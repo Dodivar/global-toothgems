@@ -6,16 +6,21 @@ import { Button } from "../components/ui/Button";
 import { ProgressBar } from "../components/ui/ProgressBar";
 import { IconButton } from "../components/ui/IconButton";
 import { QuizQuestion } from "../components/ui/QuizQuestion";
-import { FLAT, MODULES, QUIZ, LESSON_POINTS, LESSON_POINTS_FALLBACK, DEFAULT_LESSON_STATE, moduleIndexForFlatIndex } from "../data/lessons";
+import {
+  FLAT,
+  MODULES,
+  QUIZ,
+  LESSON_POINTS,
+  LESSON_POINTS_FALLBACK,
+  moduleIndexForFlatIndex,
+  parseDuration,
+} from "../data/lessons";
 import { pick } from "../data/types";
+import { useProgress } from "../lib/progress";
 import { useToast } from "../lib/toast";
 import { photo } from "../lib/images";
 import { useIsMobile } from "../lib/useIsMobile";
 
-function parseDuration(d: string): number {
-  const [m, s] = d.split(":").map(Number);
-  return m * 60 + s;
-}
 function formatClock(totalSeconds: number): string {
   const m = Math.floor(totalSeconds / 60);
   const s = Math.floor(totalSeconds % 60);
@@ -27,8 +32,11 @@ export function Lesson() {
   const { showToast } = useToast();
   const lang = i18n.language;
 
-  const [activeIdx, setActiveIdx] = useState(DEFAULT_LESSON_STATE.activeIdx);
-  const [doneCount, setDoneCount] = useState(DEFAULT_LESSON_STATE.doneCount);
+  /* Progress lives in the account, not in this page: the member dashboard reads
+     the same numbers, so validating a lesson here has to move it there too. */
+  const { activeCourse, progressFor, setActiveLesson, completeLesson: validateLesson } = useProgress();
+  const { doneCount, activeIdx, remainingMinutes } = progressFor(activeCourse.id);
+
   const [playing, setPlaying] = useState(false);
   const [pct, setPct] = useState(31);
   const [contentsOpen, setContentsOpen] = useState(false);
@@ -76,18 +84,16 @@ export function Lesson() {
       return;
     }
     resetPlayback();
-    setActiveIdx(i);
+    setActiveLesson(i);
     setContentsOpen(false);
   };
 
   const completeLesson = () => {
-    const nextDone = Math.max(doneCount, activeIdx + 1);
     const nextIdx = Math.min(FLAT.length - 1, activeIdx + 1);
     const completedTitle = pick(activeLesson.title, lang);
     const nextTitle = pick(FLAT[nextIdx].title, lang);
-    setDoneCount(nextDone);
+    validateLesson(activeIdx);
     resetPlayback();
-    setActiveIdx(nextIdx);
     setQuizCorrect(null);
     // A brief, non-blocking completion moment. It never gates the next lesson.
     setJustCompleted(true);
@@ -98,8 +104,6 @@ export function Lesson() {
   const resource = () => showToast(t("lesson.toastResourceTitle"), t("lesson.toastResourceBody"), "info");
 
   const coursePct = Math.round((doneCount / FLAT.length) * 100);
-  const remainingSeconds = FLAT.reduce((sum, l, i) => (i >= doneCount ? sum + parseDuration(l.duration) : sum), 0);
-  const remainingMinutes = Math.round(remainingSeconds / 60);
 
   const points = LESSON_POINTS[activeIdx] ?? LESSON_POINTS_FALLBACK;
   const nextIdxPreview = Math.min(FLAT.length - 1, activeIdx + 1);
@@ -112,7 +116,7 @@ export function Lesson() {
     <>
       <div className="grid gap-2">
         <span className="gt-eyebrow">{t("lesson.eyebrow")}</span>
-        <h2 className="text-[length:var(--text-h3)]">{t("lesson.courseTitle")}</h2>
+        <h2 className="text-[length:var(--text-h3)]">{pick(activeCourse.title, lang)}</h2>
       </div>
       <ProgressBar value={coursePct} label={t("lesson.progressLabel", { done: doneCount, total: FLAT.length })} />
       <p className="m-0 text-xs text-[var(--text-muted)]">{t("lesson.remainingVideo", { minutes: remainingMinutes })}</p>
@@ -174,6 +178,13 @@ export function Lesson() {
       <div className="grid gap-1.5 rounded-[var(--radius-card)] border border-[var(--border-subtle)] p-4">
         <strong className="text-sm text-[var(--text-primary)]">{t("lesson.certificateTitle")}</strong>
         <span className="text-xs text-[var(--text-muted)]">{t("lesson.certificateBody")}</span>
+        {/* The certificate itself lives in the member area, so point at it. */}
+        <Link
+          to="/compte"
+          className="mt-1 justify-self-start text-xs font-semibold text-[var(--text-link)] underline decoration-1 underline-offset-4 hover:text-[var(--text-link-hover)]"
+        >
+          {t("lesson.certificateLink")}
+        </Link>
       </div>
     </>
   );
