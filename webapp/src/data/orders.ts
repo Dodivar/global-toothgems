@@ -30,6 +30,15 @@ export interface OrderLine {
   qty: number;
 }
 
+/** Carrier details for a physical shipment. Absent until the parcel leaves. */
+export interface OrderTracking {
+  carrier: string;
+  /** Carrier tracking number, shown as-is. */
+  number: string;
+  /** ISO date (YYYY-MM-DD) announced by the carrier. */
+  estimatedDelivery: string;
+}
+
 export interface Order {
   /** Customer-facing reference, also the React key. */
   reference: string;
@@ -38,7 +47,23 @@ export interface Order {
   status: OrderStatus;
   currency: string;
   shipping: number;
+  /** Set once the order ships. Courses and cancelled orders never carry one. */
+  tracking?: OrderTracking;
   lines: OrderLine[];
+}
+
+/**
+ * Whether the order is a parcel the customer can follow. Derived from the
+ * status rather than stored: a course grants access immediately and a cancelled
+ * order has nothing in transit, so neither has a delivery timeline.
+ */
+export function isShipment(order: Order): boolean {
+  return order.status === "processing" || order.status === "shipped" || order.status === "delivered";
+}
+
+/** Position of the order on the confirmed -> shipped -> delivered timeline. */
+export function shipmentStep(order: Order): number {
+  return order.status === "delivered" ? 2 : order.status === "shipped" ? 1 : 0;
 }
 
 /** A catalogue product as it was bought. `unitPrice` defaults to the price it still has. */
@@ -93,6 +118,7 @@ export const SEED_ORDERS: Order[] = [
     status: "shipped",
     currency: "EUR",
     shipping: 0,
+    tracking: { carrier: "Colissimo", number: "6A214930571FR", estimatedDelivery: "2026-09-17" },
     lines: [productLine("aurora-heart", 2), productLine("aftercare", 1)],
   },
   {
@@ -109,6 +135,7 @@ export const SEED_ORDERS: Order[] = [
     status: "delivered",
     currency: "EUR",
     shipping: 0,
+    tracking: { carrier: "Chronopost", number: "XY884170023FR", estimatedDelivery: "2026-07-04" },
     // Bought during the summer offer: 169 €, not the 189 € it costs today.
     lines: [productLine("starter-kit", 1, 169), productLine("gants", 1)],
   },

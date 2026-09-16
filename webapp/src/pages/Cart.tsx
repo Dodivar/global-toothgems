@@ -4,6 +4,7 @@ import { useNavigate } from "react-router-dom";
 import { CheckCircle2, Minus, Plus, ShoppingBag, Trash2, Truck } from "lucide-react";
 import { Button } from "../components/ui/Button";
 import { Badge } from "../components/ui/Badge";
+import { DELIVERY_COUNTRIES, countryLabelKey } from "../data/countries";
 import { Input } from "../components/ui/Input";
 import { Select } from "../components/ui/Select";
 import { Checkbox } from "../components/ui/Checkbox";
@@ -47,7 +48,7 @@ export function Cart() {
   const shippingPct = Math.min(100, (subtotal / FREE_SHIPPING_THRESHOLD) * 100);
 
   const steps = [t("cart.step0"), t("cart.step1"), t("cart.step2"), t("cart.step3")];
-  const countryOptions = (["fr", "de", "be", "ie"] as const).map((c) => ({ value: c, label: t(`cart.countries.${c}`) }));
+  const countryOptions = DELIVERY_COUNTRIES.map((c) => ({ value: c, label: t(countryLabelKey(c)) }));
 
   // Derived from what the customer has actually supplied, rather than pinned to
   // step 2 regardless of state.

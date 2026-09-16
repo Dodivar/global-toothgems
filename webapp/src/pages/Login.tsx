@@ -52,8 +52,10 @@ export function Login() {
   const submit = (e: FormEvent) => {
     e.preventDefault();
     // The name is only asked for on sign-up; signing in falls back to the email.
-    const fullName = `${form.firstName} ${form.lastName}`.trim();
-    signIn(form.email || "camille@studio.fr", signUp && fullName ? fullName : undefined);
+    signIn(
+      form.email || "camille@studio.fr",
+      signUp ? { firstName: form.firstName, lastName: form.lastName } : undefined,
+    );
     showToast(
       t(signUp ? "auth.toastSignUpTitle" : "auth.toastSignInTitle"),
       t(signUp ? "auth.toastSignUpBody" : "auth.toastSignInBody"),

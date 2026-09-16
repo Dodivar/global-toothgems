@@ -1,4 +1,4 @@
-import { createContext, useContext, useMemo, useState, type ReactNode } from "react";
+import { createContext, useCallback, useContext, useMemo, useState, type ReactNode } from "react";
 import { Navigate, useLocation } from "react-router-dom";
 
 /**
@@ -10,18 +10,56 @@ import { Navigate, useLocation } from "react-router-dom";
  * authentication (Supabase Auth) and server-side authorization arrive later and
  * must not rely on anything in this file.
  */
+
+/**
+ * Editable member profile. The name lives here as two fields rather than as one
+ * string, so the profile form owns the single representation and `displayName`
+ * / `initials` stay derived — editing the name in the dashboard has to move the
+ * greeting and the avatar with it.
+ */
+export interface Profile {
+  firstName: string;
+  lastName: string;
+  email: string;
+  phone: string;
+  addressLine: string;
+  postalCode: string;
+  city: string;
+  /** One of `DELIVERY_COUNTRIES`, the list checkout also uses. */
+  country: string;
+  newsletter: boolean;
+}
+
+/** Fields the profile form can change. The email is edited here too. */
+export type ProfilePatch = Partial<Profile>;
+
+/**
+ * Demo postal details, the counterpart of the seeded orders in `data/orders.ts`:
+ * an account with a shipping history has a delivery address. The identity
+ * fields are not seeded — they come from what was typed on the login form.
+ */
+const DEMO_POSTAL: Pick<Profile, "phone" | "addressLine" | "postalCode" | "city" | "country"> = {
+  phone: "+33 6 12 34 56 78",
+  addressLine: "18 rue des Lices",
+  postalCode: "49100",
+  city: "Angers",
+  country: "fr",
+};
+
 interface AuthContextValue {
   signedIn: boolean;
-  /** Email the visitor typed on the mockup login form, purely for display. */
+  /** Full profile, or null when signed out. */
+  profile: Profile | null;
+  /** Email of the open session, purely for display. */
   email: string | null;
-  /** Name typed when creating the account, for the dashboard greeting. */
-  name: string | null;
   /** Falls back to the local part of the email when no name was given. */
   displayName: string;
   /** One or two letters for the account avatar. */
   initials: string;
-  signIn: (email: string, name?: string) => void;
+  signIn: (email: string, identity?: { firstName?: string; lastName?: string }) => void;
   signOut: () => void;
+  /** Applies an edit from the profile form. No-op while signed out. */
+  updateProfile: (patch: ProfilePatch) => void;
 }
 
 const AuthContext = createContext<AuthContextValue | null>(null);
@@ -42,24 +80,45 @@ function initialsOf(name: string): string {
   return (parts[0].charAt(0) + (parts.length > 1 ? parts[parts.length - 1].charAt(0) : "")).toUpperCase();
 }
 
+/** Name shown everywhere: the typed one, else the email's local part. */
+function displayNameOf(profile: Profile | null): string {
+  if (!profile) return "";
+  const full = `${profile.firstName} ${profile.lastName}`.trim();
+  return full || (profile.email ? nameFromEmail(profile.email) : "");
+}
+
 export function AuthProvider({ children }: { children: ReactNode }) {
-  const [session, setSession] = useState<{ email: string; name: string | null } | null>(null);
+  const [profile, setProfile] = useState<Profile | null>(null);
+
+  const signIn = useCallback((email: string, identity?: { firstName?: string; lastName?: string }) => {
+    setProfile({
+      firstName: identity?.firstName?.trim() ?? "",
+      lastName: identity?.lastName?.trim() ?? "",
+      email: email.trim(),
+      newsletter: true,
+      ...DEMO_POSTAL,
+    });
+  }, []);
+
+  const signOut = useCallback(() => setProfile(null), []);
+
+  const updateProfile = useCallback((patch: ProfilePatch) => {
+    setProfile((prev) => (prev ? { ...prev, ...patch } : prev));
+  }, []);
 
   const value = useMemo<AuthContextValue>(() => {
-    const email = session?.email ?? null;
-    const name = session?.name ?? null;
-    const displayName = name ?? (email ? nameFromEmail(email) : "");
+    const displayName = displayNameOf(profile);
     return {
-      signedIn: session !== null,
-      email,
-      name,
+      signedIn: profile !== null,
+      profile,
+      email: profile?.email ?? null,
       displayName,
       initials: displayName ? initialsOf(displayName) : "?",
-      signIn: (nextEmail: string, nextName?: string) =>
-        setSession({ email: nextEmail.trim(), name: nextName?.trim() || null }),
-      signOut: () => setSession(null),
+      signIn,
+      signOut,
+      updateProfile,
     };
-  }, [session]);
+  }, [profile, signIn, signOut, updateProfile]);
 
   return <AuthContext.Provider value={value}>{children}</AuthContext.Provider>;
 }
