@@ -1,11 +1,12 @@
 import { useEffect, useRef, useState } from "react";
 import { useTranslation } from "react-i18next";
 import { useNavigate } from "react-router-dom";
-import { ArrowRight, Play } from "lucide-react";
+import { ArrowRight, Lock, Play } from "lucide-react";
 import { Button } from "../components/ui/Button";
 import { CourseCard } from "../components/ui/CourseCard";
 import { COURSES } from "../data/courses";
 import { pick } from "../data/types";
+import { useAuth } from "../lib/auth";
 import { useToast } from "../lib/toast";
 import { photo } from "../lib/images";
 import { useReveal } from "../lib/useReveal";
@@ -68,6 +69,7 @@ function CountUp({ value, locale }: { value: number; locale: string }) {
 export function Academy() {
   const { t, i18n } = useTranslation();
   const navigate = useNavigate();
+  const { signedIn } = useAuth();
   const { showToast } = useToast();
   const lang = i18n.language;
   const numberLocale = lang.startsWith("en") ? "en-IE" : "fr-FR";
@@ -75,14 +77,22 @@ export function Academy() {
   const coursesRef = useReveal<HTMLDivElement>();
   const communityRef = useReveal<HTMLElement>();
 
-  const enroll = () => {
+  /**
+   * Course content requires an account. RequireAccount already guards the route,
+   * but these handlers have to check too: otherwise they would announce
+   * "enrolment saved" a moment before the guard threw the visitor back out.
+   */
+  const openLesson = (toastTitle: string, toastBody: string) => {
+    if (!signedIn) {
+      navigate("/connexion", { state: { from: "/academy/lecon" } });
+      return;
+    }
     navigate("/academy/lecon");
-    showToast(t("academy.toastEnrollTitle"), t("academy.toastEnrollBody"));
+    showToast(toastTitle, toastBody);
   };
-  const preview = () => {
-    navigate("/academy/lecon");
-    showToast(t("academy.toastPreviewTitle"), t("academy.toastPreviewBody"));
-  };
+
+  const enroll = () => openLesson(t("academy.toastEnrollTitle"), t("academy.toastEnrollBody"));
+  const preview = () => openLesson(t("academy.toastPreviewTitle"), t("academy.toastPreviewBody"));
 
   return (
     <div>
@@ -110,6 +120,12 @@ export function Academy() {
               <Button variant="primary" size="lg" onClick={enroll}>{t("academy.ctaEnroll")}</Button>
               <Button variant="glass" size="lg" iconLeft={Play} onClick={preview}>{t("academy.ctaPreview")}</Button>
             </div>
+            {!signedIn && (
+              <p className="m-0 flex items-center gap-2 text-[length:var(--text-body-sm)] text-[var(--gt-ink-300)]">
+                <Lock size={14} aria-hidden="true" />
+                {t("academy.accountRequired")}
+              </p>
+            )}
           </div>
           <dl aria-label={t("academy.statsLabel")} className="m-0 grid grid-cols-3 gap-6 border-t border-white/15 pt-8">
             {STATS.map((s) => (
@@ -135,10 +151,9 @@ export function Academy() {
                   price: c.price,
                   image: c.image,
                 }}
-                onSelect={() => {
-                  navigate("/academy/lecon");
-                  showToast(t("academy.toastCourseTitle"), t("academy.toastCourseBody", { title: pick(c.title, lang) }));
-                }}
+                onSelect={() =>
+                  openLesson(t("academy.toastCourseTitle"), t("academy.toastCourseBody", { title: pick(c.title, lang) }))
+                }
               />
             ))}
           </div>

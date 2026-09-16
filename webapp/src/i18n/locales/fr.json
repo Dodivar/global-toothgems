@@ -29,7 +29,8 @@
     "openPanelAcademy": "Afficher les formations",
     "cartWithCount_one": "Panier, {{count}} article",
     "cartWithCount_other": "Panier, {{count}} articles",
-    "primary": "Navigation principale"
+    "primary": "Navigation principale",
+    "signIn": "Se connecter"
   },
   "common": {
     "notIncludedTitle": "Écran hors périmètre",
@@ -297,6 +298,47 @@
     "confirmedScript": "Merci",
     "lineTotalAria": "Total de la ligne"
   },
+  "auth": {
+    "eyebrow": "Compte",
+    "signInTitle": "Connexion",
+    "signUpTitle": "Créer un compte",
+    "signInBody": "Retrouvez vos formations, votre progression et vos commandes.",
+    "signUpBody": "Un compte Global Toothgems donne accès aux formations de l’Academy et conserve votre progression.",
+    "modeSwitchLabel": "Connexion ou création de compte",
+    "tabSignIn": "Se connecter",
+    "tabSignUp": "Créer un compte",
+    "gateNotice": "Un compte est nécessaire pour suivre une formation. Connectez-vous ou créez un compte pour continuer.",
+    "firstName": "Prénom",
+    "lastName": "Nom",
+    "email": "E-mail",
+    "password": "Mot de passe",
+    "passwordHint": "Mot de passe oublié ? La récupération arrive avec l’authentification.",
+    "terms": "J’accepte les conditions générales",
+    "termsDescription": "Ventes, formations et traitement des données.",
+    "newsletter": "Recevoir les nouveautés et dates de formation",
+    "newsletterDescription": "Un e-mail par mois, désinscription en un clic.",
+    "submitSignIn": "Se connecter",
+    "submitSignUp": "Créer mon compte",
+    "mockNote": "Maquette : l’authentification réelle sera branchée plus tard.",
+    "guestNote": "Les gems, outils et kits s’achètent sans compte.",
+    "guestCta": "Continuer vers la boutique",
+    "benefitsTitle": "Avec un compte",
+    "benefit1Title": "Accès aux formations",
+    "benefit1Body": "Leçons vidéo, quiz et attestation liés à votre compte.",
+    "benefit2Title": "Progression conservée",
+    "benefit2Body": "Reprenez chaque module là où vous l’aviez laissé.",
+    "benefit3Title": "Commandes et suivi",
+    "benefit3Body": "Historique d’achat et retours au même endroit.",
+    "signedInBadge": "Connecté",
+    "signedInTitle": "Vous êtes connecté",
+    "signedInBody": "Session ouverte avec {{email}}. L’Academy est accessible.",
+    "signedInAcademy": "Aller à l’Academy",
+    "signOut": "Se déconnecter",
+    "toastSignInTitle": "Connexion réussie",
+    "toastSignInBody": "Votre espace formation est ouvert.",
+    "toastSignUpTitle": "Compte créé",
+    "toastSignUpBody": "Bienvenue chez Global Toothgems."
+  },
   "academy": {
     "eyebrow": "Academy",
     "title": "Une formation<br>qui tient en cabine",
@@ -316,7 +358,8 @@
     "toastPreviewBody": "Pose de la gem · module 2, leçon 5.",
     "toastCourseTitle": "Formation ouverte",
     "toastCourseBody": "{{title}} · reprise à la leçon en cours.",
-    "statsLabel": "L’Academy en chiffres"
+    "statsLabel": "L’Academy en chiffres",
+    "accountRequired": "Un compte est nécessaire pour suivre une formation."
   },
   "lesson": {
     "eyebrow": "Formation en cours",

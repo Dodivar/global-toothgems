@@ -6,6 +6,7 @@ import { IconButton } from "../ui/IconButton";
 import { Button } from "../ui/Button";
 import { ShapeCarousel } from "../ui/ShapeCarousel";
 import { ColorCarousel } from "../ui/ColorCarousel";
+import { useAuth } from "../../lib/auth";
 import { useCart } from "../../lib/cart";
 import { useToast } from "../../lib/toast";
 import { MENU } from "../../data/menu";
@@ -28,6 +29,7 @@ export function Header() {
   const navigate = useNavigate();
   const location = useLocation();
   const { count } = useCart();
+  const { signedIn } = useAuth();
   const { showToast } = useToast();
   const lang = i18n.language;
 
@@ -101,6 +103,12 @@ export function Header() {
   }, [panel, menuOpen]);
 
   const notIncluded = () => showToast(t("common.notIncludedTitle"), t("common.notIncludedScreen"), "info");
+
+  /** The account entry point: the login page is the only account screen in the maquette. */
+  const openAccount = () => {
+    closeAll();
+    navigate("/connexion");
+  };
 
   const panelItems = panel === "shop" ? [...MENU.gems, ...MENU.shop] : panel === "academy" ? MENU.academy : [];
   const panelRoot =
@@ -265,7 +273,7 @@ export function Header() {
           <div className="flex items-center gap-1">
             {langButton}
             <IconButton icon={Search} label={t("nav.search")} onClick={notIncluded} />
-            <IconButton icon={User} label={t("nav.account")} onClick={notIncluded} />
+            <IconButton icon={User} label={signedIn ? t("nav.account") : t("nav.signIn")} onClick={openAccount} />
             <IconButton
               icon={ShoppingBag}
               label={cartLabel}
@@ -350,7 +358,7 @@ export function Header() {
             <img src={logoBlack} alt="Global Toothgems" className="h-4 w-auto" />
           </Link>
           <IconButton icon={Heart} label={t("nav.wishlist")} onClick={notIncluded} />
-          <IconButton icon={User} label={t("nav.account")} onClick={notIncluded} />
+          <IconButton icon={User} label={signedIn ? t("nav.account") : t("nav.signIn")} onClick={openAccount} />
           <IconButton icon={ShoppingBag} label={cartLabel} badge={count} onClick={() => navigate("/panier")} />
         </div>
         {menuOpen && (
