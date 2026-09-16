@@ -102,7 +102,7 @@ export function Home() {
               </Button>
             </div>
           </div>
-          <div className="gt-glass grid min-w-[230px] justify-self-end gap-3.5 self-end rounded-[var(--radius-lg)] p-[var(--space-5)]">
+          <div className="gt-glass-panel gt-glass-panel-compact grid min-w-[230px] justify-self-end gap-3.5 self-end rounded-[var(--radius-lg)] p-[var(--space-5)]">
             <div className="grid gap-0.5">
               <strong className="text-[22px] font-[var(--weight-black)] text-[var(--gt-ink-900)]">{t("home.heroStat1Value")}</strong>
               <span className="text-[length:var(--text-caption)] text-[var(--gt-ink-700)]">{t("home.heroStat1Label")}</span>

@@ -101,6 +101,18 @@
   --glass-heavy-highlight: inset 0 1px 0 rgba(255, 255, 255, .85);
   --glass-heavy-inner: inset 0 -18px 36px -22px rgba(63, 90, 117, .5);
 
+  /* Deep glass: thick-bodied, lit edges. The inner glow is what reads as glass
+     body, so scale --glass-deep-glow-* down on smaller surfaces. */
+  --glass-deep-fill: rgba(250, 250, 248, .7);
+  --glass-deep-border: rgba(255, 255, 255, .8);
+  --glass-deep-blur: 14px;
+  --glass-deep-saturate: 1.5;
+  --glass-deep-glow-blur: 52px;
+  --glass-deep-glow-spread: 22px;
+  --glass-deep-glow: rgba(255, 255, 255, .8);
+  --glass-deep-edge-top: linear-gradient(90deg, transparent, rgba(255, 255, 255, .9), transparent);
+  --glass-deep-edge-left: linear-gradient(180deg, rgba(255, 255, 255, .85), transparent 55%, rgba(255, 255, 255, .35));
+
   /* Typography */
   --text-display-1: clamp(48px, 6vw, 76px);
   --text-display-2: clamp(38px, 4.6vw, 56px);
@@ -279,13 +291,49 @@
     box-shadow: var(--shadow-glass-heavy), var(--glass-heavy-highlight), var(--glass-heavy-inner);
   }
 
-  /* Hero glass panel: the one place we use the paper-tinted heavy glass. */
+  /* Hero glass panel: the one place we use the paper-tinted deep glass. The
+     inner glow gives the pane thickness; the pseudo-elements light its top and
+     left edges the way a real bevel catches light. Needs overflow clipping, so
+     keep padding clear of the radius before reusing it. */
   .gt-glass-panel {
-    background: rgba(250, 250, 248, .72);
-    backdrop-filter: blur(9px) saturate(1.45);
-    -webkit-backdrop-filter: blur(9px) saturate(1.45);
-    border: 1px solid rgba(255, 255, 255, .8);
-    box-shadow: var(--shadow-glass-heavy), inset 0 1px 0 rgba(255, 255, 255, .9);
+    position: relative;
+    overflow: hidden;
+    background: var(--glass-deep-fill);
+    backdrop-filter: blur(var(--glass-deep-blur)) saturate(var(--glass-deep-saturate));
+    -webkit-backdrop-filter: blur(var(--glass-deep-blur)) saturate(var(--glass-deep-saturate));
+    border: 1px solid var(--glass-deep-border);
+    box-shadow:
+      var(--shadow-glass-heavy),
+      inset 0 1px 0 rgba(255, 255, 255, .9),
+      inset 0 -1px 0 rgba(255, 255, 255, .28),
+      inset 0 0 var(--glass-deep-glow-blur) var(--glass-deep-glow-spread) var(--glass-deep-glow);
+  }
+
+  .gt-glass-panel::before,
+  .gt-glass-panel::after {
+    content: "";
+    position: absolute;
+    pointer-events: none;
+  }
+
+  .gt-glass-panel::before {
+    inset: 0 0 auto 0;
+    height: 1px;
+    background: var(--glass-deep-edge-top);
+  }
+
+  .gt-glass-panel::after {
+    inset: 0 auto 0 0;
+    width: 1px;
+    background: var(--glass-deep-edge-left);
+  }
+
+  /* Small deep-glass surfaces: the panel-sized glow would blanket a ~230px card
+     and kill the translucency, so pull it back to an edge falloff. */
+  .gt-glass-panel-compact {
+    --glass-deep-fill: rgba(250, 250, 248, .62);
+    --glass-deep-glow-blur: 30px;
+    --glass-deep-glow-spread: 2px;
   }
 
   /* Decorative script. Accents only - never body, nav, forms or legal copy. */
