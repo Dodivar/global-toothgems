@@ -57,6 +57,12 @@ export const PRODUCTS: Product[] = [
     image: img("img-07.jpg"),
     cat: "Gems",
     material: "Swarovski",
+    gallery: [
+      { src: img("img-07.jpg"), alt: { fr: "Solitaire Cristal, vue de face", en: "Crystal Solitaire, front view" } },
+      { src: img("img-02.jpg"), alt: { fr: "Détail de la taille", en: "Cut detail" } },
+      { src: img("img-12.jpg"), alt: { fr: "Assortiment de tailles", en: "Size assortment" } },
+      { src: img("mouth-03.jpg"), alt: { fr: "Gem posée sur dent", en: "Gem applied on a tooth" } },
+    ],
   },
   {
     id: "opale",
@@ -82,6 +88,12 @@ export const PRODUCTS: Product[] = [
     image: img("img-11.jpg"),
     cat: "Kits",
     material: "Cristal",
+    gallery: [
+      { src: img("img-11.jpg"), alt: { fr: "Contenu du kit Starter Pro", en: "Starter Pro kit contents" } },
+      { src: img("img-08.jpg"), alt: { fr: "Adhesif et mordancage", en: "Adhesive and etching gel" } },
+      { src: img("img-01.jpg"), alt: { fr: "Outils de pose", en: "Placement tools" } },
+      { src: img("mouth-04.jpg"), alt: { fr: "Pose en cabine", en: "Placement in the chair" } },
+    ],
   },
   {
     id: "aquamarine",
@@ -93,6 +105,12 @@ export const PRODUCTS: Product[] = [
     image: img("img-05.jpg"),
     cat: "Gems",
     material: "Cristal",
+    gallery: [
+      { src: img("img-05.jpg"), alt: { fr: "Aquamarine SS7, vue de face", en: "Aquamarine SS7, front view" } },
+      { src: img("img-15.jpg"), alt: { fr: "Nuances de bleu", en: "Blue shades" } },
+      { src: img("img-17.jpg"), alt: { fr: "Détail de la taille", en: "Cut detail" } },
+      { src: img("mouth-01.jpg"), alt: { fr: "Gem posée sur dent", en: "Gem applied on a tooth" } },
+    ],
   },
   {
     id: "capri",
@@ -104,6 +122,12 @@ export const PRODUCTS: Product[] = [
     image: img("img-15.jpg"),
     cat: "Gems",
     material: "Cristal",
+    gallery: [
+      { src: img("img-15.jpg"), alt: { fr: "Capri Blue SS9, vue de face", en: "Capri Blue SS9, front view" } },
+      { src: img("img-05.jpg"), alt: { fr: "Nuances de bleu", en: "Blue shades" } },
+      { src: img("img-14.jpg"), alt: { fr: "Détail de la taille", en: "Cut detail" } },
+      { src: img("mouth-05.jpg"), alt: { fr: "Gem posée sur dent", en: "Gem applied on a tooth" } },
+    ],
   },
   {
     id: "amethyste",
@@ -115,6 +139,12 @@ export const PRODUCTS: Product[] = [
     image: img("img-06.jpg"),
     cat: "Gems",
     material: "Cristal",
+    gallery: [
+      { src: img("img-06.jpg"), alt: { fr: "Light Amethyst SS7, vue de face", en: "Light Amethyst SS7, front view" } },
+      { src: img("img-09.jpg"), alt: { fr: "Détail de la taille", en: "Cut detail" } },
+      { src: img("img-18.jpg"), alt: { fr: "Assortiment de coloris", en: "Colour assortment" } },
+      { src: img("mouth-03.jpg"), alt: { fr: "Gem posée sur dent", en: "Gem applied on a tooth" } },
+    ],
   },
   {
     id: "peridot",
@@ -205,6 +235,12 @@ export const PRODUCTS: Product[] = [
     image: img("img-02.jpg"),
     cat: "Gems",
     material: "Or 18k",
+    gallery: [
+      { src: img("img-02.jpg"), alt: { fr: "Étoile Or, vue de face", en: "Gold Star, front view" } },
+      { src: img("img-07.jpg"), alt: { fr: "Détail de la monture", en: "Setting detail" } },
+      { src: img("img-13.jpg"), alt: { fr: "Assortiment de formes", en: "Shape assortment" } },
+      { src: img("mouth-02.jpg"), alt: { fr: "Gem posée sur dent", en: "Gem applied on a tooth" } },
+    ],
   },
   {
     id: "aftercare",

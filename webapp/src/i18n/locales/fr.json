@@ -1,5 +1,7 @@
 {
-  "meta": { "title": "Global Toothgems" },
+  "meta": {
+    "title": "Global Toothgems"
+  },
   "nav": {
     "home": "Accueil",
     "shop": "Boutique",
@@ -18,7 +20,12 @@
     "viewAllAcademySub": "Parcours certifiant · 4 étapes",
     "menuTabGems": "Gems",
     "menuTabShop": "Boutique",
-    "menuTabAcademy": "Academy"
+    "menuTabAcademy": "Academy",
+    "openPanelShop": "Afficher les catégories de la boutique",
+    "openPanelAcademy": "Afficher les formations",
+    "cartWithCount_one": "Panier, {{count}} article",
+    "cartWithCount_other": "Panier, {{count}} articles",
+    "primary": "Navigation principale"
   },
   "common": {
     "notIncludedTitle": "Écran hors périmètre",
@@ -26,7 +33,10 @@
     "notIncludedArtists": "L’annuaire des artistes n’est pas inclus dans cette maquette.",
     "readMore": "En savoir plus",
     "details": "Détails",
-    "close": "Fermer"
+    "close": "Fermer",
+    "skipToContent": "Aller au contenu principal",
+    "langSwitchCode": "EN",
+    "langSwitchAria": "Afficher le site en anglais"
   },
   "home": {
     "heroEyebrow": "L’univers du bijou dentaire",
@@ -68,7 +78,11 @@
     "newsletterCheckboxDescription": "Consentement explicite. Désinscription en un clic.",
     "newsletterSubmit": "S’inscrire",
     "toastSubscribeTitle": "Inscription confirmée",
-    "toastSubscribeBody": "Un email de confirmation part à l’instant."
+    "toastSubscribeBody": "Un email de confirmation part à l’instant.",
+    "categoryTileAria": "Voir la catégorie {{label}}",
+    "newsletterInvalidEmail": "Saisissez une adresse e-mail valide.",
+    "newsletterSuccessTitle": "Inscription confirmée",
+    "newsletterSuccessBody": "Surveillez votre boîte mail : le prochain drop vous sera annoncé en avant-première."
   },
   "shop": {
     "eyebrow": "Boutique",
@@ -89,7 +103,13 @@
     "page": "Page {{page}} sur {{pageCount}}",
     "prev": "Précédent",
     "next": "Suivant",
-    "categories": { "all": "Tout", "Gems": "Gems", "Outils": "Outils", "Kits": "Kits", "Suivi": "Suivi" },
+    "categories": {
+      "all": "Tout",
+      "Gems": "Gems",
+      "Outils": "Outils",
+      "Kits": "Kits",
+      "Suivi": "Suivi"
+    },
     "materials": {
       "all": "Toutes les matières",
       "Cristal": "Cristal",
@@ -98,9 +118,32 @@
       "Or 18k": "Or 18k",
       "Opale de labo": "Opale de labo"
     },
-    "priceBands": { "all": "Tous les prix", "under30": "Moins de 30 €", "30to60": "30 – 60 €", "over60": "Plus de 60 €" },
-    "stockBands": { "all": "Tout le stock", "in": "En stock", "low": "Dernières pièces", "out": "En réassort" },
-    "sorts": { "new": "Nouveautés", "priceAsc": "Prix croissant", "priceDesc": "Prix décroissant", "rating": "Mieux notés" }
+    "priceBands": {
+      "all": "Tous les prix",
+      "under30": "Moins de 30 €",
+      "30to60": "30 – 60 €",
+      "over60": "Plus de 60 €"
+    },
+    "stockBands": {
+      "all": "Tout le stock",
+      "in": "En stock",
+      "low": "Dernières pièces",
+      "out": "En réassort"
+    },
+    "sorts": {
+      "new": "Nouveautés",
+      "priceAsc": "Prix croissant",
+      "priceDesc": "Prix décroissant",
+      "rating": "Mieux notés"
+    },
+    "activeFiltersLabel": "Filtres actifs",
+    "removeFilter": "Retirer le filtre : {{label}}",
+    "clearAll": "Tout effacer",
+    "paginationLabel": "Pagination des produits",
+    "goToPage": "Aller à la page {{page}}",
+    "currentPage": "Page {{page}}, page actuelle",
+    "resultsLoading": "Mise à jour des résultats",
+    "gridLabel": "Liste des produits"
   },
   "product": {
     "breadcrumbShop": "Boutique",
@@ -141,7 +184,19 @@
     "crossSellCta": "Voir le panier",
     "toastAddedTitle": "Ajouté au panier",
     "toastSavedTitle": "Enregistré",
-    "toastSavedBody": "{{name}} est dans vos favoris."
+    "toastSavedBody": "{{name}} est dans vos favoris.",
+    "stockLow": "Stock limité",
+    "stockOut": "Épuisé",
+    "saveAria": "Ajouter {{name}} aux favoris",
+    "imagePlaceholder": "Produit",
+    "galleryLabel": "Images du produit",
+    "viewImage": "Voir l’image {{index}} sur {{total}}",
+    "ratingAria": "Noté {{rating}} sur 5, {{count}} avis",
+    "ratingBreakdownTitle": "Note globale",
+    "basedOn_one": "sur {{count}} avis vérifié",
+    "basedOn_other": "sur {{count}} avis vérifiés",
+    "stickyBarLabel": "Ajouter au panier",
+    "zoomHint": "Survolez pour agrandir"
   },
   "cart": {
     "confirmedBadge": "Commande confirmée",
@@ -166,7 +221,12 @@
     "postalCode": "Code postal",
     "city": "Ville",
     "country": "Pays",
-    "countries": { "fr": "France", "de": "Deutschland", "be": "Belgique", "ie": "Ireland" },
+    "countries": {
+      "fr": "France",
+      "de": "Deutschland",
+      "be": "Belgique",
+      "ie": "Ireland"
+    },
     "saveInfo": "Enregistrer ces informations sur mon compte artiste",
     "saveInfoDescription": "Un seul compte couvre la boutique et l’Academy.",
     "paymentTitle": "Paiement",
@@ -183,7 +243,14 @@
     "pay": "Payer {{amount}}",
     "summaryFootnote": "Les totaux sont recalculés côté serveur avant le paiement.",
     "emptyCart": "Votre panier est vide.",
-    "continueShopping": "Continuer mes achats"
+    "continueShopping": "Continuer mes achats",
+    "freeShippingProgress": "Plus que {{amount}} pour la livraison offerte",
+    "freeShippingReached": "Livraison offerte débloquée",
+    "freeShippingLabel": "Livraison offerte dès {{threshold}}",
+    "emptyCartTitle": "Votre panier est vide",
+    "emptySuggestions": "Les plus choisis en ce moment",
+    "confirmedScript": "Merci",
+    "lineTotalAria": "Total de la ligne"
   },
   "academy": {
     "eyebrow": "Academy",
@@ -203,7 +270,8 @@
     "toastPreviewTitle": "Leçon ouverte",
     "toastPreviewBody": "Pose de la gem · module 2, leçon 5.",
     "toastCourseTitle": "Formation ouverte",
-    "toastCourseBody": "{{title}} · reprise à la leçon en cours."
+    "toastCourseBody": "{{title}} · reprise à la leçon en cours.",
+    "statsLabel": "L’Academy en chiffres"
   },
   "lesson": {
     "eyebrow": "Formation en cours",
@@ -250,19 +318,63 @@
     "toastQuizIncorrectTitle": "Pas tout à fait",
     "toastQuizIncorrectBody": "L’explication reste affichée sous la question.",
     "lockedStatus": "Verrouillée · {{duration}}",
-    "doneStatus": "Terminée · {{duration}}"
+    "doneStatus": "Terminée · {{duration}}",
+    "sidebarToggle": "Programme du cours",
+    "sidebarClose": "Fermer le programme",
+    "lockedReason": "Terminez la leçon précédente pour déverrouiller celle-ci.",
+    "playerLabel": "Lecteur vidéo de la leçon",
+    "moduleLabel": "Module",
+    "completedCelebration": "Leçon terminée"
   },
   "footer": {
     "blurb": "Gems, outils et formation professionnels. Expédié dans toute l’Europe depuis Lyon.",
     "colShop": "Boutique",
     "colAcademy": "Academy",
     "colHelp": "Aide",
-    "shopItems": ["Gems", "Outils", "Kits", "Suivi client", "Cartes cadeaux"],
-    "academyItems": ["Fondation", "Placement avancé", "Business studio", "Certification"],
-    "helpItems": ["Livraison et retours", "FAQ pose", "Contact", "Trouver un artiste"],
+    "shopItems": [
+      "Gems",
+      "Outils",
+      "Kits",
+      "Suivi client",
+      "Cartes cadeaux"
+    ],
+    "academyItems": [
+      "Fondation",
+      "Placement avancé",
+      "Business studio",
+      "Certification"
+    ],
+    "helpItems": [
+      "Livraison et retours",
+      "FAQ pose",
+      "Contact",
+      "Trouver un artiste"
+    ],
     "copyright": "© 2026 Global Toothgems · Prix TTC"
   },
   "toasts": {
     "outOfScopeTitle": "Écran hors périmètre"
+  },
+  "review": {
+    "verified": "Achat vérifié",
+    "photoPlaceholder": "Photo client",
+    "starsAria": "Noté {{rating}} sur 5"
+  },
+  "course": {
+    "stateEnrolled": "Inscrit",
+    "stateCompleted": "Terminée",
+    "stateDraft": "Bientôt",
+    "lessonCount_one": "{{count}} leçon",
+    "lessonCount_other": "{{count}} leçons",
+    "progress": "Progression",
+    "imagePlaceholder": "Formation",
+    "lockedAria": "Formation verrouillée"
+  },
+  "quiz": {
+    "counter": "Question {{index}} / {{total}}",
+    "submit": "Valider ma réponse",
+    "continue": "Continuer",
+    "correct": "Correct",
+    "incorrect": "Pas tout à fait — voici pourquoi"
   }
 }

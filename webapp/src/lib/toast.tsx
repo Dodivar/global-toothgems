@@ -42,13 +42,20 @@ export function ToastProvider({ children }: { children: ReactNode }) {
   return (
     <ToastContext.Provider value={{ showToast }}>
       {children}
-      <div className="pointer-events-none fixed inset-x-0 bottom-5 z-[999] flex flex-col items-center gap-2 px-4">
+      {/* Assertive would interrupt; these are all confirmations, so polite is right.
+          The live region must exist in the DOM before a toast lands in it. */}
+      <div
+        role="status"
+        aria-live="polite"
+        aria-atomic="false"
+        className="pointer-events-none fixed inset-x-0 bottom-5 z-[999] flex flex-col items-center gap-2 px-4"
+      >
         {toasts.map((t) => {
           const Icon = toneIcon[t.tone];
           return (
             <div
               key={t.id}
-              className="gt-glass pointer-events-auto flex w-full max-w-[380px] items-start gap-3 rounded-[var(--radius-md)] p-[var(--space-4)]"
+              className="gt-glass gt-celebrate pointer-events-auto flex w-full max-w-[380px] items-start gap-3 rounded-[var(--radius-md)] p-[var(--space-4)]"
             >
               <Icon size={18} color={toneColor[t.tone]} className="mt-0.5 flex-none" />
               <div className="grid gap-0.5">

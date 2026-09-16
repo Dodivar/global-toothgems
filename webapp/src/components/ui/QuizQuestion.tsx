@@ -1,4 +1,5 @@
 import { useState } from "react";
+import { useTranslation } from "react-i18next";
 import { ArrowRight, Check, X } from "lucide-react";
 import { Button } from "./Button";
 
@@ -21,10 +22,11 @@ export function QuizQuestion({
   explanation,
   index,
   total,
-  submitLabel = "Valider ma réponse",
-  continueLabel = "Continuer",
+  submitLabel,
+  continueLabel,
   onAnswer,
 }: QuizQuestionProps) {
+  const { t } = useTranslation();
   const [picked, setPicked] = useState<number | null>(null);
   const [submitted, setSubmitted] = useState(false);
 
@@ -43,7 +45,7 @@ export function QuizQuestion({
   return (
     <section className="grid gap-5 rounded-[var(--radius-xl)] border border-[var(--border-subtle)] p-[var(--space-8)]">
       <span className="text-[11px] font-semibold uppercase tracking-[var(--tracking-eyebrow)] text-[var(--text-muted)]">
-        Question {index} / {total}
+        {t("quiz.counter", { index, total })}
       </span>
       <h3 className="text-[22px]">{question}</h3>
       <div className="grid gap-2.5">
@@ -85,24 +87,26 @@ export function QuizQuestion({
       </div>
       {submitted && (
         <div
+          role="status"
+          aria-live="polite"
           className="rounded-[var(--radius-md)] p-4 text-sm"
           style={{
             background: correct ? "var(--status-success-bg)" : "var(--surface-brand-wash)",
             color: correct ? "var(--status-success-fg)" : "var(--text-body)",
           }}
         >
-          <strong className="block pb-1">{correct ? "Correct" : "Pas tout à fait — voici pourquoi"}</strong>
+          <strong className="block pb-1">{correct ? t("quiz.correct") : t("quiz.incorrect")}</strong>
           {explanation}
         </div>
       )}
       <div className="flex justify-end">
         {!submitted ? (
           <Button variant="primary" disabled={picked == null} onClick={submit}>
-            {submitLabel}
+            {submitLabel ?? t("quiz.submit")}
           </Button>
         ) : (
           <Button variant="dark" iconRight={ArrowRight} onClick={cont}>
-            {continueLabel}
+            {continueLabel ?? t("quiz.continue")}
           </Button>
         )}
       </div>
