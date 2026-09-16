@@ -1,4 +1,4 @@
-import { useEffect, useRef, useState } from "react";
+import { useEffect, useRef, useState, type ReactNode } from "react";
 import { Link, useNavigate, useLocation } from "react-router-dom";
 import { useTranslation } from "react-i18next";
 import { ChevronDown, Heart, Menu, Search, ShoppingBag, User, X } from "lucide-react";
@@ -133,29 +133,60 @@ export function Header() {
    * drawer: a swipeable strip of the whole taxonomy plus a way to open the
    * full-page selector when the strip is not enough.
    */
-  const pickers = (compact: boolean) => (
-    <>
-      <div className="grid min-w-0 content-start gap-3">
-        <div className="flex flex-wrap items-center justify-between gap-3">
-          <span className="gt-eyebrow">{t("nav.shapesHeading")}</span>
-          <Button variant="outline" size="sm" onClick={() => goTo("/formes")}>
-            {t("nav.viewAllShapes")}
-          </Button>
-        </div>
-        <ShapeCarousel compact={compact} groups={shapeGroups} hrefFor={(g) => shapeHref(g.shape)} onNavigate={closeAll} />
+  const pickers = (compact: boolean) => {
+    /* `compact` is the desktop panel. There the strip itself is the offer and
+       the whole-taxonomy page is only a fallback, so it drops to a quiet
+       underlined link under the strip — the same treatment as "voir toute la
+       boutique" and as the shop filter bar. The mobile drawer keeps the button,
+       which is the tap target a thumb needs. */
+    const section = (heading: string, to: string, label: string, carousel: ReactNode) => (
+      /* Desktop is a flex column so the two links land on one baseline even
+         though the colour tiles wrap onto a second line and the shape tiles
+         do not. */
+      <div className={`min-w-0 gap-3 ${compact ? "flex flex-col" : "grid content-start"}`}>
+        {compact ? (
+          <span className="gt-eyebrow">{heading}</span>
+        ) : (
+          <div className="flex flex-wrap items-center justify-between gap-3">
+            <span className="gt-eyebrow">{heading}</span>
+            <Button variant="outline" size="sm" onClick={() => goTo(to)}>
+              {label}
+            </Button>
+          </div>
+        )}
+        {carousel}
+        {compact && (
+          <Link
+            to={to}
+            onClick={() => {
+              clearHoverTimer();
+              closeAll();
+            }}
+            className="mt-auto self-start text-xs text-[var(--text-muted)] underline decoration-1 underline-offset-4 hover:text-[var(--text-primary)]"
+          >
+            {label}
+          </Link>
+        )}
       </div>
+    );
 
-      <div className="grid min-w-0 content-start gap-3">
-        <div className="flex flex-wrap items-center justify-between gap-3">
-          <span className="gt-eyebrow">{t("nav.colorsHeading")}</span>
-          <Button variant="outline" size="sm" onClick={() => goTo("/couleurs")}>
-            {t("nav.viewAllColors")}
-          </Button>
-        </div>
-        <ColorCarousel compact={compact} groups={colorGroups} hrefFor={(g) => colorHref(g.color)} onNavigate={closeAll} />
-      </div>
-    </>
-  );
+    return (
+      <>
+        {section(
+          t("nav.shapesHeading"),
+          "/formes",
+          t("nav.viewAllShapes"),
+          <ShapeCarousel compact={compact} groups={shapeGroups} hrefFor={(g) => shapeHref(g.shape)} onNavigate={closeAll} />,
+        )}
+        {section(
+          t("nav.colorsHeading"),
+          "/couleurs",
+          t("nav.viewAllColors"),
+          <ColorCarousel compact={compact} groups={colorGroups} hrefFor={(g) => colorHref(g.color)} onNavigate={closeAll} />,
+        )}
+      </>
+    );
+  };
 
   const langButton = (
     <button
