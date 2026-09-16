@@ -8,6 +8,7 @@
       "Bash(git add:*)",
       "Bash(git commit:*)",
       "Bash(git push origin dev:*)",
+      "Bash(git push origin main:*)",
       "Bash(git pull:*)",
       "Bash(git fetch:*)",
       "Bash(git switch:*)",
@@ -15,7 +16,6 @@
       "Bash(git branch:*)"
     ],
     "deny": [
-      "Bash(git push origin main:*)",
       "Bash(git push --force:*)",
       "Bash(git push -f:*)"
     ]

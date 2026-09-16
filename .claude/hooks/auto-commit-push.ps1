@@ -2,14 +2,14 @@
     Stop hook: auto-commit and auto-push the work of the turn.
 
     Safety rails:
-      - only runs on the branch named in $TargetBranch (default: dev)
+      - only runs on the branch named in $TargetBranch (default: main)
       - no-op when the tree is clean
       - never blocks Claude: always exits 0
       - on a rejected push, rebases once on origin/<branch> and retries
 #>
 
 $ErrorActionPreference = 'Continue'
-$TargetBranch = 'dev'
+$TargetBranch = 'main'
 
 function Write-HookLog([string]$Message) {
     [Console]::Error.WriteLine("[auto-commit-push] $Message")
