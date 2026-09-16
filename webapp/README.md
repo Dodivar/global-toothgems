@@ -42,6 +42,7 @@ src/
   pages/account/    The member area: sidebar layout + one component per section
   components/ui/     Design-system primitives (Button, Badge, ProductCard, CourseCard, QuizQuestion, ...)
   components/account/ Dashboard pieces (stat tile, course row, certificate card, order card)
+  components/loyalty/ The Loyalty Club: stamp, card, progress, reward, steps, journey, FAQ, checkout banner, demo switcher
   components/layout/ Header (desktop nav + mega panel, mobile burger menu) and Footer
   data/               Bilingual product/course/review/lesson/order data
   i18n/               react-i18next setup + locales/fr.json, locales/en.json
@@ -57,9 +58,12 @@ The signed-in area is an administration dashboard: a left sidebar on desktop, a 
 | `/compte` | Dashboard — summary tiles, the "resume where you left off" card, the courses being followed with their module breakdown, and the courses still available |
 | `/compte/attestations` | Certificates |
 | `/compte/commandes` | Order history, with parcel tracking |
+| `/compte/fidelite` | Loyalty card — the stamp card, the reward, and the demo controls |
 | `/compte/profil` | Profile details, editable |
 
 The sidebar also links out to the course catalogue (`/academy`) and signs the member out. `RequireAccount` wraps the layout, so every section is gated at once.
+
+The member area is capped at `--max-width-account` rather than `--max-width-content`: it spends a 248 px sidebar, the column gap and its own gutters out of the width every other screen gives entirely to content, so the wider cap is what makes its content column measure the same 1240 px as the shop grid.
 
 The sections own no state of their own. Learning progress lives in `lib/progress.tsx`, order history in `lib/orders.tsx` and the member profile in `lib/auth.tsx` — in-memory contexts shaped like the existing `lib/cart.tsx`. The lesson player writes to the first and the cart writes to the second, so validating a lesson or paying moves the dashboard immediately. Certificates are derived from a course reaching 100 %, never stored as a separate flag, and the delivery timeline is derived from the order status for the same reason. Editing the profile moves the greeting and the avatar, because both are derived from the stored name rather than copied from it.
 
@@ -72,5 +76,6 @@ This app reproduces the prototype's interactions against local/mock state only �
 - All Academy courses share the same authored 9-lesson syllabus; progress is tracked per course, but only one course outline exists.
 - Nothing is persisted: the session, cart, progress and orders all live in memory and reset on reload.
 - Paying always succeeds. It records an order and empties the cart; real fulfilment belongs to a Stripe webhook, not to the browser.
+- The Loyalty Club (`/fidelite`, `/compte/fidelite`) is **display only**, and more so than the rest of this app: no stamp is ever awarded, stored or redeemed, and the checkout banner reads the subtotal without touching the total, the payment or the order. Its card state is static mock data in `data/loyalty.ts`, switched by a visible demo control on the member page. Awarding a stamp is a server's job, driven by the same verified payment event as fulfilment.
 
 Everything else — filtering, cart totals, the lesson video/quiz simulation, per-product detail pages, the member dashboard — is fully interactive.

@@ -10,7 +10,8 @@ import type { GemShape } from "../../data/products";
  * Every glyph shares one 32x32 box and is drawn with `currentColor`, so the
  * tile controls the colour and the facet lines stay consistent between cuts.
  */
-const PATHS: Record<GemShape, { outline: string; facets: string }> = {
+/** Shared with the loyalty stamps, which ink the same cuts rather than redrawing them. */
+export const GLYPH_PATHS: Record<GemShape, { outline: string; facets: string }> = {
   round: {
     outline: "M16 3A13 13 0 1 0 16 29 13 13 0 1 0 16 3Z",
     facets:
@@ -62,7 +63,7 @@ interface ShapeGlyphProps {
 }
 
 export function ShapeGlyph({ shape, size = 44, className }: ShapeGlyphProps) {
-  const { outline, facets } = PATHS[shape];
+  const { outline, facets } = GLYPH_PATHS[shape];
   return (
     <svg
       width={size}

@@ -15,6 +15,7 @@ const SHOP_TARGETS: (string | null)[] = [
   "/boutique?categorie=Kits",
   "/boutique?categorie=Suivi",
   null,
+  "/fidelite",
 ];
 const ACADEMY_TARGETS: (string | null)[] = ["/academy", "/academy", "/academy", "/academy"];
 const HELP_TARGETS: (string | null)[] = [null, null, null, null];

@@ -17,11 +17,13 @@ import { Cart } from "./pages/Cart";
 import { Academy } from "./pages/Academy";
 import { Lesson } from "./pages/Lesson";
 import { Login } from "./pages/Login";
+import { Loyalty as LoyaltyProgram } from "./pages/Loyalty";
 import { AccountLayout } from "./pages/account/AccountLayout";
 import { Dashboard } from "./pages/account/Dashboard";
 import { Certificates } from "./pages/account/Certificates";
 import { Orders } from "./pages/account/Orders";
 import { Profile } from "./pages/account/Profile";
+import { Loyalty as AccountLoyalty } from "./pages/account/Loyalty";
 
 function ScrollToTop() {
   const { pathname } = useLocation();
@@ -68,6 +70,9 @@ export default function App() {
                   <Route path="/couleurs" element={<Colors />} />
                   <Route path="/panier" element={<Cart />} />
                   <Route path="/connexion" element={<Login />} />
+                  {/* The loyalty programme's own sales page, open like the Academy
+                      landing page: gating it would hide what it advertises. */}
+                  <Route path="/fidelite" element={<LoyaltyProgram />} />
                   {/* The Academy landing page stays open — it is the sales page.
                       Only the course content itself requires an account, and gating
                       the route covers the menu links and direct URLs at once. */}
@@ -95,6 +100,7 @@ export default function App() {
                     <Route path="attestations" element={<Certificates />} />
                     <Route path="commandes" element={<Orders />} />
                     <Route path="profil" element={<Profile />} />
+                    <Route path="fidelite" element={<AccountLoyalty />} />
                   </Route>
                 </Routes>
               </main>
