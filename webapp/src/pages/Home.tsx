@@ -17,6 +17,7 @@ import { pick } from "../data/types";
 import { useToast } from "../lib/toast";
 import { photo } from "../lib/images";
 import { useReveal } from "../lib/useReveal";
+import { shapeHref } from "../lib/shopUrl";
 
 /**
  * `to` carries the shop filter each tile stands for. These used to navigate to a
@@ -134,7 +135,7 @@ export function Home() {
           </div>
           <ShapeCarousel
             groups={shapeGroups}
-            hrefFor={(group) => `/boutique?categorie=Gems&forme=${group.shape}`}
+            hrefFor={(group) => shapeHref(group.shape)}
           />
         </div>
       </section>

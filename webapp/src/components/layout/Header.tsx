@@ -3,14 +3,25 @@ import { Link, useNavigate, useLocation } from "react-router-dom";
 import { useTranslation } from "react-i18next";
 import { ChevronDown, Heart, Menu, Search, ShoppingBag, User, X } from "lucide-react";
 import { IconButton } from "../ui/IconButton";
+import { Button } from "../ui/Button";
+import { ShapeCarousel } from "../ui/ShapeCarousel";
+import { ColorCarousel } from "../ui/ColorCarousel";
 import { useCart } from "../../lib/cart";
 import { useToast } from "../../lib/toast";
 import { MENU } from "../../data/menu";
+import { colorsInCatalog, shapesInCatalog } from "../../data/products";
+import { colorHref, shapeHref } from "../../lib/shopUrl";
 import { pick } from "../../data/types";
 import logoBlack from "../../assets/logo-wordmark-black.png";
 
 type PanelKey = "shop" | "academy" | null;
 type MobileTab = "gems" | "shop" | "academy";
+
+/** Long enough that a pointer crossing the nav on its way elsewhere does not
+ *  open anything, short enough that a deliberate hover feels immediate. */
+const HOVER_OPEN_MS = 120;
+/** Grace for the trip from the nav item down into the panel. */
+const HOVER_CLOSE_MS = 250;
 
 export function Header() {
   const { t, i18n } = useTranslation();
@@ -24,6 +35,10 @@ export function Header() {
   const [menuOpen, setMenuOpen] = useState(false);
   const [menuTab, setMenuTab] = useState<MobileTab>("gems");
   const rootRef = useRef<HTMLDivElement>(null);
+  const hoverTimer = useRef<number | null>(null);
+  /** Panel the user just closed on purpose, held until the pointer leaves that
+   *  nav item — otherwise the next mouse move reopens what they dismissed. */
+  const dismissed = useRef<PanelKey>(null);
 
   const links: { id: string; label: string; to: string; panel?: Exclude<PanelKey, null>; panelLabel?: string }[] = [
     { id: "home", label: t("nav.home"), to: "/" },
@@ -36,23 +51,43 @@ export function Header() {
     setMenuOpen(false);
   };
 
+  // Hover is an addition on top of the chevron button, never a replacement: the
+  // click toggle, aria-expanded and keyboard paths below are untouched, and a
+  // coarse pointer (which reports no hover) still only opens the panel on tap.
+  const clearHoverTimer = () => {
+    if (hoverTimer.current !== null) {
+      window.clearTimeout(hoverTimer.current);
+      hoverTimer.current = null;
+    }
+  };
+  const canHover = () => window.matchMedia("(hover: hover)").matches;
+  const hoverTo = (next: PanelKey) => {
+    if (!canHover()) return;
+    if (next && dismissed.current === next) return;
+    clearHoverTimer();
+    hoverTimer.current = window.setTimeout(() => setPanel(next), next ? HOVER_OPEN_MS : HOVER_CLOSE_MS);
+  };
+  useEffect(() => clearHoverTimer, []);
+
   // Backstop for history navigation (back/forward), which no click handler sees.
   useEffect(() => {
     setPanel(null);
     setMenuOpen(false);
   }, [location.pathname]);
 
-  // Escape and outside clicks close whatever is open. Neither existed before.
+  // Escape and outside clicks close whatever is open.
   useEffect(() => {
     if (!panel && !menuOpen) return;
     const onKey = (e: KeyboardEvent) => {
       if (e.key === "Escape") {
+        clearHoverTimer();
         setPanel(null);
         setMenuOpen(false);
       }
     };
     const onPointerDown = (e: PointerEvent) => {
       if (rootRef.current && !rootRef.current.contains(e.target as Node)) {
+        clearHoverTimer();
         setPanel(null);
         setMenuOpen(false);
       }
@@ -84,6 +119,44 @@ export function Header() {
 
   const cartLabel = count > 0 ? t("nav.cartWithCount", { count }) : t("nav.cart");
 
+  const shapeGroups = shapesInCatalog();
+  const colorGroups = colorsInCatalog();
+
+  const goTo = (to: string) => {
+    clearHoverTimer();
+    closeAll();
+    navigate(to);
+  };
+
+  /**
+   * The shape and colour rows shared by the desktop panel and the mobile
+   * drawer: a swipeable strip of the whole taxonomy plus a way to open the
+   * full-page selector when the strip is not enough.
+   */
+  const pickers = (compact: boolean) => (
+    <>
+      <div className="grid min-w-0 content-start gap-3">
+        <div className="flex flex-wrap items-center justify-between gap-3">
+          <span className="gt-eyebrow">{t("nav.shapesHeading")}</span>
+          <Button variant="outline" size="sm" onClick={() => goTo("/formes")}>
+            {t("nav.viewAllShapes")}
+          </Button>
+        </div>
+        <ShapeCarousel compact={compact} groups={shapeGroups} hrefFor={(g) => shapeHref(g.shape)} onNavigate={closeAll} />
+      </div>
+
+      <div className="grid min-w-0 content-start gap-3">
+        <div className="flex flex-wrap items-center justify-between gap-3">
+          <span className="gt-eyebrow">{t("nav.colorsHeading")}</span>
+          <Button variant="outline" size="sm" onClick={() => goTo("/couleurs")}>
+            {t("nav.viewAllColors")}
+          </Button>
+        </div>
+        <ColorCarousel compact={compact} groups={colorGroups} hrefFor={(g) => colorHref(g.color)} onNavigate={closeAll} />
+      </div>
+    </>
+  );
+
   const langButton = (
     <button
       type="button"
@@ -99,7 +172,7 @@ export function Header() {
   return (
     <div ref={rootRef} className="sticky top-0 z-[60] border-b border-[var(--border-subtle)] bg-[var(--surface-page)]">
       {/* Desktop */}
-      <div className="hidden md:block">
+      <div className="relative hidden md:block" onMouseLeave={() => hoverTo(null)}>
         <header className="flex h-[76px] items-center gap-8 px-[var(--gutter-page-lg)]">
           <Link to="/" className="flex-none" onClick={closeAll}>
             <img src={logoBlack} alt="Global Toothgems" className="h-6 w-auto" />
@@ -109,12 +182,22 @@ export function Header() {
               const onRoute = location.pathname === link.to;
               const expanded = link.panel != null && panel === link.panel;
               return (
-                <span key={link.id} className="flex items-center gap-0.5">
+                <span
+                  key={link.id}
+                  className="flex items-center gap-0.5"
+                  onMouseEnter={() => hoverTo(link.panel ?? null)}
+                  onMouseLeave={() => {
+                    if (dismissed.current === link.panel) dismissed.current = null;
+                  }}
+                >
                   {/* The label navigates. Previously a nav item that owned a panel
                       only toggled that panel, so "Boutique" never reached /boutique. */}
                   <Link
                     to={link.to}
-                    onClick={closeAll}
+                    onClick={() => {
+                      clearHoverTimer();
+                      closeAll();
+                    }}
                     aria-current={onRoute ? "page" : undefined}
                     className="border-b-2 pb-1 text-[13px] font-semibold uppercase tracking-[var(--tracking-wide)] transition-colors"
                     style={{
@@ -127,7 +210,14 @@ export function Header() {
                   {link.panel && (
                     <button
                       type="button"
-                      onClick={() => setPanel((p) => (p === link.panel ? null : link.panel ?? null))}
+                      onClick={() => {
+                        clearHoverTimer();
+                        setPanel((p) => {
+                          const next = p === link.panel ? null : link.panel ?? null;
+                          dismissed.current = next === null ? link.panel ?? null : null;
+                          return next;
+                        });
+                      }}
                       aria-expanded={expanded}
                       aria-controls="gt-nav-panel"
                       aria-label={link.panelLabel}
@@ -157,7 +247,14 @@ export function Header() {
           </div>
         </header>
         {panel && (
-          <div id="gt-nav-panel" className="border-t border-[var(--border-subtle)] bg-[var(--surface-sunken)]">
+          /* An overlay rather than an in-flow block: with the shape and colour
+             rows the panel is tall enough that pushing the page down on every
+             hover would make the whole site jump. */
+          <div
+            id="gt-nav-panel"
+            onMouseEnter={clearHoverTimer}
+            className="absolute inset-x-0 top-full max-h-[calc(100vh-76px)] overflow-y-auto border-t border-[var(--border-subtle)] bg-[var(--surface-sunken)] shadow-[var(--shadow-lg)]"
+          >
             <div className="mx-auto grid max-w-[var(--max-width-content)] gap-5 px-[var(--gutter-page-lg)] py-6">
               <div className="grid grid-cols-[repeat(auto-fill,minmax(230px,1fr))] gap-4">
                 {panelItems.map((item) => (
@@ -183,6 +280,13 @@ export function Header() {
                   </Link>
                 ))}
               </div>
+              {/* Side by side: stacked, the two strips plus the category cards
+                  made the panel taller than a laptop viewport. */}
+              {panel === "shop" && (
+                <div className="grid gap-x-8 gap-y-5 border-t border-[var(--border-subtle)] pt-5 lg:grid-cols-2">
+                  {pickers(true)}
+                </div>
+              )}
               <Link
                 to={panelRoot.to}
                 onClick={closeAll}
@@ -221,7 +325,7 @@ export function Header() {
         {menuOpen && (
           <div
             id="gt-mobile-menu"
-            className="grid gap-3.5 border-t border-[var(--border-subtle)] bg-[var(--surface-sunken)] px-3 pb-5 pt-3.5"
+            className="grid max-h-[calc(100vh-60px)] gap-3.5 overflow-y-auto border-t border-[var(--border-subtle)] bg-[var(--surface-sunken)] px-3 pb-5 pt-3.5"
           >
             <div role="tablist" aria-label={t("nav.primary")} className="flex gap-4 border-b border-[var(--border-subtle)] px-1">
               {mobileTabs.map((tab) => (
@@ -265,6 +369,9 @@ export function Header() {
                 </Link>
               ))}
             </div>
+            {menuTab === "gems" && (
+              <div className="grid gap-4 border-t border-[var(--border-subtle)] pt-4">{pickers(false)}</div>
+            )}
             <div className="flex items-center justify-between gap-3 pt-1">
               <Link
                 to={mobileRoot.to}
