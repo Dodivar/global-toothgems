@@ -172,6 +172,13 @@
   --gutter-page-lg: 48px;
   --max-width-content: 1240px;
   --max-width-prose: 680px;
+  /* The member area spends a 248px sidebar, a 40px column gap and its own 48px
+     gutters out of the same width every other screen gives entirely to content,
+     so capping it at --max-width-content leaves its content column ~380px
+     narrower than the shop grid on the same display. This is --max-width-content
+     plus all four of those costs (1240 + 248 + 40 + 2x48), which makes the two
+     content columns measure the same. */
+  --max-width-account: 1624px;
   --section-y: 96px;
   --section-y-sm: 56px;
 
@@ -396,6 +403,14 @@
   /* Completion moment - order confirmed, lesson finished. */
   .gt-celebrate { animation: gt-pop var(--duration-slow) var(--ease-out-soft) both; }
 
+  /* The loyalty slot that is one purchase from being stamped. A slow breath, so
+     the empty position reads as waiting rather than as a rendering fault. The
+     halo and the heavier dash carry the same meaning without it. */
+  .gt-stamp-next {
+    transform-origin: center;
+    animation: gt-stamp-breathe 3.2s var(--ease-in-out) infinite;
+  }
+
   /* Horizontal track: snaps item to item and hides the scrollbar, which would
      otherwise sit under the row and shift the layout between platforms. */
   .gt-scroller {
@@ -438,6 +453,11 @@
   to { opacity: 1; transform: none; }
 }
 
+@keyframes gt-stamp-breathe {
+  0%, 100% { opacity: 1; transform: scale(1); }
+  50% { opacity: .74; transform: scale(1.045); }
+}
+
 @keyframes gt-skeleton {
   from { background-position: 100% 50%; }
   to { background-position: 0 50%; }
@@ -450,6 +470,7 @@
   .gt-kenburns,
   .gt-sparkle::after,
   .gt-celebrate,
+  .gt-stamp-next,
   .gt-skeleton { animation: none; }
   .gt-sparkle::after { display: none; }
 }

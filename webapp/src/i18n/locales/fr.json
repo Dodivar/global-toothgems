@@ -509,7 +509,8 @@
     "profileCancel": "Annuler",
     "toastProfileTitle": "Profil mis à jour",
     "toastProfileBody": "Vos informations ont été modifiées pour cette session.",
-    "detailsNote": "Maquette : ces informations ne sont pas enregistrées et la session se termine au rechargement de la page."
+    "detailsNote": "Maquette : ces informations ne sont pas enregistrées et la session se termine au rechargement de la page.",
+    "navLoyalty": "Fidélité"
   },
   "footer": {
     "blurb": "Gems, outils et formation professionnels. Expédié dans toute l’Europe depuis Lyon.",
@@ -521,7 +522,8 @@
       "Outils",
       "Kits",
       "Suivi client",
-      "Cartes cadeaux"
+      "Cartes cadeaux",
+      "Programme fidélité"
     ],
     "academyItems": [
       "Fondation",
@@ -574,5 +576,139 @@
     "eyebrow": "Couleurs",
     "title": "Toutes les couleurs de gems",
     "body": "Du cristal clair à l’or 18k. Choisissez une couleur pour ne voir que les gems de cette teinte."
+  },
+  "loyalty": {
+    "brand": "Global Toothgems",
+    "clubName": "Club Fidélité",
+    "progressValue": "{{done}} / {{total}}",
+    "progressUnit": "tampons",
+    "progressAria_one": "{{count}} tampon de fidélité sur {{total}} collecté.",
+    "progressAria_other": "{{count}} tampons de fidélité sur {{total}} collectés.",
+    "minimumNote": "Achat éligible : {{amount}} minimum",
+    "sealAria": "Sceau de récompense : {{percent}} % de remise",
+    "sealOff": "REMISE",
+    "demoNote": "Prototype visuel — aucune récompense n’est appliquée à ce stade.",
+    "memberTitle": "Ma carte de fidélité",
+    "memberBody": "Collectionnez {{total}} tampons sur vos achats éligibles de {{amount}} ou plus et débloquez {{percent}} % de remise sur votre prochaine commande.",
+    "rewardPanelTitle": "Récompense de {{percent}} % prête",
+    "rewardPanelBody": "Votre prochaine commande peut bénéficier de {{percent}} % de remise.",
+    "howEyebrow": "Comment ça marche",
+    "howTitle": "Quatre étapes vers votre récompense",
+    "aboutLink": "Découvrir le programme",
+    "demoHeading": "Aperçu de démonstration",
+    "demoTitle": "État de démonstration",
+    "demoBody": "Basculez entre les cinq états de la carte. Rien n’est enregistré : ce prototype n’a pas de back-end fidélité.",
+    "demoCheckoutNote": "Rendu du même état dans le tunnel de commande, sous puis au-dessus du montant éligible.",
+    "heroScript": "Merci",
+    "heroTitle": "Votre sourire. Votre style. Vos récompenses.",
+    "heroBody": "Collectionnez {{total}} tampons sur vos achats éligibles de {{amount}} ou plus et débloquez {{percent}} % de remise sur votre prochaine commande.",
+    "heroCta": "Commencer à collectionner",
+    "heroCtaSecondary": "Voir ma carte",
+    "journeyEyebrow": "La collection",
+    "journeyTitle": "Cinq tampons, une récompense",
+    "journeyBody": "Chaque achat éligible imprime un tampon de plus sur votre carte. La carte complète ouvre la remise.",
+    "journeyReward": "{{percent}} % sur votre prochaine commande",
+    "statesEyebrow": "Votre carte",
+    "statesTitle": "Tous les états de la carte",
+    "statesBody": "De la carte vierge à la récompense prête à l’emploi.",
+    "faqEyebrow": "Questions",
+    "faqTitle": "Bon à savoir",
+    "closingTitle": "Commencez votre carte",
+    "closingBody": "Chaque achat éligible de {{amount}} ou plus rapporte un tampon.",
+    "state": {
+      "start": {
+        "badge": "Nouvelle carte",
+        "demoLabel": "Départ",
+        "title": "Commencez votre parcours fidélité",
+        "body": "Chaque achat éligible de {{amount}} ou plus vous rapporte un tampon.",
+        "cta": "Découvrir la boutique"
+      },
+      "collecting": {
+        "badge": "En cours",
+        "demoLabel": "En cours",
+        "title": "{{done}} tampons sur {{total}}",
+        "body_one": "Encore {{count}} achat éligible pour débloquer {{percent}} % sur votre prochaine commande.",
+        "body_other": "Encore {{count}} achats éligibles pour débloquer {{percent}} % sur votre prochaine commande.",
+        "cta": "Continuer mes achats"
+      },
+      "oneAway": {
+        "badge": "Presque",
+        "demoLabel": "Dernier tampon",
+        "title": "Plus qu’un tampon",
+        "body": "Effectuez un dernier achat éligible pour débloquer votre récompense de {{percent}} %.",
+        "cta": "Découvrir la boutique"
+      },
+      "unlocked": {
+        "badge": "Récompense prête",
+        "demoLabel": "Débloquée",
+        "script": "Bravo",
+        "title": "{{percent}} % débloqués",
+        "body": "Votre récompense fidélité est prête pour votre prochaine commande.",
+        "cta": "Utiliser ma récompense"
+      },
+      "renewed": {
+        "badge": "Nouvelle carte",
+        "demoLabel": "Réinitialisée",
+        "title": "Nouveau parcours fidélité",
+        "body": "Votre récompense de {{percent}} % a été utilisée. Recommencez à collectionner vos tampons.",
+        "cta": "Découvrir la boutique"
+      }
+    },
+    "checkout": {
+      "belowTitle": "Ajoutez {{missing}} pour obtenir votre prochain tampon.",
+      "belowCount": "{{current}} / {{threshold}}",
+      "belowAria": "{{current}} sur {{threshold}} vers votre prochain tampon de fidélité. Il manque {{missing}}.",
+      "qualifies": "Cette commande donne droit à 1 tampon de fidélité.",
+      "finalTitle": "Plus qu’un tampon avant {{percent}} % de remise",
+      "finalBody": "Cette commande donne droit à votre dernier tampon.",
+      "rewardTitle": "Récompense fidélité de {{percent}} % prête",
+      "rewardBody": "Votre prochaine commande peut bénéficier de {{percent}} % de remise.",
+      "apply": "Appliquer les {{percent}} %",
+      "applyNote": "Démonstration uniquement — le total de la commande reste inchangé."
+    },
+    "steps": [
+      {
+        "title": "Acheter",
+        "body": "Effectuez un achat éligible de 20 € ou plus."
+      },
+      {
+        "title": "Collectionner",
+        "body": "Recevez un tampon de fidélité."
+      },
+      {
+        "title": "Compléter",
+        "body": "Réunissez les 5 tampons."
+      },
+      {
+        "title": "Récompense",
+        "body": "Débloquez 10 % de remise sur votre prochaine commande."
+      }
+    ],
+    "faq": [
+      {
+        "question": "Qu’est-ce qu’un achat éligible ?",
+        "answer": "Toute commande d’un montant de 20 € ou plus."
+      },
+      {
+        "question": "Quel montant dois-je dépenser ?",
+        "answer": "20 € ou plus sur une même commande donnent droit à un tampon."
+      },
+      {
+        "question": "Comment collectionner les tampons ?",
+        "answer": "Chaque commande éligible ajoute un tampon à votre carte, que vous retrouvez dans votre espace membre."
+      },
+      {
+        "question": "Que se passe-t-il après 5 tampons ?",
+        "answer": "Votre carte est complète et débloque 10 % de remise sur votre prochaine commande."
+      },
+      {
+        "question": "Quand puis-je utiliser ma remise de 10 % ?",
+        "answer": "Sur votre prochaine commande, une fois votre carte complète."
+      },
+      {
+        "question": "Puis-je obtenir un tampon sur chaque commande ?",
+        "answer": "Chaque commande de 20 € ou plus rapporte un tampon."
+      }
+    ]
   }
 }

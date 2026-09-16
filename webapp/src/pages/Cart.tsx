@@ -11,6 +11,8 @@ import { Checkbox } from "../components/ui/Checkbox";
 import { ProgressBar } from "../components/ui/ProgressBar";
 import { ProductCard } from "../components/ui/ProductCard";
 import { IconButton } from "../components/ui/IconButton";
+import { CheckoutLoyaltyBanner } from "../components/loyalty/CheckoutLoyaltyBanner";
+import { DEFAULT_LOYALTY_STATE, LOYALTY_STATES } from "../data/loyalty";
 import { useCart } from "../lib/cart";
 import { useOrders } from "../lib/orders";
 import { bestSellers } from "../data/products";
@@ -210,6 +212,12 @@ export function Cart() {
                 </li>
               ))}
             </ul>
+
+            {/* Loyalty is shown, never applied: the banner reads the subtotal and a
+                mock card and says what this basket would earn. It deliberately sits
+                here rather than in the summary, so nobody can mistake it for a line
+                of the total — no discount, no code, no change to what is charged. */}
+            <CheckoutLoyaltyBanner subtotal={subtotal} state={LOYALTY_STATES[DEFAULT_LOYALTY_STATE]} />
           </section>
 
           <section className="grid gap-4 rounded-[var(--radius-card)] border border-[var(--border-subtle)] p-[var(--space-6)]">

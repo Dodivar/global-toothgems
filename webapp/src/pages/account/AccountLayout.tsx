@@ -1,6 +1,6 @@
 import { useTranslation } from "react-i18next";
 import { Link, NavLink, Outlet, useNavigate } from "react-router-dom";
-import { ArrowUpRight, Award, GraduationCap, LayoutDashboard, LogOut, Package, UserRound } from "lucide-react";
+import { ArrowUpRight, Award, GraduationCap, LayoutDashboard, LogOut, Package, Sparkles, UserRound } from "lucide-react";
 import type { LucideIcon } from "lucide-react";
 import clsx from "clsx";
 import { useAuth } from "../../lib/auth";
@@ -30,6 +30,7 @@ const SECTIONS: NavItem[] = [
   { to: "/compte", labelKey: "account.navDashboard", icon: LayoutDashboard, end: true },
   { to: "/compte/attestations", labelKey: "account.navCertificates", icon: Award },
   { to: "/compte/commandes", labelKey: "account.navOrders", icon: Package },
+  { to: "/compte/fidelite", labelKey: "account.navLoyalty", icon: Sparkles },
   { to: "/compte/profil", labelKey: "account.navProfile", icon: UserRound },
 ];
 
@@ -116,7 +117,7 @@ export function AccountLayout() {
   );
 
   return (
-    <div className="mx-auto grid max-w-[var(--max-width-content)] grid-cols-1 items-start gap-[clamp(20px,3vw,40px)] px-[clamp(14px,4vw,48px)] py-[clamp(24px,4vw,44px)] lg:grid-cols-[248px_minmax(0,1fr)]">
+    <div className="mx-auto grid max-w-[var(--max-width-account)] grid-cols-1 items-start gap-[clamp(20px,3vw,40px)] px-[clamp(14px,4vw,48px)] py-[clamp(24px,4vw,44px)] lg:grid-cols-[248px_minmax(0,1fr)]">
       <aside className="grid gap-4 lg:sticky lg:top-[92px]">
         {identity}
 

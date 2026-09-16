@@ -42,7 +42,10 @@ export function Profile() {
   };
 
   return (
-    <form onSubmit={submit} className="grid gap-5">
+    // Capped rather than filling the column: the member area is as wide as the
+    // shop grid now, and a form does not improve by giving a street address a
+    // 1200px field. A grid of products wants the width; a column of inputs does not.
+    <form onSubmit={submit} className="grid max-w-[880px] gap-5">
       <SectionHeader
         icon={UserRound}
         eyebrow={t("account.profileEyebrow")}

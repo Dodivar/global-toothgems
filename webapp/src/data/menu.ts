@@ -74,6 +74,12 @@ export const MENU: Record<"gems" | "shop" | "academy", MenuItem[]> = {
       to: "/boutique?categorie=Suivi",
     },
     {
+      title: { fr: "Programme fidélité", en: "Loyalty programme" },
+      sub: { fr: "5 tampons = 10 % de remise", en: "5 stamps = 10% off" },
+      thumb: img("img-09.jpg"),
+      to: "/fidelite",
+    },
+    {
       title: { fr: "Mon panier", en: "My cart" },
       sub: { fr: "Récapitulatif et paiement", en: "Summary and payment" },
       thumb: img("img-02.jpg"),
