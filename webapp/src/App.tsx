@@ -17,7 +17,11 @@ import { Cart } from "./pages/Cart";
 import { Academy } from "./pages/Academy";
 import { Lesson } from "./pages/Lesson";
 import { Login } from "./pages/Login";
-import { Account } from "./pages/Account";
+import { AccountLayout } from "./pages/account/AccountLayout";
+import { Dashboard } from "./pages/account/Dashboard";
+import { Certificates } from "./pages/account/Certificates";
+import { Orders } from "./pages/account/Orders";
+import { Profile } from "./pages/account/Profile";
 
 function ScrollToTop() {
   const { pathname } = useLocation();
@@ -76,17 +80,22 @@ export default function App() {
                       </RequireAccount>
                     }
                   />
-                  {/* The member dashboard: progression, certificates and order
-                      history. Gated for the same reason the lesson is — it is
-                      the account itself. */}
+                  {/* The member dashboard: a sidebar layout with one route per
+                      section. Gating the layout covers every child, for the same
+                      reason the lesson is gated — this is the account itself. */}
                   <Route
                     path="/compte"
                     element={
                       <RequireAccount>
-                        <Account />
+                        <AccountLayout />
                       </RequireAccount>
                     }
-                  />
+                  >
+                    <Route index element={<Dashboard />} />
+                    <Route path="attestations" element={<Certificates />} />
+                    <Route path="commandes" element={<Orders />} />
+                    <Route path="profil" element={<Profile />} />
+                  </Route>
                 </Routes>
               </main>
               <Footer />

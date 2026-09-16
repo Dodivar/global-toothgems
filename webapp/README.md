@@ -38,8 +38,10 @@ npm run lint      # oxlint
 
 ```
 src/
-  pages/            One component per screen (Home, Shop, ProductDetail, Cart, Academy, Lesson, Login, Account)
+  pages/            One component per screen (Home, Shop, ProductDetail, Cart, Academy, Lesson, Login)
+  pages/account/    The member area: sidebar layout + one component per section
   components/ui/     Design-system primitives (Button, Badge, ProductCard, CourseCard, QuizQuestion, ...)
+  components/account/ Dashboard pieces (stat tile, course row, certificate card, order card)
   components/layout/ Header (desktop nav + mega panel, mobile burger menu) and Footer
   data/               Bilingual product/course/review/lesson/order data
   i18n/               react-i18next setup + locales/fr.json, locales/en.json
@@ -48,9 +50,18 @@ src/
 
 ## The member area (`/compte`)
 
-`Account.tsx` is the signed-in dashboard: a greeting and summary tiles, a "resume where you left off" card, per-course progression with a module breakdown, certificates, the courses still available, and the order history.
+The signed-in area is an administration dashboard: a left sidebar on desktop, a scrollable row of pills on small screens, and one route per section.
 
-It owns no state of its own. Learning progress lives in `lib/progress.tsx` and order history in `lib/orders.tsx`, both in-memory contexts shaped like the existing `lib/cart.tsx`. The lesson player writes to the first and the cart writes to the second, so validating a lesson or paying moves the dashboard immediately. Certificates are derived from a course reaching 100 %, never stored as a separate flag.
+| Route | Section |
+| --- | --- |
+| `/compte` | Dashboard — summary tiles, the "resume where you left off" card, the courses being followed with their module breakdown, and the courses still available |
+| `/compte/attestations` | Certificates |
+| `/compte/commandes` | Order history, with parcel tracking |
+| `/compte/profil` | Profile details, editable |
+
+The sidebar also links out to the course catalogue (`/academy`) and signs the member out. `RequireAccount` wraps the layout, so every section is gated at once.
+
+The sections own no state of their own. Learning progress lives in `lib/progress.tsx`, order history in `lib/orders.tsx` and the member profile in `lib/auth.tsx` — in-memory contexts shaped like the existing `lib/cart.tsx`. The lesson player writes to the first and the cart writes to the second, so validating a lesson or paying moves the dashboard immediately. Certificates are derived from a course reaching 100 %, never stored as a separate flag, and the delivery timeline is derived from the order status for the same reason. Editing the profile moves the greeting and the avatar, because both are derived from the stored name rather than copied from it.
 
 Every course reuses the single authored syllabus in `data/lessons.ts` (9 lessons, ~1 h 30), so the lesson counts and durations in `data/courses.ts` were aligned to it — a course advertising 18 lessons could never reach 100 % or unlock its certificate.
 
