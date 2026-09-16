@@ -133,16 +133,6 @@ export function Profile() {
         />
       </Panel>
 
-      <div className="flex flex-wrap items-center gap-3">
-        <Button type="submit" variant="primary" iconLeft={Check} disabled={!dirty}>
-          {t("account.profileSave")}
-        </Button>
-        <Button type="button" variant="ghost" disabled={!dirty} onClick={() => setDraft(profile!)}>
-          {t("account.profileCancel")}
-        </Button>
-        <span className="text-[length:var(--text-caption)] text-[var(--text-muted)]">{t("account.detailsNote")}</span>
-      </div>
-
       <Panel title={t("account.profileSecurityTitle")}>
         <p className="m-0 text-[length:var(--text-body-sm)] text-[var(--text-muted)]">
           {t("account.profileSecurityBody")}
@@ -162,6 +152,16 @@ export function Profile() {
           </Button>
         </div>
       </Panel>
+
+      <div className="flex flex-wrap items-center gap-3">
+        <Button type="submit" variant="primary" iconLeft={Check} disabled={!dirty}>
+          {t("account.profileSave")}
+        </Button>
+        <Button type="button" variant="ghost" disabled={!dirty} onClick={() => setDraft(profile!)}>
+          {t("account.profileCancel")}
+        </Button>
+        <span className="text-[length:var(--text-caption)] text-[var(--text-muted)]">{t("account.detailsNote")}</span>
+      </div>
     </form>
   );
 }

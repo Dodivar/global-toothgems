@@ -176,6 +176,21 @@ export function AccountLayout() {
                 <ArrowUpRight size={12} aria-hidden="true" className="text-[var(--text-subtle)]" />
               </Link>
             </li>
+            {/* The sidebar's sign-out is desktop-only, so the row carries its own:
+                leaving the account must not require opening the profile first. */}
+            <li>
+              <button
+                type="button"
+                onClick={leave}
+                className={clsx(
+                  "flex items-center gap-2 whitespace-nowrap rounded-[var(--radius-pill)] border border-[var(--border-subtle)] bg-[var(--surface-card)] px-3.5 py-2 text-[length:var(--text-caption)] font-semibold text-[var(--text-muted)]",
+                  focusRing,
+                )}
+              >
+                <LogOut size={14} strokeWidth={2} aria-hidden="true" />
+                {t("auth.signOut")}
+              </button>
+            </li>
           </ul>
         </nav>
       </aside>
