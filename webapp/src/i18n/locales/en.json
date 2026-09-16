@@ -1,5 +1,7 @@
 {
-  "meta": { "title": "Global Toothgems" },
+  "meta": {
+    "title": "Global Toothgems"
+  },
   "nav": {
     "home": "Home",
     "shop": "Shop",
@@ -18,7 +20,12 @@
     "viewAllAcademySub": "Certified track · 4 stages",
     "menuTabGems": "Gems",
     "menuTabShop": "Shop",
-    "menuTabAcademy": "Academy"
+    "menuTabAcademy": "Academy",
+    "openPanelShop": "Show shop categories",
+    "openPanelAcademy": "Show courses",
+    "cartWithCount_one": "Cart, {{count}} item",
+    "cartWithCount_other": "Cart, {{count}} items",
+    "primary": "Primary navigation"
   },
   "common": {
     "notIncludedTitle": "Screen out of scope",
@@ -26,7 +33,10 @@
     "notIncludedArtists": "The artist directory isn’t included in this prototype.",
     "readMore": "Learn more",
     "details": "Details",
-    "close": "Close"
+    "close": "Close",
+    "skipToContent": "Skip to main content",
+    "langSwitchCode": "FR",
+    "langSwitchAria": "View the site in French"
   },
   "home": {
     "heroEyebrow": "The world of tooth jewelry",
@@ -68,7 +78,11 @@
     "newsletterCheckboxDescription": "Explicit consent. Unsubscribe in one click.",
     "newsletterSubmit": "Subscribe",
     "toastSubscribeTitle": "Subscription confirmed",
-    "toastSubscribeBody": "A confirmation email is on its way."
+    "toastSubscribeBody": "A confirmation email is on its way.",
+    "categoryTileAria": "View the {{label}} category",
+    "newsletterInvalidEmail": "Enter a valid email address.",
+    "newsletterSuccessTitle": "You’re subscribed",
+    "newsletterSuccessBody": "Watch your inbox — you’ll hear about the next drop before anyone else."
   },
   "shop": {
     "eyebrow": "Shop",
@@ -89,7 +103,13 @@
     "page": "Page {{page}} of {{pageCount}}",
     "prev": "Previous",
     "next": "Next",
-    "categories": { "all": "All", "Gems": "Gems", "Outils": "Tools", "Kits": "Kits", "Suivi": "Aftercare" },
+    "categories": {
+      "all": "All",
+      "Gems": "Gems",
+      "Outils": "Tools",
+      "Kits": "Kits",
+      "Suivi": "Aftercare"
+    },
     "materials": {
       "all": "All materials",
       "Cristal": "Crystal",
@@ -98,9 +118,32 @@
       "Or 18k": "18k gold",
       "Opale de labo": "Lab opal"
     },
-    "priceBands": { "all": "All prices", "under30": "Under €30", "30to60": "€30 – €60", "over60": "Over €60" },
-    "stockBands": { "all": "All stock", "in": "In stock", "low": "Last pieces", "out": "Restocking" },
-    "sorts": { "new": "Newest", "priceAsc": "Price ascending", "priceDesc": "Price descending", "rating": "Top rated" }
+    "priceBands": {
+      "all": "All prices",
+      "under30": "Under €30",
+      "30to60": "€30 – €60",
+      "over60": "Over €60"
+    },
+    "stockBands": {
+      "all": "All stock",
+      "in": "In stock",
+      "low": "Last pieces",
+      "out": "Restocking"
+    },
+    "sorts": {
+      "new": "Newest",
+      "priceAsc": "Price ascending",
+      "priceDesc": "Price descending",
+      "rating": "Top rated"
+    },
+    "activeFiltersLabel": "Active filters",
+    "removeFilter": "Remove filter: {{label}}",
+    "clearAll": "Clear all",
+    "paginationLabel": "Product pagination",
+    "goToPage": "Go to page {{page}}",
+    "currentPage": "Page {{page}}, current page",
+    "resultsLoading": "Updating results",
+    "gridLabel": "Product list"
   },
   "product": {
     "breadcrumbShop": "Shop",
@@ -141,7 +184,19 @@
     "crossSellCta": "View cart",
     "toastAddedTitle": "Added to cart",
     "toastSavedTitle": "Saved",
-    "toastSavedBody": "{{name}} is now in your wishlist."
+    "toastSavedBody": "{{name}} is now in your wishlist.",
+    "stockLow": "Low stock",
+    "stockOut": "Sold out",
+    "saveAria": "Add {{name}} to wishlist",
+    "imagePlaceholder": "Product",
+    "galleryLabel": "Product images",
+    "viewImage": "View image {{index}} of {{total}}",
+    "ratingAria": "Rated {{rating}} out of 5, {{count}} reviews",
+    "ratingBreakdownTitle": "Overall rating",
+    "basedOn_one": "from {{count}} verified review",
+    "basedOn_other": "from {{count}} verified reviews",
+    "stickyBarLabel": "Add to cart",
+    "zoomHint": "Hover to zoom"
   },
   "cart": {
     "confirmedBadge": "Order confirmed",
@@ -166,7 +221,12 @@
     "postalCode": "Postal code",
     "city": "City",
     "country": "Country",
-    "countries": { "fr": "France", "de": "Deutschland", "be": "Belgium", "ie": "Ireland" },
+    "countries": {
+      "fr": "France",
+      "de": "Deutschland",
+      "be": "Belgium",
+      "ie": "Ireland"
+    },
     "saveInfo": "Save this information to my artist account",
     "saveInfoDescription": "One account covers the shop and the Academy.",
     "paymentTitle": "Payment",
@@ -183,7 +243,14 @@
     "pay": "Pay {{amount}}",
     "summaryFootnote": "Totals are recalculated server-side before payment.",
     "emptyCart": "Your cart is empty.",
-    "continueShopping": "Continue shopping"
+    "continueShopping": "Continue shopping",
+    "freeShippingProgress": "{{amount}} away from free delivery",
+    "freeShippingReached": "Free delivery unlocked",
+    "freeShippingLabel": "Free delivery over {{threshold}}",
+    "emptyCartTitle": "Your cart is empty",
+    "emptySuggestions": "Most popular right now",
+    "confirmedScript": "Thank you",
+    "lineTotalAria": "Line total"
   },
   "academy": {
     "eyebrow": "Academy",
@@ -203,7 +270,8 @@
     "toastPreviewTitle": "Lesson opened",
     "toastPreviewBody": "Applying the gem · module 2, lesson 5.",
     "toastCourseTitle": "Course opened",
-    "toastCourseBody": "{{title}} · resuming at your current lesson."
+    "toastCourseBody": "{{title}} · resuming at your current lesson.",
+    "statsLabel": "The Academy in numbers"
   },
   "lesson": {
     "eyebrow": "Course in progress",
@@ -250,19 +318,63 @@
     "toastQuizIncorrectTitle": "Not quite",
     "toastQuizIncorrectBody": "The explanation stays visible under the question.",
     "lockedStatus": "Locked · {{duration}}",
-    "doneStatus": "Completed · {{duration}}"
+    "doneStatus": "Completed · {{duration}}",
+    "sidebarToggle": "Course contents",
+    "sidebarClose": "Close course contents",
+    "lockedReason": "Finish the previous lesson to unlock this one.",
+    "playerLabel": "Lesson video player",
+    "moduleLabel": "Module",
+    "completedCelebration": "Lesson complete"
   },
   "footer": {
     "blurb": "Professional gems, tools and training. Shipped across Europe from Lyon.",
     "colShop": "Shop",
     "colAcademy": "Academy",
     "colHelp": "Help",
-    "shopItems": ["Gems", "Tools", "Kits", "Aftercare", "Gift cards"],
-    "academyItems": ["Foundation", "Advanced placement", "Business studio", "Certification"],
-    "helpItems": ["Shipping and returns", "Application FAQ", "Contact", "Find an artist"],
+    "shopItems": [
+      "Gems",
+      "Tools",
+      "Kits",
+      "Aftercare",
+      "Gift cards"
+    ],
+    "academyItems": [
+      "Foundation",
+      "Advanced placement",
+      "Business studio",
+      "Certification"
+    ],
+    "helpItems": [
+      "Shipping and returns",
+      "Application FAQ",
+      "Contact",
+      "Find an artist"
+    ],
     "copyright": "© 2026 Global Toothgems · Prices incl. VAT"
   },
   "toasts": {
     "outOfScopeTitle": "Screen out of scope"
+  },
+  "review": {
+    "verified": "Verified purchase",
+    "photoPlaceholder": "Customer photo",
+    "starsAria": "Rated {{rating}} out of 5"
+  },
+  "course": {
+    "stateEnrolled": "Enrolled",
+    "stateCompleted": "Completed",
+    "stateDraft": "Coming soon",
+    "lessonCount_one": "{{count}} lesson",
+    "lessonCount_other": "{{count}} lessons",
+    "progress": "Progress",
+    "imagePlaceholder": "Course",
+    "lockedAria": "Locked course"
+  },
+  "quiz": {
+    "counter": "Question {{index}} of {{total}}",
+    "submit": "Submit my answer",
+    "continue": "Continue",
+    "correct": "Correct",
+    "incorrect": "Not quite — here’s why"
   }
 }

@@ -1,5 +1,6 @@
 import { Routes, Route, useLocation } from "react-router-dom";
 import { useEffect } from "react";
+import { useTranslation } from "react-i18next";
 import { CartProvider } from "./lib/cart";
 import { ToastProvider } from "./lib/toast";
 import { Header } from "./components/layout/Header";
@@ -19,13 +20,28 @@ function ScrollToTop() {
   return null;
 }
 
+/** Keeps <html lang> in step with the UI language for screen readers and search engines. */
+function DocumentLanguage() {
+  const { i18n } = useTranslation();
+  useEffect(() => {
+    document.documentElement.lang = i18n.language.slice(0, 2);
+  }, [i18n.language]);
+  return null;
+}
+
 export default function App() {
+  const { t } = useTranslation();
+
   return (
     <CartProvider>
       <ToastProvider>
         <ScrollToTop />
+        <DocumentLanguage />
+        <a href="#main" className="gt-skip-link">
+          {t("common.skipToContent")}
+        </a>
         <Header />
-        <main>
+        <main id="main" tabIndex={-1}>
           <Routes>
             <Route path="/" element={<Home />} />
             <Route path="/boutique" element={<Shop />} />

@@ -207,6 +207,14 @@
   }
 }
 
+@font-face {
+  font-family: "Parfumerie Script";
+  src: url("./assets/fonts/ParfumerieScript-Regular.otf") format("opentype");
+  font-weight: 400;
+  font-style: normal;
+  font-display: swap;
+}
+
 *, *::before, *::after { box-sizing: border-box; }
 
 @layer base {
@@ -270,4 +278,117 @@
     border: 1px solid var(--glass-heavy-border);
     box-shadow: var(--shadow-glass-heavy), var(--glass-heavy-highlight), var(--glass-heavy-inner);
   }
+
+  /* Hero glass panel: the one place we use the paper-tinted heavy glass. */
+  .gt-glass-panel {
+    background: rgba(250, 250, 248, .72);
+    backdrop-filter: blur(9px) saturate(1.45);
+    -webkit-backdrop-filter: blur(9px) saturate(1.45);
+    border: 1px solid rgba(255, 255, 255, .8);
+    box-shadow: var(--shadow-glass-heavy), inset 0 1px 0 rgba(255, 255, 255, .9);
+  }
+
+  /* Decorative script. Accents only - never body, nav, forms or legal copy. */
+  .gt-script {
+    font-family: var(--font-decorative);
+    font-weight: var(--weight-regular);
+    letter-spacing: var(--tracking-normal);
+    line-height: 1;
+  }
+
+  /* Skip link: visible only once focused. */
+  .gt-skip-link {
+    position: absolute;
+    left: var(--space-4);
+    top: var(--space-2);
+    z-index: 200;
+    transform: translateY(-160%);
+    border-radius: var(--radius-pill);
+    background: var(--surface-inverse);
+    color: var(--text-inverse);
+    padding: var(--space-3) var(--space-5);
+    font-size: var(--text-body-sm);
+    font-weight: var(--weight-semibold);
+    transition: transform var(--duration-fast) var(--ease-standard);
+  }
+  .gt-skip-link:focus-visible { transform: translateY(0); }
+
+  /* Scroll reveal. Starts hidden, .is-visible is set by useReveal(). */
+  .gt-reveal {
+    opacity: 0;
+    transform: translateY(12px);
+    transition:
+      opacity var(--duration-slow) var(--ease-out-soft),
+      transform var(--duration-slow) var(--ease-out-soft);
+  }
+  .gt-reveal.is-visible { opacity: 1; transform: none; }
+
+  /* Slow hero drift. */
+  .gt-kenburns { animation: gt-kenburns 26s var(--ease-in-out) infinite alternate; }
+
+  /* Signature specular sweep for gem imagery. */
+  .gt-sparkle { position: relative; overflow: hidden; }
+  .gt-sparkle::after {
+    content: "";
+    position: absolute;
+    inset: -40%;
+    background: linear-gradient(
+      115deg,
+      transparent 42%,
+      rgba(255, 255, 255, .16) 47%,
+      rgba(255, 255, 255, .55) 50%,
+      rgba(255, 255, 255, .16) 53%,
+      transparent 58%
+    );
+    transform: translateX(-110%);
+    animation: gt-sparkle 7s var(--ease-in-out) infinite;
+    pointer-events: none;
+  }
+
+  /* Completion moment - order confirmed, lesson finished. */
+  .gt-celebrate { animation: gt-pop var(--duration-slow) var(--ease-out-soft) both; }
+
+  /* Loading placeholder for grids awaiting filtered results. */
+  .gt-skeleton {
+    background: linear-gradient(
+      90deg,
+      var(--surface-sunken) 25%,
+      var(--gt-ink-100) 37%,
+      var(--surface-sunken) 63%
+    );
+    background-size: 400% 100%;
+    animation: gt-skeleton 1.4s var(--ease-in-out) infinite;
+  }
+}
+
+@keyframes gt-kenburns {
+  from { transform: scale(1) translate3d(0, 0, 0); }
+  to { transform: scale(1.06) translate3d(0, -1.5%, 0); }
+}
+
+@keyframes gt-sparkle {
+  0%, 62% { transform: translateX(-110%); }
+  92%, 100% { transform: translateX(110%); }
+}
+
+@keyframes gt-pop {
+  from { opacity: 0; transform: scale(.94); }
+  60% { transform: scale(1.02); }
+  to { opacity: 1; transform: none; }
+}
+
+@keyframes gt-skeleton {
+  from { background-position: 100% 50%; }
+  to { background-position: 0 50%; }
+}
+
+/* Motion is decoration here: strip it entirely rather than just shortening it,
+   and make sure nothing reveal-based is left invisible. */
+@media (prefers-reduced-motion: reduce) {
+  .gt-reveal { opacity: 1; transform: none; transition: none; }
+  .gt-kenburns,
+  .gt-sparkle::after,
+  .gt-celebrate,
+  .gt-skeleton { animation: none; }
+  .gt-sparkle::after { display: none; }
 }
