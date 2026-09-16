@@ -165,11 +165,34 @@ Never claim a test passed unless it was actually run.
 
 ## 14. Git workflow
 
-Keep changes focused and reviewable. Do not modify unrelated files merely to clean them up.
+### Branch model
 
-Use clear commit messages. Prefer feature/fix/docs branches and pull requests for meaningful changes.
+- `main` is the release branch. Nothing is committed or pushed to `main` directly.
+- `dev` is the integration branch. All agent work lands here.
+- Only the human maintainer opens and validates the `dev` -> `main` pull request.
 
-Before opening a PR, review the diff for accidental secrets, unrelated modifications, broken imports, incomplete migrations, missing tests and documentation drift.
+### Agent commit and push policy
+
+This section deliberately overrides the default agent behavior of committing and pushing only when explicitly asked.
+
+When the session runs on `dev`:
+
+1. Commit your work at the end of each turn, without waiting to be asked.
+2. Push to `origin dev` immediately after committing.
+3. Never push to `main`, never force-push, never rewrite pushed history.
+4. Never open the `dev` -> `main` pull request yourself.
+
+A `Stop` hook in `.claude/settings.json` performs this commit and push automatically, and is a no-op on any branch other than `dev`. Treat it as a safety net, not as a reason to leave the working tree in a half-finished state: everything still in the tree when a turn ends is committed and pushed as-is.
+
+If the session runs on a branch other than `dev`, fall back to the normal flow: a focused branch and a pull request targeting `dev`.
+
+### Quality bar
+
+Keep changes focused and reviewable. Do not modify unrelated files merely to clean them up. A turn that ends with unrelated files modified ships those files to `dev`.
+
+Use clear commit messages.
+
+Before the maintainer opens the `dev` -> `main` pull request, review the accumulated diff for accidental secrets, unrelated modifications, broken imports, incomplete migrations, missing tests and documentation drift.
 
 ## 15. AI agent behavior
 
