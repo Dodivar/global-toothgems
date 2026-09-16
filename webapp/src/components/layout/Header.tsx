@@ -104,10 +104,10 @@ export function Header() {
 
   const notIncluded = () => showToast(t("common.notIncludedTitle"), t("common.notIncludedScreen"), "info");
 
-  /** The account entry point: the login page is the only account screen in the maquette. */
+  /** The account entry point: the member dashboard once signed in, the login page otherwise. */
   const openAccount = () => {
     closeAll();
-    navigate("/connexion");
+    navigate(signedIn ? "/compte" : "/connexion");
   };
 
   const panelItems = panel === "shop" ? [...MENU.gems, ...MENU.shop] : panel === "academy" ? MENU.academy : [];

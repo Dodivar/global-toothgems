@@ -38,19 +38,28 @@ npm run lint      # oxlint
 
 ```
 src/
-  pages/            One component per screen (Home, Shop, ProductDetail, Cart, Academy, Lesson)
+  pages/            One component per screen (Home, Shop, ProductDetail, Cart, Academy, Lesson, Login, Account)
   components/ui/     Design-system primitives (Button, Badge, ProductCard, CourseCard, QuizQuestion, ...)
   components/layout/ Header (desktop nav + mega panel, mobile burger menu) and Footer
-  data/               Bilingual product/course/review/lesson data
+  data/               Bilingual product/course/review/lesson/order data
   i18n/               react-i18next setup + locales/fr.json, locales/en.json
-  lib/                Cart context, toast notifications, price/format helpers
+  lib/                Auth, cart, learning-progress and order contexts, toasts, price/date helpers
 ```
+
+## The member area (`/compte`)
+
+`Account.tsx` is the signed-in dashboard: a greeting and summary tiles, a "resume where you left off" card, per-course progression with a module breakdown, certificates, the courses still available, and the order history.
+
+It owns no state of its own. Learning progress lives in `lib/progress.tsx` and order history in `lib/orders.tsx`, both in-memory contexts shaped like the existing `lib/cart.tsx`. The lesson player writes to the first and the cart writes to the second, so validating a lesson or paying moves the dashboard immediately. Certificates are derived from a course reaching 100 %, never stored as a separate flag.
+
+Every course reuses the single authored syllabus in `data/lessons.ts` (9 lessons, ~1 h 30), so the lesson counts and durations in `data/courses.ts` were aligned to it — a course advertising 18 lessons could never reach 100 % or unlock its certificate.
 
 ## Notes on scope
 
 This app reproduces the prototype's interactions against local/mock state only — there is no real backend, payment processing, or authentication. A few simplifications carried over intentionally from the prototype (flagged during the build):
 
-- All Academy courses currently open the same shared lesson-progress state (only "Fondation Tooth Gem" has its full 9-lesson breakdown authored).
-- Checkout is non-persistent: paying always succeeds and resets if you navigate away.
+- All Academy courses share the same authored 9-lesson syllabus; progress is tracked per course, but only one course outline exists.
+- Nothing is persisted: the session, cart, progress and orders all live in memory and reset on reload.
+- Paying always succeeds. It records an order and empties the cart; real fulfilment belongs to a Stripe webhook, not to the browser.
 
-Everything else — filtering, cart totals, the lesson video/quiz simulation, per-product detail pages — is fully interactive.
+Everything else — filtering, cart totals, the lesson video/quiz simulation, per-product detail pages, the member dashboard — is fully interactive.

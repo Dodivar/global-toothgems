@@ -11,6 +11,7 @@ import { ProgressBar } from "../components/ui/ProgressBar";
 import { ProductCard } from "../components/ui/ProductCard";
 import { IconButton } from "../components/ui/IconButton";
 import { useCart } from "../lib/cart";
+import { useOrders } from "../lib/orders";
 import { bestSellers } from "../data/products";
 import { pick } from "../data/types";
 import { formatPrice } from "../lib/format";
@@ -22,10 +23,12 @@ const EMAIL_RE = /^[^\s@]+@[^\s@]+\.[^\s@]{2,}$/;
 export function Cart() {
   const { t, i18n } = useTranslation();
   const navigate = useNavigate();
-  const { lines, subtotal, updateQty, removeLine } = useCart();
+  const { lines, subtotal, updateQty, removeLine, clearCart } = useCart();
+  const { placeOrder } = useOrders();
   const lang = i18n.language;
 
   const [paid, setPaid] = useState(false);
+  const [reference, setReference] = useState<string | null>(null);
   const [method, setMethod] = useState<"card" | "split">("card");
   const [country, setCountry] = useState("fr");
   const [saveInfo, setSaveInfo] = useState(true);
@@ -65,6 +68,18 @@ export function Cart() {
   const set = (key: keyof typeof form) => (e: React.ChangeEvent<HTMLInputElement>) =>
     setForm((f) => ({ ...f, [key]: e.target.value }));
 
+  /**
+   * Mockup payment. It records the cart as an order so it shows up in the member
+   * area, then empties the cart — paying twice for the same basket is not a
+   * thing. Real fulfilment is driven by the Stripe webhook, never by the browser
+   * returning from checkout.
+   */
+  const pay = () => {
+    setReference(placeOrder(lines, shipping));
+    clearCart();
+    setPaid(true);
+  };
+
   if (paid) {
     return (
       <div className="mx-auto max-w-[680px] px-[clamp(14px,4vw,48px)] py-[clamp(56px,8vw,96px)] text-center">
@@ -76,8 +91,13 @@ export function Cart() {
           </span>
           <h1 className="text-[length:var(--text-h1)]">{t("cart.confirmedTitle")}</h1>
           <p className="m-0 max-w-[480px] text-[length:var(--text-body-md)] text-[var(--text-body)]">{t("cart.confirmedBody")}</p>
+          {reference && (
+            <p className="m-0 text-[length:var(--text-body-sm)] text-[var(--text-muted)]">
+              {t("cart.confirmedReference", { reference })}
+            </p>
+          )}
           <div className="flex flex-wrap justify-center gap-3">
-            <Button variant="primary" onClick={() => navigate("/academy")}>{t("cart.confirmedOpenAcademy")}</Button>
+            <Button variant="primary" onClick={() => navigate("/compte")}>{t("cart.confirmedOpenAccount")}</Button>
             <Button variant="outline" onClick={() => navigate("/boutique")}>{t("cart.confirmedContinueShopping")}</Button>
           </div>
         </div>
@@ -258,7 +278,7 @@ export function Cart() {
             </div>
           </div>
           <div className="hidden lg:block">
-            <Button variant="primary" fullWidth size="lg" onClick={() => setPaid(true)}>
+            <Button variant="primary" fullWidth size="lg" onClick={pay}>
               {t("cart.pay", { amount: formatPrice(total) })}
             </Button>
           </div>
@@ -269,7 +289,7 @@ export function Cart() {
       {/* On mobile the summary sits below three long form sections, so the pay
           button needs to travel with the customer. */}
       <div className="fixed inset-x-0 bottom-0 z-50 border-t border-[var(--border-subtle)] bg-[var(--surface-card)] px-4 py-3 shadow-[var(--shadow-lg)] lg:hidden">
-        <Button variant="primary" fullWidth size="lg" onClick={() => setPaid(true)}>
+        <Button variant="primary" fullWidth size="lg" onClick={pay}>
           {t("cart.pay", { amount: formatPrice(total) })}
         </Button>
       </div>

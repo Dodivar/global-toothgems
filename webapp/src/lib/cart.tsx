@@ -20,6 +20,8 @@ interface CartContextValue {
   addLine: (line: Omit<CartLine, "id">) => void;
   updateQty: (id: string, qty: number) => void;
   removeLine: (id: string) => void;
+  /** Empties the cart once its contents have become an order. */
+  clearCart: () => void;
 }
 
 const CartContext = createContext<CartContextValue | null>(null);
@@ -71,11 +73,13 @@ export function CartProvider({ children }: { children: ReactNode }) {
 
   const removeLine = (id: string) => setLines((prev) => prev.filter((l) => l.id !== id));
 
+  const clearCart = () => setLines([]);
+
   const count = useMemo(() => lines.reduce((sum, l) => sum + l.qty, 0), [lines]);
   const subtotal = useMemo(() => lines.reduce((sum, l) => sum + l.qty * l.price, 0), [lines]);
 
   return (
-    <CartContext.Provider value={{ lines, count, subtotal, addLine, updateQty, removeLine }}>
+    <CartContext.Provider value={{ lines, count, subtotal, addLine, updateQty, removeLine, clearCart }}>
       {children}
     </CartContext.Provider>
   );

@@ -98,3 +98,22 @@ export const QUIZ = {
 };
 
 export const DEFAULT_LESSON_STATE = { activeIdx: 4, doneCount: 4 };
+
+/** "12:15" -> 735. The authored durations are always mm:ss. */
+export function parseDuration(d: string): number {
+  const [m, s] = d.split(":").map(Number);
+  return m * 60 + s;
+}
+
+/** Video seconds still ahead of a learner who has validated `doneCount` lessons. */
+export function remainingSeconds(doneCount: number): number {
+  return FLAT.reduce((sum, l, i) => (i >= doneCount ? sum + parseDuration(l.duration) : sum), 0);
+}
+
+/**
+ * Flat index of the first lesson of each module, so a caller holding a single
+ * `doneCount` can map course progress back onto the module breakdown.
+ */
+export const MODULE_OFFSETS: number[] = MODULES.map((_, i) =>
+  MODULES.slice(0, i).reduce((sum, m) => sum + m.lessons.length, 0),
+);

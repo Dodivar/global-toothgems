@@ -7,6 +7,7 @@ import { CourseCard } from "../components/ui/CourseCard";
 import { COURSES } from "../data/courses";
 import { pick } from "../data/types";
 import { useAuth } from "../lib/auth";
+import { useProgress } from "../lib/progress";
 import { useToast } from "../lib/toast";
 import { photo } from "../lib/images";
 import { useReveal } from "../lib/useReveal";
@@ -70,6 +71,7 @@ export function Academy() {
   const { t, i18n } = useTranslation();
   const navigate = useNavigate();
   const { signedIn } = useAuth();
+  const { openCourse } = useProgress();
   const { showToast } = useToast();
   const lang = i18n.language;
   const numberLocale = lang.startsWith("en") ? "en-IE" : "fr-FR";
@@ -81,18 +83,23 @@ export function Academy() {
    * Course content requires an account. RequireAccount already guards the route,
    * but these handlers have to check too: otherwise they would announce
    * "enrolment saved" a moment before the guard threw the visitor back out.
+   *
+   * Opening a course also puts it on the account, so the member dashboard shows
+   * it straight away — the toast says it is enrolled, so it has to be true.
    */
-  const openLesson = (toastTitle: string, toastBody: string) => {
+  const openLesson = (courseId: string, toastTitle: string, toastBody: string) => {
     if (!signedIn) {
       navigate("/connexion", { state: { from: "/academy/lecon" } });
       return;
     }
+    openCourse(courseId);
     navigate("/academy/lecon");
     showToast(toastTitle, toastBody);
   };
 
-  const enroll = () => openLesson(t("academy.toastEnrollTitle"), t("academy.toastEnrollBody"));
-  const preview = () => openLesson(t("academy.toastPreviewTitle"), t("academy.toastPreviewBody"));
+  /** The hero CTAs sell the entry-level course. */
+  const enroll = () => openLesson("fondation", t("academy.toastEnrollTitle"), t("academy.toastEnrollBody"));
+  const preview = () => openLesson("fondation", t("academy.toastPreviewTitle"), t("academy.toastPreviewBody"));
 
   return (
     <div>
@@ -152,7 +159,11 @@ export function Academy() {
                   image: c.image,
                 }}
                 onSelect={() =>
-                  openLesson(t("academy.toastCourseTitle"), t("academy.toastCourseBody", { title: pick(c.title, lang) }))
+                  openLesson(
+                    c.id,
+                    t("academy.toastCourseTitle"),
+                    t("academy.toastCourseBody", { title: pick(c.title, lang) }),
+                  )
                 }
               />
             ))}

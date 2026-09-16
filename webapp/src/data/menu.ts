@@ -83,27 +83,27 @@ export const MENU: Record<"gems" | "shop" | "academy", MenuItem[]> = {
   academy: [
     {
       title: { fr: "Fondation Tooth Gem", en: "Tooth Gem Foundation" },
-      sub: { fr: "18 leçons · 3 h 40", en: "18 lessons · 3h40" },
+      sub: { fr: "9 leçons · 1 h 30", en: "9 lessons · 1h30" },
       thumb: img("img-12.jpg"),
       to: "/academy/lecon",
     },
     {
       title: { fr: "Placement avancé", en: "Advanced placement" },
-      sub: { fr: "12 leçons · 2 h 10", en: "12 lessons · 2h10" },
+      sub: { fr: "9 leçons · 1 h 30", en: "9 lessons · 1h30" },
       thumb: img("mouth-02.jpg"),
       to: "/academy/lecon",
     },
     {
       title: { fr: "Business studio", en: "Business studio" },
-      sub: { fr: "9 leçons · 1 h 25", en: "9 lessons · 1h25" },
+      sub: { fr: "9 leçons · 1 h 30", en: "9 lessons · 1h30" },
       thumb: img("mouth-03.jpg"),
       to: "/academy/lecon",
     },
     {
-      title: { fr: "Ma formation en cours", en: "My course in progress" },
-      sub: { fr: "Module 2 · leçon 5", en: "Module 2 · lesson 5" },
+      title: { fr: "Mon espace membre", en: "My member area" },
+      sub: { fr: "Progression, attestations, commandes", en: "Progress, certificates, orders" },
       thumb: img("mouth-04.jpg"),
-      to: "/academy/lecon",
+      to: "/compte",
     },
   ],
 };

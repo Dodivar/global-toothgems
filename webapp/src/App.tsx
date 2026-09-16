@@ -3,6 +3,8 @@ import { useEffect } from "react";
 import { useTranslation } from "react-i18next";
 import { AuthProvider, RequireAccount } from "./lib/auth";
 import { CartProvider } from "./lib/cart";
+import { OrdersProvider } from "./lib/orders";
+import { ProgressProvider } from "./lib/progress";
 import { ToastProvider } from "./lib/toast";
 import { Header } from "./components/layout/Header";
 import { Footer } from "./components/layout/Footer";
@@ -15,6 +17,7 @@ import { Cart } from "./pages/Cart";
 import { Academy } from "./pages/Academy";
 import { Lesson } from "./pages/Lesson";
 import { Login } from "./pages/Login";
+import { Account } from "./pages/Account";
 
 function ScrollToTop() {
   const { pathname } = useLocation();
@@ -38,42 +41,59 @@ export default function App() {
 
   return (
     <AuthProvider>
-      <CartProvider>
-        <ToastProvider>
-          <ScrollToTop />
-          <DocumentLanguage />
-          <a href="#main" className="gt-skip-link">
-            {t("common.skipToContent")}
-          </a>
-          <Header />
-          <main id="main" tabIndex={-1}>
-            <Routes>
-              <Route path="/" element={<Home />} />
-              <Route path="/boutique" element={<Shop />} />
-              <Route path="/boutique/:id" element={<ProductDetail />} />
-              {/* Top level, not /boutique/formes: a static child of /boutique
-                  would permanently shadow a product with that id. */}
-              <Route path="/formes" element={<Shapes />} />
-              <Route path="/couleurs" element={<Colors />} />
-              <Route path="/panier" element={<Cart />} />
-              <Route path="/connexion" element={<Login />} />
-              {/* The Academy landing page stays open — it is the sales page.
-                  Only the course content itself requires an account, and gating
-                  the route covers the menu links and direct URLs at once. */}
-              <Route path="/academy" element={<Academy />} />
-              <Route
-                path="/academy/lecon"
-                element={
-                  <RequireAccount>
-                    <Lesson />
-                  </RequireAccount>
-                }
-              />
-            </Routes>
-          </main>
-          <Footer />
-        </ToastProvider>
-      </CartProvider>
+      {/* Learning progress and orders sit above the cart: paying turns the cart
+          into an order, and both histories feed the member dashboard. */}
+      <ProgressProvider>
+        <OrdersProvider>
+          <CartProvider>
+            <ToastProvider>
+              <ScrollToTop />
+              <DocumentLanguage />
+              <a href="#main" className="gt-skip-link">
+                {t("common.skipToContent")}
+              </a>
+              <Header />
+              <main id="main" tabIndex={-1}>
+                <Routes>
+                  <Route path="/" element={<Home />} />
+                  <Route path="/boutique" element={<Shop />} />
+                  <Route path="/boutique/:id" element={<ProductDetail />} />
+                  {/* Top level, not /boutique/formes: a static child of /boutique
+                      would permanently shadow a product with that id. */}
+                  <Route path="/formes" element={<Shapes />} />
+                  <Route path="/couleurs" element={<Colors />} />
+                  <Route path="/panier" element={<Cart />} />
+                  <Route path="/connexion" element={<Login />} />
+                  {/* The Academy landing page stays open — it is the sales page.
+                      Only the course content itself requires an account, and gating
+                      the route covers the menu links and direct URLs at once. */}
+                  <Route path="/academy" element={<Academy />} />
+                  <Route
+                    path="/academy/lecon"
+                    element={
+                      <RequireAccount>
+                        <Lesson />
+                      </RequireAccount>
+                    }
+                  />
+                  {/* The member dashboard: progression, certificates and order
+                      history. Gated for the same reason the lesson is — it is
+                      the account itself. */}
+                  <Route
+                    path="/compte"
+                    element={
+                      <RequireAccount>
+                        <Account />
+                      </RequireAccount>
+                    }
+                  />
+                </Routes>
+              </main>
+              <Footer />
+            </ToastProvider>
+          </CartProvider>
+        </OrdersProvider>
+      </ProgressProvider>
     </AuthProvider>
   );
 }

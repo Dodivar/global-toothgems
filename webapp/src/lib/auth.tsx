@@ -14,24 +14,52 @@ interface AuthContextValue {
   signedIn: boolean;
   /** Email the visitor typed on the mockup login form, purely for display. */
   email: string | null;
-  signIn: (email: string) => void;
+  /** Name typed when creating the account, for the dashboard greeting. */
+  name: string | null;
+  /** Falls back to the local part of the email when no name was given. */
+  displayName: string;
+  /** One or two letters for the account avatar. */
+  initials: string;
+  signIn: (email: string, name?: string) => void;
   signOut: () => void;
 }
 
 const AuthContext = createContext<AuthContextValue | null>(null);
 
-export function AuthProvider({ children }: { children: ReactNode }) {
-  const [email, setEmail] = useState<string | null>(null);
+/** "camille@studio.fr" -> "Camille": enough for a greeting when no name was typed. */
+function nameFromEmail(email: string): string {
+  const local = email.split("@")[0].replace(/[._-]+/g, " ").trim();
+  return local
+    .split(" ")
+    .filter(Boolean)
+    .map((part) => part.charAt(0).toUpperCase() + part.slice(1))
+    .join(" ");
+}
 
-  const value = useMemo<AuthContextValue>(
-    () => ({
-      signedIn: email !== null,
+function initialsOf(name: string): string {
+  const parts = name.split(" ").filter(Boolean);
+  if (parts.length === 0) return "?";
+  return (parts[0].charAt(0) + (parts.length > 1 ? parts[parts.length - 1].charAt(0) : "")).toUpperCase();
+}
+
+export function AuthProvider({ children }: { children: ReactNode }) {
+  const [session, setSession] = useState<{ email: string; name: string | null } | null>(null);
+
+  const value = useMemo<AuthContextValue>(() => {
+    const email = session?.email ?? null;
+    const name = session?.name ?? null;
+    const displayName = name ?? (email ? nameFromEmail(email) : "");
+    return {
+      signedIn: session !== null,
       email,
-      signIn: (next: string) => setEmail(next.trim()),
-      signOut: () => setEmail(null),
-    }),
-    [email],
-  );
+      name,
+      displayName,
+      initials: displayName ? initialsOf(displayName) : "?",
+      signIn: (nextEmail: string, nextName?: string) =>
+        setSession({ email: nextEmail.trim(), name: nextName?.trim() || null }),
+      signOut: () => setSession(null),
+    };
+  }, [session]);
 
   return <AuthContext.Provider value={value}>{children}</AuthContext.Provider>;
 }

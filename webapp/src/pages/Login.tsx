@@ -13,7 +13,7 @@ import { photo } from "../lib/images";
 type Mode = "signIn" | "signUp";
 
 /** Where a visitor lands when they reach the page on their own, with nothing pending. */
-const DEFAULT_TARGET = "/academy";
+const DEFAULT_TARGET = "/compte";
 
 const BENEFITS = [
   { icon: GraduationCap, titleKey: "auth.benefit1Title", bodyKey: "auth.benefit1Body" },
@@ -51,7 +51,9 @@ export function Login() {
 
   const submit = (e: FormEvent) => {
     e.preventDefault();
-    signIn(form.email || "camille@studio.fr");
+    // The name is only asked for on sign-up; signing in falls back to the email.
+    const fullName = `${form.firstName} ${form.lastName}`.trim();
+    signIn(form.email || "camille@studio.fr", signUp && fullName ? fullName : undefined);
     showToast(
       t(signUp ? "auth.toastSignUpTitle" : "auth.toastSignInTitle"),
       t(signUp ? "auth.toastSignUpBody" : "auth.toastSignInBody"),
@@ -70,7 +72,10 @@ export function Login() {
           {t("auth.signedInBody", { email: sessionEmail })}
         </p>
         <div className="flex flex-wrap justify-center gap-3">
-          <Button variant="primary" iconRight={ArrowRight} onClick={() => navigate("/academy")}>
+          <Button variant="primary" iconRight={ArrowRight} onClick={() => navigate("/compte")}>
+            {t("auth.signedInAccount")}
+          </Button>
+          <Button variant="outline" onClick={() => navigate("/academy")}>
             {t("auth.signedInAcademy")}
           </Button>
           <Button variant="outline" iconLeft={LogOut} onClick={() => signOut()}>
