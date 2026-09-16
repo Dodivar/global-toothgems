@@ -9,7 +9,8 @@ import { CourseCard } from "../components/ui/CourseCard";
 import { ReviewBlock } from "../components/ui/ReviewBlock";
 import { Input } from "../components/ui/Input";
 import { Checkbox } from "../components/ui/Checkbox";
-import { bestSellers } from "../data/products";
+import { ShapeCarousel } from "../components/ui/ShapeCarousel";
+import { bestSellers, shapesInCatalog } from "../data/products";
 import { COURSES } from "../data/courses";
 import { REVIEWS } from "../data/reviews";
 import { pick } from "../data/types";
@@ -46,7 +47,9 @@ export function Home() {
   const [subscribed, setSubscribed] = useState(false);
 
   const featured = bestSellers();
+  const shapeGroups = shapesInCatalog();
 
+  const shapesRef = useReveal<HTMLElement>();
   const categoriesRef = useReveal<HTMLElement>();
   const bestSellersRef = useReveal<HTMLElement>();
   const academyRef = useReveal<HTMLElement>();
@@ -109,6 +112,30 @@ export function Home() {
               <span className="text-[length:var(--text-caption)] text-[var(--gt-ink-700)]">{t("home.heroStat2Label")}</span>
             </div>
           </div>
+        </div>
+      </section>
+
+      {/* Shapes: pick a cut, land on the gems that have it. */}
+      <section
+        ref={shapesRef}
+        aria-labelledby="gt-shapes-title"
+        className="gt-reveal px-[clamp(14px,4vw,48px)] pt-[var(--section-y)]"
+      >
+        <div className="mx-auto max-w-[var(--max-width-content)]">
+          <div className="mb-8 flex flex-wrap items-end justify-between gap-6">
+            <div className="grid max-w-[620px] gap-2.5">
+              <span className="gt-eyebrow">{t("home.shapesEyebrow")}</span>
+              <h2 id="gt-shapes-title" className="text-[length:var(--text-h2)]">{t("home.shapesTitle")}</h2>
+              <p className="m-0 text-[length:var(--text-body-sm)] text-[var(--text-body)]">{t("home.shapesBody")}</p>
+            </div>
+            <Button variant="ghost" iconRight={ArrowRight} onClick={() => navigate("/boutique?categorie=Gems")}>
+              {t("home.shapesCta")}
+            </Button>
+          </div>
+          <ShapeCarousel
+            groups={shapeGroups}
+            hrefFor={(group) => `/boutique?categorie=Gems&forme=${group.shape}`}
+          />
         </div>
       </section>
 

@@ -5,7 +5,7 @@ import { Menu as MenuIcon, X } from "lucide-react";
 import { Button } from "../components/ui/Button";
 import { Select } from "../components/ui/Select";
 import { ProductCard } from "../components/ui/ProductCard";
-import { PRODUCTS, type Product } from "../data/products";
+import { GEM_SHAPES, PRODUCTS, type Product } from "../data/products";
 import { pick } from "../data/types";
 import { useToast } from "../lib/toast";
 
@@ -27,6 +27,7 @@ export function Shop() {
   // `categorie` was read once at mount and never written back.
   const filter = params.get("categorie") ?? "Tout";
   const material = params.get("matiere") ?? "all";
+  const shape = params.get("forme") ?? "all";
   const priceBand = params.get("prix") ?? "all";
   const stockBand = params.get("stock") ?? "all";
   const sort = params.get("tri") ?? "new";
@@ -54,6 +55,12 @@ export function Shop() {
     { value: "Or 18k", label: t("shop.materials.Or 18k") },
     { value: "Opale de labo", label: t("shop.materials.Opale de labo") },
   ];
+  // Shapes are matched on the `shape` field rather than parsed out of the
+  // subtitle: the slug is what the home carousel puts in the URL.
+  const shapeOptions = [
+    { value: "all", label: t("shop.shapes.all") },
+    ...GEM_SHAPES.map((value) => ({ value, label: t(`shop.shapes.${value}`) })),
+  ];
   const priceOptions = [
     { value: "all", label: t("shop.priceBands.all") },
     { value: "under30", label: t("shop.priceBands.under30") },
@@ -77,6 +84,7 @@ export function Shop() {
     let list = PRODUCTS.slice();
     if (filter !== "Tout") list = list.filter((p) => p.cat === filter);
     if (material !== "all") list = list.filter((p) => materialOf(p) === material);
+    if (shape !== "all") list = list.filter((p) => p.shape === shape);
     if (priceBand !== "all") {
       list = list.filter((p) => {
         if (priceBand === "under30") return p.price < 30;
@@ -95,7 +103,7 @@ export function Shop() {
     else if (sort === "priceDesc") list = list.slice().sort((a, b) => b.price - a.price);
     else if (sort === "rating") list = list.slice().sort((a, b) => b.rating - a.rating);
     return list;
-  }, [filter, material, priceBand, stockBand, sort]);
+  }, [filter, material, shape, priceBand, stockBand, sort]);
 
   const pageCount = Math.max(1, Math.ceil(filtered.length / PER_PAGE));
   const safePage = Math.min(page, pageCount);
@@ -111,7 +119,7 @@ export function Shop() {
     setPending(true);
     const id = setTimeout(() => setPending(false), 220);
     return () => clearTimeout(id);
-  }, [filter, material, priceBand, stockBand, sort]);
+  }, [filter, material, shape, priceBand, stockBand, sort]);
 
   // Paging without this leaves the reader at the bottom of the previous page.
   const goToPage = (n: number) => {
@@ -122,6 +130,7 @@ export function Shop() {
   const activeChips = [
     filter !== "Tout" && { key: "categorie", label: t(`shop.categories.${filter}`), fallback: "Tout" },
     material !== "all" && { key: "matiere", label: materialOptions.find((o) => o.value === material)?.label ?? material, fallback: "all" },
+    shape !== "all" && { key: "forme", label: shapeOptions.find((o) => o.value === shape)?.label ?? shape, fallback: "all" },
     priceBand !== "all" && { key: "prix", label: priceOptions.find((o) => o.value === priceBand)?.label ?? priceBand, fallback: "all" },
     stockBand !== "all" && { key: "stock", label: stockOptions.find((o) => o.value === stockBand)?.label ?? stockBand, fallback: "all" },
   ].filter(Boolean) as { key: string; label: string; fallback: string }[];
@@ -186,6 +195,7 @@ export function Shop() {
                 </div>
               </div>
               <Select label={t("shop.materialLabel")} options={materialOptions} value={material} onChange={(v) => setParam("matiere", v, "all")} />
+              <Select label={t("shop.shapeLabel")} options={shapeOptions} value={shape} onChange={(v) => setParam("forme", v, "all")} />
               <Select label={t("shop.priceLabel")} options={priceOptions} value={priceBand} onChange={(v) => setParam("prix", v, "all")} />
               <Select label={t("shop.stockLabel")} options={stockOptions} value={stockBand} onChange={(v) => setParam("stock", v, "all")} />
               {activeChips.length > 0 && (
