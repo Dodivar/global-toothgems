@@ -348,6 +348,19 @@
   /* Completion moment - order confirmed, lesson finished. */
   .gt-celebrate { animation: gt-pop var(--duration-slow) var(--ease-out-soft) both; }
 
+  /* Horizontal track: snaps item to item and hides the scrollbar, which would
+     otherwise sit under the row and shift the layout between platforms. */
+  .gt-scroller {
+    overflow-x: auto;
+    overscroll-behavior-x: contain;
+    /* Proximity, not mandatory: the row nearly fits on a wide screen, where a
+       short scroll should not be dragged back to a tile boundary. */
+    scroll-snap-type: x proximity;
+    scrollbar-width: none;
+    -ms-overflow-style: none;
+  }
+  .gt-scroller::-webkit-scrollbar { display: none; }
+
   /* Loading placeholder for grids awaiting filtered results. */
   .gt-skeleton {
     background: linear-gradient(

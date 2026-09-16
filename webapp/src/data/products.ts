@@ -1,6 +1,35 @@
 import type { Localized } from "./types";
 import type { BadgeTone } from "../components/ui/Badge";
 
+/**
+ * Cut of a gem, as an ASCII slug. The slug is what travels in the `forme` URL
+ * parameter, so a link built in French still resolves in English — display
+ * labels live in the locale files under `shop.shapes.*`.
+ */
+export type GemShape =
+  | "round"
+  | "heart"
+  | "drop"
+  | "navette"
+  | "star"
+  | "square"
+  | "triangle"
+  | "baguette"
+  | "flower";
+
+/** Display order of the shape carousel and of the shop filter. */
+export const GEM_SHAPES: GemShape[] = [
+  "round",
+  "heart",
+  "drop",
+  "navette",
+  "star",
+  "square",
+  "triangle",
+  "baguette",
+  "flower",
+];
+
 export interface Product {
   id: string;
   name: Localized;
@@ -15,6 +44,8 @@ export interface Product {
   image: string;
   cat: "Gems" | "Outils" | "Kits" | "Suivi";
   material: string;
+  /** Gems only. Tools, kits and aftercare have no cut. */
+  shape?: GemShape;
   description?: Localized;
   center?: Localized;
   gallery?: { src: string; alt: Localized }[];
@@ -34,6 +65,7 @@ export const PRODUCTS: Product[] = [
     image: img("img-04.jpg"),
     cat: "Gems",
     material: "Or 18k",
+    shape: "heart",
     description: {
       fr: "Cœur en or 18k à centre en opale de laboratoire. Dos plat pour le contact de l’adhésif, bords polis, livré en capsule stérile à usage unique.",
       en: "18k gold heart with a lab-grown opal center. Flat back for adhesive contact, polished edges, delivered in a single-use sterile capsule.",
@@ -57,6 +89,7 @@ export const PRODUCTS: Product[] = [
     image: img("img-07.jpg"),
     cat: "Gems",
     material: "Swarovski",
+    shape: "round",
     gallery: [
       { src: img("img-07.jpg"), alt: { fr: "Solitaire Cristal, vue de face", en: "Crystal Solitaire, front view" } },
       { src: img("img-02.jpg"), alt: { fr: "Détail de la taille", en: "Cut detail" } },
@@ -75,6 +108,7 @@ export const PRODUCTS: Product[] = [
     image: img("img-20.jpg"),
     cat: "Gems",
     material: "Opale de labo",
+    shape: "drop",
   },
   {
     id: "starter-kit",
@@ -105,6 +139,7 @@ export const PRODUCTS: Product[] = [
     image: img("img-05.jpg"),
     cat: "Gems",
     material: "Cristal",
+    shape: "round",
     gallery: [
       { src: img("img-05.jpg"), alt: { fr: "Aquamarine SS7, vue de face", en: "Aquamarine SS7, front view" } },
       { src: img("img-15.jpg"), alt: { fr: "Nuances de bleu", en: "Blue shades" } },
@@ -122,6 +157,7 @@ export const PRODUCTS: Product[] = [
     image: img("img-15.jpg"),
     cat: "Gems",
     material: "Cristal",
+    shape: "navette",
     gallery: [
       { src: img("img-15.jpg"), alt: { fr: "Capri Blue SS9, vue de face", en: "Capri Blue SS9, front view" } },
       { src: img("img-05.jpg"), alt: { fr: "Nuances de bleu", en: "Blue shades" } },
@@ -139,6 +175,7 @@ export const PRODUCTS: Product[] = [
     image: img("img-06.jpg"),
     cat: "Gems",
     material: "Cristal",
+    shape: "square",
     gallery: [
       { src: img("img-06.jpg"), alt: { fr: "Light Amethyst SS7, vue de face", en: "Light Amethyst SS7, front view" } },
       { src: img("img-09.jpg"), alt: { fr: "Détail de la taille", en: "Cut detail" } },
@@ -156,6 +193,7 @@ export const PRODUCTS: Product[] = [
     image: img("img-19.jpg"),
     cat: "Gems",
     material: "Cristal",
+    shape: "triangle",
   },
   {
     id: "sun",
@@ -167,6 +205,7 @@ export const PRODUCTS: Product[] = [
     image: img("img-18.jpg"),
     cat: "Gems",
     material: "Cristal",
+    shape: "star",
   },
   {
     id: "sunflower",
@@ -178,6 +217,7 @@ export const PRODUCTS: Product[] = [
     image: img("img-13.jpg"),
     cat: "Gems",
     material: "Cristal",
+    shape: "flower",
   },
   {
     id: "heliotrope",
@@ -190,6 +230,7 @@ export const PRODUCTS: Product[] = [
     image: img("img-09.jpg"),
     cat: "Gems",
     material: "Cristal AB",
+    shape: "baguette",
   },
   {
     id: "sapphire-ab",
@@ -201,6 +242,7 @@ export const PRODUCTS: Product[] = [
     image: img("img-14.jpg"),
     cat: "Gems",
     material: "Cristal AB",
+    shape: "navette",
   },
   {
     id: "gants",
@@ -235,6 +277,7 @@ export const PRODUCTS: Product[] = [
     image: img("img-02.jpg"),
     cat: "Gems",
     material: "Or 18k",
+    shape: "star",
     gallery: [
       { src: img("img-02.jpg"), alt: { fr: "Étoile Or, vue de face", en: "Gold Star, front view" } },
       { src: img("img-07.jpg"), alt: { fr: "Détail de la monture", en: "Setting detail" } },
@@ -269,4 +312,24 @@ export function bestSellers(): Product[] {
 
 export function relatedProducts(): Product[] {
   return PRODUCTS.slice(3, 7);
+}
+
+export interface ShapeGroup {
+  shape: GemShape;
+  count: number;
+}
+
+/**
+ * Shapes that actually have gems behind them, in `GEM_SHAPES` order.
+ *
+ * Derived rather than hardcoded so a shape tile can never land on an empty
+ * result page: adding or removing a gem updates the carousel by itself.
+ */
+export function shapesInCatalog(): ShapeGroup[] {
+  const groups: ShapeGroup[] = [];
+  for (const shape of GEM_SHAPES) {
+    const count = PRODUCTS.filter((p) => p.shape === shape).length;
+    if (count > 0) groups.push({ shape, count });
+  }
+  return groups;
 }
