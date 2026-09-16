@@ -18,6 +18,10 @@
     "viewAllShopSub": "42 gems, tools and kits",
     "viewAllAcademy": "View the whole Academy",
     "viewAllAcademySub": "Certified track · 4 stages",
+    "shapesHeading": "Shapes",
+    "colorsHeading": "Colours",
+    "viewAllShapes": "View all shapes",
+    "viewAllColors": "View all colours",
     "menuTabGems": "Gems",
     "menuTabShop": "Shop",
     "menuTabAcademy": "Academy",
@@ -103,6 +107,7 @@
     "categoryLabel": "Category",
     "materialLabel": "Material",
     "shapeLabel": "Shape",
+    "colorLabel": "Colour",
     "priceLabel": "Price",
     "stockLabel": "Availability",
     "reset": "Reset",
@@ -166,7 +171,24 @@
       "triangle": "Triangle",
       "baguette": "Baguette",
       "flower": "Flower"
-    }
+    },
+    "colors": {
+      "all": "All colours",
+      "crystal": "Clear crystal",
+      "aquamarine": "Aquamarine",
+      "capri": "Capri blue",
+      "sapphire": "Sapphire",
+      "amethyst": "Amethyst",
+      "heliotrope": "Heliotrope AB",
+      "peridot": "Peridot",
+      "topaz": "Topaz",
+      "opal": "Opal",
+      "gold": "18k gold"
+    },
+    "colorPrev": "Previous colours",
+    "colorNext": "Next colours",
+    "colorTileAria_one": "View {{color}} gems ({{count}} product)",
+    "colorTileAria_other": "View {{color}} gems ({{count}} products)"
   },
   "product": {
     "breadcrumbShop": "Shop",
@@ -399,5 +421,18 @@
     "continue": "Continue",
     "correct": "Correct",
     "incorrect": "Not quite — here’s why"
+  },
+  "selector": {
+    "back": "Back to the shop"
+  },
+  "shapesPage": {
+    "eyebrow": "Shapes",
+    "title": "Every gem cut",
+    "body": "Each cut groups the gems of that silhouette, whatever the material. Pick one to filter the shop."
+  },
+  "colorsPage": {
+    "eyebrow": "Colours",
+    "title": "Every gem colour",
+    "body": "From clear crystal to 18k gold. Pick a colour to see only the gems in that shade."
   }
 }

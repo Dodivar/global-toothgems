@@ -1,20 +1,23 @@
 import { useEffect, useMemo, useRef, useState } from "react";
 import { useTranslation } from "react-i18next";
 import { useSearchParams } from "react-router-dom";
-import { Menu as MenuIcon, X } from "lucide-react";
+import { X } from "lucide-react";
 import { Button } from "../components/ui/Button";
-import { Select } from "../components/ui/Select";
 import { ProductCard } from "../components/ui/ProductCard";
-import { GEM_SHAPES, PRODUCTS, type Product } from "../data/products";
+import { ShopFilterBar } from "../components/shop/ShopFilterBar";
+import { GEM_COLORS, GEM_SHAPES, PRODUCTS } from "../data/products";
 import { pick } from "../data/types";
 import { useToast } from "../lib/toast";
 
-const CATEGORIES = ["Tout", "Gems", "Outils", "Kits", "Suivi"] as const;
-const PER_PAGE = 8;
+/** Three full rows at the widest column count. */
+const PER_PAGE = 12;
 
-function materialOf(product: Product): string {
-  return product.subtitle.fr.split("·")[0].trim();
-}
+/**
+ * Grid ladder, shared by the results and their loading skeleton so the page
+ * does not reflow between the two. Four columns is the ceiling: past that the
+ * cards drop below the width a 2 mm gem needs to read as a shape.
+ */
+const GRID = "grid grid-cols-2 gap-4 sm:grid-cols-3 sm:gap-6 xl:grid-cols-4";
 
 export function Shop() {
   const { t, i18n } = useTranslation();
@@ -28,6 +31,7 @@ export function Shop() {
   const filter = params.get("categorie") ?? "Tout";
   const material = params.get("matiere") ?? "all";
   const shape = params.get("forme") ?? "all";
+  const color = params.get("couleur") ?? "all";
   const priceBand = params.get("prix") ?? "all";
   const stockBand = params.get("stock") ?? "all";
   const sort = params.get("tri") ?? "new";
@@ -55,12 +59,6 @@ export function Shop() {
     { value: "Or 18k", label: t("shop.materials.Or 18k") },
     { value: "Opale de labo", label: t("shop.materials.Opale de labo") },
   ];
-  // Shapes are matched on the `shape` field rather than parsed out of the
-  // subtitle: the slug is what the home carousel puts in the URL.
-  const shapeOptions = [
-    { value: "all", label: t("shop.shapes.all") },
-    ...GEM_SHAPES.map((value) => ({ value, label: t(`shop.shapes.${value}`) })),
-  ];
   const priceOptions = [
     { value: "all", label: t("shop.priceBands.all") },
     { value: "under30", label: t("shop.priceBands.under30") },
@@ -83,8 +81,11 @@ export function Shop() {
   const filtered = useMemo(() => {
     let list = PRODUCTS.slice();
     if (filter !== "Tout") list = list.filter((p) => p.cat === filter);
-    if (material !== "all") list = list.filter((p) => materialOf(p) === material);
+    // `material` holds exactly the option values, so it is read from the product
+    // rather than parsed back out of the localised subtitle.
+    if (material !== "all") list = list.filter((p) => p.material === material);
     if (shape !== "all") list = list.filter((p) => p.shape === shape);
+    if (color !== "all") list = list.filter((p) => p.color === color);
     if (priceBand !== "all") {
       list = list.filter((p) => {
         if (priceBand === "under30") return p.price < 30;
@@ -103,7 +104,7 @@ export function Shop() {
     else if (sort === "priceDesc") list = list.slice().sort((a, b) => b.price - a.price);
     else if (sort === "rating") list = list.slice().sort((a, b) => b.rating - a.rating);
     return list;
-  }, [filter, material, shape, priceBand, stockBand, sort]);
+  }, [filter, material, shape, color, priceBand, stockBand, sort]);
 
   const pageCount = Math.max(1, Math.ceil(filtered.length / PER_PAGE));
   const safePage = Math.min(page, pageCount);
@@ -119,7 +120,7 @@ export function Shop() {
     setPending(true);
     const id = setTimeout(() => setPending(false), 220);
     return () => clearTimeout(id);
-  }, [filter, material, shape, priceBand, stockBand, sort]);
+  }, [filter, material, shape, color, priceBand, stockBand, sort]);
 
   // Paging without this leaves the reader at the bottom of the previous page.
   const goToPage = (n: number) => {
@@ -127,12 +128,26 @@ export function Shop() {
     gridRef.current?.scrollIntoView({ behavior: "smooth", block: "start" });
   };
 
+  const labelOf = (options: { value: string; label: string }[], value: string) =>
+    options.find((o) => o.value === value)?.label ?? value;
+
   const activeChips = [
     filter !== "Tout" && { key: "categorie", label: t(`shop.categories.${filter}`), fallback: "Tout" },
-    material !== "all" && { key: "matiere", label: materialOptions.find((o) => o.value === material)?.label ?? material, fallback: "all" },
-    shape !== "all" && { key: "forme", label: shapeOptions.find((o) => o.value === shape)?.label ?? shape, fallback: "all" },
-    priceBand !== "all" && { key: "prix", label: priceOptions.find((o) => o.value === priceBand)?.label ?? priceBand, fallback: "all" },
-    stockBand !== "all" && { key: "stock", label: stockOptions.find((o) => o.value === stockBand)?.label ?? stockBand, fallback: "all" },
+    material !== "all" && { key: "matiere", label: labelOf(materialOptions, material), fallback: "all" },
+    // A slug that is not in the taxonomy can still arrive from a hand-edited
+    // URL; showing it raw beats rendering a missing translation key.
+    shape !== "all" && {
+      key: "forme",
+      label: (GEM_SHAPES as string[]).includes(shape) ? t(`shop.shapes.${shape}`) : shape,
+      fallback: "all",
+    },
+    color !== "all" && {
+      key: "couleur",
+      label: (GEM_COLORS as string[]).includes(color) ? t(`shop.colors.${color}`) : color,
+      fallback: "all",
+    },
+    priceBand !== "all" && { key: "prix", label: labelOf(priceOptions, priceBand), fallback: "all" },
+    stockBand !== "all" && { key: "stock", label: labelOf(stockOptions, stockBand), fallback: "all" },
   ].filter(Boolean) as { key: string; label: string; fallback: string }[];
 
   const resetFilters = () => {
@@ -154,76 +169,44 @@ export function Shop() {
       </section>
 
       <section className="px-[clamp(14px,4vw,48px)] pb-[var(--section-y)]">
-        <div className="mx-auto grid max-w-[var(--max-width-content)] grid-cols-1 items-start gap-8 lg:grid-cols-[236px_minmax(0,1fr)]">
-          <aside className="grid gap-5 lg:sticky lg:top-24">
-            <div className="lg:hidden">
-              <Button
-                variant="outline"
-                iconLeft={MenuIcon}
-                fullWidth
-                aria-expanded={filtersOpen}
-                aria-controls="gt-shop-filters"
-                onClick={() => setFiltersOpen((v) => !v)}
-              >
-                {(filtersOpen ? t("shop.filterToggleHide") : t("shop.filterToggleShow")) +
-                  (activeChips.length ? ` · ${activeChips.length}` : "")}
-              </Button>
-            </div>
-            <div
-              id="gt-shop-filters"
-              className={`${filtersOpen ? "grid" : "hidden"} gap-5 rounded-[var(--radius-card)] border border-[var(--border-subtle)] bg-[var(--surface-card)] p-[var(--space-5)] shadow-[var(--shadow-xs)] lg:grid`}
-            >
-              <div className="grid gap-1">
-                <span className="gt-eyebrow" id="gt-category-label">{t("shop.categoryLabel")}</span>
-                <div className="grid gap-0.5" role="group" aria-labelledby="gt-category-label">
-                  {CATEGORIES.map((c) => (
-                    <button
-                      key={c}
-                      type="button"
-                      onClick={() => setParam("categorie", c, "Tout")}
-                      aria-pressed={filter === c}
-                      className="rounded-[10px] px-2.5 py-2 text-left text-[length:var(--text-body-sm)] transition-colors"
-                      style={{
-                        fontWeight: filter === c ? 700 : 400,
-                        color: filter === c ? "var(--text-primary)" : "var(--text-body)",
-                        background: filter === c ? "var(--surface-sunken)" : "transparent",
-                      }}
-                    >
-                      {c === "Tout" ? t("shop.categories.all") : t(`shop.categories.${c}`)}
-                    </button>
-                  ))}
-                </div>
-              </div>
-              <Select label={t("shop.materialLabel")} options={materialOptions} value={material} onChange={(v) => setParam("matiere", v, "all")} />
-              <Select label={t("shop.shapeLabel")} options={shapeOptions} value={shape} onChange={(v) => setParam("forme", v, "all")} />
-              <Select label={t("shop.priceLabel")} options={priceOptions} value={priceBand} onChange={(v) => setParam("prix", v, "all")} />
-              <Select label={t("shop.stockLabel")} options={stockOptions} value={stockBand} onChange={(v) => setParam("stock", v, "all")} />
-              {activeChips.length > 0 && (
-                <Button variant="ghost" size="sm" iconLeft={X} fullWidth onClick={resetFilters}>
-                  {t("shop.reset")}
-                </Button>
-              )}
-            </div>
-          </aside>
+        {/* The filters used to take a 236px column out of the grid's width. They
+            now sit above it, so the products get the full container. */}
+        <div className="mx-auto grid min-w-0 max-w-[var(--max-width-content)] gap-6">
+          <ShopFilterBar
+            category={filter}
+            shape={shape}
+            color={color}
+            material={material}
+            priceBand={priceBand}
+            stockBand={stockBand}
+            sort={sort}
+            materialOptions={materialOptions}
+            priceOptions={priceOptions}
+            stockOptions={stockOptions}
+            sortOptions={sortOptions}
+            activeCount={activeChips.length}
+            setParam={setParam}
+            onReset={resetFilters}
+            open={filtersOpen}
+            onToggleOpen={() => setFiltersOpen((v) => !v)}
+          />
 
-          <div className="grid min-w-0 gap-6">
-            <div className="flex flex-wrap items-center justify-between gap-4 border-b border-[var(--border-subtle)] pb-4">
-              <span className="text-[length:var(--text-body-sm)] font-semibold text-[var(--text-primary)]" role="status" aria-live="polite">
-                {t(filtered.length === 1 ? "shop.resultCount_one" : "shop.resultCount_other", {
-                  count: filtered.length,
-                  total: PRODUCTS.length,
-                })}
-              </span>
-              <div className="min-w-[200px]">
-                <Select label={t("shop.sortLabel")} options={sortOptions} value={sort} onChange={(v) => setParam("tri", v, "new")} />
-              </div>
-            </div>
+          <div className="flex flex-wrap items-center gap-x-4 gap-y-2">
+            <span
+              className="text-[length:var(--text-body-sm)] font-semibold text-[var(--text-primary)]"
+              role="status"
+              aria-live="polite"
+            >
+              {t(filtered.length === 1 ? "shop.resultCount_one" : "shop.resultCount_other", {
+                count: filtered.length,
+                total: PRODUCTS.length,
+              })}
+            </span>
 
             {/* Active filters were only removable from inside the sidebar, which
-                is collapsed on mobile. Chips make them visible and dismissible. */}
+                was collapsed on mobile. Chips make them visible and dismissible. */}
             {activeChips.length > 0 && (
               <div className="flex flex-wrap items-center gap-2">
-                <span className="gt-eyebrow">{t("shop.activeFiltersLabel")}</span>
                 {activeChips.map((chip) => (
                   <button
                     key={chip.key}
@@ -245,83 +228,87 @@ export function Shop() {
                 </button>
               </div>
             )}
+          </div>
 
-            <div ref={gridRef} className="scroll-mt-28">
-              {pending ? (
-                <div className="grid grid-cols-2 gap-4 sm:gap-6 lg:grid-cols-3" aria-hidden="true">
-                  {Array.from({ length: Math.min(PER_PAGE, Math.max(filtered.length, 3)) }).map((_, i) => (
-                    <div key={i} className="rounded-[var(--radius-card)] border border-[var(--border-subtle)] p-[var(--space-3)]">
-                      <div className="gt-skeleton aspect-square rounded-[var(--radius-media)]" />
-                      <div className="grid gap-2 pt-3">
-                        <div className="gt-skeleton h-3 w-3/4 rounded-full" />
-                        <div className="gt-skeleton h-3 w-1/2 rounded-full" />
-                      </div>
+          <div ref={gridRef} className="scroll-mt-28">
+            {pending ? (
+              <div className={GRID} aria-hidden="true">
+                {Array.from({ length: Math.min(PER_PAGE, Math.max(filtered.length, 4)) }).map((_, i) => (
+                  <div key={i} className="rounded-[var(--radius-card)] border border-[var(--border-subtle)] p-[var(--space-3)]">
+                    <div className="gt-skeleton aspect-square rounded-[var(--radius-media)]" />
+                    <div className="grid gap-2 pt-3">
+                      <div className="gt-skeleton h-3 w-3/4 rounded-full" />
+                      <div className="gt-skeleton h-3 w-1/2 rounded-full" />
                     </div>
-                  ))}
-                </div>
-              ) : pageItems.length === 0 ? (
-                <div className="grid justify-items-center gap-4 py-16 text-center">
-                  <p className="m-0 text-sm text-[var(--text-muted)]">{t("shop.emptyState")}</p>
-                  <Button variant="outline" onClick={resetFilters}>{t("shop.emptyReset")}</Button>
-                </div>
-              ) : (
-                <div className="grid grid-cols-2 gap-4 sm:gap-6 lg:grid-cols-3" aria-label={t("shop.gridLabel")}>
-                  {pageItems.map((p, i) => (
-                    <ProductCard
-                      key={p.id}
-                      to={`/boutique/${p.id}`}
-                      eager={i < 3}
-                      product={{
-                        id: p.id,
-                        name: pick(p.name, lang),
-                        subtitle: pick(p.subtitle, lang),
-                        price: p.price,
-                        compareAtPrice: p.compareAtPrice,
-                        image: p.image,
-                        hoverImage: p.gallery?.[1]?.src,
-                        badge: p.badge ? pick(p.badge, lang) : undefined,
-                        badgeTone: p.badgeTone,
-                        rating: p.rating,
-                        reviewCount: p.reviewCount,
-                        stock: p.stock,
-                      }}
-                      onSave={() => showToast(t("product.toastSavedTitle"), t("product.toastSavedBody", { name: pick(p.name, lang) }))}
-                    />
-                  ))}
-                </div>
-              )}
-            </div>
-
-            {pageCount > 1 && (
-              <nav aria-label={t("shop.paginationLabel")} className="flex flex-wrap items-center justify-center gap-2 pt-4">
-                <Button variant="ghost" size="sm" disabled={safePage <= 1} onClick={() => goToPage(safePage - 1)}>
-                  {t("shop.prev")}
+                  </div>
+                ))}
+              </div>
+            ) : pageItems.length === 0 ? (
+              <div className="grid justify-items-center gap-4 py-16 text-center">
+                <p className="m-0 text-sm text-[var(--text-muted)]">{t("shop.emptyState")}</p>
+                <Button variant="outline" onClick={resetFilters}>
+                  {t("shop.emptyReset")}
                 </Button>
-                {Array.from({ length: pageCount }).map((_, i) => {
-                  const current = safePage === i + 1;
-                  return (
-                    <button
-                      key={i}
-                      type="button"
-                      onClick={() => goToPage(i + 1)}
-                      aria-current={current ? "page" : undefined}
-                      aria-label={current ? t("shop.currentPage", { page: i + 1 }) : t("shop.goToPage", { page: i + 1 })}
-                      className="flex h-9 w-9 items-center justify-center rounded-full text-sm font-semibold transition-colors"
-                      style={{
-                        background: current ? "var(--gt-ink-900)" : "transparent",
-                        color: current ? "var(--text-inverse)" : "var(--text-body)",
-                      }}
-                    >
-                      {i + 1}
-                    </button>
-                  );
-                })}
-                <Button variant="ghost" size="sm" disabled={safePage >= pageCount} onClick={() => goToPage(safePage + 1)}>
-                  {t("shop.next")}
-                </Button>
-              </nav>
+              </div>
+            ) : (
+              <div className={GRID} aria-label={t("shop.gridLabel")}>
+                {pageItems.map((p, i) => (
+                  <ProductCard
+                    key={p.id}
+                    to={`/boutique/${p.id}`}
+                    eager={i < 4}
+                    product={{
+                      id: p.id,
+                      name: pick(p.name, lang),
+                      subtitle: pick(p.subtitle, lang),
+                      price: p.price,
+                      compareAtPrice: p.compareAtPrice,
+                      image: p.image,
+                      hoverImage: p.gallery?.[1]?.src,
+                      badge: p.badge ? pick(p.badge, lang) : undefined,
+                      badgeTone: p.badgeTone,
+                      rating: p.rating,
+                      reviewCount: p.reviewCount,
+                      stock: p.stock,
+                    }}
+                    onSave={() =>
+                      showToast(t("product.toastSavedTitle"), t("product.toastSavedBody", { name: pick(p.name, lang) }))
+                    }
+                  />
+                ))}
+              </div>
             )}
           </div>
+
+          {pageCount > 1 && (
+            <nav aria-label={t("shop.paginationLabel")} className="flex flex-wrap items-center justify-center gap-2 pt-4">
+              <Button variant="ghost" size="sm" disabled={safePage <= 1} onClick={() => goToPage(safePage - 1)}>
+                {t("shop.prev")}
+              </Button>
+              {Array.from({ length: pageCount }).map((_, i) => {
+                const current = safePage === i + 1;
+                return (
+                  <button
+                    key={i}
+                    type="button"
+                    onClick={() => goToPage(i + 1)}
+                    aria-current={current ? "page" : undefined}
+                    aria-label={current ? t("shop.currentPage", { page: i + 1 }) : t("shop.goToPage", { page: i + 1 })}
+                    className="flex h-9 w-9 items-center justify-center rounded-full text-sm font-semibold transition-colors"
+                    style={{
+                      background: current ? "var(--gt-ink-900)" : "transparent",
+                      color: current ? "var(--text-inverse)" : "var(--text-body)",
+                    }}
+                  >
+                    {i + 1}
+                  </button>
+                );
+              })}
+              <Button variant="ghost" size="sm" disabled={safePage >= pageCount} onClick={() => goToPage(safePage + 1)}>
+                {t("shop.next")}
+              </Button>
+            </nav>
+          )}
         </div>
       </section>
     </div>

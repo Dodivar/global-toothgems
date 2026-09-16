@@ -7,6 +7,8 @@ import { Header } from "./components/layout/Header";
 import { Footer } from "./components/layout/Footer";
 import { Home } from "./pages/Home";
 import { Shop } from "./pages/Shop";
+import { Shapes } from "./pages/Shapes";
+import { Colors } from "./pages/Colors";
 import { ProductDetail } from "./pages/ProductDetail";
 import { Cart } from "./pages/Cart";
 import { Academy } from "./pages/Academy";
@@ -46,6 +48,10 @@ export default function App() {
             <Route path="/" element={<Home />} />
             <Route path="/boutique" element={<Shop />} />
             <Route path="/boutique/:id" element={<ProductDetail />} />
+            {/* Top level, not /boutique/formes: a static child of /boutique
+                would permanently shadow a product with that id. */}
+            <Route path="/formes" element={<Shapes />} />
+            <Route path="/couleurs" element={<Colors />} />
             <Route path="/panier" element={<Cart />} />
             <Route path="/academy" element={<Academy />} />
             <Route path="/academy/lecon" element={<Lesson />} />

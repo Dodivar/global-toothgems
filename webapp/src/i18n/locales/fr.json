@@ -18,6 +18,10 @@
     "viewAllShopSub": "42 gems, outils et kits",
     "viewAllAcademy": "Voir toute l’Academy",
     "viewAllAcademySub": "Parcours certifiant · 4 étapes",
+    "shapesHeading": "Formes",
+    "colorsHeading": "Couleurs",
+    "viewAllShapes": "Voir toutes les formes",
+    "viewAllColors": "Voir toutes les couleurs",
     "menuTabGems": "Gems",
     "menuTabShop": "Boutique",
     "menuTabAcademy": "Academy",
@@ -103,6 +107,7 @@
     "categoryLabel": "Catégorie",
     "materialLabel": "Matière",
     "shapeLabel": "Forme",
+    "colorLabel": "Couleur",
     "priceLabel": "Prix",
     "stockLabel": "Disponibilité",
     "reset": "Réinitialiser",
@@ -166,7 +171,24 @@
       "triangle": "Triangle",
       "baguette": "Baguette",
       "flower": "Fleur"
-    }
+    },
+    "colors": {
+      "all": "Toutes les couleurs",
+      "crystal": "Cristal clair",
+      "aquamarine": "Aigue-marine",
+      "capri": "Bleu Capri",
+      "sapphire": "Saphir",
+      "amethyst": "Améthyste",
+      "heliotrope": "Héliotrope AB",
+      "peridot": "Péridot",
+      "topaz": "Topaze",
+      "opal": "Opale",
+      "gold": "Or 18k"
+    },
+    "colorPrev": "Couleurs précédentes",
+    "colorNext": "Couleurs suivantes",
+    "colorTileAria_one": "Voir les gems de couleur {{color}} ({{count}} référence)",
+    "colorTileAria_other": "Voir les gems de couleur {{color}} ({{count}} références)"
   },
   "product": {
     "breadcrumbShop": "Boutique",
@@ -399,5 +421,18 @@
     "continue": "Continuer",
     "correct": "Correct",
     "incorrect": "Pas tout à fait — voici pourquoi"
+  },
+  "selector": {
+    "back": "Retour à la boutique"
+  },
+  "shapesPage": {
+    "eyebrow": "Formes",
+    "title": "Toutes les formes de gems",
+    "body": "Chaque forme regroupe les gems de cette coupe, toutes matières confondues. Choisissez-en une pour filtrer la boutique."
+  },
+  "colorsPage": {
+    "eyebrow": "Couleurs",
+    "title": "Toutes les couleurs de gems",
+    "body": "Du cristal clair à l’or 18k. Choisissez une couleur pour ne voir que les gems de cette teinte."
   }
 }
