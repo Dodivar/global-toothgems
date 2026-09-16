@@ -167,26 +167,24 @@ Never claim a test passed unless it was actually run.
 
 ### Branch model
 
-- `main` is the single working and release branch. Agent work lands directly on it.
-- `dev` is retired. It is kept for history and is no longer the integration branch; nothing new should be based on it.
-- There is no pull-request gate in front of `main`. Review happens before the push, not after it.
-
-This model was chosen by the maintainer on 16 September 2026, replacing the earlier `dev` -> `main` pull-request flow. It trades review latency for speed, so the quality bar below carries the weight the pull request used to carry.
+- `main` is the release branch. Nothing is committed or pushed to `main` directly.
+- `dev` is the integration branch. All agent work lands here.
+- Only the human maintainer opens and validates the `dev` -> `main` pull request.
 
 ### Agent commit and push policy
 
 This section deliberately overrides the default agent behavior of committing and pushing only when explicitly asked.
 
-When the session runs on `main`:
+When the session runs on `dev`:
 
 1. Commit your work at the end of each turn, without waiting to be asked.
-2. Push to `origin main` immediately after committing.
-3. Never force-push and never rewrite pushed history.
-4. Never leave a turn with the tree in a half-finished state: whatever is in the tree when the turn ends is published as-is, with no review step behind it.
+2. Push to `origin dev` immediately after committing.
+3. Never push to `main`, never force-push, never rewrite pushed history.
+4. Never open the `dev` -> `main` pull request yourself.
 
-A `Stop` hook in `.claude/settings.json` performs this commit and push automatically, and is a no-op on any branch other than `main`. Treat it as a safety net, not as a licence to be careless: on this branch model, a stray file in the tree ships to the release branch.
+A `Stop` hook in `.claude/settings.json` performs this commit and push automatically, and is a no-op on any branch other than `dev`. Treat it as a safety net, not as a reason to leave the working tree in a half-finished state: everything still in the tree when a turn ends is committed and pushed as-is.
 
-If the session runs on another branch, fall back to the normal flow: a focused branch and a pull request targeting `main`.
+If the session runs on a branch other than `dev`, fall back to the normal flow: a focused branch and a pull request targeting `dev`.
 
 ### Quality bar
 
@@ -194,7 +192,7 @@ Keep changes focused and reviewable. Do not modify unrelated files merely to cle
 
 Use clear commit messages.
 
-Because pushes go straight to the release branch, review the diff for accidental secrets, unrelated modifications, broken imports, incomplete migrations, missing tests and documentation drift **before every push**, not at the end of a batch of work.
+Before the maintainer opens the `dev` -> `main` pull request, review the accumulated diff for accidental secrets, unrelated modifications, broken imports, incomplete migrations, missing tests and documentation drift.
 
 ## 15. AI agent behavior
 
