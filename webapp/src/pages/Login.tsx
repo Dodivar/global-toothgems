@@ -7,6 +7,7 @@ import { Input } from "../components/ui/Input";
 import { Checkbox } from "../components/ui/Checkbox";
 import { Badge } from "../components/ui/Badge";
 import { useAuth } from "../lib/auth";
+import { useProgress } from "../lib/progress";
 import { useToast } from "../lib/toast";
 import { photo } from "../lib/images";
 
@@ -26,10 +27,16 @@ export function Login() {
   const navigate = useNavigate();
   const location = useLocation();
   const { signedIn, email: sessionEmail, signIn, signOut } = useAuth();
+  const { openCourse } = useProgress();
   const { showToast } = useToast();
 
-  /** Set by RequireAccount when it turned someone away from a gated page. */
-  const from = (location.state as { from?: string } | null)?.from;
+  /**
+   * `from` is set by RequireAccount when it turned someone away from a gated
+   * page, and by the training pages when a visitor asked to start a course.
+   * `course` carries which one, so that purchase finishes on its own instead of
+   * opening whichever course was active.
+   */
+  const { from, course: pendingCourse } = (location.state as { from?: string; course?: string } | null) ?? {};
   const target = from ?? DEFAULT_TARGET;
 
   const [mode, setMode] = useState<Mode>("signIn");
@@ -56,6 +63,10 @@ export function Login() {
       form.email || "camille@studio.fr",
       signUp ? { firstName: form.firstName, lastName: form.lastName } : undefined,
     );
+    // Finishes what the visitor came here for: the training they chose is added
+    // to the account, so the player opens on it. `openCourse` ignores an id no
+    // course carries.
+    if (pendingCourse) openCourse(pendingCourse);
     showToast(
       t(signUp ? "auth.toastSignUpTitle" : "auth.toastSignInTitle"),
       t(signUp ? "auth.toastSignUpBody" : "auth.toastSignInBody"),

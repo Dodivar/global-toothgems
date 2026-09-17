@@ -84,6 +84,10 @@ The pass mark lives once, as `PASS_SCORE` in `data/lessons.ts`. It is a prototyp
 
 The hero reflects the visitor's own state — enrolled, in progress, completed — but only when signed in: the seeded demo enrolments exist regardless of the session, and this page is public.
 
+Every route into a training now lands here rather than on the login form: both home pages, the Academy grid, the header's Academy panel and both footers' Academy columns. `CourseCard` takes a `to` so those cards are real links — a public page has to be openable in a new tab and crawlable — and `lib/academyUrl.ts` holds the path the way `lib/shopUrl.ts` holds the filtered-collection ones. Only `/academy/lecon`, the player, stays behind `RequireAccount`: the videos are the paid content.
+
+The account is asked for at the purchase, and the training asked for travels with the visitor: pressing "start" while signed out puts the course id in the navigation state, and signing in adds that course to the account before opening the player, so the purchase resumes instead of opening whichever course happened to be active.
+
 ## The member area (`/compte`)
 
 The signed-in area is an administration dashboard: a left sidebar on desktop, a scrollable row of pills on small screens, and one route per section.

@@ -1,5 +1,6 @@
 import { Link } from "react-router-dom";
 import { useTranslation } from "react-i18next";
+import { courseHref } from "../../lib/academyUrl";
 import { useToast } from "../../lib/toast";
 import logoBlue from "../../assets/logo-wordmark-blue.png";
 
@@ -21,9 +22,9 @@ const SHOP_TARGETS: (string | null)[] = [
    training's own page; "Certification" is a theme, not a course, and stays on
    the catalogue. */
 const ACADEMY_TARGETS: (string | null)[] = [
-  "/academy/formation/fondation",
-  "/academy/formation/avance",
-  "/academy/formation/business",
+  courseHref("fondation"),
+  courseHref("avance"),
+  courseHref("business"),
   "/academy",
 ];
 const HELP_TARGETS: (string | null)[] = [null, null, null, null];

@@ -92,14 +92,17 @@ export function CourseDetail() {
     : { ...stored, enrolled: false, completed: false, doneCount: 0, pct: 0, completedOn: null, startedOn: null };
 
   /**
-   * Course content requires an account. `RequireAccount` guards the player
-   * route, but this handler has to check too — otherwise it would announce
-   * "course opened" a moment before the guard threw the visitor back out.
-   * Opening the course also puts it on the account, so the toast stays true.
+   * Course content requires an account — it is the one thing on this page that
+   * does. `RequireAccount` guards the player route, but this handler has to
+   * check too, otherwise it would announce "course opened" a moment before the
+   * guard threw the visitor back out. The training they asked for travels with
+   * them, so signing in opens that one rather than whichever course happened to
+   * be active. Opening the course also puts it on the account, so the toast
+   * stays true.
    */
   const start = () => {
     if (!signedIn) {
-      navigate("/connexion", { state: { from: "/academy/lecon" } });
+      navigate("/connexion", { state: { from: "/academy/lecon", course: course.id } });
       return;
     }
     openCourse(course.id);
