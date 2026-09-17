@@ -127,10 +127,10 @@ export function AccueilEditorial() {
       {/* ------------------------------------------------------------------ */}
       <section className="border-b border-[var(--gt-ink-900)]">
         <div className="grid lg:grid-cols-[minmax(0,1.12fr)_minmax(0,0.88fr)]">
-          <div className={`order-2 flex flex-col justify-between gap-10 lg:order-1 ${GUTTER} py-[clamp(36px,5vw,72px)]`}>
+          <div className={`order-2 flex flex-col justify-between gap-8 sm:gap-10 lg:order-1 ${GUTTER} py-7 sm:py-[clamp(36px,5vw,72px)]`}>
             <div className="grid gap-[clamp(20px,2.4vw,32px)]">
               {/* The one decorative-script moment above the fold, held on a rule. */}
-              <span className="flex items-baseline gap-4 border-b border-[var(--border-subtle)] pb-4">
+              <span className="flex items-baseline gap-4 border-b border-[var(--border-subtle)] pb-3 sm:pb-4">
                 <span className="gt-script text-[clamp(24px,3vw,38px)] leading-none text-[var(--gt-blue-700)]">
                   {t("home.heroEyebrow")}
                 </span>
@@ -141,9 +141,11 @@ export function AccueilEditorial() {
               />
               {/* Offset measure: the body copy starts a column in from the
                   headline, which is what makes the block read as a spread. */}
-              <div className="grid gap-7 lg:pl-[16%]">
+              <div className="grid gap-5 sm:gap-7 lg:pl-[16%]">
                 <span aria-hidden="true" className="block h-px w-16 bg-[var(--accent-highlight)]" />
-                <p className="m-0 max-w-[46ch] text-[length:var(--text-body-lg)] leading-[var(--leading-normal)] text-[var(--text-body)]">
+                {/* 16px on a phone, 18px from sm up: the larger size ran to four
+                    lines at 375px and pushed the primary CTA under the fold. */}
+                <p className="m-0 max-w-[46ch] text-[length:var(--text-body-md)] leading-[var(--leading-normal)] text-[var(--text-body)] sm:text-[length:var(--text-body-lg)]">
                   {t("home.heroBody")}
                 </p>
                 <div className="flex flex-wrap items-center gap-x-8 gap-y-4">
@@ -186,7 +188,7 @@ export function AccueilEditorial() {
           </div>
           {/* Bleeds to the top, right and bottom of the viewport: the one hard
               edge that tells you this is a cover and not a card. */}
-          <div className="gt-sparkle relative order-1 min-h-[46vh] border-b border-[var(--gt-ink-900)] bg-[var(--surface-brand)] lg:order-2 lg:min-h-[82vh] lg:border-b-0 lg:border-l">
+          <div className="gt-sparkle relative order-1 min-h-[26vh] border-b border-[var(--gt-ink-900)] bg-[var(--surface-brand)] sm:min-h-[38vh] lg:order-2 lg:min-h-[82vh] lg:border-b-0 lg:border-l">
             <img
               src={photo("mouth-02.jpg")}
               alt=""
@@ -271,7 +273,9 @@ export function AccueilEditorial() {
                   <span className="text-[11px] font-semibold uppercase tracking-[.08em] text-[var(--gt-ink-900)]">
                     {t(`shop.shapes.${group.shape}`)}
                   </span>
-                  <span className="text-[length:var(--text-caption)] text-[var(--text-subtle)]">{group.count}</span>
+                  <span className="text-[length:var(--text-caption)] text-[var(--text-subtle)]">
+                    {t("home.shapeCount", { count: group.count })}
+                  </span>
                 </span>
               </Link>
             ))}

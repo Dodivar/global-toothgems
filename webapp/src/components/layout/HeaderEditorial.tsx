@@ -308,14 +308,16 @@ export function HeaderEditorial() {
           >
             <div className="mx-auto grid max-w-[var(--max-width-content)] gap-6 px-[clamp(20px,4vw,56px)] py-8">
               {/* Square, hairline-ruled cells: the panel reads as an index, not
-                  as a tray of cards. */}
-              <div className="grid grid-cols-[repeat(auto-fill,minmax(210px,1fr))] gap-px bg-[var(--border-subtle)]">
+                  as a tray of cards. The rules live on the cells, not on a gap
+                  track — an auto-filled last row is rarely full, and a gap track
+                  would paint the empty cell as a grey block. */}
+              <div className="grid grid-cols-[repeat(auto-fill,minmax(210px,1fr))] border-l border-t border-[var(--border-subtle)]">
                 {panelItems.map((item) => (
                   <Link
                     key={pick(item.title, lang)}
                     to={item.to}
                     onClick={closeAll}
-                    className="group flex items-center gap-3 bg-[var(--gt-off-white)] p-3 text-left transition-colors hover:bg-[var(--gt-blue-50)]"
+                    className="group flex items-center gap-3 border-b border-r border-[var(--border-subtle)] p-3 text-left transition-colors hover:bg-[var(--gt-blue-50)]"
                   >
                     <img
                       src={item.thumb}
