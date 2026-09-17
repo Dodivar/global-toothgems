@@ -8,7 +8,10 @@ import { ProgressProvider } from "./lib/progress";
 import { ToastProvider } from "./lib/toast";
 import { Header } from "./components/layout/Header";
 import { Footer } from "./components/layout/Footer";
+import { HeaderEditorial } from "./components/layout/HeaderEditorial";
+import { FooterEditorial } from "./components/layout/FooterEditorial";
 import { Home } from "./pages/Home";
+import { AccueilEditorial } from "./pages/AccueilEditorial";
 import { Shop } from "./pages/Shop";
 import { Shapes } from "./pages/Shapes";
 import { Colors } from "./pages/Colors";
@@ -42,8 +45,19 @@ function DocumentLanguage() {
   return null;
 }
 
+/**
+ * Route wearing the alternative home-page direction.
+ *
+ * `Header` and `Footer` render outside `<Routes>`, so the second home page would
+ * otherwise inherit the first one's chrome. Swapping them here — rather than
+ * restyling the shared components — keeps the comparison honest and keeps every
+ * other screen untouched.
+ */
+const EDITORIAL_ROUTE = "/accueil-b";
+
 export default function App() {
   const { t } = useTranslation();
+  const editorial = useLocation().pathname === EDITORIAL_ROUTE;
 
   return (
     <AuthProvider>
@@ -58,10 +72,15 @@ export default function App() {
               <a href="#main" className="gt-skip-link">
                 {t("common.skipToContent")}
               </a>
-              <Header />
+              {editorial ? <HeaderEditorial /> : <Header />}
               <main id="main" tabIndex={-1}>
                 <Routes>
                   <Route path="/" element={<Home />} />
+                  {/* The alternative home-page direction, live beside the
+                      current one so the team can compare the same content in
+                      two art directions. Not linked from the navigation: it is
+                      a design comparison, not a second entry point. */}
+                  <Route path={EDITORIAL_ROUTE} element={<AccueilEditorial />} />
                   <Route path="/boutique" element={<Shop />} />
                   <Route path="/boutique/:id" element={<ProductDetail />} />
                   {/* Top level, not /boutique/formes: a static child of /boutique
@@ -104,7 +123,7 @@ export default function App() {
                   </Route>
                 </Routes>
               </main>
-              <Footer />
+              {editorial ? <FooterEditorial /> : <Footer />}
             </ToastProvider>
           </CartProvider>
         </OrdersProvider>

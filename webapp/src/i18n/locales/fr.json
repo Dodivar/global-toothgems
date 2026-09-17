@@ -99,6 +99,9 @@
     "newsletterSuccessTitle": "Inscription confirmée",
     "newsletterSuccessBody": "Surveillez votre boîte mail : le prochain drop vous sera annoncé en avant-première."
   },
+  "homeAlt": {
+    "trustEyebrow": "Garanties"
+  },
   "shop": {
     "eyebrow": "Boutique",
     "title": "Gems, outils et kits professionnels",

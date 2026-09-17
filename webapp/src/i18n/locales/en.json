@@ -99,6 +99,9 @@
     "newsletterSuccessTitle": "You’re subscribed",
     "newsletterSuccessBody": "Watch your inbox — you’ll hear about the next drop before anyone else."
   },
+  "homeAlt": {
+    "trustEyebrow": "Guarantees"
+  },
   "shop": {
     "eyebrow": "Shop",
     "title": "Gems, tools and professional kits",
