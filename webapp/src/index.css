@@ -424,6 +424,14 @@
   }
   .gt-scroller::-webkit-scrollbar { display: none; }
 
+  /* Diploma preview: lies slightly off-axis, then straightens as the section
+     scrolls in — a document being laid down rather than a card sliding up. */
+  .gt-diploma {
+    transform: rotate(-1.8deg);
+    transition: transform var(--duration-slow) var(--ease-out-soft);
+  }
+  .gt-reveal.is-visible .gt-diploma { transform: none; }
+
   /* Loading placeholder for grids awaiting filtered results. */
   .gt-skeleton {
     background: linear-gradient(
@@ -472,5 +480,6 @@
   .gt-celebrate,
   .gt-stamp-next,
   .gt-skeleton { animation: none; }
+  .gt-diploma { transform: none; transition: none; }
   .gt-sparkle::after { display: none; }
 }

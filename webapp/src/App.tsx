@@ -18,6 +18,7 @@ import { Colors } from "./pages/Colors";
 import { ProductDetail } from "./pages/ProductDetail";
 import { Cart } from "./pages/Cart";
 import { Academy } from "./pages/Academy";
+import { CourseDetail } from "./pages/CourseDetail";
 import { Lesson } from "./pages/Lesson";
 import { Login } from "./pages/Login";
 import { Loyalty as LoyaltyProgram } from "./pages/Loyalty";
@@ -96,6 +97,12 @@ export default function App() {
                       Only the course content itself requires an account, and gating
                       the route covers the menu links and direct URLs at once. */}
                   <Route path="/academy" element={<Academy />} />
+                  {/* The training detail page is the sales page for one course,
+                      so it stays open for the same reason the Academy landing
+                      page does. Nested under /academy/formation rather than
+                      /academy/:id: a dynamic child there would sit alongside
+                      the player's own static /academy/lecon segment. */}
+                  <Route path="/academy/formation/:id" element={<CourseDetail />} />
                   <Route
                     path="/academy/lecon"
                     element={

@@ -38,16 +38,30 @@ npm run lint      # oxlint
 
 ```
 src/
-  pages/            One component per screen (Home, Shop, ProductDetail, Cart, Academy, Lesson, Login)
+  pages/            One component per screen (Home, Shop, ProductDetail, Cart, Academy, CourseDetail, Lesson, Login)
   pages/account/    The member area: sidebar layout + one component per section
   components/ui/     Design-system primitives (Button, Badge, ProductCard, CourseCard, QuizQuestion, ...)
   components/account/ Dashboard pieces (stat tile, course row, certificate card, order card)
+  components/academy/ The training detail page: hero, curriculum accordion, assessment, diploma, community, shared primitives
   components/loyalty/ The Loyalty Club: stamp, card, progress, reward, steps, journey, FAQ, checkout banner, demo switcher
   components/layout/ Header (desktop nav + mega panel, mobile burger menu) and Footer
   data/               Bilingual product/course/review/lesson/order data
   i18n/               react-i18next setup + locales/fr.json, locales/en.json
   lib/                Auth, cart, learning-progress and order contexts, toasts, price/date helpers
 ```
+
+## The training detail page (`/academy/formation/:id`)
+
+The Academy catalogue opens one page per training — the sales page for that course, open to visitors like `/academy` itself, since gating it would hide what it advertises. It runs the visitor through the decision in order: what the training is, what they will experience, what they will be able to do, the curriculum module by module, how the journey runs, how the assessment works, the diploma, the artist community included with the purchase, why it is worth taking, and a closing call to action. A sticky bar carries the price and the call to action on small screens once the hero's own button scrolls away.
+
+Two rules shape its content:
+
+- **Nothing is invented.** Title, level, price, duration, modules and lessons come from `data/courses.ts` and `data/lessons.ts`; the diploma is rendered with the member area's own `CertificateDocument`; the sample question is the lesson player's own quiz.
+- **What the prototype does not have is labelled.** The forum preview says it is a preview, and the assessment meter says it is an example — a visitor reading a sales page has no score, and showing one as if it were theirs would be a lie dressed as reassurance.
+
+The pass mark lives once, as `PASS_SCORE` in `data/lessons.ts`. It is a prototype value: the real rule belongs with the course record and has to be enforced server-side.
+
+The hero reflects the visitor's own state — enrolled, in progress, completed — but only when signed in: the seeded demo enrolments exist regardless of the session, and this page is public.
 
 ## The member area (`/compte`)
 

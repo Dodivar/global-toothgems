@@ -7,12 +7,21 @@ export interface Lesson {
 
 export interface Module {
   title: Localized;
+  /** Title without the "Module n ·" prefix, for layouts that number modules themselves. */
+  short: Localized;
+  /** One line describing what the module's lessons cover. */
+  summary: Localized;
   lessons: Lesson[];
 }
 
 export const MODULES: Module[] = [
   {
     title: { fr: "Module 1 · Préparation", en: "Module 1 · Preparation" },
+    short: { fr: "Préparation", en: "Preparation" },
+    summary: {
+      fr: "Anatomie de l’émail, hygiène du poste de travail, choix de la gem et de sa position.",
+      en: "Enamel anatomy, workspace hygiene, choosing the gem and its position.",
+    },
     lessons: [
       { title: { fr: "Anatomie de l’émail", en: "Enamel anatomy" }, duration: "08:40" },
       { title: { fr: "Hygiène et champ de travail", en: "Hygiene and workspace setup" }, duration: "11:05" },
@@ -21,6 +30,11 @@ export const MODULES: Module[] = [
   },
   {
     title: { fr: "Module 2 · Application", en: "Module 2 · Application" },
+    short: { fr: "Application", en: "Application" },
+    summary: {
+      fr: "Mordançage, pose de la gem, polymérisation en deux temps, contrôle et finition.",
+      en: "Etching, applying the gem, two-stage curing, inspection and finishing.",
+    },
     lessons: [
       { title: { fr: "Mordançage et rinçage", en: "Etching and rinsing" }, duration: "12:15" },
       { title: { fr: "Pose de la gem", en: "Applying the gem" }, duration: "14:02" },
@@ -30,6 +44,11 @@ export const MODULES: Module[] = [
   },
   {
     title: { fr: "Module 3 · Suivi", en: "Module 3 · Aftercare" },
+    short: { fr: "Suivi", en: "Aftercare" },
+    summary: {
+      fr: "Les conseils à donner au client et le retrait de la gem sans abîmer l’émail.",
+      en: "The advice to give the client, and removing the gem without damaging enamel.",
+    },
     lessons: [
       { title: { fr: "Conseils au client", en: "Client advice" }, duration: "06:55" },
       { title: { fr: "Retrait sans dommage", en: "Damage-free removal" }, duration: "09:10" },
@@ -98,6 +117,36 @@ export const QUIZ = {
 };
 
 export const DEFAULT_LESSON_STATE = { activeIdx: 4, doneCount: 4 };
+
+/**
+ * Score a learner must reach on the validation questions before the training is
+ * validated and the diploma is issued.
+ *
+ * Prototype value, flagged as a business rule that is not settled yet
+ * (`AGENTS.md` §15): the real pass mark belongs with the course record and has
+ * to be enforced server-side, never read back from the browser. It lives here —
+ * once — so the sales page and the player can never advertise two numbers.
+ */
+export const PASS_SCORE = 80;
+
+/**
+ * Questions in the whole validation assessment: the authored per-module quiz
+ * (`QUIZ.total`), once per module. Derived rather than authored, so adding a
+ * module cannot leave the sales page advertising a stale count.
+ */
+export const ASSESSMENT_QUESTION_TOTAL = MODULES.length * QUIZ.total;
+
+/**
+ * The lesson offered as a free preview — the one the Academy's "preview a
+ * lesson" call to action opens (`academy.toastPreviewBody`). Named here so the
+ * curriculum badge and that call to action cannot drift apart.
+ */
+export const PREVIEW_LESSON_INDEX = DEFAULT_LESSON_STATE.activeIdx;
+
+/** Total run time of a module's lessons, as "42 min". */
+export function moduleMinutes(module: Module): number {
+  return Math.round(module.lessons.reduce((sum, l) => sum + parseDuration(l.duration), 0) / 60);
+}
 
 /** "12:15" -> 735. The authored durations are always mm:ss. */
 export function parseDuration(d: string): number {

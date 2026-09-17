@@ -17,7 +17,15 @@ const SHOP_TARGETS: (string | null)[] = [
   null,
   "/fidelite",
 ];
-const ACADEMY_TARGETS: (string | null)[] = ["/academy", "/academy", "/academy", "/academy"];
+/* The first three entries name the three courses, so they lead to each
+   training's own page; "Certification" is a theme, not a course, and stays on
+   the catalogue. */
+const ACADEMY_TARGETS: (string | null)[] = [
+  "/academy/formation/fondation",
+  "/academy/formation/avance",
+  "/academy/formation/business",
+  "/academy",
+];
 const HELP_TARGETS: (string | null)[] = [null, null, null, null];
 
 export function Footer() {

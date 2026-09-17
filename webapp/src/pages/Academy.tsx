@@ -158,13 +158,12 @@ export function Academy() {
                   price: c.price,
                   image: c.image,
                 }}
-                onSelect={() =>
-                  openLesson(
-                    c.id,
-                    t("academy.toastCourseTitle"),
-                    t("academy.toastCourseBody", { title: pick(c.title, lang) }),
-                  )
-                }
+                /* The catalogue now opens the training's own page rather than
+                   dropping the visitor straight into the player: the detail
+                   page is where the curriculum, the assessment, the diploma and
+                   the community access are explained. The hero buttons above
+                   still start the Foundation directly. */
+                onSelect={() => navigate(`/academy/formation/${c.id}`)}
               />
             ))}
           </div>
