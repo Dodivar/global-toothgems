@@ -339,6 +339,26 @@
     "toastSignUpTitle": "Account created",
     "toastSignUpBody": "Welcome to Global Toothgems."
   },
+  "authAlt": {
+    "showPassword": "Show password",
+    "hidePassword": "Hide password",
+    "forgot": "Forgot your password?",
+    "forgotToastTitle": "Password recovery",
+    "passwordRule": "At least {{min}} characters.",
+    "orContinue": "or continue with",
+    "google": "Continue with Google",
+    "googleToastTitle": "Visual mockup",
+    "googleToastBody": "Google sign-in is shown for the design only — nothing is connected yet.",
+    "switchToSignUpPrompt": "No account yet?",
+    "switchToSignUpCta": "Create one",
+    "switchToSignInPrompt": "Already have an account?",
+    "switchToSignInCta": "Sign in",
+    "errorFirstName": "Enter your first name.",
+    "errorLastName": "Enter your last name.",
+    "errorEmail": "Enter a valid email address.",
+    "errorPassword": "At least {{min}} characters.",
+    "errorTerms": "Accept the terms and conditions to continue."
+  },
   "academy": {
     "eyebrow": "Academy",
     "title": "Training that holds up<br>in the chair",

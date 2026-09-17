@@ -339,6 +339,26 @@
     "toastSignUpTitle": "Compte créé",
     "toastSignUpBody": "Bienvenue chez Global Toothgems."
   },
+  "authAlt": {
+    "showPassword": "Afficher le mot de passe",
+    "hidePassword": "Masquer le mot de passe",
+    "forgot": "Mot de passe oublié ?",
+    "forgotToastTitle": "Récupération du mot de passe",
+    "passwordRule": "{{min}} caractères minimum.",
+    "orContinue": "ou continuer avec",
+    "google": "Continuer avec Google",
+    "googleToastTitle": "Maquette visuelle",
+    "googleToastBody": "La connexion Google est présentée pour le design uniquement — rien n’est branché.",
+    "switchToSignUpPrompt": "Pas encore de compte ?",
+    "switchToSignUpCta": "Créez-en un",
+    "switchToSignInPrompt": "Vous avez déjà un compte ?",
+    "switchToSignInCta": "Connectez-vous",
+    "errorFirstName": "Indiquez votre prénom.",
+    "errorLastName": "Indiquez votre nom.",
+    "errorEmail": "Indiquez une adresse e-mail valide.",
+    "errorPassword": "{{min}} caractères minimum.",
+    "errorTerms": "Acceptez les conditions générales pour continuer."
+  },
   "academy": {
     "eyebrow": "Academy",
     "title": "Une formation<br>qui tient en cabine",

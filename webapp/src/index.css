@@ -403,6 +403,11 @@
   /* Completion moment - order confirmed, lesson finished. */
   .gt-celebrate { animation: gt-pop var(--duration-slow) var(--ease-out-soft) both; }
 
+  /* Authentication panel swapping between sign-in and sign-up. One short lift,
+     replayed by keying the block on the mode: the movement is what says "same
+     panel, other state" rather than "new page". */
+  .gt-auth-swap { animation: gt-auth-swap var(--duration-normal) var(--ease-out-soft) both; }
+
   /* The loyalty slot that is one purchase from being stamped. A slow breath, so
      the empty position reads as waiting rather than as a rendering fault. The
      halo and the heavier dash carry the same meaning without it. */
@@ -461,6 +466,11 @@
   to { opacity: 1; transform: none; }
 }
 
+@keyframes gt-auth-swap {
+  from { opacity: 0; transform: translateY(6px); }
+  to { opacity: 1; transform: none; }
+}
+
 @keyframes gt-stamp-breathe {
   0%, 100% { opacity: 1; transform: scale(1); }
   50% { opacity: .74; transform: scale(1.045); }
@@ -478,6 +488,7 @@
   .gt-kenburns,
   .gt-sparkle::after,
   .gt-celebrate,
+  .gt-auth-swap,
   .gt-stamp-next,
   .gt-skeleton { animation: none; }
   .gt-diploma { transform: none; transition: none; }

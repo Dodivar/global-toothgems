@@ -21,6 +21,7 @@ import { Academy } from "./pages/Academy";
 import { CourseDetail } from "./pages/CourseDetail";
 import { Lesson } from "./pages/Lesson";
 import { Login } from "./pages/Login";
+import { ConnexionEditorial } from "./pages/ConnexionEditorial";
 import { Loyalty as LoyaltyProgram } from "./pages/Loyalty";
 import { AccountLayout } from "./pages/account/AccountLayout";
 import { Dashboard } from "./pages/account/Dashboard";
@@ -90,6 +91,11 @@ export default function App() {
                   <Route path="/couleurs" element={<Colors />} />
                   <Route path="/panier" element={<Cart />} />
                   <Route path="/connexion" element={<Login />} />
+                  {/* The alternative authentication direction, live beside the
+                      current one so the team can compare the same flow, fields
+                      and copy in two art directions. Not linked from the
+                      navigation: it is a design comparison, not a second way in. */}
+                  <Route path="/connexion-b" element={<ConnexionEditorial />} />
                   {/* The loyalty programme's own sales page, open like the Academy
                       landing page: gating it would hide what it advertises. */}
                   <Route path="/fidelite" element={<LoyaltyProgram />} />
