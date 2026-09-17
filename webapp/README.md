@@ -61,9 +61,11 @@ the repository root would be ignored.
 src/
   pages/            One component per screen (Home, Shop, ProductDetail, Cart, Academy, CourseDetail, Lesson, Login)
   pages/account/    The member area: sidebar layout + one component per section
+  pages/community/  The Artist Community: its own layout + one component per screen
   components/ui/     Design-system primitives (Button, Badge, ProductCard, CourseCard, QuizQuestion, ...)
   components/account/ Dashboard pieces (stat tile, course row, certificate card, order card)
   components/academy/ The training detail page: hero, curriculum accordion, assessment, diploma, community, shared primitives
+  components/community/ Forum pieces (navigation, discussion card, showcase card, reactions, member card, composer, locked preview)
   components/loyalty/ The Loyalty Club: stamp, card, progress, reward, steps, journey, FAQ, checkout banner, demo switcher
   components/layout/ Header (desktop nav + mega panel, mobile burger menu) and Footer
   pages/admin/      The administration workspace: access screen, shell, dashboard, products, categories
@@ -110,6 +112,38 @@ The sections own no state of their own. Learning progress lives in `lib/progress
 
 Every course reuses the single authored syllabus in `data/lessons.ts` (9 lessons, ~1 h 30), so the lesson counts and durations in `data/courses.ts` were aligned to it — a course advertising 18 lessons could never reach 100 % or unlock its certificate.
 
+## The Artist Community (`/compte/communaute`)
+
+The private forum reserved for members who own a training. It is part of the member area — it is reached from the account sidebar and it lives under `/compte` — but it carries its own navigation rather than nesting inside the account sidebar, because two levels of vertical navigation on one screen is what makes forum software feel like software.
+
+| Route | Screen |
+| --- | --- |
+| `/compte/communaute` | Community home — welcome, community figures, the discussions of the day, the wall of recent creations, the channels, and a contextual column (who is around, artists to welcome, the guidelines) |
+| `/compte/communaute/canal/:channelId` | One channel: a reading list, or the image-led wall in *Vos créations*, with Latest / Most replies / Unanswered |
+| `/compte/communaute/discussion/:discussionId` | One thread: opening post, reactions, replies, reply composer, author card |
+| `/compte/communaute/activite/:view` | Your activity: `discussions`, `reponses`, `enregistrees` |
+| `/compte/communaute/membres` | The artist directory |
+| `/compte/communaute/charte` | Community guidelines |
+
+Eight channels (general chat, show your work, techniques, training help, inspiration, tools & materials, business, introductions) are declared in `data/community.ts`, together with the members, the discussions and their replies. A showcase post is a discussion like any other, with an image and a short body — the wall is a presentation of the same object, so a creation opens, reacts and replies through the same code path as a question about adhesive.
+
+Ages in that file are stored as `minutesAgo` rather than as dates, so a prototype opened again months later still reads "il y a 2 h" instead of showing a room whose last message is a season old.
+
+### Access
+
+Forum access is derived, never stored: the community is what a training purchase unlocks, so the rule is "at least one course on the account", read from `lib/progress.tsx`. `CommunityLayout` decides it once, so a deep link into a thread meets the same door as the home page.
+
+Both states are designed:
+
+- **With access** — the full community.
+- **Without access** — the account sidebar still shows *Communauté artistes*, marked with a lock, a pastel wash and the words "accès avec une formation" (never by the icon alone, and never disabled). It leads to a preview: the real figures and four real discussion titles shown in the clear, the discussion cards and the wall behind an elegant overlay, and one access card — *La communauté des artistes vous attend* — with **Découvrir les formations** and a way back to the account. The blurred preview is `inert` and `aria-hidden`, so it is never a keyboard trap.
+
+The seeded account owns two courses, so the locked state would be unreachable in a review. A visible, labelled **Aperçu prototype** switch in the community sidebar forces either state, exactly like the loyalty card's demo control.
+
+### Scope
+
+Interactions are simulated against in-memory state in `lib/community.tsx`: reacting, saving, replying, starting a discussion (with a sample photograph in place of an upload) and opening member profiles all work and move the same counters the navigation reads, and all of it resets on reload. Nothing is sent, stored or authorised — real membership, moderation and authorization belong to the server, driven by the same verified payment event as course access.
+
 ## The administration area (`/admin`)
 
 A separate, desktop-first management workspace for the product catalogue, built as an interactive visual prototype: no backend, no persistence, no real authentication. It is deliberately not the storefront in a sidebar — same palette, same Montserrat, but squarer controls, denser rows and its own near-black navigation rail, because a catalogue table and a product page are not the same job.
@@ -146,6 +180,7 @@ Sign in with `camille@globaltoothgems.com` / `toothgems2026`; the screen prints 
 
 Only product management is functional. There is no database, no API, no file upload, no server-side validation and no real authorization: `RequireAdmin` is a UI gate, and real administration access means Supabase Auth plus server-side RBAC and RLS, none of which may ever depend on a value from this code. A page reload restores the seeded catalogue and signs the administrator out.
 
+
 ## Notes on scope
 
 This app reproduces the prototype's interactions against local/mock state only — there is no real backend, payment processing, or authentication. A few simplifications carried over intentionally from the prototype (flagged during the build):
@@ -153,6 +188,7 @@ This app reproduces the prototype's interactions against local/mock state only �
 - All Academy courses share the same authored 9-lesson syllabus; progress is tracked per course, but only one course outline exists.
 - Nothing is persisted: the session, cart, progress and orders all live in memory and reset on reload.
 - Paying always succeeds. It records an order and empties the cart; real fulfilment belongs to a Stripe webhook, not to the browser.
+- The Artist Community (`/compte/communaute`) has no backend either: members, discussions and replies are written fixtures, posting and replying live in memory, the photo "upload" picks from three sample images, and forum access is derived from the courses on the account rather than verified anywhere.
 - The Loyalty Club (`/fidelite`, `/compte/fidelite`) is **display only**, and more so than the rest of this app: no stamp is ever awarded, stored or redeemed, and the checkout banner reads the subtotal without touching the total, the payment or the order. Its card state is static mock data in `data/loyalty.ts`, switched by a visible demo control on the member page. Awarding a stamp is a server's job, driven by the same verified payment event as fulfilment.
 
 Everything else — filtering, cart totals, the lesson video/quiz simulation, per-product detail pages, the member dashboard — is fully interactive.

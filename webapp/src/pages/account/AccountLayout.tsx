@@ -1,9 +1,21 @@
 import { useTranslation } from "react-i18next";
 import { Link, NavLink, Outlet, useNavigate } from "react-router-dom";
-import { ArrowUpRight, Award, GraduationCap, LayoutDashboard, LogOut, Package, Sparkles, UserRound } from "lucide-react";
+import {
+  ArrowUpRight,
+  Award,
+  GraduationCap,
+  LayoutDashboard,
+  Lock,
+  LogOut,
+  Package,
+  Sparkles,
+  UserRound,
+  Users,
+} from "lucide-react";
 import type { LucideIcon } from "lucide-react";
 import clsx from "clsx";
 import { useAuth } from "../../lib/auth";
+import { useCommunity } from "../../lib/community";
 import { useOrders } from "../../lib/orders";
 import { formatMonthYear } from "../../lib/format";
 
@@ -24,10 +36,17 @@ interface NavItem {
   icon: LucideIcon;
   /** Only the dashboard needs it: every other path is a distinct prefix. */
   end?: boolean;
+  /**
+   * The Artist Community, which is the one entry whose availability depends on
+   * what the account owns. It is never removed and never disabled: without a
+   * training it still leads somewhere, to the preview of what is behind it.
+   */
+  community?: boolean;
 }
 
 const SECTIONS: NavItem[] = [
   { to: "/compte", labelKey: "account.navDashboard", icon: LayoutDashboard, end: true },
+  { to: "/compte/communaute", labelKey: "community.navEntry", icon: Users, community: true },
   { to: "/compte/attestations", labelKey: "account.navCertificates", icon: Award },
   { to: "/compte/commandes", labelKey: "account.navOrders", icon: Package },
   { to: "/compte/fidelite", labelKey: "account.navLoyalty", icon: Sparkles },
@@ -39,7 +58,13 @@ const focusRing =
 
 function SidebarLink({ item }: { item: NavItem }) {
   const { t } = useTranslation();
+  const { hasAccess } = useCommunity();
   const Icon = item.icon;
+  /* The community is the only entry that can be locked, and a lock icon alone
+     would say it in colour and shape only — so the state is also written out,
+     under the label on the sidebar and as text in the mobile row. */
+  const locked = item.community === true && !hasAccess;
+
   return (
     <li>
       <NavLink
@@ -51,12 +76,22 @@ function SidebarLink({ item }: { item: NavItem }) {
             focusRing,
             isActive
               ? "bg-[var(--surface-inverse)] text-[var(--text-inverse)]"
-              : "text-[var(--text-body)] hover:bg-[var(--gt-ink-100)] hover:text-[var(--text-primary)]",
+              : locked
+                ? "border border-dashed border-[var(--border-default)] bg-[var(--surface-brand-wash)] text-[var(--text-muted)] hover:border-[var(--gt-blue-300)] hover:text-[var(--text-primary)]"
+                : "text-[var(--text-body)] hover:bg-[var(--gt-ink-100)] hover:text-[var(--text-primary)]",
           )
         }
       >
         <Icon size={16} strokeWidth={2} aria-hidden="true" />
-        {t(item.labelKey)}
+        <span className="grid min-w-0 gap-0.5">
+          <span className="truncate">{t(item.labelKey)}</span>
+          {locked && (
+            <span className="text-[10px] font-semibold uppercase tracking-[var(--tracking-wide)] text-[var(--text-subtle)]">
+              {t("community.navEntryLocked")}
+            </span>
+          )}
+        </span>
+        {locked && <Lock size={13} strokeWidth={2} aria-hidden="true" className="ml-auto flex-none" />}
       </NavLink>
     </li>
   );
@@ -64,7 +99,10 @@ function SidebarLink({ item }: { item: NavItem }) {
 
 function TabLink({ item }: { item: NavItem }) {
   const { t } = useTranslation();
+  const { hasAccess } = useCommunity();
   const Icon = item.icon;
+  const locked = item.community === true && !hasAccess;
+
   return (
     <li>
       <NavLink
@@ -76,12 +114,20 @@ function TabLink({ item }: { item: NavItem }) {
             focusRing,
             isActive
               ? "border-transparent bg-[var(--surface-inverse)] text-[var(--text-inverse)]"
-              : "border-[var(--border-subtle)] bg-[var(--surface-card)] text-[var(--text-body)]",
+              : locked
+                ? "border-dashed border-[var(--border-default)] bg-[var(--surface-brand-wash)] text-[var(--text-muted)]"
+                : "border-[var(--border-subtle)] bg-[var(--surface-card)] text-[var(--text-body)]",
           )
         }
       >
         <Icon size={14} strokeWidth={2} aria-hidden="true" />
         {t(item.labelKey)}
+        {locked && (
+          <>
+            <Lock size={12} strokeWidth={2} aria-hidden="true" />
+            <span className="sr-only">{t("community.navEntryLocked")}</span>
+          </>
+        )}
       </NavLink>
     </li>
   );
