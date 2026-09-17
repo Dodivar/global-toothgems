@@ -1,4 +1,5 @@
 import { useTranslation } from "react-i18next";
+import { Link } from "react-router-dom";
 import { Clock, GraduationCap, ListVideo, Lock } from "lucide-react";
 import { Badge, type BadgeTone } from "./Badge";
 import { ProgressBar } from "./ProgressBar";
@@ -28,10 +29,14 @@ const stateBadge: Record<string, { tone: BadgeTone; key: string } | null> = {
 export function CourseCard({
   course,
   tone = "paper",
+  to,
   onSelect,
 }: {
   course: CourseCardData;
   tone?: "paper" | "ink";
+  /** Destination of the card, for the catalogues that lead to a training page. */
+  to?: string;
+  /** Used where opening the course is an action rather than a navigation. */
   onSelect?: () => void;
 }) {
   const { t } = useTranslation();
@@ -96,10 +101,20 @@ export function CourseCard({
           <span className="flex items-center gap-1"><Clock size={12} aria-hidden="true" />{duration}</span>
         </span>
         <h4 className="text-[16px] font-bold" style={{ color: ink ? "var(--gt-off-white)" : "var(--text-primary)" }}>
-          {locked || !onSelect ? (
+          {/* Stretched control: whole card clickable by mouse, one keyboard stop.
+              A real link where the card leads to a page — the training pages are
+              public, so they have to be openable in a new tab and crawlable —
+              and a button where it triggers an action instead. */}
+          {locked ? (
             title
-          ) : (
-            /* Stretched button: whole card clickable by mouse, one keyboard stop. */
+          ) : to ? (
+            <Link
+              to={to}
+              className="rounded-[var(--radius-xs)] after:absolute after:inset-0 after:content-[''] focus-visible:outline-2 focus-visible:outline-offset-4 focus-visible:outline-[var(--focus-ring)]"
+            >
+              {title}
+            </Link>
+          ) : onSelect ? (
             <button
               type="button"
               onClick={onSelect}
@@ -107,6 +122,8 @@ export function CourseCard({
             >
               {title}
             </button>
+          ) : (
+            title
           )}
         </h4>
         {progress != null && <ProgressBar value={progress} size="sm" label={t("course.progress")} />}

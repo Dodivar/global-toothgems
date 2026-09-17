@@ -34,20 +34,59 @@ npm run preview   # serve the production build locally to sanity-check it
 npm run lint      # oxlint
 ```
 
+## Deploying (`vercel.json`)
+
+Routing is client-side: `main.tsx` mounts a `BrowserRouter`, and the build is a
+single `index.html` plus assets. A static host knows nothing about the routes in
+`App.tsx`, so a request that lands directly on one — a pasted link, a refresh, a
+bookmark — asks for a file that was never built and gets a 404. Following a link
+inside the app works either way, which is why the breakage only shows up on
+direct URLs, and why the newest routes (`/accueil-b`, `/connexion-b`) surface it
+first: they are not linked from the navigation, so a direct URL is the only way
+in.
+
+`vercel.json` fixes that by rewriting every unmatched path to `/index.html` and
+letting the router read the URL. Rewrites run after the filesystem check, so real
+files — the hashed bundles, `favicon.svg`, `icons.svg` — are still served as
+themselves.
+
+The file must sit in whatever directory Vercel builds from. This app lives in
+`webapp/`, so the project's **Root Directory** has to be `webapp` for the build
+to find `package.json` at all, and `vercel.json` belongs next to it. A copy at
+the repository root would be ignored.
+
 ## Project structure
 
 ```
 src/
-  pages/            One component per screen (Home, Shop, ProductDetail, Cart, Academy, Lesson, Login)
+  pages/            One component per screen (Home, Shop, ProductDetail, Cart, Academy, CourseDetail, Lesson, Login)
   pages/account/    The member area: sidebar layout + one component per section
   components/ui/     Design-system primitives (Button, Badge, ProductCard, CourseCard, QuizQuestion, ...)
   components/account/ Dashboard pieces (stat tile, course row, certificate card, order card)
+  components/academy/ The training detail page: hero, curriculum accordion, assessment, diploma, community, shared primitives
   components/loyalty/ The Loyalty Club: stamp, card, progress, reward, steps, journey, FAQ, checkout banner, demo switcher
   components/layout/ Header (desktop nav + mega panel, mobile burger menu) and Footer
   data/               Bilingual product/course/review/lesson/order data
   i18n/               react-i18next setup + locales/fr.json, locales/en.json
   lib/                Auth, cart, learning-progress and order contexts, toasts, price/date helpers
 ```
+
+## The training detail page (`/academy/formation/:id`)
+
+The Academy catalogue opens one page per training — the sales page for that course, open to visitors like `/academy` itself, since gating it would hide what it advertises. It runs the visitor through the decision in order: what the training is, what they will experience, what they will be able to do, the curriculum module by module, how the journey runs, how the assessment works, the diploma, the artist community included with the purchase, why it is worth taking, and a closing call to action. A sticky bar carries the price and the call to action on small screens once the hero's own button scrolls away.
+
+Two rules shape its content:
+
+- **Nothing is invented.** Title, level, price, duration, modules and lessons come from `data/courses.ts` and `data/lessons.ts`; the diploma is rendered with the member area's own `CertificateDocument`; the sample question is the lesson player's own quiz.
+- **What the prototype does not have is labelled.** The forum preview says it is a preview, and the assessment meter says it is an example — a visitor reading a sales page has no score, and showing one as if it were theirs would be a lie dressed as reassurance.
+
+The pass mark lives once, as `PASS_SCORE` in `data/lessons.ts`. It is a prototype value: the real rule belongs with the course record and has to be enforced server-side.
+
+The hero reflects the visitor's own state — enrolled, in progress, completed — but only when signed in: the seeded demo enrolments exist regardless of the session, and this page is public.
+
+Every route into a training now lands here rather than on the login form: both home pages, the Academy grid, the header's Academy panel and both footers' Academy columns. `CourseCard` takes a `to` so those cards are real links — a public page has to be openable in a new tab and crawlable — and `lib/academyUrl.ts` holds the path the way `lib/shopUrl.ts` holds the filtered-collection ones. Only `/academy/lecon`, the player, stays behind `RequireAccount`: the videos are the paid content.
+
+The account is asked for at the purchase, and the training asked for travels with the visitor: pressing "start" while signed out puts the course id in the navigation state, and signing in adds that course to the account before opening the player, so the purchase resumes instead of opening whichever course happened to be active.
 
 ## The member area (`/compte`)
 

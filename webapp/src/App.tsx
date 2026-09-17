@@ -18,8 +18,10 @@ import { Colors } from "./pages/Colors";
 import { ProductDetail } from "./pages/ProductDetail";
 import { Cart } from "./pages/Cart";
 import { Academy } from "./pages/Academy";
+import { CourseDetail } from "./pages/CourseDetail";
 import { Lesson } from "./pages/Lesson";
 import { Login } from "./pages/Login";
+import { ConnexionEditorial } from "./pages/ConnexionEditorial";
 import { Loyalty as LoyaltyProgram } from "./pages/Loyalty";
 import { AccountLayout } from "./pages/account/AccountLayout";
 import { Dashboard } from "./pages/account/Dashboard";
@@ -89,6 +91,11 @@ export default function App() {
                   <Route path="/couleurs" element={<Colors />} />
                   <Route path="/panier" element={<Cart />} />
                   <Route path="/connexion" element={<Login />} />
+                  {/* The alternative authentication direction, live beside the
+                      current one so the team can compare the same flow, fields
+                      and copy in two art directions. Not linked from the
+                      navigation: it is a design comparison, not a second way in. */}
+                  <Route path="/connexion-b" element={<ConnexionEditorial />} />
                   {/* The loyalty programme's own sales page, open like the Academy
                       landing page: gating it would hide what it advertises. */}
                   <Route path="/fidelite" element={<LoyaltyProgram />} />
@@ -96,6 +103,12 @@ export default function App() {
                       Only the course content itself requires an account, and gating
                       the route covers the menu links and direct URLs at once. */}
                   <Route path="/academy" element={<Academy />} />
+                  {/* The training detail page is the sales page for one course,
+                      so it stays open for the same reason the Academy landing
+                      page does. Nested under /academy/formation rather than
+                      /academy/:id: a dynamic child there would sit alongside
+                      the player's own static /academy/lecon segment. */}
+                  <Route path="/academy/formation/:id" element={<CourseDetail />} />
                   <Route
                     path="/academy/lecon"
                     element={

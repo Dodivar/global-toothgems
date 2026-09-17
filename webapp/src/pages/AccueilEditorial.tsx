@@ -11,7 +11,7 @@ import { CATEGORY_TILES } from "../data/categoryTiles";
 import { COURSES } from "../data/courses";
 import { REVIEWS } from "../data/reviews";
 import { pick } from "../data/types";
-import { useAuth } from "../lib/auth";
+import { courseHref } from "../lib/academyUrl";
 import { useToast } from "../lib/toast";
 import { photo } from "../lib/images";
 import { formatPrice } from "../lib/format";
@@ -91,7 +91,6 @@ function Stars({ rating, label }: { rating: number; label: string }) {
 export function AccueilEditorial() {
   const { t, i18n } = useTranslation();
   const navigate = useNavigate();
-  const { signedIn } = useAuth();
   const { showToast } = useToast();
   const lang = i18n.language;
 
@@ -528,16 +527,9 @@ export function AccueilEditorial() {
                 <li key={c.id} className="border-b border-[var(--gt-ink-700)]">
                   <button
                     type="button"
-                    onClick={() => {
-                      // Same account gate as the Academy page: no "course opened"
-                      // toast for a visitor the route guard is about to turn away.
-                      if (!signedIn) {
-                        navigate("/connexion", { state: { from: "/academy/lecon" } });
-                        return;
-                      }
-                      navigate("/academy/lecon");
-                      showToast(t("academy.toastCourseTitle"), t("academy.toastCourseBody", { title }));
-                    }}
+                    /* The training's own page, open to everyone, like every
+                       other course card: the account belongs to the purchase. */
+                    onClick={() => navigate(courseHref(c.id))}
                     /* Below sm the price drops under the title instead of
                        squeezing it: a three-line course name beside a price
                        column is the one place this row stopped feeling premium

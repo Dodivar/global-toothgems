@@ -9,6 +9,9 @@ export interface MenuItem {
 
 const img = (name: string) => new URL(`../assets/photos/${name}`, import.meta.url).href;
 
+/* The Academy entries point at the trainings' public pages, not at the lesson
+   player: the menu is navigation, and it must not drop a signed-out visitor
+   onto a login wall. */
 export const MENU: Record<"gems" | "shop" | "academy", MenuItem[]> = {
   gems: [
     {
@@ -91,19 +94,19 @@ export const MENU: Record<"gems" | "shop" | "academy", MenuItem[]> = {
       title: { fr: "Fondation Tooth Gem", en: "Tooth Gem Foundation" },
       sub: { fr: "9 leçons · 1 h 30", en: "9 lessons · 1h30" },
       thumb: img("img-12.jpg"),
-      to: "/academy/lecon",
+      to: "/academy/formation/fondation",
     },
     {
       title: { fr: "Placement avancé", en: "Advanced placement" },
       sub: { fr: "9 leçons · 1 h 30", en: "9 lessons · 1h30" },
       thumb: img("mouth-02.jpg"),
-      to: "/academy/lecon",
+      to: "/academy/formation/avance",
     },
     {
       title: { fr: "Business studio", en: "Business studio" },
       sub: { fr: "9 leçons · 1 h 30", en: "9 lessons · 1h30" },
       thumb: img("mouth-03.jpg"),
-      to: "/academy/lecon",
+      to: "/academy/formation/business",
     },
     {
       title: { fr: "Mon espace membre", en: "My member area" },
