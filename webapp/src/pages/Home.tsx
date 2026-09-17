@@ -11,6 +11,7 @@ import { Input } from "../components/ui/Input";
 import { Checkbox } from "../components/ui/Checkbox";
 import { ShapeCarousel } from "../components/ui/ShapeCarousel";
 import { bestSellers, shapesInCatalog } from "../data/products";
+import { CATEGORY_TILES } from "../data/categoryTiles";
 import { COURSES } from "../data/courses";
 import { REVIEWS } from "../data/reviews";
 import { pick } from "../data/types";
@@ -19,21 +20,6 @@ import { useToast } from "../lib/toast";
 import { photo } from "../lib/images";
 import { useReveal } from "../lib/useReveal";
 import { shapeHref } from "../lib/shopUrl";
-
-/**
- * `to` carries the shop filter each tile stands for. These used to navigate to a
- * bare /boutique, so picking a category did nothing.
- */
-const CATEGORY_TILES: { key: string; image: string; label: string; sub?: string; to: string }[] = [
-  { key: "swarovski", image: photo("img-02.jpg"), label: "Swarovski®", to: "/boutique?categorie=Gems&matiere=Swarovski" },
-  { key: "preciosa", image: photo("img-05.jpg"), label: "Preciosa®", to: "/boutique?categorie=Gems&matiere=Cristal" },
-  { key: "sparklets", image: photo("img-08.jpg"), label: "Sparklets™", sub: "SS0 SS1", to: "/boutique?categorie=Gems" },
-  { key: "or", image: photo("img-11.jpg"), label: "Or 14k et 18k", to: "/boutique?categorie=Gems&matiere=Or+18k" },
-  { key: "opale", image: photo("img-14.jpg"), label: "Pièces en opale", to: "/boutique?categorie=Gems&matiere=Opale+de+labo" },
-  { key: "zircone", image: photo("img-17.jpg"), label: "Zircone", sub: "minis", to: "/boutique?categorie=Gems&prix=under30" },
-  { key: "resine", image: photo("img-19.jpg"), label: "Résine acrylique", sub: "minis", to: "/boutique?categorie=Gems&prix=under30" },
-  { key: "fairy", image: photo("img-20.jpg"), label: "Fairy dust", sub: "Swarovski®", to: "/boutique?categorie=Gems&matiere=Swarovski" },
-];
 
 const EMAIL_RE = /^[^\s@]+@[^\s@]+\.[^\s@]{2,}$/;
 
