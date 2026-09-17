@@ -476,6 +476,11 @@
   50% { opacity: .74; transform: scale(1.045); }
 }
 
+@keyframes gt-menu-in {
+  from { opacity: 0; transform: translateY(-4px) scale(.985); }
+  to { opacity: 1; transform: none; }
+}
+
 @keyframes gt-skeleton {
   from { background-position: 100% 50%; }
   to { background-position: 0 50%; }
@@ -493,4 +498,130 @@
   .gt-skeleton { animation: none; }
   .gt-diploma { transform: none; transition: none; }
   .gt-sparkle::after { display: none; }
+}
+
+/* ---------------------------------------------------------------------------
+   Administration workspace
+   ---------------------------------------------------------------------------
+   The admin inherits the brand palette and Montserrat, then diverges where the
+   storefront's choices work against a management tool: pill controls and 18px
+   card radii read as retail, and a dense product table needs tighter, squarer
+   geometry to stay scannable. These tokens are scoped to `.gt-admin` so the
+   storefront is untouched, and no admin component hard-codes a hex value.
+--------------------------------------------------------------------------- */
+.gt-admin {
+  --admin-page: var(--gt-sand);
+  --admin-panel: var(--gt-white);
+  --admin-panel-sunken: var(--gt-off-white);
+
+  /* The near-black rail is the one large colour field in the interface. It
+     frames the work without competing with the status colours inside it. */
+  --admin-rail: var(--gt-ink-900);
+  --admin-rail-text: rgba(250, 250, 248, .96);
+  --admin-rail-muted: rgba(250, 250, 248, .56);
+  --admin-rail-hover: rgba(250, 250, 248, .07);
+  --admin-rail-active: rgba(250, 250, 248, .13);
+  --admin-rail-border: rgba(250, 250, 248, .12);
+
+  --admin-radius: 12px;
+  --admin-radius-sm: 8px;
+  --admin-control-h: 40px;
+  --admin-sidebar: 264px;
+  --admin-sidebar-collapsed: 76px;
+  --admin-header-h: 68px;
+  --admin-gutter: clamp(16px, 2.4vw, 36px);
+
+  background: var(--admin-page);
+  color: var(--text-body);
+  font-family: var(--font-body);
+}
+
+@layer components {
+  /* The workspace's single surface primitive: white, hairline, barely raised.
+     Everything that groups content in the admin uses this rather than the
+     storefront's softer, rounder cards. */
+  .gt-admin-panel {
+    background: var(--admin-panel);
+    border: 1px solid var(--border-subtle);
+    border-radius: var(--admin-radius);
+    box-shadow: var(--shadow-xs);
+  }
+
+  /* Shared geometry for every text input, select and textarea in the admin. */
+  .gt-admin-field {
+    width: 100%;
+    min-height: var(--admin-control-h);
+    border: 1px solid var(--border-default);
+    border-radius: var(--admin-radius-sm);
+    background: var(--admin-panel);
+    color: var(--text-primary);
+    font-family: inherit;
+    font-size: var(--text-body-sm);
+    padding: 0 12px;
+    outline: none;
+    transition: border-color var(--duration-fast) var(--ease-standard),
+      box-shadow var(--duration-fast) var(--ease-standard);
+  }
+  .gt-admin-field::placeholder { color: var(--text-subtle); }
+  .gt-admin-field:hover:not(:disabled) { border-color: var(--gt-ink-400); }
+  .gt-admin-field:focus-visible {
+    border-color: var(--focus-ring);
+    box-shadow: var(--shadow-focus);
+    outline: none;
+  }
+  .gt-admin-field:disabled {
+    background: var(--surface-sunken);
+    color: var(--text-subtle);
+    cursor: not-allowed;
+  }
+  .gt-admin-field[aria-invalid="true"] {
+    border-color: var(--gt-red-500);
+  }
+  .gt-admin-field[aria-invalid="true"]:focus-visible {
+    box-shadow: 0 0 0 3px var(--status-error-bg);
+  }
+  textarea.gt-admin-field {
+    padding: 10px 12px;
+    line-height: var(--leading-normal);
+    resize: vertical;
+  }
+
+  /* Table rows: the hover tint has to be visible on white without turning the
+     row into a coloured band, so it is the palest blue in the ramp. */
+  .gt-admin-row { transition: background-color var(--duration-fast) var(--ease-standard); }
+  .gt-admin-row:hover { background: var(--gt-blue-50); }
+  .gt-admin-row:focus-within { background: var(--gt-blue-50); }
+
+  /* Sticky table head, so the column meanings survive a long catalogue. */
+  .gt-admin-thead {
+    position: sticky;
+    top: 0;
+    z-index: 2;
+    background: var(--admin-panel-sunken);
+    box-shadow: inset 0 -1px 0 var(--border-subtle);
+  }
+
+  /* Scroll areas inside panels: a full-width native scrollbar would break the
+     hairline geometry. */
+  .gt-admin-scroll { scrollbar-width: thin; scrollbar-color: var(--gt-ink-300) transparent; }
+  .gt-admin-scroll::-webkit-scrollbar { width: 8px; height: 8px; }
+  .gt-admin-scroll::-webkit-scrollbar-thumb {
+    background: var(--gt-ink-300);
+    border-radius: var(--radius-pill);
+  }
+  .gt-admin-scroll::-webkit-scrollbar-track { background: transparent; }
+
+  .gt-admin-scrim { animation: gt-admin-fade var(--duration-normal) var(--ease-standard) both; }
+  .gt-admin-drawer { animation: gt-admin-slide var(--duration-normal) var(--ease-out-soft) both; }
+  .gt-admin-dialog { animation: gt-admin-rise var(--duration-fast) var(--ease-out-soft) both; }
+}
+
+@keyframes gt-admin-fade { from { opacity: 0; } to { opacity: 1; } }
+@keyframes gt-admin-slide { from { transform: translateX(24px); opacity: 0; } to { transform: none; opacity: 1; } }
+@keyframes gt-admin-rise { from { transform: translateY(8px) scale(.99); opacity: 0; } to { transform: none; opacity: 1; } }
+
+@media (prefers-reduced-motion: reduce) {
+  .gt-admin-scrim,
+  .gt-admin-drawer,
+  .gt-admin-dialog { animation: none; }
 }

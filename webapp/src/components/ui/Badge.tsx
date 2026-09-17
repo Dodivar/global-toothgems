@@ -36,7 +36,7 @@ export function Badge({
   return (
     <span
       className={clsx(
-        "inline-flex items-center rounded-[var(--radius-pill)] border font-semibold uppercase tracking-[var(--tracking-wide)]",
+        "inline-flex items-center whitespace-nowrap rounded-[var(--radius-pill)] border font-semibold uppercase tracking-[var(--tracking-wide)]",
         toneClasses[tone],
         sizeClasses[size],
         className,

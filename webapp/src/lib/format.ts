@@ -41,3 +41,25 @@ export function formatDateShort(iso: string, locale: string = priceLocale()) {
 export function formatMonthYear(iso: string, locale: string = priceLocale()) {
   return new Intl.DateTimeFormat(locale, { month: "long", year: "numeric" }).format(new Date(iso));
 }
+
+/** Whole numbers with the language's separators: "1 248" / "1,248". */
+export function formatCount(value: number, locale: string = priceLocale()) {
+  return new Intl.NumberFormat(locale).format(value);
+}
+
+/**
+ * Relative age of a community post, as a translation key and its count.
+ *
+ * The community fixtures store ages in minutes rather than as dates, so a
+ * prototype opened again months later still reads "2 h ago" instead of showing
+ * a room whose last message is a season old. The formatting stays here, with
+ * the other display helpers; the wording lives in the translations.
+ */
+export function timeAgoParts(minutesAgo: number): { key: string; count: number } {
+  if (minutesAgo < 1) return { key: "community.timeNow", count: 0 };
+  if (minutesAgo < 60) return { key: "community.timeMinutes", count: Math.round(minutesAgo) };
+  if (minutesAgo < 60 * 24) return { key: "community.timeHours", count: Math.floor(minutesAgo / 60) };
+  if (minutesAgo < 60 * 48) return { key: "community.timeYesterday", count: 1 };
+  if (minutesAgo < 60 * 24 * 7) return { key: "community.timeDays", count: Math.floor(minutesAgo / (60 * 24)) };
+  return { key: "community.timeWeeks", count: Math.floor(minutesAgo / (60 * 24 * 7)) };
+}

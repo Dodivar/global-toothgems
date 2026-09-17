@@ -61,12 +61,16 @@ the repository root would be ignored.
 src/
   pages/            One component per screen (Home, Shop, ProductDetail, Cart, Academy, CourseDetail, Lesson, Login)
   pages/account/    The member area: sidebar layout + one component per section
+  pages/community/  The Artist Community: its own layout + one component per screen
   components/ui/     Design-system primitives (Button, Badge, ProductCard, CourseCard, QuizQuestion, ...)
   components/account/ Dashboard pieces (stat tile, course row, certificate card, order card)
   components/academy/ The training detail page: hero, curriculum accordion, assessment, diploma, community, shared primitives
+  components/community/ Forum pieces (navigation, discussion card, showcase card, reactions, member card, composer, locked preview)
   components/loyalty/ The Loyalty Club: stamp, card, progress, reward, steps, journey, FAQ, checkout banner, demo switcher
   components/layout/ Header (desktop nav + mega panel, mobile burger menu) and Footer
-  data/               Bilingual product/course/review/lesson/order data
+  pages/admin/      The administration workspace: access screen, shell, dashboard, orders, products, categories
+  components/admin/ Workspace primitives (rail, header, product table, form, media uploader, drawer, dialogs) and the orders workspace (KPI row, filter toolbar, order table + card list, row actions, bulk bar, pagination, detail cards, timeline, notes)
+  data/               Bilingual product/course/review/lesson/order data (the storefront's order history and the back office's order book are separate models)
   i18n/               react-i18next setup + locales/fr.json, locales/en.json
   lib/                Auth, cart, learning-progress and order contexts, toasts, price/date helpers
 ```
@@ -108,6 +112,89 @@ The sections own no state of their own. Learning progress lives in `lib/progress
 
 Every course reuses the single authored syllabus in `data/lessons.ts` (9 lessons, ~1 h 30), so the lesson counts and durations in `data/courses.ts` were aligned to it — a course advertising 18 lessons could never reach 100 % or unlock its certificate.
 
+## The Artist Community (`/compte/communaute`)
+
+The private forum reserved for members who own a training. It is part of the member area — it is reached from the account sidebar and it lives under `/compte` — but it carries its own navigation rather than nesting inside the account sidebar, because two levels of vertical navigation on one screen is what makes forum software feel like software.
+
+| Route | Screen |
+| --- | --- |
+| `/compte/communaute` | Community home — welcome, community figures, the discussions of the day, the wall of recent creations, the channels, and a contextual column (who is around, artists to welcome, the guidelines) |
+| `/compte/communaute/canal/:channelId` | One channel: a reading list, or the image-led wall in *Vos créations*, with Latest / Most replies / Unanswered |
+| `/compte/communaute/discussion/:discussionId` | One thread: opening post, reactions, replies, reply composer, author card |
+| `/compte/communaute/activite/:view` | Your activity: `discussions`, `reponses`, `enregistrees` |
+| `/compte/communaute/membres` | The artist directory |
+| `/compte/communaute/charte` | Community guidelines |
+
+Eight channels (general chat, show your work, techniques, training help, inspiration, tools & materials, business, introductions) are declared in `data/community.ts`, together with the members, the discussions and their replies. A showcase post is a discussion like any other, with an image and a short body — the wall is a presentation of the same object, so a creation opens, reacts and replies through the same code path as a question about adhesive.
+
+Ages in that file are stored as `minutesAgo` rather than as dates, so a prototype opened again months later still reads "il y a 2 h" instead of showing a room whose last message is a season old.
+
+### Access
+
+Forum access is derived, never stored: the community is what a training purchase unlocks, so the rule is "at least one course on the account", read from `lib/progress.tsx`. `CommunityLayout` decides it once, so a deep link into a thread meets the same door as the home page.
+
+Both states are designed:
+
+- **With access** — the full community.
+- **Without access** — the account sidebar still shows *Communauté artistes*, marked with a lock, a pastel wash and the words "accès avec une formation" (never by the icon alone, and never disabled). It leads to a preview: the real figures and four real discussion titles shown in the clear, the discussion cards and the wall behind an elegant overlay, and one access card — *La communauté des artistes vous attend* — with **Découvrir les formations** and a way back to the account. The blurred preview is `inert` and `aria-hidden`, so it is never a keyboard trap.
+
+The seeded account owns two courses, so the locked state would be unreachable in a review. A visible, labelled **Aperçu prototype** switch in the community sidebar forces either state, exactly like the loyalty card's demo control.
+
+### Scope
+
+Interactions are simulated against in-memory state in `lib/community.tsx`: reacting, saving, replying, starting a discussion (with a sample photograph in place of an upload) and opening member profiles all work and move the same counters the navigation reads, and all of it resets on reload. Nothing is sent, stored or authorised — real membership, moderation and authorization belong to the server, driven by the same verified payment event as course access.
+
+## The administration area (`/admin`)
+
+A separate, desktop-first management workspace for the product catalogue, built as an interactive visual prototype: no backend, no persistence, no real authentication. It is deliberately not the storefront in a sidebar — same palette, same Montserrat, but squarer controls, denser rows and its own near-black navigation rail, because a catalogue table and a product page are not the same job.
+
+| Route | Screen |
+| --- | --- |
+| `/admin/connexion` | Access screen — validation, loading, error and success states, plus a simulated password-recovery dialog |
+| `/admin` | Dashboard — catalogue counts, the products that cannot currently be sold, and recent product activity |
+| `/admin/commandes` | Order book — KPI row, search and filters, the table, bulk actions, export |
+| `/admin/commandes/:reference` | One order in full: items and money, shipping, payment, customer, timeline, internal notes |
+| `/admin/produits` | Product list — search, filters, sorting, row actions, preview drawer |
+| `/admin/produits/nouveau` | Create a product |
+| `/admin/produits/:id` | Edit a product |
+| `/admin/categories` | Categories, read-only, with per-category counts and price ranges |
+
+Sign in with `camille@globaltoothgems.com` / `toothgems2026`; the screen prints both. Customers, Training, Analytics and Settings are drawn in the rail and permanently disabled — they show how the workspace could grow without pretending they exist.
+
+### How it is put together
+
+- `data/adminCatalog.ts` — the mock catalogue: sixteen products covering every state the interface can show (active, draft, archived, out of stock, low stock, untracked inventory, discounted), the categories, and the media library the picker offers instead of a real upload.
+- `lib/adminCatalog.tsx` — the one place any product changes. Every screen above it already looks like a screen talking to a server: the callbacks are async, writes take a simulated 700 ms, and the list has a first-load skeleton. Replacing the bodies of those callbacks with real calls is the whole migration.
+- `lib/adminAuth.tsx` — the mock administrator session, kept separate from the customer session in `lib/auth.tsx`. A rejected password leaves no session behind, as the real endpoint must.
+- `lib/productFilters.ts` — search, filtering and sorting as pure functions on plain state; the product list holds its filters in the URL, so a filtered view can be linked to and stepped back through.
+- `data/adminOrders.ts` — the back office's order book: 38 orders across every status, payment and fulfilment state, 14 customers in four countries, six flagged for attention (one per reason) and seven internal notes. Deliberately a separate model from `data/orders.ts`, which is the *member's* view of their own purchases and is written to by `lib/orders.tsx` when the cart is paid; only the line-item shape is shared. Timelines, tracking numbers and payment references are derived from each order's own state rather than typed out, so a status can never disagree with the history beside it. Every line refers to a real catalogue id, because `productLine()` throws on an unknown one.
+- `lib/adminOrders.tsx` — the one place any order changes, shaped like `lib/adminCatalog.tsx`. Marking an order shipped moves the badge, the fulfilment column, the KPI row and that order's timeline together. It never invents a payment: an unpaid order marked shipped stays unpaid.
+- `lib/adminOrderFilters.ts` — search, filtering, sorting and paging as pure functions over URL state, the same convention as `lib/productFilters.ts`. The date presets are anchored to the newest order in the book rather than to the wall clock, so "Today" never silently returns nothing on fixed mock data.
+- `components/admin/` — the workspace's own primitives (rail, header, table, row, status badge, filters, form, media uploader, preview drawer, confirmation dialog, empty and loading states, form field, search input, category badge), plus the orders workspace's own pieces.
+- `components/ui/Dialog.tsx` and `components/ui/Menu.tsx` — a modal with a focus trap and a keyboard-navigable dropdown, added for the orders screens. See the scope note below: they overlap with `components/admin/ConfirmationDialog.tsx`, `OverflowMenu.tsx` and `lib/useFocusTrap.ts` and should be consolidated onto those.
+
+### Decisions worth knowing
+
+- **Status is three values, not four.** `active`, `draft` and `archived` are the lifecycle; "out of stock" is an inventory fact derived from the count, so restocking is not a status change. `displayState()` recombines the two for the single badge that has to say everything at once.
+- **Nothing says its state with colour alone.** Every status carries an icon and a word as well, and inventory is always a number *and* the word for what that number means.
+- **Product text is stored per language**, matching the translation-aware model the guidelines ask for. The form carries a FR/EN switch rather than doubling every field, and marks a language whose name is still empty.
+- **Destructive actions escalate.** Archiving is reversible and asks for a click; permanent deletion asks for the product's SKU to be typed. Focus opens on Cancel, or on the confirmation field when one is required — never on the destructive button. Restoring an archived product returns it to draft, never straight back on sale.
+- **Clicking a product opens a drawer, not a page.** Triage means checking one product after another, and the drawer keeps the filtered list and your place in it on screen. Anything that changes a product still opens the full edit page, so there is exactly one place where products are edited.
+- **Reordering media uses buttons, not drag and drop** — the obvious gesture is the inaccessible one.
+- **An order's detail is a route, not a drawer** — the opposite call from products, for a reason. Triaging products means checking one after another, which is what a drawer is for; an order is the thing a colleague pastes into a message, and it holds a page's worth of content. The list's query string travels in the URL, so the breadcrumb and the back link both return to the same filtered page rather than to row one.
+- **The KPI row is a filter, not a decoration.** Pressing "Pending" narrows the table to pending orders, and the figures are counted from the same array the table renders — a count that disagrees with the rows under it is worse than no count.
+- **Attention is a tint and a badge, never a red row.** Six flagged orders in a table of twenty-five have to be findable at a glance without the page reading as an incident.
+- **The orders table becomes cards below `xl`, not `lg`.** The rail costs 264px, so a 1024px screen would leave the table about 730px and scrolling by 300. From 1280 the scroll is under 100px, and it disappears around 1400.
+
+### Scope
+
+Product management and order management are the two functional sections. There is no database, no API, no file upload, no server-side validation and no real authorization: `RequireAdmin` is a UI gate, and real administration access means Supabase Auth plus server-side RBAC and RLS, none of which may ever depend on a value from this code. A page reload restores the seeded catalogue and order book and signs the administrator out.
+
+In the orders screens specifically, changing a status, refunding, cancelling, exporting, printing an invoice and tracking a parcel all stop at the screen. A real status transition is a server-side change behind explicit RBAC with an audit entry, and a real refund is a Stripe call whose webhook — not the browser — writes the new state. Each dialog says so where the action is taken.
+
+**Known duplication to consolidate.** The orders screens were built against their own primitives before the rest of this workspace existed, so they carry a second modal (`components/ui/Dialog.tsx`), dropdown (`components/ui/Menu.tsx`), KPI tile, empty state and loading state alongside the workspace's `ConfirmationDialog`, `OverflowMenu`, `StatCard`, `EmptyState`, `LoadingState`, `SearchInput` and `AdminButton`. The shell, the header, the rail, the guard and the route structure are shared; these presentational pieces are not, and porting the orders screens onto the workspace primitives is open work.
+
+
 ## Notes on scope
 
 This app reproduces the prototype's interactions against local/mock state only — there is no real backend, payment processing, or authentication. A few simplifications carried over intentionally from the prototype (flagged during the build):
@@ -115,6 +202,7 @@ This app reproduces the prototype's interactions against local/mock state only �
 - All Academy courses share the same authored 9-lesson syllabus; progress is tracked per course, but only one course outline exists.
 - Nothing is persisted: the session, cart, progress and orders all live in memory and reset on reload.
 - Paying always succeeds. It records an order and empties the cart; real fulfilment belongs to a Stripe webhook, not to the browser.
+- The Artist Community (`/compte/communaute`) has no backend either: members, discussions and replies are written fixtures, posting and replying live in memory, the photo "upload" picks from three sample images, and forum access is derived from the courses on the account rather than verified anywhere.
 - The Loyalty Club (`/fidelite`, `/compte/fidelite`) is **display only**, and more so than the rest of this app: no stamp is ever awarded, stored or redeemed, and the checkout banner reads the subtotal without touching the total, the payment or the order. Its card state is static mock data in `data/loyalty.ts`, switched by a visible demo control on the member page. Awarding a stamp is a server's job, driven by the same verified payment event as fulfilment.
 
 Everything else — filtering, cart totals, the lesson video/quiz simulation, per-product detail pages, the member dashboard — is fully interactive.
