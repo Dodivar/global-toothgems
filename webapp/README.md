@@ -34,6 +34,27 @@ npm run preview   # serve the production build locally to sanity-check it
 npm run lint      # oxlint
 ```
 
+## Deploying (`vercel.json`)
+
+Routing is client-side: `main.tsx` mounts a `BrowserRouter`, and the build is a
+single `index.html` plus assets. A static host knows nothing about the routes in
+`App.tsx`, so a request that lands directly on one — a pasted link, a refresh, a
+bookmark — asks for a file that was never built and gets a 404. Following a link
+inside the app works either way, which is why the breakage only shows up on
+direct URLs, and why the newest routes (`/accueil-b`, `/connexion-b`) surface it
+first: they are not linked from the navigation, so a direct URL is the only way
+in.
+
+`vercel.json` fixes that by rewriting every unmatched path to `/index.html` and
+letting the router read the URL. Rewrites run after the filesystem check, so real
+files — the hashed bundles, `favicon.svg`, `icons.svg` — are still served as
+themselves.
+
+The file must sit in whatever directory Vercel builds from. This app lives in
+`webapp/`, so the project's **Root Directory** has to be `webapp` for the build
+to find `package.json` at all, and `vercel.json` belongs next to it. A copy at
+the repository root would be ignored.
+
 ## Project structure
 
 ```
