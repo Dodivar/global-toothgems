@@ -45,6 +45,8 @@ import { AdminProducts } from "./pages/admin/AdminProducts";
 import { AdminProductNew } from "./pages/admin/AdminProductNew";
 import { AdminProductEdit } from "./pages/admin/AdminProductEdit";
 import { AdminCategories } from "./pages/admin/AdminCategories";
+import { Orders as AdminOrders } from "./pages/admin/Orders";
+import { OrderDetail as AdminOrderDetail } from "./pages/admin/OrderDetail";
 
 function ScrollToTop() {
   const { pathname } = useLocation();
@@ -200,6 +202,12 @@ export default function App() {
                         }
                       >
                         <Route index element={<AdminDashboard />} />
+                        {/* Orders. The detail page is a route rather than a
+                            drawer, for the reason `OrderDetail` documents: an
+                            order is the thing a colleague pastes into a
+                            message, and a drawer has no address. */}
+                        <Route path="commandes" element={<AdminOrders />} />
+                        <Route path="commandes/:reference" element={<AdminOrderDetail />} />
                         <Route path="produits" element={<AdminProducts />} />
                         <Route path="produits/nouveau" element={<AdminProductNew />} />
                         <Route path="produits/:id" element={<AdminProductEdit />} />

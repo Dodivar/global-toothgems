@@ -3,6 +3,7 @@ import { Outlet, useOutletContext } from "react-router-dom";
 import { useTranslation } from "react-i18next";
 import { AdminSidebar } from "../../components/admin/AdminSidebar";
 import { AdminCatalogProvider } from "../../lib/adminCatalog";
+import { AdminOrdersProvider } from "../../lib/adminOrders";
 import { useAdminAuth } from "../../lib/adminAuth";
 import { useFocusTrap } from "../../lib/useFocusTrap";
 
@@ -40,6 +41,7 @@ export function AdminLayout() {
 
   return (
     <AdminCatalogProvider actor={admin?.name ?? "Administrateur"}>
+      <AdminOrdersProvider>
       <div
         className="gt-admin min-h-screen"
         // Read by the product form's pinned action bar, which is fixed to the
@@ -83,6 +85,7 @@ export function AdminLayout() {
           <Outlet context={{ openNav: () => setNavOpen(true) } satisfies AdminShellContext} />
         </div>
       </div>
+      </AdminOrdersProvider>
     </AdminCatalogProvider>
   );
 }
