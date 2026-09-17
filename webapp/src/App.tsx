@@ -2,6 +2,7 @@ import { Routes, Route, useLocation } from "react-router-dom";
 import { useEffect } from "react";
 import { useTranslation } from "react-i18next";
 import { AuthProvider, RequireAccount } from "./lib/auth";
+import { AdminAuthProvider, RequireAdmin } from "./lib/adminAuth";
 import { CartProvider } from "./lib/cart";
 import { OrdersProvider } from "./lib/orders";
 import { ProgressProvider } from "./lib/progress";
@@ -29,6 +30,13 @@ import { Certificates } from "./pages/account/Certificates";
 import { Orders } from "./pages/account/Orders";
 import { Profile } from "./pages/account/Profile";
 import { Loyalty as AccountLoyalty } from "./pages/account/Loyalty";
+import { AdminLogin } from "./pages/admin/AdminLogin";
+import { AdminLayout } from "./pages/admin/AdminLayout";
+import { AdminDashboard } from "./pages/admin/AdminDashboard";
+import { AdminProducts } from "./pages/admin/AdminProducts";
+import { AdminProductNew } from "./pages/admin/AdminProductNew";
+import { AdminProductEdit } from "./pages/admin/AdminProductEdit";
+import { AdminCategories } from "./pages/admin/AdminCategories";
 
 function ScrollToTop() {
   const { pathname } = useLocation();
@@ -57,90 +65,120 @@ function DocumentLanguage() {
  */
 const EDITORIAL_ROUTE = "/accueil-b";
 
+/**
+ * The administration workspace has its own chrome — a navigation rail and its
+ * own header — so the storefront header and footer are left out entirely on
+ * these routes. Prefix rather than exact match: every `/admin/...` screen,
+ * including the access screen, is part of the same area.
+ */
+const ADMIN_ROUTE_PREFIX = "/admin";
+
 export default function App() {
   const { t } = useTranslation();
-  const editorial = useLocation().pathname === EDITORIAL_ROUTE;
+  const { pathname } = useLocation();
+  const editorial = pathname === EDITORIAL_ROUTE;
+  const adminArea = pathname === ADMIN_ROUTE_PREFIX || pathname.startsWith(`${ADMIN_ROUTE_PREFIX}/`);
 
   return (
     <AuthProvider>
-      {/* Learning progress and orders sit above the cart: paying turns the cart
-          into an order, and both histories feed the member dashboard. */}
-      <ProgressProvider>
-        <OrdersProvider>
-          <CartProvider>
-            <ToastProvider>
-              <ScrollToTop />
-              <DocumentLanguage />
-              <a href="#main" className="gt-skip-link">
-                {t("common.skipToContent")}
-              </a>
-              {editorial ? <HeaderEditorial /> : <Header />}
-              <main id="main" tabIndex={-1}>
-                <Routes>
-                  <Route path="/" element={<Home />} />
-                  {/* The alternative home-page direction, live beside the
-                      current one so the team can compare the same content in
-                      two art directions. Not linked from the navigation: it is
-                      a design comparison, not a second entry point. */}
-                  <Route path={EDITORIAL_ROUTE} element={<AccueilEditorial />} />
-                  <Route path="/boutique" element={<Shop />} />
-                  <Route path="/boutique/:id" element={<ProductDetail />} />
-                  {/* Top level, not /boutique/formes: a static child of /boutique
-                      would permanently shadow a product with that id. */}
-                  <Route path="/formes" element={<Shapes />} />
-                  <Route path="/couleurs" element={<Colors />} />
-                  <Route path="/panier" element={<Cart />} />
-                  <Route path="/connexion" element={<Login />} />
-                  {/* The alternative authentication direction, live beside the
-                      current one so the team can compare the same flow, fields
-                      and copy in two art directions. Not linked from the
-                      navigation: it is a design comparison, not a second way in. */}
-                  <Route path="/connexion-b" element={<ConnexionEditorial />} />
-                  {/* The loyalty programme's own sales page, open like the Academy
-                      landing page: gating it would hide what it advertises. */}
-                  <Route path="/fidelite" element={<LoyaltyProgram />} />
-                  {/* The Academy landing page stays open — it is the sales page.
-                      Only the course content itself requires an account, and gating
-                      the route covers the menu links and direct URLs at once. */}
-                  <Route path="/academy" element={<Academy />} />
-                  {/* The training detail page is the sales page for one course,
-                      so it stays open for the same reason the Academy landing
-                      page does. Nested under /academy/formation rather than
-                      /academy/:id: a dynamic child there would sit alongside
-                      the player's own static /academy/lecon segment. */}
-                  <Route path="/academy/formation/:id" element={<CourseDetail />} />
-                  <Route
-                    path="/academy/lecon"
-                    element={
-                      <RequireAccount>
-                        <Lesson />
-                      </RequireAccount>
-                    }
-                  />
-                  {/* The member dashboard: a sidebar layout with one route per
-                      section. Gating the layout covers every child, for the same
-                      reason the lesson is gated — this is the account itself. */}
-                  <Route
-                    path="/compte"
-                    element={
-                      <RequireAccount>
-                        <AccountLayout />
-                      </RequireAccount>
-                    }
-                  >
-                    <Route index element={<Dashboard />} />
-                    <Route path="attestations" element={<Certificates />} />
-                    <Route path="commandes" element={<Orders />} />
-                    <Route path="profil" element={<Profile />} />
-                    <Route path="fidelite" element={<AccountLoyalty />} />
-                  </Route>
-                </Routes>
-              </main>
-              {editorial ? <FooterEditorial /> : <Footer />}
-            </ToastProvider>
-          </CartProvider>
-        </OrdersProvider>
-      </ProgressProvider>
+      <AdminAuthProvider>
+        {/* Learning progress and orders sit above the cart: paying turns the cart
+            into an order, and both histories feed the member dashboard. */}
+        <ProgressProvider>
+          <OrdersProvider>
+            <CartProvider>
+              <ToastProvider>
+                <ScrollToTop />
+                <DocumentLanguage />
+                <a href="#main" className="gt-skip-link">
+                  {t("common.skipToContent")}
+                </a>
+                {!adminArea && (editorial ? <HeaderEditorial /> : <Header />)}
+                <main id="main" tabIndex={-1}>
+                  <Routes>
+                    <Route path="/" element={<Home />} />
+                    {/* The alternative home-page direction, live beside the
+                        current one so the team can compare the same content in
+                        two art directions. Not linked from the navigation: it is
+                        a design comparison, not a second entry point. */}
+                    <Route path={EDITORIAL_ROUTE} element={<AccueilEditorial />} />
+                    <Route path="/boutique" element={<Shop />} />
+                    <Route path="/boutique/:id" element={<ProductDetail />} />
+                    {/* Top level, not /boutique/formes: a static child of /boutique
+                        would permanently shadow a product with that id. */}
+                    <Route path="/formes" element={<Shapes />} />
+                    <Route path="/couleurs" element={<Colors />} />
+                    <Route path="/panier" element={<Cart />} />
+                    <Route path="/connexion" element={<Login />} />
+                    {/* The alternative authentication direction, live beside the
+                        current one so the team can compare the same flow, fields
+                        and copy in two art directions. Not linked from the
+                        navigation: it is a design comparison, not a second way in. */}
+                    <Route path="/connexion-b" element={<ConnexionEditorial />} />
+                    {/* The loyalty programme's own sales page, open like the Academy
+                        landing page: gating it would hide what it advertises. */}
+                    <Route path="/fidelite" element={<LoyaltyProgram />} />
+                    {/* The Academy landing page stays open — it is the sales page.
+                        Only the course content itself requires an account, and gating
+                        the route covers the menu links and direct URLs at once. */}
+                    <Route path="/academy" element={<Academy />} />
+                    {/* The training detail page is the sales page for one course,
+                        so it stays open for the same reason the Academy landing
+                        page does. Nested under /academy/formation rather than
+                        /academy/:id: a dynamic child there would sit alongside
+                        the player's own static /academy/lecon segment. */}
+                    <Route path="/academy/formation/:id" element={<CourseDetail />} />
+                    <Route
+                      path="/academy/lecon"
+                      element={
+                        <RequireAccount>
+                          <Lesson />
+                        </RequireAccount>
+                      }
+                    />
+                    {/* The member dashboard: a sidebar layout with one route per
+                        section. Gating the layout covers every child, for the same
+                        reason the lesson is gated — this is the account itself. */}
+                    <Route
+                      path="/compte"
+                      element={
+                        <RequireAccount>
+                          <AccountLayout />
+                        </RequireAccount>
+                      }
+                    >
+                      <Route index element={<Dashboard />} />
+                      <Route path="attestations" element={<Certificates />} />
+                      <Route path="commandes" element={<Orders />} />
+                      <Route path="profil" element={<Profile />} />
+                      <Route path="fidelite" element={<AccountLoyalty />} />
+                    </Route>
+
+                    {/* Administration. The access screen sits outside the guard —
+                        it is where the guard sends anyone without a session. */}
+                    <Route path="/admin/connexion" element={<AdminLogin />} />
+                    <Route
+                      path="/admin"
+                      element={
+                        <RequireAdmin>
+                          <AdminLayout />
+                        </RequireAdmin>
+                      }
+                    >
+                      <Route index element={<AdminDashboard />} />
+                      <Route path="produits" element={<AdminProducts />} />
+                      <Route path="produits/nouveau" element={<AdminProductNew />} />
+                      <Route path="produits/:id" element={<AdminProductEdit />} />
+                      <Route path="categories" element={<AdminCategories />} />
+                    </Route>
+                  </Routes>
+                </main>
+                {!adminArea && (editorial ? <FooterEditorial /> : <Footer />)}
+              </ToastProvider>
+            </CartProvider>
+          </OrdersProvider>
+        </ProgressProvider>
+      </AdminAuthProvider>
     </AuthProvider>
   );
 }

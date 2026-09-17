@@ -66,6 +66,8 @@ src/
   components/academy/ The training detail page: hero, curriculum accordion, assessment, diploma, community, shared primitives
   components/loyalty/ The Loyalty Club: stamp, card, progress, reward, steps, journey, FAQ, checkout banner, demo switcher
   components/layout/ Header (desktop nav + mega panel, mobile burger menu) and Footer
+  pages/admin/      The administration workspace: access screen, shell, dashboard, products, categories
+  components/admin/ Workspace primitives (rail, header, product table, form, media uploader, drawer, dialogs)
   data/               Bilingual product/course/review/lesson/order data
   i18n/               react-i18next setup + locales/fr.json, locales/en.json
   lib/                Auth, cart, learning-progress and order contexts, toasts, price/date helpers
@@ -107,6 +109,42 @@ The member area is capped at `--max-width-account` rather than `--max-width-cont
 The sections own no state of their own. Learning progress lives in `lib/progress.tsx`, order history in `lib/orders.tsx` and the member profile in `lib/auth.tsx` — in-memory contexts shaped like the existing `lib/cart.tsx`. The lesson player writes to the first and the cart writes to the second, so validating a lesson or paying moves the dashboard immediately. Certificates are derived from a course reaching 100 %, never stored as a separate flag, and the delivery timeline is derived from the order status for the same reason. Editing the profile moves the greeting and the avatar, because both are derived from the stored name rather than copied from it.
 
 Every course reuses the single authored syllabus in `data/lessons.ts` (9 lessons, ~1 h 30), so the lesson counts and durations in `data/courses.ts` were aligned to it — a course advertising 18 lessons could never reach 100 % or unlock its certificate.
+
+## The administration area (`/admin`)
+
+A separate, desktop-first management workspace for the product catalogue, built as an interactive visual prototype: no backend, no persistence, no real authentication. It is deliberately not the storefront in a sidebar — same palette, same Montserrat, but squarer controls, denser rows and its own near-black navigation rail, because a catalogue table and a product page are not the same job.
+
+| Route | Screen |
+| --- | --- |
+| `/admin/connexion` | Access screen — validation, loading, error and success states, plus a simulated password-recovery dialog |
+| `/admin` | Dashboard — catalogue counts, the products that cannot currently be sold, and recent product activity |
+| `/admin/produits` | Product list — search, filters, sorting, row actions, preview drawer |
+| `/admin/produits/nouveau` | Create a product |
+| `/admin/produits/:id` | Edit a product |
+| `/admin/categories` | Categories, read-only, with per-category counts and price ranges |
+
+Sign in with `camille@globaltoothgems.com` / `toothgems2026`; the screen prints both. Orders, Customers, Training, Analytics and Settings are drawn in the rail and permanently disabled — they show how the workspace could grow without pretending they exist.
+
+### How it is put together
+
+- `data/adminCatalog.ts` — the mock catalogue: sixteen products covering every state the interface can show (active, draft, archived, out of stock, low stock, untracked inventory, discounted), the categories, and the media library the picker offers instead of a real upload.
+- `lib/adminCatalog.tsx` — the one place any product changes. Every screen above it already looks like a screen talking to a server: the callbacks are async, writes take a simulated 700 ms, and the list has a first-load skeleton. Replacing the bodies of those callbacks with real calls is the whole migration.
+- `lib/adminAuth.tsx` — the mock administrator session, kept separate from the customer session in `lib/auth.tsx`. A rejected password leaves no session behind, as the real endpoint must.
+- `lib/productFilters.ts` — search, filtering and sorting as pure functions on plain state; the product list holds its filters in the URL, so a filtered view can be linked to and stepped back through.
+- `components/admin/` — the workspace's own primitives (rail, header, table, row, status badge, filters, form, media uploader, preview drawer, confirmation dialog, empty and loading states, form field, search input, category badge).
+
+### Decisions worth knowing
+
+- **Status is three values, not four.** `active`, `draft` and `archived` are the lifecycle; "out of stock" is an inventory fact derived from the count, so restocking is not a status change. `displayState()` recombines the two for the single badge that has to say everything at once.
+- **Nothing says its state with colour alone.** Every status carries an icon and a word as well, and inventory is always a number *and* the word for what that number means.
+- **Product text is stored per language**, matching the translation-aware model the guidelines ask for. The form carries a FR/EN switch rather than doubling every field, and marks a language whose name is still empty.
+- **Destructive actions escalate.** Archiving is reversible and asks for a click; permanent deletion asks for the product's SKU to be typed. Focus opens on Cancel, or on the confirmation field when one is required — never on the destructive button. Restoring an archived product returns it to draft, never straight back on sale.
+- **Clicking a product opens a drawer, not a page.** Triage means checking one product after another, and the drawer keeps the filtered list and your place in it on screen. Anything that changes a product still opens the full edit page, so there is exactly one place where products are edited.
+- **Reordering media uses buttons, not drag and drop** — the obvious gesture is the inaccessible one.
+
+### Scope
+
+Only product management is functional. There is no database, no API, no file upload, no server-side validation and no real authorization: `RequireAdmin` is a UI gate, and real administration access means Supabase Auth plus server-side RBAC and RLS, none of which may ever depend on a value from this code. A page reload restores the seeded catalogue and signs the administrator out.
 
 ## Notes on scope
 
