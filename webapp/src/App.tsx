@@ -47,6 +47,8 @@ import { AdminProductEdit } from "./pages/admin/AdminProductEdit";
 import { AdminCategories } from "./pages/admin/AdminCategories";
 import { Orders as AdminOrders } from "./pages/admin/Orders";
 import { OrderDetail as AdminOrderDetail } from "./pages/admin/OrderDetail";
+import { Customers as AdminCustomers } from "./pages/admin/Customers";
+import { CustomerDetail as AdminCustomerDetail } from "./pages/admin/CustomerDetail";
 
 function ScrollToTop() {
   const { pathname } = useLocation();
@@ -208,6 +210,14 @@ export default function App() {
                             message, and a drawer has no address. */}
                         <Route path="commandes" element={<AdminOrders />} />
                         <Route path="commandes/:reference" element={<AdminOrderDetail />} />
+                        {/* Customers. Same reasoning as Orders: the detail
+                            page is a route, because a customer record is the
+                            thing a colleague pastes into a message and a
+                            drawer has no address. The list's filters travel
+                            in the query string, so "back" returns to the
+                            filtered page rather than to row one. */}
+                        <Route path="clients" element={<AdminCustomers />} />
+                        <Route path="clients/:id" element={<AdminCustomerDetail />} />
                         <Route path="produits" element={<AdminProducts />} />
                         <Route path="produits/nouveau" element={<AdminProductNew />} />
                         <Route path="produits/:id" element={<AdminProductEdit />} />
