@@ -4,23 +4,34 @@ import clsx from "clsx";
 import { PAGE_SIZES, pageWindow, type Page } from "../../lib/adminOrderFilters";
 
 /**
- * Paging for the orders table.
+ * Paging for the admin tables.
  *
  * The range and the total come from the actual filtered array, never from a
  * constant: "Showing 1–25 of 248" above twelve rows is the first thing a
  * reviewer catches, and it is also the first thing that makes an operator stop
  * trusting the numbers on the screen.
+ *
+ * The controls are domain-neutral but the *copy* is not — "Showing 1–25 of 248
+ * orders" is wrong above a table of customers. So the two sentences that name
+ * the rows are passed in as translation keys, defaulting to the orders wording
+ * this component was written for.
  */
 export function Pagination({
   page,
   onPage,
   pageSize,
   onPageSize,
+  rangeKey = "admin.orders.paginationRange",
+  navLabelKey = "admin.orders.paginationLabel",
 }: {
   page: Page<unknown>;
   onPage: (page: number) => void;
   pageSize: number;
   onPageSize: (size: number) => void;
+  /** Takes `from`, `to` and `total`. */
+  rangeKey?: string;
+  /** Accessible name of the page-number navigation. */
+  navLabelKey?: string;
 }) {
   const { t } = useTranslation();
   const numbers = pageWindow(page.page, page.pageCount);
@@ -31,7 +42,7 @@ export function Pagination({
   return (
     <div className="flex flex-wrap items-center justify-between gap-3 border-t border-[var(--border-subtle)] pt-4">
       <p className="m-0 text-[length:var(--text-caption)] text-[var(--text-muted)]" aria-live="polite">
-        {t("admin.orders.paginationRange", {
+        {t(rangeKey, {
           from: page.firstIndex,
           to: page.lastIndex,
           total: page.total,
@@ -54,7 +65,7 @@ export function Pagination({
           </select>
         </label>
 
-        <nav aria-label={t("admin.orders.paginationLabel")} className="flex items-center gap-1">
+        <nav aria-label={t(navLabelKey)} className="flex items-center gap-1">
           <button
             type="button"
             className={stepClass}
