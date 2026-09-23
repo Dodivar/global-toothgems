@@ -1921,6 +1921,271 @@
       "toastNoteEditedBody": "La note interne a été réécrite.",
       "toastNoteDeletedTitle": "Note supprimée",
       "toastNoteDeletedBody": "La note interne a été retirée."
+    },
+    "stats": {
+      "title": "Statistiques",
+      "description": "Suivez les ventes, les clients, les produits et les formations.",
+      "kpiLabel": "Indicateurs clés de la période",
+      "loading": "Chargement des statistiques…",
+      "rangeCaption": "Du {{from}} au {{to}}",
+      "compare": "Comparer à la période précédente",
+      "updatedNow": "Mis à jour à l’instant",
+      "updatedAgo_one": "Mis à jour il y a {{count}} minute",
+      "updatedAgo_other": "Mis à jour il y a {{count}} minutes",
+      "relativeShare": "Poids relatif : {{share}} %",
+      "disclaimer": "Chiffres de démonstration : cet écran n’est relié à aucune source de données réelle.",
+      "range": {
+        "label": "Période analysée",
+        "today": "Aujourd’hui",
+        "7d": "7 derniers jours",
+        "30d": "30 derniers jours",
+        "90d": "90 derniers jours",
+        "year": "Cette année",
+        "custom": "Période personnalisée",
+        "from": "Du",
+        "to": "Au"
+      },
+      "actions": {
+        "refresh": "Actualiser",
+        "exportCsv": "Export CSV",
+        "exportPdf": "Export PDF",
+        "more": "Plus d’actions",
+        "showLoading": "Afficher l’état de chargement",
+        "showError": "Afficher l’état d’erreur"
+      },
+      "toasts": {
+        "csvTitle": "Export CSV préparé",
+        "pdfTitle": "Export PDF préparé",
+        "exportBody": "Maquette : aucun fichier n’est réellement généré.",
+        "refreshTitle": "Statistiques actualisées",
+        "refreshBody": "Les chiffres affichés datent de maintenant."
+      },
+      "filters": {
+        "label": "Période et filtres",
+        "category": "Catégorie",
+        "product": "Produit",
+        "course": "Formation",
+        "customerType": "Type de client",
+        "country": "Pays",
+        "orderStatus": "Statut de commande",
+        "allCategories": "Toutes les catégories",
+        "allProducts": "Tous les produits",
+        "allCourses": "Toutes les formations",
+        "allCustomers": "Tous les clients",
+        "allCountries": "Tous les pays",
+        "allStatuses": "Tous les statuts",
+        "active_one": "{{count}} filtre actif",
+        "active_other": "{{count}} filtres actifs",
+        "reset": "Réinitialiser les filtres"
+      },
+      "kpi": {
+        "explain": "Définition de « {{name}} »",
+        "versus": "vs période précédente",
+        "versusValue": "vs {{value}} la période précédente",
+        "revenue": {
+          "label": "Chiffre d’affaires",
+          "hint": "Total encaissé sur la période, remises déduites et hors frais de livraison."
+        },
+        "orders": {
+          "label": "Commandes",
+          "hint": "Commandes passées sur la période, tous statuts confondus."
+        },
+        "aov": {
+          "label": "Panier moyen",
+          "hint": "Chiffre d’affaires divisé par le nombre de commandes de la période."
+        },
+        "units": {
+          "label": "Produits vendus",
+          "hint": "Nombre d’articles vendus, toutes références confondues."
+        },
+        "newCustomers": {
+          "label": "Nouveaux clients",
+          "hint": "Clients dont la toute première commande tombe dans la période."
+        },
+        "returningCustomers": {
+          "label": "Clients fidèles",
+          "hint": "Commandes passées par des clients déjà connus de la boutique."
+        },
+        "enrollments": {
+          "label": "Inscriptions formation",
+          "hint": "Accès ouverts sur la période, achats et places incluses dans un kit professionnel."
+        },
+        "completionRate": {
+          "label": "Taux de complétion",
+          "hint": "Part des inscriptions menées jusqu’au certificat."
+        }
+      },
+      "metric": {
+        "revenue": "Chiffre d’affaires",
+        "orders": "Commandes"
+      },
+      "chart": {
+        "title": "Chiffre d’affaires et commandes",
+        "metricLabel": "Données affichées",
+        "metric": {
+          "revenue": "CA",
+          "orders": "Commandes",
+          "both": "Les deux"
+        },
+        "current": "Période sélectionnée",
+        "previous": "Période précédente",
+        "weekOf": "Semaine du {{date}}",
+        "date": "Date",
+        "hint": "Survolez la courbe, ou parcourez les points avec les flèches du clavier.",
+        "point": "{{date}} : {{revenue}}, {{orders}} commandes.",
+        "range": "Du {{from}} au {{to}}.",
+        "summary": {
+          "revenue": "Évolution du chiffre d’affaires : {{total}} au total, de {{first}} à {{last}}.",
+          "orders": "Évolution des commandes : {{total}} au total, de {{first}} à {{last}}."
+        },
+        "tableToggle": "Afficher les données sous forme de tableau",
+        "tableCaption": "Chiffre d’affaires et commandes, point par point"
+      },
+      "breakdown": {
+        "title": "Répartition du chiffre d’affaires",
+        "description": "D’où vient l’argent sur la période sélectionnée.",
+        "total": "Total période",
+        "category": "Catégorie",
+        "share": "Part",
+        "leader": "1re source",
+        "caption": "Chiffre d’affaires et part de chaque catégorie"
+      },
+      "category": {
+        "jewelry": "Bijoux dentaires",
+        "aftercare": "Suivi & entretien",
+        "kits": "Kits & outils",
+        "training": "Formations",
+        "other": "Autres"
+      },
+      "products": {
+        "title": "Meilleures ventes",
+        "description": "Les produits qui portent la période, et l’état de leur stock.",
+        "caption": "Produits classés par performance",
+        "rank": "Rang",
+        "product": "Produit",
+        "units": "Unités",
+        "revenue": "CA",
+        "orders": "Commandes",
+        "conversion": "Conversion",
+        "change": "Évolution",
+        "stock": "Stock",
+        "sortBy": "Trier par",
+        "emptyTitle": "Aucun produit sur cette sélection",
+        "emptyBody": "Aucune vente ne correspond aux filtres actifs. Élargissez la période ou retirez un filtre."
+      },
+      "customers": {
+        "title": "Clients",
+        "description": "Qui achète, et à quelle fréquence.",
+        "new": "Nouveaux clients",
+        "returning": "Clients fidèles",
+        "splitLabel": "Répartition entre nouveaux clients et clients fidèles :",
+        "total": "Base clients",
+        "totalHint": "Depuis l’ouverture",
+        "repeatRate": "Taux de réachat",
+        "repeatHint": "Commandes de clients connus",
+        "lifetimeValue": "Valeur client",
+        "lifetimeHint": "Moyenne sur la durée de vie",
+        "lifetimeOrders": "Commandes par client",
+        "ordersHint": "Moyenne sur la durée de vie",
+        "growthTitle": "Croissance de la base clients",
+        "growthSummary": "Croissance de la base clients : de {{from}} à {{to}} clients sur la période."
+      },
+      "training": {
+        "title": "Formations",
+        "description": "L’école, lue avec les mêmes indicateurs que la boutique.",
+        "enrollments": "Inscriptions",
+        "active": "Apprenants actifs",
+        "completed": "Parcours terminés",
+        "completionRate": "Taux de complétion",
+        "completionShort": "Complétion",
+        "averageScore": "Score moyen",
+        "scoreShort": "Score",
+        "timeToComplete": "Durée moyenne",
+        "days_one": "{{count}} jour",
+        "days_other": "{{count}} jours",
+        "rankingTitle": "Formations les plus suivies",
+        "course": "Formation",
+        "caption": "Formations classées par nombre d’inscriptions",
+        "emptyTitle": "Pas encore d’inscription",
+        "emptyBody": "Aucune inscription ne correspond à cette période ou à ces filtres."
+      },
+      "insights": {
+        "title": "À retenir",
+        "description": "Ce que les chiffres de la période racontent.",
+        "emptyTitle": "Rien à signaler",
+        "emptyBody": "La sélection est trop étroite pour en tirer une tendance.",
+        "topProduct": "Les ventes de {{name}} progressent de {{change}} sur la période.",
+        "returning": "Les clients fidèles représentent {{share}} des commandes.",
+        "bundle": "{{share}} des commandes de bijoux contiennent aussi un produit de suivi.",
+        "kit": "{{name}} a généré {{revenue}} sur la période.",
+        "courses": "Les inscriptions aux formations progressent de {{change}} par rapport à la période précédente.",
+        "slowing": "Les ventes de {{name}} reculent de {{change}} : à regarder sur la prochaine période."
+      },
+      "orders": {
+        "title": "Commandes",
+        "description": "L’état du carnet sur la période.",
+        "splitLabel": "Répartition des commandes par statut :",
+        "processing": "Traitement moyen",
+        "hours_one": "{{count}} heure",
+        "hours_other": "{{count}} heures",
+        "refundRate": "Taux de remboursement",
+        "cancelRate": "Taux d’annulation"
+      },
+      "orderStatus": {
+        "completed": "Terminées",
+        "pending": "En attente",
+        "cancelled": "Annulées",
+        "refunded": "Remboursées"
+      },
+      "geo": {
+        "title": "Ventes par pays",
+        "description": "Les marchés qui portent la période.",
+        "country": "Pays",
+        "customers": "Clients",
+        "caption": "Chiffre d’affaires, commandes et clients par pays"
+      },
+      "country": {
+        "fr": "France",
+        "be": "Belgique",
+        "ch": "Suisse",
+        "de": "Allemagne",
+        "uk": "Royaume-Uni",
+        "other": "Autres pays"
+      },
+      "cross": {
+        "title": "Boutique et formations",
+        "description": "Ce que les deux moitiés de la plateforme s’apportent.",
+        "benchmark": "Moyenne boutique : {{value}}",
+        "aftercareFollowUp": {
+          "label": "Suivi acheté après un bijou",
+          "hint": "Clients qui reviennent pour l’entretien après un premier bijou."
+        },
+        "trainedBuyers": {
+          "label": "Clients devenus élèves",
+          "hint": "Acheteurs qui s’inscrivent ensuite à une formation."
+        },
+        "graduateAov": {
+          "label": "Panier moyen des diplômés",
+          "hint": "Panier moyen des clients ayant terminé une formation."
+        },
+        "graduateRepeat": {
+          "label": "Réachat des artistes formés",
+          "hint": "Taux de réachat des clients ayant terminé une formation."
+        }
+      },
+      "panel": {
+        "collapse": "Réduire",
+        "expand": "Déployer"
+      },
+      "empty": {
+        "title": "Pas encore assez de données",
+        "body": "Aucune activité ne correspond à cette période et à ces filtres. Élargissez la période ou retirez un filtre."
+      },
+      "error": {
+        "title": "Statistiques indisponibles",
+        "body": "Les chiffres n’ont pas pu être récupérés. Rien n’est perdu : réessayez dans un instant.",
+        "retry": "Réessayer"
+      }
     }
   },
   "community": {
