@@ -25,7 +25,16 @@ export interface MenuAction {
  * A menu nested in the table is clipped by the table's own horizontal scroll
  * container as soon as it opens on the last rows.
  */
-export function OverflowMenu({ label, actions }: { label: string; actions: MenuAction[] }) {
+export function OverflowMenu({
+  label,
+  actions,
+  note,
+}: {
+  label: string;
+  actions: MenuAction[];
+  /** A short line under the entries — why some of them are disabled, for instance. */
+  note?: string;
+}) {
   const id = useId();
   const [open, setOpen] = useState(false);
   const [rect, setRect] = useState<DOMRect | null>(null);
@@ -111,7 +120,7 @@ export function OverflowMenu({ label, actions }: { label: string; actions: MenuA
   };
 
   const panelWidth = 232;
-  const panelHeight = actions.length * 38 + 16;
+  const panelHeight = actions.length * 38 + 16 + (note ? 56 : 0);
   const top =
     rect && rect.bottom + panelHeight > window.innerHeight ? rect.top - panelHeight - 6 : (rect?.bottom ?? 0) + 6;
   const left = rect ? Math.max(12, Math.min(rect.right - panelWidth, window.innerWidth - panelWidth - 12)) : 0;
@@ -146,6 +155,10 @@ export function OverflowMenu({ label, actions }: { label: string; actions: MenuA
       {open &&
         rect &&
         createPortal(
+          // The portal leaves the `.gt-admin` subtree, and with it the admin's
+          // tokens (panel colour, radii); this wrapper brings them back. Its own
+          // page background is cancelled inline — `.gt-admin` is unlayered CSS.
+          <div className="gt-admin" style={{ background: "transparent" }}>
           <div
             ref={panelRef}
             role="menu"
@@ -179,6 +192,12 @@ export function OverflowMenu({ label, actions }: { label: string; actions: MenuA
                 </button>
               </div>
             ))}
+            {note && (
+              <p className="m-0 mt-1.5 border-t border-[var(--border-subtle)] px-2.5 pb-1 pt-2 text-[11px] leading-[var(--leading-normal)] text-[var(--text-muted)]">
+                {note}
+              </p>
+            )}
+          </div>
           </div>,
           document.body,
         )}
