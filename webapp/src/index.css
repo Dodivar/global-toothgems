@@ -966,3 +966,94 @@
   .gt-review-note,
   .gt-cookie-banner { display: none !important; }
 }
+
+/* ---------------------------------------------------------------------------
+   Promotions & gift cards
+   ---------------------------------------------------------------------------
+   The gift card and the campaign banner are drawn in CSS so that what an
+   administrator types re-renders the artwork at once. Every design is built
+   from the brand ramps above; no component hard-codes a hex value. Glass is
+   used for two things only — the message chip on a light card and the
+   floating preview frame — and never for text-heavy surfaces.
+--------------------------------------------------------------------------- */
+@layer components {
+  .gt-giftcard {
+    box-shadow: 0 18px 40px -18px rgba(35, 52, 71, .45), inset 0 1px 0 rgba(255, 255, 255, .55);
+    border: 1px solid rgba(255, 255, 255, .6);
+  }
+  .gt-giftcard[data-design="sparkle"] {
+    background:
+      radial-gradient(120% 90% at 100% 0%, rgba(255, 255, 255, .7), transparent 55%),
+      linear-gradient(135deg, var(--gt-blue-100), var(--gt-blue-300) 58%, var(--gt-blue-400));
+  }
+  .gt-giftcard[data-design="blush"] {
+    background:
+      radial-gradient(120% 90% at 100% 0%, rgba(255, 255, 255, .75), transparent 55%),
+      linear-gradient(135deg, var(--gt-fuchsia-50), var(--gt-fuchsia-300) 85%);
+  }
+  .gt-giftcard[data-design="mint"] {
+    background:
+      radial-gradient(120% 90% at 100% 0%, rgba(255, 255, 255, .75), transparent 55%),
+      linear-gradient(135deg, var(--gt-emerald-50), var(--gt-emerald-300) 90%);
+  }
+  .gt-giftcard[data-design="noir"] {
+    background:
+      radial-gradient(90% 80% at 90% 0%, rgba(185, 205, 229, .35), transparent 60%),
+      linear-gradient(135deg, var(--gt-ink-900), var(--gt-ink-700));
+    border-color: rgba(255, 255, 255, .14);
+  }
+  .gt-giftcard[data-design="photo"] { background: var(--gt-ink-900); }
+
+  /* Campaign banner washes: legibility first, so every wash is strong enough
+     under the headline that the photo can be anything from the library. */
+  .gt-campaign-cover { background: var(--gt-blue-100); }
+  .gt-campaign-cover[data-theme="sparkle"] .gt-campaign-wash {
+    background: linear-gradient(0deg, rgba(231, 238, 247, .96) 8%, rgba(185, 205, 229, .55) 55%, rgba(185, 205, 229, .1));
+  }
+  .gt-campaign-cover[data-theme="blush"] .gt-campaign-wash {
+    background: linear-gradient(0deg, rgba(253, 234, 243, .96) 8%, rgba(245, 156, 199, .45) 60%, rgba(245, 156, 199, .08));
+  }
+  .gt-campaign-cover[data-theme="mint"] .gt-campaign-wash {
+    background: linear-gradient(0deg, rgba(228, 249, 240, .97) 8%, rgba(143, 240, 203, .45) 60%, rgba(143, 240, 203, .08));
+  }
+  .gt-campaign-cover[data-theme="noir"] { background: var(--gt-ink-900); }
+  .gt-campaign-cover[data-theme="noir"] .gt-campaign-wash {
+    background: linear-gradient(0deg, rgba(17, 17, 17, .94) 10%, rgba(17, 17, 17, .55) 60%, rgba(17, 17, 17, .2));
+  }
+  .gt-campaign-cover[data-theme="winter"] { background: var(--gt-blue-700); }
+  .gt-campaign-cover[data-theme="winter"] .gt-campaign-wash {
+    background: linear-gradient(0deg, rgba(63, 90, 117, .95) 10%, rgba(90, 119, 150, .55) 60%, rgba(185, 205, 229, .15));
+  }
+  .gt-campaign-photo { transition: transform var(--duration-slow) var(--ease-out-soft); }
+  .group:hover .gt-campaign-photo { transform: scale(1.035); }
+
+  /* Status change: the badge settles in rather than blinking over. */
+  .gt-status-swap { animation: gt-pop var(--duration-normal) var(--ease-out-soft) both; }
+
+  /* Bottom sheet on phones: rises from the edge the thumb is already on. */
+  .gt-sheet-up { animation: gt-sheet-up var(--duration-normal) var(--ease-out-soft) both; }
+
+  /* Expandable form sections. The grid-rows trick animates height without
+     measuring it, so the section works with any content. */
+  .gt-collapse {
+    display: grid;
+    grid-template-rows: 0fr;
+    transition: grid-template-rows var(--duration-normal) var(--ease-out-soft);
+  }
+  .gt-collapse[data-open="true"] { grid-template-rows: 1fr; }
+  .gt-collapse > * { min-height: 0; overflow: hidden; }
+  .gt-collapse[data-open="true"] > * { overflow: visible; }
+}
+
+@keyframes gt-sheet-up {
+  from { transform: translateY(24px); opacity: 0; }
+  to { transform: none; opacity: 1; }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .gt-status-swap,
+  .gt-sheet-up { animation: none; }
+  .gt-campaign-photo { transition: none; }
+  .group:hover .gt-campaign-photo { transform: none; }
+  .gt-collapse { transition: none; }
+}

@@ -9,9 +9,9 @@ import { contactHref, LEGAL_PATHS } from "../../data/legal/routes";
  * two art directions can never disagree on where a link goes.
  *
  * An item either navigates (`to`) or acts (`action`): "Cookie settings" opens
- * the preferences dialog rather than a page, and the two entries this
- * prototype has no screen for (gift cards, the artist directory) still say so
- * instead of pretending to be links.
+ * the preferences dialog rather than a page, and the one entry this
+ * prototype has no screen for (the artist directory) still says so instead
+ * of pretending to be a link.
  */
 export interface FooterItem {
   label: string;
@@ -33,7 +33,7 @@ const SHOP_TARGETS: (string | null)[] = [
   "/boutique?categorie=Outils",
   "/boutique?categorie=Kits",
   "/boutique?categorie=Suivi",
-  null,
+  "/carte-cadeau",
   "/fidelite",
 ];
 /* The first three entries name the three courses, so they lead to each
