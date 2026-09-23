@@ -166,7 +166,15 @@ export function TrainingHero({
             {!signedIn && (
               <p className="m-0 flex items-center gap-2 text-[length:var(--text-body-sm)] text-[var(--text-muted)]">
                 <Lock size={14} aria-hidden="true" />
-                {t("academy.accountRequired")}
+                <span>
+                  {t("academy.accountRequired")}{" "}
+                  <Link
+                    to={`/inscription?contexte=formation&formation=${course.id}`}
+                    className="font-semibold text-[var(--text-primary)] underline decoration-1 underline-offset-4 hover:text-[var(--text-link-hover)]"
+                  >
+                    {t("training.createAccount")}
+                  </Link>
+                </span>
               </p>
             )}
           </div>

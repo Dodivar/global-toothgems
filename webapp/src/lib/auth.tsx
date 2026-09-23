@@ -56,10 +56,25 @@ interface AuthContextValue {
   displayName: string;
   /** One or two letters for the account avatar. */
   initials: string;
-  signIn: (email: string, identity?: { firstName?: string; lastName?: string }) => void;
+  signIn: (email: string, identity?: SignInIdentity) => void;
   signOut: () => void;
   /** Applies an edit from the profile form. No-op while signed out. */
   updateProfile: (patch: ProfilePatch) => void;
+}
+
+/**
+ * What a sign-in may carry beyond the email. The login form sends the name;
+ * the registration journey also sends what it asked for — phone, country and
+ * the marketing choice — so the new profile reflects the answers given.
+ */
+export interface SignInIdentity {
+  firstName?: string;
+  lastName?: string;
+  phone?: string;
+  /** One of `DELIVERY_COUNTRIES`; anything else keeps the demo address's country. */
+  country?: string;
+  /** Explicit opt-in. Omitted by the login form, which keeps its current default. */
+  newsletter?: boolean;
 }
 
 const AuthContext = createContext<AuthContextValue | null>(null);
@@ -90,13 +105,15 @@ function displayNameOf(profile: Profile | null): string {
 export function AuthProvider({ children }: { children: ReactNode }) {
   const [profile, setProfile] = useState<Profile | null>(null);
 
-  const signIn = useCallback((email: string, identity?: { firstName?: string; lastName?: string }) => {
+  const signIn = useCallback((email: string, identity?: SignInIdentity) => {
     setProfile({
       firstName: identity?.firstName?.trim() ?? "",
       lastName: identity?.lastName?.trim() ?? "",
       email: email.trim(),
-      newsletter: true,
+      newsletter: identity?.newsletter ?? true,
       ...DEMO_POSTAL,
+      ...(identity?.phone ? { phone: identity.phone } : {}),
+      ...(identity?.country ? { country: identity.country } : {}),
     });
   }, []);
 
