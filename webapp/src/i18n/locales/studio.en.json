@@ -1,0 +1,241 @@
+{
+  "materials": {
+    "crystal": "Crystal",
+    "sapphire": "Sapphire",
+    "rose": "Fuchsia rose",
+    "emerald": "Emerald",
+    "gold": "18k gold",
+    "opal": "Opal"
+  },
+  "compositions": {
+    "signature": "Aurora",
+    "minimal": "Minimal",
+    "statement": "Statement",
+    "symmetrical": "Symmetrical",
+    "mixed": "Mixed shapes",
+    "sparkle": "Sparkle",
+    "custom": "Custom"
+  },
+  "mockup": {
+    "appName": "Studio 3D",
+    "projectName": "Composition · Aurora",
+    "undo": "Undo",
+    "redo": "Redo",
+    "save": "Save",
+    "saving": "Saving…",
+    "saved": "Saved",
+    "share": "Share",
+    "shareToastTitle": "Sharing, in the real Studio",
+    "shareToastBody": "This preview does not create a link — in the Studio you will share a composition with friends or your artist.",
+    "library": "Library",
+    "search": "Search pieces",
+    "filterLabel": "Filter the library",
+    "filters": { "all": "All", "crystals": "Crystals", "gold": "Gold" },
+    "addHint": "Pick a piece to add it to the smile.",
+    "swapHint": "Pick a piece to swap it for the selected one.",
+    "canvasLabel": "Studio canvas — interactive preview",
+    "pieceLabel": "{{name}}, piece {{index}}",
+    "viewLabel": "View angle",
+    "views": { "front": "Front", "three": "¾", "profile": "Profile" },
+    "zoomLabel": "Zoom",
+    "zoomIn": "Zoom in",
+    "zoomOut": "Zoom out",
+    "pieceCount_one": "{{count}} piece",
+    "pieceCount_other": "{{count}} pieces",
+    "panelTitle": "Composition",
+    "noSelection": "Select a piece on the teeth to adjust it, or add one from the library.",
+    "material": "Material",
+    "size": "Size",
+    "sizeValue": "{{value}} mm",
+    "remove": "Remove piece",
+    "symmetry": "Symmetry guide",
+    "presets": "Starting points",
+    "fullTitle": "The smile is full",
+    "fullBody": "Select a piece to swap it, or remove one to make room."
+  },
+  "hero": {
+    "eyebrow": "Studio 3D",
+    "script": "Your creative atelier",
+    "title": "Create your own tooth jewellery.",
+    "body": "Design unique compositions, experiment with shapes and placements, and bring your ideas to life with the Global Toothgems 3D Studio.",
+    "ctaPrimary": "Start creating",
+    "ctaSecondary": "Explore the Studio",
+    "floatPiece": "Aurora heart",
+    "floatPieceSub": "18k gold · 3.0 mm",
+    "floatSaved": "Saved to your creations"
+  },
+  "concept": {
+    "eyebrow": "What is the 3D Studio?",
+    "title": "Design. Experiment. Create.",
+    "body": "Choose your jewellery, position your pieces and explore endless combinations to create a look that feels uniquely yours.",
+    "points": {
+      "combine": { "title": "Combine pieces", "body": "Crystals, gold charms, shapes and colours, together on one smile." },
+      "position": { "title": "Place them freely", "body": "Move, resize and swap each piece tooth by tooth." },
+      "explore": { "title": "Try again, endlessly", "body": "Undo, compare, start over — nothing is final until you say so." }
+    },
+    "playground": "Use it to test a combination before you order, or simply as a creative playground — no experience needed."
+  },
+  "features": {
+    "eyebrow": "Inside the Studio",
+    "title": "Everything you need to compose.",
+    "body": "Simple tools, designed for tooth jewellery — not for engineers.",
+    "build": { "title": "Build your composition", "body": "Combine several tooth jewellery pieces into one unique design.", "chip": "5 pieces · 3 materials" },
+    "experiment": { "title": "Experiment freely", "body": "Try different shapes, styles, positions and combinations." },
+    "visualize": { "title": "Visualise your idea", "body": "See how your composition could look before bringing it to life." },
+    "signature": { "title": "Create your signature style", "body": "Build designs that reflect your personality and artistic identity.", "script": "Signature" },
+    "save": {
+      "title": "Save your creations",
+      "body": "Keep every composition in your personal gallery and come back to it whenever inspiration strikes.",
+      "listLabel": "Example saved compositions",
+      "latest": "Latest"
+    },
+    "share": { "title": "Share your ideas", "body": "Send a composition to friends, or to the artist who will set it." },
+    "before": "Before",
+    "after": "After",
+    "compareLabel": "Move the before/after divider",
+    "shareSheetTitle": "Share “Aurora”",
+    "copy": "Copy",
+    "copied": "Copied",
+    "exportImage": "Image",
+    "exportArtist": "Send to my artist",
+    "exportSocial": "Stories"
+  },
+  "showcase": {
+    "eyebrow": "Gallery",
+    "title": "See what you can create.",
+    "body": "Renders, recordings and member creations will live here. Until then, a glimpse of what the Studio makes possible.",
+    "tags": {
+      "video": "STUDIO VIDEO PLACEHOLDER",
+      "composition": "3D COMPOSITION PLACEHOLDER",
+      "screenshot": "STUDIO SCREENSHOT PLACEHOLDER",
+      "beforeAfter": "BEFORE / AFTER PLACEHOLDER",
+      "user": "USER CREATION PLACEHOLDER"
+    },
+    "captions": {
+      "video": "A 30-second tour: from an empty smile to a finished composition.",
+      "composition": "360° render of a finished composition.",
+      "screenshot": "The Studio window, library open.",
+      "beforeAfter": "The same smile, before and after its composition.",
+      "user": {
+        "one": "A very first composition.",
+        "two": "Mirrored drops, made in the Studio.",
+        "three": "A three-shape study.",
+        "four": "Micro-crystal constellation."
+      }
+    },
+    "play": "Play the Studio tour (placeholder)",
+    "videoToastTitle": "Video coming soon",
+    "videoToastBody": "The Studio tour will play here once it is recorded.",
+    "compareLabel": "Before/after style:"
+  },
+  "inspiration": {
+    "eyebrow": "Inspiration",
+    "title": "Six moods to start from.",
+    "body": "Boards to spark ideas — open one in the Studio and make it yours.",
+    "number": "No. {{n}}",
+    "recreate": "Recreate in the Studio",
+    "recreateAria": "Recreate the {{style}} composition in the Studio"
+  },
+  "steps": {
+    "eyebrow": "How it works",
+    "title": "Three steps, one composition.",
+    "stepLabel": "Step {{n}}:",
+    "choose": { "title": "Choose", "body": "Explore the available tooth jewellery pieces." },
+    "compose": { "title": "Compose", "body": "Arrange and combine them inside the Studio." },
+    "create": { "title": "Create", "body": "Save your idea and bring your composition into your Global Toothgems journey." }
+  },
+  "pricing": {
+    "eyebrow": "3D Studio access",
+    "planName": "Studio 3D · Monthly",
+    "perMonth": "/ month",
+    "selected": "Selected",
+    "benefits": [
+      "Full access to the 3D Studio",
+      "Creative composition tools",
+      "Your saved creations, always at hand",
+      "Access to future Studio improvements"
+    ],
+    "reassurance": "No commitment — cancel anytime.",
+    "reassuranceShort": "Cancel anytime"
+  },
+  "offer": {
+    "eyebrow": "Studio 3D",
+    "title": "Your next composition starts here.",
+    "body": "Everything the Studio offers, for the price of a coffee each month.",
+    "points": ["Every piece in the library", "Unlimited experiments", "Desktop, tablet and mobile", "New tools as they arrive"],
+    "cta": "Access the 3D Studio"
+  },
+  "faq": {
+    "eyebrow": "Questions",
+    "title": "Good to know.",
+    "items": [
+      {
+        "question": "What is the 3D Studio?",
+        "answer": "An online creative tool to design your own tooth jewellery compositions: choose pieces, place them on a smile and see the result before anything is set."
+      },
+      {
+        "question": "What can I create with it?",
+        "answer": "Anything from a single discreet crystal to a full statement composition — mixing shapes, colours, crystals and gold charms across several teeth."
+      },
+      {
+        "question": "How much does access cost?",
+        "answer": "Access to the Studio is €5 per month. There is no commitment: you can cancel at any time."
+      },
+      {
+        "question": "Is the Studio available on mobile?",
+        "answer": "Yes. The Studio works on desktop, tablet and mobile; a larger screen is more comfortable for fine placement."
+      },
+      {
+        "question": "Can I save my compositions?",
+        "answer": "Yes. Your compositions are saved in your personal gallery, so you can come back to them, duplicate them or keep refining them."
+      },
+      {
+        "question": "Can I use my creations when ordering jewellery?",
+        "answer": "Your saved composition is a reference: share it with your artist, or use it to find the matching pieces in the shop."
+      }
+    ]
+  },
+  "teaser": {
+    "eyebrow": "Studio 3D",
+    "title": "Turn your ideas into tooth jewellery.",
+    "body": "Compose your own designs in our 3D Studio: pick your pieces, place them tooth by tooth, and see your look come to life.",
+    "cta": "Discover Studio 3D",
+    "chip": "Aurora · 18k gold heart"
+  },
+  "subscribe": {
+    "back": "Back to Studio",
+    "title": "Unlock the Global Toothgems 3D Studio.",
+    "body": "Your creative space for designing unique tooth jewellery compositions.",
+    "stepsLabel": "Subscription steps",
+    "stepDone": "done",
+    "steps": { "plan": "Plan", "account": "Account", "confirm": "Confirmation" },
+    "planLegend": "Your plan",
+    "planMonthly": "Monthly",
+    "planMonthlySub": "Billed every month · cancel anytime",
+    "accountLegend": "Account",
+    "signedIn": "Signed in",
+    "emailLabel": "Email address",
+    "emailPlaceholder": "you@example.com",
+    "emailHint": "Your Studio access will be linked to this address. Already have an account?",
+    "signInLink": "Sign in",
+    "emailInvalid": "Enter a valid email address.",
+    "paymentLegend": "Payment",
+    "cardDemo": "Card •••• 4242",
+    "cardDemoSub": "Demo card — prototype",
+    "prototypeNote": "Prototype: no card is collected and no payment is taken. In the real Studio, payment happens on our payment provider's secure page.",
+    "summaryLine": "Studio 3D — monthly",
+    "dueToday": "Due today",
+    "renews": "Then {{price}} each month. Cancel anytime from your account.",
+    "terms": "I accept the Studio 3D subscription terms",
+    "termsHint": "Prototype copy — the terms are not written yet.",
+    "cta": "Subscribe & start creating",
+    "ctaHint": "Accept the terms to continue.",
+    "processing": "Confirming…",
+    "confirmedTitle": "Welcome to the Studio.",
+    "confirmedBody": "Your access is ready. A confirmation will be sent to {{email}}.",
+    "prototypeConfirmed": "Prototype: nothing was charged and no access was created.",
+    "openStudio": "Start creating",
+    "editorToast": "The Studio editor itself is not part of this prototype.",
+    "reassurance": { "secure": "Secure payment", "cancel": "Cancel anytime", "devices": "Desktop, tablet & mobile" }
+  }
+}

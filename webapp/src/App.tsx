@@ -74,6 +74,9 @@ import { PromotionPreview as AdminPromotionPreview } from "./pages/admin/Promoti
 import { Reviews as AdminReviews } from "./pages/admin/Reviews";
 import { Settings as AdminSettings } from "./pages/admin/Settings";
 import { GiftCard } from "./pages/GiftCard";
+import { Studio } from "./pages/Studio";
+import { StudioSubscribe } from "./pages/StudioSubscribe";
+import { STUDIO_PATH, STUDIO_SUBSCRIBE_ALIAS, STUDIO_SUBSCRIBE_PATH } from "./lib/studioUrl";
 import { NotFound } from "./pages/NotFound";
 import { ServerError } from "./pages/ServerError";
 import { Maintenance } from "./pages/Maintenance";
@@ -221,6 +224,13 @@ export default function App() {
                           configuration. The English path is an alias. */}
                       <Route path="/carte-cadeau" element={<GiftCard />} />
                       <Route path="/gift-card" element={<GiftCard />} />
+                      {/* The 3D Studio: its presentation page and its subscription
+                          page. Both open, like the Academy and Loyalty sales
+                          pages — the subscription page asks for the account
+                          itself. Visual prototypes: no editor, no payment. */}
+                      <Route path={STUDIO_PATH} element={<Studio />} />
+                      <Route path={STUDIO_SUBSCRIBE_PATH} element={<StudioSubscribe />} />
+                      <Route path={STUDIO_SUBSCRIBE_ALIAS} element={<Navigate to={STUDIO_SUBSCRIBE_PATH} replace />} />
                       {/* The Academy landing page stays open — it is the sales page.
                           Only the course content itself requires an account, and gating
                           the route covers the menu links and direct URLs at once. */}

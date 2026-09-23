@@ -3,6 +3,7 @@ import { Link, NavLink, Outlet, useNavigate } from "react-router-dom";
 import {
   ArrowUpRight,
   Award,
+  Box,
   GraduationCap,
   LayoutDashboard,
   Lock,
@@ -20,6 +21,8 @@ import { useAuth } from "../../lib/auth";
 import { useCommunity } from "../../lib/community";
 import { useOrders } from "../../lib/orders";
 import { formatMonthYear } from "../../lib/format";
+import { NewTag } from "../../components/studio/NewTag";
+import { STUDIO_PATH } from "../../lib/studioUrl";
 
 /**
  * Shell of the member area: a left sidebar on desktop, a scrollable row of pills
@@ -193,6 +196,23 @@ export function AccountLayout() {
             <ArrowUpRight size={14} aria-hidden="true" className="text-[var(--text-subtle)]" />
           </Link>
 
+          {/* The 3D Studio: an outbound link like the catalogue, since it is a
+              public page and not a section of the account. */}
+          <Link
+            to={STUDIO_PATH}
+            className={clsx(
+              "flex items-center gap-3 rounded-[var(--radius-md)] px-3 py-2.5 text-[length:var(--text-body-sm)] font-semibold text-[var(--text-body)] transition-colors hover:bg-[var(--gt-ink-100)] hover:text-[var(--text-primary)]",
+              focusRing,
+            )}
+          >
+            <Box size={16} strokeWidth={2} aria-hidden="true" />
+            <span className="flex flex-1 items-center gap-2">
+              {t("nav.studio")}
+              <NewTag />
+            </span>
+            <ArrowUpRight size={14} aria-hidden="true" className="text-[var(--text-subtle)]" />
+          </Link>
+
           <button
             type="button"
             onClick={leave}
@@ -225,6 +245,19 @@ export function AccountLayout() {
                 <GraduationCap size={14} strokeWidth={2} aria-hidden="true" />
                 {t("account.navCatalogue")}
                 <ArrowUpRight size={12} aria-hidden="true" className="text-[var(--text-subtle)]" />
+              </Link>
+            </li>
+            <li>
+              <Link
+                to={STUDIO_PATH}
+                className={clsx(
+                  "flex items-center gap-2 whitespace-nowrap rounded-[var(--radius-pill)] border border-[var(--border-subtle)] bg-[var(--surface-card)] px-3.5 py-2 text-[length:var(--text-caption)] font-semibold text-[var(--text-body)]",
+                  focusRing,
+                )}
+              >
+                <Box size={14} strokeWidth={2} aria-hidden="true" />
+                {t("nav.studio")}
+                <NewTag />
               </Link>
             </li>
             {/* The sidebar's sign-out is desktop-only, so the row carries its own:

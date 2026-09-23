@@ -30,7 +30,11 @@
     "cartWithCount_one": "Panier, {{count}} article",
     "cartWithCount_other": "Panier, {{count}} articles",
     "primary": "Navigation principale",
-    "signIn": "Se connecter"
+    "signIn": "Se connecter",
+    "studio": "Studio 3D",
+    "new": "Nouveau",
+    "studioSub": "Imaginez vos compositions",
+    "studioAria": "Studio 3D, nouveau"
   },
   "common": {
     "notIncludedTitle": "Écran hors périmètre",

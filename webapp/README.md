@@ -69,6 +69,7 @@ src/
   components/academy/ The training detail page: hero, curriculum accordion, assessment, diploma, community, shared primitives
   components/community/ Forum pieces (navigation, discussion card, showcase card, reactions, member card, composer, locked preview)
   components/reviews/ Customer reviews: stars, badges, review card, section, form, request, overlays; admin/ holds the moderation workspace
+  components/studio/ The 3D Studio mockups: smile canvas, rendered gems, interactive Studio window, feature cards, media placeholders, inspiration boards, steps, pricing card, FAQ, home teaser
   components/loyalty/ The Loyalty Club: stamp, card, progress, reward, steps, journey, FAQ, checkout banner, demo switcher
   components/layout/ Header (desktop nav + mega panel, mobile burger menu) and Footer
   pages/admin/      The administration workspace: access screen, shell, dashboard, orders, products, categories
@@ -119,6 +120,22 @@ expired verification link. `camille@studio.fr`, `hello@globaltoothgems.com` and
 opens a simulated account chooser; nothing is sent anywhere, no password is
 stored, and marketing consent is never pre-ticked. Logic and mock service live in
 `src/lib/registration.ts`, components in `src/components/register/`.
+
+## The 3D Studio (`/studio-3d`)
+
+A **visual prototype** of a paid creative tool (€5 / month) for designing tooth jewellery compositions. There is no editor, no 3D renderer, no saved composition and no payment behind it.
+
+| Route | Screen |
+| --- | --- |
+| `/studio-3d` | Presentation page: hero with the Studio window, concept, six capabilities, media wall, inspiration boards, three steps, offer, FAQ |
+| `/studio-3d/abonnement` | Subscription page: the single monthly plan, account, fictional payment, summary, loading and confirmation states (`/studio-3d/subscribe` redirects here) |
+
+- **The Studio window** (`components/studio/StudioMockup.tsx`) is lightly interactive: pieces can be selected, swapped from the library, resized, recoloured, added and removed; presets, undo/redo, zoom and a CSS-perspective "¾ / profile" view all work on local state. "Save" and "Share" only play their states.
+- **The canvas** (`SmileCanvas.tsx`) is an SVG drawing of a smile; pieces reuse the shop's `GLYPH_PATHS` with material gradients (`Gem.tsx`, `gemStyle.ts`).
+- **Replaceable media**: every tile of the "See what you can create." wall is a `MediaPlaceholder` carrying `data-placeholder="…"` and a visible `[… PLACEHOLDER]` tag. Search for `data-placeholder` to find them.
+- **Fictional content**: compositions, library pieces, saved creations and inspiration boards live in `data/studio.ts`; copy lives in `i18n/locales/studio.{fr,en}.json` under `studio`. FAQ answers (mobile availability, saving, use when ordering) describe the intended product and must be confirmed before launch.
+- **Price**: `STUDIO_PRICE` is a display value only. In production the price comes from the Stripe Price, the button hands over to Stripe Checkout (subscription mode) and access is granted by the verified webhook — never by the confirmation screen.
+- **Navigation**: "Studio 3D · New" sits after the Academy in both desktop headers, as a featured row above the tabs in both mobile menus, and as a link in the member area sidebar and pill row. The home page carries a teaser (`StudioTeaser`) between the best sellers and the Academy band.
 
 ## The member area (`/compte`)
 
