@@ -466,9 +466,9 @@
     "rulesLabel": "Exigences du mot de passe",
     "rules": {
       "length": "Au moins {{min}} caractères",
+      "number": "Un chiffre",
       "lowercase": "Une lettre minuscule",
       "uppercase": "Une lettre majuscule",
-      "number": "Un chiffre",
       "special": "Un caractère spécial (ex. ! ? # @)"
     },
     "ruleMet": "respectée",
@@ -2898,6 +2898,53 @@
     "timeDays_other": "il y a {{count}} j",
     "timeWeeks_one": "il y a {{count}} sem.",
     "timeWeeks_other": "il y a {{count}} sem."
+  },
+  "errors": {
+    "preview": {
+      "label": "Prototype · pages système",
+      "notFound": "404",
+      "serverError": "500",
+      "maintenance": "Maintenance"
+    },
+    "actions": {
+      "home": "Retour à l’accueil"
+    },
+    "notFound": {
+      "documentTitle": "Page introuvable",
+      "status": "404 · Page introuvable",
+      "title": "Oups, cette page a fait un petit détour.",
+      "body": "La page que vous cherchez a été déplacée, renommée ou n’a jamais existé. Rien n’est cassé : on vous ramène vers quelque chose qui brille.",
+      "requested": "Adresse demandée :",
+      "shop": "Découvrir la boutique",
+      "back": "Revenir en arrière"
+    },
+    "serverError": {
+      "documentTitle": "Petit contretemps",
+      "status": "500 · Incident temporaire",
+      "title": "Quelque chose s’est un peu déréglé.",
+      "body": "Notre site rencontre un souci temporaire de notre côté. L’équipe s’en occupe déjà, et tout devrait rentrer dans l’ordre très vite.",
+      "note": "Vous n’y êtes pour rien, et vous n’avez rien à corriger.",
+      "retry": "Réessayer",
+      "retrying": "Nouvel essai…",
+      "pause": "Courte pause",
+      "stillOff": "Pas tout à fait encore — nous sommes dessus. Réessayez dans un instant.",
+      "stillOffAgain": "Toujours en cours de résolution. Vous pouvez revenir à l’accueil en attendant."
+    },
+    "maintenance": {
+      "documentTitle": "De retour très vite",
+      "status": "Mode maintenance",
+      "title": "Nous revenons très vite.",
+      "body": "Global Toothgems fait une courte pause pour des améliorations prévues, afin que la boutique, l’Academy et votre compte fonctionnent encore mieux à notre retour.",
+      "note": "Aucune action n’est nécessaire de votre côté : revenez simplement un peu plus tard.",
+      "refresh": "Actualiser la page",
+      "refreshing": "Vérification…",
+      "chip": "Travaux en cours",
+      "statusTitle": "Nous améliorons les choses en coulisses.",
+      "progressLabel": "Maintenance en cours",
+      "checked": "Vérifié à {{time}} — encore quelques finitions. Merci de votre patience.",
+      "logoAlt": "Global Toothgems — accueil",
+      "copyright": "© 2026 Global Toothgems"
+    }
   },
   "security": {
     "mockInbox": "Prototype · boîte mail simulée",

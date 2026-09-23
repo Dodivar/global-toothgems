@@ -57,6 +57,9 @@ import { OrderDetail as AdminOrderDetail } from "./pages/admin/OrderDetail";
 import { Customers as AdminCustomers } from "./pages/admin/Customers";
 import { CustomerDetail as AdminCustomerDetail } from "./pages/admin/CustomerDetail";
 import { Users as AdminUsers } from "./pages/admin/Users";
+import { NotFound } from "./pages/NotFound";
+import { ServerError } from "./pages/ServerError";
+import { Maintenance } from "./pages/Maintenance";
 
 function ScrollToTop() {
   const { pathname } = useLocation();
@@ -93,11 +96,18 @@ const EDITORIAL_ROUTE = "/accueil-b";
  */
 const ADMIN_ROUTE_PREFIX = "/admin";
 
+/**
+ * During maintenance the storefront's navigation leads nowhere, so the page
+ * wears its own quiet chrome and the header and footer are left out.
+ */
+const MAINTENANCE_ROUTE = "/maintenance";
+
 export default function App() {
   const { t } = useTranslation();
   const { pathname } = useLocation();
   const editorial = pathname === EDITORIAL_ROUTE;
   const adminArea = pathname === ADMIN_ROUTE_PREFIX || pathname.startsWith(`${ADMIN_ROUTE_PREFIX}/`);
+  const bareChrome = adminArea || pathname === MAINTENANCE_ROUTE;
 
   return (
     <AuthProvider>
@@ -120,7 +130,7 @@ export default function App() {
                   <a href="#main" className="gt-skip-link">
                     {t("common.skipToContent")}
                   </a>
-                  {!adminArea && (editorial ? <HeaderEditorial /> : <Header />)}
+                  {!bareChrome && (editorial ? <HeaderEditorial /> : <Header />)}
                   <main id="main" tabIndex={-1}>
                     <Routes>
                       <Route path="/" element={<Home />} />
@@ -260,9 +270,18 @@ export default function App() {
                         <Route path="produits/:id" element={<AdminProductEdit />} />
                         <Route path="categories" element={<AdminCategories />} />
                       </Route>
+
+                      {/* System pages. The server-error and maintenance screens
+                          have their own addresses so they can be reviewed as
+                          mockups; in production the server would serve them in
+                          place of the page that failed. The catch-all is the
+                          real 404 for every address nothing above matches. */}
+                      <Route path="/erreur" element={<ServerError />} />
+                      <Route path={MAINTENANCE_ROUTE} element={<Maintenance />} />
+                      <Route path="*" element={<NotFound />} />
                     </Routes>
                   </main>
-                  {!adminArea && (editorial ? <FooterEditorial /> : <Footer />)}
+                  {!bareChrome && (editorial ? <FooterEditorial /> : <Footer />)}
                 </ToastProvider>
               </CommunityProvider>
             </CartProvider>
