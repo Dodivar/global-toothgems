@@ -72,6 +72,7 @@ import { GiftCardDetail as AdminGiftCardDetail } from "./pages/admin/GiftCardDet
 import { GiftCardSettings as AdminGiftCardSettings } from "./pages/admin/GiftCardSettings";
 import { PromotionPreview as AdminPromotionPreview } from "./pages/admin/PromotionPreview";
 import { Reviews as AdminReviews } from "./pages/admin/Reviews";
+import { Settings as AdminSettings } from "./pages/admin/Settings";
 import { GiftCard } from "./pages/GiftCard";
 import { NotFound } from "./pages/NotFound";
 import { ServerError } from "./pages/ServerError";
@@ -339,6 +340,11 @@ export default function App() {
                             review being moderated is a panel whose address is
                             the `avis` key, so it can be linked to. */}
                         <Route path="avis" element={<AdminReviews />} />
+                        {/* Store settings: one route, the section in the query
+                            string (`section=livraison`), and the translation
+                            editor addressed by `traduire` + `langue`, so a
+                            missing translation is a link a colleague can open. */}
+                        <Route path="parametres" element={<AdminSettings />} />
                       </Route>
 
                       {/* Help centre and legal pages. Every one is reachable from

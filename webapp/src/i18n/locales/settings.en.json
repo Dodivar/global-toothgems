@@ -1,0 +1,764 @@
+{
+  "title": "Settings",
+  "subtitle": "The store's operational configuration — what customers see, where you ship, how you tax, which languages you publish in.",
+  "sections": {
+    "store": {
+      "title": "Store details",
+      "nav": "Identity, address, preferences",
+      "intro": "Who you are and how the store counts. These details appear on invoices, emails and the contact page, and set the currency, time zone and formats used across the admin."
+    },
+    "shipping": {
+      "title": "Shipping",
+      "nav": "Zones, methods and rates",
+      "intro": "Group the countries you ship to into zones, then decide which methods each zone offers and at what price. A country belongs to one zone only, so every customer sees exactly one set of options."
+    },
+    "taxes": {
+      "title": "Taxes & VAT",
+      "nav": "Default rate, countries, rules",
+      "intro": "How VAT is charged and shown. Start with the store default, override it country by country, then add the rules for particular products and customers."
+    },
+    "languages": {
+      "title": "Languages",
+      "nav": "Storefront languages, translations",
+      "intro": "The languages customers can shop and learn in, their order and the default — and what is still left to translate in each, one click from the editor."
+    }
+  },
+  "nav": {
+    "label": "Settings sections",
+    "unsaved": "Unsaved",
+    "attention": {
+      "store_one": "{{count}} item needs attention",
+      "store_other": "{{count}} items need attention",
+      "shipping_one": "{{count}} shipping zone needs attention",
+      "shipping_other": "{{count}} shipping zones need attention",
+      "taxes_one": "{{count}} item needs attention",
+      "taxes_other": "{{count}} items need attention",
+      "languages_one": "{{count}} field left to translate",
+      "languages_other": "{{count}} fields left to translate"
+    }
+  },
+  "state": {
+    "unsaved": "Unsaved changes",
+    "upToDate": "All changes saved",
+    "savedAt": "Saved at {{time}}"
+  },
+  "actions": {
+    "save": "Save changes",
+    "discard": "Discard changes",
+    "discardShort": "Discard"
+  },
+  "toast": {
+    "saved": "{{section}} saved",
+    "savedBody": {
+      "store": "Your store details are live on invoices, emails and the contact page.",
+      "shipping": "Checkout now offers the updated zones and rates.",
+      "taxes": "New orders use the updated VAT settings. Past orders keep the tax they were charged.",
+      "languages": "The storefront uses the updated languages."
+    },
+    "failed": "Changes not saved",
+    "failedBody": "The server did not respond. Your edits are still here — try again in a moment.",
+    "fixErrors_one": "Fix {{count}} field before saving",
+    "fixErrors_other": "Fix {{count}} fields before saving",
+    "discarded": "Changes discarded",
+    "pendingBody": "Not live yet — save your changes to publish it."
+  },
+  "errorsSummary": {
+    "title_one": "{{count}} field needs your attention",
+    "title_other": "{{count}} fields need your attention",
+    "body": "They are marked below. Nothing has been saved yet."
+  },
+  "saveError": {
+    "title": "We couldn't save your changes",
+    "body": "Nothing was lost: your edits are still on this page. Check your connection and try again.",
+    "retry": "Try again"
+  },
+  "proto": {
+    "label": "Prototype",
+    "body": "Settings are kept in memory for this session only. Nothing is sent anywhere.",
+    "fail": "Simulate a failed save"
+  },
+  "ui": {
+    "active": "Active",
+    "inactive": "Inactive",
+    "default": "Default",
+    "on": "On",
+    "off": "Off",
+    "cancel": "Cancel",
+    "close": "Close",
+    "actions": "Actions",
+    "moreInfo": "More about {{topic}}",
+    "appliesOnSave": "Goes live when you save the page."
+  },
+  "errors": {
+    "required": "This field is required.",
+    "email": "Enter a valid email address, like name@example.com.",
+    "phone": "Enter a phone number with digits only, spaces allowed (e.g. +33 1 23 45 67 89).",
+    "url": "Enter a full address starting with https://",
+    "postalFr": "A French postal code has 5 digits.",
+    "orderAffix": "Up to 6 letters, digits or hyphens.",
+    "positive": "Enter a number greater than zero.",
+    "tooLong": "Too long — shorten it to fit the limit.",
+    "hours": "Check the opening hours: each open day needs a start before its end.",
+    "days": "Enter whole days, with the maximum at least equal to the minimum.",
+    "pricePositive": "Enter a price above zero, or choose Free shipping.",
+    "freeNeedsThreshold": "Free shipping needs a minimum order amount.",
+    "range": "The maximum must be above the minimum.",
+    "zoneNameTaken": "Another zone already has this name.",
+    "zoneNoCountry": "Choose at least one country.",
+    "percent": "Enter a percentage between 0 and 100.",
+    "vatCountryTaken": "This country already has a rate."
+  },
+  "store": {
+    "business": {
+      "title": "Business information",
+      "description": "Your trading and legal identity, and where customers and the platform reach you."
+    },
+    "address": {
+      "title": "Business address",
+      "description": "Printed on invoices and used as the return address for parcels."
+    },
+    "prefs": {
+      "title": "Store preferences",
+      "description": "The units, formats and numbering used throughout the store and the admin."
+    },
+    "public": {
+      "title": "Customer-facing information",
+      "description": "What customers read on the contact page, in the footer and in order emails.",
+      "contactTitle": "Show on the storefront",
+      "showEmail": "Support email",
+      "showPhone": "Phone number",
+      "showAddress": "Studio address",
+      "showAddressHint": "Only if customers can visit or collect orders."
+    },
+    "fields": {
+      "storeName": "Store name",
+      "legalName": "Legal business name",
+      "businessEmail": "Business email",
+      "supportEmail": "Customer support email",
+      "phone": "Phone number",
+      "website": "Website",
+      "country": "Country",
+      "address1": "Address",
+      "address2": "Apartment, suite, floor",
+      "postalCode": "Postal code",
+      "city": "City",
+      "region": "State / region",
+      "currency": "Default currency",
+      "timezone": "Time zone",
+      "dateFormat": "Date format",
+      "measurement": "Measurement system",
+      "orderPrefix": "Prefix",
+      "orderNextNumber": "Next number",
+      "orderSuffix": "Suffix",
+      "description": "Short store description",
+      "supportMessage": "Customer support message"
+    },
+    "hints": {
+      "storeName": "The name customers see in the header, emails and browser tab.",
+      "legalName": "As registered — shown on invoices and legal pages.",
+      "businessEmail": "Receives order notifications and platform messages. Never shown to customers.",
+      "supportEmail": "Shown to customers and used as the reply-to address on emails.",
+      "phone": "Include the country code.",
+      "website": "",
+      "address2": "Optional",
+      "region": "Optional in most countries",
+      "currency": "Used for prices, orders and reports.",
+      "timezone": "Order times, reports and scheduled promotions follow this zone.",
+      "description": "Used in the footer, search results and link previews.",
+      "supportMessage": "Shown on the contact page and at the end of order emails."
+    },
+    "currencies": {
+      "EUR": "Euro (EUR, €)",
+      "GBP": "British pound (GBP, £)",
+      "CHF": "Swiss franc (CHF)",
+      "USD": "US dollar (USD, $)"
+    },
+    "currencyWarning": {
+      "title": "Existing prices won't be converted.",
+      "body": "Product and shipping prices keep their amounts in the new currency. Past orders keep the currency they were paid in."
+    },
+    "measurement": {
+      "metric": "Metric · kg, cm",
+      "imperial": "Imperial · lb, in"
+    },
+    "order": {
+      "title": "Order number format",
+      "hint": "Applies to new orders only. Existing order numbers never change.",
+      "tip": "Order numbers are what customers quote when they contact you. A short prefix makes them recognisable in an inbox; the next number must be higher than any existing order.",
+      "none": "None",
+      "preview": "Next order number"
+    },
+    "hours": {
+      "title": "Support availability",
+      "hint": "When your team answers messages and calls. Shown on the contact page.",
+      "closed": "Closed",
+      "openOn": "Open on {{day}}",
+      "from": "{{day}} opening time",
+      "to": "{{day}} closing time",
+      "days": {
+        "mon": "Monday",
+        "tue": "Tuesday",
+        "wed": "Wednesday",
+        "thu": "Thursday",
+        "fri": "Friday",
+        "sat": "Saturday",
+        "sun": "Sunday"
+      },
+      "short": {
+        "mon": "Mon",
+        "tue": "Tue",
+        "wed": "Wed",
+        "thu": "Thu",
+        "fri": "Fri",
+        "sat": "Sat",
+        "sun": "Sun"
+      }
+    },
+    "preview": {
+      "label": "Customer preview",
+      "hours": "We're available"
+    }
+  },
+  "shipping": {
+    "zonesTitle": "Shipping zones",
+    "zonesHint": "Each zone lists its countries first, then the methods customers there can choose.",
+    "addZone": "Add shipping zone",
+    "editZone": "Edit zone",
+    "duplicate": "Duplicate zone",
+    "deleteZone": "Delete zone",
+    "addRate": "Add shipping method",
+    "addRateTo": "Add a shipping method to {{name}}",
+    "editRate": "Edit {{name}}",
+    "deleteRate": "Delete {{name}}",
+    "rateActive": "Offer {{name}}",
+    "zoneActive": "Ship to {{name}}",
+    "zoneMenu": "More actions for {{name}}",
+    "countriesIn": "Countries in {{name}}",
+    "copyName": "{{name}} (copy)",
+    "countryCount_one": "{{count}} country",
+    "countryCount_other": "{{count}} countries",
+    "methodCount_one": "{{count}} method · {{active}} active",
+    "methodCount_other": "{{count}} methods · {{active}} active",
+    "restOfWorldLine": "Every country not listed in another zone",
+    "methodsTitle": "Shipping methods",
+    "noRates": "No shipping method yet — customers here can't check out.",
+    "noCountries": "No countries — this zone applies to nobody yet.",
+    "inactiveZone": "Switched off: customers in these countries can't check out until the zone is on again.",
+    "inactiveWorld": "Switched off: countries outside your other zones can't check out.",
+    "notOffered": "not offered at checkout",
+    "showMore": "+{{count}} more",
+    "showLess": "Show less",
+    "free": "Free",
+    "stats": {
+      "zones": "Zones",
+      "countries": "Countries covered",
+      "methods": "Shipping methods",
+      "active_one": "{{count}} active",
+      "active_other": "{{count}} active",
+      "plusWorld": "+ rest of world",
+      "listed": "listed in active zones"
+    },
+    "issues": {
+      "title_one": "{{count}} zone can't be used at checkout",
+      "title_other": "{{count}} zones can't be used at checkout",
+      "noRates": "{{zone}} is on but has no shipping method.",
+      "noActiveRate": "{{zone}} is on but all its methods are switched off."
+    },
+    "empty": {
+      "title": "No shipping zones yet",
+      "body": "Create a zone for the countries you ship to, then add at least one shipping method so customers can check out."
+    },
+    "groups": {
+      "eu": "European Union",
+      "europe": "Rest of Europe",
+      "americas": "Americas",
+      "world": "Asia-Pacific, Middle East & Africa"
+    },
+    "kind": {
+      "standard": "Standard Shipping",
+      "express": "Express Shipping",
+      "free": "Free Shipping",
+      "pickup": "Pickup"
+    },
+    "kindHint": {
+      "standard": "Your everyday tracked delivery at a fixed price.",
+      "express": "A faster option customers pay more for.",
+      "free": "Offered automatically once the basket reaches an amount.",
+      "pickup": "Customers collect their order from the studio, free of charge."
+    },
+    "delivery": {
+      "exact_one": "{{count}} business day",
+      "exact_other": "{{count}} business days",
+      "range": "{{min}}–{{max}} business days",
+      "pickup_one": "Ready in {{count}} business day",
+      "pickup_other": "Ready in {{count}} business days"
+    },
+    "cond": {
+      "none": "All orders",
+      "orderMin": "Orders from {{amount}}",
+      "orderMax": "Orders up to {{amount}}",
+      "orderRange": "Orders {{min}} – {{max}}",
+      "weightMin": "From {{weight}}",
+      "weightMax": "Up to {{weight}}",
+      "weightRange": "{{min}} – {{max}}",
+      "freeOver": "Free from {{amount}}"
+    },
+    "checker": {
+      "title": "Check a destination",
+      "description": "See exactly what a customer in a given country is offered, including unsaved changes.",
+      "country": "Destination country",
+      "via": "{{country}} is in {{zone}}. Customers there can choose:",
+      "viaWorld": "{{country}} isn't listed in a zone, so {{zone}} applies:",
+      "noZone": "No zone covers {{country}} — customers there can't check out.",
+      "inactive": "{{country}} is in {{zone}}, which is switched off — customers there can't check out.",
+      "noRate": "{{country}} is in {{zone}}, but no method is switched on — customers there can't check out."
+    },
+    "confirm": {
+      "zoneTitle": "Delete “{{name}}”?",
+      "zoneBody_one": "Customers in its {{count}} country will no longer be able to check out unless another zone covers them. Its {{rates}} shipping methods are deleted with it. You can still discard this before saving.",
+      "zoneBody_other": "Customers in its {{count}} countries will no longer be able to check out unless another zone covers them. Its {{rates}} shipping methods are deleted with it. You can still discard this before saving.",
+      "zoneConfirm": "Delete zone",
+      "rateTitle": "Delete “{{name}}”?",
+      "rateBody": "Customers in {{zone}} will no longer see this option at checkout. Orders already placed keep the shipping they paid for.",
+      "rateConfirm": "Delete method"
+    },
+    "toast": {
+      "zoneAdded": "Zone “{{name}}” added",
+      "zoneUpdated": "Zone “{{name}}” updated",
+      "zoneDeleted": "Zone “{{name}}” deleted",
+      "zoneEnabled": "Shipping to {{name}} switched on",
+      "zoneDisabled": "Shipping to {{name}} switched off",
+      "zoneDuplicated": "“{{name}}” duplicated",
+      "zoneDuplicatedBody": "The copy starts switched off and without countries — choose them now.",
+      "rateAdded": "“{{name}}” added",
+      "rateUpdated": "“{{name}}” updated",
+      "rateDeleted": "“{{name}}” deleted"
+    },
+    "zoneSheet": {
+      "newTitle": "New shipping zone",
+      "editTitle": "Edit {{name}}",
+      "description": "A zone is a group of countries that share the same shipping methods and prices.",
+      "name": "Zone name",
+      "nameHint": "For you only — customers never see it.",
+      "restOfWorld": "Rest of world",
+      "restOfWorldHint": "Covers every country not listed in another zone.",
+      "restOfWorldTaken": "{{name}} already covers the rest of the world.",
+      "restOfWorldBody": "This zone catches every destination your other zones don't list. Switch it off to ship only to the countries you name.",
+      "active": "Zone is active",
+      "activeHint": "When off, customers in these countries can't check out.",
+      "countries": "Countries",
+      "selected": "Selected countries",
+      "remove": "Remove {{country}}",
+      "search": "Search countries",
+      "selectGroup": "Select all {{count}}",
+      "clearGroup": "Clear all",
+      "inZone": "Currently in {{zone}}",
+      "movingFrom": "Will move from {{zone}}",
+      "noMatch": "No country matches “{{query}}”.",
+      "moveNotice_one": "{{countries}} will move here from {{zone}}.",
+      "moveNotice_other": "{{count}} countries will move here from {{zone}}: {{countries}}.",
+      "add": "Add zone",
+      "apply": "Apply changes"
+    },
+    "rateSheet": {
+      "newTitle": "New shipping method",
+      "editTitle": "Edit shipping method",
+      "description": "Offered to customers in {{zone}}.",
+      "kind": "Type",
+      "name": "Name at checkout",
+      "nameHint": "What customers read when choosing how to receive their order.",
+      "minDays": "Delivery from",
+      "maxDays": "Delivery up to",
+      "readyIn": "Ready for pickup in",
+      "days": "days",
+      "price": "Price",
+      "freeOver": "Free from",
+      "optional": "Optional — the order amount above which this method becomes free.",
+      "freeFrom": "Minimum order amount",
+      "freeFromHint": "Free shipping appears at checkout from this basket total.",
+      "pickupFree": "Pickup is always free for the customer.",
+      "conditions": "Conditions",
+      "conditionsHint": "Leave empty for no limit. The method only appears when the order matches.",
+      "minOrder": "Minimum order",
+      "maxOrder": "Maximum order",
+      "minWeight": "Minimum weight",
+      "maxWeight": "Maximum weight",
+      "noLimit": "No limit",
+      "active": "Offer this method",
+      "activeHint": "When off, it is kept but hidden at checkout.",
+      "preview": "Checkout preview",
+      "add": "Add method",
+      "apply": "Apply changes"
+    }
+  },
+  "taxes": {
+    "enabled": "Charge VAT",
+    "enabledOn": "VAT is calculated on every order using the rules below.",
+    "enabledOff": "No VAT is added to orders.",
+    "disabledTitle": "VAT is switched off",
+    "disabledBody": "Only do this if your business is not VAT-registered. Your rates and rules are kept and come back when you switch VAT on again.",
+    "rules": "VAT rules",
+    "disclaimer": "Rates shown are examples for this prototype. Confirm every rate and rule with your accountant before going live.",
+    "tier1": {
+      "title": "Store default",
+      "caption": "Applies everywhere, unless a country has its own rate."
+    },
+    "tier2": {
+      "title": "Country rates",
+      "caption": "Replace the default for customers in these countries."
+    },
+    "tier3": {
+      "title": "Advanced rules",
+      "caption": "Adjust the rate for particular products or customers."
+    },
+    "precedence": {
+      "title": "How VAT is chosen at checkout",
+      "body": "The country rate wins over the default when one exists; advanced rules then lower or remove it for specific products and customers.",
+      "checker": "Check a destination",
+      "country": "{{country}}: {{rate}} — its own country rate.",
+      "default": "{{country}}: {{rate}} — no country rate, the store default applies.",
+      "export": "{{country}} is outside the EU: exports are usually zero-rated when the export rule is on.",
+      "off": "VAT is switched off — no VAT is charged."
+    },
+    "default": {
+      "title": "Default VAT",
+      "description": "The rate and display rules used whenever nothing more specific applies.",
+      "country": "Default VAT country",
+      "countryHint": "Where your business is registered for VAT.",
+      "rate": "Default VAT rate",
+      "rateHint": "The standard rate of that country.",
+      "pricesInclude": "Prices include VAT",
+      "pricesIncludeHint": "The prices you enter on products already contain VAT.",
+      "showProduct": "Show VAT on product pages",
+      "showProductHint": "Adds “incl. VAT” or “excl. VAT” under every price.",
+      "showCheckout": "Show VAT at checkout",
+      "showCheckoutHint": "Lists the VAT amount as its own line in the basket and on the receipt.",
+      "display": "Show prices to customers"
+    },
+    "display": {
+      "included": "VAT included",
+      "excluded": "VAT excluded"
+    },
+    "tips": {
+      "pricesInclude": "Turn this on if the price you type on a product is the price the customer pays. Turn it off if you type prices before tax and want VAT added on top.",
+      "display": "Consumers in the EU must see prices with VAT included. Show them excluded only if you sell mainly to businesses.",
+      "vies": "VIES is the European Commission's service that confirms a business VAT number is valid. Checking it protects you when you don't charge VAT to a business.",
+      "exempt": "Some customers must not be charged VAT — businesses in another EU country with a valid VAT number (reverse charge), or orders shipped outside the EU. The customer's situation is checked at checkout.",
+      "basis": "The address used to choose the VAT rate. For sales to consumers in the EU, the rate of the delivery country normally applies.",
+      "rounding": "Per line rounds VAT on each product, then adds the lines up. Per order adds everything up first, then rounds once. The result can differ by a cent.",
+      "reduced": "Some products are taxed at a lower rate in some countries — books or certain training, for example. Each reduced rate applies to one category in one country."
+    },
+    "example": {
+      "label": "Example",
+      "enteredGross": "You enter {{price}} on a product (VAT included).",
+      "enteredNet": "You enter {{price}} on a product (before VAT).",
+      "productPage": "Product page shows",
+      "incl": "incl. VAT ({{rate}})",
+      "excl": "excl. VAT",
+      "net": "Price before VAT",
+      "vat": "VAT {{rate}}",
+      "total": "Customer pays",
+      "checkoutHidden": "The VAT line is hidden at checkout."
+    },
+    "rates": {
+      "title": "VAT rates by country",
+      "description": "Countries not listed here use the store default ({{rate}}).",
+      "add": "Add VAT rate",
+      "country": "Country",
+      "rate": "Standard rate",
+      "rateHint": "The country's standard VAT rate, in percent.",
+      "reduced": "Reduced rates",
+      "reducedCount_one": "{{count}} reduced rate",
+      "reducedCount_other": "{{count}} reduced rates",
+      "status": "Status",
+      "storeCountry": "store country",
+      "activeFor": "Apply the {{country}} rate",
+      "edit": "Edit {{country}} rate",
+      "delete": "Delete {{country}} rate",
+      "fallback": "Inactive and unlisted countries fall back to the store default of {{rate}}.",
+      "emptyTitle": "No country rates",
+      "emptyBody": "Every order uses the store default. Add a rate for each country with a different VAT rate.",
+      "addTitle": "Add a VAT rate",
+      "editTitle": "Edit the {{country}} rate",
+      "dialogBody": "Customers delivered to this country are charged this rate instead of the store default.",
+      "chooseCountry": "Choose a country…",
+      "activeLabel": "Active",
+      "activeHint": "When off, the store default applies to this country.",
+      "addConfirm": "Add rate",
+      "editConfirm": "Apply changes",
+      "deleteTitle": "Delete the {{country}} rate?",
+      "deleteBody": "Customers in this country will be charged the store default ({{rate}}) instead. Past orders keep the VAT they were charged.",
+      "deleteConfirm": "Delete rate"
+    },
+    "reduced": {
+      "title": "Reduced VAT rates",
+      "description": "Lower rates for particular product categories, country by country.",
+      "enable": "Use reduced rates",
+      "empty": "No reduced rates yet.",
+      "add": "Add reduced rate",
+      "addTitle": "Add a reduced rate",
+      "addBody": "Applies to products of this category delivered to this country.",
+      "addConfirm": "Add reduced rate",
+      "category": "Product category",
+      "rate": "Reduced rate",
+      "activeFor": "Apply the {{category}} rate in {{country}}",
+      "remove": "Remove the {{category}} rate in {{country}}",
+      "categories": {
+        "training": "Training courses",
+        "books": "Books & printed guides",
+        "hygiene": "Hygiene products",
+        "digital": "Digital publications"
+      }
+    },
+    "b2b": {
+      "title": "Business customers & VAT numbers",
+      "description": "Let professional customers identify their business at checkout.",
+      "collect": "Ask for a VAT number at checkout",
+      "collectHint": "An optional field for customers buying as a business.",
+      "validate": "Check VAT numbers with VIES",
+      "validateHint": "Numbers are checked before the order is placed."
+    },
+    "exempt": {
+      "title": "Tax-exempt customers",
+      "description": "Orders that are not charged VAT, and why.",
+      "enable": "Allow VAT-exempt orders",
+      "groups": {
+        "reverseCharge": {
+          "label": "EU businesses with a valid VAT number",
+          "hint": "Reverse charge: the customer accounts for VAT in their own country. Needs VAT numbers at checkout."
+        },
+        "export": {
+          "label": "Orders shipped outside the EU",
+          "hint": "Exports are zero-rated; local import taxes may apply on delivery."
+        },
+        "trainingBodies": {
+          "label": "Approved training organisations",
+          "hint": "Only for organisations whose exemption you have verified and recorded."
+        }
+      }
+    },
+    "calc": {
+      "title": "Tax calculation",
+      "description": "Which address sets the rate, and how amounts are rounded.",
+      "basis": "Calculate VAT based on",
+      "basisOptions": {
+        "shipping": { "label": "Delivery address", "hint": "Where the order is sent." },
+        "billing": { "label": "Billing address", "hint": "Where the customer is invoiced." },
+        "store": { "label": "Store address", "hint": "Always your own country's rate." }
+      },
+      "recommended": "Recommended",
+      "rounding": "Rounding",
+      "roundLine": "Per line",
+      "roundOrder": "Per order",
+      "shipping": "Charge VAT on shipping",
+      "shippingHint": "Shipping is taxed at the same rate as the products in the order."
+    },
+    "toast": {
+      "rateAdded": "{{country}} rate added",
+      "rateUpdated": "{{country}} rate updated",
+      "rateDeleted": "{{country}} rate deleted",
+      "reducedAdded": "Reduced rate added",
+      "reducedRemoved": "Reduced rate removed"
+    }
+  },
+  "lang": {
+    "names": {
+      "en": "English",
+      "fr": "French",
+      "it": "Italian",
+      "de": "German",
+      "es": "Spanish",
+      "pt": "Portuguese",
+      "nl": "Dutch"
+    },
+    "enabled": {
+      "title": "Enabled languages",
+      "description": "Available to customers, in the order of the storefront's language menu. Drag a row, or use the arrows, to reorder.",
+      "order": "Enabled languages, in storefront order"
+    },
+    "available": "Available languages",
+    "new": "New",
+    "off": "Off",
+    "enable": "Enable",
+    "source": "Source language",
+    "original": "Original content",
+    "coverage": "{{percent}}% translated",
+    "complete": "Complete",
+    "notStarted": "Not started",
+    "missingCount_one": "Needs attention · {{count}} missing",
+    "missingCount_other": "Needs attention · {{count}} missing",
+    "showMissingFor": "show what's missing in {{name}}",
+    "moveUp": "Move {{name}} up",
+    "moveDown": "Move {{name}} down",
+    "moved": "{{name}} moved to position {{position}} of {{total}}.",
+    "menu": "More actions for {{name}}",
+    "setDefault": "Set as default",
+    "viewMissing": "View missing translations",
+    "disable": "Disable language",
+    "defaultNote": "The default language can't be disabled. Choose another default first.",
+    "options": "Language behaviour",
+    "detect": "Suggest the visitor's browser language",
+    "detectHint": "First-time visitors see the storefront in their browser's language when it is enabled.",
+    "fallback": "Fall back to the default language",
+    "fallbackHint": "Untranslated fields show in {{name}} instead of appearing empty.",
+    "disableTitle": "Disable {{name}}?",
+    "disableBody": "{{name}} will no longer be available to customers. Its pages, products, trainings and emails stop being published, and customers who chose {{name}} will see {{fallback}} instead.",
+    "disableKeep": "Translations are kept. Enable the language again to bring everything back.",
+    "disableConfirm": "Disable language",
+    "defaultTitle": "Make {{name}} the default language?",
+    "defaultBody": "{{name}} becomes the language new visitors see first, and the one used when a customer's language isn't available.",
+    "defaultWarning": "{{percent}}% of content is translated in this language. Untranslated fields will show the original English.",
+    "defaultSource": "Content is still written in English and translated from it — only what customers see first changes.",
+    "defaultConfirm": "Set as default",
+    "toast": {
+      "enabled": "{{name}} enabled",
+      "enabledBody": "Nothing is translated yet. Save to make it available to customers.",
+      "disabled": "{{name}} disabled",
+      "default": "{{name}} is now the default"
+    },
+    "coveragePanel": {
+      "title": "Translation coverage",
+      "description": "Share of content translated into every enabled language, by type.",
+      "overall_one": "across {{count}} language",
+      "overall_other": "across {{count}} languages"
+    }
+  },
+  "tr": {
+    "title": "Missing translations",
+    "description": "Everything customers would see untranslated. Pick an item and translate it in place — the list updates as you save.",
+    "itemsToTranslate_one": "item needs translating",
+    "itemsToTranslate_other": "items need translating",
+    "fieldsToTranslate_one": "{{count}} field in total",
+    "fieldsToTranslate_other": "{{count}} fields in total",
+    "itemsShort_one": "{{count}} item",
+    "itemsShort_other": "{{count}} items",
+    "byType": "Filter by content type",
+    "byLanguage": "Filter by language",
+    "untracked": "{{names}}: nothing translated yet. Content is shown in the default language until translations are added.",
+    "search": "Search content by name",
+    "showing": "Showing {{shown}} of {{total}}",
+    "clearFilters": "Clear filters",
+    "edit": "Edit translation",
+    "updatedOn": "Updated {{date}}",
+    "openIn": "Translate {{item}} into {{name}} — {{done}} of {{total}} fields done",
+    "filters": {
+      "language": "Language",
+      "type": "Content type",
+      "status": "Status",
+      "sort": "Sort by",
+      "allLanguages": "All languages",
+      "allTypes": "All content",
+      "allStatuses": "All statuses"
+    },
+    "sort": {
+      "priority": "Priority first",
+      "recent": "Recently updated",
+      "incomplete": "Most incomplete",
+      "name": "Name A–Z"
+    },
+    "col": {
+      "content": "Content",
+      "missing": "Missing in",
+      "status": "Status",
+      "progress": "Translated"
+    },
+    "status": {
+      "missing": "Missing",
+      "partial": "Partial",
+      "outdated": "Needs review",
+      "complete": "Complete"
+    },
+    "priority": {
+      "high": "High priority",
+      "normal": "Normal",
+      "low": "Low"
+    },
+    "type": {
+      "product": "Product",
+      "category": "Category",
+      "module": "Training module",
+      "email": "Email template",
+      "content": "Page"
+    },
+    "typePlural": {
+      "product_one": "product",
+      "product_other": "products",
+      "category_one": "category",
+      "category_other": "categories",
+      "module_one": "training module",
+      "module_other": "training modules",
+      "email_one": "email template",
+      "email_other": "email templates",
+      "content_one": "other content item",
+      "content_other": "other content items"
+    },
+    "area": {
+      "storefront": "Storefront",
+      "product": "Products",
+      "category": "Categories",
+      "module": "Training courses",
+      "email": "Emails",
+      "content": "Pages"
+    },
+    "field": {
+      "name": "Name",
+      "shortDescription": "Short description",
+      "description": "Description",
+      "seoTitle": "SEO title",
+      "title": "Title",
+      "summary": "Summary",
+      "objectives": "Learning objectives",
+      "subject": "Subject line",
+      "preheader": "Preview text",
+      "body": "Body"
+    },
+    "fieldState": {
+      "missing": "Missing",
+      "outdated": "Needs review",
+      "translated": "Translated"
+    },
+    "allDone": {
+      "title": "Everything is translated",
+      "body": "Every enabled language is complete. New content will appear here as soon as it needs translating."
+    },
+    "noMatch": {
+      "title": "Nothing matches these filters",
+      "body": "Try another language or content type, or clear the filters to see everything that is missing."
+    },
+    "editor": {
+      "description": "Translate side by side with the English original. Missing fields are highlighted.",
+      "languages": "Translation language",
+      "completeTitle": "Already fully translated",
+      "progress": "{{name}} · {{done}} of {{total}} fields translated",
+      "left_one": "{{count}} missing",
+      "left_other": "{{count}} missing",
+      "toReview_one": "{{count}} to review",
+      "toReview_other": "{{count}} to review",
+      "prev": "Previous gap",
+      "next": "Next missing field",
+      "fields": "Fields",
+      "original": "English — original",
+      "placeholder": "Add {{name}} translation",
+      "placeholders": "Keep {{list}} — it is replaced with the customer's details when the email is sent.",
+      "outdated": "The English changed on {{date}}, after this was translated.",
+      "keep": "Still correct",
+      "reviewMany_one": "{{count}} field was translated before the English changed.",
+      "reviewMany_other": "{{count}} fields were translated before the English changed.",
+      "confirmAll": "Mark all as reviewed",
+      "alreadyComplete": "{{name}} is already fully translated for this item.",
+      "unsaved_one": "Unsaved edits in {{count}} language",
+      "unsaved_other": "Unsaved edits in {{count}} languages",
+      "noChanges": "No changes yet",
+      "save": "Save translation",
+      "saveNext": "Save & next item",
+      "skip": "Skip to next item",
+      "saved": "Translation saved — {{name}}",
+      "failed": "Translation not saved",
+      "failedInline": "Not saved — your text is still here. Try again.",
+      "leaveTitle": "Leave without saving?",
+      "leaveBody": "Your translation edits for this item will be lost.",
+      "leaveConfirm": "Discard edits",
+      "leaveCancel": "Keep editing"
+    }
+  }
+}

@@ -11,14 +11,17 @@ import promoEn from "./locales/promotions.en.json";
 // Reviews and their moderation, likewise in their own pair, under `reviews`.
 import reviewsFr from "./locales/reviews.fr.json";
 import reviewsEn from "./locales/reviews.en.json";
+// Same arrangement for the Settings workspace, under `settings`.
+import settingsFr from "./locales/settings.fr.json";
+import settingsEn from "./locales/settings.en.json";
 
 i18n
   .use(LanguageDetector)
   .use(initReactI18next)
   .init({
     resources: {
-      fr: { translation: { ...fr, promo: promoFr, reviews: reviewsFr } },
-      en: { translation: { ...en, promo: promoEn, reviews: reviewsEn } },
+      fr: { translation: { ...fr, promo: promoFr, reviews: reviewsFr, settings: settingsFr } },
+      en: { translation: { ...en, promo: promoEn, reviews: reviewsEn, settings: settingsEn } },
     },
     fallbackLng: "fr",
     supportedLngs: ["fr", "en"],
