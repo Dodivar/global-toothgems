@@ -51,6 +51,7 @@ import { Orders as AdminOrders } from "./pages/admin/Orders";
 import { OrderDetail as AdminOrderDetail } from "./pages/admin/OrderDetail";
 import { Customers as AdminCustomers } from "./pages/admin/Customers";
 import { CustomerDetail as AdminCustomerDetail } from "./pages/admin/CustomerDetail";
+import { Users as AdminUsers } from "./pages/admin/Users";
 
 function ScrollToTop() {
   const { pathname } = useLocation();
@@ -225,6 +226,12 @@ export default function App() {
                             filtered page rather than to row one. */}
                         <Route path="clients" element={<AdminCustomers />} />
                         <Route path="clients/:id" element={<AdminCustomerDetail />} />
+                        {/* Users — the people who work in the back office and
+                            their roles. One route: the profile is a drawer
+                            whose address is the `utilisateur` query key, so it
+                            can still be linked to. Not in the navigation rail,
+                            which this change deliberately leaves untouched. */}
+                        <Route path="utilisateurs" element={<AdminUsers />} />
                         {/* Statistics. Read-only, and entirely derived from the
                             filters in its query string, so a filtered report is
                             a link a colleague can open on the same numbers. */}

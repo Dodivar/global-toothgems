@@ -1,7 +1,7 @@
 import { createContext, useCallback, useContext, useRef, useState, type ReactNode } from "react";
-import { CheckCircle2, Info, TriangleAlert } from "lucide-react";
+import { CheckCircle2, CircleAlert, Info, TriangleAlert } from "lucide-react";
 
-type ToastTone = "success" | "info" | "warning";
+type ToastTone = "success" | "info" | "warning" | "error";
 
 interface Toast {
   id: number;
@@ -20,11 +20,13 @@ const toneIcon: Record<ToastTone, typeof CheckCircle2> = {
   success: CheckCircle2,
   info: Info,
   warning: TriangleAlert,
+  error: CircleAlert,
 };
 const toneColor: Record<ToastTone, string> = {
   success: "var(--status-success-fg)",
   info: "var(--status-info-fg)",
   warning: "var(--status-warning-fg)",
+  error: "var(--status-error-fg)",
 };
 
 export function ToastProvider({ children }: { children: ReactNode }) {
