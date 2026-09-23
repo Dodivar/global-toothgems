@@ -8,14 +8,17 @@ import en from "./locales/en.json";
 // reviewable.
 import promoFr from "./locales/promotions.fr.json";
 import promoEn from "./locales/promotions.en.json";
+// Same arrangement for the Settings workspace, under `settings`.
+import settingsFr from "./locales/settings.fr.json";
+import settingsEn from "./locales/settings.en.json";
 
 i18n
   .use(LanguageDetector)
   .use(initReactI18next)
   .init({
     resources: {
-      fr: { translation: { ...fr, promo: promoFr } },
-      en: { translation: { ...en, promo: promoEn } },
+      fr: { translation: { ...fr, promo: promoFr, settings: settingsFr } },
+      en: { translation: { ...en, promo: promoEn, settings: settingsEn } },
     },
     fallbackLng: "fr",
     supportedLngs: ["fr", "en"],

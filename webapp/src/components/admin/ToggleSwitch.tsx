@@ -33,7 +33,9 @@ export function ToggleSwitch({ label, description, checked, onChange, disabled }
         )}
       </div>
 
-      <span className="relative inline-flex flex-none items-center">
+      {/* The painted track is a label for the input too, so clicking the
+          switch itself toggles it, not only its text. */}
+      <label htmlFor={id} className="relative inline-flex flex-none items-center">
         <input
           id={id}
           type="checkbox"
@@ -52,7 +54,7 @@ export function ToggleSwitch({ label, description, checked, onChange, disabled }
           aria-hidden="true"
           className="pointer-events-none absolute left-0.5 top-0.5 h-5 w-5 rounded-full bg-[var(--gt-white)] shadow-[var(--shadow-xs)] transition-transform duration-[var(--duration-fast)] peer-checked:translate-x-5"
         />
-      </span>
+      </label>
     </div>
   );
 }
