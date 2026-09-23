@@ -2891,5 +2891,52 @@
     "timeDays_other": "{{count}} d ago",
     "timeWeeks_one": "{{count}} w ago",
     "timeWeeks_other": "{{count}} w ago"
+  },
+  "errors": {
+    "preview": {
+      "label": "Prototype · system pages",
+      "notFound": "404",
+      "serverError": "500",
+      "maintenance": "Maintenance"
+    },
+    "actions": {
+      "home": "Back to homepage"
+    },
+    "notFound": {
+      "documentTitle": "Page not found",
+      "status": "404 · Page not found",
+      "title": "Oops, this page took a little detour.",
+      "body": "The page you’re looking for has moved, been renamed or never existed. Nothing is broken — let’s get you back to something that sparkles.",
+      "requested": "You were looking for:",
+      "shop": "Explore the shop",
+      "back": "Go back"
+    },
+    "serverError": {
+      "documentTitle": "Something went a little off",
+      "status": "500 · Temporary issue",
+      "title": "Something went a little off.",
+      "body": "Our site hit a temporary snag on our side. The team is already on it, and things should be back in place shortly.",
+      "note": "Nothing you did caused this, and there’s nothing you need to fix.",
+      "retry": "Try again",
+      "retrying": "Trying again…",
+      "pause": "Brief pause",
+      "stillOff": "Not quite yet — we’re still on it. Try again in a moment.",
+      "stillOffAgain": "Still being sorted out. Feel free to head back to the homepage in the meantime."
+    },
+    "maintenance": {
+      "documentTitle": "Back shortly",
+      "status": "Maintenance mode",
+      "title": "We’ll be back shortly.",
+      "body": "Global Toothgems is taking a short pause for planned improvements, so the shop, the Academy and your account work even better when we return.",
+      "note": "No action needed on your side — simply come back a little later.",
+      "refresh": "Refresh page",
+      "refreshing": "Checking…",
+      "chip": "Work in progress",
+      "statusTitle": "We’re making things better behind the scenes.",
+      "progressLabel": "Maintenance in progress",
+      "checked": "Checked at {{time}} — still polishing. Thank you for your patience.",
+      "logoAlt": "Global Toothgems — homepage",
+      "copyright": "© 2026 Global Toothgems"
+    }
   }
 }

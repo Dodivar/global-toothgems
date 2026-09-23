@@ -748,3 +748,115 @@
   .gt-admin-drawer,
   .gt-admin-dialog { animation: none; }
 }
+
+/* ---------------------------------------------------------------------------
+   System pages — 404, server error, maintenance
+   ---------------------------------------------------------------------------
+   One gentle entrance and a handful of slow, looping decorations. Everything
+   moves on opacity and transform only, the actions are clickable from the
+   first frame, and every loop is removed under reduced motion rather than
+   merely shortened.
+--------------------------------------------------------------------------- */
+@layer components {
+  /* Staggered entrance. The delay is set inline per block and stays short
+     (≤ 200ms) so the primary action is never waiting on choreography. */
+  .gt-sys-enter {
+    animation: gt-sys-enter var(--duration-slow) var(--ease-out-soft) both;
+    animation-delay: var(--gt-delay, 0ms);
+  }
+
+  /* SVG decorations rotate and bob around their own centre. */
+  .gt-sys-float,
+  .gt-sys-wobble,
+  .gt-sys-twinkle {
+    transform-box: fill-box;
+    transform-origin: center;
+  }
+  .gt-sys-float { animation: gt-sys-float 6s var(--ease-in-out) infinite; }
+  .gt-sys-twinkle { animation: gt-sys-twinkle 3.2s var(--ease-in-out) infinite; animation-delay: var(--gt-delay, 0ms); }
+
+  /* The server-error gem, reaching back towards its place and never quite
+     clicking in: an interruption, not a breakage. */
+  .gt-sys-wobble { animation: gt-sys-wobble 4.8s var(--ease-in-out) infinite; }
+
+  /* The 404 detour: the dotted trail drifts towards the gem that wandered off. */
+  .gt-sys-trail { animation: gt-sys-trail 2.8s linear infinite; }
+
+  /* Maintenance: slow orbit and the setting ring being worked on. Both rotate
+     about the centre of the 400×400 artboard. */
+  .gt-sys-orbit,
+  .gt-sys-spin {
+    transform-box: view-box;
+    transform-origin: 50% 50%;
+  }
+  .gt-sys-orbit { animation: gt-sys-spin 36s linear infinite; }
+  .gt-sys-spin { animation: gt-sys-spin 2.6s var(--ease-in-out) infinite; }
+
+  /* Live status dot. The ring expands behind a solid dot, so the dot itself
+     stays perfectly legible; the adjacent text carries the meaning. */
+  .gt-sys-pulse { position: relative; }
+  .gt-sys-pulse::after {
+    content: "";
+    position: absolute;
+    inset: 0;
+    border-radius: inherit;
+    background: inherit;
+    animation: gt-sys-pulse 2.2s var(--ease-out-soft) infinite;
+  }
+
+  /* Indeterminate progress: a short bar gliding across the track. There is no
+     percentage because there is no real estimate to show. */
+  .gt-sys-progress { animation: gt-sys-progress 2.4s var(--ease-in-out) infinite; }
+}
+
+@keyframes gt-sys-enter {
+  from { opacity: 0; transform: translateY(10px); }
+  to { opacity: 1; transform: none; }
+}
+
+@keyframes gt-sys-float {
+  0%, 100% { transform: translateY(0) rotate(0deg); }
+  50% { transform: translateY(-7px) rotate(-3deg); }
+}
+
+@keyframes gt-sys-twinkle {
+  0%, 100% { opacity: 1; transform: scale(1); }
+  50% { opacity: .35; transform: scale(.65); }
+}
+
+@keyframes gt-sys-wobble {
+  0%, 100% { transform: translate(0, 0) rotate(0deg); }
+  45% { transform: translate(-5px, -9px) rotate(-9deg); }
+  60% { transform: translate(-4px, -8px) rotate(-7deg); }
+}
+
+@keyframes gt-sys-trail {
+  to { stroke-dashoffset: -18; }
+}
+
+@keyframes gt-sys-spin {
+  to { transform: rotate(360deg); }
+}
+
+@keyframes gt-sys-pulse {
+  0% { opacity: .55; transform: scale(1); }
+  80%, 100% { opacity: 0; transform: scale(2.6); }
+}
+
+@keyframes gt-sys-progress {
+  0% { transform: translateX(-110%); }
+  100% { transform: translateX(260%); }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .gt-sys-enter,
+  .gt-sys-float,
+  .gt-sys-twinkle,
+  .gt-sys-wobble,
+  .gt-sys-trail,
+  .gt-sys-orbit,
+  .gt-sys-spin { animation: none; }
+  .gt-sys-pulse::after { animation: none; opacity: 0; }
+  /* A resting bar, centred: still reads as "in progress" beside its label. */
+  .gt-sys-progress { animation: none; transform: translateX(80%); }
+}
