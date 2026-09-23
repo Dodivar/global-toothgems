@@ -11,6 +11,7 @@ import {
   Settings,
   ShoppingBag,
   Tags,
+  TicketPercent,
   Users,
   type LucideIcon,
 } from "lucide-react";
@@ -45,6 +46,7 @@ const MAIN: RailItem[] = [
   { to: "/admin/clients", labelKey: "admin.nav.customers", icon: Users },
   { to: "/admin/produits", labelKey: "admin.nav.products", icon: Package },
   { to: "/admin/categories", labelKey: "admin.nav.categories", icon: Tags },
+  { to: "/admin/promotions", labelKey: "admin.nav.promotions", icon: TicketPercent },
   { to: "/admin/statistiques", labelKey: "admin.nav.analytics", icon: BarChart3 },
 ];
 

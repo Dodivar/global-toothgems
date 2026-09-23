@@ -9,6 +9,7 @@ import { ProgressProvider } from "./lib/progress";
 import { CommunityProvider } from "./lib/community";
 import { ToastProvider } from "./lib/toast";
 import { SecurityProvider } from "./lib/securityState";
+import { PromotionsProvider } from "./lib/adminPromotions";
 import { Header } from "./components/layout/Header";
 import { Footer } from "./components/layout/Footer";
 import { HeaderEditorial } from "./components/layout/HeaderEditorial";
@@ -57,6 +58,15 @@ import { OrderDetail as AdminOrderDetail } from "./pages/admin/OrderDetail";
 import { Customers as AdminCustomers } from "./pages/admin/Customers";
 import { CustomerDetail as AdminCustomerDetail } from "./pages/admin/CustomerDetail";
 import { Users as AdminUsers } from "./pages/admin/Users";
+import { Promotions as AdminPromotions } from "./pages/admin/Promotions";
+import { PromotionEditor as AdminPromotionEditor } from "./pages/admin/PromotionEditor";
+import { PromotionDetail as AdminPromotionDetail } from "./pages/admin/PromotionDetail";
+import { CampaignDetail as AdminCampaignDetail } from "./pages/admin/CampaignDetail";
+import { CampaignEditor as AdminCampaignEditor } from "./pages/admin/CampaignEditor";
+import { GiftCardDetail as AdminGiftCardDetail } from "./pages/admin/GiftCardDetail";
+import { GiftCardSettings as AdminGiftCardSettings } from "./pages/admin/GiftCardSettings";
+import { PromotionPreview as AdminPromotionPreview } from "./pages/admin/PromotionPreview";
+import { GiftCard } from "./pages/GiftCard";
 import { NotFound } from "./pages/NotFound";
 import { ServerError } from "./pages/ServerError";
 import { Maintenance } from "./pages/Maintenance";
@@ -115,6 +125,10 @@ export default function App() {
           the member area and by the verification page a link lands on. */}
       <SecurityProvider>
       <AdminAuthProvider>
+      {/* Promotions, campaigns and gift cards. Above the routes rather than in
+          the admin layout: the storefront gift card page reads the same product
+          configuration, so an edit in the back office shows on /carte-cadeau. */}
+      <PromotionsProvider>
         {/* Learning progress and orders sit above the cart: paying turns the cart
             into an order, and both histories feed the member dashboard. */}
         <ProgressProvider>
@@ -170,6 +184,11 @@ export default function App() {
                       {/* The loyalty programme's own sales page, open like the Academy
                           landing page: gating it would hide what it advertises. */}
                       <Route path="/fidelite" element={<LoyaltyProgram />} />
+                      {/* The gift card product page. Open to everyone; its amounts,
+                          designs and fields come from the back office's gift card
+                          configuration. The English path is an alias. */}
+                      <Route path="/carte-cadeau" element={<GiftCard />} />
+                      <Route path="/gift-card" element={<GiftCard />} />
                       {/* The Academy landing page stays open — it is the sales page.
                           Only the course content itself requires an account, and gating
                           the route covers the menu links and direct URLs at once. */}
@@ -269,6 +288,20 @@ export default function App() {
                         <Route path="produits/nouveau" element={<AdminProductNew />} />
                         <Route path="produits/:id" element={<AdminProductEdit />} />
                         <Route path="categories" element={<AdminCategories />} />
+                        {/* Promotions, campaigns and gift cards: one workspace
+                            with tabs in the query string, and one route per
+                            record so a promotion, a campaign or a gift card is
+                            a link a colleague can open. */}
+                        <Route path="promotions" element={<AdminPromotions />} />
+                        <Route path="promotions/nouvelle" element={<AdminPromotionEditor />} />
+                        <Route path="promotions/apercu" element={<AdminPromotionPreview />} />
+                        <Route path="promotions/cartes-cadeaux/configuration" element={<AdminGiftCardSettings />} />
+                        <Route path="promotions/cartes-cadeaux/:code" element={<AdminGiftCardDetail />} />
+                        <Route path="promotions/campagnes/nouvelle" element={<AdminCampaignEditor />} />
+                        <Route path="promotions/campagnes/:id" element={<AdminCampaignDetail />} />
+                        <Route path="promotions/campagnes/:id/modifier" element={<AdminCampaignEditor />} />
+                        <Route path="promotions/:id" element={<AdminPromotionDetail />} />
+                        <Route path="promotions/:id/modifier" element={<AdminPromotionEditor />} />
                       </Route>
 
                       {/* System pages. The server-error and maintenance screens
@@ -287,6 +320,7 @@ export default function App() {
             </CartProvider>
           </OrdersProvider>
         </ProgressProvider>
+      </PromotionsProvider>
       </AdminAuthProvider>
       </SecurityProvider>
     </AuthProvider>

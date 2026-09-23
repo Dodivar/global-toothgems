@@ -3,14 +3,19 @@ import { initReactI18next } from "react-i18next";
 import LanguageDetector from "i18next-browser-languagedetector";
 import fr from "./locales/fr.json";
 import en from "./locales/en.json";
+// The Promotions & Gift Cards workspace keeps its copy in its own pair of files
+// (mounted under the top-level `promo` key) so the two main locale files stay
+// reviewable.
+import promoFr from "./locales/promotions.fr.json";
+import promoEn from "./locales/promotions.en.json";
 
 i18n
   .use(LanguageDetector)
   .use(initReactI18next)
   .init({
     resources: {
-      fr: { translation: fr },
-      en: { translation: en },
+      fr: { translation: { ...fr, promo: promoFr } },
+      en: { translation: { ...en, promo: promoEn } },
     },
     fallbackLng: "fr",
     supportedLngs: ["fr", "en"],
