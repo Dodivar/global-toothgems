@@ -14,7 +14,6 @@ import {
   MAX_PHOTOS,
   MAX_PHOTO_BYTES,
   TITLE_MAX,
-  privacyName,
   subjectKey,
   tagsFor,
   type CustomerReview,
@@ -29,7 +28,6 @@ import {
   useReviews,
   type FormTarget,
 } from "../../lib/reviews";
-import { useAuth } from "../../lib/auth";
 
 const focusRing =
   "focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-[var(--focus-ring)]";
@@ -65,8 +63,7 @@ function FormDialogBody({ target, onClose, closeLabel }: { target: FormTarget; o
   const { t, i18n } = useTranslation();
   const lang = i18n.language;
   const navigate = useNavigate();
-  const { profile, displayName } = useAuth();
-  const { getReview, drafts, saveDraft, submitReview, updateReview } = useReviews();
+  const { getReview, drafts, saveDraft, submitReview, updateReview, myName } = useReviews();
   const eligibility = useReviewEligibility();
   const authorOf = useReviewAuthor();
 
@@ -117,7 +114,7 @@ function FormDialogBody({ target, onClose, closeLabel }: { target: FormTarget; o
   // Captured once: after an edit is sent the review is pending again, but the
   // confirmation still has to explain that a *published* review went back.
   const [published] = useState(() => editing?.status === "published");
-  const author = editing ? authorOf(editing) : profile?.firstName ? privacyName(profile.firstName, profile.lastName) : displayName;
+  const author = editing ? authorOf(editing) : myName;
   const hadDraft = !editing && Boolean(drafts[key]);
 
   const set = <K extends keyof ReviewInput>(field: K, value: ReviewInput[K]) => {

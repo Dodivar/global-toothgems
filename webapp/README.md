@@ -68,6 +68,7 @@ src/
   components/account/ Dashboard pieces (stat tile, course row, certificate card, order card)
   components/academy/ The training detail page: hero, curriculum accordion, assessment, diploma, community, shared primitives
   components/community/ Forum pieces (navigation, discussion card, showcase card, reactions, member card, composer, locked preview)
+  components/reviews/ Customer reviews: stars, badges, review card, section, form, request, overlays; admin/ holds the moderation workspace
   components/loyalty/ The Loyalty Club: stamp, card, progress, reward, steps, journey, FAQ, checkout banner, demo switcher
   components/layout/ Header (desktop nav + mega panel, mobile burger menu) and Footer
   pages/admin/      The administration workspace: access screen, shell, dashboard, orders, products, categories
@@ -290,6 +291,39 @@ How it is put together:
 A labelled **Prototype** bar on the overview switches between sample data, an empty shop and a loading error. "Christmas Early Bird -15%" is deliberately invalid (end before start, missing code) to show the invalid-configuration state; "Spring Studio Days" is a campaign with no promotions and no products.
 
 Everything that matters for money or access — code uniqueness, discount calculation, balance changes, cancellation, delivery — must be enforced server-side in the real implementation; the checks here are presentation only.
+
+## Reviews and moderation (`/admin/avis`, `/compte/avis`)
+
+A front-end-only prototype of customer reviews for products and trainings, and of their moderation. No backend, no uploads leave the browser, no persistence: a reload restores the seed. It adds **Reviews** to the admin rail's main group and **My reviews** to the member area's navigation; nothing else in either navigation changed.
+
+| Where | What |
+| --- | --- |
+| `/boutique/:id` | Reviews section below the purchase info, specifications and FAQ: average, count, star distribution (each bar filters), most helpful review, customer photos, filters (stars, with photos, verified) and sorting, review cards with verified badge, privacy name ("Sarah M."), helpful vote, discreet report, and the team's public response. The rating line under the product name reads the same published reviews |
+| `/academy/formation/:id` | The course variant: "Verified student", progress at the time of writing, what students highlight (most-used tags) and student result photos |
+| `/compte/avis` | My reviews: requests for what can still be reviewed, every review with a status explained in plain words (in review, published, needs changes with the team's message, not published with the reason), edit / edit and send again, and the lifecycle |
+| `/compte`, `/compte/commandes`, `/compte/attestations`, `/academy/lecon` | The reusable review request (`ReviewRequestCard`): on the dashboard, beside a finished training, and in the lesson player from 50 % progress; "Write a review" on eligible order lines |
+| `/admin/avis` | Overview: KPIs, "needs your attention", distribution, moderation health, average rating by product and by training |
+| `/admin/avis?vue=file` | Moderation queue: status views (pending, edited, reported, published, needs changes, rejected, hidden, all), search, type, product/training, rating, date and sort — all in the query string. Table on desktop, cards on phones |
+| `/admin/avis?vue=signalements` | Reported reviews: reports grouped by reason, keep published / hide / remove / investigate, recently decided |
+| `?avis=RV-1008` | Moderation panel (side sheet): the full review and photos, customer, order (linked when it is in the admin order book), verification, reports, public response with live preview, internal notes, history, and the decision row |
+
+How it is put together:
+
+- `data/reviewSystem.ts` — types and seed (~45 reviews across products and trainings: every status, photos, responses, reports, an unverified gift review, an edited review back in moderation). The prototype's "today" is `REVIEW_NOW` (23 Sept 2026).
+- `lib/reviewRules.ts` — pure rules: summaries, public filters and sorts, featured review, form validation, queue filters, dashboard statistics.
+- `lib/reviews.tsx` — the store and every lifecycle action, mounted in `App.tsx` above the storefront and the admin, so a review approved in the back office appears on the product page in the same session. Also the eligibility hooks and the three overlays' state (form, report, photo viewer), rendered once by `components/reviews/ReviewOverlays.tsx`.
+- `components/reviews/` — stars (display and radio-group input), badges, card, section, form, request, eligibility panel; `components/reviews/admin/` — dashboard, queue, reported view, moderation sheet and action dialogs.
+- Copy lives in `i18n/locales/reviews.{fr,en}.json`, mounted under the `reviews` key.
+
+Rules the prototype shows, and the assumptions behind them (to confirm before the real build):
+
+- **Eligibility** comes from the account's own data: a product is reviewable once an order containing it has **shipped or been delivered** (not cancelled); a training once **50 %** of it is validated (`COURSE_REVIEW_THRESHOLD`). One review per product or training; after that, the way forward is editing it. Signed out, nothing is reviewable.
+- **Editing a published review sends it back to moderation and takes it off the page** until the new version is approved.
+- **Reports never remove anything automatically.** "Remove" rejects the review and keeps it, its reports and its history on record.
+- **Customer text is never translated or edited** (guideline 08); a review that can't be published is sent back with a message or rejected with a reason the customer sees.
+- Averages and counts on product and course pages are computed from the published reviews in the store, so they differ from the catalogue's `rating`/`reviewCount` fields that shop cards still show.
+
+Prototype controls: the admin bar switches between sample data, no reviews and a loading error (this also empties the storefront sections); each storefront section has its own small switch for loading, empty and error. Everything that matters — eligibility, the order behind "verified", photo type/size checks and storage, authorship, moderation permissions — must be enforced server-side in the real implementation; the checks here are presentation only.
 
 ## Notes on scope
 

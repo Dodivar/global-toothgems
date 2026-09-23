@@ -98,7 +98,7 @@ export function StarInput({
                 key={n}
                 onMouseEnter={() => setHover(n)}
                 className={clsx(
-                  "grid cursor-pointer place-items-center rounded-[var(--radius-sm)] p-1 transition-transform duration-[var(--duration-fast)] ease-[var(--ease-out-soft)] hover:scale-110",
+                  "relative grid cursor-pointer place-items-center rounded-[var(--radius-sm)] p-1 transition-transform duration-[var(--duration-fast)] ease-[var(--ease-out-soft)] hover:scale-110",
                   "has-[:focus-visible]:outline has-[:focus-visible]:outline-2 has-[:focus-visible]:outline-offset-1 has-[:focus-visible]:outline-[var(--focus-ring)]",
                 )}
               >

@@ -81,8 +81,14 @@ export function ReviewsSection({
   const state: Preview = preview !== "live" ? preview : demoMode === "error" ? "error" : loading ? "loading" : published.length === 0 ? "empty" : "live";
   const list = state === "live" ? published : [];
 
-  const filtered = sortPublic(list.filter((r) => matchesPublicFilter(r, filter)), sort);
   const featured = course ? null : featuredReview(list);
+  // The featured review is shown once, above the list — not a second time in it,
+  // unless a filter or sort is being used to look for something specific.
+  const browsing = filter === "all" && sort === "recent";
+  const filtered = sortPublic(
+    list.filter((r) => matchesPublicFilter(r, filter) && !(browsing && featured && r.id === featured.id)),
+    sort,
+  );
   const highlights = course ? topTags(list) : [];
   const photos = list.flatMap((r) => r.photos.map((p, index) => ({ ...p, index, review: r })));
   const name = subjectName(subject, lang);
@@ -106,7 +112,7 @@ export function ReviewsSection({
         course && !inline && "bg-[var(--surface-brand-wash)]",
       )}
     >
-      <div ref={ref} className="gt-reveal mx-auto grid max-w-[var(--max-width-content)] gap-[clamp(24px,3.5vw,40px)]">
+      <div ref={ref} className="gt-reveal mx-auto grid max-w-[var(--max-width-content)] grid-cols-[minmax(0,1fr)] gap-[clamp(24px,3.5vw,40px)]">
         <header className="grid gap-2.5">
           <span className="gt-eyebrow flex items-center gap-2">
             {course ? <Users size={13} aria-hidden="true" /> : <MessageSquareText size={13} aria-hidden="true" />}
@@ -120,7 +126,7 @@ export function ReviewsSection({
           </p>
         </header>
 
-        <div className="grid items-start gap-[clamp(20px,3vw,40px)] lg:grid-cols-[minmax(280px,340px)_minmax(0,1fr)]">
+        <div className="grid grid-cols-[minmax(0,1fr)] items-start gap-[clamp(20px,3vw,40px)] lg:grid-cols-[minmax(280px,340px)_minmax(0,1fr)]">
           {/* ------------------------------ Aside ------------------------------ */}
           <aside className="grid gap-4 lg:sticky lg:top-[96px]" aria-label={t("reviews.section.summaryLabel")}>
             {state === "loading" ? (
@@ -149,7 +155,7 @@ export function ReviewsSection({
           </aside>
 
           {/* ------------------------------ Main ------------------------------- */}
-          <div className="grid min-w-0 gap-6">
+          <div className="grid min-w-0 grid-cols-[minmax(0,1fr)] gap-6">
             {state === "error" ? (
               <div role="alert" className="grid justify-items-start gap-3 rounded-[var(--radius-card)] border border-[var(--gt-red-400)] bg-[var(--status-error-bg)] p-[var(--space-6)]">
                 <span className="flex items-center gap-2 font-semibold text-[var(--status-error-fg)]">
@@ -179,7 +185,7 @@ export function ReviewsSection({
               </div>
             ) : (
               <>
-                {featured && (
+                {featured && browsing && (
                   <div className="grid gap-2">
                     <span className="gt-eyebrow flex items-center gap-2">
                       <Sparkles size={13} aria-hidden="true" className="text-[var(--accent-highlight)]" />
@@ -248,7 +254,7 @@ export function ReviewsSection({
                           <label
                             key={f}
                             className={clsx(
-                              "flex flex-none cursor-pointer items-center gap-1.5 whitespace-nowrap rounded-[var(--radius-pill)] border px-3.5 py-2 text-[length:var(--text-caption)] font-semibold transition-colors duration-[var(--duration-fast)]",
+                              "relative flex flex-none cursor-pointer items-center gap-1.5 whitespace-nowrap rounded-[var(--radius-pill)] border px-3.5 py-2 text-[length:var(--text-caption)] font-semibold transition-colors duration-[var(--duration-fast)]",
                               "has-[:focus-visible]:outline has-[:focus-visible]:outline-2 has-[:focus-visible]:outline-offset-2 has-[:focus-visible]:outline-[var(--focus-ring)]",
                               on
                                 ? "border-transparent bg-[var(--surface-inverse)] text-[var(--text-inverse)]"
@@ -412,7 +418,7 @@ function PreviewSwitch({ value, onChange, name }: { value: Preview; onChange: (v
         <label
           key={o}
           className={clsx(
-            "cursor-pointer rounded-[var(--radius-pill)] px-2.5 py-1 text-[11px] font-semibold transition-colors",
+            "relative cursor-pointer rounded-[var(--radius-pill)] px-2.5 py-1 text-[11px] font-semibold transition-colors",
             "has-[:focus-visible]:outline has-[:focus-visible]:outline-2 has-[:focus-visible]:outline-[var(--focus-ring)]",
             value === o ? "bg-[var(--surface-inverse)] text-[var(--text-inverse)]" : "text-[var(--text-muted)] hover:bg-[var(--gt-ink-100)]",
           )}

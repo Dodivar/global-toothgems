@@ -57,6 +57,8 @@ export interface PhotoViewerTarget {
 
 interface ReviewsContextValue {
   reviews: CustomerReview[];
+  /** "Sarah M." — how the signed-in customer's reviews are signed. */
+  myName: string;
   /** True during the simulated first load and after a retry. */
   loading: boolean;
   demoMode: ReviewDemoMode;
@@ -366,6 +368,7 @@ export function ReviewsProvider({ children }: { children: ReactNode }) {
   const value = useMemo<ReviewsContextValue>(
     () => ({
       reviews: visible,
+      myName,
       loading,
       demoMode,
       setDemoMode,
@@ -402,7 +405,7 @@ export function ReviewsProvider({ children }: { children: ReactNode }) {
       closePhotos: () => setPhotoTarget(null),
     }),
     [
-      visible, loading, demoMode, setDemoMode, retry, submitReview, updateReview, drafts, saveDraft, helpfulByMe,
+      visible, myName, loading, demoMode, setDemoMode, retry, submitReview, updateReview, drafts, saveDraft, helpfulByMe,
       toggleHelpful, reportedByMe, reportReview, dismissedRequests, dismissRequest, approve, reject, requestChanges,
       hide, restore, respond, removeResponse, flag, resolveReports, addNote, formTarget, reportTarget, photoTarget,
     ],
@@ -423,19 +426,25 @@ export function useReviews() {
 /* Names                                                                      */
 /* -------------------------------------------------------------------------- */
 
+/**
+ * The profile's name as first and last. The login form may only have given an
+ * email, in which case the display name derived from it is split instead.
+ */
+function namesOf(profile: Profile): { first: string; last: string } {
+  if (profile.firstName) return { first: profile.firstName, last: profile.lastName };
+  const local = profile.email.split("@")[0].split(/[._-]+/).filter(Boolean);
+  const cap = (w: string) => w.charAt(0).toUpperCase() + w.slice(1);
+  return { first: cap(local[0] ?? DEMO_CUSTOMER.firstName), last: local.slice(1).map(cap).join(" ") };
+}
+
 function authorFromProfile(profile: Profile): string {
-  if (profile.firstName) return privacyName(profile.firstName, profile.lastName);
-  const local = profile.email.split("@")[0].split(/[._-]+/)[0] ?? "";
-  return local ? local.charAt(0).toUpperCase() + local.slice(1) : privacyName(DEMO_CUSTOMER.firstName, DEMO_CUSTOMER.lastName);
+  const { first, last } = namesOf(profile);
+  return privacyName(first, last);
 }
 
 function customerFromProfile(profile: Profile): ReviewCustomer {
-  return {
-    firstName: profile.firstName || authorFromProfile(profile),
-    lastName: profile.lastName,
-    email: profile.email,
-    country: profile.country,
-  };
+  const { first, last } = namesOf(profile);
+  return { firstName: first, lastName: last, email: profile.email, country: profile.country };
 }
 
 /**

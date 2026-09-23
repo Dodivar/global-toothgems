@@ -89,7 +89,7 @@ export function Reviews() {
         </section>
       )}
 
-      <section className="grid gap-4" aria-labelledby="mine-list">
+      <section className="grid grid-cols-[minmax(0,1fr)] gap-4" aria-labelledby="mine-list">
         <div className="flex flex-wrap items-end justify-between gap-3">
           <h2 id="mine-list" className="text-[length:var(--text-h3)]">{t("reviews.mine.listTitle")}</h2>
         </div>
@@ -105,7 +105,7 @@ export function Reviews() {
                   <label
                     key={f}
                     className={clsx(
-                      "flex flex-none cursor-pointer items-center gap-1.5 whitespace-nowrap rounded-[var(--radius-pill)] border px-3.5 py-2 text-[length:var(--text-caption)] font-semibold transition-colors",
+                      "relative flex flex-none cursor-pointer items-center gap-1.5 whitespace-nowrap rounded-[var(--radius-pill)] border px-3.5 py-2 text-[length:var(--text-caption)] font-semibold transition-colors",
                       "has-[:focus-visible]:outline has-[:focus-visible]:outline-2 has-[:focus-visible]:outline-offset-2 has-[:focus-visible]:outline-[var(--focus-ring)]",
                       on ? "border-transparent bg-[var(--surface-inverse)] text-[var(--text-inverse)]" : "border-[var(--border-subtle)] bg-[var(--surface-card)] text-[var(--text-body)]",
                     )}

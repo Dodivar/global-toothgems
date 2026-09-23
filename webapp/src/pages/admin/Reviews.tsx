@@ -1,9 +1,8 @@
 import { useCallback, useState } from "react";
 import { useTranslation } from "react-i18next";
-import { useNavigate, useSearchParams } from "react-router-dom";
-import { ExternalLink, FlaskConical, Flag, LayoutDashboard, ListChecks } from "lucide-react";
+import { useSearchParams } from "react-router-dom";
+import { FlaskConical, Flag, LayoutDashboard, ListChecks } from "lucide-react";
 import { AdminHeader } from "../../components/admin/AdminHeader";
-import { AdminButton } from "../../components/admin/AdminButton";
 import { ErrorPanel, PromoTabs, Segmented, type TabItem } from "../../components/promotions/PromoUi";
 import { ReviewDashboard } from "../../components/reviews/admin/ReviewDashboard";
 import { ModerationQueue } from "../../components/reviews/admin/ModerationQueue";
@@ -35,7 +34,6 @@ const SLUG: Record<Tab, string> = { overview: "", queue: "file", reported: "sign
 export function Reviews() {
   const { t } = useTranslation();
   const { openNav } = useAdminShell();
-  const navigate = useNavigate();
   const [params, setParams] = useSearchParams();
   const { reviews, loading, demoMode, setDemoMode, retry } = useReviews();
   const [pending, setPending] = useState<PendingAction | null>(null);
@@ -77,13 +75,6 @@ export function Reviews() {
         description={t("reviews.admin.description")}
         crumbs={[{ label: t("admin.nav.dashboard"), to: "/admin" }, { label: t("reviews.nav.admin") }]}
         onOpenNav={openNav}
-        actions={
-          <span className="hidden sm:inline-flex">
-            <AdminButton variant="outline" iconRight={ExternalLink} onClick={() => navigate("/boutique/aurora-heart#avis")}>
-              {t("reviews.admin.viewStore")}
-            </AdminButton>
-          </span>
-        }
       />
 
       <div className="grid grid-cols-[minmax(0,1fr)] gap-5 px-[var(--admin-gutter)] pb-[clamp(32px,5vw,56px)] pt-5">

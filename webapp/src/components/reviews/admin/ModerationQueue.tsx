@@ -110,7 +110,7 @@ export function ModerationQueue({ onOpen }: { onOpen: (id: string) => void }) {
               <label
                 key={v}
                 className={clsx(
-                  "flex flex-none cursor-pointer items-center gap-2 whitespace-nowrap rounded-[var(--admin-radius-sm)] border px-3 py-2 text-[length:var(--text-caption)] font-semibold transition-colors duration-[var(--duration-fast)]",
+                  "relative flex flex-none cursor-pointer items-center gap-2 whitespace-nowrap rounded-[var(--admin-radius-sm)] border px-3 py-2 text-[length:var(--text-caption)] font-semibold transition-colors duration-[var(--duration-fast)]",
                   "has-[:focus-visible]:outline has-[:focus-visible]:outline-2 has-[:focus-visible]:outline-offset-2 has-[:focus-visible]:outline-[var(--focus-ring)]",
                   on ? "border-[var(--gt-ink-900)] bg-[var(--gt-ink-900)] text-[var(--gt-white)]" : "border-[var(--border-subtle)] bg-[var(--admin-panel)] text-[var(--text-body)] hover:border-[var(--gt-ink-400)]",
                 )}

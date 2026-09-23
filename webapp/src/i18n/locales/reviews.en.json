@@ -328,7 +328,6 @@
   "admin": {
     "title": "Reviews",
     "description": "Moderate customer and student reviews, answer them and handle reports.",
-    "viewStore": "View on the store",
     "protoToday": "Prototype date: {{date}}",
     "protoSimulate": "Simulate",
     "protoModes": {
@@ -503,7 +502,7 @@
       "otherReviews_one": "{{count}} other review by this customer",
       "otherReviews_other": "{{count}} other reviews by this customer",
       "searchOrders": "Find their orders",
-      "orderOutside": "This order is older than the prototype’s order book.",
+      "orderOutside": "This order isn’t in the back office’s sample order book.",
       "response": "Public response",
       "writeResponse": "Write a response",
       "editResponse": "Edit",

@@ -328,7 +328,6 @@
   "admin": {
     "title": "Avis",
     "description": "Modérez les avis des clientes et des élèves, répondez-y et traitez les signalements.",
-    "viewStore": "Voir sur la boutique",
     "protoToday": "Date du prototype : {{date}}",
     "protoSimulate": "Simuler",
     "protoModes": {
@@ -503,7 +502,7 @@
       "otherReviews_one": "{{count}} autre avis de cette cliente",
       "otherReviews_other": "{{count}} autres avis de cette cliente",
       "searchOrders": "Voir ses commandes",
-      "orderOutside": "Cette commande est antérieure au carnet de commandes du prototype.",
+      "orderOutside": "Cette commande ne figure pas dans le carnet de commandes d’exemple.",
       "response": "Réponse publique",
       "writeResponse": "Écrire une réponse",
       "editResponse": "Modifier",
