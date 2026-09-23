@@ -41,6 +41,7 @@ import { Activity } from "./pages/community/Activity";
 import { AdminLogin } from "./pages/admin/AdminLogin";
 import { AdminLayout } from "./pages/admin/AdminLayout";
 import { AdminDashboard } from "./pages/admin/AdminDashboard";
+import { Statistics as AdminStatistics } from "./pages/admin/Statistics";
 import { AdminProducts } from "./pages/admin/AdminProducts";
 import { AdminProductNew } from "./pages/admin/AdminProductNew";
 import { AdminProductEdit } from "./pages/admin/AdminProductEdit";
@@ -218,6 +219,10 @@ export default function App() {
                             filtered page rather than to row one. */}
                         <Route path="clients" element={<AdminCustomers />} />
                         <Route path="clients/:id" element={<AdminCustomerDetail />} />
+                        {/* Statistics. Read-only, and entirely derived from the
+                            filters in its query string, so a filtered report is
+                            a link a colleague can open on the same numbers. */}
+                        <Route path="statistiques" element={<AdminStatistics />} />
                         <Route path="produits" element={<AdminProducts />} />
                         <Route path="produits/nouveau" element={<AdminProductNew />} />
                         <Route path="produits/:id" element={<AdminProductEdit />} />
