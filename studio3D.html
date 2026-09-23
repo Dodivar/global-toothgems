@@ -1,0 +1,2628 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1" />
+<title>Lumière · Dental Jewelry Studio</title>
+<link rel="icon" href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 16 16'><path d='M8 1.2 9.55 6.45 14.8 8 9.55 9.55 8 14.8 6.45 9.55 1.2 8 6.45 6.45Z' fill='%23a97d45'/></svg>" />
+<link rel="preconnect" href="https://fonts.googleapis.com" />
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+<link href="https://fonts.googleapis.com/css2?family=Fraunces:ital,opsz,wght@0,9..144,400;0,9..144,500;0,9..144,600;1,9..144,400;1,9..144,500&family=Manrope:wght@400;500;600;700;800&display=swap" rel="stylesheet" />
+<style>
+/* ============================================================
+   Lumière — Dental Jewelry Studio · UI stylesheet (v4)
+   Ivory / ink / bronze on a dark velvet stage.
+============================================================ */
+*{box-sizing:border-box;margin:0;padding:0}
+:root{
+  --bg:#f6f2ea; --panel:#fffdf8; --line:#e8e1d6; --line-soft:#efe8dc;
+  --ink:#26211a; --ink-2:#6f665a; --ink-3:#a49a8b;
+  --accent:#a97d45; --accent-ink:#8a6534; --accent-soft:#f3e8d8;
+  --danger:#b3452f;
+  --shadow:0 1px 2px rgba(38,33,26,.05),0 8px 28px rgba(38,33,26,.08);
+}
+html,body,#root{height:100%}
+body{font-family:'Manrope',sans-serif;background:var(--bg);color:var(--ink);overflow:hidden;
+  -webkit-font-smoothing:antialiased;user-select:none;-webkit-user-select:none}
+button{font-family:inherit}
+.app{display:grid;height:100%;grid-template-rows:58px 1fr;grid-template-columns:288px minmax(0,1fr) 324px}
+.app>*{min-height:0}
+
+/* ---------- top bar ---------- */
+.topbar{grid-column:1/-1;display:flex;align-items:center;gap:8px;padding:0 18px;
+  background:var(--panel);border-bottom:1px solid var(--line);z-index:20}
+.brand{display:flex;align-items:center;gap:11px;margin-right:10px}
+.brand-mark{width:30px;height:30px;border-radius:9px;background:#2b241b;color:#d9b06a;
+  display:flex;align-items:center;justify-content:center;box-shadow:inset 0 0 0 1px rgba(217,176,106,.25)}
+.brand-name{font-family:'Fraunces',serif;font-size:19px;font-weight:600;letter-spacing:.01em;line-height:1}
+.brand-sub{font-size:9px;letter-spacing:.24em;color:var(--ink-3);text-transform:uppercase;margin-top:3px}
+.spacer{flex:1}
+.count-chip{font-size:12px;font-weight:600;color:var(--ink-2);background:var(--bg);
+  border:1px solid var(--line);padding:6px 13px;border-radius:999px;white-space:nowrap}
+.tb-sep{width:1px;height:22px;background:var(--line);margin:0 6px}
+.icon-btn{width:34px;height:34px;border-radius:10px;border:1px solid transparent;background:transparent;
+  color:var(--ink-2);display:inline-flex;align-items:center;justify-content:center;cursor:pointer;
+  transition:background .14s,border-color .14s,color .14s}
+.icon-btn:hover:not(:disabled){background:var(--bg);border-color:var(--line);color:var(--ink)}
+.icon-btn:disabled{opacity:.3;cursor:default}
+.btn{height:34px;padding:0 14px;border-radius:10px;border:1px solid var(--line);background:var(--panel);
+  color:var(--ink);font:600 12.5px 'Manrope';display:inline-flex;align-items:center;gap:7px;cursor:pointer;
+  transition:border-color .14s,background .14s,transform .1s}
+.btn:hover{border-color:#d8cdbb;background:#fff}
+.btn:active{transform:translateY(1px)}
+.btn-primary{background:#2b241b;border-color:#2b241b;color:#f2e7d2;box-shadow:0 6px 16px rgba(43,36,27,.22)}
+.btn-primary:hover{background:#3a3125;border-color:#3a3125}
+
+/* ---------- dropdown menus ---------- */
+.menu-wrap{position:relative}
+.menu{position:absolute;top:calc(100% + 8px);right:0;min-width:262px;background:var(--panel);
+  border:1px solid var(--line);border-radius:14px;box-shadow:var(--shadow);padding:6px;z-index:60;
+  animation:menuIn .15s ease}
+@keyframes menuIn{from{opacity:0;transform:translateY(-5px)}to{opacity:1;transform:none}}
+.menu-label{font-size:10px;letter-spacing:.16em;text-transform:uppercase;color:var(--ink-3);
+  padding:8px 10px 5px;font-weight:700}
+.menu-item{display:flex;align-items:flex-start;gap:10px;width:100%;padding:9px 10px;border:0;background:none;
+  border-radius:9px;font:600 12.5px 'Manrope';color:var(--ink);cursor:pointer;text-align:left}
+.menu-item:hover{background:var(--accent-soft)}
+.menu-item svg{flex:none;margin-top:1px;color:var(--accent-ink)}
+.menu-item small{display:block;font-weight:500;color:var(--ink-3);font-size:11px;margin-top:2px}
+.menu-sep{height:1px;background:var(--line-soft);margin:6px 4px}
+.menu-row{display:flex;align-items:stretch;gap:2px}
+.menu-row .menu-item{flex:1;min-width:0}
+.menu-del{border:0;background:none;color:var(--ink-3);border-radius:8px;cursor:pointer;
+  display:flex;align-items:center;padding:0 8px;transition:background .12s,color .12s}
+.menu-del:hover{color:var(--danger);background:#fdf3f0}
+.menu-del.sure{color:#fff;background:var(--danger)}
+.menu-hint{font:500 11.5px 'Manrope';color:var(--ink-3);padding:6px 10px 8px;line-height:1.45}
+.menu-save{display:flex;gap:6px;padding:6px}
+.menu-save input{flex:1;height:32px;border:1px solid var(--line);border-radius:8px;padding:0 10px;
+  font:600 12px 'Manrope';background:var(--panel);outline:none;min-width:0;color:var(--ink)}
+.menu-save input:focus{border-color:var(--accent)}
+.menu-save .btn{height:32px;padding:0 12px}
+
+/* ---------- side panels ---------- */
+.library{grid-row:2;grid-column:1;background:var(--panel);border-right:1px solid var(--line);
+  display:flex;flex-direction:column;min-height:0}
+.inspector{grid-row:2;grid-column:3;background:var(--panel);border-left:1px solid var(--line);
+  overflow-y:auto;padding:18px 18px 26px}
+.side-head{padding:18px 18px 10px}
+.side-title{font-family:'Fraunces',serif;font-size:17px;font-weight:600}
+.side-sub{font-size:11.5px;line-height:1.5;color:var(--ink-3);margin-top:3px}
+.search{margin:2px 16px 12px;display:flex;align-items:center;gap:8px;background:var(--bg);
+  border:1px solid var(--line);border-radius:10px;padding:8px 11px;color:var(--ink-3)}
+.search:focus-within{border-color:var(--accent)}
+.search input{border:0;outline:0;background:none;font:500 12.5px 'Manrope';color:var(--ink);width:100%}
+.lib-scroll{overflow-y:auto;padding:0 16px 20px;flex:1;min-height:0}
+.lib-label{font-size:10.5px;letter-spacing:.16em;text-transform:uppercase;color:var(--ink-3);
+  margin:18px 0 9px;display:flex;align-items:center;gap:8px;font-weight:700}
+.lib-label::after{content:'';flex:1;height:1px;background:var(--line-soft)}
+.lib-grid{display:grid;grid-template-columns:1fr 1fr;gap:8px}
+.lib-card{border:1px solid var(--line-soft);background:#fffefb;border-radius:12px;padding:12px 8px 10px;
+  display:flex;flex-direction:column;align-items:center;gap:8px;cursor:grab;touch-action:none;
+  transition:border-color .13s,transform .13s,box-shadow .13s,background .13s}
+.lib-card:hover{border-color:var(--accent);transform:translateY(-1px);box-shadow:var(--shadow)}
+.lib-card.armed{background:var(--accent-soft);border-color:var(--accent)}
+.lib-card .glyph{color:#7a6c56}
+.lib-card.armed .glyph{color:var(--accent-ink)}
+.lib-card-name{font-size:11.5px;font-weight:600;color:var(--ink-2);text-align:center;line-height:1.25}
+.lib-card.armed .lib-card-name{color:var(--accent-ink)}
+.lib-empty{font-size:12px;color:var(--ink-3);padding:8px 2px}
+
+/* ---------- viewport ---------- */
+.viewport{grid-row:2;grid-column:2;position:relative;min-width:0;overflow:hidden;
+  background:radial-gradient(120% 95% at 50% 36%,#f8f3ea 0%,#efe7d9 52%,#d8cbb4 100%)}
+.viewport canvas{display:block;width:100% !important;height:100% !important;touch-action:none}
+.viewport.drag-over::after{content:'';position:absolute;inset:12px;border:2px dashed var(--accent);
+  border-radius:14px;pointer-events:none;z-index:8}
+.chip{position:absolute;top:14px;left:50%;transform:translateX(-50%);display:flex;align-items:center;gap:9px;
+  background:rgba(255,253,248,.9);backdrop-filter:blur(8px);-webkit-backdrop-filter:blur(8px);
+  border:1px solid var(--line);border-radius:999px;padding:6px 15px 6px 8px;box-shadow:var(--shadow);
+  pointer-events:none;z-index:5;animation:chipIn .18s ease}
+.chip-fdi{background:#2b241b;color:#f0e2c6;font:700 11px 'Manrope';border-radius:999px;padding:3px 9px;letter-spacing:.03em}
+.chip-name{font-size:12.5px;font-weight:600;color:var(--ink-2)}
+@keyframes chipIn{from{opacity:0;transform:translate(-50%,-6px)}to{opacity:1;transform:translate(-50%,0)}}
+.pill{position:absolute;left:50%;transform:translateX(-50%);display:flex;align-items:center;gap:10px;
+  background:rgba(255,253,248,.9);backdrop-filter:blur(9px);-webkit-backdrop-filter:blur(9px);
+  border:1px solid var(--line);border-radius:999px;padding:8px 10px 8px 16px;box-shadow:var(--shadow);
+  font:600 12px 'Manrope';color:var(--ink-2);z-index:6;white-space:nowrap}
+.pill .dot{width:6px;height:6px;border-radius:50%;background:var(--accent);animation:pulse 1.8s infinite}
+.pill button{border:0;background:transparent;cursor:pointer;color:var(--accent-ink);display:flex;padding:2px}
+@keyframes pulse{50%{opacity:.25}}
+#hintPill{bottom:78px;animation:floaty 3.2s ease-in-out infinite}
+@keyframes floaty{0%,100%{transform:translate(-50%,0)}50%{transform:translate(-50%,-5px)}}
+#armedPill{top:58px;background:rgba(58,45,26,.92);color:#f0e2c6;border-color:rgba(240,226,198,.2)}
+#armedPill .dot{background:#e9c57f}
+#armedPill button{color:#e9c57f}
+#placingPill{bottom:78px}
+.bottombar{position:absolute;bottom:16px;left:50%;transform:translateX(-50%);display:flex;align-items:center;gap:2px;
+  padding:5px;background:rgba(255,253,248,.88);backdrop-filter:blur(10px);-webkit-backdrop-filter:blur(10px);
+  border:1px solid var(--line);border-radius:999px;box-shadow:var(--shadow);z-index:6}
+.bb-btn{height:32px;padding:0 13px;border-radius:999px;border:0;background:none;
+  font:600 12px 'Manrope';color:var(--ink-2);cursor:pointer;display:inline-flex;align-items:center;gap:6px;
+  transition:background .13s,color .13s}
+.bb-btn:hover{background:var(--bg);color:var(--ink)}
+.bb-btn.active{background:#2b241b;color:#f0e2c6}
+.bb-sep{width:1px;height:18px;background:var(--line);margin:0 3px}
+.stage-tag{position:absolute;left:18px;bottom:20px;font:700 9px 'Manrope';letter-spacing:.24em;
+  color:rgba(38,33,26,.32);z-index:3;pointer-events:none}
+
+/* ---------- inspector ---------- */
+.insp{animation:inspIn .18s ease}
+@keyframes inspIn{from{opacity:0;transform:translateY(5px)}to{opacity:1;transform:none}}
+.jewel-title{font-family:'Fraunces',serif;font-size:21px;font-weight:600;line-height:1.15}
+.jewel-sub{font-size:12px;color:var(--ink-2);margin-top:5px;line-height:1.5}
+.section-label{font-size:10.5px;letter-spacing:.16em;text-transform:uppercase;color:var(--ink-3);
+  margin:24px 0 10px;display:flex;align-items:center;gap:8px;font-weight:700}
+.section-label::after{content:'';flex:1;height:1px;background:var(--line-soft)}
+.control{margin-bottom:16px}
+.control-head{display:flex;justify-content:space-between;align-items:baseline;font-size:12px;font-weight:600;
+  color:var(--ink-2);margin-bottom:7px}
+.control-val{color:var(--accent-ink);font-variant-numeric:tabular-nums;font-size:11.5px}
+input.range{-webkit-appearance:none;appearance:none;width:100%;height:22px;background:none;cursor:pointer}
+input.range::-webkit-slider-runnable-track{height:4px;border-radius:99px;background:var(--fill,#ece4d6)}
+input.range::-webkit-slider-thumb{-webkit-appearance:none;width:16px;height:16px;border-radius:50%;
+  background:#fffdf8;border:2px solid var(--accent);margin-top:-6px;box-shadow:0 2px 6px rgba(38,33,26,.2);
+  transition:transform .12s}
+input.range:active::-webkit-slider-thumb{transform:scale(1.15)}
+input.range::-moz-range-track{height:4px;border-radius:99px;background:#ece4d6}
+input.range::-moz-range-progress{height:4px;border-radius:99px;background:var(--accent)}
+input.range::-moz-range-thumb{width:14px;height:14px;border-radius:50%;background:#fffdf8;border:2px solid var(--accent)}
+.swatches{display:grid;grid-template-columns:repeat(4,1fr);gap:8px}
+.swatch{height:42px;border-radius:11px;border:2px solid rgba(0,0,0,.06);cursor:pointer;position:relative;
+  box-shadow:inset 0 1px 3px rgba(0,0,0,.14);transition:transform .12s,box-shadow .12s}
+.swatch:hover{transform:translateY(-1px)}
+.swatch.sel{border-color:var(--ink);box-shadow:0 0 0 2px var(--panel),0 0 0 4px var(--accent)}
+.color-wheel{display:flex;flex-direction:column;gap:9px;align-items:center;padding:2px 0 4px}
+.color-wheel canvas{border-radius:50%;cursor:crosshair;touch-action:none}
+.cp-row{display:flex;align-items:center;gap:10px;font:700 11.5px 'Manrope';color:var(--ink-2);letter-spacing:.04em}
+.cp-clear{border:1px solid var(--line);background:none;border-radius:8px;padding:4px 9px;
+  font:600 10.5px 'Manrope';color:var(--ink-2);cursor:pointer;display:inline-flex;align-items:center;gap:5px}
+.cp-clear:hover{border-color:var(--accent);color:var(--accent-ink)}
+.type-select,.tooth-select{width:100%;height:36px;border:1px solid var(--line);border-radius:10px;
+  background:#fffefb url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='10' height='6' viewBox='0 0 10 6'%3E%3Cpath d='M1 1l4 4 4-4' fill='none' stroke='%23a49a8b' stroke-width='1.6' stroke-linecap='round'/%3E%3C/svg%3E") no-repeat right 12px center;
+  font:600 12.5px 'Manrope';color:var(--ink);padding:0 32px 0 12px;appearance:none;cursor:pointer;outline:none}
+.type-select:focus,.tooth-select:focus{border-color:var(--accent)}
+.action-row{display:grid;grid-template-columns:1fr 1fr;gap:8px;margin-top:8px}
+.act-btn{height:38px;border-radius:11px;border:1px solid var(--line);background:#fffefb;
+  font:600 12.5px 'Manrope';color:var(--ink);cursor:pointer;display:flex;align-items:center;justify-content:center;gap:8px;
+  transition:border-color .13s,background .13s}
+.act-btn:hover{border-color:#d8cdbb}
+.act-btn.danger{color:var(--danger)}
+.act-btn.danger:hover{border-color:#e5b8ab;background:#fdf3f0}
+.hint-copy{font-size:11.5px;line-height:1.6;color:var(--ink-3)}
+.pos-line{font-size:12.5px;font-weight:700}
+.pos-sub{font-size:11.5px;color:var(--ink-3);margin-top:4px;line-height:1.5}
+.fdi-big{font-family:'Fraunces',serif;font-size:46px;font-weight:500;line-height:.95;color:var(--ink)}
+.stat-row{display:flex;gap:10px;margin-bottom:4px}
+.stat{flex:1;border:1px solid var(--line-soft);border-radius:12px;padding:12px;text-align:center;background:#fffefb}
+.stat b{display:block;font-family:'Fraunces',serif;font-size:24px;font-weight:600}
+.stat span{font-size:10.5px;letter-spacing:.1em;text-transform:uppercase;color:var(--ink-3);font-weight:700}
+.jewel-row{display:flex;align-items:center;gap:9px;width:100%;padding:8px 10px;border:1px solid var(--line-soft);
+  border-radius:10px;background:#fffefb;cursor:pointer;margin-bottom:6px;font:600 12px 'Manrope';color:var(--ink-2);
+  text-align:left;transition:border-color .12s,transform .12s}
+.jewel-row:hover{border-color:var(--accent);transform:translateX(2px)}
+.jewel-row .fdi-tag{background:var(--bg);border:1px solid var(--line);border-radius:6px;padding:2px 7px;
+  font-size:10.5px;color:var(--ink-2)}
+.kbd-row{display:flex;justify-content:space-between;align-items:center;font-size:11.5px;color:var(--ink-3);padding:5px 0}
+.kbd{background:var(--bg);border:1px solid var(--line);border-radius:6px;padding:2px 8px;
+  font:700 10px 'Manrope';color:var(--ink-2)}
+
+/* ---------- toasts ---------- */
+.toasts{position:fixed;bottom:22px;right:22px;display:flex;flex-direction:column;gap:8px;z-index:100}
+.toast{display:flex;align-items:center;gap:10px;background:#211b12;color:#f2e9d8;padding:11px 16px;
+  border-radius:12px;font:600 12.5px 'Manrope';box-shadow:0 10px 30px rgba(0,0,0,.28);
+  animation:toastIn .22s cubic-bezier(.2,.9,.3,1.15)}
+.toast svg{color:#d3a55f;flex:none}
+@keyframes toastIn{from{opacity:0;transform:translateY(10px) scale(.96)}}
+
+/* ---------- scrollbars ---------- */
+::-webkit-scrollbar{width:9px}
+::-webkit-scrollbar-track{background:transparent}
+::-webkit-scrollbar-thumb{background:#ddd2c0;border-radius:99px;border:2px solid var(--panel)}
+
+/* ---------- boot splash / error ---------- */
+.boot{height:100%;display:flex;flex-direction:column;align-items:center;justify-content:center;gap:14px;color:#8a7f6a}
+.boot svg{animation:spin 2.4s linear infinite}
+@keyframes spin{to{transform:rotate(360deg)}}
+.boot-title{font-family:'Fraunces',serif;font-size:26px;font-style:italic;color:#3a3226}
+.boot-sub{font-size:11px;letter-spacing:.2em;text-transform:uppercase}
+.boot-error{position:fixed;left:50%;top:24px;transform:translateX(-50%);z-index:200;background:#3a2018;color:#f5ded6;
+  padding:12px 18px;border-radius:12px;font:600 13px 'Manrope';max-width:80vw;box-shadow:0 12px 40px rgba(0,0,0,.35)}
+
+/* ---------- responsive ---------- */
+@media (max-width:1180px){.app{grid-template-columns:250px minmax(0,1fr) 292px}}
+@media (max-width:940px){
+  body{overflow:auto}
+  .app{display:flex;flex-direction:column;height:auto;min-height:100%}
+  .viewport{height:56vh;min-height:400px;flex:none}
+  .library{border-right:0;border-bottom:1px solid var(--line)}
+  .lib-scroll{overflow:visible}
+  .lib-grid{grid-template-columns:repeat(auto-fill,minmax(104px,1fr))}
+  .inspector{border-left:0}
+  .brand-sub{display:none}
+  .btn .lbl{display:none}
+  .btn{padding:0 11px}
+}
+</style>
+<script src="https://cdn.jsdelivr.net/npm/@babel/standalone@7/babel.min.js"></script>
+<script type="importmap">
+{
+  "imports": {
+    "react": "https://esm.sh/react@18.3.1",
+    "react/jsx-runtime": "https://esm.sh/react@18.3.1/jsx-runtime",
+    "react-dom/client": "https://esm.sh/react-dom@18.3.1/client",
+    "three": "https://cdn.jsdelivr.net/npm/three@0.170.0/build/three.module.js",
+    "three/addons/": "https://cdn.jsdelivr.net/npm/three@0.170.0/examples/jsm/"
+  }
+}
+</script>
+</head>
+<body>
+<div id="root">
+  <div class="boot">
+    <svg width="26" height="26" viewBox="0 0 16 16" fill="none" stroke="#a8853e" stroke-width="1.4">
+      <path d="M8 1.2 9.55 6.45 14.8 8 9.55 9.55 8 14.8 6.45 9.55 1.2 8 6.45 6.45Z"/>
+    </svg>
+    <div class="boot-title">Lumière</div>
+    <div class="boot-sub">Preparing the dental studio</div>
+  </div>
+</div>
+
+<script type="text/plain" id="app-source">
+/* ============================================================================
+   LUMIÈRE — DENTAL JEWELRY STUDIO (v4)
+   ----------------------------------------------------------------------------
+   v4 changes — flush mounting + colour wheel fix
+     · Gems now sit near-flush on every model: the old fixed 0.3-unit standoff
+       (calibrated for the mm-scale studio arch) became a size-proportional
+       0.04 + 0.04·scale offset, and a per-piece "Standoff" slider was added
+       (−0.5 … +1.5) for manual fine-tuning on imported models.
+     · Surface normals are now computed geometrically from the world-space hit
+       triangle (cross product) instead of transforming the object-space face
+       normal — exact even when GLTF nodes carry non-uniform scale, which used
+       to tilt gems and lift them off the surface.
+     · Size slider extended down to 0.5 mm for smaller imported teeth.
+     · Colour wheel: the painted hue ring and the picker used angle conventions
+       rotated 90° apart (pointing at red returned yellow-green) — unified.
+       The SV square also no longer overlaps the ring's hit zone.
+   v3 — free .glb import (never rejected, Draco support).
+   v2 — colour wheel · Triangle/Teardrop/Navette/Baguette · named user presets.
+============================================================================ */
+
+import React, { useEffect, useRef, useState, useSyncExternalStore } from 'react'
+import { createRoot } from 'react-dom/client'
+import * as THREE from 'three'
+import { OrbitControls } from 'three/addons/controls/OrbitControls.js'
+import { RoomEnvironment } from 'three/addons/environments/RoomEnvironment.js'
+import { GLTFLoader } from 'three/addons/loaders/GLTFLoader.js'
+import { DRACOLoader } from 'three/addons/loaders/DRACOLoader.js'
+
+/* ============================== utils ==================================== */
+
+function uid(): string {
+  return (crypto && crypto.randomUUID) ? crypto.randomUUID().slice(0, 8)
+    : Math.random().toString(36).slice(2, 10)
+}
+const clamp = (v: number, a: number, b: number) => Math.min(b, Math.max(a, v))
+const easeInOutCubic = (t: number) => (t < 0.5 ? 4 * t * t * t : 1 - Math.pow(-2 * t + 2, 3) / 2)
+const backOut = (t: number) => { const c = 1.70158; return 1 + (c + 1) * Math.pow(t - 1, 3) + c * Math.pow(t - 1, 2) }
+const v3 = (x: number, y: number, z: number) => ({ x: +x.toFixed(3), y: +y.toFixed(3), z: +z.toFixed(3) })
+function seeded(key: string, salt: number): number {
+  let h = 0
+  for (let i = 0; i < key.length; i++) h = (h * 31 + key.charCodeAt(i)) | 0
+  const x = Math.sin(h * 12.9898 + salt * 78.233) * 43758.5453
+  return x - Math.floor(x)
+}
+
+/* ---- shared design types (kept serializable — database-ready) ---- */
+type POD = { x: number; y: number; z: number }
+interface PlacedJewelry {
+  id: string; jewelryTypeId: string; toothId: string
+  position: POD; normal: POD; rotation: number; scale: number; color: string
+  customColor?: string   // hex override from the colour wheel
+  offset?: number        // manual standoff fine-tune (world units)
+}
+/** Virtual id used when a jewel sits on an unlabeled region of a free-mode model. */
+const FREE_TOOTH = 'X0'
+
+/* ============================ data/teeth ================================= */
+
+// Full mesiodistal crown widths (mm) — upper arch, midline → distal.
+const QUADRANT_TEETH = [
+  { key: 'central', fdiR: '11', fdiL: '21', w: 8.5 },
+  { key: 'lateral', fdiR: '12', fdiL: '22', w: 6.5 },
+  { key: 'canine',  fdiR: '13', fdiL: '23', w: 7.6 },
+  { key: 'pm1',     fdiR: '14', fdiL: '24', w: 6.9 },
+  { key: 'pm2',     fdiR: '15', fdiL: '25', w: 6.9 },
+  { key: 'm1',      fdiR: '16', fdiL: '26', w: 10.2 },
+  { key: 'm2',      fdiR: '17', fdiL: '27', w: 9.8 },
+]
+const TOOTH_SPECS: Record<string, ToothSpec> = {
+  central: { wHalf: 4.25, hHalf: 5.3, dHalf: 3.05, p: 6, cervical: 0.24, incisal: 0.66, labial: 0.10, procline: 7 },
+  lateral: { wHalf: 3.25, hHalf: 5.05, dHalf: 2.75, p: 6, cervical: 0.26, incisal: 0.60, labial: 0.10, procline: 5 },
+  canine:  { wHalf: 3.55, hHalf: 5.6, dHalf: 3.15, p: 4.6, cervical: 0.30, tip: 0.62, labial: 0.12, procline: 2 },
+  pm1:     { wHalf: 3.35, hHalf: 4.7, dHalf: 3.3, p: 5, cervical: 0.20, procline: 0 },
+  pm2:     { wHalf: 3.3, hHalf: 4.6, dHalf: 3.4, p: 5, cervical: 0.20, procline: 0 },
+  m1:      { wHalf: 4.9, hHalf: 4.5, dHalf: 4.2, p: 5.5, cervical: 0.16, procline: -2 },
+  m2:      { wHalf: 4.7, hHalf: 4.3, dHalf: 4.1, p: 5.5, cervical: 0.16, procline: -2 },
+}
+const TOOTH_SHORT: Record<string, string> = {
+  central: 'Central Incisor', lateral: 'Lateral Incisor', canine: 'Canine',
+  pm1: 'First Premolar', pm2: 'Second Premolar', m1: 'First Molar', m2: 'Second Molar',
+}
+const ALL_TEETH = ['17', '16', '15', '14', '13', '12', '11', '21', '22', '23', '24', '25', '26', '27']
+function toothInfo(fdi: string) {
+  const t = QUADRANT_TEETH.find((q) => q.fdiR === fdi || q.fdiL === fdi)
+  if (!t) return { short: 'Free placement', name: 'Free placement · unlabeled surface', side: '—' }
+  const side = fdi[0] === '1' ? 'Upper Right' : 'Upper Left'
+  return { short: TOOTH_SHORT[t.key], name: `${side} ${TOOTH_SHORT[t.key]}`, side }
+}
+
+/* Arch: parabola z = -x²/K. Arc-length table lets us space teeth by width. */
+const ARCH_K = 30
+const ARCH_TABLE: { x: number; s: number }[] = (() => {
+  const out = []; let acc = 0, px = 0, pz = 0
+  for (let x = 0; x <= 40.0001; x += 0.05) {
+    const z = -(x * x) / ARCH_K
+    if (x > 0) acc += Math.hypot(x - px, z - pz)
+    out.push({ x, s: acc }); px = x; pz = z
+  }
+  return out
+})()
+function xForArc(s: number): number {
+  s = Math.abs(s)
+  let lo = 0, hi = ARCH_TABLE.length - 1
+  while (lo < hi) { const mid = (lo + hi) >> 1; if (ARCH_TABLE[mid].s < s) lo = mid + 1; else hi = mid }
+  const a = ARCH_TABLE[Math.max(0, lo - 1)], b = ARCH_TABLE[lo]
+  const t = b.s > a.s ? (s - a.s) / (b.s - a.s) : 0
+  return a.x + (b.x - a.x) * t
+}
+
+/* ======================= data/jewelryCatalog ============================= */
+
+const FINISHES: Record<string, { label: string; color: string; kind: 'crystal' | 'metal'; dispersion: number; swatch: string }> = {
+  clear:    { label: 'Clear',    color: '#ffffff', kind: 'crystal', dispersion: 0.12, swatch: 'radial-gradient(circle at 35% 30%, #ffffff, #dfe9ee 60%, #b9c9d4)' },
+  diamond:  { label: 'Diamond',  color: '#eef6ff', kind: 'crystal', dispersion: 0.30, swatch: 'radial-gradient(circle at 35% 30%, #f4fbff, #cfe4f5 55%, #9fc3de)' },
+  rose:     { label: 'Rosé',     color: '#ff9dc0', kind: 'crystal', dispersion: 0.12, swatch: 'radial-gradient(circle at 35% 30%, #ffd3e2, #ff9dc0 60%, #e0719b)' },
+  sapphire: { label: 'Sapphire', color: '#4d7cff', kind: 'crystal', dispersion: 0.12, swatch: 'radial-gradient(circle at 35% 30%, #9db9ff, #4d7cff 65%, #2c53c9)' },
+  ruby:     { label: 'Ruby',     color: '#ff2e55', kind: 'crystal', dispersion: 0.12, swatch: 'radial-gradient(circle at 35% 30%, #ff9bb0, #ff2e55 65%, #c90f34)' },
+  emerald:  { label: 'Emerald',  color: '#22c47c', kind: 'crystal', dispersion: 0.12, swatch: 'radial-gradient(circle at 35% 30%, #8fe8bd, #22c47c 65%, #0d9159)' },
+  gold:     { label: 'Gold',     color: '#f6c05a', kind: 'metal',   dispersion: 0,    swatch: 'linear-gradient(135deg, #ffe3a0, #f0b34e 55%, #c8872c)' },
+  silver:   { label: 'Silver',   color: '#e9edf4', kind: 'metal',   dispersion: 0,    swatch: 'linear-gradient(135deg, #ffffff, #ccd3dc 55%, #97a2b0)' },
+}
+
+interface JewelryTypeDef {
+  id: string; name: string; category: 'Crystals' | 'Shapes' | 'Precious'
+  geometry: string; defaultScale: number; defaultColor: string
+}
+const CATALOG: JewelryTypeDef[] = [
+  { id: 'crystal-round',   name: 'Round Crystal',   category: 'Crystals', geometry: 'round',    defaultScale: 0.95, defaultColor: 'clear' },
+  { id: 'crystal-diamond', name: 'Diamond Cut',     category: 'Crystals', geometry: 'diamond',  defaultScale: 1.0,  defaultColor: 'clear' },
+  { id: 'crystal-square',  name: 'Square Cut',      category: 'Crystals', geometry: 'square',   defaultScale: 0.95, defaultColor: 'clear' },
+  { id: 'crystal-petite',  name: 'Petite Crystal',  category: 'Crystals', geometry: 'round',    defaultScale: 0.55, defaultColor: 'clear' },
+  { id: 'crystal-grand',   name: 'Grand Crystal',   category: 'Crystals', geometry: 'round',    defaultScale: 1.4,  defaultColor: 'clear' },
+  { id: 'shape-star',      name: 'Star',            category: 'Shapes',   geometry: 'star',     defaultScale: 0.85, defaultColor: 'clear' },
+  { id: 'shape-heart',     name: 'Heart',           category: 'Shapes',   geometry: 'heart',    defaultScale: 0.8,  defaultColor: 'ruby' },
+  { id: 'shape-triangle',  name: 'Triangle',        category: 'Shapes',   geometry: 'triangle', defaultScale: 0.8,  defaultColor: 'clear' },
+  { id: 'shape-drop',      name: 'Teardrop',        category: 'Shapes',   geometry: 'drop',     defaultScale: 0.85, defaultColor: 'clear' },
+  { id: 'shape-navette',   name: 'Navette',         category: 'Shapes',   geometry: 'navette',  defaultScale: 0.9,  defaultColor: 'clear' },
+  { id: 'shape-baguette',  name: 'Baguette',        category: 'Shapes',   geometry: 'baguette', defaultScale: 0.85, defaultColor: 'clear' },
+  { id: 'shape-butterfly', name: 'Butterfly',       category: 'Shapes',   geometry: 'butterfly',defaultScale: 0.85, defaultColor: 'gold' },
+  { id: 'shape-moon',      name: 'Crescent Moon',   category: 'Shapes',   geometry: 'moon',     defaultScale: 0.85, defaultColor: 'clear' },
+  { id: 'shape-bolt',      name: 'Lightning',       category: 'Shapes',   geometry: 'bolt',     defaultScale: 0.8,  defaultColor: 'sapphire' },
+  { id: 'shape-blossom',   name: 'Blossom',         category: 'Shapes',   geometry: 'blossom',  defaultScale: 0.85, defaultColor: 'rose' },
+  { id: 'metal-gold-dot',  name: 'Gold Dot',        category: 'Precious', geometry: 'dot',      defaultScale: 0.9,  defaultColor: 'gold' },
+  { id: 'metal-gold-star', name: 'Gold Star',       category: 'Precious', geometry: 'star',     defaultScale: 0.85, defaultColor: 'gold' },
+  { id: 'metal-gold-heart',name: 'Gold Heart',      category: 'Precious', geometry: 'heart',    defaultScale: 0.8,  defaultColor: 'gold' },
+  { id: 'metal-silver',    name: 'Silver Diamond',  category: 'Precious', geometry: 'diamond',  defaultScale: 1.0,  defaultColor: 'silver' },
+]
+const JEWELRY_BY_ID: Record<string, JewelryTypeDef> = Object.fromEntries(CATALOG.map((t) => [t.id, t]))
+
+/* ---- material resolution: preset finish OR custom wheel colour ---- */
+interface MaterialSpec { kind: 'crystal' | 'metal'; hex: string; dispersion: number }
+function resolveFinishRaw(color: string, customColor?: string): MaterialSpec {
+  if (customColor) return { kind: 'crystal', hex: customColor, dispersion: 0.18 }
+  const f = FINISHES[color] ?? FINISHES.clear
+  return { kind: f.kind, hex: f.color, dispersion: f.dispersion }
+}
+function resolveFinish(j: PlacedJewelry): MaterialSpec { return resolveFinishRaw(j.color, j.customColor) }
+function matKeyFor(j: PlacedJewelry): string {
+  const s = resolveFinish(j)
+  return `${s.kind}|${s.hex}|${s.dispersion}`
+}
+const materialCache = new Map<string, THREE.MeshPhysicalMaterial>()
+function getJewelMaterial(j: PlacedJewelry): THREE.MeshPhysicalMaterial {
+  const s = resolveFinish(j)
+  const key = `${s.kind}|${s.hex}|${s.dispersion}`
+  let m = materialCache.get(key)
+  if (m) return m
+  m = s.kind === 'metal'
+    ? new THREE.MeshPhysicalMaterial({
+        color: s.hex, metalness: 1,
+        roughness: s.hex.toLowerCase() === '#e9edf4' ? 0.24 : 0.16,
+        envMapIntensity: 1.7,
+      })
+    : new THREE.MeshPhysicalMaterial({
+        color: s.hex, metalness: 0, roughness: 0.05,
+        transmission: 0.92, thickness: 1.6, ior: 2.1, dispersion: s.dispersion,
+        attenuationColor: new THREE.Color(s.hex), attenuationDistance: 2.4,
+        envMapIntensity: 2.4, specularIntensity: 1.1, clearcoat: 0.8, clearcoatRoughness: 0.06,
+      })
+  materialCache.set(key, m)
+  return m
+}
+
+/* ============================ data/presets =============================== */
+
+interface PresetItem { type: string; tooth: string; u?: number; v?: number; finish?: string; scale?: number; rot?: number }
+interface Preset { id: string; name: string; desc: string; items: PresetItem[] }
+const PRESETS: Preset[] = [
+  { id: 'minimal', name: 'Minimal', desc: 'One petite crystal on the right central incisor.', items: [
+    { type: 'crystal-petite', tooth: '11', u: 0.05, v: -0.05, finish: 'clear', scale: 0.75 } ] },
+  { id: 'symmetry', name: 'Symmetry', desc: 'Matching crystals on both central incisors.', items: [
+    { type: 'crystal-round', tooth: '11', u: 0, v: 0, finish: 'clear', scale: 0.85 },
+    { type: 'crystal-round', tooth: '21', u: 0, v: 0, finish: 'clear', scale: 0.85 } ] },
+  { id: 'glam', name: 'Glam', desc: 'A graduated cascade across the six front teeth.', items: [
+    { type: 'crystal-petite', tooth: '12', u: 0.1, v: 0, finish: 'rose', scale: 0.6 },
+    { type: 'crystal-round',  tooth: '11', u: -0.05, v: 0.05, finish: 'clear', scale: 0.95 },
+    { type: 'crystal-round',  tooth: '21', u: -0.05, v: 0.05, finish: 'clear', scale: 0.95 },
+    { type: 'crystal-petite', tooth: '22', u: 0.1, v: 0, finish: 'rose', scale: 0.6 },
+    { type: 'crystal-diamond',tooth: '13', u: 0, v: 0, finish: 'sapphire', scale: 0.55 },
+    { type: 'crystal-diamond',tooth: '23', u: 0, v: 0, finish: 'sapphire', scale: 0.55 } ] },
+  { id: 'papillon', name: 'Papillon', desc: 'A golden butterfly with scattered accents.', items: [
+    { type: 'shape-butterfly', tooth: '21', u: 0, v: 0.05, finish: 'gold', scale: 0.9 },
+    { type: 'crystal-petite',  tooth: '11', u: 0.15, v: -0.25, finish: 'clear', scale: 0.5 },
+    { type: 'shape-heart',     tooth: '22', u: -0.05, v: 0.1, finish: 'ruby', scale: 0.5 },
+    { type: 'shape-star',      tooth: '12', u: 0, v: -0.1, finish: 'silver', scale: 0.5 },
+    { type: 'crystal-petite',  tooth: '13', u: 0, v: 0.05, finish: 'clear', scale: 0.5 } ] },
+]
+
+/* ============================ state/store ================================ */
+
+type ModelMode = 'studio' | 'teeth' | 'free'
+interface StudioSnapshot {
+  jewels: PlacedJewelry[]; selectedJewelId: string | null; selectedToothId: string | null
+  armedTypeId: string | null; placingTypeId: string | null; hoveredToothId: string | null
+  modelMode: ModelMode; canUndo: boolean; canRedo: boolean
+}
+const STORAGE_KEY = 'lumiere-design-v1'
+class DesignStore {
+  jewels: PlacedJewelry[] = []
+  selectedJewelId: string | null = null
+  selectedToothId: string | null = null
+  armedTypeId: string | null = null
+  placingTypeId: string | null = null
+  hoveredToothId: string | null = null
+  modelMode: ModelMode = 'studio'
+  restored = false
+  private past: string[] = []
+  private future: string[] = []
+  private listeners = new Set<() => void>()
+  private snap: StudioSnapshot
+  private saveTimer: ReturnType<typeof setTimeout> | null = null
+
+  constructor() {
+    try {
+      const raw = localStorage.getItem(STORAGE_KEY)
+      if (raw) {
+        const data = JSON.parse(raw)
+        if (data && Array.isArray(data.jewels)) {
+          this.jewels = (data.jewels as PlacedJewelry[]).filter(
+            (j) => JEWELRY_BY_ID[j.jewelryTypeId]
+              && (ALL_TEETH.includes(j.toothId) || j.toothId === FREE_TOOTH)
+              && j.position && j.normal)
+          this.restored = this.jewels.length > 0
+        }
+      }
+    } catch { /* corrupt storage — start fresh */ }
+    this.snap = this.buildSnap()
+  }
+  subscribe = (cb: () => void) => { this.listeners.add(cb); return () => { this.listeners.delete(cb) } }
+  getSnapshot = (): StudioSnapshot => this.snap
+  private commit() {
+    this.snap = this.buildSnap()
+    this.listeners.forEach((l) => l())
+    if (this.saveTimer) clearTimeout(this.saveTimer)
+    this.saveTimer = setTimeout(() => this.saveNow(), 500)
+  }
+  private buildSnap(): StudioSnapshot {
+    return {
+      jewels: this.jewels, selectedJewelId: this.selectedJewelId, selectedToothId: this.selectedToothId,
+      armedTypeId: this.armedTypeId, placingTypeId: this.placingTypeId, hoveredToothId: this.hoveredToothId,
+      modelMode: this.modelMode, canUndo: this.past.length > 0, canRedo: this.future.length > 0,
+    }
+  }
+  pushHistory() {
+    this.past.push(JSON.stringify(this.jewels))
+    if (this.past.length > 60) this.past.shift()
+    this.future = []
+    this.commit()
+  }
+  private fixSelection() {
+    if (this.selectedJewelId && !this.jewels.find((j) => j.id === this.selectedJewelId)) this.selectedJewelId = null
+  }
+  addJewel(typeId: string, toothId: string, position: POD, normal: POD): string {
+    this.pushHistory()
+    const def = JEWELRY_BY_ID[typeId]
+    const j: PlacedJewelry = {
+      id: uid(), jewelryTypeId: typeId, toothId, position, normal,
+      rotation: 0, scale: def.defaultScale, color: def.defaultColor,
+    }
+    this.jewels = [...this.jewels, j]
+    this.selectedJewelId = j.id
+    this.selectedToothId = toothId
+    this.commit()
+    return j.id
+  }
+  updateJewel(id: string, patch: Partial<PlacedJewelry>) {
+    this.jewels = this.jewels.map((j) => (j.id === id ? { ...j, ...patch } : j))
+    this.commit()
+  }
+  removeJewel(id: string) {
+    this.pushHistory()
+    this.jewels = this.jewels.filter((j) => j.id !== id)
+    if (this.selectedJewelId === id) this.selectedJewelId = null
+    this.commit()
+  }
+  duplicateJewel(id: string): string | null {
+    const src = this.jewels.find((j) => j.id === id)
+    if (!src) return null
+    this.pushHistory()
+    const n = src.normal
+    let tx = -n.z, tz = n.x
+    const tl = Math.hypot(tx, tz) || 1; tx /= tl; tz /= tl
+    const off = 1.6
+    const copy: PlacedJewelry = { ...src, id: uid(), position: v3(src.position.x + tx * off, src.position.y, src.position.z + tz * off) }
+    this.jewels = [...this.jewels, copy]
+    this.selectedJewelId = copy.id
+    this.commit()
+    return copy.id
+  }
+  selectJewel(id: string | null) {
+    this.selectedJewelId = id
+    this.selectedToothId = id ? (this.jewels.find((j) => j.id === id)?.toothId ?? null) : null
+    this.commit()
+  }
+  selectTooth(id: string | null) { this.selectedToothId = id; this.selectedJewelId = null; this.commit() }
+  deselect() { this.selectedJewelId = null; this.selectedToothId = null; this.armedTypeId = null; this.commit() }
+  setArmed(id: string | null) { this.armedTypeId = id; this.commit() }
+  setPlacing(id: string | null) { this.placingTypeId = id; this.commit() }
+  setHoveredTooth(id: string | null) { if (this.hoveredToothId !== id) { this.hoveredToothId = id; this.commit() } }
+  setModelMode(m: ModelMode) { if (this.modelMode !== m) { this.modelMode = m; this.commit() } }
+  undo() {
+    if (!this.past.length) return
+    this.future.push(JSON.stringify(this.jewels))
+    this.jewels = JSON.parse(this.past.pop()!)
+    this.fixSelection(); this.commit()
+  }
+  redo() {
+    if (!this.future.length) return
+    this.past.push(JSON.stringify(this.jewels))
+    this.jewels = JSON.parse(this.future.pop()!)
+    this.fixSelection(); this.commit()
+  }
+  setJewels(jewels: PlacedJewelry[]) { this.pushHistory(); this.jewels = jewels; this.deselect() }
+  saveNow() { try { localStorage.setItem(STORAGE_KEY, JSON.stringify({ v: 1, jewels: this.jewels })) } catch { /* full */ } }
+}
+const store = new DesignStore()
+function useStudio(): StudioSnapshot { return useSyncExternalStore(store.subscribe, store.getSnapshot) }
+
+/* ===================== user presets (named, persisted) =================== */
+
+interface UserPreset { id: string; name: string; createdAt: number; jewels: PlacedJewelry[] }
+const PRESET_STORE_KEY = 'lumiere-presets-v1'
+function loadUserPresets(): UserPreset[] {
+  try {
+    const raw = localStorage.getItem(PRESET_STORE_KEY)
+    if (!raw) return []
+    const arr = JSON.parse(raw)
+    if (!Array.isArray(arr)) return []
+    return arr.filter((p) => p && typeof p.name === 'string' && Array.isArray(p.jewels))
+  } catch { return [] }
+}
+let userPresets: UserPreset[] = loadUserPresets()
+const userPresetListeners = new Set<() => void>()
+function persistUserPresets() { try { localStorage.setItem(PRESET_STORE_KEY, JSON.stringify(userPresets)) } catch { /* full */ } }
+function emitUserPresets() { userPresetListeners.forEach((l) => l()) }
+function saveUserPreset(name: string): UserPreset | null {
+  const clean = name.trim().slice(0, 40)
+  if (!clean || !store.jewels.length) return null
+  const p: UserPreset = { id: uid(), name: clean, createdAt: Date.now(), jewels: JSON.parse(JSON.stringify(store.jewels)) }
+  userPresets = [p, ...userPresets]
+  persistUserPresets(); emitUserPresets()
+  return p
+}
+function deleteUserPreset(id: string) {
+  userPresets = userPresets.filter((p) => p.id !== id)
+  persistUserPresets(); emitUserPresets()
+}
+function applyUserPreset(p: UserPreset) {
+  store.setJewels(p.jewels.map((j) => ({ ...j, id: uid() })))
+}
+function useUserPresets(): UserPreset[] {
+  const [list, setList] = useState(userPresets)
+  useEffect(() => {
+    const l = () => setList([...userPresets])
+    userPresetListeners.add(l)
+    return () => { userPresetListeners.delete(l) }
+  }, [])
+  return list
+}
+
+/* ============================= toasts ==================================== */
+
+interface ToastMsg { id: number; message: string }
+let toastSeq = 0
+const toastListeners = new Set<() => void>()
+let toastList: ToastMsg[] = []
+function toast(message: string) {
+  const t = { id: ++toastSeq, message }
+  toastList = [...toastList, t]
+  toastListeners.forEach((l) => l())
+  setTimeout(() => { toastList = toastList.filter((x) => x.id !== t.id); toastListeners.forEach((l) => l()) }, 2700)
+}
+
+/* ===================== geometry: teeth (DentalArch) ====================== */
+
+interface ToothSpec {
+  wHalf: number; hHalf: number; dHalf: number; p: number
+  cervical: number; incisal?: number; tip?: number; labial?: number; procline: number
+}
+const ss01 = (x: number) => { x = clamp(x, 0, 1); return x * x * (3 - 2 * x) }
+
+function createToothGeometry(spec: ToothSpec): THREE.BufferGeometry {
+  const geo = new THREE.SphereGeometry(1, 40, 28)
+  const pos = geo.attributes.position as THREE.BufferAttribute
+  const colors: number[] = []
+  const v = new THREE.Vector3()
+  const cCerv = new THREE.Color(0xe6d7bb), cWhite = new THREE.Color(0xffffff)
+  for (let i = 0; i < pos.count; i++) {
+    v.fromBufferAttribute(pos, i).normalize()
+    const ny = v.y, up = Math.max(0, ny), down = Math.max(0, -ny)
+    let wE = spec.wHalf * (1 - spec.cervical * up)
+    let dE = spec.dHalf
+    if (spec.incisal) dE *= 1 - spec.incisal * Math.pow(down, 1.4)
+    if (spec.tip) {
+      const f = down * down
+      wE *= 1 - spec.tip * f
+      dE *= 1 - spec.tip * 0.55 * f
+    }
+    const dLab = dE * (1 + (spec.labial ?? 0) * Math.max(0, v.z))
+    const dz = v.z >= 0 ? dLab : dE * 0.85
+    let x = 0, z = 0
+    const ax = Math.abs(v.x) / wE, az = Math.abs(v.z) / dz
+    const denom = Math.pow(Math.pow(ax, spec.p) + Math.pow(az, spec.p), 1 / spec.p)
+    if (denom > 1e-6) { const t = 1 / denom; x = v.x * t; z = v.z * t }
+    pos.setXYZ(i, x, ny * spec.hHalf, z)
+    const k = ss01((ny + 1) / 2 * 0.9 + 0.05) // warmer toward the cervix (top)
+    colors.push(cCerv.r + (cWhite.r - cCerv.r) * k, cCerv.g + (cWhite.g - cCerv.g) * k, cCerv.b + (cWhite.b - cCerv.b) * k)
+  }
+  geo.setAttribute('color', new THREE.Float32BufferAttribute(colors, 3))
+  geo.computeVertexNormals()
+  return geo
+}
+
+/* ===================== geometry: jewels (cached) ========================= */
+
+interface JewelTemplate { parts: THREE.BufferGeometry[]; halfDepth: number; radius: number }
+const templateCache = new Map<string, JewelTemplate>()
+
+function extrudeJewel(shape: THREE.Shape, depth = 0.3): THREE.BufferGeometry {
+  const g = new THREE.ExtrudeGeometry(shape, {
+    depth, bevelEnabled: true, bevelThickness: 0.1, bevelSize: 0.07, bevelSegments: 2, curveSegments: 32,
+  })
+  g.center()
+  g.computeVertexNormals()
+  return g
+}
+function starShape(outer: number, inner: number): THREE.Shape {
+  const s = new THREE.Shape()
+  for (let i = 0; i < 10; i++) {
+    const r = i % 2 ? inner : outer
+    const a = -Math.PI / 2 + (i * Math.PI) / 5
+    const x = Math.cos(a) * r, y = Math.sin(a) * r
+    if (i === 0) s.moveTo(x, y); else s.lineTo(x, y)
+  }
+  s.closePath(); return s
+}
+function heartShape(): THREE.Shape {
+  const s = new THREE.Shape()
+  s.moveTo(0, -0.85)
+  s.bezierCurveTo(-0.95, -0.35, -1.2, 0.35, -0.55, 0.72)
+  s.bezierCurveTo(-0.25, 0.9, -0.1, 0.72, 0, 0.45)
+  s.bezierCurveTo(0.1, 0.72, 0.25, 0.9, 0.55, 0.72)
+  s.bezierCurveTo(1.2, 0.35, 0.95, -0.35, 0, -0.85)
+  return s
+}
+function butterflyShape(): THREE.Shape {
+  const segs: number[][][] = [
+    [[0, 0.14], [-0.42, 0.86], [-1.04, 0.78], [-0.9, 0.32]],
+    [[-0.9, 0.32], [-1.18, 0.16], [-1.08, -0.14], [-0.68, -0.13]],
+    [[-0.68, -0.13], [-0.42, -0.1], [-0.22, -0.02], [-0.05, 0.02]],
+    [[-0.05, 0.02], [-0.52, -0.06], [-0.82, -0.3], [-0.66, -0.6]],
+    [[-0.66, -0.6], [-0.55, -0.88], [-0.22, -0.74], [-0.04, -0.4]],
+  ]
+  const s = new THREE.Shape()
+  s.moveTo(0, 0.14)
+  for (const seg of segs) s.bezierCurveTo(seg[1][0], seg[1][1], seg[2][0], seg[2][1], seg[3][0], seg[3][1])
+  s.lineTo(0.04, -0.4)
+  for (let i = segs.length - 1; i >= 0; i--) {
+    const seg = segs[i]
+    s.bezierCurveTo(-seg[2][0], seg[2][1], -seg[1][0], seg[1][1], -seg[0][0], seg[0][1])
+  }
+  s.closePath()
+  return s
+}
+function getJewelTemplate(geometryId: string): JewelTemplate {
+  const hit = templateCache.get(geometryId)
+  if (hit) return hit
+  const parts: THREE.BufferGeometry[] = []
+  const faceted = (g: THREE.BufferGeometry) => { g.computeVertexNormals(); return g }
+  switch (geometryId) {
+    case 'round': parts.push(faceted(new THREE.IcosahedronGeometry(0.8, 1).scale(1, 1, 0.62))); break
+    case 'diamond': parts.push(faceted(new THREE.OctahedronGeometry(0.92, 0).scale(0.8, 1.08, 0.55))); break
+    case 'square': {
+      const g = new THREE.CylinderGeometry(0.66, 0.66, 0.5, 4, 1)
+      g.rotateY(Math.PI / 4); g.rotateX(Math.PI / 2)
+      parts.push(faceted(g.toNonIndexed()))
+      break
+    }
+    case 'dot': {
+      const g = new THREE.SphereGeometry(0.52, 24, 18)
+      g.scale(1, 1, 0.62); g.translate(0, 0, 0.3)
+      parts.push(g); break
+    }
+    case 'star': parts.push(extrudeJewel(starShape(0.95, 0.4), 0.28)); break
+    case 'heart': parts.push(extrudeJewel(heartShape(), 0.3)); break
+    case 'triangle': {
+      const pts = [new THREE.Vector2(0, 0.95), new THREE.Vector2(-0.84, -0.62), new THREE.Vector2(0.84, -0.62)]
+      parts.push(extrudeJewel(new THREE.Shape(pts), 0.26)); break
+    }
+    case 'drop': {
+      const s = new THREE.Shape()
+      s.moveTo(0, 1.02)
+      s.bezierCurveTo(0.05, 0.55, 0.64, 0.2, 0.64, -0.32)
+      s.bezierCurveTo(0.64, -0.92, -0.64, -0.92, -0.64, -0.32)
+      s.bezierCurveTo(-0.64, 0.2, -0.05, 0.55, 0, 1.02)
+      parts.push(extrudeJewel(s, 0.3)); break
+    }
+    case 'navette': {
+      const s = new THREE.Shape()
+      s.moveTo(0, 1.05)
+      s.bezierCurveTo(0.62, 0.5, 0.62, -0.5, 0, -1.05)
+      s.bezierCurveTo(-0.62, -0.5, -0.62, 0.5, 0, 1.05)
+      parts.push(extrudeJewel(s, 0.28)); break
+    }
+    case 'baguette': {
+      const pts = [[0.3, 0.98], [-0.3, 0.98], [-0.52, 0.76], [-0.52, -0.76], [-0.3, -0.98], [0.3, -0.98], [0.52, -0.76], [0.52, 0.76]]
+        .map((p) => new THREE.Vector2(p[0], p[1]))
+      parts.push(extrudeJewel(new THREE.Shape(pts), 0.26)); break
+    }
+    case 'butterfly': {
+      parts.push(extrudeJewel(butterflyShape(), 0.24))
+      const body = new THREE.SphereGeometry(1, 16, 12)
+      body.scale(0.16, 0.62, 0.34); body.translate(0, 0.02, 0.16)
+      parts.push(body)
+      break
+    }
+    case 'moon': {
+      const s = new THREE.Shape()
+      s.absarc(0, 0, 0.85, Math.PI * 0.28, Math.PI * 1.72, false)
+      s.absarc(0.32, 0, 0.69, 1.243, -1.243, true)
+      parts.push(extrudeJewel(s, 0.26)); break
+    }
+    case 'bolt': {
+      const pts = [[0.5, 1], [-0.5, -0.1], [-0.05, -0.1], [-0.5, -1], [0.5, 0.1], [0.05, 0.1]]
+        .map((p) => new THREE.Vector2(p[0], p[1]))
+      parts.push(extrudeJewel(new THREE.Shape(pts), 0.24)); break
+    }
+    case 'blossom': {
+      const pts: THREE.Vector2[] = []
+      for (let i = 0; i < 160; i++) {
+        const t = (i / 160) * Math.PI * 2
+        const r = 0.36 + 0.52 * Math.abs(Math.cos(t * 2.5))
+        pts.push(new THREE.Vector2(Math.cos(t) * r, Math.sin(t) * r))
+      }
+      parts.push(extrudeJewel(new THREE.Shape(pts), 0.24)); break
+    }
+  }
+  const box = new THREE.Box3()
+  for (const p of parts) { p.computeBoundingBox(); box.union(p.boundingBox!) }
+  const size = new THREE.Vector3(); box.getSize(size)
+  const tpl = { parts, halfDepth: size.z / 2, radius: Math.max(size.x, size.y) / 2 }
+  templateCache.set(geometryId, tpl)
+  return tpl
+}
+
+/* ===================== component: StudioEngine =========================== */
+
+interface SurfaceHit { toothId: string; point: THREE.Vector3; normal: THREE.Vector3 }
+interface ToothRig {
+  id: string; mesh: THREE.Object3D; materials: THREE.MeshPhysicalMaterial[]
+  spec: ToothSpec; highlight: number; imported: boolean
+  center: THREE.Vector3; outward: THREE.Vector3; tangent: THREE.Vector3
+}
+interface JewelRig {
+  id: string; group: THREE.Group; content: THREE.Group; outline: THREE.Group; meshes: THREE.Mesh[]
+  material: THREE.MeshPhysicalMaterial | null; outlineMaterial: THREE.MeshBasicMaterial
+  typeId: string; matKey: string; halfDepth: number; radius: number
+  sizeScale: number; birth: number; death: number; hoverT: number
+}
+
+/* Auto-fit + classification heuristics for imported .glb dentitions.
+   In FREE MODE (merged meshes) only the labels depend on this — placement
+   always raycasts the real model geometry. Tweak here if your scan sits oddly. */
+const GLB_FIT = {
+  targetWidth: 54,  // world width the imported arch is scaled to
+  centerY: 1.2,     // vertical placement of the model's centre
+  centerZ: -6.5,    // depth placement of the model's centre
+  snapRadius: 9,    // max distance from an arch anchor to count as that tooth
+  maxToothSize: 32, // meshes larger than this are never treated as a single tooth
+}
+
+const _Z = new THREE.Vector3(0, 0, 1)
+const _UP = new THREE.Vector3(0, 1, 0)
+const _n = new THREE.Vector3(), _p = new THREE.Vector3(), _nn = new THREE.Vector3()
+const _q1 = new THREE.Quaternion(), _q2 = new THREE.Quaternion(), _q3 = new THREE.Quaternion()
+const _v = new THREE.Vector3()
+const GHOST_RING_GEO = new THREE.TorusGeometry(1, 0.035, 8, 56)
+const OUTLINE_COLOR = 0xb98a4a
+
+/* Geometric world normal: cross product of the hit triangle's world-space
+   vertices. Exact under any node transform — including non-uniform GLTF
+   scales, where transforming the object-space face normal goes wrong and
+   gems tilt off the surface. Always oriented against the incoming ray. */
+const _gA = new THREE.Vector3(), _gB = new THREE.Vector3(), _gC = new THREE.Vector3()
+const _gE1 = new THREE.Vector3(), _gE2 = new THREE.Vector3(), _gN = new THREE.Vector3()
+function geometricWorldNormal(hit: THREE.Intersection, rayDir: THREE.Vector3): THREE.Vector3 {
+  const g = (hit.object as THREE.Mesh).geometry
+  const pos = g.attributes.position as THREE.BufferAttribute
+  const f = hit.face!
+  _gA.fromBufferAttribute(pos, f.a).applyMatrix4(hit.object.matrixWorld)
+  _gB.fromBufferAttribute(pos, f.b).applyMatrix4(hit.object.matrixWorld)
+  _gC.fromBufferAttribute(pos, f.c).applyMatrix4(hit.object.matrixWorld)
+  _gE1.subVectors(_gB, _gA)
+  _gE2.subVectors(_gC, _gA)
+  _gN.crossVectors(_gE1, _gE2)
+  if (_gN.lengthSq() < 1e-12) _gN.copy(f.normal).transformDirection(hit.object.matrixWorld)
+  else _gN.normalize()
+  if (_gN.dot(rayDir) > 0) _gN.negate()
+  return _gN
+}
+/** Near-flush mount gap: the piece's back almost kisses the enamel. */
+function mountGap(scale: number, manualOffset = 0): number {
+  return 0.04 + 0.04 * scale + manualOffset
+}
+
+function toothIdFromObject(o: THREE.Object3D | null): string | null {
+  let cur = o
+  while (cur) { if (cur.userData.toothId) return cur.userData.toothId as string; cur = cur.parent }
+  return null
+}
+
+class StudioEngine {
+  private renderer: THREE.WebGLRenderer
+  private scene = new THREE.Scene()
+  private camera: THREE.PerspectiveCamera
+  private controls: OrbitControls
+  private raycaster = new THREE.Raycaster()
+  private container: HTMLElement
+  private dentitionGroup: THREE.Group = new THREE.Group()
+  private archAnchors = new Map<string, { center: THREE.Vector3; outward: THREE.Vector3; tangent: THREE.Vector3 }>()
+  private toothRigs = new Map<string, ToothRig>()
+  private toothMeshes: THREE.Object3D[] = []
+  private jewelRigs = new Map<string, JewelRig>()
+  private dyingJewels: JewelRig[] = []
+  private jewelMeshes: THREE.Mesh[] = []
+  private jewelsGroup = new THREE.Group()
+  private backdrop!: THREE.Mesh
+  private floor!: THREE.Mesh
+  private ro: ResizeObserver
+  private raf = 0
+  private disposed = false
+
+  // custom-model state
+  private mergedMode = false
+  private proxyMeshes: THREE.Mesh[] = []      // invisible reference teeth (free-mode labelling)
+  private proxyGroup: THREE.Group | null = null
+
+  // interaction state
+  private mode: 'idle' | 'jewel-press' | 'drag-jewel' | 'tooth-press' | 'bg-press' | 'armed-press' = 'idle'
+  private press: { jewelId?: string; toothId?: string; x: number; y: number; t: number } | null = null
+  private dragJewel: JewelRig | null = null
+  private dragLastHit: SurfaceHit | null = null
+  private hoverJewelId: string | null = null
+  private hoverToothId: string | null = null
+  private placing: { typeId: string; startX: number; startY: number; started: boolean } | null = null
+  private ghost: { root: THREE.Group; ringRoot: THREE.Group; ring: THREE.Mesh; ringScale: number; halfDepth: number; material: THREE.MeshBasicMaterial; ringMaterial: THREE.MeshBasicMaterial } | null = null
+
+  // camera animation
+  private camTween: { p0: THREE.Vector3; p1: THREE.Vector3; t0: THREE.Vector3; t1: THREE.Vector3; start: number; dur: number } | null = null
+  private autoRotate = false
+
+  constructor(container: HTMLElement, private store: DesignStore) {
+    this.container = container
+    this.renderer = new THREE.WebGLRenderer({ antialias: true, alpha: true, powerPreference: 'high-performance' })
+    this.renderer.setPixelRatio(Math.min(window.devicePixelRatio, 2))
+    this.renderer.setSize(container.clientWidth || 800, container.clientHeight || 600, false)
+    this.renderer.outputColorSpace = THREE.SRGBColorSpace
+    this.renderer.toneMapping = THREE.ACESFilmicToneMapping
+    this.renderer.toneMappingExposure = 1.0
+    this.renderer.shadowMap.enabled = true
+    this.renderer.shadowMap.type = THREE.PCFSoftShadowMap
+    container.appendChild(this.renderer.domElement)
+
+    this.camera = new THREE.PerspectiveCamera(36, (container.clientWidth || 1) / (container.clientHeight || 1), 2, 700)
+    this.controls = new OrbitControls(this.camera, this.renderer.domElement)
+    this.controls.enableDamping = true
+    this.controls.dampingFactor = 0.08
+    this.controls.rotateSpeed = 0.8
+    this.controls.zoomSpeed = 0.8
+    this.controls.panSpeed = 0.85
+    this.controls.screenSpacePanning = true
+    this.controls.minDistance = 20
+    this.controls.maxDistance = 150
+    this.controls.minPolarAngle = 0.06
+    this.controls.maxPolarAngle = Math.PI * 0.72
+    this.controls.target.set(0, 0.5, -6)
+
+    this.buildEnvironment()
+    this.buildDentition()
+    this.scene.add(this.jewelsGroup)
+
+    // input — capture phase on the container runs BEFORE OrbitControls' canvas listeners,
+    // so a press on a jewel (or an armed placement) can pre-empt camera rotation cleanly.
+    container.addEventListener('pointerdown', this.onPointerDown, true)
+    window.addEventListener('pointermove', this.onPointerMove)
+    window.addEventListener('pointerup', this.onPointerUp)
+    window.addEventListener('pointercancel', this.onPointerUp)
+    window.addEventListener('blur', this.onBlur)
+    this.renderer.domElement.addEventListener('dblclick', this.onDblClick)
+    container.addEventListener('contextmenu', (e) => e.preventDefault())
+
+    this.ro = new ResizeObserver(() => this.resize())
+    this.ro.observe(container)
+
+    store.subscribe(this.onStoreChange)
+    this.syncJewels()
+
+    this.camera.position.set(34, 24, 98)
+    this.tweenCamera(new THREE.Vector3(0, 9, 66), new THREE.Vector3(0, 0.5, -6), 1200)
+    this.raf = requestAnimationFrame(this.tick)
+  }
+
+  /* ---------- scene construction ---------- */
+
+  private buildEnvironment() {
+    const pmrem = new THREE.PMREMGenerator(this.renderer)
+    this.scene.environment = pmrem.fromScene(new RoomEnvironment(), 0.04).texture
+    pmrem.dispose()
+
+    const cnv = document.createElement('canvas'); cnv.width = cnv.height = 1024
+    const ctx = cnv.getContext('2d')!
+    const grad = ctx.createRadialGradient(512, 400, 80, 512, 512, 780)
+    grad.addColorStop(0, '#faf6ee'); grad.addColorStop(0.5, '#efe7d9'); grad.addColorStop(1, '#d8cbb4')
+    ctx.fillStyle = grad; ctx.fillRect(0, 0, 1024, 1024)
+    const tex = new THREE.CanvasTexture(cnv); tex.colorSpace = THREE.SRGBColorSpace
+    this.backdrop = new THREE.Mesh(
+      new THREE.SphereGeometry(170, 48, 32),
+      new THREE.MeshBasicMaterial({ map: tex, side: THREE.BackSide, toneMapped: false }))
+    this.scene.add(this.backdrop)
+
+    const key = new THREE.DirectionalLight(0xfff1e0, 2.2)
+    key.position.set(28, 46, 40)
+    key.castShadow = true
+    key.shadow.mapSize.set(2048, 2048)
+    key.shadow.camera.left = -55; key.shadow.camera.right = 55
+    key.shadow.camera.top = 55; key.shadow.camera.bottom = -55
+    key.shadow.camera.near = 10; key.shadow.camera.far = 160
+    key.shadow.bias = -0.0002; key.shadow.normalBias = 0.6
+    this.scene.add(key)
+    const fill = new THREE.DirectionalLight(0xdfe8f5, 0.6); fill.position.set(-34, 14, 30); this.scene.add(fill)
+    const rim = new THREE.DirectionalLight(0xffffff, 0.8); rim.position.set(-6, 20, -55); this.scene.add(rim)
+
+    this.floor = new THREE.Mesh(new THREE.PlaneGeometry(500, 500), new THREE.ShadowMaterial({ opacity: 0.14 }))
+    this.floor.rotation.x = -Math.PI / 2
+    this.floor.position.y = -16
+    this.floor.receiveShadow = true
+    this.scene.add(this.floor)
+  }
+
+  private archCenters(): number[] {
+    let cum = 0
+    const centers: number[] = []
+    for (const t of QUADRANT_TEETH) { centers.push(cum + t.w / 2); cum += t.w }
+    return centers
+  }
+  /** Walk every tooth of the procedural upper arch — shared by the studio arch,
+      the auto-fit anchors and the free-mode labelling proxies. */
+  private forEachArchTooth(fn: (fdi: string, spec: ToothSpec, pos: THREE.Vector3, outward: THREE.Vector3, tangent: THREE.Vector3) => void) {
+    const centers = this.archCenters()
+    for (const t of QUADRANT_TEETH) {
+      const centerS = centers[QUADRANT_TEETH.indexOf(t)]
+      for (const side of [-1, 1] as const) {
+        const fdi = side < 0 ? t.fdiR : t.fdiL
+        const spec = TOOTH_SPECS[t.key]
+        const s = centerS * side
+        const x = xForArc(Math.abs(s)) * side
+        const z = -(x * x) / ARCH_K
+        const outward = new THREE.Vector3((2 * x) / ARCH_K, 0, 1).normalize()
+        const tangent = new THREE.Vector3(outward.z, 0, -outward.x)
+        const pos = new THREE.Vector3(x, (seeded(fdi, 4) - 0.5) * 0.8, z)
+        fn(fdi, spec, pos, outward, tangent)
+      }
+    }
+  }
+
+  private buildDentition() {
+    const group = new THREE.Group()
+    this.dentitionGroup = group
+    const baseEnamel = new THREE.MeshPhysicalMaterial({
+      color: 0xf6f0e4, roughness: 0.3, clearcoat: 0.55, clearcoatRoughness: 0.3,
+      envMapIntensity: 0.85, emissive: 0xa97d45, emissiveIntensity: 0,
+    })
+    this.forEachArchTooth((fdi, spec, pos, outward, tangent) => {
+      const geo = createToothGeometry(spec)
+      const mat = baseEnamel.clone()
+      mat.color.offsetHSL((seeded(fdi, 1) - 0.5) * 0.012, (seeded(fdi, 2) - 0.5) * 0.03, (seeded(fdi, 3) - 0.5) * 0.035)
+      const mesh = new THREE.Mesh(geo, mat)
+      mesh.rotation.order = 'YXZ'
+      mesh.rotation.set(THREE.MathUtils.degToRad(spec.procline), Math.atan2(outward.x, outward.z), 0)
+      mesh.position.copy(pos)
+      mesh.scale.setScalar(1 + (seeded(fdi, 5) - 0.5) * 0.05)
+      mesh.castShadow = true; mesh.receiveShadow = true
+      mesh.userData.toothId = fdi
+      group.add(mesh)
+      this.toothMeshes.push(mesh)
+      this.archAnchors.set(fdi, { center: pos.clone(), outward: outward.clone(), tangent: tangent.clone() })
+      this.toothRigs.set(fdi, {
+        id: fdi, mesh, materials: [mat], spec, highlight: 0, imported: false,
+        center: pos.clone(), outward: outward.clone(), tangent: tangent.clone(),
+      })
+    })
+    const gum = this.buildGum(this.archCenters())
+    gum.castShadow = true; gum.receiveShadow = true
+    group.add(gum)
+    this.scene.add(group)
+    this.scene.updateMatrixWorld(true)
+  }
+
+  private buildGum(centers: number[]): THREE.Mesh {
+    const hw = 2.65, hh = 3.8, r = 1.8, segs = 6
+    const outline: [number, number][] = []
+    const corners = [
+      [hw - r, hh - r, 0], [-hw + r, hh - r, Math.PI / 2],
+      [-hw + r, -hh + r, Math.PI], [hw - r, -hh + r, (3 * Math.PI) / 2],
+    ]
+    for (const [cx, cy, a0] of corners)
+      for (let k = 0; k <= segs; k++) {
+        const a = a0 + (k / segs) * (Math.PI / 2)
+        outline.push([cx + Math.cos(a) * r, cy + Math.sin(a) * r])
+      }
+    const M = outline.length
+    const AC = -0.5, BC = 4.0
+    const S_END = centers[6] + 5.5
+    const STATIONS = 150
+    const positions: number[] = [], indices: number[] = []
+    for (let i = 0; i <= STATIONS; i++) {
+      const f = i / STATIONS
+      const s = -S_END + f * S_END * 2
+      const x = xForArc(Math.abs(s)) * (s < 0 ? -1 : 1)
+      const z = -(x * x) / ARCH_K
+      const nl = Math.hypot((2 * x) / ARCH_K, 1)
+      const nx = (2 * x) / ARCH_K / nl, nz = 1 / nl
+      const closeEnd = ss01((Math.abs(s) - (S_END - 3)) / 3)
+      const shrink = 0.12 + 0.88 * (1 - closeEnd)
+      for (let j = 0; j < M; j++) {
+        let a = AC + outline[j][0], b = BC + outline[j][1]
+        a = AC + (a - AC) * shrink
+        b = BC + (b - BC) * shrink
+        positions.push(x + nx * a, b, z + nz * a)
+      }
+    }
+    for (let i = 0; i < STATIONS; i++)
+      for (let j = 0; j < M; j++) {
+        const j2 = (j + 1) % M
+        const a = i * M + j, b = i * M + j2, c = (i + 1) * M + j2, d = (i + 1) * M + j
+        indices.push(a, c, d, a, b, c)
+      }
+    const geo = new THREE.BufferGeometry()
+    geo.setAttribute('position', new THREE.Float32BufferAttribute(positions, 3))
+    geo.setIndex(indices)
+    geo.computeVertexNormals()
+    const mat = new THREE.MeshPhysicalMaterial({
+      color: 0xb96f7a, roughness: 0.42, clearcoat: 0.45, clearcoatRoughness: 0.35,
+      envMapIntensity: 0.7, side: THREE.DoubleSide,
+    })
+    return new THREE.Mesh(geo, mat)
+  }
+
+  /* ---------- custom model import (.glb) ---------- */
+
+  private matchToothName(name: string): string | null {
+    const m = (name || '').match(/(?:^|[^0-9])(1[1-7]|2[1-7])(?:$|[^0-9])/)
+    return m ? m[1] : null
+  }
+  private removeDentition() {
+    if (this.dentitionGroup) {
+      this.scene.remove(this.dentitionGroup)
+      this.dentitionGroup.traverse((o) => {
+        const m = o as THREE.Mesh
+        if (m.isMesh) {
+          m.geometry?.dispose()
+          const mats = Array.isArray(m.material) ? m.material : [m.material]
+          mats.forEach((x) => x?.dispose?.())
+        }
+      })
+    }
+    this.dentitionGroup = new THREE.Group()
+    this.toothRigs.clear()
+    this.toothMeshes.length = 0
+    // arch anchors are kept: they are the reference frame for GLB classification
+  }
+  private clearCustomModel() {
+    if (this.proxyGroup) {
+      this.scene.remove(this.proxyGroup)
+      const seen = new Set<THREE.Material>()
+      this.proxyGroup.traverse((o) => {
+        const m = o as THREE.Mesh
+        if (m.isMesh) {
+          m.geometry?.dispose()
+          const mats = Array.isArray(m.material) ? m.material : [m.material]
+          mats.forEach((x) => { if (x && !seen.has(x)) { seen.add(x); x.dispose() } })
+        }
+      })
+      this.proxyGroup = null
+    }
+    this.proxyMeshes.length = 0
+    this.mergedMode = false
+  }
+  resetToStudioModel() {
+    this.cancelPlacing()
+    this.clearCustomModel()
+    this.removeDentition()
+    this.buildDentition()
+    this.scene.updateMatrixWorld(true)
+    this.syncJewels()
+  }
+  async importGLB(file: File): Promise<{ teeth: number; mode: 'teeth' | 'free' }> {
+    this.cancelPlacing()
+    if (this.dragJewel) { this.dragJewel = null; this.dragLastHit = null; this.controls.enabled = true }
+    const buffer = await file.arrayBuffer()
+    const loader = new GLTFLoader()
+    const draco = new DRACOLoader()
+    draco.setDecoderPath('https://cdn.jsdelivr.net/npm/three@0.170.0/examples/jsm/libs/draco/')
+    loader.setDRACOLoader(draco)
+    let gltf: { scene: THREE.Group }
+    try { gltf = await loader.parseAsync(buffer, '') }
+    catch { draco.dispose(); throw new Error('not a valid glTF/GLB file') }
+    draco.dispose()
+    const root = gltf.scene
+    root.updateMatrixWorld(true)
+
+    // --- auto-fit into the studio coordinate system
+    let box = new THREE.Box3().setFromObject(root)
+    const size = box.getSize(new THREE.Vector3())
+    const scale = GLB_FIT.targetWidth / Math.max(size.x, 0.001)
+    root.scale.setScalar(scale)
+    root.updateMatrixWorld(true)
+    box = new THREE.Box3().setFromObject(root)
+    const c = box.getCenter(new THREE.Vector3())
+    root.position.sub(new THREE.Vector3(c.x - 0, c.y - GLB_FIT.centerY, c.z - GLB_FIT.centerZ))
+    root.updateMatrixWorld(true)
+
+    // --- classify every mesh: named tooth / nearest-anchor tooth / scenery
+    const meshes: THREE.Mesh[] = []
+    root.traverse((o) => { const m = o as THREE.Mesh; if (m.isMesh) meshes.push(m) })
+    if (!meshes.length) throw new Error('no meshes found in the file')
+    const buckets = new Map<string, THREE.Mesh[]>()
+    const push = (fdi: string, m: THREE.Mesh) => {
+      const arr = buckets.get(fdi)
+      if (arr) arr.push(m); else buckets.set(fdi, [m])
+    }
+    for (const m of meshes) {
+      m.castShadow = true; m.receiveShadow = true
+      const byName = this.matchToothName(m.name)
+      if (byName) { push(byName, m); continue }
+      if (/gum|gingiva|gencive|muqueuse|palais|base|floor|plane|camera/i.test(m.name || '')) continue
+      const b = new THREE.Box3().setFromObject(m)
+      const ms = b.getSize(new THREE.Vector3())
+      if (Math.max(ms.x, ms.y, ms.z) > GLB_FIT.maxToothSize) continue
+      const center = b.getCenter(new THREE.Vector3())
+      let best: string | null = null, bestD = GLB_FIT.snapRadius
+      this.archAnchors.forEach((a, fdi) => { const d = a.center.distanceTo(center); if (d < bestD) { bestD = d; best = fdi } })
+      if (best) push(best, m)
+    }
+
+    // --- swap the procedural dentition for the imported one (never rejected)
+    this.clearCustomModel()
+    this.removeDentition()
+    this.dentitionGroup = root
+    this.scene.add(root)
+
+    if (buckets.size >= 4) {
+      /* TOOTH MODE — separate tooth meshes detected: exact per-tooth selection. */
+      for (const [fdi, list] of buckets) {
+        const group = new THREE.Group()
+        group.userData.toothId = fdi
+        root.add(group)
+        list.forEach((m) => group.attach(m)) // keeps world transforms
+        // clone materials per tooth so hover/selection highlights don't bleed
+        const mats: THREE.MeshPhysicalMaterial[] = []
+        group.traverse((o) => {
+          const mm = o as THREE.Mesh
+          if (!mm.isMesh) return
+          const src = Array.isArray(mm.material) ? mm.material : [mm.material]
+          const cloned = src.map((mat) => {
+            const c2 = mat.clone() as THREE.MeshPhysicalMaterial
+            if ((c2 as unknown as { emissive?: THREE.Color }).emissive) {
+              c2.emissive = new THREE.Color(0xa97d45)
+              c2.emissiveIntensity = 0
+              mats.push(c2)
+            }
+            return c2
+          })
+          mm.material = Array.isArray(mm.material) ? cloned : cloned[0]
+        })
+        const bbox = new THREE.Box3().setFromObject(group)
+        const bs = bbox.getSize(new THREE.Vector3())
+        const anchor = this.archAnchors.get(fdi)!
+        this.toothRigs.set(fdi, {
+          id: fdi, mesh: group, materials: mats, imported: true, highlight: 0,
+          spec: {
+            wHalf: Math.max(bs.x / 2, 1), hHalf: Math.max(bs.y / 2, 1),
+            dHalf: Math.max(bs.z / 2, 1), p: 5, cervical: 0.2, procline: 0,
+          },
+          center: bbox.getCenter(new THREE.Vector3()),
+          outward: anchor.outward.clone(), tangent: anchor.tangent.clone(),
+        })
+        this.toothMeshes.push(group)
+      }
+      this.scene.updateMatrixWorld(true)
+      this.syncJewels()
+      return { teeth: buckets.size, mode: 'teeth' }
+    }
+
+    /* FREE MODE — merged model: every surface is placeable, jewels raycast the
+       real geometry for exact position + orientation. Tooth labels are inferred
+       from invisible reference teeth placed along the standard arch. */
+    this.mergedMode = true
+    this.toothMeshes.push(root)
+    const proxyMat = new THREE.MeshBasicMaterial({ visible: false }) // rendered never, raycast always
+    const proxyGroup = new THREE.Group()
+    this.forEachArchTooth((fdi, spec, pos, outward, tangent) => {
+      const m = new THREE.Mesh(createToothGeometry(spec), proxyMat)
+      m.position.copy(pos)
+      m.rotation.order = 'YXZ'
+      m.rotation.set(THREE.MathUtils.degToRad(spec.procline), Math.atan2(outward.x, outward.z), 0)
+      m.userData.toothId = fdi
+      proxyGroup.add(m)
+      this.proxyMeshes.push(m)
+      this.toothRigs.set(fdi, {
+        id: fdi, mesh: root, materials: [], spec, imported: true, highlight: 0,
+        center: pos.clone(), outward: outward.clone(), tangent: tangent.clone(),
+      })
+    })
+    this.proxyGroup = proxyGroup
+    this.scene.add(proxyGroup)
+    this.scene.updateMatrixWorld(true)
+    this.syncJewels()
+    return { teeth: 0, mode: 'free' }
+  }
+
+  /* ---------- raycasting (JewelryPlacementController) ---------- */
+
+  private setNDC(e: { clientX: number; clientY: number }) {
+    const r = this.renderer.domElement.getBoundingClientRect()
+    this.raycaster.setFromCamera(
+      new THREE.Vector2(((e.clientX - r.left) / r.width) * 2 - 1, -((e.clientY - r.top) / r.height) * 2 + 1),
+      this.camera)
+  }
+  /** Free-mode labelling: which tooth does the current pointer ray point at? */
+  private classifyHit(point: THREE.Vector3): string {
+    const ph = this.raycaster.intersectObjects(this.proxyMeshes, false)
+    if (ph.length) return ph[0].object.userData.toothId as string
+    // fallback: nearest arch anchor to the surface point (vertical distance damped)
+    let best = FREE_TOOTH, bestD = 30
+    this.toothRigs.forEach((rig, fdi) => {
+      const dx = rig.center.x - point.x
+      const dy = (rig.center.y - point.y) * 0.4
+      const dz = rig.center.z - point.z
+      const d = Math.hypot(dx, dy, dz)
+      if (d < bestD) { bestD = d; best = fdi }
+    })
+    return best
+  }
+  private raycastTeeth(): SurfaceHit | null {
+    const hits = this.raycaster.intersectObjects(this.toothMeshes, true)
+    if (!hits.length) return null
+    const h = hits[0]
+    const n = geometricWorldNormal(h, this.raycaster.ray.direction).clone()
+    const toothId = this.mergedMode ? this.classifyHit(h.point) : toothIdFromObject(h.object)
+    if (!toothId) return null
+    return { toothId, point: h.point.clone(), normal: n }
+  }
+  private raycastJewels(): { jewelId: string } | null {
+    if (!this.jewelMeshes.length) return null
+    const hits = this.raycaster.intersectObjects(this.jewelMeshes, false)
+    if (!hits.length) return null
+    return { jewelId: hits[0].object.userData.jewelId as string }
+  }
+  /** Anchor point on a tooth's labial face (u: -1..1 across, v: -1..1 vertical), refined by raycast. */
+  getSurfacePoint(toothId: string, u: number, v: number): SurfaceHit {
+    const rig = this.toothRigs.get(toothId)!
+    const spec = rig.spec
+    let origin: THREE.Vector3, dir: THREE.Vector3
+    if (rig.imported) {
+      origin = rig.center.clone()
+        .addScaledVector(rig.tangent, u * spec.wHalf * 0.6)
+        .addScaledVector(_UP, v * spec.hHalf * 0.55)
+        .addScaledVector(rig.outward, spec.dHalf * 2 + 6)
+      dir = rig.outward.clone().negate()
+    } else {
+      const local = new THREE.Vector3(u * spec.wHalf * 0.6, v * spec.hHalf * 0.5, spec.dHalf * 2.5)
+      origin = rig.mesh.localToWorld(local.clone())
+      dir = new THREE.Vector3(0, 0, 1).applyQuaternion(rig.mesh.getWorldQuaternion(_q3)).normalize().negate()
+    }
+    this.raycaster.set(origin, dir)
+    this.raycaster.far = 80
+    const hits = this.raycaster.intersectObject(rig.mesh, true)
+    this.raycaster.far = Infinity
+    if (hits.length) {
+      const h = hits[0]
+      const n = geometricWorldNormal(h, dir).clone()
+      return { toothId, point: h.point.clone(), normal: n }
+    }
+    return { toothId, point: origin.clone().addScaledVector(dir, spec.dHalf * 2), normal: dir.clone().negate() }
+  }
+  /** Human-readable surface location ("Middle third · labial surface") — works for all models. */
+  describeSurface(j: PlacedJewelry): string {
+    const rig = this.toothRigs.get(j.toothId)
+    if (!rig) return ''
+    const rel = new THREE.Vector3(j.position.x, j.position.y, j.position.z).sub(rig.center)
+    const ty = rel.y / rig.spec.hHalf
+    const third = ty < -0.33 ? 'Incisal third' : ty > 0.33 ? 'Cervical third' : 'Middle third'
+    const n = new THREE.Vector3(j.normal.x, j.normal.y, j.normal.z)
+    const dOut = n.dot(rig.outward), dUp = n.y
+    const face = dOut > 0.45 ? 'labial surface' : dOut < -0.45 ? 'palatal surface'
+      : dUp < -0.5 ? 'incisal edge' : dUp > 0.5 ? 'cervical surface' : 'proximal surface'
+    return `${third} · ${face}`
+  }
+
+  /* ---------- jewel pose & rigs ---------- */
+
+  private poseObject(obj: THREE.Object3D, point: THREE.Vector3, normal: THREE.Vector3, rotationDeg: number, halfDepth: number, scale: number, manualOffset = 0) {
+    _nn.copy(normal).normalize()
+    _q1.setFromUnitVectors(_Z, _nn)
+    _q2.setFromAxisAngle(_Z, THREE.MathUtils.degToRad(rotationDeg))
+    obj.quaternion.copy(_q1).multiply(_q2)
+    obj.position.copy(point).addScaledVector(_nn, halfDepth * scale + mountGap(scale, manualOffset))
+  }
+  private applyPose(group: THREE.Group, j: PlacedJewelry, halfDepth: number) {
+    _p.set(j.position.x, j.position.y, j.position.z)
+    _n.set(j.normal.x, j.normal.y, j.normal.z)
+    this.poseObject(group, _p, _n, j.rotation, halfDepth, j.scale, j.offset ?? 0)
+  }
+  private buildRigContent(rig: JewelRig, j: PlacedJewelry) {
+    this.unregisterMeshes(rig)
+    rig.content.clear(); rig.outline.clear()
+    const def = JEWELRY_BY_ID[j.jewelryTypeId]
+    const tpl = getJewelTemplate(def.geometry)
+    const material = getJewelMaterial(j) // shared, cached — never disposed per rig
+    rig.meshes = tpl.parts.map((g) => {
+      const m = new THREE.Mesh(g, material)
+      m.castShadow = true
+      m.userData.jewelId = rig.id
+      rig.content.add(m)
+      return m
+    })
+    const outline = rig.content.clone(true)
+    outline.traverse((o) => {
+      const m = o as THREE.Mesh
+      if (m.isMesh) { m.material = rig.outlineMaterial; m.castShadow = false; (m as unknown as { raycast: () => void }).raycast = () => {} }
+    })
+    outline.scale.setScalar(1.16)
+    rig.outline.add(outline)
+    rig.material = material; rig.matKey = matKeyFor(j); rig.typeId = j.jewelryTypeId
+    rig.halfDepth = tpl.halfDepth; rig.radius = tpl.radius
+    this.jewelMeshes.push(...rig.meshes)
+  }
+  private createJewelRig(j: PlacedJewelry): JewelRig {
+    const rig: JewelRig = {
+      id: j.id, group: new THREE.Group(), content: new THREE.Group(), outline: new THREE.Group(), meshes: [],
+      material: null, outlineMaterial: new THREE.MeshBasicMaterial({
+        color: OUTLINE_COLOR, side: THREE.BackSide, transparent: true, opacity: 0 }),
+      typeId: '', matKey: '', halfDepth: 0.5, radius: 0.8, sizeScale: 1, birth: 0, death: 0, hoverT: 0,
+    }
+    rig.group.add(rig.content, rig.outline)
+    this.buildRigContent(rig, j)
+    return rig
+  }
+  private unregisterMeshes(rig: JewelRig) {
+    this.jewelMeshes = this.jewelMeshes.filter((m) => m.userData.jewelId !== rig.id)
+  }
+  private syncJewels = () => {
+    const jewels = this.store.jewels
+    const seen = new Set<string>()
+    for (const j of jewels) {
+      seen.add(j.id)
+      let rig = this.jewelRigs.get(j.id)
+      const mk = matKeyFor(j)
+      if (!rig) {
+        rig = this.createJewelRig(j)
+        this.jewelRigs.set(j.id, rig)
+        this.jewelsGroup.add(rig.group)
+        rig.birth = performance.now()
+      } else if (rig.typeId !== j.jewelryTypeId) {
+        this.buildRigContent(rig, j)
+      } else if (rig.matKey !== mk) {
+        const material = getJewelMaterial(j)
+        rig.meshes.forEach((m) => { m.material = material })
+        rig.material = material; rig.matKey = mk
+      }
+      rig.sizeScale = j.scale
+      if (this.dragJewel !== rig) this.applyPose(rig.group, j, rig.halfDepth)
+    }
+    for (const [id, rig] of Array.from(this.jewelRigs)) {
+      if (!seen.has(id)) {
+        this.jewelRigs.delete(id)
+        this.unregisterMeshes(rig)
+        rig.death = performance.now()
+        this.dyingJewels.push(rig)
+      }
+    }
+  }
+  private onStoreChange = () => { this.syncJewels() }
+
+  /* ---------- input ---------- */
+
+  private onPointerDown = (e: PointerEvent) => {
+    if (this.placing) return
+    if (this.camTween) { this.camTween = null; this.controls.enabled = true; this.controls.update() }
+    if (e.button !== 0) { this.press = null; this.mode = 'idle'; return }
+    this.setNDC(e)
+    const jHit = this.raycastJewels()
+    if (jHit) {
+      e.stopPropagation() // pre-empt OrbitControls: this press belongs to the jewel
+      this.controls.enabled = false
+      this.mode = 'jewel-press'
+      this.press = { jewelId: jHit.jewelId, x: e.clientX, y: e.clientY, t: performance.now() }
+      return
+    }
+    const tHit = this.raycastTeeth()
+    if (tHit && this.store.getSnapshot().armedTypeId) {
+      e.stopPropagation()
+      this.controls.enabled = false
+      this.mode = 'armed-press'
+      this.press = { toothId: tHit.toothId, x: e.clientX, y: e.clientY, t: performance.now() }
+      return
+    }
+    this.mode = tHit ? 'tooth-press' : 'bg-press'
+    this.press = { toothId: tHit?.toothId, x: e.clientX, y: e.clientY, t: performance.now() }
+  }
+
+  private onPointerMove = (e: PointerEvent) => {
+    if (this.placing) { this.updatePlacing(e); return }
+    if (!this.press) { this.updateHover(e); return }
+    const moved = Math.hypot(e.clientX - this.press.x, e.clientY - this.press.y) > 5
+    if (this.mode === 'jewel-press' && moved) {
+      const rig = this.jewelRigs.get(this.press.jewelId!)
+      if (rig) {
+        this.store.pushHistory()
+        this.dragJewel = rig
+        this.dragLastHit = null
+        this.mode = 'drag-jewel'
+        this.store.selectJewel(rig.id)
+      } else this.mode = 'idle'
+    }
+    if (this.mode === 'drag-jewel') {
+      this.setNDC(e)
+      const hit = this.raycastTeeth()
+      if (hit) {
+        this.dragLastHit = hit
+        const j = this.store.jewels.find((x) => x.id === this.dragJewel!.id)
+        if (j) this.poseObject(this.dragJewel.group, hit.point, hit.normal, j.rotation, this.dragJewel.halfDepth, j.scale, j.offset ?? 0)
+        this.setHoverTooth(hit.toothId)
+      }
+      this.setCursor('grabbing')
+      return
+    }
+    if (this.mode === 'bg-press' && moved) { this.clearHover(); this.setCursor('grabbing'); return }
+    if (this.mode === 'tooth-press' && moved) { this.clearHover(); this.setCursor('grabbing'); return }
+  }
+
+  private onPointerUp = (e: PointerEvent) => {
+    if (this.placing) { this.finishPlacing(e); return }
+    const quick = !!this.press &&
+      Math.hypot(e.clientX - this.press.x, e.clientY - this.press.y) < 6 &&
+      performance.now() - this.press.t < 450
+    if (this.mode === 'drag-jewel' && this.dragJewel) {
+      if (this.dragLastHit) {
+        const hit = this.dragLastHit
+        this.store.updateJewel(this.dragJewel.id, {
+          toothId: hit.toothId, position: v3(hit.point.x, hit.point.y, hit.point.z),
+          normal: v3(hit.normal.x, hit.normal.y, hit.normal.z) })
+      }
+      this.dragJewel = null; this.dragLastHit = null
+    } else if (this.mode === 'jewel-press' && quick && this.press?.jewelId) {
+      this.store.selectJewel(this.press.jewelId)
+    } else if (this.mode === 'armed-press' && quick) {
+      this.setNDC(e)
+      const hit = this.raycastTeeth()
+      if (hit) this.placeJewel(this.store.getSnapshot().armedTypeId!, hit)
+    } else if (this.mode === 'tooth-press' && quick && this.press?.toothId) {
+      this.store.selectTooth(this.press.toothId)
+    } else if (this.mode === 'bg-press' && quick) {
+      this.store.deselect()
+    }
+    this.press = null
+    this.mode = 'idle'
+    this.controls.enabled = !this.camTween
+    this.updateHover(e)
+  }
+
+  private onBlur = () => { if (this.placing) this.cancelPlacing() }
+
+  private updateHover(e: PointerEvent) {
+    const overCanvas = e.target instanceof Node && this.container.contains(e.target)
+    if (!overCanvas) { this.clearHover(); return }
+    this.setNDC(e)
+    const jHit = this.raycastJewels()
+    if (jHit) {
+      this.hoverJewelId = jHit.jewelId
+      this.setHoverTooth(null)
+      this.setCursor('grab')
+      return
+    }
+    this.hoverJewelId = null
+    const tHit = this.raycastTeeth()
+    if (tHit) { this.setHoverTooth(tHit.toothId); this.setCursor(this.store.getSnapshot().armedTypeId ? 'crosshair' : 'pointer') }
+    else { this.setHoverTooth(null); this.setCursor(this.store.getSnapshot().armedTypeId ? 'crosshair' : 'grab') }
+  }
+  private clearHover() { this.hoverJewelId = null; this.setHoverTooth(null) }
+  private setHoverTooth(id: string | null) {
+    if (this.hoverToothId !== id) { this.hoverToothId = id; this.store.setHoveredTooth(id) }
+  }
+  private setCursor(css: string) { this.renderer.domElement.style.cursor = css }
+
+  /* ---------- library placement (drag from panel / armed click) ---------- */
+
+  beginPlacing(typeId: string, e: { clientX: number; clientY: number; preventDefault: () => void }) {
+    if (this.placing) return
+    e.preventDefault()
+    this.placing = { typeId, startX: e.clientX, startY: e.clientY, started: false }
+  }
+  private updatePlacing(e: PointerEvent) {
+    const p = this.placing!
+    if (!p.started) {
+      if (Math.hypot(e.clientX - p.startX, e.clientY - p.startY) > 6) {
+        p.started = true
+        this.store.setPlacing(p.typeId)
+        this.createGhost(p.typeId)
+      } else return
+    }
+    const overCanvas = e.target instanceof Node && this.container.contains(e.target)
+    if (!overCanvas) {
+      if (this.ghost) this.ghost.root.visible = this.ghost.ringRoot.visible = false
+      this.setHoverTooth(null)
+      return
+    }
+    this.setNDC(e)
+    const hit = this.raycastTeeth()
+    if (hit) {
+      const g = this.ghost!
+      const def = JEWELRY_BY_ID[p.typeId]
+      g.root.visible = g.ringRoot.visible = true
+      this.poseObject(g.root, hit.point, hit.normal, 0, g.halfDepth, def.defaultScale, 0)
+      g.ringRoot.position.copy(hit.point)
+      _q1.setFromUnitVectors(_Z, _nn.copy(hit.normal).normalize())
+      g.ringRoot.quaternion.copy(_q1)
+      this.setHoverTooth(hit.toothId)
+      this.setCursor('grabbing')
+    } else {
+      if (this.ghost) this.ghost.root.visible = this.ghost.ringRoot.visible = false
+      this.setHoverTooth(null)
+      this.setCursor('not-allowed')
+    }
+  }
+  private finishPlacing(e: PointerEvent) {
+    const p = this.placing!
+    if (p.started) {
+      const overCanvas = e.target instanceof Node && this.container.contains(e.target)
+      let hit: SurfaceHit | null = null
+      if (overCanvas) { this.setNDC(e); hit = this.raycastTeeth() }
+      if (hit) this.placeJewel(p.typeId, hit)
+      this.destroyGhost()
+      this.store.setPlacing(null)
+    } else {
+      this.store.setArmed(this.store.getSnapshot().armedTypeId === p.typeId ? null : p.typeId)
+    }
+    this.placing = null
+  }
+  cancelPlacing() {
+    if (!this.placing) return
+    if (this.placing.started) { this.destroyGhost(); this.store.setPlacing(null) }
+    this.placing = null
+  }
+  private placeJewel(typeId: string, hit: SurfaceHit) {
+    this.store.addJewel(typeId, hit.toothId, v3(hit.point.x, hit.point.y, hit.point.z), v3(hit.normal.x, hit.normal.y, hit.normal.z))
+  }
+  private createGhost(typeId: string) {
+    const def = JEWELRY_BY_ID[typeId]
+    const tpl = getJewelTemplate(def.geometry)
+    const spec = resolveFinishRaw(def.defaultColor)
+    const material = new THREE.MeshBasicMaterial({ color: spec.hex, transparent: true, opacity: 0.55, depthWrite: false })
+    const root = new THREE.Group()
+    tpl.parts.forEach((g) => { const m = new THREE.Mesh(g, material); root.add(m) })
+    const ringRoot = new THREE.Group()
+    const ringMaterial = new THREE.MeshBasicMaterial({ color: OUTLINE_COLOR, transparent: true, opacity: 0.6, depthWrite: false, side: THREE.DoubleSide })
+    const ring = new THREE.Mesh(GHOST_RING_GEO, ringMaterial)
+    ringRoot.add(ring)
+    root.visible = ringRoot.visible = false
+    this.scene.add(root, ringRoot)
+    this.ghost = { root, ringRoot, ring, ringScale: tpl.radius * def.defaultScale * 1.4, halfDepth: tpl.halfDepth, material, ringMaterial }
+  }
+  private destroyGhost() {
+    if (!this.ghost) return
+    this.scene.remove(this.ghost.root, this.ghost.ringRoot)
+    this.ghost.material.dispose()
+    this.ghost.ringMaterial.dispose()
+    this.ghost = null
+  }
+
+  /* ---------- camera rig ---------- */
+
+  tweenCamera(pos: THREE.Vector3, target: THREE.Vector3, dur = 700) {
+    this.camTween = {
+      p0: this.camera.position.clone(), p1: pos.clone(),
+      t0: this.controls.target.clone(), t1: target.clone(),
+      start: performance.now(), dur,
+    }
+    this.controls.enabled = false
+  }
+  setView(view: 'front' | 'top' | 'side' | 'reset') {
+    const target = new THREE.Vector3(0, 0.5, -6)
+    const pos = view === 'front' ? new THREE.Vector3(0, 4, 56)
+      : view === 'top' ? new THREE.Vector3(0.01, 66, 6)
+      : view === 'side' ? new THREE.Vector3(64, 4, -8)
+      : new THREE.Vector3(0, 9, 66)
+    if (view === 'reset') this.setAutoRotate(false)
+    this.tweenCamera(pos, target, 750)
+  }
+  focusTooth(toothId: string) {
+    const rig = this.toothRigs.get(toothId)
+    if (!rig) return
+    const c = rig.center.clone()
+    const dir = this.camera.position.clone().sub(this.controls.target).normalize()
+    this.tweenCamera(c.clone().addScaledVector(dir, 30), c, 650)
+  }
+  zoomBy(f: number) {
+    const t = this.controls.target.clone()
+    const dir = this.camera.position.clone().sub(t)
+    const len = clamp(dir.length() * f, this.controls.minDistance, this.controls.maxDistance)
+    this.tweenCamera(t.clone().addScaledVector(dir.normalize(), len), t, 260)
+  }
+  setAutoRotate(on: boolean) {
+    this.autoRotate = on
+    this.controls.autoRotate = on
+    this.controls.autoRotateSpeed = 1.3
+  }
+  getAutoRotate(): boolean { return this.autoRotate }
+  private onDblClick = (e: MouseEvent) => {
+    this.setNDC(e)
+    const jHit = this.raycastJewels()
+    if (jHit) {
+      const j = this.store.jewels.find((x) => x.id === jHit.jewelId)
+      if (j) { this.focusTooth(j.toothId); return }
+    }
+    const tHit = this.raycastTeeth()
+    if (tHit) this.focusTooth(tHit.toothId)
+  }
+
+  /* ---------- presets & export ---------- */
+
+  buildPresetJewels(p: Preset): PlacedJewelry[] {
+    return p.items.map((it) => {
+      const hit = this.getSurfacePoint(it.tooth, it.u ?? 0, it.v ?? 0)
+      return {
+        id: uid(), jewelryTypeId: it.type, toothId: it.tooth,
+        position: v3(hit.point.x, hit.point.y, hit.point.z),
+        normal: v3(hit.normal.x, hit.normal.y, hit.normal.z),
+        rotation: it.rot ?? 0,
+        scale: it.scale ?? JEWELRY_BY_ID[it.type].defaultScale,
+        color: it.finish ?? JEWELRY_BY_ID[it.type].defaultColor,
+      }
+    })
+  }
+  exportPNG(transparent: boolean) {
+    const outlineVis: boolean[] = []
+    this.jewelRigs.forEach((r) => { outlineVis.push(r.outline.visible); r.outline.visible = false })
+    const emSave: number[] = []
+    this.toothRigs.forEach((r) => emSave.push(r.highlight))
+    this.toothRigs.forEach((r) => r.materials.forEach((m) => { m.emissiveIntensity = 0 }))
+    const bd = this.backdrop.visible, fl = this.floor.visible
+    if (transparent) { this.backdrop.visible = false; this.floor.visible = false }
+    this.renderer.render(this.scene, this.camera)
+    const url = this.renderer.domElement.toDataURL('image/png')
+    let out = url
+    if (!transparent) {
+      const src = this.renderer.domElement
+      const c = document.createElement('canvas'); c.width = src.width; c.height = src.height
+      const ctx = c.getContext('2d')!
+      const g = ctx.createRadialGradient(c.width / 2, c.height * 0.4, 0, c.width / 2, c.height * 0.4, Math.hypot(c.width, c.height) * 0.62)
+      g.addColorStop(0, '#faf6ee'); g.addColorStop(0.5, '#efe7d9'); g.addColorStop(1, '#d8cbb4')
+      ctx.fillStyle = g; ctx.fillRect(0, 0, c.width, c.height)
+      ctx.drawImage(src, 0, 0)
+      out = c.toDataURL('image/png')
+    }
+    let i = 0
+    this.jewelRigs.forEach((r) => { r.outline.visible = outlineVis[i++] })
+    i = 0
+    this.toothRigs.forEach((r) => { r.materials.forEach((m) => { m.emissiveIntensity = emSave[i] * 0.42 }) })
+    this.backdrop.visible = bd; this.floor.visible = fl
+    this.renderer.render(this.scene, this.camera)
+    downloadURL(out, `lumiere-design-${Date.now()}.png`)
+  }
+  exportJSON() {
+    const data = {
+      app: 'lumiere-dental-studio', version: 4, exportedAt: new Date().toISOString(),
+      model: this.mergedMode ? 'custom-free' : (this.toothMeshes.length && (this.toothMeshes[0] as THREE.Mesh).isMesh ? 'studio-arch' : 'custom-teeth'),
+      camera: { position: this.camera.position.toArray(), target: this.controls.target.toArray() },
+      jewels: this.store.jewels,
+    }
+    const blob = new Blob([JSON.stringify(data, null, 2)], { type: 'application/json' })
+    const url = URL.createObjectURL(blob)
+    downloadURL(url, `lumiere-design-${Date.now()}.json`)
+    setTimeout(() => URL.revokeObjectURL(url), 4000)
+  }
+
+  /* ---------- frame loop ---------- */
+
+  private tick = () => {
+    if (this.disposed) return
+    this.raf = requestAnimationFrame(this.tick)
+    const now = performance.now()
+    const snap = this.store.getSnapshot()
+
+    const tw = this.camTween
+    if (tw) {
+      const k = Math.min(1, (now - tw.start) / tw.dur)
+      const eased = easeInOutCubic(k)
+      this.camera.position.lerpVectors(tw.p0, tw.p1, eased)
+      this.controls.target.lerpVectors(tw.t0, tw.t1, eased)
+      this.camera.lookAt(this.controls.target)
+      if (k >= 1) { this.camTween = null; this.controls.enabled = true; this.controls.update() }
+    } else {
+      this.controls.update()
+    }
+
+    this.toothRigs.forEach((rig, id) => {
+      let t = 0
+      if (id === this.hoverToothId) t = 0.55
+      if (id === snap.selectedToothId) t = Math.max(t, 0.4)
+      rig.highlight += (t - rig.highlight) * 0.16
+      const v = rig.highlight * 0.42
+      rig.materials.forEach((m) => { m.emissiveIntensity = v })
+    })
+
+    this.jewelRigs.forEach((rig, id) => {
+      let anim = 1
+      if (rig.birth) {
+        const t = (now - rig.birth) / 420
+        if (t >= 1) rig.birth = 0
+        else anim = Math.max(0.02, backOut(t))
+      }
+      const hov = id === this.hoverJewelId ? 1 : 0
+      rig.hoverT += (hov - rig.hoverT) * 0.22
+      rig.group.scale.setScalar(Math.max(0.001, rig.sizeScale * anim * (1 + rig.hoverT * 0.09)))
+      const op = id === snap.selectedJewelId ? 0.9 : (id === this.hoverJewelId ? 0.38 : 0)
+      rig.outlineMaterial.opacity += (op - rig.outlineMaterial.opacity) * 0.2
+      rig.outline.visible = rig.outlineMaterial.opacity > 0.02
+    })
+    for (let i = this.dyingJewels.length - 1; i >= 0; i--) {
+      const rig = this.dyingJewels[i]
+      const t = (now - rig.death) / 200
+      if (t >= 1) {
+        this.jewelsGroup.remove(rig.group)
+        rig.outlineMaterial.dispose() // jewel materials are cached+shared — not disposed here
+        this.dyingJewels.splice(i, 1)
+      } else {
+        const s = Math.max(0.001, rig.sizeScale * (1 - t) * (1 - t))
+        rig.group.scale.setScalar(s)
+      }
+    }
+    if (this.ghost && this.ghost.root.visible) {
+      const p = 0.5 + 0.5 * Math.sin(now / 170)
+      this.ghost.ringMaterial.opacity = 0.35 + 0.4 * p
+      this.ghost.ring.scale.setScalar(this.ghost.ringScale * (1 + 0.05 * p))
+    }
+    this.renderer.render(this.scene, this.camera)
+  }
+
+  private resize() {
+    const w = this.container.clientWidth, h = this.container.clientHeight
+    if (!w || !h) return
+    this.renderer.setSize(w, h, false)
+    this.camera.aspect = w / h
+    this.camera.updateProjectionMatrix()
+  }
+  dispose() {
+    this.disposed = true
+    cancelAnimationFrame(this.raf)
+    this.ro.disconnect()
+    this.container.removeEventListener('pointerdown', this.onPointerDown, true)
+    window.removeEventListener('pointermove', this.onPointerMove)
+    window.removeEventListener('pointerup', this.onPointerUp)
+    window.removeEventListener('pointercancel', this.onPointerUp)
+    window.removeEventListener('blur', this.onBlur)
+    this.controls.dispose()
+    this.scene.traverse((o) => {
+      const m = o as THREE.Mesh
+      if (m.isMesh) { m.geometry.dispose(); const mats = Array.isArray(m.material) ? m.material : [m.material]; mats.forEach((x) => x?.dispose?.()) }
+    })
+    this.renderer.dispose()
+    this.renderer.domElement.remove()
+  }
+}
+
+function downloadURL(url: string, name: string) {
+  const a = document.createElement('a')
+  a.href = url; a.download = name
+  document.body.appendChild(a); a.click(); a.remove()
+}
+
+/* ---- engine singleton (mounted once by <Viewport/>) ---- */
+let engineInstance: StudioEngine | null = null
+function getEngine(): StudioEngine | null { return engineInstance }
+
+/* ---- shared .glb import entry (toolbar button · drag & drop · auto-load) ---- */
+async function importModelFile(f: File) {
+  toast(`Importing ${f.name}…`)
+  try {
+    const res = await getEngine()?.importGLB(f)
+    if (res) {
+      store.setModelMode(res.mode)
+      if (res.mode === 'teeth') {
+        toast(`Model imported — ${res.teeth} teeth ready`)
+      } else {
+        toast('Model imported in free mode — place jewels anywhere on the surface')
+        setTimeout(() => toast('Tip: name tooth meshes 11–17 / 21–27 for exact per-tooth labels'), 2900)
+      }
+    }
+  } catch (err) {
+    toast(`Import failed: ${(err as Error).message}`)
+  }
+}
+
+/* ====================== HSV ↔ hex (colour wheel) ========================= */
+
+function hsvToHex(h: number, s: number, v: number): string {
+  h = ((h % 360) + 360) % 360
+  const c = v * s, x = c * (1 - Math.abs(((h / 60) % 2) - 1)), m = v - c
+  let r = 0, g = 0, b = 0
+  if (h < 60) { r = c; g = x } else if (h < 120) { r = x; g = c } else if (h < 180) { g = c; b = x }
+  else if (h < 240) { g = x; b = c } else if (h < 300) { r = x; b = c } else { r = c; b = x }
+  const to = (t: number) => Math.round((t + m) * 255).toString(16).padStart(2, '0')
+  return `#${to(r)}${to(g)}${to(b)}`
+}
+function hexToHsv(hex: string): { h: number; s: number; v: number } {
+  const m = /^#?([0-9a-f]{6})$/i.exec((hex || '').trim())
+  if (!m) return { h: 0, s: 0, v: 1 }
+  const n = parseInt(m[1], 16)
+  const r = ((n >> 16) & 255) / 255, g = ((n >> 8) & 255) / 255, b = (n & 255) / 255
+  const mx = Math.max(r, g, b), mn = Math.min(r, g, b), d = mx - mn
+  let h = 0
+  if (d > 0) {
+    if (mx === r) h = 60 * (((g - b) / d) % 6)
+    else if (mx === g) h = 60 * ((b - r) / d + 2)
+    else h = 60 * ((r - g) / d + 4)
+  }
+  if (h < 0) h += 360
+  return { h, s: mx === 0 ? 0 : d / mx, v: mx }
+}
+
+/* ============================== icons ==================================== */
+
+const ICONS: Record<string, React.ReactNode> = {
+  spark: <path d="M8 1.2 9.55 6.45 14.8 8 9.55 9.55 8 14.8 6.45 9.55 1.2 8 6.45 6.45Z" />,
+  undo: <path d="M3.2 6.8 6.8 3.2M3.2 6.8 6.8 10.4M3.2 6.8H9.8A4.4 4.4 0 0 1 9.8 15.6H6.5" />,
+  redo: <path d="M12.8 6.8 9.2 3.2M12.8 6.8 9.2 10.4M12.8 6.8H6.2A4.4 4.4 0 0 0 6.2 15.6H9.5" />,
+  save: <path d="M8 2.6V10M5.1 7.2 8 10.1 10.9 7.2M3 11.8V13.4H13V11.8" />,
+  chevron: <path d="M4 6.5 8 10.5 12 6.5" />,
+  search: <><circle cx="7" cy="7" r="4.4" /><path d="M10.3 10.3 14 14" /></>,
+  trash: <path d="M2.8 4.4H13.2M6.4 4.4V2.9H9.6V4.4M4.2 4.4 4.9 13.6H11.1L11.8 4.4M6.7 7V11M9.3 7V11" />,
+  copy: <><rect x="5.6" y="5.6" width="7.4" height="7.4" rx="1.4" /><path d="M10.4 5.6V4.2A1.4 1.4 0 0 0 9 2.8H4.2A1.4 1.4 0 0 0 2.8 4.2V9A1.4 1.4 0 0 0 4.2 10.4H5.6" /></>,
+  plus: <path d="M8 3.5V12.5M3.5 8H12.5" />,
+  minus: <path d="M3.5 8H12.5" />,
+  orbit: <><circle cx="8" cy="8" r="2.1" /><ellipse cx="8" cy="8" rx="6.2" ry="2.7" /></>,
+  close: <path d="M3.5 3.5 12.5 12.5M12.5 3.5 3.5 12.5" />,
+  image: <><rect x="2" y="3.2" width="12" height="9.6" rx="1.6" /><path d="M2 10.6 5.6 7.2 8.4 9.8 10.8 7.6 14 10.6" /><circle cx="5.4" cy="6" r="0.8" /></>,
+  transparency: <rect x="2.8" y="2.8" width="10.4" height="10.4" rx="1.6" strokeDasharray="2.4 2" />,
+  json: <path d="M5.8 2.6C4.3 2.6 4.3 4.3 4.3 5.3 4.3 6.6 3.9 7.4 3 8 3.9 8.6 4.3 9.4 4.3 10.7 4.3 11.7 4.3 13.4 5.8 13.4M10.2 2.6C11.7 2.6 11.7 4.3 11.7 5.3 11.7 6.6 12.1 7.4 13 8 12.1 8.6 11.7 9.4 11.7 10.7 11.7 11.7 11.7 13.4 10.2 13.4" />,
+  check: <path d="M3.2 8.4 6.4 11.6 12.8 4.8" />,
+  upload: <path d="M8 10.6V3.2M5.2 6 8 3.2 10.8 6M3 11v2.4h10V11" />,
+  reset: <path d="M13.2 8A5.2 5.2 0 1 1 11 3.9M13.2 2.6v3.6H9.6" />,
+}
+function I({ name, size = 16, sw = 1.5 }: { name: string; size?: number; sw?: number }) {
+  return (
+    <svg width={size} height={size} viewBox="0 0 16 16" fill="none" stroke="currentColor"
+      strokeWidth={sw} strokeLinecap="round" strokeLinejoin="round">{ICONS[name]}</svg>
+  )
+}
+const TYPE_ICONS: Record<string, React.ReactNode> = {
+  'crystal-round': <><circle cx="8" cy="8" r="6.2" /><path d="M3.9 6.4 6.2 3.6H9.8L12.1 6.4 8 12.4Z" /></>,
+  'crystal-petite': <><circle cx="8" cy="8" r="3.5" /><path d="M5.6 7.2 6.8 5.7H9.2L10.4 7.2 8 10.5Z" /></>,
+  'crystal-grand': <><circle cx="8" cy="8" r="6.9" /><path d="M3 6.6 5.8 3.2H10.2L13 6.6 8 13Z" /></>,
+  'crystal-diamond': <><path d="M8 1.6 14.4 8 8 14.4 1.6 8Z" /><path d="M1.6 8H14.4M8 1.6 5 8 8 14.4M8 1.6 11 8 8 14.4" /></>,
+  'crystal-square': <><rect x="3.4" y="3.4" width="9.2" height="9.2" rx="1.2" /><path d="M3.4 6.4H12.6M3.4 9.6H12.6M6.4 3.4V12.6M9.6 3.4V12.6" /></>,
+  'shape-star': <path d="M8 1.5 9.65 5.73 14.2 6 10.66 8.87 11.82 13.26 8 10.8 4.18 13.26 5.34 8.87 1.8 6 6.35 5.73Z" />,
+  'shape-heart': <path d="M8 13.5C4.5 10.5 2 8.4 2 5.9 2 4 3.5 2.8 5.1 2.8 6.4 2.8 7.4 3.6 8 4.7 8.6 3.6 9.6 2.8 10.9 2.8 12.5 2.8 14 4 14 5.9 14 8.4 11.5 10.5 8 13.5Z" />,
+  'shape-triangle': <path d="M8 2 14 13.5H2Z" />,
+  'shape-drop': <path d="M8 1.6C8 4.2 11.8 6.9 11.8 10.3A3.8 3.8 0 0 1 4.2 10.3C4.2 6.9 8 4.2 8 1.6Z" />,
+  'shape-navette': <path d="M8 1.5C10.8 4.6 10.8 11.4 8 14.5 5.2 11.4 5.2 4.6 8 1.5Z" />,
+  'shape-baguette': <><path d="M5.3 2.6H10.7L13.4 5.3V10.7L10.7 13.4H5.3L2.6 10.7V5.3Z" /><path d="M2.6 5.3H13.4M2.6 10.7H13.4" /></>,
+  'shape-butterfly': <><path d="M8 8C6 3.5 2 3 2 6C2 8 4.5 8.6 6 8.2 4.2 8.9 2.6 10.5 3.8 12.2 5 13.8 7.4 11.8 8 9.6M8 8C10 3.5 14 3 14 6C14 8 11.5 8.6 10 8.2 11.8 8.9 13.4 10.5 12.2 12.2 11 13.8 8.6 11.8 8 9.6" /><path d="M8 4.6V12" /></>,
+  'shape-moon': <path d="M10.3 2.2A6.2 6.2 0 1 0 13.7 10.7 4.9 4.9 0 0 1 10.3 2.2Z" />,
+  'shape-bolt': <path d="M9 1.5 4 9H7.2L6 14.5 11.6 6.6H8.2Z" />,
+  'shape-blossom': <><circle cx="8" cy="4.5" r="1.9" /><circle cx="11.4" cy="6.9" r="1.9" /><circle cx="10.1" cy="10.9" r="1.9" /><circle cx="5.9" cy="10.9" r="1.9" /><circle cx="4.6" cy="6.9" r="1.9" /><circle cx="8" cy="8" r="1.1" /></>,
+  'metal-gold-dot': <circle cx="8" cy="8" r="5.4" fill="currentColor" stroke="none" />,
+  'metal-gold-star': <path d="M8 1.5 9.65 5.73 14.2 6 10.66 8.87 11.82 13.26 8 10.8 4.18 13.26 5.34 8.87 1.8 6 6.35 5.73Z" fill="currentColor" stroke="none" />,
+  'metal-gold-heart': <path d="M8 13.5C4.5 10.5 2 8.4 2 5.9 2 4 3.5 2.8 5.1 2.8 6.4 2.8 7.4 3.6 8 4.7 8.6 3.6 9.6 2.8 10.9 2.8 12.5 2.8 14 4 14 5.9 14 8.4 11.5 10.5 8 13.5Z" fill="currentColor" stroke="none" />,
+  'metal-silver': <><path d="M8 1.6 14.4 8 8 14.4 1.6 8Z" /><path d="M1.6 8H14.4M8 1.6 5 8 8 14.4M8 1.6 11 8 8 14.4" /></>,
+}
+function TypeIcon({ id, size = 22 }: { id: string; size?: number }) {
+  return (
+    <svg className="glyph" width={size} height={size} viewBox="0 0 16 16" fill="none"
+      stroke="currentColor" strokeWidth={1.2} strokeLinecap="round" strokeLinejoin="round">
+      {TYPE_ICONS[id] ?? TYPE_ICONS['crystal-round']}
+    </svg>
+  )
+}
+
+/* ============================== React UI ================================= */
+
+function applyPreset(p: Preset) {
+  const engine = getEngine()
+  if (!engine) return
+  store.setJewels(engine.buildPresetJewels(p))
+}
+
+function TopBar({ snap }: { snap: StudioSnapshot }) {
+  const fileRef = useRef<HTMLInputElement>(null)
+  const handleFile = async (e: React.ChangeEvent<HTMLInputElement>) => {
+    const f = e.target.files?.[0]
+    e.target.value = ''
+    if (f) await importModelFile(f)
+  }
+  return (
+    <header className="topbar">
+      <div className="brand">
+        <div className="brand-mark"><I name="spark" size={15} /></div>
+        <div>
+          <div className="brand-name">Lumière</div>
+          <div className="brand-sub">Dental Jewelry Studio</div>
+        </div>
+      </div>
+      <div className="spacer" />
+      <div className="count-chip">{snap.jewels.length} {snap.jewels.length === 1 ? 'piece' : 'pieces'}</div>
+      <div className="tb-sep" />
+      <button className="icon-btn" title="Undo (Ctrl+Z)" aria-label="Undo" disabled={!snap.canUndo} onClick={() => store.undo()}><I name="undo" /></button>
+      <button className="icon-btn" title="Redo (Ctrl+Shift+Z)" aria-label="Redo" disabled={!snap.canRedo} onClick={() => store.redo()}><I name="redo" /></button>
+      <div className="tb-sep" />
+      <input ref={fileRef} type="file" accept=".glb,.gltf" style={{ display: 'none' }} onChange={handleFile} />
+      <button className="icon-btn" title="Import a .glb dentition model" aria-label="Import model"
+        onClick={() => fileRef.current?.click()}><I name="upload" /></button>
+      {snap.modelMode !== 'studio' && (
+        <button className="icon-btn" title="Back to the studio arch" aria-label="Reset model"
+          onClick={() => { getEngine()?.resetToStudioModel(); store.setModelMode('studio'); toast('Studio model restored') }}>
+          <I name="reset" />
+        </button>
+      )}
+      <div className="tb-sep" />
+      <PresetMenu />
+      <button className="btn" onClick={() => { store.saveNow(); toast('Design saved') }}><I name="save" size={14} />Save</button>
+      <ExportMenu />
+    </header>
+  )
+}
+
+function useOutsideClose(open: boolean, onClose: () => void) {
+  const ref = useRef<HTMLDivElement>(null)
+  useEffect(() => {
+    if (!open) return
+    const h = (e: PointerEvent) => { if (ref.current && !ref.current.contains(e.target as Node)) onClose() }
+    window.addEventListener('pointerdown', h)
+    return () => window.removeEventListener('pointerdown', h)
+  }, [open, onClose])
+  return ref
+}
+
+function PresetMenu() {
+  const [open, setOpen] = useState(false)
+  const [saving, setSaving] = useState(false)
+  const [name, setName] = useState('')
+  const [confirmDel, setConfirmDel] = useState<string | null>(null)
+  const ref = useOutsideClose(open, () => { setOpen(false); setSaving(false) })
+  const presets = useUserPresets()
+  useEffect(() => {
+    if (!confirmDel) return
+    const t = setTimeout(() => setConfirmDel(null), 2600)
+    return () => clearTimeout(t)
+  }, [confirmDel])
+  const doSave = () => {
+    const clean = name.trim()
+    if (!clean) { toast('Give your preset a name first'); return }
+    if (!store.jewels.length) { toast('Place at least one piece before saving'); return }
+    if (saveUserPreset(clean)) {
+      setName(''); setSaving(false); setOpen(false)
+      toast(`Preset “${clean}” saved`)
+    }
+  }
+  return (
+    <div className="menu-wrap" ref={ref}>
+      <button className="btn" onClick={() => setOpen(!open)}>Presets<I name="chevron" size={13} /></button>
+      {open && (
+        <div className="menu">
+          <div className="menu-label">Design presets</div>
+          {PRESETS.map((p) => (
+            <button key={p.id} className="menu-item" onClick={() => { applyPreset(p); setOpen(false); toast(`${p.name} preset applied — undo available`) }}>
+              <I name="spark" size={14} />
+              <div>{p.name}<small>{p.desc}</small></div>
+            </button>
+          ))}
+          <div className="menu-sep" />
+          <div className="menu-label">My presets</div>
+          {presets.length === 0 && !saving && (
+            <div className="menu-hint">Save your current design under a name to reuse it any time.</div>
+          )}
+          {presets.map((p) => (
+            <div className="menu-row" key={p.id}>
+              <button className="menu-item"
+                onClick={() => { applyUserPreset(p); setOpen(false); toast(`Preset “${p.name}” applied — undo available`) }}>
+                <I name="spark" size={14} />
+                <div>{p.name}<small>{p.jewels.length} {p.jewels.length === 1 ? 'piece' : 'pieces'}</small></div>
+              </button>
+              <button className={'menu-del' + (confirmDel === p.id ? ' sure' : '')} title="Delete preset"
+                onClick={() => {
+                  if (confirmDel === p.id) { deleteUserPreset(p.id); setConfirmDel(null); toast('Preset deleted') }
+                  else setConfirmDel(p.id)
+                }}>
+                {confirmDel === p.id ? <I name="check" size={12} /> : <I name="trash" size={13} />}
+              </button>
+            </div>
+          ))}
+          {saving ? (
+            <div className="menu-save">
+              <input autoFocus placeholder="Preset name…" value={name} maxLength={40}
+                onChange={(e) => setName(e.target.value)}
+                onKeyDown={(e) => { if (e.key === 'Enter') doSave(); if (e.key === 'Escape') setSaving(false) }} />
+              <button className="btn btn-primary" onClick={doSave}>Save</button>
+            </div>
+          ) : (
+            <button className="menu-item" onClick={() => setSaving(true)}>
+              <I name="plus" size={14} /><div>Save current design as preset…</div>
+            </button>
+          )}
+          <div className="menu-sep" />
+          <button className="menu-item" onClick={() => { store.setJewels([]); setOpen(false); toast('Design cleared — undo available') }}>
+            <I name="trash" size={14} /><div>Clear all pieces</div>
+          </button>
+        </div>
+      )}
+    </div>
+  )
+}
+
+function ExportMenu() {
+  const [open, setOpen] = useState(false)
+  const ref = useOutsideClose(open, () => setOpen(false))
+  const act = (fn: () => void, msg: string) => { fn(); setOpen(false); toast(msg) }
+  return (
+    <div className="menu-wrap" ref={ref}>
+      <button className="btn btn-primary" onClick={() => setOpen(!open)}>Export<I name="chevron" size={13} /></button>
+      {open && (
+        <div className="menu">
+          <div className="menu-label">Export</div>
+          <button className="menu-item" onClick={() => act(() => getEngine()?.exportPNG(false), 'PNG snapshot downloaded')}>
+            <I name="image" size={14} /><div>Snapshot · PNG<small>Current camera view, studio backdrop</small></div>
+          </button>
+          <button className="menu-item" onClick={() => act(() => getEngine()?.exportPNG(true), 'Transparent PNG downloaded')}>
+            <I name="transparency" size={14} /><div>Snapshot · transparent PNG<small>Backdrop removed, alpha channel kept</small></div>
+          </button>
+          <div className="menu-sep" />
+          <button className="menu-item" onClick={() => act(() => getEngine()?.exportJSON(), 'Design JSON exported')}>
+            <I name="json" size={14} /><div>Design · JSON<small>Serializable configuration, ready for a database</small></div>
+          </button>
+        </div>
+      )}
+    </div>
+  )
+}
+
+function LibraryPanel({ snap }: { snap: StudioSnapshot }) {
+  const [q, setQ] = useState('')
+  const query = q.trim().toLowerCase()
+  const groups = (['Crystals', 'Shapes', 'Precious'] as const).map((cat) => ({
+    cat, items: CATALOG.filter((t) => t.category === cat &&
+      (!query || t.name.toLowerCase().includes(query) || t.category.toLowerCase().includes(query))),
+  })).filter((g) => g.items.length)
+  return (
+    <aside className="library">
+      <div className="side-head">
+        <div className="side-title">Jewelry Library</div>
+        <div className="side-sub">Drag a piece onto a tooth — or click to arm it, then click a tooth.</div>
+      </div>
+      <label className="search"><I name="search" size={14} />
+        <input placeholder="Search pieces…" value={q} onChange={(e) => setQ(e.target.value)} />
+      </label>
+      <div className="lib-scroll">
+        {groups.map((g) => (
+          <section key={g.cat}>
+            <div className="lib-label">{g.cat}</div>
+            <div className="lib-grid">
+              {g.items.map((t) => (
+                <div key={t.id}
+                  className={'lib-card' + (snap.armedTypeId === t.id ? ' armed' : '')}
+                  title={`${t.name} — drag onto a tooth, or click to arm`}
+                  onPointerDown={(e) => getEngine()?.beginPlacing(t.id, e)}>
+                  <TypeIcon id={t.id} />
+                  <div className="lib-card-name">{t.name}</div>
+                </div>
+              ))}
+            </div>
+          </section>
+        ))}
+        {!groups.length && <div className="lib-empty">No pieces match your search.</div>}
+      </div>
+    </aside>
+  )
+}
+
+function Viewport({ snap }: { snap: StudioSnapshot }) {
+  const hostRef = useRef<HTMLDivElement>(null)
+  const [, setReady] = useState(false)
+  useEffect(() => {
+    if (!hostRef.current) return
+    engineInstance = new StudioEngine(hostRef.current, store)
+    setReady(true)
+    return () => { engineInstance?.dispose(); engineInstance = null }
+  }, [])
+  // drag & drop a .glb straight onto the stage
+  useEffect(() => {
+    const host = hostRef.current
+    if (!host) return
+    const over = (e: DragEvent) => { e.preventDefault(); host.classList.add('drag-over') }
+    const leave = (e: DragEvent) => {
+      if (!(e.relatedTarget instanceof Node) || !host.contains(e.relatedTarget)) host.classList.remove('drag-over')
+    }
+    const drop = (e: DragEvent) => {
+      e.preventDefault()
+      host.classList.remove('drag-over')
+      const f = e.dataTransfer?.files?.[0]
+      if (f && /\.(glb|gltf)$/i.test(f.name)) importModelFile(f)
+    }
+    host.addEventListener('dragover', over)
+    host.addEventListener('dragleave', leave)
+    host.addEventListener('drop', drop)
+    return () => {
+      host.removeEventListener('dragover', over)
+      host.removeEventListener('dragleave', leave)
+      host.removeEventListener('drop', drop)
+    }
+  }, [])
+
+  const jewel = snap.jewels.find((j) => j.id === snap.selectedJewelId)
+  const chipTooth = snap.hoveredToothId ?? (jewel ? jewel.toothId : snap.selectedToothId)
+  const armedName = snap.armedTypeId ? JEWELRY_BY_ID[snap.armedTypeId]?.name : null
+
+  return (
+    <div className="viewport" ref={hostRef}>
+      {chipTooth && chipTooth !== FREE_TOOTH && (
+        <div className="chip" key={chipTooth}>
+          <span className="chip-fdi">{chipTooth}</span>
+          <span className="chip-name">{toothInfo(chipTooth).name}</span>
+        </div>
+      )}
+      {armedName && (
+        <div className="pill" id="armedPill">
+          <span className="dot" />
+          <span>Click a tooth to place the {armedName}</span>
+          <button title="Cancel" onClick={() => store.setArmed(null)}><I name="close" size={13} /></button>
+        </div>
+      )}
+      {snap.placingTypeId && !armedName && (
+        <div className="pill" id="placingPill"><span className="dot" /><span>Release over the model to place</span></div>
+      )}
+      {snap.jewels.length === 0 && !snap.placingTypeId && !armedName && (
+        <div className="pill" id="hintPill">
+          <span className="dot" />
+          <span>Drag a jewel onto a tooth to start designing</span>
+        </div>
+      )}
+      <BottomBar />
+      <div className="stage-tag">
+        {snap.modelMode === 'studio' ? 'UPPER ARCH · FDI NOTATION'
+          : snap.modelMode === 'teeth' ? 'CUSTOM MODEL · FDI MAPPING'
+          : 'CUSTOM MODEL · FREE MODE'}
+      </div>
+    </div>
+  )
+}
+
+function BottomBar() {
+  const [rot, setRot] = useState(false)
+  const view = (v: 'front' | 'top' | 'side' | 'reset') => getEngine()?.setView(v)
+  return (
+    <div className="bottombar">
+      <button className="bb-btn" onClick={() => view('front')}>Front</button>
+      <button className="bb-btn" onClick={() => view('top')}>Top</button>
+      <button className="bb-btn" onClick={() => view('side')}>Side</button>
+      <button className="bb-btn" onClick={() => view('reset')}>Reset</button>
+      <span className="bb-sep" />
+      <button className="bb-btn" title="Zoom out" onClick={() => getEngine()?.zoomBy(1.25)}><I name="minus" size={14} /></button>
+      <button className="bb-btn" title="Zoom in" onClick={() => getEngine()?.zoomBy(0.8)}><I name="plus" size={14} /></button>
+      <span className="bb-sep" />
+      <button className={'bb-btn' + (rot ? ' active' : '')} title="Auto-orbit preview"
+        onClick={() => { getEngine()?.setAutoRotate(!rot); setRot(!rot) }}>
+        <I name="orbit" size={15} />Orbit
+      </button>
+    </div>
+  )
+}
+
+function Slider({ label, value, min, max, step, format, onCommit }: {
+  label: string; value: number; min: number; max: number; step: number
+  format: (v: number) => string; onCommit: (v: number) => void
+}) {
+  const armed = useRef(false)
+  const arm = () => { if (!armed.current) { store.pushHistory(); armed.current = true } }
+  const pct = ((value - min) / (max - min)) * 100
+  return (
+    <div className="control">
+      <div className="control-head"><span>{label}</span><span className="control-val">{format(value)}</span></div>
+      <input type="range" className="range" min={min} max={max} step={step} value={value}
+        style={{ '--fill': `linear-gradient(to right, var(--accent) ${pct}%, #ece4d6 ${pct}%)` } as React.CSSProperties}
+        onPointerDown={arm} onKeyDown={arm}
+        onPointerUp={() => { armed.current = false }} onKeyUp={() => { armed.current = false }}
+        onChange={(e) => { const v = +e.target.value; arm(); onCommit(v) }} />
+    </div>
+  )
+}
+
+/* ---- HSV colour wheel: hue ring + saturation/value square ----------------
+   One angle convention everywhere: canvas angle θ (0 = 3 o'clock, clockwise)
+   maps to hue θ — the painted ring swatch, the picker and the handle all
+   agree, so the picked colour is exactly the colour under your finger. ---- */
+const WHEEL = { size: 156, r: 74, ring: 16, sq: 80 }
+const WHEEL_DPR = Math.min(window.devicePixelRatio || 1, 2)
+function ColorWheel({ hex, onPick, onClear }: {
+  hex: string | null; onPick: (hex: string) => void; onClear: () => void
+}) {
+  const [hsv, setHsv] = useState(() => hex ? hexToHsv(hex) : { h: 200, s: 0.75, v: 0.95 })
+  const canvasRef = useRef<HTMLCanvasElement>(null)
+  const ringRef = useRef<HTMLCanvasElement | null>(null)
+  const armed = useRef(false)
+
+  useEffect(() => { // pre-render the hue ring once
+    const off = document.createElement('canvas')
+    off.width = off.height = WHEEL.size * WHEEL_DPR
+    const c = off.getContext('2d')!
+    c.scale(WHEEL_DPR, WHEEL_DPR)
+    c.lineWidth = WHEEL.ring
+    for (let a = 0; a < 360; a++) {
+      c.beginPath()
+      c.strokeStyle = `hsl(${a} 100% 50%)`
+      c.arc(WHEEL.size / 2, WHEEL.size / 2, WHEEL.r - WHEEL.ring / 2, (a - 0.72) * Math.PI / 180, (a + 0.72) * Math.PI / 180)
+      c.stroke()
+    }
+    ringRef.current = off
+  }, [])
+
+  useEffect(() => { // redraw on every state change
+    const cvs = canvasRef.current, ring = ringRef.current
+    if (!cvs || !ring) return
+    const ctx = cvs.getContext('2d')!
+    ctx.setTransform(WHEEL_DPR, 0, 0, WHEEL_DPR, 0, 0)
+    ctx.clearRect(0, 0, WHEEL.size, WHEEL.size)
+    ctx.drawImage(ring, 0, 0, WHEEL.size, WHEEL.size)
+    const x0 = WHEEL.size / 2 - WHEEL.sq / 2, y0 = WHEEL.size / 2 - WHEEL.sq / 2
+    // saturation/value square: hue base + white (→) + black (↓) mixing
+    ctx.fillStyle = `hsl(${hsv.h} 100% 50%)`
+    ctx.fillRect(x0, y0, WHEEL.sq, WHEEL.sq)
+    let g = ctx.createLinearGradient(x0, 0, x0 + WHEEL.sq, 0)
+    g.addColorStop(0, '#fff'); g.addColorStop(1, 'rgba(255,255,255,0)')
+    ctx.fillStyle = g; ctx.fillRect(x0, y0, WHEEL.sq, WHEEL.sq)
+    g = ctx.createLinearGradient(0, y0, 0, y0 + WHEEL.sq)
+    g.addColorStop(0, 'rgba(0,0,0,0)'); g.addColorStop(1, '#000')
+    ctx.fillStyle = g; ctx.fillRect(x0, y0, WHEEL.sq, WHEEL.sq)
+    ctx.strokeStyle = 'rgba(0,0,0,.14)'
+    ctx.strokeRect(x0 + 0.5, y0 + 0.5, WHEEL.sq - 1, WHEEL.sq - 1)
+    // hue handle (canvas angle = hue)
+    const ha = hsv.h * Math.PI / 180
+    const hx = WHEEL.size / 2 + Math.cos(ha) * (WHEEL.r - WHEEL.ring / 2)
+    const hy = WHEEL.size / 2 + Math.sin(ha) * (WHEEL.r - WHEEL.ring / 2)
+    ctx.beginPath(); ctx.arc(hx, hy, 6.5, 0, Math.PI * 2)
+    ctx.fillStyle = `hsl(${hsv.h} 100% 50%)`; ctx.fill()
+    ctx.lineWidth = 2; ctx.strokeStyle = '#fff'; ctx.stroke()
+    // SV handle
+    const sx = x0 + hsv.s * WHEEL.sq, sy = y0 + (1 - hsv.v) * WHEEL.sq
+    ctx.beginPath(); ctx.arc(sx, sy, 6, 0, Math.PI * 2)
+    ctx.fillStyle = hsvToHex(hsv.h, hsv.s, hsv.v); ctx.fill()
+    ctx.lineWidth = 2; ctx.strokeStyle = hsv.v > 0.6 ? 'rgba(0,0,0,.5)' : '#fff'; ctx.stroke()
+  })
+
+  const pick = (e: React.PointerEvent<HTMLCanvasElement>) => {
+    const r = e.currentTarget.getBoundingClientRect()
+    const x = e.clientX - r.left, y = e.clientY - r.top
+    let next: { h: number; s: number; v: number } | null = null
+    const x0 = WHEEL.size / 2 - WHEEL.sq / 2, y0 = WHEEL.size / 2 - WHEEL.sq / 2
+    if (x >= x0 && x <= x0 + WHEEL.sq && y >= y0 && y <= y0 + WHEEL.sq) {
+      // square first — its corners must never fall through to the ring
+      next = { h: hsv.h, s: clamp((x - x0) / WHEEL.sq, 0, 1), v: clamp(1 - (y - y0) / WHEEL.sq, 0, 1) }
+    } else {
+      const dx = x - WHEEL.size / 2, dy = y - WHEEL.size / 2, d = Math.hypot(dx, dy)
+      if (d > WHEEL.r - WHEEL.ring - 6 && d < WHEEL.r + 6) {
+        let h = Math.atan2(dy, dx) * 180 / Math.PI // canvas angle = hue
+        if (h < 0) h += 360
+        next = { h, s: hsv.s, v: hsv.v }
+      }
+    }
+    if (next) {
+      setHsv(next)
+      onPick(hsvToHex(next.h, next.s, next.v)) // live, no history spam (armed once per drag)
+    }
+  }
+  const current = hsvToHex(hsv.h, hsv.s, hsv.v)
+  return (
+    <div className="color-wheel">
+      <canvas ref={canvasRef}
+        width={WHEEL.size * WHEEL_DPR} height={WHEEL.size * WHEEL_DPR}
+        style={{ width: WHEEL.size, height: WHEEL.size }}
+        onPointerDown={(e) => {
+          e.currentTarget.setPointerCapture(e.pointerId)
+          if (!armed.current) { store.pushHistory(); armed.current = true }
+          pick(e)
+        }}
+        onPointerMove={(e) => { if (e.buttons) pick(e) }}
+        onPointerUp={() => { armed.current = false }} />
+      <div className="cp-row">
+        <span>{(hex ?? current).toUpperCase()}</span>
+        {hex && (
+          <button className="cp-clear" onClick={onClear}>
+            <I name="close" size={11} />Back to presets
+          </button>
+        )}
+      </div>
+    </div>
+  )
+}
+
+function InspectorPanel({ snap }: { snap: StudioSnapshot }) {
+  const jewel = snap.jewels.find((j) => j.id === snap.selectedJewelId) ?? null
+  if (jewel) {
+    const def = JEWELRY_BY_ID[jewel.jewelryTypeId]
+    const info = toothInfo(jewel.toothId)
+    const engine = getEngine()
+    const surface = engine ? engine.describeSurface(jewel) : ''
+    const set = (patch: Partial<PlacedJewelry>, history = true) => {
+      if (history) store.pushHistory()
+      store.updateJewel(jewel.id, patch)
+    }
+    return (
+      <aside className="inspector">
+        <div className="insp" key={jewel.id}>
+          <div className="jewel-title">{def.name}</div>
+          <div className="jewel-sub">{jewel.toothId === FREE_TOOTH ? 'Free placement' : `Tooth ${jewel.toothId} · ${info.name}`}</div>
+          <div className="section-label">Type</div>
+          <select className="type-select" value={jewel.jewelryTypeId}
+            onChange={(e) => {
+              const next = JEWELRY_BY_ID[e.target.value]
+              const adoptColor = jewel.color === def.defaultColor
+              set({ jewelryTypeId: next.id, color: adoptColor ? next.defaultColor : jewel.color })
+            }}>
+            {(['Crystals', 'Shapes', 'Precious'] as const).map((cat) => (
+              <optgroup key={cat} label={cat}>
+                {CATALOG.filter((t) => t.category === cat).map((t) => <option key={t.id} value={t.id}>{t.name}</option>)}
+              </optgroup>
+            ))}
+          </select>
+          <div className="section-label">Size</div>
+          <Slider label="Diameter" value={jewel.scale} min={0.25} max={1.8} step={0.05}
+            format={(v) => `${(v * 2).toFixed(1)} mm`} onCommit={(v) => set({ scale: v }, false)} />
+          <div className="section-label">Rotation</div>
+          <Slider label="Spin around normal" value={jewel.rotation} min={0} max={360} step={1}
+            format={(v) => `${Math.round(v)}°`} onCommit={(v) => set({ rotation: v }, false)} />
+          <div className="section-label">Finish</div>
+          <div className="swatches">
+            {Object.keys(FINISHES).map((fid) => (
+              <button key={fid} className={'swatch' + (!jewel.customColor && jewel.color === fid ? ' sel' : '')}
+                title={FINISHES[fid].label} style={{ background: FINISHES[fid].swatch }}
+                onClick={() => set({ color: fid, customColor: undefined })} />
+            ))}
+            {jewel.customColor && (
+              <button className="swatch sel" title="Custom colour" style={{ background: jewel.customColor }} />
+            )}
+          </div>
+          <div className="section-label">Custom colour</div>
+          <ColorWheel
+            hex={jewel.customColor ?? null}
+            onPick={(hex) => store.updateJewel(jewel.id, { customColor: hex })}
+            onClear={() => set({ customColor: undefined })} />
+          <div className="section-label">Mounting</div>
+          <Slider label="Standoff from enamel" value={jewel.offset ?? 0} min={-0.5} max={1.5} step={0.05}
+            format={(v) => `${v >= 0 ? '+' : ''}${v.toFixed(2)}`} onCommit={(v) => set({ offset: v }, false)} />
+          <div className="hint-copy" style={{ marginTop: 2 }}>
+            Lower the standoff if the piece floats off your model; raise it if it sinks into the enamel.
+          </div>
+          <div className="section-label">Position</div>
+          <select className="tooth-select" value={jewel.toothId}
+            onChange={(e) => {
+              if (e.target.value === FREE_TOOTH) return
+              const hit = getEngine()?.getSurfacePoint(e.target.value, 0, 0)
+              if (hit) set({ toothId: e.target.value, position: v3(hit.point.x, hit.point.y, hit.point.z), normal: v3(hit.normal.x, hit.normal.y, hit.normal.z) })
+            }}>
+            {jewel.toothId === FREE_TOOTH && <option value={FREE_TOOTH}>Free placement (unlabeled)</option>}
+            {ALL_TEETH.map((fdi) => <option key={fdi} value={fdi}>{fdi} — {toothInfo(fdi).short}</option>)}
+          </select>
+          <div className="pos-sub" style={{ marginTop: 8 }}>{surface}</div>
+          <div className="hint-copy" style={{ marginTop: 6 }}>Drag the piece on the model to reposition it along the surface.</div>
+          <div className="action-row" style={{ marginTop: 20 }}>
+            <button className="act-btn" onClick={() => { const id = store.duplicateJewel(jewel.id); if (id) toast('Piece duplicated — drag it to its new home') }}>
+              <I name="copy" size={14} />Duplicate
+            </button>
+            <button className="act-btn danger" onClick={() => { store.removeJewel(jewel.id); toast('Piece removed') }}>
+              <I name="trash" size={14} />Delete
+            </button>
+          </div>
+        </div>
+      </aside>
+    )
+  }
+  if (snap.selectedToothId && snap.selectedToothId !== FREE_TOOTH) {
+    const info = toothInfo(snap.selectedToothId)
+    const onTooth = snap.jewels.filter((j) => j.toothId === snap.selectedToothId)
+    return (
+      <aside className="inspector">
+        <div className="insp" key={snap.selectedToothId}>
+          <div className="fdi-big">#{snap.selectedToothId}</div>
+          <div className="jewel-title" style={{ marginTop: 8, fontSize: 18 }}>{info.name}</div>
+          <div className="pos-sub">{info.side} quadrant · FDI notation{snap.modelMode === 'free' ? ' · approximate label' : ''}</div>
+          <div className="section-label">Pieces on this tooth</div>
+          {onTooth.length === 0 && <div className="hint-copy">No jewelry here yet. Drag a piece from the library onto the model.</div>}
+          {onTooth.map((j) => (
+            <button key={j.id} className="jewel-row" onClick={() => store.selectJewel(j.id)}>
+              <span className="fdi-tag">{j.toothId}</span>{JEWELRY_BY_ID[j.jewelryTypeId].name}
+            </button>
+          ))}
+          <div className="section-label">Camera</div>
+          <div className="hint-copy">Double-click any tooth to focus the camera on it.</div>
+        </div>
+      </aside>
+    )
+  }
+  const teethUsed = new Set(snap.jewels.map((j) => j.toothId)).size
+  return (
+    <aside className="inspector">
+      <div className="insp">
+        <div className="stat-row">
+          <div className="stat"><b>{snap.jewels.length}</b><span>Pieces</span></div>
+          <div className="stat"><b>{teethUsed}</b><span>Zones</span></div>
+        </div>
+        <div className="section-label">Design</div>
+        {snap.jewels.length === 0 && <div className="hint-copy">Nothing placed yet. Drag a jewel from the library onto the arch — it will snap onto the surface and follow its curvature.</div>}
+        {snap.jewels.map((j) => (
+          <button key={j.id} className="jewel-row" onClick={() => { store.selectJewel(j.id); getEngine()?.focusTooth(j.toothId) }}>
+            <span className="fdi-tag">{j.toothId === FREE_TOOTH ? '·' : j.toothId}</span>{JEWELRY_BY_ID[j.jewelryTypeId].name}
+          </button>
+        ))}
+        <div className="section-label">Shortcuts</div>
+        <div className="kbd-row"><span>Undo / Redo</span><span><span className="kbd">Ctrl Z</span> <span className="kbd">Ctrl ⇧ Z</span></span></div>
+        <div className="kbd-row"><span>Duplicate piece</span><span className="kbd">D</span></div>
+        <div className="kbd-row"><span>Delete piece</span><span className="kbd">Del</span></div>
+        <div className="kbd-row"><span>Deselect / cancel</span><span className="kbd">Esc</span></div>
+        <div className="kbd-row"><span>Pan camera</span><span className="kbd">Shift + drag</span></div>
+        <div className="kbd-row"><span>Focus a tooth</span><span className="kbd">Double-click</span></div>
+      </div>
+    </aside>
+  )
+}
+
+function Toasts() {
+  const [, force] = useState(0)
+  useEffect(() => {
+    const l = () => force((x) => x + 1)
+    toastListeners.add(l)
+    return () => { toastListeners.delete(l) }
+  }, [])
+  return (
+    <div className="toasts">
+      {toastList.map((t) => (
+        <div className="toast" key={t.id}><I name="check" size={14} />{t.message}</div>
+      ))}
+    </div>
+  )
+}
+
+function App() {
+  const snap = useStudio()
+  useEffect(() => {
+    const onKey = (e: KeyboardEvent) => {
+      const el = document.activeElement
+      const typing = el && ['INPUT', 'SELECT', 'TEXTAREA'].includes(el.tagName)
+      if (e.key === 'Escape') {
+        getEngine()?.cancelPlacing()
+        if (typing) (el as HTMLElement).blur()
+        store.setArmed(null)
+        store.deselect()
+        return
+      }
+      if (typing) return
+      const meta = e.metaKey || e.ctrlKey
+      if (meta && e.key.toLowerCase() === 'z') { e.preventDefault(); e.shiftKey ? store.redo() : store.undo(); return }
+      if (meta && e.key.toLowerCase() === 'y') { e.preventDefault(); store.redo(); return }
+      if (e.key === 'Delete' || e.key === 'Backspace') {
+        if (store.selectedJewelId) { store.removeJewel(store.selectedJewelId); toast('Piece removed') }
+        return
+      }
+      if (e.key.toLowerCase() === 'd' && !meta) {
+        if (store.selectedJewelId) { store.duplicateJewel(store.selectedJewelId); toast('Piece duplicated') }
+      }
+    }
+    window.addEventListener('keydown', onKey)
+    return () => window.removeEventListener('keydown', onKey)
+  }, [])
+  useEffect(() => { if (store.restored) toast('Welcome back — your last design was restored') }, [])
+  // auto-load a "dentition.glb" served next to this page (skipped on file://)
+  useEffect(() => {
+    if (location.protocol === 'file:') return
+    fetch('dentition.glb')
+      .then((r) => {
+        const ct = r.headers.get('content-type') || ''
+        if (!r.ok || /text\/html/i.test(ct)) throw new Error('missing')
+        return r.blob()
+      })
+      .then((b) => importModelFile(new File([b], 'dentition.glb', { type: 'model/gltf-binary' })))
+      .catch(() => { /* not provided — keep the studio arch */ })
+  }, [])
+  return (
+    <div className="app">
+      <TopBar snap={snap} />
+      <LibraryPanel snap={snap} />
+      <Viewport snap={snap} />
+      <InspectorPanel snap={snap} />
+      <Toasts />
+    </div>
+  )
+}
+
+createRoot(document.getElementById('root')!).render(<App />)
+</script>
+<script>
+  /* Transpile the TypeScript/TSX source above and inject it as an ES module.
+     The import map in <head> resolves react / three / addons from CDNs. */
+  ;(function () {
+    var src = document.getElementById('app-source').textContent
+    function fatal(msg) {
+      var el = document.createElement('div')
+      el.className = 'boot-error'
+      el.textContent = msg
+      document.body.appendChild(el)
+    }
+    try {
+      var out = Babel.transform(src, {
+        filename: 'app.tsx',
+        presets: ['react', 'typescript'],
+        sourceType: 'module',
+      }).code
+      var s = document.createElement('script')
+      s.type = 'module'
+      s.textContent = out
+      s.onerror = function () { fatal('A CDN module failed to load — check your network connection and reload.') }
+      document.body.appendChild(s)
+    } catch (e) {
+      fatal('Build error: ' + e.message)
+    }
+  })()
+</script>
+</body>
+</html>

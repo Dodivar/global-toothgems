@@ -501,6 +501,129 @@
 }
 
 /* ---------------------------------------------------------------------------
+   Registration journey
+   ---------------------------------------------------------------------------
+   Form controls for the onboarding flow. Taller than the storefront `Input`
+   (52px, a comfortable thumb target) and with every state drawn: hover, focus,
+   filled, error, success, disabled. Error and success also carry an icon and a
+   sentence in the markup — the border colour is never the only signal.
+--------------------------------------------------------------------------- */
+@layer components {
+  .gt-field-label {
+    font-size: 13px;
+    font-weight: var(--weight-semibold);
+    color: var(--text-primary);
+    line-height: 1.3;
+  }
+
+  .gt-field {
+    width: 100%;
+    height: 52px;
+    border: 1px solid var(--border-default);
+    border-radius: var(--radius-control);
+    background: var(--surface-card);
+    color: var(--text-primary);
+    font-family: inherit;
+    font-size: 16px; /* 16px stops iOS zooming into the field on focus. */
+    padding: 0 20px;
+    outline: none;
+    transition:
+      border-color var(--duration-fast) var(--ease-standard),
+      box-shadow var(--duration-fast) var(--ease-standard),
+      background-color var(--duration-fast) var(--ease-standard);
+  }
+  .gt-field::placeholder { color: var(--text-subtle); }
+  .gt-field:hover:not(:disabled):not(:focus) { border-color: var(--gt-ink-400); }
+  .gt-field:focus-visible,
+  .gt-field:focus {
+    border-color: var(--focus-ring);
+    box-shadow: var(--shadow-focus);
+  }
+  .gt-field:not(:placeholder-shown):not(:focus):not([aria-invalid="true"]) { border-color: var(--gt-ink-400); }
+  select.gt-field[data-empty="true"] { color: var(--text-subtle); }
+  select.gt-field option { color: var(--text-primary); }
+  .gt-field[data-valid="true"]:not(:focus) { border-color: var(--gt-emerald-500); }
+  .gt-field[aria-invalid="true"] {
+    border-color: var(--gt-red-500);
+    border-width: 1.5px;
+    background: #fffafb;
+  }
+  .gt-field[aria-invalid="true"]:focus { box-shadow: 0 0 0 3px var(--status-error-bg); }
+  .gt-field:disabled {
+    background: var(--surface-sunken);
+    color: var(--text-subtle);
+    cursor: not-allowed;
+  }
+  .gt-field[readonly] { background: var(--gt-off-white); }
+
+  /* Page atmosphere: white, with two restrained pastel-blue washes. */
+  .gt-register-wash {
+    background:
+      radial-gradient(900px 520px at 88% -8%, rgba(185, 205, 229, .55), transparent 62%),
+      radial-gradient(700px 480px at -10% 30%, rgba(231, 238, 247, .9), transparent 60%),
+      var(--gt-white);
+  }
+
+  /* Step change: a short slide in the direction of travel. */
+  .gt-step-forward { animation: gt-step-forward var(--duration-slow) var(--ease-out-soft) both; }
+  .gt-step-back { animation: gt-step-back var(--duration-slow) var(--ease-out-soft) both; }
+
+  /* Validation feedback arriving: a small drop-in, not a shake. */
+  .gt-field-message { animation: gt-auth-swap var(--duration-normal) var(--ease-out-soft) both; }
+  .gt-pop-in { animation: gt-pop var(--duration-normal) var(--ease-out-soft) both; }
+
+  .gt-check-in { animation: gt-step-forward var(--duration-slow) var(--ease-out-soft) both; }
+
+  .gt-envelope-spark { animation: gt-twinkle 2.8s var(--ease-in-out) infinite; }
+
+  /* Welcome burst: each spark flies from the centre to (--x, --y). */
+  .gt-burst-spark {
+    left: 0;
+    top: 0;
+    opacity: 0;
+    animation: gt-burst 1.4s var(--ease-out-soft) both;
+  }
+}
+
+@keyframes gt-step-forward {
+  from { opacity: 0; transform: translateX(18px); }
+  to { opacity: 1; transform: none; }
+}
+
+@keyframes gt-step-back {
+  from { opacity: 0; transform: translateX(-18px); }
+  to { opacity: 1; transform: none; }
+}
+
+@keyframes gt-twinkle {
+  0%, 100% { opacity: .9; transform: rotate(45deg) scale(1); }
+  50% { opacity: .35; transform: rotate(45deg) scale(.6); }
+}
+
+@keyframes gt-burst {
+  0% { opacity: 0; transform: translate(-50%, -50%) scale(.3) rotate(0deg); }
+  20% { opacity: 1; }
+  70% { opacity: 1; }
+  100% { opacity: .85; transform: translate(calc(-50% + var(--x)), calc(-50% + var(--y))) scale(1) rotate(var(--r)); }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .gt-step-forward,
+  .gt-step-back,
+  .gt-field-message,
+  .gt-pop-in,
+  .gt-check-in,
+  .gt-envelope-spark { animation: none; }
+  /* Sparks rest where the burst would have left them: still a festive frame,
+     just without the movement. */
+  .gt-burst-spark {
+    animation: none;
+    opacity: .85;
+    transform: translate(calc(-50% + var(--x)), calc(-50% + var(--y))) rotate(var(--r));
+  }
+}
+
+/* ---------------------------------------------------------------------------
    Administration workspace
    ---------------------------------------------------------------------------
    The admin inherits the brand palette and Montserrat, then diverges where the

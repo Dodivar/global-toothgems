@@ -24,6 +24,7 @@ import { CourseDetail } from "./pages/CourseDetail";
 import { Lesson } from "./pages/Lesson";
 import { Login } from "./pages/Login";
 import { ConnexionEditorial } from "./pages/ConnexionEditorial";
+import { Register } from "./pages/Register";
 import { Loyalty as LoyaltyProgram } from "./pages/Loyalty";
 import { AccountLayout } from "./pages/account/AccountLayout";
 import { Dashboard } from "./pages/account/Dashboard";
@@ -41,6 +42,7 @@ import { Activity } from "./pages/community/Activity";
 import { AdminLogin } from "./pages/admin/AdminLogin";
 import { AdminLayout } from "./pages/admin/AdminLayout";
 import { AdminDashboard } from "./pages/admin/AdminDashboard";
+import { Statistics as AdminStatistics } from "./pages/admin/Statistics";
 import { AdminProducts } from "./pages/admin/AdminProducts";
 import { AdminProductNew } from "./pages/admin/AdminProductNew";
 import { AdminProductEdit } from "./pages/admin/AdminProductEdit";
@@ -127,6 +129,11 @@ export default function App() {
                       <Route path="/couleurs" element={<Colors />} />
                       <Route path="/panier" element={<Cart />} />
                       <Route path="/connexion" element={<Login />} />
+                      {/* Account creation, as its own multi-step journey. The
+                          reason the visitor came (a purchase, a training) travels
+                          in the query string or in history state, so the flow
+                          can keep it in view and finish on it. */}
+                      <Route path="/inscription" element={<Register />} />
                       {/* The alternative authentication direction, live beside the
                           current one so the team can compare the same flow, fields
                           and copy in two art directions. Not linked from the
@@ -225,6 +232,10 @@ export default function App() {
                             can still be linked to. Not in the navigation rail,
                             which this change deliberately leaves untouched. */}
                         <Route path="utilisateurs" element={<AdminUsers />} />
+                        {/* Statistics. Read-only, and entirely derived from the
+                            filters in its query string, so a filtered report is
+                            a link a colleague can open on the same numbers. */}
+                        <Route path="statistiques" element={<AdminStatistics />} />
                         <Route path="produits" element={<AdminProducts />} />
                         <Route path="produits/nouveau" element={<AdminProductNew />} />
                         <Route path="produits/:id" element={<AdminProductEdit />} />

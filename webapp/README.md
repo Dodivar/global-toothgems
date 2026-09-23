@@ -92,6 +92,31 @@ Every route into a training now lands here rather than on the login form: both h
 
 The account is asked for at the purchase, and the training asked for travels with the visitor: pressing "start" while signed out puts the course id in the navigation state, and signing in adds that course to the account before opening the player, so the purchase resumes instead of opening whichever course happened to be active.
 
+## Account creation (`/inscription`)
+
+A four-step journey — Account → Profile → Preferences → Done — with a simulated
+email verification and a welcome screen. The "Create account" tab of `/connexion`,
+the cart and the training pages all lead here.
+
+The reason the visitor came is carried in the URL, and the page keeps it in view
+and ends on it:
+
+| URL | Context | Primary action at the end |
+| --- | --- | --- |
+| `/inscription` | Plain sign-up | Follows the chosen interest (products, training), else the dashboard |
+| `/inscription?contexte=achat` | Purchase in progress — shows the cart (or `&produit=<id>&qte=<n>`) | Return to cart |
+| `/inscription?contexte=formation&formation=<id>` | Training — shows the course | Continue to checkout (starts the course, like "Start this training") |
+
+History state from the login wall (`{ from, course }`) is honoured too.
+
+A **Prototype controls** panel at the top switches the context and forces
+outcomes: registration failure, network error, verification email failure,
+expired verification link. `camille@studio.fr`, `hello@globaltoothgems.com` and
+`lea.martin@gmail.com` are treated as already registered. "Continue with Google"
+opens a simulated account chooser; nothing is sent anywhere, no password is
+stored, and marketing consent is never pre-ticked. Logic and mock service live in
+`src/lib/registration.ts`, components in `src/components/register/`.
+
 ## The member area (`/compte`)
 
 The signed-in area is an administration dashboard: a left sidebar on desktop, a scrollable row of pills on small screens, and one route per section.
