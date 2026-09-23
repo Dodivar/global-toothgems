@@ -63,6 +63,10 @@ import { PromotionEditor as AdminPromotionEditor } from "./pages/admin/Promotion
 import { PromotionDetail as AdminPromotionDetail } from "./pages/admin/PromotionDetail";
 import { CampaignDetail as AdminCampaignDetail } from "./pages/admin/CampaignDetail";
 import { CampaignEditor as AdminCampaignEditor } from "./pages/admin/CampaignEditor";
+import { GiftCardDetail as AdminGiftCardDetail } from "./pages/admin/GiftCardDetail";
+import { GiftCardSettings as AdminGiftCardSettings } from "./pages/admin/GiftCardSettings";
+import { PromotionPreview as AdminPromotionPreview } from "./pages/admin/PromotionPreview";
+import { GiftCard } from "./pages/GiftCard";
 import { NotFound } from "./pages/NotFound";
 import { ServerError } from "./pages/ServerError";
 import { Maintenance } from "./pages/Maintenance";
@@ -180,6 +184,11 @@ export default function App() {
                       {/* The loyalty programme's own sales page, open like the Academy
                           landing page: gating it would hide what it advertises. */}
                       <Route path="/fidelite" element={<LoyaltyProgram />} />
+                      {/* The gift card product page. Open to everyone; its amounts,
+                          designs and fields come from the back office's gift card
+                          configuration. The English path is an alias. */}
+                      <Route path="/carte-cadeau" element={<GiftCard />} />
+                      <Route path="/gift-card" element={<GiftCard />} />
                       {/* The Academy landing page stays open — it is the sales page.
                           Only the course content itself requires an account, and gating
                           the route covers the menu links and direct URLs at once. */}
@@ -285,6 +294,9 @@ export default function App() {
                             a link a colleague can open. */}
                         <Route path="promotions" element={<AdminPromotions />} />
                         <Route path="promotions/nouvelle" element={<AdminPromotionEditor />} />
+                        <Route path="promotions/apercu" element={<AdminPromotionPreview />} />
+                        <Route path="promotions/cartes-cadeaux/configuration" element={<AdminGiftCardSettings />} />
+                        <Route path="promotions/cartes-cadeaux/:code" element={<AdminGiftCardDetail />} />
                         <Route path="promotions/campagnes/nouvelle" element={<AdminCampaignEditor />} />
                         <Route path="promotions/campagnes/:id" element={<AdminCampaignDetail />} />
                         <Route path="promotions/campagnes/:id/modifier" element={<AdminCampaignEditor />} />
