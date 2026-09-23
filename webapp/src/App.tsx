@@ -8,6 +8,7 @@ import { OrdersProvider } from "./lib/orders";
 import { ProgressProvider } from "./lib/progress";
 import { CommunityProvider } from "./lib/community";
 import { ToastProvider } from "./lib/toast";
+import { SecurityProvider } from "./lib/securityState";
 import { Header } from "./components/layout/Header";
 import { Footer } from "./components/layout/Footer";
 import { HeaderEditorial } from "./components/layout/HeaderEditorial";
@@ -25,12 +26,16 @@ import { Lesson } from "./pages/Lesson";
 import { Login } from "./pages/Login";
 import { ConnexionEditorial } from "./pages/ConnexionEditorial";
 import { Register } from "./pages/Register";
+import { ForgotPassword } from "./pages/ForgotPassword";
+import { ResetPassword } from "./pages/ResetPassword";
+import { VerifyEmailLanding } from "./pages/VerifyEmailLanding";
 import { Loyalty as LoyaltyProgram } from "./pages/Loyalty";
 import { AccountLayout } from "./pages/account/AccountLayout";
 import { Dashboard } from "./pages/account/Dashboard";
 import { Certificates } from "./pages/account/Certificates";
 import { Orders } from "./pages/account/Orders";
 import { Profile } from "./pages/account/Profile";
+import { Security } from "./pages/account/Security";
 import { Loyalty as AccountLoyalty } from "./pages/account/Loyalty";
 import { CommunityLayout } from "./pages/community/CommunityLayout";
 import { CommunityHome } from "./pages/community/CommunityHome";
@@ -96,6 +101,9 @@ export default function App() {
 
   return (
     <AuthProvider>
+      {/* Pending email change, password date and data-export status: read by
+          the member area and by the verification page a link lands on. */}
+      <SecurityProvider>
       <AdminAuthProvider>
         {/* Learning progress and orders sit above the cart: paying turns the cart
             into an order, and both histories feed the member dashboard. */}
@@ -134,6 +142,16 @@ export default function App() {
                           in the query string or in history state, so the flow
                           can keep it in view and finish on it. */}
                       <Route path="/inscription" element={<Register />} />
+                      {/* Account recovery and email verification. Open routes:
+                          they are reached from an email, often signed out. The
+                          English paths are aliases of the French ones, so links
+                          written either way land on the same screen. */}
+                      <Route path="/mot-de-passe-oublie" element={<ForgotPassword />} />
+                      <Route path="/forgot-password" element={<ForgotPassword />} />
+                      <Route path="/reinitialiser-mot-de-passe" element={<ResetPassword />} />
+                      <Route path="/reset-password" element={<ResetPassword />} />
+                      <Route path="/verifier-email" element={<VerifyEmailLanding />} />
+                      <Route path="/verify-email" element={<VerifyEmailLanding />} />
                       {/* The alternative authentication direction, live beside the
                           current one so the team can compare the same flow, fields
                           and copy in two art directions. Not linked from the
@@ -175,6 +193,7 @@ export default function App() {
                         <Route path="attestations" element={<Certificates />} />
                         <Route path="commandes" element={<Orders />} />
                         <Route path="profil" element={<Profile />} />
+                        <Route path="securite" element={<Security />} />
                         <Route path="fidelite" element={<AccountLoyalty />} />
                       </Route>
                       {/* The Artist Community. A sibling of `/compte` rather than
@@ -250,6 +269,7 @@ export default function App() {
           </OrdersProvider>
         </ProgressProvider>
       </AdminAuthProvider>
+      </SecurityProvider>
     </AuthProvider>
   );
 }

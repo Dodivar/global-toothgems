@@ -18,6 +18,7 @@ import { PreferencesStep, type CreateFailure } from "../components/register/step
 import { useAuth } from "../lib/auth";
 import { useProgress } from "../lib/progress";
 import { useToast } from "../lib/toast";
+import { FORGOT_PATH } from "../lib/accountSecurity";
 import { DELIVERY_COUNTRIES } from "../data/countries";
 import {
   EMPTY_REGISTRATION,
@@ -466,7 +467,7 @@ export function Register() {
                             onGoogle={() => setGoogleOpen(true)}
                             onUseEmail={useEmailInstead}
                             signInState={signInState}
-                            onForgotPassword={() => showToast(t("register.forgotToastTitle"), t("register.forgotToastBody"), "info")}
+                            onForgotPassword={() => navigate(FORGOT_PATH, { state: { email: data.email.trim() } })}
                           />
                         )}
                         {step === "profile" && (
