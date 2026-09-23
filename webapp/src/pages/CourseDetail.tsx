@@ -20,6 +20,7 @@ import { CurriculumAccordion } from "../components/academy/CurriculumAccordion";
 import { DiplomaPanel } from "../components/academy/DiplomaPanel";
 import { TrainingHero } from "../components/academy/TrainingHero";
 import { CheckItem, FeatureCard, Section, SectionIntro, StepCard } from "../components/academy/TrainingPrimitives";
+import { ReviewsSection } from "../components/reviews/ReviewsSection";
 import { getCourse } from "../data/courses";
 import { MODULES } from "../data/lessons";
 import { pick } from "../data/types";
@@ -274,6 +275,10 @@ export function CourseDetail() {
           onOpenForum={() => showToast(t("common.notIncludedTitle"), t("common.notIncludedForum"), "info")}
         />
       </Section>
+
+      {/* 8b — Student reviews: right after the community, because a review
+          here is one artist telling the next what the training changed. */}
+      <ReviewsSection subject={{ kind: "course", id: course.id }} />
 
       {/* 9 — Why this training */}
       <Section tone="sand" labelledBy="training-why">

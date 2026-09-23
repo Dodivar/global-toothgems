@@ -6,9 +6,11 @@ import { Button } from "../../components/ui/Button";
 import { CertificateCard, PendingCertificateCard } from "../../components/account/CertificateCard";
 import { CertificateViewer } from "../../components/account/CertificateViewer";
 import { SectionHeader } from "../../components/account/SectionHeader";
+import { ReviewRequestCard } from "../../components/reviews/ReviewRequestCard";
 import { pick } from "../../data/types";
 import { useAuth } from "../../lib/auth";
 import { useProgress } from "../../lib/progress";
+import { useReviewRequests } from "../../lib/reviews";
 import { useToast } from "../../lib/toast";
 import { formatDate } from "../../lib/format";
 
@@ -31,6 +33,8 @@ export function Certificates() {
   const { displayName } = useAuth();
   const { progressFor, enrolledCourses } = useProgress();
   const { showToast } = useToast();
+  // A finished training is the natural moment to review it.
+  const courseRequest = useReviewRequests().find((r) => r.subject.kind === "course" && r.context === "completed");
   /** Course id of the certificate open in the viewer, or null. */
   const [viewing, setViewing] = useState<string | null>(null);
 
@@ -153,6 +157,8 @@ export function Certificates() {
           </section>
         )
       )}
+
+      {courseRequest && <ReviewRequestCard request={courseRequest} variant="dark" />}
 
       {/* Enrolled but nothing finished yet: the collection says so in its own
           words, so the page never reads as if something failed to load. */}

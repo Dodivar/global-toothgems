@@ -1,3 +1,4 @@
+import type { ReactNode } from "react";
 import { useTranslation } from "react-i18next";
 import { Link } from "react-router-dom";
 import { Receipt, Truck } from "lucide-react";
@@ -10,6 +11,7 @@ import {
   orderTotal,
   shipmentStep,
   type Order,
+  type OrderLine,
   type OrderStatus,
 } from "../../data/orders";
 import { pick } from "../../data/types";
@@ -74,7 +76,18 @@ function ShipmentTracking({ order }: { order: Order }) {
   );
 }
 
-export function OrderCard({ order, lang, onInvoice }: { order: Order; lang: string; onInvoice: () => void }) {
+export function OrderCard({
+  order,
+  lang,
+  onInvoice,
+  lineAction,
+}: {
+  order: Order;
+  lang: string;
+  onInvoice: () => void;
+  /** Extra control under a line's details — the order history uses it for "Write a review". */
+  lineAction?: (line: OrderLine) => ReactNode;
+}) {
   const { t } = useTranslation();
   const total = orderTotal(order);
   const cancelled = order.status === "cancelled";
@@ -124,6 +137,7 @@ export function OrderCard({ order, lang, onInvoice }: { order: Order; lang: stri
                   {line.variant ? `${pick(line.variant, lang)} · ` : ""}
                   {t("account.orderQty", { qty: line.qty })}
                 </span>
+                {lineAction && !cancelled && lineAction(line)}
               </span>
               <span className="whitespace-nowrap text-[length:var(--text-body-sm)] tabular-nums text-[var(--text-body)]">
                 {formatPrice(line.unitPrice * line.qty)}
