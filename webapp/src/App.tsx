@@ -1,4 +1,4 @@
-import { Routes, Route, useLocation } from "react-router-dom";
+import { Routes, Route, Navigate, useLocation } from "react-router-dom";
 import { useEffect } from "react";
 import { useTranslation } from "react-i18next";
 import { AuthProvider, RequireAccount } from "./lib/auth";
@@ -9,6 +9,8 @@ import { ProgressProvider } from "./lib/progress";
 import { CommunityProvider } from "./lib/community";
 import { ToastProvider } from "./lib/toast";
 import { SecurityProvider } from "./lib/securityState";
+import { CookieConsentProvider } from "./lib/cookieConsent";
+import { ReviewModeProvider } from "./lib/reviewMode";
 import { PromotionsProvider } from "./lib/adminPromotions";
 import { Header } from "./components/layout/Header";
 import { Footer } from "./components/layout/Footer";
@@ -70,6 +72,20 @@ import { GiftCard } from "./pages/GiftCard";
 import { NotFound } from "./pages/NotFound";
 import { ServerError } from "./pages/ServerError";
 import { Maintenance } from "./pages/Maintenance";
+import { HelpCentre } from "./pages/legal/HelpCentre";
+import { Faq } from "./pages/legal/Faq";
+import { Contact } from "./pages/legal/Contact";
+import { About } from "./pages/legal/About";
+import { LegalDocumentPage } from "./components/legal/LegalDocumentPage";
+import { CookieBanner } from "./components/legal/CookieBanner";
+import { CookieSettingsDialog } from "./components/legal/CookieSettingsDialog";
+import { LEGAL_ALIASES, LEGAL_PATHS } from "./data/legal/routes";
+import { LEGAL_NOTICE } from "./data/legal/legalNotice";
+import { TERMS } from "./data/legal/terms";
+import { PRIVACY } from "./data/legal/privacy";
+import { COOKIE_POLICY } from "./data/legal/cookies";
+import { SHIPPING } from "./data/legal/shipping";
+import { RETURNS } from "./data/legal/returns";
 
 function ScrollToTop() {
   const { pathname } = useLocation();
@@ -139,11 +155,17 @@ export default function App() {
                   under both rather than owning that fact itself. */}
               <CommunityProvider>
                 <ToastProvider>
+                <CookieConsentProvider>
+                <ReviewModeProvider>
                   <ScrollToTop />
                   <DocumentLanguage />
                   <a href="#main" className="gt-skip-link">
                     {t("common.skipToContent")}
                   </a>
+                  {/* First in the document so keyboard and screen-reader users
+                      meet it before the page, though it sits at the bottom of
+                      the screen. Not on the back office or maintenance chrome. */}
+                  {!bareChrome && <CookieBanner />}
                   {!bareChrome && (editorial ? <HeaderEditorial /> : <Header />)}
                   <main id="main" tabIndex={-1}>
                     <Routes>
@@ -304,6 +326,24 @@ export default function App() {
                         <Route path="promotions/:id/modifier" element={<AdminPromotionEditor />} />
                       </Route>
 
+                      {/* Help centre and legal pages. Every one is reachable from
+                          the footer; the documents are data rendered by one
+                          layout (see `data/legal/`). The English paths redirect
+                          to the French ones, like the account-recovery aliases. */}
+                      <Route path={LEGAL_PATHS.help} element={<HelpCentre />} />
+                      <Route path={LEGAL_PATHS.faq} element={<Faq />} />
+                      <Route path={LEGAL_PATHS.contact} element={<Contact />} />
+                      <Route path={LEGAL_PATHS.about} element={<About />} />
+                      <Route path={LEGAL_PATHS.legalNotice} element={<LegalDocumentPage key={LEGAL_NOTICE.id} doc={LEGAL_NOTICE} />} />
+                      <Route path={LEGAL_PATHS.terms} element={<LegalDocumentPage key={TERMS.id} doc={TERMS} />} />
+                      <Route path={LEGAL_PATHS.privacy} element={<LegalDocumentPage key={PRIVACY.id} doc={PRIVACY} />} />
+                      <Route path={LEGAL_PATHS.cookies} element={<LegalDocumentPage key={COOKIE_POLICY.id} doc={COOKIE_POLICY} />} />
+                      <Route path={LEGAL_PATHS.shipping} element={<LegalDocumentPage key={SHIPPING.id} doc={SHIPPING} />} />
+                      <Route path={LEGAL_PATHS.returns} element={<LegalDocumentPage key={RETURNS.id} doc={RETURNS} />} />
+                      {Object.entries(LEGAL_ALIASES).map(([alias, to]) => (
+                        <Route key={alias} path={alias} element={<Navigate to={to} replace />} />
+                      ))}
+
                       {/* System pages. The server-error and maintenance screens
                           have their own addresses so they can be reviewed as
                           mockups; in production the server would serve them in
@@ -315,6 +355,9 @@ export default function App() {
                     </Routes>
                   </main>
                   {!bareChrome && (editorial ? <FooterEditorial /> : <Footer />)}
+                  <CookieSettingsDialog />
+                </ReviewModeProvider>
+                </CookieConsentProvider>
                 </ToastProvider>
               </CommunityProvider>
             </CartProvider>

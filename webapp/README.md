@@ -62,6 +62,8 @@ src/
   pages/            One component per screen (Home, Shop, ProductDetail, Cart, Academy, CourseDetail, Lesson, Login)
   pages/account/    The member area: sidebar layout + one component per section
   pages/community/  The Artist Community: its own layout + one component per screen
+  pages/legal/      Help centre, FAQ, contact and about pages
+  data/legal/       Legal and help content (bilingual data rendered by components/legal/)
   components/ui/     Design-system primitives (Button, Badge, ProductCard, CourseCard, QuizQuestion, ...)
   components/account/ Dashboard pieces (stat tile, course row, certificate card, order card)
   components/academy/ The training detail page: hero, curriculum accordion, assessment, diploma, community, shared primitives
@@ -219,6 +221,48 @@ In the orders screens specifically, changing a status, refunding, cancelling, ex
 
 **Known duplication to consolidate.** The orders screens were built against their own primitives before the rest of this workspace existed, so they carry a second modal (`components/ui/Dialog.tsx`), dropdown (`components/ui/Menu.tsx`), KPI tile, empty state and loading state alongside the workspace's `ConfirmationDialog`, `OverflowMenu`, `StatCard`, `EmptyState`, `LoadingState`, `SearchInput` and `AdminButton`. The shell, the header, the rail, the guard and the route structure are shared; these presentational pieces are not, and porting the orders screens onto the workspace primitives is open work.
 
+
+## Help centre and legal pages
+
+Reached from the footer's Customer service, Legal and Company columns. The
+English paths (`/terms-of-sale`, `/privacy-policy`, ...) redirect to the French
+ones.
+
+| Page | Path |
+| --- | --- |
+| Help centre (hub + internal pre-launch checklist) | `/aide` |
+| FAQ | `/aide/faq` |
+| Shipping & delivery | `/livraison` |
+| Returns & refunds | `/retours-remboursements` |
+| Contact | `/contact` (`?sujet=…` (order, delivery, returns, product, training, technical, privacy, professional, other) pre-selects the category) |
+| Legal notice | `/mentions-legales` |
+| Terms of sale | `/conditions-generales` |
+| Privacy policy | `/confidentialite` |
+| Cookie policy | `/cookies` |
+| About | `/a-propos` |
+
+**These pages are a design prototype, not legal text.** Every company
+identifier, commercial rule (return window, shipping rates, zones), processor
+and cookie is a visible placeholder: `[[Label]]` for "to verify" and
+`[[!Label]]` for "business information required" in `data/legal/*.ts`. The only
+provider named is Stripe. The EU consumer-law and GDPR summaries, labelled
+"Legal information", still need checking against the countries actually
+served. All of it must be reviewed by the business and by counsel before
+publication.
+
+- **Cookie consent** (`lib/cookieConsent.tsx`, `components/legal/Cookie*`) only
+  records the visitor's choice in localStorage. No script is loaded or blocked.
+  Optional categories start off, and "Reject" is as prominent as "Accept". The
+  preferences dialog can be reopened from "Cookie settings" in the footer.
+- **Review annotations** (`lib/reviewMode.tsx`): the hatched internal notes and
+  the Stripe/compliance checklist on `/aide` can be hidden with the toggle at
+  the top of each page, to preview the customer-facing version. Placeholders are
+  never hidden.
+- The contact form validates its input and shows a success state, but sends
+  nothing.
+- The cart's free-delivery threshold and flat shipping fee are sample values.
+  The Shipping page says so, and the two must be aligned with the real rate
+  card.
 
 ## Promotions, campaigns & gift cards (`/admin/promotions`)
 
