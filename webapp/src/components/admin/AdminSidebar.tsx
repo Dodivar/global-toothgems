@@ -7,6 +7,7 @@ import {
   GraduationCap,
   LayoutDashboard,
   LogOut,
+  MessageSquareText,
   Package,
   Settings,
   ShoppingBag,
@@ -47,6 +48,7 @@ const MAIN: RailItem[] = [
   { to: "/admin/produits", labelKey: "admin.nav.products", icon: Package },
   { to: "/admin/categories", labelKey: "admin.nav.categories", icon: Tags },
   { to: "/admin/promotions", labelKey: "admin.nav.promotions", icon: TicketPercent },
+  { to: "/admin/avis", labelKey: "reviews.nav.admin", icon: MessageSquareText },
   { to: "/admin/statistiques", labelKey: "admin.nav.analytics", icon: BarChart3 },
 ];
 

@@ -6,6 +6,7 @@ import { Button } from "../components/ui/Button";
 import { ProgressBar } from "../components/ui/ProgressBar";
 import { IconButton } from "../components/ui/IconButton";
 import { QuizQuestion } from "../components/ui/QuizQuestion";
+import { ReviewRequestCard } from "../components/reviews/ReviewRequestCard";
 import {
   FLAT,
   MODULES,
@@ -17,6 +18,7 @@ import {
 } from "../data/lessons";
 import { pick } from "../data/types";
 import { useProgress } from "../lib/progress";
+import { useReviewRequests } from "../lib/reviews";
 import { useToast } from "../lib/toast";
 import { photo } from "../lib/images";
 import { useIsMobile } from "../lib/useIsMobile";
@@ -36,6 +38,9 @@ export function Lesson() {
      the same numbers, so validating a lesson here has to move it there too. */
   const { activeCourse, progressFor, setActiveLesson, completeLesson: validateLesson } = useProgress();
   const { doneCount, activeIdx, remainingMinutes } = progressFor(activeCourse.id);
+  // Halfway through (or finished), the course can be reviewed: the player asks
+  // once, quietly, below the lesson statistics.
+  const reviewRequest = useReviewRequests().find((r) => r.subject.kind === "course" && r.subject.id === activeCourse.id);
 
   const [playing, setPlaying] = useState(false);
   const [pct, setPct] = useState(31);
@@ -299,6 +304,8 @@ export function Lesson() {
             </div>
           ))}
         </dl>
+
+        {reviewRequest && <ReviewRequestCard request={reviewRequest} variant="compact" />}
 
         <div className="grid gap-3 rounded-[var(--radius-card)] border border-[var(--border-subtle)] p-[var(--space-5)]">
           <h2 className="text-[length:var(--text-h4)]">{t("lesson.inThisLessonTitle")}</h2>

@@ -12,6 +12,8 @@ import { SecurityProvider } from "./lib/securityState";
 import { CookieConsentProvider } from "./lib/cookieConsent";
 import { ReviewModeProvider } from "./lib/reviewMode";
 import { PromotionsProvider } from "./lib/adminPromotions";
+import { ReviewsProvider } from "./lib/reviews";
+import { ReviewOverlays } from "./components/reviews/ReviewOverlays";
 import { Header } from "./components/layout/Header";
 import { Footer } from "./components/layout/Footer";
 import { HeaderEditorial } from "./components/layout/HeaderEditorial";
@@ -39,6 +41,7 @@ import { Certificates } from "./pages/account/Certificates";
 import { Orders } from "./pages/account/Orders";
 import { Profile } from "./pages/account/Profile";
 import { Security } from "./pages/account/Security";
+import { Reviews as AccountReviews } from "./pages/account/Reviews";
 import { Loyalty as AccountLoyalty } from "./pages/account/Loyalty";
 import { CommunityLayout } from "./pages/community/CommunityLayout";
 import { CommunityHome } from "./pages/community/CommunityHome";
@@ -68,6 +71,7 @@ import { CampaignEditor as AdminCampaignEditor } from "./pages/admin/CampaignEdi
 import { GiftCardDetail as AdminGiftCardDetail } from "./pages/admin/GiftCardDetail";
 import { GiftCardSettings as AdminGiftCardSettings } from "./pages/admin/GiftCardSettings";
 import { PromotionPreview as AdminPromotionPreview } from "./pages/admin/PromotionPreview";
+import { Reviews as AdminReviews } from "./pages/admin/Reviews";
 import { GiftCard } from "./pages/GiftCard";
 import { NotFound } from "./pages/NotFound";
 import { ServerError } from "./pages/ServerError";
@@ -157,6 +161,11 @@ export default function App() {
                 <ToastProvider>
                 <CookieConsentProvider>
                 <ReviewModeProvider>
+                {/* Customer reviews and their moderation. Inside the toasts and
+                    under the account, orders and progress it checks eligibility
+                    against; above both the storefront and the back office, so a
+                    review approved in /admin/avis shows on the product page. */}
+                <ReviewsProvider>
                   <ScrollToTop />
                   <DocumentLanguage />
                   <a href="#main" className="gt-skip-link">
@@ -246,6 +255,7 @@ export default function App() {
                         <Route path="profil" element={<Profile />} />
                         <Route path="securite" element={<Security />} />
                         <Route path="fidelite" element={<AccountLoyalty />} />
+                        <Route path="avis" element={<AccountReviews />} />
                       </Route>
                       {/* The Artist Community. A sibling of `/compte` rather than
                           one of its children: it is part of the member area, but
@@ -324,6 +334,11 @@ export default function App() {
                         <Route path="promotions/campagnes/:id/modifier" element={<AdminCampaignEditor />} />
                         <Route path="promotions/:id" element={<AdminPromotionDetail />} />
                         <Route path="promotions/:id/modifier" element={<AdminPromotionEditor />} />
+                        {/* Reviews: dashboard, moderation queue and reported
+                            reviews as tabs in the query string (`?vue=`); the
+                            review being moderated is a panel whose address is
+                            the `avis` key, so it can be linked to. */}
+                        <Route path="avis" element={<AdminReviews />} />
                       </Route>
 
                       {/* Help centre and legal pages. Every one is reachable from
@@ -356,6 +371,8 @@ export default function App() {
                   </main>
                   {!bareChrome && (editorial ? <FooterEditorial /> : <Footer />)}
                   <CookieSettingsDialog />
+                  <ReviewOverlays />
+                </ReviewsProvider>
                 </ReviewModeProvider>
                 </CookieConsentProvider>
                 </ToastProvider>

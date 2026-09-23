@@ -6,11 +6,13 @@ import { CourseCard } from "../../components/ui/CourseCard";
 import { EnrolledCourseRow } from "../../components/account/EnrolledCourseRow";
 import { EmptyPanel, SectionHeader } from "../../components/account/SectionHeader";
 import { StatTile } from "../../components/account/StatTile";
+import { ReviewRequestCard } from "../../components/reviews/ReviewRequestCard";
 import { FLAT, MODULES, moduleIndexForFlatIndex } from "../../data/lessons";
 import { pick } from "../../data/types";
 import { useAuth } from "../../lib/auth";
 import { useOrders } from "../../lib/orders";
 import { useProgress } from "../../lib/progress";
+import { useReviewRequests } from "../../lib/reviews";
 
 /**
  * Home of the member area: what the account is worth in figures, the lesson to
@@ -27,6 +29,8 @@ export function Dashboard() {
   const { displayName } = useAuth();
   const { openCourse, progressFor, enrolledCourses, availableCourses } = useProgress();
   const { orders } = useOrders();
+  // The one thing the member could review next, if anything.
+  const [reviewRequest] = useReviewRequests();
 
   const enrolled = enrolledCourses();
   const available = availableCourses();
@@ -113,6 +117,8 @@ export function Dashboard() {
           </div>
         )}
       </section>
+
+      {reviewRequest && <ReviewRequestCard request={reviewRequest} />}
 
       <section className="grid gap-5">
         <div className="grid gap-2">

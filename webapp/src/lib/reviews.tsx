@@ -139,12 +139,13 @@ export function ReviewsProvider({ children }: { children: ReactNode }) {
     timer.current = setTimeout(() => setLoading(false), LATENCY);
   }, []);
 
+  // First load: `loading` starts true, so the effect only has to end it.
   useEffect(() => {
-    simulateLoad();
+    timer.current = setTimeout(() => setLoading(false), LATENCY);
     return () => {
       if (timer.current) clearTimeout(timer.current);
     };
-  }, [simulateLoad]);
+  }, []);
 
   const setDemoMode = useCallback(
     (mode: ReviewDemoMode) => {

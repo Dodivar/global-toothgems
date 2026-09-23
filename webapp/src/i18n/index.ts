@@ -8,14 +8,17 @@ import en from "./locales/en.json";
 // reviewable.
 import promoFr from "./locales/promotions.fr.json";
 import promoEn from "./locales/promotions.en.json";
+// Reviews and their moderation, likewise in their own pair, under `reviews`.
+import reviewsFr from "./locales/reviews.fr.json";
+import reviewsEn from "./locales/reviews.en.json";
 
 i18n
   .use(LanguageDetector)
   .use(initReactI18next)
   .init({
     resources: {
-      fr: { translation: { ...fr, promo: promoFr } },
-      en: { translation: { ...en, promo: promoEn } },
+      fr: { translation: { ...fr, promo: promoFr, reviews: reviewsFr } },
+      en: { translation: { ...en, promo: promoEn, reviews: reviewsEn } },
     },
     fallbackLng: "fr",
     supportedLngs: ["fr", "en"],

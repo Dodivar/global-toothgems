@@ -55,7 +55,16 @@ export function useSubjectReviews(subject: ReviewSubject): { reviews: CustomerRe
  *
  * Only published reviews ever reach this component's list.
  */
-export function ReviewsSection({ subject, id = "avis" }: { subject: ReviewSubject; id?: string }) {
+export function ReviewsSection({
+  subject,
+  id = "avis",
+  inline = false,
+}: {
+  subject: ReviewSubject;
+  id?: string;
+  /** Inside a page that already has its gutters (the product page), rather than as a full-bleed band. */
+  inline?: boolean;
+}) {
   const { t, i18n } = useTranslation();
   const lang = i18n.language;
   const { loading, demoMode, retry, openPhotos } = useReviews();
@@ -72,7 +81,7 @@ export function ReviewsSection({ subject, id = "avis" }: { subject: ReviewSubjec
   const state: Preview = preview !== "live" ? preview : demoMode === "error" ? "error" : loading ? "loading" : published.length === 0 ? "empty" : "live";
   const list = state === "live" ? published : [];
 
-  const filtered = useMemo(() => sortPublic(list.filter((r) => matchesPublicFilter(r, filter)), sort), [list, filter, sort]);
+  const filtered = sortPublic(list.filter((r) => matchesPublicFilter(r, filter)), sort);
   const featured = course ? null : featuredReview(list);
   const highlights = course ? topTags(list) : [];
   const photos = list.flatMap((r) => r.photos.map((p, index) => ({ ...p, index, review: r })));
@@ -91,7 +100,11 @@ export function ReviewsSection({ subject, id = "avis" }: { subject: ReviewSubjec
     <section
       id={id}
       aria-labelledby={`${id}-title`}
-      className={clsx("scroll-mt-6 px-[clamp(14px,4vw,48px)] py-[clamp(56px,7vw,var(--section-y))]", course ? "bg-[var(--surface-brand-wash)]" : "")}
+      className={clsx(
+        "scroll-mt-24",
+        inline ? "mt-16" : "px-[clamp(14px,4vw,48px)] py-[clamp(56px,7vw,var(--section-y))]",
+        course && !inline && "bg-[var(--surface-brand-wash)]",
+      )}
     >
       <div ref={ref} className="gt-reveal mx-auto grid max-w-[var(--max-width-content)] gap-[clamp(24px,3.5vw,40px)]">
         <header className="grid gap-2.5">
