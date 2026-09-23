@@ -9,6 +9,7 @@ import { ProgressProvider } from "./lib/progress";
 import { CommunityProvider } from "./lib/community";
 import { ToastProvider } from "./lib/toast";
 import { SecurityProvider } from "./lib/securityState";
+import { PromotionsProvider } from "./lib/adminPromotions";
 import { Header } from "./components/layout/Header";
 import { Footer } from "./components/layout/Footer";
 import { HeaderEditorial } from "./components/layout/HeaderEditorial";
@@ -57,6 +58,7 @@ import { OrderDetail as AdminOrderDetail } from "./pages/admin/OrderDetail";
 import { Customers as AdminCustomers } from "./pages/admin/Customers";
 import { CustomerDetail as AdminCustomerDetail } from "./pages/admin/CustomerDetail";
 import { Users as AdminUsers } from "./pages/admin/Users";
+import { Promotions as AdminPromotions } from "./pages/admin/Promotions";
 import { NotFound } from "./pages/NotFound";
 import { ServerError } from "./pages/ServerError";
 import { Maintenance } from "./pages/Maintenance";
@@ -115,6 +117,10 @@ export default function App() {
           the member area and by the verification page a link lands on. */}
       <SecurityProvider>
       <AdminAuthProvider>
+      {/* Promotions, campaigns and gift cards. Above the routes rather than in
+          the admin layout: the storefront gift card page reads the same product
+          configuration, so an edit in the back office shows on /carte-cadeau. */}
+      <PromotionsProvider>
         {/* Learning progress and orders sit above the cart: paying turns the cart
             into an order, and both histories feed the member dashboard. */}
         <ProgressProvider>
@@ -269,6 +275,11 @@ export default function App() {
                         <Route path="produits/nouveau" element={<AdminProductNew />} />
                         <Route path="produits/:id" element={<AdminProductEdit />} />
                         <Route path="categories" element={<AdminCategories />} />
+                        {/* Promotions, campaigns and gift cards: one workspace
+                            with tabs in the query string, and one route per
+                            record so a promotion, a campaign or a gift card is
+                            a link a colleague can open. */}
+                        <Route path="promotions" element={<AdminPromotions />} />
                       </Route>
 
                       {/* System pages. The server-error and maintenance screens
@@ -287,6 +298,7 @@ export default function App() {
             </CartProvider>
           </OrdersProvider>
         </ProgressProvider>
+      </PromotionsProvider>
       </AdminAuthProvider>
       </SecurityProvider>
     </AuthProvider>

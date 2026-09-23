@@ -78,8 +78,10 @@ export function GiftCardVisual({
 
   return (
     <figure
-      role="img"
-      aria-label={description}
+      // An empty label marks a decorative thumbnail sitting beside its own text.
+      role={label === "" ? undefined : "img"}
+      aria-label={label === "" ? undefined : description}
+      aria-hidden={label === "" ? true : undefined}
       data-design={design}
       className={clsx(
         "gt-giftcard gt-sparkle relative m-0 aspect-[1.586/1] w-full overflow-hidden",
