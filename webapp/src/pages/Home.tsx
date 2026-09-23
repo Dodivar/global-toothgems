@@ -20,6 +20,7 @@ import { useToast } from "../lib/toast";
 import { photo } from "../lib/images";
 import { useReveal } from "../lib/useReveal";
 import { shapeHref } from "../lib/shopUrl";
+import { StudioTeaser } from "../components/studio/StudioTeaser";
 
 const EMAIL_RE = /^[^\s@]+@[^\s@]+\.[^\s@]{2,}$/;
 
@@ -203,6 +204,9 @@ export function Home() {
           </div>
         </div>
       </section>
+
+      {/* 3D Studio teaser: a door to /studio-3d, not a second landing page. */}
+      <StudioTeaser />
 
       {/* Academy band */}
       <section ref={academyRef} className="gt-reveal bg-[var(--surface-inverse)] px-[clamp(14px,4vw,48px)] py-[var(--section-y)] text-[var(--text-inverse)]">

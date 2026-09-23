@@ -30,7 +30,11 @@
     "cartWithCount_one": "Cart, {{count}} item",
     "cartWithCount_other": "Cart, {{count}} items",
     "primary": "Primary navigation",
-    "signIn": "Sign in"
+    "signIn": "Sign in",
+    "studio": "Studio 3D",
+    "new": "New",
+    "studioSub": "Design your own compositions",
+    "studioAria": "Studio 3D, new"
   },
   "common": {
     "notIncludedTitle": "Screen out of scope",

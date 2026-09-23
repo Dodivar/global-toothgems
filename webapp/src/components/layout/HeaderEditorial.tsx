@@ -1,7 +1,7 @@
 import { useEffect, useRef, useState, type ReactNode } from "react";
 import { Link, useNavigate, useLocation } from "react-router-dom";
 import { useTranslation } from "react-i18next";
-import { ChevronDown, Heart, Menu, Search, ShoppingBag, User, X } from "lucide-react";
+import { ArrowRight, ChevronDown, Heart, Menu, Search, ShoppingBag, User, X } from "lucide-react";
 import { IconButton } from "../ui/IconButton";
 import { Button } from "../ui/Button";
 import { ShapeCarousel } from "../ui/ShapeCarousel";
@@ -13,6 +13,8 @@ import { MENU } from "../../data/menu";
 import { colorsInCatalog, shapesInCatalog } from "../../data/products";
 import { colorHref, shapeHref } from "../../lib/shopUrl";
 import { pick } from "../../data/types";
+import { NewTag } from "../studio/NewTag";
+import { STUDIO_PATH } from "../../lib/studioUrl";
 import logoBlack from "../../assets/logo-wordmark-black.png";
 
 /**
@@ -58,10 +60,11 @@ export function HeaderEditorial() {
    *  nav item — otherwise the next mouse move reopens what they dismissed. */
   const dismissed = useRef<PanelKey>(null);
 
-  const links: { id: string; label: string; to: string; panel?: Exclude<PanelKey, null>; panelLabel?: string }[] = [
+  const links: { id: string; label: string; to: string; panel?: Exclude<PanelKey, null>; panelLabel?: string; isNew?: boolean }[] = [
     { id: "home", label: t("nav.home"), to: "/accueil-b" },
     { id: "shop", label: t("nav.shop"), to: "/boutique", panel: "shop", panelLabel: t("nav.openPanelShop") },
     { id: "academy", label: t("nav.academy"), to: "/academy", panel: "academy", panelLabel: t("nav.openPanelAcademy") },
+    { id: "studio", label: t("nav.studio"), to: STUDIO_PATH, isNew: true },
   ];
 
   const closeAll = () => {
@@ -246,6 +249,7 @@ export function HeaderEditorial() {
                     style={{ color: active ? "var(--gt-ink-900)" : "var(--gt-ink-500)" }}
                   >
                     {link.label}
+                    {link.isNew && <NewTag className="ml-1.5 align-middle" />}
                     {/* A hairline that draws itself in, rather than a 2px tab. */}
                     <span
                       aria-hidden="true"
@@ -380,6 +384,17 @@ export function HeaderEditorial() {
             id="gt-mobile-menu-editorial"
             className="grid max-h-[calc(100vh-60px)] gap-4 overflow-y-auto border-t border-[var(--gt-ink-900)] bg-[var(--gt-off-white)] px-3 pb-6 pt-4"
           >
+            <Link
+              to={STUDIO_PATH}
+              onClick={closeAll}
+              className="flex items-center justify-between gap-3 border-b border-[var(--border-subtle)] px-1 pb-3 text-[11.5px] font-semibold uppercase tracking-[var(--tracking-eyebrow)] text-[var(--gt-ink-900)]"
+            >
+              <span className="flex items-center gap-2">
+                {t("nav.studio")}
+                <NewTag />
+              </span>
+              <ArrowRight size={15} aria-hidden="true" />
+            </Link>
             <div role="tablist" aria-label={t("nav.primary")} className="flex gap-5 border-b border-[var(--border-subtle)] px-1">
               {mobileTabs.map((tab) => (
                 <button
