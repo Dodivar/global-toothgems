@@ -192,19 +192,27 @@ export function suggestEmail(email: string): string | null {
 
 export const MIN_PASSWORD = 8;
 
-/** Rules shown under the password field, in the order they are usually met. */
-export type PasswordRule = "length" | "case" | "number";
+/**
+ * Rules shown under every new-password field — registration, reset and change
+ * — in the order they are usually met. One policy for the whole product: a
+ * password accepted at sign-up must not be refused by the reset form.
+ */
+export type PasswordRule = "length" | "lowercase" | "uppercase" | "number" | "special";
 
-export const PASSWORD_RULES: PasswordRule[] = ["length", "case", "number"];
+export const PASSWORD_RULES: PasswordRule[] = ["length", "lowercase", "uppercase", "number", "special"];
 
 export function passwordRuleMet(rule: PasswordRule, value: string): boolean {
   switch (rule) {
     case "length":
       return value.length >= MIN_PASSWORD;
-    case "case":
-      return /[a-z]/.test(value) && /[A-Z]/.test(value);
+    case "lowercase":
+      return /[a-z]/.test(value);
+    case "uppercase":
+      return /[A-Z]/.test(value);
     case "number":
       return /\d/.test(value);
+    case "special":
+      return /[^A-Za-z0-9\s]/.test(value);
   }
 }
 
@@ -238,10 +246,8 @@ export function passwordStrength(value: string): Strength {
   if (!value) return 0;
   if (isCommonPassword(value)) return 1;
   const met = PASSWORD_RULES.filter((r) => passwordRuleMet(r, value)).length;
-  if (met < PASSWORD_RULES.length) return met === 2 ? 2 : 1;
-  let score = 3;
-  if (value.length >= 12 && /[^A-Za-z0-9]/.test(value)) score = 4;
-  return score as Strength;
+  if (met < PASSWORD_RULES.length) return met >= 3 ? 2 : 1;
+  return value.length >= 12 ? 4 : 3;
 }
 
 export const STRENGTH_KEYS: Record<Strength, string> = {

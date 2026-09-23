@@ -9,6 +9,7 @@ import { useAuth } from "../lib/auth";
 import { useProgress } from "../lib/progress";
 import { useToast } from "../lib/toast";
 import { photo } from "../lib/images";
+import { FORGOT_PATH } from "../lib/accountSecurity";
 
 /** Where a visitor lands when they reach the page on their own, with nothing pending. */
 const DEFAULT_TARGET = "/compte";
@@ -144,7 +145,14 @@ export function Login() {
             value={form.password}
             onChange={set("password")}
           />
-          <p className="m-0 text-[length:var(--text-caption)] text-[var(--text-muted)]">{t("auth.passwordHint")}</p>
+          {/* Carries the typed address to the recovery page, so it is not asked twice. */}
+          <Link
+            to={FORGOT_PATH}
+            state={{ email: form.email.trim() }}
+            className="justify-self-start text-[length:var(--text-caption)] font-semibold text-[var(--text-primary)] underline decoration-1 underline-offset-4 hover:text-[var(--text-link-hover)]"
+          >
+            {t("auth.forgotPassword")}
+          </Link>
           <Button type="submit" variant="primary" size="lg" fullWidth iconRight={ArrowRight}>
             {t("auth.submitSignIn")}
           </Button>

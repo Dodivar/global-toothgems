@@ -16,6 +16,7 @@ import { ShapeGlyph, GLYPH_PATHS } from "../components/ui/ShapeGlyph";
 import { useAuth } from "../lib/auth";
 import { useToast } from "../lib/toast";
 import { photo } from "../lib/images";
+import { FORGOT_PATH } from "../lib/accountSecurity";
 
 /**
  * The alternative authentication direction, served at `/connexion-b` beside the
@@ -627,16 +628,15 @@ export function ConnexionEditorial() {
                     />
                   </div>
                 ) : (
-                  // Recovery is not built yet, so the link says what it is rather
-                  // than opening a dead end. The existing hint copy is the answer.
+                  // Hands the typed address to the recovery page, so it is not asked twice.
                   <div className="flex justify-end">
-                    <button
-                      type="button"
-                      onClick={() => showToast(t("authAlt.forgotToastTitle"), t("auth.passwordHint"), "info")}
+                    <Link
+                      to={FORGOT_PATH}
+                      state={{ email: form.email.trim() }}
                       className="rounded-[var(--radius-xs)] text-[length:var(--text-body-sm)] font-semibold text-[var(--text-link)] underline decoration-1 underline-offset-4 transition-colors duration-[var(--duration-fast)] hover:text-[var(--text-link-hover)]"
                     >
                       {t("authAlt.forgot")}
-                    </button>
+                    </Link>
                   </div>
                 )}
 

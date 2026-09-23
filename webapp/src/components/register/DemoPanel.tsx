@@ -5,7 +5,8 @@ import { SCENARIOS, TAKEN_EMAILS, type ContextKind, type Scenario } from "../../
 
 const CONTEXTS: ContextKind[] = ["general", "purchase", "training"];
 
-function RadioPills<T extends string>({
+/** Pill-shaped radio group used by the prototype review panels. */
+export function RadioPills<T extends string>({
   name,
   legend,
   options,

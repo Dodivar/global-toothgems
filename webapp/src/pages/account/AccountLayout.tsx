@@ -8,6 +8,7 @@ import {
   Lock,
   LogOut,
   Package,
+  ShieldCheck,
   Sparkles,
   UserRound,
   Users,
@@ -51,6 +52,7 @@ const SECTIONS: NavItem[] = [
   { to: "/compte/commandes", labelKey: "account.navOrders", icon: Package },
   { to: "/compte/fidelite", labelKey: "account.navLoyalty", icon: Sparkles },
   { to: "/compte/profil", labelKey: "account.navProfile", icon: UserRound },
+  { to: "/compte/securite", labelKey: "account.navSecurity", icon: ShieldCheck },
 ];
 
 const focusRing =
