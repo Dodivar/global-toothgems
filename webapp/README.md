@@ -291,6 +291,30 @@ A labelled **Prototype** bar on the overview switches between sample data, an em
 
 Everything that matters for money or access — code uniqueness, discount calculation, balance changes, cancellation, delivery — must be enforced server-side in the real implementation; the checks here are presentation only.
 
+## Store settings (`/admin/parametres`)
+
+Store configuration in four sections, one route, the section in the query string (`?section=boutique`, `livraison`, `taxes`, `langues`). Front-end only: everything lives in memory for the session. The rail's existing **Settings** entry, until now drawn as "coming soon", became a destination (same label, same icon, moved into the main group like Analytics before it); nothing else in the rail changed.
+
+Every section edits a **draft** and commits it with **Save changes** — including edits made in a drawer or dialog (a zone, a rate, a VAT row, a language switched off). The header shows whether what you see is live, Save/Discard are disabled while nothing changed, the section navigation marks sections with unsaved drafts, drafts survive moving between sections, and the browser warns before a reload. Below 1280px the actions ride in a bottom bar that appears only when there is something to save. Validation shows inline once a field is left or a save is attempted, with an error summary; a **Prototype** bar can make saves fail to show the error path.
+
+| Section | What it covers |
+| --- | --- |
+| Store details | Business information, address, preferences (currency, time zone, date format, units, order number format with live preview), customer-facing contact, support hours, description and message, with a live customer preview |
+| Shipping | Zone cards (countries first, then methods), enable/disable, duplicate (copies start off and empty — a country lives in one zone only), delete with confirmation; zone drawer with grouped country picker that shows and spells out moves between zones; rate drawer (standard / express / free / pickup, delivery estimate, price, free-from threshold, order and weight ranges) with a checkout preview; a "check a destination" panel answering what a customer in a given country is offered |
+| Taxes & VAT | Three tiers on one rail — store default (with a live price example), country rates table, advanced rules (reduced rates, VAT numbers and VIES, exempt customers, calculation basis, rounding, shipping) — plus a precedence explainer with a per-country checker. Toggletips on the settings that are easy to misread |
+| Languages | Enabled languages (order by arrows or drag, default, disable with confirmation, enable), coverage per language with a "Needs attention · N missing" button that filters the list below, coverage by content type, and **Missing translations**: summary chips that filter, search, language / type / status filters and four sorts, all in the query string |
+
+The translation editor opens from the list with the missing language selected (`?traduire=<id>&langue=it`, so it is a link too): English original beside the target field, missing fields highlighted, "needs review" fields that can be confirmed as they are, next/previous missing field, placeholder checks for email variables, "Save & next item" to work down the list, and a guard against closing with unsaved text.
+
+How it is put together:
+
+- `data/adminSettings.ts`, `data/adminTranslations.ts` — types and fictional seed. **Money is integer cents, VAT rates integer basis points, weights grams.** Content is authored in English (`SOURCE_LANGUAGE`); only items with gaps are listed, and coverage is computed against a catalogue field count, so every percentage and count on the page comes from the same functions.
+- `lib/adminSettings.tsx` — drafts, saved values, simulated save latency and failure; mounted in the admin layout so drafts survive leaving Settings.
+- `lib/settingsRules.ts` — pure rules: validation, destination-to-zone resolution, VAT precedence and price splitting, translation progress, filters and sorts.
+- `components/settings/` — one file per section plus the drawers, the missing list and the editor; copy in `i18n/locales/settings.{fr,en}.json` under the `settings` key.
+
+Tax rates and exemption rules are **illustrative** and say so on screen: they, and every check here (zone overlap, rate ranges, VAT number validation), must be confirmed with an accountant and enforced server-side in the real implementation.
+
 ## Notes on scope
 
 This app reproduces the prototype's interactions against local/mock state only — there is no real backend, payment processing, or authentication. A few simplifications carried over intentionally from the prototype (flagged during the build):

@@ -6,6 +6,7 @@ import { AdminCatalogProvider } from "../../lib/adminCatalog";
 import { AdminOrdersProvider } from "../../lib/adminOrders";
 import { AdminCustomersProvider } from "../../lib/adminCustomers";
 import { AdminUsersProvider } from "../../lib/adminUsers";
+import { AdminSettingsProvider } from "../../lib/adminSettings";
 import { useAdminAuth } from "../../lib/adminAuth";
 import { useFocusTrap } from "../../lib/useFocusTrap";
 
@@ -50,6 +51,9 @@ export function AdminLayout() {
       {/* Staff accounts are independent of the commerce data; the provider
           sits here only so the list survives moving between sections. */}
       <AdminUsersProvider actor={admin?.name ?? "Camille Dubois"}>
+      {/* Settings drafts live above the pages so unsaved work survives a
+          detour to another section of the admin. */}
+      <AdminSettingsProvider>
       <div
         className="gt-admin min-h-screen"
         // Read by the product form's pinned action bar, which is fixed to the
@@ -93,6 +97,7 @@ export function AdminLayout() {
           <Outlet context={{ openNav: () => setNavOpen(true) } satisfies AdminShellContext} />
         </div>
       </div>
+      </AdminSettingsProvider>
       </AdminUsersProvider>
       </AdminCustomersProvider>
       </AdminOrdersProvider>

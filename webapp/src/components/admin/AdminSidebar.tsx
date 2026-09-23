@@ -22,15 +22,16 @@ import { useAdminAuth } from "../../lib/adminAuth";
 /**
  * Persistent navigation rail.
  *
- * Two groups, and the second one is the point: Training and Settings are drawn
+ * Two groups, and the second one is the point: Training is drawn
  * and permanently disabled, so the prototype shows the shape of the finished
- * platform without pretending those sections exist. Marking them rather than
- * hiding them is what lets the future administrator judge where their work will
+ * platform without pretending that section exists. Marking it rather than
+ * hiding it is what lets the future administrator judge where their work will
  * live.
  *
  * Analytics moved up into the first group when the Statistics screen landed:
  * the entry, its label and its icon are unchanged, it is simply a destination
- * now rather than a promise.
+ * now rather than a promise. Settings followed the same way when the store
+ * configuration screens landed.
  */
 
 interface RailItem {
@@ -48,11 +49,11 @@ const MAIN: RailItem[] = [
   { to: "/admin/categories", labelKey: "admin.nav.categories", icon: Tags },
   { to: "/admin/promotions", labelKey: "admin.nav.promotions", icon: TicketPercent },
   { to: "/admin/statistiques", labelKey: "admin.nav.analytics", icon: BarChart3 },
+  { to: "/admin/parametres", labelKey: "admin.nav.settings", icon: Settings },
 ];
 
 const SOON: { labelKey: string; icon: LucideIcon }[] = [
   { labelKey: "admin.nav.training", icon: GraduationCap },
-  { labelKey: "admin.nav.settings", icon: Settings },
 ];
 
 const railFocus =

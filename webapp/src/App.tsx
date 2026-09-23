@@ -68,6 +68,7 @@ import { CampaignEditor as AdminCampaignEditor } from "./pages/admin/CampaignEdi
 import { GiftCardDetail as AdminGiftCardDetail } from "./pages/admin/GiftCardDetail";
 import { GiftCardSettings as AdminGiftCardSettings } from "./pages/admin/GiftCardSettings";
 import { PromotionPreview as AdminPromotionPreview } from "./pages/admin/PromotionPreview";
+import { Settings as AdminSettings } from "./pages/admin/Settings";
 import { GiftCard } from "./pages/GiftCard";
 import { NotFound } from "./pages/NotFound";
 import { ServerError } from "./pages/ServerError";
@@ -324,6 +325,11 @@ export default function App() {
                         <Route path="promotions/campagnes/:id/modifier" element={<AdminCampaignEditor />} />
                         <Route path="promotions/:id" element={<AdminPromotionDetail />} />
                         <Route path="promotions/:id/modifier" element={<AdminPromotionEditor />} />
+                        {/* Store settings: one route, the section in the query
+                            string (`section=livraison`), and the translation
+                            editor addressed by `traduire` + `langue`, so a
+                            missing translation is a link a colleague can open. */}
+                        <Route path="parametres" element={<AdminSettings />} />
                       </Route>
 
                       {/* Help centre and legal pages. Every one is reachable from
