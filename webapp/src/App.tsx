@@ -59,6 +59,10 @@ import { Customers as AdminCustomers } from "./pages/admin/Customers";
 import { CustomerDetail as AdminCustomerDetail } from "./pages/admin/CustomerDetail";
 import { Users as AdminUsers } from "./pages/admin/Users";
 import { Promotions as AdminPromotions } from "./pages/admin/Promotions";
+import { PromotionEditor as AdminPromotionEditor } from "./pages/admin/PromotionEditor";
+import { PromotionDetail as AdminPromotionDetail } from "./pages/admin/PromotionDetail";
+import { CampaignDetail as AdminCampaignDetail } from "./pages/admin/CampaignDetail";
+import { CampaignEditor as AdminCampaignEditor } from "./pages/admin/CampaignEditor";
 import { NotFound } from "./pages/NotFound";
 import { ServerError } from "./pages/ServerError";
 import { Maintenance } from "./pages/Maintenance";
@@ -280,6 +284,12 @@ export default function App() {
                             record so a promotion, a campaign or a gift card is
                             a link a colleague can open. */}
                         <Route path="promotions" element={<AdminPromotions />} />
+                        <Route path="promotions/nouvelle" element={<AdminPromotionEditor />} />
+                        <Route path="promotions/campagnes/nouvelle" element={<AdminCampaignEditor />} />
+                        <Route path="promotions/campagnes/:id" element={<AdminCampaignDetail />} />
+                        <Route path="promotions/campagnes/:id/modifier" element={<AdminCampaignEditor />} />
+                        <Route path="promotions/:id" element={<AdminPromotionDetail />} />
+                        <Route path="promotions/:id/modifier" element={<AdminPromotionEditor />} />
                       </Route>
 
                       {/* System pages. The server-error and maintenance screens
