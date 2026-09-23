@@ -296,7 +296,9 @@
     "emptyCartTitle": "Your cart is empty",
     "emptySuggestions": "Most popular right now",
     "confirmedScript": "Thank you",
-    "lineTotalAria": "Line total"
+    "lineTotalAria": "Line total",
+    "accountPromptTitle": "Create an account with this order",
+    "accountPromptBody": "Optional — track your delivery and reorder in one click. Your cart stays as it is."
   },
   "auth": {
     "eyebrow": "Account",
@@ -359,6 +361,298 @@
     "errorEmail": "Enter a valid email address.",
     "errorPassword": "At least {{min}} characters.",
     "errorTerms": "Accept the terms and conditions to continue."
+  },
+  "register": {
+    "eyebrow": "Create account",
+    "title": "Create your Global Toothgems account",
+    "lede": "One account for your orders, your training and your progress. It takes about a minute.",
+    "benefitsToggle": "What your account includes",
+    "cardLabel": "Registration, step {{current}} of {{total}}",
+    "optional": "Optional",
+    "haveAccount": "Already have an account?",
+    "signIn": "Sign in",
+    "signInInstead": "Sign in instead",
+    "forgotPassword": "Forgot your password?",
+    "forgotToastTitle": "Password recovery",
+    "forgotToastBody": "In this prototype, recovery is shown for the design only.",
+    "reassurance": "Free to create · no card required · takes about a minute",
+    "checkingEmail": "Checking this email address…",
+    "showPassword": "Show password",
+    "hidePassword": "Hide password",
+    "clearChoice": "Clear",
+    "summary_one": "{{count}} thing needs your attention",
+    "summary_other": "{{count}} things need your attention",
+    "benefits": {
+      "orders": "Manage and track your orders",
+      "access": "Access your products and training",
+      "progress": "Follow your learning progress",
+      "saved": "Save addresses and favourites",
+      "dashboard": "Your personal dashboard",
+      "community": "Join the artist community when eligible"
+    },
+    "aside": {
+      "label": "What your account includes",
+      "script": "Welcome",
+      "title": "One account for the whole Global Toothgems world"
+    },
+    "progressLabel": "Registration progress",
+    "stepOf": "Step {{current}} of {{total}}",
+    "stepCompleted": "completed",
+    "stepCurrent": "current step",
+    "stepUpcoming": "upcoming",
+    "steps": {
+      "account": "Account",
+      "profile": "Profile",
+      "preferences": "Preferences",
+      "done": "Done"
+    },
+    "actions": {
+      "continue": "Continue",
+      "back": "Back",
+      "create": "Create my account",
+      "creating": "Creating your account…",
+      "checking": "Checking…"
+    },
+    "context": {
+      "purchaseAria": "Your purchase",
+      "trainingAria": "Your training",
+      "purchaseNotice": "You’re creating an account to continue with your purchase.",
+      "trainingNotice": "You’re creating an account to continue with your training.",
+      "purchaseKept": "Your cart is saved. Nothing will be lost while you sign up.",
+      "trainingKept": "Your training is kept. You’ll pick up right where you left off.",
+      "cartSaved": "Saved in your cart",
+      "qty_one": "Qty {{count}}",
+      "qty_other": "Qty {{count}}",
+      "moreItems_one": "+ {{count}} other item in your cart",
+      "moreItems_other": "+ {{count}} other items in your cart",
+      "subtotal": "Subtotal",
+      "trainingReady": "Your training is ready for you.",
+      "purchaseReady": "Your cart is waiting for you."
+    },
+    "account": {
+      "title": "Your sign-in details",
+      "body": "You’ll use these to sign in on any device.",
+      "divider": "or with your email",
+      "googleConnected": "Connected with Google",
+      "googleNoPassword": "No password needed — you’ll sign in with Google.",
+      "useEmailInstead": "Use an email and password instead"
+    },
+    "profile": {
+      "title": "About you",
+      "body": "So we know who we’re talking to — and where to send what you order."
+    },
+    "preferences": {
+      "title": "Make it yours",
+      "body": "Two quick questions to tailor what you see. Skip them if you like — you can change them later."
+    },
+    "fields": {
+      "email": "Email address",
+      "emailPlaceholder": "you@example.com",
+      "emailHint": "We’ll send a link to confirm it’s yours.",
+      "didYouMean": "Did you mean",
+      "password": "Password",
+      "confirmPassword": "Confirm password",
+      "passwordsMatch": "Passwords match",
+      "firstName": "First name",
+      "lastName": "Last name",
+      "country": "Country",
+      "countryPlaceholder": "Select your country",
+      "countryHint": "Helps us show the right delivery options and language.",
+      "phone": "Phone number",
+      "phonePlaceholder": "{{dial}} 612 345 678",
+      "phoneHint": "Handy for delivery updates. Start with your country code, e.g. {{dial}}."
+    },
+    "rulesLabel": "Password requirements",
+    "rules": {
+      "length": "At least {{min}} characters",
+      "case": "Upper- and lowercase letters",
+      "number": "At least one number"
+    },
+    "ruleMet": "met",
+    "ruleNotMet": "not met yet",
+    "commonWarning": "This password is too common and easy to guess.",
+    "strengthTip": "Tip: 12+ characters with a symbol makes it strong.",
+    "strength": {
+      "label": "Password strength:",
+      "empty": "—",
+      "weak": "Too weak",
+      "fair": "Fair",
+      "good": "Good",
+      "strong": "Strong"
+    },
+    "errors": {
+      "emailRequired": "Enter your email address.",
+      "emailInvalid": "This email looks incomplete — check it follows the format name@example.com.",
+      "emailTaken": "An account already exists with this email. Sign in instead, or use another address.",
+      "emailSame": "That’s the address we already have. Enter a different one.",
+      "passwordRequired": "Choose a password.",
+      "passwordWeak": "Your password needs a little more — tick off every requirement below.",
+      "passwordCommon": "This password is too easy to guess. Try a phrase only you would think of.",
+      "confirmRequired": "Type your password again to confirm it.",
+      "confirmMismatch": "The passwords don’t match yet. Check both fields.",
+      "firstNameRequired": "Enter your first name.",
+      "lastNameRequired": "Enter your last name.",
+      "countryRequired": "Select your country from the list.",
+      "countryInvalid": "Choose a country from the list.",
+      "phoneCharacters": "Use only digits, spaces and a leading + for the phone number.",
+      "phoneLength": "This phone number looks too short or too long. Include your country code.",
+      "termsRequired": "Please accept the Terms of Service and Privacy Policy to create your account."
+    },
+    "persona": {
+      "legend": "Which best describes you?",
+      "artist": "Artist / Professional",
+      "artistBody": "I apply tooth gems for clients",
+      "student": "Student / Beginner",
+      "studentBody": "I’m learning the craft",
+      "customer": "Customer / Enthusiast",
+      "customerBody": "I love wearing tooth gems",
+      "other": "Other",
+      "otherBody": "Something else entirely"
+    },
+    "interest": {
+      "legend": "What are you mainly interested in?",
+      "products": "Tooth gems & products",
+      "training": "Professional training",
+      "community": "Inspiration & community",
+      "all": "All of the above"
+    },
+    "consent": {
+      "legend": "Before we create your account",
+      "termsBefore": "I agree to the",
+      "terms": "Terms of Service",
+      "and": "and the",
+      "privacy": "Privacy Policy",
+      "termsAfter": ".",
+      "required": "required",
+      "marketingLegend": "Optional",
+      "marketing": "Send me new drops, training dates and studio tips by email",
+      "marketingBody": "About once a month. Not required for your account — unsubscribe in one click."
+    },
+    "failure": {
+      "networkTitle": "We couldn’t reach our servers",
+      "networkBody": "Check your connection, then try again. Everything you entered is still here.",
+      "serverTitle": "Your account couldn’t be created",
+      "serverBody": "Something went wrong on our side. Your details are safe in this form — please try again in a moment.",
+      "retry": "Try again"
+    },
+    "google": {
+      "cta": "Continue with Google",
+      "title": "Continue with Google",
+      "description": "Choose the Google account to use with Global Toothgems.",
+      "choose": "Choose an account",
+      "mockNote": "Prototype: a simulated account chooser. Nothing is sent to Google.",
+      "connecting": "Connecting to Google…",
+      "takenTitle": "This Google account is already registered",
+      "takenBody": "{{email}} already has a Global Toothgems account. Sign in to continue.",
+      "otherAccount": "Use another account",
+      "toastTitle": "Connected with Google",
+      "toastBody": "Your email is confirmed. Just a few details left."
+    },
+    "legal": {
+      "summaryNote": "Key points, in plain language. The full legal text will be published with the live site.",
+      "back": "Back to my account",
+      "terms": {
+        "title": "Terms of Service",
+        "points": [
+          "Your account is personal: keep your sign-in details to yourself.",
+          "Orders, training access and certificates are attached to your account.",
+          "Training content is for your own learning and may not be redistributed.",
+          "If anything here differs from the full terms, the full terms apply."
+        ]
+      },
+      "privacy": {
+        "title": "Privacy Policy",
+        "points": [
+          "We use your details to run your account, your orders and your training.",
+          "Marketing emails are only sent if you opt in — and you can opt out at any time.",
+          "You can ask to see, correct or delete your data.",
+          "Payments are handled by our payment provider; we never see your full card number."
+        ]
+      }
+    },
+    "verify": {
+      "title": "Check your inbox",
+      "body": "We’ve sent a verification link to",
+      "instruction": "Open the email and select the link to activate your account.",
+      "sending": "Sending your verification email…",
+      "sent": "Email sent",
+      "resent": "A new link is on its way",
+      "verified": "Email verified — welcome aboard!",
+      "failedTitle": "We couldn’t send the verification email",
+      "failedBody": "This is usually temporary. Try again, or check the address is correct.",
+      "tryAgain": "Try again",
+      "expiredTitle": "This link has expired",
+      "expiredBody": "For your security, verification links expire after a while. Send yourself a fresh one.",
+      "sendNewLink": "Send a new link",
+      "resend": "Resend email",
+      "resending": "Sending…",
+      "resendIn": "Resend in {{time}}",
+      "resendReady": "You can now resend the verification email.",
+      "changeEmail": "Change email address",
+      "changeTitle": "Change email address",
+      "changeBody": "We’ll send a new verification link to the corrected address.",
+      "changeSubmit": "Send link",
+      "mockInbox": "Prototype · simulated inbox",
+      "mailTo": "to {{email}}",
+      "mailNow": "now",
+      "mailSubject": "Confirm your email address",
+      "mailNewLink": "new link",
+      "mailBody": "Hi {{name}}, one last step: confirm this address to activate your Global Toothgems account.",
+      "mailFallbackName": "there",
+      "mailCta": "Verify my email",
+      "verifying": "Verifying…",
+      "mailHint": "Select the button to simulate opening the link.",
+      "mailHintExpired": "Scenario: this first link has expired.",
+      "helpTitle": "Can’t find it?",
+      "helpBody": "It can take a minute. Check your spam or promotions folder. Still nothing? Resend it, or correct your address above."
+    },
+    "welcome": {
+      "script": "Bienvenue",
+      "title": "Welcome to Global Toothgems",
+      "ready": "Your account is ready.",
+      "readyNamed": "Your account is ready, {{name}}.",
+      "checkAccount": "Account created",
+      "checkEmail": "Email address verified",
+      "checkGoogle": "Connected with Google",
+      "checkPersonalised": "Experience tailored to your answers",
+      "checkProfile": "Profile saved",
+      "personalNote": "We’ll tailor suggestions to your answers. Change them anytime in your profile.",
+      "ctaExploreProducts": "Explore products",
+      "ctaDiscoverTraining": "Discover training",
+      "ctaDashboard": "Go to my dashboard",
+      "ctaCart": "Return to cart",
+      "ctaContinueShopping": "Continue shopping",
+      "ctaViewTraining": "View training",
+      "ctaCheckout": "Continue to checkout",
+      "toastCheckoutTitle": "Training added to your account",
+      "toastCheckoutBody": "Prototype: enrolment stands in for payment. Your first lesson is open."
+    },
+    "signedIn": {
+      "title": "You’re already signed in",
+      "body": "You’re signed in as {{email}}. To create another account, sign out first.",
+      "signOut": "Sign out and create an account"
+    },
+    "demo": {
+      "title": "Prototype controls",
+      "body": "Review helpers — not part of the real page. Switch where the visitor came from, or force an outcome to see each state.",
+      "contextLegend": "Visitor came from",
+      "scenarioLegend": "Simulated outcome",
+      "takenLegend": "Already-registered emails (try one):",
+      "otherTips": "Typos like “gmial.com” get a suggestion; “password123” is rejected as too common.",
+      "restart": "Restart the journey",
+      "context": {
+        "general": "Website",
+        "purchase": "Product purchase",
+        "training": "Training course"
+      },
+      "scenario": {
+        "success": "Everything works",
+        "registrationFails": "Registration fails",
+        "networkError": "Network error",
+        "emailFails": "Verification email fails",
+        "linkExpired": "Link expired"
+      }
+    }
   },
   "academy": {
     "eyebrow": "Academy",
@@ -532,7 +826,8 @@
     "finalPoint4": "Artist community included",
     "notFoundTitle": "Training not found",
     "notFoundBody": "This training doesn't exist, or is no longer offered.",
-    "notFoundCta": "See all trainings"
+    "notFoundCta": "See all trainings",
+    "createAccount": "Create an account"
   },
   "lesson": {
     "eyebrow": "Course in progress",

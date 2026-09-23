@@ -24,6 +24,7 @@ import { CourseDetail } from "./pages/CourseDetail";
 import { Lesson } from "./pages/Lesson";
 import { Login } from "./pages/Login";
 import { ConnexionEditorial } from "./pages/ConnexionEditorial";
+import { Register } from "./pages/Register";
 import { Loyalty as LoyaltyProgram } from "./pages/Loyalty";
 import { AccountLayout } from "./pages/account/AccountLayout";
 import { Dashboard } from "./pages/account/Dashboard";
@@ -126,6 +127,11 @@ export default function App() {
                       <Route path="/couleurs" element={<Colors />} />
                       <Route path="/panier" element={<Cart />} />
                       <Route path="/connexion" element={<Login />} />
+                      {/* Account creation, as its own multi-step journey. The
+                          reason the visitor came (a purchase, a training) travels
+                          in the query string or in history state, so the flow
+                          can keep it in view and finish on it. */}
+                      <Route path="/inscription" element={<Register />} />
                       {/* The alternative authentication direction, live beside the
                           current one so the team can compare the same flow, fields
                           and copy in two art directions. Not linked from the
