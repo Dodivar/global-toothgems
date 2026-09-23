@@ -860,3 +860,109 @@
   /* A resting bar, centred: still reads as "in progress" beside its label. */
   .gt-sys-progress { animation: none; transform: translateX(80%); }
 }
+
+/* ---------------------------------------------------------------------------
+   Help centre and legal pages
+   ---------------------------------------------------------------------------
+   Reading comes first: Montserrat at 16px on a 1.7 line height, a prose-width
+   measure and no glass behind body text. The only loud element is the
+   placeholder, on purpose — information the business has not supplied must be
+   impossible to mistake for published fact. It carries an icon and a word as
+   well as its colour, and wraps across lines like the text around it.
+--------------------------------------------------------------------------- */
+:root {
+  /* Amber text dark enough for 4.5:1 on the amber wash. */
+  --gt-amber-700: #6e4608;
+  --legal-anchor-offset: 84px;
+}
+
+@media (min-width: 768px) {
+  :root { --legal-anchor-offset: 104px; }
+}
+
+@layer components {
+  .gt-placeholder {
+    display: inline;
+    padding: 1px 6px 2px;
+    border: 1px dashed var(--gt-amber-400);
+    border-radius: 6px;
+    background: var(--status-warning-bg);
+    color: var(--gt-amber-700);
+    font-size: .92em;
+    font-weight: var(--weight-semibold);
+    line-height: 1.9;
+    box-decoration-break: clone;
+    -webkit-box-decoration-break: clone;
+    white-space: normal;
+  }
+  .gt-placeholder__kind svg { display: inline; vertical-align: -1px; margin-right: 4px; }
+  .gt-placeholder__kind {
+    white-space: nowrap;
+    margin-right: 5px;
+    font-size: .78em;
+    font-weight: var(--weight-bold);
+    letter-spacing: .08em;
+    text-transform: uppercase;
+  }
+  .gt-placeholder--business {
+    border-style: solid;
+    background: #fbe9c9;
+  }
+
+  .gt-legal-link {
+    color: var(--text-primary);
+    font-weight: var(--weight-semibold);
+    text-decoration: underline;
+    text-decoration-thickness: 1px;
+    text-underline-offset: 3px;
+    transition: color var(--duration-fast) var(--ease-standard);
+  }
+  .gt-legal-link:hover { color: var(--text-link-hover); }
+
+  .gt-legal-prose {
+    max-width: var(--max-width-prose);
+    font-size: var(--text-body-md);
+    line-height: var(--leading-relaxed);
+    color: var(--text-body);
+  }
+  .gt-legal-prose p { margin: 0; }
+
+  .gt-legal-anchor { scroll-margin-top: var(--legal-anchor-offset); }
+
+  /* Internal review notes: dashed, sunken, clearly outside the document. */
+  .gt-review-note {
+    border: 1px dashed var(--gt-ink-400);
+    background: repeating-linear-gradient(
+      -45deg,
+      var(--gt-off-white),
+      var(--gt-off-white) 10px,
+      var(--gt-sand) 10px,
+      var(--gt-sand) 20px
+    );
+  }
+
+  /* Cookie banner: the one glass surface of this area — it floats over the
+     page, so translucency tells it apart from content without a dark slab. */
+  .gt-cookie-banner {
+    background: rgba(255, 255, 255, .985);
+    backdrop-filter: blur(var(--glass-blur-strong)) saturate(1.2);
+    -webkit-backdrop-filter: blur(var(--glass-blur-strong)) saturate(1.2);
+    border: 1px solid var(--gt-blue-200);
+    box-shadow: var(--shadow-glass-heavy);
+    animation: gt-auth-swap var(--duration-slow) var(--ease-out-soft) both;
+  }
+
+  /* FAQ accordion: a 56px tap target and a chevron that turns. */
+  .gt-faq-item > summary::-webkit-details-marker { display: none; }
+  .gt-faq-item > summary { list-style: none; }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .gt-cookie-banner { animation: none; }
+  html:focus-within { scroll-behavior: auto; }
+}
+
+@media print {
+  .gt-review-note,
+  .gt-cookie-banner { display: none !important; }
+}

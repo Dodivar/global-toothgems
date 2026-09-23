@@ -1023,7 +1023,6 @@
     "blurb": "Professional gems, tools and training. Shipped across Europe from Lyon.",
     "colShop": "Shop",
     "colAcademy": "Academy",
-    "colHelp": "Help",
     "shopItems": [
       "Gems",
       "Tools",
@@ -1038,13 +1037,16 @@
       "Business studio",
       "Certification"
     ],
-    "helpItems": [
-      "Shipping and returns",
-      "Application FAQ",
-      "Contact",
-      "Find an artist"
-    ],
-    "copyright": "© 2026 Global Toothgems · Prices incl. VAT"
+    "copyright": "© 2026 Global Toothgems · Prices incl. VAT",
+    "colService": "Customer service",
+    "colLegal": "Legal",
+    "colCompany": "Company",
+    "company": {
+      "about": "About Global Toothgems",
+      "training": "Professional training",
+      "pro": "Professional inquiries",
+      "findArtist": "Find an artist"
+    }
   },
   "toasts": {
     "outOfScopeTitle": "Screen out of scope"
@@ -3234,6 +3236,232 @@
       "doneTitle": "Your account has been deleted",
       "doneBody": "Thank you for having been part of Global Toothgems. Your account is closed and you’ve been signed out. You’re always welcome back.",
       "doneCta": "Return to the homepage"
+    }
+  },
+  "legal": {
+    "home": "Home",
+    "breadcrumb": "Breadcrumb",
+    "updated": "Last updated:",
+    "draft": "Draft",
+    "backToTop": "Back to top",
+    "placeholder": {
+      "verify": "To verify",
+      "business": "Business info required"
+    },
+    "tone": {
+      "legal": "Legal information",
+      "policy": "Company policy",
+      "instruction": "What you need to do",
+      "verify": "Verify before publication"
+    },
+    "key": {
+      "title": "How to read this page",
+      "legal": "What the law provides, whatever the company decides.",
+      "policy": "A rule set by Global Toothgems.",
+      "instruction": "The steps to take on your side.",
+      "verify": "Information not yet confirmed by the business."
+    },
+    "fields": {
+      "heading": "Company information",
+      "editable": "Fields to be completed by the business"
+    },
+    "review": {
+      "noteLabel": "Internal note · prototype",
+      "barLabel": "Prototype under review.",
+      "barText": "Business information must be verified before publication.",
+      "hide": "Hide internal notes",
+      "show": "Show internal notes"
+    },
+    "toc": {
+      "title": "On this page",
+      "count_one": "{{count}} section",
+      "count_other": "{{count}} sections"
+    },
+    "cta": {
+      "title": "A question about this page?",
+      "body": "Our customer service team will answer. Pick the right topic and your request reaches the right person.",
+      "contact": "Contact us",
+      "faq": "Browse the FAQ"
+    },
+    "pages": {
+      "faq": "FAQ",
+      "shipping": "Shipping & delivery",
+      "returns": "Returns & refunds",
+      "contact": "Contact us",
+      "legalNotice": "Legal notice",
+      "terms": "Terms of sale",
+      "privacy": "Privacy policy",
+      "cookies": "Cookie policy"
+    },
+    "hub": {
+      "eyebrow": "Help & legal",
+      "title": "Help centre",
+      "intro": "Orders, delivery, returns, training, personal data: everything you need to shop and train with confidence.",
+      "helpTitle": "Customer service",
+      "legalTitle": "Legal information",
+      "desc": {
+        "faq": "Answers to the most common questions, by topic.",
+        "shipping": "Destinations, times, rates and tracking.",
+        "returns": "Conditions, step-by-step process and refunds.",
+        "contact": "Write to us: a real person will answer.",
+        "legalNotice": "Publisher, host and intellectual property.",
+        "terms": "The rules that govern your purchases.",
+        "privacy": "Your data, how it is used and your rights.",
+        "cookies": "Cookies and how to manage your choices."
+      }
+    },
+    "cookies": {
+      "bannerTitle": "Your cookies, your choice",
+      "bannerBody": "Some cookies are essential for the site to work and cannot be switched off. Others are optional — remembering your preferences, measuring audience, personalising advertising — and are only used if you allow them. You can change your mind at any time via “Cookie settings” at the bottom of every page.",
+      "policyLink": "Read our cookie policy",
+      "rejectNonEssential": "Reject non-essential",
+      "acceptAll": "Accept all",
+      "rejectAll": "Reject all",
+      "customize": "Customize",
+      "save": "Save my choices",
+      "settingsTitle": "Cookie settings",
+      "settingsBody": "Choose which optional cookies you accept. They stay off until you switch them on.",
+      "settingsFoot": "You can change these choices at any time.",
+      "settingsLink": "Cookie settings",
+      "alwaysActive": "Always active",
+      "providers": "Services concerned:",
+      "providersPlaceholder": "List of services per the implementation",
+      "category": {
+        "essential": {
+          "title": "Essential",
+          "body": "Needed for the site to work: cart, sign-in, security, remembering this choice."
+        },
+        "preferences": {
+          "title": "Preferences",
+          "body": "Remember your choices, such as display language."
+        },
+        "analytics": {
+          "title": "Analytics",
+          "body": "Help us understand how the site is used so we can improve it."
+        },
+        "marketing": {
+          "title": "Marketing",
+          "body": "Measure our campaigns and personalise advertising on other sites."
+        }
+      },
+      "currentTitle": "Your current choices",
+      "decidedOn": "Choice saved on {{date}}",
+      "noChoiceYet": "No choice saved yet: optional cookies are off.",
+      "change": "Change my choices",
+      "status": {
+        "allowed": "Allowed",
+        "refused": "Refused",
+        "undecided": "Not chosen"
+      },
+      "demoNote": "Interaction prototype: no optional cookie or tracker is set; only your choice is remembered in this browser.",
+      "demoReset": "Show the banner again"
+    },
+    "faq": {
+      "eyebrow": "Help centre",
+      "title": "Frequently asked questions",
+      "intro": "Orders, products, shipping, returns, payment, account, training and privacy: answers to the questions we are asked most.",
+      "searchLabel": "Search the FAQ",
+      "searchPlaceholder": "E.g. return, delivery time, certificate…",
+      "clear": "Clear search",
+      "results_one": "{{count}} answer found",
+      "results_other": "{{count}} answers found",
+      "emptyTitle": "No matching answer",
+      "emptyBody": "Try another word, or ask our team directly.",
+      "stillNeedHelp": "Still need help? Write to us"
+    },
+    "contact": {
+      "eyebrow": "Customer service",
+      "title": "Contact us",
+      "intro": "A question about an order, a product or a course? Write to us: someone from the team will answer.",
+      "requiredNote": "All fields are required unless marked “Optional”.",
+      "categories": {
+        "order": "Order",
+        "delivery": "Delivery",
+        "returns": "Return / refund",
+        "product": "Product question",
+        "training": "Training",
+        "technical": "Technical issue",
+        "privacy": "Privacy request",
+        "professional": "Professional inquiry",
+        "other": "Other"
+      },
+      "fields": {
+        "category": "What is it about?",
+        "name": "Full name",
+        "email": "Email",
+        "order": "Order number",
+        "subject": "Subject",
+        "message": "Message",
+        "file": "Attachment"
+      },
+      "orderHint": "It is in your confirmation email.",
+      "messageHint": "At least 20 characters. Please do not include bank details.",
+      "fileCta": "Add a file",
+      "fileHint": "JPG, PNG or PDF · up to 10 MB · a photo of the product or parcel, for example",
+      "removeFile": "Remove file {{name}}",
+      "sizeKb": "{{size}} KB",
+      "sizeMb": "{{size}} MB",
+      "privacyNotice": "Your information is used only to handle your request and keep a record of it.",
+      "privacyLink": "Learn how we handle your data",
+      "privacyHint": "To protect your data, we may ask you to confirm your identity before replying.",
+      "submit": "Send message",
+      "sending": "Sending…",
+      "errorSummary_one": "{{count}} field to fix",
+      "errorSummary_other": "{{count}} fields to fix",
+      "errorSummaryBody": "The fields concerned are marked below.",
+      "errors": {
+        "name": "Enter your name.",
+        "emailRequired": "Enter your email address.",
+        "emailFormat": "This email address looks incomplete (e.g. name@example.com).",
+        "category": "Choose what your request is about.",
+        "subject": "Enter a subject.",
+        "message": "Your message must be at least 20 characters.",
+        "fileSize": "This file is over 10 MB. Choose a smaller file."
+      },
+      "successTitle": "Thank you {{name}}, your message has been sent",
+      "successBody": "We will reply to {{email}}. Usual response time:",
+      "responseTimePlaceholder": "Customer service response time",
+      "demoNote": "Prototype: no message was sent, and the attachment never left your browser.",
+      "sendAnother": "Send another message",
+      "otherTitle": "Other ways to reach us",
+      "lines": {
+        "email": "Email",
+        "emailPlaceholder": "Customer service email",
+        "phone": "Phone",
+        "phonePlaceholder": "Number, if offered",
+        "address": "Address",
+        "addressPlaceholder": "Postal address, if published",
+        "hours": "Customer service hours",
+        "hoursPlaceholder": "Days and hours",
+        "response": "Response time"
+      },
+      "quickTitle": "Quick answers",
+      "trackOrder": "Track an order"
+    },
+    "checklist": {
+      "eyebrow": "Internal · not customer-facing",
+      "title": "Pre-launch checklist — Stripe & compliance",
+      "body": "What must be verified before payments go live. Everything starts as “to verify”: ticking an item is only saved in your browser.",
+      "progress": "{{done}} / {{total}} verified",
+      "pending": "To verify",
+      "verified": "Verified",
+      "open": "Open: {{item}}",
+      "disclaimer": "A review aid for the prototype, not legal advice nor Stripe’s official list of requirements. Validate with counsel and current Stripe documentation."
+    },
+    "about": {
+      "eyebrow": "Company",
+      "title": "About Global Toothgems",
+      "intro": "Tooth gems, the tools to apply them, and the training to do it well.",
+      "shopTitle": "The shop",
+      "shopBody": "Gems, tools, kits and aftercare products, for artists and their clients.",
+      "shopCta": "Visit the shop",
+      "academyTitle": "The Academy",
+      "academyBody": "Online courses to learn application, refine technique and grow a business.",
+      "academyCta": "Explore the courses",
+      "companyTitle": "Company information",
+      "companyBody": "Company identity, hosting and intellectual property.",
+      "companyCta": "Legal notice",
+      "storyTitle": "Our story"
     }
   }
 }
