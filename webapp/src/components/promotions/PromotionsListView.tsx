@@ -253,7 +253,7 @@ export function PromotionsListView({ tab }: { tab: PromotionTab }) {
   }
 
   return (
-    <div className="grid gap-4">
+    <div className="grid grid-cols-[minmax(0,1fr)] gap-4">
       {tab === "all" && !loading && (
         <Panel title={t("promo.calendar.title")} icon={CalendarRange}>
           <PromotionCalendar promotions={promotions} campaignName={campaignName} />
@@ -373,7 +373,7 @@ export function PromotionsListView({ tab }: { tab: PromotionTab }) {
         loading={busy}
       >
         {assignable.length > 0 ? (
-          <label className="grid gap-1.5">
+          <label className="grid grid-cols-[minmax(0,1fr)] gap-1.5">
             <span className="text-[length:var(--text-caption)] font-semibold text-[var(--text-primary)]">{t("promo.dialogs.assign.field")}</span>
             <AdminSelect value={campaignChoice} onChange={(e) => setCampaignChoice(e.target.value)} options={assignable.map((c) => ({ value: c.id, label: c.name }))} />
           </label>

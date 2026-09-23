@@ -220,6 +220,33 @@ In the orders screens specifically, changing a status, refunding, cancelling, ex
 **Known duplication to consolidate.** The orders screens were built against their own primitives before the rest of this workspace existed, so they carry a second modal (`components/ui/Dialog.tsx`), dropdown (`components/ui/Menu.tsx`), KPI tile, empty state and loading state alongside the workspace's `ConfirmationDialog`, `OverflowMenu`, `StatCard`, `EmptyState`, `LoadingState`, `SearchInput` and `AdminButton`. The shell, the header, the rail, the guard and the route structure are shared; these presentational pieces are not, and porting the orders screens onto the workspace primitives is open work.
 
 
+## Promotions, campaigns & gift cards (`/admin/promotions`)
+
+A front-end-only prototype of the promotional side of the back office, plus the customer-facing gift card page. No backend, no payment, no persistence: every change lives in memory and a reload restores the seed. It adds one entry, **Promotions**, to the rail's main group; nothing else in the rail changed.
+
+| Route | Screen |
+| --- | --- |
+| `/admin/promotions` | Overview — KPI row, then tabs in the query string (`?vue=actives`, `programmees`, `expirees`, `campagnes`, `cartes-cadeaux`). The "All" tab adds a six-week "what runs when" calendar above the list |
+| `/admin/promotions/nouvelle` · `/:id/modifier` | Promotion editor — six lettered sections (basics, discount type, eligibility, usage rules, scheduling, promo code), a sticky summary with a publish checklist and a live product-card preview. `?campagne=<id>` pre-fills the campaign |
+| `/admin/promotions/:id` | Promotion detail — state banner (paused, expired, scheduled, invalid), performance, configuration, code, campaign, customer view, history |
+| `/admin/promotions/campagnes/nouvelle` · `/:id` · `/:id/modifier` | Campaign editor with live storefront preview (desktop / mobile), and campaign detail: banner, promotions, products, dates, banner preview, activity |
+| `/admin/promotions/cartes-cadeaux/:code` | Gift card detail — card visual, balance, ledger with running balance, resend / adjust / extend / cancel (cancel requires typing the code), related order sheet |
+| `/admin/promotions/cartes-cadeaux/configuration` | Gift card product settings — denominations (reorder by buttons or drag), custom amount range, validity, scheduled delivery, field rules, designs |
+| `/admin/promotions/apercu` | Customer preview — one promotion on the product card, product page, cart, checkout summary and campaign landing |
+| `/carte-cadeau` (`/gift-card`) | Storefront gift card page, driven by the configuration above |
+
+How it is put together:
+
+- `data/adminPromotions.ts` — types and seed: 15 promotions, 7 campaigns, 14 gift cards and the gift card product. **Money is integer cents.** **Statuses are derived** from a stored lifecycle (draft / live / paused / archived) and the dates, against a fixed prototype date `PROMO_NOW` (24 Nov 2027, printed on every screen) so the 2027 campaigns of the brief keep their states. Gift card balances are the sum of each card's ledger, never a stored number.
+- `lib/adminPromotions.tsx` — the store (async, simulated latency), mounted in `App.tsx` rather than the admin layout so the storefront page reads the same gift card configuration: save a new amount order in the back office, then open `/carte-cadeau` in the same tab (a new tab reloads and resets the prototype).
+- `lib/promotionRules.ts` — pure rules: validation, scope resolution, campaign roll-ups, KPIs, list filtering and sorting.
+- `components/promotions/` — badges, the CSS-drawn gift card and campaign banner (`.gt-giftcard`, `.gt-campaign-cover` in `index.css`), product picker, timelines, tables, storefront previews, dialogs and bottom sheet.
+- Copy lives in `i18n/locales/promotions.{fr,en}.json`, mounted under the `promo` key.
+
+A labelled **Prototype** bar on the overview switches between sample data, an empty shop and a loading error. "Christmas Early Bird -15%" is deliberately invalid (end before start, missing code) to show the invalid-configuration state; "Spring Studio Days" is a campaign with no promotions and no products.
+
+Everything that matters for money or access — code uniqueness, discount calculation, balance changes, cancellation, delivery — must be enforced server-side in the real implementation; the checks here are presentation only.
+
 ## Notes on scope
 
 This app reproduces the prototype's interactions against local/mock state only — there is no real backend, payment processing, or authentication. A few simplifications carried over intentionally from the prototype (flagged during the build):

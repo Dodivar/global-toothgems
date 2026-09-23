@@ -81,15 +81,15 @@ export function PromotionPreview() {
   return (
     <>
       {header}
-      <div className="grid gap-5 px-[var(--admin-gutter)] pb-[clamp(32px,5vw,56px)] pt-5">
+      <div className="grid grid-cols-[minmax(0,1fr)] gap-5 px-[var(--admin-gutter)] pb-[clamp(32px,5vw,56px)] pt-5">
         <PrototypeBar showModes={false} />
 
         <section className="gt-admin-panel grid gap-4 p-4 md:grid-cols-[minmax(0,1.3fr)_minmax(0,1fr)_auto] md:items-end">
-          <label className="grid gap-1">
+          <label className="grid grid-cols-[minmax(0,1fr)] gap-1">
             <span className="text-[11px] font-semibold uppercase tracking-[var(--tracking-wide)] text-[var(--text-muted)]">{t("promo.preview.promotion")}</span>
             <AdminSelect value={promotion.id} onChange={(e) => setParam("promotion", e.target.value)} options={selectable.map((p) => ({ value: p.id, label: `${p.name} — ${t(`promo.status.${promotionStatus(p)}`)}` }))} />
           </label>
-          <label className="grid gap-1">
+          <label className="grid grid-cols-[minmax(0,1fr)] gap-1">
             <span className="text-[11px] font-semibold uppercase tracking-[var(--tracking-wide)] text-[var(--text-muted)]">{t("promo.preview.campaign")}</span>
             <AdminSelect value={campaignId} onChange={(e) => setParam("campagne", e.target.value || null)} options={[{ value: "", label: t("promo.preview.noCampaign") }, ...campaigns.filter((c) => campaignStatus(c) !== "archived").map((c) => ({ value: c.id, label: c.name }))]} />
           </label>

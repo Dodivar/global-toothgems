@@ -133,12 +133,12 @@ function CampaignForm({ initial, isNew }: { initial: Campaign; isNew: boolean })
         onOpenNav={openNav}
         actions={
           <span className="flex items-center gap-2">
-            <AdminButton variant="ghost" onClick={cancel} disabled={!!saving} className="hidden md:inline-flex">
+            <span><span className="hidden md:inline-flex"><AdminButton variant="ghost" onClick={cancel} disabled={!!saving}>
               {t("promo.common.cancel")}
-            </AdminButton>
-            <AdminButton variant="outline" iconLeft={Save} loading={saving === "draft"} disabled={!!saving} onClick={() => save("draft")} className="hidden sm:inline-flex">
+            </AdminButton></span></span>
+            <span className="hidden sm:inline-flex"><AdminButton variant="outline" iconLeft={Save} loading={saving === "draft"} disabled={!!saving} onClick={() => save("draft")}>
               {t("promo.editor.saveDraft")}
-            </AdminButton>
+            </AdminButton></span>
             <AdminButton variant="primary" iconLeft={Rocket} loading={saving === "publish"} disabled={!!saving} onClick={() => save("publish")}>
               {toTime(draft.startsAt) > NOW_TIME ? t("promo.campaigns.schedule") : t("promo.campaigns.publish")}
             </AdminButton>
@@ -146,7 +146,7 @@ function CampaignForm({ initial, isNew }: { initial: Campaign; isNew: boolean })
         }
       />
 
-      <div className="grid gap-5 px-[var(--admin-gutter)] pb-[clamp(32px,5vw,56px)] pt-5">
+      <div className="grid grid-cols-[minmax(0,1fr)] gap-5 px-[var(--admin-gutter)] pb-[clamp(32px,5vw,56px)] pt-5">
         <PrototypeBar showModes={false} />
         {showErrors && Object.keys(errors).length > 0 && <Notice tone="error" title={t("promo.editor.invalidTitle", { count: Object.keys(errors).length })}>{Object.values(errors).join(" · ")}</Notice>}
 
@@ -159,7 +159,7 @@ function CampaignForm({ initial, isNew }: { initial: Campaign; isNew: boolean })
               <FormField label={t("promo.editor.basics.internal")}>
                 {(a) => <textarea {...a} rows={2} value={draft.internalDescription} onChange={(e) => set({ internalDescription: e.target.value })} className="gt-admin-field" />}
               </FormField>
-              <div className="grid gap-4 rounded-[var(--admin-radius)] border border-[var(--gt-fuchsia-300)] bg-[linear-gradient(180deg,var(--gt-fuchsia-50),transparent_70%)] p-4">
+              <div className="grid grid-cols-[minmax(0,1fr)] gap-4 rounded-[var(--admin-radius)] border border-[var(--gt-fuchsia-300)] bg-[linear-gradient(180deg,var(--gt-fuchsia-50),transparent_70%)] p-4">
                 <FormField
                   label={t("promo.campaigns.form.headline", { lang: lang.toUpperCase() })}
                   hint={t("promo.campaigns.form.headlineHint")}
@@ -176,12 +176,12 @@ function CampaignForm({ initial, isNew }: { initial: Campaign; isNew: boolean })
             </FormSection>
 
             <FormSection id="campaign-dates" letter="B" title={t("promo.campaigns.form.dates")} state={showErrors && errors.dates ? "issue" : undefined}>
-              <div className="grid gap-4 sm:grid-cols-2">
-                <label className="grid gap-1">
+              <div className="grid grid-cols-[minmax(0,1fr)] gap-4 sm:grid-cols-2">
+                <label className="grid grid-cols-[minmax(0,1fr)] gap-1">
                   <span className="text-[length:var(--text-caption)] font-semibold">{t("promo.editor.schedule.start")}</span>
                   <input type="datetime-local" value={draft.startsAt} onChange={(e) => set({ startsAt: e.target.value })} className="gt-admin-field" />
                 </label>
-                <label className="grid gap-1">
+                <label className="grid grid-cols-[minmax(0,1fr)] gap-1">
                   <span className="text-[length:var(--text-caption)] font-semibold">{t("promo.editor.schedule.end")}</span>
                   <input type="datetime-local" value={draft.endsAt} min={draft.startsAt} aria-invalid={err("dates") ? true : undefined} onChange={(e) => set({ endsAt: e.target.value })} className="gt-admin-field" />
                 </label>
@@ -266,7 +266,7 @@ function CampaignForm({ initial, isNew }: { initial: Campaign; isNew: boolean })
             </FormSection>
           </div>
 
-          <aside aria-label={t("promo.campaigns.livePreview")} className="grid gap-3 xl:sticky xl:top-[calc(var(--admin-header-h)+16px)]">
+          <aside aria-label={t("promo.campaigns.livePreview")} className="grid grid-cols-[minmax(0,1fr)] gap-3 xl:sticky xl:top-[calc(var(--admin-header-h)+16px)]">
             <div className="flex items-center justify-between gap-2">
               <h2 className="text-[length:var(--text-body-md)]">{t("promo.campaigns.livePreview")}</h2>
               <Segmented

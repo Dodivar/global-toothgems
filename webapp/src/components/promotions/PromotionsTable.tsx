@@ -192,7 +192,7 @@ export function PromotionsTable(props: PromotionListProps) {
   return (
     <div className="gt-admin-panel hidden overflow-hidden lg:block">
       <div className="gt-admin-scroll overflow-x-auto">
-        <table className="w-full min-w-[1240px] border-separate border-spacing-0 text-[length:var(--text-body-sm)]">
+        <table className="w-full min-w-[1040px] border-separate border-spacing-0 text-[length:var(--text-body-sm)]">
           <caption className="sr-only">{t("promo.table.caption")}</caption>
           <thead>
             <tr>
@@ -208,8 +208,8 @@ export function PromotionsTable(props: PromotionListProps) {
                   className="h-4 w-4 accent-[var(--gt-ink-900)]"
                 />
               </th>
-              {sortHead(t("promo.table.promotion"), "name", "sticky left-10 z-[3] min-w-[260px] shadow-[inset_-1px_0_0_var(--border-subtle)]")}
-              <th scope="col" className={head}>{t("promo.table.type")}</th>
+              {sortHead(t("promo.table.promotion"), "name", "sticky left-10 z-[3] min-w-[230px] shadow-[inset_-1px_0_0_var(--border-subtle)]")}
+              <th scope="col" className={clsx(head, "hidden 2xl:table-cell")}>{t("promo.table.type")}</th>
               <th scope="col" className={head}>{t("promo.table.discount")}</th>
               <th scope="col" className={head}>{t("promo.table.scope")}</th>
               <th scope="col" className={head}>{t("promo.table.campaign")}</th>
@@ -247,13 +247,14 @@ export function PromotionsTable(props: PromotionListProps) {
                     />
                   </td>
                   <td className={clsx(cell, "sticky left-10 z-[2] shadow-[inset_-1px_0_0_var(--border-subtle)]")}>
-                    <div className="grid gap-1">
+                    <div className="grid grid-cols-[minmax(0,1fr)] gap-1">
                       <Link
                         to={`/admin/promotions/${p.id}`}
                         className="w-fit rounded-[2px] font-semibold text-[var(--text-primary)] hover:underline focus-visible:outline focus-visible:outline-2 focus-visible:outline-[var(--focus-ring)]"
                       >
                         {p.name}
                       </Link>
+                      <PromotionTypeLabel type={p.discount.type} className="2xl:hidden" />
                       <span className="flex flex-wrap items-center gap-1.5">
                         {p.code.mode === "code" ? (
                           p.code.code ? <CodeTag code={p.code.code} muted={status === "expired"} /> : null
@@ -269,7 +270,7 @@ export function PromotionsTable(props: PromotionListProps) {
                       </span>
                     </div>
                   </td>
-                  <td className={cell}>
+                  <td className={clsx(cell, "hidden 2xl:table-cell")}>
                     <PromotionTypeLabel type={p.discount.type} />
                   </td>
                   <td className={cell}>
@@ -406,7 +407,7 @@ export function PromotionsSkeleton({ label }: { label: string }) {
       {Array.from({ length: 6 }).map((_, i) => (
         <div key={i} className="grid grid-cols-[24px_minmax(0,2fr)_minmax(0,1fr)_minmax(0,1fr)_minmax(0,1fr)_80px] items-center gap-4 border-b border-[var(--border-subtle)] px-4 py-4 last:border-b-0">
           <div className="gt-skeleton h-4 w-4 rounded" />
-          <div className="grid gap-2">
+          <div className="grid grid-cols-[minmax(0,1fr)] gap-2">
             <div className="gt-skeleton h-3 w-2/3 rounded-full" />
             <div className="gt-skeleton h-2.5 w-1/3 rounded-full" />
           </div>

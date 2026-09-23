@@ -18,7 +18,7 @@ const SHOP_TARGETS: (string | null)[] = [
   "/boutique?categorie=Outils",
   "/boutique?categorie=Kits",
   "/boutique?categorie=Suivi",
-  null,
+  "/carte-cadeau",
   "/fidelite",
 ];
 /* Same destinations as `Footer`: the first three entries name the three

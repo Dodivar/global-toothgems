@@ -51,7 +51,7 @@ export function CampaignCard({
   return (
     <article className="gt-admin-panel group relative grid overflow-hidden transition-[box-shadow,transform] duration-[var(--duration-normal)] focus-within:shadow-[var(--shadow-md)] hover:-translate-y-0.5 hover:shadow-[var(--shadow-md)]">
       <CampaignCover theme={campaign.theme} cover={campaign.cover} title={l(campaign.title) || campaign.name} size="sm" className={status === "archived" ? "grayscale-[.6]" : undefined} />
-      <div className="grid gap-3 p-4">
+      <div className="grid grid-cols-[minmax(0,1fr)] gap-3 p-4">
         <div className="flex items-start justify-between gap-2">
           <div className="grid min-w-0 gap-1">
             <h3 className="text-[length:var(--text-body-md)]">
@@ -96,7 +96,7 @@ export function CampaignCard({
 
 function Stat({ label, value }: { label: string; value: string }) {
   return (
-    <div className="grid gap-0.5">
+    <div className="grid grid-cols-[minmax(0,1fr)] gap-0.5">
       <dt className="text-[10px] font-semibold uppercase tracking-[var(--tracking-wide)] text-[var(--text-subtle)]">{label}</dt>
       <dd className="m-0 text-[length:var(--text-body-sm)] font-bold tabular-nums text-[var(--text-primary)]">{value}</dd>
     </div>

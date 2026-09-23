@@ -828,7 +828,7 @@ export const SEED_CAMPAIGNS: Campaign[] = [
     startsAt: "2027-10-15T09:00",
     endsAt: "2027-12-31T23:59",
     theme: "mint",
-    cover: "img-08.jpg",
+    cover: "img-19.jpg",
     productIds: ["starter-kit", "curing-lamp", "chrome-cross", "mini-crystal-collection"],
     lifecycle: "live",
     activity: [
@@ -903,7 +903,7 @@ export const SEED_CAMPAIGNS: Campaign[] = [
     startsAt: "2027-03-20T00:00",
     endsAt: "2027-04-20T23:59",
     theme: "blush",
-    cover: "img-17.jpg",
+    cover: "img-20.jpg",
     productIds: ["glitter-set-2025"],
     lifecycle: "archived",
     activity: [
@@ -1167,8 +1167,8 @@ export const SEED_GIFT_CARDS: GiftCard[] = [
 export const SEED_GIFT_CARD_CONFIG: GiftCardProductConfig = {
   title: { fr: "Carte cadeau Global Toothgems", en: "Global Toothgems gift card" },
   description: {
-    fr: "Offrez l’éclat d’un sourire. Une carte cadeau livrée par e-mail, utilisable sur les gems, les kits et les formations éligibles.",
-    en: "Give the gift of sparkle. A gift card delivered by email, redeemable on eligible gems, kits and trainings.",
+    fr: "Une carte cadeau livrée par e-mail, à dépenser en une ou plusieurs fois sur les gems, les kits et les formations éligibles.",
+    en: "A gift card delivered by email, to spend in one go or several on eligible gems, kits and trainings.",
   },
   amounts: [2500, 5000, 7500, 10000, 15000, 20000],
   allowCustomAmount: true,
@@ -1259,4 +1259,4 @@ export function blankCampaign(): Campaign {
 }
 
 /** Photos an administrator can pick as a campaign cover. */
-export const COVER_LIBRARY = ["img-05.jpg", "img-13.jpg", "img-08.jpg", "img-02.jpg", "mouth-03.jpg", "img-17.jpg", "img-11.jpg", "mouth-01.jpg"];
+export const COVER_LIBRARY = ["img-05.jpg", "img-13.jpg", "img-19.jpg", "img-02.jpg", "img-20.jpg", "mouth-03.jpg", "mouth-01.jpg", "img-12.jpg", "img-07.jpg"];

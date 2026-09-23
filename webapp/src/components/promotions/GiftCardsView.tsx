@@ -65,7 +65,7 @@ export function GiftCardsView() {
     return <ErrorPanel title={t("promo.error.title")} body={t("promo.error.body")} retryLabel={t("promo.error.retry")} onRetry={() => setDemoMode("live")} />;
 
   return (
-    <div className="grid gap-4">
+    <div className="grid grid-cols-[minmax(0,1fr)] gap-4">
       <div className="grid grid-cols-2 gap-3 sm:grid-cols-3 xl:grid-cols-6">
         <PromoKpi loading={loading} icon={Gift} tone="highlight" label={t("promo.cardsKpi.sold")} value={String(m.sold)} hint={t("promo.cardsKpi.soldHint")} />
         <PromoKpi loading={loading} icon={BadgeEuro} tone="success" label={t("promo.cardsKpi.revenue")} value={money(m.revenueCents)} hint={t("promo.cardsKpi.revenueHint")} />
@@ -81,7 +81,7 @@ export function GiftCardsView() {
         <div className="w-[180px] max-w-full">
           <GiftCardVisual design={config.defaultDesign} amountCents={config.amounts[3] ?? config.amounts[0] ?? 5000} size="sm" label="" />
         </div>
-        <div className="grid gap-1">
+        <div className="grid grid-cols-[minmax(0,1fr)] gap-1">
           <h2 className="text-[length:var(--text-body-md)]">{t("promo.cards.productTitle")}</h2>
           <p className="m-0 text-[length:var(--text-caption)] text-[var(--text-muted)]">
             {t("promo.cards.productSummary", {
@@ -132,7 +132,7 @@ export function GiftCardsView() {
               placeholder={t("promo.cards.search")}
               clearLabel={t("promo.filters.clearSearch")}
             />
-            <label className="grid gap-1">
+            <label className="grid grid-cols-[minmax(0,1fr)] gap-1">
               <span className="text-[11px] font-semibold uppercase tracking-[var(--tracking-wide)] text-[var(--text-muted)]">{t("promo.cards.status")}</span>
               <AdminSelect
                 value={filters.status}
@@ -146,7 +146,7 @@ export function GiftCardsView() {
                 ]}
               />
             </label>
-            <label className="grid gap-1">
+            <label className="grid grid-cols-[minmax(0,1fr)] gap-1">
               <span className="text-[11px] font-semibold uppercase tracking-[var(--tracking-wide)] text-[var(--text-muted)]">{t("promo.cards.delivery")}</span>
               <AdminSelect
                 value={filters.delivery}
@@ -154,7 +154,7 @@ export function GiftCardsView() {
                 options={[{ value: "all", label: t("promo.cards.allDeliveries") }, ...DELIVERY_STATUSES.map((s) => ({ value: s, label: t(`promo.delivery.${s}`) }))]}
               />
             </label>
-            <label className="grid gap-1">
+            <label className="grid grid-cols-[minmax(0,1fr)] gap-1">
               <span className="text-[11px] font-semibold uppercase tracking-[var(--tracking-wide)] text-[var(--text-muted)]">{t("promo.filters.sort")}</span>
               <AdminSelect
                 value={filters.sort}

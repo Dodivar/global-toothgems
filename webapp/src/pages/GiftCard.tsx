@@ -156,7 +156,7 @@ export function GiftCard() {
             <div className="relative rotate-[-4deg] transition-transform duration-[var(--duration-slow)] hover:rotate-0 motion-reduce:rotate-0">
               <GiftCardVisual design={design} amountCents={cents ?? null} recipient={t("promo.store.heroRecipient")} message={t("promo.store.heroMessage")} size="lg" />
             </div>
-            <div className="gt-glass-panel gt-glass-panel-compact absolute -bottom-6 left-4 hidden items-center gap-3 rounded-[var(--radius-lg)] px-4 py-3 sm:flex">
+            <div className="gt-glass-panel gt-glass-panel-compact absolute -bottom-7 right-2 hidden items-center gap-3 rounded-[var(--radius-lg)] px-4 py-3 sm:flex">
               <MailCheck size={18} aria-hidden="true" className="text-[var(--gt-emerald-600)]" />
               <span className="text-[length:var(--text-caption)] font-semibold text-[var(--text-primary)]">{t("promo.store.heroChip")}</span>
             </div>
@@ -231,7 +231,7 @@ export function GiftCard() {
                       {designs.map((d) => (
                         <label key={d} className={clsx("group grid cursor-pointer gap-2 rounded-[var(--radius-md)] p-1.5 transition-[box-shadow,transform] duration-[var(--duration-fast)] has-[:focus-visible]:outline has-[:focus-visible]:outline-2 has-[:focus-visible]:outline-offset-2 has-[:focus-visible]:outline-[var(--focus-ring)]", design === d ? "shadow-[0_0_0_2px_var(--gt-ink-900)]" : "hover:-translate-y-0.5")}>
                           <input type="radio" name="gc-design" checked={design === d} onChange={() => setDesign(d)} className="sr-only" />
-                          <GiftCardVisual design={d} amountCents={null} size="sm" label="" />
+                          <GiftCardVisual design={d} amountCents={cents ?? null} size="sm" label="" />
                           <span className="flex items-center justify-center gap-1 text-[length:var(--text-caption)] font-semibold">
                             {design === d && <Check size={13} aria-hidden="true" />}
                             {t(`promo.design.${d}`)}
@@ -337,7 +337,7 @@ export function GiftCard() {
             <ol className="m-0 grid list-none gap-4 p-0">
               {[1, 2, 3].map((n) => (
                 <li key={n} className="flex gap-4">
-                  <span aria-hidden="true" className="gt-script w-8 flex-none text-[36px] leading-none text-[var(--gt-blue-400)]">{n}</span>
+                  <span aria-hidden="true" className="grid h-9 w-9 flex-none place-items-center rounded-full bg-[var(--gt-blue-100)] text-[length:var(--text-body-sm)] font-bold text-[var(--gt-blue-700)]">{n}</span>
                   <span className="grid gap-0.5">
                     <strong className="text-[var(--text-primary)]">{t(`promo.store.how.${n}.title`)}</strong>
                     <span className="text-[length:var(--text-body-sm)] text-[var(--text-body)]">{t(`promo.store.how.${n}.body`)}</span>

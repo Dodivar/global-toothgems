@@ -143,7 +143,7 @@ export function PromoKpi({
         </span>
         {trend && !loading && <Sparkline values={trend} tone={tone === "success" ? "positive" : "neutral"} width={64} height={24} />}
       </div>
-      <div className="grid gap-0.5">
+      <div className="grid grid-cols-[minmax(0,1fr)] gap-0.5">
         {loading ? (
           <span className="gt-skeleton mt-1 h-6 w-16 rounded-full" />
         ) : (
@@ -473,7 +473,7 @@ export function FormSection({
       </div>
       <div id={panelId} className="gt-collapse" data-open={open}>
         <div>
-          <div className="grid gap-5 border-t border-[var(--border-subtle)] p-4 sm:p-5">{children}</div>
+          <div className="grid grid-cols-[minmax(0,1fr)] gap-5 border-t border-[var(--border-subtle)] p-4 sm:p-5">{children}</div>
         </div>
       </div>
     </section>
@@ -563,7 +563,7 @@ export function CheckRow({
         aria-describedby={hint ? `${id}-hint` : undefined}
         className="mt-0.5 h-[18px] w-[18px] flex-none accent-[var(--gt-ink-900)] disabled:cursor-not-allowed"
       />
-      <div className="grid gap-0.5">
+      <div className="grid grid-cols-[minmax(0,1fr)] gap-0.5">
         <label htmlFor={id} className="text-[length:var(--text-body-sm)] font-semibold text-[var(--text-primary)]">
           {label}
         </label>
@@ -805,7 +805,7 @@ export function PrototypeBar({ showModes = true }: { showModes?: boolean }) {
 /** A labelled value on detail pages. */
 export function Fact({ label, value, mono }: { label: string; value: ReactNode; mono?: boolean }) {
   return (
-    <div className="grid gap-0.5">
+    <div className="grid grid-cols-[minmax(0,1fr)] gap-0.5">
       <dt className="text-[11px] font-semibold uppercase tracking-[var(--tracking-wide)] text-[var(--text-subtle)]">{label}</dt>
       <dd
         className={clsx(
@@ -836,7 +836,7 @@ export function Panel({
   id?: string;
 }) {
   return (
-    <section id={id} className={clsx("gt-admin-panel grid content-start gap-4 p-4 sm:p-5", className)}>
+    <section id={id} className={clsx("gt-admin-panel grid grid-cols-[minmax(0,1fr)] content-start gap-4 p-4 sm:p-5", className)}>
       <header className="flex flex-wrap items-center justify-between gap-2">
         <h2 className="flex items-center gap-2 text-[length:var(--text-body-md)]">
           {Icon && <Icon size={16} strokeWidth={1.9} aria-hidden="true" className="text-[var(--text-muted)]" />}

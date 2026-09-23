@@ -109,9 +109,9 @@ export function GiftCardDetail() {
             <span className="hidden sm:inline-flex">
               <CopyButton value={card.code} label={t("promo.cards.copyCode")} copiedLabel={t("promo.editor.code.copied")} size="md" />
             </span>
-            <AdminButton variant="outline" iconLeft={Send} className="hidden md:inline-flex" onClick={() => setDialog("resend")} disabled={closed || status === "scheduled"}>
+            <span><span className="hidden md:inline-flex"><AdminButton variant="outline" iconLeft={Send} onClick={() => setDialog("resend")} disabled={closed || status === "scheduled"}>
               {t("promo.cards.resend")}
-            </AdminButton>
+            </AdminButton></span></span>
             <OverflowMenu
               label={t("promo.actions.more", { name: card.code })}
               actions={[
@@ -126,17 +126,17 @@ export function GiftCardDetail() {
         }
       />
 
-      <div className="grid gap-5 px-[var(--admin-gutter)] pb-[clamp(32px,5vw,56px)] pt-5">
+      <div className="grid grid-cols-[minmax(0,1fr)] gap-5 px-[var(--admin-gutter)] pb-[clamp(32px,5vw,56px)] pt-5">
         <PrototypeBar showModes={false} />
 
         <div className="grid items-start gap-5 lg:grid-cols-[minmax(0,420px)_minmax(0,1fr)]">
-          <div className="grid gap-4">
+          <div className="grid grid-cols-[minmax(0,1fr)] gap-4">
             <div className={clsx("mx-auto w-full max-w-[420px]", (closed || status === "expired" || status === "redeemed") && "opacity-70 grayscale-[.5]")}>
               <GiftCardVisual design={card.design} amountCents={initial} recipient={card.recipientName} sender={card.senderName} message={card.message} code={card.code} size="lg" />
             </div>
             <section className="gt-admin-panel grid gap-3 p-4 sm:p-5" aria-label={t("promo.giftDetail.balance")}>
               <div className="flex items-start justify-between gap-3">
-                <div className="grid gap-0.5">
+                <div className="grid grid-cols-[minmax(0,1fr)] gap-0.5">
                   <span className="text-[11px] font-semibold uppercase tracking-[var(--tracking-wide)] text-[var(--text-muted)]">{t("promo.giftDetail.currentBalance")}</span>
                   <span key={balance} className="gt-status-swap text-[36px] font-bold leading-none tabular-nums text-[var(--text-primary)]">{money(balance)}</span>
                   <span className="text-[length:var(--text-caption)] text-[var(--text-muted)]">{t("promo.giftDetail.ofOriginal", { amount: money(initial) })}</span>
@@ -154,7 +154,7 @@ export function GiftCardDetail() {
             </section>
           </div>
 
-          <div className="grid gap-4">
+          <div className="grid grid-cols-[minmax(0,1fr)] gap-4">
             <StateNotice card={card} onExtend={() => setDialog("extend")} onResend={() => setDialog("resend")} />
 
             <Panel title={t("promo.giftDetail.details")} icon={Gift}>
@@ -278,11 +278,12 @@ function Ledger({ card }: { card: GiftCard }) {
   const { t } = useTranslation();
   const money = useMoney();
   const { dateTime, date } = usePromoDates();
-  let running = 0;
-  const rows = card.ledger.map((tx) => {
-    running += tx.amountCents;
-    return { tx, after: running };
-  });
+  // Running balance after each line, computed without mutating across renders.
+  const rows = card.ledger.map((tx, i) => ({
+    tx,
+    after: card.ledger.slice(0, i + 1).reduce((sum, t) => sum + t.amountCents, 0),
+  }));
+  const running = rows.length ? rows[rows.length - 1].after : 0;
 
   return (
     <Panel title={t("promo.giftDetail.history")} icon={History}>
@@ -296,7 +297,7 @@ function Ledger({ card }: { card: GiftCard }) {
               <span aria-hidden="true" className={clsx("grid h-8 w-8 place-items-center rounded-full", meta.tone)}>
                 <Icon size={15} strokeWidth={1.9} />
               </span>
-              <div className="grid gap-0.5">
+              <div className="grid grid-cols-[minmax(0,1fr)] gap-0.5">
                 <span className="text-[length:var(--text-body-sm)] font-semibold text-[var(--text-primary)]">
                   {t(`promo.ledger.${tx.kind}`)}
                   {tx.orderRef && tx.kind !== "purchase" && <span className="font-normal text-[var(--text-muted)]"> · {tx.orderRef}</span>}
@@ -374,7 +375,7 @@ function AdjustDialog({ open, balance, busy, onClose, onConfirm }: { open: boole
       confirmDisabled={!valid}
       loading={busy}
     >
-      <div className="grid gap-4">
+      <div className="grid grid-cols-[minmax(0,1fr)] gap-4">
         <Segmented
           label={t("promo.giftDetail.direction")}
           value={direction}
@@ -413,7 +414,7 @@ function ExtendDialog({ open, card, busy, onClose, onConfirm }: { open: boolean;
   const valid = value > card.expiresAt.slice(0, 10);
   return (
     <FormDialog open={open} icon={CalendarPlus} title={t("promo.giftDetail.extendTitle")} description={t("promo.giftDetail.extendBody", { date: date(card.expiresAt) })} confirmLabel={t("promo.giftDetail.extendConfirm")} cancelLabel={t("promo.common.cancel")} onClose={onClose} onConfirm={() => onConfirm(`${value}T23:59`)} confirmDisabled={!valid} loading={busy}>
-      <div className="grid gap-3">
+      <div className="grid grid-cols-[minmax(0,1fr)] gap-3">
         <div className="flex flex-wrap gap-1.5">
           {[3, 6, 12].map((m) => (
             <button key={m} type="button" onClick={() => setValue(addMonthsTo(base, m))} aria-pressed={value === addMonthsTo(base, m)} className={clsx("h-8 rounded-[var(--radius-pill)] border px-3 text-[length:var(--text-caption)] font-semibold transition-colors focus-visible:outline focus-visible:outline-2 focus-visible:outline-[var(--focus-ring)]", value === addMonthsTo(base, m) ? "border-[var(--gt-ink-900)] bg-[var(--gt-ink-900)] text-[var(--gt-white)]" : "border-[var(--border-default)] hover:border-[var(--gt-ink-400)]")}>
@@ -464,7 +465,7 @@ function OrderSheet({ open, card, onClose }: { open: boolean; card: GiftCard; on
   return (
     <AdminSheet open={open} onClose={onClose} title={t("promo.giftDetail.orderTitle", { ref: card.orderRef })} description={dateTime(card.purchasedAt)} closeLabel={t("promo.common.close")} width={480}>
       <SheetBody>
-        <div className="grid gap-5">
+        <div className="grid grid-cols-[minmax(0,1fr)] gap-5">
           <Notice tone="info" title={t("promo.giftDetail.orderMock")} />
           <dl className="m-0 grid grid-cols-2 gap-4">
             <Fact label={t("promo.giftDetail.customer")} value={<span className="inline-flex items-center gap-1.5"><UserRound size={13} aria-hidden="true" />{card.purchaserName}</span>} />

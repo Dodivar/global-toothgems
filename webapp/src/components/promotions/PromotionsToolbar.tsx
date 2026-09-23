@@ -45,7 +45,7 @@ export function PromotionsToolbar({
   const active = activePromotionFilterCount(filters);
 
   const sortSelect = (id: string) => (
-    <label className="grid gap-1">
+    <label className="grid grid-cols-[minmax(0,1fr)] gap-1">
       <span className="text-[11px] font-semibold uppercase tracking-[var(--tracking-wide)] text-[var(--text-muted)]">{t("promo.filters.sort")}</span>
       <AdminSelect
         id={id}
@@ -57,7 +57,7 @@ export function PromotionsToolbar({
   );
 
   return (
-    <div className="grid gap-3">
+    <div className="grid grid-cols-[minmax(0,1fr)] gap-3">
       <div className="flex flex-wrap items-end gap-2">
         <div className="min-w-[200px] flex-1">
           <SearchInput
@@ -115,7 +115,7 @@ export function PromotionsToolbar({
           </>
         }
       >
-        <div className="grid gap-4">
+        <div className="grid grid-cols-[minmax(0,1fr)] gap-4">
           {sortSelect("promo-sort-mobile")}
           <FilterFields filters={filters} campaigns={campaigns} showStatus={showStatus} onChange={onChange} layout="stack" />
         </div>
@@ -152,7 +152,7 @@ function FilterFields({
   );
 
   return (
-    <div className="grid gap-3">
+    <div className="grid grid-cols-[minmax(0,1fr)] gap-3">
       {showStatus && (
         <fieldset className="m-0 border-0 p-0">
           <legend className="mb-1.5 p-0 text-[11px] font-semibold uppercase tracking-[var(--tracking-wide)] text-[var(--text-muted)]">
@@ -185,7 +185,7 @@ function FilterFields({
         </fieldset>
       )}
       <div className={clsx("grid gap-3", layout === "inline" && "md:grid-cols-2 xl:grid-cols-[repeat(3,minmax(0,1fr))_minmax(0,1.3fr)]")}>
-        <div className="grid gap-1">
+        <div className="grid grid-cols-[minmax(0,1fr)] gap-1">
           {label(t("promo.filters.type"), `${pre}-type`)}
           <AdminSelect
             id={`${pre}-type`}
@@ -194,7 +194,7 @@ function FilterFields({
             options={[{ value: "all", label: t("promo.filters.allTypes") }, ...PROMOTION_TYPES.map((x) => ({ value: x, label: t(`promo.type.${x}`) }))]}
           />
         </div>
-        <div className="grid gap-1">
+        <div className="grid grid-cols-[minmax(0,1fr)] gap-1">
           {label(t("promo.filters.campaign"), `${pre}-campaign`)}
           <AdminSelect
             id={`${pre}-campaign`}
@@ -207,7 +207,7 @@ function FilterFields({
             ]}
           />
         </div>
-        <div className="grid gap-1">
+        <div className="grid grid-cols-[minmax(0,1fr)] gap-1">
           {label(t("promo.filters.product"), `${pre}-product`)}
           <AdminSelect
             id={`${pre}-product`}

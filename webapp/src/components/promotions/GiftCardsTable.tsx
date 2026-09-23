@@ -105,12 +105,12 @@ export function GiftCardsTable(props: Props) {
                 >
                   <td className={clsx(cell, "pl-4")}>
                     <span className="flex items-center gap-3">
-                      <span className="w-12 flex-none">
+                      <span className="hidden w-12 flex-none 2xl:block">
                         <GiftCardVisual design={card.design} amountCents={giftCardInitial(card)} size="sm" label="" />
                       </span>
                       <Link
                         to={`/admin/promotions/cartes-cadeaux/${card.code}`}
-                        className="rounded-[2px] font-[family-name:var(--gt-font-mono)] text-[length:var(--text-caption)] font-semibold text-[var(--text-primary)] hover:underline focus-visible:outline focus-visible:outline-2 focus-visible:outline-[var(--focus-ring)]"
+                        className="whitespace-nowrap rounded-[2px] font-[family-name:var(--gt-font-mono)] text-[length:var(--text-caption)] font-semibold text-[var(--text-primary)] hover:underline focus-visible:outline focus-visible:outline-2 focus-visible:outline-[var(--focus-ring)]"
                       >
                         {card.code}
                       </Link>
@@ -124,7 +124,7 @@ export function GiftCardsTable(props: Props) {
                   </td>
                   <td className={cell}>
                     <span className="grid leading-tight">
-                      <span>{card.purchaserName}</span>
+                      <span className="whitespace-nowrap">{card.purchaserName}</span>
                       <span className="text-[11px] text-[var(--text-muted)]">{card.orderRef}</span>
                     </span>
                   </td>
@@ -137,7 +137,7 @@ export function GiftCardsTable(props: Props) {
                   <td className={cell}>
                     <GiftCardStatusBadge status={status} />
                   </td>
-                  <td className={cell}>
+                  <td className={clsx(cell, "whitespace-nowrap")}>
                     <DeliveryLabel status={card.delivery} />
                   </td>
                   <td className={clsx(cell, "text-right")}>

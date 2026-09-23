@@ -118,12 +118,12 @@ export function CampaignDetail() {
         onOpenNav={openNav}
         actions={
           <>
-            <AdminButton variant="outline" iconLeft={Pencil} className="hidden sm:inline-flex" onClick={() => navigate(`/admin/promotions/campagnes/${campaign.id}/modifier`)}>
+            <span><span className="hidden sm:inline-flex"><AdminButton variant="outline" iconLeft={Pencil} onClick={() => navigate(`/admin/promotions/campagnes/${campaign.id}/modifier`)}>
               {t("promo.campaigns.edit")}
-            </AdminButton>
-            <AdminButton variant="primary" iconLeft={Plus} className="hidden sm:inline-flex" onClick={() => setAddPromoOpen(true)} disabled={status === "archived"}>
+            </AdminButton></span></span>
+            <span><span className="hidden sm:inline-flex"><AdminButton variant="primary" iconLeft={Plus} onClick={() => setAddPromoOpen(true)} disabled={status === "archived"}>
               {t("promo.campaigns.addPromotion")}
-            </AdminButton>
+            </AdminButton></span></span>
             <OverflowMenu
               label={t("promo.actions.more", { name: campaign.name })}
               actions={[
@@ -140,7 +140,7 @@ export function CampaignDetail() {
         }
       />
 
-      <div className="grid gap-5 px-[var(--admin-gutter)] pb-[clamp(32px,5vw,56px)] pt-5">
+      <div className="grid grid-cols-[minmax(0,1fr)] gap-5 px-[var(--admin-gutter)] pb-[clamp(32px,5vw,56px)] pt-5">
         <PrototypeBar showModes={false} />
         <Hero campaign={campaign} onPause={() => setLifecycle("paused")} onResume={() => setLifecycle("live")} busy={busy} />
 
@@ -153,7 +153,7 @@ export function CampaignDetail() {
         </section>
 
         <div className="grid items-start gap-4 xl:grid-cols-[minmax(0,1fr)_420px]">
-          <div className="grid gap-4">
+          <div className="grid grid-cols-[minmax(0,1fr)] gap-4">
             <PromotionsPanel campaign={campaign} onAdd={() => setAddPromoOpen(true)} />
             <Panel
               title={t("promo.campaigns.products")}
@@ -188,7 +188,7 @@ export function CampaignDetail() {
             </Panel>
           </div>
 
-          <div className="grid gap-4 xl:sticky xl:top-[calc(var(--admin-header-h)+16px)]">
+          <div className="grid grid-cols-[minmax(0,1fr)] gap-4 xl:sticky xl:top-[calc(var(--admin-header-h)+16px)]">
             <Panel title={t("promo.campaigns.bannerPreview")} icon={MonitorSmartphone}>
               <PreviewFrame label={t("promo.preview.landing")}>
                 <PreviewCampaignLanding campaign={campaign} promotions={rollup.promotions.filter((p) => promotionStatus(p) !== "archived")} productIds={campaign.productIds} />
@@ -241,7 +241,7 @@ function Hero({ campaign, onPause, onResume, busy }: { campaign: Campaign; onPau
         subtitle={l(campaign.description)}
         size="lg"
       />
-      <div className="grid gap-3 p-4 sm:p-5">
+      <div className="grid grid-cols-[minmax(0,1fr)] gap-3 p-4 sm:p-5">
         <div className="flex flex-wrap items-center gap-2">
           <span key={status} className="gt-status-swap">
             <CampaignStatusBadge status={status} size="md" />
@@ -403,7 +403,7 @@ function ActivityPanel({ campaign }: { campaign: Campaign }) {
             >
               <CircleDot size={11} />
             </span>
-            <div className="grid gap-0.5">
+            <div className="grid grid-cols-[minmax(0,1fr)] gap-0.5">
               <span className="text-[length:var(--text-body-sm)] font-semibold text-[var(--text-primary)]">{l(entry.detail)}</span>
               <span className="text-[11px] text-[var(--text-muted)]">
                 {entry.actor} · <time dateTime={entry.at}>{dateTime(entry.at)}</time>
@@ -450,7 +450,7 @@ function AddPromotionsDialog({ campaign, open, onClose }: { campaign: Campaign; 
         onClose();
       }}
     >
-      <div className="grid gap-3">
+      <div className="grid grid-cols-[minmax(0,1fr)] gap-3">
         <AdminButton variant="outline" iconLeft={Plus} onClick={() => navigate(`/admin/promotions/nouvelle?campagne=${campaign.id}`)}>
           {t("promo.campaigns.createInside")}
         </AdminButton>

@@ -15,7 +15,7 @@ const SHOP_TARGETS: (string | null)[] = [
   "/boutique?categorie=Outils",
   "/boutique?categorie=Kits",
   "/boutique?categorie=Suivi",
-  null,
+  "/carte-cadeau",
   "/fidelite",
 ];
 /* The first three entries name the three courses, so they lead to each

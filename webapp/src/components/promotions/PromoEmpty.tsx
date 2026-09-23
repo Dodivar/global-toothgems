@@ -53,7 +53,13 @@ export function PromoEmpty({
       </span>
       <h3 className={compact ? "text-[length:var(--text-body-md)]" : "text-[length:var(--text-h4)]"}>{title}</h3>
       <p className="m-0 max-w-[50ch] text-[length:var(--text-body-sm)] text-[var(--text-muted)]">{body}</p>
-      {actions && <div className="mt-1 flex flex-wrap justify-center gap-2">{actions}</div>}
+      {/* Buttons may wrap here: an empty state's action can be a full sentence,
+          and on a phone it must not push the page sideways. */}
+      {actions && (
+        <div className="mt-1 flex max-w-full flex-wrap justify-center gap-2 [&_button]:h-auto [&_button]:min-h-10 [&_button]:whitespace-normal [&_button]:py-2">
+          {actions}
+        </div>
+      )}
       {children}
     </div>
   );

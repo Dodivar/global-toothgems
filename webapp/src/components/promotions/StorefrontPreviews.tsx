@@ -50,7 +50,7 @@ export function ShopBadge({ children, tone = "highlight" }: { children: ReactNod
   return (
     <span
       className={clsx(
-        "inline-flex h-6 items-center gap-1 whitespace-nowrap rounded-[var(--radius-pill)] px-2.5 text-[10px] font-bold uppercase tracking-[var(--tracking-wide)]",
+        "inline-flex h-6 max-w-full items-center gap-1 overflow-hidden text-ellipsis whitespace-nowrap rounded-[var(--radius-pill)] px-2.5 text-[10px] font-bold uppercase tracking-[var(--tracking-wide)]",
         tone === "highlight" && "bg-[var(--accent-highlight)] text-[var(--gt-white)]",
         tone === "ink" && "bg-[var(--gt-ink-900)] text-[var(--gt-white)]",
         tone === "brand" && "bg-[var(--gt-blue-100)] text-[var(--gt-blue-700)]",
@@ -103,7 +103,7 @@ export function PreviewProductCard({
             className="h-full w-full object-cover transition-transform duration-[var(--duration-normal)] group-hover:scale-[1.03]"
           />
         )}
-        <div className="absolute left-2 top-2 flex flex-col items-start gap-1">
+        <div className="absolute inset-x-2 top-2 flex flex-col items-start gap-1 pr-9">
           {promotion && <ShopBadge>{discount(promotion, "badge")}</ShopBadge>}
           {campaign && !compact && (
             <ShopBadge tone="ink">
@@ -116,7 +116,7 @@ export function PreviewProductCard({
           <Heart size={14} />
         </span>
       </div>
-      <div className="grid gap-1 px-1 pb-1 pt-2.5">
+      <div className="grid grid-cols-[minmax(0,1fr)] gap-1 px-1 pb-1 pt-2.5">
         <h3 className="truncate text-[length:var(--text-body-sm)] font-semibold">{l(product.name)}</h3>
         {!compact && (
           <span className="flex items-center gap-1 text-[11px] text-[var(--text-muted)]">
@@ -168,7 +168,7 @@ export function PreviewProductPage({
           <ShopBadge>{discount(promotion, "badge")}</ShopBadge>
         </span>
       </div>
-      <div className="grid content-start gap-3">
+      <div className="grid grid-cols-[minmax(0,1fr)] content-start gap-3">
         {campaign && (
           <span className="gt-script text-[26px] leading-none text-[var(--gt-blue-600)]">{l(campaign.title) || campaign.name}</span>
         )}
@@ -177,7 +177,7 @@ export function PreviewProductPage({
           <strong className={clsx("text-[22px] tabular-nums", now < price && "text-[var(--accent-highlight-ink)]")}>{money(now)}</strong>
           {now < price && <s className="text-[length:var(--text-body-sm)] text-[var(--text-muted)]">{money(price)}</s>}
         </div>
-        <div className="grid gap-1 rounded-[14px] border border-[var(--gt-fuchsia-300)] bg-[var(--gt-fuchsia-50)] p-3">
+        <div className="grid grid-cols-[minmax(0,1fr)] gap-1 rounded-[14px] border border-[var(--gt-fuchsia-300)] bg-[var(--gt-fuchsia-50)] p-3">
           <span className="flex items-center gap-1.5 text-[length:var(--text-body-sm)] font-semibold text-[var(--accent-highlight-ink)]">
             <Tag size={14} aria-hidden="true" />
             {l(promotion.customerTitle) || discount(promotion)}
@@ -303,7 +303,7 @@ export function PreviewCart({ promotion, product }: { promotion: Promotion; prod
   const cart = buildCart(promotion, products, product);
 
   return (
-    <div className="grid gap-3 p-4 sm:p-5">
+    <div className="grid grid-cols-[minmax(0,1fr)] gap-3 p-4 sm:p-5">
       <h3 className="flex items-center gap-2 text-[length:var(--text-body-md)]">
         <ShoppingBag size={16} aria-hidden="true" /> {t("promo.shop.cart")}
       </h3>
@@ -395,7 +395,7 @@ export function PreviewCheckout({ promotion, product }: { promotion: Promotion; 
   const { products } = useAdminCatalog();
   const cart = buildCart(promotion, products, product);
   return (
-    <div className="grid gap-3 bg-[var(--gt-off-white)] p-4 sm:p-5">
+    <div className="grid grid-cols-[minmax(0,1fr)] gap-3 bg-[var(--gt-off-white)] p-4 sm:p-5">
       <h3 className="flex items-center justify-between gap-2 text-[length:var(--text-body-md)]">
         {t("promo.shop.orderSummary")}
         <span className="flex items-center gap-1 text-[11px] font-medium text-[var(--text-muted)]">
@@ -455,7 +455,7 @@ export function PreviewCampaignLanding({
           ))}
         </span>
       </CampaignCover>
-      <div className="grid gap-3 p-4 sm:p-5">
+      <div className="grid grid-cols-[minmax(0,1fr)] gap-3 p-4 sm:p-5">
         {list.length > 0 ? (
           <div className="grid grid-cols-2 gap-2.5 sm:grid-cols-3">
             {list.map((p, i) => (

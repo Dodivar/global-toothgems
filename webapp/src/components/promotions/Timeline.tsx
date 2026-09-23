@@ -53,7 +53,7 @@ export function ScheduleTimeline({
   else sentence = t("promo.timeline.running");
 
   return (
-    <div className="grid gap-3">
+    <div className="grid grid-cols-[minmax(0,1fr)] gap-3">
       <div className="relative h-14" aria-hidden="true">
         {/* track */}
         <span className="absolute inset-x-0 top-6 h-2 rounded-full bg-[var(--gt-ink-100)]" />
@@ -168,10 +168,13 @@ export function PromotionCalendar({ promotions, campaignName }: { promotions: Pr
     <div className="gt-admin-scroll overflow-x-auto">
       <div className="relative min-w-[680px]">
         <div className="relative mb-2 h-5 border-b border-[var(--border-subtle)]" aria-hidden="true">
-          {weeks.map((w) => (
+          {weeks.map((w, i) => (
             <span
               key={w}
-              className="absolute top-0 -translate-x-1/2 text-[10px] font-semibold uppercase tracking-[var(--tracking-wide)] text-[var(--text-subtle)]"
+              className={clsx(
+                "absolute top-0 whitespace-nowrap text-[10px] font-semibold uppercase tracking-[var(--tracking-wide)] text-[var(--text-subtle)]",
+                i === 0 ? "translate-x-0" : i === weeks.length - 1 ? "-translate-x-full" : "-translate-x-1/2",
+              )}
               style={{ left: `${pct(w)}%` }}
             >
               {dayMonth(new Date(w).toISOString())}

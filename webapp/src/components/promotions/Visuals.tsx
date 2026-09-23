@@ -91,7 +91,7 @@ export function GiftCardVisual({
     >
       {design === "photo" && (
         <>
-          <img src={photo("img-11.jpg")} alt="" className="absolute inset-0 h-full w-full object-cover" />
+          <img src={photo("mouth-01.jpg")} alt="" className="absolute inset-0 h-full w-full object-cover" />
           <span aria-hidden="true" className="absolute inset-0 bg-[linear-gradient(120deg,rgba(17,17,17,.72),rgba(17,17,17,.2)_70%)]" />
         </>
       )}

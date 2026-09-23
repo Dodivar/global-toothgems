@@ -109,17 +109,16 @@ export function Promotions() {
         onOpenNav={openNav}
         actions={
           <>
-            <AdminButton
+            <span><span className="hidden xl:inline-flex"><AdminButton
               variant="ghost"
               iconLeft={Gift}
-              className="hidden xl:inline-flex"
               onClick={() => navigate(promotionsHref("giftCards"))}
             >
               {t("promo.header.giftCards")}
-            </AdminButton>
-            <AdminButton variant="outline" iconLeft={Megaphone} className="hidden sm:inline-flex" onClick={() => navigate("/admin/promotions/campagnes/nouvelle")}>
+            </AdminButton></span></span>
+            <span><span className="hidden sm:inline-flex"><AdminButton variant="outline" iconLeft={Megaphone} onClick={() => navigate("/admin/promotions/campagnes/nouvelle")}>
               {t("promo.header.createCampaign")}
-            </AdminButton>
+            </AdminButton></span></span>
             <AdminButton variant="primary" iconLeft={Plus} onClick={() => navigate("/admin/promotions/nouvelle")}>
               <span className="hidden sm:inline">{t("promo.header.createPromotion")}</span>
               <span className="sm:hidden">{t("promo.header.createShort")}</span>
@@ -140,19 +139,19 @@ export function Promotions() {
         }
       />
 
-      <div className="grid gap-5 px-[var(--admin-gutter)] pb-[clamp(32px,5vw,56px)] pt-5">
+      <div className="grid grid-cols-[minmax(0,1fr)] gap-5 px-[var(--admin-gutter)] pb-[clamp(32px,5vw,56px)] pt-5">
         <PrototypeBar />
 
         <section aria-label={t("promo.kpi.label")} className="grid grid-cols-2 gap-3 sm:grid-cols-3 xl:grid-cols-6">
           <PromoKpi loading={loading} icon={CircleCheck} tone="success" label={t("promo.kpi.active")} value={String(kpi.active)} hint={kpi.endingSoon ? t("promo.kpi.endingSoon", { count: kpi.endingSoon }) : t("promo.kpi.activeHint")} to={promotionsHref("active")} />
           <PromoKpi loading={loading} icon={CalendarClock} tone="brand" label={t("promo.kpi.scheduled")} value={String(kpi.scheduled)} hint={t("promo.kpi.scheduledHint")} to={promotionsHref("scheduled")} />
           <PromoKpi loading={loading} icon={Megaphone} tone="highlight" label={t("promo.kpi.campaigns")} value={String(kpi.activeCampaigns)} hint={t("promo.kpi.campaignsHint", { count: campaigns.length })} to={promotionsHref("campaigns")} />
-          <PromoKpi loading={loading} icon={BadgeEuro} tone="success" label={t("promo.kpi.revenueLabel")} value={money(kpi.revenueCents)} hint={t("promo.kpi.revenueHint")} trend={trend} />
+          <PromoKpi loading={loading} icon={BadgeEuro} tone="success" label={t("promo.kpi.revenueLabel")} value={money(kpi.revenueCents)} hint={t("promo.kpi.revenueHint")} trend={trend.some((v) => v > 0) ? trend : undefined} />
           <PromoKpi loading={loading} icon={ShoppingBag} tone="neutral" label={t("promo.kpi.ordersLabel")} value={String(kpi.orders)} hint={t("promo.kpi.ordersHint")} />
           <PromoKpi loading={loading} icon={TicketPercent} tone="highlight" label={t("promo.kpi.giftCardRevenue")} value={money(kpi.giftCardRevenueCents)} hint={t("promo.kpi.giftCardHint", { count: kpi.giftCardsSold })} to={promotionsHref("giftCards")} />
         </section>
 
-        <div className="grid gap-4">
+        <div className="grid grid-cols-[minmax(0,1fr)] gap-4">
           <div className="flex flex-wrap items-end justify-between gap-2">
             <div className="min-w-0 flex-1">
               <PromoTabs items={tabs} current={tab} label={t("promo.tabs.label")} />

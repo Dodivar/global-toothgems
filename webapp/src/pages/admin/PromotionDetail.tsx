@@ -122,22 +122,22 @@ export function PromotionDetail() {
         onOpenNav={openNav}
         actions={
           <>
-            <AdminButton variant="outline" iconLeft={Pencil} onClick={() => navigate(`/admin/promotions/${promotion.id}/modifier`)} className="hidden sm:inline-flex">
+            <span className="hidden sm:inline-flex"><AdminButton variant="outline" iconLeft={Pencil} onClick={() => navigate(`/admin/promotions/${promotion.id}/modifier`)}>
               {t("promo.actions.edit")}
-            </AdminButton>
+            </AdminButton></span>
             {canPause && (
-              <AdminButton variant="outline" iconLeft={Pause} loading={busy} onClick={() => setLifecycle("paused")} className="hidden sm:inline-flex">
+              <span className="hidden sm:inline-flex"><AdminButton variant="outline" iconLeft={Pause} loading={busy} onClick={() => setLifecycle("paused")}>
                 {t("promo.actions.pause")}
-              </AdminButton>
+              </AdminButton></span>
             )}
             {canActivate && (
-              <AdminButton variant="primary" iconLeft={Play} loading={busy} disabled={validatePromotion(promotion).length > 0} onClick={() => setLifecycle("live")} className="hidden sm:inline-flex">
+              <span className="hidden sm:inline-flex"><AdminButton variant="primary" iconLeft={Play} loading={busy} disabled={validatePromotion(promotion).length > 0} onClick={() => setLifecycle("live")}>
                 {t("promo.actions.activate")}
-              </AdminButton>
+              </AdminButton></span>
             )}
-            <AdminButton variant="ghost" iconLeft={Copy} onClick={duplicate} disabled={busy} className="hidden lg:inline-flex">
+            <span><span className="hidden lg:inline-flex"><AdminButton variant="ghost" iconLeft={Copy} onClick={duplicate} disabled={busy}>
               {t("promo.actions.duplicate")}
-            </AdminButton>
+            </AdminButton></span></span>
             <OverflowMenu
               label={t("promo.actions.more", { name: promotion.name })}
               actions={[
@@ -155,7 +155,7 @@ export function PromotionDetail() {
         }
       />
 
-      <div className="grid gap-5 px-[var(--admin-gutter)] pb-[clamp(32px,5vw,56px)] pt-5">
+      <div className="grid grid-cols-[minmax(0,1fr)] gap-5 px-[var(--admin-gutter)] pb-[clamp(32px,5vw,56px)] pt-5">
         <PrototypeBar showModes={false} />
         <Hero promotion={promotion} onActivate={() => setLifecycle("live")} onDuplicate={duplicate} busy={busy} />
         <Performance promotion={promotion} />
@@ -215,7 +215,7 @@ function Hero({ promotion, onActivate, onDuplicate, busy }: { promotion: Promoti
           </Link>
         )}
       </div>
-      <div className="grid gap-1">
+      <div className="grid grid-cols-[minmax(0,1fr)] gap-1">
         <p className="m-0 text-[length:var(--text-h4)] font-semibold text-[var(--text-primary)]">{l(promotion.customerTitle) || promotion.name}</p>
         {l(promotion.customerDescription) && <p className="m-0 max-w-[70ch] text-[length:var(--text-body-sm)] text-[var(--text-body)]">{l(promotion.customerDescription)}</p>}
         {promotion.internalDescription && (
@@ -354,7 +354,7 @@ function Configuration({ promotion }: { promotion: Promotion }) {
   const yes = (v: boolean) => (v ? t("promo.common.yes") : t("promo.common.no"));
 
   return (
-    <div className="grid gap-4">
+    <div className="grid grid-cols-[minmax(0,1fr)] gap-4">
       <Panel title={t("promo.detail.discountConfig")} icon={Percent}>
         <dl className="m-0 grid gap-4 sm:grid-cols-3">
           <Fact label={t("promo.table.type")} value={t(`promo.type.${d.type}`)} />
@@ -412,7 +412,7 @@ function Configuration({ promotion }: { promotion: Promotion }) {
         )}
       </Panel>
 
-      <div className="grid gap-4 lg:grid-cols-2">
+      <div className="grid grid-cols-[minmax(0,1fr)] gap-4 lg:grid-cols-2">
         <Panel title={t("promo.detail.eligibility")} icon={Users}>
           <dl className="m-0 grid gap-3">
             <Fact
@@ -465,12 +465,12 @@ function Aside({ promotion }: { promotion: Promotion }) {
   const c = promotion.code;
 
   return (
-    <aside className="grid gap-4 xl:sticky xl:top-[calc(var(--admin-header-h)+16px)]">
+    <aside className="grid grid-cols-[minmax(0,1fr)] gap-4 xl:sticky xl:top-[calc(var(--admin-header-h)+16px)]">
       <Panel title={t("promo.detail.code")} icon={KeyRound}>
         {c.mode === "automatic" ? (
           <p className="m-0 text-[length:var(--text-body-sm)] text-[var(--text-body)]">{t("promo.detail.automaticBody")}</p>
         ) : c.code ? (
-          <div className="grid gap-2">
+          <div className="grid grid-cols-[minmax(0,1fr)] gap-2">
             <div className="flex items-center justify-between gap-2 rounded-[var(--admin-radius-sm)] border border-dashed border-[var(--gt-ink-400)] bg-[var(--admin-panel-sunken)] px-3 py-2.5">
               <span className="font-[family-name:var(--gt-font-mono)] text-[length:var(--text-body-md)] font-bold tracking-[.08em]">{c.code}</span>
               <CopyButton value={c.code} label={t("promo.editor.code.copy")} copiedLabel={t("promo.editor.code.copied")} onCopied={() => showToast(t("promo.toast.codeCopied"), c.code, "info")} />

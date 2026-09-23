@@ -95,7 +95,7 @@ export function BasicsSection(props: SectionProps & { campaigns: Campaign[] }) {
       summary={draft.name || t("promo.editor.untitled")}
       state={sectionState("basics", props)}
     >
-      <div className="grid gap-4 md:grid-cols-2">
+      <div className="grid grid-cols-[minmax(0,1fr)] gap-4 md:grid-cols-2">
         <FormField label={t("promo.editor.basics.name")} hint={t("promo.editor.basics.nameHint")} error={issue("name")} required>
           {(a) => (
             <input
@@ -133,7 +133,7 @@ export function BasicsSection(props: SectionProps & { campaigns: Campaign[] }) {
         )}
       </FormField>
 
-      <div className="grid gap-4 rounded-[var(--admin-radius)] border border-[var(--gt-fuchsia-300)] bg-[linear-gradient(180deg,var(--gt-fuchsia-50),transparent_70%)] p-4">
+      <div className="grid grid-cols-[minmax(0,1fr)] gap-4 rounded-[var(--admin-radius)] border border-[var(--gt-fuchsia-300)] bg-[linear-gradient(180deg,var(--gt-fuchsia-50),transparent_70%)] p-4">
         <p className="m-0 flex items-center gap-2 text-[length:var(--text-caption)] font-semibold text-[var(--accent-highlight-ink)]">
           <Info size={14} aria-hidden="true" /> {t("promo.editor.basics.customerFacing")}
         </p>
@@ -452,7 +452,7 @@ export function EligibilitySection(props: SectionProps) {
       summary={`${t(`promo.editor.eligibility.scope.${e.scope}`)} · ${t(`promo.editor.eligibility.customers.${e.customers}`)}`}
       state={sectionState("eligibility", props)}
     >
-      <div className="grid gap-3">
+      <div className="grid grid-cols-[minmax(0,1fr)] gap-3">
         <h3 className="flex items-center gap-2 text-[length:var(--text-body-sm)]">
           <Tags size={15} aria-hidden="true" className="text-[var(--text-muted)]" />
           {t("promo.editor.eligibility.productsHeading")}
@@ -506,7 +506,7 @@ export function EligibilitySection(props: SectionProps) {
         )}
       </div>
 
-      <div className="grid gap-3 border-t border-[var(--border-subtle)] pt-5">
+      <div className="grid grid-cols-[minmax(0,1fr)] gap-3 border-t border-[var(--border-subtle)] pt-5">
         <h3 className="flex items-center gap-2 text-[length:var(--text-body-sm)]">
           <Users size={15} aria-hidden="true" className="text-[var(--text-muted)]" />
           {t("promo.editor.eligibility.customersHeading")}
@@ -544,7 +544,7 @@ export function EligibilitySection(props: SectionProps) {
         )}
       </div>
 
-      <div className="grid gap-4 border-t border-[var(--border-subtle)] pt-5 md:grid-cols-2">
+      <div className="grid grid-cols-[minmax(0,1fr)] gap-4 border-t border-[var(--border-subtle)] pt-5 md:grid-cols-2">
         <FormField label={t("promo.editor.eligibility.minCart")} hint={t("promo.editor.eligibility.minCartHint")}>
           {(a) => <UnitInput id={a.id} describedBy={a["aria-describedby"]} unit="€" value={centsToInput(e.minCartCents)} onChange={(v) => set({ minCartCents: parseEuros(v) })} placeholder={t("promo.editor.noMinimum")} />}
         </FormField>
@@ -583,7 +583,7 @@ export function UsageSection(props: SectionProps) {
         .join(" · ")}
       state={sectionState("usage", props)}
     >
-      <div className="grid gap-4 md:grid-cols-2">
+      <div className="grid grid-cols-[minmax(0,1fr)] gap-4 md:grid-cols-2">
         <FormField label={t("promo.editor.usage.maxTotal")} hint={t("promo.editor.usage.maxTotalHint")}>
           {(a) => <UnitInput id={a.id} describedBy={a["aria-describedby"]} inputMode="numeric" unit="×" value={u.maxTotal ? String(u.maxTotal) : ""} onChange={(v) => set({ maxTotal: intOrNull(v) })} placeholder={t("promo.editor.noLimit")} />}
         </FormField>
@@ -593,7 +593,7 @@ export function UsageSection(props: SectionProps) {
           )}
         </FormField>
       </div>
-      <div className="grid gap-4 rounded-[var(--admin-radius)] border border-[var(--border-subtle)] p-4">
+      <div className="grid grid-cols-[minmax(0,1fr)] gap-4 rounded-[var(--admin-radius)] border border-[var(--border-subtle)] p-4">
         <ToggleSwitch label={t("promo.editor.usage.combinable")} description={t("promo.editor.usage.combinableHint")} checked={u.combinable} onChange={(combinable) => set({ combinable })} />
         <ToggleSwitch label={t("promo.editor.usage.excludeDiscounted")} description={t("promo.editor.usage.excludeDiscountedHint")} checked={u.excludeDiscounted} onChange={(excludeDiscounted) => set({ excludeDiscounted })} />
         <ToggleSwitch label={t("promo.editor.usage.excludeGiftCards")} description={t("promo.editor.usage.excludeGiftCardsHint")} checked={u.excludeGiftCards} onChange={(excludeGiftCards) => set({ excludeGiftCards })} />
@@ -673,17 +673,17 @@ export function ScheduleSection(props: SectionProps) {
         ))}
       </div>
 
-      <div className="grid gap-4 md:grid-cols-2">
+      <div className="grid grid-cols-[minmax(0,1fr)] gap-4 md:grid-cols-2">
         <fieldset className="m-0 grid gap-2 border-0 p-0">
           <legend className="mb-1 p-0 text-[length:var(--text-caption)] font-semibold text-[var(--text-primary)]">
             {t("promo.editor.schedule.start")} <span className="text-[var(--accent-highlight-ink)]" aria-hidden="true">*</span>
           </legend>
           <div className="grid grid-cols-[minmax(0,1.4fr)_minmax(0,1fr)] gap-2">
-            <label className="grid gap-1">
+            <label className="grid grid-cols-[minmax(0,1fr)] gap-1">
               <span className="text-[11px] text-[var(--text-muted)]">{t("promo.editor.schedule.date")}</span>
               <input type="date" value={startDate} onChange={(e) => set({ startsAt: `${e.target.value}T${startTime || "00:00"}` })} className="gt-admin-field" required />
             </label>
-            <label className="grid gap-1">
+            <label className="grid grid-cols-[minmax(0,1fr)] gap-1">
               <span className="text-[11px] text-[var(--text-muted)]">{t("promo.editor.schedule.time")}</span>
               <input type="time" value={startTime} onChange={(e) => set({ startsAt: `${startDate}T${e.target.value || "00:00"}` })} className="gt-admin-field" />
             </label>
@@ -692,7 +692,7 @@ export function ScheduleSection(props: SectionProps) {
         <fieldset className="m-0 grid gap-2 border-0 p-0" aria-describedby={invalid ? "schedule-error" : undefined}>
           <legend className="mb-1 p-0 text-[length:var(--text-caption)] font-semibold text-[var(--text-primary)]">{t("promo.editor.schedule.end")}</legend>
           <div className="grid grid-cols-[minmax(0,1.4fr)_minmax(0,1fr)] gap-2">
-            <label className="grid gap-1">
+            <label className="grid grid-cols-[minmax(0,1fr)] gap-1">
               <span className="text-[11px] text-[var(--text-muted)]">{t("promo.editor.schedule.date")}</span>
               <input
                 type="date"
@@ -704,7 +704,7 @@ export function ScheduleSection(props: SectionProps) {
                 className="gt-admin-field"
               />
             </label>
-            <label className="grid gap-1">
+            <label className="grid grid-cols-[minmax(0,1fr)] gap-1">
               <span className="text-[11px] text-[var(--text-muted)]">{t("promo.editor.schedule.time")}</span>
               <input type="time" value={endTime} disabled={!s.endsAt} aria-invalid={invalid ? true : undefined} onChange={(e) => set({ endsAt: `${endDate}T${e.target.value || "23:59"}` })} className="gt-admin-field" />
             </label>
@@ -767,7 +767,7 @@ export function CodeSection(props: SectionProps & { codeTaken: boolean }) {
       summary={c.mode === "automatic" ? t("promo.code.automatic") : c.code || t("promo.editor.code.missing")}
       state={codeTaken && c.mode === "code" ? "issue" : sectionState("code", props)}
     >
-      <div className="grid gap-2 sm:grid-cols-2">
+      <div className="grid grid-cols-[minmax(0,1fr)] gap-2 sm:grid-cols-2">
         {(["automatic", "code"] as const).map((mode) => {
           const on = c.mode === mode;
           return (
@@ -826,7 +826,7 @@ export function CodeSection(props: SectionProps & { codeTaken: boolean }) {
               </button>
             ))}
           </div>
-          <div className="grid gap-4 rounded-[var(--admin-radius)] border border-[var(--border-subtle)] p-4">
+          <div className="grid grid-cols-[minmax(0,1fr)] gap-4 rounded-[var(--admin-radius)] border border-[var(--border-subtle)] p-4">
             <ToggleSwitch
               label={t("promo.editor.code.caseSensitive")}
               description={c.caseSensitive ? t("promo.editor.code.caseSensitiveOn") : t("promo.editor.code.caseSensitiveOff", { code: c.code || "SPARKLE20", lower: (c.code || "SPARKLE20").toLowerCase() })}

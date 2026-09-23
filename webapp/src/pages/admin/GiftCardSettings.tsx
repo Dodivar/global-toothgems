@@ -107,12 +107,12 @@ export function GiftCardSettings() {
         onOpenNav={openNav}
         actions={
           <>
-            <AdminButton variant="ghost" iconLeft={ExternalLink} className="hidden md:inline-flex" onClick={() => navigate("/carte-cadeau")} disabled={dirty}>
+            <span><span className="hidden md:inline-flex"><AdminButton variant="ghost" iconLeft={ExternalLink} onClick={() => navigate("/carte-cadeau")} disabled={dirty}>
               {t("promo.cards.viewStore")}
-            </AdminButton>
-            <AdminButton variant="outline" iconLeft={RotateCcw} className="hidden sm:inline-flex" disabled={!dirty || saving} onClick={() => { setDraft(store.config); setDirty(false); }}>
+            </AdminButton></span></span>
+            <span><span className="hidden sm:inline-flex"><AdminButton variant="outline" iconLeft={RotateCcw} disabled={!dirty || saving} onClick={() => { setDraft(store.config); setDirty(false); }}>
               {t("promo.config.revert")}
-            </AdminButton>
+            </AdminButton></span></span>
             <AdminButton variant="primary" iconLeft={Save} loading={saving} disabled={!dirty} onClick={save}>
               {t("promo.config.save")}
             </AdminButton>
@@ -120,7 +120,7 @@ export function GiftCardSettings() {
         }
       />
 
-      <div className="grid gap-5 px-[var(--admin-gutter)] pb-[clamp(32px,5vw,56px)] pt-5">
+      <div className="grid grid-cols-[minmax(0,1fr)] gap-5 px-[var(--admin-gutter)] pb-[clamp(32px,5vw,56px)] pt-5">
         <PrototypeBar showModes={false} />
         {dirty && <Notice tone="info" title={t("promo.config.unsaved")}>{t("promo.config.unsavedBody")}</Notice>}
         {errors.length > 0 && (
@@ -183,7 +183,7 @@ export function GiftCardSettings() {
                   {t("promo.config.sortAsc")}
                 </AdminButton>
               </div>
-              <div className="grid gap-4 border-t border-[var(--border-subtle)] pt-4">
+              <div className="grid grid-cols-[minmax(0,1fr)] gap-4 border-t border-[var(--border-subtle)] pt-4">
                 <ToggleSwitch label={t("promo.config.custom")} description={t("promo.config.customHint")} checked={draft.allowCustomAmount} onChange={(allowCustomAmount) => set({ allowCustomAmount })} />
                 <div className={clsx("grid gap-4 sm:grid-cols-2", !draft.allowCustomAmount && "opacity-50")}>
                   <FormField label={t("promo.config.min")}>
@@ -213,7 +213,7 @@ export function GiftCardSettings() {
                 )}
               </FormField>
               <ToggleSwitch label={t("promo.config.scheduled")} description={t("promo.config.scheduledHint")} checked={draft.allowScheduledDelivery} onChange={(allowScheduledDelivery) => set({ allowScheduledDelivery })} />
-              <div className="grid gap-3 border-t border-[var(--border-subtle)] pt-4">
+              <div className="grid grid-cols-[minmax(0,1fr)] gap-3 border-t border-[var(--border-subtle)] pt-4">
                 <h3 className="text-[length:var(--text-body-sm)]">{t("promo.config.fields")}</h3>
                 {fieldKeys.map((key) => (
                   <div key={key} className="flex flex-wrap items-center justify-between gap-2">
@@ -266,12 +266,12 @@ export function GiftCardSettings() {
             </FormSection>
           </div>
 
-          <aside aria-label={t("promo.config.preview")} className="grid gap-3 xl:sticky xl:top-[calc(var(--admin-header-h)+16px)]">
+          <aside aria-label={t("promo.config.preview")} className="grid grid-cols-[minmax(0,1fr)] gap-3 xl:sticky xl:top-[calc(var(--admin-header-h)+16px)]">
             <h2 className="text-[length:var(--text-body-md)]">{t("promo.config.preview")}</h2>
             <PreviewFrame label="globaltoothgems.com/carte-cadeau">
-              <div className="grid gap-4 bg-[radial-gradient(500px_260px_at_90%_0%,var(--gt-blue-100),transparent),var(--gt-white)] p-4">
+              <div className="grid grid-cols-[minmax(0,1fr)] gap-4 bg-[radial-gradient(500px_260px_at_90%_0%,var(--gt-blue-100),transparent),var(--gt-white)] p-4">
                 <GiftCardVisual design={draft.defaultDesign} amountCents={shown} recipient="Jade" sender="Manon" message={t("promo.config.sampleMessage")} size="md" />
-                <div className="grid gap-1">
+                <div className="grid grid-cols-[minmax(0,1fr)] gap-1">
                   <strong className="text-[length:var(--text-body-md)] text-[var(--text-primary)]">{l(draft.title) || "—"}</strong>
                   <p className="m-0 line-clamp-3 text-[length:var(--text-caption)] text-[var(--text-body)]">{l(draft.description)}</p>
                 </div>

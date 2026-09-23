@@ -178,7 +178,7 @@ function EditorForm({ initial, isNew }: { initial: Promotion; isNew: boolean }) 
         }
       />
 
-      <div className="grid gap-5 px-[var(--admin-gutter)] pb-28 pt-5 md:pb-[clamp(32px,5vw,56px)]">
+      <div className="grid grid-cols-[minmax(0,1fr)] gap-5 px-[var(--admin-gutter)] pb-28 pt-5 md:pb-[clamp(32px,5vw,56px)]">
         <PrototypeBar showModes={false} />
 
         {showErrors && blocking > 0 && (
@@ -228,7 +228,7 @@ function EditorForm({ initial, isNew }: { initial: Promotion; isNew: boolean }) 
           </div>
 
           {/* Summary aside: sticky on wide screens, after the form on narrow ones. */}
-          <aside aria-label={t("promo.editor.summary")} className="grid gap-4 xl:sticky xl:top-[calc(var(--admin-header-h)+16px)]">
+          <aside aria-label={t("promo.editor.summary")} className="grid grid-cols-[minmax(0,1fr)] gap-4 xl:sticky xl:top-[calc(var(--admin-header-h)+16px)]">
             <section className="gt-admin-panel grid gap-3 p-4">
               <div className="flex items-start justify-between gap-2">
                 <h2 className="text-[length:var(--text-body-md)]">{t("promo.editor.summary")}</h2>

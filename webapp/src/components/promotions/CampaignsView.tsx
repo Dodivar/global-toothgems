@@ -79,7 +79,7 @@ export function CampaignsView() {
   }
 
   return (
-    <div className="grid gap-4">
+    <div className="grid grid-cols-[minmax(0,1fr)] gap-4">
       <div className="gt-admin-panel flex flex-wrap items-end gap-2 p-4">
         <div className="min-w-[200px] flex-1">
           <SearchInput
@@ -102,11 +102,11 @@ export function CampaignsView() {
       </div>
 
       {loading ? (
-        <div className="grid gap-4 sm:grid-cols-2 xl:grid-cols-3" role="status" aria-label={t("promo.common.loading")}>
+        <div className="grid grid-cols-[minmax(0,1fr)] gap-4 sm:grid-cols-2 xl:grid-cols-3" role="status" aria-label={t("promo.common.loading")}>
           {Array.from({ length: 3 }).map((_, i) => (
             <div key={i} className="gt-admin-panel overflow-hidden">
               <div className="gt-skeleton h-[112px]" />
-              <div className="grid gap-2 p-4">
+              <div className="grid grid-cols-[minmax(0,1fr)] gap-2 p-4">
                 <div className="gt-skeleton h-3 w-1/2 rounded-full" />
                 <div className="gt-skeleton h-2.5 w-1/3 rounded-full" />
               </div>
