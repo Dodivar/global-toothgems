@@ -81,8 +81,30 @@ export const GEM_COLOR_SWATCH: Record<GemColor, string> = {
   gold: "linear-gradient(135deg, #f7e2ac, #c8992f)",
 };
 
-export interface Product {
+/**
+ * Shop category keys, as used by the `categorie` URL parameter and the
+ * `shop.categories.*` labels. The database's category slugs are mapped onto
+ * these in `lib/catalog/mapping.ts`.
+ */
+export type ShopCategory = "Gems" | "Outils" | "Kits" | "Suivi" | "Accessoires";
+
+export const SHOP_CATEGORIES: ShopCategory[] = ["Gems", "Outils", "Kits", "Suivi", "Accessoires"];
+
+/** A purchasable option of a catalogue product (colour, size, box quantity…). */
+export interface ProductVariant {
   id: string;
+  name: Localized;
+  /** Display price in major units; the server recomputes every price at checkout. */
+  price: number;
+  compareAtPrice?: number;
+  stock?: "low" | "out";
+}
+
+export interface Product {
+  /** URL key: the product slug in the default language. */
+  id: string;
+  /** Localized slugs that also resolve to this product (e.g. the English URL). */
+  aliases?: string[];
   name: Localized;
   subtitle: Localized;
   price: number;
@@ -93,7 +115,8 @@ export interface Product {
   reviewCount: number;
   stock?: "low" | "out";
   image: string;
-  cat: "Gems" | "Outils" | "Kits" | "Suivi";
+  /** `null` when the product's category is not one the shop filters on. */
+  cat: ShopCategory | null;
   material: string;
   /** Gems only. Tools, kits and aftercare have no cut. */
   shape?: GemShape;
@@ -102,6 +125,9 @@ export interface Product {
   description?: Localized;
   center?: Localized;
   gallery?: { src: string; alt: Localized }[];
+  /** Database products only. Mock products use the prototype's shade/size pickers. */
+  variants?: ProductVariant[];
+  isFeatured?: boolean;
 }
 
 const img = (name: string) => new URL(`../assets/photos/${name}`, import.meta.url).href;
@@ -363,20 +389,26 @@ export const PRODUCTS: Product[] = [
   },
 ];
 
-export function getProduct(id: string): Product | undefined {
-  return PRODUCTS.find((p) => p.id === id);
+export function getProduct(id: string, list: Product[] = PRODUCTS): Product | undefined {
+  return list.find((p) => p.id === id || p.aliases?.includes(id));
 }
 
-export function bestSellers(): Product[] {
-  const pool = PRODUCTS.filter((p) => p.cat === "Gems" || p.cat === "Kits")
-    .slice()
-    .sort((a, b) => b.reviewCount - a.reviewCount)
+export function bestSellers(list: Product[] = PRODUCTS): Product[] {
+  return list
+    .filter((p) => p.cat === "Gems" || p.cat === "Kits")
+    .sort((a, b) => Number(b.isFeatured ?? false) - Number(a.isFeatured ?? false) || b.reviewCount - a.reviewCount)
     .slice(0, 4);
-  return pool;
 }
 
-export function relatedProducts(): Product[] {
-  return PRODUCTS.slice(3, 7);
+/**
+ * Cross-sell for a product page: the same category first, then the rest of
+ * the catalogue, never the product itself.
+ */
+export function relatedProducts(product: Product, list: Product[] = PRODUCTS): Product[] {
+  const others = list.filter((p) => p.id !== product.id);
+  const sameCategory = others.filter((p) => p.cat !== null && p.cat === product.cat);
+  const rest = others.filter((p) => !sameCategory.includes(p));
+  return [...sameCategory, ...rest].slice(0, 4);
 }
 
 export interface ShapeGroup {
@@ -390,10 +422,10 @@ export interface ShapeGroup {
  * Derived rather than hardcoded so a shape tile can never land on an empty
  * result page: adding or removing a gem updates the carousel by itself.
  */
-export function shapesInCatalog(): ShapeGroup[] {
+export function shapesInCatalog(list: Product[] = PRODUCTS): ShapeGroup[] {
   const groups: ShapeGroup[] = [];
   for (const shape of GEM_SHAPES) {
-    const count = PRODUCTS.filter((p) => p.shape === shape).length;
+    const count = list.filter((p) => p.shape === shape).length;
     if (count > 0) groups.push({ shape, count });
   }
   return groups;
@@ -410,10 +442,10 @@ export interface ColorGroup {
  * Derived for the same reason as {@link shapesInCatalog}: a swatch can never
  * land on an empty result page.
  */
-export function colorsInCatalog(): ColorGroup[] {
+export function colorsInCatalog(list: Product[] = PRODUCTS): ColorGroup[] {
   const groups: ColorGroup[] = [];
   for (const color of GEM_COLORS) {
-    const count = PRODUCTS.filter((p) => p.color === color).length;
+    const count = list.filter((p) => p.color === color).length;
     if (count > 0) groups.push({ color, count });
   }
   return groups;

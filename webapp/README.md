@@ -32,6 +32,7 @@ This starts the Vite dev server (default [http://localhost:5173](http://localhos
 npm run build     # type-check (tsc -b) and build a production bundle into dist/
 npm run preview   # serve the production build locally to sanity-check it
 npm run lint      # oxlint
+npm test          # vitest (catalogue mapping and money conversion)
 ```
 
 ## Deploying (`vercel.json`)
@@ -54,6 +55,56 @@ The file must sit in whatever directory Vercel builds from. This app lives in
 `webapp/`, so the project's **Root Directory** has to be `webapp` for the build
 to find `package.json` at all, and `vercel.json` belongs next to it. A copy at
 the repository root would be ignored.
+
+## Supabase connection (catalogue)
+
+The storefront catalogue is read from the Supabase project described in
+`supabase/README.md`. Copy `.env.example` to `.env.local` (git-ignored) and
+set, locally and in the Vercel project settings:
+
+| Variable | Value |
+| --- | --- |
+| `VITE_SUPABASE_URL` | `https://<project-ref>.supabase.co` |
+| `VITE_SUPABASE_PUBLISHABLE_KEY` | the project's **publishable** key (`sb_publishable_…`) |
+
+Only the publishable key ever goes in a `VITE_` variable — Vite inlines them
+into the public bundle. Every read is authorized by Row Level Security; the
+service role key belongs to server code only. With both variables empty the
+app runs on its mock fixtures, as before.
+
+```
+src/lib/supabase/client.ts          the browser client (typed), `isSupabaseConfigured`
+src/lib/supabase/database.types.ts  generated from the live schema — regenerate after each migration
+src/lib/supabase/storage.ts         buckets: public URLs (product-media), signed URLs (avatars, review-photos)
+src/lib/catalog/api.ts              one PostgREST query: products + category + translations + variants + media + stock, and review stats
+src/lib/catalog/mapping.ts          pure row → `Product` mapping (locale fallback, stock, minor-unit money) — unit-tested
+src/lib/catalog/CatalogProvider.tsx loads the catalogue once, exposes `useCatalog()` (status, products, reload, findProduct)
+```
+
+What reads it: the shop (`/boutique`), the product page (`/boutique/:slug`,
+base or English slug), the home best-sellers, the empty-cart suggestions, and
+the shape/colour navigation. Loading shows skeletons; a failed load shows a
+retry and never falls back to mock products. An unknown slug is a 404.
+
+Mapping rules worth knowing:
+
+- **Language**: base columns are French; the English text comes from
+  *published* translation rows, else falls back to French.
+- **Categories**: `gems → Gems`, `outils → Outils`, `kits → Kits`,
+  `entretien → Suivi`, `accessoires → Accessoires` (the `categorie` URL values).
+- **Shape / colour filters** read `products.metadata.shape` / `.color`, using the
+  slugs of `GEM_SHAPES` / `GEM_COLORS` (`"star"`, `"crystal"`…). Products without
+  them are simply not in those filters.
+- **Variants** come from `product_variants`; a null variant price inherits the
+  product price. The cart line keeps the `variantId` for the future checkout.
+- **Money** is converted to integer minor units from the decimal digits (no
+  float maths). Prices shown are indicative: `create_order()` recomputes them.
+- **Images** are public URLs of `product-media` objects. A path whose file is
+  not uploaded yet shows the image placeholder.
+- Gift cards (`product_type = 'gift_card'`) stay on their own page.
+
+Not connected yet (still mock): authentication, cart persistence and checkout,
+orders, reviews list/moderation, the Academy, the community and the back office.
 
 ## Project structure
 

@@ -1,3 +1,4 @@
+import { useState } from "react";
 import { Link } from "react-router-dom";
 import { useTranslation } from "react-i18next";
 import { Heart, Image as ImageIcon, Star } from "lucide-react";
@@ -39,17 +40,22 @@ export function ProductCard({ product, to, onSave, saved = false, eager = false 
   } = product;
 
   const loading = eager ? undefined : ("lazy" as const);
+  // A catalogue row can point at a Storage object that was never uploaded;
+  // the placeholder then stands in rather than a broken-image icon.
+  const [brokenImage, setBrokenImage] = useState<string | null>(null);
+  const showImage = Boolean(image) && brokenImage !== image;
 
   return (
     <article className="group relative rounded-[var(--radius-card)] border border-[var(--border-subtle)] bg-[var(--surface-card)] p-[var(--space-3)] shadow-[var(--shadow-xs)] transition-[transform,box-shadow] duration-[var(--duration-normal)] ease-[var(--ease-out-soft)] hover:-translate-y-[3px] hover:shadow-[var(--shadow-md)] focus-within:-translate-y-[3px] focus-within:shadow-[var(--shadow-md)]">
       <div className="relative aspect-square overflow-hidden rounded-[var(--radius-media)] bg-[var(--surface-sunken)]">
-        {image ? (
+        {showImage ? (
           <>
             <img
               src={image}
               alt=""
               loading={loading}
               decoding="async"
+              onError={() => setBrokenImage(image ?? null)}
               className="h-full w-full object-cover transition-transform duration-[var(--duration-normal)] group-hover:scale-[1.03] group-focus-within:scale-[1.03]"
             />
             {hoverImage && (
@@ -116,7 +122,7 @@ export function ProductCard({ product, to, onSave, saved = false, eager = false 
           </Link>
         </h4>
         {subtitle && <span className="text-xs text-[var(--text-muted)]">{subtitle}</span>}
-        {rating != null && (
+        {rating != null && (reviewCount ?? 0) > 0 && (
           <span className="flex items-center gap-1 text-xs text-[var(--text-muted)]">
             <Star size={12} fill="var(--gt-ink-900)" color="var(--gt-ink-900)" aria-hidden="true" />
             <span aria-label={t("product.ratingAria", { rating: rating.toFixed(1), count: reviewCount ?? 0 })}>

@@ -11,6 +11,7 @@ import { useCart } from "../../lib/cart";
 import { useToast } from "../../lib/toast";
 import { MENU } from "../../data/menu";
 import { colorsInCatalog, shapesInCatalog } from "../../data/products";
+import { useCatalog } from "../../lib/catalog/CatalogProvider";
 import { colorHref, shapeHref } from "../../lib/shopUrl";
 import { pick } from "../../data/types";
 import { NewTag } from "../studio/NewTag";
@@ -132,8 +133,9 @@ export function Header() {
 
   const cartLabel = count > 0 ? t("nav.cartWithCount", { count }) : t("nav.cart");
 
-  const shapeGroups = shapesInCatalog();
-  const colorGroups = colorsInCatalog();
+  const { products } = useCatalog();
+  const shapeGroups = shapesInCatalog(products);
+  const colorGroups = colorsInCatalog(products);
 
   const goTo = (to: string) => {
     clearHoverTimer();

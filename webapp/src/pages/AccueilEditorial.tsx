@@ -7,6 +7,7 @@ import { Badge } from "../components/ui/Badge";
 import { Checkbox } from "../components/ui/Checkbox";
 import { ShapeGlyph } from "../components/ui/ShapeGlyph";
 import { bestSellers, shapesInCatalog } from "../data/products";
+import { useCatalog } from "../lib/catalog/CatalogProvider";
 import { CATEGORY_TILES } from "../data/categoryTiles";
 import { COURSES } from "../data/courses";
 import { REVIEWS } from "../data/reviews";
@@ -100,8 +101,9 @@ export function AccueilEditorial() {
   const [subscribed, setSubscribed] = useState(false);
   const [saved, setSaved] = useState<Record<string, boolean>>({});
 
-  const featured = bestSellers();
-  const shapeGroups = shapesInCatalog();
+  const { products } = useCatalog();
+  const featured = bestSellers(products);
+  const shapeGroups = shapesInCatalog(products);
   const [lead, ...rest] = REVIEWS;
 
   const subscribe = () => {

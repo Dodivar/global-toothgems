@@ -6,9 +6,10 @@ import { Button } from "../ui/Button";
 import { Select, type SelectOption } from "../ui/Select";
 import { ShapeGlyph } from "../ui/ShapeGlyph";
 import { ColorSwatch } from "../ui/ColorSwatch";
-import { colorsInCatalog, shapesInCatalog } from "../../data/products";
+import { SHOP_CATEGORIES, colorsInCatalog, shapesInCatalog } from "../../data/products";
+import { useCatalog } from "../../lib/catalog/CatalogProvider";
 
-const CATEGORIES = ["Tout", "Gems", "Outils", "Kits", "Suivi"] as const;
+const CATEGORIES = ["Tout", ...SHOP_CATEGORIES] as const;
 
 interface ShopFilterBarProps {
   category: string;
@@ -75,8 +76,9 @@ export function ShopFilterBar(props: ShopFilterBarProps) {
   const { t } = useTranslation();
   const { category, shape, color, material, priceBand, stockBand, sort, setParam } = props;
 
-  const shapes = shapesInCatalog();
-  const colors = colorsInCatalog();
+  const { products } = useCatalog();
+  const shapes = shapesInCatalog(products);
+  const colors = colorsInCatalog(products);
 
   return (
     <div className="grid gap-5 border-b border-[var(--border-subtle)] pb-6">

@@ -134,7 +134,8 @@
       "Gems": "Gems",
       "Outils": "Outils",
       "Kits": "Kits",
-      "Suivi": "Suivi"
+      "Suivi": "Suivi",
+      "Accessoires": "Accessoires"
     },
     "materials": {
       "all": "Toutes les matières",
@@ -251,7 +252,8 @@
     "basedOn_one": "sur {{count}} avis vérifié",
     "basedOn_other": "sur {{count}} avis vérifiés",
     "stickyBarLabel": "Ajouter au panier",
-    "zoomHint": "Survolez pour agrandir"
+    "zoomHint": "Survolez pour agrandir",
+    "variantLabel": "Option"
   },
   "cart": {
     "confirmedBadge": "Commande confirmée",
@@ -3468,5 +3470,11 @@
       "companyCta": "Mentions légales",
       "storyTitle": "Notre histoire"
     }
+  },
+  "catalog": {
+    "loading": "Chargement du catalogue…",
+    "errorTitle": "Le catalogue est momentanément indisponible",
+    "errorBody": "Nous n’avons pas pu charger les produits. Vérifiez votre connexion puis réessayez.",
+    "retry": "Réessayer"
   }
 }

@@ -5,9 +5,11 @@ import { X } from "lucide-react";
 import { Button } from "../components/ui/Button";
 import { ProductCard } from "../components/ui/ProductCard";
 import { ShopFilterBar } from "../components/shop/ShopFilterBar";
-import { GEM_COLORS, GEM_SHAPES, PRODUCTS } from "../data/products";
+import { GEM_COLORS, GEM_SHAPES } from "../data/products";
 import { pick } from "../data/types";
 import { useToast } from "../lib/toast";
+import { useCatalog } from "../lib/catalog/CatalogProvider";
+import { CatalogError } from "../components/shop/CatalogError";
 
 /** Three full rows at the widest column count. */
 const PER_PAGE = 12;
@@ -22,6 +24,7 @@ const GRID = "grid grid-cols-2 gap-4 sm:grid-cols-3 sm:gap-6 xl:grid-cols-4";
 export function Shop() {
   const { t, i18n } = useTranslation();
   const { showToast } = useToast();
+  const { products, status: catalogStatus } = useCatalog();
   const lang = i18n.language;
   const [params, setParams] = useSearchParams();
 
@@ -79,7 +82,7 @@ export function Shop() {
   ];
 
   const filtered = useMemo(() => {
-    let list = PRODUCTS.slice();
+    let list = products.slice();
     if (filter !== "Tout") list = list.filter((p) => p.cat === filter);
     // `material` holds exactly the option values, so it is read from the product
     // rather than parsed back out of the localised subtitle.
@@ -104,7 +107,7 @@ export function Shop() {
     else if (sort === "priceDesc") list = list.slice().sort((a, b) => b.price - a.price);
     else if (sort === "rating") list = list.slice().sort((a, b) => b.rating - a.rating);
     return list;
-  }, [filter, material, shape, color, priceBand, stockBand, sort]);
+  }, [products, filter, material, shape, color, priceBand, stockBand, sort]);
 
   const pageCount = Math.max(1, Math.ceil(filtered.length / PER_PAGE));
   const safePage = Math.min(page, pageCount);
@@ -197,10 +200,14 @@ export function Shop() {
               role="status"
               aria-live="polite"
             >
-              {t(filtered.length === 1 ? "shop.resultCount_one" : "shop.resultCount_other", {
-                count: filtered.length,
-                total: PRODUCTS.length,
-              })}
+              {catalogStatus === "loading"
+                ? t("catalog.loading")
+                : catalogStatus === "error"
+                  ? null
+                  : t(filtered.length === 1 ? "shop.resultCount_one" : "shop.resultCount_other", {
+                      count: filtered.length,
+                      total: products.length,
+                    })}
             </span>
 
             {/* Active filters were only removable from inside the sidebar, which
@@ -231,7 +238,9 @@ export function Shop() {
           </div>
 
           <div ref={gridRef} className="scroll-mt-28">
-            {pending ? (
+            {catalogStatus === "error" ? (
+              <CatalogError />
+            ) : pending || catalogStatus === "loading" ? (
               <div className={GRID} aria-hidden="true">
                 {Array.from({ length: Math.min(PER_PAGE, Math.max(filtered.length, 4)) }).map((_, i) => (
                   <div key={i} className="rounded-[var(--radius-card)] border border-[var(--border-subtle)] p-[var(--space-3)]">

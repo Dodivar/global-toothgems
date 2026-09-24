@@ -11,6 +11,7 @@ import { Input } from "../components/ui/Input";
 import { Checkbox } from "../components/ui/Checkbox";
 import { ShapeCarousel } from "../components/ui/ShapeCarousel";
 import { bestSellers, shapesInCatalog } from "../data/products";
+import { useCatalog } from "../lib/catalog/CatalogProvider";
 import { CATEGORY_TILES } from "../data/categoryTiles";
 import { COURSES } from "../data/courses";
 import { REVIEWS } from "../data/reviews";
@@ -35,8 +36,9 @@ export function Home() {
   const [emailError, setEmailError] = useState<string | null>(null);
   const [subscribed, setSubscribed] = useState(false);
 
-  const featured = bestSellers();
-  const shapeGroups = shapesInCatalog();
+  const { products } = useCatalog();
+  const featured = bestSellers(products);
+  const shapeGroups = shapesInCatalog(products);
 
   const shapesRef = useReveal<HTMLElement>();
   const categoriesRef = useReveal<HTMLElement>();

@@ -17,6 +17,7 @@ import { useCart } from "../lib/cart";
 import { useOrders } from "../lib/orders";
 import { useAuth } from "../lib/auth";
 import { bestSellers } from "../data/products";
+import { useCatalog } from "../lib/catalog/CatalogProvider";
 import { pick } from "../data/types";
 import { formatPrice } from "../lib/format";
 
@@ -28,6 +29,7 @@ export function Cart() {
   const { t, i18n } = useTranslation();
   const navigate = useNavigate();
   const { lines, subtotal, updateQty, removeLine, clearCart } = useCart();
+  const { products } = useCatalog();
   const { placeOrder } = useOrders();
   const { signedIn } = useAuth();
   const lang = i18n.language;
@@ -111,7 +113,7 @@ export function Cart() {
   }
 
   if (lines.length === 0) {
-    const suggestions = bestSellers().slice(0, 4);
+    const suggestions = bestSellers(products);
     return (
       <div className="mx-auto max-w-[var(--max-width-content)] px-[clamp(14px,4vw,48px)] py-[clamp(48px,7vw,88px)]">
         <div className="grid justify-items-center gap-5 text-center">
