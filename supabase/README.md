@@ -1,4 +1,4 @@
-# Global Toothgems — Database (iterations 1–7: e-commerce MVP, checkout, reviews, shipments, refunds, gift cards, member account, back-office roles, promotions, customer service)
+# Global Toothgems — Database (iterations 1–8: e-commerce MVP, checkout, reviews, shipments, refunds, gift cards, member account, back-office roles, promotions, customer service, statistics)
 
 Supabase project **Global Toothgems** (`abvuyvryerpzlvibttxp`, region `eu-west-3` Paris, Postgres 17).
 Supabase Auth is the only authentication system; all application data lives in `public`,
@@ -18,7 +18,9 @@ automatic and code promotions, unique codes, campaigns, collections, customer se
 discounts computed in `create_order()`, and redemption of the loyalty reward.
 Iteration 7 covers the public pages and customer service: contact form tickets, newsletter for
 visitors (double opt-in), e-mail templates and content pages with their translations, maintenance mode.
-Training, community, notifications and analytics are
+Iteration 8 feeds the back-office Statistics screen: `analytics_snapshot()` returns the screen's
+`AnalyticsSnapshot` computed from the orders.
+Training, community and notifications are
 still out of scope and get their own migrations later.
 
 ## Layout
@@ -35,6 +37,7 @@ supabase/
   tests/iteration5_validation.sql   iteration 5 member account suite (always rolls back)
   tests/iteration6_validation.sql   iteration 6 roles/permissions + promotions suite (always rolls back)
   tests/iteration7_validation.sql   iteration 7 contact / newsletter / e-mails / content / maintenance suite (always rolls back)
+  tests/iteration8_validation.sql   iteration 8 statistics suite (always rolls back)
 ```
 
 ## Migrations
@@ -64,6 +67,7 @@ supabase/
 | 20260924202324 | `staff_roles_permissions` | roles `viewer` / `manager` (+ `rank`), `permissions`, `role_permissions`; `private.is_staff()`, `private.has_permission()`; **every policy that used `is_admin()` rewritten** (reads: active staff; writes: the table's permission); rank rules on role/status changes; `staff_profiles`, `staff_directory()`, `my_permissions()`; audit trigger keyed for composite rows |
 | 20260924203521 | `promotions` | `collections`, `customer_segments`, `campaigns`, `promotions` (+ translations, product/category/collection/segment links), `promotion_codes`, `order_discounts`, `order_items.discount_amount`; discount engine; `create_order()` gains `p_promotion_codes` and `p_use_loyalty_reward`; `generate_promotion_codes()`; `promotion_overview`, `campaign_overview`, `customer_segment_overview` |
 | 20260924210824 | `public_pages_customer_service` | permission `manage_content`; `store_settings` (maintenance); `contact_requests` (+ notes, private `contact-attachments` bucket, `submit_contact_request()`); `newsletter_subscriptions` (double opt-in, `newsletter_subscribe/confirm/unsubscribe()`, synced with member consents); `email_templates`, `content_pages` (+ translations), `translation_status`, `email_template_for()`; `private.hit_rate_limit()` |
+| 20260924213047 | `admin_statistics` | `categories.report_group` (revenue bucket, audited); index on `orders.paid_at`; `private.analytics_sale_lines()`, `private.analytics_kpi()`; `analytics_snapshot(from, to, filters, currency, timezone)` |
 
 RLS is **enabled in the same migration that creates each table** (deny by default);
 policies are granted back in `rls_policies`.
@@ -406,6 +410,39 @@ public  newsletter_unsubscribe(token)   one-click link in every marketing e-mail
 expected end, staff bypass), public read, `manage_settings` to switch, audited. The storefront and the server
 routes (checkout included) must check it — the database does not block orders by itself.
 
+### Statistics (iteration 8)
+
+`webapp/src/pages/admin/Statistics.tsx` reads one `AnalyticsSnapshot` (`webapp/src/data/adminAnalytics.ts`).
+`analytics_snapshot(p_from date, p_to date, p_filters jsonb = '{}', p_currency = 'EUR', p_timezone = 'Europe/Paris')`
+returns that object (camelCase JSON). Nothing is stored: every call recomputes from the orders, so figures cannot
+drift from them.
+
+- **Access**: `view_statistics` (all three back-office roles) or the service role; `SECURITY INVOKER`, so RLS still
+  applies. Customers and visitors get `42501`.
+- **Validation** (`22023`): period of 1–400 days, ISO currency, known time zone, filter keys and values.
+- **Granularity**: 1 day → hours, ≤ 31 days → days, ≤ 120 days → weeks, longer → months. The previous period has the
+  same length, immediately before; its series is aligned bucket by bucket.
+- **Definitions**
+  - *Sale*: an order whose payment went through (`paid`, `partially_refunded`, `refunded`), dated by `paid_at`, in the
+    shop's time zone.
+  - *Revenue*: order lines after discounts, VAT included; gift card lines, shipping and refunds are excluded and
+    reported apart in `extras` (`giftCardsSold`, `shippingRevenue`, `discounts`, `refunds`). The category breakdown
+    therefore sums to revenue.
+  - *Customer*: the account, or the lower-cased e-mail of a guest. *New* = first sale ever in the period; a
+    *returning* order is not the customer's first sale.
+  - *Orders section*: orders **placed** in the period (`created_at`), grouped completed / pending / cancelled /
+    refunded, with refund and cancellation rates and the average paid → first shipment delay (`processingHours`).
+- **Output**: `kpis` (revenue, orders, AOV, units, new and returning customers; value, previous, change %, trend,
+  12-point sparkline), `series`, `breakdown` (jewelry, aftercare, kits, training, other — fixed order), `products`
+  (top 10 with stock, thumbnail and change), `customers` (base, repeat rate, lifetime value and orders, growth),
+  `orders`, `geo` (delivery country, else billing), `cross` (share of jewellery orders that also carry aftercare),
+  `extras`. `training` is `null` and `insights` is `[]` (see decisions).
+- **Filters** (`p_filters`): `category`, `product`, `customerType` (`new`/`returning`), `country` narrow the sales;
+  `country` and `orderStatus` narrow the orders section; the customer base is always the whole base.
+- **Reporting group**: `categories.report_group` maps catalogue categories onto the screen's buckets
+  (seed: gems → jewelry, entretien → aftercare, kits/outils/accessoires → kits). New categories default to `other`;
+  changes are audited.
+
 ### Integrity guarantees
 
 - `orders_total_matches`: `total = subtotal − discount + shipping (+ tax when prices exclude tax)`; discount ≤ subtotal; all amounts ≥ 0.
@@ -485,7 +522,7 @@ enable the extension in the dashboard — or a scheduled server job with the ser
 
 **Validation:** run `tests/mvp_validation.sql`, `tests/iteration2_validation.sql` and
 `tests/iteration3_validation.sql`, `tests/iteration4_validation.sql`, `tests/iteration5_validation.sql` and
-`tests/iteration6_validation.sql`, `tests/iteration7_validation.sql`. Each ends with
+`tests/iteration6_validation.sql`, `tests/iteration7_validation.sql`, `tests/iteration8_validation.sql`. Each ends with
 `ALL … PASSED (...)` raised as an exception, which rolls everything back.
 (The order-number sequence still advances — sequences are not transactional.)
 
@@ -584,6 +621,21 @@ VAT rates, shipping zones/rates mirroring the Settings prototype. Media rows ref
     `content_pages` is ready to receive them (kind `legal` requires a `policy_version`).
 30. **`store_settings` holds only the maintenance switch**: the store-settings iteration adds the rest of the
     Settings workspace to the same row.
+31. **Revenue = merchandise charged, VAT included**, net of discounts; shipping, gift cards (money held until spent)
+    and refunds are reported apart, not deducted. If finance wants revenue excluding VAT or net of refunds, it is a
+    change in `private.analytics_sale_lines()` only.
+32. **Sales are dated by payment (`paid_at`)** in the shop's time zone (default `Europe/Paris`); the orders section
+    uses the placement date. A customer is an account, or a guest's e-mail (a guest who later signs up counts twice
+    until guest orders are linked).
+33. **Training figures are `null`** until the training iteration; **product-page conversion** is not available (it
+    needs web analytics, not stored here); **insights** (written advice) are left to the frontend: the rules in
+    `webapp/src/data/adminAnalytics.ts` derive them from the figures (its fixed "bundle 38 %" becomes `cross`).
+34. **No pre-aggregated tables**: each call recomputes from the orders (index on `paid_at`). Fine for the expected
+    volume; add a materialised daily summary if the screen becomes slow.
+35. **Amounts in currency units** (`numeric`, like the rest of the schema), one currency per call — no conversion
+    between currencies.
+36. **Category → reporting bucket mapping** (tools and accessories folded into kits) is a guess from the prototype;
+    adjust `categories.report_group` from the admin if needed.
 
 ## Done
 
@@ -602,6 +654,8 @@ VAT rates, shipping zones/rates mirroring the Settings prototype. Media rows ref
 - Iteration 7: contact tickets (validated, throttled, own-order linking, private attachments, triage, notes),
   visitor newsletter with double opt-in synced with member consents, e-mail templates and content pages with
   translation status, maintenance switch.
+- Iteration 8: back-office statistics — `analytics_snapshot()` (KPIs vs previous period, series, category breakdown,
+  best sellers, customer base, orders, geography, cross-selling, extras), filters, category reporting groups.
 
 ## Next iterations (not implemented)
 
@@ -615,4 +669,4 @@ VAT rates, shipping zones/rates mirroring the Settings prototype. Media rows ref
 4. Guest checkout linking (attach guest orders to an account by verified email).
 5. Related products, structured product attributes (gem shape/colour), multiple signed order notes.
 6. Education (courses, modules, lessons, quizzes, attempts, certificates, entitlements), community
-   (unlocked by a training purchase), 3D Studio subscription, analytics — each as its own migration set referencing `profiles` and `products`.
+   (unlocked by a training purchase), 3D Studio subscription — each as its own migration set referencing `profiles` and `products`.
