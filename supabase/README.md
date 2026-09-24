@@ -1,4 +1,4 @@
-# Global Toothgems — Database (iterations 1–4: e-commerce MVP, checkout, reviews, shipments, refunds, gift cards)
+# Global Toothgems — Database (iterations 1–5: e-commerce MVP, checkout, reviews, shipments, refunds, gift cards, member account)
 
 Supabase project **Global Toothgems** (`abvuyvryerpzlvibttxp`, region `eu-west-3` Paris, Postgres 17).
 Supabase Auth is the only authentication system; all application data lives in `public`,
@@ -9,7 +9,10 @@ checkout and the admin need next: content translations, shipping/VAT configurati
 stock reservations with a ledger, server-side order functions, Stripe webhook
 idempotency, an admin audit log and private avatars. Iteration 3 added product
 reviews with moderation, shipments with tracking, and refunds. Iteration 4 added gift cards.
-Training, community, loyalty, promotions, notifications and analytics are
+Iteration 5 completed the data of an authenticated member against the member-area
+prototype: registration answers, consents, data export requests, loyalty club, CRM
+tags/notes, review requests, and a seeded demo member.
+Training, community, promotions, notifications and analytics are
 still out of scope and get their own migrations later.
 
 ## Layout
@@ -18,10 +21,12 @@ still out of scope and get their own migrations later.
 supabase/
   migrations/   versioned SQL, applied in filename order (versions match the remote project)
   seed.sql      fictional catalogue for development (no customers, no personal data)
+  seed_demo_member.sql  one fictional member (Camille Bernard) built through the real checkout functions
   tests/mvp_validation.sql          iteration 1 RLS / integrity suite (always rolls back)
   tests/iteration2_validation.sql   iteration 2 checkout / stock / audit / i18n suite (always rolls back)
   tests/iteration3_validation.sql   iteration 3 reviews / shipments / refunds suite (always rolls back)
   tests/iteration4_validation.sql   iteration 4 gift card suite (always rolls back)
+  tests/iteration5_validation.sql   iteration 5 member account suite (always rolls back)
 ```
 
 ## Migrations
@@ -46,6 +51,8 @@ supabase/
 | 20260924065402 | `gift_cards` | `gift_card_settings`, `gift_cards`, `gift_card_transactions` (ledger), `gift_card_overview`; gift card product type and payment provider; `orders.gift_card_amount` / `amount_due`; `create_order()` sells and redeems cards; staff functions |
 | 20260924070057 | `gift_card_code_grant` | fix: service role may call the code generator (caught by the iteration 4 suite) |
 | 20260924070342 | `fix_gift_card_amount_rounding` | fix: sub-cent gift card amounts were rounded instead of rejected (caught by the iteration 4 suite) |
+| 20260924135022 | `member_account` | profile columns (country, locale, persona, interest, birth date, marketing cache, password date); richer sign-up trigger; `consent_records` + `member_consents`; `data_export_requests` + private `data-exports` bucket; `loyalty_settings`, `loyalty_cards`, `loyalty_stamps`, `loyalty_overview`, stamp trigger on orders; `customer_tags`, `customer_notes`; `review_requests` view |
+| 20260924135345 | `fix_consent_records_ordering` | fix: consent records stamped with `clock_timestamp()` so the latest decision is unambiguous (caught by the iteration 5 suite) |
 
 RLS is **enabled in the same migration that creates each table** (deny by default);
 policies are granted back in `rls_policies`.
@@ -68,6 +75,12 @@ shipping_zones 1─* shipping_zone_countries (a country is in at most one zone)
                1─* shipping_rates ←─ orders.shipping_rate_id (+ name snapshot)
 tax_rates (country × tax_category, basis points)
 stripe_webhook_events ─→ orders        audit_logs (trigger-written)
+
+profiles 1─* consent_records   (append-only) → member_consents (latest per purpose)
+         1─* data_export_requests ─→ storage data-exports/<user_id>/…
+         1─* loyalty_cards 1─* loyalty_stamps ─→ orders (one stamp per order)
+         1─* customer_tags, customer_notes   (staff only)
+loyalty_settings (single row)      review_requests (view: shipped, not yet reviewed)
 ```
 
 Conventions: plural snake_case tables, `uuid` keys, `timestamptz created_at/updated_at`,
@@ -204,6 +217,50 @@ refund     request_refund = card (Stripe) payments only; refund_to_gift_cards() 
 - `gift_card_settings` (single row) mirrors the storefront configuration: preset amounts, custom amount bounds,
   expiry months, field modes, message length, designs, published flag. Public read when published.
 
+### Member account (iteration 5)
+
+Checked against the member area prototype (`webapp/src/pages/account/*`, `lib/auth.tsx`,
+`lib/registration.ts`, `lib/securityState.tsx`, `lib/cookieConsent.tsx`, `data/loyalty.ts`,
+`data/orders.ts`, `data/adminCustomers.ts`). Training (courses, lessons, certificates) and the
+community it unlocks are deliberately left for the training iteration.
+
+| Screen / data in the prototype | Where it lives |
+|---|---|
+| Profile: first/last name, phone | `profiles` |
+| Profile: email (read-only, changed from Security) | `auth.users.email` (mirror in `profiles.email`) |
+| Profile: delivery address | `customer_addresses` (default `shipping`, + default `billing`) |
+| Profile: newsletter checkbox | `consent_records` purpose `marketing_email` → cache `profiles.marketing_opt_in` |
+| Registration: country, persona, interest, UI language | `profiles.country_code`, `persona`, `interest`, `preferred_locale` (copied from sign-up metadata, validated) |
+| Registration: terms (required), marketing (opt-in) | `consent_records` (`terms`, `privacy`, `marketing_email`) with `policy_version`, source `registration` |
+| Cookie banner choices (signed in) | `consent_records` `cookies_preferences` / `cookies_analytics` / `cookies_marketing` |
+| Security: email verified, pending email change, password, Google sign-in | Supabase Auth (`auth.users`, `auth.identities`) — never duplicated |
+| Security: "password last changed" | `profiles.password_changed_at` (set by the backend after an Auth password change) |
+| Security: personal-data export (none/processing/ready/expired) | `data_export_requests` + private bucket `data-exports/<user_id>/` |
+| Security: delete account | backend `auth.admin.deleteUser` → profile and personal data cascade; orders kept (user_id SET NULL, snapshots) |
+| Orders, tracking | `orders`, `order_items`, `shipments` (iterations 1–3) |
+| My reviews, "what you could review" | `reviews` (iteration 3), view `review_requests` |
+| Loyalty card (start, collecting, one away, unlocked, renewed) | `loyalty_overview`: `current_stamps`, `rewards_available`, `cards_redeemed` |
+| Back office: customer status, tags, notes, birth date, marketing opt-in | `profiles.status`, `customer_tags`, `customer_notes`, `profiles.birth_date`, `profiles.marketing_opt_in` |
+| Dashboard figures (orders count, member since, lifetime spend) | derived from `orders` / `profiles.created_at` — not stored |
+
+Rules enforced in the database:
+
+- **Sign-up metadata is untrusted**: every field is validated and dropped when invalid (never blocks the
+  sign-up); role is never taken from it; consents are recorded only when the form sends a `policy_version`.
+  Metadata keys: `first_name`, `last_name`, `phone`, `country`, `locale`, `persona`, `interest`,
+  `terms_accepted`, `marketing`, `policy_version`.
+- **Consents are append-only** proof: customers can only add their own decision, with a server timestamp,
+  from `account` / `cookie_banner` / `checkout`; terms and privacy can only be granted. The latest record
+  per purpose wins (`member_consents`).
+- **Exports**: customers create a request (forced `pending`, one in flight); only the backend job moves it to
+  `processing` → `ready` (archive path in the member's folder, `expires_at`) → `expired`.
+- **Loyalty** (rules in `loyalty_settings`, public): one stamp per order when it becomes `paid` and its goods
+  (gift cards excluded, discount deducted, shipping excluded) reach `qualifying_amount` in the programme
+  currency; never two stamps for one order; a full card becomes `completed` (reward available) and the next
+  qualifying order starts a new card; the stamp is voided if the order is cancelled or **fully** refunded
+  while its card is still being collected. Customers only read their cards and stamps.
+- **CRM tags/notes** are staff-only and never visible to the member; tag changes are audited.
+
 ### Integrity guarantees
 
 - `orders_total_matches`: `total = subtotal − discount + shipping (+ tax when prices exclude tax)`; discount ≤ subtotal; all amounts ≥ 0.
@@ -237,6 +294,13 @@ Iteration 2 additions:
 - **Customers** read the VAT lines of their own orders; cannot call `create_order`, `mark_order_paid`, `cancel_order`, or read the ledger, webhook log or audit log.
 - **Admins** manage translations, shipping and VAT configuration, can `cancel_order()` unpaid orders (reservation released), mark bank transfers paid (stock committed), read the stock ledger, webhook log and audit log. They cannot cancel a paid order (refund first), edit lifecycle columns (`stock_state`, `paid_at`, `expires_at`…), or modify/delete audit entries.
 
+Iteration 5 additions:
+- **Visitors** read the loyalty rules only; no consent, export, loyalty card or CRM data.
+- **Customers** read their own consents, export requests, loyalty cards/stamps/overview and review requests; add their
+  own consent records and export requests; edit persona / interest / language / country / birth date. They cannot
+  write `marketing_opt_in`, `password_changed_at`, stamps, cards or loyalty rules, nor see CRM tags/notes.
+- **Admins** read everything above, manage CRM tags/notes (notes: own edits only) and the loyalty rules (audited).
+
 - Authorization is enforced in Postgres (`private.is_admin()` + RLS + triggers), never by frontend checks.
 - `TRUNCATE`, `REFERENCES`, `TRIGGER` revoked from `anon`/`authenticated` (TRUNCATE bypasses RLS).
 - Order/item/payment inserts are revoked from `authenticated`: prices and totals can only come from server code.
@@ -248,6 +312,7 @@ Iteration 2 additions:
 |---|---|
 | `product-media` (public, 10 MB, jpeg/png/webp/avif/mp4/webm) | anyone can fetch a file by its public URL (catalogue imagery is public by design); no public listing; upload/replace/delete **admins only**. |
 | `avatars` (private, 2 MB, jpeg/png/webp) | owner reads/uploads/replaces/deletes inside `<user_id>/`; admins read and delete (moderation); served with signed URLs. `profiles.avatar_path` must start with the owner's id. |
+| `data-exports` (private, 100 MB, zip/json) | owners read their own `<user_id>/` folder through signed URLs; only the backend (service role) writes and deletes. |
 | `review-photos` (private, 8 MB, jpeg/png/webp) | authors upload into `<user_id>/`; authors and admins read and delete; **anyone** can read a photo once its review is published. |
 
 Path convention: `products/<product-slug>/<file>`, `categories/<category-slug>/<file>`, `<user_id>/<file>` for avatars and review photos.
@@ -271,9 +336,21 @@ enable the extension in the dashboard — or a scheduled server job with the ser
 → skip when `processed`; otherwise call the function, then set `status = 'processed'` (or `failed` + `error`).
 
 **Validation:** run `tests/mvp_validation.sql`, `tests/iteration2_validation.sql` and
-`tests/iteration3_validation.sql` and `tests/iteration4_validation.sql`. Each ends with
+`tests/iteration3_validation.sql`, `tests/iteration4_validation.sql` and `tests/iteration5_validation.sql`. Each ends with
 `ALL … PASSED (...)` raised as an exception, which rolls everything back.
 (The order-number sequence still advances — sequences are not transactional.)
+
+**Demo member:** run `seed_demo_member.sql` after `seed.sql` (idempotent; the remote project already has it).
+It creates `camille.bernard@example.com` (id `c4a11e00-0000-4000-a000-000000000001`) through the real
+sign-up trigger and checkout functions: 4 orders (delivered, cancelled, delivered, shipped), 3 parcels,
+3 reviews (published, needs changes, rejected), 2 review requests, 3/5 loyalty stamps, consents, an expired
+export, a CRM tag and note. To sign in with it on a development project, set a password from the SQL editor:
+`update auth.users set encrypted_password = extensions.crypt('<password>', extensions.gen_salt('bf')) where id = 'c4a11e00-0000-4000-a000-000000000001';`
+Remove it before going live (`delete from auth.users where id = …` — orders stay, anonymised).
+
+**Data export job (to build):** pick `pending` requests, set `processing`, write
+`data-exports/<user_id>/<file>.zip` with the service role, set `ready` + `ready_at` + `expires_at` (7 days),
+later `expired` and delete the object.
 
 **Seed:** `seed.sql` is idempotent: catalogue (fr), English translations (published), weights,
 VAT rates, shipping zones/rates mirroring the Settings prototype. Media rows reference
@@ -315,6 +392,17 @@ VAT rates, shipping zones/rates mirroring the Settings prototype. Media rows ref
     write path to cards and the ledger. Tested (G13).
 12. **Expired card balances** stay in the ledger (no automatic breakage entry); accounting treatment of expired
     balances is a finance decision.
+13. **Loyalty stamp basis** (not specified by the prototype): goods value after discount, excluding shipping
+    and gift cards, at payment. A partial refund keeps the stamp; a full refund or cancellation voids it only
+    while the card is still being collected (a completed card is never taken back). Confirm with the business.
+14. **Loyalty reward redemption is not implemented**: a completed card stays `completed` until the
+    promotions/checkout iteration applies the `reward_percent` discount in `create_order()` and marks the card
+    `redeemed` (`redeemed_order_id`). No money logic was invented here.
+15. **Consent history is deleted with the account** (cascade). If proof of consent must outlive the account
+    (e.g. to answer a marketing complaint), switch to `on delete set null` + keep the email hash — legal decision.
+16. **Order numbers** stay `GT-100001…`; the member prototype shows `GT-2026-0151`. Changing the format is a
+    one-line change in the sequence default if wanted.
+17. **The demo member has no password** (no secret in Git). See *Operations*.
 
 ## Done
 
@@ -324,6 +412,8 @@ VAT rates, shipping zones/rates mirroring the Settings prototype. Media rows ref
   order status sync; refunds with payment/order states and restocking.
 - Iteration 4: gift cards — purchase through checkout, ledger balances, redemption as payment,
   reversal on cancellation, refunds onto cards, staff operations, scheduled delivery.
+- Iteration 5: member account — registration answers, consent records, data export requests, loyalty club
+  (stamps from paid orders), CRM tags/notes, review requests, seeded demo member.
 
 ## Next iterations (not implemented)
 
@@ -335,7 +425,7 @@ VAT rates, shipping zones/rates mirroring the Settings prototype. Media rows ref
 3. Store settings table (legal identity, order number format, tax display options), VAT numbers /
    B2B reverse charge, multi-currency price lists.
 4. Guest checkout linking (attach guest orders to an account by verified email).
-5. Promotions / coupons, newsletter & marketing consent, related products,
+5. Promotions / coupons (incl. loyalty reward redemption), related products,
    structured product attributes (gem shape/colour), staff permissions, order/customer notes & tags.
-6. Education (courses, modules, lessons, quizzes, attempts, certificates, entitlements), community,
-   loyalty, analytics — each as its own migration set referencing `profiles` and `products`.
+6. Education (courses, modules, lessons, quizzes, attempts, certificates, entitlements), community
+   (unlocked by a training purchase), 3D Studio subscription, analytics — each as its own migration set referencing `profiles` and `products`.
