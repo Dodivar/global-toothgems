@@ -1,4 +1,4 @@
-# Global Toothgems — Database (iterations 1–6: e-commerce MVP, checkout, reviews, shipments, refunds, gift cards, member account, back-office roles, promotions)
+# Global Toothgems — Database (iterations 1–7: e-commerce MVP, checkout, reviews, shipments, refunds, gift cards, member account, back-office roles, promotions, customer service)
 
 Supabase project **Global Toothgems** (`abvuyvryerpzlvibttxp`, region `eu-west-3` Paris, Postgres 17).
 Supabase Auth is the only authentication system; all application data lives in `public`,
@@ -16,6 +16,8 @@ Iteration 6 replaced the single `admin` gate with back-office roles and permissi
 (read only / manager / administrator, as in the Users prototype) and added promotions:
 automatic and code promotions, unique codes, campaigns, collections, customer segments,
 discounts computed in `create_order()`, and redemption of the loyalty reward.
+Iteration 7 covers the public pages and customer service: contact form tickets, newsletter for
+visitors (double opt-in), e-mail templates and content pages with their translations, maintenance mode.
 Training, community, notifications and analytics are
 still out of scope and get their own migrations later.
 
@@ -32,6 +34,7 @@ supabase/
   tests/iteration4_validation.sql   iteration 4 gift card suite (always rolls back)
   tests/iteration5_validation.sql   iteration 5 member account suite (always rolls back)
   tests/iteration6_validation.sql   iteration 6 roles/permissions + promotions suite (always rolls back)
+  tests/iteration7_validation.sql   iteration 7 contact / newsletter / e-mails / content / maintenance suite (always rolls back)
 ```
 
 ## Migrations
@@ -60,6 +63,7 @@ supabase/
 | 20260924135345 | `fix_consent_records_ordering` | fix: consent records stamped with `clock_timestamp()` so the latest decision is unambiguous (caught by the iteration 5 suite) |
 | 20260924202324 | `staff_roles_permissions` | roles `viewer` / `manager` (+ `rank`), `permissions`, `role_permissions`; `private.is_staff()`, `private.has_permission()`; **every policy that used `is_admin()` rewritten** (reads: active staff; writes: the table's permission); rank rules on role/status changes; `staff_profiles`, `staff_directory()`, `my_permissions()`; audit trigger keyed for composite rows |
 | 20260924203521 | `promotions` | `collections`, `customer_segments`, `campaigns`, `promotions` (+ translations, product/category/collection/segment links), `promotion_codes`, `order_discounts`, `order_items.discount_amount`; discount engine; `create_order()` gains `p_promotion_codes` and `p_use_loyalty_reward`; `generate_promotion_codes()`; `promotion_overview`, `campaign_overview`, `customer_segment_overview` |
+| 20260924210824 | `public_pages_customer_service` | permission `manage_content`; `store_settings` (maintenance); `contact_requests` (+ notes, private `contact-attachments` bucket, `submit_contact_request()`); `newsletter_subscriptions` (double opt-in, `newsletter_subscribe/confirm/unsubscribe()`, synced with member consents); `email_templates`, `content_pages` (+ translations), `translation_status`, `email_template_for()`; `private.hit_rate_limit()` |
 
 RLS is **enabled in the same migration that creates each table** (deny by default);
 policies are granted back in `rls_policies`.
@@ -94,6 +98,11 @@ promotions ─* promotion_{products,categories,collections,segments}, promotion_
            └─ campaign_id → campaigns ─* campaign_products, campaign_translations
 collections ─* collection_products     customer_segments ─* customer_segment_members
 orders 1─* order_discounts ─→ promotions / promotion_codes / loyalty_cards   (what the order received)
+
+contact_requests ─* contact_request_notes   (─→ profiles, orders when it is the requester's own)
+newsletter_subscriptions ─→ profiles (members)   ⇄ consent_records (marketing_email)
+email_templates 1─* email_template_translations   content_pages 1─* content_page_translations
+store_settings (single row)
 ```
 
 Conventions: plural snake_case tables, `uuid` keys, `timestamptz created_at/updated_at`,
@@ -350,6 +359,53 @@ server  create_order(..., p_promotion_codes => ['WELCOME15'], p_use_loyalty_rewa
   published translations; customers read the discounts of their own orders; staff read everything; `manage_promotions`
   writes.
 
+### Public pages and customer service (iteration 7)
+
+**Contact form → tickets** (`webapp/src/pages/legal/Contact.tsx`)
+- Only path in: `submit_contact_request(name, email, category, subject, message, order_reference?, locale?, attachment_path?)`
+  → returns the ticket number (`SUP-100001…`). Members call it with their JWT; **visitors go through the server
+  route** (captcha, IP limit) which calls it with the service role — `anon` cannot call it.
+- Validated in the database: 9 categories, subject, message 20–5000 characters, e-mail; `privacy` requests are
+  `high` priority. Throttled: 3 per 10 minutes per account or e-mail (`PT429` → HTTP 429 through PostgREST).
+- The typed order number is linked to the order **only** when it is the requester's own (account, or same e-mail
+  for a guest); the answer never says whether it matched.
+- Attachments: private bucket `contact-attachments` (10 MB, jpeg/png/pdf); members upload into `<user_id>/`, the
+  server writes guests' files under `guest/`; the function checks the file exists in the caller's folder.
+- Triage (`manage_customers`): status `new → open → waiting_customer → resolved/closed` (or `spam`), priority,
+  assignee (active team member); `first_response_at` / `resolved_at` stamped; the customer's words never change;
+  audited. Internal notes in `contact_request_notes`. Customers see their own tickets; all staff read them.
+- The server route sends the `contact_acknowledgement` e-mail (template below).
+
+**Newsletter for visitors** (storefront forms)
+```
+server  newsletter_subscribe(email, locale, source, policy_version)   service role only, 3/hour per e-mail
+          → {"status":"pending","confirm_token":…}  → e-mail `newsletter_confirmation` with the link
+          → {"status":"subscribed"|"bounced"|"complained"} → no e-mail; answer the visitor the same way
+public  newsletter_confirm(token)       48 h, single use (only its sha256 is stored) → subscribed
+public  newsletter_unsubscribe(token)   one-click link in every marketing e-mail → unsubscribed
+```
+- Members: `consent_records` stay the source of truth. Any member decision (registration, account, checkout…)
+  moves their list entry; confirming or unsubscribing a member's address records a consent (`source = 'newsletter'`);
+  a visitor who confirmed and later signs up with the same e-mail is linked and the consent recorded.
+  Bounced/complaining addresses are never re-activated. Tokens are never readable through the API.
+
+**E-mail templates and content pages** (Translations workspace, types `email` and `content`)
+- `email_templates` (key used by the sending code, subject, preheader, body, allowed `{{variables}}`, translation
+  priority) and `content_pages` (slug, kind page/guide/help/legal, title, summary, body, SEO, `policy_version` for
+  legal pages, draft/published/archived) — base columns in the default language, `*_translations` for the others.
+- Placeholders are checked on both sides (a translation cannot use a variable the code does not send).
+- `translation_status`: per item and enabled language — `missing`, `draft`, `outdated` (source changed since the
+  translation was written/published), `published`; with the priority.
+- `email_template_for(key, locale)` (service role): published translation, else the default language; says
+  whether it is outdated. Five templates seeded (fr + en): order confirmation, shipping notification, course
+  enrolment, newsletter confirmation, contact acknowledgement.
+- Content pages are public once published (with their published translations); editing needs the new
+  `manage_content` permission (managers, administrators).
+
+**Maintenance** (`pages/Maintenance.tsx`): `store_settings.maintenance_enabled` (+ start time stamped, optional
+expected end, staff bypass), public read, `manage_settings` to switch, audited. The storefront and the server
+routes (checkout included) must check it — the database does not block orders by itself.
+
 ### Integrity guarantees
 
 - `orders_total_matches`: `total = subtotal − discount + shipping (+ tax when prices exclude tax)`; discount ≤ subtotal; all amounts ≥ 0.
@@ -429,7 +485,7 @@ enable the extension in the dashboard — or a scheduled server job with the ser
 
 **Validation:** run `tests/mvp_validation.sql`, `tests/iteration2_validation.sql` and
 `tests/iteration3_validation.sql`, `tests/iteration4_validation.sql`, `tests/iteration5_validation.sql` and
-`tests/iteration6_validation.sql`. Each ends with
+`tests/iteration6_validation.sql`, `tests/iteration7_validation.sql`. Each ends with
 `ALL … PASSED (...)` raised as an exception, which rolls everything back.
 (The order-number sequence still advances — sequences are not transactional.)
 
@@ -514,6 +570,20 @@ VAT rates, shipping zones/rates mirroring the Settings prototype. Media rows ref
     "case sensitive" option is not modelled).
 24. **Internal promotion/campaign names** are hidden from visitors (column grants) but readable by signed-in customers
     for *running automatic* promotions (same trade-off as decision 7). Do not put confidential text in them.
+25. **Contact form for visitors goes through a server route** (captcha, IP limit, service role); the database only
+    throttles per e-mail/account. `submit_contact_request`, `newsletter_confirm`, `newsletter_unsubscribe` are
+    `SECURITY DEFINER` and reachable from the API on purpose (accepted advisor warnings): each validates its input
+    and only acts on the caller's own data or on a bearer token.
+26. **Retention of tickets, attachments and unsubscribed addresses** is not automated: how long to keep them is a
+    legal/business decision (e.g. tickets 3 years after closing). The list keeps unsubscribed addresses so they are
+    never mailed again.
+27. **Member e-mail change**: the list entry keeps the old address until the member's next marketing decision.
+28. **Double opt-in for visitors, not for members**: a member's opt-in is recorded from their account (Supabase Auth
+    confirms the account e-mail); confirm this is enough for the countries served (e.g. Germany).
+29. **Legal documents and FAQ stay in the frontend** (`data/legal/*`) until their placeholders are validated;
+    `content_pages` is ready to receive them (kind `legal` requires a `policy_version`).
+30. **`store_settings` holds only the maintenance switch**: the store-settings iteration adds the rest of the
+    Settings workspace to the same row.
 
 ## Done
 
@@ -529,6 +599,9 @@ VAT rates, shipping zones/rates mirroring the Settings prototype. Media rows ref
   promotions (six types, scope, customer segments, limits, automatic/shared/unique codes), campaigns, collections,
   discounts and per-line VAT in `create_order()`, loyalty reward redemption.
   The iteration 2 suite now reads the premium kit stock at start (the demo member seed had sold one).
+- Iteration 7: contact tickets (validated, throttled, own-order linking, private attachments, triage, notes),
+  visitor newsletter with double opt-in synced with member consents, e-mail templates and content pages with
+  translation status, maintenance switch.
 
 ## Next iterations (not implemented)
 
