@@ -1,4 +1,4 @@
-# Global Toothgems — Database (iterations 1–3: e-commerce MVP, checkout, reviews, shipments, refunds)
+# Global Toothgems — Database (iterations 1–4: e-commerce MVP, checkout, reviews, shipments, refunds, gift cards)
 
 Supabase project **Global Toothgems** (`abvuyvryerpzlvibttxp`, region `eu-west-3` Paris, Postgres 17).
 Supabase Auth is the only authentication system; all application data lives in `public`,
@@ -8,7 +8,7 @@ Iteration 1 laid the commerce + administration foundation. Iteration 2 added wha
 checkout and the admin need next: content translations, shipping/VAT configuration,
 stock reservations with a ledger, server-side order functions, Stripe webhook
 idempotency, an admin audit log and private avatars. Iteration 3 added product
-reviews with moderation, shipments with tracking, and refunds.
+reviews with moderation, shipments with tracking, and refunds. Iteration 4 added gift cards.
 Training, community, loyalty, promotions, notifications and analytics are
 still out of scope and get their own migrations later.
 
@@ -21,6 +21,7 @@ supabase/
   tests/mvp_validation.sql          iteration 1 RLS / integrity suite (always rolls back)
   tests/iteration2_validation.sql   iteration 2 checkout / stock / audit / i18n suite (always rolls back)
   tests/iteration3_validation.sql   iteration 3 reviews / shipments / refunds suite (always rolls back)
+  tests/iteration4_validation.sql   iteration 4 gift card suite (always rolls back)
 ```
 
 ## Migrations
@@ -42,6 +43,9 @@ supabase/
 | 20260924061309 | `reviews` | `reviews`, `review_photos`, `review_reports`, `review_helpful_votes`, `review_notes`; verification from orders; moderation rules; `product_review_stats` view; private `review-photos` bucket |
 | 20260924061542 | `shipments` | `shipments`, `shipment_items` (partial shipping); order fulfilment/status recomputed from parcels |
 | 20260924061824 | `refunds` | `refunds`, `refund_items`; `request_refund()`, `mark_refund_succeeded()`, `mark_refund_failed()`; payment/order refund states; restock via `return` movements |
+| 20260924065402 | `gift_cards` | `gift_card_settings`, `gift_cards`, `gift_card_transactions` (ledger), `gift_card_overview`; gift card product type and payment provider; `orders.gift_card_amount` / `amount_due`; `create_order()` sells and redeems cards; staff functions |
+| 20260924070057 | `gift_card_code_grant` | fix: service role may call the code generator (caught by the iteration 4 suite) |
+| 20260924070342 | `fix_gift_card_amount_rounding` | fix: sub-cent gift card amounts were rounded instead of rejected (caught by the iteration 4 suite) |
 
 RLS is **enabled in the same migration that creates each table** (deny by default);
 policies are granted back in `rls_policies`.
@@ -169,6 +173,37 @@ Staff can cancel a pending refund; only the backend can confirm or fail one; con
 cancelled refunds are final. Line quantities can never be refunded twice. Customers see refunds on
 their own orders.
 
+### Gift cards (iteration 4)
+
+Mirrors the Promotions & Gift Cards workspace (`webapp/src/data/adminPromotions.ts`).
+
+```
+purchase   create_order(items: [{product_id: <carte-cadeau>, quantity: 1, amount, gift_card: {recipient_*, sender_name, message, design, deliver_at}}])
+             → card 'pending' (no VAT on the card line: taxed when spent — confirm with the accountant)
+payment    mark_order_paid → card 'active', 'purchase' ledger line, expiry = now + settings.expiry_months
+redeem     create_order(…, p_gift_card_codes => ['GT-XXXX-XXXX-XXXX'])
+             → 'redemption' debit + 'gift_card' payment row; orders.gift_card_amount; Stripe collects orders.amount_due
+             → fully covered: order paid immediately
+cancel     unpaid order cancelled/expired → 'reversal' credit back, purchased cards 'void'
+refund     request_refund = card (Stripe) payments only; refund_to_gift_cards() credits the cards back
+```
+
+- **Balance = sum of an append-only ledger** (`gift_card_transactions`); `gift_cards.balance` is a trigger-kept
+  cache that can never go negative. Kinds: purchase, issue, redemption, reversal, refund, adjustment,
+  extension, cancellation, resend.
+- **Gift cards are a payment, not a discount**: order totals and VAT are unchanged when a card is used.
+- Cards cannot pay for gift cards; must be active, delivered (not future-scheduled), unexpired, same currency;
+  max 5 per order; one generic "not usable" error for unknown/empty/expired codes.
+- **Codes are bearer credentials** (`GT-XXXX-XXXX-XXXX`, 60 random bits, no 0/O/1/I): never granted to any API
+  role — staff see `code_last4`. `gift_card_balance(code)` and `gift_card_code_for_delivery(id)` are
+  service-role only (the app must rate-limit the public balance form).
+- Staff: `issue_gift_card`, `adjust_gift_card` (note required), `extend_gift_card` (later only),
+  `cancel_gift_card` (note required), `refund_to_gift_cards`. Backend: `record_gift_card_delivery`
+  (sent / delivered / opened / bounced, resend logged). `gift_card_overview` gives the derived display status
+  (active, partially_redeemed, redeemed, scheduled, expired, cancelled, pending_payment, void).
+- `gift_card_settings` (single row) mirrors the storefront configuration: preset amounts, custom amount bounds,
+  expiry months, field modes, message length, designs, published flag. Public read when published.
+
 ### Integrity guarantees
 
 - `orders_total_matches`: `total = subtotal − discount + shipping (+ tax when prices exclude tax)`; discount ≤ subtotal; all amounts ≥ 0.
@@ -236,7 +271,7 @@ enable the extension in the dashboard — or a scheduled server job with the ser
 → skip when `processed`; otherwise call the function, then set `status = 'processed'` (or `failed` + `error`).
 
 **Validation:** run `tests/mvp_validation.sql`, `tests/iteration2_validation.sql` and
-`tests/iteration3_validation.sql`. Each ends with
+`tests/iteration3_validation.sql` and `tests/iteration4_validation.sql`. Each ends with
 `ALL … PASSED (...)` raised as an exception, which rolls everything back.
 (The order-number sequence still advances — sequences are not transactional.)
 
@@ -273,6 +308,13 @@ VAT rates, shipping zones/rates mirroring the Settings prototype. Media rows ref
 9. **Refunds never cancel shipments** and a partial refund leaves the order status unchanged; a full
    refund sets it to `refunded`. Restocking happens only when `restock = true` and the sale had
    taken the stock.
+10. **Gift cards carry no VAT at sale** (multi-purpose voucher: VAT applies when the card is spent). Confirm
+    with the accountant; a single-purpose voucher would be taxed at sale instead.
+11. **Security advisor warning, accepted**: the five staff gift card functions are `SECURITY DEFINER` and callable by
+    signed-in users; each one authorizes the caller itself (active admin or service role) — they are the only
+    write path to cards and the ledger. Tested (G13).
+12. **Expired card balances** stay in the ledger (no automatic breakage entry); accounting treatment of expired
+    balances is a finance decision.
 
 ## Done
 
@@ -280,6 +322,8 @@ VAT rates, shipping zones/rates mirroring the Settings prototype. Media rows ref
   server-side order functions, Stripe webhook idempotency, admin audit log, private avatars.
 - Iteration 3: reviews with moderation, reports, votes and photos; shipments and tracking with
   order status sync; refunds with payment/order states and restocking.
+- Iteration 4: gift cards — purchase through checkout, ledger balances, redemption as payment,
+  reversal on cancellation, refunds onto cards, staff operations, scheduled delivery.
 
 ## Next iterations (not implemented)
 
@@ -291,7 +335,7 @@ VAT rates, shipping zones/rates mirroring the Settings prototype. Media rows ref
 3. Store settings table (legal identity, order number format, tax display options), VAT numbers /
    B2B reverse charge, multi-currency price lists.
 4. Guest checkout linking (attach guest orders to an account by verified email).
-5. Promotions / coupons / gift cards, newsletter & marketing consent, related products,
+5. Promotions / coupons, newsletter & marketing consent, related products,
    structured product attributes (gem shape/colour), staff permissions, order/customer notes & tags.
 6. Education (courses, modules, lessons, quizzes, attempts, certificates, entitlements), community,
    loyalty, analytics — each as its own migration set referencing `profiles` and `products`.
