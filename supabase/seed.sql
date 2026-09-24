@@ -22,6 +22,12 @@ insert into public.categories (slug, name, description, position) values
   ('accessoires', 'Accessoires',        'Rangement, présentation et consommables de studio.', 5)
 on conflict (slug) do nothing;
 
+-- Revenue buckets of the Statistics screen (iteration 8).
+update public.categories set report_group = case slug
+    when 'gems' then 'jewelry' when 'entretien' then 'aftercare'
+    when 'kits' then 'kits' when 'outils' then 'kits' when 'accessoires' then 'kits' else report_group end
+ where slug in ('gems', 'entretien', 'kits', 'outils', 'accessoires');
+
 -- -----------------------------------------------------------------------------
 -- Products
 -- -----------------------------------------------------------------------------
