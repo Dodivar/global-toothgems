@@ -1,4 +1,4 @@
-# Global Toothgems — Database (iterations 1–2: e-commerce MVP + checkout foundation)
+# Global Toothgems — Database (iterations 1–3: e-commerce MVP, checkout, reviews, shipments, refunds)
 
 Supabase project **Global Toothgems** (`abvuyvryerpzlvibttxp`, region `eu-west-3` Paris, Postgres 17).
 Supabase Auth is the only authentication system; all application data lives in `public`,
@@ -7,8 +7,9 @@ helpers in `private` (not exposed through the API).
 Iteration 1 laid the commerce + administration foundation. Iteration 2 added what
 checkout and the admin need next: content translations, shipping/VAT configuration,
 stock reservations with a ledger, server-side order functions, Stripe webhook
-idempotency, an admin audit log and private avatars.
-Training, community, loyalty, reviews, promotions, notifications and analytics are
+idempotency, an admin audit log and private avatars. Iteration 3 added product
+reviews with moderation, shipments with tracking, and refunds.
+Training, community, loyalty, promotions, notifications and analytics are
 still out of scope and get their own migrations later.
 
 ## Layout
@@ -19,6 +20,7 @@ supabase/
   seed.sql      fictional catalogue for development (no customers, no personal data)
   tests/mvp_validation.sql          iteration 1 RLS / integrity suite (always rolls back)
   tests/iteration2_validation.sql   iteration 2 checkout / stock / audit / i18n suite (always rolls back)
+  tests/iteration3_validation.sql   iteration 3 reviews / shipments / refunds suite (always rolls back)
 ```
 
 ## Migrations
@@ -37,6 +39,9 @@ supabase/
 | 20260924052207 | `audit_log` | `audit_logs` + triggers on accounts, orders, catalogue, money configuration |
 | 20260924052213 | `storage_avatars` | private `avatars` bucket, per-user folders |
 | 20260924053850 | `fix_consume_inventory_found` | fixes a regression from 009 (oversell attempt returned NULL instead of raising) — caught by the iteration 1 suite |
+| 20260924061309 | `reviews` | `reviews`, `review_photos`, `review_reports`, `review_helpful_votes`, `review_notes`; verification from orders; moderation rules; `product_review_stats` view; private `review-photos` bucket |
+| 20260924061542 | `shipments` | `shipments`, `shipment_items` (partial shipping); order fulfilment/status recomputed from parcels |
+| 20260924061824 | `refunds` | `refunds`, `refund_items`; `request_refund()`, `mark_refund_succeeded()`, `mark_refund_failed()`; payment/order refund states; restock via `return` movements |
 
 RLS is **enabled in the same migration that creates each table** (deny by default);
 policies are granted back in `rls_policies`.
@@ -114,6 +119,56 @@ A payment arriving after the reservation expired re-takes the stock if still
 available; otherwise the order is left `pending` + paid with an `[auto]` admin
 note (restock or refund) — it never oversells.
 
+### Reviews (iteration 3)
+
+Mirrors the review prototype (`webapp/src/data/reviewSystem.ts`, `lib/reviews.tsx`).
+
+- **Verified only.** A customer can review a product only if one of *their* orders containing it
+  is `shipped` or `delivered`; the database finds that order and stores it (`order_id`,
+  `is_verified`). One review per customer and product.
+- **Lifecycle** `pending → published | needs_changes (message to the customer) | rejected (reason) | hidden`.
+  Anything the client sends for status, counters, author name or verification is overwritten on insert.
+- **The text is the customer's.** Staff moderate, reply (`response_body`, stamped with author/time),
+  flag and keep internal notes (`review_notes`) — they cannot edit rating, title, body or tags.
+  Any customer edit (text, rating, tags or photos) sends the review back to `pending`.
+- **Reports never delete anything.** One report per customer and review, not on your own review;
+  resolving as `hidden` hides the review, `removed` rejects it.
+- **Helpful votes**: one per customer, not on your own review; `helpful_count` maintained by trigger.
+- **Photos**: at most 4, stored in the author's folder of the **private** `review-photos` bucket;
+  readable by visitors only once the review is published.
+- **Privacy**: visitors get a privacy name (`"Sarah M."`) and a verified flag — the columns
+  `user_id` / `order_id` / moderation internals are not granted to `anon` (select explicit columns).
+- `product_review_stats` (view, RLS-aware): count, average, star buckets, verified, with photos.
+- Courses are not modelled yet: reviews target products; courses will add a `course_id` and widen
+  `reviews_one_subject` (course tags are already in the allowed list).
+
+### Shipments and tracking (iteration 3)
+
+- A shipment (`carrier`, `service`, `tracking_number`, `tracking_url`, `estimated_delivery`) lists
+  the order lines and quantities it contains (`shipment_items`) — partial shipping supported.
+- Only paid, non-cancelled orders can ship; a line can never be allocated beyond its quantity;
+  digital products are refused; a shipped/delivered parcel cannot be deleted; carrier + tracking
+  number required once shipped.
+- `shipped_at` / `delivered_at` are stamped automatically, and **`orders.fulfillment_status` and
+  `orders.status` are recomputed from the parcels**: preparing → processing; some units shipped →
+  `partially_fulfilled`; all shipped → `fulfilled` + `shipped`; all delivered → `delivered`.
+- Customers read their own parcels (tracking page); staff create and update them.
+
+### Refunds (iteration 3)
+
+```
+staff/backend  request_refund(order, amount, reason, items[{order_item_id, quantity}], restock)
+                 → 'pending'; amount ≤ paid − refunded − pending (payment row locked)
+backend        Stripe Refunds API
+webhook        mark_refund_succeeded(refund, re_…)  |  mark_refund_failed(refund, reason)
+                 → payment amount_refunded/status, order payment_status partially_refunded|refunded,
+                   order status 'refunded' when fully refunded, returned lines restocked ('return')
+```
+
+Staff can cancel a pending refund; only the backend can confirm or fail one; confirmed, failed and
+cancelled refunds are final. Line quantities can never be refunded twice. Customers see refunds on
+their own orders.
+
 ### Integrity guarantees
 
 - `orders_total_matches`: `total = subtotal − discount + shipping (+ tax when prices exclude tax)`; discount ≤ subtotal; all amounts ≥ 0.
@@ -157,10 +212,10 @@ Iteration 2 additions:
 | Bucket | Access |
 |---|---|
 | `product-media` (public, 10 MB, jpeg/png/webp/avif/mp4/webm) | anyone can fetch a file by its public URL (catalogue imagery is public by design); no public listing; upload/replace/delete **admins only**. |
-
 | `avatars` (private, 2 MB, jpeg/png/webp) | owner reads/uploads/replaces/deletes inside `<user_id>/`; admins read and delete (moderation); served with signed URLs. `profiles.avatar_path` must start with the owner's id. |
+| `review-photos` (private, 8 MB, jpeg/png/webp) | authors upload into `<user_id>/`; authors and admins read and delete; **anyone** can read a photo once its review is published. |
 
-Path convention: `products/<product-slug>/<file>`, `categories/<category-slug>/<file>`, `<user_id>/<file>` for avatars.
+Path convention: `products/<product-slug>/<file>`, `categories/<category-slug>/<file>`, `<user_id>/<file>` for avatars and review photos.
 Never put private customer or paid training files in this bucket.
 
 ## Operations
@@ -171,9 +226,7 @@ Never put private customer or paid training files in this bucket.
 update public.profiles set role = 'admin' where email = '<admin email>';
 ```
 
-**Order creation (future checkout code, service role, one transaction):** recompute prices from
-`products`/`product_variants`, insert `orders` with address snapshots, insert `order_items`,
-call `consume_inventory()` per line, then let the Stripe webhook set `payment_status`/`payments`.
+**Order creation:** always through `create_order()` (service role) — see *Checkout flow* above.
 
 **Expiry job:** schedule `select public.expire_stale_orders();` every 5 minutes (pg_cron —
 enable the extension in the dashboard — or a scheduled server job with the service role).
@@ -182,7 +235,8 @@ enable the extension in the dashboard — or a scheduled server job with the ser
 `insert into stripe_webhook_events (id, type, object_id, order_id) values (…) on conflict (id) do update set attempts = stripe_webhook_events.attempts + 1 returning status;`
 → skip when `processed`; otherwise call the function, then set `status = 'processed'` (or `failed` + `error`).
 
-**Validation:** run `tests/mvp_validation.sql` and `tests/iteration2_validation.sql`. Each ends with
+**Validation:** run `tests/mvp_validation.sql`, `tests/iteration2_validation.sql` and
+`tests/iteration3_validation.sql`. Each ends with
 `ALL … PASSED (...)` raised as an exception, which rolls everything back.
 (The order-number sequence still advances — sequences are not transactional.)
 
@@ -211,21 +265,33 @@ VAT rates, shipping zones/rates mirroring the Settings prototype. Media rows ref
    modelled yet. Stripe Tax could replace `vat_rate_bp()` later.
 6. **Reservation window** defaults to 60 minutes (`p_reservation_minutes`, 5–1440). Stripe Checkout
    sessions can live longer; set the session `expires_at` to match.
+7. **Reviews are deleted with the customer's account** (their text is personal data), and customers
+   can delete their own review. Signed-in users can technically read the `user_id` of *published*
+   reviews (visitors cannot); switch to column grants for `authenticated` too if that matters.
+8. **Report resolutions:** `hidden` → review hidden; `removed` → review rejected (reason
+   `guidelines`). Nothing is ever deleted by a report.
+9. **Refunds never cancel shipments** and a partial refund leaves the order status unchanged; a full
+   refund sets it to `refunded`. Restocking happens only when `restock = true` and the sale had
+   taken the stock.
 
-## Done in iteration 2
+## Done
 
-Translations, shipping zones/rates, VAT rates, stock reservations + ledger, server-side order
-functions, Stripe webhook idempotency, admin audit log, private avatars.
+- Iteration 2: translations, shipping zones/rates, VAT rates, stock reservations + ledger,
+  server-side order functions, Stripe webhook idempotency, admin audit log, private avatars.
+- Iteration 3: reviews with moderation, reports, votes and photos; shipments and tracking with
+  order status sync; refunds with payment/order states and restocking.
 
 ## Next iterations (not implemented)
 
 1. Application code: Stripe Checkout route + verified webhook handler calling these functions;
    pg_cron schedule for `expire_stale_orders()`.
-2. Refunds & returns: refund records, `partially_refunded` flow, `return` stock movements,
-   shipments/tracking numbers, invoices / credit notes (sequential numbering).
+2. Training MVP: courses, modules, lessons, enrollments granted on payment, progress, quizzes,
+   private course media, kit QR links; course reviews (`course_id` on `reviews`).
+   Invoices / credit notes (sequential numbering), carrier tracking events.
 3. Store settings table (legal identity, order number format, tax display options), VAT numbers /
    B2B reverse charge, multi-currency price lists.
 4. Guest checkout linking (attach guest orders to an account by verified email).
-5. Promotions / coupons / gift cards, reviews, marketing consent.
+5. Promotions / coupons / gift cards, newsletter & marketing consent, related products,
+   structured product attributes (gem shape/colour), staff permissions, order/customer notes & tags.
 6. Education (courses, modules, lessons, quizzes, attempts, certificates, entitlements), community,
    loyalty, analytics — each as its own migration set referencing `profiles` and `products`.
