@@ -32,7 +32,8 @@ import { formatPrice } from "../lib/format";
 import { useReveal } from "../lib/useReveal";
 import { useToast } from "../lib/toast";
 import { COMPOSITIONS, STUDIO_PRICE, type CompositionId } from "../data/studio";
-import { STUDIO_SUBSCRIBE_PATH } from "../lib/studioUrl";
+import { STUDIO_EDITOR_PATH, STUDIO_SUBSCRIBE_PATH } from "../lib/studioUrl";
+import { useStudioAccess } from "../lib/studioAccess";
 
 /**
  * The 3D Studio's public presentation page.
@@ -42,6 +43,10 @@ import { STUDIO_SUBSCRIBE_PATH } from "../lib/studioUrl";
  * Studio itself, the concept, the six capabilities, a media wall still waiting
  * for real renders, inspiration boards, three steps, the offer and the
  * questions. Every Studio surface on it is a mockup (see `StudioMockup`).
+ *
+ * While the Studio is in its free preview (`studioAccess`), "Start creating"
+ * opens the editor itself; the offer section still leads to the subscription
+ * page, so the paid plan stays visible.
  */
 
 const SECTION_X = "px-[clamp(14px,4vw,48px)]";
@@ -106,7 +111,9 @@ export function Studio() {
     return () => io.disconnect();
   }, []);
 
-  const start = () => navigate(STUDIO_SUBSCRIBE_PATH);
+  const access = useStudioAccess();
+  const subscribe = () => navigate(STUDIO_SUBSCRIBE_PATH);
+  const start = () => navigate(access.granted ? STUDIO_EDITOR_PATH : STUDIO_SUBSCRIBE_PATH);
   const discover = () => {
     const reduced = window.matchMedia("(prefers-reduced-motion: reduce)").matches;
     document.getElementById("decouvrir")?.scrollIntoView({ behavior: reduced ? "auto" : "smooth", block: "start" });
@@ -133,7 +140,7 @@ export function Studio() {
             <p className="m-0 max-w-[48ch] text-[length:var(--text-body-lg)] text-[var(--text-body)]">{t("studio.hero.body")}</p>
             <div ref={heroCtaRef} className="flex flex-wrap gap-3">
               <Button variant="primary" size="lg" iconRight={ArrowRight} onClick={start} className="gt-studio-cta">
-                {t("studio.hero.ctaPrimary")}
+                {access.granted ? t("studio.hero.ctaOpen") : t("studio.hero.ctaPrimary")}
               </Button>
               <Button variant="outline" size="lg" iconRight={ArrowDown} onClick={discover}>
                 {t("studio.hero.ctaSecondary")}
@@ -147,6 +154,12 @@ export function Studio() {
               <span aria-hidden="true" className="h-1 w-1 rounded-full bg-[var(--gt-ink-300)]" />
               {t("studio.pricing.reassuranceShort")}
             </p>
+            {access.granted && (
+              <p className="m-0 inline-flex items-center gap-2 rounded-[var(--radius-pill)] border border-[var(--gt-emerald-300)] bg-[var(--status-success-bg)] px-3 py-1 text-[length:var(--text-caption)] font-semibold text-[var(--status-success-fg)]">
+                <Sparkles size={13} aria-hidden="true" />
+                {t("studio.access.previewNote")}
+              </p>
+            )}
           </div>
 
           <div className="relative min-w-0">
@@ -365,7 +378,7 @@ export function Studio() {
           <StudioPricingCard
             className="relative"
             action={
-              <Button variant="primary" size="lg" fullWidth iconRight={ArrowRight} onClick={start} className="gt-studio-cta">
+              <Button variant="primary" size="lg" fullWidth iconRight={ArrowRight} onClick={subscribe} className="gt-studio-cta">
                 {t("studio.offer.cta")}
               </Button>
             }
@@ -379,7 +392,7 @@ export function Studio() {
           <div className="grid content-start gap-5">
             <SectionHeading id="gt-studio-faq" eyebrow={t("studio.faq.eyebrow")} title={t("studio.faq.title")} />
             <Button variant="outline" iconRight={ArrowRight} onClick={start} className="justify-self-start">
-              {t("studio.hero.ctaPrimary")}
+              {access.granted ? t("studio.hero.ctaOpen") : t("studio.hero.ctaPrimary")}
             </Button>
           </div>
           <StudioFaq />
@@ -399,7 +412,7 @@ export function Studio() {
           <span className="text-[12px] font-semibold text-[var(--text-muted)]">{t("studio.pricing.perMonth")}</span>
         </span>
         <Button variant="primary" size="sm" iconRight={ArrowRight} onClick={start} tabIndex={showBar ? 0 : -1}>
-          {t("studio.hero.ctaPrimary")}
+          {access.granted ? t("studio.hero.ctaOpen") : t("studio.hero.ctaPrimary")}
         </Button>
       </div>
     </div>

@@ -1,5 +1,5 @@
 import { Routes, Route, Navigate, useLocation } from "react-router-dom";
-import { useEffect } from "react";
+import { lazy, Suspense, useEffect } from "react";
 import { useTranslation } from "react-i18next";
 import { AuthProvider, RequireAccount } from "./lib/auth";
 import { AdminAuthProvider, RequireAdmin } from "./lib/adminAuth";
@@ -76,8 +76,14 @@ import { Settings as AdminSettings } from "./pages/admin/Settings";
 import { GiftCard } from "./pages/GiftCard";
 import { Studio } from "./pages/Studio";
 import { StudioSubscribe } from "./pages/StudioSubscribe";
-import { STUDIO_PATH, STUDIO_SUBSCRIBE_ALIAS, STUDIO_SUBSCRIBE_PATH } from "./lib/studioUrl";
+import { STUDIO_EDITOR_ALIAS, STUDIO_EDITOR_PATH, STUDIO_PATH, STUDIO_SUBSCRIBE_ALIAS, STUDIO_SUBSCRIBE_PATH } from "./lib/studioUrl";
+import { RequireStudioAccess } from "./lib/studioAccess";
+import { StudioEditorLoading } from "./components/studio/editor/StudioEditorLoading";
 import { NotFound } from "./pages/NotFound";
+
+/* The 3D Studio editor carries three.js, the heaviest code in the site: it is
+   split into its own chunk and only downloaded when the editor is opened. */
+const StudioEditor = lazy(() => import("./pages/StudioEditor").then((m) => ({ default: m.StudioEditor })));
 import { ServerError } from "./pages/ServerError";
 import { Maintenance } from "./pages/Maintenance";
 import { HelpCentre } from "./pages/legal/HelpCentre";
@@ -136,12 +142,20 @@ const ADMIN_ROUTE_PREFIX = "/admin";
  */
 const MAINTENANCE_ROUTE = "/maintenance";
 
+/**
+ * The 3D Studio editor is a full-screen workspace with its own application
+ * bar, so it also leaves out the storefront header and footer. Unlike the back
+ * office it stays a customer page: the cookie banner still shows.
+ */
+const WORKSPACE_ROUTES = [STUDIO_EDITOR_PATH];
+
 export default function App() {
   const { t } = useTranslation();
   const { pathname } = useLocation();
   const editorial = pathname === EDITORIAL_ROUTE;
   const adminArea = pathname === ADMIN_ROUTE_PREFIX || pathname.startsWith(`${ADMIN_ROUTE_PREFIX}/`);
   const bareChrome = adminArea || pathname === MAINTENANCE_ROUTE;
+  const workspace = WORKSPACE_ROUTES.includes(pathname);
 
   return (
     <AuthProvider>
@@ -179,7 +193,7 @@ export default function App() {
                       meet it before the page, though it sits at the bottom of
                       the screen. Not on the back office or maintenance chrome. */}
                   {!bareChrome && <CookieBanner />}
-                  {!bareChrome && (editorial ? <HeaderEditorial /> : <Header />)}
+                  {!bareChrome && !workspace && (editorial ? <HeaderEditorial /> : <Header />)}
                   <main id="main" tabIndex={-1}>
                     <Routes>
                       <Route path="/" element={<Home />} />
@@ -227,10 +241,26 @@ export default function App() {
                       {/* The 3D Studio: its presentation page and its subscription
                           page. Both open, like the Academy and Loyalty sales
                           pages — the subscription page asks for the account
-                          itself. Visual prototypes: no editor, no payment. */}
+                          itself. The subscription is a visual prototype: no
+                          payment is taken. */}
                       <Route path={STUDIO_PATH} element={<Studio />} />
                       <Route path={STUDIO_SUBSCRIBE_PATH} element={<StudioSubscribe />} />
                       <Route path={STUDIO_SUBSCRIBE_ALIAS} element={<Navigate to={STUDIO_SUBSCRIBE_PATH} replace />} />
+                      {/* The editor itself. Gated by `RequireStudioAccess`,
+                          which during the preview lets every visitor in for
+                          free — the one place to change when the paid
+                          subscription goes live. Lazy: see `StudioEditor`. */}
+                      <Route
+                        path={STUDIO_EDITOR_PATH}
+                        element={
+                          <RequireStudioAccess>
+                            <Suspense fallback={<StudioEditorLoading />}>
+                              <StudioEditor />
+                            </Suspense>
+                          </RequireStudioAccess>
+                        }
+                      />
+                      <Route path={STUDIO_EDITOR_ALIAS} element={<Navigate to={STUDIO_EDITOR_PATH} replace />} />
                       {/* The Academy landing page stays open — it is the sales page.
                           Only the course content itself requires an account, and gating
                           the route covers the menu links and direct URLs at once. */}
@@ -385,7 +415,7 @@ export default function App() {
                       <Route path="*" element={<NotFound />} />
                     </Routes>
                   </main>
-                  {!bareChrome && (editorial ? <FooterEditorial /> : <Footer />)}
+                  {!bareChrome && !workspace && (editorial ? <FooterEditorial /> : <Footer />)}
                   <CookieSettingsDialog />
                   <ReviewOverlays />
                 </ReviewsProvider>

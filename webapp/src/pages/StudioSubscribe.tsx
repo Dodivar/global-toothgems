@@ -21,10 +21,9 @@ import { StudioPricingCard } from "../components/studio/StudioPricingCard";
 import { GemIcon } from "../components/studio/Gem";
 import { NewTag } from "../components/studio/NewTag";
 import { useAuth } from "../lib/auth";
-import { useToast } from "../lib/toast";
 import { formatPrice } from "../lib/format";
 import { STUDIO_PRICE } from "../data/studio";
-import { STUDIO_PATH, STUDIO_SUBSCRIBE_PATH } from "../lib/studioUrl";
+import { STUDIO_EDITOR_PATH, STUDIO_PATH, STUDIO_SUBSCRIBE_PATH } from "../lib/studioUrl";
 
 /**
  * The Studio's subscription page: one plan, one account, one action.
@@ -46,7 +45,6 @@ const PROCESSING_MS = 1600;
 export function StudioSubscribe() {
   const { t } = useTranslation();
   const navigate = useNavigate();
-  const { showToast } = useToast();
   const { signedIn, displayName, initials, email: accountEmail } = useAuth();
   const price = formatPrice(STUDIO_PRICE.amount, undefined, STUDIO_PRICE.currency);
 
@@ -167,7 +165,7 @@ export function StudioSubscribe() {
                     <Button
                       variant="primary"
                       iconRight={ArrowRight}
-                      onClick={() => showToast(t("common.notIncludedTitle"), t("studio.subscribe.editorToast"), "info")}
+                      onClick={() => navigate(STUDIO_EDITOR_PATH)}
                     >
                       {t("studio.subscribe.openStudio")}
                     </Button>
