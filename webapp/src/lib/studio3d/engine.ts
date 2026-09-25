@@ -134,6 +134,8 @@ const _UP = new THREE.Vector3(0, 1, 0);
 const _n = new THREE.Vector3(),
   _p = new THREE.Vector3(),
   _nn = new THREE.Vector3();
+const _sa = new THREE.Vector3(),
+  _sb = new THREE.Vector3();
 const _q1 = new THREE.Quaternion(),
   _q2 = new THREE.Quaternion(),
   _q3 = new THREE.Quaternion();
@@ -200,6 +202,22 @@ function geometricWorldNormal(hit: THREE.Intersection, rayDir: THREE.Vector3): T
 function mountGap(scale: number, manualOffset = 0): number {
   return 0.04 + 0.04 * scale + manualOffset;
 }
+
+/**
+ * Where the current selection sits on the canvas, in CSS pixels from the
+ * stage's top-left corner: the screen box around the selected pieces. `null`
+ * while nothing is selected, a piece is being dragged or placed, or the
+ * selection is off screen — the floating selection controls hide then.
+ */
+export interface SelectionAnchor {
+  left: number;
+  right: number;
+  top: number;
+  bottom: number;
+  width: number;
+  height: number;
+}
+export type SelectionAnchorListener = (anchor: SelectionAnchor | null) => void;
 
 function toothIdFromObject(o: THREE.Object3D | null): string | null {
   let cur = o;
@@ -279,6 +297,10 @@ export class StudioEngine {
   private camTween: { p0: THREE.Vector3; p1: THREE.Vector3; t0: THREE.Vector3; t1: THREE.Vector3; start: number; dur: number } | null =
     null;
   private autoRotate = false;
+
+  // floating selection controls (see `onSelectionAnchor`)
+  private anchorListener: SelectionAnchorListener | null = null;
+  private lastAnchorKey = "";
 
   constructor(container: HTMLElement, store: DesignStore) {
     this.container = container;
@@ -1843,6 +1865,64 @@ export class StudioEngine {
     setTimeout(() => URL.revokeObjectURL(url), 4000);
   }
 
+  /* ---------- selection anchor ---------- */
+
+  /**
+   * Follow the selection on screen, so HTML controls can float beside it.
+   * The listener is called at once, then whenever the box moves (camera,
+   * selection, drag, resize). One listener at a time; returns the unsubscribe.
+   */
+  onSelectionAnchor(fn: SelectionAnchorListener): () => void {
+    this.anchorListener = fn;
+    this.lastAnchorKey = "";
+    this.emitSelectionAnchor();
+    return () => {
+      if (this.anchorListener === fn) this.anchorListener = null;
+    };
+  }
+
+  private computeSelectionAnchor(): SelectionAnchor | null {
+    const snap = this.store.getSnapshot();
+    if (!snap.selectedJewelIds.length || this.dragJewel || this.placing || snap.placingTypeId) return null;
+    const w = this.container.clientWidth,
+      h = this.container.clientHeight;
+    if (!w || !h) return null;
+    this.camera.updateMatrixWorld();
+    // camera "up" in world space: offsets a piece's centre by its radius on screen
+    _sb.setFromMatrixColumn(this.camera.matrixWorld, 1).normalize();
+    let left = Infinity,
+      right = -Infinity,
+      top = Infinity,
+      bottom = -Infinity;
+    for (const id of snap.selectedJewelIds) {
+      const rig = this.jewelRigs.get(id);
+      if (!rig) continue;
+      rig.group.getWorldPosition(_p);
+      _sa.copy(_p).project(this.camera);
+      if (_sa.z > 1 || _sa.z < -1) continue; // behind the camera or clipped
+      const cx = (_sa.x * 0.5 + 0.5) * w,
+        cy = (-_sa.y * 0.5 + 0.5) * h;
+      _sa.copy(_p).addScaledVector(_sb, rig.radius * rig.sizeScale).project(this.camera);
+      const r = Math.hypot((_sa.x * 0.5 + 0.5) * w - cx, (-_sa.y * 0.5 + 0.5) * h - cy);
+      left = Math.min(left, cx - r);
+      right = Math.max(right, cx + r);
+      top = Math.min(top, cy - r);
+      bottom = Math.max(bottom, cy + r);
+    }
+    if (left === Infinity || right < 0 || left > w || bottom < 0 || top > h) return null;
+    return { left, right, top, bottom, width: w, height: h };
+  }
+
+  private emitSelectionAnchor() {
+    const fn = this.anchorListener;
+    if (!fn) return;
+    const a = this.computeSelectionAnchor();
+    const key = a ? `${Math.round(a.left)},${Math.round(a.right)},${Math.round(a.top)},${Math.round(a.bottom)},${a.width},${a.height}` : "";
+    if (key === this.lastAnchorKey) return;
+    this.lastAnchorKey = key;
+    fn(a);
+  }
+
   /* ---------- frame loop ---------- */
 
   private tick = () => {
@@ -1932,6 +2012,7 @@ export class StudioEngine {
       this.ghost.ring.scale.setScalar(this.ghost.ringScale * (1 + 0.05 * p));
     }
     this.renderer.render(this.scene, this.camera);
+    this.emitSelectionAnchor();
   };
 
   private hasBirths() {
@@ -1962,6 +2043,7 @@ export class StudioEngine {
     this.controls.removeEventListener("change", this.wake);
     this.controls.removeEventListener("start", this.wake);
     this.unsubscribe();
+    this.anchorListener = null;
     this.destroyGhost();
     this.controls.dispose();
     this.scene.traverse((o) => {

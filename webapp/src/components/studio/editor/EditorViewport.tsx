@@ -4,7 +4,7 @@ import { Copy, FlipHorizontal2, FlipVertical2, Minus, Orbit, Plus, RotateCw, Tra
 import { useEditorLabels } from "./editorLabels";
 import { FREE_TOOTH } from "../../../data/studioEditor";
 import { duplicatePieces, importModelFile, mirrorSelection, removePieces, rotatePieces } from "../../../lib/studio3d/actions";
-import { getEngine, setEngine, StudioEngine } from "../../../lib/studio3d/engine";
+import { getEngine, setEngine, StudioEngine, type SelectionAnchor } from "../../../lib/studio3d/engine";
 import { studioStore, type ContextMenuState, type LightPreset, type StudioSnapshot } from "../../../lib/studio3d/store";
 
 /* Glass on the dark stage, as the Studio mockup draws its floating controls. */
@@ -23,6 +23,7 @@ export function EditorViewport({ snap }: { snap: StudioSnapshot }) {
   const hostRef = useRef<HTMLDivElement>(null);
   const [failed, setFailed] = useState(false);
   const [dragOver, setDragOver] = useState(false);
+  const [engineReady, setEngineReady] = useState(false);
 
   useEffect(() => {
     const host = hostRef.current;
@@ -36,7 +37,9 @@ export function EditorViewport({ snap }: { snap: StudioSnapshot }) {
       return;
     }
     setEngine(engine);
+    setEngineReady(true);
     return () => {
+      setEngineReady(false);
       engine.dispose();
       setEngine(null);
     };
@@ -136,6 +139,9 @@ export function EditorViewport({ snap }: { snap: StudioSnapshot }) {
         </Pill>
       )}
 
+      {engineReady && snap.selectedJewelIds.length > 0 && !snap.contextMenu && (
+        <QuickRotateButton ids={snap.selectedJewelIds} />
+      )}
       {snap.contextMenu && <ContextMenu cm={snap.contextMenu} snap={snap} />}
       {!failed && <BottomBar lightPreset={snap.lightPreset} />}
       <p className="pointer-events-none absolute left-4 top-4 z-[3] m-0 hidden text-[9px] font-bold uppercase tracking-[.24em] text-[var(--gt-blue-700)]/70 xl:block">
@@ -159,6 +165,72 @@ function Pill({ children, position, floating }: { children: React.ReactNode; pos
       <span className="flex min-w-0 items-center gap-2 [&>span]:truncate">{children}</span>
     </div>
   );
+}
+
+/** Touch-sized button: 44px tall, and this far from the selection's edge. */
+const QUICK_ROTATE_SIZE = 44;
+const QUICK_ROTATE_GAP = 12;
+/** Stage bands the button stays out of: the tooth chip on top, the camera bar at the foot. */
+const STAGE_TOP_RESERVED = 56;
+const STAGE_BOTTOM_RESERVED = 68;
+const STAGE_SIDE_MARGIN = 8;
+
+/**
+ * One-tap "+90°" floating right under (or above) the selected pieces, so a
+ * finger can turn them without the inspector or a right-click — the context
+ * menu is out of reach on a tablet or phone. It follows the selection as the
+ * camera moves and hides while a piece is dragged or off screen.
+ */
+function QuickRotateButton({ ids }: { ids: string[] }) {
+  const { t } = useEditorLabels();
+  const ref = useRef<HTMLButtonElement>(null);
+  const [visible, setVisible] = useState(false);
+
+  useEffect(() => {
+    const engine = getEngine();
+    if (!engine) return;
+    // Positioned straight on the element: the anchor moves every frame while the camera does.
+    return engine.onSelectionAnchor((a) => {
+      const el = ref.current;
+      if (a && el) placeQuickRotate(el, a);
+      setVisible(!!a);
+    });
+  }, []);
+
+  const label = t("studio.editor.context.rotate", { count: ids.length });
+  return (
+    <button
+      ref={ref}
+      type="button"
+      aria-label={label}
+      title={label}
+      onClick={() => rotatePieces(ids)}
+      onContextMenu={(e) => e.preventDefault()}
+      className={clsx(
+        "gt-editor-chip absolute left-0 top-0 z-[7] inline-flex -translate-x-1/2 items-center gap-1.5 rounded-full pl-3 pr-3.5 text-[13px] font-bold transition-colors",
+        "touch-manipulation hover:bg-[rgba(22,26,32,.8)] active:bg-white active:text-[var(--gt-ink-900)]",
+        "focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-white",
+        stageGlass,
+        !visible && "invisible",
+      )}
+      style={{ height: QUICK_ROTATE_SIZE, minWidth: QUICK_ROTATE_SIZE }}
+    >
+      <RotateCw size={17} aria-hidden="true" />
+      <span aria-hidden="true">+90°</span>
+    </button>
+  );
+}
+
+/** Centre the button under the selection, above it when the camera bar is in the way, always inside the stage. */
+function placeQuickRotate(el: HTMLElement, a: SelectionAnchor) {
+  const half = el.offsetWidth / 2 || QUICK_ROTATE_SIZE;
+  const x = Math.min(Math.max((a.left + a.right) / 2, STAGE_SIDE_MARGIN + half), a.width - STAGE_SIDE_MARGIN - half);
+  const maxTop = a.height - STAGE_BOTTOM_RESERVED - QUICK_ROTATE_SIZE;
+  const below = a.bottom + QUICK_ROTATE_GAP;
+  const above = a.top - QUICK_ROTATE_GAP - QUICK_ROTATE_SIZE;
+  const y = below <= maxTop ? below : above >= STAGE_TOP_RESERVED ? above : Math.min(Math.max(below, STAGE_TOP_RESERVED), maxTop);
+  el.style.left = `${Math.round(x)}px`;
+  el.style.top = `${Math.round(y)}px`;
 }
 
 /** Right-click menu on a piece (or on the selection that contains it). */
