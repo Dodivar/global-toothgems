@@ -1,7 +1,7 @@
 import { useMemo, useState } from "react";
 import { useTranslation } from "react-i18next";
 import { Link, useNavigate, useParams } from "react-router-dom";
-import { Archive, PackageSearch, Trash2 } from "lucide-react";
+import { Archive, ChevronRight, PackageSearch, Sparkles, Trash2 } from "lucide-react";
 import { AdminButton } from "../../components/admin/AdminButton";
 import { AdminHeader } from "../../components/admin/AdminHeader";
 import { ConfirmationDialog } from "../../components/admin/ConfirmationDialog";
@@ -28,7 +28,7 @@ export function AdminProductEdit() {
   const { id } = useParams();
   const { openNav } = useAdminShell();
   const { showToast } = useToast();
-  const { products, loading, getProduct, updateProduct, setStatus, deleteProduct } = useAdminCatalog();
+  const { products, loading, getProduct, updateProduct, setStatus, deleteProduct, recommendationsFor } = useAdminCatalog();
 
   const [saving, setSaving] = useState(false);
   const [archiveOpen, setArchiveOpen] = useState(false);
@@ -132,6 +132,27 @@ export function AdminProductEdit() {
             </Link>
           </p>
         )}
+
+        {/* The links are saved on their own screen (their own table), so the
+            form only points there, with what is set today. */}
+        <Link
+          to={`/admin/produits/${product.id}/recommandations`}
+          className="gt-admin-panel group mb-5 flex items-center gap-3 p-4 transition-colors hover:border-[var(--gt-ink-400)] focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-[var(--focus-ring)]"
+        >
+          <Sparkles size={18} aria-hidden="true" className="flex-none text-[var(--text-muted)]" />
+          <span className="grid min-w-0 flex-1 gap-0.5">
+            <span className="text-[length:var(--text-body-sm)] font-semibold text-[var(--text-primary)] group-hover:underline">
+              {t("admin.recommendations.title")}
+            </span>
+            <span className="text-[length:var(--text-caption)] text-[var(--text-muted)]">
+              {t("admin.recommendations.summary", {
+                complementary: recommendationsFor(product.id, "complementary").length,
+                similar: recommendationsFor(product.id, "similar").length,
+              })}
+            </span>
+          </span>
+          <ChevronRight size={18} aria-hidden="true" className="flex-none text-[var(--text-muted)]" />
+        </Link>
 
         <ProductForm
           // Keyed by product: navigating from one product to another must load

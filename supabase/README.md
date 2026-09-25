@@ -456,6 +456,7 @@ Feeds the storefront's suggestion blocks, which today read mock data (`webapp/sr
 | Product page, "Va avec — Compléter la trousse" (`ProductDetail.tsx`) | `recommended_products(array[<product id>])` |
 | Cart suggestions (`Cart.tsx`) | `recommended_products(<cart product ids>)`; empty cart → `recommended_products('{}')` |
 | Home best-sellers (`Home.tsx`) | `recommended_products('{}')` (or a `collections` row when merchandised by hand) |
+| Back office, `/admin/produits/:id/recommandations` (`AdminProductRecommendations.tsx`) | edits `product_recommendations` (prototype store today: `saveRecommendations()` in `lib/adminCatalog.tsx` replaces a product's lists, one row per link and position) |
 
 - **`product_recommendations`**: one row per (product, kind, recommended product), ordered by `position`.
   Kinds: `complementary` (goes with it: cross-sell) and `similar` (an alternative to it). No self link, one link per

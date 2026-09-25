@@ -625,6 +625,78 @@ export function effectivePrice(product: AdminProduct): number {
   return product.promoPrice ?? product.price;
 }
 
+/**
+ * Recommendations: products the team places next to a product. Mirrors the
+ * `product_recommendations` table (`supabase/migrations/…_product_recommendations.sql`):
+ * one link per (product, kind, recommended product), ordered by `position`.
+ *
+ * - `complementary` — goes with it: the product page's "Va avec" block and the
+ *   cart suggestions;
+ * - `similar` — an alternative to it (another shape, another finish).
+ */
+export type RecommendationKind = "complementary" | "similar";
+
+export const RECOMMENDATION_KINDS: RecommendationKind[] = ["complementary", "similar"];
+
+export interface ProductRecommendation {
+  productId: string;
+  recommendedProductId: string;
+  kind: RecommendationKind;
+  position: number;
+}
+
+/**
+ * Places a recommendation block fills on the storefront. Matches the default
+ * `p_limit` of `recommended_products()`; the links beyond it stand in when an
+ * earlier one cannot be shown.
+ */
+export const STOREFRONT_RECOMMENDATION_SLOTS = 4;
+
+/**
+ * Whether the storefront may show a product as a recommendation right now.
+ * Same rule as `recommended_products()`: on sale, and not sold out. A link to a
+ * product that fails it is kept, and skipped until the product qualifies again.
+ */
+export function isRecommendable(product: AdminProduct): boolean {
+  return product.status === "active" && stockState(product) !== "out_of_stock";
+}
+
+/** Same links as `supabase/seed.sql`, on the prototype's product ids. */
+export const SEED_RECOMMENDATIONS: ProductRecommendation[] = (
+  [
+    ["crystal-star", "aftercare-gel", "complementary"],
+    ["crystal-star", "sterile-capsules", "complementary"],
+    ["crystal-star", "application-kit-pro", "complementary"],
+    ["crystal-star", "removal-pliers", "complementary"],
+    ["gold-star-charm", "aftercare-gel", "complementary"],
+    ["gold-star-charm", "application-kit-pro", "complementary"],
+    ["gold-star-charm", "sterile-capsules", "complementary"],
+    ["chrome-heart", "aftercare-gel", "complementary"],
+    ["chrome-heart", "sterile-capsules", "complementary"],
+    ["opal-drop", "aftercare-gel", "complementary"],
+    ["opal-drop", "sterile-capsules", "complementary"],
+    ["application-kit-pro", "sterile-capsules", "complementary"],
+    ["application-kit-pro", "crystal-star", "complementary"],
+    ["application-kit-pro", "removal-pliers", "complementary"],
+    ["application-kit-pro", "aftercare-gel", "complementary"],
+    ["removal-pliers", "aftercare-gel", "complementary"],
+    ["removal-pliers", "sterile-capsules", "complementary"],
+    ["aftercare-gel", "sterile-capsules", "complementary"],
+    ["sterile-capsules", "aftercare-gel", "complementary"],
+    ["crystal-star", "gold-star-charm", "similar"],
+    ["crystal-star", "chrome-heart", "similar"],
+    ["gold-star-charm", "crystal-star", "similar"],
+    ["chrome-heart", "opal-drop", "similar"],
+    ["opal-drop", "chrome-heart", "similar"],
+  ] as const
+).map(([productId, recommendedProductId, kind], index, all) => ({
+  productId,
+  recommendedProductId,
+  kind,
+  // Position within the (product, kind) list, in the order written above.
+  position: all.slice(0, index).filter(([p, , k]) => p === productId && k === kind).length,
+}));
+
 export type ActivityKind = "created" | "updated" | "archived" | "restored" | "status" | "stock" | "deleted" | "duplicated";
 
 export interface ActivityEntry {
