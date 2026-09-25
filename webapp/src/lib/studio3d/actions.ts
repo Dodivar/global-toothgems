@@ -1,4 +1,4 @@
-import { PRESETS } from "../../data/studioEditor";
+import { PRESETS, SCALE_RANGE } from "../../data/studioEditor";
 import { getEngine, MAX_MODEL_BYTES, ModelImportError } from "./engine";
 import { notify } from "./notices";
 import { studioStore } from "./store";
@@ -31,6 +31,26 @@ export function rotatePieces(ids: string[]) {
   studioStore.pushHistory();
   studioStore.applyPatches(pieces.map((j) => ({ id: j.id, patch: { rotation: (j.rotation + 90) % 360 } })));
   notify("rotated", { count: pieces.length });
+}
+
+/**
+ * Grow (`steps > 0`) or shrink the pieces by whole slider steps, each within
+ * the allowed diameters. One undo step; says so when every piece is already
+ * at the limit.
+ */
+export function resizePieces(ids: string[], steps: number) {
+  const pieces = studioStore.jewels.filter((j) => ids.includes(j.id));
+  if (!pieces.length || !steps) return;
+  const { min, max, step } = SCALE_RANGE;
+  // Rounded to the slider's grid, so repeated taps never drift (0.95 + 0.05 stays 1).
+  const next = (s: number) => Math.min(max, Math.max(min, Number((Math.round(s / step + steps) * step).toFixed(2))));
+  const updates = pieces.filter((j) => next(j.scale) !== j.scale).map((j) => ({ id: j.id, patch: { scale: next(j.scale) } }));
+  if (!updates.length) {
+    notify(steps > 0 ? "sizeMax" : "sizeMin", undefined, "info");
+    return;
+  }
+  studioStore.pushHistory();
+  studioStore.applyPatches(updates);
 }
 
 /** A rotation driven live by a control (the stage's rotate handle), in screen degrees. */

@@ -1,18 +1,20 @@
-import { useEffect, useRef, useState } from "react";
+import { Fragment, useEffect, useLayoutEffect, useRef, useState } from "react";
 import clsx from "clsx";
 import { Copy, FlipHorizontal2, FlipVertical2, Minus, Orbit, Plus, RotateCw, Trash2, TriangleAlert, X } from "lucide-react";
 import { useEditorLabels } from "./editorLabels";
-import { FREE_TOOTH } from "../../../data/studioEditor";
+import { FREE_TOOTH, type PlacedJewelry } from "../../../data/studioEditor";
 import {
   beginRotation,
   duplicatePieces,
   importModelFile,
   mirrorSelection,
   removePieces,
+  resizePieces,
   rotatePieces,
   type RotationSession,
 } from "../../../lib/studio3d/actions";
 import { getEngine, setEngine, StudioEngine, type SelectionAnchor } from "../../../lib/studio3d/engine";
+import { useQuickActions, type QuickActionId } from "../../../lib/studio3d/quickActions";
 import { studioStore, type ContextMenuState, type LightPreset, type StudioSnapshot } from "../../../lib/studio3d/store";
 
 /* Glass on the dark stage, as the Studio mockup draws its floating controls. */
@@ -86,6 +88,7 @@ export function EditorViewport({ snap }: { snap: StudioSnapshot }) {
   const jewel = snap.jewels.find((j) => j.id === snap.selectedJewelIds[0]);
   const chipTooth = snap.hoveredToothId ?? (jewel ? jewel.toothId : snap.selectedToothId);
   const armedName = snap.armedTypeId ? pieceName(snap.armedTypeId) : null;
+  const quick = useQuickActions();
 
   return (
     <section
@@ -147,7 +150,9 @@ export function EditorViewport({ snap }: { snap: StudioSnapshot }) {
         </Pill>
       )}
 
-      {engineReady && snap.selectedJewelIds.length > 0 && !snap.contextMenu && <RotateHandle ids={snap.selectedJewelIds} />}
+      {engineReady && snap.selectedJewelIds.length > 0 && !snap.contextMenu && quick.enabled && quick.actions.length > 0 && (
+        <QuickBar ids={snap.selectedJewelIds} jewels={snap.jewels} actions={quick.actions} />
+      )}
       {snap.contextMenu && <ContextMenu cm={snap.contextMenu} snap={snap} />}
       {!failed && <BottomBar lightPreset={snap.lightPreset} />}
       <p className="pointer-events-none absolute left-4 top-4 z-[3] m-0 hidden text-[9px] font-bold uppercase tracking-[.24em] text-[var(--gt-blue-700)]/70 xl:block">
@@ -173,10 +178,11 @@ function Pill({ children, position, floating }: { children: React.ReactNode; pos
   );
 }
 
-/** Touch-sized button: 44px tall, and this far from the selection's edge. */
-const HANDLE_SIZE = 44;
-const HANDLE_GAP = 12;
-/** Stage bands the button stays out of: the tooth chip on top, the camera bar at the foot. */
+/** Touch-sized buttons (42px, 48px with the bar's padding and border), and the bar's gap to the selection. */
+const QUICK_BUTTON = 42;
+const BAR_HEIGHT = 48;
+const BAR_GAP = 12;
+/** Stage bands the bar stays out of: the tooth chip on top, the camera bar at the foot. */
 const STAGE_TOP_RESERVED = 56;
 const STAGE_BOTTOM_RESERVED = 68;
 const STAGE_SIDE_MARGIN = 8;
@@ -207,19 +213,28 @@ type Gesture = {
   turned: number;
 };
 
+const quickButton = clsx(
+  "inline-flex flex-none select-none items-center justify-center gap-1.5 rounded-full text-[13px] font-bold transition-colors",
+  "hover:bg-white/15 focus-visible:outline focus-visible:outline-2 focus-visible:-outline-offset-2 focus-visible:outline-white",
+);
+
 /**
- * Rotate handle floating right under (or above) the selected pieces. Press
- * it, then drag around the selection like a dial: the pieces turn live by the
- * angle swept around the selection's centre (clockwise on screen turns them
- * clockwise), and keep that angle on release — "+50°" is a quarter of a slow
- * circle. Made for a finger on a tablet or phone, where the inspector and the
- * right-click menu are out of reach. Arrow keys turn by 1° (Shift: 15°).
- * The handle follows the selection as the camera moves and hides while a
- * piece is dragged or off screen.
+ * Quick actions floating right under (or above) the selected pieces, chosen
+ * in the toolbar's quick-action preferences: rotate, size −/+, duplicate,
+ * mirror, delete. Made for a finger on a tablet or phone, where the inspector
+ * sits below the stage and the right-click menu is out of reach.
+ *
+ * Rotate is a dial: press it, then drag around the selection, and the pieces
+ * turn live by the angle swept around the selection's centre (clockwise on
+ * screen turns them clockwise), keeping that angle on release — "+50°" is a
+ * quarter of a slow circle. Meanwhile the other buttons step aside and the
+ * handle rides under the finger. Arrow keys turn by 1° (Shift: 15°).
+ * The bar follows the selection as the camera moves and hides while a piece
+ * is dragged or off screen.
  */
-function RotateHandle({ ids }: { ids: string[] }) {
+function QuickBar({ ids, jewels, actions }: { ids: string[]; jewels: PlacedJewelry[]; actions: QuickActionId[] }) {
   const { t } = useEditorLabels();
-  const ref = useRef<HTMLButtonElement>(null);
+  const barRef = useRef<HTMLDivElement>(null);
   const anchorRef = useRef<SelectionAnchor | null>(null);
   const gestureRef = useRef<Gesture | null>(null);
   const [visible, setVisible] = useState(false);
@@ -231,11 +246,21 @@ function RotateHandle({ ids }: { ids: string[] }) {
     // Positioned straight on the element: the anchor moves every frame while the camera does.
     return engine.onSelectionAnchor((a) => {
       anchorRef.current = a;
-      const el = ref.current;
-      if (a && el && !gestureRef.current) placeRotateHandle(el, a);
+      const el = barRef.current;
+      if (a && el && !gestureRef.current) placeQuickBar(el, a);
       setVisible(!!a);
     });
   }, []);
+
+  // One diameter for the whole selection, or none when the pieces differ.
+  const scales = new Set(jewels.filter((j) => ids.includes(j.id)).map((j) => j.scale));
+  const scale = scales.size === 1 ? [...scales][0] : null;
+
+  // The bar's width changes with its buttons and the size readout: stay centred.
+  useLayoutEffect(() => {
+    const el = barRef.current;
+    if (el && anchorRef.current && !gestureRef.current) placeQuickBar(el, anchorRef.current);
+  }, [actions, scale]);
 
   const finish = () => {
     const g = gestureRef.current;
@@ -243,15 +268,19 @@ function RotateHandle({ ids }: { ids: string[] }) {
     gestureRef.current = null;
     g.session.end();
     setDial(null);
-    const el = ref.current;
-    if (el && anchorRef.current) placeRotateHandle(el, anchorRef.current);
   };
-  // Selection changed or the handle went away mid-gesture: keep what was turned.
+  // Selection changed or the bar went away mid-gesture: keep what was turned.
   useEffect(() => finish, [ids]);
+  // Back beside the selection once the gesture ends and the other buttons are back.
+  const idle = dial === null;
+  useLayoutEffect(() => {
+    const el = barRef.current;
+    if (idle && el && anchorRef.current) placeQuickBar(el, anchorRef.current);
+  }, [idle]);
 
   const onPointerDown = (e: React.PointerEvent<HTMLButtonElement>) => {
     const a = anchorRef.current;
-    const stage = e.currentTarget.offsetParent?.getBoundingClientRect();
+    const stage = barRef.current?.offsetParent?.getBoundingClientRect();
     if (e.button !== 0 || !a || !stage || gestureRef.current) return;
     e.preventDefault();
     e.currentTarget.setPointerCapture(e.pointerId);
@@ -266,15 +295,22 @@ function RotateHandle({ ids }: { ids: string[] }) {
       prevAngle: pointerAngle(e.clientX, e.clientY, pivotX, pivotY),
       turned: 0,
     };
+    moveBarTo(e.clientX - stage.left, e.clientY - stage.top);
     setDial({ turned: 0, cx: pivotX - stage.left, cy: pivotY - stage.top, r: Math.hypot(e.clientX - pivotX, e.clientY - pivotY) });
+  };
+
+  /** While turning the bar holds only the rotate handle: centre it under the finger. */
+  const moveBarTo = (x: number, y: number) => {
+    const el = barRef.current;
+    if (!el) return;
+    el.style.left = `${Math.round(x)}px`;
+    el.style.top = `${Math.round(y - BAR_HEIGHT / 2)}px`;
   };
 
   const onPointerMove = (e: React.PointerEvent<HTMLButtonElement>) => {
     const g = gestureRef.current;
     if (!g) return;
-    // The handle rides under the finger, around the dial.
-    e.currentTarget.style.left = `${Math.round(e.clientX - g.originX)}px`;
-    e.currentTarget.style.top = `${Math.round(e.clientY - g.originY - HANDLE_SIZE / 2)}px`;
+    moveBarTo(e.clientX - g.originX, e.clientY - g.originY);
     const r = Math.hypot(e.clientX - g.pivotX, e.clientY - g.pivotY);
     if (r >= HANDLE_DEAD_ZONE) {
       const angle = pointerAngle(e.clientX, e.clientY, g.pivotX, g.pivotY);
@@ -293,7 +329,76 @@ function RotateHandle({ ids }: { ids: string[] }) {
   };
 
   const turning = dial !== null;
-  const label = t("studio.editor.viewport.rotateLabel", { count: ids.length });
+  const count = ids.length;
+  const rotateLabel = t("studio.editor.viewport.rotateLabel", { count });
+  const icon = (label: string, Icon: typeof Copy, onClick: () => void, danger = false) => (
+    <button
+      type="button"
+      aria-label={label}
+      title={label}
+      onClick={onClick}
+      className={clsx(quickButton, danger && "text-[#ffb4ab]")}
+      style={{ width: QUICK_BUTTON, height: QUICK_BUTTON }}
+    >
+      <Icon size={17} aria-hidden="true" />
+    </button>
+  );
+  const sep = <span aria-hidden="true" className="mx-0.5 h-5 w-px flex-none bg-white/20" />;
+
+  const render = (id: QuickActionId) => {
+    switch (id) {
+      case "rotate":
+        return (
+          <button
+            type="button"
+            aria-label={rotateLabel}
+            title={rotateLabel}
+            onPointerDown={onPointerDown}
+            onPointerMove={onPointerMove}
+            onPointerUp={finish}
+            onPointerCancel={finish}
+            onLostPointerCapture={finish}
+            onKeyDown={onKeyDown}
+            onContextMenu={(e) => e.preventDefault()}
+            className={clsx(
+              quickButton,
+              "cursor-grab touch-none px-3 [-webkit-touch-callout:none]",
+              // Turning: solid white, like the stage's other active toggles.
+              turning && "cursor-grabbing bg-white text-[var(--gt-ink-900)] hover:bg-white",
+            )}
+            style={{ height: QUICK_BUTTON, minWidth: QUICK_BUTTON }}
+          >
+            <RotateCw size={17} aria-hidden="true" />
+            <span aria-hidden="true" className={clsx("tabular-nums", !turning && "max-sm:hidden")}>
+              {turning ? `${dial.turned > 0 ? "+" : dial.turned < 0 ? "−" : ""}${Math.abs(dial.turned)}°` : t("studio.editor.viewport.rotate")}
+            </span>
+          </button>
+        );
+      case "size":
+        return (
+          <div role="group" aria-label={t("studio.editor.inspector.diameter")} className="flex flex-none items-center">
+            {icon(t("studio.editor.viewport.quick.smaller", { count }), Minus, () => resizePieces(ids, -1))}
+            {scale !== null && (
+              <span aria-live="polite" className="min-w-[46px] text-center text-[12px] font-bold tabular-nums">
+                {t("studio.editor.inspector.mm", { value: (scale * 2).toFixed(1) })}
+              </span>
+            )}
+            {icon(t("studio.editor.viewport.quick.larger", { count }), Plus, () => resizePieces(ids, 1))}
+          </div>
+        );
+      case "duplicate":
+        return icon(t("studio.editor.context.duplicate", { count }), Copy, () => duplicatePieces(ids));
+      case "mirrorH":
+        return icon(t("studio.editor.mirror.horizontal"), FlipHorizontal2, () => mirrorSelection("h"));
+      case "mirrorV":
+        return icon(t("studio.editor.mirror.vertical"), FlipVertical2, () => mirrorSelection("v"));
+      case "delete":
+        return icon(t("studio.editor.context.delete", { count }), Trash2, () => removePieces(ids), true);
+    }
+  };
+  // While turning, only the rotate handle stays (the same element, so it keeps the pointer).
+  const shown = turning ? actions.filter((id) => id === "rotate") : actions;
+
   return (
     <>
       {dial && (
@@ -311,46 +416,35 @@ function RotateHandle({ ids }: { ids: string[] }) {
           <circle cx={dial.cx} cy={dial.cy} r="3.5" fill="white" />
         </svg>
       )}
-      <button
-        ref={ref}
-        type="button"
-        aria-label={label}
-        title={label}
-        onPointerDown={onPointerDown}
-        onPointerMove={onPointerMove}
-        onPointerUp={finish}
-        onPointerCancel={finish}
-        onLostPointerCapture={finish}
-        onKeyDown={onKeyDown}
-        onContextMenu={(e) => e.preventDefault()}
+      <div
+        ref={barRef}
+        role="toolbar"
+        aria-label={t("studio.editor.viewport.quick.label", { count })}
         className={clsx(
-          "gt-editor-chip absolute left-0 top-0 z-[7] inline-flex -translate-x-1/2 select-none items-center gap-1.5 rounded-full pl-3 pr-3.5 text-[13px] font-bold transition-colors",
-          "cursor-grab touch-none [-webkit-touch-callout:none]",
-          "focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-white",
-          // Turning: solid white, like the stage's other active toggles.
-          turning
-            ? "cursor-grabbing border border-white bg-white text-[var(--gt-ink-900)] shadow-[var(--shadow-lg)]"
-            : clsx(stageGlass, "hover:bg-[rgba(22,26,32,.8)]"),
+          "gt-editor-chip gt-editor-scroll-x absolute left-0 top-0 z-[7] flex max-w-[calc(100%-16px)] -translate-x-1/2 items-center gap-0.5 overflow-x-auto rounded-full p-0.5",
+          stageGlass,
           !visible && "invisible",
         )}
-        style={{ height: HANDLE_SIZE, minWidth: HANDLE_SIZE }}
+        style={{ height: BAR_HEIGHT }}
       >
-        <RotateCw size={17} aria-hidden="true" />
-        <span aria-hidden="true" className="tabular-nums">
-          {turning ? `${dial.turned > 0 ? "+" : dial.turned < 0 ? "−" : ""}${Math.abs(dial.turned)}°` : t("studio.editor.viewport.rotate")}
-        </span>
-      </button>
+        {shown.map((id, i) => (
+          <Fragment key={id}>
+            {i > 0 && sep}
+            {render(id)}
+          </Fragment>
+        ))}
+      </div>
     </>
   );
 }
 
-/** Centre the button under the selection, above it when the camera bar is in the way, always inside the stage. */
-function placeRotateHandle(el: HTMLElement, a: SelectionAnchor) {
-  const half = el.offsetWidth / 2 || HANDLE_SIZE;
+/** Centre the bar under the selection, above it when the camera bar is in the way, always inside the stage. */
+function placeQuickBar(el: HTMLElement, a: SelectionAnchor) {
+  const half = el.offsetWidth / 2 || BAR_HEIGHT;
   const x = Math.min(Math.max((a.left + a.right) / 2, STAGE_SIDE_MARGIN + half), a.width - STAGE_SIDE_MARGIN - half);
-  const maxTop = a.height - STAGE_BOTTOM_RESERVED - HANDLE_SIZE;
-  const below = a.bottom + HANDLE_GAP;
-  const above = a.top - HANDLE_GAP - HANDLE_SIZE;
+  const maxTop = a.height - STAGE_BOTTOM_RESERVED - BAR_HEIGHT;
+  const below = a.bottom + BAR_GAP;
+  const above = a.top - BAR_GAP - BAR_HEIGHT;
   const y = below <= maxTop ? below : above >= STAGE_TOP_RESERVED ? above : Math.min(Math.max(below, STAGE_TOP_RESERVED), maxTop);
   el.style.left = `${Math.round(x)}px`;
   el.style.top = `${Math.round(y)}px`;

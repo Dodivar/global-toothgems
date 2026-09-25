@@ -387,6 +387,14 @@
       "rotate": "Rotate",
       "rotateLabel_one": "Rotate the piece: press, then drag around it. Arrow keys turn by 1°, Shift by 15°.",
       "rotateLabel_other": "Rotate the selection: press, then drag around it. Arrow keys turn by 1°, Shift by 15°.",
+      "quick": {
+        "label_one": "Quick actions for the piece",
+        "label_other": "Quick actions for the selection",
+        "smaller_one": "Make the piece smaller",
+        "smaller_other": "Make the pieces smaller",
+        "larger_one": "Make the piece larger",
+        "larger_other": "Make the pieces larger"
+      },
       "placing": "Release over a tooth to place — red means the spot is taken",
       "hint": "Drag a piece onto a tooth to start designing",
       "stage": {
@@ -518,6 +526,20 @@
       "title": "3D can't be displayed here",
       "body": "Your browser or device has 3D graphics (WebGL) turned off or unavailable. Try an up-to-date browser, or enable hardware acceleration."
     },
+    "quickActions": {
+      "menu": "Quick actions",
+      "title": "Quick actions on the selection",
+      "hint": "Buttons that float beside the selected pieces — handy on a phone or tablet.",
+      "show": "Show quick actions",
+      "choose": "Buttons to show",
+      "rotate": "Rotate (drag dial)",
+      "size": "Size − / +",
+      "duplicate": "Duplicate",
+      "mirrorH": "Mirror horizontally",
+      "mirrorV": "Mirror vertically",
+      "delete": "Delete",
+      "reset": "Restore the default buttons"
+    },
     "toasts": {
       "restoredTitle": "Welcome back",
       "restoredBody": "Your last design has been restored.",
@@ -533,6 +555,8 @@
       "removed_other": "{{count}} pieces removed",
       "rotated_one": "Piece rotated",
       "rotated_other": "Selection rotated",
+      "sizeMax": "Already at the largest size",
+      "sizeMin": "Already at the smallest size",
       "mirroredH": "Mirrored across the midline",
       "mirroredV": "Mirrored vertically",
       "mirroredHPartial_one": "Mirrored — {{count}} piece kept in place (spot taken)",

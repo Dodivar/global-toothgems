@@ -387,6 +387,14 @@
       "rotate": "Pivoter",
       "rotateLabel_one": "Faire pivoter la pièce : appuyez, puis tournez autour. Flèches : 1°, avec Maj : 15°.",
       "rotateLabel_other": "Faire pivoter la sélection : appuyez, puis tournez autour. Flèches : 1°, avec Maj : 15°.",
+      "quick": {
+        "label_one": "Actions rapides pour la pièce",
+        "label_other": "Actions rapides pour la sélection",
+        "smaller_one": "Réduire la pièce",
+        "smaller_other": "Réduire les pièces",
+        "larger_one": "Agrandir la pièce",
+        "larger_other": "Agrandir les pièces"
+      },
       "placing": "Relâchez au-dessus d’une dent pour poser — rouge : emplacement occupé",
       "hint": "Glissez une pièce sur une dent pour commencer",
       "stage": {
@@ -518,6 +526,20 @@
       "title": "La 3D ne peut pas s’afficher ici",
       "body": "Votre navigateur ou votre appareil n’active pas les graphismes 3D (WebGL). Essayez un navigateur à jour, ou activez l’accélération matérielle."
     },
+    "quickActions": {
+      "menu": "Actions rapides",
+      "title": "Actions rapides sur la sélection",
+      "hint": "Boutons flottants à côté des pièces sélectionnées — pratiques sur téléphone ou tablette.",
+      "show": "Afficher les actions rapides",
+      "choose": "Boutons à afficher",
+      "rotate": "Pivoter (molette)",
+      "size": "Taille − / +",
+      "duplicate": "Dupliquer",
+      "mirrorH": "Refléter horizontalement",
+      "mirrorV": "Refléter verticalement",
+      "delete": "Supprimer",
+      "reset": "Rétablir les boutons par défaut"
+    },
     "toasts": {
       "restoredTitle": "Bon retour",
       "restoredBody": "Votre dernière création a été restaurée.",
@@ -533,6 +555,8 @@
       "removed_other": "{{count}} pièces retirées",
       "rotated_one": "Pièce pivotée",
       "rotated_other": "Sélection pivotée",
+      "sizeMax": "Déjà à la taille maximale",
+      "sizeMin": "Déjà à la taille minimale",
       "mirroredH": "Reflétée de part et d’autre du milieu",
       "mirroredV": "Reflétée verticalement",
       "mirroredHPartial_one": "Reflétée — {{count}} pièce laissée en place (emplacement occupé)",
