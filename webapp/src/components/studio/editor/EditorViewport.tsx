@@ -3,7 +3,15 @@ import clsx from "clsx";
 import { Copy, FlipHorizontal2, FlipVertical2, Minus, Orbit, Plus, RotateCw, Trash2, TriangleAlert, X } from "lucide-react";
 import { useEditorLabels } from "./editorLabels";
 import { FREE_TOOTH } from "../../../data/studioEditor";
-import { beginSpin, duplicatePieces, importModelFile, mirrorSelection, removePieces, rotatePieces } from "../../../lib/studio3d/actions";
+import {
+  beginRotation,
+  duplicatePieces,
+  importModelFile,
+  mirrorSelection,
+  removePieces,
+  rotatePieces,
+  type RotationSession,
+} from "../../../lib/studio3d/actions";
 import { getEngine, setEngine, StudioEngine, type SelectionAnchor } from "../../../lib/studio3d/engine";
 import { studioStore, type ContextMenuState, type LightPreset, type StudioSnapshot } from "../../../lib/studio3d/store";
 
@@ -139,9 +147,7 @@ export function EditorViewport({ snap }: { snap: StudioSnapshot }) {
         </Pill>
       )}
 
-      {engineReady && snap.selectedJewelIds.length > 0 && !snap.contextMenu && (
-        <SpinButton ids={snap.selectedJewelIds} />
-      )}
+      {engineReady && snap.selectedJewelIds.length > 0 && !snap.contextMenu && <RotateHandle ids={snap.selectedJewelIds} />}
       {snap.contextMenu && <ContextMenu cm={snap.contextMenu} snap={snap} />}
       {!failed && <BottomBar lightPreset={snap.lightPreset} />}
       <p className="pointer-events-none absolute left-4 top-4 z-[3] m-0 hidden text-[9px] font-bold uppercase tracking-[.24em] text-[var(--gt-blue-700)]/70 xl:block">
@@ -168,106 +174,183 @@ function Pill({ children, position, floating }: { children: React.ReactNode; pos
 }
 
 /** Touch-sized button: 44px tall, and this far from the selection's edge. */
-const SPIN_BUTTON_SIZE = 44;
-const SPIN_BUTTON_GAP = 12;
+const HANDLE_SIZE = 44;
+const HANDLE_GAP = 12;
 /** Stage bands the button stays out of: the tooth chip on top, the camera bar at the foot. */
 const STAGE_TOP_RESERVED = 56;
 const STAGE_BOTTOM_RESERVED = 68;
 const STAGE_SIDE_MARGIN = 8;
 
+/** Closer than this to the pivot, the pointer's angle is too jumpy to follow. */
+const HANDLE_DEAD_ZONE = 10;
+/** Keyboard steps, in degrees: arrow keys, and with Shift. */
+const KEY_STEP = 1;
+const KEY_STEP_LARGE = 15;
+
+/** Signed angle change folded into (-180°, 180°], so a turn past "9 o'clock" keeps counting. */
+function angleDelta(from: number, to: number) {
+  let d = to - from;
+  while (d > 180) d -= 360;
+  while (d <= -180) d += 360;
+  return d;
+}
+const pointerAngle = (x: number, y: number, cx: number, cy: number) => (Math.atan2(y - cy, x - cx) * 180) / Math.PI;
+
+type Gesture = {
+  session: RotationSession;
+  /** Stage origin and pivot (selection centre), in client pixels. */
+  originX: number;
+  originY: number;
+  pivotX: number;
+  pivotY: number;
+  prevAngle: number;
+  turned: number;
+};
+
 /**
- * Press-and-hold rotation floating right under (or above) the selected
- * pieces: they turn slowly while the button is held and stop on release, so a
- * finger can find the exact angle on a tablet or phone, without the inspector
- * or a right-click. Space / Enter held down does the same from the keyboard.
- * It follows the selection as the camera moves and hides while a piece is
- * dragged or off screen.
+ * Rotate handle floating right under (or above) the selected pieces. Press
+ * it, then drag around the selection like a dial: the pieces turn live by the
+ * angle swept around the selection's centre (clockwise on screen turns them
+ * clockwise), and keep that angle on release — "+50°" is a quarter of a slow
+ * circle. Made for a finger on a tablet or phone, where the inspector and the
+ * right-click menu are out of reach. Arrow keys turn by 1° (Shift: 15°).
+ * The handle follows the selection as the camera moves and hides while a
+ * piece is dragged or off screen.
  */
-function SpinButton({ ids }: { ids: string[] }) {
+function RotateHandle({ ids }: { ids: string[] }) {
   const { t } = useEditorLabels();
   const ref = useRef<HTMLButtonElement>(null);
+  const anchorRef = useRef<SelectionAnchor | null>(null);
+  const gestureRef = useRef<Gesture | null>(null);
   const [visible, setVisible] = useState(false);
-  const [turned, setTurned] = useState<number | null>(null);
-  const stopRef = useRef<(() => void) | null>(null);
+  const [dial, setDial] = useState<{ turned: number; cx: number; cy: number; r: number } | null>(null);
 
   useEffect(() => {
     const engine = getEngine();
     if (!engine) return;
     // Positioned straight on the element: the anchor moves every frame while the camera does.
     return engine.onSelectionAnchor((a) => {
+      anchorRef.current = a;
       const el = ref.current;
-      if (a && el) placeSpinButton(el, a);
+      if (a && el && !gestureRef.current) placeRotateHandle(el, a);
       setVisible(!!a);
     });
   }, []);
 
-  const start = () => {
-    if (stopRef.current) return;
-    setTurned(0);
-    stopRef.current = beginSpin(ids, (deg) => setTurned(Math.round(deg)));
+  const finish = () => {
+    const g = gestureRef.current;
+    if (!g) return;
+    gestureRef.current = null;
+    g.session.end();
+    setDial(null);
+    const el = ref.current;
+    if (el && anchorRef.current) placeRotateHandle(el, anchorRef.current);
   };
-  const stop = () => {
-    stopRef.current?.();
-    stopRef.current = null;
-    setTurned(null);
-  };
-  // Selection changed or the button went away mid-hold: settle what was turned.
-  useEffect(() => stop, [ids]);
+  // Selection changed or the handle went away mid-gesture: keep what was turned.
+  useEffect(() => finish, [ids]);
 
-  const spinning = turned !== null;
-  const label = t("studio.editor.viewport.spinLabel", { count: ids.length });
+  const onPointerDown = (e: React.PointerEvent<HTMLButtonElement>) => {
+    const a = anchorRef.current;
+    const stage = e.currentTarget.offsetParent?.getBoundingClientRect();
+    if (e.button !== 0 || !a || !stage || gestureRef.current) return;
+    e.preventDefault();
+    e.currentTarget.setPointerCapture(e.pointerId);
+    const pivotX = stage.left + (a.left + a.right) / 2;
+    const pivotY = stage.top + (a.top + a.bottom) / 2;
+    gestureRef.current = {
+      session: beginRotation(ids),
+      originX: stage.left,
+      originY: stage.top,
+      pivotX,
+      pivotY,
+      prevAngle: pointerAngle(e.clientX, e.clientY, pivotX, pivotY),
+      turned: 0,
+    };
+    setDial({ turned: 0, cx: pivotX - stage.left, cy: pivotY - stage.top, r: Math.hypot(e.clientX - pivotX, e.clientY - pivotY) });
+  };
+
+  const onPointerMove = (e: React.PointerEvent<HTMLButtonElement>) => {
+    const g = gestureRef.current;
+    if (!g) return;
+    // The handle rides under the finger, around the dial.
+    e.currentTarget.style.left = `${Math.round(e.clientX - g.originX)}px`;
+    e.currentTarget.style.top = `${Math.round(e.clientY - g.originY - HANDLE_SIZE / 2)}px`;
+    const r = Math.hypot(e.clientX - g.pivotX, e.clientY - g.pivotY);
+    if (r >= HANDLE_DEAD_ZONE) {
+      const angle = pointerAngle(e.clientX, e.clientY, g.pivotX, g.pivotY);
+      g.turned += angleDelta(g.prevAngle, angle);
+      g.prevAngle = angle;
+      g.session.set(g.turned);
+    }
+    setDial({ turned: Math.round(g.turned), cx: g.pivotX - g.originX, cy: g.pivotY - g.originY, r });
+  };
+
+  const onKeyDown = (e: React.KeyboardEvent) => {
+    const dir = { ArrowRight: 1, ArrowUp: 1, ArrowLeft: -1, ArrowDown: -1 }[e.key];
+    if (!dir) return;
+    e.preventDefault();
+    beginRotation(ids).set(dir * (e.shiftKey ? KEY_STEP_LARGE : KEY_STEP));
+  };
+
+  const turning = dial !== null;
+  const label = t("studio.editor.viewport.rotateLabel", { count: ids.length });
   return (
-    <button
-      ref={ref}
-      type="button"
-      aria-label={label}
-      aria-pressed={spinning}
-      title={label}
-      onPointerDown={(e) => {
-        if (e.button !== 0) return;
-        e.currentTarget.setPointerCapture(e.pointerId);
-        start();
-      }}
-      onPointerUp={stop}
-      onPointerCancel={stop}
-      onLostPointerCapture={stop}
-      onBlur={stop}
-      onKeyDown={(e) => {
-        if (e.key !== " " && e.key !== "Enter") return;
-        e.preventDefault();
-        if (!e.repeat) start();
-      }}
-      onKeyUp={(e) => {
-        if (e.key !== " " && e.key !== "Enter") return;
-        e.preventDefault();
-        stop();
-      }}
-      onContextMenu={(e) => e.preventDefault()}
-      className={clsx(
-        "gt-editor-chip absolute left-0 top-0 z-[7] inline-flex -translate-x-1/2 select-none items-center gap-1.5 rounded-full pl-3 pr-3.5 text-[13px] font-bold transition-colors",
-        "touch-none [-webkit-touch-callout:none]",
-        "focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-white",
-        // Held: solid white, like the stage's other active toggles.
-        spinning ? "border border-white bg-white text-[var(--gt-ink-900)]" : clsx(stageGlass, "hover:bg-[rgba(22,26,32,.8)]"),
-        !visible && "invisible",
+    <>
+      {dial && (
+        <svg aria-hidden="true" className="pointer-events-none absolute inset-0 z-[6] h-full w-full overflow-visible">
+          <circle
+            cx={dial.cx}
+            cy={dial.cy}
+            r={Math.max(dial.r, HANDLE_DEAD_ZONE)}
+            fill="none"
+            stroke="white"
+            strokeOpacity=".75"
+            strokeWidth="1.5"
+            strokeDasharray="4 5"
+          />
+          <circle cx={dial.cx} cy={dial.cy} r="3.5" fill="white" />
+        </svg>
       )}
-      style={{ height: SPIN_BUTTON_SIZE, minWidth: SPIN_BUTTON_SIZE }}
-    >
-      <RotateCw size={17} aria-hidden="true" className={clsx(spinning && "motion-safe:animate-spin")} />
-      <span aria-hidden="true" className="tabular-nums">
-        {spinning ? `+${turned}°` : t("studio.editor.viewport.spin")}
-      </span>
-    </button>
+      <button
+        ref={ref}
+        type="button"
+        aria-label={label}
+        title={label}
+        onPointerDown={onPointerDown}
+        onPointerMove={onPointerMove}
+        onPointerUp={finish}
+        onPointerCancel={finish}
+        onLostPointerCapture={finish}
+        onKeyDown={onKeyDown}
+        onContextMenu={(e) => e.preventDefault()}
+        className={clsx(
+          "gt-editor-chip absolute left-0 top-0 z-[7] inline-flex -translate-x-1/2 select-none items-center gap-1.5 rounded-full pl-3 pr-3.5 text-[13px] font-bold transition-colors",
+          "cursor-grab touch-none [-webkit-touch-callout:none]",
+          "focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-white",
+          // Turning: solid white, like the stage's other active toggles.
+          turning
+            ? "cursor-grabbing border border-white bg-white text-[var(--gt-ink-900)] shadow-[var(--shadow-lg)]"
+            : clsx(stageGlass, "hover:bg-[rgba(22,26,32,.8)]"),
+          !visible && "invisible",
+        )}
+        style={{ height: HANDLE_SIZE, minWidth: HANDLE_SIZE }}
+      >
+        <RotateCw size={17} aria-hidden="true" />
+        <span aria-hidden="true" className="tabular-nums">
+          {turning ? `${dial.turned > 0 ? "+" : dial.turned < 0 ? "−" : ""}${Math.abs(dial.turned)}°` : t("studio.editor.viewport.rotate")}
+        </span>
+      </button>
+    </>
   );
 }
 
 /** Centre the button under the selection, above it when the camera bar is in the way, always inside the stage. */
-function placeSpinButton(el: HTMLElement, a: SelectionAnchor) {
-  const half = el.offsetWidth / 2 || SPIN_BUTTON_SIZE;
+function placeRotateHandle(el: HTMLElement, a: SelectionAnchor) {
+  const half = el.offsetWidth / 2 || HANDLE_SIZE;
   const x = Math.min(Math.max((a.left + a.right) / 2, STAGE_SIDE_MARGIN + half), a.width - STAGE_SIDE_MARGIN - half);
-  const maxTop = a.height - STAGE_BOTTOM_RESERVED - SPIN_BUTTON_SIZE;
-  const below = a.bottom + SPIN_BUTTON_GAP;
-  const above = a.top - SPIN_BUTTON_GAP - SPIN_BUTTON_SIZE;
+  const maxTop = a.height - STAGE_BOTTOM_RESERVED - HANDLE_SIZE;
+  const below = a.bottom + HANDLE_GAP;
+  const above = a.top - HANDLE_GAP - HANDLE_SIZE;
   const y = below <= maxTop ? below : above >= STAGE_TOP_RESERVED ? above : Math.min(Math.max(below, STAGE_TOP_RESERVED), maxTop);
   el.style.left = `${Math.round(x)}px`;
   el.style.top = `${Math.round(y)}px`;

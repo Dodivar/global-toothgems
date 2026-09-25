@@ -384,9 +384,9 @@
       "label": "Vue 3D de l’arcade dentaire",
       "armed": "Cliquez sur une dent pour poser : {{name}}",
       "cancelArmed": "Annuler la pose",
-      "spin": "Maintenir pour pivoter",
-      "spinLabel_one": "Maintenir pour faire pivoter la pièce",
-      "spinLabel_other": "Maintenir pour faire pivoter la sélection",
+      "rotate": "Pivoter",
+      "rotateLabel_one": "Faire pivoter la pièce : appuyez, puis tournez autour. Flèches : 1°, avec Maj : 15°.",
+      "rotateLabel_other": "Faire pivoter la sélection : appuyez, puis tournez autour. Flèches : 1°, avec Maj : 15°.",
       "placing": "Relâchez au-dessus d’une dent pour poser — rouge : emplacement occupé",
       "hint": "Glissez une pièce sur une dent pour commencer",
       "stage": {

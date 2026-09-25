@@ -33,46 +33,42 @@ export function rotatePieces(ids: string[]) {
   notify("rotated", { count: pieces.length });
 }
 
-/** Hold-to-rotate speed, in degrees per second: slow enough to stop on the angle you want. */
-export const SPIN_DEG_PER_SECOND = 45;
+/** A rotation driven live by a control (the stage's rotate handle), in screen degrees. */
+export interface RotationSession {
+  /** Set the turn since the session began: clockwise on screen, in degrees. */
+  set(clockwiseDeg: number): void;
+  /** Keep the current angle; the gesture is one undo step. */
+  end(): void;
+}
 
 /**
- * Turn pieces continuously, for as long as a control is held. Each piece
- * spins around its own centre from where it started; the whole hold is one
- * undo step. `onAngle` reports the turn so far. Returns the stop function,
- * which snaps the pieces to whole degrees.
+ * Rotate pieces by a free angle, each around its own centre, while the
+ * customer turns a handle. Angles are whole degrees; the whole gesture is one
+ * undo step, recorded only if something actually turned.
  */
-export function beginSpin(ids: string[], onAngle?: (deg: number) => void): () => void {
-  const start = new Map(studioStore.jewels.filter((j) => ids.includes(j.id)).map((j) => [j.id, j.rotation]));
-  if (!start.size) return () => {};
-  let turned = 0;
-  let last = performance.now();
-  let raf = 0;
+export function beginRotation(ids: string[]): RotationSession {
+  const engine = getEngine();
+  const start = studioStore.jewels
+    .filter((j) => ids.includes(j.id))
+    .map((j) => ({ id: j.id, rotation: j.rotation, sign: engine?.screenClockwiseSign(j.id) ?? -1 }));
+  let current = 0;
   let recorded = false;
-  const apply = (deg: number, round: boolean) =>
-    studioStore.applyPatches(
-      Array.from(start, ([id, r]) => {
-        const a = (((r + deg) % 360) + 360) % 360;
-        return { id, patch: { rotation: round ? Math.round(a) % 360 : a } };
-      }),
-    );
-  const frame = (now: number) => {
-    turned += (SPIN_DEG_PER_SECOND * Math.min(now - last, 100)) / 1000;
-    last = now;
-    if (!recorded) {
-      studioStore.pushHistory();
-      recorded = true;
-    }
-    apply(turned, false);
-    onAngle?.(turned);
-    raf = requestAnimationFrame(frame);
-  };
-  raf = requestAnimationFrame(frame);
-  return () => {
-    cancelAnimationFrame(raf);
-    if (!recorded) return;
-    apply(turned, true);
-    notify("rotated", { count: start.size });
+  const apply = (deg: number) =>
+    studioStore.applyPatches(start.map((p) => ({ id: p.id, patch: { rotation: (((p.rotation + p.sign * deg) % 360) + 360) % 360 } })));
+  return {
+    set(clockwiseDeg) {
+      const deg = Math.round(clockwiseDeg);
+      if (deg === current || !start.length) return;
+      if (!recorded) {
+        studioStore.pushHistory();
+        recorded = true;
+      }
+      current = deg;
+      apply(deg);
+    },
+    end() {
+      if (recorded && current % 360 !== 0) notify("rotated", { count: start.length });
+    },
   };
 }
 

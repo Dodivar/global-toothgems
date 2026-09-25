@@ -1881,6 +1881,19 @@ export class StudioEngine {
     };
   }
 
+  /**
+   * How a piece's `rotation` moves for a clockwise turn on screen: pieces spin
+   * around their outward normal, so seen from the front a clockwise turn is a
+   * negative rotation, and seen from behind the arch a positive one.
+   */
+  screenClockwiseSign(id: string): 1 | -1 {
+    const j = this.store.jewels.find((x) => x.id === id);
+    if (!j) return -1;
+    _sa.set(j.normal.x, j.normal.y, j.normal.z);
+    _sb.set(j.position.x, j.position.y, j.position.z);
+    return _sa.dot(this.camera.position.clone().sub(_sb)) >= 0 ? -1 : 1;
+  }
+
   private computeSelectionAnchor(): SelectionAnchor | null {
     const snap = this.store.getSnapshot();
     if (!snap.selectedJewelIds.length || this.dragJewel || this.placing || snap.placingTypeId) return null;
