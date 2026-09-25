@@ -23,6 +23,7 @@ import monogram from "../../../assets/monogram-blue.png";
 import { Button } from "../../ui/Button";
 import { EditorPopover, PopoverItem, PopoverLabel, PopoverSeparator } from "./EditorPopover";
 import { useEditorLabels } from "./editorLabels";
+import { QuickActionsMenu } from "./QuickActionsMenu";
 import { estimateCents, estimateTotalCents, FREE_TOOTH, PRESETS } from "../../../data/studioEditor";
 import { applyPreset, clearDesign, importModelFile, resetModel } from "../../../lib/studio3d/actions";
 import { downloadURL, getEngine } from "../../../lib/studio3d/engine";
@@ -147,6 +148,7 @@ export function EditorTopBar({ snap }: { snap: StudioSnapshot }) {
       )}
       <span aria-hidden="true" className="mx-0.5 hidden h-5 w-px bg-[var(--border-subtle)] sm:block" />
       <PresetMenu />
+      <QuickActionsMenu triggerClassName={toolButton} />
       <button
         type="button"
         className={clsx(toolButton, "max-sm:hidden")}
