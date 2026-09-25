@@ -1,4 +1,5 @@
 import * as THREE from "three";
+import watermarkUrl from "../../assets/logo-wordmark-blue.png";
 import { OrbitControls } from "three/addons/controls/OrbitControls.js";
 import { RoomEnvironment } from "three/addons/environments/RoomEnvironment.js";
 import {
@@ -12,7 +13,16 @@ import {
   type PresetItem,
   type ToothSpec,
 } from "../../data/studioEditor";
-import { createToothGeometry, disposeGeometryCaches, getJewelMaterial, getJewelTemplate, matKeyFor, resolveFinishRaw } from "./geometry";
+import {
+  createToothGeometry,
+  disposeGeometryCaches,
+  footprintCovers,
+  getJewelMaterial,
+  getJewelTemplate,
+  matKeyFor,
+  resolveFinishRaw,
+  type Footprint,
+} from "./geometry";
 import { ARCH_K, backOut, clamp, easeInOutCubic, seeded, ss01, uid, v3, xForArc } from "./math";
 import { notify } from "./notices";
 import type { DesignStore, LightPreset } from "./store";
@@ -80,10 +90,42 @@ const GLB_FIT = {
   maxToothSize: 32, // meshes larger than this are never treated as a single tooth
 };
 
-/* Collision: pieces may TOUCH but never overlap. Two pieces collide when the
-   distance between their visual centres is below the sum of their radii,
-   minus this contact tolerance. */
-const CONTACT_TOL = 0.15;
+/* Collision: pieces may TOUCH but never overlap. Each piece's front
+   silhouette (its footprint) is posed in world space exactly as it renders;
+   two pieces collide when an edge point of one lands inside the other's
+   outline. Touching edges stay within one footprint cell and are allowed. */
+interface GemPose {
+  typeId: string;
+  scale: number;
+  offset: number;
+  rotation: number;
+}
+interface Blocker {
+  center: THREE.Vector3;
+  /** Broad phase: no point of the outline is farther than this from `center`. */
+  reach: number;
+  toWorld: THREE.Matrix4;
+  toLocal: THREE.Matrix4;
+  footprint: Footprint;
+}
+/** Only outline points within this depth of the other piece's plane (in its local units) can overlap it. */
+const OVERLAP_DEPTH = 1.5;
+function poseOf(j: PlacedJewelry): GemPose {
+  return { typeId: j.jewelryTypeId, scale: j.scale, offset: j.offset ?? 0, rotation: j.rotation };
+}
+const _ov = new THREE.Vector3();
+function edgeInside(a: Blocker, b: Blocker): boolean {
+  const e = a.footprint.edge;
+  for (let i = 0; i < e.length; i += 2) {
+    _ov.set(e[i], e[i + 1], 0).applyMatrix4(a.toWorld).applyMatrix4(b.toLocal);
+    if (Math.abs(_ov.z) < OVERLAP_DEPTH && footprintCovers(b.footprint, _ov.x, _ov.y)) return true;
+  }
+  return false;
+}
+function outlinesOverlap(a: Blocker, b: Blocker): boolean {
+  if (a.center.distanceTo(b.center) >= a.reach + b.reach) return false;
+  return edgeInside(a, b) || edgeInside(b, a);
+}
 /** Occupied-spot feedback: the site's error red (`--gt-red-500`). */
 const BLOCK_COLOR = 0xd6455d;
 
@@ -100,12 +142,27 @@ const GHOST_RING_GEO = new THREE.TorusGeometry(1, 0.035, 8, 56);
 const OUTLINE_COLOR = 0x5a7796;
 /** Hover / selection glow on the enamel (`--gt-blue-500`). */
 const TOOTH_HIGHLIGHT = 0x7a95b8;
-/** The Studio stage, as `.gt-studio-stage` paints it in CSS: ink-blue centre to near-black edge. */
+/** The editor stage, as `.gt-editor-stage` paints it in CSS: the brand's light pastel blue (`--gt-blue-50` → `--gt-blue-300`). */
 const STAGE_GRADIENT: [number, string][] = [
-  [0, "#2c3746"],
-  [0.62, "#161a20"],
-  [1, "#0f1114"],
+  [0, "#f4f8fc"],
+  [0.62, "#d3e0ef"],
+  [1, "#b9cde5"],
 ];
+/** Floor shadow on the light stage: a soft deep blue (`--gt-blue-700`), never a grey patch. */
+const STAGE_SHADOW = 0x3f5a75;
+/** Export watermark: the wordmark's width as a share of the image width, and its opacity. */
+const WATERMARK = { widthRatio: 0.24, minWidth: 150, opacity: 0.9, marginRatio: 0.035 };
+let watermarkImage: Promise<HTMLImageElement | null> | null = null;
+/** The wordmark, decoded once and on first export. Null when it fails to load: the export still goes out. */
+function loadWatermark(): Promise<HTMLImageElement | null> {
+  watermarkImage ??= new Promise((resolve) => {
+    const img = new Image();
+    img.onload = () => resolve(img);
+    img.onerror = () => resolve(null);
+    img.src = watermarkUrl;
+  });
+  return watermarkImage;
+}
 /** Half the width of the arch, molars included, plus a margin — what a whole-arch view must show. */
 const ARCH_HALF_WIDTH = 31;
 /** Frames still drawn after the last change, so damped camera and light fades can settle. */
@@ -326,7 +383,7 @@ export class StudioEngine {
     this.rimLight.position.set(-6, 20, -55);
     this.scene.add(this.rimLight);
 
-    this.floor = new THREE.Mesh(new THREE.PlaneGeometry(500, 500), new THREE.ShadowMaterial({ opacity: 0.32 }));
+    this.floor = new THREE.Mesh(new THREE.PlaneGeometry(500, 500), new THREE.ShadowMaterial({ color: STAGE_SHADOW, opacity: 0.16 }));
     this.floor.rotation.x = -Math.PI / 2;
     this.floor.position.y = -16;
     this.floor.receiveShadow = true;
@@ -827,72 +884,86 @@ export class StudioEngine {
     const tpl = getJewelTemplate(JEWELRY_BY_ID[typeId].geometry);
     return point.clone().addScaledVector(normal.clone().normalize(), tpl.halfDepth * scale + mountGap(scale, offset));
   }
-  private jewelCenter(j: PlacedJewelry): THREE.Vector3 {
-    return this.gemCenterRaw(
+  /** A piece at a surface spot, as a collision blocker: its real outline, posed exactly as it renders. */
+  private blockerAt(point: THREE.Vector3, normal: THREE.Vector3, pose: GemPose): Blocker {
+    const tpl = getJewelTemplate(JEWELRY_BY_ID[pose.typeId].geometry);
+    const center = this.gemCenterRaw(point, normal, pose.typeId, pose.scale, pose.offset);
+    const q = new THREE.Quaternion()
+      .setFromUnitVectors(_Z, normal.clone().normalize())
+      .multiply(new THREE.Quaternion().setFromAxisAngle(_Z, THREE.MathUtils.degToRad(pose.rotation)));
+    const toWorld = new THREE.Matrix4().compose(center, q, new THREE.Vector3(pose.scale, pose.scale, pose.scale));
+    return { center, reach: tpl.reach * pose.scale, toWorld, toLocal: toWorld.clone().invert(), footprint: tpl.footprint };
+  }
+  private jewelBlocker(j: PlacedJewelry): Blocker {
+    return this.blockerAt(
       new THREE.Vector3(j.position.x, j.position.y, j.position.z),
       new THREE.Vector3(j.normal.x, j.normal.y, j.normal.z),
-      j.jewelryTypeId,
-      j.scale,
-      j.offset ?? 0,
+      poseOf(j),
     );
   }
-  private jewelRadius(j: { jewelryTypeId: string; scale: number }): number {
-    return getJewelTemplate(JEWELRY_BY_ID[j.jewelryTypeId].geometry).radius * j.scale;
-  }
   /** Every placed piece except `exceptIds`, as collision blockers. */
-  private blockersFor(exceptIds: Set<string>): { center: THREE.Vector3; radius: number }[] {
-    const out: { center: THREE.Vector3; radius: number }[] = [];
+  private blockersFor(exceptIds: Set<string>): Blocker[] {
+    const out: Blocker[] = [];
     for (const j of this.store.jewels) {
       if (exceptIds.has(j.id)) continue;
-      out.push({ center: this.jewelCenter(j), radius: this.jewelRadius(j) });
+      out.push(this.jewelBlocker(j));
     }
     return out;
   }
   /** Does a candidate pose collide with any blocker? Contact (edges touching) is allowed. */
-  private hitBlocked(
-    hit: SurfaceHit,
-    typeId: string,
-    scale: number,
-    offset: number,
-    blockers: { center: THREE.Vector3; radius: number }[],
-  ): boolean {
-    const c = this.gemCenterRaw(hit.point, hit.normal, typeId, scale, offset);
-    const r = this.jewelRadius({ jewelryTypeId: typeId, scale });
-    return blockers.some((b) => b.center.distanceTo(c) < b.radius + r - CONTACT_TOL);
+  private hitBlocked(hit: SurfaceHit, pose: GemPose, blockers: Blocker[]): boolean {
+    if (!blockers.length) return false;
+    const me = this.blockerAt(hit.point, hit.normal, pose);
+    return blockers.some((b) => outlinesOverlap(me, b));
   }
   /** The proposed spot, or the nearest free spot on the enamel around it
       (spiral search in the tangent plane, re-snapped by raycast). Null = no room. */
-  private findFreeSpot(
-    startHit: SurfaceHit,
-    typeId: string,
-    scale: number,
-    offset: number,
-    blockers: { center: THREE.Vector3; radius: number }[],
-  ): SurfaceHit | null {
-    if (!this.hitBlocked(startHit, typeId, scale, offset, blockers)) return startHit;
+  private findFreeSpot(startHit: SurfaceHit, pose: GemPose, blockers: Blocker[]): SurfaceHit | null {
+    if (!this.hitBlocked(startHit, pose, blockers)) return startHit;
     const n = startHit.normal.clone().normalize();
     const t = new THREE.Vector3(-n.z, 0, n.x);
     if (t.lengthSq() < 1e-6) t.set(1, 0, 0);
     t.normalize();
     const u = new THREE.Vector3().crossVectors(t, n).normalize();
-    for (let step = 0.9; step <= 4.2; step += 0.9) {
-      for (let k = 0; k < 8; k++) {
-        const a = (k / 8) * Math.PI * 2;
+    // fine rings first, so a piece settles right against its neighbour
+    for (let step = 0.3; step <= 4.2; step += 0.3) {
+      const around = step < 1.5 ? 12 : 16;
+      for (let k = 0; k < around; k++) {
+        const a = (k / around) * Math.PI * 2;
         const cand = startHit.point
           .clone()
           .addScaledVector(t, Math.cos(a) * step)
           .addScaledVector(u, Math.sin(a) * step);
         const snapped = this.snapToSurface(cand, n);
         if (!snapped) continue;
-        if (!this.hitBlocked(snapped, typeId, scale, offset, blockers)) return snapped;
+        if (!this.hitBlocked(snapped, pose, blockers)) return snapped;
       }
     }
     return null;
   }
+  /** Walking from a free spot toward a blocked one, the last free spot before
+      contact (bisection, re-snapped onto the enamel). Null = no free start. */
+  private closestFreeAlong(from: SurfaceHit | null, to: SurfaceHit, pose: GemPose, blockers: Blocker[]): SurfaceHit | null {
+    if (!from) return null;
+    let free = from,
+      lo = 0,
+      hi = 1;
+    for (let i = 0; i < 7; i++) {
+      const mid = (lo + hi) / 2;
+      const p = from.point.clone().lerp(to.point, mid);
+      const n = from.normal.clone().lerp(to.normal, mid).normalize();
+      const snapped = this.snapToSurface(p, n);
+      if (snapped && !this.hitBlocked(snapped, pose, blockers)) {
+        free = snapped;
+        lo = mid;
+      } else hi = mid;
+    }
+    return free;
+  }
   /** Collision check for a fresh library placement at its default size. */
   private placementBlocked(hit: SurfaceHit, typeId: string): boolean {
     const def = JEWELRY_BY_ID[typeId];
-    return this.hitBlocked(hit, typeId, def.defaultScale, 0, this.blockersFor(new Set()));
+    return this.hitBlocked(hit, { typeId, scale: def.defaultScale, offset: 0, rotation: 0 }, this.blockersFor(new Set()));
   }
   /** Collision-aware duplication: each copy slides to the nearest free spot. */
   duplicateSelection(ids: string[]): number {
@@ -911,7 +982,7 @@ export class StudioEngine {
         point: new THREE.Vector3(src.position.x, src.position.y, src.position.z),
         normal: nrm,
       };
-      const free = this.findFreeSpot(startHit, src.jewelryTypeId, src.scale, src.offset ?? 0, blockers);
+      const free = this.findFreeSpot(startHit, poseOf(src), blockers);
       if (!free) continue; // no room for this copy
       const copy: PlacedJewelry = {
         ...src,
@@ -921,7 +992,7 @@ export class StudioEngine {
         normal: v3(free.normal.x, free.normal.y, free.normal.z),
       };
       copies.push(copy);
-      blockers.push({ center: this.jewelCenter(copy), radius: this.jewelRadius(src) });
+      blockers.push(this.jewelBlocker(copy));
     }
     return this.store.insertJewels(copies);
   }
@@ -930,7 +1001,7 @@ export class StudioEngine {
     const def = JEWELRY_BY_ID[typeId];
     if (!def || !this.toothRigs.has(toothId)) return false;
     const anchor = this.getSurfacePoint(toothId, 0, 0);
-    const free = this.findFreeSpot(anchor, typeId, def.defaultScale, 0, this.blockersFor(new Set()));
+    const free = this.findFreeSpot(anchor, { typeId, scale: def.defaultScale, offset: 0, rotation: 0 }, this.blockersFor(new Set()));
     if (!free) return false;
     this.store.addJewel(
       typeId,
@@ -946,7 +1017,7 @@ export class StudioEngine {
     if (!j || !this.toothRigs.has(toothId)) return false;
     const anchor = this.getSurfacePoint(toothId, 0, 0);
     const blockers = this.blockersFor(new Set([id]));
-    const free = this.findFreeSpot(anchor, j.jewelryTypeId, j.scale, j.offset ?? 0, blockers);
+    const free = this.findFreeSpot(anchor, poseOf(j), blockers);
     if (!free) return false;
     this.store.pushHistory();
     this.store.updateJewel(id, {
@@ -977,7 +1048,8 @@ export class StudioEngine {
       const rotation = Math.round((360 - (j.rotation % 360)) % 360);
       const snapped = this.snapToSurface(mp, mn);
       const proposed: SurfaceHit = snapped ?? { toothId: j.toothId, point: mp, normal: mn };
-      const free = this.findFreeSpot(proposed, j.jewelryTypeId, j.scale, j.offset ?? 0, blockers);
+      const pose = { ...poseOf(j), rotation };
+      const free = this.findFreeSpot(proposed, pose, blockers);
       if (!free) {
         skipped++;
         continue;
@@ -991,10 +1063,7 @@ export class StudioEngine {
           rotation,
         },
       });
-      blockers.push({
-        center: this.gemCenterRaw(free.point, free.normal, j.jewelryTypeId, j.scale, j.offset ?? 0),
-        radius: this.jewelRadius(j),
-      });
+      blockers.push(this.blockerAt(free.point, free.normal, pose));
     }
     if (!updates.length) return { moved: 0, skipped };
     this.store.pushHistory();
@@ -1040,7 +1109,7 @@ export class StudioEngine {
         skipped++;
         return;
       }
-      const free = this.findFreeSpot(snapped, k.j.jewelryTypeId, k.j.scale, k.j.offset ?? 0, blockers);
+      const free = this.findFreeSpot(snapped, poseOf(k.j), blockers);
       if (!free) {
         skipped++;
         return;
@@ -1053,10 +1122,7 @@ export class StudioEngine {
           normal: v3(free.normal.x, free.normal.y, free.normal.z),
         },
       });
-      blockers.push({
-        center: this.gemCenterRaw(free.point, free.normal, k.j.jewelryTypeId, k.j.scale, k.j.offset ?? 0),
-        radius: this.jewelRadius(k.j),
-      });
+      blockers.push(this.blockerAt(free.point, free.normal, poseOf(k.j)));
     });
     if (!updates.length) return { moved: 0, skipped };
     this.store.pushHistory();
@@ -1082,7 +1148,7 @@ export class StudioEngine {
       const tOff = p.clone().sub(rig.center).dot(rig.tangent);
       const u = clamp(tOff / (rig.spec.wHalf * 0.6), -1, 1);
       const anchor = this.getSurfacePoint(rig.id, u, 0);
-      const free = this.findFreeSpot(anchor, j.jewelryTypeId, j.scale, j.offset ?? 0, blockers);
+      const free = this.findFreeSpot(anchor, poseOf(j), blockers);
       if (!free) {
         skipped++;
         continue;
@@ -1095,10 +1161,7 @@ export class StudioEngine {
           normal: v3(free.normal.x, free.normal.y, free.normal.z),
         },
       });
-      blockers.push({
-        center: this.gemCenterRaw(free.point, free.normal, j.jewelryTypeId, j.scale, j.offset ?? 0),
-        radius: this.jewelRadius(j),
-      });
+      blockers.push(this.blockerAt(free.point, free.normal, poseOf(j)));
     }
     if (!updates.length) return { moved: 0, skipped };
     this.store.pushHistory();
@@ -1326,7 +1389,15 @@ export class StudioEngine {
       if (rig) {
         this.store.pushHistory();
         this.dragJewel = rig;
-        this.dragLastHit = null;
+        // the piece's current spot is the first collision-free pose to slide from
+        const j = this.store.jewels.find((x) => x.id === rig.id);
+        this.dragLastHit = j
+          ? {
+              toothId: j.toothId,
+              point: new THREE.Vector3(j.position.x, j.position.y, j.position.z),
+              normal: new THREE.Vector3(j.normal.x, j.normal.y, j.normal.z).normalize(),
+            }
+          : null;
         this.mode = "drag-jewel";
         this.store.selectJewel(rig.id); // dragging always operates on a single piece
       } else this.mode = "idle";
@@ -1340,12 +1411,15 @@ export class StudioEngine {
         const drag = this.dragJewel;
         const j = drag ? this.store.jewels.find((x) => x.id === drag.id) : undefined;
         if (drag && j) {
-          // the piece can never enter another piece — it holds at the last
-          // free position while the cursor is over an occupied spot
-          blocked = this.hitBlocked(hit, j.jewelryTypeId, j.scale, j.offset ?? 0, this.blockersFor(new Set([j.id])));
-          if (!blocked) {
-            this.dragLastHit = hit;
-            this.poseObject(drag.group, hit.point, hit.normal, j.rotation, drag.halfDepth, j.scale, j.offset ?? 0);
+          // the piece can never enter another piece — over an occupied spot it
+          // slides up to the contact point, then holds there
+          const pose = poseOf(j);
+          const blockers = this.blockersFor(new Set([j.id]));
+          blocked = this.hitBlocked(hit, pose, blockers);
+          const reached = blocked ? this.closestFreeAlong(this.dragLastHit, hit, pose, blockers) : hit;
+          if (reached) {
+            this.dragLastHit = reached;
+            this.poseObject(drag.group, reached.point, reached.normal, j.rotation, drag.halfDepth, j.scale, j.offset ?? 0);
           }
         }
       }
@@ -1722,23 +1796,30 @@ export class StudioEngine {
     this.renderer.render(this.scene, this.camera);
     return url;
   }
-  exportPNG(transparent: boolean) {
+  /** PNG of the current view, watermarked with the Global Toothgems wordmark. */
+  async exportPNG(transparent: boolean) {
     const url = this.captureView({ transparent });
-    let out = url;
+    const [render, logo] = await Promise.all([decodeImage(url), loadWatermark()]);
+    const c = document.createElement("canvas");
+    c.width = render.width;
+    c.height = render.height;
+    const ctx = c.getContext("2d")!;
     if (!transparent) {
-      const src = this.renderer.domElement;
-      const c = document.createElement("canvas");
-      c.width = src.width;
-      c.height = src.height;
-      const ctx = c.getContext("2d")!;
       const g = ctx.createRadialGradient(c.width / 2, c.height * 0.4, 0, c.width / 2, c.height * 0.4, Math.hypot(c.width, c.height) * 0.62);
       STAGE_GRADIENT.forEach(([at, color]) => g.addColorStop(at, color));
       ctx.fillStyle = g;
       ctx.fillRect(0, 0, c.width, c.height);
-      ctx.drawImage(src, 0, 0);
-      out = c.toDataURL("image/png");
     }
-    downloadURL(out, exportFileName("png"));
+    ctx.drawImage(render, 0, 0);
+    if (logo) {
+      const w = Math.min(c.width * 0.5, Math.max(WATERMARK.minWidth, c.width * WATERMARK.widthRatio));
+      const h = (logo.height / logo.width) * w;
+      const m = Math.max(12, Math.min(c.width, c.height) * WATERMARK.marginRatio);
+      ctx.globalAlpha = WATERMARK.opacity;
+      ctx.drawImage(logo, c.width - w - m, c.height - h - m, w, h);
+      ctx.globalAlpha = 1;
+    }
+    downloadURL(c.toDataURL("image/png"), exportFileName("png"));
   }
   exportJSON() {
     const data = {
@@ -1910,6 +1991,14 @@ export class ModelImportError extends Error {
   }
 }
 
+function decodeImage(src: string): Promise<HTMLImageElement> {
+  return new Promise((resolve, reject) => {
+    const img = new Image();
+    img.onload = () => resolve(img);
+    img.onerror = () => reject(new Error("image decode failed"));
+    img.src = src;
+  });
+}
 function exportFileName(ext: string) {
   return `global-toothgems-studio-${new Date().toISOString().slice(0, 10)}-${Date.now().toString(36)}.${ext}`;
 }

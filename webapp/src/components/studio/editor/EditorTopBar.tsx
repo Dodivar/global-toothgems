@@ -324,10 +324,16 @@ function ExportMenu() {
     setOpen(false);
     setQuoting(false);
   };
-  const exportPng = (transparent: boolean) => {
-    getEngine()?.exportPNG(transparent);
+  const exportPng = async (transparent: boolean) => {
+    const engine = getEngine();
     close();
-    notify(transparent ? "exportedTransparent" : "exportedPng");
+    if (!engine) return;
+    try {
+      await engine.exportPNG(transparent);
+      notify(transparent ? "exportedTransparent" : "exportedPng");
+    } catch {
+      notify("exportFailed", undefined, "error");
+    }
   };
   const exportJson = () => {
     getEngine()?.exportJSON();

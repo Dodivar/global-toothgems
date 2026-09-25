@@ -79,16 +79,16 @@ export function EditorViewport({ snap }: { snap: StudioSnapshot }) {
   return (
     <section
       aria-label={t("studio.editor.viewport.label")}
-      className="gt-studio-stage relative isolate h-[58vh] min-h-[380px] min-w-0 overflow-hidden lg:h-auto lg:min-h-0"
+      className="gt-editor-stage relative isolate h-[58vh] min-h-[380px] min-w-0 overflow-hidden lg:h-auto lg:min-h-0"
     >
       <div ref={hostRef} className="gt-editor-canvas absolute inset-0" />
 
       {failed && (
         <div role="alert" className="absolute inset-0 grid place-items-center p-6 text-center">
-          <div className="grid max-w-[380px] justify-items-center gap-3 text-white">
-            <TriangleAlert size={28} aria-hidden="true" className="text-[var(--gt-amber-400)]" />
+          <div className="grid max-w-[380px] justify-items-center gap-3 text-[var(--gt-ink-900)]">
+            <TriangleAlert size={28} aria-hidden="true" className="text-[var(--gt-red-500)]" />
             <p className="m-0 text-[length:var(--text-body-md)] font-bold">{t("studio.editor.webgl.title")}</p>
-            <p className="m-0 text-[length:var(--text-body-sm)] text-white/75">{t("studio.editor.webgl.body")}</p>
+            <p className="m-0 text-[length:var(--text-body-sm)] text-[var(--gt-ink-700)]">{t("studio.editor.webgl.body")}</p>
           </div>
         </div>
       )}
@@ -138,7 +138,7 @@ export function EditorViewport({ snap }: { snap: StudioSnapshot }) {
 
       {snap.contextMenu && <ContextMenu cm={snap.contextMenu} snap={snap} />}
       {!failed && <BottomBar lightPreset={snap.lightPreset} />}
-      <p className="pointer-events-none absolute left-4 top-4 z-[3] m-0 hidden text-[9px] font-bold uppercase tracking-[.24em] text-white/35 xl:block">
+      <p className="pointer-events-none absolute left-4 top-4 z-[3] m-0 hidden text-[9px] font-bold uppercase tracking-[.24em] text-[var(--gt-blue-700)]/70 xl:block">
         {t(`studio.editor.viewport.stage.${snap.modelMode}`)}
       </p>
     </section>
