@@ -1,4 +1,4 @@
-# Global Toothgems — Database (iterations 1–8: e-commerce MVP, checkout, reviews, shipments, refunds, gift cards, member account, back-office roles, promotions, customer service, statistics)
+# Global Toothgems — Database (iterations 1–9: e-commerce MVP, checkout, reviews, shipments, refunds, gift cards, member account, back-office roles, promotions, customer service, statistics, product recommendations)
 
 Supabase project **Global Toothgems** (`abvuyvryerpzlvibttxp`, region `eu-west-3` Paris, Postgres 17).
 Supabase Auth is the only authentication system; all application data lives in `public`,
@@ -20,6 +20,8 @@ Iteration 7 covers the public pages and customer service: contact form tickets, 
 visitors (double opt-in), e-mail templates and content pages with their translations, maintenance mode.
 Iteration 8 feeds the back-office Statistics screen: `analytics_snapshot()` returns the screen's
 `AnalyticsSnapshot` computed from the orders.
+Iteration 9 adds product recommendations: the team's links between products and
+`recommended_products()`, which feeds the product page, cart and home suggestion blocks.
 Training, community and notifications are
 still out of scope and get their own migrations later.
 
@@ -38,6 +40,7 @@ supabase/
   tests/iteration6_validation.sql   iteration 6 roles/permissions + promotions suite (always rolls back)
   tests/iteration7_validation.sql   iteration 7 contact / newsletter / e-mails / content / maintenance suite (always rolls back)
   tests/iteration8_validation.sql   iteration 8 statistics suite (always rolls back)
+  tests/iteration9_validation.sql   iteration 9 product recommendations suite (always rolls back)
 ```
 
 ## Migrations
@@ -68,6 +71,7 @@ supabase/
 | 20260924203521 | `promotions` | `collections`, `customer_segments`, `campaigns`, `promotions` (+ translations, product/category/collection/segment links), `promotion_codes`, `order_discounts`, `order_items.discount_amount`; discount engine; `create_order()` gains `p_promotion_codes` and `p_use_loyalty_reward`; `generate_promotion_codes()`; `promotion_overview`, `campaign_overview`, `customer_segment_overview` |
 | 20260924210824 | `public_pages_customer_service` | permission `manage_content`; `store_settings` (maintenance); `contact_requests` (+ notes, private `contact-attachments` bucket, `submit_contact_request()`); `newsletter_subscriptions` (double opt-in, `newsletter_subscribe/confirm/unsubscribe()`, synced with member consents); `email_templates`, `content_pages` (+ translations), `translation_status`, `email_template_for()`; `private.hit_rate_limit()` |
 | 20260924213047 | `admin_statistics` | `categories.report_group` (revenue bucket, audited); index on `orders.paid_at`; `private.analytics_sale_lines()`, `private.analytics_kpi()`; `analytics_snapshot(from, to, filters, currency, timezone)` |
+| 20260925191945 | `product_recommendations` | `product_recommendations` (manual links per product and kind, audited); `recommended_products(product_ids, kind, limit)` |
 
 RLS is **enabled in the same migration that creates each table** (deny by default);
 policies are granted back in `rls_policies`.
@@ -443,6 +447,35 @@ drift from them.
   (seed: gems → jewelry, entretien → aftercare, kits/outils/accessoires → kits). New categories default to `other`;
   changes are audited.
 
+### Product recommendations (iteration 9)
+
+Feeds the storefront's suggestion blocks, which today read mock data (`webapp/src/data/products.ts`):
+
+| Screen | Call |
+|---|---|
+| Product page, "Va avec — Compléter la trousse" (`ProductDetail.tsx`) | `recommended_products(array[<product id>])` |
+| Cart suggestions (`Cart.tsx`) | `recommended_products(<cart product ids>)`; empty cart → `recommended_products('{}')` |
+| Home best-sellers (`Home.tsx`) | `recommended_products('{}')` (or a `collections` row when merchandised by hand) |
+
+- **`product_recommendations`**: one row per (product, kind, recommended product), ordered by `position`.
+  Kinds: `complementary` (goes with it: cross-sell) and `similar` (an alternative to it). No self link, one link per
+  pair and kind, cascade-deleted with either product. Visitors read a link only when **both** products are `active`;
+  staff read all; `manage_products` writes; every insert/update/delete goes to `audit_logs`.
+- **`recommended_products(p_product_ids uuid[] = '{}', p_kind = 'complementary', p_limit = 4)`** returns
+  `(product_id, source, rank)` — ids only; the page reads products, prices and translations through the usual
+  RLS-protected tables. Priority: `manual` links (best position, then shared by the most input products) →
+  `bought_together` (complementary: paid in the same orders, at least **2** distinct orders) or `same_category`
+  (similar) → `popular` (featured first, then most paid orders). The list is always filled up to the limit when the
+  catalogue allows it.
+- **Never returned**: the input products, anything not `active`, gift cards, products with no sellable stock
+  (every active stock row `out_of_stock`; products without stock rows count as sellable).
+- **Access**: callable by visitors (`SECURITY DEFINER`, so the Supabase advisor flags it — intended): the co-purchase
+  signal reads order lines across customers, but only aggregated ids of active products leave the function, and the
+  two-order floor keeps one customer's basket from being inferred.
+- **Validation** (`22023`): unknown kind, limit outside 1–24, more than 50 input products.
+- **Seed**: complementary and similar links for every active seed product (gems → gel, capsules, tools; kit →
+  capsules, gems, pliers; …).
+
 ### Integrity guarantees
 
 - `orders_total_matches`: `total = subtotal − discount + shipping (+ tax when prices exclude tax)`; discount ≤ subtotal; all amounts ≥ 0.
@@ -522,7 +555,8 @@ enable the extension in the dashboard — or a scheduled server job with the ser
 
 **Validation:** run `tests/mvp_validation.sql`, `tests/iteration2_validation.sql` and
 `tests/iteration3_validation.sql`, `tests/iteration4_validation.sql`, `tests/iteration5_validation.sql` and
-`tests/iteration6_validation.sql`, `tests/iteration7_validation.sql`, `tests/iteration8_validation.sql`. Each ends with
+`tests/iteration6_validation.sql`, `tests/iteration7_validation.sql`, `tests/iteration8_validation.sql`,
+`tests/iteration9_validation.sql`. Each ends with
 `ALL … PASSED (...)` raised as an exception, which rolls everything back.
 (The order-number sequence still advances — sequences are not transactional.)
 
@@ -656,6 +690,8 @@ VAT rates, shipping zones/rates mirroring the Settings prototype. Media rows ref
   translation status, maintenance switch.
 - Iteration 8: back-office statistics — `analytics_snapshot()` (KPIs vs previous period, series, category breakdown,
   best sellers, customer base, orders, geography, cross-selling, extras), filters, category reporting groups.
+- Iteration 9: product recommendations — manual links per product (complementary / similar), `recommended_products()`
+  with bought-together, same-category and popular fallbacks, seed links.
 
 ## Next iterations (not implemented)
 
@@ -667,6 +703,6 @@ VAT rates, shipping zones/rates mirroring the Settings prototype. Media rows ref
 3. Store settings table (legal identity, order number format, tax display options), VAT numbers /
    B2B reverse charge, multi-currency price lists.
 4. Guest checkout linking (attach guest orders to an account by verified email).
-5. Related products, structured product attributes (gem shape/colour), multiple signed order notes.
+5. Structured product attributes (gem shape/colour), multiple signed order notes.
 6. Education (courses, modules, lessons, quizzes, attempts, certificates, entitlements), community
    (unlocked by a training purchase), 3D Studio subscription — each as its own migration set referencing `profiles` and `products`.
