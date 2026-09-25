@@ -558,6 +558,7 @@
       "quoteBuilding": "Création de la fiche d’estimation…",
       "quoteExported": "Fiche d’estimation téléchargée",
       "quoteFailed": "La fiche d’estimation n’a pas pu être créée",
+      "exportFailed": "L’image n’a pas pu être exportée",
       "modelReset": "Arcade de référence rétablie",
       "import": {
         "started": "Import de {{name}}…",

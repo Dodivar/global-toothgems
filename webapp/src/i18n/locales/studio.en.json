@@ -558,6 +558,7 @@
       "quoteBuilding": "Creating the estimate sheet…",
       "quoteExported": "Estimate sheet downloaded",
       "quoteFailed": "The estimate sheet could not be created",
+      "exportFailed": "The image could not be exported",
       "modelReset": "Reference arch restored",
       "import": {
         "started": "Importing {{name}}…",

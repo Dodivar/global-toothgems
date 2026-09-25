@@ -1300,7 +1300,7 @@
    3D Studio — the editor (/studio-3d/atelier)
    ---------------------------------------------------------------------------
    The editor wears the Studio's own art direction: white panels on the
-   storefront's paper, the dark `.gt-studio-stage` for the 3D canvas, glass
+   storefront's paper, the light blue `.gt-editor-stage` for the 3D canvas, glass
    only on the controls floating over that stage, emerald for Export. The
    pieces below are what utilities cannot express: the range track, the
    panels' thin scrollbars and the few loops, all stopped under reduced motion.
@@ -1310,7 +1310,12 @@
   .gt-editor-canvas canvas { display: block; width: 100% !important; height: 100% !important; touch-action: none; }
   /* The stage and the library are pointer surfaces: dragging must not select text. */
   .gt-editor-canvas,
-  .gt-editor .gt-studio-stage { user-select: none; -webkit-user-select: none; }
+  .gt-editor .gt-editor-stage { user-select: none; -webkit-user-select: none; }
+  /* The editor's 3D stage: light pastel blue, matched by the engine's backdrop and the PNG export. */
+  .gt-editor-stage {
+    background:
+      radial-gradient(70% 80% at 50% 38%, var(--gt-blue-50) 0%, var(--gt-blue-200) 62%, var(--gt-blue-300) 100%);
+  }
 
   .gt-editor-range {
     -webkit-appearance: none;

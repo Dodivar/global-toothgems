@@ -109,6 +109,94 @@ export interface JewelTemplate {
   parts: THREE.BufferGeometry[];
   halfDepth: number;
   radius: number;
+  /** Farthest silhouette point from the piece's centre: the collision broad phase. */
+  reach: number;
+  footprint: Footprint;
+}
+
+/**
+ * The silhouette of a piece seen from the front (its local XY plane),
+ * rasterised on a fine grid. Collision tests the real outlines against each
+ * other instead of bounding circles, so pieces can sit edge to edge exactly as
+ * they do on a real tooth — a leaf against a leaf, a stone against a stone.
+ */
+export interface Footprint {
+  cell: number;
+  minX: number;
+  minY: number;
+  cols: number;
+  rows: number;
+  /** 1 = the silhouette covers this cell. */
+  mask: Uint8Array;
+  /** Centres of the covered cells on the silhouette's edge, as x, y pairs. */
+  edge: Float32Array;
+}
+/** Footprint grid step, in template units (pieces are ~2 units across). */
+const FOOTPRINT_CELL = 0.035;
+
+function buildFootprint(parts: THREE.BufferGeometry[], box: THREE.Box3): Footprint {
+  const cell = FOOTPRINT_CELL;
+  const minX = box.min.x - cell,
+    minY = box.min.y - cell;
+  const cols = Math.ceil((box.max.x - minX) / cell) + 2,
+    rows = Math.ceil((box.max.y - minY) / cell) + 2;
+  const mask = new Uint8Array(cols * rows);
+  const a = new THREE.Vector3(),
+    b = new THREE.Vector3(),
+    c = new THREE.Vector3();
+  for (const g of parts) {
+    const pos = g.attributes.position as THREE.BufferAttribute;
+    const idx = g.index;
+    const count = idx ? idx.count : pos.count;
+    for (let i = 0; i + 2 < count; i += 3) {
+      a.fromBufferAttribute(pos, idx ? idx.getX(i) : i);
+      b.fromBufferAttribute(pos, idx ? idx.getX(i + 1) : i + 1);
+      c.fromBufferAttribute(pos, idx ? idx.getX(i + 2) : i + 2);
+      const area = (b.x - a.x) * (c.y - a.y) - (c.x - a.x) * (b.y - a.y);
+      if (Math.abs(area) < 1e-9) continue; // edge-on in XY: covers nothing
+      const c0 = Math.max(0, Math.floor((Math.min(a.x, b.x, c.x) - minX) / cell));
+      const c1 = Math.min(cols - 1, Math.ceil((Math.max(a.x, b.x, c.x) - minX) / cell));
+      const r0 = Math.max(0, Math.floor((Math.min(a.y, b.y, c.y) - minY) / cell));
+      const r1 = Math.min(rows - 1, Math.ceil((Math.max(a.y, b.y, c.y) - minY) / cell));
+      for (let r = r0; r <= r1; r++) {
+        const y = minY + (r + 0.5) * cell;
+        for (let q = c0; q <= c1; q++) {
+          if (mask[r * cols + q]) continue;
+          const x = minX + (q + 0.5) * cell;
+          const w0 = (b.x - a.x) * (y - a.y) - (x - a.x) * (b.y - a.y);
+          const w1 = (c.x - b.x) * (y - b.y) - (x - b.x) * (c.y - b.y);
+          const w2 = (a.x - c.x) * (y - c.y) - (x - c.x) * (a.y - c.y);
+          if ((w0 >= 0 && w1 >= 0 && w2 >= 0) || (w0 <= 0 && w1 <= 0 && w2 <= 0)) mask[r * cols + q] = 1;
+        }
+      }
+    }
+  }
+  const edge: number[] = [];
+  const at = (q: number, r: number) => (q < 0 || r < 0 || q >= cols || r >= rows ? 0 : mask[r * cols + q]);
+  for (let r = 0; r < rows; r++)
+    for (let q = 0; q < cols; q++)
+      if (at(q, r) && (!at(q - 1, r) || !at(q + 1, r) || !at(q, r - 1) || !at(q, r + 1)))
+        edge.push(minX + (q + 0.5) * cell, minY + (r + 0.5) * cell);
+  return { cell, minX, minY, cols, rows, mask, edge: new Float32Array(edge) };
+}
+/** Is the local point (x, y) inside the footprint's silhouette? */
+export function footprintCovers(fp: Footprint, x: number, y: number): boolean {
+  const q = Math.floor((x - fp.minX) / fp.cell),
+    r = Math.floor((y - fp.minY) / fp.cell);
+  if (q < 0 || r < 0 || q >= fp.cols || r >= fp.rows) return false;
+  return fp.mask[r * fp.cols + q] === 1;
+}
+
+/**
+ * Tooth gems are flat-backed: the cut shows on the front, but the side glued
+ * to the enamel is a plane. Every vertex behind `cutZ` is pressed onto it.
+ */
+function flattenBack(g: THREE.BufferGeometry, cutZ: number): THREE.BufferGeometry {
+  const pos = g.attributes.position as THREE.BufferAttribute;
+  for (let i = 0; i < pos.count; i++) if (pos.getZ(i) < cutZ) pos.setZ(i, cutZ);
+  pos.needsUpdate = true;
+  g.computeVertexNormals();
+  return g;
 }
 const templateCache = new Map<JewelryGeometry, JewelTemplate>();
 
@@ -122,8 +210,8 @@ function extrudeJewel(shape: THREE.Shape, depth = 0.3): THREE.BufferGeometry {
     curveSegments: 32,
   });
   g.center();
-  g.computeVertexNormals();
-  return g;
+  // the rear bevel would round the back off: press it onto the back face
+  return flattenBack(g, -depth / 2);
 }
 function starShape(outer: number, inner: number): THREE.Shape {
   const s = new THREE.Shape();
@@ -201,10 +289,11 @@ export function getJewelTemplate(geometryId: JewelryGeometry): JewelTemplate {
   };
   switch (geometryId) {
     case "round":
-      parts.push(faceted(new THREE.IcosahedronGeometry(0.8, 1).scale(1, 1, 0.62)));
+      // faceted dome on a flat base, cut just behind the girdle
+      parts.push(flattenBack(new THREE.IcosahedronGeometry(0.8, 1).scale(1, 1, 0.62), -0.06));
       break;
     case "diamond":
-      parts.push(faceted(new THREE.OctahedronGeometry(0.92, 0).scale(0.8, 1.08, 0.55)));
+      parts.push(flattenBack(new THREE.OctahedronGeometry(0.92, 0).scale(0.8, 1.08, 0.55), 0));
       break;
     case "square": {
       const g = new THREE.CylinderGeometry(0.66, 0.66, 0.5, 4, 1);
@@ -216,8 +305,7 @@ export function getJewelTemplate(geometryId: JewelryGeometry): JewelTemplate {
     case "dot": {
       const g = new THREE.SphereGeometry(0.52, 24, 18);
       g.scale(1, 1, 0.62);
-      g.translate(0, 0, 0.3);
-      parts.push(g);
+      parts.push(flattenBack(g, -0.03));
       break;
     }
     case "star":
@@ -267,7 +355,7 @@ export function getJewelTemplate(geometryId: JewelryGeometry): JewelTemplate {
       const body = new THREE.SphereGeometry(1, 16, 12);
       body.scale(0.16, 0.62, 0.34);
       body.translate(0, 0.02, 0.16);
-      parts.push(body);
+      parts.push(flattenBack(body, -0.12));
       break;
     }
     case "moon": {
@@ -305,9 +393,18 @@ export function getJewelTemplate(geometryId: JewelryGeometry): JewelTemplate {
     p.computeBoundingBox();
     box.union(p.boundingBox!);
   }
+  // centre the piece in depth, so its flat back sits exactly `halfDepth` behind the origin
+  const midZ = (box.min.z + box.max.z) / 2;
+  if (Math.abs(midZ) > 1e-6) {
+    for (const p of parts) p.translate(0, 0, -midZ);
+    box.translate(new THREE.Vector3(0, 0, -midZ));
+  }
   const size = new THREE.Vector3();
   box.getSize(size);
-  const tpl = { parts, halfDepth: size.z / 2, radius: Math.max(size.x, size.y) / 2 };
+  const footprint = buildFootprint(parts, box);
+  let reach = 0;
+  for (let i = 0; i < footprint.edge.length; i += 2) reach = Math.max(reach, Math.hypot(footprint.edge[i], footprint.edge[i + 1]));
+  const tpl = { parts, halfDepth: size.z / 2, radius: Math.max(size.x, size.y) / 2, reach: reach + footprint.cell, footprint };
   templateCache.set(geometryId, tpl);
   return tpl;
 }
