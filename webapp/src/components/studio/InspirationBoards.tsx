@@ -6,7 +6,8 @@ import { SmileCanvas } from "./SmileCanvas";
 import { MATERIAL_SWATCH } from "./gemStyle";
 import { pick } from "../../data/types";
 import { COMPOSITIONS, INSPIRATION, type InspirationBoard } from "../../data/studio";
-import { STUDIO_SUBSCRIBE_PATH } from "../../lib/studioUrl";
+import { STUDIO_EDITOR_PATH, STUDIO_SUBSCRIBE_PATH } from "../../lib/studioUrl";
+import { useStudioAccess } from "../../lib/studioAccess";
 
 /**
  * Editorial mood boards, one per style. Deliberately not product cards: no
@@ -27,6 +28,8 @@ const ASPECT = ["aspect-[4/5]", "aspect-[16/11]", "aspect-[1/1]", "aspect-[16/12
 export function InspirationBoards() {
   const { t, i18n } = useTranslation();
   const lang = i18n.language;
+  // During the free preview, "Recreate" goes straight to the editor.
+  const recreateTo = useStudioAccess().granted ? STUDIO_EDITOR_PATH : STUDIO_SUBSCRIBE_PATH;
 
   return (
     <div className="columns-1 gap-5 sm:columns-2 lg:columns-3">
@@ -79,7 +82,7 @@ export function InspirationBoards() {
                 <span className={clsx("text-[11.5px] font-semibold", ink ? "text-white/75" : "text-[var(--text-muted)]")}>{pick(board.pieces, lang)}</span>
               </span>
               <Link
-                to={STUDIO_SUBSCRIBE_PATH}
+                to={recreateTo}
                 aria-label={t("studio.inspiration.recreateAria", { style: pick(board.title, lang) })}
                 className={clsx(
                   "inline-flex items-center gap-1 rounded-full px-2 py-1 text-[11.5px] font-semibold underline decoration-1 underline-offset-4 transition-colors",

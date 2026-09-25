@@ -4,8 +4,9 @@ import type { GemShape } from "./products";
 /**
  * Fictional content for the 3D Studio presentation and subscription pages.
  *
- * The Studio is a visual prototype: there is no editor, no renderer, no saved
- * composition and no subscription behind any of this. Everything the pages
+ * These pages are a visual prototype: no subscription stands behind them. The
+ * working editor is a separate page (`/studio-3d/atelier`, see
+ * `data/studioEditor.ts`); nothing here is read by it. Everything the pages
  * show — the pieces in the library, the compositions on the canvas, the saved
  * creations — is fixture data, so the art direction can be reviewed before the
  * product exists.
