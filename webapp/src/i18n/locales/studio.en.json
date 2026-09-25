@@ -384,6 +384,9 @@
       "label": "3D view of the dental arch",
       "armed": "Click a tooth to place: {{name}}",
       "cancelArmed": "Cancel placement",
+      "spin": "Hold to rotate",
+      "spinLabel_one": "Hold to rotate the piece",
+      "spinLabel_other": "Hold to rotate the selection",
       "placing": "Release over a tooth to place — red means the spot is taken",
       "hint": "Drag a piece onto a tooth to start designing",
       "stage": {

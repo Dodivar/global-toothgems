@@ -3,8 +3,8 @@ import clsx from "clsx";
 import { Copy, FlipHorizontal2, FlipVertical2, Minus, Orbit, Plus, RotateCw, Trash2, TriangleAlert, X } from "lucide-react";
 import { useEditorLabels } from "./editorLabels";
 import { FREE_TOOTH } from "../../../data/studioEditor";
-import { duplicatePieces, importModelFile, mirrorSelection, removePieces, rotatePieces } from "../../../lib/studio3d/actions";
-import { getEngine, setEngine, StudioEngine } from "../../../lib/studio3d/engine";
+import { beginSpin, duplicatePieces, importModelFile, mirrorSelection, removePieces, rotatePieces } from "../../../lib/studio3d/actions";
+import { getEngine, setEngine, StudioEngine, type SelectionAnchor } from "../../../lib/studio3d/engine";
 import { studioStore, type ContextMenuState, type LightPreset, type StudioSnapshot } from "../../../lib/studio3d/store";
 
 /* Glass on the dark stage, as the Studio mockup draws its floating controls. */
@@ -23,6 +23,7 @@ export function EditorViewport({ snap }: { snap: StudioSnapshot }) {
   const hostRef = useRef<HTMLDivElement>(null);
   const [failed, setFailed] = useState(false);
   const [dragOver, setDragOver] = useState(false);
+  const [engineReady, setEngineReady] = useState(false);
 
   useEffect(() => {
     const host = hostRef.current;
@@ -36,7 +37,9 @@ export function EditorViewport({ snap }: { snap: StudioSnapshot }) {
       return;
     }
     setEngine(engine);
+    setEngineReady(true);
     return () => {
+      setEngineReady(false);
       engine.dispose();
       setEngine(null);
     };
@@ -136,6 +139,9 @@ export function EditorViewport({ snap }: { snap: StudioSnapshot }) {
         </Pill>
       )}
 
+      {engineReady && snap.selectedJewelIds.length > 0 && !snap.contextMenu && (
+        <SpinButton ids={snap.selectedJewelIds} />
+      )}
       {snap.contextMenu && <ContextMenu cm={snap.contextMenu} snap={snap} />}
       {!failed && <BottomBar lightPreset={snap.lightPreset} />}
       <p className="pointer-events-none absolute left-4 top-4 z-[3] m-0 hidden text-[9px] font-bold uppercase tracking-[.24em] text-[var(--gt-blue-700)]/70 xl:block">
@@ -159,6 +165,112 @@ function Pill({ children, position, floating }: { children: React.ReactNode; pos
       <span className="flex min-w-0 items-center gap-2 [&>span]:truncate">{children}</span>
     </div>
   );
+}
+
+/** Touch-sized button: 44px tall, and this far from the selection's edge. */
+const SPIN_BUTTON_SIZE = 44;
+const SPIN_BUTTON_GAP = 12;
+/** Stage bands the button stays out of: the tooth chip on top, the camera bar at the foot. */
+const STAGE_TOP_RESERVED = 56;
+const STAGE_BOTTOM_RESERVED = 68;
+const STAGE_SIDE_MARGIN = 8;
+
+/**
+ * Press-and-hold rotation floating right under (or above) the selected
+ * pieces: they turn slowly while the button is held and stop on release, so a
+ * finger can find the exact angle on a tablet or phone, without the inspector
+ * or a right-click. Space / Enter held down does the same from the keyboard.
+ * It follows the selection as the camera moves and hides while a piece is
+ * dragged or off screen.
+ */
+function SpinButton({ ids }: { ids: string[] }) {
+  const { t } = useEditorLabels();
+  const ref = useRef<HTMLButtonElement>(null);
+  const [visible, setVisible] = useState(false);
+  const [turned, setTurned] = useState<number | null>(null);
+  const stopRef = useRef<(() => void) | null>(null);
+
+  useEffect(() => {
+    const engine = getEngine();
+    if (!engine) return;
+    // Positioned straight on the element: the anchor moves every frame while the camera does.
+    return engine.onSelectionAnchor((a) => {
+      const el = ref.current;
+      if (a && el) placeSpinButton(el, a);
+      setVisible(!!a);
+    });
+  }, []);
+
+  const start = () => {
+    if (stopRef.current) return;
+    setTurned(0);
+    stopRef.current = beginSpin(ids, (deg) => setTurned(Math.round(deg)));
+  };
+  const stop = () => {
+    stopRef.current?.();
+    stopRef.current = null;
+    setTurned(null);
+  };
+  // Selection changed or the button went away mid-hold: settle what was turned.
+  useEffect(() => stop, [ids]);
+
+  const spinning = turned !== null;
+  const label = t("studio.editor.viewport.spinLabel", { count: ids.length });
+  return (
+    <button
+      ref={ref}
+      type="button"
+      aria-label={label}
+      aria-pressed={spinning}
+      title={label}
+      onPointerDown={(e) => {
+        if (e.button !== 0) return;
+        e.currentTarget.setPointerCapture(e.pointerId);
+        start();
+      }}
+      onPointerUp={stop}
+      onPointerCancel={stop}
+      onLostPointerCapture={stop}
+      onBlur={stop}
+      onKeyDown={(e) => {
+        if (e.key !== " " && e.key !== "Enter") return;
+        e.preventDefault();
+        if (!e.repeat) start();
+      }}
+      onKeyUp={(e) => {
+        if (e.key !== " " && e.key !== "Enter") return;
+        e.preventDefault();
+        stop();
+      }}
+      onContextMenu={(e) => e.preventDefault()}
+      className={clsx(
+        "gt-editor-chip absolute left-0 top-0 z-[7] inline-flex -translate-x-1/2 select-none items-center gap-1.5 rounded-full pl-3 pr-3.5 text-[13px] font-bold transition-colors",
+        "touch-none [-webkit-touch-callout:none]",
+        "focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-white",
+        // Held: solid white, like the stage's other active toggles.
+        spinning ? "border border-white bg-white text-[var(--gt-ink-900)]" : clsx(stageGlass, "hover:bg-[rgba(22,26,32,.8)]"),
+        !visible && "invisible",
+      )}
+      style={{ height: SPIN_BUTTON_SIZE, minWidth: SPIN_BUTTON_SIZE }}
+    >
+      <RotateCw size={17} aria-hidden="true" className={clsx(spinning && "motion-safe:animate-spin")} />
+      <span aria-hidden="true" className="tabular-nums">
+        {spinning ? `+${turned}°` : t("studio.editor.viewport.spin")}
+      </span>
+    </button>
+  );
+}
+
+/** Centre the button under the selection, above it when the camera bar is in the way, always inside the stage. */
+function placeSpinButton(el: HTMLElement, a: SelectionAnchor) {
+  const half = el.offsetWidth / 2 || SPIN_BUTTON_SIZE;
+  const x = Math.min(Math.max((a.left + a.right) / 2, STAGE_SIDE_MARGIN + half), a.width - STAGE_SIDE_MARGIN - half);
+  const maxTop = a.height - STAGE_BOTTOM_RESERVED - SPIN_BUTTON_SIZE;
+  const below = a.bottom + SPIN_BUTTON_GAP;
+  const above = a.top - SPIN_BUTTON_GAP - SPIN_BUTTON_SIZE;
+  const y = below <= maxTop ? below : above >= STAGE_TOP_RESERVED ? above : Math.min(Math.max(below, STAGE_TOP_RESERVED), maxTop);
+  el.style.left = `${Math.round(x)}px`;
+  el.style.top = `${Math.round(y)}px`;
 }
 
 /** Right-click menu on a piece (or on the selection that contains it). */

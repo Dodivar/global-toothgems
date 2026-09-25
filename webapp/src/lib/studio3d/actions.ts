@@ -33,6 +33,49 @@ export function rotatePieces(ids: string[]) {
   notify("rotated", { count: pieces.length });
 }
 
+/** Hold-to-rotate speed, in degrees per second: slow enough to stop on the angle you want. */
+export const SPIN_DEG_PER_SECOND = 45;
+
+/**
+ * Turn pieces continuously, for as long as a control is held. Each piece
+ * spins around its own centre from where it started; the whole hold is one
+ * undo step. `onAngle` reports the turn so far. Returns the stop function,
+ * which snaps the pieces to whole degrees.
+ */
+export function beginSpin(ids: string[], onAngle?: (deg: number) => void): () => void {
+  const start = new Map(studioStore.jewels.filter((j) => ids.includes(j.id)).map((j) => [j.id, j.rotation]));
+  if (!start.size) return () => {};
+  let turned = 0;
+  let last = performance.now();
+  let raf = 0;
+  let recorded = false;
+  const apply = (deg: number, round: boolean) =>
+    studioStore.applyPatches(
+      Array.from(start, ([id, r]) => {
+        const a = (((r + deg) % 360) + 360) % 360;
+        return { id, patch: { rotation: round ? Math.round(a) % 360 : a } };
+      }),
+    );
+  const frame = (now: number) => {
+    turned += (SPIN_DEG_PER_SECOND * Math.min(now - last, 100)) / 1000;
+    last = now;
+    if (!recorded) {
+      studioStore.pushHistory();
+      recorded = true;
+    }
+    apply(turned, false);
+    onAngle?.(turned);
+    raf = requestAnimationFrame(frame);
+  };
+  raf = requestAnimationFrame(frame);
+  return () => {
+    cancelAnimationFrame(raf);
+    if (!recorded) return;
+    apply(turned, true);
+    notify("rotated", { count: start.size });
+  };
+}
+
 export function mirrorSelection(axis: "h" | "v") {
   const r = getEngine()?.mirrorSelection(axis);
   if (!r) return;
