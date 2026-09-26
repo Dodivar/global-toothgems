@@ -2,16 +2,16 @@ import type { Localized } from "./types";
 import { photo } from "../lib/images";
 
 /**
- * Mock catalogue behind the administration prototype.
+ * Admin catalogue model, and the mock catalogue behind the prototype.
  *
- * This file is the seam a real backend replaces: the admin screens only ever
- * read the types declared here and call the store in `lib/adminCatalog.tsx`.
- * Swapping this module for Supabase queries should not require touching a
- * single component.
+ * The admin screens only ever read the types declared here and call the store
+ * in `lib/adminCatalog.tsx`. With Supabase configured the store loads and saves
+ * these types through `lib/adminCatalogSupabase.tsx` (mapping in
+ * `lib/adminCatalogMapping.ts`); without it, it runs on the fixtures below.
  *
- * Nothing here is authoritative. Prices are plain numbers rather than integer
- * minor units because the prototype never computes a total, and the real
- * catalogue must follow the money rules in `AGENTS.md` instead.
+ * Prices are major units in the UI only. The Supabase mapping converts them to
+ * integer cents and sends exact decimal strings, so no float reaches the
+ * database (see `lib/catalog/money.ts`).
  */
 
 /**
@@ -25,7 +25,11 @@ export type ProductStatus = "active" | "draft" | "archived";
 /** What the customer receives. Drives nothing but presentation in the prototype. */
 export type ProductType = "single" | "set" | "kit" | "tool" | "care" | "course-material";
 
-export type CategoryId = "gems" | "kits" | "tools" | "aftercare" | "accessories";
+/**
+ * A category key: one of the fixture slugs below in the mock catalogue, the
+ * category's uuid when the catalogue comes from Supabase.
+ */
+export type CategoryId = string;
 
 /** Availability when `trackInventory` is off — a made-to-order piece has no count. */
 export type Availability = "in_stock" | "out_of_stock" | "preorder";
@@ -38,8 +42,13 @@ export interface Category {
 
 export interface ProductImage {
   id: string;
-  /** Resolved asset URL. A real catalogue stores a storage path instead. */
+  /** Resolved asset URL, ready for an `<img>`. */
   src: string;
+  /**
+   * Object path in the `product-media` bucket when the image is stored in
+   * Supabase. Absent for the mock catalogue's bundled photographs.
+   */
+  storagePath?: string;
   alt: Localized;
 }
 
@@ -63,6 +72,12 @@ export interface AdminProduct {
   /** Manual availability, used when `trackInventory` is off. */
   availability: Availability;
   status: ProductStatus;
+  /**
+   * Number of variants in the database. A product with variants keeps its stock
+   * on each variant: `stock` is then their total, shown read-only, and saving
+   * the product never writes it.
+   */
+  variantCount?: number;
   material: Localized;
   tags: string[];
   createdAt: string;
@@ -112,6 +127,7 @@ export const CATEGORIES: Category[] = [
   },
 ];
 
+/** Fixture category. Screens reading the live catalogue use `useAdminCatalog().categoryById`. */
 export function categoryById(id: CategoryId): Category {
   return CATEGORIES.find((c) => c.id === id) ?? CATEGORIES[0];
 }

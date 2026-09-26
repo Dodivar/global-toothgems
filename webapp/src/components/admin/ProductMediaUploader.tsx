@@ -1,6 +1,6 @@
-import { useState } from "react";
+import { useRef, useState, type DragEvent } from "react";
 import { useTranslation } from "react-i18next";
-import { ArrowLeft, ArrowRight, Check, ImagePlus, Star, Trash2, UploadCloud, X } from "lucide-react";
+import { ArrowLeft, ArrowRight, Check, ImagePlus, LoaderCircle, Star, Trash2, UploadCloud, X } from "lucide-react";
 import clsx from "clsx";
 import { AdminButton } from "./AdminButton";
 import { AdminIconButton } from "./AdminIconButton";
@@ -8,15 +8,15 @@ import { useFocusTrap } from "../../lib/useFocusTrap";
 import { useLocalized } from "../../lib/localized";
 import { MEDIA_LIBRARY, mediaFromLibrary, type ProductImage } from "../../data/adminCatalog";
 import { photo } from "../../lib/images";
+import { PRODUCT_IMAGE_MAX_BYTES, PRODUCT_IMAGE_TYPES } from "../../lib/adminCatalogMapping";
 
 /**
  * Media area of the product form.
  *
- * The prototype never uploads anything — the drop zone opens a picker over the
- * existing brand photography instead. It is drawn as a real drop zone on
- * purpose: this is the part of the form where the future administrator has to
- * recognise the workflow they will actually have, and a plain "choose an image"
- * button would not show it.
+ * With `onUpload` (the Supabase catalogue) the drop zone takes real files —
+ * clicked or dropped — and uploads each one straight away, so the form only
+ * ever holds images that already exist in storage. Without it (the prototype)
+ * the same drop zone opens a picker over the brand photography instead.
  *
  * Reordering is done with buttons rather than drag and drop. Drag is the
  * obvious gesture and the inaccessible one; the arrows work with a mouse, a
@@ -26,37 +26,102 @@ import { photo } from "../../lib/images";
 export function ProductMediaUploader({
   media,
   onChange,
+  onUpload,
 }: {
   media: ProductImage[];
-  onChange: (next: ProductImage[]) => void;
+  /** Receives an updater: uploads finish asynchronously, after other edits. */
+  onChange: (update: (prev: ProductImage[]) => ProductImage[]) => void;
+  /** Stores one file and resolves with its media entry. Absent in the prototype. */
+  onUpload?: (file: File) => Promise<ProductImage>;
 }) {
   const { t } = useTranslation();
   const L = useLocalized();
   const [pickerOpen, setPickerOpen] = useState(false);
+  const [uploading, setUploading] = useState(0);
+  const [rejected, setRejected] = useState<string[]>([]);
+  const [dragging, setDragging] = useState(false);
+  const fileInput = useRef<HTMLInputElement>(null);
 
-  const move = (index: number, delta: number) => {
-    const target = index + delta;
-    if (target < 0 || target >= media.length) return;
-    const next = [...media];
-    [next[index], next[target]] = [next[target], next[index]];
-    onChange(next);
-  };
+  const move = (index: number, delta: number) =>
+    onChange((prev) => {
+      const target = index + delta;
+      if (target < 0 || target >= prev.length) return prev;
+      const next = [...prev];
+      [next[index], next[target]] = [next[target], next[index]];
+      return next;
+    });
 
-  const remove = (id: string) => onChange(media.filter((image) => image.id !== id));
+  const remove = (id: string) => onChange((prev) => prev.filter((image) => image.id !== id));
 
   const add = (files: string[]) => {
-    onChange([...media, ...files.map(mediaFromLibrary)]);
+    onChange((prev) => [...prev, ...files.map(mediaFromLibrary)]);
     setPickerOpen(false);
+  };
+
+  const upload = async (files: File[]) => {
+    if (!onUpload || files.length === 0) return;
+    // Checked here for an immediate, specific message; the bucket enforces the
+    // same limits server-side.
+    const accepted = files.filter(
+      (file) => (PRODUCT_IMAGE_TYPES as readonly string[]).includes(file.type) && file.size <= PRODUCT_IMAGE_MAX_BYTES,
+    );
+    setRejected(files.filter((file) => !accepted.includes(file)).map((file) => file.name));
+    setUploading((n) => n + accepted.length);
+    // One at a time, in the order given, so the images land in that order.
+    for (const file of accepted) {
+      try {
+        const image = await onUpload(file);
+        onChange((prev) => [...prev, image]);
+      } catch {
+        // The store has already reported the failure.
+      } finally {
+        setUploading((n) => n - 1);
+      }
+    }
+  };
+
+  const openFiles = () => (onUpload ? fileInput.current?.click() : setPickerOpen(true));
+
+  const onDrop = (event: DragEvent) => {
+    event.preventDefault();
+    setDragging(false);
+    if (onUpload) void upload(Array.from(event.dataTransfer.files));
   };
 
   return (
     <div className="grid gap-4">
+      {onUpload && (
+        <input
+          ref={fileInput}
+          type="file"
+          accept={PRODUCT_IMAGE_TYPES.join(",")}
+          multiple
+          hidden
+          onChange={(event) => {
+            void upload(Array.from(event.target.files ?? []));
+            event.target.value = "";
+          }}
+        />
+      )}
+
       {/* Drop zone. A button, not a div with a handler: this is the control that
-          opens the picker, and it has to be reachable by keyboard. */}
+          opens the file browser (or the picker), and it has to be reachable by keyboard. */}
       <button
         type="button"
-        onClick={() => setPickerOpen(true)}
-        className="grid place-items-center gap-2 rounded-[var(--admin-radius)] border-2 border-dashed border-[var(--border-default)] bg-[var(--admin-panel-sunken)] px-6 py-8 text-center transition-colors hover:border-[var(--gt-blue-400)] hover:bg-[var(--gt-blue-50)] focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-[var(--focus-ring)]"
+        onClick={openFiles}
+        onDragOver={(event) => {
+          if (!onUpload) return;
+          event.preventDefault();
+          setDragging(true);
+        }}
+        onDragLeave={() => setDragging(false)}
+        onDrop={onDrop}
+        className={clsx(
+          "grid place-items-center gap-2 rounded-[var(--admin-radius)] border-2 border-dashed px-6 py-8 text-center transition-colors hover:border-[var(--gt-blue-400)] hover:bg-[var(--gt-blue-50)] focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-[var(--focus-ring)]",
+          dragging
+            ? "border-[var(--gt-blue-400)] bg-[var(--gt-blue-50)]"
+            : "border-[var(--border-default)] bg-[var(--admin-panel-sunken)]",
+        )}
       >
         <span aria-hidden="true" className="grid h-11 w-11 place-items-center rounded-full bg-[var(--surface-brand)] text-[var(--gt-ink-900)]">
           <UploadCloud size={20} strokeWidth={1.8} />
@@ -65,12 +130,28 @@ export function ProductMediaUploader({
           {t("admin.media.dropTitle")}
         </span>
         <span className="max-w-[46ch] text-[length:var(--text-caption)] text-[var(--text-muted)]">
-          {t("admin.media.dropBody")}
+          {onUpload ? t("admin.media.dropBodyUpload") : t("admin.media.dropBody")}
         </span>
-        <span className="mt-1 rounded-[var(--radius-pill)] border border-[var(--border-default)] bg-[var(--admin-panel)] px-2.5 py-1 text-[10px] font-semibold uppercase tracking-[var(--tracking-wide)] text-[var(--text-muted)]">
-          {t("admin.media.prototypeNote")}
-        </span>
+        {!onUpload && (
+          <span className="mt-1 rounded-[var(--radius-pill)] border border-[var(--border-default)] bg-[var(--admin-panel)] px-2.5 py-1 text-[10px] font-semibold uppercase tracking-[var(--tracking-wide)] text-[var(--text-muted)]">
+            {t("admin.media.prototypeNote")}
+          </span>
+        )}
       </button>
+
+      <div role="status" aria-live="polite" className="grid gap-1 empty:hidden">
+        {uploading > 0 && (
+          <p className="m-0 flex items-center gap-2 text-[length:var(--text-caption)] text-[var(--text-muted)]">
+            <LoaderCircle size={14} aria-hidden="true" className="animate-spin motion-reduce:animate-none" />
+            {t("admin.media.uploading", { count: uploading })}
+          </p>
+        )}
+        {rejected.length > 0 && (
+          <p className="m-0 text-[length:var(--text-caption)] text-[var(--status-error-fg)]">
+            {t("admin.media.rejected", { files: rejected.join(", ") })}
+          </p>
+        )}
+      </div>
 
       {media.length > 0 && (
         <ul className="m-0 grid list-none grid-cols-2 gap-3 p-0 sm:grid-cols-3 xl:grid-cols-4">

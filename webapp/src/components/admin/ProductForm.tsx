@@ -9,8 +9,8 @@ import { ProductMediaUploader } from "./ProductMediaUploader";
 import { ToggleSwitch } from "./ToggleSwitch";
 import { CONTENT_LANGS, type ContentLang } from "../../lib/localized";
 import { formatDate } from "../../lib/format";
+import { useAdminCatalog } from "../../lib/adminCatalog";
 import {
-  CATEGORIES,
   type AdminProduct,
   type Availability,
   type CategoryId,
@@ -46,7 +46,10 @@ interface ProductFormProps {
   onArchive?: () => void;
 }
 
-type FieldKey = "name" | "sku" | "price" | "compareAtPrice" | "promoPrice" | "stock" | "lowStockThreshold";
+type FieldKey = "name" | "sku" | "price" | "compareAtPrice" | "promoPrice" | "stock" | "lowStockThreshold" | "category";
+
+/** Same rule as the `products.sku` column: upper-case letters, digits and hyphens. */
+const SKU_PATTERN = /^[A-Z0-9][A-Z0-9-]{1,63}$/;
 
 type Errors = Partial<Record<FieldKey, string>>;
 
@@ -60,6 +63,10 @@ export function ProductForm({
   onArchive,
 }: ProductFormProps) {
   const { t } = useTranslation();
+  const { source, categories, uploadImage } = useAdminCatalog();
+  // The database has no promotional price: discounts are the promotions
+  // workspace's job, so the field only exists in the prototype.
+  const withPromoPrice = source === "mock";
   const [draft, setDraft] = useState<AdminProduct>(initial);
   const [lang, setLang] = useState<ContentLang>("fr");
   const [submitted, setSubmitted] = useState(false);
@@ -74,7 +81,10 @@ export function ProductForm({
   const setLocalized = (key: "name" | "shortDescription" | "description" | "material", value: string) =>
     setDraft((prev) => ({ ...prev, [key]: { ...(prev[key] as Localized), [lang]: value } }));
 
-  const errors = useMemo<Errors>(() => validate(draft, takenSkus, t), [draft, takenSkus, t]);
+  const errors = useMemo<Errors>(
+    () => validate(draft, takenSkus, categories.map((c) => c.id), t),
+    [draft, takenSkus, categories, t],
+  );
 
   /** Errors are only shown once the administrator has had a chance to be right. */
   const showError = (key: FieldKey) => (submitted || touched[key] ? errors[key] : undefined);
@@ -91,10 +101,10 @@ export function ProductForm({
     }
     const status: ProductStatus =
       intent === "publish" ? "active" : intent === "draft" ? "draft" : draft.status;
-    onSubmit({ ...draft, status }, intent);
+    onSubmit({ ...draft, status, promoPrice: withPromoPrice ? draft.promoPrice : undefined }, intent);
   };
 
-  const categoryOptions: AdminOption[] = CATEGORIES.map((c) => ({ value: c.id, label: c.name[lang] }));
+  const categoryOptions: AdminOption[] = categories.map((c) => ({ value: c.id, label: c.name[lang] }));
   const typeOptions: AdminOption[] = TYPES.map((type) => ({ value: type, label: t(`admin.type.${type}`) }));
   const statusOptions: AdminOption[] = (["draft", "active", "archived"] as ProductStatus[]).map((s) => ({
     value: s,
@@ -224,7 +234,7 @@ export function ProductForm({
           </Section>
 
           <Section title={t("admin.form.pricingTitle")} description={t("admin.form.pricingBody")}>
-            <div className="grid gap-4 md:grid-cols-3">
+            <div className={clsx("grid gap-4", withPromoPrice ? "md:grid-cols-3" : "md:grid-cols-2")}>
               <FormField label={t("admin.form.price")} required error={showError("price")} hint={t("admin.form.priceHint")}>
                 {(props) => (
                   <MoneyInput
@@ -251,28 +261,44 @@ export function ProductForm({
                 )}
               </FormField>
 
-              <FormField
-                label={t("admin.form.promoPrice")}
-                error={showError("promoPrice")}
-                hint={t("admin.form.promoPriceHint")}
-              >
-                {(props) => (
-                  <MoneyInput
-                    {...props}
-                    value={draft.promoPrice}
-                    onValueChange={(value) => set("promoPrice", value)}
-                    onBlur={blur("promoPrice")}
-                  />
-                )}
-              </FormField>
+              {withPromoPrice && (
+                <FormField
+                  label={t("admin.form.promoPrice")}
+                  error={showError("promoPrice")}
+                  hint={t("admin.form.promoPriceHint")}
+                >
+                  {(props) => (
+                    <MoneyInput
+                      {...props}
+                      value={draft.promoPrice}
+                      onValueChange={(value) => set("promoPrice", value)}
+                      onBlur={blur("promoPrice")}
+                    />
+                  )}
+                </FormField>
+              )}
             </div>
+            {!withPromoPrice && (
+              <p className="m-0 text-[length:var(--text-caption)] text-[var(--text-muted)]">{t("admin.form.promoInPromotions")}</p>
+            )}
           </Section>
 
           <Section title={t("admin.form.mediaTitle")} description={t("admin.form.mediaBody")}>
-            <ProductMediaUploader media={draft.media} onChange={(media) => set("media", media)} />
+            <ProductMediaUploader
+              media={draft.media}
+              onChange={(update) => setDraft((prev) => ({ ...prev, media: update(prev.media) }))}
+              onUpload={uploadImage ? (file) => uploadImage(draft.id, file) : undefined}
+            />
           </Section>
 
           <Section title={t("admin.form.inventoryTitle")} description={t("admin.form.inventoryBody")}>
+            {draft.variantCount ? (
+              <p className="m-0 flex items-start gap-2 rounded-[var(--admin-radius-sm)] bg-[var(--status-info-bg)] p-3 text-[length:var(--text-body-sm)] text-[var(--gt-blue-700)]">
+                <Info size={14} aria-hidden="true" className="mt-0.5 flex-none" />
+                {t("admin.form.variantStock", { count: draft.variantCount, stock: draft.stock })}
+              </p>
+            ) : (
+            <>
             <div className="rounded-[var(--admin-radius-sm)] border border-[var(--border-subtle)] bg-[var(--admin-panel-sunken)] p-4">
               <ToggleSwitch
                 label={t("admin.form.trackInventory")}
@@ -323,6 +349,8 @@ export function ProductForm({
                   />
                 )}
               </FormField>
+            )}
+            </>
             )}
           </Section>
 
@@ -381,7 +409,7 @@ export function ProductForm({
           </Section>
 
           <Section title={t("admin.form.organisationTitle")} compact>
-            <FormField label={t("admin.form.category")} required>
+            <FormField label={t("admin.form.category")} required error={showError("category")}>
               {(props) => (
                 <AdminSelect
                   {...props}
@@ -434,7 +462,7 @@ export function ProductForm({
 
           <p className="m-0 flex items-start gap-2 rounded-[var(--admin-radius-sm)] bg-[var(--status-info-bg)] p-3 text-[length:var(--text-caption)] text-[var(--gt-blue-700)]">
             <Info size={14} aria-hidden="true" className="mt-0.5 flex-none" />
-            {t("admin.form.prototypeNotice")}
+            {source === "supabase" ? t("admin.form.databaseNotice") : t("admin.form.prototypeNotice")}
           </p>
         </div>
       </div>
@@ -575,7 +603,12 @@ function MoneyInput({ value, onValueChange, ...rest }: NumberInputProps) {
  * every one of these on the server, which is the only place a rule can be
  * trusted.
  */
-function validate(draft: AdminProduct, takenSkus: string[], t: (key: string, opts?: Record<string, unknown>) => string): Errors {
+function validate(
+  draft: AdminProduct,
+  takenSkus: string[],
+  categoryIds: string[],
+  t: (key: string, opts?: Record<string, unknown>) => string,
+): Errors {
   const errors: Errors = {};
 
   if (!draft.name.fr.trim() || !draft.name.en.trim()) {
@@ -585,21 +618,31 @@ function validate(draft: AdminProduct, takenSkus: string[], t: (key: string, opt
   const sku = draft.sku.trim();
   if (!sku) {
     errors.sku = t("admin.form.errors.skuRequired");
+  } else if (!SKU_PATTERN.test(sku)) {
+    errors.sku = t("admin.form.errors.skuFormat");
   } else if (takenSkus.some((taken) => taken.toLowerCase() === sku.toLowerCase())) {
     errors.sku = t("admin.form.errors.skuTaken");
   }
 
+  if (!categoryIds.includes(draft.categoryId)) {
+    errors.category = t("admin.form.errors.categoryRequired");
+  }
+
   if (!(draft.price > 0)) {
     errors.price = t("admin.form.errors.pricePositive");
+  } else if (!isCentAmount(draft.price)) {
+    errors.price = t("admin.form.errors.priceCents");
   }
   if (draft.compareAtPrice != null && draft.compareAtPrice <= draft.price) {
     errors.compareAtPrice = t("admin.form.errors.compareAtTooLow");
+  } else if (draft.compareAtPrice != null && !isCentAmount(draft.compareAtPrice)) {
+    errors.compareAtPrice = t("admin.form.errors.priceCents");
   }
   if (draft.promoPrice != null && draft.promoPrice >= draft.price) {
     errors.promoPrice = t("admin.form.errors.promoTooHigh");
   }
 
-  if (draft.trackInventory) {
+  if (draft.trackInventory && !draft.variantCount) {
     if (!Number.isInteger(draft.stock) || draft.stock < 0) {
       errors.stock = t("admin.form.errors.stockInvalid");
     }
@@ -609,4 +652,13 @@ function validate(draft: AdminProduct, takenSkus: string[], t: (key: string, opt
   }
 
   return errors;
+}
+
+/**
+ * A whole number of cents, below the column's 10 integer digits. Checked on the
+ * typed value so "12.345" is refused rather than silently rounded.
+ */
+function isCentAmount(value: number): boolean {
+  const cents = value * 100;
+  return value < 1e10 && Math.abs(cents - Math.round(cents)) < 1e-6;
 }

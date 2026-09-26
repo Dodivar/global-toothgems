@@ -80,8 +80,13 @@ export function AdminProductRecommendations() {
 
   const save = async () => {
     setSaving(true);
-    await saveRecommendations(product.id, lists);
-    setSaving(false);
+    try {
+      await saveRecommendations(product.id, lists);
+    } catch {
+      return;
+    } finally {
+      setSaving(false);
+    }
     setDraft(null);
     showToast(t("admin.recommendations.savedTitle"), t("admin.recommendations.savedBody", { name: L(product.name) }));
   };

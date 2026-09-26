@@ -10,7 +10,6 @@ import { useLocalized } from "../../lib/localized";
 import { formatPrice } from "../../lib/format";
 import {
   STOREFRONT_RECOMMENDATION_SLOTS,
-  categoryById,
   isRecommendable,
   stockState,
   type AdminProduct,
@@ -61,7 +60,7 @@ export function RecommendationList({
 }) {
   const { t } = useTranslation();
   const l = useLocalized();
-  const { products } = useAdminCatalog();
+  const { products, categoryById } = useAdminCatalog();
   const baseId = useId();
   const sectionRef = useRef<HTMLElement>(null);
   const searchRef = useRef<HTMLInputElement>(null);

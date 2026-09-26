@@ -1,4 +1,4 @@
-# Global Toothgems — Database (iterations 1–9: e-commerce MVP, checkout, reviews, shipments, refunds, gift cards, member account, back-office roles, promotions, customer service, statistics, product recommendations)
+# Global Toothgems — Database (iterations 1–10: e-commerce MVP, checkout, reviews, shipments, refunds, gift cards, member account, back-office roles, promotions, customer service, statistics, product recommendations, back-office product management)
 
 Supabase project **Global Toothgems** (`abvuyvryerpzlvibttxp`, region `eu-west-3` Paris, Postgres 17).
 Supabase Auth is the only authentication system; all application data lives in `public`,
@@ -22,6 +22,9 @@ Iteration 8 feeds the back-office Statistics screen: `analytics_snapshot()` retu
 `AnalyticsSnapshot` computed from the orders.
 Iteration 9 adds product recommendations: the team's links between products and
 `recommended_products()`, which feeds the product page, cart and home suggestion blocks.
+Iteration 10 connects the back office's product management: `admin_save_product()`,
+`admin_delete_product()` and `admin_save_product_recommendations()` save a product with its
+translation, stock and images, or a product's recommendation lists, in one transaction.
 Training, community and notifications are
 still out of scope and get their own migrations later.
 
@@ -41,6 +44,7 @@ supabase/
   tests/iteration7_validation.sql   iteration 7 contact / newsletter / e-mails / content / maintenance suite (always rolls back)
   tests/iteration8_validation.sql   iteration 8 statistics suite (always rolls back)
   tests/iteration9_validation.sql   iteration 9 product recommendations suite (always rolls back)
+  tests/iteration10_validation.sql  iteration 10 back-office product management suite (always rolls back)
 ```
 
 ## Migrations
@@ -72,6 +76,8 @@ supabase/
 | 20260924210824 | `public_pages_customer_service` | permission `manage_content`; `store_settings` (maintenance); `contact_requests` (+ notes, private `contact-attachments` bucket, `submit_contact_request()`); `newsletter_subscriptions` (double opt-in, `newsletter_subscribe/confirm/unsubscribe()`, synced with member consents); `email_templates`, `content_pages` (+ translations), `translation_status`, `email_template_for()`; `private.hit_rate_limit()` |
 | 20260924213047 | `admin_statistics` | `categories.report_group` (revenue bucket, audited); index on `orders.paid_at`; `private.analytics_sale_lines()`, `private.analytics_kpi()`; `analytics_snapshot(from, to, filters, currency, timezone)` |
 | 20260925191945 | `product_recommendations` | `product_recommendations` (manual links per product and kind, audited); `recommended_products(product_ids, kind, limit)` |
+| 20260926113816 | `admin_product_management` | `admin_save_product(jsonb)`, `admin_delete_product(uuid)`, `admin_save_product_recommendations(uuid, uuid[], uuid[])` — SECURITY INVOKER (RLS applies), `manage_products` checked, one transaction per call |
+| 20260926115257 | `admin_save_product_variant_stock` | `admin_save_product()` leaves stock alone for products with variants (stock is per variant) and digital products |
 
 RLS is **enabled in the same migration that creates each table** (deny by default);
 policies are granted back in `rls_policies`.
@@ -456,7 +462,7 @@ Feeds the storefront's suggestion blocks, which today read mock data (`webapp/sr
 | Product page, "Va avec — Compléter la trousse" (`ProductDetail.tsx`) | `recommended_products(array[<product id>])` |
 | Cart suggestions (`Cart.tsx`) | `recommended_products(<cart product ids>)`; empty cart → `recommended_products('{}')` |
 | Home best-sellers (`Home.tsx`) | `recommended_products('{}')` (or a `collections` row when merchandised by hand) |
-| Back office, `/admin/produits/:id/recommandations` (`AdminProductRecommendations.tsx`) | edits `product_recommendations` (prototype store today: `saveRecommendations()` in `lib/adminCatalog.tsx` replaces a product's lists, one row per link and position) |
+| Back office, `/admin/produits/:id/recommandations` (`AdminProductRecommendations.tsx`) | edits `product_recommendations` through `admin_save_product_recommendations()` when Supabase is configured (`lib/adminCatalogSupabase.tsx`); the prototype store otherwise |
 
 - **`product_recommendations`**: one row per (product, kind, recommended product), ordered by `position`.
   Kinds: `complementary` (goes with it: cross-sell) and `similar` (an alternative to it). No self link, one link per
@@ -557,7 +563,7 @@ enable the extension in the dashboard — or a scheduled server job with the ser
 **Validation:** run `tests/mvp_validation.sql`, `tests/iteration2_validation.sql` and
 `tests/iteration3_validation.sql`, `tests/iteration4_validation.sql`, `tests/iteration5_validation.sql` and
 `tests/iteration6_validation.sql`, `tests/iteration7_validation.sql`, `tests/iteration8_validation.sql`,
-`tests/iteration9_validation.sql`. Each ends with
+`tests/iteration9_validation.sql`, `tests/iteration10_validation.sql`. Each ends with
 `ALL … PASSED (...)` raised as an exception, which rolls everything back.
 (The order-number sequence still advances — sequences are not transactional.)
 
@@ -693,6 +699,9 @@ VAT rates, shipping zones/rates mirroring the Settings prototype. Media rows ref
   best sellers, customer base, orders, geography, cross-selling, extras), filters, category reporting groups.
 - Iteration 9: product recommendations — manual links per product (complementary / similar), `recommended_products()`
   with bought-together, same-category and popular fallbacks, seed links.
+- Iteration 10: back-office product management — `admin_save_product()` (product + published English translation +
+  stock + ordered media, money as validated decimal strings, unique slugs, orphaned storage paths returned),
+  `admin_delete_product()` (order history protected by FK), `admin_save_product_recommendations()`.
 
 ## Next iterations (not implemented)
 

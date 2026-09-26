@@ -26,8 +26,14 @@ export function AdminProductNew() {
 
   const submit = async (draft: AdminProduct, intent: SubmitIntent) => {
     setSaving(true);
-    const saved = await createProduct(draft);
-    setSaving(false);
+    let saved: AdminProduct;
+    try {
+      saved = await createProduct(draft);
+    } catch {
+      return; // Reported by the store; the form keeps the draft.
+    } finally {
+      setSaving(false);
+    }
     showToast(
       intent === "publish" ? t("admin.toasts.createdPublishedTitle") : t("admin.toasts.createdDraftTitle"),
       t("admin.toasts.createdBody", { name: L(saved.name) }),

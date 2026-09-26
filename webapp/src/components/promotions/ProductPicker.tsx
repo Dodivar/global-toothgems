@@ -6,7 +6,7 @@ import clsx from "clsx";
 import { useAdminCatalog } from "../../lib/adminCatalog";
 import { useLocalized } from "../../lib/localized";
 import { formatPrice } from "../../lib/format";
-import { categoryById, type AdminProduct } from "../../data/adminCatalog";
+import type { AdminProduct } from "../../data/adminCatalog";
 
 /**
  * Searchable product selector with thumbnails.
@@ -37,7 +37,7 @@ export function ProductPicker({
 }) {
   const { t } = useTranslation();
   const l = useLocalized();
-  const { products } = useAdminCatalog();
+  const { products, categoryById } = useAdminCatalog();
   const [query, setQuery] = useState("");
   const id = useId();
 
@@ -173,7 +173,7 @@ export function Thumb({ product, size = 36 }: { product: AdminProduct; size?: nu
 export function ProductStrip({ ids, max = 6, emptyLabel }: { ids: string[]; max?: number; emptyLabel?: string }) {
   const { t } = useTranslation();
   const l = useLocalized();
-  const { products } = useAdminCatalog();
+  const { products, categoryById } = useAdminCatalog();
   const list = ids.map((id) => products.find((p) => p.id === id)).filter(Boolean) as AdminProduct[];
   if (list.length === 0) return emptyLabel ? <p className="m-0 text-[length:var(--text-caption)] text-[var(--text-muted)]">{emptyLabel}</p> : null;
   const shown = list.slice(0, max);

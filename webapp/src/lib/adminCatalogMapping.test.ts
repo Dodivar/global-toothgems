@@ -1,0 +1,145 @@
+import { describe, expect, it } from "vitest";
+import type { AdminProduct } from "../data/adminCatalog";
+import {
+  amountFromDb,
+  amountToDb,
+  catalogErrorKind,
+  productToPayload,
+  rowToCategory,
+  rowToProduct,
+  slugify,
+  type ProductRow,
+} from "./adminCatalogMapping";
+
+const url = (path: string) => `https://cdn.test/${path}`;
+
+const row: ProductRow = {
+  id: "11111111-1111-4111-8111-111111111111",
+  sku: "GEM-STAR-001",
+  slug: "etoile-cristal",
+  name: "Étoile Cristal",
+  short_description: "Courte",
+  description: null,
+  category_id: "22222222-2222-4222-8222-222222222222",
+  price: 32,
+  compare_at_price: "38.00",
+  currency: "EUR",
+  status: "active",
+  metadata: { material: "Cristal taillé", tags: ["best-seller", 3], type: "set" },
+  created_at: "2026-09-01T00:00:00Z",
+  updated_at: "2026-09-02T00:00:00Z",
+  product_translations: [{ locale: "en", name: "Crystal Star", short_description: "Short", description: "Long" }],
+  product_media: [
+    { id: "m2", storage_path: "products/x/2.jpg", alt_text: "Deux", position: 1, product_media_translations: [] },
+    { id: "m1", storage_path: "products/x/1.jpg", alt_text: null, position: 0, product_media_translations: [{ locale: "en", alt_text: "One" }] },
+  ],
+  inventory_items: [{ track_inventory: true, quantity_on_hand: 12, quantity_reserved: 2, low_stock_threshold: 4, availability: "in_stock" }],
+};
+
+describe("money", () => {
+  it("sends exact decimal strings", () => {
+    expect(amountToDb(19.99)).toBe("19.99");
+    expect(amountToDb(0.1 + 0.2)).toBe("0.30");
+    expect(amountToDb(32)).toBe("32.00");
+    expect(amountToDb(1234567.5)).toBe("1234567.50");
+  });
+
+  it("rejects negative amounts", () => {
+    expect(() => amountToDb(-1)).toThrow();
+  });
+
+  it("reads numbers and strings through cents", () => {
+    expect(amountFromDb("249.00")).toBe(249);
+    expect(amountFromDb(19.99)).toBe(19.99);
+  });
+});
+
+describe("rowToProduct", () => {
+  const product = rowToProduct(row, url);
+
+  it("keeps French in the base columns and English from the translation", () => {
+    expect(product.name).toEqual({ fr: "Étoile Cristal", en: "Crystal Star" });
+    expect(product.description).toEqual({ fr: "", en: "Long" });
+  });
+
+  it("orders media by position and resolves public URLs", () => {
+    expect(product.media.map((m) => m.id)).toEqual(["m1", "m2"]);
+    expect(product.media[0]).toMatchObject({ src: "https://cdn.test/products/x/1.jpg", alt: { fr: "", en: "One" } });
+  });
+
+  it("reads stock, prices and presentation metadata", () => {
+    expect(product).toMatchObject({ stock: 12, lowStockThreshold: 4, price: 32, compareAtPrice: 38, type: "set" });
+    expect(product.material).toEqual({ fr: "Cristal taillé", en: "" });
+    expect(product.tags).toEqual(["best-seller"]);
+  });
+
+  it("sums variant stock for a product with variants", () => {
+    const stock = (quantity_on_hand: number) => [
+      { track_inventory: true, quantity_on_hand, quantity_reserved: 0, low_stock_threshold: 5, availability: "in_stock" },
+    ];
+    const withVariants = rowToProduct(
+      { ...row, inventory_items: [], product_variants: [{ id: "v1", inventory_items: stock(10) }, { id: "v2", inventory_items: stock(4) }] },
+      url,
+    );
+    expect(withVariants).toMatchObject({ variantCount: 2, stock: 14, lowStockThreshold: 10, trackInventory: true });
+  });
+
+  it("falls back safely when relations are missing", () => {
+    const bare = rowToProduct({ ...row, product_translations: null, product_media: null, inventory_items: null, metadata: {} }, url);
+    expect(bare).toMatchObject({ trackInventory: true, stock: 0, type: "single", media: [], name: { en: "" } });
+  });
+});
+
+describe("productToPayload", () => {
+  const product: AdminProduct = {
+    ...rowToProduct(row, url),
+    name: { fr: " Cœur Chrome ", en: "Chrome Heart" },
+    promoPrice: 10,
+    media: [
+      { id: "m1", storagePath: "products/x/1.jpg", src: "", alt: { fr: "", en: "" } },
+      { id: "upload-abc", storagePath: "products/x/3.jpg", src: "", alt: { fr: "Trois", en: "" } },
+      { id: "media-9", src: "/bundled.jpg", alt: { fr: "", en: "" } },
+    ],
+  };
+  const payload = productToPayload({ ...product, media: [{ ...product.media[0], id: "11111111-1111-4111-8111-111111111112" }, ...product.media.slice(1)] }) as Record<string, unknown>;
+
+  it("never sends a promotional price or a float", () => {
+    expect(payload).not.toHaveProperty("promo_price");
+    expect(payload.price).toBe("32.00");
+    expect(payload.compare_at_price).toBe("38.00");
+  });
+
+  it("builds slugs from the names", () => {
+    expect(payload.slug).toBe("coeur-chrome");
+    expect((payload.translations as { en: { slug: string } }).en.slug).toBe("chrome-heart");
+  });
+
+  it("sends stored media in order, new uploads without an id, alt text defaulting to the name", () => {
+    expect(payload.media).toEqual([
+      { id: "11111111-1111-4111-8111-111111111112", storage_path: "products/x/1.jpg", alt_fr: "Cœur Chrome", alt_en: "Chrome Heart" },
+      { id: null, storage_path: "products/x/3.jpg", alt_fr: "Trois", alt_en: "Chrome Heart" },
+    ]);
+  });
+});
+
+describe("helpers", () => {
+  it("slugifies accented names", () => {
+    expect(slugify("Kit d’Application Premium")).toBe("kit-d-application-premium");
+    expect(slugify("  ***  ")).toBe("");
+  });
+
+  it("uses the French name when a category has no English translation", () => {
+    expect(rowToCategory({ id: "c", slug: "gems", name: "Gems", description: null, position: 1, category_translations: [] }).name).toEqual({
+      fr: "Gems",
+      en: "Gems",
+    });
+  });
+
+  it("classifies database errors", () => {
+    expect(catalogErrorKind({ code: "23505" })).toBe("duplicate");
+    expect(catalogErrorKind({ code: "23503" })).toBe("inUse");
+    expect(catalogErrorKind({ code: "42501" })).toBe("permission");
+    expect(catalogErrorKind({ message: "TypeError: Failed to fetch" })).toBe("network");
+    expect(catalogErrorKind(undefined)).toBe("generic");
+  });
+});

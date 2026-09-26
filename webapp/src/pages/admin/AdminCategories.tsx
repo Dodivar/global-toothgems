@@ -5,7 +5,7 @@ import { AdminHeader } from "../../components/admin/AdminHeader";
 import { useAdminCatalog } from "../../lib/adminCatalog";
 import { useLocalized } from "../../lib/localized";
 import { formatPrice } from "../../lib/format";
-import { CATEGORIES, effectivePrice, stockState } from "../../data/adminCatalog";
+import { effectivePrice, stockState } from "../../data/adminCatalog";
 import { useAdminShell } from "./AdminLayout";
 
 /**
@@ -21,9 +21,9 @@ export function AdminCategories() {
   const { t } = useTranslation();
   const L = useLocalized();
   const { openNav } = useAdminShell();
-  const { products } = useAdminCatalog();
+  const { products, categories } = useAdminCatalog();
 
-  const rows = CATEGORIES.map((category) => {
+  const rows = categories.map((category) => {
     const inCategory = products.filter((p) => p.categoryId === category.id);
     const live = inCategory.filter((p) => p.status === "active");
     const unavailable = live.filter((p) => stockState(p) === "out_of_stock");

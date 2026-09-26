@@ -1251,7 +1251,9 @@
     },
     "role": {
       "owner": "Propriétaire",
-      "manager": "Gestionnaire"
+      "manager": "Gestionnaire",
+      "admin": "Administrateur",
+      "viewer": "Lecture seule"
     },
     "state": {
       "active": "En ligne",
@@ -1358,7 +1360,11 @@
       "pickerBody": "L’envoi de fichiers n’est pas branché dans cette maquette : choisissez un ou plusieurs visuels existants.",
       "selectedCount_one": "{{count}} visuel sélectionné",
       "selectedCount_other": "{{count}} visuels sélectionnés",
-      "addSelected": "Ajouter la sélection"
+      "addSelected": "Ajouter la sélection",
+      "dropBodyUpload": "Cliquez ou déposez des fichiers JPG, PNG, WebP ou AVIF, 10 Mo maximum chacun. Le premier visuel sert de vignette en boutique.",
+      "uploading_one": "Envoi de {{count}} visuel…",
+      "uploading_other": "Envoi de {{count}} visuels…",
+      "rejected": "Fichiers ignorés (format non accepté ou plus de 10 Mo) : {{files}}"
     },
     "form": {
       "basicTitle": "Informations générales",
@@ -1428,8 +1434,15 @@
         "compareAtTooLow": "Le prix barré doit être supérieur au prix de vente.",
         "promoTooHigh": "Le prix promotionnel doit être inférieur au prix de vente.",
         "stockInvalid": "La quantité doit être un nombre entier positif.",
-        "thresholdInvalid": "Le seuil doit être un nombre entier positif."
-      }
+        "thresholdInvalid": "Le seuil doit être un nombre entier positif.",
+        "skuFormat": "Majuscules, chiffres et tirets uniquement, 2 à 64 caractères (ex. GEM-STAR-001).",
+        "categoryRequired": "Choisissez une catégorie.",
+        "priceCents": "Deux décimales au maximum."
+      },
+      "promoInPromotions": "Les prix promotionnels se gèrent dans l’espace Promotions : le prix affiché ici est le prix de vente normal.",
+      "databaseNotice": "Enregistré dans la base Supabase. Un produit en ligne est visible en boutique ; les visuels sont envoyés dès leur ajout.",
+      "variantStock_one": "Stock géré par variante ({{count}} variante, {{stock}} unités au total). Il ne se modifie pas encore depuis cet écran.",
+      "variantStock_other": "Stock géré par variante ({{count}} variantes, {{stock}} unités au total). Il ne se modifie pas encore depuis cet écran."
     },
     "dialog": {
       "archiveTitle": "Archiver ce produit ?",
@@ -1467,7 +1480,9 @@
       "createdBody": "{{name}} figure désormais dans le catalogue.",
       "updatedTitle": "Produit mis à jour",
       "updatedBody": "{{name}} a été enregistré.",
-      "updatedDraftBody": "{{name}} a été enregistré en brouillon."
+      "updatedDraftBody": "{{name}} a été enregistré en brouillon.",
+      "variantStockTitle": "Stock par variante",
+      "variantStockBody": "Ce produit a des variantes : leur stock ne se modifie pas encore depuis le back-office."
     },
     "dashboard": {
       "title": "Bonjour {{name}}",
@@ -1603,7 +1618,9 @@
         "emailRequired": "L’adresse e-mail est requise.",
         "emailInvalid": "Cette adresse e-mail semble incomplète.",
         "passwordRequired": "Le mot de passe est requis.",
-        "rejected": "Identifiants incorrects. Vérifiez le mot de passe indiqué plus bas et réessayez."
+        "rejected": "Identifiants incorrects. Vérifiez le mot de passe indiqué plus bas et réessayez.",
+        "notStaff": "Ce compte n’a pas accès à l’administration. Demandez un accès à un administrateur.",
+        "unavailable": "Le service de connexion ne répond pas. Réessayez dans un instant."
       },
       "forgotTitle": "Mot de passe oublié",
       "forgotBody": "Indiquez votre adresse e-mail : un lien de réinitialisation vous sera envoyé. Dans cette maquette, aucun e-mail n’est réellement expédié.",
@@ -3312,6 +3329,18 @@
         "questionDeletedTitle": "Question supprimée",
         "reorderedTitle": "Ordre mis à jour"
       }
+    },
+    "errors": {
+      "title": "Enregistrement impossible",
+      "permission": "Votre compte n’a pas le droit de modifier le catalogue.",
+      "duplicate": "Un autre produit utilise déjà ce SKU.",
+      "inUse": "Ce produit figure dans des commandes : il ne peut pas être supprimé. Archivez-le plutôt.",
+      "invalid": "Une valeur a été refusée par la base (prix, stock ou fichier). Vérifiez le formulaire.",
+      "notFound": "Ce produit n’existe plus. Rechargez la liste.",
+      "network": "Connexion à la base impossible. Vérifiez votre réseau puis réessayez.",
+      "generic": "Une erreur inattendue est survenue. Réessayez dans un instant.",
+      "loadFailed": "Le catalogue n’a pas pu être chargé.",
+      "retry": "Réessayer"
     }
   },
   "community": {
