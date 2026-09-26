@@ -21,6 +21,8 @@ import {
   type ServiceOutcome,
 } from "../lib/accountSecurity";
 import { suggestEmail } from "../lib/registration";
+import { useAuth } from "../lib/auth";
+import { sendPasswordReset } from "../lib/passwordRecovery";
 
 type Phase = "form" | "sent";
 type SendFailure = null | "first" | "resend";
@@ -43,12 +45,16 @@ const TOKEN_FOR: Record<ResetLinkState, string> = {
  * customers would be a leak — and it carries a mock inbox whose button opens
  * the reset page, so the whole journey can be walked end to end.
  *
+ * With Supabase configured the email is real (`lib/passwordRecovery.ts`) and
+ * the demo panel and mock inbox are not shown.
+ *
  * The address may arrive prefilled from the login or registration screen, in
  * history state, so the visitor never types it twice.
  */
 export function ForgotPassword() {
   const { t } = useTranslation();
   const location = useLocation();
+  const { realAuth } = useAuth();
   const initialEmail = (location.state as { email?: string } | null)?.email ?? "";
 
   const [phase, setPhase] = useState<Phase>("form");
@@ -81,7 +87,11 @@ export function ForgotPassword() {
     setFailure(null);
     setResent(false);
     try {
-      await requestPasswordReset(email, outcome);
+      if (realAuth) {
+        if ((await sendPasswordReset(email)) !== "sent") throw new Error("reset request failed");
+      } else {
+        await requestPasswordReset(email, outcome);
+      }
       setSending(false);
       cooldown.start();
       if (resend) setResent(true);
@@ -138,7 +148,7 @@ export function ForgotPassword() {
   if (phase === "sent") {
     const locked = cooldown.left > 0;
     return (
-      <AuthShell demo={demo}>
+      <AuthShell demo={realAuth ? undefined : demo}>
         <StateHeading icon={MailCheck} tone="brand" title={t("security.forgot.sentTitle")} headingRef={headingRef}>
           <p>{t("security.forgot.sentBody")}</p>
           <p>
@@ -195,6 +205,7 @@ export function ForgotPassword() {
           </Button>
         </div>
 
+        {!realAuth && (
         <MockInbox
           to={email.trim()}
           subject={t("security.forgot.mailSubject")}
@@ -204,6 +215,7 @@ export function ForgotPassword() {
         >
           <p>{t("security.forgot.mailBody")}</p>
         </MockInbox>
+        )}
 
         <aside className="flex items-start gap-3 rounded-[var(--radius-md)] bg-[var(--surface-brand-wash)] p-4 text-[length:var(--text-caption)] leading-[1.55] text-[var(--text-body)]">
           <ShieldCheck size={17} aria-hidden="true" className="mt-[1px] flex-none text-[var(--gt-blue-700)]" />
@@ -219,7 +231,7 @@ export function ForgotPassword() {
   }
 
   return (
-    <AuthShell demo={demo}>
+    <AuthShell demo={realAuth ? undefined : demo}>
       <StateHeading icon={KeyRound} tone="brand" eyebrow={t("security.forgot.eyebrow")} title={t("security.forgot.title")} headingRef={headingRef}>
         <p>{t("security.forgot.body")}</p>
       </StateHeading>

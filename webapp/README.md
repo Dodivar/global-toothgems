@@ -195,7 +195,10 @@ marketing consents with `LEGAL_POLICY_VERSION` — bump that constant whenever t
 legal texts change. Supabase sends the confirmation email; its link lands on
 `/confirmation-compte?suite=<path>`, which picks up the session and continues to
 the page the member was heading to. Sign-in reports unconfirmed addresses (with a
-resend), wrong credentials, suspended accounts and rate limits separately. The
+resend), wrong credentials, suspended accounts and rate limits separately.
+`/mot-de-passe-oublie` and `/reinitialiser-mot-de-passe` use Supabase password
+recovery (`lib/passwordRecovery.ts`). The Security page cards (change email or
+password, export, deletion) are still simulated. The
 prototype controls, the mock inbox and the Google dialog only exist without
 Supabase; Google sign-in is not connected. Without Supabase, everything below is
 simulated as before.

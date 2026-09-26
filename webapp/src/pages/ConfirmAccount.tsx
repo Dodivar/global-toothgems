@@ -6,23 +6,9 @@ import { Button } from "../components/ui/Button";
 import { Badge } from "../components/ui/Badge";
 import { AuthCard, AuthField, AuthLayout } from "../components/auth/AuthScene";
 import { useAuth, type ResendResult } from "../lib/auth";
-import { confirmationRedirect, isSafeNext } from "../lib/authRedirect";
-
-type LinkError = "expired" | "invalid";
+import { authLinkErrorFromUrl, confirmationRedirect, isSafeNext, type AuthLinkError } from "../lib/authRedirect";
 
 const EMAIL_RE = /^[^\s@]+@[^\s@]+\.[^\s@]{2,}$/;
-
-/**
- * Supabase reports a refused link in the URL fragment
- * (`#error=access_denied&error_code=otp_expired&…`). Read once, before
- * anything rewrites the address bar.
- */
-function linkErrorFromHash(): LinkError | null {
-  const hash = new URLSearchParams(window.location.hash.replace(/^#/, ""));
-  const code = hash.get("error_code");
-  if (!code && !hash.get("error")) return null;
-  return code === "otp_expired" ? "expired" : "invalid";
-}
 
 /**
  * Landing page of the confirmation email, at `/confirmation-compte`.
@@ -38,7 +24,8 @@ export function ConfirmAccount() {
   const navigate = useNavigate();
   const [params] = useSearchParams();
   const { signedIn, restoring, displayName, resendConfirmation } = useAuth();
-  const [linkError] = useState(linkErrorFromHash);
+  // Read once, before anything rewrites the address bar.
+  const [linkError] = useState(() => authLinkErrorFromUrl());
 
   const suite = params.get("suite");
   const next = suite && isSafeNext(suite) ? suite : "/compte";
@@ -47,7 +34,7 @@ export function ConfirmAccount() {
   const [emailError, setEmailError] = useState<string>();
   const [resend, setResend] = useState<"idle" | "sending" | ResendResult>("idle");
 
-  const outcome: "verifying" | "confirmed" | LinkError = signedIn
+  const outcome: "verifying" | "confirmed" | AuthLinkError = signedIn
     ? "confirmed"
     : linkError ?? (restoring ? "verifying" : "invalid");
 

@@ -14,3 +14,20 @@ export function confirmationRedirect(next?: string): string {
 export function isSafeNext(path: string): boolean {
   return path.startsWith("/") && !path.startsWith("//") && !path.startsWith("/\\");
 }
+
+export type AuthLinkError = "expired" | "invalid";
+
+/**
+ * Supabase reports a refused email link in the URL — in the fragment with the
+ * implicit flow this client uses (`#error=access_denied&error_code=otp_expired`),
+ * in the query string with PKCE. Both are read, so a change of flow cannot
+ * turn an expired link into a silent failure.
+ */
+export function authLinkErrorFromUrl(location: Pick<Location, "hash" | "search"> = window.location): AuthLinkError | null {
+  for (const part of [location.hash.replace(/^#/, ""), location.search.replace(/^\?/, "")]) {
+    const params = new URLSearchParams(part);
+    const code = params.get("error_code");
+    if (code || params.get("error")) return code === "otp_expired" ? "expired" : "invalid";
+  }
+  return null;
+}

@@ -1,6 +1,6 @@
 import { describe, expect, it } from "vitest";
 import { EMPTY_REGISTRATION, LEGAL_POLICY_VERSION, registrationMetadata, type RegistrationData } from "./registration";
-import { isSafeNext } from "./authRedirect";
+import { authLinkErrorFromUrl, isSafeNext } from "./authRedirect";
 
 const filled: RegistrationData = {
   ...EMPTY_REGISTRATION,
@@ -57,5 +57,13 @@ describe("isSafeNext", () => {
     expect(isSafeNext("https://evil.example")).toBe(false);
     expect(isSafeNext("//evil.example")).toBe(false);
     expect(isSafeNext("/\\evil.example")).toBe(false);
+  });
+});
+
+describe("authLinkErrorFromUrl", () => {
+  it("reads Supabase link errors from the fragment or the query string", () => {
+    expect(authLinkErrorFromUrl({ hash: "#error=access_denied&error_code=otp_expired", search: "" })).toBe("expired");
+    expect(authLinkErrorFromUrl({ hash: "", search: "?error=access_denied&error_code=bad_code_verifier" })).toBe("invalid");
+    expect(authLinkErrorFromUrl({ hash: "#access_token=abc&type=signup", search: "?suite=/compte" })).toBeNull();
   });
 });

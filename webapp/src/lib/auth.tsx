@@ -251,7 +251,12 @@ function SupabaseAuthProvider({ children }: { children: ReactNode }) {
       }
       const loaded = await applyUser(data.user);
       if (loaded && "suspended" in loaded) return "suspended";
-      return loaded ? "accepted" : "unavailable";
+      if (!loaded) {
+        // No readable profile: leave no session behind a sign-in that failed.
+        await supabase.auth.signOut();
+        return "unavailable";
+      }
+      return "accepted";
     },
     [applyUser],
   );

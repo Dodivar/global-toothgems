@@ -577,10 +577,11 @@ enable the extension in the dashboard — or a scheduled server job with the ser
 - Authentication → Sign In / Providers → Email: *Confirm email* **on**; minimum password length 8 with
   lower case, upper case, digits and symbols required (the rules the form shows).
 - Authentication → URL Configuration: Site URL = the production URL; add `http://localhost:5173/**`
-  and the production `/confirmation-compte` to the redirect allow-list (otherwise the link falls back to
+  and the production `/confirmation-compte` and `/reinitialiser-mot-de-passe` to the redirect allow-list (otherwise the link falls back to
   the Site URL).
 - Authentication → Emails → Confirm signup: subject *Confirmez votre compte Global Toothgems*, body from
-  `templates/confirm-signup.html`.
+  `templates/confirm-signup.html`. Translate *Reset password* the same way (the link lands on
+  `/reinitialiser-mot-de-passe`).
 - Authentication → Emails → SMTP: the built-in sender is rate-limited to a few emails per hour and meant
   for testing; production needs custom SMTP (Resend, per the project stack).
 
