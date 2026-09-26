@@ -1561,6 +1561,7 @@
       "outOfStockLink": "View out-of-stock products",
       "attentionTitle": "Needs attention",
       "attentionBody": "Live products, or one of their options, out of stock or running low.",
+      "attentionOption": "{{option}}: {{state}}",
       "attentionMoreOptions_one": "+ {{count}} more option",
       "attentionMoreOptions_other": "+ {{count}} more options",
       "attentionLink": "View all",

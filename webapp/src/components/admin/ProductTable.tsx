@@ -4,7 +4,7 @@ import { PackageSearch } from "lucide-react";
 import { EmptyState } from "./EmptyState";
 import { TableLoadingState } from "./LoadingState";
 import { ProductRow, type ProductRowActions } from "./ProductRow";
-import type { AdminProduct } from "../../data/adminCatalog";
+import { variantAlerts, type AdminProduct } from "../../data/adminCatalog";
 
 /**
  * The catalogue, as a real table.
@@ -22,6 +22,7 @@ export function ProductTable({
   selectedId,
   emptyAction,
   filtered,
+  expandAlerts = false,
 }: {
   products: AdminProduct[];
   actions: ProductRowActions;
@@ -30,6 +31,11 @@ export function ProductTable({
   /** Offered in the empty state — create a product, or clear the filters. */
   emptyAction?: ReactNode;
   filtered: boolean;
+  /**
+   * Unfold, from the start, the options of every product that has one
+   * needing restocking: set while the list is filtered on low or out of stock.
+   */
+  expandAlerts?: boolean;
 }) {
   const { t } = useTranslation();
 
@@ -61,23 +67,24 @@ export function ProductTable({
             squeeze the thumbnail column, and Tailwind's `img { max-width: 100% }`
             then shrinks the 44px thumbnails into slivers. Fixed layout makes the
             colgroup below binding and leaves the remainder to the name column. */}
-        <table className="w-full min-w-[980px] table-fixed border-collapse text-left">
+        <table className="w-full min-w-[1044px] table-fixed border-collapse text-left">
           <caption className="sr-only">{t("admin.table.caption")}</caption>
           <colgroup>
-            <col style={{ width: 76 }} />
+            {/* Options toggle + thumbnail. */}
+            <col style={{ width: 100 }} />
             {/* The product name takes whatever the other eight leave. */}
             <col />
             <col style={{ width: 120 }} />
             <col style={{ width: 140 }} />
             <col style={{ width: 96 }} />
-            <col style={{ width: 110 }} />
+            <col style={{ width: 150 }} />
             <col style={{ width: 132 }} />
             <col style={{ width: 104 }} />
             <col style={{ width: 84 }} />
           </colgroup>
           <thead className="gt-admin-thead">
             <tr className="text-[length:var(--text-caption)] font-semibold uppercase tracking-[var(--tracking-wide)] text-[var(--text-muted)]">
-              <th scope="col" className="py-3 pl-5 pr-2 font-semibold">
+              <th scope="col" className="py-3 pl-2 pr-2 font-semibold">
                 <span className="sr-only">{t("admin.table.image")}</span>
               </th>
               <th scope="col" className="py-3 pr-4 font-semibold">{t("admin.table.product")}</th>
@@ -95,10 +102,13 @@ export function ProductTable({
           <tbody>
             {products.map((product) => (
               <ProductRow
-                key={product.id}
+                // Re-keyed when `expandAlerts` flips, so switching the filter
+                // re-applies the default instead of keeping stale toggles.
+                key={`${product.id}:${expandAlerts}`}
                 product={product}
                 actions={actions}
                 selected={selectedId === product.id}
+                defaultExpanded={expandAlerts && variantAlerts(product).length > 0}
               />
             ))}
           </tbody>

@@ -10,6 +10,7 @@ import { ProductPreview } from "../../components/admin/ProductPreview";
 import { ProductTable } from "../../components/admin/ProductTable";
 import type { ProductRowActions } from "../../components/admin/ProductRow";
 import { useAdminCatalog } from "../../lib/adminCatalog";
+import { productEditPath } from "../../lib/adminProductLinks";
 import { useLocalized } from "../../lib/localized";
 import { useToast } from "../../lib/toast";
 import {
@@ -103,7 +104,8 @@ export function AdminProducts() {
 
   const actions: ProductRowActions = {
     onOpen: (product) => setPreview(product),
-    onEdit: (product) => navigate(`/admin/produits/${product.id}`),
+    onEdit: (product) => navigate(productEditPath(product.id)),
+    onEditOption: (product, variant) => navigate(productEditPath(product.id, variant)),
 
     onDuplicate: async (product) => {
       let copy: AdminProduct | undefined;
@@ -244,6 +246,7 @@ export function AdminProducts() {
           loading={loading}
           selectedId={previewProduct?.id}
           filtered={filtered}
+          expandAlerts={filters.availability === "out_of_stock" || filters.availability === "low_stock"}
           emptyAction={
             filtered ? (
               <AdminButton variant="outline" onClick={() => setFilters(DEFAULT_FILTERS)}>

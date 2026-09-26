@@ -11,7 +11,8 @@ import { StockIndicator } from "../../components/admin/StockIndicator";
 import { useAdminCatalog } from "../../lib/adminCatalog";
 import { useAdminAuth } from "../../lib/adminAuth";
 import { useLocalized } from "../../lib/localized";
-import { displayState, stockState } from "../../data/adminCatalog";
+import { productEditPath } from "../../lib/adminProductLinks";
+import { displayState, matchesStockState, needsRestock, variantAlerts } from "../../data/adminCatalog";
 import { useAdminShell } from "./AdminLayout";
 
 /**
@@ -30,11 +31,18 @@ export function AdminDashboard() {
   const { admin } = useAdminAuth();
   const { stats, activity, products, loading } = useAdminCatalog();
 
-  /** The shortlist under the cards: live products that cannot be sold. */
+  /**
+   * The shortlist under the cards: live products that need restocking, the
+   * product itself or one of its options — the rule the cards count by.
+   * Anything sold out comes first.
+   */
   const needsAttention = products
     .filter((product) => product.status !== "archived")
-    .filter((product) => ["out_of_stock", "low_stock"].includes(stockState(product)))
-    .sort((a, b) => Number(stockState(a) !== "out_of_stock") - Number(stockState(b) !== "out_of_stock"))
+    .filter(needsRestock)
+    .sort(
+      (a, b) =>
+        Number(!matchesStockState(a, "out_of_stock")) - Number(!matchesStockState(b, "out_of_stock")),
+    )
     .slice(0, 5);
 
   return (
@@ -120,10 +128,13 @@ export function AdminDashboard() {
               </p>
             ) : (
               <ul className="m-0 grid list-none gap-0 p-0">
-                {needsAttention.map((product) => (
+                {needsAttention.map((product) => {
+                  const alerts = variantAlerts(product);
+                  return (
                   <li key={product.id} className="border-b border-[var(--border-subtle)] last:border-b-0">
                     <Link
-                      to={`/admin/produits/${product.id}`}
+                      // Straight to the option that needs restocking first.
+                      to={productEditPath(product.id, alerts[0])}
                       className="gt-admin-row flex items-center gap-3 px-5 py-3.5 focus-visible:outline focus-visible:outline-2 focus-visible:-outline-offset-2 focus-visible:outline-[var(--focus-ring)]"
                     >
                       {product.media[0] && (
@@ -141,12 +152,27 @@ export function AdminDashboard() {
                         <span className="font-[family-name:var(--gt-font-mono)] text-[length:var(--text-caption)] text-[var(--text-muted)]">
                           {product.sku}
                         </span>
+                        {alerts.length > 0 && (
+                          <span className="truncate text-[length:var(--text-caption)] text-[var(--text-body)]">
+                            {alerts
+                              .slice(0, 2)
+                              .map((alert) =>
+                                t("admin.dashboard.attentionOption", {
+                                  option: L(alert.name),
+                                  state: t(`admin.stock.${alert.state}`).toLowerCase(),
+                                }),
+                              )
+                              .join(" · ")}
+                            {alerts.length > 2 && ` ${t("admin.dashboard.attentionMoreOptions", { count: alerts.length - 2 })}`}
+                          </span>
+                        )}
                       </span>
                       <StockIndicator product={product} compact />
                       <ProductStatusBadge state={displayState(product)} size="sm" />
                     </Link>
                   </li>
-                ))}
+                  );
+                })}
               </ul>
             )}
           </section>

@@ -1561,6 +1561,7 @@
       "outOfStockLink": "Voir les produits en rupture",
       "attentionTitle": "À traiter",
       "attentionBody": "Produits en ligne, ou l’une de leurs options, en rupture ou en stock bas.",
+      "attentionOption": "{{option}} : {{state}}",
       "attentionMoreOptions_one": "+ {{count}} autre option",
       "attentionMoreOptions_other": "+ {{count}} autres options",
       "attentionLink": "Tout voir",

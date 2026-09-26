@@ -49,6 +49,8 @@ interface ProductFormProps {
   onSubmit: (draft: AdminProduct, intent: SubmitIntent) => void;
   onCancel: () => void;
   onArchive?: () => void;
+  /** Pack/SS option to bring forward in the options grid (`?option=` on the edit screen). */
+  focusOption?: string | null;
 }
 
 type FieldKey =
@@ -68,6 +70,7 @@ export function ProductForm({
   onSubmit,
   onCancel,
   onArchive,
+  focusOption,
 }: ProductFormProps) {
   const { t } = useTranslation();
   const { source, categories, uploadImage } = useAdminCatalog();
@@ -326,6 +329,7 @@ export function ProductForm({
                 productPrice={draft.price}
                 error={showError("options")}
                 onChange={(gemOptions) => set("gemOptions", gemOptions)}
+                focusOption={focusOption}
               />
             </Section>
           )}

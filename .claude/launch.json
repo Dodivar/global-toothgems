@@ -12,6 +12,21 @@
       ],
       "port": 5173,
       "autoPort": true
+    },
+    {
+      "name": "webapp-mock",
+      "runtimeExecutable": "npm",
+      "runtimeArgs": [
+        "run",
+        "dev",
+        "--prefix",
+        "webapp",
+        "--",
+        "--mode",
+        "mock"
+      ],
+      "port": 5174,
+      "autoPort": true
     }
   ]
 }
