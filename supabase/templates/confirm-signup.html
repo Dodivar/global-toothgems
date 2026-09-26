@@ -1,0 +1,45 @@
+<!--
+  Supabase Auth — "Confirm signup" email template (French).
+  Paste into Dashboard → Authentication → Emails → Confirm signup.
+  Suggested subject: Confirmez votre compte Global Toothgems
+  Variables are Supabase's own (Go templates): .ConfirmationURL, .Email, .Data (sign-up metadata).
+-->
+<!doctype html>
+<html lang="fr">
+  <body style="margin:0;padding:0;background:#f3f7fb;font-family:Montserrat,Arial,Helvetica,sans-serif;color:#111111;">
+    <table role="presentation" width="100%" cellpadding="0" cellspacing="0" style="background:#f3f7fb;padding:32px 16px;">
+      <tr>
+        <td align="center">
+          <table role="presentation" width="100%" cellpadding="0" cellspacing="0" style="max-width:520px;background:#ffffff;border-radius:24px;overflow:hidden;">
+            <tr>
+              <td style="background:#d6e2f0;padding:24px 32px;font-size:12px;letter-spacing:2px;text-transform:uppercase;color:#3f5a75;font-weight:600;">
+                Global Toothgems
+              </td>
+            </tr>
+            <tr>
+              <td style="padding:32px;">
+                <h1 style="margin:0 0 16px;font-size:26px;line-height:1.2;">
+                  Bienvenue{{ if .Data.first_name }}, {{ .Data.first_name }}{{ end }}
+                </h1>
+                <p style="margin:0 0 24px;font-size:15px;line-height:1.6;color:#3a3a3a;">
+                  Confirmez votre adresse e-mail pour activer votre compte Global Toothgems et retrouver vos formations,
+                  votre progression et vos commandes.
+                </p>
+                <p style="margin:0 0 24px;">
+                  <a href="{{ .ConfirmationURL }}"
+                     style="display:inline-block;background:#3ddc97;color:#111111;text-decoration:none;font-weight:700;letter-spacing:1px;text-transform:uppercase;font-size:14px;padding:16px 32px;border-radius:999px;">
+                    Confirmer mon adresse
+                  </a>
+                </p>
+                <p style="margin:0 0 8px;font-size:13px;line-height:1.6;color:#6b6b6b;">
+                  Ce lien est valable pour une durée limitée. Si vous n’êtes pas à l’origine de cette inscription pour
+                  {{ .Email }}, ignorez simplement cet e-mail : aucun compte ne sera activé.
+                </p>
+              </td>
+            </tr>
+          </table>
+        </td>
+      </tr>
+    </table>
+  </body>
+</html>

@@ -314,24 +314,16 @@
   "auth": {
     "eyebrow": "Compte",
     "signInTitle": "Connexion",
-    "signUpTitle": "Créer un compte",
     "signInBody": "Retrouvez vos formations, votre progression et vos commandes.",
-    "signUpBody": "Un compte Global Toothgems donne accès aux formations de l’Academy et conserve votre progression.",
-    "modeSwitchLabel": "Connexion ou création de compte",
-    "tabSignIn": "Se connecter",
-    "tabSignUp": "Créer un compte",
     "gateNotice": "Un compte est nécessaire pour suivre une formation. Connectez-vous ou créez un compte pour continuer.",
     "firstName": "Prénom",
     "lastName": "Nom",
     "email": "E-mail",
     "password": "Mot de passe",
     "passwordHint": "Mot de passe oublié ? La récupération arrive avec l’authentification.",
-    "terms": "J’accepte les conditions générales",
-    "termsDescription": "Ventes, formations et traitement des données.",
     "newsletter": "Recevoir les nouveautés et dates de formation",
     "newsletterDescription": "Un e-mail par mois, désinscription en un clic.",
     "submitSignIn": "Se connecter",
-    "submitSignUp": "Créer mon compte",
     "mockNote": "Maquette : l’authentification réelle sera branchée plus tard.",
     "guestNote": "Les gems, outils et kits s’achètent sans compte.",
     "guestCta": "Continuer vers la boutique",
@@ -350,8 +342,6 @@
     "signOut": "Se déconnecter",
     "toastSignInTitle": "Connexion réussie",
     "toastSignInBody": "Votre espace formation est ouvert.",
-    "toastSignUpTitle": "Compte créé",
-    "toastSignUpBody": "Bienvenue chez Global Toothgems.",
     "forgotPassword": "Mot de passe oublié ?"
   },
   "authAlt": {
@@ -359,26 +349,52 @@
     "hidePassword": "Masquer le mot de passe",
     "forgot": "Mot de passe oublié ?",
     "forgotToastTitle": "Récupération du mot de passe",
-    "passwordRule": "{{min}} caractères minimum.",
     "orContinue": "ou continuer avec",
     "google": "Continuer avec Google",
     "googleToastTitle": "Maquette visuelle",
     "googleToastBody": "La connexion Google est présentée pour le design uniquement — rien n’est branché.",
     "switchToSignUpPrompt": "Pas encore de compte ?",
-    "switchToSignUpCta": "Créez-en un",
-    "switchToSignInPrompt": "Vous avez déjà un compte ?",
-    "switchToSignInCta": "Connectez-vous",
-    "errorFirstName": "Indiquez votre prénom.",
-    "errorLastName": "Indiquez votre nom.",
-    "errorEmail": "Indiquez une adresse e-mail valide.",
-    "errorPassword": "{{min}} caractères minimum.",
-    "errorTerms": "Acceptez les conditions générales pour continuer."
+    "errorEmail": "Indiquez une adresse e-mail valide."
+  },
+  "login": {
+    "errorPasswordRequired": "Indiquez votre mot de passe.",
+    "createAccount": "Créer un compte",
+    "resend": "Renvoyer l’e-mail de confirmation",
+    "resendSent": "Nouvel e-mail envoyé. Pensez à vérifier vos indésirables.",
+    "resendFailed": "L’e-mail n’a pas pu être envoyé. Réessayez dans un instant.",
+    "resendRateLimited": "Trop de demandes rapprochées. Patientez quelques minutes avant de réessayer.",
+    "failure": {
+      "rejectedTitle": "E-mail ou mot de passe incorrect",
+      "rejectedBody": "Vérifiez votre saisie, ou réinitialisez votre mot de passe.",
+      "unconfirmedTitle": "Adresse e-mail pas encore confirmée",
+      "unconfirmedBody": "Ouvrez le lien reçu à l’inscription pour activer votre compte.",
+      "suspendedTitle": "Compte indisponible",
+      "suspendedBody": "Ce compte est suspendu ou désactivé. Contactez-nous pour en savoir plus.",
+      "rateLimitedTitle": "Trop de tentatives",
+      "rateLimitedBody": "Patientez quelques minutes avant de réessayer.",
+      "unavailableTitle": "Connexion impossible pour le moment",
+      "unavailableBody": "Un problème est survenu de notre côté. Réessayez dans un instant."
+    }
+  },
+  "confirmAccount": {
+    "badge": "Adresse confirmée",
+    "verifyingTitle": "Confirmation en cours…",
+    "title": "Votre compte est activé",
+    "titleNamed": "Bienvenue, {{name}}",
+    "body": "Votre adresse e-mail est confirmée et votre session est ouverte.",
+    "continue": "Continuer",
+    "expiredTitle": "Ce lien a expiré",
+    "expiredBody": "Les liens de confirmation sont valables un temps limité. Indiquez votre adresse pour en recevoir un nouveau.",
+    "invalidTitle": "Ce lien n’est plus valable",
+    "invalidBody": "Il a peut-être déjà été utilisé, ou il est incomplet. Si votre compte n’est pas encore confirmé, demandez un nouveau lien.",
+    "resent": "Si un compte en attente correspond à cette adresse, un nouveau lien vient d’être envoyé.",
+    "sendNewLink": "Recevoir un nouveau lien",
+    "alreadyConfirmed": "Compte déjà confirmé ?"
   },
   "register": {
     "eyebrow": "Créer un compte",
     "title": "Créez votre compte Global Toothgems",
     "lede": "Un seul compte pour vos commandes, vos formations et votre progression. Cela prend environ une minute.",
-    "benefitsToggle": "Ce que comprend votre compte",
     "cardLabel": "Inscription, étape {{current}} sur {{total}}",
     "optional": "Facultatif",
     "haveAccount": "Vous avez déjà un compte ?",
@@ -394,19 +410,6 @@
     "clearChoice": "Effacer",
     "summary_one": "{{count}} point demande votre attention",
     "summary_other": "{{count}} points demandent votre attention",
-    "benefits": {
-      "orders": "Gérez et suivez vos commandes",
-      "access": "Accédez à vos produits et formations",
-      "progress": "Suivez votre progression",
-      "saved": "Enregistrez adresses et favoris",
-      "dashboard": "Votre tableau de bord personnel",
-      "community": "Rejoignez la communauté des artistes, selon éligibilité"
-    },
-    "aside": {
-      "label": "Ce que comprend votre compte",
-      "script": "Bienvenue",
-      "title": "Un seul compte pour tout l’univers Global Toothgems"
-    },
     "progressLabel": "Progression de l’inscription",
     "stepOf": "Étape {{current}} sur {{total}}",
     "stepCompleted": "terminée",
@@ -547,7 +550,11 @@
       "networkBody": "Vérifiez votre connexion, puis réessayez. Tout ce que vous avez saisi est conservé.",
       "serverTitle": "Votre compte n’a pas pu être créé",
       "serverBody": "Un problème est survenu de notre côté. Vos informations restent dans ce formulaire — réessayez dans un instant.",
-      "retry": "Réessayer"
+      "retry": "Réessayer",
+      "rateLimitedTitle": "Trop de tentatives",
+      "rateLimitedBody": "Patientez quelques minutes, puis réessayez. Vos informations restent dans ce formulaire.",
+      "weakPasswordTitle": "Mot de passe refusé",
+      "weakPasswordBody": "Ce mot de passe ne respecte pas nos règles de sécurité. Revenez à la première étape pour en choisir un autre."
     },
     "google": {
       "cta": "Continuer avec Google",
@@ -618,7 +625,8 @@
       "mailHint": "Sélectionnez le bouton pour simuler l’ouverture du lien.",
       "mailHintExpired": "Scénario : ce premier lien a expiré.",
       "helpTitle": "Vous ne le trouvez pas ?",
-      "helpBody": "Cela peut prendre une minute. Regardez dans vos spams ou l’onglet Promotions. Toujours rien ? Renvoyez-le, ou corrigez votre adresse ci-dessus."
+      "helpBody": "Cela peut prendre une minute. Regardez dans vos spams ou l’onglet Promotions. Toujours rien ? Renvoyez-le, ou corrigez votre adresse ci-dessus.",
+      "wrongAddress": "Mauvaise adresse ? Recommencer"
     },
     "welcome": {
       "script": "Bienvenue",

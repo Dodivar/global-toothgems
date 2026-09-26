@@ -5,7 +5,8 @@ import { ArrowRight, BadgeCheck, CircleAlert, Clock, MailCheck, RotateCw } from 
 import { Button } from "../components/ui/Button";
 import { Badge } from "../components/ui/Badge";
 import { AuthCard, AuthField, AuthLayout } from "../components/auth/AuthScene";
-import { confirmationRedirect, isSafeNext, useAuth, type ResendResult } from "../lib/auth";
+import { useAuth, type ResendResult } from "../lib/auth";
+import { confirmationRedirect, isSafeNext } from "../lib/authRedirect";
 
 type LinkError = "expired" | "invalid";
 

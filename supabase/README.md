@@ -46,6 +46,8 @@ supabase/
   tests/iteration9_validation.sql   iteration 9 product recommendations suite (always rolls back)
   tests/iteration10_validation.sql  iteration 10 back-office product management suite (always rolls back)
   tests/iteration11_validation.sql  iteration 11 gem pack × stone-size options suite (always rolls back)
+  tests/iteration12_validation.sql  iteration 12 member sign-up (Supabase Auth metadata → profile + consents) suite (always rolls back)
+  templates/confirm-signup.html     French "Confirm signup" email, to paste into the Auth settings
 ```
 
 ## Migrations
@@ -565,9 +567,22 @@ enable the extension in the dashboard — or a scheduled server job with the ser
 **Validation:** run `tests/mvp_validation.sql`, `tests/iteration2_validation.sql` and
 `tests/iteration3_validation.sql`, `tests/iteration4_validation.sql`, `tests/iteration5_validation.sql` and
 `tests/iteration6_validation.sql`, `tests/iteration7_validation.sql`, `tests/iteration8_validation.sql`,
-`tests/iteration9_validation.sql`, `tests/iteration10_validation.sql`, `tests/iteration11_validation.sql`. Each ends with
+`tests/iteration9_validation.sql`, `tests/iteration10_validation.sql`, `tests/iteration11_validation.sql`,
+`tests/iteration12_validation.sql`. Each ends with
 `ALL … PASSED (...)` raised as an exception, which rolls everything back.
 (The order-number sequence still advances — sequences are not transactional.)
+
+**Member sign-up (Auth settings, not SQL):** the webapp creates accounts with `supabase.auth.signUp`;
+`handle_new_auth_user` turns the metadata into the profile and the consent records. In the dashboard:
+- Authentication → Sign In / Providers → Email: *Confirm email* **on**; minimum password length 8 with
+  lower case, upper case, digits and symbols required (the rules the form shows).
+- Authentication → URL Configuration: Site URL = the production URL; add `http://localhost:5173/**`
+  and the production `/confirmation-compte` to the redirect allow-list (otherwise the link falls back to
+  the Site URL).
+- Authentication → Emails → Confirm signup: subject *Confirmez votre compte Global Toothgems*, body from
+  `templates/confirm-signup.html`.
+- Authentication → Emails → SMTP: the built-in sender is rate-limited to a few emails per hour and meant
+  for testing; production needs custom SMTP (Resend, per the project stack).
 
 **Demo member:** run `seed_demo_member.sql` after `seed.sql` (idempotent; the remote project already has it).
 It creates `camille.bernard@example.com` (id `c4a11e00-0000-4000-a000-000000000001`) through the real

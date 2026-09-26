@@ -16,7 +16,8 @@ import { DemoPanel } from "../components/register/DemoPanel";
 import { AccountStep } from "../components/register/steps/AccountStep";
 import { ProfileStep } from "../components/register/steps/ProfileStep";
 import { PreferencesStep, type CreateFailure } from "../components/register/steps/PreferencesStep";
-import { confirmationRedirect, useAuth } from "../lib/auth";
+import { useAuth } from "../lib/auth";
+import { confirmationRedirect } from "../lib/authRedirect";
 import { useProgress } from "../lib/progress";
 import { useToast } from "../lib/toast";
 import { FORGOT_PATH } from "../lib/accountSecurity";
@@ -77,9 +78,7 @@ export function Register() {
   // Read once, as soon as a kept session is known: signing in at the end of this
   // journey must not swap the welcome screen for the "already signed in" one.
   const [arrival, setArrival] = useState<boolean | null>(restoring ? null : signedIn);
-  useEffect(() => {
-    if (arrival === null && !restoring) setArrival(signedIn);
-  }, [arrival, restoring, signedIn]);
+  if (arrival === null && !restoring) setArrival(signedIn);
   const signedInOnArrival = arrival === true;
 
   const [phase, setPhase] = useState<Phase>("form");

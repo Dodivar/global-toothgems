@@ -427,18 +427,6 @@ export function useAuth() {
   return ctx;
 }
 
-/** Where the confirmation link sends a new member, with the page they were heading to. */
-export function confirmationRedirect(next?: string): string {
-  const url = new URL("/confirmation-compte", window.location.origin);
-  if (next && isSafeNext(next)) url.searchParams.set("suite", next);
-  return url.toString();
-}
-
-/** Only same-site paths: never let a link send someone to another origin. */
-export function isSafeNext(path: string): boolean {
-  return path.startsWith("/") && !path.startsWith("//") && !path.startsWith("/\\");
-}
-
 /**
  * Guards the routes that require an account. Gating the route rather than each
  * button covers the plain `<Link>`s in the navigation menu and direct URL entry

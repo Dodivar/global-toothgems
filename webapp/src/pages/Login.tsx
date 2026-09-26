@@ -5,7 +5,8 @@ import { ArrowRight, BadgeCheck, CircleAlert, Eye, EyeOff, Info, LogOut, MailChe
 import { Button } from "../components/ui/Button";
 import { Badge } from "../components/ui/Badge";
 import { AuthCard, AuthField, AuthLayout, GoogleButton } from "../components/auth/AuthScene";
-import { confirmationRedirect, useAuth, type ResendResult, type SignInResult } from "../lib/auth";
+import { useAuth, type ResendResult, type SignInResult } from "../lib/auth";
+import { confirmationRedirect } from "../lib/authRedirect";
 import { useProgress } from "../lib/progress";
 import { useToast } from "../lib/toast";
 import { FORGOT_PATH } from "../lib/accountSecurity";
