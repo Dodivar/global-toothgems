@@ -59,7 +59,7 @@ export function SystemPage({ kind, status, title, body, note, actions, after, vi
   return (
     <section
       aria-labelledby="system-page-title"
-      className="relative isolate overflow-hidden bg-[var(--gt-white)]"
+      className="relative isolate overflow-hidden bg-[var(--surface-page)]"
     >
       {/* Page atmosphere: the registration journey's pastel wash, one step quieter. */}
       <div

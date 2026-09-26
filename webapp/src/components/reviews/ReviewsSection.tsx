@@ -109,7 +109,7 @@ export function ReviewsSection({
       className={clsx(
         "scroll-mt-24",
         inline ? "mt-16" : "px-[clamp(14px,4vw,48px)] py-[clamp(56px,7vw,var(--section-y))]",
-        course && !inline && "bg-[var(--surface-brand-wash)]",
+        course && !inline && "bg-[var(--surface-brand-wash-strong)]",
       )}
     >
       <div ref={ref} className="gt-reveal mx-auto grid max-w-[var(--max-width-content)] grid-cols-[minmax(0,1fr)] gap-[clamp(24px,3.5vw,40px)]">

@@ -47,7 +47,7 @@ export function Maintenance() {
   const time = checkedAt?.toLocaleTimeString(i18n.language, { hour: "2-digit", minute: "2-digit" });
 
   return (
-    <div className="flex min-h-[100svh] flex-col bg-[var(--gt-white)]">
+    <div className="flex min-h-[100svh] flex-col bg-[var(--surface-page)]">
       <div className="flex justify-center px-[var(--gutter-page)] pb-2 pt-6 sm:pt-8">
         <Link to="/" className="inline-flex rounded-[var(--radius-xs)] p-1">
           <img src={logoBlack} alt={t("errors.maintenance.logoAlt")} className="h-5 w-auto sm:h-6" />

@@ -25,7 +25,7 @@ export function ColorCarousel({ groups, hrefFor, compact = false, onNavigate }: 
             to={hrefFor(group)}
             onClick={onNavigate}
             aria-label={t("shop.colorTileAria", { color: t(`shop.colors.${group.color}`), count: group.count })}
-            className={`group grid justify-items-center gap-2.5 rounded-[var(--radius-card)] p-2 transition-colors duration-[var(--duration-fast)] hover:bg-[var(--surface-brand-wash)] ${
+            className={`group grid justify-items-center gap-2.5 rounded-[var(--radius-card)] p-2 transition-colors duration-[var(--duration-fast)] hover:bg-[var(--surface-brand-wash-strong)] ${
               compact ? "w-[84px] gap-2" : "w-[104px] sm:w-[124px]"
             }`}
           >

@@ -142,7 +142,7 @@ function TocList({ entries, active, numbered, onNavigate }: { entries: TocEntry[
             className={clsx(
               "flex gap-2 rounded-[var(--radius-sm)] border-l-2 px-3 py-1.5 text-[13px] leading-[1.4] transition-colors",
               active === entry.id
-                ? "border-[var(--gt-blue-600)] bg-[var(--surface-brand-wash)] font-semibold text-[var(--text-primary)]"
+                ? "border-[var(--gt-blue-600)] bg-[var(--surface-brand-wash-strong)] font-semibold text-[var(--text-primary)]"
                 : "border-transparent text-[var(--text-muted)] hover:bg-[var(--gt-ink-100)] hover:text-[var(--text-primary)]",
             )}
           >

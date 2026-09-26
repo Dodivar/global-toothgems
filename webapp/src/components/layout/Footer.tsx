@@ -11,7 +11,7 @@ export function Footer() {
     "justify-self-start py-1 text-left text-sm text-[var(--text-body)] transition-colors hover:text-[var(--text-link-hover)]";
 
   return (
-    <footer className="border-t border-[var(--border-subtle)] bg-[var(--surface-page)] px-[clamp(14px,4vw,48px)] py-[var(--section-y-sm)]">
+    <footer className="border-t border-[var(--border-subtle)] bg-[var(--surface-chrome)] px-[clamp(14px,4vw,48px)] py-[var(--section-y-sm)]">
       <div className="mx-auto grid max-w-[var(--max-width-content)] gap-10">
         {/* Brand block, then five link columns: two to browse (shop, academy),
             three to get help or read the rules. Two columns on a phone, three on

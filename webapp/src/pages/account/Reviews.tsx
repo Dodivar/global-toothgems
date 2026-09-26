@@ -267,7 +267,7 @@ function Lifecycle() {
   const { t } = useTranslation();
   const steps = ["draft", "pending", "published"] as const;
   return (
-    <section aria-labelledby="mine-lifecycle" className="grid gap-4 rounded-[var(--radius-card)] border border-dashed border-[var(--border-default)] bg-[var(--surface-brand-wash)] p-[var(--space-5)]">
+    <section aria-labelledby="mine-lifecycle" className="grid gap-4 rounded-[var(--radius-card)] border border-dashed border-[var(--border-default)] bg-[var(--surface-brand-wash-strong)] p-[var(--space-5)]">
       <h2 id="mine-lifecycle" className="text-[length:var(--text-h4)]">{t("reviews.lifecycle.title")}</h2>
       <ol className="m-0 grid list-none gap-3 p-0 sm:grid-cols-3">
         {steps.map((s, i) => (

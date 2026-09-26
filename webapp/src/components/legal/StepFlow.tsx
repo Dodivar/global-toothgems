@@ -10,7 +10,7 @@ export function StepFlow({ label, steps }: { label: string; steps: { icon: Lucid
   return (
     <ol
       aria-label={label}
-      className="m-0 grid list-none gap-0 rounded-[var(--radius-card)] border border-[var(--gt-blue-200)] bg-[var(--surface-brand-wash)] p-4 sm:p-5 lg:grid-flow-col lg:auto-cols-fr lg:gap-3"
+      className="m-0 grid list-none gap-0 rounded-[var(--radius-card)] border border-[var(--gt-blue-200)] bg-[var(--surface-brand-wash-strong)] p-4 sm:p-5 lg:grid-flow-col lg:auto-cols-fr lg:gap-3"
     >
       {steps.map((step, i) => {
         const Icon = step.icon;

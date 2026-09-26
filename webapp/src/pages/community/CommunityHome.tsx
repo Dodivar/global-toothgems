@@ -46,7 +46,7 @@ export function CommunityHome() {
   return (
     <>
       {/* Welcome. The one place on these screens with the decorative script. */}
-      <section className="relative overflow-hidden rounded-[var(--radius-xl)] border border-[var(--gt-blue-200)] bg-[var(--surface-brand-wash)] p-[clamp(20px,4vw,44px)]">
+      <section className="relative overflow-hidden rounded-[var(--radius-xl)] border border-[var(--gt-blue-200)] bg-[var(--surface-brand-wash-strong)] p-[clamp(20px,4vw,44px)]">
         <div className="grid items-center gap-8 lg:grid-cols-[minmax(0,1fr)_auto]">
           <div className="grid gap-5">
             <span className="gt-eyebrow flex items-center gap-2">
