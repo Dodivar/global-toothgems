@@ -390,7 +390,12 @@ function EditorPanel({
 
   if (selection.kind === "quiz") {
     if (!module.quiz) return null;
-    return <QuizBuilder courseId={course.id} module={module} quiz={module.quiz} lang={lang} />;
+    // Keyed on the quiz: the editor keeps "which question is open" in state, and
+    // without a remount that id survives a move to another module's quiz, where
+    // it matches nothing and leaves every question collapsed.
+    return (
+      <QuizBuilder key={module.quiz.id} courseId={course.id} module={module} quiz={module.quiz} lang={lang} />
+    );
   }
 
   if (selection.kind === "step") {
@@ -398,6 +403,9 @@ function EditorPanel({
     if (!step) return null;
     return (
       <StepEditor
+        // Same reasoning as the quiz: the open block and any pending delete
+        // dialog belong to the step being edited, not to the panel.
+        key={step.id}
         courseId={course.id}
         module={module}
         step={step}

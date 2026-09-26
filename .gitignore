@@ -5,3 +5,9 @@
 # OS
 Thumbs.db
 .DS_Store
+
+# Local 3D studio scratch work (a 14 MB .glb plus HTML iterations). Untracked
+# and unrelated to the webapp, but the Stop hook runs `git add -A`, so without
+# this it would be committed and pushed to dev. Delete these two lines if the
+# studio is meant to be versioned.
+studio3D/
