@@ -131,7 +131,7 @@ export function GiftCard() {
   const previewMessage = config.fields.message === "hidden" ? undefined : message || undefined;
 
   return (
-    <div className="bg-[var(--gt-white)]">
+    <div className="bg-[var(--surface-page)]">
       {/* Hero */}
       <section className="gt-register-wash relative overflow-hidden px-[var(--gutter-page)] pb-[var(--section-y-sm)] pt-[clamp(32px,6vw,72px)] lg:px-[var(--gutter-page-lg)]">
         <div ref={heroRef} className="gt-reveal mx-auto grid max-w-[var(--max-width-content)] items-center gap-10 lg:grid-cols-[minmax(0,1fr)_minmax(0,1fr)]">
@@ -165,7 +165,7 @@ export function GiftCard() {
       </section>
 
       {/* Reassurance */}
-      <section aria-label={t("promo.store.reassuranceLabel")} className="border-y border-[var(--border-subtle)] bg-[var(--gt-off-white)] px-[var(--gutter-page)]">
+      <section aria-label={t("promo.store.reassuranceLabel")} className="border-y border-[var(--border-subtle)] bg-[var(--surface-brand-wash-strong)] px-[var(--gutter-page)]">
         <ul className="mx-auto grid max-w-[var(--max-width-content)] list-none grid-cols-2 gap-4 p-0 py-5 md:grid-cols-4">
           {[
             { icon: Mail, key: "email" },
@@ -330,7 +330,7 @@ export function GiftCard() {
       </section>
 
       {/* How it works + FAQ */}
-      <section className="bg-[var(--gt-off-white)] px-[var(--gutter-page)] py-[var(--section-y-sm)] pb-28 lg:px-[var(--gutter-page-lg)] lg:pb-[var(--section-y-sm)]">
+      <section className="bg-[var(--surface-page)] px-[var(--gutter-page)] py-[var(--section-y-sm)] pb-28 lg:px-[var(--gutter-page-lg)] lg:pb-[var(--section-y-sm)]">
         <div className="mx-auto grid max-w-[var(--max-width-content)] gap-10 lg:grid-cols-2">
           <div className="grid content-start gap-5">
             <h2 className="text-[length:var(--text-h3)]">{t("promo.store.howTitle")}</h2>

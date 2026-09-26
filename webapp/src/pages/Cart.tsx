@@ -162,7 +162,7 @@ export function Cart() {
 
       <div className="grid grid-cols-1 gap-8 lg:grid-cols-[minmax(0,1fr)_360px]">
         <div className="grid gap-8">
-          <section className="grid gap-4 rounded-[var(--radius-card)] border border-[var(--border-subtle)] p-[var(--space-6)]">
+          <section className="grid gap-4 rounded-[var(--radius-card)] border border-[var(--border-subtle)] bg-[var(--surface-card)] p-[var(--space-6)]">
             <h2 className="text-[length:var(--text-h3)]">{t("cart.cartTitle")}</h2>
 
             {/* The free-delivery rule existed in the total but was never shown, so
@@ -229,7 +229,7 @@ export function Cart() {
           {!signedIn && (
             <Link
               to="/inscription?contexte=achat"
-              className="group flex items-center gap-4 rounded-[var(--radius-card)] border border-[var(--gt-blue-200)] bg-[var(--surface-brand-wash)] p-4 transition-colors hover:border-[var(--gt-blue-400)]"
+              className="group flex items-center gap-4 rounded-[var(--radius-card)] border border-[var(--gt-blue-200)] bg-[var(--surface-brand-wash-strong)] p-4 transition-colors hover:border-[var(--gt-blue-400)]"
             >
               <span aria-hidden="true" className="grid h-10 w-10 flex-none place-items-center rounded-full bg-white text-[var(--gt-blue-700)] shadow-[var(--shadow-xs)]">
                 <UserRound size={18} />
@@ -242,7 +242,7 @@ export function Cart() {
             </Link>
           )}
 
-          <section className="grid gap-4 rounded-[var(--radius-card)] border border-[var(--border-subtle)] p-[var(--space-6)]">
+          <section className="grid gap-4 rounded-[var(--radius-card)] border border-[var(--border-subtle)] bg-[var(--surface-card)] p-[var(--space-6)]">
             <h2 className="text-[length:var(--text-h3)]">{t("cart.detailsTitle")}</h2>
             <div className="grid grid-cols-1 gap-4 sm:grid-cols-2">
               <Input label={t("cart.firstName")} autoComplete="given-name" value={form.firstName} onChange={set("firstName")} />
@@ -262,7 +262,7 @@ export function Cart() {
             <Checkbox label={t("cart.saveInfo")} description={t("cart.saveInfoDescription")} checked={saveInfo} onChange={setSaveInfo} />
           </section>
 
-          <section className="grid gap-4 rounded-[var(--radius-card)] border border-[var(--border-subtle)] p-[var(--space-6)]">
+          <section className="grid gap-4 rounded-[var(--radius-card)] border border-[var(--border-subtle)] bg-[var(--surface-card)] p-[var(--space-6)]">
             <h2 className="text-[length:var(--text-h3)]">{t("cart.paymentTitle")}</h2>
             <fieldset className="m-0 grid grid-cols-1 gap-3 border-0 p-0 sm:grid-cols-2">
               <legend className="sr-only">{t("cart.paymentTitle")}</legend>

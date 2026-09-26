@@ -206,7 +206,7 @@ export function Studio() {
                 </li>
               ))}
             </ul>
-            <p className="m-0 flex items-start gap-3 rounded-[var(--radius-lg)] bg-[var(--surface-brand-wash)] p-4 text-[length:var(--text-body-sm)] text-[var(--gt-ink-700)]">
+            <p className="m-0 flex items-start gap-3 rounded-[var(--radius-lg)] bg-[var(--surface-brand-wash-strong)] p-4 text-[length:var(--text-body-sm)] text-[var(--gt-ink-700)]">
               <Sparkles size={16} aria-hidden="true" className="mt-0.5 flex-none text-[var(--gt-blue-700)]" />
               {t("studio.concept.playground")}
             </p>
@@ -346,7 +346,7 @@ export function Studio() {
       </section>
 
       {/* --------------------------------------------------------- Inspiration */}
-      <section ref={inspirationRef} aria-labelledby="gt-studio-inspiration" className={clsx("gt-reveal bg-[var(--surface-card)] py-[var(--section-y)]", SECTION_X)}>
+      <section ref={inspirationRef} aria-labelledby="gt-studio-inspiration" className={clsx("gt-reveal bg-[var(--surface-page)] py-[var(--section-y)]", SECTION_X)}>
         <div className="mx-auto grid max-w-[var(--max-width-content)] gap-10">
           <SectionHeading id="gt-studio-inspiration" eyebrow={t("studio.inspiration.eyebrow")} title={t("studio.inspiration.title")} body={t("studio.inspiration.body")} />
           <InspirationBoards />

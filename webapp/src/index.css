@@ -64,12 +64,19 @@
   --text-link: var(--gt-ink-900);
   --text-link-hover: var(--gt-fuchsia-600);
 
-  --surface-page: var(--gt-off-white);
+  /* Default page background: the pale brand blue rather than white, so every
+     screen carries the brand. White cards sit on it; the header and footer keep
+     the paper tone through --surface-chrome. */
+  --surface-page: var(--surface-brand-wash);
+  --surface-chrome: var(--gt-off-white);
   --surface-card: var(--gt-white);
   --surface-raised: var(--gt-white);
   --surface-sunken: var(--gt-sand);
   --surface-inverse: var(--gt-ink-900);
   --surface-brand-wash: var(--gt-blue-50);
+  /* A brand tint that must still read on the page background (which is
+     --surface-brand-wash itself): highlighted bands, selected chips, callouts. */
+  --surface-brand-wash-strong: var(--gt-blue-100);
   --surface-brand: var(--gt-blue-300);
 
   --border-subtle: var(--gt-ink-200);
@@ -86,7 +93,7 @@
   --status-error-fg: var(--gt-red-600);
   --status-error-bg: var(--gt-red-50);
   --status-info-fg: var(--gt-blue-700);
-  --status-info-bg: var(--gt-blue-50);
+  --status-info-bg: var(--gt-blue-100);
 
   --glass-fill: rgba(255, 255, 255, .62);
   --glass-fill-dark: rgba(17, 17, 17, .52);
@@ -556,12 +563,12 @@
   }
   .gt-field[readonly] { background: var(--gt-off-white); }
 
-  /* Page atmosphere: white, with two restrained pastel-blue washes. */
+  /* Page atmosphere: the page blue, with two restrained pastel-blue washes. */
   .gt-register-wash {
     background:
       radial-gradient(900px 520px at 88% -8%, rgba(185, 205, 229, .55), transparent 62%),
       radial-gradient(700px 480px at -10% 30%, rgba(231, 238, 247, .9), transparent 60%),
-      var(--gt-white);
+      var(--surface-page);
   }
 
   /* Step change: a short slide in the direction of travel. */

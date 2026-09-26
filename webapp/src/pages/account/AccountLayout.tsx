@@ -84,7 +84,7 @@ function SidebarLink({ item }: { item: NavItem }) {
             isActive
               ? "bg-[var(--surface-inverse)] text-[var(--text-inverse)]"
               : locked
-                ? "border border-dashed border-[var(--border-default)] bg-[var(--surface-brand-wash)] text-[var(--text-muted)] hover:border-[var(--gt-blue-300)] hover:text-[var(--text-primary)]"
+                ? "border border-dashed border-[var(--border-default)] bg-[var(--surface-brand-wash-strong)] text-[var(--text-muted)] hover:border-[var(--gt-blue-300)] hover:text-[var(--text-primary)]"
                 : "text-[var(--text-body)] hover:bg-[var(--gt-ink-100)] hover:text-[var(--text-primary)]",
           )
         }
@@ -122,7 +122,7 @@ function TabLink({ item }: { item: NavItem }) {
             isActive
               ? "border-transparent bg-[var(--surface-inverse)] text-[var(--text-inverse)]"
               : locked
-                ? "border-dashed border-[var(--border-default)] bg-[var(--surface-brand-wash)] text-[var(--text-muted)]"
+                ? "border-dashed border-[var(--border-default)] bg-[var(--surface-brand-wash-strong)] text-[var(--text-muted)]"
                 : "border-[var(--border-subtle)] bg-[var(--surface-card)] text-[var(--text-body)]",
           )
         }

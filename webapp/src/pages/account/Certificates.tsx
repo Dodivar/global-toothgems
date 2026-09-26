@@ -90,7 +90,7 @@ export function Certificates() {
 
       {rows.length === 0 ? (
         /* No course on the account: aspirational, not an error. */
-        <section className="grid justify-items-start gap-[var(--space-4)] rounded-[var(--radius-card)] border border-dashed border-[var(--border-default)] bg-[var(--surface-brand-wash)] p-[clamp(20px,4vw,40px)]">
+        <section className="grid justify-items-start gap-[var(--space-4)] rounded-[var(--radius-card)] border border-dashed border-[var(--border-default)] bg-[var(--surface-brand-wash-strong)] p-[clamp(20px,4vw,40px)]">
           <span className="gt-eyebrow flex items-center gap-2">
             <Award size={13} aria-hidden="true" />
             {t("account.certificatesEmptyEyebrow")}

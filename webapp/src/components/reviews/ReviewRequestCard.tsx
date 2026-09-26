@@ -78,7 +78,7 @@ export function ReviewRequestCard({
 
   if (variant === "compact") {
     return (
-      <div className={clsx("grid gap-3 rounded-[var(--radius-card)] border border-[var(--gt-blue-200)] bg-[var(--surface-brand-wash)] p-4", className)}>
+      <div className={clsx("grid gap-3 rounded-[var(--radius-card)] border border-[var(--gt-blue-200)] bg-[var(--surface-brand-wash-strong)] p-4", className)}>
         <div className="grid gap-0.5">
           <span className="gt-eyebrow">{context}</span>
           <strong className="text-[length:var(--text-body-sm)] text-[var(--text-primary)]">{t("reviews.request.compactTitle", { name })}</strong>

@@ -216,7 +216,7 @@ export function Header() {
   );
 
   return (
-    <div ref={rootRef} className="sticky top-0 z-[60] border-b border-[var(--border-subtle)] bg-[var(--surface-page)]">
+    <div ref={rootRef} className="sticky top-0 z-[60] border-b border-[var(--border-subtle)] bg-[var(--surface-chrome)]">
       {/* Desktop */}
       <div className="relative hidden md:block" onMouseLeave={() => hoverTo(null)}>
         <header className="flex h-[76px] items-center gap-8 px-[var(--gutter-page-lg)]">

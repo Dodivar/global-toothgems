@@ -310,7 +310,7 @@ export function Home() {
       </section>
 
       {/* Newsletter */}
-      <section ref={newsletterRef} className="gt-reveal bg-[var(--surface-brand-wash)] px-[clamp(14px,4vw,48px)] py-[var(--section-y)]">
+      <section ref={newsletterRef} className="gt-reveal bg-[var(--surface-brand-wash-strong)] px-[clamp(14px,4vw,48px)] py-[var(--section-y)]">
         <div className="mx-auto grid max-w-[var(--max-width-content)] grid-cols-1 items-center gap-[clamp(32px,5vw,64px)] lg:grid-cols-2">
           <div className="grid gap-4">
             <span className="text-[length:var(--text-eyebrow)] font-semibold uppercase tracking-[var(--tracking-eyebrow)] text-[var(--gt-blue-700)]">

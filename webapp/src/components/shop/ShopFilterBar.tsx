@@ -50,7 +50,7 @@ function Chip({
       className="flex shrink-0 snap-start items-center gap-2 rounded-[var(--radius-pill)] border px-3 py-2 text-[length:var(--text-body-sm)] transition-[background-color,border-color,color] duration-[var(--duration-fast)]"
       style={{
         borderColor: active ? "var(--border-brand)" : "var(--border-subtle)",
-        background: active ? "var(--surface-brand-wash)" : "var(--surface-card)",
+        background: active ? "var(--surface-brand-wash-strong)" : "var(--surface-card)",
         color: active ? "var(--text-primary)" : "var(--text-body)",
         fontWeight: active ? 700 : 400,
       }}
