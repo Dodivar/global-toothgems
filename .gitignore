@@ -5,3 +5,7 @@
 # OS
 Thumbs.db
 .DS_Store
+
+# Local 3D studio scratch work (a 14 MB .glb plus dated HTML iterations) that
+# sits at the repo root. Anchored so it cannot match webapp/src/lib/studio3d/.
+/studio3D/

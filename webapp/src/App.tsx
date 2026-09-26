@@ -74,6 +74,11 @@ import { GiftCardSettings as AdminGiftCardSettings } from "./pages/admin/GiftCar
 import { PromotionPreview as AdminPromotionPreview } from "./pages/admin/PromotionPreview";
 import { Reviews as AdminReviews } from "./pages/admin/Reviews";
 import { Settings as AdminSettings } from "./pages/admin/Settings";
+import { Training as AdminTraining } from "./pages/admin/Training";
+import { TrainingNew as AdminTrainingNew } from "./pages/admin/TrainingNew";
+import { TrainingBuilder as AdminTrainingBuilder } from "./pages/admin/TrainingBuilder";
+import { TrainingPreview as AdminTrainingPreview } from "./pages/admin/TrainingPreview";
+import { TrainingReview as AdminTrainingReview } from "./pages/admin/TrainingReview";
 import { GiftCard } from "./pages/GiftCard";
 import { Studio } from "./pages/Studio";
 import { StudioSubscribe } from "./pages/StudioSubscribe";
@@ -389,6 +394,19 @@ export default function App() {
                             editor addressed by `traduire` + `langue`, so a
                             missing translation is a link a colleague can open. */}
                         <Route path="parametres" element={<AdminSettings />} />
+                        {/* Training. The builder keeps its selection in the
+                            query string rather than in the path: a module, a
+                            step and a quiz are all edited in the same
+                            workspace, and four nested routes would put the
+                            same three panels behind four addresses. Preview
+                            and review are their own routes, because both are
+                            places an administrator arrives at rather than
+                            states the builder happens to be in. */}
+                        <Route path="formations" element={<AdminTraining />} />
+                        <Route path="formations/nouvelle" element={<AdminTrainingNew />} />
+                        <Route path="formations/:id" element={<AdminTrainingBuilder />} />
+                        <Route path="formations/:id/apercu" element={<AdminTrainingPreview />} />
+                        <Route path="formations/:id/publication" element={<AdminTrainingReview />} />
                       </Route>
 
                       {/* Help centre and legal pages. Every one is reachable from

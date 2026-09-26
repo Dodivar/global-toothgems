@@ -7,6 +7,7 @@ import { AdminOrdersProvider } from "../../lib/adminOrders";
 import { AdminCustomersProvider } from "../../lib/adminCustomers";
 import { AdminUsersProvider } from "../../lib/adminUsers";
 import { AdminSettingsProvider } from "../../lib/adminSettings";
+import { AdminTrainingProvider } from "../../lib/adminTraining";
 import { useAdminAuth } from "../../lib/adminAuth";
 import { useFocusTrap } from "../../lib/useFocusTrap";
 
@@ -54,6 +55,11 @@ export function AdminLayout() {
       {/* Settings drafts live above the pages so unsaved work survives a
           detour to another section of the admin. */}
       <AdminSettingsProvider>
+      {/* Training is independent of the commerce data: a course is not a
+          product and does not read the order book. It sits here rather than
+          inside the training routes so the catalogue, and any unsaved edit to
+          a course, survives a detour to another section. */}
+      <AdminTrainingProvider>
       <div
         className="gt-admin min-h-screen"
         // Read by the product form's pinned action bar, which is fixed to the
@@ -97,6 +103,7 @@ export function AdminLayout() {
           <Outlet context={{ openNav: () => setNavOpen(true) } satisfies AdminShellContext} />
         </div>
       </div>
+      </AdminTrainingProvider>
       </AdminSettingsProvider>
       </AdminUsersProvider>
       </AdminCustomersProvider>
