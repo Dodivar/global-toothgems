@@ -12,12 +12,16 @@
       "Bash(git fetch:*)",
       "Bash(git switch:*)",
       "Bash(git checkout:*)",
-      "Bash(git branch:*)"
+      "Bash(git branch:*)",
+      "Bash(git push origin HEAD:refs/heads/dev:*)"
     ],
     "deny": [
       "Bash(git push origin main:*)",
       "Bash(git push --force:*)",
-      "Bash(git push -f:*)"
+      "Bash(git push -f:*)",
+      "Bash(git push origin HEAD:main:*)",
+      "Bash(git push origin HEAD:refs/heads/main:*)",
+      "Bash(gh pr create:*)"
     ]
   },
   "hooks": {
@@ -28,6 +32,17 @@
             "type": "command",
             "command": "powershell -NoProfile -ExecutionPolicy Bypass -File \"${CLAUDE_PROJECT_DIR}/.claude/hooks/auto-commit-push.ps1\"",
             "timeout": 120
+          }
+        ]
+      }
+    ],
+    "SessionStart": [
+      {
+        "hooks": [
+          {
+            "type": "command",
+            "command": "powershell -NoProfile -ExecutionPolicy Bypass -File \"${CLAUDE_PROJECT_DIR}/.claude/hooks/ensure-dev-branch.ps1\"",
+            "timeout": 60
           }
         ]
       }

@@ -182,9 +182,9 @@ When the session runs on `dev`:
 3. Never push to `main`, never force-push, never rewrite pushed history.
 4. Never open the `dev` -> `main` pull request yourself.
 
-A `Stop` hook in `.claude/settings.json` performs this commit and push automatically, and is a no-op on any branch other than `dev`. Treat it as a safety net, not as a reason to leave the working tree in a half-finished state: everything still in the tree when a turn ends is committed and pushed as-is.
+A `Stop` hook in `.claude/settings.json` performs this commit and push automatically. It never commits on `main`. A `SessionStart` hook switches a clean main checkout to `dev`. Treat it as a safety net, not as a reason to leave the working tree in a half-finished state: everything still in the tree when a turn ends is committed and pushed as-is.
 
-If the session runs on a branch other than `dev`, fall back to the normal flow: a focused branch and a pull request targeting `dev`.
+If the session runs on a branch other than `dev` (for example a `claude/*` worktree created by the desktop app, where `dev` cannot be checked out), the `Stop` hook commits there, merges `origin/dev` into it and pushes `HEAD` directly to `origin/dev`. Do not push the worktree branch itself and do not open a pull request targeting `dev`. If that merge conflicts, the hook leaves the commit local: resolve the conflict and push `HEAD:dev` yourself.
 
 ### Quality bar
 
