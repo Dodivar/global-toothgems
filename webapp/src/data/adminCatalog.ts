@@ -1,7 +1,7 @@
 import type { Localized } from "./types";
 import type { GemColor, GemShape } from "./products";
 import { photo } from "../lib/images";
-import { combinations, comboKey, type GemOptionKey } from "../lib/gemOptions";
+import { combinations, comboKey, comboName, type GemOptionKey } from "../lib/gemOptions";
 
 /**
  * Admin catalogue model, and the mock catalogue behind the prototype.
@@ -63,6 +63,32 @@ export interface GemOptionVariant {
  * unticking a pack then ticking it again gives its price and stock back; only
  * the combinations of the ticked packs × sizes are saved.
  */
+/**
+ * Stock of one sellable variant, as the product list shows it under its
+ * product. Only active variants appear: an option removed after being ordered
+ * is no longer sold, so it cannot run out.
+ */
+export interface VariantStock {
+  /**
+   * `comboKey()` of a pack/SS option — what the edit form's grid is keyed
+   * by, so a link can open the form on that option — or the variant id.
+   */
+  key: string;
+  /** True for a pack/SS option, the only kind the edit form can change. */
+  gemOption: boolean;
+  name: Localized;
+  sku?: string;
+  /** EUR; undefined = the product price applies. */
+  price?: number;
+  trackInventory: boolean;
+  /** Units on the shelf. */
+  stock: number;
+  /** Units held by unpaid orders; the shop sells `stock - reserved`. */
+  reserved?: number;
+  lowStockThreshold: number;
+  availability: Availability;
+}
+
 export interface GemOptions {
   enabled: boolean;
   packs: number[];
@@ -98,6 +124,8 @@ export interface AdminProduct {
   trackInventory: boolean;
   /** Meaningful only while `trackInventory` is on. */
   stock: number;
+  /** Units held by unpaid orders; the shop sells `stock - reserved`. */
+  reserved?: number;
   lowStockThreshold: number;
   /** Manual availability, used when `trackInventory` is off. */
   availability: Availability;
@@ -108,6 +136,11 @@ export interface AdminProduct {
    * the product never writes it.
    */
   variantCount?: number;
+  /**
+   * Stock of each active variant. With variants, the product's own stock
+   * state is read from these (`stockState()`), never from the total.
+   */
+  variantStock?: VariantStock[];
   /**
    * Pack × stone-size options. Undefined when the product has none and the
    * editor was never switched on, or when its variants are another kind
@@ -219,7 +252,7 @@ export function mediaFromLibrary(file: string): ProductImage {
   return media(file);
 }
 
-export const ADMIN_PRODUCTS: AdminProduct[] = [
+const PRODUCT_FIXTURES: AdminProduct[] = [
   {
     id: "crystal-star",
     sku: "GEM-STAR-001",
@@ -242,6 +275,19 @@ export const ADMIN_PRODUCTS: AdminProduct[] = [
     lowStockThreshold: 20,
     availability: "in_stock",
     status: "active",
+    // Packs × sizes, one of them sold out and one running low, so the
+    // prototype shows what the list does with an option that needs restocking.
+    gemOptions: {
+      enabled: true,
+      packs: [20, 50],
+      sizes: [6, 7],
+      variants: [
+        { pack: 20, ss: 6, trackInventory: true, stock: 64, lowStockThreshold: 10 },
+        { pack: 20, ss: 7, trackInventory: true, stock: 52, lowStockThreshold: 10 },
+        { pack: 50, ss: 6, price: 72, trackInventory: true, stock: 0, lowStockThreshold: 5 },
+        { pack: 50, ss: 7, price: 72, trackInventory: true, stock: 3, lowStockThreshold: 5 },
+      ],
+    },
     material: { fr: "Cristal taillé", en: "Cut crystal" },
     tags: ["best-seller", "étoile"],
     createdAt: "2026-02-11T09:20:00Z",
@@ -643,6 +689,13 @@ export const ADMIN_PRODUCTS: AdminProduct[] = [
 ];
 
 /**
+ * The prototype catalogue. Fixtures with pack/SS options get their stock
+ * derived here, as the store does on every save, so every reader of this
+ * list (analytics included) sees the same per-option stock.
+ */
+export const ADMIN_PRODUCTS: AdminProduct[] = PRODUCT_FIXTURES.map(withGemStock);
+
+/**
  * What the badge shows when one label has to carry the whole story. Order
  * matters: an archived product that happens to be out of stock is archived
  * first, and a live product with no stock is what an administrator must see.
@@ -659,22 +712,78 @@ export function displayState(product: AdminProduct): DisplayState {
 
 export type StockState = "in_stock" | "low_stock" | "out_of_stock" | "preorder";
 
+/** What `inventoryState()` needs: a product without variants, or one variant. */
+type Inventory = Pick<VariantStock, "trackInventory" | "stock" | "reserved" | "lowStockThreshold" | "availability">;
+
 /**
- * Availability of a product, from the count when inventory is tracked and from
- * the manual field when it is not. Every stock reading in the admin goes
- * through here, so the two modes can never disagree on screen.
+ * State of one stock row: from the count when inventory is tracked, from the
+ * manual field when it is not. Same rule as the database's generated
+ * `inventory_items.stock_status`, so the admin and the shop agree on what is
+ * sold out: units held by unpaid orders are not for sale.
  */
-export function stockState(product: AdminProduct): StockState {
-  if (!product.trackInventory) {
-    return product.availability === "preorder"
+export function inventoryState(item: Inventory): StockState {
+  if (!item.trackInventory) {
+    return item.availability === "preorder"
       ? "preorder"
-      : product.availability === "out_of_stock"
+      : item.availability === "out_of_stock"
         ? "out_of_stock"
         : "in_stock";
   }
-  if (product.stock <= 0) return "out_of_stock";
-  if (product.stock <= product.lowStockThreshold) return "low_stock";
+  const available = item.stock - (item.reserved ?? 0);
+  if (available <= 0) return "out_of_stock";
+  if (available <= item.lowStockThreshold) return "low_stock";
   return "in_stock";
+}
+
+/**
+ * Availability of a product. Every stock reading in the admin goes through
+ * here, so the two modes can never disagree on screen.
+ *
+ * With variants, the total says nothing (six options at 100 hide a seventh
+ * at 0), so the variants decide, as in the statistics RPC
+ * (`…_admin_statistics.sql`): out of stock only when every one is, low as
+ * soon as one is low or out — the product still sells, but something needs
+ * restocking.
+ */
+export function stockState(product: AdminProduct): StockState {
+  const variants = product.variantStock;
+  if (variants && variants.length > 0) {
+    const states = variants.map(inventoryState);
+    if (states.every((s) => s === "out_of_stock")) return "out_of_stock";
+    if (states.some((s) => s === "out_of_stock" || s === "low_stock")) return "low_stock";
+    if (states.every((s) => s === "preorder")) return "preorder";
+    return "in_stock";
+  }
+  return inventoryState(product);
+}
+
+/** The variants that need restocking: sold out first, then low, list order kept. */
+export function variantAlerts(product: AdminProduct): (VariantStock & { state: "out_of_stock" | "low_stock" })[] {
+  const rank = { out_of_stock: 0, low_stock: 1 } as const;
+  return (product.variantStock ?? [])
+    .map((variant) => ({ ...variant, state: inventoryState(variant) }))
+    .filter((v): v is VariantStock & { state: "out_of_stock" | "low_stock" } =>
+      v.state === "out_of_stock" || v.state === "low_stock",
+    )
+    .sort((a, b) => rank[a.state] - rank[b.state]);
+}
+
+/**
+ * Whether a product belongs under an availability filter. "Out of stock" and
+ * "low stock" also take a product with a single option in that state, so an
+ * option that runs out can never hide behind its siblings. The filter, the
+ * dashboard counts and the dashboard shortlist all use this one rule, so the
+ * card's number is the length of the list it links to.
+ */
+export function matchesStockState(product: AdminProduct, state: StockState): boolean {
+  if (stockState(product) === state) return true;
+  if (state !== "out_of_stock" && state !== "low_stock") return false;
+  return (product.variantStock ?? []).some((variant) => inventoryState(variant) === state);
+}
+
+/** Needs restocking: out of stock or low, the product or any of its options. */
+export function needsRestock(product: AdminProduct): boolean {
+  return matchesStockState(product, "out_of_stock") || matchesStockState(product, "low_stock");
 }
 
 /** Price actually charged: the promotional price wins when one is set. */
@@ -847,20 +956,35 @@ export function offeredGemVariants(options: GemOptions | undefined): GemOptionVa
   return combinations(options.packs, options.sizes).map((key) => known.get(comboKey(key)) ?? blankGemVariant(key));
 }
 
+/** The stock rows a product's pack/SS options put under it in the list. */
+export function gemVariantStock(options: GemOptions | undefined): VariantStock[] {
+  return offeredGemVariants(options).map((variant) => ({
+    key: comboKey(variant),
+    gemOption: true,
+    name: comboName(variant),
+    price: variant.price,
+    trackInventory: variant.trackInventory,
+    stock: variant.stock,
+    lowStockThreshold: variant.lowStockThreshold,
+    availability: "in_stock",
+  }));
+}
+
 /**
  * What the prototype store does in place of the database: a product with
  * pack/SS options reads as the total of its options' stock, like
- * `rowToProduct()` does for real variants.
+ * `rowToProduct()` does for real variants, and carries each option's stock.
  */
 export function withGemStock(product: AdminProduct): AdminProduct {
   if (!product.gemOptions) return product;
-  const offered = offeredGemVariants(product.gemOptions);
-  if (offered.length === 0) return { ...product, variantCount: 0 };
+  const variantStock = gemVariantStock(product.gemOptions);
+  if (variantStock.length === 0) return { ...product, variantCount: 0, variantStock: undefined };
   return {
     ...product,
-    variantCount: offered.length,
+    variantCount: variantStock.length,
+    variantStock,
     trackInventory: true,
-    stock: offered.reduce((sum, v) => sum + v.stock, 0),
-    lowStockThreshold: offered.reduce((sum, v) => sum + v.lowStockThreshold, 0),
+    stock: variantStock.reduce((sum, v) => sum + v.stock, 0),
+    lowStockThreshold: variantStock.reduce((sum, v) => sum + v.lowStockThreshold, 0),
   };
 }
