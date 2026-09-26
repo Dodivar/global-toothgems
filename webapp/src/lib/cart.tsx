@@ -6,6 +6,8 @@ import { photo } from "./images";
 export interface CartLine {
   id: string;
   productId: string;
+  /** Database variant id, when the product has options. The checkout sends it to `create_order()`. */
+  variantId?: string;
   name: string;
   variant?: string;
   image: string;

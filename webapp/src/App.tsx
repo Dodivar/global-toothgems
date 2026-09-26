@@ -4,6 +4,7 @@ import { useTranslation } from "react-i18next";
 import { AuthProvider, RequireAccount } from "./lib/auth";
 import { AdminAuthProvider, RequireAdmin } from "./lib/adminAuth";
 import { CartProvider } from "./lib/cart";
+import { CatalogProvider } from "./lib/catalog/CatalogProvider";
 import { OrdersProvider } from "./lib/orders";
 import { ProgressProvider } from "./lib/progress";
 import { CommunityProvider } from "./lib/community";
@@ -164,6 +165,9 @@ export default function App() {
   const workspace = WORKSPACE_ROUTES.includes(pathname);
 
   return (
+    // The product catalogue (Supabase, or the mock fixtures when it is not
+    // configured) is read by the shop, product pages, home and cart alike.
+    <CatalogProvider>
     <AuthProvider>
       {/* Pending email change, password date and data-export status: read by
           the member area and by the verification page a link lands on. */}
@@ -452,5 +456,6 @@ export default function App() {
       </AdminAuthProvider>
       </SecurityProvider>
     </AuthProvider>
+    </CatalogProvider>
   );
 }

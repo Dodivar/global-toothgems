@@ -2,16 +2,18 @@ import { useTranslation } from "react-i18next";
 import { SelectorPage, SelectorTile } from "../components/shop/SelectorPage";
 import { ShapeGlyph } from "../components/ui/ShapeGlyph";
 import { shapesInCatalog } from "../data/products";
+import { useCatalog } from "../lib/catalog/CatalogProvider";
 import { shapeHref } from "../lib/shopUrl";
 
 /** Every cut on one page — the carousel's overflow, for people who want to see
  *  the whole range at once before narrowing the collection. */
 export function Shapes() {
   const { t } = useTranslation();
+  const { products } = useCatalog();
 
   return (
     <SelectorPage eyebrow={t("shapesPage.eyebrow")} title={t("shapesPage.title")} body={t("shapesPage.body")}>
-      {shapesInCatalog().map((group) => (
+      {shapesInCatalog(products).map((group) => (
         <SelectorTile
           key={group.shape}
           to={shapeHref(group.shape)}

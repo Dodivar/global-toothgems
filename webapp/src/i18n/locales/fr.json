@@ -134,7 +134,8 @@
       "Gems": "Gems",
       "Outils": "Outils",
       "Kits": "Kits",
-      "Suivi": "Suivi"
+      "Suivi": "Suivi",
+      "Accessoires": "Accessoires"
     },
     "materials": {
       "all": "Toutes les matières",
@@ -251,7 +252,8 @@
     "basedOn_one": "sur {{count}} avis vérifié",
     "basedOn_other": "sur {{count}} avis vérifiés",
     "stickyBarLabel": "Ajouter au panier",
-    "zoomHint": "Survolez pour agrandir"
+    "zoomHint": "Survolez pour agrandir",
+    "variantLabel": "Option"
   },
   "cart": {
     "confirmedBadge": "Commande confirmée",
@@ -1440,7 +1442,7 @@
         "priceCents": "Deux décimales au maximum."
       },
       "promoInPromotions": "Les prix promotionnels se gèrent dans l’espace Promotions : le prix affiché ici est le prix de vente normal.",
-      "databaseNotice": "Enregistré dans la base Supabase ; les visuels sont envoyés dès leur ajout. La boutique n’est pas encore branchée sur la base : un produit « En ligne » n’y apparaît pas encore.",
+      "databaseNotice": "Enregistré dans la base Supabase : un produit « En ligne » apparaît en boutique. Les visuels sont envoyés dès leur ajout.",
       "variantStock_one": "Stock géré par variante ({{count}} variante, {{stock}} unités au total). Il ne se modifie pas encore depuis cet écran.",
       "variantStock_other": "Stock géré par variante ({{count}} variantes, {{stock}} unités au total). Il ne se modifie pas encore depuis cet écran."
     },
@@ -4066,5 +4068,11 @@
       "companyCta": "Mentions légales",
       "storyTitle": "Notre histoire"
     }
+  },
+  "catalog": {
+    "loading": "Chargement du catalogue…",
+    "errorTitle": "Le catalogue est momentanément indisponible",
+    "errorBody": "Nous n’avons pas pu charger les produits. Vérifiez votre connexion puis réessayez.",
+    "retry": "Réessayer"
   }
 }

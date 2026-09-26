@@ -4,7 +4,7 @@ A fully interactive React implementation of the Global Toothgems brand site — 
 
 > **Architecture note:** this directory intentionally deviates from the stack mandated in the repo root's `AGENTS.md` and `global-toothgems-llm-guidelines/` (Next.js, Supabase/Postgres, Supabase Auth, Stripe). It was built at explicit user request as a fast, visual, fully-clickable reference implementation — Vite + React, no backend, cart/checkout/lesson-progress state held in memory only. Treat it as a design/behavior reference to port from, not as the production app. Porting to the mandated Next.js + Supabase + Stripe architecture is still open work.
 >
-> **One exception is live:** the back office's **product management** (products, stock, images, English translations, recommendations) and **admin sign-in** run on Supabase when the environment variables below are set. See [Supabase connection](#supabase-connection-back-office-products). Everything else — storefront, cart, orders, customers, promotions, training — is still mock data.
+> **Two parts are live** when the environment variables below are set: the **storefront catalogue** reads Supabase (see [Supabase connection (catalogue)](#supabase-connection-catalogue)), and the back office's **product management** (products, stock, images, English translations, recommendations) and **admin sign-in** read and write it (see [Supabase connection (back-office products)](#supabase-connection-back-office-products)). A product saved as active in the back office therefore appears in the shop. Cart, checkout, orders, customers, promotions and training are still mock data.
 
 ## Stack
 
@@ -85,6 +85,56 @@ The file must sit in whatever directory Vercel builds from. This app lives in
 `webapp/`, so the project's **Root Directory** has to be `webapp` for the build
 to find `package.json` at all, and `vercel.json` belongs next to it. A copy at
 the repository root would be ignored.
+
+## Supabase connection (catalogue)
+
+The storefront catalogue is read from the Supabase project described in
+`supabase/README.md`. Copy `.env.example` to `.env.local` (git-ignored) and
+set, locally and in the Vercel project settings:
+
+| Variable | Value |
+| --- | --- |
+| `VITE_SUPABASE_URL` | `https://<project-ref>.supabase.co` |
+| `VITE_SUPABASE_PUBLISHABLE_KEY` | the project's **publishable** key (`sb_publishable_…`) |
+
+Only the publishable key ever goes in a `VITE_` variable — Vite inlines them
+into the public bundle. Every read is authorized by Row Level Security; the
+service role key belongs to server code only. With both variables empty the
+app runs on its mock fixtures, as before.
+
+```
+src/lib/supabase/client.ts          the browser client (typed), `isSupabaseConfigured`
+src/lib/supabase/database.types.ts  generated from the live schema — regenerate after each migration
+src/lib/supabase/storage.ts         buckets: public URLs (product-media), signed URLs (avatars, review-photos)
+src/lib/catalog/api.ts              one PostgREST query: products + category + translations + variants + media + stock, and review stats
+src/lib/catalog/mapping.ts          pure row → `Product` mapping (locale fallback, stock, minor-unit money) — unit-tested
+src/lib/catalog/CatalogProvider.tsx loads the catalogue once, exposes `useCatalog()` (status, products, reload, findProduct)
+```
+
+What reads it: the shop (`/boutique`), the product page (`/boutique/:slug`,
+base or English slug), the home best-sellers, the empty-cart suggestions, and
+the shape/colour navigation. Loading shows skeletons; a failed load shows a
+retry and never falls back to mock products. An unknown slug is a 404.
+
+Mapping rules worth knowing:
+
+- **Language**: base columns are French; the English text comes from
+  *published* translation rows, else falls back to French.
+- **Categories**: `gems → Gems`, `outils → Outils`, `kits → Kits`,
+  `entretien → Suivi`, `accessoires → Accessoires` (the `categorie` URL values).
+- **Shape / colour filters** read `products.metadata.shape` / `.color`, using the
+  slugs of `GEM_SHAPES` / `GEM_COLORS` (`"star"`, `"crystal"`…). Products without
+  them are simply not in those filters.
+- **Variants** come from `product_variants`; a null variant price inherits the
+  product price. The cart line keeps the `variantId` for the future checkout.
+- **Money** is converted to integer minor units from the decimal digits (no
+  float maths). Prices shown are indicative: `create_order()` recomputes them.
+- **Images** are public URLs of `product-media` objects. A path whose file is
+  not uploaded yet shows the image placeholder.
+- Gift cards (`product_type = 'gift_card'`) stay on their own page.
+
+Not connected yet (still mock): authentication, cart persistence and checkout,
+orders, reviews list/moderation, the Academy, the community and the back office.
 
 ## Project structure
 

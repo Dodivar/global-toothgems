@@ -134,7 +134,8 @@
       "Gems": "Gems",
       "Outils": "Tools",
       "Kits": "Kits",
-      "Suivi": "Aftercare"
+      "Suivi": "Aftercare",
+      "Accessoires": "Accessories"
     },
     "materials": {
       "all": "All materials",
@@ -251,7 +252,8 @@
     "basedOn_one": "from {{count}} verified review",
     "basedOn_other": "from {{count}} verified reviews",
     "stickyBarLabel": "Add to cart",
-    "zoomHint": "Hover to zoom"
+    "zoomHint": "Hover to zoom",
+    "variantLabel": "Option"
   },
   "cart": {
     "confirmedBadge": "Order confirmed",
@@ -1440,7 +1442,7 @@
         "priceCents": "Two decimal places at most."
       },
       "promoInPromotions": "Promotional prices are managed in Promotions: the price here is the regular selling price.",
-      "databaseNotice": "Saved to the Supabase database; images upload as soon as they are added. The shop does not read the database yet, so an active product does not appear there yet.",
+      "databaseNotice": "Saved to the Supabase database: an active product appears in the shop. Images upload as soon as they are added.",
       "variantStock_one": "Stock is kept per variant ({{count}} variant, {{stock}} units in total). It cannot be edited from this screen yet.",
       "variantStock_other": "Stock is kept per variant ({{count}} variants, {{stock}} units in total). It cannot be edited from this screen yet."
     },
@@ -4066,5 +4068,11 @@
       "companyCta": "Legal notice",
       "storyTitle": "Our story"
     }
+  },
+  "catalog": {
+    "loading": "Loading the catalogue…",
+    "errorTitle": "The catalogue is temporarily unavailable",
+    "errorBody": "We could not load the products. Check your connection and try again.",
+    "retry": "Try again"
   }
 }
