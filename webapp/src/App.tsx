@@ -1,5 +1,5 @@
 import { Routes, Route, Navigate, useLocation } from "react-router-dom";
-import { useEffect } from "react";
+import { lazy, Suspense, useEffect } from "react";
 import { useTranslation } from "react-i18next";
 import { AuthProvider, RequireAccount } from "./lib/auth";
 import { AdminAuthProvider, RequireAdmin } from "./lib/adminAuth";
@@ -58,6 +58,7 @@ import { Statistics as AdminStatistics } from "./pages/admin/Statistics";
 import { AdminProducts } from "./pages/admin/AdminProducts";
 import { AdminProductNew } from "./pages/admin/AdminProductNew";
 import { AdminProductEdit } from "./pages/admin/AdminProductEdit";
+import { AdminProductRecommendations } from "./pages/admin/AdminProductRecommendations";
 import { AdminCategories } from "./pages/admin/AdminCategories";
 import { Orders as AdminOrders } from "./pages/admin/Orders";
 import { OrderDetail as AdminOrderDetail } from "./pages/admin/OrderDetail";
@@ -74,11 +75,22 @@ import { GiftCardSettings as AdminGiftCardSettings } from "./pages/admin/GiftCar
 import { PromotionPreview as AdminPromotionPreview } from "./pages/admin/PromotionPreview";
 import { Reviews as AdminReviews } from "./pages/admin/Reviews";
 import { Settings as AdminSettings } from "./pages/admin/Settings";
+import { Training as AdminTraining } from "./pages/admin/Training";
+import { TrainingNew as AdminTrainingNew } from "./pages/admin/TrainingNew";
+import { TrainingBuilder as AdminTrainingBuilder } from "./pages/admin/TrainingBuilder";
+import { TrainingPreview as AdminTrainingPreview } from "./pages/admin/TrainingPreview";
+import { TrainingReview as AdminTrainingReview } from "./pages/admin/TrainingReview";
 import { GiftCard } from "./pages/GiftCard";
 import { Studio } from "./pages/Studio";
 import { StudioSubscribe } from "./pages/StudioSubscribe";
-import { STUDIO_PATH, STUDIO_SUBSCRIBE_ALIAS, STUDIO_SUBSCRIBE_PATH } from "./lib/studioUrl";
+import { STUDIO_EDITOR_ALIAS, STUDIO_EDITOR_PATH, STUDIO_PATH, STUDIO_SUBSCRIBE_ALIAS, STUDIO_SUBSCRIBE_PATH } from "./lib/studioUrl";
+import { RequireStudioAccess } from "./lib/studioAccess";
+import { StudioEditorLoading } from "./components/studio/editor/StudioEditorLoading";
 import { NotFound } from "./pages/NotFound";
+
+/* The 3D Studio editor carries three.js, the heaviest code in the site: it is
+   split into its own chunk and only downloaded when the editor is opened. */
+const StudioEditor = lazy(() => import("./pages/StudioEditor").then((m) => ({ default: m.StudioEditor })));
 import { ServerError } from "./pages/ServerError";
 import { Maintenance } from "./pages/Maintenance";
 import { HelpCentre } from "./pages/legal/HelpCentre";
@@ -137,12 +149,20 @@ const ADMIN_ROUTE_PREFIX = "/admin";
  */
 const MAINTENANCE_ROUTE = "/maintenance";
 
+/**
+ * The 3D Studio editor is a full-screen workspace with its own application
+ * bar, so it also leaves out the storefront header and footer. Unlike the back
+ * office it stays a customer page: the cookie banner still shows.
+ */
+const WORKSPACE_ROUTES = [STUDIO_EDITOR_PATH];
+
 export default function App() {
   const { t } = useTranslation();
   const { pathname } = useLocation();
   const editorial = pathname === EDITORIAL_ROUTE;
   const adminArea = pathname === ADMIN_ROUTE_PREFIX || pathname.startsWith(`${ADMIN_ROUTE_PREFIX}/`);
   const bareChrome = adminArea || pathname === MAINTENANCE_ROUTE;
+  const workspace = WORKSPACE_ROUTES.includes(pathname);
 
   return (
     // The product catalogue (Supabase, or the mock fixtures when it is not
@@ -183,7 +203,7 @@ export default function App() {
                       meet it before the page, though it sits at the bottom of
                       the screen. Not on the back office or maintenance chrome. */}
                   {!bareChrome && <CookieBanner />}
-                  {!bareChrome && (editorial ? <HeaderEditorial /> : <Header />)}
+                  {!bareChrome && !workspace && (editorial ? <HeaderEditorial /> : <Header />)}
                   <main id="main" tabIndex={-1}>
                     <Routes>
                       <Route path="/" element={<Home />} />
@@ -231,10 +251,26 @@ export default function App() {
                       {/* The 3D Studio: its presentation page and its subscription
                           page. Both open, like the Academy and Loyalty sales
                           pages — the subscription page asks for the account
-                          itself. Visual prototypes: no editor, no payment. */}
+                          itself. The subscription is a visual prototype: no
+                          payment is taken. */}
                       <Route path={STUDIO_PATH} element={<Studio />} />
                       <Route path={STUDIO_SUBSCRIBE_PATH} element={<StudioSubscribe />} />
                       <Route path={STUDIO_SUBSCRIBE_ALIAS} element={<Navigate to={STUDIO_SUBSCRIBE_PATH} replace />} />
+                      {/* The editor itself. Gated by `RequireStudioAccess`,
+                          which during the preview lets every visitor in for
+                          free — the one place to change when the paid
+                          subscription goes live. Lazy: see `StudioEditor`. */}
+                      <Route
+                        path={STUDIO_EDITOR_PATH}
+                        element={
+                          <RequireStudioAccess>
+                            <Suspense fallback={<StudioEditorLoading />}>
+                              <StudioEditor />
+                            </Suspense>
+                          </RequireStudioAccess>
+                        }
+                      />
+                      <Route path={STUDIO_EDITOR_ALIAS} element={<Navigate to={STUDIO_EDITOR_PATH} replace />} />
                       {/* The Academy landing page stays open — it is the sales page.
                           Only the course content itself requires an account, and gating
                           the route covers the menu links and direct URLs at once. */}
@@ -334,6 +370,9 @@ export default function App() {
                         <Route path="produits" element={<AdminProducts />} />
                         <Route path="produits/nouveau" element={<AdminProductNew />} />
                         <Route path="produits/:id" element={<AdminProductEdit />} />
+                        {/* The products recommended next to a product: saved
+                            apart from the product form (their own table). */}
+                        <Route path="produits/:id/recommandations" element={<AdminProductRecommendations />} />
                         <Route path="categories" element={<AdminCategories />} />
                         {/* Promotions, campaigns and gift cards: one workspace
                             with tabs in the query string, and one route per
@@ -359,6 +398,19 @@ export default function App() {
                             editor addressed by `traduire` + `langue`, so a
                             missing translation is a link a colleague can open. */}
                         <Route path="parametres" element={<AdminSettings />} />
+                        {/* Training. The builder keeps its selection in the
+                            query string rather than in the path: a module, a
+                            step and a quiz are all edited in the same
+                            workspace, and four nested routes would put the
+                            same three panels behind four addresses. Preview
+                            and review are their own routes, because both are
+                            places an administrator arrives at rather than
+                            states the builder happens to be in. */}
+                        <Route path="formations" element={<AdminTraining />} />
+                        <Route path="formations/nouvelle" element={<AdminTrainingNew />} />
+                        <Route path="formations/:id" element={<AdminTrainingBuilder />} />
+                        <Route path="formations/:id/apercu" element={<AdminTrainingPreview />} />
+                        <Route path="formations/:id/publication" element={<AdminTrainingReview />} />
                       </Route>
 
                       {/* Help centre and legal pages. Every one is reachable from
@@ -389,7 +441,7 @@ export default function App() {
                       <Route path="*" element={<NotFound />} />
                     </Routes>
                   </main>
-                  {!bareChrome && (editorial ? <FooterEditorial /> : <Footer />)}
+                  {!bareChrome && !workspace && (editorial ? <FooterEditorial /> : <Footer />)}
                   <CookieSettingsDialog />
                   <ReviewOverlays />
                 </ReviewsProvider>

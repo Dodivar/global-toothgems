@@ -8,7 +8,8 @@ import { GemIcon } from "./Gem";
 import { formatPrice } from "../../lib/format";
 import { useReveal } from "../../lib/useReveal";
 import { STUDIO_PRICE } from "../../data/studio";
-import { STUDIO_PATH } from "../../lib/studioUrl";
+import { STUDIO_EDITOR_PATH, STUDIO_PATH } from "../../lib/studioUrl";
+import { useStudioAccess } from "../../lib/studioAccess";
 
 /**
  * The home page's door into the Studio: one headline, one sentence, the price
@@ -19,6 +20,7 @@ export function StudioTeaser() {
   const { t } = useTranslation();
   const navigate = useNavigate();
   const ref = useReveal<HTMLElement>();
+  const access = useStudioAccess();
 
   return (
     <section ref={ref} aria-labelledby="gt-studio-teaser-title" className="gt-reveal px-[clamp(14px,4vw,48px)] pb-[var(--section-y)]">
@@ -37,6 +39,12 @@ export function StudioTeaser() {
             <Button variant="primary" size="lg" iconRight={ArrowRight} onClick={() => navigate(STUDIO_PATH)}>
               {t("studio.teaser.cta")}
             </Button>
+            {/* During the free preview the editor is one click away. */}
+            {access.granted && (
+              <Button variant="outline" size="lg" onClick={() => navigate(STUDIO_EDITOR_PATH)}>
+                {t("studio.hero.ctaOpen")}
+              </Button>
+            )}
             <p className="m-0 flex items-baseline gap-1.5 text-[var(--text-primary)]">
               <strong className="text-[26px] font-[var(--weight-black)]">{formatPrice(STUDIO_PRICE.amount, undefined, STUDIO_PRICE.currency)}</strong>
               <span className="text-[length:var(--text-body-sm)] font-semibold text-[var(--text-muted)]">{t("studio.pricing.perMonth")}</span>

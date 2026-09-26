@@ -23,16 +23,15 @@ import { useAdminAuth } from "../../lib/adminAuth";
 /**
  * Persistent navigation rail.
  *
- * Two groups, and the second one is the point: Training is drawn
- * and permanently disabled, so the prototype shows the shape of the finished
- * platform without pretending that section exists. Marking it rather than
- * hiding it is what lets the future administrator judge where their work will
- * live.
- *
  * Analytics moved up into the first group when the Statistics screen landed:
  * the entry, its label and its icon are unchanged, it is simply a destination
  * now rather than a promise. Settings followed the same way when the store
- * configuration screens landed.
+ * configuration screens landed, and Training when its workspace did — it was
+ * the last entry left in the second group.
+ *
+ * The "coming soon" group is therefore empty, and renders nothing rather than a
+ * heading with nothing under it. The scaffolding stays for the next section
+ * that is announced before it is built.
  */
 
 interface RailItem {
@@ -52,11 +51,10 @@ const MAIN: RailItem[] = [
   { to: "/admin/avis", labelKey: "reviews.nav.admin", icon: MessageSquareText },
   { to: "/admin/statistiques", labelKey: "admin.nav.analytics", icon: BarChart3 },
   { to: "/admin/parametres", labelKey: "admin.nav.settings", icon: Settings },
+  { to: "/admin/formations", labelKey: "admin.nav.training", icon: GraduationCap },
 ];
 
-const SOON: { labelKey: string; icon: LucideIcon }[] = [
-  { labelKey: "admin.nav.training", icon: GraduationCap },
-];
+const SOON: { labelKey: string; icon: LucideIcon }[] = [];
 
 const railFocus =
   "focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-[var(--gt-blue-300)]";
@@ -160,6 +158,8 @@ export function AdminSidebar({
           ))}
         </ul>
 
+        {SOON.length > 0 && (
+          <>
         <p
           className={clsx(
             "m-0 mb-2 mt-7 text-[10px] font-semibold uppercase tracking-[var(--tracking-eyebrow)] text-[var(--admin-rail-muted)]",
@@ -196,6 +196,8 @@ export function AdminSidebar({
             </li>
           ))}
         </ul>
+          </>
+        )}
       </nav>
 
       {/* Administrator */}

@@ -120,7 +120,7 @@ src/
   components/academy/ The training detail page: hero, curriculum accordion, assessment, diploma, community, shared primitives
   components/community/ Forum pieces (navigation, discussion card, showcase card, reactions, member card, composer, locked preview)
   components/reviews/ Customer reviews: stars, badges, review card, section, form, request, overlays; admin/ holds the moderation workspace
-  components/studio/ The 3D Studio mockups: smile canvas, rendered gems, interactive Studio window, feature cards, media placeholders, inspiration boards, steps, pricing card, FAQ, home teaser
+  components/studio/ The 3D Studio mockups (and editor/, the working editor UI): smile canvas, rendered gems, interactive Studio window, feature cards, media placeholders, inspiration boards, steps, pricing card, FAQ, home teaser
   components/loyalty/ The Loyalty Club: stamp, card, progress, reward, steps, journey, FAQ, checkout banner, demo switcher
   components/layout/ Header (desktop nav + mega panel, mobile burger menu) and Footer
   pages/admin/      The administration workspace: access screen, shell, dashboard, orders, products, categories
@@ -174,18 +174,39 @@ stored, and marketing consent is never pre-ticked. Logic and mock service live i
 
 ## The 3D Studio (`/studio-3d`)
 
-A **visual prototype** of a paid creative tool (€5 / month) for designing tooth jewellery compositions. There is no editor, no 3D renderer, no saved composition and no payment behind it.
+A paid creative tool (€5 / month) for designing tooth jewellery compositions. The presentation and subscription pages are visual prototypes (no payment is taken); the **editor** at `/studio-3d/atelier` is a working three.js application, **free for every visitor during the preview**.
 
 | Route | Screen |
 | --- | --- |
 | `/studio-3d` | Presentation page: hero with the Studio window, concept, six capabilities, media wall, inspiration boards, three steps, offer, FAQ |
 | `/studio-3d/abonnement` | Subscription page: the single monthly plan, account, fictional payment, summary, loading and confirmation states (`/studio-3d/subscribe` redirects here) |
+| `/studio-3d/atelier` | The editor: 3D upper arch, jewellery library, placement by drag / click / keyboard, collision-free layout tools, presets, undo/redo, PNG / estimate sheet / JSON export (`/studio-3d/editor` redirects here). Full-screen, without the storefront header and footer |
+
+### The editor
+
+Ported from the standalone `studio3D.html` into the app's architecture:
+
+| Where | What |
+| --- | --- |
+| `data/studioEditor.ts` | Catalog, finishes, dentition, ready-made presets, the **indicative** estimate price list (integer cents + currency), validation of designs read back from storage |
+| `lib/studio3d/engine.ts` | The three.js engine: scene, camera, raycast placement, drag, collisions, mirror / distribute / align, glTF import, exports. On-demand rendering (idles when nothing moves) |
+| `lib/studio3d/geometry.ts` | Procedural teeth, piece shapes and materials, cached |
+| `lib/studio3d/store.ts` | The design store (history, selection, local persistence, named presets) |
+| `lib/studio3d/actions.ts`, `notices.ts` | Shared commands, and the channel through which the engine reports to the site's toasts by translation key |
+| `components/studio/editor/` | Top bar, library, 3D stage, inspector, colour wheel, popovers |
+| `pages/StudioEditor.tsx` | The page: layout, shortcuts, save on exit. Lazy-loaded, so three.js is only downloaded when the editor opens |
+
+- **Access**: `lib/studioAccess.tsx` is the single switch. `STUDIO_ACCESS_MODE = "preview"` lets everyone in without paying. When the subscription goes live, switch it to `"subscription"` and back it with a server-side entitlement granted by the verified Stripe webhook; the client check is navigation only.
+- **Saving** is local to the browser (`gt-studio3d-*` keys); nothing is sent to a server yet.
+- **Estimate**: prices in `ESTIMATE_PRICING` are prototype values, shown as "approx." and labelled as not a quote. They are never sent to checkout.
+- **Model import** (`.glb` / `.gltf`, 60 MB max) runs entirely in the browser; Draco-compressed files fetch their decoder from the jsDelivr build of the bundled three.js version.
 
 - **The Studio window** (`components/studio/StudioMockup.tsx`) is lightly interactive: pieces can be selected, swapped from the library, resized, recoloured, added and removed; presets, undo/redo, zoom and a CSS-perspective "¾ / profile" view all work on local state. "Save" and "Share" only play their states.
 - **The canvas** (`SmileCanvas.tsx`) is an SVG drawing of a smile; pieces reuse the shop's `GLYPH_PATHS` with material gradients (`Gem.tsx`, `gemStyle.ts`).
 - **Replaceable media**: every tile of the "See what you can create." wall is a `MediaPlaceholder` carrying `data-placeholder="…"` and a visible `[… PLACEHOLDER]` tag. Search for `data-placeholder` to find them.
 - **Fictional content**: compositions, library pieces, saved creations and inspiration boards live in `data/studio.ts`; copy lives in `i18n/locales/studio.{fr,en}.json` under `studio`. FAQ answers (mobile availability, saving, use when ordering) describe the intended product and must be confirmed before launch.
 - **Price**: `STUDIO_PRICE` is a display value only. In production the price comes from the Stripe Price, the button hands over to Stripe Checkout (subscription mode) and access is granted by the verified webhook — never by the confirmation screen.
+- **Editor entry points**: while preview access is on, "Open the Studio" on the presentation page (hero, FAQ, phone bar), the home teaser, "Recreate" on the inspiration boards and the subscription confirmation all lead to the editor; the offer section still leads to the subscription page.
 - **Navigation**: "Studio 3D · New" sits after the Academy in both desktop headers, as a featured row above the tabs in both mobile menus, and as a link in the member area sidebar and pill row. The home page carries a teaser (`StudioTeaser`) between the best sellers and the Academy band.
 
 ## The member area (`/compte`)

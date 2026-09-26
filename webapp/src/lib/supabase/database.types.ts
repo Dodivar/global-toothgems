@@ -50,6 +50,208 @@ export type Database = {
             foreignKeyName: "audit_logs_actor_id_fkey"
             columns: ["actor_id"]
             isOneToOne: false
+            referencedRelation: "loyalty_overview"
+            referencedColumns: ["user_id"]
+          },
+          {
+            foreignKeyName: "audit_logs_actor_id_fkey"
+            columns: ["actor_id"]
+            isOneToOne: false
+            referencedRelation: "profiles"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      campaign_products: {
+        Row: {
+          campaign_id: string
+          created_at: string
+          position: number
+          product_id: string
+        }
+        Insert: {
+          campaign_id: string
+          created_at?: string
+          position?: number
+          product_id: string
+        }
+        Update: {
+          campaign_id?: string
+          created_at?: string
+          position?: number
+          product_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "campaign_products_campaign_id_fkey"
+            columns: ["campaign_id"]
+            isOneToOne: false
+            referencedRelation: "campaign_overview"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "campaign_products_campaign_id_fkey"
+            columns: ["campaign_id"]
+            isOneToOne: false
+            referencedRelation: "campaigns"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "campaign_products_product_id_fkey"
+            columns: ["product_id"]
+            isOneToOne: false
+            referencedRelation: "products"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      campaign_translations: {
+        Row: {
+          campaign_id: string
+          created_at: string
+          description: string | null
+          locale: string
+          status: string
+          title: string
+          updated_at: string
+          updated_by: string | null
+        }
+        Insert: {
+          campaign_id: string
+          created_at?: string
+          description?: string | null
+          locale: string
+          status?: string
+          title: string
+          updated_at?: string
+          updated_by?: string | null
+        }
+        Update: {
+          campaign_id?: string
+          created_at?: string
+          description?: string | null
+          locale?: string
+          status?: string
+          title?: string
+          updated_at?: string
+          updated_by?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "campaign_translations_campaign_id_fkey"
+            columns: ["campaign_id"]
+            isOneToOne: false
+            referencedRelation: "campaign_overview"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "campaign_translations_campaign_id_fkey"
+            columns: ["campaign_id"]
+            isOneToOne: false
+            referencedRelation: "campaigns"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "campaign_translations_locale_fkey"
+            columns: ["locale"]
+            isOneToOne: false
+            referencedRelation: "languages"
+            referencedColumns: ["code"]
+          },
+          {
+            foreignKeyName: "campaign_translations_updated_by_fkey"
+            columns: ["updated_by"]
+            isOneToOne: false
+            referencedRelation: "loyalty_overview"
+            referencedColumns: ["user_id"]
+          },
+          {
+            foreignKeyName: "campaign_translations_updated_by_fkey"
+            columns: ["updated_by"]
+            isOneToOne: false
+            referencedRelation: "profiles"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      campaigns: {
+        Row: {
+          cover_path: string | null
+          created_at: string
+          created_by: string | null
+          description: string | null
+          ends_at: string
+          id: string
+          internal_description: string | null
+          lifecycle: string
+          name: string
+          starts_at: string
+          theme: string
+          timezone: string
+          title: string
+          updated_at: string
+          updated_by: string | null
+        }
+        Insert: {
+          cover_path?: string | null
+          created_at?: string
+          created_by?: string | null
+          description?: string | null
+          ends_at: string
+          id?: string
+          internal_description?: string | null
+          lifecycle?: string
+          name: string
+          starts_at: string
+          theme?: string
+          timezone?: string
+          title: string
+          updated_at?: string
+          updated_by?: string | null
+        }
+        Update: {
+          cover_path?: string | null
+          created_at?: string
+          created_by?: string | null
+          description?: string | null
+          ends_at?: string
+          id?: string
+          internal_description?: string | null
+          lifecycle?: string
+          name?: string
+          starts_at?: string
+          theme?: string
+          timezone?: string
+          title?: string
+          updated_at?: string
+          updated_by?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "campaigns_created_by_fkey"
+            columns: ["created_by"]
+            isOneToOne: false
+            referencedRelation: "loyalty_overview"
+            referencedColumns: ["user_id"]
+          },
+          {
+            foreignKeyName: "campaigns_created_by_fkey"
+            columns: ["created_by"]
+            isOneToOne: false
+            referencedRelation: "profiles"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "campaigns_updated_by_fkey"
+            columns: ["updated_by"]
+            isOneToOne: false
+            referencedRelation: "loyalty_overview"
+            referencedColumns: ["user_id"]
+          },
+          {
+            foreignKeyName: "campaigns_updated_by_fkey"
+            columns: ["updated_by"]
+            isOneToOne: false
             referencedRelation: "profiles"
             referencedColumns: ["id"]
           },
@@ -65,6 +267,7 @@ export type Database = {
           is_active: boolean
           name: string
           position: number
+          report_group: string
           slug: string
           updated_at: string
           updated_by: string | null
@@ -78,6 +281,7 @@ export type Database = {
           is_active?: boolean
           name: string
           position?: number
+          report_group?: string
           slug: string
           updated_at?: string
           updated_by?: string | null
@@ -91,6 +295,7 @@ export type Database = {
           is_active?: boolean
           name?: string
           position?: number
+          report_group?: string
           slug?: string
           updated_at?: string
           updated_by?: string | null
@@ -100,8 +305,22 @@ export type Database = {
             foreignKeyName: "categories_created_by_fkey"
             columns: ["created_by"]
             isOneToOne: false
+            referencedRelation: "loyalty_overview"
+            referencedColumns: ["user_id"]
+          },
+          {
+            foreignKeyName: "categories_created_by_fkey"
+            columns: ["created_by"]
+            isOneToOne: false
             referencedRelation: "profiles"
             referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "categories_updated_by_fkey"
+            columns: ["updated_by"]
+            isOneToOne: false
+            referencedRelation: "loyalty_overview"
+            referencedColumns: ["user_id"]
           },
           {
             foreignKeyName: "categories_updated_by_fkey"
@@ -163,6 +382,572 @@ export type Database = {
           },
           {
             foreignKeyName: "category_translations_updated_by_fkey"
+            columns: ["updated_by"]
+            isOneToOne: false
+            referencedRelation: "loyalty_overview"
+            referencedColumns: ["user_id"]
+          },
+          {
+            foreignKeyName: "category_translations_updated_by_fkey"
+            columns: ["updated_by"]
+            isOneToOne: false
+            referencedRelation: "profiles"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      collection_products: {
+        Row: {
+          collection_id: string
+          created_at: string
+          position: number
+          product_id: string
+        }
+        Insert: {
+          collection_id: string
+          created_at?: string
+          position?: number
+          product_id: string
+        }
+        Update: {
+          collection_id?: string
+          created_at?: string
+          position?: number
+          product_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "collection_products_collection_id_fkey"
+            columns: ["collection_id"]
+            isOneToOne: false
+            referencedRelation: "collections"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "collection_products_product_id_fkey"
+            columns: ["product_id"]
+            isOneToOne: false
+            referencedRelation: "products"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      collection_translations: {
+        Row: {
+          collection_id: string
+          created_at: string
+          description: string | null
+          locale: string
+          name: string
+          status: string
+          updated_at: string
+          updated_by: string | null
+        }
+        Insert: {
+          collection_id: string
+          created_at?: string
+          description?: string | null
+          locale: string
+          name: string
+          status?: string
+          updated_at?: string
+          updated_by?: string | null
+        }
+        Update: {
+          collection_id?: string
+          created_at?: string
+          description?: string | null
+          locale?: string
+          name?: string
+          status?: string
+          updated_at?: string
+          updated_by?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "collection_translations_collection_id_fkey"
+            columns: ["collection_id"]
+            isOneToOne: false
+            referencedRelation: "collections"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "collection_translations_locale_fkey"
+            columns: ["locale"]
+            isOneToOne: false
+            referencedRelation: "languages"
+            referencedColumns: ["code"]
+          },
+          {
+            foreignKeyName: "collection_translations_updated_by_fkey"
+            columns: ["updated_by"]
+            isOneToOne: false
+            referencedRelation: "loyalty_overview"
+            referencedColumns: ["user_id"]
+          },
+          {
+            foreignKeyName: "collection_translations_updated_by_fkey"
+            columns: ["updated_by"]
+            isOneToOne: false
+            referencedRelation: "profiles"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      collections: {
+        Row: {
+          created_at: string
+          created_by: string | null
+          description: string | null
+          id: string
+          is_active: boolean
+          name: string
+          position: number
+          slug: string
+          updated_at: string
+          updated_by: string | null
+        }
+        Insert: {
+          created_at?: string
+          created_by?: string | null
+          description?: string | null
+          id?: string
+          is_active?: boolean
+          name: string
+          position?: number
+          slug: string
+          updated_at?: string
+          updated_by?: string | null
+        }
+        Update: {
+          created_at?: string
+          created_by?: string | null
+          description?: string | null
+          id?: string
+          is_active?: boolean
+          name?: string
+          position?: number
+          slug?: string
+          updated_at?: string
+          updated_by?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "collections_created_by_fkey"
+            columns: ["created_by"]
+            isOneToOne: false
+            referencedRelation: "loyalty_overview"
+            referencedColumns: ["user_id"]
+          },
+          {
+            foreignKeyName: "collections_created_by_fkey"
+            columns: ["created_by"]
+            isOneToOne: false
+            referencedRelation: "profiles"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "collections_updated_by_fkey"
+            columns: ["updated_by"]
+            isOneToOne: false
+            referencedRelation: "loyalty_overview"
+            referencedColumns: ["user_id"]
+          },
+          {
+            foreignKeyName: "collections_updated_by_fkey"
+            columns: ["updated_by"]
+            isOneToOne: false
+            referencedRelation: "profiles"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      consent_records: {
+        Row: {
+          created_at: string
+          granted: boolean
+          id: string
+          policy_version: string
+          purpose: string
+          source: string
+          user_id: string
+        }
+        Insert: {
+          created_at?: string
+          granted: boolean
+          id?: string
+          policy_version: string
+          purpose: string
+          source: string
+          user_id: string
+        }
+        Update: {
+          created_at?: string
+          granted?: boolean
+          id?: string
+          policy_version?: string
+          purpose?: string
+          source?: string
+          user_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "consent_records_user_id_fkey"
+            columns: ["user_id"]
+            isOneToOne: false
+            referencedRelation: "loyalty_overview"
+            referencedColumns: ["user_id"]
+          },
+          {
+            foreignKeyName: "consent_records_user_id_fkey"
+            columns: ["user_id"]
+            isOneToOne: false
+            referencedRelation: "profiles"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      contact_request_notes: {
+        Row: {
+          author_id: string | null
+          body: string
+          created_at: string
+          id: string
+          request_id: string
+          updated_at: string
+        }
+        Insert: {
+          author_id?: string | null
+          body: string
+          created_at?: string
+          id?: string
+          request_id: string
+          updated_at?: string
+        }
+        Update: {
+          author_id?: string | null
+          body?: string
+          created_at?: string
+          id?: string
+          request_id?: string
+          updated_at?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "contact_request_notes_author_id_fkey"
+            columns: ["author_id"]
+            isOneToOne: false
+            referencedRelation: "loyalty_overview"
+            referencedColumns: ["user_id"]
+          },
+          {
+            foreignKeyName: "contact_request_notes_author_id_fkey"
+            columns: ["author_id"]
+            isOneToOne: false
+            referencedRelation: "profiles"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "contact_request_notes_request_id_fkey"
+            columns: ["request_id"]
+            isOneToOne: false
+            referencedRelation: "contact_requests"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      contact_requests: {
+        Row: {
+          assigned_to: string | null
+          attachment_path: string | null
+          category: string
+          created_at: string
+          email: string
+          first_response_at: string | null
+          id: string
+          locale: string
+          message: string
+          name: string
+          order_id: string | null
+          order_reference: string | null
+          priority: string
+          resolved_at: string | null
+          status: string
+          subject: string
+          ticket_number: string
+          updated_at: string
+          updated_by: string | null
+          user_id: string | null
+        }
+        Insert: {
+          assigned_to?: string | null
+          attachment_path?: string | null
+          category: string
+          created_at?: string
+          email: string
+          first_response_at?: string | null
+          id?: string
+          locale?: string
+          message: string
+          name: string
+          order_id?: string | null
+          order_reference?: string | null
+          priority?: string
+          resolved_at?: string | null
+          status?: string
+          subject: string
+          ticket_number?: string
+          updated_at?: string
+          updated_by?: string | null
+          user_id?: string | null
+        }
+        Update: {
+          assigned_to?: string | null
+          attachment_path?: string | null
+          category?: string
+          created_at?: string
+          email?: string
+          first_response_at?: string | null
+          id?: string
+          locale?: string
+          message?: string
+          name?: string
+          order_id?: string | null
+          order_reference?: string | null
+          priority?: string
+          resolved_at?: string | null
+          status?: string
+          subject?: string
+          ticket_number?: string
+          updated_at?: string
+          updated_by?: string | null
+          user_id?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "contact_requests_assigned_to_fkey"
+            columns: ["assigned_to"]
+            isOneToOne: false
+            referencedRelation: "loyalty_overview"
+            referencedColumns: ["user_id"]
+          },
+          {
+            foreignKeyName: "contact_requests_assigned_to_fkey"
+            columns: ["assigned_to"]
+            isOneToOne: false
+            referencedRelation: "profiles"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "contact_requests_locale_fkey"
+            columns: ["locale"]
+            isOneToOne: false
+            referencedRelation: "languages"
+            referencedColumns: ["code"]
+          },
+          {
+            foreignKeyName: "contact_requests_order_id_fkey"
+            columns: ["order_id"]
+            isOneToOne: false
+            referencedRelation: "orders"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "contact_requests_order_id_fkey"
+            columns: ["order_id"]
+            isOneToOne: false
+            referencedRelation: "review_requests"
+            referencedColumns: ["order_id"]
+          },
+          {
+            foreignKeyName: "contact_requests_updated_by_fkey"
+            columns: ["updated_by"]
+            isOneToOne: false
+            referencedRelation: "loyalty_overview"
+            referencedColumns: ["user_id"]
+          },
+          {
+            foreignKeyName: "contact_requests_updated_by_fkey"
+            columns: ["updated_by"]
+            isOneToOne: false
+            referencedRelation: "profiles"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "contact_requests_user_id_fkey"
+            columns: ["user_id"]
+            isOneToOne: false
+            referencedRelation: "loyalty_overview"
+            referencedColumns: ["user_id"]
+          },
+          {
+            foreignKeyName: "contact_requests_user_id_fkey"
+            columns: ["user_id"]
+            isOneToOne: false
+            referencedRelation: "profiles"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      content_page_translations: {
+        Row: {
+          body: string
+          created_at: string
+          locale: string
+          meta_description: string | null
+          meta_title: string | null
+          page_id: string
+          slug: string | null
+          source_updated_at: string
+          status: string
+          summary: string | null
+          title: string
+          updated_at: string
+          updated_by: string | null
+        }
+        Insert: {
+          body?: string
+          created_at?: string
+          locale: string
+          meta_description?: string | null
+          meta_title?: string | null
+          page_id: string
+          slug?: string | null
+          source_updated_at?: string
+          status?: string
+          summary?: string | null
+          title: string
+          updated_at?: string
+          updated_by?: string | null
+        }
+        Update: {
+          body?: string
+          created_at?: string
+          locale?: string
+          meta_description?: string | null
+          meta_title?: string | null
+          page_id?: string
+          slug?: string | null
+          source_updated_at?: string
+          status?: string
+          summary?: string | null
+          title?: string
+          updated_at?: string
+          updated_by?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "content_page_translations_locale_fkey"
+            columns: ["locale"]
+            isOneToOne: false
+            referencedRelation: "languages"
+            referencedColumns: ["code"]
+          },
+          {
+            foreignKeyName: "content_page_translations_page_id_fkey"
+            columns: ["page_id"]
+            isOneToOne: false
+            referencedRelation: "content_pages"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "content_page_translations_updated_by_fkey"
+            columns: ["updated_by"]
+            isOneToOne: false
+            referencedRelation: "loyalty_overview"
+            referencedColumns: ["user_id"]
+          },
+          {
+            foreignKeyName: "content_page_translations_updated_by_fkey"
+            columns: ["updated_by"]
+            isOneToOne: false
+            referencedRelation: "profiles"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      content_pages: {
+        Row: {
+          body: string
+          content_updated_at: string
+          created_at: string
+          created_by: string | null
+          id: string
+          kind: string
+          meta_description: string | null
+          meta_title: string | null
+          policy_version: string | null
+          published_at: string | null
+          slug: string
+          status: string
+          summary: string | null
+          title: string
+          translation_priority: string
+          updated_at: string
+          updated_by: string | null
+        }
+        Insert: {
+          body?: string
+          content_updated_at?: string
+          created_at?: string
+          created_by?: string | null
+          id?: string
+          kind?: string
+          meta_description?: string | null
+          meta_title?: string | null
+          policy_version?: string | null
+          published_at?: string | null
+          slug: string
+          status?: string
+          summary?: string | null
+          title: string
+          translation_priority?: string
+          updated_at?: string
+          updated_by?: string | null
+        }
+        Update: {
+          body?: string
+          content_updated_at?: string
+          created_at?: string
+          created_by?: string | null
+          id?: string
+          kind?: string
+          meta_description?: string | null
+          meta_title?: string | null
+          policy_version?: string | null
+          published_at?: string | null
+          slug?: string
+          status?: string
+          summary?: string | null
+          title?: string
+          translation_priority?: string
+          updated_at?: string
+          updated_by?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "content_pages_created_by_fkey"
+            columns: ["created_by"]
+            isOneToOne: false
+            referencedRelation: "loyalty_overview"
+            referencedColumns: ["user_id"]
+          },
+          {
+            foreignKeyName: "content_pages_created_by_fkey"
+            columns: ["created_by"]
+            isOneToOne: false
+            referencedRelation: "profiles"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "content_pages_updated_by_fkey"
+            columns: ["updated_by"]
+            isOneToOne: false
+            referencedRelation: "loyalty_overview"
+            referencedColumns: ["user_id"]
+          },
+          {
+            foreignKeyName: "content_pages_updated_by_fkey"
             columns: ["updated_by"]
             isOneToOne: false
             referencedRelation: "profiles"
@@ -232,6 +1017,459 @@ export type Database = {
           {
             foreignKeyName: "customer_addresses_user_id_fkey"
             columns: ["user_id"]
+            isOneToOne: false
+            referencedRelation: "loyalty_overview"
+            referencedColumns: ["user_id"]
+          },
+          {
+            foreignKeyName: "customer_addresses_user_id_fkey"
+            columns: ["user_id"]
+            isOneToOne: false
+            referencedRelation: "profiles"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      customer_notes: {
+        Row: {
+          author_id: string | null
+          body: string
+          created_at: string
+          id: string
+          updated_at: string
+          user_id: string
+        }
+        Insert: {
+          author_id?: string | null
+          body: string
+          created_at?: string
+          id?: string
+          updated_at?: string
+          user_id: string
+        }
+        Update: {
+          author_id?: string | null
+          body?: string
+          created_at?: string
+          id?: string
+          updated_at?: string
+          user_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "customer_notes_author_id_fkey"
+            columns: ["author_id"]
+            isOneToOne: false
+            referencedRelation: "loyalty_overview"
+            referencedColumns: ["user_id"]
+          },
+          {
+            foreignKeyName: "customer_notes_author_id_fkey"
+            columns: ["author_id"]
+            isOneToOne: false
+            referencedRelation: "profiles"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "customer_notes_user_id_fkey"
+            columns: ["user_id"]
+            isOneToOne: false
+            referencedRelation: "loyalty_overview"
+            referencedColumns: ["user_id"]
+          },
+          {
+            foreignKeyName: "customer_notes_user_id_fkey"
+            columns: ["user_id"]
+            isOneToOne: false
+            referencedRelation: "profiles"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      customer_segment_members: {
+        Row: {
+          added_by: string | null
+          created_at: string
+          segment_id: string
+          user_id: string
+        }
+        Insert: {
+          added_by?: string | null
+          created_at?: string
+          segment_id: string
+          user_id: string
+        }
+        Update: {
+          added_by?: string | null
+          created_at?: string
+          segment_id?: string
+          user_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "customer_segment_members_added_by_fkey"
+            columns: ["added_by"]
+            isOneToOne: false
+            referencedRelation: "loyalty_overview"
+            referencedColumns: ["user_id"]
+          },
+          {
+            foreignKeyName: "customer_segment_members_added_by_fkey"
+            columns: ["added_by"]
+            isOneToOne: false
+            referencedRelation: "profiles"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "customer_segment_members_segment_id_fkey"
+            columns: ["segment_id"]
+            isOneToOne: false
+            referencedRelation: "customer_segment_overview"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "customer_segment_members_segment_id_fkey"
+            columns: ["segment_id"]
+            isOneToOne: false
+            referencedRelation: "customer_segments"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "customer_segment_members_user_id_fkey"
+            columns: ["user_id"]
+            isOneToOne: false
+            referencedRelation: "loyalty_overview"
+            referencedColumns: ["user_id"]
+          },
+          {
+            foreignKeyName: "customer_segment_members_user_id_fkey"
+            columns: ["user_id"]
+            isOneToOne: false
+            referencedRelation: "profiles"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      customer_segments: {
+        Row: {
+          created_at: string
+          created_by: string | null
+          customer_tag: string | null
+          description: string | null
+          id: string
+          is_active: boolean
+          name: string
+          rule: string
+          slug: string
+          updated_at: string
+          updated_by: string | null
+        }
+        Insert: {
+          created_at?: string
+          created_by?: string | null
+          customer_tag?: string | null
+          description?: string | null
+          id?: string
+          is_active?: boolean
+          name: string
+          rule?: string
+          slug: string
+          updated_at?: string
+          updated_by?: string | null
+        }
+        Update: {
+          created_at?: string
+          created_by?: string | null
+          customer_tag?: string | null
+          description?: string | null
+          id?: string
+          is_active?: boolean
+          name?: string
+          rule?: string
+          slug?: string
+          updated_at?: string
+          updated_by?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "customer_segments_created_by_fkey"
+            columns: ["created_by"]
+            isOneToOne: false
+            referencedRelation: "loyalty_overview"
+            referencedColumns: ["user_id"]
+          },
+          {
+            foreignKeyName: "customer_segments_created_by_fkey"
+            columns: ["created_by"]
+            isOneToOne: false
+            referencedRelation: "profiles"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "customer_segments_updated_by_fkey"
+            columns: ["updated_by"]
+            isOneToOne: false
+            referencedRelation: "loyalty_overview"
+            referencedColumns: ["user_id"]
+          },
+          {
+            foreignKeyName: "customer_segments_updated_by_fkey"
+            columns: ["updated_by"]
+            isOneToOne: false
+            referencedRelation: "profiles"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      customer_tags: {
+        Row: {
+          created_at: string
+          created_by: string | null
+          id: string
+          tag: string
+          user_id: string
+        }
+        Insert: {
+          created_at?: string
+          created_by?: string | null
+          id?: string
+          tag: string
+          user_id: string
+        }
+        Update: {
+          created_at?: string
+          created_by?: string | null
+          id?: string
+          tag?: string
+          user_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "customer_tags_created_by_fkey"
+            columns: ["created_by"]
+            isOneToOne: false
+            referencedRelation: "loyalty_overview"
+            referencedColumns: ["user_id"]
+          },
+          {
+            foreignKeyName: "customer_tags_created_by_fkey"
+            columns: ["created_by"]
+            isOneToOne: false
+            referencedRelation: "profiles"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "customer_tags_user_id_fkey"
+            columns: ["user_id"]
+            isOneToOne: false
+            referencedRelation: "loyalty_overview"
+            referencedColumns: ["user_id"]
+          },
+          {
+            foreignKeyName: "customer_tags_user_id_fkey"
+            columns: ["user_id"]
+            isOneToOne: false
+            referencedRelation: "profiles"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      data_export_requests: {
+        Row: {
+          error: string | null
+          expires_at: string | null
+          id: string
+          ready_at: string | null
+          requested_at: string
+          status: string
+          storage_path: string | null
+          updated_at: string
+          user_id: string
+        }
+        Insert: {
+          error?: string | null
+          expires_at?: string | null
+          id?: string
+          ready_at?: string | null
+          requested_at?: string
+          status?: string
+          storage_path?: string | null
+          updated_at?: string
+          user_id: string
+        }
+        Update: {
+          error?: string | null
+          expires_at?: string | null
+          id?: string
+          ready_at?: string | null
+          requested_at?: string
+          status?: string
+          storage_path?: string | null
+          updated_at?: string
+          user_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "data_export_requests_user_id_fkey"
+            columns: ["user_id"]
+            isOneToOne: false
+            referencedRelation: "loyalty_overview"
+            referencedColumns: ["user_id"]
+          },
+          {
+            foreignKeyName: "data_export_requests_user_id_fkey"
+            columns: ["user_id"]
+            isOneToOne: false
+            referencedRelation: "profiles"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      email_template_translations: {
+        Row: {
+          body: string
+          created_at: string
+          locale: string
+          preheader: string | null
+          source_updated_at: string
+          status: string
+          subject: string
+          template_id: string
+          updated_at: string
+          updated_by: string | null
+        }
+        Insert: {
+          body: string
+          created_at?: string
+          locale: string
+          preheader?: string | null
+          source_updated_at?: string
+          status?: string
+          subject: string
+          template_id: string
+          updated_at?: string
+          updated_by?: string | null
+        }
+        Update: {
+          body?: string
+          created_at?: string
+          locale?: string
+          preheader?: string | null
+          source_updated_at?: string
+          status?: string
+          subject?: string
+          template_id?: string
+          updated_at?: string
+          updated_by?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "email_template_translations_locale_fkey"
+            columns: ["locale"]
+            isOneToOne: false
+            referencedRelation: "languages"
+            referencedColumns: ["code"]
+          },
+          {
+            foreignKeyName: "email_template_translations_template_id_fkey"
+            columns: ["template_id"]
+            isOneToOne: false
+            referencedRelation: "email_templates"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "email_template_translations_updated_by_fkey"
+            columns: ["updated_by"]
+            isOneToOne: false
+            referencedRelation: "loyalty_overview"
+            referencedColumns: ["user_id"]
+          },
+          {
+            foreignKeyName: "email_template_translations_updated_by_fkey"
+            columns: ["updated_by"]
+            isOneToOne: false
+            referencedRelation: "profiles"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      email_templates: {
+        Row: {
+          body: string
+          content_updated_at: string
+          created_at: string
+          created_by: string | null
+          description: string | null
+          id: string
+          is_active: boolean
+          key: string
+          name: string
+          preheader: string | null
+          subject: string
+          translation_priority: string
+          updated_at: string
+          updated_by: string | null
+          variables: string[]
+        }
+        Insert: {
+          body: string
+          content_updated_at?: string
+          created_at?: string
+          created_by?: string | null
+          description?: string | null
+          id?: string
+          is_active?: boolean
+          key: string
+          name: string
+          preheader?: string | null
+          subject: string
+          translation_priority?: string
+          updated_at?: string
+          updated_by?: string | null
+          variables?: string[]
+        }
+        Update: {
+          body?: string
+          content_updated_at?: string
+          created_at?: string
+          created_by?: string | null
+          description?: string | null
+          id?: string
+          is_active?: boolean
+          key?: string
+          name?: string
+          preheader?: string | null
+          subject?: string
+          translation_priority?: string
+          updated_at?: string
+          updated_by?: string | null
+          variables?: string[]
+        }
+        Relationships: [
+          {
+            foreignKeyName: "email_templates_created_by_fkey"
+            columns: ["created_by"]
+            isOneToOne: false
+            referencedRelation: "loyalty_overview"
+            referencedColumns: ["user_id"]
+          },
+          {
+            foreignKeyName: "email_templates_created_by_fkey"
+            columns: ["created_by"]
+            isOneToOne: false
+            referencedRelation: "profiles"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "email_templates_updated_by_fkey"
+            columns: ["updated_by"]
+            isOneToOne: false
+            referencedRelation: "loyalty_overview"
+            referencedColumns: ["user_id"]
+          },
+          {
+            foreignKeyName: "email_templates_updated_by_fkey"
+            columns: ["updated_by"]
             isOneToOne: false
             referencedRelation: "profiles"
             referencedColumns: ["id"]
@@ -311,6 +1549,13 @@ export type Database = {
             foreignKeyName: "gift_card_settings_updated_by_fkey"
             columns: ["updated_by"]
             isOneToOne: false
+            referencedRelation: "loyalty_overview"
+            referencedColumns: ["user_id"]
+          },
+          {
+            foreignKeyName: "gift_card_settings_updated_by_fkey"
+            columns: ["updated_by"]
+            isOneToOne: false
             referencedRelation: "profiles"
             referencedColumns: ["id"]
           },
@@ -355,6 +1600,13 @@ export type Database = {
             foreignKeyName: "gift_card_transactions_actor_id_fkey"
             columns: ["actor_id"]
             isOneToOne: false
+            referencedRelation: "loyalty_overview"
+            referencedColumns: ["user_id"]
+          },
+          {
+            foreignKeyName: "gift_card_transactions_actor_id_fkey"
+            columns: ["actor_id"]
+            isOneToOne: false
             referencedRelation: "profiles"
             referencedColumns: ["id"]
           },
@@ -378,6 +1630,13 @@ export type Database = {
             isOneToOne: false
             referencedRelation: "orders"
             referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "gift_card_transactions_order_id_fkey"
+            columns: ["order_id"]
+            isOneToOne: false
+            referencedRelation: "review_requests"
+            referencedColumns: ["order_id"]
           },
         ]
       }
@@ -472,11 +1731,25 @@ export type Database = {
             referencedColumns: ["id"]
           },
           {
+            foreignKeyName: "gift_cards_order_id_fkey"
+            columns: ["order_id"]
+            isOneToOne: false
+            referencedRelation: "review_requests"
+            referencedColumns: ["order_id"]
+          },
+          {
             foreignKeyName: "gift_cards_order_item_id_fkey"
             columns: ["order_item_id"]
             isOneToOne: false
             referencedRelation: "order_items"
             referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "gift_cards_purchaser_user_id_fkey"
+            columns: ["purchaser_user_id"]
+            isOneToOne: false
+            referencedRelation: "loyalty_overview"
+            referencedColumns: ["user_id"]
           },
           {
             foreignKeyName: "gift_cards_purchaser_user_id_fkey"
@@ -542,6 +1815,13 @@ export type Database = {
             foreignKeyName: "inventory_items_updated_by_fkey"
             columns: ["updated_by"]
             isOneToOne: false
+            referencedRelation: "loyalty_overview"
+            referencedColumns: ["user_id"]
+          },
+          {
+            foreignKeyName: "inventory_items_updated_by_fkey"
+            columns: ["updated_by"]
+            isOneToOne: false
             referencedRelation: "profiles"
             referencedColumns: ["id"]
           },
@@ -596,6 +1876,13 @@ export type Database = {
             foreignKeyName: "inventory_movements_actor_id_fkey"
             columns: ["actor_id"]
             isOneToOne: false
+            referencedRelation: "loyalty_overview"
+            referencedColumns: ["user_id"]
+          },
+          {
+            foreignKeyName: "inventory_movements_actor_id_fkey"
+            columns: ["actor_id"]
+            isOneToOne: false
             referencedRelation: "profiles"
             referencedColumns: ["id"]
           },
@@ -612,6 +1899,13 @@ export type Database = {
             isOneToOne: false
             referencedRelation: "orders"
             referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "inventory_movements_order_id_fkey"
+            columns: ["order_id"]
+            isOneToOne: false
+            referencedRelation: "review_requests"
+            referencedColumns: ["order_id"]
           },
         ]
       }
@@ -651,9 +1945,405 @@ export type Database = {
         }
         Relationships: []
       }
+      loyalty_cards: {
+        Row: {
+          completed_at: string | null
+          created_at: string
+          id: string
+          redeemed_at: string | null
+          redeemed_order_id: string | null
+          reward_percent: number
+          stamps_count: number
+          stamps_required: number
+          status: string
+          updated_at: string
+          user_id: string
+        }
+        Insert: {
+          completed_at?: string | null
+          created_at?: string
+          id?: string
+          redeemed_at?: string | null
+          redeemed_order_id?: string | null
+          reward_percent: number
+          stamps_count?: number
+          stamps_required: number
+          status?: string
+          updated_at?: string
+          user_id: string
+        }
+        Update: {
+          completed_at?: string | null
+          created_at?: string
+          id?: string
+          redeemed_at?: string | null
+          redeemed_order_id?: string | null
+          reward_percent?: number
+          stamps_count?: number
+          stamps_required?: number
+          status?: string
+          updated_at?: string
+          user_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "loyalty_cards_redeemed_order_id_fkey"
+            columns: ["redeemed_order_id"]
+            isOneToOne: false
+            referencedRelation: "orders"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "loyalty_cards_redeemed_order_id_fkey"
+            columns: ["redeemed_order_id"]
+            isOneToOne: false
+            referencedRelation: "review_requests"
+            referencedColumns: ["order_id"]
+          },
+          {
+            foreignKeyName: "loyalty_cards_user_id_fkey"
+            columns: ["user_id"]
+            isOneToOne: false
+            referencedRelation: "loyalty_overview"
+            referencedColumns: ["user_id"]
+          },
+          {
+            foreignKeyName: "loyalty_cards_user_id_fkey"
+            columns: ["user_id"]
+            isOneToOne: false
+            referencedRelation: "profiles"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      loyalty_settings: {
+        Row: {
+          created_at: string
+          created_by: string | null
+          currency: string
+          id: boolean
+          is_active: boolean
+          qualifying_amount: number
+          reward_percent: number
+          stamps_per_card: number
+          updated_at: string
+          updated_by: string | null
+        }
+        Insert: {
+          created_at?: string
+          created_by?: string | null
+          currency?: string
+          id?: boolean
+          is_active?: boolean
+          qualifying_amount?: number
+          reward_percent?: number
+          stamps_per_card?: number
+          updated_at?: string
+          updated_by?: string | null
+        }
+        Update: {
+          created_at?: string
+          created_by?: string | null
+          currency?: string
+          id?: boolean
+          is_active?: boolean
+          qualifying_amount?: number
+          reward_percent?: number
+          stamps_per_card?: number
+          updated_at?: string
+          updated_by?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "loyalty_settings_created_by_fkey"
+            columns: ["created_by"]
+            isOneToOne: false
+            referencedRelation: "loyalty_overview"
+            referencedColumns: ["user_id"]
+          },
+          {
+            foreignKeyName: "loyalty_settings_created_by_fkey"
+            columns: ["created_by"]
+            isOneToOne: false
+            referencedRelation: "profiles"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "loyalty_settings_updated_by_fkey"
+            columns: ["updated_by"]
+            isOneToOne: false
+            referencedRelation: "loyalty_overview"
+            referencedColumns: ["user_id"]
+          },
+          {
+            foreignKeyName: "loyalty_settings_updated_by_fkey"
+            columns: ["updated_by"]
+            isOneToOne: false
+            referencedRelation: "profiles"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      loyalty_stamps: {
+        Row: {
+          card_id: string
+          currency: string
+          earned_at: string
+          id: string
+          order_amount: number
+          order_id: string
+          user_id: string
+          void_reason: string | null
+          voided_at: string | null
+        }
+        Insert: {
+          card_id: string
+          currency: string
+          earned_at?: string
+          id?: string
+          order_amount: number
+          order_id: string
+          user_id: string
+          void_reason?: string | null
+          voided_at?: string | null
+        }
+        Update: {
+          card_id?: string
+          currency?: string
+          earned_at?: string
+          id?: string
+          order_amount?: number
+          order_id?: string
+          user_id?: string
+          void_reason?: string | null
+          voided_at?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "loyalty_stamps_card_id_fkey"
+            columns: ["card_id"]
+            isOneToOne: false
+            referencedRelation: "loyalty_cards"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "loyalty_stamps_order_id_fkey"
+            columns: ["order_id"]
+            isOneToOne: false
+            referencedRelation: "orders"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "loyalty_stamps_order_id_fkey"
+            columns: ["order_id"]
+            isOneToOne: false
+            referencedRelation: "review_requests"
+            referencedColumns: ["order_id"]
+          },
+          {
+            foreignKeyName: "loyalty_stamps_user_id_fkey"
+            columns: ["user_id"]
+            isOneToOne: false
+            referencedRelation: "loyalty_overview"
+            referencedColumns: ["user_id"]
+          },
+          {
+            foreignKeyName: "loyalty_stamps_user_id_fkey"
+            columns: ["user_id"]
+            isOneToOne: false
+            referencedRelation: "profiles"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      newsletter_subscriptions: {
+        Row: {
+          confirm_expires_at: string | null
+          confirm_token_hash: string | null
+          confirmation_sent_at: string | null
+          confirmed_at: string | null
+          created_at: string
+          email: string
+          id: string
+          locale: string
+          policy_version: string | null
+          source: string
+          status: string
+          unsubscribe_token: string
+          unsubscribed_at: string | null
+          updated_at: string
+          user_id: string | null
+        }
+        Insert: {
+          confirm_expires_at?: string | null
+          confirm_token_hash?: string | null
+          confirmation_sent_at?: string | null
+          confirmed_at?: string | null
+          created_at?: string
+          email: string
+          id?: string
+          locale?: string
+          policy_version?: string | null
+          source?: string
+          status?: string
+          unsubscribe_token?: string
+          unsubscribed_at?: string | null
+          updated_at?: string
+          user_id?: string | null
+        }
+        Update: {
+          confirm_expires_at?: string | null
+          confirm_token_hash?: string | null
+          confirmation_sent_at?: string | null
+          confirmed_at?: string | null
+          created_at?: string
+          email?: string
+          id?: string
+          locale?: string
+          policy_version?: string | null
+          source?: string
+          status?: string
+          unsubscribe_token?: string
+          unsubscribed_at?: string | null
+          updated_at?: string
+          user_id?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "newsletter_subscriptions_locale_fkey"
+            columns: ["locale"]
+            isOneToOne: false
+            referencedRelation: "languages"
+            referencedColumns: ["code"]
+          },
+          {
+            foreignKeyName: "newsletter_subscriptions_user_id_fkey"
+            columns: ["user_id"]
+            isOneToOne: true
+            referencedRelation: "loyalty_overview"
+            referencedColumns: ["user_id"]
+          },
+          {
+            foreignKeyName: "newsletter_subscriptions_user_id_fkey"
+            columns: ["user_id"]
+            isOneToOne: true
+            referencedRelation: "profiles"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      order_discounts: {
+        Row: {
+          code: string | null
+          created_at: string
+          customer_email: string
+          goods_amount: number
+          id: string
+          label: string
+          loyalty_card_id: string | null
+          order_id: string
+          promotion_code_id: string | null
+          promotion_id: string | null
+          promotion_type: string | null
+          shipping_amount: number
+          source: string
+          user_id: string | null
+        }
+        Insert: {
+          code?: string | null
+          created_at?: string
+          customer_email: string
+          goods_amount?: number
+          id?: string
+          label: string
+          loyalty_card_id?: string | null
+          order_id: string
+          promotion_code_id?: string | null
+          promotion_id?: string | null
+          promotion_type?: string | null
+          shipping_amount?: number
+          source: string
+          user_id?: string | null
+        }
+        Update: {
+          code?: string | null
+          created_at?: string
+          customer_email?: string
+          goods_amount?: number
+          id?: string
+          label?: string
+          loyalty_card_id?: string | null
+          order_id?: string
+          promotion_code_id?: string | null
+          promotion_id?: string | null
+          promotion_type?: string | null
+          shipping_amount?: number
+          source?: string
+          user_id?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "order_discounts_loyalty_card_id_fkey"
+            columns: ["loyalty_card_id"]
+            isOneToOne: false
+            referencedRelation: "loyalty_cards"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "order_discounts_order_id_fkey"
+            columns: ["order_id"]
+            isOneToOne: false
+            referencedRelation: "orders"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "order_discounts_order_id_fkey"
+            columns: ["order_id"]
+            isOneToOne: false
+            referencedRelation: "review_requests"
+            referencedColumns: ["order_id"]
+          },
+          {
+            foreignKeyName: "order_discounts_promotion_code_id_fkey"
+            columns: ["promotion_code_id"]
+            isOneToOne: false
+            referencedRelation: "promotion_codes"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "order_discounts_promotion_id_fkey"
+            columns: ["promotion_id"]
+            isOneToOne: false
+            referencedRelation: "promotion_overview"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "order_discounts_promotion_id_fkey"
+            columns: ["promotion_id"]
+            isOneToOne: false
+            referencedRelation: "promotions"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "order_discounts_user_id_fkey"
+            columns: ["user_id"]
+            isOneToOne: false
+            referencedRelation: "loyalty_overview"
+            referencedColumns: ["user_id"]
+          },
+          {
+            foreignKeyName: "order_discounts_user_id_fkey"
+            columns: ["user_id"]
+            isOneToOne: false
+            referencedRelation: "profiles"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       order_items: {
         Row: {
           created_at: string
+          discount_amount: number
           id: string
           inventory_item_id: string | null
           order_id: string
@@ -670,6 +2360,7 @@ export type Database = {
         }
         Insert: {
           created_at?: string
+          discount_amount?: number
           id?: string
           inventory_item_id?: string | null
           order_id: string
@@ -686,6 +2377,7 @@ export type Database = {
         }
         Update: {
           created_at?: string
+          discount_amount?: number
           id?: string
           inventory_item_id?: string | null
           order_id?: string
@@ -714,6 +2406,13 @@ export type Database = {
             isOneToOne: false
             referencedRelation: "orders"
             referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "order_items_order_id_fkey"
+            columns: ["order_id"]
+            isOneToOne: false
+            referencedRelation: "review_requests"
+            referencedColumns: ["order_id"]
           },
           {
             foreignKeyName: "order_items_product_id_fkey"
@@ -853,8 +2552,22 @@ export type Database = {
             foreignKeyName: "orders_updated_by_fkey"
             columns: ["updated_by"]
             isOneToOne: false
+            referencedRelation: "loyalty_overview"
+            referencedColumns: ["user_id"]
+          },
+          {
+            foreignKeyName: "orders_updated_by_fkey"
+            columns: ["updated_by"]
+            isOneToOne: false
             referencedRelation: "profiles"
             referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "orders_user_id_fkey"
+            columns: ["user_id"]
+            isOneToOne: false
+            referencedRelation: "loyalty_overview"
+            referencedColumns: ["user_id"]
           },
           {
             foreignKeyName: "orders_user_id_fkey"
@@ -942,7 +2655,35 @@ export type Database = {
             referencedRelation: "orders"
             referencedColumns: ["id"]
           },
+          {
+            foreignKeyName: "payments_order_id_fkey"
+            columns: ["order_id"]
+            isOneToOne: false
+            referencedRelation: "review_requests"
+            referencedColumns: ["order_id"]
+          },
         ]
+      }
+      permissions: {
+        Row: {
+          created_at: string
+          description: string
+          key: string
+          name: string
+        }
+        Insert: {
+          created_at?: string
+          description: string
+          key: string
+          name: string
+        }
+        Update: {
+          created_at?: string
+          description?: string
+          key?: string
+          name?: string
+        }
+        Relationships: []
       }
       product_media: {
         Row: {
@@ -1045,6 +2786,92 @@ export type Database = {
             foreignKeyName: "product_media_translations_updated_by_fkey"
             columns: ["updated_by"]
             isOneToOne: false
+            referencedRelation: "loyalty_overview"
+            referencedColumns: ["user_id"]
+          },
+          {
+            foreignKeyName: "product_media_translations_updated_by_fkey"
+            columns: ["updated_by"]
+            isOneToOne: false
+            referencedRelation: "profiles"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      product_recommendations: {
+        Row: {
+          created_at: string
+          created_by: string | null
+          id: string
+          kind: string
+          position: number
+          product_id: string
+          recommended_product_id: string
+          updated_at: string
+          updated_by: string | null
+        }
+        Insert: {
+          created_at?: string
+          created_by?: string | null
+          id?: string
+          kind?: string
+          position?: number
+          product_id: string
+          recommended_product_id: string
+          updated_at?: string
+          updated_by?: string | null
+        }
+        Update: {
+          created_at?: string
+          created_by?: string | null
+          id?: string
+          kind?: string
+          position?: number
+          product_id?: string
+          recommended_product_id?: string
+          updated_at?: string
+          updated_by?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "product_recommendations_created_by_fkey"
+            columns: ["created_by"]
+            isOneToOne: false
+            referencedRelation: "loyalty_overview"
+            referencedColumns: ["user_id"]
+          },
+          {
+            foreignKeyName: "product_recommendations_created_by_fkey"
+            columns: ["created_by"]
+            isOneToOne: false
+            referencedRelation: "profiles"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "product_recommendations_product_id_fkey"
+            columns: ["product_id"]
+            isOneToOne: false
+            referencedRelation: "products"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "product_recommendations_recommended_product_id_fkey"
+            columns: ["recommended_product_id"]
+            isOneToOne: false
+            referencedRelation: "products"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "product_recommendations_updated_by_fkey"
+            columns: ["updated_by"]
+            isOneToOne: false
+            referencedRelation: "loyalty_overview"
+            referencedColumns: ["user_id"]
+          },
+          {
+            foreignKeyName: "product_recommendations_updated_by_fkey"
+            columns: ["updated_by"]
+            isOneToOne: false
             referencedRelation: "profiles"
             referencedColumns: ["id"]
           },
@@ -1112,6 +2939,13 @@ export type Database = {
             foreignKeyName: "product_translations_updated_by_fkey"
             columns: ["updated_by"]
             isOneToOne: false
+            referencedRelation: "loyalty_overview"
+            referencedColumns: ["user_id"]
+          },
+          {
+            foreignKeyName: "product_translations_updated_by_fkey"
+            columns: ["updated_by"]
+            isOneToOne: false
             referencedRelation: "profiles"
             referencedColumns: ["id"]
           },
@@ -1152,6 +2986,13 @@ export type Database = {
             isOneToOne: false
             referencedRelation: "languages"
             referencedColumns: ["code"]
+          },
+          {
+            foreignKeyName: "product_variant_translations_updated_by_fkey"
+            columns: ["updated_by"]
+            isOneToOne: false
+            referencedRelation: "loyalty_overview"
+            referencedColumns: ["user_id"]
           },
           {
             foreignKeyName: "product_variant_translations_updated_by_fkey"
@@ -1223,6 +3064,13 @@ export type Database = {
             foreignKeyName: "product_variants_created_by_fkey"
             columns: ["created_by"]
             isOneToOne: false
+            referencedRelation: "loyalty_overview"
+            referencedColumns: ["user_id"]
+          },
+          {
+            foreignKeyName: "product_variants_created_by_fkey"
+            columns: ["created_by"]
+            isOneToOne: false
             referencedRelation: "profiles"
             referencedColumns: ["id"]
           },
@@ -1232,6 +3080,13 @@ export type Database = {
             isOneToOne: false
             referencedRelation: "products"
             referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "product_variants_updated_by_fkey"
+            columns: ["updated_by"]
+            isOneToOne: false
+            referencedRelation: "loyalty_overview"
+            referencedColumns: ["user_id"]
           },
           {
             foreignKeyName: "product_variants_updated_by_fkey"
@@ -1327,8 +3182,22 @@ export type Database = {
             foreignKeyName: "products_created_by_fkey"
             columns: ["created_by"]
             isOneToOne: false
+            referencedRelation: "loyalty_overview"
+            referencedColumns: ["user_id"]
+          },
+          {
+            foreignKeyName: "products_created_by_fkey"
+            columns: ["created_by"]
+            isOneToOne: false
             referencedRelation: "profiles"
             referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "products_updated_by_fkey"
+            columns: ["updated_by"]
+            isOneToOne: false
+            referencedRelation: "loyalty_overview"
+            referencedColumns: ["user_id"]
           },
           {
             foreignKeyName: "products_updated_by_fkey"
@@ -1342,50 +3211,567 @@ export type Database = {
       profiles: {
         Row: {
           avatar_path: string | null
+          birth_date: string | null
+          country_code: string | null
           created_at: string
           display_name: string | null
           email: string | null
           first_name: string | null
           id: string
+          interest: string | null
           last_name: string | null
+          marketing_opt_in: boolean
+          password_changed_at: string | null
+          persona: string | null
           phone: string | null
+          preferred_locale: string
           role: string
           status: string
           updated_at: string
         }
         Insert: {
           avatar_path?: string | null
+          birth_date?: string | null
+          country_code?: string | null
           created_at?: string
           display_name?: string | null
           email?: string | null
           first_name?: string | null
           id: string
+          interest?: string | null
           last_name?: string | null
+          marketing_opt_in?: boolean
+          password_changed_at?: string | null
+          persona?: string | null
           phone?: string | null
+          preferred_locale?: string
           role?: string
           status?: string
           updated_at?: string
         }
         Update: {
           avatar_path?: string | null
+          birth_date?: string | null
+          country_code?: string | null
           created_at?: string
           display_name?: string | null
           email?: string | null
           first_name?: string | null
           id?: string
+          interest?: string | null
           last_name?: string | null
+          marketing_opt_in?: boolean
+          password_changed_at?: string | null
+          persona?: string | null
           phone?: string | null
+          preferred_locale?: string
           role?: string
           status?: string
           updated_at?: string
         }
         Relationships: [
           {
+            foreignKeyName: "profiles_preferred_locale_fkey"
+            columns: ["preferred_locale"]
+            isOneToOne: false
+            referencedRelation: "languages"
+            referencedColumns: ["code"]
+          },
+          {
             foreignKeyName: "profiles_role_fkey"
             columns: ["role"]
             isOneToOne: false
             referencedRelation: "roles"
             referencedColumns: ["key"]
+          },
+        ]
+      }
+      promotion_categories: {
+        Row: {
+          category_id: string
+          created_at: string
+          promotion_id: string
+        }
+        Insert: {
+          category_id: string
+          created_at?: string
+          promotion_id: string
+        }
+        Update: {
+          category_id?: string
+          created_at?: string
+          promotion_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "promotion_categories_category_id_fkey"
+            columns: ["category_id"]
+            isOneToOne: false
+            referencedRelation: "categories"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "promotion_categories_promotion_id_fkey"
+            columns: ["promotion_id"]
+            isOneToOne: false
+            referencedRelation: "promotion_overview"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "promotion_categories_promotion_id_fkey"
+            columns: ["promotion_id"]
+            isOneToOne: false
+            referencedRelation: "promotions"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      promotion_codes: {
+        Row: {
+          code: string
+          created_at: string
+          created_by: string | null
+          id: string
+          is_active: boolean
+          max_uses: number | null
+          promotion_id: string
+          updated_at: string
+          updated_by: string | null
+        }
+        Insert: {
+          code: string
+          created_at?: string
+          created_by?: string | null
+          id?: string
+          is_active?: boolean
+          max_uses?: number | null
+          promotion_id: string
+          updated_at?: string
+          updated_by?: string | null
+        }
+        Update: {
+          code?: string
+          created_at?: string
+          created_by?: string | null
+          id?: string
+          is_active?: boolean
+          max_uses?: number | null
+          promotion_id?: string
+          updated_at?: string
+          updated_by?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "promotion_codes_created_by_fkey"
+            columns: ["created_by"]
+            isOneToOne: false
+            referencedRelation: "loyalty_overview"
+            referencedColumns: ["user_id"]
+          },
+          {
+            foreignKeyName: "promotion_codes_created_by_fkey"
+            columns: ["created_by"]
+            isOneToOne: false
+            referencedRelation: "profiles"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "promotion_codes_promotion_id_fkey"
+            columns: ["promotion_id"]
+            isOneToOne: false
+            referencedRelation: "promotion_overview"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "promotion_codes_promotion_id_fkey"
+            columns: ["promotion_id"]
+            isOneToOne: false
+            referencedRelation: "promotions"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "promotion_codes_updated_by_fkey"
+            columns: ["updated_by"]
+            isOneToOne: false
+            referencedRelation: "loyalty_overview"
+            referencedColumns: ["user_id"]
+          },
+          {
+            foreignKeyName: "promotion_codes_updated_by_fkey"
+            columns: ["updated_by"]
+            isOneToOne: false
+            referencedRelation: "profiles"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      promotion_collections: {
+        Row: {
+          collection_id: string
+          created_at: string
+          promotion_id: string
+        }
+        Insert: {
+          collection_id: string
+          created_at?: string
+          promotion_id: string
+        }
+        Update: {
+          collection_id?: string
+          created_at?: string
+          promotion_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "promotion_collections_collection_id_fkey"
+            columns: ["collection_id"]
+            isOneToOne: false
+            referencedRelation: "collections"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "promotion_collections_promotion_id_fkey"
+            columns: ["promotion_id"]
+            isOneToOne: false
+            referencedRelation: "promotion_overview"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "promotion_collections_promotion_id_fkey"
+            columns: ["promotion_id"]
+            isOneToOne: false
+            referencedRelation: "promotions"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      promotion_products: {
+        Row: {
+          created_at: string
+          product_id: string
+          promotion_id: string
+          role: string
+        }
+        Insert: {
+          created_at?: string
+          product_id: string
+          promotion_id: string
+          role: string
+        }
+        Update: {
+          created_at?: string
+          product_id?: string
+          promotion_id?: string
+          role?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "promotion_products_product_id_fkey"
+            columns: ["product_id"]
+            isOneToOne: false
+            referencedRelation: "products"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "promotion_products_promotion_id_fkey"
+            columns: ["promotion_id"]
+            isOneToOne: false
+            referencedRelation: "promotion_overview"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "promotion_products_promotion_id_fkey"
+            columns: ["promotion_id"]
+            isOneToOne: false
+            referencedRelation: "promotions"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      promotion_segments: {
+        Row: {
+          created_at: string
+          promotion_id: string
+          segment_id: string
+        }
+        Insert: {
+          created_at?: string
+          promotion_id: string
+          segment_id: string
+        }
+        Update: {
+          created_at?: string
+          promotion_id?: string
+          segment_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "promotion_segments_promotion_id_fkey"
+            columns: ["promotion_id"]
+            isOneToOne: false
+            referencedRelation: "promotion_overview"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "promotion_segments_promotion_id_fkey"
+            columns: ["promotion_id"]
+            isOneToOne: false
+            referencedRelation: "promotions"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "promotion_segments_segment_id_fkey"
+            columns: ["segment_id"]
+            isOneToOne: false
+            referencedRelation: "customer_segment_overview"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "promotion_segments_segment_id_fkey"
+            columns: ["segment_id"]
+            isOneToOne: false
+            referencedRelation: "customer_segments"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      promotion_translations: {
+        Row: {
+          created_at: string
+          description: string | null
+          locale: string
+          promotion_id: string
+          status: string
+          title: string
+          updated_at: string
+          updated_by: string | null
+        }
+        Insert: {
+          created_at?: string
+          description?: string | null
+          locale: string
+          promotion_id: string
+          status?: string
+          title: string
+          updated_at?: string
+          updated_by?: string | null
+        }
+        Update: {
+          created_at?: string
+          description?: string | null
+          locale?: string
+          promotion_id?: string
+          status?: string
+          title?: string
+          updated_at?: string
+          updated_by?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "promotion_translations_locale_fkey"
+            columns: ["locale"]
+            isOneToOne: false
+            referencedRelation: "languages"
+            referencedColumns: ["code"]
+          },
+          {
+            foreignKeyName: "promotion_translations_promotion_id_fkey"
+            columns: ["promotion_id"]
+            isOneToOne: false
+            referencedRelation: "promotion_overview"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "promotion_translations_promotion_id_fkey"
+            columns: ["promotion_id"]
+            isOneToOne: false
+            referencedRelation: "promotions"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "promotion_translations_updated_by_fkey"
+            columns: ["updated_by"]
+            isOneToOne: false
+            referencedRelation: "loyalty_overview"
+            referencedColumns: ["user_id"]
+          },
+          {
+            foreignKeyName: "promotion_translations_updated_by_fkey"
+            columns: ["updated_by"]
+            isOneToOne: false
+            referencedRelation: "profiles"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      promotions: {
+        Row: {
+          activation: string
+          amount_off: number | null
+          applies_to: string
+          bundle_price: number | null
+          buy_quantity: number | null
+          campaign_id: string | null
+          code_kind: string | null
+          combinable: boolean
+          created_at: string
+          created_by: string | null
+          currency: string
+          customer_eligibility: string
+          description: string | null
+          ends_at: string | null
+          exclude_discounted_products: boolean
+          get_quantity: number | null
+          gift_product_id: string | null
+          gift_variant_id: string | null
+          id: string
+          internal_description: string | null
+          lifecycle: string
+          max_discount_amount: number | null
+          max_uses_per_customer: number | null
+          max_uses_total: number | null
+          min_quantity: number | null
+          min_subtotal_amount: number | null
+          name: string
+          percent_off: number | null
+          reward_percent: number | null
+          starts_at: string
+          timezone: string
+          title: string
+          type: string
+          updated_at: string
+          updated_by: string | null
+        }
+        Insert: {
+          activation?: string
+          amount_off?: number | null
+          applies_to?: string
+          bundle_price?: number | null
+          buy_quantity?: number | null
+          campaign_id?: string | null
+          code_kind?: string | null
+          combinable?: boolean
+          created_at?: string
+          created_by?: string | null
+          currency?: string
+          customer_eligibility?: string
+          description?: string | null
+          ends_at?: string | null
+          exclude_discounted_products?: boolean
+          get_quantity?: number | null
+          gift_product_id?: string | null
+          gift_variant_id?: string | null
+          id?: string
+          internal_description?: string | null
+          lifecycle?: string
+          max_discount_amount?: number | null
+          max_uses_per_customer?: number | null
+          max_uses_total?: number | null
+          min_quantity?: number | null
+          min_subtotal_amount?: number | null
+          name: string
+          percent_off?: number | null
+          reward_percent?: number | null
+          starts_at?: string
+          timezone?: string
+          title: string
+          type: string
+          updated_at?: string
+          updated_by?: string | null
+        }
+        Update: {
+          activation?: string
+          amount_off?: number | null
+          applies_to?: string
+          bundle_price?: number | null
+          buy_quantity?: number | null
+          campaign_id?: string | null
+          code_kind?: string | null
+          combinable?: boolean
+          created_at?: string
+          created_by?: string | null
+          currency?: string
+          customer_eligibility?: string
+          description?: string | null
+          ends_at?: string | null
+          exclude_discounted_products?: boolean
+          get_quantity?: number | null
+          gift_product_id?: string | null
+          gift_variant_id?: string | null
+          id?: string
+          internal_description?: string | null
+          lifecycle?: string
+          max_discount_amount?: number | null
+          max_uses_per_customer?: number | null
+          max_uses_total?: number | null
+          min_quantity?: number | null
+          min_subtotal_amount?: number | null
+          name?: string
+          percent_off?: number | null
+          reward_percent?: number | null
+          starts_at?: string
+          timezone?: string
+          title?: string
+          type?: string
+          updated_at?: string
+          updated_by?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "promotions_campaign_id_fkey"
+            columns: ["campaign_id"]
+            isOneToOne: false
+            referencedRelation: "campaign_overview"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "promotions_campaign_id_fkey"
+            columns: ["campaign_id"]
+            isOneToOne: false
+            referencedRelation: "campaigns"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "promotions_created_by_fkey"
+            columns: ["created_by"]
+            isOneToOne: false
+            referencedRelation: "loyalty_overview"
+            referencedColumns: ["user_id"]
+          },
+          {
+            foreignKeyName: "promotions_created_by_fkey"
+            columns: ["created_by"]
+            isOneToOne: false
+            referencedRelation: "profiles"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "promotions_gift_product_id_fkey"
+            columns: ["gift_product_id"]
+            isOneToOne: false
+            referencedRelation: "products"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "promotions_gift_variant_id_fkey"
+            columns: ["gift_variant_id"]
+            isOneToOne: false
+            referencedRelation: "product_variants"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "promotions_updated_by_fkey"
+            columns: ["updated_by"]
+            isOneToOne: false
+            referencedRelation: "loyalty_overview"
+            referencedColumns: ["user_id"]
+          },
+          {
+            foreignKeyName: "promotions_updated_by_fkey"
+            columns: ["updated_by"]
+            isOneToOne: false
+            referencedRelation: "profiles"
+            referencedColumns: ["id"]
           },
         ]
       }
@@ -1480,11 +3866,25 @@ export type Database = {
             referencedColumns: ["id"]
           },
           {
+            foreignKeyName: "refunds_order_id_fkey"
+            columns: ["order_id"]
+            isOneToOne: false
+            referencedRelation: "review_requests"
+            referencedColumns: ["order_id"]
+          },
+          {
             foreignKeyName: "refunds_payment_id_fkey"
             columns: ["payment_id"]
             isOneToOne: false
             referencedRelation: "payments"
             referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "refunds_requested_by_fkey"
+            columns: ["requested_by"]
+            isOneToOne: false
+            referencedRelation: "loyalty_overview"
+            referencedColumns: ["user_id"]
           },
           {
             foreignKeyName: "refunds_requested_by_fkey"
@@ -1523,6 +3923,13 @@ export type Database = {
             foreignKeyName: "review_helpful_votes_user_id_fkey"
             columns: ["user_id"]
             isOneToOne: false
+            referencedRelation: "loyalty_overview"
+            referencedColumns: ["user_id"]
+          },
+          {
+            foreignKeyName: "review_helpful_votes_user_id_fkey"
+            columns: ["user_id"]
+            isOneToOne: false
             referencedRelation: "profiles"
             referencedColumns: ["id"]
           },
@@ -1551,6 +3958,13 @@ export type Database = {
           review_id?: string
         }
         Relationships: [
+          {
+            foreignKeyName: "review_notes_author_id_fkey"
+            columns: ["author_id"]
+            isOneToOne: false
+            referencedRelation: "loyalty_overview"
+            referencedColumns: ["user_id"]
+          },
           {
             foreignKeyName: "review_notes_author_id_fkey"
             columns: ["author_id"]
@@ -1644,8 +4058,22 @@ export type Database = {
             foreignKeyName: "review_reports_reporter_id_fkey"
             columns: ["reporter_id"]
             isOneToOne: false
+            referencedRelation: "loyalty_overview"
+            referencedColumns: ["user_id"]
+          },
+          {
+            foreignKeyName: "review_reports_reporter_id_fkey"
+            columns: ["reporter_id"]
+            isOneToOne: false
             referencedRelation: "profiles"
             referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "review_reports_resolved_by_fkey"
+            columns: ["resolved_by"]
+            isOneToOne: false
+            referencedRelation: "loyalty_overview"
+            referencedColumns: ["user_id"]
           },
           {
             foreignKeyName: "review_reports_resolved_by_fkey"
@@ -1758,11 +4186,25 @@ export type Database = {
             referencedColumns: ["id"]
           },
           {
+            foreignKeyName: "reviews_order_id_fkey"
+            columns: ["order_id"]
+            isOneToOne: false
+            referencedRelation: "review_requests"
+            referencedColumns: ["order_id"]
+          },
+          {
             foreignKeyName: "reviews_product_id_fkey"
             columns: ["product_id"]
             isOneToOne: false
             referencedRelation: "products"
             referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "reviews_response_by_fkey"
+            columns: ["response_by"]
+            isOneToOne: false
+            referencedRelation: "loyalty_overview"
+            referencedColumns: ["user_id"]
           },
           {
             foreignKeyName: "reviews_response_by_fkey"
@@ -1775,8 +4217,48 @@ export type Database = {
             foreignKeyName: "reviews_user_id_fkey"
             columns: ["user_id"]
             isOneToOne: false
+            referencedRelation: "loyalty_overview"
+            referencedColumns: ["user_id"]
+          },
+          {
+            foreignKeyName: "reviews_user_id_fkey"
+            columns: ["user_id"]
+            isOneToOne: false
             referencedRelation: "profiles"
             referencedColumns: ["id"]
+          },
+        ]
+      }
+      role_permissions: {
+        Row: {
+          created_at: string
+          permission_key: string
+          role_key: string
+        }
+        Insert: {
+          created_at?: string
+          permission_key: string
+          role_key: string
+        }
+        Update: {
+          created_at?: string
+          permission_key?: string
+          role_key?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "role_permissions_permission_key_fkey"
+            columns: ["permission_key"]
+            isOneToOne: false
+            referencedRelation: "permissions"
+            referencedColumns: ["key"]
+          },
+          {
+            foreignKeyName: "role_permissions_role_key_fkey"
+            columns: ["role_key"]
+            isOneToOne: false
+            referencedRelation: "roles"
+            referencedColumns: ["key"]
           },
         ]
       }
@@ -1787,6 +4269,7 @@ export type Database = {
           is_staff: boolean
           key: string
           name: string
+          rank: number
         }
         Insert: {
           created_at?: string
@@ -1794,6 +4277,7 @@ export type Database = {
           is_staff?: boolean
           key: string
           name: string
+          rank?: number
         }
         Update: {
           created_at?: string
@@ -1801,6 +4285,7 @@ export type Database = {
           is_staff?: boolean
           key?: string
           name?: string
+          rank?: number
         }
         Relationships: []
       }
@@ -1891,6 +4376,13 @@ export type Database = {
             foreignKeyName: "shipments_created_by_fkey"
             columns: ["created_by"]
             isOneToOne: false
+            referencedRelation: "loyalty_overview"
+            referencedColumns: ["user_id"]
+          },
+          {
+            foreignKeyName: "shipments_created_by_fkey"
+            columns: ["created_by"]
+            isOneToOne: false
             referencedRelation: "profiles"
             referencedColumns: ["id"]
           },
@@ -1900,6 +4392,20 @@ export type Database = {
             isOneToOne: false
             referencedRelation: "orders"
             referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "shipments_order_id_fkey"
+            columns: ["order_id"]
+            isOneToOne: false
+            referencedRelation: "review_requests"
+            referencedColumns: ["order_id"]
+          },
+          {
+            foreignKeyName: "shipments_updated_by_fkey"
+            columns: ["updated_by"]
+            isOneToOne: false
+            referencedRelation: "loyalty_overview"
+            referencedColumns: ["user_id"]
           },
           {
             foreignKeyName: "shipments_updated_by_fkey"
@@ -1979,8 +4485,22 @@ export type Database = {
             foreignKeyName: "shipping_rates_created_by_fkey"
             columns: ["created_by"]
             isOneToOne: false
+            referencedRelation: "loyalty_overview"
+            referencedColumns: ["user_id"]
+          },
+          {
+            foreignKeyName: "shipping_rates_created_by_fkey"
+            columns: ["created_by"]
+            isOneToOne: false
             referencedRelation: "profiles"
             referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "shipping_rates_updated_by_fkey"
+            columns: ["updated_by"]
+            isOneToOne: false
+            referencedRelation: "loyalty_overview"
+            referencedColumns: ["user_id"]
           },
           {
             foreignKeyName: "shipping_rates_updated_by_fkey"
@@ -2063,11 +4583,149 @@ export type Database = {
             foreignKeyName: "shipping_zones_created_by_fkey"
             columns: ["created_by"]
             isOneToOne: false
+            referencedRelation: "loyalty_overview"
+            referencedColumns: ["user_id"]
+          },
+          {
+            foreignKeyName: "shipping_zones_created_by_fkey"
+            columns: ["created_by"]
+            isOneToOne: false
             referencedRelation: "profiles"
             referencedColumns: ["id"]
           },
           {
             foreignKeyName: "shipping_zones_updated_by_fkey"
+            columns: ["updated_by"]
+            isOneToOne: false
+            referencedRelation: "loyalty_overview"
+            referencedColumns: ["user_id"]
+          },
+          {
+            foreignKeyName: "shipping_zones_updated_by_fkey"
+            columns: ["updated_by"]
+            isOneToOne: false
+            referencedRelation: "profiles"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      staff_profiles: {
+        Row: {
+          created_at: string
+          invited_at: string | null
+          invited_by: string | null
+          job_title: string | null
+          team: string
+          updated_at: string
+          user_id: string
+        }
+        Insert: {
+          created_at?: string
+          invited_at?: string | null
+          invited_by?: string | null
+          job_title?: string | null
+          team: string
+          updated_at?: string
+          user_id: string
+        }
+        Update: {
+          created_at?: string
+          invited_at?: string | null
+          invited_by?: string | null
+          job_title?: string | null
+          team?: string
+          updated_at?: string
+          user_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "staff_profiles_invited_by_fkey"
+            columns: ["invited_by"]
+            isOneToOne: false
+            referencedRelation: "loyalty_overview"
+            referencedColumns: ["user_id"]
+          },
+          {
+            foreignKeyName: "staff_profiles_invited_by_fkey"
+            columns: ["invited_by"]
+            isOneToOne: false
+            referencedRelation: "profiles"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "staff_profiles_user_id_fkey"
+            columns: ["user_id"]
+            isOneToOne: true
+            referencedRelation: "loyalty_overview"
+            referencedColumns: ["user_id"]
+          },
+          {
+            foreignKeyName: "staff_profiles_user_id_fkey"
+            columns: ["user_id"]
+            isOneToOne: true
+            referencedRelation: "profiles"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      store_settings: {
+        Row: {
+          created_at: string
+          created_by: string | null
+          id: boolean
+          maintenance_enabled: boolean
+          maintenance_expected_end: string | null
+          maintenance_staff_bypass: boolean
+          maintenance_started_at: string | null
+          updated_at: string
+          updated_by: string | null
+        }
+        Insert: {
+          created_at?: string
+          created_by?: string | null
+          id?: boolean
+          maintenance_enabled?: boolean
+          maintenance_expected_end?: string | null
+          maintenance_staff_bypass?: boolean
+          maintenance_started_at?: string | null
+          updated_at?: string
+          updated_by?: string | null
+        }
+        Update: {
+          created_at?: string
+          created_by?: string | null
+          id?: boolean
+          maintenance_enabled?: boolean
+          maintenance_expected_end?: string | null
+          maintenance_staff_bypass?: boolean
+          maintenance_started_at?: string | null
+          updated_at?: string
+          updated_by?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "store_settings_created_by_fkey"
+            columns: ["created_by"]
+            isOneToOne: false
+            referencedRelation: "loyalty_overview"
+            referencedColumns: ["user_id"]
+          },
+          {
+            foreignKeyName: "store_settings_created_by_fkey"
+            columns: ["created_by"]
+            isOneToOne: false
+            referencedRelation: "profiles"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "store_settings_updated_by_fkey"
+            columns: ["updated_by"]
+            isOneToOne: false
+            referencedRelation: "loyalty_overview"
+            referencedColumns: ["user_id"]
+          },
+          {
+            foreignKeyName: "store_settings_updated_by_fkey"
             columns: ["updated_by"]
             isOneToOne: false
             referencedRelation: "profiles"
@@ -2120,6 +4778,13 @@ export type Database = {
             referencedRelation: "orders"
             referencedColumns: ["id"]
           },
+          {
+            foreignKeyName: "stripe_webhook_events_order_id_fkey"
+            columns: ["order_id"]
+            isOneToOne: false
+            referencedRelation: "review_requests"
+            referencedColumns: ["order_id"]
+          },
         ]
       }
       tax_rates: {
@@ -2161,8 +4826,22 @@ export type Database = {
             foreignKeyName: "tax_rates_created_by_fkey"
             columns: ["created_by"]
             isOneToOne: false
+            referencedRelation: "loyalty_overview"
+            referencedColumns: ["user_id"]
+          },
+          {
+            foreignKeyName: "tax_rates_created_by_fkey"
+            columns: ["created_by"]
+            isOneToOne: false
             referencedRelation: "profiles"
             referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "tax_rates_updated_by_fkey"
+            columns: ["updated_by"]
+            isOneToOne: false
+            referencedRelation: "loyalty_overview"
+            referencedColumns: ["user_id"]
           },
           {
             foreignKeyName: "tax_rates_updated_by_fkey"
@@ -2175,6 +4854,58 @@ export type Database = {
       }
     }
     Views: {
+      campaign_overview: {
+        Row: {
+          cover_path: string | null
+          created_at: string | null
+          discount_amount: number | null
+          ends_at: string | null
+          id: string | null
+          lifecycle: string | null
+          name: string | null
+          orders: number | null
+          products: number | null
+          promotions: number | null
+          revenue_amount: number | null
+          starts_at: string | null
+          status: string | null
+          theme: string | null
+          timezone: string | null
+          title: string | null
+          updated_at: string | null
+        }
+        Relationships: []
+      }
+      customer_segment_overview: {
+        Row: {
+          customer_tag: string | null
+          id: string | null
+          is_active: boolean | null
+          name: string | null
+          rule: string | null
+          size: number | null
+          slug: string | null
+        }
+        Insert: {
+          customer_tag?: string | null
+          id?: string | null
+          is_active?: boolean | null
+          name?: string | null
+          rule?: string | null
+          size?: never
+          slug?: string | null
+        }
+        Update: {
+          customer_tag?: string | null
+          id?: string | null
+          is_active?: boolean | null
+          name?: string | null
+          rule?: string | null
+          size?: never
+          slug?: string | null
+        }
+        Relationships: []
+      }
       gift_card_overview: {
         Row: {
           balance: number | null
@@ -2251,8 +4982,63 @@ export type Database = {
             referencedColumns: ["id"]
           },
           {
+            foreignKeyName: "gift_cards_order_id_fkey"
+            columns: ["order_id"]
+            isOneToOne: false
+            referencedRelation: "review_requests"
+            referencedColumns: ["order_id"]
+          },
+          {
             foreignKeyName: "gift_cards_purchaser_user_id_fkey"
             columns: ["purchaser_user_id"]
+            isOneToOne: false
+            referencedRelation: "loyalty_overview"
+            referencedColumns: ["user_id"]
+          },
+          {
+            foreignKeyName: "gift_cards_purchaser_user_id_fkey"
+            columns: ["purchaser_user_id"]
+            isOneToOne: false
+            referencedRelation: "profiles"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      loyalty_overview: {
+        Row: {
+          cards_redeemed: number | null
+          currency: string | null
+          current_stamps: number | null
+          programme_active: boolean | null
+          qualifying_amount: number | null
+          reward_percent: number | null
+          rewards_available: number | null
+          stamps_lifetime: number | null
+          stamps_required: number | null
+          user_id: string | null
+        }
+        Relationships: []
+      }
+      member_consents: {
+        Row: {
+          decided_at: string | null
+          granted: boolean | null
+          policy_version: string | null
+          purpose: string | null
+          source: string | null
+          user_id: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "consent_records_user_id_fkey"
+            columns: ["user_id"]
+            isOneToOne: false
+            referencedRelation: "loyalty_overview"
+            referencedColumns: ["user_id"]
+          },
+          {
+            foreignKeyName: "consent_records_user_id_fkey"
+            columns: ["user_id"]
             isOneToOne: false
             referencedRelation: "profiles"
             referencedColumns: ["id"]
@@ -2282,6 +5068,123 @@ export type Database = {
           },
         ]
       }
+      promotion_overview: {
+        Row: {
+          activation: string | null
+          campaign_id: string | null
+          code_kind: string | null
+          codes: number | null
+          combinable: boolean | null
+          created_at: string | null
+          created_by: string | null
+          currency: string | null
+          discount_amount: number | null
+          ends_at: string | null
+          id: string | null
+          lifecycle: string | null
+          name: string | null
+          orders: number | null
+          revenue_amount: number | null
+          starts_at: string | null
+          status: string | null
+          timezone: string | null
+          title: string | null
+          type: string | null
+          updated_at: string | null
+          updated_by: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "promotions_campaign_id_fkey"
+            columns: ["campaign_id"]
+            isOneToOne: false
+            referencedRelation: "campaign_overview"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "promotions_campaign_id_fkey"
+            columns: ["campaign_id"]
+            isOneToOne: false
+            referencedRelation: "campaigns"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "promotions_created_by_fkey"
+            columns: ["created_by"]
+            isOneToOne: false
+            referencedRelation: "loyalty_overview"
+            referencedColumns: ["user_id"]
+          },
+          {
+            foreignKeyName: "promotions_created_by_fkey"
+            columns: ["created_by"]
+            isOneToOne: false
+            referencedRelation: "profiles"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "promotions_updated_by_fkey"
+            columns: ["updated_by"]
+            isOneToOne: false
+            referencedRelation: "loyalty_overview"
+            referencedColumns: ["user_id"]
+          },
+          {
+            foreignKeyName: "promotions_updated_by_fkey"
+            columns: ["updated_by"]
+            isOneToOne: false
+            referencedRelation: "profiles"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      review_requests: {
+        Row: {
+          order_id: string | null
+          order_number: string | null
+          ordered_at: string | null
+          product_id: string | null
+          product_name: string | null
+          user_id: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "order_items_product_id_fkey"
+            columns: ["product_id"]
+            isOneToOne: false
+            referencedRelation: "products"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "orders_user_id_fkey"
+            columns: ["user_id"]
+            isOneToOne: false
+            referencedRelation: "loyalty_overview"
+            referencedColumns: ["user_id"]
+          },
+          {
+            foreignKeyName: "orders_user_id_fkey"
+            columns: ["user_id"]
+            isOneToOne: false
+            referencedRelation: "profiles"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      translation_status: {
+        Row: {
+          item_id: string | null
+          item_key: string | null
+          item_name: string | null
+          item_type: string | null
+          locale: string | null
+          priority: string | null
+          source_updated_at: string | null
+          state: string | null
+          translation_updated_at: string | null
+        }
+        Relationships: []
+      }
     }
     Functions: {
       adjust_gift_card: {
@@ -2303,6 +5206,16 @@ export type Database = {
           isOneToOne: true
           isSetofReturn: false
         }
+      }
+      analytics_snapshot: {
+        Args: {
+          p_currency?: string
+          p_filters?: Json
+          p_from: string
+          p_timezone?: string
+          p_to: string
+        }
+        Returns: Json
       }
       cancel_gift_card: {
         Args: { p_gift_card_id: string; p_note: string }
@@ -2415,9 +5328,11 @@ export type Database = {
           p_gift_card_codes?: string[]
           p_items: Json
           p_locale?: string
+          p_promotion_codes?: string[]
           p_reservation_minutes?: number
           p_shipping_address?: Json
           p_shipping_rate_id?: string
+          p_use_loyalty_reward?: boolean
           p_user_id: string
         }
         Returns: {
@@ -2461,6 +5376,17 @@ export type Database = {
           isSetofReturn: false
         }
       }
+      email_template_for: {
+        Args: { p_key: string; p_locale: string }
+        Returns: {
+          body: string
+          locale: string
+          outdated: boolean
+          preheader: string
+          subject: string
+          variables: string[]
+        }[]
+      }
       expire_stale_orders: { Args: never; Returns: number }
       extend_gift_card: {
         Args: { p_expires_at: string; p_gift_card_id: string; p_note?: string }
@@ -2496,6 +5422,26 @@ export type Database = {
           to: "gift_cards"
           isOneToOne: true
           isSetofReturn: false
+        }
+      }
+      generate_promotion_codes: {
+        Args: { p_count: number; p_prefix?: string; p_promotion_id: string }
+        Returns: {
+          code: string
+          created_at: string
+          created_by: string | null
+          id: string
+          is_active: boolean
+          max_uses: number | null
+          promotion_id: string
+          updated_at: string
+          updated_by: string | null
+        }[]
+        SetofOptions: {
+          from: "*"
+          to: "promotion_codes"
+          isOneToOne: false
+          isSetofReturn: true
         }
       }
       gift_card_balance: {
@@ -2625,6 +5571,26 @@ export type Database = {
           isSetofReturn: false
         }
       }
+      my_permissions: { Args: never; Returns: string[] }
+      newsletter_confirm: { Args: { p_token: string }; Returns: boolean }
+      newsletter_subscribe: {
+        Args: {
+          p_email: string
+          p_locale?: string
+          p_policy_version?: string
+          p_source?: string
+        }
+        Returns: Json
+      }
+      newsletter_unsubscribe: { Args: { p_token: string }; Returns: boolean }
+      recommended_products: {
+        Args: { p_kind?: string; p_limit?: number; p_product_ids?: string[] }
+        Returns: {
+          product_id: string
+          rank: number
+          source: string
+        }[]
+      }
       record_gift_card_delivery: {
         Args: { p_gift_card_id: string; p_new_email?: string; p_status: string }
         Returns: {
@@ -2698,6 +5664,38 @@ export type Database = {
       }
       shipping_zone_for_country: {
         Args: { p_country_code: string }
+        Returns: string
+      }
+      staff_directory: {
+        Args: never
+        Returns: {
+          created_at: string
+          email: string
+          first_name: string
+          invited_at: string
+          invited_by: string
+          job_title: string
+          last_name: string
+          last_sign_in_at: string
+          role: string
+          role_rank: number
+          status: string
+          team: string
+          two_factor: boolean
+          user_id: string
+        }[]
+      }
+      submit_contact_request: {
+        Args: {
+          p_attachment_path?: string
+          p_category: string
+          p_email: string
+          p_locale?: string
+          p_message: string
+          p_name: string
+          p_order_reference?: string
+          p_subject: string
+        }
         Returns: string
       }
       vat_included: {

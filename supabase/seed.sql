@@ -22,6 +22,12 @@ insert into public.categories (slug, name, description, position) values
   ('accessoires', 'Accessoires',        'Rangement, présentation et consommables de studio.', 5)
 on conflict (slug) do nothing;
 
+-- Revenue buckets of the Statistics screen (iteration 8).
+update public.categories set report_group = case slug
+    when 'gems' then 'jewelry' when 'entretien' then 'aftercare'
+    when 'kits' then 'kits' when 'outils' then 'kits' when 'accessoires' then 'kits' else report_group end
+ where slug in ('gems', 'entretien', 'kits', 'outils', 'accessoires');
+
 -- -----------------------------------------------------------------------------
 -- Products
 -- -----------------------------------------------------------------------------
@@ -300,5 +306,44 @@ from (values
 ) as v(sku, name)
 join public.product_variants pv on pv.sku = v.sku
 on conflict (variant_id, locale) do nothing;
+
+
+-- -----------------------------------------------------------------------------
+-- Product recommendations (product page "Va avec", cart suggestions)
+-- -----------------------------------------------------------------------------
+insert into public.product_recommendations (product_id, recommended_product_id, kind, position)
+select p.id, r.id, v.kind, v.position
+from (values
+  -- Gems go with the aftercare gel, the sterile capsules and the tools.
+  ('etoile-cristal',          'gel-de-suivi',            'complementary', 0),
+  ('etoile-cristal',          'capsules-steriles',       'complementary', 1),
+  ('etoile-cristal',          'kit-application-premium', 'complementary', 2),
+  ('etoile-cristal',          'pince-de-depose',         'complementary', 3),
+  ('charm-etoile-or-18k',     'gel-de-suivi',            'complementary', 0),
+  ('charm-etoile-or-18k',     'kit-application-premium', 'complementary', 1),
+  ('charm-etoile-or-18k',     'capsules-steriles',       'complementary', 2),
+  ('coeur-chrome',            'gel-de-suivi',            'complementary', 0),
+  ('coeur-chrome',            'capsules-steriles',       'complementary', 1),
+  ('goutte-opale',            'gel-de-suivi',            'complementary', 0),
+  ('goutte-opale',            'capsules-steriles',       'complementary', 1),
+  -- The kit is refilled with capsules and gems, and sold with the pliers.
+  ('kit-application-premium', 'capsules-steriles',       'complementary', 0),
+  ('kit-application-premium', 'etoile-cristal',          'complementary', 1),
+  ('kit-application-premium', 'pince-de-depose',         'complementary', 2),
+  ('kit-application-premium', 'gel-de-suivi',            'complementary', 3),
+  ('pince-de-depose',         'gel-de-suivi',            'complementary', 0),
+  ('pince-de-depose',         'capsules-steriles',       'complementary', 1),
+  ('gel-de-suivi',            'capsules-steriles',       'complementary', 0),
+  ('capsules-steriles',       'gel-de-suivi',            'complementary', 0),
+  -- Alternatives between gem shapes.
+  ('etoile-cristal',          'charm-etoile-or-18k',     'similar',       0),
+  ('etoile-cristal',          'coeur-chrome',            'similar',       1),
+  ('charm-etoile-or-18k',     'etoile-cristal',          'similar',       0),
+  ('coeur-chrome',            'goutte-opale',            'similar',       0),
+  ('goutte-opale',            'coeur-chrome',            'similar',       0)
+) as v(product_slug, recommended_slug, kind, position)
+join public.products p on p.slug = v.product_slug
+join public.products r on r.slug = v.recommended_slug
+on conflict (product_id, kind, recommended_product_id) do nothing;
 
 commit;

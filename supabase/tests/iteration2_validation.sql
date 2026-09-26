@@ -23,6 +23,7 @@ declare
   o_a public.orders; o_c public.orders; o_d public.orders; o_e public.orders; o_f public.orders; o_g public.orders;
   v_inv public.inventory_items;
   v_cnt int; v_txt text; v_num numeric; v_state text; v_ok boolean;
+  v_kit_on_hand int;   -- kit stock at start (the demo member seed may have sold some)
   passed text[] := '{}';
 begin
   -- ---------------------------------------------------------------------------
@@ -40,7 +41,7 @@ begin
   select id into p_gel from public.products where slug = 'gel-de-suivi';
   select id into inv_gel from public.inventory_items where product_id = p_gel;
   select id into p_kit from public.products where slug = 'kit-application-premium';
-  select id into inv_kit from public.inventory_items where product_id = p_kit;
+  select id, quantity_on_hand into inv_kit, v_kit_on_hand from public.inventory_items where product_id = p_kit;
   select id into p_opal from public.products where slug = 'goutte-opale';
   select id into p_draft from public.products where slug = 'kit-decouverte';
   select id into p_archived from public.products where slug = 'coffret-glitter-2025';
@@ -361,7 +362,7 @@ begin
   o_c := public.cancel_order(o_c.id, 'Client injoignable');
   select * into v_inv from public.inventory_items where id = inv_kit;
   if o_c.status <> 'cancelled' or o_c.stock_state <> 'released' or o_c.cancelled_at is null
-     or v_inv.quantity_reserved <> 0 or v_inv.quantity_on_hand <> 31 then
+     or v_inv.quantity_reserved <> 0 or v_inv.quantity_on_hand <> v_kit_on_hand then
     raise exception 'FAIL G: cancel % inv %', row_to_json(o_c), row_to_json(v_inv);
   end if;
   o_c := public.cancel_order(o_c.id);   -- idempotent
@@ -440,7 +441,7 @@ begin
   o_f := public.mark_order_paid(o_f.id, o_f.total_amount, 'EUR', 'cs_late_ok');
   select * into v_inv from public.inventory_items where id = inv_kit;
   if o_f.status <> 'confirmed' or o_f.stock_state <> 'committed' or o_f.cancelled_at is not null
-     or v_inv.quantity_on_hand <> 39 then   -- 31 + 10 - 2
+     or v_inv.quantity_on_hand <> v_kit_on_hand + 10 - 2 then
     raise exception 'FAIL H: late payment % inv %', row_to_json(o_f), row_to_json(v_inv);
   end if;
   -- late payment when the stock is gone -> flagged, never oversold

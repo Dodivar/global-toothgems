@@ -2,11 +2,14 @@ import { createContext, useCallback, useContext, useEffect, useMemo, useState, t
 import {
   ADMIN_PRODUCTS,
   SEED_ACTIVITY,
+  SEED_RECOMMENDATIONS,
   stockState,
   type ActivityEntry,
   type ActivityKind,
   type AdminProduct,
+  type ProductRecommendation,
   type ProductStatus,
+  type RecommendationKind,
 } from "../data/adminCatalog";
 import type { Localized } from "../data/types";
 
@@ -49,6 +52,13 @@ interface AdminCatalogValue {
   deleteProduct: (id: string) => Promise<void>;
   /** Fresh product shell for the creation form. */
   blankProduct: () => AdminProduct;
+  /** Ids of the products recommended next to `productId`, in display order. */
+  recommendationsFor: (productId: string, kind: RecommendationKind) => string[];
+  /**
+   * Replaces the product's ordered lists, both kinds in one write: the screen
+   * edits lists, and the database keeps them as one row per link.
+   */
+  saveRecommendations: (productId: string, lists: Record<RecommendationKind, string[]>) => Promise<void>;
 }
 
 const AdminCatalogContext = createContext<AdminCatalogValue | null>(null);
@@ -87,6 +97,7 @@ const STATUS_NOTE: Record<ProductStatus, Localized> = {
 export function AdminCatalogProvider({ children, actor = "Camille D." }: { children: ReactNode; actor?: string }) {
   const [products, setProducts] = useState<AdminProduct[]>(ADMIN_PRODUCTS);
   const [activity, setActivity] = useState<ActivityEntry[]>(SEED_ACTIVITY);
+  const [recommendations, setRecommendations] = useState<ProductRecommendation[]>(SEED_RECOMMENDATIONS);
   const [loading, setLoading] = useState(true);
 
   useEffect(() => {
@@ -179,7 +190,34 @@ export function AdminCatalogProvider({ children, actor = "Camille D." }: { child
       await wait(SAVE_DELAY_MS);
       const target = products.find((p) => p.id === id);
       setProducts((prev) => prev.filter((p) => p.id !== id));
+      // Links go with the product, from either end (ON DELETE CASCADE).
+      setRecommendations((prev) => prev.filter((r) => r.productId !== id && r.recommendedProductId !== id));
       if (target) log("deleted", target);
+    },
+    [products, log],
+  );
+
+  const recommendationsFor = useCallback(
+    (productId: string, kind: RecommendationKind) =>
+      recommendations
+        .filter((r) => r.productId === productId && r.kind === kind)
+        .sort((a, b) => a.position - b.position)
+        .map((r) => r.recommendedProductId),
+    [recommendations],
+  );
+
+  const saveRecommendations = useCallback(
+    async (productId: string, lists: Record<RecommendationKind, string[]>) => {
+      await wait(SAVE_DELAY_MS);
+      // Same invariants as the table: no self link, one link per pair and kind.
+      const rows = (Object.entries(lists) as [RecommendationKind, string[]][]).flatMap(([kind, ids]) =>
+        [...new Set(ids)]
+          .filter((id) => id !== productId)
+          .map((recommendedProductId, position) => ({ productId, recommendedProductId, kind, position })),
+      );
+      setRecommendations((prev) => [...prev.filter((r) => r.productId !== productId), ...rows]);
+      const product = products.find((p) => p.id === productId);
+      if (product) log("updated", product, { fr: "Recommandations modifiées", en: "Recommendations updated" });
     },
     [products, log],
   );
@@ -233,8 +271,12 @@ export function AdminCatalogProvider({ children, actor = "Camille D." }: { child
       duplicateProduct,
       deleteProduct,
       blankProduct,
+      recommendationsFor,
+      saveRecommendations,
     }),
     [
+      recommendationsFor,
+      saveRecommendations,
       products,
       activity,
       loading,

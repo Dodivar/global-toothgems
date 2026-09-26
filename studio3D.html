@@ -10,7 +10,7 @@
 <link href="https://fonts.googleapis.com/css2?family=Fraunces:ital,opsz,wght@0,9..144,400;0,9..144,500;0,9..144,600;1,9..144,400;1,9..144,500&family=Manrope:wght@400;500;600;700;800&display=swap" rel="stylesheet" />
 <style>
 /* ============================================================
-   Lumière — Dental Jewelry Studio · UI stylesheet (v4)
+   Lumière — Dental Jewelry Studio · UI stylesheet (v7)
    Ivory / ink / bronze on a dark velvet stage.
 ============================================================ */
 *{box-sizing:border-box;margin:0;padding:0}
@@ -80,6 +80,22 @@ button{font-family:inherit}
 .menu-save input:focus{border-color:var(--accent)}
 .menu-save .btn{height:32px;padding:0 12px}
 
+/* ---------- right-click context menu ---------- */
+.ctx-menu{position:absolute;z-index:40;min-width:200px;background:var(--panel);
+  border:1px solid var(--line);border-radius:13px;box-shadow:0 16px 44px -10px rgba(38,33,26,.32);
+  padding:5px;animation:menuIn .12s ease}
+.ctx-head{padding:9px 12px 7px;font:800 10.5px 'Manrope';letter-spacing:.1em;text-transform:uppercase;
+  color:var(--ink-3);border-bottom:1px solid var(--line-soft);margin-bottom:4px}
+.ctx-item{display:flex;align-items:center;gap:10px;width:100%;padding:8px 12px;border:0;background:none;
+  border-radius:8px;font:600 12.5px 'Manrope';color:var(--ink);cursor:pointer;text-align:left;
+  transition:background .1s,color .1s}
+.ctx-item svg{color:var(--accent-ink);flex:none}
+.ctx-item:hover{background:var(--accent-soft)}
+.ctx-item.danger{color:var(--danger)}
+.ctx-item.danger svg{color:var(--danger)}
+.ctx-item.danger:hover{background:#fdf3f0}
+.ctx-sep{height:1px;background:var(--line-soft);margin:4px 8px}
+
 /* ---------- side panels ---------- */
 .library{grid-row:2;grid-column:1;background:var(--panel);border-right:1px solid var(--line);
   display:flex;flex-direction:column;min-height:0}
@@ -136,13 +152,13 @@ button{font-family:inherit}
 #placingPill{bottom:78px}
 .bottombar{position:absolute;bottom:16px;left:50%;transform:translateX(-50%);display:flex;align-items:center;gap:2px;
   padding:5px;background:rgba(255,253,248,.88);backdrop-filter:blur(10px);-webkit-backdrop-filter:blur(10px);
-  border:1px solid var(--line);border-radius:999px;box-shadow:var(--shadow);z-index:6}
-.bb-btn{height:32px;padding:0 13px;border-radius:999px;border:0;background:none;
+  border:1px solid var(--line);border-radius:999px;box-shadow:var(--shadow);z-index:6;max-width:calc(100% - 24px)}
+.bb-btn{height:32px;padding:0 12px;border-radius:999px;border:0;background:none;
   font:600 12px 'Manrope';color:var(--ink-2);cursor:pointer;display:inline-flex;align-items:center;gap:6px;
-  transition:background .13s,color .13s}
+  transition:background .13s,color .13s;white-space:nowrap}
 .bb-btn:hover{background:var(--bg);color:var(--ink)}
 .bb-btn.active{background:#2b241b;color:#f0e2c6}
-.bb-sep{width:1px;height:18px;background:var(--line);margin:0 3px}
+.bb-sep{width:1px;height:18px;background:var(--line);margin:0 3px;flex:none}
 .stage-tag{position:absolute;left:18px;bottom:20px;font:700 9px 'Manrope';letter-spacing:.24em;
   color:rgba(38,33,26,.32);z-index:3;pointer-events:none}
 
@@ -182,6 +198,17 @@ input.range::-moz-range-thumb{width:14px;height:14px;border-radius:50%;backgroun
   background:#fffefb url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='10' height='6' viewBox='0 0 10 6'%3E%3Cpath d='M1 1l4 4 4-4' fill='none' stroke='%23a49a8b' stroke-width='1.6' stroke-linecap='round'/%3E%3C/svg%3E") no-repeat right 12px center;
   font:600 12.5px 'Manrope';color:var(--ink);padding:0 32px 0 12px;appearance:none;cursor:pointer;outline:none}
 .type-select:focus,.tooth-select:focus{border-color:var(--accent)}
+.seg{display:flex;background:#efe8d6;border-radius:9px;padding:3px;gap:3px}
+.seg button{flex:1;height:26px;border:0;border-radius:7px;background:transparent;
+  font:600 11px 'Manrope';color:var(--ink-2);cursor:pointer;transition:.15s}
+.seg button:hover{color:var(--ink)}
+.seg button.on{background:#fffdf6;box-shadow:0 1px 3px rgba(70,50,10,.15);color:var(--ink)}
+.quick-row{display:flex;gap:8px;align-items:stretch;margin-bottom:10px}
+.mini-btn{height:28px;padding:0 11px;border:1px solid var(--line);border-radius:8px;background:#fffefb;
+  font:700 11px 'Manrope';color:var(--ink-2);cursor:pointer;display:inline-flex;align-items:center;gap:6px;
+  transition:border-color .13s,color .13s,background .13s}
+.mini-btn:hover{border-color:var(--accent);color:var(--accent-ink)}
+.mini-btn.grow{flex:1;justify-content:center}
 .action-row{display:grid;grid-template-columns:1fr 1fr;gap:8px;margin-top:8px}
 .act-btn{height:38px;border-radius:11px;border:1px solid var(--line);background:#fffefb;
   font:600 12.5px 'Manrope';color:var(--ink);cursor:pointer;display:flex;align-items:center;justify-content:center;gap:8px;
@@ -242,6 +269,7 @@ input.range::-moz-range-thumb{width:14px;height:14px;border-radius:50%;backgroun
   .brand-sub{display:none}
   .btn .lbl{display:none}
   .btn{padding:0 11px}
+  .bb-btn{padding:0 9px;font-size:11px}
 }
 </style>
 <script src="https://cdn.jsdelivr.net/npm/@babel/standalone@7/babel.min.js"></script>
@@ -270,23 +298,19 @@ input.range::-moz-range-thumb{width:14px;height:14px;border-radius:50%;backgroun
 
 <script type="text/plain" id="app-source">
 /* ============================================================================
-   LUMIÈRE — DENTAL JEWELRY STUDIO (v4)
+   LUMIÈRE — DENTAL JEWELRY STUDIO (v7)
    ----------------------------------------------------------------------------
-   v4 changes — flush mounting + colour wheel fix
-     · Gems now sit near-flush on every model: the old fixed 0.3-unit standoff
-       (calibrated for the mm-scale studio arch) became a size-proportional
-       0.04 + 0.04·scale offset, and a per-piece "Standoff" slider was added
-       (−0.5 … +1.5) for manual fine-tuning on imported models.
-     · Surface normals are now computed geometrically from the world-space hit
-       triangle (cross product) instead of transforming the object-space face
-       normal — exact even when GLTF nodes carry non-uniform scale, which used
-       to tilt gems and lift them off the surface.
-     · Size slider extended down to 0.5 mm for smaller imported teeth.
-     · Colour wheel: the painted hue ring and the picker used angle conventions
-       rotated 90° apart (pointing at red returned yellow-green) — unified.
-       The SV square also no longer overlaps the ring's hit zone.
-   v3 — free .glb import (never rejected, Draco support).
-   v2 — colour wheel · Triangle/Teardrop/Navette/Baguette · named user presets.
+   v7 — collision system: pieces may touch but never overlap.
+     · Library drops are refused on occupied spots (live red-ghost feedback
+       while dragging the ghost over a taken position).
+     · Dragging a placed piece can never enter another piece — it holds at the
+       last free position while the cursor is over an occupied spot.
+     · Duplicate slides each copy to the nearest free spot along the surface;
+       mirror / space-evenly / align-equator / tooth-change refuse or slide
+       colliding results (kept-in-place pieces are reported in the toast).
+   v6.1 — build fix. v6 — context menu, layout tools, pricing, light presets.
+   v5 — multi-selection, quick rotation, mirroring. v4 — flush mounting +
+        colour wheel fix. v3 — free .glb import. v2 — wheel, shapes, presets.
 ============================================================================ */
 
 import React, { useEffect, useRef, useState, useSyncExternalStore } from 'react'
@@ -418,6 +442,37 @@ const CATALOG: JewelryTypeDef[] = [
 ]
 const JEWELRY_BY_ID: Record<string, JewelryTypeDef> = Object.fromEntries(CATALOG.map((t) => [t.id, t]))
 
+/* =====================================================================
+   PRICE LIST — EDIT ME. This drives the live total in the top bar and
+   the exported quote sheet. `base` is the price per piece type in your
+   currency; `sizeBands` scales it by the piece's diameter in mm
+   (diameter = the "Diameter" slider value × 2).
+==================================================================== */
+const PRICING = {
+  currency: '€',
+  base: {
+    'crystal-round': 25, 'crystal-diamond': 28, 'crystal-square': 26,
+    'crystal-petite': 18, 'crystal-grand': 35,
+    'shape-star': 26, 'shape-heart': 26, 'shape-triangle': 24,
+    'shape-drop': 24, 'shape-navette': 26, 'shape-baguette': 26,
+    'shape-butterfly': 34, 'shape-moon': 26, 'shape-bolt': 26, 'shape-blossom': 28,
+    'metal-gold-dot': 32, 'metal-gold-star': 38, 'metal-gold-heart': 38, 'metal-silver': 30,
+  } as Record<string, number>,
+  sizeBands: [
+    { upTo: 1.4, factor: 0.85 },
+    { upTo: 2.2, factor: 1.0 },
+    { upTo: 3.0, factor: 1.35 },
+    { upTo: 99,  factor: 1.7 },
+  ],
+}
+function priceOf(j: PlacedJewelry): number {
+  const base = PRICING.base[j.jewelryTypeId] ?? 20
+  const d = j.scale * 2
+  const band = PRICING.sizeBands.find((b) => d <= b.upTo) ?? PRICING.sizeBands[PRICING.sizeBands.length - 1]
+  return Math.round(base * band.factor)
+}
+const money = (n: number) => `${PRICING.currency}${n}`
+
 /* ---- material resolution: preset finish OR custom wheel colour ---- */
 interface MaterialSpec { kind: 'crystal' | 'metal'; hex: string; dispersion: number }
 function resolveFinishRaw(color: string, customColor?: string): MaterialSpec {
@@ -480,20 +535,27 @@ const PRESETS: Preset[] = [
 /* ============================ state/store ================================ */
 
 type ModelMode = 'studio' | 'teeth' | 'free'
+type LightPreset = 'studio' | 'lamp' | 'daylight'
+interface ContextMenuState { jewelId: string; x: number; y: number }
 interface StudioSnapshot {
-  jewels: PlacedJewelry[]; selectedJewelId: string | null; selectedToothId: string | null
+  jewels: PlacedJewelry[]; selectedJewelIds: string[]; selectedToothId: string | null
   armedTypeId: string | null; placingTypeId: string | null; hoveredToothId: string | null
-  modelMode: ModelMode; canUndo: boolean; canRedo: boolean
+  modelMode: ModelMode; lightPreset: LightPreset; clientName: string
+  contextMenu: ContextMenuState | null
+  canUndo: boolean; canRedo: boolean
 }
 const STORAGE_KEY = 'lumiere-design-v1'
 class DesignStore {
   jewels: PlacedJewelry[] = []
-  selectedJewelId: string | null = null
+  selectedJewelIds: string[] = []
   selectedToothId: string | null = null
   armedTypeId: string | null = null
   placingTypeId: string | null = null
   hoveredToothId: string | null = null
   modelMode: ModelMode = 'studio'
+  lightPreset: LightPreset = 'studio'
+  clientName = ''
+  contextMenu: ContextMenuState | null = null
   restored = false
   private past: string[] = []
   private future: string[] = []
@@ -513,6 +575,7 @@ class DesignStore {
               && j.position && j.normal)
           this.restored = this.jewels.length > 0
         }
+        if (data && typeof data.clientName === 'string') this.clientName = data.clientName
       }
     } catch { /* corrupt storage — start fresh */ }
     this.snap = this.buildSnap()
@@ -527,19 +590,25 @@ class DesignStore {
   }
   private buildSnap(): StudioSnapshot {
     return {
-      jewels: this.jewels, selectedJewelId: this.selectedJewelId, selectedToothId: this.selectedToothId,
+      jewels: this.jewels, selectedJewelIds: this.selectedJewelIds, selectedToothId: this.selectedToothId,
       armedTypeId: this.armedTypeId, placingTypeId: this.placingTypeId, hoveredToothId: this.hoveredToothId,
-      modelMode: this.modelMode, canUndo: this.past.length > 0, canRedo: this.future.length > 0,
+      modelMode: this.modelMode, lightPreset: this.lightPreset, clientName: this.clientName,
+      contextMenu: this.contextMenu,
+      canUndo: this.past.length > 0, canRedo: this.future.length > 0,
     }
   }
   pushHistory() {
-    this.past.push(JSON.stringify(this.jewels))
+    const snap = JSON.stringify(this.jewels)
+    if (this.past.length && this.past[this.past.length - 1] === snap && !this.future.length) return
+    this.past.push(snap)
     if (this.past.length > 60) this.past.shift()
     this.future = []
     this.commit()
   }
   private fixSelection() {
-    if (this.selectedJewelId && !this.jewels.find((j) => j.id === this.selectedJewelId)) this.selectedJewelId = null
+    if (this.selectedJewelIds.length) {
+      this.selectedJewelIds = this.selectedJewelIds.filter((id) => this.jewels.some((j) => j.id === id))
+    }
   }
   addJewel(typeId: string, toothId: string, position: POD, normal: POD): string {
     this.pushHistory()
@@ -549,60 +618,118 @@ class DesignStore {
       rotation: 0, scale: def.defaultScale, color: def.defaultColor,
     }
     this.jewels = [...this.jewels, j]
-    this.selectedJewelId = j.id
+    this.selectedJewelIds = [j.id]
     this.selectedToothId = toothId
+    this.contextMenu = null
     this.commit()
     return j.id
+  }
+  /** Append pre-built jewels (e.g. collision-resolved duplicates) in one undo step. */
+  insertJewels(copies: PlacedJewelry[]): number {
+    if (!copies.length) return 0
+    this.pushHistory()
+    this.jewels = [...this.jewels, ...copies]
+    this.selectedJewelIds = copies.map((c) => c.id)
+    this.selectedToothId = null
+    this.contextMenu = null
+    this.commit()
+    return copies.length
   }
   updateJewel(id: string, patch: Partial<PlacedJewelry>) {
     this.jewels = this.jewels.map((j) => (j.id === id ? { ...j, ...patch } : j))
     this.commit()
   }
-  removeJewel(id: string) {
+  /** Apply a different patch to many jewels in one commit (one undo step). */
+  applyPatches(updates: { id: string; patch: Partial<PlacedJewelry> }[]) {
+    if (!updates.length) return
+    const map = new Map(updates.map((u) => [u.id, u.patch]))
+    this.jewels = this.jewels.map((j) => (map.has(j.id) ? { ...j, ...map.get(j.id)! } : j))
+    this.commit()
+  }
+  /** Apply the same patch to the whole selection in one commit. */
+  updateSelected(patch: Partial<PlacedJewelry>) {
+    if (!this.selectedJewelIds.length) return
+    const sel = new Set(this.selectedJewelIds)
+    this.jewels = this.jewels.map((j) => (sel.has(j.id) ? { ...j, ...patch } : j))
+    this.commit()
+  }
+  removeJewels(ids: string[]) {
+    if (!ids.length) return
     this.pushHistory()
-    this.jewels = this.jewels.filter((j) => j.id !== id)
-    if (this.selectedJewelId === id) this.selectedJewelId = null
+    const kill = new Set(ids)
+    this.jewels = this.jewels.filter((j) => !kill.has(j.id))
+    this.selectedJewelIds = this.selectedJewelIds.filter((id) => !kill.has(id))
+    this.contextMenu = null
     this.commit()
   }
-  duplicateJewel(id: string): string | null {
-    const src = this.jewels.find((j) => j.id === id)
-    if (!src) return null
+  duplicateJewels(ids: string[]): number {
+    if (!ids.length) return 0
     this.pushHistory()
-    const n = src.normal
-    let tx = -n.z, tz = n.x
-    const tl = Math.hypot(tx, tz) || 1; tx /= tl; tz /= tl
-    const off = 1.6
-    const copy: PlacedJewelry = { ...src, id: uid(), position: v3(src.position.x + tx * off, src.position.y, src.position.z + tz * off) }
-    this.jewels = [...this.jewels, copy]
-    this.selectedJewelId = copy.id
+    const copies: PlacedJewelry[] = []
+    for (const id of ids) {
+      const src = this.jewels.find((j) => j.id === id)
+      if (!src) continue
+      const n = src.normal
+      let tx = -n.z, tz = n.x
+      const tl = Math.hypot(tx, tz) || 1; tx /= tl; tz /= tl
+      const off = 1.6
+      copies.push({ ...src, id: uid(), position: v3(src.position.x + tx * off, src.position.y, src.position.z + tz * off) })
+    }
+    this.jewels = [...this.jewels, ...copies]
+    this.selectedJewelIds = copies.map((c) => c.id)
+    this.selectedToothId = null
+    this.contextMenu = null
     this.commit()
-    return copy.id
+    return copies.length
   }
-  selectJewel(id: string | null) {
-    this.selectedJewelId = id
-    this.selectedToothId = id ? (this.jewels.find((j) => j.id === id)?.toothId ?? null) : null
+  selectJewel(id: string | null, opts?: { toggle?: boolean }) {
+    if (id == null) this.selectedJewelIds = []
+    else if (opts?.toggle) {
+      this.selectedJewelIds = this.selectedJewelIds.includes(id)
+        ? this.selectedJewelIds.filter((x) => x !== id)
+        : [...this.selectedJewelIds, id]
+    } else this.selectedJewelIds = [id]
+    this.selectedToothId = this.selectedJewelIds.length === 1
+      ? (this.jewels.find((j) => j.id === this.selectedJewelIds[0])?.toothId ?? null)
+      : null
+    this.contextMenu = null
     this.commit()
   }
-  selectTooth(id: string | null) { this.selectedToothId = id; this.selectedJewelId = null; this.commit() }
-  deselect() { this.selectedJewelId = null; this.selectedToothId = null; this.armedTypeId = null; this.commit() }
+  selectJewels(ids: string[]) {
+    this.selectedJewelIds = [...ids]
+    this.selectedToothId = null
+    this.contextMenu = null
+    this.commit()
+  }
+  selectTooth(id: string | null) { this.selectedToothId = id; this.selectedJewelIds = []; this.contextMenu = null; this.commit() }
+  deselect() {
+    this.selectedJewelIds = []; this.selectedToothId = null; this.armedTypeId = null
+    this.contextMenu = null; this.commit()
+  }
   setArmed(id: string | null) { this.armedTypeId = id; this.commit() }
   setPlacing(id: string | null) { this.placingTypeId = id; this.commit() }
   setHoveredTooth(id: string | null) { if (this.hoveredToothId !== id) { this.hoveredToothId = id; this.commit() } }
   setModelMode(m: ModelMode) { if (this.modelMode !== m) { this.modelMode = m; this.commit() } }
+  setLightPreset(p: LightPreset) { if (this.lightPreset !== p) { this.lightPreset = p; this.commit() } }
+  setClientName(n: string) { this.clientName = n; this.commit() }
+  openContextMenu(jewelId: string, x: number, y: number) { this.contextMenu = { jewelId, x, y }; this.commit() }
+  closeContextMenu() { if (this.contextMenu) { this.contextMenu = null; this.commit() } }
   undo() {
     if (!this.past.length) return
     this.future.push(JSON.stringify(this.jewels))
     this.jewels = JSON.parse(this.past.pop()!)
-    this.fixSelection(); this.commit()
+    this.fixSelection(); this.contextMenu = null; this.commit()
   }
   redo() {
     if (!this.future.length) return
     this.past.push(JSON.stringify(this.jewels))
     this.jewels = JSON.parse(this.future.pop()!)
-    this.fixSelection(); this.commit()
+    this.fixSelection(); this.contextMenu = null; this.commit()
   }
   setJewels(jewels: PlacedJewelry[]) { this.pushHistory(); this.jewels = jewels; this.deselect() }
-  saveNow() { try { localStorage.setItem(STORAGE_KEY, JSON.stringify({ v: 1, jewels: this.jewels })) } catch { /* full */ } }
+  saveNow() {
+    try { localStorage.setItem(STORAGE_KEY, JSON.stringify({ v: 1, jewels: this.jewels, clientName: this.clientName })) } catch { /* full */ }
+  }
 }
 const store = new DesignStore()
 function useStudio(): StudioSnapshot { return useSyncExternalStore(store.subscribe, store.getSnapshot) }
@@ -837,6 +964,7 @@ function getJewelTemplate(geometryId: string): JewelTemplate {
 /* ===================== component: StudioEngine =========================== */
 
 interface SurfaceHit { toothId: string; point: THREE.Vector3; normal: THREE.Vector3 }
+interface MoveResult { moved: number; skipped: number }
 interface ToothRig {
   id: string; mesh: THREE.Object3D; materials: THREE.MeshPhysicalMaterial[]
   spec: ToothSpec; highlight: number; imported: boolean
@@ -860,6 +988,12 @@ const GLB_FIT = {
   maxToothSize: 32, // meshes larger than this are never treated as a single tooth
 }
 
+/* Collision: pieces may TOUCH but never overlap. Two pieces collide when the
+   distance between their visual centres is below the sum of their radii,
+   minus this contact tolerance. */
+const CONTACT_TOL = 0.15
+const BLOCK_COLOR = 0xc8503e
+
 const _Z = new THREE.Vector3(0, 0, 1)
 const _UP = new THREE.Vector3(0, 1, 0)
 const _n = new THREE.Vector3(), _p = new THREE.Vector3(), _nn = new THREE.Vector3()
@@ -870,8 +1004,7 @@ const OUTLINE_COLOR = 0xb98a4a
 
 /* Geometric world normal: cross product of the hit triangle's world-space
    vertices. Exact under any node transform — including non-uniform GLTF
-   scales, where transforming the object-space face normal goes wrong and
-   gems tilt off the surface. Always oriented against the incoming ray. */
+   scales. Always oriented against the incoming ray. */
 const _gA = new THREE.Vector3(), _gB = new THREE.Vector3(), _gC = new THREE.Vector3()
 const _gE1 = new THREE.Vector3(), _gE2 = new THREE.Vector3(), _gN = new THREE.Vector3()
 function geometricWorldNormal(hit: THREE.Intersection, rayDir: THREE.Vector3): THREE.Vector3 {
@@ -921,6 +1054,16 @@ class StudioEngine {
   private raf = 0
   private disposed = false
 
+  // lighting (presets crossfade these every frame)
+  private keyLight!: THREE.DirectionalLight
+  private fillLight!: THREE.DirectionalLight
+  private rimLight!: THREE.DirectionalLight
+  private lightTarget = {
+    key: 2.2, keyColor: new THREE.Color(0xfff1e0), keyPos: new THREE.Vector3(28, 46, 40),
+    fill: 0.6, fillColor: new THREE.Color(0xdfe8f5),
+    rim: 0.8, env: 1, expo: 1, tint: new THREE.Color(0xffffff),
+  }
+
   // custom-model state
   private mergedMode = false
   private proxyMeshes: THREE.Mesh[] = []      // invisible reference teeth (free-mode labelling)
@@ -934,7 +1077,7 @@ class StudioEngine {
   private hoverJewelId: string | null = null
   private hoverToothId: string | null = null
   private placing: { typeId: string; startX: number; startY: number; started: boolean } | null = null
-  private ghost: { root: THREE.Group; ringRoot: THREE.Group; ring: THREE.Mesh; ringScale: number; halfDepth: number; material: THREE.MeshBasicMaterial; ringMaterial: THREE.MeshBasicMaterial } | null = null
+  private ghost: { root: THREE.Group; ringRoot: THREE.Group; ring: THREE.Mesh; ringScale: number; halfDepth: number; material: THREE.MeshBasicMaterial; ringMaterial: THREE.MeshBasicMaterial; baseColor: number } | null = null
 
   // camera animation
   private camTween: { p0: THREE.Vector3; p1: THREE.Vector3; t0: THREE.Vector3; t1: THREE.Vector3; start: number; dur: number } | null = null
@@ -978,7 +1121,7 @@ class StudioEngine {
     window.addEventListener('pointercancel', this.onPointerUp)
     window.addEventListener('blur', this.onBlur)
     this.renderer.domElement.addEventListener('dblclick', this.onDblClick)
-    container.addEventListener('contextmenu', (e) => e.preventDefault())
+    container.addEventListener('contextmenu', this.onContextMenu)
 
     this.ro = new ResizeObserver(() => this.resize())
     this.ro.observe(container)
@@ -997,6 +1140,7 @@ class StudioEngine {
     const pmrem = new THREE.PMREMGenerator(this.renderer)
     this.scene.environment = pmrem.fromScene(new RoomEnvironment(), 0.04).texture
     pmrem.dispose()
+    this.scene.environmentIntensity = 1
 
     const cnv = document.createElement('canvas'); cnv.width = cnv.height = 1024
     const ctx = cnv.getContext('2d')!
@@ -1009,23 +1153,44 @@ class StudioEngine {
       new THREE.MeshBasicMaterial({ map: tex, side: THREE.BackSide, toneMapped: false }))
     this.scene.add(this.backdrop)
 
-    const key = new THREE.DirectionalLight(0xfff1e0, 2.2)
-    key.position.set(28, 46, 40)
-    key.castShadow = true
-    key.shadow.mapSize.set(2048, 2048)
-    key.shadow.camera.left = -55; key.shadow.camera.right = 55
-    key.shadow.camera.top = 55; key.shadow.camera.bottom = -55
-    key.shadow.camera.near = 10; key.shadow.camera.far = 160
-    key.shadow.bias = -0.0002; key.shadow.normalBias = 0.6
-    this.scene.add(key)
-    const fill = new THREE.DirectionalLight(0xdfe8f5, 0.6); fill.position.set(-34, 14, 30); this.scene.add(fill)
-    const rim = new THREE.DirectionalLight(0xffffff, 0.8); rim.position.set(-6, 20, -55); this.scene.add(rim)
+    this.keyLight = new THREE.DirectionalLight(0xfff1e0, 2.2)
+    this.keyLight.position.set(28, 46, 40)
+    this.keyLight.castShadow = true
+    this.keyLight.shadow.mapSize.set(2048, 2048)
+    this.keyLight.shadow.camera.left = -55; this.keyLight.shadow.camera.right = 55
+    this.keyLight.shadow.camera.top = 55; this.keyLight.shadow.camera.bottom = -55
+    this.keyLight.shadow.camera.near = 10; this.keyLight.shadow.camera.far = 160
+    this.keyLight.shadow.bias = -0.0002; this.keyLight.shadow.normalBias = 0.6
+    this.scene.add(this.keyLight)
+    this.fillLight = new THREE.DirectionalLight(0xdfe8f5, 0.6); this.fillLight.position.set(-34, 14, 30); this.scene.add(this.fillLight)
+    this.rimLight = new THREE.DirectionalLight(0xffffff, 0.8); this.rimLight.position.set(-6, 20, -55); this.scene.add(this.rimLight)
 
     this.floor = new THREE.Mesh(new THREE.PlaneGeometry(500, 500), new THREE.ShadowMaterial({ opacity: 0.14 }))
     this.floor.rotation.x = -Math.PI / 2
     this.floor.position.y = -16
     this.floor.receiveShadow = true
     this.scene.add(this.floor)
+  }
+
+  /** Lighting presets — smoothly crossfaded in the frame loop. */
+  setLightPreset(p: 'studio' | 'lamp' | 'daylight') {
+    const t = this.lightTarget
+    if (p === 'lamp') {
+      // warm, low, directional chair lamp — dim ambience, sparkle from the lamp
+      t.key = 1.9; t.keyColor.set(0xffd2a0); t.keyPos.set(16, 26, 44)
+      t.fill = 0.22; t.fillColor.set(0xffe6cc)
+      t.rim = 0.35; t.env = 0.5; t.expo = 1.08; t.tint.set(0xf1e6d8)
+    } else if (p === 'daylight') {
+      // bright sun + cool sky fill
+      t.key = 2.5; t.keyColor.set(0xffffff); t.keyPos.set(34, 64, 26)
+      t.fill = 0.9; t.fillColor.set(0xdcecff)
+      t.rim = 1.05; t.env = 1.3; t.expo = 1.0; t.tint.set(0xeef1f5)
+    } else {
+      // neutral studio default
+      t.key = 2.2; t.keyColor.set(0xfff1e0); t.keyPos.set(28, 46, 40)
+      t.fill = 0.6; t.fillColor.set(0xdfe8f5)
+      t.rim = 0.8; t.env = 1; t.expo = 1; t.tint.set(0xffffff)
+    }
   }
 
   private archCenters(): number[] {
@@ -1348,6 +1513,258 @@ class StudioEngine {
     if (!hits.length) return null
     return { jewelId: hits[0].object.userData.jewelId as string }
   }
+  /** Re-snap an arbitrary world point onto the nearest tooth surface along `nrm`.
+       Used by mirroring, layout tools and collision search — tries both directions. */
+  private snapToSurface(point: THREE.Vector3, nrm: THREE.Vector3): SurfaceHit | null {
+    const n = nrm.clone().normalize()
+    const tries: [THREE.Vector3, THREE.Vector3][] = [
+      [point.clone().addScaledVector(n, 6), n.clone().negate()],
+      [point.clone().addScaledVector(n, -6), n.clone()],
+    ]
+    for (const [origin, dir] of tries) {
+      this.raycaster.set(origin, dir)
+      this.raycaster.far = 80
+      const hits = this.raycaster.intersectObjects(this.toothMeshes, true)
+      this.raycaster.far = Infinity
+      if (hits.length) {
+        const h = hits[0]
+        const gn = geometricWorldNormal(h, dir).clone()
+        const toothId = this.mergedMode ? this.classifyHit(h.point) : toothIdFromObject(h.object)
+        if (toothId) return { toothId, point: h.point.clone(), normal: gn }
+      }
+    }
+    return null
+  }
+  /** Nearest tooth rig to a world point (fallback for unlabeled free-mode pieces). */
+  private nearestRig(p: THREE.Vector3): ToothRig | null {
+    let best: ToothRig | null = null, bestD = Infinity
+    this.toothRigs.forEach((r) => { const d = r.center.distanceTo(p); if (d < bestD) { bestD = d; best = r } })
+    return best
+  }
+
+  /* ---------- collision system: pieces may touch, never overlap ---------- */
+
+  /** Visual centre of a piece (surface point pushed out along its normal). */
+  private gemCenterRaw(point: THREE.Vector3, normal: THREE.Vector3, typeId: string, scale: number, offset: number): THREE.Vector3 {
+    const tpl = getJewelTemplate(JEWELRY_BY_ID[typeId].geometry)
+    return point.clone().addScaledVector(normal.clone().normalize(), tpl.halfDepth * scale + mountGap(scale, offset))
+  }
+  private jewelCenter(j: PlacedJewelry): THREE.Vector3 {
+    return this.gemCenterRaw(
+      new THREE.Vector3(j.position.x, j.position.y, j.position.z),
+      new THREE.Vector3(j.normal.x, j.normal.y, j.normal.z),
+      j.jewelryTypeId, j.scale, j.offset ?? 0)
+  }
+  private jewelRadius(j: { jewelryTypeId: string; scale: number }): number {
+    return getJewelTemplate(JEWELRY_BY_ID[j.jewelryTypeId].geometry).radius * j.scale
+  }
+  /** Every placed piece except `exceptIds`, as collision blockers. */
+  private blockersFor(exceptIds: Set<string>): { center: THREE.Vector3; radius: number }[] {
+    const out: { center: THREE.Vector3; radius: number }[] = []
+    for (const j of this.store.jewels) {
+      if (exceptIds.has(j.id)) continue
+      out.push({ center: this.jewelCenter(j), radius: this.jewelRadius(j) })
+    }
+    return out
+  }
+  /** Does a candidate pose collide with any blocker? Contact (edges touching) is allowed. */
+  private hitBlocked(hit: SurfaceHit, typeId: string, scale: number, offset: number,
+    blockers: { center: THREE.Vector3; radius: number }[]): boolean {
+    const c = this.gemCenterRaw(hit.point, hit.normal, typeId, scale, offset)
+    const r = this.jewelRadius({ jewelryTypeId: typeId, scale })
+    return blockers.some((b) => b.center.distanceTo(c) < b.radius + r - CONTACT_TOL)
+  }
+  /** The proposed spot, or the nearest free spot on the enamel around it
+      (spiral search in the tangent plane, re-snapped by raycast). Null = no room. */
+  private findFreeSpot(startHit: SurfaceHit, typeId: string, scale: number, offset: number,
+    blockers: { center: THREE.Vector3; radius: number }[]): SurfaceHit | null {
+    if (!this.hitBlocked(startHit, typeId, scale, offset, blockers)) return startHit
+    const n = startHit.normal.clone().normalize()
+    const t = new THREE.Vector3(-n.z, 0, n.x)
+    if (t.lengthSq() < 1e-6) t.set(1, 0, 0)
+    t.normalize()
+    const u = new THREE.Vector3().crossVectors(t, n).normalize()
+    for (let step = 0.9; step <= 4.2; step += 0.9) {
+      for (let k = 0; k < 8; k++) {
+        const a = (k / 8) * Math.PI * 2
+        const cand = startHit.point.clone()
+          .addScaledVector(t, Math.cos(a) * step)
+          .addScaledVector(u, Math.sin(a) * step)
+        const snapped = this.snapToSurface(cand, n)
+        if (!snapped) continue
+        if (!this.hitBlocked(snapped, typeId, scale, offset, blockers)) return snapped
+      }
+    }
+    return null
+  }
+  /** Collision check for a fresh library placement at its default size. */
+  private placementBlocked(hit: SurfaceHit, typeId: string): boolean {
+    const def = JEWELRY_BY_ID[typeId]
+    return this.hitBlocked(hit, typeId, def.defaultScale, 0, this.blockersFor(new Set()))
+  }
+  /** Collision-aware duplication: each copy slides to the nearest free spot. */
+  duplicateSelection(ids: string[]): number {
+    const srcs = this.store.jewels.filter((j) => ids.includes(j.id))
+    if (!srcs.length) return 0
+    const blockers = this.blockersFor(new Set()) // every existing piece blocks the copies
+    const copies: PlacedJewelry[] = []
+    for (const src of srcs) {
+      const nrm = new THREE.Vector3(src.normal.x, src.normal.y, src.normal.z).normalize()
+      const tDir = new THREE.Vector3(-nrm.z, 0, n.x)
+      if (tDir.lengthSq() < 1e-6) tDir.set(1, 0, 0)
+      tDir.normalize()
+      const nudged = new THREE.Vector3(src.position.x, src.position.y, src.position.z).addScaledVector(tDir, 1.4)
+      const startHit = this.snapToSurface(nudged, nrm)
+        ?? { toothId: src.toothId, point: new THREE.Vector3(src.position.x, src.position.y, src.position.z), normal: nrm }
+      const free = this.findFreeSpot(startHit, src.jewelryTypeId, src.scale, src.offset ?? 0, blockers)
+      if (!free) continue // no room for this copy
+      const copy: PlacedJewelry = {
+        ...src, id: uid(), toothId: free.toothId,
+        position: v3(free.point.x, free.point.y, free.point.z),
+        normal: v3(free.normal.x, free.normal.y, free.normal.z),
+      }
+      copies.push(copy)
+      blockers.push({ center: this.jewelCenter(copy), radius: this.jewelRadius(src) })
+    }
+    return this.store.insertJewels(copies)
+  }
+  /** Move one piece to a tooth (inspector dropdown) — slides to a free spot. */
+  relocateJewelToTooth(id: string, toothId: string): boolean {
+    const j = this.store.jewels.find((x) => x.id === id)
+    if (!j) return false
+    const anchor = this.getSurfacePoint(toothId, 0, 0)
+    const blockers = this.blockersFor(new Set([id]))
+    const free = this.findFreeSpot(anchor, j.jewelryTypeId, j.scale, j.offset ?? 0, blockers)
+    if (!free) return false
+    this.store.pushHistory()
+    this.store.updateJewel(id, {
+      toothId: free.toothId,
+      position: v3(free.point.x, free.point.y, free.point.z),
+      normal: v3(free.normal.x, free.normal.y, free.normal.z),
+    })
+    return true
+  }
+
+  /* ---------- layout operations (collision-aware) ---------- */
+
+  /** Mirror the current selection. 'h' = across the arch midline (x = 0),
+       'v' = around the selection's vertical centre. One undo step. */
+  mirrorSelection(axis: 'h' | 'v'): MoveResult | null {
+    const ids = [...this.store.getSnapshot().selectedJewelIds]
+    const affected = this.store.jewels.filter((j) => ids.includes(j.id))
+    if (!affected.length) return null
+    const planeY = axis === 'v'
+      ? affected.reduce((s, j) => s + j.position.y, 0) / affected.length
+      : 0
+    const blockers = this.blockersFor(new Set(ids))
+    const updates: { id: string; patch: Partial<PlacedJewelry> }[] = []
+    let skipped = 0
+    for (const j of affected) {
+      const p = new THREE.Vector3(j.position.x, j.position.y, j.position.z)
+      const nrm = new THREE.Vector3(j.normal.x, j.normal.y, j.normal.z).normalize()
+      const mp = axis === 'h'
+        ? new THREE.Vector3(-p.x, p.y, p.z)
+        : new THREE.Vector3(p.x, 2 * planeY - p.y, p.z)
+      const mn = axis === 'h'
+        ? new THREE.Vector3(-nrm.x, nrm.y, nrm.z)
+        : new THREE.Vector3(nrm.x, -nrm.y, nrm.z)
+      const rotation = Math.round((360 - (j.rotation % 360)) % 360)
+      const snapped = this.snapToSurface(mp, mn)
+      const proposed: SurfaceHit = snapped ?? { toothId: j.toothId, point: mp, normal: mn }
+      const free = this.findFreeSpot(proposed, j.jewelryTypeId, j.scale, j.offset ?? 0, blockers)
+      if (!free) { skipped++; continue }
+      updates.push({
+        id: j.id, patch: {
+          toothId: free.toothId,
+          position: v3(free.point.x, free.point.y, free.point.z),
+          normal: v3(free.normal.x, free.normal.y, free.normal.z),
+          rotation } })
+      blockers.push({ center: this.gemCenterRaw(free.point, free.normal, j.jewelryTypeId, j.scale, j.offset ?? 0), radius: this.jewelRadius(j) })
+    }
+    if (!updates.length) return { moved: 0, skipped }
+    this.store.pushHistory()
+    this.store.applyPatches(updates)
+    return { moved: updates.length, skipped }
+  }
+  /** Distribute the selected pieces evenly between the two outermost ones,
+       moving each along the arch tangent and re-snapping onto the enamel. */
+  distributeSelectionAlongArch(): MoveResult | null {
+    const ids = [...this.store.getSnapshot().selectedJewelIds]
+    const gems = this.store.jewels.filter((j) => ids.includes(j.id))
+    if (gems.length < 3) return null
+    const centers = this.archCenters()
+    const keyed = gems.map((j) => {
+      const p = new THREE.Vector3(j.position.x, j.position.y, j.position.z)
+      const rig = this.toothRigs.get(j.toothId) ?? this.nearestRig(p)
+      let key = p.x, tangent = new THREE.Vector3(1, 0, 0)
+      if (rig) {
+        const idx = parseInt(rig.id[1], 10) - 1
+        const side = rig.id[0] === '1' ? -1 : 1
+        key = centers[idx] * side + p.clone().sub(rig.center).dot(rig.tangent)
+        tangent = rig.tangent
+      }
+      return { j, key, tangent }
+    }).sort((a, b) => a.key - b.key)
+    const k0 = keyed[0].key, k1 = keyed[keyed.length - 1].key
+    if (k1 - k0 < 0.01) return null
+    // the two outermost pieces stay fixed and block; only the middles move
+    const blockers = this.blockersFor(new Set(keyed.slice(1, -1).map((k) => k.j.id)))
+    const updates: { id: string; patch: Partial<PlacedJewelry> }[] = []
+    let skipped = 0
+    keyed.forEach((k, i) => {
+      if (i === 0 || i === keyed.length - 1) return
+      const target = k0 + (k1 - k0) * (i / (keyed.length - 1))
+      const moved = new THREE.Vector3(k.j.position.x, k.j.position.y, k.j.position.z)
+        .addScaledVector(k.tangent, target - k.key)
+      const nrm = new THREE.Vector3(k.j.normal.x, k.j.normal.y, k.j.normal.z)
+      const snapped = this.snapToSurface(moved, nrm)
+      if (!snapped) { skipped++; return }
+      const free = this.findFreeSpot(snapped, k.j.jewelryTypeId, k.j.scale, k.j.offset ?? 0, blockers)
+      if (!free) { skipped++; return }
+      updates.push({
+        id: k.j.id, patch: {
+          toothId: free.toothId,
+          position: v3(free.point.x, free.point.y, free.point.z),
+          normal: v3(free.normal.x, free.normal.y, free.normal.z),
+        } })
+      blockers.push({ center: this.gemCenterRaw(free.point, free.normal, k.j.jewelryTypeId, k.j.scale, k.j.offset ?? 0), radius: this.jewelRadius(k.j) })
+    })
+    if (!updates.length) return { moved: 0, skipped }
+    this.store.pushHistory()
+    this.store.applyPatches(updates)
+    return { moved: updates.length, skipped }
+  }
+  /** Set every selected piece to the crown equator of its tooth, keeping its
+       across-position (u) on that tooth. */
+  alignSelectionAtEquator(): MoveResult | null {
+    const ids = [...this.store.getSnapshot().selectedJewelIds]
+    const gems = this.store.jewels.filter((j) => ids.includes(j.id))
+    if (!gems.length) return null
+    const blockers = this.blockersFor(new Set(ids))
+    const updates: { id: string; patch: Partial<PlacedJewelry> }[] = []
+    let skipped = 0
+    for (const j of gems) {
+      const p = new THREE.Vector3(j.position.x, j.position.y, j.position.z)
+      const rig = this.toothRigs.get(j.toothId) ?? this.nearestRig(p)
+      if (!rig) { skipped++; continue }
+      const tOff = p.clone().sub(rig.center).dot(rig.tangent)
+      const u = clamp(tOff / (rig.spec.wHalf * 0.6), -1, 1)
+      const anchor = this.getSurfacePoint(rig.id, u, 0)
+      const free = this.findFreeSpot(anchor, j.jewelryTypeId, j.scale, j.offset ?? 0, blockers)
+      if (!free) { skipped++; continue }
+      updates.push({
+        id: j.id, patch: {
+          toothId: free.toothId,
+          position: v3(free.point.x, free.point.y, free.point.z),
+          normal: v3(free.normal.x, free.normal.y, free.normal.z),
+        } })
+      blockers.push({ center: this.gemCenterRaw(free.point, free.normal, j.jewelryTypeId, j.scale, j.offset ?? 0), radius: this.jewelRadius(j) })
+    }
+    if (!updates.length) return { moved: 0, skipped }
+    this.store.pushHistory()
+    this.store.applyPatches(updates)
+    return { moved: updates.length, skipped }
+  }
   /** Anchor point on a tooth's labial face (u: -1..1 across, v: -1..1 vertical), refined by raycast. */
   getSurfacePoint(toothId: string, u: number, v: number): SurfaceHit {
     const rig = this.toothRigs.get(toothId)!
@@ -1512,19 +1929,27 @@ class StudioEngine {
         this.dragJewel = rig
         this.dragLastHit = null
         this.mode = 'drag-jewel'
-        this.store.selectJewel(rig.id)
+        this.store.selectJewel(rig.id) // dragging always operates on a single piece
       } else this.mode = 'idle'
     }
     if (this.mode === 'drag-jewel') {
       this.setNDC(e)
       const hit = this.raycastTeeth()
+      let blocked = false
       if (hit) {
-        this.dragLastHit = hit
-        const j = this.store.jewels.find((x) => x.id === this.dragJewel!.id)
-        if (j) this.poseObject(this.dragJewel.group, hit.point, hit.normal, j.rotation, this.dragJewel.halfDepth, j.scale, j.offset ?? 0)
         this.setHoverTooth(hit.toothId)
+        const j = this.store.jewels.find((x) => x.id === this.dragJewel!.id)
+        if (j) {
+          // the piece can never enter another piece — it holds at the last
+          // free position while the cursor is over an occupied spot
+          blocked = this.hitBlocked(hit, j.jewelryTypeId, j.scale, j.offset ?? 0, this.blockersFor(new Set([j.id])))
+          if (!blocked) {
+            this.dragLastHit = hit
+            this.poseObject(this.dragJewel.group, hit.point, hit.normal, j.rotation, this.dragJewel.halfDepth, j.scale, j.offset ?? 0)
+          }
+        }
       }
-      this.setCursor('grabbing')
+      this.setCursor(blocked ? 'not-allowed' : 'grabbing')
       return
     }
     if (this.mode === 'bg-press' && moved) { this.clearHover(); this.setCursor('grabbing'); return }
@@ -1538,14 +1963,15 @@ class StudioEngine {
       performance.now() - this.press.t < 450
     if (this.mode === 'drag-jewel' && this.dragJewel) {
       if (this.dragLastHit) {
-        const hit = this.dragLastHit
+        const hit = this.dragLastHit // last collision-free pose
         this.store.updateJewel(this.dragJewel.id, {
           toothId: hit.toothId, position: v3(hit.point.x, hit.point.y, hit.point.z),
           normal: v3(hit.normal.x, hit.normal.y, hit.normal.z) })
       }
       this.dragJewel = null; this.dragLastHit = null
     } else if (this.mode === 'jewel-press' && quick && this.press?.jewelId) {
-      this.store.selectJewel(this.press.jewelId)
+      // Shift/Ctrl-click toggles the piece into/out of the multi-selection
+      this.store.selectJewel(this.press.jewelId, { toggle: e.shiftKey || e.ctrlKey || e.metaKey })
     } else if (this.mode === 'armed-press' && quick) {
       this.setNDC(e)
       const hit = this.raycastTeeth()
@@ -1559,6 +1985,21 @@ class StudioEngine {
     this.mode = 'idle'
     this.controls.enabled = !this.camTween
     this.updateHover(e)
+  }
+
+  /** Right-click on a piece → context menu. Empty right-clicks fall through
+      to OrbitControls (pan) as before. */
+  private onContextMenu = (e: MouseEvent) => {
+    if (e.target !== this.renderer.domElement) return
+    if (this.placing) { this.cancelPlacing(); e.preventDefault(); return }
+    this.setNDC(e)
+    const jHit = this.raycastJewels()
+    if (!jHit) return // no piece under the cursor — keep OrbitControls' pan behaviour
+    e.preventDefault()
+    const sel = this.store.getSnapshot().selectedJewelIds
+    if (!(sel.includes(jHit.jewelId) && sel.length > 1)) this.store.selectJewel(jHit.jewelId)
+    const r = this.container.getBoundingClientRect()
+    this.store.openContextMenu(jHit.jewelId, e.clientX - r.left, e.clientY - r.top)
   }
 
   private onBlur = () => { if (this.placing) this.cancelPlacing() }
@@ -1611,14 +2052,18 @@ class StudioEngine {
     const hit = this.raycastTeeth()
     if (hit) {
       const g = this.ghost!
-      const def = JEWELRY_BY_ID[p.typeId]
       g.root.visible = g.ringRoot.visible = true
-      this.poseObject(g.root, hit.point, hit.normal, 0, g.halfDepth, def.defaultScale, 0)
+      this.poseObject(g.root, hit.point, hit.normal, 0, g.halfDepth, JEWELRY_BY_ID[p.typeId].defaultScale, 0)
       g.ringRoot.position.copy(hit.point)
       _q1.setFromUnitVectors(_Z, _nn.copy(hit.normal).normalize())
       g.ringRoot.quaternion.copy(_q1)
+      // live collision feedback: the ghost turns red over an occupied spot
+      const blocked = this.placementBlocked(hit, p.typeId)
+      g.material.color.setHex(blocked ? BLOCK_COLOR : g.baseColor)
+      g.material.opacity = blocked ? 0.4 : 0.55
+      g.ringMaterial.color.setHex(blocked ? BLOCK_COLOR : OUTLINE_COLOR)
       this.setHoverTooth(hit.toothId)
-      this.setCursor('grabbing')
+      this.setCursor(blocked ? 'not-allowed' : 'grabbing')
     } else {
       if (this.ghost) this.ghost.root.visible = this.ghost.ringRoot.visible = false
       this.setHoverTooth(null)
@@ -1645,13 +2090,18 @@ class StudioEngine {
     this.placing = null
   }
   private placeJewel(typeId: string, hit: SurfaceHit) {
+    if (this.placementBlocked(hit, typeId)) {
+      toast('That spot overlaps a piece — pick a free spot')
+      return
+    }
     this.store.addJewel(typeId, hit.toothId, v3(hit.point.x, hit.point.y, hit.point.z), v3(hit.normal.x, hit.normal.y, hit.normal.z))
   }
   private createGhost(typeId: string) {
     const def = JEWELRY_BY_ID[typeId]
     const tpl = getJewelTemplate(def.geometry)
     const spec = resolveFinishRaw(def.defaultColor)
-    const material = new THREE.MeshBasicMaterial({ color: spec.hex, transparent: true, opacity: 0.55, depthWrite: false })
+    const baseColor = new THREE.Color(spec.hex).getHex()
+    const material = new THREE.MeshBasicMaterial({ color: baseColor, transparent: true, opacity: 0.55, depthWrite: false })
     const root = new THREE.Group()
     tpl.parts.forEach((g) => { const m = new THREE.Mesh(g, material); root.add(m) })
     const ringRoot = new THREE.Group()
@@ -1660,7 +2110,7 @@ class StudioEngine {
     ringRoot.add(ring)
     root.visible = ringRoot.visible = false
     this.scene.add(root, ringRoot)
-    this.ghost = { root, ringRoot, ring, ringScale: tpl.radius * def.defaultScale * 1.4, halfDepth: tpl.halfDepth, material, ringMaterial }
+    this.ghost = { root, ringRoot, ring, ringScale: tpl.radius * def.defaultScale * 1.4, halfDepth: tpl.halfDepth, material, ringMaterial, baseColor }
   }
   private destroyGhost() {
     if (!this.ghost) return
@@ -1734,16 +2184,30 @@ class StudioEngine {
       }
     })
   }
-  exportPNG(transparent: boolean) {
+  /** Clean capture of the current view (overlays + highlights hidden) —
+      shared by the PNG export and the quote sheet. */
+  captureView(opts: { transparent?: boolean } = {}): string {
     const outlineVis: boolean[] = []
     this.jewelRigs.forEach((r) => { outlineVis.push(r.outline.visible); r.outline.visible = false })
     const emSave: number[] = []
-    this.toothRigs.forEach((r) => emSave.push(r.highlight))
-    this.toothRigs.forEach((r) => r.materials.forEach((m) => { m.emissiveIntensity = 0 }))
+    this.toothRigs.forEach((r) => { emSave.push(r.highlight); r.materials.forEach((m) => { m.emissiveIntensity = 0 }) })
+    const ghostVis = this.ghost ? this.ghost.root.visible : false
+    if (this.ghost) this.ghost.root.visible = this.ghost.ringRoot.visible = false
     const bd = this.backdrop.visible, fl = this.floor.visible
-    if (transparent) { this.backdrop.visible = false; this.floor.visible = false }
+    if (opts.transparent) { this.backdrop.visible = false; this.floor.visible = false }
     this.renderer.render(this.scene, this.camera)
     const url = this.renderer.domElement.toDataURL('image/png')
+    let i = 0
+    this.jewelRigs.forEach((r) => { r.outline.visible = outlineVis[i++] })
+    i = 0
+    this.toothRigs.forEach((r) => { r.materials.forEach((m) => { m.emissiveIntensity = emSave[i] * 0.42 }) })
+    if (this.ghost) this.ghost.root.visible = this.ghost.ringRoot.visible = ghostVis
+    this.backdrop.visible = bd; this.floor.visible = fl
+    this.renderer.render(this.scene, this.camera)
+    return url
+  }
+  exportPNG(transparent: boolean) {
+    const url = this.captureView({ transparent })
     let out = url
     if (!transparent) {
       const src = this.renderer.domElement
@@ -1755,18 +2219,14 @@ class StudioEngine {
       ctx.drawImage(src, 0, 0)
       out = c.toDataURL('image/png')
     }
-    let i = 0
-    this.jewelRigs.forEach((r) => { r.outline.visible = outlineVis[i++] })
-    i = 0
-    this.toothRigs.forEach((r) => { r.materials.forEach((m) => { m.emissiveIntensity = emSave[i] * 0.42 }) })
-    this.backdrop.visible = bd; this.floor.visible = fl
-    this.renderer.render(this.scene, this.camera)
     downloadURL(out, `lumiere-design-${Date.now()}.png`)
   }
   exportJSON() {
     const data = {
-      app: 'lumiere-dental-studio', version: 4, exportedAt: new Date().toISOString(),
+      app: 'lumiere-dental-studio', version: 7, exportedAt: new Date().toISOString(),
       model: this.mergedMode ? 'custom-free' : (this.toothMeshes.length && (this.toothMeshes[0] as THREE.Mesh).isMesh ? 'studio-arch' : 'custom-teeth'),
+      lightPreset: this.store.getSnapshot().lightPreset,
+      quote: { currency: PRICING.currency, total: store.jewels.reduce((s, j) => s + priceOf(j), 0) },
       camera: { position: this.camera.position.toArray(), target: this.controls.target.toArray() },
       jewels: this.store.jewels,
     }
@@ -1796,6 +2256,18 @@ class StudioEngine {
       this.controls.update()
     }
 
+    // lighting preset crossfade (Studio / Chair lamp / Daylight)
+    const lt = this.lightTarget, L = 0.1
+    this.keyLight.intensity += (lt.key - this.keyLight.intensity) * L
+    this.keyLight.color.lerp(lt.keyColor, L)
+    this.keyLight.position.lerp(lt.keyPos, L)
+    this.fillLight.intensity += (lt.fill - this.fillLight.intensity) * L
+    this.fillLight.color.lerp(lt.fillColor, L)
+    this.rimLight.intensity += (lt.rim - this.rimLight.intensity) * L
+    this.scene.environmentIntensity += (lt.env - this.scene.environmentIntensity) * L
+    this.renderer.toneMappingExposure += (lt.expo - this.renderer.toneMappingExposure) * L
+    ;(this.backdrop.material as THREE.MeshBasicMaterial).color.lerp(lt.tint, L)
+
     this.toothRigs.forEach((rig, id) => {
       let t = 0
       if (id === this.hoverToothId) t = 0.55
@@ -1815,7 +2287,7 @@ class StudioEngine {
       const hov = id === this.hoverJewelId ? 1 : 0
       rig.hoverT += (hov - rig.hoverT) * 0.22
       rig.group.scale.setScalar(Math.max(0.001, rig.sizeScale * anim * (1 + rig.hoverT * 0.09)))
-      const op = id === snap.selectedJewelId ? 0.9 : (id === this.hoverJewelId ? 0.38 : 0)
+      const op = snap.selectedJewelIds.includes(id) ? 0.9 : (id === this.hoverJewelId ? 0.38 : 0)
       rig.outlineMaterial.opacity += (op - rig.outlineMaterial.opacity) * 0.2
       rig.outline.visible = rig.outlineMaterial.opacity > 0.02
     })
@@ -1851,6 +2323,7 @@ class StudioEngine {
     cancelAnimationFrame(this.raf)
     this.ro.disconnect()
     this.container.removeEventListener('pointerdown', this.onPointerDown, true)
+    this.container.removeEventListener('contextmenu', this.onContextMenu)
     window.removeEventListener('pointermove', this.onPointerMove)
     window.removeEventListener('pointerup', this.onPointerUp)
     window.removeEventListener('pointercancel', this.onPointerUp)
@@ -1874,6 +2347,11 @@ function downloadURL(url: string, name: string) {
 /* ---- engine singleton (mounted once by <Viewport/>) ---- */
 let engineInstance: StudioEngine | null = null
 function getEngine(): StudioEngine | null { return engineInstance }
+/** Collision-aware duplication (falls back to the store if the engine is absent). */
+function duplicateSelectionSafe(ids: string[]): number {
+  const e = getEngine()
+  return e ? e.duplicateSelection(ids) : store.duplicateJewels(ids)
+}
 
 /* ---- shared .glb import entry (toolbar button · drag & drop · auto-load) ---- */
 async function importModelFile(f: File) {
@@ -1892,6 +2370,105 @@ async function importModelFile(f: File) {
   } catch (err) {
     toast(`Import failed: ${(err as Error).message}`)
   }
+}
+
+/* ===================== quote sheet (canvas composition) ================== */
+
+function loadImageURL(src: string): Promise<HTMLImageElement> {
+  return new Promise((res, rej) => {
+    const img = new Image()
+    img.onload = () => res(img)
+    img.onerror = () => rej(new Error('image load failed'))
+    img.src = src
+  })
+}
+/** Compose the client-ready quote sheet as a high-res PNG. */
+async function buildQuoteSheetDataURL(jewels: PlacedJewelry[], clientName: string, renderURL: string): Promise<string> {
+  const img = await loadImageURL(renderURL)
+  const W = 1240, M = 70
+  const renderW = W - M * 2
+  const renderH = Math.min(620, Math.max(300, Math.round(renderW * (img.height / img.width))))
+  const rows = jewels.map((j) => ({
+    name: JEWELRY_BY_ID[j.jewelryTypeId]?.name ?? j.jewelryTypeId,
+    tooth: j.toothId === FREE_TOOTH ? '—' : j.toothId,
+    size: `${(j.scale * 2).toFixed(1)} mm`,
+    finish: j.customColor ? `Custom ${j.customColor.toUpperCase()}` : (FINISHES[j.color]?.label ?? j.color),
+    price: priceOf(j),
+  }))
+  const rowH = 44
+  const H = Math.max(1240, 210 + 60 + renderH + 46 + 46 + rows.length * rowH + 96 + 70)
+  const c = document.createElement('canvas'); c.width = W; c.height = H
+  const x = c.getContext('2d')!
+
+  // page + header band
+  x.fillStyle = '#f6f2ea'; x.fillRect(0, 0, W, H)
+  x.fillStyle = '#2b241b'; x.fillRect(0, 0, W, 132)
+  x.fillStyle = '#f0e2c6'; x.font = '500 40px Fraunces, Georgia, serif'
+  x.fillText('Lumière', M, 72)
+  x.font = '700 12px Manrope, sans-serif'; x.fillStyle = '#c9b183'
+  x.fillText('D E N T A L   J E W E L R Y   S T U D I O', M, 102)
+  x.textAlign = 'right'
+  x.fillStyle = '#f0e2c6'; x.font = '800 15px Manrope, sans-serif'
+  x.fillText('DESIGN QUOTE', W - M, 66)
+  x.fillStyle = '#c9b183'; x.font = '500 14px Manrope, sans-serif'
+  x.fillText(new Date().toLocaleDateString(), W - M, 92)
+  x.textAlign = 'left'
+
+  // client line
+  let y = 182
+  x.fillStyle = '#a49a8b'; x.font = '800 11px Manrope, sans-serif'
+  x.fillText('CLIENT', M, y)
+  x.fillStyle = '#26211a'; x.font = '600 24px Manrope, sans-serif'
+  x.fillText(clientName.trim() || '—', M + 92, y + 1)
+
+  // live render
+  y += 36
+  x.drawImage(img, M, y, renderW, renderH)
+  x.strokeStyle = '#e8e1d6'; x.lineWidth = 1
+  x.strokeRect(M + 0.5, y + 0.5, renderW - 1, renderH - 1)
+
+  // piece table
+  y += renderH + 44
+  const cols = { idx: M, name: M + 52, tooth: M + 470, size: M + 560, finish: M + 690, price: W - M }
+  x.font = '800 11px Manrope, sans-serif'; x.fillStyle = '#a49a8b'
+  x.fillText('#', cols.idx, y)
+  x.fillText('PIECE', cols.name, y)
+  x.fillText('TOOTH', cols.tooth, y)
+  x.fillText('SIZE', cols.size, y)
+  x.fillText('FINISH', cols.finish, y)
+  x.textAlign = 'right'; x.fillText('PRICE', cols.price, y); x.textAlign = 'left'
+  y += 14
+  x.strokeStyle = '#d5c9ab'; x.beginPath(); x.moveTo(M, y + 0.5); x.lineTo(W - M, y + 0.5); x.stroke()
+  y += 8
+  rows.forEach((r, i) => {
+    if (i % 2 === 1) { x.fillStyle = '#fffdf8'; x.fillRect(M - 12, y, W - 2 * M + 24, rowH) }
+    const ty = y + 28
+    x.fillStyle = '#26211a'; x.font = '600 17px Manrope, sans-serif'
+    x.fillText(String(i + 1).padStart(2, '0'), cols.idx, ty)
+    x.fillText(r.name, cols.name, ty)
+    x.fillText(r.tooth, cols.tooth, ty)
+    x.fillText(r.size, cols.size, ty)
+    x.fillStyle = '#6f665a'; x.fillText(r.finish, cols.finish, ty)
+    x.fillStyle = '#26211a'
+    x.textAlign = 'right'; x.fillText(money(r.price), cols.price, ty); x.textAlign = 'left'
+    y += rowH
+    x.strokeStyle = '#efe8dc'; x.beginPath(); x.moveTo(M, y + 0.5); x.lineTo(W - M, y + 0.5); x.stroke()
+  })
+
+  // total
+  y += 20
+  const total = rows.reduce((s, r) => s + r.price, 0)
+  x.font = '700 15px Manrope, sans-serif'; x.fillStyle = '#6f665a'
+  x.fillText('TOTAL', M, y + 6)
+  x.font = '600 34px Fraunces, Georgia, serif'; x.fillStyle = '#26211a'
+  x.textAlign = 'right'; x.fillText(money(total), W - M, y + 10); x.textAlign = 'left'
+  y += 44
+  x.strokeStyle = '#a97d45'; x.beginPath(); x.moveTo(M, y + 0.5); x.lineTo(W - M, y + 0.5); x.stroke()
+
+  // footer
+  x.font = '500 12px Manrope, sans-serif'; x.fillStyle = '#a49a8b'
+  x.fillText(`Estimate for the selected design · ${rows.length} ${rows.length === 1 ? 'piece' : 'pieces'} · Generated by Lumière Studio`, M, y + 32)
+  return c.toDataURL('image/png')
 }
 
 /* ====================== HSV ↔ hex (colour wheel) ========================= */
@@ -1942,6 +2519,11 @@ const ICONS: Record<string, React.ReactNode> = {
   check: <path d="M3.2 8.4 6.4 11.6 12.8 4.8" />,
   upload: <path d="M8 10.6V3.2M5.2 6 8 3.2 10.8 6M3 11v2.4h10V11" />,
   reset: <path d="M13.2 8A5.2 5.2 0 1 1 11 3.9M13.2 2.6v3.6H9.6" />,
+  mirrorH: <><path d="M8 2v12" strokeDasharray="2.2 2" /><path d="M6 5 2.5 8 6 11M10 5l3.5 3L10 11" /></>,
+  mirrorV: <><path d="M2 8h12" strokeDasharray="2.2 2" /><path d="M5 6 8 2.5 11 6M5 10l3 3.5L11 10" /></>,
+  distribute: <><circle cx="2.8" cy="8" r="1.3" /><circle cx="8" cy="8" r="1.3" /><circle cx="13.2" cy="8" r="1.3" /><path d="M4.4 8h1.8M9.6 8h1.8" /></>,
+  align: <><path d="M2 11.2h12" /><circle cx="5.2" cy="5.6" r="1.5" /><circle cx="10.8" cy="5.6" r="1.5" /></>,
+  quote: <><path d="M3 2.5h10M3 13.5h10M3 5.5h7M3 8.5h7M3 10.8h4" /><path d="M11.5 8.5l2 2-2 2" /></>,
 }
 function I({ name, size = 16, sw = 1.5 }: { name: string; size?: number; sw?: number }) {
   return (
@@ -1989,6 +2571,7 @@ function applyPreset(p: Preset) {
 
 function TopBar({ snap }: { snap: StudioSnapshot }) {
   const fileRef = useRef<HTMLInputElement>(null)
+  const total = snap.jewels.reduce((s, j) => s + priceOf(j), 0)
   const handleFile = async (e: React.ChangeEvent<HTMLInputElement>) => {
     const f = e.target.files?.[0]
     e.target.value = ''
@@ -2004,7 +2587,10 @@ function TopBar({ snap }: { snap: StudioSnapshot }) {
         </div>
       </div>
       <div className="spacer" />
-      <div className="count-chip">{snap.jewels.length} {snap.jewels.length === 1 ? 'piece' : 'pieces'}</div>
+      <div className="count-chip">
+        {snap.jewels.length} {snap.jewels.length === 1 ? 'piece' : 'pieces'}
+        {total > 0 && ` · ${money(total)}`}
+      </div>
       <div className="tb-sep" />
       <button className="icon-btn" title="Undo (Ctrl+Z)" aria-label="Undo" disabled={!snap.canUndo} onClick={() => store.undo()}><I name="undo" /></button>
       <button className="icon-btn" title="Redo (Ctrl+Shift+Z)" aria-label="Redo" disabled={!snap.canRedo} onClick={() => store.redo()}><I name="redo" /></button>
@@ -2115,8 +2701,23 @@ function PresetMenu() {
 
 function ExportMenu() {
   const [open, setOpen] = useState(false)
-  const ref = useOutsideClose(open, () => setOpen(false))
-  const act = (fn: () => void, msg: string) => { fn(); setOpen(false); toast(msg) }
+  const [quoting, setQuoting] = useState(false)
+  const [client, setClient] = useState(store.clientName)
+  const ref = useOutsideClose(open, () => { setOpen(false); setQuoting(false) })
+  const act = (fn: () => void, msg: string) => { fn(); setOpen(false); setQuoting(false); toast(msg) }
+  const doQuote = async () => {
+    const engine = getEngine()
+    if (!engine || !store.jewels.length) { toast('Place at least one piece first'); return }
+    store.setClientName(client)
+    setOpen(false); setQuoting(false)
+    toast('Building quote sheet…')
+    try {
+      const renderURL = engine.captureView()
+      const url = await buildQuoteSheetDataURL(store.jewels, client, renderURL)
+      downloadURL(url, `lumiere-quote-${Date.now()}.png`)
+      toast('Quote sheet exported')
+    } catch { toast('Could not build the quote sheet') }
+  }
   return (
     <div className="menu-wrap" ref={ref}>
       <button className="btn btn-primary" onClick={() => setOpen(!open)}>Export<I name="chevron" size={13} /></button>
@@ -2129,6 +2730,20 @@ function ExportMenu() {
           <button className="menu-item" onClick={() => act(() => getEngine()?.exportPNG(true), 'Transparent PNG downloaded')}>
             <I name="transparency" size={14} /><div>Snapshot · transparent PNG<small>Backdrop removed, alpha channel kept</small></div>
           </button>
+          <div className="menu-sep" />
+          <div className="menu-label">Quote</div>
+          {quoting ? (
+            <div className="menu-save">
+              <input autoFocus placeholder="Client name…" value={client} maxLength={48}
+                onChange={(e) => setClient(e.target.value)}
+                onKeyDown={(e) => { if (e.key === 'Enter') doQuote(); if (e.key === 'Escape') setQuoting(false) }} />
+              <button className="btn btn-primary" onClick={doQuote}>Export</button>
+            </div>
+          ) : (
+            <button className="menu-item" onClick={() => setQuoting(true)}>
+              <I name="quote" size={14} /><div>Quote sheet · PNG<small>Priced summary, live render & total</small></div>
+            </button>
+          )}
           <div className="menu-sep" />
           <button className="menu-item" onClick={() => act(() => getEngine()?.exportJSON(), 'Design JSON exported')}>
             <I name="json" size={14} /><div>Design · JSON<small>Serializable configuration, ready for a database</small></div>
@@ -2211,7 +2826,7 @@ function Viewport({ snap }: { snap: StudioSnapshot }) {
     }
   }, [])
 
-  const jewel = snap.jewels.find((j) => j.id === snap.selectedJewelId)
+  const jewel = snap.jewels.find((j) => j.id === snap.selectedJewelIds[0])
   const chipTooth = snap.hoveredToothId ?? (jewel ? jewel.toothId : snap.selectedToothId)
   const armedName = snap.armedTypeId ? JEWELRY_BY_ID[snap.armedTypeId]?.name : null
 
@@ -2231,7 +2846,7 @@ function Viewport({ snap }: { snap: StudioSnapshot }) {
         </div>
       )}
       {snap.placingTypeId && !armedName && (
-        <div className="pill" id="placingPill"><span className="dot" /><span>Release over the model to place</span></div>
+        <div className="pill" id="placingPill"><span className="dot" /><span>Release over the model to place — red means the spot is taken</span></div>
       )}
       {snap.jewels.length === 0 && !snap.placingTypeId && !armedName && (
         <div className="pill" id="hintPill">
@@ -2239,6 +2854,7 @@ function Viewport({ snap }: { snap: StudioSnapshot }) {
           <span>Drag a jewel onto a tooth to start designing</span>
         </div>
       )}
+      {snap.contextMenu && <ContextMenu cm={snap.contextMenu} snap={snap} />}
       <BottomBar />
       <div className="stage-tag">
         {snap.modelMode === 'studio' ? 'UPPER ARCH · FDI NOTATION'
@@ -2249,9 +2865,61 @@ function Viewport({ snap }: { snap: StudioSnapshot }) {
   )
 }
 
+/* ---- right-click context menu on pieces ---- */
+function ContextMenu({ cm, snap }: { cm: ContextMenuState; snap: StudioSnapshot }) {
+  const ref = useRef<HTMLDivElement>(null)
+  useEffect(() => {
+    const h = (e: PointerEvent) => { if (ref.current && !ref.current.contains(e.target as Node)) store.closeContextMenu() }
+    window.addEventListener('pointerdown', h, true)
+    return () => window.removeEventListener('pointerdown', h, true)
+  }, [])
+  const ids = snap.selectedJewelIds.includes(cm.jewelId) ? [...snap.selectedJewelIds] : [cm.jewelId]
+  const gems = snap.jewels.filter((j) => ids.includes(j.id))
+  if (!gems.length) return null
+  const multi = gems.length > 1
+  const act = (fn: () => void) => { fn(); store.closeContextMenu() }
+  const item = (label: string, icon: string, fn: () => void, danger = false) => (
+    <button className={'ctx-item' + (danger ? ' danger' : '')} onClick={() => act(fn)}>
+      <I name={icon} size={14} />{label}
+    </button>
+  )
+  const doRotate = () => {
+    store.pushHistory()
+    store.applyPatches(gems.map((j) => ({ id: j.id, patch: { rotation: (j.rotation + 90) % 360 } })))
+    toast(multi ? 'Selection rotated' : 'Piece rotated')
+  }
+  const doDuplicate = () => {
+    const n = duplicateSelectionSafe(ids)
+    if (!n) toast('No free space beside the selection')
+    else if (n < ids.length) toast(`${n} of ${ids.length} duplicated — rest had no room`)
+    else toast(multi ? 'Pieces duplicated' : 'Piece duplicated')
+  }
+  const doMirror = (axis: 'h' | 'v') => {
+    const r = getEngine()?.mirrorSelection(axis)
+    if (r) toast(r.skipped > 0 ? `Mirrored — ${r.skipped} kept in place (occupied)` : 'Mirrored')
+  }
+  return (
+    <div className="ctx-menu" ref={ref} onContextMenu={(e) => e.preventDefault()}
+      style={{ left: `min(${cm.x}px, calc(100% - 218px))`, top: `min(${cm.y}px, calc(100% - 252px))` }}>
+      <div className="ctx-head">{multi ? `${gems.length} pieces selected` : JEWELRY_BY_ID[gems[0].jewelryTypeId]?.name}</div>
+      {item(multi ? 'Rotate all +90°' : 'Rotate +90°', 'reset', doRotate)}
+      {item(multi ? 'Duplicate all' : 'Duplicate', 'copy', doDuplicate)}
+      {item('Mirror horizontal', 'mirrorH', () => doMirror('h'))}
+      {item('Mirror vertical', 'mirrorV', () => doMirror('v'))}
+      <div className="ctx-sep" />
+      {item(multi ? 'Delete all' : 'Delete', 'trash', () => {
+        store.removeJewels(ids)
+        toast(multi ? `${gems.length} pieces removed` : 'Piece removed')
+      }, true)}
+    </div>
+  )
+}
+
 function BottomBar() {
   const [rot, setRot] = useState(false)
+  const snap = useStudio()
   const view = (v: 'front' | 'top' | 'side' | 'reset') => getEngine()?.setView(v)
+  const light = (p: LightPreset) => { getEngine()?.setLightPreset(p); store.setLightPreset(p) }
   return (
     <div className="bottombar">
       <button className="bb-btn" onClick={() => view('front')}>Front</button>
@@ -2261,6 +2929,13 @@ function BottomBar() {
       <span className="bb-sep" />
       <button className="bb-btn" title="Zoom out" onClick={() => getEngine()?.zoomBy(1.25)}><I name="minus" size={14} /></button>
       <button className="bb-btn" title="Zoom in" onClick={() => getEngine()?.zoomBy(0.8)}><I name="plus" size={14} /></button>
+      <span className="bb-sep" />
+      <button className={'bb-btn' + (snap.lightPreset === 'studio' ? ' active' : '')} title="Neutral studio lighting"
+        onClick={() => light('studio')}>Studio</button>
+      <button className={'bb-btn' + (snap.lightPreset === 'lamp' ? ' active' : '')} title="Warm directional chair lamp"
+        onClick={() => light('lamp')}>Lamp</button>
+      <button className={'bb-btn' + (snap.lightPreset === 'daylight' ? ' active' : '')} title="Bright daylight"
+        onClick={() => light('daylight')}>Day</button>
       <span className="bb-sep" />
       <button className={'bb-btn' + (rot ? ' active' : '')} title="Auto-orbit preview"
         onClick={() => { getEngine()?.setAutoRotate(!rot); setRot(!rot) }}>
@@ -2286,6 +2961,49 @@ function Slider({ label, value, min, max, step, format, onCommit }: {
         onPointerUp={() => { armed.current = false }} onKeyUp={() => { armed.current = false }}
         onChange={(e) => { const v = +e.target.value; arm(); onCommit(v) }} />
     </div>
+  )
+}
+
+/* ---- quick rotation row: absolute sets + a +90° increment button -------- */
+function QuickRotate({ value, allAt, onSet, onPlus90 }: {
+  value: number; allAt?: (deg: number) => boolean
+  onSet: (deg: number) => void; onPlus90: () => void
+}) {
+  return (
+    <div className="quick-row">
+      <div className="seg" style={{ flex: 1 }}>
+        {[0, 90, 180, 270].map((deg) => (
+          <button key={deg} className={allAt ? (allAt(deg) ? 'on' : '') : (value === deg ? 'on' : '')}
+            onClick={() => onSet(deg)}>{deg}°</button>
+        ))}
+      </div>
+      <button className="mini-btn" onClick={onPlus90}>+90°</button>
+    </div>
+  )
+}
+
+/* ---- mirror row (works for single + multi selection) -------------------- */
+function MirrorRow() {
+  const mirror = (axis: 'h' | 'v') => {
+    const r = getEngine()?.mirrorSelection(axis)
+    if (!r) return
+    const okMsg = axis === 'h' ? 'Mirrored across the midline' : 'Mirrored vertically'
+    toast(r.skipped > 0 ? `${okMsg} — ${r.skipped} kept in place (occupied)` : okMsg)
+  }
+  return (
+    <>
+      <div className="quick-row" style={{ marginBottom: 0 }}>
+        <button className="mini-btn grow" onClick={() => mirror('h')}>
+          <I name="mirrorH" size={14} />Mirror horizontal
+        </button>
+        <button className="mini-btn grow" onClick={() => mirror('v')}>
+          <I name="mirrorV" size={14} />Mirror vertical
+        </button>
+      </div>
+      <div className="hint-copy" style={{ marginTop: 8 }}>
+        Horizontal reflects across the arch midline (11 ↔ 21 …); vertical flips around the selection's centre. Pieces re-snap onto the enamel and never overlap.
+      </div>
+    </>
   )
 }
 
@@ -2398,7 +3116,106 @@ function ColorWheel({ hex, onPick, onClear }: {
 }
 
 function InspectorPanel({ snap }: { snap: StudioSnapshot }) {
-  const jewel = snap.jewels.find((j) => j.id === snap.selectedJewelId) ?? null
+  const selected = snap.jewels.filter((j) => snap.selectedJewelIds.includes(j.id))
+
+  /* ---------------- MULTI SELECTION ---------------- */
+  if (selected.length > 1) {
+    const first = selected[0]
+    const teethUsed = new Set(selected.map((j) => j.toothId)).size
+    const ids = selected.map((j) => j.id)
+    const sharedCustom = selected.every((j) => j.customColor && j.customColor === first.customColor)
+      ? first.customColor! : null
+    const dup = () => {
+      const n = duplicateSelectionSafe(ids)
+      if (!n) toast('No free space beside the selection')
+      else if (n < ids.length) toast(`${n} of ${ids.length} duplicated — rest had no room`)
+      else toast(`${n} pieces duplicated — try Mirror horizontal for a symmetric smile`)
+    }
+    const del = () => { store.removeJewels(ids); toast(`${selected.length} pieces removed`) }
+    const distribute = () => {
+      const r = getEngine()?.distributeSelectionAlongArch()
+      if (!r) toast('Select at least 3 pieces to distribute')
+      else toast(r.skipped > 0 ? `Distributed — ${r.skipped} kept in place (occupied)` : 'Pieces distributed evenly along the arch')
+    }
+    const align = () => {
+      const r = getEngine()?.alignSelectionAtEquator()
+      if (!r) toast('Nothing to align')
+      else toast(r.skipped > 0 ? `Aligned — ${r.skipped} kept in place (occupied)` : 'Pieces aligned at the crown equator')
+    }
+    return (
+      <aside className="inspector">
+        <div className="insp" key="multi">
+          <div className="jewel-title">{selected.length} pieces selected</div>
+          <div className="jewel-sub">
+            Across {teethUsed} {teethUsed === 1 ? 'tooth' : 'teeth'} · Shift-click pieces on the model to add or remove them.
+          </div>
+          <div className="section-label">Type — all pieces</div>
+          <select className="type-select" value={first.jewelryTypeId}
+            onChange={(e) => { store.pushHistory(); store.updateSelected({ jewelryTypeId: e.target.value }) }}>
+            {(['Crystals', 'Shapes', 'Precious'] as const).map((cat) => (
+              <optgroup key={cat} label={cat}>
+                {CATALOG.filter((t) => t.category === cat).map((t) => <option key={t.id} value={t.id}>{t.name}</option>)}
+              </optgroup>
+            ))}
+          </select>
+          <div className="section-label">Size — all pieces</div>
+          <Slider label="Diameter" value={first.scale} min={0.25} max={1.8} step={0.05}
+            format={(v) => `${(v * 2).toFixed(1)} mm`} onCommit={(v) => store.updateSelected({ scale: v })} />
+          <div className="section-label">Rotation — all pieces</div>
+          <QuickRotate
+            value={first.rotation}
+            allAt={(deg) => selected.every((j) => j.rotation === deg)}
+            onSet={(deg) => { store.pushHistory(); store.updateSelected({ rotation: deg }) }}
+            onPlus90={() => {
+              store.pushHistory()
+              store.applyPatches(selected.map((j) => ({ id: j.id, patch: { rotation: (j.rotation + 90) % 360 } })))
+            }} />
+          <Slider label="Spin around normal" value={first.rotation} min={0} max={360} step={1}
+            format={(v) => `${Math.round(v)}°`} onCommit={(v) => store.updateSelected({ rotation: v })} />
+          <div className="section-label">Finish — all pieces</div>
+          <div className="swatches">
+            {Object.keys(FINISHES).map((fid) => (
+              <button key={fid}
+                className={'swatch' + (selected.every((j) => !j.customColor && j.color === fid) ? ' sel' : '')}
+                title={FINISHES[fid].label} style={{ background: FINISHES[fid].swatch }}
+                onClick={() => { store.pushHistory(); store.updateSelected({ color: fid, customColor: undefined }) }} />
+            ))}
+            {sharedCustom && <button className="swatch sel" title="Custom colour" style={{ background: sharedCustom }} />}
+          </div>
+          <div className="section-label">Custom colour — all pieces</div>
+          <ColorWheel
+            hex={first.customColor ?? null}
+            onPick={(hex) => store.updateSelected({ customColor: hex })}
+            onClear={() => { store.pushHistory(); store.updateSelected({ customColor: undefined }) }} />
+          <div className="section-label">Mounting — all pieces</div>
+          <Slider label="Standoff from enamel" value={first.offset ?? 0} min={-0.5} max={1.5} step={0.05}
+            format={(v) => `${v >= 0 ? '+' : ''}${v.toFixed(2)}`} onCommit={(v) => store.updateSelected({ offset: v })} />
+          <div className="section-label">Layout</div>
+          <div className="quick-row" style={{ marginBottom: 0 }}>
+            <button className="mini-btn grow" onClick={distribute}>
+              <I name="distribute" size={14} />Space evenly
+            </button>
+            <button className="mini-btn grow" onClick={align}>
+              <I name="align" size={14} />Align equator
+            </button>
+          </div>
+          <div className="hint-copy" style={{ marginTop: 8 }}>
+            Space evenly re-distributes the selected pieces between the two outermost ones along the arch; Align equator sets every piece to the crown equator of its tooth. Pieces never overlap.
+          </div>
+          <div className="section-label">Mirror</div>
+          <MirrorRow />
+          <div className="action-row" style={{ marginTop: 18 }}>
+            <button className="act-btn" onClick={dup}><I name="copy" size={14} />Duplicate all</button>
+            <button className="act-btn danger" onClick={del}><I name="trash" size={14} />Delete all</button>
+          </div>
+        </div>
+      </aside>
+    )
+  }
+
+  const jewel = selected[0] ?? null
+
+  /* ---------------- SINGLE SELECTION ---------------- */
   if (jewel) {
     const def = JEWELRY_BY_ID[jewel.jewelryTypeId]
     const info = toothInfo(jewel.toothId)
@@ -2430,6 +3247,10 @@ function InspectorPanel({ snap }: { snap: StudioSnapshot }) {
           <Slider label="Diameter" value={jewel.scale} min={0.25} max={1.8} step={0.05}
             format={(v) => `${(v * 2).toFixed(1)} mm`} onCommit={(v) => set({ scale: v }, false)} />
           <div className="section-label">Rotation</div>
+          <QuickRotate
+            value={jewel.rotation}
+            onSet={(deg) => set({ rotation: deg })}
+            onPlus90={() => set({ rotation: (jewel.rotation + 90) % 360 })} />
           <Slider label="Spin around normal" value={jewel.rotation} min={0} max={360} step={1}
             format={(v) => `${Math.round(v)}°`} onCommit={(v) => set({ rotation: v }, false)} />
           <div className="section-label">Finish</div>
@@ -2454,23 +3275,28 @@ function InspectorPanel({ snap }: { snap: StudioSnapshot }) {
           <div className="hint-copy" style={{ marginTop: 2 }}>
             Lower the standoff if the piece floats off your model; raise it if it sinks into the enamel.
           </div>
+          <div className="section-label">Mirror</div>
+          <MirrorRow />
           <div className="section-label">Position</div>
           <select className="tooth-select" value={jewel.toothId}
             onChange={(e) => {
               if (e.target.value === FREE_TOOTH) return
-              const hit = getEngine()?.getSurfacePoint(e.target.value, 0, 0)
-              if (hit) set({ toothId: e.target.value, position: v3(hit.point.x, hit.point.y, hit.point.z), normal: v3(hit.normal.x, hit.normal.y, hit.normal.z) })
+              const ok = getEngine()?.relocateJewelToTooth(jewel.id, e.target.value)
+              if (!ok) toast('No free space on that tooth')
             }}>
             {jewel.toothId === FREE_TOOTH && <option value={FREE_TOOTH}>Free placement (unlabeled)</option>}
             {ALL_TEETH.map((fdi) => <option key={fdi} value={fdi}>{fdi} — {toothInfo(fdi).short}</option>)}
           </select>
           <div className="pos-sub" style={{ marginTop: 8 }}>{surface}</div>
-          <div className="hint-copy" style={{ marginTop: 6 }}>Drag the piece on the model to reposition it along the surface.</div>
+          <div className="hint-copy" style={{ marginTop: 6 }}>Drag the piece on the model to reposition it, or right-click it for quick actions. It can touch other pieces, never overlap them.</div>
           <div className="action-row" style={{ marginTop: 20 }}>
-            <button className="act-btn" onClick={() => { const id = store.duplicateJewel(jewel.id); if (id) toast('Piece duplicated — drag it to its new home') }}>
+            <button className="act-btn" onClick={() => {
+              const n = duplicateSelectionSafe([jewel.id])
+              toast(n ? 'Piece duplicated — drag it to its new home' : 'No free space beside this piece')
+            }}>
               <I name="copy" size={14} />Duplicate
             </button>
-            <button className="act-btn danger" onClick={() => { store.removeJewel(jewel.id); toast('Piece removed') }}>
+            <button className="act-btn danger" onClick={() => { store.removeJewels([jewel.id]); toast('Piece removed') }}>
               <I name="trash" size={14} />Delete
             </button>
           </div>
@@ -2478,6 +3304,8 @@ function InspectorPanel({ snap }: { snap: StudioSnapshot }) {
       </aside>
     )
   }
+
+  /* ---------------- TOOTH CARD ---------------- */
   if (snap.selectedToothId && snap.selectedToothId !== FREE_TOOTH) {
     const info = toothInfo(snap.selectedToothId)
     const onTooth = snap.jewels.filter((j) => j.toothId === snap.selectedToothId)
@@ -2500,6 +3328,8 @@ function InspectorPanel({ snap }: { snap: StudioSnapshot }) {
       </aside>
     )
   }
+
+  /* ---------------- OVERVIEW ---------------- */
   const teethUsed = new Set(snap.jewels.map((j) => j.toothId)).size
   return (
     <aside className="inspector">
@@ -2508,6 +3338,7 @@ function InspectorPanel({ snap }: { snap: StudioSnapshot }) {
           <div className="stat"><b>{snap.jewels.length}</b><span>Pieces</span></div>
           <div className="stat"><b>{teethUsed}</b><span>Zones</span></div>
         </div>
+        <div className="hint-copy" style={{ marginTop: 10 }}>Pieces may touch, but never overlap — occupied spots are refused.</div>
         <div className="section-label">Design</div>
         {snap.jewels.length === 0 && <div className="hint-copy">Nothing placed yet. Drag a jewel from the library onto the arch — it will snap onto the surface and follow its curvature.</div>}
         {snap.jewels.map((j) => (
@@ -2517,8 +3348,11 @@ function InspectorPanel({ snap }: { snap: StudioSnapshot }) {
         ))}
         <div className="section-label">Shortcuts</div>
         <div className="kbd-row"><span>Undo / Redo</span><span><span className="kbd">Ctrl Z</span> <span className="kbd">Ctrl ⇧ Z</span></span></div>
-        <div className="kbd-row"><span>Duplicate piece</span><span className="kbd">D</span></div>
-        <div className="kbd-row"><span>Delete piece</span><span className="kbd">Del</span></div>
+        <div className="kbd-row"><span>Select all pieces</span><span className="kbd">Ctrl A</span></div>
+        <div className="kbd-row"><span>Add to selection</span><span className="kbd">Shift + click</span></div>
+        <div className="kbd-row"><span>Piece actions</span><span className="kbd">Right-click</span></div>
+        <div className="kbd-row"><span>Duplicate selection</span><span className="kbd">D</span></div>
+        <div className="kbd-row"><span>Delete selection</span><span className="kbd">Del</span></div>
         <div className="kbd-row"><span>Deselect / cancel</span><span className="kbd">Esc</span></div>
         <div className="kbd-row"><span>Pan camera</span><span className="kbd">Shift + drag</span></div>
         <div className="kbd-row"><span>Focus a tooth</span><span className="kbd">Double-click</span></div>
@@ -2552,6 +3386,7 @@ function App() {
       if (e.key === 'Escape') {
         getEngine()?.cancelPlacing()
         if (typing) (el as HTMLElement).blur()
+        store.closeContextMenu()
         store.setArmed(null)
         store.deselect()
         return
@@ -2560,12 +3395,24 @@ function App() {
       const meta = e.metaKey || e.ctrlKey
       if (meta && e.key.toLowerCase() === 'z') { e.preventDefault(); e.shiftKey ? store.redo() : store.undo(); return }
       if (meta && e.key.toLowerCase() === 'y') { e.preventDefault(); store.redo(); return }
+      if (meta && e.key.toLowerCase() === 'a') {
+        e.preventDefault()
+        store.selectJewels(store.jewels.map((j) => j.id))
+        return
+      }
       if (e.key === 'Delete' || e.key === 'Backspace') {
-        if (store.selectedJewelId) { store.removeJewel(store.selectedJewelId); toast('Piece removed') }
+        if (store.selectedJewelIds.length) {
+          const n = store.selectedJewelIds.length
+          store.removeJewels([...store.selectedJewelIds])
+          toast(`${n} ${n === 1 ? 'piece' : 'pieces'} removed`)
+        }
         return
       }
       if (e.key.toLowerCase() === 'd' && !meta) {
-        if (store.selectedJewelId) { store.duplicateJewel(store.selectedJewelId); toast('Piece duplicated') }
+        if (store.selectedJewelIds.length) {
+          const n = duplicateSelectionSafe([...store.selectedJewelIds])
+          toast(n === 1 ? 'Piece duplicated' : n > 1 ? `${n} pieces duplicated` : 'No free space beside the selection')
+        }
       }
     }
     window.addEventListener('keydown', onKey)

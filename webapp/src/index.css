@@ -734,6 +734,33 @@
   }
   .gt-admin-scroll::-webkit-scrollbar-track { background: transparent; }
 
+  /* Authored lesson copy, in the editor and in the learner preview.
+     Tailwind's preflight strips the browser's own heading and list styling, so
+     the small HTML subset the text block produces has to be given it back here
+     — otherwise a bulleted list authored in the editor renders as plain
+     paragraphs everywhere it is read. */
+  .gt-rich-text > :first-child { margin-top: 0; }
+  .gt-rich-text > :last-child { margin-bottom: 0; }
+  .gt-rich-text h3 {
+    margin: 0 0 var(--space-2);
+    font-size: var(--text-h4);
+    font-weight: var(--weight-bold);
+    color: var(--text-primary);
+  }
+  .gt-rich-text p { margin: 0 0 var(--space-3); }
+  .gt-rich-text ul,
+  .gt-rich-text ol { margin: 0 0 var(--space-3); padding-left: var(--space-5); }
+  .gt-rich-text ul { list-style: disc; }
+  .gt-rich-text ol { list-style: decimal; }
+  .gt-rich-text li { margin-bottom: var(--space-1); }
+  .gt-rich-text strong { font-weight: var(--weight-semibold); color: var(--text-primary); }
+  .gt-rich-text em { font-style: italic; }
+  .gt-rich-text a {
+    color: var(--text-link);
+    border-bottom: 1px solid var(--border-default);
+  }
+  .gt-rich-text a:hover { color: var(--text-link-hover); border-bottom-color: currentColor; }
+
   .gt-admin-scrim { animation: gt-admin-fade var(--duration-normal) var(--ease-standard) both; }
   .gt-admin-drawer { animation: gt-admin-slide var(--duration-normal) var(--ease-out-soft) both; }
   .gt-admin-dialog { animation: gt-admin-rise var(--duration-fast) var(--ease-out-soft) both; }
@@ -1294,4 +1321,99 @@
   .gt-studio-ph:hover .gt-studio-ph-art { transform: none; }
   .gt-studio-step { opacity: 1; transform: none; transition: none; }
   .gt-studio-cta:hover:not(:disabled) { transform: none; }
+}
+
+/* ---------------------------------------------------------------------------
+   3D Studio — the editor (/studio-3d/atelier)
+   ---------------------------------------------------------------------------
+   The editor wears the Studio's own art direction: white panels on the
+   storefront's paper, the light blue `.gt-editor-stage` for the 3D canvas, glass
+   only on the controls floating over that stage, emerald for Export. The
+   pieces below are what utilities cannot express: the range track, the
+   panels' thin scrollbars and the few loops, all stopped under reduced motion.
+--------------------------------------------------------------------------- */
+@layer components {
+  .gt-editor { -webkit-font-smoothing: antialiased; }
+  .gt-editor-canvas canvas { display: block; width: 100% !important; height: 100% !important; touch-action: none; }
+  /* The stage and the library are pointer surfaces: dragging must not select text. */
+  .gt-editor-canvas,
+  .gt-editor .gt-editor-stage { user-select: none; -webkit-user-select: none; }
+  /* The editor's 3D stage: light pastel blue, matched by the engine's backdrop and the PNG export. */
+  .gt-editor-stage {
+    background:
+      radial-gradient(70% 80% at 50% 38%, var(--gt-blue-50) 0%, var(--gt-blue-200) 62%, var(--gt-blue-300) 100%);
+  }
+
+  .gt-editor-range {
+    -webkit-appearance: none;
+    appearance: none;
+    display: block;
+    width: 100%;
+    height: 22px;
+    background: none;
+    cursor: pointer;
+  }
+  .gt-editor-range::-webkit-slider-runnable-track {
+    height: 4px;
+    border-radius: 99px;
+    background: linear-gradient(to right, var(--gt-ink-900) var(--fill, 0%), var(--gt-ink-200) var(--fill, 0%));
+  }
+  .gt-editor-range::-webkit-slider-thumb {
+    -webkit-appearance: none;
+    width: 16px;
+    height: 16px;
+    margin-top: -6px;
+    border-radius: 50%;
+    background: var(--gt-white);
+    border: 2px solid var(--gt-ink-900);
+    box-shadow: var(--shadow-sm);
+    transition: transform var(--duration-fast) var(--ease-standard);
+  }
+  .gt-editor-range:active::-webkit-slider-thumb { transform: scale(1.15); }
+  .gt-editor-range::-moz-range-track { height: 4px; border-radius: 99px; background: var(--gt-ink-200); }
+  .gt-editor-range::-moz-range-progress { height: 4px; border-radius: 99px; background: var(--gt-ink-900); }
+  .gt-editor-range::-moz-range-thumb {
+    width: 14px;
+    height: 14px;
+    border-radius: 50%;
+    background: var(--gt-white);
+    border: 2px solid var(--gt-ink-900);
+  }
+  .gt-editor-range:focus-visible { outline: none; }
+  .gt-editor-range:focus-visible::-webkit-slider-thumb { box-shadow: var(--shadow-focus); }
+  .gt-editor-range:focus-visible::-moz-range-thumb { box-shadow: var(--shadow-focus); }
+
+  .gt-editor-scroll { scrollbar-width: thin; scrollbar-color: var(--gt-ink-300) transparent; }
+  .gt-editor-scroll-x { scrollbar-width: none; }
+  .gt-editor-scroll-x::-webkit-scrollbar { display: none; }
+
+  .gt-editor-panel-in { animation: gt-editor-in var(--duration-normal) var(--ease-out-soft) both; }
+  .gt-editor-chip { animation: gt-editor-chip-in var(--duration-fast) var(--ease-out-soft) both; }
+  .gt-editor-floaty { animation: gt-editor-floaty 3.2s var(--ease-in-out) infinite; }
+  .gt-editor-pulse { animation: gt-editor-pulse 1.8s var(--ease-in-out) infinite; }
+}
+
+@keyframes gt-editor-in {
+  from { opacity: 0; transform: translateY(5px); }
+  to { opacity: 1; transform: none; }
+}
+/* `transform`, not `translate`: Tailwind's `-translate-x-1/2` centring uses the
+   `translate` property, and the two compose instead of overriding each other. */
+@keyframes gt-editor-chip-in {
+  from { opacity: 0; transform: translateY(-6px); }
+  to { opacity: 1; transform: none; }
+}
+@keyframes gt-editor-floaty {
+  0%, 100% { transform: none; }
+  50% { transform: translateY(-5px); }
+}
+@keyframes gt-editor-pulse {
+  50% { opacity: .25; }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .gt-editor-panel-in,
+  .gt-editor-chip,
+  .gt-editor-floaty,
+  .gt-editor-pulse { animation: none; }
 }
