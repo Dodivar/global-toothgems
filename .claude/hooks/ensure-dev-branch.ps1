@@ -26,12 +26,12 @@ try {
 
     if ($branch -eq $TargetBranch) {
         git pull --ff-only origin $TargetBranch 2>$null | Out-Null
-        Write-Output "Git policy: this session is on '$TargetBranch'. Work is committed and pushed to origin/$TargetBranch automatically at the end of each turn. Do not create other branches or pull requests."
+        Write-Output "Git policy: this session is on '$TargetBranch'. Work is committed and pushed to origin/$TargetBranch automatically at the end of each turn. Do not create other branches. The only pull request is dev -> main, opened only when the user asks."
         exit 0
     }
 
     if ($isLinkedWorktree) {
-        Write-Output "Git policy: this session runs in a worktree on '$branch'. At the end of each turn the Stop hook commits and pushes this work directly to origin/$TargetBranch (merging origin/$TargetBranch first). Do not open a pull request and do not push '$branch' itself."
+        Write-Output "Git policy: this session runs in a worktree on '$branch'. At the end of each turn the Stop hook commits and pushes this work directly to origin/$TargetBranch (merging origin/$TargetBranch first). Do not open a pull request targeting dev and do not push '$branch' itself."
         exit 0
     }
 
@@ -46,7 +46,7 @@ try {
         exit 0
     }
     git pull --ff-only origin $TargetBranch 2>$null | Out-Null
-    Write-Output "Git policy: switched from '$branch' to '$TargetBranch'. Work is committed and pushed to origin/$TargetBranch automatically at the end of each turn. Do not create other branches or pull requests."
+    Write-Output "Git policy: switched from '$branch' to '$TargetBranch'. Work is committed and pushed to origin/$TargetBranch automatically at the end of each turn. Do not create other branches. The only pull request is dev -> main, opened only when the user asks."
 }
 catch {
     [Console]::Error.WriteLine("[ensure-dev-branch] unexpected error: $($_.Exception.Message)")

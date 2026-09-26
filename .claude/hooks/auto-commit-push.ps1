@@ -7,7 +7,8 @@
       - any other branch: (e.g. a claude/* worktree created by the desktop app)
                           commit locally, merge origin/dev into it, then push
                           HEAD directly to origin/dev - no feature branch push,
-                          no pull request
+                          no pull request targeting dev (the only pull request
+                          is dev -> main, opened on the user's request)
 
     Safety rails:
       - never pushes to main, never force-pushes, never rewrites pushed history
