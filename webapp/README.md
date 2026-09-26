@@ -62,10 +62,14 @@ src/
   pages/            One component per screen (Home, Shop, ProductDetail, Cart, Academy, CourseDetail, Lesson, Login)
   pages/account/    The member area: sidebar layout + one component per section
   pages/community/  The Artist Community: its own layout + one component per screen
+  pages/legal/      Help centre, FAQ, contact and about pages
+  data/legal/       Legal and help content (bilingual data rendered by components/legal/)
   components/ui/     Design-system primitives (Button, Badge, ProductCard, CourseCard, QuizQuestion, ...)
   components/account/ Dashboard pieces (stat tile, course row, certificate card, order card)
   components/academy/ The training detail page: hero, curriculum accordion, assessment, diploma, community, shared primitives
   components/community/ Forum pieces (navigation, discussion card, showcase card, reactions, member card, composer, locked preview)
+  components/reviews/ Customer reviews: stars, badges, review card, section, form, request, overlays; admin/ holds the moderation workspace
+  components/studio/ The 3D Studio mockups (and editor/, the working editor UI): smile canvas, rendered gems, interactive Studio window, feature cards, media placeholders, inspiration boards, steps, pricing card, FAQ, home teaser
   components/loyalty/ The Loyalty Club: stamp, card, progress, reward, steps, journey, FAQ, checkout banner, demo switcher
   components/layout/ Header (desktop nav + mega panel, mobile burger menu) and Footer
   pages/admin/      The administration workspace: access screen, shell, dashboard, orders, products, categories
@@ -91,6 +95,68 @@ The hero reflects the visitor's own state — enrolled, in progress, completed �
 Every route into a training now lands here rather than on the login form: both home pages, the Academy grid, the header's Academy panel and both footers' Academy columns. `CourseCard` takes a `to` so those cards are real links — a public page has to be openable in a new tab and crawlable — and `lib/academyUrl.ts` holds the path the way `lib/shopUrl.ts` holds the filtered-collection ones. Only `/academy/lecon`, the player, stays behind `RequireAccount`: the videos are the paid content.
 
 The account is asked for at the purchase, and the training asked for travels with the visitor: pressing "start" while signed out puts the course id in the navigation state, and signing in adds that course to the account before opening the player, so the purchase resumes instead of opening whichever course happened to be active.
+
+## Account creation (`/inscription`)
+
+A four-step journey — Account → Profile → Preferences → Done — with a simulated
+email verification and a welcome screen. The "Create account" tab of `/connexion`,
+the cart and the training pages all lead here.
+
+The reason the visitor came is carried in the URL, and the page keeps it in view
+and ends on it:
+
+| URL | Context | Primary action at the end |
+| --- | --- | --- |
+| `/inscription` | Plain sign-up | Follows the chosen interest (products, training), else the dashboard |
+| `/inscription?contexte=achat` | Purchase in progress — shows the cart (or `&produit=<id>&qte=<n>`) | Return to cart |
+| `/inscription?contexte=formation&formation=<id>` | Training — shows the course | Continue to checkout (starts the course, like "Start this training") |
+
+History state from the login wall (`{ from, course }`) is honoured too.
+
+A **Prototype controls** panel at the top switches the context and forces
+outcomes: registration failure, network error, verification email failure,
+expired verification link. `camille@studio.fr`, `hello@globaltoothgems.com` and
+`lea.martin@gmail.com` are treated as already registered. "Continue with Google"
+opens a simulated account chooser; nothing is sent anywhere, no password is
+stored, and marketing consent is never pre-ticked. Logic and mock service live in
+`src/lib/registration.ts`, components in `src/components/register/`.
+
+## The 3D Studio (`/studio-3d`)
+
+A paid creative tool (€5 / month) for designing tooth jewellery compositions. The presentation and subscription pages are visual prototypes (no payment is taken); the **editor** at `/studio-3d/atelier` is a working three.js application, **free for every visitor during the preview**.
+
+| Route | Screen |
+| --- | --- |
+| `/studio-3d` | Presentation page: hero with the Studio window, concept, six capabilities, media wall, inspiration boards, three steps, offer, FAQ |
+| `/studio-3d/abonnement` | Subscription page: the single monthly plan, account, fictional payment, summary, loading and confirmation states (`/studio-3d/subscribe` redirects here) |
+| `/studio-3d/atelier` | The editor: 3D upper arch, jewellery library, placement by drag / click / keyboard, collision-free layout tools, presets, undo/redo, PNG / estimate sheet / JSON export (`/studio-3d/editor` redirects here). Full-screen, without the storefront header and footer |
+
+### The editor
+
+Ported from the standalone `studio3D.html` into the app's architecture:
+
+| Where | What |
+| --- | --- |
+| `data/studioEditor.ts` | Catalog, finishes, dentition, ready-made presets, the **indicative** estimate price list (integer cents + currency), validation of designs read back from storage |
+| `lib/studio3d/engine.ts` | The three.js engine: scene, camera, raycast placement, drag, collisions, mirror / distribute / align, glTF import, exports. On-demand rendering (idles when nothing moves) |
+| `lib/studio3d/geometry.ts` | Procedural teeth, piece shapes and materials, cached |
+| `lib/studio3d/store.ts` | The design store (history, selection, local persistence, named presets) |
+| `lib/studio3d/actions.ts`, `notices.ts` | Shared commands, and the channel through which the engine reports to the site's toasts by translation key |
+| `components/studio/editor/` | Top bar, library, 3D stage, inspector, colour wheel, popovers |
+| `pages/StudioEditor.tsx` | The page: layout, shortcuts, save on exit. Lazy-loaded, so three.js is only downloaded when the editor opens |
+
+- **Access**: `lib/studioAccess.tsx` is the single switch. `STUDIO_ACCESS_MODE = "preview"` lets everyone in without paying. When the subscription goes live, switch it to `"subscription"` and back it with a server-side entitlement granted by the verified Stripe webhook; the client check is navigation only.
+- **Saving** is local to the browser (`gt-studio3d-*` keys); nothing is sent to a server yet.
+- **Estimate**: prices in `ESTIMATE_PRICING` are prototype values, shown as "approx." and labelled as not a quote. They are never sent to checkout.
+- **Model import** (`.glb` / `.gltf`, 60 MB max) runs entirely in the browser; Draco-compressed files fetch their decoder from the jsDelivr build of the bundled three.js version.
+
+- **The Studio window** (`components/studio/StudioMockup.tsx`) is lightly interactive: pieces can be selected, swapped from the library, resized, recoloured, added and removed; presets, undo/redo, zoom and a CSS-perspective "¾ / profile" view all work on local state. "Save" and "Share" only play their states.
+- **The canvas** (`SmileCanvas.tsx`) is an SVG drawing of a smile; pieces reuse the shop's `GLYPH_PATHS` with material gradients (`Gem.tsx`, `gemStyle.ts`).
+- **Replaceable media**: every tile of the "See what you can create." wall is a `MediaPlaceholder` carrying `data-placeholder="…"` and a visible `[… PLACEHOLDER]` tag. Search for `data-placeholder` to find them.
+- **Fictional content**: compositions, library pieces, saved creations and inspiration boards live in `data/studio.ts`; copy lives in `i18n/locales/studio.{fr,en}.json` under `studio`. FAQ answers (mobile availability, saving, use when ordering) describe the intended product and must be confirmed before launch.
+- **Price**: `STUDIO_PRICE` is a display value only. In production the price comes from the Stripe Price, the button hands over to Stripe Checkout (subscription mode) and access is granted by the verified webhook — never by the confirmation screen.
+- **Editor entry points**: while preview access is on, "Open the Studio" on the presentation page (hero, FAQ, phone bar), the home teaser, "Recreate" on the inspiration boards and the subscription confirmation all lead to the editor; the offer section still leads to the subscription page.
+- **Navigation**: "Studio 3D · New" sits after the Academy in both desktop headers, as a featured row above the tabs in both mobile menus, and as a link in the member area sidebar and pill row. The home page carries a teaser (`StudioTeaser`) between the best sellers and the Academy band.
 
 ## The member area (`/compte`)
 
@@ -194,6 +260,132 @@ In the orders screens specifically, changing a status, refunding, cancelling, ex
 
 **Known duplication to consolidate.** The orders screens were built against their own primitives before the rest of this workspace existed, so they carry a second modal (`components/ui/Dialog.tsx`), dropdown (`components/ui/Menu.tsx`), KPI tile, empty state and loading state alongside the workspace's `ConfirmationDialog`, `OverflowMenu`, `StatCard`, `EmptyState`, `LoadingState`, `SearchInput` and `AdminButton`. The shell, the header, the rail, the guard and the route structure are shared; these presentational pieces are not, and porting the orders screens onto the workspace primitives is open work.
 
+
+## Help centre and legal pages
+
+Reached from the footer's Customer service, Legal and Company columns. The
+English paths (`/terms-of-sale`, `/privacy-policy`, ...) redirect to the French
+ones.
+
+| Page | Path |
+| --- | --- |
+| Help centre (hub + internal pre-launch checklist) | `/aide` |
+| FAQ | `/aide/faq` |
+| Shipping & delivery | `/livraison` |
+| Returns & refunds | `/retours-remboursements` |
+| Contact | `/contact` (`?sujet=…` (order, delivery, returns, product, training, technical, privacy, professional, other) pre-selects the category) |
+| Legal notice | `/mentions-legales` |
+| Terms of sale | `/conditions-generales` |
+| Privacy policy | `/confidentialite` |
+| Cookie policy | `/cookies` |
+| About | `/a-propos` |
+
+**These pages are a design prototype, not legal text.** Every company
+identifier, commercial rule (return window, shipping rates, zones), processor
+and cookie is a visible placeholder: `[[Label]]` for "to verify" and
+`[[!Label]]` for "business information required" in `data/legal/*.ts`. The only
+provider named is Stripe. The EU consumer-law and GDPR summaries, labelled
+"Legal information", still need checking against the countries actually
+served. All of it must be reviewed by the business and by counsel before
+publication.
+
+- **Cookie consent** (`lib/cookieConsent.tsx`, `components/legal/Cookie*`) only
+  records the visitor's choice in localStorage. No script is loaded or blocked.
+  Optional categories start off, and "Reject" is as prominent as "Accept". The
+  preferences dialog can be reopened from "Cookie settings" in the footer.
+- **Review annotations** (`lib/reviewMode.tsx`): the hatched internal notes and
+  the Stripe/compliance checklist on `/aide` can be hidden with the toggle at
+  the top of each page, to preview the customer-facing version. Placeholders are
+  never hidden.
+- The contact form validates its input and shows a success state, but sends
+  nothing.
+- The cart's free-delivery threshold and flat shipping fee are sample values.
+  The Shipping page says so, and the two must be aligned with the real rate
+  card.
+
+## Promotions, campaigns & gift cards (`/admin/promotions`)
+
+A front-end-only prototype of the promotional side of the back office, plus the customer-facing gift card page. No backend, no payment, no persistence: every change lives in memory and a reload restores the seed. It adds one entry, **Promotions**, to the rail's main group; nothing else in the rail changed.
+
+| Route | Screen |
+| --- | --- |
+| `/admin/promotions` | Overview — KPI row, then tabs in the query string (`?vue=actives`, `programmees`, `expirees`, `campagnes`, `cartes-cadeaux`). The "All" tab adds a six-week "what runs when" calendar above the list |
+| `/admin/promotions/nouvelle` · `/:id/modifier` | Promotion editor — six lettered sections (basics, discount type, eligibility, usage rules, scheduling, promo code), a sticky summary with a publish checklist and a live product-card preview. `?campagne=<id>` pre-fills the campaign |
+| `/admin/promotions/:id` | Promotion detail — state banner (paused, expired, scheduled, invalid), performance, configuration, code, campaign, customer view, history |
+| `/admin/promotions/campagnes/nouvelle` · `/:id` · `/:id/modifier` | Campaign editor with live storefront preview (desktop / mobile), and campaign detail: banner, promotions, products, dates, banner preview, activity |
+| `/admin/promotions/cartes-cadeaux/:code` | Gift card detail — card visual, balance, ledger with running balance, resend / adjust / extend / cancel (cancel requires typing the code), related order sheet |
+| `/admin/promotions/cartes-cadeaux/configuration` | Gift card product settings — denominations (reorder by buttons or drag), custom amount range, validity, scheduled delivery, field rules, designs |
+| `/admin/promotions/apercu` | Customer preview — one promotion on the product card, product page, cart, checkout summary and campaign landing |
+| `/carte-cadeau` (`/gift-card`) | Storefront gift card page, driven by the configuration above |
+
+How it is put together:
+
+- `data/adminPromotions.ts` — types and seed: 15 promotions, 7 campaigns, 14 gift cards and the gift card product. **Money is integer cents.** **Statuses are derived** from a stored lifecycle (draft / live / paused / archived) and the dates, against a fixed prototype date `PROMO_NOW` (24 Nov 2027, printed on every screen) so the 2027 campaigns of the brief keep their states. Gift card balances are the sum of each card's ledger, never a stored number.
+- `lib/adminPromotions.tsx` — the store (async, simulated latency), mounted in `App.tsx` rather than the admin layout so the storefront page reads the same gift card configuration: save a new amount order in the back office, then open `/carte-cadeau` in the same tab (a new tab reloads and resets the prototype).
+- `lib/promotionRules.ts` — pure rules: validation, scope resolution, campaign roll-ups, KPIs, list filtering and sorting.
+- `components/promotions/` — badges, the CSS-drawn gift card and campaign banner (`.gt-giftcard`, `.gt-campaign-cover` in `index.css`), product picker, timelines, tables, storefront previews, dialogs and bottom sheet.
+- Copy lives in `i18n/locales/promotions.{fr,en}.json`, mounted under the `promo` key.
+
+A labelled **Prototype** bar on the overview switches between sample data, an empty shop and a loading error. "Christmas Early Bird -15%" is deliberately invalid (end before start, missing code) to show the invalid-configuration state; "Spring Studio Days" is a campaign with no promotions and no products.
+
+Everything that matters for money or access — code uniqueness, discount calculation, balance changes, cancellation, delivery — must be enforced server-side in the real implementation; the checks here are presentation only.
+
+## Reviews and moderation (`/admin/avis`, `/compte/avis`)
+
+A front-end-only prototype of customer reviews for products and trainings, and of their moderation. No backend, no uploads leave the browser, no persistence: a reload restores the seed. It adds **Reviews** to the admin rail's main group and **My reviews** to the member area's navigation; nothing else in either navigation changed.
+
+| Where | What |
+| --- | --- |
+| `/boutique/:id` | Reviews section below the purchase info, specifications and FAQ: average, count, star distribution (each bar filters), most helpful review, customer photos, filters (stars, with photos, verified) and sorting, review cards with verified badge, privacy name ("Sarah M."), helpful vote, discreet report, and the team's public response. The rating line under the product name reads the same published reviews |
+| `/academy/formation/:id` | The course variant: "Verified student", progress at the time of writing, what students highlight (most-used tags) and student result photos |
+| `/compte/avis` | My reviews: requests for what can still be reviewed, every review with a status explained in plain words (in review, published, needs changes with the team's message, not published with the reason), edit / edit and send again, and the lifecycle |
+| `/compte`, `/compte/commandes`, `/compte/attestations`, `/academy/lecon` | The reusable review request (`ReviewRequestCard`): on the dashboard, beside a finished training, and in the lesson player from 50 % progress; "Write a review" on eligible order lines |
+| `/admin/avis` | Overview: KPIs, "needs your attention", distribution, moderation health, average rating by product and by training |
+| `/admin/avis?vue=file` | Moderation queue: status views (pending, edited, reported, published, needs changes, rejected, hidden, all), search, type, product/training, rating, date and sort — all in the query string. Table on desktop, cards on phones |
+| `/admin/avis?vue=signalements` | Reported reviews: reports grouped by reason, keep published / hide / remove / investigate, recently decided |
+| `?avis=RV-1008` | Moderation panel (side sheet): the full review and photos, customer, order (linked when it is in the admin order book), verification, reports, public response with live preview, internal notes, history, and the decision row |
+
+How it is put together:
+
+- `data/reviewSystem.ts` — types and seed (~45 reviews across products and trainings: every status, photos, responses, reports, an unverified gift review, an edited review back in moderation). The prototype's "today" is `REVIEW_NOW` (23 Sept 2026).
+- `lib/reviewRules.ts` — pure rules: summaries, public filters and sorts, featured review, form validation, queue filters, dashboard statistics.
+- `lib/reviews.tsx` — the store and every lifecycle action, mounted in `App.tsx` above the storefront and the admin, so a review approved in the back office appears on the product page in the same session. Also the eligibility hooks and the three overlays' state (form, report, photo viewer), rendered once by `components/reviews/ReviewOverlays.tsx`.
+- `components/reviews/` — stars (display and radio-group input), badges, card, section, form, request, eligibility panel; `components/reviews/admin/` — dashboard, queue, reported view, moderation sheet and action dialogs.
+- Copy lives in `i18n/locales/reviews.{fr,en}.json`, mounted under the `reviews` key.
+
+Rules the prototype shows, and the assumptions behind them (to confirm before the real build):
+
+- **Eligibility** comes from the account's own data: a product is reviewable once an order containing it has **shipped or been delivered** (not cancelled); a training once **50 %** of it is validated (`COURSE_REVIEW_THRESHOLD`). One review per product or training; after that, the way forward is editing it. Signed out, nothing is reviewable.
+- **Editing a published review sends it back to moderation and takes it off the page** until the new version is approved.
+- **Reports never remove anything automatically.** "Remove" rejects the review and keeps it, its reports and its history on record.
+- **Customer text is never translated or edited** (guideline 08); a review that can't be published is sent back with a message or rejected with a reason the customer sees.
+- Averages and counts on product and course pages are computed from the published reviews in the store, so they differ from the catalogue's `rating`/`reviewCount` fields that shop cards still show.
+
+Prototype controls: the admin bar switches between sample data, no reviews and a loading error (this also empties the storefront sections); each storefront section has its own small switch for loading, empty and error. Everything that matters — eligibility, the order behind "verified", photo type/size checks and storage, authorship, moderation permissions — must be enforced server-side in the real implementation; the checks here are presentation only.
+
+## Store settings (`/admin/parametres`)
+
+Store configuration in four sections, one route, the section in the query string (`?section=boutique`, `livraison`, `taxes`, `langues`). Front-end only: everything lives in memory for the session. The rail's existing **Settings** entry, until now drawn as "coming soon", became a destination (same label, same icon, moved into the main group like Analytics before it); nothing else in the rail changed.
+
+Every section edits a **draft** and commits it with **Save changes** — including edits made in a drawer or dialog (a zone, a rate, a VAT row, a language switched off). The header shows whether what you see is live, Save/Discard are disabled while nothing changed, the section navigation marks sections with unsaved drafts, drafts survive moving between sections, and the browser warns before a reload. Below 1280px the actions ride in a bottom bar that appears only when there is something to save. Validation shows inline once a field is left or a save is attempted, with an error summary; a **Prototype** bar can make saves fail to show the error path.
+
+| Section | What it covers |
+| --- | --- |
+| Store details | Business information, address, preferences (currency, time zone, date format, units, order number format with live preview), customer-facing contact, support hours, description and message, with a live customer preview |
+| Shipping | Zone cards (countries first, then methods), enable/disable, duplicate (copies start off and empty — a country lives in one zone only), delete with confirmation; zone drawer with grouped country picker that shows and spells out moves between zones; rate drawer (standard / express / free / pickup, delivery estimate, price, free-from threshold, order and weight ranges) with a checkout preview; a "check a destination" panel answering what a customer in a given country is offered |
+| Taxes & VAT | Three tiers on one rail — store default (with a live price example), country rates table, advanced rules (reduced rates, VAT numbers and VIES, exempt customers, calculation basis, rounding, shipping) — plus a precedence explainer with a per-country checker. Toggletips on the settings that are easy to misread |
+| Languages | Enabled languages (order by arrows or drag, default, disable with confirmation, enable), coverage per language with a "Needs attention · N missing" button that filters the list below, coverage by content type, and **Missing translations**: summary chips that filter, search, language / type / status filters and four sorts, all in the query string |
+
+The translation editor opens from the list with the missing language selected (`?traduire=<id>&langue=it`, so it is a link too): English original beside the target field, missing fields highlighted, "needs review" fields that can be confirmed as they are, next/previous missing field, placeholder checks for email variables, "Save & next item" to work down the list, and a guard against closing with unsaved text.
+
+How it is put together:
+
+- `data/adminSettings.ts`, `data/adminTranslations.ts` — types and fictional seed. **Money is integer cents, VAT rates integer basis points, weights grams.** Content is authored in English (`SOURCE_LANGUAGE`); only items with gaps are listed, and coverage is computed against a catalogue field count, so every percentage and count on the page comes from the same functions.
+- `lib/adminSettings.tsx` — drafts, saved values, simulated save latency and failure; mounted in the admin layout so drafts survive leaving Settings.
+- `lib/settingsRules.ts` — pure rules: validation, destination-to-zone resolution, VAT precedence and price splitting, translation progress, filters and sorts.
+- `components/settings/` — one file per section plus the drawers, the missing list and the editor; copy in `i18n/locales/settings.{fr,en}.json` under the `settings` key.
+
+Tax rates and exemption rules are **illustrative** and say so on screen: they, and every check here (zone overlap, rate ranges, VAT number validation), must be confirmed with an accountant and enforced server-side in the real implementation.
 
 ## Notes on scope
 

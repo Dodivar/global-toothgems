@@ -62,7 +62,7 @@ export function TrainingToolbar({
             value={filters.status}
             onChange={(e) => set("status", e.target.value as TrainingFilterState["status"])}
             options={[
-              { value: "all", label: t("admin.training.list.allStatuses") },
+              { value: "any", label: t("admin.training.list.allStatuses") },
               ...COURSE_STATUSES.map((s) => ({ value: s, label: t(`admin.training.status.${s}`) })),
             ]}
           />
@@ -74,7 +74,7 @@ export function TrainingToolbar({
             value={filters.category}
             onChange={(e) => set("category", e.target.value as TrainingFilterState["category"])}
             options={[
-              { value: "all", label: t("admin.training.list.allCategories") },
+              { value: "any", label: t("admin.training.list.allCategories") },
               ...COURSE_CATEGORIES.map((c) => ({ value: c, label: t(`admin.training.category.${c}`) })),
             ]}
           />
@@ -86,7 +86,7 @@ export function TrainingToolbar({
             value={filters.level}
             onChange={(e) => set("level", e.target.value as TrainingFilterState["level"])}
             options={[
-              { value: "all", label: t("admin.training.list.allLevels") },
+              { value: "any", label: t("admin.training.list.allLevels") },
               ...COURSE_LEVELS.map((l) => ({ value: l, label: t(`admin.training.level.${l}`) })),
             ]}
           />
@@ -121,7 +121,7 @@ export function TrainingToolbar({
             size="sm"
             iconLeft={X}
             onClick={() =>
-              onChange({ search: "", status: "all", category: "all", level: "all", sort: filters.sort })
+              onChange({ search: "", status: "any", category: "any", level: "any", sort: filters.sort })
             }
           >
             {t("admin.training.list.clearFilters")}

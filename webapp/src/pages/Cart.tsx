@@ -1,7 +1,7 @@
 import { useMemo, useState } from "react";
 import { useTranslation } from "react-i18next";
-import { useNavigate } from "react-router-dom";
-import { CheckCircle2, Minus, Plus, ShoppingBag, Trash2, Truck } from "lucide-react";
+import { Link, useNavigate } from "react-router-dom";
+import { ArrowRight, CheckCircle2, Minus, Plus, ShoppingBag, Trash2, Truck, UserRound } from "lucide-react";
 import { Button } from "../components/ui/Button";
 import { Badge } from "../components/ui/Badge";
 import { DELIVERY_COUNTRIES, countryLabelKey } from "../data/countries";
@@ -15,6 +15,7 @@ import { CheckoutLoyaltyBanner } from "../components/loyalty/CheckoutLoyaltyBann
 import { DEFAULT_LOYALTY_STATE, LOYALTY_STATES } from "../data/loyalty";
 import { useCart } from "../lib/cart";
 import { useOrders } from "../lib/orders";
+import { useAuth } from "../lib/auth";
 import { bestSellers } from "../data/products";
 import { pick } from "../data/types";
 import { formatPrice } from "../lib/format";
@@ -28,6 +29,7 @@ export function Cart() {
   const navigate = useNavigate();
   const { lines, subtotal, updateQty, removeLine, clearCart } = useCart();
   const { placeOrder } = useOrders();
+  const { signedIn } = useAuth();
   const lang = i18n.language;
 
   const [paid, setPaid] = useState(false);
@@ -219,6 +221,24 @@ export function Cart() {
                 of the total — no discount, no code, no change to what is charged. */}
             <CheckoutLoyaltyBanner subtotal={subtotal} state={LOYALTY_STATES[DEFAULT_LOYALTY_STATE]} />
           </section>
+
+          {/* Optional, never a wall: guest checkout stays the default. Creating
+              an account from here keeps the cart in view the whole way through. */}
+          {!signedIn && (
+            <Link
+              to="/inscription?contexte=achat"
+              className="group flex items-center gap-4 rounded-[var(--radius-card)] border border-[var(--gt-blue-200)] bg-[var(--surface-brand-wash)] p-4 transition-colors hover:border-[var(--gt-blue-400)]"
+            >
+              <span aria-hidden="true" className="grid h-10 w-10 flex-none place-items-center rounded-full bg-white text-[var(--gt-blue-700)] shadow-[var(--shadow-xs)]">
+                <UserRound size={18} />
+              </span>
+              <span className="grid flex-1 gap-0.5">
+                <strong className="text-sm text-[var(--text-primary)]">{t("cart.accountPromptTitle")}</strong>
+                <span className="text-xs text-[var(--text-muted)]">{t("cart.accountPromptBody")}</span>
+              </span>
+              <ArrowRight size={16} aria-hidden="true" className="flex-none text-[var(--text-primary)] transition-transform group-hover:translate-x-0.5" />
+            </Link>
+          )}
 
           <section className="grid gap-4 rounded-[var(--radius-card)] border border-[var(--border-subtle)] p-[var(--space-6)]">
             <h2 className="text-[length:var(--text-h3)]">{t("cart.detailsTitle")}</h2>

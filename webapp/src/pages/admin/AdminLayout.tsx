@@ -5,6 +5,8 @@ import { AdminSidebar } from "../../components/admin/AdminSidebar";
 import { AdminCatalogProvider } from "../../lib/adminCatalog";
 import { AdminOrdersProvider } from "../../lib/adminOrders";
 import { AdminCustomersProvider } from "../../lib/adminCustomers";
+import { AdminUsersProvider } from "../../lib/adminUsers";
+import { AdminSettingsProvider } from "../../lib/adminSettings";
 import { AdminTrainingProvider } from "../../lib/adminTraining";
 import { useAdminAuth } from "../../lib/adminAuth";
 import { useFocusTrap } from "../../lib/useFocusTrap";
@@ -47,10 +49,16 @@ export function AdminLayout() {
       {/* Customers sit inside Orders: a customer record reads the order
           book for their order history, never the other way round. */}
       <AdminCustomersProvider>
-      {/* Training is independent of all three: a course is not a product and
-          does not read the order book. It sits here rather than inside the
-          training routes so the catalogue survives navigating away from the
-          builder and back. */}
+      {/* Staff accounts are independent of the commerce data; the provider
+          sits here only so the list survives moving between sections. */}
+      <AdminUsersProvider actor={admin?.name ?? "Camille Dubois"}>
+      {/* Settings drafts live above the pages so unsaved work survives a
+          detour to another section of the admin. */}
+      <AdminSettingsProvider>
+      {/* Training is independent of the commerce data: a course is not a
+          product and does not read the order book. It sits here rather than
+          inside the training routes so the catalogue, and any unsaved edit to
+          a course, survives a detour to another section. */}
       <AdminTrainingProvider>
       <div
         className="gt-admin min-h-screen"
@@ -96,6 +104,8 @@ export function AdminLayout() {
         </div>
       </div>
       </AdminTrainingProvider>
+      </AdminSettingsProvider>
+      </AdminUsersProvider>
       </AdminCustomersProvider>
       </AdminOrdersProvider>
     </AdminCatalogProvider>

@@ -32,19 +32,24 @@ export const TRAINING_SORT_KEYS: TrainingSortKey[] = [
   "enrolled-desc",
 ];
 
+/**
+ * `any`, not `all`: "all levels" is itself a `CourseLevel` -- a course
+ * suitable for everyone -- so a filter sentinel spelled `all` would be
+ * indistinguishable from it, and that level could never be filtered for.
+ */
 export interface TrainingFilterState {
   search: string;
-  status: CourseStatus | "all";
-  category: CourseCategory | "all";
-  level: CourseLevel | "all";
+  status: CourseStatus | "any";
+  category: CourseCategory | "any";
+  level: CourseLevel | "any";
   sort: TrainingSortKey;
 }
 
 export const DEFAULT_TRAINING_FILTERS: TrainingFilterState = {
   search: "",
-  status: "all",
-  category: "all",
-  level: "all",
+  status: "any",
+  category: "any",
+  level: "any",
   sort: "recent",
 };
 
@@ -52,9 +57,9 @@ export const DEFAULT_TRAINING_FILTERS: TrainingFilterState = {
 export function isTrainingFiltered(filters: TrainingFilterState): boolean {
   return (
     filters.search.trim() !== "" ||
-    filters.status !== "all" ||
-    filters.category !== "all" ||
-    filters.level !== "all"
+    filters.status !== "any" ||
+    filters.category !== "any" ||
+    filters.level !== "any"
   );
 }
 
@@ -93,9 +98,9 @@ export function filterCourses(
 ): TrainingCourse[] {
   const result = courses.filter((course) => {
     if (!matchesSearch(course, filters.search)) return false;
-    if (filters.status !== "all" && course.status !== filters.status) return false;
-    if (filters.category !== "all" && course.category !== filters.category) return false;
-    if (filters.level !== "all" && course.level !== filters.level) return false;
+    if (filters.status !== "any" && course.status !== filters.status) return false;
+    if (filters.category !== "any" && course.category !== filters.category) return false;
+    if (filters.level !== "any" && course.level !== filters.level) return false;
     return true;
   });
 

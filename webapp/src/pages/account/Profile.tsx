@@ -1,7 +1,7 @@
 import { useState, type FormEvent } from "react";
 import { useTranslation } from "react-i18next";
-import { useNavigate } from "react-router-dom";
-import { Check, LogOut, UserRound } from "lucide-react";
+import { Link, useNavigate } from "react-router-dom";
+import { Check, LogOut, ShieldCheck, UserRound } from "lucide-react";
 import { Button } from "../../components/ui/Button";
 import { Checkbox } from "../../components/ui/Checkbox";
 import { Input } from "../../components/ui/Input";
@@ -69,15 +69,29 @@ export function Profile() {
             autoComplete="family-name"
             onChange={setText("lastName")}
           />
-          <Input
-            id="profile-email"
-            type="email"
-            label={t("auth.email")}
-            value={draft.email}
-            autoComplete="email"
-            required
-            onChange={setText("email")}
-          />
+          {/* The sign-in email changes through Security & privacy, where the new
+              address is verified before it replaces this one. */}
+          <div className="grid gap-1.5">
+            <Input
+              id="profile-email"
+              type="email"
+              label={t("auth.email")}
+              value={profile!.email}
+              autoComplete="email"
+              readOnly
+              aria-describedby="profile-email-note"
+              className="bg-[var(--gt-off-white)] text-[var(--text-body)]"
+            />
+            <p id="profile-email-note" className="m-0 text-[length:var(--text-caption)] text-[var(--text-muted)]">
+              {t("account.profileEmailNote")}{" "}
+              <Link
+                to="/compte/securite"
+                className="font-semibold text-[var(--text-primary)] underline decoration-1 underline-offset-4 hover:text-[var(--text-link-hover)]"
+              >
+                {t("account.profileEmailLink")}
+              </Link>
+            </p>
+          </div>
           <Input
             id="profile-phone"
             type="tel"
@@ -140,7 +154,10 @@ export function Profile() {
         <p className="m-0 text-[length:var(--text-body-sm)] text-[var(--text-muted)]">
           {t("account.profileSecurityBody")}
         </p>
-        <div>
+        <div className="flex flex-wrap gap-2">
+          <Button type="button" variant="dark" size="sm" iconLeft={ShieldCheck} onClick={() => navigate("/compte/securite")}>
+            {t("account.profileSecurityCta")}
+          </Button>
           <Button
             type="button"
             variant="outline"

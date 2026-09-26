@@ -1,7 +1,7 @@
 import { useEffect, useRef, useState, type ReactNode } from "react";
 import { Link, useNavigate, useLocation } from "react-router-dom";
 import { useTranslation } from "react-i18next";
-import { ChevronDown, Heart, Menu, Search, ShoppingBag, User, X } from "lucide-react";
+import { ArrowRight, Box, ChevronDown, Heart, Menu, Search, ShoppingBag, User, X } from "lucide-react";
 import { IconButton } from "../ui/IconButton";
 import { Button } from "../ui/Button";
 import { ShapeCarousel } from "../ui/ShapeCarousel";
@@ -13,6 +13,8 @@ import { MENU } from "../../data/menu";
 import { colorsInCatalog, shapesInCatalog } from "../../data/products";
 import { colorHref, shapeHref } from "../../lib/shopUrl";
 import { pick } from "../../data/types";
+import { NewTag } from "../studio/NewTag";
+import { STUDIO_PATH } from "../../lib/studioUrl";
 import logoBlack from "../../assets/logo-wordmark-black.png";
 
 type PanelKey = "shop" | "academy" | null;
@@ -42,10 +44,13 @@ export function Header() {
    *  nav item — otherwise the next mouse move reopens what they dismissed. */
   const dismissed = useRef<PanelKey>(null);
 
-  const links: { id: string; label: string; to: string; panel?: Exclude<PanelKey, null>; panelLabel?: string }[] = [
+  const links: { id: string; label: string; to: string; panel?: Exclude<PanelKey, null>; panelLabel?: string; isNew?: boolean }[] = [
     { id: "home", label: t("nav.home"), to: "/" },
     { id: "shop", label: t("nav.shop"), to: "/boutique", panel: "shop", panelLabel: t("nav.openPanelShop") },
     { id: "academy", label: t("nav.academy"), to: "/academy", panel: "academy", panelLabel: t("nav.openPanelAcademy") },
+    /* Last, after the two pillars, and without a panel: a single destination.
+       The "New" mark is what makes it noticed, not its size or colour. */
+    { id: "studio", label: t("nav.studio"), to: STUDIO_PATH, isNew: true },
   ];
 
   const closeAll = () => {
@@ -238,13 +243,15 @@ export function Header() {
                       closeAll();
                     }}
                     aria-current={onRoute ? "page" : undefined}
-                    className="border-b-2 pb-1 text-[13px] font-semibold uppercase tracking-[var(--tracking-wide)] transition-colors"
+                    className="inline-flex items-center gap-1.5 border-b-2 pb-1 text-[13px] font-semibold uppercase tracking-[var(--tracking-wide)] transition-colors hover:text-[var(--text-primary)]"
                     style={{
                       color: onRoute || expanded ? "var(--text-primary)" : "var(--text-muted)",
                       borderBottomColor: onRoute || expanded ? "var(--surface-brand)" : "transparent",
                     }}
                   >
+                    {link.isNew && <Box size={14} strokeWidth={2} aria-hidden="true" />}
                     {link.label}
+                    {link.isNew && <NewTag />}
                   </Link>
                   {link.panel && (
                     <button
@@ -366,6 +373,25 @@ export function Header() {
             id="gt-mobile-menu"
             className="grid max-h-[calc(100vh-60px)] gap-3.5 overflow-y-auto border-t border-[var(--border-subtle)] bg-[var(--surface-sunken)] px-3 pb-5 pt-3.5"
           >
+            {/* The Studio has no tab of its own: it is one destination, so it
+                sits above the tabs as a single featured row. */}
+            <Link
+              to={STUDIO_PATH}
+              onClick={closeAll}
+              className="flex items-center gap-3.5 rounded-[var(--radius-card)] border border-[var(--gt-blue-200)] bg-[var(--surface-brand-wash)] p-3 text-left shadow-[var(--shadow-xs)]"
+            >
+              <span aria-hidden="true" className="grid h-[46px] w-[46px] flex-none place-items-center rounded-[var(--radius-sm)] bg-[var(--gt-ink-900)] text-[var(--gt-blue-200)]">
+                <Box size={20} strokeWidth={1.75} />
+              </span>
+              <span className="grid min-w-0 flex-1 gap-0.5">
+                <span className="flex items-center gap-2 text-[11.5px] font-semibold uppercase tracking-[.06em] text-[var(--text-primary)]">
+                  {t("nav.studio")}
+                  <NewTag />
+                </span>
+                <span className="text-xs text-[var(--text-muted)]">{t("nav.studioSub")}</span>
+              </span>
+              <ArrowRight size={16} aria-hidden="true" className="flex-none text-[var(--text-muted)]" />
+            </Link>
             <div role="tablist" aria-label={t("nav.primary")} className="flex gap-4 border-b border-[var(--border-subtle)] px-1">
               {mobileTabs.map((tab) => (
                 <button

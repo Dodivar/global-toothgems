@@ -3,6 +3,7 @@ import { useNavigate } from "react-router-dom";
 import { Package, ShoppingBag } from "lucide-react";
 import { Button } from "../../components/ui/Button";
 import { OrderCard } from "../../components/account/OrderCard";
+import { OrderLineReviewAction } from "../../components/reviews/OrderLineReviewAction";
 import { EmptyPanel, SectionHeader } from "../../components/account/SectionHeader";
 import { useOrders } from "../../lib/orders";
 import { useToast } from "../../lib/toast";
@@ -51,7 +52,13 @@ export function Orders() {
       ) : (
         <ul className="m-0 grid list-none gap-4 p-0">
           {orders.map((order) => (
-            <OrderCard key={order.reference} order={order} lang={lang} onInvoice={invoiceNotShipped} />
+            <OrderCard
+              key={order.reference}
+              order={order}
+              lang={lang}
+              onInvoice={invoiceNotShipped}
+              lineAction={(line) => <OrderLineReviewAction line={line} />}
+            />
           ))}
         </ul>
       )}

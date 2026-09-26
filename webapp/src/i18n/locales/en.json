@@ -30,7 +30,11 @@
     "cartWithCount_one": "Cart, {{count}} item",
     "cartWithCount_other": "Cart, {{count}} items",
     "primary": "Primary navigation",
-    "signIn": "Sign in"
+    "signIn": "Sign in",
+    "studio": "Studio 3D",
+    "new": "New",
+    "studioSub": "Design your own compositions",
+    "studioAria": "Studio 3D, new"
   },
   "common": {
     "notIncludedTitle": "Screen out of scope",
@@ -296,7 +300,9 @@
     "emptyCartTitle": "Your cart is empty",
     "emptySuggestions": "Most popular right now",
     "confirmedScript": "Thank you",
-    "lineTotalAria": "Line total"
+    "lineTotalAria": "Line total",
+    "accountPromptTitle": "Create an account with this order",
+    "accountPromptBody": "Optional — track your delivery and reorder in one click. Your cart stays as it is."
   },
   "auth": {
     "eyebrow": "Account",
@@ -338,7 +344,8 @@
     "toastSignInTitle": "Signed in",
     "toastSignInBody": "Your training space is open.",
     "toastSignUpTitle": "Account created",
-    "toastSignUpBody": "Welcome to Global Toothgems."
+    "toastSignUpBody": "Welcome to Global Toothgems.",
+    "forgotPassword": "Forgot your password?"
   },
   "authAlt": {
     "showPassword": "Show password",
@@ -359,6 +366,300 @@
     "errorEmail": "Enter a valid email address.",
     "errorPassword": "At least {{min}} characters.",
     "errorTerms": "Accept the terms and conditions to continue."
+  },
+  "register": {
+    "eyebrow": "Create account",
+    "title": "Create your Global Toothgems account",
+    "lede": "One account for your orders, your training and your progress. It takes about a minute.",
+    "benefitsToggle": "What your account includes",
+    "cardLabel": "Registration, step {{current}} of {{total}}",
+    "optional": "Optional",
+    "haveAccount": "Already have an account?",
+    "signIn": "Sign in",
+    "signInInstead": "Sign in instead",
+    "forgotPassword": "Forgot your password?",
+    "forgotToastTitle": "Password recovery",
+    "forgotToastBody": "In this prototype, recovery is shown for the design only.",
+    "reassurance": "Free to create · no card required · takes about a minute",
+    "checkingEmail": "Checking this email address…",
+    "showPassword": "Show password",
+    "hidePassword": "Hide password",
+    "clearChoice": "Clear",
+    "summary_one": "{{count}} thing needs your attention",
+    "summary_other": "{{count}} things need your attention",
+    "benefits": {
+      "orders": "Manage and track your orders",
+      "access": "Access your products and training",
+      "progress": "Follow your learning progress",
+      "saved": "Save addresses and favourites",
+      "dashboard": "Your personal dashboard",
+      "community": "Join the artist community when eligible"
+    },
+    "aside": {
+      "label": "What your account includes",
+      "script": "Welcome",
+      "title": "One account for the whole Global Toothgems world"
+    },
+    "progressLabel": "Registration progress",
+    "stepOf": "Step {{current}} of {{total}}",
+    "stepCompleted": "completed",
+    "stepCurrent": "current step",
+    "stepUpcoming": "upcoming",
+    "steps": {
+      "account": "Account",
+      "profile": "Profile",
+      "preferences": "Preferences",
+      "done": "Done"
+    },
+    "actions": {
+      "continue": "Continue",
+      "back": "Back",
+      "create": "Create my account",
+      "creating": "Creating your account…",
+      "checking": "Checking…"
+    },
+    "context": {
+      "purchaseAria": "Your purchase",
+      "trainingAria": "Your training",
+      "purchaseNotice": "You’re creating an account to continue with your purchase.",
+      "trainingNotice": "You’re creating an account to continue with your training.",
+      "purchaseKept": "Your cart is saved. Nothing will be lost while you sign up.",
+      "trainingKept": "Your training is kept. You’ll pick up right where you left off.",
+      "cartSaved": "Saved in your cart",
+      "qty_one": "Qty {{count}}",
+      "qty_other": "Qty {{count}}",
+      "moreItems_one": "+ {{count}} other item in your cart",
+      "moreItems_other": "+ {{count}} other items in your cart",
+      "subtotal": "Subtotal",
+      "trainingReady": "Your training is ready for you.",
+      "purchaseReady": "Your cart is waiting for you."
+    },
+    "account": {
+      "title": "Your sign-in details",
+      "body": "You’ll use these to sign in on any device.",
+      "divider": "or with your email",
+      "googleConnected": "Connected with Google",
+      "googleNoPassword": "No password needed — you’ll sign in with Google.",
+      "useEmailInstead": "Use an email and password instead"
+    },
+    "profile": {
+      "title": "About you",
+      "body": "So we know who we’re talking to — and where to send what you order."
+    },
+    "preferences": {
+      "title": "Make it yours",
+      "body": "Two quick questions to tailor what you see. Skip them if you like — you can change them later."
+    },
+    "fields": {
+      "email": "Email address",
+      "emailPlaceholder": "you@example.com",
+      "emailHint": "We’ll send a link to confirm it’s yours.",
+      "didYouMean": "Did you mean",
+      "password": "Password",
+      "confirmPassword": "Confirm password",
+      "passwordsMatch": "Passwords match",
+      "firstName": "First name",
+      "lastName": "Last name",
+      "country": "Country",
+      "countryPlaceholder": "Select your country",
+      "countryHint": "Helps us show the right delivery options and language.",
+      "phone": "Phone number",
+      "phonePlaceholder": "{{dial}} 612 345 678",
+      "phoneHint": "Handy for delivery updates. Start with your country code, e.g. {{dial}}."
+    },
+    "rulesLabel": "Password requirements",
+    "rules": {
+      "length": "At least {{min}} characters",
+      "number": "One number",
+      "lowercase": "One lowercase letter",
+      "uppercase": "One uppercase letter",
+      "special": "One special character (e.g. ! ? # @)"
+    },
+    "ruleMet": "met",
+    "ruleNotMet": "not met yet",
+    "commonWarning": "This password is too common and easy to guess.",
+    "strengthTip": "Tip: 12 characters or more makes it strong.",
+    "strength": {
+      "label": "Password strength:",
+      "empty": "—",
+      "weak": "Too weak",
+      "fair": "Fair",
+      "good": "Good",
+      "strong": "Strong"
+    },
+    "errors": {
+      "emailRequired": "Enter your email address.",
+      "emailInvalid": "This email looks incomplete — check it follows the format name@example.com.",
+      "emailTaken": "An account already exists with this email. Sign in instead, or use another address.",
+      "emailSame": "That’s the address we already have. Enter a different one.",
+      "passwordRequired": "Choose a password.",
+      "passwordWeak": "Your password needs a little more — tick off every requirement below.",
+      "passwordCommon": "This password is too easy to guess. Try a phrase only you would think of.",
+      "confirmRequired": "Type your password again to confirm it.",
+      "confirmMismatch": "The passwords don’t match yet. Check both fields.",
+      "firstNameRequired": "Enter your first name.",
+      "lastNameRequired": "Enter your last name.",
+      "countryRequired": "Select your country from the list.",
+      "countryInvalid": "Choose a country from the list.",
+      "phoneCharacters": "Use only digits, spaces and a leading + for the phone number.",
+      "phoneLength": "This phone number looks too short or too long. Include your country code.",
+      "termsRequired": "Please accept the Terms of Service and Privacy Policy to create your account."
+    },
+    "persona": {
+      "legend": "Which best describes you?",
+      "artist": "Artist / Professional",
+      "artistBody": "I apply tooth gems for clients",
+      "student": "Student / Beginner",
+      "studentBody": "I’m learning the craft",
+      "customer": "Customer / Enthusiast",
+      "customerBody": "I love wearing tooth gems",
+      "other": "Other",
+      "otherBody": "Something else entirely"
+    },
+    "interest": {
+      "legend": "What are you mainly interested in?",
+      "products": "Tooth gems & products",
+      "training": "Professional training",
+      "community": "Inspiration & community",
+      "all": "All of the above"
+    },
+    "consent": {
+      "legend": "Before we create your account",
+      "termsBefore": "I agree to the",
+      "terms": "Terms of Service",
+      "and": "and the",
+      "privacy": "Privacy Policy",
+      "termsAfter": ".",
+      "required": "required",
+      "marketingLegend": "Optional",
+      "marketing": "Send me new drops, training dates and studio tips by email",
+      "marketingBody": "About once a month. Not required for your account — unsubscribe in one click."
+    },
+    "failure": {
+      "networkTitle": "We couldn’t reach our servers",
+      "networkBody": "Check your connection, then try again. Everything you entered is still here.",
+      "serverTitle": "Your account couldn’t be created",
+      "serverBody": "Something went wrong on our side. Your details are safe in this form — please try again in a moment.",
+      "retry": "Try again"
+    },
+    "google": {
+      "cta": "Continue with Google",
+      "title": "Continue with Google",
+      "description": "Choose the Google account to use with Global Toothgems.",
+      "choose": "Choose an account",
+      "mockNote": "Prototype: a simulated account chooser. Nothing is sent to Google.",
+      "connecting": "Connecting to Google…",
+      "takenTitle": "This Google account is already registered",
+      "takenBody": "{{email}} already has a Global Toothgems account. Sign in to continue.",
+      "otherAccount": "Use another account",
+      "toastTitle": "Connected with Google",
+      "toastBody": "Your email is confirmed. Just a few details left."
+    },
+    "legal": {
+      "summaryNote": "Key points, in plain language. The full legal text will be published with the live site.",
+      "back": "Back to my account",
+      "terms": {
+        "title": "Terms of Service",
+        "points": [
+          "Your account is personal: keep your sign-in details to yourself.",
+          "Orders, training access and certificates are attached to your account.",
+          "Training content is for your own learning and may not be redistributed.",
+          "If anything here differs from the full terms, the full terms apply."
+        ]
+      },
+      "privacy": {
+        "title": "Privacy Policy",
+        "points": [
+          "We use your details to run your account, your orders and your training.",
+          "Marketing emails are only sent if you opt in — and you can opt out at any time.",
+          "You can ask to see, correct or delete your data.",
+          "Payments are handled by our payment provider; we never see your full card number."
+        ]
+      }
+    },
+    "verify": {
+      "title": "Check your inbox",
+      "body": "We’ve sent a verification link to",
+      "instruction": "Open the email and select the link to activate your account.",
+      "sending": "Sending your verification email…",
+      "sent": "Email sent",
+      "resent": "A new link is on its way",
+      "verified": "Email verified — welcome aboard!",
+      "failedTitle": "We couldn’t send the verification email",
+      "failedBody": "This is usually temporary. Try again, or check the address is correct.",
+      "tryAgain": "Try again",
+      "expiredTitle": "This link has expired",
+      "expiredBody": "For your security, verification links expire after a while. Send yourself a fresh one.",
+      "sendNewLink": "Send a new link",
+      "resend": "Resend email",
+      "resending": "Sending…",
+      "resendIn": "Resend in {{time}}",
+      "resendReady": "You can now resend the verification email.",
+      "changeEmail": "Change email address",
+      "changeTitle": "Change email address",
+      "changeBody": "We’ll send a new verification link to the corrected address.",
+      "changeSubmit": "Send link",
+      "mockInbox": "Prototype · simulated inbox",
+      "mailTo": "to {{email}}",
+      "mailNow": "now",
+      "mailSubject": "Confirm your email address",
+      "mailNewLink": "new link",
+      "mailBody": "Hi {{name}}, one last step: confirm this address to activate your Global Toothgems account.",
+      "mailFallbackName": "there",
+      "mailCta": "Verify my email",
+      "verifying": "Verifying…",
+      "mailHint": "Select the button to simulate opening the link.",
+      "mailHintExpired": "Scenario: this first link has expired.",
+      "helpTitle": "Can’t find it?",
+      "helpBody": "It can take a minute. Check your spam or promotions folder. Still nothing? Resend it, or correct your address above."
+    },
+    "welcome": {
+      "script": "Bienvenue",
+      "title": "Welcome to Global Toothgems",
+      "ready": "Your account is ready.",
+      "readyNamed": "Your account is ready, {{name}}.",
+      "checkAccount": "Account created",
+      "checkEmail": "Email address verified",
+      "checkGoogle": "Connected with Google",
+      "checkPersonalised": "Experience tailored to your answers",
+      "checkProfile": "Profile saved",
+      "personalNote": "We’ll tailor suggestions to your answers. Change them anytime in your profile.",
+      "ctaExploreProducts": "Explore products",
+      "ctaDiscoverTraining": "Discover training",
+      "ctaDashboard": "Go to my dashboard",
+      "ctaCart": "Return to cart",
+      "ctaContinueShopping": "Continue shopping",
+      "ctaViewTraining": "View training",
+      "ctaCheckout": "Continue to checkout",
+      "toastCheckoutTitle": "Training added to your account",
+      "toastCheckoutBody": "Prototype: enrolment stands in for payment. Your first lesson is open."
+    },
+    "signedIn": {
+      "title": "You’re already signed in",
+      "body": "You’re signed in as {{email}}. To create another account, sign out first.",
+      "signOut": "Sign out and create an account"
+    },
+    "demo": {
+      "title": "Prototype controls",
+      "body": "Review helpers — not part of the real page. Switch where the visitor came from, or force an outcome to see each state.",
+      "contextLegend": "Visitor came from",
+      "scenarioLegend": "Simulated outcome",
+      "takenLegend": "Already-registered emails (try one):",
+      "otherTips": "Typos like “gmial.com” get a suggestion; “password123” is rejected as too common.",
+      "restart": "Restart the journey",
+      "context": {
+        "general": "Website",
+        "purchase": "Product purchase",
+        "training": "Training course"
+      },
+      "scenario": {
+        "success": "Everything works",
+        "registrationFails": "Registration fails",
+        "networkError": "Network error",
+        "emailFails": "Verification email fails",
+        "linkExpired": "Link expired"
+      }
+    }
   },
   "academy": {
     "eyebrow": "Academy",
@@ -532,7 +833,8 @@
     "finalPoint4": "Artist community included",
     "notFoundTitle": "Training not found",
     "notFoundBody": "This training doesn't exist, or is no longer offered.",
-    "notFoundCta": "See all trainings"
+    "notFoundCta": "See all trainings",
+    "createAccount": "Create an account"
   },
   "lesson": {
     "eyebrow": "Course in progress",
@@ -704,7 +1006,7 @@
     "profileAddressNote": "Used as the default address at checkout.",
     "profilePrefsTitle": "Preferences",
     "profileSecurityTitle": "Security",
-    "profileSecurityBody": "Password and two-factor authentication arrive with real authentication.",
+    "profileSecurityBody": "Change your email or password, download your data or close your account.",
     "profilePhone": "Phone",
     "profileAddress": "Address",
     "profilePostalCode": "Postcode",
@@ -715,13 +1017,16 @@
     "toastProfileTitle": "Profile updated",
     "toastProfileBody": "Your details have been changed for this session.",
     "detailsNote": "Mockup: these details are not stored and the session ends when the page reloads.",
-    "navLoyalty": "Loyalty"
+    "navLoyalty": "Loyalty",
+    "navSecurity": "Security & privacy",
+    "profileEmailNote": "Your sign-in email is changed with a verification step.",
+    "profileEmailLink": "Change it in Security & privacy",
+    "profileSecurityCta": "Security & privacy"
   },
   "footer": {
     "blurb": "Professional gems, tools and training. Shipped across Europe from Lyon.",
     "colShop": "Shop",
     "colAcademy": "Academy",
-    "colHelp": "Help",
     "shopItems": [
       "Gems",
       "Tools",
@@ -736,13 +1041,16 @@
       "Business studio",
       "Certification"
     ],
-    "helpItems": [
-      "Shipping and returns",
-      "Application FAQ",
-      "Contact",
-      "Find an artist"
-    ],
-    "copyright": "© 2026 Global Toothgems · Prices incl. VAT"
+    "copyright": "© 2026 Global Toothgems · Prices incl. VAT",
+    "colService": "Customer service",
+    "colLegal": "Legal",
+    "colCompany": "Company",
+    "company": {
+      "about": "About Global Toothgems",
+      "training": "Professional training",
+      "pro": "Professional inquiries",
+      "findArtist": "Find an artist"
+    }
   },
   "toasts": {
     "outOfScopeTitle": "Screen out of scope"
@@ -933,6 +1241,7 @@
       "dashboard": "Dashboard",
       "products": "Products",
       "categories": "Categories",
+      "promotions": "Promotions",
       "orders": "Orders",
       "customers": "Customers",
       "training": "Training",
@@ -1219,6 +1528,47 @@
       "backToList": "Back to products",
       "archivedNotice": "This product is archived: it does not appear in the storefront.",
       "archivedLink": "View archived products"
+    },
+    "recommendations": {
+      "title": "Recommendations",
+      "editProduct": "Edit product",
+      "summary": "Goes with: {{complementary}} · Alternatives: {{similar}}",
+      "intro": "Your picks come first, in list order. The storefront shows {{count}}: the remaining places, and those of an unavailable product, are filled automatically.",
+      "notOnSale": "This product is not on sale: its recommendations are saved, and will show once it is published.",
+      "complementaryTitle": "Goes with",
+      "complementaryDescription": "Shown on the product page (“Complete the kit”) and in the cart suggestions. Think aftercare, tools and consumables.",
+      "similarTitle": "Alternatives",
+      "similarDescription": "Products that can replace this one: another shape, another finish. Not shown on the storefront yet.",
+      "previewTitle": "Storefront preview",
+      "autoSlot": "Automatic",
+      "autoHint_one": "{{count}} place filled by the storefront: frequently bought together or same category, then popular products.",
+      "autoHint_other": "{{count}} places filled by the storefront: frequently bought together or same category, then popular products.",
+      "empty": "No product picked. The storefront fills the block by itself.",
+      "listLabel": "{{title}}: {{count}} product(s), {{shown}} shown",
+      "position": "Position {{position}}:",
+      "placement": {
+        "shown": "Shown",
+        "reserve": "Standby",
+        "draft": "Draft — not shown",
+        "archived": "Archived — not shown",
+        "soldOut": "Sold out — skipped"
+      },
+      "moveUp": "Move {{name}} up",
+      "moveDown": "Move {{name}} down",
+      "remove": "Remove {{name}}",
+      "add": "Add a product",
+      "addNamed": "Add",
+      "search": "Search for a product to add",
+      "searchPlaceholder": "Name, SKU or category",
+      "closeSearch": "Close search",
+      "noResult": "No product matches “{{query}}”",
+      "noCandidate": "Every available product is already in the list.",
+      "moved": "{{name}} moved to position {{position}} of {{total}}",
+      "removed": "{{name}} removed from the list",
+      "added": "{{name}} added at position {{position}}",
+      "discard": "Discard changes",
+      "savedTitle": "Recommendations saved",
+      "savedBody": "{{name}}’s recommendations are up to date."
     },
     "categories": {
       "title": "Categories",
@@ -1922,6 +2272,519 @@
       "toastNoteDeletedTitle": "Note deleted",
       "toastNoteDeletedBody": "The internal note was removed."
     },
+    "users": {
+      "title": "Users",
+      "description": "Manage who can access the administration panel and what each person is allowed to do.",
+      "addUser": "Add user",
+      "addUserShort": "Add",
+      "you": "You",
+      "kpiLabel": "Users overview",
+      "kpiTotal": "Total users",
+      "kpiActive": "Active users",
+      "kpiManagers": "Managers",
+      "kpiAdministrators": "Administrators",
+      "kpiInvited_one": "{{count}} invitation pending",
+      "kpiInvited_other": "{{count}} invitations pending",
+      "kpiShare": "{{percent}}% of the team",
+      "kpiAdminHint": "Full access",
+      "kpiFilterHint": "Press to filter the list.",
+      "kpiActiveHint": "Active filter. Press to clear it.",
+      "searchLabel": "Search users by name or email",
+      "searchPlaceholder": "Search by name or email…",
+      "clearSearch": "Clear search",
+      "filterRole": "Role",
+      "filterStatus": "Status",
+      "filterActivity": "Last activity",
+      "filterAllRoles": "All roles",
+      "filterAllStatuses": "All statuses",
+      "sortLabel": "Sort",
+      "sortHint": "Change sort order",
+      "sort": {
+        "nameAsc": "Name A–Z",
+        "nameDesc": "Name Z–A",
+        "activityDesc": "Most recently active",
+        "activityAsc": "Least recently active",
+        "createdDesc": "Newest accounts",
+        "createdAsc": "Oldest accounts",
+        "roleDesc": "Most access first",
+        "roleAsc": "Least access first"
+      },
+      "activityPreset": {
+        "all": "Any time",
+        "last24h": "Active in the last 24 h",
+        "last7": "Active in the last 7 days",
+        "last30": "Active in the last 30 days",
+        "inactive30": "Inactive for 30+ days",
+        "never": "Never signed in"
+      },
+      "chipSearch": "Search: “{{term}}”",
+      "chipRemove": "Remove this filter",
+      "clearFilters": "Clear filters",
+      "resultCount_one": "{{count}} user",
+      "resultCount_other": "{{count}} users",
+      "tableCaption": "Administration users, with role, status and activity",
+      "colUser": "User",
+      "colEmail": "Email",
+      "colRole": "Role",
+      "colStatus": "Status",
+      "colLastActivity": "Last activity",
+      "colCreated": "Created",
+      "colActions": "Actions",
+      "rowActionsLabel": "Actions for {{name}}",
+      "actionView": "View profile",
+      "viewProfileOf": "View {{name}}'s profile",
+      "editUser": "Edit user",
+      "changeRole": "Change role",
+      "suspend": "Suspend",
+      "reactivate": "Reactivate",
+      "resendInvitation": "Resend invitation",
+      "deleteUser": "Delete user",
+      "neverActive": "Never",
+      "awaitingAcceptance": "Invitation not accepted yet",
+      "loading": "Loading users…",
+      "paginationRange": "Showing {{from}}–{{to}} of {{total}} users",
+      "paginationLabel": "User list pages",
+      "emptyTitle": "No users yet",
+      "emptyBody": "Invite the first member of your team to give them access to the administration panel.",
+      "emptySearchTitle": "No user matches “{{term}}”",
+      "emptyFilterTitle": "No users match these filters",
+      "emptyFilterBody": "Try another spelling, or remove a filter to widen the list.",
+      "role": {
+        "readOnly": "Read-only",
+        "manager": "Manager",
+        "administrator": "Administrator"
+      },
+      "roleDescription": {
+        "readOnly": "Can view administrative information without making changes.",
+        "manager": "Can manage operational content and selected platform resources.",
+        "administrator": "Has full access to administrative features and permissions."
+      },
+      "status": {
+        "active": "Active",
+        "invited": "Invited",
+        "suspended": "Suspended"
+      },
+      "statusHint": {
+        "active": "The user can sign in with the access their role gives them.",
+        "invited": "An invitation email is sent. Access starts once the user accepts it.",
+        "suspended": "The user cannot sign in. Their role and history are kept."
+      },
+      "team": {
+        "leadership": "Leadership",
+        "operations": "Operations",
+        "academy": "Academy",
+        "customerCare": "Customer care",
+        "marketing": "Marketing",
+        "finance": "Finance"
+      },
+      "permission": {
+        "viewDashboard": "View dashboard",
+        "viewUsers": "View users",
+        "viewStatistics": "View statistics",
+        "manageUsers": "Manage users",
+        "manageProducts": "Manage products",
+        "manageTraining": "Manage training",
+        "manageSettings": "Manage settings"
+      },
+      "allowed": "Allowed",
+      "notAllowed": "Not allowed",
+      "matrixCaption": "Permissions granted by each role",
+      "matrixPermission": "Permission",
+      "gains": "Gains access to",
+      "loses": "Loses access to",
+      "rolesTitle": "Roles & permissions",
+      "rolesBody": "Every user has exactly one role. Choose the smallest role that lets a person do their job — access can always be raised later.",
+      "roleHolders_one": "{{count}} user",
+      "roleHolders_other": "{{count}} users",
+      "compareRoles": "Compare roles",
+      "profileTitle": "User profile",
+      "closeProfile": "Close profile",
+      "sectionAccount": "Account information",
+      "sectionPermissions": "Permissions",
+      "sectionActivity": "Recent activity",
+      "factCreated": "Created",
+      "factLastActive": "Last activity",
+      "factInvitedBy": "Invited by",
+      "factTeam": "Team",
+      "factTwoFactor": "Two-step verification",
+      "factId": "User ID",
+      "founderAccount": "Founding account",
+      "twoFactorOn": "Enabled",
+      "twoFactorOff": "Not enabled",
+      "invitedBanner": "Invitation sent on {{date}} and not accepted yet.",
+      "suspendedBanner": "This account is suspended. The user cannot sign in until it is reactivated.",
+      "guard": {
+        "self": "You can't change the role or status of your own account, or delete it. Ask another administrator.",
+        "lastAdmin": "This is the only active administrator. Promote someone else before changing this account."
+      },
+      "addTitle": "Add user",
+      "addDescription": "Give a team member access to the administration panel.",
+      "editTitle": "Edit user",
+      "editDescription": "Update {{name}}'s details and access.",
+      "cancelEdit": "Cancel editing",
+      "readOnlyInfo": "Account information · not editable",
+      "readOnlyInfoHint": "These details are recorded by the platform and cannot be changed by hand.",
+      "sectionIdentity": "Identity",
+      "sectionAccess": "Access",
+      "fieldFirstName": "First name",
+      "fieldLastName": "Last name",
+      "fieldEmail": "Email",
+      "fieldJobTitle": "Job title",
+      "fieldTeam": "Team",
+      "fieldRole": "Role",
+      "fieldStatus": "Account status",
+      "optional": "Optional",
+      "emailPlaceholder": "name@globaltoothgems.com",
+      "emailHintCreate": "The invitation and sign-in link are sent to this address.",
+      "emailHintEdit": "Changing it signs the user out of every session.",
+      "roleWillConfirm": "You'll be asked to confirm the role change when you save.",
+      "errorFirstName": "Enter a first name.",
+      "errorLastName": "Enter a last name.",
+      "errorEmailRequired": "Enter an email address.",
+      "errorEmailInvalid": "Enter a valid email address, like name@example.com.",
+      "errorEmailTaken": "This email address is already used by another user.",
+      "errorSummary_one": "{{count}} field needs your attention.",
+      "errorSummary_other": "{{count}} fields need your attention.",
+      "createUser": "Create user",
+      "saveChanges": "Save changes",
+      "saving": "Saving…",
+      "roleDialogTitle": "Change user role?",
+      "roleDialogChoose": "Choose the new role for {{name}}. You'll see what changes before confirming.",
+      "roleDialogBody": "You are about to change {{name}}'s permissions from {{from}} to {{to}}.",
+      "roleDialogLegend": "New role",
+      "roleDialogConfirm": "Confirm change",
+      "roleConsequence": {
+        "administrator_up": "This will give the user access to all administrative features, including platform settings and every other user's role.",
+        "manager_up": "The user will be able to create and edit products, training content and users — but not platform settings.",
+        "manager_down": "The user will keep managing operational content, but will lose access to platform settings.",
+        "readOnly_down": "The user will still see the dashboard, users and statistics, but will no longer be able to change anything."
+      },
+      "suspendTitle": "Suspend {{name}}?",
+      "suspendBody": "They will be signed out right away and won't be able to access the administration panel until the account is reactivated.",
+      "suspendNote": "Their role, profile and history are kept.",
+      "suspendConfirm": "Suspend account",
+      "deleteTitle": "Delete user?",
+      "deleteBody": "This action will permanently remove {{name}} from the administration panel. It cannot be undone.",
+      "deleteAlternative": "To remove access for now, suspend the account instead — it can be reactivated later.",
+      "deleteConfirm": "Delete user",
+      "settingsArea": {
+        "shipping": "shipping"
+      },
+      "activity": {
+        "signedIn": "Signed in",
+        "viewedDashboard": "Viewed the dashboard",
+        "viewedStatistics": "Viewed statistics",
+        "viewedOrders": "Viewed orders",
+        "viewedCustomers": "Viewed customers",
+        "updatedOrder": "Updated order {{reference}}",
+        "updatedStock": "Updated stock for {{product}}",
+        "updatedProduct": "Edited product “{{product}}”",
+        "publishedLesson": "Published lesson “{{lesson}}”",
+        "updatedCourse": "Edited course “{{course}}”",
+        "repliedCustomer": "Replied to {{name}}",
+        "exportedOrders": "Exported orders",
+        "changedSettings": "Changed {{area}} settings",
+        "invitedUser": "Invited {{name}}",
+        "uploadedMedia": "Uploaded {{count}} images",
+        "accountCreated": "Account created by {{by}}",
+        "invitationSent": "Invited by {{by}}",
+        "invitationResent": "Invitation resent by {{by}}",
+        "profileUpdated": "Profile updated by {{by}}",
+        "roleChanged": "Role changed from {{from}} to {{to}} by {{by}}",
+        "activated": "Account activated by {{by}}",
+        "suspended": "Account suspended by {{by}}",
+        "reactivated": "Account reactivated by {{by}}"
+      },
+      "toastCreatedTitle": "User created successfully",
+      "toastCreatedInvited": "An invitation was sent to {{email}}.",
+      "toastCreatedActive": "{{name}} can now sign in as {{role}}.",
+      "toastCreateErrorTitle": "Couldn't create the user",
+      "toastSavedTitle": "Changes saved",
+      "toastSavedBody": "{{name}}'s profile was updated.",
+      "toastSaveErrorTitle": "Couldn't save the changes",
+      "toastRoleTitle": "Role updated",
+      "toastRoleBody": "{{name}} is now {{role}}.",
+      "toastRoleErrorTitle": "Couldn't change the role",
+      "toastSuspendedTitle": "Account suspended",
+      "toastSuspendedBody": "{{name}} can no longer sign in.",
+      "toastReactivatedTitle": "Account reactivated",
+      "toastReactivatedBody": "{{name}} can sign in again.",
+      "toastStatusErrorTitle": "Couldn't update the account",
+      "toastResentTitle": "Invitation resent",
+      "toastResentBody": "A new invitation was sent to {{email}}.",
+      "toastDeletedTitle": "User deleted",
+      "toastDeletedBody": "{{name}} was removed from the administration panel.",
+      "toastDeleteErrorTitle": "Couldn't delete the user",
+      "toastError": {
+        "emailTaken": "This email address is already used by another user.",
+        "notFound": "This user no longer exists. The list has been refreshed."
+      }
+    },
+    "stats": {
+      "title": "Statistics",
+      "description": "Monitor sales, customers, products and training performance.",
+      "kpiLabel": "Key figures for the period",
+      "loading": "Loading statistics…",
+      "rangeCaption": "{{from}} to {{to}}",
+      "compare": "Compare with previous period",
+      "updatedNow": "Updated just now",
+      "updatedAgo_one": "Updated {{count}} minute ago",
+      "updatedAgo_other": "Updated {{count}} minutes ago",
+      "relativeShare": "Relative weight: {{share}}%",
+      "disclaimer": "Sample figures: this screen is not connected to any real data source.",
+      "range": {
+        "label": "Date range",
+        "today": "Today",
+        "7d": "Last 7 days",
+        "30d": "Last 30 days",
+        "90d": "Last 90 days",
+        "year": "This year",
+        "custom": "Custom range",
+        "from": "From",
+        "to": "To"
+      },
+      "actions": {
+        "refresh": "Refresh",
+        "exportCsv": "Export CSV",
+        "exportPdf": "Export PDF",
+        "more": "More actions",
+        "showLoading": "Show the loading state",
+        "showError": "Show the error state"
+      },
+      "toasts": {
+        "csvTitle": "CSV export prepared",
+        "pdfTitle": "PDF export prepared",
+        "exportBody": "Mockup: no file is actually generated.",
+        "refreshTitle": "Statistics refreshed",
+        "refreshBody": "The figures on screen are current as of now."
+      },
+      "filters": {
+        "label": "Date range and filters",
+        "category": "Category",
+        "product": "Product",
+        "course": "Course",
+        "customerType": "Customer type",
+        "country": "Country",
+        "orderStatus": "Order status",
+        "allCategories": "All categories",
+        "allProducts": "All products",
+        "allCourses": "All courses",
+        "allCustomers": "All customers",
+        "allCountries": "All countries",
+        "allStatuses": "All statuses",
+        "active_one": "{{count}} filter active",
+        "active_other": "{{count}} filters active",
+        "reset": "Reset filters"
+      },
+      "kpi": {
+        "explain": "What “{{name}}” means",
+        "versus": "vs previous period",
+        "versusValue": "vs {{value}} last period",
+        "revenue": {
+          "label": "Total revenue",
+          "hint": "Everything taken in the period, after discounts and excluding shipping."
+        },
+        "orders": {
+          "label": "Orders",
+          "hint": "Orders placed during the period, whatever their status."
+        },
+        "aov": {
+          "label": "Average order value",
+          "hint": "Revenue divided by the number of orders in the period."
+        },
+        "units": {
+          "label": "Products sold",
+          "hint": "Items sold across every reference in the catalogue."
+        },
+        "newCustomers": {
+          "label": "New customers",
+          "hint": "Customers whose very first order falls inside the period."
+        },
+        "returningCustomers": {
+          "label": "Returning customers",
+          "hint": "Orders placed by customers the shop already knew."
+        },
+        "enrollments": {
+          "label": "Course enrolments",
+          "hint": "Access opened in the period, both purchased and included with a professional kit."
+        },
+        "completionRate": {
+          "label": "Completion rate",
+          "hint": "Share of enrolments carried through to the certificate."
+        }
+      },
+      "metric": {
+        "revenue": "Revenue",
+        "orders": "Orders"
+      },
+      "chart": {
+        "title": "Revenue and orders",
+        "metricLabel": "Data shown",
+        "metric": {
+          "revenue": "Revenue",
+          "orders": "Orders",
+          "both": "Both"
+        },
+        "current": "Selected period",
+        "previous": "Previous period",
+        "weekOf": "Week of {{date}}",
+        "date": "Date",
+        "hint": "Hover the curve, or step through the points with the arrow keys.",
+        "point": "{{date}}: {{revenue}}, {{orders}} orders.",
+        "range": "{{from}} to {{to}}.",
+        "summary": {
+          "revenue": "Revenue over time: {{total}} in total, from {{first}} to {{last}}.",
+          "orders": "Orders over time: {{total}} in total, from {{first}} to {{last}}."
+        },
+        "tableToggle": "Show the data as a table",
+        "tableCaption": "Revenue and orders, point by point"
+      },
+      "breakdown": {
+        "title": "Revenue breakdown",
+        "description": "Where the money came from in the selected period.",
+        "total": "Period total",
+        "category": "Category",
+        "share": "Share",
+        "leader": "Top source",
+        "caption": "Revenue and share per category"
+      },
+      "category": {
+        "jewelry": "Dental jewelry",
+        "aftercare": "Aftercare",
+        "kits": "Kits & tools",
+        "training": "Training",
+        "other": "Other"
+      },
+      "products": {
+        "title": "Top products",
+        "description": "The products carrying the period, and where their stock stands.",
+        "caption": "Products ranked by performance",
+        "rank": "Rank",
+        "product": "Product",
+        "units": "Units",
+        "revenue": "Revenue",
+        "orders": "Orders",
+        "conversion": "Conversion",
+        "change": "Change",
+        "stock": "Stock",
+        "sortBy": "Sort by",
+        "emptyTitle": "No products in this selection",
+        "emptyBody": "No sales match the active filters. Widen the period or remove a filter."
+      },
+      "customers": {
+        "title": "Customers",
+        "description": "Who is buying, and how often.",
+        "new": "New customers",
+        "returning": "Returning customers",
+        "splitLabel": "Split between new and returning customers:",
+        "total": "Customer base",
+        "totalHint": "Since opening",
+        "repeatRate": "Repeat purchase rate",
+        "repeatHint": "Orders from known customers",
+        "lifetimeValue": "Customer lifetime value",
+        "lifetimeHint": "Lifetime average",
+        "lifetimeOrders": "Orders per customer",
+        "ordersHint": "Lifetime average",
+        "growthTitle": "Customer base growth",
+        "growthSummary": "Customer base growth: from {{from}} to {{to}} customers across the period."
+      },
+      "training": {
+        "title": "Training",
+        "description": "The school, read with the same measures as the shop.",
+        "enrollments": "Enrolments",
+        "active": "Active learners",
+        "completed": "Courses completed",
+        "completionRate": "Completion rate",
+        "completionShort": "Completion",
+        "averageScore": "Average score",
+        "scoreShort": "Score",
+        "timeToComplete": "Average time",
+        "days_one": "{{count}} day",
+        "days_other": "{{count}} days",
+        "rankingTitle": "Most popular courses",
+        "course": "Course",
+        "caption": "Courses ranked by enrolments",
+        "emptyTitle": "No enrolments yet",
+        "emptyBody": "No enrolment matches this period or these filters."
+      },
+      "insights": {
+        "title": "Worth noting",
+        "description": "What the period's figures add up to.",
+        "emptyTitle": "Nothing to flag",
+        "emptyBody": "The selection is too narrow to read a trend from.",
+        "topProduct": "{{name}} sales increased by {{change}} this period.",
+        "returning": "Returning customers account for {{share}} of orders.",
+        "bundle": "{{share}} of jewelry orders also include an aftercare product.",
+        "kit": "{{name}} generated {{revenue}} this period.",
+        "courses": "Course enrolments are up {{change}} compared with the previous period.",
+        "slowing": "{{name}} sales are down {{change}} — worth watching next period."
+      },
+      "orders": {
+        "title": "Orders",
+        "description": "How the order book behaved during the period.",
+        "splitLabel": "Orders by status:",
+        "processing": "Average processing",
+        "hours_one": "{{count}} hour",
+        "hours_other": "{{count}} hours",
+        "refundRate": "Refund rate",
+        "cancelRate": "Cancellation rate"
+      },
+      "orderStatus": {
+        "completed": "Completed",
+        "pending": "Pending",
+        "cancelled": "Cancelled",
+        "refunded": "Refunded"
+      },
+      "geo": {
+        "title": "Sales by location",
+        "description": "The markets carrying the period.",
+        "country": "Country",
+        "customers": "Customers",
+        "caption": "Revenue, orders and customers per country"
+      },
+      "country": {
+        "fr": "France",
+        "be": "Belgium",
+        "ch": "Switzerland",
+        "de": "Germany",
+        "uk": "United Kingdom",
+        "other": "Other countries"
+      },
+      "cross": {
+        "title": "Shop and school",
+        "description": "What the two halves of the platform give each other.",
+        "benchmark": "Shop average: {{value}}",
+        "aftercareFollowUp": {
+          "label": "Aftercare bought after jewelry",
+          "hint": "Customers who come back for aftercare after a first gem."
+        },
+        "trainedBuyers": {
+          "label": "Customers who became learners",
+          "hint": "Buyers who go on to enrol in a course."
+        },
+        "graduateAov": {
+          "label": "Average order value, graduates",
+          "hint": "Average order value of customers who completed a course."
+        },
+        "graduateRepeat": {
+          "label": "Repeat rate, trained artists",
+          "hint": "Repeat purchase rate of customers who completed a course."
+        }
+      },
+      "panel": {
+        "collapse": "Collapse",
+        "expand": "Expand"
+      },
+      "empty": {
+        "title": "Not enough data yet",
+        "body": "Nothing matches this period and these filters. Widen the period or remove a filter."
+      },
+      "error": {
+        "title": "Statistics unavailable",
+        "body": "The figures could not be fetched. Nothing is lost — try again in a moment.",
+        "retry": "Try again"
+      }
+    },
     "training": {
       "list": {
         "title": "Training",
@@ -2611,5 +3474,568 @@
     "timeDays_other": "{{count}} d ago",
     "timeWeeks_one": "{{count}} w ago",
     "timeWeeks_other": "{{count}} w ago"
+  },
+  "errors": {
+    "preview": {
+      "label": "Prototype · system pages",
+      "notFound": "404",
+      "serverError": "500",
+      "maintenance": "Maintenance"
+    },
+    "actions": {
+      "home": "Back to homepage"
+    },
+    "notFound": {
+      "documentTitle": "Page not found",
+      "status": "404 · Page not found",
+      "title": "Oops, this page took a little detour.",
+      "body": "The page you’re looking for has moved, been renamed or never existed. Nothing is broken — let’s get you back to something that sparkles.",
+      "requested": "You were looking for:",
+      "shop": "Explore the shop",
+      "back": "Go back"
+    },
+    "serverError": {
+      "documentTitle": "Something went a little off",
+      "status": "500 · Temporary issue",
+      "title": "Something went a little off.",
+      "body": "Our site hit a temporary snag on our side. The team is already on it, and things should be back in place shortly.",
+      "note": "Nothing you did caused this, and there’s nothing you need to fix.",
+      "retry": "Try again",
+      "retrying": "Trying again…",
+      "pause": "Brief pause",
+      "stillOff": "Not quite yet — we’re still on it. Try again in a moment.",
+      "stillOffAgain": "Still being sorted out. Feel free to head back to the homepage in the meantime."
+    },
+    "maintenance": {
+      "documentTitle": "Back shortly",
+      "status": "Maintenance mode",
+      "title": "We’ll be back shortly.",
+      "body": "Global Toothgems is taking a short pause for planned improvements, so the shop, the Academy and your account work even better when we return.",
+      "note": "No action needed on your side — simply come back a little later.",
+      "refresh": "Refresh page",
+      "refreshing": "Checking…",
+      "chip": "Work in progress",
+      "statusTitle": "We’re making things better behind the scenes.",
+      "progressLabel": "Maintenance in progress",
+      "checked": "Checked at {{time}} — still polishing. Thank you for your patience.",
+      "logoAlt": "Global Toothgems — homepage",
+      "copyright": "© 2026 Global Toothgems"
+    }
+  },
+  "security": {
+    "mockInbox": "Prototype · your inbox",
+    "mailTo": "to {{email}}",
+    "mailNow": "Just now",
+    "backToLogin": "Back to login",
+    "backToAccount": "Back to my account",
+    "resend": "Resend email",
+    "resending": "Resending…",
+    "sending": "Sending…",
+    "resendIn": "Resend in {{time}}",
+    "tryAgain": "Try again",
+    "fields": {
+      "newPassword": "New password",
+      "confirmNewPassword": "Confirm new password",
+      "currentPassword": "Current password",
+      "newEmail": "New email address",
+      "confirmNewEmail": "Confirm new email address"
+    },
+    "errors": {
+      "serverTitle": "Something went wrong on our side",
+      "newPasswordRequired": "Choose a new password.",
+      "mismatch": "The passwords don’t match yet. Check both fields.",
+      "currentPasswordRequired": "Enter your current password.",
+      "wrongPassword": "That’s not your current password. Check it and try again.",
+      "passwordSame": "Your new password must be different from the current one.",
+      "newEmailRequired": "Enter your new email address.",
+      "confirmEmailRequired": "Type the new address again to confirm it.",
+      "emailMismatch": "The two addresses don’t match. Check for a typo.",
+      "emailTaken": "This address is already linked to another Global Toothgems account."
+    },
+    "demo": {
+      "outcomeLegend": "Next server response",
+      "outcome": {
+        "success": "Success",
+        "serverError": "Server error"
+      },
+      "resetLinkLegend": "Reset link in the email",
+      "resetLink": {
+        "valid": "Valid link",
+        "expired": "Expired link",
+        "invalid": "Invalid link"
+      },
+      "verifyLegend": "Verification link",
+      "verify": {
+        "verified": "Valid link",
+        "expired": "Expired link",
+        "invalid": "Invalid link",
+        "alreadyVerified": "Already verified"
+      },
+      "sendLegend": "Sending a new email"
+    },
+    "forgot": {
+      "eyebrow": "Password recovery",
+      "title": "Forgot your password?",
+      "body": "It happens to everyone. Enter the email you use for Global Toothgems and we’ll send you a link to choose a new one.",
+      "emailHint": "The address you sign in with.",
+      "submit": "Send reset link",
+      "sending": "Sending link…",
+      "failedBody": "We couldn’t send the email just now. Your details are still here — please try again in a moment.",
+      "noAccount": "No account yet?",
+      "createAccount": "Create one",
+      "sentTitle": "Check your inbox",
+      "sentTo": "Sent to",
+      "sentBody": "If an account exists for this address, a password reset link is on its way to:",
+      "sentSpam": "It usually arrives within a minute. Nothing yet? Have a look in your spam or promotions folder.",
+      "resentTitle": "A new link is on its way",
+      "resentBody": "Use the most recent email — earlier links no longer work.",
+      "resendFailed": "We couldn’t resend the email. Please try again in a moment.",
+      "useOther": "Use another email",
+      "noteTitle": "For your security",
+      "noteBody": "The link works once and expires after {{minutes}} minutes. If you didn’t ask for it, you can ignore the email — your password stays the same.",
+      "mailSubject": "Reset your Global Toothgems password",
+      "mailBody": "Hello! We received a request to reset your password. Click the button below to choose a new one.",
+      "mailCta": "Choose a new password",
+      "mailHint": "This link expires in {{minutes}} minutes and can be used once.",
+      "demoBody": "Choose how the server answers the next request, and which kind of link the email carries — then open it from the mock inbox."
+    },
+    "reset": {
+      "eyebrow": "New password",
+      "title": "Choose a new password",
+      "body": "Pick something strong that you don’t use anywhere else. You’ll use it to sign in from now on.",
+      "checking": "Checking your link…",
+      "submit": "Reset password",
+      "saving": "Saving your password…",
+      "failedBody": "Your new password couldn’t be saved. Nothing has changed yet — please try again.",
+      "expiredTitle": "This link has expired",
+      "expiredBody": "For your security, reset links only work for {{minutes}} minutes. No harm done — request a new one and you’ll be back in in no time.",
+      "invalidTitle": "This link doesn’t work",
+      "invalidBody": "It may be incomplete, or it has already been used. Request a new link and open the most recent email.",
+      "requestNew": "Request a new link",
+      "doneTitle": "Your password has been changed",
+      "doneBody": "All set. Your account is now protected by your new password — use it the next time you sign in.",
+      "logIn": "Log in",
+      "tipTitle": "A small tip",
+      "tipBody": "A password manager can remember a unique password for every site. And if you didn’t make this change, contact us straight away.",
+      "demoBody": "Switch the link state to see the expired and invalid screens, or make the next save fail."
+    },
+    "verify": {
+      "verifyingTitle": "Verifying your email",
+      "verifyingBody": "One moment while we confirm your address.",
+      "verifyingStatus": "Checking your verification link…",
+      "script": "Welcome",
+      "successTitle": "Email verified successfully",
+      "successBody": "Thank you! Your address is confirmed and your account is fully ready — courses, orders and community included.",
+      "successChangeBody": "Your new address {{email}} is confirmed. Use it the next time you sign in.",
+      "continue": "Continue to my account",
+      "home": "Back to the homepage",
+      "alreadyTitle": "Your email is already verified",
+      "alreadyBody": "Good news — there’s nothing left to do. This address was confirmed earlier and your account is ready to use.",
+      "expiredTitle": "This verification link has expired",
+      "expiredBody": "Verification links stay valid for {{hours}} hours. We can send you a fresh one right away.",
+      "invalidTitle": "This verification link isn’t valid",
+      "invalidBody": "It may be incomplete or already used. Send yourself a new link and open the most recent email.",
+      "sendNew": "Send a new verification email",
+      "sentTitle": "A new link is on its way",
+      "sentBody": "Check your inbox (and spam folder). Only the newest link will work.",
+      "sendFailed": "We couldn’t send a new email just now. Please try again in a moment.",
+      "yourAddress": "your address",
+      "toastSentTitle": "Verification email sent",
+      "toastSentBody": "Open the newest email to confirm your address.",
+      "mailSubject": "Confirm your email address",
+      "mailBody": "Here’s your new verification link. Click below to confirm your address.",
+      "mailCta": "Verify my email",
+      "mailHint": "This link is valid for {{hours}} hours.",
+      "demoBody": "Choose what the verification link does. The expired and invalid states let you request a new email."
+    },
+    "page": {
+      "title": "Security & privacy",
+      "body": "Keep your sign-in details up to date and stay in control of your personal data.",
+      "signInGroup": "Sign-in",
+      "privacyGroup": "Your data",
+      "demoBody": "Every action on this page is simulated. Pick how the server answers, and use the shortcuts to move a data request along.",
+      "demoPassword": "Current password",
+      "demoPasswordBody": "the demo account’s password. Anything else is treated as incorrect.",
+      "demoExport": "Data request",
+      "demoFinishExport": "Finish processing now",
+      "demoExpireExport": "Expire the download"
+    },
+    "overview": {
+      "okTitle": "Your account is well protected",
+      "okBody": "Your email is verified and your password is set. Nothing needs your attention.",
+      "attentionTitle": "One thing to finish",
+      "attentionEmail": "Confirm your new email address to complete the change.",
+      "attentionExport": "Your personal data is ready to download.",
+      "goTo": "Go to this section",
+      "email": "Email",
+      "emailVerified": "Verified",
+      "emailVerifiedDetail": "You sign in with a confirmed address.",
+      "emailPending": "Change pending",
+      "emailPendingDetail": "Waiting for {{email}} to be confirmed.",
+      "password": "Password",
+      "passwordSet": "Set",
+      "passwordChanged": "Last changed on {{date}}.",
+      "passwordSinceSignUp": "Unchanged since you created your account.",
+      "data": "Personal data",
+      "exportNone": "No request",
+      "exportNoneDetail": "You can request a copy at any time.",
+      "exportProcessing": "Being prepared",
+      "exportProcessingDetail": "We’ll email you when it’s ready.",
+      "exportReady": "Ready",
+      "exportReadyDetail": "Download available until {{date}}.",
+      "exportExpired": "Link expired",
+      "exportExpiredDetail": "Request a new copy whenever you like."
+    },
+    "email": {
+      "title": "Email address",
+      "body": "The address you sign in with and where we send order and course updates.",
+      "current": "Current email",
+      "pending": "New email",
+      "verified": "Verified",
+      "awaiting": "Awaiting verification",
+      "pendingBadge": "Change pending",
+      "open": "Change email",
+      "submit": "Change email",
+      "saving": "Sending verification…",
+      "passwordHint": "For your security, we ask for your password before changing how you sign in.",
+      "match": "The addresses match.",
+      "failedBody": "We couldn’t start the change. Nothing has been modified — please try again.",
+      "sentTitle": "Check your new inbox",
+      "pendingTitle": "Waiting for your confirmation",
+      "sentBody": "We sent a verification link to {{email}}. Until you open it, keep signing in with {{current}}. The link is valid for {{hours}} hours.",
+      "resendFailed": "We couldn’t resend the email. Please try again in a moment.",
+      "cancelChange": "Cancel change",
+      "toastTitle": "Verification email sent",
+      "toastBody": "Confirm your new address to finish the change.",
+      "resentTitle": "Email sent again",
+      "resentBody": "A new link is on its way to {{email}}.",
+      "cancelledTitle": "Change cancelled",
+      "cancelledBody": "Your email address stays the same.",
+      "mailSubject": "Confirm your new email address",
+      "mailBody": "You asked to use {{email}} for your Global Toothgems account. Confirm it to finish the change.",
+      "mailCta": "Confirm this address"
+    },
+    "password": {
+      "title": "Password",
+      "body": "Use a strong password that’s unique to Global Toothgems.",
+      "lastChanged": "Last changed",
+      "sinceSignUp": "When you created your account",
+      "open": "Change password",
+      "submit": "Update password",
+      "saving": "Updating…",
+      "forgot": "Forgot your current password?",
+      "failedBody": "Your password couldn’t be updated. Your current password still works — please try again.",
+      "doneTitle": "Password updated",
+      "doneBody": "Your account is now secured with your new password. Use it the next time you sign in.",
+      "toastTitle": "Password updated",
+      "toastBody": "Your new password is active."
+    },
+    "export": {
+      "title": "Download your personal data",
+      "body": "You can ask for a copy of the personal information linked to your account, at any time and free of charge.",
+      "includedTitle": "What your copy includes",
+      "items": {
+        "account": {
+          "title": "Account information",
+          "body": "Sign-in email and account settings."
+        },
+        "profile": {
+          "title": "Profile information",
+          "body": "Name, phone, delivery address and preferences."
+        },
+        "orders": {
+          "title": "Order history",
+          "body": "Every order, with its items, prices and status."
+        },
+        "courses": {
+          "title": "Courses and enrolments",
+          "body": "Your trainings, lesson progress and certificates."
+        },
+        "activity": {
+          "title": "Account activity",
+          "body": "Where applicable: sign-ins and security events."
+        }
+      },
+      "format": "Delivered as a machine-readable JSON file, so you can keep it or take it to another service.",
+      "request": "Request my data",
+      "requestAgain": "Request a new copy",
+      "confirmTitle": "Request a copy of your data?",
+      "confirmBody": "Here’s what happens next:",
+      "step1": "We gather your personal data into one file. This can take a little while.",
+      "step2": "We email {{email}} as soon as it’s ready.",
+      "step3": "You download it from this page, signed in. The download stays available for {{days}} days.",
+      "confirm": "Submit request",
+      "submitting": "Submitting…",
+      "failedBody": "Your request couldn’t be submitted. Please try again in a moment.",
+      "sentTitle": "Request submitted",
+      "sentBody": "We’re preparing your data. You can leave this page — we’ll email {{email}} when your download is ready.",
+      "sentClose": "Got it",
+      "processingTitle": "Preparing your data",
+      "processingBody": "Requested on {{date}} at {{time}}. We’ll email you when it’s ready.",
+      "readyTitle": "Your data is ready",
+      "readyBody": "Your download is available until {{date}}.",
+      "download": "Download my data",
+      "expiredTitle": "The download link has expired",
+      "expiredBody": "Downloads stay available for {{days}} days to keep your data safe. You can request a new copy at any time.",
+      "toastDownloadTitle": "Download started",
+      "toastDownloadBody": "Keep this file somewhere safe: it contains your personal data.",
+      "fileNote": "Prototype export generated in your browser from this demo session."
+    },
+    "delete": {
+      "title": "Delete account",
+      "body": "Permanently close your Global Toothgems account.",
+      "point1": "You lose access to your courses, certificates, community and loyalty rewards.",
+      "point2": "Your profile and preferences are erased. This can’t be undone.",
+      "point3": "Order records we must keep by law are retained for the legal period, then deleted.",
+      "exportHint": "Tip: download your personal data first if you’d like to keep a copy.",
+      "open": "Delete my account",
+      "dialogTitle": "Delete your account?",
+      "dialogBody": "This permanently closes your account. Please read carefully before continuing.",
+      "consequencesTitle": "What happens",
+      "consequences": {
+        "access": "You’re signed out and can’t sign in with this account again.",
+        "courses": "Your courses, progress and certificates are no longer accessible.",
+        "community": "Your community profile is removed.",
+        "loyalty": "Your loyalty stamps and unused rewards are lost."
+      },
+      "retention": "Invoices and order records we are legally required to keep are retained, securely, for the statutory period only.",
+      "phrase": "DELETE",
+      "phraseLabel": "Type {{phrase}} to confirm",
+      "phraseHint": "The delete button unlocks once the word matches.",
+      "phraseOk": "Confirmation word matches.",
+      "keep": "Keep my account",
+      "confirm": "Delete permanently",
+      "deleting": "Deleting…",
+      "failedBody": "We couldn’t delete your account. Nothing has been removed — please try again, or contact us if it keeps happening.",
+      "doneTitle": "Your account has been deleted",
+      "doneBody": "Thank you for having been part of Global Toothgems. Your account is closed and you’ve been signed out. You’re always welcome back.",
+      "doneCta": "Return to the homepage"
+    }
+  },
+  "legal": {
+    "home": "Home",
+    "breadcrumb": "Breadcrumb",
+    "updated": "Last updated:",
+    "draft": "Draft",
+    "backToTop": "Back to top",
+    "placeholder": {
+      "verify": "To verify",
+      "business": "Business info required"
+    },
+    "tone": {
+      "legal": "Legal information",
+      "policy": "Company policy",
+      "instruction": "What you need to do",
+      "verify": "Verify before publication"
+    },
+    "key": {
+      "title": "How to read this page",
+      "legal": "What the law provides, whatever the company decides.",
+      "policy": "A rule set by Global Toothgems.",
+      "instruction": "The steps to take on your side.",
+      "verify": "Information not yet confirmed by the business."
+    },
+    "fields": {
+      "heading": "Company information",
+      "editable": "Fields to be completed by the business"
+    },
+    "review": {
+      "noteLabel": "Internal note · prototype",
+      "barLabel": "Prototype under review.",
+      "barText": "Business information must be verified before publication.",
+      "hide": "Hide internal notes",
+      "show": "Show internal notes"
+    },
+    "toc": {
+      "title": "On this page",
+      "count_one": "{{count}} section",
+      "count_other": "{{count}} sections"
+    },
+    "cta": {
+      "title": "A question about this page?",
+      "body": "Our customer service team will answer. Pick the right topic and your request reaches the right person.",
+      "contact": "Contact us",
+      "faq": "Browse the FAQ"
+    },
+    "pages": {
+      "faq": "FAQ",
+      "shipping": "Shipping & delivery",
+      "returns": "Returns & refunds",
+      "contact": "Contact us",
+      "legalNotice": "Legal notice",
+      "terms": "Terms of sale",
+      "privacy": "Privacy policy",
+      "cookies": "Cookie policy"
+    },
+    "hub": {
+      "eyebrow": "Help & legal",
+      "title": "Help centre",
+      "intro": "Orders, delivery, returns, training, personal data: everything you need to shop and train with confidence.",
+      "helpTitle": "Customer service",
+      "legalTitle": "Legal information",
+      "desc": {
+        "faq": "Answers to the most common questions, by topic.",
+        "shipping": "Destinations, times, rates and tracking.",
+        "returns": "Conditions, step-by-step process and refunds.",
+        "contact": "Write to us: a real person will answer.",
+        "legalNotice": "Publisher, host and intellectual property.",
+        "terms": "The rules that govern your purchases.",
+        "privacy": "Your data, how it is used and your rights.",
+        "cookies": "Cookies and how to manage your choices."
+      }
+    },
+    "cookies": {
+      "bannerTitle": "Your cookies, your choice",
+      "bannerBody": "Some cookies are essential for the site to work and cannot be switched off. Others are optional — remembering your preferences, measuring audience, personalising advertising — and are only used if you allow them. You can change your mind at any time via “Cookie settings” at the bottom of every page.",
+      "policyLink": "Read our cookie policy",
+      "rejectNonEssential": "Reject non-essential",
+      "acceptAll": "Accept all",
+      "rejectAll": "Reject all",
+      "customize": "Customize",
+      "save": "Save my choices",
+      "settingsTitle": "Cookie settings",
+      "settingsBody": "Choose which optional cookies you accept. They stay off until you switch them on.",
+      "settingsFoot": "You can change these choices at any time.",
+      "settingsLink": "Cookie settings",
+      "alwaysActive": "Always active",
+      "providers": "Services concerned:",
+      "providersPlaceholder": "List of services per the implementation",
+      "category": {
+        "essential": {
+          "title": "Essential",
+          "body": "Needed for the site to work: cart, sign-in, security, remembering this choice."
+        },
+        "preferences": {
+          "title": "Preferences",
+          "body": "Remember your choices, such as display language."
+        },
+        "analytics": {
+          "title": "Analytics",
+          "body": "Help us understand how the site is used so we can improve it."
+        },
+        "marketing": {
+          "title": "Marketing",
+          "body": "Measure our campaigns and personalise advertising on other sites."
+        }
+      },
+      "currentTitle": "Your current choices",
+      "decidedOn": "Choice saved on {{date}}",
+      "noChoiceYet": "No choice saved yet: optional cookies are off.",
+      "change": "Change my choices",
+      "status": {
+        "allowed": "Allowed",
+        "refused": "Refused",
+        "undecided": "Not chosen"
+      },
+      "demoNote": "Interaction prototype: no optional cookie or tracker is set; only your choice is remembered in this browser.",
+      "demoReset": "Show the banner again"
+    },
+    "faq": {
+      "eyebrow": "Help centre",
+      "title": "Frequently asked questions",
+      "intro": "Orders, products, shipping, returns, payment, account, training and privacy: answers to the questions we are asked most.",
+      "searchLabel": "Search the FAQ",
+      "searchPlaceholder": "E.g. return, delivery time, certificate…",
+      "clear": "Clear search",
+      "results_one": "{{count}} answer found",
+      "results_other": "{{count}} answers found",
+      "emptyTitle": "No matching answer",
+      "emptyBody": "Try another word, or ask our team directly.",
+      "stillNeedHelp": "Still need help? Write to us"
+    },
+    "contact": {
+      "eyebrow": "Customer service",
+      "title": "Contact us",
+      "intro": "A question about an order, a product or a course? Write to us: someone from the team will answer.",
+      "requiredNote": "All fields are required unless marked “Optional”.",
+      "categories": {
+        "order": "Order",
+        "delivery": "Delivery",
+        "returns": "Return / refund",
+        "product": "Product question",
+        "training": "Training",
+        "technical": "Technical issue",
+        "privacy": "Privacy request",
+        "professional": "Professional inquiry",
+        "other": "Other"
+      },
+      "fields": {
+        "category": "What is it about?",
+        "name": "Full name",
+        "email": "Email",
+        "order": "Order number",
+        "subject": "Subject",
+        "message": "Message",
+        "file": "Attachment"
+      },
+      "orderHint": "It is in your confirmation email.",
+      "messageHint": "At least 20 characters. Please do not include bank details.",
+      "fileCta": "Add a file",
+      "fileHint": "JPG, PNG or PDF · up to 10 MB · a photo of the product or parcel, for example",
+      "removeFile": "Remove file {{name}}",
+      "sizeKb": "{{size}} KB",
+      "sizeMb": "{{size}} MB",
+      "privacyNotice": "Your information is used only to handle your request and keep a record of it.",
+      "privacyLink": "Learn how we handle your data",
+      "privacyHint": "To protect your data, we may ask you to confirm your identity before replying.",
+      "submit": "Send message",
+      "sending": "Sending…",
+      "errorSummary_one": "{{count}} field to fix",
+      "errorSummary_other": "{{count}} fields to fix",
+      "errorSummaryBody": "The fields concerned are marked below.",
+      "errors": {
+        "name": "Enter your name.",
+        "emailRequired": "Enter your email address.",
+        "emailFormat": "This email address looks incomplete (e.g. name@example.com).",
+        "category": "Choose what your request is about.",
+        "subject": "Enter a subject.",
+        "message": "Your message must be at least 20 characters.",
+        "fileSize": "This file is over 10 MB. Choose a smaller file."
+      },
+      "successTitle": "Thank you {{name}}, your message has been sent",
+      "successBody": "We will reply to {{email}}. Usual response time:",
+      "responseTimePlaceholder": "Customer service response time",
+      "demoNote": "Prototype: no message was sent, and the attachment never left your browser.",
+      "sendAnother": "Send another message",
+      "otherTitle": "Other ways to reach us",
+      "lines": {
+        "email": "Email",
+        "emailPlaceholder": "Customer service email",
+        "phone": "Phone",
+        "phonePlaceholder": "Number, if offered",
+        "address": "Address",
+        "addressPlaceholder": "Postal address, if published",
+        "hours": "Customer service hours",
+        "hoursPlaceholder": "Days and hours",
+        "response": "Response time"
+      },
+      "quickTitle": "Quick answers",
+      "trackOrder": "Track an order"
+    },
+    "checklist": {
+      "eyebrow": "Internal · not customer-facing",
+      "title": "Pre-launch checklist — Stripe & compliance",
+      "body": "What must be verified before payments go live. Everything starts as “to verify”: ticking an item is only saved in your browser.",
+      "progress": "{{done}} / {{total}} verified",
+      "pending": "To verify",
+      "verified": "Verified",
+      "open": "Open: {{item}}",
+      "disclaimer": "A review aid for the prototype, not legal advice nor Stripe’s official list of requirements. Validate with counsel and current Stripe documentation."
+    },
+    "about": {
+      "eyebrow": "Company",
+      "title": "About Global Toothgems",
+      "intro": "Tooth gems, the tools to apply them, and the training to do it well.",
+      "shopTitle": "The shop",
+      "shopBody": "Gems, tools, kits and aftercare products, for artists and their clients.",
+      "shopCta": "Visit the shop",
+      "academyTitle": "The Academy",
+      "academyBody": "Online courses to learn application, refine technique and grow a business.",
+      "academyCta": "Explore the courses",
+      "companyTitle": "Company information",
+      "companyBody": "Company identity, hosting and intellectual property.",
+      "companyCta": "Legal notice",
+      "storyTitle": "Our story"
+    }
   }
 }

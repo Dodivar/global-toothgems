@@ -31,7 +31,10 @@ export function Dialog({
   footer,
   children,
   closeLabel,
+  size = "md",
 }: {
+  /** `lg` for dialogs holding a whole form, such as writing a review. */
+  size?: "md" | "lg";
   open: boolean;
   onClose: () => void;
   title: string;
@@ -114,8 +117,9 @@ export function Dialog({
         aria-describedby={description ? descId : undefined}
         tabIndex={-1}
         className={clsx(
-          "gt-celebrate relative w-full max-w-[520px] rounded-t-[var(--radius-xl)] border bg-[var(--surface-card)] shadow-[var(--shadow-lg)] sm:rounded-[var(--radius-lg)]",
+          "gt-celebrate relative w-full rounded-t-[var(--radius-xl)] border bg-[var(--surface-card)] shadow-[var(--shadow-lg)] sm:rounded-[var(--radius-lg)]",
           tone === "danger" ? "border-[var(--gt-red-400)]" : "border-[var(--border-subtle)]",
+          size === "lg" ? "max-w-[640px]" : "max-w-[520px]",
         )}
       >
         <header className="flex items-start gap-3 border-b border-[var(--border-subtle)] p-[var(--space-5)] pr-[var(--space-4)]">

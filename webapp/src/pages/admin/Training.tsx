@@ -47,9 +47,9 @@ export function Training() {
   const filters = useMemo<TrainingFilterState>(
     () => ({
       search: params.get("q") ?? "",
-      status: (params.get("statut") as CourseStatus | null) ?? "all",
-      category: (params.get("categorie") as CourseCategory | null) ?? "all",
-      level: (params.get("niveau") as CourseLevel | null) ?? "all",
+      status: (params.get("statut") as CourseStatus | null) ?? "any",
+      category: (params.get("categorie") as CourseCategory | null) ?? "any",
+      level: (params.get("niveau") as CourseLevel | null) ?? "any",
       sort: TRAINING_SORT_KEYS.includes(params.get("tri") as TrainingSortKey)
         ? (params.get("tri") as TrainingSortKey)
         : "recent",
@@ -60,9 +60,9 @@ export function Training() {
   const setFilters = (next: TrainingFilterState) => {
     const search = new URLSearchParams();
     if (next.search.trim()) search.set("q", next.search);
-    if (next.status !== "all") search.set("statut", next.status);
-    if (next.category !== "all") search.set("categorie", next.category);
-    if (next.level !== "all") search.set("niveau", next.level);
+    if (next.status !== "any") search.set("statut", next.status);
+    if (next.category !== "any") search.set("categorie", next.category);
+    if (next.level !== "any") search.set("niveau", next.level);
     if (next.sort !== "recent") search.set("tri", next.sort);
     // Replace, not push: typing in the search box must not fill the history.
     setParams(search, { replace: true });

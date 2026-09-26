@@ -1,0 +1,764 @@
+{
+  "title": "Paramètres",
+  "subtitle": "La configuration de la boutique : ce que voient les clients, où vous livrez, comment vous facturez la TVA, dans quelles langues vous publiez.",
+  "sections": {
+    "store": {
+      "title": "Boutique",
+      "nav": "Identité, adresse, préférences",
+      "intro": "Qui vous êtes et comment la boutique compte. Ces informations figurent sur les factures, les e-mails et la page contact, et fixent la devise, le fuseau horaire et les formats utilisés dans l'administration."
+    },
+    "shipping": {
+      "title": "Livraison",
+      "nav": "Zones, modes et tarifs",
+      "intro": "Regroupez les pays livrés en zones, puis choisissez les modes proposés dans chaque zone et leur prix. Un pays n'appartient qu'à une seule zone : chaque client voit un seul jeu d'options."
+    },
+    "taxes": {
+      "title": "Taxes et TVA",
+      "nav": "Taux par défaut, pays, règles",
+      "intro": "Comment la TVA est appliquée et affichée. Commencez par le taux par défaut, remplacez-le pays par pays, puis ajoutez les règles propres à certains produits et clients."
+    },
+    "languages": {
+      "title": "Langues",
+      "nav": "Langues de la boutique, traductions",
+      "intro": "Les langues dans lesquelles les clients achètent et se forment, leur ordre et la langue par défaut — et ce qu'il reste à traduire dans chacune, à un clic de l'éditeur."
+    }
+  },
+  "nav": {
+    "label": "Sections des paramètres",
+    "unsaved": "Non enregistré",
+    "attention": {
+      "store_one": "{{count}} élément à vérifier",
+      "store_other": "{{count}} éléments à vérifier",
+      "shipping_one": "{{count}} zone de livraison à vérifier",
+      "shipping_other": "{{count}} zones de livraison à vérifier",
+      "taxes_one": "{{count}} élément à vérifier",
+      "taxes_other": "{{count}} éléments à vérifier",
+      "languages_one": "{{count}} champ à traduire",
+      "languages_other": "{{count}} champs à traduire"
+    }
+  },
+  "state": {
+    "unsaved": "Modifications non enregistrées",
+    "upToDate": "Tout est enregistré",
+    "savedAt": "Enregistré à {{time}}"
+  },
+  "actions": {
+    "save": "Enregistrer",
+    "discard": "Annuler les modifications",
+    "discardShort": "Annuler"
+  },
+  "toast": {
+    "saved": "{{section}} : modifications enregistrées",
+    "savedBody": {
+      "store": "Vos informations sont à jour sur les factures, les e-mails et la page contact.",
+      "shipping": "Le paiement propose désormais les zones et tarifs mis à jour.",
+      "taxes": "Les nouvelles commandes utilisent les réglages de TVA mis à jour. Les commandes passées gardent la TVA facturée.",
+      "languages": "La boutique utilise les langues mises à jour."
+    },
+    "failed": "Modifications non enregistrées",
+    "failedBody": "Le serveur n'a pas répondu. Vos modifications sont toujours là — réessayez dans un instant.",
+    "fixErrors_one": "Corrigez {{count}} champ avant d'enregistrer",
+    "fixErrors_other": "Corrigez {{count}} champs avant d'enregistrer",
+    "discarded": "Modifications annulées",
+    "pendingBody": "Pas encore en ligne — enregistrez pour publier."
+  },
+  "errorsSummary": {
+    "title_one": "{{count}} champ demande votre attention",
+    "title_other": "{{count}} champs demandent votre attention",
+    "body": "Ils sont signalés ci-dessous. Rien n'a encore été enregistré."
+  },
+  "saveError": {
+    "title": "Impossible d'enregistrer vos modifications",
+    "body": "Rien n'est perdu : vos modifications sont toujours sur cette page. Vérifiez votre connexion et réessayez.",
+    "retry": "Réessayer"
+  },
+  "proto": {
+    "label": "Prototype",
+    "body": "Les paramètres sont conservés en mémoire pour cette session uniquement. Rien n'est envoyé.",
+    "fail": "Simuler un échec d'enregistrement"
+  },
+  "ui": {
+    "active": "Actif",
+    "inactive": "Inactif",
+    "default": "Par défaut",
+    "on": "Activé",
+    "off": "Désactivé",
+    "cancel": "Annuler",
+    "close": "Fermer",
+    "actions": "Actions",
+    "moreInfo": "En savoir plus : {{topic}}",
+    "appliesOnSave": "Mis en ligne à l'enregistrement de la page."
+  },
+  "errors": {
+    "required": "Ce champ est obligatoire.",
+    "email": "Saisissez une adresse e-mail valide, par exemple nom@exemple.fr.",
+    "phone": "Saisissez un numéro composé de chiffres, espaces acceptés (ex. +33 1 23 45 67 89).",
+    "url": "Saisissez une adresse complète commençant par https://",
+    "postalFr": "Un code postal français compte 5 chiffres.",
+    "orderAffix": "6 lettres, chiffres ou tirets au maximum.",
+    "positive": "Saisissez un nombre supérieur à zéro.",
+    "tooLong": "Trop long — raccourcissez pour respecter la limite.",
+    "hours": "Vérifiez les horaires : chaque jour ouvert doit commencer avant de finir.",
+    "days": "Saisissez des jours entiers, le maximum au moins égal au minimum.",
+    "pricePositive": "Saisissez un prix supérieur à zéro, ou choisissez Livraison offerte.",
+    "freeNeedsThreshold": "La livraison offerte nécessite un montant minimum de commande.",
+    "range": "Le maximum doit être supérieur au minimum.",
+    "zoneNameTaken": "Une autre zone porte déjà ce nom.",
+    "zoneNoCountry": "Choisissez au moins un pays.",
+    "percent": "Saisissez un pourcentage entre 0 et 100.",
+    "vatCountryTaken": "Ce pays a déjà un taux."
+  },
+  "store": {
+    "business": {
+      "title": "Informations de l'entreprise",
+      "description": "Votre identité commerciale et légale, et les adresses où clients et plateforme vous joignent."
+    },
+    "address": {
+      "title": "Adresse de l'entreprise",
+      "description": "Imprimée sur les factures et utilisée comme adresse de retour des colis."
+    },
+    "prefs": {
+      "title": "Préférences de la boutique",
+      "description": "Les unités, formats et numérotations utilisés dans la boutique et l'administration."
+    },
+    "public": {
+      "title": "Informations visibles par les clients",
+      "description": "Ce que les clients lisent sur la page contact, dans le pied de page et dans les e-mails de commande.",
+      "contactTitle": "Afficher sur la boutique",
+      "showEmail": "E-mail du service client",
+      "showPhone": "Numéro de téléphone",
+      "showAddress": "Adresse du studio",
+      "showAddressHint": "Uniquement si les clients peuvent venir ou retirer leurs commandes."
+    },
+    "fields": {
+      "storeName": "Nom de la boutique",
+      "legalName": "Raison sociale",
+      "businessEmail": "E-mail professionnel",
+      "supportEmail": "E-mail du service client",
+      "phone": "Téléphone",
+      "website": "Site web",
+      "country": "Pays",
+      "address1": "Adresse",
+      "address2": "Complément d'adresse",
+      "postalCode": "Code postal",
+      "city": "Ville",
+      "region": "Région / État",
+      "currency": "Devise par défaut",
+      "timezone": "Fuseau horaire",
+      "dateFormat": "Format de date",
+      "measurement": "Système de mesure",
+      "orderPrefix": "Préfixe",
+      "orderNextNumber": "Prochain numéro",
+      "orderSuffix": "Suffixe",
+      "description": "Description courte de la boutique",
+      "supportMessage": "Message du service client"
+    },
+    "hints": {
+      "storeName": "Le nom affiché dans l'en-tête, les e-mails et l'onglet du navigateur.",
+      "legalName": "Tel qu'immatriculé — affiché sur les factures et les pages légales.",
+      "businessEmail": "Reçoit les notifications de commande et les messages de la plateforme. Jamais montré aux clients.",
+      "supportEmail": "Montré aux clients et utilisé comme adresse de réponse des e-mails.",
+      "phone": "Avec l'indicatif du pays.",
+      "website": "",
+      "address2": "Facultatif",
+      "region": "Facultatif dans la plupart des pays",
+      "currency": "Utilisée pour les prix, les commandes et les rapports.",
+      "timezone": "Heures des commandes, rapports et promotions programmées suivent ce fuseau.",
+      "description": "Utilisée dans le pied de page, les résultats de recherche et les aperçus de liens.",
+      "supportMessage": "Affiché sur la page contact et à la fin des e-mails de commande."
+    },
+    "currencies": {
+      "EUR": "Euro (EUR, €)",
+      "GBP": "Livre sterling (GBP, £)",
+      "CHF": "Franc suisse (CHF)",
+      "USD": "Dollar américain (USD, $)"
+    },
+    "currencyWarning": {
+      "title": "Les prix existants ne seront pas convertis.",
+      "body": "Les prix des produits et de la livraison gardent leur montant dans la nouvelle devise. Les commandes passées gardent la devise dans laquelle elles ont été payées."
+    },
+    "measurement": {
+      "metric": "Métrique · kg, cm",
+      "imperial": "Impérial · lb, in"
+    },
+    "order": {
+      "title": "Format des numéros de commande",
+      "hint": "S'applique aux nouvelles commandes uniquement. Les numéros existants ne changent jamais.",
+      "tip": "Le numéro de commande est ce que les clients citent quand ils vous contactent. Un préfixe court le rend reconnaissable dans une boîte mail ; le prochain numéro doit être supérieur à toute commande existante.",
+      "none": "Aucun",
+      "preview": "Prochain numéro de commande"
+    },
+    "hours": {
+      "title": "Disponibilité du service client",
+      "hint": "Quand votre équipe répond aux messages et aux appels. Affiché sur la page contact.",
+      "closed": "Fermé",
+      "openOn": "Ouvert le {{day}}",
+      "from": "Heure d'ouverture le {{day}}",
+      "to": "Heure de fermeture le {{day}}",
+      "days": {
+        "mon": "Lundi",
+        "tue": "Mardi",
+        "wed": "Mercredi",
+        "thu": "Jeudi",
+        "fri": "Vendredi",
+        "sat": "Samedi",
+        "sun": "Dimanche"
+      },
+      "short": {
+        "mon": "Lun.",
+        "tue": "Mar.",
+        "wed": "Mer.",
+        "thu": "Jeu.",
+        "fri": "Ven.",
+        "sat": "Sam.",
+        "sun": "Dim."
+      }
+    },
+    "preview": {
+      "label": "Aperçu client",
+      "hours": "Nous sommes disponibles"
+    }
+  },
+  "shipping": {
+    "zonesTitle": "Zones de livraison",
+    "zonesHint": "Chaque zone indique d'abord ses pays, puis les modes que les clients de ces pays peuvent choisir.",
+    "addZone": "Ajouter une zone",
+    "editZone": "Modifier la zone",
+    "duplicate": "Dupliquer la zone",
+    "deleteZone": "Supprimer la zone",
+    "addRate": "Ajouter un mode de livraison",
+    "addRateTo": "Ajouter un mode de livraison à {{name}}",
+    "editRate": "Modifier {{name}}",
+    "deleteRate": "Supprimer {{name}}",
+    "rateActive": "Proposer {{name}}",
+    "zoneActive": "Livrer la zone {{name}}",
+    "zoneMenu": "Plus d'actions pour {{name}}",
+    "countriesIn": "Pays de la zone {{name}}",
+    "copyName": "{{name}} (copie)",
+    "countryCount_one": "{{count}} pays",
+    "countryCount_other": "{{count}} pays",
+    "methodCount_one": "{{count}} mode · {{active}} actif",
+    "methodCount_other": "{{count}} modes · {{active}} actifs",
+    "restOfWorldLine": "Tous les pays absents des autres zones",
+    "methodsTitle": "Modes de livraison",
+    "noRates": "Aucun mode de livraison — les clients de cette zone ne peuvent pas commander.",
+    "noCountries": "Aucun pays — cette zone ne s'applique encore à personne.",
+    "inactiveZone": "Désactivée : les clients de ces pays ne peuvent pas commander tant que la zone est désactivée.",
+    "inactiveWorld": "Désactivée : les pays hors de vos autres zones ne peuvent pas commander.",
+    "notOffered": "non proposé au paiement",
+    "showMore": "+{{count}} autres",
+    "showLess": "Afficher moins",
+    "free": "Offert",
+    "stats": {
+      "zones": "Zones",
+      "countries": "Pays couverts",
+      "methods": "Modes de livraison",
+      "active_one": "{{count}} active",
+      "active_other": "{{count}} actives",
+      "plusWorld": "+ reste du monde",
+      "listed": "dans les zones actives"
+    },
+    "issues": {
+      "title_one": "{{count}} zone inutilisable au paiement",
+      "title_other": "{{count}} zones inutilisables au paiement",
+      "noRates": "{{zone}} est activée mais n'a aucun mode de livraison.",
+      "noActiveRate": "{{zone}} est activée mais tous ses modes sont désactivés."
+    },
+    "empty": {
+      "title": "Aucune zone de livraison",
+      "body": "Créez une zone pour les pays que vous livrez, puis ajoutez au moins un mode de livraison pour que les clients puissent commander."
+    },
+    "groups": {
+      "eu": "Union européenne",
+      "europe": "Reste de l'Europe",
+      "americas": "Amériques",
+      "world": "Asie-Pacifique, Moyen-Orient et Afrique"
+    },
+    "kind": {
+      "standard": "Livraison standard",
+      "express": "Livraison express",
+      "free": "Livraison offerte",
+      "pickup": "Retrait"
+    },
+    "kindHint": {
+      "standard": "La livraison suivie habituelle, à prix fixe.",
+      "express": "Une option plus rapide, facturée plus cher.",
+      "free": "Proposée automatiquement dès que le panier atteint un montant.",
+      "pickup": "Les clients retirent leur commande au studio, gratuitement."
+    },
+    "delivery": {
+      "exact_one": "{{count}} jour ouvré",
+      "exact_other": "{{count}} jours ouvrés",
+      "range": "{{min}} à {{max}} jours ouvrés",
+      "pickup_one": "Prête en {{count}} jour ouvré",
+      "pickup_other": "Prête en {{count}} jours ouvrés"
+    },
+    "cond": {
+      "none": "Toutes les commandes",
+      "orderMin": "Commandes dès {{amount}}",
+      "orderMax": "Commandes jusqu'à {{amount}}",
+      "orderRange": "Commandes de {{min}} à {{max}}",
+      "weightMin": "À partir de {{weight}}",
+      "weightMax": "Jusqu'à {{weight}}",
+      "weightRange": "{{min}} à {{max}}",
+      "freeOver": "Offerte dès {{amount}}"
+    },
+    "checker": {
+      "title": "Vérifier une destination",
+      "description": "Voyez exactement ce qui est proposé à un client d'un pays donné, modifications non enregistrées comprises.",
+      "country": "Pays de destination",
+      "via": "{{country}} fait partie de {{zone}}. Les clients peuvent choisir :",
+      "viaWorld": "{{country}} ne figure dans aucune zone : {{zone}} s'applique :",
+      "noZone": "Aucune zone ne couvre ce pays ({{country}}) — les clients ne peuvent pas commander.",
+      "inactive": "{{country}} fait partie de {{zone}}, qui est désactivée — les clients ne peuvent pas commander.",
+      "noRate": "{{country}} fait partie de {{zone}}, mais aucun mode n'est activé — les clients ne peuvent pas commander."
+    },
+    "confirm": {
+      "zoneTitle": "Supprimer « {{name}} » ?",
+      "zoneBody_one": "Les clients de son pays ({{count}}) ne pourront plus commander sauf si une autre zone le couvre. Ses {{rates}} modes de livraison sont supprimés avec elle. Vous pourrez encore annuler avant d'enregistrer.",
+      "zoneBody_other": "Les clients de ses {{count}} pays ne pourront plus commander sauf si une autre zone les couvre. Ses {{rates}} modes de livraison sont supprimés avec elle. Vous pourrez encore annuler avant d'enregistrer.",
+      "zoneConfirm": "Supprimer la zone",
+      "rateTitle": "Supprimer « {{name}} » ?",
+      "rateBody": "Les clients de la zone {{zone}} ne verront plus cette option au paiement. Les commandes déjà passées gardent la livraison payée.",
+      "rateConfirm": "Supprimer le mode"
+    },
+    "toast": {
+      "zoneAdded": "Zone « {{name}} » ajoutée",
+      "zoneUpdated": "Zone « {{name}} » modifiée",
+      "zoneDeleted": "Zone « {{name}} » supprimée",
+      "zoneEnabled": "Livraison vers {{name}} activée",
+      "zoneDisabled": "Livraison vers {{name}} désactivée",
+      "zoneDuplicated": "« {{name}} » dupliquée",
+      "zoneDuplicatedBody": "La copie est désactivée et sans pays — choisissez-les maintenant.",
+      "rateAdded": "« {{name}} » ajouté",
+      "rateUpdated": "« {{name}} » modifié",
+      "rateDeleted": "« {{name}} » supprimé"
+    },
+    "zoneSheet": {
+      "newTitle": "Nouvelle zone de livraison",
+      "editTitle": "Modifier {{name}}",
+      "description": "Une zone regroupe des pays qui partagent les mêmes modes et tarifs de livraison.",
+      "name": "Nom de la zone",
+      "nameHint": "Pour vous uniquement — jamais montré aux clients.",
+      "restOfWorld": "Reste du monde",
+      "restOfWorldHint": "Couvre tous les pays absents des autres zones.",
+      "restOfWorldTaken": "{{name}} couvre déjà le reste du monde.",
+      "restOfWorldBody": "Cette zone reçoit toutes les destinations que vos autres zones ne listent pas. Désactivez-la pour ne livrer que les pays nommés.",
+      "active": "Zone active",
+      "activeHint": "Désactivée, les clients de ces pays ne peuvent pas commander.",
+      "countries": "Pays",
+      "selected": "Pays sélectionnés",
+      "remove": "Retirer {{country}}",
+      "search": "Rechercher un pays",
+      "selectGroup": "Tout sélectionner ({{count}})",
+      "clearGroup": "Tout retirer",
+      "inZone": "Actuellement dans {{zone}}",
+      "movingFrom": "Sera retiré de {{zone}}",
+      "noMatch": "Aucun pays ne correspond à « {{query}} ».",
+      "moveNotice_one": "{{countries}} sera déplacé ici depuis {{zone}}.",
+      "moveNotice_other": "{{count}} pays seront déplacés ici depuis {{zone}} : {{countries}}.",
+      "add": "Ajouter la zone",
+      "apply": "Appliquer"
+    },
+    "rateSheet": {
+      "newTitle": "Nouveau mode de livraison",
+      "editTitle": "Modifier le mode de livraison",
+      "description": "Proposé aux clients de la zone {{zone}}.",
+      "kind": "Type",
+      "name": "Nom au paiement",
+      "nameHint": "Ce que lisent les clients en choisissant comment recevoir leur commande.",
+      "minDays": "Livraison en au moins",
+      "maxDays": "Livraison en au plus",
+      "readyIn": "Prête au retrait en",
+      "days": "jours",
+      "price": "Prix",
+      "freeOver": "Offerte dès",
+      "optional": "Facultatif — le montant de commande à partir duquel ce mode devient gratuit.",
+      "freeFrom": "Montant minimum de commande",
+      "freeFromHint": "La livraison offerte apparaît au paiement à partir de ce total de panier.",
+      "pickupFree": "Le retrait est toujours gratuit pour le client.",
+      "conditions": "Conditions",
+      "conditionsHint": "Laissez vide pour aucune limite. Le mode n'apparaît que si la commande correspond.",
+      "minOrder": "Commande minimum",
+      "maxOrder": "Commande maximum",
+      "minWeight": "Poids minimum",
+      "maxWeight": "Poids maximum",
+      "noLimit": "Aucune limite",
+      "active": "Proposer ce mode",
+      "activeHint": "Désactivé, il est conservé mais masqué au paiement.",
+      "preview": "Aperçu au paiement",
+      "add": "Ajouter le mode",
+      "apply": "Appliquer"
+    }
+  },
+  "taxes": {
+    "enabled": "Facturer la TVA",
+    "enabledOn": "La TVA est calculée sur chaque commande selon les règles ci-dessous.",
+    "enabledOff": "Aucune TVA n'est ajoutée aux commandes.",
+    "disabledTitle": "La TVA est désactivée",
+    "disabledBody": "Uniquement si votre entreprise n'est pas assujettie à la TVA. Vos taux et règles sont conservés et reviennent quand vous réactivez la TVA.",
+    "rules": "Règles de TVA",
+    "disclaimer": "Les taux affichés sont des exemples pour ce prototype. Faites valider chaque taux et chaque règle par votre expert-comptable avant la mise en ligne.",
+    "tier1": {
+      "title": "Taux par défaut",
+      "caption": "S'applique partout, sauf si un pays a son propre taux."
+    },
+    "tier2": {
+      "title": "Taux par pays",
+      "caption": "Remplacent le taux par défaut pour les clients de ces pays."
+    },
+    "tier3": {
+      "title": "Règles avancées",
+      "caption": "Ajustent le taux pour certains produits ou clients."
+    },
+    "precedence": {
+      "title": "Comment la TVA est choisie au paiement",
+      "body": "Le taux du pays l'emporte sur le taux par défaut quand il existe ; les règles avancées le réduisent ou le suppriment ensuite pour certains produits et clients.",
+      "checker": "Vérifier une destination",
+      "country": "{{country}} : {{rate}} — son propre taux.",
+      "default": "{{country}} : {{rate}} — pas de taux propre, le taux par défaut s'applique.",
+      "export": "{{country}} est hors UE : les exportations sont généralement exonérées quand la règle d'export est active.",
+      "off": "La TVA est désactivée — aucune TVA n'est facturée."
+    },
+    "default": {
+      "title": "TVA par défaut",
+      "description": "Le taux et les règles d'affichage utilisés quand rien de plus précis ne s'applique.",
+      "country": "Pays de TVA par défaut",
+      "countryHint": "Le pays où votre entreprise est immatriculée à la TVA.",
+      "rate": "Taux de TVA par défaut",
+      "rateHint": "Le taux normal de ce pays.",
+      "pricesInclude": "Les prix incluent la TVA",
+      "pricesIncludeHint": "Les prix saisis sur les produits contiennent déjà la TVA.",
+      "showProduct": "Afficher la TVA sur les fiches produit",
+      "showProductHint": "Ajoute « TTC » ou « HT » sous chaque prix.",
+      "showCheckout": "Afficher la TVA au paiement",
+      "showCheckoutHint": "Affiche le montant de TVA sur une ligne à part dans le panier et sur le reçu.",
+      "display": "Prix montrés aux clients"
+    },
+    "display": {
+      "included": "TTC",
+      "excluded": "HT"
+    },
+    "tips": {
+      "pricesInclude": "Activez si le prix saisi sur un produit est le prix payé par le client. Désactivez si vous saisissez les prix hors taxes et voulez ajouter la TVA par-dessus.",
+      "display": "Dans l'UE, les consommateurs doivent voir les prix TTC. N'affichez les prix HT que si vous vendez surtout aux professionnels.",
+      "vies": "VIES est le service de la Commission européenne qui confirme la validité d'un numéro de TVA intracommunautaire. Le vérifier vous protège quand vous ne facturez pas la TVA à une entreprise.",
+      "exempt": "Certains clients ne doivent pas payer la TVA — les entreprises d'un autre pays de l'UE avec un numéro valide (autoliquidation), ou les commandes expédiées hors UE. La situation du client est vérifiée au paiement.",
+      "basis": "L'adresse utilisée pour choisir le taux. Pour les ventes aux particuliers dans l'UE, c'est en principe le taux du pays de livraison qui s'applique.",
+      "rounding": "Par ligne arrondit la TVA de chaque produit puis additionne. Par commande additionne tout puis arrondit une seule fois. Le résultat peut différer d'un centime.",
+      "reduced": "Certains produits sont taxés à un taux réduit dans certains pays — les livres ou certaines formations, par exemple. Chaque taux réduit s'applique à une catégorie dans un pays."
+    },
+    "example": {
+      "label": "Exemple",
+      "enteredGross": "Vous saisissez {{price}} sur un produit (TTC).",
+      "enteredNet": "Vous saisissez {{price}} sur un produit (HT).",
+      "productPage": "La fiche produit affiche",
+      "incl": "TTC (TVA {{rate}})",
+      "excl": "HT",
+      "net": "Prix HT",
+      "vat": "TVA {{rate}}",
+      "total": "Le client paie",
+      "checkoutHidden": "La ligne de TVA est masquée au paiement."
+    },
+    "rates": {
+      "title": "Taux de TVA par pays",
+      "description": "Les pays absents de cette liste utilisent le taux par défaut ({{rate}}).",
+      "add": "Ajouter un taux",
+      "country": "Pays",
+      "rate": "Taux normal",
+      "rateHint": "Le taux normal de TVA du pays, en pourcentage.",
+      "reduced": "Taux réduits",
+      "reducedCount_one": "{{count}} taux réduit",
+      "reducedCount_other": "{{count}} taux réduits",
+      "status": "Statut",
+      "storeCountry": "pays de la boutique",
+      "activeFor": "Appliquer le taux : {{country}}",
+      "edit": "Modifier le taux : {{country}}",
+      "delete": "Supprimer le taux : {{country}}",
+      "fallback": "Les pays inactifs ou absents utilisent le taux par défaut de {{rate}}.",
+      "emptyTitle": "Aucun taux par pays",
+      "emptyBody": "Toutes les commandes utilisent le taux par défaut. Ajoutez un taux pour chaque pays au taux différent.",
+      "addTitle": "Ajouter un taux de TVA",
+      "editTitle": "Modifier le taux : {{country}}",
+      "dialogBody": "Les clients livrés dans ce pays paient ce taux au lieu du taux par défaut.",
+      "chooseCountry": "Choisir un pays…",
+      "activeLabel": "Actif",
+      "activeHint": "Désactivé, le taux par défaut s'applique à ce pays.",
+      "addConfirm": "Ajouter le taux",
+      "editConfirm": "Appliquer",
+      "deleteTitle": "Supprimer le taux : {{country}} ?",
+      "deleteBody": "Les clients de ce pays paieront le taux par défaut ({{rate}}). Les commandes passées gardent la TVA facturée.",
+      "deleteConfirm": "Supprimer le taux"
+    },
+    "reduced": {
+      "title": "Taux de TVA réduits",
+      "description": "Des taux plus bas pour certaines catégories de produits, pays par pays.",
+      "enable": "Utiliser les taux réduits",
+      "empty": "Aucun taux réduit pour l'instant.",
+      "add": "Ajouter un taux réduit",
+      "addTitle": "Ajouter un taux réduit",
+      "addBody": "S'applique aux produits de cette catégorie livrés dans ce pays.",
+      "addConfirm": "Ajouter le taux réduit",
+      "category": "Catégorie de produits",
+      "rate": "Taux réduit",
+      "activeFor": "Appliquer le taux {{category}} — {{country}}",
+      "remove": "Retirer le taux {{category}} — {{country}}",
+      "categories": {
+        "training": "Formations",
+        "books": "Livres et guides imprimés",
+        "hygiene": "Produits d'hygiène",
+        "digital": "Publications numériques"
+      }
+    },
+    "b2b": {
+      "title": "Clients professionnels et numéros de TVA",
+      "description": "Permettez aux professionnels d'identifier leur entreprise au paiement.",
+      "collect": "Demander un numéro de TVA au paiement",
+      "collectHint": "Un champ facultatif pour les clients qui achètent en tant qu'entreprise.",
+      "validate": "Vérifier les numéros avec VIES",
+      "validateHint": "Les numéros sont vérifiés avant la validation de la commande."
+    },
+    "exempt": {
+      "title": "Clients exonérés",
+      "description": "Les commandes sans TVA, et pourquoi.",
+      "enable": "Autoriser les commandes exonérées",
+      "groups": {
+        "reverseCharge": {
+          "label": "Entreprises de l'UE avec un numéro de TVA valide",
+          "hint": "Autoliquidation : le client déclare la TVA dans son pays. Nécessite les numéros de TVA au paiement."
+        },
+        "export": {
+          "label": "Commandes expédiées hors UE",
+          "hint": "Les exportations sont exonérées ; des taxes d'import locales peuvent s'appliquer à la livraison."
+        },
+        "trainingBodies": {
+          "label": "Organismes de formation agréés",
+          "hint": "Uniquement pour les organismes dont l'exonération a été vérifiée et enregistrée."
+        }
+      }
+    },
+    "calc": {
+      "title": "Calcul de la taxe",
+      "description": "L'adresse qui fixe le taux, et la façon d'arrondir.",
+      "basis": "Calculer la TVA selon",
+      "basisOptions": {
+        "shipping": { "label": "Adresse de livraison", "hint": "Là où la commande est envoyée." },
+        "billing": { "label": "Adresse de facturation", "hint": "Là où le client est facturé." },
+        "store": { "label": "Adresse de la boutique", "hint": "Toujours le taux de votre pays." }
+      },
+      "recommended": "Recommandé",
+      "rounding": "Arrondi",
+      "roundLine": "Par ligne",
+      "roundOrder": "Par commande",
+      "shipping": "Appliquer la TVA à la livraison",
+      "shippingHint": "La livraison est taxée au même taux que les produits de la commande."
+    },
+    "toast": {
+      "rateAdded": "Taux ajouté : {{country}}",
+      "rateUpdated": "Taux modifié : {{country}}",
+      "rateDeleted": "Taux supprimé : {{country}}",
+      "reducedAdded": "Taux réduit ajouté",
+      "reducedRemoved": "Taux réduit retiré"
+    }
+  },
+  "lang": {
+    "names": {
+      "en": "Anglais",
+      "fr": "Français",
+      "it": "Italien",
+      "de": "Allemand",
+      "es": "Espagnol",
+      "pt": "Portugais",
+      "nl": "Néerlandais"
+    },
+    "enabled": {
+      "title": "Langues activées",
+      "description": "Disponibles pour les clients, dans l'ordre du menu des langues de la boutique. Faites glisser une ligne, ou utilisez les flèches, pour réordonner.",
+      "order": "Langues activées, dans l'ordre de la boutique"
+    },
+    "available": "Langues disponibles",
+    "new": "Nouvelle",
+    "off": "Désactivée",
+    "enable": "Activer",
+    "source": "Langue source",
+    "original": "Contenu original",
+    "coverage": "{{percent}} % traduit",
+    "complete": "Complète",
+    "notStarted": "Pas commencée",
+    "missingCount_one": "À traiter · {{count}} manquant",
+    "missingCount_other": "À traiter · {{count}} manquants",
+    "showMissingFor": "voir ce qui manque en {{name}}",
+    "moveUp": "Monter {{name}}",
+    "moveDown": "Descendre {{name}}",
+    "moved": "{{name}} déplacé en position {{position}} sur {{total}}.",
+    "menu": "Plus d'actions pour {{name}}",
+    "setDefault": "Définir par défaut",
+    "viewMissing": "Voir les traductions manquantes",
+    "disable": "Désactiver la langue",
+    "defaultNote": "La langue par défaut ne peut pas être désactivée. Choisissez d'abord une autre langue par défaut.",
+    "options": "Comportement des langues",
+    "detect": "Proposer la langue du navigateur",
+    "detectHint": "Les nouveaux visiteurs voient la boutique dans la langue de leur navigateur si elle est activée.",
+    "fallback": "Revenir à la langue par défaut",
+    "fallbackHint": "Les champs non traduits s'affichent en {{name}} au lieu de rester vides.",
+    "disableTitle": "Désactiver : {{name}} ?",
+    "disableBody": "{{name}} ne sera plus disponible pour les clients. Ses pages, produits, formations et e-mails ne sont plus publiés, et les clients qui l'avaient choisi verront la boutique en {{fallback}}.",
+    "disableKeep": "Les traductions sont conservées. Réactivez la langue pour tout retrouver.",
+    "disableConfirm": "Désactiver la langue",
+    "defaultTitle": "Définir {{name}} comme langue par défaut ?",
+    "defaultBody": "{{name}} devient la langue que les nouveaux visiteurs voient en premier, et celle utilisée quand la langue d'un client n'est pas disponible.",
+    "defaultWarning": "{{percent}} % du contenu est traduit dans cette langue. Les champs non traduits afficheront l'anglais d'origine.",
+    "defaultSource": "Le contenu reste rédigé en anglais et traduit depuis l'anglais — seule la langue vue en premier change.",
+    "defaultConfirm": "Définir par défaut",
+    "toast": {
+      "enabled": "{{name}} activé",
+      "enabledBody": "Rien n'est encore traduit. Enregistrez pour la rendre disponible aux clients.",
+      "disabled": "{{name}} désactivé",
+      "default": "{{name}} est désormais la langue par défaut"
+    },
+    "coveragePanel": {
+      "title": "Couverture des traductions",
+      "description": "Part du contenu traduite dans toutes les langues activées, par type.",
+      "overall_one": "sur {{count}} langue",
+      "overall_other": "sur {{count}} langues"
+    }
+  },
+  "tr": {
+    "title": "Traductions manquantes",
+    "description": "Tout ce que les clients verraient sans traduction. Choisissez un élément et traduisez-le sur place — la liste se met à jour à chaque enregistrement.",
+    "itemsToTranslate_one": "élément à traduire",
+    "itemsToTranslate_other": "éléments à traduire",
+    "fieldsToTranslate_one": "{{count}} champ au total",
+    "fieldsToTranslate_other": "{{count}} champs au total",
+    "itemsShort_one": "{{count}} élément",
+    "itemsShort_other": "{{count}} éléments",
+    "byType": "Filtrer par type de contenu",
+    "byLanguage": "Filtrer par langue",
+    "untracked": "{{names}} : rien n'est encore traduit. Le contenu s'affiche dans la langue par défaut en attendant les traductions.",
+    "search": "Rechercher un contenu par nom",
+    "showing": "{{shown}} sur {{total}}",
+    "clearFilters": "Effacer les filtres",
+    "edit": "Traduire",
+    "updatedOn": "Mis à jour le {{date}}",
+    "openIn": "Traduire {{item}} en {{name}} — {{done}} champs sur {{total}} faits",
+    "filters": {
+      "language": "Langue",
+      "type": "Type de contenu",
+      "status": "Statut",
+      "sort": "Trier par",
+      "allLanguages": "Toutes les langues",
+      "allTypes": "Tous les contenus",
+      "allStatuses": "Tous les statuts"
+    },
+    "sort": {
+      "priority": "Priorité d'abord",
+      "recent": "Mis à jour récemment",
+      "incomplete": "Les moins avancés",
+      "name": "Nom A–Z"
+    },
+    "col": {
+      "content": "Contenu",
+      "missing": "Manquant en",
+      "status": "Statut",
+      "progress": "Traduit"
+    },
+    "status": {
+      "missing": "Manquant",
+      "partial": "Partiel",
+      "outdated": "À relire",
+      "complete": "Complet"
+    },
+    "priority": {
+      "high": "Priorité haute",
+      "normal": "Normale",
+      "low": "Basse"
+    },
+    "type": {
+      "product": "Produit",
+      "category": "Catégorie",
+      "module": "Module de formation",
+      "email": "Modèle d'e-mail",
+      "content": "Page"
+    },
+    "typePlural": {
+      "product_one": "produit",
+      "product_other": "produits",
+      "category_one": "catégorie",
+      "category_other": "catégories",
+      "module_one": "module de formation",
+      "module_other": "modules de formation",
+      "email_one": "modèle d'e-mail",
+      "email_other": "modèles d'e-mail",
+      "content_one": "autre contenu",
+      "content_other": "autres contenus"
+    },
+    "area": {
+      "storefront": "Boutique",
+      "product": "Produits",
+      "category": "Catégories",
+      "module": "Formations",
+      "email": "E-mails",
+      "content": "Pages"
+    },
+    "field": {
+      "name": "Nom",
+      "shortDescription": "Description courte",
+      "description": "Description",
+      "seoTitle": "Titre SEO",
+      "title": "Titre",
+      "summary": "Résumé",
+      "objectives": "Objectifs pédagogiques",
+      "subject": "Objet",
+      "preheader": "Texte d'aperçu",
+      "body": "Corps du texte"
+    },
+    "fieldState": {
+      "missing": "Manquant",
+      "outdated": "À relire",
+      "translated": "Traduit"
+    },
+    "allDone": {
+      "title": "Tout est traduit",
+      "body": "Toutes les langues activées sont complètes. Les nouveaux contenus apparaîtront ici dès qu'ils seront à traduire."
+    },
+    "noMatch": {
+      "title": "Aucun résultat pour ces filtres",
+      "body": "Essayez une autre langue ou un autre type de contenu, ou effacez les filtres pour tout voir."
+    },
+    "editor": {
+      "description": "Traduisez à côté de l'original anglais. Les champs manquants sont mis en évidence.",
+      "languages": "Langue de traduction",
+      "completeTitle": "Déjà entièrement traduit",
+      "progress": "{{name}} · {{done}} champs traduits sur {{total}}",
+      "left_one": "{{count}} manquant",
+      "left_other": "{{count}} manquants",
+      "toReview_one": "{{count}} à relire",
+      "toReview_other": "{{count}} à relire",
+      "prev": "Lacune précédente",
+      "next": "Champ manquant suivant",
+      "fields": "Champs",
+      "original": "Anglais — original",
+      "placeholder": "Ajouter la traduction ({{name}})",
+      "placeholders": "Conservez {{list}} — remplacé par les informations du client à l'envoi de l'e-mail.",
+      "outdated": "L'anglais a changé le {{date}}, après cette traduction.",
+      "keep": "Toujours correct",
+      "reviewMany_one": "{{count}} champ a été traduit avant la modification de l'anglais.",
+      "reviewMany_other": "{{count}} champs ont été traduits avant la modification de l'anglais.",
+      "confirmAll": "Tout marquer comme relu",
+      "alreadyComplete": "Cet élément est déjà entièrement traduit ({{name}}).",
+      "unsaved_one": "Modifications non enregistrées dans {{count}} langue",
+      "unsaved_other": "Modifications non enregistrées dans {{count}} langues",
+      "noChanges": "Aucune modification",
+      "save": "Enregistrer la traduction",
+      "saveNext": "Enregistrer et suivant",
+      "skip": "Passer au suivant",
+      "saved": "Traduction enregistrée — {{name}}",
+      "failed": "Traduction non enregistrée",
+      "failedInline": "Non enregistré — votre texte est toujours là. Réessayez.",
+      "leaveTitle": "Quitter sans enregistrer ?",
+      "leaveBody": "Vos modifications de traduction pour cet élément seront perdues.",
+      "leaveConfirm": "Abandonner",
+      "leaveCancel": "Continuer"
+    }
+  }
+}

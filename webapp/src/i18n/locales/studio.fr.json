@@ -1,0 +1,602 @@
+{
+  "materials": {
+    "crystal": "Cristal",
+    "sapphire": "Saphir",
+    "rose": "Rose fuchsia",
+    "emerald": "Émeraude",
+    "gold": "Or 18k",
+    "opal": "Opale"
+  },
+  "compositions": {
+    "signature": "Aurora",
+    "minimal": "Minimal",
+    "statement": "Statement",
+    "symmetrical": "Symétrique",
+    "mixed": "Formes mixtes",
+    "sparkle": "Sparkle",
+    "custom": "Libre"
+  },
+  "mockup": {
+    "appName": "Studio 3D",
+    "projectName": "Composition · Aurora",
+    "undo": "Annuler",
+    "redo": "Rétablir",
+    "save": "Enregistrer",
+    "saving": "Enregistrement…",
+    "saved": "Enregistrée",
+    "share": "Partager",
+    "shareToastTitle": "Le partage, dans le vrai Studio",
+    "shareToastBody": "Cet aperçu ne crée pas de lien — dans le Studio, vous partagerez une composition avec vos proches ou votre artiste.",
+    "library": "Bibliothèque",
+    "search": "Rechercher une pièce",
+    "filterLabel": "Filtrer la bibliothèque",
+    "filters": { "all": "Tout", "crystals": "Cristaux", "gold": "Or" },
+    "addHint": "Choisissez une pièce pour l’ajouter au sourire.",
+    "swapHint": "Choisissez une pièce pour remplacer celle sélectionnée.",
+    "canvasLabel": "Canevas du Studio — aperçu interactif",
+    "pieceLabel": "{{name}}, pièce {{index}}",
+    "viewLabel": "Angle de vue",
+    "views": { "front": "Face", "three": "¾", "profile": "Profil" },
+    "zoomLabel": "Zoom",
+    "zoomIn": "Zoomer",
+    "zoomOut": "Dézoomer",
+    "pieceCount_one": "{{count}} pièce",
+    "pieceCount_other": "{{count}} pièces",
+    "panelTitle": "Composition",
+    "noSelection": "Sélectionnez une pièce sur les dents pour l’ajuster, ou ajoutez-en une depuis la bibliothèque.",
+    "material": "Matière",
+    "size": "Taille",
+    "sizeValue": "{{value}} mm",
+    "remove": "Retirer la pièce",
+    "symmetry": "Guide de symétrie",
+    "presets": "Points de départ",
+    "fullTitle": "Le sourire est complet",
+    "fullBody": "Sélectionnez une pièce pour la remplacer, ou retirez-en une pour faire de la place."
+  },
+  "hero": {
+    "eyebrow": "Studio 3D",
+    "script": "Votre atelier créatif",
+    "title": "Créez vos propres bijoux dentaires.",
+    "body": "Imaginez des compositions uniques, testez formes et placements, et donnez vie à vos idées avec le Studio 3D Global Toothgems.",
+    "ctaPrimary": "Commencer à créer",
+    "ctaOpen": "Ouvrir le Studio",
+    "ctaSecondary": "Découvrir le Studio",
+    "floatPiece": "Cœur Aurora",
+    "floatPieceSub": "Or 18k · 3,0 mm",
+    "floatSaved": "Enregistrée dans vos créations"
+  },
+  "concept": {
+    "eyebrow": "Qu’est-ce que le Studio 3D ?",
+    "title": "Imaginez. Testez. Créez.",
+    "body": "Choisissez vos bijoux, placez vos pièces et explorez des combinaisons infinies pour créer un look qui ne ressemble qu’à vous.",
+    "points": {
+      "combine": { "title": "Combinez les pièces", "body": "Cristaux, charms en or, formes et couleurs, réunis sur un même sourire." },
+      "position": { "title": "Placez-les librement", "body": "Déplacez, redimensionnez et changez chaque pièce, dent par dent." },
+      "explore": { "title": "Recommencez à l’infini", "body": "Annulez, comparez, repartez de zéro — rien n’est figé tant que vous ne le décidez pas." }
+    },
+    "playground": "Utilisez-le pour tester une combinaison avant de commander, ou simplement comme terrain de jeu créatif — aucune expérience requise."
+  },
+  "features": {
+    "eyebrow": "Dans le Studio",
+    "title": "Tout pour composer.",
+    "body": "Des outils simples, pensés pour le bijou dentaire — pas pour les ingénieurs.",
+    "build": { "title": "Construisez votre composition", "body": "Associez plusieurs bijoux dentaires en un seul design unique.", "chip": "5 pièces · 3 matières" },
+    "experiment": { "title": "Expérimentez librement", "body": "Essayez formes, styles, positions et combinaisons." },
+    "visualize": { "title": "Visualisez votre idée", "body": "Voyez à quoi pourrait ressembler votre composition avant de lui donner vie." },
+    "signature": { "title": "Créez votre style signature", "body": "Des designs qui reflètent votre personnalité et votre identité artistique.", "script": "Signature" },
+    "save": {
+      "title": "Enregistrez vos créations",
+      "body": "Gardez chaque composition dans votre galerie personnelle et retrouvez-la dès que l’inspiration revient.",
+      "listLabel": "Exemples de compositions enregistrées",
+      "latest": "Récente"
+    },
+    "share": { "title": "Partagez vos idées", "body": "Envoyez une composition à vos proches, ou à l’artiste qui la posera." },
+    "before": "Avant",
+    "after": "Après",
+    "compareLabel": "Déplacer le séparateur avant/après",
+    "shareSheetTitle": "Partager « Aurora »",
+    "copy": "Copier",
+    "copied": "Copié",
+    "exportImage": "Image",
+    "exportArtist": "Envoyer à mon artiste",
+    "exportSocial": "Stories"
+  },
+  "showcase": {
+    "eyebrow": "Galerie",
+    "title": "Découvrez ce que vous pouvez créer.",
+    "body": "Rendus, vidéos et créations de membres prendront place ici. En attendant, un aperçu de ce que le Studio rend possible.",
+    "tags": {
+      "video": "STUDIO VIDEO PLACEHOLDER",
+      "composition": "3D COMPOSITION PLACEHOLDER",
+      "screenshot": "STUDIO SCREENSHOT PLACEHOLDER",
+      "beforeAfter": "BEFORE / AFTER PLACEHOLDER",
+      "user": "USER CREATION PLACEHOLDER"
+    },
+    "captions": {
+      "video": "Une visite de 30 secondes : d’un sourire vierge à une composition terminée.",
+      "composition": "Rendu 360° d’une composition terminée.",
+      "screenshot": "La fenêtre du Studio, bibliothèque ouverte.",
+      "beforeAfter": "Le même sourire, avant et après sa composition.",
+      "user": {
+        "one": "Une toute première composition.",
+        "two": "Gouttes en miroir, créées dans le Studio.",
+        "three": "Une étude à trois formes.",
+        "four": "Constellation de micro-cristaux."
+      }
+    },
+    "play": "Lire la visite du Studio (emplacement)",
+    "videoToastTitle": "Vidéo à venir",
+    "videoToastBody": "La visite du Studio sera lue ici une fois tournée.",
+    "compareLabel": "Style de l’avant/après :"
+  },
+  "inspiration": {
+    "eyebrow": "Inspiration",
+    "title": "Six ambiances pour commencer.",
+    "body": "Des planches pour faire naître des idées — ouvrez-en une dans le Studio et faites-la vôtre.",
+    "number": "N° {{n}}",
+    "recreate": "Recréer dans le Studio",
+    "recreateAria": "Recréer la composition {{style}} dans le Studio"
+  },
+  "steps": {
+    "eyebrow": "Comment ça marche",
+    "title": "Trois étapes, une composition.",
+    "stepLabel": "Étape {{n}} :",
+    "choose": { "title": "Choisir", "body": "Explorez les bijoux dentaires disponibles." },
+    "compose": { "title": "Composer", "body": "Disposez-les et associez-les dans le Studio." },
+    "create": { "title": "Créer", "body": "Enregistrez votre idée et intégrez votre composition à votre parcours Global Toothgems." }
+  },
+  "pricing": {
+    "eyebrow": "Accès au Studio 3D",
+    "planName": "Studio 3D · Mensuel",
+    "perMonth": "/ mois",
+    "selected": "Sélectionné",
+    "benefits": [
+      "Accès complet au Studio 3D",
+      "Outils de composition créative",
+      "Vos créations enregistrées, toujours à portée de main",
+      "Accès aux futures améliorations du Studio"
+    ],
+    "reassurance": "Sans engagement — résiliable à tout moment.",
+    "reassuranceShort": "Sans engagement"
+  },
+  "offer": {
+    "eyebrow": "Studio 3D",
+    "title": "Votre prochaine composition commence ici.",
+    "body": "Tout ce que propose le Studio, pour le prix d’un café par mois.",
+    "points": ["Toutes les pièces de la bibliothèque", "Des essais à volonté", "Ordinateur, tablette et mobile", "Les nouveaux outils dès leur sortie"],
+    "cta": "Accéder au Studio 3D"
+  },
+  "faq": {
+    "eyebrow": "Questions",
+    "title": "Bon à savoir.",
+    "items": [
+      {
+        "question": "Qu’est-ce que le Studio 3D ?",
+        "answer": "Un outil créatif en ligne pour imaginer vos propres compositions de bijoux dentaires : choisissez des pièces, placez-les sur un sourire et voyez le résultat avant toute pose."
+      },
+      {
+        "question": "Que puis-je créer avec ?",
+        "answer": "D’un seul cristal discret à une composition statement complète — en mêlant formes, couleurs, cristaux et charms en or sur plusieurs dents."
+      },
+      {
+        "question": "Combien coûte l’accès ?",
+        "answer": "L’accès au Studio coûte 5 € par mois. Sans engagement : vous pouvez résilier à tout moment."
+      },
+      {
+        "question": "Le Studio est-il disponible sur mobile ?",
+        "answer": "Oui. Le Studio fonctionne sur ordinateur, tablette et mobile ; un plus grand écran reste plus confortable pour les placements précis."
+      },
+      {
+        "question": "Puis-je enregistrer mes compositions ?",
+        "answer": "Oui. Vos compositions sont enregistrées dans votre galerie personnelle : vous pouvez les retrouver, les dupliquer ou continuer à les affiner."
+      },
+      {
+        "question": "Puis-je utiliser mes créations pour commander des bijoux ?",
+        "answer": "Votre composition enregistrée sert de référence : partagez-la avec votre artiste, ou utilisez-la pour retrouver les pièces correspondantes en boutique."
+      }
+    ]
+  },
+  "teaser": {
+    "eyebrow": "Studio 3D",
+    "title": "Transformez vos idées en bijoux dentaires.",
+    "body": "Composez vos propres designs dans notre Studio 3D : choisissez vos pièces, placez-les dent par dent et voyez votre look prendre vie.",
+    "cta": "Découvrir le Studio 3D",
+    "chip": "Aurora · cœur or 18k"
+  },
+  "subscribe": {
+    "back": "Retour au Studio",
+    "title": "Débloquez le Studio 3D Global Toothgems.",
+    "body": "Votre espace créatif pour imaginer des compositions de bijoux dentaires uniques.",
+    "stepsLabel": "Étapes de l’abonnement",
+    "stepDone": "terminé",
+    "steps": { "plan": "Formule", "account": "Compte", "confirm": "Confirmation" },
+    "planLegend": "Votre formule",
+    "planMonthly": "Mensuelle",
+    "planMonthlySub": "Facturée chaque mois · sans engagement",
+    "accountLegend": "Compte",
+    "signedIn": "Session ouverte",
+    "emailLabel": "Adresse e-mail",
+    "emailPlaceholder": "vous@exemple.com",
+    "emailHint": "Votre accès au Studio sera lié à cette adresse. Déjà un compte ?",
+    "signInLink": "Se connecter",
+    "emailInvalid": "Saisissez une adresse e-mail valide.",
+    "paymentLegend": "Paiement",
+    "cardDemo": "Carte •••• 4242",
+    "cardDemoSub": "Carte de démonstration — prototype",
+    "prototypeNote": "Prototype : aucune carte n’est saisie et aucun paiement n’est effectué. Dans le vrai Studio, le paiement a lieu sur la page sécurisée de notre prestataire de paiement.",
+    "summaryLine": "Studio 3D — mensuel",
+    "dueToday": "À régler aujourd’hui",
+    "renews": "Puis {{price}} chaque mois. Résiliable à tout moment depuis votre compte.",
+    "terms": "J’accepte les conditions de l’abonnement Studio 3D",
+    "termsHint": "Texte de prototype — les conditions ne sont pas encore rédigées.",
+    "cta": "S’abonner et commencer à créer",
+    "ctaHint": "Acceptez les conditions pour continuer.",
+    "processing": "Confirmation…",
+    "confirmedTitle": "Bienvenue dans le Studio.",
+    "confirmedBody": "Votre accès est prêt. Une confirmation sera envoyée à {{email}}.",
+    "prototypeConfirmed": "Prototype : rien n’a été débité et aucun accès n’a été créé.",
+    "openStudio": "Commencer à créer",
+    "reassurance": { "secure": "Paiement sécurisé", "cancel": "Sans engagement", "devices": "Ordinateur, tablette et mobile" }
+  },
+  "access": {
+    "previewBadge": "Aperçu gratuit",
+    "previewHint": "Le Studio est gratuit pendant son aperçu — sans paiement ni carte.",
+    "previewNote": "Gratuit pendant l’aperçu — sans carte bancaire."
+  },
+  "editor": {
+    "documentTitle": "Studio 3D · Atelier",
+    "appName": "Studio 3D",
+    "loading": "Préparation du studio…",
+    "backToStudio": "Retour à la page du Studio",
+    "pieceCount_one": "{{count}} pièce",
+    "pieceCount_other": "{{count}} pièces",
+    "estimateShort": "env. {{total}}",
+    "estimateHint": "Estimation indicative des pièces seules — ce n’est pas un prix facturé. La pose et les prix définitifs sont fixés par votre artiste.",
+    "undo": "Annuler",
+    "undoHint": "Annuler (Ctrl+Z)",
+    "redo": "Rétablir",
+    "redoHint": "Rétablir (Ctrl+Maj+Z)",
+    "importModel": "Importer un modèle 3D",
+    "importModelHint": "Importez votre propre modèle de dentition (.glb ou .gltf) — ou déposez le fichier sur la scène",
+    "resetModel": "Revenir à l’arcade de référence",
+    "save": "Enregistrer",
+    "saveHint": "Enregistrer la création dans ce navigateur",
+    "freePlacement": "Placement libre",
+    "freePlacementLong": "Placement libre · surface non identifiée",
+    "toothName": "{{tooth}} · {{side}}",
+    "teeth": {
+      "central": "Incisive centrale",
+      "lateral": "Incisive latérale",
+      "canine": "Canine",
+      "pm1": "Première prémolaire",
+      "pm2": "Deuxième prémolaire",
+      "m1": "Première molaire",
+      "m2": "Deuxième molaire"
+    },
+    "sides": {
+      "right": "haut droite",
+      "left": "haut gauche"
+    },
+    "pieces": {
+      "crystal-round": "Cristal rond",
+      "crystal-diamond": "Taille diamant",
+      "crystal-square": "Taille carrée",
+      "crystal-petite": "Petit cristal",
+      "crystal-grand": "Grand cristal",
+      "shape-star": "Étoile",
+      "shape-heart": "Cœur",
+      "shape-triangle": "Triangle",
+      "shape-drop": "Goutte",
+      "shape-navette": "Navette",
+      "shape-baguette": "Baguette",
+      "shape-butterfly": "Papillon",
+      "shape-moon": "Croissant de lune",
+      "shape-bolt": "Éclair",
+      "shape-blossom": "Fleur",
+      "metal-gold-dot": "Point doré",
+      "metal-gold-star": "Étoile dorée",
+      "metal-gold-heart": "Cœur doré",
+      "metal-silver": "Diamant argenté"
+    },
+    "finishes": {
+      "clear": "Transparent",
+      "diamond": "Diamant",
+      "rose": "Rosé",
+      "sapphire": "Saphir",
+      "ruby": "Rubis",
+      "emerald": "Émeraude",
+      "gold": "Or",
+      "silver": "Argent",
+      "custom": "Couleur personnalisée",
+      "customValue": "Personnalisée {{hex}}"
+    },
+    "presets": {
+      "menu": "Modèles",
+      "designPresets": "Compositions prêtes",
+      "mine": "Mes modèles",
+      "mineEmpty": "Enregistrez votre création sous un nom pour la réutiliser à tout moment.",
+      "saveCurrent": "Enregistrer la création comme modèle…",
+      "nameLabel": "Nom du modèle",
+      "namePlaceholder": "Nom du modèle…",
+      "save": "Enregistrer",
+      "delete": "Supprimer le modèle « {{name}} »",
+      "confirmDelete": "Confirmer : supprimer « {{name}} »",
+      "clearAll": "Retirer toutes les pièces",
+      "minimal": {
+        "name": "Minimal",
+        "desc": "Un petit cristal sur l’incisive centrale supérieure droite."
+      },
+      "symmetry": {
+        "name": "Symétrie",
+        "desc": "Deux cristaux assortis sur les incisives centrales."
+      },
+      "glam": {
+        "name": "Glam",
+        "desc": "Une cascade graduée sur les six dents de devant."
+      },
+      "papillon": {
+        "name": "Papillon",
+        "desc": "Un papillon doré et quelques éclats dispersés."
+      }
+    },
+    "export": {
+      "menu": "Exporter",
+      "images": "Images",
+      "png": "Capture · PNG",
+      "pngSub": "Vue actuelle sur le fond du Studio",
+      "transparent": "Capture · PNG transparent",
+      "transparentSub": "Fond retiré, transparence conservée",
+      "quoteSection": "Estimation",
+      "quote": "Fiche d’estimation · PNG",
+      "quoteSub": "Récapitulatif chiffré avec le rendu et le total",
+      "clientLabel": "Nom du client",
+      "clientPlaceholder": "Nom du client…",
+      "quoteAction": "Créer",
+      "json": "Création · JSON",
+      "jsonSub": "Les données de la création, à conserver ou à partager avec votre artiste"
+    },
+    "quote": {
+      "title": "Estimation de la création",
+      "client": "Client",
+      "piece": "Pièce",
+      "tooth": "Dent",
+      "size": "Taille",
+      "finish": "Finition",
+      "price": "Prix",
+      "total": "Total estimé",
+      "footer_one": "Estimation indicative pour {{count}} pièce — ni un devis ni une facture. Générée par le Studio 3D Global Toothgems.",
+      "footer_other": "Estimation indicative pour {{count}} pièces — ni un devis ni une facture. Générée par le Studio 3D Global Toothgems."
+    },
+    "library": {
+      "title": "Bibliothèque de bijoux",
+      "sub": "Glissez une pièce sur une dent — ou cliquez dessus, puis sur une dent.",
+      "search": "Rechercher une pièce",
+      "empty": "Aucune pièce ne correspond à votre recherche.",
+      "categories": {
+        "crystals": "Cristaux",
+        "shapes": "Formes",
+        "precious": "Métaux précieux"
+      },
+      "cardHint": "{{name}} — glissez sur une dent, ou cliquez pour la sélectionner",
+      "keyboardHint": "Appuyez sur Entrée pour poser cette pièce sur la dent {{fdi}}, {{tooth}}. Sélectionnez une dent sur le modèle pour changer de cible."
+    },
+    "viewport": {
+      "label": "Vue 3D de l’arcade dentaire",
+      "armed": "Cliquez sur une dent pour poser : {{name}}",
+      "cancelArmed": "Annuler la pose",
+      "rotate": "Pivoter",
+      "rotateLabel_one": "Faire pivoter la pièce : appuyez, puis tournez autour. Flèches : 1°, avec Maj : 15°.",
+      "rotateLabel_other": "Faire pivoter la sélection : appuyez, puis tournez autour. Flèches : 1°, avec Maj : 15°.",
+      "quick": {
+        "label_one": "Actions rapides pour la pièce",
+        "label_other": "Actions rapides pour la sélection",
+        "smaller_one": "Réduire la pièce",
+        "smaller_other": "Réduire les pièces",
+        "larger_one": "Agrandir la pièce",
+        "larger_other": "Agrandir les pièces"
+      },
+      "placing": "Relâchez au-dessus d’une dent pour poser — rouge : emplacement occupé",
+      "hint": "Glissez une pièce sur une dent pour commencer",
+      "stage": {
+        "studio": "Arcade supérieure · notation FDI",
+        "teeth": "Modèle importé · dents identifiées",
+        "free": "Modèle importé · mode libre"
+      }
+    },
+    "views": {
+      "label": "Caméra",
+      "front": "Face",
+      "top": "Dessus",
+      "side": "Profil",
+      "reset": "Réinitialiser"
+    },
+    "zoomIn": "Zoomer",
+    "zoomOut": "Dézoomer",
+    "lights": {
+      "label": "Éclairage",
+      "studio": "Studio",
+      "lamp": "Lampe",
+      "daylight": "Jour",
+      "studioHint": "Éclairage neutre de studio",
+      "lampHint": "Lampe de fauteuil chaude et dirigée",
+      "daylightHint": "Lumière du jour, vive"
+    },
+    "orbit": "Orbite",
+    "orbitHint": "Tourner lentement autour de la création",
+    "context": {
+      "selected_one": "{{count}} pièce sélectionnée",
+      "selected_other": "{{count}} pièces sélectionnées",
+      "rotate_one": "Pivoter de +90°",
+      "rotate_other": "Tout pivoter de +90°",
+      "duplicate_one": "Dupliquer",
+      "duplicate_other": "Tout dupliquer",
+      "delete_one": "Supprimer",
+      "delete_other": "Tout supprimer"
+    },
+    "mirror": {
+      "label": "Miroir",
+      "horizontal": "Miroir horizontal",
+      "vertical": "Miroir vertical",
+      "hint": "L’horizontal reflète de part et d’autre du milieu de l’arcade (11 ↔ 21…) ; le vertical retourne autour du centre de la sélection. Les pièces se recalent sur l’émail et ne se chevauchent jamais."
+    },
+    "inspector": {
+      "label": "Propriétés",
+      "multiSub_one": "Sur {{count}} dent · Maj + clic sur une pièce du modèle pour l’ajouter ou la retirer.",
+      "multiSub_other": "Sur {{count}} dents · Maj + clic sur une pièce du modèle pour l’ajouter ou la retirer.",
+      "onTooth": "Dent {{fdi}} · {{name}}",
+      "type": "Type",
+      "typeAll": "Type — toutes les pièces",
+      "size": "Taille",
+      "sizeAll": "Taille — toutes les pièces",
+      "diameter": "Diamètre",
+      "mm": "{{value}} mm",
+      "rotation": "Rotation",
+      "rotationAll": "Rotation — toutes les pièces",
+      "quarterTurns": "Quarts de tour",
+      "spin": "Rotation sur la surface",
+      "finish": "Finition",
+      "finishAll": "Finition — toutes les pièces",
+      "customColor": "Couleur personnalisée",
+      "customColorAll": "Couleur personnalisée — toutes les pièces",
+      "customColorInput": "Choisir une couleur précise",
+      "backToFinishes": "Revenir aux finitions",
+      "mounting": "Pose",
+      "mountingAll": "Pose — toutes les pièces",
+      "standoff": "Distance à l’émail",
+      "standoffHint": "Diminuez-la si la pièce flotte au-dessus de votre modèle ; augmentez-la si elle s’enfonce dans l’émail.",
+      "layout": "Disposition",
+      "distribute": "Espacer",
+      "align": "Aligner au centre",
+      "layoutHint": "Espacer répartit les pièces sélectionnées entre les deux plus éloignées, le long de l’arcade ; Aligner au centre place chaque pièce à mi-hauteur de sa dent. Les pièces ne se chevauchent jamais.",
+      "position": "Position",
+      "positionHint": "Faites glisser la pièce sur le modèle pour la déplacer, ou faites un clic droit pour les actions rapides. Les pièces peuvent se toucher, jamais se chevaucher.",
+      "fdi": "Notation FDI",
+      "fdiApprox": "Notation FDI · identification approximative",
+      "piecesOnTooth": "Pièces sur cette dent",
+      "toothEmpty": "Aucun bijou ici pour l’instant. Glissez une pièce de la bibliothèque sur le modèle.",
+      "camera": "Caméra",
+      "cameraHint": "Double-cliquez sur une dent pour centrer la caméra dessus.",
+      "overview": "Vue d’ensemble de la création",
+      "pieces": "Pièces",
+      "zones": "Dents",
+      "estimate": "Estimation",
+      "noOverlap": "Les pièces peuvent se toucher, jamais se chevaucher — les emplacements occupés sont refusés.",
+      "design": "Création",
+      "designEmpty": "Rien n’est encore posé. Glissez une pièce de la bibliothèque sur l’arcade — elle se cale sur la surface et en suit la courbe."
+    },
+    "surface": {
+      "line": "{{third}} · {{face}}",
+      "third": {
+        "incisal": "Tiers incisif",
+        "middle": "Tiers moyen",
+        "cervical": "Tiers cervical"
+      },
+      "face": {
+        "labial": "face vestibulaire",
+        "palatal": "face palatine",
+        "incisal": "bord incisif",
+        "cervical": "face cervicale",
+        "proximal": "face proximale"
+      }
+    },
+    "shortcuts": {
+      "title": "Raccourcis",
+      "undoRedo": "Annuler / rétablir",
+      "selectAll": "Sélectionner toutes les pièces",
+      "addToSelection": "Ajouter à la sélection",
+      "pieceActions": "Actions sur une pièce",
+      "duplicate": "Dupliquer la sélection",
+      "delete": "Supprimer la sélection",
+      "deselect": "Désélectionner / annuler",
+      "pan": "Déplacer la caméra",
+      "focus": "Centrer sur une dent",
+      "keys": {
+        "undoRedo": "Ctrl Z|Ctrl Maj Z",
+        "selectAll": "Ctrl A",
+        "addToSelection": "Maj + clic",
+        "pieceActions": "Clic droit",
+        "duplicate": "D",
+        "delete": "Suppr",
+        "deselect": "Échap",
+        "pan": "Maj + glisser",
+        "focus": "Double-clic"
+      }
+    },
+    "webgl": {
+      "title": "La 3D ne peut pas s’afficher ici",
+      "body": "Votre navigateur ou votre appareil n’active pas les graphismes 3D (WebGL). Essayez un navigateur à jour, ou activez l’accélération matérielle."
+    },
+    "quickActions": {
+      "menu": "Actions rapides",
+      "title": "Actions rapides sur la sélection",
+      "hint": "Boutons flottants à côté des pièces sélectionnées — pratiques sur téléphone ou tablette.",
+      "show": "Afficher les actions rapides",
+      "choose": "Boutons à afficher",
+      "rotate": "Pivoter (molette)",
+      "size": "Taille − / +",
+      "duplicate": "Dupliquer",
+      "mirrorH": "Refléter horizontalement",
+      "mirrorV": "Refléter verticalement",
+      "delete": "Supprimer",
+      "reset": "Rétablir les boutons par défaut"
+    },
+    "toasts": {
+      "restoredTitle": "Bon retour",
+      "restoredBody": "Votre dernière création a été restaurée.",
+      "saved": "Création enregistrée dans ce navigateur",
+      "spotTaken": "Cet emplacement chevauche une pièce — choisissez un endroit libre",
+      "noRoomBeside": "Pas de place libre à côté de la sélection",
+      "noRoomOnTooth": "Pas de place libre sur cette dent",
+      "placedOnTooth": "Pièce posée sur la dent {{tooth}}",
+      "duplicated_one": "Pièce dupliquée — faites-la glisser où vous voulez",
+      "duplicated_other": "{{count}} pièces dupliquées — essayez le miroir horizontal pour un sourire symétrique",
+      "duplicatedPartial": "{{count}} sur {{total}} dupliquées — les autres n’avaient pas de place",
+      "removed_one": "Pièce retirée",
+      "removed_other": "{{count}} pièces retirées",
+      "rotated_one": "Pièce pivotée",
+      "rotated_other": "Sélection pivotée",
+      "sizeMax": "Déjà à la taille maximale",
+      "sizeMin": "Déjà à la taille minimale",
+      "mirroredH": "Reflétée de part et d’autre du milieu",
+      "mirroredV": "Reflétée verticalement",
+      "mirroredHPartial_one": "Reflétée — {{count}} pièce laissée en place (emplacement occupé)",
+      "mirroredHPartial_other": "Reflétée — {{count}} pièces laissées en place (emplacements occupés)",
+      "mirroredVPartial_one": "Reflétée — {{count}} pièce laissée en place (emplacement occupé)",
+      "mirroredVPartial_other": "Reflétée — {{count}} pièces laissées en place (emplacements occupés)",
+      "distributeNeedsThree": "Sélectionnez au moins 3 pièces pour les espacer",
+      "distributed": "Pièces espacées régulièrement le long de l’arcade",
+      "distributedPartial_one": "Espacées — {{count}} pièce laissée en place (emplacement occupé)",
+      "distributedPartial_other": "Espacées — {{count}} pièces laissées en place (emplacements occupés)",
+      "nothingToAlign": "Rien à aligner",
+      "aligned": "Pièces alignées au milieu de leur dent",
+      "alignedPartial_one": "Alignées — {{count}} pièce laissée en place (emplacement occupé)",
+      "alignedPartial_other": "Alignées — {{count}} pièces laissées en place (emplacements occupés)",
+      "presetApplied": "« {{name}} » appliqué — vous pouvez annuler",
+      "presetUnavailable": "Les dents de ce modèle ne figurent pas sur le modèle 3D actuel",
+      "presetNameMissing": "Donnez d’abord un nom à votre modèle",
+      "presetEmpty": "Posez au moins une pièce avant d’enregistrer un modèle",
+      "presetSaved": "Modèle « {{name}} » enregistré",
+      "presetDeleted": "Modèle supprimé",
+      "cleared": "Création effacée — vous pouvez annuler",
+      "exportedPng": "Capture PNG téléchargée",
+      "exportedTransparent": "PNG transparent téléchargé",
+      "exportedJson": "Fichier JSON de la création téléchargé",
+      "quoteEmpty": "Posez d’abord au moins une pièce",
+      "quoteBuilding": "Création de la fiche d’estimation…",
+      "quoteExported": "Fiche d’estimation téléchargée",
+      "quoteFailed": "La fiche d’estimation n’a pas pu être créée",
+      "exportFailed": "L’image n’a pas pu être exportée",
+      "modelReset": "Arcade de référence rétablie",
+      "import": {
+        "started": "Import de {{name}}…",
+        "teeth_one": "Modèle importé — {{count}} dent reconnue",
+        "teeth_other": "Modèle importé — {{count}} dents reconnues",
+        "free": "Modèle importé en mode libre — posez des pièces n’importe où sur la surface. Astuce : nommez les maillages des dents 11–17 / 21–27 pour une identification exacte.",
+        "wrongType": "Choisissez un fichier .glb ou .gltf",
+        "tooLarge": "Ce fichier est trop volumineux ({{max}} Mo max.)",
+        "invalid": "Ce fichier n’est pas un modèle glTF / GLB valide",
+        "empty": "Ce fichier ne contient aucun modèle 3D"
+      }
+    }
+  }
+}

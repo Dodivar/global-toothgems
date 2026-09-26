@@ -1,4 +1,4 @@
-import { useEffect, useMemo, useRef, useState } from "react";
+import { useEffect, useRef, useState } from "react";
 import { useTranslation } from "react-i18next";
 import { Link, useNavigate, useParams } from "react-router-dom";
 import { CheckCircle2, Minus, Plus, ShoppingBag, Star } from "lucide-react";
@@ -7,9 +7,8 @@ import { Button } from "../components/ui/Button";
 import { IconButton } from "../components/ui/IconButton";
 import { Select } from "../components/ui/Select";
 import { ProductCard } from "../components/ui/ProductCard";
-import { ReviewBlock } from "../components/ui/ReviewBlock";
+import { ReviewsSection, useSubjectReviews } from "../components/reviews/ReviewsSection";
 import { getProduct, relatedProducts } from "../data/products";
-import { REVIEWS } from "../data/reviews";
 import { pick } from "../data/types";
 import { formatPrice } from "../lib/format";
 import { useCart } from "../lib/cart";
@@ -45,7 +44,6 @@ export function ProductDetail() {
 
   const buyRef = useRef<HTMLDivElement>(null);
   const [showStickyBar, setShowStickyBar] = useState(false);
-  const reviewsRef = useReveal<HTMLElement>();
   const crossSellRef = useReveal<HTMLElement>();
 
   const name = pick(product.name, lang);
@@ -83,12 +81,11 @@ export function ProductDetail() {
 
   const installment = formatPrice(product.price / 4);
 
-  // Star distribution for the review summary, derived from the sample reviews.
-  const ratingBuckets = useMemo(() => {
-    const counts = [0, 0, 0, 0, 0];
-    for (const r of REVIEWS) counts[Math.min(4, Math.max(0, Math.round(r.rating) - 1))] += 1;
-    return counts.map((c, i) => ({ stars: i + 1, count: c, pct: REVIEWS.length ? (c / REVIEWS.length) * 100 : 0 })).reverse();
-  }, []);
+  // The rating line reads the same published reviews as the section below it,
+  // so the two can never disagree — and a review approved in the back office
+  // moves both.
+  const reviewSubject = { kind: "product" as const, id: product.id };
+  const { summary: ratings } = useSubjectReviews(reviewSubject);
 
   const addToCart = () => {
     addLine({
@@ -179,9 +176,19 @@ export function ProductDetail() {
           <h1 className="text-[length:var(--text-h1)]">{name}</h1>
           <span className="flex items-center gap-1.5 text-sm text-[var(--text-muted)]">
             <Star size={14} fill="var(--gt-ink-900)" color="var(--gt-ink-900)" aria-hidden="true" />
-            <span aria-label={t("product.ratingAria", { rating: product.rating.toFixed(1), count: product.reviewCount })}>
-              {product.rating.toFixed(1)} · {product.reviewCount} {t("product.reviewsSuffix")}
-            </span>
+            {ratings.count > 0 ? (
+              <a
+                href="#avis"
+                className="underline decoration-1 underline-offset-4 hover:text-[var(--text-primary)]"
+                aria-label={t("product.ratingAria", { rating: ratings.average.toFixed(1), count: ratings.count })}
+              >
+                {ratings.average.toFixed(1)} · {ratings.count} {t("product.reviewsSuffix")}
+              </a>
+            ) : (
+              <a href="#avis" className="underline decoration-1 underline-offset-4 hover:text-[var(--text-primary)]">
+                {t("reviews.section.noneYet")}
+              </a>
+            )}
             <span aria-hidden="true">· {material}{center !== material ? `, ${center}` : ""}</span>
           </span>
           <div className="flex items-baseline gap-3">
@@ -308,55 +315,9 @@ export function ProductDetail() {
         </div>
       </div>
 
-      <section ref={reviewsRef} className="gt-reveal mt-16 grid gap-8">
-        <div className="grid gap-2.5">
-          <span className="gt-eyebrow">{t("product.reviewsEyebrow")}</span>
-          <h2 className="text-[length:var(--text-h2)]">{t("product.reviewsTitle")}</h2>
-        </div>
-
-        {/* Rating distribution: a single average hides whether the score is
-            consistent or an average of extremes. */}
-        <div className="grid gap-6 rounded-[var(--radius-card)] border border-[var(--border-subtle)] bg-[var(--surface-card)] p-[var(--space-6)] sm:grid-cols-[auto_minmax(0,1fr)] sm:gap-10">
-          <div className="grid content-start gap-1">
-            <span className="gt-eyebrow">{t("product.ratingBreakdownTitle")}</span>
-            <strong className="text-[40px] font-[var(--weight-black)] leading-none text-[var(--text-primary)]">
-              {product.rating.toFixed(1)}
-            </strong>
-            <span className="flex items-center gap-0.5" role="img" aria-label={t("review.starsAria", { rating: product.rating.toFixed(1) })}>
-              {Array.from({ length: 5 }).map((_, i) => (
-                <Star
-                  key={i}
-                  size={14}
-                  aria-hidden="true"
-                  fill={i < Math.round(product.rating) ? "var(--gt-ink-900)" : "none"}
-                  color={i < Math.round(product.rating) ? "var(--gt-ink-900)" : "var(--gt-ink-300)"}
-                />
-              ))}
-            </span>
-            <span className="text-xs text-[var(--text-muted)]">{t("product.basedOn", { count: product.reviewCount })}</span>
-          </div>
-          <div className="grid content-center gap-1.5">
-            {ratingBuckets.map((b) => (
-              <div key={b.stars} className="flex items-center gap-3 text-xs text-[var(--text-muted)]">
-                <span className="w-8 flex-none tabular-nums">{b.stars} ★</span>
-                <span className="h-1.5 flex-1 overflow-hidden rounded-[var(--radius-pill)] bg-[var(--surface-sunken)]">
-                  <span
-                    className="block h-full rounded-[var(--radius-pill)] bg-[var(--gt-ink-900)] transition-[width] duration-[var(--duration-slow)]"
-                    style={{ width: `${b.pct}%` }}
-                  />
-                </span>
-                <span className="w-6 flex-none text-right tabular-nums">{b.count}</span>
-              </div>
-            ))}
-          </div>
-        </div>
-
-        <div className="grid grid-cols-[repeat(auto-fit,minmax(min(280px,100%),1fr))] gap-6">
-          {REVIEWS.map((r) => (
-            <ReviewBlock key={r.author} author={r.author} date={r.date} rating={r.rating} locale={r.locale} verified title={pick(r.title, lang)} body={pick(r.body, lang)} />
-          ))}
-        </div>
-      </section>
+      {/* Reviews stay below the purchase information, the specifications and
+          the FAQ: they support the decision rather than compete with it. */}
+      <ReviewsSection subject={reviewSubject} inline />
 
       <section ref={crossSellRef} className="gt-reveal mt-16 grid gap-8">
         <div className="flex flex-wrap items-end justify-between gap-4">

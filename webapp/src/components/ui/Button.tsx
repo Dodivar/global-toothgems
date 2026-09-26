@@ -3,7 +3,7 @@ import type { LucideIcon } from "lucide-react";
 import { LoaderCircle } from "lucide-react";
 import clsx from "clsx";
 
-export type ButtonVariant = "primary" | "dark" | "brand" | "outline" | "ghost" | "glass";
+export type ButtonVariant = "primary" | "dark" | "brand" | "outline" | "ghost" | "glass" | "danger" | "dangerOutline";
 export type ButtonSize = "sm" | "md" | "lg";
 
 interface ButtonProps extends ButtonHTMLAttributes<HTMLButtonElement> {
@@ -33,6 +33,11 @@ const variantClasses: Record<ButtonVariant, string> = {
   outline: "bg-transparent text-[var(--text-primary)] border border-[var(--border-strong)] hover:bg-[var(--gt-ink-100)]",
   ghost: "bg-transparent text-[var(--text-primary)] border border-transparent hover:bg-[var(--gt-ink-100)]",
   glass: "gt-glass text-[var(--text-primary)] hover:bg-white/82",
+  /* Destructive actions only. The outline form opens a confirmation; the solid
+     form is the confirmation's final, irreversible button. */
+  danger: "bg-[var(--gt-red-600)] text-white border border-transparent hover:bg-[#8c1227]",
+  dangerOutline:
+    "bg-transparent text-[var(--status-error-fg)] border border-[var(--gt-red-400)] hover:bg-[var(--status-error-bg)] hover:border-[var(--gt-red-600)]",
 };
 
 export function Button({
