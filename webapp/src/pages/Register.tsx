@@ -6,16 +6,17 @@ import { Button } from "../components/ui/Button";
 import { Badge } from "../components/ui/Badge";
 import { StepProgress } from "../components/register/StepProgress";
 import { ContextSummary } from "../components/register/ContextSummary";
-import { BrandAside, BenefitsDisclosure } from "../components/register/BrandAside";
+import { AuthCard, AuthLayout } from "../components/auth/AuthScene";
 import { GoogleDialog, type GoogleIdentity } from "../components/register/GoogleDialog";
 import { LegalDialog, type LegalDoc } from "../components/register/LegalDialog";
 import { VerifyEmail } from "../components/register/VerifyEmail";
+import { CheckInbox } from "../components/register/CheckInbox";
 import { WelcomeScreen, type WelcomeAction } from "../components/register/WelcomeScreen";
 import { DemoPanel } from "../components/register/DemoPanel";
 import { AccountStep } from "../components/register/steps/AccountStep";
 import { ProfileStep } from "../components/register/steps/ProfileStep";
 import { PreferencesStep, type CreateFailure } from "../components/register/steps/PreferencesStep";
-import { useAuth } from "../lib/auth";
+import { confirmationRedirect, useAuth } from "../lib/auth";
 import { useProgress } from "../lib/progress";
 import { useToast } from "../lib/toast";
 import { FORGOT_PATH } from "../lib/accountSecurity";
@@ -54,25 +55,32 @@ const normaliseEmail = (email: string) => email.trim().toLowerCase();
  * state from the login wall, and is shown beside the form throughout so that
  * creating the account never reads as a detour.
  *
- * All of it is front-end only: `lib/registration.ts` simulates the service and
- * `useAuth().signIn` opens the same mock session the login page does. No
- * password leaves this component, and none is stored.
+ * With Supabase configured, the last step creates the account through
+ * Supabase Auth (`useAuth().signUp`): the answers travel as sign-up metadata,
+ * which the database copies into the profile and the consent records, and
+ * Supabase sends the confirmation email, whose link lands on
+ * `/confirmation-compte`. Without Supabase, `lib/registration.ts` simulates
+ * the service — mock inbox included — and nothing is stored.
  */
 export function Register() {
-  const { t } = useTranslation();
+  const { t, i18n } = useTranslation();
   const navigate = useNavigate();
   const location = useLocation();
   const [params, setParams] = useSearchParams();
-  const { signedIn, signIn, signOut, email: sessionEmail } = useAuth();
+  const { signedIn, restoring, realAuth, signIn, signUp, signOut, email: sessionEmail } = useAuth();
   const { openCourse } = useProgress();
   const { showToast } = useToast();
 
   const routeState = location.state as { from?: string; course?: string } | null;
   const context = useMemo(() => resolveContext(params, routeState), [params, routeState]);
 
-  // Read once: signing in at the end of this journey must not swap the welcome
-  // screen for the "already signed in" one.
-  const [signedInOnArrival, setSignedInOnArrival] = useState(signedIn);
+  // Read once, as soon as a kept session is known: signing in at the end of this
+  // journey must not swap the welcome screen for the "already signed in" one.
+  const [arrival, setArrival] = useState<boolean | null>(restoring ? null : signedIn);
+  useEffect(() => {
+    if (arrival === null && !restoring) setArrival(signedIn);
+  }, [arrival, restoring, signedIn]);
+  const signedInOnArrival = arrival === true;
 
   const [phase, setPhase] = useState<Phase>("form");
   const [step, setStep] = useState<FormStep>("account");
@@ -178,6 +186,12 @@ export function Register() {
   /* ---------------- account service (simulated) ---------------- */
 
   const completeAccount = () => {
+    // A real session was opened by the confirmation link (or by sign-up itself).
+    if (realAuth) {
+      setPhase("welcome");
+      scrollToTop();
+      return;
+    }
     const country = data.country.toLowerCase();
     signIn(data.email, {
       firstName: data.firstName,
@@ -190,9 +204,31 @@ export function Register() {
     scrollToTop();
   };
 
+  const emailTakenOnCreate = () => {
+    setEmailTaken(true);
+    setViaGoogle(false);
+    pendingFocus.current = "email";
+    goTo("account");
+  };
+
   const create = async () => {
     setFailure(null);
     setCreating(true);
+    if (realAuth) {
+      const result = await signUp(data, i18n.language, confirmationRedirect(afterConfirmation));
+      setCreating(false);
+      switch (result) {
+        case "confirmationSent":
+          setPhase("verify");
+          return scrollToTop();
+        case "signedIn":
+          return completeAccount();
+        case "emailTaken":
+          return emailTakenOnCreate();
+        default:
+          return setFailure(result);
+      }
+    }
     try {
       await createAccount(data, scenario);
       setCreating(false);
@@ -206,10 +242,7 @@ export function Register() {
       setCreating(false);
       const code = error instanceof RegistrationError ? error.code : "server";
       if (code === "emailTaken") {
-        setEmailTaken(true);
-        setViaGoogle(false);
-        pendingFocus.current = "email";
-        goTo("account");
+        emailTakenOnCreate();
       } else {
         setFailure(code === "network" ? "network" : "server");
       }
@@ -234,7 +267,10 @@ export function Register() {
     setSummary([]);
 
     if (step === "account") {
-      if (!viaGoogle && clearedEmail !== normaliseEmail(data.email)) {
+      // The mock checks availability up front. Supabase Auth offers visitors no
+      // such query — it would reveal who holds an account — so a taken address
+      // is only reported when the account is created.
+      if (!realAuth && !viaGoogle && clearedEmail !== normaliseEmail(data.email)) {
         setCheckingEmail(true);
         const available = await checkEmailAvailable(data.email);
         setCheckingEmail(false);
@@ -302,6 +338,16 @@ export function Register() {
 
   const courseId = context.kind === "training" ? context.courseId : "fondation";
 
+  /** Where the confirmation page offers to continue, following the reason the visitor came. */
+  const afterConfirmation =
+    context.kind === "training" ? `/academy/formation/${courseId}` : context.kind === "purchase" ? "/panier" : "/compte";
+
+  /** Google sign-in is not connected to Supabase yet: say so rather than pretend. */
+  const openGoogle = () => {
+    if (realAuth) showToast(t("authAlt.googleToastTitle"), t("authAlt.googleToastBody"), "info");
+    else setGoogleOpen(true);
+  };
+
   const changeContext = (kind: ContextKind) => {
     const next = new URLSearchParams({ contexte: contextParam(kind) });
     if (kind === "training") next.set("formation", courseId);
@@ -363,208 +409,224 @@ export function Register() {
         ? t("register.actions.create")
         : t("register.actions.continue");
 
+  const crown = (
+    <>
+      <span className="gt-eyebrow text-[var(--gt-blue-700)]">{t("register.eyebrow")}</span>
+      {signedInOnArrival && phase === "form" ? (
+        <Badge tone="success" icon={BadgeCheck} className="justify-self-start">
+          {t("auth.signedInBadge")}
+        </Badge>
+      ) : (
+        <StepProgress current={progressStep} allDone={phase === "welcome"} />
+      )}
+    </>
+  );
+
   return (
-    <div className="gt-register relative isolate overflow-x-clip">
-      <div aria-hidden="true" className="gt-register-wash absolute inset-0 -z-10" />
+    <>
+      <AuthLayout
+        wide
+        before={
+          realAuth ? undefined : (
+            <DemoPanel
+              context={context.kind}
+              onContextChange={changeContext}
+              scenario={scenario}
+              onScenarioChange={setScenario}
+              onRestart={restart}
+            />
+          )
+        }
+      >
+        <div ref={topRef} className="grid min-w-0 scroll-mt-24 gap-5">
+          {arrival === null ? (
+            <div aria-busy="true" className="min-h-[420px]" />
+          ) : (
+            <>
+              {phase !== "welcome" && !signedInOnArrival && <ContextSummary context={context} />}
 
-      <div className="mx-auto grid max-w-[var(--max-width-content)] grid-cols-1 gap-6 px-4 pb-[clamp(48px,7vw,96px)] pt-4 sm:px-[clamp(16px,4vw,48px)] sm:pt-6">
-        <DemoPanel
-          context={context.kind}
-          onContextChange={changeContext}
-          scenario={scenario}
-          onScenarioChange={setScenario}
-          onRestart={restart}
-        />
-
-        <div className="grid grid-cols-1 items-start gap-10 lg:grid-cols-[minmax(0,1fr)_minmax(0,540px)] lg:gap-[clamp(40px,5vw,72px)]">
-          <div ref={topRef} className="grid min-w-0 scroll-mt-24 gap-5 lg:col-start-2 lg:row-start-1">
-            {phase === "form" && !signedInOnArrival ? (
-              <header className="grid gap-3">
-                <span className="gt-eyebrow">{t("register.eyebrow")}</span>
-                <h1 className="text-[clamp(28px,4.4vw,40px)] leading-[1.12] tracking-[var(--tracking-display)]">{t("register.title")}</h1>
-                <p className="m-0 max-w-[46ch] text-[length:var(--text-body-md)] text-[var(--text-body)]">{t("register.lede")}</p>
-              </header>
-            ) : (
-              <h1 className="sr-only">{t("register.title")}</h1>
-            )}
-
-            {phase === "form" && !signedInOnArrival && <BenefitsDisclosure />}
-            {phase !== "welcome" && !signedInOnArrival && <ContextSummary context={context} />}
-
-            {signedInOnArrival && phase === "form" ? (
-              <section className="grid justify-items-start gap-4 rounded-[var(--radius-xl)] border border-[var(--border-subtle)] bg-white p-6 shadow-[var(--shadow-md)] sm:p-8">
-                <Badge tone="success" icon={BadgeCheck}>
-                  {t("auth.signedInBadge")}
-                </Badge>
-                <h2 className="text-[length:var(--text-h3)]">{t("register.signedIn.title")}</h2>
-                <p className="m-0 text-[length:var(--text-body-sm)] text-[var(--text-body)]">
-                  {t("register.signedIn.body", { email: sessionEmail })}
-                </p>
-                <div className="flex flex-wrap gap-2">
-                  <Button variant="primary" iconLeft={LayoutDashboard} onClick={() => navigate("/compte")}>
-                    {t("register.welcome.ctaDashboard")}
-                  </Button>
-                  <Button
-                    variant="outline"
-                    iconLeft={LogOut}
-                    onClick={() => {
-                      signOut();
-                      setSignedInOnArrival(false);
-                    }}
-                  >
-                    {t("register.signedIn.signOut")}
-                  </Button>
-                </div>
-              </section>
-            ) : (
-              <>
-                <StepProgress current={progressStep} allDone={phase === "welcome"} />
-
-                <section
-                  aria-label={t("register.cardLabel", { current: stepIndex + 1, total: STEPS.length })}
-                  className="relative min-w-0 rounded-[var(--radius-xl)] border border-[var(--border-subtle)] bg-white/95 p-5 shadow-[var(--shadow-lg)] backdrop-blur-[6px] sm:p-8"
-                >
-                  {phase === "form" && (
-                    <form noValidate onSubmit={submitStep} className="grid min-w-0">
-                      {liveSummary.length > 1 && (
-                        <div
-                          role="alert"
-                          className="gt-field-message mb-6 grid gap-2 rounded-[var(--radius-md)] border border-[var(--gt-red-400)] bg-[var(--status-error-bg)] p-4"
-                        >
-                          <p className="m-0 flex items-center gap-2 text-[length:var(--text-body-sm)] font-semibold text-[var(--status-error-fg)]">
-                            <CircleAlert size={16} aria-hidden="true" />
-                            {t("register.summary", { count: liveSummary.length })}
-                          </p>
-                          <ul className="m-0 grid gap-1 pl-6 text-[length:var(--text-caption)]">
-                            {liveSummary.map((name) => (
-                              <li key={name}>
-                                <button
-                                  type="button"
-                                  onClick={() => focusField(name)}
-                                  className="text-left text-[var(--status-error-fg)] underline decoration-1 underline-offset-2 hover:text-[var(--gt-ink-900)]"
-                                >
-                                  {errors[name]}
-                                </button>
-                              </li>
-                            ))}
-                          </ul>
-                        </div>
-                      )}
-
-                      <div key={step} className={direction === "forward" ? "gt-step-forward" : "gt-step-back"}>
-                        {step === "account" && (
-                          <AccountStep
-                            data={data}
-                            errors={errors}
-                            set={set}
-                            blur={blur}
-                            fieldRef={fieldRef}
-                            headingRef={headingRef}
-                            touched={(name) => touched.has(name)}
-                            checkingEmail={checkingEmail}
-                            emailTaken={emailTaken}
-                            viaGoogle={viaGoogle}
-                            onGoogle={() => setGoogleOpen(true)}
-                            onUseEmail={useEmailInstead}
-                            signInState={signInState}
-                            onForgotPassword={() => navigate(FORGOT_PATH, { state: { email: data.email.trim() } })}
-                          />
-                        )}
-                        {step === "profile" && (
-                          <ProfileStep data={data} errors={errors} set={set} blur={blur} fieldRef={fieldRef} headingRef={headingRef} />
-                        )}
-                        {step === "preferences" && (
-                          <PreferencesStep
-                            data={data}
-                            errors={errors}
-                            set={set}
-                            blur={blur}
-                            fieldRef={fieldRef}
-                            headingRef={headingRef}
-                            onOpenLegal={setLegalDoc}
-                            failure={failure}
-                            onRetry={() => void create()}
-                            creating={creating}
-                          />
-                        )}
-                      </div>
-
-                      {/* On phones the actions stick to the bottom of the card, so
-                          Continue is always one thumb away on a long step. */}
-                      <div className="gt-step-actions sticky bottom-0 z-10 -mx-5 -mb-5 mt-7 flex items-center gap-3 rounded-b-[var(--radius-xl)] border-t border-[var(--border-subtle)] bg-white/90 px-5 py-3 backdrop-blur-[10px] sm:static sm:m-0 sm:mt-8 sm:rounded-none sm:border-0 sm:bg-transparent sm:p-0 sm:backdrop-blur-none">
-                        {step !== "account" && (
-                          <Button variant="ghost" size="lg" iconLeft={ArrowLeft} onClick={back} disabled={creating} className="flex-none gap-0 px-4! sm:gap-2 sm:px-5!">
-                            {/* Icon-only on phones so the primary action keeps its full label. */}
-                            <span className="sr-only sm:not-sr-only">{t("register.actions.back")}</span>
-                          </Button>
-                        )}
-                        <Button
-                          type="submit"
-                          variant="primary"
-                          size="lg"
-                          iconRight={ArrowRight}
-                          loading={checkingEmail || creating}
-                          className="min-w-0 flex-1 px-5! max-sm:text-[length:var(--text-body-sm)] sm:ml-auto sm:flex-none sm:px-[30px]!"
-                        >
-                          {primaryLabel}
-                        </Button>
-                      </div>
-                    </form>
-                  )}
-
-                  {phase === "verify" && (
-                    <div className="gt-step-forward">
-                      <VerifyEmail
-                        email={data.email}
-                        firstName={data.firstName}
-                        scenario={scenario}
-                        headingRef={headingRef}
-                        onEmailChange={(email) => {
-                          setData((d) => ({ ...d, email }));
-                          setClearedEmail(normaliseEmail(email));
-                        }}
-                        onVerified={completeAccount}
-                      />
-                    </div>
-                  )}
-
-                  {phase === "welcome" && (
-                    <WelcomeScreen
-                      context={context}
-                      firstName={data.firstName}
-                      persona={data.persona}
-                      interest={data.interest}
-                      viaGoogle={viaGoogle}
-                      headingRef={headingRef}
-                      onAction={onWelcomeAction}
-                    />
-                  )}
-                </section>
-
-                {phase === "form" && (
-                  <div className="grid justify-items-center gap-2 text-center">
+              <AuthCard crown={crown} label={t("register.cardLabel", { current: stepIndex + 1, total: STEPS.length })}>
+                {signedInOnArrival && phase === "form" ? (
+                  <div className="grid justify-items-start gap-4">
+                    <h1 className="text-[clamp(26px,3.4vw,34px)]">{t("register.signedIn.title")}</h1>
                     <p className="m-0 text-[length:var(--text-body-sm)] text-[var(--text-body)]">
-                      {t("register.haveAccount")}{" "}
-                      <Link
-                        to="/connexion"
-                        state={signInState}
-                        className="font-semibold text-[var(--text-primary)] underline decoration-1 underline-offset-4 hover:text-[var(--text-link-hover)]"
-                      >
-                        {t("register.signIn")}
-                      </Link>
+                      {t("register.signedIn.body", { email: sessionEmail })}
                     </p>
-                    <p className="m-0 text-[length:var(--text-caption)] text-[var(--text-muted)]">{t("register.reassurance")}</p>
+                    <div className="flex flex-wrap gap-2">
+                      <Button variant="primary" iconLeft={LayoutDashboard} onClick={() => navigate("/compte")}>
+                        {t("register.welcome.ctaDashboard")}
+                      </Button>
+                      <Button
+                        variant="outline"
+                        iconLeft={LogOut}
+                        onClick={() => {
+                          signOut();
+                          setArrival(false);
+                        }}
+                      >
+                        {t("register.signedIn.signOut")}
+                      </Button>
+                    </div>
                   </div>
-                )}
-              </>
-            )}
-          </div>
+                ) : (
+                  <>
+                    {phase === "form" ? (
+                      <header className="mb-6 grid gap-2">
+                        <h1 className="text-[clamp(26px,3.4vw,34px)]">{t("register.title")}</h1>
+                        <p className="m-0 text-[length:var(--text-body-sm)] text-[var(--text-body)]">{t("register.lede")}</p>
+                      </header>
+                    ) : (
+                      <h1 className="sr-only">{t("register.title")}</h1>
+                    )}
 
-          <aside aria-label={t("register.aside.label")} className="hidden lg:sticky lg:top-24 lg:col-start-1 lg:row-start-1 lg:block">
-            <BrandAside />
-          </aside>
+                    {phase === "form" && (
+                      <form noValidate onSubmit={submitStep} className="grid min-w-0">
+                        {liveSummary.length > 1 && (
+                          <div
+                            role="alert"
+                            className="gt-field-message mb-6 grid gap-2 rounded-[var(--radius-md)] border border-[var(--gt-red-400)] bg-[var(--status-error-bg)] p-4"
+                          >
+                            <p className="m-0 flex items-center gap-2 text-[length:var(--text-body-sm)] font-semibold text-[var(--status-error-fg)]">
+                              <CircleAlert size={16} aria-hidden="true" />
+                              {t("register.summary", { count: liveSummary.length })}
+                            </p>
+                            <ul className="m-0 grid gap-1 pl-6 text-[length:var(--text-caption)]">
+                              {liveSummary.map((name) => (
+                                <li key={name}>
+                                  <button
+                                    type="button"
+                                    onClick={() => focusField(name)}
+                                    className="text-left text-[var(--status-error-fg)] underline decoration-1 underline-offset-2 hover:text-[var(--gt-ink-900)]"
+                                  >
+                                    {errors[name]}
+                                  </button>
+                                </li>
+                              ))}
+                            </ul>
+                          </div>
+                        )}
+
+                        <div key={step} className={direction === "forward" ? "gt-step-forward" : "gt-step-back"}>
+                          {step === "account" && (
+                            <AccountStep
+                              data={data}
+                              errors={errors}
+                              set={set}
+                              blur={blur}
+                              fieldRef={fieldRef}
+                              headingRef={headingRef}
+                              touched={(name) => touched.has(name)}
+                              checkingEmail={checkingEmail}
+                              emailTaken={emailTaken}
+                              viaGoogle={viaGoogle}
+                              onGoogle={openGoogle}
+                              onUseEmail={useEmailInstead}
+                              signInState={signInState}
+                              onForgotPassword={() => navigate(FORGOT_PATH, { state: { email: data.email.trim() } })}
+                            />
+                          )}
+                          {step === "profile" && (
+                            <ProfileStep data={data} errors={errors} set={set} blur={blur} fieldRef={fieldRef} headingRef={headingRef} />
+                          )}
+                          {step === "preferences" && (
+                            <PreferencesStep
+                              data={data}
+                              errors={errors}
+                              set={set}
+                              blur={blur}
+                              fieldRef={fieldRef}
+                              headingRef={headingRef}
+                              onOpenLegal={setLegalDoc}
+                              failure={failure}
+                              onRetry={() => void create()}
+                              creating={creating}
+                            />
+                          )}
+                        </div>
+
+                        {/* On phones the actions stick to the bottom of the screen, so
+                            Continue is always one thumb away on a long step. */}
+                        <div className="gt-step-actions sticky bottom-0 z-10 -mx-5 mt-7 flex items-center gap-3 border-t border-[var(--border-subtle)] bg-white/90 px-5 py-3 backdrop-blur-[10px] sm:static sm:m-0 sm:mt-8 sm:border-0 sm:bg-transparent sm:p-0 sm:backdrop-blur-none">
+                          {step !== "account" && (
+                            <Button variant="ghost" size="lg" iconLeft={ArrowLeft} onClick={back} disabled={creating} className="flex-none gap-0 px-4! sm:gap-2 sm:px-5!">
+                              {/* Icon-only on phones so the primary action keeps its full label. */}
+                              <span className="sr-only sm:not-sr-only">{t("register.actions.back")}</span>
+                            </Button>
+                          )}
+                          <Button
+                            type="submit"
+                            variant="primary"
+                            size="lg"
+                            iconRight={ArrowRight}
+                            loading={checkingEmail || creating}
+                            className="min-w-0 flex-1 px-5! max-sm:text-[length:var(--text-body-sm)] sm:ml-auto sm:flex-none sm:px-[30px]!"
+                          >
+                            {primaryLabel}
+                          </Button>
+                        </div>
+                      </form>
+                    )}
+
+                    {phase === "verify" && (
+                      <div className="gt-step-forward">
+                        {realAuth ? (
+                          <CheckInbox
+                            email={data.email}
+                            redirectTo={confirmationRedirect(afterConfirmation)}
+                            headingRef={headingRef}
+                            onVerified={completeAccount}
+                            onRestart={restart}
+                          />
+                        ) : (
+                          <VerifyEmail
+                            email={data.email}
+                            firstName={data.firstName}
+                            scenario={scenario}
+                            headingRef={headingRef}
+                            onEmailChange={(email) => {
+                              setData((d) => ({ ...d, email }));
+                              setClearedEmail(normaliseEmail(email));
+                            }}
+                            onVerified={completeAccount}
+                          />
+                        )}
+                      </div>
+                    )}
+
+                    {phase === "welcome" && (
+                      <WelcomeScreen
+                        context={context}
+                        firstName={data.firstName}
+                        persona={data.persona}
+                        interest={data.interest}
+                        viaGoogle={viaGoogle}
+                        headingRef={headingRef}
+                        onAction={onWelcomeAction}
+                      />
+                    )}
+
+                    {phase === "form" && (
+                      <div className="mt-6 grid justify-items-center gap-2 border-t border-[var(--border-subtle)] pt-5 text-center">
+                        <p className="m-0 text-[length:var(--text-body-sm)] text-[var(--text-muted)]">
+                          {t("register.haveAccount")}{" "}
+                          <Link
+                            to="/connexion"
+                            state={signInState}
+                            className="font-semibold text-[var(--text-link)] underline decoration-1 underline-offset-4 transition-colors hover:text-[var(--text-link-hover)]"
+                          >
+                            {t("register.signIn")}
+                          </Link>
+                        </p>
+                        <p className="m-0 text-[length:var(--text-caption)] text-[var(--text-muted)]">{t("register.reassurance")}</p>
+                      </div>
+                    )}
+                  </>
+                )}
+              </AuthCard>
+            </>
+          )}
         </div>
-      </div>
+      </AuthLayout>
 
       {googleOpen && (
         <GoogleDialog
@@ -574,6 +636,6 @@ export function Register() {
         />
       )}
       <LegalDialog doc={legalDoc} onClose={() => setLegalDoc(null)} />
-    </div>
+    </>
   );
 }
