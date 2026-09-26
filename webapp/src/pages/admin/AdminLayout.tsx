@@ -5,6 +5,7 @@ import { AdminSidebar } from "../../components/admin/AdminSidebar";
 import { AdminCatalogProvider } from "../../lib/adminCatalog";
 import { AdminOrdersProvider } from "../../lib/adminOrders";
 import { AdminCustomersProvider } from "../../lib/adminCustomers";
+import { AdminTrainingProvider } from "../../lib/adminTraining";
 import { useAdminAuth } from "../../lib/adminAuth";
 import { useFocusTrap } from "../../lib/useFocusTrap";
 
@@ -46,6 +47,11 @@ export function AdminLayout() {
       {/* Customers sit inside Orders: a customer record reads the order
           book for their order history, never the other way round. */}
       <AdminCustomersProvider>
+      {/* Training is independent of all three: a course is not a product and
+          does not read the order book. It sits here rather than inside the
+          training routes so the catalogue survives navigating away from the
+          builder and back. */}
+      <AdminTrainingProvider>
       <div
         className="gt-admin min-h-screen"
         // Read by the product form's pinned action bar, which is fixed to the
@@ -89,6 +95,7 @@ export function AdminLayout() {
           <Outlet context={{ openNav: () => setNavOpen(true) } satisfies AdminShellContext} />
         </div>
       </div>
+      </AdminTrainingProvider>
       </AdminCustomersProvider>
       </AdminOrdersProvider>
     </AdminCatalogProvider>

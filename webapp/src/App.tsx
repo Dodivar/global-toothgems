@@ -49,6 +49,11 @@ import { Orders as AdminOrders } from "./pages/admin/Orders";
 import { OrderDetail as AdminOrderDetail } from "./pages/admin/OrderDetail";
 import { Customers as AdminCustomers } from "./pages/admin/Customers";
 import { CustomerDetail as AdminCustomerDetail } from "./pages/admin/CustomerDetail";
+import { Training as AdminTraining } from "./pages/admin/Training";
+import { TrainingNew as AdminTrainingNew } from "./pages/admin/TrainingNew";
+import { TrainingBuilder as AdminTrainingBuilder } from "./pages/admin/TrainingBuilder";
+import { TrainingPreview as AdminTrainingPreview } from "./pages/admin/TrainingPreview";
+import { TrainingReview as AdminTrainingReview } from "./pages/admin/TrainingReview";
 
 function ScrollToTop() {
   const { pathname } = useLocation();
@@ -218,6 +223,19 @@ export default function App() {
                             filtered page rather than to row one. */}
                         <Route path="clients" element={<AdminCustomers />} />
                         <Route path="clients/:id" element={<AdminCustomerDetail />} />
+                        {/* Training. The builder keeps its selection in the
+                            query string rather than in the path: a module, a
+                            step and a quiz are all edited in the same
+                            workspace, and four nested routes would put the same
+                            three panels behind four addresses. Preview and
+                            review are their own routes, because both are places
+                            an administrator arrives at rather than states the
+                            builder happens to be in. */}
+                        <Route path="formations" element={<AdminTraining />} />
+                        <Route path="formations/nouvelle" element={<AdminTrainingNew />} />
+                        <Route path="formations/:id" element={<AdminTrainingBuilder />} />
+                        <Route path="formations/:id/apercu" element={<AdminTrainingPreview />} />
+                        <Route path="formations/:id/publication" element={<AdminTrainingReview />} />
                         <Route path="produits" element={<AdminProducts />} />
                         <Route path="produits/nouveau" element={<AdminProductNew />} />
                         <Route path="produits/:id" element={<AdminProductEdit />} />
