@@ -57,6 +57,7 @@ import { Statistics as AdminStatistics } from "./pages/admin/Statistics";
 import { AdminProducts } from "./pages/admin/AdminProducts";
 import { AdminProductNew } from "./pages/admin/AdminProductNew";
 import { AdminProductEdit } from "./pages/admin/AdminProductEdit";
+import { AdminProductRecommendations } from "./pages/admin/AdminProductRecommendations";
 import { AdminCategories } from "./pages/admin/AdminCategories";
 import { Orders as AdminOrders } from "./pages/admin/Orders";
 import { OrderDetail as AdminOrderDetail } from "./pages/admin/OrderDetail";
@@ -360,6 +361,9 @@ export default function App() {
                         <Route path="produits" element={<AdminProducts />} />
                         <Route path="produits/nouveau" element={<AdminProductNew />} />
                         <Route path="produits/:id" element={<AdminProductEdit />} />
+                        {/* The products recommended next to a product: saved
+                            apart from the product form (their own table). */}
+                        <Route path="produits/:id/recommandations" element={<AdminProductRecommendations />} />
                         <Route path="categories" element={<AdminCategories />} />
                         {/* Promotions, campaigns and gift cards: one workspace
                             with tabs in the query string, and one route per
