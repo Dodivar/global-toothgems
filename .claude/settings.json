@@ -13,7 +13,11 @@
       "Bash(git switch:*)",
       "Bash(git checkout:*)",
       "Bash(git branch:*)",
-      "Bash(git push origin HEAD:refs/heads/dev:*)"
+      "Bash(git push origin HEAD:refs/heads/dev:*)",
+      "Bash(gh pr create --repo Dodivar/global-toothgems --base main --head dev:*)",
+      "Bash(gh pr create --base main --head dev:*)",
+      "Bash(gh pr list:*)",
+      "Bash(gh pr view:*)"
     ],
     "deny": [
       "Bash(git push origin main:*)",
@@ -21,7 +25,7 @@
       "Bash(git push -f:*)",
       "Bash(git push origin HEAD:main:*)",
       "Bash(git push origin HEAD:refs/heads/main:*)",
-      "Bash(gh pr create:*)"
+      "Bash(gh pr merge:*)"
     ]
   },
   "hooks": {
