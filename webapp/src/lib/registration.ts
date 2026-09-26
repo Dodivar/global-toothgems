@@ -394,3 +394,38 @@ export async function verifyLink(scenario: Scenario, linkNumber: number): Promis
   // "send a new link" — can be completed.
   return scenario === "linkExpired" && linkNumber === 1 ? "expired" : "verified";
 }
+
+/* ------------------------------------------------------------------ */
+/* Real sign-up (Supabase Auth)                                       */
+/* ------------------------------------------------------------------ */
+
+/**
+ * Version of the terms and privacy policy the registration form asks to
+ * accept. Stored with every consent record, so it must change whenever the
+ * legal texts do. The database writes no consent row without it.
+ */
+export const LEGAL_POLICY_VERSION = "2026-09-26";
+
+/**
+ * Metadata sent with `supabase.auth.signUp`. The keys are the ones the
+ * `private.handle_new_auth_user` trigger reads (migration `member_account`):
+ * it copies the answers into `profiles` and records the terms, privacy and
+ * marketing consents. The trigger re-validates every value and never derives
+ * a role from it, so this is convenience, not trust.
+ */
+export function registrationMetadata(data: RegistrationData, locale: string): Record<string, string | boolean> {
+  const meta: Record<string, string | boolean> = {
+    first_name: data.firstName.trim(),
+    last_name: data.lastName.trim(),
+    locale: locale.slice(0, 2).toLowerCase(),
+    terms_accepted: data.terms,
+    marketing: data.marketing,
+    policy_version: LEGAL_POLICY_VERSION,
+  };
+  const phone = data.phone.trim();
+  if (phone) meta.phone = phone;
+  if (data.country) meta.country = data.country.toUpperCase();
+  if (data.persona) meta.persona = data.persona;
+  if (data.interest) meta.interest = data.interest;
+  return meta;
+}

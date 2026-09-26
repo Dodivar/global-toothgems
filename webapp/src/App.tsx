@@ -30,7 +30,7 @@ import { Academy } from "./pages/Academy";
 import { CourseDetail } from "./pages/CourseDetail";
 import { Lesson } from "./pages/Lesson";
 import { Login } from "./pages/Login";
-import { ConnexionEditorial } from "./pages/ConnexionEditorial";
+import { ConfirmAccount } from "./pages/ConfirmAccount";
 import { Register } from "./pages/Register";
 import { ForgotPassword } from "./pages/ForgotPassword";
 import { ResetPassword } from "./pages/ResetPassword";
@@ -235,11 +235,11 @@ export default function App() {
                       <Route path="/reset-password" element={<ResetPassword />} />
                       <Route path="/verifier-email" element={<VerifyEmailLanding />} />
                       <Route path="/verify-email" element={<VerifyEmailLanding />} />
-                      {/* The alternative authentication direction, live beside the
-                          current one so the team can compare the same flow, fields
-                          and copy in two art directions. Not linked from the
-                          navigation: it is a design comparison, not a second way in. */}
-                      <Route path="/connexion-b" element={<ConnexionEditorial />} />
+                      {/* Where the account-confirmation email sent by Supabase Auth lands. */}
+                      <Route path="/confirmation-compte" element={<ConfirmAccount />} />
+                      {/* The former design-comparison URL of the login page, kept
+                          so an old link still lands on it. */}
+                      <Route path="/connexion-b" element={<Navigate to="/connexion" replace />} />
                       {/* The loyalty programme's own sales page, open like the Academy
                           landing page: gating it would hide what it advertises. */}
                       <Route path="/fidelite" element={<LoyaltyProgram />} />

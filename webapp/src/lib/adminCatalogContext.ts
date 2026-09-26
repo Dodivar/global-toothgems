@@ -1,6 +1,6 @@
 import { createContext, useContext } from "react";
 import {
-  stockState,
+  matchesStockState,
   type ActivityEntry,
   type AdminProduct,
   type Category,
@@ -92,8 +92,9 @@ export function computeStats(products: AdminProduct[]): CatalogStats {
     active: products.filter((p) => p.status === "active").length,
     draft: products.filter((p) => p.status === "draft").length,
     archived: products.filter((p) => p.status === "archived").length,
-    outOfStock: live.filter((p) => stockState(p) === "out_of_stock").length,
-    lowStock: live.filter((p) => stockState(p) === "low_stock").length,
+    // Same rule as the availability filter the dashboard cards link to.
+    outOfStock: live.filter((p) => matchesStockState(p, "out_of_stock")).length,
+    lowStock: live.filter((p) => matchesStockState(p, "low_stock")).length,
   };
 }
 

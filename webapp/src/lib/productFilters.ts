@@ -1,6 +1,6 @@
 import {
   effectivePrice,
-  stockState,
+  matchesStockState,
   type AdminProduct,
   type CategoryId,
   type ProductStatus,
@@ -84,7 +84,7 @@ export function filterProducts(
     if (!matchesSearch(product, filters.search)) return false;
     if (filters.category !== "all" && product.categoryId !== filters.category) return false;
     if (filters.status !== "all" && product.status !== filters.status) return false;
-    if (filters.availability !== "all" && stockState(product) !== filters.availability) return false;
+    if (filters.availability !== "all" && !matchesStockState(product, filters.availability)) return false;
     return true;
   });
 
@@ -112,8 +112,16 @@ export function filterProducts(
   });
 }
 
-/** Untracked products have no count; they sort after everything countable. */
+/**
+ * Untracked products have no count; they sort after everything countable.
+ * A product with variants sorts by its emptiest option: the total would put
+ * a gem with one sold-out option far down the list.
+ */
 function stockValue(product: AdminProduct): number {
+  const tracked = (product.variantStock ?? []).filter((variant) => variant.trackInventory);
+  if (product.variantStock?.length) {
+    return tracked.length > 0 ? Math.min(...tracked.map((v) => v.stock - (v.reserved ?? 0))) : Number.MAX_SAFE_INTEGER;
+  }
   if (!product.trackInventory) return Number.MAX_SAFE_INTEGER;
-  return product.stock;
+  return product.stock - (product.reserved ?? 0);
 }

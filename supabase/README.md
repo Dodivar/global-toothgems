@@ -46,6 +46,8 @@ supabase/
   tests/iteration9_validation.sql   iteration 9 product recommendations suite (always rolls back)
   tests/iteration10_validation.sql  iteration 10 back-office product management suite (always rolls back)
   tests/iteration11_validation.sql  iteration 11 gem pack × stone-size options suite (always rolls back)
+  tests/iteration12_validation.sql  iteration 12 member sign-up (Supabase Auth metadata → profile + consents) suite (always rolls back)
+  templates/confirm-signup.html     French "Confirm signup" email, to paste into the Auth settings
 ```
 
 ## Migrations
@@ -79,7 +81,7 @@ supabase/
 | 20260925191945 | `product_recommendations` | `product_recommendations` (manual links per product and kind, audited); `recommended_products(product_ids, kind, limit)` |
 | 20260926113816 | `admin_product_management` | `admin_save_product(jsonb)`, `admin_delete_product(uuid)`, `admin_save_product_recommendations(uuid, uuid[], uuid[])` — SECURITY INVOKER (RLS applies), `manage_products` checked, one transaction per call |
 | 20260926115257 | `admin_save_product_variant_stock` | `admin_save_product()` leaves stock alone for products with variants (stock is per variant) and digital products |
-| 20260926160000 | `gem_pack_stone_size_options` | `admin_save_product()` gains an optional `variants` list: gem options pack (20/50/100) × stone size (SS), one variant each (`attributes` `{"pack": 50, "ss": 6}`), names/SKUs derived server-side, matched by combination, unticked options deleted (deactivated when ordered); products with other kinds of variants refused; product stock applies again once no variant is active |
+| 20260926151552 | `gem_pack_stone_size_options` | `admin_save_product()` gains an optional `variants` list: gem options pack (20/50/100) × stone size (SS), one variant each (`attributes` `{"pack": 50, "ss": 6}`), names/SKUs derived server-side, matched by combination, unticked options deleted (deactivated when ordered); products with other kinds of variants refused; product stock applies again once no variant is active |
 
 RLS is **enabled in the same migration that creates each table** (deny by default);
 policies are granted back in `rls_policies`.
@@ -565,9 +567,23 @@ enable the extension in the dashboard — or a scheduled server job with the ser
 **Validation:** run `tests/mvp_validation.sql`, `tests/iteration2_validation.sql` and
 `tests/iteration3_validation.sql`, `tests/iteration4_validation.sql`, `tests/iteration5_validation.sql` and
 `tests/iteration6_validation.sql`, `tests/iteration7_validation.sql`, `tests/iteration8_validation.sql`,
-`tests/iteration9_validation.sql`, `tests/iteration10_validation.sql`, `tests/iteration11_validation.sql`. Each ends with
+`tests/iteration9_validation.sql`, `tests/iteration10_validation.sql`, `tests/iteration11_validation.sql`,
+`tests/iteration12_validation.sql`. Each ends with
 `ALL … PASSED (...)` raised as an exception, which rolls everything back.
 (The order-number sequence still advances — sequences are not transactional.)
+
+**Member sign-up (Auth settings, not SQL):** the webapp creates accounts with `supabase.auth.signUp`;
+`handle_new_auth_user` turns the metadata into the profile and the consent records. In the dashboard:
+- Authentication → Sign In / Providers → Email: *Confirm email* **on**; minimum password length 8 with
+  lower case, upper case, digits and symbols required (the rules the form shows).
+- Authentication → URL Configuration: Site URL = the production URL; add `http://localhost:5173/**`
+  and the production `/confirmation-compte` and `/reinitialiser-mot-de-passe` to the redirect allow-list (otherwise the link falls back to
+  the Site URL).
+- Authentication → Emails → Confirm signup: subject *Confirmez votre compte Global Toothgems*, body from
+  `templates/confirm-signup.html`. Translate *Reset password* the same way (the link lands on
+  `/reinitialiser-mot-de-passe`).
+- Authentication → Emails → SMTP: the built-in sender is rate-limited to a few emails per hour and meant
+  for testing; production needs custom SMTP (Resend, per the project stack).
 
 **Demo member:** run `seed_demo_member.sql` after `seed.sql` (idempotent; the remote project already has it).
 It creates `camille.bernard@example.com` (id `c4a11e00-0000-4000-a000-000000000001`) through the real

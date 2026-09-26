@@ -85,6 +85,13 @@ describe("rowToProduct", () => {
     expect(withVariants).toMatchObject({ variantCount: 2, stock: 14, lowStockThreshold: 10, trackInventory: true });
   });
 
+  it("reads a gem's shape and colour, ignoring unknown values", () => {
+    expect(rowToProduct({ ...row, metadata: { shape: "heart", color: "opal" } }, url)).toMatchObject({ shape: "heart", color: "opal" });
+    const unknown = rowToProduct({ ...row, metadata: { shape: "oval", color: 3 } }, url);
+    expect(unknown.shape).toBeUndefined();
+    expect(unknown.color).toBeUndefined();
+  });
+
   it("falls back safely when relations are missing", () => {
     const bare = rowToProduct({ ...row, product_translations: null, product_media: null, inventory_items: null, metadata: {} }, url);
     expect(bare).toMatchObject({ trackInventory: true, stock: 0, type: "single", media: [], name: { en: "" } });
@@ -108,6 +115,12 @@ describe("productToPayload", () => {
     expect(payload).not.toHaveProperty("promo_price");
     expect(payload.price).toBe("32.00");
     expect(payload.compare_at_price).toBe("38.00");
+  });
+
+  it("sends shape and colour, as null when unset so the merge clears them", () => {
+    expect(payload.metadata).toMatchObject({ shape: null, color: null });
+    const gem = productToPayload({ ...product, shape: "star", color: "crystal" }) as { metadata: Record<string, unknown> };
+    expect(gem.metadata).toMatchObject({ shape: "star", color: "crystal" });
   });
 
   it("builds slugs from the names", () => {
@@ -186,6 +199,36 @@ describe("gem options", () => {
     );
     expect(product.variantCount).toBe(1);
     expect(product.stock).toBe(10);
+  });
+
+  it("lists the stock of each active variant, keyed like the options grid", () => {
+    const product = rowToProduct(
+      {
+        ...row,
+        product_variants: [
+          { id: "a", sku: "GEM-P50-SS6", attributes: { pack: 50, ss: 6 }, price: "45.00", is_active: true, inventory_items: [inv(0)] },
+          { id: "b", attributes: { pack: 20, ss: 6 }, is_active: false, inventory_items: [inv(0)] },
+          {
+            id: "c",
+            name: "Saphir",
+            attributes: { colour: "saphir" },
+            is_active: true,
+            product_variant_translations: [{ locale: "en", name: "Sapphire" }],
+            inventory_items: [{ ...inv(5), quantity_reserved: 2 }],
+          },
+        ],
+      },
+      url,
+    );
+    expect(product.variantStock).toEqual([
+      expect.objectContaining({ key: "50:6", gemOption: true, sku: "GEM-P50-SS6", price: 45, stock: 0 }),
+      expect.objectContaining({ key: "c", gemOption: false, name: { fr: "Saphir", en: "Sapphire" }, stock: 5, reserved: 2 }),
+    ]);
+    expect(product.variantStock?.[0].name.fr).toBe("Pack de 50 · SS6");
+  });
+
+  it("has no variant stock without variants", () => {
+    expect(rowToProduct(row, url).variantStock).toBeUndefined();
   });
 
   it("sends the ticked combinations only, with exact prices", () => {

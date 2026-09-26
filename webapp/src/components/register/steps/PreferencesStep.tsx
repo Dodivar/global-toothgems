@@ -9,7 +9,7 @@ import type { LegalDoc } from "../LegalDialog";
 import type { Interest, Persona } from "../../../lib/registration";
 import type { StepProps } from "./types";
 
-export type CreateFailure = "network" | "server" | null;
+export type CreateFailure = "network" | "server" | "rateLimited" | "weakPassword" | null;
 
 /**
  * Step 3 — optional personalisation, then consent.

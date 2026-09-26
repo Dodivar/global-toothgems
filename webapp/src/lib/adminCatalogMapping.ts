@@ -9,11 +9,13 @@ import {
   type ProductStatus,
   type ProductType,
   type RecommendationKind,
+  type VariantStock,
 } from "../data/adminCatalog";
+import { GEM_COLORS, GEM_SHAPES } from "../data/products";
 import type { Localized } from "../data/types";
 import type { Json } from "./supabase/database.types";
 import { toMinorUnits } from "./catalog/money";
-import { parseGemAttributes } from "./gemOptions";
+import { comboKey, comboName, parseGemAttributes } from "./gemOptions";
 
 /**
  * Pure translation between the Supabase catalogue and the admin model.
@@ -24,7 +26,8 @@ import { parseGemAttributes } from "./gemOptions";
  * Database shape (migrations 002 and 007):
  * - base columns of `products` / `product_media` hold French, the default
  *   language; English lives in `*_translations` rows (`locale = 'en'`);
- * - `metadata` holds presentation-only fields: type, material, tags;
+ * - `metadata` holds presentation-only fields: type, material, tags and, for
+ *   gems, shape and color (the storefront filters on the last two);
  * - stock lives in the product's single `inventory_items` row.
  */
 
@@ -35,7 +38,8 @@ export const ADMIN_PRODUCT_SELECT = `
   product_translations ( locale, name, short_description, description ),
   product_media ( id, storage_path, alt_text, position, product_media_translations ( locale, alt_text ) ),
   inventory_items ( track_inventory, quantity_on_hand, quantity_reserved, low_stock_threshold, availability ),
-  product_variants ( id, attributes, price, is_active, position,
+  product_variants ( id, name, sku, attributes, price, is_active, position,
+    product_variant_translations ( locale, name ),
     inventory_items ( track_inventory, quantity_on_hand, quantity_reserved, low_stock_threshold, availability ) )
 `;
 
@@ -93,6 +97,9 @@ export interface ProductRow {
 
 export interface VariantRow {
   id: string;
+  name?: string | null;
+  sku?: string | null;
+  product_variant_translations?: { locale: string; name: string }[] | null;
   attributes?: Json;
   price?: number | string | null;
   is_active?: boolean;
@@ -226,6 +233,7 @@ export function rowToProduct(row: ProductRow, publicUrl: (path: string) => strin
         ? row.inventory_items[0]
         : row.inventory_items;
   const gemOptions = readGemOptions(allVariants);
+  const variantStockRows = variants.map((variant) => variantToStock(variant));
   const tags = Array.isArray(metadata.tags) ? metadata.tags.filter((tag): tag is string => typeof tag === "string") : [];
 
   const media: ProductImage[] = [...(row.product_media ?? [])]
@@ -252,13 +260,18 @@ export function rowToProduct(row: ProductRow, publicUrl: (path: string) => strin
     // Units on the shelf. Reservations held by unpaid orders are not
     // subtracted here: the form edits what is physically in stock.
     stock: inventory?.quantity_on_hand ?? 0,
+    // …but they are what the shop cannot sell, so the stock state counts them.
+    reserved: inventory?.quantity_reserved ?? 0,
     lowStockThreshold: inventory?.low_stock_threshold ?? 5,
     availability: oneOf(inventory?.availability, AVAILABILITIES, "in_stock"),
     status: oneOf(row.status, STATUSES, "draft"),
     variantCount: variants.length,
+    variantStock: variantStockRows.length > 0 ? variantStockRows : undefined,
     gemOptions,
     otherVariants: allVariants.length > 0 && !gemOptions,
     material: readLocalized(metadata.material),
+    shape: GEM_SHAPES.find((shape) => shape === metadata.shape),
+    color: GEM_COLORS.find((color) => color === metadata.color),
     tags,
     createdAt: row.created_at,
     updatedAt: row.updated_at,
@@ -276,6 +289,29 @@ export function rowToRecommendation(row: RecommendationRow): ProductRecommendati
 
 function inventoryOf(variant: VariantRow): InventoryRow | null {
   return (Array.isArray(variant.inventory_items) ? variant.inventory_items[0] : variant.inventory_items) ?? null;
+}
+
+/**
+ * Stock of one active variant, for the product list. A pack/SS option is
+ * keyed and named like the edit form's grid; any other variant keeps its id
+ * and the name the database gave it.
+ */
+function variantToStock(variant: VariantRow): VariantStock {
+  const inventory = inventoryOf(variant);
+  const gem = parseGemAttributes(variant.attributes);
+  const nameFr = variant.name ?? "";
+  return {
+    key: gem ? comboKey(gem) : variant.id,
+    gemOption: gem !== null,
+    name: gem ? comboName(gem) : { fr: nameFr, en: english(variant.product_variant_translations)?.name ?? nameFr },
+    sku: variant.sku ?? undefined,
+    price: variant.price == null ? undefined : amountFromDb(variant.price),
+    trackInventory: inventory?.track_inventory ?? true,
+    stock: inventory?.quantity_on_hand ?? 0,
+    reserved: inventory?.quantity_reserved ?? 0,
+    lowStockThreshold: inventory?.low_stock_threshold ?? 5,
+    availability: oneOf(inventory?.availability, AVAILABILITIES, "in_stock"),
+  };
 }
 
 /**
@@ -335,6 +371,10 @@ export function productToPayload(product: AdminProduct): Json {
       type: product.type,
       material: { fr: product.material.fr.trim(), en: product.material.en.trim() },
       tags: product.tags,
+      // The database merges metadata into what is stored, so an unset value is
+      // sent as null to clear it rather than omitted.
+      shape: product.shape ?? null,
+      color: product.color ?? null,
     },
     translations: {
       en: {

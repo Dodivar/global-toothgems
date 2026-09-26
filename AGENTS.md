@@ -169,7 +169,7 @@ Never claim a test passed unless it was actually run.
 
 - `main` is the release branch. Nothing is committed or pushed to `main` directly.
 - `dev` is the integration branch. All agent work lands here.
-- Only the human maintainer opens and validates the `dev` -> `main` pull request.
+- The `dev` -> `main` pull request is the only pull request in the workflow. An agent may open it when the user asks; only the human maintainer reviews and merges it.
 
 ### Agent commit and push policy
 
@@ -180,11 +180,11 @@ When the session runs on `dev`:
 1. Commit your work at the end of each turn, without waiting to be asked.
 2. Push to `origin dev` immediately after committing.
 3. Never push to `main`, never force-push, never rewrite pushed history.
-4. Never open the `dev` -> `main` pull request yourself.
+4. Open the `dev` -> `main` pull request only when the user asks for it (`gh pr create --base main --head dev`), not as a draft unless asked, and never merge it. If one is already open, push to `dev` and reuse it.
 
-A `Stop` hook in `.claude/settings.json` performs this commit and push automatically, and is a no-op on any branch other than `dev`. Treat it as a safety net, not as a reason to leave the working tree in a half-finished state: everything still in the tree when a turn ends is committed and pushed as-is.
+A `Stop` hook in `.claude/settings.json` performs this commit and push automatically. It never commits on `main`. A `SessionStart` hook switches a clean main checkout to `dev`. Treat it as a safety net, not as a reason to leave the working tree in a half-finished state: everything still in the tree when a turn ends is committed and pushed as-is.
 
-If the session runs on a branch other than `dev`, fall back to the normal flow: a focused branch and a pull request targeting `dev`.
+If the session runs on a branch other than `dev` (for example a `claude/*` worktree created by the desktop app, where `dev` cannot be checked out), the `Stop` hook commits there, merges `origin/dev` into it and pushes `HEAD` directly to `origin/dev`. Do not push the worktree branch itself and do not open a pull request targeting `dev`. If that merge conflicts, the hook leaves the commit local: resolve the conflict and push `HEAD:dev` yourself.
 
 ### Quality bar
 
@@ -192,7 +192,7 @@ Keep changes focused and reviewable. Do not modify unrelated files merely to cle
 
 Use clear commit messages.
 
-Before the maintainer opens the `dev` -> `main` pull request, review the accumulated diff for accidental secrets, unrelated modifications, broken imports, incomplete migrations, missing tests and documentation drift.
+Before the `dev` -> `main` pull request is opened, review the accumulated diff for accidental secrets, unrelated modifications, broken imports, incomplete migrations, missing tests and documentation drift.
 
 ## 15. AI agent behavior
 

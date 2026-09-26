@@ -72,7 +72,7 @@ single `index.html` plus assets. A static host knows nothing about the routes in
 `App.tsx`, so a request that lands directly on one — a pasted link, a refresh, a
 bookmark — asks for a file that was never built and gets a 404. Following a link
 inside the app works either way, which is why the breakage only shows up on
-direct URLs, and why the newest routes (`/accueil-b`, `/connexion-b`) surface it
+direct URLs, and why the newest routes (such as `/accueil-b`) surface it
 first: they are not linked from the navigation, so a direct URL is the only way
 in.
 
@@ -179,9 +179,29 @@ The account is asked for at the purchase, and the training asked for travels wit
 
 ## Account creation (`/inscription`)
 
-A four-step journey — Account → Profile → Preferences → Done — with a simulated
-email verification and a welcome screen. The "Create account" tab of `/connexion`,
+A four-step journey — Account → Profile → Preferences → Done — with an email
+verification and a welcome screen. The "Create an account" link of `/connexion`,
 the cart and the training pages all lead here.
+
+`/connexion` (sign-in only), `/inscription` and `/confirmation-compte` share one
+setting, `components/auth/AuthScene.tsx`: the pastel facet field, the card with
+its blue crown, and the editorial column (rounded photograph, account benefits).
+
+**With Supabase configured, accounts are real** (`lib/auth.tsx`, same pattern as
+`lib/adminAuth.tsx`). The last step calls `supabase.auth.signUp` with the
+answers as metadata (`registrationMetadata()` in `lib/registration.ts`); the
+database trigger copies them into `profiles` and records the terms, privacy and
+marketing consents with `LEGAL_POLICY_VERSION` — bump that constant whenever the
+legal texts change. Supabase sends the confirmation email; its link lands on
+`/confirmation-compte?suite=<path>`, which picks up the session and continues to
+the page the member was heading to. Sign-in reports unconfirmed addresses (with a
+resend), wrong credentials, suspended accounts and rate limits separately.
+`/mot-de-passe-oublie` and `/reinitialiser-mot-de-passe` use Supabase password
+recovery (`lib/passwordRecovery.ts`). The Security page cards (change email or
+password, export, deletion) are still simulated. The
+prototype controls, the mock inbox and the Google dialog only exist without
+Supabase; Google sign-in is not connected. Without Supabase, everything below is
+simulated as before.
 
 The reason the visitor came is carried in the URL, and the page keeps it in view
 and ends on it:

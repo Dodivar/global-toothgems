@@ -63,7 +63,15 @@ export function ProductPreview({
     { label: t("admin.form.type"), value: t(`admin.type.${product.type}`) },
     { label: t("admin.preview.material"), value: L(product.material) || "—" },
     { label: t("admin.table.stock"), value: <StockIndicator product={product} compact /> },
-    { label: t("admin.preview.threshold"), value: product.trackInventory ? String(product.lowStockThreshold) : "—" },
+    {
+      label: t("admin.preview.threshold"),
+      // The sum of the options' thresholds means nothing: each option has its own.
+      value: product.variantStock?.length
+        ? t("admin.stock.perOption")
+        : product.trackInventory
+          ? String(product.lowStockThreshold)
+          : "—",
+    },
     { label: t("admin.preview.created"), value: formatDate(product.createdAt) },
     { label: t("admin.preview.updated"), value: formatDate(product.updatedAt) },
   ];

@@ -1,6 +1,6 @@
 import { useMemo, useState } from "react";
 import { useTranslation } from "react-i18next";
-import { Link, useNavigate, useParams } from "react-router-dom";
+import { Link, useNavigate, useParams, useSearchParams } from "react-router-dom";
 import { Archive, ChevronRight, PackageSearch, Sparkles, Trash2 } from "lucide-react";
 import { AdminButton } from "../../components/admin/AdminButton";
 import { AdminHeader } from "../../components/admin/AdminHeader";
@@ -9,6 +9,7 @@ import { EmptyState } from "../../components/admin/EmptyState";
 import { ProductStatusBadge } from "../../components/admin/ProductStatusBadge";
 import { ProductForm, type SubmitIntent } from "../../components/admin/ProductForm";
 import { useAdminCatalog } from "../../lib/adminCatalog";
+import { OPTION_PARAM } from "../../lib/adminProductLinks";
 import { useLocalized } from "../../lib/localized";
 import { useToast } from "../../lib/toast";
 import { displayState, type AdminProduct } from "../../data/adminCatalog";
@@ -26,6 +27,8 @@ export function AdminProductEdit() {
   const L = useLocalized();
   const navigate = useNavigate();
   const { id } = useParams();
+  // Set when the product list opens the form on one option.
+  const [searchParams] = useSearchParams();
   const { openNav } = useAdminShell();
   const { showToast } = useToast();
   const { products, loading, getProduct, updateProduct, setStatus, deleteProduct, recommendationsFor } = useAdminCatalog();
@@ -180,6 +183,7 @@ export function AdminProductEdit() {
           onSubmit={submit}
           onCancel={() => navigate("/admin/produits")}
           onArchive={product.status === "archived" ? undefined : () => setArchiveOpen(true)}
+          focusOption={searchParams.get(OPTION_PARAM)}
         />
       </div>
 

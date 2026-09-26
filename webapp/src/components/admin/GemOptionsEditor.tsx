@@ -1,4 +1,4 @@
-import type { ReactNode } from "react";
+import { useEffect, useRef, type ReactNode } from "react";
 import { useTranslation } from "react-i18next";
 import { Info } from "lucide-react";
 import clsx from "clsx";
@@ -23,14 +23,32 @@ interface GemOptionsEditorProps {
   productPrice: number;
   error?: string;
   onChange: (options: GemOptions) => void;
+  /**
+   * `comboKey()` of the option to bring forward on arrival (the product
+   * list links here from an option row): scrolled into view, highlighted, its
+   * stock field focused. A key the grid does not show is ignored.
+   */
+  focusOption?: string | null;
 }
 
 const EMPTY: GemOptions = { enabled: false, packs: [], sizes: [], variants: [] };
 
-export function GemOptionsEditor({ options = EMPTY, productPrice, error, onChange }: GemOptionsEditorProps) {
+export function GemOptionsEditor({ options = EMPTY, productPrice, error, onChange, focusOption }: GemOptionsEditorProps) {
   const { t, i18n } = useTranslation();
   const lang = i18n.language;
   const offered = offeredGemVariants(options);
+  const target = focusOption && offered.some((v) => comboKey(v) === focusOption) ? focusOption : null;
+  const arrived = useRef(false);
+
+  // Once, on arrival: ticking and unticking options later must not pull the
+  // focus back to this row.
+  useEffect(() => {
+    if (arrived.current || !target) return;
+    arrived.current = true;
+    const input = document.getElementById(stockFieldId(target));
+    input?.closest("tr")?.scrollIntoView({ block: "center" });
+    input?.focus({ preventScroll: true });
+  }, [target]);
 
   const toggleIn = (list: number[], value: number) =>
     list.includes(value) ? list.filter((v) => v !== value) : [...list, value].sort((a, b) => a - b);
@@ -110,7 +128,13 @@ export function GemOptionsEditor({ options = EMPTY, productPrice, error, onChang
                     {offered.map((variant) => {
                       const name = pick(comboName(variant), lang);
                       return (
-                        <tr key={comboKey(variant)} className="border-t border-[var(--border-subtle)]">
+                        <tr
+                          key={comboKey(variant)}
+                          className={clsx(
+                            "border-t border-[var(--border-subtle)]",
+                            comboKey(variant) === target && "bg-[var(--status-warning-bg)]",
+                          )}
+                        >
                           <th scope="row" className="px-3 py-2 text-left font-semibold">
                             {name}
                             {variant.ss != null && formatSsMm(variant.ss, lang) && (
@@ -129,6 +153,7 @@ export function GemOptionsEditor({ options = EMPTY, productPrice, error, onChang
                           </td>
                           <td className="px-3 py-2">
                             <NumberInput
+                              id={stockFieldId(comboKey(variant))}
                               aria-label={t("admin.form.optionsStockLabel", { option: name })}
                               value={variant.stock}
                               min={0}
@@ -167,6 +192,11 @@ export function GemOptionsEditor({ options = EMPTY, productPrice, error, onChang
       </p>
     </div>
   );
+}
+
+/** Id of an option's stock field, for the arrival focus. */
+function stockFieldId(key: string): string {
+  return `gem-option-stock-${key}`;
 }
 
 function ChipGroup({ legend, hint, children }: { legend: string; hint?: string; children: ReactNode }) {

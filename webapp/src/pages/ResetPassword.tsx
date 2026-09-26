@@ -10,6 +10,9 @@ import { Notice } from "../components/security/Notice";
 import { DemoControls, DemoNote, RadioPills } from "../components/security/DemoControls";
 import { FORGOT_PATH, LINK_TOKENS, RESET_LINK_MINUTES, newPasswordError, resetLinkStateOf, resetPassword, type ResetLinkState, type ServiceOutcome } from "../lib/accountSecurity";
 import { useAccountSecurity } from "../lib/securityState";
+import { useAuth } from "../lib/auth";
+import { authLinkErrorFromUrl } from "../lib/authRedirect";
+import { setNewPassword } from "../lib/passwordRecovery";
 
 type Phase = "checking" | "form" | "done" | "expired" | "invalid";
 
@@ -31,6 +34,10 @@ const TOKEN_FOR: Record<ResetLinkState, string> = {
  * only — both lead back to requesting a new link — but "expired" reassures the
  * visitor that they did nothing wrong.
  *
+ * With Supabase configured, the recovery link has already been checked by
+ * Supabase: it lands here with a recovery session (or an error in the URL),
+ * and the new password is saved with `supabase.auth.updateUser`.
+ *
  * The form uses the same password policy, meter and fields as registration.
  */
 export function ResetPassword() {
@@ -40,10 +47,18 @@ export function ResetPassword() {
   const token = params.get("jeton");
   const linkState = resetLinkStateOf(token);
   const { markPasswordChanged } = useAccountSecurity();
+  const { realAuth, signedIn, restoring } = useAuth();
+  // Read once, before anything rewrites the address bar.
+  const [linkError] = useState(() => (realAuth ? authLinkErrorFromUrl() : null));
 
   /** Outcome of the last link check, tagged with the token it was for. */
   const [checked, setChecked] = useState<{ token: string | null; phase: Exclude<Phase, "checking"> } | null>(null);
-  const phase: Phase = checked && checked.token === token ? checked.phase : "checking";
+  const mockPhase: Phase = checked && checked.token === token ? checked.phase : "checking";
+  const phase: Phase = !realAuth
+    ? mockPhase
+    : checked?.phase === "done"
+      ? "done"
+      : (linkError ?? (restoring ? "checking" : signedIn ? "form" : "invalid"));
   const setPhase = (next: Exclude<Phase, "checking">) => setChecked({ token, phase: next });
   const [password, setPassword] = useState("");
   const [confirm, setConfirm] = useState("");
@@ -59,9 +74,10 @@ export function ResetPassword() {
   // Checking the link: a new token (the demo panel rewrites it) reads as
   // "checking" until its own result lands, so every state opens from one page.
   useEffect(() => {
+    if (realAuth) return;
     const timer = setTimeout(() => setChecked({ token, phase: linkState === "valid" ? "form" : linkState }), 700);
     return () => clearTimeout(timer);
-  }, [linkState, token]);
+  }, [linkState, token, realAuth]);
 
   // Focus the heading of each settled state so its message is read first.
   useEffect(() => {
@@ -82,9 +98,13 @@ export function ResetPassword() {
     setServerError(false);
     setSaving(true);
     try {
-      await resetPassword(password, outcome);
+      if (realAuth) {
+        if ((await setNewPassword(password)) !== "updated") throw new Error("password update failed");
+      } else {
+        await resetPassword(password, outcome);
+        markPasswordChanged();
+      }
       setSaving(false);
-      markPasswordChanged();
       setPassword("");
       setConfirm("");
       setPhase("done");
@@ -134,7 +154,7 @@ export function ResetPassword() {
 
   if (phase === "checking") {
     return (
-      <AuthShell demo={demo}>
+      <AuthShell demo={realAuth ? undefined : demo}>
         <div role="status" className="grid justify-items-center gap-4 py-6 text-center">
           <LoaderCircle size={30} aria-hidden="true" className="animate-spin text-[var(--gt-blue-600)]" />
           <p className="m-0 text-[length:var(--text-body-md)] font-semibold text-[var(--text-primary)]">{t("security.reset.checking")}</p>
@@ -147,7 +167,7 @@ export function ResetPassword() {
   if (phase === "expired" || phase === "invalid") {
     const expired = phase === "expired";
     return (
-      <AuthShell demo={demo}>
+      <AuthShell demo={realAuth ? undefined : demo}>
         <StateHeading
           icon={expired ? Clock : LinkIcon}
           tone="warning"
@@ -168,7 +188,7 @@ export function ResetPassword() {
 
   if (phase === "done") {
     return (
-      <AuthShell demo={demo}>
+      <AuthShell demo={realAuth ? undefined : demo}>
         <StateHeading icon={ShieldCheck} tone="success" title={t("security.reset.doneTitle")} headingRef={headingRef}>
           <p>{t("security.reset.doneBody")}</p>
         </StateHeading>
@@ -187,7 +207,7 @@ export function ResetPassword() {
   }
 
   return (
-    <AuthShell demo={demo}>
+    <AuthShell demo={realAuth ? undefined : demo}>
       <StateHeading icon={KeyRound} tone="brand" eyebrow={t("security.reset.eyebrow")} title={t("security.reset.title")} headingRef={headingRef}>
         <p>{t("security.reset.body")}</p>
       </StateHeading>
