@@ -204,6 +204,9 @@ export function AdminLogin() {
                 </span>
               </label>
 
+              {/* The recovery dialog is a simulation: with real accounts it would
+                  claim an e-mail was sent when none was. */}
+              {!realAuth && (
               <button
                 type="button"
                 onClick={() => setForgotOpen(true)}
@@ -211,6 +214,7 @@ export function AdminLogin() {
               >
                 {t("admin.login.forgot")}
               </button>
+              )}
             </div>
 
             <AdminButton

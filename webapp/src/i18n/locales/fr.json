@@ -1440,7 +1440,7 @@
         "priceCents": "Deux décimales au maximum."
       },
       "promoInPromotions": "Les prix promotionnels se gèrent dans l’espace Promotions : le prix affiché ici est le prix de vente normal.",
-      "databaseNotice": "Enregistré dans la base Supabase. Un produit en ligne est visible en boutique ; les visuels sont envoyés dès leur ajout.",
+      "databaseNotice": "Enregistré dans la base Supabase ; les visuels sont envoyés dès leur ajout. La boutique n’est pas encore branchée sur la base : un produit « En ligne » n’y apparaît pas encore.",
       "variantStock_one": "Stock géré par variante ({{count}} variante, {{stock}} unités au total). Il ne se modifie pas encore depuis cet écran.",
       "variantStock_other": "Stock géré par variante ({{count}} variantes, {{stock}} unités au total). Il ne se modifie pas encore depuis cet écran."
     },
