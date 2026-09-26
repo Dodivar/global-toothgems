@@ -4,13 +4,16 @@ import { Archive, CircleAlert, Info, Save, Send, X } from "lucide-react";
 import clsx from "clsx";
 import { AdminButton } from "./AdminButton";
 import { AdminSelect, type AdminOption } from "./AdminSelect";
+import { MoneyInput, NumberInput } from "./AdminNumberInputs";
 import { FormField } from "./FormField";
+import { GemOptionsEditor } from "./GemOptionsEditor";
 import { ProductMediaUploader } from "./ProductMediaUploader";
 import { ToggleSwitch } from "./ToggleSwitch";
 import { CONTENT_LANGS, type ContentLang } from "../../lib/localized";
 import { formatDate } from "../../lib/format";
 import { useAdminCatalog } from "../../lib/adminCatalog";
 import {
+  offeredGemVariants,
   type AdminProduct,
   type Availability,
   type CategoryId,
@@ -18,6 +21,7 @@ import {
   type ProductType,
 } from "../../data/adminCatalog";
 import type { Localized } from "../../data/types";
+import { comboSkuSuffix, longestSkuSuffix } from "../../lib/gemOptions";
 
 /**
  * Create and edit a product.
@@ -46,10 +50,12 @@ interface ProductFormProps {
   onArchive?: () => void;
 }
 
-type FieldKey = "name" | "sku" | "price" | "compareAtPrice" | "promoPrice" | "stock" | "lowStockThreshold" | "category";
+type FieldKey =
+  | "name" | "sku" | "price" | "compareAtPrice" | "promoPrice" | "stock" | "lowStockThreshold" | "category" | "options";
 
 /** Same rule as the `products.sku` column: upper-case letters, digits and hyphens. */
 const SKU_PATTERN = /^[A-Z0-9][A-Z0-9-]{1,63}$/;
+const SKU_MAX_LENGTH = 64;
 
 type Errors = Partial<Record<FieldKey, string>>;
 
@@ -103,6 +109,15 @@ export function ProductForm({
       intent === "publish" ? "active" : intent === "draft" ? "draft" : draft.status;
     onSubmit({ ...draft, status, promoPrice: withPromoPrice ? draft.promoPrice : undefined }, intent);
   };
+
+  // Pack/SS options are a gem thing; a product that already has them keeps
+  // the editor whatever its category. Products whose variants are another
+  // kind (colours, boxes…) never get it: saving would replace them.
+  const category = categories.find((c) => c.id === draft.categoryId);
+  const isGem = (category?.slug ?? category?.id) === "gems";
+  const otherVariants = Boolean(draft.otherVariants) || (Boolean(draft.variantCount) && !draft.gemOptions);
+  const showGemOptions = !otherVariants && (isGem || draft.gemOptions !== undefined);
+  const optionsOn = Boolean(draft.gemOptions?.enabled);
 
   const categoryOptions: AdminOption[] = categories.map((c) => ({ value: c.id, label: c.name[lang] }));
   const typeOptions: AdminOption[] = TYPES.map((type) => ({ value: type, label: t(`admin.type.${type}`) }));
@@ -291,8 +306,24 @@ export function ProductForm({
             />
           </Section>
 
+          {showGemOptions && (
+            <Section title={t("admin.form.optionsTitle")} description={t("admin.form.optionsBody")}>
+              <GemOptionsEditor
+                options={draft.gemOptions}
+                productPrice={draft.price}
+                error={showError("options")}
+                onChange={(gemOptions) => set("gemOptions", gemOptions)}
+              />
+            </Section>
+          )}
+
           <Section title={t("admin.form.inventoryTitle")} description={t("admin.form.inventoryBody")}>
-            {draft.variantCount ? (
+            {optionsOn ? (
+              <p className="m-0 flex items-start gap-2 rounded-[var(--admin-radius-sm)] bg-[var(--status-info-bg)] p-3 text-[length:var(--text-body-sm)] text-[var(--gt-blue-700)]">
+                <Info size={14} aria-hidden="true" className="mt-0.5 flex-none" />
+                {t("admin.form.optionsStockNotice")}
+              </p>
+            ) : otherVariants ? (
               <p className="m-0 flex items-start gap-2 rounded-[var(--admin-radius-sm)] bg-[var(--status-info-bg)] p-3 text-[length:var(--text-body-sm)] text-[var(--gt-blue-700)]">
                 <Info size={14} aria-hidden="true" className="mt-0.5 flex-none" />
                 {t("admin.form.variantStock", { count: draft.variantCount, stock: draft.stock })}
@@ -527,75 +558,6 @@ function Section({
   );
 }
 
-interface NumberInputProps {
-  id?: string;
-  value: number | undefined;
-  onValueChange: (value: number | undefined) => void;
-  onBlur?: () => void;
-  min?: number;
-  "aria-describedby"?: string;
-  "aria-invalid"?: boolean;
-  "aria-required"?: boolean;
-}
-
-/**
- * Numeric entry that keeps what was typed.
- *
- * Parsing straight into the number would erase a half-typed "1." or refuse to
- * let the field be emptied; the text is held locally and only the parsed value
- * travels up.
- */
-function NumberInput({ value, onValueChange, min, ...rest }: NumberInputProps) {
-  const [text, setText] = useState(value == null ? "" : String(value));
-
-  return (
-    <input
-      {...rest}
-      type="number"
-      inputMode="numeric"
-      min={min}
-      step={1}
-      className="gt-admin-field tabular-nums"
-      value={text}
-      onChange={(e) => {
-        setText(e.target.value);
-        const parsed = e.target.value === "" ? undefined : Number(e.target.value);
-        onValueChange(parsed != null && Number.isFinite(parsed) ? parsed : undefined);
-      }}
-    />
-  );
-}
-
-/** Same, with a currency affix. The prototype trades in euro only. */
-function MoneyInput({ value, onValueChange, ...rest }: NumberInputProps) {
-  const [text, setText] = useState(value == null ? "" : String(value));
-
-  return (
-    <span className="relative block">
-      <input
-        {...rest}
-        type="number"
-        inputMode="decimal"
-        min={0}
-        step="0.01"
-        className="gt-admin-field pr-9 tabular-nums"
-        value={text}
-        onChange={(e) => {
-          setText(e.target.value);
-          const parsed = e.target.value === "" ? undefined : Number(e.target.value);
-          onValueChange(parsed != null && Number.isFinite(parsed) ? parsed : undefined);
-        }}
-      />
-      <span
-        aria-hidden="true"
-        className="pointer-events-none absolute right-3 top-1/2 -translate-y-1/2 text-[length:var(--text-body-sm)] text-[var(--text-muted)]"
-      >
-        €
-      </span>
-    </span>
-  );
-}
-
 /**
  * Field-level rules.
  *
@@ -642,12 +604,30 @@ function validate(
     errors.promoPrice = t("admin.form.errors.promoTooHigh");
   }
 
-  if (draft.trackInventory && !draft.variantCount) {
+  const productStock = draft.gemOptions ? !draft.gemOptions.enabled : !draft.variantCount;
+  if (draft.trackInventory && productStock) {
     if (!Number.isInteger(draft.stock) || draft.stock < 0) {
       errors.stock = t("admin.form.errors.stockInvalid");
     }
     if (!Number.isInteger(draft.lowStockThreshold) || draft.lowStockThreshold < 0) {
       errors.lowStockThreshold = t("admin.form.errors.thresholdInvalid");
+    }
+  }
+
+  if (draft.gemOptions?.enabled) {
+    const offered = offeredGemVariants(draft.gemOptions);
+    const suffix = longestSkuSuffix(offered);
+    if (offered.length === 0) {
+      errors.options = t("admin.form.errors.optionsEmpty");
+    } else if (sku.length + suffix > SKU_MAX_LENGTH) {
+      const longest = offered.map(comboSkuSuffix).sort((a, b) => b.length - a.length)[0];
+      errors.options = t("admin.form.errors.optionsSkuTooLong", { max: SKU_MAX_LENGTH - suffix, suffix: longest });
+    } else if (offered.some((v) => v.price != null && (!(v.price > 0) || !isCentAmount(v.price)))) {
+      errors.options = t("admin.form.errors.optionsPrice");
+    } else if (
+      offered.some((v) => ![v.stock, v.lowStockThreshold].every((n) => Number.isInteger(n) && n >= 0))
+    ) {
+      errors.options = t("admin.form.errors.optionsStock");
     }
   }
 

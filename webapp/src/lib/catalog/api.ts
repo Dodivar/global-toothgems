@@ -14,7 +14,7 @@ const PRODUCT_SELECT = `
   id, slug, name, short_description, description, price, compare_at_price, currency, is_featured, metadata,
   category:categories ( slug, name, category_translations ( locale, name, status ) ),
   product_translations ( locale, name, slug, short_description, description, status ),
-  product_variants ( id, name, price, compare_at_price, is_active, position,
+  product_variants ( id, name, attributes, price, compare_at_price, is_active, position,
     product_variant_translations ( locale, name, status ),
     inventory_items ( stock_status ) ),
   product_media ( id, storage_path, media_type, alt_text, position, is_primary,

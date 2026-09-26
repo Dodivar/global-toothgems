@@ -346,4 +346,56 @@ join public.products p on p.slug = v.product_slug
 join public.products r on r.slug = v.recommended_slug
 on conflict (product_id, kind, recommended_product_id) do nothing;
 
+-- -----------------------------------------------------------------------------
+-- A gem sold by pack (20 / 50 / 100 stones) × stone size (SS)
+-- (migration …_gem_pack_stone_size_options). Variant names and SKUs follow
+-- what admin_save_product() writes: "Pack de 50 · SS6", <sku>-P50-SS6.
+-- -----------------------------------------------------------------------------
+insert into public.products
+  (category_id, name, slug, short_description, description, sku, price, status, is_featured, metadata)
+select c.id, 'Strass Cristal', 'strass-cristal',
+       'Strass cristal à dos plat, en packs de 20, 50 ou 100 pierres.',
+       'Strass cristal à dos plat pour tooth gems, vendus en packs. Choisissez la taille de pierre (SS) selon la dent et l’effet recherché.',
+       'GEM-STR-020', 14.00, 'active', false,
+       '{"material": "Cristal", "tags": ["strass", "pack"]}'::jsonb
+from public.categories c where c.slug = 'gems'
+on conflict (slug) do nothing;
+
+insert into public.product_translations (product_id, locale, name, slug, short_description, description, status)
+select p.id, 'en', 'Crystal Rhinestones', 'crystal-rhinestones',
+       'Flat-back crystal rhinestones in packs of 20, 50 or 100 stones.',
+       'Flat-back crystal rhinestones for tooth gems, sold in packs. Pick the stone size (SS) for the tooth and the look you want.',
+       'published'
+from public.products p where p.slug = 'strass-cristal'
+on conflict (product_id, locale) do nothing;
+
+insert into public.product_variants (product_id, name, sku, attributes, price, position)
+select p.id,
+       'Pack de ' || v.pack || ' · SS' || v.ss,
+       'GEM-STR-020-P' || v.pack || '-SS' || v.ss,
+       jsonb_build_object('pack', v.pack, 'ss', v.ss),
+       v.price, v.position
+from (values
+  (20,  4, null::numeric, 0), (20,  6, null::numeric, 1), (20,  8, 16.00, 2),
+  (50,  4, 29.00,         3), (50,  6, 29.00,         4), (50,  8, 33.00, 5),
+  (100, 6, 52.00,         6), (100, 8, 58.00,         7)
+) as v(pack, ss, price, position)
+join public.products p on p.slug = 'strass-cristal'
+on conflict (sku) do nothing;
+
+insert into public.product_variant_translations (variant_id, locale, name, status)
+select pv.id, 'en', 'Pack of ' || (pv.attributes ->> 'pack') || ' · SS' || (pv.attributes ->> 'ss'), 'published'
+from public.product_variants pv
+join public.products p on p.id = pv.product_id and p.slug = 'strass-cristal'
+on conflict (variant_id, locale) do nothing;
+
+-- One option sold out (100 × SS8), one low (50 × SS8).
+insert into public.inventory_items (variant_id, quantity_on_hand, low_stock_threshold)
+select pv.id,
+       case pv.sku when 'GEM-STR-020-P100-SS8' then 0 when 'GEM-STR-020-P50-SS8' then 4 else 60 end,
+       5
+from public.product_variants pv
+join public.products p on p.id = pv.product_id and p.slug = 'strass-cristal'
+on conflict do nothing;
+
 commit;

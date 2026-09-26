@@ -5,6 +5,7 @@ import {
   SEED_ACTIVITY,
   SEED_RECOMMENDATIONS,
   categoryById as fixtureCategory,
+  withGemStock,
   type ActivityEntry,
   type ActivityKind,
   type AdminProduct,
@@ -98,7 +99,7 @@ function MockAdminCatalogProvider({ children, actor }: { children: ReactNode; ac
     async (product: AdminProduct) => {
       await wait(SAVE_DELAY_MS);
       const now = new Date().toISOString();
-      const saved: AdminProduct = { ...product, createdAt: now, updatedAt: now };
+      const saved: AdminProduct = withGemStock({ ...product, createdAt: now, updatedAt: now });
       setProducts((prev) => [saved, ...prev]);
       log("created", saved, saved.status === "draft" ? { fr: "Enregistré en brouillon", en: "Saved as a draft" } : undefined);
       return saved;
@@ -113,7 +114,7 @@ function MockAdminCatalogProvider({ children, actor }: { children: ReactNode; ac
       setProducts((prev) =>
         prev.map((p) => {
           if (p.id !== id) return p;
-          saved = { ...p, ...patch, updatedAt: new Date().toISOString() };
+          saved = withGemStock({ ...p, ...patch, updatedAt: new Date().toISOString() });
           return saved;
         }),
       );

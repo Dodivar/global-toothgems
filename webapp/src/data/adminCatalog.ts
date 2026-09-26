@@ -1,5 +1,6 @@
 import type { Localized } from "./types";
 import { photo } from "../lib/images";
+import { combinations, comboKey, type GemOptionKey } from "../lib/gemOptions";
 
 /**
  * Admin catalogue model, and the mock catalogue behind the prototype.
@@ -36,8 +37,36 @@ export type Availability = "in_stock" | "out_of_stock" | "preorder";
 
 export interface Category {
   id: CategoryId;
+  /** Stable key ("gems"…). The mock uses it as the id too. */
+  slug?: string;
   name: Localized;
   description: Localized;
+}
+
+/** One pack × stone-size combination of a gem, with its own price and stock. */
+export interface GemOptionVariant {
+  pack: number | null;
+  ss: number | null;
+  /** EUR; undefined = the product price applies. */
+  price?: number;
+  trackInventory: boolean;
+  stock: number;
+  lowStockThreshold: number;
+}
+
+/**
+ * Pack (20/50/100) × stone size (SS) options of a gem (`lib/gemOptions.ts`).
+ *
+ * `enabled` off with the product still carrying options means "remove them
+ * on save". `variants` keeps every combination ever loaded or typed, so
+ * unticking a pack then ticking it again gives its price and stock back; only
+ * the combinations of the ticked packs × sizes are saved.
+ */
+export interface GemOptions {
+  enabled: boolean;
+  packs: number[];
+  sizes: number[];
+  variants: GemOptionVariant[];
 }
 
 export interface ProductImage {
@@ -78,6 +107,14 @@ export interface AdminProduct {
    * the product never writes it.
    */
   variantCount?: number;
+  /**
+   * Pack × stone-size options. Undefined when the product has none and the
+   * editor was never switched on, or when its variants are another kind
+   * (colours, boxes…) that this form does not edit.
+   */
+  gemOptions?: GemOptions;
+  /** Has variants (active or not) that are not pack/SS options: the form leaves them alone. */
+  otherVariants?: boolean;
   material: Localized;
   tags: string[];
   createdAt: string;
@@ -790,3 +827,36 @@ export const SEED_ACTIVITY: ActivityEntry[] = [
     actor: "Yanis B.",
   },
 ];
+
+/** A combination that was never given values: product price, tracked, empty shelf. */
+export function blankGemVariant(key: GemOptionKey): GemOptionVariant {
+  return { ...key, price: undefined, trackInventory: true, stock: 0, lowStockThreshold: 5 };
+}
+
+/**
+ * The combinations a product offers — ticked packs × ticked sizes, in display
+ * order — each with its remembered values. Empty when the options are off.
+ */
+export function offeredGemVariants(options: GemOptions | undefined): GemOptionVariant[] {
+  if (!options?.enabled) return [];
+  const known = new Map(options.variants.map((variant) => [comboKey(variant), variant]));
+  return combinations(options.packs, options.sizes).map((key) => known.get(comboKey(key)) ?? blankGemVariant(key));
+}
+
+/**
+ * What the prototype store does in place of the database: a product with
+ * pack/SS options reads as the total of its options' stock, like
+ * `rowToProduct()` does for real variants.
+ */
+export function withGemStock(product: AdminProduct): AdminProduct {
+  if (!product.gemOptions) return product;
+  const offered = offeredGemVariants(product.gemOptions);
+  if (offered.length === 0) return { ...product, variantCount: 0 };
+  return {
+    ...product,
+    variantCount: offered.length,
+    trackInventory: true,
+    stock: offered.reduce((sum, v) => sum + v.stock, 0),
+    lowStockThreshold: offered.reduce((sum, v) => sum + v.lowStockThreshold, 0),
+  };
+}

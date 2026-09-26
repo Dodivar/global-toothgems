@@ -5,6 +5,7 @@ import {
   amountToDb,
   catalogErrorKind,
   productToPayload,
+  readGemOptions,
   rowToCategory,
   rowToProduct,
   slugify,
@@ -141,5 +142,76 @@ describe("helpers", () => {
     expect(catalogErrorKind({ code: "42501" })).toBe("permission");
     expect(catalogErrorKind({ message: "TypeError: Failed to fetch" })).toBe("network");
     expect(catalogErrorKind(undefined)).toBe("generic");
+  });
+});
+
+describe("gem options", () => {
+  const inv = (quantity_on_hand: number) => ({
+    track_inventory: true, quantity_on_hand, quantity_reserved: 0, low_stock_threshold: 3, availability: "in_stock",
+  });
+
+  it("reads pack/SS variants, ticking only the axes of active ones", () => {
+    const options = readGemOptions([
+      { id: "a", attributes: { pack: 20, ss: 6 }, price: null, is_active: true, position: 0, inventory_items: [inv(10)] },
+      { id: "b", attributes: { pack: 50, ss: 6 }, price: "45.00", is_active: true, position: 1, inventory_items: [inv(4)] },
+      { id: "c", attributes: { pack: 100, ss: 6 }, price: "80.00", is_active: false, position: 2, inventory_items: [inv(0)] },
+    ]);
+    expect(options).toMatchObject({ enabled: true, packs: [20, 50], sizes: [6] });
+    expect(options?.variants).toHaveLength(3);
+    expect(options?.variants[1]).toMatchObject({ pack: 50, ss: 6, price: 45, stock: 4, lowStockThreshold: 3 });
+    expect(options?.variants[0].price).toBeUndefined();
+  });
+
+  it("leaves other kinds of variants to the database", () => {
+    expect(readGemOptions([{ id: "a", attributes: { colour: "saphir" }, inventory_items: null }])).toBeUndefined();
+    expect(readGemOptions([])).toBeUndefined();
+    const product = rowToProduct(
+      { ...row, product_variants: [{ id: "a", attributes: { colour: "saphir" }, is_active: false, inventory_items: null }] },
+      url,
+    );
+    expect(product).toMatchObject({ otherVariants: true, variantCount: 0 });
+    expect(product.gemOptions).toBeUndefined();
+  });
+
+  it("sums active option stock and ignores removed ones", () => {
+    const product = rowToProduct(
+      {
+        ...row,
+        product_variants: [
+          { id: "a", attributes: { pack: 20 }, is_active: true, inventory_items: [inv(10)] },
+          { id: "b", attributes: { pack: 50 }, is_active: false, inventory_items: [inv(99)] },
+        ],
+      },
+      url,
+    );
+    expect(product.variantCount).toBe(1);
+    expect(product.stock).toBe(10);
+  });
+
+  it("sends the ticked combinations only, with exact prices", () => {
+    const base = rowToProduct(row, url);
+    const payload = productToPayload({
+      ...base,
+      gemOptions: {
+        enabled: true,
+        packs: [20],
+        sizes: [6, 8],
+        variants: [
+          { pack: 20, ss: 8, price: 19.9, trackInventory: true, stock: 5, lowStockThreshold: 2 },
+          { pack: 50, ss: 6, price: 40, trackInventory: true, stock: 7, lowStockThreshold: 2 },
+        ],
+      },
+    }) as { variants: unknown[] };
+    expect(payload.variants).toEqual([
+      { pack: 20, ss: 6, price: null, track_inventory: true, quantity_on_hand: 0, low_stock_threshold: 5 },
+      { pack: 20, ss: 8, price: "19.90", track_inventory: true, quantity_on_hand: 5, low_stock_threshold: 2 },
+    ]);
+  });
+
+  it("sends an empty list to remove options, and nothing when never used", () => {
+    const base = rowToProduct(row, url);
+    const off = productToPayload({ ...base, gemOptions: { enabled: false, packs: [20], sizes: [], variants: [] } }) as Record<string, unknown>;
+    expect(off.variants).toEqual([]);
+    expect(productToPayload(base)).not.toHaveProperty("variants");
   });
 });

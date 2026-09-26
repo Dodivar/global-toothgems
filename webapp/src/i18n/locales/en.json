@@ -253,7 +253,12 @@
     "basedOn_other": "from {{count}} verified reviews",
     "stickyBarLabel": "Add to cart",
     "zoomHint": "Hover to zoom",
-    "variantLabel": "Option"
+    "variantLabel": "Option",
+    "packLabel": "Pack",
+    "packValue": "{{count}} stones",
+    "stoneSizeLabel": "Stone size",
+    "optionUnavailable": "unavailable",
+    "ssApprox": "SS = stone size. Diameters are approximate."
   },
   "cart": {
     "confirmedBadge": "Order confirmed",
@@ -1439,12 +1444,37 @@
         "thresholdInvalid": "The threshold must be a positive whole number.",
         "skuFormat": "Capital letters, digits and hyphens only, 2 to 64 characters (e.g. GEM-STAR-001).",
         "categoryRequired": "Choose a category.",
-        "priceCents": "Two decimal places at most."
+        "priceCents": "Two decimal places at most.",
+        "optionsEmpty": "Tick at least one pack or one stone size, or switch the options off.",
+        "optionsSkuTooLong": "With these options the SKU must be {{max}} characters or fewer (each option adds a suffix such as {{suffix}}).",
+        "optionsPrice": "Check the option prices: greater than 0, two decimal places at most.",
+        "optionsStock": "Option stock and alert thresholds must be positive whole numbers."
       },
       "promoInPromotions": "Promotional prices are managed in Promotions: the price here is the regular selling price.",
       "databaseNotice": "Saved to the Supabase database: an active product appears in the shop. Images upload as soon as they are added.",
       "variantStock_one": "Stock is kept per variant ({{count}} variant, {{stock}} units in total). It cannot be edited from this screen yet.",
-      "variantStock_other": "Stock is kept per variant ({{count}} variants, {{stock}} units in total). It cannot be edited from this screen yet."
+      "variantStock_other": "Stock is kept per variant ({{count}} variants, {{stock}} units in total). It cannot be edited from this screen yet.",
+      "optionsTitle": "Packs and stone sizes",
+      "optionsBody": "Sell this gem in packs of 20, 50 or 100 stones and in one or more stone sizes (SS). Each pack × size is an option with its own price and stock.",
+      "optionsToggle": "Offer packs and sizes",
+      "optionsToggleHint": "Off: the product is sold as a single item, with the stock of the section above.",
+      "optionsPacks": "Packs",
+      "optionsPackValue": "{{count}} stones",
+      "optionsSizes": "Stone sizes (SS)",
+      "optionsSizesHint": "Diameters are approximate: manufacturer charts differ slightly.",
+      "optionsColOption": "Option",
+      "optionsColPrice": "Price",
+      "optionsColStock": "Stock",
+      "optionsColThreshold": "Alert at",
+      "optionsPriceHint": "An empty price uses the product price. Shop cards show the product price, so set it to the cheapest option.",
+      "optionsRemoveNotice": "Unticked options are removed on save. Options already ordered are kept for order history, hidden from the shop.",
+      "optionsNone": "Tick a pack or a stone size to create options.",
+      "optionsCount_one": "{{count}} option offered",
+      "optionsCount_other": "{{count}} options offered",
+      "optionsStockNotice": "Stock is set per option, in “Packs and stone sizes”.",
+      "optionsPriceLabel": "Price of {{option}}",
+      "optionsStockLabel": "Stock of {{option}}",
+      "optionsThresholdLabel": "Alert threshold of {{option}}"
     },
     "dialog": {
       "archiveTitle": "Archive this product?",
@@ -3341,6 +3371,7 @@
       "notFound": "This product no longer exists. Reload the list.",
       "network": "Could not reach the database. Check your connection and try again.",
       "generic": "Something unexpected went wrong. Try again in a moment.",
+      "outdated": "The product was saved, but not its packs and sizes: the database has not been updated for them yet.",
       "loadFailed": "The catalogue could not be loaded.",
       "retry": "Try again"
     }
