@@ -1,4 +1,5 @@
 import type { Localized } from "./types";
+import type { GemColor, GemShape } from "./products";
 import { photo } from "../lib/images";
 import { combinations, comboKey, type GemOptionKey } from "../lib/gemOptions";
 
@@ -116,6 +117,9 @@ export interface AdminProduct {
   /** Has variants (active or not) that are not pack/SS options: the form leaves them alone. */
   otherVariants?: boolean;
   material: Localized;
+  /** Gem cut and colour family, feeding the storefront's shape and colour filters. Gems only. */
+  shape?: GemShape;
+  color?: GemColor;
   tags: string[];
   createdAt: string;
   updatedAt: string;

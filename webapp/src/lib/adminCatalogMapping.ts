@@ -10,6 +10,7 @@ import {
   type ProductType,
   type RecommendationKind,
 } from "../data/adminCatalog";
+import { GEM_COLORS, GEM_SHAPES } from "../data/products";
 import type { Localized } from "../data/types";
 import type { Json } from "./supabase/database.types";
 import { toMinorUnits } from "./catalog/money";
@@ -24,7 +25,8 @@ import { parseGemAttributes } from "./gemOptions";
  * Database shape (migrations 002 and 007):
  * - base columns of `products` / `product_media` hold French, the default
  *   language; English lives in `*_translations` rows (`locale = 'en'`);
- * - `metadata` holds presentation-only fields: type, material, tags;
+ * - `metadata` holds presentation-only fields: type, material, tags and, for
+ *   gems, shape and color (the storefront filters on the last two);
  * - stock lives in the product's single `inventory_items` row.
  */
 
@@ -259,6 +261,8 @@ export function rowToProduct(row: ProductRow, publicUrl: (path: string) => strin
     gemOptions,
     otherVariants: allVariants.length > 0 && !gemOptions,
     material: readLocalized(metadata.material),
+    shape: GEM_SHAPES.find((shape) => shape === metadata.shape),
+    color: GEM_COLORS.find((color) => color === metadata.color),
     tags,
     createdAt: row.created_at,
     updatedAt: row.updated_at,
@@ -335,6 +339,10 @@ export function productToPayload(product: AdminProduct): Json {
       type: product.type,
       material: { fr: product.material.fr.trim(), en: product.material.en.trim() },
       tags: product.tags,
+      // The database merges metadata into what is stored, so an unset value is
+      // sent as null to clear it rather than omitted.
+      shape: product.shape ?? null,
+      color: product.color ?? null,
     },
     translations: {
       en: {

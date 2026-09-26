@@ -85,6 +85,13 @@ describe("rowToProduct", () => {
     expect(withVariants).toMatchObject({ variantCount: 2, stock: 14, lowStockThreshold: 10, trackInventory: true });
   });
 
+  it("reads a gem's shape and colour, ignoring unknown values", () => {
+    expect(rowToProduct({ ...row, metadata: { shape: "heart", color: "opal" } }, url)).toMatchObject({ shape: "heart", color: "opal" });
+    const unknown = rowToProduct({ ...row, metadata: { shape: "oval", color: 3 } }, url);
+    expect(unknown.shape).toBeUndefined();
+    expect(unknown.color).toBeUndefined();
+  });
+
   it("falls back safely when relations are missing", () => {
     const bare = rowToProduct({ ...row, product_translations: null, product_media: null, inventory_items: null, metadata: {} }, url);
     expect(bare).toMatchObject({ trackInventory: true, stock: 0, type: "single", media: [], name: { en: "" } });
@@ -108,6 +115,12 @@ describe("productToPayload", () => {
     expect(payload).not.toHaveProperty("promo_price");
     expect(payload.price).toBe("32.00");
     expect(payload.compare_at_price).toBe("38.00");
+  });
+
+  it("sends shape and colour, as null when unset so the merge clears them", () => {
+    expect(payload.metadata).toMatchObject({ shape: null, color: null });
+    const gem = productToPayload({ ...product, shape: "star", color: "crystal" }) as { metadata: Record<string, unknown> };
+    expect(gem.metadata).toMatchObject({ shape: "star", color: "crystal" });
   });
 
   it("builds slugs from the names", () => {

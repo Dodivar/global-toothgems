@@ -20,6 +20,7 @@ import {
   type ProductStatus,
   type ProductType,
 } from "../../data/adminCatalog";
+import { GEM_COLORS, GEM_SHAPES, type GemColor, type GemShape } from "../../data/products";
 import type { Localized } from "../../data/types";
 import { comboSkuSuffix, longestSkuSuffix } from "../../lib/gemOptions";
 
@@ -96,6 +97,9 @@ export function ProductForm({
   const showError = (key: FieldKey) => (submitted || touched[key] ? errors[key] : undefined);
   const blur = (key: FieldKey) => () => setTouched((prev) => ({ ...prev, [key]: true }));
 
+  const category = categories.find((c) => c.id === draft.categoryId);
+  const isGem = (category?.slug ?? category?.id) === "gems";
+
   const submit = (intent: SubmitIntent) => (event?: FormEvent) => {
     event?.preventDefault();
     setSubmitted(true);
@@ -107,19 +111,28 @@ export function ProductForm({
     }
     const status: ProductStatus =
       intent === "publish" ? "active" : intent === "draft" ? "draft" : draft.status;
-    onSubmit({ ...draft, status, promoPrice: withPromoPrice ? draft.promoPrice : undefined }, intent);
+    // Shape and colour describe a gem; a product moved out of the gems
+    // category loses them so it never shows up under a gem filter.
+    const gemLook = isGem ? {} : { shape: undefined, color: undefined };
+    onSubmit({ ...draft, ...gemLook, status, promoPrice: withPromoPrice ? draft.promoPrice : undefined }, intent);
   };
 
   // Pack/SS options are a gem thing; a product that already has them keeps
   // the editor whatever its category. Products whose variants are another
   // kind (colours, boxes…) never get it: saving would replace them.
-  const category = categories.find((c) => c.id === draft.categoryId);
-  const isGem = (category?.slug ?? category?.id) === "gems";
   const otherVariants = Boolean(draft.otherVariants) || (Boolean(draft.variantCount) && !draft.gemOptions);
   const showGemOptions = !otherVariants && (isGem || draft.gemOptions !== undefined);
   const optionsOn = Boolean(draft.gemOptions?.enabled);
 
   const categoryOptions: AdminOption[] = categories.map((c) => ({ value: c.id, label: c.name[lang] }));
+  const shapeOptions: AdminOption[] = [
+    { value: "", label: t("admin.form.gemLookNone") },
+    ...GEM_SHAPES.map((shape) => ({ value: shape, label: t(`shop.shapes.${shape}`) })),
+  ];
+  const colorOptions: AdminOption[] = [
+    { value: "", label: t("admin.form.gemLookNone") },
+    ...GEM_COLORS.map((color) => ({ value: color, label: t(`shop.colors.${color}`) })),
+  ];
   const typeOptions: AdminOption[] = TYPES.map((type) => ({ value: type, label: t(`admin.type.${type}`) }));
   const statusOptions: AdminOption[] = (["draft", "active", "archived"] as ProductStatus[]).map((s) => ({
     value: s,
@@ -450,6 +463,32 @@ export function ProductForm({
                 />
               )}
             </FormField>
+
+            {isGem && (
+              <>
+                <FormField label={t("admin.form.shape")} hint={t("admin.form.gemLookHint")}>
+                  {(props) => (
+                    <AdminSelect
+                      {...props}
+                      options={shapeOptions}
+                      value={draft.shape ?? ""}
+                      onChange={(e) => set("shape", (e.target.value || undefined) as GemShape | undefined)}
+                    />
+                  )}
+                </FormField>
+
+                <FormField label={t("admin.form.color")} hint={t("admin.form.gemLookHint")}>
+                  {(props) => (
+                    <AdminSelect
+                      {...props}
+                      options={colorOptions}
+                      value={draft.color ?? ""}
+                      onChange={(e) => set("color", (e.target.value || undefined) as GemColor | undefined)}
+                    />
+                  )}
+                </FormField>
+              </>
+            )}
 
             <FormField label={t("admin.form.type")} hint={t("admin.form.typeHint")}>
               {(props) => (
