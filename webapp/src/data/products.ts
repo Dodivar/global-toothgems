@@ -98,6 +98,9 @@ export interface ProductVariant {
   price: number;
   compareAtPrice?: number;
   stock?: "low" | "out";
+  /** Gem options (`lib/gemOptions.ts`): stones per pack, and stone size (SS). */
+  pack?: number;
+  ss?: number;
 }
 
 export interface Product {

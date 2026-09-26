@@ -253,7 +253,12 @@
     "basedOn_other": "sur {{count}} avis vérifiés",
     "stickyBarLabel": "Ajouter au panier",
     "zoomHint": "Survolez pour agrandir",
-    "variantLabel": "Option"
+    "variantLabel": "Option",
+    "packLabel": "Pack",
+    "packValue": "{{count}} pierres",
+    "stoneSizeLabel": "Taille de pierre",
+    "optionUnavailable": "indisponible",
+    "ssApprox": "SS = stone size (taille de pierre). Diamètres approximatifs."
   },
   "cart": {
     "confirmedBadge": "Commande confirmée",
@@ -1439,12 +1444,37 @@
         "thresholdInvalid": "Le seuil doit être un nombre entier positif.",
         "skuFormat": "Majuscules, chiffres et tirets uniquement, 2 à 64 caractères (ex. GEM-STAR-001).",
         "categoryRequired": "Choisissez une catégorie.",
-        "priceCents": "Deux décimales au maximum."
+        "priceCents": "Deux décimales au maximum.",
+        "optionsEmpty": "Cochez au moins un pack ou une taille de pierre, ou désactivez les options.",
+        "optionsSkuTooLong": "Avec ces options, le SKU doit faire {{max}} caractères au plus (chaque option ajoute un suffixe comme {{suffix}}).",
+        "optionsPrice": "Vérifiez les prix des options : supérieurs à 0, deux décimales au plus.",
+        "optionsStock": "Le stock et le seuil d’alerte des options doivent être des nombres entiers positifs."
       },
       "promoInPromotions": "Les prix promotionnels se gèrent dans l’espace Promotions : le prix affiché ici est le prix de vente normal.",
       "databaseNotice": "Enregistré dans la base Supabase : un produit « En ligne » apparaît en boutique. Les visuels sont envoyés dès leur ajout.",
       "variantStock_one": "Stock géré par variante ({{count}} variante, {{stock}} unités au total). Il ne se modifie pas encore depuis cet écran.",
-      "variantStock_other": "Stock géré par variante ({{count}} variantes, {{stock}} unités au total). Il ne se modifie pas encore depuis cet écran."
+      "variantStock_other": "Stock géré par variante ({{count}} variantes, {{stock}} unités au total). Il ne se modifie pas encore depuis cet écran.",
+      "optionsTitle": "Packs et tailles de pierre",
+      "optionsBody": "Vendez cette gem en packs de 20, 50 ou 100 pierres, dans une ou plusieurs tailles (SS). Chaque pack × taille est une option avec son propre prix et son propre stock.",
+      "optionsToggle": "Proposer des packs et des tailles",
+      "optionsToggleHint": "Désactivé : le produit est vendu à l’unité, avec le stock de la section ci-dessus.",
+      "optionsPacks": "Packs",
+      "optionsPackValue": "{{count}} pierres",
+      "optionsSizes": "Tailles de pierre (SS)",
+      "optionsSizesHint": "Diamètres approximatifs : les tableaux des fabricants varient légèrement.",
+      "optionsColOption": "Option",
+      "optionsColPrice": "Prix",
+      "optionsColStock": "Stock",
+      "optionsColThreshold": "Alerte à",
+      "optionsPriceHint": "Un prix vide reprend le prix du produit. Les cartes de la boutique affichent le prix du produit : indiquez celui de l’option la moins chère.",
+      "optionsRemoveNotice": "Les options décochées sont supprimées à l’enregistrement. Celles déjà commandées sont conservées pour l’historique, masquées en boutique.",
+      "optionsNone": "Cochez un pack ou une taille de pierre pour créer des options.",
+      "optionsCount_one": "{{count}} option proposée",
+      "optionsCount_other": "{{count}} options proposées",
+      "optionsStockNotice": "Le stock se règle par option, dans « Packs et tailles de pierre ».",
+      "optionsPriceLabel": "Prix de {{option}}",
+      "optionsStockLabel": "Stock de {{option}}",
+      "optionsThresholdLabel": "Seuil d’alerte de {{option}}"
     },
     "dialog": {
       "archiveTitle": "Archiver ce produit ?",
@@ -3341,6 +3371,7 @@
       "notFound": "Ce produit n’existe plus. Rechargez la liste.",
       "network": "Connexion à la base impossible. Vérifiez votre réseau puis réessayez.",
       "generic": "Une erreur inattendue est survenue. Réessayez dans un instant.",
+      "outdated": "Le produit est enregistré, mais pas ses packs et tailles : la base n’a pas encore été mise à jour pour eux.",
       "loadFailed": "Le catalogue n’a pas pu être chargé.",
       "retry": "Réessayer"
     }

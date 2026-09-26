@@ -9,6 +9,7 @@ import {
 } from "../../data/products";
 import type { Localized } from "../../data/types";
 import { toMajorUnits, toMinorUnits } from "./money";
+import { parseGemAttributes } from "../gemOptions";
 
 /**
  * Pure mapping from catalogue rows (as returned by `api.ts`) to the
@@ -44,6 +45,8 @@ interface InventoryRow {
 export interface VariantRow {
   id: string;
   name: string;
+  /** Option values, e.g. `{ "pack": 50, "ss": 6 }` for a gem. */
+  attributes?: Json;
   price: number | null;
   compare_at_price: number | null;
   is_active: boolean;
@@ -160,9 +163,11 @@ function displayPrice(value: number | string): number {
 function mapVariant(row: VariantRow, productPrice: number | string): ProductVariant {
   const price = displayPrice(row.price ?? productPrice);
   const compareAt = row.compare_at_price != null ? displayPrice(row.compare_at_price) : undefined;
+  const gem = parseGemAttributes(row.attributes);
   return {
     id: row.id,
     name: localize(row.name, row.product_variant_translations, (t) => t.name),
+    ...(gem ? { pack: gem.pack ?? undefined, ss: gem.ss ?? undefined } : {}),
     price,
     compareAtPrice: compareAt != null && compareAt > price ? compareAt : undefined,
     stock: stockBadge(row.inventory_items[0]?.stock_status),

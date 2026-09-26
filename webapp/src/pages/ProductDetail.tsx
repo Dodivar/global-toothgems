@@ -16,6 +16,8 @@ import { useToast } from "../lib/toast";
 import { useReveal } from "../lib/useReveal";
 import { useCatalog } from "../lib/catalog/CatalogProvider";
 import { CatalogError } from "../components/shop/CatalogError";
+import { GemOptionPicker } from "../components/shop/GemOptionPicker";
+import { formatSs, formatSsMm, isGemOptionSet } from "../lib/gemOptions";
 import { NotFound } from "./NotFound";
 
 const SHADES = ["Bleu aurore", "Cristal clair", "Or rose"];
@@ -78,6 +80,8 @@ function ProductView({ product }: { product: Product }) {
   // their illustrative shade and size pickers.
   const variants = product.variants ?? [];
   const legacyOptions = variants.length === 0 && source === "mock";
+  // Gems sold by pack and stone size get a two-axis picker instead of one list.
+  const gemPicker = isGemOptionSet(variants);
   const [variantId, setVariantId] = useState(() => (variants.find((v) => v.stock !== "out") ?? variants[0])?.id);
   const variant = variants.find((v) => v.id === variantId);
   const unitPrice = variant?.price ?? product.price;
@@ -274,7 +278,9 @@ function ProductView({ product }: { product: Product }) {
 
           {/* Shade is a swatch radio group rather than a dropdown: colour is the
               decision here, and a <select> hides the options behind a click. */}
-          {variants.length > 0 && (
+          {gemPicker && <GemOptionPicker variants={variants} selected={variant} onSelect={(v) => setVariantId(v.id)} />}
+
+          {variants.length > 0 && !gemPicker && (
             <fieldset className="m-0 grid gap-2 border-0 p-0">
               <legend className="text-[11px] font-semibold uppercase tracking-[var(--tracking-eyebrow)] text-[var(--text-muted)]">
                 {t("product.variantLabel")}
@@ -390,7 +396,10 @@ function ProductView({ product }: { product: Product }) {
               {[
                 [t("product.specMaterial"), material],
                 [t("product.specCenter"), center],
-                [t("product.specDiameter"), legacyOptions ? size : ""],
+                [
+                  t("product.specDiameter"),
+                  legacyOptions ? size : variant?.ss != null ? `${formatSs(variant.ss)} ${formatSsMm(variant.ss, lang)}`.trim() : "",
+                ],
                 [t("product.specBack"), t("product.specBackValue")],
                 [t("product.specPackaging"), t("product.specPackagingValue")],
                 [t("product.specWear"), t("product.specWearValue")],

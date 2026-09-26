@@ -45,6 +45,7 @@ supabase/
   tests/iteration8_validation.sql   iteration 8 statistics suite (always rolls back)
   tests/iteration9_validation.sql   iteration 9 product recommendations suite (always rolls back)
   tests/iteration10_validation.sql  iteration 10 back-office product management suite (always rolls back)
+  tests/iteration11_validation.sql  iteration 11 gem pack × stone-size options suite (always rolls back)
 ```
 
 ## Migrations
@@ -78,6 +79,7 @@ supabase/
 | 20260925191945 | `product_recommendations` | `product_recommendations` (manual links per product and kind, audited); `recommended_products(product_ids, kind, limit)` |
 | 20260926113816 | `admin_product_management` | `admin_save_product(jsonb)`, `admin_delete_product(uuid)`, `admin_save_product_recommendations(uuid, uuid[], uuid[])` — SECURITY INVOKER (RLS applies), `manage_products` checked, one transaction per call |
 | 20260926115257 | `admin_save_product_variant_stock` | `admin_save_product()` leaves stock alone for products with variants (stock is per variant) and digital products |
+| 20260926160000 | `gem_pack_stone_size_options` | `admin_save_product()` gains an optional `variants` list: gem options pack (20/50/100) × stone size (SS), one variant each (`attributes` `{"pack": 50, "ss": 6}`), names/SKUs derived server-side, matched by combination, unticked options deleted (deactivated when ordered); products with other kinds of variants refused; product stock applies again once no variant is active |
 
 RLS is **enabled in the same migration that creates each table** (deny by default);
 policies are granted back in `rls_policies`.
@@ -131,7 +133,7 @@ statuses as `text` + `CHECK` (easy to extend, no enum migrations), money as
 | `profiles` | first/last/display name, `avatar_path`, `phone`, `role`, `status` (`active`/`suspended`/`deactivated`), `email` mirror of `auth.users`. Created automatically on sign-up; sign-up metadata can **never** set the role. |
 | `categories` | flat list: `slug` (unique), `name`, `description`, `image_path`, `is_active`, `position`. |
 | `products` | `slug`/`sku` unique, `price`, `compare_at_price` (> price), `currency`, `status` `draft`/`active`/`archived` (archived = soft delete), `is_featured`, `product_type` `physical`/`digital`, `metadata` (presentation only). |
-| `product_variants` | optional per product; `attributes` JSONB object (`{"colour":"saphir"}`, `{"size":"3mm"}`) so new option types need no columns; `price` null = inherit product price. |
+| `product_variants` | optional per product; `attributes` JSONB object (`{"colour":"saphir"}`, `{"size":"3mm"}`, gems: `{"pack":50,"ss":6}` — integers) so new option types need no columns; `price` null = inherit product price. |
 | `product_media` | Storage object path + `media_type`, `alt_text`, `position`, `is_primary` (max one per product), optional `variant_id`. No binaries in Postgres. |
 | `inventory_items` | exactly one of `product_id`/`variant_id`; `quantity_on_hand`, `quantity_reserved` (≤ on hand), `low_stock_threshold`, `track_inventory`, manual `availability`; generated `stock_status` (`in_stock`/`low_stock`/`out_of_stock`/`preorder`). |
 | `customer_addresses` | many per user, `address_type` shipping/billing, one default per type (setting a new default clears the old one), ISO `country_code`, nullable `postal_code`/`region`. |
@@ -563,7 +565,7 @@ enable the extension in the dashboard — or a scheduled server job with the ser
 **Validation:** run `tests/mvp_validation.sql`, `tests/iteration2_validation.sql` and
 `tests/iteration3_validation.sql`, `tests/iteration4_validation.sql`, `tests/iteration5_validation.sql` and
 `tests/iteration6_validation.sql`, `tests/iteration7_validation.sql`, `tests/iteration8_validation.sql`,
-`tests/iteration9_validation.sql`, `tests/iteration10_validation.sql`. Each ends with
+`tests/iteration9_validation.sql`, `tests/iteration10_validation.sql`, `tests/iteration11_validation.sql`. Each ends with
 `ALL … PASSED (...)` raised as an exception, which rolls everything back.
 (The order-number sequence still advances — sequences are not transactional.)
 
@@ -702,6 +704,8 @@ VAT rates, shipping zones/rates mirroring the Settings prototype. Media rows ref
 - Iteration 10: back-office product management — `admin_save_product()` (product + published English translation +
   stock + ordered media, money as validated decimal strings, unique slugs, orphaned storage paths returned),
   `admin_delete_product()` (order history protected by FK), `admin_save_product_recommendations()`.
+- Iteration 11: gem options — packs of 20 / 50 / 100 stones × stone sizes (SS) as variants with their own price
+  and stock, edited from the product form and picked on the product page; seed product `strass-cristal`.
 
 ## Next iterations (not implemented)
 

@@ -1,16 +1,19 @@
-import type {
-  AdminProduct,
-  Availability,
-  Category,
-  ProductImage,
-  ProductRecommendation,
-  ProductStatus,
-  ProductType,
-  RecommendationKind,
+import {
+  offeredGemVariants,
+  type AdminProduct,
+  type Availability,
+  type Category,
+  type GemOptions,
+  type ProductImage,
+  type ProductRecommendation,
+  type ProductStatus,
+  type ProductType,
+  type RecommendationKind,
 } from "../data/adminCatalog";
 import type { Localized } from "../data/types";
 import type { Json } from "./supabase/database.types";
 import { toMinorUnits } from "./catalog/money";
+import { parseGemAttributes } from "./gemOptions";
 
 /**
  * Pure translation between the Supabase catalogue and the admin model.
@@ -32,7 +35,8 @@ export const ADMIN_PRODUCT_SELECT = `
   product_translations ( locale, name, short_description, description ),
   product_media ( id, storage_path, alt_text, position, product_media_translations ( locale, alt_text ) ),
   inventory_items ( track_inventory, quantity_on_hand, quantity_reserved, low_stock_threshold, availability ),
-  product_variants ( id, inventory_items ( track_inventory, quantity_on_hand, quantity_reserved, low_stock_threshold, availability ) )
+  product_variants ( id, attributes, price, is_active, position,
+    inventory_items ( track_inventory, quantity_on_hand, quantity_reserved, low_stock_threshold, availability ) )
 `;
 
 export const ADMIN_CATEGORY_SELECT = `
@@ -84,7 +88,16 @@ export interface ProductRow {
   /** One row per product without variants; PostgREST embeds it as a list. */
   inventory_items: InventoryRow[] | InventoryRow | null;
   /** Variants, each with its own stock row. */
-  product_variants?: { id: string; inventory_items: InventoryRow[] | InventoryRow | null }[] | null;
+  product_variants?: VariantRow[] | null;
+}
+
+export interface VariantRow {
+  id: string;
+  attributes?: Json;
+  price?: number | string | null;
+  is_active?: boolean;
+  position?: number;
+  inventory_items: InventoryRow[] | InventoryRow | null;
 }
 
 export interface CategoryRow {
@@ -183,6 +196,7 @@ export function rowToCategory(row: CategoryRow): Category {
   const en = english(row.category_translations);
   return {
     id: row.id,
+    slug: row.slug,
     name: { fr: row.name, en: en?.name ?? row.name },
     description: { fr: row.description ?? "", en: en?.description ?? row.description ?? "" },
   };
@@ -191,7 +205,10 @@ export function rowToCategory(row: CategoryRow): Category {
 export function rowToProduct(row: ProductRow, publicUrl: (path: string) => string): AdminProduct {
   const en = english(row.product_translations);
   const metadata = asObject(row.metadata);
-  const variants = row.product_variants ?? [];
+  const allVariants = row.product_variants ?? [];
+  // Stock and the variant count follow what the shop sells: active variants.
+  // Options removed after being ordered stay in the database, inactive.
+  const variants = allVariants.filter((variant) => variant.is_active !== false);
   const variantStock = variants
     .map((variant) => (Array.isArray(variant.inventory_items) ? variant.inventory_items[0] : variant.inventory_items))
     .filter((item): item is InventoryRow => Boolean(item));
@@ -208,6 +225,7 @@ export function rowToProduct(row: ProductRow, publicUrl: (path: string) => strin
       : Array.isArray(row.inventory_items)
         ? row.inventory_items[0]
         : row.inventory_items;
+  const gemOptions = readGemOptions(allVariants);
   const tags = Array.isArray(metadata.tags) ? metadata.tags.filter((tag): tag is string => typeof tag === "string") : [];
 
   const media: ProductImage[] = [...(row.product_media ?? [])]
@@ -238,6 +256,8 @@ export function rowToProduct(row: ProductRow, publicUrl: (path: string) => strin
     availability: oneOf(inventory?.availability, AVAILABILITIES, "in_stock"),
     status: oneOf(row.status, STATUSES, "draft"),
     variantCount: variants.length,
+    gemOptions,
+    otherVariants: allVariants.length > 0 && !gemOptions,
     material: readLocalized(metadata.material),
     tags,
     createdAt: row.created_at,
@@ -251,6 +271,43 @@ export function rowToRecommendation(row: RecommendationRow): ProductRecommendati
     recommendedProductId: row.recommended_product_id,
     kind: row.kind as RecommendationKind,
     position: row.position,
+  };
+}
+
+function inventoryOf(variant: VariantRow): InventoryRow | null {
+  return (Array.isArray(variant.inventory_items) ? variant.inventory_items[0] : variant.inventory_items) ?? null;
+}
+
+/**
+ * Pack × stone-size options of a product, when every variant is one. Undefined
+ * for a product without variants or with another kind (colours, boxes…): the
+ * form then leaves its variants alone.
+ */
+export function readGemOptions(rows: VariantRow[]): GemOptions | undefined {
+  if (rows.length === 0) return undefined;
+  const parsed = rows.map((row) => ({ row, key: parseGemAttributes(row.attributes) }));
+  if (parsed.some(({ key }) => key === null)) return undefined;
+
+  const active = parsed.filter(({ row }) => row.is_active !== false);
+  const packs = [...new Set(active.map(({ key }) => key!.pack).filter((v): v is number => v != null))].sort((a, b) => a - b);
+  const sizes = [...new Set(active.map(({ key }) => key!.ss).filter((v): v is number => v != null))].sort((a, b) => a - b);
+  return {
+    enabled: active.length > 0,
+    packs,
+    sizes,
+    variants: parsed
+      .sort((a, b) => (a.row.position ?? 0) - (b.row.position ?? 0))
+      .map(({ row, key }) => {
+        const inventory = inventoryOf(row);
+        return {
+          pack: key!.pack,
+          ss: key!.ss,
+          price: row.price == null ? undefined : amountFromDb(row.price),
+          trackInventory: inventory?.track_inventory ?? true,
+          stock: inventory?.quantity_on_hand ?? 0,
+          lowStockThreshold: inventory?.low_stock_threshold ?? 5,
+        };
+      }),
   };
 }
 
@@ -293,6 +350,20 @@ export function productToPayload(product: AdminProduct): Json {
       low_stock_threshold: product.lowStockThreshold,
       availability: product.availability,
     },
+    // Absent = variants left as they are; a list (possibly empty) = the
+    // complete set of pack × size options (migration `…_gem_pack_stone_size_options`).
+    ...(product.gemOptions
+      ? {
+          variants: offeredGemVariants(product.gemOptions).map((variant) => ({
+            pack: variant.pack,
+            ss: variant.ss,
+            price: variant.price == null ? null : amountToDb(variant.price),
+            track_inventory: variant.trackInventory,
+            quantity_on_hand: variant.stock,
+            low_stock_threshold: variant.lowStockThreshold,
+          })),
+        }
+      : {}),
     media: product.media
       .filter((image) => image.storagePath)
       .map((image) => ({
@@ -307,7 +378,8 @@ export function productToPayload(product: AdminProduct): Json {
 }
 
 /** Categories of failure the admin tells apart, keyed like `admin.errors.*`. */
-export type CatalogErrorKind = "permission" | "duplicate" | "inUse" | "invalid" | "notFound" | "network" | "generic";
+export type CatalogErrorKind =
+  | "permission" | "duplicate" | "inUse" | "invalid" | "notFound" | "network" | "outdated" | "generic";
 
 /** Maps a PostgREST / Postgres / Storage error to a message the screen can show. */
 export function catalogErrorKind(error: { code?: string; message?: string; status?: number | string } | null | undefined): CatalogErrorKind {
@@ -328,6 +400,8 @@ export function catalogErrorKind(error: { code?: string; message?: string; statu
     case "P0002":
     case "PGRST116":
       return "notFound";
+    case "PGRST202":
+      return "outdated";
   }
   const status = Number(error.status);
   if (status === 401 || status === 403) return "permission";

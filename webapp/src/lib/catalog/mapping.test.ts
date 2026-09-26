@@ -167,3 +167,20 @@ describe("mapProduct", () => {
     expect(p.compareAtPrice).toBeUndefined();
   });
 });
+
+describe("mapProduct gem options", () => {
+  it("exposes the pack and stone size of pack/SS variants", () => {
+    const p = mapProduct(
+      row({
+        product_variants: [
+          variant({ id: "a", name: "Pack de 20 · SS6", attributes: { pack: 20, ss: 6 } }),
+          variant({ id: "b", name: "Cristal", attributes: { colour: "cristal" }, position: 1 }),
+        ],
+      }),
+      undefined,
+      url,
+    );
+    expect(p.variants?.[0]).toMatchObject({ pack: 20, ss: 6 });
+    expect(p.variants?.[1]).not.toHaveProperty("pack");
+  });
+});

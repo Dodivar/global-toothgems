@@ -172,8 +172,13 @@ export function SupabaseAdminCatalogProvider({ children, actor }: { children: Re
       const { data, error } = await client.rpc("admin_save_product", { p_product: payload });
       if (error) return fail(error);
 
-      const result = data as { id: string; removed_paths?: string[] };
+      const result = data as { id: string; removed_paths?: string[]; variants?: string[] };
       await removeFiles(result.removed_paths ?? []);
+      // A database without the pack/SS migration saves the product and
+      // ignores the options: say so rather than pretend they were saved.
+      if (product.gemOptions && !Array.isArray(result.variants)) {
+        return fail({ code: "PGRST202", message: "admin_save_product() does not save gem options yet" });
+      }
 
       const fresh = await client.from("products").select(ADMIN_PRODUCT_SELECT).eq("id", result.id).single();
       if (fresh.error) return fail(fresh.error);
