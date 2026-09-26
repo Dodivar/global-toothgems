@@ -134,7 +134,8 @@
       "Gems": "Gems",
       "Outils": "Tools",
       "Kits": "Kits",
-      "Suivi": "Aftercare"
+      "Suivi": "Aftercare",
+      "Accessoires": "Accessories"
     },
     "materials": {
       "all": "All materials",
@@ -251,7 +252,8 @@
     "basedOn_one": "from {{count}} verified review",
     "basedOn_other": "from {{count}} verified reviews",
     "stickyBarLabel": "Add to cart",
-    "zoomHint": "Hover to zoom"
+    "zoomHint": "Hover to zoom",
+    "variantLabel": "Option"
   },
   "cart": {
     "confirmedBadge": "Order confirmed",
@@ -4037,5 +4039,11 @@
       "companyCta": "Legal notice",
       "storyTitle": "Our story"
     }
+  },
+  "catalog": {
+    "loading": "Loading the catalogue…",
+    "errorTitle": "The catalogue is temporarily unavailable",
+    "errorBody": "We could not load the products. Check your connection and try again.",
+    "retry": "Try again"
   }
 }

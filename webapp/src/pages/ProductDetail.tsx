@@ -1,19 +1,22 @@
 import { useEffect, useRef, useState } from "react";
 import { useTranslation } from "react-i18next";
 import { Link, useNavigate, useParams } from "react-router-dom";
-import { CheckCircle2, Minus, Plus, ShoppingBag, Star } from "lucide-react";
+import { CheckCircle2, Image as ImageIcon, Minus, Plus, ShoppingBag, Star } from "lucide-react";
 import { Badge } from "../components/ui/Badge";
 import { Button } from "../components/ui/Button";
 import { IconButton } from "../components/ui/IconButton";
 import { Select } from "../components/ui/Select";
 import { ProductCard } from "../components/ui/ProductCard";
 import { ReviewsSection, useSubjectReviews } from "../components/reviews/ReviewsSection";
-import { getProduct, relatedProducts } from "../data/products";
+import { relatedProducts, type Product } from "../data/products";
 import { pick } from "../data/types";
 import { formatPrice } from "../lib/format";
 import { useCart } from "../lib/cart";
 import { useToast } from "../lib/toast";
 import { useReveal } from "../lib/useReveal";
+import { useCatalog } from "../lib/catalog/CatalogProvider";
+import { CatalogError } from "../components/shop/CatalogError";
+import { NotFound } from "./NotFound";
 
 const SHADES = ["Bleu aurore", "Cristal clair", "Or rose"];
 const SHADES_EN: Record<string, string> = { "Bleu aurore": "Aurora blue", "Cristal clair": "Clear crystal", "Or rose": "Rose gold" };
@@ -24,15 +27,63 @@ const SHADE_SWATCH: Record<string, string> = {
 };
 const SIZES = ["1,8 mm", "2,0 mm", "2,5 mm"];
 
+/**
+ * Resolves the product from the catalogue (by base or localized slug) before
+ * rendering it, so the page never flashes another product while loading and
+ * an unknown slug is a real 404 rather than a stand-in product.
+ */
 export function ProductDetail() {
   const { id } = useParams();
+  const { status, findProduct } = useCatalog();
+
+  if (status === "loading") return <ProductSkeleton />;
+  if (status === "error") {
+    return (
+      <div className="mx-auto max-w-[var(--max-width-content)] px-[clamp(14px,4vw,48px)] py-[clamp(32px,4vw,56px)]">
+        <CatalogError />
+      </div>
+    );
+  }
+  const product = findProduct(id ?? "");
+  if (!product) return <NotFound />;
+  return <ProductView key={product.id} product={product} />;
+}
+
+function ProductSkeleton() {
+  return (
+    <div
+      aria-busy="true"
+      className="mx-auto grid max-w-[var(--max-width-content)] grid-cols-1 gap-10 px-[clamp(14px,4vw,48px)] py-[clamp(32px,4vw,56px)] lg:grid-cols-[minmax(0,1.1fr)_minmax(0,1fr)]"
+    >
+      <div className="gt-skeleton aspect-square rounded-[var(--radius-lg)]" />
+      <div className="grid content-start gap-4">
+        <div className="gt-skeleton h-8 w-3/4 rounded-full" />
+        <div className="gt-skeleton h-4 w-1/2 rounded-full" />
+        <div className="gt-skeleton h-7 w-1/4 rounded-full" />
+        <div className="gt-skeleton h-20 w-full rounded-[var(--radius-sm)]" />
+      </div>
+    </div>
+  );
+}
+
+function ProductView({ product }: { product: Product }) {
   const { t, i18n } = useTranslation();
   const navigate = useNavigate();
   const { addLine } = useCart();
   const { showToast } = useToast();
+  const { products, source } = useCatalog();
   const lang = i18n.language;
 
-  const product = getProduct(id ?? "") ?? getProduct("aurora-heart")!;
+  // Database products carry their real options; the prototype's fixtures keep
+  // their illustrative shade and size pickers.
+  const variants = product.variants ?? [];
+  const legacyOptions = variants.length === 0 && source === "mock";
+  const [variantId, setVariantId] = useState(() => (variants.find((v) => v.stock !== "out") ?? variants[0])?.id);
+  const variant = variants.find((v) => v.id === variantId);
+  const unitPrice = variant?.price ?? product.price;
+  const compareAtPrice = variant ? variant.compareAtPrice : product.compareAtPrice;
+  const stock = variant ? variant.stock : product.stock;
+
   const [shade, setShade] = useState(SHADES[0]);
   const [size, setSize] = useState(SIZES[1]);
   const [qtyCursor, setQtyCursor] = useState({ id: "", qty: 1 });
@@ -52,7 +103,10 @@ export function ProductDetail() {
   const material = product.material || subtitle.split("·")[0].trim();
   const center = product.center ? pick(product.center, lang) : material;
   const gallery = product.gallery ?? [{ src: product.image, alt: { fr: name, en: name } }];
-  const related = relatedProducts().filter((p) => p.id !== product.id);
+  // Storage paths can exist in the catalogue before their file is uploaded.
+  const [brokenImages, setBrokenImages] = useState<string[]>([]);
+  const markBroken = (src: string) => setBrokenImages((list) => (list.includes(src) ? list : [...list, src]));
+  const related = relatedProducts(product, products);
 
   const activeImage = imageCursor.id === product.id ? Math.min(imageCursor.index, gallery.length - 1) : 0;
   const setActiveImage = (index: number) => setImageCursor({ id: product.id, index });
@@ -79,7 +133,7 @@ export function ProductDetail() {
     { q: t("product.faq3Q"), a: t("product.faq3A") },
   ];
 
-  const installment = formatPrice(product.price / 4);
+  const installment = formatPrice(unitPrice / 4);
 
   // The rating line reads the same published reviews as the section below it,
   // so the two can never disagree — and a review approved in the back office
@@ -87,16 +141,20 @@ export function ProductDetail() {
   const reviewSubject = { kind: "product" as const, id: product.id };
   const { summary: ratings } = useSubjectReviews(reviewSubject);
 
+  const variantLabel = variant ? pick(variant.name, lang) : legacyOptions ? `${shadeLabel(shade)} · ${size}` : undefined;
+
   const addToCart = () => {
     addLine({
       productId: product.id,
+      variantId: variant?.id,
       name,
-      variant: `${shadeLabel(shade)} · ${size}`,
+      variant: variantLabel,
       image: product.image,
-      price: product.price,
+      // Indicative only: the checkout recomputes every price server-side.
+      price: unitPrice,
       qty,
     });
-    showToast(t("product.toastAddedTitle"), `${name} · ${shadeLabel(shade)}`);
+    showToast(t("product.toastAddedTitle"), variantLabel ? `${name} · ${variantLabel}` : name);
   };
 
   return (
@@ -106,10 +164,14 @@ export function ProductDetail() {
           {t("product.breadcrumbShop")}
         </Link>
         <span aria-hidden="true">·</span>
-        <Link to={`/boutique?categorie=${product.cat}`} className="underline decoration-1 underline-offset-2">
-          {product.cat}
-        </Link>
-        <span aria-hidden="true">·</span>
+        {product.cat && (
+          <>
+            <Link to={`/boutique?categorie=${product.cat}`} className="underline decoration-1 underline-offset-2">
+              {t(`shop.categories.${product.cat}`)}
+            </Link>
+            <span aria-hidden="true">·</span>
+          </>
+        )}
         <span className="text-[var(--text-primary)]" aria-current="page">{name}</span>
       </nav>
 
@@ -125,17 +187,27 @@ export function ProductDetail() {
             }}
             onMouseLeave={() => setZoom(null)}
           >
+            {!gallery[activeImage].src || brokenImages.includes(gallery[activeImage].src) ? (
+              <div className="flex h-full w-full flex-col items-center justify-center gap-2 bg-[var(--surface-brand-wash)] text-[var(--gt-blue-500)]">
+                <ImageIcon size={28} aria-hidden="true" />
+                <span className="text-[11px] font-medium uppercase tracking-[var(--tracking-eyebrow)]">
+                  {t("product.imagePlaceholder")}
+                </span>
+              </div>
+            ) : (
             <img
               src={gallery[activeImage].src}
               alt={pick(gallery[activeImage].alt, lang)}
               fetchPriority="high"
               decoding="async"
+              onError={() => markBroken(gallery[activeImage].src)}
               className="h-full w-full object-cover transition-transform duration-[var(--duration-normal)] ease-[var(--ease-out-soft)]"
               style={{
                 transform: zoom ? "scale(1.6)" : "scale(1)",
                 transformOrigin: zoom ? `${zoom.x}% ${zoom.y}%` : "center",
               }}
             />
+            )}
           </div>
           {gallery.length > 1 && (
             <div role="group" aria-label={t("product.galleryLabel")} className="grid grid-cols-4 gap-2">
@@ -169,9 +241,9 @@ export function ProductDetail() {
         <div className="grid content-start gap-5">
           <div className="flex flex-wrap gap-2">
             {product.badge && <Badge tone="highlight">{pick(product.badge, lang)}</Badge>}
-            {product.stock !== "out" && <Badge tone="success" icon={CheckCircle2}>{t("product.inStockBadge")}</Badge>}
-            {product.stock === "low" && <Badge tone="warning">{t("product.stockLow")}</Badge>}
-            {product.stock === "out" && <Badge tone="error">{t("product.stockOut")}</Badge>}
+            {stock !== "out" && <Badge tone="success" icon={CheckCircle2}>{t("product.inStockBadge")}</Badge>}
+            {stock === "low" && <Badge tone="warning">{t("product.stockLow")}</Badge>}
+            {stock === "out" && <Badge tone="error">{t("product.stockOut")}</Badge>}
           </div>
           <h1 className="text-[length:var(--text-h1)]">{name}</h1>
           <span className="flex items-center gap-1.5 text-sm text-[var(--text-muted)]">
@@ -189,12 +261,12 @@ export function ProductDetail() {
                 {t("reviews.section.noneYet")}
               </a>
             )}
-            <span aria-hidden="true">· {material}{center !== material ? `, ${center}` : ""}</span>
+            {material && <span aria-hidden="true">· {material}{center !== material ? `, ${center}` : ""}</span>}
           </span>
           <div className="flex items-baseline gap-3">
-            <strong className="text-[28px] font-bold text-[var(--text-primary)]">{formatPrice(product.price)}</strong>
-            {product.compareAtPrice && (
-              <span className="text-sm text-[var(--text-subtle)] line-through">{formatPrice(product.compareAtPrice)}</span>
+            <strong className="text-[28px] font-bold text-[var(--text-primary)]">{formatPrice(unitPrice)}</strong>
+            {compareAtPrice && (
+              <span className="text-sm text-[var(--text-subtle)] line-through">{formatPrice(compareAtPrice)}</span>
             )}
             <span className="text-sm text-[var(--text-muted)]">{t("product.installment", { amount: installment })}</span>
           </div>
@@ -202,6 +274,47 @@ export function ProductDetail() {
 
           {/* Shade is a swatch radio group rather than a dropdown: colour is the
               decision here, and a <select> hides the options behind a click. */}
+          {variants.length > 0 && (
+            <fieldset className="m-0 grid gap-2 border-0 p-0">
+              <legend className="text-[11px] font-semibold uppercase tracking-[var(--tracking-eyebrow)] text-[var(--text-muted)]">
+                {t("product.variantLabel")}
+              </legend>
+              <div className="flex flex-wrap gap-2">
+                {variants.map((v) => {
+                  const selected = v.id === variant?.id;
+                  const out = v.stock === "out";
+                  return (
+                    <label
+                      key={v.id}
+                      className="flex cursor-pointer items-center gap-2 rounded-[var(--radius-pill)] px-3 py-2 text-sm transition-colors has-[:disabled]:cursor-not-allowed has-[:disabled]:opacity-50 has-[:focus-visible]:outline has-[:focus-visible]:outline-2 has-[:focus-visible]:outline-offset-2 has-[:focus-visible]:outline-[var(--focus-ring)]"
+                      style={{
+                        border: `1px solid ${selected ? "var(--gt-ink-900)" : "var(--border-default)"}`,
+                        background: selected ? "var(--gt-ink-100)" : "transparent",
+                        fontWeight: selected ? 600 : 400,
+                      }}
+                    >
+                      <input
+                        type="radio"
+                        name="variant"
+                        value={v.id}
+                        checked={selected}
+                        disabled={out}
+                        onChange={() => setVariantId(v.id)}
+                        className="sr-only"
+                      />
+                      {pick(v.name, lang)}
+                      {v.price !== product.price && (
+                        <span className="text-[var(--text-muted)]">· {formatPrice(v.price)}</span>
+                      )}
+                      {out && <span className="text-[var(--text-muted)]">· {t("product.stockOut")}</span>}
+                    </label>
+                  );
+                })}
+              </div>
+            </fieldset>
+          )}
+
+          {legacyOptions && (
           <fieldset className="m-0 grid gap-2 border-0 p-0">
             <legend className="text-[11px] font-semibold uppercase tracking-[var(--tracking-eyebrow)] text-[var(--text-muted)]">
               {t("product.shadeLabel")}
@@ -239,9 +352,13 @@ export function ProductDetail() {
             </div>
           </fieldset>
 
-          <div className="max-w-[220px]">
-            <Select label={t("product.sizeLabel")} options={sizeOptions} value={size} onChange={setSize} />
-          </div>
+          )}
+
+          {legacyOptions && (
+            <div className="max-w-[220px]">
+              <Select label={t("product.sizeLabel")} options={sizeOptions} value={size} onChange={setSize} />
+            </div>
+          )}
 
           <div ref={buyRef} className="flex flex-wrap items-center gap-3">
             <div className="flex items-center gap-1 rounded-[var(--radius-control)] border border-[var(--border-default)]">
@@ -249,7 +366,7 @@ export function ProductDetail() {
               <span className="w-8 text-center text-sm font-semibold" aria-live="polite">{qty}</span>
               <IconButton icon={Plus} label={t("product.increaseQty")} variant="ghost" size="sm" onClick={() => setQty((q) => q + 1)} />
             </div>
-            <Button variant="primary" size="lg" iconLeft={ShoppingBag} onClick={addToCart} disabled={product.stock === "out"} className="flex-1">
+            <Button variant="primary" size="lg" iconLeft={ShoppingBag} onClick={addToCart} disabled={stock === "out"} className="flex-1">
               {t("product.addToCart")}
             </Button>
             <IconButton
@@ -273,11 +390,14 @@ export function ProductDetail() {
               {[
                 [t("product.specMaterial"), material],
                 [t("product.specCenter"), center],
-                [t("product.specDiameter"), size],
+                [t("product.specDiameter"), legacyOptions ? size : ""],
                 [t("product.specBack"), t("product.specBackValue")],
                 [t("product.specPackaging"), t("product.specPackagingValue")],
                 [t("product.specWear"), t("product.specWearValue")],
-              ].map(([k, v]) => (
+              ]
+                // A spec the catalogue does not hold is left out, not shown empty.
+                .filter(([, v]) => v)
+                .map(([k, v]) => (
                 <div key={k} className="flex justify-between border-b border-[var(--border-subtle)] py-2 text-sm">
                   <dt className="text-[var(--text-muted)]">{k}</dt>
                   <dd className="m-0 font-medium text-[var(--text-primary)]">{v}</dd>
@@ -358,13 +478,13 @@ export function ProductDetail() {
         <div className="flex items-center gap-3">
           <div className="grid min-w-0 flex-1 gap-0.5">
             <span className="truncate text-xs text-[var(--text-muted)]">{name}</span>
-            <strong className="text-sm text-[var(--text-primary)]">{formatPrice(product.price * qty)}</strong>
+            <strong className="text-sm text-[var(--text-primary)]">{formatPrice(unitPrice * qty)}</strong>
           </div>
           <Button
             variant="primary"
             iconLeft={ShoppingBag}
             onClick={addToCart}
-            disabled={product.stock === "out"}
+            disabled={stock === "out"}
             tabIndex={showStickyBar ? 0 : -1}
           >
             {t("product.stickyBarLabel")}
