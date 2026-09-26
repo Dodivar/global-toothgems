@@ -69,8 +69,13 @@ export function AdminProductEdit() {
 
   const submit = async (draft: AdminProduct, intent: SubmitIntent) => {
     setSaving(true);
-    await updateProduct(draft.id, draft);
-    setSaving(false);
+    try {
+      await updateProduct(draft.id, draft);
+    } catch {
+      return; // Reported by the store; the form keeps the draft.
+    } finally {
+      setSaving(false);
+    }
     showToast(
       t("admin.toasts.updatedTitle"),
       intent === "draft"
@@ -82,8 +87,13 @@ export function AdminProductEdit() {
 
   const confirmArchive = async () => {
     setPending(true);
-    await setStatus(product.id, "archived");
-    setPending(false);
+    try {
+      await setStatus(product.id, "archived");
+    } catch {
+      return;
+    } finally {
+      setPending(false);
+    }
     setArchiveOpen(false);
     showToast(t("admin.toasts.archivedTitle"), t("admin.toasts.archivedBody", { name: L(product.name) }), "info");
     navigate("/admin/produits");
@@ -91,8 +101,13 @@ export function AdminProductEdit() {
 
   const confirmDelete = async () => {
     setPending(true);
-    await deleteProduct(product.id);
-    setPending(false);
+    try {
+      await deleteProduct(product.id);
+    } catch {
+      return;
+    } finally {
+      setPending(false);
+    }
     setDeleteOpen(false);
     showToast(t("admin.toasts.deletedTitle"), t("admin.toasts.deletedBody", { name: L(product.name) }), "warning");
     navigate("/admin/produits");

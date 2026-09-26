@@ -14,18 +14,13 @@ import { photo } from "../../lib/images";
 /**
  * Administration access screen.
  *
- * Nothing here authenticates anything — see `lib/adminAuth.tsx`. What it does
- * do is rehearse the whole shape of the real screen: validation before the
- * request, a busy state during it, a failure that says what to do next, and a
- * confirmed success before the redirect. Those four states are what the real
- * sign-in will need, and they are the reason this is not simply a button.
- *
- * The demo credentials are printed on the page on purpose. This is a prototype
- * with no account behind it; the real screen will have neither the notice nor
- * the credentials.
+ * With Supabase configured it signs in through Supabase Auth and only lets a
+ * staff account through (see `lib/adminAuth.tsx`). Without it, it rehearses
+ * the same states against the prototype's demo account, whose credentials are
+ * then printed on the page on purpose; they never appear with real sign-in.
  */
 
-type Status = "idle" | "submitting" | "error" | "success";
+type Status = "idle" | "submitting" | "rejected" | "notStaff" | "unavailable" | "success";
 
 /** Good enough to catch a typo; the real check belongs to the server. */
 const EMAIL_PATTERN = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
@@ -34,12 +29,12 @@ export function AdminLogin() {
   const { t } = useTranslation();
   const navigate = useNavigate();
   const location = useLocation();
-  const { signedIn, signIn } = useAdminAuth();
+  const { signedIn, signIn, realAuth } = useAdminAuth();
 
   const from = (location.state as { from?: string } | null)?.from ?? "/admin";
 
-  const [email, setEmail] = useState(DEMO_ADMIN_EMAIL);
-  const [password, setPassword] = useState(DEMO_ADMIN_PASSWORD);
+  const [email, setEmail] = useState(realAuth ? "" : DEMO_ADMIN_EMAIL);
+  const [password, setPassword] = useState(realAuth ? "" : DEMO_ADMIN_PASSWORD);
   const [remember, setRemember] = useState(true);
   const [reveal, setReveal] = useState(false);
   const [status, setStatus] = useState<Status>("idle");
@@ -74,10 +69,8 @@ export function AdminLogin() {
     if (emailError || passwordError) return;
 
     setStatus("submitting");
-    // The only failure the prototype can produce, which is what makes the error
-    // state reachable without a backend.
-    const accepted = await signIn(email, password);
-    setStatus(accepted ? "success" : "error");
+    const result = await signIn(email, password);
+    setStatus(result === "accepted" ? "success" : result);
   };
 
   const busy = status === "submitting" || status === "success";
@@ -131,13 +124,13 @@ export function AdminLogin() {
           <p className="m-0 mt-2 text-[length:var(--text-body-sm)] text-[var(--text-body)]">{t("admin.login.body")}</p>
 
           <form onSubmit={submit} noValidate className="mt-7 grid gap-4">
-            {status === "error" && (
+            {(status === "rejected" || status === "notStaff" || status === "unavailable") && (
               <p
                 role="alert"
                 className="m-0 flex items-start gap-2.5 rounded-[var(--admin-radius-sm)] border border-[var(--gt-red-400)] bg-[var(--status-error-bg)] p-3.5 text-[length:var(--text-body-sm)] text-[var(--status-error-fg)]"
               >
                 <CircleAlert size={16} aria-hidden="true" className="mt-0.5 flex-none" />
-                {t("admin.login.errors.rejected")}
+                {t(`admin.login.errors.${status}`)}
               </p>
             )}
             {status === "success" && (
@@ -211,6 +204,9 @@ export function AdminLogin() {
                 </span>
               </label>
 
+              {/* The recovery dialog is a simulation: with real accounts it would
+                  claim an e-mail was sent when none was. */}
+              {!realAuth && (
               <button
                 type="button"
                 onClick={() => setForgotOpen(true)}
@@ -218,6 +214,7 @@ export function AdminLogin() {
               >
                 {t("admin.login.forgot")}
               </button>
+              )}
             </div>
 
             <AdminButton
@@ -238,9 +235,11 @@ export function AdminLogin() {
             {t("admin.login.security")}
           </p>
 
-          <p className="m-0 mt-3 rounded-[var(--admin-radius-sm)] bg-[var(--status-info-bg)] p-3.5 text-[length:var(--text-caption)] text-[var(--gt-blue-700)]">
-            {t("admin.login.demoNotice", { email: DEMO_ADMIN_EMAIL, password: DEMO_ADMIN_PASSWORD })}
-          </p>
+          {!realAuth && (
+            <p className="m-0 mt-3 rounded-[var(--admin-radius-sm)] bg-[var(--status-info-bg)] p-3.5 text-[length:var(--text-caption)] text-[var(--gt-blue-700)]">
+              {t("admin.login.demoNotice", { email: DEMO_ADMIN_EMAIL, password: DEMO_ADMIN_PASSWORD })}
+            </p>
+          )}
         </div>
       </section>
 

@@ -1253,7 +1253,9 @@
     },
     "role": {
       "owner": "Owner",
-      "manager": "Manager"
+      "manager": "Manager",
+      "admin": "Administrator",
+      "viewer": "Read only"
     },
     "state": {
       "active": "Active",
@@ -1360,7 +1362,11 @@
       "pickerBody": "File upload is not wired up in this prototype: pick one or more existing images instead.",
       "selectedCount_one": "{{count}} image selected",
       "selectedCount_other": "{{count}} images selected",
-      "addSelected": "Add selection"
+      "addSelected": "Add selection",
+      "dropBodyUpload": "Click or drop JPG, PNG, WebP or AVIF files, 10 MB maximum each. The first image is the shop thumbnail.",
+      "uploading_one": "Uploading {{count}} image…",
+      "uploading_other": "Uploading {{count}} images…",
+      "rejected": "Files skipped (unsupported format or over 10 MB): {{files}}"
     },
     "form": {
       "basicTitle": "Basic information",
@@ -1430,8 +1436,15 @@
         "compareAtTooLow": "The compare-at price must be higher than the selling price.",
         "promoTooHigh": "The promotional price must be lower than the selling price.",
         "stockInvalid": "The quantity must be a positive whole number.",
-        "thresholdInvalid": "The threshold must be a positive whole number."
-      }
+        "thresholdInvalid": "The threshold must be a positive whole number.",
+        "skuFormat": "Capital letters, digits and hyphens only, 2 to 64 characters (e.g. GEM-STAR-001).",
+        "categoryRequired": "Choose a category.",
+        "priceCents": "Two decimal places at most."
+      },
+      "promoInPromotions": "Promotional prices are managed in Promotions: the price here is the regular selling price.",
+      "databaseNotice": "Saved to the Supabase database: an active product appears in the shop. Images upload as soon as they are added.",
+      "variantStock_one": "Stock is kept per variant ({{count}} variant, {{stock}} units in total). It cannot be edited from this screen yet.",
+      "variantStock_other": "Stock is kept per variant ({{count}} variants, {{stock}} units in total). It cannot be edited from this screen yet."
     },
     "dialog": {
       "archiveTitle": "Archive this product?",
@@ -1469,7 +1482,9 @@
       "createdBody": "{{name}} is now part of the catalogue.",
       "updatedTitle": "Product updated successfully",
       "updatedBody": "{{name}} has been saved.",
-      "updatedDraftBody": "{{name}} has been saved as a draft."
+      "updatedDraftBody": "{{name}} has been saved as a draft.",
+      "variantStockTitle": "Stock per variant",
+      "variantStockBody": "This product has variants: their stock cannot be edited from the back office yet."
     },
     "dashboard": {
       "title": "Hello {{name}}",
@@ -1605,7 +1620,9 @@
         "emailRequired": "The email address is required.",
         "emailInvalid": "This email address looks incomplete.",
         "passwordRequired": "The password is required.",
-        "rejected": "Incorrect credentials. Check the password shown below and try again."
+        "rejected": "Incorrect credentials. Check the password shown below and try again.",
+        "notStaff": "This account has no access to the back office. Ask an administrator for access.",
+        "unavailable": "The sign-in service is not responding. Try again in a moment."
       },
       "forgotTitle": "Forgotten password",
       "forgotBody": "Enter your email address and a reset link will be sent to it. No email is actually sent in this prototype.",
@@ -3314,6 +3331,18 @@
         "questionDeletedTitle": "Question deleted",
         "reorderedTitle": "Order updated"
       }
+    },
+    "errors": {
+      "title": "Could not save",
+      "permission": "Your account is not allowed to change the catalogue.",
+      "duplicate": "Another product already uses this SKU.",
+      "inUse": "This product appears in orders, so it cannot be deleted. Archive it instead.",
+      "invalid": "The database refused a value (price, stock or file). Check the form.",
+      "notFound": "This product no longer exists. Reload the list.",
+      "network": "Could not reach the database. Check your connection and try again.",
+      "generic": "Something unexpected went wrong. Try again in a moment.",
+      "loadFailed": "The catalogue could not be loaded.",
+      "retry": "Try again"
     }
   },
   "community": {

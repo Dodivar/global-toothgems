@@ -18,9 +18,9 @@ import { ProductStatusBadge } from "./ProductStatusBadge";
 import { StockIndicator } from "./StockIndicator";
 import { useFocusTrap } from "../../lib/useFocusTrap";
 import { useLocalized } from "../../lib/localized";
+import { useAdminCatalog } from "../../lib/adminCatalog";
 import { formatDate, formatPrice } from "../../lib/format";
 import {
-  categoryById,
   displayState,
   effectivePrice,
   type AdminProduct,
@@ -47,6 +47,7 @@ export function ProductPreview({
 }) {
   const { t } = useTranslation();
   const L = useLocalized();
+  const { categoryById } = useAdminCatalog();
   const ref = useFocusTrap<HTMLDivElement>(product !== null, onClose);
   const [activeImage, setActiveImage] = useState(0);
 

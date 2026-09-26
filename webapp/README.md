@@ -3,6 +3,8 @@
 A fully interactive React implementation of the Global Toothgems brand site — a premium tooth-gem e-commerce shop and professional Academy — built from a Claude Design prototype (see the design brief and chat transcripts that shipped with it).
 
 > **Architecture note:** this directory intentionally deviates from the stack mandated in the repo root's `AGENTS.md` and `global-toothgems-llm-guidelines/` (Next.js, Supabase/Postgres, Supabase Auth, Stripe). It was built at explicit user request as a fast, visual, fully-clickable reference implementation — Vite + React, no backend, cart/checkout/lesson-progress state held in memory only. Treat it as a design/behavior reference to port from, not as the production app. Porting to the mandated Next.js + Supabase + Stripe architecture is still open work.
+>
+> **Two parts are live** when the environment variables below are set: the **storefront catalogue** reads Supabase (see [Supabase connection (catalogue)](#supabase-connection-catalogue)), and the back office's **product management** (products, stock, images, English translations, recommendations) and **admin sign-in** read and write it (see [Supabase connection (back-office products)](#supabase-connection-back-office-products)). A product saved as active in the back office therefore appears in the shop. Cart, checkout, orders, customers, promotions and training are still mock data.
 
 ## Stack
 
@@ -26,13 +28,41 @@ npm run dev
 
 This starts the Vite dev server (default [http://localhost:5173](http://localhost:5173)) with hot module reload.
 
+## Supabase connection (back-office products)
+
+Copy `.env.example` to `.env.local` and set `VITE_SUPABASE_URL` and `VITE_SUPABASE_PUBLISHABLE_KEY` (Supabase dashboard → Project settings → API). Set the same two variables in the Vercel project for deployed previews. Only the **publishable** key goes here: every read and write is authorized by Row Level Security in Postgres. Without the variables the app runs entirely on its mock data, as before.
+
+With them set:
+
+- **`/admin/connexion` signs in through Supabase Auth.** Only an active profile whose role is a staff role (`admin`, `manager`, `viewer`) gets past the screen; any other account is signed straight back out. Writing to the catalogue needs the `manage_products` permission (`admin` and `manager`); a `viewer` can look but every save is refused by the database. To give someone access, create the user in Supabase (Authentication → Users), then set their role:
+
+  ```sql
+  update public.profiles set role = 'admin' where email = 'someone@example.com';
+  ```
+
+- **Products** are read from `products` with their English translation, images, stock and variants, and saved through `admin_save_product()` — one transaction for the product, its published English translation, its stock row and its ordered images (migration `…_admin_product_management`). Prices travel as exact decimal strings; the form refuses more than two decimals.
+- **Images** upload to the public `product-media` bucket as soon as they are picked (JPG, PNG, WebP or AVIF, 10 MB max), under `products/<product id>/`. They are linked to the product when the form is saved; files no product references any more are removed from the bucket on save and on delete. An upload whose form is then abandoned stays in the bucket.
+- **Delete** only works for a product that was never ordered (the database protects order history); otherwise the message says to archive it.
+- **Recommendations** are saved with `admin_save_product_recommendations()`.
+
+What is not wired to the database yet, on purpose:
+
+- **Promotional price.** There is no column for it: discounts belong to the promotions domain. The field is hidden when connected.
+- **Variants.** Products with variants (three of the seeded ones) show their total stock read-only; the form never writes variant stock.
+- **Categories** are read from the database but still not editable.
+- **The activity feed** shows this session's actions only; the full history is in `audit_logs` and `inventory_movements`.
+- **The seeded products' images** point at files that were never uploaded, so they show broken until replaced.
+- **Other admin workspaces** (orders, customers, promotions, statistics, training…) still use their mock stores, so e.g. promotions refer to prototype product ids.
+
+Code: `lib/supabase/` (client + generated `database.types.ts`), `lib/adminCatalogMapping.ts` (pure row ↔ form mapping, unit-tested), `lib/adminCatalogSupabase.tsx` (the Supabase store), `lib/adminCatalog.tsx` (the mock store, and the switch between the two), `lib/adminAuth.tsx`.
+
 ## Other scripts
 
 ```bash
 npm run build     # type-check (tsc -b) and build a production bundle into dist/
 npm run preview   # serve the production build locally to sanity-check it
 npm run lint      # oxlint
-npm test          # vitest (catalogue mapping and money conversion)
+npm test          # vitest (catalogue mapping and money rules)
 ```
 
 ## Deploying (`vercel.json`)
@@ -263,7 +293,7 @@ Interactions are simulated against in-memory state in `lib/community.tsx`: react
 
 ## The administration area (`/admin`)
 
-A separate, desktop-first management workspace for the product catalogue, built as an interactive visual prototype: no backend, no persistence, no real authentication. It is deliberately not the storefront in a sidebar — same palette, same Montserrat, but squarer controls, denser rows and its own near-black navigation rail, because a catalogue table and a product page are not the same job.
+A separate, desktop-first management workspace for the product catalogue. Product management and sign-in run on Supabase when it is configured (see [Supabase connection](#supabase-connection-back-office-products)); without it, and for every other section, it is an interactive visual prototype with no persistence. It is deliberately not the storefront in a sidebar — same palette, same Montserrat, but squarer controls, denser rows and its own near-black navigation rail, because a catalogue table and a product page are not the same job.
 
 | Route | Screen |
 | --- | --- |
@@ -276,13 +306,13 @@ A separate, desktop-first management workspace for the product catalogue, built 
 | `/admin/produits/:id` | Edit a product |
 | `/admin/categories` | Categories, read-only, with per-category counts and price ranges |
 
-Sign in with `camille@globaltoothgems.com` / `toothgems2026`; the screen prints both. Customers, Training, Analytics and Settings are drawn in the rail and permanently disabled — they show how the workspace could grow without pretending they exist.
+Without Supabase, sign in with `camille@globaltoothgems.com` / `toothgems2026`; the screen prints both. With Supabase, use a staff account. Customers, Training, Analytics and Settings are drawn in the rail and permanently disabled — they show how the workspace could grow without pretending they exist.
 
 ### How it is put together
 
 - `data/adminCatalog.ts` — the mock catalogue: sixteen products covering every state the interface can show (active, draft, archived, out of stock, low stock, untracked inventory, discounted), the categories, and the media library the picker offers instead of a real upload.
-- `lib/adminCatalog.tsx` — the one place any product changes. Every screen above it already looks like a screen talking to a server: the callbacks are async, writes take a simulated 700 ms, and the list has a first-load skeleton. Replacing the bodies of those callbacks with real calls is the whole migration.
-- `lib/adminAuth.tsx` — the mock administrator session, kept separate from the customer session in `lib/auth.tsx`. A rejected password leaves no session behind, as the real endpoint must.
+- `lib/adminCatalog.tsx` — the one place any product changes. It picks the Supabase store (`lib/adminCatalogSupabase.tsx`) when the environment is configured and the in-memory prototype store otherwise; both implement the same contract (`lib/adminCatalogContext.ts`), so no screen knows which one it is on. A failed write is reported by a toast from the store and rejects, so the screen keeps the form and skips its success path.
+- `lib/adminAuth.tsx` — the administrator session, kept separate from the customer session in `lib/auth.tsx`: Supabase Auth restricted to staff accounts when configured, the demo account otherwise. A rejected password leaves no session behind.
 - `lib/productFilters.ts` — search, filtering and sorting as pure functions on plain state; the product list holds its filters in the URL, so a filtered view can be linked to and stepped back through.
 - `data/adminOrders.ts` — the back office's order book: 38 orders across every status, payment and fulfilment state, 14 customers in four countries, six flagged for attention (one per reason) and seven internal notes. Deliberately a separate model from `data/orders.ts`, which is the *member's* view of their own purchases and is written to by `lib/orders.tsx` when the cart is paid; only the line-item shape is shared. Timelines, tracking numbers and payment references are derived from each order's own state rather than typed out, so a status can never disagree with the history beside it. Every line refers to a real catalogue id, because `productLine()` throws on an unknown one.
 - `lib/adminOrders.tsx` — the one place any order changes, shaped like `lib/adminCatalog.tsx`. Marking an order shipped moves the badge, the fulfilment column, the KPI row and that order's timeline together. It never invents a payment: an unpaid order marked shipped stays unpaid.
@@ -305,7 +335,7 @@ Sign in with `camille@globaltoothgems.com` / `toothgems2026`; the screen prints 
 
 ### Scope
 
-Product management and order management are the two functional sections. There is no database, no API, no file upload, no server-side validation and no real authorization: `RequireAdmin` is a UI gate, and real administration access means Supabase Auth plus server-side RBAC and RLS, none of which may ever depend on a value from this code. A page reload restores the seeded catalogue and order book and signs the administrator out.
+Product management and order management are the two functional sections. With Supabase configured, product management is real: Supabase Auth, the `manage_products` permission and RLS decide every read and write, and `RequireAdmin` remains a navigation gate only. Everything else — and product management without Supabase — has no database, no server-side validation and no real authorization; a page reload restores the seeded data and signs the administrator out.
 
 In the orders screens specifically, changing a status, refunding, cancelling, exporting, printing an invoice and tracking a parcel all stop at the screen. A real status transition is a server-side change behind explicit RBAC with an audit entry, and a real refund is a Stripe call whose webhook — not the browser — writes the new state. Each dialog says so where the action is taken.
 

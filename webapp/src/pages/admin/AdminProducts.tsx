@@ -1,7 +1,7 @@
 import { useMemo, useState } from "react";
 import { useTranslation } from "react-i18next";
 import { useNavigate, useSearchParams } from "react-router-dom";
-import { Archive, Plus, Trash2 } from "lucide-react";
+import { Archive, CircleAlert, Plus, RotateCcw, Trash2 } from "lucide-react";
 import { AdminButton } from "../../components/admin/AdminButton";
 import { AdminHeader } from "../../components/admin/AdminHeader";
 import { ConfirmationDialog } from "../../components/admin/ConfirmationDialog";
@@ -43,7 +43,8 @@ export function AdminProducts() {
   const navigate = useNavigate();
   const { openNav } = useAdminShell();
   const { showToast } = useToast();
-  const { products, loading, updateProduct, setStatus, duplicateProduct, deleteProduct } = useAdminCatalog();
+  const { products, loading, loadError, reload, updateProduct, setStatus, duplicateProduct, deleteProduct } =
+    useAdminCatalog();
 
   const [params, setParams] = useSearchParams();
   const [preview, setPreview] = useState<AdminProduct | null>(null);
@@ -87,41 +88,73 @@ export function AdminProducts() {
   // the badge the administrator is looking at.
   const previewProduct = preview ? (products.find((p) => p.id === preview.id) ?? null) : null;
 
+  /**
+   * Runs a catalogue write. A failure has already been reported by the store,
+   * so the caller only needs to know whether to carry on with its success path.
+   */
+  const attempt = async (write: () => Promise<unknown>) => {
+    try {
+      await write();
+      return true;
+    } catch {
+      return false;
+    }
+  };
+
   const actions: ProductRowActions = {
     onOpen: (product) => setPreview(product),
     onEdit: (product) => navigate(`/admin/produits/${product.id}`),
 
     onDuplicate: async (product) => {
-      const copy = await duplicateProduct(product.id);
+      let copy: AdminProduct | undefined;
+      try {
+        copy = await duplicateProduct(product.id);
+      } catch {
+        return;
+      }
       if (copy) {
         showToast(t("admin.toasts.duplicatedTitle"), t("admin.toasts.duplicatedBody", { name: L(copy.name) }));
       }
     },
 
     onPublish: async (product) => {
-      await setStatus(product.id, "active");
+      if (!(await attempt(() => setStatus(product.id, "active")))) return;
       showToast(t("admin.toasts.publishedTitle"), t("admin.toasts.publishedBody", { name: L(product.name) }));
     },
 
     onUnpublish: async (product) => {
-      await setStatus(product.id, "draft");
+      if (!(await attempt(() => setStatus(product.id, "draft")))) return;
       showToast(t("admin.toasts.unpublishedTitle"), t("admin.toasts.unpublishedBody", { name: L(product.name) }), "info");
     },
 
     onMarkOutOfStock: async (product) => {
+      if (product.variantCount) {
+        showToast(t("admin.toasts.variantStockTitle"), t("admin.toasts.variantStockBody"), "info");
+        return;
+      }
       // Tracked stock is a count, so the count is what changes; an untracked
       // product has no count and only its manual availability can move.
-      await updateProduct(
-        product.id,
-        product.trackInventory ? { stock: 0 } : { availability: "out_of_stock" },
-        { fr: "Marqué en rupture", en: "Marked out of stock" },
+      const marked = await attempt(() =>
+        updateProduct(
+          product.id,
+          product.trackInventory ? { stock: 0 } : { availability: "out_of_stock" },
+          { fr: "Marqué en rupture", en: "Marked out of stock" },
+        ),
       );
+      if (!marked) return;
       showToast(t("admin.toasts.outOfStockTitle"), t("admin.toasts.outOfStockBody", { name: L(product.name) }), "warning");
     },
 
     onRestock: async (product) => {
+      if (product.variantCount) {
+        showToast(t("admin.toasts.variantStockTitle"), t("admin.toasts.variantStockBody"), "info");
+        return;
+      }
       if (!product.trackInventory) {
-        await updateProduct(product.id, { availability: "in_stock" }, { fr: "Remis en vente", en: "Back on sale" });
+        const restocked = await attempt(() =>
+          updateProduct(product.id, { availability: "in_stock" }, { fr: "Remis en vente", en: "Back on sale" }),
+        );
+        if (!restocked) return;
         showToast(t("admin.toasts.restockedTitle"), t("admin.toasts.restockedBody", { name: L(product.name) }));
         return;
       }
@@ -136,7 +169,7 @@ export function AdminProducts() {
     onRestore: async (product) => {
       // Restored as a draft, never straight back on sale: what took a product
       // out of the catalogue may still be true.
-      await setStatus(product.id, "draft");
+      if (!(await attempt(() => setStatus(product.id, "draft")))) return;
       showToast(t("admin.toasts.restoredTitle"), t("admin.toasts.restoredBody", { name: L(product.name) }));
     },
 
@@ -146,8 +179,9 @@ export function AdminProducts() {
   const confirmArchive = async () => {
     if (!archiving) return;
     setPending(true);
-    await setStatus(archiving.id, "archived");
+    const archived = await attempt(() => setStatus(archiving.id, "archived"));
     setPending(false);
+    if (!archived) return;
     showToast(t("admin.toasts.archivedTitle"), t("admin.toasts.archivedBody", { name: L(archiving.name) }), "info");
     setArchiving(null);
     if (preview?.id === archiving.id) setPreview(null);
@@ -156,8 +190,9 @@ export function AdminProducts() {
   const confirmDelete = async () => {
     if (!deleting) return;
     setPending(true);
-    await deleteProduct(deleting.id);
+    const deleted = await attempt(() => deleteProduct(deleting.id));
     setPending(false);
+    if (!deleted) return;
     showToast(t("admin.toasts.deletedTitle"), t("admin.toasts.deletedBody", { name: L(deleting.name) }), "warning");
     if (preview?.id === deleting.id) setPreview(null);
     setDeleting(null);
@@ -180,6 +215,22 @@ export function AdminProducts() {
       />
 
       <div className="grid gap-4 px-[var(--admin-gutter)] pb-[clamp(32px,5vw,56px)] pt-5">
+        {/* A failed load must not look like an empty catalogue. */}
+        {loadError && !loading && (
+          <div
+            role="alert"
+            className="flex flex-wrap items-center justify-between gap-3 rounded-[var(--admin-radius)] border border-[var(--gt-red-400)] bg-[var(--status-error-bg)] p-4 text-[length:var(--text-body-sm)] text-[var(--status-error-fg)]"
+          >
+            <span className="flex items-start gap-2.5">
+              <CircleAlert size={16} aria-hidden="true" className="mt-0.5 flex-none" />
+              {t("admin.errors.loadFailed")} {t(`admin.errors.${loadError}`)}
+            </span>
+            <AdminButton variant="outline" size="sm" iconLeft={RotateCcw} onClick={reload}>
+              {t("admin.errors.retry")}
+            </AdminButton>
+          </div>
+        )}
+
         <ProductFilters
           filters={filters}
           onChange={setFilters}

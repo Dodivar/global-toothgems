@@ -5207,6 +5207,19 @@ export type Database = {
           isSetofReturn: false
         }
       }
+      admin_delete_product: {
+        Args: { p_product_id: string }
+        Returns: string[]
+      }
+      admin_save_product: { Args: { p_product: Json }; Returns: Json }
+      admin_save_product_recommendations: {
+        Args: {
+          p_complementary: string[]
+          p_product_id: string
+          p_similar: string[]
+        }
+        Returns: undefined
+      }
       analytics_snapshot: {
         Args: {
           p_currency?: string

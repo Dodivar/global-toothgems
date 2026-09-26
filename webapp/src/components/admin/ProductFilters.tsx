@@ -4,7 +4,8 @@ import { AdminButton } from "./AdminButton";
 import { AdminSelect, type AdminOption } from "./AdminSelect";
 import { SearchInput } from "./SearchInput";
 import { useLocalized } from "../../lib/localized";
-import { CATEGORIES, type CategoryId, type ProductStatus, type StockState } from "../../data/adminCatalog";
+import { useAdminCatalog } from "../../lib/adminCatalog";
+import { type CategoryId, type ProductStatus, type StockState } from "../../data/adminCatalog";
 import { DEFAULT_FILTERS, SORT_KEYS, isFiltered, type ProductFilterState, type SortKey } from "../../lib/productFilters";
 
 /**
@@ -28,13 +29,14 @@ export function ProductFilters({
 }) {
   const { t } = useTranslation();
   const L = useLocalized();
+  const { categories } = useAdminCatalog();
 
   const set = <K extends keyof ProductFilterState>(key: K, value: ProductFilterState[K]) =>
     onChange({ ...filters, [key]: value });
 
   const categoryOptions: AdminOption[] = [
     { value: "all", label: t("admin.filters.allCategories") },
-    ...CATEGORIES.map((c) => ({ value: c.id, label: L(c.name) })),
+    ...categories.map((c) => ({ value: c.id, label: L(c.name) })),
   ];
 
   const statusOptions: AdminOption[] = [

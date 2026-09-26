@@ -1,9 +1,10 @@
-import { createContext, useCallback, useContext, useEffect, useMemo, useState, type ReactNode } from "react";
+import { useCallback, useEffect, useMemo, useState, type ReactNode } from "react";
 import {
   ADMIN_PRODUCTS,
+  CATEGORIES,
   SEED_ACTIVITY,
   SEED_RECOMMENDATIONS,
-  stockState,
+  categoryById as fixtureCategory,
   type ActivityEntry,
   type ActivityKind,
   type AdminProduct,
@@ -12,56 +13,40 @@ import {
   type RecommendationKind,
 } from "../data/adminCatalog";
 import type { Localized } from "../data/types";
+import { isSupabaseConfigured } from "./supabase/client";
+import { SupabaseAdminCatalogProvider } from "./adminCatalogSupabase";
+import {
+  ACTIVITY_LIMIT,
+  AdminCatalogContext,
+  STATUS_NOTE,
+  computeStats,
+  type AdminCatalogValue,
+} from "./adminCatalogContext";
+
+export { useAdminCatalog, CatalogError, type AdminCatalogValue, type CatalogStats } from "./adminCatalogContext";
 
 /**
- * Frontend catalogue store for the administration prototype.
+ * The administration catalogue store.
  *
- * Everything lives in React state: a refresh restores the seeded catalogue, and
- * nothing leaves the browser. The point of routing every mutation through this
- * one module is that the screens above it already look like screens talking to
- * a backend — replacing the bodies of these callbacks with server calls is the
- * whole migration.
+ * With `VITE_SUPABASE_URL` and `VITE_SUPABASE_PUBLISHABLE_KEY` set, products,
+ * stock, media and recommendations are read from and written to Supabase
+ * (`adminCatalogSupabase.tsx`). Without them the prototype keeps running on
+ * the in-memory fixtures below, so a preview deployment without a database
+ * still shows a working back office.
  */
+export function AdminCatalogProvider({ children, actor = "Camille D." }: { children: ReactNode; actor?: string }) {
+  return isSupabaseConfigured ? (
+    <SupabaseAdminCatalogProvider actor={actor}>{children}</SupabaseAdminCatalogProvider>
+  ) : (
+    <MockAdminCatalogProvider actor={actor}>{children}</MockAdminCatalogProvider>
+  );
+}
 
 /** How long a simulated write takes, so save buttons have a real busy state. */
-export const SAVE_DELAY_MS = 700;
+const SAVE_DELAY_MS = 700;
 
 /** Initial list fetch, so the table can show its skeleton at least once. */
 const LOAD_DELAY_MS = 550;
-
-export interface CatalogStats {
-  total: number;
-  active: number;
-  draft: number;
-  archived: number;
-  outOfStock: number;
-  lowStock: number;
-}
-
-interface AdminCatalogValue {
-  products: AdminProduct[];
-  activity: ActivityEntry[];
-  /** True during the simulated first load of the list. */
-  loading: boolean;
-  stats: CatalogStats;
-  getProduct: (id: string) => AdminProduct | undefined;
-  createProduct: (product: AdminProduct) => Promise<AdminProduct>;
-  updateProduct: (id: string, patch: Partial<AdminProduct>, note?: Localized) => Promise<AdminProduct | undefined>;
-  setStatus: (id: string, status: ProductStatus) => Promise<void>;
-  duplicateProduct: (id: string) => Promise<AdminProduct | undefined>;
-  deleteProduct: (id: string) => Promise<void>;
-  /** Fresh product shell for the creation form. */
-  blankProduct: () => AdminProduct;
-  /** Ids of the products recommended next to `productId`, in display order. */
-  recommendationsFor: (productId: string, kind: RecommendationKind) => string[];
-  /**
-   * Replaces the product's ordered lists, both kinds in one write: the screen
-   * edits lists, and the database keeps them as one row per link.
-   */
-  saveRecommendations: (productId: string, lists: Record<RecommendationKind, string[]>) => Promise<void>;
-}
-
-const AdminCatalogContext = createContext<AdminCatalogValue | null>(null);
 
 function wait(ms: number) {
   return new Promise((resolve) => setTimeout(resolve, ms));
@@ -85,16 +70,11 @@ function entry(
   };
 }
 
-/** Keeps the feed from growing without bound during a long demo session. */
-const ACTIVITY_LIMIT = 24;
-
-const STATUS_NOTE: Record<ProductStatus, Localized> = {
-  active: { fr: "Mis en ligne", en: "Published" },
-  draft: { fr: "Repassé en brouillon", en: "Moved back to draft" },
-  archived: { fr: "Archivé", en: "Archived" },
-};
-
-export function AdminCatalogProvider({ children, actor = "Camille D." }: { children: ReactNode; actor?: string }) {
+/**
+ * Prototype store: everything lives in React state, a refresh restores the
+ * seeded catalogue, and nothing leaves the browser.
+ */
+function MockAdminCatalogProvider({ children, actor }: { children: ReactNode; actor: string }) {
   const [products, setProducts] = useState<AdminProduct[]>(ADMIN_PRODUCTS);
   const [activity, setActivity] = useState<ActivityEntry[]>(SEED_ACTIVITY);
   const [recommendations, setRecommendations] = useState<ProductRecommendation[]>(SEED_RECOMMENDATIONS);
@@ -246,24 +226,19 @@ export function AdminCatalogProvider({ children, actor = "Camille D." }: { child
     };
   }, []);
 
-  const stats = useMemo<CatalogStats>(() => {
-    const live = products.filter((p) => p.status !== "archived");
-    return {
-      total: products.length,
-      active: products.filter((p) => p.status === "active").length,
-      draft: products.filter((p) => p.status === "draft").length,
-      archived: products.filter((p) => p.status === "archived").length,
-      outOfStock: live.filter((p) => stockState(p) === "out_of_stock").length,
-      lowStock: live.filter((p) => stockState(p) === "low_stock").length,
-    };
-  }, [products]);
+  const stats = useMemo(() => computeStats(products), [products]);
 
   const value = useMemo<AdminCatalogValue>(
     () => ({
+      source: "mock",
       products,
       activity,
       loading,
+      loadError: null,
+      reload: () => {},
       stats,
+      categories: CATEGORIES,
+      categoryById: fixtureCategory,
       getProduct,
       createProduct,
       updateProduct,
@@ -271,6 +246,7 @@ export function AdminCatalogProvider({ children, actor = "Camille D." }: { child
       duplicateProduct,
       deleteProduct,
       blankProduct,
+      uploadImage: null,
       recommendationsFor,
       saveRecommendations,
     }),
@@ -292,10 +268,4 @@ export function AdminCatalogProvider({ children, actor = "Camille D." }: { child
   );
 
   return <AdminCatalogContext.Provider value={value}>{children}</AdminCatalogContext.Provider>;
-}
-
-export function useAdminCatalog() {
-  const ctx = useContext(AdminCatalogContext);
-  if (!ctx) throw new Error("useAdminCatalog must be used within AdminCatalogProvider");
-  return ctx;
 }
