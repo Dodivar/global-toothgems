@@ -556,7 +556,7 @@
       "weakPasswordTitle": "Mot de passe refusé",
       "weakPasswordBody": "Ce mot de passe ne respecte pas nos règles de sécurité. Revenez à la première étape pour en choisir un autre.",
       "emailSendTitle": "L’e-mail de confirmation n’a pas pu être envoyé",
-      "emailSendBody": "Votre demande est bien enregistrée, mais notre service d’envoi d’e-mails a échoué. Réessayez dans quelques minutes ; si le problème persiste, contactez-nous."
+      "emailSendBody": "Votre compte n’a pas été créé : notre service d’envoi d’e-mails a échoué. Vos informations restent dans ce formulaire — réessayez dans quelques minutes, et contactez-nous si le problème persiste."
     },
     "google": {
       "cta": "Continuer avec Google",

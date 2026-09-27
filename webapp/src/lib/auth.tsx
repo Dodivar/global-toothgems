@@ -277,8 +277,8 @@ function SupabaseAuthProvider({ children }: { children: ReactNode }) {
         // supabase-js reports every 5xx as "retryable"; only status 0 means the
         // request never reached Supabase.
         if (error.name === "AuthRetryableFetchError" && !error.status) return "network";
-        // The account row exists but the confirmation email could not leave
-        // (SMTP refused it): retrying sends it again once the mail setup is fixed.
+        // The confirmation email could not leave (SMTP refused it). Supabase
+        // then rolls the new user back, so retrying is a fresh sign-up.
         if (/email/i.test(error.message)) return "emailSend";
         return "server";
       }
