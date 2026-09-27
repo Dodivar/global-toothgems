@@ -230,7 +230,7 @@ A paid creative tool (€5 / month) for designing tooth jewellery compositions. 
 | --- | --- |
 | `/studio-3d` | Presentation page: hero with the Studio window, concept, six capabilities, media wall, inspiration boards, three steps, offer, FAQ |
 | `/studio-3d/abonnement` | Subscription page: the single monthly plan, account, fictional payment, summary, loading and confirmation states (`/studio-3d/subscribe` redirects here) |
-| `/studio-3d/atelier` | The editor: 3D upper arch, jewellery library, placement by drag / click / keyboard, collision-free layout tools, presets, undo/redo, PNG / estimate sheet / JSON export (`/studio-3d/editor` redirects here). Full-screen, without the storefront header and footer |
+| `/studio-3d/atelier` | The editor: 3D dentition (both arches), jewellery library, placement by drag / click / keyboard, collision-free layout tools, presets, undo/redo, PNG / estimate sheet / JSON export (`/studio-3d/editor` redirects here). Full-screen, without the storefront header and footer |
 
 ### The editor
 
@@ -239,8 +239,9 @@ Ported from the standalone `studio3D.html` into the app's architecture:
 | Where | What |
 | --- | --- |
 | `data/studioEditor.ts` | Catalog, finishes, dentition, ready-made presets, the **indicative** estimate price list (integer cents + currency), validation of designs read back from storage |
-| `lib/studio3d/engine.ts` | The three.js engine: scene, camera, raycast placement, drag, collisions, mirror / distribute / align, glTF import, exports. On-demand rendering (idles when nothing moves) |
-| `lib/studio3d/geometry.ts` | Procedural teeth, piece shapes and materials, cached |
+| `lib/studio3d/engine.ts` | The three.js engine: scene, camera, raycast placement, drag, collisions, mirror / distribute / align, group turn, the design check, glTF import, exports. On-demand rendering (idles when nothing moves) |
+| `lib/studio3d/dentition.ts`, `assets/studio3d/dentition.glb` | The default dentition scan and its calibration: where each crown of both arches sits, so a surface point is known as a tooth (FDI 11–47) or as gum / socle |
+| `lib/studio3d/geometry.ts` | Procedural teeth (the fallback arch), piece shapes and materials, cached |
 | `lib/studio3d/store.ts` | The design store (history, selection, local persistence, named presets) |
 | `lib/studio3d/actions.ts`, `notices.ts` | Shared commands, and the channel through which the engine reports to the site's toasts by translation key |
 | `components/studio/editor/` | Top bar, library, 3D stage, inspector, colour wheel, popovers |
@@ -249,6 +250,8 @@ Ported from the standalone `studio3D.html` into the app's architecture:
 - **Access**: `lib/studioAccess.tsx` is the single switch. `STUDIO_ACCESS_MODE = "preview"` lets everyone in without paying. When the subscription goes live, switch it to `"subscription"` and back it with a server-side entitlement granted by the verified Stripe webhook; the client check is navigation only.
 - **Saving** is local to the browser (`gt-studio3d-*` keys); nothing is sent to a server yet.
 - **Estimate**: prices in `ESTIMATE_PRICING` are prototype values, shown as "approx." and labelled as not a quote. They are never sent to checkout.
+- **Default model**: the editor opens on `dentition.glb` (meshopt-compressed, ~1 MB, decoded from the bundle). If it cannot be fetched, the procedural upper arch stands in, with a notice. Pieces go on crowns only, never on gum or socle. A design saved on another model (older designs were made on the procedural arch) is re-seated tooth by tooth when it opens; the same happens when a model is imported or reset. Raycasts use a bounding-volume hierarchy (`three-mesh-bvh`): a scan of this size costs ~18 ms per ray without one, and placement casts hundreds.
+- **Design check**: pieces that overlap another or do not sit on a tooth are framed in red on the stage and listed in a panel (placement and dragging never create them; sizes, type changes, group turns or a design from another model can).
 - **Model import** (`.glb` / `.gltf`, 60 MB max) runs entirely in the browser; Draco-compressed files fetch their decoder from the jsDelivr build of the bundled three.js version.
 
 - **The Studio window** (`components/studio/StudioMockup.tsx`) is lightly interactive: pieces can be selected, swapped from the library, resized, recoloured, added and removed; presets, undo/redo, zoom and a CSS-perspective "¾ / profile" view all work on local state. "Save" and "Share" only play their states.

@@ -258,7 +258,7 @@
     "redoHint": "Redo (Ctrl+Shift+Z)",
     "importModel": "Import a 3D model",
     "importModelHint": "Import your own dentition model (.glb or .gltf) — or drop the file onto the stage",
-    "resetModel": "Back to the reference arch",
+    "resetModel": "Back to the reference dentition",
     "save": "Save",
     "saveHint": "Save the design in this browser",
     "freePlacement": "Free placement",
@@ -275,7 +275,9 @@
     },
     "sides": {
       "right": "upper right",
-      "left": "upper left"
+      "left": "upper left",
+      "lowerRight": "lower right",
+      "lowerLeft": "lower left"
     },
     "pieces": {
       "crystal-round": "Round crystal",
@@ -396,11 +398,29 @@
         "larger_other": "Make the pieces larger"
       },
       "placing": "Release over a tooth to place — red means the spot is taken",
+      "loading": "Loading the dentition…",
+      "colorLabel_one": "Piece colour",
+      "colorLabel_other": "Pieces colour",
+      "colorPanel": "Colour",
+      "customColor": "Custom colour",
       "hint": "Drag a piece onto a tooth to start designing",
       "stage": {
-        "studio": "Upper arch · FDI notation",
+        "dentition": "Reference dentition · FDI notation",
+        "studio": "Simplified upper arch · FDI notation",
         "teeth": "Imported model · FDI mapping",
         "free": "Imported model · free mode"
+      },
+      "issues": {
+        "title_one": "The scene has {{count}} error",
+        "title_other": "The scene has {{count}} errors",
+        "hint": "The pieces concerned are framed in red. Move them onto a free spot on a tooth, or make them smaller.",
+        "overlap": "Overlaps another piece",
+        "offTooth": "Not on a tooth",
+        "both": "Off the teeth, overlaps another piece",
+        "select": "Select: {{name}} — {{problem}}",
+        "selectAll": "Select all",
+        "collapse": "Collapse the error list",
+        "expand": "Show the error list"
       }
     },
     "views": {
@@ -451,7 +471,9 @@
       "diameter": "Diameter",
       "mm": "{{value}} mm",
       "rotation": "Rotation",
-      "rotationAll": "Rotation — all pieces",
+      "rotationAll": "Group rotation",
+      "rotationGroupHint": "The group turns around its centre, as you see it on screen: the pieces travel with it. On the stage, the “Rotate” dial gives a free angle.",
+      "turnBy": "Turn the group by {{deg}}°",
       "quarterTurns": "Quarter turns",
       "spin": "Spin around the surface",
       "finish": "Finish",
@@ -533,6 +555,7 @@
       "show": "Show quick actions",
       "choose": "Buttons to show",
       "rotate": "Rotate (drag dial)",
+      "color": "Colour",
       "size": "Size − / +",
       "duplicate": "Duplicate",
       "mirrorH": "Mirror horizontally",
@@ -586,7 +609,8 @@
       "quoteExported": "Estimate sheet downloaded",
       "quoteFailed": "The estimate sheet could not be created",
       "exportFailed": "The image could not be exported",
-      "modelReset": "Reference arch restored",
+      "modelReset": "Reference dentition restored",
+      "modelLoadFailed": "The reference dentition could not be loaded — the simplified arch stands in. Try again with “Back to the reference dentition”.",
       "import": {
         "started": "Importing {{name}}…",
         "teeth_one": "Model imported — {{count}} tooth recognised",

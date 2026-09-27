@@ -1,8 +1,22 @@
-import { Fragment, useEffect, useLayoutEffect, useRef, useState } from "react";
+import { Fragment, useEffect, useId, useLayoutEffect, useRef, useState } from "react";
 import clsx from "clsx";
-import { Copy, FlipHorizontal2, FlipVertical2, Minus, Orbit, Plus, RotateCw, Trash2, TriangleAlert, X } from "lucide-react";
+import {
+  Copy,
+  FlipHorizontal2,
+  FlipVertical2,
+  LoaderCircle,
+  Minus,
+  Orbit,
+  Plus,
+  RotateCw,
+  Trash2,
+  TriangleAlert,
+  X,
+} from "lucide-react";
 import { useEditorLabels } from "./editorLabels";
-import { FREE_TOOTH, type PlacedJewelry } from "../../../data/studioEditor";
+import { QuickColorPanel } from "./QuickColorPanel";
+import { IssueFrames, IssuePanel } from "./StageIssues";
+import { FINISHES, FREE_TOOTH, isFinishId, type PlacedJewelry } from "../../../data/studioEditor";
 import {
   beginRotation,
   duplicatePieces,
@@ -144,12 +158,26 @@ export function EditorViewport({ snap }: { snap: StudioSnapshot }) {
         </Pill>
       )}
       {snap.placingTypeId && !armedName && <Pill position="bottom">{t("studio.editor.viewport.placing")}</Pill>}
-      {snap.jewels.length === 0 && !snap.placingTypeId && !armedName && !failed && (
+      {snap.modelLoading && !failed && (
+        <div
+          role="status"
+          className={clsx(
+            "absolute left-1/2 top-1/2 z-[6] flex -translate-x-1/2 -translate-y-1/2 items-center gap-2.5 rounded-full py-2 pl-3 pr-4 text-[12px] font-semibold",
+            stageGlass,
+          )}
+        >
+          <LoaderCircle size={16} aria-hidden="true" className="motion-safe:animate-spin" />
+          {t("studio.editor.viewport.loading")}
+        </div>
+      )}
+      {snap.jewels.length === 0 && !snap.modelLoading && !snap.placingTypeId && !armedName && !failed && (
         <Pill position="bottom" floating>
           {t("studio.editor.viewport.hint")}
         </Pill>
       )}
 
+      {engineReady && snap.issues.length > 0 && <IssueFrames />}
+      {engineReady && snap.issues.length > 0 && <IssuePanel issues={snap.issues} jewels={snap.jewels} />}
       {engineReady && snap.selectedJewelIds.length > 0 && !snap.contextMenu && quick.enabled && quick.actions.length > 0 && (
         <QuickBar ids={snap.selectedJewelIds} jewels={snap.jewels} actions={quick.actions} />
       )}
@@ -235,10 +263,18 @@ const quickButton = clsx(
 function QuickBar({ ids, jewels, actions }: { ids: string[]; jewels: PlacedJewelry[]; actions: QuickActionId[] }) {
   const { t } = useEditorLabels();
   const barRef = useRef<HTMLDivElement>(null);
+  const panelRef = useRef<HTMLDivElement>(null);
+  const colorButtonRef = useRef<HTMLButtonElement>(null);
   const anchorRef = useRef<SelectionAnchor | null>(null);
   const gestureRef = useRef<Gesture | null>(null);
   const [visible, setVisible] = useState(false);
   const [dial, setDial] = useState<{ turned: number; cx: number; cy: number; r: number } | null>(null);
+  // The colour panel is open for one selection: another selection finds it closed.
+  const selectionKey = ids.join(",");
+  const [colorFor, setColorFor] = useState<string | null>(null);
+  const colorOpen = colorFor === selectionKey;
+  const setColorOpen = (open: boolean) => setColorFor(open ? selectionKey : null);
+  const panelId = useId();
 
   useEffect(() => {
     const engine = getEngine();
@@ -246,21 +282,31 @@ function QuickBar({ ids, jewels, actions }: { ids: string[]; jewels: PlacedJewel
     // Positioned straight on the element: the anchor moves every frame while the camera does.
     return engine.onSelectionAnchor((a) => {
       anchorRef.current = a;
-      const el = barRef.current;
-      if (a && el && !gestureRef.current) placeQuickBar(el, a);
+      if (a) placeBarAndPanel(barRef.current, panelRef.current, a, !!gestureRef.current);
       setVisible(!!a);
     });
   }, []);
 
+  const selected = jewels.filter((j) => ids.includes(j.id));
   // One diameter for the whole selection, or none when the pieces differ.
-  const scales = new Set(jewels.filter((j) => ids.includes(j.id)).map((j) => j.scale));
+  const scales = new Set(selected.map((j) => j.scale));
   const scale = scales.size === 1 ? [...scales][0] : null;
 
-  // The bar's width changes with its buttons and the size readout: stay centred.
+  // The bar's width changes with its buttons and the size readout, the panel comes and goes: stay placed.
   useLayoutEffect(() => {
-    const el = barRef.current;
-    if (el && anchorRef.current && !gestureRef.current) placeQuickBar(el, anchorRef.current);
-  }, [actions, scale]);
+    if (anchorRef.current) placeBarAndPanel(barRef.current, panelRef.current, anchorRef.current, !!gestureRef.current);
+  }, [actions, scale, colorOpen]);
+
+  // A press anywhere else closes the colour panel.
+  useEffect(() => {
+    if (!colorOpen) return;
+    const onDown = (e: PointerEvent) => {
+      const target = e.target as Node;
+      if (!panelRef.current?.contains(target) && !colorButtonRef.current?.contains(target)) setColorFor(null);
+    };
+    window.addEventListener("pointerdown", onDown, true);
+    return () => window.removeEventListener("pointerdown", onDown, true);
+  }, [colorOpen]);
 
   const finish = () => {
     const g = gestureRef.current;
@@ -284,8 +330,10 @@ function QuickBar({ ids, jewels, actions }: { ids: string[]; jewels: PlacedJewel
     if (e.button !== 0 || !a || !stage || gestureRef.current) return;
     e.preventDefault();
     e.currentTarget.setPointerCapture(e.pointerId);
-    const pivotX = stage.left + (a.left + a.right) / 2;
-    const pivotY = stage.top + (a.top + a.bottom) / 2;
+    setColorOpen(false);
+    // The pivot is the selection's centre: a group turns around it, a single piece around itself.
+    const pivotX = stage.left + a.cx;
+    const pivotY = stage.top + a.cy;
     gestureRef.current = {
       session: beginRotation(ids),
       originX: stage.left,
@@ -386,6 +434,29 @@ function QuickBar({ ids, jewels, actions }: { ids: string[]; jewels: PlacedJewel
             {icon(t("studio.editor.viewport.quick.larger", { count }), Plus, () => resizePieces(ids, 1))}
           </div>
         );
+      case "color": {
+        const label = t("studio.editor.viewport.colorLabel", { count });
+        return (
+          <button
+            ref={colorButtonRef}
+            type="button"
+            aria-label={label}
+            title={label}
+            aria-expanded={colorOpen}
+            aria-controls={panelId}
+            aria-haspopup="dialog"
+            onClick={() => setColorOpen(!colorOpen)}
+            className={clsx(quickButton, colorOpen && "bg-white/15")}
+            style={{ width: QUICK_BUTTON, height: QUICK_BUTTON }}
+          >
+            <span
+              aria-hidden="true"
+              className="h-[18px] w-[18px] rounded-full border-2 border-white/85 shadow-[0_0_0_1px_rgba(0,0,0,.25)]"
+              style={{ background: swatchOf(selected) }}
+            />
+          </button>
+        );
+      }
       case "duplicate":
         return icon(t("studio.editor.context.duplicate", { count }), Copy, () => duplicatePieces(ids));
       case "mirrorH":
@@ -434,8 +505,53 @@ function QuickBar({ ids, jewels, actions }: { ids: string[]; jewels: PlacedJewel
           </Fragment>
         ))}
       </div>
+      {colorOpen && !turning && actions.includes("color") && (
+        <QuickColorPanel
+          ref={panelRef}
+          id={panelId}
+          selected={selected}
+          hidden={!visible}
+          onClose={() => {
+            setColorOpen(false);
+            colorButtonRef.current?.focus();
+          }}
+        />
+      )}
     </>
   );
+}
+
+/** The bar beside the selection, and the colour panel (a sibling: the bar scrolls and would clip it) beside the bar. */
+function placeBarAndPanel(bar: HTMLElement | null, panel: HTMLElement | null, a: SelectionAnchor, turning: boolean) {
+  if (!bar || turning) return;
+  placeQuickBar(bar, a);
+  if (panel) placeColorPanel(panel, bar, a);
+}
+
+/** The colour a selection shows on its quick-action button: its shared colour, or a mix. */
+function swatchOf(pieces: PlacedJewelry[]): string {
+  const first = pieces[0];
+  if (!first) return "transparent";
+  if (pieces.every((j) => j.customColor && j.customColor === first.customColor)) return first.customColor!;
+  if (pieces.every((j) => !j.customColor && j.color === first.color) && isFinishId(first.color)) return FINISHES[first.color].swatch;
+  return "conic-gradient(#ff9dc0, #4d7cff, #22c47c, #f6c05a, #ff9dc0)";
+}
+
+/** Beside the bar, on the side away from the selection, always inside the stage. */
+function placeColorPanel(panel: HTMLElement, bar: HTMLElement, a: SelectionAnchor) {
+  const barTop = parseFloat(bar.style.top) || 0;
+  const barCentre = parseFloat(bar.style.left) || 0;
+  const w = panel.offsetWidth;
+  const h = panel.offsetHeight;
+  const below = barTop + BAR_HEIGHT + 8;
+  const above = barTop - 8 - h;
+  let y = barTop >= (a.top + a.bottom) / 2 ? below : above;
+  if (y + h > a.height - STAGE_SIDE_MARGIN) y = above;
+  if (y < STAGE_SIDE_MARGIN) y = Math.min(below, a.height - STAGE_SIDE_MARGIN - h);
+  y = Math.max(STAGE_SIDE_MARGIN, y);
+  const x = Math.min(Math.max(barCentre - w / 2, STAGE_SIDE_MARGIN), a.width - STAGE_SIDE_MARGIN - w);
+  panel.style.left = `${Math.round(x)}px`;
+  panel.style.top = `${Math.round(y)}px`;
 }
 
 /** Centre the bar under the selection, above it when the camera bar is in the way, always inside the stage. */

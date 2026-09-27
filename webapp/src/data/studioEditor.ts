@@ -79,16 +79,29 @@ export const TOOTH_SPECS: Record<ToothKey, ToothSpec> = {
 };
 
 /** Every tooth of the upper arch, in the order the viewer sees them. */
-export const ALL_TEETH = ["17", "16", "15", "14", "13", "12", "11", "21", "22", "23", "24", "25", "26", "27"];
+export const UPPER_TEETH = ["17", "16", "15", "14", "13", "12", "11", "21", "22", "23", "24", "25", "26", "27"];
+/** Every tooth of the lower arch, in the order the viewer sees them (FDI quadrants 4 and 3). */
+export const LOWER_TEETH = ["47", "46", "45", "44", "43", "42", "41", "31", "32", "33", "34", "35", "36", "37"];
+/** Every tooth a piece can sit on: the default dentition has both arches. */
+export const ALL_TEETH = [...UPPER_TEETH, ...LOWER_TEETH];
+
+/** The quadrant of a tooth, as a translation key under `studio.editor.sides`. */
+export type ToothSide = "right" | "left" | "lowerRight" | "lowerLeft";
+const QUADRANT_SIDES: Record<string, ToothSide> = { "1": "right", "2": "left", "3": "lowerLeft", "4": "lowerRight" };
 
 /**
- * Translation keys describing a tooth. `short` is the tooth type ("Canine"),
+ * Translation keys describing a tooth. `tooth` is the tooth type ("Canine"),
  * `side` the quadrant; the UI assembles them in the customer's language.
  */
-export function toothKeys(fdi: string): { tooth: ToothKey; side: "right" | "left" } | null {
-  const t = QUADRANT_TEETH.find((q) => q.fdiR === fdi || q.fdiL === fdi);
-  if (!t) return null;
-  return { tooth: t.key, side: fdi[0] === "1" ? "right" : "left" };
+export function toothKeys(fdi: string): { tooth: ToothKey; side: ToothSide } | null {
+  const side = QUADRANT_SIDES[fdi[0]];
+  const t = fdi.length === 2 ? QUADRANT_TEETH[Number(fdi[1]) - 1] : undefined;
+  if (!side || !t) return null;
+  return { tooth: t.key, side };
+}
+
+export function isLowerTooth(fdi: string): boolean {
+  return fdi[0] === "3" || fdi[0] === "4";
 }
 
 /* --------------------------------------------------------------- catalog */

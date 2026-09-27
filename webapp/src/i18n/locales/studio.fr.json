@@ -258,7 +258,7 @@
     "redoHint": "Rétablir (Ctrl+Maj+Z)",
     "importModel": "Importer un modèle 3D",
     "importModelHint": "Importez votre propre modèle de dentition (.glb ou .gltf) — ou déposez le fichier sur la scène",
-    "resetModel": "Revenir à l’arcade de référence",
+    "resetModel": "Revenir à la dentition de référence",
     "save": "Enregistrer",
     "saveHint": "Enregistrer la création dans ce navigateur",
     "freePlacement": "Placement libre",
@@ -275,7 +275,9 @@
     },
     "sides": {
       "right": "haut droite",
-      "left": "haut gauche"
+      "left": "haut gauche",
+      "lowerRight": "bas droite",
+      "lowerLeft": "bas gauche"
     },
     "pieces": {
       "crystal-round": "Cristal rond",
@@ -396,11 +398,29 @@
         "larger_other": "Agrandir les pièces"
       },
       "placing": "Relâchez au-dessus d’une dent pour poser — rouge : emplacement occupé",
+      "loading": "Chargement de la dentition…",
+      "colorLabel_one": "Couleur de la pièce",
+      "colorLabel_other": "Couleur des pièces",
+      "colorPanel": "Couleur",
+      "customColor": "Couleur personnalisée",
       "hint": "Glissez une pièce sur une dent pour commencer",
       "stage": {
-        "studio": "Arcade supérieure · notation FDI",
+        "dentition": "Dentition de référence · notation FDI",
+        "studio": "Arcade supérieure simplifiée · notation FDI",
         "teeth": "Modèle importé · dents identifiées",
         "free": "Modèle importé · mode libre"
+      },
+      "issues": {
+        "title_one": "La scène contient {{count}} erreur",
+        "title_other": "La scène contient {{count}} erreurs",
+        "hint": "Les pièces concernées sont encadrées en rouge. Déplacez-les sur une dent libre, ou réduisez-les.",
+        "overlap": "Chevauche une autre pièce",
+        "offTooth": "N’est pas sur une dent",
+        "both": "Hors d’une dent, chevauche une autre pièce",
+        "select": "Sélectionner : {{name}} — {{problem}}",
+        "selectAll": "Tout sélectionner",
+        "collapse": "Réduire la liste des erreurs",
+        "expand": "Afficher la liste des erreurs"
       }
     },
     "views": {
@@ -451,7 +471,9 @@
       "diameter": "Diamètre",
       "mm": "{{value}} mm",
       "rotation": "Rotation",
-      "rotationAll": "Rotation — toutes les pièces",
+      "rotationAll": "Rotation du groupe",
+      "rotationGroupHint": "Le groupe pivote autour de son centre, comme vous le voyez à l’écran : les pièces se déplacent avec lui. Sur la scène, la molette « Pivoter » donne un angle libre.",
+      "turnBy": "Pivoter le groupe de {{deg}}°",
       "quarterTurns": "Quarts de tour",
       "spin": "Rotation sur la surface",
       "finish": "Finition",
@@ -533,6 +555,7 @@
       "show": "Afficher les actions rapides",
       "choose": "Boutons à afficher",
       "rotate": "Pivoter (molette)",
+      "color": "Couleur",
       "size": "Taille − / +",
       "duplicate": "Dupliquer",
       "mirrorH": "Refléter horizontalement",
@@ -586,7 +609,8 @@
       "quoteExported": "Fiche d’estimation téléchargée",
       "quoteFailed": "La fiche d’estimation n’a pas pu être créée",
       "exportFailed": "L’image n’a pas pu être exportée",
-      "modelReset": "Arcade de référence rétablie",
+      "modelReset": "Dentition de référence rétablie",
+      "modelLoadFailed": "La dentition de référence n’a pas pu être chargée — l’arcade simplifiée la remplace. Réessayez avec le bouton « Revenir à la dentition de référence ».",
       "import": {
         "started": "Import de {{name}}…",
         "teeth_one": "Modèle importé — {{count}} dent reconnue",
