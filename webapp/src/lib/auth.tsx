@@ -63,6 +63,7 @@ export type SignUpResult =
   | "emailTaken"
   | "weakPassword"
   | "rateLimited"
+  | "emailSend"
   | "network"
   | "server";
 
@@ -273,7 +274,13 @@ function SupabaseAuthProvider({ children }: { children: ReactNode }) {
         if (error.code === "user_already_exists" || error.code === "email_exists") return "emailTaken";
         if (error.code === "weak_password") return "weakPassword";
         if (isRateLimit(error)) return "rateLimited";
-        return error.name === "AuthRetryableFetchError" ? "network" : "server";
+        // supabase-js reports every 5xx as "retryable"; only status 0 means the
+        // request never reached Supabase.
+        if (error.name === "AuthRetryableFetchError" && !error.status) return "network";
+        // The account row exists but the confirmation email could not leave
+        // (SMTP refused it): retrying sends it again once the mail setup is fixed.
+        if (/email/i.test(error.message)) return "emailSend";
+        return "server";
       }
       // With email enumeration protection, an address that already has an
       // account answers with a user holding no identity and sends nothing.

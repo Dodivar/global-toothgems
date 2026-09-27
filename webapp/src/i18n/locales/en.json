@@ -554,7 +554,9 @@
       "rateLimitedTitle": "Too many attempts",
       "rateLimitedBody": "Wait a few minutes, then try again. Your details stay in this form.",
       "weakPasswordTitle": "Password refused",
-      "weakPasswordBody": "This password does not meet our security rules. Go back to the first step to choose another one."
+      "weakPasswordBody": "This password does not meet our security rules. Go back to the first step to choose another one.",
+      "emailSendTitle": "The confirmation email could not be sent",
+      "emailSendBody": "Your request was received, but our email service failed. Try again in a few minutes; if it keeps happening, contact us."
     },
     "google": {
       "cta": "Continue with Google",
