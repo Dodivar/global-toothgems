@@ -554,7 +554,9 @@
       "rateLimitedTitle": "Trop de tentatives",
       "rateLimitedBody": "Patientez quelques minutes, puis réessayez. Vos informations restent dans ce formulaire.",
       "weakPasswordTitle": "Mot de passe refusé",
-      "weakPasswordBody": "Ce mot de passe ne respecte pas nos règles de sécurité. Revenez à la première étape pour en choisir un autre."
+      "weakPasswordBody": "Ce mot de passe ne respecte pas nos règles de sécurité. Revenez à la première étape pour en choisir un autre.",
+      "emailSendTitle": "L’e-mail de confirmation n’a pas pu être envoyé",
+      "emailSendBody": "Votre compte n’a pas été créé : notre service d’envoi d’e-mails a échoué. Vos informations restent dans ce formulaire — réessayez dans quelques minutes, et contactez-nous si le problème persiste."
     },
     "google": {
       "cta": "Continuer avec Google",
