@@ -297,6 +297,16 @@ function QuickBar({ ids, jewels, actions }: { ids: string[]; jewels: PlacedJewel
     if (anchorRef.current) placeBarAndPanel(barRef.current, panelRef.current, anchorRef.current, !!gestureRef.current);
   }, [actions, scale, colorOpen]);
 
+  // The panel grows when the custom colour wheel opens: place it again.
+  useEffect(() => {
+    const panel = panelRef.current;
+    if (!colorOpen || !panel) return;
+    const ro = new ResizeObserver(() => {
+      if (anchorRef.current) placeBarAndPanel(barRef.current, panel, anchorRef.current, !!gestureRef.current);
+    });
+    ro.observe(panel);
+    return () => ro.disconnect();
+  }, [colorOpen]);
   // A press anywhere else closes the colour panel.
   useEffect(() => {
     if (!colorOpen) return;
@@ -537,17 +547,22 @@ function swatchOf(pieces: PlacedJewelry[]): string {
   return "conic-gradient(#ff9dc0, #4d7cff, #22c47c, #f6c05a, #ff9dc0)";
 }
 
-/** Beside the bar, on the side away from the selection, always inside the stage. */
+/**
+ * Beside the bar, on the side away from the selection, inside the stage and
+ * clear of the camera bar. On a small stage where it fits on neither side, it
+ * covers the quick bar rather than leave the stage.
+ */
 function placeColorPanel(panel: HTMLElement, bar: HTMLElement, a: SelectionAnchor) {
   const barTop = parseFloat(bar.style.top) || 0;
   const barCentre = parseFloat(bar.style.left) || 0;
   const w = panel.offsetWidth;
   const h = panel.offsetHeight;
+  const maxBottom = a.height - STAGE_BOTTOM_RESERVED;
   const below = barTop + BAR_HEIGHT + 8;
   const above = barTop - 8 - h;
   let y = barTop >= (a.top + a.bottom) / 2 ? below : above;
-  if (y + h > a.height - STAGE_SIDE_MARGIN) y = above;
-  if (y < STAGE_SIDE_MARGIN) y = Math.min(below, a.height - STAGE_SIDE_MARGIN - h);
+  if (y + h > maxBottom) y = above;
+  if (y < STAGE_SIDE_MARGIN) y = Math.min(below, maxBottom - h);
   y = Math.max(STAGE_SIDE_MARGIN, y);
   const x = Math.min(Math.max(barCentre - w / 2, STAGE_SIDE_MARGIN), a.width - STAGE_SIDE_MARGIN - w);
   panel.style.left = `${Math.round(x)}px`;

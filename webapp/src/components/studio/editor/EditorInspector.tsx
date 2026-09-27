@@ -478,7 +478,7 @@ function SinglePanel({ jewel, snap }: { jewel: PlacedJewelry; snap: StudioSnapsh
       <QuickRotate
         isOn={(deg) => jewel.rotation === deg}
         onSet={(deg) => set({ rotation: deg })}
-        onPlus90={() => set({ rotation: (jewel.rotation + 90) % 360 })}
+        onPlus90={() => rotatePieces([jewel.id], 90)}
       />
       <Slider
         label={t("studio.editor.inspector.spin")}
