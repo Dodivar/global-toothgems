@@ -12,6 +12,7 @@ import { useToast } from "../../lib/toast";
 import { formatDate } from "../../lib/format";
 import { FORGOT_PATH, SecurityServiceError, changePassword, newPasswordError, type ServiceOutcome } from "../../lib/accountSecurity";
 import { useAccountSecurity } from "../../lib/securityState";
+import { changeOwnPassword } from "../../lib/accountCredentials";
 
 type Field = "current" | "next" | "confirm";
 
@@ -29,7 +30,7 @@ const UNTOUCHED: Record<Field, boolean> = { current: false, next: false, confirm
  */
 export function ChangePasswordCard({ outcome }: { outcome: ServiceOutcome }) {
   const { t } = useTranslation();
-  const { email } = useAuth();
+  const { email, realAuth } = useAuth();
   const { passwordChangedAt, markPasswordChanged } = useAccountSecurity();
   const { showToast } = useToast();
 
@@ -37,6 +38,8 @@ export function ChangePasswordCard({ outcome }: { outcome: ServiceOutcome }) {
   const [values, setValues] = useState(EMPTY);
   const [touched, setTouched] = useState(UNTOUCHED);
   const [wrongCurrent, setWrongCurrent] = useState(false);
+  /** A new password Supabase refused (e.g. found in a leak list), as an error key. */
+  const [nextServerError, setNextServerError] = useState<string | null>(null);
   const [saving, setSaving] = useState(false);
   const [serverError, setServerError] = useState(false);
   const [done, setDone] = useState(false);
@@ -60,6 +63,7 @@ export function ChangePasswordCard({ outcome }: { outcome: ServiceOutcome }) {
 
   const errorOf = (field: Field) => {
     if (field === "current" && wrongCurrent) return t("security.errors.wrongPassword");
+    if (field === "next" && nextServerError) return t(nextServerError);
     return touched[field] && errorKeys[field] ? t(errorKeys[field]!) : null;
   };
 
@@ -67,6 +71,7 @@ export function ChangePasswordCard({ outcome }: { outcome: ServiceOutcome }) {
     const value = e.target.value;
     setValues((v) => ({ ...v, [field]: value }));
     if (field === "current") setWrongCurrent(false);
+    if (field === "next") setNextServerError(null);
     if (field === "confirm" && values.next && value.length >= values.next.length) setTouched((s) => ({ ...s, confirm: true }));
     if (serverError) setServerError(false);
   };
@@ -79,6 +84,7 @@ export function ChangePasswordCard({ outcome }: { outcome: ServiceOutcome }) {
     setValues(EMPTY);
     setTouched(UNTOUCHED);
     setWrongCurrent(false);
+    setNextServerError(null);
     setServerError(false);
   };
 
@@ -98,7 +104,19 @@ export function ChangePasswordCard({ outcome }: { outcome: ServiceOutcome }) {
     setSaving(true);
     setServerError(false);
     try {
-      await changePassword(values.current, values.next, outcome);
+      if (realAuth) {
+        const result = await changeOwnPassword(values.current, values.next);
+        if (result === "wrongPassword") throw new SecurityServiceError("wrongPassword");
+        if (result === "weak" || result === "same") {
+          setSaving(false);
+          setNextServerError(result === "weak" ? "register.errors.passwordWeak" : "security.errors.passwordSame");
+          nextRef.current?.focus();
+          return;
+        }
+        if (result !== "updated") throw new SecurityServiceError("server");
+      } else {
+        await changePassword(values.current, values.next, outcome);
+      }
       setSaving(false);
       markPasswordChanged();
       setOpen(false);
@@ -173,7 +191,7 @@ export function ChangePasswordCard({ outcome }: { outcome: ServiceOutcome }) {
               onChange={set("next")}
               onBlur={blur("next")}
               error={errorOf("next")}
-              success={touched.next && !errorKeys.next}
+              success={touched.next && !errorKeys.next && !nextServerError}
               describedBy="security-new-password-strength"
             />
             <PasswordField

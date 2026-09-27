@@ -11,6 +11,7 @@ import { DemoCode, DemoControls, DemoNote, RadioPills } from "../../components/s
 import { DEMO_CURRENT_PASSWORD, type ServiceOutcome } from "../../lib/accountSecurity";
 import { useAccountSecurity } from "../../lib/securityState";
 import { TAKEN_EMAILS } from "../../lib/registration";
+import { useAuth } from "../../lib/auth";
 
 const OUTCOMES: ServiceOutcome[] = ["success", "serverError"];
 
@@ -25,9 +26,13 @@ const demoButton =
  * the account stands, then sign-in (email, password), then data (export) and
  * finally, quietly, deletion. Each card owns its own states; the page only
  * holds the demo outcome that every simulated call reads.
+ *
+ * With Supabase, email and password changes are real, so the demo panel keeps
+ * only what still drives the simulated export and deletion.
  */
 export function Security() {
   const { t } = useTranslation();
+  const { realAuth } = useAuth();
   const { dataExport, finishExportNow, expireExportNow } = useAccountSecurity();
   const [outcome, setOutcome] = useState<ServiceOutcome>("success");
 
@@ -41,7 +46,7 @@ export function Security() {
       />
 
       <DemoControls summary={t(`security.demo.outcome.${outcome}`)}>
-        <DemoNote>{t("security.page.demoBody")}</DemoNote>
+        <DemoNote>{t(realAuth ? "security.page.demoBodyReal" : "security.page.demoBody")}</DemoNote>
         <RadioPills
           name="gt-security-outcome"
           legend={t("security.demo.outcomeLegend")}
@@ -50,6 +55,8 @@ export function Security() {
           onChange={setOutcome}
           labelFor={(v) => t(`security.demo.outcome.${v}`)}
         />
+        {!realAuth && (
+          <>
         <div className="grid gap-1 text-[length:var(--text-caption)] text-[var(--text-muted)]">
           <span className="font-semibold text-[var(--text-primary)]">{t("security.page.demoPassword")}</span>
           <span>
@@ -64,6 +71,8 @@ export function Security() {
             ))}
           </span>
         </div>
+          </>
+        )}
         <div className="grid gap-2">
           <span className="text-[length:var(--text-caption)] font-semibold text-[var(--text-primary)]">{t("security.page.demoExport")}</span>
           <div className="flex flex-wrap gap-2">
