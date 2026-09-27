@@ -17,14 +17,17 @@ import settingsEn from "./locales/settings.en.json";
 // The 3D Studio's presentation and subscription pages, under `studio`.
 import studioFr from "./locales/studio.fr.json";
 import studioEn from "./locales/studio.en.json";
+// The Studio workspace around the editor (creations, Gem Groups, help), under `studio.workspace`.
+import studioWorkspaceFr from "./locales/studioWorkspace.fr.json";
+import studioWorkspaceEn from "./locales/studioWorkspace.en.json";
 
 i18n
   .use(LanguageDetector)
   .use(initReactI18next)
   .init({
     resources: {
-      fr: { translation: { ...fr, promo: promoFr, reviews: reviewsFr, settings: settingsFr, studio: studioFr } },
-      en: { translation: { ...en, promo: promoEn, reviews: reviewsEn, settings: settingsEn, studio: studioEn } },
+      fr: { translation: { ...fr, promo: promoFr, reviews: reviewsFr, settings: settingsFr, studio: { ...studioFr, workspace: studioWorkspaceFr } } },
+      en: { translation: { ...en, promo: promoEn, reviews: reviewsEn, settings: settingsEn, studio: { ...studioEn, workspace: studioWorkspaceEn } } },
     },
     fallbackLng: "fr",
     supportedLngs: ["fr", "en"],

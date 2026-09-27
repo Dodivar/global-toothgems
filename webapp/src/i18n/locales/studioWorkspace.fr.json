@@ -1,0 +1,381 @@
+{
+  "untitled": "Création sans titre",
+  "justNow": "à l’instant",
+  "close": "Fermer",
+  "cancel": "Annuler",
+  "copySuffix": "(copie)",
+  "gems_one": "{{count}} gemme",
+  "gems_other": "{{count}} gemmes",
+  "estimatedValue": "Valeur estimée {{price}}",
+  "edited": "Modifiée {{when}}",
+  "favorite": "Ajouter {{name}} aux favoris",
+  "unfavorite": "Retirer {{name}} des favoris",
+  "nav": {
+    "label": "Espace Studio",
+    "open": "Ouvrir le menu du Studio",
+    "studio": "Studio 3D",
+    "creations": "Mes créations",
+    "groups": "Mes groupes de gemmes",
+    "help": "Aide & tutoriel",
+    "feedback": "Donner mon avis",
+    "account": "Mon compte",
+    "signedOut": "Non connecté·e",
+    "backToStage": "Studio",
+    "short": {
+      "studio": "Studio",
+      "creations": "Créations",
+      "groups": "Groupes",
+      "help": "Aide",
+      "feedback": "Avis"
+    },
+    "desc": {
+      "studio": "Revenir à la création en cours",
+      "creations": "Vos créations enregistrées",
+      "groups": "Assemblages de gemmes réutilisables",
+      "help": "Apprendre le Studio pas à pas",
+      "feedback": "Dites-nous ce que vous en pensez"
+    }
+  },
+  "status": {
+    "empty": "Rien à enregistrer pour l’instant",
+    "unsaved": "Modifications non enregistrées",
+    "saving": "Enregistrement…",
+    "saved": "Enregistrée {{when}}",
+    "failed": "Échec de l’enregistrement — réessayez"
+  },
+  "save": {
+    "cta": "Enregistrer",
+    "ctaSub": "Nommez-la et retrouvez-la dans Mes créations",
+    "changes": "Enregistrer les modifications",
+    "changesSub": "Mettre à jour « {{name}} »",
+    "saved": "Enregistrée",
+    "nothingToSave": "Tout est déjà enregistré",
+    "more": "Autres options d’enregistrement",
+    "shortcut": "Enregistrer (Ctrl+S)",
+    "newTitle": "Enregistrer la création",
+    "newSub": "Donnez un nom à votre création : vous pourrez la rouvrir, la dupliquer et la réutiliser à tout moment.",
+    "asNewTitle": "Enregistrer comme nouvelle création",
+    "asNewSub": "Garder l’originale et enregistrer cette version à part",
+    "editTitle": "Modifier les informations",
+    "editSub": "Changez le nom, la description ou les étiquettes. La composition elle-même n’est pas modifiée.",
+    "namePlaceholder": "ex. Papillon minimaliste",
+    "descriptionPlaceholder": "ex. Composition papillon symétrique pour les dents de devant.",
+    "saveDetails": "Enregistrer"
+  },
+  "details": {
+    "name": "Nom",
+    "description": "Description",
+    "tags": "Étiquettes",
+    "optional": "(facultatif)",
+    "tagsPlaceholder": "Ajoutez une étiquette puis Entrée",
+    "tagsHint": "Appuyez sur Entrée ou une virgule pour ajouter une étiquette.",
+    "tagsFull": "{{max}} étiquettes au maximum.",
+    "suggested": "Étiquettes suggérées",
+    "removeTag": "Retirer l’étiquette {{tag}}",
+    "errors": {
+      "nameMissing": "Donnez-lui un nom pour la retrouver facilement.",
+      "nameTooLong": "Le nom doit faire moins de {{max}} caractères.",
+      "descriptionTooLong": "La description est trop longue."
+    }
+  },
+  "actions": {
+    "open": "Ouvrir",
+    "openInStudio": "Ouvrir dans le Studio",
+    "backToStage": "Revenir à la scène",
+    "duplicate": "Dupliquer",
+    "rename": "Renommer",
+    "edit": "Modifier",
+    "editDetails": "Modifier les informations",
+    "delete": "Supprimer",
+    "useInStudio": "Utiliser dans le Studio"
+  },
+  "creations": {
+    "eyebrow": "Mes créations",
+    "title": "Vos créations, enregistrées et prêtes à resservir.",
+    "sub": "Chaque composition enregistrée arrive ici : rouvrez-la là où vous l’aviez laissée, dupliquez-la en variante, ou gardez vos favorites à portée de main.",
+    "newDesign": "Nouvelle création",
+    "searchPlaceholder": "Rechercher par nom, description ou étiquette",
+    "viewDetails": "Voir le détail de {{name}}",
+    "actionsFor": "Actions pour {{name}}",
+    "onStage": "Sur la scène",
+    "onStageUnsaved": "Sur la scène · non enregistrée",
+    "emptyTitle": "Votre bibliothèque créative est vide",
+    "emptyBody": "Commencez à créer dans le Studio 3D et enregistrez ici vos compositions préférées. Elles seront toujours prêtes à être reprises.",
+    "emptyCta": "Créer ma première composition",
+    "emptyHelp": "Découvrir le fonctionnement"
+  },
+  "summary": {
+    "title": "Votre Studio",
+    "creations_one": "création",
+    "creations_other": "créations",
+    "groups_one": "groupe de gemmes",
+    "groups_other": "groupes de gemmes",
+    "gems_one": "gemme utilisée",
+    "gems_other": "gemmes utilisées",
+    "value": "valeur estimée totale des créations"
+  },
+  "library": {
+    "clearSearch": "Effacer la recherche",
+    "filterLabel": "Filtrer",
+    "sortLabel": "Trier par",
+    "filters": {
+      "all": "Toutes",
+      "favorites": "Favorites",
+      "minimal": "Minimalistes",
+      "complex": "Élaborées",
+      "symmetrical": "Symétriques",
+      "withGroups": "Avec groupes",
+      "recent": "Utilisées récemment"
+    },
+    "sorts": {
+      "updated": "Modifiées récemment",
+      "created": "Créées récemment",
+      "name": "Nom A–Z",
+      "price": "Prix",
+      "elements": "Nombre de gemmes"
+    },
+    "resultCount_one": "{{count}} création affichée",
+    "resultCount_other": "{{count}} créations affichées",
+    "noMatchTitle": "Aucun résultat",
+    "noMatchBody": "Essayez un autre mot, ou retirez les filtres pour voir toute votre bibliothèque.",
+    "resetFilters": "Tout afficher",
+    "loadFailedTitle": "Impossible de charger votre bibliothèque",
+    "loadFailedBody": "Vos créations sont en sécurité, nous n’avons simplement pas pu les récupérer. Réessayez.",
+    "retry": "Réessayer"
+  },
+  "detail": {
+    "estimate": "Estimation",
+    "elements": "Gemmes",
+    "created": "Créée le",
+    "modified": "Modifiée le",
+    "noDescription": "Pas encore de description."
+  },
+  "delete": {
+    "creationTitle": "Supprimer cette création ?",
+    "groupTitle": "Supprimer ce groupe de gemmes ?",
+    "creationBody": "« {{name}} » sera retirée de Mes créations.",
+    "groupBody": "« {{name}} » sera retiré de Mes groupes de gemmes. Les créations qui l’utilisent déjà gardent leurs gemmes.",
+    "cannotUndo": "Cette action est irréversible.",
+    "confirm": "Supprimer"
+  },
+  "discard": {
+    "title": "Remplacer la création sur la scène ?",
+    "body": "Vos modifications non enregistrées seront perdues. Enregistrez-les d’abord si vous souhaitez les garder.",
+    "keep": "Continuer l’édition",
+    "confirm": "Abandonner et continuer"
+  },
+  "groups": {
+    "eyebrow": "Mes groupes de gemmes",
+    "title": "Des assemblages de gemmes réutilisables",
+    "sub": "Enregistrez quelques gemmes posées ensemble (un papillon, une constellation, un arc) et déposez tout l’assemblage sur n’importe quel sourire en un geste.",
+    "searchPlaceholder": "Rechercher dans vos groupes",
+    "lastUsed": "Utilisé {{when}}",
+    "neverUsed": "Pas encore utilisé",
+    "emptyTitle": "Aucun groupe de gemmes",
+    "emptyBody": "Dans le Studio, sélectionnez au moins deux gemmes (Maj + clic), puis choisissez « Créer un groupe ». Il apparaîtra ici, prêt à resservir.",
+    "emptyCta": "Aller au Studio",
+    "saveTitle_one": "Enregistrer cette gemme comme groupe réutilisable ?",
+    "saveTitle_other": "Enregistrer ces {{count}} gemmes comme groupe réutilisable ?",
+    "saveSub": "L’assemblage est conservé à l’identique (espacement, rotation, taille et finition) pour le déposer plus tard sur n’importe quelle dent.",
+    "editTitle": "Modifier le groupe",
+    "createCta": "Créer un groupe",
+    "namePlaceholder": "ex. Ailes de papillon",
+    "descriptionPlaceholder": "ex. Assemblage de 4 gemmes pensé pour une pose symétrique.",
+    "prompt_one": "Enregistrer cette gemme comme groupe réutilisable ?",
+    "prompt_other": "Enregistrer ces {{count}} gemmes comme groupe réutilisable ?",
+    "needsTwo": "Un groupe compte au moins deux gemmes. Maj + clic sur une autre gemme pour l’ajouter à la sélection.",
+    "tooMany": "Un groupe contient au plus {{max}} gemmes. Sélectionnez-en moins pour l’enregistrer.",
+    "contextSave_one": "Enregistrer comme groupe",
+    "contextSave_other": "Grouper ces {{count}} gemmes"
+  },
+  "panel": {
+    "tabsLabel": "Bibliothèque",
+    "tabs": {
+      "gems": "Gemmes",
+      "groups": "Mes groupes"
+    },
+    "hint": "Glissez un groupe sur une dent, ou cliquez pour l’ajouter là où il a été créé.",
+    "hintTooth": "Cliquez sur un groupe pour l’ajouter sur {{tooth}} ({{fdi}}), ou glissez-le sur n’importe quelle dent.",
+    "tileHint": "Ajouter {{name}}, ou le glisser sur une dent",
+    "emptyTitle": "Aucun groupe de gemmes",
+    "emptyBody": "Sélectionnez au moins deux gemmes sur la scène, puis « Créer un groupe » dans le panneau de droite.",
+    "manage": "Gérer mes groupes",
+    "dragOver": "Déposez-le sur une dent",
+    "dropOn": "Déposer sur {{tooth}} · {{fdi}}"
+  },
+  "signIn": {
+    "title": "Connectez-vous pour garder vos créations",
+    "body": "Créations et groupes de gemmes sont enregistrés dans votre compte Global Toothgems. La création en cours reste sur cet appareil pendant que vous vous connectez.",
+    "cta": "Se connecter",
+    "register": "Créer un compte",
+    "dialogTitle": "Enregistrer dans votre compte"
+  },
+  "hints": {
+    "saving": {
+      "question": "Comment fonctionne l’enregistrement ?",
+      "answer": "Le Studio garde automatiquement un brouillon de votre création sur cet appareil. « Enregistrer » la range dans votre compte, dans Mes créations, pour la rouvrir, la dupliquer ou la réutiliser. Ensuite, « Enregistrer les modifications » la met à jour, et l’indicateur à côté du nom vous dit toujours si tout est enregistré."
+    },
+    "groups": {
+      "question": "Qu’est-ce qu’un groupe de gemmes ?",
+      "answer": "Un assemblage réutilisable de plusieurs gemmes, comme une macro. Sélectionnez au moins deux gemmes puis « Créer un groupe » : espacement, rotation, taille et finition sont conservés. Déposez ensuite le groupe sur n’importe quelle dent, chaque gemme restant modifiable."
+    },
+    "estimate": {
+      "question": "Comment le prix estimé est-il calculé ?",
+      "answer": "Chaque gemme a un prix indicatif selon son type, ajusté à sa taille, et l’estimation les additionne. C’est un support d’échange avec votre cliente ou votre client, pas un prix catalogue : rien n’est facturé à partir de ce montant."
+    }
+  },
+  "help": {
+    "eyebrow": "Aide & tutoriel",
+    "title": "Prenez le Studio en main en quelques minutes",
+    "sub": "Six leçons courtes, de votre première gemme aux assemblages réutilisables. N’ouvrez les étapes que lorsque vous en avez besoin.",
+    "replayTour": "Revoir la visite guidée",
+    "showSteps": "Voir les étapes",
+    "faqTitle": "Bon à savoir",
+    "shortcutsTitle": "Raccourcis clavier",
+    "feedbackTitle": "Quelque chose n’est pas clair ?",
+    "feedbackBody": "Dites-nous ce qui vous a semblé confus : le Studio est en avant-première et vos retours le façonnent.",
+    "shortcuts": {
+      "undo": "Annuler",
+      "redo": "Rétablir",
+      "multi": "Ajouter une gemme à la sélection",
+      "all": "Sélectionner toutes les gemmes",
+      "duplicate": "Dupliquer la sélection",
+      "delete": "Supprimer la sélection",
+      "deselect": "Désélectionner / annuler"
+    },
+    "tutorials": {
+      "choose": {
+        "title": "Choisir une gemme",
+        "summary": "Parcourez cristaux, formes et pièces précieuses dans la bibliothèque à gauche.",
+        "steps": [
+          "Ouvrez l’onglet Gemmes de la bibliothèque.",
+          "Cherchez par nom, ou parcourez les trois familles.",
+          "Cliquez sur une gemme pour la prendre : elle est prête à être posée."
+        ]
+      },
+      "place": {
+        "title": "La poser sur la mâchoire",
+        "summary": "Glissez la gemme sur une dent, puis ajustez sa position, sa taille et son angle.",
+        "steps": [
+          "Glissez une gemme sur une dent, ou cliquez sur une dent une fois la gemme prise.",
+          "Faites glisser une gemme posée sur l’émail : elle ne chevauche jamais une autre.",
+          "Réglez taille, rotation, finition et couleur dans le panneau de droite."
+        ]
+      },
+      "compose": {
+        "title": "Créer une composition",
+        "summary": "Combinez plusieurs gemmes, reflétez-les en miroir et alignez-les le long du sourire.",
+        "steps": [
+          "Ajoutez d’autres gemmes : Maj + clic en sélectionne plusieurs.",
+          "Utilisez Miroir pour copier une gemme de l’autre côté du sourire.",
+          "Répartissez ou alignez une sélection le long de l’arcade."
+        ]
+      },
+      "save": {
+        "title": "Enregistrer votre création",
+        "summary": "Nommez votre composition et gardez-la dans Mes créations pour la rouvrir à tout moment.",
+        "steps": [
+          "Appuyez sur « Enregistrer » (ou Ctrl + S) en haut à droite.",
+          "Donnez-lui un nom, et si vous le souhaitez une description et des étiquettes.",
+          "Rouvrez-la depuis Mes créations : elle revient exactement comme vous l’avez laissée."
+        ]
+      },
+      "groups": {
+        "title": "Créer des groupes réutilisables",
+        "summary": "Transformez quelques gemmes souvent posées ensemble en un groupe à placer en un clic.",
+        "steps": [
+          "Sélectionnez au moins deux gemmes sur la scène.",
+          "Choisissez « Créer un groupe » dans le panneau de droite, puis nommez-le.",
+          "Retrouvez-le dans Mes groupes de gemmes et dans l’onglet Mes groupes de la bibliothèque."
+        ]
+      },
+      "reuse": {
+        "title": "Réutiliser vos créations",
+        "summary": "Déposez vos groupes sur de nouveaux sourires, ou dupliquez une création pour en faire une variante.",
+        "steps": [
+          "Dans l’onglet Mes groupes, glissez un groupe sur n’importe quelle dent.",
+          "Chaque gemme du groupe reste modifiable une fois posée.",
+          "Dupliquez une création enregistrée pour explorer une variante sans toucher à l’originale."
+        ]
+      }
+    }
+  },
+  "onboarding": {
+    "progress": "Étape {{step}} sur {{total}}",
+    "skip": "Passer le tutoriel",
+    "back": "Retour",
+    "next": "Suivant",
+    "start": "Commencer à créer",
+    "welcome": {
+      "title": "Bienvenue dans le Studio Tooth Gem",
+      "body": "Créez, expérimentez et enregistrez vos propres compositions sur un sourire en 3D. Voici l’essentiel en trois étapes rapides."
+    },
+    "place": {
+      "title": "Glissez une gemme sur une dent",
+      "body": "Prenez une gemme dans la bibliothèque à gauche et déposez-la sur n’importe quelle dent. Faites-la glisser à nouveau pour la déplacer sur l’émail."
+    },
+    "compose": {
+      "title": "Composez et ajustez",
+      "body": "Sélectionnez une gemme pour changer sa taille, sa rotation et sa finition à droite. Maj + clic en sélectionne plusieurs : miroir, alignement, ou groupe de gemmes réutilisable."
+    },
+    "save": {
+      "title": "Enregistrez et réutilisez",
+      "body": "« Enregistrer » range votre création dans Mes créations. Vos groupes de gemmes vous attendent dans Mes groupes, prêts pour le prochain sourire."
+    }
+  },
+  "feedback": {
+    "title": "Donner mon avis",
+    "sub": "Comment se passe votre expérience du Studio 3D ? Chaque message est lu par l’équipe.",
+    "signInTitle": "Connectez-vous pour donner votre avis",
+    "signInBody": "Votre avis est rattaché à votre compte, pour que l’équipe puisse revenir vers vous sur ce que vous avez signalé.",
+    "rating": "Expérience globale",
+    "stars_one": "{{count}} étoile",
+    "stars_other": "{{count}} étoiles",
+    "ratingLabels": {
+      "1": "Frustrante",
+      "2": "Peut mieux faire",
+      "3": "Bonne",
+      "4": "Très bonne",
+      "5": "J’adore"
+    },
+    "type": "Type de retour",
+    "types": {
+      "general": "Avis général",
+      "bug": "Bug",
+      "feature": "Idée de fonctionnalité",
+      "usability": "Facilité d’utilisation",
+      "performance": "Performance"
+    },
+    "message": "Qu’en pensez-vous ?",
+    "placeholder": "Dites-nous ce que vous aimez, ce qui vous semble confus, ou ce que vous aimeriez que l’on améliore...",
+    "privacy": "Nous joignons la page, le nombre de gemmes sur la scène, votre langue et la taille de la fenêtre, rien d’autre.",
+    "send": "Envoyer",
+    "errors": {
+      "ratingMissing": "Choisissez une note de 1 à 5 étoiles.",
+      "messageTooShort": "Écrivez quelques mots pour que nous comprenions."
+    },
+    "thanksTitle": "Merci !",
+    "thanksBody": "Merci de nous aider à améliorer le Studio.",
+    "backToStudio": "Revenir au Studio"
+  },
+  "toasts": {
+    "creationSaved": "Création enregistrée",
+    "changesSaved": "Modifications enregistrées",
+    "detailsSaved": "Informations enregistrées",
+    "saveFailed": "Impossible d’enregistrer. Veuillez réessayer.",
+    "genericFailed": "L’opération n’a pas abouti.",
+    "invalid": "Certaines informations ne sont pas valides.",
+    "tryAgain": "Rien n’a été perdu : réessayez dans un instant.",
+    "opened": "« {{name}} » est sur la scène",
+    "duplicated": "Copie créée : « {{name}} »",
+    "deleted": "Suppression effectuée : « {{name}} »",
+    "groupSaved": "Groupe de gemmes enregistré",
+    "groupNeedsTwo": "Sélectionnez au moins deux gemmes pour créer un groupe.",
+    "groupNoRoom": "Pas de place pour ce groupe ici : essayez une autre dent.",
+    "groupInserted_one": "{{name}} ajouté · {{count}} gemme",
+    "groupInserted_other": "{{name}} ajouté · {{count}} gemmes",
+    "groupInsertedPartial_one": "{{name}} ajouté : {{count}} gemme n’a pas trouvé de place",
+    "groupInsertedPartial_other": "{{name}} ajouté : {{count}} gemmes n’ont pas trouvé de place",
+    "feedbackFailed": "Votre avis n’a pas pu être envoyé."
+  }
+}

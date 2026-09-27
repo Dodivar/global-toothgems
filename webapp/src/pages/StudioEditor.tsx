@@ -1,15 +1,27 @@
-import { useEffect } from "react";
+import { useEffect, useRef, useState } from "react";
 import { useTranslation } from "react-i18next";
+import { useLocation } from "react-router-dom";
+import clsx from "clsx";
+import { Box, Menu } from "lucide-react";
 import { EditorTopBar } from "../components/studio/editor/EditorTopBar";
 import { EditorLibrary } from "../components/studio/editor/EditorLibrary";
 import { EditorViewport } from "../components/studio/editor/EditorViewport";
 import { EditorInspector } from "../components/studio/editor/EditorInspector";
+import { StudioSidebar } from "../components/studio/workspace/StudioSidebar";
+import { WorkspaceDialogs } from "../components/studio/workspace/WorkspaceDialogs";
+import { CreationLibrary } from "../components/studio/workspace/CreationLibrary";
+import { GemGroupLibrary } from "../components/studio/workspace/GemGroupLibrary";
+import { HelpPanel } from "../components/studio/workspace/HelpPanel";
+import { useWorkspaceActions } from "../components/studio/workspace/useWorkspaceActions";
 import { useDocumentTitle } from "../components/legal/hooks";
 import { useToast } from "../lib/toast";
 import { duplicatePieces, removePieces } from "../lib/studio3d/actions";
 import { getEngine } from "../lib/studio3d/engine";
 import { setNoticeHandler } from "../lib/studio3d/notices";
 import { studioStore, useStudio } from "../lib/studio3d/store";
+import { studioSectionFromPath, type StudioSection } from "../lib/studioUrl";
+import { StudioWorkspaceProvider } from "../lib/studioWorkspace/workspace";
+import { getWorkspaceDialog, onboardingSeen, openWorkspaceDialog } from "../lib/studioWorkspace/workspaceUi";
 
 /**
  * The 3D Studio editor: compose tooth jewellery on a 3D dental arch.
@@ -21,12 +33,39 @@ import { studioStore, useStudio } from "../lib/studio3d/store";
  *
  * Access is decided by `RequireStudioAccess` around the route; during the
  * preview it is open to every visitor (see `studioAccess`).
+ *
+ * Around the editor sits the Studio workspace (`lib/studioWorkspace`): the
+ * account's saved creations and Gem Groups, help, and feedback. Its sections
+ * (`/studio-3d/atelier/mes-creations`…) open over the stage rather than
+ * replacing it, so the 3D scene — and an imported model — stays exactly as
+ * it was when the artist comes back.
  */
 export function StudioEditor() {
+  return (
+    <StudioWorkspaceProvider>
+      <StudioWorkspace />
+    </StudioWorkspaceProvider>
+  );
+}
+
+const SECTION_TITLE: Record<StudioSection, string> = { creations: "creations", groups: "groups", help: "help" };
+
+function StudioWorkspace() {
   const { t } = useTranslation();
   const { showToast } = useToast();
   const snap = useStudio();
-  useDocumentTitle(t("studio.editor.documentTitle"));
+  const { pathname } = useLocation();
+  const section = studioSectionFromPath(pathname);
+  const [drawerOpen, setDrawerOpen] = useState(false);
+  const { save } = useWorkspaceActions();
+  // Read by the keyboard handler, which is registered once.
+  const live = useRef({ section, save });
+  useEffect(() => {
+    live.current = { section, save };
+  });
+  useDocumentTitle(
+    section ? `${t(`studio.workspace.nav.${SECTION_TITLE[section]}`)} · ${t("studio.editor.documentTitle")}` : t("studio.editor.documentTitle"),
+  );
 
   // The engine and the store speak in translation keys; the site's toasts say it.
   useEffect(() => {
@@ -48,13 +87,29 @@ export function StudioEditor() {
     }
   }, [showToast, t]);
 
+  // First visit: a short welcome over the stage, once it has had a moment to draw.
+  useEffect(() => {
+    if (onboardingSeen()) return;
+    const timer = setTimeout(() => {
+      if (!getWorkspaceDialog()) openWorkspaceDialog({ kind: "onboarding" });
+    }, 900);
+    return () => clearTimeout(timer);
+  }, []);
+
+  // A section in front: nothing half-done may linger on the stage behind it.
+  useEffect(() => {
+    if (!section) return;
+    studioStore.closeContextMenu();
+    getEngine()?.cancelPlacing();
+  }, [section]);
+
   // Save on the way out — leaving the page or closing the tab — not only on the debounce.
   useEffect(() => {
-    const save = () => studioStore.saveNow();
-    window.addEventListener("pagehide", save);
+    const saveDraft = () => studioStore.saveNow();
+    window.addEventListener("pagehide", saveDraft);
     return () => {
-      window.removeEventListener("pagehide", save);
-      save();
+      window.removeEventListener("pagehide", saveDraft);
+      saveDraft();
       studioStore.resetSession();
     };
   }, []);
@@ -63,8 +118,18 @@ export function StudioEditor() {
   useEffect(() => {
     const onKey = (e: KeyboardEvent) => {
       if (e.defaultPrevented) return;
+      // The shortcuts belong to the stage: not while a section covers it, nor
+      // behind a dialog or the navigation drawer (whose own keys come first).
+      if (live.current.section || getWorkspaceDialog() || document.querySelector('[aria-modal="true"]')) return;
       const el = document.activeElement as HTMLElement | null;
       const typing = !!el && (["INPUT", "SELECT", "TEXTAREA"].includes(el.tagName) || el.isContentEditable);
+      const meta = e.metaKey || e.ctrlKey;
+      const key = e.key.toLowerCase();
+      if (meta && key === "s") {
+        e.preventDefault(); // the browser's "Save page as…" is never what is meant here
+        live.current.save("auto");
+        return;
+      }
       if (e.key === "Escape") {
         getEngine()?.cancelPlacing();
         if (typing) el?.blur();
@@ -73,8 +138,6 @@ export function StudioEditor() {
         return;
       }
       if (typing) return;
-      const meta = e.metaKey || e.ctrlKey;
-      const key = e.key.toLowerCase();
       if (meta && key === "z") {
         e.preventDefault();
         if (e.shiftKey) studioStore.redo();
@@ -105,20 +168,71 @@ export function StudioEditor() {
   }, []);
 
   return (
-    <div className="gt-editor flex min-h-[100dvh] flex-col bg-[var(--surface-page)] lg:h-[100dvh] lg:min-h-0">
-      <EditorTopBar snap={snap} />
-      <div className="grid min-h-0 flex-1 grid-cols-1 lg:grid-cols-[264px_minmax(0,1fr)_316px] xl:grid-cols-[288px_minmax(0,1fr)_332px]">
-        {/* Stage first on small screens: it is what the visitor came for. */}
-        <div className="order-1 grid min-h-0 lg:order-2">
-          <EditorViewport snap={snap} />
+    <div className="gt-editor flex min-h-[100dvh] bg-[var(--surface-page)] lg:h-[100dvh] lg:min-h-0">
+      <StudioSidebar section={section} drawerOpen={drawerOpen} onCloseDrawer={() => setDrawerOpen(false)} />
+      <div className="relative flex min-w-0 flex-1 flex-col">
+        {/* The editor stays mounted under a section — hidden but still measured —
+            so the engine keeps its canvas, its model and its camera. */}
+        <div inert={!!section} className={clsx("flex min-h-0 flex-1 flex-col", section && "invisible")}>
+          <EditorTopBar snap={snap} onOpenMenu={() => setDrawerOpen(true)} />
+          <div className="grid min-h-0 flex-1 grid-cols-1 lg:grid-cols-[264px_minmax(0,1fr)_316px] xl:grid-cols-[288px_minmax(0,1fr)_332px]">
+            {/* Stage first on small screens: it is what the visitor came for. */}
+            <div className="order-1 grid min-h-0 lg:order-2">
+              <EditorViewport snap={snap} />
+            </div>
+            <div className="order-2 grid min-h-0 lg:order-1">
+              <EditorLibrary snap={snap} />
+            </div>
+            <div className="order-3 grid min-h-0">
+              <EditorInspector snap={snap} />
+            </div>
+          </div>
         </div>
-        <div className="order-2 grid min-h-0 lg:order-1">
-          <EditorLibrary snap={snap} />
-        </div>
-        <div className="order-3 grid min-h-0">
-          <EditorInspector snap={snap} />
-        </div>
+        {section && (
+          <main key={section} className="gt-ws-section fixed inset-0 z-30 flex flex-col overflow-hidden bg-[var(--surface-page)] lg:absolute">
+            <SectionBar section={section} onOpenMenu={() => setDrawerOpen(true)} />
+            <div className="gt-editor-scroll min-h-0 flex-1 overflow-y-auto overscroll-contain">
+              {section === "creations" && <CreationLibrary />}
+              {section === "groups" && <GemGroupLibrary />}
+              {section === "help" && <HelpPanel />}
+            </div>
+          </main>
+        )}
       </div>
+      <WorkspaceDialogs />
+    </div>
+  );
+}
+
+/** A section's slim bar on small screens: the menu, its name, and the way back to the stage. */
+function SectionBar({ section, onOpenMenu }: { section: StudioSection; onOpenMenu: () => void }) {
+  const { t } = useTranslation();
+  const { toEditor } = useWorkspaceActions();
+  const ring = "focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-[var(--focus-ring)]";
+  return (
+    <div className="flex h-14 flex-none items-center gap-2 border-b border-[var(--border-subtle)] bg-[var(--surface-card)] px-2 lg:hidden">
+      <button
+        type="button"
+        onClick={onOpenMenu}
+        aria-label={t("studio.workspace.nav.open")}
+        className={clsx("grid h-9 w-9 place-items-center rounded-[var(--radius-sm)] text-[var(--gt-ink-600)] hover:bg-[var(--gt-ink-100)]", ring)}
+      >
+        <Menu size={18} aria-hidden="true" />
+      </button>
+      <p className="m-0 min-w-0 flex-1 truncate text-[15px] font-[var(--weight-black)] text-[var(--text-primary)]">
+        {t(`studio.workspace.nav.${SECTION_TITLE[section]}`)}
+      </p>
+      <button
+        type="button"
+        onClick={toEditor}
+        className={clsx(
+          "inline-flex h-9 items-center gap-1.5 rounded-[var(--radius-pill)] bg-[var(--gt-ink-900)] px-3.5 text-[11px] font-bold uppercase tracking-[var(--tracking-wide)] text-white",
+          ring,
+        )}
+      >
+        <Box size={14} aria-hidden="true" />
+        {t("studio.workspace.nav.backToStage")}
+      </button>
     </div>
   );
 }
