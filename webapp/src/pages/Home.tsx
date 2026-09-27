@@ -22,6 +22,9 @@ import { photo } from "../lib/images";
 import { useReveal } from "../lib/useReveal";
 import { shapeHref } from "../lib/shopUrl";
 import { StudioTeaser } from "../components/studio/StudioTeaser";
+import { LoyaltyCard } from "../components/loyalty/LoyaltyCard";
+import { LOYALTY_STATES, QUALIFYING_AMOUNT, REWARD_PERCENT, STAMPS_PER_CARD } from "../data/loyalty";
+import { formatPrice } from "../lib/format";
 
 const EMAIL_RE = /^[^\s@]+@[^\s@]+\.[^\s@]{2,}$/;
 
@@ -46,6 +49,7 @@ export function Home() {
   const academyRef = useReveal<HTMLElement>();
   const reviewsRef = useReveal<HTMLElement>();
   const giftRef = useReveal<HTMLElement>();
+  const loyaltyRef = useReveal<HTMLElement>();
   const newsletterRef = useReveal<HTMLElement>();
 
   const subscribe = () => {
@@ -301,11 +305,42 @@ export function Home() {
               <li>{t("home.giftBullet3")}</li>
             </ul>
             <div className="flex flex-wrap gap-3">
-              <Button variant="outline" size="lg" iconRight={ArrowRight} onClick={() => navigate("/boutique")}>
+              <Button variant="outline" size="lg" iconRight={ArrowRight} onClick={() => navigate("/carte-cadeau")}>
                 {t("home.giftCta")}
               </Button>
             </div>
           </div>
+        </div>
+      </section>
+
+      {/* Loyalty Club: the programme in one sentence and a sample card, with
+          the details left to /fidelite. The gift card above already carries the
+          section's top spacing, so this one only pads its bottom. */}
+      <section
+        ref={loyaltyRef}
+        aria-labelledby="gt-home-loyalty-title"
+        className="gt-reveal px-[clamp(14px,4vw,48px)] pb-[var(--section-y)]"
+      >
+        <div className="mx-auto grid max-w-[var(--max-width-content)] grid-cols-1 items-center gap-[clamp(32px,5vw,64px)] lg:grid-cols-2">
+          <div className="grid min-w-0 gap-5">
+            <span className="gt-eyebrow">{t("home.loyaltyEyebrow")}</span>
+            <h2 id="gt-home-loyalty-title" className="text-[length:var(--text-h2)]">{t("home.loyaltyTitle")}</h2>
+            <p className="m-0 max-w-[var(--max-width-prose)] text-[length:var(--text-body-md)] text-[var(--text-body)]">
+              {t("home.loyaltyBody", {
+                total: STAMPS_PER_CARD,
+                amount: formatPrice(QUALIFYING_AMOUNT),
+                percent: REWARD_PERCENT,
+              })}
+            </p>
+            <div className="flex flex-wrap gap-3">
+              <Button variant="outline" size="lg" iconRight={ArrowRight} onClick={() => navigate("/fidelite")}>
+                {t("home.loyaltyCta")}
+              </Button>
+            </div>
+          </div>
+          {/* A sample card, the same one the programme page opens on: static
+              mock data, not the visitor's own progress. */}
+          <LoyaltyCard state={LOYALTY_STATES.collecting} titleAs="h3" />
         </div>
       </section>
 
