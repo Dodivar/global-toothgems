@@ -41,3 +41,36 @@ export async function setNewPassword(password: string): Promise<NewPasswordResul
   await supabase.auth.signOut();
   return "updated";
 }
+
+export type PasswordChangeResult = "updated" | "wrongPassword" | "weak" | "same" | "rateLimited" | "failed";
+
+/**
+ * Changes the signed-in member's password from the Security page.
+ *
+ * `updateUser` alone does not check the current password (it only does when the
+ * project turns on "secure password change"), so the current one is verified
+ * first by signing in again with it. A wrong password leaves the open session
+ * untouched; a right one refreshes it, which also satisfies Supabase's
+ * recent-login requirement for the update.
+ */
+export async function changeOwnPassword(currentPassword: string, newPassword: string): Promise<PasswordChangeResult> {
+  if (!supabase) return "failed";
+  const { data: userData } = await supabase.auth.getUser();
+  const email = userData.user?.email;
+  if (!email) return "failed";
+
+  const check = await supabase.auth.signInWithPassword({ email, password: currentPassword });
+  if (check.error) {
+    if (isRateLimit(check.error)) return "rateLimited";
+    return check.error.code === "invalid_credentials" || check.error.status === 400 ? "wrongPassword" : "failed";
+  }
+
+  const { error } = await supabase.auth.updateUser({ password: newPassword });
+  if (error) {
+    if (error.code === "weak_password") return "weak";
+    if (error.code === "same_password") return "same";
+    if (isRateLimit(error)) return "rateLimited";
+    return "failed";
+  }
+  return "updated";
+}
