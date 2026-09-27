@@ -71,7 +71,13 @@ export function GemGroupPanel({ snap }: { snap: StudioSnapshot }) {
       window.removeEventListener("pointercancel", end);
       window.removeEventListener("keydown", cancelOnEscape, true);
       if (!dragging) return;
+      // Released over the tile, the browser follows with a click that must not
+      // insert a second copy; released elsewhere, no click comes. Either way the
+      // guard only lives until the next tick.
       suppressClick.current = true;
+      setTimeout(() => {
+        suppressClick.current = false;
+      });
       getEngine()?.previewDropTooth(null);
       setDrag(null);
       if (ev.type === "pointerup" && tooth) ws.insertGroup(group, tooth);

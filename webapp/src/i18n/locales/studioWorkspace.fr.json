@@ -47,6 +47,7 @@
     "cta": "Enregistrer",
     "ctaSub": "Nommez-la et retrouvez-la dans Mes créations",
     "changes": "Enregistrer les modifications",
+    "changesShort": "Enregistrer",
     "changesSub": "Mettre à jour « {{name}} »",
     "saved": "Enregistrée",
     "nothingToSave": "Tout est déjà enregistré",
@@ -205,7 +206,7 @@
   },
   "signIn": {
     "title": "Connectez-vous pour garder vos créations",
-    "body": "Créations et groupes de gemmes sont enregistrés dans votre compte Global Toothgems. La création en cours reste sur cet appareil pendant que vous vous connectez.",
+    "body": "Créations et groupes de gemmes sont liés à votre compte Global Toothgems. Pendant l’avant-première, ils sont conservés dans ce navigateur, sur cet appareil. La création en cours reste ici pendant que vous vous connectez.",
     "cta": "Se connecter",
     "register": "Créer un compte",
     "dialogTitle": "Enregistrer dans votre compte"
@@ -213,7 +214,7 @@
   "hints": {
     "saving": {
       "question": "Comment fonctionne l’enregistrement ?",
-      "answer": "Le Studio garde automatiquement un brouillon de votre création sur cet appareil. « Enregistrer » la range dans votre compte, dans Mes créations, pour la rouvrir, la dupliquer ou la réutiliser. Ensuite, « Enregistrer les modifications » la met à jour, et l’indicateur à côté du nom vous dit toujours si tout est enregistré."
+      "answer": "Le Studio garde automatiquement un brouillon de votre création sur cet appareil. « Enregistrer » l’ajoute à Mes créations, sous votre compte, pour la rouvrir, la dupliquer ou la réutiliser : pendant l’avant-première, votre bibliothèque est conservée dans ce navigateur, elle n’apparaît donc que sur cet appareil. Ensuite, « Enregistrer les modifications » la met à jour, et l’indicateur à côté du nom vous dit toujours si tout est enregistré."
     },
     "groups": {
       "question": "Qu’est-ce qu’un groupe de gemmes ?",

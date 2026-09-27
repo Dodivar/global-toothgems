@@ -69,7 +69,7 @@ export function EditorTopBar({ snap, onOpenMenu }: { snap: StudioSnapshot; onOpe
       <button type="button" className={clsx(toolButton, "lg:hidden")} aria-label={t("studio.workspace.nav.open")} title={t("studio.workspace.nav.open")} onClick={onOpenMenu}>
         <Menu size={18} aria-hidden="true" />
       </button>
-      <div className="flex min-w-[80px] items-center gap-2.5 pr-1 max-sm:flex-1 sm:min-w-0">
+      <div className="flex min-w-[80px] items-center gap-2.5 pr-1 max-sm:flex-1 sm:min-w-[140px]">
         <img src={monogram} alt="" aria-hidden="true" className="hidden h-7 w-7 flex-none object-contain sm:block lg:hidden" />
         <div className="grid min-w-0 leading-none">
           <h1 className="m-0 flex min-w-0 items-baseline gap-2 truncate text-[15px] font-[var(--weight-black)] tracking-[var(--tracking-tight)] text-[var(--text-primary)]">
@@ -96,7 +96,7 @@ export function EditorTopBar({ snap, onOpenMenu }: { snap: StudioSnapshot; onOpe
       <div className="flex-1 max-sm:hidden" />
 
       <p
-        className="m-0 hidden whitespace-nowrap rounded-[var(--radius-pill)] border border-[var(--border-subtle)] bg-[var(--surface-page)] px-3 py-1.5 text-[12px] font-semibold text-[var(--text-muted)] md:block"
+        className="m-0 hidden whitespace-nowrap rounded-[var(--radius-pill)] border border-[var(--border-subtle)] bg-[var(--surface-page)] px-3 py-1.5 text-[12px] font-semibold text-[var(--text-muted)] xl:block"
         title={t("studio.editor.estimateHint")}
         aria-live="polite"
       >
@@ -387,12 +387,12 @@ function ExportMenu() {
         <button
           type="button"
           {...props}
-          className="inline-flex h-9 items-center gap-1.5 rounded-[var(--radius-pill)] border border-[var(--border-default)] px-3 text-[11px] font-semibold uppercase tracking-[var(--tracking-wide)] text-[var(--text-primary)] transition-colors hover:border-[var(--border-strong)] focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-[var(--focus-ring)] max-sm:w-9 max-sm:justify-center max-sm:px-0 sm:px-3.5"
+          className="inline-flex h-9 items-center gap-1.5 rounded-[var(--radius-pill)] border border-[var(--border-default)] px-3 text-[11px] font-semibold uppercase tracking-[var(--tracking-wide)] text-[var(--text-primary)] transition-colors hover:border-[var(--border-strong)] focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-[var(--focus-ring)] max-xl:w-9 max-xl:justify-center max-xl:px-0 xl:px-3.5"
         >
           <Download size={14} aria-hidden="true" />
-          <span className="hidden sm:inline">{t("studio.editor.export.menu")}</span>
-          <span className="sr-only sm:hidden">{t("studio.editor.export.menu")}</span>
-          <ChevronDown size={13} aria-hidden="true" className="hidden sm:block" />
+          <span className="hidden xl:inline">{t("studio.editor.export.menu")}</span>
+          <span className="sr-only xl:hidden">{t("studio.editor.export.menu")}</span>
+          <ChevronDown size={13} aria-hidden="true" className="hidden xl:block" />
         </button>
       )}
     >

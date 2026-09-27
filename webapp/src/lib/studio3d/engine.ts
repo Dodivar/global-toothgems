@@ -1902,6 +1902,7 @@ export class StudioEngine {
       if (!same(position, j.position) || !same(normal, j.normal)) updates.push({ id: j.id, patch: { position, normal } });
     }
     this.store.settleLoadedPieces(updates);
+    this.setLightPreset(this.store.lightPreset);
     if (load.camera) {
       const [px, py, pz] = load.camera.position;
       const [tx, ty, tz] = load.camera.target;

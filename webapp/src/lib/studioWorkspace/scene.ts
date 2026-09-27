@@ -34,7 +34,7 @@ export interface SceneCamera {
 /** Pieces that arrived together from a saved Gem Group — kept so the grouping is not lost. */
 export interface SceneGroupRef {
   id: string;
-  /** The library group they came from; null once that group is deleted. */
+  /** The library group they came from (it may have been deleted since); null when unknown. */
   gemGroupId: string | null;
   name: string;
   pieceIds: string[];

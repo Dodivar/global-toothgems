@@ -25,6 +25,8 @@ export function SaveControls() {
   const busy = ws.saveState === "saving";
 
   const label = !snap.active ? t("studio.workspace.save.cta") : clean ? t("studio.workspace.save.saved") : t("studio.workspace.save.changes");
+  // The bar is narrow: the button says it briefly, its accessible name in full.
+  const shortLabel = !snap.active || clean ? label : t("studio.workspace.save.changesShort");
   const run = (fn: () => void) => {
     setOpen(false);
     fn();
@@ -46,7 +48,7 @@ export function SaveControls() {
         )}
       >
         {clean ? <Check size={14} aria-hidden="true" className="gt-ws-pop" /> : <Save size={14} aria-hidden="true" />}
-        <span className="hidden sm:inline">{busy ? t("studio.workspace.status.saving") : label}</span>
+        <span className="hidden sm:inline">{busy ? t("studio.workspace.status.saving") : shortLabel}</span>
       </button>
       <span aria-hidden="true" className={clsx("my-2 w-px", clean ? "bg-[var(--gt-emerald-300)]" : "bg-[var(--gt-emerald-600)]/25")} />
       <EditorPopover

@@ -47,6 +47,7 @@
     "cta": "Save creation",
     "ctaSub": "Name it and keep it in My Creations",
     "changes": "Save changes",
+    "changesShort": "Save changes",
     "changesSub": "Update “{{name}}”",
     "saved": "Saved",
     "nothingToSave": "Everything is already saved",
@@ -205,7 +206,7 @@
   },
   "signIn": {
     "title": "Sign in to keep your designs",
-    "body": "Creations and gem groups are saved to your Global Toothgems account. The design on the stage stays on this device while you sign in.",
+    "body": "Creations and gem groups belong to your Global Toothgems account. During the preview they are kept in this browser, on this device. The design on the stage stays here while you sign in.",
     "cta": "Sign in",
     "register": "Create an account",
     "dialogTitle": "Save to your account"
@@ -213,7 +214,7 @@
   "hints": {
     "saving": {
       "question": "How does saving work?",
-      "answer": "The Studio keeps a draft of your current design on this device automatically. “Save creation” stores it in your account, in My Creations, where you can reopen, duplicate or reuse it. Once saved, “Save changes” updates it — and the status next to the name always tells you whether everything is stored."
+      "answer": "The Studio keeps a draft of your current design on this device automatically. “Save creation” adds it to My Creations, under your account, where you can reopen, duplicate or reuse it — during the preview, your library is kept in this browser, so it shows on this device only. Once saved, “Save changes” updates it, and the status next to the name always tells you whether everything is stored."
     },
     "groups": {
       "question": "What’s a Gem Group?",

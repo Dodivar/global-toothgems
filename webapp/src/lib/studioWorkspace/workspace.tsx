@@ -75,18 +75,23 @@ function browserStorage(): KeyValueStorage {
   }
 }
 
-function createRepositories(userId: string): StudioRepositories {
-  // The one switch for the backend: when the Supabase tables are live, a
-  // `createSupabaseRepositories(client)` goes here (see README, "3D Studio workspace").
-  return createLocalRepositories(userId, { storage: browserStorage(), latency: LOCAL_LATENCY_MS, seed: true });
+/**
+ * The one switch for the backend: when the Supabase tables are live, a
+ * `createSupabaseRepositories(client)` goes here (see README, "3D Studio
+ * workspace"). Until then the library lives in this browser — also for real
+ * accounts, which is what the interface copy says. The example designs are
+ * only for the demo accounts of the mock sign-in, never for real members.
+ */
+function createRepositories(userId: string, opts: { seed: boolean }): StudioRepositories {
+  return createLocalRepositories(userId, { storage: browserStorage(), latency: LOCAL_LATENCY_MS, seed: opts.seed });
 }
 
 export function StudioWorkspaceProvider({ children }: { children: ReactNode }) {
   const { t } = useTranslation();
   const { showToast } = useToast();
-  const { userId } = useAuth();
+  const { userId, restoring, realAuth } = useAuth();
   const snap = useStudio();
-  const repos = useMemo(() => (userId ? createRepositories(userId) : null), [userId]);
+  const repos = useMemo(() => (userId ? createRepositories(userId, { seed: !realAuth }) : null), [userId, realAuth]);
 
   // What was loaded, and for which repositories: a sign-out or another account
   // makes it stale at once, without waiting for an effect to clear it.
@@ -97,7 +102,7 @@ export function StudioWorkspaceProvider({ children }: { children: ReactNode }) {
     groups: GemGroup[];
   } | null>(null);
   const current = loaded && loaded.repos === repos ? loaded : null;
-  const status: LibraryStatus = !repos ? "signedOut" : current ? current.status : "loading";
+  const status: LibraryStatus = !repos ? (restoring ? "loading" : "signedOut") : current ? current.status : "loading";
   const creations = useMemo(() => current?.creations ?? [], [current]);
   const groups = useMemo(() => current?.groups ?? [], [current]);
   const [saving, setSaving] = useState(false);
