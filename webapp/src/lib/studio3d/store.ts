@@ -43,6 +43,8 @@ export interface StudioSnapshot {
   selectedToothId: string | null;
   armedTypeId: string | null;
   placingTypeId: string | null;
+  /** The lasso tool is on: a press on the stage draws a loop that selects the pieces inside. */
+  lasso: boolean;
   hoveredToothId: string | null;
   modelMode: ModelMode;
   /** True while a model is being fetched and prepared: the stage says so. */
@@ -86,6 +88,7 @@ export class DesignStore {
   selectedToothId: string | null = null;
   armedTypeId: string | null = null;
   placingTypeId: string | null = null;
+  lasso = false;
   hoveredToothId: string | null = null;
   modelMode: ModelMode = "dentition";
   modelLoading = true;
@@ -138,6 +141,7 @@ export class DesignStore {
       selectedToothId: this.selectedToothId,
       armedTypeId: this.armedTypeId,
       placingTypeId: this.placingTypeId,
+      lasso: this.lasso,
       hoveredToothId: this.hoveredToothId,
       modelMode: this.modelMode,
       modelLoading: this.modelLoading,
@@ -276,10 +280,21 @@ export class DesignStore {
   }
   setArmed(id: string | null) {
     this.armedTypeId = id;
+    // Placing a piece and drawing a lasso both want the next press on the stage.
+    if (id) this.lasso = false;
     this.commit();
   }
   setPlacing(id: string | null) {
     this.placingTypeId = id;
+    if (id) this.lasso = false;
+    this.commit();
+  }
+  /** Turn the lasso tool on or off. On, it takes over from a piece armed for placing. */
+  setLasso(on: boolean) {
+    if (this.lasso === on) return;
+    this.lasso = on;
+    if (on) this.armedTypeId = null;
+    this.contextMenu = null;
     this.commit();
   }
   setHoveredTooth(id: string | null) {
@@ -369,6 +384,7 @@ export class DesignStore {
   resetSession() {
     this.armedTypeId = null;
     this.placingTypeId = null;
+    this.lasso = false;
     this.hoveredToothId = null;
     this.contextMenu = null;
     // The next editor session loads the default dentition afresh.

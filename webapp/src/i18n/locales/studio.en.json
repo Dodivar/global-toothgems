@@ -403,6 +403,10 @@
       "colorLabel_other": "Pieces colour",
       "colorPanel": "Colour",
       "customColor": "Custom colour",
+      "lasso": "Lasso",
+      "lassoHint": "Lasso: draw around pieces to select them (L)",
+      "lassoActive": "Draw around the pieces to select — hold Shift to add to the selection",
+      "cancelLasso": "Leave the lasso",
       "hint": "Drag a piece onto a tooth to start designing",
       "stage": {
         "dentition": "Reference dentition · FDI notation",
@@ -428,7 +432,8 @@
       "front": "Front",
       "top": "Top",
       "side": "Side",
-      "reset": "Reset"
+      "reset": "Reset",
+      "menu": "Camera view"
     },
     "zoomIn": "Zoom in",
     "zoomOut": "Zoom out",
@@ -439,7 +444,8 @@
       "daylight": "Day",
       "studioHint": "Neutral studio lighting",
       "lampHint": "Warm directional chair lamp",
-      "daylightHint": "Bright daylight"
+      "daylightHint": "Bright daylight",
+      "current": "Lighting: {{name}}"
     },
     "orbit": "Orbit",
     "orbitHint": "Slowly orbit around the design",
@@ -450,6 +456,8 @@
       "rotate_other": "Rotate all +90°",
       "duplicate_one": "Duplicate",
       "duplicate_other": "Duplicate all",
+      "duplicateMirror_one": "Duplicate mirrored",
+      "duplicateMirror_other": "Duplicate all mirrored",
       "delete_one": "Delete",
       "delete_other": "Delete all"
     },
@@ -457,6 +465,7 @@
       "label": "Mirror",
       "horizontal": "Mirror horizontally",
       "vertical": "Mirror vertically",
+      "duplicate": "Duplicate mirrored",
       "hint": "Horizontal reflects across the midline of the arch (11 ↔ 21…); vertical flips around the selection's centre. Pieces snap back onto the enamel and never overlap."
     },
     "inspector": {
@@ -528,6 +537,8 @@
       "addToSelection": "Add to the selection",
       "pieceActions": "Piece actions",
       "duplicate": "Duplicate the selection",
+      "duplicateMirror": "Duplicate mirrored",
+      "lasso": "Lasso select",
       "delete": "Delete the selection",
       "deselect": "Deselect / cancel",
       "pan": "Pan the camera",
@@ -538,6 +549,8 @@
         "addToSelection": "⇧ + click",
         "pieceActions": "Right-click",
         "duplicate": "D",
+        "duplicateMirror": "⇧ D",
+        "lasso": "L",
         "delete": "Del",
         "deselect": "Esc",
         "pan": "⇧ + drag",
@@ -558,6 +571,7 @@
       "color": "Colour",
       "size": "Size − / +",
       "duplicate": "Duplicate",
+      "duplicateMirror": "Duplicate mirrored",
       "mirrorH": "Mirror horizontally",
       "mirrorV": "Mirror vertically",
       "delete": "Delete",
@@ -574,6 +588,10 @@
       "duplicated_one": "Piece duplicated — drag it where you want it",
       "duplicated_other": "{{count}} pieces duplicated — try Mirror horizontally for a symmetrical smile",
       "duplicatedPartial": "{{count}} of {{total}} duplicated — the others had no room",
+      "duplicatedMirrored_one": "Piece duplicated on the other side of the arch",
+      "duplicatedMirrored_other": "{{count}} pieces duplicated mirrored",
+      "noRoomMirrored": "No free space on the other side of the arch",
+      "lassoEmpty": "No visible piece inside the lasso — draw around the pieces' centres",
       "removed_one": "Piece removed",
       "removed_other": "{{count}} pieces removed",
       "rotated_one": "Piece rotated",

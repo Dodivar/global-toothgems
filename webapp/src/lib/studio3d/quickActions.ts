@@ -8,7 +8,7 @@ import { useSyncExternalStore } from "react";
  * below the stage and the right-click menu is out of reach.
  */
 
-export const QUICK_ACTIONS = ["rotate", "size", "color", "duplicate", "mirrorH", "mirrorV", "delete"] as const;
+export const QUICK_ACTIONS = ["rotate", "size", "color", "duplicate", "duplicateMirror", "mirrorH", "mirrorV", "delete"] as const;
 export type QuickActionId = (typeof QUICK_ACTIONS)[number];
 
 export interface QuickActionPrefs {
@@ -23,7 +23,7 @@ export interface QuickActionPrefs {
 const KEY = "gt-studio3d-quick-actions-v1";
 export const DEFAULT_QUICK_ACTIONS: QuickActionPrefs = {
   enabled: true,
-  actions: ["rotate", "size", "color", "duplicate", "delete"],
+  actions: ["rotate", "size", "color", "duplicate", "duplicateMirror", "delete"],
   known: [...QUICK_ACTIONS],
 };
 /** What the first version offered, for choices saved before `known` existed. */

@@ -19,6 +19,18 @@ export function duplicatePieces(ids: string[]) {
   else notify("duplicated", { count: n });
 }
 
+/**
+ * Duplicate the pieces onto their mirror image across the arch midline: the
+ * copies land on the other side, reflected, and become the selection.
+ */
+export function duplicateMirroredPieces(ids: string[]) {
+  if (!ids.length) return;
+  const n = getEngine()?.duplicateMirrored(ids) ?? 0;
+  if (!n) notify("noRoomMirrored", undefined, "warning");
+  else if (n < ids.length) notify("duplicatedPartial", { count: n, total: ids.length }, "info");
+  else notify("duplicatedMirrored", { count: n });
+}
+
 export function removePieces(ids: string[]) {
   if (!ids.length) return;
   studioStore.removeJewels(ids);

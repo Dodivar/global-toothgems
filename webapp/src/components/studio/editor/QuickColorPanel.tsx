@@ -1,6 +1,5 @@
-import { useId, useState } from "react";
+import { useId } from "react";
 import clsx from "clsx";
-import { ChevronDown } from "lucide-react";
 import { ColorWheel } from "./ColorWheel";
 import { Swatches } from "./EditorInspector";
 import { useEditorLabels } from "./editorLabels";
@@ -9,7 +8,7 @@ import { studioStore } from "../../../lib/studio3d/store";
 
 /**
  * The colour quick action's panel, floating on the stage beside the quick
- * bar: the finishes, and a custom colour on demand. It acts on the whole
+ * bar: the finishes, and the custom colour wheel right under them. It acts on the whole
  * selection like the inspector does — one undo step per pick, one per drag of
  * the wheel. Positioned by the quick bar, which knows where the selection is.
  */
@@ -29,8 +28,7 @@ export function QuickColorPanel({
   const { t } = useEditorLabels();
   const first = selected[0];
   const sharedCustom = first && selected.every((j) => j.customColor && j.customColor === first.customColor) ? first.customColor! : null;
-  const [custom, setCustom] = useState(sharedCustom !== null);
-  const wheelId = useId();
+  const customId = useId();
   if (!first) return null;
   return (
     <div
@@ -60,28 +58,19 @@ export function QuickColorPanel({
         }}
         custom={sharedCustom}
       />
-      <button
-        type="button"
-        aria-expanded={custom}
-        aria-controls={wheelId}
-        onClick={() => setCustom((c) => !c)}
-        className="mt-2.5 flex w-full items-center justify-between rounded-[var(--radius-sm)] px-1.5 py-1.5 text-[12px] font-semibold text-[var(--text-body)] transition-colors hover:bg-[var(--surface-brand-wash)] focus-visible:outline focus-visible:outline-2 focus-visible:-outline-offset-2 focus-visible:outline-[var(--focus-ring)]"
-      >
-        {t("studio.editor.viewport.customColor")}
-        <ChevronDown size={14} aria-hidden="true" className={clsx("transition-transform", custom && "rotate-180")} />
-      </button>
-      {custom && (
-        <div id={wheelId} className="mt-1.5">
-          <ColorWheel
-            hex={sharedCustom}
-            onPick={(hex) => studioStore.updateSelected({ customColor: hex })}
-            onClear={() => {
-              studioStore.pushHistory();
-              studioStore.updateSelected({ customColor: undefined });
-            }}
-          />
-        </div>
-      )}
+      <div role="group" aria-labelledby={customId} className="mt-2.5 border-t border-[var(--border-subtle)] pt-2">
+        <p id={customId} className="m-0 mb-1.5 px-0.5 text-[12px] font-semibold text-[var(--text-body)]">
+          {t("studio.editor.viewport.customColor")}
+        </p>
+        <ColorWheel
+          hex={sharedCustom}
+          onPick={(hex) => studioStore.updateSelected({ customColor: hex })}
+          onClear={() => {
+            studioStore.pushHistory();
+            studioStore.updateSelected({ customColor: undefined });
+          }}
+        />
+      </div>
     </div>
   );
 }

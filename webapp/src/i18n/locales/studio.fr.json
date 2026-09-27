@@ -403,6 +403,10 @@
       "colorLabel_other": "Couleur des pièces",
       "colorPanel": "Couleur",
       "customColor": "Couleur personnalisée",
+      "lasso": "Lasso",
+      "lassoHint": "Lasso : entourez des pièces pour les sélectionner (L)",
+      "lassoActive": "Entourez les pièces à sélectionner — Maj pour ajouter à la sélection",
+      "cancelLasso": "Quitter le lasso",
       "hint": "Glissez une pièce sur une dent pour commencer",
       "stage": {
         "dentition": "Dentition de référence · notation FDI",
@@ -428,7 +432,8 @@
       "front": "Face",
       "top": "Dessus",
       "side": "Profil",
-      "reset": "Réinitialiser"
+      "reset": "Réinitialiser",
+      "menu": "Vue de la caméra"
     },
     "zoomIn": "Zoomer",
     "zoomOut": "Dézoomer",
@@ -439,7 +444,8 @@
       "daylight": "Jour",
       "studioHint": "Éclairage neutre de studio",
       "lampHint": "Lampe de fauteuil chaude et dirigée",
-      "daylightHint": "Lumière du jour, vive"
+      "daylightHint": "Lumière du jour, vive",
+      "current": "Éclairage : {{name}}"
     },
     "orbit": "Orbite",
     "orbitHint": "Tourner lentement autour de la création",
@@ -450,6 +456,8 @@
       "rotate_other": "Tout pivoter de +90°",
       "duplicate_one": "Dupliquer",
       "duplicate_other": "Tout dupliquer",
+      "duplicateMirror_one": "Dupliquer en miroir",
+      "duplicateMirror_other": "Tout dupliquer en miroir",
       "delete_one": "Supprimer",
       "delete_other": "Tout supprimer"
     },
@@ -457,6 +465,7 @@
       "label": "Miroir",
       "horizontal": "Miroir horizontal",
       "vertical": "Miroir vertical",
+      "duplicate": "Dupliquer en miroir",
       "hint": "L’horizontal reflète de part et d’autre du milieu de l’arcade (11 ↔ 21…) ; le vertical retourne autour du centre de la sélection. Les pièces se recalent sur l’émail et ne se chevauchent jamais."
     },
     "inspector": {
@@ -528,6 +537,8 @@
       "addToSelection": "Ajouter à la sélection",
       "pieceActions": "Actions sur une pièce",
       "duplicate": "Dupliquer la sélection",
+      "duplicateMirror": "Dupliquer en miroir",
+      "lasso": "Lasso de sélection",
       "delete": "Supprimer la sélection",
       "deselect": "Désélectionner / annuler",
       "pan": "Déplacer la caméra",
@@ -538,6 +549,8 @@
         "addToSelection": "Maj + clic",
         "pieceActions": "Clic droit",
         "duplicate": "D",
+        "duplicateMirror": "Maj D",
+        "lasso": "L",
         "delete": "Suppr",
         "deselect": "Échap",
         "pan": "Maj + glisser",
@@ -558,6 +571,7 @@
       "color": "Couleur",
       "size": "Taille − / +",
       "duplicate": "Dupliquer",
+      "duplicateMirror": "Dupliquer en miroir",
       "mirrorH": "Refléter horizontalement",
       "mirrorV": "Refléter verticalement",
       "delete": "Supprimer",
@@ -574,6 +588,10 @@
       "duplicated_one": "Pièce dupliquée — faites-la glisser où vous voulez",
       "duplicated_other": "{{count}} pièces dupliquées — essayez le miroir horizontal pour un sourire symétrique",
       "duplicatedPartial": "{{count}} sur {{total}} dupliquées — les autres n’avaient pas de place",
+      "duplicatedMirrored_one": "Pièce dupliquée de l’autre côté de l’arcade",
+      "duplicatedMirrored_other": "{{count}} pièces dupliquées en miroir",
+      "noRoomMirrored": "Pas de place libre de l’autre côté de l’arcade",
+      "lassoEmpty": "Aucune pièce visible dans le lasso — entourez le centre des pièces",
       "removed_one": "Pièce retirée",
       "removed_other": "{{count}} pièces retirées",
       "rotated_one": "Pièce pivotée",

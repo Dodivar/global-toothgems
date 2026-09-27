@@ -26,7 +26,7 @@ import {
   resolveFinishRaw,
   type Footprint,
 } from "./geometry";
-import { ARCH_K, backOut, clamp, easeInOutCubic, seeded, ss01, uid, v3, xForArc } from "./math";
+import { ARCH_K, backOut, clamp, easeInOutCubic, pointInPolygon, seeded, ss01, uid, v3, xForArc, type Point2 } from "./math";
 import { notify } from "./notices";
 import type { DesignIssue, DesignStore, LightPreset, ModelMode } from "./store";
 
@@ -319,6 +319,17 @@ export interface IssueFrame {
 }
 export type IssueFramesListener = (frames: IssueFrame[]) => void;
 
+/** The lasso being drawn, in CSS pixels from the stage's top-left corner; `null` when none is. */
+export type LassoListener = (points: readonly Point2[] | null) => void;
+/** A lasso point is kept once the pointer has moved this far (CSS pixels) from the last one. */
+const LASSO_STEP = 4;
+/** Longest outline kept: enough for any loop drawn by hand, bounded all the same. */
+const LASSO_MAX_POINTS = 1500;
+/** Shorter than this (CSS pixels), the lasso was a tap, not a loop. */
+const LASSO_MIN_LENGTH = 24;
+/** World units a tooth may stand in front of a piece's rim before the piece counts as hidden behind it. */
+const LASSO_OCCLUSION_SLACK = 1;
+
 /** A group turn in progress: every piece's start, so each step is computed afresh and nothing drifts. */
 export interface GroupTurn {
   patchesFor(clockwiseDeg: number): { id: string; patch: Partial<PlacedJewelry> }[];
@@ -420,6 +431,10 @@ export class StudioEngine {
   // floating selection controls (see `onSelectionAnchor`)
   private anchorListener: SelectionAnchorListener | null = null;
   private lastAnchorKey = "";
+
+  // lasso selection (see `onLassoPath`)
+  private lasso: { pointerId: number; originX: number; originY: number; points: Point2[]; additive: boolean } | null = null;
+  private lassoListener: LassoListener | null = null;
 
   constructor(container: HTMLElement, store: DesignStore) {
     this.container = container;
@@ -1153,6 +1168,7 @@ export class StudioEngine {
   /** Drop a placement or a drag in progress: the model under it is about to change. */
   private cancelInteraction() {
     this.cancelPlacing();
+    this.cancelLasso();
     if (this.dragJewel) {
       this.dragJewel = null;
       this.dragLastHit = null;
@@ -1365,6 +1381,39 @@ export class StudioEngine {
         toothId: free.toothId,
         position: v3(free.point.x, free.point.y, free.point.z),
         normal: v3(free.normal.x, free.normal.y, free.normal.z),
+      };
+      copies.push(copy);
+      blockers.push(this.jewelBlocker(copy));
+    }
+    return this.store.insertJewels(copies);
+  }
+  /**
+   * Duplicate each piece straight to its mirror image across the arch midline
+   * (x = 0; 11 ↔ 21…), turned like a reflection: the other half of a
+   * symmetric smile in one step. A copy whose mirrored spot is taken slides to
+   * the nearest free one; the originals stay put. The copies become the
+   * selection, in one undo step.
+   */
+  duplicateMirrored(ids: string[]): number {
+    const srcs = this.store.jewels.filter((j) => ids.includes(j.id));
+    if (!srcs.length) return 0;
+    const blockers = this.blockersFor(new Set()); // every existing piece blocks the copies
+    const copies: PlacedJewelry[] = [];
+    for (const src of srcs) {
+      const mp = new THREE.Vector3(-src.position.x, src.position.y, src.position.z);
+      const mn = new THREE.Vector3(-src.normal.x, src.normal.y, src.normal.z).normalize();
+      const rotation = Math.round((360 - (src.rotation % 360)) % 360);
+      const pose = { ...poseOf(src), rotation };
+      const proposed: SurfaceHit = this.snapToSurface(mp, mn) ?? { toothId: src.toothId, point: mp, normal: mn };
+      const free = this.findFreeSpot(proposed, pose, blockers);
+      if (!free) continue; // no room for this copy
+      const copy: PlacedJewelry = {
+        ...src,
+        id: uid(),
+        toothId: free.toothId,
+        position: v3(free.point.x, free.point.y, free.point.z),
+        normal: v3(free.normal.x, free.normal.y, free.normal.z),
+        rotation,
       };
       copies.push(copy);
       blockers.push(this.jewelBlocker(copy));
@@ -1721,10 +1770,31 @@ export class StudioEngine {
 
   private onPointerDown = (e: PointerEvent) => {
     if (this.placing) return;
+    // One loop at a time: a second finger while drawing must not pinch the camera either.
+    if (this.lasso) {
+      e.stopPropagation();
+      return;
+    }
     if (this.camTween) {
       this.camTween = null;
       this.controls.enabled = true;
       this.controls.update();
+    }
+    if (e.button === 0 && this.store.getSnapshot().lasso) {
+      // Before the piece test: a loop may well start on a piece, and must not drag it.
+      e.stopPropagation();
+      this.controls.enabled = false;
+      this.clearHover();
+      const r = this.container.getBoundingClientRect();
+      this.lasso = {
+        pointerId: e.pointerId,
+        originX: r.left,
+        originY: r.top,
+        points: [{ x: e.clientX - r.left, y: e.clientY - r.top }],
+        additive: e.shiftKey || e.ctrlKey || e.metaKey,
+      };
+      this.emitLasso();
+      return;
     }
     if (e.button !== 0) {
       this.press = null;
@@ -1760,6 +1830,16 @@ export class StudioEngine {
   private onPointerMove = (e: PointerEvent) => {
     if (this.placing) {
       this.updatePlacing(e);
+      return;
+    }
+    if (this.lasso) {
+      const l = this.lasso;
+      if (e.pointerId !== l.pointerId || l.points.length >= LASSO_MAX_POINTS) return;
+      const p = { x: e.clientX - l.originX, y: e.clientY - l.originY };
+      const last = l.points[l.points.length - 1];
+      if (Math.hypot(p.x - last.x, p.y - last.y) < LASSO_STEP) return;
+      l.points.push(p);
+      this.emitLasso();
       return;
     }
     if (!this.press) {
@@ -1826,6 +1906,12 @@ export class StudioEngine {
       this.finishPlacing(e);
       return;
     }
+    if (this.lasso) {
+      if (e.pointerId !== this.lasso.pointerId) return;
+      if (e.type === "pointercancel") this.cancelLasso();
+      else this.finishLasso();
+      return;
+    }
     const quick =
       !!this.press && Math.hypot(e.clientX - this.press.x, e.clientY - this.press.y) < 6 && performance.now() - this.press.t < 450;
     if (this.mode === "drag-jewel" && this.dragJewel) {
@@ -1878,6 +1964,7 @@ export class StudioEngine {
 
   private onBlur = () => {
     if (this.placing) this.cancelPlacing();
+    this.cancelLasso();
   };
 
   private updateHover(e: PointerEvent) {
@@ -1890,6 +1977,13 @@ export class StudioEngine {
     const overCanvas = e.target instanceof Node && this.container.contains(e.target);
     if (!overCanvas) {
       this.clearHover();
+      return;
+    }
+    if (this.store.getSnapshot().lasso) {
+      // The lasso draws anywhere: no piece or tooth reacts under it.
+      this.hoverJewelId = null;
+      this.setHoverTooth(null);
+      this.setCursor("crosshair");
       return;
     }
     this.setNDC(e);
@@ -2100,6 +2194,7 @@ export class StudioEngine {
     return this.autoRotate;
   }
   private onDblClick = (e: MouseEvent) => {
+    if (this.store.getSnapshot().lasso) return; // two quick loops are not a request to focus a tooth
     this.setNDC(e);
     const jHit = this.raycastJewels();
     if (jHit) {
@@ -2351,6 +2446,83 @@ export class StudioEngine {
     fn(frames);
   }
 
+  /* ---------- lasso selection ---------- */
+
+  /**
+   * Follow the lasso being drawn, so the stage can trace it. The listener is
+   * called at once, then as the loop grows, and with `null` when it ends. One
+   * listener at a time; returns the unsubscribe.
+   */
+  onLassoPath(fn: LassoListener): () => void {
+    this.lassoListener = fn;
+    fn(this.lasso ? [...this.lasso.points] : null);
+    return () => {
+      if (this.lassoListener === fn) this.lassoListener = null;
+    };
+  }
+  private emitLasso() {
+    this.lassoListener?.(this.lasso ? [...this.lasso.points] : null);
+  }
+  /** Drop a loop in progress without selecting anything (the tool stays on). */
+  cancelLasso() {
+    if (!this.lasso) return;
+    this.lasso = null;
+    this.emitLasso();
+    this.controls.enabled = !this.camTween;
+  }
+  /**
+   * Select the pieces inside the loop just drawn: those alone, or added to the
+   * selection when Shift / Ctrl was held as the loop began. The tool then
+   * hands back to the usual controls. A loop around nothing says so and keeps
+   * the tool on; a tap does nothing.
+   */
+  private finishLasso() {
+    const l = this.lasso;
+    if (!l) return;
+    this.cancelLasso();
+    let length = 0;
+    for (let i = 1; i < l.points.length; i++) length += Math.hypot(l.points[i].x - l.points[i - 1].x, l.points[i].y - l.points[i - 1].y);
+    if (length < LASSO_MIN_LENGTH) return;
+    const ids = this.piecesInLoop(l.points);
+    if (!ids.length) {
+      notify("lassoEmpty", undefined, "info");
+      return;
+    }
+    const current = this.store.getSnapshot().selectedJewelIds;
+    this.store.selectJewels(l.additive ? [...new Set([...current, ...ids])] : ids);
+    this.store.setLasso(false);
+  }
+  /**
+   * The pieces whose centre, on screen, lies inside the loop — and that the
+   * customer can actually see: a piece hidden behind the arch is left out.
+   */
+  private piecesInLoop(loop: readonly Point2[]): string[] {
+    if (!this.jewelsGroup.visible) return [];
+    const w = this.container.clientWidth,
+      h = this.container.clientHeight;
+    if (!w || !h) return [];
+    this.camera.updateMatrixWorld();
+    const ids: string[] = [];
+    for (const j of this.store.jewels) {
+      const rig = this.jewelRigs.get(j.id);
+      if (!rig) continue;
+      rig.group.getWorldPosition(_p);
+      _sa.copy(_p).project(this.camera);
+      if (_sa.z > 1 || _sa.z < -1) continue; // behind the camera or clipped
+      if (!pointInPolygon({ x: (_sa.x * 0.5 + 0.5) * w, y: (-_sa.y * 0.5 + 0.5) * h }, loop)) continue;
+      // Hidden when enamel stands between the camera and the piece, clearly short of the piece itself.
+      _sb.copy(_p).sub(this.camera.position);
+      const dist = _sb.length();
+      this.raycaster.set(this.camera.position, _sb.normalize());
+      this.raycaster.far = dist;
+      const hit = this.raycaster.intersectObjects(this.toothMeshes, true)[0];
+      this.raycaster.far = Infinity;
+      if (hit && hit.distance < dist - rig.radius * rig.sizeScale - LASSO_OCCLUSION_SLACK) continue;
+      ids.push(j.id);
+    }
+    return ids;
+  }
+
   /* ---------- selection anchor ---------- */
 
   /**
@@ -2556,6 +2728,7 @@ export class StudioEngine {
     this.controls.removeEventListener("start", this.wake);
     this.unsubscribe();
     this.anchorListener = null;
+    this.lassoListener = null;
     this.issueListener = null;
     this.destroyGhost();
     this.controls.dispose();

@@ -9,6 +9,7 @@ import {
   FlipVertical2,
   RotateCcw,
   RotateCw,
+  SquareSplitHorizontal,
   Trash2,
 } from "lucide-react";
 import { ColorWheel } from "./ColorWheel";
@@ -31,6 +32,7 @@ import {
 import {
   alignSelection,
   distributeSelection,
+  duplicateMirroredPieces,
   duplicatePieces,
   mirrorSelection,
   removePieces,
@@ -265,6 +267,10 @@ function MirrorRow() {
           {t("studio.editor.mirror.vertical")}
         </button>
       </div>
+      <button type="button" className={clsx(miniButton, "mt-2 w-full")} onClick={() => duplicateMirroredPieces([...studioStore.selectedJewelIds])}>
+        <SquareSplitHorizontal size={14} aria-hidden="true" />
+        {t("studio.editor.mirror.duplicate")}
+      </button>
       <Hint className="mt-2">{t("studio.editor.mirror.hint")}</Hint>
     </>
   );
@@ -589,7 +595,19 @@ function OverviewPanel({ snap }: { snap: StudioSnapshot }) {
       <span className="text-[10px] font-bold uppercase tracking-[.1em] text-[var(--text-subtle)]">{label}</span>
     </div>
   );
-  const shortcuts = ["undoRedo", "selectAll", "addToSelection", "pieceActions", "duplicate", "delete", "deselect", "pan", "focus"];
+  const shortcuts = [
+    "undoRedo",
+    "selectAll",
+    "addToSelection",
+    "lasso",
+    "pieceActions",
+    "duplicate",
+    "duplicateMirror",
+    "delete",
+    "deselect",
+    "pan",
+    "focus",
+  ];
 
   return (
     <>

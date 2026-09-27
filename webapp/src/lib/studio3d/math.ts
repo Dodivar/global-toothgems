@@ -102,3 +102,24 @@ export function hexToHsv(hex: string): { h: number; s: number; v: number } {
   if (h < 0) h += 360;
   return { h, s: mx === 0 ? 0 : d / mx, v: mx };
 }
+
+/** A point on screen, in CSS pixels. */
+export interface Point2 {
+  x: number;
+  y: number;
+}
+
+/**
+ * Is the point inside the closed polygon (even–odd rule)? The lasso draws an
+ * open path; it is closed here, from its last point back to its first.
+ */
+export function pointInPolygon(p: Point2, poly: readonly Point2[]): boolean {
+  if (poly.length < 3) return false;
+  let inside = false;
+  for (let i = 0, j = poly.length - 1; i < poly.length; j = i++) {
+    const a = poly[i];
+    const b = poly[j];
+    if (a.y > p.y !== b.y > p.y && p.x < ((b.x - a.x) * (p.y - a.y)) / (b.y - a.y) + a.x) inside = !inside;
+  }
+  return inside;
+}
