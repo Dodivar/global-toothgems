@@ -23,7 +23,8 @@ export interface QuickActionPrefs {
 const KEY = "gt-studio3d-quick-actions-v1";
 export const DEFAULT_QUICK_ACTIONS: QuickActionPrefs = {
   enabled: true,
-  actions: ["rotate", "size", "color", "duplicate", "duplicateMirror", "delete"],
+  // "duplicateMirror" is offered but off: with it, a single piece's bar is wider than a phone.
+  actions: ["rotate", "size", "color", "duplicate", "delete"],
   known: [...QUICK_ACTIONS],
 };
 /** What the first version offered, for choices saved before `known` existed. */

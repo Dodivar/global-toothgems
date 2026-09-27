@@ -966,7 +966,9 @@ function StageMenu({
           aria-label={label}
           className="absolute bottom-[calc(100%+10px)] left-1/2 w-max min-w-[176px] max-w-[min(260px,calc(100vw-32px))] -translate-x-1/2 rounded-[var(--radius-md)] border border-white/15 bg-[rgba(22,26,32,.92)] p-1 text-white shadow-[var(--shadow-lg)] backdrop-blur-md motion-safe:animate-[gt-menu-in_var(--duration-fast)_var(--ease-out-soft)_both]"
         >
-          <p className="m-0 px-2.5 pb-1 pt-1.5 text-[10px] font-bold uppercase tracking-[.12em] text-white/60">{label}</p>
+          <p aria-hidden="true" className="m-0 px-2.5 pb-1 pt-1.5 text-[10px] font-bold uppercase tracking-[.12em] text-white/60">
+            {label}
+          </p>
           {items.map((item) => (
             <button
               key={item.key}
