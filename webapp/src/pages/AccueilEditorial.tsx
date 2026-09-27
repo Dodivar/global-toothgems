@@ -691,7 +691,7 @@ export function AccueilEditorial() {
                 size="lg"
                 iconRight={ArrowRight}
                 className="justify-self-start"
-                onClick={() => navigate("/boutique")}
+                onClick={() => navigate("/carte-cadeau")}
               >
                 {t("home.giftCta")}
               </Button>

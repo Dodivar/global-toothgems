@@ -6,7 +6,7 @@ import { EditorViewport } from "../components/studio/editor/EditorViewport";
 import { EditorInspector } from "../components/studio/editor/EditorInspector";
 import { useDocumentTitle } from "../components/legal/hooks";
 import { useToast } from "../lib/toast";
-import { duplicatePieces, removePieces } from "../lib/studio3d/actions";
+import { duplicateMirroredPieces, duplicatePieces, removePieces } from "../lib/studio3d/actions";
 import { getEngine } from "../lib/studio3d/engine";
 import { setNoticeHandler } from "../lib/studio3d/notices";
 import { studioStore, useStudio } from "../lib/studio3d/store";
@@ -67,6 +67,8 @@ export function StudioEditor() {
       const typing = !!el && (["INPUT", "SELECT", "TEXTAREA"].includes(el.tagName) || el.isContentEditable);
       if (e.key === "Escape") {
         getEngine()?.cancelPlacing();
+        getEngine()?.cancelLasso();
+        studioStore.setLasso(false);
         if (typing) el?.blur();
         studioStore.closeContextMenu();
         studioStore.deselect();
@@ -97,7 +99,14 @@ export function StudioEditor() {
         return;
       }
       if (key === "d" && !meta && !e.altKey && studioStore.selectedJewelIds.length) {
-        duplicatePieces([...studioStore.selectedJewelIds]);
+        // Shift + D: the copies land on the mirror side of the arch.
+        if (e.shiftKey) duplicateMirroredPieces([...studioStore.selectedJewelIds]);
+        else duplicatePieces([...studioStore.selectedJewelIds]);
+        return;
+      }
+      if (key === "l" && !meta && !e.altKey) {
+        getEngine()?.cancelLasso();
+        studioStore.setLasso(!studioStore.lasso);
       }
     };
     window.addEventListener("keydown", onKey);

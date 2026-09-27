@@ -8,7 +8,7 @@ import { useSyncExternalStore } from "react";
  * below the stage and the right-click menu is out of reach.
  */
 
-export const QUICK_ACTIONS = ["rotate", "size", "duplicate", "mirrorH", "mirrorV", "delete"] as const;
+export const QUICK_ACTIONS = ["rotate", "size", "color", "duplicate", "duplicateMirror", "mirrorH", "mirrorV", "delete"] as const;
 export type QuickActionId = (typeof QUICK_ACTIONS)[number];
 
 export interface QuickActionPrefs {
@@ -16,19 +16,32 @@ export interface QuickActionPrefs {
   enabled: boolean;
   /** The actions shown, in `QUICK_ACTIONS` order. */
   actions: QuickActionId[];
+  /** The actions the customer could choose from when this was saved: a later one is shown by default. */
+  known: QuickActionId[];
 }
 
 const KEY = "gt-studio3d-quick-actions-v1";
-export const DEFAULT_QUICK_ACTIONS: QuickActionPrefs = { enabled: true, actions: ["rotate", "size", "duplicate", "delete"] };
+export const DEFAULT_QUICK_ACTIONS: QuickActionPrefs = {
+  enabled: true,
+  // "duplicateMirror" is offered but off: with it, a single piece's bar is wider than a phone.
+  actions: ["rotate", "size", "color", "duplicate", "delete"],
+  known: [...QUICK_ACTIONS],
+};
+/** What the first version offered, for choices saved before `known` existed. */
+const FIRST_ACTIONS: readonly QuickActionId[] = ["rotate", "size", "duplicate", "mirrorH", "mirrorV", "delete"];
 
 function load(): QuickActionPrefs {
   try {
     const raw = localStorage.getItem(KEY);
     const data = raw ? (JSON.parse(raw) as Partial<QuickActionPrefs>) : null;
     if (!data || typeof data !== "object" || !Array.isArray(data.actions)) return DEFAULT_QUICK_ACTIONS;
+    const saved = data.actions as unknown[];
+    const known = Array.isArray(data.known) ? (data.known as unknown[]) : FIRST_ACTIONS;
     return {
       enabled: data.enabled !== false,
-      actions: QUICK_ACTIONS.filter((id) => (data.actions as unknown[]).includes(id)),
+      // The customer's own choice, plus any action added since that is on by default.
+      actions: QUICK_ACTIONS.filter((id) => saved.includes(id) || (!known.includes(id) && DEFAULT_QUICK_ACTIONS.actions.includes(id))),
+      known: [...QUICK_ACTIONS],
     };
   } catch {
     return DEFAULT_QUICK_ACTIONS; // blocked or corrupt storage: defaults

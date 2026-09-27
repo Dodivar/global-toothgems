@@ -12,6 +12,7 @@ import { useAuth } from "../lib/auth";
 import { useToast } from "../lib/toast";
 import { LINK_TOKENS, VERIFY_LINK_HOURS, confirmVerification, formatCountdown, sendVerification, useCooldown, verifyLink, verifyOutcomeOf, type ServiceOutcome, type VerifyOutcome } from "../lib/accountSecurity";
 import { useAccountSecurity } from "../lib/securityState";
+import { EmailChangeLanding } from "../components/security/EmailChangeLanding";
 
 type Phase = "verifying" | VerifyOutcome;
 type SendState = "idle" | "sending" | "sent" | "failed";
@@ -35,8 +36,17 @@ const TOKEN_FOR: Record<VerifyOutcome, string> = {
  * a new link), invalid (the link is incomplete or was already used) and
  * already verified (nothing left to do). Only the first two need the member to
  * act, and each state offers exactly one primary action.
+ *
+ * With Supabase, sign-up confirmation lands on `/confirmation-compte`, so a
+ * link arriving here without a demo token is a real email change.
  */
 export function VerifyEmailLanding() {
+  const { realAuth } = useAuth();
+  const [params] = useSearchParams();
+  return realAuth && !params.get("jeton") ? <EmailChangeLanding /> : <MockVerifyEmailLanding />;
+}
+
+function MockVerifyEmailLanding() {
   const { t } = useTranslation();
   const navigate = useNavigate();
   const [params, setParams] = useSearchParams();

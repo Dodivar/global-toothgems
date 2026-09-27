@@ -19,18 +19,32 @@ export function duplicatePieces(ids: string[]) {
   else notify("duplicated", { count: n });
 }
 
+/**
+ * Duplicate the pieces onto their mirror image across the arch midline: the
+ * copies land on the other side, reflected, and become the selection.
+ */
+export function duplicateMirroredPieces(ids: string[]) {
+  if (!ids.length) return;
+  const n = getEngine()?.duplicateMirrored(ids) ?? 0;
+  if (!n) notify("noRoomMirrored", undefined, "warning");
+  else if (n < ids.length) notify("duplicatedPartial", { count: n, total: ids.length }, "info");
+  else notify("duplicatedMirrored", { count: n });
+}
+
 export function removePieces(ids: string[]) {
   if (!ids.length) return;
   studioStore.removeJewels(ids);
   notify("removed", { count: ids.length });
 }
 
-export function rotatePieces(ids: string[]) {
-  const pieces = studioStore.jewels.filter((j) => ids.includes(j.id));
-  if (!pieces.length) return;
-  studioStore.pushHistory();
-  studioStore.applyPatches(pieces.map((j) => ({ id: j.id, patch: { rotation: (j.rotation + 90) % 360 } })));
-  notify("rotated", { count: pieces.length });
+/**
+ * Turn the pieces a fixed angle clockwise on screen, in one undo step. Several
+ * pieces turn as a group around their centre; one piece spins in place.
+ */
+export function rotatePieces(ids: string[], clockwiseDeg = 90) {
+  const session = beginRotation(ids);
+  session.set(clockwiseDeg);
+  session.end();
 }
 
 /**
@@ -62,19 +76,23 @@ export interface RotationSession {
 }
 
 /**
- * Rotate pieces by a free angle, each around its own centre, while the
- * customer turns a handle. Angles are whole degrees; the whole gesture is one
- * undo step, recorded only if something actually turned.
+ * Rotate pieces by a free angle while the customer turns a handle. One piece
+ * spins around its own centre; a selection turns as a group around its
+ * centre, as seen on screen (see the engine's `beginGroupTurn`). Angles are
+ * whole degrees; the whole gesture is one undo step, recorded only if
+ * something actually turned.
  */
 export function beginRotation(ids: string[]): RotationSession {
   const engine = getEngine();
   const start = studioStore.jewels
     .filter((j) => ids.includes(j.id))
     .map((j) => ({ id: j.id, rotation: j.rotation, sign: engine?.screenClockwiseSign(j.id) ?? -1 }));
+  // Without the engine (not mounted), each piece spins in place.
+  const turn = engine?.beginGroupTurn(ids) ?? {
+    patchesFor: (deg: number) => start.map((p) => ({ id: p.id, patch: { rotation: (((p.rotation + p.sign * deg) % 360) + 360) % 360 } })),
+  };
   let current = 0;
   let recorded = false;
-  const apply = (deg: number) =>
-    studioStore.applyPatches(start.map((p) => ({ id: p.id, patch: { rotation: (((p.rotation + p.sign * deg) % 360) + 360) % 360 } })));
   return {
     set(clockwiseDeg) {
       const deg = Math.round(clockwiseDeg);
@@ -84,7 +102,7 @@ export function beginRotation(ids: string[]): RotationSession {
         recorded = true;
       }
       current = deg;
-      apply(deg);
+      studioStore.applyPatches(turn.patchesFor(deg));
     },
     end() {
       if (recorded && current % 360 !== 0) notify("rotated", { count: start.length });
@@ -155,7 +173,6 @@ export async function importModelFile(file: File) {
   notify("import.started", { name: file.name }, "info");
   try {
     const res = await engine.importGLB(file);
-    studioStore.setModelMode(res.mode);
     if (res.mode === "teeth") notify("import.teeth", { count: res.teeth });
     else notify("import.free", undefined, "info");
   } catch (err) {
@@ -165,8 +182,8 @@ export async function importModelFile(file: File) {
   }
 }
 
-export function resetModel() {
-  getEngine()?.resetToStudioModel();
-  studioStore.setModelMode("studio");
-  notify("modelReset");
+/** Back to the Studio's own dentition, from an imported model (or after the default failed to load). */
+export async function resetModel() {
+  const ok = await getEngine()?.loadDefaultModel();
+  if (ok) notify("modelReset");
 }

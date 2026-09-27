@@ -1,10 +1,37 @@
-import { Fragment, useEffect, useLayoutEffect, useRef, useState } from "react";
+import { Fragment, useEffect, useId, useLayoutEffect, useRef, useState } from "react";
 import clsx from "clsx";
-import { Copy, FlipHorizontal2, FlipVertical2, Minus, Orbit, Plus, RotateCw, Trash2, TriangleAlert, X } from "lucide-react";
+import {
+  Aperture,
+  ArrowDownToLine,
+  ArrowRightToLine,
+  Camera,
+  Check,
+  ChevronUp,
+  Copy,
+  FlipHorizontal2,
+  FlipVertical2,
+  LampDesk,
+  LassoSelect,
+  LoaderCircle,
+  Minus,
+  Orbit,
+  Plus,
+  RotateCcw,
+  RotateCw,
+  ScanFace,
+  SquareSplitHorizontal,
+  Sun,
+  Trash2,
+  TriangleAlert,
+  X,
+} from "lucide-react";
 import { useEditorLabels } from "./editorLabels";
-import { FREE_TOOTH, type PlacedJewelry } from "../../../data/studioEditor";
+import { QuickColorPanel } from "./QuickColorPanel";
+import { IssueFrames, IssuePanel } from "./StageIssues";
+import { FINISHES, FREE_TOOTH, isFinishId, type PlacedJewelry } from "../../../data/studioEditor";
 import {
   beginRotation,
+  duplicateMirroredPieces,
   duplicatePieces,
   importModelFile,
   mirrorSelection,
@@ -14,6 +41,7 @@ import {
   type RotationSession,
 } from "../../../lib/studio3d/actions";
 import { getEngine, setEngine, StudioEngine, type SelectionAnchor } from "../../../lib/studio3d/engine";
+import type { Point2 } from "../../../lib/studio3d/math";
 import { useQuickActions, type QuickActionId } from "../../../lib/studio3d/quickActions";
 import { studioStore, type ContextMenuState, type LightPreset, type StudioSnapshot } from "../../../lib/studio3d/store";
 
@@ -143,22 +171,77 @@ export function EditorViewport({ snap }: { snap: StudioSnapshot }) {
           </button>
         </Pill>
       )}
+      {snap.lasso && (
+        <Pill position="top">
+          <span>{t("studio.editor.viewport.lassoActive")}</span>
+          <button
+            type="button"
+            aria-label={t("studio.editor.viewport.cancelLasso")}
+            title={t("studio.editor.viewport.cancelLasso")}
+            onClick={() => {
+              getEngine()?.cancelLasso();
+              studioStore.setLasso(false);
+            }}
+            className="grid h-6 w-6 flex-none place-items-center rounded-full text-[var(--gt-blue-200)] hover:bg-white/15"
+          >
+            <X size={13} aria-hidden="true" />
+          </button>
+        </Pill>
+      )}
+      {engineReady && <LassoTrace />}
       {snap.placingTypeId && !armedName && <Pill position="bottom">{t("studio.editor.viewport.placing")}</Pill>}
-      {snap.jewels.length === 0 && !snap.placingTypeId && !armedName && !failed && (
+      {snap.modelLoading && !failed && (
+        <div
+          role="status"
+          className={clsx(
+            "absolute left-1/2 top-1/2 z-[6] flex -translate-x-1/2 -translate-y-1/2 items-center gap-2.5 rounded-full py-2 pl-3 pr-4 text-[12px] font-semibold",
+            stageGlass,
+          )}
+        >
+          <LoaderCircle size={16} aria-hidden="true" className="motion-safe:animate-spin" />
+          {t("studio.editor.viewport.loading")}
+        </div>
+      )}
+      {snap.jewels.length === 0 && !snap.modelLoading && !snap.placingTypeId && !armedName && !failed && (
         <Pill position="bottom" floating>
           {t("studio.editor.viewport.hint")}
         </Pill>
       )}
 
-      {engineReady && snap.selectedJewelIds.length > 0 && !snap.contextMenu && quick.enabled && quick.actions.length > 0 && (
+      {engineReady && snap.issues.length > 0 && <IssueFrames />}
+      {engineReady && snap.issues.length > 0 && <IssuePanel issues={snap.issues} jewels={snap.jewels} />}
+      {engineReady && snap.selectedJewelIds.length > 0 && !snap.contextMenu && !snap.lasso && quick.enabled && quick.actions.length > 0 && (
         <QuickBar ids={snap.selectedJewelIds} jewels={snap.jewels} actions={quick.actions} />
       )}
       {snap.contextMenu && <ContextMenu cm={snap.contextMenu} snap={snap} />}
-      {!failed && <BottomBar lightPreset={snap.lightPreset} />}
+      {!failed && <BottomBar lightPreset={snap.lightPreset} lasso={snap.lasso} />}
       <p className="pointer-events-none absolute left-4 top-4 z-[3] m-0 hidden text-[9px] font-bold uppercase tracking-[.24em] text-[var(--gt-blue-700)]/70 xl:block">
         {t(`studio.editor.viewport.stage.${snap.modelMode}`)}
       </p>
     </section>
+  );
+}
+
+/** The loop being drawn with the lasso, traced over the stage as the finger or mouse goes. */
+function LassoTrace() {
+  const [points, setPoints] = useState<readonly Point2[] | null>(null);
+  useEffect(() => getEngine()?.onLassoPath(setPoints), []);
+  if (!points || points.length < 2) return null;
+  const d = points.map((p) => `${Math.round(p.x)},${Math.round(p.y)}`).join(" ");
+  return (
+    <svg aria-hidden="true" className="pointer-events-none absolute inset-0 z-[6] h-full w-full overflow-visible">
+      <polygon points={d} fill="rgba(255,255,255,.14)" stroke="none" />
+      <polyline points={d} fill="none" stroke="rgba(22,26,32,.55)" strokeWidth="3.5" strokeLinejoin="round" strokeLinecap="round" />
+      <polyline
+        points={d}
+        fill="none"
+        stroke="white"
+        strokeWidth="1.75"
+        strokeDasharray="6 5"
+        strokeLinejoin="round"
+        strokeLinecap="round"
+      />
+    </svg>
   );
 }
 
@@ -235,10 +318,18 @@ const quickButton = clsx(
 function QuickBar({ ids, jewels, actions }: { ids: string[]; jewels: PlacedJewelry[]; actions: QuickActionId[] }) {
   const { t } = useEditorLabels();
   const barRef = useRef<HTMLDivElement>(null);
+  const panelRef = useRef<HTMLDivElement>(null);
+  const colorButtonRef = useRef<HTMLButtonElement>(null);
   const anchorRef = useRef<SelectionAnchor | null>(null);
   const gestureRef = useRef<Gesture | null>(null);
   const [visible, setVisible] = useState(false);
   const [dial, setDial] = useState<{ turned: number; cx: number; cy: number; r: number } | null>(null);
+  // The colour panel is open for one selection: another selection finds it closed.
+  const selectionKey = ids.join(",");
+  const [colorFor, setColorFor] = useState<string | null>(null);
+  const colorOpen = colorFor === selectionKey;
+  const setColorOpen = (open: boolean) => setColorFor(open ? selectionKey : null);
+  const panelId = useId();
 
   useEffect(() => {
     const engine = getEngine();
@@ -246,21 +337,41 @@ function QuickBar({ ids, jewels, actions }: { ids: string[]; jewels: PlacedJewel
     // Positioned straight on the element: the anchor moves every frame while the camera does.
     return engine.onSelectionAnchor((a) => {
       anchorRef.current = a;
-      const el = barRef.current;
-      if (a && el && !gestureRef.current) placeQuickBar(el, a);
+      if (a) placeBarAndPanel(barRef.current, panelRef.current, a, !!gestureRef.current);
       setVisible(!!a);
     });
   }, []);
 
+  const selected = jewels.filter((j) => ids.includes(j.id));
   // One diameter for the whole selection, or none when the pieces differ.
-  const scales = new Set(jewels.filter((j) => ids.includes(j.id)).map((j) => j.scale));
+  const scales = new Set(selected.map((j) => j.scale));
   const scale = scales.size === 1 ? [...scales][0] : null;
 
-  // The bar's width changes with its buttons and the size readout: stay centred.
+  // The bar's width changes with its buttons and the size readout, the panel comes and goes: stay placed.
   useLayoutEffect(() => {
-    const el = barRef.current;
-    if (el && anchorRef.current && !gestureRef.current) placeQuickBar(el, anchorRef.current);
-  }, [actions, scale]);
+    if (anchorRef.current) placeBarAndPanel(barRef.current, panelRef.current, anchorRef.current, !!gestureRef.current);
+  }, [actions, scale, colorOpen]);
+
+  // The panel grows when the custom colour wheel opens: place it again.
+  useEffect(() => {
+    const panel = panelRef.current;
+    if (!colorOpen || !panel) return;
+    const ro = new ResizeObserver(() => {
+      if (anchorRef.current) placeBarAndPanel(barRef.current, panel, anchorRef.current, !!gestureRef.current);
+    });
+    ro.observe(panel);
+    return () => ro.disconnect();
+  }, [colorOpen]);
+  // A press anywhere else closes the colour panel.
+  useEffect(() => {
+    if (!colorOpen) return;
+    const onDown = (e: PointerEvent) => {
+      const target = e.target as Node;
+      if (!panelRef.current?.contains(target) && !colorButtonRef.current?.contains(target)) setColorFor(null);
+    };
+    window.addEventListener("pointerdown", onDown, true);
+    return () => window.removeEventListener("pointerdown", onDown, true);
+  }, [colorOpen]);
 
   const finish = () => {
     const g = gestureRef.current;
@@ -284,8 +395,10 @@ function QuickBar({ ids, jewels, actions }: { ids: string[]; jewels: PlacedJewel
     if (e.button !== 0 || !a || !stage || gestureRef.current) return;
     e.preventDefault();
     e.currentTarget.setPointerCapture(e.pointerId);
-    const pivotX = stage.left + (a.left + a.right) / 2;
-    const pivotY = stage.top + (a.top + a.bottom) / 2;
+    setColorOpen(false);
+    // The pivot is the selection's centre: a group turns around it, a single piece around itself.
+    const pivotX = stage.left + a.cx;
+    const pivotY = stage.top + a.cy;
     gestureRef.current = {
       session: beginRotation(ids),
       originX: stage.left,
@@ -386,8 +499,33 @@ function QuickBar({ ids, jewels, actions }: { ids: string[]; jewels: PlacedJewel
             {icon(t("studio.editor.viewport.quick.larger", { count }), Plus, () => resizePieces(ids, 1))}
           </div>
         );
+      case "color": {
+        const label = t("studio.editor.viewport.colorLabel", { count });
+        return (
+          <button
+            ref={colorButtonRef}
+            type="button"
+            aria-label={label}
+            title={label}
+            aria-expanded={colorOpen}
+            aria-controls={panelId}
+            aria-haspopup="dialog"
+            onClick={() => setColorOpen(!colorOpen)}
+            className={clsx(quickButton, colorOpen && "bg-white/15")}
+            style={{ width: QUICK_BUTTON, height: QUICK_BUTTON }}
+          >
+            <span
+              aria-hidden="true"
+              className="h-[18px] w-[18px] rounded-full border-2 border-white/85 shadow-[0_0_0_1px_rgba(0,0,0,.25)]"
+              style={{ background: swatchOf(selected) }}
+            />
+          </button>
+        );
+      }
       case "duplicate":
         return icon(t("studio.editor.context.duplicate", { count }), Copy, () => duplicatePieces(ids));
+      case "duplicateMirror":
+        return icon(t("studio.editor.context.duplicateMirror", { count }), SquareSplitHorizontal, () => duplicateMirroredPieces(ids));
       case "mirrorH":
         return icon(t("studio.editor.mirror.horizontal"), FlipHorizontal2, () => mirrorSelection("h"));
       case "mirrorV":
@@ -434,8 +572,71 @@ function QuickBar({ ids, jewels, actions }: { ids: string[]; jewels: PlacedJewel
           </Fragment>
         ))}
       </div>
+      {colorOpen && !turning && actions.includes("color") && (
+        <QuickColorPanel
+          ref={panelRef}
+          id={panelId}
+          selected={selected}
+          hidden={!visible}
+          onClose={() => {
+            setColorOpen(false);
+            colorButtonRef.current?.focus();
+          }}
+        />
+      )}
     </>
   );
+}
+
+/** The bar beside the selection, and the colour panel (a sibling: the bar scrolls and would clip it) beside the bar. */
+function placeBarAndPanel(bar: HTMLElement | null, panel: HTMLElement | null, a: SelectionAnchor, turning: boolean) {
+  if (!bar || turning) return;
+  placeQuickBar(bar, a);
+  if (panel) placeColorPanel(panel, bar, a);
+}
+
+/** The colour a selection shows on its quick-action button: its shared colour, or a mix. */
+function swatchOf(pieces: PlacedJewelry[]): string {
+  const first = pieces[0];
+  if (!first) return "transparent";
+  if (pieces.every((j) => j.customColor && j.customColor === first.customColor)) return first.customColor!;
+  if (pieces.every((j) => !j.customColor && j.color === first.color) && isFinishId(first.color)) return FINISHES[first.color].swatch;
+  return "conic-gradient(#ff9dc0, #4d7cff, #22c47c, #f6c05a, #ff9dc0)";
+}
+
+/**
+ * Beside the bar, on the side away from the selection, inside the stage and
+ * clear of the camera bar. Too tall for above or below, it sits level with the
+ * bar, to its right or left; on a small stage with no room there either, it
+ * covers the quick bar rather than leave the stage.
+ */
+function placeColorPanel(panel: HTMLElement, bar: HTMLElement, a: SelectionAnchor) {
+  const barTop = parseFloat(bar.style.top) || 0;
+  const barCentre = parseFloat(bar.style.left) || 0;
+  const w = panel.offsetWidth;
+  const h = panel.offsetHeight;
+  const maxBottom = a.height - STAGE_BOTTOM_RESERVED;
+  const below = barTop + BAR_HEIGHT + 8;
+  const above = barTop - 8 - h;
+  let y = barTop >= (a.top + a.bottom) / 2 ? below : above;
+  if (y + h > maxBottom) y = above;
+  if (y < STAGE_SIDE_MARGIN) {
+    // Too tall for either side: level with the bar, beside it, when the stage is wide enough.
+    const half = bar.offsetWidth / 2;
+    const right = barCentre + half + 8;
+    const left = barCentre - half - 8 - w;
+    const side = right + w <= a.width - STAGE_SIDE_MARGIN ? right : left >= STAGE_SIDE_MARGIN ? left : null;
+    if (side !== null) {
+      panel.style.left = `${Math.round(side)}px`;
+      panel.style.top = `${Math.round(Math.max(STAGE_SIDE_MARGIN, Math.min(barTop + BAR_HEIGHT / 2 - h / 2, maxBottom - h)))}px`;
+      return;
+    }
+    y = Math.min(below, maxBottom - h);
+  }
+  y = Math.max(STAGE_SIDE_MARGIN, y);
+  const x = Math.min(Math.max(barCentre - w / 2, STAGE_SIDE_MARGIN), a.width - STAGE_SIDE_MARGIN - w);
+  panel.style.left = `${Math.round(x)}px`;
+  panel.style.top = `${Math.round(y)}px`;
 }
 
 /** Centre the bar under the selection, above it when the camera bar is in the way, always inside the stage. */
@@ -508,7 +709,7 @@ function ContextMenu({ cm, snap }: { cm: ContextMenuState; snap: StudioSnapshot 
       aria-label={heading}
       onKeyDown={onKeyDown}
       onContextMenu={(e) => e.preventDefault()}
-      style={{ left: `min(${cm.x}px, calc(100% - 228px))`, top: `min(${cm.y}px, calc(100% - 262px))` }}
+      style={{ left: `min(${cm.x}px, calc(100% - 228px))`, top: `min(${cm.y}px, calc(100% - 298px))` }}
       className="absolute z-40 w-[216px] rounded-[var(--radius-md)] border border-[var(--border-subtle)] bg-[var(--surface-card)] p-1.5 shadow-[var(--shadow-lg)] motion-safe:animate-[gt-menu-in_var(--duration-fast)_var(--ease-out-soft)_both]"
     >
       <p className="m-0 mb-1 truncate border-b border-[var(--border-subtle)] px-3 pb-2 pt-1.5 text-[10.5px] font-extrabold uppercase tracking-[.1em] text-[var(--text-subtle)]">
@@ -516,6 +717,7 @@ function ContextMenu({ cm, snap }: { cm: ContextMenuState; snap: StudioSnapshot 
       </p>
       {item(t("studio.editor.context.rotate", { count }), RotateCw, () => rotatePieces(ids))}
       {item(t("studio.editor.context.duplicate", { count }), Copy, () => duplicatePieces(ids))}
+      {item(t("studio.editor.context.duplicateMirror", { count }), SquareSplitHorizontal, () => duplicateMirroredPieces(ids))}
       {item(t("studio.editor.mirror.horizontal"), FlipHorizontal2, () => mirrorSelection("h"))}
       {item(t("studio.editor.mirror.vertical"), FlipVertical2, () => mirrorSelection("v"))}
       <span role="none" className="mx-2 my-1 block h-px bg-[var(--border-subtle)]" />
@@ -524,10 +726,29 @@ function ContextMenu({ cm, snap }: { cm: ContextMenuState; snap: StudioSnapshot 
   );
 }
 
-/** Camera, zoom, lighting and orbit controls, floating at the foot of the stage. */
-function BottomBar({ lightPreset }: { lightPreset: LightPreset }) {
+/** Lighting presets, each with the icon that stands for it on the camera bar. */
+const LIGHTS: { id: LightPreset; Icon: typeof Copy }[] = [
+  { id: "studio", Icon: Aperture },
+  { id: "lamp", Icon: LampDesk },
+  { id: "daylight", Icon: Sun },
+];
+const VIEWS: { id: "front" | "top" | "side" | "reset"; Icon: typeof Copy }[] = [
+  { id: "front", Icon: ScanFace },
+  { id: "top", Icon: ArrowDownToLine },
+  { id: "side", Icon: ArrowRightToLine },
+  { id: "reset", Icon: RotateCcw },
+];
+
+/**
+ * Camera views, zoom, lighting, orbit and the lasso, floating at the foot of
+ * the stage. The views and the lights fold into menus that open upwards, each
+ * shown by an icon (the chosen light's own), so the bar stays short enough
+ * for a phone.
+ */
+function BottomBar({ lightPreset, lasso }: { lightPreset: LightPreset; lasso: boolean }) {
   const { t } = useEditorLabels();
   const [orbit, setOrbit] = useState(false);
+  const [menu, setMenu] = useState<"views" | "lights" | null>(null);
   const view = (v: "front" | "top" | "side" | "reset") => {
     if (v === "reset") setOrbit(false);
     getEngine()?.setView(v);
@@ -536,22 +757,37 @@ function BottomBar({ lightPreset }: { lightPreset: LightPreset }) {
     getEngine()?.setLightPreset(p);
     studioStore.setLightPreset(p);
   };
+  const toggle = (id: "views" | "lights") => (open: boolean) => setMenu((cur) => (open ? id : cur === id ? null : cur));
   const sep = <span aria-hidden="true" className="mx-0.5 h-4 w-px flex-none bg-white/20" />;
+  const LightIcon = LIGHTS.find((l) => l.id === lightPreset)?.Icon ?? Aperture;
+  const lightName = t(`studio.editor.lights.${lightPreset}`);
 
   return (
     <div
       className={clsx(
-        "gt-editor-scroll-x absolute bottom-4 left-1/2 z-[6] flex max-w-[calc(100%-24px)] -translate-x-1/2 items-center gap-0.5 overflow-x-auto rounded-full p-1",
+        "absolute bottom-4 left-1/2 flex max-w-[calc(100%-24px)] -translate-x-1/2 items-center gap-0.5 rounded-full p-1",
         stageGlass,
+        // An open menu rises above the quick bar and the issue list.
+        menu ? "z-[12]" : "z-[6]",
       )}
     >
-      <div role="group" aria-label={t("studio.editor.views.label")} className="flex items-center gap-0.5">
-        {(["front", "top", "side", "reset"] as const).map((v) => (
-          <button key={v} type="button" className={stageButton} onClick={() => view(v)}>
-            {t(`studio.editor.views.${v}`)}
-          </button>
-        ))}
-      </div>
+      <StageMenu
+        label={t("studio.editor.views.menu")}
+        open={menu === "views"}
+        onOpenChange={toggle("views")}
+        trigger={
+          <>
+            <Camera size={14} aria-hidden="true" />
+            <span className="max-sm:sr-only">{t("studio.editor.views.label")}</span>
+          </>
+        }
+        items={VIEWS.map(({ id, Icon }) => ({
+          key: id,
+          icon: <Icon size={14} />,
+          label: t(`studio.editor.views.${id}`),
+          onSelect: () => view(id),
+        }))}
+      />
       {sep}
       <button
         type="button"
@@ -572,25 +808,31 @@ function BottomBar({ lightPreset }: { lightPreset: LightPreset }) {
         <Plus size={14} aria-hidden="true" />
       </button>
       {sep}
-      <div role="radiogroup" aria-label={t("studio.editor.lights.label")} className="flex items-center gap-0.5">
-        {(["studio", "lamp", "daylight"] as const).map((p) => (
-          <button
-            key={p}
-            type="button"
-            role="radio"
-            aria-checked={lightPreset === p}
-            title={t(`studio.editor.lights.${p}Hint`)}
-            onClick={() => light(p)}
-            className={clsx(stageButton, lightPreset === p && "bg-white text-[var(--gt-ink-900)] hover:bg-white")}
-          >
-            {t(`studio.editor.lights.${p}`)}
-          </button>
-        ))}
-      </div>
+      <StageMenu
+        label={t("studio.editor.lights.label")}
+        triggerLabel={t("studio.editor.lights.current", { name: lightName })}
+        open={menu === "lights"}
+        onOpenChange={toggle("lights")}
+        trigger={
+          <>
+            <LightIcon size={14} aria-hidden="true" />
+            <span className="max-sm:sr-only">{lightName}</span>
+          </>
+        }
+        items={LIGHTS.map(({ id, Icon }) => ({
+          key: id,
+          icon: <Icon size={14} />,
+          label: t(`studio.editor.lights.${id}`),
+          sub: t(`studio.editor.lights.${id}Hint`),
+          checked: lightPreset === id,
+          onSelect: () => light(id),
+        }))}
+      />
       {sep}
       <button
         type="button"
         aria-pressed={orbit}
+        aria-label={t("studio.editor.orbit")}
         title={t("studio.editor.orbitHint")}
         onClick={() => {
           getEngine()?.setAutoRotate(!orbit);
@@ -599,8 +841,162 @@ function BottomBar({ lightPreset }: { lightPreset: LightPreset }) {
         className={clsx(stageButton, orbit && "bg-white text-[var(--gt-ink-900)] hover:bg-white")}
       >
         <Orbit size={14} aria-hidden="true" />
-        {t("studio.editor.orbit")}
+        <span aria-hidden="true" className="max-sm:hidden">
+          {t("studio.editor.orbit")}
+        </span>
       </button>
+      <button
+        type="button"
+        aria-pressed={lasso}
+        aria-label={t("studio.editor.viewport.lasso")}
+        title={t("studio.editor.viewport.lassoHint")}
+        onClick={() => {
+          getEngine()?.cancelLasso();
+          studioStore.setLasso(!lasso);
+        }}
+        className={clsx(stageButton, lasso && "bg-white text-[var(--gt-ink-900)] hover:bg-white")}
+      >
+        <LassoSelect size={14} aria-hidden="true" />
+        <span aria-hidden="true" className="max-sm:hidden">
+          {t("studio.editor.viewport.lasso")}
+        </span>
+      </button>
+    </div>
+  );
+}
+
+interface StageMenuItem {
+  key: string;
+  icon: React.ReactNode;
+  label: string;
+  sub?: string;
+  /** Set on a choice menu (the lights): the item is a radio, checked or not. */
+  checked?: boolean;
+  onSelect: () => void;
+}
+
+/**
+ * A button on the camera bar opening a short menu upwards, in the stage's
+ * glass. Arrow keys move through the items, Escape closes it and gives focus
+ * back to the button, a press elsewhere dismisses it.
+ */
+function StageMenu({
+  label,
+  triggerLabel,
+  trigger,
+  items,
+  open,
+  onOpenChange,
+}: {
+  label: string;
+  /** The button's accessible name, when it says more than the menu's (the chosen light). */
+  triggerLabel?: string;
+  trigger: React.ReactNode;
+  items: StageMenuItem[];
+  open: boolean;
+  onOpenChange: (open: boolean) => void;
+}) {
+  const wrapRef = useRef<HTMLDivElement>(null);
+  const triggerRef = useRef<HTMLButtonElement>(null);
+  const menuRef = useRef<HTMLDivElement>(null);
+  const menuId = useId();
+  // The latest callback, so the effect below runs when the menu opens, not on every render.
+  const onOpenChangeRef = useRef(onOpenChange);
+  useLayoutEffect(() => {
+    onOpenChangeRef.current = onOpenChange;
+  });
+
+  useEffect(() => {
+    if (!open) return;
+    const onDown = (e: PointerEvent) => {
+      if (!wrapRef.current?.contains(e.target as Node)) onOpenChangeRef.current(false);
+    };
+    window.addEventListener("pointerdown", onDown, true);
+    // Keyboard users land on the chosen item, or the first.
+    const list = menuRef.current?.querySelectorAll<HTMLElement>("[role^='menuitem']");
+    const checked = menuRef.current?.querySelector<HTMLElement>("[aria-checked='true']");
+    (checked ?? list?.[0])?.focus({ preventScroll: true });
+    return () => window.removeEventListener("pointerdown", onDown, true);
+  }, [open]);
+
+  const close = (refocus: boolean) => {
+    onOpenChange(false);
+    if (refocus) triggerRef.current?.focus();
+  };
+  const onKeyDown = (e: React.KeyboardEvent) => {
+    if (e.key === "Escape") {
+      // Marked handled, so the editor's own Escape (deselect) leaves the selection alone.
+      e.preventDefault();
+      close(true);
+      return;
+    }
+    if (e.key === "Tab") {
+      close(false);
+      return;
+    }
+    const list = Array.from(menuRef.current?.querySelectorAll<HTMLElement>("[role^='menuitem']") ?? []);
+    const i = list.indexOf(document.activeElement as HTMLElement);
+    const next = { ArrowDown: i + 1, ArrowUp: i - 1 + list.length, Home: 0, End: list.length - 1 }[e.key];
+    if (next === undefined || !list.length) return;
+    e.preventDefault();
+    list[next % list.length]?.focus();
+  };
+
+  return (
+    <div ref={wrapRef} className="relative flex" onKeyDown={open ? onKeyDown : undefined}>
+      <button
+        ref={triggerRef}
+        type="button"
+        aria-haspopup="menu"
+        aria-expanded={open}
+        aria-controls={open ? menuId : undefined}
+        aria-label={triggerLabel}
+        title={triggerLabel ?? label}
+        onClick={() => onOpenChange(!open)}
+        className={clsx(stageButton, open && "bg-white/15")}
+      >
+        {trigger}
+        <ChevronUp size={12} aria-hidden="true" className={clsx("transition-transform", !open && "rotate-180")} />
+      </button>
+      {open && (
+        <div
+          ref={menuRef}
+          id={menuId}
+          role="menu"
+          aria-label={label}
+          className="absolute bottom-[calc(100%+10px)] left-1/2 w-max min-w-[176px] max-w-[min(260px,calc(100vw-32px))] -translate-x-1/2 rounded-[var(--radius-md)] border border-white/15 bg-[rgba(22,26,32,.92)] p-1 text-white shadow-[var(--shadow-lg)] backdrop-blur-md motion-safe:animate-[gt-menu-in_var(--duration-fast)_var(--ease-out-soft)_both]"
+        >
+          <p aria-hidden="true" className="m-0 px-2.5 pb-1 pt-1.5 text-[10px] font-bold uppercase tracking-[.12em] text-white/60">
+            {label}
+          </p>
+          {items.map((item) => (
+            <button
+              key={item.key}
+              type="button"
+              role={item.checked === undefined ? "menuitem" : "menuitemradio"}
+              aria-checked={item.checked}
+              onClick={() => {
+                item.onSelect();
+                close(true);
+              }}
+              className={clsx(
+                "flex w-full items-center gap-2.5 rounded-[var(--radius-sm)] px-2.5 py-2 text-left text-[12px] font-semibold transition-colors",
+                "hover:bg-white/15 focus-visible:outline focus-visible:outline-2 focus-visible:-outline-offset-2 focus-visible:outline-white",
+                item.checked && "bg-white/10",
+              )}
+            >
+              <span aria-hidden="true" className="flex-none text-[var(--gt-blue-200)]">
+                {item.icon}
+              </span>
+              <span className="grid min-w-0 flex-1">
+                <span className="truncate">{item.label}</span>
+                {item.sub && <span className="text-[11px] font-medium leading-snug text-white/65">{item.sub}</span>}
+              </span>
+              {item.checked && <Check size={14} aria-hidden="true" className="flex-none" />}
+            </button>
+          ))}
+        </div>
+      )}
     </div>
   );
 }

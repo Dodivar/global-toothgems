@@ -8,8 +8,7 @@ import { photo } from "../../lib/images";
 /**
  * The shared setting of the authentication pages — `/connexion`, `/inscription`
  * and the account-confirmation landing — in the jewellery sense: the card is the
- * stone, everything around it is the mount. The card wears a pastel-blue crown
- * headed by the facet band cut from the catalogue's own gem glyphs; the page
+ * stone, everything around it is the mount. The card wears a pastel-blue crown; the page
  * sits on a flat pastel field with one oversized brand cut drawn into it; and
  * the editorial column holds a rounded photograph with its own offset outline.
  *
@@ -72,34 +71,7 @@ export function FacetField() {
 }
 
 /**
- * The crown facets, as a band across the top of the card. Twelve triangles on a
- * baseline, stretched to the card width — the same geometry the gem glyphs draw
- * at 32px, which is what ties the card to the product marks.
- */
-function FacetBand() {
-  return (
-    <svg
-      viewBox="0 0 240 16"
-      preserveAspectRatio="none"
-      fill="none"
-      aria-hidden="true"
-      focusable="false"
-      className="absolute inset-x-0 top-0 h-[16px] w-full text-[var(--gt-blue-600)]"
-    >
-      <path
-        d="M0 16L20 0L40 16L60 0L80 16L100 0L120 16L140 0L160 16L180 0L200 16L220 0L240 16"
-        stroke="currentColor"
-        strokeWidth={1}
-        vectorEffect="non-scaling-stroke"
-        opacity={0.5}
-      />
-      <path d="M0 15.5H240" stroke="currentColor" strokeWidth={1} vectorEffect="non-scaling-stroke" opacity={0.3} />
-    </svg>
-  );
-}
-
-/**
- * The card shell: crown, facet band, decorative initial, then whatever it holds.
+ * The card shell: crown, decorative initial, then whatever it holds.
  *
  * `overflow-clip` rather than `overflow-hidden`: clipping keeps the rounded
  * corners without making the card a scroll container, so a sticky action bar
@@ -111,8 +83,7 @@ export function AuthCard({ children, crown, label }: { children: ReactNode; crow
       aria-label={label}
       className="min-w-0 overflow-clip rounded-[var(--radius-xl)] border border-[var(--border-subtle)] bg-[var(--surface-card)] shadow-[var(--shadow-lg)]"
     >
-      <div className="relative overflow-hidden bg-[var(--gt-blue-200)] px-[clamp(20px,4vw,32px)] pb-5 pt-7">
-        <FacetBand />
+      <div className="relative overflow-hidden bg-[var(--gt-blue-200)] px-[clamp(20px,4vw,32px)] py-6">
         {/* The one decorative-script moment on the page: a large initial, the
             use the design system explicitly sanctions. Hidden from readers. */}
         <span
