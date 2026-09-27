@@ -12,6 +12,7 @@ import { useAuth } from "../../lib/auth";
 import { useToast } from "../../lib/toast";
 import { LINK_TOKENS, SecurityServiceError, VERIFY_LINK_HOURS, formatCountdown, isEmail, requestEmailChange, sendVerification, useCooldown, verifyLink, type ServiceOutcome } from "../../lib/accountSecurity";
 import { useAccountSecurity } from "../../lib/securityState";
+import { readEmailChange, requestOwnEmailChange, resendEmailChangeLink } from "../../lib/accountCredentials";
 
 type Field = "email" | "confirm" | "password";
 
@@ -29,10 +30,15 @@ const OPEN_ID = "security-email-open";
  *
  * The current password is asked for because an email change is how an account
  * is taken over: an unattended open session must not be enough.
+ *
+ * With Supabase the pending address is Supabase's own (`new_email`), so it
+ * survives a reload, and the real confirmation emails replace the mock inbox.
+ * There is no cancel: Supabase offers no way to withdraw a sent link, and
+ * saying "cancelled" while the link still works would be false.
  */
 export function ChangeEmailCard({ outcome }: { outcome: ServiceOutcome }) {
   const { t } = useTranslation();
-  const { email: currentEmail } = useAuth();
+  const { email: currentEmail, realAuth } = useAuth();
   const { pendingEmail, startEmailChange, cancelEmailChange, resendEmailChange } = useAccountSecurity();
   const { showToast } = useToast();
 
@@ -51,6 +57,20 @@ export function ChangeEmailCard({ outcome }: { outcome: ServiceOutcome }) {
   const confirmRef = useRef<HTMLInputElement>(null);
   const passwordRef = useRef<HTMLInputElement>(null);
   const focusField = (field: Field) => ({ email: emailRef, confirm: confirmRef, password: passwordRef })[field].current?.focus();
+
+  useEffect(() => {
+    if (!realAuth) return;
+    let active = true;
+    // Supabase is the source; the shared state mirrors it so the overview agrees.
+    void readEmailChange().then((state) => {
+      if (!active || !state) return;
+      if (state.pending) startEmailChange(state.pending);
+      else cancelEmailChange();
+    });
+    return () => {
+      active = false;
+    };
+  }, [realAuth, startEmailChange, cancelEmailChange]);
 
   // Focus moves into the form when it opens, and back to its trigger when it closes.
   useEffect(() => {
@@ -108,9 +128,15 @@ export function ChangeEmailCard({ outcome }: { outcome: ServiceOutcome }) {
     setSaving(true);
     setServerError(false);
     try {
-      await requestEmailChange(values.email, values.password, outcome);
-      setSaving(false);
+      if (realAuth) {
+        const result = await requestOwnEmailChange(values.email, values.password);
+        if (result === "wrongPassword" || result === "emailTaken") throw new SecurityServiceError(result);
+        if (result !== "sent") throw new SecurityServiceError("server");
+      } else {
+        await requestEmailChange(values.email, values.password, outcome);
+      }
       startEmailChange(values.email);
+      setSaving(false);
       cooldown.start();
       setJustSent(true);
       setOpen(false);
@@ -139,7 +165,11 @@ export function ChangeEmailCard({ outcome }: { outcome: ServiceOutcome }) {
     setResending(true);
     setResendFailed(false);
     try {
-      await sendVerification(outcome);
+      if (realAuth) {
+        if ((await resendEmailChangeLink(pendingEmail!)) !== "sent") throw new SecurityServiceError("server");
+      } else {
+        await sendVerification(outcome);
+      }
       resendEmailChange();
       cooldown.start();
       showToast(t("security.email.resentTitle"), t("security.email.resentBody", { email: pendingEmail }));
@@ -192,8 +222,16 @@ export function ChangeEmailCard({ outcome }: { outcome: ServiceOutcome }) {
       {pendingEmail ? (
         <div className="grid gap-4">
           <div role="status" aria-live="polite">
-            <Notice tone={justSent ? "success" : "info"} title={t(justSent ? "security.email.sentTitle" : "security.email.pendingTitle")}>
-              <p>{t("security.email.sentBody", { email: pendingEmail, current: currentEmail, hours: VERIFY_LINK_HOURS })}</p>
+            <Notice
+              tone={justSent ? "success" : "info"}
+              title={t(justSent ? (realAuth ? "security.email.sentTitleBoth" : "security.email.sentTitle") : "security.email.pendingTitle")}
+            >
+              <p>
+                {realAuth
+                  ? t("security.email.sentBodyBoth", { email: pendingEmail, current: currentEmail })
+                  : t("security.email.sentBody", { email: pendingEmail, current: currentEmail, hours: VERIFY_LINK_HOURS })}
+              </p>
+              {realAuth && <span className="mt-2 block text-[var(--text-muted)]">{t("security.email.cancelHint")}</span>}
             </Notice>
           </div>
           {resendFailed && (
@@ -213,10 +251,13 @@ export function ChangeEmailCard({ outcome }: { outcome: ServiceOutcome }) {
             >
               {resending ? t("security.resending") : locked ? t("security.resendIn", { time: formatCountdown(cooldown.left) }) : t("security.resend")}
             </Button>
-            <Button variant="ghost" size="sm" iconLeft={X} onClick={cancel} disabled={resending}>
-              {t("security.email.cancelChange")}
-            </Button>
+            {!realAuth && (
+              <Button variant="ghost" size="sm" iconLeft={X} onClick={cancel} disabled={resending}>
+                {t("security.email.cancelChange")}
+              </Button>
+            )}
           </div>
+          {!realAuth && (
           <MockInbox
             id="gt-email-change-inbox"
             to={pendingEmail}
@@ -227,6 +268,7 @@ export function ChangeEmailCard({ outcome }: { outcome: ServiceOutcome }) {
           >
             <p>{t("security.email.mailBody", { email: pendingEmail })}</p>
           </MockInbox>
+          )}
         </div>
       ) : open ? (
         <form noValidate onSubmit={submit} className="grid gap-4 border-t border-[var(--border-subtle)] pt-5">

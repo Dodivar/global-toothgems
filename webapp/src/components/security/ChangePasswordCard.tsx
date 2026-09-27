@@ -12,7 +12,7 @@ import { useToast } from "../../lib/toast";
 import { formatDate } from "../../lib/format";
 import { FORGOT_PATH, SecurityServiceError, changePassword, newPasswordError, type ServiceOutcome } from "../../lib/accountSecurity";
 import { useAccountSecurity } from "../../lib/securityState";
-import { changeOwnPassword } from "../../lib/passwordRecovery";
+import { changeOwnPassword } from "../../lib/accountCredentials";
 
 type Field = "current" | "next" | "confirm";
 

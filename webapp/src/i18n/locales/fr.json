@@ -3739,7 +3739,12 @@
       "mailBody": "Voici votre nouveau lien de vérification. Sélectionnez le bouton ci-dessous pour confirmer votre adresse.",
       "mailCta": "Vérifier mon e-mail",
       "mailHint": "Ce lien est valable {{hours}} heures.",
-      "demoBody": "Choisissez l’effet du lien de vérification. Les états « expiré » et « invalide » permettent de demander un nouvel e-mail."
+      "demoBody": "Choisissez l’effet du lien de vérification. Les états « expiré » et « invalide » permettent de demander un nouvel e-mail.",
+      "changeDoneTitle": "Adresse e-mail modifiée",
+      "changeHalfTitle": "Plus qu’une confirmation",
+      "changeHalfBody": "Ce lien est bien validé. Ouvrez maintenant celui envoyé à votre autre adresse pour finaliser le changement.",
+      "changeRetryBody": "Rien n’a été modifié. Relancez le changement d’adresse depuis Sécurité et confidentialité pour recevoir un nouveau lien.",
+      "backToSecurity": "Aller à Sécurité et confidentialité"
     },
     "page": {
       "title": "Sécurité et confidentialité",
@@ -3751,7 +3756,8 @@
       "demoPasswordBody": "le mot de passe du compte de démonstration. Toute autre valeur est considérée comme incorrecte.",
       "demoExport": "Demande de données",
       "demoFinishExport": "Terminer le traitement",
-      "demoExpireExport": "Faire expirer le téléchargement"
+      "demoExpireExport": "Faire expirer le téléchargement",
+      "demoBodyReal": "Le changement d’e-mail et de mot de passe agit sur votre vrai compte. Seuls l’export des données et la suppression du compte restent simulés : choisissez leur réponse et utilisez les raccourcis ci-dessous."
     },
     "overview": {
       "okTitle": "Votre compte est bien protégé",
@@ -3806,7 +3812,10 @@
       "cancelledBody": "Votre adresse e-mail reste la même.",
       "mailSubject": "Confirmez votre nouvelle adresse e-mail",
       "mailBody": "Vous avez demandé à utiliser {{email}} pour votre compte Global Toothgems. Confirmez-la pour finaliser le changement.",
-      "mailCta": "Confirmer cette adresse"
+      "mailCta": "Confirmer cette adresse",
+      "sentTitleBoth": "Consultez vos boîtes mail",
+      "sentBodyBoth": "Nous avons envoyé un lien de confirmation à {{email}}, et par sécurité un autre à {{current}}. Ouvrez les deux pour finaliser le changement. D’ici là, continuez à vous connecter avec {{current}}.",
+      "cancelHint": "Vous ne souhaitez plus changer d’adresse ? N’ouvrez pas ces liens : votre adresse actuelle reste inchangée."
     },
     "password": {
       "title": "Mot de passe",

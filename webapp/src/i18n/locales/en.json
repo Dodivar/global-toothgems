@@ -3739,7 +3739,12 @@
       "mailBody": "Here’s your new verification link. Click below to confirm your address.",
       "mailCta": "Verify my email",
       "mailHint": "This link is valid for {{hours}} hours.",
-      "demoBody": "Choose what the verification link does. The expired and invalid states let you request a new email."
+      "demoBody": "Choose what the verification link does. The expired and invalid states let you request a new email.",
+      "changeDoneTitle": "Email address changed",
+      "changeHalfTitle": "One more confirmation",
+      "changeHalfBody": "This link is confirmed. Now open the one sent to your other address to finish the change.",
+      "changeRetryBody": "Nothing was changed. Start the address change again from Security & privacy to get a new link.",
+      "backToSecurity": "Go to Security & privacy"
     },
     "page": {
       "title": "Security & privacy",
@@ -3751,7 +3756,8 @@
       "demoPasswordBody": "the demo account’s password. Anything else is treated as incorrect.",
       "demoExport": "Data request",
       "demoFinishExport": "Finish processing now",
-      "demoExpireExport": "Expire the download"
+      "demoExpireExport": "Expire the download",
+      "demoBodyReal": "Email and password changes act on your real account. Only the data export and account deletion are still simulated: pick their response and use the shortcuts below."
     },
     "overview": {
       "okTitle": "Your account is well protected",
@@ -3806,7 +3812,10 @@
       "cancelledBody": "Your email address stays the same.",
       "mailSubject": "Confirm your new email address",
       "mailBody": "You asked to use {{email}} for your Global Toothgems account. Confirm it to finish the change.",
-      "mailCta": "Confirm this address"
+      "mailCta": "Confirm this address",
+      "sentTitleBoth": "Check your inboxes",
+      "sentBodyBoth": "We sent a confirmation link to {{email}} and, for security, another one to {{current}}. Open both to finish the change. Until then, keep signing in with {{current}}.",
+      "cancelHint": "Changed your mind? Don’t open these links: your current address stays as it is."
     },
     "password": {
       "title": "Password",
