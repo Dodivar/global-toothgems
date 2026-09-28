@@ -727,6 +727,12 @@
   .gt-admin-field[aria-invalid="true"] {
     border-color: var(--gt-red-500);
   }
+  /* A filter narrowing the list: set apart from the resting ones at a glance. */
+  select.gt-admin-field[data-active="true"] {
+    border-color: var(--gt-ink-900);
+    background: var(--gt-blue-50);
+    font-weight: 600;
+  }
   .gt-admin-field[aria-invalid="true"]:focus-visible {
     box-shadow: 0 0 0 3px var(--status-error-bg);
   }

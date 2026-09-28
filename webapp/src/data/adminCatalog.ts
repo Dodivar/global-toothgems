@@ -56,12 +56,13 @@ export interface GemOptionVariant {
 }
 
 /**
- * Pack (20/50/100) × stone size (SS) options of a gem (`lib/gemOptions.ts`).
+ * Pack (any number of stones, set per product) × stone size (SS) options of
+ * a gem (`lib/gemOptions.ts`).
  *
  * `enabled` off with the product still carrying options means "remove them
  * on save". `variants` keeps every combination ever loaded or typed, so
- * unticking a pack then ticking it again gives its price and stock back; only
- * the combinations of the ticked packs × sizes are saved.
+ * removing a pack then adding it again gives its price and stock back; only
+ * the combinations of the listed packs × ticked sizes are saved.
  */
 /**
  * Stock of one sellable variant, as the product list shows it under its
