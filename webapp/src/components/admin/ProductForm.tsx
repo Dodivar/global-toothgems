@@ -24,7 +24,7 @@ import {
   type ProductType,
 } from "../../data/adminCatalog";
 import type { Localized } from "../../data/types";
-import { comboSkuSuffix, longestSkuSuffix } from "../../lib/gemOptions";
+import { comboSkuSuffix, isValidPack, longestSkuSuffix, PACK_MAX, PACK_MIN } from "../../lib/gemOptions";
 
 /**
  * Create and edit a product.
@@ -644,6 +644,8 @@ function validate(
     const suffix = longestSkuSuffix(offered);
     if (offered.length === 0) {
       errors.options = t("admin.form.errors.optionsEmpty");
+    } else if (!draft.gemOptions.packs.every(isValidPack)) {
+      errors.options = t("admin.form.errors.optionsPack", { min: PACK_MIN, max: PACK_MAX });
     } else if (sku.length + suffix > SKU_MAX_LENGTH) {
       const longest = offered.map(comboSkuSuffix).sort((a, b) => b.length - a.length)[0];
       errors.options = t("admin.form.errors.optionsSkuTooLong", { max: SKU_MAX_LENGTH - suffix, suffix: longest });

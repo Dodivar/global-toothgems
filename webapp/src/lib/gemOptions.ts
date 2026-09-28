@@ -8,13 +8,29 @@ import type { Localized } from "../data/types";
  * `…_gem_pack_stone_size_options`). Either key may be absent. Values are
  * integers so SS6 sorts before SS10.
  *
+ * Packs are set per product: any whole number of stones within the bounds
+ * below (migration `…_gem_free_pack_sizes`).
+ *
  * Shared by the back office (which edits the options) and the storefront
  * (which lets the customer pick one), so both read the same rules.
  */
 
-/** Stones per pack. Fixed list: the database refuses any other value. */
-export const GEM_PACKS = [20, 50, 100] as const;
-export type GemPack = (typeof GEM_PACKS)[number];
+/** Stones per pack. Same bounds as the database check. */
+export const PACK_MIN = 1;
+export const PACK_MAX = 10_000;
+
+/** The pack typed by the administrator, or null when it is not a whole number within the bounds. */
+export function parsePackCount(input: string): number | null {
+  const trimmed = input.trim();
+  if (!/^\d+$/.test(trimmed)) return null;
+  const n = Number(trimmed);
+  return n >= PACK_MIN && n <= PACK_MAX ? n : null;
+}
+
+/** Whether a pack value can be saved. */
+export function isValidPack(pack: number): boolean {
+  return Number.isInteger(pack) && pack >= PACK_MIN && pack <= PACK_MAX;
+}
 
 /**
  * Stone sizes offered in the editor, with an APPROXIMATE diameter in mm.
