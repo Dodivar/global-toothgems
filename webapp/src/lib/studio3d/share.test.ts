@@ -11,7 +11,7 @@ describe("shareLink (social share URLs)", () => {
   it("points every network at its own share endpoint", () => {
     expect(shareLink("whatsapp", content)).toMatch(/^https:\/\/wa\.me\/\?text=/);
     expect(shareLink("facebook", content)).toMatch(/^https:\/\/www\.facebook\.com\/sharer\/sharer\.php\?u=/);
-    expect(shareLink("x", content)).toMatch(/^https:\/\/x\.com\/intent\/post\?/);
+    expect(shareLink("x", content)).toMatch(/^https:\/\/x\.com\/intent\/tweet\?/);
     expect(shareLink("linkedin", content)).toMatch(/^https:\/\/www\.linkedin\.com\/sharing\/share-offsite\/\?url=/);
     expect(shareLink("email", content)).toMatch(/^mailto:\?subject=/);
   });
