@@ -28,6 +28,8 @@ translation, stock and images, or a product's recommendation lists, in one trans
 Iteration 13 makes the storefront's gem colour filter data: `gem_colors` (+ translations), managed
 from the back-office Catégories page through `admin_save_gem_color()`, `admin_delete_gem_color()` and
 `admin_reorder_gem_colors()`.
+Iteration 15 lets the back office edit every other kind of variant (colours, boxes, sizes in mm):
+`admin_save_product()` takes the complete list of a product's variants and the variant each photo shows.
 Training, community and notifications are
 still out of scope and get their own migrations later.
 
@@ -51,6 +53,7 @@ supabase/
   tests/iteration11_validation.sql  iteration 11 gem pack × stone-size options suite (always rolls back)
   tests/iteration12_validation.sql  iteration 12 member sign-up (Supabase Auth metadata → profile + consents) suite (always rolls back)
   tests/iteration13_validation.sql  iteration 13 gem colours suite (always rolls back)
+  tests/iteration15_validation.sql  iteration 15 product variants of any kind (colours, boxes…) + their photos suite (always rolls back)
   templates/confirm-signup.html     French "Confirm signup" email, to paste into the Auth settings
 ```
 
@@ -89,6 +92,7 @@ supabase/
 | 20260927120000 | `studio_workspace` | 3D Studio workspace: `creations` (scene_data jsonb v1, generated `element_count`, indicative `estimated_price_minor` + `currency`, private thumbnail path), `gem_groups`, `studio_feedback` (insert-only, staff read), private `studio-thumbnails` bucket; owner-only RLS, `user_id` defaults to `auth.uid()` and is not writable; `updated_at` moves on content edits only. **Not wired to the webapp yet** (local repository) |
 | 20260928174400 | `gem_colors` | `gem_colors` (immutable `slug` = `products.metadata.color` value, French `name`, one exact `hex`, single `is_multicolor` entry without hex, `is_active`, `position`) + `gem_color_translations`; seed of the ten former front-end colours + « Multicolore »; trigger rejecting an unknown `metadata.color`; `admin_save_gem_color()`, `admin_delete_gem_color()` (refused while a product uses the colour, never for the multicolour entry), `admin_reorder_gem_colors()`; audited |
 | 20260928201905 | `gem_free_pack_sizes` | `admin_save_product()` accepts gem packs of any whole number of stones from 1 to 10 000 (was 20 / 50 / 100 only), set per product; nothing else changes and existing variants stay valid |
+| 20260928223009 | `product_custom_variants` | `admin_save_product()` gains an optional `custom_variants` list (every variant that is not a pack/SS option: browser-generated id, fr + en name, optional `attributes.swatch` `#rrggbb` merged into the other attributes, optional price, stock) and an optional `media[].variant_id`; SKU derived once from the product SKU + French name, unique; names can be swapped in one save; a variant left out is deleted, or deactivated when ordered; refused alongside `variants` or on a product selling pack/SS options; returns `custom_variants` |
 
 RLS is **enabled in the same migration that creates each table** (deny by default);
 policies are granted back in `rls_policies`.
@@ -598,7 +602,7 @@ enable the extension in the dashboard — or a scheduled server job with the ser
 `tests/iteration3_validation.sql`, `tests/iteration4_validation.sql`, `tests/iteration5_validation.sql` and
 `tests/iteration6_validation.sql`, `tests/iteration7_validation.sql`, `tests/iteration8_validation.sql`,
 `tests/iteration9_validation.sql`, `tests/iteration10_validation.sql`, `tests/iteration11_validation.sql`,
-`tests/iteration12_validation.sql`, `tests/iteration13_validation.sql`. Each ends with
+`tests/iteration12_validation.sql`, `tests/iteration13_validation.sql`, `tests/iteration15_validation.sql`. Each ends with
 `ALL … PASSED (...)` raised as an exception, which rolls everything back.
 (The order-number sequence still advances — sequences are not transactional.)
 
@@ -757,6 +761,9 @@ VAT rates, shipping zones/rates mirroring the Settings prototype. Media rows ref
   (refused while used), product colour checked against the list.
 - Iteration 14: gem packs set per product — the administrator types any number of stones (1 to 10 000) instead of
   choosing among 20 / 50 / 100; the storefront picker already reads the packs from the variants.
+- Iteration 15: variants of any kind edited from the product form — a list of named variants (colour, box, size…)
+  with an optional colour dot, price, stock and the photos that show them; the product page shows colour dots
+  and moves the gallery to the picked variant's photo.
 
 ## Next iterations (not implemented)
 

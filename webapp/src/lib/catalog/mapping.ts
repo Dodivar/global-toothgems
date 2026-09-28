@@ -61,6 +61,8 @@ export interface MediaRow {
   alt_text: string | null;
   position: number;
   is_primary: boolean;
+  /** The variant this photo shows; null = the whole product. */
+  variant_id?: string | null;
   product_media_translations: (TranslationRow & { alt_text: string })[];
 }
 
@@ -176,14 +178,24 @@ function displayPrice(value: number | string): number {
   return toMajorUnits(toMinorUnits(value));
 }
 
-function mapVariant(row: VariantRow, productPrice: number | string): ProductVariant {
+/** Colour dot of a variant (`attributes.swatch`), when it is a valid `#rrggbb`. */
+function swatchOf(attributes: Json | undefined): string | undefined {
+  if (!attributes || typeof attributes !== "object" || Array.isArray(attributes)) return undefined;
+  const swatch = attributes.swatch;
+  return typeof swatch === "string" && /^#[0-9a-f]{6}$/i.test(swatch) ? swatch.toLowerCase() : undefined;
+}
+
+function mapVariant(row: VariantRow, productPrice: number | string, image: string | undefined): ProductVariant {
   const price = displayPrice(row.price ?? productPrice);
   const compareAt = row.compare_at_price != null ? displayPrice(row.compare_at_price) : undefined;
   const gem = parseGemAttributes(row.attributes);
+  const swatch = swatchOf(row.attributes);
   return {
     id: row.id,
     name: localize(row.name, row.product_variant_translations, (t) => t.name),
     ...(gem ? { pack: gem.pack ?? undefined, ss: gem.ss ?? undefined } : {}),
+    ...(swatch ? { swatch } : {}),
+    ...(image ? { image } : {}),
     price,
     compareAtPrice: compareAt != null && compareAt > price ? compareAt : undefined,
     stock: stockBadge(row.inventory_items[0]?.stock_status),
@@ -214,20 +226,25 @@ export function mapProduct(
     ? localize(row.category.name, row.category.category_translations, (t) => t.name)
     : undefined;
 
-  const images = row.product_media
+  const imageRows = row.product_media
     .filter((m) => m.media_type === "image")
-    .sort((a, b) => Number(b.is_primary) - Number(a.is_primary) || a.position - b.position)
-    .map((m) => ({
-      src: mediaUrl(m.storage_path),
-      alt: m.alt_text
-        ? localize(m.alt_text, m.product_media_translations, (t) => t.alt_text)
-        : name,
-    }));
+    .sort((a, b) => Number(b.is_primary) - Number(a.is_primary) || a.position - b.position);
+  const images = imageRows.map((m) => ({
+    src: mediaUrl(m.storage_path),
+    alt: m.alt_text
+      ? localize(m.alt_text, m.product_media_translations, (t) => t.alt_text)
+      : name,
+  }));
+  // A variant's photo is the first gallery image that shows it.
+  const variantImage = (variantId: string) => {
+    const index = imageRows.findIndex((m) => m.variant_id === variantId);
+    return index >= 0 ? images[index].src : undefined;
+  };
 
   const variants = row.product_variants
     .filter((v) => v.is_active)
     .sort((a, b) => a.position - b.position)
-    .map((v) => mapVariant(v, row.price));
+    .map((v) => mapVariant(v, row.price, variantImage(v.id)));
 
   const stock = variants.length > 0
     ? aggregateStock(row.product_variants.filter((v) => v.is_active).map((v) => v.inventory_items[0]?.stock_status))
