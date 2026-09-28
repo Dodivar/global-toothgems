@@ -267,7 +267,7 @@
         "title": "Create a composition",
         "summary": "Combine several gems, mirror them, and align them along the smile.",
         "steps": [
-          "Add more gems — Shift + click selects several at once.",
+          "Add more gems — Shift + click selects several at once; drag one of them to move the whole selection.",
           "Use Mirror to copy a gem to the other side of the smile.",
           "Distribute or Align to line up a selection along the arch."
         ]
