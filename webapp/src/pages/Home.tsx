@@ -78,8 +78,8 @@ export function Home() {
         </div>
         <div className="relative mx-auto grid w-full min-w-0 max-w-[var(--max-width-content)] grid-cols-1 items-end gap-6 lg:grid-cols-[minmax(min(520px,100%),2fr)_minmax(min(220px,100%),1fr)]">
           <div className="gt-glass-panel grid min-w-0 max-w-[620px] gap-5 rounded-[var(--radius-xl)] p-[clamp(24px,3vw,40px)]">
-            {/* The one decorative-script moment above the fold. */}
-            <span className="gt-script text-[clamp(26px,3.4vw,40px)] text-[var(--gt-blue-700)]">
+            {/* The one editorial accent above the fold. */}
+            <span className="gt-accent text-[clamp(17px,1.9vw,22px)] text-[var(--gt-blue-700)]">
               {t("home.heroEyebrow")}
             </span>
             <h1
@@ -147,7 +147,7 @@ export function Home() {
                 key={tile.key}
                 to={tile.to}
                 aria-label={t("home.categoryTileAria", { label: tile.label })}
-                className="group relative block h-[104px] rounded-[var(--radius-card)] shadow-[var(--shadow-xs)] transition-[transform,box-shadow] duration-[var(--duration-normal)] hover:-translate-y-[3px] hover:shadow-[var(--shadow-md)]"
+                className="group relative block h-[104px] rounded-[var(--radius-card)] shadow-[var(--shadow-card)] transition-[transform,box-shadow] duration-[var(--duration-normal)] hover:-translate-y-[3px] hover:shadow-[var(--shadow-card-hover)] focus-visible:-translate-y-[3px] focus-visible:shadow-[var(--shadow-card-hover)]"
               >
                 <img
                   src={tile.image}
@@ -283,7 +283,7 @@ export function Home() {
       {/* Gift card */}
       <section ref={giftRef} className="gt-reveal px-[clamp(14px,4vw,48px)] py-[var(--section-y)]">
         <div className="mx-auto grid max-w-[var(--max-width-content)] grid-cols-1 items-center gap-[clamp(32px,5vw,64px)] lg:grid-cols-2">
-          <div className="gt-sparkle relative aspect-[4/3] overflow-hidden rounded-[var(--radius-lg)] bg-[var(--surface-brand-wash)]">
+          <div className="gt-sparkle relative aspect-[4/3] overflow-hidden rounded-[var(--radius-lg)] bg-[var(--surface-brand-wash)] shadow-[var(--shadow-card)]">
             <img
               src={photo("mouth-05.jpg")}
               alt=""
@@ -296,8 +296,7 @@ export function Home() {
             <span className="justify-self-start">
               <Badge tone="highlight" size="sm">{t("home.giftBadge")}</Badge>
             </span>
-            {/* Editorial accent: short, decorative, not carrying essential detail. */}
-            <h2 className="gt-script m-0 text-[clamp(38px,5vw,64px)] font-normal tracking-normal">{t("home.giftTitle")}</h2>
+            <h2 className="text-[length:var(--text-h2)]">{t("home.giftTitle")}</h2>
             <p className="m-0 max-w-[var(--max-width-prose)] text-[length:var(--text-body-md)] text-[var(--text-body)]">{t("home.giftBody")}</p>
             <ul className="m-0 grid list-none gap-2 p-0 text-[length:var(--text-body-sm)] text-[var(--text-body)]">
               <li>{t("home.giftBullet1")}</li>
@@ -354,7 +353,7 @@ export function Home() {
             <h2 className="text-[length:var(--text-h2)]">{t("home.newsletterTitle")}</h2>
             <p className="m-0 max-w-[var(--max-width-prose)] text-[length:var(--text-body-md)] text-[var(--text-body)]">{t("home.newsletterBody")}</p>
           </div>
-          <div className="grid gap-3 rounded-[var(--radius-card)] border border-[var(--border-subtle)] bg-[var(--surface-card)] p-[var(--space-6)] shadow-[var(--shadow-xs)]">
+          <div className="grid gap-3 rounded-[var(--radius-card)] border border-[var(--border-subtle)] bg-[var(--surface-card)] p-[var(--space-6)] shadow-[var(--shadow-card)]">
             {subscribed ? (
               /* An inline success state: a toast disappears after 3.6s and leaves
                  the form looking untouched. */

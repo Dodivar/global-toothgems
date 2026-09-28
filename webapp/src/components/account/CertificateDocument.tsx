@@ -94,7 +94,7 @@ export function CertificateDocument({
             {t("account.certificateDocIssuedOn", { date: formatDate(awardedOn) })}
           </span>
           {/* The one decorative accent on the document. */}
-          <span className="gt-script text-[length:4.2cqw] leading-none text-[var(--gt-blue-500)]">Global Toothgems</span>
+          <span className="text-[length:1.5cqw] font-bold uppercase leading-none tracking-[var(--tracking-logo)] text-[var(--gt-blue-600)]">Global Toothgems</span>
         </footer>
       </div>
     </div>

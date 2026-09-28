@@ -170,7 +170,7 @@ export function PreviewProductPage({
       </div>
       <div className="grid grid-cols-[minmax(0,1fr)] content-start gap-3">
         {campaign && (
-          <span className="gt-script text-[26px] leading-none text-[var(--gt-blue-600)]">{l(campaign.title) || campaign.name}</span>
+          <span className="gt-accent text-[17px] text-[var(--gt-blue-600)]">{l(campaign.title) || campaign.name}</span>
         )}
         <h3 className="text-[length:var(--text-h4)]">{l(product.name)}</h3>
         <div className="flex items-baseline gap-2">
