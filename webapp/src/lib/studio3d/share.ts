@@ -32,7 +32,7 @@ export function shareLink(network: ShareNetwork, { url, text, title }: ShareCont
     case "facebook":
       return `https://www.facebook.com/sharer/sharer.php?u=${u}`;
     case "x":
-      return `https://x.com/intent/post?text=${encodeURIComponent(text)}&url=${u}`;
+      return `https://x.com/intent/tweet?text=${encodeURIComponent(text)}&url=${u}`;
     case "linkedin":
       return `https://www.linkedin.com/sharing/share-offsite/?url=${u}`;
     case "email":
