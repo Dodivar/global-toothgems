@@ -5,6 +5,7 @@ import { EmptyState } from "./EmptyState";
 import { TableLoadingState } from "./LoadingState";
 import { ProductRow, type ProductRowActions } from "./ProductRow";
 import { variantAlerts, type AdminProduct } from "../../data/adminCatalog";
+import type { ProductFilterState } from "../../lib/productFilters";
 
 /**
  * The catalogue, as a real table.
@@ -22,6 +23,7 @@ export function ProductTable({
   selectedId,
   emptyAction,
   filtered,
+  filters,
   expandAlerts = false,
 }: {
   products: AdminProduct[];
@@ -31,6 +33,8 @@ export function ProductTable({
   /** Offered in the empty state — create a product, or clear the filters. */
   emptyAction?: ReactNode;
   filtered: boolean;
+  /** The list's filters, which the rows' category, shape and colour toggles reflect. */
+  filters: ProductFilterState;
   /**
    * Unfold, from the start, the options of every product that has one
    * needing restocking: set while the list is filtered on low or out of stock.
@@ -108,6 +112,7 @@ export function ProductTable({
                 product={product}
                 actions={actions}
                 selected={selectedId === product.id}
+                filters={filters}
                 defaultExpanded={expandAlerts && variantAlerts(product).length > 0}
               />
             ))}
