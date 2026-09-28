@@ -715,8 +715,8 @@ function ContextMenu({ cm, snap }: { cm: ContextMenuState; snap: StudioSnapshot 
       aria-label={heading}
       onKeyDown={onKeyDown}
       onContextMenu={(e) => e.preventDefault()}
-      style={{ left: `min(${cm.x}px, calc(100% - 252px))`, top: `min(${cm.y}px, calc(100% - 336px))` }}
-      className="absolute z-40 w-[240px] rounded-[var(--radius-md)] border border-[var(--border-subtle)] bg-[var(--surface-card)] p-1.5 shadow-[var(--shadow-lg)] motion-safe:animate-[gt-menu-in_var(--duration-fast)_var(--ease-out-soft)_both]"
+      style={{ left: `min(${cm.x}px, calc(100% - 268px))`, top: `min(${cm.y}px, calc(100% - 376px))` }}
+      className="absolute z-40 w-[256px] rounded-[var(--radius-md)] border border-[var(--border-subtle)] bg-[var(--surface-card)] p-1.5 shadow-[var(--shadow-lg)] motion-safe:animate-[gt-menu-in_var(--duration-fast)_var(--ease-out-soft)_both]"
     >
       <p className="m-0 mb-1 truncate border-b border-[var(--border-subtle)] px-3 pb-2 pt-1.5 text-[10.5px] font-extrabold uppercase tracking-[.1em] text-[var(--text-subtle)]">
         {heading}
