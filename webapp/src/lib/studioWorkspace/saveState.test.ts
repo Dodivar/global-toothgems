@@ -37,7 +37,7 @@ describe("design store and saved creations", () => {
     expect(store.lightPreset).toBe("lamp");
     expect(store.getSnapshot().canUndo).toBe(false);
     expect(store.hasPendingLoad()).toBe(true);
-    expect(store.takePendingLoad()).toEqual({ camera: null });
+    expect(store.takePendingLoad()).toEqual({ camera: null, model: "studio" });
     expect(store.hasPendingLoad()).toBe(false);
     expect(clean(store)).toBe(true);
   });
@@ -89,7 +89,7 @@ describe("design store and saved creations", () => {
     const store = loaded();
     store.addGroupRef({ id: "g", gemGroupId: "grp", name: "Pair", pieceIds: ["a", "b"] });
     store.removeJewels(["b"]);
-    const scene = store.toScene({ model: "studio-arch", camera: null });
+    const scene = store.toScene({ model: "studio", camera: null });
     expect(scene.pieces.map((p) => p.id)).toEqual(["a"]);
     expect(scene.groups).toEqual([{ id: "g", gemGroupId: "grp", name: "Pair", pieceIds: ["a"] }]);
     expect(scene.lightPreset).toBe("lamp");

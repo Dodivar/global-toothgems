@@ -17,7 +17,13 @@ import { piecesKey, pruneGroups, sanitizeScene, type SceneCamera, type SceneGrou
  * remembers which saved creation the draft belongs to.
  */
 
-export type ModelMode = "studio" | "teeth" | "free";
+/**
+ * The model on stage: the default dentition scan, the procedural reference
+ * arch (its fallback), or an imported model with separate teeth / merged.
+ */
+export type ModelMode = "dentition" | "studio" | "teeth" | "free";
+const MODEL_MODES: ModelMode[] = ["dentition", "studio", "teeth", "free"];
+const isModelMode = (v: unknown): v is ModelMode => MODEL_MODES.includes(v as ModelMode);
 export type LightPreset = "studio" | "lamp" | "daylight";
 
 export interface ContextMenuState {
@@ -46,6 +52,15 @@ export interface ActiveCreation {
 /** A scene waiting for the engine: its pieces are re-seated on the enamel, its camera restored. */
 export interface PendingLoad {
   camera: SceneCamera | null;
+  /** The model the scene was saved on. */
+  model: ModelMode;
+}
+
+/** A piece the design check flagged: it overlaps another piece, or does not sit on a tooth. */
+export interface DesignIssue {
+  id: string;
+  overlap: boolean;
+  offTooth: boolean;
 }
 
 export interface StudioSnapshot {
@@ -57,8 +72,13 @@ export interface StudioSnapshot {
   selectedToothId: string | null;
   armedTypeId: string | null;
   placingTypeId: string | null;
+  /** The lasso tool is on: a press on the stage draws a loop that selects the pieces inside. */
+  lasso: boolean;
   hoveredToothId: string | null;
   modelMode: ModelMode;
+  /** True while a model is being fetched and prepared: the stage says so. */
+  modelLoading: boolean;
+  issues: DesignIssue[];
   lightPreset: LightPreset;
   clientName: string;
   contextMenu: ContextMenuState | null;
@@ -97,8 +117,16 @@ export class DesignStore {
   selectedToothId: string | null = null;
   armedTypeId: string | null = null;
   placingTypeId: string | null = null;
+  lasso = false;
   hoveredToothId: string | null = null;
-  modelMode: ModelMode = "studio";
+  modelMode: ModelMode = "dentition";
+  modelLoading = true;
+  issues: DesignIssue[] = [];
+  /**
+   * The model the design's positions were made on. Designs saved before the
+   * default dentition carry no tag: they were made on the reference arch.
+   */
+  designModel: ModelMode = "studio";
   lightPreset: LightPreset = "studio";
   clientName = "";
   contextMenu: ContextMenuState | null = null;
@@ -114,9 +142,16 @@ export class DesignStore {
   private saveTimer: ReturnType<typeof setTimeout> | null = null;
 
   constructor() {
-    const data = readStorage(DESIGN_KEY) as { jewels?: unknown; clientName?: unknown; groups?: unknown; active?: unknown } | null;
+    const data = readStorage(DESIGN_KEY) as {
+      jewels?: unknown;
+      clientName?: unknown;
+      model?: unknown;
+      groups?: unknown;
+      active?: unknown;
+    } | null;
     if (data && typeof data === "object") {
       this.jewels = sanitizeJewels(data.jewels);
+      if (isModelMode(data.model)) this.designModel = data.model;
       this.restored = this.jewels.length > 0;
       if (typeof data.clientName === "string") this.clientName = data.clientName.slice(0, CLIENT_NAME_MAX);
       this.groups = sanitizeScene({ pieces: this.jewels, groups: data.groups }).groups;
@@ -148,8 +183,11 @@ export class DesignStore {
       selectedToothId: this.selectedToothId,
       armedTypeId: this.armedTypeId,
       placingTypeId: this.placingTypeId,
+      lasso: this.lasso,
       hoveredToothId: this.hoveredToothId,
       modelMode: this.modelMode,
+      modelLoading: this.modelLoading,
+      issues: this.issues,
       lightPreset: this.lightPreset,
       clientName: this.clientName,
       contextMenu: this.contextMenu,
@@ -284,10 +322,21 @@ export class DesignStore {
   }
   setArmed(id: string | null) {
     this.armedTypeId = id;
+    // Placing a piece and drawing a lasso both want the next press on the stage.
+    if (id) this.lasso = false;
     this.commit();
   }
   setPlacing(id: string | null) {
     this.placingTypeId = id;
+    if (id) this.lasso = false;
+    this.commit();
+  }
+  /** Turn the lasso tool on or off. On, it takes over from a piece armed for placing. */
+  setLasso(on: boolean) {
+    if (this.lasso === on) return;
+    this.lasso = on;
+    if (on) this.armedTypeId = null;
+    this.contextMenu = null;
     this.commit();
   }
   setHoveredTooth(id: string | null) {
@@ -301,6 +350,35 @@ export class DesignStore {
       this.modelMode = m;
       this.commit();
     }
+  }
+  setModelLoading(loading: boolean) {
+    if (this.modelLoading !== loading) {
+      this.modelLoading = loading;
+      this.commit();
+    }
+  }
+  /** The design check's findings (see the engine); only committed when they change. */
+  setIssues(issues: DesignIssue[]) {
+    const key = (list: DesignIssue[]) => list.map((i) => `${i.id}:${+i.overlap}${+i.offTooth}`).join("|");
+    if (key(issues) === key(this.issues)) return;
+    this.issues = issues;
+    this.commit();
+  }
+  setDesignModel(model: ModelMode) {
+    this.designModel = model;
+  }
+  /**
+   * The design moved onto another model (re-seated tooth by tooth). A fresh
+   * start for undo: the earlier steps hold positions on the old model.
+   */
+  replaceDesign(jewels: PlacedJewelry[], model: ModelMode) {
+    this.jewels = jewels;
+    this.designModel = model;
+    this.past = [];
+    this.future = [];
+    this.fixSelection();
+    this.contextMenu = null;
+    this.commit();
   }
   setLightPreset(p: LightPreset) {
     if (this.lightPreset !== p) {
@@ -348,9 +426,13 @@ export class DesignStore {
   resetSession() {
     this.armedTypeId = null;
     this.placingTypeId = null;
+    this.lasso = false;
     this.hoveredToothId = null;
     this.contextMenu = null;
-    this.modelMode = "studio";
+    // The next editor session loads the default dentition afresh.
+    this.modelMode = "dentition";
+    this.modelLoading = true;
+    this.issues = [];
     this.commit();
   }
   saveNow() {
@@ -360,6 +442,7 @@ export class DesignStore {
       v: 1,
       jewels: this.jewels,
       clientName: this.clientName,
+      model: this.designModel,
       groups: pruneGroups(this.groups, this.jewels),
       active: this.active,
     });
@@ -396,7 +479,8 @@ export class DesignStore {
     this.armedTypeId = null;
     this.contextMenu = null;
     this.active = active ? { ...active, baselineKey: piecesKey(this.jewels) } : null;
-    this.pendingLoad = { camera: clean.camera };
+    this.designModel = clean.model;
+    this.pendingLoad = { camera: clean.camera, model: clean.model };
     this.restored = false;
     this.commit();
   }
@@ -415,7 +499,8 @@ export class DesignStore {
    * Apply the engine's re-seating of a freshly loaded scene. Not an edit: no
    * history step, and a design that was clean stays clean.
    */
-  settleLoadedPieces(updates: { id: string; patch: Partial<PlacedJewelry> }[]) {
+  settleLoadedPieces(updates: { id: string; patch: Partial<PlacedJewelry> }[], model?: ModelMode) {
+    if (model) this.designModel = model;
     const wasClean = !!this.active && this.active.baselineKey === piecesKey(this.jewels);
     if (updates.length) {
       const map = new Map(updates.map((u) => [u.id, u.patch]));
@@ -492,6 +577,8 @@ export interface UserPreset {
   name: string;
   createdAt: number;
   jewels: PlacedJewelry[];
+  /** The model the pieces were placed on; untagged presets predate the default dentition. */
+  model: ModelMode;
 }
 
 function loadUserPresets(): UserPreset[] {
@@ -504,6 +591,7 @@ function loadUserPresets(): UserPreset[] {
       name: (p.name as string).slice(0, PRESET_NAME_MAX),
       createdAt: typeof p.createdAt === "number" ? p.createdAt : 0,
       jewels: sanitizeJewels(p.jewels),
+      model: isModelMode(p.model) ? p.model : ("studio" as const),
     }))
     .filter((p) => p.jewels.length > 0);
 }
@@ -519,7 +607,13 @@ function emitPresets() {
 export function saveUserPreset(name: string): UserPreset | null {
   const clean = name.trim().slice(0, PRESET_NAME_MAX);
   if (!clean || !studioStore.jewels.length) return null;
-  const p: UserPreset = { id: uid(), name: clean, createdAt: Date.now(), jewels: structuredClone(studioStore.jewels) };
+  const p: UserPreset = {
+    id: uid(),
+    name: clean,
+    createdAt: Date.now(),
+    jewels: structuredClone(studioStore.jewels),
+    model: studioStore.designModel,
+  };
   userPresets = [p, ...userPresets];
   emitPresets();
   return p;
@@ -530,8 +624,13 @@ export function deleteUserPreset(id: string) {
   emitPresets();
 }
 
-export function applyUserPreset(p: UserPreset) {
-  studioStore.setJewels(p.jewels.map((j) => ({ ...j, id: uid() })));
+/**
+ * Replace the design with a saved preset. `adapt` re-seats pieces saved on
+ * another model onto the one on stage (the engine's `adaptDesign`).
+ */
+export function applyUserPreset(p: UserPreset, adapt?: (jewels: PlacedJewelry[], from: ModelMode) => PlacedJewelry[]) {
+  const jewels = p.jewels.map((j) => ({ ...j, id: uid() }));
+  studioStore.setJewels(adapt ? adapt(jewels, p.model) : jewels);
 }
 
 export function useUserPresets(): UserPreset[] {

@@ -177,7 +177,7 @@ export function StudioWorkspaceProvider({ children }: { children: ReactNode }) {
       if (mode === "update" && !active) return null;
       if (mode === "new" && !details) return null;
       const engine = getEngine();
-      const scene = studioStore.toScene({ model: engine?.modelKind() ?? "studio-arch", camera: engine?.getCameraState() ?? null });
+      const scene = studioStore.toScene({ model: engine?.modelKind() ?? "studio", camera: engine?.getCameraState() ?? null });
       const savedKey = piecesKey(scene.pieces);
       setSaving(true);
       setFailedKey(null);

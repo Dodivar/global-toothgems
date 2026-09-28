@@ -15,7 +15,7 @@ import { HelpPanel } from "../components/studio/workspace/HelpPanel";
 import { useWorkspaceActions } from "../components/studio/workspace/useWorkspaceActions";
 import { useDocumentTitle } from "../components/legal/hooks";
 import { useToast } from "../lib/toast";
-import { duplicatePieces, removePieces } from "../lib/studio3d/actions";
+import { duplicateMirroredPieces, duplicatePieces, removePieces } from "../lib/studio3d/actions";
 import { getEngine } from "../lib/studio3d/engine";
 import { setNoticeHandler } from "../lib/studio3d/notices";
 import { studioStore, useStudio } from "../lib/studio3d/store";
@@ -91,7 +91,8 @@ function StudioWorkspace() {
   useEffect(() => {
     if (onboardingSeen()) return;
     const timer = setTimeout(() => {
-      if (!getWorkspaceDialog()) openWorkspaceDialog({ kind: "onboarding" });
+      // Only over the stage: arriving on a library page is not a first look at the editor.
+      if (!getWorkspaceDialog() && !live.current.section) openWorkspaceDialog({ kind: "onboarding" });
     }, 900);
     return () => clearTimeout(timer);
   }, []);
@@ -132,6 +133,8 @@ function StudioWorkspace() {
       }
       if (e.key === "Escape") {
         getEngine()?.cancelPlacing();
+        getEngine()?.cancelLasso();
+        studioStore.setLasso(false);
         if (typing) el?.blur();
         studioStore.closeContextMenu();
         studioStore.deselect();
@@ -160,7 +163,14 @@ function StudioWorkspace() {
         return;
       }
       if (key === "d" && !meta && !e.altKey && studioStore.selectedJewelIds.length) {
-        duplicatePieces([...studioStore.selectedJewelIds]);
+        // Shift + D: the copies land on the mirror side of the arch.
+        if (e.shiftKey) duplicateMirroredPieces([...studioStore.selectedJewelIds]);
+        else duplicatePieces([...studioStore.selectedJewelIds]);
+        return;
+      }
+      if (key === "l" && !meta && !e.altKey) {
+        getEngine()?.cancelLasso();
+        studioStore.setLasso(!studioStore.lasso);
       }
     };
     window.addEventListener("keydown", onKey);

@@ -58,7 +58,7 @@ describe("scene", () => {
         { id: "gone", pieceIds: ["x"] },
       ],
     });
-    expect(scene.model).toBe("studio-arch");
+    expect(scene.model).toBe("studio");
     expect(scene.lightPreset).toBe("studio");
     expect(scene.camera).toBeNull();
     expect(scene.pieces.map((p) => p.id)).toEqual(["a"]);

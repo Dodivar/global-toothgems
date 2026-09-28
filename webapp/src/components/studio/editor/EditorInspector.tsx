@@ -1,6 +1,17 @@
 import { useId, useRef, type ReactNode } from "react";
 import clsx from "clsx";
-import { AlignCenterHorizontal, AlignHorizontalSpaceAround, ChevronDown, Copy, FlipHorizontal2, FlipVertical2, Trash2 } from "lucide-react";
+import {
+  AlignCenterHorizontal,
+  AlignHorizontalSpaceAround,
+  ChevronDown,
+  Copy,
+  FlipHorizontal2,
+  FlipVertical2,
+  RotateCcw,
+  RotateCw,
+  SquareSplitHorizontal,
+  Trash2,
+} from "lucide-react";
 import { ColorWheel } from "./ColorWheel";
 import { PieceIcon } from "./PieceIcon";
 import { useEditorLabels } from "./editorLabels";
@@ -15,9 +26,18 @@ import {
   JEWELRY_CATEGORIES,
   OFFSET_RANGE,
   SCALE_RANGE,
+  UPPER_TEETH,
   type PlacedJewelry,
 } from "../../../data/studioEditor";
-import { alignSelection, distributeSelection, duplicatePieces, mirrorSelection, removePieces } from "../../../lib/studio3d/actions";
+import {
+  alignSelection,
+  distributeSelection,
+  duplicateMirroredPieces,
+  duplicatePieces,
+  mirrorSelection,
+  removePieces,
+  rotatePieces,
+} from "../../../lib/studio3d/actions";
 import { getEngine } from "../../../lib/studio3d/engine";
 import { notify } from "../../../lib/studio3d/notices";
 import { studioStore, type StudioSnapshot } from "../../../lib/studio3d/store";
@@ -41,7 +61,7 @@ export function EditorInspector({ snap }: { snap: StudioSnapshot }) {
   const selected = snap.jewels.filter((j) => snap.selectedJewelIds.includes(j.id));
   let body: ReactNode;
   if (selected.length > 1) body = <MultiPanel key="multi" selected={selected} />;
-  else if (selected.length === 1) body = <SinglePanel key={selected[0].id} jewel={selected[0]} />;
+  else if (selected.length === 1) body = <SinglePanel key={selected[0].id} jewel={selected[0]} snap={snap} />;
   else if (snap.selectedToothId && snap.selectedToothId !== FREE_TOOTH)
     body = <ToothPanel key={snap.selectedToothId} snap={snap} toothId={snap.selectedToothId} />;
   else body = <OverviewPanel snap={snap} />;
@@ -192,7 +212,8 @@ function QuickRotate({ isOn, onSet, onPlus90 }: { isOn: (deg: number) => boolean
   );
 }
 
-function Swatches({
+/** The finish swatches, plus the custom colour when one is set. Shared with the stage's colour quick action. */
+export function Swatches({
   isSelected,
   onPick,
   custom,
@@ -247,6 +268,10 @@ function MirrorRow() {
           {t("studio.editor.mirror.vertical")}
         </button>
       </div>
+      <button type="button" className={clsx(miniButton, "mt-2 w-full")} onClick={() => duplicateMirroredPieces([...studioStore.selectedJewelIds])}>
+        <SquareSplitHorizontal size={14} aria-hidden="true" />
+        {t("studio.editor.mirror.duplicate")}
+      </button>
       <Hint className="mt-2">{t("studio.editor.mirror.hint")}</Hint>
     </>
   );
@@ -323,26 +348,8 @@ function MultiPanel({ selected }: { selected: PlacedJewelry[] }) {
       />
 
       <SectionLabel>{t("studio.editor.inspector.rotationAll")}</SectionLabel>
-      <QuickRotate
-        isOn={(deg) => selected.every((j) => j.rotation === deg)}
-        onSet={(deg) => {
-          studioStore.pushHistory();
-          studioStore.updateSelected({ rotation: deg });
-        }}
-        onPlus90={() => {
-          studioStore.pushHistory();
-          studioStore.applyPatches(selected.map((j) => ({ id: j.id, patch: { rotation: (j.rotation + 90) % 360 } })));
-        }}
-      />
-      <Slider
-        label={t("studio.editor.inspector.spin")}
-        value={first.rotation}
-        min={0}
-        max={360}
-        step={1}
-        format={(v) => `${Math.round(v)}°`}
-        onCommit={(v) => studioStore.updateSelected({ rotation: v })}
-      />
+      <GroupTurnButtons ids={ids} />
+      <Hint className="mt-2">{t("studio.editor.inspector.rotationGroupHint")}</Hint>
 
       <SectionLabel>{t("studio.editor.inspector.finishAll")}</SectionLabel>
       <Swatches
@@ -393,7 +400,35 @@ function MultiPanel({ selected }: { selected: PlacedJewelry[] }) {
   );
 }
 
-function SinglePanel({ jewel }: { jewel: PlacedJewelry }) {
+/**
+ * Turn the selection as a group, around its centre as seen on screen (the
+ * pieces travel with it): a quarter turn or a fine 15° step either way. Each
+ * press is one undo step.
+ */
+function GroupTurnButtons({ ids }: { ids: string[] }) {
+  const { t } = useEditorLabels();
+  const turn = (deg: number, Icon: typeof RotateCw) => (
+    <button
+      type="button"
+      className={miniButton}
+      aria-label={t("studio.editor.inspector.turnBy", { deg: deg > 0 ? `+${deg}` : `−${Math.abs(deg)}` })}
+      onClick={() => rotatePieces(ids, deg)}
+    >
+      <Icon size={13} aria-hidden="true" />
+      {deg > 0 ? `+${deg}°` : `−${Math.abs(deg)}°`}
+    </button>
+  );
+  return (
+    <div className="flex gap-1.5">
+      {turn(-90, RotateCcw)}
+      {turn(-15, RotateCcw)}
+      {turn(15, RotateCw)}
+      {turn(90, RotateCw)}
+    </div>
+  );
+}
+
+function SinglePanel({ jewel, snap }: { jewel: PlacedJewelry; snap: StudioSnapshot }) {
   const { t, pieceName, toothName, toothShort, formatEstimate } = useEditorLabels();
   const def = JEWELRY_BY_ID[jewel.jewelryTypeId];
   const surface = getEngine()?.describeSurface(jewel) ?? null;
@@ -451,7 +486,7 @@ function SinglePanel({ jewel }: { jewel: PlacedJewelry }) {
       <QuickRotate
         isOn={(deg) => jewel.rotation === deg}
         onSet={(deg) => set({ rotation: deg })}
-        onPlus90={() => set({ rotation: (jewel.rotation + 90) % 360 })}
+        onPlus90={() => rotatePieces([jewel.id], 90)}
       />
       <Slider
         label={t("studio.editor.inspector.spin")}
@@ -503,7 +538,8 @@ function SinglePanel({ jewel }: { jewel: PlacedJewelry }) {
           }}
         >
           {jewel.toothId === FREE_TOOTH && <option value={FREE_TOOTH}>{t("studio.editor.freePlacementLong")}</option>}
-          {ALL_TEETH.map((fdi) => (
+          {/* The simplified reference arch and imports carry the upper arch only. */}
+          {(snap.modelMode === "dentition" ? ALL_TEETH : UPPER_TEETH).map((fdi) => (
             <option key={fdi} value={fdi}>
               {fdi} — {toothShort(fdi)}
             </option>
@@ -562,7 +598,19 @@ function OverviewPanel({ snap }: { snap: StudioSnapshot }) {
       <span className="text-[10px] font-bold uppercase tracking-[.1em] text-[var(--text-subtle)]">{label}</span>
     </div>
   );
-  const shortcuts = ["undoRedo", "selectAll", "addToSelection", "pieceActions", "duplicate", "delete", "deselect", "pan", "focus"];
+  const shortcuts = [
+    "undoRedo",
+    "selectAll",
+    "addToSelection",
+    "lasso",
+    "pieceActions",
+    "duplicate",
+    "duplicateMirror",
+    "delete",
+    "deselect",
+    "pan",
+    "focus",
+  ];
 
   return (
     <>

@@ -22,8 +22,13 @@ export const SCENE_VERSION = 1;
 /** Upper bound on pieces per design; far above any real smile, it keeps a row small. */
 export const SCENE_MAX_PIECES = 200;
 
-/** Which dentition the pieces were placed on. An imported model is not stored, only named. */
-export type SceneModel = "studio-arch" | "custom-teeth" | "custom-free";
+/**
+ * Which dentition the pieces were placed on — the editor's own model names
+ * (`ModelMode`): the default scan, the procedural reference arch, or an
+ * imported model (not stored, only named). On load, a design made on another
+ * built-in model is re-seated tooth by tooth by the engine.
+ */
+export type SceneModel = "dentition" | "studio" | "teeth" | "free";
 export type SceneLight = "studio" | "lamp" | "daylight";
 
 export interface SceneCamera {
@@ -49,7 +54,7 @@ export interface StudioScene {
   groups: SceneGroupRef[];
 }
 
-const MODELS: SceneModel[] = ["studio-arch", "custom-teeth", "custom-free"];
+const MODELS: SceneModel[] = ["dentition", "studio", "teeth", "free"];
 const LIGHTS: SceneLight[] = ["studio", "lamp", "daylight"];
 const isNum = (v: unknown): v is number => typeof v === "number" && Number.isFinite(v);
 const isTriple = (v: unknown): v is [number, number, number] => Array.isArray(v) && v.length === 3 && v.every(isNum);
@@ -72,7 +77,7 @@ export function createScene(parts: {
   const pieces = structuredClone(parts.pieces);
   return {
     version: SCENE_VERSION,
-    model: parts.model ?? "studio-arch",
+    model: parts.model ?? "studio",
     lightPreset: parts.lightPreset ?? "studio",
     camera: parts.camera ?? null,
     pieces,
@@ -104,7 +109,7 @@ export function sanitizeScene(input: unknown): StudioScene {
   const cam = data.camera as Record<string, unknown> | null | undefined;
   return {
     version: SCENE_VERSION,
-    model: MODELS.includes(data.model as SceneModel) ? (data.model as SceneModel) : "studio-arch",
+    model: MODELS.includes(data.model as SceneModel) ? (data.model as SceneModel) : "studio",
     lightPreset: LIGHTS.includes(data.lightPreset as SceneLight) ? (data.lightPreset as SceneLight) : "studio",
     camera: cam && isTriple(cam.position) && isTriple(cam.target) ? { position: [...cam.position], target: [...cam.target] } : null,
     pieces,

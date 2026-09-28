@@ -142,7 +142,7 @@ export function EditorTopBar({ snap, onOpenMenu }: { snap: StudioSnapshot; onOpe
       >
         <Upload size={16} aria-hidden="true" />
       </button>
-      {snap.modelMode !== "studio" && (
+      {snap.modelMode !== "dentition" && !snap.modelLoading && (
         <button
           type="button"
           className={toolButton}
@@ -237,7 +237,7 @@ function PresetMenu() {
               label={p.name}
               sub={t("studio.editor.pieceCount", { count: p.jewels.length })}
               onClick={() => {
-                applyUserPreset(p);
+                applyUserPreset(p, (jewels, from) => getEngine()?.adaptDesign(jewels, from) ?? jewels);
                 close();
                 notify("presetApplied", { name: p.name });
               }}
