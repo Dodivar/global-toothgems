@@ -89,9 +89,9 @@ export function TrainingHero({
               {progress.completed && <Badge tone="success">{t("course.stateCompleted")}</Badge>}
               {progress.enrolled && !progress.completed && <Badge tone="highlight">{t("course.stateEnrolled")}</Badge>}
             </div>
-            {/* The one decorative-script moment at the top of the page. The
+            {/* The one editorial accent at the top of the page. The
                 breadcrumb already names the Academy, so it is purely visual. */}
-            <span aria-hidden="true" className="gt-script -mb-3 text-[clamp(30px,4.4vw,46px)] text-[var(--gt-blue-400)]">
+            <span aria-hidden="true" className="gt-accent text-[clamp(18px,2.2vw,24px)] text-[var(--gt-blue-600)]">
               {t("training.heroScript")}
             </span>
             <h1 className="max-w-[16ch] text-[length:var(--text-display-2)] font-[var(--weight-black)] leading-[var(--leading-tight)] tracking-[var(--tracking-display)]">

@@ -1,8 +1,8 @@
 import { useTranslation } from "react-i18next";
 import { SelectorPage, SelectorTile } from "../components/shop/SelectorPage";
 import { ShapeGlyph } from "../components/ui/ShapeGlyph";
-import { shapesInCatalog } from "../data/products";
 import { useCatalog } from "../lib/catalog/CatalogProvider";
+import { useShapesInCatalog } from "../lib/catalog/useShapesInCatalog";
 import { shapeHref } from "../lib/shopUrl";
 
 /** Every cut on one page — the carousel's overflow, for people who want to see
@@ -10,10 +10,11 @@ import { shapeHref } from "../lib/shopUrl";
 export function Shapes() {
   const { t } = useTranslation();
   const { products } = useCatalog();
+  const shapes = useShapesInCatalog(products);
 
   return (
     <SelectorPage eyebrow={t("shapesPage.eyebrow")} title={t("shapesPage.title")} body={t("shapesPage.body")}>
-      {shapesInCatalog(products).map((group) => (
+      {shapes.map((group) => (
         <SelectorTile
           key={group.shape}
           to={shapeHref(group.shape)}

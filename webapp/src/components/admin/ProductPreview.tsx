@@ -16,6 +16,7 @@ import { AdminIconButton } from "./AdminIconButton";
 import { CategoryBadge } from "./CategoryBadge";
 import { ProductStatusBadge } from "./ProductStatusBadge";
 import { StockIndicator } from "./StockIndicator";
+import { RichText } from "../ui/RichText";
 import { useFocusTrap } from "../../lib/useFocusTrap";
 import { useLocalized } from "../../lib/localized";
 import { useAdminCatalog } from "../../lib/adminCatalog";
@@ -164,9 +165,10 @@ export function ProductPreview({
             )}
           </div>
 
-          <p className="m-0 mt-3 text-[length:var(--text-body-sm)] leading-[var(--leading-normal)] text-[var(--text-body)]">
-            {L(product.description)}
-          </p>
+          <RichText
+            source={L(product.description)}
+            className="mt-3 text-[length:var(--text-body-sm)] leading-[var(--leading-normal)] text-[var(--text-body)]"
+          />
 
           {/* Facts */}
           <dl className="mt-6 grid grid-cols-2 gap-x-6 gap-y-4 border-t border-[var(--border-subtle)] pt-5">

@@ -46,7 +46,7 @@ export function ProductCard({ product, to, onSave, saved = false, eager = false 
   const showImage = Boolean(image) && brokenImage !== image;
 
   return (
-    <article className="group relative rounded-[var(--radius-card)] border border-[var(--border-subtle)] bg-[var(--surface-card)] p-[var(--space-3)] shadow-[var(--shadow-xs)] transition-[transform,box-shadow] duration-[var(--duration-normal)] ease-[var(--ease-out-soft)] hover:-translate-y-[3px] hover:shadow-[var(--shadow-md)] focus-within:-translate-y-[3px] focus-within:shadow-[var(--shadow-md)]">
+    <article className="group relative rounded-[var(--radius-card)] border border-[var(--border-subtle)] bg-[var(--surface-card)] p-[var(--space-3)] shadow-[var(--shadow-card)] transition-[transform,box-shadow] duration-[var(--duration-normal)] ease-[var(--ease-out-soft)] hover:-translate-y-[3px] hover:shadow-[var(--shadow-card-hover)] focus-within:-translate-y-[3px] focus-within:shadow-[var(--shadow-card-hover)]">
       <div className="relative aspect-square overflow-hidden rounded-[var(--radius-media)] bg-[var(--surface-sunken)]">
         {showImage ? (
           <>

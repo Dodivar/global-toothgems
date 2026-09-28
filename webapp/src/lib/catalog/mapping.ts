@@ -1,7 +1,6 @@
 import {
-  GEM_COLORS,
   GEM_SHAPES,
-  type GemColor,
+  type GemColorDef,
   type GemShape,
   type Product,
   type ProductVariant,
@@ -152,8 +151,25 @@ function asShape(value: string | undefined): GemShape | undefined {
   return (GEM_SHAPES as string[]).includes(value ?? "") ? (value as GemShape) : undefined;
 }
 
-function asColor(value: string | undefined): GemColor | undefined {
-  return (GEM_COLORS as string[]).includes(value ?? "") ? (value as GemColor) : undefined;
+/**
+ * One row of `gem_colors` with its translations. RLS already limits visitors
+ * to active colours and published translations.
+ */
+export interface GemColorRow {
+  slug: string;
+  name: string;
+  hex: string | null;
+  is_multicolor: boolean;
+  gem_color_translations: (TranslationRow & { name: string })[];
+}
+
+export function mapGemColor(row: GemColorRow): GemColorDef {
+  return {
+    slug: row.slug,
+    name: localize(row.name, row.gem_color_translations, (t) => t.name),
+    hex: row.is_multicolor ? null : row.hex,
+    isMulticolor: row.is_multicolor,
+  };
 }
 
 function displayPrice(value: number | string): number {
@@ -240,7 +256,9 @@ export function mapProduct(
     cat: row.category ? CATEGORY_BY_SLUG[row.category.slug] ?? null : null,
     material,
     shape: asShape(metadataString(row.metadata, "shape")),
-    color: asColor(metadataString(row.metadata, "color")),
+    // Any slug: the colour list is data, and a slug with no matching colour
+    // simply never shows up in the colour filter.
+    color: metadataString(row.metadata, "color"),
     description: longDescription ?? shortDescription,
     gallery: images.length > 0 ? images : undefined,
     variants: variants.length > 0 ? variants : undefined,

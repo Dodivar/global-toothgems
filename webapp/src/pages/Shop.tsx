@@ -5,10 +5,11 @@ import { X } from "lucide-react";
 import { Button } from "../components/ui/Button";
 import { ProductCard } from "../components/ui/ProductCard";
 import { ShopFilterBar } from "../components/shop/ShopFilterBar";
-import { GEM_COLORS, GEM_SHAPES } from "../data/products";
+import { GEM_SHAPES } from "../data/products";
 import { pick } from "../data/types";
 import { useToast } from "../lib/toast";
 import { useCatalog } from "../lib/catalog/CatalogProvider";
+import { useLocalized } from "../lib/localized";
 import { CatalogError } from "../components/shop/CatalogError";
 
 /** Three full rows at the widest column count. */
@@ -24,7 +25,8 @@ const GRID = "grid grid-cols-2 gap-4 sm:grid-cols-3 sm:gap-6 xl:grid-cols-4";
 export function Shop() {
   const { t, i18n } = useTranslation();
   const { showToast } = useToast();
-  const { products, status: catalogStatus } = useCatalog();
+  const { products, colors, status: catalogStatus } = useCatalog();
+  const L = useLocalized();
   const lang = i18n.language;
   const [params, setParams] = useSearchParams();
 
@@ -134,6 +136,7 @@ export function Shop() {
   const labelOf = (options: { value: string; label: string }[], value: string) =>
     options.find((o) => o.value === value)?.label ?? value;
 
+  const selectedColor = colors.find((c) => c.slug === color);
   const activeChips = [
     filter !== "Tout" && { key: "categorie", label: t(`shop.categories.${filter}`), fallback: "Tout" },
     material !== "all" && { key: "matiere", label: labelOf(materialOptions, material), fallback: "all" },
@@ -146,7 +149,7 @@ export function Shop() {
     },
     color !== "all" && {
       key: "couleur",
-      label: (GEM_COLORS as string[]).includes(color) ? t(`shop.colors.${color}`) : color,
+      label: selectedColor ? L(selectedColor.name) : color,
       fallback: "all",
     },
     priceBand !== "all" && { key: "prix", label: labelOf(priceOptions, priceBand), fallback: "all" },
@@ -243,7 +246,7 @@ export function Shop() {
             ) : pending || catalogStatus === "loading" ? (
               <div className={GRID} aria-hidden="true">
                 {Array.from({ length: Math.min(PER_PAGE, Math.max(filtered.length, 4)) }).map((_, i) => (
-                  <div key={i} className="rounded-[var(--radius-card)] border border-[var(--border-subtle)] p-[var(--space-3)]">
+                  <div key={i} className="rounded-[var(--radius-card)] border border-[var(--border-subtle)] bg-[var(--surface-card)] p-[var(--space-3)] shadow-[var(--shadow-card)]">
                     <div className="gt-skeleton aspect-square rounded-[var(--radius-media)]" />
                     <div className="grid gap-2 pt-3">
                       <div className="gt-skeleton h-3 w-3/4 rounded-full" />

@@ -1,5 +1,5 @@
 import type { Localized } from "./types";
-import type { GemColor, GemShape } from "./products";
+import { FALLBACK_GEM_COLORS, type GemColor, type GemShape } from "./products";
 import { photo } from "../lib/images";
 import { combinations, comboKey, comboName, type GemOptionKey } from "../lib/gemOptions";
 
@@ -56,12 +56,13 @@ export interface GemOptionVariant {
 }
 
 /**
- * Pack (20/50/100) × stone size (SS) options of a gem (`lib/gemOptions.ts`).
+ * Pack (any number of stones, set per product) × stone size (SS) options of
+ * a gem (`lib/gemOptions.ts`).
  *
  * `enabled` off with the product still carrying options means "remove them
  * on save". `variants` keeps every combination ever loaded or typed, so
- * unticking a pack then ticking it again gives its price and stock back; only
- * the combinations of the ticked packs × sizes are saved.
+ * removing a pack then adding it again gives its price and stock back; only
+ * the combinations of the listed packs × ticked sizes are saved.
  */
 /**
  * Stock of one sellable variant, as the product list shows it under its
@@ -157,6 +158,43 @@ export interface AdminProduct {
   createdAt: string;
   updatedAt: string;
 }
+
+/**
+ * A colour of the storefront gem filter, as the back office edits it
+ * (`gem_colors`). The slug is what products store and URLs carry; it is set
+ * at creation and never changes, so renaming a colour breaks nothing.
+ */
+export interface AdminGemColor {
+  id: string;
+  slug: GemColor;
+  name: Localized;
+  /** One exact shade, `#rrggbb`; null only for the multicolour entry. */
+  hex: string | null;
+  /** The single entry for gems with special reflections or several colours. */
+  isMulticolor: boolean;
+  /** Hidden colours stay on their products but leave the storefront filter. */
+  isActive: boolean;
+  position: number;
+}
+
+/** What the colour form edits. No id = a new colour, always a single shade. */
+export interface GemColorDraft {
+  id?: string;
+  name: Localized;
+  hex: string | null;
+  isActive: boolean;
+}
+
+/** `#rrggbb`, as the database stores it. */
+export const HEX_COLOR_PATTERN = /^#[0-9a-f]{6}$/;
+
+/** The prototype's colours: the storefront fallback list, ids = slugs. */
+export const SEED_GEM_COLORS: AdminGemColor[] = FALLBACK_GEM_COLORS.map((color, position) => ({
+  id: color.slug,
+  ...color,
+  isActive: true,
+  position,
+}));
 
 export const CATEGORIES: Category[] = [
   {

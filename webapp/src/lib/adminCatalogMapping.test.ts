@@ -4,11 +4,14 @@ import {
   amountFromDb,
   amountToDb,
   catalogErrorKind,
+  gemColorToPayload,
   productToPayload,
   readGemOptions,
   rowToCategory,
+  rowToGemColor,
   rowToProduct,
   slugify,
+  type GemColorRow,
   type ProductRow,
 } from "./adminCatalogMapping";
 
@@ -251,10 +254,66 @@ describe("gem options", () => {
     ]);
   });
 
+  it("round-trips packs of any size set on the product", () => {
+    const options = readGemOptions([
+      { id: "a", attributes: { pack: 35 }, price: "12.50", is_active: true, position: 0, inventory_items: [inv(9)] },
+      { id: "b", attributes: { pack: 250 }, price: "70.00", is_active: true, position: 1, inventory_items: [inv(2)] },
+    ]);
+    expect(options).toMatchObject({ enabled: true, packs: [35, 250], sizes: [] });
+    const payload = productToPayload({ ...rowToProduct(row, url), gemOptions: options }) as { variants: unknown[] };
+    expect(payload.variants).toEqual([
+      { pack: 35, ss: null, price: "12.50", track_inventory: true, quantity_on_hand: 9, low_stock_threshold: 3 },
+      { pack: 250, ss: null, price: "70.00", track_inventory: true, quantity_on_hand: 2, low_stock_threshold: 3 },
+    ]);
+  });
+
   it("sends an empty list to remove options, and nothing when never used", () => {
     const base = rowToProduct(row, url);
     const off = productToPayload({ ...base, gemOptions: { enabled: false, packs: [20], sizes: [], variants: [] } }) as Record<string, unknown>;
     expect(off.variants).toEqual([]);
     expect(productToPayload(base)).not.toHaveProperty("variants");
+  });
+});
+
+describe("gem colours", () => {
+  const colorRow: GemColorRow = {
+    id: "c1",
+    slug: "rose-poudre",
+    name: "Rose poudré",
+    hex: "#e8b4c0",
+    is_multicolor: false,
+    is_active: true,
+    position: 3,
+    gem_color_translations: [{ locale: "en", name: "Powder pink" }],
+  };
+
+  it("reads both names, and never a shade for the multicolour entry", () => {
+    expect(rowToGemColor(colorRow)).toEqual({
+      id: "c1",
+      slug: "rose-poudre",
+      name: { fr: "Rose poudré", en: "Powder pink" },
+      hex: "#e8b4c0",
+      isMulticolor: false,
+      isActive: true,
+      position: 3,
+    });
+    const multi = rowToGemColor({ ...colorRow, hex: "#000000", is_multicolor: true, gem_color_translations: null });
+    expect(multi).toMatchObject({ hex: null, isMulticolor: true, name: { en: "" } });
+  });
+
+  it("sends trimmed names, a lowercase shade and a URL-safe slug wish", () => {
+    const payload = gemColorToPayload({
+      name: { fr: "  Rose poudré ", en: " Powder pink " },
+      hex: "#E8B4C0",
+      isActive: false,
+    }) as Record<string, unknown>;
+    expect(payload).toEqual({
+      id: null,
+      slug: "rose-poudre",
+      name: "Rose poudré",
+      name_en: "Powder pink",
+      hex: "#e8b4c0",
+      is_active: false,
+    });
   });
 });

@@ -192,7 +192,7 @@ export function StudioFeatures() {
         body={t("studio.features.signature.body")}
         visual={
           <div className="gt-studio-ph--blush relative grid aspect-[16/10] place-items-center overflow-hidden rounded-[var(--radius-lg)]">
-            <span className="gt-script text-[clamp(34px,4vw,46px)] text-[var(--gt-fuchsia-600)]">{t("studio.features.signature.script")}</span>
+            <span className="gt-accent text-[clamp(22px,2.6vw,28px)] text-[var(--gt-fuchsia-600)]">{t("studio.features.signature.script")}</span>
             <span className="absolute bottom-3 right-3 flex gap-1">
               <GemIcon shape="flower" material="opal" size={24} />
               <GemIcon shape="round" material="rose" size={24} />

@@ -3,6 +3,7 @@ import { Link } from "react-router-dom";
 import { CarouselTrack } from "./CarouselTrack";
 import { ColorSwatch } from "./ColorSwatch";
 import type { ColorGroup } from "../../data/products";
+import { useLocalized } from "../../lib/localized";
 
 interface ColorCarouselProps {
   groups: ColorGroup[];
@@ -16,15 +17,16 @@ interface ColorCarouselProps {
 /** Horizontal picker of gem colours — the shape carousel's twin. */
 export function ColorCarousel({ groups, hrefFor, compact = false, onNavigate }: ColorCarouselProps) {
   const { t } = useTranslation();
+  const L = useLocalized();
 
   return (
     <CarouselTrack prevLabel={t("shop.colorPrev")} nextLabel={t("shop.colorNext")}>
       {groups.map((group) => (
-        <li key={group.color} className="shrink-0 snap-start">
+        <li key={group.color.slug} className="shrink-0 snap-start">
           <Link
             to={hrefFor(group)}
             onClick={onNavigate}
-            aria-label={t("shop.colorTileAria", { color: t(`shop.colors.${group.color}`), count: group.count })}
+            aria-label={t("shop.colorTileAria", { color: L(group.color.name), count: group.count })}
             className={`group grid justify-items-center gap-2.5 rounded-[var(--radius-card)] p-2 transition-colors duration-[var(--duration-fast)] hover:bg-[var(--surface-brand-wash-strong)] ${
               compact ? "w-[84px] gap-2" : "w-[104px] sm:w-[124px]"
             }`}
@@ -38,7 +40,7 @@ export function ColorCarousel({ groups, hrefFor, compact = false, onNavigate }: 
             </span>
             <span className="grid justify-items-center gap-0.5 text-center">
               <span className="text-[length:var(--text-body-sm)] font-semibold text-[var(--text-primary)]">
-                {t(`shop.colors.${group.color}`)}
+                {L(group.color.name)}
               </span>
               {!compact && (
                 <span className="text-[length:var(--text-caption)] text-[var(--text-muted)]">

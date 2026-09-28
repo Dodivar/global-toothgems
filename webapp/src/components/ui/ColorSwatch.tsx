@@ -1,7 +1,7 @@
-import { GEM_COLOR_SWATCH, type GemColor } from "../../data/products";
+import { colorSwatchFill, type GemColorDef } from "../../data/products";
 
 interface ColorSwatchProps {
-  color: GemColor;
+  color: Pick<GemColorDef, "hex" | "isMulticolor">;
   size?: number;
   className?: string;
 }
@@ -16,8 +16,8 @@ export function ColorSwatch({ color, size = 44, className }: ColorSwatchProps) {
   return (
     <span
       aria-hidden="true"
-      className={`block rounded-[var(--radius-pill)] border border-[var(--border-subtle)] ${className ?? ""}`}
-      style={{ width: size, height: size, background: GEM_COLOR_SWATCH[color] }}
+      className={`block flex-none rounded-[var(--radius-pill)] border border-[var(--border-subtle)] ${className ?? ""}`}
+      style={{ width: size, height: size, background: colorSwatchFill(color) }}
     />
   );
 }

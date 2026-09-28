@@ -30,7 +30,7 @@ export function ShapeCarousel({ groups, hrefFor, compact = false, onNavigate }: 
             }`}
           >
             <span
-              className={`flex items-center justify-center rounded-[var(--radius-pill)] border border-[var(--border-subtle)] bg-[var(--surface-card)] text-[var(--gt-blue-700)] shadow-[var(--shadow-xs)] transition-[transform,border-color,box-shadow] duration-[var(--duration-normal)] group-hover:-translate-y-[3px] group-hover:border-[var(--border-brand)] group-hover:shadow-[var(--shadow-md)] ${
+              className={`flex items-center justify-center rounded-[var(--radius-pill)] border border-[var(--border-subtle)] bg-[var(--surface-card)] text-[var(--gt-blue-700)] shadow-[var(--shadow-card)] transition-[transform,border-color,box-shadow] duration-[var(--duration-normal)] group-hover:-translate-y-[3px] group-hover:border-[var(--border-brand)] group-hover:shadow-[var(--shadow-card-hover)] ${
                 compact ? "h-[56px] w-[56px]" : "h-[84px] w-[84px] sm:h-[96px] sm:w-[96px]"
               }`}
             >

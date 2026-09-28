@@ -15,9 +15,17 @@ export type GemShape =
   | "square"
   | "triangle"
   | "baguette"
-  | "flower";
+  | "flower"
+  | "marquise"
+  | "diamond"
+  | "rivoli-star"
+  | "star-flower"
+  | "xilion-rose";
 
-/** Display order of the shape carousel and of the shop filter. */
+/**
+ * Every known cut. Not a display order: shape lists are shown alphabetically
+ * by translated label (`sortByShapeLabel`).
+ */
 export const GEM_SHAPES: GemShape[] = [
   "round",
   "heart",
@@ -28,58 +36,70 @@ export const GEM_SHAPES: GemShape[] = [
   "triangle",
   "baguette",
   "flower",
+  "marquise",
+  "diamond",
+  "rivoli-star",
+  "star-flower",
+  "xilion-rose",
 ];
 
 /**
  * Colour family of a gem, as an ASCII slug. It travels in the `couleur` URL
  * parameter exactly like `forme` does, so a link built in one language still
- * resolves in the other — display labels live under `shop.colors.*`.
+ * resolves in the other. The list itself is data: the team manages it from the
+ * back office (`gem_colors` table), so a slug is any string here.
  */
-export type GemColor =
-  | "crystal"
-  | "aquamarine"
-  | "capri"
-  | "sapphire"
-  | "amethyst"
-  | "heliotrope"
-  | "peridot"
-  | "topaz"
-  | "opal"
-  | "gold";
-
-/** Display order of the colour carousel and of the shop filter. */
-export const GEM_COLORS: GemColor[] = [
-  "crystal",
-  "aquamarine",
-  "capri",
-  "sapphire",
-  "amethyst",
-  "heliotrope",
-  "peridot",
-  "topaz",
-  "opal",
-  "gold",
-];
+export type GemColor = string;
 
 /**
- * Swatch fill per colour.
+ * One entry of the colour filter.
  *
- * A gradient rather than a flat hex: a crystal reads as a highlight and a
- * shadow, and a flat circle of clear crystal would be indistinguishable from a
- * disabled chip. The angle is shared so a row of swatches lines up.
+ * A colour is one exact shade (`hex`). Gems with special reflections or several
+ * colours share the single multicolour entry, which has no shade of its own and
+ * is painted with a fixed iridescent swatch.
  */
-export const GEM_COLOR_SWATCH: Record<GemColor, string> = {
-  crystal: "linear-gradient(135deg, #ffffff, #d3e0ef)",
-  aquamarine: "linear-gradient(135deg, #cfeaf2, #6fb3c9)",
-  capri: "linear-gradient(135deg, #7fb6e4, #1f6dab)",
-  sapphire: "linear-gradient(135deg, #8fa7e8, #2b3f96)",
-  amethyst: "linear-gradient(135deg, #e0cdf0, #8e6bb5)",
-  heliotrope: "linear-gradient(135deg, #f2d7ef, #9bb8e6 55%, #c8a6dd)",
-  peridot: "linear-gradient(135deg, #e2efb8, #8fb34a)",
-  topaz: "linear-gradient(135deg, #fbe7bb, #d9a03f)",
-  opal: "linear-gradient(135deg, #fdf3ec, #cfe6e2 45%, #efd3e6)",
-  gold: "linear-gradient(135deg, #f7e2ac, #c8992f)",
-};
+export interface GemColorDef {
+  slug: GemColor;
+  name: Localized;
+  /** `#rrggbb`; null only for the multicolour entry. */
+  hex: string | null;
+  isMulticolor: boolean;
+}
+
+/**
+ * The colours the prototype runs on when no database is configured — the same
+ * slugs, names and shades the `gem_colors` migration seeds.
+ */
+export const FALLBACK_GEM_COLORS: GemColorDef[] = [
+  { slug: "crystal", name: { fr: "Cristal clair", en: "Clear crystal" }, hex: "#d3e0ef", isMulticolor: false },
+  { slug: "aquamarine", name: { fr: "Aigue-marine", en: "Aquamarine" }, hex: "#6fb3c9", isMulticolor: false },
+  { slug: "capri", name: { fr: "Bleu Capri", en: "Capri blue" }, hex: "#1f6dab", isMulticolor: false },
+  { slug: "sapphire", name: { fr: "Saphir", en: "Sapphire" }, hex: "#2b3f96", isMulticolor: false },
+  { slug: "amethyst", name: { fr: "Améthyste", en: "Amethyst" }, hex: "#8e6bb5", isMulticolor: false },
+  { slug: "heliotrope", name: { fr: "Héliotrope AB", en: "Heliotrope AB" }, hex: "#9c8fd8", isMulticolor: false },
+  { slug: "peridot", name: { fr: "Péridot", en: "Peridot" }, hex: "#8fb34a", isMulticolor: false },
+  { slug: "topaz", name: { fr: "Topaze", en: "Topaz" }, hex: "#d9a03f", isMulticolor: false },
+  { slug: "opal", name: { fr: "Opale", en: "Opal" }, hex: "#cfe6e2", isMulticolor: false },
+  { slug: "gold", name: { fr: "Or 18k", en: "18k gold" }, hex: "#c8992f", isMulticolor: false },
+  { slug: "multicolor", name: { fr: "Multicolore", en: "Multicolour" }, hex: null, isMulticolor: true },
+];
+
+/** Fixed iridescent fill of the multicolour entry. */
+export const MULTICOLOR_SWATCH =
+  "conic-gradient(from 200deg, #f2d7ef, #9bb8e6, #cfe6e2, #fbe7bb, #e0cdf0, #f2d7ef)";
+
+/**
+ * Swatch fill of a colour.
+ *
+ * A gradient from a pale tint to the exact shade rather than a flat disc: a
+ * crystal reads as a highlight and a shadow, and a flat circle of clear
+ * crystal would be indistinguishable from a disabled chip. The angle is shared
+ * so a row of swatches lines up.
+ */
+export function colorSwatchFill(color: Pick<GemColorDef, "hex" | "isMulticolor">): string {
+  if (color.isMulticolor || !color.hex) return MULTICOLOR_SWATCH;
+  return `linear-gradient(135deg, color-mix(in srgb, ${color.hex} 22%, #ffffff), ${color.hex})`;
+}
 
 /**
  * Shop category keys, as used by the `categorie` URL parameter and the
@@ -420,7 +440,8 @@ export interface ShapeGroup {
 }
 
 /**
- * Shapes that actually have gems behind them, in `GEM_SHAPES` order.
+ * Shapes that actually have gems behind them, in `GEM_SHAPES` order; screens
+ * sort them by label through `useShapesInCatalog`.
  *
  * Derived rather than hardcoded so a shape tile can never land on an empty
  * result page: adding or removing a gem updates the carousel by itself.
@@ -434,21 +455,38 @@ export function shapesInCatalog(list: Product[] = PRODUCTS): ShapeGroup[] {
   return groups;
 }
 
+/**
+ * Items ordered alphabetically by their shape's translated label.
+ *
+ * Sorted at render time, not by slug: "Étoile" must sit beside "Diamant" in
+ * French, and the English order differs from the French one.
+ */
+export function sortByShapeLabel<T>(
+  items: T[],
+  shapeOf: (item: T) => GemShape,
+  label: (shape: GemShape) => string,
+  locale: string,
+): T[] {
+  const collator = new Intl.Collator(locale, { sensitivity: "base" });
+  return [...items].sort((a, b) => collator.compare(label(shapeOf(a)), label(shapeOf(b))));
+}
+
 export interface ColorGroup {
-  color: GemColor;
+  color: GemColorDef;
   count: number;
 }
 
 /**
- * Colours that actually have gems behind them, in `GEM_COLORS` order.
+ * Colours that actually have gems behind them, in the order of `colors` (the
+ * order the team set in the back office).
  *
  * Derived for the same reason as {@link shapesInCatalog}: a swatch can never
  * land on an empty result page.
  */
-export function colorsInCatalog(list: Product[] = PRODUCTS): ColorGroup[] {
+export function colorsInCatalog(list: Product[], colors: GemColorDef[]): ColorGroup[] {
   const groups: ColorGroup[] = [];
-  for (const color of GEM_COLORS) {
-    const count = list.filter((p) => p.color === color).length;
+  for (const color of colors) {
+    const count = list.filter((p) => p.color === color.slug).length;
     if (count > 0) groups.push({ color, count });
   }
   return groups;

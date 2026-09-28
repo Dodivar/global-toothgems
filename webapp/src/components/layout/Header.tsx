@@ -10,7 +10,8 @@ import { useAuth } from "../../lib/auth";
 import { useCart } from "../../lib/cart";
 import { useToast } from "../../lib/toast";
 import { MENU } from "../../data/menu";
-import { colorsInCatalog, shapesInCatalog } from "../../data/products";
+import { colorsInCatalog } from "../../data/products";
+import { useShapesInCatalog } from "../../lib/catalog/useShapesInCatalog";
 import { useCatalog } from "../../lib/catalog/CatalogProvider";
 import { colorHref, shapeHref } from "../../lib/shopUrl";
 import { pick } from "../../data/types";
@@ -133,9 +134,9 @@ export function Header() {
 
   const cartLabel = count > 0 ? t("nav.cartWithCount", { count }) : t("nav.cart");
 
-  const { products } = useCatalog();
-  const shapeGroups = shapesInCatalog(products);
-  const colorGroups = colorsInCatalog(products);
+  const { products, colors } = useCatalog();
+  const shapeGroups = useShapesInCatalog(products);
+  const colorGroups = colorsInCatalog(products, colors);
 
   const goTo = (to: string) => {
     clearHoverTimer();
@@ -197,7 +198,7 @@ export function Header() {
           t("nav.colorsHeading"),
           "/couleurs",
           t("nav.viewAllColors"),
-          <ColorCarousel compact={compact} groups={colorGroups} hrefFor={(g) => colorHref(g.color)} onNavigate={closeAll} />,
+          <ColorCarousel compact={compact} groups={colorGroups} hrefFor={(g) => colorHref(g.color.slug)} onNavigate={closeAll} />,
         )}
       </>
     );

@@ -44,7 +44,7 @@ CTA/accent direction:
 
 Typography:
 - Montserrat as the principal UI/content typeface.
-- A script/parfumerie-style font may be used sparingly for decorative initials/lettrines only.
+- No script/parfumerie-style font on the website: it was removed for legibility. Accents stay in Montserrat.
 
 Visual language:
 - refined glassmorphism inspired by modern Apple/iOS interfaces;

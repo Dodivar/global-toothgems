@@ -4,10 +4,13 @@ import { Archive, CircleAlert, Info, Save, Send, X } from "lucide-react";
 import clsx from "clsx";
 import { AdminButton } from "./AdminButton";
 import { AdminSelect, type AdminOption } from "./AdminSelect";
+import { ColorPicker } from "./ColorPicker";
 import { MoneyInput, NumberInput } from "./AdminNumberInputs";
 import { FormField } from "./FormField";
 import { GemOptionsEditor } from "./GemOptionsEditor";
 import { ProductMediaUploader } from "./ProductMediaUploader";
+import { RichTextArea } from "./RichTextArea";
+import { ShapePicker } from "./ShapePicker";
 import { ToggleSwitch } from "./ToggleSwitch";
 import { CONTENT_LANGS, type ContentLang } from "../../lib/localized";
 import { formatDate } from "../../lib/format";
@@ -20,9 +23,8 @@ import {
   type ProductStatus,
   type ProductType,
 } from "../../data/adminCatalog";
-import { GEM_COLORS, GEM_SHAPES, type GemColor, type GemShape } from "../../data/products";
 import type { Localized } from "../../data/types";
-import { comboSkuSuffix, longestSkuSuffix } from "../../lib/gemOptions";
+import { comboSkuSuffix, isValidPack, longestSkuSuffix, PACK_MAX, PACK_MIN } from "../../lib/gemOptions";
 
 /**
  * Create and edit a product.
@@ -73,7 +75,7 @@ export function ProductForm({
   focusOption,
 }: ProductFormProps) {
   const { t } = useTranslation();
-  const { source, categories, uploadImage } = useAdminCatalog();
+  const { source, categories, uploadImage, gemColors } = useAdminCatalog();
   // The database has no promotional price: discounts are the promotions
   // workspace's job, so the field only exists in the prototype.
   const withPromoPrice = source === "mock";
@@ -128,14 +130,6 @@ export function ProductForm({
   const optionsOn = Boolean(draft.gemOptions?.enabled);
 
   const categoryOptions: AdminOption[] = categories.map((c) => ({ value: c.id, label: c.name[lang] }));
-  const shapeOptions: AdminOption[] = [
-    { value: "", label: t("admin.form.gemLookNone") },
-    ...GEM_SHAPES.map((shape) => ({ value: shape, label: t(`shop.shapes.${shape}`) })),
-  ];
-  const colorOptions: AdminOption[] = [
-    { value: "", label: t("admin.form.gemLookNone") },
-    ...GEM_COLORS.map((color) => ({ value: color, label: t(`shop.colors.${color}`) })),
-  ];
   const typeOptions: AdminOption[] = TYPES.map((type) => ({ value: type, label: t(`admin.type.${type}`) }));
   const statusOptions: AdminOption[] = (["draft", "active", "archived"] as ProductStatus[]).map((s) => ({
     value: s,
@@ -253,16 +247,30 @@ export function ProductForm({
 
             <FormField label={t("admin.form.description")} hint={t("admin.form.descriptionHint")}>
               {(props) => (
-                <textarea
+                <RichTextArea
                   {...props}
-                  rows={5}
-                  className="gt-admin-field"
                   value={draft.description[lang]}
-                  onChange={(e) => setLocalized("description", e.target.value)}
+                  onValueChange={(value) => setLocalized("description", value)}
+                  rows={16}
                 />
               )}
             </FormField>
           </Section>
+
+          {/* Gem only: what the storefront shape and colour filters file the
+              gem under. In the main column rather than the rail, which is too
+              narrow for a palette of shapes and shades. */}
+          {isGem && (
+            <Section title={t("admin.form.gemLookTitle")} description={t("admin.form.gemLookBody")}>
+              <ShapePicker label={t("admin.form.shape")} value={draft.shape} onChange={(shape) => set("shape", shape)} />
+              <ColorPicker
+                label={t("admin.form.color")}
+                colors={gemColors}
+                value={draft.color}
+                onChange={(color) => set("color", color)}
+              />
+            </Section>
+          )}
 
           <Section title={t("admin.form.pricingTitle")} description={t("admin.form.pricingBody")}>
             <div className={clsx("grid gap-4", withPromoPrice ? "md:grid-cols-3" : "md:grid-cols-2")}>
@@ -468,32 +476,6 @@ export function ProductForm({
               )}
             </FormField>
 
-            {isGem && (
-              <>
-                <FormField label={t("admin.form.shape")} hint={t("admin.form.gemLookHint")}>
-                  {(props) => (
-                    <AdminSelect
-                      {...props}
-                      options={shapeOptions}
-                      value={draft.shape ?? ""}
-                      onChange={(e) => set("shape", (e.target.value || undefined) as GemShape | undefined)}
-                    />
-                  )}
-                </FormField>
-
-                <FormField label={t("admin.form.color")} hint={t("admin.form.gemLookHint")}>
-                  {(props) => (
-                    <AdminSelect
-                      {...props}
-                      options={colorOptions}
-                      value={draft.color ?? ""}
-                      onChange={(e) => set("color", (e.target.value || undefined) as GemColor | undefined)}
-                    />
-                  )}
-                </FormField>
-              </>
-            )}
-
             <FormField label={t("admin.form.type")} hint={t("admin.form.typeHint")}>
               {(props) => (
                 <AdminSelect
@@ -662,6 +644,8 @@ function validate(
     const suffix = longestSkuSuffix(offered);
     if (offered.length === 0) {
       errors.options = t("admin.form.errors.optionsEmpty");
+    } else if (!draft.gemOptions.packs.every(isValidPack)) {
+      errors.options = t("admin.form.errors.optionsPack", { min: PACK_MIN, max: PACK_MAX });
     } else if (sku.length + suffix > SKU_MAX_LENGTH) {
       const longest = offered.map(comboSkuSuffix).sort((a, b) => b.length - a.length)[0];
       errors.options = t("admin.form.errors.optionsSkuTooLong", { max: SKU_MAX_LENGTH - suffix, suffix: longest });

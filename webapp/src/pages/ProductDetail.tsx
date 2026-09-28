@@ -7,6 +7,7 @@ import { Button } from "../components/ui/Button";
 import { IconButton } from "../components/ui/IconButton";
 import { Select } from "../components/ui/Select";
 import { ProductCard } from "../components/ui/ProductCard";
+import { RichText } from "../components/ui/RichText";
 import { ReviewsSection, useSubjectReviews } from "../components/reviews/ReviewsSection";
 import { relatedProducts, type Product } from "../data/products";
 import { pick } from "../data/types";
@@ -274,7 +275,7 @@ function ProductView({ product }: { product: Product }) {
             )}
             <span className="text-sm text-[var(--text-muted)]">{t("product.installment", { amount: installment })}</span>
           </div>
-          <p className="m-0 text-[length:var(--text-body-md)] text-[var(--text-body)]">{description}</p>
+          <RichText source={description} className="text-[length:var(--text-body-md)] text-[var(--text-body)]" />
 
           {/* Shade is a swatch radio group rather than a dropdown: colour is the
               decision here, and a <select> hides the options behind a click. */}
