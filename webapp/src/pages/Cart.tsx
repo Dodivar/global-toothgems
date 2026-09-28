@@ -92,8 +92,8 @@ export function Cart() {
       <div className="mx-auto max-w-[680px] px-[clamp(14px,4vw,48px)] py-[clamp(56px,8vw,96px)] text-center">
         <div className="gt-celebrate grid justify-items-center gap-5">
           <Badge tone="success" icon={CheckCircle2}>{t("cart.confirmedBadge")}</Badge>
-          {/* The celebratory moment: the one place the script font carries a full word. */}
-          <span className="gt-script text-[clamp(56px,10vw,104px)] leading-none text-[var(--gt-blue-500)]">
+          {/* The celebratory moment: one word, set as an editorial accent. */}
+          <span className="gt-accent text-[clamp(28px,4vw,40px)] leading-none text-[var(--gt-blue-600)]">
             {t("cart.confirmedScript")}
           </span>
           <h1 className="text-[length:var(--text-h1)]">{t("cart.confirmedTitle")}</h1>

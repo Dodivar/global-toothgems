@@ -46,10 +46,10 @@ export function CourseCard({
 
   return (
     <article
-      className={`group relative overflow-hidden rounded-[var(--radius-card)] border shadow-[var(--shadow-xs)] transition-[transform,box-shadow] duration-[var(--duration-normal)] ease-[var(--ease-out-soft)] ${
+      className={`group relative overflow-hidden rounded-[var(--radius-card)] border shadow-[var(--shadow-card)] transition-[transform,box-shadow] duration-[var(--duration-normal)] ease-[var(--ease-out-soft)] ${
         locked
           ? "opacity-80"
-          : "hover:-translate-y-[3px] hover:shadow-[var(--shadow-md)] focus-within:-translate-y-[3px] focus-within:shadow-[var(--shadow-md)]"
+          : "hover:-translate-y-[3px] hover:shadow-[var(--shadow-card-hover)] focus-within:-translate-y-[3px] focus-within:shadow-[var(--shadow-card-hover)]"
       }`}
       style={{
         background: ink ? "var(--gt-ink-800)" : "var(--surface-card)",

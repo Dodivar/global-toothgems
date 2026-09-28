@@ -133,7 +133,7 @@ export function Studio() {
               {t("studio.hero.eyebrow")}
               <NewTag />
             </span>
-            <span className="gt-script -mb-2 text-[clamp(28px,3.4vw,42px)] text-[var(--gt-blue-700)]">{t("studio.hero.script")}</span>
+            <span className="gt-accent text-[clamp(18px,2vw,24px)] text-[var(--gt-blue-700)]">{t("studio.hero.script")}</span>
             <h1 id="gt-studio-title" className="text-[length:var(--text-display-1)] font-[var(--weight-black)] leading-[var(--leading-tight)] tracking-[var(--tracking-display)] text-[var(--gt-ink-900)]">
               {t("studio.hero.title")}
             </h1>

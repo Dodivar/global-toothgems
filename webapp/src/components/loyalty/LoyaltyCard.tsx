@@ -155,10 +155,10 @@ export function LoyaltyCard({ state, action, titleAs = "h2", compact = false, cl
         <LoyaltyProgress stamps={state.stamps} total={STAMPS_PER_CARD} tone={complete ? "ink" : "paper"} />
 
         <div className="grid gap-2">
-          {/* The one decorative-script moment in the programme, saved for the
+          {/* The one editorial accent in the programme, saved for the
               payoff — the role it already plays on the order-confirmed screen. */}
           {complete && (
-            <span aria-hidden="true" className="gt-script text-[clamp(30px,5vw,44px)] leading-none text-[var(--gt-emerald-300)]">
+            <span aria-hidden="true" className="gt-accent text-[clamp(20px,3vw,26px)] leading-none text-[var(--gt-emerald-300)]">
               {t("loyalty.state.unlocked.script")}
             </span>
           )}

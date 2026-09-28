@@ -82,7 +82,7 @@ export function Certificates() {
             </dl>
             <span className="flex items-center gap-2 text-[var(--gt-blue-300)]">
               <span aria-hidden="true">&#10022;</span>
-              <span className="gt-script text-[26px] leading-none">{t("account.certificatesTagline")}</span>
+              <span className="gt-accent text-[15px] leading-none">{t("account.certificatesTagline")}</span>
             </span>
           </div>
         )}

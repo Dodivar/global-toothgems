@@ -153,11 +153,9 @@
   --tracking-logo: .32em;
 
   --gt-font-sans: "Montserrat", "Helvetica Neue", Arial, sans-serif;
-  --gt-font-script: "Parfumerie Script", "Snell Roundhand", cursive;
   --gt-font-mono: ui-monospace, "SFMono-Regular", Menlo, monospace;
   --font-body: var(--gt-font-sans);
   --font-display: var(--gt-font-sans);
-  --font-decorative: var(--gt-font-script);
 
   /* Spacing */
   --space-0: 0;
@@ -211,6 +209,19 @@
   --shadow-inset-hairline: inset 0 0 0 1px var(--border-subtle);
   --shadow-focus: 0 0 0 3px rgba(185, 205, 229, .9);
   --shadow-glass-heavy: 0 24px 64px -12px rgba(35, 52, 71, .42), 0 4px 14px rgba(35, 52, 71, .14);
+  /* Storefront cards (products, courses, reviews, tiles) on the pale blue page.
+     A neutral grey barely registers on --surface-page, so both are tinted with
+     the brand ink: a tight contact shadow under the edge plus a soft offset
+     drop that gives the card its lift. Hover deepens the drop to match the
+     card rising by a few pixels. The admin keeps its flatter --shadow-xs. */
+  --shadow-card:
+    0 1px 2px rgba(35, 52, 71, .08),
+    0 4px 10px -2px rgba(35, 52, 71, .08),
+    0 14px 32px -10px rgba(35, 52, 71, .20);
+  --shadow-card-hover:
+    0 2px 4px rgba(35, 52, 71, .08),
+    0 10px 22px -6px rgba(35, 52, 71, .14),
+    0 28px 52px -16px rgba(35, 52, 71, .30);
 
   /* Motion */
   --ease-standard: cubic-bezier(.22, .61, .36, 1);
@@ -231,14 +242,6 @@
     --duration-normal: 1ms;
     --duration-slow: 1ms;
   }
-}
-
-@font-face {
-  font-family: "Parfumerie Script";
-  src: url("./assets/fonts/ParfumerieScript-Regular.otf") format("opentype");
-  font-weight: 400;
-  font-style: normal;
-  font-display: swap;
 }
 
 *, *::before, *::after { box-sizing: border-box; }
@@ -283,10 +286,11 @@
   }
 
   .gt-lettrine {
-    font-family: var(--font-decorative);
+    font-family: var(--font-display);
     font-size: 3.2em;
+    font-weight: var(--weight-semibold);
     line-height: .8;
-    color: var(--gt-blue-400);
+    color: var(--gt-blue-500);
   }
 
   .gt-glass {
@@ -350,12 +354,16 @@
     --glass-deep-glow-spread: 2px;
   }
 
-  /* Decorative script. Accents only - never body, nav, forms or legal copy. */
-  .gt-script {
-    font-family: var(--font-decorative);
+  /* Editorial accent: a short line set in Montserrat italic beside a heading.
+     The site no longer uses a script face anywhere - it was unreadable on
+     screen - so accents stay in the brand sans and differ by style and colour
+     only. Italic is loaded at 400 alone; do not pair this with another weight. */
+  .gt-accent {
+    font-family: var(--font-display);
+    font-style: italic;
     font-weight: var(--weight-regular);
-    letter-spacing: var(--tracking-normal);
-    line-height: 1;
+    letter-spacing: var(--tracking-tight);
+    line-height: 1.15;
   }
 
   /* Skip link: visible only once focused. */
