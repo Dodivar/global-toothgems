@@ -1414,7 +1414,17 @@
       "shortDescription": "Description courte",
       "shortDescriptionHint": "Une phrase, affichée sous le nom dans les listes.",
       "description": "Description complète",
-      "descriptionHint": "Matière, dimensions, conditionnement : ce qui évite une question au support.",
+      "descriptionHint": "Matière, dimensions, conditionnement : ce qui évite une question au support. Mise en forme : **gras**, *italique*, « - » pour une liste à puces, « 1. » pour une liste numérotée, une ligne vide entre deux paragraphes.",
+      "richText": {
+        "toolbar": "Mise en forme",
+        "bold": "Gras (Ctrl+B)",
+        "italic": "Italique (Ctrl+I)",
+        "bulletList": "Liste à puces",
+        "numberedList": "Liste numérotée",
+        "preview": "Aperçu",
+        "edit": "Modifier",
+        "empty": "Aucune description pour le moment."
+      },
       "pricingTitle": "Prix",
       "pricingBody": "Montants en euros, taxes comprises. Le prix promotionnel remplace le prix de vente lorsqu’il est renseigné.",
       "price": "Prix de vente",

@@ -8,6 +8,7 @@ import { MoneyInput, NumberInput } from "./AdminNumberInputs";
 import { FormField } from "./FormField";
 import { GemOptionsEditor } from "./GemOptionsEditor";
 import { ProductMediaUploader } from "./ProductMediaUploader";
+import { RichTextArea } from "./RichTextArea";
 import { ToggleSwitch } from "./ToggleSwitch";
 import { CONTENT_LANGS, type ContentLang } from "../../lib/localized";
 import { formatDate } from "../../lib/format";
@@ -253,12 +254,10 @@ export function ProductForm({
 
             <FormField label={t("admin.form.description")} hint={t("admin.form.descriptionHint")}>
               {(props) => (
-                <textarea
+                <RichTextArea
                   {...props}
-                  rows={5}
-                  className="gt-admin-field"
                   value={draft.description[lang]}
-                  onChange={(e) => setLocalized("description", e.target.value)}
+                  onValueChange={(value) => setLocalized("description", value)}
                 />
               )}
             </FormField>

@@ -1414,7 +1414,17 @@
       "shortDescription": "Short description",
       "shortDescriptionHint": "One sentence, shown under the name in lists.",
       "description": "Full description",
-      "descriptionHint": "Material, dimensions, packaging: whatever saves the customer a question.",
+      "descriptionHint": "Material, dimensions, packaging: whatever saves the customer a question. Formatting: **bold**, *italic*, \"- \" for a bullet list, \"1. \" for a numbered list, a blank line between paragraphs.",
+      "richText": {
+        "toolbar": "Formatting",
+        "bold": "Bold (Ctrl+B)",
+        "italic": "Italic (Ctrl+I)",
+        "bulletList": "Bullet list",
+        "numberedList": "Numbered list",
+        "preview": "Preview",
+        "edit": "Edit",
+        "empty": "No description yet."
+      },
       "pricingTitle": "Pricing",
       "pricingBody": "Amounts in euro, tax included. A promotional price replaces the selling price while it is set.",
       "price": "Selling price",

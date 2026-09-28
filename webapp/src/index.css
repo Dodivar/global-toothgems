@@ -285,6 +285,18 @@
     color: var(--text-muted);
   }
 
+  /* Formatted product descriptions (components/ui/RichText.tsx). Preflight
+     strips margins and list markers, so both are restored here. */
+  .gt-rich-text > * { margin: 0; }
+  .gt-rich-text > * + * { margin-top: 0.75em; }
+  .gt-rich-text ul,
+  .gt-rich-text ol { padding-left: 1.25em; }
+  .gt-rich-text ul { list-style: disc; }
+  .gt-rich-text ol { list-style: decimal; }
+  .gt-rich-text li + li { margin-top: 0.25em; }
+  .gt-rich-text li::marker { color: var(--text-muted); }
+  .gt-rich-text strong { font-weight: var(--weight-semibold); color: var(--text-primary); }
+
   .gt-lettrine {
     font-family: var(--font-display);
     font-size: 3.2em;
