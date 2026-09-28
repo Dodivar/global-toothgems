@@ -24,7 +24,7 @@ export function StudioTeaser() {
 
   return (
     <section ref={ref} aria-labelledby="gt-studio-teaser-title" className="gt-reveal px-[clamp(14px,4vw,48px)] pb-[var(--section-y)]">
-      <div className="gt-studio-teaser relative mx-auto grid max-w-[var(--max-width-content)] grid-cols-1 items-center gap-[clamp(28px,4vw,56px)] overflow-hidden rounded-[var(--radius-2xl)] p-[clamp(20px,4vw,56px)] lg:grid-cols-[minmax(0,0.9fr)_minmax(0,1.1fr)]">
+      <div className="gt-studio-teaser relative mx-auto grid shadow-[var(--shadow-card)] max-w-[var(--max-width-content)] grid-cols-1 items-center gap-[clamp(28px,4vw,56px)] overflow-hidden rounded-[var(--radius-2xl)] p-[clamp(20px,4vw,56px)] lg:grid-cols-[minmax(0,0.9fr)_minmax(0,1.1fr)]">
         <div className="relative grid justify-items-start gap-5">
           <span className="inline-flex items-center gap-2 text-[length:var(--text-eyebrow)] font-semibold uppercase tracking-[var(--tracking-eyebrow)] text-[var(--gt-blue-700)]">
             <Box size={14} aria-hidden="true" />

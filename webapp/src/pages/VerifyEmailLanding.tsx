@@ -179,7 +179,7 @@ function MockVerifyEmailLanding() {
         <div className="grid justify-items-center gap-5 pt-2 text-center">
           <SuccessMark />
           <div className="grid gap-2">
-            <span aria-hidden="true" className="gt-script text-[40px] leading-none text-[var(--gt-blue-400)]">
+            <span aria-hidden="true" className="gt-accent text-[22px] leading-none text-[var(--gt-blue-600)]">
               {t("security.verify.script")}
             </span>
             <h1 ref={headingRef} tabIndex={-1} className="text-[clamp(26px,4vw,34px)] leading-[1.15] tracking-[var(--tracking-display)] outline-none">

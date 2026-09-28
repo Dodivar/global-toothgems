@@ -243,7 +243,7 @@ export function Shop() {
             ) : pending || catalogStatus === "loading" ? (
               <div className={GRID} aria-hidden="true">
                 {Array.from({ length: Math.min(PER_PAGE, Math.max(filtered.length, 4)) }).map((_, i) => (
-                  <div key={i} className="rounded-[var(--radius-card)] border border-[var(--border-subtle)] p-[var(--space-3)]">
+                  <div key={i} className="rounded-[var(--radius-card)] border border-[var(--border-subtle)] bg-[var(--surface-card)] p-[var(--space-3)] shadow-[var(--shadow-card)]">
                     <div className="gt-skeleton aspect-square rounded-[var(--radius-media)]" />
                     <div className="grid gap-2 pt-3">
                       <div className="gt-skeleton h-3 w-3/4 rounded-full" />

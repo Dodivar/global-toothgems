@@ -57,7 +57,7 @@ export function CommunityHome() {
               <h1 className="max-w-[16ch] text-[length:var(--text-display-2)] leading-[var(--leading-tight)]">
                 {t("community.homeTitle")}
               </h1>
-              <p className="gt-script m-0 text-[clamp(28px,4vw,40px)] text-[var(--gt-blue-600)]">
+              <p className="gt-accent m-0 text-[clamp(18px,2.2vw,22px)] text-[var(--gt-blue-600)]">
                 {t("community.homeMotto")}
               </p>
             </div>

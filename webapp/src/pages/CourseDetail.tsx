@@ -304,7 +304,7 @@ export function CourseDetail() {
           }}
         />
         <div className="relative mx-auto grid max-w-[var(--max-width-prose)] justify-items-center gap-5">
-          <span className="gt-script text-[clamp(30px,4.4vw,46px)] text-[var(--gt-blue-300)]">
+          <span className="gt-accent text-[clamp(18px,2.2vw,24px)] text-[var(--gt-blue-300)]">
             {t("training.finalScript")}
           </span>
           <h2

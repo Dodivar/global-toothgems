@@ -139,7 +139,7 @@ export function GiftCard() {
             <p className="gt-eyebrow m-0">{t("promo.store.eyebrow")}</p>
             <h1 className="text-[length:var(--text-display-2)] leading-[var(--leading-tight)] tracking-[var(--tracking-display)]">
               {t("promo.store.headlineA")}{" "}
-              <span className="gt-script font-normal text-[var(--gt-blue-600)]">{t("promo.store.headlineB")}</span>
+              <span className="text-[var(--gt-blue-600)]">{t("promo.store.headlineB")}</span>
             </h1>
             <p className="m-0 max-w-[48ch] text-[length:var(--text-body-lg)] leading-[var(--leading-relaxed)] text-[var(--text-body)]">{l(config.description)}</p>
             <div className="flex flex-wrap items-center gap-3">

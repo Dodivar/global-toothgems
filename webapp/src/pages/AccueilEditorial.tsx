@@ -130,9 +130,9 @@ export function AccueilEditorial() {
         <div className="grid lg:grid-cols-[minmax(0,1.12fr)_minmax(0,0.88fr)]">
           <div className={`order-2 flex flex-col justify-between gap-8 sm:gap-10 lg:order-1 ${GUTTER} py-7 sm:py-[clamp(36px,5vw,72px)]`}>
             <div className="grid gap-[clamp(20px,2.4vw,32px)]">
-              {/* The one decorative-script moment above the fold, held on a rule. */}
+              {/* The one editorial accent above the fold, held on a rule. */}
               <span className="flex items-baseline gap-4 border-b border-[var(--border-subtle)] pb-3 sm:pb-4">
-                <span className="gt-script text-[clamp(24px,3vw,38px)] leading-none text-[var(--gt-blue-700)]">
+                <span className="gt-accent text-[clamp(17px,1.9vw,22px)] leading-none text-[var(--gt-blue-700)]">
                   {t("home.heroEyebrow")}
                 </span>
               </span>
@@ -592,11 +592,7 @@ export function AccueilEditorial() {
             </h2>
           </div>
           <figure className="m-0 grid gap-8 py-[clamp(36px,5vw,64px)] lg:grid-cols-[auto_minmax(0,1fr)] lg:gap-12">
-            {/* Decorative accent, carrying no information of its own. Set in
-                Montserrat rather than the script face: the script's quote glyph
-                is a hairline mark in a 2em line box, which reads as a rendering
-                fault and pushes the quote down the column. The page already
-                spends its script moments on the eyebrow and the gift title. */}
+            {/* Decorative accent, carrying no information of its own. */}
             <span
               aria-hidden="true"
               className="hidden select-none text-[clamp(90px,10vw,150px)] font-[var(--weight-black)] leading-[.72] text-[var(--gt-blue-300)] lg:block"
@@ -666,8 +662,7 @@ export function AccueilEditorial() {
               <span className="justify-self-start">
                 <Badge tone="highlight" size="sm">{t("home.giftBadge")}</Badge>
               </span>
-              {/* Editorial accent: short, decorative, not carrying essential detail. */}
-              <h2 id="alt-gift-title" className="gt-script m-0 text-[clamp(44px,6.5vw,86px)] font-normal tracking-normal text-[var(--gt-ink-900)]">
+              <h2 id="alt-gift-title" className="m-0 text-[length:var(--text-display-2)] font-[var(--weight-bold)] leading-[var(--leading-tight)] tracking-[var(--tracking-display)] text-[var(--gt-ink-900)]">
                 {t("home.giftTitle")}
               </h2>
               <p className="m-0 max-w-[48ch] text-[length:var(--text-body-md)] leading-[var(--leading-normal)] text-[var(--gt-ink-800)]">

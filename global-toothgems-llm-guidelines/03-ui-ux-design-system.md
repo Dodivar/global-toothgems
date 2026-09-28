@@ -36,10 +36,12 @@ Each page should have a clear visual hierarchy.
 Primary:
 - Montserrat.
 
-Decorative:
-- script/parfumerie-style font only for selective decorative elements such as a large initial or editorial accent.
+No script or decorative typeface is used anywhere on the site. The former
+script/parfumerie face ("Parfumerie Script") was removed because it is not
+legible on screen. Editorial accents are set in Montserrat (italic 400, the
+`.gt-accent` class) and differ from surrounding text by style and colour only.
 
-Never use decorative typography for:
+Never use accent styling for:
 - body copy;
 - legal text;
 - forms;
@@ -57,6 +59,13 @@ Use restrained glassmorphism:
 
 Do not create opaque “frosted plastic” interfaces everywhere.
 Glass is an accent, not the entire design language.
+
+## Card elevation
+
+Storefront cards (products, courses, reviews, category tiles) float visibly
+above the pale blue page. They use the `--shadow-card` token at rest and
+`--shadow-card-hover` when hovered or focused, both tinted with the brand ink
+rather than neutral grey. The admin keeps its flatter `--shadow-xs` panels.
 
 ## Components
 
