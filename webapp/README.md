@@ -274,7 +274,8 @@ The layer around the editor that makes it a personal design workspace. The edito
 | `lib/studioWorkspace/scene.ts` | The saved `scene_data` format (version 1): every piece with its full transform, the light, the camera and the Gem Groups pieces came from; `sanitizeScene` for anything read back |
 | `lib/studioWorkspace/gemGroup.ts` | Gem Group arrangements, stored in an anchor tooth's frame (along the arch, up, out of the enamel) so they can be dropped on any tooth and keep their spacing, spin, size and finish |
 | `lib/studioWorkspace/repository.ts` | **The persistence boundary**: `CreationsRepository`, `GemGroupsRepository`, `FeedbackRepository`. The UI never touches storage or Supabase directly |
-| `lib/studioWorkspace/localRepository.ts` | PROTOTYPE implementation in browser storage, one namespace per account, seeded with the example library (`seed.ts`) |
+| `lib/studioWorkspace/supabaseRepository.ts` | The Supabase implementation, used for real accounts: `creations`, `gem_groups`, `studio_feedback`, thumbnails in the private `studio-thumbnails` bucket |
+| `lib/studioWorkspace/localRepository.ts` | Browser-storage implementation for the mock sign-in's demo accounts, one namespace per account, seeded with the example library (`seed.ts`) |
 | `lib/studioWorkspace/workspace.tsx` | Provider: the loaded library, the save state of the stage (`empty` / `unsaved` / `saving` / `saved` / `failed`), and every action with its toast |
 | `lib/studioWorkspace/library.ts`, `validation.ts` | Search, filters, sort, summary; name / description / tag rules (unit-tested in `studioWorkspace.test.ts`) |
 | `lib/studio3d/archLayout.ts` | The reference arch as plain numbers, shared by the engine and the drawn previews |
@@ -290,7 +291,7 @@ The layer around the editor that makes it a personal design workspace. The edito
 - **Onboarding** shows once per browser (`gt-studio3d-onboarding-v1`), can be skipped at any step and replayed from Help.
 - **Feedback** records a rating, a type, the message and a little context (page, piece count, language, window size — nothing personal).
 
-**Moving to Supabase.** The schema is ready in `supabase/migrations/20260927120000_studio_workspace.sql` — `creations`, `gem_groups`, `studio_feedback` and a private `studio-thumbnails` bucket, owner-only by RLS, with `user_id` defaulting to `auth.uid()` and not writable. It is **not applied** yet. To switch: apply the migration, regenerate `lib/supabase/database.types.ts`, write `createSupabaseRepositories(client)` implementing `StudioRepositories` (thumbnails uploaded to `studio-thumbnails/<user id>/<creation id>.jpg` and served by signed URL), and return it from `createRepositories()` in `workspace.tsx` when `isSupabaseConfigured`. Nothing else in the UI changes.
+**On Supabase.** Real accounts use `lib/studioWorkspace/supabaseRepository.ts`, backed by `supabase/migrations/20260928222836_studio_workspace.sql`: `creations` (the scene in `scene_data`), `gem_groups`, `studio_feedback` and the private `studio-thumbnails` bucket, owner-only by RLS, with `user_id` defaulting to `auth.uid()` and not writable. A creation's render is uploaded to `studio-thumbnails/<user id>/<creation id>.jpg` after the row is saved (best effort) and served by signed URL. The demo accounts of the mock sign-in keep the local, seeded store (`localRepository.ts`). The switch is `createRepositories()` in `workspace.tsx`. Designs saved in a browser before the switch stay in that browser's storage and are not imported.
 
 **Overlap to decide:** the editor's older "My presets" (whole designs kept in browser storage, under Presets) still works as before. Saved creations now cover that need per account; the presets menu could be retired or pointed at My Creations.
 
