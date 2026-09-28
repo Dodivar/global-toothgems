@@ -14,6 +14,7 @@ import {
   type PlacedJewelry,
   type PresetItem,
   type ToothSpec,
+  type Vec3,
 } from "../../data/studioEditor";
 import { crownAt, DENTITION_CROWNS, DENTITION_FIT } from "./dentition";
 import {
@@ -27,6 +28,9 @@ import {
   type Footprint,
 } from "./geometry";
 import { ARCH_K, backOut, clamp, easeInOutCubic, pointInPolygon, seeded, ss01, uid, v3, xForArc, type Point2 } from "./math";
+import { ARCH_FRAMES } from "./archLayout";
+import { anchorToothOf, groupToWorld, piecesToGroup, type Frame, type GemGroupData } from "../studioWorkspace/gemGroup";
+import type { SceneCamera, SceneModel } from "../studioWorkspace/scene";
 import { notify } from "./notices";
 import type { DesignIssue, DesignStore, LightPreset, ModelMode } from "./store";
 
@@ -601,20 +605,14 @@ export class StudioEngine {
   /** Walk every tooth of the procedural upper arch — shared by the studio arch,
       the auto-fit anchors and the free-mode labelling proxies. */
   private forEachArchTooth(fn: (fdi: string, spec: ToothSpec, pos: THREE.Vector3, outward: THREE.Vector3, tangent: THREE.Vector3) => void) {
-    const centers = this.archCenters();
-    for (const t of QUADRANT_TEETH) {
-      const centerS = centers[QUADRANT_TEETH.indexOf(t)];
-      for (const side of [-1, 1] as const) {
-        const fdi = side < 0 ? t.fdiR : t.fdiL;
-        const spec = TOOTH_SPECS[t.key];
-        const s = centerS * side;
-        const x = xForArc(Math.abs(s)) * side;
-        const z = -(x * x) / ARCH_K;
-        const outward = new THREE.Vector3((2 * x) / ARCH_K, 0, 1).normalize();
-        const tangent = new THREE.Vector3(outward.z, 0, -outward.x);
-        const pos = new THREE.Vector3(x, (seeded(fdi, 4) - 0.5) * 0.8, z);
-        fn(fdi, spec, pos, outward, tangent);
-      }
+    for (const f of ARCH_FRAMES) {
+      fn(
+        f.fdi,
+        f.spec,
+        new THREE.Vector3(f.center.x, f.center.y, f.center.z),
+        new THREE.Vector3(f.outward.x, f.outward.y, f.outward.z),
+        new THREE.Vector3(f.tangent.x, f.tangent.y, f.tangent.z),
+      );
     }
   }
 
@@ -880,6 +878,8 @@ export class StudioEngine {
     this.syncJewels();
     this.checkDesign(true);
     if (stageChanged) this.setView("reset");
+    // A saved creation opened while the model was loading.
+    if (this.store.hasPendingLoad()) this.settlePendingLoad();
     this.wake();
   }
 
@@ -1760,6 +1760,8 @@ export class StudioEngine {
     this.syncJewels();
     this.checkDesign();
     this.wake();
+    // A saved scene was just put on the stage: settle it once this commit is over.
+    if (this.store.hasPendingLoad()) queueMicrotask(() => this.settlePendingLoad());
   };
   /** Keep drawing for the settle period: something on screen may change. */
   private wake = () => {
@@ -2230,7 +2232,7 @@ export class StudioEngine {
   }
   /** Clean capture of the current view (overlays + highlights hidden) —
       shared by the PNG export and the quote sheet. */
-  captureView(opts: { transparent?: boolean } = {}): string {
+  captureView(opts: { transparent?: boolean; camera?: THREE.PerspectiveCamera } = {}): string {
     const outlineVis: boolean[] = [];
     this.jewelRigs.forEach((r) => {
       outlineVis.push(r.outline.visible);
@@ -2251,7 +2253,7 @@ export class StudioEngine {
       this.backdrop.visible = false;
       this.floor.visible = false;
     }
-    this.renderer.render(this.scene, this.camera);
+    this.renderer.render(this.scene, opts.camera ?? this.camera);
     const url = this.renderer.domElement.toDataURL("image/png");
     let i = 0;
     this.jewelRigs.forEach((r) => {
@@ -2310,6 +2312,162 @@ export class StudioEngine {
     const url = URL.createObjectURL(blob);
     downloadURL(url, exportFileName("json"));
     setTimeout(() => URL.revokeObjectURL(url), 4000);
+  }
+
+  /* ---------- saved creations & gem groups ---------- */
+
+  /** Which dentition the design sits on, as a saved scene names it. */
+  modelKind(): SceneModel {
+    return this.modelMode;
+  }
+  getCameraState(): SceneCamera {
+    const r = (v: number) => Math.round(v * 100) / 100;
+    const p = this.camera.position;
+    const t = this.controls.target;
+    return { position: [r(p.x), r(p.y), r(p.z)], target: [r(t.x), r(t.y), r(t.z)] };
+  }
+  /**
+   * Finish loading a saved scene once a model is on stage: a design saved on
+   * another built-in model is re-seated tooth by tooth (`adaptDesign`), then
+   * the light and — on the same model — the saved view come back. Waits, and
+   * is picked up by `swapModel`, while the model is still loading.
+   */
+  private settlePendingLoad() {
+    if (this.disposed || !this.modelReady) return;
+    const load = this.store.takePendingLoad();
+    if (!load) return;
+    const same = (a: Vec3, b: Vec3) => a.x === b.x && a.y === b.y && a.z === b.z;
+    const before = new Map(this.store.jewels.map((j) => [j.id, j]));
+    const updates: { id: string; patch: Partial<PlacedJewelry> }[] = [];
+    for (const j of this.adaptDesign(this.store.jewels, load.model)) {
+      const old = before.get(j.id);
+      if (old && (old.toothId !== j.toothId || !same(old.position, j.position) || !same(old.normal, j.normal))) {
+        updates.push({ id: j.id, patch: { toothId: j.toothId, position: j.position, normal: j.normal } });
+      }
+    }
+    this.store.settleLoadedPieces(updates, this.modelMode);
+    this.setLightPreset(this.store.lightPreset);
+    // A camera saved on another model frames another stage: start from the default view there.
+    if (load.camera && load.model === this.modelMode) {
+      const [px, py, pz] = load.camera.position;
+      const [tx, ty, tz] = load.camera.target;
+      this.tweenCamera(new THREE.Vector3(px, py, pz), new THREE.Vector3(tx, ty, tz), 700);
+    } else this.setView("reset");
+  }
+
+  /**
+   * A small JPEG of the stage for a saved creation's card: the clean capture
+   * (no outlines, no highlights) on the stage's own blue, cropped to fill.
+   */
+  async captureThumbnail(width = 480, height = 360): Promise<string> {
+    const render = await decodeImage(this.captureView({ camera: this.thumbnailCamera(width / height) }));
+    const c = document.createElement("canvas");
+    c.width = width;
+    c.height = height;
+    const ctx = c.getContext("2d")!;
+    const g = ctx.createRadialGradient(width / 2, height * 0.4, 0, width / 2, height * 0.4, Math.hypot(width, height) * 0.62);
+    STAGE_GRADIENT.forEach(([at, color]) => g.addColorStop(at, color));
+    ctx.fillStyle = g;
+    ctx.fillRect(0, 0, width, height);
+    const scale = Math.max(width / render.width, height / render.height);
+    const w = render.width * scale;
+    const h = render.height * scale;
+    ctx.drawImage(render, (width - w) / 2, (height - h) / 2, w, h);
+    return c.toDataURL("image/jpeg", 0.82);
+  }
+
+  /**
+   * A camera for the saved-design card, independent of where the artist left
+   * the view: slightly above the front, centred on the pieces and pulled back
+   * until they fit the card (`cardAspect`) with a little of the smile around.
+   */
+  private thumbnailCamera(cardAspect: number): THREE.PerspectiveCamera {
+    const cam = this.camera.clone();
+    const jewels = this.store.jewels;
+    const box = new THREE.Box3();
+    if (jewels.length) jewels.forEach((j) => box.expandByPoint(new THREE.Vector3(j.position.x, j.position.y, j.position.z)));
+    else box.setFromCenterAndSize(new THREE.Vector3(0, 0, 0), new THREE.Vector3(24, 10, 1));
+    const size = box.getSize(new THREE.Vector3());
+    const target = box.getCenter(new THREE.Vector3());
+    const w = Math.max(size.x + 10, 26);
+    const h = Math.max(size.y + 8, w / cardAspect);
+    const tanV = Math.tan(THREE.MathUtils.degToRad(cam.fov / 2));
+    // The capture is cropped to the card from the canvas: fit both ways.
+    const dist = Math.max(h / 2 / tanV, w / 2 / (tanV * Math.min(cam.aspect, cardAspect)));
+    cam.position.copy(target).addScaledVector(new THREE.Vector3(0, 0.12, 1).normalize(), dist);
+    cam.lookAt(target);
+    cam.updateMatrixWorld();
+    return cam;
+  }
+
+  /** A tooth's local frame: its labial centre, the arch direction, up, and out of the enamel. */
+  private toothFrame(toothId: string): Frame | null {
+    const rig = this.toothRigs.get(toothId);
+    if (!rig) return null;
+    const origin = this.getSurfacePoint(toothId, 0, 0).point;
+    const vec = (v: THREE.Vector3) => ({ x: v.x, y: v.y, z: v.z });
+    return { origin: vec(origin), tangent: vec(rig.tangent), up: { x: 0, y: 1, z: 0 }, outward: vec(rig.outward) };
+  }
+
+  /** The selected pieces as a reusable arrangement, relative to the tooth holding most of them. */
+  captureGroup(ids: string[]): GemGroupData | null {
+    const pieces = this.store.jewels.filter((j) => ids.includes(j.id));
+    const anchor = anchorToothOf(pieces.filter((p) => this.toothRigs.has(p.toothId)));
+    const frame = anchor ? this.toothFrame(anchor) : null;
+    if (!anchor || !frame || pieces.length < 2) return null;
+    return { version: 1, anchorToothId: anchor, pieces: piecesToGroup(pieces, frame) };
+  }
+
+  /**
+   * Insert a Gem Group on a tooth (its own anchor tooth by default), keeping
+   * the arrangement: each piece is mapped into that tooth's frame, re-seated
+   * on the enamel and, if the spot is taken, slid to the nearest free one.
+   * One undo step; the new pieces arrive selected and stay individually editable.
+   */
+  insertGroup(data: GemGroupData, toothId?: string | null): { placed: string[]; skipped: number } {
+    const target =
+      toothId && this.toothRigs.has(toothId) ? toothId : this.toothRigs.has(data.anchorToothId) ? data.anchorToothId : "11";
+    const frame = this.toothFrame(target);
+    if (!frame) return { placed: [], skipped: data.pieces.length };
+    const blockers = this.blockersFor(new Set());
+    const copies: PlacedJewelry[] = [];
+    for (const { piece, position, normal } of groupToWorld(data.pieces, frame)) {
+      const hit = this.snapToSurface(new THREE.Vector3(position.x, position.y, position.z), new THREE.Vector3(normal.x, normal.y, normal.z));
+      if (!hit) continue;
+      const pose: GemPose = { typeId: piece.jewelryTypeId, scale: piece.scale, offset: piece.offset ?? 0, rotation: piece.rotation };
+      const free = this.findFreeSpot(hit, pose, blockers);
+      if (!free) continue;
+      const copy: PlacedJewelry = {
+        id: uid(),
+        jewelryTypeId: piece.jewelryTypeId,
+        toothId: free.toothId,
+        position: v3(free.point.x, free.point.y, free.point.z),
+        normal: v3(free.normal.x, free.normal.y, free.normal.z),
+        rotation: piece.rotation,
+        scale: piece.scale,
+        color: piece.color,
+        ...(piece.customColor ? { customColor: piece.customColor } : {}),
+        ...(piece.offset ? { offset: piece.offset } : {}),
+      };
+      copies.push(copy);
+      blockers.push(this.jewelBlocker(copy));
+    }
+    this.store.insertJewels(copies);
+    return { placed: copies.map((c) => c.id), skipped: data.pieces.length - copies.length };
+  }
+
+  /** The labelled tooth under a screen point, for dropping a Gem Group dragged from the panel. */
+  toothAt(clientX: number, clientY: number): string | null {
+    const r = this.renderer.domElement.getBoundingClientRect();
+    if (clientX < r.left || clientX > r.right || clientY < r.top || clientY > r.bottom) return null;
+    this.setNDC({ clientX, clientY });
+    const hit = this.raycastTeeth();
+    return hit && hit.toothId !== FREE_TOOTH ? hit.toothId : null;
+  }
+  /** Light up the tooth a dragged group would land on (null clears it). */
+  previewDropTooth(toothId: string | null) {
+    this.setHoverTooth(toothId);
+    this.wake();
   }
 
   /* ---------- group turn ---------- */

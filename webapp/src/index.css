@@ -1424,3 +1424,34 @@
   .gt-editor-floaty,
   .gt-editor-pulse { animation: none; }
 }
+
+/* ---------------------------------------------------------------------------
+   3D Studio workspace (creations, Gem Groups, help) around the editor.
+   Motion is short and never in the way: a section fades up, the drawer slides
+   in, a heart or a check pops once. All of it stops under reduced motion.
+--------------------------------------------------------------------------- */
+@layer components {
+  .gt-ws-section { animation: gt-editor-in var(--duration-normal) var(--ease-out-soft) both; }
+  .gt-ws-drawer { animation: gt-ws-drawer-in var(--duration-normal) var(--ease-out-soft) both; }
+  .gt-ws-pop { animation: gt-ws-pop var(--duration-slow) var(--ease-out-soft) both; }
+}
+
+@keyframes gt-ws-drawer-in {
+  from { transform: translateX(-24px); opacity: 0; }
+  to { transform: none; opacity: 1; }
+}
+@keyframes gt-ws-pop {
+  0% { transform: scale(.6); }
+  55% { transform: scale(1.18); }
+  100% { transform: scale(1); }
+}
+@keyframes gt-fade-in {
+  from { opacity: 0; }
+  to { opacity: 1; }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .gt-ws-section,
+  .gt-ws-drawer,
+  .gt-ws-pop { animation: none; }
+}

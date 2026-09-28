@@ -1,6 +1,7 @@
 import { useSyncExternalStore } from "react";
 import { JEWELRY_BY_ID, sanitizeJewels, type PlacedJewelry, type Vec3 } from "../../data/studioEditor";
 import { uid, v3 } from "./math";
+import { piecesKey, pruneGroups, sanitizeScene, type SceneCamera, type SceneGroupRef, type StudioScene } from "../studioWorkspace/scene";
 
 /**
  * State of the design being composed in the 3D Studio.
@@ -9,10 +10,11 @@ import { uid, v3 } from "./math";
  * because two very different readers share it: the React panels, and the
  * three.js engine, which renders every frame and must not wait for React.
  *
- * Persistence is local only, like the standalone Studio it comes from: the
- * current design and the named presets live in this browser's storage. Nothing
- * is sent to a server. When designs are saved to the account, this is the
- * place that changes — the rest of the editor only talks to the store.
+ * The working draft and the named presets live in this browser's storage, as
+ * in the standalone Studio it comes from. Saving a design to the account is
+ * the Studio workspace's job (`lib/studioWorkspace`): this store only loads a
+ * saved scene onto the stage, serialises the stage back into one, and
+ * remembers which saved creation the draft belongs to.
  */
 
 /**
@@ -30,6 +32,30 @@ export interface ContextMenuState {
   y: number;
 }
 
+/**
+ * The saved creation the design on the stage belongs to, if any, and the
+ * version of it last stored — what "unsaved changes" is measured against.
+ * Kept with the local draft so a reload does not unlink the two (which would
+ * turn the next "Save" into a duplicate).
+ */
+export interface ActiveCreation {
+  creationId: string;
+  /** Account the creation belongs to; the link is dropped for anyone else. */
+  ownerId: string;
+  name: string;
+  /** `piecesKey` of the pieces as last saved. */
+  baselineKey: string;
+  /** ISO time of the last successful save or load. */
+  savedAt: string;
+}
+
+/** A scene waiting for the engine: its pieces are re-seated on the enamel, its camera restored. */
+export interface PendingLoad {
+  camera: SceneCamera | null;
+  /** The model the scene was saved on. */
+  model: ModelMode;
+}
+
 /** A piece the design check flagged: it overlaps another piece, or does not sit on a tooth. */
 export interface DesignIssue {
   id: string;
@@ -39,6 +65,9 @@ export interface DesignIssue {
 
 export interface StudioSnapshot {
   jewels: PlacedJewelry[];
+  /** Pieces that arrived together from a Gem Group. */
+  groups: SceneGroupRef[];
+  active: ActiveCreation | null;
   selectedJewelIds: string[];
   selectedToothId: string | null;
   armedTypeId: string | null;
@@ -101,6 +130,9 @@ export class DesignStore {
   lightPreset: LightPreset = "studio";
   clientName = "";
   contextMenu: ContextMenuState | null = null;
+  groups: SceneGroupRef[] = [];
+  active: ActiveCreation | null = null;
+  private pendingLoad: PendingLoad | null = null;
   /** True when the design was restored from a previous visit. */
   restored = false;
   private past: string[] = [];
@@ -110,12 +142,20 @@ export class DesignStore {
   private saveTimer: ReturnType<typeof setTimeout> | null = null;
 
   constructor() {
-    const data = readStorage(DESIGN_KEY) as { jewels?: unknown; clientName?: unknown; model?: unknown } | null;
+    const data = readStorage(DESIGN_KEY) as {
+      jewels?: unknown;
+      clientName?: unknown;
+      model?: unknown;
+      groups?: unknown;
+      active?: unknown;
+    } | null;
     if (data && typeof data === "object") {
       this.jewels = sanitizeJewels(data.jewels);
       if (isModelMode(data.model)) this.designModel = data.model;
       this.restored = this.jewels.length > 0;
       if (typeof data.clientName === "string") this.clientName = data.clientName.slice(0, CLIENT_NAME_MAX);
+      this.groups = sanitizeScene({ pieces: this.jewels, groups: data.groups }).groups;
+      this.active = readActive(data.active);
     }
     this.snap = this.buildSnap();
   }
@@ -137,6 +177,8 @@ export class DesignStore {
   private buildSnap(): StudioSnapshot {
     return {
       jewels: this.jewels,
+      groups: this.groups,
+      active: this.active,
       selectedJewelIds: this.selectedJewelIds,
       selectedToothId: this.selectedToothId,
       armedTypeId: this.armedTypeId,
@@ -396,8 +438,129 @@ export class DesignStore {
   saveNow() {
     if (this.saveTimer) clearTimeout(this.saveTimer);
     this.saveTimer = null;
-    writeStorage(DESIGN_KEY, { v: 1, jewels: this.jewels, clientName: this.clientName, model: this.designModel });
+    writeStorage(DESIGN_KEY, {
+      v: 1,
+      jewels: this.jewels,
+      clientName: this.clientName,
+      model: this.designModel,
+      groups: pruneGroups(this.groups, this.jewels),
+      active: this.active,
+    });
   }
+
+  /* ---------- saved creations ---------- */
+
+  /** The design as a `scene_data` document. */
+  toScene(extra: { model: StudioScene["model"]; camera: SceneCamera | null }): StudioScene {
+    return {
+      version: 1,
+      model: extra.model,
+      lightPreset: this.lightPreset,
+      camera: extra.camera,
+      pieces: structuredClone(this.jewels),
+      groups: pruneGroups(structuredClone(this.groups), this.jewels),
+    };
+  }
+
+  /**
+   * Put a saved scene on the stage, replacing the design. History starts over:
+   * undo must not step back into another creation. The engine re-seats the
+   * pieces and restores the camera when it picks up the pending load.
+   */
+  loadScene(scene: StudioScene, active: Omit<ActiveCreation, "baselineKey"> | null) {
+    const clean = sanitizeScene(scene);
+    this.jewels = clean.pieces;
+    this.groups = clean.groups;
+    this.lightPreset = clean.lightPreset;
+    this.past = [];
+    this.future = [];
+    this.selectedJewelIds = [];
+    this.selectedToothId = null;
+    this.armedTypeId = null;
+    this.contextMenu = null;
+    this.active = active ? { ...active, baselineKey: piecesKey(this.jewels) } : null;
+    this.designModel = clean.model;
+    this.pendingLoad = { camera: clean.camera, model: clean.model };
+    this.restored = false;
+    this.commit();
+  }
+
+  hasPendingLoad(): boolean {
+    return this.pendingLoad !== null;
+  }
+  /** Hand the pending load to the engine (once). */
+  takePendingLoad(): PendingLoad | null {
+    const load = this.pendingLoad;
+    this.pendingLoad = null;
+    return load;
+  }
+
+  /**
+   * Apply the engine's re-seating of a freshly loaded scene. Not an edit: no
+   * history step, and a design that was clean stays clean.
+   */
+  settleLoadedPieces(updates: { id: string; patch: Partial<PlacedJewelry> }[], model?: ModelMode) {
+    if (model) this.designModel = model;
+    const wasClean = !!this.active && this.active.baselineKey === piecesKey(this.jewels);
+    if (updates.length) {
+      const map = new Map(updates.map((u) => [u.id, u.patch]));
+      this.jewels = this.jewels.map((j) => {
+        const patch = map.get(j.id);
+        return patch ? { ...j, ...patch } : j;
+      });
+    }
+    if (wasClean && this.active) this.active = { ...this.active, baselineKey: piecesKey(this.jewels) };
+    this.commit();
+  }
+
+  /** Link the stage to a creation that was just saved with exactly these pieces. */
+  markSaved(active: Omit<ActiveCreation, "baselineKey">, savedPieces: PlacedJewelry[]) {
+    this.active = { ...active, baselineKey: piecesKey(savedPieces) };
+    this.commit();
+    this.saveNow();
+  }
+
+  /** Rename the linked creation without touching the pieces or their saved state. */
+  renameActive(name: string) {
+    if (!this.active) return;
+    this.active = { ...this.active, name };
+    this.commit();
+  }
+
+  /** Forget the link (the creation was deleted, or another account signed in). */
+  unlink() {
+    if (!this.active) return;
+    this.active = null;
+    this.commit();
+  }
+
+  /** A blank stage for a new design (one undo step, so a slip can be taken back). */
+  startNew() {
+    if (this.jewels.length) this.pushHistory();
+    this.jewels = [];
+    this.groups = [];
+    this.active = null;
+    this.deselect();
+  }
+
+  /** Remember that these pieces arrived together from a Gem Group. */
+  addGroupRef(ref: SceneGroupRef) {
+    this.groups = [...pruneGroups(this.groups, this.jewels), ref];
+    this.commit();
+  }
+}
+
+function readActive(input: unknown): ActiveCreation | null {
+  if (!input || typeof input !== "object") return null;
+  const a = input as Record<string, unknown>;
+  if (typeof a.creationId !== "string" || typeof a.ownerId !== "string" || typeof a.baselineKey !== "string") return null;
+  return {
+    creationId: a.creationId,
+    ownerId: a.ownerId,
+    name: typeof a.name === "string" ? a.name.slice(0, 80) : "",
+    baselineKey: a.baselineKey,
+    savedAt: typeof a.savedAt === "string" ? a.savedAt : new Date(0).toISOString(),
+  };
 }
 
 /** The one design of this browser tab. Created when the editor chunk first loads. */

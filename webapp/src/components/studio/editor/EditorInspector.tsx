@@ -41,6 +41,7 @@ import {
 import { getEngine } from "../../../lib/studio3d/engine";
 import { notify } from "../../../lib/studio3d/notices";
 import { studioStore, type StudioSnapshot } from "../../../lib/studio3d/store";
+import { SaveSelectionAsGroup } from "../workspace/SaveSelectionAsGroup";
 
 const focusRing = "focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-[var(--focus-ring)]";
 const selectClass = clsx(
@@ -325,6 +326,7 @@ function MultiPanel({ selected }: { selected: PlacedJewelry[] }) {
         {t("studio.editor.context.selected", { count: selected.length })}
       </h2>
       <Hint className="mt-1.5">{t("studio.editor.inspector.multiSub", { count: teethUsed })}</Hint>
+      <SaveSelectionAsGroup ids={ids} />
 
       <SectionLabel>{t("studio.editor.inspector.typeAll")}</SectionLabel>
       <TypeSelect
@@ -560,6 +562,7 @@ function SinglePanel({ jewel, snap }: { jewel: PlacedJewelry; snap: StudioSnapsh
       <Hint className="mt-1.5">{t("studio.editor.inspector.positionHint")}</Hint>
 
       <ActionRow count={1} onDuplicate={() => duplicatePieces([jewel.id])} onDelete={() => removePieces([jewel.id])} />
+      <SaveSelectionAsGroup ids={[jewel.id]} />
     </>
   );
 }

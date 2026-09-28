@@ -80,6 +80,12 @@ interface AuthContextValue {
   profile: Profile | null;
   /** Email of the open session, purely for display. */
   email: string | null;
+  /**
+   * Account id of the open session (`auth.users.id` with Supabase), or null
+   * when signed out. Scopes per-account data such as the Studio library; it
+   * is not an authorization token — row-level security decides access.
+   */
+  userId: string | null;
   /** Falls back to the local part of the email when no name was given. */
   displayName: string;
   /** One or two letters for the account avatar. */
@@ -360,6 +366,7 @@ function SupabaseAuthProvider({ children }: { children: ReactNode }) {
       contextValue(profile, {
         restoring,
         realAuth: true,
+        userId,
         signInWithPassword,
         signUp,
         resendConfirmation,
@@ -367,7 +374,7 @@ function SupabaseAuthProvider({ children }: { children: ReactNode }) {
         signOut,
         updateProfile,
       }),
-    [profile, restoring, signInWithPassword, signUp, resendConfirmation, signIn, signOut, updateProfile],
+    [profile, restoring, userId, signInWithPassword, signUp, resendConfirmation, signIn, signOut, updateProfile],
   );
 
   return <AuthContext.Provider value={value}>{children}</AuthContext.Provider>;
@@ -420,6 +427,8 @@ function DemoAuthProvider({ children }: { children: ReactNode }) {
       contextValue(profile, {
         restoring: false,
         realAuth: false,
+        // Mock mode: a stable id per demo email, so each demo account keeps its own library.
+        userId: profile ? `demo-${profile.email.trim().toLowerCase()}` : null,
         signInWithPassword,
         signUp,
         resendConfirmation,

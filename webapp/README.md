@@ -231,6 +231,9 @@ A paid creative tool (€5 / month) for designing tooth jewellery compositions. 
 | `/studio-3d` | Presentation page: hero with the Studio window, concept, six capabilities, media wall, inspiration boards, three steps, offer, FAQ |
 | `/studio-3d/abonnement` | Subscription page: the single monthly plan, account, fictional payment, summary, loading and confirmation states (`/studio-3d/subscribe` redirects here) |
 | `/studio-3d/atelier` | The editor: 3D dentition (both arches), jewellery library, placement by drag / click / keyboard, collision-free layout tools, presets, undo/redo, PNG / estimate sheet / JSON export (`/studio-3d/editor` redirects here). Full-screen, without the storefront header and footer |
+| `/studio-3d/atelier/mes-creations` | My Creations: the account's saved designs (`…/editor/creations` redirects here) |
+| `/studio-3d/atelier/mes-groupes` | My Gem Groups: reusable multi-gem arrangements (`…/editor/groups`) |
+| `/studio-3d/atelier/aide` | Help & Tutorial (`…/editor/help`) |
 
 ### The editor
 
@@ -248,7 +251,7 @@ Ported from the standalone `studio3D.html` into the app's architecture:
 | `pages/StudioEditor.tsx` | The page: layout, shortcuts, save on exit. Lazy-loaded, so three.js is only downloaded when the editor opens |
 
 - **Access**: `lib/studioAccess.tsx` is the single switch. `STUDIO_ACCESS_MODE = "preview"` lets everyone in without paying. When the subscription goes live, switch it to `"subscription"` and back it with a server-side entitlement granted by the verified Stripe webhook; the client check is navigation only.
-- **Saving** is local to the browser (`gt-studio3d-*` keys); nothing is sent to a server yet.
+- **Saving**: the working draft is kept in the browser (`gt-studio3d-*` keys) as before; saving it to the account goes through the Studio workspace below.
 - **Estimate**: prices in `ESTIMATE_PRICING` are prototype values, shown as "approx." and labelled as not a quote. They are never sent to checkout.
 - **Default model**: the editor opens on `dentition.glb` (meshopt-compressed, ~1 MB, decoded from the bundle). If it cannot be fetched, the procedural upper arch stands in, with a notice. Pieces go on crowns only, never on gum or socle. A design saved on another model (older designs were made on the procedural arch) is re-seated tooth by tooth when it opens; the same happens when a model is imported or reset. Raycasts use a bounding-volume hierarchy (`three-mesh-bvh`): a scan of this size costs ~18 ms per ray without one, and placement casts hundreds.
 - **Design check**: pieces that overlap another or do not sit on a tooth are framed in red on the stage and listed in a panel (placement and dragging never create them; sizes, type changes, group turns or a design from another model can).
@@ -261,6 +264,35 @@ Ported from the standalone `studio3D.html` into the app's architecture:
 - **Price**: `STUDIO_PRICE` is a display value only. In production the price comes from the Stripe Price, the button hands over to Stripe Checkout (subscription mode) and access is granted by the verified webhook — never by the confirmation screen.
 - **Editor entry points**: while preview access is on, "Open the Studio" on the presentation page (hero, FAQ, phone bar), the home teaser, "Recreate" on the inspiration boards and the subscription confirmation all lead to the editor; the offer section still leads to the subscription page.
 - **Navigation**: "Studio 3D · New" sits after the Academy in both desktop headers, as a featured row above the tabs in both mobile menus, and as a link in the member area sidebar and pill row. The home page carries a teaser (`StudioTeaser`) between the best sellers and the Academy band.
+
+### The Studio workspace (creations, Gem Groups, help, feedback)
+
+The layer around the editor that makes it a personal design workspace. The editor itself is unchanged in its interaction model; the workspace adds a navigation rail (a drawer below `lg`), a save pipeline, a creative library, reusable Gem Groups, help and feedback.
+
+| Where | What |
+| --- | --- |
+| `lib/studioWorkspace/scene.ts` | The saved `scene_data` format (version 1): every piece with its full transform, the light, the camera and the Gem Groups pieces came from; `sanitizeScene` for anything read back |
+| `lib/studioWorkspace/gemGroup.ts` | Gem Group arrangements, stored in an anchor tooth's frame (along the arch, up, out of the enamel) so they can be dropped on any tooth and keep their spacing, spin, size and finish |
+| `lib/studioWorkspace/repository.ts` | **The persistence boundary**: `CreationsRepository`, `GemGroupsRepository`, `FeedbackRepository`. The UI never touches storage or Supabase directly |
+| `lib/studioWorkspace/localRepository.ts` | PROTOTYPE implementation in browser storage, one namespace per account, seeded with the example library (`seed.ts`) |
+| `lib/studioWorkspace/workspace.tsx` | Provider: the loaded library, the save state of the stage (`empty` / `unsaved` / `saving` / `saved` / `failed`), and every action with its toast |
+| `lib/studioWorkspace/library.ts`, `validation.ts` | Search, filters, sort, summary; name / description / tag rules (unit-tested in `studioWorkspace.test.ts`) |
+| `lib/studio3d/archLayout.ts` | The reference arch as plain numbers, shared by the engine and the drawn previews |
+| `components/studio/workspace/` | `StudioSidebar`, `CreationLibrary`, `CreationCard`, `CreationDetail`, `GemGroupLibrary`, `GemGroupCard`, `GemGroupPanel` (in the editor's library, with drag onto a tooth), `SaveCreationDialog`, `SaveGemGroupDialog`, `DeleteConfirmation`, `FeedbackModal`, `HelpPanel`, `HelpHint`, `OnboardingOverlay`, `SaveStatus`, `SaveControls`, `EmptyState`, `SearchAndFilters`, `ScenePreview` |
+
+- **Sections open over the stage** instead of replacing it: the editor stays mounted (hidden, `inert`), so an imported model, the camera and the undo history are still there when the artist comes back. The editor's keyboard shortcuts are off while a section or dialog is in front.
+- **Saving** needs an account (signed out, Save explains why and returns after sign-in; the local draft is never lost). A new design opens the save dialog (name, description, tags); a linked one saves with "Save changes" or Ctrl+S; "Save as new creation" keeps the original. The draft remembers which creation it belongs to, per account, across reloads. An empty design is never saved over a creation.
+- **Unsaved changes** are measured by content, not by history. Opening another creation or starting a new design over unsaved changes asks first.
+- **Previews**: a saved creation stores a small JPEG captured from a fixed front camera (`engine.captureThumbnail`). Designs without one — the examples, Gem Groups — are drawn from their own data by `ScenePreview`, on the same arch geometry, so a card always shows the real composition.
+- **Opening a creation** re-seats every piece on the enamel of the current model (`engine.settlePendingLoad`) and restores its camera; this settling does not count as an edit.
+- **Gem Groups**: select two or more gems → "Create Gem Group" (inspector, or right-click on the stage). Insert from the editor's "My Groups" tab (click: on the selected tooth or where the group was made; drag: onto any tooth, with the target tooth lit before dropping) or "Use in Studio" from the library. Pieces that do not fit slide to the nearest free spot or are skipped, and the toast says so.
+- **Estimates** reuse `ESTIMATE_PRICING` (integer minor units + currency). The summary's "total estimated design value" is informational only.
+- **Onboarding** shows once per browser (`gt-studio3d-onboarding-v1`), can be skipped at any step and replayed from Help.
+- **Feedback** records a rating, a type, the message and a little context (page, piece count, language, window size — nothing personal).
+
+**Moving to Supabase.** The schema is ready in `supabase/migrations/20260927120000_studio_workspace.sql` — `creations`, `gem_groups`, `studio_feedback` and a private `studio-thumbnails` bucket, owner-only by RLS, with `user_id` defaulting to `auth.uid()` and not writable. It is **not applied** yet. To switch: apply the migration, regenerate `lib/supabase/database.types.ts`, write `createSupabaseRepositories(client)` implementing `StudioRepositories` (thumbnails uploaded to `studio-thumbnails/<user id>/<creation id>.jpg` and served by signed URL), and return it from `createRepositories()` in `workspace.tsx` when `isSupabaseConfigured`. Nothing else in the UI changes.
+
+**Overlap to decide:** the editor's older "My presets" (whole designs kept in browser storage, under Presets) still works as before. Saved creations now cover that need per account; the presets menu could be retired or pointed at My Creations.
 
 ## The member area (`/compte`)
 

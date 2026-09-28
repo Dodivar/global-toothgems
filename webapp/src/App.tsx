@@ -83,7 +83,15 @@ import { TrainingReview as AdminTrainingReview } from "./pages/admin/TrainingRev
 import { GiftCard } from "./pages/GiftCard";
 import { Studio } from "./pages/Studio";
 import { StudioSubscribe } from "./pages/StudioSubscribe";
-import { STUDIO_EDITOR_ALIAS, STUDIO_EDITOR_PATH, STUDIO_PATH, STUDIO_SUBSCRIBE_ALIAS, STUDIO_SUBSCRIBE_PATH } from "./lib/studioUrl";
+import {
+  STUDIO_EDITOR_ALIAS,
+  STUDIO_EDITOR_PATH,
+  STUDIO_PATH,
+  STUDIO_SUBSCRIBE_ALIAS,
+  STUDIO_SUBSCRIBE_PATH,
+  studioSectionFromPath,
+  studioSectionPath,
+} from "./lib/studioUrl";
 import { RequireStudioAccess } from "./lib/studioAccess";
 import { StudioEditorLoading } from "./components/studio/editor/StudioEditorLoading";
 import { NotFound } from "./pages/NotFound";
@@ -107,6 +115,12 @@ import { PRIVACY } from "./data/legal/privacy";
 import { COOKIE_POLICY } from "./data/legal/cookies";
 import { SHIPPING } from "./data/legal/shipping";
 import { RETURNS } from "./data/legal/returns";
+
+/** `/studio-3d/editor/groups` → `/studio-3d/atelier/mes-groupes`: the English alias keeps its section. */
+function StudioEditorAlias() {
+  const { pathname } = useLocation();
+  return <Navigate to={studioSectionPath(studioSectionFromPath(pathname))} replace />;
+}
 
 function ScrollToTop() {
   const { pathname } = useLocation();
@@ -162,7 +176,8 @@ export default function App() {
   const editorial = pathname === EDITORIAL_ROUTE;
   const adminArea = pathname === ADMIN_ROUTE_PREFIX || pathname.startsWith(`${ADMIN_ROUTE_PREFIX}/`);
   const bareChrome = adminArea || pathname === MAINTENANCE_ROUTE;
-  const workspace = WORKSPACE_ROUTES.includes(pathname);
+  // The editor and its sections (`/studio-3d/atelier/mes-creations`…).
+  const workspace = WORKSPACE_ROUTES.some((r) => pathname === r || pathname.startsWith(`${r}/`));
 
   return (
     // The product catalogue (Supabase, or the mock fixtures when it is not
@@ -261,7 +276,7 @@ export default function App() {
                           free — the one place to change when the paid
                           subscription goes live. Lazy: see `StudioEditor`. */}
                       <Route
-                        path={STUDIO_EDITOR_PATH}
+                        path={`${STUDIO_EDITOR_PATH}/*`}
                         element={
                           <RequireStudioAccess>
                             <Suspense fallback={<StudioEditorLoading />}>
@@ -270,7 +285,7 @@ export default function App() {
                           </RequireStudioAccess>
                         }
                       />
-                      <Route path={STUDIO_EDITOR_ALIAS} element={<Navigate to={STUDIO_EDITOR_PATH} replace />} />
+                      <Route path={`${STUDIO_EDITOR_ALIAS}/*`} element={<StudioEditorAlias />} />
                       {/* The Academy landing page stays open — it is the sales page.
                           Only the course content itself requires an account, and gating
                           the route covers the menu links and direct URLs at once. */}

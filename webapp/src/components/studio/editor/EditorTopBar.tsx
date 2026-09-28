@@ -1,17 +1,15 @@
 import { useEffect, useRef, useState } from "react";
-import { Link } from "react-router-dom";
 import clsx from "clsx";
 import {
-  ArrowLeft,
   Braces,
   Check,
   ChevronDown,
   Download,
   Image as ImageIcon,
+  Menu,
   Plus,
   Redo2,
   RotateCcw,
-  Save,
   Sparkles,
   SquareDashed,
   Trash2,
@@ -24,6 +22,9 @@ import { Button } from "../../ui/Button";
 import { EditorPopover, PopoverItem, PopoverLabel, PopoverSeparator } from "./EditorPopover";
 import { useEditorLabels } from "./editorLabels";
 import { QuickActionsMenu } from "./QuickActionsMenu";
+import { HelpHint } from "../workspace/HelpHint";
+import { SaveControls } from "../workspace/SaveControls";
+import { SaveStatus } from "../workspace/SaveStatus";
 import { estimateCents, estimateTotalCents, FREE_TOOTH, PRESETS } from "../../../data/studioEditor";
 import { applyPreset, clearDesign, importModelFile, resetModel } from "../../../lib/studio3d/actions";
 import { downloadURL, getEngine } from "../../../lib/studio3d/engine";
@@ -39,7 +40,6 @@ import {
   useUserPresets,
   type StudioSnapshot,
 } from "../../../lib/studio3d/store";
-import { STUDIO_PATH } from "../../../lib/studioUrl";
 import { formatDate } from "../../../lib/format";
 
 const toolButton = clsx(
@@ -51,8 +51,8 @@ const toolButton = clsx(
 const inputClass =
   "h-9 min-w-0 flex-1 rounded-[var(--radius-pill)] border border-[var(--border-default)] bg-[var(--surface-card)] px-3.5 text-[length:var(--text-body-sm)] text-[var(--text-primary)] outline-none transition-colors placeholder:text-[var(--text-subtle)] focus:border-[var(--focus-ring)]";
 
-/** The editor's application bar: identity, history, model, presets and exports. */
-export function EditorTopBar({ snap }: { snap: StudioSnapshot }) {
+/** The editor's application bar: identity and save state, history, model, presets, exports and Save. */
+export function EditorTopBar({ snap, onOpenMenu }: { snap: StudioSnapshot; onOpenMenu: () => void }) {
   const { t, formatEstimate } = useEditorLabels();
   const fileRef = useRef<HTMLInputElement>(null);
   const total = estimateTotalCents(snap.jewels);
@@ -64,18 +64,24 @@ export function EditorTopBar({ snap }: { snap: StudioSnapshot }) {
   };
 
   return (
-    <header className="relative z-20 flex h-14 min-w-0 items-center gap-1.5 border-b border-[var(--border-subtle)] bg-[var(--surface-card)] px-2 sm:gap-2 sm:px-3">
-      <Link to={STUDIO_PATH} className={toolButton} aria-label={t("studio.editor.backToStudio")} title={t("studio.editor.backToStudio")}>
-        <ArrowLeft size={17} aria-hidden="true" />
-      </Link>
-      <div className="flex min-w-0 items-center gap-2.5 pr-1">
-        <img src={monogram} alt="" aria-hidden="true" className="hidden h-7 w-7 flex-none object-contain sm:block" />
+    <header className="relative z-20 flex h-14 min-w-0 items-center gap-1 border-b border-[var(--border-subtle)] bg-[var(--surface-card)] px-2 sm:gap-2 sm:px-3">
+      {/* Below `lg` the workspace navigation lives in a drawer; on desktop it is the rail. */}
+      <button type="button" className={clsx(toolButton, "lg:hidden")} aria-label={t("studio.workspace.nav.open")} title={t("studio.workspace.nav.open")} onClick={onOpenMenu}>
+        <Menu size={18} aria-hidden="true" />
+      </button>
+      <div className="flex min-w-[80px] items-center gap-2.5 pr-1 max-sm:flex-1 sm:min-w-[140px]">
+        <img src={monogram} alt="" aria-hidden="true" className="hidden h-7 w-7 flex-none object-contain sm:block lg:hidden" />
         <div className="grid min-w-0 leading-none">
-          <h1 className="m-0 truncate text-[15px] font-[var(--weight-black)] tracking-[var(--tracking-tight)] text-[var(--text-primary)]">
-            {t("studio.editor.appName")}
+          <h1 className="m-0 flex min-w-0 items-baseline gap-2 truncate text-[15px] font-[var(--weight-black)] tracking-[var(--tracking-tight)] text-[var(--text-primary)]">
+            <span className="flex-none max-sm:sr-only">{t("studio.editor.appName")}</span>
+            <span className="min-w-0 truncate text-[13px] font-semibold text-[var(--text-muted)] max-sm:text-[14px] max-sm:font-bold max-sm:text-[var(--text-primary)]">
+              <span aria-hidden="true" className="max-sm:hidden">/ </span>
+              {snap.active?.name || t("studio.workspace.untitled")}
+            </span>
           </h1>
-          <span className="mt-1 hidden truncate text-[10px] font-semibold uppercase tracking-[var(--tracking-eyebrow)] text-[var(--text-subtle)] md:block">
-            Global Toothgems
+          <span className="mt-1 flex min-w-0 items-center gap-0.5">
+            <SaveStatus />
+            <HelpHint id="saving" className="-my-1 h-5 w-5 max-md:hidden" />
           </span>
         </div>
         <span
@@ -87,10 +93,10 @@ export function EditorTopBar({ snap }: { snap: StudioSnapshot }) {
         </span>
       </div>
 
-      <div className="flex-1" />
+      <div className="flex-1 max-sm:hidden" />
 
       <p
-        className="m-0 hidden whitespace-nowrap rounded-[var(--radius-pill)] border border-[var(--border-subtle)] bg-[var(--surface-page)] px-3 py-1.5 text-[12px] font-semibold text-[var(--text-muted)] md:block"
+        className="m-0 hidden whitespace-nowrap rounded-[var(--radius-pill)] border border-[var(--border-subtle)] bg-[var(--surface-page)] px-3 py-1.5 text-[12px] font-semibold text-[var(--text-muted)] xl:block"
         title={t("studio.editor.estimateHint")}
         aria-live="polite"
       >
@@ -114,9 +120,10 @@ export function EditorTopBar({ snap }: { snap: StudioSnapshot }) {
       >
         <Undo2 size={16} aria-hidden="true" />
       </button>
+      {/* On a phone, Undo stays and Redo steps aside for the design's name (Ctrl+Y still works on a keyboard). */}
       <button
         type="button"
-        className={toolButton}
+        className={clsx(toolButton, "max-sm:hidden")}
         aria-label={t("studio.editor.redo")}
         title={t("studio.editor.redoHint")}
         disabled={!snap.canRedo}
@@ -149,19 +156,8 @@ export function EditorTopBar({ snap }: { snap: StudioSnapshot }) {
       <span aria-hidden="true" className="mx-0.5 hidden h-5 w-px bg-[var(--border-subtle)] sm:block" />
       <PresetMenu />
       <QuickActionsMenu triggerClassName={toolButton} />
-      <button
-        type="button"
-        className={clsx(toolButton, "max-sm:hidden")}
-        aria-label={t("studio.editor.save")}
-        title={t("studio.editor.saveHint")}
-        onClick={() => {
-          studioStore.saveNow();
-          notify("saved");
-        }}
-      >
-        <Save size={16} aria-hidden="true" />
-      </button>
       <ExportMenu />
+      <SaveControls />
     </header>
   );
 }
@@ -206,12 +202,12 @@ function PresetMenu() {
         <button
           type="button"
           {...props}
-          className="inline-flex h-9 items-center gap-1.5 rounded-[var(--radius-pill)] border border-[var(--border-default)] px-3 text-[11px] font-semibold uppercase tracking-[var(--tracking-wide)] text-[var(--text-primary)] transition-colors hover:border-[var(--border-strong)] focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-[var(--focus-ring)]"
+          className="inline-flex h-9 items-center gap-1.5 rounded-[var(--radius-pill)] border border-[var(--border-default)] px-3 text-[11px] font-semibold uppercase tracking-[var(--tracking-wide)] text-[var(--text-primary)] transition-colors hover:border-[var(--border-strong)] focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-[var(--focus-ring)] max-sm:w-9 max-sm:justify-center max-sm:px-0"
         >
           <Sparkles size={14} aria-hidden="true" className="sm:hidden" />
           <span className="hidden sm:inline">{t("studio.editor.presets.menu")}</span>
           <span className="sr-only sm:hidden">{t("studio.editor.presets.menu")}</span>
-          <ChevronDown size={13} aria-hidden="true" />
+          <ChevronDown size={13} aria-hidden="true" className="max-sm:hidden" />
         </button>
       )}
     >
@@ -391,12 +387,12 @@ function ExportMenu() {
         <button
           type="button"
           {...props}
-          className="gt-studio-cta inline-flex h-9 items-center gap-1.5 rounded-[var(--radius-pill)] bg-[var(--accent-cta)] px-3 text-[11px] font-semibold uppercase tracking-[var(--tracking-wide)] text-[var(--text-on-accent)] transition-colors hover:bg-[var(--accent-cta-hover)] focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-[var(--focus-ring)] sm:px-3.5"
+          className="inline-flex h-9 items-center gap-1.5 rounded-[var(--radius-pill)] border border-[var(--border-default)] px-3 text-[11px] font-semibold uppercase tracking-[var(--tracking-wide)] text-[var(--text-primary)] transition-colors hover:border-[var(--border-strong)] focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-[var(--focus-ring)] max-xl:w-9 max-xl:justify-center max-xl:px-0 xl:px-3.5"
         >
           <Download size={14} aria-hidden="true" />
-          <span className="hidden sm:inline">{t("studio.editor.export.menu")}</span>
-          <span className="sr-only sm:hidden">{t("studio.editor.export.menu")}</span>
-          <ChevronDown size={13} aria-hidden="true" className="hidden sm:block" />
+          <span className="hidden xl:inline">{t("studio.editor.export.menu")}</span>
+          <span className="sr-only xl:hidden">{t("studio.editor.export.menu")}</span>
+          <ChevronDown size={13} aria-hidden="true" className="hidden xl:block" />
         </button>
       )}
     >
