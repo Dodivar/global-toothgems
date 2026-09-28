@@ -251,10 +251,26 @@ export function ProductForm({
                   {...props}
                   value={draft.description[lang]}
                   onValueChange={(value) => setLocalized("description", value)}
+                  rows={16}
                 />
               )}
             </FormField>
           </Section>
+
+          {/* Gem only: what the storefront shape and colour filters file the
+              gem under. In the main column rather than the rail, which is too
+              narrow for a palette of shapes and shades. */}
+          {isGem && (
+            <Section title={t("admin.form.gemLookTitle")} description={t("admin.form.gemLookBody")}>
+              <ShapePicker label={t("admin.form.shape")} value={draft.shape} onChange={(shape) => set("shape", shape)} />
+              <ColorPicker
+                label={t("admin.form.color")}
+                colors={gemColors}
+                value={draft.color}
+                onChange={(color) => set("color", color)}
+              />
+            </Section>
+          )}
 
           <Section title={t("admin.form.pricingTitle")} description={t("admin.form.pricingBody")}>
             <div className={clsx("grid gap-4", withPromoPrice ? "md:grid-cols-3" : "md:grid-cols-2")}>
@@ -459,25 +475,6 @@ export function ProductForm({
                 />
               )}
             </FormField>
-
-            {isGem && (
-              <>
-                <ShapePicker
-                  label={t("admin.form.shape")}
-                  hint={t("admin.form.gemLookHint")}
-                  value={draft.shape}
-                  onChange={(shape) => set("shape", shape)}
-                />
-
-                <ColorPicker
-                  label={t("admin.form.color")}
-                  hint={t("admin.form.gemLookHint")}
-                  colors={gemColors}
-                  value={draft.color}
-                  onChange={(color) => set("color", color)}
-                />
-              </>
-            )}
 
             <FormField label={t("admin.form.type")} hint={t("admin.form.typeHint")}>
               {(props) => (
