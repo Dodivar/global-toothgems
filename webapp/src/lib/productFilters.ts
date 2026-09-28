@@ -6,6 +6,7 @@ import {
   type ProductStatus,
   type StockState,
 } from "../data/adminCatalog";
+import { GEM_SHAPES, type GemColor, type GemShape } from "../data/products";
 import { pick } from "../data/types";
 
 /**
@@ -25,6 +26,9 @@ export interface ProductFilterState {
   category: CategoryId | "all";
   status: ProductStatus | "all";
   availability: StockState | "all";
+  /** Gem cut and colour family, the two attributes gems are told apart by. */
+  shape: GemShape | "all";
+  color: GemColor | "all";
   sort: SortKey;
 }
 
@@ -33,8 +37,13 @@ export const DEFAULT_FILTERS: ProductFilterState = {
   category: "all",
   status: "all",
   availability: "all",
+  shape: "all",
+  color: "all",
   sort: "newest",
 };
+
+/** The keys that narrow the list — everything but the sort order. */
+export type FilterKey = Exclude<keyof ProductFilterState, "sort">;
 
 /** True as soon as anything narrows the list, which is what enables "Clear". */
 export function isFiltered(filters: ProductFilterState): boolean {
@@ -42,7 +51,9 @@ export function isFiltered(filters: ProductFilterState): boolean {
     filters.search.trim() !== "" ||
     filters.category !== "all" ||
     filters.status !== "all" ||
-    filters.availability !== "all"
+    filters.availability !== "all" ||
+    filters.shape !== "all" ||
+    filters.color !== "all"
   );
 }
 
@@ -75,18 +86,64 @@ function matchesSearch(product: AdminProduct, query: string): boolean {
   return haystack.includes(needle);
 }
 
+/** Every filter but `except`, so a facet can count what choosing each value would give. */
+function matchesFilters(product: AdminProduct, filters: ProductFilterState, except?: FilterKey): boolean {
+  if (except !== "search" && !matchesSearch(product, filters.search)) return false;
+  if (except !== "category" && filters.category !== "all" && product.categoryId !== filters.category) return false;
+  if (except !== "status" && filters.status !== "all" && product.status !== filters.status) return false;
+  if (except !== "availability" && filters.availability !== "all" && !matchesStockState(product, filters.availability))
+    return false;
+  if (except !== "shape" && filters.shape !== "all" && product.shape !== filters.shape) return false;
+  if (except !== "color" && filters.color !== "all" && product.color !== filters.color) return false;
+  return true;
+}
+
+export interface FacetCount<T extends string> {
+  value: T;
+  /** Products the list would show with this value picked, the other filters unchanged. */
+  count: number;
+}
+
+/**
+ * The shapes and colours worth offering as filters, each with its count.
+ *
+ * Only values some product actually carries are listed — a chip that can only
+ * ever empty the list is noise — and the list does not shrink as other filters
+ * change, so the chips stay where the eye left them. The count, on the other
+ * hand, follows the other filters: "Étoile 0" under "Outils" says why picking
+ * it would empty the table before anyone clicks.
+ *
+ * Shapes come in `GEM_SHAPES` order and colours in the order of `colorOrder`
+ * (the back-office order); a colour slug missing from it (a deleted colour
+ * still on a product) goes last rather than disappearing.
+ */
+export function gemFacets(
+  products: AdminProduct[],
+  filters: ProductFilterState,
+  colorOrder: GemColor[],
+): { shapes: FacetCount<GemShape>[]; colors: FacetCount<GemColor>[] } {
+  const count = <T extends string>(key: "shape" | "color", values: T[]): FacetCount<T>[] =>
+    values.map((value) => ({
+      value,
+      count: products.filter((p) => p[key] === value && matchesFilters(p, filters, key)).length,
+    }));
+
+  const shapesUsed = new Set(products.map((p) => p.shape).filter((s): s is GemShape => s !== undefined));
+  const colorsUsed = new Set(products.map((p) => p.color).filter((c): c is GemColor => c !== undefined));
+  const orphanColors = [...colorsUsed].filter((slug) => !colorOrder.includes(slug)).sort();
+
+  return {
+    shapes: count("shape", GEM_SHAPES.filter((shape) => shapesUsed.has(shape))),
+    colors: count("color", [...colorOrder.filter((slug) => colorsUsed.has(slug)), ...orphanColors]),
+  };
+}
+
 export function filterProducts(
   products: AdminProduct[],
   filters: ProductFilterState,
   lang: string,
 ): AdminProduct[] {
-  const result = products.filter((product) => {
-    if (!matchesSearch(product, filters.search)) return false;
-    if (filters.category !== "all" && product.categoryId !== filters.category) return false;
-    if (filters.status !== "all" && product.status !== filters.status) return false;
-    if (filters.availability !== "all" && !matchesStockState(product, filters.availability)) return false;
-    return true;
-  });
+  const result = products.filter((product) => matchesFilters(product, filters));
 
   const collator = new Intl.Collator(lang.startsWith("en") ? "en" : "fr", { sensitivity: "base" });
 

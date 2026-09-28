@@ -1320,7 +1320,20 @@
       "resultCount_other": "{{count}} products",
       "resultCountFiltered_one": "{{count}} of {{total}} products",
       "resultCountFiltered_other": "{{count}} of {{total}} products",
-      "clear": "Clear filters"
+      "clear": "Clear filters",
+      "search": "Search",
+      "searchValue": "“{{query}}”",
+      "shape": "Shape",
+      "color": "Colour",
+      "allShapes": "All shapes",
+      "allColors": "All colours",
+      "chipCount_one": "({{count}} product)",
+      "chipCount_other": "({{count}} products)",
+      "active": "Active filters",
+      "pill": "{{name}}: {{value}}",
+      "removeFilter": "Remove filter {{filter}}",
+      "filterOn": "Filter on {{value}}",
+      "unfilterOn": "Stop filtering on {{value}}"
     },
     "sort": {
       "newest": "Recently updated",

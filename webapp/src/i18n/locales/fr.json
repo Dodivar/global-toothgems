@@ -1320,7 +1320,20 @@
       "resultCount_other": "{{count}} produits",
       "resultCountFiltered_one": "{{count}} produit sur {{total}}",
       "resultCountFiltered_other": "{{count}} produits sur {{total}}",
-      "clear": "Réinitialiser les filtres"
+      "clear": "Réinitialiser les filtres",
+      "search": "Recherche",
+      "searchValue": "« {{query}} »",
+      "shape": "Forme",
+      "color": "Couleur",
+      "allShapes": "Toutes formes",
+      "allColors": "Toutes couleurs",
+      "chipCount_one": "({{count}} produit)",
+      "chipCount_other": "({{count}} produits)",
+      "active": "Filtres actifs",
+      "pill": "{{name}} : {{value}}",
+      "removeFilter": "Retirer le filtre {{filter}}",
+      "filterOn": "Filtrer sur {{value}}",
+      "unfilterOn": "Ne plus filtrer sur {{value}}"
     },
     "sort": {
       "newest": "Modifiés récemment",
