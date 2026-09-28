@@ -1,19 +1,12 @@
-import { useEffect, useRef, useState, type ReactNode } from "react";
+import { useEffect, useRef, useState } from "react";
 import { Link, useNavigate, useLocation } from "react-router-dom";
 import { useTranslation } from "react-i18next";
 import { ArrowRight, Box, ChevronDown, Heart, Menu, Search, ShoppingBag, User, X } from "lucide-react";
 import { IconButton } from "../ui/IconButton";
-import { Button } from "../ui/Button";
-import { ShapeCarousel } from "../ui/ShapeCarousel";
-import { ColorCarousel } from "../ui/ColorCarousel";
 import { useAuth } from "../../lib/auth";
 import { useCart } from "../../lib/cart";
 import { useToast } from "../../lib/toast";
 import { MENU } from "../../data/menu";
-import { colorsInCatalog } from "../../data/products";
-import { useShapesInCatalog } from "../../lib/catalog/useShapesInCatalog";
-import { useCatalog } from "../../lib/catalog/CatalogProvider";
-import { colorHref, shapeHref } from "../../lib/shopUrl";
 import { pick } from "../../data/types";
 import { NewTag } from "../studio/NewTag";
 import { STUDIO_PATH } from "../../lib/studioUrl";
@@ -133,76 +126,6 @@ export function Header() {
     menuTab === "academy" ? { label: t("nav.viewAllAcademy"), to: "/academy" } : { label: t("nav.viewAllShop"), to: "/boutique" };
 
   const cartLabel = count > 0 ? t("nav.cartWithCount", { count }) : t("nav.cart");
-
-  const { products, colors } = useCatalog();
-  const shapeGroups = useShapesInCatalog(products);
-  const colorGroups = colorsInCatalog(products, colors);
-
-  const goTo = (to: string) => {
-    clearHoverTimer();
-    closeAll();
-    navigate(to);
-  };
-
-  /**
-   * The shape and colour rows shared by the desktop panel and the mobile
-   * drawer: a swipeable strip of the whole taxonomy plus a way to open the
-   * full-page selector when the strip is not enough.
-   */
-  const pickers = (compact: boolean) => {
-    /* `compact` is the desktop panel. There the strip itself is the offer and
-       the whole-taxonomy page is only a fallback, so it drops to a quiet
-       underlined link under the strip — the same treatment as "voir toute la
-       boutique" and as the shop filter bar. The mobile drawer keeps the button,
-       which is the tap target a thumb needs. */
-    const section = (heading: string, to: string, label: string, carousel: ReactNode) => (
-      /* Desktop is a flex column so the two links land on one baseline even
-         though the colour tiles wrap onto a second line and the shape tiles
-         do not. */
-      <div className={`min-w-0 gap-3 ${compact ? "flex flex-col" : "grid content-start"}`}>
-        {compact ? (
-          <span className="gt-eyebrow">{heading}</span>
-        ) : (
-          <div className="flex flex-wrap items-center justify-between gap-3">
-            <span className="gt-eyebrow">{heading}</span>
-            <Button variant="outline" size="sm" onClick={() => goTo(to)}>
-              {label}
-            </Button>
-          </div>
-        )}
-        {carousel}
-        {compact && (
-          <Link
-            to={to}
-            onClick={() => {
-              clearHoverTimer();
-              closeAll();
-            }}
-            className="mt-auto self-start text-xs text-[var(--text-muted)] underline decoration-1 underline-offset-4 hover:text-[var(--text-primary)]"
-          >
-            {label}
-          </Link>
-        )}
-      </div>
-    );
-
-    return (
-      <>
-        {section(
-          t("nav.shapesHeading"),
-          "/formes",
-          t("nav.viewAllShapes"),
-          <ShapeCarousel compact={compact} groups={shapeGroups} hrefFor={(g) => shapeHref(g.shape)} onNavigate={closeAll} />,
-        )}
-        {section(
-          t("nav.colorsHeading"),
-          "/couleurs",
-          t("nav.viewAllColors"),
-          <ColorCarousel compact={compact} groups={colorGroups} hrefFor={(g) => colorHref(g.color.slug)} onNavigate={closeAll} />,
-        )}
-      </>
-    );
-  };
 
   const langButton = (
     <button
@@ -329,13 +252,6 @@ export function Header() {
                   </Link>
                 ))}
               </div>
-              {/* Side by side: stacked, the two strips plus the category cards
-                  made the panel taller than a laptop viewport. */}
-              {panel === "shop" && (
-                <div className="grid gap-x-8 gap-y-5 border-t border-[var(--border-subtle)] pt-5 lg:grid-cols-2">
-                  {pickers(true)}
-                </div>
-              )}
               <Link
                 to={panelRoot.to}
                 onClick={closeAll}
@@ -437,9 +353,6 @@ export function Header() {
                 </Link>
               ))}
             </div>
-            {menuTab === "gems" && (
-              <div className="grid gap-4 border-t border-[var(--border-subtle)] pt-4">{pickers(false)}</div>
-            )}
             <div className="flex items-center justify-between gap-3 pt-1">
               <Link
                 to={mobileRoot.to}

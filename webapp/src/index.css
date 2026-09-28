@@ -794,6 +794,33 @@
   }
   .gt-rich-text a:hover { color: var(--text-link-hover); border-bottom-color: currentColor; }
 
+  /* What product descriptions add to that subset (lib/richText.ts): a
+     section heading above the h3, quotes, separators, underline and
+     strikethrough. Later than the rules above so their margins win. */
+  .gt-rich-text h2 {
+    margin: var(--space-5) 0 var(--space-2);
+    font-size: var(--text-h3);
+    font-weight: var(--weight-bold);
+    line-height: 1.25;
+    color: var(--text-primary);
+  }
+  .gt-rich-text blockquote {
+    margin: 0 0 var(--space-3);
+    border-left: 2px solid var(--border-default);
+    padding-left: var(--space-4);
+    font-style: italic;
+    color: var(--text-muted);
+  }
+  .gt-rich-text hr {
+    margin: var(--space-4) 0;
+    border: 0;
+    border-top: 1px solid var(--border-subtle);
+  }
+  .gt-rich-text u { text-decoration: underline; text-underline-offset: 3px; }
+  .gt-rich-text s,
+  .gt-rich-text strike { text-decoration: line-through; }
+  .gt-rich-text > :first-child { margin-top: 0; }
+
   .gt-admin-scrim { animation: gt-admin-fade var(--duration-normal) var(--ease-standard) both; }
   .gt-admin-drawer { animation: gt-admin-slide var(--duration-normal) var(--ease-out-soft) both; }
   .gt-admin-dialog { animation: gt-admin-rise var(--duration-fast) var(--ease-out-soft) both; }

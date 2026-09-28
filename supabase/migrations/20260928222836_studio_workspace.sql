@@ -26,8 +26,8 @@
 -- description, tags or the design itself — not when a creation is favourited
 -- or opened, which is what the library shows as "Edited 2 days ago".
 --
--- Not applied by the webapp yet: the prototype runs on a local repository with
--- the same interface (repository.ts). See the webapp README, "3D Studio workspace".
+-- Used by the webapp through supabaseRepository.ts (same interface as the local
+-- prototype, repository.ts). See the webapp README, "3D Studio workspace".
 -- =============================================================================
 
 -- -----------------------------------------------------------------------------
@@ -173,6 +173,10 @@ alter table public.studio_feedback enable row level security;
 -- -----------------------------------------------------------------------------
 -- 4. Privileges and policies
 -- -----------------------------------------------------------------------------
+-- The tag check runs as the writing member; the trigger function needs no grant.
+revoke all on function private.studio_tags_valid(text[]), private.studio_touch_updated_at() from public;
+grant execute on function private.studio_tags_valid(text[]) to authenticated, service_role;
+
 revoke all on public.creations, public.gem_groups, public.studio_feedback from anon;
 revoke truncate, references, trigger on public.creations, public.gem_groups, public.studio_feedback from authenticated;
 

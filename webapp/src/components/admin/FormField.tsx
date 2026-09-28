@@ -8,7 +8,9 @@ import { CircleAlert } from "lucide-react";
  * field owns the ids and every input in the admin is wired to its label,
  * description and error the same way. `aria-describedby` points at the hint,
  * the error, or both — a screen reader gets the same information the sighted
- * administrator reads under the field.
+ * administrator reads under the field. The label also carries `${id}-label`,
+ * for a control that is not a form element (a `contentEditable` surface) and
+ * has to name itself with `aria-labelledby`.
  */
 interface FormFieldProps {
   label: string;
@@ -35,6 +37,7 @@ export function FormField({ label, hint, error, required, aside, children }: For
     <div className="grid gap-1.5">
       <div className="flex items-baseline justify-between gap-3">
         <label
+          id={`${id}-label`}
           htmlFor={id}
           className="text-[length:var(--text-caption)] font-semibold text-[var(--text-primary)]"
         >

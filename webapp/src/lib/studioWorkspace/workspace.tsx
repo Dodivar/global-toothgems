@@ -5,9 +5,11 @@ import { useToast } from "../toast";
 import { getEngine } from "../studio3d/engine";
 import { uid } from "../studio3d/math";
 import { studioStore, useStudio } from "../studio3d/store";
+import { supabase } from "../supabase/client";
 import { createLocalRepositories, type KeyValueStorage } from "./localRepository";
 import { StudioStoreError, type StudioRepositories } from "./repository";
 import { piecesKey } from "./scene";
+import { createSupabaseRepositories } from "./supabaseRepository";
 import type { Creation, FeedbackInput, GemGroup, RecordDetails } from "./types";
 import { copyName } from "./validation";
 
@@ -76,14 +78,14 @@ function browserStorage(): KeyValueStorage {
 }
 
 /**
- * The one switch for the backend: when the Supabase tables are live, a
- * `createSupabaseRepositories(client)` goes here (see README, "3D Studio
- * workspace"). Until then the library lives in this browser — also for real
- * accounts, which is what the interface copy says. The example designs are
- * only for the demo accounts of the mock sign-in, never for real members.
+ * The one switch for the backend. A real account (Supabase session) keeps its
+ * library in the database, on every device. The demo accounts of the mock
+ * sign-in keep theirs in this browser, seeded with the example designs, which
+ * never reach real members.
  */
-function createRepositories(userId: string, opts: { seed: boolean }): StudioRepositories {
-  return createLocalRepositories(userId, { storage: browserStorage(), latency: LOCAL_LATENCY_MS, seed: opts.seed });
+function createRepositories(userId: string, opts: { realAuth: boolean }): StudioRepositories {
+  if (opts.realAuth && supabase) return createSupabaseRepositories(supabase, userId);
+  return createLocalRepositories(userId, { storage: browserStorage(), latency: LOCAL_LATENCY_MS, seed: !opts.realAuth });
 }
 
 export function StudioWorkspaceProvider({ children }: { children: ReactNode }) {
@@ -91,7 +93,7 @@ export function StudioWorkspaceProvider({ children }: { children: ReactNode }) {
   const { showToast } = useToast();
   const { userId, restoring, realAuth } = useAuth();
   const snap = useStudio();
-  const repos = useMemo(() => (userId ? createRepositories(userId, { seed: !realAuth }) : null), [userId, realAuth]);
+  const repos = useMemo(() => (userId ? createRepositories(userId, { realAuth }) : null), [userId, realAuth]);
 
   // What was loaded, and for which repositories: a sign-out or another account
   // makes it stale at once, without waiting for an effect to clear it.

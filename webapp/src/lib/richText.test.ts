@@ -1,6 +1,5 @@
 import { describe, expect, it } from "vitest";
-import { parseInline, parseRichText } from "./richText";
-import { toggleInlineMarker, toggleList } from "./richTextEditing";
+import { isSafeHref, parseInline, parseRichText } from "./richText";
 
 const text = (value: string) => ({ type: "text", text: value });
 
@@ -35,6 +34,22 @@ describe("parseRichText", () => {
     expect(parseRichText("*soft* finish")[0].type).toBe("paragraph");
   });
 
+  it("parses headings, quotes and separators", () => {
+    expect(parseRichText("## Title\n### Sub\n> one\n> **two**\n\n---\nafter")).toEqual([
+      { type: "heading", level: 2, content: [text("Title")] },
+      { type: "heading", level: 3, content: [text("Sub")] },
+      { type: "quote", lines: [[text("one")], [{ type: "strong", children: [text("two")] }]] },
+      { type: "rule" },
+      { type: "paragraph", lines: [[text("after")]] },
+    ]);
+  });
+
+  it("reads escaped block markers as text", () => {
+    expect(parseRichText("\\- no\n1\\. no\n\\## no\n\\> no")).toEqual([
+      { type: "paragraph", lines: [[text("- no")], [text("1. no")], [text("## no")], [text("> no")]] },
+    ]);
+  });
+
   it("returns nothing for an empty description", () => {
     expect(parseRichText(" \n\n ")).toEqual([]);
   });
@@ -67,56 +82,35 @@ describe("parseInline", () => {
     expect(parseInline("\\*not italic\\*")).toEqual([text("*not italic*")]);
   });
 
+  it("parses underline, strikethrough and links", () => {
+    expect(parseInline("++u++ ~~s~~ [site](https://example.com/a) C++ and ~ 3 mm")).toEqual([
+      { type: "underline", children: [text("u")] },
+      text(" "),
+      { type: "strike", children: [text("s")] },
+      text(" "),
+      { type: "link", href: "https://example.com/a", children: [text("site")] },
+      text(" C++ and ~ 3 mm"),
+    ]);
+  });
+
+  it("keeps a link with a refused address as plain text", () => {
+    expect(parseInline("[x](javascript:alert(1))")).toEqual([text("[x](javascript:alert(1))")]);
+    expect(parseInline("[x](//evil.example)")).toEqual([text("[x](//evil.example)")]);
+  });
+
   it("keeps markup-looking text as text", () => {
     expect(parseInline("<script>alert(1)</script>")).toEqual([text("<script>alert(1)</script>")]);
   });
 });
 
-describe("toggleInlineMarker", () => {
-  it("wraps the selection, leaving surrounding spaces outside", () => {
-    const value = "a gem here";
-    expect(toggleInlineMarker(value, 1, 6, "**")).toEqual({ value: "a **gem** here", selectionStart: 4, selectionEnd: 7 });
-  });
-
-  it("inserts an empty pair at the cursor", () => {
-    expect(toggleInlineMarker("ab", 1, 1, "*")).toEqual({ value: "a**b", selectionStart: 2, selectionEnd: 2 });
-  });
-
-  it("unwraps a selection wrapped from outside or inside", () => {
-    expect(toggleInlineMarker("a **gem** b", 4, 7, "**").value).toBe("a gem b");
-    expect(toggleInlineMarker("a **gem** b", 2, 9, "**").value).toBe("a gem b");
-  });
-
-  it("tells italic apart from bold when unwrapping", () => {
-    // Italic over a bold word adds a marker instead of eating the bold one.
-    expect(toggleInlineMarker("**gem**", 2, 5, "*").value).toBe("***gem***");
-    expect(toggleInlineMarker("***gem***", 3, 6, "*").value).toBe("**gem**");
-    expect(toggleInlineMarker("***gem***", 3, 6, "**").value).toBe("*gem*");
-  });
-
-  it("wraps a multi-line selection line by line, after list prefixes", () => {
-    const value = "- one\n\n- two";
-    expect(toggleInlineMarker(value, 0, value.length, "**").value).toBe("- **one**\n\n- **two**");
-  });
-});
-
-describe("toggleList", () => {
-  it("turns the selected lines into a bullet list and back", () => {
-    const on = toggleList("one\ntwo", 0, 7, false);
-    expect(on.value).toBe("- one\n- two");
-    expect(toggleList(on.value, 0, on.value.length, false).value).toBe("one\ntwo");
-  });
-
-  it("numbers lines and switches kinds without stacking prefixes", () => {
-    expect(toggleList("- one\n\n- two", 0, 12, true).value).toBe("1. one\n\n2. two");
-  });
-
-  it("only touches the lines the selection reaches", () => {
-    const value = "intro\none\ntwo\noutro";
-    expect(toggleList(value, 6, 10, false).value).toBe("intro\n- one\ntwo\noutro");
-  });
-
-  it("starts a list on an empty line with the cursor after the prefix", () => {
-    expect(toggleList("text\n", 5, 5, false)).toEqual({ value: "text\n- ", selectionStart: 7, selectionEnd: 7 });
+describe("isSafeHref", () => {
+  it("accepts web, e-mail and site links only", () => {
+    expect(isSafeHref("https://example.com")).toBe(true);
+    expect(isSafeHref("mailto:hello@example.com")).toBe(true);
+    expect(isSafeHref("/produits/etoile")).toBe(true);
+    expect(isSafeHref("javascript:alert(1)")).toBe(false);
+    expect(isSafeHref("data:text/html,x")).toBe(false);
+    expect(isSafeHref("//evil.example")).toBe(false);
+    expect(isSafeHref("https://")).toBe(false);
   });
 });
