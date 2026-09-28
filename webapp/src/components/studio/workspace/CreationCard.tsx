@@ -1,5 +1,5 @@
 import clsx from "clsx";
-import { Copy, FolderOpen, Heart, MoreHorizontal, PencilLine, Trash2 } from "lucide-react";
+import { Copy, FolderOpen, Heart, Link2, MoreHorizontal, PencilLine, Trash2 } from "lucide-react";
 import { Menu } from "../../ui/Menu";
 import type { Creation } from "../../../lib/studioWorkspace/types";
 import { useWorkspace } from "../../../lib/studioWorkspace/workspace";
@@ -96,6 +96,12 @@ export function CreationCard({ creation, onStage }: { creation: Creation; onStag
             items={[
               { id: "open", label: t("studio.workspace.actions.open"), icon: FolderOpen, onSelect: () => openInStudio(creation) },
               { id: "duplicate", label: t("studio.workspace.actions.duplicate"), icon: Copy, onSelect: () => void ws.duplicateCreation(creation) },
+              {
+                id: "share",
+                label: t("studio.workspace.actions.share"),
+                icon: Link2,
+                onSelect: () => openWorkspaceDialog({ kind: "shareCreation", creation }),
+              },
               {
                 id: "rename",
                 label: t("studio.workspace.actions.rename"),

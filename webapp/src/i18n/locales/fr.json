@@ -316,6 +316,7 @@
     "signInTitle": "Connexion",
     "signInBody": "Retrouvez vos formations, votre progression et vos commandes.",
     "gateNotice": "Un compte est nécessaire pour suivre une formation. Connectez-vous ou créez un compte pour continuer.",
+    "gateNoticeStudio": "Un compte est nécessaire pour utiliser le Studio 3D. Connectez-vous ou créez un compte : vous reviendrez ensuite là où vous étiez.",
     "firstName": "Prénom",
     "lastName": "Nom",
     "email": "E-mail",

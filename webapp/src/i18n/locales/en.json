@@ -316,6 +316,7 @@
     "signInTitle": "Sign in",
     "signInBody": "Pick your courses, your progress and your orders back up.",
     "gateNotice": "An account is required to take a course. Sign in or create an account to continue.",
+    "gateNoticeStudio": "An account is required to use the 3D Studio. Sign in or create an account: you will come back to where you were.",
     "firstName": "First name",
     "lastName": "Last name",
     "email": "Email",

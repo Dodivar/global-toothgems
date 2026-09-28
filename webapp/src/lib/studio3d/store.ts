@@ -140,9 +140,12 @@ export class DesignStore {
   private listeners = new Set<() => void>();
   private snap: StudioSnapshot;
   private saveTimer: ReturnType<typeof setTimeout> | null = null;
+  /** False for a design that is not this browser's draft (a shared link): never read nor written. */
+  private readonly persist: boolean;
 
-  constructor() {
-    const data = readStorage(DESIGN_KEY) as {
+  constructor(options: { persist?: boolean } = {}) {
+    this.persist = options.persist ?? true;
+    const data = (this.persist ? readStorage(DESIGN_KEY) : null) as {
       jewels?: unknown;
       clientName?: unknown;
       model?: unknown;
@@ -171,6 +174,7 @@ export class DesignStore {
   private commit() {
     this.snap = this.buildSnap();
     this.listeners.forEach((l) => l());
+    if (!this.persist) return;
     if (this.saveTimer) clearTimeout(this.saveTimer);
     this.saveTimer = setTimeout(() => this.saveNow(), SAVE_DEBOUNCE_MS);
   }
@@ -438,6 +442,7 @@ export class DesignStore {
   saveNow() {
     if (this.saveTimer) clearTimeout(this.saveTimer);
     this.saveTimer = null;
+    if (!this.persist) return;
     writeStorage(DESIGN_KEY, {
       v: 1,
       jewels: this.jewels,

@@ -87,6 +87,8 @@ import {
   STUDIO_EDITOR_ALIAS,
   STUDIO_EDITOR_PATH,
   STUDIO_PATH,
+  STUDIO_SHARE_ALIAS,
+  STUDIO_SHARE_PATH,
   STUDIO_SUBSCRIBE_ALIAS,
   STUDIO_SUBSCRIBE_PATH,
   studioSectionFromPath,
@@ -99,6 +101,8 @@ import { NotFound } from "./pages/NotFound";
 /* The 3D Studio editor carries three.js, the heaviest code in the site: it is
    split into its own chunk and only downloaded when the editor is opened. */
 const StudioEditor = lazy(() => import("./pages/StudioEditor").then((m) => ({ default: m.StudioEditor })));
+/* A shared design is viewed in the same 3D engine: same on-demand chunk. */
+const StudioShare = lazy(() => import("./pages/StudioShare").then((m) => ({ default: m.StudioShare })));
 import { ServerError } from "./pages/ServerError";
 import { Maintenance } from "./pages/Maintenance";
 import { HelpCentre } from "./pages/legal/HelpCentre";
@@ -120,6 +124,12 @@ import { RETURNS } from "./data/legal/returns";
 function StudioEditorAlias() {
   const { pathname } = useLocation();
   return <Navigate to={studioSectionPath(studioSectionFromPath(pathname))} replace />;
+}
+
+/** `/studio-3d/share#…` → `/studio-3d/partage#…`: the fragment is the design, so it must come along. */
+function StudioShareAlias() {
+  const { hash } = useLocation();
+  return <Navigate to={{ pathname: STUDIO_SHARE_PATH, hash }} replace />;
 }
 
 function ScrollToTop() {
@@ -166,9 +176,10 @@ const MAINTENANCE_ROUTE = "/maintenance";
 /**
  * The 3D Studio editor is a full-screen workspace with its own application
  * bar, so it also leaves out the storefront header and footer. Unlike the back
- * office it stays a customer page: the cookie banner still shows.
+ * office it stays a customer page: the cookie banner still shows. A shared
+ * design's page is the same kind of screen: a 3D stage with its own bar.
  */
-const WORKSPACE_ROUTES = [STUDIO_EDITOR_PATH];
+const WORKSPACE_ROUTES = [STUDIO_EDITOR_PATH, STUDIO_SHARE_PATH];
 
 export default function App() {
   const { t } = useTranslation();
@@ -286,6 +297,18 @@ export default function App() {
                         }
                       />
                       <Route path={`${STUDIO_EDITOR_ALIAS}/*`} element={<StudioEditorAlias />} />
+                      {/* A design shared read-only. Open to everyone, outside
+                          `RequireStudioAccess`: looking at a design someone sent
+                          is not using the Studio. Full-screen like the editor. */}
+                      <Route
+                        path={STUDIO_SHARE_PATH}
+                        element={
+                          <Suspense fallback={<StudioEditorLoading />}>
+                            <StudioShare />
+                          </Suspense>
+                        }
+                      />
+                      <Route path={STUDIO_SHARE_ALIAS} element={<StudioShareAlias />} />
                       {/* The Academy landing page stays open — it is the sales page.
                           Only the course content itself requires an account, and gating
                           the route covers the menu links and direct URLs at once. */}

@@ -348,6 +348,14 @@ function toothIdFromObject(o: THREE.Object3D | null): string | null {
   return null;
 }
 
+export interface EngineOptions {
+  /**
+   * View a design without editing it (a shared link): orbit, zoom and
+   * double-click focus work, but no press selects, drags or places a piece.
+   */
+  readOnly?: boolean;
+}
+
 export class StudioEngine {
   private renderer: THREE.WebGLRenderer;
   private scene = new THREE.Scene();
@@ -369,6 +377,8 @@ export class StudioEngine {
   private raf = 0;
   private disposed = false;
   private store: DesignStore;
+  /** A shared design being viewed: the camera moves, the pieces never do (see `EngineOptions`). */
+  private readOnly: boolean;
   private unsubscribe: () => void;
   /** Frames left to draw before the loop idles (see `wake`). */
   private pendingFrames = SETTLE_FRAMES;
@@ -440,9 +450,10 @@ export class StudioEngine {
   private lasso: { pointerId: number; originX: number; originY: number; points: Point2[]; additive: boolean } | null = null;
   private lassoListener: LassoListener | null = null;
 
-  constructor(container: HTMLElement, store: DesignStore) {
+  constructor(container: HTMLElement, store: DesignStore, options: EngineOptions = {}) {
     this.container = container;
     this.store = store;
+    this.readOnly = options.readOnly ?? false;
     this.renderer = new THREE.WebGLRenderer({ antialias: true, alpha: true, powerPreference: "high-performance" });
     this.renderer.setPixelRatio(Math.min(window.devicePixelRatio, 2));
     this.renderer.setSize(container.clientWidth || 800, container.clientHeight || 600, false);
@@ -1782,6 +1793,8 @@ export class StudioEngine {
       this.controls.enabled = true;
       this.controls.update();
     }
+    // Viewing only: every press belongs to the camera.
+    if (this.readOnly) return;
     if (e.button === 0 && this.store.getSnapshot().lasso) {
       // Before the piece test: a loop may well start on a piece, and must not drag it.
       e.stopPropagation();
@@ -1948,7 +1961,7 @@ export class StudioEngine {
   /** Right-click on a piece → context menu. Empty right-clicks fall through
       to OrbitControls (pan) as before. */
   private onContextMenu = (e: MouseEvent) => {
-    if (e.target !== this.renderer.domElement) return;
+    if (this.readOnly || e.target !== this.renderer.domElement) return;
     if (this.placing) {
       this.cancelPlacing();
       e.preventDefault();
@@ -1970,6 +1983,8 @@ export class StudioEngine {
   };
 
   private updateHover(e: PointerEvent) {
+    // Nothing on a viewed design can be picked up: no hover swell, no grab cursor.
+    if (this.readOnly) return;
     const before = this.hoverJewelId;
     this.updateHoverTargets(e);
     // A piece's hover glow is drawn by the engine alone (no store change), so it wakes the loop itself.

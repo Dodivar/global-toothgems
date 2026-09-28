@@ -10,6 +10,7 @@ import { confirmationRedirect } from "../lib/authRedirect";
 import { useProgress } from "../lib/progress";
 import { useToast } from "../lib/toast";
 import { FORGOT_PATH } from "../lib/accountSecurity";
+import { STUDIO_PATH } from "../lib/studioUrl";
 
 /** Where a visitor lands when they reach the page on their own, with nothing pending. */
 const DEFAULT_TARGET = "/compte";
@@ -158,7 +159,8 @@ export function Login() {
               className="m-0 flex items-start gap-2.5 rounded-[var(--radius-md)] bg-[var(--status-info-bg)] p-4 text-[length:var(--text-body-sm)] text-[var(--gt-blue-700)]"
             >
               <Info size={16} aria-hidden="true" className="mt-0.5 flex-none" />
-              <span>{t("auth.gateNotice")}</span>
+              {/* Sent from the 3D Studio (saving, a shared design), the reason is the Studio, not a course. */}
+              <span>{t(from.startsWith(STUDIO_PATH) ? "auth.gateNoticeStudio" : "auth.gateNotice")}</span>
             </p>
           )}
 

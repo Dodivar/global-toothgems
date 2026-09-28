@@ -14,9 +14,12 @@ export function SignInPrompt({
   onNavigate,
   title,
   body,
+  returnTo,
 }: {
   compact?: boolean;
   onNavigate?: () => void;
+  /** Where signing in leads back to; the current path by default. A shared design passes its fragment too. */
+  returnTo?: string;
   /** Wording for a context other than the library (feedback, for one). */
   title?: string;
   body?: string;
@@ -26,7 +29,7 @@ export function SignInPrompt({
   const { pathname } = useLocation();
   const go = (to: string) => {
     onNavigate?.();
-    navigate(to, { state: { from: pathname } });
+    navigate(to, { state: { from: returnTo ?? pathname } });
   };
 
   return (

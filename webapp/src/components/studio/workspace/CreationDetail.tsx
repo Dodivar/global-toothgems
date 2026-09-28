@@ -1,4 +1,4 @@
-import { Copy, FolderOpen, Gem, PencilLine, Trash2 } from "lucide-react";
+import { Copy, FolderOpen, Gem, Link2, PencilLine, Trash2 } from "lucide-react";
 import { Dialog } from "../../ui/Dialog";
 import { Button } from "../../ui/Button";
 import { formatDate } from "../../../lib/format";
@@ -85,6 +85,9 @@ export function CreationDetail({ creationId, onClose }: { creationId: string; on
         </Button>
         <Button variant="outline" size="sm" iconLeft={Copy} onClick={() => void ws.duplicateCreation(creation)}>
           {t("studio.workspace.actions.duplicate")}
+        </Button>
+        <Button variant="outline" size="sm" iconLeft={Link2} onClick={() => openWorkspaceDialog({ kind: "shareCreation", creation })}>
+          {t("studio.workspace.actions.share")}
         </Button>
         <Button variant="ghost" size="sm" iconLeft={PencilLine} onClick={() => openWorkspaceDialog({ kind: "editCreation", creation })}>
           {t("studio.workspace.actions.editDetails")}
