@@ -1,5 +1,6 @@
 import {
   offeredGemVariants,
+  type AdminGemColor,
   type AdminProduct,
   type Availability,
   type Category,
@@ -9,9 +10,10 @@ import {
   type ProductStatus,
   type ProductType,
   type RecommendationKind,
+  type GemColorDraft,
   type VariantStock,
 } from "../data/adminCatalog";
-import { GEM_COLORS, GEM_SHAPES } from "../data/products";
+import { GEM_SHAPES } from "../data/products";
 import type { Localized } from "../data/types";
 import type { Json } from "./supabase/database.types";
 import { toMinorUnits } from "./catalog/money";
@@ -271,7 +273,7 @@ export function rowToProduct(row: ProductRow, publicUrl: (path: string) => strin
     otherVariants: allVariants.length > 0 && !gemOptions,
     material: readLocalized(metadata.material),
     shape: GEM_SHAPES.find((shape) => shape === metadata.shape),
-    color: GEM_COLORS.find((color) => color === metadata.color),
+    color: typeof metadata.color === "string" && metadata.color ? metadata.color : undefined,
     tags,
     createdAt: row.created_at,
     updatedAt: row.updated_at,
@@ -414,6 +416,51 @@ export function productToPayload(product: AdminProduct): Json {
         alt_fr: image.alt.fr.trim() || name.fr,
         alt_en: image.alt.en.trim() || name.en,
       })),
+  };
+}
+
+/** Colours of the gem filter, hidden ones included (migration `…_gem_colors`). */
+export const ADMIN_GEM_COLOR_SELECT = `
+  id, slug, name, hex, is_multicolor, is_active, position,
+  gem_color_translations ( locale, name )
+`;
+
+export interface GemColorRow {
+  id: string;
+  slug: string;
+  name: string;
+  hex: string | null;
+  is_multicolor: boolean;
+  is_active: boolean;
+  position: number;
+  gem_color_translations: { locale: string; name: string }[] | null;
+}
+
+export function rowToGemColor(row: GemColorRow): AdminGemColor {
+  return {
+    id: row.id,
+    slug: row.slug,
+    name: { fr: row.name, en: english(row.gem_color_translations ?? [])?.name ?? "" },
+    hex: row.is_multicolor ? null : row.hex,
+    isMulticolor: row.is_multicolor,
+    isActive: row.is_active,
+    position: row.position,
+  };
+}
+
+/**
+ * Payload of `admin_save_gem_color()`. The slug is only a wish for a new
+ * colour: the database makes it unique and ignores it on an update.
+ */
+export function gemColorToPayload(draft: GemColorDraft): Json {
+  const name = { fr: draft.name.fr.trim(), en: draft.name.en.trim() };
+  return {
+    id: draft.id ?? null,
+    slug: (slugify(name.fr) || slugify(name.en) || "couleur").slice(0, 50).replace(/-+$/g, ""),
+    name: name.fr,
+    name_en: name.en,
+    hex: draft.hex ? draft.hex.toLowerCase() : null,
+    is_active: draft.isActive,
   };
 }
 

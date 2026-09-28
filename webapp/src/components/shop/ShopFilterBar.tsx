@@ -6,8 +6,9 @@ import { Button } from "../ui/Button";
 import { Select, type SelectOption } from "../ui/Select";
 import { ShapeGlyph } from "../ui/ShapeGlyph";
 import { ColorSwatch } from "../ui/ColorSwatch";
-import { SHOP_CATEGORIES, colorsInCatalog, shapesInCatalog } from "../../data/products";
+import { SHOP_CATEGORIES, colorsInCatalog, shapesInCatalog, sortByShapeLabel } from "../../data/products";
 import { useCatalog } from "../../lib/catalog/CatalogProvider";
+import { useLocalized } from "../../lib/localized";
 
 const CATEGORIES = ["Tout", ...SHOP_CATEGORIES] as const;
 
@@ -73,12 +74,14 @@ function Chip({
  * mobile, where they would otherwise push the grid off the first screen.
  */
 export function ShopFilterBar(props: ShopFilterBarProps) {
-  const { t } = useTranslation();
+  const { t, i18n } = useTranslation();
   const { category, shape, color, material, priceBand, stockBand, sort, setParam } = props;
 
-  const { products } = useCatalog();
-  const shapes = shapesInCatalog(products);
-  const colors = colorsInCatalog(products);
+  const L = useLocalized();
+  const { products, colors: colorList } = useCatalog();
+  // Alphabetical in the reading language, so a long row of cuts is scannable.
+  const shapes = sortByShapeLabel(shapesInCatalog(products), (group) => group.shape, (s) => t(`shop.shapes.${s}`), i18n.language);
+  const colors = colorsInCatalog(products, colorList);
 
   return (
     <div className="grid gap-5 border-b border-[var(--border-subtle)] pb-6">
@@ -114,10 +117,10 @@ export function ShopFilterBar(props: ShopFilterBarProps) {
           <Chip active={color === "all"} onClick={() => setParam("couleur", "all", "all")} label={t("shop.colors.all")} />
           {colors.map((group) => (
             <Chip
-              key={group.color}
-              active={color === group.color}
-              onClick={() => setParam("couleur", group.color, "all")}
-              label={t(`shop.colors.${group.color}`)}
+              key={group.color.slug}
+              active={color === group.color.slug}
+              onClick={() => setParam("couleur", group.color.slug, "all")}
+              label={L(group.color.name)}
               media={<ColorSwatch color={group.color} size={20} />}
             />
           ))}

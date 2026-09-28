@@ -25,6 +25,9 @@ Iteration 9 adds product recommendations: the team's links between products and
 Iteration 10 connects the back office's product management: `admin_save_product()`,
 `admin_delete_product()` and `admin_save_product_recommendations()` save a product with its
 translation, stock and images, or a product's recommendation lists, in one transaction.
+Iteration 13 makes the storefront's gem colour filter data: `gem_colors` (+ translations), managed
+from the back-office Catégories page through `admin_save_gem_color()`, `admin_delete_gem_color()` and
+`admin_reorder_gem_colors()`.
 Training, community and notifications are
 still out of scope and get their own migrations later.
 
@@ -47,6 +50,7 @@ supabase/
   tests/iteration10_validation.sql  iteration 10 back-office product management suite (always rolls back)
   tests/iteration11_validation.sql  iteration 11 gem pack × stone-size options suite (always rolls back)
   tests/iteration12_validation.sql  iteration 12 member sign-up (Supabase Auth metadata → profile + consents) suite (always rolls back)
+  tests/iteration13_validation.sql  iteration 13 gem colours suite (always rolls back)
   templates/confirm-signup.html     French "Confirm signup" email, to paste into the Auth settings
 ```
 
@@ -83,6 +87,7 @@ supabase/
 | 20260926115257 | `admin_save_product_variant_stock` | `admin_save_product()` leaves stock alone for products with variants (stock is per variant) and digital products |
 | 20260926151552 | `gem_pack_stone_size_options` | `admin_save_product()` gains an optional `variants` list: gem options pack (20/50/100) × stone size (SS), one variant each (`attributes` `{"pack": 50, "ss": 6}`), names/SKUs derived server-side, matched by combination, unticked options deleted (deactivated when ordered); products with other kinds of variants refused; product stock applies again once no variant is active |
 | 20260927120000 | `studio_workspace` | 3D Studio workspace: `creations` (scene_data jsonb v1, generated `element_count`, indicative `estimated_price_minor` + `currency`, private thumbnail path), `gem_groups`, `studio_feedback` (insert-only, staff read), private `studio-thumbnails` bucket; owner-only RLS, `user_id` defaults to `auth.uid()` and is not writable; `updated_at` moves on content edits only. **Not wired to the webapp yet** (local repository) |
+| 20260928174400 | `gem_colors` | `gem_colors` (immutable `slug` = `products.metadata.color` value, French `name`, one exact `hex`, single `is_multicolor` entry without hex, `is_active`, `position`) + `gem_color_translations`; seed of the ten former front-end colours + « Multicolore »; trigger rejecting an unknown `metadata.color`; `admin_save_gem_color()`, `admin_delete_gem_color()` (refused while a product uses the colour, never for the multicolour entry), `admin_reorder_gem_colors()`; audited |
 
 RLS is **enabled in the same migration that creates each table** (deny by default);
 policies are granted back in `rls_policies`.
@@ -100,7 +105,8 @@ categories 1─* products 1─* product_variants
                   └── inventory_items (one per product WITHOUT variants, or one per variant)
                           └─* inventory_movements (ledger, order_id optional)
 
-languages 1─* {category,product,product_variant,product_media}_translations
+languages 1─* {category,product,product_variant,product_media,gem_color}_translations
+gem_colors ←─ products.metadata.color (slug; checked by trigger, delete refused while used)
 shipping_zones 1─* shipping_zone_countries (a country is in at most one zone)
                1─* shipping_rates ←─ orders.shipping_rate_id (+ name snapshot)
 tax_rates (country × tax_category, basis points)
@@ -488,6 +494,28 @@ Feeds the storefront's suggestion blocks, which today read mock data (`webapp/sr
 - **Seed**: complementary and similar links for every active seed product (gems → gel, capsules, tools; kit →
   capsules, gems, pliers; …).
 
+### Gem colours (iteration 13)
+
+The colour filter of the storefront (`/couleurs`, shop chips, header carousels) and the product form's colour
+select read `gem_colors`; the team manages it in the back office, section « Couleurs des gemmes » of the
+Catégories page (`GemColorsSection.tsx`).
+
+- **One exact shade per colour** (`hex` `#rrggbb`, lowercase). No two-tone colours: gems with special reflections
+  or several colours go into the single **multicolour** entry (`is_multicolor`, no hex, iridescent swatch drawn by
+  the front end). It is a colour like any other for products and URLs (`couleur=multicolor`); it can be renamed and
+  hidden, never deleted.
+- **`slug`** is the value of `products.metadata.color` and of the `couleur` URL parameter: set once at creation
+  (from the French name, made unique with a suffix), never changed afterwards (trigger), so renaming a colour breaks
+  no link and no product.
+- **Names**: French in `name`, English in `gem_color_translations` (published). `admin_save_gem_color()` requires
+  both, so a colour never reaches the English storefront untranslated.
+- **Products**: `metadata.color` stays a slug (presentation data), but a trigger rejects a slug that is not a
+  colour (`23503`), and `admin_delete_gem_color()` refuses a colour that any product uses (`23503`) — hide it
+  (`is_active = false`) to take it out of the storefront while its products keep it.
+- **Access**: visitors read active colours and published translations; staff read all; `manage_products` writes
+  (the three functions are `SECURITY INVOKER`, RLS applies). Name, shade, visibility changes and deletions go to
+  `audit_logs`.
+
 ### Integrity guarantees
 
 - `orders_total_matches`: `total = subtotal − discount + shipping (+ tax when prices exclude tax)`; discount ≤ subtotal; all amounts ≥ 0.
@@ -569,7 +597,7 @@ enable the extension in the dashboard — or a scheduled server job with the ser
 `tests/iteration3_validation.sql`, `tests/iteration4_validation.sql`, `tests/iteration5_validation.sql` and
 `tests/iteration6_validation.sql`, `tests/iteration7_validation.sql`, `tests/iteration8_validation.sql`,
 `tests/iteration9_validation.sql`, `tests/iteration10_validation.sql`, `tests/iteration11_validation.sql`,
-`tests/iteration12_validation.sql`. Each ends with
+`tests/iteration12_validation.sql`, `tests/iteration13_validation.sql`. Each ends with
 `ALL … PASSED (...)` raised as an exception, which rolls everything back.
 (The order-number sequence still advances — sequences are not transactional.)
 
@@ -723,6 +751,9 @@ VAT rates, shipping zones/rates mirroring the Settings prototype. Media rows ref
   `admin_delete_product()` (order history protected by FK), `admin_save_product_recommendations()`.
 - Iteration 11: gem options — packs of 20 / 50 / 100 stones × stone sizes (SS) as variants with their own price
   and stock, edited from the product form and picked on the product page; seed product `strass-cristal`.
+- Iteration 13: gem colours managed from the back office — `gem_colors` + translations, one exact shade per colour,
+  a single multicolour entry for gems with reflections / several colours, create / edit / hide / reorder / delete
+  (refused while used), product colour checked against the list.
 
 ## Next iterations (not implemented)
 

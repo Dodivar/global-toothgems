@@ -1,7 +1,7 @@
-import type { Product } from "../../data/products";
+import type { GemColorDef, Product } from "../../data/products";
 import { requireSupabase } from "../supabase/client";
 import { productMediaUrl } from "../supabase/storage";
-import { mapProduct, type ProductRow, type ReviewStatsRow } from "./mapping";
+import { mapGemColor, mapProduct, type GemColorRow, type ProductRow, type ReviewStatsRow } from "./mapping";
 
 /**
  * Everything a product card or page needs, in one request: translations,
@@ -55,4 +55,22 @@ export async function fetchCatalog(signal?: AbortSignal): Promise<Product[]> {
   return rows.map((row) =>
     mapProduct(row, statsByProduct.get(row.id), productMediaUrl),
   );
+}
+
+/**
+ * The colour filter's entries, in the order the team set in the back office.
+ * Active colours only; `is_active` is repeated here for the same reason as the
+ * product filters above.
+ */
+export async function fetchGemColors(signal?: AbortSignal): Promise<GemColorDef[]> {
+  const db = requireSupabase();
+  let query = db
+    .from("gem_colors")
+    .select("slug, name, hex, is_multicolor, gem_color_translations ( locale, name, status )")
+    .eq("is_active", true)
+    .order("position");
+  if (signal) query = query.abortSignal(signal);
+  const { data, error } = await query;
+  if (error) throw error;
+  return (data as GemColorRow[]).map(mapGemColor);
 }

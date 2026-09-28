@@ -9,6 +9,7 @@ import { FormField } from "./FormField";
 import { GemOptionsEditor } from "./GemOptionsEditor";
 import { ProductMediaUploader } from "./ProductMediaUploader";
 import { RichTextArea } from "./RichTextArea";
+import { ShapePicker } from "./ShapePicker";
 import { ToggleSwitch } from "./ToggleSwitch";
 import { CONTENT_LANGS, type ContentLang } from "../../lib/localized";
 import { formatDate } from "../../lib/format";
@@ -21,7 +22,7 @@ import {
   type ProductStatus,
   type ProductType,
 } from "../../data/adminCatalog";
-import { GEM_COLORS, GEM_SHAPES, type GemColor, type GemShape } from "../../data/products";
+import type { GemColor } from "../../data/products";
 import type { Localized } from "../../data/types";
 import { comboSkuSuffix, longestSkuSuffix } from "../../lib/gemOptions";
 
@@ -74,7 +75,7 @@ export function ProductForm({
   focusOption,
 }: ProductFormProps) {
   const { t } = useTranslation();
-  const { source, categories, uploadImage } = useAdminCatalog();
+  const { source, categories, uploadImage, gemColors } = useAdminCatalog();
   // The database has no promotional price: discounts are the promotions
   // workspace's job, so the field only exists in the prototype.
   const withPromoPrice = source === "mock";
@@ -129,13 +130,15 @@ export function ProductForm({
   const optionsOn = Boolean(draft.gemOptions?.enabled);
 
   const categoryOptions: AdminOption[] = categories.map((c) => ({ value: c.id, label: c.name[lang] }));
-  const shapeOptions: AdminOption[] = [
-    { value: "", label: t("admin.form.gemLookNone") },
-    ...GEM_SHAPES.map((shape) => ({ value: shape, label: t(`shop.shapes.${shape}`) })),
-  ];
   const colorOptions: AdminOption[] = [
     { value: "", label: t("admin.form.gemLookNone") },
-    ...GEM_COLORS.map((color) => ({ value: color, label: t(`shop.colors.${color}`) })),
+    // Hidden colours are not offered, except the one the product already has.
+    ...gemColors
+      .filter((color) => color.isActive || color.slug === draft.color)
+      .map((color) => ({
+        value: color.slug,
+        label: color.isActive ? color.name[lang] || color.name.fr : t("admin.gemColors.hiddenOption", { name: color.name.fr }),
+      })),
   ];
   const typeOptions: AdminOption[] = TYPES.map((type) => ({ value: type, label: t(`admin.type.${type}`) }));
   const statusOptions: AdminOption[] = (["draft", "active", "archived"] as ProductStatus[]).map((s) => ({
@@ -469,16 +472,12 @@ export function ProductForm({
 
             {isGem && (
               <>
-                <FormField label={t("admin.form.shape")} hint={t("admin.form.gemLookHint")}>
-                  {(props) => (
-                    <AdminSelect
-                      {...props}
-                      options={shapeOptions}
-                      value={draft.shape ?? ""}
-                      onChange={(e) => set("shape", (e.target.value || undefined) as GemShape | undefined)}
-                    />
-                  )}
-                </FormField>
+                <ShapePicker
+                  label={t("admin.form.shape")}
+                  hint={t("admin.form.gemLookHint")}
+                  value={draft.shape}
+                  onChange={(shape) => set("shape", shape)}
+                />
 
                 <FormField label={t("admin.form.color")} hint={t("admin.form.gemLookHint")}>
                   {(props) => (
