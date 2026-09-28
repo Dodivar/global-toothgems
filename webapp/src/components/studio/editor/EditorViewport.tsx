@@ -21,6 +21,7 @@ import {
   RotateCw,
   ScanFace,
   SquareSplitHorizontal,
+  SquareSplitVertical,
   Sun,
   Trash2,
   TriangleAlert,
@@ -529,6 +530,8 @@ function QuickBar({ ids, jewels, actions }: { ids: string[]; jewels: PlacedJewel
         return icon(t("studio.editor.context.duplicate", { count }), Copy, () => duplicatePieces(ids));
       case "duplicateMirror":
         return icon(t("studio.editor.context.duplicateMirror", { count }), SquareSplitHorizontal, () => duplicateMirroredPieces(ids));
+      case "duplicateMirrorV":
+        return icon(t("studio.editor.context.duplicateMirrorV", { count }), SquareSplitVertical, () => duplicateMirroredPieces(ids, "v"));
       case "mirrorH":
         return icon(t("studio.editor.mirror.horizontal"), FlipHorizontal2, () => mirrorSelection("h"));
       case "mirrorV":
@@ -712,8 +715,8 @@ function ContextMenu({ cm, snap }: { cm: ContextMenuState; snap: StudioSnapshot 
       aria-label={heading}
       onKeyDown={onKeyDown}
       onContextMenu={(e) => e.preventDefault()}
-      style={{ left: `min(${cm.x}px, calc(100% - 228px))`, top: `min(${cm.y}px, calc(100% - 336px))` }}
-      className="absolute z-40 w-[216px] rounded-[var(--radius-md)] border border-[var(--border-subtle)] bg-[var(--surface-card)] p-1.5 shadow-[var(--shadow-lg)] motion-safe:animate-[gt-menu-in_var(--duration-fast)_var(--ease-out-soft)_both]"
+      style={{ left: `min(${cm.x}px, calc(100% - 252px))`, top: `min(${cm.y}px, calc(100% - 336px))` }}
+      className="absolute z-40 w-[240px] rounded-[var(--radius-md)] border border-[var(--border-subtle)] bg-[var(--surface-card)] p-1.5 shadow-[var(--shadow-lg)] motion-safe:animate-[gt-menu-in_var(--duration-fast)_var(--ease-out-soft)_both]"
     >
       <p className="m-0 mb-1 truncate border-b border-[var(--border-subtle)] px-3 pb-2 pt-1.5 text-[10.5px] font-extrabold uppercase tracking-[.1em] text-[var(--text-subtle)]">
         {heading}
@@ -721,6 +724,7 @@ function ContextMenu({ cm, snap }: { cm: ContextMenuState; snap: StudioSnapshot 
       {item(t("studio.editor.context.rotate", { count }), RotateCw, () => rotatePieces(ids))}
       {item(t("studio.editor.context.duplicate", { count }), Copy, () => duplicatePieces(ids))}
       {item(t("studio.editor.context.duplicateMirror", { count }), SquareSplitHorizontal, () => duplicateMirroredPieces(ids))}
+      {item(t("studio.editor.context.duplicateMirrorV", { count }), SquareSplitVertical, () => duplicateMirroredPieces(ids, "v"))}
       {item(t("studio.editor.mirror.horizontal"), FlipHorizontal2, () => mirrorSelection("h"))}
       {item(t("studio.editor.mirror.vertical"), FlipVertical2, () => mirrorSelection("v"))}
       {count >= GROUP_MIN_PIECES &&

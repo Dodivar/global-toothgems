@@ -31,6 +31,7 @@ import { ARCH_K, backOut, clamp, easeInOutCubic, pointInPolygon, seeded, ss01, u
 import { ARCH_FRAMES } from "./archLayout";
 import { anchorToothOf, groupToWorld, piecesToGroup, type Frame, type GemGroupData } from "../studioWorkspace/gemGroup";
 import type { SceneCamera, SceneModel } from "../studioWorkspace/scene";
+import { mirroredRotation, opposingTooth } from "./mirror";
 import { notify } from "./notices";
 import type { DesignIssue, DesignStore, LightPreset, ModelMode } from "./store";
 
@@ -1388,23 +1389,22 @@ export class StudioEngine {
     return this.store.insertJewels(copies);
   }
   /**
-   * Duplicate each piece straight to its mirror image across the arch midline
-   * (x = 0; 11 ↔ 21…), turned like a reflection: the other half of a
-   * symmetric smile in one step. A copy whose mirrored spot is taken slides to
-   * the nearest free one; the originals stay put. The copies become the
-   * selection, in one undo step.
+   * Duplicate each piece straight to its mirror image, turned like a
+   * reflection (see `mirroredSpot`): 'h' gives the other half of a symmetric
+   * smile, 'v' the matching piece on the other arch. A copy whose mirrored spot
+   * is taken slides to the nearest free one; the originals stay put. The
+   * copies become the selection, in one undo step.
    */
-  duplicateMirrored(ids: string[]): number {
+  duplicateMirrored(ids: string[], axis: "h" | "v" = "h"): number {
     const srcs = this.store.jewels.filter((j) => ids.includes(j.id));
     if (!srcs.length) return 0;
     const blockers = this.blockersFor(new Set()); // every existing piece blocks the copies
     const copies: PlacedJewelry[] = [];
     for (const src of srcs) {
-      const mp = new THREE.Vector3(-src.position.x, src.position.y, src.position.z);
-      const mn = new THREE.Vector3(-src.normal.x, src.normal.y, src.normal.z).normalize();
-      const rotation = Math.round((360 - (src.rotation % 360)) % 360);
+      const rotation = mirroredRotation(src.rotation, axis);
       const pose = { ...poseOf(src), rotation };
-      const proposed: SurfaceHit = this.snapToSurface(mp, mn) ?? { toothId: src.toothId, point: mp, normal: mn };
+      const proposed = this.mirroredSpot(src, axis);
+      if (!proposed) continue; // no enamel at the mirrored spot
       const free = this.findFreeSpot(proposed, pose, blockers);
       if (!free) continue; // no room for this copy
       const copy: PlacedJewelry = {
@@ -1454,26 +1454,52 @@ export class StudioEngine {
 
   /* ---------- layout operations (collision-aware) ---------- */
 
-  /** Mirror the current selection. 'h' = across the arch midline (x = 0),
-       'v' = around the selection's vertical centre. One undo step. */
+  /**
+   * Where a piece lands mirrored, re-snapped onto the enamel. 'h' reflects
+   * across the arch midline (x = 0; 11 ↔ 21…). 'v' reflects across the bite
+   * onto the matching tooth of the other arch (11 ↔ 41, 21 ↔ 31…), at the same
+   * place relative to that crown: near the biting edge stays near the biting
+   * edge. On a model with one arch only, 'v' flips the piece on its own tooth
+   * instead (biting edge ↔ gum line). Null: no enamel there ('v' only; 'h'
+   * keeps its historical unsnapped fallback).
+   */
+  private mirroredSpot(j: PlacedJewelry, axis: "h" | "v"): SurfaceHit | null {
+    const p = new THREE.Vector3(j.position.x, j.position.y, j.position.z);
+    const n = new THREE.Vector3(j.normal.x, j.normal.y, j.normal.z).normalize();
+    if (axis === "h") {
+      const mp = new THREE.Vector3(-p.x, p.y, p.z);
+      const mn = new THREE.Vector3(-n.x, n.y, n.z);
+      return this.snapToSurface(mp, mn) ?? { toothId: j.toothId, point: mp, normal: mn };
+    }
+    const src = this.toothRigs.get(j.toothId) ?? this.nearestRig(p);
+    if (!src) return null;
+    const dst = this.toothRigs.get(opposingTooth(src.id)) ?? src;
+    // In each crown's own frame: along the arch, up, outward — scaled to the target crown.
+    const rel = p.clone().sub(src.center);
+    const along = rel.dot(src.tangent) * (dst.spec.wHalf / src.spec.wHalf);
+    const up = -rel.y * (dst.spec.hHalf / src.spec.hHalf);
+    const out = rel.dot(src.outward) * (dst.spec.dHalf / src.spec.dHalf);
+    const point = dst.center.clone().addScaledVector(dst.tangent, along).addScaledVector(_UP, up).addScaledVector(dst.outward, out);
+    const normal = new THREE.Vector3()
+      .addScaledVector(dst.tangent, n.dot(src.tangent))
+      .addScaledVector(_UP, -n.y)
+      .addScaledVector(dst.outward, n.dot(src.outward))
+      .normalize();
+    return this.snapToSurface(point, normal);
+  }
+  /** Mirror the current selection in place (see `mirroredSpot` for each axis). One undo step. */
   mirrorSelection(axis: "h" | "v"): MoveResult | null {
     const ids = [...this.store.getSnapshot().selectedJewelIds];
     const affected = this.store.jewels.filter((j) => ids.includes(j.id));
     if (!affected.length) return null;
-    const planeY = axis === "v" ? affected.reduce((s, j) => s + j.position.y, 0) / affected.length : 0;
     const blockers = this.blockersFor(new Set(ids));
     const updates: { id: string; patch: Partial<PlacedJewelry> }[] = [];
     let skipped = 0;
     for (const j of affected) {
-      const p = new THREE.Vector3(j.position.x, j.position.y, j.position.z);
-      const nrm = new THREE.Vector3(j.normal.x, j.normal.y, j.normal.z).normalize();
-      const mp = axis === "h" ? new THREE.Vector3(-p.x, p.y, p.z) : new THREE.Vector3(p.x, 2 * planeY - p.y, p.z);
-      const mn = axis === "h" ? new THREE.Vector3(-nrm.x, nrm.y, nrm.z) : new THREE.Vector3(nrm.x, -nrm.y, nrm.z);
-      const rotation = Math.round((360 - (j.rotation % 360)) % 360);
-      const snapped = this.snapToSurface(mp, mn);
-      const proposed: SurfaceHit = snapped ?? { toothId: j.toothId, point: mp, normal: mn };
+      const rotation = mirroredRotation(j.rotation, axis);
+      const proposed = this.mirroredSpot(j, axis);
       const pose = { ...poseOf(j), rotation };
-      const free = this.findFreeSpot(proposed, pose, blockers);
+      const free = proposed && this.findFreeSpot(proposed, pose, blockers);
       if (!free) {
         skipped++;
         continue;
