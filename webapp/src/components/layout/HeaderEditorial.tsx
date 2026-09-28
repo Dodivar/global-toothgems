@@ -1,19 +1,12 @@
-import { useEffect, useRef, useState, type ReactNode } from "react";
+import { useEffect, useRef, useState } from "react";
 import { Link, useNavigate, useLocation } from "react-router-dom";
 import { useTranslation } from "react-i18next";
 import { ArrowRight, ChevronDown, Heart, Menu, Search, ShoppingBag, User, X } from "lucide-react";
 import { IconButton } from "../ui/IconButton";
-import { Button } from "../ui/Button";
-import { ShapeCarousel } from "../ui/ShapeCarousel";
-import { ColorCarousel } from "../ui/ColorCarousel";
 import { useAuth } from "../../lib/auth";
 import { useCart } from "../../lib/cart";
 import { useToast } from "../../lib/toast";
 import { MENU } from "../../data/menu";
-import { colorsInCatalog } from "../../data/products";
-import { useShapesInCatalog } from "../../lib/catalog/useShapesInCatalog";
-import { useCatalog } from "../../lib/catalog/CatalogProvider";
-import { colorHref, shapeHref } from "../../lib/shopUrl";
 import { pick } from "../../data/types";
 import { NewTag } from "../studio/NewTag";
 import { STUDIO_PATH } from "../../lib/studioUrl";
@@ -144,63 +137,6 @@ export function HeaderEditorial() {
     menuTab === "academy" ? { label: t("nav.viewAllAcademy"), to: "/academy" } : { label: t("nav.viewAllShop"), to: "/boutique" };
 
   const cartLabel = count > 0 ? t("nav.cartWithCount", { count }) : t("nav.cart");
-
-  const { products, colors } = useCatalog();
-  const shapeGroups = useShapesInCatalog(products);
-  const colorGroups = colorsInCatalog(products, colors);
-
-  const goTo = (to: string) => {
-    clearHoverTimer();
-    closeAll();
-    navigate(to);
-  };
-
-  const pickers = (compact: boolean) => {
-    const section = (heading: string, to: string, label: string, carousel: ReactNode) => (
-      <div className={`min-w-0 gap-3 ${compact ? "flex flex-col" : "grid content-start"}`}>
-        {compact ? (
-          <span className="gt-eyebrow">{heading}</span>
-        ) : (
-          <div className="flex flex-wrap items-center justify-between gap-3">
-            <span className="gt-eyebrow">{heading}</span>
-            <Button variant="outline" size="sm" onClick={() => goTo(to)}>
-              {label}
-            </Button>
-          </div>
-        )}
-        {carousel}
-        {compact && (
-          <Link
-            to={to}
-            onClick={() => {
-              clearHoverTimer();
-              closeAll();
-            }}
-            className="mt-auto self-start text-xs text-[var(--text-muted)] underline decoration-1 underline-offset-4 hover:text-[var(--text-primary)]"
-          >
-            {label}
-          </Link>
-        )}
-      </div>
-    );
-
-    return (
-      <>
-        {section(
-          t("nav.shapesHeading"),
-          "/formes",
-          t("nav.viewAllShapes"),
-          <ShapeCarousel compact={compact} groups={shapeGroups} hrefFor={(g) => shapeHref(g.shape)} onNavigate={closeAll} />,
-        )}
-        {section(
-          t("nav.colorsHeading"),
-          "/couleurs",
-          t("nav.viewAllColors"),
-          <ColorCarousel compact={compact} groups={colorGroups} hrefFor={(g) => colorHref(g.color.slug)} onNavigate={closeAll} />,
-        )}
-      </>
-    );
-  };
 
   const langButton = (
     <button
@@ -342,11 +278,6 @@ export function HeaderEditorial() {
                   </Link>
                 ))}
               </div>
-              {panel === "shop" && (
-                <div className="grid gap-x-10 gap-y-6 border-t border-[var(--border-subtle)] pt-6 lg:grid-cols-2">
-                  {pickers(true)}
-                </div>
-              )}
               <Link
                 to={panelRoot.to}
                 onClick={closeAll}
@@ -440,9 +371,6 @@ export function HeaderEditorial() {
                 </Link>
               ))}
             </div>
-            {menuTab === "gems" && (
-              <div className="grid gap-4 border-t border-[var(--border-subtle)] pt-4">{pickers(false)}</div>
-            )}
             <div className="flex items-center justify-between gap-3 pt-1">
               <Link
                 to={mobileRoot.to}
