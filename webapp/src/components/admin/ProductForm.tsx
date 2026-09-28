@@ -4,6 +4,7 @@ import { Archive, CircleAlert, Info, Save, Send, X } from "lucide-react";
 import clsx from "clsx";
 import { AdminButton } from "./AdminButton";
 import { AdminSelect, type AdminOption } from "./AdminSelect";
+import { ColorPicker } from "./ColorPicker";
 import { MoneyInput, NumberInput } from "./AdminNumberInputs";
 import { FormField } from "./FormField";
 import { GemOptionsEditor } from "./GemOptionsEditor";
@@ -22,7 +23,6 @@ import {
   type ProductStatus,
   type ProductType,
 } from "../../data/adminCatalog";
-import type { GemColor } from "../../data/products";
 import type { Localized } from "../../data/types";
 import { comboSkuSuffix, longestSkuSuffix } from "../../lib/gemOptions";
 
@@ -130,16 +130,6 @@ export function ProductForm({
   const optionsOn = Boolean(draft.gemOptions?.enabled);
 
   const categoryOptions: AdminOption[] = categories.map((c) => ({ value: c.id, label: c.name[lang] }));
-  const colorOptions: AdminOption[] = [
-    { value: "", label: t("admin.form.gemLookNone") },
-    // Hidden colours are not offered, except the one the product already has.
-    ...gemColors
-      .filter((color) => color.isActive || color.slug === draft.color)
-      .map((color) => ({
-        value: color.slug,
-        label: color.isActive ? color.name[lang] || color.name.fr : t("admin.gemColors.hiddenOption", { name: color.name.fr }),
-      })),
-  ];
   const typeOptions: AdminOption[] = TYPES.map((type) => ({ value: type, label: t(`admin.type.${type}`) }));
   const statusOptions: AdminOption[] = (["draft", "active", "archived"] as ProductStatus[]).map((s) => ({
     value: s,
@@ -479,16 +469,13 @@ export function ProductForm({
                   onChange={(shape) => set("shape", shape)}
                 />
 
-                <FormField label={t("admin.form.color")} hint={t("admin.form.gemLookHint")}>
-                  {(props) => (
-                    <AdminSelect
-                      {...props}
-                      options={colorOptions}
-                      value={draft.color ?? ""}
-                      onChange={(e) => set("color", (e.target.value || undefined) as GemColor | undefined)}
-                    />
-                  )}
-                </FormField>
+                <ColorPicker
+                  label={t("admin.form.color")}
+                  hint={t("admin.form.gemLookHint")}
+                  colors={gemColors}
+                  value={draft.color}
+                  onChange={(color) => set("color", color)}
+                />
               </>
             )}
 
