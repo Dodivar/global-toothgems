@@ -6,8 +6,9 @@ import { Button } from "../ui/Button";
 import { Select, type SelectOption } from "../ui/Select";
 import { ShapeGlyph } from "../ui/ShapeGlyph";
 import { ColorSwatch } from "../ui/ColorSwatch";
-import { SHOP_CATEGORIES, colorsInCatalog, shapesInCatalog, sortByShapeLabel } from "../../data/products";
+import { SHOP_CATEGORIES, colorsInCatalog } from "../../data/products";
 import { useCatalog } from "../../lib/catalog/CatalogProvider";
+import { useShapesInCatalog } from "../../lib/catalog/useShapesInCatalog";
 import { useLocalized } from "../../lib/localized";
 
 const CATEGORIES = ["Tout", ...SHOP_CATEGORIES] as const;
@@ -74,13 +75,12 @@ function Chip({
  * mobile, where they would otherwise push the grid off the first screen.
  */
 export function ShopFilterBar(props: ShopFilterBarProps) {
-  const { t, i18n } = useTranslation();
+  const { t } = useTranslation();
   const { category, shape, color, material, priceBand, stockBand, sort, setParam } = props;
 
   const L = useLocalized();
   const { products, colors: colorList } = useCatalog();
-  // Alphabetical in the reading language, so a long row of cuts is scannable.
-  const shapes = sortByShapeLabel(shapesInCatalog(products), (group) => group.shape, (s) => t(`shop.shapes.${s}`), i18n.language);
+  const shapes = useShapesInCatalog(products);
   const colors = colorsInCatalog(products, colorList);
 
   return (
