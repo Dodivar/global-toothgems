@@ -23,8 +23,8 @@ export type GemShape =
   | "xilion-rose";
 
 /**
- * Display order of the shape carousels. The shop filter and the admin picker
- * sort by translated label instead (`sortShapesByLabel`).
+ * Every known cut. Not a display order: shape lists are shown alphabetically
+ * by translated label (`sortByShapeLabel`).
  */
 export const GEM_SHAPES: GemShape[] = [
   "round",
@@ -433,7 +433,8 @@ export interface ShapeGroup {
 }
 
 /**
- * Shapes that actually have gems behind them, in `GEM_SHAPES` order.
+ * Shapes that actually have gems behind them, in `GEM_SHAPES` order; screens
+ * sort them by label through `useShapesInCatalog`.
  *
  * Derived rather than hardcoded so a shape tile can never land on an empty
  * result page: adding or removing a gem updates the carousel by itself.
