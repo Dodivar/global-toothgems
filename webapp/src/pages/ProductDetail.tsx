@@ -85,6 +85,8 @@ function ProductView({ product }: { product: Product }) {
   const gemPicker = isGemOptionSet(variants);
   const [variantId, setVariantId] = useState(() => (variants.find((v) => v.stock !== "out") ?? variants[0])?.id);
   const variant = variants.find((v) => v.id === variantId);
+  // Colour variants read as colours: the legend says so once every one has a dot.
+  const colorVariants = variants.length > 0 && variants.every((v) => v.swatch);
   const unitPrice = variant?.price ?? product.price;
   const compareAtPrice = variant ? variant.compareAtPrice : product.compareAtPrice;
   const stock = variant ? variant.stock : product.stock;
@@ -93,9 +95,13 @@ function ProductView({ product }: { product: Product }) {
   const [size, setSize] = useState(SIZES[1]);
   const [qtyCursor, setQtyCursor] = useState({ id: "", qty: 1 });
   const [openFaq, setOpenFaq] = useState(0);
-  // Derived rather than reset in an effect: switching products shows image 0
-  // on the very first render, with no frame of the previous product's gallery.
-  const [imageCursor, setImageCursor] = useState({ id: "", index: 0 });
+  // Derived rather than reset in an effect: switching products shows the first
+  // image (or the preselected variant's) on the very first render, with no
+  // frame of the previous product's gallery.
+  const [imageCursor, setImageCursor] = useState(() => ({
+    id: product.id,
+    index: Math.max(0, (product.gallery ?? []).findIndex((g) => variant?.image != null && g.src === variant.image)),
+  }));
   const [zoom, setZoom] = useState<{ x: number; y: number } | null>(null);
 
   const buyRef = useRef<HTMLDivElement>(null);
@@ -116,6 +122,13 @@ function ProductView({ product }: { product: Product }) {
   const activeImage = imageCursor.id === product.id ? Math.min(imageCursor.index, gallery.length - 1) : 0;
   const setActiveImage = (index: number) => setImageCursor({ id: product.id, index });
   const qty = qtyCursor.id === product.id ? qtyCursor.qty : 1;
+
+  /** Picks a variant and brings its photo forward, when it has one. */
+  const selectVariant = (next: { id: string; image?: string }) => {
+    setVariantId(next.id);
+    const index = next.image ? gallery.findIndex((g) => g.src === next.image) : -1;
+    if (index >= 0) setActiveImage(index);
+  };
   const setQty = (next: number | ((q: number) => number)) =>
     setQtyCursor({ id: product.id, qty: typeof next === "function" ? next(qty) : next });
 
@@ -154,7 +167,8 @@ function ProductView({ product }: { product: Product }) {
       variantId: variant?.id,
       name,
       variant: variantLabel,
-      image: product.image,
+      // The cart shows the colour that was picked, not the cover photo.
+      image: variant?.image ?? product.image,
       // Indicative only: the checkout recomputes every price server-side.
       price: unitPrice,
       qty,
@@ -279,12 +293,15 @@ function ProductView({ product }: { product: Product }) {
 
           {/* Shade is a swatch radio group rather than a dropdown: colour is the
               decision here, and a <select> hides the options behind a click. */}
-          {gemPicker && <GemOptionPicker variants={variants} selected={variant} onSelect={(v) => setVariantId(v.id)} />}
+          {gemPicker && <GemOptionPicker variants={variants} selected={variant} onSelect={selectVariant} />}
 
           {variants.length > 0 && !gemPicker && (
             <fieldset className="m-0 grid gap-2 border-0 p-0">
               <legend className="text-[11px] font-semibold uppercase tracking-[var(--tracking-eyebrow)] text-[var(--text-muted)]">
-                {t("product.variantLabel")}
+                {t(colorVariants ? "product.colorLabel" : "product.variantLabel")}
+                {variant && (
+                  <span className="ml-1.5 normal-case tracking-normal text-[var(--text-primary)]">· {pick(variant.name, lang)}</span>
+                )}
               </legend>
               <div className="flex flex-wrap gap-2">
                 {variants.map((v) => {
@@ -306,9 +323,16 @@ function ProductView({ product }: { product: Product }) {
                         value={v.id}
                         checked={selected}
                         disabled={out}
-                        onChange={() => setVariantId(v.id)}
+                        onChange={() => selectVariant(v)}
                         className="sr-only"
                       />
+                      {v.swatch && (
+                        <span
+                          aria-hidden="true"
+                          className="h-4 w-4 flex-none rounded-full border border-[var(--border-default)]"
+                          style={{ background: v.swatch }}
+                        />
+                      )}
                       {pick(v.name, lang)}
                       {v.price !== product.price && (
                         <span className="text-[var(--text-muted)]">· {formatPrice(v.price)}</span>

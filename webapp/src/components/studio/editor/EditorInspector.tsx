@@ -10,6 +10,7 @@ import {
   RotateCcw,
   RotateCw,
   SquareSplitHorizontal,
+  SquareSplitVertical,
   Trash2,
 } from "lucide-react";
 import { ColorWheel } from "./ColorWheel";
@@ -268,10 +269,16 @@ function MirrorRow() {
           {t("studio.editor.mirror.vertical")}
         </button>
       </div>
-      <button type="button" className={clsx(miniButton, "mt-2 w-full")} onClick={() => duplicateMirroredPieces([...studioStore.selectedJewelIds])}>
-        <SquareSplitHorizontal size={14} aria-hidden="true" />
-        {t("studio.editor.mirror.duplicate")}
-      </button>
+      <div className="mt-2 flex gap-2">
+        <button type="button" className={miniButton} onClick={() => duplicateMirroredPieces([...studioStore.selectedJewelIds])}>
+          <SquareSplitHorizontal size={14} aria-hidden="true" />
+          {t("studio.editor.mirror.duplicate")}
+        </button>
+        <button type="button" className={miniButton} onClick={() => duplicateMirroredPieces([...studioStore.selectedJewelIds], "v")}>
+          <SquareSplitVertical size={14} aria-hidden="true" />
+          {t("studio.editor.mirror.duplicateVertical")}
+        </button>
+      </div>
       <Hint className="mt-2">{t("studio.editor.mirror.hint")}</Hint>
     </>
   );

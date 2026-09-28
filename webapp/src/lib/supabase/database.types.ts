@@ -955,6 +955,72 @@ export type Database = {
           },
         ]
       }
+      creations: {
+        Row: {
+          created_at: string
+          currency: string
+          description: string
+          element_count: number | null
+          estimated_price_minor: number
+          id: string
+          is_favorite: boolean
+          last_opened_at: string | null
+          name: string
+          scene_data: Json
+          tags: string[]
+          thumbnail_path: string | null
+          updated_at: string
+          user_id: string
+        }
+        Insert: {
+          created_at?: string
+          currency?: string
+          description?: string
+          element_count?: number | null
+          estimated_price_minor?: number
+          id?: string
+          is_favorite?: boolean
+          last_opened_at?: string | null
+          name: string
+          scene_data: Json
+          tags?: string[]
+          thumbnail_path?: string | null
+          updated_at?: string
+          user_id?: string
+        }
+        Update: {
+          created_at?: string
+          currency?: string
+          description?: string
+          element_count?: number | null
+          estimated_price_minor?: number
+          id?: string
+          is_favorite?: boolean
+          last_opened_at?: string | null
+          name?: string
+          scene_data?: Json
+          tags?: string[]
+          thumbnail_path?: string | null
+          updated_at?: string
+          user_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "creations_user_id_fkey"
+            columns: ["user_id"]
+            isOneToOne: false
+            referencedRelation: "loyalty_overview"
+            referencedColumns: ["user_id"]
+          },
+          {
+            foreignKeyName: "creations_user_id_fkey"
+            columns: ["user_id"]
+            isOneToOne: false
+            referencedRelation: "profiles"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       customer_addresses: {
         Row: {
           address_line1: string
@@ -1519,6 +1585,20 @@ export type Database = {
             referencedRelation: "languages"
             referencedColumns: ["code"]
           },
+          {
+            foreignKeyName: "gem_color_translations_updated_by_fkey"
+            columns: ["updated_by"]
+            isOneToOne: false
+            referencedRelation: "loyalty_overview"
+            referencedColumns: ["user_id"]
+          },
+          {
+            foreignKeyName: "gem_color_translations_updated_by_fkey"
+            columns: ["updated_by"]
+            isOneToOne: false
+            referencedRelation: "profiles"
+            referencedColumns: ["id"]
+          },
         ]
       }
       gem_colors: {
@@ -1561,7 +1641,99 @@ export type Database = {
           updated_at?: string
           updated_by?: string | null
         }
-        Relationships: []
+        Relationships: [
+          {
+            foreignKeyName: "gem_colors_created_by_fkey"
+            columns: ["created_by"]
+            isOneToOne: false
+            referencedRelation: "loyalty_overview"
+            referencedColumns: ["user_id"]
+          },
+          {
+            foreignKeyName: "gem_colors_created_by_fkey"
+            columns: ["created_by"]
+            isOneToOne: false
+            referencedRelation: "profiles"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "gem_colors_updated_by_fkey"
+            columns: ["updated_by"]
+            isOneToOne: false
+            referencedRelation: "loyalty_overview"
+            referencedColumns: ["user_id"]
+          },
+          {
+            foreignKeyName: "gem_colors_updated_by_fkey"
+            columns: ["updated_by"]
+            isOneToOne: false
+            referencedRelation: "profiles"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      gem_groups: {
+        Row: {
+          created_at: string
+          currency: string
+          description: string
+          element_count: number | null
+          estimated_price_minor: number
+          group_data: Json
+          id: string
+          is_favorite: boolean
+          last_used_at: string | null
+          name: string
+          tags: string[]
+          updated_at: string
+          user_id: string
+        }
+        Insert: {
+          created_at?: string
+          currency?: string
+          description?: string
+          element_count?: number | null
+          estimated_price_minor?: number
+          group_data: Json
+          id?: string
+          is_favorite?: boolean
+          last_used_at?: string | null
+          name: string
+          tags?: string[]
+          updated_at?: string
+          user_id?: string
+        }
+        Update: {
+          created_at?: string
+          currency?: string
+          description?: string
+          element_count?: number | null
+          estimated_price_minor?: number
+          group_data?: Json
+          id?: string
+          is_favorite?: boolean
+          last_used_at?: string | null
+          name?: string
+          tags?: string[]
+          updated_at?: string
+          user_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "gem_groups_user_id_fkey"
+            columns: ["user_id"]
+            isOneToOne: false
+            referencedRelation: "loyalty_overview"
+            referencedColumns: ["user_id"]
+          },
+          {
+            foreignKeyName: "gem_groups_user_id_fkey"
+            columns: ["user_id"]
+            isOneToOne: false
+            referencedRelation: "profiles"
+            referencedColumns: ["id"]
+          },
+        ]
       }
       gift_card_settings: {
         Row: {
@@ -4874,6 +5046,51 @@ export type Database = {
           },
         ]
       }
+      studio_feedback: {
+        Row: {
+          category: string
+          context: Json
+          created_at: string
+          id: string
+          message: string
+          rating: number
+          user_id: string | null
+        }
+        Insert: {
+          category: string
+          context?: Json
+          created_at?: string
+          id?: string
+          message: string
+          rating: number
+          user_id?: string | null
+        }
+        Update: {
+          category?: string
+          context?: Json
+          created_at?: string
+          id?: string
+          message?: string
+          rating?: number
+          user_id?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "studio_feedback_user_id_fkey"
+            columns: ["user_id"]
+            isOneToOne: false
+            referencedRelation: "loyalty_overview"
+            referencedColumns: ["user_id"]
+          },
+          {
+            foreignKeyName: "studio_feedback_user_id_fkey"
+            columns: ["user_id"]
+            isOneToOne: false
+            referencedRelation: "profiles"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       tax_rates: {
         Row: {
           country_code: string
@@ -5299,7 +5516,10 @@ export type Database = {
         Args: { p_product_id: string }
         Returns: string[]
       }
-      admin_reorder_gem_colors: { Args: { p_ids: string[] }; Returns: undefined }
+      admin_reorder_gem_colors: {
+        Args: { p_ids: string[] }
+        Returns: undefined
+      }
       admin_save_gem_color: { Args: { p_color: Json }; Returns: Json }
       admin_save_product: { Args: { p_product: Json }; Returns: Json }
       admin_save_product_recommendations: {

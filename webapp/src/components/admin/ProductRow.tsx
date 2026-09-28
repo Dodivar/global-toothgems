@@ -432,11 +432,6 @@ function OptionRow({
           <span className="block truncate text-[length:var(--text-body-sm)] font-semibold text-[var(--text-primary)]">
             {L(variant.name)}
           </span>
-          {!variant.gemOption && (
-            <span className="block truncate text-[length:var(--text-caption)] text-[var(--text-muted)]">
-              {t("admin.table.optionNotEditable")}
-            </span>
-          )}
         </button>
       </td>
       <td className="py-2 pr-4 align-middle">

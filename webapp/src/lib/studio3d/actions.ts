@@ -20,15 +20,16 @@ export function duplicatePieces(ids: string[]) {
 }
 
 /**
- * Duplicate the pieces onto their mirror image across the arch midline: the
- * copies land on the other side, reflected, and become the selection.
+ * Duplicate the pieces onto their mirror image: across the arch midline ('h',
+ * the other side of the smile) or across the bite ('v', the other arch). The
+ * copies land reflected and become the selection.
  */
-export function duplicateMirroredPieces(ids: string[]) {
+export function duplicateMirroredPieces(ids: string[], axis: "h" | "v" = "h") {
   if (!ids.length) return;
-  const n = getEngine()?.duplicateMirrored(ids) ?? 0;
-  if (!n) notify("noRoomMirrored", undefined, "warning");
+  const n = getEngine()?.duplicateMirrored(ids, axis) ?? 0;
+  if (!n) notify(axis === "h" ? "noRoomMirrored" : "noRoomMirroredV", undefined, "warning");
   else if (n < ids.length) notify("duplicatedPartial", { count: n, total: ids.length }, "info");
-  else notify("duplicatedMirrored", { count: n });
+  else notify(axis === "h" ? "duplicatedMirrored" : "duplicatedMirroredV", { count: n });
 }
 
 export function removePieces(ids: string[]) {

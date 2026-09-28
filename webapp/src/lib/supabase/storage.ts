@@ -8,6 +8,7 @@ import { requireSupabase } from "./client";
  * | product-media   | public     | anyone, by URL (no listing)                         |
  * | avatars         | private    | owner and admins, through signed URLs               |
  * | review-photos   | private    | author and admins; anyone once the review is public |
+ * | studio-thumbnails | private  | owner only (3D Studio creation previews)            |
  *
  * Paths stored in the database are object paths inside the bucket
  * (`products/<slug>/01.jpg`, `<user_id>/<file>`), never full URLs, so the
@@ -17,9 +18,10 @@ export const BUCKETS = {
   productMedia: "product-media",
   avatars: "avatars",
   reviewPhotos: "review-photos",
+  studioThumbnails: "studio-thumbnails",
 } as const;
 
-export type PrivateBucket = typeof BUCKETS.avatars | typeof BUCKETS.reviewPhotos;
+export type PrivateBucket = typeof BUCKETS.avatars | typeof BUCKETS.reviewPhotos | typeof BUCKETS.studioThumbnails;
 
 /** Signed URLs live long enough for a page view, not long enough to be shared around. */
 export const SIGNED_URL_TTL_SECONDS = 60 * 60;

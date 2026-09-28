@@ -22,6 +22,7 @@ import { Button } from "../../ui/Button";
 import { EditorPopover, PopoverItem, PopoverLabel, PopoverSeparator } from "./EditorPopover";
 import { useEditorLabels } from "./editorLabels";
 import { QuickActionsMenu } from "./QuickActionsMenu";
+import { ShareMenu } from "./ShareMenu";
 import { HelpHint } from "../workspace/HelpHint";
 import { SaveControls } from "../workspace/SaveControls";
 import { SaveStatus } from "../workspace/SaveStatus";
@@ -51,7 +52,7 @@ const toolButton = clsx(
 const inputClass =
   "h-9 min-w-0 flex-1 rounded-[var(--radius-pill)] border border-[var(--border-default)] bg-[var(--surface-card)] px-3.5 text-[length:var(--text-body-sm)] text-[var(--text-primary)] outline-none transition-colors placeholder:text-[var(--text-subtle)] focus:border-[var(--focus-ring)]";
 
-/** The editor's application bar: identity and save state, history, model, presets, exports and Save. */
+/** The editor's application bar: identity and save state, history, model, presets, exports, sharing and Save. */
 export function EditorTopBar({ snap, onOpenMenu }: { snap: StudioSnapshot; onOpenMenu: () => void }) {
   const { t, formatEstimate } = useEditorLabels();
   const fileRef = useRef<HTMLInputElement>(null);
@@ -155,8 +156,10 @@ export function EditorTopBar({ snap, onOpenMenu }: { snap: StudioSnapshot; onOpe
       )}
       <span aria-hidden="true" className="mx-0.5 hidden h-5 w-px bg-[var(--border-subtle)] sm:block" />
       <PresetMenu />
-      <QuickActionsMenu triggerClassName={toolButton} />
+      {/* On a phone the quick actions keep their defaults: their settings step aside for Share. */}
+      <QuickActionsMenu triggerClassName={clsx(toolButton, "max-sm:hidden")} />
       <ExportMenu />
+      <ShareMenu triggerClassName={toolButton} />
       <SaveControls />
     </header>
   );

@@ -207,7 +207,7 @@
   },
   "signIn": {
     "title": "Sign in to keep your designs",
-    "body": "Creations and gem groups belong to your Global Toothgems account. During the preview they are kept in this browser, on this device. The design on the stage stays here while you sign in.",
+    "body": "Creations and gem groups are saved to your Global Toothgems account and follow you on every device. The design on the stage stays here while you sign in.",
     "cta": "Sign in",
     "register": "Create an account",
     "dialogTitle": "Save to your account"
@@ -215,7 +215,7 @@
   "hints": {
     "saving": {
       "question": "How does saving work?",
-      "answer": "The Studio keeps a draft of your current design on this device automatically. “Save creation” adds it to My Creations, under your account, where you can reopen, duplicate or reuse it — during the preview, your library is kept in this browser, so it shows on this device only. Once saved, “Save changes” updates it, and the status next to the name always tells you whether everything is stored."
+      "answer": "The Studio keeps a draft of your current design on this device automatically. “Save creation” adds it to My Creations, under your account, where you can reopen, duplicate or reuse it from any device signed in to your account. Once saved, “Save changes” updates it, and the status next to the name always tells you whether everything is stored."
     },
     "groups": {
       "question": "What’s a Gem Group?",
@@ -268,7 +268,7 @@
         "title": "Create a composition",
         "summary": "Combine several gems, mirror them, and align them along the smile.",
         "steps": [
-          "Add more gems — Shift + click selects several at once.",
+          "Add more gems — Shift + click selects several at once; drag one of them to move the whole selection.",
           "Use Mirror to copy a gem to the other side of the smile.",
           "Distribute or Align to line up a selection along the arch."
         ]
