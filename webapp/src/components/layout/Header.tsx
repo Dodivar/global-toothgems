@@ -134,9 +134,9 @@ export function Header() {
 
   const cartLabel = count > 0 ? t("nav.cartWithCount", { count }) : t("nav.cart");
 
-  const { products } = useCatalog();
+  const { products, colors } = useCatalog();
   const shapeGroups = useShapesInCatalog(products);
-  const colorGroups = colorsInCatalog(products);
+  const colorGroups = colorsInCatalog(products, colors);
 
   const goTo = (to: string) => {
     clearHoverTimer();
@@ -198,7 +198,7 @@ export function Header() {
           t("nav.colorsHeading"),
           "/couleurs",
           t("nav.viewAllColors"),
-          <ColorCarousel compact={compact} groups={colorGroups} hrefFor={(g) => colorHref(g.color)} onNavigate={closeAll} />,
+          <ColorCarousel compact={compact} groups={colorGroups} hrefFor={(g) => colorHref(g.color.slug)} onNavigate={closeAll} />,
         )}
       </>
     );

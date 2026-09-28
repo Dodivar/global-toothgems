@@ -1,5 +1,6 @@
 import { describe, expect, it } from "vitest";
-import { aggregateStock, localize, mapProduct, type ProductRow, type VariantRow } from "./mapping";
+import { aggregateStock, localize, mapGemColor, mapProduct, type ProductRow, type VariantRow } from "./mapping";
+import { MULTICOLOR_SWATCH, colorSwatchFill, colorsInCatalog, type GemColorDef } from "../../data/products";
 
 const url = (path: string) => `https://cdn.test/${path}`;
 
@@ -182,5 +183,53 @@ describe("mapProduct gem options", () => {
     );
     expect(p.variants?.[0]).toMatchObject({ pack: 20, ss: 6 });
     expect(p.variants?.[1]).not.toHaveProperty("pack");
+  });
+});
+
+describe("gem colours", () => {
+  it("localizes published names only and drops the shade of the multicolour entry", () => {
+    const color = mapGemColor({
+      slug: "multicolor",
+      name: "Multicolore",
+      hex: null,
+      is_multicolor: true,
+      gem_color_translations: [{ locale: "en", status: "published", name: "Multicolour" }],
+    });
+    expect(color).toEqual({ slug: "multicolor", name: { fr: "Multicolore", en: "Multicolour" }, hex: null, isMulticolor: true });
+    const draft = mapGemColor({
+      slug: "capri",
+      name: "Bleu Capri",
+      hex: "#1f6dab",
+      is_multicolor: false,
+      gem_color_translations: [{ locale: "en", status: "draft", name: "Capri blue" }],
+    });
+    expect(draft.name).toEqual({ fr: "Bleu Capri", en: "Bleu Capri" });
+  });
+
+  it("keeps any colour slug on the product; the filter decides what is shown", () => {
+    const p = mapProduct(row({ metadata: { color: "rose-poudre" } }), undefined, url);
+    expect(p.color).toBe("rose-poudre");
+  });
+
+  it("lists only colours with gems behind them, in the back-office order", () => {
+    const colors: GemColorDef[] = [
+      { slug: "multicolor", name: { fr: "Multicolore", en: "Multicolour" }, hex: null, isMulticolor: true },
+      { slug: "capri", name: { fr: "Bleu Capri", en: "Capri blue" }, hex: "#1f6dab", isMulticolor: false },
+      { slug: "gold", name: { fr: "Or", en: "Gold" }, hex: "#c8992f", isMulticolor: false },
+    ];
+    const products = [
+      mapProduct(row({ metadata: { color: "capri" } }), undefined, url),
+      mapProduct(row({ metadata: { color: "multicolor" } }), undefined, url),
+      mapProduct(row({ metadata: { color: "multicolor" } }), undefined, url),
+    ];
+    expect(colorsInCatalog(products, colors).map((g) => [g.color.slug, g.count])).toEqual([
+      ["multicolor", 2],
+      ["capri", 1],
+    ]);
+  });
+
+  it("paints a shade as a tint-to-shade gradient and the multicolour entry as a fixed iridescent fill", () => {
+    expect(colorSwatchFill({ hex: "#1f6dab", isMulticolor: false })).toContain("#1f6dab");
+    expect(colorSwatchFill({ hex: null, isMulticolor: true })).toBe(MULTICOLOR_SWATCH);
   });
 });

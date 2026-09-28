@@ -1476,6 +1476,93 @@ export type Database = {
           },
         ]
       }
+      gem_color_translations: {
+        Row: {
+          created_at: string
+          gem_color_id: string
+          locale: string
+          name: string
+          status: string
+          updated_at: string
+          updated_by: string | null
+        }
+        Insert: {
+          created_at?: string
+          gem_color_id: string
+          locale: string
+          name: string
+          status?: string
+          updated_at?: string
+          updated_by?: string | null
+        }
+        Update: {
+          created_at?: string
+          gem_color_id?: string
+          locale?: string
+          name?: string
+          status?: string
+          updated_at?: string
+          updated_by?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "gem_color_translations_gem_color_id_fkey"
+            columns: ["gem_color_id"]
+            isOneToOne: false
+            referencedRelation: "gem_colors"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "gem_color_translations_locale_fkey"
+            columns: ["locale"]
+            isOneToOne: false
+            referencedRelation: "languages"
+            referencedColumns: ["code"]
+          },
+        ]
+      }
+      gem_colors: {
+        Row: {
+          created_at: string
+          created_by: string | null
+          hex: string | null
+          id: string
+          is_active: boolean
+          is_multicolor: boolean
+          name: string
+          position: number
+          slug: string
+          updated_at: string
+          updated_by: string | null
+        }
+        Insert: {
+          created_at?: string
+          created_by?: string | null
+          hex?: string | null
+          id?: string
+          is_active?: boolean
+          is_multicolor?: boolean
+          name: string
+          position?: number
+          slug: string
+          updated_at?: string
+          updated_by?: string | null
+        }
+        Update: {
+          created_at?: string
+          created_by?: string | null
+          hex?: string | null
+          id?: string
+          is_active?: boolean
+          is_multicolor?: boolean
+          name?: string
+          position?: number
+          slug?: string
+          updated_at?: string
+          updated_by?: string | null
+        }
+        Relationships: []
+      }
       gift_card_settings: {
         Row: {
           allow_custom_amount: boolean
@@ -5207,10 +5294,13 @@ export type Database = {
           isSetofReturn: false
         }
       }
+      admin_delete_gem_color: { Args: { p_id: string }; Returns: undefined }
       admin_delete_product: {
         Args: { p_product_id: string }
         Returns: string[]
       }
+      admin_reorder_gem_colors: { Args: { p_ids: string[] }; Returns: undefined }
+      admin_save_gem_color: { Args: { p_color: Json }; Returns: Json }
       admin_save_product: { Args: { p_product: Json }; Returns: Json }
       admin_save_product_recommendations: {
         Args: {

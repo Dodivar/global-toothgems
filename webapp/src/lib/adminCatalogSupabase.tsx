@@ -3,8 +3,10 @@ import { useTranslation } from "react-i18next";
 import type {
   ActivityEntry,
   ActivityKind,
+  AdminGemColor,
   AdminProduct,
   Category,
+  GemColorDraft,
   ProductImage,
   ProductRecommendation,
   ProductStatus,
@@ -15,17 +17,21 @@ import { useToast } from "./toast";
 import { requireSupabase } from "./supabase/client";
 import {
   ADMIN_CATEGORY_SELECT,
+  ADMIN_GEM_COLOR_SELECT,
   ADMIN_PRODUCT_SELECT,
   PRODUCT_IMAGE_MAX_BYTES,
   PRODUCT_MEDIA_BUCKET,
   UNSAVED_MEDIA_PREFIX,
   catalogErrorKind,
+  gemColorToPayload,
   productToPayload,
   rowToCategory,
+  rowToGemColor,
   rowToProduct,
   rowToRecommendation,
   type CatalogErrorKind,
   type CategoryRow,
+  type GemColorRow,
   type ProductRow,
   type RecommendationRow,
 } from "./adminCatalogMapping";
@@ -76,6 +82,7 @@ export function SupabaseAdminCatalogProvider({ children, actor }: { children: Re
   const [products, setProducts] = useState<AdminProduct[]>([]);
   const [categories, setCategories] = useState<Category[]>([]);
   const [recommendations, setRecommendations] = useState<ProductRecommendation[]>([]);
+  const [gemColors, setGemColors] = useState<AdminGemColor[]>([]);
   const [activity, setActivity] = useState<ActivityEntry[]>([]);
   const [loading, setLoading] = useState(true);
   const [loadError, setLoadError] = useState<CatalogErrorKind | null>(null);
@@ -95,13 +102,14 @@ export function SupabaseAdminCatalogProvider({ children, actor }: { children: Re
   useEffect(() => {
     let cancelled = false;
     (async () => {
-      const [productRes, categoryRes, recommendationRes] = await Promise.all([
+      const [productRes, categoryRes, recommendationRes, colorRes] = await Promise.all([
         client.from("products").select(ADMIN_PRODUCT_SELECT).order("updated_at", { ascending: false }),
         client.from("categories").select(ADMIN_CATEGORY_SELECT).order("position"),
         client.from("product_recommendations").select("product_id, recommended_product_id, kind, position"),
+        client.from("gem_colors").select(ADMIN_GEM_COLOR_SELECT).order("position"),
       ]);
       if (cancelled) return;
-      const error = productRes.error ?? categoryRes.error ?? recommendationRes.error;
+      const error = productRes.error ?? categoryRes.error ?? recommendationRes.error ?? colorRes.error;
       if (error) {
         console.error("Admin catalogue load failed", error);
         setLoadError(catalogErrorKind(error));
@@ -109,6 +117,7 @@ export function SupabaseAdminCatalogProvider({ children, actor }: { children: Re
         setProducts((productRes.data as unknown as ProductRow[]).map((row) => rowToProduct(row, publicUrl)));
         setCategories((categoryRes.data as unknown as CategoryRow[]).map(rowToCategory));
         setRecommendations((recommendationRes.data as RecommendationRow[]).map(rowToRecommendation));
+        setGemColors((colorRes.data as unknown as GemColorRow[]).map(rowToGemColor));
         setLoadError(null);
       }
       setLoading(false);
@@ -311,6 +320,51 @@ export function SupabaseAdminCatalogProvider({ children, actor }: { children: Re
     [client, fail, log],
   );
 
+  const fetchGemColor = useCallback(
+    async (id: string) => {
+      const { data, error } = await client.from("gem_colors").select(ADMIN_GEM_COLOR_SELECT).eq("id", id).single();
+      if (error) return fail(error);
+      return rowToGemColor(data as unknown as GemColorRow);
+    },
+    [client, fail],
+  );
+
+  const saveGemColor = useCallback(
+    async (draft: GemColorDraft) => {
+      const { data, error } = await client.rpc("admin_save_gem_color", { p_color: gemColorToPayload(draft) });
+      if (error) return fail(error);
+      const saved = await fetchGemColor((data as { id: string }).id);
+      setGemColors((prev) =>
+        prev.some((c) => c.id === saved.id) ? prev.map((c) => (c.id === saved.id ? saved : c)) : [...prev, saved],
+      );
+      return saved;
+    },
+    [client, fail, fetchGemColor],
+  );
+
+  const deleteGemColor = useCallback(
+    async (id: string) => {
+      const { error } = await client.rpc("admin_delete_gem_color", { p_id: id });
+      if (error) fail(error);
+      setGemColors((prev) => prev.filter((c) => c.id !== id));
+    },
+    [client, fail],
+  );
+
+  const reorderGemColors = useCallback(
+    async (ids: string[]) => {
+      const { error } = await client.rpc("admin_reorder_gem_colors", { p_ids: ids });
+      if (error) fail(error);
+      setGemColors((prev) =>
+        ids.flatMap((id, position) => {
+          const color = prev.find((c) => c.id === id);
+          return color ? [{ ...color, position }] : [];
+        }),
+      );
+    },
+    [client, fail],
+  );
+
   const blankProduct = useCallback<() => AdminProduct>(() => {
     const now = new Date().toISOString();
     return {
@@ -365,8 +419,16 @@ export function SupabaseAdminCatalogProvider({ children, actor }: { children: Re
       uploadImage,
       recommendationsFor,
       saveRecommendations,
+      gemColors,
+      saveGemColor,
+      deleteGemColor,
+      reorderGemColors,
     }),
     [
+      gemColors,
+      saveGemColor,
+      deleteGemColor,
+      reorderGemColors,
       products,
       activity,
       loading,
