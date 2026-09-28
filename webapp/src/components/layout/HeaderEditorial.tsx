@@ -10,7 +10,8 @@ import { useAuth } from "../../lib/auth";
 import { useCart } from "../../lib/cart";
 import { useToast } from "../../lib/toast";
 import { MENU } from "../../data/menu";
-import { colorsInCatalog, shapesInCatalog } from "../../data/products";
+import { colorsInCatalog } from "../../data/products";
+import { useShapesInCatalog } from "../../lib/catalog/useShapesInCatalog";
 import { useCatalog } from "../../lib/catalog/CatalogProvider";
 import { colorHref, shapeHref } from "../../lib/shopUrl";
 import { pick } from "../../data/types";
@@ -145,7 +146,7 @@ export function HeaderEditorial() {
   const cartLabel = count > 0 ? t("nav.cartWithCount", { count }) : t("nav.cart");
 
   const { products, colors } = useCatalog();
-  const shapeGroups = shapesInCatalog(products);
+  const shapeGroups = useShapesInCatalog(products);
   const colorGroups = colorsInCatalog(products, colors);
 
   const goTo = (to: string) => {

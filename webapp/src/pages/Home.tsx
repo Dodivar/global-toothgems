@@ -10,7 +10,8 @@ import { ReviewBlock } from "../components/ui/ReviewBlock";
 import { Input } from "../components/ui/Input";
 import { Checkbox } from "../components/ui/Checkbox";
 import { ShapeCarousel } from "../components/ui/ShapeCarousel";
-import { bestSellers, shapesInCatalog } from "../data/products";
+import { bestSellers } from "../data/products";
+import { useShapesInCatalog } from "../lib/catalog/useShapesInCatalog";
 import { useCatalog } from "../lib/catalog/CatalogProvider";
 import { CATEGORY_TILES } from "../data/categoryTiles";
 import { COURSES } from "../data/courses";
@@ -41,7 +42,7 @@ export function Home() {
 
   const { products } = useCatalog();
   const featured = bestSellers(products);
-  const shapeGroups = shapesInCatalog(products);
+  const shapeGroups = useShapesInCatalog(products);
 
   const shapesRef = useReveal<HTMLElement>();
   const categoriesRef = useReveal<HTMLElement>();
