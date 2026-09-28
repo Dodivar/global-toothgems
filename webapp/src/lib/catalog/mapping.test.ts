@@ -233,3 +233,30 @@ describe("gem colours", () => {
     expect(colorSwatchFill({ hex: null, isMulticolor: true })).toBe(MULTICOLOR_SWATCH);
   });
 });
+
+describe("colour variants", () => {
+  it("carries each variant's swatch and the first photo that shows it", () => {
+    const media = row().product_media;
+    const product = mapProduct(
+      row({
+        product_variants: [
+          variant({ id: "v-pink", name: "Rose", attributes: { swatch: "#F3C9D6" }, position: 1 }),
+          variant({ id: "v-blue", name: "Bleu", attributes: { swatch: "#c6d6e3", quantity: 1 }, position: 0 }),
+          variant({ id: "v-none", name: "Sans photo", attributes: { swatch: "blue" }, position: 2 }),
+        ],
+        product_media: [
+          { ...media[0], variant_id: "v-pink" },
+          { ...media[1], variant_id: "v-blue" },
+        ],
+      }),
+      undefined,
+      url,
+    );
+    expect(product.variants?.map((v) => [v.id, v.swatch, v.image])).toEqual([
+      ["v-blue", "#c6d6e3", url("products/etoile-cristal/01.jpg")],
+      ["v-pink", "#f3c9d6", url("products/etoile-cristal/02.jpg")],
+      ["v-none", undefined, undefined],
+    ]);
+    expect(product.variants?.[0]).not.toHaveProperty("pack");
+  });
+});

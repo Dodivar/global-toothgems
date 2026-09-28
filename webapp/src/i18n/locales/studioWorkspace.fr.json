@@ -267,7 +267,7 @@
         "title": "Créer une composition",
         "summary": "Combinez plusieurs gemmes, reflétez-les en miroir et alignez-les le long du sourire.",
         "steps": [
-          "Ajoutez d’autres gemmes : Maj + clic en sélectionne plusieurs.",
+          "Ajoutez d’autres gemmes : Maj + clic en sélectionne plusieurs ; faites-en glisser une pour déplacer toute la sélection.",
           "Utilisez Miroir pour copier une gemme de l’autre côté du sourire.",
           "Répartissez ou alignez une sélection le long de l’arcade."
         ]

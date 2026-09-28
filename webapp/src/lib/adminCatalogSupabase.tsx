@@ -181,12 +181,15 @@ export function SupabaseAdminCatalogProvider({ children, actor }: { children: Re
       const { data, error } = await client.rpc("admin_save_product", { p_product: payload });
       if (error) return fail(error);
 
-      const result = data as { id: string; removed_paths?: string[]; variants?: string[] };
+      const result = data as { id: string; removed_paths?: string[]; variants?: string[]; custom_variants?: string[] };
       await removeFiles(result.removed_paths ?? []);
-      // A database without the pack/SS migration saves the product and
-      // ignores the options: say so rather than pretend they were saved.
+      // A database without the pack/SS or variants migration saves the product
+      // and ignores the options: say so rather than pretend they were saved.
       if (product.gemOptions && !Array.isArray(result.variants)) {
         return fail({ code: "PGRST202", message: "admin_save_product() does not save gem options yet" });
+      }
+      if (product.customVariants && !Array.isArray(result.custom_variants)) {
+        return fail({ code: "PGRST202", message: "admin_save_product() does not save variants yet" });
       }
 
       const fresh = await client.from("products").select(ADMIN_PRODUCT_SELECT).eq("id", result.id).single();
@@ -239,6 +242,8 @@ export function SupabaseAdminCatalogProvider({ children, actor }: { children: Re
       let sku = base;
       for (let n = 2; taken.has(sku); n++) sku = `${base}${n}`;
 
+      // The copy's variants are rows of their own, and its photos follow them.
+      const variantIds = new Map((source.customVariants ?? []).map((variant) => [variant.id, crypto.randomUUID()]));
       const copy: AdminProduct = {
         ...source,
         id: crypto.randomUUID(),
@@ -250,7 +255,12 @@ export function SupabaseAdminCatalogProvider({ children, actor }: { children: Re
         // Same files, new rows: the copy gets its own media records that point
         // at the original's objects. A file is only deleted once no product
         // references it any more.
-        media: source.media.map((image, index) => ({ ...image, id: `${UNSAVED_MEDIA_PREFIX}${index}` })),
+        media: source.media.map((image, index) => ({
+          ...image,
+          id: `${UNSAVED_MEDIA_PREFIX}${index}`,
+          variantId: image.variantId ? variantIds.get(image.variantId) : undefined,
+        })),
+        customVariants: source.customVariants?.map((variant) => ({ ...variant, id: variantIds.get(variant.id)! })),
       };
       const saved = await save(copy);
       log("duplicated", saved, { fr: `Copie de ${source.name.fr}`, en: `Copy of ${source.name.en || source.name.fr}` });
