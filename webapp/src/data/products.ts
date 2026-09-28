@@ -15,9 +15,17 @@ export type GemShape =
   | "square"
   | "triangle"
   | "baguette"
-  | "flower";
+  | "flower"
+  | "marquise"
+  | "diamond"
+  | "rivoli-star"
+  | "star-flower"
+  | "xilion-rose";
 
-/** Display order of the shape carousel and of the shop filter. */
+/**
+ * Display order of the shape carousels. The shop filter and the admin picker
+ * sort by translated label instead (`sortShapesByLabel`).
+ */
 export const GEM_SHAPES: GemShape[] = [
   "round",
   "heart",
@@ -28,6 +36,11 @@ export const GEM_SHAPES: GemShape[] = [
   "triangle",
   "baguette",
   "flower",
+  "marquise",
+  "diamond",
+  "rivoli-star",
+  "star-flower",
+  "xilion-rose",
 ];
 
 /**
@@ -432,6 +445,22 @@ export function shapesInCatalog(list: Product[] = PRODUCTS): ShapeGroup[] {
     if (count > 0) groups.push({ shape, count });
   }
   return groups;
+}
+
+/**
+ * Items ordered alphabetically by their shape's translated label.
+ *
+ * Sorted at render time, not by slug: "Étoile" must sit beside "Diamant" in
+ * French, and the English order differs from the French one.
+ */
+export function sortByShapeLabel<T>(
+  items: T[],
+  shapeOf: (item: T) => GemShape,
+  label: (shape: GemShape) => string,
+  locale: string,
+): T[] {
+  const collator = new Intl.Collator(locale, { sensitivity: "base" });
+  return [...items].sort((a, b) => collator.compare(label(shapeOf(a)), label(shapeOf(b))));
 }
 
 export interface ColorGroup {

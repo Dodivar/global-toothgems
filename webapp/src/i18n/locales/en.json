@@ -180,12 +180,17 @@
       "round": "Round",
       "heart": "Heart",
       "drop": "Drop",
-      "navette": "Marquise",
+      "navette": "Navette",
       "star": "Star",
       "square": "Square",
       "triangle": "Triangle",
       "baguette": "Baguette",
-      "flower": "Flower"
+      "flower": "Flower",
+      "marquise": "Marquise",
+      "diamond": "Diamond shape",
+      "rivoli-star": "Rivoli star",
+      "star-flower": "Star flower",
+      "xilion-rose": "Xilion rose"
     },
     "colors": {
       "all": "All colours",

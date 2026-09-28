@@ -185,7 +185,12 @@
       "square": "Carré",
       "triangle": "Triangle",
       "baguette": "Baguette",
-      "flower": "Fleur"
+      "flower": "Fleur",
+      "marquise": "Marquise",
+      "diamond": "Diamant",
+      "rivoli-star": "Étoile rivoli",
+      "star-flower": "Fleur étoilée",
+      "xilion-rose": "Xilion rose"
     },
     "colors": {
       "all": "Toutes les couleurs",
