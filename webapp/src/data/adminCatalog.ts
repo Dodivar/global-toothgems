@@ -1,5 +1,5 @@
 import type { Localized } from "./types";
-import type { GemColor, GemShape } from "./products";
+import { FALLBACK_GEM_COLORS, type GemColor, type GemShape } from "./products";
 import { photo } from "../lib/images";
 import { combinations, comboKey, comboName, type GemOptionKey } from "../lib/gemOptions";
 
@@ -157,6 +157,43 @@ export interface AdminProduct {
   createdAt: string;
   updatedAt: string;
 }
+
+/**
+ * A colour of the storefront gem filter, as the back office edits it
+ * (`gem_colors`). The slug is what products store and URLs carry; it is set
+ * at creation and never changes, so renaming a colour breaks nothing.
+ */
+export interface AdminGemColor {
+  id: string;
+  slug: GemColor;
+  name: Localized;
+  /** One exact shade, `#rrggbb`; null only for the multicolour entry. */
+  hex: string | null;
+  /** The single entry for gems with special reflections or several colours. */
+  isMulticolor: boolean;
+  /** Hidden colours stay on their products but leave the storefront filter. */
+  isActive: boolean;
+  position: number;
+}
+
+/** What the colour form edits. No id = a new colour, always a single shade. */
+export interface GemColorDraft {
+  id?: string;
+  name: Localized;
+  hex: string | null;
+  isActive: boolean;
+}
+
+/** `#rrggbb`, as the database stores it. */
+export const HEX_COLOR_PATTERN = /^#[0-9a-f]{6}$/;
+
+/** The prototype's colours: the storefront fallback list, ids = slugs. */
+export const SEED_GEM_COLORS: AdminGemColor[] = FALLBACK_GEM_COLORS.map((color, position) => ({
+  id: color.slug,
+  ...color,
+  isActive: true,
+  position,
+}));
 
 export const CATEGORIES: Category[] = [
   {

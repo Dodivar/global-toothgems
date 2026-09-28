@@ -2,8 +2,10 @@ import { createContext, useContext } from "react";
 import {
   matchesStockState,
   type ActivityEntry,
+  type AdminGemColor,
   type AdminProduct,
   type Category,
+  type GemColorDraft,
   type ProductImage,
   type ProductStatus,
   type RecommendationKind,
@@ -64,6 +66,14 @@ export interface AdminCatalogValue {
    * edits lists, and the database keeps them as one row per link.
    */
   saveRecommendations: (productId: string, lists: Record<RecommendationKind, string[]>) => Promise<void>;
+  /** Colours of the storefront gem filter, hidden ones included, in display order. */
+  gemColors: AdminGemColor[];
+  /** Creates (no id) or updates a colour with its English name. */
+  saveGemColor: (draft: GemColorDraft) => Promise<AdminGemColor>;
+  /** Rejects with `inUse` while a product uses the colour, and for the multicolour entry. */
+  deleteGemColor: (id: string) => Promise<void>;
+  /** The complete list of colour ids, in the new display order. */
+  reorderGemColors: (ids: string[]) => Promise<void>;
 }
 
 /** A failed catalogue write, classified for the message shown to the user. */

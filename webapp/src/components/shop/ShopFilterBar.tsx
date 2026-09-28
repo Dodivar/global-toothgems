@@ -8,6 +8,7 @@ import { ShapeGlyph } from "../ui/ShapeGlyph";
 import { ColorSwatch } from "../ui/ColorSwatch";
 import { SHOP_CATEGORIES, colorsInCatalog, shapesInCatalog } from "../../data/products";
 import { useCatalog } from "../../lib/catalog/CatalogProvider";
+import { useLocalized } from "../../lib/localized";
 
 const CATEGORIES = ["Tout", ...SHOP_CATEGORIES] as const;
 
@@ -76,9 +77,10 @@ export function ShopFilterBar(props: ShopFilterBarProps) {
   const { t } = useTranslation();
   const { category, shape, color, material, priceBand, stockBand, sort, setParam } = props;
 
-  const { products } = useCatalog();
+  const L = useLocalized();
+  const { products, colors: colorList } = useCatalog();
   const shapes = shapesInCatalog(products);
-  const colors = colorsInCatalog(products);
+  const colors = colorsInCatalog(products, colorList);
 
   return (
     <div className="grid gap-5 border-b border-[var(--border-subtle)] pb-6">
@@ -114,10 +116,10 @@ export function ShopFilterBar(props: ShopFilterBarProps) {
           <Chip active={color === "all"} onClick={() => setParam("couleur", "all", "all")} label={t("shop.colors.all")} />
           {colors.map((group) => (
             <Chip
-              key={group.color}
-              active={color === group.color}
-              onClick={() => setParam("couleur", group.color, "all")}
-              label={t(`shop.colors.${group.color}`)}
+              key={group.color.slug}
+              active={color === group.color.slug}
+              onClick={() => setParam("couleur", group.color.slug, "all")}
+              label={L(group.color.name)}
               media={<ColorSwatch color={group.color} size={20} />}
             />
           ))}

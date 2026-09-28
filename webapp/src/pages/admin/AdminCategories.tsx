@@ -2,6 +2,7 @@ import { useTranslation } from "react-i18next";
 import { Link } from "react-router-dom";
 import { ArrowUpRight, Info } from "lucide-react";
 import { AdminHeader } from "../../components/admin/AdminHeader";
+import { GemColorsSection } from "../../components/admin/GemColorsSection";
 import { useAdminCatalog } from "../../lib/adminCatalog";
 import { useLocalized } from "../../lib/localized";
 import { formatPrice } from "../../lib/format";
@@ -11,11 +12,14 @@ import { useAdminShell } from "./AdminLayout";
 /**
  * How the catalogue is organised.
  *
- * Read-only in the prototype, and it says so: categories are a small, stable
+ * Categories are read-only, and the page says so: they are a small, stable
  * set that the storefront navigation is built on, so editing them is a
- * different, riskier job than editing a product, and pretending otherwise here
- * would misrepresent it. What the page does give is the number that matters —
- * how much of the catalogue sits in each one, and how much of that is live.
+ * different, riskier job than editing a product. What the page does give is
+ * the number that matters — how much of the catalogue sits in each one, and
+ * how much of that is live.
+ *
+ * The gem colours of the storefront filter are managed underneath: they are
+ * catalogue taxonomy too, and change far more often than categories.
  */
 export function AdminCategories() {
   const { t } = useTranslation();
@@ -113,6 +117,10 @@ export function AdminCategories() {
             </li>
           ))}
         </ul>
+
+        <div className="mt-6">
+          <GemColorsSection />
+        </div>
       </div>
     </>
   );
