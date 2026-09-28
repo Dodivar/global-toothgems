@@ -7,7 +7,7 @@ import {
   needsRestock,
   stockState,
   variantAlerts,
-  withGemStock,
+  withVariantStock,
   type AdminProduct,
   type VariantStock,
 } from "../data/adminCatalog";
@@ -19,7 +19,6 @@ const base = ADMIN_PRODUCTS.find((p) => !p.gemOptions)!;
 
 const option = (key: string, stock: number, lowStockThreshold = 5, extra: Partial<VariantStock> = {}): VariantStock => ({
   key,
-  gemOption: true,
   name: { fr: key, en: key },
   trackInventory: true,
   stock,
@@ -106,7 +105,7 @@ describe("one rule for the filter and the dashboard counts", () => {
 
 describe("prototype catalogue", () => {
   it("derives each offered option's stock from the gem options", () => {
-    const product = withGemStock({
+    const product = withVariantStock({
       ...base,
       gemOptions: {
         enabled: true,
@@ -124,15 +123,30 @@ describe("prototype catalogue", () => {
     expect(gemVariantStock({ enabled: false, packs: [20], sizes: [], variants: [] })).toEqual([]);
   });
 
+  it("derives each variant's stock from the other variants", () => {
+    const product = withVariantStock({
+      ...base,
+      customVariants: [
+        { id: "v-blue", name: { fr: "Bleu", en: "Blue" }, trackInventory: true, stock: 0, lowStockThreshold: 5, availability: "in_stock" },
+        { id: "v-pink", name: { fr: "Rose", en: "Pink" }, trackInventory: true, stock: 12, lowStockThreshold: 5, availability: "in_stock" },
+      ],
+    });
+    expect(product.variantStock?.map((v) => [v.key, v.stock])).toEqual([["v-blue", 0], ["v-pink", 12]]);
+    expect(product).toMatchObject({ variantCount: 2, stock: 12 });
+    expect(stockState(product)).toBe("low_stock");
+    // An emptied list gives the product its own stock back.
+    expect(withVariantStock({ ...product, customVariants: [] })).toMatchObject({ variantCount: 0, variantStock: undefined });
+  });
+
   it("shows a fixture with an option to restock", () => {
     expect(ADMIN_PRODUCTS.some((p) => variantAlerts(p).length > 0)).toBe(true);
   });
 });
 
 describe("edit links", () => {
-  it("opens the form on a pack/SS option, and on the product for anything else", () => {
+  it("opens the form on the option, whatever its kind", () => {
     expect(productEditPath("p1")).toBe("/admin/produits/p1");
     expect(productEditPath("p1", option("50:-", 0))).toBe("/admin/produits/p1?option=50%3A-");
-    expect(productEditPath("p1", option("uuid", 0, 5, { gemOption: false }))).toBe("/admin/produits/p1");
+    expect(productEditPath("p1", option("0f5c2a44-uuid", 0))).toBe("/admin/produits/p1?option=0f5c2a44-uuid");
   });
 });

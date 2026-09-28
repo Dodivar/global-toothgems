@@ -121,6 +121,10 @@ export interface ProductVariant {
   /** Gem options (`lib/gemOptions.ts`): stones per pack, and stone size (SS). */
   pack?: number;
   ss?: number;
+  /** Colour dot of a colour variant, `#rrggbb`. */
+  swatch?: string;
+  /** First photo showing this variant: the gallery moves to it when the variant is picked. */
+  image?: string;
 }
 
 export interface Product {

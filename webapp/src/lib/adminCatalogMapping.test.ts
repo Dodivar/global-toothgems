@@ -185,7 +185,8 @@ describe("gem options", () => {
       { ...row, product_variants: [{ id: "a", attributes: { colour: "saphir" }, is_active: false, inventory_items: null }] },
       url,
     );
-    expect(product).toMatchObject({ otherVariants: true, variantCount: 0 });
+    // Only removed ones: an empty list the form edits, and no variant stock.
+    expect(product).toMatchObject({ customVariants: [], variantCount: 0 });
     expect(product.gemOptions).toBeUndefined();
   });
 
@@ -224,8 +225,8 @@ describe("gem options", () => {
       url,
     );
     expect(product.variantStock).toEqual([
-      expect.objectContaining({ key: "50:6", gemOption: true, sku: "GEM-P50-SS6", price: 45, stock: 0 }),
-      expect.objectContaining({ key: "c", gemOption: false, name: { fr: "Saphir", en: "Sapphire" }, stock: 5, reserved: 2 }),
+      expect.objectContaining({ key: "50:6", sku: "GEM-P50-SS6", price: 45, stock: 0 }),
+      expect.objectContaining({ key: "c", name: { fr: "Saphir", en: "Sapphire" }, stock: 5, reserved: 2 }),
     ]);
     expect(product.variantStock?.[0].name.fr).toBe("Pack de 50 · SS6");
   });
@@ -272,6 +273,89 @@ describe("gem options", () => {
     const off = productToPayload({ ...base, gemOptions: { enabled: false, packs: [20], sizes: [], variants: [] } }) as Record<string, unknown>;
     expect(off.variants).toEqual([]);
     expect(productToPayload(base)).not.toHaveProperty("variants");
+  });
+});
+
+describe("other variants (colours, boxes…)", () => {
+  const inv = (quantity_on_hand: number, low_stock_threshold = 5) => ({
+    track_inventory: true,
+    quantity_on_hand,
+    quantity_reserved: 0,
+    low_stock_threshold,
+    availability: "in_stock",
+  });
+  const mirror: ProductRow = {
+    ...row,
+    product_variants: [
+      {
+        id: "v-pink",
+        name: "Rose",
+        attributes: { swatch: "#F3C9D6", quantity: 1 },
+        price: "14.50",
+        is_active: true,
+        position: 1,
+        product_variant_translations: [{ locale: "en", name: "Pink" }],
+        inventory_items: [inv(4, 2)],
+      },
+      { id: "v-old", name: "Cristal", attributes: { colour: "cristal" }, is_active: false, position: 0, inventory_items: [inv(99)] },
+      { id: "v-blue", name: "Bleu", attributes: { swatch: "not-a-colour" }, is_active: true, position: 0, inventory_items: [inv(0)] },
+    ],
+    product_media: [
+      { id: "m1", storage_path: "products/x/1.jpg", alt_text: null, position: 0, variant_id: "v-blue", product_media_translations: [] },
+      { id: "m2", storage_path: "products/x/2.jpg", alt_text: null, position: 1, variant_id: "v-pink", product_media_translations: [] },
+    ],
+  };
+
+  it("reads the active variants in order, with swatch, price, stock and photos", () => {
+    const product = rowToProduct(mirror, url);
+    expect(product.gemOptions).toBeUndefined();
+    expect(product.customVariants).toEqual([
+      expect.objectContaining({ id: "v-blue", name: { fr: "Bleu", en: "" }, swatch: undefined, price: undefined, stock: 0 }),
+      expect.objectContaining({ id: "v-pink", name: { fr: "Rose", en: "Pink" }, swatch: "#f3c9d6", price: 14.5, stock: 4, lowStockThreshold: 2 }),
+    ]);
+    expect(product.media.map((image) => image.variantId)).toEqual(["v-blue", "v-pink"]);
+    expect(product.variantStock?.map((v) => v.key)).toEqual(["v-blue", "v-pink"]);
+    expect(product).toMatchObject({ variantCount: 2, stock: 4 });
+  });
+
+  it("sends the complete list with exact prices, and each photo's variant", () => {
+    const product = rowToProduct(mirror, url);
+    const payload = productToPayload({
+      ...product,
+      customVariants: [
+        { ...product.customVariants![1], name: { fr: " Rose ", en: " Pink " }, price: 19.9 },
+        {
+          id: "33333333-3333-4333-8333-333333333333",
+          name: { fr: "Vert", en: "Green" },
+          swatch: "#A8D5BA",
+          trackInventory: true,
+          stock: 3,
+          lowStockThreshold: 1,
+          availability: "in_stock",
+        },
+      ],
+    }) as { custom_variants: unknown[]; media: { variant_id?: string | null }[] };
+    expect(payload.custom_variants).toEqual([
+      { id: "v-pink", name: "Rose", name_en: "Pink", swatch: "#f3c9d6", price: "19.90", track_inventory: true, quantity_on_hand: 4, low_stock_threshold: 2 },
+      {
+        id: "33333333-3333-4333-8333-333333333333",
+        name: "Vert",
+        name_en: "Green",
+        swatch: "#a8d5ba",
+        price: null,
+        track_inventory: true,
+        quantity_on_hand: 3,
+        low_stock_threshold: 1,
+      },
+    ]);
+    // "Bleu" left the list: its photo no longer points at it.
+    expect(payload.media.map((m) => m.variant_id)).toEqual([null, "v-pink"]);
+  });
+
+  it("leaves variants and photo links alone when the list is not edited", () => {
+    const payload = productToPayload(rowToProduct(row, url)) as { media: Record<string, unknown>[] };
+    expect(payload).not.toHaveProperty("custom_variants");
+    expect(payload.media[0]).not.toHaveProperty("variant_id");
   });
 });
 
