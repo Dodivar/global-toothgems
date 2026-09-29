@@ -1180,7 +1180,8 @@
       "collecting": {
         "badge": "In progress",
         "demoLabel": "Collecting",
-        "title": "{{done}} of {{total}} stamps",
+        "title_one": "{{done}} of {{total}} stamps",
+        "title_other": "{{done}} of {{total}} stamps",
         "body_one": "{{count}} more qualifying purchase to unlock {{percent}}% off your next order.",
         "body_other": "{{count}} more qualifying purchases to unlock {{percent}}% off your next order.",
         "cta": "Continue shopping"

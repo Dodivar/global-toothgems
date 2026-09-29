@@ -1180,7 +1180,8 @@
       "collecting": {
         "badge": "En cours",
         "demoLabel": "En cours",
-        "title": "{{done}} tampons sur {{total}}",
+        "title_one": "{{done}} tampon sur {{total}}",
+        "title_other": "{{done}} tampons sur {{total}}",
         "body_one": "Encore {{count}} achat éligible pour débloquer {{percent}} % sur votre prochaine commande.",
         "body_other": "Encore {{count}} achats éligibles pour débloquer {{percent}} % sur votre prochaine commande.",
         "cta": "Continuer mes achats"
