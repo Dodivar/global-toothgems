@@ -115,7 +115,6 @@ function ProductView({ product }: { product: Product }) {
   const material = product.material || subtitle.split("·")[0].trim();
   const center = product.center ? pick(product.center, lang) : material;
   const gallery = product.gallery ?? [{ src: product.image, alt: { fr: name, en: name } }];
-  const hasThumbnails = gallery.length > 1;
   // Storage paths can exist in the catalogue before their file is uploaded.
   const [brokenImages, setBrokenImages] = useState<string[]>([]);
   const markBroken = (src: string) => setBrokenImages((list) => (list.includes(src) ? list : [...list, src]));
@@ -199,18 +198,12 @@ function ProductView({ product }: { product: Product }) {
 
         <div className="grid grid-cols-1 gap-10 lg:grid-cols-[minmax(0,1.1fr)_minmax(0,1fr)]">
           {/* On desktop the gallery follows the scroll beside the long product
-              column instead of leaving an empty half-page under it, and the
-              thumbnails move into a strip beside the photo so the whole gallery
-              fits a laptop screen. */}
-          <div
-            className={`grid content-start gap-3 lg:sticky lg:top-[100px] lg:self-start ${
-              hasThumbnails ? "lg:grid-cols-[80px_minmax(0,1fr)]" : ""
-            }`}
-          >
+              column instead of leaving an empty half-page under it. */}
+          <div className="grid content-start gap-3 lg:sticky lg:top-[100px] lg:self-start">
             {/* Cursor-tracked zoom: transform-origin follows the pointer so the
                 detail under the cursor is the detail that magnifies. */}
             <div
-              className="aspect-square overflow-hidden rounded-[var(--radius-lg)] bg-[var(--surface-sunken)] lg:col-start-2 lg:row-start-1"
+              className="aspect-square overflow-hidden rounded-[var(--radius-lg)] bg-[var(--surface-sunken)]"
               onMouseMove={(e) => {
                 const r = e.currentTarget.getBoundingClientRect();
                 setZoom({ x: ((e.clientX - r.left) / r.width) * 100, y: ((e.clientY - r.top) / r.height) * 100 });
@@ -239,15 +232,8 @@ function ProductView({ product }: { product: Product }) {
               />
               )}
             </div>
-            {hasThumbnails && (
-              // h-0 + min-h-full: the strip takes the photo's height and scrolls
-              // past it rather than stretching the row; the padding keeps the
-              // active outline clear of the scroll clip.
-              <div
-                role="group"
-                aria-label={t("product.galleryLabel")}
-                className="grid grid-cols-4 gap-2 lg:col-start-1 lg:row-start-1 lg:h-0 lg:min-h-full lg:grid-cols-1 lg:content-start lg:overflow-y-auto lg:p-1"
-              >
+            {gallery.length > 1 && (
+              <div role="group" aria-label={t("product.galleryLabel")} className="grid grid-cols-4 gap-2">
                 {gallery.map((g, i) => (
                   <button
                     key={g.src + i}
