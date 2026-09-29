@@ -1,22 +1,16 @@
 import { useEffect, useRef, useState } from "react";
 import { useTranslation } from "react-i18next";
 import { useNavigate } from "react-router-dom";
-import { ArrowRight, Box, Gem as GemGlyph, Pause, Play, RotateCcw, Share2 } from "lucide-react";
-import clsx from "clsx";
+import { ArrowRight, Box, Gem as GemGlyph, Pause, Play, Share2 } from "lucide-react";
 import { Button } from "../ui/Button";
-import { SmileCanvas } from "../studio/SmileCanvas";
 import { GemIcon } from "../studio/Gem";
 import { NewTag } from "../studio/NewTag";
-import { COMPOSITIONS, type CompositionId } from "../../data/studio";
 import { STUDIO_PATH } from "../../lib/studioUrl";
 import { useReveal } from "../../lib/useReveal";
+import { usePrefersReducedMotion } from "./usePrefersReducedMotion";
 
-/** Length of the preview loop. Short on purpose: it stands in for a film. */
-const PREVIEW_MS = 12_000;
-/** The compositions the preview walks through, in order. */
-const REEL: CompositionId[] = ["signature", "statement", "symmetrical", "mixed", "sparkle"];
-
-type PlayState = "idle" | "playing" | "paused" | "ended";
+const VIDEO_SRC = "/videos/studio-3d-intro.mp4";
+const POSTER_SRC = "/videos/studio-3d-intro-poster.jpg";
 
 const FEATURES = [
   { key: "feature1", icon: Box },
@@ -33,59 +27,39 @@ function clock(ms: number): string {
  * The 3D Studio's showcase: the site's one dark, "night studio" section, with
  * a large video frame at its centre.
  *
- * REPLACEABLE CONTENT. There is no presentation film yet, so the frame is a
- * placeholder in the house style (`data-placeholder` plus a visible tag, as
- * `MediaPlaceholder` does): pressing play runs a short preview that steps
- * through Studio compositions on the real canvas, with a working timeline,
- * pause and replay. When the film exists, swap the canvas for a <video>.
+ * The frame plays the Studio's silent introduction film (`/videos/`): it loops
+ * on its own, with a big play button while paused and a bar with pause and a
+ * timeline. A reader who asked for less motion gets the poster until they
+ * press play.
  */
 export function StudioVideoFeature() {
   const { t } = useTranslation();
   const navigate = useNavigate();
   const ref = useReveal<HTMLElement>();
-  const [state, setState] = useState<PlayState>("idle");
-  const [elapsed, setElapsed] = useState(0);
-  const elapsedRef = useRef(0);
+  const reduced = usePrefersReducedMotion();
+  const video = useRef<HTMLVideoElement>(null);
   const barToggle = useRef<HTMLButtonElement>(null);
+  const [playing, setPlaying] = useState(false);
+  const [elapsed, setElapsed] = useState(0);
+  const [duration, setDuration] = useState(0);
 
-  // One rAF clock while playing; it stops itself at the end of the preview.
   useEffect(() => {
-    if (state !== "playing") return;
-    let frame = 0;
-    let last = performance.now();
-    const tick = (now: number) => {
-      elapsedRef.current = Math.min(PREVIEW_MS, elapsedRef.current + (now - last));
-      last = now;
-      setElapsed(elapsedRef.current);
-      if (elapsedRef.current >= PREVIEW_MS) {
-        setState("ended");
-        return;
-      }
-      frame = requestAnimationFrame(tick);
-    };
-    frame = requestAnimationFrame(tick);
-    return () => cancelAnimationFrame(frame);
-  }, [state]);
+    const el = video.current;
+    if (!el) return;
+    if (reduced) el.pause();
+    else void el.play().catch(() => {}); // autoplay refused: poster and play button stay
+  }, [reduced]);
 
   const toggle = () => {
-    if (state === "playing") {
-      setState("paused");
-      return;
-    }
-    if (state === "ended") {
-      elapsedRef.current = 0;
-      setElapsed(0);
-    }
-    setState("playing");
+    const el = video.current;
+    if (!el) return;
+    if (el.paused) void el.play().catch(() => {});
+    else el.pause();
   };
 
-  const reelIndex = Math.min(REEL.length - 1, Math.floor((elapsed / PREVIEW_MS) * REEL.length));
-  const composition = REEL[reelIndex];
-  const compositionName = t(`studio.compositions.${composition}`);
-  const playing = state === "playing";
-  const progress = elapsed / PREVIEW_MS;
-  const toggleLabel = playing ? t("homeAlt.studio.pause") : state === "ended" ? t("homeAlt.studio.replay") : t("homeAlt.studio.play");
-  const ToggleIcon = playing ? Pause : state === "ended" ? RotateCcw : Play;
+  const progress = duration ? elapsed / duration : 0;
+  const toggleLabel = playing ? t("homeAlt.studio.pause") : t("homeAlt.studio.play");
+  const ToggleIcon = playing ? Pause : Play;
 
   return (
     <section ref={ref} aria-labelledby="gt-alt-studio-title" className="gt-reveal gt-alt-section gt-alt-studio relative w-full overflow-hidden text-[var(--gt-off-white)]">
@@ -110,7 +84,7 @@ export function StudioVideoFeature() {
           </div>
         </div>
 
-        <figure data-placeholder={t("homeAlt.studio.placeholderTag")} className="relative m-0 mx-auto max-w-[1400px]">
+        <figure className="relative m-0 mx-auto max-w-[1400px]">
           <span aria-hidden="true" className="gt-alt-float absolute -left-4 -top-6 z-[1] hidden lg:block">
             <GemIcon shape="heart" material="rose" size={56} />
           </span>
@@ -119,27 +93,24 @@ export function StudioVideoFeature() {
           </span>
 
           <div className="gt-alt-frame relative overflow-hidden rounded-[clamp(18px,2vw,32px)]">
-            <div className="gt-studio-stage relative aspect-[4/3] sm:aspect-[16/9]">
-              <div className="absolute inset-0 grid place-items-center px-[6%] pb-[12%] pt-[8%]">
-                <SmileCanvas
-                  key={composition}
-                  pieces={COMPOSITIONS[composition]}
-                  label={t("homeAlt.studio.nowShowing", { name: compositionName })}
-                  className={clsx("block h-full w-full", state !== "idle" && "gt-alt-reel-in")}
-                />
-              </div>
+            <div className="gt-studio-stage relative aspect-video">
+              <video
+                ref={video}
+                className="absolute inset-0 block h-full w-full object-cover"
+                src={VIDEO_SRC}
+                poster={POSTER_SRC}
+                muted
+                loop
+                playsInline
+                preload="metadata"
+                aria-label={t("homeAlt.studio.videoDescription")}
+                onPlay={() => setPlaying(true)}
+                onPause={() => setPlaying(false)}
+                onTimeUpdate={(e) => setElapsed(e.currentTarget.currentTime)}
+                onLoadedMetadata={(e) => setDuration(e.currentTarget.duration)}
+              />
 
-              {/* Window chrome: the placeholder tag stays visible on purpose. */}
-              <div className="absolute inset-x-0 top-0 flex items-center justify-between gap-3 p-[clamp(12px,1.6vw,22px)]">
-                <span className="rounded-[var(--radius-pill)] bg-white/10 px-2.5 py-1 font-[family-name:var(--gt-font-mono)] text-[10px] font-semibold tracking-[.04em] text-white/85 ring-1 ring-white/20">
-                  [{t("homeAlt.studio.placeholderTag")}]
-                </span>
-                <span className="hidden truncate text-[12px] font-semibold text-white/75 sm:block">
-                  {t("homeAlt.studio.windowTitle", { name: compositionName })}
-                </span>
-              </div>
-
-              {/* The big play button, over the picture until the preview runs. */}
+              {/* The big play button, over the picture while it is paused. */}
               {!playing && (
                 <button
                   type="button"
@@ -151,7 +122,7 @@ export function StudioVideoFeature() {
                   aria-label={toggleLabel}
                   className="gt-alt-play absolute left-1/2 top-1/2 grid h-[clamp(64px,7vw,96px)] w-[clamp(64px,7vw,96px)] -translate-x-1/2 -translate-y-1/2 place-items-center rounded-full"
                 >
-                  <ToggleIcon size={30} fill={ToggleIcon === Play ? "currentColor" : "none"} strokeWidth={ToggleIcon === Play ? 1.5 : 2.2} className={ToggleIcon === Play ? "translate-x-[2px]" : undefined} />
+                  <Play size={30} fill="currentColor" strokeWidth={1.5} className="translate-x-[2px]" />
                 </button>
               )}
 
@@ -164,23 +135,20 @@ export function StudioVideoFeature() {
                   aria-label={toggleLabel}
                   className="grid h-10 w-10 flex-none place-items-center rounded-full text-white transition-colors hover:bg-white/15"
                 >
-                  <ToggleIcon size={18} fill={ToggleIcon === Play || ToggleIcon === Pause ? "currentColor" : "none"} />
+                  <ToggleIcon size={18} fill="currentColor" />
                 </button>
                 <span aria-hidden="true" className="relative h-1 flex-1 overflow-hidden rounded-full bg-white/20">
                   <span className="absolute inset-y-0 left-0 rounded-full bg-[var(--gt-blue-300)]" style={{ width: `${progress * 100}%` }} />
                 </span>
                 <span className="flex-none text-[12px] font-semibold tabular-nums text-white/85">
                   <span className="sr-only">{t("homeAlt.studio.videoLabel")} — </span>
-                  {clock(elapsed)} / {clock(PREVIEW_MS)}
+                  {clock(elapsed * 1000)} / {clock(duration * 1000)}
                 </span>
               </div>
             </div>
           </div>
 
-          <figcaption className="mt-4 flex flex-wrap items-center justify-between gap-2 text-[13px] text-[var(--gt-ink-400)]">
-            <span>{t("homeAlt.studio.placeholderCaption")}</span>
-            {state !== "idle" && <span aria-live="polite" className="font-semibold text-[var(--gt-blue-200)]">{t("homeAlt.studio.nowShowing", { name: compositionName })}</span>}
-          </figcaption>
+          <figcaption className="mt-4 text-[13px] text-[var(--gt-ink-400)]">{t("homeAlt.studio.caption")}</figcaption>
         </figure>
 
         <ul className="m-0 mt-[clamp(40px,5vw,72px)] grid list-none gap-6 p-0 md:grid-cols-3 md:gap-8">

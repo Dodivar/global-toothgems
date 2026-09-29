@@ -86,15 +86,19 @@
   "reviews": {
     "eyebrow": "Community voices",
     "title": "Loved by artists and customers alike.",
-    "body": "A few words from the people who learn with us and create with our products.",
-    "pickerLabel": "Choose a review",
-    "prev": "Previous review",
-    "next": "Next review",
+    "body": "Real-life results and first-hand words from the people who learn with us and create with our products.",
+    "filterLabel": "Filter the reviews",
+    "filter": {
+      "all": "All",
+      "academy": "Academy",
+      "product": "Products"
+    },
     "academyBadge": "Academy review",
     "productBadge": "Product review",
     "courseRef": "Course",
     "productRef": "Product",
-    "counter": "{{index}} / {{total}}"
+    "showMore_one": "Show {{count}} more review",
+    "showMore_other": "Show {{count}} more reviews"
   },
   "studio": {
     "eyebrow": "3D Studio",
@@ -102,13 +106,10 @@
     "body": "Experiment with your own tooth gem designs on a true-to-life 3D smile. Try shapes, materials and sizes, save the compositions you love, and share them with your artist before a single stone is set.",
     "cta": "Explore the 3D Studio",
     "videoLabel": "3D Studio presentation video",
-    "placeholderTag": "STUDIO VIDEO PLACEHOLDER",
-    "placeholderCaption": "The presentation film is coming soon. This preview plays the Studio's compositions.",
+    "videoDescription": "Studio 3D demo: placing gems on teeth, changing their colours, moving them and rotating them.",
+    "caption": "Place, recolour, move, rotate: the 3D Studio in 35 seconds.",
     "play": "Play the Studio preview",
     "pause": "Pause the preview",
-    "replay": "Replay the preview",
-    "windowTitle": "Studio 3D · Composition {{name}}",
-    "nowShowing": "Now showing: {{name}}",
     "feature1Title": "Design on a 3D smile",
     "feature1Body": "Place every gem exactly where you imagine it.",
     "feature2Title": "Try every material",

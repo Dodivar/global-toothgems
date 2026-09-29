@@ -4,7 +4,7 @@ import { FilterX, X } from "lucide-react";
 import clsx from "clsx";
 import { AdminButton } from "./AdminButton";
 import { AdminSelect, type AdminOption } from "./AdminSelect";
-import { ColorMedia, ShapeMedia, useGemTraits } from "./GemTraits";
+import { ShapeMedia, useGemTraits } from "./GemTraits";
 import { SearchInput } from "./SearchInput";
 import { useLocalized } from "../../lib/localized";
 import { useAdminCatalog } from "../../lib/adminCatalog";
@@ -27,10 +27,10 @@ import {
  * Every control changes the list on the spot — there is no Apply button,
  * because filtering a catalogue should cost one interaction, not two.
  *
- * Shape and colour get rows of drawn chips rather than selects: a gem is
- * recognised by its silhouette and shade faster than by its name, and a native
- * `<select>` can show neither. Each chip carries the count its click would
- * give, so a dead end is visible before it is taken.
+ * Shape gets a row of drawn chips rather than a select: a gem is recognised
+ * by its silhouette faster than by its name, and a native `<select>` cannot
+ * show one. Each chip carries the count its click would give, so a dead end is
+ * visible before it is taken. There is deliberately no colour filter here.
  *
  * Whatever narrows the list is repeated as a removable pill next to the count:
  * a shape picked, then a category that has no such shape, would otherwise
@@ -53,7 +53,7 @@ export function ProductFilters({
   const { t, i18n } = useTranslation();
   const L = useLocalized();
   const { categories, categoryById } = useAdminCatalog();
-  const { shapeLabel, colorLabel, colorDef, colorOrder } = useGemTraits();
+  const { shapeLabel, colorOrder } = useGemTraits();
 
   const set = <K extends keyof ProductFilterState>(key: K, value: ProductFilterState[K]) =>
     onChange({ ...filters, [key]: value });
@@ -103,7 +103,6 @@ export function ProductFilters({
   if (filters.availability !== "all")
     pills.push({ key: "availability", name: t("admin.filters.availability"), value: t(`admin.stock.${filters.availability}`) });
   if (filters.shape !== "all") pills.push({ key: "shape", name: t("admin.filters.shape"), value: shapeLabel(filters.shape) });
-  if (filters.color !== "all") pills.push({ key: "color", name: t("admin.filters.color"), value: colorLabel(filters.color) });
 
   return (
     <section aria-label={t("admin.filters.label")} className="gt-admin-panel grid gap-4 p-4">
@@ -162,15 +161,6 @@ export function ProductFilters({
         allLabel={t("admin.filters.allShapes")}
         onSelect={(value) => set("shape", value)}
         render={(shape) => ({ label: shapeLabel(shape), media: <ShapeMedia shape={shape} /> })}
-      />
-
-      <ChipRow
-        label={t("admin.filters.color")}
-        facets={facets.colors}
-        selected={filters.color}
-        allLabel={t("admin.filters.allColors")}
-        onSelect={(value) => set("color", value)}
-        render={(slug) => ({ label: colorLabel(slug), media: <ColorMedia color={colorDef(slug)} /> })}
       />
 
       <div className="flex flex-wrap items-center gap-x-3 gap-y-2 border-t border-[var(--border-subtle)] pt-3">
