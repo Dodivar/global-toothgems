@@ -239,9 +239,11 @@ export function Header() {
           <div
             id="gt-nav-panel"
             onMouseEnter={clearHoverTimer}
-            className="absolute inset-x-0 top-full max-h-[calc(100vh-76px)] overflow-y-auto border-t border-[var(--border-subtle)] bg-[var(--surface-sunken)] shadow-[var(--shadow-lg)]"
+            className="absolute inset-x-0 top-full max-h-[calc(100vh-76px)] overflow-y-auto border-t border-[var(--border-subtle)] bg-[linear-gradient(180deg,var(--surface-chrome)_0%,var(--surface-brand-wash)_55%,var(--surface-brand-wash-strong)_100%)] shadow-[var(--shadow-lg)]"
           >
-            <div className="mx-auto grid max-w-[var(--max-width-content)] gap-5 px-[var(--gutter-page-lg)] py-6">
+            {/* The brand-wash backdrop is what the ink-tinted card shadows are
+                tuned for; on the old sand the cards barely lifted. */}
+            <div className="mx-auto grid max-w-[var(--max-width-content)] gap-7 px-[var(--gutter-page-lg)] pb-7 pt-7">
               {panel === "shop" ? (
                 <ShopMenu layout="columns" onNavigate={closeAll} />
               ) : (
@@ -251,7 +253,7 @@ export function Header() {
                       key={pick(item.title, lang)}
                       to={item.to}
                       onClick={closeAll}
-                      className="flex items-center gap-3 rounded-[var(--radius-card)] border border-[var(--border-subtle)] bg-[var(--surface-card)] p-2.5 text-left shadow-[var(--shadow-xs)] transition-shadow hover:shadow-[var(--shadow-md)]"
+                      className="flex items-center gap-3 rounded-[var(--radius-card)] border border-[var(--border-subtle)] bg-[var(--surface-card)] p-2.5 text-left shadow-[var(--shadow-card)] outline-none transition-[transform,box-shadow,border-color] duration-[var(--duration-normal)] ease-[var(--ease-out-soft)] hover:-translate-y-0.5 hover:border-[var(--gt-blue-300)] hover:shadow-[var(--shadow-card-hover)] focus-visible:border-[var(--gt-blue-400)] focus-visible:shadow-[var(--shadow-focus),var(--shadow-card-hover)]"
                     >
                       <img
                         src={item.thumb}
@@ -273,9 +275,12 @@ export function Header() {
               <Link
                 to={panelRoot.to}
                 onClick={closeAll}
-                className="justify-self-start text-xs text-[var(--text-muted)] underline decoration-1 underline-offset-4"
+                className="group/all inline-flex items-center gap-2.5 justify-self-start rounded-[var(--radius-pill)] bg-[var(--gt-ink-900)] py-2 pl-4 pr-2 text-[11px] font-semibold uppercase tracking-[var(--tracking-wide)] text-[var(--gt-white)] shadow-[var(--shadow-card)] outline-none transition-[box-shadow,transform] duration-[var(--duration-normal)] ease-[var(--ease-out-soft)] hover:-translate-y-0.5 hover:shadow-[var(--shadow-card-hover)] focus-visible:shadow-[var(--shadow-focus)]"
               >
                 {panelRoot.label}
+                <span aria-hidden="true" className="grid h-6 w-6 place-items-center rounded-full bg-[var(--gt-white)] text-[var(--gt-ink-900)] transition-transform duration-[var(--duration-normal)] ease-[var(--ease-out-soft)] group-hover/all:translate-x-0.5">
+                  <ArrowRight size={12} />
+                </span>
               </Link>
             </div>
           </div>
