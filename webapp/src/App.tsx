@@ -20,6 +20,7 @@ import { Footer } from "./components/layout/Footer";
 import { MemberShell } from "./components/layout/MemberShell";
 import { isMemberSpacePath } from "./lib/memberSpace";
 import { Home } from "./pages/Home";
+import { HomeAlt } from "./pages/HomeAlt";
 import { Shop } from "./pages/Shop";
 import { Shapes } from "./pages/Shapes";
 import { Colors } from "./pages/Colors";
@@ -230,6 +231,7 @@ export default function App() {
                           current one so the team can compare the same content in
                           two art directions. Not linked from the navigation: it is
                           a design comparison, not a second entry point. */}
+                      <Route path="/accueil-b" element={<HomeAlt />} />
                       <Route path="/boutique" element={<Shop />} />
                       <Route path="/boutique/:id" element={<ProductDetail />} />
                       {/* Top level, not /boutique/formes: a static child of /boutique
