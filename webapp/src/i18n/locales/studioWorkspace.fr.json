@@ -12,6 +12,7 @@
   "unfavorite": "Retirer {{name}} des favoris",
   "nav": {
     "label": "Espace Studio",
+    "explore": "Global Toothgems",
     "open": "Ouvrir le menu du Studio",
     "studio": "Studio 3D",
     "creations": "Mes créations",
@@ -26,14 +27,20 @@
       "creations": "Créations",
       "groups": "Groupes",
       "help": "Aide",
-      "feedback": "Avis"
+      "feedback": "Avis",
+      "shop": "Boutique",
+      "academy": "Academy",
+      "account": "Mon espace"
     },
     "desc": {
       "studio": "Revenir à la création en cours",
       "creations": "Vos créations enregistrées",
       "groups": "Assemblages de gemmes réutilisables",
       "help": "Apprendre le Studio pas à pas",
-      "feedback": "Dites-nous ce que vous en pensez"
+      "feedback": "Dites-nous ce que vous en pensez",
+      "shop": "Gems, outils et kits",
+      "academy": "Les formations",
+      "account": "Commandes, attestations, profil"
     }
   },
   "status": {
@@ -84,6 +91,7 @@
     "openInStudio": "Ouvrir dans le Studio",
     "backToStage": "Revenir à la scène",
     "duplicate": "Dupliquer",
+    "share": "Partager",
     "rename": "Renommer",
     "edit": "Modifier",
     "editDetails": "Modifier les informations",
@@ -206,7 +214,7 @@
   },
   "signIn": {
     "title": "Connectez-vous pour garder vos créations",
-    "body": "Créations et groupes de gemmes sont liés à votre compte Global Toothgems. Pendant l’avant-première, ils sont conservés dans ce navigateur, sur cet appareil. La création en cours reste ici pendant que vous vous connectez.",
+    "body": "Créations et groupes de gemmes sont enregistrés dans votre compte Global Toothgems et vous suivent sur tous vos appareils. La création en cours reste ici pendant que vous vous connectez.",
     "cta": "Se connecter",
     "register": "Créer un compte",
     "dialogTitle": "Enregistrer dans votre compte"
@@ -214,7 +222,7 @@
   "hints": {
     "saving": {
       "question": "Comment fonctionne l’enregistrement ?",
-      "answer": "Le Studio garde automatiquement un brouillon de votre création sur cet appareil. « Enregistrer » l’ajoute à Mes créations, sous votre compte, pour la rouvrir, la dupliquer ou la réutiliser : pendant l’avant-première, votre bibliothèque est conservée dans ce navigateur, elle n’apparaît donc que sur cet appareil. Ensuite, « Enregistrer les modifications » la met à jour, et l’indicateur à côté du nom vous dit toujours si tout est enregistré."
+      "answer": "Le Studio garde automatiquement un brouillon de votre création sur cet appareil. « Enregistrer » l’ajoute à Mes créations, sous votre compte, pour la rouvrir, la dupliquer ou la réutiliser, depuis n’importe quel appareil connecté à votre compte. Ensuite, « Enregistrer les modifications » la met à jour, et l’indicateur à côté du nom vous dit toujours si tout est enregistré."
     },
     "groups": {
       "question": "Qu’est-ce qu’un groupe de gemmes ?",
@@ -267,7 +275,7 @@
         "title": "Créer une composition",
         "summary": "Combinez plusieurs gemmes, reflétez-les en miroir et alignez-les le long du sourire.",
         "steps": [
-          "Ajoutez d’autres gemmes : Maj + clic en sélectionne plusieurs.",
+          "Ajoutez d’autres gemmes : Maj + clic en sélectionne plusieurs ; faites-en glisser une pour déplacer toute la sélection.",
           "Utilisez Miroir pour copier une gemme de l’autre côté du sourire.",
           "Répartissez ou alignez une sélection le long de l’arcade."
         ]
@@ -370,6 +378,7 @@
     "opened": "« {{name}} » est sur la scène",
     "duplicated": "Copie créée : « {{name}} »",
     "deleted": "Suppression effectuée : « {{name}} »",
+    "shareRevoked": "Lien de « {{name}} » désactivé : il n’ouvre plus la création",
     "groupSaved": "Groupe de gemmes enregistré",
     "groupNeedsTwo": "Sélectionnez au moins deux gemmes pour créer un groupe.",
     "groupNoRoom": "Pas de place pour ce groupe ici : essayez une autre dent.",
@@ -378,5 +387,57 @@
     "groupInsertedPartial_one": "{{name}} ajouté : {{count}} gemme n’a pas trouvé de place",
     "groupInsertedPartial_other": "{{name}} ajouté : {{count}} gemmes n’ont pas trouvé de place",
     "feedbackFailed": "Votre avis n’a pas pu être envoyé."
+  },
+  "share": {
+    "menuSub": "Un lien en lecture seule vers la version enregistrée",
+    "title": "Partager en lecture seule",
+    "intro": "Envoyez ce lien : la personne qui le reçoit voit « {{name}} » en 3D, sans pouvoir le modifier.",
+    "linkLabel": "Lien de partage",
+    "preparing": "Préparation du lien…",
+    "copy": "Copier le lien",
+    "copiedShort": "Copié",
+    "copied": "Lien copié",
+    "copyFailed": "Copie impossible : le lien est sélectionné, copiez-le avec Ctrl + C.",
+    "failed": "Le lien n’a pas pu être préparé. Réessayez dans un instant.",
+    "native": "Partager…",
+    "nativeText": "Découvrez « {{name}} », ma création dans le Studio 3D Global Toothgems",
+    "preview": "Voir l’aperçu tel qu’il sera reçu",
+    "noteReadOnly": "Toute personne qui a le lien peut voir ce design en 3D, avec ou sans compte. Personne ne peut le modifier ni accéder à vos autres créations.",
+    "noteSnapshot": "Le lien contient la version enregistrée à cet instant : vos modifications ultérieures n’y apparaîtront pas. Générez un nouveau lien pour les partager.",
+    "noteUnsaved": "Cette création a des modifications non enregistrées sur la scène : elles ne sont pas dans ce lien.",
+    "noteLive": "Le lien montre toujours la dernière version enregistrée de cette création. Vous pouvez le désactiver à tout moment.",
+    "noteUnsavedLive": "Cette création a des modifications non enregistrées sur la scène : enregistrez-les pour qu’elles apparaissent dans le lien.",
+    "networks": "Partager sur les réseaux",
+    "revoke": "Désactiver le lien",
+    "revokeConfirm": "Confirmer la désactivation",
+    "revokeHint": "Toute personne qui a ce lien ne pourra plus voir la création. Vous pourrez en créer un nouveau.",
+    "revokedNote": "Ce lien est désactivé : il n’ouvre plus la création, y compris là où il a déjà été publié.",
+    "newLink": "Créer un nouveau lien",
+    "view": {
+      "documentTitle": "Création partagée · Studio 3D",
+      "readOnly": "Lecture seule",
+      "opening": "Ouverture de la création…",
+      "eyebrow": "Création partagée",
+      "stageLabel": "Aperçu 3D de la création partagée",
+      "readOnlyNote": "Faites pivoter et zoomez pour l’examiner sous tous les angles. Cette création est en lecture seule.",
+      "checkingAccount": "Vérification de votre compte…",
+      "signInTitle": "Connectez-vous pour utiliser le Studio",
+      "signInBody": "Avec un compte Global Toothgems, reprenez ce design dans l’atelier, modifiez-le, enregistrez vos propres créations et partagez-les à votre tour.",
+      "copyTitle": "Envie de le retravailler ?",
+      "copyBody": "Ouvrez une copie dans votre Studio : la création partagée reste intacte, et vous enregistrez votre version dans vos créations.",
+      "copyCta": "Modifier une copie",
+      "copyOpened": "Copie de « {{name}} » ouverte",
+      "copyOpenedBody": "Enregistrez-la pour la retrouver dans vos créations.",
+      "replaceBody": "Votre scène contient une création non enregistrée. Ouvrir la copie la remplacera.",
+      "replaceConfirm": "Ouvrir la copie",
+      "invalidTitle": "Ce lien ne contient pas de création lisible",
+      "invalidBody": "Il est peut-être incomplet — certains services de messagerie coupent les liens longs. Demandez à la personne qui vous l’a envoyé de le copier à nouveau.",
+      "invalidStoredTitle": "Ce lien de partage n’est plus valide",
+      "invalidStoredBody": "La personne qui l’a partagé l’a peut-être désactivé, ou la création a été supprimée. Demandez-lui un nouveau lien.",
+      "unavailableTitle": "La création n’a pas pu être chargée",
+      "unavailableBody": "Vérifiez votre connexion, puis réessayez.",
+      "retry": "Réessayer",
+      "discover": "Découvrir le Studio 3D"
+    }
   }
 }

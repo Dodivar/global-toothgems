@@ -12,6 +12,7 @@
   "unfavorite": "Remove {{name}} from favourites",
   "nav": {
     "label": "Studio workspace",
+    "explore": "Global Toothgems",
     "open": "Open the Studio menu",
     "studio": "3D Studio",
     "creations": "My Creations",
@@ -26,14 +27,20 @@
       "creations": "Creations",
       "groups": "Groups",
       "help": "Help",
-      "feedback": "Feedback"
+      "feedback": "Feedback",
+      "shop": "Shop",
+      "academy": "Academy",
+      "account": "My space"
     },
     "desc": {
       "studio": "Back to the design on the stage",
       "creations": "Your saved designs",
       "groups": "Reusable gem arrangements",
       "help": "Learn the Studio step by step",
-      "feedback": "Tell us how it feels"
+      "feedback": "Tell us how it feels",
+      "shop": "Gems, tools and kits",
+      "academy": "The trainings",
+      "account": "Orders, certificates, profile"
     }
   },
   "status": {
@@ -84,6 +91,7 @@
     "openInStudio": "Open in Studio",
     "backToStage": "Back to the stage",
     "duplicate": "Duplicate",
+    "share": "Share",
     "rename": "Rename",
     "edit": "Edit",
     "editDetails": "Edit details",
@@ -206,7 +214,7 @@
   },
   "signIn": {
     "title": "Sign in to keep your designs",
-    "body": "Creations and gem groups belong to your Global Toothgems account. During the preview they are kept in this browser, on this device. The design on the stage stays here while you sign in.",
+    "body": "Creations and gem groups are saved to your Global Toothgems account and follow you on every device. The design on the stage stays here while you sign in.",
     "cta": "Sign in",
     "register": "Create an account",
     "dialogTitle": "Save to your account"
@@ -214,7 +222,7 @@
   "hints": {
     "saving": {
       "question": "How does saving work?",
-      "answer": "The Studio keeps a draft of your current design on this device automatically. “Save creation” adds it to My Creations, under your account, where you can reopen, duplicate or reuse it — during the preview, your library is kept in this browser, so it shows on this device only. Once saved, “Save changes” updates it, and the status next to the name always tells you whether everything is stored."
+      "answer": "The Studio keeps a draft of your current design on this device automatically. “Save creation” adds it to My Creations, under your account, where you can reopen, duplicate or reuse it from any device signed in to your account. Once saved, “Save changes” updates it, and the status next to the name always tells you whether everything is stored."
     },
     "groups": {
       "question": "What’s a Gem Group?",
@@ -267,7 +275,7 @@
         "title": "Create a composition",
         "summary": "Combine several gems, mirror them, and align them along the smile.",
         "steps": [
-          "Add more gems — Shift + click selects several at once.",
+          "Add more gems — Shift + click selects several at once; drag one of them to move the whole selection.",
           "Use Mirror to copy a gem to the other side of the smile.",
           "Distribute or Align to line up a selection along the arch."
         ]
@@ -370,6 +378,7 @@
     "opened": "“{{name}}” is on the stage",
     "duplicated": "“{{name}}” created",
     "deleted": "“{{name}}” deleted",
+    "shareRevoked": "Link to “{{name}}” disabled: it no longer opens the design",
     "groupSaved": "Gem group saved",
     "groupNeedsTwo": "Select at least two gems to make a group.",
     "groupNoRoom": "No room for this group here — try another tooth.",
@@ -378,5 +387,57 @@
     "groupInsertedPartial_one": "{{name}} added — {{count}} gem did not fit",
     "groupInsertedPartial_other": "{{name}} added — {{count}} gems did not fit",
     "feedbackFailed": "Your feedback could not be sent."
+  },
+  "share": {
+    "menuSub": "A read-only link to the saved version",
+    "title": "Share read-only",
+    "intro": "Send this link: whoever receives it sees “{{name}}” in 3D, without being able to change it.",
+    "linkLabel": "Share link",
+    "preparing": "Preparing the link…",
+    "copy": "Copy link",
+    "copiedShort": "Copied",
+    "copied": "Link copied",
+    "copyFailed": "Couldn’t copy: the link is selected, copy it with Ctrl + C.",
+    "failed": "The link couldn’t be prepared. Please try again in a moment.",
+    "native": "Share…",
+    "nativeText": "Take a look at “{{name}}”, my design in the Global Toothgems 3D Studio",
+    "preview": "Preview it as it will be received",
+    "noteReadOnly": "Anyone with the link can view this design in 3D, with or without an account. Nobody can edit it or reach your other creations.",
+    "noteSnapshot": "The link holds the version saved right now: later changes won’t appear in it. Create a new link to share them.",
+    "noteUnsaved": "This creation has unsaved changes on the stage: they are not in this link.",
+    "noteLive": "The link always shows the latest saved version of this creation. You can disable it at any time.",
+    "noteUnsavedLive": "This creation has unsaved changes on the stage: save them for them to appear through the link.",
+    "networks": "Share on social networks",
+    "revoke": "Disable link",
+    "revokeConfirm": "Confirm disabling",
+    "revokeHint": "Anyone who has this link will no longer be able to see the design. You can create a new one.",
+    "revokedNote": "This link is disabled: it no longer opens the design, including wherever it was already posted.",
+    "newLink": "Create a new link",
+    "view": {
+      "documentTitle": "Shared design · 3D Studio",
+      "readOnly": "Read-only",
+      "opening": "Opening the design…",
+      "eyebrow": "Shared design",
+      "stageLabel": "3D preview of the shared design",
+      "readOnlyNote": "Turn and zoom to look at it from every angle. This design is read-only.",
+      "checkingAccount": "Checking your account…",
+      "signInTitle": "Sign in to use the Studio",
+      "signInBody": "With a Global Toothgems account, take this design into the workshop, edit it, save your own creations and share them in turn.",
+      "copyTitle": "Want to rework it?",
+      "copyBody": "Open a copy in your Studio: the shared design stays as it is, and you save your version to your creations.",
+      "copyCta": "Edit a copy",
+      "copyOpened": "Copy of “{{name}}” opened",
+      "copyOpenedBody": "Save it to find it in your creations.",
+      "replaceBody": "Your stage holds an unsaved design. Opening the copy will replace it.",
+      "replaceConfirm": "Open the copy",
+      "invalidTitle": "This link doesn’t hold a readable design",
+      "invalidBody": "It may be incomplete — some messaging apps cut long links. Ask the person who sent it to copy it again.",
+      "invalidStoredTitle": "This share link is no longer valid",
+      "invalidStoredBody": "The person who shared it may have disabled it, or the design was deleted. Ask them for a new link.",
+      "unavailableTitle": "The design couldn’t be loaded",
+      "unavailableBody": "Check your connection, then try again.",
+      "retry": "Try again",
+      "discover": "Discover the 3D Studio"
+    }
   }
 }

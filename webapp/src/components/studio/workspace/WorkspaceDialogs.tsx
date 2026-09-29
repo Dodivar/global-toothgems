@@ -10,6 +10,7 @@ import { FeedbackModal } from "./FeedbackModal";
 import { OnboardingOverlay } from "./OnboardingOverlay";
 import { SaveCreationDialog } from "./SaveCreationDialog";
 import { SaveGemGroupDialog } from "./SaveGemGroupDialog";
+import { ShareDialog } from "./ShareDialog";
 import { SignInPrompt } from "./SignInPrompt";
 
 /**
@@ -39,6 +40,8 @@ export function WorkspaceDialogs() {
       return <SaveCreationDialog mode="edit" creation={dialog.creation} onClose={close} />;
     case "creationDetail":
       return <CreationDetail creationId={dialog.creationId} onClose={close} />;
+    case "shareCreation":
+      return <ShareDialog creation={dialog.creation} onClose={close} />;
     case "deleteCreation":
       return (
         <DeleteConfirmation kind="creation" name={dialog.creation.name} onConfirm={() => ws.deleteCreation(dialog.creation)} onClose={close} />

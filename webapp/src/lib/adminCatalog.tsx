@@ -6,7 +6,7 @@ import {
   SEED_GEM_COLORS,
   SEED_RECOMMENDATIONS,
   categoryById as fixtureCategory,
-  withGemStock,
+  withVariantStock,
   type ActivityEntry,
   type ActivityKind,
   type AdminGemColor,
@@ -105,7 +105,7 @@ function MockAdminCatalogProvider({ children, actor }: { children: ReactNode; ac
     async (product: AdminProduct) => {
       await wait(SAVE_DELAY_MS);
       const now = new Date().toISOString();
-      const saved: AdminProduct = withGemStock({ ...product, createdAt: now, updatedAt: now });
+      const saved: AdminProduct = withVariantStock({ ...product, createdAt: now, updatedAt: now });
       setProducts((prev) => [saved, ...prev]);
       log("created", saved, saved.status === "draft" ? { fr: "Enregistré en brouillon", en: "Saved as a draft" } : undefined);
       return saved;
@@ -120,7 +120,7 @@ function MockAdminCatalogProvider({ children, actor }: { children: ReactNode; ac
       setProducts((prev) =>
         prev.map((p) => {
           if (p.id !== id) return p;
-          saved = withGemStock({ ...p, ...patch, updatedAt: new Date().toISOString() });
+          saved = withVariantStock({ ...p, ...patch, updatedAt: new Date().toISOString() });
           return saved;
         }),
       );

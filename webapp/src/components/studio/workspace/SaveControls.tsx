@@ -1,6 +1,6 @@
 import { useState } from "react";
 import clsx from "clsx";
-import { Check, ChevronDown, CopyPlus, FilePlus2, PencilLine, Save } from "lucide-react";
+import { Check, ChevronDown, CopyPlus, FilePlus2, Link2, PencilLine, Save } from "lucide-react";
 import { useStudio } from "../../../lib/studio3d/store";
 import { useWorkspace } from "../../../lib/studioWorkspace/workspace";
 import { openWorkspaceDialog } from "../../../lib/studioWorkspace/workspaceUi";
@@ -96,6 +96,14 @@ export function SaveControls() {
             icon={<PencilLine size={14} />}
             label={t("studio.workspace.actions.editDetails")}
             onClick={() => run(() => openWorkspaceDialog({ kind: "editCreation", creation: linked }))}
+          />
+        )}
+        {linked && (
+          <PopoverItem
+            icon={<Link2 size={14} />}
+            label={t("studio.workspace.actions.share")}
+            sub={t("studio.workspace.share.menuSub")}
+            onClick={() => run(() => openWorkspaceDialog({ kind: "shareCreation", creation: linked }))}
           />
         )}
         <PopoverSeparator />

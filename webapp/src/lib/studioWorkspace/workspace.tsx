@@ -5,9 +5,12 @@ import { useToast } from "../toast";
 import { getEngine } from "../studio3d/engine";
 import { uid } from "../studio3d/math";
 import { studioStore, useStudio } from "../studio3d/store";
+import { supabase } from "../supabase/client";
 import { createLocalRepositories, type KeyValueStorage } from "./localRepository";
 import { StudioStoreError, type StudioRepositories } from "./repository";
 import { piecesKey } from "./scene";
+import type { ShareLink } from "./share";
+import { createSupabaseRepositories } from "./supabaseRepository";
 import type { Creation, FeedbackInput, GemGroup, RecordDetails } from "./types";
 import { copyName } from "./validation";
 
@@ -48,6 +51,12 @@ interface WorkspaceValue {
   duplicateCreation: (c: Creation) => Promise<Creation | null>;
   toggleCreationFavorite: (c: Creation) => Promise<void>;
   deleteCreation: (c: Creation) => Promise<boolean>;
+  /** The creation's read-only link, created on first use. Throws when it cannot be prepared. */
+  shareLink: (c: Creation) => Promise<ShareLink>;
+  /** Its link if one is already active, never creating one; null otherwise or on failure. */
+  existingShareLink: (c: Creation) => Promise<ShareLink | null>;
+  /** Disable the creation's link: whoever has it can no longer open the design. */
+  revokeShare: (c: Creation) => Promise<boolean>;
   saveSelectionAsGroup: (ids: string[], details: RecordDetails) => Promise<GemGroup | null>;
   insertGroup: (g: GemGroup, toothId?: string | null) => boolean;
   updateGroupDetails: (g: GemGroup, details: RecordDetails) => Promise<boolean>;
@@ -76,14 +85,14 @@ function browserStorage(): KeyValueStorage {
 }
 
 /**
- * The one switch for the backend: when the Supabase tables are live, a
- * `createSupabaseRepositories(client)` goes here (see README, "3D Studio
- * workspace"). Until then the library lives in this browser — also for real
- * accounts, which is what the interface copy says. The example designs are
- * only for the demo accounts of the mock sign-in, never for real members.
+ * The one switch for the backend. A real account (Supabase session) keeps its
+ * library in the database, on every device. The demo accounts of the mock
+ * sign-in keep theirs in this browser, seeded with the example designs, which
+ * never reach real members.
  */
-function createRepositories(userId: string, opts: { seed: boolean }): StudioRepositories {
-  return createLocalRepositories(userId, { storage: browserStorage(), latency: LOCAL_LATENCY_MS, seed: opts.seed });
+function createRepositories(userId: string, opts: { realAuth: boolean }): StudioRepositories {
+  if (opts.realAuth && supabase) return createSupabaseRepositories(supabase, userId);
+  return createLocalRepositories(userId, { storage: browserStorage(), latency: LOCAL_LATENCY_MS, seed: !opts.realAuth });
 }
 
 export function StudioWorkspaceProvider({ children }: { children: ReactNode }) {
@@ -91,7 +100,7 @@ export function StudioWorkspaceProvider({ children }: { children: ReactNode }) {
   const { showToast } = useToast();
   const { userId, restoring, realAuth } = useAuth();
   const snap = useStudio();
-  const repos = useMemo(() => (userId ? createRepositories(userId, { seed: !realAuth }) : null), [userId, realAuth]);
+  const repos = useMemo(() => (userId ? createRepositories(userId, { realAuth }) : null), [userId, realAuth]);
 
   // What was loaded, and for which repositories: a sign-out or another account
   // makes it stale at once, without waiting for an effect to clear it.
@@ -286,6 +295,34 @@ export function StudioWorkspaceProvider({ children }: { children: ReactNode }) {
     [repos, say, fail, setCreations],
   );
 
+  const shareLink = useCallback(
+    async (c: Creation) => {
+      if (!repos) throw new StudioStoreError("unavailable");
+      return repos.creations.shareLink(c);
+    },
+    [repos],
+  );
+
+  const existingShareLink = useCallback(
+    async (c: Creation) => (repos ? repos.creations.existingShareLink(c).catch(() => null) : null),
+    [repos],
+  );
+
+  const revokeShare = useCallback(
+    async (c: Creation) => {
+      if (!repos) return false;
+      try {
+        await repos.creations.revokeShare(c.id);
+        say("shareRevoked", "success", { name: c.name });
+        return true;
+      } catch (err) {
+        fail(err);
+        return false;
+      }
+    },
+    [repos, say, fail],
+  );
+
   const saveSelectionAsGroup = useCallback(
     async (ids: string[], details: RecordDetails) => {
       const data = getEngine()?.captureGroup(ids);
@@ -417,6 +454,9 @@ export function StudioWorkspaceProvider({ children }: { children: ReactNode }) {
     duplicateCreation,
     toggleCreationFavorite,
     deleteCreation,
+    shareLink,
+    existingShareLink,
+    revokeShare,
     saveSelectionAsGroup,
     insertGroup,
     updateGroupDetails,

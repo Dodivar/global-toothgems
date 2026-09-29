@@ -2,17 +2,21 @@ import { useId, useRef, type ReactNode } from "react";
 import clsx from "clsx";
 import {
   AlignCenterHorizontal,
+  AlignCenterVertical,
   AlignHorizontalSpaceAround,
   ChevronDown,
   Copy,
+  Crosshair,
   FlipHorizontal2,
   FlipVertical2,
   RotateCcw,
   RotateCw,
   SquareSplitHorizontal,
+  SquareSplitVertical,
   Trash2,
 } from "lucide-react";
 import { ColorWheel } from "./ColorWheel";
+import { InfoTip, InfoTipText } from "./InfoTip";
 import { PieceIcon } from "./PieceIcon";
 import { useEditorLabels } from "./editorLabels";
 import {
@@ -31,6 +35,7 @@ import {
 } from "../../../data/studioEditor";
 import {
   alignSelection,
+  centerOnTeeth,
   distributeSelection,
   duplicateMirroredPieces,
   duplicatePieces,
@@ -78,11 +83,25 @@ export function EditorInspector({ snap }: { snap: StudioSnapshot }) {
 
 /* ------------------------------------------------------------ building blocks */
 
-function SectionLabel({ children }: { children: ReactNode }) {
+/** A section heading; `info` puts that section's explanation in a bubble at the end of the rule. */
+function SectionLabel({ children, info }: { children: string; info?: string }) {
   return (
-    <h3 className="mb-2.5 mt-6 flex items-center gap-2 text-[10px] font-bold uppercase tracking-[var(--tracking-eyebrow)] text-[var(--text-subtle)] after:h-px after:flex-1 after:bg-[var(--border-subtle)]">
-      {children}
-    </h3>
+    <div className="mb-2.5 mt-6 flex items-center gap-1.5">
+      <h3 className="m-0 flex flex-1 items-center gap-2 text-[10px] font-bold uppercase tracking-[var(--tracking-eyebrow)] text-[var(--text-subtle)] after:h-px after:flex-1 after:bg-[var(--border-subtle)]">
+        {children}
+      </h3>
+      {info && <SectionInfo topic={children}>{info}</SectionInfo>}
+    </div>
+  );
+}
+
+/** The explanation of a panel or section, shown on hover, keyboard focus or tap. */
+function SectionInfo({ topic, children, className }: { topic: string; children: string; className?: string }) {
+  const { t } = useEditorLabels();
+  return (
+    <InfoTip label={t("studio.editor.inspector.infoAbout", { topic })} className={clsx("-my-1.5", className)}>
+      <InfoTipText>{children}</InfoTipText>
+    </InfoTip>
   );
 }
 
@@ -268,11 +287,16 @@ function MirrorRow() {
           {t("studio.editor.mirror.vertical")}
         </button>
       </div>
-      <button type="button" className={clsx(miniButton, "mt-2 w-full")} onClick={() => duplicateMirroredPieces([...studioStore.selectedJewelIds])}>
-        <SquareSplitHorizontal size={14} aria-hidden="true" />
-        {t("studio.editor.mirror.duplicate")}
-      </button>
-      <Hint className="mt-2">{t("studio.editor.mirror.hint")}</Hint>
+      <div className="mt-2 flex gap-2">
+        <button type="button" className={miniButton} onClick={() => duplicateMirroredPieces([...studioStore.selectedJewelIds])}>
+          <SquareSplitHorizontal size={14} aria-hidden="true" />
+          {t("studio.editor.mirror.duplicate")}
+        </button>
+        <button type="button" className={miniButton} onClick={() => duplicateMirroredPieces([...studioStore.selectedJewelIds], "v")}>
+          <SquareSplitVertical size={14} aria-hidden="true" />
+          {t("studio.editor.mirror.duplicateVertical")}
+        </button>
+      </div>
     </>
   );
 }
@@ -319,12 +343,18 @@ function MultiPanel({ selected }: { selected: PlacedJewelry[] }) {
   const ids = selected.map((j) => j.id);
   const teethUsed = new Set(selected.map((j) => j.toothId)).size;
   const sharedCustom = selected.every((j) => j.customColor && j.customColor === first.customColor) ? first.customColor! : null;
+  const alignLabelId = useId();
 
   return (
     <>
-      <h2 className="m-0 text-[length:var(--text-h4)] font-[var(--weight-black)] leading-tight text-[var(--text-primary)]">
-        {t("studio.editor.context.selected", { count: selected.length })}
-      </h2>
+      <div className="flex items-start justify-between gap-2">
+        <h2 className="m-0 text-[length:var(--text-h4)] font-[var(--weight-black)] leading-tight text-[var(--text-primary)]">
+          {t("studio.editor.context.selected", { count: selected.length })}
+        </h2>
+        <SectionInfo topic={t("studio.editor.context.selected", { count: selected.length })} className="mt-0.5">
+          {t("studio.editor.inspector.multiHint")}
+        </SectionInfo>
+      </div>
       <Hint className="mt-1.5">{t("studio.editor.inspector.multiSub", { count: teethUsed })}</Hint>
       <SaveSelectionAsGroup ids={ids} />
 
@@ -347,9 +377,8 @@ function MultiPanel({ selected }: { selected: PlacedJewelry[] }) {
         onCommit={(v) => studioStore.updateSelected({ scale: v })}
       />
 
-      <SectionLabel>{t("studio.editor.inspector.rotationAll")}</SectionLabel>
+      <SectionLabel info={t("studio.editor.inspector.rotationGroupHint")}>{t("studio.editor.inspector.rotationAll")}</SectionLabel>
       <GroupTurnButtons ids={ids} />
-      <Hint className="mt-2">{t("studio.editor.inspector.rotationGroupHint")}</Hint>
 
       <SectionLabel>{t("studio.editor.inspector.finishAll")}</SectionLabel>
       <Swatches
@@ -380,20 +409,50 @@ function MultiPanel({ selected }: { selected: PlacedJewelry[] }) {
         onCommit={(v) => studioStore.updateSelected({ offset: v })}
       />
 
-      <SectionLabel>{t("studio.editor.inspector.layout")}</SectionLabel>
-      <div className="flex gap-2">
+      <SectionLabel info={t("studio.editor.inspector.layoutHint")}>{t("studio.editor.inspector.layout")}</SectionLabel>
+      <div role="group" aria-labelledby={alignLabelId} className="flex items-center gap-2">
+        <span id={alignLabelId} className="flex-none text-[11px] font-semibold text-[var(--text-muted)]">
+          {t("studio.editor.inspector.align")}
+        </span>
+        <button
+          type="button"
+          className={miniButton}
+          aria-label={t("studio.editor.inspector.alignHorizontalLabel")}
+          title={t("studio.editor.inspector.alignHorizontalLabel")}
+          onClick={() => alignSelection("h")}
+        >
+          <AlignCenterHorizontal size={14} aria-hidden="true" />
+          {t("studio.editor.inspector.alignHorizontal")}
+        </button>
+        <button
+          type="button"
+          className={miniButton}
+          aria-label={t("studio.editor.inspector.alignVerticalLabel")}
+          title={t("studio.editor.inspector.alignVerticalLabel")}
+          onClick={() => alignSelection("v")}
+        >
+          <AlignCenterVertical size={14} aria-hidden="true" />
+          {t("studio.editor.inspector.alignVertical")}
+        </button>
+      </div>
+      <div className="mt-2 flex gap-2">
         <button type="button" className={miniButton} onClick={distributeSelection}>
           <AlignHorizontalSpaceAround size={14} aria-hidden="true" />
           {t("studio.editor.inspector.distribute")}
         </button>
-        <button type="button" className={miniButton} onClick={alignSelection}>
-          <AlignCenterHorizontal size={14} aria-hidden="true" />
-          {t("studio.editor.inspector.align")}
+        <button
+          type="button"
+          className={miniButton}
+          aria-label={t("studio.editor.inspector.centerAll")}
+          title={t("studio.editor.inspector.centerAll")}
+          onClick={() => centerOnTeeth(ids)}
+        >
+          <Crosshair size={14} aria-hidden="true" />
+          {t("studio.editor.inspector.centerShort")}
         </button>
       </div>
-      <Hint className="mt-2">{t("studio.editor.inspector.layoutHint")}</Hint>
 
-      <SectionLabel>{t("studio.editor.mirror.label")}</SectionLabel>
+      <SectionLabel info={t("studio.editor.mirror.hint")}>{t("studio.editor.mirror.label")}</SectionLabel>
       <MirrorRow />
       <ActionRow count={selected.length} onDuplicate={() => duplicatePieces(ids)} onDelete={() => removePieces(ids)} />
     </>
@@ -512,7 +571,7 @@ function SinglePanel({ jewel, snap }: { jewel: PlacedJewelry; snap: StudioSnapsh
         onClear={() => set({ customColor: undefined })}
       />
 
-      <SectionLabel>{t("studio.editor.inspector.mounting")}</SectionLabel>
+      <SectionLabel info={t("studio.editor.inspector.standoffHint")}>{t("studio.editor.inspector.mounting")}</SectionLabel>
       <Slider
         label={t("studio.editor.inspector.standoff")}
         value={jewel.offset ?? 0}
@@ -520,12 +579,11 @@ function SinglePanel({ jewel, snap }: { jewel: PlacedJewelry; snap: StudioSnapsh
         format={offsetText}
         onCommit={(v) => set({ offset: v }, false)}
       />
-      <Hint>{t("studio.editor.inspector.standoffHint")}</Hint>
 
-      <SectionLabel>{t("studio.editor.mirror.label")}</SectionLabel>
+      <SectionLabel info={t("studio.editor.mirror.hint")}>{t("studio.editor.mirror.label")}</SectionLabel>
       <MirrorRow />
 
-      <SectionLabel>{t("studio.editor.inspector.position")}</SectionLabel>
+      <SectionLabel info={t("studio.editor.inspector.positionHint")}>{t("studio.editor.inspector.position")}</SectionLabel>
       <span className="relative block">
         <select
           aria-label={t("studio.editor.inspector.position")}
@@ -559,7 +617,12 @@ function SinglePanel({ jewel, snap }: { jewel: PlacedJewelry; snap: StudioSnapsh
           })}
         </p>
       )}
-      <Hint className="mt-1.5">{t("studio.editor.inspector.positionHint")}</Hint>
+      {jewel.toothId !== FREE_TOOTH && (
+        <button type="button" className={clsx(miniButton, "mt-2.5 w-full")} onClick={() => centerOnTeeth([jewel.id])}>
+          <Crosshair size={14} aria-hidden="true" />
+          {t("studio.editor.inspector.center")}
+        </button>
+      )}
 
       <ActionRow count={1} onDuplicate={() => duplicatePieces([jewel.id])} onDelete={() => removePieces([jewel.id])} />
       <SaveSelectionAsGroup ids={[jewel.id]} />
@@ -572,18 +635,20 @@ function ToothPanel({ snap, toothId }: { snap: StudioSnapshot; toothId: string }
   const onTooth = snap.jewels.filter((j) => j.toothId === toothId);
   return (
     <>
-      <p className="m-0 text-[46px] font-[var(--weight-black)] leading-[.95] tracking-[var(--tracking-display)] text-[var(--text-primary)]">
-        #{toothId}
-      </p>
+      <div className="flex items-start justify-between gap-2">
+        <p className="m-0 text-[46px] font-[var(--weight-black)] leading-[.95] tracking-[var(--tracking-display)] text-[var(--text-primary)]">
+          #{toothId}
+        </p>
+        <SectionInfo topic={t("studio.editor.inspector.camera")} className="mt-1">
+          {t("studio.editor.inspector.cameraHint")}
+        </SectionInfo>
+      </div>
       <h2 className="m-0 mt-2 text-[length:var(--text-h4)] font-bold leading-tight text-[var(--text-primary)]">{toothName(toothId)}</h2>
       <Hint className="mt-1">{t(snap.modelMode === "free" ? "studio.editor.inspector.fdiApprox" : "studio.editor.inspector.fdi")}</Hint>
 
       <SectionLabel>{t("studio.editor.inspector.piecesOnTooth")}</SectionLabel>
       {onTooth.length === 0 && <Hint>{t("studio.editor.inspector.toothEmpty")}</Hint>}
       <PieceList jewels={onTooth} label={(j) => pieceName(j.jewelryTypeId)} />
-
-      <SectionLabel>{t("studio.editor.inspector.camera")}</SectionLabel>
-      <Hint>{t("studio.editor.inspector.cameraHint")}</Hint>
     </>
   );
 }
@@ -627,9 +692,10 @@ function OverviewPanel({ snap }: { snap: StudioSnapshot }) {
           <strong className="text-[18px] font-[var(--weight-black)] text-[var(--text-primary)]">{formatEstimate(total)}</strong>
         </div>
       )}
-      <Hint className="mt-2.5">{total > 0 ? t("studio.editor.estimateHint") : t("studio.editor.inspector.noOverlap")}</Hint>
+      {/* Stays in view: it qualifies the price shown just above. */}
+      {total > 0 && <Hint className="mt-2.5">{t("studio.editor.estimateHint")}</Hint>}
 
-      <SectionLabel>{t("studio.editor.inspector.design")}</SectionLabel>
+      <SectionLabel info={t("studio.editor.inspector.noOverlap")}>{t("studio.editor.inspector.design")}</SectionLabel>
       {snap.jewels.length === 0 && <Hint>{t("studio.editor.inspector.designEmpty")}</Hint>}
       <PieceList jewels={snap.jewels} label={(j) => pieceName(j.jewelryTypeId)} focusCamera />
 

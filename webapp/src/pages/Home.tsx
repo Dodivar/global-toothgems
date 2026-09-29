@@ -201,8 +201,7 @@ export function Home() {
                   hoverImage: p.gallery?.[1]?.src,
                   badge: i === 0 ? t("home.bestSellerBadge") : undefined,
                   badgeTone: "ink",
-                  rating: p.rating,
-                  reviewCount: p.reviewCount,
+                  variants: p.variants,
                   stock: p.stock,
                 }}
                 onSave={() => showToast(t("product.toastSavedTitle"), t("product.toastSavedBody", { name: pick(p.name, lang) }))}

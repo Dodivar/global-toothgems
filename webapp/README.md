@@ -72,9 +72,8 @@ single `index.html` plus assets. A static host knows nothing about the routes in
 `App.tsx`, so a request that lands directly on one — a pasted link, a refresh, a
 bookmark — asks for a file that was never built and gets a 404. Following a link
 inside the app works either way, which is why the breakage only shows up on
-direct URLs, and why the newest routes (such as `/accueil-b`) surface it
-first: they are not linked from the navigation, so a direct URL is the only way
-in.
+direct URLs, and why routes not linked from the navigation surface it
+first: a direct URL is the only way in.
 
 `vercel.json` fixes that by rewriting every unmatched path to `/index.html` and
 letting the router read the URL. Rewrites run after the filesystem check, so real
@@ -234,6 +233,7 @@ A paid creative tool (€5 / month) for designing tooth jewellery compositions. 
 | `/studio-3d/atelier/mes-creations` | My Creations: the account's saved designs (`…/editor/creations` redirects here) |
 | `/studio-3d/atelier/mes-groupes` | My Gem Groups: reusable multi-gem arrangements (`…/editor/groups`) |
 | `/studio-3d/atelier/aide` | Help & Tutorial (`…/editor/help`) |
+| `/studio-3d/partage/<token>`, `/studio-3d/partage#…` | A creation shared read-only (a stored link, or a snapshot carried in the fragment): the design in 3D (orbit, zoom, auto-orbit), its name and description, and an invitation to sign in to use the Studio — or, signed in, "Edit a copy". Open to everyone, outside `RequireStudioAccess`; full-screen like the editor (`/studio-3d/share/<token>` and `/studio-3d/share#…` redirect here) |
 
 ### The editor
 
@@ -274,11 +274,14 @@ The layer around the editor that makes it a personal design workspace. The edito
 | `lib/studioWorkspace/scene.ts` | The saved `scene_data` format (version 1): every piece with its full transform, the light, the camera and the Gem Groups pieces came from; `sanitizeScene` for anything read back |
 | `lib/studioWorkspace/gemGroup.ts` | Gem Group arrangements, stored in an anchor tooth's frame (along the arch, up, out of the enamel) so they can be dropped on any tooth and keep their spacing, spin, size and finish |
 | `lib/studioWorkspace/repository.ts` | **The persistence boundary**: `CreationsRepository`, `GemGroupsRepository`, `FeedbackRepository`. The UI never touches storage or Supabase directly |
-| `lib/studioWorkspace/localRepository.ts` | PROTOTYPE implementation in browser storage, one namespace per account, seeded with the example library (`seed.ts`) |
+| `lib/studioWorkspace/supabaseRepository.ts` | The Supabase implementation, used for real accounts: `creations`, `gem_groups`, `studio_feedback`, thumbnails in the private `studio-thumbnails` bucket |
+| `lib/studioWorkspace/localRepository.ts` | Browser-storage implementation for the mock sign-in's demo accounts, one namespace per account, seeded with the example library (`seed.ts`) |
 | `lib/studioWorkspace/workspace.tsx` | Provider: the loaded library, the save state of the stage (`empty` / `unsaved` / `saving` / `saved` / `failed`), and every action with its toast |
+| `lib/studioWorkspace/share.ts` | Read-only share links: stored links (token) and snapshot links (the design encoded in the URL fragment), both read defensively (tested in `share.test.ts`) |
+| `lib/studio3d/socialShare.ts`, `components/studio/ShareNetworks.tsx` | Social networks: each network's share page pre-filled with the read-only link (no network script loaded), shared by the editor's Share menu and `ShareDialog` |
 | `lib/studioWorkspace/library.ts`, `validation.ts` | Search, filters, sort, summary; name / description / tag rules (unit-tested in `studioWorkspace.test.ts`) |
 | `lib/studio3d/archLayout.ts` | The reference arch as plain numbers, shared by the engine and the drawn previews |
-| `components/studio/workspace/` | `StudioSidebar`, `CreationLibrary`, `CreationCard`, `CreationDetail`, `GemGroupLibrary`, `GemGroupCard`, `GemGroupPanel` (in the editor's library, with drag onto a tooth), `SaveCreationDialog`, `SaveGemGroupDialog`, `DeleteConfirmation`, `FeedbackModal`, `HelpPanel`, `HelpHint`, `OnboardingOverlay`, `SaveStatus`, `SaveControls`, `EmptyState`, `SearchAndFilters`, `ScenePreview` |
+| `components/studio/workspace/` | `StudioSidebar`, `CreationLibrary`, `CreationCard`, `CreationDetail`, `GemGroupLibrary`, `GemGroupCard`, `GemGroupPanel` (in the editor's library, with drag onto a tooth), `SaveCreationDialog`, `SaveGemGroupDialog`, `DeleteConfirmation`, `FeedbackModal`, `HelpPanel`, `HelpHint`, `OnboardingOverlay`, `SaveStatus`, `SaveControls`, `EmptyState`, `SearchAndFilters`, `ScenePreview`, `ShareDialog` |
 
 - **Sections open over the stage** instead of replacing it: the editor stays mounted (hidden, `inert`), so an imported model, the camera and the undo history are still there when the artist comes back. The editor's keyboard shortcuts are off while a section or dialog is in front.
 - **Saving** needs an account (signed out, Save explains why and returns after sign-in; the local draft is never lost). A new design opens the save dialog (name, description, tags); a linked one saves with "Save changes" or Ctrl+S; "Save as new creation" keeps the original. The draft remembers which creation it belongs to, per account, across reloads. An empty design is never saved over a creation.
@@ -290,7 +293,13 @@ The layer around the editor that makes it a personal design workspace. The edito
 - **Onboarding** shows once per browser (`gt-studio3d-onboarding-v1`), can be skipped at any step and replayed from Help.
 - **Feedback** records a rating, a type, the message and a little context (page, piece count, language, window size — nothing personal).
 
-**Moving to Supabase.** The schema is ready in `supabase/migrations/20260927120000_studio_workspace.sql` — `creations`, `gem_groups`, `studio_feedback` and a private `studio-thumbnails` bucket, owner-only by RLS, with `user_id` defaulting to `auth.uid()` and not writable. It is **not applied** yet. To switch: apply the migration, regenerate `lib/supabase/database.types.ts`, write `createSupabaseRepositories(client)` implementing `StudioRepositories` (thumbnails uploaded to `studio-thumbnails/<user id>/<creation id>.jpg` and served by signed URL), and return it from `createRepositories()` in `workspace.tsx` when `isSupabaseConfigured`. Nothing else in the UI changes.
+**On Supabase.** Real accounts use `lib/studioWorkspace/supabaseRepository.ts`, backed by `supabase/migrations/20260928222836_studio_workspace.sql`: `creations` (the scene in `scene_data`), `gem_groups`, `studio_feedback` and the private `studio-thumbnails` bucket, owner-only by RLS, with `user_id` defaulting to `auth.uid()` and not writable. A creation's render is uploaded to `studio-thumbnails/<user id>/<creation id>.jpg` after the row is saved (best effort) and served by signed URL. The demo accounts of the mock sign-in keep the local, seeded store (`localRepository.ts`). The switch is `createRepositories()` in `workspace.tsx`. Designs saved in a browser before the switch stay in that browser's storage and are not imported.
+
+**Read-only share links.** "Share" (a creation card's menu, its detail dialog, the Save menu when the stage is linked to a creation, and the editor's Share menu) opens `ShareDialog`: the link, one button per social network (WhatsApp, Facebook, X, LinkedIn, e-mail — `socialShare.ts`, plain share pages opened in a new tab, no SDK), the system share sheet where available, and a preview. Opening the dialog is the explicit act that creates a link; the editor's Share menu only looks for an existing one (and asks to save a new design first).
+- **Stored links** (real accounts, Supabase): `/studio-3d/partage/<token>`, backed by `creation_shares` (a random 48-hex token per creation, one active at a time, `revoked_at`). Owners read their own links through RLS and create / disable them only through `studio_share_creation` / `studio_revoke_creation_share`, which check ownership. Guests — signed in or not — never touch a table: `studio_shared_creation(token)`, a security-definer reader granted to `anon`, returns the name, description and scene of **that one creation** (Gem Group ids blanked), nothing about the owner, and nothing for an unknown or disabled token. The link always shows the latest saved version; "Disable link" in the dialog stops it at once, including where it was already posted, and a new one can be created. Deleting the creation deletes its links.
+- **Snapshot links** (the mock sign-in's local library, and the fallback while the share table is missing from the database): the design itself in the URL fragment (`#z1.…` deflate-compressed base64url JSON; `#j1.…` where `CompressionStream` is missing) — sanitized scene, name and description, never the owner id, the client name, tags or the thumbnail. The fragment never reaches a server. A snapshot does not follow later edits and cannot be revoked; links of this form already sent keep opening.
+- The viewer (`pages/StudioShare.tsx`) renders with its own `DesignStore({ persist: false })` and a `StudioEngine(…, { readOnly: true })`: every press goes to the camera, no piece can be selected or moved, and the recipient's own draft (`gt-studio3d-design-v1`) is never read nor written. Everything it receives is re-sanitized. Signed out, the panel asks them to sign in (and returns to the same link); signed in, "Edit a copy" loads the design as a new unsaved design on **their own** stage — the shared creation is never written — asking first if that would replace unsaved work.
+- Limits: anyone who has a link can view the design; a design made on an imported model is shown on the default dentition. Social networks show the site's generic preview card (no per-creation image yet).
 
 **Overlap to decide:** the editor's older "My presets" (whole designs kept in browser storage, under Presets) still works as before. Saved creations now cover that need per account; the presets menu could be retired or pointed at My Creations.
 

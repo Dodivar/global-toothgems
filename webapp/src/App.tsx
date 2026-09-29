@@ -17,10 +17,9 @@ import { ReviewsProvider } from "./lib/reviews";
 import { ReviewOverlays } from "./components/reviews/ReviewOverlays";
 import { Header } from "./components/layout/Header";
 import { Footer } from "./components/layout/Footer";
-import { HeaderEditorial } from "./components/layout/HeaderEditorial";
-import { FooterEditorial } from "./components/layout/FooterEditorial";
+import { MemberShell } from "./components/layout/MemberShell";
+import { isMemberSpacePath } from "./lib/memberSpace";
 import { Home } from "./pages/Home";
-import { AccueilEditorial } from "./pages/AccueilEditorial";
 import { Shop } from "./pages/Shop";
 import { Shapes } from "./pages/Shapes";
 import { Colors } from "./pages/Colors";
@@ -87,6 +86,8 @@ import {
   STUDIO_EDITOR_ALIAS,
   STUDIO_EDITOR_PATH,
   STUDIO_PATH,
+  STUDIO_SHARE_ALIAS,
+  STUDIO_SHARE_PATH,
   STUDIO_SUBSCRIBE_ALIAS,
   STUDIO_SUBSCRIBE_PATH,
   studioSectionFromPath,
@@ -99,6 +100,8 @@ import { NotFound } from "./pages/NotFound";
 /* The 3D Studio editor carries three.js, the heaviest code in the site: it is
    split into its own chunk and only downloaded when the editor is opened. */
 const StudioEditor = lazy(() => import("./pages/StudioEditor").then((m) => ({ default: m.StudioEditor })));
+/* A shared design is viewed in the same 3D engine: same on-demand chunk. */
+const StudioShare = lazy(() => import("./pages/StudioShare").then((m) => ({ default: m.StudioShare })));
 import { ServerError } from "./pages/ServerError";
 import { Maintenance } from "./pages/Maintenance";
 import { HelpCentre } from "./pages/legal/HelpCentre";
@@ -122,6 +125,16 @@ function StudioEditorAlias() {
   return <Navigate to={studioSectionPath(studioSectionFromPath(pathname))} replace />;
 }
 
+/**
+ * `/studio-3d/share/<token>` → `/studio-3d/partage/<token>`, and
+ * `/studio-3d/share#…` → `/studio-3d/partage#…`: the token or the fragment is
+ * the design, so it must come along.
+ */
+function StudioShareAlias() {
+  const { pathname, hash } = useLocation();
+  return <Navigate to={{ pathname: pathname.replace(STUDIO_SHARE_ALIAS, STUDIO_SHARE_PATH), hash }} replace />;
+}
+
 function ScrollToTop() {
   const { pathname } = useLocation();
   useEffect(() => {
@@ -140,16 +153,6 @@ function DocumentLanguage() {
 }
 
 /**
- * Route wearing the alternative home-page direction.
- *
- * `Header` and `Footer` render outside `<Routes>`, so the second home page would
- * otherwise inherit the first one's chrome. Swapping them here — rather than
- * restyling the shared components — keeps the comparison honest and keeps every
- * other screen untouched.
- */
-const EDITORIAL_ROUTE = "/accueil-b";
-
-/**
  * The administration workspace has its own chrome — a navigation rail and its
  * own header — so the storefront header and footer are left out entirely on
  * these routes. Prefix rather than exact match: every `/admin/...` screen,
@@ -166,18 +169,19 @@ const MAINTENANCE_ROUTE = "/maintenance";
 /**
  * The 3D Studio editor is a full-screen workspace with its own application
  * bar, so it also leaves out the storefront header and footer. Unlike the back
- * office it stays a customer page: the cookie banner still shows.
+ * office it stays a customer page: the cookie banner still shows. A shared
+ * design's page is the same kind of screen: a 3D stage with its own bar.
  */
-const WORKSPACE_ROUTES = [STUDIO_EDITOR_PATH];
+const WORKSPACE_ROUTES = [STUDIO_EDITOR_PATH, STUDIO_SHARE_PATH];
 
 export default function App() {
   const { t } = useTranslation();
   const { pathname } = useLocation();
-  const editorial = pathname === EDITORIAL_ROUTE;
   const adminArea = pathname === ADMIN_ROUTE_PREFIX || pathname.startsWith(`${ADMIN_ROUTE_PREFIX}/`);
   const bareChrome = adminArea || pathname === MAINTENANCE_ROUTE;
-  // The editor and its sections (`/studio-3d/atelier/mes-creations`…).
-  const workspace = WORKSPACE_ROUTES.some((r) => pathname === r || pathname.startsWith(`${r}/`));
+  // The editor and its sections (`/studio-3d/atelier/mes-creations`…), and
+  // the member space, which carries its own sidebar (see `MemberShell`).
+  const workspace = WORKSPACE_ROUTES.some((r) => pathname === r || pathname.startsWith(`${r}/`)) || isMemberSpacePath(pathname);
 
   return (
     // The product catalogue (Supabase, or the mock fixtures when it is not
@@ -218,7 +222,7 @@ export default function App() {
                       meet it before the page, though it sits at the bottom of
                       the screen. Not on the back office or maintenance chrome. */}
                   {!bareChrome && <CookieBanner />}
-                  {!bareChrome && !workspace && (editorial ? <HeaderEditorial /> : <Header />)}
+                  {!bareChrome && !workspace && <Header />}
                   <main id="main" tabIndex={-1}>
                     <Routes>
                       <Route path="/" element={<Home />} />
@@ -226,7 +230,6 @@ export default function App() {
                           current one so the team can compare the same content in
                           two art directions. Not linked from the navigation: it is
                           a design comparison, not a second entry point. */}
-                      <Route path={EDITORIAL_ROUTE} element={<AccueilEditorial />} />
                       <Route path="/boutique" element={<Shop />} />
                       <Route path="/boutique/:id" element={<ProductDetail />} />
                       {/* Top level, not /boutique/formes: a static child of /boutique
@@ -286,6 +289,22 @@ export default function App() {
                         }
                       />
                       <Route path={`${STUDIO_EDITOR_ALIAS}/*`} element={<StudioEditorAlias />} />
+                      {/* A design shared read-only. Open to everyone, outside
+                          `RequireStudioAccess`: looking at a design someone sent
+                          is not using the Studio. Full-screen like the editor. */}
+                      {[STUDIO_SHARE_PATH, `${STUDIO_SHARE_PATH}/:token`].map((path) => (
+                        <Route
+                          key={path}
+                          path={path}
+                          element={
+                            <Suspense fallback={<StudioEditorLoading />}>
+                              <StudioShare />
+                            </Suspense>
+                          }
+                        />
+                      ))}
+                      <Route path={STUDIO_SHARE_ALIAS} element={<StudioShareAlias />} />
+                      <Route path={`${STUDIO_SHARE_ALIAS}/:token`} element={<StudioShareAlias />} />
                       {/* The Academy landing page stays open — it is the sales page.
                           Only the course content itself requires an account, and gating
                           the route covers the menu links and direct URLs at once. */}
@@ -304,46 +323,45 @@ export default function App() {
                           </RequireAccount>
                         }
                       />
-                      {/* The member dashboard: a sidebar layout with one route per
-                          section. Gating the layout covers every child, for the same
-                          reason the lesson is gated — this is the account itself. */}
+                      {/* The member space: the dashboard and the Artist
+                          Community share one shell — a full-height sidebar
+                          with the member's sections and the way out to the
+                          shop, the Academy and the Studio — in place of the
+                          storefront header. Gating the shell covers every
+                          child: this is the account itself. */}
                       <Route
-                        path="/compte"
                         element={
                           <RequireAccount>
-                            <AccountLayout />
+                            <MemberShell />
                           </RequireAccount>
                         }
                       >
-                        <Route index element={<Dashboard />} />
-                        <Route path="attestations" element={<Certificates />} />
-                        <Route path="commandes" element={<Orders />} />
-                        <Route path="profil" element={<Profile />} />
-                        <Route path="securite" element={<Security />} />
-                        <Route path="fidelite" element={<AccountLoyalty />} />
-                        <Route path="avis" element={<AccountReviews />} />
-                      </Route>
-                      {/* The Artist Community. A sibling of `/compte` rather than
-                          one of its children: it is part of the member area, but
-                          it carries its own navigation, and nesting it would put
-                          two sidebars on the same screen. Gated by the same
-                          `RequireAccount`; whether the account may enter the
-                          community is then decided inside the layout, from the
-                          courses it owns. */}
-                      <Route
-                        path="/compte/communaute"
-                        element={
-                          <RequireAccount>
-                            <CommunityLayout />
-                          </RequireAccount>
-                        }
-                      >
-                        <Route index element={<CommunityHome />} />
-                        <Route path="canal/:channelId" element={<Channel />} />
-                        <Route path="discussion/:discussionId" element={<Discussion />} />
-                        <Route path="activite/:view" element={<Activity />} />
-                        <Route path="membres" element={<Members />} />
-                        <Route path="charte" element={<Guidelines />} />
+                        <Route path="/compte" element={<AccountLayout />}>
+                          <Route index element={<Dashboard />} />
+                          <Route path="attestations" element={<Certificates />} />
+                          <Route path="commandes" element={<Orders />} />
+                          <Route path="profil" element={<Profile />} />
+                          <Route path="securite" element={<Security />} />
+                          <Route path="fidelite" element={<AccountLoyalty />} />
+                          <Route path="avis" element={<AccountReviews />} />
+                          {/* An unknown address in the member space is a 404
+                              inside its shell: the storefront header is not
+                              there to lead back out. */}
+                          <Route path="*" element={<NotFound />} />
+                        </Route>
+                        {/* The Artist Community. A sibling of `/compte` rather
+                            than one of its children: it has its own layout and
+                            its channels. Whether the account may enter it is
+                            decided inside that layout, from the courses it owns. */}
+                        <Route path="/compte/communaute" element={<CommunityLayout />}>
+                          <Route index element={<CommunityHome />} />
+                          <Route path="canal/:channelId" element={<Channel />} />
+                          <Route path="discussion/:discussionId" element={<Discussion />} />
+                          <Route path="activite/:view" element={<Activity />} />
+                          <Route path="membres" element={<Members />} />
+                          <Route path="charte" element={<Guidelines />} />
+                          <Route path="*" element={<NotFound />} />
+                        </Route>
                       </Route>
 
                       {/* Administration. The access screen sits outside the guard —
@@ -456,7 +474,7 @@ export default function App() {
                       <Route path="*" element={<NotFound />} />
                     </Routes>
                   </main>
-                  {!bareChrome && !workspace && (editorial ? <FooterEditorial /> : <Footer />)}
+                  {!bareChrome && !workspace && <Footer />}
                   <CookieSettingsDialog />
                   <ReviewOverlays />
                 </ReviewsProvider>

@@ -31,6 +31,8 @@ import { ARCH_K, backOut, clamp, easeInOutCubic, pointInPolygon, seeded, ss01, u
 import { ARCH_FRAMES } from "./archLayout";
 import { anchorToothOf, groupToWorld, piecesToGroup, type Frame, type GemGroupData } from "../studioWorkspace/gemGroup";
 import type { SceneCamera, SceneModel } from "../studioWorkspace/scene";
+import { alignedColumn, alignedHeights, centeredOffsets, type CenterItem } from "./layout";
+import { mirroredRotation, opposingTooth } from "./mirror";
 import { notify } from "./notices";
 import type { DesignIssue, DesignStore, LightPreset, ModelMode } from "./store";
 
@@ -65,6 +67,12 @@ interface SurfaceHit {
 interface MoveResult {
   moved: number;
   skipped: number;
+}
+/** A selected piece carried along by a group drag: where it sat when the drag began. */
+interface DragFollower {
+  rig: JewelRig;
+  pose: GemPose;
+  start: SurfaceHit;
 }
 interface ToothRig {
   id: string;
@@ -139,6 +147,10 @@ interface SeatFrame {
 }
 /** Only outline points within this depth of the other piece's plane (in its local units) can overlap it. */
 const OVERLAP_DEPTH = 1.5;
+/** Aligning moves a piece straight up or down: its snapped spot may sit at most this far from there (world units, ~mm). */
+const ALIGN_MAX_DRIFT = 3;
+/** Aligning on screen may seat a piece this far past the edge of the facet it rests on (world units, ~mm). */
+const ALIGN_FACET_SLACK = 0.5;
 function poseOf(j: PlacedJewelry): GemPose {
   return { typeId: j.jewelryTypeId, scale: j.scale, offset: j.offset ?? 0, rotation: j.rotation };
 }
@@ -348,6 +360,14 @@ function toothIdFromObject(o: THREE.Object3D | null): string | null {
   return null;
 }
 
+export interface EngineOptions {
+  /**
+   * View a design without editing it (a shared link): orbit, zoom and
+   * double-click focus work, but no press selects, drags or places a piece.
+   */
+  readOnly?: boolean;
+}
+
 export class StudioEngine {
   private renderer: THREE.WebGLRenderer;
   private scene = new THREE.Scene();
@@ -369,6 +389,8 @@ export class StudioEngine {
   private raf = 0;
   private disposed = false;
   private store: DesignStore;
+  /** A shared design being viewed: the camera moves, the pieces never do (see `EngineOptions`). */
+  private readOnly: boolean;
   private unsubscribe: () => void;
   /** Frames left to draw before the loop idles (see `wake`). */
   private pendingFrames = SETTLE_FRAMES;
@@ -413,6 +435,10 @@ export class StudioEngine {
   private press: { jewelId?: string; toothId?: string; x: number; y: number; t: number } | null = null;
   private dragJewel: JewelRig | null = null;
   private dragLastHit: SurfaceHit | null = null;
+  // group drag: the lead's spot when the drag began, the other selected pieces and their last free spots
+  private dragStart: SurfaceHit | null = null;
+  private dragFollowers: DragFollower[] = [];
+  private dragFollowerSpots = new Map<string, SurfaceHit>();
   private hoverJewelId: string | null = null;
   private hoverToothId: string | null = null;
   private placing: { typeId: string; startX: number; startY: number; started: boolean } | null = null;
@@ -440,9 +466,10 @@ export class StudioEngine {
   private lasso: { pointerId: number; originX: number; originY: number; points: Point2[]; additive: boolean } | null = null;
   private lassoListener: LassoListener | null = null;
 
-  constructor(container: HTMLElement, store: DesignStore) {
+  constructor(container: HTMLElement, store: DesignStore, options: EngineOptions = {}) {
     this.container = container;
     this.store = store;
+    this.readOnly = options.readOnly ?? false;
     this.renderer = new THREE.WebGLRenderer({ antialias: true, alpha: true, powerPreference: "high-performance" });
     this.renderer.setPixelRatio(Math.min(window.devicePixelRatio, 2));
     this.renderer.setSize(container.clientWidth || 800, container.clientHeight || 600, false);
@@ -1170,8 +1197,7 @@ export class StudioEngine {
     this.cancelPlacing();
     this.cancelLasso();
     if (this.dragJewel) {
-      this.dragJewel = null;
-      this.dragLastHit = null;
+      this.endDrag();
       this.controls.enabled = true;
     }
     this.press = null;
@@ -1335,6 +1361,10 @@ export class StudioEngine {
   /** Walking from a free spot toward a blocked one, the last free spot before
       contact (bisection, re-snapped onto the enamel). Null = no free start. */
   private closestFreeAlong(from: SurfaceHit | null, to: SurfaceHit, pose: GemPose, blockers: Blocker[]): SurfaceHit | null {
+    return this.lastAcceptedAlong(from, to, (hit) => !this.hitBlocked(hit, pose, blockers));
+  }
+  /** Walking from an accepted spot toward a refused one, the last spot `accept` still takes (bisection, re-snapped). */
+  private lastAcceptedAlong(from: SurfaceHit | null, to: SurfaceHit, accept: (hit: SurfaceHit) => boolean): SurfaceHit | null {
     if (!from) return null;
     let free = from,
       lo = 0,
@@ -1344,7 +1374,7 @@ export class StudioEngine {
       const p = from.point.clone().lerp(to.point, mid);
       const n = from.normal.clone().lerp(to.normal, mid).normalize();
       const snapped = this.snapToSurface(p, n);
-      if (snapped && !this.hitBlocked(snapped, pose, blockers)) {
+      if (snapped && accept(snapped)) {
         free = snapped;
         lo = mid;
       } else hi = mid;
@@ -1388,23 +1418,22 @@ export class StudioEngine {
     return this.store.insertJewels(copies);
   }
   /**
-   * Duplicate each piece straight to its mirror image across the arch midline
-   * (x = 0; 11 ↔ 21…), turned like a reflection: the other half of a
-   * symmetric smile in one step. A copy whose mirrored spot is taken slides to
-   * the nearest free one; the originals stay put. The copies become the
-   * selection, in one undo step.
+   * Duplicate each piece straight to its mirror image, turned like a
+   * reflection (see `mirroredSpot`): 'h' gives the other half of a symmetric
+   * smile, 'v' the matching piece on the other arch. A copy whose mirrored spot
+   * is taken slides to the nearest free one; the originals stay put. The
+   * copies become the selection, in one undo step.
    */
-  duplicateMirrored(ids: string[]): number {
+  duplicateMirrored(ids: string[], axis: "h" | "v" = "h"): number {
     const srcs = this.store.jewels.filter((j) => ids.includes(j.id));
     if (!srcs.length) return 0;
     const blockers = this.blockersFor(new Set()); // every existing piece blocks the copies
     const copies: PlacedJewelry[] = [];
     for (const src of srcs) {
-      const mp = new THREE.Vector3(-src.position.x, src.position.y, src.position.z);
-      const mn = new THREE.Vector3(-src.normal.x, src.normal.y, src.normal.z).normalize();
-      const rotation = Math.round((360 - (src.rotation % 360)) % 360);
+      const rotation = mirroredRotation(src.rotation, axis);
       const pose = { ...poseOf(src), rotation };
-      const proposed: SurfaceHit = this.snapToSurface(mp, mn) ?? { toothId: src.toothId, point: mp, normal: mn };
+      const proposed = this.mirroredSpot(src, axis);
+      if (!proposed) continue; // no enamel at the mirrored spot
       const free = this.findFreeSpot(proposed, pose, blockers);
       if (!free) continue; // no room for this copy
       const copy: PlacedJewelry = {
@@ -1454,26 +1483,52 @@ export class StudioEngine {
 
   /* ---------- layout operations (collision-aware) ---------- */
 
-  /** Mirror the current selection. 'h' = across the arch midline (x = 0),
-       'v' = around the selection's vertical centre. One undo step. */
+  /**
+   * Where a piece lands mirrored, re-snapped onto the enamel. 'h' reflects
+   * across the arch midline (x = 0; 11 ↔ 21…). 'v' reflects across the bite
+   * onto the matching tooth of the other arch (11 ↔ 41, 21 ↔ 31…), at the same
+   * place relative to that crown: near the biting edge stays near the biting
+   * edge. On a model with one arch only, 'v' flips the piece on its own tooth
+   * instead (biting edge ↔ gum line). Null: no enamel there ('v' only; 'h'
+   * keeps its historical unsnapped fallback).
+   */
+  private mirroredSpot(j: PlacedJewelry, axis: "h" | "v"): SurfaceHit | null {
+    const p = new THREE.Vector3(j.position.x, j.position.y, j.position.z);
+    const n = new THREE.Vector3(j.normal.x, j.normal.y, j.normal.z).normalize();
+    if (axis === "h") {
+      const mp = new THREE.Vector3(-p.x, p.y, p.z);
+      const mn = new THREE.Vector3(-n.x, n.y, n.z);
+      return this.snapToSurface(mp, mn) ?? { toothId: j.toothId, point: mp, normal: mn };
+    }
+    const src = this.toothRigs.get(j.toothId) ?? this.nearestRig(p);
+    if (!src) return null;
+    const dst = this.toothRigs.get(opposingTooth(src.id)) ?? src;
+    // In each crown's own frame: along the arch, up, outward — scaled to the target crown.
+    const rel = p.clone().sub(src.center);
+    const along = rel.dot(src.tangent) * (dst.spec.wHalf / src.spec.wHalf);
+    const up = -rel.y * (dst.spec.hHalf / src.spec.hHalf);
+    const out = rel.dot(src.outward) * (dst.spec.dHalf / src.spec.dHalf);
+    const point = dst.center.clone().addScaledVector(dst.tangent, along).addScaledVector(_UP, up).addScaledVector(dst.outward, out);
+    const normal = new THREE.Vector3()
+      .addScaledVector(dst.tangent, n.dot(src.tangent))
+      .addScaledVector(_UP, -n.y)
+      .addScaledVector(dst.outward, n.dot(src.outward))
+      .normalize();
+    return this.snapToSurface(point, normal);
+  }
+  /** Mirror the current selection in place (see `mirroredSpot` for each axis). One undo step. */
   mirrorSelection(axis: "h" | "v"): MoveResult | null {
     const ids = [...this.store.getSnapshot().selectedJewelIds];
     const affected = this.store.jewels.filter((j) => ids.includes(j.id));
     if (!affected.length) return null;
-    const planeY = axis === "v" ? affected.reduce((s, j) => s + j.position.y, 0) / affected.length : 0;
     const blockers = this.blockersFor(new Set(ids));
     const updates: { id: string; patch: Partial<PlacedJewelry> }[] = [];
     let skipped = 0;
     for (const j of affected) {
-      const p = new THREE.Vector3(j.position.x, j.position.y, j.position.z);
-      const nrm = new THREE.Vector3(j.normal.x, j.normal.y, j.normal.z).normalize();
-      const mp = axis === "h" ? new THREE.Vector3(-p.x, p.y, p.z) : new THREE.Vector3(p.x, 2 * planeY - p.y, p.z);
-      const mn = axis === "h" ? new THREE.Vector3(-nrm.x, nrm.y, nrm.z) : new THREE.Vector3(nrm.x, -nrm.y, nrm.z);
-      const rotation = Math.round((360 - (j.rotation % 360)) % 360);
-      const snapped = this.snapToSurface(mp, mn);
-      const proposed: SurfaceHit = snapped ?? { toothId: j.toothId, point: mp, normal: mn };
+      const rotation = mirroredRotation(j.rotation, axis);
+      const proposed = this.mirroredSpot(j, axis);
       const pose = { ...poseOf(j), rotation };
-      const free = this.findFreeSpot(proposed, pose, blockers);
+      const free = proposed && this.findFreeSpot(proposed, pose, blockers);
       if (!free) {
         skipped++;
         continue;
@@ -1553,24 +1608,189 @@ export class StudioEngine {
     this.store.applyPatches(updates);
     return { moved: updates.length, skipped };
   }
-  /** Set every selected piece to the crown equator of its tooth, keeping its
-       across-position (u) on that tooth. */
-  alignSelectionAtEquator(): MoveResult | null {
+  /**
+   * Line the selected pieces up on one horizontal line, each arch on its own
+   * (see `alignedHeights`). Pieces only move up or down — never toward the
+   * middle of their tooth. A piece whose spot on that line is off the enamel
+   * or taken stays where it is, so the others never end up off the line.
+   */
+  alignSelectionHorizontally(): MoveResult | null {
     const ids = [...this.store.getSnapshot().selectedJewelIds];
     const gems = this.store.jewels.filter((j) => ids.includes(j.id));
+    if (gems.length < 2) return null;
+    const posOf = (j: PlacedJewelry) => new THREE.Vector3(j.position.x, j.position.y, j.position.z);
+    const rigOf = (j: PlacedJewelry) => this.toothRigs.get(j.toothId) ?? this.nearestRig(posOf(j));
+    const targets = alignedHeights(gems.map((j) => ({ id: j.id, y: j.position.y, lower: rigOf(j)?.lower ?? false })));
+    if (!targets.size) return null;
+
+    // Where each piece would land: straight up or down, snapped back onto the
+    // enamel by a horizontal ray so the hit stays exactly on the line. A hit
+    // far from the piece, or on the other arch (past the biting edge, the ray
+    // can reach the teeth behind), means that height is off this crown.
+    const planned = new Map<string, SurfaceHit>();
+    let skipped = 0;
+    for (const j of gems) {
+      const y = targets.get(j.id);
+      if (y === undefined || Math.abs(y - j.position.y) < 1e-4) continue;
+      const lower = rigOf(j)?.lower ?? false;
+      const dir = new THREE.Vector3(j.normal.x, 0, j.normal.z);
+      if (dir.lengthSq() < 1e-6) dir.copy(rigOf(j)?.outward ?? _Z).setY(0);
+      if (dir.lengthSq() < 1e-6) dir.copy(_Z);
+      const start = new THREE.Vector3(j.position.x, y, j.position.z);
+      const hit = this.snapToSurface(start, dir.normalize());
+      const onArch = hit && (this.toothRigs.get(hit.toothId)?.lower ?? false) === lower;
+      if (hit && onArch && hit.point.distanceTo(start) < ALIGN_MAX_DRIFT) planned.set(j.id, hit);
+      else skipped++;
+    }
+    return this.applyAlignedMoves(gems, planned, skipped);
+  }
+  /**
+   * Line the selected pieces up on one vertical line of the screen, exactly as
+   * the customer sees them now, midway between the leftmost and rightmost
+   * piece (see `alignedColumn`) — whatever tooth each one sits on, across
+   * both arches. Each piece only slides left or right on screen, keeping its
+   * on-screen height; the line is drawn through the pieces' visible centres,
+   * not their teeth. A piece whose spot on that line is off its arch's
+   * enamel (hidden behind the other arch), off screen or taken stays put.
+   */
+  alignSelectionVertically(): MoveResult | null {
+    const ids = [...this.store.getSnapshot().selectedJewelIds];
+    const gems = this.store.jewels.filter((j) => ids.includes(j.id));
+    if (gems.length < 2) return null;
+    this.camera.updateMatrixWorld();
+    const onScreen = new Map(
+      gems.map((j) => {
+        const p = new THREE.Vector3(j.position.x, j.position.y, j.position.z);
+        const n = new THREE.Vector3(j.normal.x, j.normal.y, j.normal.z);
+        return [j.id, this.screenCentre(p, n, poseOf(j))] as const;
+      }),
+    );
+    const targets = alignedColumn(gems.map((j) => ({ id: j.id, x: onScreen.get(j.id)!.x })));
+    if (!targets.size) return null;
+    const archOf = (toothId: string, p: THREE.Vector3) => (this.toothRigs.get(toothId) ?? this.nearestRig(p))?.lower ?? false;
+
+    const planned = new Map<string, SurfaceHit>();
+    let skipped = 0;
+    for (const j of gems) {
+      const x = targets.get(j.id)!;
+      const at = onScreen.get(j.id)!;
+      if (Math.abs(x - at.x) < 1e-5) continue;
+      if (Math.abs(at.z) > 1) {
+        skipped++;
+        continue;
+      }
+      const lower = archOf(j.toothId, new THREE.Vector3(j.position.x, j.position.y, j.position.z));
+      const hit = this.surfaceSeenAt(x, at.y, poseOf(j));
+      if (hit && archOf(hit.toothId, hit.point) === lower) planned.set(j.id, hit);
+      else skipped++;
+    }
+    return this.applyAlignedMoves(gems, planned, skipped);
+  }
+  /** A piece's visible centre on screen, in normalized device coordinates (x, y in −1..1; |z| > 1 is off screen). */
+  private screenCentre(point: THREE.Vector3, normal: THREE.Vector3, pose: GemPose): THREE.Vector3 {
+    return this.gemCenterRaw(point, normal, pose.typeId, pose.scale, pose.offset).project(this.camera);
+  }
+  /**
+   * The spot on the enamel where a piece shows its centre exactly at (x, y) on
+   * screen (normalized device coordinates). The piece stands out from the
+   * enamel along its normal, so the camera ray is first nudged until the
+   * piece's centre, not its footing, lands near the point. That finds the
+   * facet the piece rests on, but pieces follow each facet's own normal, so
+   * their centre jumps a little from one facet to the next and nudging alone
+   * can hover a pixel off. The last step is exact: the centre is where the
+   * camera ray meets that facet's plane lifted by the piece's standoff, and
+   * the piece stays flush on the facet's plane.
+   */
+  private surfaceSeenAt(x: number, y: number, pose: GemPose): SurfaceHit | null {
+    const ndc = new THREE.Vector2(x, y);
+    let hit: SurfaceHit | null = null;
+    for (let i = 0; i < 4; i++) {
+      this.raycaster.setFromCamera(ndc, this.camera);
+      const hits = this.raycaster.intersectObjects(this.toothMeshes, true);
+      if (!hits.length) return null;
+      const toothId = this.toothOfHit(hits[0]);
+      if (!toothId) return null;
+      hit = { toothId, point: hits[0].point.clone(), normal: geometricWorldNormal(hits[0], this.raycaster.ray.direction).clone() };
+      const seen = this.screenCentre(hit.point, hit.normal, pose);
+      const dx = x - seen.x;
+      const dy = y - seen.y;
+      if (Math.abs(dx) < 1e-6 && Math.abs(dy) < 1e-6) return hit;
+      ndc.x += dx;
+      ndc.y += dy;
+    }
+    if (!hit) return null;
+    const standoff = this.gemCenterRaw(hit.point, hit.normal, pose.typeId, pose.scale, pose.offset).distanceTo(hit.point);
+    const lifted = new THREE.Plane().setFromNormalAndCoplanarPoint(hit.normal, hit.point.clone().addScaledVector(hit.normal, standoff));
+    this.raycaster.setFromCamera(new THREE.Vector2(x, y), this.camera);
+    const centre = this.raycaster.ray.intersectPlane(lifted, new THREE.Vector3());
+    // Past the facet by more than a hair means a grazing view: keep the nudged spot.
+    if (centre && centre.distanceTo(hit.point) < standoff + ALIGN_FACET_SLACK) hit.point = centre.addScaledVector(hit.normal, -standoff);
+    return hit;
+  }
+  /**
+   * Commit the moves an alignment planned, in one undo step. Pieces that stay
+   * put block the ones that move; any move that would overlap is dropped
+   * (and counted as skipped) until every accepted move is clear.
+   */
+  private applyAlignedMoves(gems: PlacedJewelry[], planned: Map<string, SurfaceHit>, skipped: number): MoveResult {
+    const outside = this.blockersFor(new Set(gems.map((j) => j.id)));
+    for (let changed = true; changed; ) {
+      changed = false;
+      const blockers = [...outside, ...gems.filter((j) => !planned.has(j.id)).map((j) => this.jewelBlocker(j))];
+      for (const j of gems) {
+        const hit = planned.get(j.id);
+        if (!hit) continue;
+        if (this.hitBlocked(hit, poseOf(j), blockers)) {
+          planned.delete(j.id);
+          skipped++;
+          changed = true;
+          break;
+        }
+        blockers.push(this.blockerAt(hit.point, hit.normal, poseOf(j)));
+      }
+    }
+    if (!planned.size) return { moved: 0, skipped };
+    this.store.pushHistory();
+    this.store.applyPatches(
+      [...planned].map(([id, hit]) => ({
+        id,
+        patch: {
+          toothId: hit.toothId,
+          position: v3(hit.point.x, hit.point.y, hit.point.z),
+          normal: v3(hit.normal.x, hit.normal.y, hit.normal.z),
+        },
+      })),
+    );
+    return { moved: planned.size, skipped };
+  }
+  /**
+   * Bring every selected piece to the middle of its tooth: half-way up the
+   * crown and in the middle across it. Pieces sharing a tooth are centred as
+   * a cluster and keep their spacing (see `centeredOffsets`).
+   */
+  centerSelectionOnTeeth(ids: string[]): MoveResult | null {
+    const gems = this.store.jewels.filter((j) => ids.includes(j.id));
     if (!gems.length) return null;
+    const rigs = new Map<string, ToothRig>();
+    const offsets: CenterItem[] = [];
+    for (const j of gems) {
+      const p = new THREE.Vector3(j.position.x, j.position.y, j.position.z);
+      const rig = this.toothRigs.get(j.toothId) ?? this.nearestRig(p);
+      if (!rig) continue;
+      rigs.set(j.id, rig);
+      offsets.push({ id: j.id, toothId: rig.id, offset: p.sub(rig.center).dot(rig.tangent) });
+    }
+    const centred = centeredOffsets(offsets);
     const blockers = this.blockersFor(new Set(ids));
     const updates: { id: string; patch: Partial<PlacedJewelry> }[] = [];
     let skipped = 0;
     for (const j of gems) {
-      const p = new THREE.Vector3(j.position.x, j.position.y, j.position.z);
-      const rig = this.toothRigs.get(j.toothId) ?? this.nearestRig(p);
+      const rig = rigs.get(j.id);
       if (!rig) {
         skipped++;
         continue;
       }
-      const tOff = p.clone().sub(rig.center).dot(rig.tangent);
-      const u = clamp(tOff / (rig.spec.wHalf * 0.6), -1, 1);
+      const u = clamp((centred.get(j.id) ?? 0) / (rig.spec.wHalf * 0.6), -1, 1);
       const anchor = this.getSurfacePoint(rig.id, u, 0);
       const free = this.findFreeSpot(anchor, poseOf(j), blockers);
       if (!free) {
@@ -1745,7 +1965,7 @@ export class StudioEngine {
         rig.matKey = mk;
       }
       rig.sizeScale = j.scale;
-      if (this.dragJewel !== rig) this.applyPose(rig.group, j, rig.halfDepth);
+      if (!this.isDragged(rig)) this.applyPose(rig.group, j, rig.halfDepth);
     }
     for (const [id, rig] of Array.from(this.jewelRigs)) {
       if (!seen.has(id)) {
@@ -1782,6 +2002,8 @@ export class StudioEngine {
       this.controls.enabled = true;
       this.controls.update();
     }
+    // Viewing only: every press belongs to the camera.
+    if (this.readOnly) return;
     if (e.button === 0 && this.store.getSnapshot().lasso) {
       // Before the piece test: a loop may well start on a piece, and must not drag it.
       e.stopPropagation();
@@ -1853,18 +2075,8 @@ export class StudioEngine {
       const rig = this.jewelRigs.get(this.press.jewelId!);
       if (rig) {
         this.store.pushHistory();
-        this.dragJewel = rig;
-        // the piece's current spot is the first collision-free pose to slide from
-        const j = this.store.jewels.find((x) => x.id === rig.id);
-        this.dragLastHit = j
-          ? {
-              toothId: j.toothId,
-              point: new THREE.Vector3(j.position.x, j.position.y, j.position.z),
-              normal: new THREE.Vector3(j.normal.x, j.normal.y, j.normal.z).normalize(),
-            }
-          : null;
+        this.beginDrag(rig);
         this.mode = "drag-jewel";
-        this.store.selectJewel(rig.id); // dragging always operates on a single piece
       } else this.mode = "idle";
     }
     if (this.mode === "drag-jewel") {
@@ -1875,7 +2087,8 @@ export class StudioEngine {
         this.setHoverTooth(hit.toothId);
         const drag = this.dragJewel;
         const j = drag ? this.store.jewels.find((x) => x.id === drag.id) : undefined;
-        if (drag && j) {
+        if (drag && j && this.dragFollowers.length) blocked = this.dragGroupTo(drag, j, hit);
+        else if (drag && j) {
           // the piece can never enter another piece — over an occupied spot it
           // slides up to the contact point, then holds there
           const pose = poseOf(j);
@@ -1918,15 +2131,18 @@ export class StudioEngine {
       !!this.press && Math.hypot(e.clientX - this.press.x, e.clientY - this.press.y) < 6 && performance.now() - this.press.t < 450;
     if (this.mode === "drag-jewel" && this.dragJewel) {
       if (this.dragLastHit) {
-        const hit = this.dragLastHit; // last collision-free pose
-        this.store.updateJewel(this.dragJewel.id, {
+        // last collision-free pose, for the piece in hand and every piece carried with it
+        const spot = (hit: SurfaceHit): Partial<PlacedJewelry> => ({
           toothId: hit.toothId,
           position: v3(hit.point.x, hit.point.y, hit.point.z),
           normal: v3(hit.normal.x, hit.normal.y, hit.normal.z),
         });
+        this.store.applyPatches([
+          { id: this.dragJewel.id, patch: spot(this.dragLastHit) },
+          ...Array.from(this.dragFollowerSpots, ([id, hit]) => ({ id, patch: spot(hit) })),
+        ]);
       }
-      this.dragJewel = null;
-      this.dragLastHit = null;
+      this.endDrag();
     } else if (this.mode === "jewel-press" && quick && this.press?.jewelId) {
       // Shift/Ctrl-click toggles the piece into/out of the multi-selection
       this.store.selectJewel(this.press.jewelId, { toggle: e.shiftKey || e.ctrlKey || e.metaKey });
@@ -1945,10 +2161,88 @@ export class StudioEngine {
     this.updateHover(e);
   };
 
+  /**
+   * Take a piece in hand. When it belongs to a multi-selection, the whole
+   * selection comes along (see `dragGroupTo`) and stays selected; otherwise
+   * the piece is dragged alone and becomes the selection.
+   */
+  private beginDrag(rig: JewelRig) {
+    const spotOf = (j: PlacedJewelry): SurfaceHit => ({
+      toothId: j.toothId,
+      point: new THREE.Vector3(j.position.x, j.position.y, j.position.z),
+      normal: new THREE.Vector3(j.normal.x, j.normal.y, j.normal.z).normalize(),
+    });
+    const j = this.store.jewels.find((x) => x.id === rig.id);
+    this.dragJewel = rig;
+    // the piece's current spot is the first collision-free pose to slide from
+    this.dragLastHit = j ? spotOf(j) : null;
+    this.dragStart = this.dragLastHit;
+    const sel = this.store.getSnapshot().selectedJewelIds;
+    if (!j || sel.length < 2 || !sel.includes(rig.id)) {
+      this.store.selectJewel(rig.id);
+      return;
+    }
+    for (const f of this.store.jewels) {
+      const followerRig = this.jewelRigs.get(f.id);
+      if (f.id === rig.id || !followerRig || !sel.includes(f.id)) continue;
+      const start = spotOf(f);
+      this.dragFollowers.push({ rig: followerRig, pose: poseOf(f), start });
+      this.dragFollowerSpots.set(f.id, start);
+    }
+  }
+  /**
+   * Move a group drag toward the spot under the pointer: the piece in hand
+   * goes there and the others shift by the same amount, each set back onto
+   * the enamel, so the arrangement keeps its shape. The group never enters a
+   * piece outside it nor leaves the teeth: it slides up to the last spot
+   * where all of it fits, then holds. Returns whether it was held back.
+   */
+  private dragGroupTo(lead: JewelRig, j: PlacedJewelry, hit: SurfaceHit): boolean {
+    const start = this.dragStart;
+    if (!start) return true;
+    const leadPose = poseOf(j);
+    const blockers = this.blockersFor(new Set([lead.id, ...this.dragFollowers.map((f) => f.rig.id)]));
+    const found = { spots: null as Map<string, SurfaceHit> | null };
+    // Every piece must rest on the enamel (not in a gap between teeth) and stay clear of the pieces left behind.
+    const fits = (at: SurfaceHit) => {
+      if (!this.seatedAt(at.point, at.normal) || this.hitBlocked(at, leadPose, blockers)) return false;
+      const delta = at.point.clone().sub(start.point);
+      const spots = new Map<string, SurfaceHit>();
+      for (const f of this.dragFollowers) {
+        const spot = this.snapToSurface(f.start.point.clone().add(delta), f.start.normal);
+        if (!spot || !this.seatedAt(spot.point, spot.normal) || this.hitBlocked(spot, f.pose, blockers)) return false;
+        spots.set(f.rig.id, spot);
+      }
+      found.spots = spots;
+      return true;
+    };
+    const blocked = !fits(hit);
+    const reached = blocked ? this.lastAcceptedAlong(this.dragLastHit, hit, fits) : hit;
+    if (!reached) return blocked;
+    this.dragLastHit = reached;
+    if (found.spots) this.dragFollowerSpots = found.spots;
+    this.poseObject(lead.group, reached.point, reached.normal, j.rotation, lead.halfDepth, j.scale, j.offset ?? 0);
+    for (const f of this.dragFollowers) {
+      const spot = this.dragFollowerSpots.get(f.rig.id);
+      if (spot) this.poseObject(f.rig.group, spot.point, spot.normal, f.pose.rotation, f.rig.halfDepth, f.pose.scale, f.pose.offset);
+    }
+    return blocked;
+  }
+  private endDrag() {
+    this.dragJewel = null;
+    this.dragLastHit = null;
+    this.dragStart = null;
+    this.dragFollowers = [];
+    this.dragFollowerSpots = new Map();
+  }
+  private isDragged(rig: JewelRig): boolean {
+    return this.dragJewel === rig || this.dragFollowers.some((f) => f.rig === rig);
+  }
+
   /** Right-click on a piece → context menu. Empty right-clicks fall through
       to OrbitControls (pan) as before. */
   private onContextMenu = (e: MouseEvent) => {
-    if (e.target !== this.renderer.domElement) return;
+    if (this.readOnly || e.target !== this.renderer.domElement) return;
     if (this.placing) {
       this.cancelPlacing();
       e.preventDefault();
@@ -1970,6 +2264,8 @@ export class StudioEngine {
   };
 
   private updateHover(e: PointerEvent) {
+    // Nothing on a viewed design can be picked up: no hover swell, no grab cursor.
+    if (this.readOnly) return;
     const before = this.hoverJewelId;
     this.updateHoverTargets(e);
     // A piece's hover glow is drawn by the engine alone (no store change), so it wakes the loop itself.
@@ -2271,8 +2567,20 @@ export class StudioEngine {
     this.renderer.render(this.scene, this.camera);
     return url;
   }
-  /** PNG of the current view, watermarked with the Global Toothgems wordmark. */
+  /** Download a PNG of the current view, watermarked with the Global Toothgems wordmark. */
   async exportPNG(transparent: boolean) {
+    const c = await this.renderWatermarked(transparent);
+    downloadURL(c.toDataURL("image/png"), exportFileName("png"));
+  }
+  /** The same watermarked PNG as the export, as a file ready for the system share sheet. */
+  async shareableImage(): Promise<File> {
+    const c = await this.renderWatermarked(false);
+    const blob = await new Promise<Blob>((resolve, reject) =>
+      c.toBlob((b) => (b ? resolve(b) : reject(new Error("image encode failed"))), "image/png"),
+    );
+    return new File([blob], exportFileName("png"), { type: "image/png" });
+  }
+  private async renderWatermarked(transparent: boolean): Promise<HTMLCanvasElement> {
     const url = this.captureView({ transparent });
     const [render, logo] = await Promise.all([decodeImage(url), loadWatermark()]);
     const c = document.createElement("canvas");
@@ -2294,7 +2602,7 @@ export class StudioEngine {
       ctx.drawImage(logo, c.width - w - m, c.height - h - m, w, h);
       ctx.globalAlpha = 1;
     }
-    downloadURL(c.toDataURL("image/png"), exportFileName("png"));
+    return c;
   }
   exportJSON() {
     const data = {
@@ -2548,9 +2856,13 @@ export class StudioEngine {
 
   /** Does the piece rest on the enamel of a tooth — not on gum or socle, not floating off the surface? */
   private isSeated(j: PlacedJewelry): boolean {
-    const n = new THREE.Vector3(j.normal.x, j.normal.y, j.normal.z).normalize();
+    return this.seatedAt(new THREE.Vector3(j.position.x, j.position.y, j.position.z), new THREE.Vector3(j.normal.x, j.normal.y, j.normal.z));
+  }
+  /** `isSeated` for a spot: the enamel lies right under it, along its normal. */
+  private seatedAt(point: THREE.Vector3, normal: THREE.Vector3): boolean {
+    const n = normal.clone().normalize();
     const from = SEAT_TOLERANCE * 2;
-    this.raycaster.set(new THREE.Vector3(j.position.x, j.position.y, j.position.z).addScaledVector(n, from), n.negate());
+    this.raycaster.set(point.clone().addScaledVector(n, from), n.negate());
     this.raycaster.far = from * 2;
     const hits = this.raycaster.intersectObjects(this.toothMeshes, true);
     this.raycaster.far = Infinity;

@@ -17,7 +17,7 @@ const PRODUCT_SELECT = `
   product_variants ( id, name, attributes, price, compare_at_price, is_active, position,
     product_variant_translations ( locale, name, status ),
     inventory_items ( stock_status ) ),
-  product_media ( id, storage_path, media_type, alt_text, position, is_primary,
+  product_media ( id, storage_path, media_type, alt_text, position, is_primary, variant_id,
     product_media_translations ( locale, alt_text, status ) ),
   inventory_items ( stock_status )
 `;

@@ -18,6 +18,7 @@ export function EditorPopover({
   children,
   width = 300,
   align = "end",
+  side = "bottom",
 }: {
   label: string;
   open: boolean;
@@ -34,6 +35,8 @@ export function EditorPopover({
   width?: number;
   /** Which edge of the trigger the panel lines up with. */
   align?: "start" | "end";
+  /** Opens below the trigger, or above it when there is no room below. */
+  side?: "bottom" | "top";
 }) {
   const wrap = useRef<HTMLDivElement>(null);
   const triggerRef = useRef<HTMLButtonElement | null>(null);
@@ -80,7 +83,8 @@ export function EditorPopover({
           style={{ width: `min(${width}px, calc(100vw - 24px))` }}
           className={clsx(
             align === "end" ? "right-0" : "left-0",
-            "absolute top-[calc(100%+8px)] z-50 grid max-h-[min(70vh,560px)] origin-top overflow-y-auto rounded-[var(--radius-md)] border border-[var(--border-subtle)] bg-[var(--surface-card)] p-1.5 shadow-[var(--shadow-md)]",
+            side === "top" ? "bottom-[calc(100%+8px)] origin-bottom" : "top-[calc(100%+8px)] origin-top",
+            "absolute z-50 grid max-h-[min(70vh,560px)] overflow-y-auto rounded-[var(--radius-md)] border border-[var(--border-subtle)] bg-[var(--surface-card)] p-1.5 shadow-[var(--shadow-md)]",
             "motion-safe:animate-[gt-menu-in_var(--duration-fast)_var(--ease-out-soft)_both]",
           )}
         >

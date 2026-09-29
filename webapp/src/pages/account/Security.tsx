@@ -37,7 +37,7 @@ export function Security() {
   const [outcome, setOutcome] = useState<ServiceOutcome>("success");
 
   return (
-    <div className="grid max-w-[880px] gap-6">
+    <div className="grid gap-6">
       <SectionHeader
         icon={ShieldCheck}
         eyebrow={t("account.profileEyebrow")}

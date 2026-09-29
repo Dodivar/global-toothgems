@@ -71,12 +71,10 @@ export interface GemOptionVariant {
  */
 export interface VariantStock {
   /**
-   * `comboKey()` of a pack/SS option — what the edit form's grid is keyed
-   * by, so a link can open the form on that option — or the variant id.
+   * What the edit form keys the option by, so a link can open the form on it:
+   * `comboKey()` of a pack/SS option, the variant id of any other variant.
    */
   key: string;
-  /** True for a pack/SS option, the only kind the edit form can change. */
-  gemOption: boolean;
   name: Localized;
   sku?: string;
   /** EUR; undefined = the product price applies. */
@@ -97,6 +95,28 @@ export interface GemOptions {
   variants: GemOptionVariant[];
 }
 
+/**
+ * A variant of any other kind than a gem's pack/SS option: a colour, a box of
+ * 50 or 100, a size in mm… Named by the administrator, one row each, with its
+ * own price, stock and photos (migration `…_product_custom_variants`).
+ */
+export interface CustomVariant {
+  /** Database id; generated in the browser for a new variant, like a product's. */
+  id: string;
+  name: Localized;
+  /** Colour dot shown to the customer, lowercase `#rrggbb`. */
+  swatch?: string;
+  /** EUR; undefined = the product price applies. */
+  price?: number;
+  trackInventory: boolean;
+  /** Units on the shelf. */
+  stock: number;
+  /** Units held by unpaid orders; the shop sells `stock - reserved`. */
+  reserved?: number;
+  lowStockThreshold: number;
+  availability: Availability;
+}
+
 export interface ProductImage {
   id: string;
   /** Resolved asset URL, ready for an `<img>`. */
@@ -107,6 +127,8 @@ export interface ProductImage {
    */
   storagePath?: string;
   alt: Localized;
+  /** Id of the variant this photo shows (`customVariants`); none = the whole product. */
+  variantId?: string;
 }
 
 export interface AdminProduct {
@@ -145,11 +167,15 @@ export interface AdminProduct {
   /**
    * Pack × stone-size options. Undefined when the product has none and the
    * editor was never switched on, or when its variants are another kind
-   * (colours, boxes…) that this form does not edit.
+   * (colours, boxes…), which `customVariants` holds.
    */
   gemOptions?: GemOptions;
-  /** Has variants (active or not) that are not pack/SS options: the form leaves them alone. */
-  otherVariants?: boolean;
+  /**
+   * Every other kind of variant, in display order: the complete list the
+   * product sells. Undefined when the product has none and none was added,
+   * or when it sells pack/SS options — saving then leaves variants alone.
+   */
+  customVariants?: CustomVariant[];
   material: Localized;
   /** Gem cut and colour family, feeding the storefront's shape and colour filters. Gems only. */
   shape?: GemShape;
@@ -731,7 +757,7 @@ const PRODUCT_FIXTURES: AdminProduct[] = [
  * derived here, as the store does on every save, so every reader of this
  * list (analytics included) sees the same per-option stock.
  */
-export const ADMIN_PRODUCTS: AdminProduct[] = PRODUCT_FIXTURES.map(withGemStock);
+export const ADMIN_PRODUCTS: AdminProduct[] = PRODUCT_FIXTURES.map(withVariantStock);
 
 /**
  * What the badge shows when one label has to carry the whole story. Order
@@ -998,7 +1024,6 @@ export function offeredGemVariants(options: GemOptions | undefined): GemOptionVa
 export function gemVariantStock(options: GemOptions | undefined): VariantStock[] {
   return offeredGemVariants(options).map((variant) => ({
     key: comboKey(variant),
-    gemOption: true,
     name: comboName(variant),
     price: variant.price,
     trackInventory: variant.trackInventory,
@@ -1008,14 +1033,34 @@ export function gemVariantStock(options: GemOptions | undefined): VariantStock[]
   }));
 }
 
+/** A variant just added in the form: unnamed, product price, tracked, empty shelf. */
+export function blankCustomVariant(id: string): CustomVariant {
+  return { id, name: { fr: "", en: "" }, trackInventory: true, stock: 0, lowStockThreshold: 5, availability: "in_stock" };
+}
+
+/** The stock rows a product's other variants put under it in the list. */
+export function customVariantStock(variants: CustomVariant[] | undefined): VariantStock[] {
+  return (variants ?? []).map((variant) => ({
+    key: variant.id,
+    name: variant.name,
+    price: variant.price,
+    trackInventory: variant.trackInventory,
+    stock: variant.stock,
+    reserved: variant.reserved,
+    lowStockThreshold: variant.lowStockThreshold,
+    availability: variant.availability,
+  }));
+}
+
 /**
  * What the prototype store does in place of the database: a product with
- * pack/SS options reads as the total of its options' stock, like
- * `rowToProduct()` does for real variants, and carries each option's stock.
+ * variants (pack/SS options or any other kind) reads as the total of their
+ * stock, like `rowToProduct()` does for real variants, and carries each
+ * variant's stock.
  */
-export function withGemStock(product: AdminProduct): AdminProduct {
-  if (!product.gemOptions) return product;
-  const variantStock = gemVariantStock(product.gemOptions);
+export function withVariantStock(product: AdminProduct): AdminProduct {
+  if (!product.gemOptions && !product.customVariants) return product;
+  const variantStock = product.gemOptions ? gemVariantStock(product.gemOptions) : customVariantStock(product.customVariants);
   if (variantStock.length === 0) return { ...product, variantCount: 0, variantStock: undefined };
   return {
     ...product,
