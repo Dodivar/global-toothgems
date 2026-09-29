@@ -13,10 +13,6 @@ export interface CategoryTile {
  *
  * `to` carries the shop filter each tile stands for. These used to navigate to a
  * bare /boutique, so picking a category did nothing.
- *
- * Shared rather than declared per page: the two home-page directions at `/` and
- * `/accueil-b` are meant to be compared, which only holds if they offer exactly
- * the same categories behind exactly the same filters.
  */
 export const CATEGORY_TILES: CategoryTile[] = [
   { key: "swarovski", image: photo("img-02.jpg"), label: "Swarovski®", to: "/boutique?categorie=Gems&matiere=Swarovski" },

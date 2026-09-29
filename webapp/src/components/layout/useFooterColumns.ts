@@ -5,8 +5,7 @@ import { useCookieConsent } from "../../lib/cookieConsent";
 import { contactHref, LEGAL_PATHS } from "../../data/legal/routes";
 
 /**
- * The footer's link columns, shared by `Footer` and `FooterEditorial` so the
- * two art directions can never disagree on where a link goes.
+ * The footer's link columns, used by `Footer`.
  *
  * An item either navigates (`to`) or acts (`action`): "Cookie settings" opens
  * the preferences dialog rather than a page, and the one entry this

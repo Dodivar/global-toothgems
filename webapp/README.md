@@ -72,9 +72,8 @@ single `index.html` plus assets. A static host knows nothing about the routes in
 `App.tsx`, so a request that lands directly on one — a pasted link, a refresh, a
 bookmark — asks for a file that was never built and gets a 404. Following a link
 inside the app works either way, which is why the breakage only shows up on
-direct URLs, and why the newest routes (such as `/accueil-b`) surface it
-first: they are not linked from the navigation, so a direct URL is the only way
-in.
+direct URLs, and why routes not linked from the navigation surface it
+first: a direct URL is the only way in.
 
 `vercel.json` fixes that by rewriting every unmatched path to `/index.html` and
 letting the router read the URL. Rewrites run after the filesystem check, so real
