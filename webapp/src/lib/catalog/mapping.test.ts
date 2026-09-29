@@ -1,5 +1,5 @@
 import { describe, expect, it } from "vitest";
-import { aggregateStock, localize, mapGemColor, mapProduct, type ProductRow, type VariantRow } from "./mapping";
+import { aggregateStock, localize, mapGemColor, mapProduct, mapTaxonomy, type ProductRow, type VariantRow } from "./mapping";
 import { MULTICOLOR_SWATCH, colorSwatchFill, colorsInCatalog, type GemColorDef } from "../../data/products";
 
 const url = (path: string) => `https://cdn.test/${path}`;
@@ -100,7 +100,8 @@ describe("mapProduct", () => {
     expect(p.description).toEqual({ fr: "Étoile cinq branches.", en: "Five-point star." });
     expect(p.price).toBe(32);
     expect(p.compareAtPrice).toBe(38);
-    expect(p.cat).toBe("Gems");
+    expect(p.cat).toBe("gems");
+    expect(p.family).toBeNull();
     expect(p.shape).toBe("star");
     expect(p.color).toBe("crystal");
     expect(p.material).toBe("Cristal taillé");
@@ -127,7 +128,7 @@ describe("mapProduct", () => {
     expect(p.reviewCount).toBe(0);
   });
 
-  it("ignores unknown taxonomy values and unknown categories", () => {
+  it("ignores unknown shapes and colours, and keeps any category slug", () => {
     const p = mapProduct(
       row({ metadata: { shape: "hexagon", color: 3 }, category: { slug: "nouveautes", name: "Nouveautés", category_translations: [] } }),
       undefined,
@@ -135,10 +136,17 @@ describe("mapProduct", () => {
     );
     expect(p.shape).toBeUndefined();
     expect(p.color).toBeUndefined();
-    expect(p.cat).toBeNull();
+    // The taxonomy is data: the shop decides what a slug means, not the mapping.
+    expect(p.cat).toBe("nouveautes");
     expect(p.subtitle).toEqual({ fr: "Nouveautés", en: "Nouveautés" });
   });
 
+  it("reads the family, and no category as none", () => {
+    expect(mapProduct(row({ family: { slug: "swarovski" } }), undefined, url).family).toBe("swarovski");
+    const loose = mapProduct(row({ category: null, family: undefined }), undefined, url);
+    expect(loose.cat).toBeNull();
+    expect(loose.family).toBeNull();
+  });
   it("maps active variants with inherited or overridden prices and derives stock from them", () => {
     const p = mapProduct(
       row({
@@ -166,6 +174,40 @@ describe("mapProduct", () => {
   it("drops a compare-at price that is not above the price", () => {
     const p = mapProduct(row({ compare_at_price: 32 }), undefined, url);
     expect(p.compareAtPrice).toBeUndefined();
+  });
+});
+
+describe("mapTaxonomy", () => {
+  const family = (slug: string, position: number, isActive = true) => ({
+    slug,
+    name: slug,
+    image_path: null,
+    position,
+    is_active: isActive,
+    category_family_translations: [],
+  });
+
+  it("orders categories and families, drops hidden families and translates names", () => {
+    const taxonomy = mapTaxonomy(
+      [
+        { slug: "kits", name: "Kits", position: 3, category_translations: [], category_families: [] },
+        {
+          slug: "materiel",
+          name: "Matériel",
+          position: 2,
+          category_translations: [{ locale: "en", status: "published", name: "Equipment" }],
+          category_families: [family("accessoires", 1), family("essentiels", 0), family("old", 2, false)],
+        },
+      ],
+      url,
+    );
+    expect(taxonomy.map((c) => c.slug)).toEqual(["materiel", "kits"]);
+    expect(taxonomy[0].name).toEqual({ fr: "Matériel", en: "Equipment" });
+    expect(taxonomy[0].families.map((f) => f.slug)).toEqual(["essentiels", "accessoires"]);
+  });
+
+  it("reads a category without its families from an older database", () => {
+    expect(mapTaxonomy([{ slug: "gems", name: "Toothgems", position: 1, category_translations: [] }], url)[0].families).toEqual([]);
   });
 });
 

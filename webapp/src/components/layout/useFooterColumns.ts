@@ -3,6 +3,7 @@ import { courseHref } from "../../lib/academyUrl";
 import { useToast } from "../../lib/toast";
 import { useCookieConsent } from "../../lib/cookieConsent";
 import { contactHref, LEGAL_PATHS } from "../../data/legal/routes";
+import { shopHref } from "../../data/taxonomy";
 
 /**
  * The footer's link columns, used by `Footer`.
@@ -28,10 +29,10 @@ export interface FooterColumn {
    routes stay correct in both languages. `null` marks an item this prototype
    does not have a screen for. */
 const SHOP_TARGETS: (string | null)[] = [
-  "/boutique?categorie=Gems",
-  "/boutique?categorie=Outils",
-  "/boutique?categorie=Kits",
-  "/boutique?categorie=Suivi",
+  shopHref("gems"),
+  shopHref("materiel"),
+  shopHref("kits"),
+  shopHref("lip-gloss"),
   "/carte-cadeau",
   "/fidelite",
 ];

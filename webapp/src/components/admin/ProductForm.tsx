@@ -20,6 +20,7 @@ import {
   offeredGemVariants,
   type AdminProduct,
   type Availability,
+  type Category,
   type CategoryId,
   type ProductStatus,
   type ProductType,
@@ -57,7 +58,7 @@ interface ProductFormProps {
 }
 
 type FieldKey =
-  | "name" | "sku" | "price" | "compareAtPrice" | "promoPrice" | "stock" | "lowStockThreshold" | "category" | "options"
+  | "name" | "sku" | "price" | "compareAtPrice" | "promoPrice" | "stock" | "lowStockThreshold" | "category" | "family" | "options"
   | "variants";
 
 /** Same rule as the `products.sku` column: upper-case letters, digits and hyphens. */
@@ -113,7 +114,7 @@ export function ProductForm({
     : Boolean(draft.gemOptions?.enabled);
 
   const errors = useMemo<Errors>(
-    () => validate(draft, takenSkus, categories.map((c) => c.id), showCustomVariants, t),
+    () => validate(draft, takenSkus, categories, showCustomVariants, t),
     [draft, takenSkus, categories, showCustomVariants, t],
   );
 
@@ -142,7 +143,17 @@ export function ProductForm({
     );
   };
 
-  const categoryOptions: AdminOption[] = categories.map((c) => ({ value: c.id, label: c.name[lang] }));
+  // A hidden category is only offered to the product still filed under it.
+  const categoryOptions: AdminOption[] = categories
+    .filter((c) => c.isActive !== false || c.id === initial.categoryId)
+    .map((c) => ({ value: c.id, label: c.name[lang] }));
+  // Same for a hidden family.
+  const familyOptions: AdminOption[] = [
+    { value: "", label: t("admin.form.noFamily") },
+    ...(category?.families ?? [])
+      .filter((f) => f.isActive || f.id === initial.familyId)
+      .map((f) => ({ value: f.id, label: f.name[lang] })),
+  ];
   const typeOptions: AdminOption[] = TYPES.map((type) => ({ value: type, label: t(`admin.type.${type}`) }));
   const statusOptions: AdminOption[] = (["draft", "active", "archived"] as ProductStatus[]).map((s) => ({
     value: s,
@@ -493,10 +504,24 @@ export function ProductForm({
                   {...props}
                   options={categoryOptions}
                   value={draft.categoryId}
-                  onChange={(e) => set("categoryId", e.target.value as CategoryId)}
+                  // A family belongs to one category: a new category starts without one.
+                  onChange={(e) => setDraft((prev) => ({ ...prev, categoryId: e.target.value as CategoryId, familyId: null }))}
                 />
               )}
             </FormField>
+
+            {familyOptions.length > 1 && (
+              <FormField label={t("admin.form.family")} hint={t("admin.form.familyHint")} error={showError("family")}>
+                {(props) => (
+                  <AdminSelect
+                    {...props}
+                    options={familyOptions}
+                    value={draft.familyId ?? ""}
+                    onChange={(e) => set("familyId", e.target.value || null)}
+                  />
+                )}
+              </FormField>
+            )}
 
             <FormField label={t("admin.form.type")} hint={t("admin.form.typeHint")}>
               {(props) => (
@@ -615,7 +640,7 @@ function Section({
 function validate(
   draft: AdminProduct,
   takenSkus: string[],
-  categoryIds: string[],
+  categories: Category[],
   /** Which variant editor the form shows: the free list, or the pack/SS grid. */
   custom: boolean,
   t: (key: string, opts?: Record<string, unknown>) => string,
@@ -635,8 +660,11 @@ function validate(
     errors.sku = t("admin.form.errors.skuTaken");
   }
 
-  if (!categoryIds.includes(draft.categoryId)) {
+  const category = categories.find((c) => c.id === draft.categoryId);
+  if (!category) {
     errors.category = t("admin.form.errors.categoryRequired");
+  } else if (draft.familyId && !(category.families ?? []).some((f) => f.id === draft.familyId)) {
+    errors.family = t("admin.form.errors.familyMismatch");
   }
 
   if (!(draft.price > 0)) {

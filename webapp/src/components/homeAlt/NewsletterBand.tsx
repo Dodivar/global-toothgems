@@ -53,18 +53,21 @@ export function NewsletterBand() {
   };
 
   return (
-    <section ref={ref} aria-labelledby="gt-alt-newsletter-title" className="gt-reveal gt-alt-section w-full">
+    <section ref={ref} aria-labelledby="gt-alt-newsletter-title" className="gt-reveal gt-alt-section w-full !py-[clamp(24px,3vw,48px)]">
       <div className="gt-alt-wide px-[var(--gt-alt-gutter)]">
-        <div className="gt-alt-newsletter relative mx-auto grid max-w-[1040px] justify-items-center gap-5 overflow-hidden rounded-[var(--radius-2xl)] px-[clamp(20px,5vw,72px)] py-[clamp(40px,5vw,72px)] text-center">
-          <span aria-hidden="true" className="grid h-12 w-12 place-items-center rounded-full bg-white text-[var(--gt-blue-700)] shadow-[var(--shadow-sm)]">
-            <Sparkles size={20} />
-          </span>
-          <span className="gt-eyebrow !text-[var(--gt-blue-700)]">{t("homeAlt.newsletter.eyebrow")}</span>
-          <h2 id="gt-alt-newsletter-title" className="gt-alt-h2 max-w-[18ch]">{t("homeAlt.newsletter.title")}</h2>
-          <p className="m-0 max-w-[54ch] text-[length:var(--text-body-md)] text-[var(--text-body)]">{t("homeAlt.newsletter.body")}</p>
+        <div className="gt-alt-newsletter relative mx-auto grid max-w-[1120px] items-center gap-x-12 gap-y-6 overflow-hidden rounded-[var(--radius-2xl)] px-[clamp(20px,4vw,56px)] py-[clamp(20px,2.5vw,32px)] text-center lg:grid-cols-[minmax(0,1fr)_minmax(0,520px)] lg:text-left">
+          <div className="grid justify-items-center gap-2 lg:justify-items-start">
+            <span aria-hidden="true" className="grid h-10 w-10 place-items-center rounded-full bg-white text-[var(--gt-blue-700)] shadow-[var(--shadow-sm)]">
+              <Sparkles size={18} />
+            </span>
+            <span className="gt-eyebrow !text-[var(--gt-blue-700)]">{t("homeAlt.newsletter.eyebrow")}</span>
+            <h2 id="gt-alt-newsletter-title" className="gt-alt-h2 max-w-[26ch] !text-[clamp(26px,2.6vw,38px)]">{t("homeAlt.newsletter.title")}</h2>
+            <p className="m-0 max-w-[54ch] text-[length:var(--text-body-md)] text-[var(--text-body)]">{t("homeAlt.newsletter.body")}</p>
+          </div>
 
+          <div className="grid justify-items-center gap-3 lg:justify-items-stretch">
           {status === "done" ? (
-            <div role="status" className="gt-celebrate mt-2 grid justify-items-center gap-2 rounded-[var(--radius-lg)] bg-[var(--surface-card)] px-6 py-5 shadow-[var(--shadow-card)]">
+            <div role="status" className="gt-celebrate grid justify-items-center gap-2 rounded-[var(--radius-lg)] bg-[var(--surface-card)] px-6 py-5 shadow-[var(--shadow-card)]">
               <span className="inline-flex items-center gap-2 text-[16px] font-bold text-[var(--status-success-fg)]">
                 <CheckCircle2 size={18} aria-hidden="true" />
                 {t("homeAlt.newsletter.successTitle")}
@@ -72,7 +75,7 @@ export function NewsletterBand() {
               <span className="text-[length:var(--text-body-sm)] text-[var(--text-body)]">{t("homeAlt.newsletter.successBody", { email: email.trim() })}</span>
             </div>
           ) : (
-            <form noValidate onSubmit={submit} className="mt-2 grid w-full max-w-[560px] gap-4 text-left">
+            <form noValidate onSubmit={submit} className="grid w-full max-w-[560px] gap-3 text-left">
               <label htmlFor={emailId} className="sr-only">
                 {t("homeAlt.newsletter.emailLabel")}
               </label>
@@ -115,13 +118,14 @@ export function NewsletterBand() {
             </form>
           )}
 
-          <p className="m-0 inline-flex flex-wrap items-center justify-center gap-x-2 gap-y-1 text-[12px] text-[var(--text-muted)]">
+          <p className="m-0 inline-flex flex-wrap items-center justify-center gap-x-2 lg:justify-start lg:px-2 gap-y-1 text-[12px] text-[var(--text-muted)]">
             <Lock size={13} aria-hidden="true" />
             {t("homeAlt.newsletter.privacy")}
             <Link to={LEGAL_PATHS.privacy} className="gt-underline font-semibold text-[var(--text-primary)]">
               {t("homeAlt.newsletter.privacyLink")}
             </Link>
           </p>
+          </div>
         </div>
       </div>
     </section>

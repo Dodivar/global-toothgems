@@ -1,35 +1,69 @@
-import { useEffect, useRef, useState, type CSSProperties, type Ref } from "react";
+import { useEffect, useMemo, useRef, useState, type CSSProperties, type Ref } from "react";
 import { useTranslation } from "react-i18next";
 import { Link } from "react-router-dom";
 import { ArrowUpRight, GraduationCap, ShoppingBag } from "lucide-react";
 import clsx from "clsx";
 import { Button } from "../ui/Button";
 import { Stars } from "../reviews/Stars";
-import { HOME_TESTIMONIALS, type HomeTestimonial } from "../../data/homeAltTestimonials";
+import type { CustomerReview } from "../../data/reviewSystem";
 import { getCourse } from "../../data/courses";
 import { getProduct } from "../../data/products";
 import { pick } from "../../data/types";
 import { useCatalog } from "../../lib/catalog/CatalogProvider";
 import { courseHref } from "../../lib/academyUrl";
+import { formatDate } from "../../lib/format";
+import { publicDate } from "../../lib/reviewRules";
+import { useReviewAuthor, useReviews } from "../../lib/reviews";
 import { useReveal } from "../../lib/useReveal";
 
 type Filter = "all" | "academy" | "product";
 const FILTERS: Filter[] = ["all", "academy", "product"];
 
+/** Newest published reviews shown on the home page. */
+const FEED_LIMIT = 12;
+
 /** Pins shown on a phone before "Show more": two columns, three rows. */
 const PHONE_LIMIT = 6;
 
+/** Placeholder heights while the reviews load: enough to hint at a mosaic. */
+const SKELETON_HEIGHTS = [260, 180, 220, 300];
+
+function kindOf(review: CustomerReview): Exclude<Filter, "all"> {
+  return review.subject.kind === "course" ? "academy" : "product";
+}
+
 /**
- * Social proof as a Pinterest-style feed: many reviews at once, in masonry
- * columns of varied heights — photo pins, product pins, and quote-only pins
- * on a green tint. Academy students and shop customers share the feed; each
- * pin says which it is with a tag, and the chips above filter by source.
+ * Social proof as a Pinterest-style feed: the newest published reviews, in
+ * masonry columns of varied heights — photo pins and quote-only pins on a
+ * green tint. Read from the review store, so with Supabase configured these
+ * are the reviews in the database that moderation has published, nothing
+ * else. Academy and shop reviews share the feed; each pin says which it is
+ * with a tag, and the chips above filter by source when both are present.
+ *
+ * The section stays out of the page when there is no published review to
+ * show (none yet, or the store could not be read).
  *
  * Emerald carries the energy here — the stars, the tags, the quote pins —
  * which is a deliberate exception to "emerald is for calls to action" on
  * this one section.
  */
 export function ReviewFeed() {
+  const { reviews, loading } = useReviews();
+  const published = useMemo(
+    () =>
+      reviews
+        .filter((r) => r.status === "published")
+        .sort((a, b) => publicDate(b).localeCompare(publicDate(a)))
+        .slice(0, FEED_LIMIT),
+    [reviews],
+  );
+
+  // A separate component, so its reveal is set up when the section actually mounts.
+  if (!loading && published.length === 0) return null;
+  return <FeedSection published={published} loading={loading} />;
+}
+
+function FeedSection({ published, loading }: { published: CustomerReview[]; loading: boolean }) {
   const { t } = useTranslation();
   const ref = useReveal<HTMLElement>();
   const [filter, setFilter] = useState<Filter>("all");
@@ -45,12 +79,21 @@ export function ReviewFeed() {
     firstMore.current?.focus();
   }, [expanded]);
 
-  const items = HOME_TESTIMONIALS.filter((item) => filter === "all" || item.kind === filter);
-  const count = (f: Filter) => HOME_TESTIMONIALS.filter((item) => f === "all" || item.kind === f).length;
+  const count = (f: Filter) => published.filter((r) => f === "all" || kindOf(r) === f).length;
+  // A chip that would filter to nothing is left out; with a single source, so is the whole group.
+  const filters = FILTERS.filter((f) => f === "all" || count(f) > 0);
+  const showFilters = filters.length > 2;
+  const active = filters.includes(filter) ? filter : "all";
+  const items = published.filter((r) => active === "all" || kindOf(r) === active);
   const hasMore = !expanded && items.length > PHONE_LIMIT;
 
   return (
-    <section ref={ref} aria-labelledby="gt-alt-reviews-title" className="gt-reveal gt-alt-section w-full bg-[var(--surface-brand-wash-strong)]">
+    <section
+      ref={ref}
+      aria-labelledby="gt-alt-reviews-title"
+      aria-busy={loading || undefined}
+      className="gt-reveal gt-alt-section w-full bg-[var(--surface-brand-wash-strong)]"
+    >
       <div className="gt-alt-wide px-[var(--gt-alt-gutter)]">
         <div className="mb-8 grid grid-cols-[minmax(0,1fr)] gap-6 lg:mb-12 lg:grid-cols-[minmax(0,1fr)_auto] lg:items-end">
           <div className="grid gap-4">
@@ -58,51 +101,65 @@ export function ReviewFeed() {
             <h2 id="gt-alt-reviews-title" className="gt-alt-h2 max-w-[18ch]">{t("homeAlt.reviews.title")}</h2>
             <p className="m-0 max-w-[48ch] text-[length:var(--text-body-md)] text-[var(--text-body)]">{t("homeAlt.reviews.body")}</p>
           </div>
-          <div role="group" aria-label={t("homeAlt.reviews.filterLabel")} className="flex flex-wrap gap-2">
-            {FILTERS.map((f) => (
-              <button
-                key={f}
-                type="button"
-                aria-pressed={filter === f}
-                onClick={() => {
-                  setFilter(f);
-                  setExpanded(false);
-                }}
-                className={clsx(
-                  "inline-flex h-9 items-center gap-1.5 rounded-[var(--radius-pill)] border px-3 text-[12px] font-semibold sm:h-10 sm:gap-2 sm:px-4 sm:text-[13px] transition-[background-color,border-color,color] duration-[var(--duration-fast)]",
-                  filter === f
-                    ? "border-[var(--gt-ink-900)] bg-[var(--gt-ink-900)] text-[var(--gt-off-white)]"
-                    : "border-[var(--gt-blue-300)] bg-white/70 text-[var(--text-primary)] hover:border-[var(--gt-ink-900)]",
-                )}
-              >
-                {t(`homeAlt.reviews.filter.${f}`)}
-                <span
-                  aria-hidden="true"
+          {showFilters && (
+            <div role="group" aria-label={t("homeAlt.reviews.filterLabel")} className="flex flex-wrap gap-2">
+              {filters.map((f) => (
+                <button
+                  key={f}
+                  type="button"
+                  aria-pressed={active === f}
+                  onClick={() => {
+                    setFilter(f);
+                    setExpanded(false);
+                  }}
                   className={clsx(
-                    "grid h-5 min-w-5 place-items-center rounded-full px-1.5 text-[11px] tabular-nums",
-                    filter === f ? "bg-[var(--accent-cta)] text-[var(--gt-ink-900)]" : "bg-[var(--gt-blue-100)] text-[var(--gt-ink-700)]",
+                    "inline-flex h-9 items-center gap-1.5 rounded-[var(--radius-pill)] border px-3 text-[12px] font-semibold sm:h-10 sm:gap-2 sm:px-4 sm:text-[13px] transition-[background-color,border-color,color] duration-[var(--duration-fast)]",
+                    active === f
+                      ? "border-[var(--gt-ink-900)] bg-[var(--gt-ink-900)] text-[var(--gt-off-white)]"
+                      : "border-[var(--gt-blue-300)] bg-white/70 text-[var(--text-primary)] hover:border-[var(--gt-ink-900)]",
                   )}
                 >
-                  {count(f)}
-                </span>
-              </button>
-            ))}
-          </div>
+                  {t(`homeAlt.reviews.filter.${f}`)}
+                  <span
+                    aria-hidden="true"
+                    className={clsx(
+                      "grid h-5 min-w-5 place-items-center rounded-full px-1.5 text-[11px] tabular-nums",
+                      active === f ? "bg-[var(--accent-cta)] text-[var(--gt-ink-900)]" : "bg-[var(--gt-blue-100)] text-[var(--gt-ink-700)]",
+                    )}
+                  >
+                    {count(f)}
+                  </span>
+                </button>
+              ))}
+            </div>
+          )}
         </div>
 
         {/* Masonry by CSS columns: two on a phone, as the app does, four on a
             wide screen. Keyed on the filter so the pins settle in again. */}
-        <ul key={filter} className="m-0 list-none columns-2 gap-3 p-0 sm:gap-4 lg:columns-3 xl:columns-4 xl:gap-5">
-          {items.map((item, i) => (
-            <li
-              key={item.id}
-              className={clsx("gt-alt-pin-in mb-3 break-inside-avoid sm:mb-4 xl:mb-5", i >= PHONE_LIMIT && !expanded && "hidden sm:block")}
-              style={{ "--gt-delay": `${Math.min(i, 8) * 60}ms` } as CSSProperties}
-            >
-              <ReviewPin item={item} pinRef={i === PHONE_LIMIT ? firstMore : undefined} />
-            </li>
-          ))}
-        </ul>
+        {loading && published.length === 0 ? (
+          <ul aria-hidden="true" className="m-0 list-none columns-2 gap-3 p-0 sm:gap-4 lg:columns-3 xl:columns-4 xl:gap-5">
+            {SKELETON_HEIGHTS.map((h, i) => (
+              <li
+                key={i}
+                className="mb-3 break-inside-avoid animate-pulse rounded-[var(--radius-xl)] bg-white/60 sm:mb-4 xl:mb-5"
+                style={{ height: h }}
+              />
+            ))}
+          </ul>
+        ) : (
+          <ul key={active} className="m-0 list-none columns-2 gap-3 p-0 sm:gap-4 lg:columns-3 xl:columns-4 xl:gap-5">
+            {items.map((review, i) => (
+              <li
+                key={review.id}
+                className={clsx("gt-alt-pin-in mb-3 break-inside-avoid sm:mb-4 xl:mb-5", i >= PHONE_LIMIT && !expanded && "hidden sm:block")}
+                style={{ "--gt-delay": `${Math.min(i, 8) * 60}ms` } as CSSProperties}
+              >
+                <ReviewPin review={review} pinRef={i === PHONE_LIMIT ? firstMore : undefined} />
+              </li>
+            ))}
+          </ul>
+        )}
 
         {hasMore && (
           <div className="mt-4 flex justify-center sm:hidden">
@@ -122,22 +179,20 @@ export function ReviewFeed() {
   );
 }
 
-function ReviewPin({ item, pinRef }: { item: HomeTestimonial; pinRef?: Ref<HTMLElement> }) {
+function ReviewPin({ review, pinRef }: { review: CustomerReview; pinRef?: Ref<HTMLElement> }) {
   const { t, i18n } = useTranslation();
   const { products } = useCatalog();
+  const authorOf = useReviewAuthor();
   const lang = i18n.language;
-  const academy = item.kind === "academy";
-  const image = item.image;
+  const academy = review.subject.kind === "course";
+  const author = authorOf(review);
+  const photo = review.photos[0];
 
-  // Link the course or product only when it exists in the current catalogue.
-  const refHref = academy
-    ? getCourse(item.refId)
-      ? courseHref(item.refId)
-      : null
-    : getProduct(item.refId, products)
-      ? `/boutique/${item.refId}`
-      : null;
-  const refName = pick(item.refName, lang);
+  // Name and link the course or product only when it exists in the current catalogue.
+  const course = academy ? getCourse(review.subject.id) : undefined;
+  const product = academy ? undefined : getProduct(review.subject.id, products);
+  const refHref = course ? courseHref(course.id) : product ? `/boutique/${product.id}` : null;
+  const refName = course ? pick(course.title, lang) : product ? pick(product.name, lang) : null;
 
   return (
     <article
@@ -145,23 +200,18 @@ function ReviewPin({ item, pinRef }: { item: HomeTestimonial; pinRef?: Ref<HTMLE
       tabIndex={pinRef ? -1 : undefined}
       className={clsx(
         "gt-alt-pin group relative overflow-hidden rounded-[var(--radius-xl)] shadow-[var(--shadow-card)] outline-none",
-        image ? "bg-[var(--surface-card)]" : "bg-[var(--gt-emerald-50)] ring-1 ring-[var(--gt-emerald-300)]/60",
+        photo ? "bg-[var(--surface-card)]" : "bg-[var(--gt-emerald-50)] ring-1 ring-[var(--gt-emerald-300)]/60",
       )}
     >
-      {image && (
-        <div
-          className={clsx("relative overflow-hidden", image.cutout && "bg-[linear-gradient(145deg,var(--gt-blue-50),var(--gt-blue-200))]")}
-          style={{ aspectRatio: image.ratio }}
-        >
+      {photo && (
+        <div className="relative overflow-hidden bg-[var(--surface-sunken)]">
+          {/* Customer photos come in any shape: shown at their own ratio, capped so a tall one does not take the column. */}
           <img
-            src={image.src}
-            alt={pick(image.alt, lang)}
+            src={photo.src}
+            alt={photo.alt || t("reviews.photos.fallbackAlt", { name: author })}
             loading="lazy"
             decoding="async"
-            className={clsx(
-              "gt-alt-tile-art absolute inset-0 h-full w-full",
-              image.cutout ? "object-contain p-[14%] mix-blend-multiply" : "object-cover",
-            )}
+            className="gt-alt-tile-art block max-h-[420px] min-h-[160px] w-full object-cover"
           />
           <span className="absolute left-2.5 top-2.5 sm:left-3 sm:top-3">
             <KindTag academy={academy} />
@@ -169,47 +219,51 @@ function ReviewPin({ item, pinRef }: { item: HomeTestimonial; pinRef?: Ref<HTMLE
         </div>
       )}
 
-      <div className={clsx("grid gap-2.5 p-3.5 sm:gap-3 sm:p-5", !image && "pt-4 sm:pt-5")}>
-        {!image && (
+      <div className={clsx("grid gap-2.5 p-3.5 sm:gap-3 sm:p-5", !photo && "pt-4 sm:pt-5")}>
+        {!photo && (
           <span className="justify-self-start">
             <KindTag academy={academy} />
           </span>
         )}
         <span className="flex items-center gap-2">
-          <Stars rating={item.rating} size={14} tone="accent" />
+          <Stars rating={review.rating} size={14} tone="accent" />
           <span aria-hidden="true" className="text-[12px] font-bold tabular-nums text-[var(--gt-emerald-600)]">
-            {item.rating.toFixed(1)}
+            {review.rating.toFixed(1)}
           </span>
         </span>
-        <blockquote className="m-0">
+        {/* The customer's own words, in their own language: never translated. */}
+        <blockquote lang={review.lang} className="m-0 grid gap-1.5">
+          {review.title && (
+            <p className="m-0 text-[14px] font-bold leading-[1.35] text-[var(--text-primary)] sm:text-[16px]">{review.title}</p>
+          )}
           <p
             className={clsx(
-              "gt-alt-pin-quote m-0 text-[var(--text-primary)]",
-              image ? "text-[13px] leading-[1.5] sm:text-[15px]" : "text-[15px] font-semibold leading-[1.4] sm:text-[19px]",
+              "gt-alt-pin-quote m-0 line-clamp-[8] whitespace-pre-line text-[var(--text-primary)]",
+              photo ? "text-[13px] leading-[1.5] sm:text-[15px]" : "text-[15px] leading-[1.45] sm:text-[17px]",
             )}
           >
-            {pick(item.quote, lang)}
+            {review.body}
           </p>
         </blockquote>
         <footer className="grid gap-2 border-t border-[var(--border-subtle)] pt-3">
           <span className="flex min-w-0 items-center gap-2.5">
-            <Avatar name={item.author} academy={academy} />
+            <Avatar name={author} academy={academy} />
             <span className="grid min-w-0">
-              <span className="truncate text-[13px] font-bold text-[var(--text-primary)]">{item.author}</span>
-              <span className="truncate text-[11.5px] text-[var(--text-muted)]">{pick(item.place, lang)}</span>
+              <span className="truncate text-[13px] font-bold text-[var(--text-primary)]">{author}</span>
+              <time dateTime={publicDate(review)} className="truncate text-[11.5px] text-[var(--text-muted)]">
+                {formatDate(publicDate(review))}
+              </time>
             </span>
           </span>
-          <span className="text-[12px] leading-snug text-[var(--text-body)]">
-            <span className="font-semibold">{academy ? t("homeAlt.reviews.courseRef") : t("homeAlt.reviews.productRef")} · </span>
-            {refHref ? (
+          {refName && refHref && (
+            <span className="text-[12px] leading-snug text-[var(--text-body)]">
+              <span className="font-semibold">{academy ? t("homeAlt.reviews.courseRef") : t("homeAlt.reviews.productRef")} · </span>
               <Link to={refHref} className="gt-underline font-semibold">
                 {refName}
                 <ArrowUpRight size={12} aria-hidden="true" className="ml-0.5 inline align-[-1px]" />
               </Link>
-            ) : (
-              refName
-            )}
-          </span>
+            </span>
+          )}
         </footer>
       </div>
     </article>

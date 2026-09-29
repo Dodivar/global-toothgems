@@ -49,7 +49,7 @@ What is not wired to the database yet, on purpose:
 
 - **Promotional price.** There is no column for it: discounts belong to the promotions domain. The field is hidden when connected.
 - **Variants.** Products with variants (three of the seeded ones) show their total stock read-only; the form never writes variant stock.
-- **Categories** are read from the database but still not editable.
+- **Categories and families** are read from the database but not editable; a product's family is picked in the product form.
 - **The activity feed** shows this session's actions only; the full history is in `audit_logs` and `inventory_movements`.
 - **The seeded products' images** point at files that were never uploaded, so they show broken until replaced.
 - **Orders and reviews** are connected too (see "Orders and reviews on Supabase" below). **Other admin workspaces** (promotions, statistics, training…) still use their mock stores, so e.g. promotions refer to prototype product ids. The customers workspace reads its order counts from the order book, so it mixes mock customers with real orders.
@@ -119,8 +119,12 @@ Mapping rules worth knowing:
 
 - **Language**: base columns are French; the English text comes from
   *published* translation rows, else falls back to French.
-- **Categories**: `gems → Gems`, `outils → Outils`, `kits → Kits`,
-  `entretien → Suivi`, `accessoires → Accessoires` (the `categorie` URL values).
+- **Categories and families** are data (`fetchTaxonomy()`, `data/taxonomy.ts` for
+  the mock): their slugs are the `categorie` and `famille` URL values
+  (`/boutique?categorie=gems&famille=swarovski`). The header menu, the shop's
+  product-type tree and the home tiles are built from them. Former values
+  (`Gems`, `Outils`, `Suivi`, `Accessoires`, `Kits`) still resolve, through
+  `LEGACY_CATEGORIES`.
 - **Shape / colour filters** read `products.metadata.shape` / `.color`, using the
   slugs of `GEM_SHAPES` / `GEM_COLORS` (`"star"`, `"crystal"`…). Products without
   them are simply not in those filters.

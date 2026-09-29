@@ -13,8 +13,10 @@ import { NewsletterBand } from "../components/homeAlt/NewsletterBand";
  * The home page, at /: the brand's storefront composed full width and
  * editorially. It wears the site's usual header and footer.
  *
- * Nothing on it reaches a backend of its own. Quick-adding a best seller uses
- * the ordinary cart; the newsletter is a mock-up that says so.
+ * Nothing on it reaches a backend of its own. The review feed reads the
+ * shared review store (the database's published reviews when Supabase is
+ * configured); quick-adding a best seller uses the ordinary cart; the
+ * newsletter is a mock-up that says so.
  */
 export function HomeAlt() {
   const { t } = useTranslation();

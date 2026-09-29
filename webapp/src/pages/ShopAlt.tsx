@@ -19,6 +19,7 @@ import {
   SORT_KEYS,
   activeFilterCount,
   filterProducts,
+  normalizeTaxonomy,
   readFilters,
   readSort,
   sortProducts,
@@ -49,7 +50,7 @@ const SIDEBAR_OPEN_GROUPS: GroupKey[] = ["category", "shape", "color", "price"];
 /**
  * The alternative shop page, at /boutique: the same catalogue, copy and URL
  * parameters as /boutique, laid out so the products come first — a short
- * introduction, a wide grid, and the filters in a sticky sidebar on the right
+ * introduction, a wide grid, and the filters in a sticky sidebar on the left
  * (a drawer below the lg breakpoint).
  *
  * A layout prototype for comparison. Nothing here touches pricing or stock:
@@ -60,12 +61,12 @@ export function ShopAlt() {
   const { t, i18n } = useTranslation();
   const lang = i18n.language;
   const { showToast } = useToast();
-  const { products, status, source } = useCatalog();
+  const { products, status, source, taxonomy } = useCatalog();
   const [params, setParams] = useSearchParams();
   const labelOf = useFilterLabels();
   const sortId = useId();
 
-  const filters = useMemo(() => readFilters(params), [params]);
+  const filters = useMemo(() => normalizeTaxonomy(readFilters(params), taxonomy), [params, taxonomy]);
   const sort = readSort(params);
   const activeCount = activeFilterCount(filters);
   const results = useMemo(() => sortProducts(filterProducts(products, filters), sort, lang), [products, filters, sort, lang]);
@@ -96,7 +97,8 @@ export function ShopAlt() {
   }, [signature]);
 
   const [drawerOpen, setDrawerOpen] = useState(false);
-  const setFilter = (key: FilterKey, value: string) => setParams(writeFilters(params, withFilter(filters, key, value)));
+  const setFilters = (next: StorefrontFilters) => setParams(writeFilters(params, next));
+  const setFilter = (key: FilterKey, value: string) => setFilters(withFilter(filters, key, value));
   const clearAll = () => setParams(writeFilters(params, NO_FILTERS));
   const setSort = (value: StorefrontSort) => {
     const next = new URLSearchParams(params);
@@ -158,9 +160,15 @@ export function ShopAlt() {
 
   const [saved, setSaved] = useState<Record<string, boolean>>({});
 
-  const chips = FILTER_KEYS.filter((key) => filters[key] !== FILTER_PARAMS[key].fallback).map((key) => ({
+  // The family is part of the product-type chip ("Toothgems › Swarovski");
+  // removing that chip clears both.
+  const familyActive = filters.family !== FILTER_PARAMS.family.fallback;
+  const chips = FILTER_KEYS.filter((key) => key !== "family" && filters[key] !== FILTER_PARAMS[key].fallback).map((key) => ({
     key,
-    label: labelOf(key, filters[key]),
+    label:
+      key === "category" && familyActive
+        ? `${labelOf("category", filters.category)} › ${labelOf("family", filters.family)}`
+        : labelOf(key, filters[key]),
   }));
 
   const countText =
@@ -190,11 +198,11 @@ export function ShopAlt() {
       </section>
 
       <section className="gt-shopb-gutter pb-[var(--section-y-sm)]">
-        <div className="mx-auto grid max-w-[var(--max-width-shop)] gap-8 lg:grid-cols-[minmax(0,1fr)_264px] xl:gap-10 2xl:grid-cols-[minmax(0,1fr)_288px]">
-          {/* First in the DOM, so a keyboard reaches the filters before the
-              grid's cards; the grid places it on the right. The skip link
-              covers the other case, reaching the products first. */}
-          <aside aria-label={t("shopAlt.sidebarLabel")} className="hidden lg:col-start-2 lg:row-start-1 lg:block">
+        <div className="mx-auto grid max-w-[var(--max-width-shop)] gap-8 lg:grid-cols-[264px_minmax(0,1fr)] xl:gap-10 2xl:grid-cols-[288px_minmax(0,1fr)]">
+          {/* First in the DOM and on screen, so a keyboard reaches the filters
+              before the grid's cards. The skip link covers the other case,
+              reaching the products first. */}
+          <aside aria-label={t("shopAlt.sidebarLabel")} className="hidden lg:block">
             <div className="gt-shopb-sidebar sticky top-[100px] max-h-[calc(100vh-124px)] overflow-y-auto rounded-[var(--radius-card)] bg-[var(--surface-card)] px-5 pb-2 shadow-[var(--shadow-card)]">
               <a href="#gt-shopb-results" className="gt-shopb-skip sr-only focus:not-sr-only">
                 {t("shopAlt.skipToResults")}
@@ -215,7 +223,7 @@ export function ShopAlt() {
                   </>
                 )}
               </div>
-              <FilterPanel filters={filters} onChange={setFilter} products={products} defaultOpen={SIDEBAR_OPEN_GROUPS} />
+              <FilterPanel filters={filters} onChange={setFilters} products={products} defaultOpen={SIDEBAR_OPEN_GROUPS} />
             </div>
           </aside>
 
@@ -224,7 +232,7 @@ export function ShopAlt() {
             id="gt-shopb-results"
             tabIndex={-1}
             aria-label={t("shop.gridLabel")}
-            className="@container min-w-0 scroll-mt-28 outline-none lg:col-start-1 lg:row-start-1"
+            className="@container min-w-0 scroll-mt-28 outline-none"
           >
             {/* Toolbar: count, then sort, and below lg the filter trigger. */}
             <div className="flex flex-wrap items-center gap-x-3 gap-y-2 pb-3 sm:gap-x-4">

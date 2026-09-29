@@ -22,10 +22,12 @@
     "colorsHeading": "Couleurs",
     "viewAllShapes": "Voir toutes les formes",
     "viewAllColors": "Voir toutes les couleurs",
-    "menuTabGems": "Gems",
     "menuTabShop": "Boutique",
     "menuTabAcademy": "Academy",
     "openPanelShop": "Afficher les catégories de la boutique",
+    "menuProductCount_one": "{{count}} produit",
+    "menuProductCount_other": "{{count}} produits",
+    "menuComingSoon": "Bientôt disponible",
     "openPanelAcademy": "Afficher les formations",
     "cartWithCount_one": "Panier, {{count}} article",
     "cartWithCount_other": "Panier, {{count}} articles",
@@ -136,12 +138,7 @@
     "prev": "Précédent",
     "next": "Suivant",
     "categories": {
-      "all": "Tout",
-      "Gems": "Gems",
-      "Outils": "Outils",
-      "Kits": "Kits",
-      "Suivi": "Suivi",
-      "Accessoires": "Accessoires"
+      "all": "Tout"
     },
     "materials": {
       "all": "Toutes les matières",
@@ -941,7 +938,8 @@
       "menuLabel": "Menu de l’espace membre",
       "homeAlt": "Global Toothgems — accueil",
       "help": "Aide",
-      "cookies": "Cookies"
+      "cookies": "Cookies",
+      "adminSpace": "Administration"
     },
     "statsLabel": "Votre compte en chiffres",
     "statCourses": "formations en cours",
@@ -1069,10 +1067,10 @@
     "colShop": "Boutique",
     "colAcademy": "Academy",
     "shopItems": [
-      "Gems",
-      "Outils",
+      "Toothgems",
+      "Matériel",
       "Kits",
-      "Suivi client",
+      "Global Lip Gloss",
       "Cartes cadeaux",
       "Programme fidélité"
     ],
@@ -1180,7 +1178,8 @@
       "collecting": {
         "badge": "En cours",
         "demoLabel": "En cours",
-        "title": "{{done}} tampons sur {{total}}",
+        "title_one": "{{done}} tampon sur {{total}}",
+        "title_other": "{{done}} tampons sur {{total}}",
         "body_one": "Encore {{count}} achat éligible pour débloquer {{percent}} % sur votre prochaine commande.",
         "body_other": "Encore {{count}} achats éligibles pour débloquer {{percent}} % sur votre prochaine commande.",
         "cta": "Continuer mes achats"
@@ -1273,7 +1272,8 @@
       "expand": "Déployer le menu",
       "openNav": "Ouvrir la navigation",
       "breadcrumb": "Fil d’Ariane",
-      "viewStore": "Voir la boutique"
+      "viewStore": "Voir la boutique",
+      "memberSpace": "Mon espace membre"
     },
     "nav": {
       "primary": "Navigation de l’administration",
@@ -1502,6 +1502,9 @@
       },
       "organisationTitle": "Classement",
       "category": "Catégorie",
+      "family": "Famille",
+      "familyHint": "Affine la catégorie dans le menu et le filtre de la boutique.",
+      "noFamily": "Aucune famille",
       "shape": "Forme",
       "color": "Couleur",
       "gemLookNone": "Non renseignée",
@@ -1529,6 +1532,7 @@
         "thresholdInvalid": "Le seuil doit être un nombre entier positif.",
         "skuFormat": "Majuscules, chiffres et tirets uniquement, 2 à 64 caractères (ex. GEM-STAR-001).",
         "categoryRequired": "Choisissez une catégorie.",
+        "familyMismatch": "Cette famille n’appartient pas à la catégorie choisie.",
         "priceCents": "Deux décimales au maximum.",
         "optionsEmpty": "Ajoutez au moins un pack ou cochez une taille de pierre, ou désactivez les options.",
         "optionsPack": "Chaque pack doit contenir un nombre entier de pierres, de {{min}} à {{max}}.",
@@ -1746,6 +1750,7 @@
       "unavailable": "En rupture",
       "priceRange": "De {{min}} à {{max}}",
       "noProducts": "Aucun produit dans cette catégorie",
+      "families": "Familles",
       "view": "Voir les produits"
     },
     "gemColors": {

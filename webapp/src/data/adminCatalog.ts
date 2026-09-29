@@ -36,12 +36,28 @@ export type CategoryId = string;
 /** Availability when `trackInventory` is off — a made-to-order piece has no count. */
 export type Availability = "in_stock" | "out_of_stock" | "preorder";
 
+/**
+ * Second level of the shop taxonomy (`category_families`). A product may sit
+ * in one family of its own category, or in none.
+ */
+export interface CategoryFamily {
+  id: string;
+  /** The `famille` value of shop URLs. */
+  slug: string;
+  name: Localized;
+  isActive: boolean;
+}
+
 export interface Category {
   id: CategoryId;
   /** Stable key ("gems"…). The mock uses it as the id too. */
   slug?: string;
   name: Localized;
   description: Localized;
+  /** Hidden from the shop; kept for the products and history that still point at it. */
+  isActive?: boolean;
+  /** In display order. */
+  families?: CategoryFamily[];
 }
 
 /** One pack × stone-size combination of a gem, with its own price and stock. */
@@ -138,6 +154,8 @@ export interface AdminProduct {
   shortDescription: Localized;
   description: Localized;
   categoryId: CategoryId;
+  /** One of the category's families (`CategoryFamily.id`), or none. */
+  familyId?: string | null;
   type: ProductType;
   /** EUR, as typed in the form. See the file note on monetary values. */
   price: number;
@@ -222,46 +240,55 @@ export const SEED_GEM_COLORS: AdminGemColor[] = FALLBACK_GEM_COLORS.map((color, 
   position,
 }));
 
+const fixtureFamily = (slug: string, fr: string, en: string = fr): CategoryFamily => ({
+  id: slug,
+  slug,
+  name: { fr, en },
+  isActive: true,
+});
+
 export const CATEGORIES: Category[] = [
   {
     id: "gems",
-    name: { fr: "Gems", en: "Gems" },
+    name: { fr: "Toothgems", en: "Toothgems" },
     description: {
-      fr: "Cristaux, charms, étoiles et pièces décoratives posées sur l’émail.",
-      en: "Crystals, charms, stars and decorative pieces set on enamel.",
+      fr: "Cristaux, bijoux en or et pièces décoratives posées sur l’émail.",
+      en: "Crystals, gold jewellery and decorative pieces set on the enamel.",
     },
+    families: [
+      fixtureFamily("swarovski", "Swarovski"),
+      fixtureFamily("preciosa", "Preciosa"),
+      fixtureFamily("bijoux-or-18ct", "Bijoux en or 18ct", "18ct gold jewels"),
+      fixtureFamily("opales", "Opales", "Opals"),
+      fixtureFamily("micro-gems", "Micro gems"),
+    ],
+  },
+  {
+    id: "materiel",
+    name: { fr: "Matériel", en: "Equipment" },
+    description: {
+      fr: "Instruments, consommables et accessoires de pose.",
+      en: "Application instruments, consumables and accessories.",
+    },
+    families: [fixtureFamily("essentiels", "Essentiels", "Essentials"), fixtureFamily("accessoires", "Accessoires", "Accessories")],
   },
   {
     id: "kits",
-    name: { fr: "Kits d’application", en: "Application kits" },
+    name: { fr: "Kits", en: "Kits" },
     description: {
-      fr: "Coffrets complets de pose, du mordançage à la photopolymérisation.",
-      en: "Complete application sets, from etching to light curing.",
+      fr: "Coffrets complets de pose, pour les pros comme pour débuter.",
+      en: "Complete application kits, for professionals and beginners.",
     },
+    families: [
+      fixtureFamily("kit-professionnel", "Kit professionnel", "Professional kit"),
+      fixtureFamily("kit-diy", "Kit DIY", "DIY kit"),
+    ],
   },
   {
-    id: "tools",
-    name: { fr: "Outils", en: "Tools" },
-    description: {
-      fr: "Instruments de pose et de dépose à usage professionnel.",
-      en: "Professional application and removal instruments.",
-    },
-  },
-  {
-    id: "aftercare",
-    name: { fr: "Suivi & entretien", en: "Aftercare" },
-    description: {
-      fr: "Gels, brosses et produits de nettoyage pour la tenue dans la durée.",
-      en: "Gels, brushes and cleaning products for long-term wear.",
-    },
-  },
-  {
-    id: "accessories",
-    name: { fr: "Accessoires", en: "Accessories" },
-    description: {
-      fr: "Rangement, présentation et consommables de studio.",
-      en: "Storage, display and studio consumables.",
-    },
+    id: "lip-gloss",
+    name: { fr: "Global Lip Gloss", en: "Global Lip Gloss" },
+    description: { fr: "Les gloss Global Toothgems.", en: "Global Toothgems lip glosses." },
+    families: [],
   },
 ];
 
@@ -330,6 +357,7 @@ const PRODUCT_FIXTURES: AdminProduct[] = [
       en: "Five-point cut-crystal star with a flat back, calibrated at 2.2mm for lateral incisors. Polished edges, delivered in a single-use sterile capsule.",
     },
     categoryId: "gems",
+    familyId: "swarovski",
     type: "single",
     price: 32,
     compareAtPrice: 38,
@@ -370,6 +398,7 @@ const PRODUCT_FIXTURES: AdminProduct[] = [
       en: "Twelve authentic Swarovski crystals across three calibres and four shades. Presented in a compartment tray, ideal for a studio offering a chairside choice.",
     },
     categoryId: "gems",
+    familyId: "swarovski",
     type: "set",
     price: 119,
     media: [media("img-11.jpg"), media("img-05.jpg"), media("img-02.jpg")],
@@ -396,6 +425,7 @@ const PRODUCT_FIXTURES: AdminProduct[] = [
       en: "Solid 18-carat gold star, no plating. Grooved flat back for adhesive, mirror finish. Signature piece of the gold collection.",
     },
     categoryId: "gems",
+    familyId: "bijoux-or-18ct",
     type: "single",
     price: 89,
     media: [media("img-12.jpg"), media("img-07.jpg")],
@@ -448,6 +478,7 @@ const PRODUCT_FIXTURES: AdminProduct[] = [
       en: "Complete professional application set: etchant, light-cured adhesive, LED lamp, retractor, gripping tweezers and consumables for roughly forty applications.",
     },
     categoryId: "kits",
+    familyId: "kit-professionnel",
     type: "kit",
     price: 249,
     compareAtPrice: 289,
@@ -476,6 +507,7 @@ const PRODUCT_FIXTURES: AdminProduct[] = [
       en: "Condensed version of the premium kit, built for Academy students: enough for around ten applications in workshop conditions.",
     },
     categoryId: "kits",
+    familyId: "kit-diy",
     type: "kit",
     price: 129,
     media: [media("img-09.jpg"), media("img-14.jpg")],
@@ -501,7 +533,8 @@ const PRODUCT_FIXTURES: AdminProduct[] = [
       fr: "Gel reminéralisant sans fluor à appliquer autour de la gem, formulé pour ne pas attaquer l’adhésif. Flacon 30 ml, environ deux mois d’utilisation quotidienne.",
       en: "Fluoride-free remineralising gel applied around the gem, formulated not to attack the adhesive. 30ml bottle, roughly two months of daily use.",
     },
-    categoryId: "aftercare",
+    categoryId: "materiel",
+    familyId: "essentiels",
     type: "care",
     price: 19,
     media: [media("img-13.jpg")],
@@ -527,7 +560,8 @@ const PRODUCT_FIXTURES: AdminProduct[] = [
       fr: "Brosse à filaments souples conçue pour nettoyer le pourtour de la pierre sans décoller l’adhésif. Vendue par lot de trois, à remplacer tous les deux mois.",
       en: "Soft-filament brush designed to clean around the stone without lifting the adhesive. Sold in packs of three, replaced every two months.",
     },
-    categoryId: "aftercare",
+    categoryId: "materiel",
+    familyId: "accessoires",
     type: "care",
     price: 12,
     media: [media("img-19.jpg")],
@@ -554,6 +588,7 @@ const PRODUCT_FIXTURES: AdminProduct[] = [
       en: "Six 1.5mm micro-crystals in neutral shades, made for discreet applications and multi-stone alignments on a single tooth.",
     },
     categoryId: "gems",
+    familyId: "micro-gems",
     type: "set",
     price: 54,
     media: [media("img-18.jpg"), media("img-06.jpg")],
@@ -580,6 +615,7 @@ const PRODUCT_FIXTURES: AdminProduct[] = [
       en: "Lab-grown opal drop whose reflections shift with the angle. Limited edition piece, produced in batches of fifty.",
     },
     categoryId: "gems",
+    familyId: "opales",
     type: "single",
     price: 64,
     media: [media("img-01.jpg"), media("mouth-04.jpg")],
@@ -605,7 +641,8 @@ const PRODUCT_FIXTURES: AdminProduct[] = [
       fr: "Pince en acier chirurgical à mors profilés, conçue pour une dépose sans éclat d’émail. Stérilisable en autoclave, réservée à un usage professionnel.",
       en: "Surgical-steel pliers with profiled jaws, designed for chip-free removal. Autoclave-sterilisable, professional use only.",
     },
-    categoryId: "tools",
+    categoryId: "materiel",
+    familyId: "essentiels",
     type: "tool",
     price: 78,
     media: [media("img-08.jpg")],
@@ -631,7 +668,8 @@ const PRODUCT_FIXTURES: AdminProduct[] = [
       fr: "Lampe LED sans fil de 1200 mW/cm² avec trois modes de polymérisation. Autonomie d’environ trois cents cycles, chargeur secteur inclus.",
       en: "Cordless 1200 mW/cm² LED lamp with three curing modes. Around three hundred cycles per charge, mains charger included.",
     },
-    categoryId: "tools",
+    categoryId: "materiel",
+    familyId: "essentiels",
     type: "tool",
     price: 165,
     media: [media("img-08.jpg"), media("img-14.jpg")],
@@ -657,7 +695,8 @@ const PRODUCT_FIXTURES: AdminProduct[] = [
       fr: "Plateau en velours à douze emplacements, pensé pour présenter les pierres au client avant la pose. Se range dans un tiroir standard.",
       en: "Twelve-slot velvet tray, made to present stones to the client before application. Fits a standard drawer.",
     },
-    categoryId: "accessories",
+    categoryId: "materiel",
+    familyId: "accessoires",
     type: "tool",
     price: 45,
     media: [media("img-05.jpg"), media("img-20.jpg")],
@@ -683,7 +722,8 @@ const PRODUCT_FIXTURES: AdminProduct[] = [
       fr: "Capsules à usage unique pour le conditionnement individuel des pierres. Boîte de cent, consommable de studio.",
       en: "Single-use capsules for individual stone packaging. Box of one hundred, studio consumable.",
     },
-    categoryId: "accessories",
+    categoryId: "materiel",
+    familyId: "essentiels",
     type: "care",
     price: 24,
     media: [media("img-15.jpg")],

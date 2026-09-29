@@ -4,8 +4,8 @@ import {
   type GemShape,
   type Product,
   type ProductVariant,
-  type ShopCategory,
 } from "../../data/products";
+import type { ShopCategoryDef } from "../../data/taxonomy";
 import type { Localized } from "../../data/types";
 import { toMajorUnits, toMinorUnits } from "./money";
 import { parseGemAttributes } from "../gemOptions";
@@ -84,6 +84,8 @@ export interface ProductRow {
   is_featured: boolean;
   metadata: Json;
   category: CategoryRow | null;
+  /** Absent when the query predates `…_category_families` (see `api.ts`). */
+  family?: { slug: string } | null;
   product_translations: ProductTranslationRow[];
   product_variants: VariantRow[];
   product_media: MediaRow[];
@@ -96,14 +98,42 @@ export interface ReviewStatsRow {
   review_count: number | null;
 }
 
-/** Database category slug → shop filter key. Unknown slugs stay unfiltered. */
-const CATEGORY_BY_SLUG: Record<string, ShopCategory> = {
-  gems: "Gems",
-  outils: "Outils",
-  kits: "Kits",
-  entretien: "Suivi",
-  accessoires: "Accessoires",
-};
+export interface FamilyRow {
+  slug: string;
+  name: string;
+  image_path: string | null;
+  position: number;
+  is_active: boolean;
+  category_family_translations: (TranslationRow & { name: string })[];
+}
+
+export interface TaxonomyRow extends CategoryRow {
+  position: number;
+  category_families?: FamilyRow[];
+}
+
+/**
+ * The shop taxonomy from the active categories and their families, both in
+ * their back-office order. A hidden family is left out even if the query
+ * returned it (a signed-in admin reads every row).
+ */
+export function mapTaxonomy(rows: TaxonomyRow[], mediaUrl: (path: string) => string): ShopCategoryDef[] {
+  return rows
+    .slice()
+    .sort((a, b) => a.position - b.position)
+    .map((row) => ({
+      slug: row.slug,
+      name: localize(row.name, row.category_translations, (t) => t.name),
+      families: (row.category_families ?? [])
+        .filter((f) => f.is_active)
+        .sort((a, b) => a.position - b.position)
+        .map((f) => ({
+          slug: f.slug,
+          name: localize(f.name, f.category_family_translations, (t) => t.name),
+          imageUrl: f.image_path ? mediaUrl(f.image_path) : undefined,
+        })),
+    }));
+}
 
 /**
  * Builds a `Localized` value from the base column and the published
@@ -270,7 +300,8 @@ export function mapProduct(
     reviewCount: stats?.review_count ?? 0,
     stock,
     image: images[0]?.src ?? "",
-    cat: row.category ? CATEGORY_BY_SLUG[row.category.slug] ?? null : null,
+    cat: row.category?.slug ?? null,
+    family: row.family?.slug ?? null,
     material,
     shape: asShape(metadataString(row.metadata, "shape")),
     // Any slug: the colour list is data, and a slug with no matching colour

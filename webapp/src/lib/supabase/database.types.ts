@@ -331,6 +331,131 @@ export type Database = {
           },
         ]
       }
+      category_families: {
+        Row: {
+          category_id: string
+          created_at: string
+          created_by: string | null
+          description: string | null
+          id: string
+          image_path: string | null
+          is_active: boolean
+          name: string
+          position: number
+          slug: string
+          updated_at: string
+          updated_by: string | null
+        }
+        Insert: {
+          category_id: string
+          created_at?: string
+          created_by?: string | null
+          description?: string | null
+          id?: string
+          image_path?: string | null
+          is_active?: boolean
+          name: string
+          position?: number
+          slug: string
+          updated_at?: string
+          updated_by?: string | null
+        }
+        Update: {
+          category_id?: string
+          created_at?: string
+          created_by?: string | null
+          description?: string | null
+          id?: string
+          image_path?: string | null
+          is_active?: boolean
+          name?: string
+          position?: number
+          slug?: string
+          updated_at?: string
+          updated_by?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "category_families_category_id_fkey"
+            columns: ["category_id"]
+            isOneToOne: false
+            referencedRelation: "categories"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "category_families_created_by_fkey"
+            columns: ["created_by"]
+            isOneToOne: false
+            referencedRelation: "profiles"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "category_families_updated_by_fkey"
+            columns: ["updated_by"]
+            isOneToOne: false
+            referencedRelation: "profiles"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      category_family_translations: {
+        Row: {
+          created_at: string
+          description: string | null
+          family_id: string
+          locale: string
+          name: string
+          slug: string | null
+          status: string
+          updated_at: string
+          updated_by: string | null
+        }
+        Insert: {
+          created_at?: string
+          description?: string | null
+          family_id: string
+          locale: string
+          name: string
+          slug?: string | null
+          status?: string
+          updated_at?: string
+          updated_by?: string | null
+        }
+        Update: {
+          created_at?: string
+          description?: string | null
+          family_id?: string
+          locale?: string
+          name?: string
+          slug?: string | null
+          status?: string
+          updated_at?: string
+          updated_by?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "category_family_translations_family_id_fkey"
+            columns: ["family_id"]
+            isOneToOne: false
+            referencedRelation: "category_families"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "category_family_translations_locale_fkey"
+            columns: ["locale"]
+            isOneToOne: false
+            referencedRelation: "languages"
+            referencedColumns: ["code"]
+          },
+          {
+            foreignKeyName: "category_family_translations_updated_by_fkey"
+            columns: ["updated_by"]
+            isOneToOne: false
+            referencedRelation: "profiles"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       category_translations: {
         Row: {
           category_id: string
@@ -3413,6 +3538,7 @@ export type Database = {
           created_by: string | null
           currency: string
           description: string | null
+          family_id: string | null
           id: string
           is_featured: boolean
           meta_description: string | null
@@ -3437,6 +3563,7 @@ export type Database = {
           created_by?: string | null
           currency?: string
           description?: string | null
+          family_id?: string | null
           id?: string
           is_featured?: boolean
           meta_description?: string | null
@@ -3461,6 +3588,7 @@ export type Database = {
           created_by?: string | null
           currency?: string
           description?: string | null
+          family_id?: string | null
           id?: string
           is_featured?: boolean
           meta_description?: string | null
@@ -3485,6 +3613,13 @@ export type Database = {
             isOneToOne: false
             referencedRelation: "categories"
             referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "products_family_fkey"
+            columns: ["category_id", "family_id"]
+            isOneToOne: false
+            referencedRelation: "category_families"
+            referencedColumns: ["category_id", "id"]
           },
           {
             foreignKeyName: "products_created_by_fkey"

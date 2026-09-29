@@ -22,7 +22,7 @@ begin
   insert into auth.users (id, aud, role, email, raw_user_meta_data, created_at, updated_at) values
     (mgr, 'authenticated', 'authenticated', 'mgr14.test@example.invalid', '{"first_name":"Mia"}', now(), now());
   update public.profiles set role = 'manager' where id = mgr;
-  select id into c_tools from public.categories where slug = 'outils';
+  select id into c_tools from public.categories where slug = 'materiel';
   select id into c_gems from public.categories where slug = 'gems';
 
   base := jsonb_build_object(

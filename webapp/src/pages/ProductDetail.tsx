@@ -16,6 +16,8 @@ import { useCart } from "../lib/cart";
 import { useToast } from "../lib/toast";
 import { useReveal } from "../lib/useReveal";
 import { useCatalog } from "../lib/catalog/CatalogProvider";
+import { useTaxonomy } from "../lib/catalog/useTaxonomy";
+import { shopHref } from "../data/taxonomy";
 import { CatalogError } from "../components/shop/CatalogError";
 import { GemOptionPicker } from "../components/shop/GemOptionPicker";
 import { formatSs, formatSsMm, isGemOptionSet } from "../lib/gemOptions";
@@ -76,6 +78,7 @@ function ProductView({ product }: { product: Product }) {
   const { addLine } = useCart();
   const { showToast } = useToast();
   const { products, source } = useCatalog();
+  const { categoryName, familyName } = useTaxonomy();
   const lang = i18n.language;
 
   // Database products carry their real options; the prototype's fixtures keep
@@ -187,10 +190,18 @@ function ProductView({ product }: { product: Product }) {
           <span aria-hidden="true">·</span>
           {product.cat && (
             <>
-              <Link to={`/boutique?categorie=${product.cat}`} className="underline decoration-1 underline-offset-2">
-                {t(`shop.categories.${product.cat}`)}
+              <Link to={shopHref(product.cat)} className="underline decoration-1 underline-offset-2">
+                {categoryName(product.cat)}
               </Link>
               <span aria-hidden="true">·</span>
+              {product.family && (
+                <>
+                  <Link to={shopHref(product.cat, product.family)} className="underline decoration-1 underline-offset-2">
+                    {familyName(product.family)}
+                  </Link>
+                  <span aria-hidden="true">·</span>
+                </>
+              )}
             </>
           )}
           <span className="text-[var(--text-primary)]" aria-current="page">{name}</span>

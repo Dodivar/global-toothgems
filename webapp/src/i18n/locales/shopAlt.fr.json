@@ -13,6 +13,7 @@
   "sidebarLabel": "Filtres produits",
   "skipToResults": "Aller aux produits",
   "categoryLabel": "Type de produit",
+  "toggleFamilies": "Familles de {{name}}",
   "sortLabel": "Trier par",
   "sorts": {
     "new": "Nouveautés",
