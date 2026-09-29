@@ -7,7 +7,7 @@ import { LOYALTY_STATES, STAMPS_PER_CARD, type LoyaltyState } from "../../data/l
 import { usePrefersReducedMotion } from "./usePrefersReducedMotion";
 
 /** Time each stamp stays on the card before the next one is pressed. */
-const STAMP_INTERVAL_MS = 5000;
+const STAMP_INTERVAL_MS = 3000;
 
 /**
  * The card for a given stamp count. Zero reads as "renewed" rather than "start"
@@ -21,13 +21,13 @@ function stateForStamps(stamps: number): LoyaltyState {
 }
 
 /**
- * The home page's sample card, filling itself one stamp every five seconds and
+ * The home page's sample card, filling itself one stamp every three seconds and
  * starting over once the reward is unlocked, so the visitor sees the whole
  * journey without being handed a second call to action next to the programme
  * link.
  *
- * It only runs while the card is on screen, stops while the pointer or focus
- * is on it, and has a pause toggle (WCAG 2.2.2). Readers who asked for less
+ * It only runs while the card is on screen, stops while the pointer
+ * is over it, and has a pause toggle (WCAG 2.2.2). Readers who asked for less
  * motion get the static "collecting" card, as before.
  */
 export function AnimatedLoyaltyCard() {
