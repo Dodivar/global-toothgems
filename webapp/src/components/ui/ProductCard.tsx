@@ -1,4 +1,4 @@
-import { useMemo, useState } from "react";
+import { useMemo, useState, type ReactNode } from "react";
 import { Link } from "react-router-dom";
 import { useTranslation } from "react-i18next";
 import { Heart, Image as ImageIcon } from "lucide-react";
@@ -38,9 +38,15 @@ interface ProductCardProps {
   saved?: boolean;
   /** Skip the lazy-load hint for cards that are above the fold. */
   eager?: boolean;
+  /**
+   * A control laid over the bottom-left of the image, such as a quick add to
+   * the cart. Rendered above the stretched link, like the save button, so it
+   * stays a sibling of the link rather than nested interactive content.
+   */
+  quickAction?: ReactNode;
 }
 
-export function ProductCard({ product, to, onSave, saved = false, eager = false }: ProductCardProps) {
+export function ProductCard({ product, to, onSave, saved = false, eager = false, quickAction }: ProductCardProps) {
   const { t, i18n } = useTranslation();
   const {
     name, subtitle, price, compareAtPrice, image, hoverImage, imageLabel,
@@ -107,6 +113,7 @@ export function ProductCard({ product, to, onSave, saved = false, eager = false 
             <Badge tone="error" size="sm">{t("product.stockOut")}</Badge>
           </span>
         )}
+        {quickAction && <span className="absolute bottom-2 left-2 z-10">{quickAction}</span>}
         {onSave && (
           /* z-10 keeps this above the stretched link below; it must stay a sibling
              of that link rather than a child, or it would be nested interactive content. */
