@@ -1508,3 +1508,332 @@
   .gt-ws-drawer,
   .gt-ws-pop { animation: none; }
 }
+
+/* ---------------------------------------------------------------------------
+   Alternative home page (/accueil-b)
+   ---------------------------------------------------------------------------
+   The same tokens as every other storefront screen, composed full width and
+   editorially: sections run edge to edge, text keeps its measure inside a
+   wide container, and each band has its own rhythm (a rail, a mosaic, a
+   statement, a review feed, a night-studio frame). Emerald stays on the
+   calls to action and the review feed's stars and tags, fuchsia appears
+   once (the gift card badge), and the pastel blue carries the loyalty band. Every loop and entrance stops under reduced
+   motion, and nothing is hidden waiting for an animation to run.
+--------------------------------------------------------------------------- */
+@layer components {
+  .gt-alt {
+    --gt-alt-gutter: clamp(16px, 4vw, 72px);
+    --gt-alt-max: 1760px;
+  }
+
+  .gt-alt-wide { width: 100%; max-width: var(--gt-alt-max); margin-inline: auto; }
+  .gt-alt-section { padding-block: clamp(64px, 8vw, 136px); }
+
+  /* The rail starts on the container's left edge and runs off the right of
+     the screen, however wide the screen is. */
+  .gt-alt-bleed-right {
+    padding-left: max(var(--gt-alt-gutter), calc((100% - var(--gt-alt-max)) / 2 + var(--gt-alt-gutter)));
+  }
+  .gt-alt-rail { padding-right: var(--gt-alt-gutter); }
+  /* Swiped rows pad their ends with the page gutter; snapping must honour
+     that padding or the first card is pulled flush against the screen edge. */
+  .gt-alt-snap-pad { scroll-padding-inline: var(--gt-alt-gutter); }
+
+  .gt-alt-h2 {
+    font-size: clamp(32px, 3.6vw, 56px);
+    font-weight: var(--weight-black);
+    line-height: 1.05;
+    letter-spacing: var(--tracking-display);
+    color: var(--text-primary);
+    text-wrap: balance;
+  }
+  .gt-alt-display {
+    font-size: clamp(40px, 5.4vw, 88px);
+    font-weight: var(--weight-black);
+    line-height: 1.01;
+    letter-spacing: -.025em;
+    color: var(--text-primary);
+    text-wrap: balance;
+  }
+  .gt-alt-h3 {
+    font-size: clamp(20px, 1.6vw, 26px);
+    font-weight: var(--weight-bold);
+    color: var(--text-primary);
+  }
+
+  /* Calls to action: a soft emerald bloom and an arrow that leans forward. */
+  .gt-alt-cta { box-shadow: 0 10px 24px -12px rgba(18, 168, 122, .55); }
+  .gt-alt-cta:hover:not(:disabled) { box-shadow: 0 16px 32px -12px rgba(18, 168, 122, .7); }
+  .gt-alt-cta svg:last-child { transition: transform var(--duration-normal) var(--ease-out-soft); }
+  .gt-alt-cta:hover svg:last-child,
+  .gt-alt-cta:focus-visible svg:last-child { transform: translateX(3px); }
+
+  /* Product cut-outs are shot on white: multiplying them into the tint
+     behind leaves only the gem. */
+  .gt-alt-cutout { mix-blend-mode: multiply; }
+
+  .gt-alt-float { animation: gt-alt-float 7s var(--ease-in-out) infinite; }
+  .gt-alt-float--late { animation-delay: -3.5s; }
+
+  .gt-alt-arch { border-radius: 999px 999px var(--radius-xl) var(--radius-xl); }
+
+  /* Hero ------------------------------------------------------------------ */
+  .gt-alt-hero {
+    background: var(--gt-blue-100);
+    color: var(--gt-ink-900);
+    transition: background-color var(--duration-slow) var(--ease-standard), color var(--duration-slow) var(--ease-standard);
+  }
+  .gt-alt-hero[data-slide="academy"] { background: var(--gt-ink-900); color: var(--gt-off-white); }
+  .gt-alt-hero[data-slide="studio"] { background: var(--gt-blue-50); }
+
+  .gt-alt-hero-shop {
+    background:
+      radial-gradient(55% 70% at 18% 20%, rgba(255, 255, 255, .75), transparent 70%),
+      linear-gradient(135deg, var(--gt-blue-100) 0%, var(--gt-blue-300) 100%);
+  }
+  .gt-alt-hero-academy {
+    background:
+      radial-gradient(55% 75% at 78% 35%, rgba(122, 149, 184, .38), transparent 70%),
+      radial-gradient(40% 50% at 0% 100%, rgba(185, 205, 229, .12), transparent 70%),
+      var(--gt-ink-900);
+  }
+  .gt-alt-hero-studio {
+    background:
+      radial-gradient(60% 70% at 85% 20%, rgba(185, 205, 229, .6), transparent 70%),
+      radial-gradient(50% 60% at 0% 100%, rgba(231, 238, 247, .9), transparent 70%),
+      var(--gt-blue-50);
+  }
+
+  .gt-alt-slide > div { display: grid; }
+  @media (min-width: 1024px) {
+    .gt-alt-slide > div { min-height: clamp(640px, calc(100svh - 76px), 940px); }
+  }
+
+  .gt-alt-slide {
+    opacity: 0;
+    visibility: hidden;
+    transition: opacity 700ms var(--ease-out-soft), visibility 0s linear 700ms;
+  }
+  .gt-alt-slide[data-active="true"] {
+    z-index: 1;
+    opacity: 1;
+    visibility: visible;
+    transition: opacity 700ms var(--ease-out-soft), visibility 0s;
+  }
+  .gt-alt-slide .gt-alt-slide-media {
+    transform: scale(1.045);
+    transition: transform 1600ms var(--ease-out-soft);
+  }
+  .gt-alt-slide[data-active="true"] .gt-alt-slide-media { transform: none; }
+  .gt-alt-slide .gt-alt-slide-copy > * {
+    opacity: 0;
+    transform: translateY(14px);
+    transition: opacity 600ms var(--ease-out-soft), transform 600ms var(--ease-out-soft);
+  }
+  .gt-alt-slide[data-active="true"] .gt-alt-slide-copy > * { opacity: 1; transform: none; }
+  .gt-alt-slide[data-active="true"] .gt-alt-slide-copy > :nth-child(2) { transition-delay: 70ms; }
+  .gt-alt-slide[data-active="true"] .gt-alt-slide-copy > :nth-child(3) { transition-delay: 140ms; }
+  .gt-alt-slide[data-active="true"] .gt-alt-slide-copy > :nth-child(n + 4) { transition-delay: 210ms; }
+
+  .gt-alt-tab { color: inherit; opacity: .62; transition: opacity var(--duration-fast) var(--ease-standard); }
+  .gt-alt-tab:hover,
+  .gt-alt-tab[aria-selected="true"] { opacity: 1; }
+  .gt-alt-tab-num { opacity: .7; }
+  .gt-alt-tab-track { background: color-mix(in srgb, currentColor 22%, transparent); }
+  .gt-alt-tab-fill {
+    background: currentColor;
+    transform: scaleX(0);
+    transform-origin: left center;
+  }
+  .gt-alt-tab[aria-selected="true"] .gt-alt-tab-fill { transform: scaleX(1); }
+  .gt-alt-tab-fill--timed { animation-name: gt-alt-progress; animation-timing-function: linear; animation-fill-mode: both; }
+
+  /* Best sellers ------------------------------------------------------------ */
+  .gt-alt-rank {
+    display: flex;
+    align-items: center;
+    gap: var(--space-3);
+    font-size: 12px;
+    font-weight: var(--weight-bold);
+    letter-spacing: var(--tracking-eyebrow);
+    font-variant-numeric: tabular-nums;
+    color: var(--gt-blue-600);
+  }
+  .gt-alt-rank::after { content: ""; flex: 1; height: 1px; background: var(--border-subtle); }
+
+  /* Quick add: always there on touch screens, revealed with the card's other
+     controls where there is a pointer to hover with. */
+  @media (hover: hover) {
+    .gt-alt-quickadd { opacity: 0; transform: translateY(4px); }
+    .group:hover .gt-alt-quickadd,
+    .group:focus-within .gt-alt-quickadd,
+    .gt-alt-quickadd[data-added="true"] { opacity: 1; transform: none; }
+  }
+
+  /* Category mosaic and course cards --------------------------------------- */
+  .gt-alt-tile {
+    transition: transform var(--duration-normal) var(--ease-out-soft), box-shadow var(--duration-normal) var(--ease-out-soft);
+  }
+  .gt-alt-tile:hover,
+  .gt-alt-tile:focus-visible { transform: translateY(-4px); box-shadow: var(--shadow-card-hover); }
+  .gt-alt-tile:focus-visible { outline: 2px solid var(--focus-ring); outline-offset: 3px; }
+  .gt-alt-tile-art { transition: transform 1200ms var(--ease-out-soft); }
+  .gt-alt-tile:hover .gt-alt-tile-art,
+  .gt-alt-tile:focus-visible .gt-alt-tile-art,
+  .gt-alt-course:hover .gt-alt-tile-art,
+  .gt-alt-course:focus-within .gt-alt-tile-art { transform: scale(1.05); }
+  .gt-alt-tile-arrow { transition: transform var(--duration-normal) var(--ease-out-soft); }
+  .gt-alt-tile:hover .gt-alt-tile-arrow,
+  .gt-alt-tile:focus-visible .gt-alt-tile-arrow { transform: translate(2px, -2px); }
+  .gt-alt-course:hover .gt-alt-tile-arrow,
+  .gt-alt-course:focus-within .gt-alt-tile-arrow { transform: translateX(3px); }
+
+  /* Academy ------------------------------------------------------------------ */
+  .gt-alt-academy { background: linear-gradient(180deg, var(--gt-off-white) 0%, var(--gt-sand) 100%); }
+
+  /* Review feed: Pinterest-style pins ------------------------------------- */
+  .gt-alt-pin {
+    transition: transform var(--duration-normal) var(--ease-out-soft), box-shadow var(--duration-normal) var(--ease-out-soft);
+  }
+  .gt-alt-pin:hover,
+  .gt-alt-pin:focus-within { transform: translateY(-4px); box-shadow: var(--shadow-card-hover); }
+  .gt-alt-pin:focus-visible { outline: 2px solid var(--focus-ring); outline-offset: 3px; }
+  .gt-alt-pin:hover .gt-alt-tile-art,
+  .gt-alt-pin:focus-within .gt-alt-tile-art { transform: scale(1.05); }
+  .gt-alt-pin-quote::before { content: "\201C"; margin-right: .04em; color: var(--gt-emerald-500); font-weight: var(--weight-black); }
+  .gt-alt-pin-quote::after { content: "\201D"; margin-left: .04em; color: var(--gt-emerald-500); font-weight: var(--weight-black); }
+  /* Pins settle in one after another; the delay is set inline and capped. */
+  .gt-alt-pin-in { animation: gt-alt-rise var(--duration-slow) var(--ease-out-soft) both; animation-delay: var(--gt-delay, 0ms); }
+
+  /* 3D Studio: the night studio -------------------------------------------- */
+  .gt-alt-studio {
+    background:
+      radial-gradient(45% 55% at 12% 0%, rgba(122, 149, 184, .3), transparent 70%),
+      radial-gradient(40% 50% at 100% 55%, rgba(185, 205, 229, .16), transparent 70%),
+      linear-gradient(180deg, var(--gt-ink-900) 0%, #151b23 100%);
+  }
+  .gt-alt-studio-grid {
+    background-image:
+      linear-gradient(rgba(185, 205, 229, .06) 1px, transparent 1px),
+      linear-gradient(90deg, rgba(185, 205, 229, .06) 1px, transparent 1px);
+    background-size: 56px 56px;
+    mask-image: radial-gradient(70% 60% at 50% 45%, #000, transparent 85%);
+    -webkit-mask-image: radial-gradient(70% 60% at 50% 45%, #000, transparent 85%);
+  }
+  .gt-alt-frame {
+    box-shadow:
+      0 0 0 1px rgba(255, 255, 255, .14),
+      0 40px 120px -30px rgba(122, 149, 184, .55),
+      0 0 90px -24px rgba(185, 205, 229, .4);
+  }
+  .gt-alt-play {
+    color: var(--gt-white);
+    background: rgba(255, 255, 255, .16);
+    backdrop-filter: blur(12px);
+    -webkit-backdrop-filter: blur(12px);
+    border: 1px solid rgba(255, 255, 255, .45);
+    box-shadow: 0 0 0 12px rgba(255, 255, 255, .07), var(--shadow-lg);
+    transition: background-color var(--duration-fast) var(--ease-standard), box-shadow var(--duration-normal) var(--ease-out-soft);
+  }
+  .gt-alt-play:hover { background: rgba(255, 255, 255, .26); box-shadow: 0 0 0 18px rgba(255, 255, 255, .08), var(--shadow-lg); }
+  .gt-alt-play:focus-visible { outline: 3px solid var(--gt-blue-300); outline-offset: 4px; }
+  .gt-alt-reel-in { animation: gt-alt-reel 700ms var(--ease-out-soft) both; }
+
+  /* Gift card ----------------------------------------------------------------- */
+  .gt-alt-gift-stage {
+    perspective: 1400px;
+    background:
+      radial-gradient(70% 70% at 25% 15%, rgba(255, 255, 255, .95), transparent 60%),
+      linear-gradient(150deg, var(--gt-blue-100) 0%, var(--gt-blue-300) 100%);
+  }
+  .gt-alt-giftcard {
+    display: flex;
+    flex-direction: column;
+    justify-content: space-between;
+    width: min(86%, 460px);
+    aspect-ratio: 1.586;
+    border-radius: clamp(16px, 1.6vw, 24px);
+    padding: clamp(18px, 2.2vw, 30px);
+    background:
+      radial-gradient(120% 90% at 0% 0%, rgba(255, 255, 255, .32), transparent 50%),
+      linear-gradient(135deg, var(--gt-blue-500) 0%, var(--gt-blue-700) 50%, #1e2a38 100%);
+    box-shadow: 0 34px 70px -24px rgba(35, 52, 71, .6), inset 0 1px 0 rgba(255, 255, 255, .45);
+    transform: rotateX(8deg) rotateY(-16deg) rotate(-3deg);
+    transition: transform 900ms var(--ease-out-soft);
+  }
+  /* A faint iridescence across the card stock. Decorative. */
+  .gt-alt-giftcard::before {
+    content: "";
+    position: absolute;
+    inset: 0;
+    border-radius: inherit;
+    background: linear-gradient(115deg, transparent 28%, rgba(245, 156, 199, .16) 44%, rgba(185, 205, 229, .22) 52%, transparent 68%);
+    pointer-events: none;
+  }
+  .gt-alt-gift-stage:hover .gt-alt-giftcard:not(.gt-alt-giftcard--back) { transform: none; }
+  .gt-alt-giftcard--back {
+    background: linear-gradient(135deg, var(--gt-ink-700), var(--gt-ink-900));
+    transform: translate(12%, 10%) rotate(9deg);
+    opacity: .9;
+  }
+  .gt-alt-amount-in { animation: gt-pop var(--duration-slow) var(--ease-out-soft) both; }
+
+  /* Loyalty and newsletter ------------------------------------------------- */
+  .gt-alt-loyalty {
+    background:
+      radial-gradient(55% 80% at 92% 8%, rgba(255, 255, 255, .6), transparent 60%),
+      linear-gradient(160deg, var(--gt-blue-200) 0%, var(--gt-blue-300) 100%);
+  }
+  .gt-alt-loyalty-card { transform: rotate(-2.5deg); transition: transform var(--duration-slow) var(--ease-out-soft); }
+  .gt-alt-loyalty-card:hover { transform: none; }
+  .gt-alt-newsletter {
+    background:
+      radial-gradient(60% 90% at 50% 0%, rgba(255, 255, 255, .9), transparent 70%),
+      var(--gt-blue-100);
+    border: 1px solid rgba(255, 255, 255, .85);
+  }
+}
+
+@keyframes gt-alt-progress {
+  from { transform: scaleX(0); }
+  to { transform: scaleX(1); }
+}
+@keyframes gt-alt-float {
+  0%, 100% { transform: translateY(0); }
+  50% { transform: translateY(-9px); }
+}
+@keyframes gt-alt-rise {
+  from { opacity: 0; transform: translateY(10px); }
+  to { opacity: 1; transform: none; }
+}
+@keyframes gt-alt-reel {
+  from { opacity: 0; transform: scale(.97); }
+  to { opacity: 1; transform: none; }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .gt-alt-float,
+  .gt-alt-pin-in,
+  .gt-alt-reel-in,
+  .gt-alt-amount-in { animation: none; }
+  .gt-alt-slide,
+  .gt-alt-slide[data-active="true"],
+  .gt-alt-slide .gt-alt-slide-media,
+  .gt-alt-slide .gt-alt-slide-copy > *,
+  .gt-alt-tile,
+  .gt-alt-tile-art,
+  .gt-alt-pin,
+  .gt-alt-giftcard,
+  .gt-alt-loyalty-card,
+  .gt-alt-hero { transition: none; }
+  .gt-alt-slide .gt-alt-slide-media,
+  .gt-alt-slide .gt-alt-slide-copy > * { transform: none; opacity: 1; }
+  .gt-alt-tile:hover .gt-alt-tile-art,
+  .gt-alt-tile:focus-visible .gt-alt-tile-art,
+  .gt-alt-course:hover .gt-alt-tile-art,
+  .gt-alt-course:focus-within .gt-alt-tile-art,
+  .gt-alt-pin:hover .gt-alt-tile-art,
+  .gt-alt-pin:focus-within .gt-alt-tile-art { transform: none; }
+  .gt-alt-pin:hover,
+  .gt-alt-pin:focus-within { transform: none; }
+}

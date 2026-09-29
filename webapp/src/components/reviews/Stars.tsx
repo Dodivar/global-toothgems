@@ -20,11 +20,12 @@ export function Stars({
   rating: number;
   size?: number;
   className?: string;
-  tone?: "ink" | "inverse";
+  /** `accent`: emerald stars, for the editorial surfaces that want the rating to pop. */
+  tone?: "ink" | "inverse" | "accent";
 }) {
   const { t } = useTranslation();
-  const filled = tone === "ink" ? "var(--gt-ink-900)" : "var(--gt-off-white)";
-  const empty = tone === "ink" ? "var(--gt-ink-300)" : "rgba(250,250,248,.35)";
+  const filled = tone === "inverse" ? "var(--gt-off-white)" : tone === "accent" ? "var(--gt-emerald-500)" : "var(--gt-ink-900)";
+  const empty = tone === "inverse" ? "rgba(250,250,248,.35)" : "var(--gt-ink-300)";
   return (
     <span
       className={clsx("inline-flex items-center gap-0.5", className)}
