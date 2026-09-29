@@ -2135,7 +2135,7 @@
       "toastBulkStatusBody": "Nouveau statut : {{status}}.",
       "toastRefundTitle": "Commande {{reference}} remboursée",
       "refundUnavailableTitle": "Remboursement indisponible ici",
-      "refundUnavailableBody": "Les remboursements passent par Stripe, qui n’est pas encore relié au back-office. Rien n’a été modifié.",
+      "refundUnavailableBody": "Rembourser, ou annuler une commande payée, passe par Stripe, qui n’est pas encore relié au back-office. Rien n’a été modifié.",
       "loadErrorTitle": "Commandes indisponibles",
       "loadErrorBody": "Le carnet de commandes n’a pas pu être chargé. Rechargez la page.",
       "writeErrorTitle": "Modification non enregistrée",

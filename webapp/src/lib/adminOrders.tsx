@@ -51,18 +51,19 @@ export interface AdminOrdersContextValue {
   orders: AdminOrder[];
   /** True until the first read of the book has answered. */
   loading: boolean;
-  /** Moves one order along, updating fulfilment and timeline with it. */
-  setStatus: (reference: string, status: AdminOrderStatus) => void;
-  /** Same, for a batch selected in the table. */
-  setStatusMany: (references: string[], status: AdminOrderStatus) => void;
-  /**
-   * Records a refund: full or partial, with the amount actually given back.
-   * Returns false when refunds cannot be made here (the caller then says so
-   * instead of confirming).
+  /*
+   * The actions below return false when they are refused before anything is
+   * sent — the store has already said why — so the caller skips its success
+   * message.
    */
+  /** Moves one order along, updating fulfilment and timeline with it. */
+  setStatus: (reference: string, status: AdminOrderStatus) => boolean;
+  /** Same, for a batch selected in the table. */
+  setStatusMany: (references: string[], status: AdminOrderStatus) => boolean;
+  /** Records a refund: full or partial, with the amount actually given back. */
   refund: (reference: string, amount: number, full: boolean) => boolean;
-  cancel: (reference: string) => void;
-  cancelMany: (references: string[]) => void;
+  cancel: (reference: string) => boolean;
+  cancelMany: (references: string[]) => boolean;
   addNote: (reference: string, body: string, author: string) => void;
 }
 
@@ -146,29 +147,47 @@ function SupabaseAdminOrdersProvider({ children }: { children: ReactNode }) {
     [reload, showToast, t],
   );
 
+  const refuseMoney = useCallback(() => {
+    showToast(t("admin.orders.refundUnavailableTitle"), t("admin.orders.refundUnavailableBody"), "info");
+    return false;
+  }, [showToast, t]);
+
+  /**
+   * Whether any of these orders holds money. Cancelling one, or marking it
+   * refunded, would claim a refund that no one made: that goes through
+   * Stripe, so it is refused here like `refund` itself.
+   */
+  const holdsMoney = useCallback(
+    (references: string[]) =>
+      (rows ?? []).some((r) => references.includes(r.order_number) && (r.payment_status === "paid" || r.payment_status === "partially_refunded")),
+    [rows],
+  );
+
   const setStatusMany = useCallback(
     (references: string[], status: AdminOrderStatus) => {
+      if ((status === "cancelled" || status === "refunded") && holdsMoney(references)) return refuseMoney();
       const fulfillment = FULFILLMENT_FOR[status];
       const patch = { status, ...(fulfillment ? { fulfillment_status: fulfillmentToDb(fulfillment) } : {}) };
       write(async () => [await requireSupabase().from("orders").update(patch).in("id", idsOf(references))]);
+      return true;
     },
-    [write, idsOf],
+    [write, idsOf, holdsMoney, refuseMoney],
   );
 
   const setStatus = useCallback((reference: string, status: AdminOrderStatus) => setStatusMany([reference], status), [setStatusMany]);
 
   const cancelMany = useCallback(
-    (references: string[]) =>
-      write(() => Promise.all(idsOf(references).map((id) => requireSupabase().rpc("cancel_order", { p_order_id: id })))),
-    [write, idsOf],
+    (references: string[]) => {
+      if (holdsMoney(references)) return refuseMoney();
+      write(() => Promise.all(idsOf(references).map((id) => requireSupabase().rpc("cancel_order", { p_order_id: id }))));
+      return true;
+    },
+    [write, idsOf, holdsMoney, refuseMoney],
   );
 
   const cancel = useCallback((reference: string) => cancelMany([reference]), [cancelMany]);
 
-  const refund = useCallback(() => {
-    showToast(t("admin.orders.refundUnavailableTitle"), t("admin.orders.refundUnavailableBody"), "info");
-    return false;
-  }, [showToast, t]);
+  const refund = refuseMoney;
 
   /** Appended to the order's single note column, signed and dated. */
   const addNote = useCallback(
@@ -225,6 +244,7 @@ function MockAdminOrdersProvider({ children }: { children: ReactNode }) {
         // reason behind it is actually resolved.
         timeline: withEvent(order, EVENT_FOR[status]),
       }));
+      return true;
     },
     [patch],
   );
@@ -280,6 +300,7 @@ function MockAdminOrdersProvider({ children }: { children: ReactNode }) {
             : [...order.timeline, { kind: "cancelled" as TimelineKind, at }],
         };
       });
+      return true;
     },
     [patch],
   );

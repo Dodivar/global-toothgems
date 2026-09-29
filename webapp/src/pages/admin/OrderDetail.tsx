@@ -277,11 +277,12 @@ export function OrderDetail() {
         order={statusOpen ? order : null}
         onClose={() => setStatusOpen(false)}
         onConfirm={(status) => {
-          setStatus(order.reference, status);
-          showToast(
-            t("admin.orders.toastStatusTitle", { reference: `#${order.reference}` }),
-            t("admin.orders.toastStatusBody", { status: t(`admin.orders.orderStatus.${status}`) }),
-          );
+          if (setStatus(order.reference, status)) {
+            showToast(
+              t("admin.orders.toastStatusTitle", { reference: `#${order.reference}` }),
+              t("admin.orders.toastStatusBody", { status: t(`admin.orders.orderStatus.${status}`) }),
+            );
+          }
           setStatusOpen(false);
         }}
       />
@@ -304,12 +305,13 @@ export function OrderDetail() {
         orders={cancelOpen ? [order] : []}
         onClose={() => setCancelOpen(false)}
         onConfirm={() => {
-          cancel(order.reference);
-          showToast(
-            t("admin.orders.toastCancelTitle", { reference: `#${order.reference}` }),
-            t("admin.orders.toastCancelBody"),
-            "warning",
-          );
+          if (cancel(order.reference)) {
+            showToast(
+              t("admin.orders.toastCancelTitle", { reference: `#${order.reference}` }),
+              t("admin.orders.toastCancelBody"),
+              "warning",
+            );
+          }
           setCancelOpen(false);
         }}
       />

@@ -144,7 +144,7 @@ instead of their mock data; without them the mock stores run unchanged.
 | Store | Reads | Writes |
 | --- | --- | --- |
 | `lib/orders.tsx` (member area) | the account's own paid orders (`payment_status` paid / refunded / partially refunded), items and parcels | nothing: orders come from the checkout and the Stripe webhook. The demo cart's "payment" adds no order in this mode |
-| `lib/adminOrders.tsx` (back office) | every order except expired unpaid checkouts, with items, parcels and payments | status (+ implied fulfilment), cancellation (`cancel_order`), notes (appended to `admin_note`). Refunds are refused with a message: they go through Stripe |
+| `lib/adminOrders.tsx` (back office) | every order except expired unpaid checkouts, with items, parcels and payments | status (+ implied fulfilment), cancellation (`cancel_order`), notes (appended to `admin_note`). Refunds — and cancelling or marking refunded an order that holds money — are refused with a message: they go through Stripe |
 | `lib/reviewsSupabase.tsx` | published reviews for visitors (public columns only); own reviews, votes and reports for customers; everything for staff | submit / edit (photos to the private `review-photos` bucket), helpful votes, reports, and every moderation action |
 
 The database enforces the review rules: only a customer whose order with the
