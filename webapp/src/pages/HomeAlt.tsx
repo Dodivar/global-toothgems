@@ -3,7 +3,7 @@ import { HeroCarousel } from "../components/homeAlt/HeroCarousel";
 import { BestSellersRail } from "../components/homeAlt/BestSellersRail";
 import { CategoryMosaic } from "../components/homeAlt/CategoryMosaic";
 import { AcademyFeature } from "../components/homeAlt/AcademyFeature";
-import { TestimonialShowcase } from "../components/homeAlt/TestimonialShowcase";
+import { ReviewFeed } from "../components/homeAlt/ReviewFeed";
 import { StudioVideoFeature } from "../components/homeAlt/StudioVideoFeature";
 import { GiftCardFeature } from "../components/homeAlt/GiftCardFeature";
 import { LoyaltyFeature } from "../components/homeAlt/LoyaltyFeature";
@@ -29,7 +29,7 @@ export function HomeAlt() {
       <BestSellersRail />
       <CategoryMosaic />
       <AcademyFeature />
-      <TestimonialShowcase />
+      <ReviewFeed />
       <StudioVideoFeature />
       <GiftCardFeature />
       <LoyaltyFeature />

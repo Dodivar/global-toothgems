@@ -91,15 +91,19 @@
   "reviews": {
     "eyebrow": "Community voices",
     "title": "Loved by artists and customers alike.",
-    "body": "A few words from the people who learn with us and create with our products.",
-    "pickerLabel": "Choose a review",
-    "prev": "Previous review",
-    "next": "Next review",
+    "body": "Real-life results and first-hand words from the people who learn with us and create with our products.",
+    "filterLabel": "Filter the reviews",
+    "filter": {
+      "all": "All",
+      "academy": "Academy",
+      "product": "Products"
+    },
     "academyBadge": "Academy review",
     "productBadge": "Product review",
     "courseRef": "Course",
     "productRef": "Product",
-    "counter": "{{index}} / {{total}}"
+    "showMore_one": "Show {{count}} more review",
+    "showMore_other": "Show {{count}} more reviews"
   },
   "studio": {
     "eyebrow": "3D Studio",
