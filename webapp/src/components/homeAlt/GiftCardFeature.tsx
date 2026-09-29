@@ -20,8 +20,8 @@ const FACTS = [
 /**
  * The gift card as a gift, not a product tile: the card itself, large and
  * lit, and a row of amounts that re-print it. The amounts are the back
- * office's gift card configuration — the same list /carte-cadeau offers — so
- * the two can never disagree. Picking one here only previews it; buying
+ * office's gift card configuration — the same list /carte-cadeau offers — as
+ * is the validity, so the two can never disagree. Picking one here only previews it; buying
  * happens on the gift card page.
  */
 export function GiftCardFeature() {
@@ -32,6 +32,8 @@ export function GiftCardFeature() {
   const ref = useReveal<HTMLElement>();
   const amounts = config.amounts.slice(0, 4);
   const [amount, setAmount] = useState<number | undefined>(amounts[1] ?? amounts[0]);
+  // Validity is a back-office setting too: read it rather than restate it.
+  const validity = config.expiryMonths ? t("promo.config.validFor", { count: config.expiryMonths }) : t("promo.config.noExpiry");
 
   return (
     <section ref={ref} aria-labelledby="gt-alt-gift-title" className="gt-reveal gt-alt-section w-full bg-[var(--surface-card)]">
@@ -98,7 +100,7 @@ export function GiftCardFeature() {
             {FACTS.map(({ key, icon: Icon }) => (
               <li key={key} className="inline-flex items-center gap-2 text-[length:var(--text-body-sm)] font-medium text-[var(--text-body)]">
                 <Icon size={16} aria-hidden="true" className="text-[var(--gt-blue-600)]" />
-                {t(`homeAlt.gift.${key}`)}
+                {key === "fact2" ? validity : t(`homeAlt.gift.${key}`)}
               </li>
             ))}
           </ul>

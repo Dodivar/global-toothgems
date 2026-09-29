@@ -39,7 +39,7 @@ export function BestSellersRail() {
   const { t, i18n } = useTranslation();
   const navigate = useNavigate();
   const { showToast } = useToast();
-  const { products } = useCatalog();
+  const { products, source } = useCatalog();
   const lang = i18n.language;
   const ref = useReveal<HTMLElement>();
   const { ref: railRef, atStart, atEnd, page } = useScrollRail<HTMLUListElement>();
@@ -74,7 +74,10 @@ export function BestSellersRail() {
         >
           {items.map((p, i) => {
             const name = pick(p.name, lang);
-            const quickAdd = (p.variants?.length ?? 0) <= 1 && p.stock !== "out";
+            // Only where the product page itself would add without a choice:
+            // one option at most, and not a prototype fixture, whose page
+            // asks for a shade and a size.
+            const quickAdd = source !== "mock" && (p.variants?.length ?? 0) <= 1 && p.stock !== "out";
             return (
               <li key={p.id} className="grid w-[clamp(220px,19vw,300px)] flex-none snap-start content-start gap-3">
                 <span aria-hidden="true" className="gt-alt-rank">{String(i + 1).padStart(2, "0")}</span>
@@ -112,7 +115,8 @@ export function BestSellersRail() {
 
 /**
  * One-tap add for products without options to choose. A product with several
- * variants has no quick add: the card itself leads to the page where the
+ * variants — or a mock fixture, which the product page gives a shade and size
+ * picker — has no quick add: the card itself leads to the page where the
  * option is picked. Nothing here decides a price — the cart line carries the
  * catalogue's display price and checkout recomputes it server-side.
  */

@@ -54,9 +54,9 @@ const TILES: Tile[] = [
       kind: "cutouts",
       tone: "brand",
       items: [
-        { src: photo("img-11.jpg"), className: "left-1/2 top-[10%] w-[62%] max-w-[170px] -translate-x-1/2" },
-        { src: photo("img-13.jpg"), className: "left-[6%] top-[38%] w-[38%] max-w-[104px]" },
-        { src: photo("img-05.jpg"), className: "right-[8%] top-[34%] w-[34%] max-w-[92px]" },
+        { src: photo("img-11.jpg"), className: "left-1/2 top-[7%] w-[56%] max-w-[140px] -translate-x-1/2" },
+        { src: photo("img-13.jpg"), className: "left-[6%] top-[30%] w-[34%] max-w-[84px]" },
+        { src: photo("img-05.jpg"), className: "right-[8%] top-[27%] w-[30%] max-w-[76px]" },
       ],
     },
     area: "lg:col-span-2 lg:col-start-11 lg:row-span-2",
@@ -135,8 +135,8 @@ function CategoryTile({ tile, index }: { tile: Tile; index: number }) {
     <Link
       to={`/boutique?categorie=${tile.cat}`}
       className={clsx(
-        "gt-alt-tile group relative flex h-full min-h-[340px] flex-col justify-end overflow-hidden rounded-[var(--radius-xl)] shadow-[var(--shadow-card)] md:min-h-[260px]",
-        tile.hero && "md:min-h-[380px]",
+        "gt-alt-tile group relative flex h-full min-h-[340px] flex-col justify-end overflow-hidden rounded-[var(--radius-xl)] shadow-[var(--shadow-card)] md:min-h-[340px] lg:min-h-0",
+        tile.hero && "md:min-h-[400px] lg:min-h-0",
         tile.art.kind === "cutouts" && TONE_BG[tile.art.tone],
       )}
     >
