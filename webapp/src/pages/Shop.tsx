@@ -279,8 +279,7 @@ export function Shop() {
                       hoverImage: p.gallery?.[1]?.src,
                       badge: p.badge ? pick(p.badge, lang) : undefined,
                       badgeTone: p.badgeTone,
-                      rating: p.rating,
-                      reviewCount: p.reviewCount,
+                      variants: p.variants,
                       stock: p.stock,
                     }}
                     onSave={() =>

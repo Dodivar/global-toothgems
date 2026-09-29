@@ -497,8 +497,7 @@ function ProductView({ product }: { product: Product }) {
                   price: p.price,
                   image: p.image,
                   hoverImage: p.gallery?.[1]?.src,
-                  rating: p.rating,
-                  reviewCount: p.reviewCount,
+                  variants: p.variants,
                   stock: p.stock,
                 }}
               />

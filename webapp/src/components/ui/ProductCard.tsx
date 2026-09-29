@@ -1,9 +1,17 @@
-import { useState } from "react";
+import { useMemo, useState } from "react";
 import { Link } from "react-router-dom";
 import { useTranslation } from "react-i18next";
-import { Heart, Image as ImageIcon, Star } from "lucide-react";
+import { Heart, Image as ImageIcon } from "lucide-react";
 import { Badge, type BadgeTone } from "./Badge";
 import { formatPrice } from "../../lib/format";
+import { gemAxes, isGemOptionSet } from "../../lib/gemOptions";
+import { pick } from "../../data/types";
+import type { ProductVariant } from "../../data/products";
+import { Stars } from "../reviews/Stars";
+import { useSubjectReviews } from "../reviews/ReviewsSection";
+
+/** Named variants shown as chips before the rest collapse into "+n". */
+const MAX_VARIANT_CHIPS = 4;
 
 export interface ProductCardData {
   id: string;
@@ -17,9 +25,9 @@ export interface ProductCardData {
   imageLabel?: string;
   badge?: string;
   badgeTone?: BadgeTone;
-  rating?: number;
-  reviewCount?: number;
   stock?: "in" | "low" | "out";
+  /** Purchasable options of the product, shown as a summary under the name. */
+  variants?: ProductVariant[];
 }
 
 interface ProductCardProps {
@@ -33,11 +41,18 @@ interface ProductCardProps {
 }
 
 export function ProductCard({ product, to, onSave, saved = false, eager = false }: ProductCardProps) {
-  const { t } = useTranslation();
+  const { t, i18n } = useTranslation();
   const {
     name, subtitle, price, compareAtPrice, image, hoverImage, imageLabel,
-    badge, badgeTone = "highlight", rating, reviewCount, stock = "in",
+    badge, badgeTone = "highlight", stock = "in", variants = [],
   } = product;
+
+  // Same published reviews as the product page's rating line, so the card and
+  // the page can never disagree.
+  const subject = useMemo(() => ({ kind: "product" as const, id: product.id }), [product.id]);
+  const { summary } = useSubjectReviews(subject);
+  const rating = summary.average;
+  const reviewCount = summary.count;
 
   const loading = eager ? undefined : ("lazy" as const);
   // A catalogue row can point at a Storage object that was never uploaded;
@@ -122,14 +137,15 @@ export function ProductCard({ product, to, onSave, saved = false, eager = false 
           </Link>
         </h4>
         {subtitle && <span className="text-xs text-[var(--text-muted)]">{subtitle}</span>}
-        {rating != null && (reviewCount ?? 0) > 0 && (
-          <span className="flex items-center gap-1 text-xs text-[var(--text-muted)]">
-            <Star size={12} fill="var(--gt-ink-900)" color="var(--gt-ink-900)" aria-hidden="true" />
-            <span aria-label={t("product.ratingAria", { rating: rating.toFixed(1), count: reviewCount ?? 0 })}>
-              {rating.toFixed(1)} ({reviewCount ?? 0})
+        {reviewCount > 0 && (
+          <span className="flex items-center gap-1.5 text-xs text-[var(--text-muted)]">
+            <Stars rating={rating} size={12} />
+            <span aria-label={t("product.ratingAria", { rating: rating.toFixed(1), count: reviewCount })}>
+              {rating.toFixed(1)} ({reviewCount})
             </span>
           </span>
         )}
+        <VariantSummary variants={variants} lang={i18n.language} />
         <span className="flex items-baseline gap-2 pt-0.5">
           <strong className="text-[15px] font-bold text-[var(--text-primary)]">{formatPrice(price)}</strong>
           {compareAtPrice && (
@@ -138,5 +154,62 @@ export function ProductCard({ product, to, onSave, saved = false, eager = false 
         </span>
       </div>
     </article>
+  );
+}
+
+/**
+ * What a product can be bought as, in one quiet line or row. Colours are dots,
+ * gem options are the packs and the stone-size range, anything else is a few
+ * named chips. Informational only: the card stays a single link, and the
+ * customer picks on the product page.
+ */
+function VariantSummary({ variants, lang }: { variants: ProductVariant[]; lang: string }) {
+  const { t } = useTranslation();
+  if (variants.length < 2 && !(variants.length === 1 && variants[0].swatch)) return null;
+
+  if (variants.every((v) => v.swatch)) {
+    const shown = variants.slice(0, 6);
+    return (
+      <span className="flex flex-wrap items-center gap-1 pt-0.5" aria-label={t("product.cardColors", { count: variants.length })} role="img">
+        {shown.map((v) => (
+          <span
+            key={v.id}
+            aria-hidden="true"
+            title={pick(v.name, lang)}
+            className={`h-3.5 w-3.5 rounded-full border border-[var(--border-default)] ${v.stock === "out" ? "opacity-40" : ""}`}
+            style={{ background: v.swatch }}
+          />
+        ))}
+        {variants.length > shown.length && (
+          <span aria-hidden="true" className="text-[11px] text-[var(--text-muted)]">+{variants.length - shown.length}</span>
+        )}
+      </span>
+    );
+  }
+
+  if (isGemOptionSet(variants)) {
+    const { packs, sizes } = gemAxes(variants);
+    const parts = [
+      packs.length > 0 ? t("product.cardPacks", { list: packs.join(" · ") }) : null,
+      sizes.length > 1 ? t("product.cardSizes", { from: `SS${sizes[0]}`, to: `SS${sizes[sizes.length - 1]}` }) : sizes.length === 1 ? `SS${sizes[0]}` : null,
+    ].filter(Boolean);
+    return <span className="text-xs text-[var(--text-muted)]">{parts.join(" — ")}</span>;
+  }
+
+  const shown = variants.slice(0, MAX_VARIANT_CHIPS);
+  return (
+    <ul className="m-0 flex list-none flex-wrap gap-1 p-0 pt-0.5" aria-label={t("product.cardVariants", { count: variants.length })}>
+      {shown.map((v) => (
+        <li
+          key={v.id}
+          className={`rounded-[var(--radius-pill)] border border-[var(--border-default)] px-2 py-0.5 text-[11px] text-[var(--text-muted)] ${v.stock === "out" ? "line-through opacity-60" : ""}`}
+        >
+          {pick(v.name, lang)}
+        </li>
+      ))}
+      {variants.length > shown.length && (
+        <li className="px-1 py-0.5 text-[11px] text-[var(--text-muted)]">+{variants.length - shown.length}</li>
+      )}
+    </ul>
   );
 }
