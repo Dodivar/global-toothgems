@@ -91,15 +91,19 @@
   "reviews": {
     "eyebrow": "La parole à la communauté",
     "title": "Adoré par les artistes comme par les clientes.",
-    "body": "Quelques mots de celles et ceux qui apprennent avec nous et créent avec nos produits.",
-    "pickerLabel": "Choisir un avis",
-    "prev": "Avis précédent",
-    "next": "Avis suivant",
+    "body": "Des résultats bien réels et des mots de première main, de celles et ceux qui apprennent avec nous et créent avec nos produits.",
+    "filterLabel": "Filtrer les avis",
+    "filter": {
+      "all": "Tous",
+      "academy": "Academy",
+      "product": "Produits"
+    },
     "academyBadge": "Avis Academy",
     "productBadge": "Avis produit",
     "courseRef": "Formation",
     "productRef": "Produit",
-    "counter": "{{index}} / {{total}}"
+    "showMore_one": "Voir {{count}} avis de plus",
+    "showMore_other": "Voir {{count}} avis de plus"
   },
   "studio": {
     "eyebrow": "Studio 3D",

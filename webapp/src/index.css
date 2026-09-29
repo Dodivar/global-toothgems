@@ -1515,9 +1515,9 @@
    The same tokens as every other storefront screen, composed full width and
    editorially: sections run edge to edge, text keeps its measure inside a
    wide container, and each band has its own rhythm (a rail, a mosaic, a
-   statement, a stack, a night-studio frame). Emerald stays on the calls to
-   action, fuchsia appears once (the gift card badge), and the pastel blue
-   carries the loyalty band. Every loop and entrance stops under reduced
+   statement, a review feed, a night-studio frame). Emerald stays on the
+   calls to action and the review feed's stars and tags, fuchsia appears
+   once (the gift card badge), and the pastel blue carries the loyalty band. Every loop and entrance stops under reduced
    motion, and nothing is hidden waiting for an animation to run.
 --------------------------------------------------------------------------- */
 @layer components {
@@ -1691,17 +1691,19 @@
   /* Academy ------------------------------------------------------------------ */
   .gt-alt-academy { background: linear-gradient(180deg, var(--gt-off-white) 0%, var(--gt-sand) 100%); }
 
-  /* Testimonials ------------------------------------------------------------ */
-  .gt-alt-quote-ghost { display: none; background: var(--gt-white); box-shadow: var(--shadow-card); }
-  @media (min-width: 640px) {
-    .gt-alt-quote-ghost { display: block; }
-    .gt-alt-quote-ghost--1 { opacity: .6; transform: rotate(-2.2deg) translate(-12px, 16px); }
-    .gt-alt-quote-ghost--2 { opacity: .35; transform: rotate(2.4deg) translate(16px, 28px); }
+  /* Review feed: Pinterest-style pins ------------------------------------- */
+  .gt-alt-pin {
+    transition: transform var(--duration-normal) var(--ease-out-soft), box-shadow var(--duration-normal) var(--ease-out-soft);
   }
-  .gt-alt-review-tab:focus-visible { outline: 2px solid var(--focus-ring); outline-offset: 2px; }
-  .gt-alt-quote-in { animation: gt-alt-rise var(--duration-slow) var(--ease-out-soft) both; }
-  .gt-alt-quote::before { content: "\201C"; margin-right: .05em; color: var(--gt-blue-500); }
-  .gt-alt-quote::after { content: "\201D"; margin-left: .05em; color: var(--gt-blue-500); }
+  .gt-alt-pin:hover,
+  .gt-alt-pin:focus-within { transform: translateY(-4px); box-shadow: var(--shadow-card-hover); }
+  .gt-alt-pin:focus-visible { outline: 2px solid var(--focus-ring); outline-offset: 3px; }
+  .gt-alt-pin:hover .gt-alt-tile-art,
+  .gt-alt-pin:focus-within .gt-alt-tile-art { transform: scale(1.05); }
+  .gt-alt-pin-quote::before { content: "\201C"; margin-right: .04em; color: var(--gt-emerald-500); font-weight: var(--weight-black); }
+  .gt-alt-pin-quote::after { content: "\201D"; margin-left: .04em; color: var(--gt-emerald-500); font-weight: var(--weight-black); }
+  /* Pins settle in one after another; the delay is set inline and capped. */
+  .gt-alt-pin-in { animation: gt-alt-rise var(--duration-slow) var(--ease-out-soft) both; animation-delay: var(--gt-delay, 0ms); }
 
   /* 3D Studio: the night studio -------------------------------------------- */
   .gt-alt-studio {
@@ -1811,7 +1813,7 @@
 
 @media (prefers-reduced-motion: reduce) {
   .gt-alt-float,
-  .gt-alt-quote-in,
+  .gt-alt-pin-in,
   .gt-alt-reel-in,
   .gt-alt-amount-in { animation: none; }
   .gt-alt-slide,
@@ -1820,6 +1822,7 @@
   .gt-alt-slide .gt-alt-slide-copy > *,
   .gt-alt-tile,
   .gt-alt-tile-art,
+  .gt-alt-pin,
   .gt-alt-giftcard,
   .gt-alt-loyalty-card,
   .gt-alt-hero { transition: none; }
@@ -1828,5 +1831,9 @@
   .gt-alt-tile:hover .gt-alt-tile-art,
   .gt-alt-tile:focus-visible .gt-alt-tile-art,
   .gt-alt-course:hover .gt-alt-tile-art,
-  .gt-alt-course:focus-within .gt-alt-tile-art { transform: none; }
+  .gt-alt-course:focus-within .gt-alt-tile-art,
+  .gt-alt-pin:hover .gt-alt-tile-art,
+  .gt-alt-pin:focus-within .gt-alt-tile-art { transform: none; }
+  .gt-alt-pin:hover,
+  .gt-alt-pin:focus-within { transform: none; }
 }
