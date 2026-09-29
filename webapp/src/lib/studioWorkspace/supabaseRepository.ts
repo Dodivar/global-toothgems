@@ -2,6 +2,7 @@ import { ESTIMATE_PRICING } from "../../data/studioEditor";
 import type { TypedSupabaseClient } from "../supabase/client";
 import type { Json, Tables } from "../supabase/database.types";
 import { BUCKETS, SIGNED_URL_TTL_SECONDS } from "../supabase/storage";
+import { STUDIO_SHARE_PATH } from "../studioUrl";
 import { groupEstimateCents, sanitizeGroupData } from "./gemGroup";
 import {
   StudioStoreError,
@@ -12,6 +13,7 @@ import {
   type StudioRepositories,
 } from "./repository";
 import { sanitizeScene, sceneStats } from "./scene";
+import { parseSharedCreation, SHARE_TOKEN_PATTERN, snapshotShareLink, storedShareLink, type SharedDesign } from "./share";
 import type { Creation, FeedbackInput, GemGroup } from "./types";
 import { normalizeDetails, normalizeTags, validateDetails, validateFeedback } from "./validation";
 
@@ -48,6 +50,7 @@ function storeError(error: PgError | null | undefined): StudioStoreError {
     case "22023":
       return new StudioStoreError("invalid");
     case "PGRST116": // no row (or not ours: RLS hides it)
+    case "P0002": // raised by the share functions for a creation that is not ours
       return new StudioStoreError("notFound");
   }
   if (/failed to fetch|network/i.test(error?.message ?? "")) return new StudioStoreError("unavailable");
@@ -59,6 +62,14 @@ function checkDetails(details: { name: string; description: string; tags: string
   if (problem) throw new StudioStoreError("invalid", problem);
   return normalizeDetails(details);
 }
+
+/**
+ * The share table and its functions (`…_studio_creation_shares.sql`) are not
+ * in this database yet: PostgREST cannot find them. Sharing then falls back to
+ * snapshot links, exactly as before stored links existed.
+ */
+const shareSchemaMissing = (error: PgError | null | undefined) =>
+  !!error && ["PGRST202", "PGRST205", "42P01", "42883"].includes(error.code ?? "");
 
 const hasDetails = (p: { name?: string; description?: string; tags?: string[] }) =>
   p.name !== undefined || p.description !== undefined || p.tags !== undefined;
@@ -270,6 +281,32 @@ export function createSupabaseRepositories(client: TypedSupabaseClient, userId: 
         // An orphaned image is harmless and private; the design is already gone.
         if (path) await thumbs().remove([path]).catch(() => undefined);
       },
+
+      async shareLink(creation: Creation) {
+        const { data, error } = await client.rpc("studio_share_creation", { p_creation_id: creation.id });
+        if (shareSchemaMissing(error)) return snapshotShareLink(creation, STUDIO_SHARE_PATH);
+        if (error) throw storeError(error);
+        if (typeof data !== "string" || !SHARE_TOKEN_PATTERN.test(data)) throw new StudioStoreError("storage");
+        return storedShareLink(data, STUDIO_SHARE_PATH);
+      },
+
+      async existingShareLink(creation: Creation) {
+        // RLS: only the owner's own links are visible.
+        const { data, error } = await client
+          .from("creation_shares")
+          .select("token")
+          .eq("creation_id", creation.id)
+          .is("revoked_at", null)
+          .maybeSingle();
+        if (shareSchemaMissing(error)) return snapshotShareLink(creation, STUDIO_SHARE_PATH);
+        if (error) throw storeError(error);
+        return data && SHARE_TOKEN_PATTERN.test(data.token) ? storedShareLink(data.token, STUDIO_SHARE_PATH) : null;
+      },
+
+      async revokeShare(id: string) {
+        const { error } = await client.rpc("studio_revoke_creation_share", { p_creation_id: id });
+        if (error) throw storeError(error);
+      },
     },
 
     groups: {
@@ -366,4 +403,19 @@ export function createSupabaseRepositories(client: TypedSupabaseClient, userId: 
       },
     },
   };
+}
+
+/**
+ * The creation behind a stored share link, for anyone who has the link,
+ * signed in or not. Read through `studio_shared_creation`, the only way in for
+ * a guest: it returns the name, description and scene of that one creation
+ * and nothing about its owner. Null for an unknown or disabled link; throws
+ * when the database cannot be reached, so the page can tell the two apart.
+ */
+export async function fetchSharedCreation(client: TypedSupabaseClient, token: string): Promise<SharedDesign | null> {
+  if (!SHARE_TOKEN_PATTERN.test(token)) return null;
+  const { data, error } = await client.rpc("studio_shared_creation", { p_token: token });
+  if (shareSchemaMissing(error)) return null;
+  if (error) throw storeError(error);
+  return parseSharedCreation(Array.isArray(data) ? data[0] : null);
 }

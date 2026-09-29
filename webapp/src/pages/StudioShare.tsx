@@ -1,6 +1,6 @@
 import { useEffect, useMemo, useRef, useState, useSyncExternalStore } from "react";
 import { useTranslation } from "react-i18next";
-import { Link, useLocation, useNavigate } from "react-router-dom";
+import { Link, useLocation, useNavigate, useParams } from "react-router-dom";
 import clsx from "clsx";
 import { Box, Eye, Gem, Link2, LoaderCircle, Minus, Orbit, PencilRuler, Plus, RotateCcw, TriangleAlert } from "lucide-react";
 import monogram from "../assets/monogram-blue.png";
@@ -14,10 +14,15 @@ import { StudioEngine } from "../lib/studio3d/engine";
 import { DesignStore, studioStore } from "../lib/studio3d/store";
 import { STUDIO_EDITOR_PATH, STUDIO_PATH } from "../lib/studioUrl";
 import { piecesKey } from "../lib/studioWorkspace/scene";
+import { supabase } from "../lib/supabase/client";
 import { decodeSharedDesign, type SharedDesign } from "../lib/studioWorkspace/share";
+import { fetchSharedCreation } from "../lib/studioWorkspace/supabaseRepository";
 
 /**
- * A Studio design someone shared (`/studio-3d/partage#…`), shown read-only.
+ * A Studio design someone shared, shown read-only: a saved creation behind a
+ * token (`/studio-3d/partage/<token>`, read through `studio_shared_creation`,
+ * the only door a guest has, which returns that one creation and nothing
+ * about its owner), or a snapshot carried in the fragment (`…/partage#…`).
  *
  * The recipient can turn, zoom and light-orbit the composition, nothing more:
  * the engine runs in read-only mode on a store of its own that is never
@@ -28,24 +33,38 @@ import { decodeSharedDesign, type SharedDesign } from "../lib/studioWorkspace/sh
  * Open to everyone and outside `RequireStudioAccess`: looking at a design
  * someone sent you is not using the paid tool. Lazy-loaded with three.js.
  */
+type Loaded =
+  | { key: string; status: "ready"; design: SharedDesign }
+  /** Unknown, disabled or unreadable link. */
+  | { key: string; status: "invalid" }
+  /** The database could not be reached: worth another try. */
+  | { key: string; status: "unavailable" };
+
+async function loadShared(token: string | undefined, hash: string): Promise<SharedDesign | null> {
+  if (token) return supabase ? fetchSharedCreation(supabase, token) : null;
+  return decodeSharedDesign(hash);
+}
+
 export function StudioShare() {
   const { t } = useTranslation();
   const { hash } = useLocation();
-  // `undefined` while decoding, `null` for a link that carries no valid design.
-  const [decoded, setDecoded] = useState<{ hash: string; design: SharedDesign | null } | null>(null);
+  const { token } = useParams();
+  const [retry, setRetry] = useState(0);
+  const key = `${token ?? ""}${hash}#${retry}`;
+  const [loaded, setLoaded] = useState<Loaded | null>(null);
 
   useEffect(() => {
     let live = true;
-    decodeSharedDesign(hash)
-      .then((design) => live && setDecoded({ hash, design }))
-      .catch(() => live && setDecoded({ hash, design: null }));
+    loadShared(token, hash)
+      .then((design) => live && setLoaded(design ? { key, status: "ready", design } : { key, status: "invalid" }))
+      .catch(() => live && setLoaded({ key, status: token ? "unavailable" : "invalid" }));
     return () => {
       live = false;
     };
-  }, [hash]);
+  }, [token, hash, key]);
 
-  const current = decoded && decoded.hash === hash ? decoded : null;
-  const design = current?.design ?? null;
+  const current = loaded && loaded.key === key ? loaded : null;
+  const design = current?.status === "ready" ? current.design : null;
   const name = design?.name || t("studio.workspace.untitled");
   useDocumentTitle(design ? `${name} · ${t("studio.workspace.share.view.documentTitle")}` : t("studio.workspace.share.view.documentTitle"));
 
@@ -83,25 +102,32 @@ export function StudioShare() {
       ) : design ? (
         <SharedDesignView design={design} name={name} />
       ) : (
-        <InvalidLink />
+        <InvalidLink stored={!!token} unavailable={current.status === "unavailable"} onRetry={() => setRetry((n) => n + 1)} />
       )}
     </div>
   );
 }
 
-function InvalidLink() {
+function InvalidLink({ stored, unavailable, onRetry }: { stored: boolean; unavailable: boolean; onRetry: () => void }) {
   const { t } = useTranslation();
+  const copy = unavailable ? "unavailable" : stored ? "invalidStored" : "invalid";
   return (
     <div className="grid flex-1 place-items-center p-6">
       <div role="alert" className="grid max-w-[440px] justify-items-center gap-3 text-center">
         <Link2 size={28} aria-hidden="true" className="text-[var(--gt-blue-600)]" />
         <h1 className="m-0 text-[length:var(--text-h3)] font-[var(--weight-black)] tracking-[var(--tracking-tight)] text-[var(--text-primary)]">
-          {t("studio.workspace.share.view.invalidTitle")}
+          {t(`studio.workspace.share.view.${copy}Title`)}
         </h1>
-        <p className="m-0 text-[length:var(--text-body-sm)] leading-relaxed text-[var(--text-muted)]">{t("studio.workspace.share.view.invalidBody")}</p>
-        <Button as="a" href={STUDIO_PATH} variant="dark" size="sm" iconLeft={Box} className="mt-2">
-          {t("studio.workspace.share.view.discover")}
-        </Button>
+        <p className="m-0 text-[length:var(--text-body-sm)] leading-relaxed text-[var(--text-muted)]">{t(`studio.workspace.share.view.${copy}Body`)}</p>
+        {unavailable ? (
+          <Button variant="dark" size="sm" iconLeft={RotateCcw} className="mt-2" onClick={onRetry}>
+            {t("studio.workspace.share.view.retry")}
+          </Button>
+        ) : (
+          <Button as="a" href={STUDIO_PATH} variant="dark" size="sm" iconLeft={Box} className="mt-2">
+            {t("studio.workspace.share.view.discover")}
+          </Button>
+        )}
       </div>
     </div>
   );

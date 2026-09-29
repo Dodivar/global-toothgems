@@ -109,7 +109,7 @@ export function CommunitySidebar() {
   const { t } = useTranslation();
 
   return (
-    <nav aria-label={t("community.navLabel")} className="hidden lg:grid lg:gap-5">
+    <nav aria-label={t("community.navLabel")} className="hidden xl:grid xl:gap-5">
       {groups.map((group) => (
         <div key={group.id} className="grid gap-1.5">
           <h2 className="gt-eyebrow px-3">{group.title}</h2>
@@ -167,7 +167,7 @@ export function CommunityMobileNav() {
   const secondary = rest.flatMap((group) => group.entries);
 
   return (
-    <nav aria-label={t("community.navLabel")} className="grid gap-2 lg:hidden">
+    <nav aria-label={t("community.navLabel")} className="grid gap-2 xl:hidden">
       {/* `min-w-0` keeps the rows from widening the grid column: without it the
           pills size the page and the whole community scrolls sideways. */}
       <ul className="gt-scroller m-0 flex min-w-0 list-none gap-2 p-0 pb-1">
