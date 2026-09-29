@@ -1830,3 +1830,203 @@
   .gt-alt-course:hover .gt-alt-tile-art,
   .gt-alt-course:focus-within .gt-alt-tile-art { transform: none; }
 }
+
+/* ---------------------------------------------------------------------------
+   Alternative shop (/boutique-b)
+
+   The products come first: a wider container than the rest of the storefront
+   (the same 1760px as the alternative home page), a short introduction, and
+   the filters as a quiet white sidebar on the right. Cards drop their inner
+   frame so the photo runs to the edges of the card. Emerald is kept for the
+   add and apply actions and the count bubble; the rest is ink, white and
+   pastel blue.
+--------------------------------------------------------------------------- */
+@layer components {
+  .gt-shopb { --max-width-shop: 1760px; }
+  .gt-shopb-gutter { padding-inline: clamp(16px, 3.2vw, 56px); }
+
+  /* Cards ----------------------------------------------------------------- */
+  .gt-shopb-card {
+    width: 100%;
+    transition:
+      transform var(--duration-normal) var(--ease-out-soft),
+      box-shadow var(--duration-normal) var(--ease-out-soft);
+  }
+  .gt-shopb-card:hover,
+  .gt-shopb-card:focus-within { transform: translateY(-3px); box-shadow: var(--shadow-card-hover); }
+  /* The link's own outline would only ring the name; the whole card is the target. */
+  .gt-shopb-card:has(a:focus-visible) { outline: 2px solid var(--focus-ring); outline-offset: 3px; }
+
+  .gt-shopb-card-img { transition: transform var(--duration-slow) var(--ease-out-soft); }
+  .gt-shopb-card:hover .gt-shopb-card-img,
+  .gt-shopb-card:focus-within .gt-shopb-card-img { transform: scale(1.045); }
+  .gt-shopb-card-img-alt { opacity: 0; transition: opacity var(--duration-normal) var(--ease-standard); }
+  .gt-shopb-card:hover .gt-shopb-card-img-alt,
+  .gt-shopb-card:focus-within .gt-shopb-card-img-alt { opacity: 1; }
+  .gt-shopb-card[data-stock="out"] .gt-shopb-card-img { filter: grayscale(.55); opacity: .72; }
+
+  /* Touch first: the quick add is a small round "+" that is always there, the
+     save heart always shows, and the "choose options" hint never does. */
+  .gt-shopb-quickadd {
+    right: 10px;
+    bottom: 10px;
+    width: 38px;
+    height: 38px;
+    border-radius: var(--radius-pill);
+    background: var(--accent-cta);
+    box-shadow: var(--shadow-md);
+    transition:
+      opacity var(--duration-fast) var(--ease-standard),
+      transform var(--duration-fast) var(--ease-standard),
+      background-color var(--duration-fast) var(--ease-standard);
+  }
+  .gt-shopb-quickadd .gt-quickadd-label {
+    position: absolute;
+    width: 1px;
+    height: 1px;
+    overflow: hidden;
+    clip: rect(0 0 0 0);
+    white-space: nowrap;
+  }
+  .gt-shopb-quickadd:active { transform: scale(.96); }
+  .gt-shopb-quickadd:focus-visible,
+  .gt-shopb-save:focus-visible { outline: 2px solid var(--focus-ring); outline-offset: 2px; }
+  .gt-shopb-options { display: none; }
+
+  /* With a pointer: the add bar and the options hint slide up over the
+     photo on hover or keyboard focus, and the heart appears with them. */
+  @media (hover: hover) and (pointer: fine) {
+    .gt-shopb-quickadd {
+      left: 10px;
+      right: 10px;
+      width: auto;
+      box-shadow: 0 6px 16px -6px rgba(11, 126, 91, .5);
+      opacity: 0;
+      transform: translateY(6px);
+    }
+    .gt-shopb-quickadd:hover { background: var(--accent-cta-hover); }
+    .gt-shopb-quickadd .gt-quickadd-label { position: static; width: auto; height: auto; overflow: visible; clip: auto; }
+    .gt-shopb-options {
+      display: flex;
+      height: 38px;
+      background: var(--glass-fill);
+      -webkit-backdrop-filter: blur(var(--glass-blur));
+      backdrop-filter: blur(var(--glass-blur));
+      border: 1px solid var(--glass-border);
+      opacity: 0;
+      transform: translateY(6px);
+      transition: opacity var(--duration-fast) var(--ease-standard), transform var(--duration-fast) var(--ease-standard);
+    }
+    .gt-shopb-save { opacity: 0; transition: opacity var(--duration-fast) var(--ease-standard); }
+    .gt-shopb-card:hover .gt-shopb-quickadd,
+    .gt-shopb-card:focus-within .gt-shopb-quickadd,
+    .gt-shopb-quickadd[data-added="true"],
+    .gt-shopb-card:hover .gt-shopb-options,
+    .gt-shopb-card:focus-within .gt-shopb-options { opacity: 1; transform: none; }
+    .gt-shopb-card:hover .gt-shopb-save,
+    .gt-shopb-card:focus-within .gt-shopb-save,
+    .gt-shopb-save[data-saved="true"] { opacity: 1; }
+  }
+
+  /* Filters --------------------------------------------------------------- */
+  .gt-shopb-sidebar { scrollbar-width: thin; scrollbar-color: var(--gt-ink-300) transparent; }
+  .gt-shopb-skip:focus {
+    display: inline-block;
+    margin-top: 12px;
+    padding: 6px 12px;
+    border-radius: var(--radius-pill);
+    background: var(--gt-ink-900);
+    color: var(--text-inverse);
+    font-size: 12px;
+    font-weight: 600;
+  }
+  .gt-shopb-group-toggle { border-radius: var(--radius-xs); }
+  .gt-shopb-group-toggle:focus-visible { outline: 2px solid var(--focus-ring); outline-offset: 2px; }
+
+  .gt-shopb-option { transition: background-color var(--duration-fast) var(--ease-standard); }
+  .gt-shopb-option:hover { background: var(--surface-brand-wash); }
+  .gt-shopb-option:has(:focus-visible) { outline: 2px solid var(--focus-ring); outline-offset: -2px; }
+  .gt-shopb-option[data-empty="true"],
+  .gt-shopb-tile[data-empty="true"],
+  .gt-shopb-pill[data-empty="true"] { opacity: .45; }
+
+  .gt-shopb-radio {
+    appearance: none;
+    flex: none;
+    width: 16px;
+    height: 16px;
+    margin: 0;
+    border: 1.5px solid var(--gt-ink-300);
+    border-radius: 50%;
+    background: var(--gt-white);
+    transition: border-color var(--duration-fast) var(--ease-standard), box-shadow var(--duration-fast) var(--ease-standard);
+  }
+  .gt-shopb-radio:checked { border-color: var(--gt-ink-900); background: var(--gt-ink-900); box-shadow: inset 0 0 0 3.5px var(--gt-white); }
+  .gt-shopb-radio:focus-visible { outline: none; }
+
+  .gt-shopb-tile-face,
+  .gt-shopb-pill-face {
+    border-color: var(--border-subtle);
+    background: var(--gt-white);
+    color: var(--text-body);
+    transition: border-color var(--duration-fast) var(--ease-standard), background-color var(--duration-fast) var(--ease-standard);
+  }
+  .gt-shopb-tile:hover .gt-shopb-tile-face,
+  .gt-shopb-pill:hover .gt-shopb-pill-face { border-color: var(--gt-blue-400); }
+  .gt-shopb-tile input:checked + .gt-shopb-tile-face,
+  .gt-shopb-pill input:checked + .gt-shopb-pill-face {
+    border-color: var(--gt-ink-900);
+    background: var(--surface-brand-wash-strong);
+    color: var(--text-primary);
+    font-weight: 700;
+    box-shadow: inset 0 0 0 1px var(--gt-ink-900);
+  }
+  .gt-shopb-tile input:focus-visible + .gt-shopb-tile-face,
+  .gt-shopb-pill input:focus-visible + .gt-shopb-pill-face { outline: 2px solid var(--focus-ring); outline-offset: 2px; }
+
+  /* Toolbar --------------------------------------------------------------- */
+  .gt-shopb-sort { cursor: pointer; transition: background-color var(--duration-fast) var(--ease-standard); }
+  .gt-shopb-sort:hover { background: var(--surface-brand-wash-strong); }
+  .gt-shopb-sort:focus-visible,
+  .gt-shopb-trigger:focus-visible,
+  .gt-shopb-chip:focus-visible,
+  .gt-shopb-fab:focus-visible { outline: 2px solid var(--focus-ring); outline-offset: 2px; }
+  .gt-shopb-chip { transition: background-color var(--duration-fast) var(--ease-standard); }
+  .gt-shopb-chip:hover { background: var(--gt-blue-200); }
+
+  /* Floating filter button and drawer ------------------------------------- */
+  .gt-shopb-fab {
+    box-shadow: 0 12px 28px -8px rgba(17, 17, 17, .45), 0 2px 6px rgba(17, 17, 17, .18);
+    transform: translate(-50%, 0);
+    transition: opacity var(--duration-normal) var(--ease-out-soft), transform var(--duration-normal) var(--ease-out-soft);
+  }
+  .gt-shopb-fab[data-visible="false"] { opacity: 0; transform: translate(-50%, 16px); pointer-events: none; }
+
+  .gt-shopb-backdrop { animation: gt-shopb-fade var(--duration-normal) var(--ease-standard); }
+  .gt-shopb-sheet { animation: gt-shopb-up var(--duration-slow) var(--ease-out-soft); }
+  @media (min-width: 640px) {
+    .gt-shopb-sheet { animation-name: gt-shopb-left; }
+  }
+}
+
+@keyframes gt-shopb-fade {
+  from { opacity: 0; }
+  to { opacity: 1; }
+}
+@keyframes gt-shopb-up {
+  from { transform: translateY(100%); }
+  to { transform: none; }
+}
+@keyframes gt-shopb-left {
+  from { transform: translateX(100%); }
+  to { transform: none; }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .gt-shopb-card:hover,
+  .gt-shopb-card:focus-within,
+  .gt-shopb-card:hover .gt-shopb-card-img,
+  .gt-shopb-card:focus-within .gt-shopb-card-img { transform: none; }
+  .gt-shopb-backdrop,
+  .gt-shopb-sheet { animation: none; }
+}

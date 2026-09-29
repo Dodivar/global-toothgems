@@ -50,12 +50,7 @@
     "prev": "Previous products",
     "next": "Next products",
     "listLabel": "Best-selling products",
-    "badge": "Best seller",
-    "quickAdd": "Add",
-    "quickAddAria": "Add {{name}} to the cart",
-    "added": "Added",
-    "toastTitle": "Added to your cart",
-    "toastBody": "{{name}} is waiting in your cart."
+    "badge": "Best seller"
   },
   "categories": {
     "eyebrow": "Shop by category",

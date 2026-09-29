@@ -50,12 +50,7 @@
     "prev": "Produits précédents",
     "next": "Produits suivants",
     "listLabel": "Produits les plus vendus",
-    "badge": "Best-seller",
-    "quickAdd": "Ajouter",
-    "quickAddAria": "Ajouter {{name}} au panier",
-    "added": "Ajouté",
-    "toastTitle": "Ajouté au panier",
-    "toastBody": "{{name}} vous attend dans votre panier."
+    "badge": "Best-seller"
   },
   "categories": {
     "eyebrow": "Acheter par catégorie",

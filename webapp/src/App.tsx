@@ -22,6 +22,7 @@ import { isMemberSpacePath } from "./lib/memberSpace";
 import { Home } from "./pages/Home";
 import { HomeAlt } from "./pages/HomeAlt";
 import { Shop } from "./pages/Shop";
+import { ShopAlt } from "./pages/ShopAlt";
 import { Shapes } from "./pages/Shapes";
 import { Colors } from "./pages/Colors";
 import { ProductDetail } from "./pages/ProductDetail";
@@ -233,6 +234,9 @@ export default function App() {
                           a design comparison, not a second entry point. */}
                       <Route path="/accueil-b" element={<HomeAlt />} />
                       <Route path="/boutique" element={<Shop />} />
+                      {/* Alternative shop layout, compared against /boutique. Top
+                          level for the same reason as /formes below. */}
+                      <Route path="/boutique-b" element={<ShopAlt />} />
                       <Route path="/boutique/:id" element={<ProductDetail />} />
                       {/* Top level, not /boutique/formes: a static child of /boutique
                           would permanently shadow a product with that id. */}

@@ -1,0 +1,42 @@
+{
+  "totalCount_one": "{{count}} produit",
+  "totalCount_other": "{{count}} produits",
+  "results_one": "{{count}} produit",
+  "results_other": "{{count}} produits",
+  "resultsOf": "{{count}} sur {{total}} produits",
+  "filters": "Filtres",
+  "filtersActive_one": "{{count}} actif",
+  "filtersActive_other": "{{count}} actifs",
+  "filtersButtonAria_zero": "Ouvrir les filtres",
+  "filtersButtonAria_one": "Ouvrir les filtres, {{count}} actif",
+  "filtersButtonAria_other": "Ouvrir les filtres, {{count}} actifs",
+  "sidebarLabel": "Filtres produits",
+  "skipToResults": "Aller aux produits",
+  "categoryLabel": "Type de produit",
+  "sortLabel": "Trier par",
+  "sorts": {
+    "new": "Nouveautés",
+    "bestSellers": "Meilleures ventes",
+    "priceAsc": "Prix croissant",
+    "priceDesc": "Prix décroissant",
+    "rating": "Mieux notés",
+    "name": "Nom A–Z"
+  },
+  "optionCount_one": "{{count}} produit",
+  "optionCount_other": "{{count}} produits",
+  "drawerClose": "Fermer les filtres",
+  "apply_zero": "Aucun produit à afficher",
+  "apply_one": "Voir {{count}} produit",
+  "apply_other": "Voir {{count}} produits",
+  "showMore": "Voir plus de produits",
+  "shown": "{{shown}} sur {{total}} affichés",
+  "emptyTitle": "Aucun produit ne correspond à ces filtres",
+  "emptyBody": "Retirez un ou deux filtres pour voir davantage de la collection.",
+  "availability": {
+    "in": "En stock",
+    "low": "Stock limité",
+    "out": "Épuisé"
+  },
+  "chooseOptions": "Choisir les options",
+  "ratingAria": "Noté {{rating}} sur 5 d’après {{count}} avis"
+}
