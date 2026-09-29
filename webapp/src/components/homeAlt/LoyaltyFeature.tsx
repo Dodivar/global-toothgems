@@ -2,8 +2,8 @@ import { useTranslation } from "react-i18next";
 import { useNavigate } from "react-router-dom";
 import { ArrowRight, BadgePercent, Stamp, Sparkles } from "lucide-react";
 import { Button } from "../ui/Button";
-import { LoyaltyCard } from "../loyalty/LoyaltyCard";
-import { LOYALTY_STATES, QUALIFYING_AMOUNT, REWARD_PERCENT, STAMPS_PER_CARD } from "../../data/loyalty";
+import { AnimatedLoyaltyCard } from "./AnimatedLoyaltyCard";
+import { QUALIFYING_AMOUNT, REWARD_PERCENT, STAMPS_PER_CARD } from "../../data/loyalty";
 import { formatPrice } from "../../lib/format";
 import { useReveal } from "../../lib/useReveal";
 
@@ -11,7 +11,7 @@ import { useReveal } from "../../lib/useReveal";
  * The Loyalty Club in one band on the brand blue: the promise, the three
  * numbers that make the programme, and a sample card. Every figure comes from
  * `data/loyalty`, so the band cannot drift from the programme page. The card
- * is the static "collecting" sample, not the visitor's own progress.
+ * is a self-filling sample, not the visitor's own progress.
  */
 export function LoyaltyFeature() {
   const { t } = useTranslation();
@@ -48,15 +48,7 @@ export function LoyaltyFeature() {
           </Button>
         </div>
 
-        <div className="relative mx-auto w-full max-w-[560px]">
-          <div className="gt-alt-loyalty-card">
-            <LoyaltyCard state={LOYALTY_STATES.collecting} titleAs="h3" />
-          </div>
-          <span aria-hidden="true" className="gt-alt-float gt-glass absolute -right-2 -top-5 inline-flex items-center gap-1.5 rounded-[var(--radius-pill)] px-4 py-2 text-[13px] font-bold text-[var(--gt-ink-900)] sm:-right-6">
-            <Stamp size={15} className="text-[var(--gt-blue-700)]" />
-            {t("homeAlt.loyalty.chip")}
-          </span>
-        </div>
+        <AnimatedLoyaltyCard />
       </div>
     </section>
   );

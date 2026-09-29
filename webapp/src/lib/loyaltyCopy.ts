@@ -37,7 +37,8 @@ export function useLoyaltyCopy(state: LoyaltyState): LoyaltyCopy {
 
   return {
     badge: t(`loyalty.state.${state.id}.badge`, values),
-    title: t(`loyalty.state.${state.id}.title`, values),
+    // The title counts stamps held, not stamps left: "1 tampon", never "1 tampons".
+    title: t(`loyalty.state.${state.id}.title`, { ...values, count: state.stamps }),
     body: t(`loyalty.state.${state.id}.body`, values),
     cta: t(`loyalty.state.${state.id}.cta`, values),
   };

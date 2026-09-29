@@ -9,6 +9,7 @@ import { useSubjectReviews } from "../reviews/ReviewsSection";
 import { formatPrice } from "../../lib/format";
 import { gemAxes, isGemOptionSet } from "../../lib/gemOptions";
 import { pick } from "../../data/types";
+import { useTaxonomy } from "../../lib/catalog/useTaxonomy";
 import type { Product, ProductVariant } from "../../data/products";
 
 interface StorefrontCardProps {
@@ -42,7 +43,10 @@ export function StorefrontCard({ product, source, saved, onSave, eager = false }
   const name = pick(product.name, lang);
   const subtitle = pick(product.subtitle, lang);
   const stock = product.stock ?? "in";
-  const categoryLabel = product.cat ? t(`shop.categories.${product.cat}`) : undefined;
+  const { categoryName, familyName } = useTaxonomy();
+  const categoryLabel = product.cat ? categoryName(product.cat) : undefined;
+  // The family says more than its category ("Swarovski" rather than "Toothgems").
+  const eyebrow = product.family ? familyName(product.family) : categoryLabel;
   const quickAdd = canQuickAdd(product, source);
   const hoverImage = product.gallery?.[1]?.src;
 
@@ -146,7 +150,7 @@ export function StorefrontCard({ product, source, saved, onSave, eager = false }
       <div className="flex flex-1 flex-col gap-1 px-3 pb-3.5 pt-3 sm:px-3.5">
         <div className="flex items-center justify-between gap-2">
           <span className="truncate text-[10.5px] font-semibold uppercase tracking-[var(--tracking-eyebrow)] text-[var(--text-muted)]">
-            {categoryLabel ?? subtitle}
+            {eyebrow ?? subtitle}
           </span>
           {summary.count > 0 && (
             <span
@@ -169,7 +173,7 @@ export function StorefrontCard({ product, source, saved, onSave, eager = false }
           </Link>
         </h3>
         {/* Without a material, the subtitle is the category name again. */}
-        {product.cat && subtitle && subtitle !== categoryLabel && (
+        {product.cat && subtitle && subtitle !== categoryLabel && subtitle !== eyebrow && (
           <span className="truncate text-xs text-[var(--text-muted)]">{subtitle}</span>
         )}
         <VariantAvailability variants={product.variants ?? []} />

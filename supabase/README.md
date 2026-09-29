@@ -93,6 +93,7 @@ supabase/
 | 20260928201905 | `gem_free_pack_sizes` | `admin_save_product()` accepts gem packs of any whole number of stones from 1 to 10 000 (was 20 / 50 / 100 only), set per product; nothing else changes and existing variants stay valid |
 | 20260928222836 | `studio_workspace` | 3D Studio workspace: `creations` (scene_data jsonb v1, generated `element_count`, indicative `estimated_price_minor` + `currency`, private thumbnail path), `gem_groups`, `studio_feedback` (insert-only, staff read), private `studio-thumbnails` bucket; owner-only RLS, `user_id` defaults to `auth.uid()` and is not writable; `updated_at` moves on content edits only. Used by the webapp through `lib/studioWorkspace/supabaseRepository.ts` |
 | 20260928223009 | `product_custom_variants` | `admin_save_product()` gains an optional `custom_variants` list (every variant that is not a pack/SS option: browser-generated id, fr + en name, optional `attributes.swatch` `#rrggbb` merged into the other attributes, optional price, stock) and an optional `media[].variant_id`; SKU derived once from the product SKU + French name, unique; names can be swapped in one save; a variant left out is deleted, or deactivated when ordered; refused alongside `variants` or on a product selling pack/SS options; returns `custom_variants` |
+| 20260929120000 | `category_families` | second level of the shop taxonomy: `category_families` (under one category, `slug` unique across categories = `famille` URL value, `is_active`, `position`, audited) + `category_family_translations`; optional `products.family_id` with a composite FK `(category_id, family_id)` and a trigger clearing a family the new category does not have; categories reorganised into `gems` (Toothgems), `materiel` (former `outils`), `kits`, `lip-gloss`, `entretien` / `accessoires` emptied into `materiel` and hidden; hosted products classified by slug; `admin_save_product()` gains an optional `family_id` (absent = unchanged) and returns it |
 
 RLS is **enabled in the same migration that creates each table** (deny by default);
 policies are granted back in `rls_policies`.
@@ -105,12 +106,13 @@ auth.users 1─1 profiles ─* customer_addresses
                   └─* orders ─* order_items ─→ products / product_variants (RESTRICT)
                               └─* payments
 
-categories 1─* products 1─* product_variants
+categories 1─* category_families
+     1─* products 1─* product_variants        products.(category_id, family_id) ─→ category_families (optional)
                   │   └─* product_media (variant_id optional)
                   └── inventory_items (one per product WITHOUT variants, or one per variant)
                           └─* inventory_movements (ledger, order_id optional)
 
-languages 1─* {category,product,product_variant,product_media,gem_color}_translations
+languages 1─* {category,category_family,product,product_variant,product_media,gem_color}_translations
 gem_colors ←─ products.metadata.color (slug; checked by trigger, delete refused while used)
 shipping_zones 1─* shipping_zone_countries (a country is in at most one zone)
                1─* shipping_rates ←─ orders.shipping_rate_id (+ name snapshot)
@@ -145,7 +147,8 @@ statuses as `text` + `CHECK` (easy to extend, no enum migrations), money as
 |---|---|
 | `roles` | `customer`, `admin`. New roles = one `INSERT` (`is_staff` flag ready for support/content roles). |
 | `profiles` | first/last/display name, `avatar_path`, `phone`, `role`, `status` (`active`/`suspended`/`deactivated`), `email` mirror of `auth.users`. Created automatically on sign-up; sign-up metadata can **never** set the role. |
-| `categories` | flat list: `slug` (unique), `name`, `description`, `image_path`, `is_active`, `position`. |
+| `categories` | top level of the shop taxonomy: `slug` (unique, the `categorie` URL value), `name`, `description`, `image_path`, `is_active`, `position`. Today `gems` (Toothgems), `materiel`, `kits`, `lip-gloss`. |
+| `category_families` | second level: one category each, `slug` unique across categories (the `famille` URL value), `name`, `image_path`, `is_active`, `position`. A product sits in at most one family of its own category (`products.family_id`, composite FK). |
 | `products` | `slug`/`sku` unique, `price`, `compare_at_price` (> price), `currency`, `status` `draft`/`active`/`archived` (archived = soft delete), `is_featured`, `product_type` `physical`/`digital`, `metadata` (presentation only). |
 | `product_variants` | optional per product; `attributes` JSONB object (`{"colour":"saphir"}`, `{"size":"3mm"}`, gems: `{"pack":50,"ss":6}` — integers) so new option types need no columns; `price` null = inherit product price. |
 | `product_media` | Storage object path + `media_type`, `alt_text`, `position`, `is_primary` (max one per product), optional `variant_id`. No binaries in Postgres. |
@@ -466,7 +469,8 @@ drift from them.
 - **Filters** (`p_filters`): `category`, `product`, `customerType` (`new`/`returning`), `country` narrow the sales;
   `country` and `orderStatus` narrow the orders section; the customer base is always the whole base.
 - **Reporting group**: `categories.report_group` maps catalogue categories onto the screen's buckets
-  (seed: gems → jewelry, entretien → aftercare, kits/outils/accessoires → kits). New categories default to `other`;
+  (gems → jewelry, materiel/kits → kits, lip-gloss → other; since `…_category_families` nothing maps to aftercare).
+  New categories default to `other`;
   changes are audited.
 
 ### Product recommendations (iteration 9)
@@ -764,6 +768,8 @@ VAT rates, shipping zones/rates mirroring the Settings prototype. Media rows ref
 - Iteration 15: variants of any kind edited from the product form — a list of named variants (colour, box, size…)
   with an optional colour dot, price, stock and the photos that show them; the product page shows colour dots
   and moves the gallery to the picked variant's photo.
+- Iteration 16: product families — categories › families taxonomy, composite FK, family cleared on a category
+  change, `admin_save_product()` family input, visitor RLS on families and their translations.
 
 ## Next iterations (not implemented)
 

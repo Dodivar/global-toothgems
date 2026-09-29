@@ -44,7 +44,7 @@ begin
   select id into p_pince from public.products where slug = 'pince-de-depose';         -- 78.00, outils
   select id into p_gc    from public.products where slug = 'carte-cadeau';
   select id into c_kits  from public.categories where slug = 'kits';
-  select id into c_outils from public.categories where slug = 'outils';
+  select id into c_outils from public.categories where slug = 'materiel';
   select id into inv_gel from public.inventory_items where product_id = p_gel;
   select r.id into r_std from public.shipping_rates r join public.shipping_zones z on z.id = r.zone_id
    where z.name = 'France' and r.kind = 'standard';                                    -- 4.90

@@ -19,6 +19,7 @@ import {
   SORT_KEYS,
   activeFilterCount,
   filterProducts,
+  normalizeTaxonomy,
   readFilters,
   readSort,
   sortProducts,
@@ -60,12 +61,12 @@ export function ShopAlt() {
   const { t, i18n } = useTranslation();
   const lang = i18n.language;
   const { showToast } = useToast();
-  const { products, status, source } = useCatalog();
+  const { products, status, source, taxonomy } = useCatalog();
   const [params, setParams] = useSearchParams();
   const labelOf = useFilterLabels();
   const sortId = useId();
 
-  const filters = useMemo(() => readFilters(params), [params]);
+  const filters = useMemo(() => normalizeTaxonomy(readFilters(params), taxonomy), [params, taxonomy]);
   const sort = readSort(params);
   const activeCount = activeFilterCount(filters);
   const results = useMemo(() => sortProducts(filterProducts(products, filters), sort, lang), [products, filters, sort, lang]);
@@ -96,7 +97,8 @@ export function ShopAlt() {
   }, [signature]);
 
   const [drawerOpen, setDrawerOpen] = useState(false);
-  const setFilter = (key: FilterKey, value: string) => setParams(writeFilters(params, withFilter(filters, key, value)));
+  const setFilters = (next: StorefrontFilters) => setParams(writeFilters(params, next));
+  const setFilter = (key: FilterKey, value: string) => setFilters(withFilter(filters, key, value));
   const clearAll = () => setParams(writeFilters(params, NO_FILTERS));
   const setSort = (value: StorefrontSort) => {
     const next = new URLSearchParams(params);
@@ -158,9 +160,15 @@ export function ShopAlt() {
 
   const [saved, setSaved] = useState<Record<string, boolean>>({});
 
-  const chips = FILTER_KEYS.filter((key) => filters[key] !== FILTER_PARAMS[key].fallback).map((key) => ({
+  // The family is part of the product-type chip ("Toothgems › Swarovski");
+  // removing that chip clears both.
+  const familyActive = filters.family !== FILTER_PARAMS.family.fallback;
+  const chips = FILTER_KEYS.filter((key) => key !== "family" && filters[key] !== FILTER_PARAMS[key].fallback).map((key) => ({
     key,
-    label: labelOf(key, filters[key]),
+    label:
+      key === "category" && familyActive
+        ? `${labelOf("category", filters.category)} › ${labelOf("family", filters.family)}`
+        : labelOf(key, filters[key]),
   }));
 
   const countText =
@@ -215,7 +223,7 @@ export function ShopAlt() {
                   </>
                 )}
               </div>
-              <FilterPanel filters={filters} onChange={setFilter} products={products} defaultOpen={SIDEBAR_OPEN_GROUPS} />
+              <FilterPanel filters={filters} onChange={setFilters} products={products} defaultOpen={SIDEBAR_OPEN_GROUPS} />
             </div>
           </aside>
 
