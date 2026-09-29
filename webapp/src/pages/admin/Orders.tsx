@@ -221,7 +221,7 @@ export function Orders() {
 
   const applyStatusToSelection = (status: AdminOrderStatus) => {
     const references = [...selected];
-    setStatusMany(references, status);
+    if (!setStatusMany(references, status)) return;
     setSelected(new Set());
     showToast(
       t("admin.orders.toastBulkStatusTitle", { count: references.length }),
@@ -365,11 +365,12 @@ export function Orders() {
         onClose={() => setStatusTarget(null)}
         onConfirm={(status) => {
           if (!statusTarget) return;
-          setStatus(statusTarget.reference, status);
-          showToast(
-            t("admin.orders.toastStatusTitle", { reference: `#${statusTarget.reference}` }),
-            t("admin.orders.toastStatusBody", { status: t(`admin.orders.orderStatus.${status}`) }),
-          );
+          if (setStatus(statusTarget.reference, status)) {
+            showToast(
+              t("admin.orders.toastStatusTitle", { reference: `#${statusTarget.reference}` }),
+              t("admin.orders.toastStatusBody", { status: t(`admin.orders.orderStatus.${status}`) }),
+            );
+          }
           setStatusTarget(null);
         }}
       />
@@ -379,11 +380,12 @@ export function Orders() {
         onClose={() => setRefundTarget(null)}
         onConfirm={(amount, full) => {
           if (!refundTarget) return;
-          refund(refundTarget.reference, amount, full);
-          showToast(
-            t("admin.orders.toastRefundTitle", { reference: `#${refundTarget.reference}` }),
-            t("admin.orders.toastRefundBody", { amount: formatPrice(amount) }),
-          );
+          if (refund(refundTarget.reference, amount, full)) {
+            showToast(
+              t("admin.orders.toastRefundTitle", { reference: `#${refundTarget.reference}` }),
+              t("admin.orders.toastRefundBody", { amount: formatPrice(amount) }),
+            );
+          }
           setRefundTarget(null);
         }}
       />
@@ -393,15 +395,16 @@ export function Orders() {
         onClose={() => setCancelTargets([])}
         onConfirm={() => {
           const references = cancelTargets.map((o) => o.reference);
-          if (references.length === 1) cancel(references[0]);
-          else cancelMany(references);
-          showToast(
-            references.length === 1
-              ? t("admin.orders.toastCancelTitle", { reference: `#${references[0]}` })
-              : t("admin.orders.toastCancelTitleMany", { count: references.length }),
-            t("admin.orders.toastCancelBody"),
-            "warning",
-          );
+          const sent = references.length === 1 ? cancel(references[0]) : cancelMany(references);
+          if (sent) {
+            showToast(
+              references.length === 1
+                ? t("admin.orders.toastCancelTitle", { reference: `#${references[0]}` })
+                : t("admin.orders.toastCancelTitleMany", { count: references.length }),
+              t("admin.orders.toastCancelBody"),
+              "warning",
+            );
+          }
           setCancelTargets([]);
           setSelected(new Set());
         }}

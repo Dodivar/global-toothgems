@@ -114,8 +114,8 @@ export function GiftCardVisual({
           </span>
           <span
             className={clsx(
-              "gt-accent leading-none",
-              size === "sm" ? "text-[13px]" : size === "lg" ? "text-[clamp(17px,3vw,22px)]" : "text-[clamp(15px,2.6vw,18px)]",
+              "font-semibold uppercase leading-none tracking-[var(--tracking-eyebrow)]",
+              size === "sm" ? "text-[8px]" : size === "lg" ? "text-[clamp(11px,1.6vw,13px)]" : "text-[clamp(10px,1.4vw,12px)]",
             )}
           >
             {t("promo.visual.giftCard")}

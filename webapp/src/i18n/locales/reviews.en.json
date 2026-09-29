@@ -3,6 +3,12 @@
     "account": "My reviews",
     "admin": "Reviews"
   },
+  "errors": {
+    "saveTitle": "Change not saved",
+    "saveBody": "The database refused the operation. The list has been reloaded.",
+    "photosTitle": "Photos not saved",
+    "photosBody": "Your review was sent, but its photos could not be added. You can add them by editing it."
+  },
   "kind": {
     "product": "Product",
     "course": "Training",
@@ -228,6 +234,7 @@
     "resubmit": "Send for review",
     "close": "Close",
     "successTitle": "Review sent",
+    "sendFailed": "Your review could not be saved. Your text is kept: try again in a moment.",
     "thanks": "Thank you for sharing your experience with Global Toothgems.",
     "successBody": "Your review is pending moderation and will appear once our team has approved it. You can follow it in “My reviews”.",
     "successEdited": "Your changes are with our team. Your review will appear again, updated, once they’re approved.",

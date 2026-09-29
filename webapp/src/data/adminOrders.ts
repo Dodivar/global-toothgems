@@ -51,7 +51,8 @@ export type AttentionReason =
 
 export type ShippingMethod = "standard" | "express" | "pickup" | "digital";
 
-export type PaymentMethod = "visa" | "mastercard" | "paypal" | "applePay" | "bankTransfer";
+/** `card` is a card whose brand the provider did not report; `other` any method not listed. */
+export type PaymentMethod = "visa" | "mastercard" | "paypal" | "applePay" | "bankTransfer" | "card" | "other";
 
 export const ORDER_STATUSES: AdminOrderStatus[] = [
   "pending",

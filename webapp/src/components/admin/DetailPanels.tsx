@@ -387,7 +387,7 @@ export function PaymentCard({ order }: { order: AdminOrder }) {
   const { t, i18n } = useTranslation();
   const locale = i18n.language.startsWith("en") ? "en-IE" : "fr-FR";
   const { payment } = order;
-  const card = payment.method === "visa" || payment.method === "mastercard";
+  const card = payment.method === "visa" || payment.method === "mastercard" || payment.method === "card";
 
   return (
     <Card title={t("admin.orders.paymentTitle")} icon={CreditCard}>

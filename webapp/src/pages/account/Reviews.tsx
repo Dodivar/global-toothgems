@@ -21,7 +21,7 @@ import { Stars } from "../../components/reviews/Stars";
 import { EditedBadge, ReviewStatusBadge, VerifiedBadge } from "../../components/reviews/ReviewBadges";
 import { ReviewRequestCard } from "../../components/reviews/ReviewRequestCard";
 import { type CustomerReview, type ReviewStatus } from "../../data/reviewSystem";
-import { subjectImage, subjectName, subjectPath, useReviewRequests, useReviews } from "../../lib/reviews";
+import { subjectPath, useReviewRequests, useReviewSubjects, useReviews } from "../../lib/reviews";
 import { formatDate } from "../../lib/format";
 
 type MineFilter = "all" | ReviewStatus;
@@ -167,6 +167,7 @@ const ICON = { pending: Hourglass, published: CircleCheck, needsChanges: PencilL
 
 function MyReviewCard({ review: r, lang, onEdit }: { review: CustomerReview; lang: string; onEdit: () => void }) {
   const { t } = useTranslation();
+  const { subjectName, subjectImage } = useReviewSubjects();
   const name = subjectName(r.subject, lang);
   const image = subjectImage(r.subject);
   const Icon = ICON[r.status];

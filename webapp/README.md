@@ -52,7 +52,7 @@ What is not wired to the database yet, on purpose:
 - **Categories** are read from the database but still not editable.
 - **The activity feed** shows this session's actions only; the full history is in `audit_logs` and `inventory_movements`.
 - **The seeded products' images** point at files that were never uploaded, so they show broken until replaced.
-- **Other admin workspaces** (orders, customers, promotions, statistics, training…) still use their mock stores, so e.g. promotions refer to prototype product ids.
+- **Orders and reviews** are connected too (see "Orders and reviews on Supabase" below). **Other admin workspaces** (promotions, statistics, training…) still use their mock stores, so e.g. promotions refer to prototype product ids. The customers workspace reads its order counts from the order book, so it mixes mock customers with real orders.
 
 Code: `lib/supabase/` (client + generated `database.types.ts`), `lib/adminCatalogMapping.ts` (pure row ↔ form mapping, unit-tested), `lib/adminCatalogSupabase.tsx` (the Supabase store), `lib/adminCatalog.tsx` (the mock store, and the switch between the two), `lib/adminAuth.tsx`.
 
@@ -132,8 +132,32 @@ Mapping rules worth knowing:
   not uploaded yet shows the image placeholder.
 - Gift cards (`product_type = 'gift_card'`) stay on their own page.
 
-Not connected yet (still mock): authentication, cart persistence and checkout,
-orders, reviews list/moderation, the Academy, the community and the back office.
+Not connected yet (still mock): cart persistence and checkout, the Academy, the
+community and most of the back office. Orders and reviews are connected (next
+section).
+
+## Orders and reviews on Supabase
+
+With the Supabase variables set, three stores read and write the database
+instead of their mock data; without them the mock stores run unchanged.
+
+| Store | Reads | Writes |
+| --- | --- | --- |
+| `lib/orders.tsx` (member area) | the account's own paid orders (`payment_status` paid / refunded / partially refunded), items and parcels | nothing: orders come from the checkout and the Stripe webhook. The demo cart's "payment" adds no order in this mode |
+| `lib/adminOrders.tsx` (back office) | every order except expired unpaid checkouts, with items, parcels and payments | status (+ implied fulfilment), cancellation (`cancel_order`), notes (appended to `admin_note`). Refunds — and cancelling or marking refunded an order that holds money — are refused with a message: they go through Stripe |
+| `lib/reviewsSupabase.tsx` | published reviews for visitors (public columns only); own reviews, votes and reports for customers; everything for staff | submit / edit (photos to the private `review-photos` bucket), helpful votes, reports, and every moderation action |
+
+The database enforces the review rules: only a customer whose order with the
+product has shipped or been delivered can write one (the order is filled in by
+the database), a customer edit goes back to moderation, and staff moderate
+but never change the text. A consequence worth knowing: **staff cannot
+moderate their own review** (the author rules apply), so test moderation with
+a second staff account. The public signature is built by the database from
+the profile's first and last name ("Client" when both are empty).
+
+Course reviews are not stored yet (the table has no course column), so with
+Supabase they are not offered. Mapping lives in pure, unit-tested modules:
+`lib/orderMapping.ts`, `lib/adminOrderMapping.ts`, `lib/reviewMapping.ts`.
 
 ## Project structure
 
@@ -380,7 +404,7 @@ Without Supabase, sign in with `camille@globaltoothgems.com` / `toothgems2026`; 
 - `lib/productFilters.ts` — search, filtering and sorting as pure functions on plain state; the product list holds its filters in the URL, so a filtered view can be linked to and stepped back through.
 - `data/adminOrders.ts` — the back office's order book: 38 orders across every status, payment and fulfilment state, 14 customers in four countries, six flagged for attention (one per reason) and seven internal notes. Deliberately a separate model from `data/orders.ts`, which is the *member's* view of their own purchases and is written to by `lib/orders.tsx` when the cart is paid; only the line-item shape is shared. Timelines, tracking numbers and payment references are derived from each order's own state rather than typed out, so a status can never disagree with the history beside it. Every line refers to a real catalogue id, because `productLine()` throws on an unknown one.
 - `lib/adminOrders.tsx` — the one place any order changes, shaped like `lib/adminCatalog.tsx`. Marking an order shipped moves the badge, the fulfilment column, the KPI row and that order's timeline together. It never invents a payment: an unpaid order marked shipped stays unpaid.
-- `lib/adminOrderFilters.ts` — search, filtering, sorting and paging as pure functions over URL state, the same convention as `lib/productFilters.ts`. The date presets are anchored to the newest order in the book rather than to the wall clock, so "Today" never silently returns nothing on fixed mock data.
+- `lib/adminOrderFilters.ts` — search, filtering, sorting and paging as pure functions over URL state, the same convention as `lib/productFilters.ts`. With Supabase the date presets use the calendar day; on the mock book they are anchored to the newest order rather than to the wall clock, so "Today" never silently returns nothing on fixed mock data.
 - `components/admin/` — the workspace's own primitives (rail, header, table, row, status badge, filters, form, media uploader, preview drawer, confirmation dialog, empty and loading states, form field, search input, category badge), plus the orders workspace's own pieces.
 - `components/ui/Dialog.tsx` and `components/ui/Menu.tsx` — a modal with a focus trap and a keyboard-navigable dropdown, added for the orders screens. See the scope note below: they overlap with `components/admin/ConfirmationDialog.tsx`, `OverflowMenu.tsx` and `lib/useFocusTrap.ts` and should be consolidated onto those.
 
@@ -477,7 +501,7 @@ Everything that matters for money or access — code uniqueness, discount calcul
 
 ## Reviews and moderation (`/admin/avis`, `/compte/avis`)
 
-A front-end-only prototype of customer reviews for products and trainings, and of their moderation. No backend, no uploads leave the browser, no persistence: a reload restores the seed. It adds **Reviews** to the admin rail's main group and **My reviews** to the member area's navigation; nothing else in either navigation changed.
+Customer reviews for products and trainings, and their moderation. With Supabase configured, product reviews are stored in the database (see "Orders and reviews on Supabase"); without it, this is the front-end-only prototype described below — no uploads leave the browser, a reload restores the seed. It adds **Reviews** to the admin rail's main group and **My reviews** to the member area's navigation; nothing else in either navigation changed.
 
 | Where | What |
 | --- | --- |
@@ -494,7 +518,7 @@ How it is put together:
 
 - `data/reviewSystem.ts` — types and seed (~45 reviews across products and trainings: every status, photos, responses, reports, an unverified gift review, an edited review back in moderation). The prototype's "today" is `REVIEW_NOW` (23 Sept 2026).
 - `lib/reviewRules.ts` — pure rules: summaries, public filters and sorts, featured review, form validation, queue filters, dashboard statistics.
-- `lib/reviews.tsx` — the store and every lifecycle action, mounted in `App.tsx` above the storefront and the admin, so a review approved in the back office appears on the product page in the same session. Also the eligibility hooks and the three overlays' state (form, report, photo viewer), rendered once by `components/reviews/ReviewOverlays.tsx`.
+- `lib/reviews.tsx` — the store switch (Supabase: `lib/reviewsSupabase.tsx`; otherwise the in-memory store in the same file), mounted in `App.tsx` above the storefront and the admin, so a review approved in the back office appears on the product page in the same session. Also the eligibility hooks and `useReviewSubjects` (product names and photos from the catalogue). The contract and the three overlays' state (form, report, photo viewer) live in `lib/reviewsContext.ts`; the overlays render once in `components/reviews/ReviewOverlays.tsx`.
 - `components/reviews/` — stars (display and radio-group input), badges, card, section, form, request, eligibility panel; `components/reviews/admin/` — dashboard, queue, reported view, moderation sheet and action dialogs.
 - Copy lives in `i18n/locales/reviews.{fr,en}.json`, mounted under the `reviews` key.
 

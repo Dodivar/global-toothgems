@@ -63,7 +63,8 @@ export function ReviewStatusBadge({
  */
 export function VerifiedBadge({ review, size = "sm" }: { review: CustomerReview; size?: "sm" | "md" }) {
   const { t } = useTranslation();
-  if (!review.orderRef) return null;
+  // Visitors are not told which order verifies someone else's review: an empty reference still counts.
+  if (review.orderRef === null) return null;
   const course = review.subject.kind === "course";
   return (
     <Badge tone="success" size={size} icon={course ? GraduationCap : ShieldCheck}>

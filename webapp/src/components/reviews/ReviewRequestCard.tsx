@@ -3,7 +3,7 @@ import { useTranslation } from "react-i18next";
 import { ArrowRight, Star } from "lucide-react";
 import clsx from "clsx";
 import { Button } from "../ui/Button";
-import { subjectImage, subjectName, useReviews, type ReviewRequest } from "../../lib/reviews";
+import { useReviewSubjects, useReviews, type ReviewRequest } from "../../lib/reviews";
 import { subjectKey } from "../../data/reviewSystem";
 import { formatDate } from "../../lib/format";
 
@@ -36,6 +36,7 @@ export function ReviewRequestCard({
   const lang = i18n.language;
   const { openForm, dismissRequest, drafts } = useReviews();
   const [hover, setHover] = useState(0);
+  const { subjectName, subjectImage } = useReviewSubjects();
   const name = subjectName(request.subject, lang);
   const image = subjectImage(request.subject);
   const hasDraft = Boolean(drafts[subjectKey(request.subject)]);

@@ -5,11 +5,10 @@ import { ArrowRight, CalendarClock, Mail, Store } from "lucide-react";
 import clsx from "clsx";
 import { Button } from "../ui/Button";
 import { Badge } from "../ui/Badge";
-import { GemIcon } from "../studio/Gem";
+import { GiftCardVisual } from "../promotions/Visuals";
 import { useMoney } from "../promotions/PromoBadges";
 import { usePromotions } from "../../lib/adminPromotions";
 import { useReveal } from "../../lib/useReveal";
-import monogramWhite from "../../assets/monogram-white.png";
 
 const FACTS = [
   { key: "fact1", icon: Mail },
@@ -39,31 +38,17 @@ export function GiftCardFeature() {
     <section ref={ref} aria-labelledby="gt-alt-gift-title" className="gt-reveal gt-alt-section w-full bg-[var(--surface-card)]">
       <div className="gt-alt-wide grid grid-cols-[minmax(0,1fr)] items-center gap-12 px-[var(--gt-alt-gutter)] lg:grid-cols-[minmax(0,1.1fr)_minmax(0,1fr)] lg:gap-[clamp(48px,7vw,140px)]">
         <div className="gt-alt-gift-stage relative grid min-h-[clamp(320px,38vw,560px)] place-items-center overflow-hidden rounded-[var(--radius-2xl)] px-6 py-12">
-          <span aria-hidden="true" className="gt-alt-giftcard gt-alt-giftcard--back absolute" />
-          <div
-            role="img"
-            aria-label={t("homeAlt.gift.cardAria", { amount: amount != null ? money(amount) : "" })}
-            className="gt-alt-giftcard gt-sparkle relative"
-          >
-            <span className="flex items-start justify-between">
-              <img src={monogramWhite} alt="" className="h-[clamp(34px,3.4vw,48px)] w-auto" />
-              <span className="text-[clamp(10px,.9vw,12px)] font-semibold uppercase tracking-[var(--tracking-eyebrow)] text-white/90">
-                {t("homeAlt.gift.cardLabel")}
-              </span>
-            </span>
-            <span className="flex items-end justify-between gap-4">
-              <span className="grid gap-1">
-                <span className="text-[clamp(10px,.9vw,12px)] font-semibold uppercase tracking-[var(--tracking-logo)] text-white/85">Global Toothgems</span>
-                <span key={amount} className="gt-alt-amount-in text-[clamp(38px,4.4vw,64px)] font-[var(--weight-black)] leading-none tracking-[var(--tracking-display)] text-white">
-                  {amount != null ? money(amount) : ""}
-                </span>
-              </span>
-              <span aria-hidden="true" className="flex -space-x-2">
-                <GemIcon shape="heart" material="rose" size={30} />
-                <GemIcon shape="round" material="crystal" size={30} />
-                <GemIcon shape="star" material="gold" size={30} />
-              </span>
-            </span>
+          <div className="gt-alt-giftcard-stage relative w-[min(86%,460px)] -rotate-3 transition-transform duration-[var(--duration-slow)] hover:rotate-0 motion-reduce:rotate-0 motion-reduce:transition-none">
+            <GiftCardVisual
+              key={amount}
+              design={config.defaultDesign}
+              amountCents={amount ?? null}
+              recipient={t("homeAlt.gift.exampleRecipient")}
+              sender={t("homeAlt.gift.exampleSender")}
+              message={t("homeAlt.gift.exampleMessage")}
+              size="lg"
+              label={t("homeAlt.gift.cardAria", { amount: amount != null ? money(amount) : "" })}
+            />
           </div>
         </div>
 

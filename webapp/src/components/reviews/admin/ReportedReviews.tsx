@@ -5,7 +5,7 @@ import { EmptyState } from "../../admin/EmptyState";
 import { Stars } from "../Stars";
 import { ReviewStatusBadge, VerifiedBadge } from "../ReviewBadges";
 import { openReports, privacyName, type CustomerReview, type ReportReason } from "../../../data/reviewSystem";
-import { subjectName, useReviewCustomer, useReviews } from "../../../lib/reviews";
+import { useReviewCustomer, useReviewSubjects, useReviews } from "../../../lib/reviews";
 import { useWhen } from "./ModerationSheet";
 import type { DialogAction } from "./ModerationDialogs";
 
@@ -86,6 +86,7 @@ function ReportedCard({ review: r, onOpen, onAction }: { review: CustomerReview;
   const { t, i18n } = useTranslation();
   const when = useWhen();
   const customerOf = useReviewCustomer();
+  const { subjectName } = useReviewSubjects();
   const c = customerOf(r);
   const reports = openReports(r);
   const byReason = new Map<ReportReason, number>();

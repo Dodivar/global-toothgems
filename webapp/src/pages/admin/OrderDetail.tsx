@@ -54,7 +54,7 @@ export function OrderDetail() {
   const { search } = useLocation();
   const { openNav } = useAdminShell();
   const { showToast } = useToast();
-  const { orders, setStatus, refund, cancel, addNote } = useAdminOrders();
+  const { orders, loading, setStatus, refund, cancel, addNote } = useAdminOrders();
 
   const order = orders.find((o) => o.reference === reference);
 
@@ -72,6 +72,10 @@ export function OrderDetail() {
   const [cancelOpen, setCancelOpen] = useState(false);
 
   const backTo = `/admin/commandes${search}`;
+
+  if (!order && loading) {
+    return <section aria-busy="true" className="min-h-[40vh]" />;
+  }
 
   if (!order) {
     return (
@@ -273,11 +277,12 @@ export function OrderDetail() {
         order={statusOpen ? order : null}
         onClose={() => setStatusOpen(false)}
         onConfirm={(status) => {
-          setStatus(order.reference, status);
-          showToast(
-            t("admin.orders.toastStatusTitle", { reference: `#${order.reference}` }),
-            t("admin.orders.toastStatusBody", { status: t(`admin.orders.orderStatus.${status}`) }),
-          );
+          if (setStatus(order.reference, status)) {
+            showToast(
+              t("admin.orders.toastStatusTitle", { reference: `#${order.reference}` }),
+              t("admin.orders.toastStatusBody", { status: t(`admin.orders.orderStatus.${status}`) }),
+            );
+          }
           setStatusOpen(false);
         }}
       />
@@ -286,11 +291,12 @@ export function OrderDetail() {
         order={refundOpen ? order : null}
         onClose={() => setRefundOpen(false)}
         onConfirm={(amount, full) => {
-          refund(order.reference, amount, full);
-          showToast(
-            t("admin.orders.toastRefundTitle", { reference: `#${order.reference}` }),
-            t("admin.orders.toastRefundBody", { amount: formatPrice(amount) }),
-          );
+          if (refund(order.reference, amount, full)) {
+            showToast(
+              t("admin.orders.toastRefundTitle", { reference: `#${order.reference}` }),
+              t("admin.orders.toastRefundBody", { amount: formatPrice(amount) }),
+            );
+          }
           setRefundOpen(false);
         }}
       />
@@ -299,12 +305,13 @@ export function OrderDetail() {
         orders={cancelOpen ? [order] : []}
         onClose={() => setCancelOpen(false)}
         onConfirm={() => {
-          cancel(order.reference);
-          showToast(
-            t("admin.orders.toastCancelTitle", { reference: `#${order.reference}` }),
-            t("admin.orders.toastCancelBody"),
-            "warning",
-          );
+          if (cancel(order.reference)) {
+            showToast(
+              t("admin.orders.toastCancelTitle", { reference: `#${order.reference}` }),
+              t("admin.orders.toastCancelBody"),
+              "warning",
+            );
+          }
           setCancelOpen(false);
         }}
       />

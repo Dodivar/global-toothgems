@@ -1,4 +1,4 @@
-import { createContext, useCallback, useContext, useEffect, useMemo, useRef, useState, type ReactNode } from "react";
+import { useCallback, useEffect, useMemo, useRef, useState, type ReactNode } from "react";
 import {
   COURSE_REVIEW_THRESHOLD,
   DEMO_CUSTOMER,
@@ -8,19 +8,26 @@ import {
   subjectKey,
   type CustomerReview,
   type HistoryEvent,
-  type RejectReason,
-  type ReportReason,
   type ReviewCustomer,
-  type ReviewPhoto,
   type ReviewSubject,
 } from "../data/reviewSystem";
-import { getProduct } from "../data/products";
 import { getCourse } from "../data/courses";
 import { pick } from "../data/types";
-import type { ReviewInput } from "./reviewRules";
 import { useAuth, type Profile } from "./auth";
+import { useCatalog } from "./catalog/CatalogProvider";
 import { useOrders } from "./orders";
 import { useProgress } from "./progress";
+import { isSupabaseConfigured } from "./supabase/client";
+import { SupabaseReviewsProvider } from "./reviewsSupabase";
+import {
+  ReviewsContext,
+  useLocalReviewState,
+  useReviews,
+  type ReviewDemoMode,
+  type ReviewsContextValue,
+} from "./reviewsContext";
+
+export { useReviews, type FormTarget, type PhotoViewerTarget, type ReviewDemoMode } from "./reviewsContext";
 
 /**
  * The review store: every review, the moderation actions on them, and the
@@ -30,83 +37,31 @@ import { useProgress } from "./progress";
  * Mounted once in `App.tsx`, above the storefront and the back office alike,
  * so approving a review in `/admin/avis` puts it on the product page in the
  * same session, and a report sent from a product page lands in the admin's
- * "Reported" tab. In-memory mockup state like the cart and the order history:
- * a reload restores the seed.
+ * "Reported" tab.
  *
- * Nothing here is authorization. Eligibility is computed in the browser from
- * the demo account's orders and progress so the prototype can show the rules;
- * the real endpoint must check the order, the enrolment and the author itself.
+ * With Supabase configured the reviews are stored in the database
+ * (`reviewsSupabase.tsx`), which enforces who may write, edit and moderate.
+ * Without it the prototype's in-memory store below is used: a reload restores
+ * the seed, and eligibility computed in the browser is all there is.
  */
-
-export type ReviewDemoMode = "live" | "empty" | "error";
-
-/** What the form overlay is doing: writing a new review, or editing one. */
-export interface FormTarget {
-  subject: ReviewSubject;
-  /** Pre-selected rating, when the form is opened from a row of stars. */
-  rating?: number;
-  reviewId?: string;
+export function ReviewsProvider({ children }: { children: ReactNode }) {
+  const { profile } = useAuth();
+  /** The author as the storefront names them — the signed-in name for the account's own reviews. */
+  const myName = profile ? authorFromProfile(profile) : privacyName(DEMO_CUSTOMER.firstName, DEMO_CUSTOMER.lastName);
+  return isSupabaseConfigured ? (
+    <SupabaseReviewsProvider myName={myName}>{children}</SupabaseReviewsProvider>
+  ) : (
+    <MockReviewsProvider myName={myName}>{children}</MockReviewsProvider>
+  );
 }
-
-export interface PhotoViewerTarget {
-  photos: ReviewPhoto[];
-  index: number;
-  /** "Photo shared by Sarah M." — prefixed to each photo's own description. */
-  caption: string;
-}
-
-interface ReviewsContextValue {
-  reviews: CustomerReview[];
-  /** "Sarah M." — how the signed-in customer's reviews are signed. */
-  myName: string;
-  /** True during the simulated first load and after a retry. */
-  loading: boolean;
-  demoMode: ReviewDemoMode;
-  setDemoMode: (mode: ReviewDemoMode) => void;
-  retry: () => void;
-
-  getReview: (id: string) => CustomerReview | undefined;
-
-  /* Customer */
-  submitReview: (subject: ReviewSubject, input: ReviewInput, verification: { orderRef: string | null; progressPct?: number }) => string;
-  updateReview: (id: string, input: ReviewInput) => void;
-  drafts: Record<string, ReviewInput>;
-  saveDraft: (subject: ReviewSubject, input: ReviewInput | null) => void;
-  helpfulByMe: Set<string>;
-  toggleHelpful: (id: string) => void;
-  reportedByMe: Set<string>;
-  reportReview: (id: string, reason: ReportReason, details: string) => void;
-  dismissedRequests: Set<string>;
-  dismissRequest: (subject: ReviewSubject) => void;
-
-  /* Team */
-  approve: (id: string, actor: string) => void;
-  reject: (id: string, actor: string, reason: RejectReason, internal: string) => void;
-  requestChanges: (id: string, actor: string, message: string) => void;
-  hide: (id: string, actor: string, note: string) => void;
-  restore: (id: string, actor: string) => void;
-  respond: (id: string, actor: string, body: string) => void;
-  removeResponse: (id: string, actor: string) => void;
-  flag: (id: string, actor: string, reason: ReportReason, note: string) => void;
-  resolveReports: (id: string, actor: string, resolution: "kept" | "hidden" | "removed", note: string) => void;
-  addNote: (id: string, actor: string, body: string) => void;
-
-  /* Overlays */
-  formTarget: FormTarget | null;
-  openForm: (target: FormTarget) => void;
-  closeForm: () => void;
-  reportTarget: string | null;
-  openReport: (id: string) => void;
-  closeReport: () => void;
-  photoTarget: PhotoViewerTarget | null;
-  openPhotos: (target: PhotoViewerTarget) => void;
-  closePhotos: () => void;
-}
-
-const ReviewsContext = createContext<ReviewsContextValue | null>(null);
 
 /** Simulated round trip, so the loading states are real states rather than theory. */
 const LATENCY = 550;
+
+/** Simulated round trip of a submission. */
+const SUBMIT_LATENCY = 750;
+
+const wait = (ms: number) => new Promise((resolve) => setTimeout(resolve, ms));
 
 /**
  * The prototype's clock: its fixed "today" plus the time spent in this
@@ -120,18 +75,20 @@ function nowIso(): string {
   return `${t.getFullYear()}-${pad(t.getMonth() + 1)}-${pad(t.getDate())}T${pad(t.getHours())}:${pad(t.getMinutes())}`;
 }
 
-export function ReviewsProvider({ children }: { children: ReactNode }) {
+/**
+ * Prototype store. Nothing here is authorization: eligibility is computed in
+ * the browser from the demo account's orders and progress so the prototype
+ * can show the rules.
+ */
+function MockReviewsProvider({ children, myName }: { children: ReactNode; myName: string }) {
   const { profile } = useAuth();
+  const local = useLocalReviewState();
+  const { saveDraft } = local;
   const [reviews, setReviews] = useState<CustomerReview[]>(SEED_REVIEWS);
   const [loading, setLoading] = useState(true);
   const [demoMode, setDemoModeState] = useState<ReviewDemoMode>("live");
-  const [drafts, setDrafts] = useState<Record<string, ReviewInput>>({});
   const [helpfulByMe, setHelpful] = useState<Set<string>>(() => new Set());
   const [reportedByMe, setReported] = useState<Set<string>>(() => new Set());
-  const [dismissedRequests, setDismissed] = useState<Set<string>>(() => new Set());
-  const [formTarget, setFormTarget] = useState<FormTarget | null>(null);
-  const [reportTarget, setReportTarget] = useState<string | null>(null);
-  const [photoTarget, setPhotoTarget] = useState<PhotoViewerTarget | null>(null);
   const nextId = useRef(4001);
   const timer = useRef<ReturnType<typeof setTimeout> | null>(null);
 
@@ -170,11 +127,9 @@ export function ReviewsProvider({ children }: { children: ReactNode }) {
     );
   }, []);
 
-  /** The author as the storefront names them — the signed-in name for the demo account's own reviews. */
-  const myName = profile ? authorFromProfile(profile) : privacyName(DEMO_CUSTOMER.firstName, DEMO_CUSTOMER.lastName);
-
   const submitReview = useCallback<ReviewsContextValue["submitReview"]>(
-    (subject, input, verification) => {
+    async (subject, input, verification) => {
+      await wait(SUBMIT_LATENCY);
       const id = `RV-${nextId.current++}`;
       const at = nowIso();
       const review: CustomerReview = {
@@ -198,14 +153,10 @@ export function ReviewsProvider({ children }: { children: ReactNode }) {
         history: [{ kind: "submitted", at, by: myName }],
       };
       setReviews((prev) => [review, ...prev]);
-      setDrafts((prev) => {
-        const next = { ...prev };
-        delete next[subjectKey(subject)];
-        return next;
-      });
+      saveDraft(subject, null);
       return id;
     },
-    [profile, myName],
+    [profile, myName, saveDraft],
   );
 
   /**
@@ -214,7 +165,8 @@ export function ReviewsProvider({ children }: { children: ReactNode }) {
    * its new version is approved, rather than being republished unread.
    */
   const updateReview = useCallback<ReviewsContextValue["updateReview"]>(
-    (id, input) => {
+    async (id, input) => {
+      await wait(SUBMIT_LATENCY);
       mutate(
         id,
         (r) => ({
@@ -234,15 +186,6 @@ export function ReviewsProvider({ children }: { children: ReactNode }) {
     },
     [mutate, myName],
   );
-
-  const saveDraft = useCallback((subject: ReviewSubject, input: ReviewInput | null) => {
-    setDrafts((prev) => {
-      const next = { ...prev };
-      if (input) next[subjectKey(subject)] = input;
-      else delete next[subjectKey(subject)];
-      return next;
-    });
-  }, []);
 
   const toggleHelpful = useCallback((id: string) => {
     setHelpful((prev) => {
@@ -269,10 +212,6 @@ export function ReviewsProvider({ children }: { children: ReactNode }) {
     },
     [mutate],
   );
-
-  const dismissRequest = useCallback((subject: ReviewSubject) => {
-    setDismissed((prev) => new Set(prev).add(subjectKey(subject)));
-  }, []);
 
   /* ------------------------------ Team actions ----------------------------- */
 
@@ -367,6 +306,7 @@ export function ReviewsProvider({ children }: { children: ReactNode }) {
 
   const value = useMemo<ReviewsContextValue>(
     () => ({
+      ...local,
       reviews: visible,
       myName,
       loading,
@@ -376,14 +316,10 @@ export function ReviewsProvider({ children }: { children: ReactNode }) {
       getReview: (id) => visible.find((r) => r.id === id),
       submitReview,
       updateReview,
-      drafts,
-      saveDraft,
       helpfulByMe,
       toggleHelpful,
       reportedByMe,
       reportReview,
-      dismissedRequests,
-      dismissRequest,
       approve,
       reject,
       requestChanges,
@@ -394,20 +330,11 @@ export function ReviewsProvider({ children }: { children: ReactNode }) {
       flag,
       resolveReports,
       addNote,
-      formTarget,
-      openForm: setFormTarget,
-      closeForm: () => setFormTarget(null),
-      reportTarget,
-      openReport: setReportTarget,
-      closeReport: () => setReportTarget(null),
-      photoTarget,
-      openPhotos: setPhotoTarget,
-      closePhotos: () => setPhotoTarget(null),
     }),
     [
-      visible, myName, loading, demoMode, setDemoMode, retry, submitReview, updateReview, drafts, saveDraft, helpfulByMe,
-      toggleHelpful, reportedByMe, reportReview, dismissedRequests, dismissRequest, approve, reject, requestChanges,
-      hide, restore, respond, removeResponse, flag, resolveReports, addNote, formTarget, reportTarget, photoTarget,
+      local, visible, myName, loading, demoMode, setDemoMode, retry, submitReview, updateReview, helpfulByMe,
+      toggleHelpful, reportedByMe, reportReview, approve, reject, requestChanges,
+      hide, restore, respond, removeResponse, flag, resolveReports, addNote,
     ],
   );
 
@@ -415,12 +342,6 @@ export function ReviewsProvider({ children }: { children: ReactNode }) {
 }
 
 const EMPTY: CustomerReview[] = [];
-
-export function useReviews() {
-  const ctx = useContext(ReviewsContext);
-  if (!ctx) throw new Error("useReviews must be used within ReviewsProvider");
-  return ctx;
-}
 
 /* -------------------------------------------------------------------------- */
 /* Names                                                                      */
@@ -448,14 +369,16 @@ function customerFromProfile(profile: Profile): ReviewCustomer {
 }
 
 /**
- * Who a review belongs to, as a full record for the back office. The demo
- * account's reviews follow whoever is signed in, so the moderation panel and
- * "My reviews" never disagree about the author.
+ * Who a review belongs to, as a full record for the back office. In the
+ * prototype the demo account's reviews follow whoever is signed in, so the
+ * moderation panel and "My reviews" never disagree about the author; stored
+ * reviews carry their author already.
  */
 export function useReviewCustomer() {
   const { profile } = useAuth();
   return useCallback(
-    (review: CustomerReview): ReviewCustomer => (review.mine && profile ? customerFromProfile(profile) : review.customer),
+    (review: CustomerReview): ReviewCustomer =>
+      review.mine && profile && !isSupabaseConfigured ? customerFromProfile(profile) : review.customer,
     [profile],
   );
 }
@@ -472,18 +395,30 @@ export function useReviewAuthor() {
   );
 }
 
-/** Display name of a product or a course in the current language. */
-export function subjectName(subject: ReviewSubject, lang: string): string {
-  if (subject.kind === "product") {
-    const p = getProduct(subject.id);
-    return p ? pick(p.name, lang) : subject.id;
-  }
-  const c = getCourse(subject.id);
-  return c ? pick(c.title, lang) : subject.id;
-}
-
-export function subjectImage(subject: ReviewSubject): string | undefined {
-  return subject.kind === "product" ? getProduct(subject.id)?.image : getCourse(subject.id)?.image;
+/**
+ * Display name and photo of a product or a course, from the catalogue the
+ * shop shows (database or fixtures). A product that left the shop falls back
+ * to its slug and no photo.
+ */
+export function useReviewSubjects() {
+  const { findProduct } = useCatalog();
+  const subjectName = useCallback(
+    (subject: ReviewSubject, lang: string): string => {
+      if (subject.kind === "product") {
+        const p = findProduct(subject.id);
+        return p ? pick(p.name, lang) : subject.id;
+      }
+      const c = getCourse(subject.id);
+      return c ? pick(c.title, lang) : subject.id;
+    },
+    [findProduct],
+  );
+  const subjectImage = useCallback(
+    (subject: ReviewSubject): string | undefined =>
+      subject.kind === "product" ? findProduct(subject.id)?.image || undefined : getCourse(subject.id)?.image,
+    [findProduct],
+  );
+  return { subjectName, subjectImage };
 }
 
 export function subjectPath(subject: ReviewSubject): string {
@@ -507,12 +442,15 @@ export type RequestContext = "delivered" | "shipped" | "completed" | "progress";
 
 /**
  * Whether the signed-in account may review `subject`, and why not otherwise.
+ * With Supabase this only decides what the page offers: the database checks
+ * the order again when the review is written.
  *
  * - Products: the product is on one of the account's orders that has left the
  *   workshop (shipped or delivered). Cancelled orders never count.
  * - Courses: the course is on the account and at least
  *   `COURSE_REVIEW_THRESHOLD` % of it has been validated, so the review speaks
- *   from real experience of the teaching.
+ *   from real experience of the teaching. Course reviews are not stored in the
+ *   database yet, so with Supabase they are not offered.
  * - One review per product or course: once written, the answer is "reviewed"
  *   and the way forward is editing it.
  *
@@ -539,13 +477,14 @@ export function useReviewEligibility() {
             state: "eligible",
             orderRef: received.reference,
             context: received.status === "delivered" ? "delivered" : "shipped",
-            date: received.tracking?.estimatedDelivery ?? received.placedOn,
+            date: received.tracking?.estimatedDelivery || received.placedOn,
           };
         }
         if (holding.length > 0) return { state: "awaitingShipment", orderRef: holding[0].reference };
         return { state: "notPurchased" };
       }
 
+      if (isSupabaseConfigured) return { state: "notPurchased" };
       const progress = progressFor(subject.id);
       if (!progress.enrolled) return { state: "notPurchased" };
       if (!progress.completed && progress.pct < COURSE_REVIEW_THRESHOLD) return { state: "needsProgress", pct: progress.pct };
