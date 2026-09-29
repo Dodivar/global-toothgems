@@ -37,6 +37,10 @@
     "low": "Low stock",
     "out": "Sold out"
   },
+  "variantsOut_one": "{{count}} sold out",
+  "variantsOut_other": "{{count}} sold out",
+  "colorsAria_one": "{{count}} colour, {{available}} available",
+  "colorsAria_other": "{{count}} colours, {{available}} available",
   "chooseOptions": "Choose options",
   "ratingAria": "Rated {{rating}} out of 5 from {{count}} reviews"
 }

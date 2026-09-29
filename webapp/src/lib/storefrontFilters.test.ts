@@ -11,6 +11,7 @@ import {
   readFilters,
   readSort,
   sortProducts,
+  withFilter,
   writeFilters,
 } from "./storefrontFilters";
 
@@ -47,6 +48,13 @@ describe("URL state", () => {
       material: "Swarovski",
     });
     expect(readFilters(new URLSearchParams())).toEqual(NO_FILTERS);
+  });
+
+  it("ignores a shape or colour paired with a type that has none", () => {
+    expect(readFilters(new URLSearchParams("categorie=Outils&forme=heart&couleur=gold"))).toEqual({
+      ...NO_FILTERS,
+      category: "Outils",
+    });
   });
 
   it("drops defaults and the page number, and keeps the sort", () => {
@@ -106,6 +114,10 @@ describe("facetCount", () => {
     // Replaces the current value of the same key rather than stacking on it.
     expect(facetCount(catalogue, filters, "category", "Outils")).toBe(1);
   });
+
+  it("counts a product type as it would really apply, shape and colour cleared", () => {
+    expect(facetCount(catalogue, { ...NO_FILTERS, shape: "heart" }, "category", "Outils")).toBe(1);
+  });
 });
 
 describe("materialsInCatalog", () => {
@@ -133,5 +145,22 @@ describe("sortProducts", () => {
     const before = catalogue.map((p) => p.id);
     sortProducts(catalogue, "priceDesc", "fr");
     expect(catalogue.map((p) => p.id)).toEqual(before);
+  });
+});
+
+describe("withFilter", () => {
+  const gems = { ...NO_FILTERS, category: "Gems", shape: "heart", color: "crystal" };
+
+  it("clears shape and colour when the product type cannot have them", () => {
+    expect(withFilter(gems, "category", "Outils")).toEqual({ ...NO_FILTERS, category: "Outils" });
+  });
+
+  it("keeps them for all products and for gems", () => {
+    expect(withFilter(gems, "category", "Tout")).toEqual({ ...gems, category: "Tout" });
+    expect(withFilter({ ...gems, category: "Tout" }, "category", "Gems")).toEqual(gems);
+  });
+
+  it("changes only the given key otherwise", () => {
+    expect(withFilter(gems, "price", "under30")).toEqual({ ...gems, price: "under30" });
   });
 });

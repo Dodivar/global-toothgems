@@ -1870,7 +1870,18 @@
   .gt-shopb-card-img-alt { opacity: 0; transition: opacity var(--duration-normal) var(--ease-standard); }
   .gt-shopb-card:hover .gt-shopb-card-img-alt,
   .gt-shopb-card:focus-within .gt-shopb-card-img-alt { opacity: 1; }
-  .gt-shopb-card[data-stock="out"] .gt-shopb-card-img { filter: grayscale(.55); opacity: .72; }
+
+  /* A sold-out colour keeps its dot, struck through: the line says it, not
+     the dimming alone. */
+  .gt-shopb-swatch[data-out="true"] { opacity: .45; }
+  .gt-shopb-swatch[data-out="true"]::after {
+    content: "";
+    position: absolute;
+    inset: 50% -2px auto;
+    height: 1.5px;
+    background: var(--gt-ink-700);
+    transform: rotate(-45deg);
+  }
 
   /* Touch first: the quick add is a small round "+" that is always there, the
      save heart always shows, and the "choose options" hint never does. */

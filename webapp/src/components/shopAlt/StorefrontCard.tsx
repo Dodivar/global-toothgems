@@ -7,8 +7,9 @@ import { QuickAdd } from "../shop/QuickAdd";
 import { canQuickAdd } from "../../lib/quickAdd";
 import { useSubjectReviews } from "../reviews/ReviewsSection";
 import { formatPrice } from "../../lib/format";
+import { gemAxes, isGemOptionSet } from "../../lib/gemOptions";
 import { pick } from "../../data/types";
-import type { Product } from "../../data/products";
+import type { Product, ProductVariant } from "../../data/products";
 
 interface StorefrontCardProps {
   product: Product;
@@ -25,8 +26,9 @@ interface StorefrontCardProps {
  * The image does the selling, so it takes the card's full width with no inner
  * frame; the text underneath reads in the order people decide in — what kind
  * of product, which one, how much, can I have it now. Stock is spelled out in
- * words next to the price rather than carried by a colour, and a sold-out
- * product dims its photo as well.
+ * words next to the price rather than carried by a colour. Options come
+ * with their own availability: each colour is a dot, struck through when
+ * that colour is sold out.
  *
  * Where there is a pointer, the add-to-cart bar slides up over the photo on
  * hover or keyboard focus; on touch screens it is a small "+" that is always
@@ -40,6 +42,7 @@ export function StorefrontCard({ product, source, saved, onSave, eager = false }
   const name = pick(product.name, lang);
   const subtitle = pick(product.subtitle, lang);
   const stock = product.stock ?? "in";
+  const categoryLabel = product.cat ? t(`shop.categories.${product.cat}`) : undefined;
   const quickAdd = canQuickAdd(product, source);
   const hoverImage = product.gallery?.[1]?.src;
 
@@ -53,7 +56,6 @@ export function StorefrontCard({ product, source, saved, onSave, eager = false }
   return (
     <article
       className="gt-shopb-card group relative flex flex-col overflow-hidden rounded-[var(--radius-card)] bg-[var(--surface-card)] shadow-[var(--shadow-card)]"
-      data-stock={stock}
     >
       <div className="relative aspect-square overflow-hidden bg-[var(--surface-card)]">
         {showImage ? (
@@ -144,7 +146,7 @@ export function StorefrontCard({ product, source, saved, onSave, eager = false }
       <div className="flex flex-1 flex-col gap-1 px-3 pb-3.5 pt-3 sm:px-3.5">
         <div className="flex items-center justify-between gap-2">
           <span className="truncate text-[10.5px] font-semibold uppercase tracking-[var(--tracking-eyebrow)] text-[var(--text-muted)]">
-            {product.cat ? t(`shop.categories.${product.cat}`) : subtitle}
+            {categoryLabel ?? subtitle}
           </span>
           {summary.count > 0 && (
             <span
@@ -166,9 +168,11 @@ export function StorefrontCard({ product, source, saved, onSave, eager = false }
             {name}
           </Link>
         </h3>
-        {product.cat && subtitle && (
+        {/* Without a material, the subtitle is the category name again. */}
+        {product.cat && subtitle && subtitle !== categoryLabel && (
           <span className="truncate text-xs text-[var(--text-muted)]">{subtitle}</span>
         )}
+        <VariantAvailability variants={product.variants ?? []} />
         <div className="mt-auto flex flex-wrap items-baseline justify-between gap-x-2 gap-y-0.5 pt-1.5">
           <span className="flex items-baseline gap-1.5">
             <strong className="text-[15px] font-bold text-[var(--text-primary)]">{formatPrice(product.price)}</strong>
@@ -180,6 +184,72 @@ export function StorefrontCard({ product, source, saved, onSave, eager = false }
         </div>
       </div>
     </article>
+  );
+}
+
+/** Colour dots shown before the rest collapse into "+n". */
+const MAX_SWATCHES = 6;
+
+/**
+ * What the product comes in, and which of it can be had now. Colours are
+ * dots — a sold-out one struck through, and named in its tooltip — followed
+ * by how many are sold out; gem options are their packs and stone sizes;
+ * any other options are counted. The card stays one link: choosing happens
+ * on the product page.
+ */
+function VariantAvailability({ variants }: { variants: ProductVariant[] }) {
+  const { t, i18n } = useTranslation();
+  const lang = i18n.language;
+  const outCount = variants.filter((v) => v.stock === "out").length;
+  const outText = outCount > 0 ? t("shopAlt.variantsOut", { count: outCount }) : null;
+
+  if (variants.length === 0 || (variants.length === 1 && !variants[0].swatch)) return null;
+
+  if (variants.every((v) => v.swatch)) {
+    const shown = variants.slice(0, MAX_SWATCHES);
+    return (
+      <span
+        role="img"
+        aria-label={t("shopAlt.colorsAria", { count: variants.length, available: variants.length - outCount })}
+        className="flex items-center gap-1.5 pt-0.5"
+      >
+        <span aria-hidden="true" className="flex items-center gap-1">
+          {shown.map((v) => (
+            <span
+              key={v.id}
+              title={`${pick(v.name, lang)} — ${t(`shopAlt.availability.${v.stock ?? "in"}`)}`}
+              data-out={v.stock === "out"}
+              className="gt-shopb-swatch relative h-3.5 w-3.5 flex-none rounded-full border border-[var(--border-default)]"
+              style={{ background: v.swatch }}
+            />
+          ))}
+          {variants.length > shown.length && (
+            <span className="text-[11px] text-[var(--text-muted)]">+{variants.length - shown.length}</span>
+          )}
+        </span>
+        {outText && <span aria-hidden="true" className="truncate text-[11px] text-[var(--text-muted)]">· {outText}</span>}
+      </span>
+    );
+  }
+
+  if (isGemOptionSet(variants)) {
+    const { packs, sizes } = gemAxes(variants);
+    const parts = [
+      packs.length > 0 ? t("product.cardPacks", { list: packs.join(" · ") }) : null,
+      sizes.length > 1
+        ? t("product.cardSizes", { from: `SS${sizes[0]}`, to: `SS${sizes[sizes.length - 1]}` })
+        : sizes.length === 1
+          ? `SS${sizes[0]}`
+          : null,
+    ].filter(Boolean);
+    return <span className="truncate text-[11px] text-[var(--text-muted)]">{parts.join(" — ")}</span>;
+  }
+
+  return (
+    <span className="truncate text-[11px] text-[var(--text-muted)]">
+      {t("product.cardVariants", { count: variants.length })}
+      {outText && ` · ${outText}`}
+    </span>
   );
 }
 

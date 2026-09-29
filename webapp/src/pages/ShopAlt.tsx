@@ -22,26 +22,26 @@ import {
   readFilters,
   readSort,
   sortProducts,
+  withFilter,
   writeFilters,
   type FilterKey,
   type StorefrontFilters,
   type StorefrontSort,
 } from "../lib/storefrontFilters";
 
-/**
- * Products revealed per step. 24 fills whole rows at 2, 3, 4 and 6 columns.
- */
-const STEP = 24;
+/** Products revealed per step: whole rows at 2, 3, 4 and 5 columns alike. */
+const STEP = 20;
 
 /**
  * Column ladder keyed to the width of the results column itself (a container
  * query), not the viewport: the sidebar takes its share from lg up, so the
  * viewport alone would say nothing about how wide a card ends up. The steps
  * keep every card at roughly 190 px or more, which is what a small gem photo
- * needs to still read as a shape.
+ * needs to still read as a shape; five columns is the ceiling, so on a wide
+ * screen the cards grow rather than multiply.
  */
 const GRID =
-  "grid grid-cols-2 gap-3 @min-[540px]:grid-cols-3 @min-[540px]:gap-4 @min-[780px]:grid-cols-4 @min-[1000px]:grid-cols-5 @min-[1000px]:gap-5 @min-[1240px]:grid-cols-6";
+  "grid grid-cols-2 gap-3 @min-[540px]:grid-cols-3 @min-[540px]:gap-4 @min-[780px]:grid-cols-4 @min-[1000px]:grid-cols-5 @min-[1000px]:gap-5";
 
 /** Sidebar groups open on arrival; the rest are one click away. */
 const SIDEBAR_OPEN_GROUPS: GroupKey[] = ["category", "shape", "color", "price"];
@@ -96,7 +96,7 @@ export function ShopAlt() {
   }, [signature]);
 
   const [drawerOpen, setDrawerOpen] = useState(false);
-  const setFilter = (key: FilterKey, value: string) => setParams(writeFilters(params, { ...filters, [key]: value }));
+  const setFilter = (key: FilterKey, value: string) => setParams(writeFilters(params, withFilter(filters, key, value)));
   const clearAll = () => setParams(writeFilters(params, NO_FILTERS));
   const setSort = (value: StorefrontSort) => {
     const next = new URLSearchParams(params);

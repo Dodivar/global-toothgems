@@ -60,7 +60,7 @@ export const DEFAULT_SORT: StorefrontSort = "new";
 
 export function readFilters(params: URLSearchParams): StorefrontFilters {
   const read = (key: FilterKey) => params.get(FILTER_PARAMS[key].param) ?? FILTER_PARAMS[key].fallback;
-  return {
+  const filters = {
     category: read("category"),
     material: read("material"),
     shape: read("shape"),
@@ -68,6 +68,8 @@ export function readFilters(params: URLSearchParams): StorefrontFilters {
     price: read("price"),
     stock: read("stock"),
   };
+  // A hand-edited URL can pair a cut with tools; drop what the panel cannot show.
+  return withFilter(filters, "category", filters.category);
 }
 
 /** An unknown `tri` from a hand-edited URL falls back to the default order. */
@@ -88,6 +90,25 @@ export function writeFilters(params: URLSearchParams, filters: StorefrontFilters
     else next.set(param, filters[key]);
   }
   next.delete("page");
+  return next;
+}
+
+/**
+ * Only gems carry a cut or a colour, so those two filters exist only while the
+ * product type is "all" or gems. Picking another type clears them: a hidden
+ * filter that still narrowed the grid would be impossible to see or undo.
+ */
+export function gemFiltersApply(category: string): boolean {
+  return category === FILTER_PARAMS.category.fallback || category === "Gems";
+}
+
+/** `filters` with one value changed, and the rule above applied. */
+export function withFilter(filters: StorefrontFilters, key: FilterKey, value: string): StorefrontFilters {
+  const next = { ...filters, [key]: value };
+  if (key === "category" && !gemFiltersApply(value)) {
+    next.shape = FILTER_PARAMS.shape.fallback;
+    next.color = FILTER_PARAMS.color.fallback;
+  }
   return next;
 }
 
@@ -128,11 +149,11 @@ export function filterProducts(products: Product[], filters: StorefrontFilters):
 
 /**
  * How many products picking `value` for `key` would show, the other filters
- * unchanged — so an option can say it would empty the grid before anyone
+ * unchanged (bar the ones `withFilter` clears with it) — so an option can say it would empty the grid before anyone
  * clicks it.
  */
 export function facetCount(products: Product[], filters: StorefrontFilters, key: FilterKey, value: string): number {
-  return products.filter((p) => matches(p, { ...filters, [key]: value })).length;
+  return products.filter((p) => matches(p, withFilter(filters, key, value))).length;
 }
 
 /** Materials some product carries, alphabetical; an empty material is not an option. */

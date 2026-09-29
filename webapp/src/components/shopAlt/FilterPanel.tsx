@@ -12,6 +12,7 @@ import {
   SORT_KEYS,
   STOCK_BANDS,
   facetCount,
+  gemFiltersApply,
   materialsInCatalog,
   type FilterKey,
   type StorefrontFilters,
@@ -52,6 +53,8 @@ export function FilterPanel({ filters, onChange, products, defaultOpen, sort }: 
   const materials = useMemo(() => materialsInCatalog(products, i18n.language), [products, i18n.language]);
   const categories = SHOP_CATEGORIES.filter((c) => products.some((p) => p.cat === c));
 
+  // Shape and colour only describe gems (see `gemFiltersApply`).
+  const showGemFilters = gemFiltersApply(filters.category);
   const count = (key: FilterKey, value: string) => facetCount(products, filters, key, value);
   const name = (key: GroupKey) => `${uid}-${key}`;
   const summary = (key: FilterKey) =>
@@ -98,7 +101,7 @@ export function FilterPanel({ filters, onChange, products, defaultOpen, sort }: 
         </FilterGroup>
       )}
 
-      {shapes.length > 0 && (
+      {showGemFilters && shapes.length > 0 && (
         <FilterGroup title={t("shop.shapeLabel")} summary={summary("shape")} defaultOpen={isOpen("shape")}>
           <div role="radiogroup" aria-label={t("shop.shapeLabel")} className="grid grid-cols-3 gap-1.5">
             {["all", ...shapes.map((s) => s.shape)].map((value) => (
@@ -126,7 +129,7 @@ export function FilterPanel({ filters, onChange, products, defaultOpen, sort }: 
         </FilterGroup>
       )}
 
-      {colors.length > 0 && (
+      {showGemFilters && colors.length > 0 && (
         <FilterGroup title={t("shop.colorLabel")} summary={summary("color")} defaultOpen={isOpen("color")}>
           {rows(
             "color",

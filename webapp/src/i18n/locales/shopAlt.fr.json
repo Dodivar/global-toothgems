@@ -37,6 +37,10 @@
     "low": "Stock limité",
     "out": "Épuisé"
   },
+  "variantsOut_one": "{{count}} épuisée",
+  "variantsOut_other": "{{count}} épuisées",
+  "colorsAria_one": "{{count}} couleur, {{available}} disponible",
+  "colorsAria_other": "{{count}} couleurs, dont {{available}} disponibles",
   "chooseOptions": "Choisir les options",
   "ratingAria": "Noté {{rating}} sur 5 d’après {{count}} avis"
 }
