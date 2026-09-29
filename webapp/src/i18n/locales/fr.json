@@ -34,7 +34,9 @@
     "studio": "Studio 3D",
     "new": "Nouveau",
     "studioSub": "Imaginez vos compositions",
-    "studioAria": "Studio 3D, nouveau"
+    "studioAria": "Studio 3D, nouveau",
+    "mySpace": "Mon espace",
+    "explore": "Explorer"
   },
   "common": {
     "notIncludedTitle": "Écran hors périmètre",
@@ -924,6 +926,14 @@
     "navCatalogue": "Catalogue des formations",
     "greeting": "Bonjour {{name}}",
     "memberSince": "Membre depuis {{date}}",
+    "shell": {
+      "openMenu": "Ouvrir le menu de l’espace membre",
+      "closeMenu": "Fermer le menu",
+      "menuLabel": "Menu de l’espace membre",
+      "homeAlt": "Global Toothgems — accueil",
+      "help": "Aide",
+      "cookies": "Cookies"
+    },
     "statsLabel": "Votre compte en chiffres",
     "statCourses": "formations en cours",
     "statLessons": "leçons terminées",
