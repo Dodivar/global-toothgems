@@ -6061,7 +6061,10 @@ export type Database = {
         Args: { p_creation_id: string }
         Returns: undefined
       }
-      studio_share_creation: { Args: { p_creation_id: string }; Returns: string }
+      studio_share_creation: {
+        Args: { p_creation_id: string }
+        Returns: string
+      }
       studio_shared_creation: {
         Args: { p_token: string }
         Returns: {
