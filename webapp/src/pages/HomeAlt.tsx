@@ -10,13 +10,11 @@ import { LoyaltyFeature } from "../components/homeAlt/LoyaltyFeature";
 import { NewsletterBand } from "../components/homeAlt/NewsletterBand";
 
 /**
- * The alternative home page, at /accueil-b: the same brand, components and
- * content as `/`, composed full width and editorially so the two can be
- * compared side by side. It wears the site's usual header and footer.
+ * The home page, at /: the brand's storefront composed full width and
+ * editorially. It wears the site's usual header and footer.
  *
- * A visual prototype: nothing on it reaches a backend. Quick-adding a best
- * seller uses the ordinary cart; the newsletter and the Studio film are
- * mock-ups that say so.
+ * Nothing on it reaches a backend of its own. Quick-adding a best seller uses
+ * the ordinary cart; the newsletter is a mock-up that says so.
  */
 export function HomeAlt() {
   const { t } = useTranslation();

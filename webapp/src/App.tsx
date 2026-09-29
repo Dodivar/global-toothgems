@@ -19,7 +19,6 @@ import { Header } from "./components/layout/Header";
 import { Footer } from "./components/layout/Footer";
 import { MemberShell } from "./components/layout/MemberShell";
 import { isMemberSpacePath } from "./lib/memberSpace";
-import { Home } from "./pages/Home";
 import { HomeAlt } from "./pages/HomeAlt";
 import { Shop } from "./pages/Shop";
 import { Shapes } from "./pages/Shapes";
@@ -226,12 +225,10 @@ export default function App() {
                   {!bareChrome && !workspace && <Header />}
                   <main id="main" tabIndex={-1}>
                     <Routes>
-                      <Route path="/" element={<Home />} />
-                      {/* The alternative home-page direction, live beside the
-                          current one so the team can compare the same content in
-                          two art directions. Not linked from the navigation: it is
-                          a design comparison, not a second entry point. */}
-                      <Route path="/accueil-b" element={<HomeAlt />} />
+                      <Route path="/" element={<HomeAlt />} />
+                      {/* The home page used to be previewed here while two art
+                          directions were compared; keep the old link working. */}
+                      <Route path="/accueil-b" element={<Navigate to="/" replace />} />
                       <Route path="/boutique" element={<Shop />} />
                       <Route path="/boutique/:id" element={<ProductDetail />} />
                       {/* Top level, not /boutique/formes: a static child of /boutique
