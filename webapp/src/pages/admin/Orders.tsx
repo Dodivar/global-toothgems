@@ -379,11 +379,12 @@ export function Orders() {
         onClose={() => setRefundTarget(null)}
         onConfirm={(amount, full) => {
           if (!refundTarget) return;
-          refund(refundTarget.reference, amount, full);
-          showToast(
-            t("admin.orders.toastRefundTitle", { reference: `#${refundTarget.reference}` }),
-            t("admin.orders.toastRefundBody", { amount: formatPrice(amount) }),
-          );
+          if (refund(refundTarget.reference, amount, full)) {
+            showToast(
+              t("admin.orders.toastRefundTitle", { reference: `#${refundTarget.reference}` }),
+              t("admin.orders.toastRefundBody", { amount: formatPrice(amount) }),
+            );
+          }
           setRefundTarget(null);
         }}
       />

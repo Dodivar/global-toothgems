@@ -1,5 +1,6 @@
 import { ADMIN_ORDERS, orderItemCount, orderTotal, type AdminOrder } from "../data/adminOrders";
 import { pick } from "../data/types";
+import { isSupabaseConfigured } from "./supabase/client";
 
 /**
  * Filtering, searching, sorting and paging of the order book — all of it
@@ -27,15 +28,14 @@ export const SORT_KEYS: SortKey[] = ["dateDesc", "dateAsc", "totalDesc", "totalA
 /**
  * "Today" for the date presets.
  *
- * Anchored to the newest order rather than to the wall clock: the order book is
- * fixed mock data, so a real `new Date()` would make every preset empty the day
- * after this prototype was authored, and "Today" returning nothing would read as
- * a bug in the filter rather than as a quiet seed date.
+ * With Supabase the book is live, so today is the calendar day. The mock book
+ * is fixed data instead: it is anchored to the newest seeded order, because a
+ * real `new Date()` would make every preset empty the day after the prototype
+ * was authored, and "Today" returning nothing would read as a bug.
  */
-export const BOOK_TODAY: string = ADMIN_ORDERS.reduce(
-  (latest, o) => (o.placedAt > latest ? o.placedAt : latest),
-  ADMIN_ORDERS[0].placedAt,
-).slice(0, 10);
+export const BOOK_TODAY: string = isSupabaseConfigured
+  ? new Date().toLocaleDateString("sv-SE")
+  : ADMIN_ORDERS.reduce((latest, o) => (o.placedAt > latest ? o.placedAt : latest), ADMIN_ORDERS[0].placedAt).slice(0, 10);
 
 function addDays(isoDate: string, days: number): string {
   const d = new Date(`${isoDate}T12:00:00`);

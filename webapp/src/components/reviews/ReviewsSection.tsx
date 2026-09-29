@@ -21,7 +21,7 @@ import {
   type PublicSort,
   type RatingSummary,
 } from "../../lib/reviewRules";
-import { subjectName, useReviewAuthor, useReviews } from "../../lib/reviews";
+import { useReviewAuthor, useReviewSubjects, useReviews } from "../../lib/reviews";
 import { useReveal } from "../../lib/useReveal";
 
 const PAGE = 6;
@@ -69,6 +69,7 @@ export function ReviewsSection({
   const lang = i18n.language;
   const { loading, demoMode, retry, openPhotos } = useReviews();
   const authorOf = useReviewAuthor();
+  const { subjectName } = useReviewSubjects();
   const { reviews: published, summary } = useSubjectReviews(subject);
   const ref = useReveal<HTMLDivElement>();
   const course = subject.kind === "course";

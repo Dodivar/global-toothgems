@@ -21,10 +21,9 @@ import {
 } from "../../data/reviewSystem";
 import { validateReview, type ReviewInput } from "../../lib/reviewRules";
 import {
-  subjectImage,
-  subjectName,
   useReviewAuthor,
   useReviewEligibility,
+  useReviewSubjects,
   useReviews,
   type FormTarget,
 } from "../../lib/reviews";
@@ -33,9 +32,6 @@ const focusRing =
   "focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-[var(--focus-ring)]";
 
 const EMPTY_INPUT: ReviewInput = { rating: 0, title: "", body: "", tags: [], photos: [] };
-
-/** Simulated round trip of the submission. */
-const SUBMIT_LATENCY = 750;
 
 /**
  * Writing or editing a review, as one dialog opened from anywhere — a product
@@ -66,6 +62,7 @@ function FormDialogBody({ target, onClose, closeLabel }: { target: FormTarget; o
   const { getReview, drafts, saveDraft, submitReview, updateReview, myName } = useReviews();
   const eligibility = useReviewEligibility();
   const authorOf = useReviewAuthor();
+  const { subjectName, subjectImage } = useReviewSubjects();
 
   const editing: CustomerReview | undefined = target.reviewId ? getReview(target.reviewId) : undefined;
   const key = subjectKey(target.subject);
@@ -79,6 +76,7 @@ function FormDialogBody({ target, onClose, closeLabel }: { target: FormTarget; o
   });
   const [errors, setErrors] = useState<ReturnType<typeof validateReview>>({});
   const [photoError, setPhotoError] = useState<string | null>(null);
+  const [sendError, setSendError] = useState(false);
   const [tagsOpen, setTagsOpen] = useState(() => input.tags.length > 0);
   const [phase, setPhase] = useState<"form" | "sending" | "done">("form");
   const titleRef = useRef<HTMLInputElement>(null);
@@ -163,11 +161,21 @@ function FormDialogBody({ target, onClose, closeLabel }: { target: FormTarget; o
     if (found.body) return bodyRef.current?.focus();
 
     setPhase("sending");
-    window.setTimeout(() => {
-      if (editing) updateReview(editing.id, input);
-      else if (e.state === "eligible") submitReview(target.subject, input, { orderRef: e.orderRef, progressPct: e.progressPct });
-      setPhase("done");
-    }, SUBMIT_LATENCY);
+    setSendError(false);
+    const sent = editing
+      ? updateReview(editing.id, input)
+      : e.state === "eligible"
+        ? submitReview(target.subject, input, { orderRef: e.orderRef, progressPct: e.progressPct })
+        : Promise.reject(new Error("reviews: not eligible"));
+    sent.then(
+      () => setPhase("done"),
+      (error: unknown) => {
+        // The form stays filled in: nothing the customer wrote is lost.
+        console.error("[reviews] submission refused", error);
+        setSendError(true);
+        setPhase("form");
+      },
+    );
   };
 
   if (phase === "done") {
@@ -416,6 +424,12 @@ function FormDialogBody({ target, onClose, closeLabel }: { target: FormTarget; o
         <p className="m-0 text-[length:var(--text-caption)] leading-[var(--leading-normal)] text-[var(--text-muted)]">
           {t("reviews.form.publishedAs", { name: author })} {t("reviews.form.moderationNote")}
         </p>
+
+        {sendError && (
+          <p role="alert" className="m-0 rounded-[var(--radius-md)] bg-[var(--status-error-bg)] p-3 text-[length:var(--text-caption)] font-semibold text-[var(--status-error-fg)]">
+            {t("reviews.form.sendFailed")}
+          </p>
+        )}
 
         <div className="flex flex-wrap items-center justify-end gap-3 border-t border-[var(--border-subtle)] pt-4">
           <Button variant="ghost" size="sm" onClick={onClose} disabled={phase === "sending"}>

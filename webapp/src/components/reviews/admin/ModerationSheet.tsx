@@ -24,9 +24,9 @@ import { Fact } from "../../promotions/PromoUi";
 import { Stars } from "../Stars";
 import { EditedBadge, ReportedBadge, ReviewStatusBadge, UnverifiedBadge, VerifiedBadge } from "../ReviewBadges";
 import { REJECT_REASONS, RESPONSE_MAX, openReports, privacyName, type CustomerReview, type HistoryEvent, type RejectReason } from "../../../data/reviewSystem";
-import { getAdminOrder } from "../../../data/adminOrders";
+import { useAdminOrders } from "../../../lib/adminOrders";
 import { isEditedPending } from "../../../lib/reviewRules";
-import { subjectName, subjectPath, useReviewCustomer, useReviews } from "../../../lib/reviews";
+import { subjectPath, useReviewCustomer, useReviewSubjects, useReviews } from "../../../lib/reviews";
 import { useToast } from "../../../lib/toast";
 import { formatDateShort } from "../../../lib/format";
 import { useModerator, type DialogAction } from "./ModerationDialogs";
@@ -63,6 +63,7 @@ export function ModerationSheet({
 }) {
   const { t, i18n } = useTranslation();
   const { getReview } = useReviews();
+  const { subjectName } = useReviewSubjects();
   const review = id ? getReview(id) : undefined;
   return (
     <AdminSheet
@@ -99,10 +100,12 @@ function SheetContent({ review, onAction }: { review: CustomerReview; onAction: 
   const { showToast } = useToast();
   const { reviews, approve, restore, respond, addNote, openPhotos } = useReviews();
   const customerOf = useReviewCustomer();
+  const { subjectName } = useReviewSubjects();
   const customer = customerOf(review);
   const author = privacyName(customer.firstName, customer.lastName);
   const reports = openReports(review);
-  const order = review.orderRef ? getAdminOrder(review.orderRef) : undefined;
+  const { orders } = useAdminOrders();
+  const order = review.orderRef ? orders.find((o) => o.reference === review.orderRef) : undefined;
   const others = reviews.filter((r) => r.id !== review.id && customerOf(r).email === customer.email);
 
   const [draft, setDraft] = useState(review.response?.body ?? "");
