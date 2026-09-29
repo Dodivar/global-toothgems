@@ -45,7 +45,7 @@ export function StudioSidebar({
     <>
       <nav
         aria-label={t("studio.workspace.nav.label")}
-        className="relative z-30 hidden w-[84px] flex-none flex-col items-center border-r border-[var(--border-subtle)] bg-[var(--surface-card)] py-3 lg:flex"
+        className="relative z-30 hidden w-[84px] flex-none flex-col items-center overflow-y-auto overscroll-contain border-r border-[var(--border-subtle)] bg-[var(--surface-card)] py-3 lg:flex"
       >
         <RailContent section={section} />
       </nav>

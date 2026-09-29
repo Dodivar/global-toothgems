@@ -359,6 +359,10 @@ export default function App() {
                           <Route path="securite" element={<Security />} />
                           <Route path="fidelite" element={<AccountLoyalty />} />
                           <Route path="avis" element={<AccountReviews />} />
+                          {/* An unknown address in the member space is a 404
+                              inside its shell: the storefront header is not
+                              there to lead back out. */}
+                          <Route path="*" element={<NotFound />} />
                         </Route>
                         {/* The Artist Community. A sibling of `/compte` rather
                             than one of its children: it has its own layout and
@@ -371,6 +375,7 @@ export default function App() {
                           <Route path="activite/:view" element={<Activity />} />
                           <Route path="membres" element={<Members />} />
                           <Route path="charte" element={<Guidelines />} />
+                          <Route path="*" element={<NotFound />} />
                         </Route>
                       </Route>
 
