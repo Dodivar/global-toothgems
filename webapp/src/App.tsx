@@ -126,10 +126,14 @@ function StudioEditorAlias() {
   return <Navigate to={studioSectionPath(studioSectionFromPath(pathname))} replace />;
 }
 
-/** `/studio-3d/share#…` → `/studio-3d/partage#…`: the fragment is the design, so it must come along. */
+/**
+ * `/studio-3d/share/<token>` → `/studio-3d/partage/<token>`, and
+ * `/studio-3d/share#…` → `/studio-3d/partage#…`: the token or the fragment is
+ * the design, so it must come along.
+ */
 function StudioShareAlias() {
-  const { hash } = useLocation();
-  return <Navigate to={{ pathname: STUDIO_SHARE_PATH, hash }} replace />;
+  const { pathname, hash } = useLocation();
+  return <Navigate to={{ pathname: pathname.replace(STUDIO_SHARE_ALIAS, STUDIO_SHARE_PATH), hash }} replace />;
 }
 
 function ScrollToTop() {
@@ -300,15 +304,19 @@ export default function App() {
                       {/* A design shared read-only. Open to everyone, outside
                           `RequireStudioAccess`: looking at a design someone sent
                           is not using the Studio. Full-screen like the editor. */}
-                      <Route
-                        path={STUDIO_SHARE_PATH}
-                        element={
-                          <Suspense fallback={<StudioEditorLoading />}>
-                            <StudioShare />
-                          </Suspense>
-                        }
-                      />
+                      {[STUDIO_SHARE_PATH, `${STUDIO_SHARE_PATH}/:token`].map((path) => (
+                        <Route
+                          key={path}
+                          path={path}
+                          element={
+                            <Suspense fallback={<StudioEditorLoading />}>
+                              <StudioShare />
+                            </Suspense>
+                          }
+                        />
+                      ))}
                       <Route path={STUDIO_SHARE_ALIAS} element={<StudioShareAlias />} />
+                      <Route path={`${STUDIO_SHARE_ALIAS}/:token`} element={<StudioShareAlias />} />
                       {/* The Academy landing page stays open — it is the sales page.
                           Only the course content itself requires an account, and gating
                           the route covers the menu links and direct URLs at once. */}
