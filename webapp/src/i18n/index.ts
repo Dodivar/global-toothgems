@@ -23,7 +23,7 @@ import studioWorkspaceEn from "./locales/studioWorkspace.en.json";
 // The alternative home page at /accueil-b, under `homeAlt`.
 import homeAltFr from "./locales/homeAlt.fr.json";
 import homeAltEn from "./locales/homeAlt.en.json";
-// The alternative shop page at /boutique-b, under `shopAlt`.
+// The alternative shop page at /boutique, under `shopAlt`.
 import shopAltFr from "./locales/shopAlt.fr.json";
 import shopAltEn from "./locales/shopAlt.en.json";
 

@@ -20,7 +20,6 @@ import { Footer } from "./components/layout/Footer";
 import { MemberShell } from "./components/layout/MemberShell";
 import { isMemberSpacePath } from "./lib/memberSpace";
 import { HomeAlt } from "./pages/HomeAlt";
-import { Shop } from "./pages/Shop";
 import { ShopAlt } from "./pages/ShopAlt";
 import { Shapes } from "./pages/Shapes";
 import { Colors } from "./pages/Colors";
@@ -230,10 +229,9 @@ export default function App() {
                       {/* The home page used to be previewed here while two art
                           directions were compared; keep the old link working. */}
                       <Route path="/accueil-b" element={<Navigate to="/" replace />} />
-                      <Route path="/boutique" element={<Shop />} />
-                      {/* Alternative shop layout, compared against /boutique. Top
-                          level for the same reason as /formes below. */}
-                      <Route path="/boutique-b" element={<ShopAlt />} />
+                      <Route path="/boutique" element={<ShopAlt />} />
+                      {/* The shop layout used to be previewed here; keep the old link working. */}
+                      <Route path="/boutique-b" element={<Navigate to="/boutique" replace />} />
                       <Route path="/boutique/:id" element={<ProductDetail />} />
                       {/* Top level, not /boutique/formes: a static child of /boutique
                           would permanently shadow a product with that id. */}

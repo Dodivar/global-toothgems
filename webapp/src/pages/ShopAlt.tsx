@@ -47,7 +47,7 @@ const GRID =
 const SIDEBAR_OPEN_GROUPS: GroupKey[] = ["category", "shape", "color", "price"];
 
 /**
- * The alternative shop page, at /boutique-b: the same catalogue, copy and URL
+ * The alternative shop page, at /boutique: the same catalogue, copy and URL
  * parameters as /boutique, laid out so the products come first — a short
  * introduction, a wide grid, and the filters in a sticky sidebar on the right
  * (a drawer below the lg breakpoint).

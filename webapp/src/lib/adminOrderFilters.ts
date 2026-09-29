@@ -6,7 +6,7 @@ import { isSupabaseConfigured } from "./supabase/client";
  * Filtering, searching, sorting and paging of the order book — all of it
  * derived from the URL.
  *
- * The shop already established the convention (`ShopFilterBar`, `lib/shopUrl.ts`):
+ * The shop already established the convention (`lib/shopUrl.ts`):
  * the URL is the single source of truth for what a list is showing. Repeating it
  * here buys three things the back office needs for free — a filtered view is a
  * link an administrator can send to a colleague, the browser's back button

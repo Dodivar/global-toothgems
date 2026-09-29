@@ -21,7 +21,7 @@ interface StorefrontCardProps {
 }
 
 /**
- * Product card of the alternative shop (/boutique-b).
+ * Product card of the alternative shop (/boutique).
  *
  * The image does the selling, so it takes the card's full width with no inner
  * frame; the text underneath reads in the order people decide in — what kind

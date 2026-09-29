@@ -2,7 +2,7 @@ import { pick } from "../data/types";
 import type { Product } from "../data/products";
 
 /**
- * Filtering and sorting of the storefront collection (/boutique-b).
+ * Filtering and sorting of the storefront collection (/boutique).
  *
  * Pure functions on plain state, like `productFilters.ts` does for the
  * back office's list, so the page only renders what it is handed and the
