@@ -37,10 +37,9 @@ export const REVENUE_CATEGORIES: RevenueCategoryId[] = ["jewelry", "aftercare", 
 
 const CATALOG_BUCKET: Record<CategoryId, RevenueCategoryId> = {
   gems: "jewelry",
-  aftercare: "aftercare",
+  materiel: "kits",
   kits: "kits",
-  tools: "kits",
-  accessories: "kits",
+  "lip-gloss": "other",
 };
 
 /**

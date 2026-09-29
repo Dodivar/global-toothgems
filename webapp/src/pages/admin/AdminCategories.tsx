@@ -27,13 +27,20 @@ export function AdminCategories() {
   const { openNav } = useAdminShell();
   const { products, categories } = useAdminCatalog();
 
-  const rows = categories.map((category) => {
+  // A retired category stays listed only while products still point at it.
+  const shown = categories.filter(
+    (category) => category.isActive !== false || products.some((p) => p.categoryId === category.id),
+  );
+  const rows = shown.map((category) => {
     const inCategory = products.filter((p) => p.categoryId === category.id);
     const live = inCategory.filter((p) => p.status === "active");
     const unavailable = live.filter((p) => stockState(p) === "out_of_stock");
     const prices = inCategory.map(effectivePrice);
     return {
       category,
+      families: (category.families ?? [])
+        .filter((family) => family.isActive)
+        .map((family) => ({ family, count: inCategory.filter((p) => p.familyId === family.id).length })),
       total: inCategory.length,
       active: live.length,
       unavailable: unavailable.length,
@@ -58,14 +65,33 @@ export function AdminCategories() {
         </p>
 
         <ul className="m-0 grid list-none gap-4 p-0 md:grid-cols-2 2xl:grid-cols-3">
-          {rows.map(({ category, total, active, unavailable, min, max }) => (
-            <li key={category.id} className="gt-admin-panel grid gap-4 p-5">
+          {rows.map(({ category, families, total, active, unavailable, min, max }) => (
+            <li key={category.id} className="gt-admin-panel grid content-start gap-4 p-5">
               <div className="grid gap-1">
                 <h2 className="text-[length:var(--text-h4)]">{L(category.name)}</h2>
                 <p className="m-0 text-[length:var(--text-caption)] leading-[var(--leading-normal)] text-[var(--text-muted)]">
                   {L(category.description)}
                 </p>
               </div>
+
+              {families.length > 0 && (
+                <div className="grid gap-1.5">
+                  <h3 className="m-0 text-[10px] font-semibold uppercase tracking-[var(--tracking-eyebrow)] text-[var(--text-muted)]">
+                    {t("admin.categories.families")}
+                  </h3>
+                  <ul className="m-0 flex list-none flex-wrap gap-1.5 p-0">
+                    {families.map(({ family, count }) => (
+                      <li
+                        key={family.id}
+                        className="inline-flex items-center gap-1.5 rounded-[var(--radius-pill)] border border-[var(--border-subtle)] px-2.5 py-1 text-[length:var(--text-caption)] text-[var(--text-primary)]"
+                      >
+                        {L(family.name)}
+                        <span className="tabular-nums text-[var(--text-muted)]">{count}</span>
+                      </li>
+                    ))}
+                  </ul>
+                </div>
+              )}
 
               <dl className="m-0 grid grid-cols-3 gap-3 border-y border-[var(--border-subtle)] py-3.5">
                 <div className="grid gap-0.5">

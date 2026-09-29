@@ -3,8 +3,9 @@ import { useTranslation } from "react-i18next";
 import { ChevronDown } from "lucide-react";
 import { ShapeGlyph } from "../ui/ShapeGlyph";
 import { ColorSwatch } from "../ui/ColorSwatch";
-import { GEM_SHAPES, SHOP_CATEGORIES, colorsInCatalog, type Product } from "../../data/products";
+import { GEM_SHAPES, colorsInCatalog, type Product } from "../../data/products";
 import { useCatalog } from "../../lib/catalog/CatalogProvider";
+import { useTaxonomy } from "../../lib/catalog/useTaxonomy";
 import { useShapesInCatalog } from "../../lib/catalog/useShapesInCatalog";
 import {
   FILTER_PARAMS,
@@ -14,6 +15,9 @@ import {
   facetCount,
   gemFiltersApply,
   materialsInCatalog,
+  taxonomyNodeCount,
+  withFilter,
+  withTaxonomyNode,
   type FilterKey,
   type StorefrontFilters,
   type StorefrontSort,
@@ -25,7 +29,8 @@ export type GroupKey = FilterKey | "sort";
 
 interface FilterPanelProps {
   filters: StorefrontFilters;
-  onChange: (key: FilterKey, value: string) => void;
+  /** The filters after a choice, with the rules of `storefrontFilters` applied. */
+  onChange: (filters: StorefrontFilters) => void;
   /** The whole catalogue: options come from what it carries, counts from the filters applied to it. */
   products: Product[];
   /** Groups expanded on first render; a group with an active value always starts open. */
@@ -38,20 +43,23 @@ interface FilterPanelProps {
  * The filter groups, shared by the desktop sidebar and the mobile drawer.
  *
  * Every group is a set of radio buttons — one choice per filter, as in the URL
- * — so a whole group is one tab stop and arrow keys move within it. Each
+ * — so a whole group is one tab stop and arrow keys move within it. The
+ * product type is a tree (category › family) but still one radio group: a
+ * whole category or a single family, never both. Each
  * option shows how many products choosing it would leave, the other filters
  * unchanged; an option that would empty the grid is dimmed but not disabled,
  * so it can still be reached and read.
  */
-export function FilterPanel({ filters, onChange, products, defaultOpen, sort }: FilterPanelProps) {
+export function FilterPanel({ filters, onChange: onFiltersChange, products, defaultOpen, sort }: FilterPanelProps) {
   const { t, i18n } = useTranslation();
   const labelOf = useFilterLabels();
+  const { taxonomy } = useTaxonomy();
+  const onChange = (key: FilterKey, value: string) => onFiltersChange(withFilter(filters, key, value));
   const uid = useId();
   const { colors: colorList } = useCatalog();
   const shapes = useShapesInCatalog(products);
   const colors = colorsInCatalog(products, colorList);
   const materials = useMemo(() => materialsInCatalog(products, i18n.language), [products, i18n.language]);
-  const categories = SHOP_CATEGORIES.filter((c) => products.some((p) => p.cat === c));
 
   // Shape and colour only describe gems (see `gemFiltersApply`).
   const showGemFilters = gemFiltersApply(filters.category);
@@ -59,6 +67,7 @@ export function FilterPanel({ filters, onChange, products, defaultOpen, sort }: 
   const name = (key: GroupKey) => `${uid}-${key}`;
   const summary = (key: FilterKey) =>
     filters[key] !== FILTER_PARAMS[key].fallback ? labelOf(key, filters[key]) : undefined;
+  const categorySummary = summary("category") && (summary("family") ? `${summary("category")} › ${summary("family")}` : summary("category"));
   const isOpen = (key: GroupKey) => defaultOpen.includes(key) || (key !== "sort" && summary(key) !== undefined);
 
   const rows = (key: FilterKey, label: string, values: string[], media?: (value: string) => ReactNode) => (
@@ -95,9 +104,35 @@ export function FilterPanel({ filters, onChange, products, defaultOpen, sort }: 
         </FilterGroup>
       )}
 
-      {categories.length > 0 && (
-        <FilterGroup title={t("shopAlt.categoryLabel")} summary={summary("category")} defaultOpen={isOpen("category")}>
-          {rows("category", t("shopAlt.categoryLabel"), categories)}
+      {taxonomy.length > 0 && (
+        <FilterGroup title={t("shopAlt.categoryLabel")} summary={categorySummary} defaultOpen={isOpen("category")}>
+          <div role="radiogroup" aria-label={t("shopAlt.categoryLabel")} className="grid gap-0.5">
+            <OptionRow
+              name={name("category")}
+              checked={filters.category === FILTER_PARAMS.category.fallback}
+              onSelect={() => onChange("category", FILTER_PARAMS.category.fallback)}
+              label={labelOf("category", FILTER_PARAMS.category.fallback)}
+              count={count("category", FILTER_PARAMS.category.fallback)}
+            />
+            {taxonomy.map((category) => (
+              <CategoryBranch
+                key={category.slug}
+                name={name("category")}
+                label={labelOf("category", category.slug)}
+                count={taxonomyNodeCount(products, filters, category.slug)}
+                checked={filters.category === category.slug && filters.family === FILTER_PARAMS.family.fallback}
+                onSelect={() => onFiltersChange(withTaxonomyNode(filters, category.slug))}
+                selectedWithin={filters.category === category.slug}
+                families={category.families.map((family) => ({
+                  slug: family.slug,
+                  label: labelOf("family", family.slug),
+                  count: taxonomyNodeCount(products, filters, category.slug, family.slug),
+                  checked: filters.family === family.slug,
+                  onSelect: () => onFiltersChange(withTaxonomyNode(filters, category.slug, family.slug)),
+                }))}
+              />
+            ))}
+          </div>
         </FilterGroup>
       )}
 
@@ -167,6 +202,80 @@ export function FilterPanel({ filters, onChange, products, defaultOpen, sort }: 
       <FilterGroup title={t("shop.stockLabel")} summary={summary("stock")} defaultOpen={isOpen("stock")}>
         {rows("stock", t("shop.stockLabel"), [...STOCK_BANDS])}
       </FilterGroup>
+    </div>
+  );
+}
+
+/**
+ * A category of the product-type tree: its own radio, and its families as
+ * indented radios of the same group behind a disclosure button. The branch
+ * holding the current choice is open, so after choosing a category its
+ * families are the next thing in reach.
+ */
+function CategoryBranch({
+  name,
+  label,
+  count,
+  checked,
+  onSelect,
+  selectedWithin,
+  families,
+}: {
+  name: string;
+  label: string;
+  count: number;
+  checked: boolean;
+  onSelect: () => void;
+  selectedWithin: boolean;
+  families: { slug: string; label: string; count: number; checked: boolean; onSelect: () => void }[];
+}) {
+  const { t } = useTranslation();
+  const [open, setOpen] = useState(selectedWithin);
+  // The choice can also move here from outside (a menu link while the shop is
+  // open): the branch then opens, and stays as the shopper leaves it after.
+  const [wasSelected, setWasSelected] = useState(selectedWithin);
+  if (selectedWithin !== wasSelected) {
+    setWasSelected(selectedWithin);
+    if (selectedWithin) setOpen(true);
+  }
+  const id = useId();
+  return (
+    <div>
+      <div className="flex items-center gap-1">
+        <div className="min-w-0 flex-1">
+          <OptionRow name={name} checked={checked} onSelect={onSelect} label={label} count={count} />
+        </div>
+        {families.length > 0 && (
+          <button
+            type="button"
+            aria-expanded={open}
+            aria-controls={id}
+            aria-label={t("shopAlt.toggleFamilies", { name: label })}
+            onClick={() => setOpen((v) => !v)}
+            className="gt-shopb-branch-toggle flex h-8 w-8 flex-none items-center justify-center rounded-[var(--radius-sm)] text-[var(--text-muted)] hover:bg-[var(--gt-ink-100)] hover:text-[var(--text-primary)]"
+          >
+            <ChevronDown
+              size={15}
+              aria-hidden="true"
+              className={`transition-transform duration-[var(--duration-fast)] ${open ? "rotate-180" : ""}`}
+            />
+          </button>
+        )}
+      </div>
+      {families.length > 0 && (
+        <div id={id} hidden={!open} className="ml-[15px] grid gap-0.5 border-l border-[var(--border-subtle)] pl-2">
+          {families.map((family) => (
+            <OptionRow
+              key={family.slug}
+              name={name}
+              checked={family.checked}
+              onSelect={family.onSelect}
+              label={family.label}
+              count={family.count}
+            />
+          ))}
+        </div>
+      )}
     </div>
   );
 }

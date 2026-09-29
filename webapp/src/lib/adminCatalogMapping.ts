@@ -37,8 +37,12 @@ import { comboKey, comboName, parseGemAttributes } from "./gemOptions";
  *   `product_media.variant_id`.
  */
 
-/** Columns the admin reads, with the relations it embeds. */
-export const ADMIN_PRODUCT_SELECT = `
+/**
+ * Columns the admin reads, with the relations it embeds. The `_BASE` variants
+ * leave out the product families (`…_category_families`), for a database the
+ * migration has not reached yet: the catalogue still loads, without families.
+ */
+export const ADMIN_PRODUCT_SELECT_BASE = `
   id, sku, slug, name, short_description, description, category_id,
   price, compare_at_price, currency, status, metadata, created_at, updated_at,
   product_translations ( locale, name, short_description, description ),
@@ -48,10 +52,14 @@ export const ADMIN_PRODUCT_SELECT = `
     product_variant_translations ( locale, name ),
     inventory_items ( track_inventory, quantity_on_hand, quantity_reserved, low_stock_threshold, availability ) )
 `;
+export const ADMIN_PRODUCT_SELECT = `${ADMIN_PRODUCT_SELECT_BASE}, family_id`;
 
-export const ADMIN_CATEGORY_SELECT = `
-  id, slug, name, description, position,
+export const ADMIN_CATEGORY_SELECT_BASE = `
+  id, slug, name, description, position, is_active,
   category_translations ( locale, name, description )
+`;
+export const ADMIN_CATEGORY_SELECT = `${ADMIN_CATEGORY_SELECT_BASE},
+  category_families ( id, slug, name, position, is_active, category_family_translations ( locale, name ) )
 `;
 
 interface TranslationRow {
@@ -77,6 +85,8 @@ export interface ProductRow {
   short_description: string | null;
   description: string | null;
   category_id: string | null;
+  /** Absent when read with `ADMIN_PRODUCT_SELECT_BASE`. */
+  family_id?: string | null;
   /** PostgREST sends numeric as a JSON number, occasionally as a string. */
   price: number | string;
   compare_at_price: number | string | null;
@@ -120,7 +130,19 @@ export interface CategoryRow {
   name: string;
   description: string | null;
   position: number;
+  is_active?: boolean;
   category_translations: TranslationRow[] | null;
+  /** Absent when read with `ADMIN_CATEGORY_SELECT_BASE`. */
+  category_families?: CategoryFamilyRow[] | null;
+}
+
+export interface CategoryFamilyRow {
+  id: string;
+  slug: string;
+  name: string;
+  position: number;
+  is_active: boolean;
+  category_family_translations: { locale: string; name: string }[] | null;
 }
 
 export interface RecommendationRow {
@@ -213,6 +235,18 @@ export function rowToCategory(row: CategoryRow): Category {
     slug: row.slug,
     name: { fr: row.name, en: en?.name ?? row.name },
     description: { fr: row.description ?? "", en: en?.description ?? row.description ?? "" },
+    isActive: row.is_active ?? true,
+    families: [...(row.category_families ?? [])]
+      .sort((a, b) => a.position - b.position)
+      .map((family) => ({
+        id: family.id,
+        slug: family.slug,
+        name: {
+          fr: family.name,
+          en: family.category_family_translations?.find((t) => t.locale === "en")?.name ?? family.name,
+        },
+        isActive: family.is_active,
+      })),
   };
 }
 
@@ -262,6 +296,7 @@ export function rowToProduct(row: ProductRow, publicUrl: (path: string) => strin
     shortDescription: { fr: row.short_description ?? "", en: en?.short_description ?? "" },
     description: { fr: row.description ?? "", en: en?.description ?? "" },
     categoryId: row.category_id ?? "",
+    familyId: row.family_id ?? null,
     type: oneOf(metadata.type, PRODUCT_TYPES, "single"),
     price: amountFromDb(row.price),
     compareAtPrice: row.compare_at_price == null ? undefined : amountFromDb(row.compare_at_price),
@@ -391,6 +426,7 @@ export function productToPayload(product: AdminProduct): Json {
   return {
     id: product.id,
     category_id: product.categoryId,
+    family_id: product.familyId ?? null,
     sku: product.sku.trim(),
     // Only used on creation; the database keeps an existing product's URL.
     slug: slugify(name.fr) || slugify(product.sku) || "produit",

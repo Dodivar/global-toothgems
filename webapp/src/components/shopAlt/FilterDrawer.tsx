@@ -10,7 +10,6 @@ import {
   NO_FILTERS,
   activeFilterCount,
   filterProducts,
-  withFilter,
   type StorefrontFilters,
   type StorefrontSort,
 } from "../../lib/storefrontFilters";
@@ -83,7 +82,7 @@ export function FilterDrawer({ filters, sort, products, onApply, onClose }: Filt
         <div className="min-h-0 flex-1 overflow-y-auto overscroll-contain px-5">
           <FilterPanel
             filters={draft}
-            onChange={(key, value) => setDraft((d) => withFilter(d, key, value))}
+            onChange={setDraft}
             products={products}
             defaultOpen={DRAWER_OPEN_GROUPS}
             sort={{ value: draftSort, onChange: setDraftSort }}

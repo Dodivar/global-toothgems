@@ -9,110 +9,53 @@ export interface MenuItem {
 
 const img = (name: string) => new URL(`../assets/photos/${name}`, import.meta.url).href;
 
-/* The Academy entries point at the trainings' public pages, not at the lesson
-   player: the menu is navigation, and it must not drop a signed-out visitor
-   onto a login wall. */
-export const MENU: Record<"gems" | "shop" | "academy", MenuItem[]> = {
-  gems: [
-    {
-      title: { fr: "Gems dentaires Swarovski®", en: "Swarovski® dental gems" },
-      sub: { fr: "SS3 · SS5 · SS7", en: "SS3 · SS5 · SS7" },
-      thumb: img("img-05.jpg"),
-      to: "/boutique/aquamarine",
-    },
-    {
-      title: { fr: "Gems dentaires Preciosa®", en: "Preciosa® dental gems" },
-      sub: { fr: "SS3 · SS6", en: "SS3 · SS6" },
-      thumb: img("img-15.jpg"),
-      to: "/boutique/capri",
-    },
-    {
-      title: { fr: "Sparklets™", en: "Sparklets™" },
-      sub: { fr: "SS0 · SS1", en: "SS0 · SS1" },
-      thumb: img("img-07.jpg"),
-      to: "/boutique/solitaire",
-    },
-    {
-      title: { fr: "Gems zircone cubique", en: "Cubic zirconia gems" },
-      sub: { fr: "Minis", en: "Minis" },
-      thumb: img("img-20.jpg"),
-      to: "/boutique/opale",
-    },
-    {
-      title: { fr: "Bijoux dentaires or 14k et 18k", en: "14k & 18k gold dental jewelry" },
-      sub: { fr: "Cœurs, étoiles, gouttes", en: "Hearts, stars, drops" },
-      thumb: img("img-04.jpg"),
-      to: "/boutique/aurora-heart",
-    },
-    {
-      title: { fr: "Or 18k — collection Minis", en: "18k gold — Minis collection" },
-      sub: { fr: "Nouveau drop", en: "New drop" },
-      thumb: img("img-13.jpg"),
-      to: "/boutique/sunflower",
-    },
-  ],
-  shop: [
-    {
-      title: { fr: "Kits professionnels", en: "Professional kits" },
-      sub: { fr: "Outils + 20 gems", en: "Tools + 20 gems" },
-      thumb: img("img-11.jpg"),
-      to: "/boutique?categorie=Kits",
-    },
-    {
-      title: { fr: "Outils et lampes", en: "Tools and lamps" },
-      sub: { fr: "Lampe LED 1200", en: "1200 LED lamp" },
-      thumb: img("img-01.jpg"),
-      to: "/boutique?categorie=Outils",
-    },
-    {
-      title: { fr: "Adhésifs et mordançage", en: "Adhesives and etchants" },
-      sub: { fr: "Grade clinique", en: "Clinical grade" },
-      thumb: img("img-08.jpg"),
-      to: "/boutique?categorie=Outils",
-    },
-    {
-      title: { fr: "Suivi client", en: "Aftercare" },
-      sub: { fr: "Cartes FR · EN · DE", en: "Cards FR · EN · DE" },
-      thumb: img("mouth-01.jpg"),
-      to: "/boutique?categorie=Suivi",
-    },
-    {
-      title: { fr: "Programme fidélité", en: "Loyalty programme" },
-      sub: { fr: "5 tampons = 10 % de remise", en: "5 stamps = 10% off" },
-      thumb: img("img-09.jpg"),
-      to: "/fidelite",
-    },
-    {
-      title: { fr: "Mon panier", en: "My cart" },
-      sub: { fr: "Récapitulatif et paiement", en: "Summary and payment" },
-      thumb: img("img-02.jpg"),
-      to: "/panier",
-    },
-  ],
-  academy: [
-    {
-      title: { fr: "Fondation Tooth Gem", en: "Tooth Gem Foundation" },
-      sub: { fr: "9 leçons · 1 h 30", en: "9 lessons · 1h30" },
-      thumb: img("img-12.jpg"),
-      to: "/academy/formation/fondation",
-    },
-    {
-      title: { fr: "Placement avancé", en: "Advanced placement" },
-      sub: { fr: "9 leçons · 1 h 30", en: "9 lessons · 1h30" },
-      thumb: img("mouth-02.jpg"),
-      to: "/academy/formation/avance",
-    },
-    {
-      title: { fr: "Business studio", en: "Business studio" },
-      sub: { fr: "9 leçons · 1 h 30", en: "9 lessons · 1h30" },
-      thumb: img("mouth-03.jpg"),
-      to: "/academy/formation/business",
-    },
-    {
-      title: { fr: "Mon espace membre", en: "My member area" },
-      sub: { fr: "Progression, attestations, commandes", en: "Progress, certificates, orders" },
-      thumb: img("mouth-04.jpg"),
-      to: "/compte",
-    },
-  ],
+/**
+ * Menu photo of each family (and of a category with no family), by slug.
+ * The fallback when the back office has not set an image on the family; a
+ * slug missing here shows the brand's generic shot.
+ */
+export const TAXONOMY_THUMBS: Record<string, string> = {
+  swarovski: img("img-05.jpg"),
+  preciosa: img("img-15.jpg"),
+  "bijoux-or-18ct": img("img-04.jpg"),
+  opales: img("img-14.jpg"),
+  "micro-gems": img("img-07.jpg"),
+  essentiels: img("img-01.jpg"),
+  accessoires: img("img-08.jpg"),
+  "kit-professionnel": img("img-11.jpg"),
+  "kit-diy": img("img-13.jpg"),
+  "lip-gloss": img("mouth-05.jpg"),
 };
+
+export const DEFAULT_MENU_THUMB = img("mouth-01.jpg");
+
+/* The shop's entries are the taxonomy itself (`ShopMenu`). The Academy
+   entries point at the trainings' public pages, not at the lesson player: the
+   menu is navigation, and it must not drop a signed-out visitor onto a login
+   wall. */
+export const ACADEMY_MENU: MenuItem[] = [
+  {
+    title: { fr: "Fondation Tooth Gem", en: "Tooth Gem Foundation" },
+    sub: { fr: "9 leçons · 1 h 30", en: "9 lessons · 1h30" },
+    thumb: img("img-12.jpg"),
+    to: "/academy/formation/fondation",
+  },
+  {
+    title: { fr: "Placement avancé", en: "Advanced placement" },
+    sub: { fr: "9 leçons · 1 h 30", en: "9 lessons · 1h30" },
+    thumb: img("mouth-02.jpg"),
+    to: "/academy/formation/avance",
+  },
+  {
+    title: { fr: "Business studio", en: "Business studio" },
+    sub: { fr: "9 leçons · 1 h 30", en: "9 lessons · 1h30" },
+    thumb: img("mouth-03.jpg"),
+    to: "/academy/formation/business",
+  },
+  {
+    title: { fr: "Mon espace membre", en: "My member area" },
+    sub: { fr: "Progression, attestations, commandes", en: "Progress, certificates, orders" },
+    thumb: img("mouth-04.jpg"),
+    to: "/compte",
+  },
+];

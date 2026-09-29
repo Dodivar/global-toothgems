@@ -115,8 +115,8 @@ export const FAQ: FaqCategory[] = [
         question: l("Comment entretenir les produits ?", "How should products be maintained?"),
         answer: [
           l(
-            "Conservez les gems et adhésifs dans leur emballage, à l’abri de la chaleur et de l’humidité. Les conseils d’entretien après la pose sont donnés dans la catégorie <<Suivi client|/boutique?categorie=Suivi>> de la boutique. [[Conditions de conservation par produit]]",
-            "Keep gems and adhesives in their packaging, away from heat and moisture. Aftercare advice is given in the shop’s <<Aftercare|/boutique?categorie=Suivi>> category. [[Storage conditions per product]]",
+            "Conservez les gems et adhésifs dans leur emballage, à l’abri de la chaleur et de l’humidité. Les conseils d’entretien après la pose sont donnés dans la catégorie <<Matériel|/boutique?categorie=materiel>> de la boutique. [[Conditions de conservation par produit]]",
+            "Keep gems and adhesives in their packaging, away from heat and moisture. Aftercare advice is given in the shop’s <<Equipment|/boutique?categorie=materiel>> category. [[Storage conditions per product]]",
           ),
         ],
       },

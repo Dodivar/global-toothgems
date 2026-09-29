@@ -55,14 +55,14 @@
   "categories": {
     "eyebrow": "Acheter par catégorie",
     "title": "Tout pour un éclat parfait.",
-    "body": "Cinq collections, un seul objectif : un résultat beau, sûr et durable.",
+    "body": "Quatre univers, un seul objectif : un résultat beau, sûr et durable.",
     "shopAll": "Tout voir",
     "explore": "Explorer",
+    "families": "Familles {{name}}",
     "gems": "Faites briller votre sourire.",
-    "tools": "Tout pour poser en toute confiance.",
+    "materiel": "Tout pour poser en toute confiance.",
     "kits": "L’essentiel, prêt à créer.",
-    "aftercare": "Des gems éclatantes, plus longtemps.",
-    "accessories": "Complétez votre équipement tooth gem."
+    "lipGloss": "La touche finale de votre sourire."
   },
   "academy": {
     "eyebrow": "Global Toothgems Academy",

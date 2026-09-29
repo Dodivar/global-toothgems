@@ -2,6 +2,7 @@ import { useCallback } from "react";
 import { useTranslation } from "react-i18next";
 import { GEM_SHAPES } from "../../data/products";
 import { useCatalog } from "../../lib/catalog/CatalogProvider";
+import { useTaxonomy } from "../../lib/catalog/useTaxonomy";
 import { useLocalized } from "../../lib/localized";
 import { FILTER_PARAMS, type FilterKey } from "../../lib/storefrontFilters";
 
@@ -13,11 +14,14 @@ export function useFilterLabels() {
   const { t } = useTranslation();
   const L = useLocalized();
   const { colors } = useCatalog();
+  const { categoryName, familyName } = useTaxonomy();
   return useCallback(
     (key: FilterKey, value: string): string => {
       switch (key) {
         case "category":
-          return value === FILTER_PARAMS.category.fallback ? t("shop.categories.all") : t(`shop.categories.${value}`, { defaultValue: value });
+          return value === FILTER_PARAMS.category.fallback ? t("shop.categories.all") : categoryName(value);
+        case "family":
+          return value === FILTER_PARAMS.family.fallback ? t("shop.categories.all") : familyName(value);
         case "material":
           // Materials are catalogue data; the known ones have a translation,
           // the rest show as entered. A dot would read as a key path.
@@ -36,6 +40,6 @@ export function useFilterLabels() {
           return t(`shop.stockBands.${value}`, { defaultValue: value });
       }
     },
-    [t, L, colors],
+    [t, L, colors, categoryName, familyName],
   );
 }

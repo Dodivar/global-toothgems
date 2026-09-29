@@ -101,15 +101,6 @@ export function colorSwatchFill(color: Pick<GemColorDef, "hex" | "isMulticolor">
   return `linear-gradient(135deg, color-mix(in srgb, ${color.hex} 22%, #ffffff), ${color.hex})`;
 }
 
-/**
- * Shop category keys, as used by the `categorie` URL parameter and the
- * `shop.categories.*` labels. The database's category slugs are mapped onto
- * these in `lib/catalog/mapping.ts`.
- */
-export type ShopCategory = "Gems" | "Outils" | "Kits" | "Suivi" | "Accessoires";
-
-export const SHOP_CATEGORIES: ShopCategory[] = ["Gems", "Outils", "Kits", "Suivi", "Accessoires"];
-
 /** A purchasable option of a catalogue product (colour, size, box quantity…). */
 export interface ProductVariant {
   id: string;
@@ -142,8 +133,13 @@ export interface Product {
   reviewCount: number;
   stock?: "low" | "out";
   image: string;
-  /** `null` when the product's category is not one the shop filters on. */
-  cat: ShopCategory | null;
+  /**
+   * Category slug (`gems`, `materiel`…, the `categorie` URL value; see
+   * `data/taxonomy.ts`), `null` for a product outside the shop's categories.
+   */
+  cat: string | null;
+  /** Family slug within `cat` (`swarovski`…, the `famille` URL value), if classified. */
+  family: string | null;
   material: string;
   /** Gems only. Tools, kits and aftercare have no cut. */
   shape?: GemShape;
@@ -169,7 +165,8 @@ export const PRODUCTS: Product[] = [
     rating: 4.8,
     reviewCount: 126,
     image: img("img-04.jpg"),
-    cat: "Gems",
+    cat: "gems",
+    family: "bijoux-or-18ct",
     material: "Or 18k",
     shape: "heart",
     color: "gold",
@@ -194,7 +191,8 @@ export const PRODUCTS: Product[] = [
     rating: 4.6,
     reviewCount: 318,
     image: img("img-07.jpg"),
-    cat: "Gems",
+    cat: "gems",
+    family: "swarovski",
     material: "Swarovski",
     shape: "round",
     color: "crystal",
@@ -214,7 +212,8 @@ export const PRODUCTS: Product[] = [
     reviewCount: 74,
     stock: "low",
     image: img("img-20.jpg"),
-    cat: "Gems",
+    cat: "gems",
+    family: "opales",
     material: "Opale de labo",
     shape: "drop",
     color: "opal",
@@ -229,7 +228,8 @@ export const PRODUCTS: Product[] = [
     rating: 4.7,
     reviewCount: 212,
     image: img("img-11.jpg"),
-    cat: "Kits",
+    cat: "kits",
+    family: "kit-diy",
     material: "Cristal",
     gallery: [
       { src: img("img-11.jpg"), alt: { fr: "Contenu du kit Starter Pro", en: "Starter Pro kit contents" } },
@@ -246,7 +246,8 @@ export const PRODUCTS: Product[] = [
     rating: 4.7,
     reviewCount: 88,
     image: img("img-05.jpg"),
-    cat: "Gems",
+    cat: "gems",
+    family: "swarovski",
     material: "Cristal",
     shape: "round",
     color: "aquamarine",
@@ -265,7 +266,8 @@ export const PRODUCTS: Product[] = [
     rating: 4.6,
     reviewCount: 64,
     image: img("img-15.jpg"),
-    cat: "Gems",
+    cat: "gems",
+    family: "preciosa",
     material: "Cristal",
     shape: "navette",
     color: "capri",
@@ -284,7 +286,8 @@ export const PRODUCTS: Product[] = [
     rating: 4.8,
     reviewCount: 52,
     image: img("img-06.jpg"),
-    cat: "Gems",
+    cat: "gems",
+    family: "preciosa",
     material: "Cristal",
     shape: "square",
     color: "amethyst",
@@ -303,7 +306,8 @@ export const PRODUCTS: Product[] = [
     rating: 4.5,
     reviewCount: 41,
     image: img("img-19.jpg"),
-    cat: "Gems",
+    cat: "gems",
+    family: "swarovski",
     material: "Cristal",
     shape: "triangle",
     color: "peridot",
@@ -316,7 +320,8 @@ export const PRODUCTS: Product[] = [
     rating: 4.7,
     reviewCount: 37,
     image: img("img-18.jpg"),
-    cat: "Gems",
+    cat: "gems",
+    family: "micro-gems",
     material: "Cristal",
     shape: "star",
     color: "topaz",
@@ -329,7 +334,8 @@ export const PRODUCTS: Product[] = [
     rating: 4.6,
     reviewCount: 29,
     image: img("img-13.jpg"),
-    cat: "Gems",
+    cat: "gems",
+    family: "micro-gems",
     material: "Cristal",
     shape: "flower",
     color: "topaz",
@@ -343,7 +349,8 @@ export const PRODUCTS: Product[] = [
     rating: 4.9,
     reviewCount: 24,
     image: img("img-09.jpg"),
-    cat: "Gems",
+    cat: "gems",
+    family: "swarovski",
     material: "Cristal AB",
     shape: "baguette",
     color: "heliotrope",
@@ -356,7 +363,8 @@ export const PRODUCTS: Product[] = [
     rating: 4.8,
     reviewCount: 31,
     image: img("img-14.jpg"),
-    cat: "Gems",
+    cat: "gems",
+    family: "preciosa",
     material: "Cristal AB",
     shape: "navette",
     color: "sapphire",
@@ -369,7 +377,8 @@ export const PRODUCTS: Product[] = [
     rating: 4.5,
     reviewCount: 58,
     image: img("img-01.jpg"),
-    cat: "Outils",
+    cat: "materiel",
+    family: "essentiels",
     material: "",
   },
   {
@@ -381,7 +390,8 @@ export const PRODUCTS: Product[] = [
     reviewCount: 141,
     stock: "out",
     image: img("img-08.jpg"),
-    cat: "Outils",
+    cat: "materiel",
+    family: "essentiels",
     material: "",
   },
   {
@@ -392,7 +402,8 @@ export const PRODUCTS: Product[] = [
     rating: 4.7,
     reviewCount: 96,
     image: img("img-02.jpg"),
-    cat: "Gems",
+    cat: "gems",
+    family: "bijoux-or-18ct",
     material: "Or 18k",
     shape: "star",
     color: "gold",
@@ -411,7 +422,8 @@ export const PRODUCTS: Product[] = [
     rating: 4.4,
     reviewCount: 33,
     image: img("mouth-01.jpg"),
-    cat: "Suivi",
+    cat: "materiel",
+    family: "accessoires",
     material: "",
   },
 ];
@@ -422,7 +434,7 @@ export function getProduct(id: string, list: Product[] = PRODUCTS): Product | un
 
 export function bestSellers(list: Product[] = PRODUCTS): Product[] {
   return list
-    .filter((p) => p.cat === "Gems" || p.cat === "Kits")
+    .filter((p) => p.cat === "gems" || p.cat === "kits")
     .sort((a, b) => Number(b.isFeatured ?? false) - Number(a.isFeatured ?? false) || b.reviewCount - a.reviewCount)
     .slice(0, 4);
 }
