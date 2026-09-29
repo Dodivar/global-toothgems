@@ -938,7 +938,8 @@
       "menuLabel": "Menu de l’espace membre",
       "homeAlt": "Global Toothgems — accueil",
       "help": "Aide",
-      "cookies": "Cookies"
+      "cookies": "Cookies",
+      "adminSpace": "Administration"
     },
     "statsLabel": "Votre compte en chiffres",
     "statCourses": "formations en cours",
@@ -1271,7 +1272,8 @@
       "expand": "Déployer le menu",
       "openNav": "Ouvrir la navigation",
       "breadcrumb": "Fil d’Ariane",
-      "viewStore": "Voir la boutique"
+      "viewStore": "Voir la boutique",
+      "memberSpace": "Mon espace membre"
     },
     "nav": {
       "primary": "Navigation de l’administration",

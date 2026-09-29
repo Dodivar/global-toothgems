@@ -5,14 +5,17 @@ import {
   ChevronsLeft,
   ChevronsRight,
   GraduationCap,
+  Languages,
   LayoutDashboard,
   LogOut,
   MessageSquareText,
   Package,
   Settings,
   ShoppingBag,
+  Store,
   Tags,
   TicketPercent,
+  UserRound,
   Users,
   type LucideIcon,
 } from "lucide-react";
@@ -22,6 +25,10 @@ import { useAdminAuth } from "../../lib/adminAuth";
 
 /**
  * Persistent navigation rail.
+ *
+ * Laid out like the member space's sidebar (`MemberShell`), in the rail's own
+ * dark colours: the brand, who is signed in, the sections, then at the foot
+ * the way out to the store, the member space and the language, and signing out.
  *
  * Analytics moved up into the first group when the Statistics screen landed:
  * the entry, its label and its icon are unchanged, it is simply a destination
@@ -59,6 +66,15 @@ const SOON: { labelKey: string; icon: LucideIcon }[] = [];
 const railFocus =
   "focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-[var(--gt-blue-300)]";
 
+/** Small secondary links at the foot of the rail; icon-only squares when collapsed. */
+const footPill = (collapsed: boolean) =>
+  clsx(
+    "inline-flex items-center gap-1.5 text-[length:var(--text-caption)] font-semibold text-[var(--admin-rail-muted)] transition-colors hover:bg-[var(--admin-rail-hover)] hover:text-[var(--admin-rail-text)]",
+    collapsed
+      ? "h-9 w-9 justify-center rounded-[var(--admin-radius-sm)]"
+      : "rounded-[var(--radius-pill)] px-2.5 py-1.5",
+  );
+
 export function AdminSidebar({
   collapsed,
   onToggle,
@@ -69,7 +85,7 @@ export function AdminSidebar({
   /** Lets the small-screen drawer close itself when a destination is chosen. */
   onNavigate?: () => void;
 }) {
-  const { t } = useTranslation();
+  const { t, i18n } = useTranslation();
   const navigate = useNavigate();
   const { admin, signOut } = useAdminAuth();
 
@@ -104,6 +120,32 @@ export function AdminSidebar({
             </span>
           )}
         </Link>
+      </div>
+
+      {/* Who is signed in, under the brand as in the member space. */}
+      <div
+        className={clsx(
+          "flex flex-none items-center gap-3 border-b border-[var(--admin-rail-border)] py-4",
+          collapsed ? "justify-center px-3" : "px-5",
+        )}
+        title={collapsed && admin ? `${admin.name} — ${t(`admin.role.${admin.role}`)}` : undefined}
+      >
+        <span
+          aria-hidden="true"
+          className="grid h-9 w-9 flex-none place-items-center rounded-full bg-[var(--surface-brand)] text-[length:var(--text-caption)] font-bold text-[var(--gt-ink-900)]"
+        >
+          {admin?.initials ?? "?"}
+        </span>
+        {collapsed ? (
+          <span className="sr-only">{admin?.name}</span>
+        ) : (
+          <span className="grid min-w-0 leading-tight">
+            <strong className="truncate text-[length:var(--text-body-sm)] font-semibold">{admin?.name}</strong>
+            <span className="truncate text-[length:var(--text-caption)] text-[var(--admin-rail-muted)]">
+              {admin ? t(`admin.role.${admin.role}`) : ""}
+            </span>
+          </span>
+        )}
       </div>
 
       <nav
@@ -200,23 +242,44 @@ export function AdminSidebar({
         )}
       </nav>
 
-      {/* Administrator */}
+      {/* The way out, the member space and the language, then signing out:
+          the same order as the foot of the member space's sidebar. */}
       <div className="flex-none border-t border-[var(--admin-rail-border)] p-3">
-        <div className={clsx("flex items-center gap-3 rounded-[var(--admin-radius-sm)] p-2", collapsed && "justify-center p-0 py-2")}>
-          <span
-            aria-hidden="true"
-            className="grid h-9 w-9 flex-none place-items-center rounded-full bg-[var(--surface-brand)] text-[length:var(--text-caption)] font-bold text-[var(--gt-ink-900)]"
+        <div className={clsx("flex gap-1", collapsed ? "flex-col items-center" : "flex-wrap items-center")}>
+          {/* The storefront is the other half of the job; the admin should
+              never be a dead end away from it. */}
+          <Link
+            to="/"
+            onClick={onNavigate}
+            aria-label={collapsed ? t("admin.shell.viewStore") : undefined}
+            title={collapsed ? t("admin.shell.viewStore") : undefined}
+            className={clsx(footPill(collapsed), railFocus)}
           >
-            {admin?.initials ?? "?"}
-          </span>
-          {!collapsed && (
-            <span className="grid min-w-0 leading-tight">
-              <strong className="truncate text-[length:var(--text-body-sm)] font-semibold">{admin?.name}</strong>
-              <span className="truncate text-[length:var(--text-caption)] text-[var(--admin-rail-muted)]">
-                {admin ? t(`admin.role.${admin.role}`) : ""}
-              </span>
-            </span>
-          )}
+            <Store size={14} strokeWidth={1.9} aria-hidden="true" className="flex-none" />
+            {!collapsed && t("admin.shell.viewStore")}
+          </Link>
+          {/* Staff are members too: their own account is one click away. */}
+          <Link
+            to="/compte"
+            onClick={onNavigate}
+            aria-label={collapsed ? t("admin.shell.memberSpace") : undefined}
+            title={collapsed ? t("admin.shell.memberSpace") : undefined}
+            className={clsx(footPill(collapsed), railFocus)}
+          >
+            <UserRound size={14} strokeWidth={1.9} aria-hidden="true" className="flex-none" />
+            {!collapsed && t("admin.shell.memberSpace")}
+          </Link>
+          <button
+            type="button"
+            onClick={() => i18n.changeLanguage(i18n.language?.startsWith("en") ? "fr" : "en")}
+            aria-label={t("common.langSwitchAria")}
+            title={collapsed ? t("common.langSwitchAria") : undefined}
+            className={clsx(footPill(collapsed), "uppercase", railFocus)}
+          >
+            <Languages size={14} strokeWidth={1.9} aria-hidden="true" className="flex-none" />
+            {/* Shows the language you switch TO, like the storefront header. */}
+            {!collapsed && t("common.langSwitchCode")}
+          </button>
         </div>
 
         <button

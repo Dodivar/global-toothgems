@@ -1,7 +1,7 @@
 import type { ReactNode } from "react";
 import { useTranslation } from "react-i18next";
 import { Link } from "react-router-dom";
-import { ChevronRight, ExternalLink, Menu } from "lucide-react";
+import { ChevronRight, Menu } from "lucide-react";
 import clsx from "clsx";
 
 export interface Crumb {
@@ -31,8 +31,7 @@ export function AdminHeader({
   actions?: ReactNode;
   onOpenNav: () => void;
 }) {
-  const { t, i18n } = useTranslation();
-  const lang = i18n.language ?? "fr";
+  const { t } = useTranslation();
 
   return (
     <header className="sticky top-0 z-[60] border-b border-[var(--border-subtle)] bg-[var(--admin-page)]/92 backdrop-blur-[10px]">
@@ -84,27 +83,6 @@ export function AdminHeader({
 
         <div className="flex flex-none items-center gap-2">
           {actions}
-
-          <span aria-hidden="true" className="mx-1 hidden h-6 w-px bg-[var(--border-subtle)] md:block" />
-
-          <button
-            type="button"
-            onClick={() => i18n.changeLanguage(lang.startsWith("en") ? "fr" : "en")}
-            aria-label={t("common.langSwitchAria")}
-            className="hidden h-9 items-center rounded-[var(--admin-radius-sm)] px-2.5 text-[length:var(--text-caption)] font-semibold uppercase tracking-[var(--tracking-wide)] text-[var(--text-muted)] transition-colors hover:bg-[var(--gt-ink-100)] hover:text-[var(--text-primary)] focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-[var(--focus-ring)] md:inline-flex"
-          >
-            {t("common.langSwitchCode")}
-          </button>
-
-          {/* The storefront is the other half of the job; the admin should never
-              be a dead end away from it. */}
-          <Link
-            to="/"
-            className="hidden h-9 items-center gap-1.5 rounded-[var(--admin-radius-sm)] px-2.5 text-[length:var(--text-caption)] font-semibold text-[var(--text-muted)] transition-colors hover:bg-[var(--gt-ink-100)] hover:text-[var(--text-primary)] focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-[var(--focus-ring)] md:inline-flex"
-          >
-            {t("admin.shell.viewStore")}
-            <ExternalLink size={13} strokeWidth={2} aria-hidden="true" />
-          </Link>
         </div>
       </div>
     </header>
