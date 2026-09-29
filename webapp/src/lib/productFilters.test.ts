@@ -21,7 +21,7 @@ const catalogue = [
   product("star-crystal", { shape: "star", color: "crystal" }),
   product("heart-aqua", { shape: "heart", color: "aquamarine", status: "draft" }),
   product("legacy", { shape: "round", color: "retired-shade" }),
-  product("mirror", { categoryId: "tools" }),
+  product("mirror", { categoryId: "materiel" }),
 ];
 
 const filters = (extra: Partial<ProductFilterState>): ProductFilterState => ({ ...DEFAULT_FILTERS, ...extra });
@@ -72,7 +72,7 @@ describe("gemFacets", () => {
   });
 
   it("keeps the list steady when another filter empties it", () => {
-    const { shapes } = gemFacets(catalogue, filters({ category: "tools" }), order);
+    const { shapes } = gemFacets(catalogue, filters({ category: "materiel" }), order);
     expect(shapes.map((f) => f.value)).toEqual(["round", "heart", "star"]);
     expect(shapes.every((f) => f.count === 0)).toBe(true);
   });

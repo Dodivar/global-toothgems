@@ -6,14 +6,15 @@ import { IconButton } from "../ui/IconButton";
 import { useAuth } from "../../lib/auth";
 import { useCart } from "../../lib/cart";
 import { useToast } from "../../lib/toast";
-import { MENU } from "../../data/menu";
+import { ACADEMY_MENU } from "../../data/menu";
 import { pick } from "../../data/types";
 import { NewTag } from "../studio/NewTag";
+import { ShopMenu } from "./ShopMenu";
 import { STUDIO_PATH } from "../../lib/studioUrl";
 import logoBlack from "../../assets/logo-wordmark-black.png";
 
 type PanelKey = "shop" | "academy" | null;
-type MobileTab = "gems" | "shop" | "academy";
+type MobileTab = "shop" | "academy";
 
 /** Long enough that a pointer crossing the nav on its way elsewhere does not
  *  open anything, short enough that a deliberate hover feels immediate. */
@@ -32,7 +33,7 @@ export function Header() {
 
   const [panel, setPanel] = useState<PanelKey>(null);
   const [menuOpen, setMenuOpen] = useState(false);
-  const [menuTab, setMenuTab] = useState<MobileTab>("gems");
+  const [menuTab, setMenuTab] = useState<MobileTab>("shop");
   const rootRef = useRef<HTMLDivElement>(null);
   const hoverTimer = useRef<number | null>(null);
   /** Panel the user just closed on purpose, held until the pointer leaves that
@@ -110,18 +111,15 @@ export function Header() {
     navigate(signedIn ? "/compte" : "/connexion");
   };
 
-  const panelItems = panel === "shop" ? [...MENU.gems, ...MENU.shop] : panel === "academy" ? MENU.academy : [];
   const panelRoot =
     panel === "shop"
       ? { label: t("nav.viewAllShop"), to: "/boutique" }
       : { label: t("nav.viewAllAcademy"), to: "/academy" };
 
   const mobileTabs: { key: MobileTab; label: string }[] = [
-    { key: "gems", label: t("nav.menuTabGems") },
     { key: "shop", label: t("nav.menuTabShop") },
     { key: "academy", label: t("nav.menuTabAcademy") },
   ];
-  const mobileItems = MENU[menuTab];
   const mobileRoot =
     menuTab === "academy" ? { label: t("nav.viewAllAcademy"), to: "/academy" } : { label: t("nav.viewAllShop"), to: "/boutique" };
 
@@ -244,30 +242,34 @@ export function Header() {
             className="absolute inset-x-0 top-full max-h-[calc(100vh-76px)] overflow-y-auto border-t border-[var(--border-subtle)] bg-[var(--surface-sunken)] shadow-[var(--shadow-lg)]"
           >
             <div className="mx-auto grid max-w-[var(--max-width-content)] gap-5 px-[var(--gutter-page-lg)] py-6">
-              <div className="grid grid-cols-[repeat(auto-fill,minmax(230px,1fr))] gap-4">
-                {panelItems.map((item) => (
-                  <Link
-                    key={pick(item.title, lang)}
-                    to={item.to}
-                    onClick={closeAll}
-                    className="flex items-center gap-3 rounded-[var(--radius-card)] border border-[var(--border-subtle)] bg-[var(--surface-card)] p-2.5 text-left shadow-[var(--shadow-xs)] transition-shadow hover:shadow-[var(--shadow-md)]"
-                  >
-                    <img
-                      src={item.thumb}
-                      alt=""
-                      loading="lazy"
-                      decoding="async"
-                      className="h-11 w-11 flex-none rounded-[var(--radius-sm)] border border-[var(--gt-blue-200)] object-cover"
-                    />
-                    <span className="grid min-w-0 gap-0.5">
-                      <span className="truncate text-[11px] font-semibold uppercase tracking-[.06em] text-[var(--text-primary)]">
-                        {pick(item.title, lang)}
+              {panel === "shop" ? (
+                <ShopMenu layout="columns" onNavigate={closeAll} />
+              ) : (
+                <div className="grid grid-cols-[repeat(auto-fill,minmax(230px,1fr))] gap-4">
+                  {ACADEMY_MENU.map((item) => (
+                    <Link
+                      key={pick(item.title, lang)}
+                      to={item.to}
+                      onClick={closeAll}
+                      className="flex items-center gap-3 rounded-[var(--radius-card)] border border-[var(--border-subtle)] bg-[var(--surface-card)] p-2.5 text-left shadow-[var(--shadow-xs)] transition-shadow hover:shadow-[var(--shadow-md)]"
+                    >
+                      <img
+                        src={item.thumb}
+                        alt=""
+                        loading="lazy"
+                        decoding="async"
+                        className="h-11 w-11 flex-none rounded-[var(--radius-sm)] border border-[var(--gt-blue-200)] object-cover"
+                      />
+                      <span className="grid min-w-0 gap-0.5">
+                        <span className="truncate text-[11px] font-semibold uppercase tracking-[.06em] text-[var(--text-primary)]">
+                          {pick(item.title, lang)}
+                        </span>
+                        <span className="text-xs text-[var(--text-muted)]">{pick(item.sub, lang)}</span>
                       </span>
-                      <span className="text-xs text-[var(--text-muted)]">{pick(item.sub, lang)}</span>
-                    </span>
-                  </Link>
-                ))}
-              </div>
+                    </Link>
+                  ))}
+                </div>
+              )}
               <Link
                 to={panelRoot.to}
                 onClick={closeAll}
@@ -345,30 +347,34 @@ export function Header() {
                 </button>
               ))}
             </div>
-            <div className="grid gap-2.5">
-              {mobileItems.map((item) => (
-                <Link
-                  key={pick(item.title, lang)}
-                  to={item.to}
-                  onClick={closeAll}
-                  className="flex items-center gap-3.5 rounded-[var(--radius-card)] border border-[var(--border-subtle)] bg-[var(--surface-card)] p-3 text-left shadow-[var(--shadow-xs)]"
-                >
-                  <img
-                    src={item.thumb}
-                    alt=""
-                    loading="lazy"
-                    decoding="async"
-                    className="h-[46px] w-[46px] flex-none rounded-[var(--radius-sm)] border border-[var(--gt-blue-200)] object-cover"
-                  />
-                  <span className="grid min-w-0 gap-0.5">
-                    <span className="truncate text-[11.5px] font-semibold uppercase tracking-[.06em] text-[var(--text-primary)]">
-                      {pick(item.title, lang)}
+            {menuTab === "shop" ? (
+              <ShopMenu layout="stack" onNavigate={closeAll} />
+            ) : (
+              <div className="grid gap-2.5">
+                {ACADEMY_MENU.map((item) => (
+                  <Link
+                    key={pick(item.title, lang)}
+                    to={item.to}
+                    onClick={closeAll}
+                    className="flex items-center gap-3.5 rounded-[var(--radius-card)] border border-[var(--border-subtle)] bg-[var(--surface-card)] p-3 text-left shadow-[var(--shadow-xs)]"
+                  >
+                    <img
+                      src={item.thumb}
+                      alt=""
+                      loading="lazy"
+                      decoding="async"
+                      className="h-[46px] w-[46px] flex-none rounded-[var(--radius-sm)] border border-[var(--gt-blue-200)] object-cover"
+                    />
+                    <span className="grid min-w-0 gap-0.5">
+                      <span className="truncate text-[11.5px] font-semibold uppercase tracking-[.06em] text-[var(--text-primary)]">
+                        {pick(item.title, lang)}
+                      </span>
+                      <span className="text-xs text-[var(--text-muted)]">{pick(item.sub, lang)}</span>
                     </span>
-                    <span className="text-xs text-[var(--text-muted)]">{pick(item.sub, lang)}</span>
-                  </span>
-                </Link>
-              ))}
-            </div>
+                  </Link>
+                ))}
+              </div>
+            )}
             <div className="flex items-center justify-between gap-3 pt-1">
               <Link
                 to={mobileRoot.to}

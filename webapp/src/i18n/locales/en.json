@@ -22,10 +22,12 @@
     "colorsHeading": "Colours",
     "viewAllShapes": "View all shapes",
     "viewAllColors": "View all colours",
-    "menuTabGems": "Gems",
     "menuTabShop": "Shop",
     "menuTabAcademy": "Academy",
     "openPanelShop": "Show shop categories",
+    "menuProductCount_one": "{{count}} product",
+    "menuProductCount_other": "{{count}} products",
+    "menuComingSoon": "Coming soon",
     "openPanelAcademy": "Show courses",
     "cartWithCount_one": "Cart, {{count}} item",
     "cartWithCount_other": "Cart, {{count}} items",
@@ -136,12 +138,7 @@
     "prev": "Previous",
     "next": "Next",
     "categories": {
-      "all": "All",
-      "Gems": "Gems",
-      "Outils": "Tools",
-      "Kits": "Kits",
-      "Suivi": "Aftercare",
-      "Accessoires": "Accessories"
+      "all": "All"
     },
     "materials": {
       "all": "All materials",
@@ -1069,10 +1066,10 @@
     "colShop": "Shop",
     "colAcademy": "Academy",
     "shopItems": [
-      "Gems",
-      "Tools",
+      "Toothgems",
+      "Equipment",
       "Kits",
-      "Aftercare",
+      "Global Lip Gloss",
       "Gift cards",
       "Loyalty programme"
     ],
@@ -1180,7 +1177,8 @@
       "collecting": {
         "badge": "In progress",
         "demoLabel": "Collecting",
-        "title": "{{done}} of {{total}} stamps",
+        "title_one": "{{done}} of {{total}} stamps",
+        "title_other": "{{done}} of {{total}} stamps",
         "body_one": "{{count}} more qualifying purchase to unlock {{percent}}% off your next order.",
         "body_other": "{{count}} more qualifying purchases to unlock {{percent}}% off your next order.",
         "cta": "Continue shopping"
@@ -1502,6 +1500,9 @@
       },
       "organisationTitle": "Organisation",
       "category": "Category",
+      "family": "Family",
+      "familyHint": "Narrows the category in the shop menu and filter.",
+      "noFamily": "No family",
       "shape": "Shape",
       "color": "Colour",
       "gemLookNone": "Not set",
@@ -1529,6 +1530,7 @@
         "thresholdInvalid": "The threshold must be a positive whole number.",
         "skuFormat": "Capital letters, digits and hyphens only, 2 to 64 characters (e.g. GEM-STAR-001).",
         "categoryRequired": "Choose a category.",
+        "familyMismatch": "This family does not belong to the chosen category.",
         "priceCents": "Two decimal places at most.",
         "optionsEmpty": "Add at least one pack or tick a stone size, or switch the options off.",
         "optionsPack": "Each pack must hold a whole number of stones, from {{min}} to {{max}}.",
@@ -1746,6 +1748,7 @@
       "unavailable": "Out of stock",
       "priceRange": "From {{min}} to {{max}}",
       "noProducts": "No product in this category",
+      "families": "Families",
       "view": "View products"
     },
     "gemColors": {

@@ -9,7 +9,8 @@ import { SmileCanvas } from "../studio/SmileCanvas";
 import { GemIcon } from "../studio/Gem";
 import { NewTag } from "../studio/NewTag";
 import { COMPOSITIONS } from "../../data/studio";
-import { SHOP_CATEGORIES } from "../../data/products";
+import { GEMS_CATEGORY, shopHref } from "../../data/taxonomy";
+import { useTaxonomy } from "../../lib/catalog/useTaxonomy";
 import { photo } from "../../lib/images";
 import { STUDIO_PATH } from "../../lib/studioUrl";
 import { usePrefersReducedMotion } from "./usePrefersReducedMotion";
@@ -200,6 +201,7 @@ function SlideTitle({ children, inverse = false }: { children: ReactNode; invers
 function ShopSlide() {
   const { t } = useTranslation();
   const navigate = useNavigate();
+  const { taxonomy, categoryName } = useTaxonomy();
   return (
     <div className="gt-alt-hero-shop h-full">
       <SlideLayout
@@ -212,19 +214,19 @@ function ShopSlide() {
               <Button variant="primary" size="lg" iconRight={ArrowRight} className="gt-alt-cta" onClick={() => navigate("/boutique")}>
                 {t("homeAlt.hero.shop.cta")}
               </Button>
-              <Button variant="glass" size="lg" onClick={() => navigate("/boutique?categorie=Gems")}>
+              <Button variant="glass" size="lg" onClick={() => navigate(shopHref(GEMS_CATEGORY))}>
                 {t("homeAlt.hero.shop.ctaSecondary")}
               </Button>
             </div>
             <nav aria-label={t("homeAlt.hero.shop.chipsLabel")} className="hidden pt-2 sm:block">
               <ul className="m-0 flex list-none flex-wrap gap-2 p-0">
-                {SHOP_CATEGORIES.map((cat) => (
-                  <li key={cat}>
+                {taxonomy.map(({ slug }) => (
+                  <li key={slug}>
                     <Link
-                      to={`/boutique?categorie=${cat}`}
+                      to={shopHref(slug)}
                       className="inline-flex h-9 items-center rounded-[var(--radius-pill)] border border-[var(--gt-blue-400)] bg-white/40 px-4 text-[12px] font-semibold text-[var(--gt-ink-900)] transition-colors duration-[var(--duration-fast)] hover:border-[var(--gt-ink-900)] hover:bg-white/80"
                     >
-                      {t(`shop.categories.${cat}`)}
+                      {categoryName(slug)}
                     </Link>
                   </li>
                 ))}

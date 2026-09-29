@@ -130,9 +130,10 @@ begin
                         {"key": "2020-03-11T00:00:00", "orders": 1, "revenue": 78.00, "previousOrders": 1, "previousRevenue": 19.00}]'::jsonb then
     raise exception 'FAIL S3: series %', s -> 'series';
   end if;
+  -- The gel sits in Matériel since `…_category_families`, a "kits" bucket.
   if s -> 'breakdown' <> '[{"id": "jewelry", "share": 0, "orders": 0, "revenue": 0},
-                           {"id": "aftercare", "share": 5.5, "orders": 1, "revenue": 19.00},
-                           {"id": "kits", "share": 94.5, "orders": 2, "revenue": 327.00},
+                           {"id": "aftercare", "share": 0, "orders": 0, "revenue": 0},
+                           {"id": "kits", "share": 100.0, "orders": 2, "revenue": 346.00},
                            {"id": "training", "share": 0, "orders": 0, "revenue": 0},
                            {"id": "other", "share": 0, "orders": 0, "revenue": 0}]'::jsonb then
     raise exception 'FAIL S3: breakdown %', s -> 'breakdown';
@@ -172,7 +173,7 @@ begin
   -- S5 filters and periods
   -- ===========================================================================
   foreach v_txt in array array['{"country": "DE"}|78', '{"customerType": "new"}|78', '{"customerType": "returning"}|268',
-                               '{"category": "aftercare"}|19'] loop
+                               '{"category": "kits"}|346', '{"category": "aftercare"}|0'] loop
     s := public.analytics_snapshot('2020-03-10', '2020-03-11', split_part(v_txt, '|', 1)::jsonb);
     select (value ->> 'value')::numeric into v_num from jsonb_array_elements(s -> 'kpis') where value ->> 'id' = 'revenue';
     if v_num <> split_part(v_txt, '|', 2)::numeric then raise exception 'FAIL S5: % gives %', v_txt, v_num; end if;

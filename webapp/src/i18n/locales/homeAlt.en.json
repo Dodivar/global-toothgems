@@ -55,14 +55,14 @@
   "categories": {
     "eyebrow": "Shop by category",
     "title": "Everything for the perfect sparkle.",
-    "body": "Five collections, one goal: a beautiful, safe and lasting result.",
+    "body": "Four worlds, one goal: a beautiful, safe and lasting result.",
     "shopAll": "Shop everything",
     "explore": "Explore",
+    "families": "{{name}} families",
     "gems": "Make your smile shine.",
-    "tools": "Everything you need to apply with confidence.",
+    "materiel": "Everything you need to apply with confidence.",
     "kits": "Ready-to-create essentials.",
-    "aftercare": "Keep your gems looking their best.",
-    "accessories": "Complete your tooth gem setup."
+    "lipGloss": "The finishing touch to your smile."
   },
   "academy": {
     "eyebrow": "Global Toothgems Academy",
@@ -141,6 +141,8 @@
     "perk3Value": "{{percent}}% off",
     "perk3Label": "your next order",
     "chip": "+1 stamp",
+    "pause": "Pause the card animation",
+    "play": "Play the card animation",
     "cta": "Discover the loyalty program"
   },
   "newsletter": {

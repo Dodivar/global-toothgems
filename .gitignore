@@ -9,3 +9,6 @@ Thumbs.db
 # Local 3D studio scratch work (a 14 MB .glb plus dated HTML iterations) that
 # sits at the repo root. Anchored so it cannot match webapp/src/lib/studio3d/.
 /studio3D/
+
+# Supabase CLI link state (project ref, pooler URL), written by `supabase link`.
+supabase/.temp/

@@ -3,8 +3,11 @@ import { Link, useNavigate } from "react-router-dom";
 import { ArrowRight, ArrowUpRight } from "lucide-react";
 import clsx from "clsx";
 import { Button } from "../ui/Button";
-import type { ShopCategory } from "../../data/products";
+import { FALLBACK_TAXONOMY, findCategory, shopHref, type ShopFamilyDef } from "../../data/taxonomy";
+import { pick } from "../../data/types";
 import { photo } from "../../lib/images";
+import { useCatalog } from "../../lib/catalog/CatalogProvider";
+import { useTaxonomy } from "../../lib/catalog/useTaxonomy";
 import { useReveal } from "../../lib/useReveal";
 
 /**
@@ -20,8 +23,9 @@ type TileArt =
   | { kind: "cutouts"; tone: "blue" | "brand" | "sand"; items: { src: string; className: string; print?: boolean }[] };
 
 interface Tile {
-  cat: ShopCategory;
-  copyKey: "gems" | "tools" | "kits" | "aftercare" | "accessories";
+  /** Category slug (`categories.slug`). */
+  cat: string;
+  copyKey: "gems" | "materiel" | "kits" | "lipGloss";
   art: TileArt;
   /** Placement in the 12-column desktop mosaic and the 2-column tablet grid. */
   area: string;
@@ -31,24 +35,27 @@ interface Tile {
 
 const TILES: Tile[] = [
   {
-    cat: "Gems",
+    cat: "gems",
     copyKey: "gems",
     hero: true,
     art: { kind: "photo", src: photo("mouth-02.jpg"), position: "50% 42%" },
     area: "md:col-span-2 lg:col-span-6 lg:row-span-2",
   },
   {
-    cat: "Outils",
-    copyKey: "tools",
+    cat: "materiel",
+    copyKey: "materiel",
     art: {
       kind: "cutouts",
       tone: "blue",
-      items: [{ src: photo("img-01.jpg"), print: true, className: "right-[7%] top-1/2 w-[40%] max-w-[190px] -translate-y-1/2 rotate-[-6deg]" }],
+      items: [
+        { src: photo("img-01.jpg"), print: true, className: "right-[7%] top-[12%] w-[34%] max-w-[170px] rotate-[-6deg]" },
+        { src: photo("img-08.jpg"), print: true, className: "right-[38%] top-[6%] w-[22%] max-w-[110px] rotate-[5deg]" },
+      ],
     },
     area: "lg:col-span-4 lg:col-start-7",
   },
   {
-    cat: "Kits",
+    cat: "kits",
     copyKey: "kits",
     art: {
       kind: "cutouts",
@@ -62,20 +69,10 @@ const TILES: Tile[] = [
     area: "lg:col-span-2 lg:col-start-11 lg:row-span-2",
   },
   {
-    cat: "Suivi",
-    copyKey: "aftercare",
-    art: {
-      kind: "cutouts",
-      tone: "sand",
-      items: [{ src: photo("img-08.jpg"), print: true, className: "right-[8%] top-[8%] w-[50%] max-w-[150px] rotate-[5deg]" }],
-    },
-    area: "lg:col-span-2 lg:col-start-7 lg:row-start-2",
-  },
-  {
-    cat: "Accessoires",
-    copyKey: "accessories",
+    cat: "lip-gloss",
+    copyKey: "lipGloss",
     art: { kind: "photo", src: photo("mouth-05.jpg"), position: "50% 50%" },
-    area: "lg:col-span-2 lg:col-start-9 lg:row-start-2",
+    area: "lg:col-span-4 lg:col-start-7 lg:row-start-2",
   },
 ];
 
@@ -86,16 +83,23 @@ const TONE_BG: Record<"blue" | "brand" | "sand", string> = {
 };
 
 /**
- * The five shop categories as an asymmetric mosaic: one large photographic
- * tile for the gems, then tools, kits, aftercare and accessories in varied
- * sizes. Each tile opens the shop filtered on that category, through the same
- * `categorie` parameter the shop's own filter bar writes. On a phone the
- * mosaic becomes a swiped row of tall cards.
+ * The four shop categories as an asymmetric mosaic: one large photographic
+ * tile for the toothgems, then equipment, kits and lip gloss. Each tile opens
+ * the shop filtered on that category, through the same `categorie` parameter
+ * the shop's filter writes, and lists the category's families as links of
+ * their own (`famille`). On a phone the mosaic becomes a swiped row of tall
+ * cards.
+ *
+ * A category the back office has hidden loses its tile.
  */
 export function CategoryMosaic() {
   const { t } = useTranslation();
   const navigate = useNavigate();
   const ref = useReveal<HTMLElement>();
+  const { taxonomy } = useCatalog();
+  // Until the taxonomy arrives, the prototype's copy keeps the mosaic in place.
+  const source = taxonomy.length > 0 ? taxonomy : FALLBACK_TAXONOMY;
+  const tiles = TILES.filter((tile) => findCategory(source, tile.cat));
 
   return (
     <section ref={ref} aria-labelledby="gt-alt-categories-title" className="gt-reveal gt-alt-section w-full">
@@ -117,9 +121,9 @@ export function CategoryMosaic() {
       {/* Phone: a swiped row that runs to the screen edge. Tablet: two
           columns. Desktop: the 12-column mosaic. */}
       <ul className="gt-scroller gt-alt-snap-pad m-0 flex list-none gap-3 p-0 pb-2 pl-[var(--gt-alt-gutter)] pr-[var(--gt-alt-gutter)] md:grid md:grid-cols-2 md:gap-4 md:overflow-visible lg:mx-auto lg:max-w-[var(--gt-alt-max)] lg:grid-cols-12 lg:grid-rows-[repeat(2,clamp(240px,19vw,340px))] lg:gap-5">
-        {TILES.map((tile, i) => (
+        {tiles.map((tile, i) => (
           <li key={tile.cat} className={clsx("w-[78%] max-w-[340px] flex-none snap-start md:w-auto md:max-w-none", tile.area)}>
-            <CategoryTile tile={tile} index={i} />
+            <CategoryTile tile={tile} index={i} families={findCategory(source, tile.cat)?.families ?? []} />
           </li>
         ))}
       </ul>
@@ -127,13 +131,14 @@ export function CategoryMosaic() {
   );
 }
 
-function CategoryTile({ tile, index }: { tile: Tile; index: number }) {
-  const { t } = useTranslation();
+function CategoryTile({ tile, index, families }: { tile: Tile; index: number; families: ShopFamilyDef[] }) {
+  const { t, i18n } = useTranslation();
+  const { categoryName } = useTaxonomy();
   const photoTile = tile.art.kind === "photo";
+  const name = categoryName(tile.cat);
 
   return (
-    <Link
-      to={`/boutique?categorie=${tile.cat}`}
+    <div
       className={clsx(
         "gt-alt-tile group relative flex h-full min-h-[340px] flex-col justify-end overflow-hidden rounded-[var(--radius-xl)] shadow-[var(--shadow-card)] md:min-h-[340px] lg:min-h-0",
         tile.hero && "md:min-h-[400px] lg:min-h-0",
@@ -177,11 +182,34 @@ function CategoryTile({ tile, index }: { tile: Tile; index: number }) {
             photoTile ? "text-[var(--gt-off-white)]" : "text-[var(--gt-ink-900)]",
           )}
         >
-          {t(`shop.categories.${tile.cat}`)}
+          {/* Stretched link: its ::after covers the whole tile; the family
+              links below sit above it. */}
+          <Link to={shopHref(tile.cat)} className="gt-alt-tile-link after:absolute after:inset-0 after:content-['']">
+            {name}
+          </Link>
         </h3>
         <span className={clsx("max-w-[30ch] font-medium leading-snug", tile.hero ? "text-[length:var(--text-body-lg)]" : "text-[13px]", photoTile ? "text-white/85" : "text-[var(--gt-ink-700)]")}>
           {t(`homeAlt.categories.${tile.copyKey}`)}
         </span>
+        {families.length > 0 && (
+          <ul aria-label={t("homeAlt.categories.families", { name })} className="relative z-[1] m-0 mt-1 flex list-none flex-wrap gap-1.5 p-0">
+            {families.map((family) => (
+              <li key={family.slug}>
+                <Link
+                  to={shopHref(tile.cat, family.slug)}
+                  className={clsx(
+                    "inline-flex h-7 items-center rounded-[var(--radius-pill)] border px-3 text-[11.5px] font-semibold transition-colors duration-[var(--duration-fast)]",
+                    photoTile
+                      ? "border-white/40 bg-white/10 text-[var(--gt-off-white)] backdrop-blur-sm hover:bg-white/25"
+                      : "border-[var(--gt-ink-900)]/20 bg-white/55 text-[var(--gt-ink-900)] hover:bg-white/90",
+                  )}
+                >
+                  {pick(family.name, i18n.language)}
+                </Link>
+              </li>
+            ))}
+          </ul>
+        )}
         <span
           aria-hidden="true"
           className={clsx(
@@ -193,6 +221,6 @@ function CategoryTile({ tile, index }: { tile: Tile; index: number }) {
           <ArrowUpRight size={15} className="gt-alt-tile-arrow" />
         </span>
       </span>
-    </Link>
+    </div>
   );
 }

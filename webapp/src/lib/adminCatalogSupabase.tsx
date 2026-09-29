@@ -17,8 +17,10 @@ import { useToast } from "./toast";
 import { requireSupabase } from "./supabase/client";
 import {
   ADMIN_CATEGORY_SELECT,
+  ADMIN_CATEGORY_SELECT_BASE,
   ADMIN_GEM_COLOR_SELECT,
   ADMIN_PRODUCT_SELECT,
+  ADMIN_PRODUCT_SELECT_BASE,
   PRODUCT_IMAGE_MAX_BYTES,
   PRODUCT_MEDIA_BUCKET,
   UNSAVED_MEDIA_PREFIX,
@@ -87,6 +89,9 @@ export function SupabaseAdminCatalogProvider({ children, actor }: { children: Re
   const [loading, setLoading] = useState(true);
   const [loadError, setLoadError] = useState<CatalogErrorKind | null>(null);
   const [loadCount, setLoadCount] = useState(0);
+  // False on a database without `…_category_families`: products read and
+  // save without a family until the migration is applied.
+  const familiesSupported = useRef(true);
 
   // Callbacks read the latest list without being rebuilt on every change.
   const productsRef = useRef(products);
@@ -102,9 +107,18 @@ export function SupabaseAdminCatalogProvider({ children, actor }: { children: Re
   useEffect(() => {
     let cancelled = false;
     (async () => {
-      const [productRes, categoryRes, recommendationRes, colorRes] = await Promise.all([
-        client.from("products").select(ADMIN_PRODUCT_SELECT).order("updated_at", { ascending: false }),
-        client.from("categories").select(ADMIN_CATEGORY_SELECT).order("position"),
+      const loadProducts = (select: string) =>
+        client.from("products").select(select).order("updated_at", { ascending: false });
+      const loadCategories = (select: string) => client.from("categories").select(select).order("position");
+      let [productRes, categoryRes] = await Promise.all([loadProducts(ADMIN_PRODUCT_SELECT), loadCategories(ADMIN_CATEGORY_SELECT)]);
+      // Any failure is retried once without the families (see
+      // `ADMIN_PRODUCT_SELECT_BASE`); a real outage still fails the second time.
+      if (productRes.error || categoryRes.error) {
+        console.warn("Admin catalogue: product families unavailable", productRes.error ?? categoryRes.error);
+        [productRes, categoryRes] = await Promise.all([loadProducts(ADMIN_PRODUCT_SELECT_BASE), loadCategories(ADMIN_CATEGORY_SELECT_BASE)]);
+        familiesSupported.current = false;
+      }
+      const [recommendationRes, colorRes] = await Promise.all([
         client.from("product_recommendations").select("product_id, recommended_product_id, kind, position"),
         client.from("gem_colors").select(ADMIN_GEM_COLOR_SELECT).order("position"),
       ]);
@@ -181,18 +195,28 @@ export function SupabaseAdminCatalogProvider({ children, actor }: { children: Re
       const { data, error } = await client.rpc("admin_save_product", { p_product: payload });
       if (error) return fail(error);
 
-      const result = data as { id: string; removed_paths?: string[]; variants?: string[]; custom_variants?: string[] };
+      const result = data as {
+        id: string;
+        removed_paths?: string[];
+        variants?: string[];
+        custom_variants?: string[];
+        family_id?: string | null;
+      };
       await removeFiles(result.removed_paths ?? []);
-      // A database without the pack/SS or variants migration saves the product
-      // and ignores the options: say so rather than pretend they were saved.
+      // A database without the pack/SS, variants or families migration saves
+      // the product and ignores the rest: say so rather than pretend it was saved.
       if (product.gemOptions && !Array.isArray(result.variants)) {
         return fail({ code: "PGRST202", message: "admin_save_product() does not save gem options yet" });
       }
       if (product.customVariants && !Array.isArray(result.custom_variants)) {
         return fail({ code: "PGRST202", message: "admin_save_product() does not save variants yet" });
       }
+      if (product.familyId && !("family_id" in result)) {
+        return fail({ code: "PGRST202", message: "admin_save_product() does not save families yet" });
+      }
 
-      const fresh = await client.from("products").select(ADMIN_PRODUCT_SELECT).eq("id", result.id).single();
+      const select = familiesSupported.current ? ADMIN_PRODUCT_SELECT : ADMIN_PRODUCT_SELECT_BASE;
+      const fresh = await client.from("products").select(select).eq("id", result.id).single();
       if (fresh.error) return fail(fresh.error);
       const saved = rowToProduct(fresh.data as unknown as ProductRow, publicUrl);
       setProducts((prev) => [saved, ...prev.filter((p) => p.id !== saved.id)]);
