@@ -125,13 +125,18 @@ export function distributeSelection() {
   else notify("distributed");
 }
 
-/** Line the selected pieces up at one height (one line per arch), without moving them across their teeth. */
-export function alignSelection() {
-  const r = getEngine()?.alignSelectionHorizontally();
-  if (!r) notify("nothingToAlign", undefined, "info");
+/**
+ * Line the selected pieces up: 'h' at one height (one line per arch), moving
+ * them only up or down; 'v' on one vertical line seen from the front (across
+ * both arches), moving them only left or right.
+ */
+export function alignSelection(axis: "h" | "v" = "h") {
+  const engine = getEngine();
+  const r = axis === "h" ? engine?.alignSelectionHorizontally() : engine?.alignSelectionVertically();
+  if (!r) notify(axis === "h" ? "nothingToAlign" : "nothingToAlignV", undefined, "info");
   else if (!r.moved && r.skipped > 0) notify("alignNoRoom", undefined, "warning");
   else if (r.skipped > 0) notify("alignedPartial", { count: r.skipped }, "info");
-  else notify("aligned");
+  else notify(axis === "h" ? "aligned" : "alignedV");
 }
 
 /** Bring one or several pieces to the middle of their tooth. */
