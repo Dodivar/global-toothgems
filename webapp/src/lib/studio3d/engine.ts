@@ -149,8 +149,8 @@ interface SeatFrame {
 const OVERLAP_DEPTH = 1.5;
 /** Aligning moves a piece straight up or down: its snapped spot may sit at most this far from there (world units, ~mm). */
 const ALIGN_MAX_DRIFT = 3;
-/** Rays that look for the enamel "from the front" start this far forward (+Z, toward the viewer), well ahead of any model. */
-const FRONT_RAY_Z = 400;
+/** Aligning on screen may seat a piece this far past the edge of the facet it rests on (world units, ~mm). */
+const ALIGN_FACET_SLACK = 0.5;
 function poseOf(j: PlacedJewelry): GemPose {
   return { typeId: j.jewelryTypeId, scale: j.scale, offset: j.offset ?? 0, rotation: j.rotation };
 }
@@ -1645,44 +1645,87 @@ export class StudioEngine {
     return this.applyAlignedMoves(gems, planned, skipped);
   }
   /**
-   * Line the selected pieces up on one vertical line, as seen from the front,
-   * midway between the leftmost and rightmost piece (see `alignedColumn`) —
-   * across both arches, so a piece on 11 can sit right above one on 41.
-   * Pieces only slide left or right, keeping their height. A piece whose spot
-   * on that line is off its arch's enamel or taken stays where it is.
+   * Line the selected pieces up on one vertical line of the screen, exactly as
+   * the customer sees them now, midway between the leftmost and rightmost
+   * piece (see `alignedColumn`) — whatever tooth each one sits on, across
+   * both arches. Each piece only slides left or right on screen, keeping its
+   * on-screen height; the line is drawn through the pieces' visible centres,
+   * not their teeth. A piece whose spot on that line is off its arch's
+   * enamel (hidden behind the other arch), off screen or taken stays put.
    */
   alignSelectionVertically(): MoveResult | null {
     const ids = [...this.store.getSnapshot().selectedJewelIds];
     const gems = this.store.jewels.filter((j) => ids.includes(j.id));
     if (gems.length < 2) return null;
-    const targets = alignedColumn(gems.map((j) => ({ id: j.id, x: j.position.x })));
+    this.camera.updateMatrixWorld();
+    const onScreen = new Map(
+      gems.map((j) => {
+        const p = new THREE.Vector3(j.position.x, j.position.y, j.position.z);
+        const n = new THREE.Vector3(j.normal.x, j.normal.y, j.normal.z);
+        return [j.id, this.screenCentre(p, n, poseOf(j))] as const;
+      }),
+    );
+    const targets = alignedColumn(gems.map((j) => ({ id: j.id, x: onScreen.get(j.id)!.x })));
     if (!targets.size) return null;
     const archOf = (toothId: string, p: THREE.Vector3) => (this.toothRigs.get(toothId) ?? this.nearestRig(p))?.lower ?? false;
 
-    // Where each piece would land: the enamel met by a ray from the front at
-    // the piece's own height. A hit on the other arch (upper incisors overlap
-    // the lower ones) means that spot is hidden from the front: skipped.
     const planned = new Map<string, SurfaceHit>();
     let skipped = 0;
     for (const j of gems) {
-      const x = targets.get(j.id);
-      if (x === undefined || Math.abs(x - j.position.x) < 1e-4) continue;
+      const x = targets.get(j.id)!;
+      const at = onScreen.get(j.id)!;
+      if (Math.abs(x - at.x) < 1e-5) continue;
+      if (Math.abs(at.z) > 1) {
+        skipped++;
+        continue;
+      }
       const lower = archOf(j.toothId, new THREE.Vector3(j.position.x, j.position.y, j.position.z));
-      const hit = this.frontSurfaceAt(x, j.position.y);
+      const hit = this.surfaceSeenAt(x, at.y, poseOf(j));
       if (hit && archOf(hit.toothId, hit.point) === lower) planned.set(j.id, hit);
       else skipped++;
     }
     return this.applyAlignedMoves(gems, planned, skipped);
   }
-  /** The first enamel met straight from the front (looking down −Z) at (x, y). */
-  private frontSurfaceAt(x: number, y: number): SurfaceHit | null {
-    this.raycaster.set(new THREE.Vector3(x, y, FRONT_RAY_Z), _Z.clone().negate());
-    const hits = this.raycaster.intersectObjects(this.toothMeshes, true);
-    if (!hits.length) return null;
-    const h = hits[0];
-    const toothId = this.toothOfHit(h);
-    if (!toothId) return null;
-    return { toothId, point: h.point.clone(), normal: geometricWorldNormal(h, this.raycaster.ray.direction).clone() };
+  /** A piece's visible centre on screen, in normalized device coordinates (x, y in −1..1; |z| > 1 is off screen). */
+  private screenCentre(point: THREE.Vector3, normal: THREE.Vector3, pose: GemPose): THREE.Vector3 {
+    return this.gemCenterRaw(point, normal, pose.typeId, pose.scale, pose.offset).project(this.camera);
+  }
+  /**
+   * The spot on the enamel where a piece shows its centre exactly at (x, y) on
+   * screen (normalized device coordinates). The piece stands out from the
+   * enamel along its normal, so the camera ray is first nudged until the
+   * piece's centre, not its footing, lands near the point. That finds the
+   * facet the piece rests on, but pieces follow each facet's own normal, so
+   * their centre jumps a little from one facet to the next and nudging alone
+   * can hover a pixel off. The last step is exact: the centre is where the
+   * camera ray meets that facet's plane lifted by the piece's standoff, and
+   * the piece stays flush on the facet's plane.
+   */
+  private surfaceSeenAt(x: number, y: number, pose: GemPose): SurfaceHit | null {
+    const ndc = new THREE.Vector2(x, y);
+    let hit: SurfaceHit | null = null;
+    for (let i = 0; i < 4; i++) {
+      this.raycaster.setFromCamera(ndc, this.camera);
+      const hits = this.raycaster.intersectObjects(this.toothMeshes, true);
+      if (!hits.length) return null;
+      const toothId = this.toothOfHit(hits[0]);
+      if (!toothId) return null;
+      hit = { toothId, point: hits[0].point.clone(), normal: geometricWorldNormal(hits[0], this.raycaster.ray.direction).clone() };
+      const seen = this.screenCentre(hit.point, hit.normal, pose);
+      const dx = x - seen.x;
+      const dy = y - seen.y;
+      if (Math.abs(dx) < 1e-6 && Math.abs(dy) < 1e-6) return hit;
+      ndc.x += dx;
+      ndc.y += dy;
+    }
+    if (!hit) return null;
+    const standoff = this.gemCenterRaw(hit.point, hit.normal, pose.typeId, pose.scale, pose.offset).distanceTo(hit.point);
+    const lifted = new THREE.Plane().setFromNormalAndCoplanarPoint(hit.normal, hit.point.clone().addScaledVector(hit.normal, standoff));
+    this.raycaster.setFromCamera(new THREE.Vector2(x, y), this.camera);
+    const centre = this.raycaster.ray.intersectPlane(lifted, new THREE.Vector3());
+    // Past the facet by more than a hair means a grazing view: keep the nudged spot.
+    if (centre && centre.distanceTo(hit.point) < standoff + ALIGN_FACET_SLACK) hit.point = centre.addScaledVector(hit.normal, -standoff);
+    return hit;
   }
   /**
    * Commit the moves an alignment planned, in one undo step. Pieces that stay

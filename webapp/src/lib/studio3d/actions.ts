@@ -127,8 +127,8 @@ export function distributeSelection() {
 
 /**
  * Line the selected pieces up: 'h' at one height (one line per arch), moving
- * them only up or down; 'v' on one vertical line seen from the front (across
- * both arches), moving them only left or right.
+ * them only up or down; 'v' on one vertical line of the screen, as the
+ * customer sees them (across both arches), moving them only left or right.
  */
 export function alignSelection(axis: "h" | "v" = "h") {
   const engine = getEngine();
