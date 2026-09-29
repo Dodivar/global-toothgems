@@ -955,6 +955,55 @@ export type Database = {
           },
         ]
       }
+      creation_shares: {
+        Row: {
+          created_at: string
+          creation_id: string
+          id: string
+          revoked_at: string | null
+          token: string
+          user_id: string
+        }
+        Insert: {
+          created_at?: string
+          creation_id: string
+          id?: string
+          revoked_at?: string | null
+          token?: string
+          user_id?: string
+        }
+        Update: {
+          created_at?: string
+          creation_id?: string
+          id?: string
+          revoked_at?: string | null
+          token?: string
+          user_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "creation_shares_creation_id_fkey"
+            columns: ["creation_id"]
+            isOneToOne: false
+            referencedRelation: "creations"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "creation_shares_user_id_fkey"
+            columns: ["user_id"]
+            isOneToOne: false
+            referencedRelation: "loyalty_overview"
+            referencedColumns: ["user_id"]
+          },
+          {
+            foreignKeyName: "creation_shares_user_id_fkey"
+            columns: ["user_id"]
+            isOneToOne: false
+            referencedRelation: "profiles"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       creations: {
         Row: {
           created_at: string
@@ -6006,6 +6055,20 @@ export type Database = {
           team: string
           two_factor: boolean
           user_id: string
+        }[]
+      }
+      studio_revoke_creation_share: {
+        Args: { p_creation_id: string }
+        Returns: undefined
+      }
+      studio_share_creation: { Args: { p_creation_id: string }; Returns: string }
+      studio_shared_creation: {
+        Args: { p_token: string }
+        Returns: {
+          description: string
+          name: string
+          scene_data: Json
+          updated_at: string
         }[]
       }
       submit_contact_request: {

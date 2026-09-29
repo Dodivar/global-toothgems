@@ -1,5 +1,6 @@
 import { ESTIMATE_PRICING } from "../../data/studioEditor";
 import { uid } from "../studio3d/math";
+import { STUDIO_SHARE_PATH } from "../studioUrl";
 import { groupEstimateCents, sanitizeGroupData } from "./gemGroup";
 import {
   StudioStoreError,
@@ -11,6 +12,7 @@ import {
 } from "./repository";
 import { sanitizeScene, sceneStats } from "./scene";
 import { seedCreations, seedGroups } from "./seed";
+import { snapshotShareLink } from "./share";
 import type { Creation, FeedbackInput, GemGroup } from "./types";
 import { normalizeDetails, normalizeTags, validateDetails, validateFeedback } from "./validation";
 
@@ -242,6 +244,16 @@ export function createLocalRepositories(userId: string, opts: LocalRepositoryOpt
         file.creations.splice(findCreation(file, id), 1);
         write(file);
         writeThumb(id, null);
+      },
+      // Nothing here is on a server a token could point at: the link carries a snapshot of the design.
+      async shareLink(creation: Creation) {
+        return snapshotShareLink(creation, STUDIO_SHARE_PATH);
+      },
+      async existingShareLink(creation: Creation) {
+        return snapshotShareLink(creation, STUDIO_SHARE_PATH);
+      },
+      async revokeShare() {
+        // A snapshot link cannot be revoked; the dialog does not offer it.
       },
     },
 
