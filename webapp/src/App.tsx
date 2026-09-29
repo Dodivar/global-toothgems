@@ -17,8 +17,6 @@ import { ReviewsProvider } from "./lib/reviews";
 import { ReviewOverlays } from "./components/reviews/ReviewOverlays";
 import { Header } from "./components/layout/Header";
 import { Footer } from "./components/layout/Footer";
-import { HeaderEditorial } from "./components/layout/HeaderEditorial";
-import { FooterEditorial } from "./components/layout/FooterEditorial";
 import { MemberShell } from "./components/layout/MemberShell";
 import { isMemberSpacePath } from "./lib/memberSpace";
 import { HomeAlt } from "./pages/HomeAlt";
@@ -156,13 +154,6 @@ function DocumentLanguage() {
 }
 
 /**
- * The home page wears its own header and footer. `Header` and `Footer` render
- * outside `<Routes>`, so they are swapped here rather than restyled, which keeps
- * every other screen untouched.
- */
-const HOME_ROUTE = "/";
-
-/**
  * The administration workspace has its own chrome — a navigation rail and its
  * own header — so the storefront header and footer are left out entirely on
  * these routes. Prefix rather than exact match: every `/admin/...` screen,
@@ -187,7 +178,6 @@ const WORKSPACE_ROUTES = [STUDIO_EDITOR_PATH, STUDIO_SHARE_PATH];
 export default function App() {
   const { t } = useTranslation();
   const { pathname } = useLocation();
-  const editorial = pathname === HOME_ROUTE;
   const adminArea = pathname === ADMIN_ROUTE_PREFIX || pathname.startsWith(`${ADMIN_ROUTE_PREFIX}/`);
   const bareChrome = adminArea || pathname === MAINTENANCE_ROUTE;
   // The editor and its sections (`/studio-3d/atelier/mes-creations`…), and
@@ -233,17 +223,13 @@ export default function App() {
                       meet it before the page, though it sits at the bottom of
                       the screen. Not on the back office or maintenance chrome. */}
                   {!bareChrome && <CookieBanner />}
-                  {!bareChrome && !workspace && (editorial ? <HeaderEditorial /> : <Header />)}
+                  {!bareChrome && !workspace && <Header />}
                   <main id="main" tabIndex={-1}>
                     <Routes>
-<<<<<<< HEAD
-                      <Route path="/" element={<Home />} />
-=======
                       <Route path="/" element={<HomeAlt />} />
                       {/* The home page used to be previewed here while two art
                           directions were compared; keep the old link working. */}
                       <Route path="/accueil-b" element={<Navigate to="/" replace />} />
->>>>>>> origin/dev
                       <Route path="/boutique" element={<Shop />} />
                       {/* Alternative shop layout, compared against /boutique. Top
                           level for the same reason as /formes below. */}
@@ -491,7 +477,7 @@ export default function App() {
                       <Route path="*" element={<NotFound />} />
                     </Routes>
                   </main>
-                  {!bareChrome && !workspace && (editorial ? <FooterEditorial /> : <Footer />)}
+                  {!bareChrome && !workspace && <Footer />}
                   <CookieSettingsDialog />
                   <ReviewOverlays />
                 </ReviewsProvider>
