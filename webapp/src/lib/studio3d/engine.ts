@@ -31,6 +31,7 @@ import { ARCH_K, backOut, clamp, easeInOutCubic, pointInPolygon, seeded, ss01, u
 import { ARCH_FRAMES } from "./archLayout";
 import { anchorToothOf, groupToWorld, piecesToGroup, type Frame, type GemGroupData } from "../studioWorkspace/gemGroup";
 import type { SceneCamera, SceneModel } from "../studioWorkspace/scene";
+import { alignedHeights, centeredOffsets, type CenterItem } from "./layout";
 import { mirroredRotation, opposingTooth } from "./mirror";
 import { notify } from "./notices";
 import type { DesignIssue, DesignStore, LightPreset, ModelMode } from "./store";
@@ -146,6 +147,8 @@ interface SeatFrame {
 }
 /** Only outline points within this depth of the other piece's plane (in its local units) can overlap it. */
 const OVERLAP_DEPTH = 1.5;
+/** Aligning moves a piece straight up or down: its snapped spot may sit at most this far from there (world units, ~mm). */
+const ALIGN_MAX_DRIFT = 3;
 function poseOf(j: PlacedJewelry): GemPose {
   return { typeId: j.jewelryTypeId, scale: j.scale, offset: j.offset ?? 0, rotation: j.rotation };
 }
@@ -1603,24 +1606,101 @@ export class StudioEngine {
     this.store.applyPatches(updates);
     return { moved: updates.length, skipped };
   }
-  /** Set every selected piece to the crown equator of its tooth, keeping its
-       across-position (u) on that tooth. */
-  alignSelectionAtEquator(): MoveResult | null {
+  /**
+   * Line the selected pieces up on one horizontal line, each arch on its own
+   * (see `alignedHeights`). Pieces only move up or down — never toward the
+   * middle of their tooth. A piece whose spot on that line is off the enamel
+   * or taken stays where it is, so the others never end up off the line.
+   */
+  alignSelectionHorizontally(): MoveResult | null {
     const ids = [...this.store.getSnapshot().selectedJewelIds];
     const gems = this.store.jewels.filter((j) => ids.includes(j.id));
+    if (gems.length < 2) return null;
+    const posOf = (j: PlacedJewelry) => new THREE.Vector3(j.position.x, j.position.y, j.position.z);
+    const rigOf = (j: PlacedJewelry) => this.toothRigs.get(j.toothId) ?? this.nearestRig(posOf(j));
+    const targets = alignedHeights(gems.map((j) => ({ id: j.id, y: j.position.y, lower: rigOf(j)?.lower ?? false })));
+    if (!targets.size) return null;
+
+    // Where each piece would land: straight up or down, snapped back onto the
+    // enamel by a horizontal ray so the hit stays exactly on the line. A hit
+    // far from the piece, or on the other arch (past the biting edge, the ray
+    // can reach the teeth behind), means that height is off this crown.
+    const planned = new Map<string, SurfaceHit>();
+    let skipped = 0;
+    for (const j of gems) {
+      const y = targets.get(j.id);
+      if (y === undefined || Math.abs(y - j.position.y) < 1e-4) continue;
+      const lower = rigOf(j)?.lower ?? false;
+      const dir = new THREE.Vector3(j.normal.x, 0, j.normal.z);
+      if (dir.lengthSq() < 1e-6) dir.copy(rigOf(j)?.outward ?? _Z).setY(0);
+      if (dir.lengthSq() < 1e-6) dir.copy(_Z);
+      const start = new THREE.Vector3(j.position.x, y, j.position.z);
+      const hit = this.snapToSurface(start, dir.normalize());
+      const onArch = hit && (this.toothRigs.get(hit.toothId)?.lower ?? false) === lower;
+      if (hit && onArch && hit.point.distanceTo(start) < ALIGN_MAX_DRIFT) planned.set(j.id, hit);
+      else skipped++;
+    }
+
+    // Pieces that stay put block the ones that move; drop any move that would
+    // overlap, until every accepted move is clear.
+    const outside = this.blockersFor(new Set(ids));
+    for (let changed = true; changed; ) {
+      changed = false;
+      const blockers = [...outside, ...gems.filter((j) => !planned.has(j.id)).map((j) => this.jewelBlocker(j))];
+      for (const j of gems) {
+        const hit = planned.get(j.id);
+        if (!hit) continue;
+        if (this.hitBlocked(hit, poseOf(j), blockers)) {
+          planned.delete(j.id);
+          skipped++;
+          changed = true;
+          break;
+        }
+        blockers.push(this.blockerAt(hit.point, hit.normal, poseOf(j)));
+      }
+    }
+    if (!planned.size) return { moved: 0, skipped };
+    this.store.pushHistory();
+    this.store.applyPatches(
+      [...planned].map(([id, hit]) => ({
+        id,
+        patch: {
+          toothId: hit.toothId,
+          position: v3(hit.point.x, hit.point.y, hit.point.z),
+          normal: v3(hit.normal.x, hit.normal.y, hit.normal.z),
+        },
+      })),
+    );
+    return { moved: planned.size, skipped };
+  }
+  /**
+   * Bring every selected piece to the middle of its tooth: half-way up the
+   * crown and in the middle across it. Pieces sharing a tooth are centred as
+   * a cluster and keep their spacing (see `centeredOffsets`).
+   */
+  centerSelectionOnTeeth(ids: string[]): MoveResult | null {
+    const gems = this.store.jewels.filter((j) => ids.includes(j.id));
     if (!gems.length) return null;
+    const rigs = new Map<string, ToothRig>();
+    const offsets: CenterItem[] = [];
+    for (const j of gems) {
+      const p = new THREE.Vector3(j.position.x, j.position.y, j.position.z);
+      const rig = this.toothRigs.get(j.toothId) ?? this.nearestRig(p);
+      if (!rig) continue;
+      rigs.set(j.id, rig);
+      offsets.push({ id: j.id, toothId: rig.id, offset: p.sub(rig.center).dot(rig.tangent) });
+    }
+    const centred = centeredOffsets(offsets);
     const blockers = this.blockersFor(new Set(ids));
     const updates: { id: string; patch: Partial<PlacedJewelry> }[] = [];
     let skipped = 0;
     for (const j of gems) {
-      const p = new THREE.Vector3(j.position.x, j.position.y, j.position.z);
-      const rig = this.toothRigs.get(j.toothId) ?? this.nearestRig(p);
+      const rig = rigs.get(j.id);
       if (!rig) {
         skipped++;
         continue;
       }
-      const tOff = p.clone().sub(rig.center).dot(rig.tangent);
-      const u = clamp(tOff / (rig.spec.wHalf * 0.6), -1, 1);
+      const u = clamp((centred.get(j.id) ?? 0) / (rig.spec.wHalf * 0.6), -1, 1);
       const anchor = this.getSurfacePoint(rig.id, u, 0);
       const free = this.findFreeSpot(anchor, poseOf(j), blockers);
       if (!free) {
