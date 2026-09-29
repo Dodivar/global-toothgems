@@ -610,7 +610,7 @@ function ToothPanel({ snap, toothId }: { snap: StudioSnapshot; toothId: string }
         <p className="m-0 text-[46px] font-[var(--weight-black)] leading-[.95] tracking-[var(--tracking-display)] text-[var(--text-primary)]">
           #{toothId}
         </p>
-        <SectionInfo topic={toothName(toothId)} className="mt-1">
+        <SectionInfo topic={t("studio.editor.inspector.camera")} className="mt-1">
           {t("studio.editor.inspector.cameraHint")}
         </SectionInfo>
       </div>

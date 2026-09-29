@@ -129,6 +129,7 @@ export function distributeSelection() {
 export function alignSelection() {
   const r = getEngine()?.alignSelectionHorizontally();
   if (!r) notify("nothingToAlign", undefined, "info");
+  else if (!r.moved && r.skipped > 0) notify("alignNoRoom", undefined, "warning");
   else if (r.skipped > 0) notify("alignedPartial", { count: r.skipped }, "info");
   else notify("aligned");
 }
@@ -137,6 +138,7 @@ export function alignSelection() {
 export function centerOnTeeth(ids: string[]) {
   const r = getEngine()?.centerSelectionOnTeeth(ids);
   if (!r) notify("nothingToCenter", undefined, "info");
+  else if (!r.moved && r.skipped > 0) notify("centerNoRoom", undefined, "warning");
   else if (r.skipped > 0) notify("centeredPartial", { count: r.skipped }, "info");
   else notify("centered", { count: r.moved });
 }
