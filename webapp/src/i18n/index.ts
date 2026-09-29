@@ -20,14 +20,20 @@ import studioEn from "./locales/studio.en.json";
 // The Studio workspace around the editor (creations, Gem Groups, help), under `studio.workspace`.
 import studioWorkspaceFr from "./locales/studioWorkspace.fr.json";
 import studioWorkspaceEn from "./locales/studioWorkspace.en.json";
+// The alternative home page at /accueil-b, under `homeAlt`.
+import homeAltFr from "./locales/homeAlt.fr.json";
+import homeAltEn from "./locales/homeAlt.en.json";
+// The alternative shop page at /boutique-b, under `shopAlt`.
+import shopAltFr from "./locales/shopAlt.fr.json";
+import shopAltEn from "./locales/shopAlt.en.json";
 
 i18n
   .use(LanguageDetector)
   .use(initReactI18next)
   .init({
     resources: {
-      fr: { translation: { ...fr, promo: promoFr, reviews: reviewsFr, settings: settingsFr, studio: { ...studioFr, workspace: studioWorkspaceFr } } },
-      en: { translation: { ...en, promo: promoEn, reviews: reviewsEn, settings: settingsEn, studio: { ...studioEn, workspace: studioWorkspaceEn } } },
+      fr: { translation: { ...fr, promo: promoFr, reviews: reviewsFr, settings: settingsFr, studio: { ...studioFr, workspace: studioWorkspaceFr }, homeAlt: homeAltFr, shopAlt: shopAltFr } },
+      en: { translation: { ...en, promo: promoEn, reviews: reviewsEn, settings: settingsEn, studio: { ...studioEn, workspace: studioWorkspaceEn }, homeAlt: homeAltEn, shopAlt: shopAltEn } },
     },
     fallbackLng: "fr",
     supportedLngs: ["fr", "en"],

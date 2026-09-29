@@ -35,7 +35,7 @@ import {
 import type { ProductFilterState } from "../../lib/productFilters";
 
 /** The values a row can filter the list on, straight from the table. */
-export type RowFilterKey = "category" | "shape" | "color";
+export type RowFilterKey = "category" | "shape";
 
 /** Everything a row can ask the page to do. The page owns the consequences. */
 export interface ProductRowActions {
@@ -239,12 +239,8 @@ export function ProductRow({
               />
             )}
             {color && (
-              <FilterTag
-                active={filters.color === color}
-                label={colorLabel(color)}
-                media={<ColorMedia color={colorDef(color)} size={12} />}
-                onToggle={(on) => actions.onFilter("color", on ? color : "all")}
-              />
+              // Informative only: the colour is not a filter of this list.
+              <TagBody active={false} label={colorLabel(color)} media={<ColorMedia color={colorDef(color)} size={12} />} />
             )}
           </span>
         )}
@@ -352,7 +348,7 @@ function FilterToggle({
   );
 }
 
-/** Cut or colour of a gem, under its name: its drawing and name, as a filter toggle. */
+/** Cut of a gem, under its name: its drawing and name, as a filter toggle. */
 function FilterTag({
   active,
   label,
@@ -366,18 +362,25 @@ function FilterTag({
 }) {
   return (
     <FilterToggle active={active} label={label} onToggle={onToggle}>
-      <span
-        className={clsx(
-          "inline-flex max-w-full items-center gap-1 rounded-[var(--radius-pill)] border py-px pl-1 pr-2 text-[length:var(--text-caption)] leading-5 transition-colors",
-          active
-            ? "border-[var(--gt-ink-900)] bg-[var(--gt-blue-50)] font-semibold text-[var(--text-primary)]"
-            : "border-[var(--border-subtle)] bg-[var(--admin-panel)] text-[var(--text-body)]",
-        )}
-      >
-        <span className="grid h-4 w-4 flex-none place-items-center">{media}</span>
-        <span className="truncate">{label}</span>
-      </span>
+      <TagBody active={active} label={label} media={media} />
     </FilterToggle>
+  );
+}
+
+/** The drawing and name of a gem trait, with no behaviour of its own. */
+function TagBody({ active, label, media }: { active: boolean; label: string; media: ReactNode }) {
+  return (
+    <span
+      className={clsx(
+        "inline-flex max-w-full items-center gap-1 rounded-[var(--radius-pill)] border py-px pl-1 pr-2 text-[length:var(--text-caption)] leading-5 transition-colors",
+        active
+          ? "border-[var(--gt-ink-900)] bg-[var(--gt-blue-50)] font-semibold text-[var(--text-primary)]"
+          : "border-[var(--border-subtle)] bg-[var(--admin-panel)] text-[var(--text-body)]",
+      )}
+    >
+      <span className="grid h-4 w-4 flex-none place-items-center">{media}</span>
+      <span className="truncate">{label}</span>
+    </span>
   );
 }
 
