@@ -49,7 +49,7 @@ export function FilterDrawer({ filters, sort, products, onApply, onClose }: Filt
   const active = activeFilterCount(draft);
 
   return createPortal(
-    <div className="fixed inset-0 z-[300]">
+    <div className="fixed inset-0 z-[500]">
       <div aria-hidden="true" className="gt-shopb-backdrop absolute inset-0 bg-[rgba(17,17,17,.38)]" onClick={close} />
       <div
         ref={panelRef}
