@@ -26,9 +26,9 @@ export function alignedHeights(items: LevelItem[]): Map<string, number> {
 }
 
 /**
- * The across position (world X, left–right as seen from the front) each
- * piece is aligned to: a single vertical line for the whole selection, both
- * arches included, midway between the leftmost and the rightmost piece.
+ * The left–right position on screen each piece is aligned to: a single
+ * vertical line for the whole selection, both arches included, midway
+ * between the leftmost and the rightmost piece.
  */
 export function alignedColumn(items: { id: string; x: number }[]): Map<string, number> {
   const out = new Map<string, number>();
