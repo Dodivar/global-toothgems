@@ -15,6 +15,7 @@ import {
   ShieldCheck,
   ShoppingBag,
   Sparkles,
+  UserCog,
   UserRound,
   Users,
   X,
@@ -22,6 +23,7 @@ import {
 } from "lucide-react";
 import clsx from "clsx";
 import { useAuth } from "../../lib/auth";
+import { useAdminAuth } from "../../lib/adminAuth";
 import { useCart } from "../../lib/cart";
 import { useCommunity } from "../../lib/community";
 import { useCookieConsent } from "../../lib/cookieConsent";
@@ -176,6 +178,9 @@ function SidebarBody({ onNavigate, closeButton }: { onNavigate?: () => void; clo
   const { memberSince } = useOrders();
   const { count } = useCart();
   const { openSettings } = useCookieConsent();
+  /* Staff (any role the admin session accepts) get a way back to the back
+     office. Navigation only: `RequireAdmin` and RLS still decide access. */
+  const { signedIn: isStaff } = useAdminAuth();
 
   const leave = () => {
     onNavigate?.();
@@ -269,6 +274,19 @@ function SidebarBody({ onNavigate, closeButton }: { onNavigate?: () => void; clo
             <Cookie size={14} aria-hidden="true" />
             {t("account.shell.cookies")}
           </button>
+          {isStaff && (
+            <Link
+              to="/admin"
+              onClick={onNavigate}
+              className={clsx(
+                "inline-flex items-center gap-1.5 rounded-[var(--radius-pill)] px-2.5 py-1.5 text-[length:var(--text-caption)] font-semibold text-[var(--text-muted)] hover:bg-[var(--gt-ink-100)] hover:text-[var(--text-primary)]",
+                focusRing,
+              )}
+            >
+              <UserCog size={14} aria-hidden="true" />
+              {t("account.shell.adminSpace")}
+            </Link>
+          )}
           <button
             type="button"
             onClick={() => i18n.changeLanguage(i18n.language.startsWith("en") ? "fr" : "en")}
