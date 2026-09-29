@@ -2,6 +2,7 @@ import { useId, useRef, type ReactNode } from "react";
 import clsx from "clsx";
 import {
   AlignCenterHorizontal,
+  AlignCenterVertical,
   AlignHorizontalSpaceAround,
   ChevronDown,
   Copy,
@@ -342,6 +343,7 @@ function MultiPanel({ selected }: { selected: PlacedJewelry[] }) {
   const ids = selected.map((j) => j.id);
   const teethUsed = new Set(selected.map((j) => j.toothId)).size;
   const sharedCustom = selected.every((j) => j.customColor && j.customColor === first.customColor) ? first.customColor! : null;
+  const alignLabelId = useId();
 
   return (
     <>
@@ -408,20 +410,47 @@ function MultiPanel({ selected }: { selected: PlacedJewelry[] }) {
       />
 
       <SectionLabel info={t("studio.editor.inspector.layoutHint")}>{t("studio.editor.inspector.layout")}</SectionLabel>
-      <div className="flex gap-2">
+      <div role="group" aria-labelledby={alignLabelId} className="flex items-center gap-2">
+        <span id={alignLabelId} className="flex-none text-[11px] font-semibold text-[var(--text-muted)]">
+          {t("studio.editor.inspector.align")}
+        </span>
+        <button
+          type="button"
+          className={miniButton}
+          aria-label={t("studio.editor.inspector.alignHorizontalLabel")}
+          title={t("studio.editor.inspector.alignHorizontalLabel")}
+          onClick={() => alignSelection("h")}
+        >
+          <AlignCenterHorizontal size={14} aria-hidden="true" />
+          {t("studio.editor.inspector.alignHorizontal")}
+        </button>
+        <button
+          type="button"
+          className={miniButton}
+          aria-label={t("studio.editor.inspector.alignVerticalLabel")}
+          title={t("studio.editor.inspector.alignVerticalLabel")}
+          onClick={() => alignSelection("v")}
+        >
+          <AlignCenterVertical size={14} aria-hidden="true" />
+          {t("studio.editor.inspector.alignVertical")}
+        </button>
+      </div>
+      <div className="mt-2 flex gap-2">
         <button type="button" className={miniButton} onClick={distributeSelection}>
           <AlignHorizontalSpaceAround size={14} aria-hidden="true" />
           {t("studio.editor.inspector.distribute")}
         </button>
-        <button type="button" className={miniButton} onClick={alignSelection}>
-          <AlignCenterHorizontal size={14} aria-hidden="true" />
-          {t("studio.editor.inspector.align")}
+        <button
+          type="button"
+          className={miniButton}
+          aria-label={t("studio.editor.inspector.centerAll")}
+          title={t("studio.editor.inspector.centerAll")}
+          onClick={() => centerOnTeeth(ids)}
+        >
+          <Crosshair size={14} aria-hidden="true" />
+          {t("studio.editor.inspector.centerShort")}
         </button>
       </div>
-      <button type="button" className={clsx(miniButton, "mt-2 w-full")} onClick={() => centerOnTeeth(ids)}>
-        <Crosshair size={14} aria-hidden="true" />
-        {t("studio.editor.inspector.centerAll")}
-      </button>
 
       <SectionLabel info={t("studio.editor.mirror.hint")}>{t("studio.editor.mirror.label")}</SectionLabel>
       <MirrorRow />

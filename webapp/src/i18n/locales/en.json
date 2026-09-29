@@ -34,7 +34,9 @@
     "studio": "Studio 3D",
     "new": "New",
     "studioSub": "Design your own compositions",
-    "studioAria": "Studio 3D, new"
+    "studioAria": "Studio 3D, new",
+    "mySpace": "My space",
+    "explore": "Explore"
   },
   "common": {
     "notIncludedTitle": "Screen out of scope",
@@ -924,6 +926,14 @@
     "navCatalogue": "Course catalogue",
     "greeting": "Hi {{name}}",
     "memberSince": "Member since {{date}}",
+    "shell": {
+      "openMenu": "Open the member space menu",
+      "closeMenu": "Close the menu",
+      "menuLabel": "Member space menu",
+      "homeAlt": "Global Toothgems — home",
+      "help": "Help",
+      "cookies": "Cookies"
+    },
     "statsLabel": "Your account in numbers",
     "statCourses": "courses in progress",
     "statLessons": "lessons completed",

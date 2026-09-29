@@ -12,6 +12,7 @@
   "unfavorite": "Retirer {{name}} des favoris",
   "nav": {
     "label": "Espace Studio",
+    "explore": "Global Toothgems",
     "open": "Ouvrir le menu du Studio",
     "studio": "Studio 3D",
     "creations": "Mes créations",
@@ -26,14 +27,20 @@
       "creations": "Créations",
       "groups": "Groupes",
       "help": "Aide",
-      "feedback": "Avis"
+      "feedback": "Avis",
+      "shop": "Boutique",
+      "academy": "Academy",
+      "account": "Mon espace"
     },
     "desc": {
       "studio": "Revenir à la création en cours",
       "creations": "Vos créations enregistrées",
       "groups": "Assemblages de gemmes réutilisables",
       "help": "Apprendre le Studio pas à pas",
-      "feedback": "Dites-nous ce que vous en pensez"
+      "feedback": "Dites-nous ce que vous en pensez",
+      "shop": "Gems, outils et kits",
+      "academy": "Les formations",
+      "account": "Commandes, attestations, profil"
     }
   },
   "status": {

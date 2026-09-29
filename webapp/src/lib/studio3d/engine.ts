@@ -31,7 +31,7 @@ import { ARCH_K, backOut, clamp, easeInOutCubic, pointInPolygon, seeded, ss01, u
 import { ARCH_FRAMES } from "./archLayout";
 import { anchorToothOf, groupToWorld, piecesToGroup, type Frame, type GemGroupData } from "../studioWorkspace/gemGroup";
 import type { SceneCamera, SceneModel } from "../studioWorkspace/scene";
-import { alignedHeights, centeredOffsets, type CenterItem } from "./layout";
+import { alignedColumn, alignedHeights, centeredOffsets, type CenterItem } from "./layout";
 import { mirroredRotation, opposingTooth } from "./mirror";
 import { notify } from "./notices";
 import type { DesignIssue, DesignStore, LightPreset, ModelMode } from "./store";
@@ -149,6 +149,8 @@ interface SeatFrame {
 const OVERLAP_DEPTH = 1.5;
 /** Aligning moves a piece straight up or down: its snapped spot may sit at most this far from there (world units, ~mm). */
 const ALIGN_MAX_DRIFT = 3;
+/** Rays that look for the enamel "from the front" start this far forward (+Z, toward the viewer), well ahead of any model. */
+const FRONT_RAY_Z = 400;
 function poseOf(j: PlacedJewelry): GemPose {
   return { typeId: j.jewelryTypeId, scale: j.scale, offset: j.offset ?? 0, rotation: j.rotation };
 }
@@ -1640,10 +1642,55 @@ export class StudioEngine {
       if (hit && onArch && hit.point.distanceTo(start) < ALIGN_MAX_DRIFT) planned.set(j.id, hit);
       else skipped++;
     }
+    return this.applyAlignedMoves(gems, planned, skipped);
+  }
+  /**
+   * Line the selected pieces up on one vertical line, as seen from the front,
+   * midway between the leftmost and rightmost piece (see `alignedColumn`) —
+   * across both arches, so a piece on 11 can sit right above one on 41.
+   * Pieces only slide left or right, keeping their height. A piece whose spot
+   * on that line is off its arch's enamel or taken stays where it is.
+   */
+  alignSelectionVertically(): MoveResult | null {
+    const ids = [...this.store.getSnapshot().selectedJewelIds];
+    const gems = this.store.jewels.filter((j) => ids.includes(j.id));
+    if (gems.length < 2) return null;
+    const targets = alignedColumn(gems.map((j) => ({ id: j.id, x: j.position.x })));
+    if (!targets.size) return null;
+    const archOf = (toothId: string, p: THREE.Vector3) => (this.toothRigs.get(toothId) ?? this.nearestRig(p))?.lower ?? false;
 
-    // Pieces that stay put block the ones that move; drop any move that would
-    // overlap, until every accepted move is clear.
-    const outside = this.blockersFor(new Set(ids));
+    // Where each piece would land: the enamel met by a ray from the front at
+    // the piece's own height. A hit on the other arch (upper incisors overlap
+    // the lower ones) means that spot is hidden from the front: skipped.
+    const planned = new Map<string, SurfaceHit>();
+    let skipped = 0;
+    for (const j of gems) {
+      const x = targets.get(j.id);
+      if (x === undefined || Math.abs(x - j.position.x) < 1e-4) continue;
+      const lower = archOf(j.toothId, new THREE.Vector3(j.position.x, j.position.y, j.position.z));
+      const hit = this.frontSurfaceAt(x, j.position.y);
+      if (hit && archOf(hit.toothId, hit.point) === lower) planned.set(j.id, hit);
+      else skipped++;
+    }
+    return this.applyAlignedMoves(gems, planned, skipped);
+  }
+  /** The first enamel met straight from the front (looking down −Z) at (x, y). */
+  private frontSurfaceAt(x: number, y: number): SurfaceHit | null {
+    this.raycaster.set(new THREE.Vector3(x, y, FRONT_RAY_Z), _Z.clone().negate());
+    const hits = this.raycaster.intersectObjects(this.toothMeshes, true);
+    if (!hits.length) return null;
+    const h = hits[0];
+    const toothId = this.toothOfHit(h);
+    if (!toothId) return null;
+    return { toothId, point: h.point.clone(), normal: geometricWorldNormal(h, this.raycaster.ray.direction).clone() };
+  }
+  /**
+   * Commit the moves an alignment planned, in one undo step. Pieces that stay
+   * put block the ones that move; any move that would overlap is dropped
+   * (and counted as skipped) until every accepted move is clear.
+   */
+  private applyAlignedMoves(gems: PlacedJewelry[], planned: Map<string, SurfaceHit>, skipped: number): MoveResult {
+    const outside = this.blockersFor(new Set(gems.map((j) => j.id)));
     for (let changed = true; changed; ) {
       changed = false;
       const blockers = [...outside, ...gems.filter((j) => !planned.has(j.id)).map((j) => this.jewelBlocker(j))];

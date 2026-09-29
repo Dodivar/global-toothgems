@@ -1,5 +1,5 @@
 import { describe, expect, it } from "vitest";
-import { alignedHeights, centeredOffsets } from "./layout";
+import { alignedColumn, alignedHeights, centeredOffsets } from "./layout";
 
 describe("alignedHeights", () => {
   it("lines pieces up midway between the highest and the lowest", () => {
@@ -52,5 +52,20 @@ describe("centeredOffsets", () => {
     ]);
     expect(out.get("a")).toBe(-1);
     expect(out.get("b")).toBe(1);
+  });
+});
+
+describe("alignedColumn", () => {
+  it("puts every piece, on either arch, midway between the leftmost and the rightmost", () => {
+    const out = alignedColumn([
+      { id: "a", x: -4 },
+      { id: "b", x: 2 },
+      { id: "c", x: 0 },
+    ]);
+    expect([...out.values()]).toEqual([-1, -1, -1]);
+  });
+
+  it("needs at least two pieces", () => {
+    expect(alignedColumn([{ id: "a", x: 3 }]).size).toBe(0);
   });
 });

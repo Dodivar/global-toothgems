@@ -51,7 +51,7 @@ export function Discussion() {
   };
 
   return (
-    <div className="grid items-start gap-[clamp(20px,3vw,32px)] xl:grid-cols-[minmax(0,1fr)_296px]">
+    <div className="grid items-start gap-[clamp(20px,3vw,32px)] 2xl:grid-cols-[minmax(0,1fr)_296px]">
       <div className="grid min-w-0 gap-[clamp(18px,3vw,28px)]">
         <nav aria-label={t("community.breadcrumbLabel")}>
           <ol className="m-0 flex flex-wrap items-center gap-1.5 p-0 text-[length:var(--text-caption)] text-[var(--text-muted)]">
@@ -166,7 +166,7 @@ export function Discussion() {
         </section>
       </div>
 
-      <aside className="grid gap-4 xl:sticky xl:top-[92px]">
+      <aside className="grid gap-4 2xl:sticky 2xl:top-6">
         <section className={clsx("grid gap-3.5 p-[var(--space-5)]", cardBase)}>
           <h2 className="gt-eyebrow">{t("community.aboutAuthor")}</h2>
           <div className="flex items-center gap-3">
