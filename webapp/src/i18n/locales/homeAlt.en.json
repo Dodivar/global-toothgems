@@ -141,6 +141,8 @@
     "perk3Value": "{{percent}}% off",
     "perk3Label": "your next order",
     "chip": "+1 stamp",
+    "pause": "Pause the card animation",
+    "play": "Play the card animation",
     "cta": "Discover the loyalty program"
   },
   "newsletter": {

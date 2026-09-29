@@ -141,6 +141,8 @@
     "perk3Value": "−{{percent}} %",
     "perk3Label": "sur la commande suivante",
     "chip": "+1 tampon",
+    "pause": "Mettre en pause l’animation de la carte",
+    "play": "Relancer l’animation de la carte",
     "cta": "Découvrir le programme fidélité"
   },
   "newsletter": {
