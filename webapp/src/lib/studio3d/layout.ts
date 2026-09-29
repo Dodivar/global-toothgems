@@ -25,6 +25,20 @@ export function alignedHeights(items: LevelItem[]): Map<string, number> {
   return out;
 }
 
+/**
+ * The across position (world X, left–right as seen from the front) each
+ * piece is aligned to: a single vertical line for the whole selection, both
+ * arches included, midway between the leftmost and the rightmost piece.
+ */
+export function alignedColumn(items: { id: string; x: number }[]): Map<string, number> {
+  const out = new Map<string, number>();
+  if (items.length < 2) return out;
+  const xs = items.map((i) => i.x);
+  const target = (Math.min(...xs) + Math.max(...xs)) / 2;
+  for (const i of items) out.set(i.id, target);
+  return out;
+}
+
 export interface CenterItem {
   id: string;
   toothId: string;

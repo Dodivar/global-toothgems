@@ -2,7 +2,16 @@ import { afterEach, describe, expect, it, vi } from "vitest";
 import type { PlacedJewelry } from "../../data/studioEditor";
 import { DesignStore } from "../studio3d/store";
 import { createScene } from "./scene";
-import { decodeSharedDesign, encodeSharedDesign, SHARE_JSON_MAX_BYTES, SHARE_TOKEN_MAX_CHARS } from "./share";
+import {
+  decodeSharedDesign,
+  encodeSharedDesign,
+  parseSharedCreation,
+  SHARE_JSON_MAX_BYTES,
+  SHARE_TOKEN_MAX_CHARS,
+  SHARE_TOKEN_PATTERN,
+  snapshotShareLink,
+  storedShareLink,
+} from "./share";
 
 const piece = (over: Partial<PlacedJewelry> = {}): PlacedJewelry => ({
   id: "a",
@@ -128,5 +137,46 @@ describe("a store for viewing only", () => {
     } finally {
       vi.useRealTimers();
     }
+  });
+});
+
+describe("stored share links", () => {
+  const token = "0123456789abcdef".repeat(3);
+
+  it("points a live, revocable link at the token", () => {
+    expect(SHARE_TOKEN_PATTERN.test(token)).toBe(true);
+    expect(storedShareLink(token, "/studio-3d/partage", "https://example.test")).toEqual({
+      url: `https://example.test/studio-3d/partage/${token}`,
+      live: true,
+      revocable: true,
+    });
+  });
+
+  it("accepts only the 48-hex tokens the database mints", () => {
+    for (const bad of ["", token.slice(1), `${token}0`, token.toUpperCase(), `${token.slice(0, 47)}g`, "../../creations"]) {
+      expect(SHARE_TOKEN_PATTERN.test(bad)).toBe(false);
+    }
+  });
+
+  it("keeps snapshot links neither live nor revocable", async () => {
+    const link = await snapshotShareLink({ name: "Pair", description: "", scene }, "/studio-3d/partage", "https://example.test");
+    expect(link.live).toBe(false);
+    expect(link.revocable).toBe(false);
+    expect(link.url.startsWith("https://example.test/studio-3d/partage#")).toBe(true);
+  });
+
+  it("reads the shared creation defensively", () => {
+    const back = parseSharedCreation({ name: "  Crystal \n Smile ", description: " Two ", scene_data: scene, updated_at: "2026-09-29" });
+    expect(back?.name).toBe("Crystal Smile");
+    expect(back?.description).toBe("Two");
+    expect(back?.scene.pieces).toHaveLength(2);
+    expect(parseSharedCreation({ name: "x".repeat(500), description: "", scene_data: scene })?.name.length).toBeLessThanOrEqual(60);
+  });
+
+  it("refuses rows that are missing or from an unknown scene version", () => {
+    expect(parseSharedCreation(null)).toBeNull();
+    expect(parseSharedCreation(undefined)).toBeNull();
+    expect(parseSharedCreation({ name: "x", scene_data: null })).toBeNull();
+    expect(parseSharedCreation({ name: "x", scene_data: { ...scene, version: 99 } })).toBeNull();
   });
 });

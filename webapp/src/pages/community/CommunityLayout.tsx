@@ -1,7 +1,5 @@
 import { useTranslation } from "react-i18next";
-import { Link, Outlet } from "react-router-dom";
-import { ArrowLeft } from "lucide-react";
-import clsx from "clsx";
+import { Outlet } from "react-router-dom";
 import { useCommunity } from "../../lib/community";
 import { MemberProfileProvider } from "../../components/community/MemberProfile";
 import { ComposerProvider, StartDiscussionButton } from "../../components/community/NewDiscussion";
@@ -10,16 +8,15 @@ import { MemberAvatar } from "../../components/community/MemberAvatar";
 import { MemberBadges } from "../../components/community/MemberBadges";
 import { AccessDemoSwitch } from "../../components/community/AccessDemoSwitch";
 import { LockedCommunity } from "../../components/community/LockedCommunity";
-import { focusRing } from "../../components/community/styles";
 
 /**
  * Shell of the Artist Community.
  *
- * The community is part of the member area — it is reached from the account
- * sidebar and it lives under `/compte` — but it does not nest inside that
- * sidebar: a screen with two levels of vertical navigation is what makes forum
- * software feel like software. It swaps the account's navigation for its own
- * and keeps one link back, the way a workspace does.
+ * The community is part of the member area — it lives under `/compte` and
+ * inside the same `MemberShell`, whose sidebar marks it as the current
+ * section and is the way back to the rest of the account. Its channels are a
+ * column of this page, not a second sidebar level: they only sit beside the
+ * content on wide screens, and are a row above it otherwise.
  *
  * Access is decided here rather than per page, for the same reason
  * `RequireAccount` guards the account layout rather than each button: a deep
@@ -58,32 +55,24 @@ export function CommunityLayout() {
   return (
     <MemberProfileProvider>
       <ComposerProvider>
-        <div className="mx-auto grid max-w-[var(--max-width-account)] grid-cols-1 items-start gap-[clamp(20px,3vw,40px)] px-[clamp(14px,4vw,48px)] py-[clamp(20px,4vw,40px)] lg:grid-cols-[248px_minmax(0,1fr)]">
-          <aside className="grid gap-4 lg:sticky lg:top-[92px]">
-            <Link
-              to="/compte"
-              className={clsx(
-                "inline-flex w-fit items-center gap-2 rounded-[var(--radius-pill)] py-1 text-[length:var(--text-caption)] font-semibold uppercase tracking-[var(--tracking-wide)] text-[var(--text-muted)] transition-colors hover:text-[var(--text-primary)]",
-                focusRing,
-              )}
-            >
-              <ArrowLeft size={14} aria-hidden="true" />
-              {t("community.backToAccount")}
-            </Link>
-
+        {/* Inside the member-space shell, whose sidebar already takes the
+            left edge: the channel column only opens beside the page from
+            `xl`, below that the channels are a row above it. */}
+        <div className="mx-auto grid w-full min-w-0 max-w-[var(--max-width-account)] grid-cols-1 items-start gap-[clamp(20px,3vw,40px)] px-[clamp(14px,4vw,48px)] py-[clamp(20px,4vw,40px)] xl:grid-cols-[248px_minmax(0,1fr)]">
+          <aside className="grid gap-4 xl:sticky xl:top-6">
             {identity}
 
             <StartDiscussionButton fullWidth />
 
             <CommunitySidebar />
 
-            <AccessDemoSwitch className="hidden lg:grid" />
+            <AccessDemoSwitch className="hidden xl:grid" />
           </aside>
 
           <div className="grid min-w-0 gap-[clamp(20px,3vw,32px)]">
             <CommunityMobileNav />
             <Outlet />
-            <AccessDemoSwitch className="lg:hidden" />
+            <AccessDemoSwitch className="xl:hidden" />
           </div>
         </div>
       </ComposerProvider>

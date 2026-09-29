@@ -8,6 +8,7 @@ import { useFocusTrap } from "../../../lib/useFocusTrap";
 import { STUDIO_PATH, studioSectionPath, type StudioSection } from "../../../lib/studioUrl";
 import { useWorkspace } from "../../../lib/studioWorkspace/workspace";
 import { openWorkspaceDialog } from "../../../lib/studioWorkspace/workspaceUi";
+import { STUDIO_EXPLORE, type ClientSpace } from "../../layout/clientSpaces";
 import { focusRing } from "./workspaceStyles";
 
 interface NavItem {
@@ -44,7 +45,7 @@ export function StudioSidebar({
     <>
       <nav
         aria-label={t("studio.workspace.nav.label")}
-        className="relative z-30 hidden w-[84px] flex-none flex-col items-center border-r border-[var(--border-subtle)] bg-[var(--surface-card)] py-3 lg:flex"
+        className="relative z-30 hidden w-[84px] flex-none flex-col items-center overflow-y-auto overscroll-contain border-r border-[var(--border-subtle)] bg-[var(--surface-card)] py-3 lg:flex"
       >
         <RailContent section={section} />
       </nav>
@@ -133,21 +134,62 @@ function RailContent({ section }: { section: StudioSection | null }) {
           </span>
           <span className="text-[10.5px] font-semibold leading-tight">{t("studio.workspace.nav.short.feedback")}</span>
         </button>
-        <Link
-          to={signedIn ? "/compte" : "/connexion"}
-          state={signedIn ? undefined : { from: pathname }}
-          aria-label={signedIn ? t("studio.workspace.nav.account") : t("studio.workspace.signIn.cta")}
-          title={signedIn ? t("studio.workspace.nav.account") : t("studio.workspace.signIn.cta")}
-          className={clsx(
-            "mt-1 grid h-9 w-9 place-items-center rounded-full text-[11px] font-bold transition-colors",
-            signedIn ? "bg-[var(--gt-blue-100)] text-[var(--gt-blue-700)] hover:bg-[var(--gt-blue-200)]" : "border border-[var(--border-default)] text-[var(--gt-ink-600)] hover:bg-[var(--gt-ink-100)]",
-            focusRing,
-          )}
-        >
-          {signedIn ? initials : <UserRound size={16} aria-hidden="true" />}
-        </Link>
+        {/* The rest of the site, set apart from the Studio's own entries: the
+            same destinations, icons and order as the member-space sidebar. */}
+        <span aria-hidden="true" className="my-1 h-px w-10 bg-[var(--border-subtle)]" />
+        <ul aria-label={t("studio.workspace.nav.explore")} className="m-0 grid w-full list-none gap-1 p-0">
+          {STUDIO_EXPLORE.map((space) => (
+            <li key={space.id}>
+              <RailSpaceLink space={space} />
+            </li>
+          ))}
+          <li>
+            <Link
+              to={signedIn ? "/compte" : "/connexion"}
+              state={signedIn ? undefined : { from: pathname }}
+              className={clsx(
+                "group/nav flex w-full flex-col items-center gap-1 rounded-[var(--radius-md)] px-1 py-2 text-[var(--gt-ink-600)] transition-colors hover:text-[var(--gt-ink-900)]",
+                focusRing,
+              )}
+            >
+              <span
+                aria-hidden="true"
+                className={clsx(
+                  "grid h-8 w-8 place-items-center rounded-full text-[11px] font-bold transition-colors",
+                  signedIn
+                    ? "bg-[var(--gt-blue-100)] text-[var(--gt-blue-700)] group-hover/nav:bg-[var(--gt-blue-200)]"
+                    : "border border-[var(--border-default)] group-hover/nav:bg-[var(--gt-ink-100)]",
+                )}
+              >
+                {signedIn ? initials : <UserRound size={16} />}
+              </span>
+              <span className="text-[10.5px] font-semibold leading-tight">
+                {signedIn ? t("studio.workspace.nav.short.account") : t("nav.signIn")}
+              </span>
+            </Link>
+          </li>
+        </ul>
       </div>
     </>
+  );
+}
+
+/** A destination outside the Studio, drawn like the rail's own entries but never current. */
+function RailSpaceLink({ space }: { space: ClientSpace }) {
+  const { t } = useTranslation();
+  return (
+    <Link
+      to={space.to}
+      className={clsx(
+        "group/nav flex w-full flex-col items-center gap-1 rounded-[var(--radius-md)] px-1 py-2 text-center text-[var(--gt-ink-600)] transition-colors hover:text-[var(--gt-ink-900)]",
+        focusRing,
+      )}
+    >
+      <span className="grid h-8 w-12 place-items-center rounded-[var(--radius-pill)] transition-colors duration-[var(--duration-fast)] group-hover/nav:bg-[var(--gt-ink-100)]">
+        <space.icon size={18} aria-hidden="true" strokeWidth={1.8} />
+      </span>
+      <span className="text-[10.5px] font-semibold leading-tight">{t(`studio.workspace.nav.short.${space.id}`)}</span>
+    </Link>
   );
 }
 
@@ -232,14 +274,32 @@ function Drawer({ section, onClose }: { section: StudioSection | null; onClose: 
           </li>
         </ul>
         <div className="mt-auto grid gap-1 border-t border-[var(--border-subtle)] p-3">
+          <span className="gt-eyebrow px-3 pb-1 pt-1">{t("studio.workspace.nav.explore")}</span>
+          {STUDIO_EXPLORE.map((space) => (
+            <Link
+              key={space.id}
+              to={space.to}
+              onClick={onClose}
+              className={clsx("flex items-center gap-3 rounded-[var(--radius-md)] px-3 py-2.5 text-[var(--gt-ink-700)] hover:bg-[var(--gt-ink-100)]", focusRing)}
+            >
+              <space.icon size={18} aria-hidden="true" />
+              <span className="grid min-w-0">
+                <span className="text-[13.5px] font-semibold">{t(space.labelKey)}</span>
+                <span className="truncate text-[11.5px] text-[var(--text-muted)]">{t(`studio.workspace.nav.desc.${space.id}`)}</span>
+              </span>
+            </Link>
+          ))}
           <Link
             to={signedIn ? "/compte" : "/connexion"}
             state={signedIn ? undefined : { from: pathname }}
             onClick={onClose}
-            className={clsx("flex items-center gap-3 rounded-[var(--radius-md)] px-3 py-2.5 text-[13.5px] font-semibold text-[var(--gt-ink-700)] hover:bg-[var(--gt-ink-100)]", focusRing)}
+            className={clsx("flex items-center gap-3 rounded-[var(--radius-md)] px-3 py-2.5 text-[var(--gt-ink-700)] hover:bg-[var(--gt-ink-100)]", focusRing)}
           >
             <UserRound size={18} aria-hidden="true" />
-            {signedIn ? t("studio.workspace.nav.account") : t("studio.workspace.signIn.cta")}
+            <span className="grid min-w-0">
+              <span className="text-[13.5px] font-semibold">{signedIn ? t("nav.mySpace") : t("studio.workspace.signIn.cta")}</span>
+              {signedIn && <span className="truncate text-[11.5px] text-[var(--text-muted)]">{t("studio.workspace.nav.desc.account")}</span>}
+            </span>
           </Link>
           <Link
             to={STUDIO_PATH}

@@ -26,7 +26,7 @@ export function Header() {
   const navigate = useNavigate();
   const location = useLocation();
   const { count } = useCart();
-  const { signedIn } = useAuth();
+  const { signedIn, initials } = useAuth();
   const { showToast } = useToast();
   const lang = i18n.language;
 
@@ -206,7 +206,23 @@ export function Header() {
           <div className="flex items-center gap-1">
             {langButton}
             <IconButton icon={Search} label={t("nav.search")} onClick={notIncluded} />
-            <IconButton icon={User} label={signedIn ? t("nav.account") : t("nav.signIn")} onClick={openAccount} />
+            {signedIn ? (
+              /* Signed in, the account is a named place — "My space", with the
+                 member's initials — rather than an anonymous person icon: it is
+                 the way back to the member space's own sidebar. */
+              <Link
+                to="/compte"
+                onClick={closeAll}
+                className="mx-1 inline-flex items-center gap-2 rounded-[var(--radius-pill)] border border-[var(--border-subtle)] bg-[var(--surface-card)] py-1 pl-1 pr-3 text-xs font-semibold uppercase tracking-[var(--tracking-wide)] text-[var(--text-primary)] transition-colors hover:border-[var(--gt-blue-300)]"
+              >
+                <span aria-hidden="true" className="grid h-7 w-7 place-items-center rounded-full bg-[var(--surface-brand)] text-[10.5px] font-[var(--weight-black)] text-[var(--gt-ink-900)]">
+                  {initials}
+                </span>
+                {t("nav.mySpace")}
+              </Link>
+            ) : (
+              <IconButton icon={User} label={t("nav.signIn")} onClick={openAccount} />
+            )}
             <IconButton
               icon={ShoppingBag}
               label={cartLabel}
@@ -284,7 +300,7 @@ export function Header() {
             <img src={logoBlack} alt="Global Toothgems" className="h-4 w-auto" />
           </Link>
           <IconButton icon={Heart} label={t("nav.wishlist")} onClick={notIncluded} />
-          <IconButton icon={User} label={signedIn ? t("nav.account") : t("nav.signIn")} onClick={openAccount} />
+          <IconButton icon={User} label={signedIn ? t("nav.mySpace") : t("nav.signIn")} onClick={openAccount} />
           <IconButton icon={ShoppingBag} label={cartLabel} badge={count} onClick={() => navigate("/panier")} />
         </div>
         {menuOpen && (

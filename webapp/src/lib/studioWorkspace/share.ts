@@ -2,20 +2,19 @@ import { sanitizeScene, SCENE_VERSION, type StudioScene } from "./scene";
 import { DESCRIPTION_MAX, NAME_MAX } from "./validation";
 
 /**
- * Read-only share links for Studio designs.
+ * Read-only share links for Studio designs, in two forms.
  *
- * While the workspace keeps creations in the author's browser (see
- * `workspace.tsx`, `createRepositories`), there is no server copy a token
- * could point at: another customer's browser would find nothing. So the link
- * carries the design itself — a SNAPSHOT of the scene, its name and its
- * description — in the URL fragment (`/studio-3d/partage#z1.…`). The fragment
- * is never sent to a server, so the design does not land in any request log.
+ * STORED links (`/studio-3d/partage/<token>`): for creations saved in
+ * Supabase. The token points at a `creation_shares` row; guests read the
+ * creation through the `studio_shared_creation` function only, and the owner
+ * can disable the link. They always show the latest saved version.
  *
- * Consequences, stated in the share dialog: later edits do not reach a link
- * already sent, and a link cannot be revoked. When creations move to Supabase,
- * a `creation_shares` table (random token, owner, revoked_at) read through a
- * security-definer function can replace this module behind the same two
- * functions, without the viewer changing.
+ * SNAPSHOT links (`/studio-3d/partage#z1.…`): the design itself — scene, name
+ * and description — in the URL fragment, which is never sent to a server.
+ * Used by the local demo library, which has no server copy a token could
+ * point at, and as the fallback until the share table exists. Later edits do
+ * not reach a snapshot already sent, and it cannot be revoked. Links of this
+ * form already sent keep opening.
  *
  * Only what the viewer needs travels: never the owner's id, the client name
  * typed in the editor, tags or the thumbnail. What comes back is untrusted
@@ -149,6 +148,49 @@ export async function encodeSharedDesign(design: SharedDesign): Promise<string> 
 /** The full link to send: `https://…/studio-3d/partage#z1.…`. */
 export async function createShareUrl(design: SharedDesign, sharePath: string, origin = window.location.origin): Promise<string> {
   return `${origin}${sharePath}#${await encodeSharedDesign(design)}`;
+}
+
+/* ---------------------------------------------------------- stored links */
+
+/**
+ * A link as the share dialog shows it. Stored links
+ * (`/studio-3d/partage/<token>`, `creation_shares` in Supabase) are `live` —
+ * they always open the creation's latest saved version — and `revocable`.
+ * Snapshot links (the fragment form above) are neither: they are what a local
+ * demo library can offer, and the fallback until the share table exists.
+ */
+export interface ShareLink {
+  url: string;
+  live: boolean;
+  revocable: boolean;
+}
+
+/** A stored link's token: 24 random bytes in hex, as `creation_shares.token` mints them. */
+export const SHARE_TOKEN_PATTERN = /^[0-9a-f]{48}$/;
+
+export function storedShareLink(token: string, sharePath: string, origin = window.location.origin): ShareLink {
+  return { url: `${origin}${sharePath}/${token}`, live: true, revocable: true };
+}
+
+export async function snapshotShareLink(design: SharedDesign, sharePath: string, origin = window.location.origin): Promise<ShareLink> {
+  return { url: await createShareUrl(design, sharePath, origin), live: false, revocable: false };
+}
+
+/**
+ * The creation a stored link opens, from `studio_shared_creation` — untrusted
+ * like a fragment: capped and sanitised the same way. Null when the row is
+ * missing or unreadable.
+ */
+export function parseSharedCreation(row: unknown): SharedDesign | null {
+  if (!row || typeof row !== "object") return null;
+  const r = row as Record<string, unknown>;
+  if (!r.scene_data || typeof r.scene_data !== "object") return null;
+  if ((r.scene_data as Record<string, unknown>).version !== SCENE_VERSION) return null;
+  return {
+    name: typeof r.name === "string" ? r.name.replace(/\s+/g, " ").trim().slice(0, NAME_MAX) : "",
+    description: typeof r.description === "string" ? r.description.trim().slice(0, DESCRIPTION_MAX) : "",
+    scene: sanitizeScene(r.scene_data),
+  };
 }
 
 /**

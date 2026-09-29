@@ -12,6 +12,7 @@
   "unfavorite": "Remove {{name}} from favourites",
   "nav": {
     "label": "Studio workspace",
+    "explore": "Global Toothgems",
     "open": "Open the Studio menu",
     "studio": "3D Studio",
     "creations": "My Creations",
@@ -26,14 +27,20 @@
       "creations": "Creations",
       "groups": "Groups",
       "help": "Help",
-      "feedback": "Feedback"
+      "feedback": "Feedback",
+      "shop": "Shop",
+      "academy": "Academy",
+      "account": "My space"
     },
     "desc": {
       "studio": "Back to the design on the stage",
       "creations": "Your saved designs",
       "groups": "Reusable gem arrangements",
       "help": "Learn the Studio step by step",
-      "feedback": "Tell us how it feels"
+      "feedback": "Tell us how it feels",
+      "shop": "Gems, tools and kits",
+      "academy": "The trainings",
+      "account": "Orders, certificates, profile"
     }
   },
   "status": {
@@ -371,6 +378,7 @@
     "opened": "“{{name}}” is on the stage",
     "duplicated": "“{{name}}” created",
     "deleted": "“{{name}}” deleted",
+    "shareRevoked": "Link to “{{name}}” disabled: it no longer opens the design",
     "groupSaved": "Gem group saved",
     "groupNeedsTwo": "Select at least two gems to make a group.",
     "groupNoRoom": "No room for this group here — try another tooth.",
@@ -397,6 +405,14 @@
     "noteReadOnly": "Anyone with the link can view this design in 3D, with or without an account. Nobody can edit it or reach your other creations.",
     "noteSnapshot": "The link holds the version saved right now: later changes won’t appear in it. Create a new link to share them.",
     "noteUnsaved": "This creation has unsaved changes on the stage: they are not in this link.",
+    "noteLive": "The link always shows the latest saved version of this creation. You can disable it at any time.",
+    "noteUnsavedLive": "This creation has unsaved changes on the stage: save them for them to appear through the link.",
+    "networks": "Share on social networks",
+    "revoke": "Disable link",
+    "revokeConfirm": "Confirm disabling",
+    "revokeHint": "Anyone who has this link will no longer be able to see the design. You can create a new one.",
+    "revokedNote": "This link is disabled: it no longer opens the design, including wherever it was already posted.",
+    "newLink": "Create a new link",
     "view": {
       "documentTitle": "Shared design · 3D Studio",
       "readOnly": "Read-only",
@@ -416,6 +432,11 @@
       "replaceConfirm": "Open the copy",
       "invalidTitle": "This link doesn’t hold a readable design",
       "invalidBody": "It may be incomplete — some messaging apps cut long links. Ask the person who sent it to copy it again.",
+      "invalidStoredTitle": "This share link is no longer valid",
+      "invalidStoredBody": "The person who shared it may have disabled it, or the design was deleted. Ask them for a new link.",
+      "unavailableTitle": "The design couldn’t be loaded",
+      "unavailableBody": "Check your connection, then try again.",
+      "retry": "Try again",
       "discover": "Discover the 3D Studio"
     }
   }

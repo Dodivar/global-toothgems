@@ -1,5 +1,6 @@
 import type { GemGroupData } from "./gemGroup";
 import type { StudioScene } from "./scene";
+import type { ShareLink } from "./share";
 import type { Creation, FeedbackInput, GemGroup, RecordDetails } from "./types";
 
 /**
@@ -53,6 +54,12 @@ export interface CreationsRepository {
   /** A copy under a new name; the original is not touched. */
   duplicate(id: string, name: string): Promise<Creation>;
   remove(id: string): Promise<void>;
+  /** The creation's read-only link, created on first use: sharing is an explicit act. */
+  shareLink(creation: Creation): Promise<ShareLink>;
+  /** Its link if one is already active — never creates one. */
+  existingShareLink(creation: Creation): Promise<ShareLink | null>;
+  /** Disable the active link: it stops opening the creation at once. */
+  revokeShare(id: string): Promise<void>;
 }
 
 export interface GemGroupInput extends RecordDetails {

@@ -9,6 +9,7 @@ import { supabase } from "../supabase/client";
 import { createLocalRepositories, type KeyValueStorage } from "./localRepository";
 import { StudioStoreError, type StudioRepositories } from "./repository";
 import { piecesKey } from "./scene";
+import type { ShareLink } from "./share";
 import { createSupabaseRepositories } from "./supabaseRepository";
 import type { Creation, FeedbackInput, GemGroup, RecordDetails } from "./types";
 import { copyName } from "./validation";
@@ -50,6 +51,12 @@ interface WorkspaceValue {
   duplicateCreation: (c: Creation) => Promise<Creation | null>;
   toggleCreationFavorite: (c: Creation) => Promise<void>;
   deleteCreation: (c: Creation) => Promise<boolean>;
+  /** The creation's read-only link, created on first use. Throws when it cannot be prepared. */
+  shareLink: (c: Creation) => Promise<ShareLink>;
+  /** Its link if one is already active, never creating one; null otherwise or on failure. */
+  existingShareLink: (c: Creation) => Promise<ShareLink | null>;
+  /** Disable the creation's link: whoever has it can no longer open the design. */
+  revokeShare: (c: Creation) => Promise<boolean>;
   saveSelectionAsGroup: (ids: string[], details: RecordDetails) => Promise<GemGroup | null>;
   insertGroup: (g: GemGroup, toothId?: string | null) => boolean;
   updateGroupDetails: (g: GemGroup, details: RecordDetails) => Promise<boolean>;
@@ -288,6 +295,34 @@ export function StudioWorkspaceProvider({ children }: { children: ReactNode }) {
     [repos, say, fail, setCreations],
   );
 
+  const shareLink = useCallback(
+    async (c: Creation) => {
+      if (!repos) throw new StudioStoreError("unavailable");
+      return repos.creations.shareLink(c);
+    },
+    [repos],
+  );
+
+  const existingShareLink = useCallback(
+    async (c: Creation) => (repos ? repos.creations.existingShareLink(c).catch(() => null) : null),
+    [repos],
+  );
+
+  const revokeShare = useCallback(
+    async (c: Creation) => {
+      if (!repos) return false;
+      try {
+        await repos.creations.revokeShare(c.id);
+        say("shareRevoked", "success", { name: c.name });
+        return true;
+      } catch (err) {
+        fail(err);
+        return false;
+      }
+    },
+    [repos, say, fail],
+  );
+
   const saveSelectionAsGroup = useCallback(
     async (ids: string[], details: RecordDetails) => {
       const data = getEngine()?.captureGroup(ids);
@@ -419,6 +454,9 @@ export function StudioWorkspaceProvider({ children }: { children: ReactNode }) {
     duplicateCreation,
     toggleCreationFavorite,
     deleteCreation,
+    shareLink,
+    existingShareLink,
+    revokeShare,
     saveSelectionAsGroup,
     insertGroup,
     updateGroupDetails,
