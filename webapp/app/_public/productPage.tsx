@@ -5,7 +5,7 @@ import { productSlug } from "../../src/lib/catalog/productSlugs";
 import { findPublicProduct } from "../../src/lib/catalog/serverCatalog";
 import { localizedPath, type Locale } from "../../src/lib/localeRoutes";
 import { siteUrl } from "../../src/lib/siteUrl";
-import { ServerRendered } from "../[[...slug]]/client";
+import { ProductScreen } from "../../src/zones/public";
 import { publicPageMetadata } from "./metadata";
 import { searchOf } from "./search";
 
@@ -18,8 +18,8 @@ import { searchOf } from "./search";
  *   slug or its row id to its address in this language, query kept;
  * - gives the page its title, description, hreflang to the other language's
  *   slug, Open Graph image and structured data (schema.org Product).
- * The page itself is the React Router app's `ProductDetail`, rendered on the
- * server and hydrated in the browser.
+ * The page itself is `ProductDetail`, rendered on the server and hydrated in
+ * the browser.
  */
 export type ProductPageProps = {
   params: Promise<{ slug: string }>;
@@ -50,11 +50,11 @@ export async function productMetadata(props: ProductPageProps, locale: Locale): 
 }
 
 export async function ProductPage({ props, locale }: { props: ProductPageProps; locale: Locale }) {
-  const { product, address } = await productFor(props, locale);
+  const { product } = await productFor(props, locale);
   return (
     <>
       <script type="application/ld+json" dangerouslySetInnerHTML={{ __html: jsonLdScript(productJsonLd(product, locale, siteUrl())) }} />
-      <ServerRendered address={address} locale={locale} />
+      <ProductScreen />
     </>
   );
 }

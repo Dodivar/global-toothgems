@@ -1,4 +1,3 @@
-import type { i18n as I18n } from "i18next";
 import { isLocale, LANGUAGE_KEY, type Locale } from "../lib/localeRoutes";
 
 /*
@@ -22,13 +21,6 @@ export function saveLanguagePreference(locale: Locale) {
     // Storage blocked: the cookie still carries the choice.
   }
   writeCookie(locale);
-}
-
-/** The FR/EN switch of the header, footer, member space and back office. */
-export function switchLanguage(i18n: I18n) {
-  const next: Locale = i18n.language?.startsWith("en") ? "fr" : "en";
-  saveLanguagePreference(next);
-  void i18n.changeLanguage(next);
 }
 
 /** A choice saved before the cookie existed is copied to it once, so the server knows it too. */

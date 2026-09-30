@@ -1,11 +1,11 @@
-import { Link } from "../../lib/navigation";
+import { Link, useLanguageSwitch } from "../../lib/navigation";
 import { useTranslation } from "react-i18next";
 import { useFooterColumns } from "./useFooterColumns";
 import logoBlue from "../../assets/logo-wordmark-blue.png";
-import { switchLanguage } from "../../i18n/preference";
 
 export function Footer() {
-  const { t, i18n } = useTranslation();
+  const { t } = useTranslation();
+  const switchLanguage = useLanguageSwitch();
   const columns = useFooterColumns();
 
   const linkClass =
@@ -45,7 +45,7 @@ export function Footer() {
           <span>{t("footer.copyright")}</span>
           <button
             type="button"
-            onClick={() => switchLanguage(i18n)}
+            onClick={switchLanguage}
             aria-label={t("common.langSwitchAria")}
             className="underline decoration-1 underline-offset-4 transition-colors hover:text-[var(--text-primary)]"
           >

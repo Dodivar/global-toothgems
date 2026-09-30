@@ -1,5 +1,6 @@
 import type { Metadata } from "next";
-import type { Locale } from "../../src/lib/localeRoutes";
+import { parsePath, type Locale } from "../../src/lib/localeRoutes";
+import { pageMeta } from "../../src/lib/pageMeta";
 
 /**
  * The `<head>` of an indexed public page, in its language: canonical, the
@@ -36,4 +37,25 @@ export function publicPageMetadata(page: {
       ...(page.image ? { images: [page.image] } : {}),
     },
   };
+}
+
+/**
+ * The `<head>` of the page at an address, from the table of public pages
+ * (`lib/pageMeta.ts`): a public page's own, else the site name and, for a
+ * page search engines should not list, `noindex`.
+ */
+export function addressMetadata(path: string): Metadata {
+  const parsed = parsePath(path);
+  const meta = pageMeta(parsed);
+  if (!meta.alternates || !meta.locale) {
+    return { title: meta.title, robots: meta.indexed ? undefined : { index: false, follow: false } };
+  }
+  return publicPageMetadata({
+    title: meta.title,
+    description: meta.description,
+    locale: meta.locale,
+    alternates: meta.alternates,
+    home: parsed.route?.id === "home",
+    indexed: meta.indexed,
+  });
 }

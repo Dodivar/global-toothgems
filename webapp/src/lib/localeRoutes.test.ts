@@ -1,4 +1,4 @@
-import { readFileSync } from "node:fs";
+import { existsSync } from "node:fs";
 import { describe, expect, it } from "vitest";
 import { LEGAL_ALIASES, LEGAL_PATHS } from "../data/legal/routes";
 import { STUDIO_PATH, STUDIO_SUBSCRIBE_PATH } from "./studioUrl";
@@ -111,14 +111,18 @@ describe("route table", () => {
     }
   });
 
-  it("knows every route declared in the zone apps, so the server does not answer 404 for it", () => {
-    const files = ["../App.tsx"];
-    const app = files.map((file) => readFileSync(new URL(file, import.meta.url), "utf8")).join("\n");
-    const declared = [...app.matchAll(/path="(\/[^"]*)"/g)].map((m) => m[1].replace(/\/\*$/, ""));
-    expect(declared.length).toBeGreaterThan(20);
-    for (const path of declared) {
-      const concrete = path.replace(/:[A-Za-z]+/g, "x");
-      expect(isKnownPath(concrete) || isKnownPath(toAddress(concrete, "fr")), path).toBe(true);
+  it("has a page in app/ for every public route, in both languages, which the server knows", () => {
+    for (const route of PUBLIC_ROUTES) {
+      for (const locale of ["fr", "en"] as const) {
+        const segments = route[locale].replace(/:\w+/g, (m) => (route.id === "product" ? "[slug]" : `[${m.slice(1)}]`));
+        const file = `../../app/(public)/${locale}${segments === "/" ? "" : segments}/page.tsx`;
+        expect(existsSync(new URL(file, import.meta.url)), `${route.id} ${locale}`).toBe(true);
+        expect(isKnownPath(localizedPath(route.id, locale, { id: "x" })), `${route.id} ${locale}`).toBe(true);
+      }
+    }
+    for (const path of ["/connexion", "/inscription", "/mot-de-passe-oublie", "/forgot-password", "/reinitialiser-mot-de-passe", "/reset-password", "/verifier-email", "/verify-email", "/confirmation-compte", "/erreur", "/maintenance"]) {
+      expect(existsSync(new URL(`../../app/(public)${path}/page.tsx`, import.meta.url)), path).toBe(true);
+      expect(isKnownPath(path), path).toBe(true);
     }
     expect(isKnownPath("/fr/nimporte-quoi")).toBe(false);
     expect(isKnownPath("/nimporte-quoi")).toBe(false);

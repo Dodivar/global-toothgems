@@ -1,4 +1,4 @@
-import { existsSync, readFileSync } from "node:fs";
+import { existsSync } from "node:fs";
 import { describe, expect, it } from "vitest";
 import { zoneOf, type AppZone } from "./appZones";
 
@@ -28,18 +28,6 @@ describe("zoneOf", () => {
       ["/administration", "public"],
     ];
     for (const [path, zone] of cases) expect(zoneOf(path), path).toBe(zone);
-  });
-
-  it("matches the routes each zone app declares", () => {
-    const apps: [string, AppZone][] = [
-      ["../App.tsx", "public"],
-    ];
-    for (const [file, zone] of apps) {
-      const source = readFileSync(new URL(file, import.meta.url), "utf8");
-      const paths = [...source.matchAll(/path="(\/[^"]*)"/g)].map((m) => m[1].replace(/\/\*$/, "").replace(/:[A-Za-z]+/g, "x"));
-      expect(paths.length, file).toBeGreaterThan(0);
-      for (const path of paths) expect(zoneOf(path), `${file}: ${path}`).toBe(zone);
-    }
   });
 
   it("has a segment in app/ for each private zone, so a zone's address never reloads into the wrong one", () => {

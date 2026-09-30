@@ -1,5 +1,5 @@
 import { useEffect, useRef, useState } from "react";
-import { Link, useNavigate, useLocation } from "../../lib/navigation";
+import { Link, useNavigate, useLocation, useLanguageSwitch } from "../../lib/navigation";
 import { useTranslation } from "react-i18next";
 import { ArrowRight, Box, ChevronDown, Heart, Menu, Search, ShoppingBag, User, X } from "lucide-react";
 import { IconButton } from "../ui/IconButton";
@@ -14,7 +14,6 @@ import { NewTag } from "../studio/NewTag";
 import { ShopMenu } from "./ShopMenu";
 import { STUDIO_PATH } from "../../lib/studioUrl";
 import logoBlack from "../../assets/logo-wordmark-black.png";
-import { switchLanguage } from "../../i18n/preference";
 
 type PanelKey = "shop" | "academy" | null;
 type MobileTab = "shop" | "academy";
@@ -27,6 +26,7 @@ const HOVER_CLOSE_MS = 250;
 
 export function Header() {
   const { t, i18n } = useTranslation();
+  const switchLanguage = useLanguageSwitch();
   const navigate = useNavigate();
   const location = useLocation();
   const { count } = useCart();
@@ -139,7 +139,7 @@ export function Header() {
   const langButton = (
     <button
       type="button"
-      onClick={() => switchLanguage(i18n)}
+      onClick={switchLanguage}
       aria-label={t("common.langSwitchAria")}
       className="rounded-[var(--radius-pill)] px-2 py-1 text-xs font-semibold uppercase tracking-[var(--tracking-wide)] text-[var(--text-muted)] transition-colors hover:text-[var(--text-primary)]"
     >

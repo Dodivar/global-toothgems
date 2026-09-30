@@ -1,5 +1,5 @@
 import { useTranslation } from "react-i18next";
-import { Link, NavLink, useNavigate } from "../../lib/navigation";
+import { Link, NavLink, useNavigate, useLanguageSwitch } from "../../lib/navigation";
 import {
   BarChart3,
   ChevronsLeft,
@@ -22,7 +22,6 @@ import {
 import clsx from "clsx";
 import monogram from "../../assets/monogram-white.png";
 import { useAdminAuth } from "../../lib/adminAuth";
-import { switchLanguage } from "../../i18n/preference";
 
 /**
  * Persistent navigation rail.
@@ -86,7 +85,8 @@ export function AdminSidebar({
   /** Lets the small-screen drawer close itself when a destination is chosen. */
   onNavigate?: () => void;
 }) {
-  const { t, i18n } = useTranslation();
+  const { t } = useTranslation();
+  const switchLanguage = useLanguageSwitch();
   const navigate = useNavigate();
   const { admin, signOut } = useAdminAuth();
 
@@ -272,7 +272,7 @@ export function AdminSidebar({
           </Link>
           <button
             type="button"
-            onClick={() => switchLanguage(i18n)}
+            onClick={switchLanguage}
             aria-label={t("common.langSwitchAria")}
             title={collapsed ? t("common.langSwitchAria") : undefined}
             className={clsx(footPill(collapsed), "uppercase", railFocus)}

@@ -1,6 +1,7 @@
 "use client";
 
-import type { ReactNode } from "react";
+import { usePathname } from "next/navigation";
+import { useEffect, type ReactNode } from "react";
 import { I18nextProvider } from "react-i18next";
 import i18n from "./i18n";
 import { i18nFor } from "./i18n/instances";
@@ -20,21 +21,31 @@ import { ReviewModeProvider } from "./lib/reviewMode";
 import { PromotionsProvider } from "./lib/adminPromotions";
 import { ReviewsProvider } from "./lib/reviews";
 import { FavoritesProvider } from "./lib/favorites";
-import type { Locale } from "./lib/localeRoutes";
+import { parsePath, type Locale } from "./lib/localeRoutes";
 
 /**
  * The stores of the whole site, in the order their comments justify, under
  * the root layout (docs/migration-nextjs.md, phase 5): they outlive a
  * navigation from one page to another, whatever part of the site it leads to.
  *
- * Language: on the server, the instance of the page's language (`locale`,
- * from the proxy), so concurrent renders never share one; in the browser, the
- * UI's instance. `catalog`: what the server read of the catalogue for a
- * public page it renders.
+ * Language: a public page speaks the language of its address, with that
+ * language's instance (`i18nFor`) on the server and in the browser alike, so
+ * a client-side navigation from `/fr/…` to `/en/…` renders in English at once
+ * and concurrent server renders never share one. Other pages use the UI's
+ * instance (saved choice, else the browser's language); on the server, the
+ * language the proxy negotiated (`locale`). `catalog`: what the server read
+ * of the catalogue for a public page it renders.
  */
 export function AppProviders({ locale, catalog, children }: { locale: Locale; catalog?: CatalogSeed; children: ReactNode }) {
+  const addressLocale = parsePath(usePathname() ?? "/").locale;
+  // The UI's language follows the public page last shown, as before: the
+  // member space opened from an English page speaks English.
+  useEffect(() => {
+    if (addressLocale && !i18n.language?.startsWith(addressLocale)) void i18n.changeLanguage(addressLocale);
+  }, [addressLocale]);
+  const instance = typeof window === "undefined" ? i18nFor(locale) : addressLocale ? i18nFor(addressLocale) : i18n;
   return (
-    <I18nextProvider i18n={typeof window === "undefined" ? i18nFor(locale) : i18n}>
+    <I18nextProvider i18n={instance}>
     <CatalogProvider seed={catalog}>
     <AuthProvider>
       {/* Pending email change, password date and data-export status: read by

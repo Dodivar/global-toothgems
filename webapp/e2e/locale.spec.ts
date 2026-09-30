@@ -116,8 +116,11 @@ test("the language switch moves to the same page in the other language and is re
   await dismissCookieBanner(page);
   await expect(page.locator("header a[href='/fr/boutique']").first()).toBeAttached();
 
+  await page.evaluate(() => ((window as unknown as { gtMarker: number }).gtMarker = 1));
   await page.getByRole("button", { name: "Afficher le site en anglais" }).first().click();
-  await expect(page).toHaveURL((url) => url.pathname === "/en/shop");
+  await expect(page).toHaveURL((url) => url.pathname === "/en/shop", { timeout: 30_000 });
+  // A client-side navigation (phase 5): the page is not loaded again.
+  expect(await page.evaluate(() => (window as unknown as { gtMarker?: number }).gtMarker)).toBe(1);
   await expect(page.getByRole("heading", { level: 1 }).first()).toHaveText(/Gems, tools and professional kits/);
   await expect(page).toHaveTitle("Gems, tools and professional kits · Global Toothgems");
   expect((await context.cookies(baseURL)).find((c) => c.name === "gt-lang")?.value).toBe("en");

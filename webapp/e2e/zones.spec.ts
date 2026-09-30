@@ -235,6 +235,31 @@ test("learner pages: opening a lesson from the course stays on the page (client-
   expect(problems).toEqual([]);
 });
 
+test("links between zones are client-side navigations (phase 5)", async ({ page, problems }) => {
+  await signInMember(page);
+  await open(page, "/fr/boutique");
+  await dismissCookieBanner(page);
+  await page.evaluate(() => ((window as unknown as { gtMarker: number }).gtMarker = 1));
+  const marker = () => page.evaluate(() => (window as unknown as { gtMarker?: number }).gtMarker);
+  await page.getByRole("link", { name: "Mon espace" }).click();
+  // A client-side navigation asks the server for the page's segment: compiled on first request by a dev server.
+  await expect(page).toHaveURL((url) => url.pathname === "/compte", { timeout: 30_000 });
+  await expect(page.getByRole("heading", { level: 1 }).first()).toHaveText(/^Bonjour Camille Roussel$/);
+  expect(await marker()).toBe(1);
+  await page.goBack();
+  await expect(page).toHaveURL((url) => url.pathname === "/fr/boutique", { timeout: 30_000 });
+  await expect(page.getByRole("heading", { level: 1 }).first()).toHaveText(/Gems, outils et kits professionnels/);
+  expect(await marker()).toBe(1);
+  await page.waitForLoadState("networkidle");
+  expect(problems).toEqual([]);
+});
+
+test("the sign-in page's former address is moved by the server", async ({ request }) => {
+  const response = await request.get("/connexion-b?suite=%2Fcompte", { maxRedirects: 0 });
+  expect(response.status()).toBe(308);
+  expect(response.headers().location).toMatch(/\/connexion\?suite=%2Fcompte$/);
+});
+
 test("the cart is kept when the visitor goes through another zone", async ({ page, problems }) => {
   await open(page, "/fr/boutique/opale");
   await dismissCookieBanner(page);

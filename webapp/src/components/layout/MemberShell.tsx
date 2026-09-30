@@ -1,6 +1,6 @@
 import { useState, type ReactNode } from "react";
 import { useTranslation } from "react-i18next";
-import { Link, NavLink, useLocation, useNavigate } from "../../lib/navigation";
+import { Link, NavLink, useLocation, useNavigate, useLanguageSwitch } from "../../lib/navigation";
 import {
   Award,
   Cookie,
@@ -35,7 +35,6 @@ import { NewTag } from "../studio/NewTag";
 import { MEMBER_SPACE_EXPLORE } from "./clientSpaces";
 import monogram from "../../assets/monogram-blue.png";
 import logoBlack from "../../assets/logo-wordmark-black.png";
-import { switchLanguage } from "../../i18n/preference";
 
 /**
  * Shell of the member space: the account and the Artist Community.
@@ -174,7 +173,8 @@ function Drawer({ onClose }: { onClose: () => void }) {
  */
 function SidebarBody({ onNavigate, closeButton }: { onNavigate?: () => void; closeButton?: ReactNode }) {
   const { formatMonthYear } = useFormat();
-  const { t, i18n } = useTranslation();
+  const { t } = useTranslation();
+  const switchLanguage = useLanguageSwitch();
   const navigate = useNavigate();
   const { displayName, initials, email, signOut } = useAuth();
   const { memberSince } = useOrders();
@@ -291,7 +291,7 @@ function SidebarBody({ onNavigate, closeButton }: { onNavigate?: () => void; clo
           )}
           <button
             type="button"
-            onClick={() => switchLanguage(i18n)}
+            onClick={switchLanguage}
             aria-label={t("common.langSwitchAria")}
             className={clsx(
               "inline-flex items-center gap-1.5 rounded-[var(--radius-pill)] px-2.5 py-1.5 text-[length:var(--text-caption)] font-semibold uppercase text-[var(--text-muted)] hover:bg-[var(--gt-ink-100)] hover:text-[var(--text-primary)]",

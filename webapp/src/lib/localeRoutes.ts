@@ -206,6 +206,8 @@ export function alternates(parsed: ParsedPath, translate: ParamTranslator = keep
 const LEGACY_ALIASES: Record<string, string> = {
   "/accueil-b": localizedPath("home", "fr"),
   "/boutique-b": localizedPath("shop", "fr"),
+  // The sign-in page's former design-comparison address.
+  "/connexion-b": "/connexion",
   "/gift-card": localizedPath("giftCard", "en"),
   "/studio-3d/subscribe": localizedPath("studioSubscribe", "en"),
   "/help": localizedPath("help", "en"),
@@ -271,7 +273,6 @@ export function negotiateLocale(saved: string | null | undefined, acceptLanguage
  */
 const APP_PATHS = [
   "/connexion",
-  "/connexion-b",
   "/inscription",
   "/mot-de-passe-oublie",
   "/forgot-password",
