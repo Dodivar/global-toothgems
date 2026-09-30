@@ -67,14 +67,14 @@ Stripe  payment source of truth; fulfilment only from verified, idempotent webho
 - The service-role key and every provider secret exist only in Edge Function secrets / Supabase — never in `NEXT_PUBLIC_*` variables (Next.js inlines them into the public bundle).
 - Decided by the user (2026-09-30): e-mail links land on `/auth/confirm` (server route opening the session, phase 2); public pages are prefixed `/fr/…` and `/en/…` with English segments (`/fr/boutique` ↔ `/en/shop`), `/` goes to the saved choice, else the browser's language, else English; the member space, sign-in and the back office are not prefixed (phase 3.1, done). The address table is `webapp/src/lib/localeRoutes.ts`: add every new public page there, in both languages. The React Router app keeps its French paths internally (`localizedHistory.ts` translates them). Decided by the owner (2026-09-30): product slugs per language (`/fr/boutique/<products.slug>`, `/en/shop/<product_translations.slug>`), other keys moved (308), unknown slugs 404 (phase 3.2, done).
 - Sessions live in cookies (`@supabase/ssr`); `webapp/proxy.ts` refreshes them and turns signed-out visitors away from `/compte`, the learner pages and `/admin` before anything is sent.
-- Still the user's call, never improvise: the Vercel project switch (done by the user), the Supabase Auth dashboard settings (redirect allow-list, e-mail templates), the English wording of new public addresses, and the open points of `docs/migration-nextjs.md`.
+- Still the user's call, never improvise: Vercel project settings and the Supabase Auth dashboard settings (redirect allow-list, e-mail templates; both set by the user on 2026-09-30), the English wording of new public addresses, and the open points of `docs/migration-nextjs.md`.
 
 ### Domain status (update this table when a domain goes live)
 
 | Domain | UI | Database | State |
 | --- | --- | --- | --- |
 | Catalogue, categories/families, gem colours, variants, recommendations | storefront + back office | yes | **Live** |
-| Customer & staff auth (sign-up, sign-in, recovery, email/password change) | yes | yes | **Live** (Google sign-in, data export and account deletion not wired). Next.js side (cookie sessions, proxy, `/auth/confirm`) built, live once Vercel is switched and the Supabase dashboard settings applied |
+| Customer & staff auth (sign-up, sign-in, recovery, email/password change) | yes | yes | **Live** (Google sign-in, data export and account deletion not wired). Next.js side (cookie sessions, proxy, `/auth/confirm`) live since 2026-09-30 (Vercel switched, Supabase dashboard settings applied by the user) |
 | Favourites, reviews + moderation, member & admin order reading | yes | yes | **Live** |
 | Studio 3D workspace (creations, Gem Groups, share links) | yes | yes | **Live** (subscription/paywall not built: preview access) |
 | Cart, checkout, payment, order creation | yes | `create_order`, `mark_order_paid`, webhook log | **Mock** — no Stripe, no Edge Function yet |

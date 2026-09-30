@@ -13,6 +13,9 @@
 //                          the per-language product addresses (locale tests);
 //                          `slug=eq.` / `id=eq.` filters honoured
 //   other /rest/v1 → []
+//   GET  /__server-reads   how many REST reads each table got from the Next.js
+//                          server (requests without an Origin header), for the
+//                          catalogue cache test
 import { createServer } from "node:http";
 
 const port = Number(process.env.FAKE_SUPABASE_PORT) || 54399;
@@ -82,8 +85,14 @@ function matches(url, row) {
   return true;
 }
 
+const serverReads = {};
+
 createServer(async (req, res) => {
   const url = new URL(req.url, `http://localhost:${port}`);
+  if (url.pathname.startsWith("/rest/v1/") && req.method === "GET" && !req.headers.origin) {
+    const table = url.pathname.slice("/rest/v1/".length);
+    serverReads[table] = (serverReads[table] ?? 0) + 1;
+  }
   const send = (status, body) => {
     res.writeHead(status, {
       "content-type": "application/json",
@@ -132,5 +141,6 @@ createServer(async (req, res) => {
   }
   if (url.pathname.startsWith("/rest/v1/")) return send(200, []);
   if (url.pathname === "/health") return send(200, { ok: true });
+  if (url.pathname === "/__server-reads") return send(200, serverReads);
   return send(404, { message: "not faked" });
 }).listen(port, () => console.log(`fake Supabase on http://localhost:${port}`));
