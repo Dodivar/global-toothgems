@@ -9,7 +9,7 @@ import { dismissCookieBanner, expect, open, test } from "./fixtures";
 const ENGLISH_PAGES: { path: string; heading: RegExp; title: string }[] = [
   { path: "/en", heading: /tooth gems, Academy and 3D Studio/, title: "Global Toothgems — tooth gems, Academy and 3D Studio" },
   { path: "/en/shop", heading: /Gems, tools and professional kits/, title: "Gems, tools and professional kits · Global Toothgems" },
-  { path: "/en/shop/aurora-heart", heading: /Aurora Heart/, title: "Global Toothgems" },
+  { path: "/en/shop/aurora-heart", heading: /Aurora Heart/, title: "Aurora Heart · Global Toothgems" },
   { path: "/en/academy/course/fondation", heading: /Tooth Gem/, title: "Global Toothgems" },
   { path: "/en/help/faq", heading: /Frequently asked questions/, title: "Frequently asked questions · Global Toothgems" },
   { path: "/en/terms-of-sale", heading: /Terms/, title: "Terms of sale · Global Toothgems" },
@@ -63,7 +63,7 @@ test("old addresses are moved permanently, query included", async ({ request }) 
 });
 
 test("the server answers 404 for addresses without a page", async ({ request }) => {
-  for (const path of ["/fr/nimporte-quoi", "/en/boutique", "/fr/compte", "/nimporte-quoi"]) {
+  for (const path of ["/fr/nimporte-quoi", "/en/boutique", "/fr/compte", "/nimporte-quoi", "/fr/boutique/n-existe-pas", "/en/shop/n-existe-pas"]) {
     expect((await request.get(path)).status(), path).toBe(404);
   }
   for (const path of ["/fr/boutique", "/en/shop/aurora-heart", "/connexion", "/compte", "/admin/produits"]) {
@@ -84,10 +84,27 @@ test("public pages carry their canonical, hreflang and description; private ones
   expect(signIn).toContain('<meta name="robots" content="noindex, nofollow"/>');
 });
 
+test("a product page is titled and described by its product, with structured data", async ({ request }) => {
+  const html = await (await request.get("/fr/boutique/aurora-heart")).text();
+  expect(html).toContain("<title>Aurora Heart · Global Toothgems</title>");
+  expect(html).toMatch(/<link rel="canonical" href="[^"]*\/fr\/boutique\/aurora-heart"\/>/);
+  expect(html).toMatch(/<link rel="alternate" hrefLang="en" href="[^"]*\/en\/shop\/aurora-heart"\/>/);
+  expect(html).toMatch(/<meta property="og:image" content="[^"]+"\/>/);
+  const jsonLd = /<script type="application\/ld\+json">(.*?)<\/script>/.exec(html)?.[1];
+  expect(JSON.parse(jsonLd ?? "{}")).toMatchObject({
+    "@type": "Product",
+    name: "Aurora Heart",
+    url: expect.stringMatching(/\/fr\/boutique\/aurora-heart$/),
+    offers: { "@type": "Offer", price: "49.00", priceCurrency: "EUR" },
+  });
+});
+
 test("sitemap and robots.txt list the public pages and keep private areas out", async ({ request }) => {
   const sitemap = await (await request.get("/sitemap.xml")).text();
   expect(sitemap).toMatch(/<loc>[^<]*\/fr\/boutique<\/loc>/);
   expect(sitemap).toMatch(/<loc>[^<]*\/en\/shop<\/loc>/);
+  expect(sitemap).toMatch(/<loc>[^<]*\/fr\/boutique\/aurora-heart<\/loc>/);
+  expect(sitemap).toMatch(/<loc>[^<]*\/en\/shop\/aurora-heart<\/loc>/);
   expect(sitemap).not.toMatch(/panier|\/cart<|compte|admin/);
   const robots = await (await request.get("/robots.txt")).text();
   expect(robots).toContain("Disallow: /compte");

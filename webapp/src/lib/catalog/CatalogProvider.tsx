@@ -1,8 +1,10 @@
 import { createContext, useCallback, useContext, useEffect, useMemo, useState, type ReactNode } from "react";
-import { FALLBACK_GEM_COLORS, PRODUCTS, getProduct, type GemColorDef, type Product } from "../../data/products";
+import { FALLBACK_GEM_COLORS, PRODUCTS, type GemColorDef, type Product } from "../../data/products";
 import { isSupabaseConfigured } from "../supabase/client";
 import { FALLBACK_TAXONOMY, type ShopCategoryDef } from "../../data/taxonomy";
 import { fetchCatalog, fetchGemColors, fetchTaxonomy } from "./api";
+import { registerProductSlugs } from "./productSlugRegistry";
+import { findProductByKey } from "./productSlugs";
 
 export type CatalogStatus = "loading" | "ready" | "error";
 
@@ -17,7 +19,7 @@ interface CatalogContextValue {
   taxonomy: ShopCategoryDef[];
   error: Error | null;
   reload: () => void;
-  /** By base slug or by any published localized slug. */
+  /** By base slug, by any published localized slug or by row id. */
   findProduct: (idOrSlug: string) => Product | undefined;
 }
 
@@ -36,11 +38,11 @@ const CatalogContext = createContext<CatalogContextValue | null>(null);
  * not exist.
  */
 export function CatalogProvider({ children }: { children: ReactNode }) {
-  const [state, setState] = useState<{ status: CatalogStatus; products: Product[]; error: Error | null }>(() =>
-    isSupabaseConfigured
-      ? { status: "loading", products: [], error: null }
-      : { status: "ready", products: PRODUCTS, error: null },
-  );
+  const [state, setState] = useState<{ status: CatalogStatus; products: Product[]; error: Error | null }>(() => {
+    if (isSupabaseConfigured) return { status: "loading", products: [], error: null };
+    registerProductSlugs(PRODUCTS);
+    return { status: "ready", products: PRODUCTS, error: null };
+  });
   const [colors, setColors] = useState<GemColorDef[]>(() => (isSupabaseConfigured ? [] : FALLBACK_GEM_COLORS));
   const [taxonomy, setTaxonomy] = useState<ShopCategoryDef[]>(() => (isSupabaseConfigured ? [] : FALLBACK_TAXONOMY));
   const [attempt, setAttempt] = useState(0);
@@ -63,7 +65,11 @@ export function CatalogProvider({ children }: { children: ReactNode }) {
         if (!controller.signal.aborted) console.warn("[catalog] taxonomy unavailable", error);
       });
     fetchCatalog(controller.signal)
-      .then((products) => setState({ status: "ready", products, error: null }))
+      .then((products) => {
+        // Before the product links render, so they carry each language's slug.
+        registerProductSlugs(products);
+        setState({ status: "ready", products, error: null });
+      })
       .catch((error: unknown) => {
         if (controller.signal.aborted) return;
         console.error("[catalog] load failed", error);
@@ -84,7 +90,7 @@ export function CatalogProvider({ children }: { children: ReactNode }) {
       taxonomy,
       source: isSupabaseConfigured ? "supabase" : "mock",
       reload,
-      findProduct: (idOrSlug) => getProduct(idOrSlug, state.products),
+      findProduct: (idOrSlug) => findProductByKey(state.products, idOrSlug),
     }),
     [state, colors, taxonomy, reload],
   );

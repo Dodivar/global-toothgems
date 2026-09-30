@@ -4,7 +4,7 @@ import { useTranslation } from "react-i18next";
 import { AuthProvider, RequireAccount } from "./lib/auth";
 import { AdminAuthProvider, RequireAdmin } from "./lib/adminAuth";
 import { CartProvider } from "./lib/cart";
-import { CatalogProvider } from "./lib/catalog/CatalogProvider";
+import { CatalogProvider, useCatalog } from "./lib/catalog/CatalogProvider";
 import { OrdersProvider } from "./lib/orders";
 import { ProgressProvider } from "./lib/progress";
 import { AdminTrainingProvider } from "./lib/adminTraining";
@@ -103,8 +103,9 @@ import {
 import { RequireStudioAccess } from "./lib/studioAccess";
 import { StudioEditorLoading } from "./components/studio/editor/StudioEditorLoading";
 import { NotFound } from "./screens/NotFound";
-import { toAddress } from "./lib/localeRoutes";
+import { parsePath, toAddress } from "./lib/localeRoutes";
 import { titleFor } from "./lib/pageMeta";
+import { productTitle } from "./lib/catalog/productMeta";
 
 /* The 3D Studio editor carries three.js, the heaviest code in the site: it is
    split into its own chunk and only downloaded when the editor is opened. */
@@ -163,17 +164,21 @@ function DocumentLanguage() {
 
 /**
  * Tab title of public pages, from the table the server's `<head>` uses
- * (`lib/pageMeta.ts`), so it follows client-side navigation. Screens that name
- * themselves (legal, system pages) set theirs after it; other screens keep
- * the site name, as before.
+ * (`lib/pageMeta.ts`, `lib/catalog/productMeta.ts`), so it follows client-side
+ * navigation. Screens that name themselves (legal, system pages) set theirs
+ * after it; other screens keep the site name, as before.
  */
 function DocumentTitle() {
   const { pathname } = useLocation();
   const { i18n } = useTranslation();
+  const { findProduct } = useCatalog();
   const locale = i18n.language.startsWith("en") ? "en" : "fr";
   useEffect(() => {
-    document.title = titleFor(toAddress(pathname, locale));
-  }, [pathname, locale]);
+    const address = parsePath(toAddress(pathname, locale));
+    // A product page is titled by its product, as the server titles it.
+    const product = address.route?.id === "product" ? findProduct(address.params.id) : undefined;
+    document.title = product ? productTitle(product, locale) : titleFor(address);
+  }, [pathname, locale, findProduct]);
   return null;
 }
 

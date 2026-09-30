@@ -1,19 +1,31 @@
 import type { MetadataRoute } from "next";
-import { localizedPath, PUBLIC_ROUTES } from "../src/lib/localeRoutes";
+import { productSlug } from "../src/lib/catalog/productSlugs";
+import { listPublicProductSlugs } from "../src/lib/catalog/serverCatalog";
+import { LOCALES, localizedPath, PUBLIC_ROUTES } from "../src/lib/localeRoutes";
 import { siteUrl } from "../src/lib/siteUrl";
 
 /**
- * The indexed public pages, each in French and English with its alternate.
- * Product and course pages join once they are rendered on the server with
- * their data (phase 3.2 of docs/migration-nextjs.md).
+ * The indexed public pages and every product page, each in French and
+ * English with its alternate (a product with its slug in each language).
+ * Course pages join once the Academy has real data (docs/migration-nextjs.md,
+ * phase 3.2). Rendered per request: the catalogue changes without a deploy.
  */
-export default function sitemap(): MetadataRoute.Sitemap {
+export const dynamic = "force-dynamic";
+
+export default async function sitemap(): Promise<MetadataRoute.Sitemap> {
   const base = siteUrl();
   const url = (path: string) => new URL(path, base).toString();
-  return PUBLIC_ROUTES.filter((route) => route.indexed && !route.fr.includes(":")).flatMap((route) =>
-    (["fr", "en"] as const).map((locale) => ({
-      url: url(localizedPath(route.id, locale)),
-      alternates: { languages: { fr: url(localizedPath(route.id, "fr")), en: url(localizedPath(route.id, "en")) } },
-    })),
+  const entry = (paths: Record<(typeof LOCALES)[number], string>) =>
+    LOCALES.map((locale) => ({ url: url(paths[locale]), alternates: { languages: { fr: url(paths.fr), en: url(paths.en) } } }));
+
+  const pages = PUBLIC_ROUTES.filter((route) => route.indexed && !route.fr.includes(":")).flatMap((route) =>
+    entry({ fr: localizedPath(route.id, "fr"), en: localizedPath(route.id, "en") }),
   );
+  const products = (await listPublicProductSlugs()).flatMap((product) =>
+    entry({
+      fr: localizedPath("product", "fr", { id: productSlug(product, "fr") }),
+      en: localizedPath("product", "en", { id: productSlug(product, "en") }),
+    }),
+  );
+  return [...pages, ...products];
 }

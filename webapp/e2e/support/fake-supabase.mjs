@@ -7,7 +7,12 @@
 //   POST /auth/v1/verify   token_hash "valid-…" → session; "expired" → otp_expired;
 //                          type email_change + "halfway" → accepted, no session
 //   GET  /auth/v1/user     200 for a token issued here, 401 otherwise
-//   GET  /rest/v1/profiles the member's profile row; other /rest/v1 → []
+//   GET  /rest/v1/profiles the member's profile row
+//   GET  /rest/v1/products, /product_translations, /product_review_stats:
+//                          one product with a French and an English slug, for
+//                          the per-language product addresses (locale tests);
+//                          `slug=eq.` / `id=eq.` filters honoured
+//   other /rest/v1 → []
 import { createServer } from "node:http";
 
 const port = Number(process.env.FAKE_SUPABASE_PORT) || 54399;
@@ -47,6 +52,35 @@ function session() {
 }
 
 const PROFILE = { first_name: "Membre", last_name: "E2E", email: USER.email, phone: null, country_code: "FR", marketing_opt_in: false, status: "active", role: "customer" };
+
+const PRODUCT = {
+  id: "00000000-0000-4000-8000-0000000000a1",
+  slug: "coeur-chrome",
+  name: "Cœur Chrome",
+  short_description: "Un cœur chromé.",
+  description: "Un cœur chromé, poli miroir.",
+  price: 29,
+  compare_at_price: null,
+  currency: "EUR",
+  is_featured: false,
+  metadata: {},
+  category: null,
+  family: null,
+  product_translations: [
+    { locale: "en", name: "Chrome Heart", slug: "chrome-heart-tooth-gem", short_description: "A chrome heart.", description: "A mirror-polished chrome heart.", status: "published" },
+  ],
+  product_variants: [],
+  product_media: [],
+  inventory_items: [{ stock_status: "in_stock" }],
+};
+
+/** PostgREST `column=eq.value` filters of a request (only `eq` is faked). */
+function matches(url, row) {
+  for (const [column, filter] of url.searchParams) {
+    if (filter.startsWith("eq.") && column in row && String(row[column]) !== filter.slice(3)) return false;
+  }
+  return true;
+}
 
 createServer(async (req, res) => {
   const url = new URL(req.url, `http://localhost:${port}`);
@@ -90,6 +124,11 @@ createServer(async (req, res) => {
   if (url.pathname === "/rest/v1/profiles") {
     const single = (req.headers.accept ?? "").includes("vnd.pgrst.object");
     return send(200, single ? PROFILE : [PROFILE]);
+  }
+  if (url.pathname === "/rest/v1/products") return send(200, [PRODUCT].filter((row) => matches(url, row)));
+  if (url.pathname === "/rest/v1/product_translations") {
+    const rows = PRODUCT.product_translations.map((t) => ({ ...t, product_id: PRODUCT.id }));
+    return send(200, rows.filter((row) => matches(url, row)));
   }
   if (url.pathname.startsWith("/rest/v1/")) return send(200, []);
   if (url.pathname === "/health") return send(200, { ok: true });

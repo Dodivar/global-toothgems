@@ -1,6 +1,7 @@
 import type { i18n as I18n } from "i18next";
 import { parsePath as parseTo, UNSAFE_createBrowserHistory as createBrowserHistory, type unstable_HistoryRouter } from "react-router-dom";
 import { isLocale, parsePath, toAddress, type Locale } from "./localeRoutes";
+import { translateProductSlugs as translate } from "./catalog/productSlugRegistry";
 
 type History = Parameters<typeof unstable_HistoryRouter>[0]["history"];
 type To = Parameters<History["push"]>[0];
@@ -17,6 +18,8 @@ type Location = History["location"];
  * - what it writes (links' `href`, `push`, `replace`) becomes the address in
  *   the current language: `/boutique/x` → `/en/shop/x` or `/fr/boutique/x`.
  *   Paths that are not public pages (member space, back office…) pass through.
+ *   Product slugs are translated too (`/en/shop/<English slug>`), from the
+ *   catalogue the page has loaded (`catalog/productSlugRegistry.ts`);
  * - the language follows the address: going back from `/en/shop` to
  *   `/fr/boutique` switches the UI to French, and switching the UI language
  *   on a public page rewrites the address to the other language's.
@@ -27,11 +30,11 @@ export function createLocalizedHistory(i18n: I18n): History {
   const browser = createBrowserHistory({ v5Compat: true });
   const current = (): Locale => (i18n.resolvedLanguage === "en" || i18n.language?.startsWith("en") ? "en" : "fr");
 
-  const internal = (location: Location): Location => ({ ...location, pathname: parsePath(location.pathname).internal });
+  const internal = (location: Location): Location => ({ ...location, pathname: parsePath(location.pathname, translate).internal });
 
   const address = (to: To): To => {
     const path = typeof to === "string" ? parseTo(to) : to;
-    return path.pathname === undefined ? path : { ...path, pathname: toAddress(path.pathname, current()) };
+    return path.pathname === undefined ? path : { ...path, pathname: toAddress(path.pathname, current(), translate) };
   };
 
   /** The address decides the language of a public page. */
@@ -45,7 +48,7 @@ export function createLocalizedHistory(i18n: I18n): History {
     const location = browser.location;
     const parsed = parsePath(location.pathname);
     if (parsed.locale && parsed.locale !== language) {
-      browser.replace({ ...location, pathname: toAddress(location.pathname, language) }, location.state);
+      browser.replace({ ...location, pathname: toAddress(location.pathname, language, translate) }, location.state);
     }
   });
 

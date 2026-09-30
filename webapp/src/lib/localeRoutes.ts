@@ -108,6 +108,18 @@ function fill(pattern: string, params: Record<string, string>): string {
   return "/" + segments(pattern).map((s) => (s.startsWith(":") ? params[s.slice(1)] : s)).join("/");
 }
 
+/**
+ * Translates the parameters of a public route into a language: product pages
+ * have one slug per language (`product_translations.slug`), so
+ * `/fr/boutique/coeur-chrome` is `/en/shop/chrome-heart-tooth-gem` in English.
+ * Internal paths carry the French values. Every other parameter is the same in
+ * both languages. The catalogue provides the translator
+ * (`lib/catalog/productSlugs.ts`); without one, parameters are left as they are.
+ */
+export type ParamTranslator = (id: PublicRouteId, params: Record<string, string>, locale: Locale) => Record<string, string>;
+
+const keepParams: ParamTranslator = (_id, params) => params;
+
 /** The public route a locale-less path belongs to in one language. */
 function find(path: string, locale: Locale): { route: PublicRoute; params: Record<string, string> } | null {
   for (const route of PUBLIC_ROUTES) {
@@ -137,35 +149,43 @@ export interface ParsedPath {
   internal: string;
 }
 
-/** Reads an address: `/en/shop/x` → locale "en", internal `/boutique/x`. */
-export function parsePath(pathname: string): ParsedPath {
+/**
+ * Reads an address: `/en/shop/x` → locale "en", internal `/boutique/<x in French>`.
+ * `params` are the values as written in the address.
+ */
+export function parsePath(pathname: string, translate: ParamTranslator = keepParams): ParsedPath {
   const [first] = segments(pathname);
   if (!isLocale(first)) return { locale: null, route: null, params: {}, internal: pathname };
   const rest = pathname.slice(first.length + 1) || "/";
   const found = find(rest, first);
   if (!found) return { locale: first, route: null, params: {}, internal: pathname };
-  return { locale: first, route: found.route, params: found.params, internal: fill(found.route.fr, found.params) };
+  const internal = fill(found.route.fr, translate(found.route.id, found.params, "fr"));
+  return { locale: first, route: found.route, params: found.params, internal };
 }
 
 /**
  * Writes an internal path for the address bar in a language: a public route
  * gets its prefix and translated segments; any other path is left as it is.
  */
-export function toAddress(internal: string, locale: Locale): string {
+export function toAddress(internal: string, locale: Locale, translate: ParamTranslator = keepParams): string {
   const parsed = parsePath(internal);
   if (parsed.locale) {
     // Already an address (an unknown prefixed path): keep it, in this language.
-    if (parsed.route) return localizedPath(parsed.route.id, locale, parsed.params);
+    if (parsed.route) return localizedPath(parsed.route.id, locale, translate(parsed.route.id, parsed.params, locale));
     return `/${locale}${internal.slice(parsed.locale.length + 1)}`;
   }
   const found = find(internal, "fr");
-  return found ? localizedPath(found.route.id, locale, found.params) : internal;
+  return found ? localizedPath(found.route.id, locale, translate(found.route.id, found.params, locale)) : internal;
 }
 
-/** The address of the same page in the other language(s), for hreflang and the language switch. */
-export function alternates(parsed: ParsedPath): Record<Locale, string> | null {
-  if (!parsed.route) return null;
-  return { fr: localizedPath(parsed.route.id, "fr", parsed.params), en: localizedPath(parsed.route.id, "en", parsed.params) };
+/** The address of the same page in each language, for hreflang and the language switch. */
+export function alternates(parsed: ParsedPath, translate: ParamTranslator = keepParams): Record<Locale, string> | null {
+  const { route, params } = parsed;
+  if (!route) return null;
+  return {
+    fr: localizedPath(route.id, "fr", translate(route.id, params, "fr")),
+    en: localizedPath(route.id, "en", translate(route.id, params, "en")),
+  };
 }
 
 /**

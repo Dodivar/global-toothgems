@@ -134,3 +134,46 @@ test.describe("browser session", () => {
     await expect(page.getByRole("heading", { level: 1 }).first()).toHaveText(/Connexion/);
   });
 });
+
+/*
+ * Product addresses per language (phase 3.2): the fake Supabase sells one
+ * product, `coeur-chrome` in French and `chrome-heart-tooth-gem` in English.
+ */
+test.describe("product addresses", () => {
+  test("each language has its own slug; other keys move there, query kept", async ({ request }) => {
+    for (const [from, to] of [
+      ["/en/shop/coeur-chrome", "/en/shop/chrome-heart-tooth-gem"],
+      ["/fr/boutique/chrome-heart-tooth-gem?couleur=or", "/fr/boutique/coeur-chrome?couleur=or"],
+      ["/en/shop/00000000-0000-4000-8000-0000000000a1", "/en/shop/chrome-heart-tooth-gem"],
+      ["/boutique/coeur-chrome", "/fr/boutique/coeur-chrome"],
+    ]) {
+      const response = await request.get(from, noRedirect);
+      expect(response.status(), from).toBe(308);
+      expect(location(response), from).toBe(to);
+    }
+    expect((await request.get("/fr/boutique/n-existe-pas")).status()).toBe(404);
+  });
+
+  test("the page points to the other language's slug", async ({ request }) => {
+    const html = await (await request.get("/en/shop/chrome-heart-tooth-gem")).text();
+    expect(html).toContain("<title>Chrome Heart · Global Toothgems</title>");
+    expect(html).toContain('<meta name="description" content="A mirror-polished chrome heart."/>');
+    expect(html).toMatch(/<link rel="alternate" hrefLang="fr" href="[^"]*\/fr\/boutique\/coeur-chrome"\/>/);
+    expect(html).toMatch(/<link rel="canonical" href="[^"]*\/en\/shop\/chrome-heart-tooth-gem"\/>/);
+
+    const sitemap = await (await request.get("/sitemap.xml")).text();
+    expect(sitemap).toMatch(/<loc>[^<]*\/fr\/boutique\/coeur-chrome<\/loc>/);
+    expect(sitemap).toMatch(/<loc>[^<]*\/en\/shop\/chrome-heart-tooth-gem<\/loc>/);
+  });
+
+  test("links and the language switch use each language's slug", async ({ page }) => {
+    await page.goto("/fr/boutique");
+    await expect(page.locator("main a[href='/fr/boutique/coeur-chrome']").first()).toBeAttached();
+    await page.goto("/fr/boutique/coeur-chrome");
+    await expect(page.getByRole("heading", { level: 1 }).first()).toHaveText(/Cœur Chrome/);
+    await page.getByRole("button", { name: "Afficher le site en anglais" }).first().click();
+    await expect(page).toHaveURL((url) => url.pathname === "/en/shop/chrome-heart-tooth-gem");
+    await expect(page.getByRole("heading", { level: 1 }).first()).toHaveText(/Chrome Heart/);
+    await expect(page).toHaveTitle("Chrome Heart · Global Toothgems");
+  });
+});

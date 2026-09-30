@@ -97,6 +97,7 @@ describe("mapProduct", () => {
     expect(p.id).toBe("etoile-cristal");
     expect(p.dbId).toBe("00000000-0000-0000-0000-000000000001");
     expect(p.aliases).toEqual(["crystal-star-tooth-gem"]);
+    expect(p.slugs).toEqual({ en: "crystal-star-tooth-gem" });
     expect(p.name).toEqual({ fr: "Étoile Cristal", en: "Crystal Star Tooth Gem" });
     expect(p.description).toEqual({ fr: "Étoile cinq branches.", en: "Five-point star." });
     expect(p.price).toBe(32);

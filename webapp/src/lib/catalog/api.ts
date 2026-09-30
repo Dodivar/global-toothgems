@@ -1,7 +1,7 @@
 import type { GemColorDef, Product } from "../../data/products";
 import type { ShopCategoryDef } from "../../data/taxonomy";
-import { requireSupabase } from "../supabase/client";
-import { productMediaUrl } from "../supabase/storage";
+import { requireSupabase, type TypedSupabaseClient } from "../supabase/client";
+import { BUCKETS, productMediaUrl } from "../supabase/storage";
 import {
   mapGemColor,
   mapProduct,
@@ -122,4 +122,63 @@ export async function fetchTaxonomy(signal?: AbortSignal): Promise<ShopCategoryD
   if (retryWithoutFamilies(result.error, signal)) result = await query(TAXONOMY_SELECT_BASE);
   if (result.error) throw result.error;
   return mapTaxonomy(result.data as unknown as TaxonomyRow[], productMediaUrl);
+}
+
+/** Public URL of a catalogue image, from any client (the server has no browser client). */
+function mediaUrlFrom(db: TypedSupabaseClient) {
+  return (path: string) => db.storage.from(BUCKETS.productMedia).getPublicUrl(path).data.publicUrl;
+}
+
+const UUID = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i;
+
+/**
+ * One storefront product by a key of its address — its French slug, a
+ * published slug of another language or its row id — with the same filters
+ * and shape as `fetchCatalog`; null when no product the shop sells has it.
+ * For the server (product page metadata, redirects, 404); `db` acts as an
+ * anonymous visitor, so RLS limits it to what the public may read.
+ */
+export async function fetchProductByKey(db: TypedSupabaseClient, key: string): Promise<Product | null> {
+  const productsQuery = (select: string) =>
+    db.from("products").select(select).eq("status", "active").neq("product_type", "gift_card");
+
+  const byColumn = async (column: "id" | "slug", value: string) => {
+    let result = await productsQuery(PRODUCT_SELECT).eq(column, value).maybeSingle();
+    if (retryWithoutFamilies(result.error)) result = await productsQuery(PRODUCT_SELECT_BASE).eq(column, value).maybeSingle();
+    if (result.error) throw result.error;
+    return result.data as unknown as ProductRow | null;
+  };
+
+  let row = await byColumn(UUID.test(key) ? "id" : "slug", key);
+  if (!row && !UUID.test(key)) {
+    const translation = await db
+      .from("product_translations")
+      .select("product_id")
+      .eq("slug", key)
+      .eq("status", "published")
+      .limit(1)
+      .maybeSingle();
+    if (translation.error) throw translation.error;
+    if (translation.data) row = await byColumn("id", translation.data.product_id);
+  }
+  if (!row) return null;
+
+  const stats = await db.from("product_review_stats").select("product_id, average_rating, review_count").eq("product_id", row.id).maybeSingle();
+  if (stats.error) console.warn("[catalog] review stats unavailable", stats.error.message);
+  return mapProduct(row, stats.data ?? undefined, mediaUrlFrom(db));
+}
+
+/** Slugs of every product the shop sells, in each language: for the sitemap. */
+export async function fetchProductSlugs(db: TypedSupabaseClient): Promise<{ id: string; slugs: { en?: string } }[]> {
+  const { data, error } = await db
+    .from("products")
+    .select("slug, product_translations ( locale, slug, status )")
+    .eq("status", "active")
+    .neq("product_type", "gift_card")
+    .order("created_at", { ascending: false });
+  if (error) throw error;
+  return data.map((row) => {
+    const en = row.product_translations.find((t) => t.locale === "en" && t.status === "published")?.slug;
+    return { id: row.slug, slugs: en && en !== row.slug ? { en } : {} };
+  });
 }

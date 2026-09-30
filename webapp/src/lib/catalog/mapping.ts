@@ -286,16 +286,23 @@ export function mapProduct(
   const aliases = row.product_translations
     .filter((t) => t.status === "published" && t.slug && t.slug !== row.slug)
     .map((t) => t.slug as string);
+  const slugs: Partial<Record<(typeof TRANSLATED_LOCALES)[number], string>> = {};
+  for (const locale of TRANSLATED_LOCALES) {
+    const slug = row.product_translations.find((t) => t.locale === locale && t.status === "published")?.slug;
+    if (slug && slug !== row.slug) slugs[locale] = slug;
+  }
 
   return {
     id: row.slug,
     dbId: row.id,
     aliases,
+    slugs,
     name,
     // Cards read best with a short spec line; the material is that line when
     // the product has one, else the category.
     subtitle: material ? { fr: material, en: material } : categoryName ?? { fr: "", en: "" },
     price,
+    currency: row.currency,
     compareAtPrice: compareAtPrice != null && compareAtPrice > price ? compareAtPrice : undefined,
     rating: stats?.average_rating ?? 0,
     reviewCount: stats?.review_count ?? 0,

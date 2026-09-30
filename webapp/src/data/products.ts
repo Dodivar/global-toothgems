@@ -126,9 +126,16 @@ export interface Product {
   dbId?: string;
   /** Localized slugs that also resolve to this product (e.g. the English URL). */
   aliases?: string[];
+  /**
+   * The published slug of each other language, for its address
+   * (`/en/shop/<slug>`); absent = the French slug (`lib/catalog/productSlugs.ts`).
+   */
+  slugs?: Partial<Record<"fr" | "en", string>>;
   name: Localized;
   subtitle: Localized;
   price: number;
+  /** ISO 4217 code of the prices; absent on the mock products (euros). */
+  currency?: string;
   compareAtPrice?: number;
   badge?: Localized;
   badgeTone?: BadgeTone;

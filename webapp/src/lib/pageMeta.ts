@@ -13,8 +13,8 @@ import { alternates, parsePath, type Locale, type ParsedPath, type PublicRouteId
  * server's `<head>` (canonical, hreflang, Open Graph: `app/[[...slug]]/page.tsx`)
  * and for the tab title while the app navigates (`App.tsx`). Only text the
  * pages already show is used (their heading and introduction); no copy is
- * written for search engines. Product and course pages get their own titles
- * with server rendering (phase 3.2).
+ * written for search engines. Product pages are titled by their product
+ * (`lib/catalog/productMeta.ts`); course pages keep the site name for now.
  */
 
 export const SITE_NAME = "Global Toothgems";
@@ -85,6 +85,6 @@ export function pageMeta(parsed: ParsedPath): PageMeta {
 }
 
 /** The tab title for an address. */
-export function titleFor(pathname: string): string {
-  return pageMeta(parsePath(pathname)).title;
+export function titleFor(address: string | ParsedPath): string {
+  return pageMeta(typeof address === "string" ? parsePath(address) : address).title;
 }
