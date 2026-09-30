@@ -17,8 +17,12 @@ const hasAuthCookie = (request: NextRequest) =>
  * still uses a shared secret) — the cookie alone is never trusted. Without an
  * auth cookie there is nothing to check and Supabase is not called.
  */
-export async function refreshSession(request: NextRequest): Promise<{ response: NextResponse; signedIn: boolean }> {
-  let response = NextResponse.next({ request });
+export async function refreshSession(
+  request: NextRequest,
+  requestHeaders: Headers,
+): Promise<{ response: NextResponse; signedIn: boolean }> {
+  const next = () => NextResponse.next({ request: { headers: requestHeaders } });
+  let response = next();
   if (!hasAuthCookie(request)) return { response, signedIn: false };
 
   const supabase = createServerClient<Database>(supabaseUrl, supabasePublishableKey, {
@@ -28,7 +32,9 @@ export async function refreshSession(request: NextRequest): Promise<{ response: 
       },
       setAll(cookiesToSet, headers) {
         for (const { name, value } of cookiesToSet) request.cookies.set(name, value);
-        response = NextResponse.next({ request });
+        // The refreshed cookies travel to the page through the request headers too.
+        requestHeaders.set("cookie", request.cookies.toString());
+        response = next();
         for (const { name, value, options } of cookiesToSet) response.cookies.set(name, value, options);
         for (const [key, value] of Object.entries(headers)) response.headers.set(key, value);
       },

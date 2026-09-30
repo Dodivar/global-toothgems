@@ -103,6 +103,8 @@ import {
 import { RequireStudioAccess } from "./lib/studioAccess";
 import { StudioEditorLoading } from "./components/studio/editor/StudioEditorLoading";
 import { NotFound } from "./screens/NotFound";
+import { toAddress } from "./lib/localeRoutes";
+import { titleFor } from "./lib/pageMeta";
 
 /* The 3D Studio editor carries three.js, the heaviest code in the site: it is
    split into its own chunk and only downloaded when the editor is opened. */
@@ -156,6 +158,22 @@ function DocumentLanguage() {
   useEffect(() => {
     document.documentElement.lang = i18n.language.slice(0, 2);
   }, [i18n.language]);
+  return null;
+}
+
+/**
+ * Tab title of public pages, from the table the server's `<head>` uses
+ * (`lib/pageMeta.ts`), so it follows client-side navigation. Screens that name
+ * themselves (legal, system pages) set theirs after it; other screens keep
+ * the site name, as before.
+ */
+function DocumentTitle() {
+  const { pathname } = useLocation();
+  const { i18n } = useTranslation();
+  const locale = i18n.language.startsWith("en") ? "en" : "fr";
+  useEffect(() => {
+    document.title = titleFor(toAddress(pathname, locale));
+  }, [pathname, locale]);
   return null;
 }
 
@@ -233,6 +251,7 @@ export default function App() {
                 <FavoritesProvider>
                   <ScrollToTop />
                   <DocumentLanguage />
+                  <DocumentTitle />
                   <a href="#main" className="gt-skip-link">
                     {t("common.skipToContent")}
                   </a>

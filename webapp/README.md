@@ -11,7 +11,7 @@ The production web application of Global Toothgems: storefront, Academy, member 
 - **Next.js 16 (App Router, Turbopack) + React 19 + TypeScript**
 - **Tailwind CSS v4** through PostCSS (`postcss.config.mjs`), driven by the design system's CSS variable tokens (`src/index.css`)
 - **react-router-dom** for routing inside the catch-all page `app/[[...slug]]` (phase 1 of the migration; replaced by App Router routes page by page)
-- **react-i18next** for French/English (French is the default; a toggle in the header switches and persists the choice)
+- **react-i18next** for French/English. Public pages carry their language in the address (`/fr/…`, `/en/…`, `src/lib/localeRoutes.ts`); elsewhere the saved choice (FR/EN switches), else the browser's language, else English
 - **lucide-react** for icons
 
 ## Requirements
@@ -40,7 +40,11 @@ src/ClientApp.tsx           i18n + StrictMode + BrowserRouter + App (formerly ma
 src/App.tsx                 the React Router routes
 ```
 
-No screen of `src/` is rendered on the server yet; the server only runs `proxy.ts`, `/auth/confirm` and the pure rules they share (`src/lib/authRoutes.ts`). Screens live in `src/screens/` (not `src/pages/`, which Next.js would treat as a Pages Router directory). Image imports resolve to `{ src, width, height }` in Next.js: use `.src` in an `<img>`.
+No screen of `src/` is rendered on the server yet; the server runs `proxy.ts`, `/auth/confirm`, the `<head>` of each page, `sitemap.xml` and `robots.txt`.
+
+### Addresses and language (phase 3.1)
+
+Public pages live at `/fr/…` and `/en/…` with English segments (`/fr/boutique/aurora-heart` ↔ `/en/shop/aurora-heart`); the full table is `src/lib/localeRoutes.ts`, and `docs/migration-nextjs.md` lists it. The React Router app still uses its French paths everywhere (`<Link to="/boutique">`, `navigate("/aide")`): `src/lib/localizedHistory.ts` translates them to the address of the current language and back, so write internal paths as before. When adding a public page: add its route to `App.tsx` as usual **and** its French/English addresses to `localeRoutes.ts` (a unit test fails if a route of `App.tsx` is unknown to the server), and its title/description source to `src/lib/pageMeta.ts`. `/` is sent by the proxy to the saved language (`gt-lang` cookie), else the browser's, else English; old unprefixed addresses are moved permanently. Screens live in `src/screens/` (not `src/pages/`, which Next.js would treat as a Pages Router directory). Image imports resolve to `{ src, width, height }` in Next.js: use `.src` in an `<img>`.
 
 ## Sessions and e-mail links (server side)
 

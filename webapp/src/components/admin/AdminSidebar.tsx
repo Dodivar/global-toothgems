@@ -22,6 +22,7 @@ import {
 import clsx from "clsx";
 import monogram from "../../assets/monogram-white.png";
 import { useAdminAuth } from "../../lib/adminAuth";
+import { switchLanguage } from "../../i18n/preference";
 
 /**
  * Persistent navigation rail.
@@ -271,7 +272,7 @@ export function AdminSidebar({
           </Link>
           <button
             type="button"
-            onClick={() => i18n.changeLanguage(i18n.language?.startsWith("en") ? "fr" : "en")}
+            onClick={() => switchLanguage(i18n)}
             aria-label={t("common.langSwitchAria")}
             title={collapsed ? t("common.langSwitchAria") : undefined}
             className={clsx(footPill(collapsed), "uppercase", railFocus)}

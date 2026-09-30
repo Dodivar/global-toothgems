@@ -1,27 +1,47 @@
 import { NextResponse, type NextRequest } from "next/server";
 import { gateFor, signInRedirect } from "./src/lib/authRoutes";
+import { LANGUAGE_KEY, legacyAddress, negotiateLocale, parsePath } from "./src/lib/localeRoutes";
+import { LOCALE_HEADER } from "./src/lib/localeHeader";
 import { isSupabaseConfigured } from "./src/lib/supabase/env";
 import { refreshSession } from "./src/lib/supabase/proxySession";
 
 /**
  * Runs before every page request (Next.js 16 "proxy", formerly middleware).
  *
- * - Keeps the Supabase session fresh: the cookie session written by the
- *   browser client is refreshed here, so server code sees a valid one.
- * - Turns signed-out visitors away from the member space, the learner pages
- *   and the back office before any of it is sent, to the matching sign-in
- *   page with `?suite=<the page they asked for>`.
+ * 1. Language in the address (phase 3, `src/lib/localeRoutes.ts`): `/` is
+ *    sent to `/fr` or `/en` by the saved choice, else the browser's language,
+ *    else English; old unprefixed public addresses are permanently moved
+ *    (`/boutique` → `/fr/boutique`, `/help` → `/en/help`). The language of the
+ *    request is passed on to the root layout (`<html lang>`).
+ * 2. Session (phase 2): keeps the Supabase session fresh and turns signed-out
+ *    visitors away from the member space, the learner pages and the back
+ *    office, to the matching sign-in page with `?suite=<the page asked for>`.
+ *    Navigation, not authorization: RLS decides every read and write. In mock
+ *    mode (no Supabase variables) the client guards decide, as before.
  *
- * This is navigation, not authorization: RLS decides every read and write,
- * and the back office checks the staff role itself. In mock mode (no Supabase
- * variables) there is no real session to read, so the client guards decide,
- * as before. See docs/migration-nextjs.md, phase 2.
+ * See docs/migration-nextjs.md.
  */
 export async function proxy(request: NextRequest) {
-  if (!isSupabaseConfigured) return NextResponse.next();
-
-  const { response, signedIn } = await refreshSession(request);
   const { pathname, search } = request.nextUrl;
+  const saved = request.cookies.get(LANGUAGE_KEY)?.value;
+  const acceptLanguage = request.headers.get("accept-language");
+
+  if (pathname === "/") {
+    const home = new URL(`/${negotiateLocale(saved, acceptLanguage)}${search}`, request.url);
+    const response = NextResponse.redirect(home, 307);
+    response.headers.set("Cache-Control", "private, no-store");
+    response.headers.set("Vary", "Cookie, Accept-Language");
+    return response;
+  }
+  const moved = legacyAddress(pathname);
+  if (moved) return NextResponse.redirect(new URL(`${moved}${search}`, request.url), 308);
+
+  const requestHeaders = new Headers(request.headers);
+  requestHeaders.set(LOCALE_HEADER, parsePath(pathname).locale ?? negotiateLocale(saved, acceptLanguage));
+
+  if (!isSupabaseConfigured) return NextResponse.next({ request: { headers: requestHeaders } });
+
+  const { response, signedIn } = await refreshSession(request, requestHeaders);
   const gate = gateFor(pathname);
   if (!gate || signedIn) return response;
 

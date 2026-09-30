@@ -1,17 +1,24 @@
 import type { Metadata } from "next";
+import { headers } from "next/headers";
 import type { ReactNode } from "react";
+import { isLocale } from "../src/lib/localeRoutes";
+import { LOCALE_HEADER } from "../src/lib/localeHeader";
+import { siteUrl } from "../src/lib/siteUrl";
 import "../src/index.css";
 
 /* What `index.html` carried under Vite. Next.js adds the charset and viewport
-   tags itself. Pages that set their own title still do it client-side. */
+   tags itself. Each page adds its own title and description. */
 export const metadata: Metadata = {
+  metadataBase: siteUrl(),
   title: "Global Toothgems",
   icons: { icon: { url: "/favicon.svg", type: "image/svg+xml" } },
 };
 
-export default function RootLayout({ children }: { children: ReactNode }) {
+export default async function RootLayout({ children }: { children: ReactNode }) {
+  // The page's language, from the proxy (address prefix, else the visitor's preference).
+  const locale = (await headers()).get(LOCALE_HEADER);
   return (
-    <html lang="fr">
+    <html lang={isLocale(locale) ? locale : "fr"}>
       <head>
         <link rel="preconnect" href="https://fonts.googleapis.com" />
         <link rel="preconnect" href="https://fonts.gstatic.com" crossOrigin="" />

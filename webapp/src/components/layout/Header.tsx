@@ -14,6 +14,7 @@ import { NewTag } from "../studio/NewTag";
 import { ShopMenu } from "./ShopMenu";
 import { STUDIO_PATH } from "../../lib/studioUrl";
 import logoBlack from "../../assets/logo-wordmark-black.png";
+import { switchLanguage } from "../../i18n/preference";
 
 type PanelKey = "shop" | "academy" | null;
 type MobileTab = "shop" | "academy";
@@ -138,7 +139,7 @@ export function Header() {
   const langButton = (
     <button
       type="button"
-      onClick={() => i18n.changeLanguage(lang.startsWith("en") ? "fr" : "en")}
+      onClick={() => switchLanguage(i18n)}
       aria-label={t("common.langSwitchAria")}
       className="rounded-[var(--radius-pill)] px-2 py-1 text-xs font-semibold uppercase tracking-[var(--tracking-wide)] text-[var(--text-muted)] transition-colors hover:text-[var(--text-primary)]"
     >

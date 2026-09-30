@@ -35,7 +35,7 @@ test.describe("proxy", () => {
     });
   }
 
-  for (const path of ["/", "/boutique", "/connexion", "/admin/connexion", "/academy/formation/fondation", "/studio-3d"]) {
+  for (const path of ["/fr", "/en/shop", "/connexion", "/admin/connexion", "/fr/academy/formation/fondation", "/fr/studio-3d"]) {
     test(`leaves ${path} open`, async ({ request }) => {
       const response = await request.get(path, noRedirect);
       expect(response.status()).toBe(200);

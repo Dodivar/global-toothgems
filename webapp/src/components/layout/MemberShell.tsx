@@ -35,6 +35,7 @@ import { NewTag } from "../studio/NewTag";
 import { MEMBER_SPACE_EXPLORE } from "./clientSpaces";
 import monogram from "../../assets/monogram-blue.png";
 import logoBlack from "../../assets/logo-wordmark-black.png";
+import { switchLanguage } from "../../i18n/preference";
 
 /**
  * Shell of the member space: the account and the Artist Community.
@@ -289,7 +290,7 @@ function SidebarBody({ onNavigate, closeButton }: { onNavigate?: () => void; clo
           )}
           <button
             type="button"
-            onClick={() => i18n.changeLanguage(i18n.language.startsWith("en") ? "fr" : "en")}
+            onClick={() => switchLanguage(i18n)}
             aria-label={t("common.langSwitchAria")}
             className={clsx(
               "inline-flex items-center gap-1.5 rounded-[var(--radius-pill)] px-2.5 py-1.5 text-[length:var(--text-caption)] font-semibold uppercase text-[var(--text-muted)] hover:bg-[var(--gt-ink-100)] hover:text-[var(--text-primary)]",

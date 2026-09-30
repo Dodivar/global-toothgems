@@ -65,9 +65,9 @@ Stripe  payment source of truth; fulfilment only from verified, idempotent webho
 - Next.js server code (Server Components, middleware, Route Handlers) renders pages, refreshes the Supabase session cookie, protects routes and reads public data with the publishable key. It never holds the service-role key or a provider secret and does not take over what Edge Functions own (payments, webhooks, e-mail, service-role jobs) without an explicit user decision. No other backend framework, database, auth provider, CMS, LMS or commerce engine without an explicit user decision.
 - Business rules that protect money, stock, access or permissions live in Postgres (functions, constraints, triggers, RLS) or in Edge Functions — never only in the browser or in a page. Front-end and middleware checks are UX and navigation; RLS is the authority.
 - The service-role key and every provider secret exist only in Edge Function secrets / Supabase — never in `NEXT_PUBLIC_*` variables (Next.js inlines them into the public bundle).
-- Decided by the user (2026-09-30): e-mail links land on `/auth/confirm` (server route opening the session, phase 2); locale URLs are prefixed `/fr/…` and `/en/…` (implemented in phase 3; details still to ask are listed in `docs/migration-nextjs.md`).
+- Decided by the user (2026-09-30): e-mail links land on `/auth/confirm` (server route opening the session, phase 2); public pages are prefixed `/fr/…` and `/en/…` with English segments (`/fr/boutique` ↔ `/en/shop`), `/` goes to the saved choice, else the browser's language, else English; the member space, sign-in and the back office are not prefixed (phase 3.1, done). The address table is `webapp/src/lib/localeRoutes.ts`: add every new public page there, in both languages. The React Router app keeps its French paths internally (`localizedHistory.ts` translates them).
 - Sessions live in cookies (`@supabase/ssr`); `webapp/proxy.ts` refreshes them and turns signed-out visitors away from `/compte`, the learner pages and `/admin` before anything is sent.
-- Still the user's call, never improvise: the Vercel project switch (done by the user), the Supabase Auth dashboard settings (redirect allow-list, e-mail templates), and the open locale details.
+- Still the user's call, never improvise: the Vercel project switch (done by the user), the Supabase Auth dashboard settings (redirect allow-list, e-mail templates), the English wording of new public addresses, and the open points of `docs/migration-nextjs.md`.
 
 ### Domain status (update this table when a domain goes live)
 
@@ -124,6 +124,7 @@ Customer identity is shared across commerce, learning and Studio; the functional
 
 - **Launch languages: French (default and reference) and English.** German is enabled in the database and planned, but not launch-blocking; do not add partial German UI strings.
 - Customer-facing UI text goes through react-i18next (`webapp/src/i18n/locales/*.json`) — never hard-coded. Every new key exists in both `fr` and `en`.
+- UI language: on public pages, the one in the address (`/fr`, `/en`); elsewhere the saved choice (`gt-lang`, written only by the FR/EN switches), else the browser's, else English.
 - Content (products, categories, e-mails, pages) uses translation tables (`*_translations`): base columns hold French, other locales are rows with a draft/published status. Never add `name_en`-style columns.
 - Language, country, currency, tax regime and shipping zone are separate dimensions.
 

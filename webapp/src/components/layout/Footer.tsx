@@ -2,6 +2,7 @@ import { Link } from "react-router-dom";
 import { useTranslation } from "react-i18next";
 import { useFooterColumns } from "./useFooterColumns";
 import logoBlue from "../../assets/logo-wordmark-blue.png";
+import { switchLanguage } from "../../i18n/preference";
 
 export function Footer() {
   const { t, i18n } = useTranslation();
@@ -44,7 +45,7 @@ export function Footer() {
           <span>{t("footer.copyright")}</span>
           <button
             type="button"
-            onClick={() => i18n.changeLanguage(i18n.language.startsWith("en") ? "fr" : "en")}
+            onClick={() => switchLanguage(i18n)}
             aria-label={t("common.langSwitchAria")}
             className="underline decoration-1 underline-offset-4 transition-colors hover:text-[var(--text-primary)]"
           >
