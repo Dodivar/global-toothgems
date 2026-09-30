@@ -121,6 +121,8 @@ export interface ProductVariant {
 export interface Product {
   /** URL key: the product slug in the default language. */
   id: string;
+  /** Row id in the database. Absent on the prototype's mock products. */
+  dbId?: string;
   /** Localized slugs that also resolve to this product (e.g. the English URL). */
   aliases?: string[];
   name: Localized;

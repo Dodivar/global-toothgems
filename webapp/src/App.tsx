@@ -14,6 +14,7 @@ import { CookieConsentProvider } from "./lib/cookieConsent";
 import { ReviewModeProvider } from "./lib/reviewMode";
 import { PromotionsProvider } from "./lib/adminPromotions";
 import { ReviewsProvider } from "./lib/reviews";
+import { FavoritesProvider } from "./lib/favorites";
 import { ReviewOverlays } from "./components/reviews/ReviewOverlays";
 import { Header } from "./components/layout/Header";
 import { Footer } from "./components/layout/Footer";
@@ -213,6 +214,9 @@ export default function App() {
                     against; above both the storefront and the back office, so a
                     review approved in /admin/avis shows on the product page. */}
                 <ReviewsProvider>
+                {/* The member's favourite products: reads the account and the
+                    catalogue above it, and confirms with a toast. */}
+                <FavoritesProvider>
                   <ScrollToTop />
                   <DocumentLanguage />
                   <a href="#main" className="gt-skip-link">
@@ -478,6 +482,7 @@ export default function App() {
                   {!bareChrome && !workspace && <Footer />}
                   <CookieSettingsDialog />
                   <ReviewOverlays />
+                </FavoritesProvider>
                 </ReviewsProvider>
                 </ReviewModeProvider>
                 </CookieConsentProvider>

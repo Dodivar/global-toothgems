@@ -17,7 +17,7 @@ import { AccountStep } from "../components/register/steps/AccountStep";
 import { ProfileStep } from "../components/register/steps/ProfileStep";
 import { PreferencesStep, type CreateFailure } from "../components/register/steps/PreferencesStep";
 import { useAuth } from "../lib/auth";
-import { confirmationRedirect } from "../lib/authRedirect";
+import { confirmationRedirect, isSafeNext } from "../lib/authRedirect";
 import { useProgress } from "../lib/progress";
 import { useToast } from "../lib/toast";
 import { FORGOT_PATH } from "../lib/accountSecurity";
@@ -337,9 +337,18 @@ export function Register() {
 
   const courseId = context.kind === "training" ? context.courseId : "fondation";
 
-  /** Where the confirmation page offers to continue, following the reason the visitor came. */
+  /**
+   * Where the confirmation page offers to continue, following the reason the
+   * visitor came. A plain sign-up that started from a page (a heart tapped in
+   * the shop, a gated screen) goes back to that page.
+   */
+  const returnPath = routeState?.from && isSafeNext(routeState.from) ? routeState.from : undefined;
   const afterConfirmation =
-    context.kind === "training" ? `/academy/formation/${courseId}` : context.kind === "purchase" ? "/panier" : "/compte";
+    context.kind === "training"
+      ? `/academy/formation/${courseId}`
+      : context.kind === "purchase"
+        ? "/panier"
+        : returnPath ?? "/compte";
 
   /** Google sign-in is not connected to Supabase yet: say so rather than pretend. */
   const openGoogle = () => {

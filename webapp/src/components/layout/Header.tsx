@@ -4,6 +4,8 @@ import { useTranslation } from "react-i18next";
 import { ArrowRight, Box, ChevronDown, Heart, Menu, Search, ShoppingBag, User, X } from "lucide-react";
 import { IconButton } from "../ui/IconButton";
 import { useAuth } from "../../lib/auth";
+import { useFavorites } from "../../lib/favorites";
+import { FAVORITES_HREF } from "../../lib/favoritesState";
 import { useCart } from "../../lib/cart";
 import { useToast } from "../../lib/toast";
 import { ACADEMY_MENU } from "../../data/menu";
@@ -28,6 +30,7 @@ export function Header() {
   const location = useLocation();
   const { count } = useCart();
   const { signedIn, initials } = useAuth();
+  const { favoriteProducts } = useFavorites();
   const { showToast } = useToast();
   const lang = i18n.language;
 
@@ -124,6 +127,13 @@ export function Header() {
     menuTab === "academy" ? { label: t("nav.viewAllAcademy"), to: "/academy" } : { label: t("nav.viewAllShop"), to: "/boutique" };
 
   const cartLabel = count > 0 ? t("nav.cartWithCount", { count }) : t("nav.cart");
+  const favoriteCount = signedIn ? favoriteProducts.length : 0;
+  const wishlistLabel = favoriteCount > 0 ? t("nav.wishlistWithCount", { count: favoriteCount }) : t("nav.wishlist");
+  /** The shop narrowed to the member's favourites; signed out, it explains that they need an account. */
+  const openFavorites = () => {
+    closeAll();
+    navigate(FAVORITES_HREF);
+  };
 
   const langButton = (
     <button
@@ -204,6 +214,7 @@ export function Header() {
           <div className="flex items-center gap-1">
             {langButton}
             <IconButton icon={Search} label={t("nav.search")} onClick={notIncluded} />
+            <IconButton icon={Heart} label={wishlistLabel} badge={favoriteCount} onClick={openFavorites} />
             {signedIn ? (
               /* Signed in, the account is a named place — "My space", with the
                  member's initials — rather than an anonymous person icon: it is
@@ -306,7 +317,7 @@ export function Header() {
           >
             <img src={logoBlack} alt="Global Toothgems" className="h-4 w-auto" />
           </Link>
-          <IconButton icon={Heart} label={t("nav.wishlist")} onClick={notIncluded} />
+          <IconButton icon={Heart} label={wishlistLabel} badge={favoriteCount} onClick={openFavorites} />
           <IconButton icon={User} label={signedIn ? t("nav.mySpace") : t("nav.signIn")} onClick={openAccount} />
           <IconButton icon={ShoppingBag} label={cartLabel} badge={count} onClick={() => navigate("/panier")} />
         </div>

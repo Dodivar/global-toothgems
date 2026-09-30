@@ -1,16 +1,18 @@
 import { useCallback, useEffect, useId, useMemo, useRef, useState } from "react";
 import { useTranslation } from "react-i18next";
 import { useSearchParams } from "react-router-dom";
-import { ChevronDown, SlidersHorizontal, X } from "lucide-react";
+import { ChevronDown, Heart, SlidersHorizontal, X } from "lucide-react";
 import { Button } from "../components/ui/Button";
 import { CatalogError } from "../components/shop/CatalogError";
 import { FilterPanel, type GroupKey } from "../components/shopAlt/FilterPanel";
 import { useFilterLabels } from "../components/shopAlt/useFilterLabels";
 import { FilterDrawer } from "../components/shopAlt/FilterDrawer";
 import { StorefrontCard, StorefrontCardSkeleton } from "../components/shopAlt/StorefrontCard";
-import { pick } from "../data/types";
 import { useCatalog } from "../lib/catalog/CatalogProvider";
-import { useToast } from "../lib/toast";
+import { useAuth } from "../lib/auth";
+import { useFavorites } from "../lib/favorites";
+import { isFavoritesView, withFavoritesView } from "../lib/favoritesState";
+import { FavoritesEmpty } from "../components/favorites/FavoritesEmpty";
 import {
   DEFAULT_SORT,
   FILTER_KEYS,
@@ -60,11 +62,28 @@ const SIDEBAR_OPEN_GROUPS: GroupKey[] = ["category", "shape", "color", "price"];
 export function ShopAlt() {
   const { t, i18n } = useTranslation();
   const lang = i18n.language;
-  const { showToast } = useToast();
-  const { products, status, source, taxonomy } = useCatalog();
+  const { products: catalog, status: catalogStatus, source, taxonomy } = useCatalog();
+  const { signedIn, restoring } = useAuth();
+  const favorites = useFavorites();
   const [params, setParams] = useSearchParams();
   const labelOf = useFilterLabels();
   const sortId = useId();
+
+  // "My favourites" narrows the whole page — grid, counts and filter facets —
+  // to the member's favourites; the filters then work within them.
+  const favoritesView = isFavoritesView(params);
+  const products = favoritesView ? favorites.favoriteProducts : catalog;
+  const favoritesLoading = restoring || (signedIn && (favorites.status === "idle" || favorites.status === "loading"));
+  const status = favoritesView && catalogStatus === "ready" && favoritesLoading ? "loading" : catalogStatus;
+  /** Signed out, or the list could not be read: the favourites view shows why instead of a grid. */
+  const favoritesBlocked = favoritesView && !restoring && (!signedIn || favorites.status === "error");
+  const toggleFavoritesView = () => {
+    if (!favoritesView && !signedIn) {
+      favorites.requestAccount();
+      return;
+    }
+    setParams(withFavoritesView(params, !favoritesView));
+  };
 
   const filters = useMemo(() => normalizeTaxonomy(readFilters(params), taxonomy), [params, taxonomy]);
   const sort = readSort(params);
@@ -158,8 +177,6 @@ export function ShopAlt() {
   }, []);
   const floatingVisible = !inlineTriggerVisible && resultsVisible && !drawerOpen;
 
-  const [saved, setSaved] = useState<Record<string, boolean>>({});
-
   // The family is part of the product-type chip ("Toothgems › Swarovski");
   // removing that chip clears both.
   const familyActive = filters.family !== FILTER_PARAMS.family.fallback;
@@ -185,13 +202,13 @@ export function ShopAlt() {
           <div className="grid max-w-[760px] gap-2">
             <span className="gt-eyebrow">
               {t("shop.eyebrow")}
-              {status === "ready" && <span className="text-[var(--text-subtle)]"> · {t("shopAlt.totalCount", { count: products.length })}</span>}
+              {catalogStatus === "ready" && <span className="text-[var(--text-subtle)]"> · {t("shopAlt.totalCount", { count: catalog.length })}</span>}
             </span>
             <h1 className="m-0 text-[length:clamp(28px,3.1vw,44px)] font-bold leading-[var(--leading-tight)] tracking-[var(--tracking-display)] text-[var(--text-primary)]">
-              {t("shop.title")}
+              {favoritesView ? t("favorites.title") : t("shop.title")}
             </h1>
             <p className="m-0 max-w-[62ch] text-[length:var(--text-body-sm)] text-[var(--text-body)] sm:text-[length:var(--text-body-md)]">
-              {t("shop.body")}
+              {favoritesView ? t("favorites.body") : t("shop.body")}
             </p>
           </div>
         </div>
@@ -236,8 +253,30 @@ export function ShopAlt() {
           >
             {/* Toolbar: count, then sort, and below lg the filter trigger. */}
             <div className="flex flex-wrap items-center gap-x-3 gap-y-2 pb-3 sm:gap-x-4">
+              <button
+                type="button"
+                onClick={toggleFavoritesView}
+                aria-pressed={favoritesView}
+                className="inline-flex h-9 items-center gap-2 rounded-[var(--radius-pill)] border px-3.5 text-[13px] font-semibold transition-colors"
+                style={{
+                  borderColor: favoritesView ? "var(--gt-ink-900)" : "var(--border-strong)",
+                  background: favoritesView ? "var(--gt-ink-900)" : "var(--surface-card)",
+                  color: favoritesView ? "var(--text-inverse)" : "var(--text-primary)",
+                }}
+              >
+                <Heart
+                  size={15}
+                  aria-hidden="true"
+                  fill={favoritesView ? "var(--accent-highlight)" : "none"}
+                  color={favoritesView ? "var(--accent-highlight)" : "currentColor"}
+                />
+                {t("favorites.filter")}
+                {signedIn && favorites.favoriteProducts.length > 0 && (
+                  <span className="font-normal opacity-80">· {favorites.favoriteProducts.length}</span>
+                )}
+              </button>
               <span role="status" aria-live="polite" className="mr-auto text-[13px] font-semibold text-[var(--text-primary)]">
-                {status === "error" ? null : countText}
+                {status === "error" || favoritesBlocked ? null : countText}
               </span>
               <label htmlFor={sortId} className="flex items-center gap-1.5 text-[13px] text-[var(--text-muted)]">
                 <span className="hidden sm:inline">{t("shopAlt.sortLabel")}</span>
@@ -298,12 +337,16 @@ export function ShopAlt() {
 
             {status === "error" ? (
               <CatalogError />
+            ) : favoritesBlocked ? (
+              <FavoritesEmpty kind={signedIn ? "error" : "signedOut"} onAction={favorites.reload} />
             ) : pending || status === "loading" ? (
               <div className={GRID} aria-hidden="true">
                 {Array.from({ length: Math.min(STEP, Math.max(visible.length, 12)) }).map((_, i) => (
                   <StorefrontCardSkeleton key={i} />
                 ))}
               </div>
+            ) : favoritesView && products.length === 0 ? (
+              <FavoritesEmpty kind="empty" onAction={() => setParams(withFavoritesView(params, false))} />
             ) : visible.length === 0 ? (
               <div className="grid justify-items-center gap-3 rounded-[var(--radius-card)] bg-[var(--surface-card)] px-6 py-16 text-center shadow-[var(--shadow-card)]">
                 <p className="m-0 text-[length:var(--text-h4)] font-semibold text-[var(--text-primary)]">{t("shopAlt.emptyTitle")}</p>
@@ -322,11 +365,8 @@ export function ShopAlt() {
                       product={p}
                       source={source}
                       eager={i < 6}
-                      saved={Boolean(saved[p.id])}
-                      onSave={(next) => {
-                        setSaved((s) => ({ ...s, [p.id]: next }));
-                        if (next) showToast(t("product.toastSavedTitle"), t("product.toastSavedBody", { name: pick(p.name, lang) }));
-                      }}
+                      saved={favorites.isFavorite(p)}
+                      onSave={() => favorites.toggleFavorite(p)}
                     />
                   </li>
                 ))}

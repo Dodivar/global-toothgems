@@ -54,6 +54,7 @@ supabase/
   tests/iteration12_validation.sql  iteration 12 member sign-up (Supabase Auth metadata → profile + consents) suite (always rolls back)
   tests/iteration13_validation.sql  iteration 13 gem colours suite (always rolls back)
   tests/iteration15_validation.sql  iteration 15 product variants of any kind (colours, boxes…) + their photos suite (always rolls back)
+  tests/iteration17_validation.sql  iteration 17 member wishlist (favourites) suite (always rolls back)
   templates/confirm-signup.html     French "Confirm signup" email, to paste into the Auth settings
 ```
 
@@ -94,6 +95,7 @@ supabase/
 | 20260928222836 | `studio_workspace` | 3D Studio workspace: `creations` (scene_data jsonb v1, generated `element_count`, indicative `estimated_price_minor` + `currency`, private thumbnail path), `gem_groups`, `studio_feedback` (insert-only, staff read), private `studio-thumbnails` bucket; owner-only RLS, `user_id` defaults to `auth.uid()` and is not writable; `updated_at` moves on content edits only. Used by the webapp through `lib/studioWorkspace/supabaseRepository.ts` |
 | 20260928223009 | `product_custom_variants` | `admin_save_product()` gains an optional `custom_variants` list (every variant that is not a pack/SS option: browser-generated id, fr + en name, optional `attributes.swatch` `#rrggbb` merged into the other attributes, optional price, stock) and an optional `media[].variant_id`; SKU derived once from the product SKU + French name, unique; names can be swapped in one save; a variant left out is deleted, or deactivated when ordered; refused alongside `variants` or on a product selling pack/SS options; returns `custom_variants` |
 | 20260929120000 | `category_families` | second level of the shop taxonomy: `category_families` (under one category, `slug` unique across categories = `famille` URL value, `is_active`, `position`, audited) + `category_family_translations`; optional `products.family_id` with a composite FK `(category_id, family_id)` and a trigger clearing a family the new category does not have; categories reorganised into `gems` (Toothgems), `materiel` (former `outils`), `kits`, `lip-gloss`, `entretien` / `accessoires` emptied into `materiel` and hidden; hosted products classified by slug; `admin_save_product()` gains an optional `family_id` (absent = unchanged) and returns it |
+| 20260930090111 | `wishlist` | `wishlist_items` (member × product, composite key, `user_id` defaults to `auth.uid()`, both CASCADE); members read, add and remove only their own rows; adding needs an active account and an active product; only `product_id` is insertable, nothing is updatable; no visitor or staff access |
 
 RLS is **enabled in the same migration that creates each table** (deny by default);
 policies are granted back in `rls_policies`.
@@ -123,6 +125,7 @@ profiles 1─* consent_records   (append-only) → member_consents (latest per p
          1─* data_export_requests ─→ storage data-exports/<user_id>/…
          1─* loyalty_cards 1─* loyalty_stamps ─→ orders (one stamp per order)
          1─* customer_tags, customer_notes   (staff only)
+         1─* wishlist_items ─→ products   (favourites; own rows only)
 loyalty_settings (single row)      review_requests (view: shipped, not yet reviewed)
 
 roles 1─* role_permissions *─1 permissions        profiles 1─1 staff_profiles (team members)
@@ -525,6 +528,23 @@ Catégories page (`GemColorsSection.tsx`).
   (the three functions are `SECURITY INVOKER`, RLS applies). Name, shade, visibility changes and deletions go to
   `audit_logs`.
 
+### Wishlist (iteration 17)
+
+The hearts of the storefront (shop cards, home rail, product page) and the shop's « Mes favoris » view
+(`/boutique?favoris=1`, behind the header's heart) read and write `wishlist_items` (`webapp/src/lib/favorites.tsx`).
+
+- **One row per member and product** (primary key): adding twice fails with `23505`, which the app treats as done.
+  The list is naturally bounded by the catalogue, so there is no separate cap.
+- **The owner comes from the session**: `user_id` defaults to `auth.uid()` and only `product_id` is granted for insert.
+  No update grant — a favourite is added or removed.
+- **Only shop products**: the insert policy requires an `active` product and an `active` account. A product later
+  archived keeps its rows but is no longer readable by customers, so it drops out of the view and comes back if
+  republished; a product really deleted takes its rows with it (CASCADE).
+- **Private**: members see only their own favourites; visitors have no access; staff have no read access either
+  (no screen needs it). Per-product counts, if wanted later, belong in a function that returns aggregates only.
+- **Personal data**: deleted with the account (CASCADE). To include in the personal-data export when that job is built.
+- Not audited: a customer preference, neither money nor security.
+
 ### Integrity guarantees
 
 - `orders_total_matches`: `total = subtotal − discount + shipping (+ tax when prices exclude tax)`; discount ≤ subtotal; all amounts ≥ 0.
@@ -564,6 +584,8 @@ Iteration 5 additions:
   own consent records and export requests; edit persona / interest / language / country / birth date. They cannot
   write `marketing_opt_in`, `password_changed_at`, stamps, cards or loyalty rules, nor see CRM tags/notes.
 - **Admins** read everything above, manage CRM tags/notes (notes: own edits only) and the loyalty rules (audited).
+
+Iteration 17: **customers** read, add and remove their own favourites (`wishlist_items`); visitors and staff have no access.
 
 Iteration 6: "admin" in the lines above now reads "a team member holding the matching permission"
 (see *Back-office roles and permissions*); policy names say "staff".
@@ -606,7 +628,8 @@ enable the extension in the dashboard — or a scheduled server job with the ser
 `tests/iteration3_validation.sql`, `tests/iteration4_validation.sql`, `tests/iteration5_validation.sql` and
 `tests/iteration6_validation.sql`, `tests/iteration7_validation.sql`, `tests/iteration8_validation.sql`,
 `tests/iteration9_validation.sql`, `tests/iteration10_validation.sql`, `tests/iteration11_validation.sql`,
-`tests/iteration12_validation.sql`, `tests/iteration13_validation.sql`, `tests/iteration15_validation.sql`. Each ends with
+`tests/iteration12_validation.sql`, `tests/iteration13_validation.sql`, `tests/iteration15_validation.sql`,
+`tests/iteration17_validation.sql`. Each ends with
 `ALL … PASSED (...)` raised as an exception, which rolls everything back.
 (The order-number sequence still advances — sequences are not transactional.)
 

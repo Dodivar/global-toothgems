@@ -95,6 +95,7 @@ describe("mapProduct", () => {
   it("maps a product row to the storefront model", () => {
     const p = mapProduct(row(), { product_id: "x", average_rating: 4.5, review_count: 12 }, url);
     expect(p.id).toBe("etoile-cristal");
+    expect(p.dbId).toBe("00000000-0000-0000-0000-000000000001");
     expect(p.aliases).toEqual(["crystal-star-tooth-gem"]);
     expect(p.name).toEqual({ fr: "Étoile Cristal", en: "Crystal Star Tooth Gem" });
     expect(p.description).toEqual({ fr: "Étoile cinq branches.", en: "Five-point star." });

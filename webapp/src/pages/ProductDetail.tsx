@@ -7,6 +7,7 @@ import { Button } from "../components/ui/Button";
 import { IconButton } from "../components/ui/IconButton";
 import { Select } from "../components/ui/Select";
 import { ProductCard } from "../components/ui/ProductCard";
+import { FavoriteButton } from "../components/favorites/FavoriteButton";
 import { RichText } from "../components/ui/RichText";
 import { ReviewsSection, useSubjectReviews } from "../components/reviews/ReviewsSection";
 import { relatedProducts, type Product } from "../data/products";
@@ -14,6 +15,7 @@ import { pick } from "../data/types";
 import { formatPrice } from "../lib/format";
 import { useCart } from "../lib/cart";
 import { useToast } from "../lib/toast";
+import { useFavorites } from "../lib/favorites";
 import { useReveal } from "../lib/useReveal";
 import { useCatalog } from "../lib/catalog/CatalogProvider";
 import { useTaxonomy } from "../lib/catalog/useTaxonomy";
@@ -77,6 +79,7 @@ function ProductView({ product }: { product: Product }) {
   const navigate = useNavigate();
   const { addLine } = useCart();
   const { showToast } = useToast();
+  const { isFavorite, toggleFavorite } = useFavorites();
   const { products, source } = useCatalog();
   const { categoryName, familyName } = useTaxonomy();
   const lang = i18n.language;
@@ -413,13 +416,7 @@ function ProductView({ product }: { product: Product }) {
               <Button variant="primary" size="lg" iconLeft={ShoppingBag} onClick={addToCart} disabled={stock === "out"} className="flex-1">
                 {t("product.addToCart")}
               </Button>
-              <IconButton
-                icon={Star}
-                label={t("product.save")}
-                variant="outline"
-                size="lg"
-                onClick={() => showToast(t("product.toastSavedTitle"), t("product.toastSavedBody", { name }))}
-              />
+              <FavoriteButton product={product} />
             </div>
 
             <RichText source={description} className="text-[length:var(--text-body-md)] text-[var(--text-body)]" />
@@ -501,6 +498,8 @@ function ProductView({ product }: { product: Product }) {
               <ProductCard
                 key={p.id}
                 to={`/boutique/${p.id}`}
+                saved={isFavorite(p)}
+                onSave={() => toggleFavorite(p)}
                 product={{
                   id: p.id,
                   name: pick(p.name, lang),

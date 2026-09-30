@@ -289,6 +289,7 @@ export function mapProduct(
 
   return {
     id: row.slug,
+    dbId: row.id,
     aliases,
     name,
     // Cards read best with a short spec line; the material is that line when

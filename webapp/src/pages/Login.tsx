@@ -42,7 +42,7 @@ export function Login() {
    * page, and by the training pages when a visitor asked to start a course.
    * `course` carries which one, so that purchase finishes on its own.
    */
-  const routeState = location.state as { from?: string; course?: string } | null;
+  const routeState = location.state as { from?: string; course?: string; reason?: "favorite" } | null;
   const from = routeState?.from;
   const pendingCourse = routeState?.course;
   const target = from ?? DEFAULT_TARGET;
@@ -160,7 +160,15 @@ export function Login() {
             >
               <Info size={16} aria-hidden="true" className="mt-0.5 flex-none" />
               {/* Sent from the 3D Studio (saving, a shared design), the reason is the Studio, not a course. */}
-              <span>{t(from.startsWith(STUDIO_PATH) ? "auth.gateNoticeStudio" : "auth.gateNotice")}</span>
+              <span>
+                {t(
+                  routeState?.reason === "favorite"
+                    ? "favorites.gate.loginNotice"
+                    : from.startsWith(STUDIO_PATH)
+                      ? "auth.gateNoticeStudio"
+                      : "auth.gateNotice",
+                )}
+              </span>
             </p>
           )}
 
