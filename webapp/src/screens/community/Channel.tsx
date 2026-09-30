@@ -5,7 +5,7 @@ import { MessagesSquare, Users } from "lucide-react";
 import clsx from "clsx";
 import { getChannel, type Discussion } from "../../data/community";
 import { pick } from "../../data/types";
-import { formatCount } from "../../lib/format";
+import { useFormat } from "../../lib/format";
 import { useCommunity } from "../../lib/community";
 import { DiscussionCard } from "../../components/community/DiscussionCard";
 import { ShowcaseCard } from "../../components/community/ShowcaseCard";
@@ -33,6 +33,7 @@ type Sort = "latest" | "busiest" | "unanswered";
 const SORTS: Sort[] = ["latest", "busiest", "unanswered"];
 
 export function Channel() {
+  const { formatCount } = useFormat();
   const { t, i18n } = useTranslation();
   const lang = i18n.language;
   const { channelId = "" } = useParams();

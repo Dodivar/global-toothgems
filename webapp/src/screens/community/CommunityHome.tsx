@@ -10,7 +10,7 @@ import {
   MEMBERS,
 } from "../../data/community";
 import { pick } from "../../data/types";
-import { formatCount } from "../../lib/format";
+import { useFormat } from "../../lib/format";
 import { useCommunity, VIEWER_ID } from "../../lib/community";
 import { AvatarStack } from "../../components/community/MemberAvatar";
 import { MemberButton } from "../../components/community/MemberProfile";
@@ -35,6 +35,7 @@ import { cardBase, cardHover, focusRing } from "../../components/community/style
  * member scrolls for.
  */
 export function CommunityHome() {
+  const { formatCount } = useFormat();
   const { t, i18n } = useTranslation();
   const lang = i18n.language;
   const { discussions, discussionsIn } = useCommunity();

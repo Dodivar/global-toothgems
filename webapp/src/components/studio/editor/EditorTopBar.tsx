@@ -41,7 +41,7 @@ import {
   useUserPresets,
   type StudioSnapshot,
 } from "../../../lib/studio3d/store";
-import { formatDate } from "../../../lib/format";
+import { useFormat } from "../../../lib/format";
 
 const toolButton = clsx(
   "inline-grid h-9 w-9 flex-none place-items-center rounded-[var(--radius-sm)] text-[var(--gt-ink-600)] transition-colors",
@@ -315,6 +315,7 @@ function PresetMenu() {
 }
 
 function ExportMenu() {
+  const { formatDate } = useFormat();
   const labels = useEditorLabels();
   const { t } = labels;
   const [open, setOpen] = useState(false);

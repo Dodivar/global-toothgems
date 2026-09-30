@@ -5,7 +5,7 @@ import { Button } from "../../components/ui/Button";
 import { ProgressRing } from "../../components/learning/LearningStatus";
 import { pick } from "../../data/types";
 import { learnHref, lessonHref } from "../../lib/academyUrl";
-import { formatDate } from "../../lib/format";
+import { useFormat } from "../../lib/format";
 import { formatDuration } from "../../lib/trainingFilters";
 import { LearnAccessState } from "./LearnAccessState";
 import { useLearnerCourse } from "./useLearnerCourse";
@@ -31,6 +31,7 @@ const SPARKS = [
  * congratulating anyone early.
  */
 export function CourseCompleted() {
+  const { formatDate } = useFormat();
   const { courseId = "" } = useParams();
   const { t, i18n } = useTranslation();
   const lang = i18n.language;

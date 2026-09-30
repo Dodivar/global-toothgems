@@ -12,7 +12,7 @@ import { RichText } from "../components/ui/RichText";
 import { ReviewsSection, useSubjectReviews } from "../components/reviews/ReviewsSection";
 import { relatedProducts, type Product } from "../data/products";
 import { pick } from "../data/types";
-import { formatPrice } from "../lib/format";
+import { useFormat } from "../lib/format";
 import { useCart } from "../lib/cart";
 import { useToast } from "../lib/toast";
 import { useFavorites } from "../lib/favorites";
@@ -75,6 +75,7 @@ function ProductSkeleton() {
 }
 
 function ProductView({ product }: { product: Product }) {
+  const { formatPrice } = useFormat();
   const { t, i18n } = useTranslation();
   const navigate = useNavigate();
   const { addLine } = useCart();

@@ -27,7 +27,7 @@ import { pick } from "../data/types";
 import { useAuth } from "../lib/auth";
 import { useProgress } from "../lib/progress";
 import { useToast } from "../lib/toast";
-import { formatPrice } from "../lib/format";
+import { useFormat } from "../lib/format";
 
 /**
  * The training detail page: the sales page for one Academy course.
@@ -45,6 +45,7 @@ import { formatPrice } from "../lib/format";
  * it would hide the thing it advertises. Only the lesson player is gated.
  */
 export function CourseDetail() {
+  const { formatPrice } = useFormat();
   const { id } = useParams();
   const { t, i18n } = useTranslation();
   const navigate = useNavigate();

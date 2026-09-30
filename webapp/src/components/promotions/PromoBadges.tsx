@@ -31,7 +31,7 @@ import type {
   PromotionStatus,
   PromotionType,
 } from "../../data/adminPromotions";
-import { formatPrice } from "../../lib/format";
+import { useFormat } from "../../lib/format";
 import { euros } from "../../lib/promotionRules";
 
 /**
@@ -164,6 +164,7 @@ export function PromotionTypeLabel({ type, className }: { type: PromotionType; c
 
 /** Formats cents in the UI language. Display only. */
 export function useMoney() {
+  const { formatPrice } = useFormat();
   // Subscribing to the translation hook is what re-renders callers on a
   // language switch; `formatPrice` reads the language itself.
   useTranslation();

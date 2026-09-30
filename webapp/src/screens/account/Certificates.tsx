@@ -12,7 +12,7 @@ import { useAuth } from "../../lib/auth";
 import { useProgress } from "../../lib/progress";
 import { useReviewRequests } from "../../lib/reviews";
 import { useToast } from "../../lib/toast";
-import { formatDate } from "../../lib/format";
+import { useFormat } from "../../lib/format";
 
 /**
  * The member's certificate collection.
@@ -27,6 +27,7 @@ import { formatDate } from "../../lib/format";
  * more certificates. Each one is designed rather than left to a generic panel.
  */
 export function Certificates() {
+  const { formatDate } = useFormat();
   const { t, i18n } = useTranslation();
   const navigate = useNavigate();
   const lang = i18n.language;

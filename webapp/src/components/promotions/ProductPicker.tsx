@@ -5,7 +5,7 @@ import { ImageOff, Search, X } from "lucide-react";
 import clsx from "clsx";
 import { useAdminCatalog } from "../../lib/adminCatalog";
 import { useLocalized } from "../../lib/localized";
-import { formatPrice } from "../../lib/format";
+import { useFormat } from "../../lib/format";
 import type { AdminProduct } from "../../data/adminCatalog";
 
 /**
@@ -35,6 +35,7 @@ export function ProductPicker({
   error?: string;
   excludeIds?: string[];
 }) {
+  const { formatPrice } = useFormat();
   const { t } = useTranslation();
   const l = useLocalized();
   const { products, categoryById } = useAdminCatalog();
@@ -171,6 +172,7 @@ export function Thumb({ product, size = 36 }: { product: AdminProduct; size?: nu
 
 /** Read-only strip of products, each a link to its catalogue page. */
 export function ProductStrip({ ids, max = 6, emptyLabel }: { ids: string[]; max?: number; emptyLabel?: string }) {
+  const { formatPrice } = useFormat();
   const { t } = useTranslation();
   const l = useLocalized();
   const { products, categoryById } = useAdminCatalog();

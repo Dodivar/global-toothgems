@@ -19,13 +19,14 @@ import { useAuth } from "../lib/auth";
 import { bestSellers } from "../data/products";
 import { useCatalog } from "../lib/catalog/CatalogProvider";
 import { pick } from "../data/types";
-import { formatPrice } from "../lib/format";
+import { useFormat } from "../lib/format";
 
 const FREE_SHIPPING_THRESHOLD = 80;
 const SHIPPING_FLAT = 6.9;
 const EMAIL_RE = /^[^\s@]+@[^\s@]+\.[^\s@]{2,}$/;
 
 export function Cart() {
+  const { formatPrice } = useFormat();
   const { t, i18n } = useTranslation();
   const navigate = useNavigate();
   const { lines, subtotal, updateQty, removeLine, clearCart } = useCart();

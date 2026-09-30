@@ -8,7 +8,7 @@ import { VerifiedBadge } from "./ReviewBadges";
 import { type CustomerReview } from "../../data/reviewSystem";
 import { publicDate } from "../../lib/reviewRules";
 import { useReviewAuthor, useReviews } from "../../lib/reviews";
-import { formatDate } from "../../lib/format";
+import { useFormat } from "../../lib/format";
 
 const focusRing =
   "focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-[var(--focus-ring)]";
@@ -34,6 +34,7 @@ function toneFor(name: string): string {
  * card as quiet text buttons: the review is the content, not its controls.
  */
 export function ReviewCard({ review, featured = false }: { review: CustomerReview; featured?: boolean }) {
+  const { formatDate } = useFormat();
   const { t, i18n } = useTranslation();
   const lang = i18n.language.startsWith("en") ? "en" : "fr";
   const authorOf = useReviewAuthor();

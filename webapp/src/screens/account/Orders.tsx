@@ -7,13 +7,14 @@ import { OrderLineReviewAction } from "../../components/reviews/OrderLineReviewA
 import { EmptyPanel, SectionHeader } from "../../components/account/SectionHeader";
 import { useOrders } from "../../lib/orders";
 import { useToast } from "../../lib/toast";
-import { formatPrice } from "../../lib/format";
+import { useFormat } from "../../lib/format";
 
 /**
  * Purchase history and parcel tracking. The list comes from `lib/orders.tsx`:
  * the account's paid orders in Supabase, or the prototype's in-memory history.
  */
 export function Orders() {
+  const { formatPrice } = useFormat();
   const { t, i18n } = useTranslation();
   const navigate = useNavigate();
   const lang = i18n.language;

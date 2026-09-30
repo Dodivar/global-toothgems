@@ -38,7 +38,7 @@ import { DisableDialog, EmailDialog, StatusDialog } from "../../components/admin
 import { CURRENT_OPERATOR, useAdminCustomers, type CustomerProfileDraft } from "../../lib/adminCustomers";
 import { useAdminOrders } from "../../lib/adminOrders";
 import { useToast } from "../../lib/toast";
-import { formatDateShort } from "../../lib/format";
+import { useFormat } from "../../lib/format";
 import {
   customerActivity,
   customerName,
@@ -88,6 +88,7 @@ const TAB_META: Record<Tab, { labelKey: string; icon: typeof LayoutGrid }> = {
 const SAVE_DELAY = 620;
 
 export function CustomerDetail() {
+  const { formatDateShort } = useFormat();
   const { t } = useTranslation();
   const { id = "" } = useParams();
   const navigate = useNavigate();

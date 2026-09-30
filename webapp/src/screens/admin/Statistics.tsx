@@ -49,7 +49,7 @@ import {
   type ChartMetric,
   type ProductSortKey,
 } from "../../lib/adminAnalytics";
-import { formatCount, formatDate, formatPrice } from "../../lib/format";
+import { useFormat } from "../../lib/format";
 import { useLocalized } from "../../lib/localized";
 import { useToast } from "../../lib/toast";
 import { DEFAULT_FILTERS, activeFilterCount, type AnalyticsFilters, type OrderStatusId } from "../../data/adminAnalytics";
@@ -70,6 +70,7 @@ import { useAdminShell } from "./AdminLayout";
  * replaces is `data/adminAnalytics.ts`.
  */
 export function Statistics() {
+  const { formatCount, formatDate, formatPrice } = useFormat();
   const { t } = useTranslation();
   const L = useLocalized();
   const { openNav } = useAdminShell();

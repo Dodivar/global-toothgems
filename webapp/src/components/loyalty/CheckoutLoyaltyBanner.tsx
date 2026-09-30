@@ -4,7 +4,7 @@ import clsx from "clsx";
 import { Button } from "../ui/Button";
 import { LoyaltyStamp } from "./LoyaltyStamp";
 import { RewardSeal } from "./LoyaltyReward";
-import { formatPrice } from "../../lib/format";
+import { useFormat } from "../../lib/format";
 import { QUALIFYING_AMOUNT, REWARD_PERCENT, STAMPS_PER_CARD, type LoyaltyState } from "../../data/loyalty";
 
 /**
@@ -43,6 +43,7 @@ export function CheckoutLoyaltyBanner({
   state: LoyaltyState;
   className?: string;
 }) {
+  const { formatPrice } = useFormat();
   const { t } = useTranslation();
 
   // A ready reward outranks everything: it is worth money on this order. Below

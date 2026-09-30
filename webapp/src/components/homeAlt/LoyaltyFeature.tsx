@@ -4,7 +4,7 @@ import { ArrowRight, BadgePercent, Stamp, Sparkles } from "lucide-react";
 import { Button } from "../ui/Button";
 import { AnimatedLoyaltyCard } from "./AnimatedLoyaltyCard";
 import { QUALIFYING_AMOUNT, REWARD_PERCENT, STAMPS_PER_CARD } from "../../data/loyalty";
-import { formatPrice } from "../../lib/format";
+import { useFormat } from "../../lib/format";
 import { useReveal } from "../../lib/useReveal";
 
 /**
@@ -14,6 +14,7 @@ import { useReveal } from "../../lib/useReveal";
  * is a self-filling sample, not the visitor's own progress.
  */
 export function LoyaltyFeature() {
+  const { formatPrice } = useFormat();
   const { t } = useTranslation();
   const navigate = useNavigate();
   const ref = useReveal<HTMLElement>();

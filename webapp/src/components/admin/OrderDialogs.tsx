@@ -5,7 +5,7 @@ import clsx from "clsx";
 import { Dialog } from "../ui/Dialog";
 import { Button } from "../ui/Button";
 import { ORDER_STATUSES, orderTotal, type AdminOrder, type AdminOrderStatus } from "../../data/adminOrders";
-import { formatPrice } from "../../lib/format";
+import { useFormat } from "../../lib/format";
 import { OrderStatusBadge } from "./StatusBadges";
 
 /**
@@ -153,6 +153,7 @@ export function RefundDialog({
   onClose: () => void;
   onConfirm: (amount: number, full: boolean, reason: string) => void;
 }) {
+  const { formatPrice } = useFormat();
   const { t } = useTranslation();
   const total = order ? orderTotal(order) : 0;
   const [full, setFull] = useState(true);

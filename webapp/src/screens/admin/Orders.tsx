@@ -20,7 +20,7 @@ import {
 } from "../../components/admin/OrderDialogs";
 import { useAdminOrders } from "../../lib/adminOrders";
 import { useToast } from "../../lib/toast";
-import { formatPrice } from "../../lib/format";
+import { useFormat } from "../../lib/format";
 import {
   applyFilters,
   activeFilterCount,
@@ -66,6 +66,7 @@ import { useAdminShell } from "./AdminLayout";
 const FILTER_DELAY = 420;
 
 export function Orders() {
+  const { formatPrice } = useFormat();
   const { t } = useTranslation();
   const navigate = useNavigate();
   const { openNav } = useAdminShell();

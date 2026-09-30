@@ -9,7 +9,7 @@ import { DetailRow, SecurityCard } from "./SecurityCard";
 import { Notice } from "./Notice";
 import { useAuth } from "../../lib/auth";
 import { useToast } from "../../lib/toast";
-import { formatDate } from "../../lib/format";
+import { useFormat } from "../../lib/format";
 import { FORGOT_PATH, SecurityServiceError, changePassword, newPasswordError, type ServiceOutcome } from "../../lib/accountSecurity";
 import { useAccountSecurity } from "../../lib/securityState";
 import { changeOwnPassword } from "../../lib/accountCredentials";
@@ -29,6 +29,7 @@ const UNTOUCHED: Record<Field, boolean> = { current: false, next: false, confirm
  * no modal: the member was mid-task on their account, not starting a new one.
  */
 export function ChangePasswordCard({ outcome }: { outcome: ServiceOutcome }) {
+  const { formatDate } = useFormat();
   const { t } = useTranslation();
   const { email, realAuth } = useAuth();
   const { passwordChangedAt, markPasswordChanged } = useAccountSecurity();

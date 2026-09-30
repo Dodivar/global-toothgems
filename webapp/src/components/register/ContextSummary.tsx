@@ -1,7 +1,7 @@
 import { useTranslation } from "react-i18next";
 import { GraduationCap, Lock, ShoppingBag } from "lucide-react";
 import clsx from "clsx";
-import { formatPrice } from "../../lib/format";
+import { useFormat } from "../../lib/format";
 import type { RegistrationContext } from "../../lib/registration";
 import { useContextItem } from "./useContextItem";
 
@@ -22,6 +22,7 @@ export function ContextSummary({
   /** The account exists: the card now says the errand is waiting, not that it is being kept. */
   done?: boolean;
 }) {
+  const { formatPrice } = useFormat();
   const { t } = useTranslation();
   const item = useContextItem(context);
   if (context.kind === "general") return null;

@@ -24,7 +24,7 @@ import { Badge } from "../ui/Badge";
 import { Button } from "../ui/Button";
 import { ProgressBar } from "../ui/ProgressBar";
 import { FulfillmentBadge, OrderStatusBadge, PaymentStatusBadge } from "./StatusBadges";
-import { formatDateShort, formatPrice } from "../../lib/format";
+import { useFormat } from "../../lib/format";
 import { pick } from "../../data/types";
 import { COURSES } from "../../data/courses";
 import { countryLabelKey } from "../../data/countries";
@@ -79,6 +79,7 @@ export function CustomerSummary({
   orderCountInBook: number;
   lastOrder?: string;
 }) {
+  const { formatDateShort, formatPrice } = useFormat();
   const { t } = useTranslation();
   const state = trainingState(customer);
 
@@ -206,6 +207,7 @@ export function OverviewPanel({
   onEdit: () => void;
   onSeeAllActivity: () => void;
 }) {
+  const { formatDateShort } = useFormat();
   const { t } = useTranslation();
 
   return (
@@ -328,6 +330,7 @@ export function OrdersPanel({
   lifetimeCount: number;
   hrefForOrder: (order: AdminOrder) => string;
 }) {
+  const { formatDateShort, formatPrice } = useFormat();
   const { t, i18n } = useTranslation();
   const lang = i18n.language;
 
@@ -455,6 +458,7 @@ export function TrainingPanel({ customer }: { customer: AdminCustomerRecord }) {
 }
 
 function EnrollmentRow({ seat, title }: { seat: Enrollment; title: string }) {
+  const { formatDateShort } = useFormat();
   const { t } = useTranslation();
   const done = seat.progress >= 100;
 

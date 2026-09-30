@@ -13,7 +13,7 @@ import {
 } from "lucide-react";
 import { EmptyState } from "./EmptyState";
 import { useLocalized } from "../../lib/localized";
-import { formatDateShort } from "../../lib/format";
+import { useFormat } from "../../lib/format";
 import type { ActivityEntry, ActivityKind } from "../../data/adminCatalog";
 
 const KIND_ICON: Record<ActivityKind, LucideIcon> = {
@@ -35,6 +35,7 @@ const KIND_ICON: Record<ActivityKind, LucideIcon> = {
  * actually gets asked.
  */
 export function ActivityFeed({ entries }: { entries: ActivityEntry[] }) {
+  const { formatDateShort } = useFormat();
   const { t } = useTranslation();
   const L = useLocalized();
 

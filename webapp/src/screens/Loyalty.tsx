@@ -8,7 +8,7 @@ import { LoyaltyJourney } from "../components/loyalty/LoyaltyJourney";
 import { LoyaltyFAQ } from "../components/loyalty/LoyaltyFAQ";
 import { useReveal } from "../lib/useReveal";
 import { photo } from "../lib/images";
-import { formatPrice } from "../lib/format";
+import { useFormat } from "../lib/format";
 import {
   LOYALTY_STATES,
   LOYALTY_STATE_ORDER,
@@ -26,6 +26,7 @@ import {
  * card on it is static mock data.
  */
 export function Loyalty() {
+  const { formatPrice } = useFormat();
   const { t } = useTranslation();
   const navigate = useNavigate();
 

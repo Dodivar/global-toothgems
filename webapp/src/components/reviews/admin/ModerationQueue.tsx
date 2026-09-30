@@ -26,7 +26,7 @@ import {
   type QueueView,
 } from "../../../lib/reviewRules";
 import { useReviewCustomer, useReviewSubjects, useReviews } from "../../../lib/reviews";
-import { formatDateShort } from "../../../lib/format";
+import { useFormat } from "../../../lib/format";
 
 const focusRing =
   "focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-[var(--focus-ring)]";
@@ -56,6 +56,7 @@ function readFilters(params: URLSearchParams): QueueFilters {
  * A table on wide screens, a list of cards below `lg` — same data, same order.
  */
 export function ModerationQueue({ onOpen }: { onOpen: (id: string) => void }) {
+  const { formatDateShort } = useFormat();
   const { t, i18n } = useTranslation();
   const lang = i18n.language;
   const [params, setParams] = useSearchParams();

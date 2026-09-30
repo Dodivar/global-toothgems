@@ -15,7 +15,7 @@ import {
   type OrderStatus,
 } from "../../data/orders";
 import { pick } from "../../data/types";
-import { formatDate, formatDateShort, formatPrice } from "../../lib/format";
+import { useFormat } from "../../lib/format";
 
 const statusTone: Record<OrderStatus, BadgeTone> = {
   processing: "warning",
@@ -31,6 +31,7 @@ const statusTone: Record<OrderStatus, BadgeTone> = {
  * orders and cancelled orders have nothing in transit and never render it.
  */
 function ShipmentTracking({ order }: { order: Order }) {
+  const { formatDateShort } = useFormat();
   const { t } = useTranslation();
   const steps = [
     t("account.trackingStep.confirmed"),
@@ -88,6 +89,7 @@ export function OrderCard({
   /** Extra control under a line's details — the order history uses it for "Write a review". */
   lineAction?: (line: OrderLine) => ReactNode;
 }) {
+  const { formatDate, formatPrice } = useFormat();
   const { t } = useTranslation();
   const total = orderTotal(order);
   const cancelled = order.status === "cancelled";

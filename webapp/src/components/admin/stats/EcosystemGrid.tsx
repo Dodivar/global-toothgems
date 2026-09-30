@@ -2,7 +2,7 @@ import { useTranslation } from "react-i18next";
 import { GraduationCap, HeartHandshake, Repeat2, Sprout, type LucideIcon } from "lucide-react";
 import type { CrossDatum } from "../../../data/adminAnalytics";
 import { formatPercent } from "../../../lib/adminAnalytics";
-import { formatPrice } from "../../../lib/format";
+import { useFormat } from "../../../lib/format";
 
 /**
  * Where the shop and the school meet.
@@ -21,6 +21,7 @@ const ICONS: Record<string, LucideIcon> = {
 };
 
 export function EcosystemGrid({ rows }: { rows: CrossDatum[] }) {
+  const { formatPrice } = useFormat();
   const { t } = useTranslation();
   const show = (value: number, format: CrossDatum["format"]) =>
     format === "currency" ? formatPrice(value) : formatPercent(value);

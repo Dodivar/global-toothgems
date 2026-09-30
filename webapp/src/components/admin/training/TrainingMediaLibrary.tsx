@@ -19,7 +19,7 @@ import {
   type TrainingMedia,
   type UsageFilter,
 } from "../../../lib/trainingMediaRules";
-import { formatDate } from "../../../lib/format";
+import { useFormat } from "../../../lib/format";
 
 /**
  * The training image library: the course editor's own media collection.
@@ -393,6 +393,7 @@ function DetailsPanel({
   onDelete: () => void;
   onChange: (patch: Partial<Pick<TrainingMedia, "name" | "alt" | "category" | "tags">>) => void;
 }) {
+  const { formatDate } = useFormat();
   const { t, i18n } = useTranslation();
   const lang = i18n.language;
   const ids = { name: useId(), altFr: useId(), altEn: useId(), tags: useId(), category: useId() };

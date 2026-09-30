@@ -29,7 +29,7 @@ import { useCart } from "../../lib/cart";
 import { useCommunity } from "../../lib/community";
 import { useCookieConsent } from "../../lib/cookieConsent";
 import { useOrders } from "../../lib/orders";
-import { formatMonthYear } from "../../lib/format";
+import { useFormat } from "../../lib/format";
 import { useFocusTrap } from "../../lib/useFocusTrap";
 import { LEGAL_PATHS } from "../../data/legal/routes";
 import { NewTag } from "../studio/NewTag";
@@ -174,6 +174,7 @@ function Drawer({ onClose }: { onClose: () => void }) {
  * Rendered once in the desktop sidebar and once in the mobile drawer.
  */
 function SidebarBody({ onNavigate, closeButton }: { onNavigate?: () => void; closeButton?: ReactNode }) {
+  const { formatMonthYear } = useFormat();
   const { t, i18n } = useTranslation();
   const navigate = useNavigate();
   const { displayName, initials, email, signOut } = useAuth();

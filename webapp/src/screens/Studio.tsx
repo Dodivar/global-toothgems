@@ -28,7 +28,7 @@ import { StudioSteps } from "../components/studio/StudioSteps";
 import { StudioPricingCard } from "../components/studio/StudioPricingCard";
 import { StudioFaq } from "../components/studio/StudioFaq";
 import { NewTag } from "../components/studio/NewTag";
-import { formatPrice } from "../lib/format";
+import { useFormat } from "../lib/format";
 import { useReveal } from "../lib/useReveal";
 import { useToast } from "../lib/toast";
 import { COMPOSITIONS, STUDIO_PRICE, type CompositionId } from "../data/studio";
@@ -86,6 +86,7 @@ function SectionHeading({
 }
 
 export function Studio() {
+  const { formatPrice } = useFormat();
   const { t } = useTranslation();
   const navigate = useNavigate();
   const { showToast } = useToast();

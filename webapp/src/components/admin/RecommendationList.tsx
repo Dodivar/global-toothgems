@@ -7,7 +7,7 @@ import { AdminIconButton } from "./AdminIconButton";
 import { Thumb } from "../promotions/ProductPicker";
 import { useAdminCatalog } from "../../lib/adminCatalog";
 import { useLocalized } from "../../lib/localized";
-import { formatPrice } from "../../lib/format";
+import { useFormat } from "../../lib/format";
 import {
   STOREFRONT_RECOMMENDATION_SLOTS,
   isRecommendable,
@@ -58,6 +58,7 @@ export function RecommendationList({
   ids: string[];
   onChange: (ids: string[]) => void;
 }) {
+  const { formatPrice } = useFormat();
   const { t } = useTranslation();
   const l = useLocalized();
   const { products, categoryById } = useAdminCatalog();

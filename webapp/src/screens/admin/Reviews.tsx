@@ -12,7 +12,7 @@ import { ModerationDialogs, type DialogAction, type PendingAction } from "../../
 import { REVIEW_NOW } from "../../data/reviewSystem";
 import { isReported, viewCounts } from "../../lib/reviewRules";
 import { useReviews, type ReviewDemoMode } from "../../lib/reviews";
-import { formatDate } from "../../lib/format";
+import { useFormat } from "../../lib/format";
 import { useAdminShell } from "./AdminLayout";
 
 type Tab = "overview" | "queue" | "reported";
@@ -32,6 +32,7 @@ const SLUG: Record<Tab, string> = { overview: "", queue: "file", reported: "sign
  * page arrives here.
  */
 export function Reviews() {
+  const { formatDate } = useFormat();
   const { t } = useTranslation();
   const { openNav } = useAdminShell();
   const [params, setParams] = useSearchParams();

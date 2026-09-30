@@ -22,7 +22,7 @@ import { ModuleStatusBadge, NodeMarker, ProgressRing, ThinProgress, type NodeSta
 import { getInstructor, type TrainingCourse } from "../../data/adminTraining";
 import { pick } from "../../data/types";
 import { completionHref, lessonHref } from "../../lib/academyUrl";
-import { formatDate } from "../../lib/format";
+import { useFormat } from "../../lib/format";
 import { isNodeDone, isUnlocked, type CourseSummary, type LearnerRecord } from "../../lib/learning/path";
 import { formatDuration } from "../../lib/trainingFilters";
 import { ReviewRequestCard } from "../../components/reviews/ReviewRequestCard";
@@ -39,6 +39,7 @@ import { useLearnerCourse } from "./useLearnerCourse";
  * course as authored in the back office and from the learner's own record.
  */
 export function CourseOverview() {
+  const { formatDate } = useFormat();
   const { courseId = "" } = useParams();
   const { t, i18n } = useTranslation();
   const lang = i18n.language;
@@ -355,6 +356,7 @@ function ModuleCard({
 }
 
 function RecentlyCompleted({ courseId, summary, record }: { courseId: string; summary: CourseSummary; record: LearnerRecord }) {
+  const { formatDate } = useFormat();
   const { t, i18n } = useTranslation();
   const lang = i18n.language;
   const items = record.history

@@ -1,7 +1,7 @@
 import { useTranslation } from "react-i18next";
 import type { BucketStep } from "../../../data/adminAnalytics";
 import { useBucketLabel } from "../../../lib/adminAnalytics";
-import { formatCount } from "../../../lib/format";
+import { useFormat } from "../../../lib/format";
 import { areaPath, createPlot, linePath, useMeasure } from "./chart";
 
 /**
@@ -19,6 +19,7 @@ export function GrowthChart({
   points: { key: string; total: number }[];
   step: BucketStep;
 }) {
+  const { formatCount } = useFormat();
   const { t } = useTranslation();
   const labelOf = useBucketLabel(step);
   const { ref, width } = useMeasure<HTMLDivElement>();

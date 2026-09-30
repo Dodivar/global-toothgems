@@ -8,7 +8,7 @@ import {
   useBucketLabel,
   type ChartMetric,
 } from "../../../lib/adminAnalytics";
-import { formatCount, formatPrice } from "../../../lib/format";
+import { formatCount, formatPrice, useFormat } from "../../../lib/format";
 import { areaPath, axisScale, createPlot, labelIndices, linePath, useMeasure } from "./chart";
 
 /**
@@ -33,7 +33,8 @@ interface SeriesSpec {
   value: (point: TimePoint) => number;
   previous: (point: TimePoint) => number;
   tick: (value: number) => string;
-  full: (value: number) => string;
+  /** Full value for screen readers, in the number locale of the page. */
+  full: (value: number, locale: string) => string;
 }
 
 const SERIES: Record<"revenue" | "orders", SeriesSpec> = {
@@ -46,7 +47,7 @@ const SERIES: Record<"revenue" | "orders", SeriesSpec> = {
     value: (p) => p.revenue,
     previous: (p) => p.previousRevenue,
     tick: formatCompactMoney,
-    full: (v) => formatPrice(v),
+    full: (v, locale) => formatPrice(v, locale),
   },
   orders: {
     id: "orders",
@@ -55,7 +56,7 @@ const SERIES: Record<"revenue" | "orders", SeriesSpec> = {
     value: (p) => p.orders,
     previous: (p) => p.previousOrders,
     tick: formatCompact,
-    full: (v) => formatCount(v),
+    full: (v, locale) => formatCount(v, locale),
   },
 };
 
@@ -73,6 +74,7 @@ export function TrendChart({
   step: BucketStep;
 }) {
   const { t } = useTranslation();
+  const { locale } = useFormat();
   const labelOf = useBucketLabel(step);
   const { ref, width } = useMeasure<HTMLDivElement>();
   const [active, setActive] = useState<number | null>(null);
@@ -98,9 +100,9 @@ export function TrendChart({
       const values = points.map(series.value);
       const total = values.reduce((a, b) => a + b, 0);
       return t(`admin.stats.chart.summary.${series.id}`, {
-        total: series.full(total),
-        first: series.full(values[0] ?? 0),
-        last: series.full(values[values.length - 1] ?? 0),
+        total: series.full(total, locale),
+        first: series.full(values[0] ?? 0, locale),
+        last: series.full(values[values.length - 1] ?? 0, locale),
       });
     })
     .join(" ");

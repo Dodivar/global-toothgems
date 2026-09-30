@@ -9,7 +9,7 @@ import { MetaPill } from "./TrainingPrimitives";
 import type { Course } from "../../data/courses";
 import { pick } from "../../data/types";
 import type { CourseProgress } from "../../lib/progress";
-import { formatPrice } from "../../lib/format";
+import { useFormat } from "../../lib/format";
 
 /**
  * The training hero.
@@ -43,6 +43,7 @@ export function TrainingHero({
   onStart: () => void;
   onExploreCurriculum: () => void;
 }) {
+  const { formatPrice } = useFormat();
   const { t } = useTranslation();
   const title = pick(course.title, lang);
 

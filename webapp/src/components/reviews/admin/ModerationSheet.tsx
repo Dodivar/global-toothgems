@@ -28,10 +28,11 @@ import { useAdminOrders } from "../../../lib/adminOrders";
 import { isEditedPending } from "../../../lib/reviewRules";
 import { subjectPath, useReviewCustomer, useReviewSubjects, useReviews } from "../../../lib/reviews";
 import { useToast } from "../../../lib/toast";
-import { formatDateShort } from "../../../lib/format";
+import { useFormat } from "../../../lib/format";
 import { useModerator, type DialogAction } from "./ModerationDialogs";
 
 export function useWhen() {
+  const { formatDateShort } = useFormat();
   const { i18n } = useTranslation();
   return (iso: string) => {
     const time = new Intl.DateTimeFormat(i18n.language.startsWith("en") ? "en-IE" : "fr-FR", { hour: "2-digit", minute: "2-digit" }).format(new Date(iso));

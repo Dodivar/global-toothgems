@@ -18,7 +18,7 @@ import {
 import { CancelDialog, RefundDialog, StatusDialog } from "../../components/admin/OrderDialogs";
 import { useAdminOrders } from "../../lib/adminOrders";
 import { useToast } from "../../lib/toast";
-import { formatPrice } from "../../lib/format";
+import { useFormat } from "../../lib/format";
 import { orderItemCount, orderTotal, type AdminOrder } from "../../data/adminOrders";
 import { useAdminShell } from "./AdminLayout";
 
@@ -48,6 +48,7 @@ import { useAdminShell } from "./AdminLayout";
 const CURRENT_OPERATOR = "Léa — Support";
 
 export function OrderDetail() {
+  const { formatPrice } = useFormat();
   const { t } = useTranslation();
   const { reference = "" } = useParams();
   const navigate = useNavigate();

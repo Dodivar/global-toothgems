@@ -1,7 +1,7 @@
 import { useTranslation } from "react-i18next";
 import type { Course } from "../../data/courses";
 import { pick } from "../../data/types";
-import { formatDate } from "../../lib/format";
+import { useFormat } from "../../lib/format";
 
 /**
  * The certificate itself, drawn as a document rather than shown as a thumbnail.
@@ -31,6 +31,7 @@ export function CertificateDocument({
   reference: string;
   lang: string;
 }) {
+  const { formatDate } = useFormat();
   const { t } = useTranslation();
 
   return (

@@ -21,7 +21,7 @@ import { StudioPricingCard } from "../components/studio/StudioPricingCard";
 import { GemIcon } from "../components/studio/Gem";
 import { NewTag } from "../components/studio/NewTag";
 import { useAuth } from "../lib/auth";
-import { formatPrice } from "../lib/format";
+import { useFormat } from "../lib/format";
 import { STUDIO_PRICE } from "../data/studio";
 import { STUDIO_EDITOR_PATH, STUDIO_PATH, STUDIO_SUBSCRIBE_PATH } from "../lib/studioUrl";
 
@@ -43,6 +43,7 @@ const EMAIL_RE = /^[^\s@]+@[^\s@]+\.[^\s@]{2,}$/;
 const PROCESSING_MS = 1600;
 
 export function StudioSubscribe() {
+  const { formatPrice } = useFormat();
   const { t } = useTranslation();
   const navigate = useNavigate();
   const { signedIn, displayName, initials, email: accountEmail } = useAuth();

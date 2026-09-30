@@ -4,7 +4,7 @@ import { ArrowDown, ArrowUp, ChevronRight } from "lucide-react";
 import clsx from "clsx";
 import type { AdminOrder } from "../../data/adminOrders";
 import { orderTotal } from "../../data/adminOrders";
-import { formatPrice } from "../../lib/format";
+import { useFormat } from "../../lib/format";
 import type { SortKey } from "../../lib/adminOrderFilters";
 import { AttentionBadge, FulfillmentBadge, OrderStatusBadge, PaymentStatusBadge } from "./StatusBadges";
 import { CustomerCell, ItemsCell } from "./OrderCells";
@@ -111,6 +111,7 @@ function placedCell(placedAt: string, locale: string): { day: string; time: stri
 }
 
 export function OrdersTable(props: OrdersTableProps) {
+  const { formatPrice } = useFormat();
   const { t, i18n } = useTranslation();
   const navigate = useNavigate();
   const locale = i18n.language.startsWith("en") ? "en-IE" : "fr-FR";
@@ -316,6 +317,7 @@ export function OrdersTable(props: OrdersTableProps) {
  * reference.
  */
 export function OrderCardList(props: OrdersTableProps) {
+  const { formatPrice } = useFormat();
   const { t, i18n } = useTranslation();
   const navigate = useNavigate();
   const locale = i18n.language.startsWith("en") ? "en-IE" : "fr-FR";

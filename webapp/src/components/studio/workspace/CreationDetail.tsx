@@ -1,7 +1,7 @@
 import { Copy, FolderOpen, Gem, Link2, PencilLine, Trash2 } from "lucide-react";
 import { Dialog } from "../../ui/Dialog";
 import { Button } from "../../ui/Button";
-import { formatDate } from "../../../lib/format";
+import { useFormat } from "../../../lib/format";
 import { useWorkspace } from "../../../lib/studioWorkspace/workspace";
 import { openWorkspaceDialog } from "../../../lib/studioWorkspace/workspaceUi";
 import { CreationThumb, FavoriteButton } from "./CreationCard";
@@ -15,6 +15,7 @@ import { tagChip, useWorkspaceFormat } from "./workspaceStyles";
  * the content.
  */
 export function CreationDetail({ creationId, onClose }: { creationId: string; onClose: () => void }) {
+  const { formatDate } = useFormat();
   const { t, price, count } = useWorkspaceFormat();
   const ws = useWorkspace();
   const { openInStudio } = useWorkspaceActions();

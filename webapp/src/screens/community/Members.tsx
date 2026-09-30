@@ -3,7 +3,7 @@ import { MapPin, Users } from "lucide-react";
 import clsx from "clsx";
 import { COMMUNITY_STATS } from "../../data/community";
 import { pick } from "../../data/types";
-import { formatCount } from "../../lib/format";
+import { useFormat } from "../../lib/format";
 import { directoryMembers, useCommunity } from "../../lib/community";
 import { MemberAvatar } from "../../components/community/MemberAvatar";
 import { MemberBadges } from "../../components/community/MemberBadges";
@@ -19,6 +19,7 @@ import { cardBase, cardHover, focusRing } from "../../components/community/style
  * the same control here as anywhere else in the community.
  */
 export function Members() {
+  const { formatCount } = useFormat();
   const { t, i18n } = useTranslation();
   const lang = i18n.language;
   const { openProfile } = useMemberProfile();

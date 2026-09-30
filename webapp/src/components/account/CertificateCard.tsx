@@ -7,7 +7,7 @@ import { CertificateDocument } from "./CertificateDocument";
 import type { Course } from "../../data/courses";
 import { pick } from "../../data/types";
 import type { CourseProgress } from "../../lib/progress";
-import { formatDate } from "../../lib/format";
+import { useFormat } from "../../lib/format";
 
 /**
  * Certificate reference shown on an unlocked attestation. Derived from the
@@ -93,6 +93,7 @@ export function CertificateCard({
   onOpen,
   onDownload,
 }: EarnedProps) {
+  const { formatDate } = useFormat();
   const { t } = useTranslation();
   // The caller only renders this for completed courses, so the date is present.
   const awardedOn = progress.completedOn!;

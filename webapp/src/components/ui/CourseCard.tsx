@@ -3,7 +3,7 @@ import { Link } from "../../lib/navigation";
 import { Clock, GraduationCap, ListVideo, Lock } from "lucide-react";
 import { Badge, type BadgeTone } from "./Badge";
 import { ProgressBar } from "./ProgressBar";
-import { formatPrice } from "../../lib/format";
+import { useFormat } from "../../lib/format";
 
 export interface CourseCardData {
   id: string;
@@ -39,6 +39,7 @@ export function CourseCard({
   /** Used where opening the course is an action rather than a navigation. */
   onSelect?: () => void;
 }) {
+  const { formatPrice } = useFormat();
   const { t } = useTranslation();
   const { title, level, lessonCount, duration, price, image, imageLabel, progress, state = "available", locked = false } = course;
   const badge = stateBadge[state];

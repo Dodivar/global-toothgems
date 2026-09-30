@@ -22,7 +22,7 @@ import { EditedBadge, ReviewStatusBadge, VerifiedBadge } from "../../components/
 import { ReviewRequestCard } from "../../components/reviews/ReviewRequestCard";
 import { type CustomerReview, type ReviewStatus } from "../../data/reviewSystem";
 import { subjectPath, useReviewRequests, useReviewSubjects, useReviews } from "../../lib/reviews";
-import { formatDate } from "../../lib/format";
+import { useFormat } from "../../lib/format";
 
 type MineFilter = "all" | ReviewStatus;
 const FILTERS: MineFilter[] = ["all", "published", "pending", "needsChanges", "rejected"];
@@ -166,6 +166,7 @@ const TONE: Record<ReviewStatus, string> = {
 const ICON = { pending: Hourglass, published: CircleCheck, needsChanges: PencilLine, rejected: XCircle, hidden: CircleHelp };
 
 function MyReviewCard({ review: r, lang, onEdit }: { review: CustomerReview; lang: string; onEdit: () => void }) {
+  const { formatDate } = useFormat();
   const { t } = useTranslation();
   const { subjectName, subjectImage } = useReviewSubjects();
   const name = subjectName(r.subject, lang);

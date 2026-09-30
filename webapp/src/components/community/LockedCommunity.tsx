@@ -5,7 +5,7 @@ import clsx from "clsx";
 import { Button } from "../ui/Button";
 import { ACTIVE_MEMBERS, COMMUNITY_STATS, DISCUSSIONS, getMember } from "../../data/community";
 import { pick } from "../../data/types";
-import { formatCount } from "../../lib/format";
+import { useFormat } from "../../lib/format";
 import { AvatarStack, MemberAvatar } from "./MemberAvatar";
 import { ChannelChip } from "./ChannelChip";
 import { CommunityStats } from "./CommunityStats";
@@ -62,6 +62,7 @@ function BlurredCard({ discussionId }: { discussionId: string }) {
 }
 
 export function LockedCommunity() {
+  const { formatCount } = useFormat();
   const { t, i18n } = useTranslation();
   const lang = i18n.language;
   const navigate = useNavigate();

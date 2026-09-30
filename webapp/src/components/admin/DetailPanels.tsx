@@ -29,7 +29,7 @@ import {
   type AdminOrder,
 } from "../../data/adminOrders";
 import { countryLabelKey } from "../../data/countries";
-import { formatMonthYear, formatPrice } from "../../lib/format";
+import { useFormat } from "../../lib/format";
 import { pick } from "../../data/types";
 import { PaymentStatusBadge } from "./StatusBadges";
 
@@ -90,6 +90,7 @@ function Field({ label, value, mono }: { label: string; value: ReactNode; mono?:
 /* -------------------------------------------------------------------------- */
 
 export function CustomerCard({ order, onViewProfile }: { order: AdminOrder; onViewProfile: () => void }) {
+  const { formatMonthYear, formatPrice } = useFormat();
   const { t } = useTranslation();
   const { customer } = order;
   const returning = customer.orderCount > 1;
@@ -163,6 +164,7 @@ export function CustomerCard({ order, onViewProfile }: { order: AdminOrder; onVi
 /* -------------------------------------------------------------------------- */
 
 export function ItemsCard({ order }: { order: AdminOrder }) {
+  const { formatPrice } = useFormat();
   const { t, i18n } = useTranslation();
   const lang = i18n.language;
   const subtotal = orderSubtotal(order);
@@ -384,6 +386,7 @@ export function ShippingCard({ order, onTrack }: { order: AdminOrder; onTrack: (
 /* -------------------------------------------------------------------------- */
 
 export function PaymentCard({ order }: { order: AdminOrder }) {
+  const { formatPrice } = useFormat();
   const { t, i18n } = useTranslation();
   const locale = i18n.language.startsWith("en") ? "en-IE" : "fr-FR";
   const { payment } = order;

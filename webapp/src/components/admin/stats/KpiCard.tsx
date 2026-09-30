@@ -4,7 +4,7 @@ import { Info, Minus, TrendingDown, TrendingUp } from "lucide-react";
 import clsx from "clsx";
 import type { KpiDatum } from "../../../data/adminAnalytics";
 import { formatChange, formatPercent } from "../../../lib/adminAnalytics";
-import { formatCount, formatPrice } from "../../../lib/format";
+import { useFormat } from "../../../lib/format";
 import { Sparkline } from "./Sparkline";
 
 /**
@@ -20,6 +20,7 @@ import { Sparkline } from "./Sparkline";
  * and, for a screen reader, the period it is measured against.
  */
 export function KpiCard({ kpi, compare }: { kpi: KpiDatum; compare: boolean }) {
+  const { formatCount, formatPrice } = useFormat();
   const { t } = useTranslation();
   const [explained, setExplained] = useState(false);
 

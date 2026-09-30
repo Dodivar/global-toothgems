@@ -8,7 +8,7 @@ import { certificateRef } from "./CertificateCard";
 import type { Course } from "../../data/courses";
 import { pick } from "../../data/types";
 import type { CourseProgress } from "../../lib/progress";
-import { formatDate } from "../../lib/format";
+import { useFormat } from "../../lib/format";
 
 /**
  * Full-size view of one certificate.
@@ -36,6 +36,7 @@ export function CertificateViewer({
   onClose: () => void;
   onDownload: () => void;
 }) {
+  const { formatDate } = useFormat();
   const { t } = useTranslation();
   const ref = useRef<HTMLDialogElement>(null);
   const titleId = useId();

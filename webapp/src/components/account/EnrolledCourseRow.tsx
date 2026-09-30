@@ -6,7 +6,7 @@ import { ProgressBar } from "../ui/ProgressBar";
 import type { Course } from "../../data/courses";
 import { pick } from "../../data/types";
 import type { CourseProgress } from "../../lib/progress";
-import { formatDate } from "../../lib/format";
+import { useFormat } from "../../lib/format";
 import { formatDuration } from "../../lib/trainingFilters";
 
 /** Per-module completion for one course, as the authored modules stand. */
@@ -49,6 +49,7 @@ export function EnrolledCourseRow({
   lang: string;
   onOpen: () => void;
 }) {
+  const { formatDate } = useFormat();
   const { t } = useTranslation();
   return (
     <li className="grid grid-cols-1 gap-4 rounded-[var(--radius-card)] border border-[var(--border-subtle)] bg-[var(--surface-card)] p-[var(--space-5)] shadow-[var(--shadow-xs)] sm:grid-cols-[132px_minmax(0,1fr)]">

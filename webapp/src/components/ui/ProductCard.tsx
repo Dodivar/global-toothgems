@@ -3,7 +3,7 @@ import { Link } from "../../lib/navigation";
 import { useTranslation } from "react-i18next";
 import { Heart, Image as ImageIcon } from "lucide-react";
 import { Badge, type BadgeTone } from "./Badge";
-import { formatPrice } from "../../lib/format";
+import { useFormat } from "../../lib/format";
 import { gemAxes, isGemOptionSet } from "../../lib/gemOptions";
 import { pick } from "../../data/types";
 import type { ProductVariant } from "../../data/products";
@@ -47,6 +47,7 @@ interface ProductCardProps {
 }
 
 export function ProductCard({ product, to, onSave, saved = false, eager = false, quickAction }: ProductCardProps) {
+  const { formatPrice } = useFormat();
   const { t, i18n } = useTranslation();
   const {
     name, subtitle, price, compareAtPrice, image, hoverImage, imageLabel,

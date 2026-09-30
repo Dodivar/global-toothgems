@@ -5,7 +5,7 @@ import { AdminHeader } from "../../components/admin/AdminHeader";
 import { GemColorsSection } from "../../components/admin/GemColorsSection";
 import { useAdminCatalog } from "../../lib/adminCatalog";
 import { useLocalized } from "../../lib/localized";
-import { formatPrice } from "../../lib/format";
+import { useFormat } from "../../lib/format";
 import { effectivePrice, stockState } from "../../data/adminCatalog";
 import { useAdminShell } from "./AdminLayout";
 
@@ -22,6 +22,7 @@ import { useAdminShell } from "./AdminLayout";
  * catalogue taxonomy too, and change far more often than categories.
  */
 export function AdminCategories() {
+  const { formatPrice } = useFormat();
   const { t } = useTranslation();
   const L = useLocalized();
   const { openNav } = useAdminShell();

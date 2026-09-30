@@ -10,7 +10,7 @@ import { LoyaltySteps } from "../../components/loyalty/LoyaltySteps";
 import { LoyaltyStateDemo } from "../../components/loyalty/LoyaltyStateDemo";
 import { CheckoutLoyaltyBanner } from "../../components/loyalty/CheckoutLoyaltyBanner";
 import { useLoyaltyCopy } from "../../lib/loyaltyCopy";
-import { formatPrice } from "../../lib/format";
+import { useFormat } from "../../lib/format";
 import {
   DEFAULT_LOYALTY_STATE,
   DEMO_CART_ABOVE,
@@ -32,6 +32,7 @@ import {
  * the production surface reads as production even while it is a prototype.
  */
 export function Loyalty() {
+  const { formatPrice } = useFormat();
   const { t } = useTranslation();
   const navigate = useNavigate();
   const [stateId, setStateId] = useState<LoyaltyStateId>(DEFAULT_LOYALTY_STATE);
