@@ -17,7 +17,7 @@ import {
 /**
  * Learning progress for the signed-in visitor.
  *
- * Mockup state, like `cart.tsx` and `auth.tsx`: it lives in memory and resets
+ * Mockup state: it lives in memory and resets
  * on reload. What it records is real, though: which steps of the authored
  * course were validated and how each knowledge check went, keyed by step and
  * module id (`lib/learning/path.ts`). Every number the member area shows —

@@ -1,7 +1,7 @@
 import { NextResponse, type NextRequest } from "next/server";
 import { gateFor, signInRedirect } from "./src/lib/authRoutes";
 import { LANGUAGE_KEY, legacyAddress, negotiateLocale, parsePath } from "./src/lib/localeRoutes";
-import { LOCALE_HEADER } from "./src/lib/localeHeader";
+import { LOCALE_HEADER, PATH_HEADER } from "./src/lib/localeHeader";
 import { isSupabaseConfigured } from "./src/lib/supabase/env";
 import { refreshSession } from "./src/lib/supabase/proxySession";
 
@@ -17,7 +17,8 @@ import { refreshSession } from "./src/lib/supabase/proxySession";
  *    visitors away from the member space, the learner pages and the back
  *    office, to the matching sign-in page with `?suite=<the page asked for>`.
  *    Navigation, not authorization: RLS decides every read and write. In mock
- *    mode (no Supabase variables) the client guards decide, as before.
+ *    mode (no Supabase variables) the client guards decide, as before. The
+ *    zones' server layouts and pages check again (`app/_zones/guard.ts`).
  *
  * See docs/migration-nextjs.md.
  */
@@ -38,6 +39,8 @@ export async function proxy(request: NextRequest) {
 
   const requestHeaders = new Headers(request.headers);
   requestHeaders.set(LOCALE_HEADER, parsePath(pathname).locale ?? negotiateLocale(saved, acceptLanguage));
+  // For the server layouts of the private zones, which are not given the address.
+  requestHeaders.set(PATH_HEADER, pathname + search);
 
   if (!isSupabaseConfigured) return NextResponse.next({ request: { headers: requestHeaders } });
 

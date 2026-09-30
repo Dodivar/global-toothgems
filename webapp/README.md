@@ -28,23 +28,32 @@ npm run dev
 
 This starts the Next.js dev server on [http://localhost:5173](http://localhost:5173) — the port the app has always used, which the Supabase Auth redirect allow-list knows (`scripts/dev.mjs`; set `PORT` to use another one). `npm run dev:mock` runs the same server on the mock data, whatever `.env.local` says.
 
-How the app is mounted (phases 1–3.2 of `docs/migration-nextjs.md`):
+How the app is mounted (phases 1–4 of `docs/migration-nextjs.md`):
 
 ```
 app/layout.tsx                 root layout: <html lang>, fonts, favicon, src/index.css
-app/[[...slug]]/page.tsx       every path without a page of its own: head, 404, then the app
+app/[[...slug]]/page.tsx       the public zone: every path without a page of its own: head, 404, then the app
 app/[[...slug]]/client.tsx     ServerRendered (public pages: rendered on the server, hydrated)
-                               and ClientOnly (other areas: dynamic(..., { ssr: false }))
+                               and ClientOnly (sign-in, recovery, system pages: dynamic(..., { ssr: false }))
+app/compte/, app/academy/(learner)/, app/admin/, app/studio-3d/
+                               the private zones (phase 4): each mounts its zone app in the browser
+                               only; server layouts + pages turn signed-out visitors away (app/_zones/)
 app/fr/boutique/[slug]/page.tsx, app/en/shop/[slug]/page.tsx
                                product pages: product found on the server, 404/308, head, JSON-LD
 app/_public/                   shared server code of public pages (product page, metadata)
 app/auth/confirm/route.ts      where every Supabase Auth e-mail link lands (server)
 proxy.ts                       before every page: language, session refresh, sign-in redirects
 src/ClientApp.tsx              ClientApp (browser) and ServerApp (server): i18n + router + App
-src/App.tsx                    the React Router routes
+src/AppRoot.tsx                i18n + router around any zone app; the browser history
+src/AppShell.tsx               what every zone shares: the stores (in their justified order) and the chrome
+src/App.tsx                    the public zone's React Router routes
+src/zones/                     the other zones' apps (AccountApp, LearnApp, AdminApp, StudioApp) and ZoneExit
+src/lib/appZones.ts            which zone owns an address
 ```
 
-Public pages (`/fr/…`, `/en/…`) are rendered on the server: `ServerApp` renders the React Router app at the requested address, in its language, from the catalogue the server read with the publishable key (`src/lib/catalog/serverCatalog.ts`; fixtures in mock mode), and the browser hydrates it. Their first browser render must match the server's: state that only the browser knows (localStorage, media queries) is read once hydrated (`src/lib/useHydrated.ts`), never in a `useState` initializer. The member space, sign-in, back office and Studio workspace still render in the browser only.
+**Zones (phase 4).** Each zone is its own App Router segment mounting a React Router app reduced to its screens, so a page downloads only its zone's code (the back office's screens are no longer in the public pages). A link to another zone reaches the zone's `*` route, `ZoneExit`, which reloads the page into the right zone (history state survives the reload); an address no zone owns is the 404 screen. When adding a screen, add its route to the zone app that owns its address (`zoneOf`; a unit test checks the routes against it). The cart is kept for the tab in sessionStorage (`src/lib/cartStorage.ts`), and so are the mock member and staff sessions; other mock stores (orders placed by the demo checkout, learning progress, promotions, training, community) reset when the visitor changes zone, as they do on a reload.
+
+Public pages (`/fr/…`, `/en/…`) are rendered on the server: `ServerApp` renders the React Router app at the requested address, in its language, from the catalogue the server read with the publishable key (`src/lib/catalog/serverCatalog.ts`; fixtures in mock mode), and the browser hydrates it. Their first browser render must match the server's: state that only the browser knows (localStorage, media queries) is read once hydrated (`src/lib/useHydrated.ts`), never in a `useState` initializer. Sign-in, recovery, the system pages and the private zones (member space, learner pages, back office, Studio workspace) render in the browser only.
 
 ### Addresses and language (phase 3.1)
 
@@ -55,7 +64,7 @@ Public pages live at `/fr/…` and `/en/…` with English segments (`/fr/boutiqu
 With Supabase configured (phase 2 of `docs/migration-nextjs.md`):
 
 - **The session lives in cookies** (`@supabase/ssr`): `src/lib/supabase/client.ts` is the browser client, `server.ts` the one for route handlers (the visitor's session, publishable key, RLS), `proxySession.ts` the proxy's. A member signed in before the switch had the session in `localStorage`; the browser client carries it over once into cookies (`sessionReady`, which the auth providers wait for).
-- **`proxy.ts`** refreshes the session on every page request (`getClaims()`, which validates the token rather than trusting the cookie) and redirects a signed-out visitor away from `/compte/*`, `/academy/lecon`, `/academy/mes-formations/*` (to `/connexion`) and `/admin/*` except its sign-in screen (to `/admin/connexion`), with `?suite=<page>`; both sign-in pages read it to send the visitor back. The client guards (`RequireAccount`, `RequireAdmin`) stay; the staff role is checked by the back office and by RLS, not by the proxy. In mock mode the proxy does nothing.
+- **`proxy.ts`** refreshes the session on every page request (`getClaims()`, which validates the token rather than trusting the cookie) and redirects a signed-out visitor away from `/compte/*`, `/academy/lecon`, `/academy/mes-formations/*` (to `/connexion`) and `/admin/*` except its sign-in screen (to `/admin/connexion`), with `?suite=<page>`; both sign-in pages read it to send the visitor back. The client guards (`RequireAccount`, `RequireAdmin`) stay; the staff role is checked by the back office and by RLS, not by the proxy. The zones' server layouts and pages check the session again with the same rule (`app/_zones/guard.ts`, server client, never the service role). In mock mode the proxy and those checks do nothing.
 - **`/auth/confirm`** receives every Auth e-mail link — `?token_hash=…&type=…` (the templates in `supabase/templates/`, any device) or `?code=…` (Supabase's default templates, same browser only) — opens the session and forwards to `next` (a same-site path only) or to the page for the kind of link, with `error`/`error_code` when the link is refused. The app passes `…/auth/confirm?next=…` as the redirect of sign-up, resend, password reset and e-mail change. Supabase dashboard settings: `supabase/README.md`, "Member sign-up".
 - The rules (which paths need a session, safe redirects, link kinds) are pure and unit-tested in `src/lib/authRoutes.ts`.
 
@@ -158,7 +167,7 @@ Mapping rules worth knowing:
   not uploaded yet shows the image placeholder.
 - Gift cards (`product_type = 'gift_card'`) stay on their own page.
 
-Not connected yet (still mock): cart persistence and checkout, the Academy, the
+Not connected yet (still mock): the cart (kept for the browser tab only) and checkout, the Academy, the
 community and most of the back office. Orders and reviews are connected (next
 section).
 
@@ -370,7 +379,7 @@ The sidebar also links out to the course catalogue (`/academy`) and signs the me
 
 The member area is capped at `--max-width-account` rather than `--max-width-content`: it spends a 248 px sidebar, the column gap and its own gutters out of the width every other screen gives entirely to content, so the wider cap is what makes its content column measure the same 1240 px as the shop grid.
 
-The sections own no state of their own. Learning progress lives in `lib/progress.tsx`, order history in `lib/orders.tsx` and the member profile in `lib/auth.tsx` — in-memory contexts shaped like the existing `lib/cart.tsx`. The lesson player writes to the first and the cart writes to the second, so validating a lesson or paying moves the dashboard immediately. Certificates are derived from a course reaching 100 %, never stored as a separate flag, and the delivery timeline is derived from the order status for the same reason. Editing the profile moves the greeting and the avatar, because both are derived from the stored name rather than copied from it.
+The sections own no state of their own. Learning progress lives in `lib/progress.tsx`, order history in `lib/orders.tsx` and the member profile in `lib/auth.tsx` — in-memory contexts shaped like the existing `lib/cart.tsx`. The lesson player writes to the first and the cart writes to the second; since the member space became its own zone (a full page load away, phase 4 of `docs/migration-nextjs.md`), those mock writes reset before the dashboard shows them, as on a reload. Certificates are derived from a course reaching 100 %, never stored as a separate flag, and the delivery timeline is derived from the order status for the same reason. Editing the profile moves the greeting and the avatar, because both are derived from the stored name rather than copied from it.
 
 Progress is computed against the course each product opens (`Course.trainingId`), as authored in the back office — see the learning experience below. The Academy sales pages still advertise the single syllabus in `data/lessons.ts`; moving them onto the authored courses is the next step.
 
@@ -543,7 +552,7 @@ A front-end-only prototype of the promotional side of the back office, plus the 
 How it is put together:
 
 - `data/adminPromotions.ts` — types and seed: 15 promotions, 7 campaigns, 14 gift cards and the gift card product. **Money is integer cents.** **Statuses are derived** from a stored lifecycle (draft / live / paused / archived) and the dates, against a fixed prototype date `PROMO_NOW` (24 Nov 2027, printed on every screen) so the 2027 campaigns of the brief keep their states. Gift card balances are the sum of each card's ledger, never a stored number.
-- `lib/adminPromotions.tsx` — the store (async, simulated latency), mounted in `App.tsx` rather than the admin layout so the storefront page reads the same gift card configuration: save a new amount order in the back office, then open `/carte-cadeau` in the same tab (a new tab reloads and resets the prototype).
+- `lib/adminPromotions.tsx` — the store (async, simulated latency), mounted in `AppShell.tsx` rather than the admin layout so the storefront page reads the same gift card configuration. Since phase 4 the back office and the storefront are separate zones (a full page load between them), so a prototype edit no longer reaches `/carte-cadeau`: the storefront shows the seed until the store is connected to Supabase.
 - `lib/promotionRules.ts` — pure rules: validation, scope resolution, campaign roll-ups, KPIs, list filtering and sorting.
 - `components/promotions/` — badges, the CSS-drawn gift card and campaign banner (`.gt-giftcard`, `.gt-campaign-cover` in `index.css`), product picker, timelines, tables, storefront previews, dialogs and bottom sheet.
 - Copy lives in `i18n/locales/promotions.{fr,en}.json`, mounted under the `promo` key.
@@ -571,7 +580,7 @@ How it is put together:
 
 - `data/reviewSystem.ts` — types and seed (~45 reviews across products and trainings: every status, photos, responses, reports, an unverified gift review, an edited review back in moderation). The prototype's "today" is `REVIEW_NOW` (23 Sept 2026).
 - `lib/reviewRules.ts` — pure rules: summaries, public filters and sorts, featured review, form validation, queue filters, dashboard statistics.
-- `lib/reviews.tsx` — the store switch (Supabase: `lib/reviewsSupabase.tsx`; otherwise the in-memory store in the same file), mounted in `App.tsx` above the storefront and the admin, so a review approved in the back office appears on the product page in the same session. Also the eligibility hooks and `useReviewSubjects` (product names and photos from the catalogue). The contract and the three overlays' state (form, report, photo viewer) live in `lib/reviewsContext.ts`; the overlays render once in `components/reviews/ReviewOverlays.tsx`.
+- `lib/reviews.tsx` — the store switch (Supabase: `lib/reviewsSupabase.tsx`; otherwise the in-memory store in the same file), mounted in `AppShell.tsx` in every zone; with Supabase, a review approved in the back office appears on the product page (the in-memory store resets between zones). Also the eligibility hooks and `useReviewSubjects` (product names and photos from the catalogue). The contract and the three overlays' state (form, report, photo viewer) live in `lib/reviewsContext.ts`; the overlays render once in `components/reviews/ReviewOverlays.tsx`.
 - `components/reviews/` — stars (display and radio-group input), badges, card, section, form, request, eligibility panel; `components/reviews/admin/` — dashboard, queue, reported view, moderation sheet and action dialogs.
 - Copy lives in `i18n/locales/reviews.{fr,en}.json`, mounted under the `reviews` key.
 

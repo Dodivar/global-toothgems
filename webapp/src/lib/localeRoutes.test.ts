@@ -101,8 +101,9 @@ describe("route table", () => {
     }
   });
 
-  it("knows every route declared in App.tsx, so the server does not answer 404 for it", () => {
-    const app = readFileSync(new URL("../App.tsx", import.meta.url), "utf8");
+  it("knows every route declared in the zone apps, so the server does not answer 404 for it", () => {
+    const files = ["../App.tsx", "../zones/AccountApp.tsx", "../zones/LearnApp.tsx", "../zones/AdminApp.tsx"];
+    const app = files.map((file) => readFileSync(new URL(file, import.meta.url), "utf8")).join("\n");
     const declared = [...app.matchAll(/path="(\/[^"]*)"/g)].map((m) => m[1].replace(/\/\*$/, ""));
     expect(declared.length).toBeGreaterThan(20);
     for (const path of declared) {

@@ -47,7 +47,7 @@ Other facts that shape the plan:
 | 2 | Auth on the server | `@supabase/ssr`: browser client + server client, session in cookies (existing `localStorage` sessions carried over), `proxy.ts` (Next.js 16 name of middleware) refreshing the session and redirecting signed-out visitors away from `/compte/*`, `/academy/mes-formations/*`, `/academy/lecon` and `/admin/*` (client guards stay as a second layer); e-mail links through `/auth/confirm` (token hash or PKCE code); Supabase dashboard settings updated **by the user** | done (2026-09-30); live since the user applied the Supabase settings and switched Vercel the same day |
 | 3.1 | Language in the address + SEO head | `/fr/…` and `/en/…` with English segments for public pages, `/` negotiated, old addresses moved (308), localized history for the React Router app, server `<head>` per page (title, description, canonical, hreflang, Open Graph, noindex for private areas), real 404 status, `sitemap.xml`, `robots.txt` | done (2026-09-30) |
 | 3.2 | Public pages rendered on the server | Home, shop, shapes, colours, product, gift card, loyalty, Studio and Academy sales pages, help and legal pages as App Router segments whose content is rendered on the server (data read with the publishable key); product and course titles/descriptions and structured data (Product, Course); 404 for unknown product/course slugs; per-locale product slugs (`product_translations`); products and courses in the sitemap; `window`/`localStorage` code behind client boundaries | **done except the course pages' own head** (2026-09-30): every public page's content is rendered on the server and hydrated; product pages have per-language slugs, 404/308, their own head, Product structured data and sitemap entries. Course titles, Course structured data, 404 for unknown courses and courses in the sitemap wait for a decision (Academy is mock data, see Open decisions) |
-| 4 | Account, back office, Studio | `/compte/*`, community, learner pages, `/admin/*`, Studio editor/share as App Router segments (mostly client components under server-protected layouts); Studio stays client-only | not started |
+| 4 | Account, back office, Studio | `/compte/*`, community, learner pages, `/admin/*`, Studio editor/share as App Router segments (mostly client components under server-protected layouts); Studio stays client-only | **done** (2026-09-30): one segment per zone, each mounting a React Router app reduced to its screens (see "Phase 4"); public pages download 29 % less JavaScript (992 → 709 kB gzip) |
 | 5 | Cleanup | Remove the catch-all shell, react-router-dom, SPA-only helpers (`ScrollToTop`, `DocumentLanguage`…), dead Vite leftovers; update READMEs | not started |
 
 A route leaves the catch-all shell only when its App Router page exists, its smoke test (added if missing) passes, and every link to it still works from the shell (a full page load between the two worlds is acceptable during phases 3–4).
@@ -145,9 +145,42 @@ Known limits, accepted for now:
 - The cookie banner is not in the server HTML: it appears once the page is hydrated (as it did before, when everything rendered in the browser). The legal review notes show by default on the server and disappear after hydration for a reviewer who turned them off.
 - Course pages are rendered on the server from the mock fixtures, as the browser rendered them; their head, 404 and sitemap entries wait for the Academy decision.
 
+## Phase 4 — zones
+
+Decided by the user (2026-09-30): one catch-all segment per zone mounting a React Router app reduced to that zone's routes and providers, under a server-protected layout (native segments for each screen come with phase 5, when React Router is removed); the cart kept for the browser tab in sessionStorage; the mock member session kept for the tab; sign-in, registration and recovery stay in the public zone; `/erreur` and `/maintenance` stay there too (`error.tsx` in phase 5); the Studio aliases stay browser redirects; the other mock stores reset between zones (accepted).
+
+| Zone | Addresses | Segment | Server check | Rendering |
+| --- | --- | --- | --- | --- |
+| public | public pages (`/fr/…`, `/en/…`), sign-in, registration, recovery, e-mail landings, `/erreur`, `/maintenance`, legacy aliases, 404 | `app/[[...slug]]` (+ product segments) | none | server + hydration for public pages, browser only for the rest |
+| account | `/compte`, `/compte/*` (member space, community) | `app/compte/[[...slug]]` | session (layout + page) | browser only |
+| learn | `/academy/lecon`, `/academy/mes-formations/*` | `app/academy/(learner)/lecon`, `…/mes-formations/[...slug]` | session (layout + page) | browser only |
+| admin | `/admin/connexion` (open), `/admin`, `/admin/*` | `app/admin/connexion`, `app/admin/(staff)/[[...slug]]` | session (layout + page), not the staff role | browser only |
+| studio | `/studio-3d/atelier/*`, `/studio-3d/partage/*` | `app/studio-3d/atelier/[[...slug]]`, `app/studio-3d/partage/[[...slug]]` | none (open during the preview) | browser only (three.js still a lazy chunk inside the zone) |
+
+How it works:
+- **One table**, `src/lib/appZones.ts` (`zoneOf`, pure, unit-tested — including that every route a zone app declares belongs to that zone and that each private zone has its segment).
+- **`src/AppShell.tsx`** is what every zone shares: all the stores in the order their comments justify, the skip link, cookie banner and dialog, header/footer (public), `DocumentTitle`/`DocumentLanguage`/`ScrollToTop`. Each zone passes its `<Routes>`: `src/App.tsx` (public), `src/zones/AccountApp.tsx`, `LearnApp.tsx`, `AdminApp.tsx`, `StudioApp.tsx`; `src/AppRoot.tsx` wraps them in i18n and the localized browser history. Every zone keeps every store for now (no behaviour change inside a zone); dropping the stores a zone does not use is a later optimisation.
+- **Moving between zones**: each zone app's `*` route is `ZoneExit` (`src/zones/ZoneExit.tsx`). An address of another zone reloads the page (React Router has already put it in the address bar; the history entry keeps its state across the reload, e.g. the page to return to after sign-in); an address no zone owns is the 404 screen as before. Loop guard: the address being reloaded is noted in sessionStorage; if the page comes back to the same wrong zone at that address, it shows the 404 screen; the owning zone clears the note (`ZoneArrival`). The back button across zones loads the earlier page.
+- **Server check**: `app/_zones/guard.ts` — `getClaims()` with the server client (`createServerSupabase`, the visitor's cookies, never the service role), once per request (React `cache`), then `redirect()` (307) to `signInRedirect(gateFor(path))`, the proxy's own rule. The layouts (`app/compte/layout.tsx`, `app/academy/(learner)/layout.tsx`, `app/admin/(staff)/layout.tsx`) are not given the address: the proxy passes it in the `x-gt-path` request header (always overwritten). The pages check again with their own address (Next.js docs: a layout does not stop its page from rendering), and answer 404 for addresses the zone has no screen for, with the same `<head>` as before (`app/_zones/zonePage.tsx`: site name, `noindex`). Mock mode: no check, the client guards decide. The staff role is not checked on the server: RLS and the back office do it.
+- **Cart and demo sessions kept for the tab**: `src/lib/cartStorage.ts` (sessionStorage `gt-cart`, every line validated when read back, unit-tested) read once hydrated in `CartProvider`; the mock member (`gt-demo-session`) and staff (`gt-demo-admin-session`) sessions likewise, so a demo sign-in reaches the member space and the back office. Consequence on server-rendered pages in mock mode: the demo auth is `restoring` until hydrated, as a Supabase session always was.
+
+Bundle sizes (production build in mock mode, JavaScript actually downloaded by Chromium per page after the network is idle, lazy chunks included; throwaway measuring script):
+
+| Page | Before (45e02f1) raw / gzip | After raw / gzip |
+| --- | --- | --- |
+| `/fr`, `/fr/boutique`, product page, `/fr/academy` | 3 854 / 992 kB | 2 501 / 709 kB |
+| `/connexion` | 3 855 / 992 kB | 2 502 / 709 kB |
+| `/compte` (signed in), `/compte/communaute` | 3 855 / 992 kB | 2 688 / 751 kB |
+| `/academy/mes-formations/fondation` | 3 855 / 992 kB | 2 595 / 735 kB |
+| `/admin` (signed in) | 3 855 / 992 kB | 3 738 / 983 kB |
+| `/studio-3d/atelier` | 4 865 / 1 258 kB | 3 539 / 984 kB |
+| `/studio-3d/partage` | 4 596 / 1 189 kB | 3 255 / 910 kB |
+
+(Before, `/compte`, `/admin` and the learner pages were measured signed out, i.e. redirected to a sign-in page, which loaded the same single bundle.) What remains shared by every zone: the stores and their mock fixtures, both locale files, the header and footer. Known limits, accepted: the mock stores other than the cart and the demo sessions (orders placed by the demo checkout, learning progress, promotions, training, community, in-memory reviews) reset when the visitor changes zone; a cart line keeps the image address it was added with (after a deployment a mock photo's hashed address may change until the tab is closed); `/studio-3d/editor/*` and `/studio-3d/share/*` still redirect in the browser (one extra load).
+
 ## Route checklist
 
-Legend (phase 1 done: every route below is served by the catch-all shell; phase 2 done: "account" and "staff" routes are also turned away server-side by `proxy.ts`; phase 3.2: public pages rendered on the server) — **Access**: open / account (`RequireAccount` + proxy) / staff (`RequireAdmin` + proxy) / studio (`RequireStudioAccess`) / redirect (client-side `Navigate`). **P1**: served by the catch-all shell. **Smoke**: covered by `webapp/e2e/`. **Native**: App Router segment exists. **SSR**: "head" = server `<head>` done (3.1), "body" = content rendered on the server (3.2). Public routes now live at `/fr/…` / `/en/…` (table in phase 3.1); the address in the first column is the internal one and, when unprefixed, redirects (308). Target phase in the last column.
+Legend (phase 1 done: every route below is served by the catch-all shell; phase 2 done: "account" and "staff" routes are also turned away server-side by `proxy.ts`; phase 3.2: public pages rendered on the server; phase 4: private zones have their own segments — **Native** below means the zone segment serving the route) — **Access**: open / account (`RequireAccount` + proxy + zone layout/page) / staff (`RequireAdmin` + proxy + zone layout/page) / studio (`RequireStudioAccess`) / redirect (client-side `Navigate`). **P1**: served by the catch-all shell. **Smoke**: covered by `webapp/e2e/`. **Native**: App Router segment exists. **SSR**: "head" = server `<head>` done (3.1), "body" = content rendered on the server (3.2). Public routes now live at `/fr/…` / `/en/…` (table in phase 3.1); the address in the first column is the internal one and, when unprefixed, redirects (308). Target phase in the last column.
 
 ### Storefront
 
@@ -169,13 +202,13 @@ Legend (phase 1 done: every route below is served by the catch-all shell; phase 
 
 | Route | Access | P1 | Smoke | Native | SSR | Target |
 | --- | --- | --- | --- | --- | --- | --- |
-| `/connexion` | open | ✅ | ✅ (mock sign-in) | ⬜ | — | 4 |
-| `/connexion-b` → `/connexion` | redirect | ✅ | ✅ | ⬜ | — | 4 |
-| `/inscription` | open | ✅ | ✅ (mock registration) | ⬜ | — | 4 |
-| `/mot-de-passe-oublie`, `/forgot-password` | open | ✅ | ✅ (FR) | ⬜ | — | 4 |
-| `/reinitialiser-mot-de-passe`, `/reset-password` | open (e-mail link) | ✅ | ✅ (FR) | ⬜ | — | 4 |
-| `/verifier-email`, `/verify-email` | open (e-mail link) | ✅ | ✅ (FR) | ⬜ | — | 4 |
-| `/confirmation-compte` | open (after `/auth/confirm`) | ✅ | ✅ | ⬜ | — | 4 |
+| `/connexion` | open | ✅ | ✅ (mock sign-in; return to the page asked for, `zones.spec.ts`) | ⬜ | — | public zone (decided, phase 4: stays with the cart); own segment in 5 |
+| `/connexion-b` → `/connexion` | redirect | ✅ | ✅ | ⬜ | — | public zone (decided, phase 4: stays with the cart); own segment in 5 |
+| `/inscription` | open | ✅ | ✅ (mock registration) | ⬜ | — | public zone (decided, phase 4: stays with the cart); own segment in 5 |
+| `/mot-de-passe-oublie`, `/forgot-password` | open | ✅ | ✅ (FR) | ⬜ | — | public zone (decided, phase 4: stays with the cart); own segment in 5 |
+| `/reinitialiser-mot-de-passe`, `/reset-password` | open (e-mail link) | ✅ | ✅ (FR) | ⬜ | — | public zone (decided, phase 4: stays with the cart); own segment in 5 |
+| `/verifier-email`, `/verify-email` | open (e-mail link) | ✅ | ✅ (FR) | ⬜ | — | public zone (decided, phase 4: stays with the cart); own segment in 5 |
+| `/confirmation-compte` | open (after `/auth/confirm`) | ✅ | ✅ | ⬜ | — | public zone (decided, phase 4: stays with the cart); own segment in 5 |
 | `/auth/confirm` (route handler, phase 2) | open (e-mail links) | — | ✅ (`auth-server`) | ✅ | — | done |
 
 ### Studio 3D
@@ -185,10 +218,10 @@ Legend (phase 1 done: every route below is served by the catch-all shell; phase 
 | `/studio-3d` | open | ✅ | ✅ | ⬜ | head ✅ body ✅ | done (3.2); own segment in 5 |
 | `/studio-3d/abonnement` | open | ✅ | ✅ | ⬜ | head ✅ body ✅ | done (3.2); own segment in 5 |
 | `/studio-3d/subscribe` → `/en/3d-studio/subscribe` | redirect | ✅ | ✅ | ⬜ | — | server redirect ✅ (3.1) |
-| `/studio-3d/atelier/*` (editor, lazy three.js) | studio | ✅ | ✅ (canvas renders) | ⬜ | — (client only) | 4 |
-| `/studio-3d/editor/*` → `/studio-3d/atelier/*` | redirect | ✅ | ⬜ | ⬜ | — | 4 |
-| `/studio-3d/partage`, `/studio-3d/partage/:token` | open (lazy three.js) | ✅ | ✅ (no token) | ⬜ | — (client only) | 4 |
-| `/studio-3d/share`, `/studio-3d/share/:token` → `partage` | redirect | ✅ | ⬜ | ⬜ | — | 4 |
+| `/studio-3d/atelier/*` (editor, lazy three.js) | studio | ✅ | ✅ (canvas renders) | ✅ `app/studio-3d/atelier/[[...slug]]` | — (client only) | done (4) |
+| `/studio-3d/editor/*` → `/studio-3d/atelier/*` | redirect | ✅ | ✅ (`zones.spec.ts`) | ⬜ | — | browser redirect from the public zone (decided, 4); server redirect in 5 |
+| `/studio-3d/partage`, `/studio-3d/partage/:token` | open (lazy three.js) | ✅ | ✅ (no token; open on the server) | ✅ `app/studio-3d/partage/[[...slug]]` | — (client only) | done (4) |
+| `/studio-3d/share`, `/studio-3d/share/:token` → `partage` | redirect | ✅ | ✅ (`zones.spec.ts`) | ⬜ | — | browser redirect from the public zone (decided, 4); server redirect in 5 |
 
 ### Academy
 
@@ -196,50 +229,50 @@ Legend (phase 1 done: every route below is served by the catch-all shell; phase 
 | --- | --- | --- | --- | --- | --- | --- |
 | `/academy` | open | ✅ | ✅ | ⬜ | head ✅ body ✅ | done (3.2); own segment in 5 |
 | `/academy/formation/:id` | open | ✅ | ✅ | ⬜ | head: generic (site name) body ✅ (fixtures) | course title, Course JSON-LD, 404, sitemap: **decision needed** (Academy mock) |
-| `/academy/lecon` | account | ✅ | ✅ (proxy redirect) | ⬜ | — | 4 |
-| `/academy/mes-formations/:courseId` | account | ✅ | ⬜ | ⬜ | — | 4 |
-| `/academy/mes-formations/:courseId/lecon/:nodeKey` | account | ✅ | ✅ (proxy redirect) | ⬜ | — | 4 |
-| `/academy/mes-formations/:courseId/terminee` | account | ✅ | ⬜ | ⬜ | — | 4 |
+| `/academy/lecon` | account | ✅ | ✅ (proxy redirect; forwards to the course, `zones.spec.ts`) | ✅ `app/academy/(learner)` | — | done (4) |
+| `/academy/mes-formations/:courseId` | account | ✅ | ✅ | ✅ `app/academy/(learner)` | — | done (4) |
+| `/academy/mes-formations/:courseId/lecon/:nodeKey` | account | ✅ | ✅ (proxy redirect) | ✅ `app/academy/(learner)` | — | done (4) |
+| `/academy/mes-formations/:courseId/terminee` | account | ✅ | ✅ (+ server refusal) | ✅ `app/academy/(learner)` | — | done (4) |
 
 ### Member area (`MemberShell`, account)
 
 | Route | Access | P1 | Smoke | Native | SSR | Target |
 | --- | --- | --- | --- | --- | --- | --- |
-| `/compte` | account | ✅ | ✅ (redirect + mock sign-in; proxy redirect and cookie session in `auth-server`) | ⬜ | — | 4 |
-| `/compte/attestations` | account | ✅ | ⬜ | ⬜ | — | 4 |
-| `/compte/commandes` | account | ✅ | ✅ (redirect) | ⬜ | — | 4 |
-| `/compte/profil` | account | ✅ | ⬜ | ⬜ | — | 4 |
-| `/compte/securite` | account | ✅ | ⬜ | ⬜ | — | 4 |
-| `/compte/fidelite` | account | ✅ | ⬜ | ⬜ | — | 4 |
-| `/compte/avis` | account | ✅ | ⬜ | ⬜ | — | 4 |
-| `/compte/*` (404 inside the shell) | account | ✅ | ⬜ | ⬜ | — | 4 |
-| `/compte/communaute` | account | ✅ | ⬜ | ⬜ | — | 4 |
-| `/compte/communaute/canal/:channelId` | account | ✅ | ⬜ | ⬜ | — | 4 |
-| `/compte/communaute/discussion/:discussionId` | account | ✅ | ⬜ | ⬜ | — | 4 |
-| `/compte/communaute/activite/:view` | account | ✅ | ⬜ | ⬜ | — | 4 |
-| `/compte/communaute/membres` | account | ✅ | ⬜ | ⬜ | — | 4 |
-| `/compte/communaute/charte` | account | ✅ | ⬜ | ⬜ | — | 4 |
-| `/compte/communaute/*` (404) | account | ✅ | ⬜ | ⬜ | — | 4 |
+| `/compte` | account | ✅ | ✅ (redirect + mock sign-in; proxy redirect and cookie session in `auth-server`) | ✅ `app/compte` | — | done (4) |
+| `/compte/attestations` | account | ✅ | ✅ (`zones.spec.ts`) | ✅ `app/compte` | — | done (4) |
+| `/compte/commandes` | account | ✅ | ✅ (redirect, `zones.spec.ts`) | ✅ `app/compte` | — | done (4) |
+| `/compte/profil` | account | ✅ | ✅ (`zones.spec.ts`) | ✅ `app/compte` | — | done (4) |
+| `/compte/securite` | account | ✅ | ✅ (`zones.spec.ts`) | ✅ `app/compte` | — | done (4) |
+| `/compte/fidelite` | account | ✅ | ✅ (`zones.spec.ts`) | ✅ `app/compte` | — | done (4) |
+| `/compte/avis` | account | ✅ | ✅ (`zones.spec.ts`) | ✅ `app/compte` | — | done (4) |
+| `/compte/*` (404 inside the shell) | account | ✅ | ✅ (`zones.spec.ts`) | ✅ `app/compte` | — | done (4) |
+| `/compte/communaute` | account | ✅ | ✅ (`zones.spec.ts`) | ✅ `app/compte` | — | done (4) |
+| `/compte/communaute/canal/:channelId` | account | ✅ | ⬜ (its zone is: `/compte/communaute`) | ✅ `app/compte` | — | done (4) |
+| `/compte/communaute/discussion/:discussionId` | account | ✅ | ⬜ (its zone is: `/compte/communaute`) | ✅ `app/compte` | — | done (4) |
+| `/compte/communaute/activite/:view` | account | ✅ | ⬜ (its zone is: `/compte/communaute`) | ✅ `app/compte` | — | done (4) |
+| `/compte/communaute/membres` | account | ✅ | ✅ (`zones.spec.ts`) | ✅ `app/compte` | — | done (4) |
+| `/compte/communaute/charte` | account | ✅ | ✅ (`zones.spec.ts`) | ✅ `app/compte` | — | done (4) |
+| `/compte/communaute/*` (404) | account | ✅ | ⬜ (its zone is: `/compte/*` 404) | ✅ `app/compte` | — | done (4) |
 
 ### Back office (`AdminLayout`, staff)
 
 | Route | Access | P1 | Smoke | Native | SSR | Target |
 | --- | --- | --- | --- | --- | --- | --- |
-| `/admin/connexion` | open | ✅ | ✅ | ⬜ | — | 4 |
-| `/admin` | staff | ✅ | ✅ (client and proxy redirects) | ⬜ | — | 4 |
-| `/admin/commandes`, `/admin/commandes/:reference` | staff | ✅ | ⬜ | ⬜ | — | 4 |
-| `/admin/clients`, `/admin/clients/:id` | staff | ✅ | ⬜ | ⬜ | — | 4 |
-| `/admin/utilisateurs` | staff | ✅ | ⬜ | ⬜ | — | 4 |
-| `/admin/statistiques` | staff | ✅ | ⬜ | ⬜ | — | 4 |
-| `/admin/produits` | staff | ✅ | ✅ (redirect) | ⬜ | — | 4 |
-| `/admin/produits/nouveau`, `/admin/produits/:id`, `/admin/produits/:id/recommandations` | staff | ✅ | ⬜ | ⬜ | — | 4 |
-| `/admin/categories` | staff | ✅ | ⬜ | ⬜ | — | 4 |
-| `/admin/promotions`, `/nouvelle`, `/apercu`, `/:id`, `/:id/modifier` | staff | ✅ | ⬜ | ⬜ | — | 4 |
-| `/admin/promotions/cartes-cadeaux/configuration`, `/cartes-cadeaux/:code` | staff | ✅ | ⬜ | ⬜ | — | 4 |
-| `/admin/promotions/campagnes/nouvelle`, `/:id`, `/:id/modifier` | staff | ✅ | ⬜ | ⬜ | — | 4 |
-| `/admin/avis` | staff | ✅ | ⬜ | ⬜ | — | 4 |
-| `/admin/parametres` | staff | ✅ | ⬜ | ⬜ | — | 4 |
-| `/admin/formations`, `/nouvelle`, `/:id`, `/:id/apercu`, `/:id/publication` | staff | ✅ | ⬜ | ⬜ | — | 4 |
+| `/admin/connexion` | open | ✅ | ✅ | ✅ `app/admin/connexion` | — | done (4) |
+| `/admin` | staff | ✅ | ✅ (client and proxy redirects) | ✅ `app/admin/(staff)` | — | done (4) |
+| `/admin/commandes`, `/admin/commandes/:reference` | staff | ✅ | ✅ list only (`zones.spec.ts`) | ✅ `app/admin/(staff)` | — | done (4) |
+| `/admin/clients`, `/admin/clients/:id` | staff | ✅ | ✅ list only (`zones.spec.ts`) | ✅ `app/admin/(staff)` | — | done (4) |
+| `/admin/utilisateurs` | staff | ✅ | ✅ (`zones.spec.ts`) | ✅ `app/admin/(staff)` | — | done (4) |
+| `/admin/statistiques` | staff | ✅ | ✅ (`zones.spec.ts`) | ✅ `app/admin/(staff)` | — | done (4) |
+| `/admin/produits` | staff | ✅ | ✅ (redirect, sign-in return, `zones.spec.ts`) | ✅ `app/admin/(staff)` | — | done (4) |
+| `/admin/produits/nouveau`, `/admin/produits/:id`, `/admin/produits/:id/recommandations` | staff | ✅ | ⬜ (its zone is, via the list pages) | ✅ `app/admin/(staff)` | — | done (4) |
+| `/admin/categories` | staff | ✅ | ✅ (`zones.spec.ts`) | ✅ `app/admin/(staff)` | — | done (4) |
+| `/admin/promotions`, `/nouvelle`, `/apercu`, `/:id`, `/:id/modifier` | staff | ✅ | ✅ list only (`zones.spec.ts`) | ✅ `app/admin/(staff)` | — | done (4) |
+| `/admin/promotions/cartes-cadeaux/configuration`, `/cartes-cadeaux/:code` | staff | ✅ | ⬜ (its zone is, via the list pages) | ✅ `app/admin/(staff)` | — | done (4) |
+| `/admin/promotions/campagnes/nouvelle`, `/:id`, `/:id/modifier` | staff | ✅ | ⬜ (its zone is, via the list pages) | ✅ `app/admin/(staff)` | — | done (4) |
+| `/admin/avis` | staff | ✅ | ✅ (`zones.spec.ts`) | ✅ `app/admin/(staff)` | — | done (4) |
+| `/admin/parametres` | staff | ✅ | ✅ (`zones.spec.ts`) | ✅ `app/admin/(staff)` | — | done (4) |
+| `/admin/formations`, `/nouvelle`, `/:id`, `/:id/apercu`, `/:id/publication` | staff | ✅ | ✅ list only (`zones.spec.ts`) | ✅ `app/admin/(staff)` | — | done (4) |
 
 ### Help centre and legal pages
 
@@ -261,8 +294,8 @@ Legend (phase 1 done: every route below is served by the catch-all shell; phase 
 
 | Route | Access | P1 | Smoke | Native | SSR | Target |
 | --- | --- | --- | --- | --- | --- | --- |
-| `/erreur` | open | ✅ | ✅ | ⬜ | — | 4 (becomes `error.tsx`) |
-| `/maintenance` | open | ✅ | ✅ | ⬜ | — | 4 |
+| `/erreur` | open | ✅ | ✅ | ⬜ | — | public zone (decided, 4); becomes `error.tsx` in 5 |
+| `/maintenance` | open | ✅ | ✅ | ⬜ | — | public zone (decided, 4); own segment in 5 |
 | `*` (404) | open | ✅ | ✅ (status 404) | `not-found.tsx` ✅ | — | real 404 status ✅ (3.1) |
 
 ## Open decisions (ask the user)
@@ -280,10 +313,23 @@ Legend (phase 1 done: every route below is served by the catch-all shell; phase 
 | Server-side catalogue caching | before launch traffic | **done** (2026-09-30): Next.js data cache, 60 s, tag `catalog` (see "Phase 3.2"); the 60 s delay is a reversible default to confirm; on-demand invalidation from the back office is a follow-up |
 | Supabase dashboard: redirect allow-list and the three e-mail templates (`supabase/README.md`, "Member sign-up") | the phase 2 release | **done** by the user (2026-09-30) |
 | Vercel project switch to the Next.js framework preset; optional `SITE_URL` (custom domain) | before the first Next.js deployment | **done** by the user (2026-09-30) |
+| Phase 4 shape: one catch-all segment per zone vs native segments now | phase 4 | **decided** (2026-09-30): one per zone, native segments in phase 5 |
+| Cart lost when changing zone (it lived in memory only) | phase 4 | **decided** (2026-09-30): kept for the tab in sessionStorage until the real cart/checkout; demo (mock) sessions kept the same way; other mock stores reset between zones (accepted) |
+| Where sign-in, registration, recovery, `/erreur`, `/maintenance` live | phase 4 | **decided** (2026-09-30): public zone; Studio aliases stay browser redirects |
+| Refusing a signed-in non-staff visitor on the server for `/admin` | if wanted | open — not built (navigation only; RLS is the authority); ask the user |
 
 ## Log
 
 Newest first. For each session: what changed, the commands run and their real results.
+
+### 2026-09-30 — Phase 4 (zones)
+
+- User decisions: the zone approach (one catch-all segment per zone), cart kept in sessionStorage, mock session kept for the tab, sign-in pages and system pages in the public zone, Studio aliases as browser redirects, other mock stores reset between zones (see "Phase 4").
+- Added: `src/lib/appZones.ts` (+ test), `src/AppShell.tsx`, `src/AppRoot.tsx`, `src/zones/` (`AccountApp`, `LearnApp`, `AdminApp`, `StudioApp`, `ZoneExit`), `src/lib/cartStorage.ts` (+ test), `app/_zones/` (guard, zone page, zone clients), segments `app/compte`, `app/academy/(learner)`, `app/admin`, `app/studio-3d`, `e2e/zones.spec.ts`; `App.tsx` reduced to the public zone; proxy passes `x-gt-path`; `CartProvider`, `DemoAuthProvider`, `DemoAdminAuthProvider` keep their state for the tab. No text, style or address changed.
+- Results before any change: `npm run test:e2e` 100 passed (dev servers). After: `npm run typecheck` OK; `npm run lint` 0 errors, 95 warnings (unchanged); `npm test` 30 files / 312 tests passed (6 new: `appZones.test.ts`, `cartStorage.test.ts`; the `localeRoutes` route check now reads every zone app); `npm run build` OK (new: `ƒ /compte/[[...slug]]`, `ƒ /academy/lecon`, `ƒ /academy/mes-formations/[...slug]`, `ƒ /admin/connexion`, `ƒ /admin/[[...slug]]`, `ƒ /studio-3d/atelier/[[...slug]]`, `ƒ /studio-3d/partage/[[...slug]]`); `npm run test:e2e` 137 passed on the dev servers and 137 passed on production builds (`next start` of a mock build and of a `NEXT_DIST_DIR=.next-e2e-auth` build pointed at the fake Supabase). New tests: 32 in `zones.spec.ts`, 5 in `auth-server.spec.ts` (server refusals for the community, a learner page and a back-office page with query; the Studio zone open; a signed-in member let into every private zone).
+- Layered server check verified by hand (not committed): with the proxy's redirect disabled, the 11 refusal/forged-cookie/member tests of `auth-server` passed with layout + page checks, with the layout alone and with the page alone, and 10 failed with all three disabled.
+- Bundle sizes before/after: table in "Phase 4".
+- Not verified here: the zones against the real Supabase project and on Vercel (to check on the first preview: signing in from `/compte`, the back office, a learner page, and the header's cart count after visiting the member space).
 
 ### 2026-09-30 — Catalogue cache, decisions
 

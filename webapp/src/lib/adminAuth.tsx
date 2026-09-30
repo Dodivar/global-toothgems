@@ -2,6 +2,7 @@ import { createContext, useCallback, useContext, useEffect, useMemo, useState, t
 import { Navigate, useLocation } from "react-router-dom";
 import type { User } from "@supabase/supabase-js";
 import { isSupabaseConfigured, sessionReady, supabase } from "./supabase/client";
+import { useHydrated } from "./useHydrated";
 
 /**
  * Administrator session.
@@ -157,8 +158,43 @@ function SupabaseAdminAuthProvider({ children }: { children: ReactNode }) {
   return <AdminAuthContext.Provider value={value}>{children}</AdminAuthContext.Provider>;
 }
 
+/**
+ * The mock staff session is kept for the browser tab (sessionStorage): moving
+ * between zones of the site is a full page load (docs/migration-nextjs.md,
+ * phase 4). Mock mode only.
+ */
+const DEMO_ADMIN_SESSION_KEY = "gt-demo-admin-session";
+
+function readDemoAdmin(): AdminIdentity | null {
+  try {
+    const raw = window.sessionStorage.getItem(DEMO_ADMIN_SESSION_KEY);
+    const stored = raw ? (JSON.parse(raw) as Partial<AdminIdentity>) : null;
+    return stored && typeof stored.email === "string" && typeof stored.name === "string" ? { ...(stored as AdminIdentity) } : null;
+  } catch {
+    return null;
+  }
+}
+
+function writeDemoAdmin(admin: AdminIdentity | null) {
+  try {
+    if (admin) window.sessionStorage.setItem(DEMO_ADMIN_SESSION_KEY, JSON.stringify(admin));
+    else window.sessionStorage.removeItem(DEMO_ADMIN_SESSION_KEY);
+  } catch {
+    // Blocked storage: the demo session lasts this page.
+  }
+}
+
 function DemoAdminAuthProvider({ children }: { children: ReactNode }) {
-  const [admin, setAdmin] = useState<AdminIdentity | null>(null);
+  // Read once hydrated (server-rendered pages carry this provider too);
+  // `changed` is the session as changed on this page.
+  const hydrated = useHydrated();
+  const stored = useMemo(() => (hydrated ? readDemoAdmin() : null), [hydrated]);
+  const [changed, setChanged] = useState<AdminIdentity | null | undefined>(undefined);
+  const admin = changed === undefined ? stored : changed;
+  const setAdmin = useCallback((value: AdminIdentity | null) => {
+    writeDemoAdmin(value);
+    setChanged(value);
+  }, []);
 
   const signIn = useCallback(async (email: string, password: string): Promise<AdminSignInResult> => {
     await new Promise((resolve) => setTimeout(resolve, SIGN_IN_DELAY_MS));
@@ -168,13 +204,13 @@ function DemoAdminAuthProvider({ children }: { children: ReactNode }) {
     const name = email.toLowerCase() === DEMO_ADMIN_EMAIL ? "Camille Dubois" : nameFromEmail(email);
     setAdmin({ name, email: email.trim(), role: "owner", initials: initialsOf(name) });
     return "accepted";
-  }, []);
+  }, [setAdmin]);
 
-  const signOut = useCallback(() => setAdmin(null), []);
+  const signOut = useCallback(() => setAdmin(null), [setAdmin]);
 
   const value = useMemo<AdminAuthValue>(
-    () => ({ admin, signedIn: admin !== null, restoring: false, realAuth: false, signIn, signOut }),
-    [admin, signIn, signOut],
+    () => ({ admin, signedIn: admin !== null, restoring: !hydrated, realAuth: false, signIn, signOut }),
+    [admin, hydrated, signIn, signOut],
   );
 
   return <AdminAuthContext.Provider value={value}>{children}</AdminAuthContext.Provider>;

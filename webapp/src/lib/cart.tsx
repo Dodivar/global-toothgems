@@ -1,7 +1,9 @@
-import { createContext, useContext, useMemo, useState, type ReactNode } from "react";
+import { createContext, useCallback, useContext, useMemo, useState, type ReactNode } from "react";
 import { useTranslation } from "react-i18next";
 import { getProduct } from "../data/products";
 import { photo } from "./images";
+import { readStoredCart, writeStoredCart } from "./cartStorage";
+import { useHydrated } from "./useHydrated";
 
 export interface CartLine {
   id: string;
@@ -54,7 +56,24 @@ function seedLines(en: boolean): CartLine[] {
 
 export function CartProvider({ children }: { children: ReactNode }) {
   const { i18n } = useTranslation();
-  const [lines, setLines] = useState<CartLine[]>(() => seedLines(i18n.language.startsWith("en")));
+  const [seed] = useState<CartLine[]>(() => seedLines(i18n.language.startsWith("en")));
+  // The cart kept for the tab (`cartStorage.ts`), read once hydrated so a
+  // server-rendered page hydrates with the markup the server sent.
+  const hydrated = useHydrated();
+  const stored = useMemo(() => (hydrated ? readStoredCart() : null), [hydrated]);
+  // `changed`: the cart as edited on this page, written back at each change.
+  const [changed, setChanged] = useState<CartLine[] | undefined>(undefined);
+  const lines = changed ?? stored ?? seed;
+
+  const setLines = useCallback(
+    (next: (prev: CartLine[]) => CartLine[]) =>
+      setChanged((prev) => {
+        const value = next(prev ?? stored ?? seed);
+        writeStoredCart(value);
+        return value;
+      }),
+    [stored, seed],
+  );
 
   const addLine = (line: Omit<CartLine, "id">) => {
     setLines((prev) => {
@@ -75,7 +94,7 @@ export function CartProvider({ children }: { children: ReactNode }) {
 
   const removeLine = (id: string) => setLines((prev) => prev.filter((l) => l.id !== id));
 
-  const clearCart = () => setLines([]);
+  const clearCart = () => setLines(() => []);
 
   const count = useMemo(() => lines.reduce((sum, l) => sum + l.qty, 0), [lines]);
   const subtotal = useMemo(() => lines.reduce((sum, l) => sum + l.qty * l.price, 0), [lines]);

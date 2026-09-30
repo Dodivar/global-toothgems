@@ -5,9 +5,9 @@ import ClientApp, { ServerApp } from "../../src/ClientApp";
 import type { CatalogSeed } from "../../src/lib/catalog/CatalogProvider";
 import type { Locale } from "../../src/lib/localeRoutes";
 
-/* The React Router app rendered in the browser only, for the pages that are
-   not rendered on the server yet (member space, back office, Studio
-   workspace, sign-in): they read `window`, `document` and `localStorage`
+/* The public zone's app rendered in the browser only, for its pages that are
+   not rendered on the server yet (sign-in, registration, recovery, system
+   pages, the 404 page): they read `window`, `document` and `localStorage`
    from the first render. */
 const BrowserOnlyApp = dynamic(() => import("../../src/ClientApp"), { ssr: false });
 

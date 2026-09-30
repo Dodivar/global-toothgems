@@ -37,7 +37,7 @@ Rules of thumb:
 
 ## Front-end structure (`webapp/`)
 
-- `app/` Next.js App Router: the root layout and, during the migration, the catch-all page `app/[[...slug]]` that runs the React Router app (rendered on the server and hydrated for public pages since phase 3.2, browser-only elsewhere); migrated routes get their own App Router segments here (product pages: `app/fr/boutique/[slug]`, `app/en/shop/[slug]`). Server reads of public data use `src/lib/supabase/publicServer.ts` (publishable key, no session). A component rendered on the server must render the same markup on its first browser render: read browser-only state (localStorage, media queries) once hydrated (`src/lib/useHydrated.ts`).
+- `app/` Next.js App Router: the root layout and, during the migration, one segment per zone (`src/lib/appZones.ts`, phase 4), each running a React Router app reduced to its screens: the catch-all page `app/[[...slug]]` for the public zone (rendered on the server and hydrated for public pages since phase 3.2), and `app/compte`, `app/academy/(learner)`, `app/admin`, `app/studio-3d` for the private zones (browser-only, signed-out visitors turned away by server layouts in `app/_zones/`); product pages have their own segments (`app/fr/boutique/[slug]`, `app/en/shop/[slug]`). Server reads of public data use `src/lib/supabase/publicServer.ts` (publishable key, no session). A component rendered on the server must render the same markup on its first browser render: read browser-only state (localStorage, media queries) once hydrated (`src/lib/useHydrated.ts`).
 
 - `src/screens/` one component per route (React Router screens, moved to `app/` route by route; not `src/pages/`, which Next.js would read as a Pages Router); `components/<domain>/` presentational pieces; `components/ui/` and `components/admin/` shared primitives.
 - `src/lib/<domain>.tsx` one store/context per domain — the only place a domain's data changes. Screens never import the Supabase client directly.
@@ -63,7 +63,7 @@ Mock-only code that remains must never look real to a customer: no fake payment 
 - Browser configuration: only `NEXT_PUBLIC_SUPABASE_URL` and `NEXT_PUBLIC_SUPABASE_PUBLISHABLE_KEY` (`webapp/.env.example`, Vercel project settings). `NEXT_PUBLIC_*` values are inlined into the client bundle: never a secret there. Anything else secret is an Edge Function secret.
 - Supabase: today a single project, "Global Toothgems" (`abvuyvryerpzlvibttxp`), used for development and holding seed/demo data. Production needs its own project (or an explicit, documented promotion of this one) — see `09-supabase-workflow.md`.
 - Stripe: test mode keys everywhere until the owner provides production keys; test and live never mixed in one environment.
-- Vercel: root directory `webapp`, framework preset Next.js (no rewrite file: the catch-all route serves every path); preview deployments per branch.
+- Vercel: root directory `webapp`, framework preset Next.js (no rewrite file: the catch-all route serves every path the zone segments do not); preview deployments per branch.
 
 ## Data model
 

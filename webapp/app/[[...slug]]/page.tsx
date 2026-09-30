@@ -8,14 +8,17 @@ import { searchOf } from "../_public/search";
 import { ClientOnly, ServerRendered } from "./client";
 
 /**
- * Every address of the site without a page of its own yet, during the
- * migration: the React Router app decides what to show
- * (docs/migration-nextjs.md). The server already gives each public page its
+ * The public zone (`src/lib/appZones.ts`) during the migration: every
+ * address without a page of its own, the React Router app of `App.tsx`
+ * deciding what to show (docs/migration-nextjs.md). The member space, the
+ * learner pages, the back office and the Studio workspace have their own
+ * segments since phase 4. The server already gives each public page its
  * `<head>` — title, description, canonical, the other language (hreflang) and
  * Open Graph — keeps private areas out of search engines, and answers 404 for
  * an address the app has no screen for. Public pages are rendered on the
- * server (their content is in the HTML) and hydrated in the browser; the
- * other areas still render in the browser only. Product pages have their own
+ * server (their content is in the HTML) and hydrated in the browser; sign-in,
+ * registration, recovery and the system pages still render in the browser
+ * only. Product pages have their own
  * segments (`app/fr/boutique/[slug]`, `app/en/shop/[slug]`).
  */
 type Props = {

@@ -27,6 +27,10 @@ test.describe("proxy", () => {
     ["/academy/mes-formations/fondation/lecon/m1", "/connexion?suite=%2Facademy%2Fmes-formations%2Ffondation%2Flecon%2Fm1"],
     ["/admin", "/admin/connexion?suite=%2Fadmin"],
     ["/admin/produits/42", "/admin/connexion?suite=%2Fadmin%2Fproduits%2F42"],
+    // Phase 4: every zone's own segment (the proxy, then the zone's layout and page).
+    ["/compte/communaute/membres", "/connexion?suite=%2Fcompte%2Fcommunaute%2Fmembres"],
+    ["/academy/mes-formations/business/terminee", "/connexion?suite=%2Facademy%2Fmes-formations%2Fbusiness%2Fterminee"],
+    ["/admin/avis?vue=signales", "/admin/connexion?suite=%2Fadmin%2Favis%3Fvue%3Dsignales"],
   ]) {
     test(`sends a signed-out visitor from ${path} to ${target.split("?")[0]}`, async ({ request }) => {
       const response = await request.get(path, noRedirect);
@@ -35,7 +39,7 @@ test.describe("proxy", () => {
     });
   }
 
-  for (const path of ["/fr", "/en/shop", "/connexion", "/admin/connexion", "/fr/academy/formation/fondation", "/fr/studio-3d"]) {
+  for (const path of ["/fr", "/en/shop", "/connexion", "/admin/connexion", "/fr/academy/formation/fondation", "/fr/studio-3d", "/studio-3d/atelier", "/studio-3d/partage/abc"]) {
     test(`leaves ${path} open`, async ({ request }) => {
       const response = await request.get(path, noRedirect);
       expect(response.status()).toBe(200);
@@ -61,6 +65,10 @@ test.describe("/auth/confirm", () => {
     // The request context keeps the cookies it was given.
     const account = await request.get("/compte", noRedirect);
     expect(account.status()).toBe(200);
+    // Every private zone lets the member in (the staff role is not a server check).
+    for (const path of ["/compte/communaute", "/academy/lecon", "/admin/produits"]) {
+      expect((await request.get(path, noRedirect)).status(), path).toBe(200);
+    }
   });
 
   test("lands a password-recovery link on the reset page by default", async ({ request }) => {
