@@ -8,4 +8,3 @@ import dynamic from "next/dynamic";
 export const AccountZone = dynamic(() => import("../../src/zones/AccountApp"), { ssr: false });
 export const LearnZone = dynamic(() => import("../../src/zones/LearnApp"), { ssr: false });
 export const AdminZone = dynamic(() => import("../../src/zones/AdminApp"), { ssr: false });
-export const StudioZone = dynamic(() => import("../../src/zones/StudioApp"), { ssr: false });

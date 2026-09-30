@@ -1,5 +1,5 @@
 import { Routes, Route } from "react-router-dom";
-import { Navigate, useLocation } from "./lib/navigation";
+import { Navigate } from "./lib/navigation";
 import { AppShell, MAINTENANCE_ROUTE } from "./AppShell";
 import { ZoneExit } from "./zones/ZoneExit";
 import { HomeAlt } from "./screens/HomeAlt";
@@ -20,16 +20,7 @@ import { Loyalty as LoyaltyProgram } from "./screens/Loyalty";
 import { GiftCard } from "./screens/GiftCard";
 import { Studio } from "./screens/Studio";
 import { StudioSubscribe } from "./screens/StudioSubscribe";
-import {
-  STUDIO_EDITOR_ALIAS,
-  STUDIO_PATH,
-  STUDIO_SHARE_ALIAS,
-  STUDIO_SHARE_PATH,
-  STUDIO_SUBSCRIBE_ALIAS,
-  STUDIO_SUBSCRIBE_PATH,
-  studioSectionFromPath,
-  studioSectionPath,
-} from "./lib/studioUrl";
+import { STUDIO_PATH, STUDIO_SUBSCRIBE_ALIAS, STUDIO_SUBSCRIBE_PATH } from "./lib/studioUrl";
 import { ServerError } from "./screens/ServerError";
 import { Maintenance } from "./screens/Maintenance";
 import { HelpCentre } from "./screens/legal/HelpCentre";
@@ -44,22 +35,6 @@ import { PRIVACY } from "./data/legal/privacy";
 import { COOKIE_POLICY } from "./data/legal/cookies";
 import { SHIPPING } from "./data/legal/shipping";
 import { RETURNS } from "./data/legal/returns";
-
-/** `/studio-3d/editor/groups` → `/studio-3d/atelier/mes-groupes`: the English alias keeps its section. */
-function StudioEditorAlias() {
-  const { pathname } = useLocation();
-  return <Navigate to={studioSectionPath(studioSectionFromPath(pathname))} replace />;
-}
-
-/**
- * `/studio-3d/share/<token>` → `/studio-3d/partage/<token>`, and
- * `/studio-3d/share#…` → `/studio-3d/partage#…`: the token or the fragment is
- * the design, so it must come along.
- */
-function StudioShareAlias() {
-  const { pathname, hash } = useLocation();
-  return <Navigate to={`${pathname.replace(STUDIO_SHARE_ALIAS, STUDIO_SHARE_PATH)}${hash}`} replace />;
-}
 
 /**
  * The public zone (`lib/appZones.ts`, docs/migration-nextjs.md): storefront,
@@ -120,9 +95,6 @@ export default function App() {
         <Route path={STUDIO_PATH} element={<Studio />} />
         <Route path={STUDIO_SUBSCRIBE_PATH} element={<StudioSubscribe />} />
         <Route path={STUDIO_SUBSCRIBE_ALIAS} element={<Navigate to={STUDIO_SUBSCRIBE_PATH} replace />} />
-        <Route path={`${STUDIO_EDITOR_ALIAS}/*`} element={<StudioEditorAlias />} />
-        <Route path={STUDIO_SHARE_ALIAS} element={<StudioShareAlias />} />
-        <Route path={`${STUDIO_SHARE_ALIAS}/:token`} element={<StudioShareAlias />} />
         {/* The Academy landing page stays open — it is the sales page.
             Only the course content itself requires an account, and gating
             the route covers the menu links and direct URLs at once. */}

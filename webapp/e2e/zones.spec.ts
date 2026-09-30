@@ -118,6 +118,7 @@ test("back office: signing in on the access screen opens the page asked for", as
 for (const [from, to] of [
   ["/studio-3d/share/abc", "/studio-3d/partage/abc"],
   ["/studio-3d/editor", "/studio-3d/atelier"],
+  ["/studio-3d/editor/groups", "/studio-3d/atelier/mes-groupes"],
 ]) {
   test(`Studio alias ${from} moves to ${to}`, async ({ page, problems }) => {
     await page.goto(from);
@@ -142,6 +143,13 @@ test("a link to another zone loads it, and the back button returns", async ({ pa
   await expect(page.getByRole("heading", { level: 1 }).first()).toHaveText(/Gems, outils et kits professionnels/);
   await page.waitForLoadState("networkidle");
   expect(problems).toEqual([]);
+});
+test("the Studio aliases are moved by the server, the shared design's fragment kept", async ({ page, request }) => {
+  const response = await request.get("/studio-3d/share/abc?x=1", { maxRedirects: 0 });
+  expect(response.status()).toBe(308);
+  expect(response.headers().location).toMatch(/\/studio-3d\/partage\/abc\?x=1$/);
+  await page.goto("/studio-3d/share#design");
+  await expect(page).toHaveURL((url) => url.pathname === "/studio-3d/partage" && url.hash === "#design", { timeout: 30_000 });
 });
 
 test("the cart is kept when the visitor goes through another zone", async ({ page, problems }) => {

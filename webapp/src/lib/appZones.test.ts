@@ -52,8 +52,9 @@ describe("zoneOf", () => {
       "academy/(learner)/mes-formations/[...slug]",
       "admin/connexion",
       "admin/(staff)/[[...slug]]",
-      "studio-3d/atelier/[[...slug]]",
-      "studio-3d/partage/[[...slug]]",
+      "studio-3d/atelier/[[...section]]",
+      "studio-3d/partage",
+      "studio-3d/partage/[token]",
     ];
     for (const segment of segments) expect(existsSync(new URL(`../../app/${segment}/page.tsx`, import.meta.url)), segment).toBe(true);
   });

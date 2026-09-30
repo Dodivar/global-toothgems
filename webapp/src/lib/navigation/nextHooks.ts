@@ -4,6 +4,7 @@ import { useTranslation } from "react-i18next";
 import { useSlugTranslator } from "../catalog/CatalogProvider";
 import { internalParams, parsePath, type Locale } from "../localeRoutes";
 import { resolveAddress } from "./href";
+import { isNativeAddress } from "./native";
 import { handOff, stateFor } from "./state";
 import type { AppLocation, NavigateFunction, SetSearchParams } from "./types";
 
@@ -58,7 +59,11 @@ export function useNavigate(): NavigateFunction {
       }
       const address = resolve(to);
       handOff(address, options?.state);
-      if (options?.replace) router.replace(address, { scroll: false });
+      if (!isNativeAddress(address)) {
+        // A zone still mounted by React Router: the page is loaded.
+        if (options?.replace) window.location.replace(address);
+        else window.location.assign(address);
+      } else if (options?.replace) router.replace(address, { scroll: false });
       else router.push(address, { scroll: false });
     },
     [router, resolve],

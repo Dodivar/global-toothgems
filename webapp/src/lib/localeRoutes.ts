@@ -1,3 +1,5 @@
+import { STUDIO_EDITOR_ALIAS, STUDIO_SHARE_ALIAS, STUDIO_SHARE_PATH, studioSectionFromPath, studioSectionPath } from "./studioUrl";
+
 /**
  * Language in the address of public pages (decided 2026-09-30,
  * docs/migration-nextjs.md phase 3): `/fr/…` and `/en/…`, English pages with
@@ -214,10 +216,27 @@ const LEGACY_ALIASES: Record<string, string> = {
   "/about": localizedPath("about", "en"),
 };
 
+/**
+ * The Studio workspace's English aliases (phase 5; browser redirects before):
+ * `/studio-3d/editor/groups` → `/studio-3d/atelier/mes-groupes` (the section
+ * comes along, an unknown one opens the editor), `/studio-3d/share/<token>` →
+ * `/studio-3d/partage/<token>`. A shared design's fragment (`#…`) is kept by
+ * the browser across the redirect.
+ */
+function studioAlias(pathname: string): string | null {
+  if (pathname === STUDIO_EDITOR_ALIAS || pathname.startsWith(`${STUDIO_EDITOR_ALIAS}/`)) {
+    return studioSectionPath(studioSectionFromPath(pathname));
+  }
+  if (pathname === STUDIO_SHARE_ALIAS || /^\/studio-3d\/share\/[^/]+$/.test(pathname)) {
+    return `${STUDIO_SHARE_PATH}${pathname.slice(STUDIO_SHARE_ALIAS.length)}`;
+  }
+  return null;
+}
+
 /** Where an old unprefixed address now lives, or null. */
 export function legacyAddress(pathname: string): string | null {
   if (pathname === "/") return null;
-  const alias = LEGACY_ALIASES[pathname];
+  const alias = LEGACY_ALIASES[pathname] ?? studioAlias(pathname);
   if (alias) return alias;
   if (isLocale(segments(pathname)[0])) return null;
   const found = find(pathname, "fr");
@@ -266,10 +285,8 @@ const APP_PATHS = [
   "/academy/mes-formations/:courseId/terminee",
   "/studio-3d/partage",
   "/studio-3d/partage/:token",
-  "/studio-3d/share",
-  "/studio-3d/share/:token",
 ];
-const APP_PREFIXES = ["/compte", "/admin", "/studio-3d/atelier", "/studio-3d/editor"];
+const APP_PREFIXES = ["/compte", "/admin", "/studio-3d/atelier"];
 
 /** Whether the app has a screen at this address (the server answers 404 otherwise). */
 export function isKnownPath(pathname: string): boolean {

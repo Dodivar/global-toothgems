@@ -4,6 +4,7 @@ import NextLink from "next/link";
 import { useEffect, useRef, type MouseEvent } from "react";
 import { isActivePath } from "./href";
 import { useInternalPath, useNavigate, useResolve } from "./nextHooks";
+import { isNativeAddress } from "./native";
 import { handOff } from "./state";
 import type { LinkProps, NavigateProps, NavLinkProps } from "./types";
 
@@ -16,6 +17,14 @@ export function Link({ to, replace, state, onClick, children, ...rest }: LinkPro
     onClick?.(event);
     if (!event.defaultPrevented) handOff(href, state);
   };
+  // A zone still mounted by React Router (`native.ts`): a plain link, the page is loaded.
+  if (!isNativeAddress(href)) {
+    return (
+      <a href={href} onClick={handleClick} {...rest}>
+        {children}
+      </a>
+    );
+  }
   return (
     <NextLink href={href} replace={replace} scroll={false} prefetch={false} onClick={handleClick} {...rest}>
       {children}

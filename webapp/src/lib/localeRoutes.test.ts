@@ -61,6 +61,16 @@ describe("legacyAddress", () => {
     }
   });
 
+  it("moves the Studio workspace's English aliases, section and token kept", () => {
+    expect(legacyAddress("/studio-3d/editor")).toBe("/studio-3d/atelier");
+    expect(legacyAddress("/studio-3d/editor/groups")).toBe("/studio-3d/atelier/mes-groupes");
+    expect(legacyAddress("/studio-3d/editor/inconnu")).toBe("/studio-3d/atelier");
+    expect(legacyAddress("/studio-3d/share")).toBe("/studio-3d/partage");
+    expect(legacyAddress("/studio-3d/share/abc")).toBe("/studio-3d/partage/abc");
+    expect(legacyAddress("/studio-3d/share/abc/def")).toBeNull();
+    expect(legacyAddress("/studio-3d/editeur")).toBeNull();
+  });
+
   it("covers every English alias the app used to accept", () => {
     for (const alias of Object.keys(LEGAL_ALIASES)) expect(legacyAddress(alias), alias).toMatch(/^\/en\//);
   });
