@@ -57,6 +57,32 @@ for (const { path, heading } of MEMBER_SCREENS) {
   });
 }
 
+test("member space: the sidebar and the community's links are client-side navigations", async ({ page, problems }) => {
+  await signInMember(page);
+  await open(page, "/compte");
+  await dismissCookieBanner(page);
+  await page.evaluate(() => ((window as unknown as { gtMarker: number }).gtMarker = 1));
+  const marker = () => page.evaluate(() => (window as unknown as { gtMarker?: number }).gtMarker);
+  const follow = async (selector: string) => {
+    const link = page.locator(selector).first();
+    await expect(link).toBeVisible({ timeout: 30_000 });
+    const href = await link.getAttribute("href");
+    await link.click();
+    // A client-side navigation asks the server for the page's segment: compiled on first request by a dev server.
+    await expect(page).toHaveURL((url) => url.pathname === href, { timeout: 30_000 });
+    await expect(page.getByRole("heading", { level: 1 }).first()).toBeVisible();
+    expect(await marker()).toBe(1);
+  };
+  await follow('aside a[href="/compte/commandes"]');
+  await follow('aside a[href="/compte/communaute"]');
+  // The community's pages without a smoke test of their own until phase 5.
+  await follow('main a[href^="/compte/communaute/canal/"]');
+  await follow('main a[href^="/compte/communaute/discussion/"]');
+  await follow('main a[href^="/compte/communaute/activite/"]');
+  await page.waitForLoadState("networkidle");
+  expect(problems).toEqual([]);
+});
+
 test("member space: an unknown address is the 404 screen inside the shell", async ({ page, problems }) => {
   await signInMember(page);
   await expectScreen(page, "/compte/nimporte-quoi", /Oups, cette page a fait un petit détour/);

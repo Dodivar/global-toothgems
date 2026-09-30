@@ -7,6 +7,7 @@ import {
   useParams as useRouterParams,
   useSearchParams as useRouterSearchParams,
 } from "react-router-dom";
+import { stateFor } from "./state";
 import type { NavigationBackend, NavigateFunction, SetSearchParams } from "./types";
 
 /*
@@ -22,7 +23,10 @@ export const reactRouterBackend: NavigationBackend = {
   useNavigate: () => useRouterNavigate() as NavigateFunction,
   useLocation: () => {
     const { pathname, search, hash, state } = useRouterLocation();
-    return { pathname, search, hash, state: state ?? null };
+    // A page reached from an App Router page gets what that navigation
+    // handed it (`state.ts`), the browser's address being the key.
+    const handedOff = state == null && typeof window !== "undefined" ? stateFor(`${window.location.pathname}${window.location.search}`) : null;
+    return { pathname, search, hash, state: state ?? handedOff };
   },
   useParams: () => useRouterParams(),
   useSearchParams: () => {

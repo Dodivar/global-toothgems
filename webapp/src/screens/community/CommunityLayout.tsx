@@ -1,5 +1,5 @@
+import type { ReactNode } from "react";
 import { useTranslation } from "react-i18next";
-import { Outlet } from "react-router-dom";
 import { useCommunity } from "../../lib/community";
 import { MemberProfileProvider } from "../../components/community/MemberProfile";
 import { ComposerProvider, StartDiscussionButton } from "../../components/community/NewDiscussion";
@@ -22,7 +22,7 @@ import { LockedCommunity } from "../../components/community/LockedCommunity";
  * `RequireAccount` guards the account layout rather than each button: a deep
  * link into a thread has to meet the same door as the home page.
  */
-export function CommunityLayout() {
+export function CommunityLayout({ children }: { children: ReactNode }) {
   const { t } = useTranslation();
   const { hasAccess, viewer } = useCommunity();
 
@@ -71,7 +71,7 @@ export function CommunityLayout() {
 
           <div className="grid min-w-0 gap-[clamp(20px,3vw,32px)]">
             <CommunityMobileNav />
-            <Outlet />
+            {children}
             <AccessDemoSwitch className="xl:hidden" />
           </div>
         </div>

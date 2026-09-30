@@ -1,4 +1,4 @@
-import { Outlet } from "react-router-dom";
+import type { ReactNode } from "react";
 
 /**
  * Content column of the member area: the active section, one route each.
@@ -7,10 +7,10 @@ import { Outlet } from "react-router-dom";
  * Studio, signing out — belongs to `MemberShell`, which frames this layout and
  * the Artist Community alike, so both share one sidebar.
  */
-export function AccountLayout() {
+export function AccountLayout({ children }: { children: ReactNode }) {
   return (
     <div className="mx-auto grid w-full max-w-[var(--max-width-account)] min-w-0 gap-[clamp(28px,4vw,44px)] px-[clamp(14px,4vw,48px)] py-[clamp(24px,4vw,44px)]">
-      <Outlet />
+      {children}
     </div>
   );
 }

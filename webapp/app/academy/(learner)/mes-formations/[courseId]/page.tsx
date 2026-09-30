@@ -1,15 +1,6 @@
-import { guardPage, zoneMetadata, type SearchProps } from "../../../../_zones/zonePage";
+import { zoneScreen } from "../../../../_zones/zonePage";
 import { CourseOverviewScreen } from "../../../../../src/zones/learn";
 
-type Props = SearchProps & { params: Promise<{ courseId: string }> };
-
-const pathOf = async ({ params }: Props) => `/academy/mes-formations/${(await params).courseId}`;
-
-export async function generateMetadata(props: Props) {
-  return zoneMetadata(await pathOf(props));
-}
-
-export default async function Page(props: Props) {
-  await guardPage(await pathOf(props), props);
-  return <CourseOverviewScreen />;
-}
+const page = zoneScreen(({ courseId }) => `/academy/mes-formations/${courseId}`, CourseOverviewScreen);
+export const generateMetadata = page.generateMetadata;
+export default page.Page;

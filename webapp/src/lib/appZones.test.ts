@@ -33,7 +33,6 @@ describe("zoneOf", () => {
   it("matches the routes each zone app declares", () => {
     const apps: [string, AppZone][] = [
       ["../App.tsx", "public"],
-      ["../zones/AccountApp.tsx", "account"],
       ["../zones/AdminApp.tsx", "admin"],
     ];
     for (const [file, zone] of apps) {
@@ -46,7 +45,11 @@ describe("zoneOf", () => {
 
   it("has a segment in app/ for each private zone, so a zone's address never reloads into the wrong one", () => {
     const segments = [
-      "compte/[[...slug]]",
+      "compte/(space)",
+      "compte/(space)/commandes/[reference]",
+      "compte/(space)/[...rest]",
+      "compte/communaute",
+      "compte/communaute/[...rest]",
       "academy/(learner)/lecon",
       "academy/(learner)/mes-formations/[courseId]",
       "academy/(learner)/mes-formations/[courseId]/lecon/[nodeKey]",

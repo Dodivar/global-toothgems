@@ -1,6 +1,5 @@
 import { useState, type ReactNode } from "react";
 import { useTranslation } from "react-i18next";
-import { Outlet } from "react-router-dom";
 import { Link, NavLink, useLocation, useNavigate } from "../../lib/navigation";
 import {
   Award,
@@ -90,7 +89,7 @@ const rowBase =
   "flex items-center gap-3 rounded-[var(--radius-md)] px-3 py-2 text-[length:var(--text-body-sm)] font-semibold transition-colors";
 const rowIdle = "text-[var(--text-body)] hover:bg-[var(--gt-ink-100)] hover:text-[var(--text-primary)]";
 
-export function MemberShell() {
+export function MemberShell({ children }: { children: ReactNode }) {
   const { t } = useTranslation();
   const { pathname } = useLocation();
   const { count } = useCart();
@@ -127,7 +126,7 @@ export function MemberShell() {
           <CartLink count={count} compact />
         </div>
 
-        <Outlet />
+        {children}
       </div>
 
       {drawerOpen && <Drawer onClose={() => setDrawerPath(null)} />}
