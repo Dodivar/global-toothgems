@@ -48,7 +48,7 @@ Other facts that shape the plan:
 | 3.1 | Language in the address + SEO head | `/fr/…` and `/en/…` with English segments for public pages, `/` negotiated, old addresses moved (308), localized history for the React Router app, server `<head>` per page (title, description, canonical, hreflang, Open Graph, noindex for private areas), real 404 status, `sitemap.xml`, `robots.txt` | done (2026-09-30) |
 | 3.2 | Public pages rendered on the server | Home, shop, shapes, colours, product, gift card, loyalty, Studio and Academy sales pages, help and legal pages as App Router segments whose content is rendered on the server (data read with the publishable key); product and course titles/descriptions and structured data (Product, Course); 404 for unknown product/course slugs; per-locale product slugs (`product_translations`); products and courses in the sitemap; `window`/`localStorage` code behind client boundaries | **done except the course pages' own head** (2026-09-30): every public page's content is rendered on the server and hydrated; product pages have per-language slugs, 404/308, their own head, Product structured data and sitemap entries. Course titles, Course structured data, 404 for unknown courses and courses in the sitemap wait for a decision (Academy is mock data, see Open decisions) |
 | 4 | Account, back office, Studio | `/compte/*`, community, learner pages, `/admin/*`, Studio editor/share as App Router segments (mostly client components under server-protected layouts); Studio stays client-only | **done** (2026-09-30): one segment per zone, each mounting a React Router app reduced to its screens (see "Phase 4"); public pages download 29 % less JavaScript (992 → 709 kB gzip) |
-| 5 | Cleanup | Remove the catch-all shell, react-router-dom, SPA-only helpers (`ScrollToTop`, `DocumentLanguage`…), dead Vite leftovers; update READMEs | not started |
+| 5 | Cleanup | Remove the catch-all shell, react-router-dom, SPA-only helpers (`ScrollToTop`, `DocumentLanguage`…), dead Vite leftovers; update READMEs | **plan proposed, awaiting the user's validation** (2026-09-30); baseline in the log |
 
 A route leaves the catch-all shell only when its App Router page exists, its smoke test (added if missing) passes, and every link to it still works from the shell (a full page load between the two worlds is acceptable during phases 3–4).
 
@@ -321,6 +321,12 @@ Legend (phase 1 done: every route below is served by the catch-all shell; phase 
 ## Log
 
 Newest first. For each session: what changed, the commands run and their real results.
+
+### 2026-09-30 — Phase 5: baseline before any change (plan awaiting validation)
+
+- No code changed. Plan proposed to the user (order by zone, localized navigation module over `next/link` / `next/navigation`, providers in the root layout, history state, commit split); this document gets the decided plan once validated.
+- Results on `dev` at 1be0eb5 (fresh `npm ci`): `npm run typecheck` OK; `npm run lint` 0 errors, 95 warnings; `npm test` 30 files / 312 tests passed; `npm run test:e2e` (dev servers) 136 passed, 1 failed: `auth-server` "the server reads the catalogue once for many page renders (cache)" — passed when run again alone (15.8 s). Likely cause, not yet proven: the 60 s cache entry filled by an earlier test more than a minute before is served stale and revalidated in the background during the loop, counting a read. Pre-existing, unrelated to phase 5; to fix in the test if it recurs.
+- Bundle baseline (mock production build, `next start`, JavaScript bodies received by Chromium after `networkidle` + 1.5 s, gzip via zlib; throwaway script rewritten this session, hence slightly higher than the phase 4 table): `/fr`, `/fr/boutique`, `/fr/academy` 2 562 / 726 kB; `/connexion` 2 562 / 726 kB; `/compte`, `/compte/communaute` (demo member) 2 753 / 769 kB; `/academy/mes-formations/fondation` 2 658 / 752 kB; `/admin` (demo staff) 3 828 / 1 007 kB; `/studio-3d/atelier` 3 624 / 1 008 kB; `/studio-3d/partage` 3 333 / 932 kB (raw / gzip). The after-measure will use the same script.
 
 ### 2026-09-30 — Phase 4 (zones)
 
