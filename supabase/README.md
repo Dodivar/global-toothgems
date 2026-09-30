@@ -639,12 +639,23 @@ enable the extension in the dashboard — or a scheduled server job with the ser
 `handle_new_auth_user` turns the metadata into the profile and the consent records. In the dashboard:
 - Authentication → Sign In / Providers → Email: *Confirm email* **on**; minimum password length 8 with
   lower case, upper case, digits and symbols required (the rules the form shows).
-- Authentication → URL Configuration: Site URL = the production URL; add `http://localhost:5173/**`
-  and the production `/confirmation-compte` and `/reinitialiser-mot-de-passe` to the redirect allow-list (otherwise the link falls back to
-  the Site URL).
-- Authentication → Emails → Confirm signup: subject *Confirmez votre compte Global Toothgems*, body from
-  `templates/confirm-signup.html`. Translate *Reset password* the same way (the link lands on
-  `/reinitialiser-mot-de-passe`).
+- Every Auth e-mail link lands on the webapp's `/auth/confirm` route (Next.js, since phase 2 of
+  `docs/migration-nextjs.md`), which opens the session in cookies server-side and forwards to the page
+  showing the outcome (`/confirmation-compte`, `/reinitialiser-mot-de-passe`, `/verifier-email?type=changement`).
+  The webapp passes `…/auth/confirm?next=…` as the redirect of every sign-up, resend, reset and e-mail change.
+- Authentication → URL Configuration: Site URL = the production URL; redirect allow-list:
+  `http://localhost:5173/**`, `https://<production domain>/auth/confirm**` and, for Vercel previews,
+  `https://*-<vercel team>.vercel.app/auth/confirm**` (a redirect not in the list is replaced by the Site URL).
+  The former `/confirmation-compte` and `/reinitialiser-mot-de-passe` entries are no longer used.
+- Authentication → Emails, the link of each template, so it works on whichever device opens it
+  (`verifyOtp` with the token hash rather than the PKCE code, which only the requesting browser can exchange):
+  - *Confirm signup*: subject *Confirmez votre compte Global Toothgems*, body from `templates/confirm-signup.html`
+    (link `{{ .RedirectTo }}&token_hash={{ .TokenHash }}&type=email`);
+  - *Reset password*: link `{{ .RedirectTo }}&token_hash={{ .TokenHash }}&type=recovery`;
+  - *Change email address*: link `{{ .RedirectTo }}&token_hash={{ .TokenHash }}&type=email_change`.
+  With Supabase's default `{{ .ConfirmationURL }}` links still work, but only in the browser that asked for them.
+  An e-mail sent from the dashboard rather than by the app carries the Site URL as `.RedirectTo`: send
+  confirmations and resets from the app.
 - Authentication → Emails → SMTP: the built-in sender is rate-limited to a few emails per hour and meant
   for testing; production needs custom SMTP (Resend, per the project stack).
 

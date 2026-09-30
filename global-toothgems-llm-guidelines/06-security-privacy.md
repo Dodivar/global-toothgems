@@ -11,6 +11,7 @@ Security is a functional requirement, not a polishing step.
 
 - Supabase Auth is the only identity system, shared by customers, learners, Studio users and staff (`lib/auth.tsx` for members, `lib/adminAuth.tsx` for staff — same Auth, different gates).
 - Never implement custom password handling. Protect sessions, password reset, e-mail verification, account enumeration (neutral messages), brute force (Auth rate limits), CSRF where relevant.
+- Sessions: Supabase Auth in cookies (`@supabase/ssr`, `SameSite=Lax`). They are readable by page scripts by design (the browser client uses them), as `localStorage` was before, so XSS prevention stays essential. E-mail links (confirmation, recovery, e-mail change) are verified server-side by `/auth/confirm`; every post-link or post-sign-in redirect goes through `isSafeNext` (`webapp/src/lib/authRoutes.ts`) — never to another origin.
 - Sign-up metadata is untrusted: the `handle_new_auth_user` trigger validates it and never takes a role from it.
 - Never log passwords, tokens, gift-card codes or payment secrets.
 
@@ -30,7 +31,7 @@ Security is a functional requirement, not a polishing step.
 
 ## Authorization
 
-Deny by default. Every table has RLS enabled in the migration that creates it. A customer reads and writes only their own profile, addresses, orders, entitlements, progress, reviews, favourites, creations and consents. Front-end guards (`RequireAccount`, `RequireAdmin`) are UX. Test that another user and an anonymous visitor are refused.
+Deny by default. Every table has RLS enabled in the migration that creates it. A customer reads and writes only their own profile, addresses, orders, entitlements, progress, reviews, favourites, creations and consents. Front-end guards (`RequireAccount`, `RequireAdmin`) and the proxy's sign-in redirects (`webapp/proxy.ts`, which validates the session with `getClaims()`, never trusting the cookie alone) are UX. Test that another user and an anonymous visitor are refused.
 
 ## Secrets
 

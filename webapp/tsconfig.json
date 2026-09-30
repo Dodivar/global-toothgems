@@ -40,8 +40,11 @@
     "src",
     "app",
     "next.config.ts",
+    "proxy.ts",
     ".next/types/**/*.ts",
-    ".next/dev/types/**/*.ts"
+    ".next/dev/types/**/*.ts",
+    ".next-e2e-auth/types/**/*.ts",
+    ".next-e2e-auth/dev/types/**/*.ts"
   ],
   "exclude": [
     "node_modules"

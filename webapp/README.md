@@ -34,11 +34,22 @@ How the app is mounted (phase 1 of `docs/migration-nextjs.md`):
 app/layout.tsx              root layout: <html lang="fr">, fonts, title, favicon, src/index.css
 app/[[...slug]]/page.tsx    the only page; every path lands here
 app/[[...slug]]/client.tsx  loads src/ClientApp.tsx with dynamic(..., { ssr: false })
+app/auth/confirm/route.ts   where every Supabase Auth e-mail link lands (server)
+proxy.ts                    before every page: session refresh + sign-in redirects (server)
 src/ClientApp.tsx           i18n + StrictMode + BrowserRouter + App (formerly main.tsx)
 src/App.tsx                 the React Router routes
 ```
 
-Nothing from `src/` runs on the server yet. Screens live in `src/screens/` (not `src/pages/`, which Next.js would treat as a Pages Router directory). Image imports resolve to `{ src, width, height }` in Next.js: use `.src` in an `<img>`.
+No screen of `src/` is rendered on the server yet; the server only runs `proxy.ts`, `/auth/confirm` and the pure rules they share (`src/lib/authRoutes.ts`). Screens live in `src/screens/` (not `src/pages/`, which Next.js would treat as a Pages Router directory). Image imports resolve to `{ src, width, height }` in Next.js: use `.src` in an `<img>`.
+
+## Sessions and e-mail links (server side)
+
+With Supabase configured (phase 2 of `docs/migration-nextjs.md`):
+
+- **The session lives in cookies** (`@supabase/ssr`): `src/lib/supabase/client.ts` is the browser client, `server.ts` the one for route handlers (the visitor's session, publishable key, RLS), `proxySession.ts` the proxy's. A member signed in before the switch had the session in `localStorage`; the browser client carries it over once into cookies (`sessionReady`, which the auth providers wait for).
+- **`proxy.ts`** refreshes the session on every page request (`getClaims()`, which validates the token rather than trusting the cookie) and redirects a signed-out visitor away from `/compte/*`, `/academy/lecon`, `/academy/mes-formations/*` (to `/connexion`) and `/admin/*` except its sign-in screen (to `/admin/connexion`), with `?suite=<page>`; both sign-in pages read it to send the visitor back. The client guards (`RequireAccount`, `RequireAdmin`) stay; the staff role is checked by the back office and by RLS, not by the proxy. In mock mode the proxy does nothing.
+- **`/auth/confirm`** receives every Auth e-mail link — `?token_hash=…&type=…` (the templates in `supabase/templates/`, any device) or `?code=…` (Supabase's default templates, same browser only) — opens the session and forwards to `next` (a same-site path only) or to the page for the kind of link, with `error`/`error_code` when the link is refused. The app passes `…/auth/confirm?next=…` as the redirect of sign-up, resend, password reset and e-mail change. Supabase dashboard settings: `supabase/README.md`, "Member sign-up".
+- The rules (which paths need a session, safe redirects, link kinds) are pure and unit-tested in `src/lib/authRoutes.ts`.
 
 ## Supabase connection (back-office products)
 
@@ -76,7 +87,8 @@ npm start         # serve the production build (next start)
 npm run typecheck # tsc on the app, then on e2e/ + the tool configs
 npm run lint      # oxlint
 npm test          # vitest (catalogue mapping and money rules; vitest.config.ts)
-npm run test:e2e  # Playwright smoke tests in mock mode (starts `npm run dev` on port 5199)
+npm run test:e2e  # Playwright: smoke tests in mock mode (dev server on 5199) + auth-server tests
+                  # (dev server on 5198 against e2e/support/fake-supabase.mjs on 54399)
 ```
 
 `npm run test:e2e` needs a Chromium: `npx playwright install chromium` once on a workstation (cloud sessions use the preinstalled one). `E2E_BASE_URL=http://localhost:3000 npm run test:e2e` runs the same tests against a server you started yourself (e.g. `npm run build && npm start`, built without the Supabase variables).

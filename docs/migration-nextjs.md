@@ -10,7 +10,7 @@ Living document. **Every session that works on this migration reads it first and
 
 1. **No visible change.** No route, text or style changes unless the user asks. The Playwright smoke tests (`webapp/e2e/`, `npm run test:e2e`) are the reference: they must pass before and after each step.
 2. Exit criteria of every phase: `npx tsc -b` (phase 0) / `npm run typecheck` (from phase 1), `npm run lint`, `npm test`, `npm run build`, `npm run test:e2e` — all run and green, results written in the log below.
-3. Ask the user, never decide alone: the locale URL format (`/fr`, `/en` or another scheme), the Vercel project switch (the user does it), the Supabase Auth redirect URLs.
+3. Ask the user, never decide alone. Decided so far: e-mail links land on `/auth/confirm`; locale URLs are `/fr/…` and `/en/…`. Still the user's: the Vercel project switch and the Supabase dashboard settings (they do both), and the open points listed under "Open decisions".
 4. Only the publishable key is public (`NEXT_PUBLIC_*`). The service-role key and provider secrets never reach Next.js code.
 5. Business rules stay in Postgres / Edge Functions. A server-side route guard is navigation, not authorization: RLS is.
 
@@ -30,7 +30,7 @@ The brief quoted 96 routes, 152 files importing react-router and ~75 files touch
 Other facts that shape the plan:
 
 - **Studio 3D (three.js, three-mesh-bvh):** the editor and the share viewer are lazy chunks (`React.lazy`) loading `src/assets/studio3d/dentition.glb`. WebGL only exists in the browser: these routes stay client-only (`dynamic(..., { ssr: false })` or a client component that mounts the engine in an effect) even after phase 4.
-- **Supabase Auth:** `src/lib/supabase/client.ts` creates one browser client with `persistSession`, `autoRefreshToken` and `detectSessionInUrl: true` — the session lives in `localStorage` and e-mail links use the implicit flow (tokens in the URL fragment, read by `authLinkErrorFromUrl` and the confirmation/reset pages). A server never sees a fragment nor `localStorage`: phase 2 moves the session to cookies (`@supabase/ssr`) and e-mail links to the PKCE flow (`?code=` exchanged by a route handler), which changes the redirect URLs configured in Supabase Auth.
+- **Supabase Auth (before phase 2):** `src/lib/supabase/client.ts` created one browser client with `persistSession`, `autoRefreshToken` and `detectSessionInUrl: true` — the session lives in `localStorage` and e-mail links use the implicit flow (tokens in the URL fragment, read by `authLinkErrorFromUrl` and the confirmation/reset pages). A server never sees a fragment nor `localStorage`: phase 2 moves the session to cookies (`@supabase/ssr`) and e-mail links to the PKCE flow (`?code=` exchanged by a route handler), which changes the redirect URLs configured in Supabase Auth.
 - **Redirect URLs are built from `window.location.origin`** (`authRedirect.ts`, `passwordRecovery.ts`, `accountCredentials.ts`, `studioWorkspace/share.ts`): local development must keep port 5173 or the Supabase allow-list must change.
 - **Route guards are client components:** `RequireAccount` (→ `/connexion`), `RequireAdmin` (→ `/admin/connexion`), `RequireStudioAccess` (lets everyone in during the preview).
 - **i18n:** react-i18next with `i18next-browser-languagedetector`, language cached in `localStorage` (`gt-lang`), French default; `DocumentLanguage` sets `<html lang>` after mount. The server cannot know the language today — this ties SSR to the locale URL decision.
@@ -44,8 +44,8 @@ Other facts that shape the plan:
 | --- | --- | --- | --- |
 | 0 | Framing | Decision recorded (AGENTS.md §4, guidelines 02/08), this file, Playwright smoke tests passing on the Vite app | done (2026-09-30) |
 | 1 | Next.js shell | Next.js 16.3 installed in `webapp/`; the existing app runs unchanged from `app/[[...slug]]/page.tsx` through `dynamic(() => import(App), { ssr: false })` with `BrowserRouter` (official guide "Migrating from Vite"); Tailwind v4 via PostCSS; `VITE_*` → `NEXT_PUBLIC_*`; `vercel.json` removed; Vitest kept | done (2026-09-30) |
-| 2 | Auth on the server | `@supabase/ssr`: browser client + server client, session in cookies, `proxy.ts` (Next.js 16 name of middleware) refreshing the session and redirecting signed-out visitors away from `/compte/*`, `/academy/mes-formations/*`, `/academy/lecon` and `/admin/*` (client guards stay as a second layer); PKCE e-mail links through an auth route handler; Supabase redirect URLs updated **by the user** | not started — needs the redirect-URL decision |
-| 3 | Public pages SSR + SEO | Home, shop, shapes, colours, product, gift card, loyalty, Studio and Academy sales pages, help and legal pages as App Router segments rendered on the server (data read with the publishable key), `generateMetadata`, canonical/OG, structured data, `notFound()`, sitemap/robots; `window`/`localStorage` code behind client boundaries | not started — needs the locale URL decision |
+| 2 | Auth on the server | `@supabase/ssr`: browser client + server client, session in cookies (existing `localStorage` sessions carried over), `proxy.ts` (Next.js 16 name of middleware) refreshing the session and redirecting signed-out visitors away from `/compte/*`, `/academy/mes-formations/*`, `/academy/lecon` and `/admin/*` (client guards stay as a second layer); e-mail links through `/auth/confirm` (token hash or PKCE code); Supabase dashboard settings updated **by the user** | done in code (2026-09-30); live once the user applies the Supabase settings and switches Vercel |
+| 3 | Public pages SSR + SEO | Locale prefixes `/fr/…` and `/en/…` with redirects from today's paths and hreflang; home, shop, shapes, colours, product, gift card, loyalty, Studio and Academy sales pages, help and legal pages as App Router segments rendered on the server (data read with the publishable key), `generateMetadata`, canonical/OG, structured data, `notFound()`, sitemap/robots; `window`/`localStorage` code behind client boundaries | not started — locale details to ask first (see Open decisions) |
 | 4 | Account, back office, Studio | `/compte/*`, community, learner pages, `/admin/*`, Studio editor/share as App Router segments (mostly client components under server-protected layouts); Studio stays client-only | not started |
 | 5 | Cleanup | Remove the catch-all shell, react-router-dom, SPA-only helpers (`ScrollToTop`, `DocumentLanguage`…), dead Vite leftovers; update READMEs | not started |
 
@@ -77,9 +77,25 @@ Deviations from the official guide, and the Vite-only code, with the reason for 
 
 Known and accepted: the CSS minifier (Lightning CSS in Turbopack) writes `(width>=40rem)` as `(min-width:40rem)`, `rotate:0deg` as `rotate:none` (`hover:rotate-0` on the two gift-card visuals) and the pill radius `2147483647px` as `3.40282e38px`; the set of rules is otherwise identical to the Vite build, and full-page screenshots of every public route (desktop 1280 px and mobile 390 px, plus the hovered gift card) are pixel-identical between the two builds.
 
+## Phase 2 — sessions on the server
+
+- **Clients** (`src/lib/supabase/`): `env.ts` (the two public values), `client.ts` (`createBrowserClient`, cookies), `server.ts` (route handlers and server components: the visitor's session, publishable key, RLS applies), `proxySession.ts` (the proxy's). No service-role key anywhere in Next.js.
+- **Existing sessions:** before, supabase-js kept the session in `localStorage` under `sb-<ref>-auth-token`, the name the cookies now use. `client.ts` carries it over once into cookies (`setSession`) and removes the old entry; `AuthProvider` and `AdminAuthProvider` wait for it (`sessionReady`) before reading the session, so nobody is signed out by the release. Limit: a member whose first visit after the release is a direct load of a protected URL is sent once to `/connexion?suite=…` by the proxy (it cannot see `localStorage`); the page then shows them signed in.
+- **`proxy.ts`**: runs on page requests (static files excluded by the matcher). Without an auth cookie it calls nothing. Otherwise `getClaims()` validates the access token (JWKS, or Auth for a shared-secret project) and refreshes it when expired, writing the new cookies to the request and the response. Signed-out visitor on a gated path → 307 to `/connexion?suite=<path+query>` (member space, learner pages) or `/admin/connexion?suite=…` (back office); `Login` and `AdminLogin` read `?suite=` besides the history state they already read. The staff role is not checked here (the back office does it, RLS enforces it). Mock mode: the proxy does nothing, the client guards decide as before.
+- **`/auth/confirm`** (`app/auth/confirm/route.ts`): `?token_hash=&type=` → `verifyOtp` (any device), `?code=` → `exchangeCodeForSession` (browser that asked only), Supabase's own `?error=` forwarded. Accepted kinds: `signup`, `email`, `recovery`, `email_change` (others refused). Success → 303 to the safe `next` or the page for the kind (`/confirmation-compte`, `/reinitialiser-mot-de-passe`, `/verifier-email?type=changement`); the first half of a secure e-mail change → `&message=confirm_other_address`; failure → same page with `error=access_denied&error_code=…`, which the existing pages already turn into their "expired" / "invalid" states. No page changed.
+- **Redirects given to Supabase**: `authConfirmUrl(next)` in `confirmationRedirect` (sign-up, resend), `sendPasswordReset`, `emailChangeRedirect`.
+- **Rules in one place**: `src/lib/authRoutes.ts` (gated paths, sign-in redirect, `?suite=`, `isSafeNext` — now also refusing control characters and `\` anywhere —, link kinds and landing pages), unit-tested; `authRedirect.ts` and `accountSecurity.ts` re-use it.
+- **Tests**: `src/lib/authRoutes.test.ts`; Playwright project `auth-server` against `e2e/support/fake-supabase.mjs` (see guideline 07). The legacy-session test was checked to fail with the carry-over disabled.
+- **`npm run typecheck`** now starts with `next typegen`, so it works on a fresh clone (it needed a prior `next dev`/`build` for `next-env.d.ts`). `tsconfig.json` lists `.next-e2e-auth/` types: Next.js adds them when the auth test server runs (`NEXT_DIST_DIR`), so they are committed to keep the tree stable.
+
+Known limits, accepted:
+- E-mail links sent **before** the release use the implicit flow (`#access_token=…`), which the cookie client no longer reads: opened after the release, they show "invalid" and the member asks for a new one (Supabase links expire within 24 h anyway).
+- Until the three e-mail templates are changed to the token-hash link, links work only in the browser that asked for them (PKCE). An account confirmation opened elsewhere is still confirmed by Supabase but the page says the link is invalid — which is why the template change is part of the release.
+- An e-mail sent from the Supabase dashboard (not by the app) has the Site URL as `.RedirectTo`, so the token-hash link is malformed; send confirmations and resets from the app.
+
 ## Route checklist
 
-Legend (phase 1 done: every route below is served by the catch-all shell) — **Access**: open / account (`RequireAccount`) / staff (`RequireAdmin`) / studio (`RequireStudioAccess`) / redirect (client-side `Navigate`). **P1**: served by the catch-all shell. **Smoke**: covered by `webapp/e2e/`. **Native**: App Router segment exists. **SSR**: rendered on the server with metadata (public pages only). Target phase in the last column.
+Legend (phase 1 done: every route below is served by the catch-all shell; phase 2 done: "account" and "staff" routes are also turned away server-side by `proxy.ts`) — **Access**: open / account (`RequireAccount` + proxy) / staff (`RequireAdmin` + proxy) / studio (`RequireStudioAccess`) / redirect (client-side `Navigate`). **P1**: served by the catch-all shell. **Smoke**: covered by `webapp/e2e/`. **Native**: App Router segment exists. **SSR**: rendered on the server with metadata (public pages only). Target phase in the last column.
 
 ### Storefront
 
@@ -101,13 +117,14 @@ Legend (phase 1 done: every route below is served by the catch-all shell) — **
 
 | Route | Access | P1 | Smoke | Native | SSR | Target |
 | --- | --- | --- | --- | --- | --- | --- |
-| `/connexion` | open | ✅ | ✅ (mock sign-in) | ⬜ | — | 2 |
-| `/connexion-b` → `/connexion` | redirect | ✅ | ✅ | ⬜ | — | 2 |
-| `/inscription` | open | ✅ | ✅ (mock registration) | ⬜ | — | 2 |
-| `/mot-de-passe-oublie`, `/forgot-password` | open | ✅ | ✅ (FR) | ⬜ | — | 2 |
-| `/reinitialiser-mot-de-passe`, `/reset-password` | open (e-mail link) | ✅ | ✅ (FR) | ⬜ | — | 2 |
-| `/verifier-email`, `/verify-email` | open (e-mail link) | ✅ | ✅ (FR) | ⬜ | — | 2 |
-| `/confirmation-compte` | open (Supabase confirmation link) | ✅ | ✅ | ⬜ | — | 2 |
+| `/connexion` | open | ✅ | ✅ (mock sign-in) | ⬜ | — |4 |
+| `/connexion-b` → `/connexion` | redirect | ✅ | ✅ | ⬜ | — |4 |
+| `/inscription` | open | ✅ | ✅ (mock registration) | ⬜ | — |4 |
+| `/mot-de-passe-oublie`, `/forgot-password` | open | ✅ | ✅ (FR) | ⬜ | — |4 |
+| `/reinitialiser-mot-de-passe`, `/reset-password` | open (e-mail link) | ✅ | ✅ (FR) | ⬜ | — |4 |
+| `/verifier-email`, `/verify-email` | open (e-mail link) | ✅ | ✅ (FR) | ⬜ | — |4 |
+| `/confirmation-compte` | open (after `/auth/confirm`) | ✅ | ✅ | ⬜ | — | 4 |
+| `/auth/confirm` (route handler, phase 2) | open (e-mail links) | — | ✅ (`auth-server`) | ✅ | — | done |
 
 ### Studio 3D
 
@@ -127,16 +144,16 @@ Legend (phase 1 done: every route below is served by the catch-all shell) — **
 | --- | --- | --- | --- | --- | --- | --- |
 | `/academy` | open | ✅ | ✅ | ⬜ | ⬜ | 3 |
 | `/academy/formation/:id` | open | ✅ | ✅ | ⬜ | ⬜ | 3 |
-| `/academy/lecon` | account | ✅ | ⬜ | ⬜ | — | 4 |
+| `/academy/lecon` | account | ✅ | ✅ (proxy redirect) | ⬜ | — | 4 |
 | `/academy/mes-formations/:courseId` | account | ✅ | ⬜ | ⬜ | — | 4 |
-| `/academy/mes-formations/:courseId/lecon/:nodeKey` | account | ✅ | ⬜ | ⬜ | — | 4 |
+| `/academy/mes-formations/:courseId/lecon/:nodeKey` | account | ✅ | ✅ (proxy redirect) | ⬜ | — | 4 |
 | `/academy/mes-formations/:courseId/terminee` | account | ✅ | ⬜ | ⬜ | — | 4 |
 
 ### Member area (`MemberShell`, account)
 
 | Route | Access | P1 | Smoke | Native | SSR | Target |
 | --- | --- | --- | --- | --- | --- | --- |
-| `/compte` | account | ✅ | ✅ (redirect + mock sign-in) | ⬜ | — | 4 |
+| `/compte` | account | ✅ | ✅ (redirect + mock sign-in; proxy redirect and cookie session in `auth-server`) | ⬜ | — | 4 |
 | `/compte/attestations` | account | ✅ | ⬜ | ⬜ | — | 4 |
 | `/compte/commandes` | account | ✅ | ✅ (redirect) | ⬜ | — | 4 |
 | `/compte/profil` | account | ✅ | ⬜ | ⬜ | — | 4 |
@@ -156,8 +173,8 @@ Legend (phase 1 done: every route below is served by the catch-all shell) — **
 
 | Route | Access | P1 | Smoke | Native | SSR | Target |
 | --- | --- | --- | --- | --- | --- | --- |
-| `/admin/connexion` | open | ✅ | ✅ | ⬜ | — | 2 |
-| `/admin` | staff | ✅ | ✅ (redirect) | ⬜ | — | 4 |
+| `/admin/connexion` | open | ✅ | ✅ | ⬜ | — |4 |
+| `/admin` | staff | ✅ | ✅ (client and proxy redirects) | ⬜ | — | 4 |
 | `/admin/commandes`, `/admin/commandes/:reference` | staff | ✅ | ⬜ | ⬜ | — | 4 |
 | `/admin/clients`, `/admin/clients/:id` | staff | ✅ | ⬜ | ⬜ | — | 4 |
 | `/admin/utilisateurs` | staff | ✅ | ⬜ | ⬜ | — | 4 |
@@ -200,13 +217,24 @@ Legend (phase 1 done: every route below is served by the catch-all shell) — **
 
 | Decision | Needed by | Status |
 | --- | --- | --- |
-| Locale URL format (`/fr/...` + `/en/...`, French without prefix + `/en/...`, or keep the toggle) and hreflang | phase 3 | open |
-| Supabase Auth redirect URLs (Site URL, allow-list, PKCE callback path) | phase 2 | open |
-| Vercel project switch to the Next.js framework preset | before the first Next.js deployment | the user does it |
+| Where Supabase e-mail links land | phase 2 | **decided**: `/auth/confirm` |
+| Locale URL format | phase 3 | **decided**: `/fr/…` and `/en/…`, hreflang between them, today's paths redirected |
+| English path segments: French slugs under `/en` (`/en/boutique`) or English ones (`/en/shop`) | phase 3 | open |
+| What `/` does: redirect to `/fr` always, or by saved choice / browser language | phase 3 | open |
+| Whether the member space and back office get the prefix too, or only public pages | phase 3 | open |
+| Supabase dashboard: redirect allow-list and the three e-mail templates (`supabase/README.md`, "Member sign-up") | the phase 2 release | the user does it |
+| Vercel project switch to the Next.js framework preset | before the first Next.js deployment | the user does it (later) |
 
 ## Log
 
 Newest first. For each session: what changed, the commands run and their real results.
+
+### 2026-09-30 — Phase 2
+
+- User decisions: e-mail links land on `/auth/confirm`; locale URLs `/fr/…` and `/en/…` (recorded for phase 3 in AGENTS.md §4, guidelines 02 and 08; three details left open, see Open decisions).
+- `@supabase/ssr` 0.12.7 and `server-only` added; sessions in cookies with the one-time carry-over of `localStorage` sessions; `proxy.ts`; `app/auth/confirm/route.ts`; `src/lib/authRoutes.ts`; sign-in pages read `?suite=`; the redirects given to Supabase point at `/auth/confirm`; `supabase/templates/confirm-signup.html` uses the token-hash link; Supabase dashboard steps in `supabase/README.md`.
+- Results: `npm run typecheck` OK (also from a clean tree, thanks to `next typegen`); `npm run lint` 0 errors, 95 warnings (unchanged); `npm test` 25 files / 280 tests passed (9 new); `npm run build` OK (`ƒ Proxy (Middleware)`, `ƒ /auth/confirm`); `npm run test:e2e` 71 passed on the dev servers (49 smoke in mock mode + 22 `auth-server`) and 71 passed on production builds (`next start` of the mock build and of a build pointed at the fake Supabase). The legacy-session test failed as expected with the carry-over disabled, then passed with it restored.
+- Not verified here: the flow against the real Supabase project (no test ever points at it) — to check on the first preview after the user applies the dashboard settings: sign-up confirmation, password reset, e-mail change, and an existing session surviving the release.
 
 ### 2026-09-30 — Phase 1
 

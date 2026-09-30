@@ -7,6 +7,7 @@ import { Badge } from "../components/ui/Badge";
 import { AuthCard, AuthField, AuthLayout, GoogleButton } from "../components/auth/AuthScene";
 import { useAuth, type ResendResult, type SignInResult } from "../lib/auth";
 import { confirmationRedirect } from "../lib/authRedirect";
+import { returnPathFrom } from "../lib/authRoutes";
 import { useProgress } from "../lib/progress";
 import { useToast } from "../lib/toast";
 import { FORGOT_PATH } from "../lib/accountSecurity";
@@ -40,9 +41,13 @@ export function Login() {
   /**
    * `from` is set by RequireAccount when it turned someone away from a gated
    * page, and by the training pages when a visitor asked to start a course.
-   * `course` carries which one, so that purchase finishes on its own.
+   * `course` carries which one, so that purchase finishes on its own. When the
+   * server (`proxy.ts`) turned the visitor away, the page arrives in the query
+   * string instead (`?suite=`).
    */
-  const routeState = location.state as { from?: string; course?: string; reason?: "favorite" } | null;
+  const stateFromHistory = location.state as { from?: string; course?: string; reason?: "favorite" } | null;
+  const suite = returnPathFrom(location.search);
+  const routeState = stateFromHistory ?? (suite ? { from: suite } : null);
   const from = routeState?.from;
   const pendingCourse = routeState?.course;
   const target = from ?? DEFAULT_TARGET;

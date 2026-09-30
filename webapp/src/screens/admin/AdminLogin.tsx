@@ -9,6 +9,7 @@ import { AdminIconButton } from "../../components/admin/AdminIconButton";
 import { FormField } from "../../components/admin/FormField";
 import { DEMO_ADMIN_EMAIL, DEMO_ADMIN_PASSWORD, useAdminAuth } from "../../lib/adminAuth";
 import { useFocusTrap } from "../../lib/useFocusTrap";
+import { returnPathFrom } from "../../lib/authRoutes";
 import { photo } from "../../lib/images";
 
 /**
@@ -31,7 +32,8 @@ export function AdminLogin() {
   const location = useLocation();
   const { signedIn, signIn, realAuth } = useAdminAuth();
 
-  const from = (location.state as { from?: string } | null)?.from ?? "/admin";
+  // From `RequireAdmin` (history state) or from the server's redirect (`?suite=`, `proxy.ts`).
+  const from = (location.state as { from?: string } | null)?.from ?? returnPathFrom(location.search) ?? "/admin";
 
   const [email, setEmail] = useState(realAuth ? "" : DEMO_ADMIN_EMAIL);
   const [password, setPassword] = useState(realAuth ? "" : DEMO_ADMIN_PASSWORD);

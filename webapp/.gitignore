@@ -34,3 +34,6 @@ dist-ssr
 /out/
 next-env.d.ts
 *.tsbuildinfo
+
+# Build folder of the Playwright auth-server tests (playwright.config.ts)
+/.next-e2e-auth/

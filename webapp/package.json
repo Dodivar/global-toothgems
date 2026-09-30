@@ -8,12 +8,13 @@
     "dev:mock": "node scripts/dev.mjs --mock",
     "build": "next build",
     "start": "next start",
-    "typecheck": "tsc --noEmit && tsc --noEmit -p tsconfig.e2e.json",
+    "typecheck": "next typegen && tsc --noEmit && tsc --noEmit -p tsconfig.e2e.json",
     "lint": "oxlint",
     "test": "vitest run",
     "test:e2e": "playwright test"
   },
   "dependencies": {
+    "@supabase/ssr": "^0.12.7",
     "@supabase/supabase-js": "^2.117.2",
     "@types/three": "^0.170.0",
     "clsx": "^2.1.1",
@@ -25,6 +26,7 @@
     "react-dom": "^19.2.8",
     "react-i18next": "^17.0.14",
     "react-router-dom": "^7.18.4",
+    "server-only": "^0.0.1",
     "three": "^0.170.0",
     "three-mesh-bvh": "^0.9.15"
   },

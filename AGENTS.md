@@ -65,14 +65,16 @@ Stripe  payment source of truth; fulfilment only from verified, idempotent webho
 - Next.js server code (Server Components, middleware, Route Handlers) renders pages, refreshes the Supabase session cookie, protects routes and reads public data with the publishable key. It never holds the service-role key or a provider secret and does not take over what Edge Functions own (payments, webhooks, e-mail, service-role jobs) without an explicit user decision. No other backend framework, database, auth provider, CMS, LMS or commerce engine without an explicit user decision.
 - Business rules that protect money, stock, access or permissions live in Postgres (functions, constraints, triggers, RLS) or in Edge Functions — never only in the browser or in a page. Front-end and middleware checks are UX and navigation; RLS is the authority.
 - The service-role key and every provider secret exist only in Edge Function secrets / Supabase — never in `NEXT_PUBLIC_*` variables (Next.js inlines them into the public bundle).
-- Open decisions (ask the user, never improvise): locale URL format (`/fr`, `/en`, prefix-less default…), the Vercel project switch (done by the user), Supabase Auth redirect URLs.
+- Decided by the user (2026-09-30): e-mail links land on `/auth/confirm` (server route opening the session, phase 2); locale URLs are prefixed `/fr/…` and `/en/…` (implemented in phase 3; details still to ask are listed in `docs/migration-nextjs.md`).
+- Sessions live in cookies (`@supabase/ssr`); `webapp/proxy.ts` refreshes them and turns signed-out visitors away from `/compte`, the learner pages and `/admin` before anything is sent.
+- Still the user's call, never improvise: the Vercel project switch (done by the user), the Supabase Auth dashboard settings (redirect allow-list, e-mail templates), and the open locale details.
 
 ### Domain status (update this table when a domain goes live)
 
 | Domain | UI | Database | State |
 | --- | --- | --- | --- |
 | Catalogue, categories/families, gem colours, variants, recommendations | storefront + back office | yes | **Live** |
-| Customer & staff auth (sign-up, sign-in, recovery, email/password change) | yes | yes | **Live** (Google sign-in, data export and account deletion not wired) |
+| Customer & staff auth (sign-up, sign-in, recovery, email/password change) | yes | yes | **Live** (Google sign-in, data export and account deletion not wired). Next.js side (cookie sessions, proxy, `/auth/confirm`) built, live once Vercel is switched and the Supabase dashboard settings applied |
 | Favourites, reviews + moderation, member & admin order reading | yes | yes | **Live** |
 | Studio 3D workspace (creations, Gem Groups, share links) | yes | yes | **Live** (subscription/paywall not built: preview access) |
 | Cart, checkout, payment, order creation | yes | `create_order`, `mark_order_paid`, webhook log | **Mock** — no Stripe, no Edge Function yet |
@@ -104,7 +106,7 @@ Customer identity is shared across commerce, learning and Studio; the functional
 ## 7. Security rules
 
 - Never trust client-calculated prices, discounts, totals, permissions, payment states, entitlements or completion states.
-- Authorization is enforced by RLS and database functions (`private.has_permission()`, `private.is_staff()`) or in Edge Functions — deny by default. Route guards (`RequireAdmin`, `RequireAccount`) are navigation only.
+- Authorization is enforced by RLS and database functions (`private.has_permission()`, `private.is_staff()`) or in Edge Functions — deny by default. Route guards (`RequireAdmin`, `RequireAccount`) and the proxy's redirects (`webapp/proxy.ts`) are navigation only.
 - Validate all untrusted input server-side (function arguments, webhook payloads, uploads, sign-up metadata).
 - Never put secrets in source, client bundles, logs or commits. Only the publishable key is public.
 - Paid training media and personal files stay in private buckets, served by signed URLs.
