@@ -14,10 +14,13 @@ From `webapp/` (run `npm ci` first if `node_modules` is missing):
 | Lint | `npm run lint` (oxlint) | every change |
 | Unit tests | `npm test` (Vitest) | every change to `lib/` logic; run a single file with `npx vitest run <path>` |
 | Type-check + build | `npm run build` | every change before committing |
+| Smoke tests (Playwright) | `npm run test:e2e` | every change to routing, rendering, auth plumbing, layout or build configuration; before and after each Next.js migration step |
 
 Database: the `supabase/tests/*_validation.sql` suites run against a Supabase project (MCP `execute_sql`, or the SQL editor). Each is one transaction that ends by raising `ALL … TESTS PASSED` (success) or `FAIL: …` — both roll back. See `09-supabase-workflow.md`.
 
-Not in place yet (build when the matching launch work starts): Playwright end-to-end tests for the critical journeys below, GitHub Actions CI running lint + tests + build, Deno tests for Edge Functions.
+The Playwright smoke tests (`webapp/e2e/`) run the app in mock mode (Supabase variables forced empty) and check that every public route renders its heading without console errors, failed same-origin requests or redirects; the cart; mock sign-in and registration; and that `/compte` and `/admin` send a signed-out visitor to their sign-in pages. They are the reference for the Next.js migration (`docs/migration-nextjs.md`): they must pass before and after every step. They start `npm run dev` themselves; `E2E_BASE_URL` points them at an already running server instead. Chromium: `npx playwright install chromium` locally; cloud sessions use the preinstalled `/opt/pw-browsers/chromium` (picked up automatically, never run `playwright install` there).
+
+Not in place yet (build when the matching launch work starts): Playwright end-to-end tests for the critical journeys below against a real Supabase project, GitHub Actions CI running lint + tests + build + smoke tests, Deno tests for Edge Functions.
 
 ## Test levels
 

@@ -33,6 +33,7 @@ Read only what the task needs (`guidelines/` below = `global-toothgems-llm-guide
 | Anything non-trivial | this file, then `global-toothgems-llm-guidelines/README.md` (index) |
 | Scope ("should this exist / is it launch-critical?") | `guidelines/01-scope-and-launch.md` |
 | Architecture, runtime boundaries, mock → live | `guidelines/02-architecture-and-engineering.md` |
+| Routing, rendering, auth plumbing, build config (Next.js migration) | `docs/migration-nextjs.md`, then `guidelines/02` |
 | Visual design, components, accessibility | `guidelines/03-ui-ux-design-system.md`, `webapp/src/index.css` tokens |
 | Catalogue, cart, checkout, Stripe, orders, promotions, gift cards | `guidelines/04-ecommerce-rules.md`, `supabase/README.md` (Checkout flow, Promotions, Gift cards) |
 | Academy, courses, progress, quizzes | `guidelines/05-learning-platform-rules.md` |
@@ -46,21 +47,25 @@ Read only what the task needs (`guidelines/` below = `global-toothgems-llm-guide
 ## 4. Production architecture (decided)
 
 ```
-Browser  webapp/  Vite + React 19 + TypeScript SPA, deployed as static files on Vercel
+Browser + Vercel  webapp/  Next.js (App Router) + React 19 + TypeScript, deployed on Vercel
    │  supabase-js with the PUBLISHABLE key only; every read/write authorised by RLS
    ▼
-Supabase (project "Global Toothgems", eu-west-3)
+Supabase (project "Global Toothgems", eu-west-3) — unchanged by the Next.js migration
    ├─ Postgres: tables + RLS + SECURITY INVOKER/DEFINER functions = the business logic
    ├─ Auth: the only identity system (customers and staff)
    ├─ Storage: public product-media; private buckets for everything personal or paid
-   └─ Edge Functions (Deno): the only server code — Stripe Checkout, Stripe webhooks,
-      transactional e-mail, visitor forms (captcha/IP limit), jobs needing the service role
+   └─ Edge Functions (Deno): the server code holding secrets — Stripe Checkout, Stripe
+      webhooks, transactional e-mail, visitor forms (captcha/IP limit), service-role jobs
 Stripe  payment source of truth; fulfilment only from verified, idempotent webhooks
 ```
 
-- There is **no Next.js** and no Node server. Do not introduce one, nor any other backend framework, database, auth provider, CMS, LMS or commerce engine, without an explicit user decision.
-- Business rules that protect money, stock, access or permissions live in Postgres (functions, constraints, triggers, RLS) or in Edge Functions — never only in the browser. Front-end checks are UX.
-- The service-role key and every provider secret exist only in Edge Function secrets / Supabase — never in `VITE_*` variables (Vite inlines them into the public bundle).
+**Decision (2026-09-30): `webapp/` moves from Vite + React Router to Next.js App Router on Vercel.** It replaces the earlier "Vite SPA, no Next.js" decision. Why: public pages (home, shop, products, Academy sales pages, legal, help) need server rendering and per-route metadata for search engines and social previews, and member/back-office routes need server-side protection (middleware + `@supabase/ssr`) instead of client-only guards. What does not change: Supabase (schema, RLS, migrations, Auth), Stripe and e-mail server code in Edge Functions, react-i18next for UI strings during the migration (next-intl is not decided).
+
+- **The migration runs in phases, tracked in [`docs/migration-nextjs.md`](docs/migration-nextjs.md).** Read it before touching routing, rendering, auth plumbing or build configuration in `webapp/`, and update its checklist in the same commit. Until a route is migrated it is served by the React Router app inside the catch-all client page `app/[[...slug]]`.
+- Next.js server code (Server Components, middleware, Route Handlers) renders pages, refreshes the Supabase session cookie, protects routes and reads public data with the publishable key. It never holds the service-role key or a provider secret and does not take over what Edge Functions own (payments, webhooks, e-mail, service-role jobs) without an explicit user decision. No other backend framework, database, auth provider, CMS, LMS or commerce engine without an explicit user decision.
+- Business rules that protect money, stock, access or permissions live in Postgres (functions, constraints, triggers, RLS) or in Edge Functions — never only in the browser or in a page. Front-end and middleware checks are UX and navigation; RLS is the authority.
+- The service-role key and every provider secret exist only in Edge Function secrets / Supabase — never in `NEXT_PUBLIC_*` variables (Next.js inlines them into the public bundle).
+- Open decisions (ask the user, never improvise): locale URL format (`/fr`, `/en`, prefix-less default…), the Vercel project switch (done by the user), Supabase Auth redirect URLs.
 
 ### Domain status (update this table when a domain goes live)
 
@@ -82,17 +87,17 @@ The switch between mock and live stores is `isSupabaseConfigured` (`webapp/src/l
 
 ## 5. Technology baseline
 
-In use: Vite, React 19, TypeScript 6, react-router-dom 7, Tailwind CSS v4 with the design tokens in `webapp/src/index.css`, react-i18next (FR default, EN), lucide-react, three.js (Studio 3D only, lazy-loaded), supabase-js, Vitest, oxlint. Supabase (Postgres 17, Auth, Storage, Edge Functions), Stripe, Vercel.
+In use: Vite, React 19, TypeScript 6, react-router-dom 7, Tailwind CSS v4 with the design tokens in `webapp/src/index.css`, react-i18next (FR default, EN), lucide-react, three.js (Studio 3D only, lazy-loaded), supabase-js, Vitest, Playwright (smoke tests), oxlint. Supabase (Postgres 17, Auth, Storage, Edge Functions), Stripe, Vercel.
 
-Planned, when the matching work starts: Stripe Checkout + webhooks (Edge Functions), Resend (+ React Email if useful) for e-mail, Sentry for monitoring, Playwright for critical journeys, GitHub Actions CI. Optional only with a concrete need: Mux (serious video), Cloudflare, PostHog, Algolia/Typesense.
+Planned, when the matching work starts: Stripe Checkout + webhooks (Edge Functions), Resend (+ React Email if useful) for e-mail, Sentry for monitoring, Playwright for the critical journeys against a real project, GitHub Actions CI. Optional only with a concrete need: Mux (serious video), Cloudflare, PostHog, Algolia/Typesense.
 
-Not used and not to introduce: Next.js, shadcn/ui (the project has its own component set), next-intl, Shopify/WooCommerce, Firebase, MongoDB, microservices. A new dependency needs a concrete justification (§12).
+Not used and not to introduce: shadcn/ui (the project has its own component set), next-intl (not decided: react-i18next stays during the Next.js migration), Shopify/WooCommerce, Firebase, MongoDB, microservices. A new dependency needs a concrete justification (§12).
 
 ## 6. Architecture principles
 
 Keep these domains logically separated in code and data: catalogue/products; customers/accounts; cart/checkout; orders/fulfilment; payments; reviews; marketing/consent; promotions/gift cards/loyalty; courses, lessons, quizzes, learning progress, certificates; Studio 3D; administration.
 
-One SPA contains them, but boundaries stay explicit: one store/context per domain (`webapp/src/lib/`), pure mapping modules for row ↔ UI shapes (`*Mapping.ts`, unit-tested), and a single persistence boundary per domain so screens never call Supabase directly.
+One application contains them, but boundaries stay explicit: one store/context per domain (`webapp/src/lib/`), pure mapping modules for row ↔ UI shapes (`*Mapping.ts`, unit-tested), and a single persistence boundary per domain so screens never call Supabase directly.
 
 Customer identity is shared across commerce, learning and Studio; the functional domains stay separate. Administration is a separate workspace (`/admin`) on the same identity, gated by staff roles.
 
@@ -141,7 +146,7 @@ Before adding a dependency, check whether the stack already solves the need. Whe
 
 ## 13. Testing and validation
 
-From `webapp/`: `npm run lint`, `npm test` (Vitest), `npm run build` (type-check + bundle). Database: the relevant `supabase/tests/*_validation.sql` suite(s), run on the Supabase project (they roll back). Choose checks by risk; critical flows are authentication, checkout, webhook handling, fulfilment, course access, progress and admin authorization.
+From `webapp/`: `npm run lint`, `npm test` (Vitest), `npm run build` (type-check + bundle), `npm run test:e2e` (Playwright smoke tests, mock mode — required for routing, rendering and build changes). Database: the relevant `supabase/tests/*_validation.sql` suite(s), run on the Supabase project (they roll back). Choose checks by risk; critical flows are authentication, checkout, webhook handling, fulfilment, course access, progress and admin authorization.
 
 Never claim a check passed unless it was run in this session. If a check cannot run (no `node_modules`, no database access), say so.
 

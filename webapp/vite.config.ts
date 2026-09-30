@@ -1,3 +1,4 @@
+/// <reference types="vitest/config" />
 import react from '@vitejs/plugin-react'
 import tailwindcss from '@tailwindcss/vite'
 import { defineConfig } from 'vite'
@@ -10,4 +11,6 @@ export default defineConfig({
   // set keeps the default unchanged and lets a second instance be told where to
   // listen.
   server: { port: Number(process.env.PORT) || 5173 },
+  // Unit tests only: the Playwright smoke tests in e2e/ have their own runner.
+  test: { include: ['src/**/*.test.{ts,tsx}'] },
 })
