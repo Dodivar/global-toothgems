@@ -1,3 +1,5 @@
+"use client";
+
 import { useTranslation } from "react-i18next";
 import { Link, Navigate, useParams } from "../../lib/navigation";
 import { ChevronRight, MessageCircle, Reply as ReplyIcon, ThumbsUp } from "lucide-react";

@@ -1,6 +1,6 @@
 import { publicScreen } from "../../../_public/publicPage";
-import { CartScreen } from "../../../../src/zones/public";
+import { Cart } from "../../../../src/screens/Cart";
 
-const page = publicScreen("cart", "en", CartScreen);
+const page = publicScreen("cart", "en", <Cart />);
 export const generateMetadata = page.generateMetadata;
 export default page.Page;

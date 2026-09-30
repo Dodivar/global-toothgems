@@ -159,9 +159,9 @@ function SupabaseAdminAuthProvider({ children }: { children: ReactNode }) {
 }
 
 /**
- * The mock staff session is kept for the browser tab (sessionStorage): moving
- * between zones of the site is a full page load (docs/migration-nextjs.md,
- * phase 4). Mock mode only.
+ * The mock staff session is kept for the browser tab (sessionStorage), like
+ * the member's (docs/migration-nextjs.md, phases 4–5): it survives a reload or
+ * an address typed in. Mock mode only.
  */
 const DEMO_ADMIN_SESSION_KEY = "gt-demo-admin-session";
 

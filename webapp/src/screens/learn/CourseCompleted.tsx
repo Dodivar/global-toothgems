@@ -1,3 +1,5 @@
+"use client";
+
 import { useTranslation } from "react-i18next";
 import { useNavigate, useParams } from "../../lib/navigation";
 import { ArrowRight, Award, LayoutDashboard, RotateCcw, Trophy } from "lucide-react";

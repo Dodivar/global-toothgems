@@ -1,3 +1,5 @@
+"use client";
+
 import { useEffect, useRef, useState } from "react";
 import { Link } from "../lib/navigation";
 import { useTranslation } from "react-i18next";

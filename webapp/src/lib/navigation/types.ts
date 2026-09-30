@@ -1,4 +1,4 @@
-import type { AnchorHTMLAttributes, CSSProperties, ComponentType, ReactNode } from "react";
+import type { AnchorHTMLAttributes, CSSProperties, ReactNode } from "react";
 
 /** A link target written with the app's internal path: `/boutique/x?type=y#z`. */
 export type To = string;
@@ -54,15 +54,4 @@ export interface NavigateProps {
   to: To;
   replace?: boolean;
   state?: unknown;
-}
-
-/** One implementation of the navigation API (`index.tsx`). */
-export interface NavigationBackend {
-  Link: ComponentType<LinkProps>;
-  NavLink: ComponentType<NavLinkProps>;
-  Navigate: ComponentType<NavigateProps>;
-  useNavigate: () => NavigateFunction;
-  useLocation: () => AppLocation;
-  useParams: () => Record<string, string | undefined>;
-  useSearchParams: () => [URLSearchParams, SetSearchParams];
 }

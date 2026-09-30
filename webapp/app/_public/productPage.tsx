@@ -5,7 +5,7 @@ import { productSlug } from "../../src/lib/catalog/productSlugs";
 import { findPublicProduct } from "../../src/lib/catalog/serverCatalog";
 import { localizedPath, type Locale } from "../../src/lib/localeRoutes";
 import { siteUrl } from "../../src/lib/siteUrl";
-import { ProductScreen } from "../../src/zones/public";
+import { ProductDetail } from "../../src/screens/ProductDetail";
 import { publicPageMetadata } from "./metadata";
 import { searchOf } from "./search";
 
@@ -54,7 +54,7 @@ export async function ProductPage({ props, locale }: { props: ProductPageProps; 
   return (
     <>
       <script type="application/ld+json" dangerouslySetInnerHTML={{ __html: jsonLdScript(productJsonLd(product, locale, siteUrl())) }} />
-      <ProductScreen />
+      <ProductDetail />
     </>
   );
 }

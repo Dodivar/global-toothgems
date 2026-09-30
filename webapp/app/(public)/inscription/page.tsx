@@ -1,8 +1,13 @@
 import { addressMetadata } from "../../_public/metadata";
-import { RegisterScreen } from "../../../src/zones/public";
+import { Register } from "../../../src/screens/Register";
+import { BrowserOnly } from "../../../src/zones/BrowserOnly";
 
 export const metadata = addressMetadata("/inscription");
 
 export default function Page() {
-  return <RegisterScreen />;
+  return (
+    <BrowserOnly>
+      <Register />
+    </BrowserOnly>
+  );
 }

@@ -1,6 +1,6 @@
 import { zoneScreen } from "../../../../../_zones/zonePage";
-import { AdminGiftCardDetailScreen } from "../../../../../../src/zones/admin";
+import { GiftCardDetail as AdminGiftCardDetail } from "../../../../../../src/screens/admin/GiftCardDetail";
 
-const page = zoneScreen(({ code }) => `/admin/promotions/cartes-cadeaux/${code}`, AdminGiftCardDetailScreen);
+const page = zoneScreen(({ code }) => `/admin/promotions/cartes-cadeaux/${code}`, <AdminGiftCardDetail />);
 export const generateMetadata = page.generateMetadata;
 export default page.Page;

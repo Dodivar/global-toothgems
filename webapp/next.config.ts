@@ -2,9 +2,9 @@ import type { NextConfig } from "next";
 
 /**
  * See docs/migration-nextjs.md. Deployed on Vercel as a regular Next.js app
- * (no `output: "export"`): the catch-all page `app/[[...slug]]` answers every
- * path without a page of its own, so no rewrite file is needed, and the
- * server runs the proxy, `/auth/confirm` and the server-rendered public pages.
+ * (no `output: "export"`): every screen is an App Router segment, and the
+ * server runs the proxy, `/auth/confirm`, the session checks of the private
+ * pages and the server-rendered public pages.
  */
 const nextConfig: NextConfig = {
   // Only the Playwright auth tests set it, to run a second dev server beside

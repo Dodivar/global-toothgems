@@ -1,6 +1,6 @@
 import { zoneScreen } from "../../../_zones/zonePage";
-import { GuidelinesScreen } from "../../../../src/zones/account";
+import { Guidelines } from "../../../../src/screens/community/Guidelines";
 
-const page = zoneScreen("/compte/communaute/charte", GuidelinesScreen);
+const page = zoneScreen("/compte/communaute/charte", <Guidelines />);
 export const generateMetadata = page.generateMetadata;
 export default page.Page;

@@ -1,6 +1,6 @@
 import { zoneScreen } from "../../../_zones/zonePage";
-import { AdminStatisticsScreen } from "../../../../src/zones/admin";
+import { Statistics as AdminStatistics } from "../../../../src/screens/admin/Statistics";
 
-const page = zoneScreen("/admin/statistiques", AdminStatisticsScreen);
+const page = zoneScreen("/admin/statistiques", <AdminStatistics />);
 export const generateMetadata = page.generateMetadata;
 export default page.Page;

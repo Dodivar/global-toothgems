@@ -1,8 +1,13 @@
 import { addressMetadata } from "../../_public/metadata";
-import { ForgotPasswordScreen } from "../../../src/zones/public";
+import { ForgotPassword } from "../../../src/screens/ForgotPassword";
+import { BrowserOnly } from "../../../src/zones/BrowserOnly";
 
 export const metadata = addressMetadata("/forgot-password");
 
 export default function Page() {
-  return <ForgotPasswordScreen />;
+  return (
+    <BrowserOnly>
+      <ForgotPassword />
+    </BrowserOnly>
+  );
 }

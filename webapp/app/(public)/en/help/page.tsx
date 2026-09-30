@@ -1,6 +1,6 @@
 import { publicScreen } from "../../../_public/publicPage";
-import { HelpScreen } from "../../../../src/zones/public";
+import { HelpCentre } from "../../../../src/screens/legal/HelpCentre";
 
-const page = publicScreen("help", "en", HelpScreen);
+const page = publicScreen("help", "en", <HelpCentre />);
 export const generateMetadata = page.generateMetadata;
 export default page.Page;

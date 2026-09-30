@@ -1,8 +1,13 @@
 import { addressMetadata } from "../../_public/metadata";
-import { VerifyEmailScreen } from "../../../src/zones/public";
+import { VerifyEmailLanding } from "../../../src/screens/VerifyEmailLanding";
+import { BrowserOnly } from "../../../src/zones/BrowserOnly";
 
 export const metadata = addressMetadata("/verify-email");
 
 export default function Page() {
-  return <VerifyEmailScreen />;
+  return (
+    <BrowserOnly>
+      <VerifyEmailLanding />
+    </BrowserOnly>
+  );
 }

@@ -1,3 +1,5 @@
+"use client";
+
 import { useTranslation } from "react-i18next";
 import { Link, useNavigate } from "../../lib/navigation";
 import { Archive, CircleCheck, CircleSlash, PackageSearch, Pencil, Plus, TriangleAlert } from "lucide-react";

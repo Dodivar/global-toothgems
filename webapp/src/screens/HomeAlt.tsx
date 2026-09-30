@@ -1,3 +1,5 @@
+"use client";
+
 import { useTranslation } from "react-i18next";
 import { HeroCarousel } from "../components/homeAlt/HeroCarousel";
 import { BestSellersRail } from "../components/homeAlt/BestSellersRail";

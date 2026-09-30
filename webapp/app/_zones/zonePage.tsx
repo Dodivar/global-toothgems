@@ -1,5 +1,5 @@
 import type { Metadata } from "next";
-import type { ComponentType } from "react";
+import type { ReactNode } from "react";
 import { parsePath } from "../../src/lib/localeRoutes";
 import { pageMeta } from "../../src/lib/pageMeta";
 import { searchOf } from "../_public/search";
@@ -33,10 +33,10 @@ type ScreenProps = SearchProps & { params: Promise<Record<string, string | strin
 /**
  * A native zone page (phase 5): `path` gives the page's address from its
  * segment's parameters; the page checks the session with it (sign-in
- * redirect for a signed-out visitor) and renders `Screen`, a client
+ * redirect for a signed-out visitor) and renders `screen`, a client
  * component. Private areas stay out of search engines.
  */
-export function zoneScreen(path: string | ((params: Record<string, string>) => string), Screen: ComponentType) {
+export function zoneScreen(path: string | ((params: Record<string, string>) => string), screen: ReactNode) {
   const pathOf = async ({ params }: ScreenProps) => {
     if (typeof path === "string") return path;
     const values = Object.fromEntries(Object.entries(await params).map(([key, value]) => [key, Array.isArray(value) ? value.join("/") : (value ?? "")]));
@@ -46,7 +46,7 @@ export function zoneScreen(path: string | ((params: Record<string, string>) => s
     generateMetadata: async (props: ScreenProps) => zoneMetadata(await pathOf(props)),
     Page: async function ZoneScreenPage(props: ScreenProps) {
       await guardPage(await pathOf(props), props);
-      return <Screen />;
+      return screen;
     },
   };
 }

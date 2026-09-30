@@ -1,3 +1,5 @@
+"use client";
+
 import { useTranslation } from "react-i18next";
 import { Link, useNavigate } from "../../lib/navigation";
 import { ArrowRight, Award, BookOpen, GraduationCap, ListVideo, Package, PlayCircle } from "lucide-react";

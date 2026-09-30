@@ -1,8 +1,13 @@
 import { addressMetadata } from "../../_public/metadata";
-import { ConfirmAccountScreen } from "../../../src/zones/public";
+import { ConfirmAccount } from "../../../src/screens/ConfirmAccount";
+import { BrowserOnly } from "../../../src/zones/BrowserOnly";
 
 export const metadata = addressMetadata("/confirmation-compte");
 
 export default function Page() {
-  return <ConfirmAccountScreen />;
+  return (
+    <BrowserOnly>
+      <ConfirmAccount />
+    </BrowserOnly>
+  );
 }

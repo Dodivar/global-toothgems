@@ -1,3 +1,5 @@
+"use client";
+
 import { useTranslation } from "react-i18next";
 import { Link, useSearchParams } from "../../lib/navigation";
 import { Eye, Monitor, Pencil, Smartphone, Sparkles } from "lucide-react";

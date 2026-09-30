@@ -1,6 +1,6 @@
 import { zoneScreen } from "../../../../_zones/zonePage";
-import { ChannelScreen } from "../../../../../src/zones/account";
+import { Channel } from "../../../../../src/screens/community/Channel";
 
-const page = zoneScreen(({ channelId }) => `/compte/communaute/canal/${channelId}`, ChannelScreen);
+const page = zoneScreen(({ channelId }) => `/compte/communaute/canal/${channelId}`, <Channel />);
 export const generateMetadata = page.generateMetadata;
 export default page.Page;

@@ -1,3 +1,5 @@
+"use client";
+
 import { Link } from "../../lib/navigation";
 import { useTranslation } from "react-i18next";
 import { ArrowRight, Gem, GraduationCap, Landmark } from "lucide-react";

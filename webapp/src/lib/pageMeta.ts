@@ -10,8 +10,9 @@ import { alternates, parsePath, type Locale, type ParsedPath, type PublicRouteId
 
 /**
  * Title and description of each public page, in each language — for the
- * server's `<head>` (canonical, hreflang, Open Graph: `app/[[...slug]]/page.tsx`)
- * and for the tab title while the app navigates (`App.tsx`). Only text the
+ * `<head>` of the public pages (canonical, hreflang, Open Graph:
+ * `app/_public/metadata.ts`), which the Next.js router also applies on
+ * client-side navigation. Only text the
  * pages already show is used (their heading and introduction); no copy is
  * written for search engines. Product pages are titled by their product
  * (`lib/catalog/productMeta.ts`); course pages keep the site name for now.

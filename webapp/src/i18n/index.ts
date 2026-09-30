@@ -8,7 +8,8 @@ import { syncLanguageCookie } from "./preference";
 /*
  * Which language the UI speaks:
  * - on a public page, the one in the address (`/fr/…`, `/en/…`, see
- *   `lib/localeRoutes.ts`), kept in step on navigation by `lib/localizedHistory.ts`;
+ *   `lib/localeRoutes.ts`), with that language's instance (`instances.ts`,
+ *   chosen by `AppProviders`); this main instance follows it;
  * - elsewhere (member space, sign-in, back office, Studio workspace), the saved
  *   choice (`gt-lang`, localStorage then cookie), else the browser's language,
  *   else English (decided 2026-09-30).

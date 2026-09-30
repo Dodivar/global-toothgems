@@ -1,6 +1,6 @@
 import { publicScreen } from "../../../_public/publicPage";
-import { AcademyScreen } from "../../../../src/zones/public";
+import { Academy } from "../../../../src/screens/Academy";
 
-const page = publicScreen("academy", "en", AcademyScreen);
+const page = publicScreen("academy", "en", <Academy />);
 export const generateMetadata = page.generateMetadata;
 export default page.Page;

@@ -1,6 +1,6 @@
 import { zoneScreen } from "../../../../../_zones/zonePage";
-import { CourseCompletedScreen } from "../../../../../../src/zones/learn";
+import { CourseCompleted } from "../../../../../../src/screens/learn/CourseCompleted";
 
-const page = zoneScreen(({ courseId }) => `/academy/mes-formations/${courseId}/terminee`, CourseCompletedScreen);
+const page = zoneScreen(({ courseId }) => `/academy/mes-formations/${courseId}/terminee`, <CourseCompleted />);
 export const generateMetadata = page.generateMetadata;
 export default page.Page;

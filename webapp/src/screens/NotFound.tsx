@@ -1,4 +1,6 @@
-import { useLocation, useNavigate } from "../lib/navigation";
+"use client";
+
+import { useCanGoBack, useLocation, useNavigate } from "../lib/navigation";
 import { useTranslation } from "react-i18next";
 import { ArrowLeft, ArrowRight, Compass, House } from "lucide-react";
 import { Button } from "../components/ui/Button";
@@ -19,9 +21,9 @@ export function NotFound() {
   const navigate = useNavigate();
   const link = useRouterLink();
 
-  // React Router numbers its history entries; 0 means this tab arrived here
-  // directly, where "back" would leave the site, so the action is not offered.
-  const canGoBack = ((window.history.state as { idx?: number } | null)?.idx ?? 0) > 0;
+  // A tab that arrived here directly would leave the site by going back, so
+  // the action is only offered after another page of the site.
+  const canGoBack = useCanGoBack();
 
   return (
     <SystemPage

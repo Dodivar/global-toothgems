@@ -2,8 +2,9 @@ import { MAX_LINE_QTY, type CartLine } from "./checkout/cartLines";
 
 /*
  * The cart kept for the browser tab (sessionStorage), decided by the owner on
- * 2026-09-30 for phase 4 of docs/migration-nextjs.md: moving between zones of
- * the site is a full page load, which would otherwise empty the cart. Until
+ * 2026-09-30 (docs/migration-nextjs.md, phase 4, kept in phase 5): moving
+ * between pages keeps the stores in memory, but a reload, an address typed in
+ * or a return from another site would otherwise empty the cart. Until
  * the real checkout exists this is the cart's only persistence; prices shown
  * from it are indicative (minor units), the order is priced by the database.
  * A cart stored in an older shape (float `price`) is discarded, not converted.

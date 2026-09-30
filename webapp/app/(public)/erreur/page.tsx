@@ -1,8 +1,13 @@
 import { addressMetadata } from "../../_public/metadata";
-import { ServerErrorScreen } from "../../../src/zones/public";
+import { ServerError } from "../../../src/screens/ServerError";
+import { BrowserOnly } from "../../../src/zones/BrowserOnly";
 
 export const metadata = addressMetadata("/erreur");
 
 export default function Page() {
-  return <ServerErrorScreen />;
+  return (
+    <BrowserOnly>
+      <ServerError />
+    </BrowserOnly>
+  );
 }

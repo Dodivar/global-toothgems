@@ -1,3 +1,5 @@
+"use client";
+
 import { useTranslation } from "react-i18next";
 import { MapPin, Users } from "lucide-react";
 import clsx from "clsx";

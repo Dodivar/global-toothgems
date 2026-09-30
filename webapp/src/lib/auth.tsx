@@ -395,9 +395,9 @@ function SupabaseAuthProvider({ children }: { children: ReactNode }) {
 const wait = (ms: number) => new Promise((resolve) => setTimeout(resolve, ms));
 
 /**
- * The mock session is kept for the browser tab (sessionStorage): moving
- * between zones of the site is a full page load (docs/migration-nextjs.md,
- * phase 4), and a signed-in demo must reach the member space. Mock mode only.
+ * The mock session is kept for the browser tab (sessionStorage), like the
+ * cart (docs/migration-nextjs.md, phases 4–5): a signed-in demo survives a
+ * reload or an address typed in. Mock mode only.
  */
 const DEMO_SESSION_KEY = "gt-demo-session";
 

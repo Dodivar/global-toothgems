@@ -7,10 +7,12 @@ import { STUDIO_EDITOR_ALIAS, STUDIO_SHARE_ALIAS, STUDIO_SHARE_PATH, studioSecti
  * learner pages, the Studio workspace, sign-in and the back office are not
  * prefixed: their language is the visitor's preference.
  *
- * The React Router app keeps working on its historical French paths
- * ("internal" paths below: `/boutique`, `/aide/faq`…); `localizedHistory.ts`
- * translates them to and from the address bar, the proxy redirects the old
- * unprefixed addresses, and the server builds metadata from the same table.
+ * Screens keep writing their historical French paths ("internal" paths
+ * below: `/boutique`, `/aide/faq`…); the navigation module (`lib/navigation`)
+ * turns them into addresses and reads addresses back, the public pages'
+ * segments (`app/(public)/fr`, `app/(public)/en`) follow this table, the proxy
+ * redirects the old unprefixed addresses, and the server builds metadata from
+ * the same table.
  * Pure: no React, no Next.js, no `window`.
  */
 
@@ -147,7 +149,7 @@ export interface ParsedPath {
   route: PublicRoute | null;
   params: Record<string, string>;
   /**
-   * The path the React Router app knows: the French path of a public route,
+   * The path the screens know: the French path of a public route,
    * the path itself when it has no prefix, and the unchanged path for an
    * unknown prefixed one (which the app renders as its 404).
    */
@@ -264,40 +266,4 @@ export function negotiateLocale(saved: string | null | undefined, acceptLanguage
     .filter((entry) => entry.language && entry.q > 0)
     .sort((a, b) => b.q - a.q || a.index - b.index);
   return ranked.map((entry) => entry.language).find(isLocale) ?? FALLBACK_LOCALE;
-}
-
-/**
- * The other screens of the app (not prefixed), for the server to answer 200
- * rather than 404. Mirrors `App.tsx`; the member space and the back office
- * are prefixes (their unknown addresses are 404 screens inside their shells).
- */
-const APP_PATHS = [
-  "/connexion",
-  "/inscription",
-  "/mot-de-passe-oublie",
-  "/forgot-password",
-  "/reinitialiser-mot-de-passe",
-  "/reset-password",
-  "/verifier-email",
-  "/verify-email",
-  "/confirmation-compte",
-  "/erreur",
-  "/maintenance",
-  "/academy/lecon",
-  "/academy/mes-formations/:courseId",
-  "/academy/mes-formations/:courseId/lecon/:nodeKey",
-  "/academy/mes-formations/:courseId/terminee",
-  "/studio-3d/partage",
-  "/studio-3d/partage/:token",
-];
-const APP_PREFIXES = ["/compte", "/admin", "/studio-3d/atelier"];
-
-/** Whether the app has a screen at this address (the server answers 404 otherwise). */
-export function isKnownPath(pathname: string): boolean {
-  if (pathname === "/") return true;
-  const parsed = parsePath(pathname);
-  if (parsed.locale) return parsed.route !== null;
-  if (legacyAddress(pathname)) return true;
-  if (APP_PREFIXES.some((prefix) => pathname === prefix || pathname.startsWith(`${prefix}/`))) return true;
-  return APP_PATHS.some((pattern) => match(pattern, pathname) !== null);
 }

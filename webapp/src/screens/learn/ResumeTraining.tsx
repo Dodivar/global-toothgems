@@ -1,3 +1,5 @@
+"use client";
+
 import { Navigate } from "../../lib/navigation";
 import { learnHref } from "../../lib/academyUrl";
 import { useProgress } from "../../lib/progress";

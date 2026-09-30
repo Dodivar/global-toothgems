@@ -7,5 +7,5 @@ import { ZoneChrome } from "../../src/zones/ZoneChrome";
  * layout, which turns signed-out visitors away on the server.
  */
 export default function Layout({ children }: { children: ReactNode }) {
-  return <ZoneChrome zone="admin">{children}</ZoneChrome>;
+  return <ZoneChrome>{children}</ZoneChrome>;
 }

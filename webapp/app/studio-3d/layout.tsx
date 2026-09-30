@@ -8,5 +8,5 @@ import { ZoneChrome } from "../../src/zones/ZoneChrome";
  * sales and subscription pages are public pages (`/fr/studio-3d`).
  */
 export default function Layout({ children }: { children: ReactNode }) {
-  return <ZoneChrome zone="studio">{children}</ZoneChrome>;
+  return <ZoneChrome>{children}</ZoneChrome>;
 }

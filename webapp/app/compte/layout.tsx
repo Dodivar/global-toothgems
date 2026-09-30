@@ -12,7 +12,7 @@ import { MemberShellLayout } from "../../src/zones/account";
 export default async function Layout({ children }: { children: ReactNode }) {
   await guardRequest("/compte");
   return (
-    <ZoneChrome zone="account">
+    <ZoneChrome>
       <MemberShellLayout>{children}</MemberShellLayout>
     </ZoneChrome>
   );

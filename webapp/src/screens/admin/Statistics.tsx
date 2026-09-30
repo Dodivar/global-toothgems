@@ -1,3 +1,5 @@
+"use client";
+
 import { useCallback, useId, useMemo, useState } from "react";
 import { useTranslation } from "react-i18next";
 import { useSearchParams } from "../../lib/navigation";

@@ -1,6 +1,6 @@
 import { zoneScreen } from "../../../_zones/zonePage";
-import { NotFoundScreen } from "../../../../src/zones/account";
+import { NotFound } from "../../../../src/screens/NotFound";
 
-const page = zoneScreen(({ rest }) => `/compte/communaute/${rest}`, NotFoundScreen);
+const page = zoneScreen(({ rest }) => `/compte/communaute/${rest}`, <NotFound />);
 export const generateMetadata = page.generateMetadata;
 export default page.Page;

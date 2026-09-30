@@ -1,6 +1,6 @@
 import { zoneScreen } from "../../../../_zones/zonePage";
-import { AdminProductEditScreen } from "../../../../../src/zones/admin";
+import { AdminProductEdit } from "../../../../../src/screens/admin/AdminProductEdit";
 
-const page = zoneScreen(({ id }) => `/admin/produits/${id}`, AdminProductEditScreen);
+const page = zoneScreen(({ id }) => `/admin/produits/${id}`, <AdminProductEdit />);
 export const generateMetadata = page.generateMetadata;
 export default page.Page;

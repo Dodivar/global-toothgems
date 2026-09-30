@@ -1,6 +1,6 @@
 import { publicScreen } from "../../../_public/publicPage";
-import { ContactScreen } from "../../../../src/zones/public";
+import { Contact } from "../../../../src/screens/legal/Contact";
 
-const page = publicScreen("contact", "en", ContactScreen);
+const page = publicScreen("contact", "en", <Contact />);
 export const generateMetadata = page.generateMetadata;
 export default page.Page;

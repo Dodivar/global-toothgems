@@ -1,3 +1,5 @@
+"use client";
+
 import { useTranslation } from "react-i18next";
 import { Link, Navigate, useParams } from "../../lib/navigation";
 import { Bookmark, MessageCircle, PenLine } from "lucide-react";

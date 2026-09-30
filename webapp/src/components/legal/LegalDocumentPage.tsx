@@ -1,3 +1,5 @@
+"use client";
+
 import { useTranslation } from "react-i18next";
 import { pick } from "../../data/types";
 import type { LegalDocument } from "../../data/legal/types";

@@ -5,7 +5,6 @@ import { STUDIO_PATH, STUDIO_SUBSCRIBE_PATH } from "./studioUrl";
 import {
   PUBLIC_ROUTES,
   alternates,
-  isKnownPath,
   legacyAddress,
   localizedPath,
   negotiateLocale,
@@ -111,22 +110,17 @@ describe("route table", () => {
     }
   });
 
-  it("has a page in app/ for every public route, in both languages, which the server knows", () => {
+  it("has a page in app/ for every public route, in both languages, and for the unprefixed public pages", () => {
     for (const route of PUBLIC_ROUTES) {
       for (const locale of ["fr", "en"] as const) {
         const segments = route[locale].replace(/:\w+/g, (m) => (route.id === "product" ? "[slug]" : `[${m.slice(1)}]`));
         const file = `../../app/(public)/${locale}${segments === "/" ? "" : segments}/page.tsx`;
         expect(existsSync(new URL(file, import.meta.url)), `${route.id} ${locale}`).toBe(true);
-        expect(isKnownPath(localizedPath(route.id, locale, { id: "x" })), `${route.id} ${locale}`).toBe(true);
       }
     }
     for (const path of ["/connexion", "/inscription", "/mot-de-passe-oublie", "/forgot-password", "/reinitialiser-mot-de-passe", "/reset-password", "/verifier-email", "/verify-email", "/confirmation-compte", "/erreur", "/maintenance"]) {
       expect(existsSync(new URL(`../../app/(public)${path}/page.tsx`, import.meta.url)), path).toBe(true);
-      expect(isKnownPath(path), path).toBe(true);
     }
-    expect(isKnownPath("/fr/nimporte-quoi")).toBe(false);
-    expect(isKnownPath("/nimporte-quoi")).toBe(false);
-    expect(isKnownPath("/compte/nimporte-quoi")).toBe(true);
   });
 
   it("builds addresses with their parameters", () => {

@@ -2,18 +2,19 @@
 
 import type { ReactNode } from "react";
 import { AppShell } from "../AppShell";
-import type { AppZone } from "../lib/appZones";
-import { useHydrated } from "../lib/useHydrated";
+import { BrowserOnly } from "./BrowserOnly";
 
 /**
  * The chrome of a private zone whose screens are App Router segments
  * (docs/migration-nextjs.md, phase 5), rendered in the browser only, as the
- * zone apps were: these screens read `window`, `document` and `localStorage`
+ * zone apps of phase 4 were: these screens read `window`, `document` and `localStorage`
  * from their first render. The server sends the page without its content; a
  * client-side navigation renders it at once.
  */
-export function ZoneChrome({ zone, children }: { zone: AppZone; children: ReactNode }) {
-  const hydrated = useHydrated();
-  if (!hydrated) return null;
-  return <AppShell zone={zone}>{children}</AppShell>;
+export function ZoneChrome({ children }: { children: ReactNode }) {
+  return (
+    <BrowserOnly>
+      <AppShell>{children}</AppShell>
+    </BrowserOnly>
+  );
 }

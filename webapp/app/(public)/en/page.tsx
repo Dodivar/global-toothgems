@@ -1,6 +1,6 @@
 import { publicScreen } from "../../_public/publicPage";
-import { HomeScreen } from "../../../src/zones/public";
+import { HomeAlt } from "../../../src/screens/HomeAlt";
 
-const page = publicScreen("home", "en", HomeScreen);
+const page = publicScreen("home", "en", <HomeAlt />);
 export const generateMetadata = page.generateMetadata;
 export default page.Page;

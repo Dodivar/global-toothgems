@@ -3,7 +3,6 @@ import { FALLBACK_GEM_COLORS, PRODUCTS, type GemColorDef, type Product } from ".
 import { isSupabaseConfigured } from "../supabase/client";
 import { FALLBACK_TAXONOMY, type ShopCategoryDef } from "../../data/taxonomy";
 import { fetchCatalog, fetchGemColors, fetchTaxonomy } from "./api";
-import { registerProductSlugs } from "./productSlugRegistry";
 import { findProductByKey, productSlugTranslator } from "./productSlugs";
 import type { ParamTranslator } from "../localeRoutes";
 
@@ -44,13 +43,6 @@ export interface CatalogSeed {
   taxonomy?: ShopCategoryDef[];
 }
 
-/* Product links carry each language's slug in the browser
-   (`productSlugRegistry.ts`). The server gives its own history the page's
-   products instead: one shared registry must not mix requests. */
-function register(products: Product[]) {
-  if (typeof window !== "undefined") registerProductSlugs(products);
-}
-
 /**
  * Loads the storefront catalogue once per visit and shares it (starting from
  * what the server read, on a server-rendered page: `seed`).
@@ -67,11 +59,9 @@ function register(products: Product[]) {
 export function CatalogProvider({ seed, children }: { seed?: CatalogSeed; children: ReactNode }) {
   const [state, setState] = useState<{ status: CatalogStatus; products: Product[]; error: Error | null }>(() => {
     if (!isSupabaseConfigured) {
-      register(PRODUCTS);
       return { status: "ready", products: PRODUCTS, error: null };
     }
     if (seed?.products) {
-      register(seed.products);
       return { status: "ready", products: seed.products, error: null };
     }
     return { status: "loading", products: [], error: null };
@@ -108,8 +98,6 @@ export function CatalogProvider({ seed, children }: { seed?: CatalogSeed; childr
     if (!(first && seeded.products)) {
       fetchCatalog(controller.signal)
         .then((products) => {
-          // Before the product links render, so they carry each language's slug.
-          register(products);
           setState({ status: "ready", products, error: null });
         })
         .catch((error: unknown) => {

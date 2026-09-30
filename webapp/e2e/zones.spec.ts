@@ -2,11 +2,12 @@ import type { Page } from "@playwright/test";
 import { dismissCookieBanner, expect, open, test } from "./fixtures";
 
 /**
- * Phase 4 of docs/migration-nextjs.md: the member space, the learner pages,
- * the back office and the Studio workspace are zones of their own, each
- * loading only its code; moving between zones is a full page load. Mock mode:
- * the demo sessions are kept for the tab (sessionStorage), so a test opens a
- * session by writing it before the page loads.
+ * Phases 4–5 of docs/migration-nextjs.md: the member space, the learner
+ * pages, the back office and the Studio workspace are zones of their own,
+ * each screen an App Router segment loading only its code; links between
+ * pages, zones included, are client-side navigations. Mock mode: the demo
+ * sessions are kept for the tab (sessionStorage), so a test opens a session
+ * by writing it before the page loads.
  */
 
 const MEMBER = {
@@ -197,7 +198,7 @@ for (const [from, to] of [
   });
 }
 
-test("a link to another zone loads it, and the back button returns", async ({ page, problems }) => {
+test("a link to another zone opens it, and the back button returns", async ({ page, problems }) => {
   await signInMember(page);
   await open(page, "/fr/boutique");
   await dismissCookieBanner(page);
@@ -302,10 +303,15 @@ test("public pages do not download the back office's code", async ({ page, baseU
     page.off("response", listener);
     return urls;
   };
+  await signInStaff(page);
   const publicScripts = await scripts("/fr");
-  const adminScripts = await scripts("/admin/connexion");
+  // Each back-office screen is its own segment (phase 5): several are needed to see the back office's code.
+  const adminScripts = new Map<string, number>();
+  for (const path of ["/admin", "/admin/produits", "/admin/statistiques", "/admin/promotions"]) {
+    for (const [url, bytes] of await scripts(path)) adminScripts.set(url, bytes);
+  }
   const adminOnly = [...adminScripts].filter(([url]) => !publicScripts.has(url));
   const adminOnlyBytes = adminOnly.reduce((sum, [, bytes]) => sum + bytes, 0);
   // The back office's screens are hundreds of kB: none of it on the home page.
-  expect(adminOnlyBytes).toBeGreaterThan(300_000);
+  expect(adminOnlyBytes).toBeGreaterThan(200_000);
 });

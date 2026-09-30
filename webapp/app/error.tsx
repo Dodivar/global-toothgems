@@ -1,6 +1,8 @@
 "use client";
 
-import { PublicChrome, ServerErrorScreen } from "../src/zones/public";
+import { PublicChrome } from "../src/zones/public";
+import { ServerError } from "../src/screens/ServerError";
+import { BrowserOnly } from "../src/zones/BrowserOnly";
 
 /**
  * A page outside the public zone (member space, learner pages, back office,
@@ -10,7 +12,9 @@ import { PublicChrome, ServerErrorScreen } from "../src/zones/public";
 export default function Error() {
   return (
     <PublicChrome>
-      <ServerErrorScreen />
+      <BrowserOnly>
+        <ServerError />
+      </BrowserOnly>
     </PublicChrome>
   );
 }

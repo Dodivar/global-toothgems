@@ -1,6 +1,6 @@
 import { publicScreen } from "../../../_public/publicPage";
-import { LoyaltyScreen } from "../../../../src/zones/public";
+import { Loyalty } from "../../../../src/screens/Loyalty";
 
-const page = publicScreen("loyalty", "fr", LoyaltyScreen);
+const page = publicScreen("loyalty", "fr", <Loyalty />);
 export const generateMetadata = page.generateMetadata;
 export default page.Page;

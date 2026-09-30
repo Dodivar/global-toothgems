@@ -1,6 +1,6 @@
 import { zoneScreen } from "../../../../../_zones/zonePage";
-import { AdminTrainingPreviewScreen } from "../../../../../../src/zones/admin";
+import { TrainingPreview as AdminTrainingPreview } from "../../../../../../src/screens/admin/TrainingPreview";
 
-const page = zoneScreen(({ id }) => `/admin/formations/${id}/apercu`, AdminTrainingPreviewScreen);
+const page = zoneScreen(({ id }) => `/admin/formations/${id}/apercu`, <AdminTrainingPreview />);
 export const generateMetadata = page.generateMetadata;
 export default page.Page;

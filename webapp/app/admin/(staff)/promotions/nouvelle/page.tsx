@@ -1,6 +1,6 @@
 import { zoneScreen } from "../../../../_zones/zonePage";
-import { AdminPromotionEditorScreen } from "../../../../../src/zones/admin";
+import { PromotionEditor as AdminPromotionEditor } from "../../../../../src/screens/admin/PromotionEditor";
 
-const page = zoneScreen("/admin/promotions/nouvelle", AdminPromotionEditorScreen);
+const page = zoneScreen("/admin/promotions/nouvelle", <AdminPromotionEditor />);
 export const generateMetadata = page.generateMetadata;
 export default page.Page;

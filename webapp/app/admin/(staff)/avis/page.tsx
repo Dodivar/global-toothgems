@@ -1,6 +1,6 @@
 import { zoneScreen } from "../../../_zones/zonePage";
-import { AdminReviewsScreen } from "../../../../src/zones/admin";
+import { Reviews as AdminReviews } from "../../../../src/screens/admin/Reviews";
 
-const page = zoneScreen("/admin/avis", AdminReviewsScreen);
+const page = zoneScreen("/admin/avis", <AdminReviews />);
 export const generateMetadata = page.generateMetadata;
 export default page.Page;

@@ -1,8 +1,13 @@
 import { addressMetadata } from "../../_public/metadata";
-import { ResetPasswordScreen } from "../../../src/zones/public";
+import { ResetPassword } from "../../../src/screens/ResetPassword";
+import { BrowserOnly } from "../../../src/zones/BrowserOnly";
 
 export const metadata = addressMetadata("/reset-password");
 
 export default function Page() {
-  return <ResetPasswordScreen />;
+  return (
+    <BrowserOnly>
+      <ResetPassword />
+    </BrowserOnly>
+  );
 }

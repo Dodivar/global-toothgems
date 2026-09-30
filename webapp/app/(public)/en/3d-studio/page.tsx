@@ -1,6 +1,6 @@
 import { publicScreen } from "../../../_public/publicPage";
-import { StudioScreen } from "../../../../src/zones/public";
+import { Studio } from "../../../../src/screens/Studio";
 
-const page = publicScreen("studio", "en", StudioScreen);
+const page = publicScreen("studio", "en", <Studio />);
 export const generateMetadata = page.generateMetadata;
 export default page.Page;

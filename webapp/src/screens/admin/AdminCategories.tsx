@@ -1,3 +1,5 @@
+"use client";
+
 import { useTranslation } from "react-i18next";
 import { Link } from "../../lib/navigation";
 import { ArrowUpRight, Info } from "lucide-react";

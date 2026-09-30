@@ -22,6 +22,7 @@ import { PromotionsProvider } from "./lib/adminPromotions";
 import { ReviewsProvider } from "./lib/reviews";
 import { FavoritesProvider } from "./lib/favorites";
 import { parsePath, type Locale } from "./lib/localeRoutes";
+import { NavigationTracker } from "./lib/navigation";
 
 /**
  * The stores of the whole site, in the order their comments justify, under
@@ -46,6 +47,7 @@ export function AppProviders({ locale, catalog, children }: { locale: Locale; ca
   const instance = typeof window === "undefined" ? i18nFor(locale) : addressLocale ? i18nFor(addressLocale) : i18n;
   return (
     <I18nextProvider i18n={instance}>
+    <NavigationTracker />
     <CatalogProvider seed={catalog}>
     <AuthProvider>
       {/* Pending email change, password date and data-export status: read by

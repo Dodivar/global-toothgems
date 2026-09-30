@@ -1,6 +1,6 @@
 import { publicScreen } from "../../../_public/publicPage";
-import { GiftCardScreen } from "../../../../src/zones/public";
+import { GiftCard } from "../../../../src/screens/GiftCard";
 
-const page = publicScreen("giftCard", "en", GiftCardScreen);
+const page = publicScreen("giftCard", "en", <GiftCard />);
 export const generateMetadata = page.generateMetadata;
 export default page.Page;

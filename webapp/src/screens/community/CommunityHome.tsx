@@ -1,3 +1,5 @@
+"use client";
+
 import { useTranslation } from "react-i18next";
 import { Link } from "../../lib/navigation";
 import { ArrowRight, Images, ScrollText, Sparkles, Users } from "lucide-react";

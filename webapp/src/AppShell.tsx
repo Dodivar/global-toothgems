@@ -1,7 +1,6 @@
 import { useLocation } from "./lib/navigation";
 import { useEffect, type ReactNode } from "react";
 import { useTranslation } from "react-i18next";
-import { useCatalog } from "./lib/catalog/CatalogProvider";
 import { ReviewOverlays } from "./components/reviews/ReviewOverlays";
 import { FavoriteAccountDialogHost } from "./lib/favorites";
 import { Header } from "./components/layout/Header";
@@ -11,12 +10,10 @@ import { isLessonPlayerPath } from "./lib/academyUrl";
 import { STUDIO_EDITOR_PATH, STUDIO_SHARE_PATH } from "./lib/studioUrl";
 import { CookieBanner } from "./components/legal/CookieBanner";
 import { CookieSettingsDialog } from "./components/legal/CookieSettingsDialog";
-import { parsePath, toAddress } from "./lib/localeRoutes";
-import { titleFor } from "./lib/pageMeta";
-import { productTitle } from "./lib/catalog/productMeta";
-import type { AppZone } from "./lib/appZones";
-import { ZoneArrival } from "./zones/ZoneExit";
 
+/* Every new page starts at the top, as it always has: the navigation module
+   turns the Next.js router's own scrolling off (it keeps the position while
+   the page is visible). */
 function ScrollToTop() {
   const { pathname } = useLocation();
   useEffect(() => {
@@ -25,32 +22,14 @@ function ScrollToTop() {
   return null;
 }
 
-/** Keeps <html lang> in step with the UI language for screen readers and search engines. */
+/** Keeps <html lang> in step with the UI language for screen readers and search
+    engines: the root layout sets it on the server, and is not rendered again
+    by a client-side navigation from `/fr/…` to `/en/…`. */
 function DocumentLanguage() {
   const { i18n } = useTranslation();
   useEffect(() => {
     document.documentElement.lang = i18n.language.slice(0, 2);
   }, [i18n.language]);
-  return null;
-}
-
-/**
- * Tab title of public pages, from the table the server's `<head>` uses
- * (`lib/pageMeta.ts`, `lib/catalog/productMeta.ts`), so it follows client-side
- * navigation. Screens that name themselves (legal, system pages) set theirs
- * after it; other screens keep the site name, as before.
- */
-function DocumentTitle() {
-  const { pathname } = useLocation();
-  const { i18n } = useTranslation();
-  const { findProduct } = useCatalog();
-  const locale = i18n.language.startsWith("en") ? "en" : "fr";
-  useEffect(() => {
-    const address = parsePath(toAddress(pathname, locale));
-    // A product page is titled by its product, as the server titles it.
-    const product = address.route?.id === "product" ? findProduct(address.params.id) : undefined;
-    document.title = product ? productTitle(product, locale) : titleFor(address);
-  }, [pathname, locale, findProduct]);
   return null;
 }
 
@@ -77,13 +56,14 @@ export const MAINTENANCE_ROUTE = "/maintenance";
 const WORKSPACE_ROUTES = [STUDIO_EDITOR_PATH, STUDIO_SHARE_PATH];
 
 /**
- * The chrome every zone's page shares (docs/migration-nextjs.md, phase 4):
- * skip link, cookie banner and dialog, header and footer, and the page-level
- * helpers. `children` is the zone's `<Routes>`; `zone` is the zone rendering
- * it (`lib/appZones.ts`). The stores are above, in the root layout
- * (`src/AppProviders.tsx`, phase 5).
+ * The chrome every page shares (docs/migration-nextjs.md, phases 4–5): skip
+ * link, cookie banner and dialog, header and footer, and two page-level
+ * helpers the Next.js router does not replace (`ScrollToTop`,
+ * `DocumentLanguage`). Each zone's layout renders it around its pages
+ * (`src/zones/`); the stores are above, in the root layout
+ * (`src/AppProviders.tsx`).
  */
-export function AppShell({ zone, children }: { zone: AppZone; children: ReactNode }) {
+export function AppShell({ children }: { children: ReactNode }) {
   const { t } = useTranslation();
   const { pathname } = useLocation();
   const adminArea = pathname === ADMIN_ROUTE_PREFIX || pathname.startsWith(`${ADMIN_ROUTE_PREFIX}/`);
@@ -95,10 +75,8 @@ export function AppShell({ zone, children }: { zone: AppZone; children: ReactNod
 
   return (
     <>
-      <ZoneArrival zone={zone} />
       <ScrollToTop />
       <DocumentLanguage />
-      <DocumentTitle />
       <a href="#main" className="gt-skip-link">
         {t("common.skipToContent")}
       </a>
