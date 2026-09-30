@@ -46,7 +46,7 @@ Other facts that shape the plan:
 | 1 | Next.js shell | Next.js 16.3 installed in `webapp/`; the existing app runs unchanged from `app/[[...slug]]/page.tsx` through `dynamic(() => import(App), { ssr: false })` with `BrowserRouter` (official guide "Migrating from Vite"); Tailwind v4 via PostCSS; `VITE_*` → `NEXT_PUBLIC_*`; `vercel.json` removed; Vitest kept | done (2026-09-30) |
 | 2 | Auth on the server | `@supabase/ssr`: browser client + server client, session in cookies (existing `localStorage` sessions carried over), `proxy.ts` (Next.js 16 name of middleware) refreshing the session and redirecting signed-out visitors away from `/compte/*`, `/academy/mes-formations/*`, `/academy/lecon` and `/admin/*` (client guards stay as a second layer); e-mail links through `/auth/confirm` (token hash or PKCE code); Supabase dashboard settings updated **by the user** | done in code (2026-09-30); live once the user applies the Supabase settings and switches Vercel |
 | 3.1 | Language in the address + SEO head | `/fr/…` and `/en/…` with English segments for public pages, `/` negotiated, old addresses moved (308), localized history for the React Router app, server `<head>` per page (title, description, canonical, hreflang, Open Graph, noindex for private areas), real 404 status, `sitemap.xml`, `robots.txt` | done (2026-09-30) |
-| 3.2 | Public pages rendered on the server | Home, shop, shapes, colours, product, gift card, loyalty, Studio and Academy sales pages, help and legal pages as App Router segments whose content is rendered on the server (data read with the publishable key); product and course titles/descriptions and structured data (Product, Course); 404 for unknown product/course slugs; per-locale product slugs (`product_translations`); products and courses in the sitemap; `window`/`localStorage` code behind client boundaries | not started |
+| 3.2 | Public pages rendered on the server | Home, shop, shapes, colours, product, gift card, loyalty, Studio and Academy sales pages, help and legal pages as App Router segments whose content is rendered on the server (data read with the publishable key); product and course titles/descriptions and structured data (Product, Course); 404 for unknown product/course slugs; per-locale product slugs (`product_translations`); products and courses in the sitemap; `window`/`localStorage` code behind client boundaries | **done except the course pages' own head** (2026-09-30): every public page's content is rendered on the server and hydrated; product pages have per-language slugs, 404/308, their own head, Product structured data and sitemap entries. Course titles, Course structured data, 404 for unknown courses and courses in the sitemap wait for a decision (Academy is mock data, see Open decisions) |
 | 4 | Account, back office, Studio | `/compte/*`, community, learner pages, `/admin/*`, Studio editor/share as App Router segments (mostly client components under server-protected layouts); Studio stays client-only | not started |
 | 5 | Cleanup | Remove the catch-all shell, react-router-dom, SPA-only helpers (`ScrollToTop`, `DocumentLanguage`…), dead Vite leftovers; update READMEs | not started |
 
@@ -121,26 +121,45 @@ How it works:
 - **404**: an address with no screen answers HTTP 404 (`notFound()`); `app/not-found.tsx` renders the app, which shows its usual 404 page. The member space and back office keep answering 200 for their unknown sub-addresses (their 404 screen lives inside their shell).
 - **`sitemap.xml`** (static public pages, both languages with alternates) and **`robots.txt`** (private areas disallowed). Absolute URLs from `SITE_URL` (optional, server-only), else Vercel's production domain, else localhost.
 
-Known limits, accepted: internal links still point to the unprefixed French path in the code, translated at render (search engines see the localized `href`); the first page load on a public address renders client-side as before (content SSR is 3.2); `/fr/boutique/<unknown>` answers 200 with the app's "product not found" state until 3.2.
+Known limits, accepted: internal links still point to the unprefixed French path in the code, translated at render (search engines see the localized `href`); the first page load on a public address renders client-side as before (content SSR is 3.2, since done); `/fr/boutique/<unknown>` answers 200 with the app's "product not found" state until 3.2 (since done: 404).
+
+## Phase 3.2 — public pages rendered on the server
+
+Decided by the product owner (2026-09-30): **product slugs per language**, `/fr/boutique/<French slug>` and `/en/shop/<English slug>`, from `product_translations.slug` (`products.slug` is the French one); hreflang, canonical, sitemap and the FR/EN switch point to the other language's slug; another language's slug or an old identifier moves (308) to the right address; an unknown slug is a 404. No schema change was needed: every product of the Supabase project already has a published English slug (90 active products checked on 2026-09-30). Mock fixtures have no English slug: both languages use their id, as before.
+
+How it works:
+- **The content is the React Router app rendered on the server.** Public addresses (`/fr/…`, `/en/…`) render `ServerRendered` (`app/[[...slug]]/client.tsx`): on the server, `ServerApp` (`src/ClientApp.tsx`) renders the whole app — header, page, footer — at the requested address with a server history (`createServerLocalizedHistory`: fixed location, links written exactly as the browser history writes them) and an i18next instance fixed to the address's language; in the browser, `ClientApp` hydrates the same markup. Member space, sign-in, back office and Studio workspace still render in the browser only (`ClientOnly`, `dynamic(..., { ssr: false })`). Deviation from the plan's wording ("App Router segments"): except the product pages, the public pages are not separate segments yet; the React Router screens are rendered by the catch-all page until phase 5 removes React Router, which is when each screen becomes its own segment. No screen was rewritten, so no text or style changed.
+- **Catalogue on the server** (`src/lib/catalog/serverCatalog.ts`, `src/lib/supabase/publicServer.ts`): read with the publishable key and no session (anonymous RLS), per request (React `cache`). Pages showing products (home, shop, product, shapes, colours, cart) get the whole catalogue (products, colours, taxonomy) as a seed for `CatalogProvider`, the others the taxonomy (header menu); the browser starts from the seed and does not ask again for what it got. A part that fails on the server is left to the browser, as before. Mock mode: no seed, the fixtures are in the bundle.
+- **Product pages** have their own segments, `app/fr/boutique/[slug]` and `app/en/shop/[slug]` (`app/_public/productPage.tsx`): the product is found by any of its keys (`fetchProductByKey`: French slug, published slug of another language, row id), then 404 (`notFound()`), 308 (`permanentRedirect`, query kept) or the page with its title (`<name> · Global Toothgems`), description (its description as plain text, else the line the page shows without one, cut at 160 characters), hreflang to the other language's slug, Open Graph image and `application/ld+json` schema.org `Product` (price from minor units, currency, availability, rating when reviewed) — `src/lib/catalog/productMeta.ts`, unit-tested. The tab title follows client navigation (`DocumentTitle` in `App.tsx`).
+- **Slugs in addresses** (`src/lib/catalog/productSlugs.ts`, pure, unit-tested): `localeRoutes.ts` takes an optional parameter translator; the browser's comes from the loaded catalogue (`productSlugRegistry.ts`, filled by `CatalogProvider` before links render), the server's from the page's own seed (a shared registry would mix requests). Unknown slugs are left as written; the server moves them.
+- **Sitemap**: every product in both languages with its alternates (`listPublicProductSlugs`), rendered per request.
+- **Browser state and hydration**: state the server cannot see is read once hydrated (`src/lib/useHydrated.ts`): the cookie choice (the banner waits for it rather than flashing at visitors who already chose), the legal review notes toggle, the launch checklist ticks; the Academy count-up starts at 0 on both sides. React 19 reports any mismatch as a console error, which fails the smoke tests; `server-rendering.spec.ts` covers a returning visitor with saved choices and reduced motion (checked to fail with the old consent reading).
+- **Metadata is not streamed** (`htmlLimitedBots: /.*/` in `next.config.ts`): with streaming, a page hydrated quickly could switch language before its `<title>` arrived and have it overwritten (seen once in the smoke tests). Every response now has its whole `<head>` up front; the pages await the same data anyway.
+
+Known limits, accepted for now:
+- Prices and dates are formatted with the shared i18next instance (`lib/format.ts`), whose language `ServerApp` sets before rendering; safe because no public page suspends while rendering. Moving `format.ts` to the language of the rendering tree removes that assumption (phase 5 at the latest).
+- Catalogue pages carry the whole catalogue in their payload and each server render reads it again (no cross-request cache). Measure on the first preview against the real project (90 products); caching (`use cache` / revalidation) is a follow-up.
+- The cookie banner is not in the server HTML: it appears once the page is hydrated (as it did before, when everything rendered in the browser). The legal review notes show by default on the server and disappear after hydration for a reviewer who turned them off.
+- Course pages are rendered on the server from the mock fixtures, as the browser rendered them; their head, 404 and sitemap entries wait for the Academy decision.
 
 ## Route checklist
 
-Legend (phase 1 done: every route below is served by the catch-all shell; phase 2 done: "account" and "staff" routes are also turned away server-side by `proxy.ts`) — **Access**: open / account (`RequireAccount` + proxy) / staff (`RequireAdmin` + proxy) / studio (`RequireStudioAccess`) / redirect (client-side `Navigate`). **P1**: served by the catch-all shell. **Smoke**: covered by `webapp/e2e/`. **Native**: App Router segment exists. **SSR**: "head" = server `<head>` done (3.1), "body" = content rendered on the server (3.2). Public routes now live at `/fr/…` / `/en/…` (table in phase 3.1); the address in the first column is the internal one and, when unprefixed, redirects (308). Target phase in the last column.
+Legend (phase 1 done: every route below is served by the catch-all shell; phase 2 done: "account" and "staff" routes are also turned away server-side by `proxy.ts`; phase 3.2: public pages rendered on the server) — **Access**: open / account (`RequireAccount` + proxy) / staff (`RequireAdmin` + proxy) / studio (`RequireStudioAccess`) / redirect (client-side `Navigate`). **P1**: served by the catch-all shell. **Smoke**: covered by `webapp/e2e/`. **Native**: App Router segment exists. **SSR**: "head" = server `<head>` done (3.1), "body" = content rendered on the server (3.2). Public routes now live at `/fr/…` / `/en/…` (table in phase 3.1); the address in the first column is the internal one and, when unprefixed, redirects (308). Target phase in the last column.
 
 ### Storefront
 
 | Route | Access | P1 | Smoke | Native | SSR | Target |
 | --- | --- | --- | --- | --- | --- | --- |
-| `/` | open | ✅ | ✅ | ⬜ | head ✅ body ⬜ | 3.2 |
+| `/` | open | ✅ | ✅ | ⬜ | head ✅ body ✅ | done (3.2); own segment in 5 |
 | `/accueil-b` → `/` | redirect | ✅ | ✅ | ⬜ | — | server redirect ✅ (3.1) |
-| `/boutique` | open | ✅ | ✅ (+ distinct product photos) | ⬜ | head ✅ body ⬜ | 3.2 |
+| `/boutique` | open | ✅ | ✅ (+ distinct product photos) | ⬜ | head ✅ body ✅ | done (3.2); own segment in 5 |
 | `/boutique-b` → `/boutique` | redirect | ✅ | ✅ | ⬜ | — | server redirect ✅ (3.1) |
-| `/boutique/:id` | open | ✅ | ✅ | ⬜ | head ✅ body ⬜ | 3.2 |
-| `/formes` | open | ✅ | ✅ | ⬜ | head ✅ body ⬜ | 3.2 |
-| `/couleurs` | open | ✅ | ✅ | ⬜ | head ✅ body ⬜ | 3.2 |
-| `/panier` | open | ✅ | ✅ (cart flow) | ⬜ | head ✅ (noindex), client | 3.2 |
-| `/fidelite` | open | ✅ | ✅ | ⬜ | head ✅ body ⬜ | 3.2 |
-| `/carte-cadeau` | open | ✅ | ✅ | ⬜ | head ✅ body ⬜ | 3.2 |
+| `/boutique/:id` (`/fr/boutique/<French slug>`, `/en/shop/<English slug>`) | open | ✅ | ✅ (+ 404, 308, head, JSON-LD, slugs in `auth-server`) | ✅ `app/fr/boutique/[slug]`, `app/en/shop/[slug]` | head ✅ (product) body ✅ | done (3.2) |
+| `/formes` | open | ✅ | ✅ | ⬜ | head ✅ body ✅ | done (3.2); own segment in 5 |
+| `/couleurs` | open | ✅ | ✅ | ⬜ | head ✅ body ✅ | done (3.2); own segment in 5 |
+| `/panier` | open | ✅ | ✅ (cart flow) | ⬜ | head ✅ (noindex) body ✅ | done (3.2); own segment in 5 |
+| `/fidelite` | open | ✅ | ✅ | ⬜ | head ✅ body ✅ | done (3.2); own segment in 5 |
+| `/carte-cadeau` | open | ✅ | ✅ | ⬜ | head ✅ body ✅ | done (3.2); own segment in 5 |
 | `/gift-card` (alias) | redirect | ✅ | ✅ (`locale.spec.ts`) | ⬜ | — | server redirect to `/en/gift-card` ✅ (3.1) |
 
 ### Sign-in, registration, recovery
@@ -160,8 +179,8 @@ Legend (phase 1 done: every route below is served by the catch-all shell; phase 
 
 | Route | Access | P1 | Smoke | Native | SSR | Target |
 | --- | --- | --- | --- | --- | --- | --- |
-| `/studio-3d` | open | ✅ | ✅ | ⬜ | head ✅ body ⬜ | 3.2 |
-| `/studio-3d/abonnement` | open | ✅ | ✅ | ⬜ | head ✅ body ⬜ | 3.2 |
+| `/studio-3d` | open | ✅ | ✅ | ⬜ | head ✅ body ✅ | done (3.2); own segment in 5 |
+| `/studio-3d/abonnement` | open | ✅ | ✅ | ⬜ | head ✅ body ✅ | done (3.2); own segment in 5 |
 | `/studio-3d/subscribe` → `/en/3d-studio/subscribe` | redirect | ✅ | ✅ | ⬜ | — | server redirect ✅ (3.1) |
 | `/studio-3d/atelier/*` (editor, lazy three.js) | studio | ✅ | ✅ (canvas renders) | ⬜ | — (client only) | 4 |
 | `/studio-3d/editor/*` → `/studio-3d/atelier/*` | redirect | ✅ | ⬜ | ⬜ | — | 4 |
@@ -172,8 +191,8 @@ Legend (phase 1 done: every route below is served by the catch-all shell; phase 
 
 | Route | Access | P1 | Smoke | Native | SSR | Target |
 | --- | --- | --- | --- | --- | --- | --- |
-| `/academy` | open | ✅ | ✅ | ⬜ | head ✅ body ⬜ | 3.2 |
-| `/academy/formation/:id` | open | ✅ | ✅ | ⬜ | head ✅ body ⬜ | 3.2 |
+| `/academy` | open | ✅ | ✅ | ⬜ | head ✅ body ✅ | done (3.2); own segment in 5 |
+| `/academy/formation/:id` | open | ✅ | ✅ | ⬜ | head: generic (site name) body ✅ (fixtures) | course title, Course JSON-LD, 404, sitemap: **decision needed** (Academy mock) |
 | `/academy/lecon` | account | ✅ | ✅ (proxy redirect) | ⬜ | — | 4 |
 | `/academy/mes-formations/:courseId` | account | ✅ | ⬜ | ⬜ | — | 4 |
 | `/academy/mes-formations/:courseId/lecon/:nodeKey` | account | ✅ | ✅ (proxy redirect) | ⬜ | — | 4 |
@@ -223,16 +242,16 @@ Legend (phase 1 done: every route below is served by the catch-all shell; phase 
 
 | Route | Access | P1 | Smoke | Native | SSR | Target |
 | --- | --- | --- | --- | --- | --- | --- |
-| `/aide` | open | ✅ | ✅ | ⬜ | head ✅ body ⬜ | 3.2 |
-| `/aide/faq` | open | ✅ | ✅ | ⬜ | head ✅ body ⬜ | 3.2 |
-| `/contact` | open | ✅ | ✅ | ⬜ | head ✅ body ⬜ | 3.2 |
-| `/a-propos` | open | ✅ | ✅ | ⬜ | head ✅ body ⬜ | 3.2 |
-| `/mentions-legales` | open | ✅ | ✅ | ⬜ | head ✅ body ⬜ | 3.2 |
-| `/conditions-generales` | open | ✅ | ✅ | ⬜ | head ✅ body ⬜ | 3.2 |
-| `/confidentialite` | open | ✅ | ✅ | ⬜ | head ✅ body ⬜ | 3.2 |
-| `/cookies` | open | ✅ | ✅ | ⬜ | head ✅ body ⬜ | 3.2 |
-| `/livraison` | open | ✅ | ✅ | ⬜ | head ✅ body ⬜ | 3.2 |
-| `/retours-remboursements` | open | ✅ | ✅ | ⬜ | head ✅ body ⬜ | 3.2 |
+| `/aide` | open | ✅ | ✅ | ⬜ | head ✅ body ✅ | done (3.2); own segment in 5 |
+| `/aide/faq` | open | ✅ | ✅ | ⬜ | head ✅ body ✅ | done (3.2); own segment in 5 |
+| `/contact` | open | ✅ | ✅ | ⬜ | head ✅ body ✅ | done (3.2); own segment in 5 |
+| `/a-propos` | open | ✅ | ✅ | ⬜ | head ✅ body ✅ | done (3.2); own segment in 5 |
+| `/mentions-legales` | open | ✅ | ✅ | ⬜ | head ✅ body ✅ | done (3.2); own segment in 5 |
+| `/conditions-generales` | open | ✅ | ✅ | ⬜ | head ✅ body ✅ | done (3.2); own segment in 5 |
+| `/confidentialite` | open | ✅ | ✅ | ⬜ | head ✅ body ✅ | done (3.2); own segment in 5 |
+| `/cookies` | open | ✅ | ✅ | ⬜ | head ✅ body ✅ | done (3.2); own segment in 5 |
+| `/livraison` | open | ✅ | ✅ | ⬜ | head ✅ body ✅ | done (3.2); own segment in 5 |
+| `/retours-remboursements` | open | ✅ | ✅ | ⬜ | head ✅ body ✅ | done (3.2); own segment in 5 |
 | English aliases `/help`, `/faq`, `/shipping`, `/returns`, `/legal-notice`, `/terms-of-sale`, `/privacy-policy`, `/cookie-policy`, `/about` | redirect | ✅ | ✅ (`/help`, `/privacy-policy`, `/terms-of-sale`) | ⬜ | — | server redirects to `/en/…` ✅ (3.1) |
 
 ### System pages
@@ -252,13 +271,25 @@ Legend (phase 1 done: every route below is served by the catch-all shell; phase 
 | English path segments | phase 3 | **decided**: translated (`/en/shop`); the exact English words of the table in "Phase 3.1" are proposals to confirm (notably `/en/3d-studio`, `/en/colours` in British spelling, `/en/academy/course/:id`) |
 | What `/` does | phase 3 | **decided**: saved choice, else browser language, else English |
 | Prefix for the member space and back office | phase 3 | **decided**: no, public pages only. Assumed in this session (reversible): sign-in, registration and recovery pages count as member area (unprefixed); the cart counts as public (prefixed, noindex) |
-| Per-locale product slugs (`product_translations`) in `/en/shop/:slug` | phase 3.2 | open — today the same id/slug in both languages |
+| Per-locale product slugs (`product_translations`) in `/en/shop/:slug` | phase 3.2 | **decided** (2026-09-30): one slug per language, other keys moved (308), unknown slug 404 — built in 3.2 |
+| Course pages' head, Course structured data, 404 for unknown courses, courses in the sitemap | end of phase 3.2 | open — the Academy is still mock data (`data/courses.ts`, AGENTS.md §4): publishing titles, prices and structured data of fixture courses, or 404s tied to them, needs the owner's go (or waits for the Academy schema) |
+| Product `meta_title` / `meta_description` (columns exist on `products` and `product_translations`, empty, not editable in the back office) | when the back office edits them | open — proposed: use them before the name/description once they can be edited |
+| Server-side catalogue caching (every catalogue page render reads the catalogue) | before launch traffic | open — technical follow-up, measure on the first preview |
 | Supabase dashboard: redirect allow-list and the three e-mail templates (`supabase/README.md`, "Member sign-up") | the phase 2 release | the user does it |
 | Vercel project switch to the Next.js framework preset; optional `SITE_URL` (custom domain) | before the first Next.js deployment | the user does it (later) |
 
 ## Log
 
 Newest first. For each session: what changed, the commands run and their real results.
+
+### 2026-09-30 — Phase 3.2 (all public pages rendered on the server; course head pending)
+
+- User decision: product slugs per language (see "Phase 3.2"). Checked read-only on the Supabase project: all 90 active products have a published English slug; no SQL change, nothing written to the database.
+- Added: `app/fr/boutique/[slug]`, `app/en/shop/[slug]`, `app/_public/` (product page, shared metadata, query string), `src/lib/catalog/productSlugs.ts`, `productSlugRegistry.ts`, `productMeta.ts`, `serverCatalog.ts`, `src/lib/supabase/publicServer.ts`, `src/lib/useHydrated.ts`, `e2e/server-rendering.spec.ts`; `ServerApp` / `ClientApp` in `src/ClientApp.tsx`; the catch-all renders public pages on the server; `CatalogProvider` accepts a seed; catalogue queries take a client (`api.ts`, `productMediaUrl`); product `currency` and `slugs` in the storefront model; `next.config.ts` `htmlLimitedBots`; the fake Supabase of the tests sells one product with two slugs.
+- Visible changes, all required by the phase: product pages' tab title is the product name; the cookie banner shows once the page is hydrated; the Academy figures count up from 0 as before (their server HTML shows 0).
+- Tests changed: `/en/shop/aurora-heart` now expects its product title; "each product card shows its own photo" reads `img.src` instead of `currentSrc` (in server HTML, `currentSrc` depends on when the browser picks the image: it failed once on a full run, passed 44/44 twice alone).
+- Results: before any change `npm run test:e2e` 92 passed. After: `npm run typecheck` OK; `npm run lint` 0 errors, 95 warnings (unchanged); `npm test` 28 files / 306 tests passed (14 new: `productSlugs.test.ts`, `productMeta.test.ts`, mapping); `npm run build` OK (`ƒ /fr/boutique/[slug]`, `ƒ /en/shop/[slug]`, `ƒ /sitemap.xml`); `npm run test:e2e` 99 passed on the dev servers, and 99 passed on production builds (`next start` of a mock build and of a build pointed at the fake Supabase). Earlier full runs on the way: 98/99 once (the streamed-title race, fixed by `htmlLimitedBots`, then 90/90 with `--repeat-each 2` on the locale and auth specs), 95/96 once (the photo test above).
+- Not verified here: the pages against the real Supabase project (no test points at it) — to check on the first preview: an English product address, a 308 from a French slug under `/en/shop`, the sitemap, and the weight of the catalogue pages.
 
 ### 2026-09-30 — Phase 3.1
 

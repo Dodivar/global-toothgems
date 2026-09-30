@@ -160,20 +160,34 @@ test.describe("product addresses", () => {
     expect(html).toContain('<meta name="description" content="A mirror-polished chrome heart."/>');
     expect(html).toMatch(/<link rel="alternate" hrefLang="fr" href="[^"]*\/fr\/boutique\/coeur-chrome"\/>/);
     expect(html).toMatch(/<link rel="canonical" href="[^"]*\/en\/shop\/chrome-heart-tooth-gem"\/>/);
+    // Rendered on the server from the catalogue it read (phase 3.2).
+    expect(html).toMatch(/<h1[^>]*>Chrome Heart<\/h1>/);
+    const shop = await (await request.get("/en/shop")).text();
+    expect(shop).toContain('href="/en/shop/chrome-heart-tooth-gem"');
 
     const sitemap = await (await request.get("/sitemap.xml")).text();
     expect(sitemap).toMatch(/<loc>[^<]*\/fr\/boutique\/coeur-chrome<\/loc>/);
     expect(sitemap).toMatch(/<loc>[^<]*\/en\/shop\/chrome-heart-tooth-gem<\/loc>/);
   });
+});
 
-  test("links and the language switch use each language's slug", async ({ page }) => {
-    await page.goto("/fr/boutique");
-    await expect(page.locator("main a[href='/fr/boutique/coeur-chrome']").first()).toBeAttached();
-    await page.goto("/fr/boutique/coeur-chrome");
-    await expect(page.getByRole("heading", { level: 1 }).first()).toHaveText(/Cœur Chrome/);
-    await page.getByRole("button", { name: "Afficher le site en anglais" }).first().click();
-    await expect(page).toHaveURL((url) => url.pathname === "/en/shop/chrome-heart-tooth-gem");
-    await expect(page.getByRole("heading", { level: 1 }).first()).toHaveText(/Chrome Heart/);
-    await expect(page).toHaveTitle("Chrome Heart · Global Toothgems");
+test("product links and the language switch use each language's slug", async ({ page }) => {
+  // What the smoke tests watch for (e2e/fixtures.ts), without cutting off the
+  // fake Supabase, which runs on another origin: only the web fonts are.
+  const problems: string[] = [];
+  await page.route(/fonts\.(googleapis|gstatic)\.com/, (route) => route.fulfill({ status: 200, body: "", contentType: "text/css" }));
+  page.on("console", (message) => {
+    if (message.type() === "error") problems.push(`console: ${message.text()}`);
   });
+  page.on("pageerror", (error) => problems.push(`exception: ${error.message}`));
+  await page.goto("/fr/boutique");
+  await expect(page.locator("main a[href='/fr/boutique/coeur-chrome']").first()).toBeAttached();
+  await page.goto("/fr/boutique/coeur-chrome");
+  await expect(page.getByRole("heading", { level: 1 }).first()).toHaveText(/Cœur Chrome/);
+  await page.getByRole("button", { name: "Afficher le site en anglais" }).first().click();
+  await expect(page).toHaveURL((url) => url.pathname === "/en/shop/chrome-heart-tooth-gem");
+  await expect(page.getByRole("heading", { level: 1 }).first()).toHaveText(/Chrome Heart/);
+  await expect(page).toHaveTitle("Chrome Heart · Global Toothgems");
+  // The server-rendered pages hydrated from the same catalogue, without a mismatch.
+  expect(problems).toEqual([]);
 });

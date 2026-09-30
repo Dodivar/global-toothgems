@@ -97,7 +97,9 @@ test("the Studio 3D editor loads its 3D engine", async ({ page, problems }) => {
 
 test("each product card shows its own photo", async ({ page, problems }) => {
   await open(page, "/fr/boutique");
-  const photos = await page.locator("main article img").evaluateAll((images) => images.map((img) => (img as HTMLImageElement).currentSrc));
+  // `src`, the photo each card asks for: `currentSrc` stays empty until the
+  // browser has picked the image, which the server-rendered page leaves to its own timing.
+  const photos = await page.locator("main article img").evaluateAll((images) => images.map((img) => (img as HTMLImageElement).src));
   expect(photos.length).toBeGreaterThanOrEqual(8);
   // A bundler that resolves every fixture photo to the same file once showed
   // one image on every card; the mock catalogue uses many different photos.

@@ -1,6 +1,6 @@
 # Global Toothgems — web application
 
-The production web application of Global Toothgems: storefront, Academy, member area, Studio 3D and back office, in one Next.js (App Router) application backed by Supabase (see `supabase/README.md`) and deployed on Vercel. It is being migrated from Vite + React Router: during the migration the React Router app runs client-side inside a catch-all Next.js page — see `docs/migration-nextjs.md` for the phases and the per-route checklist.
+The production web application of Global Toothgems: storefront, Academy, member area, Studio 3D and back office, in one Next.js (App Router) application backed by Supabase (see `supabase/README.md`) and deployed on Vercel. It is being migrated from Vite + React Router: during the migration the React Router app runs inside a catch-all Next.js page, rendered on the server for public pages and in the browser only elsewhere — see `docs/migration-nextjs.md` for the phases and the per-route checklist.
 
 > **Status: being industrialised.** The app started as a fully clickable implementation of the Claude Design prototype, with every domain on in-memory mock data. Domains are now connected to Supabase one by one; the up-to-date live/mock table is in the root `AGENTS.md` §4. With the Supabase variables set, these are **live**: the storefront catalogue, back-office product management and categories, member and staff authentication, favourites (`wishlist_items`), reviews and moderation, member and admin order reading, and the Studio 3D workspace. Cart/checkout/payment (no Stripe yet), promotions, gift cards, loyalty, customers/users/statistics/settings in the back office, contact and newsletter, and the whole Academy still run on mock data.
 >
@@ -28,23 +28,27 @@ npm run dev
 
 This starts the Next.js dev server on [http://localhost:5173](http://localhost:5173) — the port the app has always used, which the Supabase Auth redirect allow-list knows (`scripts/dev.mjs`; set `PORT` to use another one). `npm run dev:mock` runs the same server on the mock data, whatever `.env.local` says.
 
-How the app is mounted (phase 1 of `docs/migration-nextjs.md`):
+How the app is mounted (phases 1–3.2 of `docs/migration-nextjs.md`):
 
 ```
-app/layout.tsx              root layout: <html lang="fr">, fonts, title, favicon, src/index.css
-app/[[...slug]]/page.tsx    the only page; every path lands here
-app/[[...slug]]/client.tsx  loads src/ClientApp.tsx with dynamic(..., { ssr: false })
-app/auth/confirm/route.ts   where every Supabase Auth e-mail link lands (server)
-proxy.ts                    before every page: session refresh + sign-in redirects (server)
-src/ClientApp.tsx           i18n + StrictMode + BrowserRouter + App (formerly main.tsx)
-src/App.tsx                 the React Router routes
+app/layout.tsx                 root layout: <html lang>, fonts, favicon, src/index.css
+app/[[...slug]]/page.tsx       every path without a page of its own: head, 404, then the app
+app/[[...slug]]/client.tsx     ServerRendered (public pages: rendered on the server, hydrated)
+                               and ClientOnly (other areas: dynamic(..., { ssr: false }))
+app/fr/boutique/[slug]/page.tsx, app/en/shop/[slug]/page.tsx
+                               product pages: product found on the server, 404/308, head, JSON-LD
+app/_public/                   shared server code of public pages (product page, metadata)
+app/auth/confirm/route.ts      where every Supabase Auth e-mail link lands (server)
+proxy.ts                       before every page: language, session refresh, sign-in redirects
+src/ClientApp.tsx              ClientApp (browser) and ServerApp (server): i18n + router + App
+src/App.tsx                    the React Router routes
 ```
 
-No screen of `src/` is rendered on the server yet; the server runs `proxy.ts`, `/auth/confirm`, the `<head>` of each page, `sitemap.xml` and `robots.txt`.
+Public pages (`/fr/…`, `/en/…`) are rendered on the server: `ServerApp` renders the React Router app at the requested address, in its language, from the catalogue the server read with the publishable key (`src/lib/catalog/serverCatalog.ts`; fixtures in mock mode), and the browser hydrates it. Their first browser render must match the server's: state that only the browser knows (localStorage, media queries) is read once hydrated (`src/lib/useHydrated.ts`), never in a `useState` initializer. The member space, sign-in, back office and Studio workspace still render in the browser only.
 
 ### Addresses and language (phase 3.1)
 
-Public pages live at `/fr/…` and `/en/…` with English segments (`/fr/boutique/aurora-heart` ↔ `/en/shop/aurora-heart`); the full table is `src/lib/localeRoutes.ts`, and `docs/migration-nextjs.md` lists it. The React Router app still uses its French paths everywhere (`<Link to="/boutique">`, `navigate("/aide")`): `src/lib/localizedHistory.ts` translates them to the address of the current language and back, so write internal paths as before. When adding a public page: add its route to `App.tsx` as usual **and** its French/English addresses to `localeRoutes.ts` (a unit test fails if a route of `App.tsx` is unknown to the server), and its title/description source to `src/lib/pageMeta.ts`. `/` is sent by the proxy to the saved language (`gt-lang` cookie), else the browser's, else English; old unprefixed addresses are moved permanently. Screens live in `src/screens/` (not `src/pages/`, which Next.js would treat as a Pages Router directory). Image imports resolve to `{ src, width, height }` in Next.js: use `.src` in an `<img>`.
+Public pages live at `/fr/…` and `/en/…` with English segments (`/fr/boutique/coeur-chrome` ↔ `/en/shop/chrome-heart-tooth-gem`: product pages use each language's slug, `product_translations.slug`, see `src/lib/catalog/productSlugs.ts`); the full table is `src/lib/localeRoutes.ts`, and `docs/migration-nextjs.md` lists it. The React Router app still uses its French paths everywhere (`<Link to="/boutique">`, `navigate("/aide")`): `src/lib/localizedHistory.ts` translates them to the address of the current language and back, so write internal paths as before. When adding a public page: add its route to `App.tsx` as usual **and** its French/English addresses to `localeRoutes.ts` (a unit test fails if a route of `App.tsx` is unknown to the server), and its title/description source to `src/lib/pageMeta.ts`. `/` is sent by the proxy to the saved language (`gt-lang` cookie), else the browser's, else English; old unprefixed addresses are moved permanently. Screens live in `src/screens/` (not `src/pages/`, which Next.js would treat as a Pages Router directory). Image imports resolve to `{ src, width, height }` in Next.js: use `.src` in an `<img>`.
 
 ## Sessions and e-mail links (server side)
 
@@ -99,7 +103,7 @@ npm run test:e2e  # Playwright: smoke tests in mock mode (dev server on 5199) + 
 
 ## Deploying (Vercel)
 
-The Vercel project builds from the **Root Directory** `webapp` with the **Next.js** framework preset (`next build`, output managed by Vercel). There is no `vercel.json` any more: under Vite a rewrite sent every unknown path to `index.html`; now the optional catch-all route `app/[[...slug]]` answers every path itself, and real files in `public/` (`favicon.svg`, `icons.svg`, videos) are still served as themselves. Like the SPA before it, the catch-all answers HTTP 200 for an unknown address and the app renders its 404 page; real 404 statuses come with the server-rendered pages (phase 3 of `docs/migration-nextjs.md`).
+The Vercel project builds from the **Root Directory** `webapp` with the **Next.js** framework preset (`next build`, output managed by Vercel). There is no `vercel.json` any more: under Vite a rewrite sent every unknown path to `index.html`; now the optional catch-all route `app/[[...slug]]` answers every path itself, and real files in `public/` (`favicon.svg`, `icons.svg`, videos) are still served as themselves. An address without a screen, and a product slug the shop does not sell, answer HTTP 404 (the app renders its 404 page); the member space and back office answer 200 for their unknown sub-addresses (their 404 screen lives inside their shell).
 
 Environment variables (Production and Preview): `NEXT_PUBLIC_SUPABASE_URL`, `NEXT_PUBLIC_SUPABASE_PUBLISHABLE_KEY`. They are inlined at build time, so a change needs a redeploy.
 

@@ -1,7 +1,7 @@
 import type { GemColorDef, Product } from "../../data/products";
 import type { ShopCategoryDef } from "../../data/taxonomy";
 import { requireSupabase, type TypedSupabaseClient } from "../supabase/client";
-import { BUCKETS, productMediaUrl } from "../supabase/storage";
+import { productMediaUrl } from "../supabase/storage";
 import {
   mapGemColor,
   mapProduct,
@@ -52,8 +52,7 @@ function retryWithoutFamilies(error: { message?: string } | null, signal?: Abort
  * The storefront catalogue: active, physical/digital products (gift cards
  * have their own page), newest first, with their public review stats.
  */
-export async function fetchCatalog(signal?: AbortSignal): Promise<Product[]> {
-  const db = requireSupabase();
+export async function fetchCatalog(signal?: AbortSignal, db: TypedSupabaseClient = requireSupabase()): Promise<Product[]> {
 
   const productsQuery = (select: string) => {
     const query = db
@@ -80,9 +79,8 @@ export async function fetchCatalog(signal?: AbortSignal): Promise<Product[]> {
   }
 
   const rows = products.data as unknown as ProductRow[];
-  return rows.map((row) =>
-    mapProduct(row, statsByProduct.get(row.id), productMediaUrl),
-  );
+  const mediaUrl = mediaUrlFrom(db);
+  return rows.map((row) => mapProduct(row, statsByProduct.get(row.id), mediaUrl));
 }
 
 /**
@@ -90,8 +88,7 @@ export async function fetchCatalog(signal?: AbortSignal): Promise<Product[]> {
  * Active colours only; `is_active` is repeated here for the same reason as the
  * product filters above.
  */
-export async function fetchGemColors(signal?: AbortSignal): Promise<GemColorDef[]> {
-  const db = requireSupabase();
+export async function fetchGemColors(signal?: AbortSignal, db: TypedSupabaseClient = requireSupabase()): Promise<GemColorDef[]> {
   let query = db
     .from("gem_colors")
     .select("slug, name, hex, is_multicolor, gem_color_translations ( locale, name, status )")
@@ -112,8 +109,7 @@ const TAXONOMY_SELECT = `${TAXONOMY_SELECT_BASE},
  * The shop taxonomy (header menu, the shop's product-type tree, home tiles):
  * active categories and their active families, in back-office order.
  */
-export async function fetchTaxonomy(signal?: AbortSignal): Promise<ShopCategoryDef[]> {
-  const db = requireSupabase();
+export async function fetchTaxonomy(signal?: AbortSignal, db: TypedSupabaseClient = requireSupabase()): Promise<ShopCategoryDef[]> {
   const query = (select: string) => {
     const q = db.from("categories").select(select).eq("is_active", true).order("position");
     return signal ? q.abortSignal(signal) : q;
@@ -121,12 +117,12 @@ export async function fetchTaxonomy(signal?: AbortSignal): Promise<ShopCategoryD
   let result = await query(TAXONOMY_SELECT);
   if (retryWithoutFamilies(result.error, signal)) result = await query(TAXONOMY_SELECT_BASE);
   if (result.error) throw result.error;
-  return mapTaxonomy(result.data as unknown as TaxonomyRow[], productMediaUrl);
+  return mapTaxonomy(result.data as unknown as TaxonomyRow[], mediaUrlFrom(db));
 }
 
-/** Public URL of a catalogue image, from any client (the server has no browser client). */
+/** Public URLs of catalogue images, from the client in use (the server has no browser client). */
 function mediaUrlFrom(db: TypedSupabaseClient) {
-  return (path: string) => db.storage.from(BUCKETS.productMedia).getPublicUrl(path).data.publicUrl;
+  return (path: string) => productMediaUrl(path, db);
 }
 
 const UUID = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i;

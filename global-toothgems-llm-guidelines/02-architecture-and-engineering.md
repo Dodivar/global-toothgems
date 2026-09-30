@@ -16,7 +16,7 @@ description: Production architecture, runtime boundaries, the mock-to-live migra
 - **Why:** public pages (home, shop, product, Academy sales pages, legal, help) need server rendering, per-route metadata, canonical/Open Graph tags and real HTTP status codes for search engines and social previews; member and back-office routes need protection on the server (middleware — `proxy.ts` since Next.js 16 — refreshing the Supabase session with `@supabase/ssr`) rather than only client-side guards.
 - **Unchanged:** Supabase (schema, RLS, the migrations, Auth and its users), Edge Functions for Stripe, e-mail and service-role jobs, react-i18next for UI strings while the migration runs (moving to next-intl is a separate, undecided step), Tailwind v4 and the design tokens, Vitest.
 - **How:** phases tracked in `docs/migration-nextjs.md` — (1) the existing app runs unchanged in a catch-all client page, (2) auth with `@supabase/ssr` + middleware, (3) public pages as server-rendered App Router routes with SEO, (4) account, back office and Studio as App Router routes, (5) removal of React Router and SPA-only code. Every session touching `webapp/` routing or rendering reads that file first and updates its checklist.
-- **Decided since:** e-mail links land on `/auth/confirm` (phase 2, done); locale URLs `/fr/…` and `/en/…` (phase 3). **Still the user's:** the Vercel project switch, Supabase Auth dashboard settings, the remaining locale details (see `docs/migration-nextjs.md`).
+- **Decided since:** e-mail links land on `/auth/confirm` (phase 2, done); locale URLs `/fr/…` and `/en/…` (phase 3.1, done); product slugs per language (phase 3.2, done). **Still the user's:** the Vercel project switch, Supabase Auth dashboard settings, the remaining locale details (see `docs/migration-nextjs.md`).
 
 ## Runtime boundaries
 
@@ -37,7 +37,7 @@ Rules of thumb:
 
 ## Front-end structure (`webapp/`)
 
-- `app/` Next.js App Router: the root layout and, during the migration, the catch-all client page `app/[[...slug]]` that runs the React Router app; migrated routes get their own App Router segments here.
+- `app/` Next.js App Router: the root layout and, during the migration, the catch-all page `app/[[...slug]]` that runs the React Router app (rendered on the server and hydrated for public pages since phase 3.2, browser-only elsewhere); migrated routes get their own App Router segments here (product pages: `app/fr/boutique/[slug]`, `app/en/shop/[slug]`). Server reads of public data use `src/lib/supabase/publicServer.ts` (publishable key, no session). A component rendered on the server must render the same markup on its first browser render: read browser-only state (localStorage, media queries) once hydrated (`src/lib/useHydrated.ts`).
 
 - `src/screens/` one component per route (React Router screens, moved to `app/` route by route; not `src/pages/`, which Next.js would read as a Pages Router); `components/<domain>/` presentational pieces; `components/ui/` and `components/admin/` shared primitives.
 - `src/lib/<domain>.tsx` one store/context per domain — the only place a domain's data changes. Screens never import the Supabase client directly.

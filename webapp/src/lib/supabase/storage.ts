@@ -1,4 +1,4 @@
-import { requireSupabase } from "./client";
+import { requireSupabase, type TypedSupabaseClient } from "./client";
 
 /**
  * Storage buckets, as created by the migrations in `supabase/migrations`.
@@ -30,8 +30,8 @@ export const SIGNED_URL_TTL_SECONDS = 60 * 60;
  * Public URL of a catalogue image or video. No network call: the URL is
  * derived from the project URL and the path.
  */
-export function productMediaUrl(path: string): string {
-  return requireSupabase().storage.from(BUCKETS.productMedia).getPublicUrl(path).data.publicUrl;
+export function productMediaUrl(path: string, db: TypedSupabaseClient = requireSupabase()): string {
+  return db.storage.from(BUCKETS.productMedia).getPublicUrl(path).data.publicUrl;
 }
 
 /**

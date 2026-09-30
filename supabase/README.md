@@ -769,6 +769,13 @@ VAT rates, shipping zones/rates mirroring the Settings prototype. Media rows ref
     between currencies.
 36. **Category → reporting bucket mapping** (tools and accessories folded into kits) is a guess from the prototype;
     adjust `categories.report_group` from the admin if needed.
+37. **Product addresses use the slugs (decided by the owner, Sept 2026).** `/fr/boutique/<products.slug>` and
+    `/en/shop/<published product_translations.slug>` (the French slug when there is none); any other known key
+    (another language's slug, the row id) is moved there with a 308, an unknown slug is a 404
+    (`webapp/src/lib/catalog/productSlugs.ts`, `docs/migration-nextjs.md` phase 3.2). So editing a published slug
+    moves the product page: old slugs are not kept, and an old link to a renamed product becomes a 404. A slug
+    history table would be the fix if renames become common. `meta_title` / `meta_description` are not used yet
+    (empty, not editable in the back office).
 
 ## Done
 

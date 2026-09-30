@@ -1,6 +1,6 @@
 import type { i18n as I18n } from "i18next";
 import { parsePath as parseTo, UNSAFE_createBrowserHistory as createBrowserHistory, type unstable_HistoryRouter } from "react-router-dom";
-import { isLocale, parsePath, toAddress, type Locale } from "./localeRoutes";
+import { isLocale, parsePath, toAddress, type Locale, type ParamTranslator } from "./localeRoutes";
 import { translateProductSlugs as translate } from "./catalog/productSlugRegistry";
 
 type History = Parameters<typeof unstable_HistoryRouter>[0]["history"];
@@ -71,5 +71,45 @@ export function createLocalizedHistory(i18n: I18n): History {
         followAddress(update.location.pathname);
         listener({ ...update, location: internal(update.location) });
       }),
+  };
+}
+
+/**
+ * The same history for a page rendered on the server: fixed at the requested
+ * address, writing links exactly as the browser history will once the page
+ * hydrates (so the server HTML and the first browser render agree): product
+ * slugs from the page's own catalogue (`translate`), not the browser's
+ * registry. It cannot navigate. Transitional, like `createLocalizedHistory`.
+ */
+export function createServerLocalizedHistory(address: string, locale: Locale, translate: ParamTranslator): History {
+  const { pathname, search = "", hash = "" } = parseTo(address);
+  const location: Location = {
+    pathname: parsePath(pathname ?? "/", translate).internal,
+    search,
+    hash,
+    state: null,
+    key: "default",
+  };
+  const href = (to: To) => {
+    const path = typeof to === "string" ? parseTo(to) : to;
+    const pathname = path.pathname === undefined ? location.pathname : toAddress(path.pathname, locale, translate);
+    return `${pathname}${path.search ?? ""}${path.hash ?? ""}`;
+  };
+  const cannotNavigate = () => {
+    throw new Error("A page rendered on the server cannot navigate.");
+  };
+  return {
+    action: "POP" as History["action"],
+    location,
+    createHref: href,
+    createURL: (to) => new URL(href(to), "http://localhost"),
+    encodeLocation: (to) => {
+      const path = typeof to === "string" ? parseTo(to) : to;
+      return { pathname: path.pathname ?? "", search: path.search ?? "", hash: path.hash ?? "" };
+    },
+    push: cannotNavigate,
+    replace: cannotNavigate,
+    go: cannotNavigate,
+    listen: () => () => undefined,
   };
 }

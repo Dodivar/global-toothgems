@@ -25,11 +25,10 @@ const STATS = [
  * the figure is never blank.
  */
 function CountUp({ value, locale }: { value: number; locale: string }) {
-  // Starts at the final value when motion is reduced, so the figure is correct
-  // on first paint and the effect never has to walk it back.
-  const [shown, setShown] = useState(() =>
-    typeof window !== "undefined" && window.matchMedia("(prefers-reduced-motion: reduce)").matches ? value : 0,
-  );
+  // Starts at 0 on the server and in the browser alike (the page is rendered
+  // on the server, and hydration needs the same markup); under reduced motion
+  // the effect below shows the final value at once.
+  const [shown, setShown] = useState(0);
   const ref = useRef<HTMLSpanElement>(null);
 
   useEffect(() => {

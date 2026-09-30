@@ -3,7 +3,9 @@ import { cache } from "react";
 import { PRODUCTS, type Product } from "../../data/products";
 import { isSupabaseConfigured } from "../supabase/env";
 import { createPublicServerSupabase } from "../supabase/publicServer";
-import { fetchProductByKey, fetchProductSlugs } from "./api";
+import type { PublicRouteId } from "../localeRoutes";
+import { fetchCatalog, fetchGemColors, fetchProductByKey, fetchProductSlugs, fetchTaxonomy } from "./api";
+import type { CatalogSeed } from "./CatalogProvider";
 import { findProductByKey, type SluggedProduct } from "./productSlugs";
 
 /*
@@ -23,3 +25,28 @@ export async function listPublicProductSlugs(): Promise<SluggedProduct[]> {
   if (!isSupabaseConfigured) return PRODUCTS;
   return fetchProductSlugs(createPublicServerSupabase());
 }
+
+/** Pages that show products: the server reads the whole catalogue for them. The others get the taxonomy (header menu). */
+const CATALOGUE_PAGES: ReadonlySet<PublicRouteId> = new Set(["home", "shop", "product", "shapes", "colours", "cart"]);
+
+/**
+ * What a server-rendered public page needs of the catalogue, read with the
+ * publishable key; undefined in mock mode. A part that fails to load is left
+ * out and the browser loads it, as before (never a fallback to the fixtures).
+ */
+export const loadCatalogSeed = cache(async (route: PublicRouteId): Promise<CatalogSeed | undefined> => {
+  if (!isSupabaseConfigured) return undefined;
+  const db = createPublicServerSupabase();
+  const full = CATALOGUE_PAGES.has(route);
+  const [products, colors, taxonomy] = await Promise.allSettled([
+    full ? fetchCatalog(undefined, db) : Promise.resolve(undefined),
+    full ? fetchGemColors(undefined, db) : Promise.resolve(undefined),
+    fetchTaxonomy(undefined, db),
+  ]);
+  const value = <T>(result: PromiseSettledResult<T | undefined>, part: string): T | undefined => {
+    if (result.status === "fulfilled") return result.value;
+    console.warn(`[catalog] server read of the ${part} failed; the browser loads it`, result.reason);
+    return undefined;
+  };
+  return { products: value(products, "products"), colors: value(colors, "colours"), taxonomy: value(taxonomy, "taxonomy") };
+});
