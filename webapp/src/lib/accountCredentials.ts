@@ -1,6 +1,7 @@
 import type { AuthError } from "@supabase/supabase-js";
 import { supabase } from "./supabase/client";
 import { VERIFY_PATH } from "./accountSecurity";
+import { authConfirmUrl } from "./authRoutes";
 
 /**
  * Changing the sign-in credentials of the signed-in member through Supabase
@@ -21,11 +22,9 @@ export type EmailResendResult = "sent" | "rateLimited" | "failed";
 const isRateLimit = (error: AuthError) =>
   error.status === 429 || error.code === "over_email_send_rate_limit" || error.code === "over_request_rate_limit";
 
-/** Where the links confirming an email change land. */
+/** Where the links confirming an email change land, through `/auth/confirm`. */
 export function emailChangeRedirect(): string {
-  const url = new URL(VERIFY_PATH, window.location.origin);
-  url.searchParams.set("type", "changement");
-  return url.toString();
+  return authConfirmUrl(`${VERIFY_PATH}?type=changement`, window.location.origin);
 }
 
 type Verified = { ok: true } | { ok: false; result: "wrongPassword" | "rateLimited" | "failed" };

@@ -107,7 +107,7 @@ export function GiftCardVisual({
       >
         <div className="flex items-start justify-between gap-3">
           <span className="flex items-center gap-2">
-            <img src={dark ? monogramWhite : monogramBlue} alt="" className={size === "sm" ? "h-4 w-auto" : "h-6 w-auto"} />
+            <img src={(dark ? monogramWhite : monogramBlue).src} alt="" className={size === "sm" ? "h-4 w-auto" : "h-6 w-auto"} />
             {size !== "sm" && (
               <span className="text-[10px] font-bold uppercase tracking-[var(--tracking-logo)]">Global Toothgems</span>
             )}

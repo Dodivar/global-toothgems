@@ -1,95 +1,82 @@
+import { useState } from "react";
 import { useTranslation } from "react-i18next";
-import { Check, ImagePlus } from "lucide-react";
-import clsx from "clsx";
-import { MEDIA_LIBRARY } from "../../../data/adminTraining";
-import { useLocalized } from "../../../lib/localized";
+import { Images } from "lucide-react";
+import { AdminButton } from "../AdminButton";
+import { useTrainingMedia } from "../../../lib/trainingMedia";
+import type { TrainingMedia } from "../../../lib/trainingMediaRules";
+import { TrainingMediaLibrary } from "./TrainingMediaLibrary";
 
 /**
- * Picks an image from the studio library.
+ * An image field of the course editor.
  *
- * A grid of real photographs rather than an upload field: the prototype has no
- * storage behind it, and a file input that silently discards the chosen file
- * would be a worse lie than a library that plainly is one. The upload path
- * replaces this component rather than being faked inside it.
- *
- * Radios, not buttons: exactly one image is selected at a time, which is what
- * the radio role says and what arrow-key navigation then gives for free.
+ * Shows the current image and opens the training image library to change it —
+ * where images are uploaded, found, described and inserted. Every image field
+ * of the builder (image blocks, module covers, video thumbnails, question
+ * illustrations) goes through here, so they all share one training-only
+ * collection that never mixes with the shop's product photos.
  */
 export function MediaPicker({
   value,
   onChange,
+  onPick,
   label,
   hint,
-  columns = 4,
+  autoOpen = false,
+  onCancel,
+  showPreview = true,
 }: {
   value: string;
-  onChange: (src: string) => void;
+  onChange?: (src: string) => void;
+  /** The whole library entry, for callers that also want its description. */
+  onPick?: (media: TrainingMedia) => void;
   label: string;
   hint?: string;
-  columns?: 3 | 4;
+  /** Opens the library straight away — "Add image" is the first half of choosing one. */
+  autoOpen?: boolean;
+  /** Called when the library is closed without inserting anything. */
+  onCancel?: () => void;
+  /** Off where the caller already shows the image. */
+  showPreview?: boolean;
 }) {
   const { t } = useTranslation();
-  const L = useLocalized();
+  const { findBySrc } = useTrainingMedia();
+  const [open, setOpen] = useState(autoOpen);
+  const current = value ? findBySrc(value) : undefined;
 
   return (
     <fieldset className="m-0 grid gap-2 border-0 p-0">
-      <legend className="mb-1 p-0 text-[length:var(--text-caption)] font-semibold text-[var(--text-primary)]">
-        {label}
-      </legend>
+      <legend className="mb-1 p-0 text-[length:var(--text-caption)] font-semibold text-[var(--text-primary)]">{label}</legend>
       {hint && <p className="m-0 -mt-1 mb-1 text-[length:var(--text-caption)] text-[var(--text-muted)]">{hint}</p>}
 
-      <div
-        className={clsx(
-          "grid gap-2",
-          columns === 3 ? "grid-cols-2 sm:grid-cols-3" : "grid-cols-2 sm:grid-cols-3 lg:grid-cols-4",
+      <div className="flex flex-wrap items-center gap-3 rounded-[var(--admin-radius-sm)] border border-dashed border-[var(--border-default)] bg-[var(--admin-panel-sunken)] p-2.5">
+        {showPreview && value && (
+          <img src={value} alt="" aria-hidden="true" className="h-14 w-20 flex-none rounded-[var(--radius-xs)] object-cover" />
         )}
-      >
-        {MEDIA_LIBRARY.map((item) => {
-          const selected = item.src === value;
-          return (
-            <label
-              key={item.id}
-              className={clsx(
-                "group relative block cursor-pointer overflow-hidden rounded-[var(--admin-radius-sm)] border-2 transition-colors",
-                "focus-within:outline focus-within:outline-2 focus-within:outline-offset-2 focus-within:outline-[var(--focus-ring)]",
-                selected ? "border-[var(--gt-emerald-500)]" : "border-transparent hover:border-[var(--gt-ink-400)]",
-              )}
-            >
-              <input
-                type="radio"
-                name={`media-${label}`}
-                checked={selected}
-                onChange={() => onChange(item.src)}
-                className="sr-only"
-              />
-              <img
-                src={item.src}
-                alt={L(item.label)}
-                loading="lazy"
-                className="aspect-[4/3] w-full object-cover"
-              />
-              {selected && (
-                <span
-                  aria-hidden="true"
-                  className="absolute right-1.5 top-1.5 grid h-5 w-5 place-items-center rounded-full bg-[var(--gt-emerald-500)] text-[var(--gt-white)] shadow-[var(--shadow-xs)]"
-                >
-                  <Check size={12} strokeWidth={3} />
-                </span>
-              )}
-              {/* The name is what a screen reader reads; sighted users get it on
-                  hover, where it would otherwise crowd a 12-image grid. */}
-              <span className="pointer-events-none absolute inset-x-0 bottom-0 truncate bg-[rgba(17,17,17,.72)] px-2 py-1 text-[10px] font-medium text-[var(--gt-white)] opacity-0 transition-opacity group-hover:opacity-100">
-                {L(item.label)}
-              </span>
-            </label>
-          );
-        })}
+        <span className="grid min-w-0 flex-1 gap-0.5">
+          <span className="truncate text-[length:var(--text-caption)] font-semibold text-[var(--text-primary)]">
+            {current?.name ?? (value ? t("trainingMedia.picker.current") : t("trainingMedia.picker.none"))}
+          </span>
+          <span className="text-[11px] text-[var(--text-muted)]">{t("trainingMedia.picker.from")}</span>
+        </span>
+        <AdminButton variant="outline" size="sm" iconLeft={Images} onClick={() => setOpen(true)}>
+          {value ? t("trainingMedia.picker.change") : t("trainingMedia.picker.choose")}
+        </AdminButton>
       </div>
 
-      <p className="m-0 flex items-center gap-1.5 text-[length:var(--text-caption)] text-[var(--text-subtle)]">
-        <ImagePlus size={12} strokeWidth={2} aria-hidden="true" />
-        {t("admin.training.blocks.imageLibrary")}
-      </p>
+      {open && (
+        <TrainingMediaLibrary
+          initialSrc={value}
+          onClose={() => {
+            setOpen(false);
+            onCancel?.();
+          }}
+          onInsert={(media) => {
+            setOpen(false);
+            onChange?.(media.src);
+            onPick?.(media);
+          }}
+        />
+      )}
     </fieldset>
   );
 }

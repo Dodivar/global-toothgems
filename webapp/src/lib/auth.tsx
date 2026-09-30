@@ -1,7 +1,7 @@
 import { createContext, useCallback, useContext, useEffect, useMemo, useState, type ReactNode } from "react";
 import { Navigate, useLocation } from "react-router-dom";
 import type { AuthError, User } from "@supabase/supabase-js";
-import { isSupabaseConfigured, supabase } from "./supabase/client";
+import { isSupabaseConfigured, sessionReady, supabase } from "./supabase/client";
 import { DELIVERY_COUNTRIES } from "../data/countries";
 import { LEGAL_POLICY_VERSION, registrationMetadata, type RegistrationData } from "./registration";
 
@@ -231,19 +231,26 @@ function SupabaseAuthProvider({ children }: { children: ReactNode }) {
     if (!supabase) return;
     let active = true;
     // Restores a kept session, and follows sign-in from the confirmation link,
-    // sign-outs and token expiry from any tab.
-    const { data } = supabase.auth.onAuthStateChange((event, session) => {
-      if (event === "TOKEN_REFRESHED" || event === "USER_UPDATED") return;
-      // Supabase warns against awaiting its own calls inside this callback.
-      setTimeout(async () => {
-        if (!active) return;
-        await applyUser(session?.user ?? null);
-        if (active) setRestoring(false);
-      }, 0);
+    // sign-outs and token expiry from any tab. Subscribes once a pre-migration
+    // session has been carried over (`sessionReady`).
+    const client = supabase;
+    let unsubscribe = () => {};
+    void sessionReady.then(() => {
+      if (!active) return;
+      const { data } = client.auth.onAuthStateChange((event, session) => {
+        if (event === "TOKEN_REFRESHED" || event === "USER_UPDATED") return;
+        // Supabase warns against awaiting its own calls inside this callback.
+        setTimeout(async () => {
+          if (!active) return;
+          await applyUser(session?.user ?? null);
+          if (active) setRestoring(false);
+        }, 0);
+      });
+      unsubscribe = () => data.subscription.unsubscribe();
     });
     return () => {
       active = false;
-      data.subscription.unsubscribe();
+      unsubscribe();
     };
   }, [applyUser]);
 

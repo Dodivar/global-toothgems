@@ -1,17 +1,17 @@
-# Global Toothgems — static/mock prototype
+# Global Toothgems — web application
 
-A fully interactive React implementation of the Global Toothgems brand site — a premium tooth-gem e-commerce shop and professional Academy — built from a Claude Design prototype (see the design brief and chat transcripts that shipped with it).
+The production web application of Global Toothgems: storefront, Academy, member area, Studio 3D and back office, in one Next.js (App Router) application backed by Supabase (see `supabase/README.md`) and deployed on Vercel. It is being migrated from Vite + React Router: during the migration the React Router app runs inside a catch-all Next.js page, rendered on the server for public pages and in the browser only elsewhere — see `docs/migration-nextjs.md` for the phases and the per-route checklist.
 
-> **Architecture note:** this directory intentionally deviates from the stack mandated in the repo root's `AGENTS.md` and `global-toothgems-llm-guidelines/` (Next.js, Supabase/Postgres, Supabase Auth, Stripe). It was built at explicit user request as a fast, visual, fully-clickable reference implementation — Vite + React, no backend, cart/checkout/lesson-progress state held in memory only. Treat it as a design/behavior reference to port from, not as the production app. Porting to the mandated Next.js + Supabase + Stripe architecture is still open work.
+> **Status: being industrialised.** The app started as a fully clickable implementation of the Claude Design prototype, with every domain on in-memory mock data. Domains are now connected to Supabase one by one; the up-to-date live/mock table is in the root `AGENTS.md` §4. With the Supabase variables set, these are **live**: the storefront catalogue, back-office product management and categories, member and staff authentication, favourites (`wishlist_items`), reviews and moderation, member and admin order reading, and the Studio 3D workspace. Cart/checkout/payment (no Stripe yet), promotions, gift cards, loyalty, customers/users/statistics/settings in the back office, contact and newsletter, and the whole Academy still run on mock data.
 >
-> **Two parts are live** when the environment variables below are set: the **storefront catalogue** reads Supabase (see [Supabase connection (catalogue)](#supabase-connection-catalogue)), and the back office's **product management** (products, stock, images, English translations, recommendations) and **admin sign-in** read and write it (see [Supabase connection (back-office products)](#supabase-connection-back-office-products)). A product saved as active in the back office therefore appears in the shop. Cart, checkout, orders, customers, promotions and training are still mock data.
+> Architecture (decided): Next.js App Router on Vercel (migration in progress), business rules in Postgres (RLS + functions), server code in Supabase Edge Functions, payments by Stripe with webhook-driven fulfilment. Sections below that describe "prototype" behaviour, "Prototype controls" panels or mock stores document code that is **still mock and scheduled to be replaced**, not a target design.
 
 ## Stack
 
-- **React 19 + TypeScript**, built with **Vite**
-- **Tailwind CSS v4** for styling, driven by the design system's CSS variable tokens (`src/index.css`)
-- **react-router-dom** for routing
-- **react-i18next** for French/English (French is the default; a toggle in the header switches and persists the choice)
+- **Next.js 16 (App Router, Turbopack) + React 19 + TypeScript**
+- **Tailwind CSS v4** through PostCSS (`postcss.config.mjs`), driven by the design system's CSS variable tokens (`src/index.css`)
+- **react-router-dom** for routing inside the catch-all page `app/[[...slug]]` (transitional: rendered on the server for public pages since phase 3.2, removed in phase 5 of the migration). Inside `src/`, keep using its `Link` / `useNavigate` with the internal French paths; `next/link` and `next/navigation` only in `app/`
+- **react-i18next** for French/English. Public pages carry their language in the address (`/fr/…`, `/en/…`, `src/lib/localeRoutes.ts`); elsewhere the saved choice (FR/EN switches), else the browser's language, else English
 - **lucide-react** for icons
 
 ## Requirements
@@ -26,11 +26,42 @@ npm install
 npm run dev
 ```
 
-This starts the Vite dev server (default [http://localhost:5173](http://localhost:5173)) with hot module reload.
+This starts the Next.js dev server on [http://localhost:5173](http://localhost:5173) — the port the app has always used, which the Supabase Auth redirect allow-list knows (`scripts/dev.mjs`; set `PORT` to use another one). `npm run dev:mock` runs the same server on the mock data, whatever `.env.local` says.
+
+How the app is mounted (phases 1–3.2 of `docs/migration-nextjs.md`):
+
+```
+app/layout.tsx                 root layout: <html lang>, fonts, favicon, src/index.css
+app/[[...slug]]/page.tsx       every path without a page of its own: head, 404, then the app
+app/[[...slug]]/client.tsx     ServerRendered (public pages: rendered on the server, hydrated)
+                               and ClientOnly (other areas: dynamic(..., { ssr: false }))
+app/fr/boutique/[slug]/page.tsx, app/en/shop/[slug]/page.tsx
+                               product pages: product found on the server, 404/308, head, JSON-LD
+app/_public/                   shared server code of public pages (product page, metadata)
+app/auth/confirm/route.ts      where every Supabase Auth e-mail link lands (server)
+proxy.ts                       before every page: language, session refresh, sign-in redirects
+src/ClientApp.tsx              ClientApp (browser) and ServerApp (server): i18n + router + App
+src/App.tsx                    the React Router routes
+```
+
+Public pages (`/fr/…`, `/en/…`) are rendered on the server: `ServerApp` renders the React Router app at the requested address, in its language, from the catalogue the server read with the publishable key (`src/lib/catalog/serverCatalog.ts`; fixtures in mock mode), and the browser hydrates it. Their first browser render must match the server's: state that only the browser knows (localStorage, media queries) is read once hydrated (`src/lib/useHydrated.ts`), never in a `useState` initializer. The member space, sign-in, back office and Studio workspace still render in the browser only.
+
+### Addresses and language (phase 3.1)
+
+Public pages live at `/fr/…` and `/en/…` with English segments (`/fr/boutique/coeur-chrome` ↔ `/en/shop/chrome-heart-tooth-gem`: product pages use each language's slug, `product_translations.slug`, see `src/lib/catalog/productSlugs.ts`); the full table is `src/lib/localeRoutes.ts`, and `docs/migration-nextjs.md` lists it. The React Router app still uses its French paths everywhere (`<Link to="/boutique">`, `navigate("/aide")`): `src/lib/localizedHistory.ts` translates them to the address of the current language and back, so write internal paths as before. When adding a public page: add its route to `App.tsx` as usual **and** its French/English addresses to `localeRoutes.ts` (a unit test fails if a route of `App.tsx` is unknown to the server), and its title/description source to `src/lib/pageMeta.ts`. `/` is sent by the proxy to the saved language (`gt-lang` cookie), else the browser's, else English; old unprefixed addresses are moved permanently. Screens live in `src/screens/` (not `src/pages/`, which Next.js would treat as a Pages Router directory). Image imports resolve to `{ src, width, height }` in Next.js: use `.src` in an `<img>`.
+
+## Sessions and e-mail links (server side)
+
+With Supabase configured (phase 2 of `docs/migration-nextjs.md`):
+
+- **The session lives in cookies** (`@supabase/ssr`): `src/lib/supabase/client.ts` is the browser client, `server.ts` the one for route handlers (the visitor's session, publishable key, RLS), `proxySession.ts` the proxy's. A member signed in before the switch had the session in `localStorage`; the browser client carries it over once into cookies (`sessionReady`, which the auth providers wait for).
+- **`proxy.ts`** refreshes the session on every page request (`getClaims()`, which validates the token rather than trusting the cookie) and redirects a signed-out visitor away from `/compte/*`, `/academy/lecon`, `/academy/mes-formations/*` (to `/connexion`) and `/admin/*` except its sign-in screen (to `/admin/connexion`), with `?suite=<page>`; both sign-in pages read it to send the visitor back. The client guards (`RequireAccount`, `RequireAdmin`) stay; the staff role is checked by the back office and by RLS, not by the proxy. In mock mode the proxy does nothing.
+- **`/auth/confirm`** receives every Auth e-mail link — `?token_hash=…&type=…` (the templates in `supabase/templates/`, any device) or `?code=…` (Supabase's default templates, same browser only) — opens the session and forwards to `next` (a same-site path only) or to the page for the kind of link, with `error`/`error_code` when the link is refused. The app passes `…/auth/confirm?next=…` as the redirect of sign-up, resend, password reset and e-mail change. Supabase dashboard settings: `supabase/README.md`, "Member sign-up".
+- The rules (which paths need a session, safe redirects, link kinds) are pure and unit-tested in `src/lib/authRoutes.ts`.
 
 ## Supabase connection (back-office products)
 
-Copy `.env.example` to `.env.local` and set `VITE_SUPABASE_URL` and `VITE_SUPABASE_PUBLISHABLE_KEY` (Supabase dashboard → Project settings → API). Set the same two variables in the Vercel project for deployed previews. Only the **publishable** key goes here: every read and write is authorized by Row Level Security in Postgres. Without the variables the app runs entirely on its mock data, as before.
+Copy `.env.example` to `.env.local` and set `NEXT_PUBLIC_SUPABASE_URL` and `NEXT_PUBLIC_SUPABASE_PUBLISHABLE_KEY` (Supabase dashboard → Project settings → API). Set the same two variables in the Vercel project for deployed previews. Only the **publishable** key goes here: every read and write is authorized by Row Level Security in Postgres. Without the variables the app runs entirely on its mock data, as before.
 
 With them set:
 
@@ -59,31 +90,22 @@ Code: `lib/supabase/` (client + generated `database.types.ts`), `lib/adminCatalo
 ## Other scripts
 
 ```bash
-npm run build     # type-check (tsc -b) and build a production bundle into dist/
-npm run preview   # serve the production build locally to sanity-check it
+npm run build     # next build: production build into .next/ (includes a type-check)
+npm start         # serve the production build (next start)
+npm run typecheck # tsc on the app, then on e2e/ + the tool configs
 npm run lint      # oxlint
-npm test          # vitest (catalogue mapping and money rules)
+npm test          # vitest (catalogue mapping and money rules; vitest.config.ts)
+npm run test:e2e  # Playwright: smoke tests in mock mode (dev server on 5199) + auth-server tests
+                  # (dev server on 5198 against e2e/support/fake-supabase.mjs on 54399)
 ```
 
-## Deploying (`vercel.json`)
+`npm run test:e2e` needs a Chromium: `npx playwright install chromium` once on a workstation (cloud sessions use the preinstalled one). `E2E_BASE_URL=http://localhost:3000 npm run test:e2e` runs the same tests against a server you started yourself (e.g. `npm run build && npm start`, built without the Supabase variables).
 
-Routing is client-side: `main.tsx` mounts a `BrowserRouter`, and the build is a
-single `index.html` plus assets. A static host knows nothing about the routes in
-`App.tsx`, so a request that lands directly on one — a pasted link, a refresh, a
-bookmark — asks for a file that was never built and gets a 404. Following a link
-inside the app works either way, which is why the breakage only shows up on
-direct URLs, and why routes not linked from the navigation surface it
-first: a direct URL is the only way in.
+## Deploying (Vercel)
 
-`vercel.json` fixes that by rewriting every unmatched path to `/index.html` and
-letting the router read the URL. Rewrites run after the filesystem check, so real
-files — the hashed bundles, `favicon.svg`, `icons.svg` — are still served as
-themselves.
+The Vercel project builds from the **Root Directory** `webapp` with the **Next.js** framework preset (`next build`, output managed by Vercel). There is no `vercel.json` any more: under Vite a rewrite sent every unknown path to `index.html`; now the optional catch-all route `app/[[...slug]]` answers every path itself, and real files in `public/` (`favicon.svg`, `icons.svg`, videos) are still served as themselves. An address without a screen, and a product slug the shop does not sell, answer HTTP 404 (the app renders its 404 page); the member space and back office answer 200 for their unknown sub-addresses (their 404 screen lives inside their shell).
 
-The file must sit in whatever directory Vercel builds from. This app lives in
-`webapp/`, so the project's **Root Directory** has to be `webapp` for the build
-to find `package.json` at all, and `vercel.json` belongs next to it. A copy at
-the repository root would be ignored.
+Environment variables (Production and Preview): `NEXT_PUBLIC_SUPABASE_URL`, `NEXT_PUBLIC_SUPABASE_PUBLISHABLE_KEY`. They are inlined at build time, so a change needs a redeploy.
 
 ## Supabase connection (catalogue)
 
@@ -93,10 +115,10 @@ set, locally and in the Vercel project settings:
 
 | Variable | Value |
 | --- | --- |
-| `VITE_SUPABASE_URL` | `https://<project-ref>.supabase.co` |
-| `VITE_SUPABASE_PUBLISHABLE_KEY` | the project's **publishable** key (`sb_publishable_…`) |
+| `NEXT_PUBLIC_SUPABASE_URL` | `https://<project-ref>.supabase.co` |
+| `NEXT_PUBLIC_SUPABASE_PUBLISHABLE_KEY` | the project's **publishable** key (`sb_publishable_…`) |
 
-Only the publishable key ever goes in a `VITE_` variable — Vite inlines them
+Only the publishable key ever goes in a `NEXT_PUBLIC_` variable — Next.js inlines them
 into the public bundle. Every read is authorized by Row Level Security; the
 service role key belongs to server code only. With both variables empty the
 app runs on its mock fixtures, as before.
@@ -167,10 +189,10 @@ Supabase they are not offered. Mapping lives in pure, unit-tested modules:
 
 ```
 src/
-  pages/            One component per screen (Home, Shop, ProductDetail, Cart, Academy, CourseDetail, Lesson, Login)
-  pages/account/    The member area: sidebar layout + one component per section
-  pages/community/  The Artist Community: its own layout + one component per screen
-  pages/legal/      Help centre, FAQ, contact and about pages
+  screens/          One component per screen (Home, Shop, ProductDetail, Cart, Academy, CourseDetail, Lesson, Login)
+  screens/account/  The member area: sidebar layout + one component per section
+  screens/community/ The Artist Community: its own layout + one component per screen
+  screens/legal/    Help centre, FAQ, contact and about pages
   data/legal/       Legal and help content (bilingual data rendered by components/legal/)
   components/ui/     Design-system primitives (Button, Badge, ProductCard, CourseCard, QuizQuestion, ...)
   components/account/ Dashboard pieces (stat tile, course row, certificate card, order card)
@@ -180,7 +202,7 @@ src/
   components/studio/ The 3D Studio mockups (and editor/, the working editor UI): smile canvas, rendered gems, interactive Studio window, feature cards, media placeholders, inspiration boards, steps, pricing card, FAQ, home teaser
   components/loyalty/ The Loyalty Club: stamp, card, progress, reward, steps, journey, FAQ, checkout banner, demo switcher
   components/layout/ Header (desktop nav + mega panel, mobile burger menu) and Footer
-  pages/admin/      The administration workspace: access screen, shell, dashboard, orders, products, categories
+  screens/admin/    The administration workspace: access screen, shell, dashboard, orders, products, categories
   components/admin/ Workspace primitives (rail, header, product table, form, media uploader, drawer, dialogs) and the orders workspace (KPI row, filter toolbar, order table + card list, row actions, bulk bar, pagination, detail cards, timeline, notes)
   data/               Bilingual product/course/review/lesson/order data (the storefront's order history and the back office's order book are separate models)
   i18n/               react-i18next setup + locales/fr.json, locales/en.json
@@ -200,7 +222,7 @@ The pass mark lives once, as `PASS_SCORE` in `data/lessons.ts`. It is a prototyp
 
 The hero reflects the visitor's own state — enrolled, in progress, completed — but only when signed in: the seeded demo enrolments exist regardless of the session, and this page is public.
 
-Every route into a training now lands here rather than on the login form: both home pages, the Academy grid, the header's Academy panel and both footers' Academy columns. `CourseCard` takes a `to` so those cards are real links — a public page has to be openable in a new tab and crawlable — and `lib/academyUrl.ts` holds the path the way `lib/shopUrl.ts` holds the filtered-collection ones. Only `/academy/lecon`, the player, stays behind `RequireAccount`: the videos are the paid content.
+Every route into a training now lands here rather than on the login form: both home pages, the Academy grid, the header's Academy panel and both footers' Academy columns. `CourseCard` takes a `to` so those cards are real links — a public page has to be openable in a new tab and crawlable — and `lib/academyUrl.ts` holds the path the way `lib/shopUrl.ts` holds the filtered-collection ones. Only the learner's own pages (`/academy/mes-formations/…`, and `/academy/lecon`, which forwards to them) stay behind `RequireAccount`: the lessons are the paid content.
 
 The account is asked for at the purchase, and the training asked for travels with the visitor: pressing "start" while signed out puts the course id in the navigation state, and signing in adds that course to the account before opening the player, so the purchase resumes instead of opening whichever course happened to be active.
 
@@ -224,8 +246,9 @@ legal texts change. Supabase sends the confirmation email; its link lands on
 the page the member was heading to. Sign-in reports unconfirmed addresses (with a
 resend), wrong credentials, suspended accounts and rate limits separately.
 `/mot-de-passe-oublie` and `/reinitialiser-mot-de-passe` use Supabase password
-recovery (`lib/passwordRecovery.ts`). The Security page cards (change email or
-password, export, deletion) are still simulated. The
+recovery (`lib/passwordRecovery.ts`). On the Security page, changing the email or
+the password goes through Supabase Auth (`lib/accountCredentials.ts`); data export
+and account deletion are still simulated. The
 prototype controls, the mock inbox and the Google dialog only exist without
 Supabase; Google sign-in is not connected. Without Supabase, everything below is
 simulated as before.
@@ -276,7 +299,7 @@ Ported from the standalone `studio3D.html` into the app's architecture:
 | `lib/studio3d/store.ts` | The design store (history, selection, local persistence, named presets) |
 | `lib/studio3d/actions.ts`, `notices.ts` | Shared commands, and the channel through which the engine reports to the site's toasts by translation key |
 | `components/studio/editor/` | Top bar, library, 3D stage, inspector, colour wheel, popovers |
-| `pages/StudioEditor.tsx` | The page: layout, shortcuts, save on exit. Lazy-loaded, so three.js is only downloaded when the editor opens |
+| `screens/StudioEditor.tsx` | The page: layout, shortcuts, save on exit. Lazy-loaded, so three.js is only downloaded when the editor opens |
 
 - **Access**: `lib/studioAccess.tsx` is the single switch. `STUDIO_ACCESS_MODE = "preview"` lets everyone in without paying. When the subscription goes live, switch it to `"subscription"` and back it with a server-side entitlement granted by the verified Stripe webhook; the client check is navigation only.
 - **Saving**: the working draft is kept in the browser (`gt-studio3d-*` keys) as before; saving it to the account goes through the Studio workspace below.
@@ -326,7 +349,7 @@ The layer around the editor that makes it a personal design workspace. The edito
 **Read-only share links.** "Share" (a creation card's menu, its detail dialog, the Save menu when the stage is linked to a creation, and the editor's Share menu) opens `ShareDialog`: the link, one button per social network (WhatsApp, Facebook, X, LinkedIn, e-mail — `socialShare.ts`, plain share pages opened in a new tab, no SDK), the system share sheet where available, and a preview. Opening the dialog is the explicit act that creates a link; the editor's Share menu only looks for an existing one (and asks to save a new design first).
 - **Stored links** (real accounts, Supabase): `/studio-3d/partage/<token>`, backed by `creation_shares` (a random 48-hex token per creation, one active at a time, `revoked_at`). Owners read their own links through RLS and create / disable them only through `studio_share_creation` / `studio_revoke_creation_share`, which check ownership. Guests — signed in or not — never touch a table: `studio_shared_creation(token)`, a security-definer reader granted to `anon`, returns the name, description and scene of **that one creation** (Gem Group ids blanked), nothing about the owner, and nothing for an unknown or disabled token. The link always shows the latest saved version; "Disable link" in the dialog stops it at once, including where it was already posted, and a new one can be created. Deleting the creation deletes its links.
 - **Snapshot links** (the mock sign-in's local library, and the fallback while the share table is missing from the database): the design itself in the URL fragment (`#z1.…` deflate-compressed base64url JSON; `#j1.…` where `CompressionStream` is missing) — sanitized scene, name and description, never the owner id, the client name, tags or the thumbnail. The fragment never reaches a server. A snapshot does not follow later edits and cannot be revoked; links of this form already sent keep opening.
-- The viewer (`pages/StudioShare.tsx`) renders with its own `DesignStore({ persist: false })` and a `StudioEngine(…, { readOnly: true })`: every press goes to the camera, no piece can be selected or moved, and the recipient's own draft (`gt-studio3d-design-v1`) is never read nor written. Everything it receives is re-sanitized. Signed out, the panel asks them to sign in (and returns to the same link); signed in, "Edit a copy" loads the design as a new unsaved design on **their own** stage — the shared creation is never written — asking first if that would replace unsaved work.
+- The viewer (`screens/StudioShare.tsx`) renders with its own `DesignStore({ persist: false })` and a `StudioEngine(…, { readOnly: true })`: every press goes to the camera, no piece can be selected or moved, and the recipient's own draft (`gt-studio3d-design-v1`) is never read nor written. Everything it receives is re-sanitized. Signed out, the panel asks them to sign in (and returns to the same link); signed in, "Edit a copy" loads the design as a new unsaved design on **their own** stage — the shared creation is never written — asking first if that would replace unsaved work.
 - Limits: anyone who has a link can view the design; a design made on an imported model is shown on the default dentition. Social networks show the site's generic preview card (no per-creation image yet).
 
 **Overlap to decide:** the editor's older "My presets" (whole designs kept in browser storage, under Presets) still works as before. Saved creations now cover that need per account; the presets menu could be retired or pointed at My Creations.
@@ -349,7 +372,33 @@ The member area is capped at `--max-width-account` rather than `--max-width-cont
 
 The sections own no state of their own. Learning progress lives in `lib/progress.tsx`, order history in `lib/orders.tsx` and the member profile in `lib/auth.tsx` — in-memory contexts shaped like the existing `lib/cart.tsx`. The lesson player writes to the first and the cart writes to the second, so validating a lesson or paying moves the dashboard immediately. Certificates are derived from a course reaching 100 %, never stored as a separate flag, and the delivery timeline is derived from the order status for the same reason. Editing the profile moves the greeting and the avatar, because both are derived from the stored name rather than copied from it.
 
-Every course reuses the single authored syllabus in `data/lessons.ts` (9 lessons, ~1 h 30), so the lesson counts and durations in `data/courses.ts` were aligned to it — a course advertising 18 lessons could never reach 100 % or unlock its certificate.
+Progress is computed against the course each product opens (`Course.trainingId`), as authored in the back office — see the learning experience below. The Academy sales pages still advertise the single syllabus in `data/lessons.ts`; moving them onto the authored courses is the next step.
+
+## The learning experience (`/academy/mes-formations/:courseId`)
+
+What a customer who owns a training reads. The course is the one built in the back office (`/admin/formations`), never a separate copy: the training store (`lib/adminTraining.tsx`) is mounted above the whole app, each storefront product names the training it opens (`trainingId` in `data/courses.ts`), and the administrator's preview renders blocks and knowledge checks with the learner's own components. Admin preview and learner view are two views of one course.
+
+| Route | Screen |
+| --- | --- |
+| `/academy/mes-formations/:courseId` | Course overview: cover, instructor, progress ring, modules and steps completed, time left, the next unfinished lesson behind one "Continue training" button, module cards with status badges, recently completed lessons, objectives and completion rules |
+| `/academy/mes-formations/:courseId/lecon/:nodeKey` | The lesson player, a full-screen workspace (no storefront header/footer): lesson content in authored order (text, image, video, any mix), the module's knowledge check after its last step, a side panel with the course outline on desktop, and a progress strip, a contents sheet and a bottom action bar on phones |
+| `/academy/mes-formations/:courseId/terminee` | Completion: medal, course, date, average score, certificate when the course issues one, back to the dashboard, review the course |
+| `/academy/lecon` | Forwards to the overview of the course just opened (every existing "open this course" action lands here) |
+
+How it works:
+
+- **One walk through the course.** `lib/learning/path.ts` turns a course into the learner's path — every step, each module's check after its last step (the same order the admin preview uses) — and holds the rules: sequential unlocking, which checks gate progression (the course's `allQuizzes` setting), attempts per check (`allowRetry`/`attempts`), the course minimum average score, deterministic scoring. Progress is stored per step and per check id, so reordering a course in the builder never moves a learner's progress onto another lesson. The rules are unit-tested (`learning.test.ts`); in production the same rules run server-side and the browser never decides a completion or a pass.
+- **Access** (`lib/learning/access.ts`): an enrolment is required; draft and in-review courses are never shown; a course that was *unpublished* stays readable by learners who already hold it. **That last rule is an assumption to confirm with the business.**
+- **Authored HTML is sanitised** before a learner reads it (`lib/learning/sanitizeHtml.ts`, allow-list, tested).
+- **Video**: real sources (http(s), blob) play in a native `<video>` behind custom controls; the prototype's placeholder sources (`gtg-media://…`) run on a simulated clock labelled "demo footage". Keyboard: Space/K, ←/→, M, F.
+- **Knowledge checks** follow the settings chosen in the builder: immediate or end-of-check feedback, revealed answers, shuffling once per attempt, retries and attempt limits. Wrong answers are explained in the administrator's words, never punished.
+- `lib/progress.tsx` keeps the same public API, so the dashboard, certificates, community access and review eligibility all read the real course numbers.
+
+## Training image library (back office)
+
+Every image field of the course builder — image blocks, module covers, video thumbnails, question images — opens the **training image library** (`components/admin/training/TrainingMediaLibrary.tsx`): search, category chips, usage filter, upload by button or drag and drop (JPG/PNG/WebP/AVIF, 10 MB max, validated), a thumbnail grid with an obvious selection, a details panel (dimensions, size, date, usage count, name, category, FR/EN description, tags), delete (refused while the image is used in a course) and insert. Adding an image block opens it straight away, and the library's description pre-fills an empty alt text.
+
+It is deliberately separate from the shop's product media. In the prototype uploads are real files previewed from local object URLs with a simulated progress bar; the production home is a **private** `training-media` bucket served through signed URLs (paid training material must not be publicly listable), which is not created yet.
 
 ## The Artist Community (`/compte/communaute`)
 
@@ -512,7 +561,7 @@ Customer reviews for products and trainings, and their moderation. With Supabase
 | `/boutique/:id` | Reviews section below the purchase info, specifications and FAQ: average, count, star distribution (each bar filters), most helpful review, customer photos, filters (stars, with photos, verified) and sorting, review cards with verified badge, privacy name ("Sarah M."), helpful vote, discreet report, and the team's public response. The rating line under the product name reads the same published reviews |
 | `/academy/formation/:id` | The course variant: "Verified student", progress at the time of writing, what students highlight (most-used tags) and student result photos |
 | `/compte/avis` | My reviews: requests for what can still be reviewed, every review with a status explained in plain words (in review, published, needs changes with the team's message, not published with the reason), edit / edit and send again, and the lifecycle |
-| `/compte`, `/compte/commandes`, `/compte/attestations`, `/academy/lecon` | The reusable review request (`ReviewRequestCard`): on the dashboard, beside a finished training, and in the lesson player from 50 % progress; "Write a review" on eligible order lines |
+| `/compte`, `/compte/commandes`, `/compte/attestations`, `/academy/mes-formations/:courseId` | The reusable review request (`ReviewRequestCard`): on the dashboard, beside a finished training, and on the course overview from 50 % progress; "Write a review" on eligible order lines |
 | `/admin/avis` | Overview: KPIs, "needs your attention", distribution, moderation health, average rating by product and by training |
 | `/admin/avis?vue=file` | Moderation queue: status views (pending, edited, reported, published, needs changes, rejected, hidden, all), search, type, product/training, rating, date and sort — all in the query string. Table on desktop, cards on phones |
 | `/admin/avis?vue=signalements` | Reported reviews: reports grouped by reason, keep published / hide / remove / investigate, recently decided |
@@ -560,14 +609,15 @@ How it is put together:
 
 Tax rates and exemption rules are **illustrative** and say so on screen: they, and every check here (zone overlap, rate ranges, VAT number validation), must be confirmed with an accountant and enforced server-side in the real implementation.
 
-## Notes on scope
+## Remaining mock behaviour (to replace before launch)
 
-This app reproduces the prototype's interactions against local/mock state only — there is no real backend, payment processing, or authentication. A few simplifications carried over intentionally from the prototype (flagged during the build):
+Without the Supabase variables every domain runs on its mock store. With them, the following still do not touch the database:
 
-- All Academy courses share the same authored 9-lesson syllabus; progress is tracked per course, but only one course outline exists.
-- Nothing is persisted: the session, cart, progress and orders all live in memory and reset on reload.
-- Paying always succeeds. It records an order and empties the cart; real fulfilment belongs to a Stripe webhook, not to the browser.
-- The Artist Community (`/compte/communaute`) has no backend either: members, discussions and replies are written fixtures, posting and replying live in memory, the photo "upload" picks from three sample images, and forum access is derived from the courses on the account rather than verified anywhere.
-- The Loyalty Club (`/fidelite`, `/compte/fidelite`) is **display only**, and more so than the rest of this app: no stamp is ever awarded, stored or redeemed, and the checkout banner reads the subtotal without touching the total, the payment or the order. Its card state is static mock data in `data/loyalty.ts`, switched by a visible demo control on the member page. Awarding a stamp is a server's job, driven by the same verified payment event as fulfilment.
+- **Cart and checkout.** "Paying" always succeeds in the mock; with Supabase it adds no order. Real payment needs the `checkout` and `stripe-webhook` Edge Functions (see `global-toothgems-llm-guidelines/04-ecommerce-rules.md`).
+- **Academy.** All courses share the one authored 9-lesson syllabus in `data/lessons.ts`; progress lives in memory (`lib/progress.tsx`); there is no Academy schema yet.
+- **Artist Community.** Fixtures and in-memory posting; access derived client-side from the courses on the account. Post-launch.
+- **Loyalty Club.** Display only (`data/loyalty.ts` with a demo switch); the database already awards stamps on paid orders — the UI must read `loyalty_overview`.
+- **Security page:** data export and account deletion are simulated (they need backend jobs).
+- **Back-office promotions, gift cards, customers, users, statistics, settings and translations:** mock stores over a schema that already exists.
 
-Everything else — filtering, cart totals, the lesson video/quiz simulation, per-product detail pages, the member dashboard — is fully interactive.
+The mock stores, fixtures in `data/`, demo accounts and "Prototype controls" panels are removed domain by domain as each goes live; a production build must never fall back to them.

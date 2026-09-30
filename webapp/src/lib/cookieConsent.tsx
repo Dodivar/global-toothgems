@@ -1,4 +1,5 @@
 import { createContext, useCallback, useContext, useMemo, useState, type ReactNode } from "react";
+import { useHydrated } from "./useHydrated";
 
 /**
  * Cookie consent — the interaction prototype.
@@ -62,6 +63,12 @@ function writeStored(record: ConsentRecord | null) {
 interface CookieConsentValue {
   /** `null` until the visitor has made a choice. */
   record: ConsentRecord | null;
+  /**
+   * Whether `record` has been read yet: a server-rendered page knows the
+   * choice only once hydrated (it lives in localStorage), so the banner waits
+   * for it rather than flashing at visitors who already chose.
+   */
+  known: boolean;
   settingsOpen: boolean;
   openSettings: () => void;
   closeSettings: () => void;
@@ -75,7 +82,11 @@ interface CookieConsentValue {
 const CookieConsentContext = createContext<CookieConsentValue | null>(null);
 
 export function CookieConsentProvider({ children }: { children: ReactNode }) {
-  const [record, setRecord] = useState<ConsentRecord | null>(readStored);
+  const known = useHydrated();
+  // The stored choice, once it can be read; `chosen` is a choice made on this page.
+  const stored = useMemo(() => (known ? readStored() : null), [known]);
+  const [chosen, setRecord] = useState<ConsentRecord | null | undefined>(undefined);
+  const record = chosen === undefined ? stored : chosen;
   const [settingsOpen, setSettingsOpen] = useState(false);
 
   const save = useCallback((choices: ConsentChoices) => {
@@ -88,6 +99,7 @@ export function CookieConsentProvider({ children }: { children: ReactNode }) {
   const value = useMemo<CookieConsentValue>(
     () => ({
       record,
+      known,
       settingsOpen,
       openSettings: () => setSettingsOpen(true),
       closeSettings: () => setSettingsOpen(false),
@@ -99,7 +111,7 @@ export function CookieConsentProvider({ children }: { children: ReactNode }) {
         setRecord(null);
       },
     }),
-    [record, settingsOpen, save],
+    [record, known, settingsOpen, save],
   );
 
   return <CookieConsentContext.Provider value={value}>{children}</CookieConsentContext.Provider>;

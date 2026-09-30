@@ -1,4 +1,5 @@
 import { createContext, useContext, useMemo, useState, type ReactNode } from "react";
+import { useHydrated } from "./useHydrated";
 
 /**
  * Review annotations for the legal and help pages.
@@ -28,7 +29,13 @@ interface ReviewModeValue {
 const ReviewModeContext = createContext<ReviewModeValue | null>(null);
 
 export function ReviewModeProvider({ children }: { children: ReactNode }) {
-  const [showNotes, setShow] = useState(readStored);
+  // Stored in the browser: a server-rendered page shows the default (notes
+  // on) until hydrated, then the stored choice, so the first browser render
+  // matches the server's.
+  const hydrated = useHydrated();
+  const stored = useMemo(() => (hydrated ? readStored() : true), [hydrated]);
+  const [chosen, setShow] = useState<boolean | undefined>(undefined);
+  const showNotes = chosen ?? stored;
 
   const value = useMemo<ReviewModeValue>(
     () => ({

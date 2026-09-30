@@ -2,6 +2,7 @@ import { Link } from "react-router-dom";
 import { useTranslation } from "react-i18next";
 import { useFooterColumns } from "./useFooterColumns";
 import logoBlue from "../../assets/logo-wordmark-blue.png";
+import { switchLanguage } from "../../i18n/preference";
 
 export function Footer() {
   const { t, i18n } = useTranslation();
@@ -18,7 +19,7 @@ export function Footer() {
             a tablet, one row on a desktop. */}
         <div className="grid grid-cols-2 gap-x-6 gap-y-9 sm:grid-cols-3 lg:grid-cols-[minmax(0,1.3fr)_repeat(5,minmax(0,1fr))] lg:gap-x-8">
           <div className="col-span-2 grid content-start gap-3 sm:col-span-3 lg:col-span-1">
-            <img src={logoBlue} alt="Global Toothgems" className="h-6 w-auto justify-self-start" loading="lazy" decoding="async" />
+            <img src={logoBlue.src} alt="Global Toothgems" className="h-6 w-auto justify-self-start" loading="lazy" decoding="async" />
             <p className="m-0 max-w-[260px] text-sm text-[var(--text-muted)]">{t("footer.blurb")}</p>
           </div>
           {columns.map((col) => (
@@ -44,7 +45,7 @@ export function Footer() {
           <span>{t("footer.copyright")}</span>
           <button
             type="button"
-            onClick={() => i18n.changeLanguage(i18n.language.startsWith("en") ? "fr" : "en")}
+            onClick={() => switchLanguage(i18n)}
             aria-label={t("common.langSwitchAria")}
             className="underline decoration-1 underline-offset-4 transition-colors hover:text-[var(--text-primary)]"
           >

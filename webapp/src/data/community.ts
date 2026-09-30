@@ -1,4 +1,5 @@
 import type { Localized } from "./types";
+import { photo } from "../lib/images";
 
 /**
  * Mock content for the Artist Community.
@@ -20,7 +21,7 @@ import type { Localized } from "./types";
  *    question about adhesive.
  */
 
-const img = (name: string) => new URL(`../assets/photos/${name}`, import.meta.url).href;
+const img = photo;
 
 /* ------------------------------------------------------------------ badges */
 

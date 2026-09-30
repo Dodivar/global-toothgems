@@ -1,7 +1,6 @@
 import * as THREE from "three";
 import { acceleratedRaycast, computeBoundsTree, disposeBoundsTree } from "three-mesh-bvh";
-import watermarkUrl from "../../assets/logo-wordmark-blue.png";
-import dentitionUrl from "../../assets/studio3d/dentition.glb?url";
+import watermark from "../../assets/logo-wordmark-blue.png";
 import { OrbitControls } from "three/addons/controls/OrbitControls.js";
 import { RoomEnvironment } from "three/addons/environments/RoomEnvironment.js";
 import {
@@ -35,6 +34,10 @@ import { alignedColumn, alignedHeights, centeredOffsets, type CenterItem } from 
 import { mirroredRotation, opposingTooth } from "./mirror";
 import { notify } from "./notices";
 import type { DesignIssue, DesignStore, LightPreset, ModelMode } from "./store";
+
+/* An asset URL both bundlers resolve and fingerprint (Vite's `?url` suffix is
+   not understood by Next.js). */
+const dentitionUrl = new URL("../../assets/studio3d/dentition.glb", import.meta.url).href;
 
 /**
  * The 3D Studio's renderer and interaction controller.
@@ -202,7 +205,7 @@ function loadWatermark(): Promise<HTMLImageElement | null> {
     const img = new Image();
     img.onload = () => resolve(img);
     img.onerror = () => resolve(null);
-    img.src = watermarkUrl;
+    img.src = watermark.src;
   });
   return watermarkImage;
 }

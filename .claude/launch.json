@@ -18,12 +18,9 @@
       "runtimeExecutable": "npm",
       "runtimeArgs": [
         "run",
-        "dev",
+        "dev:mock",
         "--prefix",
-        "webapp",
-        "--",
-        "--mode",
-        "mock"
+        "webapp"
       ],
       "port": 5174,
       "autoPort": true

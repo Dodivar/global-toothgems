@@ -1,7 +1,7 @@
 import { createContext, useCallback, useContext, useEffect, useMemo, useState, type ReactNode } from "react";
 import { Navigate, useLocation } from "react-router-dom";
 import type { User } from "@supabase/supabase-js";
-import { isSupabaseConfigured, supabase } from "./supabase/client";
+import { isSupabaseConfigured, sessionReady, supabase } from "./supabase/client";
 
 /**
  * Administrator session.
@@ -108,18 +108,25 @@ function SupabaseAdminAuthProvider({ children }: { children: ReactNode }) {
     // member login opens the same session: a staff member who signs in there
     // is recognised without a reload (the member space then offers the way
     // to the back office). A non-staff account simply resolves to null.
-    const { data } = supabase.auth.onAuthStateChange((_event, session) => {
-      // Supabase warns against awaiting its own calls inside this callback.
-      setTimeout(async () => {
-        const identity = session?.user ? await staffIdentity(session.user) : null;
-        if (!active) return;
-        setAdmin(identity);
-        setRestoring(false);
-      }, 0);
+    // Subscribes once a pre-migration session has been carried over (`sessionReady`).
+    const client = supabase;
+    let unsubscribe = () => {};
+    void sessionReady.then(() => {
+      if (!active) return;
+      const { data } = client.auth.onAuthStateChange((_event, session) => {
+        // Supabase warns against awaiting its own calls inside this callback.
+        setTimeout(async () => {
+          const identity = session?.user ? await staffIdentity(session.user) : null;
+          if (!active) return;
+          setAdmin(identity);
+          setRestoring(false);
+        }, 0);
+      });
+      unsubscribe = () => data.subscription.unsubscribe();
     });
     return () => {
       active = false;
-      data.subscription.unsubscribe();
+      unsubscribe();
     };
   }, []);
 

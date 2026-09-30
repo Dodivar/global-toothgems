@@ -35,6 +35,7 @@ import { NewTag } from "../studio/NewTag";
 import { MEMBER_SPACE_EXPLORE } from "./clientSpaces";
 import monogram from "../../assets/monogram-blue.png";
 import logoBlack from "../../assets/logo-wordmark-black.png";
+import { switchLanguage } from "../../i18n/preference";
 
 /**
  * Shell of the member space: the account and the Artist Community.
@@ -117,7 +118,7 @@ export function MemberShell() {
             <Menu size={20} aria-hidden="true" />
           </button>
           <Link to="/" aria-label={t("nav.home")} className={clsx("grid h-10 w-10 flex-none place-items-center rounded-[var(--radius-sm)]", focusRing)}>
-            <img src={monogram} alt="" className="h-7 w-7 object-contain" />
+            <img src={monogram.src} alt="" className="h-7 w-7 object-contain" />
           </Link>
           <p className="m-0 min-w-0 flex-1 truncate text-[15px] font-[var(--weight-black)] text-[var(--text-primary)]">
             {section ? t(section.labelKey) : t("account.eyebrow")}
@@ -192,7 +193,7 @@ function SidebarBody({ onNavigate, closeButton }: { onNavigate?: () => void; clo
     <>
       <div className="flex h-16 flex-none items-center gap-2 border-b border-[var(--border-subtle)] px-5">
         <Link to="/" onClick={onNavigate} className={clsx("flex-1 rounded-[var(--radius-sm)]", focusRing)}>
-          <img src={logoBlack} alt={t("account.shell.homeAlt")} className="h-5 w-auto" />
+          <img src={logoBlack.src} alt={t("account.shell.homeAlt")} className="h-5 w-auto" />
         </Link>
         {closeButton}
       </div>
@@ -289,7 +290,7 @@ function SidebarBody({ onNavigate, closeButton }: { onNavigate?: () => void; clo
           )}
           <button
             type="button"
-            onClick={() => i18n.changeLanguage(i18n.language.startsWith("en") ? "fr" : "en")}
+            onClick={() => switchLanguage(i18n)}
             aria-label={t("common.langSwitchAria")}
             className={clsx(
               "inline-flex items-center gap-1.5 rounded-[var(--radius-pill)] px-2.5 py-1.5 text-[length:var(--text-caption)] font-semibold uppercase text-[var(--text-muted)] hover:bg-[var(--gt-ink-100)] hover:text-[var(--text-primary)]",

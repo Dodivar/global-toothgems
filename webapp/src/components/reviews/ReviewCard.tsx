@@ -157,7 +157,7 @@ export function ReviewCard({ review, featured = false }: { review: CustomerRevie
       {review.response && (
         <div className="grid gap-2 rounded-[var(--radius-md)] border-l-2 border-[var(--gt-blue-300)] bg-[var(--surface-brand-wash)] px-4 py-3">
           <span className="flex flex-wrap items-center gap-2 text-[length:var(--text-caption)]">
-            <img src={monogram} alt="" aria-hidden="true" className="h-4 w-auto" />
+            <img src={monogram.src} alt="" aria-hidden="true" className="h-4 w-auto" />
             <strong className="text-[var(--text-primary)]">{t("reviews.response.from")}</strong>
             <span className="text-[var(--text-muted)]">
               · <time dateTime={review.response.at}>{formatDate(review.response.at)}</time>

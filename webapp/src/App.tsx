@@ -4,9 +4,11 @@ import { useTranslation } from "react-i18next";
 import { AuthProvider, RequireAccount } from "./lib/auth";
 import { AdminAuthProvider, RequireAdmin } from "./lib/adminAuth";
 import { CartProvider } from "./lib/cart";
-import { CatalogProvider } from "./lib/catalog/CatalogProvider";
+import { CatalogProvider, useCatalog, type CatalogSeed } from "./lib/catalog/CatalogProvider";
 import { OrdersProvider } from "./lib/orders";
 import { ProgressProvider } from "./lib/progress";
+import { AdminTrainingProvider } from "./lib/adminTraining";
+import { TrainingMediaProvider } from "./lib/trainingMedia";
 import { CommunityProvider } from "./lib/community";
 import { ToastProvider } from "./lib/toast";
 import { SecurityProvider } from "./lib/securityState";
@@ -14,74 +16,79 @@ import { CookieConsentProvider } from "./lib/cookieConsent";
 import { ReviewModeProvider } from "./lib/reviewMode";
 import { PromotionsProvider } from "./lib/adminPromotions";
 import { ReviewsProvider } from "./lib/reviews";
+import { FavoritesProvider } from "./lib/favorites";
 import { ReviewOverlays } from "./components/reviews/ReviewOverlays";
 import { Header } from "./components/layout/Header";
 import { Footer } from "./components/layout/Footer";
 import { MemberShell } from "./components/layout/MemberShell";
 import { isMemberSpacePath } from "./lib/memberSpace";
-import { HomeAlt } from "./pages/HomeAlt";
-import { ShopAlt } from "./pages/ShopAlt";
-import { Shapes } from "./pages/Shapes";
-import { Colors } from "./pages/Colors";
-import { ProductDetail } from "./pages/ProductDetail";
-import { Cart } from "./pages/Cart";
-import { Academy } from "./pages/Academy";
-import { CourseDetail } from "./pages/CourseDetail";
-import { Lesson } from "./pages/Lesson";
-import { Login } from "./pages/Login";
-import { ConfirmAccount } from "./pages/ConfirmAccount";
-import { Register } from "./pages/Register";
-import { ForgotPassword } from "./pages/ForgotPassword";
-import { ResetPassword } from "./pages/ResetPassword";
-import { VerifyEmailLanding } from "./pages/VerifyEmailLanding";
-import { Loyalty as LoyaltyProgram } from "./pages/Loyalty";
-import { AccountLayout } from "./pages/account/AccountLayout";
-import { Dashboard } from "./pages/account/Dashboard";
-import { Certificates } from "./pages/account/Certificates";
-import { Orders } from "./pages/account/Orders";
-import { Profile } from "./pages/account/Profile";
-import { Security } from "./pages/account/Security";
-import { Reviews as AccountReviews } from "./pages/account/Reviews";
-import { Loyalty as AccountLoyalty } from "./pages/account/Loyalty";
-import { CommunityLayout } from "./pages/community/CommunityLayout";
-import { CommunityHome } from "./pages/community/CommunityHome";
-import { Channel } from "./pages/community/Channel";
-import { Discussion } from "./pages/community/Discussion";
-import { Members } from "./pages/community/Members";
-import { Guidelines } from "./pages/community/Guidelines";
-import { Activity } from "./pages/community/Activity";
-import { AdminLogin } from "./pages/admin/AdminLogin";
-import { AdminLayout } from "./pages/admin/AdminLayout";
-import { AdminDashboard } from "./pages/admin/AdminDashboard";
-import { Statistics as AdminStatistics } from "./pages/admin/Statistics";
-import { AdminProducts } from "./pages/admin/AdminProducts";
-import { AdminProductNew } from "./pages/admin/AdminProductNew";
-import { AdminProductEdit } from "./pages/admin/AdminProductEdit";
-import { AdminProductRecommendations } from "./pages/admin/AdminProductRecommendations";
-import { AdminCategories } from "./pages/admin/AdminCategories";
-import { Orders as AdminOrders } from "./pages/admin/Orders";
-import { OrderDetail as AdminOrderDetail } from "./pages/admin/OrderDetail";
-import { Customers as AdminCustomers } from "./pages/admin/Customers";
-import { CustomerDetail as AdminCustomerDetail } from "./pages/admin/CustomerDetail";
-import { Users as AdminUsers } from "./pages/admin/Users";
-import { Promotions as AdminPromotions } from "./pages/admin/Promotions";
-import { PromotionEditor as AdminPromotionEditor } from "./pages/admin/PromotionEditor";
-import { PromotionDetail as AdminPromotionDetail } from "./pages/admin/PromotionDetail";
-import { CampaignDetail as AdminCampaignDetail } from "./pages/admin/CampaignDetail";
-import { CampaignEditor as AdminCampaignEditor } from "./pages/admin/CampaignEditor";
-import { GiftCardDetail as AdminGiftCardDetail } from "./pages/admin/GiftCardDetail";
-import { GiftCardSettings as AdminGiftCardSettings } from "./pages/admin/GiftCardSettings";
-import { PromotionPreview as AdminPromotionPreview } from "./pages/admin/PromotionPreview";
-import { Reviews as AdminReviews } from "./pages/admin/Reviews";
-import { Settings as AdminSettings } from "./pages/admin/Settings";
-import { Training as AdminTraining } from "./pages/admin/Training";
-import { TrainingNew as AdminTrainingNew } from "./pages/admin/TrainingNew";
-import { TrainingBuilder as AdminTrainingBuilder } from "./pages/admin/TrainingBuilder";
-import { TrainingPreview as AdminTrainingPreview } from "./pages/admin/TrainingPreview";
-import { TrainingReview as AdminTrainingReview } from "./pages/admin/TrainingReview";
-import { GiftCard } from "./pages/GiftCard";
-import { Studio } from "./pages/Studio";
-import { StudioSubscribe } from "./pages/StudioSubscribe";
+import { HomeAlt } from "./screens/HomeAlt";
+import { ShopAlt } from "./screens/ShopAlt";
+import { Shapes } from "./screens/Shapes";
+import { Colors } from "./screens/Colors";
+import { ProductDetail } from "./screens/ProductDetail";
+import { Cart } from "./screens/Cart";
+import { Academy } from "./screens/Academy";
+import { CourseDetail } from "./screens/CourseDetail";
+import { CourseOverview } from "./screens/learn/CourseOverview";
+import { LessonPlayer } from "./screens/learn/LessonPlayer";
+import { CourseCompleted } from "./screens/learn/CourseCompleted";
+import { ResumeTraining } from "./screens/learn/ResumeTraining";
+import { isLessonPlayerPath } from "./lib/academyUrl";
+import { Login } from "./screens/Login";
+import { ConfirmAccount } from "./screens/ConfirmAccount";
+import { Register } from "./screens/Register";
+import { ForgotPassword } from "./screens/ForgotPassword";
+import { ResetPassword } from "./screens/ResetPassword";
+import { VerifyEmailLanding } from "./screens/VerifyEmailLanding";
+import { Loyalty as LoyaltyProgram } from "./screens/Loyalty";
+import { AccountLayout } from "./screens/account/AccountLayout";
+import { Dashboard } from "./screens/account/Dashboard";
+import { Certificates } from "./screens/account/Certificates";
+import { Orders } from "./screens/account/Orders";
+import { Profile } from "./screens/account/Profile";
+import { Security } from "./screens/account/Security";
+import { Reviews as AccountReviews } from "./screens/account/Reviews";
+import { Loyalty as AccountLoyalty } from "./screens/account/Loyalty";
+import { CommunityLayout } from "./screens/community/CommunityLayout";
+import { CommunityHome } from "./screens/community/CommunityHome";
+import { Channel } from "./screens/community/Channel";
+import { Discussion } from "./screens/community/Discussion";
+import { Members } from "./screens/community/Members";
+import { Guidelines } from "./screens/community/Guidelines";
+import { Activity } from "./screens/community/Activity";
+import { AdminLogin } from "./screens/admin/AdminLogin";
+import { AdminLayout } from "./screens/admin/AdminLayout";
+import { AdminDashboard } from "./screens/admin/AdminDashboard";
+import { Statistics as AdminStatistics } from "./screens/admin/Statistics";
+import { AdminProducts } from "./screens/admin/AdminProducts";
+import { AdminProductNew } from "./screens/admin/AdminProductNew";
+import { AdminProductEdit } from "./screens/admin/AdminProductEdit";
+import { AdminProductRecommendations } from "./screens/admin/AdminProductRecommendations";
+import { AdminCategories } from "./screens/admin/AdminCategories";
+import { Orders as AdminOrders } from "./screens/admin/Orders";
+import { OrderDetail as AdminOrderDetail } from "./screens/admin/OrderDetail";
+import { Customers as AdminCustomers } from "./screens/admin/Customers";
+import { CustomerDetail as AdminCustomerDetail } from "./screens/admin/CustomerDetail";
+import { Users as AdminUsers } from "./screens/admin/Users";
+import { Promotions as AdminPromotions } from "./screens/admin/Promotions";
+import { PromotionEditor as AdminPromotionEditor } from "./screens/admin/PromotionEditor";
+import { PromotionDetail as AdminPromotionDetail } from "./screens/admin/PromotionDetail";
+import { CampaignDetail as AdminCampaignDetail } from "./screens/admin/CampaignDetail";
+import { CampaignEditor as AdminCampaignEditor } from "./screens/admin/CampaignEditor";
+import { GiftCardDetail as AdminGiftCardDetail } from "./screens/admin/GiftCardDetail";
+import { GiftCardSettings as AdminGiftCardSettings } from "./screens/admin/GiftCardSettings";
+import { PromotionPreview as AdminPromotionPreview } from "./screens/admin/PromotionPreview";
+import { Reviews as AdminReviews } from "./screens/admin/Reviews";
+import { Settings as AdminSettings } from "./screens/admin/Settings";
+import { Training as AdminTraining } from "./screens/admin/Training";
+import { TrainingNew as AdminTrainingNew } from "./screens/admin/TrainingNew";
+import { TrainingBuilder as AdminTrainingBuilder } from "./screens/admin/TrainingBuilder";
+import { TrainingPreview as AdminTrainingPreview } from "./screens/admin/TrainingPreview";
+import { TrainingReview as AdminTrainingReview } from "./screens/admin/TrainingReview";
+import { GiftCard } from "./screens/GiftCard";
+import { Studio } from "./screens/Studio";
+import { StudioSubscribe } from "./screens/StudioSubscribe";
 import {
   STUDIO_EDITOR_ALIAS,
   STUDIO_EDITOR_PATH,
@@ -95,19 +102,22 @@ import {
 } from "./lib/studioUrl";
 import { RequireStudioAccess } from "./lib/studioAccess";
 import { StudioEditorLoading } from "./components/studio/editor/StudioEditorLoading";
-import { NotFound } from "./pages/NotFound";
+import { NotFound } from "./screens/NotFound";
+import { parsePath, toAddress } from "./lib/localeRoutes";
+import { titleFor } from "./lib/pageMeta";
+import { productTitle } from "./lib/catalog/productMeta";
 
 /* The 3D Studio editor carries three.js, the heaviest code in the site: it is
    split into its own chunk and only downloaded when the editor is opened. */
-const StudioEditor = lazy(() => import("./pages/StudioEditor").then((m) => ({ default: m.StudioEditor })));
+const StudioEditor = lazy(() => import("./screens/StudioEditor").then((m) => ({ default: m.StudioEditor })));
 /* A shared design is viewed in the same 3D engine: same on-demand chunk. */
-const StudioShare = lazy(() => import("./pages/StudioShare").then((m) => ({ default: m.StudioShare })));
-import { ServerError } from "./pages/ServerError";
-import { Maintenance } from "./pages/Maintenance";
-import { HelpCentre } from "./pages/legal/HelpCentre";
-import { Faq } from "./pages/legal/Faq";
-import { Contact } from "./pages/legal/Contact";
-import { About } from "./pages/legal/About";
+const StudioShare = lazy(() => import("./screens/StudioShare").then((m) => ({ default: m.StudioShare })));
+import { ServerError } from "./screens/ServerError";
+import { Maintenance } from "./screens/Maintenance";
+import { HelpCentre } from "./screens/legal/HelpCentre";
+import { Faq } from "./screens/legal/Faq";
+import { Contact } from "./screens/legal/Contact";
+import { About } from "./screens/legal/About";
 import { LegalDocumentPage } from "./components/legal/LegalDocumentPage";
 import { CookieBanner } from "./components/legal/CookieBanner";
 import { CookieSettingsDialog } from "./components/legal/CookieSettingsDialog";
@@ -153,6 +163,26 @@ function DocumentLanguage() {
 }
 
 /**
+ * Tab title of public pages, from the table the server's `<head>` uses
+ * (`lib/pageMeta.ts`, `lib/catalog/productMeta.ts`), so it follows client-side
+ * navigation. Screens that name themselves (legal, system pages) set theirs
+ * after it; other screens keep the site name, as before.
+ */
+function DocumentTitle() {
+  const { pathname } = useLocation();
+  const { i18n } = useTranslation();
+  const { findProduct } = useCatalog();
+  const locale = i18n.language.startsWith("en") ? "en" : "fr";
+  useEffect(() => {
+    const address = parsePath(toAddress(pathname, locale));
+    // A product page is titled by its product, as the server titles it.
+    const product = address.route?.id === "product" ? findProduct(address.params.id) : undefined;
+    document.title = product ? productTitle(product, locale) : titleFor(address);
+  }, [pathname, locale, findProduct]);
+  return null;
+}
+
+/**
  * The administration workspace has its own chrome — a navigation rail and its
  * own header — so the storefront header and footer are left out entirely on
  * these routes. Prefix rather than exact match: every `/admin/...` screen,
@@ -174,19 +204,21 @@ const MAINTENANCE_ROUTE = "/maintenance";
  */
 const WORKSPACE_ROUTES = [STUDIO_EDITOR_PATH, STUDIO_SHARE_PATH];
 
-export default function App() {
+/** `catalog`: what the server read of the catalogue for a server-rendered page. */
+export default function App({ catalog }: { catalog?: CatalogSeed }) {
   const { t } = useTranslation();
   const { pathname } = useLocation();
   const adminArea = pathname === ADMIN_ROUTE_PREFIX || pathname.startsWith(`${ADMIN_ROUTE_PREFIX}/`);
   const bareChrome = adminArea || pathname === MAINTENANCE_ROUTE;
   // The editor and its sections (`/studio-3d/atelier/mes-creations`…), and
-  // the member space, which carries its own sidebar (see `MemberShell`).
-  const workspace = WORKSPACE_ROUTES.some((r) => pathname === r || pathname.startsWith(`${r}/`)) || isMemberSpacePath(pathname);
+  // the member space, which carries its own sidebar (see `MemberShell`), and
+  // the lesson player, a distraction-free workspace with its own bar.
+  const workspace = WORKSPACE_ROUTES.some((r) => pathname === r || pathname.startsWith(`${r}/`)) || isMemberSpacePath(pathname) || isLessonPlayerPath(pathname);
 
   return (
     // The product catalogue (Supabase, or the mock fixtures when it is not
     // configured) is read by the shop, product pages, home and cart alike.
-    <CatalogProvider>
+    <CatalogProvider seed={catalog}>
     <AuthProvider>
       {/* Pending email change, password date and data-export status: read by
           the member area and by the verification page a link lands on. */}
@@ -196,6 +228,13 @@ export default function App() {
           the admin layout: the storefront gift card page reads the same product
           configuration, so an edit in the back office shows on /carte-cadeau. */}
       <PromotionsProvider>
+        {/* The authored training catalogue: what the back office builds is
+            exactly what a learner reads, so the store sits above both rather
+            than inside the admin layout. Learning progress reads it. */}
+        <AdminTrainingProvider>
+        {/* The training image library (back office). Beside the courses so an
+            uploaded lesson image keeps showing on the learner's side. */}
+        <TrainingMediaProvider>
         {/* Learning progress and orders sit above the cart: paying turns the cart
             into an order, and both histories feed the member dashboard. */}
         <ProgressProvider>
@@ -213,8 +252,12 @@ export default function App() {
                     against; above both the storefront and the back office, so a
                     review approved in /admin/avis shows on the product page. */}
                 <ReviewsProvider>
+                {/* The member's favourite products: reads the account and the
+                    catalogue above it, and confirms with a toast. */}
+                <FavoritesProvider>
                   <ScrollToTop />
                   <DocumentLanguage />
+                  <DocumentTitle />
                   <a href="#main" className="gt-skip-link">
                     {t("common.skipToContent")}
                   </a>
@@ -316,11 +359,43 @@ export default function App() {
                           /academy/:id: a dynamic child there would sit alongside
                           the player's own static /academy/lecon segment. */}
                       <Route path="/academy/formation/:id" element={<CourseDetail />} />
+                      {/* The historical entry point: every "open this course"
+                          action lands here, and it forwards to the overview of
+                          the course that was just opened. */}
                       <Route
                         path="/academy/lecon"
                         element={
                           <RequireAccount>
-                            <Lesson />
+                            <ResumeTraining />
+                          </RequireAccount>
+                        }
+                      />
+                      {/* The learner's own pages for a course on the account:
+                          its overview, each lesson (a step, or a module's
+                          knowledge check) and the completion screen. Gated by
+                          the account here, and by the enrolment inside each
+                          page (`lib/learning/access.ts`). */}
+                      <Route
+                        path="/academy/mes-formations/:courseId"
+                        element={
+                          <RequireAccount>
+                            <CourseOverview />
+                          </RequireAccount>
+                        }
+                      />
+                      <Route
+                        path="/academy/mes-formations/:courseId/lecon/:nodeKey"
+                        element={
+                          <RequireAccount>
+                            <LessonPlayer />
+                          </RequireAccount>
+                        }
+                      />
+                      <Route
+                        path="/academy/mes-formations/:courseId/terminee"
+                        element={
+                          <RequireAccount>
+                            <CourseCompleted />
                           </RequireAccount>
                         }
                       />
@@ -478,6 +553,7 @@ export default function App() {
                   {!bareChrome && !workspace && <Footer />}
                   <CookieSettingsDialog />
                   <ReviewOverlays />
+                </FavoritesProvider>
                 </ReviewsProvider>
                 </ReviewModeProvider>
                 </CookieConsentProvider>
@@ -486,6 +562,8 @@ export default function App() {
             </CartProvider>
           </OrdersProvider>
         </ProgressProvider>
+        </TrainingMediaProvider>
+        </AdminTrainingProvider>
       </PromotionsProvider>
       </AdminAuthProvider>
       </SecurityProvider>

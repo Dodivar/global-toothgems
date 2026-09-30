@@ -1,105 +1,60 @@
 ---
 name: global-toothgems-agent-workflow
-description: Operating procedure for coding LLMs and autonomous agents contributing to Global Toothgems.
+description: Operating procedure for coding agents — understand, plan, implement, validate, review, report, and keep the shared context current.
 ---
 
-# LLM Agent Workflow
+# Agent Workflow
 
-## Mission
+Act as a senior product engineer industrialising Global Toothgems for production. Optimize for a reliable product, not for code volume.
 
-Act as a senior product engineer working on Global Toothgems.
+## 1. Understand (proportional to the task)
 
-Optimize for a production-ready product, not maximum code volume.
+- Read `AGENTS.md` §4 (domain status) and the guideline(s) routed by §3 — not every file.
+- Open the READMEs by section (`grep -n '^##' webapp/README.md supabase/README.md`), then the code: the domain's store in `webapp/src/lib/`, its mapping module and tests, the screen, the related migrations.
+- For database work, check the live schema (Supabase MCP, read-only) rather than assuming.
+- Classify the request: launch blocker, live-domain improvement, post-launch, or new (`01-scope-and-launch.md`).
 
-## Step 1 — Understand
+## 2. Plan
 
-Before modifying code:
-- inspect repository structure;
-- inspect package/dependency configuration;
-- inspect existing architecture;
-- inspect relevant tests;
-- inspect existing design components;
-- identify the feature's domain;
-- determine MVP vs roadmap scope.
+For non-trivial tasks, state briefly: objective, affected layers (browser / Postgres / Edge Function / Stripe), assumptions, acceptance criteria, risks (money, access, data), checks to run. Keep it proportional; do not ask for confirmation of a plan unless a decision belongs to the user (money rules, legal/consent, permissions, retention, irreversible data changes, new infrastructure).
 
-## Step 2 — Plan
+## 3. Implement
 
-For non-trivial tasks, state:
-- objective;
-- affected areas;
-- assumptions;
-- acceptance criteria;
-- risks;
-- tests to run.
+- Real backend first: schema/function → types → store → UI. Follow the mock → live pattern (`02`).
+- Reuse existing patterns and components; keep changes focused; no unrelated refactors.
+- Remove the mock path you replaced; do not leave two ways of doing the same thing.
+- No roadmap features opportunistically; no minimal "placeholder" UI for things that do not work.
 
-Keep the plan proportional to the change.
+## 4. Validate
 
-## Step 3 — Implement
+Narrowest useful checks first, then broader (`07-testing-and-quality.md`): lint, unit tests, SQL suite, build. If a check cannot run, say why. When a failure appears, determine whether your change caused it, it pre-existed, or it is environmental — never ignore it silently.
 
-Rules:
-- reuse existing patterns;
-- keep changes focused;
-- avoid unrelated refactors;
-- preserve backward compatibility unless explicitly asked otherwise;
-- do not add roadmap functionality opportunistically.
+## 5. Review your diff
 
-## Step 4 — Validate
+Accidental changes, secrets, authorization gaps (RLS, function checks), untranslated strings, missing `en`/`fr` keys, broken responsive states, accessibility regressions, dead mock code, duplicated business rules, migration/type/README drift.
 
-Run the narrowest useful checks first, then broader checks where appropriate:
-- formatting;
-- lint;
-- type checking;
-- unit/integration tests;
-- relevant end-to-end tests;
-- build.
+## 6. Commit, push, report
 
-If a check cannot run, explain why rather than pretending it passed.
+- Commit and push per `AGENTS.md` §14 with a clear English message you wrote.
+- Report to the user in their language, concisely:
+  - what changed and where it now runs (live vs still mock);
+  - checks run and their real results;
+  - **decisions to confirm** (anything you assumed about money, legal, access, retention);
+  - known limitations and the natural next step.
 
-## Step 5 — Review
+## 7. Keep the context current
 
-Before finishing, inspect the diff for:
-- accidental changes;
-- secrets;
-- authorization gaps;
-- untranslated text;
-- broken responsive states;
-- accessibility regressions;
-- dead code;
-- duplicated business rules.
+The next agent starts from `AGENTS.md`, these guidelines and the READMEs. In the same commit as your change:
+
+- update the domain status table in `AGENTS.md` §4 when a domain changes state;
+- update the relevant README section (remove statements that became false, especially "mock"/"not connected" lines);
+- update a guideline only when a rule or decision changed — they hold rules, not changelogs;
+- keep documents short: replace outdated text rather than appending history.
 
 ## Decision rules
 
-### If requirements are ambiguous
-Make the safest reasonable assumption when it does not affect architecture or money/security.
-If ambiguity affects payment, legal/privacy, access control, data integrity or irreversible behavior, stop and request clarification.
-
-### If a requested feature is roadmap
-Do not implement it as MVP.
-You may add a minimal extensibility hook only when it has a clear technical benefit and no meaningful product complexity.
-
-### If existing code is poor
-Do not rewrite unrelated areas.
-Improve the smallest surface necessary to deliver the requested feature safely.
-
-### If a dependency is missing
-Do not immediately install a library.
-First check whether the existing stack can support the requirement.
-
-### If tests fail
-Determine whether the failure is:
-- caused by the change;
-- pre-existing;
-- environmental.
-
-Never silently ignore a relevant failure.
-
-## Output expectations
-
-When reporting work:
-- summarize what changed;
-- identify important design decisions;
-- list tests/checks performed;
-- list known limitations;
-- mention deferred roadmap items when they materially affect the implementation.
-
-Do not claim functionality is complete if critical paths remain unverified.
+- **Ambiguous but safe:** make the safest reasonable assumption, state it, continue.
+- **Ambiguous and touching payment, legal/privacy, access control, data integrity or irreversible behaviour:** ask before implementing, or implement the most restrictive reversible option and flag it.
+- **Existing code is poor:** improve only the surface needed to deliver safely.
+- **Missing dependency:** first check whether the stack can do it.
+- **The user asks for a mockup explicitly:** build it, label it clearly as non-functional in the UI and the README, and keep it out of the production path.

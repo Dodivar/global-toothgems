@@ -1,4 +1,6 @@
-# Global Toothgems — Database (iterations 1–10: e-commerce MVP, checkout, reviews, shipments, refunds, gift cards, member account, back-office roles, promotions, customer service, statistics, product recommendations, back-office product management)
+# Global Toothgems — Database
+
+Schema, rules and operations of the Supabase backend (iterations 1–17: commerce, checkout, reviews, shipments, refunds, gift cards, member account, back-office roles, promotions, customer service, statistics, recommendations, back-office product management, gem options and colours, custom variants, Studio 3D workspace and share links, category families, wishlist). How to change it: `global-toothgems-llm-guidelines/09-supabase-workflow.md`.
 
 Supabase project **Global Toothgems** (`abvuyvryerpzlvibttxp`, region `eu-west-3` Paris, Postgres 17).
 Supabase Auth is the only authentication system; all application data lives in `public`,
@@ -30,8 +32,8 @@ from the back-office Catégories page through `admin_save_gem_color()`, `admin_d
 `admin_reorder_gem_colors()`.
 Iteration 15 lets the back office edit every other kind of variant (colours, boxes, sizes in mm):
 `admin_save_product()` takes the complete list of a product's variants and the variant each photo shows.
-Training, community and notifications are
-still out of scope and get their own migrations later.
+Training (the Academy), community and notifications are not built yet and get their own
+migrations; the Academy is launch-blocking.
 
 ## Layout
 
@@ -54,6 +56,7 @@ supabase/
   tests/iteration12_validation.sql  iteration 12 member sign-up (Supabase Auth metadata → profile + consents) suite (always rolls back)
   tests/iteration13_validation.sql  iteration 13 gem colours suite (always rolls back)
   tests/iteration15_validation.sql  iteration 15 product variants of any kind (colours, boxes…) + their photos suite (always rolls back)
+  tests/iteration17_validation.sql  iteration 17 member wishlist (favourites) suite (always rolls back)
   templates/confirm-signup.html     French "Confirm signup" email, to paste into the Auth settings
 ```
 
@@ -94,6 +97,7 @@ supabase/
 | 20260928222836 | `studio_workspace` | 3D Studio workspace: `creations` (scene_data jsonb v1, generated `element_count`, indicative `estimated_price_minor` + `currency`, private thumbnail path), `gem_groups`, `studio_feedback` (insert-only, staff read), private `studio-thumbnails` bucket; owner-only RLS, `user_id` defaults to `auth.uid()` and is not writable; `updated_at` moves on content edits only. Used by the webapp through `lib/studioWorkspace/supabaseRepository.ts` |
 | 20260928223009 | `product_custom_variants` | `admin_save_product()` gains an optional `custom_variants` list (every variant that is not a pack/SS option: browser-generated id, fr + en name, optional `attributes.swatch` `#rrggbb` merged into the other attributes, optional price, stock) and an optional `media[].variant_id`; SKU derived once from the product SKU + French name, unique; names can be swapped in one save; a variant left out is deleted, or deactivated when ordered; refused alongside `variants` or on a product selling pack/SS options; returns `custom_variants` |
 | 20260929120000 | `category_families` | second level of the shop taxonomy: `category_families` (under one category, `slug` unique across categories = `famille` URL value, `is_active`, `position`, audited) + `category_family_translations`; optional `products.family_id` with a composite FK `(category_id, family_id)` and a trigger clearing a family the new category does not have; categories reorganised into `gems` (Toothgems), `materiel` (former `outils`), `kits`, `lip-gloss`, `entretien` / `accessoires` emptied into `materiel` and hidden; hosted products classified by slug; `admin_save_product()` gains an optional `family_id` (absent = unchanged) and returns it |
+| 20260930090111 | `wishlist` | `wishlist_items` (member × product, composite key, `user_id` defaults to `auth.uid()`, both CASCADE); members read, add and remove only their own rows; adding needs an active account and an active product; only `product_id` is insertable, nothing is updatable; no visitor or staff access |
 
 RLS is **enabled in the same migration that creates each table** (deny by default);
 policies are granted back in `rls_policies`.
@@ -123,6 +127,7 @@ profiles 1─* consent_records   (append-only) → member_consents (latest per p
          1─* data_export_requests ─→ storage data-exports/<user_id>/…
          1─* loyalty_cards 1─* loyalty_stamps ─→ orders (one stamp per order)
          1─* customer_tags, customer_notes   (staff only)
+         1─* wishlist_items ─→ products   (favourites; own rows only)
 loyalty_settings (single row)      review_requests (view: shipped, not yet reviewed)
 
 roles 1─* role_permissions *─1 permissions        profiles 1─1 staff_profiles (team members)
@@ -274,7 +279,7 @@ refund     request_refund = card (Stripe) payments only; refund_to_gift_cards() 
 
 ### Member account (iteration 5)
 
-Checked against the member area prototype (`webapp/src/pages/account/*`, `lib/auth.tsx`,
+Checked against the member area prototype (`webapp/src/screens/account/*`, `lib/auth.tsx`,
 `lib/registration.ts`, `lib/securityState.tsx`, `lib/cookieConsent.tsx`, `data/loyalty.ts`,
 `data/orders.ts`, `data/adminCustomers.ts`). Training (courses, lessons, certificates) and the
 community it unlocks are deliberately left for the training iteration.
@@ -394,7 +399,7 @@ server  create_order(..., p_promotion_codes => ['WELCOME15'], p_use_loyalty_rewa
 
 ### Public pages and customer service (iteration 7)
 
-**Contact form → tickets** (`webapp/src/pages/legal/Contact.tsx`)
+**Contact form → tickets** (`webapp/src/screens/legal/Contact.tsx`)
 - Only path in: `submit_contact_request(name, email, category, subject, message, order_reference?, locale?, attachment_path?)`
   → returns the ticket number (`SUP-100001…`). Members call it with their JWT; **visitors go through the server
   route** (captcha, IP limit) which calls it with the service role — `anon` cannot call it.
@@ -435,13 +440,13 @@ public  newsletter_unsubscribe(token)   one-click link in every marketing e-mail
 - Content pages are public once published (with their published translations); editing needs the new
   `manage_content` permission (managers, administrators).
 
-**Maintenance** (`pages/Maintenance.tsx`): `store_settings.maintenance_enabled` (+ start time stamped, optional
+**Maintenance** (`screens/Maintenance.tsx`): `store_settings.maintenance_enabled` (+ start time stamped, optional
 expected end, staff bypass), public read, `manage_settings` to switch, audited. The storefront and the server
 routes (checkout included) must check it — the database does not block orders by itself.
 
 ### Statistics (iteration 8)
 
-`webapp/src/pages/admin/Statistics.tsx` reads one `AnalyticsSnapshot` (`webapp/src/data/adminAnalytics.ts`).
+`webapp/src/screens/admin/Statistics.tsx` reads one `AnalyticsSnapshot` (`webapp/src/data/adminAnalytics.ts`).
 `analytics_snapshot(p_from date, p_to date, p_filters jsonb = '{}', p_currency = 'EUR', p_timezone = 'Europe/Paris')`
 returns that object (camelCase JSON). Nothing is stored: every call recomputes from the orders, so figures cannot
 drift from them.
@@ -525,6 +530,23 @@ Catégories page (`GemColorsSection.tsx`).
   (the three functions are `SECURITY INVOKER`, RLS applies). Name, shade, visibility changes and deletions go to
   `audit_logs`.
 
+### Wishlist (iteration 17)
+
+The hearts of the storefront (shop cards, home rail, product page) and the shop's « Mes favoris » view
+(`/boutique?favoris=1`, behind the header's heart) read and write `wishlist_items` (`webapp/src/lib/favorites.tsx`).
+
+- **One row per member and product** (primary key): adding twice fails with `23505`, which the app treats as done.
+  The list is naturally bounded by the catalogue, so there is no separate cap.
+- **The owner comes from the session**: `user_id` defaults to `auth.uid()` and only `product_id` is granted for insert.
+  No update grant — a favourite is added or removed.
+- **Only shop products**: the insert policy requires an `active` product and an `active` account. A product later
+  archived keeps its rows but is no longer readable by customers, so it drops out of the view and comes back if
+  republished; a product really deleted takes its rows with it (CASCADE).
+- **Private**: members see only their own favourites; visitors have no access; staff have no read access either
+  (no screen needs it). Per-product counts, if wanted later, belong in a function that returns aggregates only.
+- **Personal data**: deleted with the account (CASCADE). To include in the personal-data export when that job is built.
+- Not audited: a customer preference, neither money nor security.
+
 ### Integrity guarantees
 
 - `orders_total_matches`: `total = subtotal − discount + shipping (+ tax when prices exclude tax)`; discount ≤ subtotal; all amounts ≥ 0.
@@ -564,6 +586,8 @@ Iteration 5 additions:
   own consent records and export requests; edit persona / interest / language / country / birth date. They cannot
   write `marketing_opt_in`, `password_changed_at`, stamps, cards or loyalty rules, nor see CRM tags/notes.
 - **Admins** read everything above, manage CRM tags/notes (notes: own edits only) and the loyalty rules (audited).
+
+Iteration 17: **customers** read, add and remove their own favourites (`wishlist_items`); visitors and staff have no access.
 
 Iteration 6: "admin" in the lines above now reads "a team member holding the matching permission"
 (see *Back-office roles and permissions*); policy names say "staff".
@@ -606,7 +630,8 @@ enable the extension in the dashboard — or a scheduled server job with the ser
 `tests/iteration3_validation.sql`, `tests/iteration4_validation.sql`, `tests/iteration5_validation.sql` and
 `tests/iteration6_validation.sql`, `tests/iteration7_validation.sql`, `tests/iteration8_validation.sql`,
 `tests/iteration9_validation.sql`, `tests/iteration10_validation.sql`, `tests/iteration11_validation.sql`,
-`tests/iteration12_validation.sql`, `tests/iteration13_validation.sql`, `tests/iteration15_validation.sql`. Each ends with
+`tests/iteration12_validation.sql`, `tests/iteration13_validation.sql`, `tests/iteration15_validation.sql`,
+`tests/iteration17_validation.sql`. Each ends with
 `ALL … PASSED (...)` raised as an exception, which rolls everything back.
 (The order-number sequence still advances — sequences are not transactional.)
 
@@ -614,12 +639,23 @@ enable the extension in the dashboard — or a scheduled server job with the ser
 `handle_new_auth_user` turns the metadata into the profile and the consent records. In the dashboard:
 - Authentication → Sign In / Providers → Email: *Confirm email* **on**; minimum password length 8 with
   lower case, upper case, digits and symbols required (the rules the form shows).
-- Authentication → URL Configuration: Site URL = the production URL; add `http://localhost:5173/**`
-  and the production `/confirmation-compte` and `/reinitialiser-mot-de-passe` to the redirect allow-list (otherwise the link falls back to
-  the Site URL).
-- Authentication → Emails → Confirm signup: subject *Confirmez votre compte Global Toothgems*, body from
-  `templates/confirm-signup.html`. Translate *Reset password* the same way (the link lands on
-  `/reinitialiser-mot-de-passe`).
+- Every Auth e-mail link lands on the webapp's `/auth/confirm` route (Next.js, since phase 2 of
+  `docs/migration-nextjs.md`), which opens the session in cookies server-side and forwards to the page
+  showing the outcome (`/confirmation-compte`, `/reinitialiser-mot-de-passe`, `/verifier-email?type=changement`).
+  The webapp passes `…/auth/confirm?next=…` as the redirect of every sign-up, resend, reset and e-mail change.
+- Authentication → URL Configuration: Site URL = the production URL; redirect allow-list:
+  `http://localhost:5173/**`, `https://<production domain>/auth/confirm**` and, for Vercel previews,
+  `https://*-<vercel team>.vercel.app/auth/confirm**` (a redirect not in the list is replaced by the Site URL).
+  The former `/confirmation-compte` and `/reinitialiser-mot-de-passe` entries are no longer used.
+- Authentication → Emails, the link of each template, so it works on whichever device opens it
+  (`verifyOtp` with the token hash rather than the PKCE code, which only the requesting browser can exchange):
+  - *Confirm signup*: subject *Confirmez votre compte Global Toothgems*, body from `templates/confirm-signup.html`
+    (link `{{ .RedirectTo }}&token_hash={{ .TokenHash }}&type=email`);
+  - *Reset password*: link `{{ .RedirectTo }}&token_hash={{ .TokenHash }}&type=recovery`;
+  - *Change email address*: link `{{ .RedirectTo }}&token_hash={{ .TokenHash }}&type=email_change`.
+  With Supabase's default `{{ .ConfirmationURL }}` links still work, but only in the browser that asked for them.
+  An e-mail sent from the dashboard rather than by the app carries the Site URL as `.RedirectTo`: send
+  confirmations and resets from the app.
 - Authentication → Emails → SMTP: the built-in sender is rate-limited to a few emails per hour and meant
   for testing; production needs custom SMTP (Resend, per the project stack).
 
@@ -641,10 +677,10 @@ VAT rates, shipping zones/rates mirroring the Settings prototype. Media rows ref
 
 ## Deliberate decisions to review
 
-1. **Money as `numeric(12,2)`** (explicit task instruction) whereas `AGENTS.md` §8 asks for integer
-   minor units. Both are exact (no floats). Converting to Stripe's minor units is `amount * 100` for
-   2-decimal currencies. If minor units are preferred, switch before real orders exist.
-   3-decimal currencies (KWD, BHD…) would need a wider scale.
+1. **Money as `numeric(12,2)`** — **decided (Sept 2026), keep it.** Postgres stores exact decimals + ISO-4217
+   currency; TypeScript and Stripe use integer minor units; conversion only at boundaries
+   (`amount * 100` for 2-decimal currencies, `webapp/src/lib/catalog/money.ts`). 3-decimal currencies
+   (KWD, BHD…) would need a wider scale.
 2. **Default content language = French.** Base columns hold French (matches the storefront
    `fallbackLng: "fr"`), but the Settings prototype declares `SOURCE_LANGUAGE = "en"`. The repo is
    inconsistent; switching the default later means moving base text into an `fr` translation and
@@ -733,6 +769,13 @@ VAT rates, shipping zones/rates mirroring the Settings prototype. Media rows ref
     between currencies.
 36. **Category → reporting bucket mapping** (tools and accessories folded into kits) is a guess from the prototype;
     adjust `categories.report_group` from the admin if needed.
+37. **Product addresses use the slugs (decided by the owner, Sept 2026).** `/fr/boutique/<products.slug>` and
+    `/en/shop/<published product_translations.slug>` (the French slug when there is none); any other known key
+    (another language's slug, the row id) is moved there with a 308, an unknown slug is a 404
+    (`webapp/src/lib/catalog/productSlugs.ts`, `docs/migration-nextjs.md` phase 3.2). So editing a published slug
+    moves the product page: old slugs are not kept, and an old link to a renamed product becomes a 404. A slug
+    history table would be the fix if renames become common. `meta_title` / `meta_description` are not used yet
+    (empty, not editable in the back office).
 
 ## Done
 
