@@ -106,6 +106,7 @@ Decided by the user (2026-09-30): public pages are prefixed `/fr/…` and `/en/�
 | Shop, product | `/fr/boutique`, `/fr/boutique/:id` | `/en/shop`, `/en/shop/:id` |
 | Shapes, colours | `/fr/formes`, `/fr/couleurs` | `/en/shapes`, `/en/colours` |
 | Cart (noindex) | `/fr/panier` | `/en/cart` |
+| Payment return (noindex, Stripe's return address) | `/fr/panier/confirmation` | `/en/cart/confirmation` |
 | Loyalty, gift card | `/fr/fidelite`, `/fr/carte-cadeau` | `/en/loyalty`, `/en/gift-card` |
 | Studio 3D sales, subscription | `/fr/studio-3d`, `/fr/studio-3d/abonnement` | `/en/3d-studio`, `/en/3d-studio/subscribe` |
 | Academy, course sales page | `/fr/academy`, `/fr/academy/formation/:id` | `/en/academy`, `/en/academy/course/:id` |
@@ -194,6 +195,7 @@ Legend (phase 1 done: every route below is served by the catch-all shell; phase 
 | `/formes` | open | ✅ | ✅ | ⬜ | head ✅ body ✅ | done (3.2); own segment in 5 |
 | `/couleurs` | open | ✅ | ✅ | ⬜ | head ✅ body ✅ | done (3.2); own segment in 5 |
 | `/panier` | open | ✅ | ✅ (cart flow) | ⬜ | head ✅ (noindex) body ✅ | done (3.2); own segment in 5 |
+| `/panier/confirmation` (Stripe return, added with the checkout) | open | ✅ | ✅ (`cart.spec`) | ⬜ | head ✅ (noindex) body ✅ (state read once hydrated) | done; own segment in 5 |
 | `/fidelite` | open | ✅ | ✅ | ⬜ | head ✅ body ✅ | done (3.2); own segment in 5 |
 | `/carte-cadeau` | open | ✅ | ✅ | ⬜ | head ✅ body ✅ | done (3.2); own segment in 5 |
 | `/gift-card` (alias) | redirect | ✅ | ✅ (`locale.spec.ts`) | ⬜ | — | server redirect to `/en/gift-card` ✅ (3.1) |

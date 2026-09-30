@@ -8,6 +8,7 @@ import { Shapes } from "./screens/Shapes";
 import { Colors } from "./screens/Colors";
 import { ProductDetail } from "./screens/ProductDetail";
 import { Cart } from "./screens/Cart";
+import { CheckoutReturn } from "./screens/CheckoutReturn";
 import { Academy } from "./screens/Academy";
 import { CourseDetail } from "./screens/CourseDetail";
 import { Login } from "./screens/Login";
@@ -58,6 +59,8 @@ export default function App() {
         <Route path="/formes" element={<Shapes />} />
         <Route path="/couleurs" element={<Colors />} />
         <Route path="/panier" element={<Cart />} />
+        {/* Stripe's return address: reads the order's state, grants nothing. */}
+        <Route path="/panier/confirmation" element={<CheckoutReturn />} />
         <Route path="/connexion" element={<Login />} />
         {/* Account creation, as its own multi-step journey. The
             reason the visitor came (a purchase, a training) travels

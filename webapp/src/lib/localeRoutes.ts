@@ -34,6 +34,7 @@ export type PublicRouteId =
   | "shapes"
   | "colours"
   | "cart"
+  | "checkoutReturn"
   | "loyalty"
   | "giftCard"
   | "studio"
@@ -67,6 +68,8 @@ export const PUBLIC_ROUTES: readonly PublicRoute[] = [
   { id: "shapes", fr: "/formes", en: "/shapes", indexed: true },
   { id: "colours", fr: "/couleurs", en: "/colours", indexed: true },
   { id: "cart", fr: "/panier", en: "/cart", indexed: false },
+  // Stripe's return address (supabase/functions/create-checkout-session builds it).
+  { id: "checkoutReturn", fr: "/panier/confirmation", en: "/cart/confirmation", indexed: false },
   { id: "loyalty", fr: "/fidelite", en: "/loyalty", indexed: true },
   { id: "giftCard", fr: "/carte-cadeau", en: "/gift-card", indexed: true },
   { id: "studio", fr: "/studio-3d", en: "/3d-studio", indexed: true },

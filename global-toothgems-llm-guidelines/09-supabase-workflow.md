@@ -10,7 +10,7 @@ description: How to change the database and server side — migrations, conventi
 - Project: **Global Toothgems**, ref `abvuyvryerpzlvibttxp`, region `eu-west-3`, Postgres 17. It is the development project today and holds seed and demo data (`seed.sql`, `seed_demo_member.sql`).
 - There is no staging or production project yet. Until the user creates one, every migration you apply lands on this single project: apply only migrations that are committed in the same turn, never experiment on it with ad-hoc DDL.
 - Before launch (decision for the user): a separate production project with the same migrations, reference seed only (no demo member), its own Auth settings, SMTP, secrets and Stripe live keys.
-- No Supabase CLI config is committed (`supabase/config.toml` absent). Agents work through the **Supabase MCP tools** when available; the user can also paste SQL in the dashboard.
+- `supabase/config.toml` holds only what the repo relies on (JWT verification of the Edge Functions); the project is chosen with `supabase link`. Agents work through the **Supabase MCP tools** when available; the user can also paste SQL in the dashboard. A local stack (`supabase start`, Docker) is the place to try migrations and functions before the shared project.
 
 ## Changing the schema
 
@@ -33,10 +33,10 @@ Never modify an already-applied migration; fix forward with a new one (`fix_…`
 - Errors raised with meaningful SQLSTATEs (`22023` invalid input, `42501` forbidden, `PT429` rate limit) so the webapp can map them to messages.
 - Personal data: never store Stripe payloads or card data; think about deletion cascade vs `set null`.
 
-## Edge Functions (to create)
+## Edge Functions
 
 - Location: `supabase/functions/<name>/index.ts` (Deno, TypeScript), shared code in `supabase/functions/_shared/`. Commit the source; deploy with MCP `deploy_edge_function`.
-- Planned: `checkout` (create order + Stripe Checkout Session), `stripe-webhook` (signature, dedup, fulfilment), `send-email` / template rendering via `email_template_for()` + Resend, `contact` and `newsletter` for visitors (captcha, IP rate limit), `account-export` and `account-delete` jobs.
+- Built: `create-checkout-session` (create order + Stripe Checkout Session), `stripe-webhook` (signature, dedup, fulfilment) — logic in injectable `handler.ts` modules tested with `deno test`, clients in `_shared/clients.ts`, secret names in `functions/.env.example`. Planned: `send-email` / template rendering via `email_template_for()` + Resend, `contact` and `newsletter` for visitors (captcha, IP rate limit), `account-export` and `account-delete` jobs.
 - Authenticate callers from the `Authorization` JWT unless the function is a webhook (then verify the provider signature, and disable JWT verification for that function only).
 - Secrets via Supabase function secrets (`STRIPE_SECRET_KEY`, `STRIPE_WEBHOOK_SECRET`, `RESEND_API_KEY`, …) — never in the repo; document each required secret name in `supabase/README.md`.
 - Return generic errors to clients; log details server-side.
@@ -47,7 +47,7 @@ Buckets and their policies are created by migration. Path convention `<user_id>/
 
 ## Scheduled jobs
 
-`expire_stale_orders()` every 5 minutes and export cleanup must be scheduled (pg_cron via migration once the extension is enabled, or a scheduled Edge Function). Not scheduled yet.
+`expire_stale_orders()` runs every 5 minutes (pg_cron job `expire-stale-orders`, migration `20260930200000_stripe_checkout`). Export cleanup is not scheduled yet.
 
 ## Safety
 

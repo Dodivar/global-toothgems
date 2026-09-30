@@ -18,6 +18,7 @@ import { useToast } from "../lib/toast";
 import { useFavorites } from "../lib/favorites";
 import { useReveal } from "../lib/useReveal";
 import { useCatalog } from "../lib/catalog/CatalogProvider";
+import { toMinorUnits } from "../lib/catalog/money";
 import { useTaxonomy } from "../lib/catalog/useTaxonomy";
 import { shopHref } from "../data/taxonomy";
 import { CatalogError } from "../components/shop/CatalogError";
@@ -172,13 +173,15 @@ function ProductView({ product }: { product: Product }) {
   const addToCart = () => {
     addLine({
       productId: product.id,
+      dbProductId: product.dbId,
       variantId: variant?.id,
       name,
       variant: variantLabel,
       // The cart shows the colour that was picked, not the cover photo.
       image: variant?.image ?? product.image,
       // Indicative only: the checkout recomputes every price server-side.
-      price: unitPrice,
+      unitPrice: toMinorUnits(unitPrice),
+      currency: product.currency ?? "EUR",
       qty,
     });
     showToast(t("product.toastAddedTitle"), variantLabel ? `${name} · ${variantLabel}` : name);

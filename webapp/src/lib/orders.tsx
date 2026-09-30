@@ -2,6 +2,7 @@ import { createContext, useCallback, useContext, useEffect, useMemo, useState, t
 import { SEED_ORDERS, mockOrder, spentByCurrency, type Order, type OrderLine, type SpentTotal } from "../data/orders";
 import { getProduct } from "../data/products";
 import type { CartLine } from "./cart";
+import { toMajorUnits } from "./catalog/money";
 import { useAuth } from "./auth";
 import { useCatalog } from "./catalog/CatalogProvider";
 import { CUSTOMER_ORDER_SELECT, CUSTOMER_VISIBLE_PAYMENT_STATUSES, mapOrder, type OrderRow } from "./orderMapping";
@@ -146,7 +147,7 @@ function toOrderLine(line: CartLine): OrderLine {
         ? { fr: line.variant, en: line.variant }
         : undefined,
     image: line.image,
-    unitPrice: line.price,
+    unitPrice: toMajorUnits(line.unitPrice),
     qty: line.qty,
   };
 }

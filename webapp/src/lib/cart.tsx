@@ -3,23 +3,16 @@ import { useTranslation } from "react-i18next";
 import { getProduct } from "../data/products";
 import { photo } from "./images";
 import { readStoredCart, writeStoredCart } from "./cartStorage";
+import { addToLines, cartCount, cartSubtotal, setLineQty, type CartLine } from "./checkout/cartLines";
+import { isSupabaseConfigured } from "./supabase/client";
 import { useHydrated } from "./useHydrated";
 
-export interface CartLine {
-  id: string;
-  productId: string;
-  /** Database variant id, when the product has options. The checkout sends it to `create_order()`. */
-  variantId?: string;
-  name: string;
-  variant?: string;
-  image: string;
-  price: number;
-  qty: number;
-}
+export type { CartLine } from "./checkout/cartLines";
 
 interface CartContextValue {
   lines: CartLine[];
   count: number;
+  /** Indicative, in minor units: the order is priced by the database. */
   subtotal: number;
   addLine: (line: Omit<CartLine, "id">) => void;
   updateQty: (id: string, qty: number) => void;
@@ -30,7 +23,12 @@ interface CartContextValue {
 
 const CartContext = createContext<CartContextValue | null>(null);
 
-function seedLines(en: boolean): CartLine[] {
+/**
+ * The prototype's example basket, in mock mode only (no Supabase variables):
+ * with the real catalogue a visitor's cart starts empty.
+ */
+function mockSeedLines(en: boolean): CartLine[] {
+  if (isSupabaseConfigured) return [];
   const aurora = getProduct("aurora-heart")!;
   return [
     {
@@ -39,7 +37,8 @@ function seedLines(en: boolean): CartLine[] {
       name: en ? aurora.name.en : aurora.name.fr,
       variant: en ? "Aurora blue · 2.0mm" : "Bleu aurore · 2,0 mm",
       image: aurora.image,
-      price: 49,
+      unitPrice: 4900,
+      currency: "EUR",
       qty: 1,
     },
     {
@@ -48,7 +47,8 @@ function seedLines(en: boolean): CartLine[] {
       name: en ? "Bond & Etch Kit" : "Coffret Bond & Etch",
       variant: en ? "Clinical grade · 5ml" : "Grade clinique · 5 ml",
       image: photo("img-08.jpg"),
-      price: 39,
+      unitPrice: 3900,
+      currency: "EUR",
       qty: 1,
     },
   ];
@@ -56,7 +56,7 @@ function seedLines(en: boolean): CartLine[] {
 
 export function CartProvider({ children }: { children: ReactNode }) {
   const { i18n } = useTranslation();
-  const [seed] = useState<CartLine[]>(() => seedLines(i18n.language.startsWith("en")));
+  const [seed] = useState<CartLine[]>(() => mockSeedLines(i18n.language.startsWith("en")));
   // The cart kept for the tab (`cartStorage.ts`), read once hydrated so a
   // server-rendered page hydrates with the markup the server sent.
   const hydrated = useHydrated();
@@ -75,29 +75,13 @@ export function CartProvider({ children }: { children: ReactNode }) {
     [stored, seed],
   );
 
-  const addLine = (line: Omit<CartLine, "id">) => {
-    setLines((prev) => {
-      const key = `${line.productId}::${line.variant ?? ""}`;
-      const existing = prev.find((l) => `${l.productId}::${l.variant ?? ""}` === key);
-      if (existing) {
-        return prev.map((l) => (l.id === existing.id ? { ...l, qty: l.qty + line.qty } : l));
-      }
-      return [...prev, { ...line, id: key }];
-    });
-  };
+  const addLine = useCallback((line: Omit<CartLine, "id">) => setLines((prev) => addToLines(prev, line)), [setLines]);
+  const updateQty = useCallback((id: string, qty: number) => setLines((prev) => setLineQty(prev, id, qty)), [setLines]);
+  const removeLine = useCallback((id: string) => setLines((prev) => prev.filter((l) => l.id !== id)), [setLines]);
+  const clearCart = useCallback(() => setLines(() => []), [setLines]);
 
-  const updateQty = (id: string, qty: number) => {
-    setLines((prev) =>
-      qty <= 0 ? prev.filter((l) => l.id !== id) : prev.map((l) => (l.id === id ? { ...l, qty } : l)),
-    );
-  };
-
-  const removeLine = (id: string) => setLines((prev) => prev.filter((l) => l.id !== id));
-
-  const clearCart = () => setLines(() => []);
-
-  const count = useMemo(() => lines.reduce((sum, l) => sum + l.qty, 0), [lines]);
-  const subtotal = useMemo(() => lines.reduce((sum, l) => sum + l.qty * l.price, 0), [lines]);
+  const count = useMemo(() => cartCount(lines), [lines]);
+  const subtotal = useMemo(() => cartSubtotal(lines), [lines]);
 
   return (
     <CartContext.Provider value={{ lines, count, subtotal, addLine, updateQty, removeLine, clearCart }}>

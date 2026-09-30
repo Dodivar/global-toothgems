@@ -178,7 +178,7 @@ instead of their mock data; without them the mock stores run unchanged.
 
 | Store | Reads | Writes |
 | --- | --- | --- |
-| `lib/orders.tsx` (member area) | the account's own paid orders (`payment_status` paid / refunded / partially refunded): recorded amounts (subtotal, discount, shipping, VAT, total, gift cards, amount due), items, discounts (`order_discounts`), parcels with their contents, refunds, address snapshots — never the internal fields (`CUSTOMER_ORDER_SELECT`) | nothing: orders come from the checkout and the Stripe webhook. The demo cart's "payment" adds no order in this mode |
+| `lib/orders.tsx` (member area) | the account's own paid orders (`payment_status` paid / refunded / partially refunded): recorded amounts (subtotal, discount, shipping, VAT, total, gift cards, amount due), items, discounts (`order_discounts`), parcels with their contents, refunds, address snapshots — never the internal fields (`CUSTOMER_ORDER_SELECT`) | nothing: orders come from the checkout (`create-checkout-session`) and the Stripe webhook |
 | `lib/adminOrders.tsx` (back office) | every order except expired unpaid checkouts, with items, parcels and payments; the staff notes from `order_notes` (falls back to `orders.admin_note` until migration `20260930210000_order_staff_notes` is applied) | status (+ implied fulfilment), cancellation (`cancel_order`), notes (written to `orders.admin_note`, which a trigger appends to `order_notes`). Refunds — and cancelling or marking refunded an order that holds money — are refused with a message: they go through Stripe |
 | `lib/reviewsSupabase.tsx` | published reviews for visitors (public columns only); own reviews, votes and reports for customers; everything for staff | submit / edit (photos to the private `review-photos` bucket), helpful votes, reports, and every moderation action |
 
@@ -193,6 +193,33 @@ the profile's first and last name ("Client" when both are empty).
 Course reviews are not stored yet (the table has no course column), so with
 Supabase they are not offered. Mapping lives in pure, unit-tested modules:
 `lib/orderMapping.ts`, `lib/adminOrderMapping.ts`, `lib/reviewMapping.ts`.
+
+## Cart and checkout (Stripe)
+
+The cart (`lib/cart.tsx`, pure rules in `lib/checkout/cartLines.ts`) holds integer **minor units** and the
+catalogue's `products.id` / `product_variants.id` on each line; it is kept for the tab in `sessionStorage`
+(`lib/cartStorage.ts`, a cart stored in the older float format is discarded). Its prices are indicative.
+
+With the Supabase variables set, `screens/Cart.tsx`:
+
+1. reads the delivery rates of the destination's zone (public tables) and lets the customer pick one
+   (`lib/checkout/shippingRates.ts`, cheapest pre-selected);
+2. sends identifiers, quantities, contact details and the rate id — never an amount — to the Edge Function
+   `create-checkout-session` (`lib/checkout/api.ts`, `supabase.functions.invoke`), which creates the order with
+   `create_order()` and a Stripe Checkout Session for the amount the database computed;
+3. follows the returned URL, only if it is `https://checkout.stripe.com/…`.
+
+Stripe sends the customer back to `/fr/panier/confirmation?session_id=cs_…` (`/en/cart/confirmation`,
+`screens/CheckoutReturn.tsx`). That page only reads `checkout_session_status()` — order number and state — and
+checks again for about a minute; the order becomes paid solely through the verified `stripe-webhook`. The cart
+is emptied once the database says the order is paid. Errors are shown as translated messages (`checkout.errors.*`).
+
+Without the variables the cart keeps its mock behaviour (example basket, one flat delivery rule, "payment"
+recorded in the in-memory order history). Server side, secrets and the Stripe webhook set-up are described in
+`../supabase/README.md` (*Edge Functions (iteration 19)*). To try the whole path locally: `supabase start`,
+`supabase functions serve --env-file supabase/functions/.env`, `stripe listen --forward-to
+http://127.0.0.1:54321/functions/v1/stripe-webhook`, point `.env.local` at the local project, and pay with the
+test card 4242 4242 4242 4242 (`ALLOWED_RETURN_ORIGINS` must include `http://localhost:5173`).
 
 ## Project structure
 
@@ -623,7 +650,7 @@ Tax rates and exemption rules are **illustrative** and say so on screen: they, a
 
 Without the Supabase variables every domain runs on its mock store. With them, the following still do not touch the database:
 
-- **Cart and checkout.** "Paying" always succeeds in the mock; with Supabase it adds no order. Real payment needs the `checkout` and `stripe-webhook` Edge Functions (see `global-toothgems-llm-guidelines/04-ecommerce-rules.md`).
+- **Checkout extras.** Payment runs through Stripe (see *Cart and checkout*), but promotion codes, gift cards and the loyalty reward cannot be entered in the cart yet (the Edge Function accepts codes), no confirmation e-mail is sent, and saving the address on the account is not offered.
 - **Academy.** All courses share the one authored 9-lesson syllabus in `data/lessons.ts`; progress lives in memory (`lib/progress.tsx`); there is no Academy schema yet.
 - **Artist Community.** Fixtures and in-memory posting; access derived client-side from the courses on the account. Post-launch.
 - **Loyalty Club.** Display only (`data/loyalty.ts` with a demo switch); the database already awards stamps on paid orders — the UI must read `loyalty_overview`.

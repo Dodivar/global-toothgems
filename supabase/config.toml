@@ -1,0 +1,16 @@
+# Supabase CLI configuration: only what this repository relies on; every other
+# setting keeps the CLI default. The remote project is chosen with
+# `supabase link --project-ref <ref>` (never written here).
+project_id = "global-toothgems"
+
+# Both functions check their callers themselves:
+# - stripe-webhook: Stripe sends no Supabase token; the Stripe signature
+#   (STRIPE_WEBHOOK_SECRET) is the authentication.
+# - create-checkout-session: guest checkout is the default, and the browser
+#   calls it with the publishable key, which is not a JWT. A user token, when
+#   present, is verified inside the function (auth.getUser).
+[functions.create-checkout-session]
+verify_jwt = false
+
+[functions.stripe-webhook]
+verify_jwt = false

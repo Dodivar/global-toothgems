@@ -12,3 +12,6 @@ Thumbs.db
 
 # Supabase CLI link state (project ref, pooler URL), written by `supabase link`.
 supabase/.temp/
+
+# Edge Function secrets (names in supabase/functions/.env.example)
+supabase/functions/.env

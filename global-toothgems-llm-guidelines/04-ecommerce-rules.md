@@ -24,10 +24,10 @@ The catalogue represents physical products, digital products, gift cards, varian
 - Quantities validated, unavailable/archived products not purchasable, stale carts handled gracefully (re-validate against the database before checkout).
 - Cart persistence for signed-in members is a product decision; until decided, keep it client-side and never treat it as an order.
 
-## Checkout (target flow)
+## Checkout (built in iteration 19 — `supabase/README.md`, *Edge Functions*)
 
 ```
-browser   POST to Edge Function `checkout` with {items[{product_id, variant_id, quantity}], shipping address, rate, locale, codes}
+browser   POST to Edge Function `create-checkout-session` with {items[{product_id, variant_id, quantity}], email, address, rate, locale, codes}
 edge fn   verifies the JWT (or guest e-mail), checks maintenance mode,
           calls create_order() with the service role → order 'pending', stock reserved, totals computed in SQL
           creates a Stripe Checkout Session for order.amount_due / currency (metadata: order id), expires_at aligned with the reservation
@@ -35,8 +35,8 @@ browser   redirected to Stripe; returns to a confirmation page that READS the or
 webhook   Edge Function `stripe-webhook`: verify signature → insert stripe_webhook_events (dedup) →
           checkout.session.completed → mark_order_paid(order, amount, currency, cs_…, pi_…)
           checkout.session.expired   → cancel_order(order, 'expired')
-          charge.refunded / refund events → mark_refund_succeeded | mark_refund_failed
-cron      expire_stale_orders() every 5 minutes
+          charge.refunded / refund events → mark_refund_succeeded | mark_refund_failed   (not built yet)
+cron      expire_stale_orders() every 5 minutes (pg_cron job `expire-stale-orders`)
 ```
 
 Required UI states: cart, customer, delivery, payment, processing, success, failure/cancelled. Mobile-first, minimal friction, clear totals (VAT included, shipping, discounts, gift cards applied).

@@ -5885,6 +5885,13 @@ export type Database = {
           isSetofReturn: false
         }
       }
+      checkout_session_status: {
+        Args: { p_session_id: string }
+        Returns: {
+          order_number: string
+          state: string
+        }[]
+      }
       consume_inventory: {
         Args: { p_inventory_item_id: string; p_quantity: number }
         Returns: {
@@ -6215,6 +6222,16 @@ export type Database = {
           isOneToOne: true
           isSetofReturn: false
         }
+      }
+      record_stripe_webhook_event: {
+        Args: {
+          p_event_id: string
+          p_livemode: boolean
+          p_object_id?: string
+          p_order_id?: string
+          p_type: string
+        }
+        Returns: string
       }
       refund_to_gift_cards: {
         Args: { p_amount: number; p_order_id: string; p_reason: string }

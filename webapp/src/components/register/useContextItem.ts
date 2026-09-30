@@ -3,6 +3,7 @@ import { getProduct } from "../../data/products";
 import { getCourse } from "../../data/courses";
 import { pick } from "../../data/types";
 import { useCart } from "../../lib/cart";
+import { toMajorUnits } from "../../lib/catalog/money";
 import type { RegistrationContext } from "../../lib/registration";
 
 /** What the summary card shows, resolved from the context and the live cart. */
@@ -58,10 +59,10 @@ export function useContextItem(context: RegistrationContext): ContextItem | null
       image: first.image,
       title: first.name,
       subtitle: first.variant,
-      price: first.price,
+      price: toMajorUnits(first.unitPrice),
       qty: first.qty,
       moreCount: count - first.qty,
-      subtotal,
+      subtotal: toMajorUnits(subtotal),
       priceNote: t("register.context.cartSaved"),
     };
   }

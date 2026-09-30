@@ -58,6 +58,10 @@ supabase/
   tests/iteration15_validation.sql  iteration 15 product variants of any kind (colours, boxes…) + their photos suite (always rolls back)
   tests/iteration17_validation.sql  iteration 17 member wishlist (favourites) suite (always rolls back)
   tests/iteration18_validation.sql  iteration 18 "My orders" isolation + staff order notes suite (always rolls back)
+  tests/iteration19_validation.sql  iteration 19 Stripe Checkout wiring (expiry job, webhook idempotency, return page) suite (always rolls back)
+  config.toml   CLI settings this repo relies on (verify_jwt of the two Edge Functions)
+  functions/    Edge Functions (Deno): create-checkout-session, stripe-webhook, _shared/ (pure modules + clients),
+                *_test.ts (deno test), .env.example (secret names)
   templates/confirm-signup.html     French "Confirm signup" email, to paste into the Auth settings
 ```
 
@@ -185,18 +189,82 @@ server  create_order(user, email, items[{product_id, variant_id, quantity}], bil
           → prices from products/variants, shipping from shipping_rates (zone, bounds, free-over),
             VAT per line at the destination rate (prices include VAT, rounded per line; shipping at standard rate),
             snapshots, stock RESERVED, expires_at = now + 60 min            → order 'pending'
-server  create Stripe Checkout Session for order.total_amount / currency
+server  create Stripe Checkout Session for order.amount_due / currency
 webhook checkout.session.completed → record stripe_webhook_events → mark_order_paid(order, amount, currency, cs_…, pi_…)
           → amount/currency must match; payment row upserted; reserved stock becomes a SALE → order 'confirmed'
 webhook checkout.session.expired   → cancel_order(order, 'expired')   → reservation RELEASED
-cron    expire_stale_orders() every few minutes                        → same, for abandoned orders
+cron    expire_stale_orders() every 5 minutes (pg_cron job, iteration 19) → same, for abandoned orders
 ```
+
+Since iteration 19 the two server steps exist as Edge Functions — see *Edge Functions (iteration 19)*.
 
 Stock transitions live in a trigger on `orders`, so they apply whatever the path
 (webhook, admin marking a bank transfer paid, admin cancelling, expiry job).
 A payment arriving after the reservation expired re-takes the stock if still
 available; otherwise the order is left `pending` + paid with an `[auto]` admin
 note (restock or refund) — it never oversells.
+
+### Edge Functions (iteration 19)
+
+```
+browser  POST functions/v1/create-checkout-session  {items[{product_id, variant_id, quantity}], email, address,
+                                                      shipping_rate_id, locale, promotion_codes?, gift_card_codes?}
+           → strict validation (_shared/checkoutInput.ts): no amount, total or currency is accepted
+           → user = auth.getUser(Bearer token) when a user token is sent, else guest
+           → create_order(…, reservation 70 min) with the service role
+           → amount_due = 0 (gift cards) → {status: 'paid'}; otherwise Stripe Checkout Session:
+               one line "Commande GT-…" for orders.amount_due in minor units, metadata.order_id,
+               idempotency key checkout-session:<order id>, expires_at = now + 60 min,
+               success/cancel URLs on SITE_URL or an allowed origin (ALLOWED_RETURN_ORIGINS)
+           → payments row 'pending' with the cs_… id → {status: 'redirect', url}
+           → Stripe unreachable: cancel_order(order, 'checkout_failed') → reservation released
+Stripe   POST functions/v1/stripe-webhook (verify_jwt = false; the Stripe signature is the authentication)
+           → constructEventAsync + SubtleCrypto provider; bad signature → 400, nothing recorded
+           → record_stripe_webhook_event(): processed / ignored → 200 without doing anything
+           → completed (payment_status 'paid') / async_payment_succeeded → mark_order_paid(Stripe's amount_total)
+           → expired / async_payment_failed → pending payment row closed; cancel_order() only while the order is unpaid
+           → stored as processed / ignored / failed; permanent SQL errors (amount mismatch, unknown order…) are
+             acknowledged (200, `failed` for the team), anything else answers 500 so Stripe retries
+browser  /fr/panier/confirmation?session_id=cs_… → checkout_session_status(cs_…) → order number + state
+           (pending / paid / cancelled / failed); polls ~1 min. Grants nothing.
+```
+
+- The whole order is one Stripe line because only `amount_due` is guaranteed to equal what Postgres computed
+  (per-line discounts, shipping discounts and gift card payments cannot be expressed as Stripe lines without
+  rounding or negative amounts). The order's lines stay in the database and the member area.
+- The reservation (70 min) outlives the Stripe session (60 min, Stripe's minimum is 30), so a card payment made
+  at the last minute still finds its stock. Delayed methods (bank debits) can confirm days later: the order has
+  expired by then and the documented late-payment path applies (stock re-taken if still there, otherwise flagged).
+- Error codes returned to the browser: `invalid_request`, `unavailable`, `out_of_stock`, `shipping_unavailable`,
+  `promotion_code_invalid`, `gift_card_invalid`, `payment_unavailable`, `maintenance`, `session_expired`, `server_error`
+  (`_shared/orderErrors.ts`). SQL messages are logged, never returned.
+
+**Deploy (test mode, after the user's go-ahead for the target project):**
+
+```sh
+supabase link --project-ref <project ref>
+supabase db push                                  # applies 20260930200000_stripe_checkout.sql (pg_cron job + functions)
+supabase secrets set --env-file supabase/functions/.env   # names in functions/.env.example
+supabase functions deploy create-checkout-session
+supabase functions deploy stripe-webhook          # verify_jwt = false comes from config.toml
+```
+
+Secrets (Edge Function environment only, never `NEXT_PUBLIC_*`): `STRIPE_SECRET_KEY` (sk_test_…),
+`STRIPE_WEBHOOK_SECRET` (whsec_…), `SITE_URL` (production origin), `ALLOWED_RETURN_ORIGINS` (comma-separated
+exact origins, e.g. `http://localhost:5173`). `SUPABASE_URL` / `SUPABASE_SERVICE_ROLE_KEY` are provided by Supabase.
+
+**Stripe webhook (test mode):** Dashboard → Developers → Webhooks → Add endpoint
+`https://<project ref>.supabase.co/functions/v1/stripe-webhook`, events `checkout.session.completed`,
+`checkout.session.async_payment_succeeded`, `checkout.session.async_payment_failed`, `checkout.session.expired`;
+copy its signing secret into `STRIPE_WEBHOOK_SECRET`. Payment methods offered are those enabled in the Stripe
+dashboard (the session does not force a list).
+
+**Locally:** `supabase start`, then `supabase functions serve --env-file supabase/functions/.env` and
+`stripe listen --forward-to http://127.0.0.1:54321/functions/v1/stripe-webhook` (it prints the `whsec_…` to put
+in `.env`); `stripe trigger checkout.session.completed` sends test events (they carry no `order_id` and are
+recorded as `ignored`: pay a real test session with card 4242 4242 4242 4242 for the full path).
+Unit tests: `cd supabase/functions && deno test` (validation, return URLs, error mapping, signatures made and
+checked by the Stripe SDK, replays, retries).
 
 ### Reviews (iteration 3)
 
@@ -634,19 +702,20 @@ update public.profiles set role = 'admin' where email = '<admin email>';
 
 **Order creation:** always through `create_order()` (service role) — see *Checkout flow* above.
 
-**Expiry job:** schedule `select public.expire_stale_orders();` every 5 minutes (pg_cron —
-enable the extension in the dashboard — or a scheduled server job with the service role).
+**Expiry job:** pg_cron job `expire-stale-orders` runs `select public.expire_stale_orders();` every 5 minutes
+(migration `20260930200000_stripe_checkout`). Check it with `select * from cron.job_run_details order by start_time desc limit 5;`.
 
-**Webhook handler pattern:**
-`insert into stripe_webhook_events (id, type, object_id, order_id) values (…) on conflict (id) do update set attempts = stripe_webhook_events.attempts + 1 returning status;`
-→ skip when `processed`; otherwise call the function, then set `status = 'processed'` (or `failed` + `error`).
+**Webhook handler pattern** (implemented in `functions/stripe-webhook`): `record_stripe_webhook_event()` inserts the
+event or counts the retry and returns its status → skip when `processed` / `ignored`; otherwise call the function,
+then set `status = 'processed'` (or `failed` + `error`). Events in `failed` need a look from the team
+(`select * from stripe_webhook_events where status = 'failed'`).
 
 **Validation:** run `tests/mvp_validation.sql`, `tests/iteration2_validation.sql` and
 `tests/iteration3_validation.sql`, `tests/iteration4_validation.sql`, `tests/iteration5_validation.sql` and
 `tests/iteration6_validation.sql`, `tests/iteration7_validation.sql`, `tests/iteration8_validation.sql`,
 `tests/iteration9_validation.sql`, `tests/iteration10_validation.sql`, `tests/iteration11_validation.sql`,
 `tests/iteration12_validation.sql`, `tests/iteration13_validation.sql`, `tests/iteration15_validation.sql`,
-`tests/iteration17_validation.sql`. Each ends with
+`tests/iteration17_validation.sql`, `tests/iteration18_validation.sql`, `tests/iteration19_validation.sql`. Each ends with
 `ALL … PASSED (...)` raised as an exception, which rolls everything back.
 (The order-number sequence still advances — sequences are not transactional.)
 
@@ -802,6 +871,17 @@ VAT rates, shipping zones/rates mirroring the Settings prototype. Media rows ref
 40. **Guest orders are not attached to an account.** An order placed without an account (`user_id` NULL) never
     appears in "My orders", even if the e-mail later signs up. Attaching them (by verified e-mail, at sign-up or
     on demand) is an open business decision — not implemented.
+41. **Checkout return page readable by the session id holder** (`checkout_session_status`, SECURITY DEFINER, anon):
+    order number + coarse state only. The cs_… id is a bearer value (Stripe redirect, browser history); nothing
+    personal or payable is behind it. Accepted advisor warning.
+42. **Checkout identity**: a signed-in customer's order carries the account (`user_id` from the token verified by the
+    Edge Function); the e-mail typed in the cart is the order's contact e-mail, even if it differs from the account's.
+    Guest orders: decision 40.
+43. **Delivery rate chosen by the customer** among the zone's rates whose order bounds fit the basket (cheapest
+    pre-selected); create_order() re-checks zone, bounds and weight. Rate names are French-only in the database, so
+    the storefront labels them by kind (standard / express / free / pickup). Confirm the offer with the business.
+44. **Split payment ("payer en 4 fois") removed from the cart** until a provider is decided (Klarna through Stripe
+    would be a dashboard setting, not code). The methods offered are those enabled in the Stripe dashboard.
 
 ## Done
 
@@ -837,6 +917,8 @@ VAT rates, shipping zones/rates mirroring the Settings prototype. Media rows ref
 - Iteration 15: variants of any kind edited from the product form — a list of named variants (colour, box, size…)
   with an optional colour dot, price, stock and the photos that show them; the product page shows colour dots
   and moves the gallery to the picked variant's photo.
+- Iteration 19: Stripe Checkout wiring — Edge Functions `create-checkout-session` and `stripe-webhook`, pg_cron job
+  `expire-stale-orders`, `record_stripe_webhook_event()`, `checkout_session_status()` for the payment return page.
 - Iteration 16: product families — categories › families taxonomy, composite FK, family cleared on a category
   change, `admin_save_product()` family input, visitor RLS on families and their translations.
 - Iteration 18 ("My orders", migration **not applied yet**): internal order notes out of the customer's reach
@@ -844,8 +926,9 @@ VAT rates, shipping zones/rates mirroring the Settings prototype. Media rows ref
 
 ## Next iterations (not implemented)
 
-1. Application code: Stripe Checkout route + verified webhook handler calling these functions;
-   pg_cron schedule for `expire_stale_orders()`.
+1. Checkout follow-ups: order confirmation e-mail (Resend, Edge Function), promotion code and gift card fields
+   in the cart (the function already accepts them), Stripe refunds from the back office, `charge.refunded` /
+   `charge.dispute.created` webhooks.
 2. Training MVP: courses, modules, lessons, enrollments granted on payment, progress, quizzes,
    private course media, kit QR links; course reviews (`course_id` on `reviews`).
    Invoices / credit notes (sequential numbering), carrier tracking events.

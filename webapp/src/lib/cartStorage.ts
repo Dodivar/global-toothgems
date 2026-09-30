@@ -1,11 +1,12 @@
-import type { CartLine } from "./cart";
+import { MAX_LINE_QTY, type CartLine } from "./checkout/cartLines";
 
 /*
  * The cart kept for the browser tab (sessionStorage), decided by the owner on
  * 2026-09-30 for phase 4 of docs/migration-nextjs.md: moving between zones of
  * the site is a full page load, which would otherwise empty the cart. Until
  * the real checkout exists this is the cart's only persistence; prices shown
- * from it are indicative, the order is priced by the database.
+ * from it are indicative (minor units), the order is priced by the database.
+ * A cart stored in an older shape (float `price`) is discarded, not converted.
  */
 
 export const CART_STORAGE_KEY = "gt-cart";
@@ -16,18 +17,21 @@ const isOptionalText = (value: unknown) => value === undefined || typeof value =
 function parseLine(value: unknown): CartLine | null {
   if (typeof value !== "object" || value === null) return null;
   const line = value as Record<string, unknown>;
-  const { id, productId, variantId, name, variant, image, price, qty } = line;
+  const { id, productId, dbProductId, variantId, name, variant, image, unitPrice, currency, qty } = line;
   if (!isText(id) || !isText(productId) || !isText(name) || typeof image !== "string") return null;
-  if (!isOptionalText(variantId) || !isOptionalText(variant)) return null;
-  if (typeof price !== "number" || !Number.isFinite(price) || price < 0) return null;
-  if (typeof qty !== "number" || !Number.isInteger(qty) || qty < 1) return null;
+  if (!isOptionalText(dbProductId) || !isOptionalText(variantId) || !isOptionalText(variant)) return null;
+  if (typeof unitPrice !== "number" || !Number.isSafeInteger(unitPrice) || unitPrice < 0) return null;
+  if (typeof currency !== "string" || !/^[A-Z]{3}$/.test(currency)) return null;
+  if (typeof qty !== "number" || !Number.isInteger(qty) || qty < 1 || qty > MAX_LINE_QTY) return null;
   return {
     id,
     productId,
     name,
     image,
-    price,
+    unitPrice,
+    currency,
     qty,
+    ...(dbProductId === undefined ? {} : { dbProductId: dbProductId as string }),
     ...(variantId === undefined ? {} : { variantId: variantId as string }),
     ...(variant === undefined ? {} : { variant: variant as string }),
   };

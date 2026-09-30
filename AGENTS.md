@@ -77,7 +77,7 @@ Stripe  payment source of truth; fulfilment only from verified, idempotent webho
 | Customer & staff auth (sign-up, sign-in, recovery, email/password change) | yes | yes | **Live** (Google sign-in, data export and account deletion not wired). Next.js side (cookie sessions, proxy, `/auth/confirm`) live since 2026-09-30 (Vercel switched, Supabase dashboard settings applied by the user) |
 | Favourites, reviews + moderation, member & admin order reading | yes | yes | **Live** |
 | Studio 3D workspace (creations, Gem Groups, share links) | yes | yes | **Live** (subscription/paywall not built: preview access) |
-| Cart, checkout, payment, order creation | yes | `create_order`, `mark_order_paid`, webhook log | **Mock** — no Stripe, no Edge Function yet |
+| Cart, checkout, payment, order creation | yes | `create_order`, `mark_order_paid`, webhook log, `checkout_session_status` | **Built, not deployed** — Edge Functions `create-checkout-session` + `stripe-webhook`, cart in minor units, Stripe return page; migration `20260930200000` and functions await the user's go-ahead (test mode). Codes / gift cards not in the cart UI, no confirmation e-mail |
 | Promotions, gift cards, loyalty | yes | yes | **Mock UI** over a ready schema |
 | Admin customers, users/roles, statistics, settings, translations | yes | mostly yes | **Mock UI** over a ready schema |
 | Contact form, newsletter, transactional e-mails | yes | yes | **Mock** — needs Edge Functions + Resend |
@@ -91,7 +91,7 @@ The switch between mock and live stores is `isSupabaseConfigured` (`webapp/src/l
 
 In use: Next.js 16 (App Router, Turbopack), React 19, TypeScript 6 (`strict`), react-router-dom 7 (inside each zone's segment until phase 5 removes it), Tailwind CSS v4 via PostCSS with the design tokens in `webapp/src/index.css`, react-i18next (FR default, EN), lucide-react, three.js (Studio 3D only, lazy-loaded), supabase-js, Vitest, Playwright (smoke tests), oxlint. Supabase (Postgres 17, Auth, Storage, Edge Functions), Stripe, Vercel.
 
-Planned, when the matching work starts: Stripe Checkout + webhooks (Edge Functions), Resend (+ React Email if useful) for e-mail, Sentry for monitoring, Playwright for the critical journeys against a real project, GitHub Actions CI. Optional only with a concrete need: Mux (serious video), Cloudflare, PostHog, Algolia/Typesense.
+Stripe Checkout + webhooks are Edge Functions (`supabase/functions/`, `npm:stripe` pinned, tested with `deno test`). Planned, when the matching work starts: Resend (+ React Email if useful) for e-mail, Sentry for monitoring, Playwright for the critical journeys against a real project, GitHub Actions CI. Optional only with a concrete need: Mux (serious video), Cloudflare, PostHog, Algolia/Typesense.
 
 Not used and not to introduce: shadcn/ui (the project has its own component set), next-intl (not decided: react-i18next stays during the Next.js migration), Shopify/WooCommerce, Firebase, MongoDB, microservices. A new dependency needs a concrete justification (§12).
 

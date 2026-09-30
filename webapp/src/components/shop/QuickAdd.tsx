@@ -4,6 +4,7 @@ import { Check, Plus } from "lucide-react";
 import { pick } from "../../data/types";
 import type { Product } from "../../data/products";
 import { useCart } from "../../lib/cart";
+import { toMinorUnits } from "../../lib/catalog/money";
 import { useToast } from "../../lib/toast";
 
 /** How long the button says "Added" before offering itself again. */
@@ -40,11 +41,13 @@ export function QuickAdd({ product, name, className }: { product: Product; name:
         e.stopPropagation();
         addLine({
           productId: product.id,
+          dbProductId: product.dbId,
           variantId: variant?.id,
           variant: variant ? pick(variant.name, i18n.language) : undefined,
           name,
           image: product.image,
-          price: variant?.price ?? product.price,
+          unitPrice: toMinorUnits(variant?.price ?? product.price),
+          currency: product.currency ?? "EUR",
           qty: 1,
         });
         setAdded(true);

@@ -27,6 +27,7 @@ const PAGES: Partial<Record<PublicRouteId, { title: Text; description?: Text }>>
   shapes: { title: { key: "shapesPage.title" }, description: { key: "shapesPage.body" } },
   colours: { title: { key: "colorsPage.title" }, description: { key: "colorsPage.body" } },
   cart: { title: { key: "cart.cartTitle" } },
+  checkoutReturn: { title: { key: "checkout.pageTitle" } },
   loyalty: { title: { key: "loyalty.heroTitle" }, description: { key: "loyalty.journeyBody" } },
   giftCard: { title: { keys: ["promo.store.headlineA", "promo.store.headlineB"] } },
   studio: { title: { key: "studio.hero.title" }, description: { key: "studio.hero.body" } },
