@@ -12,8 +12,10 @@ import type { Database } from "./database.types";
  * When the two variables are missing the prototype keeps running on its mock
  * data; `supabase` is then `null` and callers check `isSupabaseConfigured`.
  */
-const url = import.meta.env.VITE_SUPABASE_URL?.trim();
-const publishableKey = import.meta.env.VITE_SUPABASE_PUBLISHABLE_KEY?.trim();
+// Written out in full: Next.js inlines `process.env.NEXT_PUBLIC_*` into the
+// browser bundle only for literal references.
+const url = process.env.NEXT_PUBLIC_SUPABASE_URL?.trim();
+const publishableKey = process.env.NEXT_PUBLIC_SUPABASE_PUBLISHABLE_KEY?.trim();
 
 export const isSupabaseConfigured = Boolean(url && publishableKey);
 
@@ -32,7 +34,7 @@ export const supabase: TypedSupabaseClient | null = isSupabaseConfigured
 /** For code paths that cannot run without the database. */
 export function requireSupabase(): TypedSupabaseClient {
   if (!supabase) {
-    throw new Error("Supabase is not configured: set VITE_SUPABASE_URL and VITE_SUPABASE_PUBLISHABLE_KEY.");
+    throw new Error("Supabase is not configured: set NEXT_PUBLIC_SUPABASE_URL and NEXT_PUBLIC_SUPABASE_PUBLISHABLE_KEY.");
   }
   return supabase;
 }

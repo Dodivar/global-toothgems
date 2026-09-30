@@ -73,7 +73,7 @@ function RailContent({ section }: { section: StudioSection | null }) {
         title={t("studio.editor.backToStudio")}
         className={clsx("group/home relative mb-4 grid h-11 w-11 place-items-center rounded-[var(--radius-md)] hover:bg-[var(--gt-ink-100)]", focusRing)}
       >
-        <img src={monogram} alt="" className="h-8 w-8 object-contain transition-opacity group-hover/home:opacity-0" />
+        <img src={monogram.src} alt="" className="h-8 w-8 object-contain transition-opacity group-hover/home:opacity-0" />
         <ArrowLeft size={18} aria-hidden="true" className="absolute opacity-0 transition-opacity group-hover/home:opacity-100" />
       </Link>
       <ul className="m-0 grid w-full list-none gap-1 px-2 p-0">
@@ -212,7 +212,7 @@ function Drawer({ section, onClose }: { section: StudioSection | null; onClose: 
         className="gt-ws-drawer absolute inset-y-0 left-0 flex w-[min(320px,86vw)] flex-col bg-[var(--surface-card)] shadow-[var(--shadow-lg)]"
       >
         <div className="flex items-center gap-3 border-b border-[var(--border-subtle)] px-4 py-3">
-          <img src={monogram} alt="" aria-hidden="true" className="h-8 w-8 object-contain" />
+          <img src={monogram.src} alt="" aria-hidden="true" className="h-8 w-8 object-contain" />
           <div className="grid min-w-0 flex-1 leading-tight">
             <span className="text-[15px] font-[var(--weight-black)] text-[var(--text-primary)]">{t("studio.editor.appName")}</span>
             <span className="text-[11px] font-semibold text-[var(--text-subtle)]">

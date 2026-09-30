@@ -228,7 +228,7 @@ function MyReviewCard({ review: r, lang, onEdit }: { review: CustomerReview; lan
       {r.response && (
         <div className="grid gap-1 rounded-[var(--radius-md)] border-l-2 border-[var(--gt-blue-300)] bg-[var(--surface-brand-wash)] px-4 py-3">
           <span className="flex items-center gap-2 text-[length:var(--text-caption)] font-semibold text-[var(--text-primary)]">
-            <img src={monogram} alt="" aria-hidden="true" className="h-4 w-auto" />
+            <img src={monogram.src} alt="" aria-hidden="true" className="h-4 w-auto" />
             {t("reviews.response.from")}
           </span>
           <p className="m-0 text-[length:var(--text-caption)] text-[var(--text-body)]">{r.response.body}</p>

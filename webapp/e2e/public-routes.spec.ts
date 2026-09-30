@@ -81,3 +81,13 @@ test("the Studio 3D editor loads its 3D engine", async ({ page, problems }) => {
   await expect(page.locator("canvas").first()).toBeVisible();
   expect(problems).toEqual([]);
 });
+
+test("each product card shows its own photo", async ({ page, problems }) => {
+  await open(page, "/boutique");
+  const photos = await page.locator("main article img").evaluateAll((images) => images.map((img) => (img as HTMLImageElement).currentSrc));
+  expect(photos.length).toBeGreaterThanOrEqual(8);
+  // A bundler that resolves every fixture photo to the same file once showed
+  // one image on every card; the mock catalogue uses many different photos.
+  expect(new Set(photos).size).toBeGreaterThanOrEqual(8);
+  expect(problems).toEqual([]);
+});

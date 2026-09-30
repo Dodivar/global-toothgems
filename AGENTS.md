@@ -87,7 +87,7 @@ The switch between mock and live stores is `isSupabaseConfigured` (`webapp/src/l
 
 ## 5. Technology baseline
 
-In use: Vite, React 19, TypeScript 6, react-router-dom 7, Tailwind CSS v4 with the design tokens in `webapp/src/index.css`, react-i18next (FR default, EN), lucide-react, three.js (Studio 3D only, lazy-loaded), supabase-js, Vitest, Playwright (smoke tests), oxlint. Supabase (Postgres 17, Auth, Storage, Edge Functions), Stripe, Vercel.
+In use: Next.js 16 (App Router, Turbopack), React 19, TypeScript 6 (`strict`), react-router-dom 7 (inside the catch-all page until each route is migrated), Tailwind CSS v4 via PostCSS with the design tokens in `webapp/src/index.css`, react-i18next (FR default, EN), lucide-react, three.js (Studio 3D only, lazy-loaded), supabase-js, Vitest, Playwright (smoke tests), oxlint. Supabase (Postgres 17, Auth, Storage, Edge Functions), Stripe, Vercel.
 
 Planned, when the matching work starts: Stripe Checkout + webhooks (Edge Functions), Resend (+ React Email if useful) for e-mail, Sentry for monitoring, Playwright for the critical journeys against a real project, GitHub Actions CI. Optional only with a concrete need: Mux (serious video), Cloudflare, PostHog, Algolia/Typesense.
 
@@ -146,7 +146,7 @@ Before adding a dependency, check whether the stack already solves the need. Whe
 
 ## 13. Testing and validation
 
-From `webapp/`: `npm run lint`, `npm test` (Vitest), `npm run build` (type-check + bundle), `npm run test:e2e` (Playwright smoke tests, mock mode — required for routing, rendering and build changes). Database: the relevant `supabase/tests/*_validation.sql` suite(s), run on the Supabase project (they roll back). Choose checks by risk; critical flows are authentication, checkout, webhook handling, fulfilment, course access, progress and admin authorization.
+From `webapp/`: `npm run typecheck`, `npm run lint`, `npm test` (Vitest), `npm run build` (`next build`, includes a type-check), `npm run test:e2e` (Playwright smoke tests, mock mode — required for routing, rendering and build changes). Database: the relevant `supabase/tests/*_validation.sql` suite(s), run on the Supabase project (they roll back). Choose checks by risk; critical flows are authentication, checkout, webhook handling, fulfilment, course access, progress and admin authorization.
 
 Never claim a check passed unless it was run in this session. If a check cannot run (no `node_modules`, no database access), say so.
 

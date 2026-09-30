@@ -13,7 +13,8 @@ From `webapp/` (run `npm ci` first if `node_modules` is missing):
 | --- | --- | --- |
 | Lint | `npm run lint` (oxlint) | every change |
 | Unit tests | `npm test` (Vitest) | every change to `lib/` logic; run a single file with `npx vitest run <path>` |
-| Type-check + build | `npm run build` | every change before committing |
+| Type-check | `npm run typecheck` (app, then `e2e/` and tool configs) | every change |
+| Build | `npm run build` (`next build`, type-checks the app too) | every change before committing |
 | Smoke tests (Playwright) | `npm run test:e2e` | every change to routing, rendering, auth plumbing, layout or build configuration; before and after each Next.js migration step |
 
 Database: the `supabase/tests/*_validation.sql` suites run against a Supabase project (MCP `execute_sql`, or the SQL editor). Each is one transaction that ends by raising `ALL … TESTS PASSED` (success) or `FAIL: …` — both roll back. See `09-supabase-workflow.md`.

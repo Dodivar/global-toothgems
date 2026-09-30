@@ -20,7 +20,7 @@ import type { Localized } from "../data/types";
  * Frontend training store: the authored course catalogue.
  *
  * Written by the back office and read by the learner experience
- * (`lib/progress.tsx`, `pages/learn/`), so the provider is mounted above the
+ * (`lib/progress.tsx`, `screens/learn/`), so the provider is mounted above the
  * whole app. The learner side only ever reads — and only published content.
  *
  * Structural edits — adding a step, reordering a module, marking an answer

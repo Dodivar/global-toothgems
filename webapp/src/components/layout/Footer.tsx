@@ -18,7 +18,7 @@ export function Footer() {
             a tablet, one row on a desktop. */}
         <div className="grid grid-cols-2 gap-x-6 gap-y-9 sm:grid-cols-3 lg:grid-cols-[minmax(0,1.3fr)_repeat(5,minmax(0,1fr))] lg:gap-x-8">
           <div className="col-span-2 grid content-start gap-3 sm:col-span-3 lg:col-span-1">
-            <img src={logoBlue} alt="Global Toothgems" className="h-6 w-auto justify-self-start" loading="lazy" decoding="async" />
+            <img src={logoBlue.src} alt="Global Toothgems" className="h-6 w-auto justify-self-start" loading="lazy" decoding="async" />
             <p className="m-0 max-w-[260px] text-sm text-[var(--text-muted)]">{t("footer.blurb")}</p>
           </div>
           {columns.map((col) => (

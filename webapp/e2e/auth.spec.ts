@@ -56,8 +56,11 @@ test("the registration journey reaches its confirmation screen", async ({ page, 
   await page.getByLabel(/pays/i).selectOption("FR");
   await page.getByRole("button", { name: /^continuer$/i }).click();
 
-  // The checkbox is visually replaced by a styled box; it is still the input that is checked.
-  await page.locator("#reg-terms").check({ force: true });
+  // The checkbox is visually hidden behind a styled box and its label holds
+  // links, so the input is clicked directly (React listens to that click).
+  const terms = page.locator("#reg-terms");
+  await terms.dispatchEvent("click");
+  await expect(terms).toBeChecked();
   await page.getByRole("button", { name: /créer mon compte/i }).click();
 
   await expect(page.getByRole("heading", { name: "Consultez votre boîte mail" })).toBeVisible();

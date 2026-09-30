@@ -93,7 +93,7 @@ export function AdminLogin() {
           className="absolute inset-0 bg-[linear-gradient(180deg,rgba(17,17,17,.35),rgba(17,17,17,.82))]"
         />
         <div className="relative flex h-full flex-col justify-between p-[clamp(32px,4vw,64px)] text-[var(--text-inverse)]">
-          <img src={monogram} alt="Global Toothgems" className="h-9 w-auto" />
+          <img src={monogram.src} alt="Global Toothgems" className="h-9 w-auto" />
 
           <div className="grid max-w-[30ch] gap-4">
             <span className="gt-accent text-[clamp(22px,2.4vw,28px)] text-[var(--gt-blue-300)]">

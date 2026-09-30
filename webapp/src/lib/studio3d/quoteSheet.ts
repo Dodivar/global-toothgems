@@ -1,4 +1,4 @@
-import wordmarkUrl from "../../assets/logo-wordmark-black.png";
+import wordmarkImage from "../../assets/logo-wordmark-black.png";
 
 /**
  * The design estimate sheet: a PNG the artist can hand to a client.
@@ -67,7 +67,7 @@ function fitText(ctx: CanvasRenderingContext2D, text: string, maxWidth: number) 
 
 export async function buildQuoteSheetDataURL(input: QuoteSheetInput): Promise<string> {
   const { labels, rows } = input;
-  const [render, wordmark] = await Promise.all([loadImage(input.renderURL), loadImage(wordmarkUrl).catch(() => null)]);
+  const [render, wordmark] = await Promise.all([loadImage(input.renderURL), loadImage(wordmarkImage.src).catch(() => null)]);
   const W = 1240;
   const M = 70;
   const renderW = W - M * 2;

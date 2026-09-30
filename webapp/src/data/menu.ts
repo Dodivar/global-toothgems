@@ -1,4 +1,5 @@
 import type { Localized } from "./types";
+import { photo } from "../lib/images";
 
 export interface MenuItem {
   title: Localized;
@@ -7,7 +8,7 @@ export interface MenuItem {
   to: string;
 }
 
-const img = (name: string) => new URL(`../assets/photos/${name}`, import.meta.url).href;
+const img = photo;
 
 /**
  * Menu photo of each family (and of a category with no family), by slug.

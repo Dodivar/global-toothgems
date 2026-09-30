@@ -7,7 +7,8 @@ import { test as base, expect, type Page } from "@playwright/test";
  * body so the tests neither depend on the network nor report its failures.
  */
 export const test = base.extend<{ problems: string[] }>({
-  problems: async ({ page, baseURL }, use) => {
+  // The second argument is Playwright's `use`, renamed so lint does not take it for a React hook.
+  problems: async ({ page, baseURL }, provide) => {
     const origin = new URL(baseURL!).origin;
     const problems: string[] = [];
 
@@ -30,7 +31,7 @@ export const test = base.extend<{ problems: string[] }>({
       }
     });
 
-    await use(problems);
+    await provide(problems);
   },
 });
 

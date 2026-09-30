@@ -1,16 +1,16 @@
 # Global Toothgems — web application
 
-The production web application of Global Toothgems: storefront, Academy, member area, Studio 3D and back office, in one React single-page application backed by Supabase (see `supabase/README.md`) and deployed on Vercel.
+The production web application of Global Toothgems: storefront, Academy, member area, Studio 3D and back office, in one Next.js (App Router) application backed by Supabase (see `supabase/README.md`) and deployed on Vercel. It is being migrated from Vite + React Router: during the migration the React Router app runs client-side inside a catch-all Next.js page — see `docs/migration-nextjs.md` for the phases and the per-route checklist.
 
 > **Status: being industrialised.** The app started as a fully clickable implementation of the Claude Design prototype, with every domain on in-memory mock data. Domains are now connected to Supabase one by one; the up-to-date live/mock table is in the root `AGENTS.md` §4. With the Supabase variables set, these are **live**: the storefront catalogue, back-office product management and categories, member and staff authentication, favourites (`wishlist_items`), reviews and moderation, member and admin order reading, and the Studio 3D workspace. Cart/checkout/payment (no Stripe yet), promotions, gift cards, loyalty, customers/users/statistics/settings in the back office, contact and newsletter, and the whole Academy still run on mock data.
 >
-> Architecture (decided): Vite + React SPA, business rules in Postgres (RLS + functions), server code in Supabase Edge Functions, payments by Stripe with webhook-driven fulfilment. Sections below that describe "prototype" behaviour, "Prototype controls" panels or mock stores document code that is **still mock and scheduled to be replaced**, not a target design.
+> Architecture (decided): Next.js App Router on Vercel (migration in progress), business rules in Postgres (RLS + functions), server code in Supabase Edge Functions, payments by Stripe with webhook-driven fulfilment. Sections below that describe "prototype" behaviour, "Prototype controls" panels or mock stores document code that is **still mock and scheduled to be replaced**, not a target design.
 
 ## Stack
 
-- **React 19 + TypeScript**, built with **Vite**
-- **Tailwind CSS v4** for styling, driven by the design system's CSS variable tokens (`src/index.css`)
-- **react-router-dom** for routing
+- **Next.js 16 (App Router, Turbopack) + React 19 + TypeScript**
+- **Tailwind CSS v4** through PostCSS (`postcss.config.mjs`), driven by the design system's CSS variable tokens (`src/index.css`)
+- **react-router-dom** for routing inside the catch-all page `app/[[...slug]]` (phase 1 of the migration; replaced by App Router routes page by page)
 - **react-i18next** for French/English (French is the default; a toggle in the header switches and persists the choice)
 - **lucide-react** for icons
 
@@ -26,11 +26,23 @@ npm install
 npm run dev
 ```
 
-This starts the Vite dev server (default [http://localhost:5173](http://localhost:5173)) with hot module reload.
+This starts the Next.js dev server on [http://localhost:5173](http://localhost:5173) — the port the app has always used, which the Supabase Auth redirect allow-list knows (`scripts/dev.mjs`; set `PORT` to use another one). `npm run dev:mock` runs the same server on the mock data, whatever `.env.local` says.
+
+How the app is mounted (phase 1 of `docs/migration-nextjs.md`):
+
+```
+app/layout.tsx              root layout: <html lang="fr">, fonts, title, favicon, src/index.css
+app/[[...slug]]/page.tsx    the only page; every path lands here
+app/[[...slug]]/client.tsx  loads src/ClientApp.tsx with dynamic(..., { ssr: false })
+src/ClientApp.tsx           i18n + StrictMode + BrowserRouter + App (formerly main.tsx)
+src/App.tsx                 the React Router routes
+```
+
+Nothing from `src/` runs on the server yet. Screens live in `src/screens/` (not `src/pages/`, which Next.js would treat as a Pages Router directory). Image imports resolve to `{ src, width, height }` in Next.js: use `.src` in an `<img>`.
 
 ## Supabase connection (back-office products)
 
-Copy `.env.example` to `.env.local` and set `VITE_SUPABASE_URL` and `VITE_SUPABASE_PUBLISHABLE_KEY` (Supabase dashboard → Project settings → API). Set the same two variables in the Vercel project for deployed previews. Only the **publishable** key goes here: every read and write is authorized by Row Level Security in Postgres. Without the variables the app runs entirely on its mock data, as before.
+Copy `.env.example` to `.env.local` and set `NEXT_PUBLIC_SUPABASE_URL` and `NEXT_PUBLIC_SUPABASE_PUBLISHABLE_KEY` (Supabase dashboard → Project settings → API). Set the same two variables in the Vercel project for deployed previews. Only the **publishable** key goes here: every read and write is authorized by Row Level Security in Postgres. Without the variables the app runs entirely on its mock data, as before.
 
 With them set:
 
@@ -59,31 +71,21 @@ Code: `lib/supabase/` (client + generated `database.types.ts`), `lib/adminCatalo
 ## Other scripts
 
 ```bash
-npm run build     # type-check (tsc -b) and build a production bundle into dist/
-npm run preview   # serve the production build locally to sanity-check it
+npm run build     # next build: production build into .next/ (includes a type-check)
+npm start         # serve the production build (next start)
+npm run typecheck # tsc on the app, then on e2e/ + the tool configs
 npm run lint      # oxlint
-npm test          # vitest (catalogue mapping and money rules)
+npm test          # vitest (catalogue mapping and money rules; vitest.config.ts)
+npm run test:e2e  # Playwright smoke tests in mock mode (starts `npm run dev` on port 5199)
 ```
 
-## Deploying (`vercel.json`)
+`npm run test:e2e` needs a Chromium: `npx playwright install chromium` once on a workstation (cloud sessions use the preinstalled one). `E2E_BASE_URL=http://localhost:3000 npm run test:e2e` runs the same tests against a server you started yourself (e.g. `npm run build && npm start`, built without the Supabase variables).
 
-Routing is client-side: `main.tsx` mounts a `BrowserRouter`, and the build is a
-single `index.html` plus assets. A static host knows nothing about the routes in
-`App.tsx`, so a request that lands directly on one — a pasted link, a refresh, a
-bookmark — asks for a file that was never built and gets a 404. Following a link
-inside the app works either way, which is why the breakage only shows up on
-direct URLs, and why routes not linked from the navigation surface it
-first: a direct URL is the only way in.
+## Deploying (Vercel)
 
-`vercel.json` fixes that by rewriting every unmatched path to `/index.html` and
-letting the router read the URL. Rewrites run after the filesystem check, so real
-files — the hashed bundles, `favicon.svg`, `icons.svg` — are still served as
-themselves.
+The Vercel project builds from the **Root Directory** `webapp` with the **Next.js** framework preset (`next build`, output managed by Vercel). There is no `vercel.json` any more: under Vite a rewrite sent every unknown path to `index.html`; now the optional catch-all route `app/[[...slug]]` answers every path itself, and real files in `public/` (`favicon.svg`, `icons.svg`, videos) are still served as themselves. Like the SPA before it, the catch-all answers HTTP 200 for an unknown address and the app renders its 404 page; real 404 statuses come with the server-rendered pages (phase 3 of `docs/migration-nextjs.md`).
 
-The file must sit in whatever directory Vercel builds from. This app lives in
-`webapp/`, so the project's **Root Directory** has to be `webapp` for the build
-to find `package.json` at all, and `vercel.json` belongs next to it. A copy at
-the repository root would be ignored.
+Environment variables (Production and Preview): `NEXT_PUBLIC_SUPABASE_URL`, `NEXT_PUBLIC_SUPABASE_PUBLISHABLE_KEY`. They are inlined at build time, so a change needs a redeploy.
 
 ## Supabase connection (catalogue)
 
@@ -93,10 +95,10 @@ set, locally and in the Vercel project settings:
 
 | Variable | Value |
 | --- | --- |
-| `VITE_SUPABASE_URL` | `https://<project-ref>.supabase.co` |
-| `VITE_SUPABASE_PUBLISHABLE_KEY` | the project's **publishable** key (`sb_publishable_…`) |
+| `NEXT_PUBLIC_SUPABASE_URL` | `https://<project-ref>.supabase.co` |
+| `NEXT_PUBLIC_SUPABASE_PUBLISHABLE_KEY` | the project's **publishable** key (`sb_publishable_…`) |
 
-Only the publishable key ever goes in a `VITE_` variable — Vite inlines them
+Only the publishable key ever goes in a `NEXT_PUBLIC_` variable — Next.js inlines them
 into the public bundle. Every read is authorized by Row Level Security; the
 service role key belongs to server code only. With both variables empty the
 app runs on its mock fixtures, as before.
@@ -167,10 +169,10 @@ Supabase they are not offered. Mapping lives in pure, unit-tested modules:
 
 ```
 src/
-  pages/            One component per screen (Home, Shop, ProductDetail, Cart, Academy, CourseDetail, Lesson, Login)
-  pages/account/    The member area: sidebar layout + one component per section
-  pages/community/  The Artist Community: its own layout + one component per screen
-  pages/legal/      Help centre, FAQ, contact and about pages
+  screens/          One component per screen (Home, Shop, ProductDetail, Cart, Academy, CourseDetail, Lesson, Login)
+  screens/account/  The member area: sidebar layout + one component per section
+  screens/community/ The Artist Community: its own layout + one component per screen
+  screens/legal/    Help centre, FAQ, contact and about pages
   data/legal/       Legal and help content (bilingual data rendered by components/legal/)
   components/ui/     Design-system primitives (Button, Badge, ProductCard, CourseCard, QuizQuestion, ...)
   components/account/ Dashboard pieces (stat tile, course row, certificate card, order card)
@@ -180,7 +182,7 @@ src/
   components/studio/ The 3D Studio mockups (and editor/, the working editor UI): smile canvas, rendered gems, interactive Studio window, feature cards, media placeholders, inspiration boards, steps, pricing card, FAQ, home teaser
   components/loyalty/ The Loyalty Club: stamp, card, progress, reward, steps, journey, FAQ, checkout banner, demo switcher
   components/layout/ Header (desktop nav + mega panel, mobile burger menu) and Footer
-  pages/admin/      The administration workspace: access screen, shell, dashboard, orders, products, categories
+  screens/admin/    The administration workspace: access screen, shell, dashboard, orders, products, categories
   components/admin/ Workspace primitives (rail, header, product table, form, media uploader, drawer, dialogs) and the orders workspace (KPI row, filter toolbar, order table + card list, row actions, bulk bar, pagination, detail cards, timeline, notes)
   data/               Bilingual product/course/review/lesson/order data (the storefront's order history and the back office's order book are separate models)
   i18n/               react-i18next setup + locales/fr.json, locales/en.json
@@ -277,7 +279,7 @@ Ported from the standalone `studio3D.html` into the app's architecture:
 | `lib/studio3d/store.ts` | The design store (history, selection, local persistence, named presets) |
 | `lib/studio3d/actions.ts`, `notices.ts` | Shared commands, and the channel through which the engine reports to the site's toasts by translation key |
 | `components/studio/editor/` | Top bar, library, 3D stage, inspector, colour wheel, popovers |
-| `pages/StudioEditor.tsx` | The page: layout, shortcuts, save on exit. Lazy-loaded, so three.js is only downloaded when the editor opens |
+| `screens/StudioEditor.tsx` | The page: layout, shortcuts, save on exit. Lazy-loaded, so three.js is only downloaded when the editor opens |
 
 - **Access**: `lib/studioAccess.tsx` is the single switch. `STUDIO_ACCESS_MODE = "preview"` lets everyone in without paying. When the subscription goes live, switch it to `"subscription"` and back it with a server-side entitlement granted by the verified Stripe webhook; the client check is navigation only.
 - **Saving**: the working draft is kept in the browser (`gt-studio3d-*` keys) as before; saving it to the account goes through the Studio workspace below.
@@ -327,7 +329,7 @@ The layer around the editor that makes it a personal design workspace. The edito
 **Read-only share links.** "Share" (a creation card's menu, its detail dialog, the Save menu when the stage is linked to a creation, and the editor's Share menu) opens `ShareDialog`: the link, one button per social network (WhatsApp, Facebook, X, LinkedIn, e-mail — `socialShare.ts`, plain share pages opened in a new tab, no SDK), the system share sheet where available, and a preview. Opening the dialog is the explicit act that creates a link; the editor's Share menu only looks for an existing one (and asks to save a new design first).
 - **Stored links** (real accounts, Supabase): `/studio-3d/partage/<token>`, backed by `creation_shares` (a random 48-hex token per creation, one active at a time, `revoked_at`). Owners read their own links through RLS and create / disable them only through `studio_share_creation` / `studio_revoke_creation_share`, which check ownership. Guests — signed in or not — never touch a table: `studio_shared_creation(token)`, a security-definer reader granted to `anon`, returns the name, description and scene of **that one creation** (Gem Group ids blanked), nothing about the owner, and nothing for an unknown or disabled token. The link always shows the latest saved version; "Disable link" in the dialog stops it at once, including where it was already posted, and a new one can be created. Deleting the creation deletes its links.
 - **Snapshot links** (the mock sign-in's local library, and the fallback while the share table is missing from the database): the design itself in the URL fragment (`#z1.…` deflate-compressed base64url JSON; `#j1.…` where `CompressionStream` is missing) — sanitized scene, name and description, never the owner id, the client name, tags or the thumbnail. The fragment never reaches a server. A snapshot does not follow later edits and cannot be revoked; links of this form already sent keep opening.
-- The viewer (`pages/StudioShare.tsx`) renders with its own `DesignStore({ persist: false })` and a `StudioEngine(…, { readOnly: true })`: every press goes to the camera, no piece can be selected or moved, and the recipient's own draft (`gt-studio3d-design-v1`) is never read nor written. Everything it receives is re-sanitized. Signed out, the panel asks them to sign in (and returns to the same link); signed in, "Edit a copy" loads the design as a new unsaved design on **their own** stage — the shared creation is never written — asking first if that would replace unsaved work.
+- The viewer (`screens/StudioShare.tsx`) renders with its own `DesignStore({ persist: false })` and a `StudioEngine(…, { readOnly: true })`: every press goes to the camera, no piece can be selected or moved, and the recipient's own draft (`gt-studio3d-design-v1`) is never read nor written. Everything it receives is re-sanitized. Signed out, the panel asks them to sign in (and returns to the same link); signed in, "Edit a copy" loads the design as a new unsaved design on **their own** stage — the shared creation is never written — asking first if that would replace unsaved work.
 - Limits: anyone who has a link can view the design; a design made on an imported model is shown on the default dentition. Social networks show the site's generic preview card (no per-creation image yet).
 
 **Overlap to decide:** the editor's older "My presets" (whole designs kept in browser storage, under Presets) still works as before. Saved creations now cover that need per account; the presets menu could be retired or pointed at My Creations.

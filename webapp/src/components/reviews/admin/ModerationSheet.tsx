@@ -485,7 +485,7 @@ function ResponsePreview({ body, meta }: { body: string; meta?: string }) {
   return (
     <div className="grid gap-1.5 rounded-[var(--admin-radius-sm)] border-l-2 border-[var(--gt-blue-300)] bg-[var(--surface-brand-wash)] px-3.5 py-2.5">
       <span className="flex flex-wrap items-center gap-2 text-[length:var(--text-caption)] font-semibold text-[var(--text-primary)]">
-        <img src={monogram} alt="" aria-hidden="true" className="h-4 w-auto" />
+        <img src={monogram.src} alt="" aria-hidden="true" className="h-4 w-auto" />
         {t("reviews.response.from")}
         {meta && <span className="font-normal text-[var(--text-muted)]">· {meta}</span>}
       </span>

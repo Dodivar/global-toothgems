@@ -108,7 +108,7 @@ export function AdminSidebar({
           onClick={onNavigate}
           className={clsx("flex items-center gap-3 rounded-[var(--admin-radius-sm)]", railFocus)}
         >
-          <img src={monogram} alt="" aria-hidden="true" className="h-7 w-auto flex-none" />
+          <img src={monogram.src} alt="" aria-hidden="true" className="h-7 w-auto flex-none" />
           {!collapsed && (
             <span className="grid leading-tight">
               <span className="text-[length:var(--text-body-sm)] font-bold tracking-[var(--tracking-tight)]">

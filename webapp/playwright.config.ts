@@ -45,8 +45,8 @@ export default defineConfig({
         timeout: 180_000,
         env: {
           PORT: String(PORT),
-          VITE_SUPABASE_URL: "",
-          VITE_SUPABASE_PUBLISHABLE_KEY: "",
+          NEXT_PUBLIC_SUPABASE_URL: "",
+          NEXT_PUBLIC_SUPABASE_PUBLISHABLE_KEY: "",
         },
       },
 });

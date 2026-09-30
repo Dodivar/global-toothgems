@@ -153,7 +153,7 @@ export function Header() {
       <div className="relative hidden md:block" onMouseLeave={() => hoverTo(null)}>
         <header className="flex h-[76px] items-center gap-8 px-[var(--gutter-page-lg)]">
           <Link to="/" className="flex-none" onClick={closeAll}>
-            <img src={logoBlack} alt="Global Toothgems" className="h-6 w-auto" />
+            <img src={logoBlack.src} alt="Global Toothgems" className="h-6 w-auto" />
           </Link>
           <nav aria-label={t("nav.primary")} className="flex flex-1 items-center gap-6 overflow-hidden">
             {links.map((link) => {
@@ -315,7 +315,7 @@ export function Header() {
             onClick={closeAll}
             className="absolute left-1/2 top-1/2 grid -translate-x-1/2 -translate-y-1/2 place-items-center"
           >
-            <img src={logoBlack} alt="Global Toothgems" className="h-4 w-auto" />
+            <img src={logoBlack.src} alt="Global Toothgems" className="h-4 w-auto" />
           </Link>
           <IconButton icon={Heart} label={wishlistLabel} badge={favoriteCount} onClick={openFavorites} />
           <IconButton icon={User} label={signedIn ? t("nav.mySpace") : t("nav.signIn")} onClick={openAccount} />

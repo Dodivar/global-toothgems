@@ -34,7 +34,7 @@ Other facts that shape the plan:
 - **Redirect URLs are built from `window.location.origin`** (`authRedirect.ts`, `passwordRecovery.ts`, `accountCredentials.ts`, `studioWorkspace/share.ts`): local development must keep port 5173 or the Supabase allow-list must change.
 - **Route guards are client components:** `RequireAccount` (→ `/connexion`), `RequireAdmin` (→ `/admin/connexion`), `RequireStudioAccess` (lets everyone in during the preview).
 - **i18n:** react-i18next with `i18next-browser-languagedetector`, language cached in `localStorage` (`gt-lang`), French default; `DocumentLanguage` sets `<html lang>` after mount. The server cannot know the language today — this ties SSR to the locale URL decision.
-- **Vite-only code:** `import.meta.env.VITE_*` (Supabase client), `import.meta.glob` (`lib/images.ts`), `new URL(\`../assets/photos/${name}\`, import.meta.url)` (six `data/*.ts` fixtures), `?url` import of the `.glb`, image imports used as strings (20 files).
+- **Vite-only code:** `import.meta.env.VITE_*` (Supabase client), `import.meta.glob` (`lib/images.ts`), `new URL(\`../assets/photos/${name}\`, import.meta.url)` (six `data/*.ts` fixtures), `?url` import of the `.glb`, image imports used as strings (20 files). All handled in phase 1 (see below).
 - **Bundle:** the Vite build ships a 3.2 MB (830 kB gzip) main chunk: every page is in it except the Studio editor/share chunks. Code-splitting per route is a phase 3–4 benefit, not a phase 1 goal.
 - **Status codes:** the SPA (and the phase 1 shell) answer HTTP 200 for every path, including unknown ones rendered as the 404 page. Real 404s come with phase 3.
 
@@ -43,7 +43,7 @@ Other facts that shape the plan:
 | Phase | Goal | Content | Status |
 | --- | --- | --- | --- |
 | 0 | Framing | Decision recorded (AGENTS.md §4, guidelines 02/08), this file, Playwright smoke tests passing on the Vite app | done (2026-09-30) |
-| 1 | Next.js shell | Next.js installed in `webapp/`; the existing app runs unchanged from `app/[[...slug]]/page.tsx` through `dynamic(() => import(App), { ssr: false })` with `BrowserRouter` (official guide "Migrating from Vite"); Tailwind v4 via PostCSS; `VITE_*` → `NEXT_PUBLIC_*`; `vercel.json` removed; Vitest kept | see phase 1 log |
+| 1 | Next.js shell | Next.js 16.3 installed in `webapp/`; the existing app runs unchanged from `app/[[...slug]]/page.tsx` through `dynamic(() => import(App), { ssr: false })` with `BrowserRouter` (official guide "Migrating from Vite"); Tailwind v4 via PostCSS; `VITE_*` → `NEXT_PUBLIC_*`; `vercel.json` removed; Vitest kept | done (2026-09-30) |
 | 2 | Auth on the server | `@supabase/ssr`: browser client + server client, session in cookies, `proxy.ts` (Next.js 16 name of middleware) refreshing the session and redirecting signed-out visitors away from `/compte/*`, `/academy/mes-formations/*`, `/academy/lecon` and `/admin/*` (client guards stay as a second layer); PKCE e-mail links through an auth route handler; Supabase redirect URLs updated **by the user** | not started — needs the redirect-URL decision |
 | 3 | Public pages SSR + SEO | Home, shop, shapes, colours, product, gift card, loyalty, Studio and Academy sales pages, help and legal pages as App Router segments rendered on the server (data read with the publishable key), `generateMetadata`, canonical/OG, structured data, `notFound()`, sitemap/robots; `window`/`localStorage` code behind client boundaries | not started — needs the locale URL decision |
 | 4 | Account, back office, Studio | `/compte/*`, community, learner pages, `/admin/*`, Studio editor/share as App Router segments (mostly client components under server-protected layouts); Studio stays client-only | not started |
@@ -53,129 +53,148 @@ A route leaves the catch-all shell only when its App Router page exists, its smo
 
 ## Phase 1 — how the shell works
 
-- `webapp/app/layout.tsx` — root layout: `<html lang="fr">`, the Google Fonts `<link>`s and the title/favicon formerly in `index.html`, the global stylesheet `src/index.css`.
-- `webapp/app/[[...slug]]/page.tsx` — the only page. It renders `ClientApp`, which loads `src/ClientApp.tsx` (former `main.tsx`: i18n init, `StrictMode`, `BrowserRouter`, `App`) with `dynamic(..., { ssr: false })`: nothing from the React Router app runs on the server. `generateStaticParams` returns only `/`; other paths are rendered on demand by the same page.
-- Environment: `NEXT_PUBLIC_SUPABASE_URL`, `NEXT_PUBLIC_SUPABASE_PUBLISHABLE_KEY` (the publishable key only). Empty = mock mode, as before.
-- Vitest runs from `vitest.config.ts` (Vite stays a development dependency of Vitest only).
+- `webapp/app/layout.tsx` — root layout: `<html lang="fr">`, the Google Fonts `<link>`s and the title/favicon formerly in `index.html` (title and icon through the `metadata` export), the global stylesheet `src/index.css`, and the `<div id="root">` wrapper kept from `index.html`.
+- `webapp/app/[[...slug]]/page.tsx` — the only page. It renders `ClientOnly` (`client.tsx`), which loads `src/ClientApp.tsx` (former `main.tsx`: i18n init, `StrictMode`, `BrowserRouter`, `App`) with `dynamic(..., { ssr: false })`: nothing from `src/` runs on the server. `generateStaticParams` prerenders only `/`; every other path is rendered on demand by the same page (HTTP 200, like the SPA).
+- No `output: "export"` (unlike the guide): the app is deployed as a normal Next.js app so that phase 2 can add `proxy.ts` and phase 3 server rendering without changing the deployment again. Hence no `vercel.json`: the catch-all answers every path.
+- Environment: `NEXT_PUBLIC_SUPABASE_URL`, `NEXT_PUBLIC_SUPABASE_PUBLISHABLE_KEY` (the publishable key only). Empty = mock mode, as before; `npm run dev:mock` forces them empty.
+- `npm run dev` goes through `scripts/dev.mjs`: `next dev` on port 5173 (the Vite port, known to the Supabase Auth redirect allow-list); `PORT` still overrides it.
+- Tailwind v4 through `@tailwindcss/postcss` (`postcss.config.mjs`). Vitest runs from `vitest.config.ts`; `vite` stays only as Vitest's peer dependency; `@vitejs/plugin-react` and `@tailwindcss/vite` are removed.
+
+Deviations from the official guide, and the Vite-only code, with the reason for each:
+
+| Change | Why |
+| --- | --- |
+| `app/` at the root of `webapp/`, not `src/app/` as in the guide | keeps `app/` next to `public/` and the configs; either works once `src/pages/` is gone |
+| `src/pages/` renamed `src/screens/` (only `App.tsx` imported from it) | Next.js reads any `pages/` or `src/pages/` directory as a Pages Router and refuses to build when it sits in another folder than `app/` |
+| `tsconfig.json` is the single app config (plus `tsconfig.e2e.json` for `e2e/` and the tool configs); `"strict": true` written out | TypeScript 6 is strict by default; `next build` inserts `"strict": false` when the key is missing, which weakened the checks the Vite config had |
+| Image imports: `src={logo.src}` (20 files); `lib/images.ts` reads `.src` | Next.js resolves an image import to `{ src, width, height }`; Vitest gets the same shape through a small plugin in `vitest.config.ts` |
+| `lib/images.ts`: `import.meta.glob(["./*.jpg", "./*.png"], { base: "../assets/photos", eager: true, import: "default" })` | Turbopack returned an empty object for `../assets/photos/*.{jpg,png}` (no brace expansion, no parent-relative pattern) |
+| The six `data/*.ts` fixtures use `photo(name)` instead of a dynamic `new URL(..., import.meta.url)` | Turbopack resolved the dynamic `new URL` to one single file: every product card showed the same photo. Caught by the visual comparison; now guarded by the smoke test "each product card shows its own photo" |
+| `dentition.glb`: static `new URL("../../assets/studio3d/dentition.glb", import.meta.url).href` | Turbopack has no loader for `?url` on `.glb` |
+| `process.env.NEXT_PUBLIC_*` in `lib/supabase/client.ts` | `import.meta.env.VITE_*` does not exist in Next.js |
+| oxlint: `react/only-export-components` off for `app/**` | `metadata` and `generateStaticParams` are required Next.js exports; the rule is about Vite fast refresh |
+| `webapp/AGENTS.md` + `webapp/CLAUDE.md` committed | `next dev` writes them whenever an AI agent runs it; committed (with a pointer to the root `AGENTS.md`) so they stop reappearing as uncommitted changes |
+
+Known and accepted: the CSS minifier (Lightning CSS in Turbopack) writes `(width>=40rem)` as `(min-width:40rem)`, `rotate:0deg` as `rotate:none` (`hover:rotate-0` on the two gift-card visuals) and the pill radius `2147483647px` as `3.40282e38px`; the set of rules is otherwise identical to the Vite build, and full-page screenshots of every public route (desktop 1280 px and mobile 390 px, plus the hovered gift card) are pixel-identical between the two builds.
 
 ## Route checklist
 
-Legend — **Access**: open / account (`RequireAccount`) / staff (`RequireAdmin`) / studio (`RequireStudioAccess`) / redirect (client-side `Navigate`). **P1**: served by the catch-all shell. **Smoke**: covered by `webapp/e2e/`. **Native**: App Router segment exists. **SSR**: rendered on the server with metadata (public pages only). Target phase in the last column.
+Legend (phase 1 done: every route below is served by the catch-all shell) — **Access**: open / account (`RequireAccount`) / staff (`RequireAdmin`) / studio (`RequireStudioAccess`) / redirect (client-side `Navigate`). **P1**: served by the catch-all shell. **Smoke**: covered by `webapp/e2e/`. **Native**: App Router segment exists. **SSR**: rendered on the server with metadata (public pages only). Target phase in the last column.
 
 ### Storefront
 
 | Route | Access | P1 | Smoke | Native | SSR | Target |
 | --- | --- | --- | --- | --- | --- | --- |
-| `/` | open | ⬜ | ✅ | ⬜ | ⬜ | 3 |
-| `/accueil-b` → `/` | redirect | ⬜ | ✅ | ⬜ | — | 3 (server redirect) |
-| `/boutique` | open | ⬜ | ✅ | ⬜ | ⬜ | 3 |
-| `/boutique-b` → `/boutique` | redirect | ⬜ | ✅ | ⬜ | — | 3 (server redirect) |
-| `/boutique/:id` | open | ⬜ | ✅ | ⬜ | ⬜ | 3 |
-| `/formes` | open | ⬜ | ✅ | ⬜ | ⬜ | 3 |
-| `/couleurs` | open | ⬜ | ✅ | ⬜ | ⬜ | 3 |
-| `/panier` | open | ⬜ | ✅ (cart flow) | ⬜ | — (client) | 3 |
-| `/fidelite` | open | ⬜ | ✅ | ⬜ | ⬜ | 3 |
-| `/carte-cadeau` | open | ⬜ | ✅ | ⬜ | ⬜ | 3 |
-| `/gift-card` (alias, same page) | open | ⬜ | ⬜ | ⬜ | — | 3 (canonical → `/carte-cadeau`) |
+| `/` | open | ✅ | ✅ | ⬜ | ⬜ | 3 |
+| `/accueil-b` → `/` | redirect | ✅ | ✅ | ⬜ | — | 3 (server redirect) |
+| `/boutique` | open | ✅ | ✅ (+ distinct product photos) | ⬜ | ⬜ | 3 |
+| `/boutique-b` → `/boutique` | redirect | ✅ | ✅ | ⬜ | — | 3 (server redirect) |
+| `/boutique/:id` | open | ✅ | ✅ | ⬜ | ⬜ | 3 |
+| `/formes` | open | ✅ | ✅ | ⬜ | ⬜ | 3 |
+| `/couleurs` | open | ✅ | ✅ | ⬜ | ⬜ | 3 |
+| `/panier` | open | ✅ | ✅ (cart flow) | ⬜ | — (client) | 3 |
+| `/fidelite` | open | ✅ | ✅ | ⬜ | ⬜ | 3 |
+| `/carte-cadeau` | open | ✅ | ✅ | ⬜ | ⬜ | 3 |
+| `/gift-card` (alias, same page) | open | ✅ | ⬜ | ⬜ | — | 3 (canonical → `/carte-cadeau`) |
 
 ### Sign-in, registration, recovery
 
 | Route | Access | P1 | Smoke | Native | SSR | Target |
 | --- | --- | --- | --- | --- | --- | --- |
-| `/connexion` | open | ⬜ | ✅ (mock sign-in) | ⬜ | — | 2 |
-| `/connexion-b` → `/connexion` | redirect | ⬜ | ✅ | ⬜ | — | 2 |
-| `/inscription` | open | ⬜ | ✅ (mock registration) | ⬜ | — | 2 |
-| `/mot-de-passe-oublie`, `/forgot-password` | open | ⬜ | ✅ (FR) | ⬜ | — | 2 |
-| `/reinitialiser-mot-de-passe`, `/reset-password` | open (e-mail link) | ⬜ | ✅ (FR) | ⬜ | — | 2 |
-| `/verifier-email`, `/verify-email` | open (e-mail link) | ⬜ | ✅ (FR) | ⬜ | — | 2 |
-| `/confirmation-compte` | open (Supabase confirmation link) | ⬜ | ✅ | ⬜ | — | 2 |
+| `/connexion` | open | ✅ | ✅ (mock sign-in) | ⬜ | — | 2 |
+| `/connexion-b` → `/connexion` | redirect | ✅ | ✅ | ⬜ | — | 2 |
+| `/inscription` | open | ✅ | ✅ (mock registration) | ⬜ | — | 2 |
+| `/mot-de-passe-oublie`, `/forgot-password` | open | ✅ | ✅ (FR) | ⬜ | — | 2 |
+| `/reinitialiser-mot-de-passe`, `/reset-password` | open (e-mail link) | ✅ | ✅ (FR) | ⬜ | — | 2 |
+| `/verifier-email`, `/verify-email` | open (e-mail link) | ✅ | ✅ (FR) | ⬜ | — | 2 |
+| `/confirmation-compte` | open (Supabase confirmation link) | ✅ | ✅ | ⬜ | — | 2 |
 
 ### Studio 3D
 
 | Route | Access | P1 | Smoke | Native | SSR | Target |
 | --- | --- | --- | --- | --- | --- | --- |
-| `/studio-3d` | open | ⬜ | ✅ | ⬜ | ⬜ | 3 |
-| `/studio-3d/abonnement` | open | ⬜ | ✅ | ⬜ | ⬜ | 3 |
-| `/studio-3d/subscribe` → `/studio-3d/abonnement` | redirect | ⬜ | ✅ | ⬜ | — | 3 |
-| `/studio-3d/atelier/*` (editor, lazy three.js) | studio | ⬜ | ✅ (canvas renders) | ⬜ | — (client only) | 4 |
-| `/studio-3d/editor/*` → `/studio-3d/atelier/*` | redirect | ⬜ | ⬜ | ⬜ | — | 4 |
-| `/studio-3d/partage`, `/studio-3d/partage/:token` | open (lazy three.js) | ⬜ | ✅ (no token) | ⬜ | — (client only) | 4 |
-| `/studio-3d/share`, `/studio-3d/share/:token` → `partage` | redirect | ⬜ | ⬜ | ⬜ | — | 4 |
+| `/studio-3d` | open | ✅ | ✅ | ⬜ | ⬜ | 3 |
+| `/studio-3d/abonnement` | open | ✅ | ✅ | ⬜ | ⬜ | 3 |
+| `/studio-3d/subscribe` → `/studio-3d/abonnement` | redirect | ✅ | ✅ | ⬜ | — | 3 |
+| `/studio-3d/atelier/*` (editor, lazy three.js) | studio | ✅ | ✅ (canvas renders) | ⬜ | — (client only) | 4 |
+| `/studio-3d/editor/*` → `/studio-3d/atelier/*` | redirect | ✅ | ⬜ | ⬜ | — | 4 |
+| `/studio-3d/partage`, `/studio-3d/partage/:token` | open (lazy three.js) | ✅ | ✅ (no token) | ⬜ | — (client only) | 4 |
+| `/studio-3d/share`, `/studio-3d/share/:token` → `partage` | redirect | ✅ | ⬜ | ⬜ | — | 4 |
 
 ### Academy
 
 | Route | Access | P1 | Smoke | Native | SSR | Target |
 | --- | --- | --- | --- | --- | --- | --- |
-| `/academy` | open | ⬜ | ✅ | ⬜ | ⬜ | 3 |
-| `/academy/formation/:id` | open | ⬜ | ✅ | ⬜ | ⬜ | 3 |
-| `/academy/lecon` | account | ⬜ | ⬜ | ⬜ | — | 4 |
-| `/academy/mes-formations/:courseId` | account | ⬜ | ⬜ | ⬜ | — | 4 |
-| `/academy/mes-formations/:courseId/lecon/:nodeKey` | account | ⬜ | ⬜ | ⬜ | — | 4 |
-| `/academy/mes-formations/:courseId/terminee` | account | ⬜ | ⬜ | ⬜ | — | 4 |
+| `/academy` | open | ✅ | ✅ | ⬜ | ⬜ | 3 |
+| `/academy/formation/:id` | open | ✅ | ✅ | ⬜ | ⬜ | 3 |
+| `/academy/lecon` | account | ✅ | ⬜ | ⬜ | — | 4 |
+| `/academy/mes-formations/:courseId` | account | ✅ | ⬜ | ⬜ | — | 4 |
+| `/academy/mes-formations/:courseId/lecon/:nodeKey` | account | ✅ | ⬜ | ⬜ | — | 4 |
+| `/academy/mes-formations/:courseId/terminee` | account | ✅ | ⬜ | ⬜ | — | 4 |
 
 ### Member area (`MemberShell`, account)
 
 | Route | Access | P1 | Smoke | Native | SSR | Target |
 | --- | --- | --- | --- | --- | --- | --- |
-| `/compte` | account | ⬜ | ✅ (redirect + mock sign-in) | ⬜ | — | 4 |
-| `/compte/attestations` | account | ⬜ | ⬜ | ⬜ | — | 4 |
-| `/compte/commandes` | account | ⬜ | ✅ (redirect) | ⬜ | — | 4 |
-| `/compte/profil` | account | ⬜ | ⬜ | ⬜ | — | 4 |
-| `/compte/securite` | account | ⬜ | ⬜ | ⬜ | — | 4 |
-| `/compte/fidelite` | account | ⬜ | ⬜ | ⬜ | — | 4 |
-| `/compte/avis` | account | ⬜ | ⬜ | ⬜ | — | 4 |
-| `/compte/*` (404 inside the shell) | account | ⬜ | ⬜ | ⬜ | — | 4 |
-| `/compte/communaute` | account | ⬜ | ⬜ | ⬜ | — | 4 |
-| `/compte/communaute/canal/:channelId` | account | ⬜ | ⬜ | ⬜ | — | 4 |
-| `/compte/communaute/discussion/:discussionId` | account | ⬜ | ⬜ | ⬜ | — | 4 |
-| `/compte/communaute/activite/:view` | account | ⬜ | ⬜ | ⬜ | — | 4 |
-| `/compte/communaute/membres` | account | ⬜ | ⬜ | ⬜ | — | 4 |
-| `/compte/communaute/charte` | account | ⬜ | ⬜ | ⬜ | — | 4 |
-| `/compte/communaute/*` (404) | account | ⬜ | ⬜ | ⬜ | — | 4 |
+| `/compte` | account | ✅ | ✅ (redirect + mock sign-in) | ⬜ | — | 4 |
+| `/compte/attestations` | account | ✅ | ⬜ | ⬜ | — | 4 |
+| `/compte/commandes` | account | ✅ | ✅ (redirect) | ⬜ | — | 4 |
+| `/compte/profil` | account | ✅ | ⬜ | ⬜ | — | 4 |
+| `/compte/securite` | account | ✅ | ⬜ | ⬜ | — | 4 |
+| `/compte/fidelite` | account | ✅ | ⬜ | ⬜ | — | 4 |
+| `/compte/avis` | account | ✅ | ⬜ | ⬜ | — | 4 |
+| `/compte/*` (404 inside the shell) | account | ✅ | ⬜ | ⬜ | — | 4 |
+| `/compte/communaute` | account | ✅ | ⬜ | ⬜ | — | 4 |
+| `/compte/communaute/canal/:channelId` | account | ✅ | ⬜ | ⬜ | — | 4 |
+| `/compte/communaute/discussion/:discussionId` | account | ✅ | ⬜ | ⬜ | — | 4 |
+| `/compte/communaute/activite/:view` | account | ✅ | ⬜ | ⬜ | — | 4 |
+| `/compte/communaute/membres` | account | ✅ | ⬜ | ⬜ | — | 4 |
+| `/compte/communaute/charte` | account | ✅ | ⬜ | ⬜ | — | 4 |
+| `/compte/communaute/*` (404) | account | ✅ | ⬜ | ⬜ | — | 4 |
 
 ### Back office (`AdminLayout`, staff)
 
 | Route | Access | P1 | Smoke | Native | SSR | Target |
 | --- | --- | --- | --- | --- | --- | --- |
-| `/admin/connexion` | open | ⬜ | ✅ | ⬜ | — | 2 |
-| `/admin` | staff | ⬜ | ✅ (redirect) | ⬜ | — | 4 |
-| `/admin/commandes`, `/admin/commandes/:reference` | staff | ⬜ | ⬜ | ⬜ | — | 4 |
-| `/admin/clients`, `/admin/clients/:id` | staff | ⬜ | ⬜ | ⬜ | — | 4 |
-| `/admin/utilisateurs` | staff | ⬜ | ⬜ | ⬜ | — | 4 |
-| `/admin/statistiques` | staff | ⬜ | ⬜ | ⬜ | — | 4 |
-| `/admin/produits` | staff | ⬜ | ✅ (redirect) | ⬜ | — | 4 |
-| `/admin/produits/nouveau`, `/admin/produits/:id`, `/admin/produits/:id/recommandations` | staff | ⬜ | ⬜ | ⬜ | — | 4 |
-| `/admin/categories` | staff | ⬜ | ⬜ | ⬜ | — | 4 |
-| `/admin/promotions`, `/nouvelle`, `/apercu`, `/:id`, `/:id/modifier` | staff | ⬜ | ⬜ | ⬜ | — | 4 |
-| `/admin/promotions/cartes-cadeaux/configuration`, `/cartes-cadeaux/:code` | staff | ⬜ | ⬜ | ⬜ | — | 4 |
-| `/admin/promotions/campagnes/nouvelle`, `/:id`, `/:id/modifier` | staff | ⬜ | ⬜ | ⬜ | — | 4 |
-| `/admin/avis` | staff | ⬜ | ⬜ | ⬜ | — | 4 |
-| `/admin/parametres` | staff | ⬜ | ⬜ | ⬜ | — | 4 |
-| `/admin/formations`, `/nouvelle`, `/:id`, `/:id/apercu`, `/:id/publication` | staff | ⬜ | ⬜ | ⬜ | — | 4 |
+| `/admin/connexion` | open | ✅ | ✅ | ⬜ | — | 2 |
+| `/admin` | staff | ✅ | ✅ (redirect) | ⬜ | — | 4 |
+| `/admin/commandes`, `/admin/commandes/:reference` | staff | ✅ | ⬜ | ⬜ | — | 4 |
+| `/admin/clients`, `/admin/clients/:id` | staff | ✅ | ⬜ | ⬜ | — | 4 |
+| `/admin/utilisateurs` | staff | ✅ | ⬜ | ⬜ | — | 4 |
+| `/admin/statistiques` | staff | ✅ | ⬜ | ⬜ | — | 4 |
+| `/admin/produits` | staff | ✅ | ✅ (redirect) | ⬜ | — | 4 |
+| `/admin/produits/nouveau`, `/admin/produits/:id`, `/admin/produits/:id/recommandations` | staff | ✅ | ⬜ | ⬜ | — | 4 |
+| `/admin/categories` | staff | ✅ | ⬜ | ⬜ | — | 4 |
+| `/admin/promotions`, `/nouvelle`, `/apercu`, `/:id`, `/:id/modifier` | staff | ✅ | ⬜ | ⬜ | — | 4 |
+| `/admin/promotions/cartes-cadeaux/configuration`, `/cartes-cadeaux/:code` | staff | ✅ | ⬜ | ⬜ | — | 4 |
+| `/admin/promotions/campagnes/nouvelle`, `/:id`, `/:id/modifier` | staff | ✅ | ⬜ | ⬜ | — | 4 |
+| `/admin/avis` | staff | ✅ | ⬜ | ⬜ | — | 4 |
+| `/admin/parametres` | staff | ✅ | ⬜ | ⬜ | — | 4 |
+| `/admin/formations`, `/nouvelle`, `/:id`, `/:id/apercu`, `/:id/publication` | staff | ✅ | ⬜ | ⬜ | — | 4 |
 
 ### Help centre and legal pages
 
 | Route | Access | P1 | Smoke | Native | SSR | Target |
 | --- | --- | --- | --- | --- | --- | --- |
-| `/aide` | open | ⬜ | ✅ | ⬜ | ⬜ | 3 |
-| `/aide/faq` | open | ⬜ | ✅ | ⬜ | ⬜ | 3 |
-| `/contact` | open | ⬜ | ✅ | ⬜ | ⬜ | 3 |
-| `/a-propos` | open | ⬜ | ✅ | ⬜ | ⬜ | 3 |
-| `/mentions-legales` | open | ⬜ | ✅ | ⬜ | ⬜ | 3 |
-| `/conditions-generales` | open | ⬜ | ✅ | ⬜ | ⬜ | 3 |
-| `/confidentialite` | open | ⬜ | ✅ | ⬜ | ⬜ | 3 |
-| `/cookies` | open | ⬜ | ✅ | ⬜ | ⬜ | 3 |
-| `/livraison` | open | ⬜ | ✅ | ⬜ | ⬜ | 3 |
-| `/retours-remboursements` | open | ⬜ | ✅ | ⬜ | ⬜ | 3 |
-| English aliases `/help`, `/faq`, `/shipping`, `/returns`, `/legal-notice`, `/terms-of-sale`, `/privacy-policy`, `/cookie-policy`, `/about` | redirect | ⬜ | ✅ (`/help`, `/privacy-policy`, `/terms-of-sale`) | ⬜ | — | 3 (server redirects) |
+| `/aide` | open | ✅ | ✅ | ⬜ | ⬜ | 3 |
+| `/aide/faq` | open | ✅ | ✅ | ⬜ | ⬜ | 3 |
+| `/contact` | open | ✅ | ✅ | ⬜ | ⬜ | 3 |
+| `/a-propos` | open | ✅ | ✅ | ⬜ | ⬜ | 3 |
+| `/mentions-legales` | open | ✅ | ✅ | ⬜ | ⬜ | 3 |
+| `/conditions-generales` | open | ✅ | ✅ | ⬜ | ⬜ | 3 |
+| `/confidentialite` | open | ✅ | ✅ | ⬜ | ⬜ | 3 |
+| `/cookies` | open | ✅ | ✅ | ⬜ | ⬜ | 3 |
+| `/livraison` | open | ✅ | ✅ | ⬜ | ⬜ | 3 |
+| `/retours-remboursements` | open | ✅ | ✅ | ⬜ | ⬜ | 3 |
+| English aliases `/help`, `/faq`, `/shipping`, `/returns`, `/legal-notice`, `/terms-of-sale`, `/privacy-policy`, `/cookie-policy`, `/about` | redirect | ✅ | ✅ (`/help`, `/privacy-policy`, `/terms-of-sale`) | ⬜ | — | 3 (server redirects) |
 
 ### System pages
 
 | Route | Access | P1 | Smoke | Native | SSR | Target |
 | --- | --- | --- | --- | --- | --- | --- |
-| `/erreur` | open | ⬜ | ✅ | ⬜ | — | 3 (becomes `error.tsx`) |
-| `/maintenance` | open | ⬜ | ✅ | ⬜ | — | 3 |
-| `*` (404) | open | ⬜ | ✅ | ⬜ | — | 3 (`not-found.tsx`, real 404 status) |
+| `/erreur` | open | ✅ | ✅ | ⬜ | — | 3 (becomes `error.tsx`) |
+| `/maintenance` | open | ✅ | ✅ | ⬜ | — | 3 |
+| `*` (404) | open | ✅ | ✅ | ⬜ | — | 3 (`not-found.tsx`, real 404 status) |
 
 ## Open decisions (ask the user)
 
@@ -189,8 +208,16 @@ Legend — **Access**: open / account (`RequireAccount`) / staff (`RequireAdmin`
 
 Newest first. For each session: what changed, the commands run and their real results.
 
+### 2026-09-30 — Phase 1
+
+- Next.js 16.3.7 shell as described in "Phase 1 — how the shell works"; `index.html`, `main.tsx`, `vite-env.d.ts`, `vite.config.ts`, `tsconfig.app.json`, `tsconfig.node.json` and `vercel.json` removed; `src/pages/` → `src/screens/`; `.claude/launch.json` uses `npm run dev:mock` instead of Vite's `--mode mock`.
+- New smoke test: every product card on `/boutique` shows its own photo (49 tests in total).
+- Results (mock mode): `npm run typecheck` OK; `npm run lint` 0 errors, 95 warnings (same count as `dev` before the migration); `npm test` 24 files / 271 tests passed; `npm run build` OK (`/` prerendered, the other paths on demand); `npm run test:e2e` 49 passed on `next dev` (the two runs before the last test was added passed 48/48; earlier, the registration test failed twice under load on a fragile click on its visually hidden terms checkbox, fixed in the test) and 49 passed on `next build` + `next start`; `npm run dev:mock` answers on port 5173.
+- Visual check (throwaway script, not committed): full-page screenshots of the 33 public routes at 1280 px and 390 px, plus the hovered gift card, taken from the Vite build of the phase 0 commit (stable: 68/68 identical on two runs) and from the Next.js production build: 68/68 identical with a zero-pixel tolerance, after the fixture-photo fix above (before it, 12 captures differed).
+- The generated CSS was compared rule by rule with the Vite build: identical apart from the minifier rewrites listed above.
+
 ### 2026-09-30 — Phase 0
 
 - Decision recorded in `AGENTS.md` §3–§5, guidelines 02, 07 and 08; this file created.
 - Playwright 1.63 added (`playwright.config.ts`, `e2e/`, `npm run test:e2e`, `tsconfig.e2e.json`); Vitest limited to `src/**/*.test.{ts,tsx}`.
-- Results on the Vite app (mock mode): `npx tsc -b` OK; `npm run lint` 0 errors (existing warnings only); `npm test` 24 files / 271 tests passed; `npm run build` OK; `npm run test:e2e` 48 passed.
+- Results on the Vite app (mock mode): `npx tsc -b` OK; `npm test` 24 files / 271 tests passed; `npm run build` OK; `npm run test:e2e` 48 passed. Correction made in phase 1: `npm run lint` was reported here as clean, but the phase 0 commit had one lint error in `e2e/fixtures.ts` (Playwright's `use` fixture parameter read as a React hook); fixed in phase 1 by renaming the parameter.

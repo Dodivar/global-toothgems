@@ -1,4 +1,5 @@
 import type { Localized } from "./types";
+import { photo } from "../lib/images";
 
 /**
  * Training catalogue for the administration prototype.
@@ -14,7 +15,7 @@ import type { Localized } from "./types";
  * not interface chrome.
  */
 
-const img = (name: string) => new URL(`../assets/photos/${name}`, import.meta.url).href;
+const img = photo;
 
 /** Compact constructor — this file is mostly bilingual prose. */
 const L = (fr: string, en: string): Localized => ({ fr, en });

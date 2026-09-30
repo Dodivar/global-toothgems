@@ -1,4 +1,5 @@
 import type { Localized } from "./types";
+import { photo } from "../lib/images";
 
 export interface Course {
   id: string;
@@ -18,7 +19,7 @@ export interface Course {
   trainingId: string;
 }
 
-const img = (name: string) => new URL(`../assets/photos/${name}`, import.meta.url).href;
+const img = photo;
 
 /**
  * Lesson counts and durations mirror the single syllabus in `data/lessons.ts`

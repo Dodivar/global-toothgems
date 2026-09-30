@@ -75,7 +75,7 @@ export function StudioShare() {
           to={STUDIO_PATH}
           className="flex min-w-0 items-center gap-2.5 rounded-[var(--radius-sm)] focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-[var(--focus-ring)]"
         >
-          <img src={monogram} alt="" aria-hidden="true" className="h-7 w-7 flex-none object-contain" />
+          <img src={monogram.src} alt="" aria-hidden="true" className="h-7 w-7 flex-none object-contain" />
           <span className="text-[15px] font-[var(--weight-black)] tracking-[var(--tracking-tight)] text-[var(--text-primary)]">
             {t("studio.editor.appName")}
           </span>

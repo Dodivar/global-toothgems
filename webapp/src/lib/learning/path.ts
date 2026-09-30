@@ -7,7 +7,7 @@ import type { Module, Quiz, TrainingCourse } from "../../data/adminTraining";
  * The course is read exactly as the builder stores it: every step of every
  * module in order, and each module's knowledge check (if it has one) right
  * after its last step. This is the same walk the administrator's preview takes
- * (`pages/admin/TrainingPreview.tsx`), so the two views of a course can never
+ * (`screens/admin/TrainingPreview.tsx`), so the two views of a course can never
  * disagree on what comes next.
  *
  * Everything here is pure and deterministic. In production the same rules run

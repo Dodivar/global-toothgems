@@ -117,7 +117,7 @@ export function MemberShell() {
             <Menu size={20} aria-hidden="true" />
           </button>
           <Link to="/" aria-label={t("nav.home")} className={clsx("grid h-10 w-10 flex-none place-items-center rounded-[var(--radius-sm)]", focusRing)}>
-            <img src={monogram} alt="" className="h-7 w-7 object-contain" />
+            <img src={monogram.src} alt="" className="h-7 w-7 object-contain" />
           </Link>
           <p className="m-0 min-w-0 flex-1 truncate text-[15px] font-[var(--weight-black)] text-[var(--text-primary)]">
             {section ? t(section.labelKey) : t("account.eyebrow")}
@@ -192,7 +192,7 @@ function SidebarBody({ onNavigate, closeButton }: { onNavigate?: () => void; clo
     <>
       <div className="flex h-16 flex-none items-center gap-2 border-b border-[var(--border-subtle)] px-5">
         <Link to="/" onClick={onNavigate} className={clsx("flex-1 rounded-[var(--radius-sm)]", focusRing)}>
-          <img src={logoBlack} alt={t("account.shell.homeAlt")} className="h-5 w-auto" />
+          <img src={logoBlack.src} alt={t("account.shell.homeAlt")} className="h-5 w-auto" />
         </Link>
         {closeButton}
       </div>

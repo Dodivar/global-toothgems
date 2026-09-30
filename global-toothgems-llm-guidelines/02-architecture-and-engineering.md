@@ -39,7 +39,7 @@ Rules of thumb:
 
 - `app/` Next.js App Router: the root layout and, during the migration, the catch-all client page `app/[[...slug]]` that runs the React Router app; migrated routes get their own App Router segments here.
 
-- `src/pages/` one component per route (React Router screens, moved to `app/` route by route); `components/<domain>/` presentational pieces; `components/ui/` and `components/admin/` shared primitives.
+- `src/screens/` one component per route (React Router screens, moved to `app/` route by route; not `src/pages/`, which Next.js would read as a Pages Router); `components/<domain>/` presentational pieces; `components/ui/` and `components/admin/` shared primitives.
 - `src/lib/<domain>.tsx` one store/context per domain — the only place a domain's data changes. Screens never import the Supabase client directly.
 - `src/lib/*Mapping.ts` pure row ↔ UI conversions (money to minor units, locale fallback, statuses), unit-tested.
 - `src/lib/supabase/` typed client (`client.ts`), generated `database.types.ts`, storage helpers.

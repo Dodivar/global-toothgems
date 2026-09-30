@@ -279,7 +279,7 @@ refund     request_refund = card (Stripe) payments only; refund_to_gift_cards() 
 
 ### Member account (iteration 5)
 
-Checked against the member area prototype (`webapp/src/pages/account/*`, `lib/auth.tsx`,
+Checked against the member area prototype (`webapp/src/screens/account/*`, `lib/auth.tsx`,
 `lib/registration.ts`, `lib/securityState.tsx`, `lib/cookieConsent.tsx`, `data/loyalty.ts`,
 `data/orders.ts`, `data/adminCustomers.ts`). Training (courses, lessons, certificates) and the
 community it unlocks are deliberately left for the training iteration.
@@ -399,7 +399,7 @@ server  create_order(..., p_promotion_codes => ['WELCOME15'], p_use_loyalty_rewa
 
 ### Public pages and customer service (iteration 7)
 
-**Contact form → tickets** (`webapp/src/pages/legal/Contact.tsx`)
+**Contact form → tickets** (`webapp/src/screens/legal/Contact.tsx`)
 - Only path in: `submit_contact_request(name, email, category, subject, message, order_reference?, locale?, attachment_path?)`
   → returns the ticket number (`SUP-100001…`). Members call it with their JWT; **visitors go through the server
   route** (captcha, IP limit) which calls it with the service role — `anon` cannot call it.
@@ -440,13 +440,13 @@ public  newsletter_unsubscribe(token)   one-click link in every marketing e-mail
 - Content pages are public once published (with their published translations); editing needs the new
   `manage_content` permission (managers, administrators).
 
-**Maintenance** (`pages/Maintenance.tsx`): `store_settings.maintenance_enabled` (+ start time stamped, optional
+**Maintenance** (`screens/Maintenance.tsx`): `store_settings.maintenance_enabled` (+ start time stamped, optional
 expected end, staff bypass), public read, `manage_settings` to switch, audited. The storefront and the server
 routes (checkout included) must check it — the database does not block orders by itself.
 
 ### Statistics (iteration 8)
 
-`webapp/src/pages/admin/Statistics.tsx` reads one `AnalyticsSnapshot` (`webapp/src/data/adminAnalytics.ts`).
+`webapp/src/screens/admin/Statistics.tsx` reads one `AnalyticsSnapshot` (`webapp/src/data/adminAnalytics.ts`).
 `analytics_snapshot(p_from date, p_to date, p_filters jsonb = '{}', p_currency = 'EUR', p_timezone = 'Europe/Paris')`
 returns that object (camelCase JSON). Nothing is stored: every call recomputes from the orders, so figures cannot
 drift from them.

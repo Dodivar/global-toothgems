@@ -46,7 +46,7 @@ export function MockInbox({
       </h2>
       <article className="grid gap-3 rounded-[var(--radius-md)] bg-white p-4 shadow-[var(--shadow-sm)]">
         <header className="flex items-center gap-3">
-          <img src={monogram} alt="" className="h-9 w-9 rounded-full bg-[var(--gt-ink-900)] object-contain p-1.5" />
+          <img src={monogram.src} alt="" className="h-9 w-9 rounded-full bg-[var(--gt-ink-900)] object-contain p-1.5" />
           <div className="grid min-w-0 flex-1">
             <strong className="text-[length:var(--text-body-sm)] text-[var(--text-primary)]">Global Toothgems</strong>
             <span className="truncate text-[length:var(--text-caption)] text-[var(--text-muted)]">{t("security.mailTo", { email: to })}</span>

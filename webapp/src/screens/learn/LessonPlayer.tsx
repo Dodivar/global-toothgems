@@ -254,7 +254,7 @@ function PlayerBar({
           className="flex min-w-0 items-center gap-2.5 rounded-[var(--radius-pill)] py-1 pr-3 text-[length:var(--text-body-sm)] font-semibold text-[var(--text-primary)] hover:text-[var(--text-link-hover)]"
         >
           <ArrowLeft size={18} aria-hidden="true" className="flex-none" />
-          <img src={monogram} alt="" aria-hidden="true" className="hidden h-7 w-7 flex-none object-contain sm:block" />
+          <img src={monogram.src} alt="" aria-hidden="true" className="hidden h-7 w-7 flex-none object-contain sm:block" />
           <span className="sr-only sm:not-sr-only sm:truncate">{t("learning.backToOverview")}</span>
           <span className="sr-only">· {title}</span>
         </Link>

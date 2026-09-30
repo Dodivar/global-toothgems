@@ -1,4 +1,5 @@
-const img = (name: string) => new URL(`../assets/photos/${name}`, import.meta.url).href;
+import { photo } from "../lib/images";
+const img = photo;
 
 /**
  * Customer reviews and their moderation — types and seed.
