@@ -367,13 +367,15 @@ function QuestionCard({
             {(showImagePicker || question.image) && (
               <MediaPicker
                 value={question.image ?? ""}
+                autoOpen={showImagePicker && !question.image}
+                onCancel={() => setShowImagePicker(false)}
+                showPreview={false}
                 onChange={(image) => {
                   updateQuestion(courseId, moduleId, question.id, { image });
                   setShowImagePicker(false);
                 }}
                 label={t("admin.training.quiz.questionImage")}
                 hint={t("admin.training.quiz.questionImageHint")}
-                columns={4}
               />
             )}
           </div>

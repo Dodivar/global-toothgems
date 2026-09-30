@@ -4,22 +4,20 @@ import { Badge } from "../ui/Badge";
 import { Button } from "../ui/Button";
 import { ProgressBar } from "../ui/ProgressBar";
 import type { Course } from "../../data/courses";
-import { MODULES, MODULE_OFFSETS } from "../../data/lessons";
 import { pick } from "../../data/types";
 import type { CourseProgress } from "../../lib/progress";
 import { formatDate } from "../../lib/format";
+import { formatDuration } from "../../lib/trainingFilters";
 
-/** Per-module completion for one course, from its single `doneCount`. */
-function ModuleBreakdown({ doneCount, lang }: { doneCount: number; lang: string }) {
+/** Per-module completion for one course, as the authored modules stand. */
+function ModuleBreakdown({ modules, lang }: { modules: CourseProgress["modules"]; lang: string }) {
   return (
     <ul className="m-0 flex list-none flex-wrap gap-2 p-0">
-      {MODULES.map((module, i) => {
-        const total = module.lessons.length;
-        const done = Math.max(0, Math.min(total, doneCount - MODULE_OFFSETS[i]));
-        const complete = done === total;
+      {modules.map((module) => {
+        const complete = module.status === "completed";
         return (
           <li
-            key={module.title.fr}
+            key={module.id}
             className="flex items-center gap-1.5 rounded-[var(--radius-pill)] border px-2.5 py-1 text-[11px] font-medium"
             style={{
               borderColor: complete ? "var(--gt-emerald-300)" : "var(--border-subtle)",
@@ -30,7 +28,7 @@ function ModuleBreakdown({ doneCount, lang }: { doneCount: number; lang: string 
             {complete && <Check size={11} strokeWidth={3} aria-hidden="true" />}
             <span>{pick(module.title, lang)}</span>
             <span className="tabular-nums">
-              {done}/{total}
+              {module.done}/{module.total}
             </span>
           </li>
         );
@@ -62,7 +60,7 @@ export function EnrolledCourseRow({
           <div className="grid gap-1">
             <h3 className="text-[length:var(--text-h4)]">{pick(course.title, lang)}</h3>
             <span className="text-[length:var(--text-caption)] text-[var(--text-muted)]">
-              {pick(course.level, lang)} · {t("course.lessonCount", { count: progress.total })} · {course.duration}
+              {pick(course.level, lang)} · {t("course.lessonCount", { count: progress.total })} · {formatDuration(progress.totalMinutes, lang)}
             </span>
           </div>
           <Badge tone={progress.completed ? "success" : "brand"} size="sm">
@@ -77,7 +75,7 @@ export function EnrolledCourseRow({
           label={t("lesson.progressLabel", { done: progress.doneCount, total: progress.total })}
         />
 
-        <ModuleBreakdown doneCount={progress.doneCount} lang={lang} />
+        <ModuleBreakdown modules={progress.modules} lang={lang} />
 
         <div className="flex flex-wrap items-center gap-3">
           <Button variant={progress.completed ? "outline" : "dark"} size="sm" iconRight={ArrowRight} onClick={onOpen}>

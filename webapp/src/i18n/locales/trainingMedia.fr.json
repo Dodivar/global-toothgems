@@ -1,0 +1,80 @@
+{
+  "title": "Médiathèque des formations",
+  "badge": "Formations uniquement",
+  "subtitle": "Les images des formations, modules et leçons. Distincte des photos produits de la boutique.",
+  "close": "Fermer la médiathèque",
+  "search": "Rechercher une image de formation",
+  "searchPlaceholder": "Rechercher par nom, description ou mot-clé",
+  "usageFilter": "Afficher",
+  "usage": {
+    "all": "Toutes les images",
+    "unused": "Pas encore utilisées",
+    "uploads": "Importées pendant cette session"
+  },
+  "categoryFilter": "Filtrer par catégorie",
+  "category": {
+    "all": "Toutes",
+    "technique": "Technique",
+    "hygiene": "Hygiène",
+    "materials": "Matériel",
+    "results": "Résultats",
+    "studio": "Studio et clients"
+  },
+  "upload": "Importer des images",
+  "uploading": "Imports en cours",
+  "uploadingFile": "Import… {{progress}} %",
+  "dropHere": "Déposez pour ajouter à la médiathèque des formations",
+  "rejectedTitle_one": "{{count}} fichier n’a pas été ajouté",
+  "rejectedTitle_other": "{{count}} fichiers n’ont pas été ajoutés",
+  "rejected": {
+    "type": "images JPG, PNG, WebP ou AVIF uniquement.",
+    "size": "plus lourd que {{max}}.",
+    "empty": "le fichier est vide."
+  },
+  "emptyTitle": "Aucune image de formation pour l’instant",
+  "emptyBody": "Importez les photos de vos leçons : glissez-les ici ou choisissez-les sur votre ordinateur.",
+  "emptyCta": "Importer votre première image",
+  "noMatch": "Aucune image ne correspond à ces filtres.",
+  "clearFilters": "Effacer les filtres",
+  "gridLabel": "Images de formation",
+  "count_one": "{{count}} image",
+  "count_other": "{{count}} images",
+  "inUse_one": "Utilisée 1 fois",
+  "inUse_other": "Utilisée {{count}} fois",
+  "new": "Nouvelle",
+  "selected": "sélectionnée",
+  "details": "Détails de l’image",
+  "detailsEmpty": "Sélectionnez une image pour voir ses détails, la décrire et l’insérer.",
+  "meta": {
+    "size": "Taille",
+    "added": "Ajoutée le",
+    "usage": "Utilisation"
+  },
+  "usedIn_one": "Utilisée à {{count}} endroit",
+  "usedIn_other": "Utilisée à {{count}} endroits",
+  "notUsed": "Pas encore utilisée",
+  "fields": {
+    "name": "Nom",
+    "category": "Catégorie",
+    "altFr": "Description (français)",
+    "altEn": "Description (anglais)",
+    "altHint": "Proposée comme texte alternatif lorsque l’image est insérée dans une leçon.",
+    "tags": "Mots-clés",
+    "tagsHint": "Séparés par des virgules, pour retrouver l’image."
+  },
+  "delete": "Supprimer",
+  "deleteConfirm": "Supprimer cette image de la médiathèque ? Cette action est définitive.",
+  "deleteBlocked_one": "Utilisée à {{count}} endroit d’une formation. Remplacez-la là-bas avant de la supprimer.",
+  "deleteBlocked_other": "Utilisée à {{count}} endroits des formations. Remplacez-la là-bas avant de la supprimer.",
+  "cancel": "Annuler",
+  "insert": "Insérer l’image",
+  "noneSelected": "Aucune image sélectionnée",
+  "selectedName": "Sélection : {{name}}",
+  "picker": {
+    "choose": "Ouvrir la médiathèque",
+    "change": "Changer d’image",
+    "none": "Aucune image choisie",
+    "current": "Image actuelle",
+    "from": "Depuis la médiathèque des formations"
+  }
+}

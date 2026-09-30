@@ -22,7 +22,8 @@ import { FormField } from "../FormField";
 import { AdminSelect } from "../AdminSelect";
 import { BlockTypeBadge } from "./TrainingPrimitives";
 import { MediaPicker } from "./MediaPicker";
-import { RichTextEditor, RichTextView } from "./RichTextEditor";
+import { RichTextEditor } from "./RichTextEditor";
+import { LessonBlock } from "../../learning/LessonBlocks";
 import { BLOCK_TYPES, type BlockType, type ContentBlock, type ImageBlock, type TextBlock, type VideoBlock } from "../../../data/adminTraining";
 import type { ContentLang } from "../../../lib/localized";
 import type { DragItemProps } from "../../../lib/useDragReorder";
@@ -379,10 +380,15 @@ export function ImageBlockEditor({
   block,
   lang,
   onChange,
+  openLibrary = false,
+  onLibraryDone,
 }: {
   block: ImageBlock;
   lang: ContentLang;
   onChange: (patch: Partial<ImageBlock>) => void;
+  /** Set for a block that was just added: choosing its image comes first. */
+  openLibrary?: boolean;
+  onLibraryDone?: () => void;
 }) {
   const { t } = useTranslation();
 
@@ -449,7 +455,17 @@ export function ImageBlockEditor({
 
       <MediaPicker
         value={block.src}
-        onChange={(src) => onChange({ src })}
+        autoOpen={openLibrary}
+        onCancel={onLibraryDone}
+        // The library's own description is offered where the block has none,
+        // in both languages; an author's wording is never overwritten.
+        onPick={(media) => {
+          onLibraryDone?.();
+          onChange({
+            src: media.src,
+            alt: { fr: block.alt.fr || media.alt.fr, en: block.alt.en || media.alt.en },
+          });
+        }}
         label={t("admin.training.blocks.imageReplace")}
       />
     </div>
@@ -591,38 +607,13 @@ export function VideoFrame({
 /* Read-only rendering                                                         */
 /* -------------------------------------------------------------------------- */
 
-/** How a block looks to a learner. Used by the preview and the step preview. */
+/**
+ * How a block looks to a learner. Used by the preview and the step preview.
+ *
+ * It is the learner's own renderer (`components/learning/LessonBlocks.tsx`),
+ * not a lookalike: what an administrator previews is exactly what a learner
+ * reads, video player and sanitised text included.
+ */
 export function BlockView({ block, lang }: { block: ContentBlock; lang: ContentLang }) {
-  if (block.type === "text") {
-    return <RichTextView html={block.html[lang]} />;
-  }
-
-  if (block.type === "image") {
-    const width = block.align === "full" ? "w-full" : block.align === "center" ? "mx-auto max-w-[520px]" : "max-w-[420px]";
-    return (
-      <figure className={clsx("m-0 grid gap-2", width)}>
-        <img
-          src={block.src}
-          alt={block.alt[lang]}
-          className="w-full rounded-[var(--radius-media)] border border-[var(--border-subtle)] object-cover"
-        />
-        {block.caption[lang] && (
-          <figcaption className="text-[length:var(--text-caption)] text-[var(--text-muted)]">
-            {block.caption[lang]}
-          </figcaption>
-        )}
-      </figure>
-    );
-  }
-
-  return (
-    <figure className="m-0 grid gap-2">
-      <VideoFrame poster={block.poster} title={block.title[lang]} duration={block.duration} large />
-      {block.caption[lang] && (
-        <figcaption className="text-[length:var(--text-caption)] text-[var(--text-muted)]">
-          {block.caption[lang]}
-        </figcaption>
-      )}
-    </figure>
-  );
+  return <LessonBlock block={block} lang={lang} />;
 }

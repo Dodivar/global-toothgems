@@ -7,6 +7,8 @@ import { CartProvider } from "./lib/cart";
 import { CatalogProvider } from "./lib/catalog/CatalogProvider";
 import { OrdersProvider } from "./lib/orders";
 import { ProgressProvider } from "./lib/progress";
+import { AdminTrainingProvider } from "./lib/adminTraining";
+import { TrainingMediaProvider } from "./lib/trainingMedia";
 import { CommunityProvider } from "./lib/community";
 import { ToastProvider } from "./lib/toast";
 import { SecurityProvider } from "./lib/securityState";
@@ -28,7 +30,11 @@ import { ProductDetail } from "./pages/ProductDetail";
 import { Cart } from "./pages/Cart";
 import { Academy } from "./pages/Academy";
 import { CourseDetail } from "./pages/CourseDetail";
-import { Lesson } from "./pages/Lesson";
+import { CourseOverview } from "./pages/learn/CourseOverview";
+import { LessonPlayer } from "./pages/learn/LessonPlayer";
+import { CourseCompleted } from "./pages/learn/CourseCompleted";
+import { ResumeTraining } from "./pages/learn/ResumeTraining";
+import { isLessonPlayerPath } from "./lib/academyUrl";
 import { Login } from "./pages/Login";
 import { ConfirmAccount } from "./pages/ConfirmAccount";
 import { Register } from "./pages/Register";
@@ -162,7 +168,8 @@ export default function App() {
   const editorial = pathname === EDITORIAL_ROUTE;
   const adminArea = pathname === ADMIN_ROUTE_PREFIX || pathname.startsWith(`${ADMIN_ROUTE_PREFIX}/`);
   const bareChrome = adminArea || pathname === MAINTENANCE_ROUTE;
-  const workspace = WORKSPACE_ROUTES.includes(pathname);
+  // The lesson player is a distraction-free workspace with its own bar.
+  const workspace = WORKSPACE_ROUTES.includes(pathname) || isLessonPlayerPath(pathname);
 
   return (
     // The product catalogue (Supabase, or the mock fixtures when it is not
@@ -177,6 +184,13 @@ export default function App() {
           the admin layout: the storefront gift card page reads the same product
           configuration, so an edit in the back office shows on /carte-cadeau. */}
       <PromotionsProvider>
+        {/* The authored training catalogue: what the back office builds is
+            exactly what a learner reads, so the store sits above both rather
+            than inside the admin layout. Learning progress reads it. */}
+        <AdminTrainingProvider>
+        {/* The training image library (back office). Beside the courses so an
+            uploaded lesson image keeps showing on the learner's side. */}
+        <TrainingMediaProvider>
         {/* Learning progress and orders sit above the cart: paying turns the cart
             into an order, and both histories feed the member dashboard. */}
         <ProgressProvider>
@@ -281,11 +295,43 @@ export default function App() {
                           /academy/:id: a dynamic child there would sit alongside
                           the player's own static /academy/lecon segment. */}
                       <Route path="/academy/formation/:id" element={<CourseDetail />} />
+                      {/* The historical entry point: every "open this course"
+                          action lands here, and it forwards to the overview of
+                          the course that was just opened. */}
                       <Route
                         path="/academy/lecon"
                         element={
                           <RequireAccount>
-                            <Lesson />
+                            <ResumeTraining />
+                          </RequireAccount>
+                        }
+                      />
+                      {/* The learner's own pages for a course on the account:
+                          its overview, each lesson (a step, or a module's
+                          knowledge check) and the completion screen. Gated by
+                          the account here, and by the enrolment inside each
+                          page (`lib/learning/access.ts`). */}
+                      <Route
+                        path="/academy/mes-formations/:courseId"
+                        element={
+                          <RequireAccount>
+                            <CourseOverview />
+                          </RequireAccount>
+                        }
+                      />
+                      <Route
+                        path="/academy/mes-formations/:courseId/lecon/:nodeKey"
+                        element={
+                          <RequireAccount>
+                            <LessonPlayer />
+                          </RequireAccount>
+                        }
+                      />
+                      <Route
+                        path="/academy/mes-formations/:courseId/terminee"
+                        element={
+                          <RequireAccount>
+                            <CourseCompleted />
                           </RequireAccount>
                         }
                       />
@@ -452,6 +498,8 @@ export default function App() {
             </CartProvider>
           </OrdersProvider>
         </ProgressProvider>
+        </TrainingMediaProvider>
+        </AdminTrainingProvider>
       </PromotionsProvider>
       </AdminAuthProvider>
       </SecurityProvider>

@@ -10,16 +10,22 @@ export interface Course {
   image: string;
   copy: Localized;
   meta: Localized;
+  /**
+   * The authored training this product gives access to — the course built in
+   * the back office (`data/adminTrainingSeed.ts`). Buying the product is the
+   * entitlement; the learner then reads that course exactly as it was built.
+   */
+  trainingId: string;
 }
 
 const img = (name: string) => new URL(`../assets/photos/${name}`, import.meta.url).href;
 
 /**
- * Lesson counts and durations mirror the single authored syllabus in
- * `data/lessons.ts` (9 lessons, ~1 h 30), which every course shares in this
- * prototype. They have to match: the lesson player and the member dashboard
- * both compute progress against that syllabus, so a course advertising 18
- * lessons would never reach 100 % or unlock its certificate.
+ * Lesson counts and durations mirror the single syllabus in `data/lessons.ts`
+ * (9 lessons, ~1 h 30), which the Academy sales pages still advertise. The
+ * learner experience itself no longer reads that syllabus: it reads the course
+ * linked by `trainingId`, as authored in the back office, and derives its own
+ * counts and progress from it (`lib/progress.tsx`).
  */
 export const COURSES: Course[] = [
   {
@@ -35,6 +41,7 @@ export const COURSES: Course[] = [
       en: "Enamel prep, choosing the gem, application, polishing and damage-free removal.",
     },
     meta: { fr: "9 leçons · 1 h 30 · FR · EN · DE", en: "9 lessons · 1h30 · FR · EN · DE" },
+    trainingId: "pose-professionnelle",
   },
   {
     id: "avance",
@@ -49,6 +56,7 @@ export const COURSES: Course[] = [
       en: "Multi-gem compositions, lateral teeth, difficult cases and corrections.",
     },
     meta: { fr: "9 leçons · 1 h 30 · prérequis Fondation", en: "9 lessons · 1h30 · Foundation required" },
+    trainingId: "cristaux-charms",
   },
   {
     id: "business",
@@ -63,6 +71,7 @@ export const COURSES: Course[] = [
       en: "Pricing, hygiene, client consent, photography and booking.",
     },
     meta: { fr: "9 leçons · 1 h 30 · modèles inclus", en: "9 lessons · 1h30 · templates included" },
+    trainingId: "hygiene-securite",
   },
 ];
 

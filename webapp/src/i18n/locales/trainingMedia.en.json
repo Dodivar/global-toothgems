@@ -1,0 +1,80 @@
+{
+  "title": "Training image library",
+  "badge": "Courses only",
+  "subtitle": "Images for courses, modules and lessons. Separate from the shop’s product photos.",
+  "close": "Close the image library",
+  "search": "Search training images",
+  "searchPlaceholder": "Search by name, description or tag",
+  "usageFilter": "Show",
+  "usage": {
+    "all": "All images",
+    "unused": "Not used yet",
+    "uploads": "Uploaded in this session"
+  },
+  "categoryFilter": "Filter by category",
+  "category": {
+    "all": "All",
+    "technique": "Technique",
+    "hygiene": "Hygiene",
+    "materials": "Materials",
+    "results": "Results",
+    "studio": "Studio & clients"
+  },
+  "upload": "Upload images",
+  "uploading": "Uploads in progress",
+  "uploadingFile": "Uploading… {{progress}}%",
+  "dropHere": "Drop to add to the training library",
+  "rejectedTitle_one": "{{count}} file wasn’t added",
+  "rejectedTitle_other": "{{count}} files weren’t added",
+  "rejected": {
+    "type": "JPG, PNG, WebP or AVIF images only.",
+    "size": "larger than {{max}}.",
+    "empty": "the file is empty."
+  },
+  "emptyTitle": "No training images yet",
+  "emptyBody": "Upload the photos you’ll use in your lessons. Drag them here or pick them from your computer.",
+  "emptyCta": "Upload your first image",
+  "noMatch": "No image matches these filters.",
+  "clearFilters": "Clear filters",
+  "gridLabel": "Training images",
+  "count_one": "{{count}} image",
+  "count_other": "{{count}} images",
+  "inUse_one": "Used once",
+  "inUse_other": "Used {{count}}×",
+  "new": "New",
+  "selected": "selected",
+  "details": "Image details",
+  "detailsEmpty": "Select an image to see its details, describe it and insert it.",
+  "meta": {
+    "size": "Size",
+    "added": "Added",
+    "usage": "Usage"
+  },
+  "usedIn_one": "Used in {{count}} place",
+  "usedIn_other": "Used in {{count}} places",
+  "notUsed": "Not used yet",
+  "fields": {
+    "name": "Name",
+    "category": "Category",
+    "altFr": "Description (French)",
+    "altEn": "Description (English)",
+    "altHint": "Offered as the image’s alternative text when it’s inserted into a lesson.",
+    "tags": "Tags",
+    "tagsHint": "Comma-separated, to find the image again."
+  },
+  "delete": "Delete",
+  "deleteConfirm": "Delete this image from the library? This can’t be undone.",
+  "deleteBlocked_one": "Used in {{count}} place of a course. Replace it there before deleting it.",
+  "deleteBlocked_other": "Used in {{count}} places across courses. Replace it there before deleting it.",
+  "cancel": "Cancel",
+  "insert": "Insert image",
+  "noneSelected": "No image selected",
+  "selectedName": "Selected: {{name}}",
+  "picker": {
+    "choose": "Open the image library",
+    "change": "Change image",
+    "none": "No image chosen",
+    "current": "Current image",
+    "from": "From the training image library"
+  }
+}

@@ -7,12 +7,12 @@ import { EnrolledCourseRow } from "../../components/account/EnrolledCourseRow";
 import { EmptyPanel, SectionHeader } from "../../components/account/SectionHeader";
 import { StatTile } from "../../components/account/StatTile";
 import { ReviewRequestCard } from "../../components/reviews/ReviewRequestCard";
-import { FLAT, MODULES, moduleIndexForFlatIndex } from "../../data/lessons";
 import { pick } from "../../data/types";
 import { useAuth } from "../../lib/auth";
 import { useOrders } from "../../lib/orders";
 import { useProgress } from "../../lib/progress";
 import { useReviewRequests } from "../../lib/reviews";
+import { learnHref, lessonHref } from "../../lib/academyUrl";
 
 /**
  * Home of the member area: what the account is worth in figures, the lesson to
@@ -27,7 +27,7 @@ export function Dashboard() {
   const navigate = useNavigate();
   const lang = i18n.language;
   const { displayName } = useAuth();
-  const { openCourse, progressFor, enrolledCourses, availableCourses } = useProgress();
+  const { openCourse, progressFor, enrolledCourses, availableCourses, trainingFor } = useProgress();
   const { orders } = useOrders();
   // The one thing the member could review next, if anything.
   const [reviewRequest] = useReviewRequests();
@@ -42,9 +42,14 @@ export function Dashboard() {
   /** The course the "resume" card offers: the least advanced one still open. */
   const resume = inProgress.slice().sort((a, b) => a.progress.pct - b.progress.pct)[0] ?? null;
 
+  /** A course row opens its overview; the resume card goes straight to the lesson. */
   const open = (courseId: string) => {
     openCourse(courseId);
-    navigate("/academy/lecon");
+    navigate(learnHref(courseId));
+  };
+  const resumeLesson = (courseId: string, key: string | undefined) => {
+    openCourse(courseId);
+    navigate(key ? lessonHref(courseId, key) : learnHref(courseId));
   };
 
   return (
@@ -82,16 +87,17 @@ export function Dashboard() {
               <strong className="text-[length:var(--text-h4)] text-[var(--gt-off-white)]">
                 {t("account.resumeLesson", {
                   number: resume.progress.activeIdx + 1,
-                  title: pick(FLAT[resume.progress.activeIdx].title, lang),
+                  title: resume.progress.current ? pick(resume.progress.current.title, lang) : "",
                 })}
               </strong>
               <span className="text-[length:var(--text-body-sm)] text-[var(--gt-ink-300)]">
                 {pick(resume.course.title, lang)} ·{" "}
-                {pick(MODULES[moduleIndexForFlatIndex(resume.progress.activeIdx)].title, lang)} ·{" "}
+                {resume.progress.current &&
+                  `${pick(trainingFor(resume.course.id)?.modules[resume.progress.current.moduleIndex]?.title ?? { fr: "", en: "" }, lang)} · `}
                 {t("account.resumeRemaining", { minutes: resume.progress.remainingMinutes })}
               </span>
               <div className="flex flex-wrap items-center gap-3">
-                <Button variant="primary" iconRight={ArrowRight} onClick={() => open(resume.course.id)}>
+                <Button variant="primary" iconRight={ArrowRight} onClick={() => resumeLesson(resume.course.id, resume.progress.current?.key)}>
                   {t("account.resumeCta")}
                 </Button>
                 <span className="text-[length:var(--text-caption)] tabular-nums text-[var(--gt-ink-300)]">

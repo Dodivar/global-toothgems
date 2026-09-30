@@ -17,14 +17,21 @@ import settingsEn from "./locales/settings.en.json";
 // The 3D Studio's presentation and subscription pages, under `studio`.
 import studioFr from "./locales/studio.fr.json";
 import studioEn from "./locales/studio.en.json";
+// The learner experience (course overview, lesson player, knowledge checks),
+// under `learning`; and the back office's training image library, under
+// `trainingMedia`.
+import learningFr from "./locales/learning.fr.json";
+import learningEn from "./locales/learning.en.json";
+import trainingMediaFr from "./locales/trainingMedia.fr.json";
+import trainingMediaEn from "./locales/trainingMedia.en.json";
 
 i18n
   .use(LanguageDetector)
   .use(initReactI18next)
   .init({
     resources: {
-      fr: { translation: { ...fr, promo: promoFr, reviews: reviewsFr, settings: settingsFr, studio: studioFr } },
-      en: { translation: { ...en, promo: promoEn, reviews: reviewsEn, settings: settingsEn, studio: studioEn } },
+      fr: { translation: { ...fr, promo: promoFr, reviews: reviewsFr, settings: settingsFr, studio: studioFr, learning: learningFr, trainingMedia: trainingMediaFr } },
+      en: { translation: { ...en, promo: promoEn, reviews: reviewsEn, settings: settingsEn, studio: studioEn, learning: learningEn, trainingMedia: trainingMediaEn } },
     },
     fallbackLng: "fr",
     supportedLngs: ["fr", "en"],

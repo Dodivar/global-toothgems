@@ -173,7 +173,7 @@ The pass mark lives once, as `PASS_SCORE` in `data/lessons.ts`. It is a prototyp
 
 The hero reflects the visitor's own state — enrolled, in progress, completed — but only when signed in: the seeded demo enrolments exist regardless of the session, and this page is public.
 
-Every route into a training now lands here rather than on the login form: both home pages, the Academy grid, the header's Academy panel and both footers' Academy columns. `CourseCard` takes a `to` so those cards are real links — a public page has to be openable in a new tab and crawlable — and `lib/academyUrl.ts` holds the path the way `lib/shopUrl.ts` holds the filtered-collection ones. Only `/academy/lecon`, the player, stays behind `RequireAccount`: the videos are the paid content.
+Every route into a training now lands here rather than on the login form: both home pages, the Academy grid, the header's Academy panel and both footers' Academy columns. `CourseCard` takes a `to` so those cards are real links — a public page has to be openable in a new tab and crawlable — and `lib/academyUrl.ts` holds the path the way `lib/shopUrl.ts` holds the filtered-collection ones. Only the learner's own pages (`/academy/mes-formations/…`, and `/academy/lecon`, which forwards to them) stay behind `RequireAccount`: the lessons are the paid content.
 
 The account is asked for at the purchase, and the training asked for travels with the visitor: pressing "start" while signed out puts the course id in the navigation state, and signing in adds that course to the account before opening the player, so the purchase resumes instead of opening whichever course happened to be active.
 
@@ -280,7 +280,33 @@ The member area is capped at `--max-width-account` rather than `--max-width-cont
 
 The sections own no state of their own. Learning progress lives in `lib/progress.tsx`, order history in `lib/orders.tsx` and the member profile in `lib/auth.tsx` — in-memory contexts shaped like the existing `lib/cart.tsx`. The lesson player writes to the first and the cart writes to the second, so validating a lesson or paying moves the dashboard immediately. Certificates are derived from a course reaching 100 %, never stored as a separate flag, and the delivery timeline is derived from the order status for the same reason. Editing the profile moves the greeting and the avatar, because both are derived from the stored name rather than copied from it.
 
-Every course reuses the single authored syllabus in `data/lessons.ts` (9 lessons, ~1 h 30), so the lesson counts and durations in `data/courses.ts` were aligned to it — a course advertising 18 lessons could never reach 100 % or unlock its certificate.
+Progress is computed against the course each product opens (`Course.trainingId`), as authored in the back office — see the learning experience below. The Academy sales pages still advertise the single syllabus in `data/lessons.ts`; moving them onto the authored courses is the next step.
+
+## The learning experience (`/academy/mes-formations/:courseId`)
+
+What a customer who owns a training reads. The course is the one built in the back office (`/admin/formations`), never a separate copy: the training store (`lib/adminTraining.tsx`) is mounted above the whole app, each storefront product names the training it opens (`trainingId` in `data/courses.ts`), and the administrator's preview renders blocks and knowledge checks with the learner's own components. Admin preview and learner view are two views of one course.
+
+| Route | Screen |
+| --- | --- |
+| `/academy/mes-formations/:courseId` | Course overview: cover, instructor, progress ring, modules and steps completed, time left, the next unfinished lesson behind one "Continue training" button, module cards with status badges, recently completed lessons, objectives and completion rules |
+| `/academy/mes-formations/:courseId/lecon/:nodeKey` | The lesson player, a full-screen workspace (no storefront header/footer): lesson content in authored order (text, image, video, any mix), the module's knowledge check after its last step, a side panel with the course outline on desktop, and a progress strip, a contents sheet and a bottom action bar on phones |
+| `/academy/mes-formations/:courseId/terminee` | Completion: medal, course, date, average score, certificate when the course issues one, back to the dashboard, review the course |
+| `/academy/lecon` | Forwards to the overview of the course just opened (every existing "open this course" action lands here) |
+
+How it works:
+
+- **One walk through the course.** `lib/learning/path.ts` turns a course into the learner's path — every step, each module's check after its last step (the same order the admin preview uses) — and holds the rules: sequential unlocking, which checks gate progression (the course's `allQuizzes` setting), attempts per check (`allowRetry`/`attempts`), the course minimum average score, deterministic scoring. Progress is stored per step and per check id, so reordering a course in the builder never moves a learner's progress onto another lesson. The rules are unit-tested (`learning.test.ts`); in production the same rules run server-side and the browser never decides a completion or a pass.
+- **Access** (`lib/learning/access.ts`): an enrolment is required; draft and in-review courses are never shown; a course that was *unpublished* stays readable by learners who already hold it. **That last rule is an assumption to confirm with the business.**
+- **Authored HTML is sanitised** before a learner reads it (`lib/learning/sanitizeHtml.ts`, allow-list, tested).
+- **Video**: real sources (http(s), blob) play in a native `<video>` behind custom controls; the prototype's placeholder sources (`gtg-media://…`) run on a simulated clock labelled "demo footage". Keyboard: Space/K, ←/→, M, F.
+- **Knowledge checks** follow the settings chosen in the builder: immediate or end-of-check feedback, revealed answers, shuffling once per attempt, retries and attempt limits. Wrong answers are explained in the administrator's words, never punished.
+- `lib/progress.tsx` keeps the same public API, so the dashboard, certificates, community access and review eligibility all read the real course numbers.
+
+## Training image library (back office)
+
+Every image field of the course builder — image blocks, module covers, video thumbnails, question images — opens the **training image library** (`components/admin/training/TrainingMediaLibrary.tsx`): search, category chips, usage filter, upload by button or drag and drop (JPG/PNG/WebP/AVIF, 10 MB max, validated), a thumbnail grid with an obvious selection, a details panel (dimensions, size, date, usage count, name, category, FR/EN description, tags), delete (refused while the image is used in a course) and insert. Adding an image block opens it straight away, and the library's description pre-fills an empty alt text.
+
+It is deliberately separate from the shop's product media. In the prototype uploads are real files previewed from local object URLs with a simulated progress bar; the production home is a **private** `training-media` bucket served through signed URLs (paid training material must not be publicly listable), which is not created yet.
 
 ## The Artist Community (`/compte/communaute`)
 
@@ -443,7 +469,7 @@ A front-end-only prototype of customer reviews for products and trainings, and o
 | `/boutique/:id` | Reviews section below the purchase info, specifications and FAQ: average, count, star distribution (each bar filters), most helpful review, customer photos, filters (stars, with photos, verified) and sorting, review cards with verified badge, privacy name ("Sarah M."), helpful vote, discreet report, and the team's public response. The rating line under the product name reads the same published reviews |
 | `/academy/formation/:id` | The course variant: "Verified student", progress at the time of writing, what students highlight (most-used tags) and student result photos |
 | `/compte/avis` | My reviews: requests for what can still be reviewed, every review with a status explained in plain words (in review, published, needs changes with the team's message, not published with the reason), edit / edit and send again, and the lifecycle |
-| `/compte`, `/compte/commandes`, `/compte/attestations`, `/academy/lecon` | The reusable review request (`ReviewRequestCard`): on the dashboard, beside a finished training, and in the lesson player from 50 % progress; "Write a review" on eligible order lines |
+| `/compte`, `/compte/commandes`, `/compte/attestations`, `/academy/mes-formations/:courseId` | The reusable review request (`ReviewRequestCard`): on the dashboard, beside a finished training, and on the course overview from 50 % progress; "Write a review" on eligible order lines |
 | `/admin/avis` | Overview: KPIs, "needs your attention", distribution, moderation health, average rating by product and by training |
 | `/admin/avis?vue=file` | Moderation queue: status views (pending, edited, reported, published, needs changes, rejected, hidden, all), search, type, product/training, rating, date and sort — all in the query string. Table on desktop, cards on phones |
 | `/admin/avis?vue=signalements` | Reported reviews: reports grouped by reason, keep published / hide / remove / investigate, recently decided |
