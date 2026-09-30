@@ -34,7 +34,6 @@ describe("zoneOf", () => {
     const apps: [string, AppZone][] = [
       ["../App.tsx", "public"],
       ["../zones/AccountApp.tsx", "account"],
-      ["../zones/LearnApp.tsx", "learn"],
       ["../zones/AdminApp.tsx", "admin"],
     ];
     for (const [file, zone] of apps) {
@@ -49,7 +48,9 @@ describe("zoneOf", () => {
     const segments = [
       "compte/[[...slug]]",
       "academy/(learner)/lecon",
-      "academy/(learner)/mes-formations/[...slug]",
+      "academy/(learner)/mes-formations/[courseId]",
+      "academy/(learner)/mes-formations/[courseId]/lecon/[nodeKey]",
+      "academy/(learner)/mes-formations/[courseId]/terminee",
       "admin/connexion",
       "admin/(staff)/[[...slug]]",
       "studio-3d/atelier/[[...section]]",

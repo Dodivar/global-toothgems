@@ -1,11 +1,11 @@
-import { renderZone, zoneMetadata, zonePath, type ZonePageProps } from "../../../_zones/zonePage";
-import { LearnZone } from "../../../_zones/zones";
+import { guardPage, zoneMetadata, type SearchProps } from "../../../_zones/zonePage";
+import { ResumeTrainingScreen } from "../../../../src/zones/learn";
 
-/** The learner's entry point: the learn zone (docs/migration-nextjs.md, phase 4). */
-export async function generateMetadata(props: ZonePageProps) {
-  return zoneMetadata(await zonePath("/academy/lecon", props));
-}
+const PATH = "/academy/lecon";
 
-export default async function Page(props: ZonePageProps) {
-  return renderZone(await zonePath("/academy/lecon", props), props, LearnZone);
+export const metadata = zoneMetadata(PATH);
+
+export default async function Page(props: SearchProps) {
+  await guardPage(PATH, props);
+  return <ResumeTrainingScreen />;
 }

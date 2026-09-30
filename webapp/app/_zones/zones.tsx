@@ -6,5 +6,4 @@ import dynamic from "next/dynamic";
    these screens read `window`, `document` and `localStorage` from their first
    render. One chunk per zone, so a page downloads only its own zone's code. */
 export const AccountZone = dynamic(() => import("../../src/zones/AccountApp"), { ssr: false });
-export const LearnZone = dynamic(() => import("../../src/zones/LearnApp"), { ssr: false });
 export const AdminZone = dynamic(() => import("../../src/zones/AdminApp"), { ssr: false });

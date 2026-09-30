@@ -9,7 +9,7 @@ import { splitTo } from "./href";
  * phase 4); within native zones, navigation stays client-side. Grows zone by
  * zone, then disappears with React Router.
  */
-const NATIVE_ZONES: ReadonlySet<AppZone> = new Set<AppZone>(["studio"]);
+const NATIVE_ZONES: ReadonlySet<AppZone> = new Set<AppZone>(["studio", "learn"]);
 
 /** Whether the page at this address is an App Router segment of its own. */
 export function isNativeAddress(address: string): boolean {

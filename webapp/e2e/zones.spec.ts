@@ -152,6 +152,22 @@ test("the Studio aliases are moved by the server, the shared design's fragment k
   await expect(page).toHaveURL((url) => url.pathname === "/studio-3d/partage" && url.hash === "#design", { timeout: 30_000 });
 });
 
+test("learner pages: opening a lesson from the course stays on the page (client-side navigation)", async ({ page, problems }) => {
+  await signInMember(page);
+  await open(page, "/academy/mes-formations/fondation");
+  await dismissCookieBanner(page);
+  const lesson = page.locator('main a[href^="/academy/mes-formations/fondation/lecon/"]').first();
+  await expect(lesson).toBeVisible({ timeout: 30_000 });
+  const href = await lesson.getAttribute("href");
+  await page.evaluate(() => ((window as unknown as { gtMarker: number }).gtMarker = 1));
+  await lesson.click();
+  // A client-side navigation asks the server for the page's segment: compiled on first request by a dev server.
+  await expect(page).toHaveURL((url) => url.pathname === href, { timeout: 30_000 });
+  expect(await page.evaluate(() => (window as unknown as { gtMarker?: number }).gtMarker)).toBe(1);
+  await page.waitForLoadState("networkidle");
+  expect(problems).toEqual([]);
+});
+
 test("the cart is kept when the visitor goes through another zone", async ({ page, problems }) => {
   await open(page, "/fr/boutique/opale");
   await dismissCookieBanner(page);

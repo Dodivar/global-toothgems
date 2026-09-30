@@ -28,6 +28,17 @@ export function zoneMetadata(path: string): Metadata {
   return { title: pageMeta(parsePath(path)).title, robots: { index: false, follow: false } };
 }
 
+/** Search parameters, as every page is given them. */
+export type SearchProps = { searchParams: Promise<Record<string, string | string[] | undefined>> };
+
+/**
+ * The server check of a native zone page (phase 5): the sign-in redirect for a
+ * signed-out visitor, with the page's own address and query.
+ */
+export async function guardPage(path: string, { searchParams }: SearchProps) {
+  await guardAddress(path, searchOf(await searchParams));
+}
+
 /** 404 for an address the zone has no screen for, the sign-in redirect for a signed-out visitor, else the zone. */
 export async function renderZone(path: string, props: ZonePageProps, Zone: ComponentType) {
   if (!isKnownPath(path)) notFound();
