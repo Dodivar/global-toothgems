@@ -1,5 +1,5 @@
 import { useTranslation } from "react-i18next";
-import { Link } from "react-router-dom";
+import { Link } from "../../lib/navigation";
 import { ArrowRight } from "lucide-react";
 import { Badge } from "../ui/Badge";
 import { CertificateDocument } from "../account/CertificateDocument";

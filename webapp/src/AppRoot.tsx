@@ -4,6 +4,8 @@ import { unstable_HistoryRouter as HistoryRouter } from "react-router-dom";
 import type { i18n as I18n } from "i18next";
 import i18n from "./i18n";
 import { createLocalizedHistory } from "./lib/localizedHistory";
+import { NavigationBackendProvider } from "./lib/navigation";
+import { reactRouterBackend } from "./lib/navigation/reactRouterBackend";
 
 export type History = Parameters<typeof HistoryRouter>[0]["history"];
 
@@ -16,7 +18,7 @@ export function AppRoot({ history, i18n, children }: { history: History; i18n: I
     <StrictMode>
       <I18nextProvider i18n={i18n}>
         <HistoryRouter history={history}>
-          {children}
+          <NavigationBackendProvider backend={reactRouterBackend}>{children}</NavigationBackendProvider>
         </HistoryRouter>
       </I18nextProvider>
     </StrictMode>

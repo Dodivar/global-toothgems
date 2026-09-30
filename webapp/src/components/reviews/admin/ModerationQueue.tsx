@@ -1,6 +1,6 @@
 import { useMemo, useState } from "react";
 import { useTranslation } from "react-i18next";
-import { useSearchParams } from "react-router-dom";
+import { useSearchParams } from "../../../lib/navigation";
 import { CircleCheck, Inbox, SlidersHorizontal, ShieldCheck } from "lucide-react";
 import clsx from "clsx";
 import { SearchInput } from "../../admin/SearchInput";

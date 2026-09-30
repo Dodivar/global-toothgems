@@ -1,5 +1,5 @@
 import { useTranslation } from "react-i18next";
-import { Link, useNavigate } from "react-router-dom";
+import { Link, useNavigate } from "../../lib/navigation";
 import { Archive, CalendarRange, Copy, Eye, Package, Pause, Pencil, Play, Tag } from "lucide-react";
 import { OverflowMenu, type MenuAction } from "../admin/OverflowMenu";
 import { useLocalized } from "../../lib/localized";

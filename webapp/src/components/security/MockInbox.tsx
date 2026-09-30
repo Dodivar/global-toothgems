@@ -1,6 +1,6 @@
 import type { ReactNode } from "react";
 import { useTranslation } from "react-i18next";
-import { Link } from "react-router-dom";
+import { Link } from "../../lib/navigation";
 import { FlaskConical } from "lucide-react";
 import monogram from "../../assets/monogram-blue.png";
 

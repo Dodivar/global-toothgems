@@ -1,6 +1,6 @@
 import { useEffect, useMemo, useRef, useState, type CSSProperties, type Ref } from "react";
 import { useTranslation } from "react-i18next";
-import { Link } from "react-router-dom";
+import { Link } from "../../lib/navigation";
 import { ArrowUpRight, GraduationCap, ShoppingBag } from "lucide-react";
 import clsx from "clsx";
 import { Button } from "../ui/Button";

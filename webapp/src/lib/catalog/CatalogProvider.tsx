@@ -4,7 +4,8 @@ import { isSupabaseConfigured } from "../supabase/client";
 import { FALLBACK_TAXONOMY, type ShopCategoryDef } from "../../data/taxonomy";
 import { fetchCatalog, fetchGemColors, fetchTaxonomy } from "./api";
 import { registerProductSlugs } from "./productSlugRegistry";
-import { findProductByKey } from "./productSlugs";
+import { findProductByKey, productSlugTranslator } from "./productSlugs";
+import type { ParamTranslator } from "../localeRoutes";
 
 export type CatalogStatus = "loading" | "ready" | "error";
 
@@ -21,6 +22,12 @@ interface CatalogContextValue {
   reload: () => void;
   /** By base slug, by any published localized slug or by row id. */
   findProduct: (idOrSlug: string) => Product | undefined;
+  /**
+   * Product slugs of each language for links (`lib/navigation`), from the
+   * products this provider holds: the server's seed on the server and on the
+   * first browser render alike, so both write the same `href`.
+   */
+  translateSlugs: ParamTranslator;
 }
 
 const CatalogContext = createContext<CatalogContextValue | null>(null);
@@ -119,6 +126,8 @@ export function CatalogProvider({ seed, children }: { seed?: CatalogSeed; childr
     setAttempt((n) => n + 1);
   }, []);
 
+  const translateSlugs = useMemo(() => productSlugTranslator(state.products), [state.products]);
+
   const value = useMemo<CatalogContextValue>(
     () => ({
       ...state,
@@ -127,11 +136,19 @@ export function CatalogProvider({ seed, children }: { seed?: CatalogSeed; childr
       source: isSupabaseConfigured ? "supabase" : "mock",
       reload,
       findProduct: (idOrSlug) => findProductByKey(state.products, idOrSlug),
+      translateSlugs,
     }),
-    [state, colors, taxonomy, reload],
+    [state, colors, taxonomy, reload, translateSlugs],
   );
 
   return <CatalogContext.Provider value={value}>{children}</CatalogContext.Provider>;
+}
+
+const keepSlugs: ParamTranslator = (_id, params) => params;
+
+/** The catalogue's slug translator, or none outside a `CatalogProvider`. */
+export function useSlugTranslator(): ParamTranslator {
+  return useContext(CatalogContext)?.translateSlugs ?? keepSlugs;
 }
 
 export function useCatalog(): CatalogContextValue {

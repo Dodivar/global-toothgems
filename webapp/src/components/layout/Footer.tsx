@@ -1,4 +1,4 @@
-import { Link } from "react-router-dom";
+import { Link } from "../../lib/navigation";
 import { useTranslation } from "react-i18next";
 import { useFooterColumns } from "./useFooterColumns";
 import logoBlue from "../../assets/logo-wordmark-blue.png";

@@ -1,5 +1,5 @@
 import { useDeferredValue, useId, useMemo, useState } from "react";
-import { Link } from "react-router-dom";
+import { Link } from "../../lib/navigation";
 import { useTranslation } from "react-i18next";
 import { ArrowRight, ChevronDown, Search, X } from "lucide-react";
 import { FAQ } from "../../data/legal/faq";

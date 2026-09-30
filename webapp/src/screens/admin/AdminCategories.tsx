@@ -1,5 +1,5 @@
 import { useTranslation } from "react-i18next";
-import { Link } from "react-router-dom";
+import { Link } from "../../lib/navigation";
 import { ArrowUpRight, Info } from "lucide-react";
 import { AdminHeader } from "../../components/admin/AdminHeader";
 import { GemColorsSection } from "../../components/admin/GemColorsSection";

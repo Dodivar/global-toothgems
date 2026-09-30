@@ -1,5 +1,5 @@
 import { useEffect } from "react";
-import { useLocation } from "react-router-dom";
+import { useLocation } from "../../lib/navigation";
 
 /** Sets the tab title while the page is shown, like the system pages do. */
 export function useDocumentTitle(title: string) {

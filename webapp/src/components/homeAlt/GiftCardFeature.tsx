@@ -1,6 +1,6 @@
 import { useState } from "react";
 import { useTranslation } from "react-i18next";
-import { useNavigate } from "react-router-dom";
+import { useNavigate } from "../../lib/navigation";
 import { ArrowRight, CalendarClock, Mail, Store } from "lucide-react";
 import clsx from "clsx";
 import { Button } from "../ui/Button";

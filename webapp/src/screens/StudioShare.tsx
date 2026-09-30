@@ -1,6 +1,6 @@
 import { useEffect, useMemo, useRef, useState, useSyncExternalStore } from "react";
 import { useTranslation } from "react-i18next";
-import { Link, useLocation, useNavigate, useParams } from "react-router-dom";
+import { Link, useLocation, useNavigate, useParams } from "../lib/navigation";
 import clsx from "clsx";
 import { Box, Eye, Gem, Link2, LoaderCircle, Minus, Orbit, PencilRuler, Plus, RotateCcw, TriangleAlert } from "lucide-react";
 import monogram from "../assets/monogram-blue.png";

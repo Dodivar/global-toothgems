@@ -1,5 +1,5 @@
 import { useTranslation } from "react-i18next";
-import { Link, useNavigate } from "react-router-dom";
+import { Link, useNavigate } from "../../lib/navigation";
 import { Copy, Eye, Send } from "lucide-react";
 import clsx from "clsx";
 import { OverflowMenu } from "../admin/OverflowMenu";

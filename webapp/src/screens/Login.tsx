@@ -1,6 +1,6 @@
 import { useState, type FormEvent } from "react";
 import { useTranslation } from "react-i18next";
-import { Link, useLocation, useNavigate } from "react-router-dom";
+import { Link, useLocation, useNavigate } from "../lib/navigation";
 import { ArrowRight, BadgeCheck, CircleAlert, Eye, EyeOff, Info, LogOut, MailCheck, RotateCw } from "lucide-react";
 import { Button } from "../components/ui/Button";
 import { Badge } from "../components/ui/Badge";

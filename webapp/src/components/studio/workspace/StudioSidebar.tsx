@@ -1,6 +1,6 @@
 import clsx from "clsx";
 import { ArrowLeft, Box, LayoutGrid, Layers, LifeBuoy, MessageSquareHeart, UserRound, X, type LucideIcon } from "lucide-react";
-import { Link, useLocation } from "react-router-dom";
+import { Link, useLocation } from "../../../lib/navigation";
 import { useTranslation } from "react-i18next";
 import monogram from "../../../assets/monogram-blue.png";
 import { useAuth } from "../../../lib/auth";

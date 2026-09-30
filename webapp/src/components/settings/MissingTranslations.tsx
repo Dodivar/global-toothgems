@@ -1,6 +1,6 @@
 import { useMemo } from "react";
 import { useTranslation } from "react-i18next";
-import { useSearchParams } from "react-router-dom";
+import { useSearchParams } from "../../lib/navigation";
 import { FilterX, Languages, PartyPopper, PenLine, Search, SearchX } from "lucide-react";
 import clsx from "clsx";
 import { AdminButton } from "../admin/AdminButton";

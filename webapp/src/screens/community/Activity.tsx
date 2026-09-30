@@ -1,5 +1,5 @@
 import { useTranslation } from "react-i18next";
-import { Link, Navigate, useParams } from "react-router-dom";
+import { Link, Navigate, useParams } from "../../lib/navigation";
 import { Bookmark, MessageCircle, PenLine } from "lucide-react";
 import clsx from "clsx";
 import { pick } from "../../data/types";

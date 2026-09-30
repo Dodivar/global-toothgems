@@ -1,6 +1,6 @@
 import { useMemo, useRef, useState } from "react";
 import { useTranslation } from "react-i18next";
-import { useNavigate } from "react-router-dom";
+import { useNavigate } from "../../lib/navigation";
 import { ArrowDown, ArrowUp, Check, ExternalLink, GripVertical, Plus, RotateCcw, Save, X } from "lucide-react";
 import clsx from "clsx";
 import { AdminButton } from "../../components/admin/AdminButton";

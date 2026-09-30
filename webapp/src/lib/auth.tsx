@@ -1,5 +1,5 @@
 import { createContext, useCallback, useContext, useEffect, useMemo, useState, type ReactNode } from "react";
-import { Navigate, useLocation } from "react-router-dom";
+import { Navigate, useLocation } from "./navigation";
 import type { AuthError, User } from "@supabase/supabase-js";
 import { isSupabaseConfigured, sessionReady, supabase } from "./supabase/client";
 import { DELIVERY_COUNTRIES } from "../data/countries";

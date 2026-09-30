@@ -1,6 +1,6 @@
 import { createContext, useCallback, useContext, useId, useMemo, useState, type ReactNode } from "react";
 import { useTranslation } from "react-i18next";
-import { Link } from "react-router-dom";
+import { Link } from "../../lib/navigation";
 import { MapPin, MessageCircle } from "lucide-react";
 import clsx from "clsx";
 import { pick } from "../../data/types";

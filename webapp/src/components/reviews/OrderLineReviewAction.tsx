@@ -1,5 +1,5 @@
 import { useTranslation } from "react-i18next";
-import { Link } from "react-router-dom";
+import { Link } from "../../lib/navigation";
 import { PenLine } from "lucide-react";
 import type { OrderLine } from "../../data/orders";
 import { useReviewEligibility, useReviews } from "../../lib/reviews";

@@ -1,5 +1,5 @@
 import { useEffect } from "react";
-import { useLocation } from "react-router-dom";
+import { useLocation } from "../lib/navigation";
 import { zoneOf, type AppZone } from "../lib/appZones";
 import { NotFound } from "../screens/NotFound";
 import { useHydrated } from "../lib/useHydrated";

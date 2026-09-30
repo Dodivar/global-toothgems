@@ -1,6 +1,6 @@
 import { useState } from "react";
 import { useTranslation } from "react-i18next";
-import { Navigate, useParams } from "react-router-dom";
+import { Navigate, useParams } from "../../lib/navigation";
 import { MessagesSquare, Users } from "lucide-react";
 import clsx from "clsx";
 import { getChannel, type Discussion } from "../../data/community";

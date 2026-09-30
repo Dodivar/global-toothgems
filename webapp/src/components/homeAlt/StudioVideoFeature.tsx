@@ -1,6 +1,6 @@
 import { useEffect, useRef, useState } from "react";
 import { useTranslation } from "react-i18next";
-import { useNavigate } from "react-router-dom";
+import { useNavigate } from "../../lib/navigation";
 import { ArrowRight, Box, Gem as GemGlyph, Pause, Play, Share2 } from "lucide-react";
 import { Button } from "../ui/Button";
 import { GemIcon } from "../studio/Gem";

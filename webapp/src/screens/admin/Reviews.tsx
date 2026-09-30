@@ -1,6 +1,6 @@
 import { useCallback, useState } from "react";
 import { useTranslation } from "react-i18next";
-import { useSearchParams } from "react-router-dom";
+import { useSearchParams } from "../../lib/navigation";
 import { FlaskConical, Flag, LayoutDashboard, ListChecks } from "lucide-react";
 import { AdminHeader } from "../../components/admin/AdminHeader";
 import { ErrorPanel, PromoTabs, Segmented, type TabItem } from "../../components/promotions/PromoUi";

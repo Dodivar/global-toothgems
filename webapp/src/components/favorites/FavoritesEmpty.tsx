@@ -1,5 +1,5 @@
 import { useTranslation } from "react-i18next";
-import { useLocation, useNavigate } from "react-router-dom";
+import { useLocation, useNavigate } from "../../lib/navigation";
 import { Heart, LogIn, RotateCw, Store, UserPlus } from "lucide-react";
 import { Button } from "../ui/Button";
 

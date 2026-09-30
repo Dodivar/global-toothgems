@@ -1,5 +1,5 @@
 import { useTranslation } from "react-i18next";
-import { useNavigate, useParams } from "react-router-dom";
+import { useNavigate, useParams } from "../../lib/navigation";
 import { ArrowRight, Award, LayoutDashboard, RotateCcw, Trophy } from "lucide-react";
 import { Button } from "../../components/ui/Button";
 import { ProgressRing } from "../../components/learning/LearningStatus";

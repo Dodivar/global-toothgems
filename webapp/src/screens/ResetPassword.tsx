@@ -1,6 +1,6 @@
 import { useEffect, useRef, useState, type FormEvent } from "react";
 import { useTranslation } from "react-i18next";
-import { Link, useNavigate, useSearchParams } from "react-router-dom";
+import { Link, useNavigate, useSearchParams } from "../lib/navigation";
 import { ArrowLeft, ArrowRight, Clock, KeyRound, LinkIcon, LoaderCircle, LockKeyhole, RotateCw, ShieldCheck } from "lucide-react";
 import { Button } from "../components/ui/Button";
 import { PasswordField } from "../components/register/Field";

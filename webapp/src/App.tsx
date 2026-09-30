@@ -1,4 +1,5 @@
-import { Routes, Route, Navigate, useLocation } from "react-router-dom";
+import { Routes, Route } from "react-router-dom";
+import { Navigate, useLocation } from "./lib/navigation";
 import type { CatalogSeed } from "./lib/catalog/CatalogProvider";
 import { AppShell, MAINTENANCE_ROUTE } from "./AppShell";
 import { ZoneExit } from "./zones/ZoneExit";
@@ -58,7 +59,7 @@ function StudioEditorAlias() {
  */
 function StudioShareAlias() {
   const { pathname, hash } = useLocation();
-  return <Navigate to={{ pathname: pathname.replace(STUDIO_SHARE_ALIAS, STUDIO_SHARE_PATH), hash }} replace />;
+  return <Navigate to={`${pathname.replace(STUDIO_SHARE_ALIAS, STUDIO_SHARE_PATH)}${hash}`} replace />;
 }
 
 /**

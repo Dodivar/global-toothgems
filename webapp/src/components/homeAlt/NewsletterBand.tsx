@@ -1,6 +1,6 @@
 import { useId, useState, type FormEvent } from "react";
 import { useTranslation } from "react-i18next";
-import { Link } from "react-router-dom";
+import { Link } from "../../lib/navigation";
 import { ArrowRight, CheckCircle2, Lock, Sparkles } from "lucide-react";
 import { Button } from "../ui/Button";
 import { Checkbox } from "../ui/Checkbox";

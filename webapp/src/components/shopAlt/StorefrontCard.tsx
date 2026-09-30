@@ -1,5 +1,5 @@
 import { useMemo, useState } from "react";
-import { Link } from "react-router-dom";
+import { Link } from "../../lib/navigation";
 import { useTranslation } from "react-i18next";
 import { Heart, Image as ImageIcon, Star } from "lucide-react";
 import { Badge } from "../ui/Badge";

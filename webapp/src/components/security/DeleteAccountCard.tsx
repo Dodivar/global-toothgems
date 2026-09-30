@@ -1,6 +1,6 @@
 import { useEffect, useRef, useState, type FormEvent } from "react";
 import { useTranslation } from "react-i18next";
-import { useNavigate } from "react-router-dom";
+import { useNavigate } from "../../lib/navigation";
 import { CircleCheck, Home, Trash2, TriangleAlert, UserX } from "lucide-react";
 import { Button } from "../ui/Button";
 import { Dialog } from "../ui/Dialog";

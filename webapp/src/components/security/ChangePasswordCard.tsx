@@ -1,7 +1,7 @@
 import { useEffect, useRef, useState, type FormEvent } from "react";
 import { useTranslation } from "react-i18next";
 import { KeyRound, Link as LinkGlyph, Pencil } from "lucide-react";
-import { Link } from "react-router-dom";
+import { Link } from "../../lib/navigation";
 import { Button } from "../ui/Button";
 import { PasswordField } from "../register/Field";
 import { PasswordStrength } from "../register/PasswordStrength";

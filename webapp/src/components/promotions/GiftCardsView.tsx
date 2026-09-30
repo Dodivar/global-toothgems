@@ -1,6 +1,6 @@
 import { useMemo, useState } from "react";
 import { useTranslation } from "react-i18next";
-import { useNavigate } from "react-router-dom";
+import { useNavigate } from "../../lib/navigation";
 import { BadgeEuro, CircleDollarSign, ExternalLink, Gift, Hourglass, PiggyBank, Receipt, SearchX, Settings2, WalletCards } from "lucide-react";
 import { AdminButton } from "../admin/AdminButton";
 import { AdminSelect } from "../admin/AdminSelect";

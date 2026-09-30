@@ -1,5 +1,5 @@
 import { useEffect, useRef, useState } from "react";
-import { Link, useNavigate, useLocation } from "react-router-dom";
+import { Link, useNavigate, useLocation } from "../../lib/navigation";
 import { useTranslation } from "react-i18next";
 import { ArrowRight, Box, ChevronDown, Heart, Menu, Search, ShoppingBag, User, X } from "lucide-react";
 import { IconButton } from "../ui/IconButton";

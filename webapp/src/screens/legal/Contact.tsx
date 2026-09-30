@@ -1,5 +1,5 @@
 import { useRef, useState, type FormEvent, type ReactNode } from "react";
-import { Link, useSearchParams } from "react-router-dom";
+import { Link, useSearchParams } from "../../lib/navigation";
 import { useTranslation } from "react-i18next";
 import {
   ArrowRight,

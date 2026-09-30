@@ -1,5 +1,5 @@
 import { useCallback } from "react";
-import { useNavigate } from "react-router-dom";
+import { useNavigate } from "../../../lib/navigation";
 import { studioSectionPath } from "../../../lib/studioUrl";
 import { notify } from "../../../lib/studio3d/notices";
 import { studioStore } from "../../../lib/studio3d/store";

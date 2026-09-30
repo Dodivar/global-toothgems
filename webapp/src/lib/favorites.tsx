@@ -1,6 +1,6 @@
 import { createContext, useCallback, useContext, useEffect, useMemo, useRef, useState, type ReactNode } from "react";
 import { useTranslation } from "react-i18next";
-import { useLocation } from "react-router-dom";
+import { useLocation } from "./navigation";
 import type { Product } from "../data/products";
 import { pick } from "../data/types";
 import { FavoriteAccountDialog } from "../components/favorites/FavoriteAccountDialog";

@@ -1,5 +1,5 @@
 import { useTranslation } from "react-i18next";
-import { Link } from "react-router-dom";
+import { Link } from "../../lib/navigation";
 import clsx from "clsx";
 import { getChannel } from "../../data/community";
 import { pick } from "../../data/types";

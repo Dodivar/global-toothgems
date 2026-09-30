@@ -1,6 +1,6 @@
 import { useCallback, useEffect, useId, useMemo, useRef, useState } from "react";
 import { useTranslation } from "react-i18next";
-import { useSearchParams } from "react-router-dom";
+import { useSearchParams } from "../lib/navigation";
 import { ChevronDown, Heart, SlidersHorizontal, X } from "lucide-react";
 import { Button } from "../components/ui/Button";
 import { CatalogError } from "../components/shop/CatalogError";

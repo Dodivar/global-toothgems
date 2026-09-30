@@ -1,6 +1,6 @@
 import { useEffect, useRef, useState } from "react";
 import { useTranslation } from "react-i18next";
-import { Link } from "react-router-dom";
+import { Link } from "../../lib/navigation";
 import { ArrowLeft, ArrowRight, BookOpen, Check, CircleCheck, Lightbulb, ListChecks, RotateCcw, Sparkles, X } from "lucide-react";
 import clsx from "clsx";
 import { Button } from "../ui/Button";

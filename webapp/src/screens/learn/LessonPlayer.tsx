@@ -1,6 +1,6 @@
 import { useEffect, useRef, useState } from "react";
 import { useTranslation } from "react-i18next";
-import { Link, Navigate, useNavigate, useParams } from "react-router-dom";
+import { Link, Navigate, useNavigate, useParams } from "../../lib/navigation";
 import { ArrowLeft, ArrowRight, Check, Clock, FileText, Flag, Image as ImageIcon, ListChecks, ListTree, Lock, PlayCircle, X } from "lucide-react";
 import clsx from "clsx";
 import { Button } from "../../components/ui/Button";

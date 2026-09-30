@@ -178,6 +178,11 @@ export function toAddress(internal: string, locale: Locale, translate: ParamTran
   return found ? localizedPath(found.route.id, locale, translate(found.route.id, found.params, locale)) : internal;
 }
 
+/** The parameters of an internal path of a public route (`/boutique/x` → `{ id: "x" }`), else null. */
+export function internalParams(internal: string): Record<string, string> | null {
+  return find(internal, "fr")?.params ?? null;
+}
+
 /** The address of the same page in each language, for hreflang and the language switch. */
 export function alternates(parsed: ParsedPath, translate: ParamTranslator = keepParams): Record<Locale, string> | null {
   const { route, params } = parsed;

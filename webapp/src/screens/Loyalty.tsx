@@ -1,5 +1,5 @@
 import { useTranslation } from "react-i18next";
-import { useNavigate } from "react-router-dom";
+import { useNavigate } from "../lib/navigation";
 import { ArrowRight, Sparkles } from "lucide-react";
 import { Button } from "../components/ui/Button";
 import { LoyaltyCard } from "../components/loyalty/LoyaltyCard";

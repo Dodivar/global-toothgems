@@ -1,5 +1,5 @@
 import { useTranslation } from "react-i18next";
-import { Link, useSearchParams } from "react-router-dom";
+import { Link, useSearchParams } from "../../lib/navigation";
 import { Eye, Monitor, Pencil, Smartphone, Sparkles } from "lucide-react";
 import clsx from "clsx";
 import { AdminHeader } from "../../components/admin/AdminHeader";

@@ -1,5 +1,5 @@
 import type { ReactNode } from "react";
-import { Link } from "react-router-dom";
+import { Link } from "../../lib/navigation";
 import { useTranslation } from "react-i18next";
 import { ArrowLeft } from "lucide-react";
 

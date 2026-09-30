@@ -1,4 +1,4 @@
-import { useLocation } from "react-router-dom";
+import { useLocation } from "./lib/navigation";
 import { useEffect, type ReactNode } from "react";
 import { useTranslation } from "react-i18next";
 import { AuthProvider } from "./lib/auth";

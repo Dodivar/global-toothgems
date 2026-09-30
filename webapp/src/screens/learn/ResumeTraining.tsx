@@ -1,4 +1,4 @@
-import { Navigate } from "react-router-dom";
+import { Navigate } from "../../lib/navigation";
 import { learnHref } from "../../lib/academyUrl";
 import { useProgress } from "../../lib/progress";
 

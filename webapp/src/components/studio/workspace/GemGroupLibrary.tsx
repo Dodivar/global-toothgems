@@ -1,6 +1,6 @@
 import { useMemo, useState } from "react";
 import { BookOpen, MousePointer2, RotateCw } from "lucide-react";
-import { useNavigate } from "react-router-dom";
+import { useNavigate } from "../../../lib/navigation";
 import { Button } from "../../ui/Button";
 import { studioSectionPath } from "../../../lib/studioUrl";
 import { queryGroups } from "../../../lib/studioWorkspace/library";

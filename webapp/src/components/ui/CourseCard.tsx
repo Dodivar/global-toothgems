@@ -1,5 +1,5 @@
 import { useTranslation } from "react-i18next";
-import { Link } from "react-router-dom";
+import { Link } from "../../lib/navigation";
 import { Clock, GraduationCap, ListVideo, Lock } from "lucide-react";
 import { Badge, type BadgeTone } from "./Badge";
 import { ProgressBar } from "./ProgressBar";

@@ -1,6 +1,6 @@
 import { useEffect, useRef, useState } from "react";
 import { useTranslation } from "react-i18next";
-import { Link, useNavigate, useSearchParams } from "react-router-dom";
+import { Link, useNavigate, useSearchParams } from "../lib/navigation";
 import { ArrowLeft, ArrowRight, BadgeCheck, Clock, Home, Link2Off, MailCheck, RotateCw } from "lucide-react";
 import { Button } from "../components/ui/Button";
 import { AuthShell, StateHeading } from "../components/security/AuthShell";

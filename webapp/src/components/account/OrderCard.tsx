@@ -1,6 +1,6 @@
 import type { ReactNode } from "react";
 import { useTranslation } from "react-i18next";
-import { Link } from "react-router-dom";
+import { Link } from "../../lib/navigation";
 import { Receipt, Truck } from "lucide-react";
 import { Badge, type BadgeTone } from "../ui/Badge";
 import { Button } from "../ui/Button";

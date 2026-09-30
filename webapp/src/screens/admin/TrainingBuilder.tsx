@@ -1,6 +1,6 @@
 import { useCallback, useMemo, useState } from "react";
 import { useTranslation } from "react-i18next";
-import { Navigate, useNavigate, useParams, useSearchParams } from "react-router-dom";
+import { Navigate, useNavigate, useParams, useSearchParams } from "../../lib/navigation";
 import { CircleCheck, Eye, GraduationCap, Layers, PanelRight, Save, Trash2, X } from "lucide-react";
 import clsx from "clsx";
 import { AdminButton } from "../../components/admin/AdminButton";

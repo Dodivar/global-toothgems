@@ -1,5 +1,5 @@
 import { useTranslation } from "react-i18next";
-import { useNavigate } from "react-router-dom";
+import { useNavigate } from "../../lib/navigation";
 import { Package, RotateCw, ShoppingBag } from "lucide-react";
 import { Button } from "../../components/ui/Button";
 import { OrderCard } from "../../components/account/OrderCard";

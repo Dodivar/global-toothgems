@@ -1,5 +1,5 @@
 import { useTranslation } from "react-i18next";
-import { Link, NavLink, useNavigate } from "react-router-dom";
+import { Link, NavLink, useNavigate } from "../../lib/navigation";
 import {
   BarChart3,
   ChevronsLeft,

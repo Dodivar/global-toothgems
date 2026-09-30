@@ -1,6 +1,6 @@
 import { useId, useMemo, useState } from "react";
 import { useTranslation } from "react-i18next";
-import { Link } from "react-router-dom";
+import { Link } from "../../lib/navigation";
 import { ImageOff, Search, X } from "lucide-react";
 import clsx from "clsx";
 import { useAdminCatalog } from "../../lib/adminCatalog";

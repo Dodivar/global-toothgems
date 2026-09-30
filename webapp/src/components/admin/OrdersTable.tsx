@@ -1,5 +1,5 @@
 import { useTranslation } from "react-i18next";
-import { Link, useNavigate } from "react-router-dom";
+import { Link, useNavigate } from "../../lib/navigation";
 import { ArrowDown, ArrowUp, ChevronRight } from "lucide-react";
 import clsx from "clsx";
 import type { AdminOrder } from "../../data/adminOrders";

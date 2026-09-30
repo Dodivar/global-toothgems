@@ -1,6 +1,6 @@
 import { useMemo, useState } from "react";
 import { useTranslation } from "react-i18next";
-import { useNavigate } from "react-router-dom";
+import { useNavigate } from "../../lib/navigation";
 import { AdminHeader } from "../../components/admin/AdminHeader";
 import { CardLoadingState } from "../../components/admin/LoadingState";
 import { ProductForm, type SubmitIntent } from "../../components/admin/ProductForm";

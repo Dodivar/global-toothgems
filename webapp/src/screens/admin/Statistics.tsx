@@ -1,6 +1,6 @@
 import { useCallback, useId, useMemo, useState } from "react";
 import { useTranslation } from "react-i18next";
-import { useSearchParams } from "react-router-dom";
+import { useSearchParams } from "../../lib/navigation";
 import {
   Ban,
   ChartNoAxesCombined,

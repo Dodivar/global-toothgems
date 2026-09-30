@@ -1,4 +1,4 @@
-import { Link } from "react-router-dom";
+import { Link } from "../../lib/navigation";
 import { ArrowUpRight, type LucideIcon } from "lucide-react";
 import clsx from "clsx";
 

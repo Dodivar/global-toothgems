@@ -1,5 +1,5 @@
 import { useTranslation } from "react-i18next";
-import { Link } from "react-router-dom";
+import { Link } from "../../lib/navigation";
 import { MessageCircle, Pin } from "lucide-react";
 import clsx from "clsx";
 import type { Discussion } from "../../data/community";

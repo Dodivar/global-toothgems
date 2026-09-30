@@ -1,5 +1,5 @@
 import { useTranslation } from "react-i18next";
-import { Link, useNavigate } from "react-router-dom";
+import { Link, useNavigate } from "../../lib/navigation";
 import { ArrowLeft, ArrowRight, Check, LockKeyhole, MessageCircle, Sparkles } from "lucide-react";
 import clsx from "clsx";
 import { Button } from "../ui/Button";

@@ -1,5 +1,5 @@
 import { useTranslation } from "react-i18next";
-import { Link, Navigate, useParams } from "react-router-dom";
+import { Link, Navigate, useParams } from "../../lib/navigation";
 import { ChevronRight, MessageCircle, Reply as ReplyIcon, ThumbsUp } from "lucide-react";
 import clsx from "clsx";
 import { getChannel, type Reply } from "../../data/community";

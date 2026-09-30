@@ -1,6 +1,6 @@
 import { useEffect, useState, type FormEvent } from "react";
 import { useTranslation } from "react-i18next";
-import { Navigate, useLocation, useNavigate } from "react-router-dom";
+import { Navigate, useLocation, useNavigate } from "../../lib/navigation";
 import { ArrowRight, Check, CircleAlert, CircleCheck, Eye, EyeOff, LockKeyhole, ShieldCheck, X } from "lucide-react";
 import clsx from "clsx";
 import monogram from "../../assets/monogram-white.png";

@@ -1,5 +1,5 @@
 import { useTranslation } from "react-i18next";
-import { Link } from "react-router-dom";
+import { Link } from "../../lib/navigation";
 import { ArrowRight, Hourglass, SearchX, ShoppingBag } from "lucide-react";
 import type { LucideIcon } from "lucide-react";
 import { getCourse } from "../../data/courses";

@@ -1,6 +1,6 @@
 import { useEffect, useRef, useState, type FormEvent } from "react";
 import { useTranslation } from "react-i18next";
-import { Link, useLocation } from "react-router-dom";
+import { Link, useLocation } from "../lib/navigation";
 import { ArrowLeft, KeyRound, MailCheck, Pencil, RotateCw, ShieldCheck } from "lucide-react";
 import clsx from "clsx";
 import { Button } from "../components/ui/Button";

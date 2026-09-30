@@ -1,5 +1,5 @@
 import { useTranslation } from "react-i18next";
-import { Link } from "react-router-dom";
+import { Link } from "../../lib/navigation";
 import { CarouselTrack } from "./CarouselTrack";
 import { ColorSwatch } from "./ColorSwatch";
 import type { ColorGroup } from "../../data/products";
