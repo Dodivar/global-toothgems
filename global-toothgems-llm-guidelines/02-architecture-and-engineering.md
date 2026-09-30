@@ -1,136 +1,81 @@
 ---
 name: global-toothgems-architecture-engineering
-description: Engineering principles, architecture rules, maintainability and implementation standards for Global Toothgems.
+description: Production architecture, runtime boundaries, the mock-to-live migration pattern, environments, dependencies and engineering standards.
 ---
 
-# Architecture & Engineering Rules
+# Architecture & Engineering
 
-## General
+## Priorities
 
-Build production-quality software, not a prototype disguised as production.
+1. correctness; 2. security; 3. maintainability; 4. accessibility; 5. performance; 6. developer experience.
 
-Priorities:
-1. correctness;
-2. security;
-3. maintainability;
-4. accessibility;
-5. performance;
-6. developer experience.
+## Runtime boundaries
 
-Do not over-engineer MVP features.
+| Layer | Owns | Never |
+| --- | --- | --- |
+| **Browser** (`webapp/`, Vite SPA on Vercel) | presentation, navigation, form UX, optimistic display, calls to Supabase with the user's JWT | holds a secret, decides a price, a permission, a payment or an entitlement |
+| **Postgres** (tables, RLS, functions, triggers) | business invariants: prices and totals, stock, discounts, VAT, entitlements, moderation, audit, permissions | trusts a value the client could forge without re-checking it |
+| **Edge Functions** (`supabase/functions/`, Deno) | anything needing a secret or the service role: Stripe Checkout sessions, Stripe webhooks, refunds, e-mail sending, visitor forms with captcha/IP limits, GDPR export/deletion jobs | contain business rules that Postgres already enforces (call the function instead) |
+| **Stripe** | payment state, card data, subscriptions | is bypassed by a browser redirect |
 
-## Before coding
+Rules of thumb:
 
-For every non-trivial change:
-1. inspect the existing repository;
-2. identify the relevant domain/module;
-3. reuse existing patterns;
-4. verify whether the requested behavior is MVP or roadmap;
-5. define acceptance criteria;
-6. implement the smallest coherent change;
-7. test it.
+- If the logic protects money, stock, access or permissions → Postgres function or Edge Function.
+- A browser call that writes more than one row, or whose result must be consistent, goes through one RPC (`admin_save_product()` is the model: one transaction, `SECURITY INVOKER` so RLS applies, permission checked inside).
+- `SECURITY DEFINER` functions are the exception: they authorize the caller themselves, live behind a narrow signature and are listed in `supabase/README.md` as accepted advisor warnings.
+- Scheduled work (order expiry, export cleanup) runs with `pg_cron` or a scheduled Edge Function — never from a browser.
 
-Never create a parallel implementation when an existing abstraction already solves the problem.
+## Front-end structure (`webapp/src/`)
 
-## Domain separation
+- `pages/` one component per route; `components/<domain>/` presentational pieces; `components/ui/` and `components/admin/` shared primitives.
+- `lib/<domain>.tsx` one store/context per domain — the only place a domain's data changes. Screens never import the Supabase client directly.
+- `lib/*Mapping.ts` pure row ↔ UI conversions (money to minor units, locale fallback, statuses), unit-tested.
+- `lib/supabase/` typed client (`client.ts`), generated `database.types.ts`, storage helpers.
+- `data/` legacy mock fixtures and static content — shrinking as domains go live.
+- `i18n/locales/` UI strings per namespace (`fr`, `en`).
 
-Keep these concerns logically separated:
-- catalog/products;
-- customers/accounts;
-- cart/checkout/orders;
-- payments;
-- reviews;
-- newsletter/marketing consent;
-- courses;
-- lessons;
-- quizzes;
-- learning progress;
-- administration.
+## Mock → live pattern
 
-Do not couple unrelated domains through UI state.
+Many domains still have two implementations behind one contract (`lib/adminCatalog.tsx` picking `adminCatalogSupabase.tsx` or the mock store; `lib/studioWorkspace/` repositories). When wiring a domain:
+
+1. Read the domain's section in `supabase/README.md`: the schema and functions usually already exist. Do not duplicate their rules in TypeScript.
+2. Implement the Supabase store behind the existing contract; map rows in a pure, tested mapping module; use the generated types.
+3. Handle loading, empty, error and permission-refused states with localized messages; never fall back to mock data on error.
+4. Remove the mock path for that domain (fixtures, prototype controls, demo switches, simulated latency) unless the user asks to keep a design-review mode — and then it must be impossible to reach in a production build.
+5. Update `AGENTS.md` §4 domain status, `webapp/README.md` and `supabase/README.md`.
+
+Mock-only code that remains must never look real to a customer: no fake payment success, no fabricated order, no invented figures.
+
+## Environments and configuration
+
+- Browser configuration: only `VITE_SUPABASE_URL` and `VITE_SUPABASE_PUBLISHABLE_KEY` (`webapp/.env.example`, Vercel project settings). Anything else secret is an Edge Function secret.
+- Supabase: today a single project, "Global Toothgems" (`abvuyvryerpzlvibttxp`), used for development and holding seed/demo data. Production needs its own project (or an explicit, documented promotion of this one) — see `09-supabase-workflow.md`.
+- Stripe: test mode keys everywhere until the owner provides production keys; test and live never mixed in one environment.
+- Vercel: root directory `webapp`, SPA rewrite in `webapp/vercel.json`; preview deployments per branch.
 
 ## Data model
 
-Prefer explicit domain models over unstructured blobs.
+Explicit relational models, not blobs. Invariants that must always hold:
 
-Important invariants:
-- money must never rely on floating-point arithmetic;
-- order totals must be reproducible;
-- purchased training access must remain auditable;
-- course progress must be persisted;
-- review publication state must be controllable;
-- user authorization must be enforced server-side.
-
-## Configuration
-
-No secrets in source code.
-No production credentials in client-side bundles.
-Use environment/configuration mechanisms appropriate to the deployment platform.
-
-## API/server rules
-
-Validate all untrusted input.
-Enforce authorization server-side.
-Never trust client-calculated prices, permissions, completion states or payment statuses.
-
-## Frontend rules
-
-- Responsive by default.
-- Mobile-first for checkout and training consumption.
-- Accessible keyboard navigation.
-- Visible focus states.
-- Loading/error/empty states.
-- Avoid layout shifts.
-- Avoid excessive animation.
-- Do not hide essential information behind hover-only interactions.
-
-## Performance
-
-Optimize real bottlenecks rather than prematurely optimizing everything.
-
-Pay particular attention to:
-- product images;
-- course videos;
-- public page loading;
-- checkout;
-- mobile networks.
-
-Use lazy loading where appropriate.
-Do not load large admin/training bundles on public storefront pages unnecessarily.
+- money is exact (`numeric(12,2)` + currency in Postgres, integer minor units in TypeScript/Stripe) — never floats;
+- order totals are reproducible from the order's own snapshots;
+- purchased access (courses, Studio subscription) is an auditable entitlement record;
+- progress, review status and publication states are server-side facts.
 
 ## Error handling
 
-Errors should:
-- be understandable to users;
-- not expose internals;
-- be logged with enough diagnostic context;
-- preserve user data when safe.
+User-facing errors are understandable, localized and never expose internals (SQL, stack traces, provider messages, internal ids). Log diagnostic context server-side (Edge Function logs, Sentry once installed). Preserve user input on a failed save.
 
-Never expose stack traces, SQL errors, provider secrets or internal identifiers unnecessarily.
+## Performance
+
+Optimize real bottlenecks: product images (sizes, lazy loading), course videos, public page load on mobile networks, checkout. Keep heavy code lazy-loaded (three.js is only loaded by the Studio routes; admin and Academy player bundles should not weigh on the storefront). Query only needed columns; one PostgREST query with embedded relations rather than N round trips.
 
 ## Dependencies
 
-Before adding a dependency:
-- verify that an existing dependency cannot solve the need;
-- verify maintenance/activity;
-- check security implications;
-- keep the dependency scope narrow.
-
-Avoid dependencies solely for trivial helpers.
+Before adding one: can the stack do it? Is it maintained? What is its security and bundle cost? Keep its use narrow. No dependency for trivial helpers. New infrastructure (another backend, database, CMS, auth or commerce engine) needs an explicit user decision.
 
 ## Code quality
 
-Prefer:
-- small cohesive modules;
-- explicit naming;
-- predictable control flow;
-- typed interfaces where the stack supports typing;
-- domain-oriented functions;
-- tests around business invariants.
+Small cohesive modules, explicit names, typed interfaces, pure domain functions with tests, predictable control flow. No giant components, duplicated business rules, magic numbers, implicit global state or speculative abstractions. Do not rewrite unrelated areas; improve the smallest surface needed to deliver safely.
 
-Avoid:
-- giant components;
-- duplicated business rules;
-- magic numbers;
-- implicit global state;
-- speculative abstractions.
+Known debt worth fixing when touched: the admin orders screens use their own `components/ui/Dialog.tsx` / `Menu.tsx` instead of the admin workspace primitives (`ConfirmationDialog`, `OverflowMenu`, `useFocusTrap`).

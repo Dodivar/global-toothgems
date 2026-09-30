@@ -1,10 +1,10 @@
-# Global Toothgems — static/mock prototype
+# Global Toothgems — web application
 
-A fully interactive React implementation of the Global Toothgems brand site — a premium tooth-gem e-commerce shop and professional Academy — built from a Claude Design prototype (see the design brief and chat transcripts that shipped with it).
+The production web application of Global Toothgems: storefront, Academy, member area, Studio 3D and back office, in one React single-page application backed by Supabase (see `supabase/README.md`) and deployed on Vercel.
 
-> **Architecture note:** this directory intentionally deviates from the stack mandated in the repo root's `AGENTS.md` and `global-toothgems-llm-guidelines/` (Next.js, Supabase/Postgres, Supabase Auth, Stripe). It was built at explicit user request as a fast, visual, fully-clickable reference implementation — Vite + React, no backend, cart/checkout/lesson-progress state held in memory only. Treat it as a design/behavior reference to port from, not as the production app. Porting to the mandated Next.js + Supabase + Stripe architecture is still open work.
+> **Status: being industrialised.** The app started as a fully clickable implementation of the Claude Design prototype, with every domain on in-memory mock data. Domains are now connected to Supabase one by one; the up-to-date live/mock table is in the root `AGENTS.md` §4. With the Supabase variables set, these are **live**: the storefront catalogue, back-office product management and categories, member and staff authentication, favourites (`wishlist_items`), reviews and moderation, member and admin order reading, and the Studio 3D workspace. Cart/checkout/payment (no Stripe yet), promotions, gift cards, loyalty, customers/users/statistics/settings in the back office, contact and newsletter, and the whole Academy still run on mock data.
 >
-> **Two parts are live** when the environment variables below are set: the **storefront catalogue** reads Supabase (see [Supabase connection (catalogue)](#supabase-connection-catalogue)), and the back office's **product management** (products, stock, images, English translations, recommendations) and **admin sign-in** read and write it (see [Supabase connection (back-office products)](#supabase-connection-back-office-products)). A product saved as active in the back office therefore appears in the shop. A signed-in member's **favourites** (the hearts, and « Mes favoris » at `/boutique?favoris=1`) are stored in `wishlist_items`; without Supabase they last for the session only. Cart, checkout, orders, customers, promotions and training are still mock data.
+> Architecture (decided): Vite + React SPA, business rules in Postgres (RLS + functions), server code in Supabase Edge Functions, payments by Stripe with webhook-driven fulfilment. Sections below that describe "prototype" behaviour, "Prototype controls" panels or mock stores document code that is **still mock and scheduled to be replaced**, not a target design.
 
 ## Stack
 
@@ -224,8 +224,9 @@ legal texts change. Supabase sends the confirmation email; its link lands on
 the page the member was heading to. Sign-in reports unconfirmed addresses (with a
 resend), wrong credentials, suspended accounts and rate limits separately.
 `/mot-de-passe-oublie` and `/reinitialiser-mot-de-passe` use Supabase password
-recovery (`lib/passwordRecovery.ts`). The Security page cards (change email or
-password, export, deletion) are still simulated. The
+recovery (`lib/passwordRecovery.ts`). On the Security page, changing the email or
+the password goes through Supabase Auth (`lib/accountCredentials.ts`); data export
+and account deletion are still simulated. The
 prototype controls, the mock inbox and the Google dialog only exist without
 Supabase; Google sign-in is not connected. Without Supabase, everything below is
 simulated as before.
@@ -560,14 +561,15 @@ How it is put together:
 
 Tax rates and exemption rules are **illustrative** and say so on screen: they, and every check here (zone overlap, rate ranges, VAT number validation), must be confirmed with an accountant and enforced server-side in the real implementation.
 
-## Notes on scope
+## Remaining mock behaviour (to replace before launch)
 
-This app reproduces the prototype's interactions against local/mock state only — there is no real backend, payment processing, or authentication. A few simplifications carried over intentionally from the prototype (flagged during the build):
+Without the Supabase variables every domain runs on its mock store. With them, the following still do not touch the database:
 
-- All Academy courses share the same authored 9-lesson syllabus; progress is tracked per course, but only one course outline exists.
-- Nothing is persisted: the session, cart, progress and orders all live in memory and reset on reload.
-- Paying always succeeds. It records an order and empties the cart; real fulfilment belongs to a Stripe webhook, not to the browser.
-- The Artist Community (`/compte/communaute`) has no backend either: members, discussions and replies are written fixtures, posting and replying live in memory, the photo "upload" picks from three sample images, and forum access is derived from the courses on the account rather than verified anywhere.
-- The Loyalty Club (`/fidelite`, `/compte/fidelite`) is **display only**, and more so than the rest of this app: no stamp is ever awarded, stored or redeemed, and the checkout banner reads the subtotal without touching the total, the payment or the order. Its card state is static mock data in `data/loyalty.ts`, switched by a visible demo control on the member page. Awarding a stamp is a server's job, driven by the same verified payment event as fulfilment.
+- **Cart and checkout.** "Paying" always succeeds in the mock; with Supabase it adds no order. Real payment needs the `checkout` and `stripe-webhook` Edge Functions (see `global-toothgems-llm-guidelines/04-ecommerce-rules.md`).
+- **Academy.** All courses share the one authored 9-lesson syllabus in `data/lessons.ts`; progress lives in memory (`lib/progress.tsx`); there is no Academy schema yet.
+- **Artist Community.** Fixtures and in-memory posting; access derived client-side from the courses on the account. Post-launch.
+- **Loyalty Club.** Display only (`data/loyalty.ts` with a demo switch); the database already awards stamps on paid orders — the UI must read `loyalty_overview`.
+- **Security page:** data export and account deletion are simulated (they need backend jobs).
+- **Back-office promotions, gift cards, customers, users, statistics, settings and translations:** mock stores over a schema that already exists.
 
-Everything else — filtering, cart totals, the lesson video/quiz simulation, per-product detail pages, the member dashboard — is fully interactive.
+The mock stores, fixtures in `data/`, demo accounts and "Prototype controls" panels are removed domain by domain as each goes live; a production build must never fall back to them.

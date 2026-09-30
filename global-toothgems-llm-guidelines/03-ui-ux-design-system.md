@@ -69,7 +69,11 @@ rather than neutral grey. The admin keeps its flatter `--shadow-xs` panels.
 
 ## Components
 
-Build reusable components for:
+The design system is implemented: tokens (colours, shadows, radii, widths) in
+`webapp/src/index.css`, storefront primitives in `webapp/src/components/ui/`,
+back-office primitives in `webapp/src/components/admin/`. Reuse and extend them;
+do not hard-code colours or create a parallel component. Reusable components exist
+or must exist for:
 - buttons;
 - inputs;
 - cards;

@@ -1,75 +1,49 @@
 ---
 name: global-toothgems-testing-quality
-description: Testing strategy, acceptance criteria and quality gates for Global Toothgems.
+description: Checks to run, test levels, critical journeys, authorization tests and the definition of done.
 ---
 
 # Testing & Quality
 
-## Testing pyramid
+## Commands
 
-Use the appropriate level:
-- unit tests for business rules;
-- integration tests for persistence/API boundaries;
-- end-to-end tests for critical user journeys.
+From `webapp/` (run `npm ci` first if `node_modules` is missing):
 
-Do not replace all testing with end-to-end tests.
+| Check | Command | When |
+| --- | --- | --- |
+| Lint | `npm run lint` (oxlint) | every change |
+| Unit tests | `npm test` (Vitest) | every change to `lib/` logic; run a single file with `npx vitest run <path>` |
+| Type-check + build | `npm run build` | every change before committing |
 
-## Critical e-commerce journeys
+Database: the `supabase/tests/*_validation.sql` suites run against a Supabase project (MCP `execute_sql`, or the SQL editor). Each is one transaction that ends by raising `ALL … TESTS PASSED` (success) or `FAIL: …` — both roll back. See `09-supabase-workflow.md`.
 
-At minimum cover:
-1. browse product;
-2. product detail;
-3. add to cart;
-4. update cart;
-5. checkout;
-6. successful payment state;
-7. failed/cancelled payment state;
-8. order visible in account.
+Not in place yet (build when the matching launch work starts): Playwright end-to-end tests for the critical journeys below, GitHub Actions CI running lint + tests + build, Deno tests for Edge Functions.
 
-## Critical training journeys
+## Test levels
 
-At minimum cover:
-1. customer logs in;
-2. purchased course appears;
-3. learner opens course;
-4. progress is recorded;
-5. quiz answer is evaluated;
-6. incorrect-answer feedback appears;
-7. gated next step remains inaccessible until prerequisite completion;
-8. course completion is persisted.
+- **Unit (Vitest):** pure business rules and mappings — money conversion, row ↔ UI mapping, filters, validation, eligibility. Every `*Mapping.ts` has a `*.test.ts`.
+- **Database (SQL suites):** RLS, constraints, triggers and functions — every migration adds or extends one. This is where money, stock, access and permissions are proven.
+- **Edge Functions:** signature verification, idempotency, error paths (Stripe test events / fixtures).
+- **End-to-end (Playwright):** critical journeys only; do not replace lower levels with E2E.
 
-## Authorization tests
+## Critical journeys
 
-Explicitly test that a customer cannot access:
-- another customer's order;
-- another customer's progress;
-- another customer's private data;
-- unpublished course content;
-- admin functions.
+Commerce: browse → product → add to cart → update cart → checkout → payment success (webhook) → payment failure/cancel → order visible in account → refund reflected.
 
-## UI tests
+Academy: sign in → purchased course visible → open course → progress recorded → quiz evaluated with feedback → gated step locked until prerequisite → completion persisted → certificate issued.
 
-Verify:
-- mobile;
-- desktop;
-- keyboard;
-- loading;
-- error;
-- empty states.
+## Authorization tests (required for every new table or function)
+
+A customer cannot read or modify another customer's orders, progress, reviews drafts, creations, favourites, consents or files; cannot read unpublished content; cannot call staff functions. An anonymous visitor gets only public columns. A `viewer` cannot write. A suspended staff member is refused.
+
+## UI checks
+
+Mobile and desktop, keyboard only, loading / error / empty states, reduced motion, French and English strings present. When a check needs a running app, use the dev server (`npm run dev`) with the Supabase variables set, and say which screens you actually looked at.
 
 ## Regression rule
 
-Every bug fix should include a regression test when practical.
+Every bug fix comes with a regression test when practical (unit or SQL suite).
 
 ## Definition of done
 
-A feature is not done merely because it renders.
-
-It is done when:
-- acceptance criteria pass;
-- authorization is correct;
-- error states are handled;
-- responsive behavior is checked;
-- relevant tests pass;
-- no obvious regression is introduced;
-- customer-facing text is localized where required.
+See `AGENTS.md` §16. In short: works against the real backend, authorization proven, errors handled, responsive, localized, checks run and reported honestly.

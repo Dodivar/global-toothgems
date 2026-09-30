@@ -1,4 +1,6 @@
-# Global Toothgems — Database (iterations 1–10: e-commerce MVP, checkout, reviews, shipments, refunds, gift cards, member account, back-office roles, promotions, customer service, statistics, product recommendations, back-office product management)
+# Global Toothgems — Database
+
+Schema, rules and operations of the Supabase backend (iterations 1–17: commerce, checkout, reviews, shipments, refunds, gift cards, member account, back-office roles, promotions, customer service, statistics, recommendations, back-office product management, gem options and colours, custom variants, Studio 3D workspace and share links, category families, wishlist). How to change it: `global-toothgems-llm-guidelines/09-supabase-workflow.md`.
 
 Supabase project **Global Toothgems** (`abvuyvryerpzlvibttxp`, region `eu-west-3` Paris, Postgres 17).
 Supabase Auth is the only authentication system; all application data lives in `public`,
@@ -30,8 +32,8 @@ from the back-office Catégories page through `admin_save_gem_color()`, `admin_d
 `admin_reorder_gem_colors()`.
 Iteration 15 lets the back office edit every other kind of variant (colours, boxes, sizes in mm):
 `admin_save_product()` takes the complete list of a product's variants and the variant each photo shows.
-Training, community and notifications are
-still out of scope and get their own migrations later.
+Training (the Academy), community and notifications are not built yet and get their own
+migrations; the Academy is launch-blocking.
 
 ## Layout
 
@@ -664,10 +666,10 @@ VAT rates, shipping zones/rates mirroring the Settings prototype. Media rows ref
 
 ## Deliberate decisions to review
 
-1. **Money as `numeric(12,2)`** (explicit task instruction) whereas `AGENTS.md` §8 asks for integer
-   minor units. Both are exact (no floats). Converting to Stripe's minor units is `amount * 100` for
-   2-decimal currencies. If minor units are preferred, switch before real orders exist.
-   3-decimal currencies (KWD, BHD…) would need a wider scale.
+1. **Money as `numeric(12,2)`** — **decided (Sept 2026), keep it.** Postgres stores exact decimals + ISO-4217
+   currency; TypeScript and Stripe use integer minor units; conversion only at boundaries
+   (`amount * 100` for 2-decimal currencies, `webapp/src/lib/catalog/money.ts`). 3-decimal currencies
+   (KWD, BHD…) would need a wider scale.
 2. **Default content language = French.** Base columns hold French (matches the storefront
    `fallbackLng: "fr"`), but the Settings prototype declares `SOURCE_LANGUAGE = "en"`. The repo is
    inconsistent; switching the default later means moving base text into an `fr` translation and

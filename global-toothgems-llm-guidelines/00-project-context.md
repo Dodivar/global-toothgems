@@ -55,17 +55,31 @@ Visual language:
 - subtle motion;
 - accessible contrast.
 
+## Audience and markets
+
+- Tooth-gem artists and beauty professionals (tools, stones, kits, training);
+- consumers discovering tooth gems, often from Instagram, on a phone;
+- customers in France and the EU first; prices in EUR.
+
 ## Languages
 
-The storefront is intended to support:
-- French;
-- English;
-- German.
+- Launch: French (reference language) and English.
+- Planned: German (enabled in the database, not launch-blocking), other EU languages later.
 
-Do not hard-code customer-facing text in application logic when localization is expected.
+Customer-facing text is always localized (see `08-content-and-localization.md`).
+
+## Product surfaces
+
+- Storefront (shop, product pages, gift cards, Loyalty Club page).
+- Academy (training catalogue, sales pages, lesson player).
+- Member area (`/compte`: orders, courses, certificates, reviews, favourites, loyalty, profile, security).
+- Studio 3D (`/studio-3d`): design tool for tooth-jewellery compositions, planned as a paid subscription.
+- Back office (`/admin`) for the team.
 
 ## General product principle
 
+The product is being industrialised for a real commercial launch: reliability of the existing
+surfaces comes before new features.
 Prefer simple, reliable flows over feature quantity.
 Every feature must have a clear user value.
 Avoid premature abstractions and speculative architecture.
