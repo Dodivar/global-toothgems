@@ -73,8 +73,11 @@ export default defineConfig({
     trace: "retain-on-failure",
   },
   projects: [
-    { name: "chromium", testIgnore: /auth-server\.spec\.ts/, use: { ...chrome, baseURL } },
+    { name: "chromium", testIgnore: /auth-(server|cache)\.spec\.ts/, use: { ...chrome, baseURL } },
     { name: "auth-server", testMatch: /auth-server\.spec\.ts/, use: { ...chrome, baseURL: authBaseURL } },
+    // Counts the server's reads on the fake Supabase, which every test of the
+    // project above can cause: runs once they have all finished.
+    { name: "auth-cache", testMatch: /auth-cache\.spec\.ts/, dependencies: ["auth-server"], use: { ...chrome, baseURL: authBaseURL } },
   ],
   webServer: servers,
 });

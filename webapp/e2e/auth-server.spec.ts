@@ -202,17 +202,3 @@ test("product links and the language switch use each language's slug", async ({ 
   // The server-rendered pages hydrated from the same catalogue, without a mismatch.
   expect(problems).toEqual([]);
 });
-
-test("the server reads the catalogue once for many page renders (cache)", async ({ request }) => {
-  const reads = async () => (await (await request.get("http://localhost:54399/__server-reads")).json()) as Record<string, number>;
-  await request.get("/en/shop"); // fills the cache, if no earlier test did
-  const before = await reads();
-  for (const path of ["/en/shop", "/fr/boutique", "/fr", "/fr/formes", "/en/shop"]) {
-    expect((await request.get(path)).status(), path).toBe(200);
-  }
-  const after = await reads();
-  for (const table of ["products", "gem_colors", "categories"]) expect(after[table] ?? 0, table).toBe(before[table] ?? 0);
-  // The count does see server reads: a key never asked before is read from the database.
-  expect((await request.get(`/fr/boutique/inconnu-${Date.now()}`)).status()).toBe(404);
-  expect((await reads()).products ?? 0).toBeGreaterThan(after.products ?? 0);
-});
