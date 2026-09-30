@@ -1,76 +1,56 @@
 ---
 name: global-toothgems-content-localization
-description: Multilingual content, translation, copywriting, SEO and content-management rules.
+description: UI localization with react-i18next, content translations in the database, copywriting tone, SEO for the SPA, user-generated content.
 ---
 
-# Content & Localization
+# Content, Localization & SEO
 
 ## Languages
 
-Supported launch languages:
-- FR;
-- EN;
-- DE.
+- Launch: **French** (default, reference, base columns) and **English**.
+- German: enabled in the `languages` table, planned, not launch-blocking. Do not add partial `de` UI files; adding German is a deliberate project step (UI JSON + content translations + review).
+- Adding a locale must not require redesign: locale lists come from configuration/`languages`, not scattered conditionals.
 
-French is the reference language unless product requirements specify otherwise.
+## UI strings (react-i18next)
 
-## Localization
+- All customer-facing and staff-facing text in `webapp/src/i18n/locales/` (`fr.json`, `en.json`, and namespaced files such as `promotions.*`, `reviews.*`, `settings.*`, `studio.*`). Every key in both languages.
+- Complete sentences with interpolation; never concatenate translated fragments. Pluralization via i18next plurals.
+- Dates, numbers and currencies with `Intl` in the active locale (`lib/format.ts`).
+- Error messages from Supabase or Edge Functions are mapped to translation keys, never shown raw.
 
-Never concatenate translated fragments in application logic.
+## Content translations (database)
 
-Prefer translation keys and complete localized strings.
+- Products, variants, media alt text, categories, gem colours, promotions, campaigns, e-mail templates and content pages: base columns in French, other locales in `*_translations` rows with `draft`/`published` status; only published rows are public; fallback to French.
+- Future Academy content follows the same model. Never add `name_en`-style columns.
+- `translation_status` reports missing/outdated translations for the back office.
 
-Dates, numbers, currencies and pluralization must use locale-aware formatting.
+## Commerce localization
+
+Language, country, currency, tax regime and shipping zone are independent. Selecting English does not change currency, VAT or shipping.
+
+## Translation workflow
+
+Translations are explicit and reviewable. Do not silently machine-translate commercial, legal or instructional content; if you draft a translation, mark it as a draft for review.
 
 ## Tone
 
-Customer-facing copy should be:
-- professional;
-- friendly;
-- confident;
-- reassuring;
-- premium;
-- concise.
-
-Avoid:
-- excessive jargon;
-- aggressive sales language;
-- childish wording;
-- unsupported claims;
-- medical/technical claims that have not been validated.
-
-## Product content
-
-Product descriptions should clearly distinguish:
-- factual specifications;
-- usage instructions;
-- recommendations;
-- marketing copy.
-
-Never invent product properties.
+Professional, friendly, confident, reassuring, premium, concise. Avoid jargon, aggressive sales language, childish wording, unsupported claims, and medical/technical claims that have not been validated. Product descriptions separate specifications, usage instructions, recommendations and marketing copy. Never invent product properties, legal terms or company identifiers — use a visible placeholder and flag it.
 
 ## Training content
 
-Educational explanations should be:
-- clear;
-- structured;
-- encouraging;
-- actionable.
-
-Incorrect quiz answers should teach rather than shame.
-
-## SEO
-
-Public product and course pages should be designed for:
-- crawlability;
-- meaningful titles;
-- descriptions;
-- semantic headings;
-- structured content where appropriate;
-- clean URLs.
-
-Do not sacrifice usability for keyword stuffing.
+Clear, structured, encouraging, actionable. Incorrect quiz answers teach rather than shame.
 
 ## User-generated content
 
-Reviews are user-generated content and should not be translated, altered or attributed to the user without an explicit product decision.
+Reviews, community posts and Studio creation names are the author's words: never translated, altered or re-attributed without an explicit product decision.
+
+## SEO (SPA)
+
+The webapp is a client-rendered SPA; public pages (home, shop, product, course sales pages, legal, help) must still be indexable and shareable:
+
+- meaningful `<title>` and meta description per route, localized; canonical URL; Open Graph tags for product and course pages;
+- semantic headings, crawlable links (`<a href>` via router links, not click handlers), clean stable URLs (French paths today; product slugs per locale exist in `product_translations`);
+- structured data (Product, Course) where appropriate;
+- correct 404 for unknown slugs.
+
+Open decision before launch (ask the user, do not improvise): locale URL strategy (`/en/...` prefixes vs. current toggle), hreflang, and prerendering/SSG of public pages for crawlers and social previews. Do not introduce a new framework for this without that decision.

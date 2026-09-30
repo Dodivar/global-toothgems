@@ -121,7 +121,7 @@ export function WelcomeScreen({
         </span>
 
         <div className="grid gap-2">
-          <span aria-hidden="true" className="gt-script text-[44px] leading-none text-[var(--gt-blue-400)]">
+          <span aria-hidden="true" className="gt-accent text-[22px] leading-none text-[var(--gt-blue-600)]">
             {t("register.welcome.script")}
           </span>
           <h2 ref={headingRef} tabIndex={-1} className="text-[length:var(--text-h2)] outline-none">

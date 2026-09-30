@@ -17,6 +17,15 @@ import settingsEn from "./locales/settings.en.json";
 // The 3D Studio's presentation and subscription pages, under `studio`.
 import studioFr from "./locales/studio.fr.json";
 import studioEn from "./locales/studio.en.json";
+// The Studio workspace around the editor (creations, Gem Groups, help), under `studio.workspace`.
+import studioWorkspaceFr from "./locales/studioWorkspace.fr.json";
+import studioWorkspaceEn from "./locales/studioWorkspace.en.json";
+// The alternative home page at /accueil-b, under `homeAlt`.
+import homeAltFr from "./locales/homeAlt.fr.json";
+import homeAltEn from "./locales/homeAlt.en.json";
+// The alternative shop page at /boutique, under `shopAlt`.
+import shopAltFr from "./locales/shopAlt.fr.json";
+import shopAltEn from "./locales/shopAlt.en.json";
 // The learner experience (course overview, lesson player, knowledge checks),
 // under `learning`; and the back office's training image library, under
 // `trainingMedia`.
@@ -30,8 +39,8 @@ i18n
   .use(initReactI18next)
   .init({
     resources: {
-      fr: { translation: { ...fr, promo: promoFr, reviews: reviewsFr, settings: settingsFr, studio: studioFr, learning: learningFr, trainingMedia: trainingMediaFr } },
-      en: { translation: { ...en, promo: promoEn, reviews: reviewsEn, settings: settingsEn, studio: studioEn, learning: learningEn, trainingMedia: trainingMediaEn } },
+      fr: { translation: { ...fr, promo: promoFr, reviews: reviewsFr, settings: settingsFr, studio: { ...studioFr, workspace: studioWorkspaceFr }, homeAlt: homeAltFr, shopAlt: shopAltFr, learning: learningFr, trainingMedia: trainingMediaFr } },
+      en: { translation: { ...en, promo: promoEn, reviews: reviewsEn, settings: settingsEn, studio: { ...studioEn, workspace: studioWorkspaceEn }, homeAlt: homeAltEn, shopAlt: shopAltEn, learning: learningEn, trainingMedia: trainingMediaEn } },
     },
     fallbackLng: "fr",
     supportedLngs: ["fr", "en"],

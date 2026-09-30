@@ -103,10 +103,12 @@ function SupabaseAdminAuthProvider({ children }: { children: ReactNode }) {
   useEffect(() => {
     if (!supabase) return;
     let active = true;
-    // Restores a session kept by supabase-js, and follows sign-outs and token
-    // expiry from any tab. Sign-in itself is handled by `signIn` below.
-    const { data } = supabase.auth.onAuthStateChange((event, session) => {
-      if (event === "SIGNED_IN") return;
+    // Restores a session kept by supabase-js, and follows sign-ins, sign-outs
+    // and token expiry from any tab. Sign-ins are followed too because the
+    // member login opens the same session: a staff member who signs in there
+    // is recognised without a reload (the member space then offers the way
+    // to the back office). A non-staff account simply resolves to null.
+    const { data } = supabase.auth.onAuthStateChange((_event, session) => {
       // Supabase warns against awaiting its own calls inside this callback.
       setTimeout(async () => {
         const identity = session?.user ? await staffIdentity(session.user) : null;

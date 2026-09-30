@@ -12,21 +12,22 @@
 begin;
 
 -- -----------------------------------------------------------------------------
--- Categories
+-- Categories and their families
 -- -----------------------------------------------------------------------------
+-- Migration `…_category_families` already creates the four categories and
+-- their families (with their English names); this only makes the seed
+-- self-sufficient if it runs against a database that predates it.
 insert into public.categories (slug, name, description, position) values
-  ('gems',        'Gems',               'Cristaux, charms, étoiles et pièces décoratives posées sur l’émail.', 1),
-  ('kits',        'Kits d’application', 'Coffrets complets de pose, du mordançage à la photopolymérisation.', 2),
-  ('outils',      'Outils',             'Instruments de pose et de dépose à usage professionnel.', 3),
-  ('entretien',   'Suivi & entretien',  'Gels, brosses et produits de nettoyage pour la tenue dans la durée.', 4),
-  ('accessoires', 'Accessoires',        'Rangement, présentation et consommables de studio.', 5)
+  ('gems',      'Toothgems',        'Cristaux, bijoux en or et pièces décoratives posées sur l’émail.', 1),
+  ('materiel',  'Matériel',         'Instruments, consommables et accessoires de pose.', 2),
+  ('kits',      'Kits',             'Coffrets complets de pose, pour les pros comme pour débuter.', 3),
+  ('lip-gloss', 'Global Lip Gloss', 'Les gloss Global Toothgems.', 4)
 on conflict (slug) do nothing;
 
 -- Revenue buckets of the Statistics screen (iteration 8).
 update public.categories set report_group = case slug
-    when 'gems' then 'jewelry' when 'entretien' then 'aftercare'
-    when 'kits' then 'kits' when 'outils' then 'kits' when 'accessoires' then 'kits' else report_group end
- where slug in ('gems', 'entretien', 'kits', 'outils', 'accessoires');
+    when 'gems' then 'jewelry' when 'materiel' then 'kits' when 'kits' then 'kits' else 'other' end
+ where slug in ('gems', 'materiel', 'kits', 'lip-gloss');
 
 -- -----------------------------------------------------------------------------
 -- Products
@@ -67,17 +68,17 @@ from (values
    'Kit d’initiation pensé pour les stagiaires : consommables pour une dizaine de poses et un assortiment de cristaux.',
    'KIT-START-002', 129.00, null, 'draft', false,
    '{"tags": ["formation"]}'),
-  ('outils', 'Pince de Dépose', 'pince-de-depose',
+  ('materiel', 'Pince de Dépose', 'pince-de-depose',
    'Pince inox pour une dépose sans dommage.',
    'Pince en acier inoxydable à mors protégés, conçue pour retirer une gem sans altérer l’émail. Autoclavable.',
    'TOOL-REM-002', 78.00, null, 'active', false,
    '{"material": "Acier inoxydable"}'),
-  ('entretien', 'Gel de Suivi', 'gel-de-suivi',
+  ('materiel', 'Gel de Suivi', 'gel-de-suivi',
    'Gel d’entretien post-pose, 15 ml.',
    'Gel doux au fluor pour les jours suivant la pose. Aide à préserver l’éclat de la gem et le confort de l’émail.',
    'CARE-GEL-003', 19.00, null, 'active', false,
    '{}'),
-  ('accessoires', 'Capsules Stériles', 'capsules-steriles',
+  ('materiel', 'Capsules Stériles', 'capsules-steriles',
    'Capsules stériles à usage unique pour la présentation des gems.',
    'Capsules stériles transparentes à usage unique pour présenter et manipuler les gems en cabine.',
    'ACC-CAP-009', 24.00, null, 'active', false,
@@ -251,11 +252,10 @@ where not exists (
 insert into public.category_translations (category_id, locale, name, slug, description, status)
 select c.id, 'en', v.name, v.slug, v.description, 'published'
 from (values
-  ('gems',        'Gems',             'gems',             'Crystals, charms, stars and decorative pieces set on enamel.'),
-  ('kits',        'Application kits', 'application-kits', 'Complete application sets, from etching to light curing.'),
-  ('outils',      'Tools',            'tools',            'Professional application and removal instruments.'),
-  ('entretien',   'Aftercare',        'aftercare',        'Gels, brushes and cleaning products for long-term wear.'),
-  ('accessoires', 'Accessories',      'accessories',      'Storage, display and studio consumables.')
+  ('gems',      'Toothgems',        'toothgems', 'Crystals, gold jewellery and decorative pieces set on the enamel.'),
+  ('materiel',  'Equipment',        'equipment', 'Application instruments, consumables and accessories.'),
+  ('kits',      'Kits',             'kits',      'Complete application kits, for professionals and beginners.'),
+  ('lip-gloss', 'Global Lip Gloss', 'lip-gloss', 'Global Toothgems lip glosses.')
 ) as v(base_slug, name, slug, description)
 join public.categories c on c.slug = v.base_slug
 on conflict (category_id, locale) do nothing;
@@ -397,5 +397,26 @@ select pv.id,
 from public.product_variants pv
 join public.products p on p.id = pv.product_id and p.slug = 'strass-cristal'
 on conflict do nothing;
+
+-- -----------------------------------------------------------------------------
+-- Families of the demo products (Coeur Chrome, the archived coffret and the
+-- Strass Cristal stay unclassified)
+-- -----------------------------------------------------------------------------
+update public.products p
+   set family_id = f.id
+  from (values
+    ('charm-etoile-or-18k',     'bijoux-or-18ct'),
+    ('etoile-cristal',          'swarovski'),
+    ('goutte-opale',            'opales'),
+    ('kit-application-premium', 'kit-professionnel'),
+    ('kit-decouverte',          'kit-professionnel'),
+    ('pince-de-depose',         'essentiels'),
+    ('gel-de-suivi',            'essentiels'),
+    ('capsules-steriles',       'essentiels')
+  ) as v(product_slug, family_slug)
+  join public.category_families f on f.slug = v.family_slug
+ where p.slug = v.product_slug
+   and p.category_id = f.category_id
+   and p.family_id is null;
 
 commit;

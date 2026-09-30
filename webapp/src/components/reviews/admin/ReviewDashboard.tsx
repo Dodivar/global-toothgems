@@ -20,7 +20,7 @@ import { Stars } from "../Stars";
 import { EditedBadge, ReportedBadge } from "../ReviewBadges";
 import { REVIEW_NOW, openReports, privacyName, subjectKey, type CustomerReview } from "../../../data/reviewSystem";
 import { activityDate, isEditedPending, isReported, reviewStats, type SubjectRating } from "../../../lib/reviewRules";
-import { subjectName, useReviewCustomer, useReviews } from "../../../lib/reviews";
+import { useReviewCustomer, useReviewSubjects, useReviews } from "../../../lib/reviews";
 import { useWhen } from "./ModerationSheet";
 
 const focusRing =
@@ -37,6 +37,7 @@ export function ReviewDashboard({ hrefFor, onOpen }: { hrefFor: (query: Record<s
   const lang = i18n.language;
   const { reviews, loading } = useReviews();
   const customerOf = useReviewCustomer();
+  const { subjectName } = useReviewSubjects();
   const when = useWhen();
   const stats = useMemo(() => reviewStats(reviews), [reviews]);
 
@@ -186,6 +187,7 @@ function SubjectPanel({
   hrefFor: (query: Record<string, string>) => string;
 }) {
   const { t } = useTranslation();
+  const { subjectName } = useReviewSubjects();
   return (
     <Panel title={title} icon={icon}>
       {rows.length === 0 ? (

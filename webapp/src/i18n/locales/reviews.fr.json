@@ -3,6 +3,12 @@
     "account": "Mes avis",
     "admin": "Avis"
   },
+  "errors": {
+    "saveTitle": "Modification non enregistrée",
+    "saveBody": "La base de données a refusé l’opération. La liste a été rechargée.",
+    "photosTitle": "Photos non enregistrées",
+    "photosBody": "Votre avis est bien envoyé, mais ses photos n’ont pas pu être ajoutées. Vous pouvez les ajouter en le modifiant."
+  },
   "kind": {
     "product": "Produit",
     "course": "Formation",
@@ -228,6 +234,7 @@
     "resubmit": "Envoyer pour relecture",
     "close": "Fermer",
     "successTitle": "Avis envoyé",
+    "sendFailed": "Votre avis n’a pas pu être enregistré. Votre texte est conservé : réessayez dans un instant.",
     "thanks": "Merci d’avoir partagé votre expérience avec Global Toothgems.",
     "successBody": "Votre avis est en attente de modération et apparaîtra dès que notre équipe l’aura validé. Vous pouvez le suivre dans « Mes avis ».",
     "successEdited": "Vos modifications sont entre les mains de notre équipe. Votre avis réapparaîtra, mis à jour, dès leur validation.",

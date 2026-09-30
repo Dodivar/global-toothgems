@@ -51,7 +51,7 @@ export function Loyalty() {
 
         <div className="relative mx-auto grid w-full min-w-0 max-w-[var(--max-width-content)] grid-cols-1 items-center gap-[clamp(24px,4vw,48px)] lg:grid-cols-[minmax(0,1fr)_minmax(min(440px,100%),0.85fr)]">
           <div className="gt-glass-panel grid min-w-0 gap-5 rounded-[var(--radius-xl)] p-[clamp(24px,3vw,40px)]">
-            <span className="gt-script text-[clamp(26px,3.4vw,40px)] text-[var(--gt-blue-700)]">
+            <span className="gt-accent text-[clamp(17px,1.9vw,22px)] text-[var(--gt-blue-700)]">
               {t("loyalty.heroScript")}
             </span>
             <h1 className="text-[length:var(--text-display-2)] font-[var(--weight-black)] uppercase leading-[var(--leading-tight)] tracking-[var(--tracking-display)] text-[var(--gt-ink-900)]">

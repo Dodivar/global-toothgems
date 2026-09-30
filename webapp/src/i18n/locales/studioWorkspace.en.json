@@ -1,0 +1,443 @@
+{
+  "untitled": "Untitled design",
+  "justNow": "just now",
+  "close": "Close",
+  "cancel": "Cancel",
+  "copySuffix": "(copy)",
+  "gems_one": "{{count}} gem",
+  "gems_other": "{{count}} gems",
+  "estimatedValue": "{{price}} estimated value",
+  "edited": "Edited {{when}}",
+  "favorite": "Add {{name}} to favourites",
+  "unfavorite": "Remove {{name}} from favourites",
+  "nav": {
+    "label": "Studio workspace",
+    "explore": "Global Toothgems",
+    "open": "Open the Studio menu",
+    "studio": "3D Studio",
+    "creations": "My Creations",
+    "groups": "My Gem Groups",
+    "help": "Help & Tutorial",
+    "feedback": "Give feedback",
+    "account": "My account",
+    "signedOut": "Not signed in",
+    "backToStage": "Studio",
+    "short": {
+      "studio": "Studio",
+      "creations": "Creations",
+      "groups": "Groups",
+      "help": "Help",
+      "feedback": "Feedback",
+      "shop": "Shop",
+      "academy": "Academy",
+      "account": "My space"
+    },
+    "desc": {
+      "studio": "Back to the design on the stage",
+      "creations": "Your saved designs",
+      "groups": "Reusable gem arrangements",
+      "help": "Learn the Studio step by step",
+      "feedback": "Tell us how it feels",
+      "shop": "Gems, tools and kits",
+      "academy": "The trainings",
+      "account": "Orders, certificates, profile"
+    }
+  },
+  "status": {
+    "empty": "Nothing to save yet",
+    "unsaved": "Unsaved changes",
+    "saving": "Saving…",
+    "saved": "Saved {{when}}",
+    "failed": "Save failed — try again"
+  },
+  "save": {
+    "cta": "Save creation",
+    "ctaSub": "Name it and keep it in My Creations",
+    "changes": "Save changes",
+    "changesShort": "Save changes",
+    "changesSub": "Update “{{name}}”",
+    "saved": "Saved",
+    "nothingToSave": "Everything is already saved",
+    "more": "More save options",
+    "shortcut": "Save (Ctrl+S)",
+    "newTitle": "Save creation",
+    "newSub": "Give your design a name — you can reopen, duplicate and reuse it any time.",
+    "asNewTitle": "Save as new creation",
+    "asNewSub": "Keep the original, save this version separately",
+    "editTitle": "Edit details",
+    "editSub": "Change the name, description or tags. The design itself is not modified.",
+    "namePlaceholder": "e.g. Minimal Butterfly",
+    "descriptionPlaceholder": "e.g. Symmetrical butterfly composition for front teeth.",
+    "saveDetails": "Save details"
+  },
+  "details": {
+    "name": "Name",
+    "description": "Description",
+    "tags": "Tags",
+    "optional": "(optional)",
+    "tagsPlaceholder": "Add a tag and press Enter",
+    "tagsHint": "Press Enter or a comma to add a tag.",
+    "tagsFull": "Up to {{max}} tags.",
+    "suggested": "Suggested tags",
+    "removeTag": "Remove tag {{tag}}",
+    "errors": {
+      "nameMissing": "Give it a name so you can find it again.",
+      "nameTooLong": "Keep the name under {{max}} characters.",
+      "descriptionTooLong": "The description is too long."
+    }
+  },
+  "actions": {
+    "open": "Open",
+    "openInStudio": "Open in Studio",
+    "backToStage": "Back to the stage",
+    "duplicate": "Duplicate",
+    "share": "Share",
+    "rename": "Rename",
+    "edit": "Edit",
+    "editDetails": "Edit details",
+    "delete": "Delete",
+    "useInStudio": "Use in Studio"
+  },
+  "creations": {
+    "eyebrow": "My Creations",
+    "title": "Your designs, saved and ready to reuse.",
+    "sub": "Every composition you save lands here — reopen it where you left off, duplicate it into a variation, or keep your favourites close.",
+    "newDesign": "New design",
+    "searchPlaceholder": "Search by name, description or tag",
+    "viewDetails": "View details of {{name}}",
+    "actionsFor": "Actions for {{name}}",
+    "onStage": "On the stage",
+    "onStageUnsaved": "On the stage · unsaved",
+    "emptyTitle": "Your creative library is empty",
+    "emptyBody": "Start designing in the 3D Studio and save your favourite tooth gem compositions here. Your designs will always be ready to revisit.",
+    "emptyCta": "Create your first design",
+    "emptyHelp": "Learn how it works"
+  },
+  "summary": {
+    "title": "Your Studio",
+    "creations_one": "creation",
+    "creations_other": "creations",
+    "groups_one": "gem group",
+    "groups_other": "gem groups",
+    "gems_one": "gem used",
+    "gems_other": "gems used",
+    "value": "total estimated design value"
+  },
+  "library": {
+    "clearSearch": "Clear search",
+    "filterLabel": "Filter",
+    "sortLabel": "Sort by",
+    "filters": {
+      "all": "All",
+      "favorites": "Favourites",
+      "minimal": "Minimal",
+      "complex": "Complex",
+      "symmetrical": "Symmetrical",
+      "withGroups": "With gem groups",
+      "recent": "Recently used"
+    },
+    "sorts": {
+      "updated": "Recently updated",
+      "created": "Recently created",
+      "name": "Name A–Z",
+      "price": "Price",
+      "elements": "Number of gems"
+    },
+    "resultCount_one": "{{count}} design shown",
+    "resultCount_other": "{{count}} designs shown",
+    "noMatchTitle": "Nothing matches",
+    "noMatchBody": "Try another word, or clear the filters to see your whole library.",
+    "resetFilters": "Show everything",
+    "loadFailedTitle": "Your library could not be loaded",
+    "loadFailedBody": "Your designs are safe — we just could not reach them. Please try again.",
+    "retry": "Try again"
+  },
+  "detail": {
+    "estimate": "Estimate",
+    "elements": "Gems",
+    "created": "Created",
+    "modified": "Last modified",
+    "noDescription": "No description yet."
+  },
+  "delete": {
+    "creationTitle": "Delete this creation?",
+    "groupTitle": "Delete this gem group?",
+    "creationBody": "“{{name}}” will be removed from My Creations.",
+    "groupBody": "“{{name}}” will be removed from My Gem Groups. Designs that already use it keep their gems.",
+    "cannotUndo": "This action cannot be undone.",
+    "confirm": "Delete"
+  },
+  "discard": {
+    "title": "Replace the design on the stage?",
+    "body": "Your unsaved changes will be lost. Save them first if you want to keep them.",
+    "keep": "Keep editing",
+    "confirm": "Discard and continue"
+  },
+  "groups": {
+    "eyebrow": "My Gem Groups",
+    "title": "Reusable gem arrangements",
+    "sub": "Save a few gems placed together — a butterfly, a cluster, an arc — and drop the whole arrangement onto any smile in one move.",
+    "searchPlaceholder": "Search your gem groups",
+    "lastUsed": "Last used {{when}}",
+    "neverUsed": "Not used yet",
+    "emptyTitle": "No gem groups yet",
+    "emptyBody": "In the Studio, select two or more gems (Shift + click), then choose “Create Gem Group”. It will be here, ready to reuse.",
+    "emptyCta": "Go to the Studio",
+    "saveTitle_one": "Save this gem as a reusable group?",
+    "saveTitle_other": "Save these {{count}} gems as a reusable group?",
+    "saveSub": "The arrangement is kept exactly — spacing, rotation, size and finish — so you can drop it onto any tooth later.",
+    "editTitle": "Edit gem group",
+    "createCta": "Create Gem Group",
+    "namePlaceholder": "e.g. Butterfly Wings",
+    "descriptionPlaceholder": "e.g. 4-gem arrangement designed for symmetrical placement.",
+    "prompt_one": "Save this gem as a reusable group?",
+    "prompt_other": "Save these {{count}} gems as a reusable group?",
+    "needsTwo": "A gem group needs at least two gems. Shift + click another gem to add it to the selection.",
+    "tooMany": "A gem group holds up to {{max}} gems. Select fewer to save one.",
+    "contextSave_one": "Save as gem group",
+    "contextSave_other": "Save {{count}} gems as a group"
+  },
+  "panel": {
+    "tabsLabel": "Library",
+    "tabs": {
+      "gems": "Gems",
+      "groups": "My Groups"
+    },
+    "hint": "Drag a group onto a tooth, or click to add it where it was made.",
+    "hintTooth": "Click a group to add it on {{tooth}} ({{fdi}}), or drag it onto any tooth.",
+    "tileHint": "Add {{name}} — or drag it onto a tooth",
+    "emptyTitle": "No gem groups yet",
+    "emptyBody": "Select two or more gems on the stage, then “Create Gem Group” in the panel on the right.",
+    "manage": "Manage my gem groups",
+    "dragOver": "Drop it on a tooth",
+    "dropOn": "Drop on {{tooth}} · {{fdi}}"
+  },
+  "signIn": {
+    "title": "Sign in to keep your designs",
+    "body": "Creations and gem groups are saved to your Global Toothgems account and follow you on every device. The design on the stage stays here while you sign in.",
+    "cta": "Sign in",
+    "register": "Create an account",
+    "dialogTitle": "Save to your account"
+  },
+  "hints": {
+    "saving": {
+      "question": "How does saving work?",
+      "answer": "The Studio keeps a draft of your current design on this device automatically. “Save creation” adds it to My Creations, under your account, where you can reopen, duplicate or reuse it from any device signed in to your account. Once saved, “Save changes” updates it, and the status next to the name always tells you whether everything is stored."
+    },
+    "groups": {
+      "question": "What’s a Gem Group?",
+      "answer": "A reusable arrangement of several gems — like a macro. Select two or more gems and choose “Create Gem Group”: their spacing, rotation, size and finish are kept. Later, drag the group onto any tooth, and each gem stays individually editable."
+    },
+    "estimate": {
+      "question": "How is the estimated price calculated?",
+      "answer": "Each gem has an indicative price by type, adjusted for its size, and the estimate adds them up. It is a conversation aid for you and your client — not a catalogue price, and nothing is charged from it."
+    }
+  },
+  "help": {
+    "eyebrow": "Help & Tutorial",
+    "title": "Learn the Studio in a few minutes",
+    "sub": "Six short lessons, from your first gem to reusable design blocks. Open the steps only when you need them.",
+    "replayTour": "Replay the welcome tour",
+    "showSteps": "Show the steps",
+    "faqTitle": "Good to know",
+    "shortcutsTitle": "Keyboard shortcuts",
+    "feedbackTitle": "Something unclear?",
+    "feedbackBody": "Tell us what felt confusing — the Studio is still in preview and your feedback shapes it.",
+    "shortcuts": {
+      "undo": "Undo",
+      "redo": "Redo",
+      "multi": "Add a gem to the selection",
+      "all": "Select every gem",
+      "duplicate": "Duplicate the selection",
+      "delete": "Delete the selection",
+      "deselect": "Deselect / cancel"
+    },
+    "tutorials": {
+      "choose": {
+        "title": "Choose a gem",
+        "summary": "Browse crystals, shapes and precious pieces in the library on the left.",
+        "steps": [
+          "Open the Gems tab of the library.",
+          "Search by name, or scroll through the three families.",
+          "Click a gem to pick it up — it is now ready to place."
+        ]
+      },
+      "place": {
+        "title": "Place it on the jaw",
+        "summary": "Drag the gem onto a tooth, then fine-tune its position, size and angle.",
+        "steps": [
+          "Drag a gem onto a tooth, or click a tooth once a gem is picked up.",
+          "Drag a placed gem to slide it across the enamel — it never overlaps another.",
+          "Adjust size, rotation, finish and colour in the panel on the right."
+        ]
+      },
+      "compose": {
+        "title": "Create a composition",
+        "summary": "Combine several gems, mirror them, and align them along the smile.",
+        "steps": [
+          "Add more gems — Shift + click selects several at once; drag one of them to move the whole selection.",
+          "Use Mirror to copy a gem to the other side of the smile.",
+          "Distribute or Align to line up a selection along the arch."
+        ]
+      },
+      "save": {
+        "title": "Save your creation",
+        "summary": "Name your design and keep it in My Creations to reopen it any time.",
+        "steps": [
+          "Press “Save creation” (or Ctrl + S) at the top right.",
+          "Give it a name, and optionally a description and tags.",
+          "Reopen it from My Creations: it comes back exactly as you left it."
+        ]
+      },
+      "groups": {
+        "title": "Create reusable groups",
+        "summary": "Turn a few gems you often place together into a one-click Gem Group.",
+        "steps": [
+          "Select two or more gems on the stage.",
+          "Choose “Create Gem Group” in the panel on the right, then name it.",
+          "Find it in My Gem Groups and in the library’s My Groups tab."
+        ]
+      },
+      "reuse": {
+        "title": "Reuse your designs",
+        "summary": "Drop saved groups onto new smiles, or duplicate a creation into a variation.",
+        "steps": [
+          "In the library’s My Groups tab, drag a group onto any tooth.",
+          "Each gem of the group stays editable once it is placed.",
+          "Duplicate a saved creation to explore a variation without touching the original."
+        ]
+      }
+    }
+  },
+  "onboarding": {
+    "progress": "Step {{step}} of {{total}}",
+    "skip": "Skip tutorial",
+    "back": "Back",
+    "next": "Next",
+    "start": "Start designing",
+    "welcome": {
+      "title": "Welcome to the Tooth Gem Studio",
+      "body": "Create, experiment and save your own designs on a 3D smile. Here is the whole idea in three quick steps."
+    },
+    "place": {
+      "title": "Drag a gem onto a tooth",
+      "body": "Pick a gem in the library on the left and drop it on any tooth. Drag it again to slide it across the enamel."
+    },
+    "compose": {
+      "title": "Compose and adjust",
+      "body": "Select a gem to change its size, rotation and finish on the right. Shift + click selects several — mirror, align, or save them as a reusable Gem Group."
+    },
+    "save": {
+      "title": "Save and reuse",
+      "body": "“Save creation” keeps your design in My Creations. Your gem groups wait in My Gem Groups, ready to drop onto the next smile."
+    }
+  },
+  "feedback": {
+    "title": "Give feedback",
+    "sub": "How is the 3D Studio working for you? Every message is read by the team.",
+    "signInTitle": "Sign in to send feedback",
+    "signInBody": "Feedback is linked to your account, so the team can come back to you about what you reported.",
+    "rating": "Overall experience",
+    "stars_one": "{{count}} star",
+    "stars_other": "{{count}} stars",
+    "ratingLabels": {
+      "1": "Frustrating",
+      "2": "Could be better",
+      "3": "Good",
+      "4": "Very good",
+      "5": "Love it"
+    },
+    "type": "Feedback type",
+    "types": {
+      "general": "General feedback",
+      "bug": "Bug",
+      "feature": "Feature request",
+      "usability": "Usability",
+      "performance": "Performance"
+    },
+    "message": "What do you think?",
+    "placeholder": "Tell us what you love, what feels confusing, or what you'd like us to improve...",
+    "privacy": "We attach the page, the number of gems on the stage, your language and window size — nothing else.",
+    "send": "Send feedback",
+    "errors": {
+      "ratingMissing": "Choose a rating from 1 to 5 stars.",
+      "messageTooShort": "Write a few words so we understand."
+    },
+    "thanksTitle": "Thank you!",
+    "thanksBody": "Thank you for helping us improve the Studio.",
+    "backToStudio": "Back to the Studio"
+  },
+  "toasts": {
+    "creationSaved": "Creation saved",
+    "changesSaved": "Changes saved",
+    "detailsSaved": "Details saved",
+    "saveFailed": "Unable to save. Please try again.",
+    "genericFailed": "That did not work.",
+    "invalid": "Some details are not valid.",
+    "tryAgain": "Nothing was lost — please try again in a moment.",
+    "opened": "“{{name}}” is on the stage",
+    "duplicated": "“{{name}}” created",
+    "deleted": "“{{name}}” deleted",
+    "shareRevoked": "Link to “{{name}}” disabled: it no longer opens the design",
+    "groupSaved": "Gem group saved",
+    "groupNeedsTwo": "Select at least two gems to make a group.",
+    "groupNoRoom": "No room for this group here — try another tooth.",
+    "groupInserted_one": "{{name}} added · {{count}} gem",
+    "groupInserted_other": "{{name}} added · {{count}} gems",
+    "groupInsertedPartial_one": "{{name}} added — {{count}} gem did not fit",
+    "groupInsertedPartial_other": "{{name}} added — {{count}} gems did not fit",
+    "feedbackFailed": "Your feedback could not be sent."
+  },
+  "share": {
+    "menuSub": "A read-only link to the saved version",
+    "title": "Share read-only",
+    "intro": "Send this link: whoever receives it sees “{{name}}” in 3D, without being able to change it.",
+    "linkLabel": "Share link",
+    "preparing": "Preparing the link…",
+    "copy": "Copy link",
+    "copiedShort": "Copied",
+    "copied": "Link copied",
+    "copyFailed": "Couldn’t copy: the link is selected, copy it with Ctrl + C.",
+    "failed": "The link couldn’t be prepared. Please try again in a moment.",
+    "native": "Share…",
+    "nativeText": "Take a look at “{{name}}”, my design in the Global Toothgems 3D Studio",
+    "preview": "Preview it as it will be received",
+    "noteReadOnly": "Anyone with the link can view this design in 3D, with or without an account. Nobody can edit it or reach your other creations.",
+    "noteSnapshot": "The link holds the version saved right now: later changes won’t appear in it. Create a new link to share them.",
+    "noteUnsaved": "This creation has unsaved changes on the stage: they are not in this link.",
+    "noteLive": "The link always shows the latest saved version of this creation. You can disable it at any time.",
+    "noteUnsavedLive": "This creation has unsaved changes on the stage: save them for them to appear through the link.",
+    "networks": "Share on social networks",
+    "revoke": "Disable link",
+    "revokeConfirm": "Confirm disabling",
+    "revokeHint": "Anyone who has this link will no longer be able to see the design. You can create a new one.",
+    "revokedNote": "This link is disabled: it no longer opens the design, including wherever it was already posted.",
+    "newLink": "Create a new link",
+    "view": {
+      "documentTitle": "Shared design · 3D Studio",
+      "readOnly": "Read-only",
+      "opening": "Opening the design…",
+      "eyebrow": "Shared design",
+      "stageLabel": "3D preview of the shared design",
+      "readOnlyNote": "Turn and zoom to look at it from every angle. This design is read-only.",
+      "checkingAccount": "Checking your account…",
+      "signInTitle": "Sign in to use the Studio",
+      "signInBody": "With a Global Toothgems account, take this design into the workshop, edit it, save your own creations and share them in turn.",
+      "copyTitle": "Want to rework it?",
+      "copyBody": "Open a copy in your Studio: the shared design stays as it is, and you save your version to your creations.",
+      "copyCta": "Edit a copy",
+      "copyOpened": "Copy of “{{name}}” opened",
+      "copyOpenedBody": "Save it to find it in your creations.",
+      "replaceBody": "Your stage holds an unsaved design. Opening the copy will replace it.",
+      "replaceConfirm": "Open the copy",
+      "invalidTitle": "This link doesn’t hold a readable design",
+      "invalidBody": "It may be incomplete — some messaging apps cut long links. Ask the person who sent it to copy it again.",
+      "invalidStoredTitle": "This share link is no longer valid",
+      "invalidStoredBody": "The person who shared it may have disabled it, or the design was deleted. Ask them for a new link.",
+      "unavailableTitle": "The design couldn’t be loaded",
+      "unavailableBody": "Check your connection, then try again.",
+      "retry": "Try again",
+      "discover": "Discover the 3D Studio"
+    }
+  }
+}

@@ -96,7 +96,7 @@ export function AdminLogin() {
           <img src={monogram} alt="Global Toothgems" className="h-9 w-auto" />
 
           <div className="grid max-w-[30ch] gap-4">
-            <span className="gt-script text-[clamp(44px,5vw,68px)] text-[var(--gt-blue-300)]">
+            <span className="gt-accent text-[clamp(22px,2.4vw,28px)] text-[var(--gt-blue-300)]">
               {t("admin.login.scriptAccent")}
             </span>
             <h2 className="text-[length:var(--text-h2)] text-[var(--text-inverse)]">{t("admin.login.brandTitle")}</h2>

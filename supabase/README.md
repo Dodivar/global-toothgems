@@ -1,4 +1,6 @@
-# Global Toothgems — Database (iterations 1–10: e-commerce MVP, checkout, reviews, shipments, refunds, gift cards, member account, back-office roles, promotions, customer service, statistics, product recommendations, back-office product management)
+# Global Toothgems — Database
+
+Schema, rules and operations of the Supabase backend (iterations 1–17: commerce, checkout, reviews, shipments, refunds, gift cards, member account, back-office roles, promotions, customer service, statistics, recommendations, back-office product management, gem options and colours, custom variants, Studio 3D workspace and share links, category families, wishlist). How to change it: `global-toothgems-llm-guidelines/09-supabase-workflow.md`.
 
 Supabase project **Global Toothgems** (`abvuyvryerpzlvibttxp`, region `eu-west-3` Paris, Postgres 17).
 Supabase Auth is the only authentication system; all application data lives in `public`,
@@ -25,8 +27,13 @@ Iteration 9 adds product recommendations: the team's links between products and
 Iteration 10 connects the back office's product management: `admin_save_product()`,
 `admin_delete_product()` and `admin_save_product_recommendations()` save a product with its
 translation, stock and images, or a product's recommendation lists, in one transaction.
-Training, community and notifications are
-still out of scope and get their own migrations later.
+Iteration 13 makes the storefront's gem colour filter data: `gem_colors` (+ translations), managed
+from the back-office Catégories page through `admin_save_gem_color()`, `admin_delete_gem_color()` and
+`admin_reorder_gem_colors()`.
+Iteration 15 lets the back office edit every other kind of variant (colours, boxes, sizes in mm):
+`admin_save_product()` takes the complete list of a product's variants and the variant each photo shows.
+Training (the Academy), community and notifications are not built yet and get their own
+migrations; the Academy is launch-blocking.
 
 ## Layout
 
@@ -47,6 +54,9 @@ supabase/
   tests/iteration10_validation.sql  iteration 10 back-office product management suite (always rolls back)
   tests/iteration11_validation.sql  iteration 11 gem pack × stone-size options suite (always rolls back)
   tests/iteration12_validation.sql  iteration 12 member sign-up (Supabase Auth metadata → profile + consents) suite (always rolls back)
+  tests/iteration13_validation.sql  iteration 13 gem colours suite (always rolls back)
+  tests/iteration15_validation.sql  iteration 15 product variants of any kind (colours, boxes…) + their photos suite (always rolls back)
+  tests/iteration17_validation.sql  iteration 17 member wishlist (favourites) suite (always rolls back)
   templates/confirm-signup.html     French "Confirm signup" email, to paste into the Auth settings
 ```
 
@@ -82,6 +92,12 @@ supabase/
 | 20260926113816 | `admin_product_management` | `admin_save_product(jsonb)`, `admin_delete_product(uuid)`, `admin_save_product_recommendations(uuid, uuid[], uuid[])` — SECURITY INVOKER (RLS applies), `manage_products` checked, one transaction per call |
 | 20260926115257 | `admin_save_product_variant_stock` | `admin_save_product()` leaves stock alone for products with variants (stock is per variant) and digital products |
 | 20260926151552 | `gem_pack_stone_size_options` | `admin_save_product()` gains an optional `variants` list: gem options pack (20/50/100) × stone size (SS), one variant each (`attributes` `{"pack": 50, "ss": 6}`), names/SKUs derived server-side, matched by combination, unticked options deleted (deactivated when ordered); products with other kinds of variants refused; product stock applies again once no variant is active |
+| 20260928174400 | `gem_colors` | `gem_colors` (immutable `slug` = `products.metadata.color` value, French `name`, one exact `hex`, single `is_multicolor` entry without hex, `is_active`, `position`) + `gem_color_translations`; seed of the ten former front-end colours + « Multicolore »; trigger rejecting an unknown `metadata.color`; `admin_save_gem_color()`, `admin_delete_gem_color()` (refused while a product uses the colour, never for the multicolour entry), `admin_reorder_gem_colors()`; audited |
+| 20260928201905 | `gem_free_pack_sizes` | `admin_save_product()` accepts gem packs of any whole number of stones from 1 to 10 000 (was 20 / 50 / 100 only), set per product; nothing else changes and existing variants stay valid |
+| 20260928222836 | `studio_workspace` | 3D Studio workspace: `creations` (scene_data jsonb v1, generated `element_count`, indicative `estimated_price_minor` + `currency`, private thumbnail path), `gem_groups`, `studio_feedback` (insert-only, staff read), private `studio-thumbnails` bucket; owner-only RLS, `user_id` defaults to `auth.uid()` and is not writable; `updated_at` moves on content edits only. Used by the webapp through `lib/studioWorkspace/supabaseRepository.ts` |
+| 20260928223009 | `product_custom_variants` | `admin_save_product()` gains an optional `custom_variants` list (every variant that is not a pack/SS option: browser-generated id, fr + en name, optional `attributes.swatch` `#rrggbb` merged into the other attributes, optional price, stock) and an optional `media[].variant_id`; SKU derived once from the product SKU + French name, unique; names can be swapped in one save; a variant left out is deleted, or deactivated when ordered; refused alongside `variants` or on a product selling pack/SS options; returns `custom_variants` |
+| 20260929120000 | `category_families` | second level of the shop taxonomy: `category_families` (under one category, `slug` unique across categories = `famille` URL value, `is_active`, `position`, audited) + `category_family_translations`; optional `products.family_id` with a composite FK `(category_id, family_id)` and a trigger clearing a family the new category does not have; categories reorganised into `gems` (Toothgems), `materiel` (former `outils`), `kits`, `lip-gloss`, `entretien` / `accessoires` emptied into `materiel` and hidden; hosted products classified by slug; `admin_save_product()` gains an optional `family_id` (absent = unchanged) and returns it |
+| 20260930090111 | `wishlist` | `wishlist_items` (member × product, composite key, `user_id` defaults to `auth.uid()`, both CASCADE); members read, add and remove only their own rows; adding needs an active account and an active product; only `product_id` is insertable, nothing is updatable; no visitor or staff access |
 
 RLS is **enabled in the same migration that creates each table** (deny by default);
 policies are granted back in `rls_policies`.
@@ -94,12 +110,14 @@ auth.users 1─1 profiles ─* customer_addresses
                   └─* orders ─* order_items ─→ products / product_variants (RESTRICT)
                               └─* payments
 
-categories 1─* products 1─* product_variants
+categories 1─* category_families
+     1─* products 1─* product_variants        products.(category_id, family_id) ─→ category_families (optional)
                   │   └─* product_media (variant_id optional)
                   └── inventory_items (one per product WITHOUT variants, or one per variant)
                           └─* inventory_movements (ledger, order_id optional)
 
-languages 1─* {category,product,product_variant,product_media}_translations
+languages 1─* {category,category_family,product,product_variant,product_media,gem_color}_translations
+gem_colors ←─ products.metadata.color (slug; checked by trigger, delete refused while used)
 shipping_zones 1─* shipping_zone_countries (a country is in at most one zone)
                1─* shipping_rates ←─ orders.shipping_rate_id (+ name snapshot)
 tax_rates (country × tax_category, basis points)
@@ -109,6 +127,7 @@ profiles 1─* consent_records   (append-only) → member_consents (latest per p
          1─* data_export_requests ─→ storage data-exports/<user_id>/…
          1─* loyalty_cards 1─* loyalty_stamps ─→ orders (one stamp per order)
          1─* customer_tags, customer_notes   (staff only)
+         1─* wishlist_items ─→ products   (favourites; own rows only)
 loyalty_settings (single row)      review_requests (view: shipped, not yet reviewed)
 
 roles 1─* role_permissions *─1 permissions        profiles 1─1 staff_profiles (team members)
@@ -133,7 +152,8 @@ statuses as `text` + `CHECK` (easy to extend, no enum migrations), money as
 |---|---|
 | `roles` | `customer`, `admin`. New roles = one `INSERT` (`is_staff` flag ready for support/content roles). |
 | `profiles` | first/last/display name, `avatar_path`, `phone`, `role`, `status` (`active`/`suspended`/`deactivated`), `email` mirror of `auth.users`. Created automatically on sign-up; sign-up metadata can **never** set the role. |
-| `categories` | flat list: `slug` (unique), `name`, `description`, `image_path`, `is_active`, `position`. |
+| `categories` | top level of the shop taxonomy: `slug` (unique, the `categorie` URL value), `name`, `description`, `image_path`, `is_active`, `position`. Today `gems` (Toothgems), `materiel`, `kits`, `lip-gloss`. |
+| `category_families` | second level: one category each, `slug` unique across categories (the `famille` URL value), `name`, `image_path`, `is_active`, `position`. A product sits in at most one family of its own category (`products.family_id`, composite FK). |
 | `products` | `slug`/`sku` unique, `price`, `compare_at_price` (> price), `currency`, `status` `draft`/`active`/`archived` (archived = soft delete), `is_featured`, `product_type` `physical`/`digital`, `metadata` (presentation only). |
 | `product_variants` | optional per product; `attributes` JSONB object (`{"colour":"saphir"}`, `{"size":"3mm"}`, gems: `{"pack":50,"ss":6}` — integers) so new option types need no columns; `price` null = inherit product price. |
 | `product_media` | Storage object path + `media_type`, `alt_text`, `position`, `is_primary` (max one per product), optional `variant_id`. No binaries in Postgres. |
@@ -454,7 +474,8 @@ drift from them.
 - **Filters** (`p_filters`): `category`, `product`, `customerType` (`new`/`returning`), `country` narrow the sales;
   `country` and `orderStatus` narrow the orders section; the customer base is always the whole base.
 - **Reporting group**: `categories.report_group` maps catalogue categories onto the screen's buckets
-  (seed: gems → jewelry, entretien → aftercare, kits/outils/accessoires → kits). New categories default to `other`;
+  (gems → jewelry, materiel/kits → kits, lip-gloss → other; since `…_category_families` nothing maps to aftercare).
+  New categories default to `other`;
   changes are audited.
 
 ### Product recommendations (iteration 9)
@@ -486,6 +507,45 @@ Feeds the storefront's suggestion blocks, which today read mock data (`webapp/sr
 - **Validation** (`22023`): unknown kind, limit outside 1–24, more than 50 input products.
 - **Seed**: complementary and similar links for every active seed product (gems → gel, capsules, tools; kit →
   capsules, gems, pliers; …).
+
+### Gem colours (iteration 13)
+
+The colour filter of the storefront (`/couleurs`, shop chips, header carousels) and the product form's colour
+select read `gem_colors`; the team manages it in the back office, section « Couleurs des gemmes » of the
+Catégories page (`GemColorsSection.tsx`).
+
+- **One exact shade per colour** (`hex` `#rrggbb`, lowercase). No two-tone colours: gems with special reflections
+  or several colours go into the single **multicolour** entry (`is_multicolor`, no hex, iridescent swatch drawn by
+  the front end). It is a colour like any other for products and URLs (`couleur=multicolor`); it can be renamed and
+  hidden, never deleted.
+- **`slug`** is the value of `products.metadata.color` and of the `couleur` URL parameter: set once at creation
+  (from the French name, made unique with a suffix), never changed afterwards (trigger), so renaming a colour breaks
+  no link and no product.
+- **Names**: French in `name`, English in `gem_color_translations` (published). `admin_save_gem_color()` requires
+  both, so a colour never reaches the English storefront untranslated.
+- **Products**: `metadata.color` stays a slug (presentation data), but a trigger rejects a slug that is not a
+  colour (`23503`), and `admin_delete_gem_color()` refuses a colour that any product uses (`23503`) — hide it
+  (`is_active = false`) to take it out of the storefront while its products keep it.
+- **Access**: visitors read active colours and published translations; staff read all; `manage_products` writes
+  (the three functions are `SECURITY INVOKER`, RLS applies). Name, shade, visibility changes and deletions go to
+  `audit_logs`.
+
+### Wishlist (iteration 17)
+
+The hearts of the storefront (shop cards, home rail, product page) and the shop's « Mes favoris » view
+(`/boutique?favoris=1`, behind the header's heart) read and write `wishlist_items` (`webapp/src/lib/favorites.tsx`).
+
+- **One row per member and product** (primary key): adding twice fails with `23505`, which the app treats as done.
+  The list is naturally bounded by the catalogue, so there is no separate cap.
+- **The owner comes from the session**: `user_id` defaults to `auth.uid()` and only `product_id` is granted for insert.
+  No update grant — a favourite is added or removed.
+- **Only shop products**: the insert policy requires an `active` product and an `active` account. A product later
+  archived keeps its rows but is no longer readable by customers, so it drops out of the view and comes back if
+  republished; a product really deleted takes its rows with it (CASCADE).
+- **Private**: members see only their own favourites; visitors have no access; staff have no read access either
+  (no screen needs it). Per-product counts, if wanted later, belong in a function that returns aggregates only.
+- **Personal data**: deleted with the account (CASCADE). To include in the personal-data export when that job is built.
+- Not audited: a customer preference, neither money nor security.
 
 ### Integrity guarantees
 
@@ -526,6 +586,8 @@ Iteration 5 additions:
   own consent records and export requests; edit persona / interest / language / country / birth date. They cannot
   write `marketing_opt_in`, `password_changed_at`, stamps, cards or loyalty rules, nor see CRM tags/notes.
 - **Admins** read everything above, manage CRM tags/notes (notes: own edits only) and the loyalty rules (audited).
+
+Iteration 17: **customers** read, add and remove their own favourites (`wishlist_items`); visitors and staff have no access.
 
 Iteration 6: "admin" in the lines above now reads "a team member holding the matching permission"
 (see *Back-office roles and permissions*); policy names say "staff".
@@ -568,7 +630,8 @@ enable the extension in the dashboard — or a scheduled server job with the ser
 `tests/iteration3_validation.sql`, `tests/iteration4_validation.sql`, `tests/iteration5_validation.sql` and
 `tests/iteration6_validation.sql`, `tests/iteration7_validation.sql`, `tests/iteration8_validation.sql`,
 `tests/iteration9_validation.sql`, `tests/iteration10_validation.sql`, `tests/iteration11_validation.sql`,
-`tests/iteration12_validation.sql`. Each ends with
+`tests/iteration12_validation.sql`, `tests/iteration13_validation.sql`, `tests/iteration15_validation.sql`,
+`tests/iteration17_validation.sql`. Each ends with
 `ALL … PASSED (...)` raised as an exception, which rolls everything back.
 (The order-number sequence still advances — sequences are not transactional.)
 
@@ -603,10 +666,10 @@ VAT rates, shipping zones/rates mirroring the Settings prototype. Media rows ref
 
 ## Deliberate decisions to review
 
-1. **Money as `numeric(12,2)`** (explicit task instruction) whereas `AGENTS.md` §8 asks for integer
-   minor units. Both are exact (no floats). Converting to Stripe's minor units is `amount * 100` for
-   2-decimal currencies. If minor units are preferred, switch before real orders exist.
-   3-decimal currencies (KWD, BHD…) would need a wider scale.
+1. **Money as `numeric(12,2)`** — **decided (Sept 2026), keep it.** Postgres stores exact decimals + ISO-4217
+   currency; TypeScript and Stripe use integer minor units; conversion only at boundaries
+   (`amount * 100` for 2-decimal currencies, `webapp/src/lib/catalog/money.ts`). 3-decimal currencies
+   (KWD, BHD…) would need a wider scale.
 2. **Default content language = French.** Base columns hold French (matches the storefront
    `fallbackLng: "fr"`), but the Settings prototype declares `SOURCE_LANGUAGE = "en"`. The repo is
    inconsistent; switching the default later means moving base text into an `fr` translation and
@@ -722,6 +785,16 @@ VAT rates, shipping zones/rates mirroring the Settings prototype. Media rows ref
   `admin_delete_product()` (order history protected by FK), `admin_save_product_recommendations()`.
 - Iteration 11: gem options — packs of 20 / 50 / 100 stones × stone sizes (SS) as variants with their own price
   and stock, edited from the product form and picked on the product page; seed product `strass-cristal`.
+- Iteration 13: gem colours managed from the back office — `gem_colors` + translations, one exact shade per colour,
+  a single multicolour entry for gems with reflections / several colours, create / edit / hide / reorder / delete
+  (refused while used), product colour checked against the list.
+- Iteration 14: gem packs set per product — the administrator types any number of stones (1 to 10 000) instead of
+  choosing among 20 / 50 / 100; the storefront picker already reads the packs from the variants.
+- Iteration 15: variants of any kind edited from the product form — a list of named variants (colour, box, size…)
+  with an optional colour dot, price, stock and the photos that show them; the product page shows colour dots
+  and moves the gallery to the picked variant's photo.
+- Iteration 16: product families — categories › families taxonomy, composite FK, family cleared on a category
+  change, `admin_save_product()` family input, visitor RLS on families and their translations.
 
 ## Next iterations (not implemented)
 

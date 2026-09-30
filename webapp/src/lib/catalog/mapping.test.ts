@@ -1,5 +1,6 @@
 import { describe, expect, it } from "vitest";
-import { aggregateStock, localize, mapProduct, type ProductRow, type VariantRow } from "./mapping";
+import { aggregateStock, localize, mapGemColor, mapProduct, mapTaxonomy, type ProductRow, type VariantRow } from "./mapping";
+import { MULTICOLOR_SWATCH, colorSwatchFill, colorsInCatalog, type GemColorDef } from "../../data/products";
 
 const url = (path: string) => `https://cdn.test/${path}`;
 
@@ -94,12 +95,14 @@ describe("mapProduct", () => {
   it("maps a product row to the storefront model", () => {
     const p = mapProduct(row(), { product_id: "x", average_rating: 4.5, review_count: 12 }, url);
     expect(p.id).toBe("etoile-cristal");
+    expect(p.dbId).toBe("00000000-0000-0000-0000-000000000001");
     expect(p.aliases).toEqual(["crystal-star-tooth-gem"]);
     expect(p.name).toEqual({ fr: "Étoile Cristal", en: "Crystal Star Tooth Gem" });
     expect(p.description).toEqual({ fr: "Étoile cinq branches.", en: "Five-point star." });
     expect(p.price).toBe(32);
     expect(p.compareAtPrice).toBe(38);
-    expect(p.cat).toBe("Gems");
+    expect(p.cat).toBe("gems");
+    expect(p.family).toBeNull();
     expect(p.shape).toBe("star");
     expect(p.color).toBe("crystal");
     expect(p.material).toBe("Cristal taillé");
@@ -126,7 +129,7 @@ describe("mapProduct", () => {
     expect(p.reviewCount).toBe(0);
   });
 
-  it("ignores unknown taxonomy values and unknown categories", () => {
+  it("ignores unknown shapes and colours, and keeps any category slug", () => {
     const p = mapProduct(
       row({ metadata: { shape: "hexagon", color: 3 }, category: { slug: "nouveautes", name: "Nouveautés", category_translations: [] } }),
       undefined,
@@ -134,10 +137,17 @@ describe("mapProduct", () => {
     );
     expect(p.shape).toBeUndefined();
     expect(p.color).toBeUndefined();
-    expect(p.cat).toBeNull();
+    // The taxonomy is data: the shop decides what a slug means, not the mapping.
+    expect(p.cat).toBe("nouveautes");
     expect(p.subtitle).toEqual({ fr: "Nouveautés", en: "Nouveautés" });
   });
 
+  it("reads the family, and no category as none", () => {
+    expect(mapProduct(row({ family: { slug: "swarovski" } }), undefined, url).family).toBe("swarovski");
+    const loose = mapProduct(row({ category: null, family: undefined }), undefined, url);
+    expect(loose.cat).toBeNull();
+    expect(loose.family).toBeNull();
+  });
   it("maps active variants with inherited or overridden prices and derives stock from them", () => {
     const p = mapProduct(
       row({
@@ -168,6 +178,40 @@ describe("mapProduct", () => {
   });
 });
 
+describe("mapTaxonomy", () => {
+  const family = (slug: string, position: number, isActive = true) => ({
+    slug,
+    name: slug,
+    image_path: null,
+    position,
+    is_active: isActive,
+    category_family_translations: [],
+  });
+
+  it("orders categories and families, drops hidden families and translates names", () => {
+    const taxonomy = mapTaxonomy(
+      [
+        { slug: "kits", name: "Kits", position: 3, category_translations: [], category_families: [] },
+        {
+          slug: "materiel",
+          name: "Matériel",
+          position: 2,
+          category_translations: [{ locale: "en", status: "published", name: "Equipment" }],
+          category_families: [family("accessoires", 1), family("essentiels", 0), family("old", 2, false)],
+        },
+      ],
+      url,
+    );
+    expect(taxonomy.map((c) => c.slug)).toEqual(["materiel", "kits"]);
+    expect(taxonomy[0].name).toEqual({ fr: "Matériel", en: "Equipment" });
+    expect(taxonomy[0].families.map((f) => f.slug)).toEqual(["essentiels", "accessoires"]);
+  });
+
+  it("reads a category without its families from an older database", () => {
+    expect(mapTaxonomy([{ slug: "gems", name: "Toothgems", position: 1, category_translations: [] }], url)[0].families).toEqual([]);
+  });
+});
+
 describe("mapProduct gem options", () => {
   it("exposes the pack and stone size of pack/SS variants", () => {
     const p = mapProduct(
@@ -182,5 +226,80 @@ describe("mapProduct gem options", () => {
     );
     expect(p.variants?.[0]).toMatchObject({ pack: 20, ss: 6 });
     expect(p.variants?.[1]).not.toHaveProperty("pack");
+  });
+});
+
+describe("gem colours", () => {
+  it("localizes published names only and drops the shade of the multicolour entry", () => {
+    const color = mapGemColor({
+      slug: "multicolor",
+      name: "Multicolore",
+      hex: null,
+      is_multicolor: true,
+      gem_color_translations: [{ locale: "en", status: "published", name: "Multicolour" }],
+    });
+    expect(color).toEqual({ slug: "multicolor", name: { fr: "Multicolore", en: "Multicolour" }, hex: null, isMulticolor: true });
+    const draft = mapGemColor({
+      slug: "capri",
+      name: "Bleu Capri",
+      hex: "#1f6dab",
+      is_multicolor: false,
+      gem_color_translations: [{ locale: "en", status: "draft", name: "Capri blue" }],
+    });
+    expect(draft.name).toEqual({ fr: "Bleu Capri", en: "Bleu Capri" });
+  });
+
+  it("keeps any colour slug on the product; the filter decides what is shown", () => {
+    const p = mapProduct(row({ metadata: { color: "rose-poudre" } }), undefined, url);
+    expect(p.color).toBe("rose-poudre");
+  });
+
+  it("lists only colours with gems behind them, in the back-office order", () => {
+    const colors: GemColorDef[] = [
+      { slug: "multicolor", name: { fr: "Multicolore", en: "Multicolour" }, hex: null, isMulticolor: true },
+      { slug: "capri", name: { fr: "Bleu Capri", en: "Capri blue" }, hex: "#1f6dab", isMulticolor: false },
+      { slug: "gold", name: { fr: "Or", en: "Gold" }, hex: "#c8992f", isMulticolor: false },
+    ];
+    const products = [
+      mapProduct(row({ metadata: { color: "capri" } }), undefined, url),
+      mapProduct(row({ metadata: { color: "multicolor" } }), undefined, url),
+      mapProduct(row({ metadata: { color: "multicolor" } }), undefined, url),
+    ];
+    expect(colorsInCatalog(products, colors).map((g) => [g.color.slug, g.count])).toEqual([
+      ["multicolor", 2],
+      ["capri", 1],
+    ]);
+  });
+
+  it("paints a shade as a tint-to-shade gradient and the multicolour entry as a fixed iridescent fill", () => {
+    expect(colorSwatchFill({ hex: "#1f6dab", isMulticolor: false })).toContain("#1f6dab");
+    expect(colorSwatchFill({ hex: null, isMulticolor: true })).toBe(MULTICOLOR_SWATCH);
+  });
+});
+
+describe("colour variants", () => {
+  it("carries each variant's swatch and the first photo that shows it", () => {
+    const media = row().product_media;
+    const product = mapProduct(
+      row({
+        product_variants: [
+          variant({ id: "v-pink", name: "Rose", attributes: { swatch: "#F3C9D6" }, position: 1 }),
+          variant({ id: "v-blue", name: "Bleu", attributes: { swatch: "#c6d6e3", quantity: 1 }, position: 0 }),
+          variant({ id: "v-none", name: "Sans photo", attributes: { swatch: "blue" }, position: 2 }),
+        ],
+        product_media: [
+          { ...media[0], variant_id: "v-pink" },
+          { ...media[1], variant_id: "v-blue" },
+        ],
+      }),
+      undefined,
+      url,
+    );
+    expect(product.variants?.map((v) => [v.id, v.swatch, v.image])).toEqual([
+      ["v-blue", "#c6d6e3", url("products/etoile-cristal/01.jpg")],
+      ["v-pink", "#f3c9d6", url("products/etoile-cristal/02.jpg")],
+      ["v-none", undefined, undefined],
+    ]);
+    expect(product.variants?.[0]).not.toHaveProperty("pack");
   });
 });

@@ -3,12 +3,15 @@ import {
   ADMIN_PRODUCTS,
   CATEGORIES,
   SEED_ACTIVITY,
+  SEED_GEM_COLORS,
   SEED_RECOMMENDATIONS,
   categoryById as fixtureCategory,
-  withGemStock,
+  withVariantStock,
   type ActivityEntry,
   type ActivityKind,
+  type AdminGemColor,
   type AdminProduct,
+  type GemColorDraft,
   type ProductRecommendation,
   type ProductStatus,
   type RecommendationKind,
@@ -16,9 +19,11 @@ import {
 import type { Localized } from "../data/types";
 import { isSupabaseConfigured } from "./supabase/client";
 import { SupabaseAdminCatalogProvider } from "./adminCatalogSupabase";
+import { slugify } from "./adminCatalogMapping";
 import {
   ACTIVITY_LIMIT,
   AdminCatalogContext,
+  CatalogError,
   STATUS_NOTE,
   computeStats,
   type AdminCatalogValue,
@@ -79,6 +84,7 @@ function MockAdminCatalogProvider({ children, actor }: { children: ReactNode; ac
   const [products, setProducts] = useState<AdminProduct[]>(ADMIN_PRODUCTS);
   const [activity, setActivity] = useState<ActivityEntry[]>(SEED_ACTIVITY);
   const [recommendations, setRecommendations] = useState<ProductRecommendation[]>(SEED_RECOMMENDATIONS);
+  const [gemColors, setGemColors] = useState<AdminGemColor[]>(SEED_GEM_COLORS);
   const [loading, setLoading] = useState(true);
 
   useEffect(() => {
@@ -99,7 +105,7 @@ function MockAdminCatalogProvider({ children, actor }: { children: ReactNode; ac
     async (product: AdminProduct) => {
       await wait(SAVE_DELAY_MS);
       const now = new Date().toISOString();
-      const saved: AdminProduct = withGemStock({ ...product, createdAt: now, updatedAt: now });
+      const saved: AdminProduct = withVariantStock({ ...product, createdAt: now, updatedAt: now });
       setProducts((prev) => [saved, ...prev]);
       log("created", saved, saved.status === "draft" ? { fr: "Enregistré en brouillon", en: "Saved as a draft" } : undefined);
       return saved;
@@ -114,7 +120,7 @@ function MockAdminCatalogProvider({ children, actor }: { children: ReactNode; ac
       setProducts((prev) =>
         prev.map((p) => {
           if (p.id !== id) return p;
-          saved = withGemStock({ ...p, ...patch, updatedAt: new Date().toISOString() });
+          saved = withVariantStock({ ...p, ...patch, updatedAt: new Date().toISOString() });
           return saved;
         }),
       );
@@ -227,6 +233,46 @@ function MockAdminCatalogProvider({ children, actor }: { children: ReactNode; ac
     };
   }, []);
 
+  // Same rules as the database functions, so the prototype behaves like the real thing.
+  const saveGemColor = useCallback(async (draft: GemColorDraft) => {
+    await wait(SAVE_DELAY_MS);
+    let saved: AdminGemColor | undefined;
+    setGemColors((prev) => {
+      const current = draft.id ? prev.find((c) => c.id === draft.id) : undefined;
+      const name = { fr: draft.name.fr.trim(), en: draft.name.en.trim() };
+      if (current) {
+        saved = { ...current, name, hex: current.isMulticolor ? null : draft.hex, isActive: draft.isActive };
+        return prev.map((c) => (c.id === current.id ? saved! : c));
+      }
+      const base = slugify(name.fr) || slugify(name.en) || "couleur";
+      let slug = base;
+      for (let n = 2; prev.some((c) => c.slug === slug); n++) slug = `${base}-${n}`;
+      saved = { id: slug, slug, name, hex: draft.hex, isMulticolor: false, isActive: draft.isActive, position: prev.length };
+      return [...prev, saved];
+    });
+    return saved!;
+  }, []);
+
+  const deleteGemColor = useCallback(
+    async (id: string) => {
+      await wait(SAVE_DELAY_MS);
+      const target = gemColors.find((c) => c.id === id);
+      if (!target) return;
+      if (target.isMulticolor || products.some((p) => p.color === target.slug)) throw new CatalogError("inUse");
+      setGemColors((prev) => prev.filter((c) => c.id !== id).map((c, position) => ({ ...c, position })));
+    },
+    [gemColors, products],
+  );
+
+  const reorderGemColors = useCallback(async (ids: string[]) => {
+    setGemColors((prev) =>
+      ids.flatMap((id, position) => {
+        const color = prev.find((c) => c.id === id);
+        return color ? [{ ...color, position }] : [];
+      }),
+    );
+  }, []);
+
   const stats = useMemo(() => computeStats(products), [products]);
 
   const value = useMemo<AdminCatalogValue>(
@@ -250,10 +296,18 @@ function MockAdminCatalogProvider({ children, actor }: { children: ReactNode; ac
       uploadImage: null,
       recommendationsFor,
       saveRecommendations,
+      gemColors,
+      saveGemColor,
+      deleteGemColor,
+      reorderGemColors,
     }),
     [
       recommendationsFor,
       saveRecommendations,
+      gemColors,
+      saveGemColor,
+      deleteGemColor,
+      reorderGemColors,
       products,
       activity,
       loading,

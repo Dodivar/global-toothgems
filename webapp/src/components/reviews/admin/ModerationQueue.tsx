@@ -25,7 +25,7 @@ import {
   type QueueFilters,
   type QueueView,
 } from "../../../lib/reviewRules";
-import { subjectName, useReviewCustomer, useReviews } from "../../../lib/reviews";
+import { useReviewCustomer, useReviewSubjects, useReviews } from "../../../lib/reviews";
 import { formatDateShort } from "../../../lib/format";
 
 const focusRing =
@@ -61,6 +61,7 @@ export function ModerationQueue({ onOpen }: { onOpen: (id: string) => void }) {
   const [params, setParams] = useSearchParams();
   const { reviews, loading } = useReviews();
   const customerOf = useReviewCustomer();
+  const { subjectName } = useReviewSubjects();
   const [filtersOpen, setFiltersOpen] = useState(false);
   const filters = readFilters(params);
 
@@ -85,7 +86,7 @@ export function ModerationQueue({ onOpen }: { onOpen: (id: string) => void }) {
     () => filterQueue(reviews, filters, (s) => subjectName(s, lang), (r) => `${customerOf(r).firstName} ${customerOf(r).lastName}`),
     // `filters` is rebuilt from the query string on every render; its fields are the real inputs.
     // eslint-disable-next-line react-hooks/exhaustive-deps
-    [reviews, lang, customerOf, params.toString()],
+    [reviews, lang, customerOf, subjectName, params.toString()],
   );
   const counts = useMemo(() => viewCounts(reviews), [reviews]);
 

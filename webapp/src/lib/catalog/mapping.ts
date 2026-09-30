@@ -1,12 +1,11 @@
 import {
-  GEM_COLORS,
   GEM_SHAPES,
-  type GemColor,
+  type GemColorDef,
   type GemShape,
   type Product,
   type ProductVariant,
-  type ShopCategory,
 } from "../../data/products";
+import type { ShopCategoryDef } from "../../data/taxonomy";
 import type { Localized } from "../../data/types";
 import { toMajorUnits, toMinorUnits } from "./money";
 import { parseGemAttributes } from "../gemOptions";
@@ -62,6 +61,8 @@ export interface MediaRow {
   alt_text: string | null;
   position: number;
   is_primary: boolean;
+  /** The variant this photo shows; null = the whole product. */
+  variant_id?: string | null;
   product_media_translations: (TranslationRow & { alt_text: string })[];
 }
 
@@ -83,6 +84,8 @@ export interface ProductRow {
   is_featured: boolean;
   metadata: Json;
   category: CategoryRow | null;
+  /** Absent when the query predates `…_category_families` (see `api.ts`). */
+  family?: { slug: string } | null;
   product_translations: ProductTranslationRow[];
   product_variants: VariantRow[];
   product_media: MediaRow[];
@@ -95,14 +98,42 @@ export interface ReviewStatsRow {
   review_count: number | null;
 }
 
-/** Database category slug → shop filter key. Unknown slugs stay unfiltered. */
-const CATEGORY_BY_SLUG: Record<string, ShopCategory> = {
-  gems: "Gems",
-  outils: "Outils",
-  kits: "Kits",
-  entretien: "Suivi",
-  accessoires: "Accessoires",
-};
+export interface FamilyRow {
+  slug: string;
+  name: string;
+  image_path: string | null;
+  position: number;
+  is_active: boolean;
+  category_family_translations: (TranslationRow & { name: string })[];
+}
+
+export interface TaxonomyRow extends CategoryRow {
+  position: number;
+  category_families?: FamilyRow[];
+}
+
+/**
+ * The shop taxonomy from the active categories and their families, both in
+ * their back-office order. A hidden family is left out even if the query
+ * returned it (a signed-in admin reads every row).
+ */
+export function mapTaxonomy(rows: TaxonomyRow[], mediaUrl: (path: string) => string): ShopCategoryDef[] {
+  return rows
+    .slice()
+    .sort((a, b) => a.position - b.position)
+    .map((row) => ({
+      slug: row.slug,
+      name: localize(row.name, row.category_translations, (t) => t.name),
+      families: (row.category_families ?? [])
+        .filter((f) => f.is_active)
+        .sort((a, b) => a.position - b.position)
+        .map((f) => ({
+          slug: f.slug,
+          name: localize(f.name, f.category_family_translations, (t) => t.name),
+          imageUrl: f.image_path ? mediaUrl(f.image_path) : undefined,
+        })),
+    }));
+}
 
 /**
  * Builds a `Localized` value from the base column and the published
@@ -152,22 +183,49 @@ function asShape(value: string | undefined): GemShape | undefined {
   return (GEM_SHAPES as string[]).includes(value ?? "") ? (value as GemShape) : undefined;
 }
 
-function asColor(value: string | undefined): GemColor | undefined {
-  return (GEM_COLORS as string[]).includes(value ?? "") ? (value as GemColor) : undefined;
+/**
+ * One row of `gem_colors` with its translations. RLS already limits visitors
+ * to active colours and published translations.
+ */
+export interface GemColorRow {
+  slug: string;
+  name: string;
+  hex: string | null;
+  is_multicolor: boolean;
+  gem_color_translations: (TranslationRow & { name: string })[];
+}
+
+export function mapGemColor(row: GemColorRow): GemColorDef {
+  return {
+    slug: row.slug,
+    name: localize(row.name, row.gem_color_translations, (t) => t.name),
+    hex: row.is_multicolor ? null : row.hex,
+    isMulticolor: row.is_multicolor,
+  };
 }
 
 function displayPrice(value: number | string): number {
   return toMajorUnits(toMinorUnits(value));
 }
 
-function mapVariant(row: VariantRow, productPrice: number | string): ProductVariant {
+/** Colour dot of a variant (`attributes.swatch`), when it is a valid `#rrggbb`. */
+function swatchOf(attributes: Json | undefined): string | undefined {
+  if (!attributes || typeof attributes !== "object" || Array.isArray(attributes)) return undefined;
+  const swatch = attributes.swatch;
+  return typeof swatch === "string" && /^#[0-9a-f]{6}$/i.test(swatch) ? swatch.toLowerCase() : undefined;
+}
+
+function mapVariant(row: VariantRow, productPrice: number | string, image: string | undefined): ProductVariant {
   const price = displayPrice(row.price ?? productPrice);
   const compareAt = row.compare_at_price != null ? displayPrice(row.compare_at_price) : undefined;
   const gem = parseGemAttributes(row.attributes);
+  const swatch = swatchOf(row.attributes);
   return {
     id: row.id,
     name: localize(row.name, row.product_variant_translations, (t) => t.name),
     ...(gem ? { pack: gem.pack ?? undefined, ss: gem.ss ?? undefined } : {}),
+    ...(swatch ? { swatch } : {}),
+    ...(image ? { image } : {}),
     price,
     compareAtPrice: compareAt != null && compareAt > price ? compareAt : undefined,
     stock: stockBadge(row.inventory_items[0]?.stock_status),
@@ -198,20 +256,25 @@ export function mapProduct(
     ? localize(row.category.name, row.category.category_translations, (t) => t.name)
     : undefined;
 
-  const images = row.product_media
+  const imageRows = row.product_media
     .filter((m) => m.media_type === "image")
-    .sort((a, b) => Number(b.is_primary) - Number(a.is_primary) || a.position - b.position)
-    .map((m) => ({
-      src: mediaUrl(m.storage_path),
-      alt: m.alt_text
-        ? localize(m.alt_text, m.product_media_translations, (t) => t.alt_text)
-        : name,
-    }));
+    .sort((a, b) => Number(b.is_primary) - Number(a.is_primary) || a.position - b.position);
+  const images = imageRows.map((m) => ({
+    src: mediaUrl(m.storage_path),
+    alt: m.alt_text
+      ? localize(m.alt_text, m.product_media_translations, (t) => t.alt_text)
+      : name,
+  }));
+  // A variant's photo is the first gallery image that shows it.
+  const variantImage = (variantId: string) => {
+    const index = imageRows.findIndex((m) => m.variant_id === variantId);
+    return index >= 0 ? images[index].src : undefined;
+  };
 
   const variants = row.product_variants
     .filter((v) => v.is_active)
     .sort((a, b) => a.position - b.position)
-    .map((v) => mapVariant(v, row.price));
+    .map((v) => mapVariant(v, row.price, variantImage(v.id)));
 
   const stock = variants.length > 0
     ? aggregateStock(row.product_variants.filter((v) => v.is_active).map((v) => v.inventory_items[0]?.stock_status))
@@ -226,6 +289,7 @@ export function mapProduct(
 
   return {
     id: row.slug,
+    dbId: row.id,
     aliases,
     name,
     // Cards read best with a short spec line; the material is that line when
@@ -237,10 +301,13 @@ export function mapProduct(
     reviewCount: stats?.review_count ?? 0,
     stock,
     image: images[0]?.src ?? "",
-    cat: row.category ? CATEGORY_BY_SLUG[row.category.slug] ?? null : null,
+    cat: row.category?.slug ?? null,
+    family: row.family?.slug ?? null,
     material,
     shape: asShape(metadataString(row.metadata, "shape")),
-    color: asColor(metadataString(row.metadata, "color")),
+    // Any slug: the colour list is data, and a slug with no matching colour
+    // simply never shows up in the colour filter.
+    color: metadataString(row.metadata, "color"),
     description: longDescription ?? shortDescription,
     gallery: images.length > 0 ? images : undefined,
     variants: variants.length > 0 ? variants : undefined,

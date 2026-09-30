@@ -570,7 +570,7 @@ export const SEED_PROMOTIONS: Promotion[] = [
       en: "Your Global Toothgems certification unlocks 10% off all studio equipment.",
     },
     discount: { type: "percentage", percent: 10, maxDiscountCents: null },
-    eligibility: { ...ALL_ELIGIBLE, scope: "categories", categoryIds: ["tools"], customers: "segments", segmentIds: ["certified", "studios"] },
+    eligibility: { ...ALL_ELIGIBLE, scope: "categories", categoryIds: ["materiel"], customers: "segments", segmentIds: ["certified", "studios"] },
     usage: { ...DEFAULT_USAGE, maxPerCustomer: null, combinable: true },
     schedule: { startsAt: "2027-04-01T00:00", endsAt: null, timezone: "Europe/Paris" },
     code: withCode("PROSTUDIO10"),

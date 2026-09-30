@@ -57,7 +57,7 @@ export function CommunityHome() {
               <h1 className="max-w-[16ch] text-[length:var(--text-display-2)] leading-[var(--leading-tight)]">
                 {t("community.homeTitle")}
               </h1>
-              <p className="gt-script m-0 text-[clamp(28px,4vw,40px)] text-[var(--gt-blue-600)]">
+              <p className="gt-accent m-0 text-[clamp(18px,2.2vw,22px)] text-[var(--gt-blue-600)]">
                 {t("community.homeMotto")}
               </p>
             </div>
@@ -102,7 +102,7 @@ export function CommunityHome() {
 
       <CommunityStats />
 
-      <div className="grid items-start gap-[clamp(20px,3vw,32px)] xl:grid-cols-[minmax(0,1fr)_296px]">
+      <div className="grid items-start gap-[clamp(20px,3vw,32px)] 2xl:grid-cols-[minmax(0,1fr)_296px]">
         <div className="grid min-w-0 gap-[clamp(20px,3vw,32px)]">
           <section className="grid gap-4">
             <header className="flex flex-wrap items-end justify-between gap-3">
@@ -207,7 +207,7 @@ export function CommunityHome() {
         </div>
 
         {/* Who is around. Folded under the feed below xl rather than dropped. */}
-        <aside className="grid gap-4 xl:sticky xl:top-[92px]">
+        <aside className="grid gap-4 2xl:sticky 2xl:top-6">
           <section className={clsx("grid gap-3.5 p-[var(--space-5)]", cardBase)}>
             <h2 className="gt-eyebrow flex items-center gap-2">
               <Users size={13} aria-hidden="true" />

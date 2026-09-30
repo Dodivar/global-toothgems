@@ -1,17 +1,29 @@
-import { useEffect, useRef, type ReactNode } from "react";
+import { useEffect, useId, useRef, useState, type ReactNode } from "react";
 import { useTranslation } from "react-i18next";
-import { Info } from "lucide-react";
+import { Info, Plus, X } from "lucide-react";
 import clsx from "clsx";
 import { MoneyInput, NumberInput } from "./AdminNumberInputs";
 import { ToggleSwitch } from "./ToggleSwitch";
+import { AdminButton } from "./AdminButton";
 import { blankGemVariant, offeredGemVariants, type GemOptions, type GemOptionVariant } from "../../data/adminCatalog";
-import { comboKey, comboName, formatSs, formatSsMm, GEM_PACKS, STONE_SIZES, type GemOptionKey } from "../../lib/gemOptions";
+import {
+  comboKey,
+  comboName,
+  formatSs,
+  formatSsMm,
+  PACK_MAX,
+  PACK_MIN,
+  parsePackCount,
+  STONE_SIZES,
+  type GemOptionKey,
+} from "../../lib/gemOptions";
 import { pick } from "../../data/types";
 
 /**
- * Pack (20 / 50 / 100) × stone size (SS) options of a gem.
+ * Pack × stone size (SS) options of a gem.
  *
- * The administrator ticks packs and sizes; every combination becomes a row
+ * The administrator types the packs this product is sold in (any number of
+ * stones) and ticks sizes; every combination becomes a row
  * with its own price and stock. Rows are derived, not added one by one, so the
  * offer is always a complete grid and a customer never meets a pack that
  * exists in one size only by mistake.
@@ -72,26 +84,17 @@ export function GemOptionsEditor({ options = EMPTY, productPrice, error, onChang
           label={t("admin.form.optionsToggle")}
           description={t("admin.form.optionsToggleHint")}
           checked={options.enabled}
-          // First switch-on offers the most common pack, so the grid is never
-          // empty on arrival.
-          onChange={(enabled) =>
-            onChange({ ...options, enabled, packs: enabled && options.packs.length === 0 && options.sizes.length === 0 ? [20] : options.packs })
-          }
+          onChange={(enabled) => onChange({ ...options, enabled })}
         />
       </div>
 
       {options.enabled && (
         <>
-          <ChipGroup legend={t("admin.form.optionsPacks")}>
-            {GEM_PACKS.map((pack) => (
-              <Chip
-                key={pack}
-                checked={options.packs.includes(pack)}
-                onChange={() => onChange({ ...options, packs: toggleIn(options.packs, pack) })}
-                label={t("admin.form.optionsPackValue", { count: pack })}
-              />
-            ))}
-          </ChipGroup>
+          <PackList
+            packs={options.packs}
+            onAdd={(pack) => onChange({ ...options, packs: toggleIn(options.packs, pack) })}
+            onRemove={(pack) => onChange({ ...options, packs: options.packs.filter((p) => p !== pack) })}
+          />
 
           <ChipGroup legend={t("admin.form.optionsSizes")} hint={t("admin.form.optionsSizesHint")}>
             {STONE_SIZES.map(({ ss }) => (
@@ -197,6 +200,104 @@ export function GemOptionsEditor({ options = EMPTY, productPrice, error, onChang
 /** Id of an option's stock field, for the arrival focus. */
 function stockFieldId(key: string): string {
   return `gem-option-stock-${key}`;
+}
+
+/**
+ * The packs of this product: one removable pill each, and a field to add one.
+ * A removed pack keeps its typed price and stock in `variants`, so adding the
+ * same number back restores them.
+ */
+function PackList({ packs, onAdd, onRemove }: { packs: number[]; onAdd: (pack: number) => void; onRemove: (pack: number) => void }) {
+  const { t, i18n } = useTranslation();
+  const [text, setText] = useState("");
+  const [error, setError] = useState<string | null>(null);
+  const inputId = useId();
+  const errorId = useId();
+  const inputRef = useRef<HTMLInputElement>(null);
+  const sorted = [...packs].sort((a, b) => a - b);
+
+  const add = () => {
+    const pack = parsePackCount(text);
+    if (pack == null) {
+      setError(t("admin.form.optionsPackInvalid", { min: PACK_MIN, max: PACK_MAX.toLocaleString(i18n.language) }));
+      return;
+    }
+    if (packs.includes(pack)) {
+      setError(t("admin.form.optionsPackDuplicate", { count: pack }));
+      return;
+    }
+    onAdd(pack);
+    setText("");
+    setError(null);
+  };
+
+  return (
+    <fieldset className="m-0 grid gap-2 border-0 p-0">
+      <legend className="mb-2 p-0 text-[length:var(--text-body-sm)] font-semibold text-[var(--text-primary)]">
+        {t("admin.form.optionsPacks")}
+      </legend>
+      {sorted.length > 0 && (
+        <ul className="m-0 flex list-none flex-wrap gap-2 p-0">
+          {sorted.map((pack) => (
+            <li
+              key={pack}
+              className="inline-flex items-center gap-1 rounded-[var(--radius-pill)] border border-[var(--gt-ink-900)] bg-[var(--gt-ink-900)] py-1 pl-3 pr-1 text-[length:var(--text-body-sm)] font-semibold text-[var(--text-inverse)]"
+            >
+              {t("admin.form.optionsPackValue", { count: pack })}
+              <button
+                type="button"
+                // The pill and its button disappear: keep the keyboard user in the list's field.
+                onClick={() => {
+                  onRemove(pack);
+                  inputRef.current?.focus();
+                }}
+                aria-label={t("admin.form.optionsPackRemove", { count: pack })}
+                className="inline-flex h-6 w-6 items-center justify-center rounded-full hover:bg-[var(--gt-ink-700)] focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-[var(--focus-ring)]"
+              >
+                <X size={14} aria-hidden="true" />
+              </button>
+            </li>
+          ))}
+        </ul>
+      )}
+      <div className="flex flex-wrap items-center gap-2">
+        <label htmlFor={inputId} className="sr-only">
+          {t("admin.form.optionsPackInputLabel")}
+        </label>
+        <input
+          ref={inputRef}
+          id={inputId}
+          type="number"
+          inputMode="numeric"
+          min={PACK_MIN}
+          max={PACK_MAX}
+          step={1}
+          className="gt-admin-field w-40 tabular-nums"
+          placeholder={t("admin.form.optionsPackInputLabel")}
+          value={text}
+          aria-invalid={error ? true : undefined}
+          aria-describedby={error ? errorId : undefined}
+          onChange={(e) => {
+            setText(e.target.value);
+            setError(null);
+          }}
+          // Enter adds the pack; it must not submit the product form.
+          onKeyDown={(e) => {
+            if (e.key === "Enter") {
+              e.preventDefault();
+              add();
+            }
+          }}
+        />
+        <AdminButton variant="outline" iconLeft={Plus} onClick={add}>
+          {t("admin.form.optionsPackAdd")}
+        </AdminButton>
+      </div>
+      <p id={errorId} aria-live="polite" className="m-0 text-[length:var(--text-caption)] font-semibold text-[var(--status-error-fg)] empty:hidden">
+        {error ?? ""}
+      </p>
+    </fieldset>
+  );
 }
 
 function ChipGroup({ legend, hint, children }: { legend: string; hint?: string; children: ReactNode }) {

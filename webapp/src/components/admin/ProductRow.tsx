@@ -1,4 +1,4 @@
-import { useState } from "react";
+import { useState, type ReactNode } from "react";
 import { useTranslation } from "react-i18next";
 import {
   Archive,
@@ -17,9 +17,11 @@ import {
 import clsx from "clsx";
 import { AdminIconButton } from "./AdminIconButton";
 import { CategoryBadge } from "./CategoryBadge";
+import { ColorMedia, ShapeMedia, useGemTraits } from "./GemTraits";
 import { OverflowMenu, type MenuAction } from "./OverflowMenu";
 import { ProductStatusBadge } from "./ProductStatusBadge";
 import { StockIndicator, VariantStockIndicator } from "./StockIndicator";
+import { useAdminCatalog } from "../../lib/adminCatalog";
 import { useLocalized } from "../../lib/localized";
 import { formatDateShort, formatPrice } from "../../lib/format";
 import {
@@ -30,6 +32,10 @@ import {
   type AdminProduct,
   type VariantStock,
 } from "../../data/adminCatalog";
+import type { ProductFilterState } from "../../lib/productFilters";
+
+/** The values a row can filter the list on, straight from the table. */
+export type RowFilterKey = "category" | "shape";
 
 /** Everything a row can ask the page to do. The page owns the consequences. */
 export interface ProductRowActions {
@@ -45,6 +51,8 @@ export interface ProductRowActions {
   onArchive: (product: AdminProduct) => void;
   onRestore: (product: AdminProduct) => void;
   onDelete: (product: AdminProduct) => void;
+  /** Filter the list on one of the row's values; `"all"` lifts that filter. */
+  onFilter: <K extends RowFilterKey>(key: K, value: ProductFilterState[K]) => void;
 }
 
 /**
@@ -64,10 +72,13 @@ export function ProductRow({
   product,
   actions,
   selected,
+  filters,
   defaultExpanded = false,
 }: {
   product: AdminProduct;
   actions: ProductRowActions;
+  /** The list's current filters, so a value already filtered on reads as such. */
+  filters: ProductFilterState;
   /** The row currently open in the preview drawer. */
   selected: boolean;
   /** Start with the option rows unfolded. */
@@ -75,6 +86,8 @@ export function ProductRow({
 }) {
   const { t } = useTranslation();
   const L = useLocalized();
+  const { categoryById } = useAdminCatalog();
+  const { shapeLabel, colorLabel, colorDef } = useGemTraits();
   const variants = product.variantStock ?? [];
   const [expanded, setExpanded] = useState(defaultExpanded && variants.length > 0);
   const optionRowId = (index: number) => `product-${product.id}-option-${index}`;
@@ -86,6 +99,8 @@ export function ProductRow({
   const cover = product.media[0];
   const price = effectivePrice(product);
   const discounted = product.promoPrice != null && product.promoPrice < product.price;
+
+  const { shape, color } = product;
 
   const menu: MenuAction[] = [
     { id: "open", label: t("admin.actions.preview"), icon: Eye, onSelect: () => actions.onOpen(product) },
@@ -204,10 +219,31 @@ export function ProductRow({
           >
             {L(product.name)}
           </span>
-          <span className="block truncate text-[length:var(--text-caption)] text-[var(--text-muted)]">
-            {L(product.shortDescription)}
-          </span>
+          {/* On a gem, the traits line below takes the description's place:
+              in a list of look-alike names, cut and colour are what tell the
+              rows apart. */}
+          {!shape && !color && (
+            <span className="block truncate text-[length:var(--text-caption)] text-[var(--text-muted)]">
+              {L(product.shortDescription)}
+            </span>
+          )}
         </button>
+        {(shape || color) && (
+          <span className="mt-1 flex flex-wrap items-center gap-1" onClick={(e) => e.stopPropagation()}>
+            {shape && (
+              <FilterTag
+                active={filters.shape === shape}
+                label={shapeLabel(shape)}
+                media={<ShapeMedia shape={shape} size={16} />}
+                onToggle={(on) => actions.onFilter("shape", on ? shape : "all")}
+              />
+            )}
+            {color && (
+              // Informative only: the colour is not a filter of this list.
+              <TagBody active={false} label={colorLabel(color)} media={<ColorMedia color={colorDef(color)} size={12} />} />
+            )}
+          </span>
+        )}
       </td>
 
       <td className="py-3 pr-4 align-middle">
@@ -216,8 +252,14 @@ export function ProductRow({
         </span>
       </td>
 
-      <td className="py-3 pr-4 align-middle">
-        <CategoryBadge id={product.categoryId} />
+      <td className="py-3 pr-4 align-middle" onClick={(e) => e.stopPropagation()}>
+        <FilterToggle
+          active={filters.category === product.categoryId}
+          label={L(categoryById(product.categoryId).name)}
+          onToggle={(on) => actions.onFilter("category", on ? product.categoryId : "all")}
+        >
+          <CategoryBadge id={product.categoryId} active={filters.category === product.categoryId} />
+        </FilterToggle>
       </td>
 
       <td className="py-3 pr-4 align-middle">
@@ -273,6 +315,75 @@ export function ProductRow({
   );
 }
 
+/**
+ * A value of the row that doubles as a filter. A real toggle button — pressed
+ * while the list is filtered on it — so the keyboard reaches it and a screen
+ * reader says what a click does. The name is spelled out ("Filtrer sur
+ * Étoile") because the visible text alone reads as plain information.
+ */
+function FilterToggle({
+  active,
+  label,
+  onToggle,
+  children,
+}: {
+  active: boolean;
+  label: string;
+  onToggle: (on: boolean) => void;
+  children: ReactNode;
+}) {
+  const { t } = useTranslation();
+  const name = t(active ? "admin.filters.unfilterOn" : "admin.filters.filterOn", { value: label });
+  return (
+    <button
+      type="button"
+      aria-pressed={active}
+      aria-label={name}
+      title={name}
+      onClick={() => onToggle(!active)}
+      className="inline-flex max-w-full rounded-[var(--radius-pill)] [&:hover>span]:border-[var(--gt-ink-900)] focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-[var(--focus-ring)]"
+    >
+      {children}
+    </button>
+  );
+}
+
+/** Cut of a gem, under its name: its drawing and name, as a filter toggle. */
+function FilterTag({
+  active,
+  label,
+  media,
+  onToggle,
+}: {
+  active: boolean;
+  label: string;
+  media: ReactNode;
+  onToggle: (on: boolean) => void;
+}) {
+  return (
+    <FilterToggle active={active} label={label} onToggle={onToggle}>
+      <TagBody active={active} label={label} media={media} />
+    </FilterToggle>
+  );
+}
+
+/** The drawing and name of a gem trait, with no behaviour of its own. */
+function TagBody({ active, label, media }: { active: boolean; label: string; media: ReactNode }) {
+  return (
+    <span
+      className={clsx(
+        "inline-flex max-w-full items-center gap-1 rounded-[var(--radius-pill)] border py-px pl-1 pr-2 text-[length:var(--text-caption)] leading-5 transition-colors",
+        active
+          ? "border-[var(--gt-ink-900)] bg-[var(--gt-blue-50)] font-semibold text-[var(--text-primary)]"
+          : "border-[var(--border-subtle)] bg-[var(--admin-panel)] text-[var(--text-body)]",
+      )}
+    >
+      <span className="grid h-4 w-4 flex-none place-items-center">{media}</span>
+      <span className="truncate">{label}</span>
+    </span>
+  );
+}
+
 const OPTION_RANK = { out_of_stock: 0, low_stock: 1, in_stock: 2, preorder: 2 } as const;
 
 /** Sold out first, then low, then the rest; each group keeps the product's option order. */
@@ -324,11 +435,6 @@ function OptionRow({
           <span className="block truncate text-[length:var(--text-body-sm)] font-semibold text-[var(--text-primary)]">
             {L(variant.name)}
           </span>
-          {!variant.gemOption && (
-            <span className="block truncate text-[length:var(--text-caption)] text-[var(--text-muted)]">
-              {t("admin.table.optionNotEditable")}
-            </span>
-          )}
         </button>
       </td>
       <td className="py-2 pr-4 align-middle">

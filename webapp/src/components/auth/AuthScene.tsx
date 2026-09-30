@@ -14,8 +14,8 @@ import { photo } from "../../lib/images";
  *
  * Colour is rationed on purpose: pastel blue carries the whole surface, emerald
  * appears on exactly one control (the primary submit), and fuchsia is reduced to
- * two small sparkle marks. The script face appears once, as a decorative
- * initial, never on a label, an instruction or legal copy.
+ * two small sparkle marks. One large light initial in the brand sans is the
+ * only decoration, never a label, an instruction or legal copy.
  */
 
 /** Shared page gutter, matched to the rest of the site. */
@@ -84,11 +84,11 @@ export function AuthCard({ children, crown, label }: { children: ReactNode; crow
       className="min-w-0 overflow-clip rounded-[var(--radius-xl)] border border-[var(--border-subtle)] bg-[var(--surface-card)] shadow-[var(--shadow-lg)]"
     >
       <div className="relative overflow-hidden bg-[var(--gt-blue-200)] px-[clamp(20px,4vw,32px)] py-6">
-        {/* The one decorative-script moment on the page: a large initial, the
-            use the design system explicitly sanctions. Hidden from readers. */}
+        {/* The one decorative moment on the page: a large light initial in
+            the brand sans. Hidden from readers. */}
         <span
           aria-hidden="true"
-          className="gt-script pointer-events-none absolute -top-9 right-2 select-none text-[150px] leading-none text-white/70"
+          className="pointer-events-none absolute -top-5 right-4 select-none text-[128px] font-[var(--weight-light)] leading-none text-white/70"
         >
           G
         </span>

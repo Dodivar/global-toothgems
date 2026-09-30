@@ -4,10 +4,14 @@ import { Archive, CircleAlert, Info, Save, Send, X } from "lucide-react";
 import clsx from "clsx";
 import { AdminButton } from "./AdminButton";
 import { AdminSelect, type AdminOption } from "./AdminSelect";
+import { ColorPicker } from "./ColorPicker";
+import { CustomVariantsEditor } from "./CustomVariantsEditor";
 import { MoneyInput, NumberInput } from "./AdminNumberInputs";
 import { FormField } from "./FormField";
 import { GemOptionsEditor } from "./GemOptionsEditor";
 import { ProductMediaUploader } from "./ProductMediaUploader";
+import { RichTextArea } from "./RichTextArea";
+import { ShapePicker } from "./ShapePicker";
 import { ToggleSwitch } from "./ToggleSwitch";
 import { CONTENT_LANGS, type ContentLang } from "../../lib/localized";
 import { formatDate } from "../../lib/format";
@@ -16,13 +20,13 @@ import {
   offeredGemVariants,
   type AdminProduct,
   type Availability,
+  type Category,
   type CategoryId,
   type ProductStatus,
   type ProductType,
 } from "../../data/adminCatalog";
-import { GEM_COLORS, GEM_SHAPES, type GemColor, type GemShape } from "../../data/products";
 import type { Localized } from "../../data/types";
-import { comboSkuSuffix, longestSkuSuffix } from "../../lib/gemOptions";
+import { comboSkuSuffix, isValidPack, longestSkuSuffix, PACK_MAX, PACK_MIN } from "../../lib/gemOptions";
 
 /**
  * Create and edit a product.
@@ -49,12 +53,13 @@ interface ProductFormProps {
   onSubmit: (draft: AdminProduct, intent: SubmitIntent) => void;
   onCancel: () => void;
   onArchive?: () => void;
-  /** Pack/SS option to bring forward in the options grid (`?option=` on the edit screen). */
+  /** Option to bring forward in the options grid or variant list (`?option=` on the edit screen). */
   focusOption?: string | null;
 }
 
 type FieldKey =
-  | "name" | "sku" | "price" | "compareAtPrice" | "promoPrice" | "stock" | "lowStockThreshold" | "category" | "options";
+  | "name" | "sku" | "price" | "compareAtPrice" | "promoPrice" | "stock" | "lowStockThreshold" | "category" | "family" | "options"
+  | "variants";
 
 /** Same rule as the `products.sku` column: upper-case letters, digits and hyphens. */
 const SKU_PATTERN = /^[A-Z0-9][A-Z0-9-]{1,63}$/;
@@ -73,7 +78,7 @@ export function ProductForm({
   focusOption,
 }: ProductFormProps) {
   const { t } = useTranslation();
-  const { source, categories, uploadImage } = useAdminCatalog();
+  const { source, categories, uploadImage, gemColors } = useAdminCatalog();
   // The database has no promotional price: discounts are the promotions
   // workspace's job, so the field only exists in the prototype.
   const withPromoPrice = source === "mock";
@@ -91,17 +96,31 @@ export function ProductForm({
   const setLocalized = (key: "name" | "shortDescription" | "description" | "material", value: string) =>
     setDraft((prev) => ({ ...prev, [key]: { ...(prev[key] as Localized), [lang]: value } }));
 
+  const category = categories.find((c) => c.id === draft.categoryId);
+  const isGem = (category?.slug ?? category?.id) === "gems";
+
+  // Two editors, by the kind of variants: pack/SS options for a gem (or a
+  // product that already sells them), a free list of variants for anything
+  // else — including a gem whose variants are already of another kind, which
+  // keeps the list even once emptied so the removal is saved. The other
+  // editor's data is never sent, so a save never mixes the two.
+  const showCustomVariants =
+    (initial.customVariants?.length ?? 0) > 0 ||
+    (draft.customVariants?.length ?? 0) > 0 ||
+    (!isGem && draft.gemOptions === undefined);
+  const showGemOptions = !showCustomVariants;
+  const variantsOn = showCustomVariants
+    ? (draft.customVariants?.length ?? 0) > 0
+    : Boolean(draft.gemOptions?.enabled);
+
   const errors = useMemo<Errors>(
-    () => validate(draft, takenSkus, categories.map((c) => c.id), t),
-    [draft, takenSkus, categories, t],
+    () => validate(draft, takenSkus, categories, showCustomVariants, t),
+    [draft, takenSkus, categories, showCustomVariants, t],
   );
 
   /** Errors are only shown once the administrator has had a chance to be right. */
   const showError = (key: FieldKey) => (submitted || touched[key] ? errors[key] : undefined);
   const blur = (key: FieldKey) => () => setTouched((prev) => ({ ...prev, [key]: true }));
-
-  const category = categories.find((c) => c.id === draft.categoryId);
-  const isGem = (category?.slug ?? category?.id) === "gems";
 
   const submit = (intent: SubmitIntent) => (event?: FormEvent) => {
     event?.preventDefault();
@@ -117,24 +136,23 @@ export function ProductForm({
     // Shape and colour describe a gem; a product moved out of the gems
     // category loses them so it never shows up under a gem filter.
     const gemLook = isGem ? {} : { shape: undefined, color: undefined };
-    onSubmit({ ...draft, ...gemLook, status, promoPrice: withPromoPrice ? draft.promoPrice : undefined }, intent);
+    const variantKind = showCustomVariants ? { gemOptions: undefined } : { customVariants: undefined };
+    onSubmit(
+      { ...draft, ...gemLook, ...variantKind, status, promoPrice: withPromoPrice ? draft.promoPrice : undefined },
+      intent,
+    );
   };
 
-  // Pack/SS options are a gem thing; a product that already has them keeps
-  // the editor whatever its category. Products whose variants are another
-  // kind (colours, boxes…) never get it: saving would replace them.
-  const otherVariants = Boolean(draft.otherVariants) || (Boolean(draft.variantCount) && !draft.gemOptions);
-  const showGemOptions = !otherVariants && (isGem || draft.gemOptions !== undefined);
-  const optionsOn = Boolean(draft.gemOptions?.enabled);
-
-  const categoryOptions: AdminOption[] = categories.map((c) => ({ value: c.id, label: c.name[lang] }));
-  const shapeOptions: AdminOption[] = [
-    { value: "", label: t("admin.form.gemLookNone") },
-    ...GEM_SHAPES.map((shape) => ({ value: shape, label: t(`shop.shapes.${shape}`) })),
-  ];
-  const colorOptions: AdminOption[] = [
-    { value: "", label: t("admin.form.gemLookNone") },
-    ...GEM_COLORS.map((color) => ({ value: color, label: t(`shop.colors.${color}`) })),
+  // A hidden category is only offered to the product still filed under it.
+  const categoryOptions: AdminOption[] = categories
+    .filter((c) => c.isActive !== false || c.id === initial.categoryId)
+    .map((c) => ({ value: c.id, label: c.name[lang] }));
+  // Same for a hidden family.
+  const familyOptions: AdminOption[] = [
+    { value: "", label: t("admin.form.noFamily") },
+    ...(category?.families ?? [])
+      .filter((f) => f.isActive || f.id === initial.familyId)
+      .map((f) => ({ value: f.id, label: f.name[lang] })),
   ];
   const typeOptions: AdminOption[] = TYPES.map((type) => ({ value: type, label: t(`admin.type.${type}`) }));
   const statusOptions: AdminOption[] = (["draft", "active", "archived"] as ProductStatus[]).map((s) => ({
@@ -253,16 +271,30 @@ export function ProductForm({
 
             <FormField label={t("admin.form.description")} hint={t("admin.form.descriptionHint")}>
               {(props) => (
-                <textarea
+                <RichTextArea
                   {...props}
-                  rows={5}
-                  className="gt-admin-field"
                   value={draft.description[lang]}
-                  onChange={(e) => setLocalized("description", e.target.value)}
+                  onValueChange={(value) => setLocalized("description", value)}
+                  rows={16}
                 />
               )}
             </FormField>
           </Section>
+
+          {/* Gem only: what the storefront shape and colour filters file the
+              gem under. In the main column rather than the rail, which is too
+              narrow for a palette of shapes and shades. */}
+          {isGem && (
+            <Section title={t("admin.form.gemLookTitle")} description={t("admin.form.gemLookBody")}>
+              <ShapePicker label={t("admin.form.shape")} value={draft.shape} onChange={(shape) => set("shape", shape)} />
+              <ColorPicker
+                label={t("admin.form.color")}
+                colors={gemColors}
+                value={draft.color}
+                onChange={(color) => set("color", color)}
+              />
+            </Section>
+          )}
 
           <Section title={t("admin.form.pricingTitle")} description={t("admin.form.pricingBody")}>
             <div className={clsx("grid gap-4", withPromoPrice ? "md:grid-cols-3" : "md:grid-cols-2")}>
@@ -334,16 +366,25 @@ export function ProductForm({
             </Section>
           )}
 
+          {showCustomVariants && (
+            <Section title={t("admin.form.variantsTitle")} description={t("admin.form.variantsBody")}>
+              <CustomVariantsEditor
+                variants={draft.customVariants}
+                media={draft.media}
+                productPrice={draft.price}
+                error={showError("variants")}
+                onChange={(customVariants) => set("customVariants", customVariants)}
+                onMediaChange={(update) => setDraft((prev) => ({ ...prev, media: update(prev.media) }))}
+                focusOption={focusOption}
+              />
+            </Section>
+          )}
+
           <Section title={t("admin.form.inventoryTitle")} description={t("admin.form.inventoryBody")}>
-            {optionsOn ? (
+            {variantsOn ? (
               <p className="m-0 flex items-start gap-2 rounded-[var(--admin-radius-sm)] bg-[var(--status-info-bg)] p-3 text-[length:var(--text-body-sm)] text-[var(--gt-blue-700)]">
                 <Info size={14} aria-hidden="true" className="mt-0.5 flex-none" />
-                {t("admin.form.optionsStockNotice")}
-              </p>
-            ) : otherVariants ? (
-              <p className="m-0 flex items-start gap-2 rounded-[var(--admin-radius-sm)] bg-[var(--status-info-bg)] p-3 text-[length:var(--text-body-sm)] text-[var(--gt-blue-700)]">
-                <Info size={14} aria-hidden="true" className="mt-0.5 flex-none" />
-                {t("admin.form.variantStock", { count: draft.variantCount, stock: draft.stock })}
+                {t(showCustomVariants ? "admin.form.variantsStockNotice" : "admin.form.optionsStockNotice")}
               </p>
             ) : (
             <>
@@ -463,35 +504,23 @@ export function ProductForm({
                   {...props}
                   options={categoryOptions}
                   value={draft.categoryId}
-                  onChange={(e) => set("categoryId", e.target.value as CategoryId)}
+                  // A family belongs to one category: a new category starts without one.
+                  onChange={(e) => setDraft((prev) => ({ ...prev, categoryId: e.target.value as CategoryId, familyId: null }))}
                 />
               )}
             </FormField>
 
-            {isGem && (
-              <>
-                <FormField label={t("admin.form.shape")} hint={t("admin.form.gemLookHint")}>
-                  {(props) => (
-                    <AdminSelect
-                      {...props}
-                      options={shapeOptions}
-                      value={draft.shape ?? ""}
-                      onChange={(e) => set("shape", (e.target.value || undefined) as GemShape | undefined)}
-                    />
-                  )}
-                </FormField>
-
-                <FormField label={t("admin.form.color")} hint={t("admin.form.gemLookHint")}>
-                  {(props) => (
-                    <AdminSelect
-                      {...props}
-                      options={colorOptions}
-                      value={draft.color ?? ""}
-                      onChange={(e) => set("color", (e.target.value || undefined) as GemColor | undefined)}
-                    />
-                  )}
-                </FormField>
-              </>
+            {familyOptions.length > 1 && (
+              <FormField label={t("admin.form.family")} hint={t("admin.form.familyHint")} error={showError("family")}>
+                {(props) => (
+                  <AdminSelect
+                    {...props}
+                    options={familyOptions}
+                    value={draft.familyId ?? ""}
+                    onChange={(e) => set("familyId", e.target.value || null)}
+                  />
+                )}
+              </FormField>
             )}
 
             <FormField label={t("admin.form.type")} hint={t("admin.form.typeHint")}>
@@ -611,7 +640,9 @@ function Section({
 function validate(
   draft: AdminProduct,
   takenSkus: string[],
-  categoryIds: string[],
+  categories: Category[],
+  /** Which variant editor the form shows: the free list, or the pack/SS grid. */
+  custom: boolean,
   t: (key: string, opts?: Record<string, unknown>) => string,
 ): Errors {
   const errors: Errors = {};
@@ -629,8 +660,11 @@ function validate(
     errors.sku = t("admin.form.errors.skuTaken");
   }
 
-  if (!categoryIds.includes(draft.categoryId)) {
+  const category = categories.find((c) => c.id === draft.categoryId);
+  if (!category) {
     errors.category = t("admin.form.errors.categoryRequired");
+  } else if (draft.familyId && !(category.families ?? []).some((f) => f.id === draft.familyId)) {
+    errors.family = t("admin.form.errors.familyMismatch");
   }
 
   if (!(draft.price > 0)) {
@@ -647,7 +681,9 @@ function validate(
     errors.promoPrice = t("admin.form.errors.promoTooHigh");
   }
 
-  const productStock = draft.gemOptions ? !draft.gemOptions.enabled : !draft.variantCount;
+  const customVariants = custom ? (draft.customVariants ?? []) : [];
+  const gemOn = !custom && Boolean(draft.gemOptions?.enabled);
+  const productStock = !gemOn && customVariants.length === 0;
   if (draft.trackInventory && productStock) {
     if (!Number.isInteger(draft.stock) || draft.stock < 0) {
       errors.stock = t("admin.form.errors.stockInvalid");
@@ -657,11 +693,28 @@ function validate(
     }
   }
 
-  if (draft.gemOptions?.enabled) {
+  if (customVariants.length > 0) {
+    const names = customVariants.map((v) => v.name.fr.trim().toLowerCase());
+    if (customVariants.some((v) => !v.name.fr.trim() || !v.name.en.trim())) {
+      errors.variants = t("admin.form.errors.variantsName");
+    } else if (new Set(names).size !== names.length) {
+      errors.variants = t("admin.form.errors.variantsDuplicate");
+    } else if (customVariants.some((v) => v.price != null && (!(v.price > 0) || !isCentAmount(v.price)))) {
+      errors.variants = t("admin.form.errors.optionsPrice");
+    } else if (
+      customVariants.some((v) => ![v.stock, v.lowStockThreshold].every((n) => Number.isInteger(n) && n >= 0))
+    ) {
+      errors.variants = t("admin.form.errors.optionsStock");
+    }
+  }
+
+  if (gemOn && draft.gemOptions) {
     const offered = offeredGemVariants(draft.gemOptions);
     const suffix = longestSkuSuffix(offered);
     if (offered.length === 0) {
       errors.options = t("admin.form.errors.optionsEmpty");
+    } else if (!draft.gemOptions.packs.every(isValidPack)) {
+      errors.options = t("admin.form.errors.optionsPack", { min: PACK_MIN, max: PACK_MAX });
     } else if (sku.length + suffix > SKU_MAX_LENGTH) {
       const longest = offered.map(comboSkuSuffix).sort((a, b) => b.length - a.length)[0];
       errors.options = t("admin.form.errors.optionsSkuTooLong", { max: SKU_MAX_LENGTH - suffix, suffix: longest });

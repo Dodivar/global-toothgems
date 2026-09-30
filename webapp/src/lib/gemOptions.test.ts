@@ -6,9 +6,11 @@ import {
   formatSsMm,
   gemAxes,
   isGemOptionSet,
+  isValidPack,
   longestSkuSuffix,
   packAvailable,
   parseGemAttributes,
+  parsePackCount,
   pickGemVariant,
   sizeAvailable,
   type GemPickable,
@@ -28,6 +30,34 @@ describe("parseGemAttributes", () => {
     expect(parseGemAttributes({})).toBeNull();
     expect(parseGemAttributes({ pack: 2.5 })).toBeNull();
     expect(parseGemAttributes(null)).toBeNull();
+  });
+});
+
+describe("free pack sizes", () => {
+  it("reads a typed pack within 1..10 000 stones", () => {
+    expect(parsePackCount("30")).toBe(30);
+    expect(parsePackCount(" 1 ")).toBe(1);
+    expect(parsePackCount("10000")).toBe(10000);
+  });
+
+  it("refuses anything else", () => {
+    for (const input of ["", "0", "10001", "2.5", "-5", "1e3", "abc"]) {
+      expect(parsePackCount(input)).toBeNull();
+    }
+    expect(isValidPack(35)).toBe(true);
+    expect(isValidPack(0)).toBe(false);
+    expect(isValidPack(2.5)).toBe(false);
+    expect(isValidPack(10001)).toBe(false);
+  });
+
+  it("names and suffixes any pack like the database does", () => {
+    expect(combinations([250, 35], [6])).toEqual([
+      { pack: 35, ss: 6 },
+      { pack: 250, ss: 6 },
+    ]);
+    expect(comboName({ pack: 35, ss: 6 })).toEqual({ fr: "Pack de 35 · SS6", en: "Pack of 35 · SS6" });
+    expect(comboSkuSuffix({ pack: 10000, ss: 60 })).toBe("-P10000-SS60");
+    expect(parseGemAttributes({ pack: 35 })).toEqual({ pack: 35, ss: null });
   });
 });
 

@@ -1,17 +1,20 @@
 import {
   offeredGemVariants,
+  type AdminGemColor,
   type AdminProduct,
   type Availability,
   type Category,
+  type CustomVariant,
   type GemOptions,
   type ProductImage,
   type ProductRecommendation,
   type ProductStatus,
   type ProductType,
   type RecommendationKind,
+  type GemColorDraft,
   type VariantStock,
 } from "../data/adminCatalog";
-import { GEM_COLORS, GEM_SHAPES } from "../data/products";
+import { GEM_SHAPES } from "../data/products";
 import type { Localized } from "../data/types";
 import type { Json } from "./supabase/database.types";
 import { toMinorUnits } from "./catalog/money";
@@ -28,24 +31,35 @@ import { comboKey, comboName, parseGemAttributes } from "./gemOptions";
  *   language; English lives in `*_translations` rows (`locale = 'en'`);
  * - `metadata` holds presentation-only fields: type, material, tags and, for
  *   gems, shape and color (the storefront filters on the last two);
- * - stock lives in the product's single `inventory_items` row.
+ * - stock lives in the product's single `inventory_items` row, or on each
+ *   variant's row when it has variants: pack/SS options (`gemOptions`) or
+ *   any other kind (`customVariants`), whose photos point at them through
+ *   `product_media.variant_id`.
  */
 
-/** Columns the admin reads, with the relations it embeds. */
-export const ADMIN_PRODUCT_SELECT = `
+/**
+ * Columns the admin reads, with the relations it embeds. The `_BASE` variants
+ * leave out the product families (`…_category_families`), for a database the
+ * migration has not reached yet: the catalogue still loads, without families.
+ */
+export const ADMIN_PRODUCT_SELECT_BASE = `
   id, sku, slug, name, short_description, description, category_id,
   price, compare_at_price, currency, status, metadata, created_at, updated_at,
   product_translations ( locale, name, short_description, description ),
-  product_media ( id, storage_path, alt_text, position, product_media_translations ( locale, alt_text ) ),
+  product_media ( id, storage_path, alt_text, position, variant_id, product_media_translations ( locale, alt_text ) ),
   inventory_items ( track_inventory, quantity_on_hand, quantity_reserved, low_stock_threshold, availability ),
   product_variants ( id, name, sku, attributes, price, is_active, position,
     product_variant_translations ( locale, name ),
     inventory_items ( track_inventory, quantity_on_hand, quantity_reserved, low_stock_threshold, availability ) )
 `;
+export const ADMIN_PRODUCT_SELECT = `${ADMIN_PRODUCT_SELECT_BASE}, family_id`;
 
-export const ADMIN_CATEGORY_SELECT = `
-  id, slug, name, description, position,
+export const ADMIN_CATEGORY_SELECT_BASE = `
+  id, slug, name, description, position, is_active,
   category_translations ( locale, name, description )
+`;
+export const ADMIN_CATEGORY_SELECT = `${ADMIN_CATEGORY_SELECT_BASE},
+  category_families ( id, slug, name, position, is_active, category_family_translations ( locale, name ) )
 `;
 
 interface TranslationRow {
@@ -71,6 +85,8 @@ export interface ProductRow {
   short_description: string | null;
   description: string | null;
   category_id: string | null;
+  /** Absent when read with `ADMIN_PRODUCT_SELECT_BASE`. */
+  family_id?: string | null;
   /** PostgREST sends numeric as a JSON number, occasionally as a string. */
   price: number | string;
   compare_at_price: number | string | null;
@@ -86,6 +102,7 @@ export interface ProductRow {
         storage_path: string;
         alt_text: string | null;
         position: number;
+        variant_id?: string | null;
         product_media_translations: { locale: string; alt_text: string }[] | null;
       }[]
     | null;
@@ -113,7 +130,19 @@ export interface CategoryRow {
   name: string;
   description: string | null;
   position: number;
+  is_active?: boolean;
   category_translations: TranslationRow[] | null;
+  /** Absent when read with `ADMIN_CATEGORY_SELECT_BASE`. */
+  category_families?: CategoryFamilyRow[] | null;
+}
+
+export interface CategoryFamilyRow {
+  id: string;
+  slug: string;
+  name: string;
+  position: number;
+  is_active: boolean;
+  category_family_translations: { locale: string; name: string }[] | null;
 }
 
 export interface RecommendationRow {
@@ -206,13 +235,25 @@ export function rowToCategory(row: CategoryRow): Category {
     slug: row.slug,
     name: { fr: row.name, en: en?.name ?? row.name },
     description: { fr: row.description ?? "", en: en?.description ?? row.description ?? "" },
+    isActive: row.is_active ?? true,
+    families: [...(row.category_families ?? [])]
+      .sort((a, b) => a.position - b.position)
+      .map((family) => ({
+        id: family.id,
+        slug: family.slug,
+        name: {
+          fr: family.name,
+          en: family.category_family_translations?.find((t) => t.locale === "en")?.name ?? family.name,
+        },
+        isActive: family.is_active,
+      })),
   };
 }
 
 export function rowToProduct(row: ProductRow, publicUrl: (path: string) => string): AdminProduct {
   const en = english(row.product_translations);
   const metadata = asObject(row.metadata);
-  const allVariants = row.product_variants ?? [];
+  const allVariants = [...(row.product_variants ?? [])].sort((a, b) => (a.position ?? 0) - (b.position ?? 0));
   // Stock and the variant count follow what the shop sells: active variants.
   // Options removed after being ordered stay in the database, inactive.
   const variants = allVariants.filter((variant) => variant.is_active !== false);
@@ -233,6 +274,8 @@ export function rowToProduct(row: ProductRow, publicUrl: (path: string) => strin
         ? row.inventory_items[0]
         : row.inventory_items;
   const gemOptions = readGemOptions(allVariants);
+  // Any other kind of variant is edited as a list: the active ones, in order.
+  const customVariants = !gemOptions && allVariants.length > 0 ? variants.map(variantToCustom) : undefined;
   const variantStockRows = variants.map((variant) => variantToStock(variant));
   const tags = Array.isArray(metadata.tags) ? metadata.tags.filter((tag): tag is string => typeof tag === "string") : [];
 
@@ -243,6 +286,7 @@ export function rowToProduct(row: ProductRow, publicUrl: (path: string) => strin
       storagePath: item.storage_path,
       src: publicUrl(item.storage_path),
       alt: { fr: item.alt_text ?? "", en: english(item.product_media_translations)?.alt_text ?? "" },
+      ...(item.variant_id ? { variantId: item.variant_id } : {}),
     }));
 
   return {
@@ -252,6 +296,7 @@ export function rowToProduct(row: ProductRow, publicUrl: (path: string) => strin
     shortDescription: { fr: row.short_description ?? "", en: en?.short_description ?? "" },
     description: { fr: row.description ?? "", en: en?.description ?? "" },
     categoryId: row.category_id ?? "",
+    familyId: row.family_id ?? null,
     type: oneOf(metadata.type, PRODUCT_TYPES, "single"),
     price: amountFromDb(row.price),
     compareAtPrice: row.compare_at_price == null ? undefined : amountFromDb(row.compare_at_price),
@@ -268,10 +313,10 @@ export function rowToProduct(row: ProductRow, publicUrl: (path: string) => strin
     variantCount: variants.length,
     variantStock: variantStockRows.length > 0 ? variantStockRows : undefined,
     gemOptions,
-    otherVariants: allVariants.length > 0 && !gemOptions,
+    customVariants,
     material: readLocalized(metadata.material),
     shape: GEM_SHAPES.find((shape) => shape === metadata.shape),
-    color: GEM_COLORS.find((color) => color === metadata.color),
+    color: typeof metadata.color === "string" && metadata.color ? metadata.color : undefined,
     tags,
     createdAt: row.created_at,
     updatedAt: row.updated_at,
@@ -291,6 +336,28 @@ function inventoryOf(variant: VariantRow): InventoryRow | null {
   return (Array.isArray(variant.inventory_items) ? variant.inventory_items[0] : variant.inventory_items) ?? null;
 }
 
+/** Colour dot of a variant (`attributes.swatch`), when it is a valid `#rrggbb`. */
+export function readSwatch(attributes: Json | undefined): string | undefined {
+  const swatch = asObject(attributes).swatch;
+  return typeof swatch === "string" && /^#[0-9a-f]{6}$/i.test(swatch) ? swatch.toLowerCase() : undefined;
+}
+
+/** One variant of any kind other than pack/SS, as the form's variant list edits it. */
+function variantToCustom(variant: VariantRow): CustomVariant {
+  const inventory = inventoryOf(variant);
+  return {
+    id: variant.id,
+    name: { fr: variant.name ?? "", en: english(variant.product_variant_translations)?.name ?? "" },
+    swatch: readSwatch(variant.attributes),
+    price: variant.price == null ? undefined : amountFromDb(variant.price),
+    trackInventory: inventory?.track_inventory ?? true,
+    stock: inventory?.quantity_on_hand ?? 0,
+    reserved: inventory?.quantity_reserved ?? 0,
+    lowStockThreshold: inventory?.low_stock_threshold ?? 5,
+    availability: oneOf(inventory?.availability, AVAILABILITIES, "in_stock"),
+  };
+}
+
 /**
  * Stock of one active variant, for the product list. A pack/SS option is
  * keyed and named like the edit form's grid; any other variant keeps its id
@@ -302,7 +369,6 @@ function variantToStock(variant: VariantRow): VariantStock {
   const nameFr = variant.name ?? "";
   return {
     key: gem ? comboKey(gem) : variant.id,
-    gemOption: gem !== null,
     name: gem ? comboName(gem) : { fr: nameFr, en: english(variant.product_variant_translations)?.name ?? nameFr },
     sku: variant.sku ?? undefined,
     price: variant.price == null ? undefined : amountFromDb(variant.price),
@@ -348,16 +414,19 @@ export function readGemOptions(rows: VariantRow[]): GemOptions | undefined {
 }
 
 /**
- * Payload of `admin_save_product()` (migration `…_admin_product_management`).
+ * Payload of `admin_save_product()` (migrations `…_admin_product_management`,
+ * `…_gem_pack_stone_size_options` and `…_product_custom_variants`).
  *
  * `promoPrice` is deliberately not sent: the database has no column for it and
  * discounts belong to the promotions domain, not to the product.
  */
 export function productToPayload(product: AdminProduct): Json {
   const name = { fr: product.name.fr.trim(), en: product.name.en.trim() };
+  const customIds = new Set((product.customVariants ?? []).map((variant) => variant.id));
   return {
     id: product.id,
     category_id: product.categoryId,
+    family_id: product.familyId ?? null,
     sku: product.sku.trim(),
     // Only used on creation; the database keeps an existing product's URL.
     slug: slugify(name.fr) || slugify(product.sku) || "produit",
@@ -404,6 +473,23 @@ export function productToPayload(product: AdminProduct): Json {
           })),
         }
       : {}),
+    // Absent = variants left as they are; a list (possibly empty) = every
+    // other kind of variant the product sells, in display order (migration
+    // `…_product_custom_variants`). SKUs and every check are the database's.
+    ...(product.customVariants
+      ? {
+          custom_variants: product.customVariants.map((variant) => ({
+            id: variant.id,
+            name: variant.name.fr.trim(),
+            name_en: variant.name.en.trim(),
+            swatch: variant.swatch ? variant.swatch.toLowerCase() : null,
+            price: variant.price == null ? null : amountToDb(variant.price),
+            track_inventory: variant.trackInventory,
+            quantity_on_hand: variant.stock,
+            low_stock_threshold: variant.lowStockThreshold,
+          })),
+        }
+      : {}),
     media: product.media
       .filter((image) => image.storagePath)
       .map((image) => ({
@@ -413,7 +499,57 @@ export function productToPayload(product: AdminProduct): Json {
         // An image without its own description is described by the product.
         alt_fr: image.alt.fr.trim() || name.fr,
         alt_en: image.alt.en.trim() || name.en,
+        // The variant a photo shows, sent only with the variant list it
+        // belongs to; a link to a variant removed in this edit is dropped.
+        ...(product.customVariants
+          ? { variant_id: image.variantId && customIds.has(image.variantId) ? image.variantId : null }
+          : {}),
       })),
+  };
+}
+
+/** Colours of the gem filter, hidden ones included (migration `…_gem_colors`). */
+export const ADMIN_GEM_COLOR_SELECT = `
+  id, slug, name, hex, is_multicolor, is_active, position,
+  gem_color_translations ( locale, name )
+`;
+
+export interface GemColorRow {
+  id: string;
+  slug: string;
+  name: string;
+  hex: string | null;
+  is_multicolor: boolean;
+  is_active: boolean;
+  position: number;
+  gem_color_translations: { locale: string; name: string }[] | null;
+}
+
+export function rowToGemColor(row: GemColorRow): AdminGemColor {
+  return {
+    id: row.id,
+    slug: row.slug,
+    name: { fr: row.name, en: english(row.gem_color_translations ?? [])?.name ?? "" },
+    hex: row.is_multicolor ? null : row.hex,
+    isMulticolor: row.is_multicolor,
+    isActive: row.is_active,
+    position: row.position,
+  };
+}
+
+/**
+ * Payload of `admin_save_gem_color()`. The slug is only a wish for a new
+ * colour: the database makes it unique and ignores it on an update.
+ */
+export function gemColorToPayload(draft: GemColorDraft): Json {
+  const name = { fr: draft.name.fr.trim(), en: draft.name.en.trim() };
+  return {
+    id: draft.id ?? null,
+    slug: (slugify(name.fr) || slugify(name.en) || "couleur").slice(0, 50).replace(/-+$/g, ""),
+    name: name.fr,
+    name_en: name.en,
+    hex: draft.hex ? draft.hex.toLowerCase() : null,
+    is_active: draft.isActive,
   };
 }
 

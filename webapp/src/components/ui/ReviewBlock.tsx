@@ -33,7 +33,7 @@ export interface ReviewData {
 export function ReviewBlock({ author, date, rating = 5, locale, title, body, verified = false, photo, photoLabel }: ReviewData) {
   const { t } = useTranslation();
   return (
-    <article className="grid gap-3 rounded-[var(--radius-card)] border border-[var(--border-subtle)] bg-[var(--surface-card)] p-[var(--space-5)]">
+    <article className="grid gap-3 rounded-[var(--radius-card)] border border-[var(--border-subtle)] bg-[var(--surface-card)] p-[var(--space-5)] shadow-[var(--shadow-card)]">
       <div className="flex flex-wrap items-center gap-3">
         <Stars rating={rating} label={t("review.starsAria", { rating })} />
         <strong className="text-sm text-[var(--text-primary)]">{author}</strong>

@@ -1,10 +1,10 @@
-# Global Toothgems — static/mock prototype
+# Global Toothgems — web application
 
-A fully interactive React implementation of the Global Toothgems brand site — a premium tooth-gem e-commerce shop and professional Academy — built from a Claude Design prototype (see the design brief and chat transcripts that shipped with it).
+The production web application of Global Toothgems: storefront, Academy, member area, Studio 3D and back office, in one React single-page application backed by Supabase (see `supabase/README.md`) and deployed on Vercel.
 
-> **Architecture note:** this directory intentionally deviates from the stack mandated in the repo root's `AGENTS.md` and `global-toothgems-llm-guidelines/` (Next.js, Supabase/Postgres, Supabase Auth, Stripe). It was built at explicit user request as a fast, visual, fully-clickable reference implementation — Vite + React, no backend, cart/checkout/lesson-progress state held in memory only. Treat it as a design/behavior reference to port from, not as the production app. Porting to the mandated Next.js + Supabase + Stripe architecture is still open work.
+> **Status: being industrialised.** The app started as a fully clickable implementation of the Claude Design prototype, with every domain on in-memory mock data. Domains are now connected to Supabase one by one; the up-to-date live/mock table is in the root `AGENTS.md` §4. With the Supabase variables set, these are **live**: the storefront catalogue, back-office product management and categories, member and staff authentication, favourites (`wishlist_items`), reviews and moderation, member and admin order reading, and the Studio 3D workspace. Cart/checkout/payment (no Stripe yet), promotions, gift cards, loyalty, customers/users/statistics/settings in the back office, contact and newsletter, and the whole Academy still run on mock data.
 >
-> **Two parts are live** when the environment variables below are set: the **storefront catalogue** reads Supabase (see [Supabase connection (catalogue)](#supabase-connection-catalogue)), and the back office's **product management** (products, stock, images, English translations, recommendations) and **admin sign-in** read and write it (see [Supabase connection (back-office products)](#supabase-connection-back-office-products)). A product saved as active in the back office therefore appears in the shop. Cart, checkout, orders, customers, promotions and training are still mock data.
+> Architecture (decided): Vite + React SPA, business rules in Postgres (RLS + functions), server code in Supabase Edge Functions, payments by Stripe with webhook-driven fulfilment. Sections below that describe "prototype" behaviour, "Prototype controls" panels or mock stores document code that is **still mock and scheduled to be replaced**, not a target design.
 
 ## Stack
 
@@ -49,10 +49,10 @@ What is not wired to the database yet, on purpose:
 
 - **Promotional price.** There is no column for it: discounts belong to the promotions domain. The field is hidden when connected.
 - **Variants.** Products with variants (three of the seeded ones) show their total stock read-only; the form never writes variant stock.
-- **Categories** are read from the database but still not editable.
+- **Categories and families** are read from the database but not editable; a product's family is picked in the product form.
 - **The activity feed** shows this session's actions only; the full history is in `audit_logs` and `inventory_movements`.
 - **The seeded products' images** point at files that were never uploaded, so they show broken until replaced.
-- **Other admin workspaces** (orders, customers, promotions, statistics, training…) still use their mock stores, so e.g. promotions refer to prototype product ids.
+- **Orders and reviews** are connected too (see "Orders and reviews on Supabase" below). **Other admin workspaces** (promotions, statistics, training…) still use their mock stores, so e.g. promotions refer to prototype product ids. The customers workspace reads its order counts from the order book, so it mixes mock customers with real orders.
 
 Code: `lib/supabase/` (client + generated `database.types.ts`), `lib/adminCatalogMapping.ts` (pure row ↔ form mapping, unit-tested), `lib/adminCatalogSupabase.tsx` (the Supabase store), `lib/adminCatalog.tsx` (the mock store, and the switch between the two), `lib/adminAuth.tsx`.
 
@@ -72,9 +72,8 @@ single `index.html` plus assets. A static host knows nothing about the routes in
 `App.tsx`, so a request that lands directly on one — a pasted link, a refresh, a
 bookmark — asks for a file that was never built and gets a 404. Following a link
 inside the app works either way, which is why the breakage only shows up on
-direct URLs, and why the newest routes (such as `/accueil-b`) surface it
-first: they are not linked from the navigation, so a direct URL is the only way
-in.
+direct URLs, and why routes not linked from the navigation surface it
+first: a direct URL is the only way in.
 
 `vercel.json` fixes that by rewriting every unmatched path to `/index.html` and
 letting the router read the URL. Rewrites run after the filesystem check, so real
@@ -120,8 +119,12 @@ Mapping rules worth knowing:
 
 - **Language**: base columns are French; the English text comes from
   *published* translation rows, else falls back to French.
-- **Categories**: `gems → Gems`, `outils → Outils`, `kits → Kits`,
-  `entretien → Suivi`, `accessoires → Accessoires` (the `categorie` URL values).
+- **Categories and families** are data (`fetchTaxonomy()`, `data/taxonomy.ts` for
+  the mock): their slugs are the `categorie` and `famille` URL values
+  (`/boutique?categorie=gems&famille=swarovski`). The header menu, the shop's
+  product-type tree and the home tiles are built from them. Former values
+  (`Gems`, `Outils`, `Suivi`, `Accessoires`, `Kits`) still resolve, through
+  `LEGACY_CATEGORIES`.
 - **Shape / colour filters** read `products.metadata.shape` / `.color`, using the
   slugs of `GEM_SHAPES` / `GEM_COLORS` (`"star"`, `"crystal"`…). Products without
   them are simply not in those filters.
@@ -133,8 +136,32 @@ Mapping rules worth knowing:
   not uploaded yet shows the image placeholder.
 - Gift cards (`product_type = 'gift_card'`) stay on their own page.
 
-Not connected yet (still mock): authentication, cart persistence and checkout,
-orders, reviews list/moderation, the Academy, the community and the back office.
+Not connected yet (still mock): cart persistence and checkout, the Academy, the
+community and most of the back office. Orders and reviews are connected (next
+section).
+
+## Orders and reviews on Supabase
+
+With the Supabase variables set, three stores read and write the database
+instead of their mock data; without them the mock stores run unchanged.
+
+| Store | Reads | Writes |
+| --- | --- | --- |
+| `lib/orders.tsx` (member area) | the account's own paid orders (`payment_status` paid / refunded / partially refunded), items and parcels | nothing: orders come from the checkout and the Stripe webhook. The demo cart's "payment" adds no order in this mode |
+| `lib/adminOrders.tsx` (back office) | every order except expired unpaid checkouts, with items, parcels and payments | status (+ implied fulfilment), cancellation (`cancel_order`), notes (appended to `admin_note`). Refunds — and cancelling or marking refunded an order that holds money — are refused with a message: they go through Stripe |
+| `lib/reviewsSupabase.tsx` | published reviews for visitors (public columns only); own reviews, votes and reports for customers; everything for staff | submit / edit (photos to the private `review-photos` bucket), helpful votes, reports, and every moderation action |
+
+The database enforces the review rules: only a customer whose order with the
+product has shipped or been delivered can write one (the order is filled in by
+the database), a customer edit goes back to moderation, and staff moderate
+but never change the text. A consequence worth knowing: **staff cannot
+moderate their own review** (the author rules apply), so test moderation with
+a second staff account. The public signature is built by the database from
+the profile's first and last name ("Client" when both are empty).
+
+Course reviews are not stored yet (the table has no course column), so with
+Supabase they are not offered. Mapping lives in pure, unit-tested modules:
+`lib/orderMapping.ts`, `lib/adminOrderMapping.ts`, `lib/reviewMapping.ts`.
 
 ## Project structure
 
@@ -197,8 +224,9 @@ legal texts change. Supabase sends the confirmation email; its link lands on
 the page the member was heading to. Sign-in reports unconfirmed addresses (with a
 resend), wrong credentials, suspended accounts and rate limits separately.
 `/mot-de-passe-oublie` and `/reinitialiser-mot-de-passe` use Supabase password
-recovery (`lib/passwordRecovery.ts`). The Security page cards (change email or
-password, export, deletion) are still simulated. The
+recovery (`lib/passwordRecovery.ts`). On the Security page, changing the email or
+the password goes through Supabase Auth (`lib/accountCredentials.ts`); data export
+and account deletion are still simulated. The
 prototype controls, the mock inbox and the Google dialog only exist without
 Supabase; Google sign-in is not connected. Without Supabase, everything below is
 simulated as before.
@@ -231,6 +259,10 @@ A paid creative tool (€5 / month) for designing tooth jewellery compositions. 
 | `/studio-3d` | Presentation page: hero with the Studio window, concept, six capabilities, media wall, inspiration boards, three steps, offer, FAQ |
 | `/studio-3d/abonnement` | Subscription page: the single monthly plan, account, fictional payment, summary, loading and confirmation states (`/studio-3d/subscribe` redirects here) |
 | `/studio-3d/atelier` | The editor: 3D dentition (both arches), jewellery library, placement by drag / click / keyboard, collision-free layout tools, presets, undo/redo, PNG / estimate sheet / JSON export (`/studio-3d/editor` redirects here). Full-screen, without the storefront header and footer |
+| `/studio-3d/atelier/mes-creations` | My Creations: the account's saved designs (`…/editor/creations` redirects here) |
+| `/studio-3d/atelier/mes-groupes` | My Gem Groups: reusable multi-gem arrangements (`…/editor/groups`) |
+| `/studio-3d/atelier/aide` | Help & Tutorial (`…/editor/help`) |
+| `/studio-3d/partage/<token>`, `/studio-3d/partage#…` | A creation shared read-only (a stored link, or a snapshot carried in the fragment): the design in 3D (orbit, zoom, auto-orbit), its name and description, and an invitation to sign in to use the Studio — or, signed in, "Edit a copy". Open to everyone, outside `RequireStudioAccess`; full-screen like the editor (`/studio-3d/share/<token>` and `/studio-3d/share#…` redirect here) |
 
 ### The editor
 
@@ -248,7 +280,7 @@ Ported from the standalone `studio3D.html` into the app's architecture:
 | `pages/StudioEditor.tsx` | The page: layout, shortcuts, save on exit. Lazy-loaded, so three.js is only downloaded when the editor opens |
 
 - **Access**: `lib/studioAccess.tsx` is the single switch. `STUDIO_ACCESS_MODE = "preview"` lets everyone in without paying. When the subscription goes live, switch it to `"subscription"` and back it with a server-side entitlement granted by the verified Stripe webhook; the client check is navigation only.
-- **Saving** is local to the browser (`gt-studio3d-*` keys); nothing is sent to a server yet.
+- **Saving**: the working draft is kept in the browser (`gt-studio3d-*` keys) as before; saving it to the account goes through the Studio workspace below.
 - **Estimate**: prices in `ESTIMATE_PRICING` are prototype values, shown as "approx." and labelled as not a quote. They are never sent to checkout.
 - **Default model**: the editor opens on `dentition.glb` (meshopt-compressed, ~1 MB, decoded from the bundle). If it cannot be fetched, the procedural upper arch stands in, with a notice. Pieces go on crowns only, never on gum or socle. A design saved on another model (older designs were made on the procedural arch) is re-seated tooth by tooth when it opens; the same happens when a model is imported or reset. Raycasts use a bounding-volume hierarchy (`three-mesh-bvh`): a scan of this size costs ~18 ms per ray without one, and placement casts hundreds.
 - **Design check**: pieces that overlap another or do not sit on a tooth are framed in red on the stage and listed in a panel (placement and dragging never create them; sizes, type changes, group turns or a design from another model can).
@@ -261,6 +293,44 @@ Ported from the standalone `studio3D.html` into the app's architecture:
 - **Price**: `STUDIO_PRICE` is a display value only. In production the price comes from the Stripe Price, the button hands over to Stripe Checkout (subscription mode) and access is granted by the verified webhook — never by the confirmation screen.
 - **Editor entry points**: while preview access is on, "Open the Studio" on the presentation page (hero, FAQ, phone bar), the home teaser, "Recreate" on the inspiration boards and the subscription confirmation all lead to the editor; the offer section still leads to the subscription page.
 - **Navigation**: "Studio 3D · New" sits after the Academy in both desktop headers, as a featured row above the tabs in both mobile menus, and as a link in the member area sidebar and pill row. The home page carries a teaser (`StudioTeaser`) between the best sellers and the Academy band.
+
+### The Studio workspace (creations, Gem Groups, help, feedback)
+
+The layer around the editor that makes it a personal design workspace. The editor itself is unchanged in its interaction model; the workspace adds a navigation rail (a drawer below `lg`), a save pipeline, a creative library, reusable Gem Groups, help and feedback.
+
+| Where | What |
+| --- | --- |
+| `lib/studioWorkspace/scene.ts` | The saved `scene_data` format (version 1): every piece with its full transform, the light, the camera and the Gem Groups pieces came from; `sanitizeScene` for anything read back |
+| `lib/studioWorkspace/gemGroup.ts` | Gem Group arrangements, stored in an anchor tooth's frame (along the arch, up, out of the enamel) so they can be dropped on any tooth and keep their spacing, spin, size and finish |
+| `lib/studioWorkspace/repository.ts` | **The persistence boundary**: `CreationsRepository`, `GemGroupsRepository`, `FeedbackRepository`. The UI never touches storage or Supabase directly |
+| `lib/studioWorkspace/supabaseRepository.ts` | The Supabase implementation, used for real accounts: `creations`, `gem_groups`, `studio_feedback`, thumbnails in the private `studio-thumbnails` bucket |
+| `lib/studioWorkspace/localRepository.ts` | Browser-storage implementation for the mock sign-in's demo accounts, one namespace per account, seeded with the example library (`seed.ts`) |
+| `lib/studioWorkspace/workspace.tsx` | Provider: the loaded library, the save state of the stage (`empty` / `unsaved` / `saving` / `saved` / `failed`), and every action with its toast |
+| `lib/studioWorkspace/share.ts` | Read-only share links: stored links (token) and snapshot links (the design encoded in the URL fragment), both read defensively (tested in `share.test.ts`) |
+| `lib/studio3d/socialShare.ts`, `components/studio/ShareNetworks.tsx` | Social networks: each network's share page pre-filled with the read-only link (no network script loaded), shared by the editor's Share menu and `ShareDialog` |
+| `lib/studioWorkspace/library.ts`, `validation.ts` | Search, filters, sort, summary; name / description / tag rules (unit-tested in `studioWorkspace.test.ts`) |
+| `lib/studio3d/archLayout.ts` | The reference arch as plain numbers, shared by the engine and the drawn previews |
+| `components/studio/workspace/` | `StudioSidebar`, `CreationLibrary`, `CreationCard`, `CreationDetail`, `GemGroupLibrary`, `GemGroupCard`, `GemGroupPanel` (in the editor's library, with drag onto a tooth), `SaveCreationDialog`, `SaveGemGroupDialog`, `DeleteConfirmation`, `FeedbackModal`, `HelpPanel`, `HelpHint`, `OnboardingOverlay`, `SaveStatus`, `SaveControls`, `EmptyState`, `SearchAndFilters`, `ScenePreview`, `ShareDialog` |
+
+- **Sections open over the stage** instead of replacing it: the editor stays mounted (hidden, `inert`), so an imported model, the camera and the undo history are still there when the artist comes back. The editor's keyboard shortcuts are off while a section or dialog is in front.
+- **Saving** needs an account (signed out, Save explains why and returns after sign-in; the local draft is never lost). A new design opens the save dialog (name, description, tags); a linked one saves with "Save changes" or Ctrl+S; "Save as new creation" keeps the original. The draft remembers which creation it belongs to, per account, across reloads. An empty design is never saved over a creation.
+- **Unsaved changes** are measured by content, not by history. Opening another creation or starting a new design over unsaved changes asks first.
+- **Previews**: a saved creation stores a small JPEG captured from a fixed front camera (`engine.captureThumbnail`). Designs without one — the examples, Gem Groups — are drawn from their own data by `ScenePreview`, on the same arch geometry, so a card always shows the real composition.
+- **Opening a creation** re-seats every piece on the enamel of the current model (`engine.settlePendingLoad`) and restores its camera; this settling does not count as an edit.
+- **Gem Groups**: select two or more gems → "Create Gem Group" (inspector, or right-click on the stage). Insert from the editor's "My Groups" tab (click: on the selected tooth or where the group was made; drag: onto any tooth, with the target tooth lit before dropping) or "Use in Studio" from the library. Pieces that do not fit slide to the nearest free spot or are skipped, and the toast says so.
+- **Estimates** reuse `ESTIMATE_PRICING` (integer minor units + currency). The summary's "total estimated design value" is informational only.
+- **Onboarding** shows once per browser (`gt-studio3d-onboarding-v1`), can be skipped at any step and replayed from Help.
+- **Feedback** records a rating, a type, the message and a little context (page, piece count, language, window size — nothing personal).
+
+**On Supabase.** Real accounts use `lib/studioWorkspace/supabaseRepository.ts`, backed by `supabase/migrations/20260928222836_studio_workspace.sql`: `creations` (the scene in `scene_data`), `gem_groups`, `studio_feedback` and the private `studio-thumbnails` bucket, owner-only by RLS, with `user_id` defaulting to `auth.uid()` and not writable. A creation's render is uploaded to `studio-thumbnails/<user id>/<creation id>.jpg` after the row is saved (best effort) and served by signed URL. The demo accounts of the mock sign-in keep the local, seeded store (`localRepository.ts`). The switch is `createRepositories()` in `workspace.tsx`. Designs saved in a browser before the switch stay in that browser's storage and are not imported.
+
+**Read-only share links.** "Share" (a creation card's menu, its detail dialog, the Save menu when the stage is linked to a creation, and the editor's Share menu) opens `ShareDialog`: the link, one button per social network (WhatsApp, Facebook, X, LinkedIn, e-mail — `socialShare.ts`, plain share pages opened in a new tab, no SDK), the system share sheet where available, and a preview. Opening the dialog is the explicit act that creates a link; the editor's Share menu only looks for an existing one (and asks to save a new design first).
+- **Stored links** (real accounts, Supabase): `/studio-3d/partage/<token>`, backed by `creation_shares` (a random 48-hex token per creation, one active at a time, `revoked_at`). Owners read their own links through RLS and create / disable them only through `studio_share_creation` / `studio_revoke_creation_share`, which check ownership. Guests — signed in or not — never touch a table: `studio_shared_creation(token)`, a security-definer reader granted to `anon`, returns the name, description and scene of **that one creation** (Gem Group ids blanked), nothing about the owner, and nothing for an unknown or disabled token. The link always shows the latest saved version; "Disable link" in the dialog stops it at once, including where it was already posted, and a new one can be created. Deleting the creation deletes its links.
+- **Snapshot links** (the mock sign-in's local library, and the fallback while the share table is missing from the database): the design itself in the URL fragment (`#z1.…` deflate-compressed base64url JSON; `#j1.…` where `CompressionStream` is missing) — sanitized scene, name and description, never the owner id, the client name, tags or the thumbnail. The fragment never reaches a server. A snapshot does not follow later edits and cannot be revoked; links of this form already sent keep opening.
+- The viewer (`pages/StudioShare.tsx`) renders with its own `DesignStore({ persist: false })` and a `StudioEngine(…, { readOnly: true })`: every press goes to the camera, no piece can be selected or moved, and the recipient's own draft (`gt-studio3d-design-v1`) is never read nor written. Everything it receives is re-sanitized. Signed out, the panel asks them to sign in (and returns to the same link); signed in, "Edit a copy" loads the design as a new unsaved design on **their own** stage — the shared creation is never written — asking first if that would replace unsaved work.
+- Limits: anyone who has a link can view the design; a design made on an imported model is shown on the default dentition. Social networks show the site's generic preview card (no per-creation image yet).
+
+**Overlap to decide:** the editor's older "My presets" (whole designs kept in browser storage, under Presets) still works as before. Saved creations now cover that need per account; the presets menu could be retired or pointed at My Creations.
 
 ## The member area (`/compte`)
 
@@ -365,7 +435,7 @@ Without Supabase, sign in with `camille@globaltoothgems.com` / `toothgems2026`; 
 - `lib/productFilters.ts` — search, filtering and sorting as pure functions on plain state; the product list holds its filters in the URL, so a filtered view can be linked to and stepped back through.
 - `data/adminOrders.ts` — the back office's order book: 38 orders across every status, payment and fulfilment state, 14 customers in four countries, six flagged for attention (one per reason) and seven internal notes. Deliberately a separate model from `data/orders.ts`, which is the *member's* view of their own purchases and is written to by `lib/orders.tsx` when the cart is paid; only the line-item shape is shared. Timelines, tracking numbers and payment references are derived from each order's own state rather than typed out, so a status can never disagree with the history beside it. Every line refers to a real catalogue id, because `productLine()` throws on an unknown one.
 - `lib/adminOrders.tsx` — the one place any order changes, shaped like `lib/adminCatalog.tsx`. Marking an order shipped moves the badge, the fulfilment column, the KPI row and that order's timeline together. It never invents a payment: an unpaid order marked shipped stays unpaid.
-- `lib/adminOrderFilters.ts` — search, filtering, sorting and paging as pure functions over URL state, the same convention as `lib/productFilters.ts`. The date presets are anchored to the newest order in the book rather than to the wall clock, so "Today" never silently returns nothing on fixed mock data.
+- `lib/adminOrderFilters.ts` — search, filtering, sorting and paging as pure functions over URL state, the same convention as `lib/productFilters.ts`. With Supabase the date presets use the calendar day; on the mock book they are anchored to the newest order rather than to the wall clock, so "Today" never silently returns nothing on fixed mock data.
 - `components/admin/` — the workspace's own primitives (rail, header, table, row, status badge, filters, form, media uploader, preview drawer, confirmation dialog, empty and loading states, form field, search input, category badge), plus the orders workspace's own pieces.
 - `components/ui/Dialog.tsx` and `components/ui/Menu.tsx` — a modal with a focus trap and a keyboard-navigable dropdown, added for the orders screens. See the scope note below: they overlap with `components/admin/ConfirmationDialog.tsx`, `OverflowMenu.tsx` and `lib/useFocusTrap.ts` and should be consolidated onto those.
 
@@ -462,7 +532,7 @@ Everything that matters for money or access — code uniqueness, discount calcul
 
 ## Reviews and moderation (`/admin/avis`, `/compte/avis`)
 
-A front-end-only prototype of customer reviews for products and trainings, and of their moderation. No backend, no uploads leave the browser, no persistence: a reload restores the seed. It adds **Reviews** to the admin rail's main group and **My reviews** to the member area's navigation; nothing else in either navigation changed.
+Customer reviews for products and trainings, and their moderation. With Supabase configured, product reviews are stored in the database (see "Orders and reviews on Supabase"); without it, this is the front-end-only prototype described below — no uploads leave the browser, a reload restores the seed. It adds **Reviews** to the admin rail's main group and **My reviews** to the member area's navigation; nothing else in either navigation changed.
 
 | Where | What |
 | --- | --- |
@@ -479,7 +549,7 @@ How it is put together:
 
 - `data/reviewSystem.ts` — types and seed (~45 reviews across products and trainings: every status, photos, responses, reports, an unverified gift review, an edited review back in moderation). The prototype's "today" is `REVIEW_NOW` (23 Sept 2026).
 - `lib/reviewRules.ts` — pure rules: summaries, public filters and sorts, featured review, form validation, queue filters, dashboard statistics.
-- `lib/reviews.tsx` — the store and every lifecycle action, mounted in `App.tsx` above the storefront and the admin, so a review approved in the back office appears on the product page in the same session. Also the eligibility hooks and the three overlays' state (form, report, photo viewer), rendered once by `components/reviews/ReviewOverlays.tsx`.
+- `lib/reviews.tsx` — the store switch (Supabase: `lib/reviewsSupabase.tsx`; otherwise the in-memory store in the same file), mounted in `App.tsx` above the storefront and the admin, so a review approved in the back office appears on the product page in the same session. Also the eligibility hooks and `useReviewSubjects` (product names and photos from the catalogue). The contract and the three overlays' state (form, report, photo viewer) live in `lib/reviewsContext.ts`; the overlays render once in `components/reviews/ReviewOverlays.tsx`.
 - `components/reviews/` — stars (display and radio-group input), badges, card, section, form, request, eligibility panel; `components/reviews/admin/` — dashboard, queue, reported view, moderation sheet and action dialogs.
 - Copy lives in `i18n/locales/reviews.{fr,en}.json`, mounted under the `reviews` key.
 
@@ -517,14 +587,15 @@ How it is put together:
 
 Tax rates and exemption rules are **illustrative** and say so on screen: they, and every check here (zone overlap, rate ranges, VAT number validation), must be confirmed with an accountant and enforced server-side in the real implementation.
 
-## Notes on scope
+## Remaining mock behaviour (to replace before launch)
 
-This app reproduces the prototype's interactions against local/mock state only — there is no real backend, payment processing, or authentication. A few simplifications carried over intentionally from the prototype (flagged during the build):
+Without the Supabase variables every domain runs on its mock store. With them, the following still do not touch the database:
 
-- All Academy courses share the same authored 9-lesson syllabus; progress is tracked per course, but only one course outline exists.
-- Nothing is persisted: the session, cart, progress and orders all live in memory and reset on reload.
-- Paying always succeeds. It records an order and empties the cart; real fulfilment belongs to a Stripe webhook, not to the browser.
-- The Artist Community (`/compte/communaute`) has no backend either: members, discussions and replies are written fixtures, posting and replying live in memory, the photo "upload" picks from three sample images, and forum access is derived from the courses on the account rather than verified anywhere.
-- The Loyalty Club (`/fidelite`, `/compte/fidelite`) is **display only**, and more so than the rest of this app: no stamp is ever awarded, stored or redeemed, and the checkout banner reads the subtotal without touching the total, the payment or the order. Its card state is static mock data in `data/loyalty.ts`, switched by a visible demo control on the member page. Awarding a stamp is a server's job, driven by the same verified payment event as fulfilment.
+- **Cart and checkout.** "Paying" always succeeds in the mock; with Supabase it adds no order. Real payment needs the `checkout` and `stripe-webhook` Edge Functions (see `global-toothgems-llm-guidelines/04-ecommerce-rules.md`).
+- **Academy.** All courses share the one authored 9-lesson syllabus in `data/lessons.ts`; progress lives in memory (`lib/progress.tsx`); there is no Academy schema yet.
+- **Artist Community.** Fixtures and in-memory posting; access derived client-side from the courses on the account. Post-launch.
+- **Loyalty Club.** Display only (`data/loyalty.ts` with a demo switch); the database already awards stamps on paid orders — the UI must read `loyalty_overview`.
+- **Security page:** data export and account deletion are simulated (they need backend jobs).
+- **Back-office promotions, gift cards, customers, users, statistics, settings and translations:** mock stores over a schema that already exists.
 
-Everything else — filtering, cart totals, the lesson video/quiz simulation, per-product detail pages, the member dashboard — is fully interactive.
+The mock stores, fixtures in `data/`, demo accounts and "Prototype controls" panels are removed domain by domain as each goes live; a production build must never fall back to them.

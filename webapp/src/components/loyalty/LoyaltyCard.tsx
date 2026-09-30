@@ -29,6 +29,8 @@ interface LoyaltyCardProps {
   titleAs?: "h2" | "h3";
   /** Smaller type and stamps, for the side-by-side state gallery. */
   compact?: boolean;
+  /** Position that was just inked, played as a stamp press. -1 or omitted for none. */
+  pressedIndex?: number;
   className?: string;
 }
 
@@ -39,7 +41,7 @@ const STOCK_INK = "radial-gradient(120% 90% at 85% 0%, rgba(62,219,160,.22), tra
 const STOCK_PAPER =
   "repeating-linear-gradient(135deg, rgba(63,90,117,.05) 0 1px, transparent 1px 7px), radial-gradient(110% 80% at 88% 0%, rgba(185,205,229,.4), transparent 60%)";
 
-export function LoyaltyCard({ state, action, titleAs = "h2", compact = false, className }: LoyaltyCardProps) {
+export function LoyaltyCard({ state, action, titleAs = "h2", compact = false, pressedIndex = -1, className }: LoyaltyCardProps) {
   const { t } = useTranslation();
   const copy = useLoyaltyCopy(state);
   const complete = state.rewardReady;
@@ -147,6 +149,7 @@ export function LoyaltyCard({ state, action, titleAs = "h2", compact = false, cl
                 "h-auto",
                 compact ? "w-[clamp(34px,7vw,44px)]" : "w-[clamp(44px,11vw,72px)]",
                 stampTone(i),
+                i === pressedIndex && i < state.stamps && "gt-stamp-press",
               )}
             />
           ))}
@@ -155,10 +158,10 @@ export function LoyaltyCard({ state, action, titleAs = "h2", compact = false, cl
         <LoyaltyProgress stamps={state.stamps} total={STAMPS_PER_CARD} tone={complete ? "ink" : "paper"} />
 
         <div className="grid gap-2">
-          {/* The one decorative-script moment in the programme, saved for the
+          {/* The one editorial accent in the programme, saved for the
               payoff — the role it already plays on the order-confirmed screen. */}
           {complete && (
-            <span aria-hidden="true" className="gt-script text-[clamp(30px,5vw,44px)] leading-none text-[var(--gt-emerald-300)]">
+            <span aria-hidden="true" className="gt-accent text-[clamp(20px,3vw,26px)] leading-none text-[var(--gt-emerald-300)]">
               {t("loyalty.state.unlocked.script")}
             </span>
           )}

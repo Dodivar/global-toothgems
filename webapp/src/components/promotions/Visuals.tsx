@@ -114,8 +114,8 @@ export function GiftCardVisual({
           </span>
           <span
             className={clsx(
-              "gt-script leading-none",
-              size === "sm" ? "text-[18px]" : size === "lg" ? "text-[clamp(28px,5vw,40px)]" : "text-[clamp(22px,4vw,30px)]",
+              "font-semibold uppercase leading-none tracking-[var(--tracking-eyebrow)]",
+              size === "sm" ? "text-[8px]" : size === "lg" ? "text-[clamp(11px,1.6vw,13px)]" : "text-[clamp(10px,1.4vw,12px)]",
             )}
           >
             {t("promo.visual.giftCard")}
@@ -167,9 +167,8 @@ export function GiftCardVisual({
 
 /**
  * Campaign banner: an optional brand photo under a theme wash, with the
- * customer-facing headline. The headline takes the script face — this is the
- * one "editorial accent" the brief allows in the admin, and it is only ever a
- * few words long.
+ * customer-facing headline, set bold in the brand sans and only ever a few
+ * words long.
  */
 export function CampaignCover({
   theme,
@@ -223,8 +222,8 @@ export function CampaignCover({
         {title && (
           <span
             className={clsx(
-              "gt-script block",
-              size === "sm" ? "text-[26px]" : size === "lg" ? "text-[clamp(40px,6vw,68px)]" : "text-[34px]",
+              "block font-[var(--weight-bold)] leading-[var(--leading-tight)] tracking-[var(--tracking-tight)]",
+              size === "sm" ? "text-[18px]" : size === "lg" ? "text-[clamp(26px,3.6vw,40px)]" : "text-[22px]",
             )}
           >
             {title}

@@ -87,6 +87,9 @@ function Push-HeadToDev {
 }
 
 try {
+    # The hook payload is UTF-8 JSON; without this, Windows PowerShell decodes it
+    # with the OEM code page and accented text reaches commit messages garbled.
+    [Console]::InputEncoding = [System.Text.Encoding]::UTF8
     $raw = [Console]::In.ReadToEnd()
     $payload = if ($raw) { $raw | ConvertFrom-Json } else { $null }
 

@@ -1,25 +1,22 @@
-import { useEffect, useRef, useState, type ReactNode } from "react";
+import { useEffect, useRef, useState } from "react";
 import { Link, useNavigate, useLocation } from "react-router-dom";
 import { useTranslation } from "react-i18next";
 import { ArrowRight, Box, ChevronDown, Heart, Menu, Search, ShoppingBag, User, X } from "lucide-react";
 import { IconButton } from "../ui/IconButton";
-import { Button } from "../ui/Button";
-import { ShapeCarousel } from "../ui/ShapeCarousel";
-import { ColorCarousel } from "../ui/ColorCarousel";
 import { useAuth } from "../../lib/auth";
+import { useFavorites } from "../../lib/favorites";
+import { FAVORITES_HREF } from "../../lib/favoritesState";
 import { useCart } from "../../lib/cart";
 import { useToast } from "../../lib/toast";
-import { MENU } from "../../data/menu";
-import { colorsInCatalog, shapesInCatalog } from "../../data/products";
-import { useCatalog } from "../../lib/catalog/CatalogProvider";
-import { colorHref, shapeHref } from "../../lib/shopUrl";
+import { ACADEMY_MENU } from "../../data/menu";
 import { pick } from "../../data/types";
 import { NewTag } from "../studio/NewTag";
+import { ShopMenu } from "./ShopMenu";
 import { STUDIO_PATH } from "../../lib/studioUrl";
 import logoBlack from "../../assets/logo-wordmark-black.png";
 
 type PanelKey = "shop" | "academy" | null;
-type MobileTab = "gems" | "shop" | "academy";
+type MobileTab = "shop" | "academy";
 
 /** Long enough that a pointer crossing the nav on its way elsewhere does not
  *  open anything, short enough that a deliberate hover feels immediate. */
@@ -32,13 +29,14 @@ export function Header() {
   const navigate = useNavigate();
   const location = useLocation();
   const { count } = useCart();
-  const { signedIn } = useAuth();
+  const { signedIn, initials } = useAuth();
+  const { favoriteProducts } = useFavorites();
   const { showToast } = useToast();
   const lang = i18n.language;
 
   const [panel, setPanel] = useState<PanelKey>(null);
   const [menuOpen, setMenuOpen] = useState(false);
-  const [menuTab, setMenuTab] = useState<MobileTab>("gems");
+  const [menuTab, setMenuTab] = useState<MobileTab>("shop");
   const rootRef = useRef<HTMLDivElement>(null);
   const hoverTimer = useRef<number | null>(null);
   /** Panel the user just closed on purpose, held until the pointer leaves that
@@ -116,91 +114,25 @@ export function Header() {
     navigate(signedIn ? "/compte" : "/connexion");
   };
 
-  const panelItems = panel === "shop" ? [...MENU.gems, ...MENU.shop] : panel === "academy" ? MENU.academy : [];
   const panelRoot =
     panel === "shop"
       ? { label: t("nav.viewAllShop"), to: "/boutique" }
       : { label: t("nav.viewAllAcademy"), to: "/academy" };
 
   const mobileTabs: { key: MobileTab; label: string }[] = [
-    { key: "gems", label: t("nav.menuTabGems") },
     { key: "shop", label: t("nav.menuTabShop") },
     { key: "academy", label: t("nav.menuTabAcademy") },
   ];
-  const mobileItems = MENU[menuTab];
   const mobileRoot =
     menuTab === "academy" ? { label: t("nav.viewAllAcademy"), to: "/academy" } : { label: t("nav.viewAllShop"), to: "/boutique" };
 
   const cartLabel = count > 0 ? t("nav.cartWithCount", { count }) : t("nav.cart");
-
-  const { products } = useCatalog();
-  const shapeGroups = shapesInCatalog(products);
-  const colorGroups = colorsInCatalog(products);
-
-  const goTo = (to: string) => {
-    clearHoverTimer();
+  const favoriteCount = signedIn ? favoriteProducts.length : 0;
+  const wishlistLabel = favoriteCount > 0 ? t("nav.wishlistWithCount", { count: favoriteCount }) : t("nav.wishlist");
+  /** The shop narrowed to the member's favourites; signed out, it explains that they need an account. */
+  const openFavorites = () => {
     closeAll();
-    navigate(to);
-  };
-
-  /**
-   * The shape and colour rows shared by the desktop panel and the mobile
-   * drawer: a swipeable strip of the whole taxonomy plus a way to open the
-   * full-page selector when the strip is not enough.
-   */
-  const pickers = (compact: boolean) => {
-    /* `compact` is the desktop panel. There the strip itself is the offer and
-       the whole-taxonomy page is only a fallback, so it drops to a quiet
-       underlined link under the strip — the same treatment as "voir toute la
-       boutique" and as the shop filter bar. The mobile drawer keeps the button,
-       which is the tap target a thumb needs. */
-    const section = (heading: string, to: string, label: string, carousel: ReactNode) => (
-      /* Desktop is a flex column so the two links land on one baseline even
-         though the colour tiles wrap onto a second line and the shape tiles
-         do not. */
-      <div className={`min-w-0 gap-3 ${compact ? "flex flex-col" : "grid content-start"}`}>
-        {compact ? (
-          <span className="gt-eyebrow">{heading}</span>
-        ) : (
-          <div className="flex flex-wrap items-center justify-between gap-3">
-            <span className="gt-eyebrow">{heading}</span>
-            <Button variant="outline" size="sm" onClick={() => goTo(to)}>
-              {label}
-            </Button>
-          </div>
-        )}
-        {carousel}
-        {compact && (
-          <Link
-            to={to}
-            onClick={() => {
-              clearHoverTimer();
-              closeAll();
-            }}
-            className="mt-auto self-start text-xs text-[var(--text-muted)] underline decoration-1 underline-offset-4 hover:text-[var(--text-primary)]"
-          >
-            {label}
-          </Link>
-        )}
-      </div>
-    );
-
-    return (
-      <>
-        {section(
-          t("nav.shapesHeading"),
-          "/formes",
-          t("nav.viewAllShapes"),
-          <ShapeCarousel compact={compact} groups={shapeGroups} hrefFor={(g) => shapeHref(g.shape)} onNavigate={closeAll} />,
-        )}
-        {section(
-          t("nav.colorsHeading"),
-          "/couleurs",
-          t("nav.viewAllColors"),
-          <ColorCarousel compact={compact} groups={colorGroups} hrefFor={(g) => colorHref(g.color)} onNavigate={closeAll} />,
-        )}
-      </>
-    );
+    navigate(FAVORITES_HREF);
   };
 
   const langButton = (
@@ -282,7 +214,24 @@ export function Header() {
           <div className="flex items-center gap-1">
             {langButton}
             <IconButton icon={Search} label={t("nav.search")} onClick={notIncluded} />
-            <IconButton icon={User} label={signedIn ? t("nav.account") : t("nav.signIn")} onClick={openAccount} />
+            <IconButton icon={Heart} label={wishlistLabel} badge={favoriteCount} onClick={openFavorites} />
+            {signedIn ? (
+              /* Signed in, the account is a named place — "My space", with the
+                 member's initials — rather than an anonymous person icon: it is
+                 the way back to the member space's own sidebar. */
+              <Link
+                to="/compte"
+                onClick={closeAll}
+                className="mx-1 inline-flex items-center gap-2 rounded-[var(--radius-pill)] border border-[var(--border-subtle)] bg-[var(--surface-card)] py-1 pl-1 pr-3 text-xs font-semibold uppercase tracking-[var(--tracking-wide)] text-[var(--text-primary)] transition-colors hover:border-[var(--gt-blue-300)]"
+              >
+                <span aria-hidden="true" className="grid h-7 w-7 place-items-center rounded-full bg-[var(--surface-brand)] text-[10.5px] font-[var(--weight-black)] text-[var(--gt-ink-900)]">
+                  {initials}
+                </span>
+                {t("nav.mySpace")}
+              </Link>
+            ) : (
+              <IconButton icon={User} label={t("nav.signIn")} onClick={openAccount} />
+            )}
             <IconButton
               icon={ShoppingBag}
               label={cartLabel}
@@ -301,46 +250,48 @@ export function Header() {
           <div
             id="gt-nav-panel"
             onMouseEnter={clearHoverTimer}
-            className="absolute inset-x-0 top-full max-h-[calc(100vh-76px)] overflow-y-auto border-t border-[var(--border-subtle)] bg-[var(--surface-sunken)] shadow-[var(--shadow-lg)]"
+            className="absolute inset-x-0 top-full max-h-[calc(100vh-76px)] overflow-y-auto border-t border-[var(--border-subtle)] bg-[linear-gradient(180deg,var(--surface-chrome)_0%,var(--surface-brand-wash)_55%,var(--surface-brand-wash-strong)_100%)] shadow-[var(--shadow-lg)]"
           >
-            <div className="mx-auto grid max-w-[var(--max-width-content)] gap-5 px-[var(--gutter-page-lg)] py-6">
-              <div className="grid grid-cols-[repeat(auto-fill,minmax(230px,1fr))] gap-4">
-                {panelItems.map((item) => (
-                  <Link
-                    key={pick(item.title, lang)}
-                    to={item.to}
-                    onClick={closeAll}
-                    className="flex items-center gap-3 rounded-[var(--radius-card)] border border-[var(--border-subtle)] bg-[var(--surface-card)] p-2.5 text-left shadow-[var(--shadow-xs)] transition-shadow hover:shadow-[var(--shadow-md)]"
-                  >
-                    <img
-                      src={item.thumb}
-                      alt=""
-                      loading="lazy"
-                      decoding="async"
-                      className="h-11 w-11 flex-none rounded-[var(--radius-sm)] border border-[var(--gt-blue-200)] object-cover"
-                    />
-                    <span className="grid min-w-0 gap-0.5">
-                      <span className="truncate text-[11px] font-semibold uppercase tracking-[.06em] text-[var(--text-primary)]">
-                        {pick(item.title, lang)}
+            {/* The brand-wash backdrop is what the ink-tinted card shadows are
+                tuned for; on the old sand the cards barely lifted. */}
+            <div className="mx-auto grid max-w-[var(--max-width-content)] gap-7 px-[var(--gutter-page-lg)] pb-7 pt-7">
+              {panel === "shop" ? (
+                <ShopMenu layout="columns" onNavigate={closeAll} />
+              ) : (
+                <div className="grid grid-cols-[repeat(auto-fill,minmax(230px,1fr))] gap-4">
+                  {ACADEMY_MENU.map((item) => (
+                    <Link
+                      key={pick(item.title, lang)}
+                      to={item.to}
+                      onClick={closeAll}
+                      className="flex items-center gap-3 rounded-[var(--radius-card)] border border-[var(--border-subtle)] bg-[var(--surface-card)] p-2.5 text-left shadow-[var(--shadow-card)] outline-none transition-[transform,box-shadow,border-color] duration-[var(--duration-normal)] ease-[var(--ease-out-soft)] hover:-translate-y-0.5 hover:border-[var(--gt-blue-300)] hover:shadow-[var(--shadow-card-hover)] focus-visible:border-[var(--gt-blue-400)] focus-visible:shadow-[var(--shadow-focus),var(--shadow-card-hover)]"
+                    >
+                      <img
+                        src={item.thumb}
+                        alt=""
+                        loading="lazy"
+                        decoding="async"
+                        className="h-11 w-11 flex-none rounded-[var(--radius-sm)] border border-[var(--gt-blue-200)] object-cover"
+                      />
+                      <span className="grid min-w-0 gap-0.5">
+                        <span className="truncate text-[11px] font-semibold uppercase tracking-[.06em] text-[var(--text-primary)]">
+                          {pick(item.title, lang)}
+                        </span>
+                        <span className="text-xs text-[var(--text-muted)]">{pick(item.sub, lang)}</span>
                       </span>
-                      <span className="text-xs text-[var(--text-muted)]">{pick(item.sub, lang)}</span>
-                    </span>
-                  </Link>
-                ))}
-              </div>
-              {/* Side by side: stacked, the two strips plus the category cards
-                  made the panel taller than a laptop viewport. */}
-              {panel === "shop" && (
-                <div className="grid gap-x-8 gap-y-5 border-t border-[var(--border-subtle)] pt-5 lg:grid-cols-2">
-                  {pickers(true)}
+                    </Link>
+                  ))}
                 </div>
               )}
               <Link
                 to={panelRoot.to}
                 onClick={closeAll}
-                className="justify-self-start text-xs text-[var(--text-muted)] underline decoration-1 underline-offset-4"
+                className="group/all inline-flex items-center gap-2.5 justify-self-start rounded-[var(--radius-pill)] bg-[var(--gt-ink-900)] py-2 pl-4 pr-2 text-[11px] font-semibold uppercase tracking-[var(--tracking-wide)] text-[var(--gt-white)] shadow-[var(--shadow-card)] outline-none transition-[box-shadow,transform] duration-[var(--duration-normal)] ease-[var(--ease-out-soft)] hover:-translate-y-0.5 hover:shadow-[var(--shadow-card-hover)] focus-visible:shadow-[var(--shadow-focus)]"
               >
                 {panelRoot.label}
+                <span aria-hidden="true" className="grid h-6 w-6 place-items-center rounded-full bg-[var(--gt-white)] text-[var(--gt-ink-900)] transition-transform duration-[var(--duration-normal)] ease-[var(--ease-out-soft)] group-hover/all:translate-x-0.5">
+                  <ArrowRight size={12} />
+                </span>
               </Link>
             </div>
           </div>
@@ -366,8 +317,8 @@ export function Header() {
           >
             <img src={logoBlack} alt="Global Toothgems" className="h-4 w-auto" />
           </Link>
-          <IconButton icon={Heart} label={t("nav.wishlist")} onClick={notIncluded} />
-          <IconButton icon={User} label={signedIn ? t("nav.account") : t("nav.signIn")} onClick={openAccount} />
+          <IconButton icon={Heart} label={wishlistLabel} badge={favoriteCount} onClick={openFavorites} />
+          <IconButton icon={User} label={signedIn ? t("nav.mySpace") : t("nav.signIn")} onClick={openAccount} />
           <IconButton icon={ShoppingBag} label={cartLabel} badge={count} onClick={() => navigate("/panier")} />
         </div>
         {menuOpen && (
@@ -412,32 +363,33 @@ export function Header() {
                 </button>
               ))}
             </div>
-            <div className="grid gap-2.5">
-              {mobileItems.map((item) => (
-                <Link
-                  key={pick(item.title, lang)}
-                  to={item.to}
-                  onClick={closeAll}
-                  className="flex items-center gap-3.5 rounded-[var(--radius-card)] border border-[var(--border-subtle)] bg-[var(--surface-card)] p-3 text-left shadow-[var(--shadow-xs)]"
-                >
-                  <img
-                    src={item.thumb}
-                    alt=""
-                    loading="lazy"
-                    decoding="async"
-                    className="h-[46px] w-[46px] flex-none rounded-[var(--radius-sm)] border border-[var(--gt-blue-200)] object-cover"
-                  />
-                  <span className="grid min-w-0 gap-0.5">
-                    <span className="truncate text-[11.5px] font-semibold uppercase tracking-[.06em] text-[var(--text-primary)]">
-                      {pick(item.title, lang)}
+            {menuTab === "shop" ? (
+              <ShopMenu layout="stack" onNavigate={closeAll} />
+            ) : (
+              <div className="grid gap-2.5">
+                {ACADEMY_MENU.map((item) => (
+                  <Link
+                    key={pick(item.title, lang)}
+                    to={item.to}
+                    onClick={closeAll}
+                    className="flex items-center gap-3.5 rounded-[var(--radius-card)] border border-[var(--border-subtle)] bg-[var(--surface-card)] p-3 text-left shadow-[var(--shadow-xs)]"
+                  >
+                    <img
+                      src={item.thumb}
+                      alt=""
+                      loading="lazy"
+                      decoding="async"
+                      className="h-[46px] w-[46px] flex-none rounded-[var(--radius-sm)] border border-[var(--gt-blue-200)] object-cover"
+                    />
+                    <span className="grid min-w-0 gap-0.5">
+                      <span className="truncate text-[11.5px] font-semibold uppercase tracking-[.06em] text-[var(--text-primary)]">
+                        {pick(item.title, lang)}
+                      </span>
+                      <span className="text-xs text-[var(--text-muted)]">{pick(item.sub, lang)}</span>
                     </span>
-                    <span className="text-xs text-[var(--text-muted)]">{pick(item.sub, lang)}</span>
-                  </span>
-                </Link>
-              ))}
-            </div>
-            {menuTab === "gems" && (
-              <div className="grid gap-4 border-t border-[var(--border-subtle)] pt-4">{pickers(false)}</div>
+                  </Link>
+                ))}
+              </div>
             )}
             <div className="flex items-center justify-between gap-3 pt-1">
               <Link

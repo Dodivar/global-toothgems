@@ -1,4 +1,4 @@
-import { useMemo, useState } from "react";
+import { useEffect, useMemo, useRef, useState } from "react";
 import { useTranslation } from "react-i18next";
 import { useNavigate, useSearchParams } from "react-router-dom";
 import { Archive, CircleAlert, Plus, RotateCcw, Trash2 } from "lucide-react";
@@ -11,6 +11,7 @@ import { ProductTable } from "../../components/admin/ProductTable";
 import type { ProductRowActions } from "../../components/admin/ProductRow";
 import { useAdminCatalog } from "../../lib/adminCatalog";
 import { productEditPath } from "../../lib/adminProductLinks";
+import { loadProductListFilters, saveProductListFilters } from "../../lib/adminProductListMemory";
 import { useLocalized } from "../../lib/localized";
 import { useToast } from "../../lib/toast";
 import {
@@ -28,6 +29,7 @@ import {
   type ProductStatus,
   type StockState,
 } from "../../data/adminCatalog";
+import { GEM_SHAPES, type GemShape } from "../../data/products";
 import { useAdminShell } from "./AdminLayout";
 
 /**
@@ -64,6 +66,11 @@ export function AdminProducts() {
       category: (params.get("categorie") as CategoryId | null) ?? "all",
       status: (params.get("statut") as ProductStatus | null) ?? "all",
       availability: (params.get("disponibilite") as StockState | null) ?? "all",
+      // Same parameter name as the storefront, so a slug copied from a shop
+      // URL filters the back office too. An unknown cut is ignored. Colour is
+      // not a filter of this list: a `couleur` parameter has no effect.
+      shape: GEM_SHAPES.includes(params.get("forme") as GemShape) ? (params.get("forme") as GemShape) : "all",
+      color: "all",
       sort: SORT_KEYS.includes(params.get("tri") as SortKey) ? (params.get("tri") as SortKey) : "newest",
     }),
     [params],
@@ -75,10 +82,26 @@ export function AdminProducts() {
     if (next.category !== "all") search.set("categorie", next.category);
     if (next.status !== "all") search.set("statut", next.status);
     if (next.availability !== "all") search.set("disponibilite", next.availability);
+    if (next.shape !== "all") search.set("forme", next.shape);
     if (next.sort !== "newest") search.set("tri", next.sort);
     // Replace, not push: typing in the search box must not fill the history.
     setParams(search, { replace: true });
+    saveProductListFilters(search.toString());
   };
+
+  /**
+   * The selection follows the administrator from product to product: the list
+   * reopens on the last filters used unless the URL already carries some (a
+   * dashboard card, a shared link), which win and become the new memory.
+   */
+  const saved = useRef(loadProductListFilters());
+  useEffect(() => {
+    const current = params.toString();
+    if (current) saveProductListFilters(current);
+    else if (saved.current) setParams(new URLSearchParams(saved.current), { replace: true });
+    // Mount only; later changes are the administrator's and are saved in setFilters.
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, []);
 
   const visible = useMemo(
     () => filterProducts(products, filters, i18n.language),
@@ -106,6 +129,9 @@ export function AdminProducts() {
     onOpen: (product) => setPreview(product),
     onEdit: (product) => navigate(productEditPath(product.id)),
     onEditOption: (product, variant) => navigate(productEditPath(product.id, variant)),
+    // A value clicked in the table joins the current filters rather than
+    // replacing them: narrowing further is what that click is for.
+    onFilter: (key, value) => setFilters({ ...filters, [key]: value }),
 
     onDuplicate: async (product) => {
       let copy: AdminProduct | undefined;
@@ -236,6 +262,7 @@ export function AdminProducts() {
         <ProductFilters
           filters={filters}
           onChange={setFilters}
+          products={products}
           resultCount={visible.length}
           totalCount={products.length}
         />
@@ -246,10 +273,11 @@ export function AdminProducts() {
           loading={loading}
           selectedId={previewProduct?.id}
           filtered={filtered}
+          filters={filters}
           expandAlerts={filters.availability === "out_of_stock" || filters.availability === "low_stock"}
           emptyAction={
             filtered ? (
-              <AdminButton variant="outline" onClick={() => setFilters(DEFAULT_FILTERS)}>
+              <AdminButton variant="outline" onClick={() => setFilters({ ...DEFAULT_FILTERS, sort: filters.sort })}>
                 {t("admin.filters.clear")}
               </AdminButton>
             ) : (
