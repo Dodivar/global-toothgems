@@ -54,6 +54,8 @@ A route leaves the catch-all shell only when its App Router page exists, its smo
 
 ## Phase 1 — how the shell works
 
+Historical: since phase 3.2 public pages are rendered on the server (see "Phase 3.2"); what follows still describes the browser-only path of the other areas.
+
 - `webapp/app/layout.tsx` — root layout: `<html lang="fr">`, the Google Fonts `<link>`s and the title/favicon formerly in `index.html` (title and icon through the `metadata` export), the global stylesheet `src/index.css`, and the `<div id="root">` wrapper kept from `index.html`.
 - `webapp/app/[[...slug]]/page.tsx` — the only page. It renders `ClientOnly` (`client.tsx`), which loads `src/ClientApp.tsx` (former `main.tsx`: i18n init, `StrictMode`, `BrowserRouter`, `App`) with `dynamic(..., { ssr: false })`: nothing from `src/` runs on the server. `generateStaticParams` prerenders only `/`; every other path is rendered on demand by the same page (HTTP 200, like the SPA).
 - No `output: "export"` (unlike the guide): the app is deployed as a normal Next.js app so that phase 2 can add `proxy.ts` and phase 3 server rendering without changing the deployment again. Hence no `vercel.json`: the catch-all answers every path.

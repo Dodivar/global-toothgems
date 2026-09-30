@@ -10,7 +10,7 @@ The production web application of Global Toothgems: storefront, Academy, member 
 
 - **Next.js 16 (App Router, Turbopack) + React 19 + TypeScript**
 - **Tailwind CSS v4** through PostCSS (`postcss.config.mjs`), driven by the design system's CSS variable tokens (`src/index.css`)
-- **react-router-dom** for routing inside the catch-all page `app/[[...slug]]` (phase 1 of the migration; replaced by App Router routes page by page)
+- **react-router-dom** for routing inside the catch-all page `app/[[...slug]]` (transitional: rendered on the server for public pages since phase 3.2, removed in phase 5 of the migration). Inside `src/`, keep using its `Link` / `useNavigate` with the internal French paths; `next/link` and `next/navigation` only in `app/`
 - **react-i18next** for French/English. Public pages carry their language in the address (`/fr/…`, `/en/…`, `src/lib/localeRoutes.ts`); elsewhere the saved choice (FR/EN switches), else the browser's language, else English
 - **lucide-react** for icons
 

@@ -141,6 +141,8 @@ Responsive and mobile-first where behaviour demands it (checkout, lessons, Studi
 
 Follow the established visual direction (`guidelines/03`, tokens in `webapp/src/index.css`) and reuse the existing components (`webapp/src/components/ui/`, `components/admin/`) before creating new ones.
 
+Public pages are rendered on the server, then hydrated: any component they use must render the same markup on the server and on its first browser render. Never read `window`, `document`, `localStorage`, media queries, the time or randomness during render or in a `useState` initializer — do it in an effect, or read browser state once hydrated (`webapp/src/lib/useHydrated.ts`). A hydration mismatch is a console error, which fails the smoke tests. Server-only code (`server-only`, `app/`, `src/lib/supabase/server.ts`, `publicServer.ts`) never reaches a client component.
+
 ## 12. Code quality
 
 Prefer small cohesive modules, explicit names, typed interfaces (generated `Database` types for Supabase rows), domain-oriented pure functions with tests, predictable control flow. Avoid giant components, duplicated business rules, magic numbers, unnecessary global state and speculative abstractions.
