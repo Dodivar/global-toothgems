@@ -11,6 +11,7 @@ import {
   type ReviewCustomer,
   type ReviewSubject,
 } from "../data/reviewSystem";
+import { isActiveOrder } from "../data/orders";
 import { getCourse } from "../data/courses";
 import { pick } from "../data/types";
 import { useAuth, type Profile } from "./auth";
@@ -470,7 +471,7 @@ export function useReviewEligibility() {
       if (mine) return { state: "reviewed", review: mine };
 
       if (subject.kind === "product") {
-        const holding = orders.filter((o) => o.status !== "cancelled" && o.lines.some((l) => l.productId === subject.id));
+        const holding = orders.filter((o) => isActiveOrder(o) && o.lines.some((l) => l.productId === subject.id));
         const received = holding.find((o) => o.status === "delivered" || o.status === "shipped");
         if (received) {
           return {
@@ -488,7 +489,7 @@ export function useReviewEligibility() {
       const progress = progressFor(subject.id);
       if (!progress.enrolled) return { state: "notPurchased" };
       if (!progress.completed && progress.pct < COURSE_REVIEW_THRESHOLD) return { state: "needsProgress", pct: progress.pct };
-      const order = orders.find((o) => o.status !== "cancelled" && o.lines.some((l) => l.courseId === subject.id));
+      const order = orders.find((o) => isActiveOrder(o) && o.lines.some((l) => l.courseId === subject.id));
       return {
         state: "eligible",
         // A course opened without an order in this prototype is still an

@@ -1,6 +1,7 @@
 import { useMemo } from "react";
 import { useTranslation } from "react-i18next";
 import i18n from "../i18n";
+import { toMajorUnits } from "./catalog/money";
 
 /**
  * Number-formatting locale per UI language. Currency stays EUR across all of
@@ -30,6 +31,14 @@ export function formatPrice(value: number, locale: string = priceLocale(), curre
     minimumFractionDigits: value % 1 === 0 ? 0 : 2,
     maximumFractionDigits: 2,
   }).format(value);
+}
+
+/**
+ * An amount kept in integer minor units (cents) with its currency, as the
+ * orders are: converted to major units only here, for display.
+ */
+export function formatMoney(minor: number, currency: string, locale: string = priceLocale()) {
+  return formatPrice(toMajorUnits(minor), locale, currency);
 }
 
 /**
@@ -69,6 +78,7 @@ export function useFormat() {
       locale,
       // Same signatures as the plain helpers; the locale defaults to the tree's.
       formatPrice: (value: number, at: string = locale, currency?: string) => formatPrice(value, at, currency),
+      formatMoney: (minor: number, currency: string, at: string = locale) => formatMoney(minor, currency, at),
       formatDate: (iso: string, at: string = locale) => formatDate(iso, at),
       formatDateShort: (iso: string, at: string = locale) => formatDateShort(iso, at),
       formatMonthYear: (iso: string, at: string = locale) => formatMonthYear(iso, at),

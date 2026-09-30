@@ -1,7 +1,7 @@
 import { useTranslation } from "react-i18next";
 import { Link } from "../../lib/navigation";
 import { PenLine } from "lucide-react";
-import type { OrderLine } from "../../data/orders";
+import type { PurchasedItem } from "../../data/orders";
 import { useReviewEligibility, useReviews } from "../../lib/reviews";
 
 /**
@@ -9,7 +9,7 @@ import { useReviewEligibility, useReviews } from "../../lib/reviews";
  * review" once the line can be reviewed, the review's state once it exists,
  * nothing otherwise — an order is not the place to explain eligibility rules.
  */
-export function OrderLineReviewAction({ line }: { line: OrderLine }) {
+export function OrderLineReviewAction({ line }: { line: PurchasedItem }) {
   const { t } = useTranslation();
   const eligibility = useReviewEligibility();
   const { openForm } = useReviews();

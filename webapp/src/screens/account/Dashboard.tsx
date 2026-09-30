@@ -28,7 +28,7 @@ export function Dashboard() {
   const lang = i18n.language;
   const { displayName } = useAuth();
   const { openCourse, progressFor, enrolledCourses, availableCourses, trainingFor } = useProgress();
-  const { orders } = useOrders();
+  const { orders, status: ordersStatus } = useOrders();
   // The one thing the member could review next, if anything.
   const [reviewRequest] = useReviewRequests();
 
@@ -61,7 +61,12 @@ export function Dashboard() {
           <StatTile value={String(inProgress.length)} label={t("account.statCourses")} icon={BookOpen} />
           <StatTile value={String(lessonsDone)} label={t("account.statLessons")} icon={PlayCircle} />
           <StatTile value={String(certificates)} label={t("account.statCertificates")} icon={Award} />
-          <StatTile value={String(orders.length)} label={t("account.statOrders")} icon={Package} />
+          {/* No count until the history has answered: "0" would be a wrong answer, not a pending one. */}
+          <StatTile
+            value={ordersStatus === "ready" ? String(orders.length) : "—"}
+            label={t("account.statOrders")}
+            icon={Package}
+          />
         </dl>
 
         {/* The single most useful control on the dashboard, so it keeps the dark

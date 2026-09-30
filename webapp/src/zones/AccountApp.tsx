@@ -5,6 +5,7 @@ import { AccountLayout } from "../screens/account/AccountLayout";
 import { Dashboard } from "../screens/account/Dashboard";
 import { Certificates } from "../screens/account/Certificates";
 import { Orders } from "../screens/account/Orders";
+import { OrderDetail } from "../screens/account/OrderDetail";
 import { Profile } from "../screens/account/Profile";
 import { Security } from "../screens/account/Security";
 import { Reviews as AccountReviews } from "../screens/account/Reviews";
@@ -49,6 +50,7 @@ export default function AccountApp() {
               <Route index element={<Dashboard />} />
               <Route path="attestations" element={<Certificates />} />
               <Route path="commandes" element={<Orders />} />
+              <Route path="commandes/:reference" element={<OrderDetail />} />
               <Route path="profil" element={<Profile />} />
               <Route path="securite" element={<Security />} />
               <Route path="fidelite" element={<AccountLoyalty />} />

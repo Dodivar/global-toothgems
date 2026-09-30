@@ -178,8 +178,8 @@ instead of their mock data; without them the mock stores run unchanged.
 
 | Store | Reads | Writes |
 | --- | --- | --- |
-| `lib/orders.tsx` (member area) | the account's own paid orders (`payment_status` paid / refunded / partially refunded), items and parcels | nothing: orders come from the checkout and the Stripe webhook. The demo cart's "payment" adds no order in this mode |
-| `lib/adminOrders.tsx` (back office) | every order except expired unpaid checkouts, with items, parcels and payments | status (+ implied fulfilment), cancellation (`cancel_order`), notes (appended to `admin_note`). Refunds — and cancelling or marking refunded an order that holds money — are refused with a message: they go through Stripe |
+| `lib/orders.tsx` (member area) | the account's own paid orders (`payment_status` paid / refunded / partially refunded): recorded amounts (subtotal, discount, shipping, VAT, total, gift cards, amount due), items, discounts (`order_discounts`), parcels with their contents, refunds, address snapshots — never the internal fields (`CUSTOMER_ORDER_SELECT`) | nothing: orders come from the checkout and the Stripe webhook. The demo cart's "payment" adds no order in this mode |
+| `lib/adminOrders.tsx` (back office) | every order except expired unpaid checkouts, with items, parcels and payments; the staff notes from `order_notes` (falls back to `orders.admin_note` until migration `20260930210000_order_staff_notes` is applied) | status (+ implied fulfilment), cancellation (`cancel_order`), notes (written to `orders.admin_note`, which a trigger appends to `order_notes`). Refunds — and cancelling or marking refunded an order that holds money — are refused with a message: they go through Stripe |
 | `lib/reviewsSupabase.tsx` | published reviews for visitors (public columns only); own reviews, votes and reports for customers; everything for staff | submit / edit (photos to the private `review-photos` bucket), helpful votes, reports, and every moderation action |
 
 The database enforces the review rules: only a customer whose order with the
@@ -371,7 +371,8 @@ The signed-in area is an administration dashboard: a left sidebar on desktop, a 
 | --- | --- |
 | `/compte` | Dashboard — summary tiles, the "resume where you left off" card, the courses being followed with their module breakdown, and the courses still available |
 | `/compte/attestations` | Certificates |
-| `/compte/commandes` | Order history, with parcel tracking |
+| `/compte/commandes` | Order history, with parcel tracking and lifetime spend per currency |
+| `/compte/commandes/:reference` | One order: lines as bought, recorded amounts, parcels and tracking, refunds, addresses; "Print the summary" (an order summary, explicitly not an invoice) |
 | `/compte/fidelite` | Loyalty card — the stamp card, the reward, and the demo controls |
 | `/compte/profil` | Profile details, editable |
 
@@ -379,7 +380,7 @@ The sidebar also links out to the course catalogue (`/academy`) and signs the me
 
 The member area is capped at `--max-width-account` rather than `--max-width-content`: it spends a 248 px sidebar, the column gap and its own gutters out of the width every other screen gives entirely to content, so the wider cap is what makes its content column measure the same 1240 px as the shop grid.
 
-The sections own no state of their own. Learning progress lives in `lib/progress.tsx`, order history in `lib/orders.tsx` and the member profile in `lib/auth.tsx` — in-memory contexts shaped like the existing `lib/cart.tsx`. The lesson player writes to the first and the cart writes to the second; since the member space became its own zone (a full page load away, phase 4 of `docs/migration-nextjs.md`), those mock writes reset before the dashboard shows them, as on a reload. Certificates are derived from a course reaching 100 %, never stored as a separate flag, and the delivery timeline is derived from the order status for the same reason. Editing the profile moves the greeting and the avatar, because both are derived from the stored name rather than copied from it.
+The sections own no state of their own. Learning progress lives in `lib/progress.tsx`, order history in `lib/orders.tsx` and the member profile in `lib/auth.tsx` — in-memory contexts shaped like the existing `lib/cart.tsx`. The lesson player writes to the first and the cart writes to the second; since the member space became its own zone (a full page load away, phase 4 of `docs/migration-nextjs.md`), those mock writes reset before the dashboard shows them, as on a reload. Certificates are derived from a course reaching 100 %, never stored as a separate flag, and the delivery timeline is derived from the order's recorded status and fulfilment for the same reason. Order amounts are integer minor units plus the order's currency (`data/orders.ts`), taken as recorded — never re-added from the lines — and formatted only at display (`formatMoney`); an order has three independent state axes (status, payment, fulfilment), a refund is not a cancellation. Editing the profile moves the greeting and the avatar, because both are derived from the stored name rather than copied from it.
 
 Progress is computed against the course each product opens (`Course.trainingId`), as authored in the back office — see the learning experience below. The Academy sales pages still advertise the single syllabus in `data/lessons.ts`; moving them onto the authored courses is the next step.
 

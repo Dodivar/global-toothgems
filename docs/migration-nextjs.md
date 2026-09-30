@@ -241,6 +241,7 @@ Legend (phase 1 done: every route below is served by the catch-all shell; phase 
 | `/compte` | account | ✅ | ✅ (redirect + mock sign-in; proxy redirect and cookie session in `auth-server`) | ✅ `app/compte` | — | done (4) |
 | `/compte/attestations` | account | ✅ | ✅ (`zones.spec.ts`) | ✅ `app/compte` | — | done (4) |
 | `/compte/commandes` | account | ✅ | ✅ (redirect, `zones.spec.ts`) | ✅ `app/compte` | — | done (4) |
+| `/compte/commandes/:reference` | account | ✅ | ✅ (`orders.spec.ts`; proxy redirect in `auth-server`) | ✅ `app/compte` | — | done (4) — added 2026-09-30 (order detail, zone route in `AccountApp`) |
 | `/compte/profil` | account | ✅ | ✅ (`zones.spec.ts`) | ✅ `app/compte` | — | done (4) |
 | `/compte/securite` | account | ✅ | ✅ (`zones.spec.ts`) | ✅ `app/compte` | — | done (4) |
 | `/compte/fidelite` | account | ✅ | ✅ (`zones.spec.ts`) | ✅ `app/compte` | — | done (4) |

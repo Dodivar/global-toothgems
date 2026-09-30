@@ -1081,6 +1081,13 @@
 @media print {
   .gt-review-note,
   .gt-cookie-banner { display: none !important; }
+  /* A page with a print area (the order summary) prints only that area,
+     without the member shell around it. */
+  body:has(.gt-print-area) * { visibility: hidden; }
+  .gt-print-area,
+  .gt-print-area * { visibility: visible; }
+  .gt-print-area { position: absolute; inset: 0 0 auto 0; }
+  .gt-print-area .gt-no-print { display: none !important; }
 }
 
 /* ---------------------------------------------------------------------------

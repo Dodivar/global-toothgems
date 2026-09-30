@@ -1,36 +1,64 @@
 import type { ReactNode } from "react";
 import { useTranslation } from "react-i18next";
 import { Link } from "../../lib/navigation";
-import { Receipt, Truck } from "lucide-react";
+import { ArrowRight, Truck } from "lucide-react";
 import { Badge, type BadgeTone } from "../ui/Badge";
-import { Button } from "../ui/Button";
 import { ProgressBar } from "../ui/ProgressBar";
 import {
+  isActiveOrder,
   isShipment,
   orderItemCount,
-  orderTotal,
   shipmentStep,
   type Order,
-  type OrderLine,
+  type OrderPaymentState,
   type OrderStatus,
+  type PurchasedItem,
 } from "../../data/orders";
 import { pick } from "../../data/types";
 import { useFormat } from "../../lib/format";
+import { orderHref } from "../../lib/memberSpace";
 
 const statusTone: Record<OrderStatus, BadgeTone> = {
   processing: "warning",
+  confirmed: "success",
   shipped: "brand",
   delivered: "success",
   accessGranted: "success",
   cancelled: "neutral",
+  refunded: "neutral",
 };
 
 /**
- * Delivery timeline for a physical order. The step comes from the order status,
- * so a status change moves the timeline and the two can never disagree. Course
- * orders and cancelled orders have nothing in transit and never render it.
+ * The order's state as text: its commercial status and, when money went
+ * back, the payment state — two independent axes, both worded (never colour
+ * alone).
  */
-function ShipmentTracking({ order }: { order: Order }) {
+export function OrderStatusBadges({ order }: { order: Order }) {
+  const { t } = useTranslation();
+  const showPayment: OrderPaymentState | null =
+    order.payment === "partiallyRefunded" || (order.payment === "refunded" && order.status !== "refunded")
+      ? order.payment
+      : null;
+  return (
+    <span className="flex flex-wrap gap-1.5">
+      <Badge tone={statusTone[order.status]} size="sm">
+        {t(`account.orderStatus.${order.status}`)}
+      </Badge>
+      {showPayment && (
+        <Badge tone="highlight" size="sm">
+          {t(`account.orderPayment.${showPayment}`)}
+        </Badge>
+      )}
+    </span>
+  );
+}
+
+/**
+ * Delivery timeline for a physical order. The step comes from the recorded
+ * statuses, so the timeline and the badge never disagree. Digital orders and
+ * orders that no longer stand have nothing in transit and never render it.
+ */
+export function ShipmentTracking({ order }: { order: Order }) {
   const { formatDateShort } = useFormat();
   const { t } = useTranslation();
   const steps = [
@@ -46,7 +74,7 @@ function ShipmentTracking({ order }: { order: Order }) {
           <Truck size={15} aria-hidden="true" />
           {t("account.trackingTitle")}
         </strong>
-        {order.tracking && (
+        {order.tracking?.estimatedDelivery && (
           <span className="text-[length:var(--text-caption)] text-[var(--text-muted)]">
             {t(order.status === "delivered" ? "account.trackingDeliveredOn" : "account.trackingEta", {
               date: formatDateShort(order.tracking.estimatedDelivery),
@@ -56,6 +84,10 @@ function ShipmentTracking({ order }: { order: Order }) {
       </div>
 
       <ProgressBar variant="steps" tone="ink" steps={steps} current={shipmentStep(order)} />
+
+      {order.fulfilment === "partiallyShipped" && order.status !== "delivered" && (
+        <p className="m-0 text-[length:var(--text-caption)] text-[var(--text-body)]">{t("account.trackingPartial")}</p>
+      )}
 
       {order.tracking ? (
         <dl className="m-0 flex flex-wrap gap-x-8 gap-y-1 text-[length:var(--text-caption)]">
@@ -80,19 +112,16 @@ function ShipmentTracking({ order }: { order: Order }) {
 export function OrderCard({
   order,
   lang,
-  onInvoice,
   lineAction,
 }: {
   order: Order;
   lang: string;
-  onInvoice: () => void;
   /** Extra control under a line's details — the order history uses it for "Write a review". */
-  lineAction?: (line: OrderLine) => ReactNode;
+  lineAction?: (line: PurchasedItem) => ReactNode;
 }) {
-  const { formatDate, formatPrice } = useFormat();
+  const { formatDate, formatMoney } = useFormat();
   const { t } = useTranslation();
-  const total = orderTotal(order);
-  const cancelled = order.status === "cancelled";
+  const active = isActiveOrder(order);
 
   return (
     <li className="grid gap-4 rounded-[var(--radius-card)] border border-[var(--border-subtle)] bg-[var(--surface-card)] p-[var(--space-5)] shadow-[var(--shadow-xs)]">
@@ -106,25 +135,27 @@ export function OrderCard({
             {t("account.orderItems", { count: orderItemCount(order) })}
           </span>
         </div>
-        <Badge tone={statusTone[order.status]} size="sm">
-          {t(`account.orderStatus.${order.status}`)}
-        </Badge>
+        <OrderStatusBadges order={order} />
       </div>
 
       <ul className="m-0 grid list-none gap-3 p-0">
-        {order.lines.map((line, i) => {
+        {order.lines.map((line) => {
           const name = pick(line.name, lang);
           const to = line.productId ? `/boutique/${line.productId}` : null;
           return (
-            <li key={`${order.reference}-${i}`} className="flex items-center gap-3">
-              <img
-                src={line.image}
-                alt=""
-                loading="lazy"
-                decoding="async"
-                className="h-12 w-12 flex-none rounded-[var(--radius-sm)] object-cover"
-                style={{ opacity: cancelled ? 0.5 : 1 }}
-              />
+            <li key={line.id} className="flex items-center gap-3">
+              {line.image ? (
+                <img
+                  src={line.image}
+                  alt=""
+                  loading="lazy"
+                  decoding="async"
+                  className="h-12 w-12 flex-none rounded-[var(--radius-sm)] object-cover"
+                  style={{ opacity: active ? 1 : 0.5 }}
+                />
+              ) : (
+                <span aria-hidden="true" className="h-12 w-12 flex-none rounded-[var(--radius-sm)] bg-[var(--surface-sunken)]" />
+              )}
               <span className="grid min-w-0 flex-1 gap-0.5">
                 <span className="truncate text-[length:var(--text-body-sm)] font-semibold text-[var(--text-primary)]">
                   {to ? (
@@ -139,10 +170,10 @@ export function OrderCard({
                   {line.variant ? `${pick(line.variant, lang)} · ` : ""}
                   {t("account.orderQty", { qty: line.qty })}
                 </span>
-                {lineAction && !cancelled && lineAction(line)}
+                {lineAction && active && lineAction(line)}
               </span>
               <span className="whitespace-nowrap text-[length:var(--text-body-sm)] tabular-nums text-[var(--text-body)]">
-                {formatPrice(line.unitPrice * line.qty)}
+                {formatMoney(line.totalAmount, order.currency)}
               </span>
             </li>
           );
@@ -152,11 +183,23 @@ export function OrderCard({
       {isShipment(order) && <ShipmentTracking order={order} />}
 
       <div className="flex flex-wrap items-center justify-between gap-3 border-t border-[var(--border-subtle)] pt-3">
-        <Button variant="ghost" size="sm" iconLeft={Receipt} onClick={onInvoice}>
-          {t("account.orderInvoice")}
-        </Button>
-        <span className="text-[length:var(--text-body-sm)] font-bold tabular-nums text-[var(--text-primary)]">
-          {t("account.orderTotal")} {formatPrice(total)}
+        <Link
+          to={orderHref(order.reference)}
+          aria-label={t("account.orderViewLabel", { reference: order.reference })}
+          className="inline-flex h-9 items-center gap-2 rounded-[var(--radius-control)] px-4 text-[length:var(--text-caption)] font-semibold uppercase tracking-[var(--tracking-wide)] text-[var(--text-primary)] hover:bg-[var(--gt-ink-100)] focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-[var(--focus-ring)]"
+        >
+          {t("account.orderView")}
+          <ArrowRight size={14} aria-hidden="true" />
+        </Link>
+        <span className="grid justify-items-end gap-0.5">
+          <span className="text-[length:var(--text-body-sm)] font-bold tabular-nums text-[var(--text-primary)]">
+            {t("account.orderTotal")} {formatMoney(order.amounts.total, order.currency)}
+          </span>
+          {order.amounts.refunded > 0 && (
+            <span className="text-[length:var(--text-caption)] tabular-nums text-[var(--text-muted)]">
+              {t("account.orderRefundedAmount", { amount: formatMoney(order.amounts.refunded, order.currency) })}
+            </span>
+          )}
         </span>
       </div>
     </li>

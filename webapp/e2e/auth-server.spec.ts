@@ -31,6 +31,8 @@ test.describe("proxy", () => {
     ["/compte/communaute/membres", "/connexion?suite=%2Fcompte%2Fcommunaute%2Fmembres"],
     ["/academy/mes-formations/business/terminee", "/connexion?suite=%2Facademy%2Fmes-formations%2Fbusiness%2Fterminee"],
     ["/admin/avis?vue=signales", "/admin/connexion?suite=%2Fadmin%2Favis%3Fvue%3Dsignales"],
+    // An order's detail page.
+    ["/compte/commandes/GT-100001", "/connexion?suite=%2Fcompte%2Fcommandes%2FGT-100001"],
   ]) {
     test(`sends a signed-out visitor from ${path} to ${target.split("?")[0]}`, async ({ request }) => {
       const response = await request.get(path, noRedirect);

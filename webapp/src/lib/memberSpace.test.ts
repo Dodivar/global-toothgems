@@ -1,5 +1,5 @@
 import { describe, expect, it } from "vitest";
-import { isMemberSpacePath } from "./memberSpace";
+import { isMemberSpacePath, orderHref } from "./memberSpace";
 
 describe("isMemberSpacePath", () => {
   it("matches the account and every screen under it", () => {
@@ -12,5 +12,12 @@ describe("isMemberSpacePath", () => {
     expect(isMemberSpacePath("/comptes")).toBe(false);
     expect(isMemberSpacePath("/boutique")).toBe(false);
     expect(isMemberSpacePath("/")).toBe(false);
+  });
+});
+
+describe("orderHref", () => {
+  it("addresses an order's detail page by its reference", () => {
+    expect(orderHref("GT-100149")).toBe("/compte/commandes/GT-100149");
+    expect(isMemberSpacePath(orderHref("GT-100149"))).toBe(true);
   });
 });

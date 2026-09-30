@@ -57,6 +57,7 @@ supabase/
   tests/iteration13_validation.sql  iteration 13 gem colours suite (always rolls back)
   tests/iteration15_validation.sql  iteration 15 product variants of any kind (colours, boxes…) + their photos suite (always rolls back)
   tests/iteration17_validation.sql  iteration 17 member wishlist (favourites) suite (always rolls back)
+  tests/iteration18_validation.sql  iteration 18 "My orders" isolation + staff order notes suite (always rolls back)
   templates/confirm-signup.html     French "Confirm signup" email, to paste into the Auth settings
 ```
 
@@ -98,6 +99,7 @@ supabase/
 | 20260928223009 | `product_custom_variants` | `admin_save_product()` gains an optional `custom_variants` list (every variant that is not a pack/SS option: browser-generated id, fr + en name, optional `attributes.swatch` `#rrggbb` merged into the other attributes, optional price, stock) and an optional `media[].variant_id`; SKU derived once from the product SKU + French name, unique; names can be swapped in one save; a variant left out is deleted, or deactivated when ordered; refused alongside `variants` or on a product selling pack/SS options; returns `custom_variants` |
 | 20260929120000 | `category_families` | second level of the shop taxonomy: `category_families` (under one category, `slug` unique across categories = `famille` URL value, `is_active`, `position`, audited) + `category_family_translations`; optional `products.family_id` with a composite FK `(category_id, family_id)` and a trigger clearing a family the new category does not have; categories reorganised into `gems` (Toothgems), `materiel` (former `outils`), `kits`, `lip-gloss`, `entretien` / `accessoires` emptied into `materiel` and hidden; hosted products classified by slug; `admin_save_product()` gains an optional `family_id` (absent = unchanged) and returns it |
 | 20260930090111 | `wishlist` | `wishlist_items` (member × product, composite key, `user_id` defaults to `auth.uid()`, both CASCADE); members read, add and remove only their own rows; adding needs an active account and an active product; only `product_id` is insertable, nothing is updatable; no visitor or staff access |
+| 20260930210000 | `order_staff_notes` | **Not applied yet (awaiting the owner's go).** `order_notes` (one per order, staff read, `manage_orders` writes, audited); trigger `orders_zz_move_admin_note` appends anything written to `orders.admin_note` (staff edits, the checkout's automatic notes) to `order_notes` and empties the column; check `orders_admin_note_moved` (column always NULL); existing notes moved. Reason: RLS filters rows, not columns, so members could read the internal notes of their own orders |
 
 RLS is **enabled in the same migration that creates each table** (deny by default);
 policies are granted back in `rls_policies`.
@@ -159,7 +161,7 @@ statuses as `text` + `CHECK` (easy to extend, no enum migrations), money as
 | `product_media` | Storage object path + `media_type`, `alt_text`, `position`, `is_primary` (max one per product), optional `variant_id`. No binaries in Postgres. |
 | `inventory_items` | exactly one of `product_id`/`variant_id`; `quantity_on_hand`, `quantity_reserved` (≤ on hand), `low_stock_threshold`, `track_inventory`, manual `availability`; generated `stock_status` (`in_stock`/`low_stock`/`out_of_stock`/`preorder`). |
 | `customer_addresses` | many per user, `address_type` shipping/billing, one default per type (setting a new default clears the old one), ISO `country_code`, nullable `postal_code`/`region`. |
-| `orders` | `order_number` `GT-100001…`, `user_id` (SET NULL on account deletion — accounting records survive), `customer_email` + `billing_address`/`shipping_address` **JSONB snapshots**, subtotal/discount/shipping/tax/total, `prices_include_tax` (EU VAT-inclusive default), `status`, `payment_status`, `fulfillment_status`, `customer_note`, `admin_note`. |
+| `orders` | `order_number` `GT-100001…`, `user_id` (SET NULL on account deletion — accounting records survive), `customer_email` + `billing_address`/`shipping_address` **JSONB snapshots**, subtotal/discount/shipping/tax/total, `prices_include_tax` (EU VAT-inclusive default), `status`, `payment_status`, `fulfillment_status`, `customer_note`, `admin_note` (deprecated, always NULL once `order_staff_notes` is applied: notes live in `order_notes`, staff only). |
 | `order_items` | frozen `product_name`, `variant_name`, `sku`, `unit_price`, `quantity`, generated `subtotal_amount`. |
 | `languages` | `fr` (default = language of base columns), `en`, `de` enabled; `it`, `es`, `pt`, `nl` disabled. |
 | `*_translations` | one row per (entity, non-default locale); product translations carry a localized `slug` (unique per locale) and `meta_title`/`meta_description`; `status` draft/published — only published rows are public. A translation for the default locale is rejected. |
@@ -218,6 +220,19 @@ Mirrors the review prototype (`webapp/src/data/reviewSystem.ts`, `lib/reviews.ts
 - `product_review_stats` (view, RLS-aware): count, average, star buckets, verified, with photos.
 - Courses are not modelled yet: reviews target products; courses will add a `course_id` and widen
   `reviews_one_subject` (course tags are already in the allowed list).
+
+### What a member reads of an order ("My orders", iteration 18)
+
+The member area (`webapp/src/lib/orders.tsx`, `CUSTOMER_ORDER_SELECT`) reads, through RLS, only its own
+orders whose `payment_status` is paid / partially refunded / refunded, with `order_items`, `order_discounts`,
+`shipments` + `shipment_items`, `refunds` + `refund_items`. Amounts are shown **as recorded** (subtotal,
+discount, shipping, VAT, total, gift cards, amount due, succeeded refunds), never recomputed in the browser.
+RLS is row-level: a member can technically also read, on their **own** rows, `orders.cancellation_reason`,
+`orders.updated_by`, `refunds.failure_reason` / `requested_by` / `provider_refund_id`, `shipments.created_by`
+/ `updated_by`, `payments` references. The app does not select them; staff free text there should stay
+customer-safe (decision 38). The internal notes are the exception that had to move (`order_notes`).
+`supabase/tests/iteration18_validation.sql` checks own-rows-only for every table above and that notes stay
+staff-only.
 
 ### Shipments and tracking (iteration 3)
 
@@ -776,6 +791,17 @@ VAT rates, shipping zones/rates mirroring the Settings prototype. Media rows ref
     moves the product page: old slugs are not kept, and an old link to a renamed product becomes a 404. A slug
     history table would be the fix if renames become common. `meta_title` / `meta_description` are not used yet
     (empty, not editable in the back office).
+38. **Internal order notes moved to `order_notes` (proposed Sept 2026, migration not applied yet).** The
+    column stays (always NULL, a check forbids a value) because the checkout's stock trigger still writes
+    `new.admin_note`; dropping it means rewriting those functions — a follow-up once the Stripe work settles.
+    Other staff-written fields remain readable by the owner of the order (`cancellation_reason`,
+    `refunds.failure_reason`): keep them customer-safe, or move them the same way if they need to be internal.
+39. **No invoices yet.** The member area offers a printable *order summary*, labelled as not being an invoice.
+    Legal invoices (sequential numbering, seller details, VAT breakdown per rate, credit notes) remain a
+    future iteration ("Next iterations", item on invoices / credit notes).
+40. **Guest orders are not attached to an account.** An order placed without an account (`user_id` NULL) never
+    appears in "My orders", even if the e-mail later signs up. Attaching them (by verified e-mail, at sign-up or
+    on demand) is an open business decision — not implemented.
 
 ## Done
 
@@ -813,6 +839,8 @@ VAT rates, shipping zones/rates mirroring the Settings prototype. Media rows ref
   and moves the gallery to the picked variant's photo.
 - Iteration 16: product families — categories › families taxonomy, composite FK, family cleared on a category
   change, `admin_save_product()` family input, visitor RLS on families and their translations.
+- Iteration 18 ("My orders", migration **not applied yet**): internal order notes out of the customer's reach
+  (`order_notes`), isolation suite for everything the member area reads of an order.
 
 ## Next iterations (not implemented)
 

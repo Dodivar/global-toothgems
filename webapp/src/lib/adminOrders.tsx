@@ -102,23 +102,38 @@ function SupabaseAdminOrdersProvider({ children }: { children: ReactNode }) {
   const [rows, setRows] = useState<AdminOrderRow[] | null>(null);
   const [attempt, setAttempt] = useState(0);
 
+  /**
+   * Whether the staff notes live in `order_notes` (migration
+   * `20260930210000_order_staff_notes`), where customers cannot read them.
+   * Until that migration is applied, the book falls back to the old
+   * `orders.admin_note` column, so it keeps working either way.
+   */
+  const [notesTable, setNotesTable] = useState(false);
+
   useEffect(() => {
     const controller = new AbortController();
-    requireSupabase()
-      .from("orders")
-      .select(ADMIN_ORDER_SELECT)
-      .order("created_at", { ascending: false })
-      .abortSignal(controller.signal)
-      .then(({ data, error }) => {
-        if (controller.signal.aborted) return;
-        if (error) {
-          console.error("[admin orders] load failed", error.message);
-          setRows([]);
-          showToast(t("admin.orders.loadErrorTitle"), t("admin.orders.loadErrorBody"), "error");
-          return;
-        }
-        setRows((data as unknown as AdminOrderRow[]).filter(isInBook));
-      });
+    const client = requireSupabase();
+    void Promise.all([
+      client.from("orders").select(ADMIN_ORDER_SELECT).order("created_at", { ascending: false }).abortSignal(controller.signal),
+      client.from("order_notes").select("order_id, body").abortSignal(controller.signal),
+    ]).then(([{ data, error }, notes]) => {
+      if (controller.signal.aborted) return;
+      if (error) {
+        console.error("[admin orders] load failed", error.message);
+        setRows([]);
+        showToast(t("admin.orders.loadErrorTitle"), t("admin.orders.loadErrorBody"), "error");
+        return;
+      }
+      const loaded = (data as unknown as AdminOrderRow[]).filter(isInBook);
+      if (notes.error) {
+        setNotesTable(false);
+        setRows(loaded);
+        return;
+      }
+      const byOrder = new Map(notes.data.map((n) => [n.order_id, n.body]));
+      setNotesTable(true);
+      setRows(loaded.map((row) => ({ ...row, admin_note: byOrder.get(row.id) ?? row.admin_note })));
+    });
     return () => controller.abort();
   }, [attempt, showToast, t]);
 
@@ -189,16 +204,21 @@ function SupabaseAdminOrdersProvider({ children }: { children: ReactNode }) {
 
   const refund = refuseMoney;
 
-  /** Appended to the order's single note column, signed and dated. */
+  /**
+   * Appended to the order's note, signed and dated. Written through
+   * `orders.admin_note`: with `order_notes` in place, a database trigger
+   * appends the entry there and empties the column; before it, the whole
+   * note is rewritten in the column as it always was.
+   */
   const addNote = useCallback(
     (reference: string, body: string, author: string) => {
       const row = rows?.find((r) => r.order_number === reference);
       if (!row) return;
       const entry = `${author} · ${new Date().toLocaleString()}\n${body.trim()}`;
-      const note = row.admin_note ? `${row.admin_note}\n\n${entry}` : entry;
+      const note = notesTable || !row.admin_note ? entry : `${row.admin_note}\n\n${entry}`;
       write(async () => [await requireSupabase().from("orders").update({ admin_note: note }).eq("id", row.id)]);
     },
-    [rows, write],
+    [rows, write, notesTable],
   );
 
   const value = useMemo<AdminOrdersContextValue>(

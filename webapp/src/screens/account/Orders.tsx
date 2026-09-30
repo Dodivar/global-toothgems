@@ -6,22 +6,19 @@ import { OrderCard } from "../../components/account/OrderCard";
 import { OrderLineReviewAction } from "../../components/reviews/OrderLineReviewAction";
 import { EmptyPanel, SectionHeader } from "../../components/account/SectionHeader";
 import { useOrders } from "../../lib/orders";
-import { useToast } from "../../lib/toast";
 import { useFormat } from "../../lib/format";
 
 /**
  * Purchase history and parcel tracking. The list comes from `lib/orders.tsx`:
  * the account's paid orders in Supabase, or the prototype's in-memory history.
+ * Each order opens its detail page (`OrderDetail`).
  */
 export function Orders() {
-  const { formatPrice } = useFormat();
+  const { formatMoney } = useFormat();
   const { t, i18n } = useTranslation();
   const navigate = useNavigate();
   const lang = i18n.language;
   const { orders, status, reload, totalSpent } = useOrders();
-  const { showToast } = useToast();
-
-  const invoiceNotShipped = () => showToast(t("common.notIncludedTitle"), t("common.notIncludedScreen"), "info");
 
   return (
     <section className="grid gap-5">
@@ -31,10 +28,13 @@ export function Orders() {
         title={t("account.ordersTitle")}
         description={t("account.ordersBody")}
         actions={
-          orders.length > 0 && (
+          totalSpent.length > 0 && (
             <span className="text-[length:var(--text-caption)] text-[var(--text-muted)]">
               {t("account.ordersTotalSpent")}{" "}
-              <strong className="tabular-nums text-[var(--text-primary)]">{formatPrice(totalSpent)}</strong>
+              <strong className="tabular-nums text-[var(--text-primary)]">
+                {/* One amount per currency: amounts in different currencies are never added. */}
+                {totalSpent.map((spent) => formatMoney(spent.amount, spent.currency)).join(" · ")}
+              </strong>
             </span>
           )
         }
@@ -70,7 +70,6 @@ export function Orders() {
               key={order.reference}
               order={order}
               lang={lang}
-              onInvoice={invoiceNotShipped}
               lineAction={(line) => <OrderLineReviewAction line={line} />}
             />
           ))}
