@@ -1,6 +1,5 @@
 import { Routes, Route } from "react-router-dom";
 import { Navigate, useLocation } from "./lib/navigation";
-import type { CatalogSeed } from "./lib/catalog/CatalogProvider";
 import { AppShell, MAINTENANCE_ROUTE } from "./AppShell";
 import { ZoneExit } from "./zones/ZoneExit";
 import { HomeAlt } from "./screens/HomeAlt";
@@ -66,11 +65,10 @@ function StudioShareAlias() {
  * The public zone (`lib/appZones.ts`, docs/migration-nextjs.md): storefront,
  * public pages, sign-in, registration and recovery, system pages. Rendered by
  * the catch-all page `app/[[...slug]]` — on the server for public pages.
- * `catalog`: what the server read of the catalogue for a server-rendered page.
  */
-export default function App({ catalog }: { catalog?: CatalogSeed }) {
+export default function App() {
   return (
-    <AppShell zone="public" catalog={catalog}>
+    <AppShell zone="public">
       <Routes>
         <Route path="/" element={<HomeAlt />} />
         {/* The home page used to be previewed here while two art

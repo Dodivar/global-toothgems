@@ -1,8 +1,10 @@
 import type { Metadata } from "next";
 import { headers } from "next/headers";
 import type { ReactNode } from "react";
-import { isLocale } from "../src/lib/localeRoutes";
-import { LOCALE_HEADER } from "../src/lib/localeHeader";
+import { isLocale, parsePath } from "../src/lib/localeRoutes";
+import { LOCALE_HEADER, PATH_HEADER } from "../src/lib/localeHeader";
+import { loadCatalogSeed } from "../src/lib/catalog/serverCatalog";
+import { AppProviders } from "../src/AppProviders";
 import { siteUrl } from "../src/lib/siteUrl";
 import "../src/index.css";
 
@@ -15,10 +17,18 @@ export const metadata: Metadata = {
 };
 
 export default async function RootLayout({ children }: { children: ReactNode }) {
+  const requestHeaders = await headers();
   // The page's language, from the proxy (address prefix, else the visitor's preference).
-  const locale = (await headers()).get(LOCALE_HEADER);
+  const asked = requestHeaders.get(LOCALE_HEADER);
+  const locale = isLocale(asked) ? asked : "fr";
+  // What the stores start from on a public page: the part of the catalogue it
+  // shows (`loadCatalogSeed`), read for the address the proxy saw. Read once
+  // per page load: a later client-side navigation keeps what the stores hold
+  // and they load the rest themselves.
+  const route = parsePath((requestHeaders.get(PATH_HEADER) ?? "/").split("?")[0]).route;
+  const catalog = route ? await loadCatalogSeed(route.id) : undefined;
   return (
-    <html lang={isLocale(locale) ? locale : "fr"}>
+    <html lang={locale}>
       <head>
         <link rel="preconnect" href="https://fonts.googleapis.com" />
         <link rel="preconnect" href="https://fonts.gstatic.com" crossOrigin="" />
@@ -28,7 +38,11 @@ export default async function RootLayout({ children }: { children: ReactNode }) 
         />
       </head>
       <body>
-        <div id="root">{children}</div>
+        <div id="root">
+          <AppProviders locale={locale} catalog={catalog}>
+            {children}
+          </AppProviders>
+        </div>
       </body>
     </html>
   );

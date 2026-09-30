@@ -48,6 +48,16 @@ interface FavoritesContextValue {
   reload: () => void;
 }
 
+/** The account dialog's state, shown by `FavoriteAccountDialogHost` in the page chrome. */
+interface FavoritesDialogValue {
+  open: boolean;
+  productName?: string;
+  /** Closes it; `dismissed`: the visitor declined, the remembered product is dropped. */
+  close: (dismissed: boolean) => void;
+}
+
+const FavoritesDialogContext = createContext<FavoritesDialogValue | null>(null);
+
 const FavoritesContext = createContext<FavoritesContextValue | null>(null);
 
 interface FavoritesList {
@@ -65,7 +75,6 @@ export function FavoritesProvider({ children }: { children: ReactNode }) {
   const { signedIn, email } = useAuth();
   const { products, source, status: catalogStatus, findProduct } = useCatalog();
   const { showToast } = useToast();
-  const location = useLocation();
 
   // The list is tagged with the account it belongs to, so signing out or
   // switching accounts shows nothing stale before the new list arrives.
@@ -189,20 +198,36 @@ export function FavoritesProvider({ children }: { children: ReactNode }) {
     [status, isFavorite, toggleFavorite, favoriteProducts, requestAccount, reload],
   );
 
+  const closeDialog = useCallback((dismissed: boolean) => {
+    if (dismissed) clearPendingFavorite(browserStore());
+    setDialog({ open: false });
+  }, []);
+  const dialogValue = useMemo<FavoritesDialogValue>(() => ({ ...dialog, close: closeDialog }), [dialog, closeDialog]);
+
   return (
     <FavoritesContext.Provider value={value}>
-      {children}
-      <FavoriteAccountDialog
-        open={dialog.open}
-        productName={dialog.productName}
-        returnTo={location.pathname + location.search}
-        onContinue={() => setDialog({ open: false })}
-        onDismiss={() => {
-          clearPendingFavorite(browserStore());
-          setDialog({ open: false });
-        }}
-      />
+      <FavoritesDialogContext.Provider value={dialogValue}>{children}</FavoritesDialogContext.Provider>
     </FavoritesContext.Provider>
+  );
+}
+
+/**
+ * The account dialog of a signed-out visitor's heart tap, in the page chrome
+ * rather than in the provider: it leads to the sign-in page, with the page to
+ * come back to, through the navigation of the page it is shown on.
+ */
+export function FavoriteAccountDialogHost() {
+  const dialog = useContext(FavoritesDialogContext);
+  const location = useLocation();
+  if (!dialog) return null;
+  return (
+    <FavoriteAccountDialog
+      open={dialog.open}
+      productName={dialog.productName}
+      returnTo={location.pathname + location.search}
+      onContinue={() => dialog.close(false)}
+      onDismiss={() => dialog.close(true)}
+    />
   );
 }
 

@@ -2,7 +2,7 @@ import type { Metadata } from "next";
 import { notFound, permanentRedirect } from "next/navigation";
 import { jsonLdScript, productAddresses, productDescription, productJsonLd, productTitle } from "../../src/lib/catalog/productMeta";
 import { productSlug } from "../../src/lib/catalog/productSlugs";
-import { findPublicProduct, loadCatalogSeed } from "../../src/lib/catalog/serverCatalog";
+import { findPublicProduct } from "../../src/lib/catalog/serverCatalog";
 import { localizedPath, type Locale } from "../../src/lib/localeRoutes";
 import { siteUrl } from "../../src/lib/siteUrl";
 import { ServerRendered } from "../[[...slug]]/client";
@@ -54,7 +54,7 @@ export async function ProductPage({ props, locale }: { props: ProductPageProps; 
   return (
     <>
       <script type="application/ld+json" dangerouslySetInnerHTML={{ __html: jsonLdScript(productJsonLd(product, locale, siteUrl())) }} />
-      <ServerRendered address={address} locale={locale} catalog={await loadCatalogSeed("product")} />
+      <ServerRendered address={address} locale={locale} />
     </>
   );
 }

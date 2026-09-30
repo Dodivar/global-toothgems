@@ -2,7 +2,6 @@ import type { Metadata } from "next";
 import { notFound } from "next/navigation";
 import { isKnownPath, parsePath } from "../../src/lib/localeRoutes";
 import { pageMeta } from "../../src/lib/pageMeta";
-import { loadCatalogSeed } from "../../src/lib/catalog/serverCatalog";
 import { publicPageMetadata } from "../_public/metadata";
 import { searchOf } from "../_public/search";
 import { ClientOnly, ServerRendered } from "./client";
@@ -49,7 +48,5 @@ export default async function Page(props: Props) {
   if (!isKnownPath(path)) notFound();
   const { locale, route } = parsePath(path);
   if (!locale || !route) return <ClientOnly />;
-  return (
-    <ServerRendered address={`${path}${searchOf(await props.searchParams)}`} locale={locale} catalog={await loadCatalogSeed(route.id)} />
-  );
+  return <ServerRendered address={`${path}${searchOf(await props.searchParams)}`} locale={locale} />;
 }
