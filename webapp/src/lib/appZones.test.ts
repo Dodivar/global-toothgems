@@ -33,7 +33,6 @@ describe("zoneOf", () => {
   it("matches the routes each zone app declares", () => {
     const apps: [string, AppZone][] = [
       ["../App.tsx", "public"],
-      ["../zones/AdminApp.tsx", "admin"],
     ];
     for (const [file, zone] of apps) {
       const source = readFileSync(new URL(file, import.meta.url), "utf8");
@@ -55,7 +54,9 @@ describe("zoneOf", () => {
       "academy/(learner)/mes-formations/[courseId]/lecon/[nodeKey]",
       "academy/(learner)/mes-formations/[courseId]/terminee",
       "admin/connexion",
-      "admin/(staff)/[[...slug]]",
+      "admin/(staff)",
+      "admin/(staff)/promotions/[id]/modifier",
+      "admin/[...rest]",
       "studio-3d/atelier/[[...section]]",
       "studio-3d/partage",
       "studio-3d/partage/[token]",

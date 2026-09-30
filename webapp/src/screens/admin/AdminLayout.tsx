@@ -1,5 +1,4 @@
-import { useCallback, useState } from "react";
-import { Outlet, useOutletContext } from "react-router-dom";
+import { createContext, useCallback, useContext, useMemo, useState, type ReactNode } from "react";
 import { useTranslation } from "react-i18next";
 import { AdminSidebar } from "../../components/admin/AdminSidebar";
 import { AdminCatalogProvider } from "../../lib/adminCatalog";
@@ -28,17 +27,21 @@ interface AdminShellContext {
   openNav: () => void;
 }
 
+const AdminShell = createContext<AdminShellContext>({ openNav: () => undefined });
+
 export function useAdminShell(): AdminShellContext {
-  return useOutletContext<AdminShellContext>();
+  return useContext(AdminShell);
 }
 
-export function AdminLayout() {
+export function AdminLayout({ children }: { children: ReactNode }) {
   const { t } = useTranslation();
   const { admin } = useAdminAuth();
   const [collapsed, setCollapsed] = useState(false);
   const [navOpen, setNavOpen] = useState(false);
   const closeNav = useCallback(() => setNavOpen(false), []);
   const drawerRef = useFocusTrap<HTMLDivElement>(navOpen, closeNav);
+
+  const shell = useMemo<AdminShellContext>(() => ({ openNav: () => setNavOpen(true) }), []);
 
   const railWidth = collapsed ? "var(--admin-sidebar-collapsed)" : "var(--admin-sidebar)";
 
@@ -96,7 +99,7 @@ export function AdminLayout() {
         )}
 
         <div className="min-h-screen lg:pl-[var(--admin-rail-offset)]">
-          <Outlet context={{ openNav: () => setNavOpen(true) } satisfies AdminShellContext} />
+          <AdminShell.Provider value={shell}>{children}</AdminShell.Provider>
         </div>
       </div>
       </AdminSettingsProvider>

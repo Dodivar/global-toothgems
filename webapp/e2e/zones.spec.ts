@@ -131,6 +131,47 @@ for (const { path, heading } of STAFF_SCREENS) {
   });
 }
 
+// Screens without a smoke test of their own until phase 5: rendered with a heading and without errors.
+for (const path of [
+  "/admin/produits/nouveau",
+  "/admin/promotions/nouvelle",
+  "/admin/promotions/apercu",
+  "/admin/promotions/cartes-cadeaux/configuration",
+  "/admin/promotions/campagnes/nouvelle",
+  "/admin/formations/nouvelle",
+]) {
+  test(`back office: ${path} renders for signed-in staff`, async ({ page, problems }) => {
+    await signInStaff(page);
+    await open(page, path);
+    await expect(page.getByRole("heading", { level: 1 }).first()).toBeVisible({ timeout: 30_000 });
+    expect(new URL(page.url()).pathname).toBe(path);
+    expect(problems).toEqual([]);
+  });
+}
+
+test("back office: the rail and the lists' links are client-side navigations", async ({ page, problems }) => {
+  await signInStaff(page);
+  await open(page, "/admin");
+  await page.evaluate(() => ((window as unknown as { gtMarker: number }).gtMarker = 1));
+  const follow = async (selector: string) => {
+    const link = page.locator(selector).first();
+    await expect(link).toBeVisible({ timeout: 30_000 });
+    const href = (await link.getAttribute("href"))!;
+    await link.click();
+    // A client-side navigation asks the server for the page's segment: compiled on first request by a dev server.
+    await expect(page).toHaveURL((url) => url.pathname + url.search === href, { timeout: 30_000 });
+    await expect(page.getByRole("heading", { level: 1 }).first()).toBeVisible();
+    expect(await page.evaluate(() => (window as unknown as { gtMarker?: number }).gtMarker)).toBe(1);
+  };
+  await follow('aside a[href="/admin/produits"]');
+  await follow('aside a[href="/admin/commandes"]');
+  await follow('main a[href^="/admin/commandes/"]:visible');
+  await follow('aside a[href="/admin/clients"]');
+  await follow('main a[href^="/admin/clients/"]:visible');
+  await page.waitForLoadState("networkidle");
+  expect(problems).toEqual([]);
+});
+
 test("back office: signing in on the access screen opens the page asked for", async ({ page, problems }) => {
   await open(page, "/admin/produits");
   await expect(page).toHaveURL((url) => url.pathname === "/admin/connexion");
