@@ -442,7 +442,7 @@ Progress is computed against the course each product opens (`Course.trainingId`)
 
 ## The learning experience (`/academy/mes-formations/:courseId`)
 
-What a customer who owns a training reads. The course is the one built in the back office (`/admin/formations`), never a separate copy: the training store (`lib/adminTraining.tsx`) is mounted above the whole app, each storefront product names the training it opens (`trainingId` in `data/courses.ts`), and the administrator's preview renders blocks and knowledge checks with the learner's own components. Admin preview and learner view are two views of one course. **Still the prototype (phase C):** with Supabase configured, the learner pages keep reading the seeded courses (`data/adminTrainingSeed.ts`, see `lib/progress.tsx`) — the back office's courses carry database ids the prototype enrolments do not point at — until entitlements, progress and quiz attempts exist server-side.
+What a member who holds a course reads. The course is the one built in the back office (`/admin/formations`), never a separate copy, and the administrator's preview renders blocks and knowledge checks with the learner's own components. **With Supabase (phase C, live):** `lib/progress.tsx` loads `learner_courses()` once the member is signed in — the courses they hold an active entitlement to, keyed in the addresses by their French slug (`/academy/mes-formations/<slug>`), the published content without answer keys, the media paths (signed for 4 h, renewed every 3 h, resolved by `useCourseMediaUrl()`), and their progress — through `lib/learning/learnerApi.ts` and the pure mapping `lib/learning/learnerCourse.ts` (unit-tested). Validating a step calls `complete_course_step()` and moves on only once it is recorded; knowledge checks are corrected by the server (`lib/learning/grading.ts`: `answer_quiz_question()` for immediate feedback, `submit_quiz_answers()` for the attempt). **Without Supabase (mock mode)** the prototype's storefront courses (`data/courses.ts` → `trainingId`), seeded enrolments and local grading run instead (Playwright uses this mode).
 
 | Route | Screen |
 | --- | --- |
@@ -454,11 +454,11 @@ What a customer who owns a training reads. The course is the one built in the ba
 How it works:
 
 - **One walk through the course.** `lib/learning/path.ts` turns a course into the learner's path — every step, each module's check after its last step (the same order the admin preview uses) — and holds the rules: sequential unlocking, which checks gate progression (the course's `allQuizzes` setting), attempts per check (`allowRetry`/`attempts`), the course minimum average score, deterministic scoring. Progress is stored per step and per check id, so reordering a course in the builder never moves a learner's progress onto another lesson. The rules are unit-tested (`learning.test.ts`); in production the same rules run server-side and the browser never decides a completion or a pass.
-- **Access** (`lib/learning/access.ts`): an enrolment is required; draft and in-review courses are never shown; a course that was *unpublished* stays readable by learners who already hold it. **That last rule is an assumption to confirm with the business.**
+- **Access** (`lib/learning/access.ts`, enforced by the database functions): an entitlement is required; a draft is never shown; a course that was *unpublished* (owner, 2026-10-01) stays on its holders' dashboard, greyed out with a "back soon" message, and its pages show the same message instead of the content. Loading and load errors have their own screens.
 - **Authored HTML is sanitised** before a learner reads it (`lib/learning/sanitizeHtml.ts`, allow-list, tested).
 - **Video**: real sources (http(s), blob) play in a native `<video>` behind custom controls; the prototype's placeholder sources (`gtg-media://…`) run on a simulated clock labelled "demo footage". Keyboard: Space/K, ←/→, M, F.
-- **Knowledge checks** follow the settings chosen in the builder: immediate or end-of-check feedback, revealed answers, shuffling once per attempt, retries and attempt limits. Wrong answers are explained in the administrator's words, never punished.
-- `lib/progress.tsx` keeps the same public API, so the dashboard, certificates, community access and review eligibility all read the real course numbers.
+- **Knowledge checks** follow the settings chosen in the builder: immediate or end-of-check feedback, revealed answers, shuffling once per attempt, retries and attempt limits. Wrong answers are explained in the administrator's words, never punished. The browser never holds the answer keys: `QuizPlayer` asks a grader, which is the server for a learner and the local answer keys in the administrator's preview. With immediate feedback the first answer to a question stands.
+- `lib/progress.tsx` is the one source for the dashboard, certificates (the server's verification code), community access and review eligibility. The dashboard's "available" courses are the published Academy (`useAcademy()`) minus the held ones; a course's sales page offers "continue the training" to a member who holds it.
 
 ## Course authoring on Supabase (back office)
 
@@ -468,6 +468,10 @@ The course builder (`/admin/formations`, `/nouvelle`, `/:id`, `/:id/apercu`, `/:
 - `lib/adminTrainingBackend.ts` — mock and Supabase backends; `lib/adminTrainingMapping.ts` — rows ↔ builder, payloads, error kinds (unit-tested). Node ids are browser-generated uuids kept across saves.
 - **Price and promotions**: the price is typed in the course form (`lib/coursePricing.ts`, minor units, no float); `components/admin/training/CoursePromotions.tsx` manages dated percentage/amount promotions of one course (saved immediately; one active at a time). Courses are not shop products and never appear in the shop.
 - Status: draft → published ⇄ unpublished, no "review" state; a course ever published cannot be deleted (the card hides the action, RLS refuses it). No instructor field.
+
+## Course access (`/admin/formations/:id/acces`)
+
+Until checkout sells courses (phase D), a course reaches a member by hand: the screen (`screens/admin/TrainingAccess.tsx`, reached from a published course's card menu, "Member access") lists the holders with their source, dates, steps validated, completion and certificate code, gives the course to an account by exact e-mail (optional end date and internal note) and revokes an access after confirmation. `lib/adminCourseAccess.ts` calls `admin_course_entitlements()`, `admin_grant_course()` and `admin_revoke_course_entitlement()` — `manage_training`, audited — and keeps a page-local list in mock mode.
 
 ## Training media library (`/admin/formations/medias`)
 
@@ -702,7 +706,7 @@ Live on Supabase; without the Supabase variables the screen says the directory i
 Without the Supabase variables every domain runs on its mock store. With them, the following still do not touch the database:
 
 - **Checkout extras.** Payment runs through Stripe (see *Cart and checkout*), but promotion codes, gift cards and the loyalty reward cannot be entered in the cart yet (the Edge Function accepts codes), no confirmation e-mail is sent, and saving the address on the account is not offered.
-- **Academy.** All courses share the one authored 9-lesson syllabus in `data/lessons.ts`; progress lives in memory (`lib/progress.tsx`); there is no Academy schema yet.
+- **Academy.** Authoring, public pages and the learner side are on Supabase (phases A–C). Courses cannot be bought yet (phase D): members get one by a manual grant (`/admin/formations/:id/acces`). The back office's course list and statistics still show placeholder learner figures (`enrolled`, `completionRate`, `data/adminAnalytics.ts`).
 - **Artist Community.** Fixtures and in-memory posting; access derived client-side from the courses on the account. Post-launch.
 - **Loyalty Club.** Display only (`data/loyalty.ts` with a demo switch); the database already awards stamps on paid orders — the UI must read `loyalty_overview`.
 - **Security page:** data export and account deletion are simulated (they need backend jobs).

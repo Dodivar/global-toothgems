@@ -94,7 +94,9 @@ for (const path of ["/compte/nimporte-quoi", "/compte/communaute/nimporte-quoi"]
 
 const LEARNER_SCREENS: { path: string; heading: RegExp }[] = [
   { path: "/academy/mes-formations/fondation", heading: /^Pose professionnelle de tooth gems$/ },
-  { path: "/academy/mes-formations/business/terminee", heading: /^Formation terminée$/ },
+  { path: "/academy/mes-formations/fondation/terminee", heading: /^Vous y êtes presque$/ },
+  // The demo's Business kit opens a withdrawn course: greyed out, "back soon", never opened (owner, 2026-10-01).
+  { path: "/academy/mes-formations/business/terminee", heading: /^Cette formation revient bientôt$/ },
 ];
 
 for (const { path, heading } of LEARNER_SCREENS) {

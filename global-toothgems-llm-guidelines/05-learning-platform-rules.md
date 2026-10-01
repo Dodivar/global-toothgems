@@ -7,7 +7,7 @@ description: Academy rules and target architecture — courses, modules, lessons
 
 ## Current state
 
-The Academy is fully designed in the UI (catalogue, course sales pages, lesson player, quizzes, certificates, admin Training workspace and course builder). **Authoring schema is live (phase A, migration `academy_authoring`, 2026-10-01)**: courses, modules, steps, content blocks, quizzes, the training media library, course price and course promotions, written by the back office (`lib/adminTraining.tsx` + `lib/adminTrainingBackend.ts`, `lib/trainingMedia.tsx`, `/admin/formations/medias`). **Public pages are live (phase B, migration `academy_public_pages`, 2026-10-01)**: the catalogue, course sales pages, home band and header/footer entries read the published courses, their outline (modules, steps, knowledge checks' pass marks — never content or answers), cover and current price (`lib/academy/`, server-rendered from `app/_public/coursePage.tsx`). Until phase D a course page shows its price and "enrolment opens soon" — never a fake enrolment. Still on mock data: the learner side — access, progress, quiz attempts, certificates (phase C: `lib/progress.tsx`, `lib/learning/`, `data/courses.ts`), and selling a course (phase D, with checkout). See `supabase/README.md` → *Academy authoring* and *Academy public pages*.
+The Academy is fully designed in the UI (catalogue, course sales pages, lesson player, quizzes, certificates, admin Training workspace and course builder). **Authoring schema is live (phase A, migration `academy_authoring`, 2026-10-01)**: courses, modules, steps, content blocks, quizzes, the training media library, course price and course promotions, written by the back office (`lib/adminTraining.tsx` + `lib/adminTrainingBackend.ts`, `lib/trainingMedia.tsx`, `/admin/formations/medias`). **Public pages are live (phase B, migration `academy_public_pages`, 2026-10-01)**: the catalogue, course sales pages, home band and header/footer entries read the published courses, their outline (modules, steps, knowledge checks' pass marks — never content or answers), cover and current price (`lib/academy/`, server-rendered from `app/_public/coursePage.tsx`). Until phase D a course page shows its price and "enrolment opens soon" — never a fake enrolment. **Learner side is live (phase C, migration `academy_learner_access`, 2026-10-01)**: `course_entitlements` (granted by hand from `/admin/formations/<id>/acces` until checkout sells courses, audited), content served by `learner_courses()` without answer keys, progress, attempts, scoring and completion written by database functions that port `lib/learning/path.ts`, certificates as `course_completions` rows with a verification code, lesson media through signed URLs after the entitlement check (`lib/progress.tsx`, `lib/learning/`). Not built yet: selling a course (phase D, with checkout). See `supabase/README.md` → *Academy authoring*, *Academy public pages* and *Academy learner access*.
 
 ## Decisions (owner, 2026-10-01)
 
@@ -49,7 +49,9 @@ Draft → published ⇄ unpublished (enforced by the `courses_guard` trigger; pu
 
 - Progress persisted server-side; opening a URL does not complete a lesson. Completion rules (video watched threshold, quiz passed) are enforced by a database function.
 - Gated sequences: prerequisites validated server-side; the UI explains why a step is locked; changing the URL does not bypass a gate.
-- Scoring deterministic and reproducible; store score, threshold version and timestamp. The pass mark is on the course record (`courses.min_score`, per check `course_quizzes.passing_score`); the sales pages show it, and the prototype's `PASS_SCORE` (`data/lessons.ts`) is only left in the learner fixtures until phase C.
+- Scoring deterministic and reproducible; store score, threshold version and timestamp. The pass mark is on the course record (`courses.min_score`, per check `course_quizzes.passing_score`) and snapshotted on each attempt (`quiz_attempts.passing_score`). The prototype's `PASS_SCORE` (`data/lessons.ts`) only feeds the mock-mode sales page fixtures.
+- With immediate feedback, the first answer to a question stands for the attempt (the server records it before correcting it); a check is keyed by its module, so replacing a module's check keeps a member's pass.
+- Progress rows keep soft references (no foreign key) to steps, checks and answers: an author can delete or replace a node of a published course, and what members completed is never erased nor blocks the save.
 - Incorrect answers teach: explain why, show the correct answer, never shame.
 
 ## Media
@@ -61,7 +63,7 @@ Draft → published ⇄ unpublished (enforced by the `courses_guard` trigger; pu
 
 ## Certificates
 
-A certificate shown as real must be a durable record (recipient, course, issue date, verification code, score) created by a server rule when completion conditions are met — not a flag computed in the browser. Social verification pages, graduate-only areas and celebrations are post-launch (`01`).
+A certificate shown as real must be a durable record (recipient, course, issue date, verification code, score) created by a server rule when completion conditions are met — not a flag computed in the browser. It is the `course_completions` row of a course that issues certificates (code `GTC-XXXX-XXXX-XXXX`), written once and kept after a revocation or later course edits. Social verification pages, graduate-only areas and celebrations are post-launch (`01`).
 
 ## Community
 

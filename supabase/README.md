@@ -114,6 +114,7 @@ supabase/
 | 20261001063421 | `academy_merge_read_policies` | one SELECT policy per role on `courses`, `course_translations`, `course_promotions` (performance advisor) |
 | 20261001071006 | `academy_published_integrity` | a price cut below an active amount promotion is refused (the course would become free); a deferred constraint trigger re-checks `course_publication_problems()` when a published course is saved, so it cannot become unpublishable while online |
 | 20261001121248 | `academy_public_pages` | Academy phase B: visitors and customers read the outline of a published course (modules, steps, knowledge checks' titles and pass marks, published translations — never blocks, questions or answers), its cover (`training_media` row + translations + the file in the private bucket) and its current price; `course_promotions` staff-only (the price view reads the running promotion through `private.course_running_promotion()`, SECURITY DEFINER); column grants hide `courses.created_by`/`updated_by` and the media's internal columns from `anon`; policies widened in place (ALTER POLICY) |
+| 20261001170703 | `academy_learner_access` | Academy phase C: `course_entitlements` (manual grants by `manage_training`, audited; `purchase` rows from phase D), `lesson_progress`, `quiz_attempts`, `course_completions` (sticky, certificate code); `learner_courses()` serves the held courses' content without answer keys or feedback; `complete_course_step()`, `answer_quiz_question()`, `submit_quiz_answers()` port the path rules of `lib/learning/path.ts` and score server-side; storage policy for the media of held courses; holders see their withdrawn course (row, translations, cover); `admin_grant_course()`, `admin_revoke_course_entitlement()`, `admin_course_entitlements()` |
 
 RLS is **enabled in the same migration that creates each table** (deny by default);
 policies are granted back in `rls_policies`.
@@ -687,8 +688,8 @@ The hearts of the storefront (shop cards, home rail, product page) and the shop'
 ### Academy authoring (iteration 20)
 
 What the back-office course builder (`/admin/formations`) and the training media library
-(`/admin/formations/medias`) read and write. Learner access, progress and quiz attempts come next (phase C);
-the public Academy pages read the published courses since iteration 21 (phase B, below).
+(`/admin/formations/medias`) read and write. The public Academy pages read the published courses since
+iteration 21 (phase B), the learners since iteration 22 (phase C, below).
 
 ```
 training_media (image | video, storage media/<id>/<file> in the private training-media bucket)
@@ -717,14 +718,14 @@ media references: courses.cover_media_id, course_modules.cover_media_id, course_
   its buyers read at once — there is no separate draft of a published course. Status, price, slug, creation and
   deletion audited.
 - **Unpublished course** (owner, 2026-10-01): its buyers still see it in their space, greyed out with a "back soon"
-  message, and cannot open it (phase C enforces it in RLS). Visitors no longer see it.
+  message, and cannot open it (enforced by the learner functions since iteration 22). Visitors no longer see it.
 - **Course promotions**: `percentage` (< 100) or `amount` (< the course price) off one course between `starts_at`
   and `ends_at` (open-ended allowed); at most one active promotion per course at any instant (guard locks the
   course row, then checks overlaps); `course_current_prices` gives the price now, rounded half away from zero to
   the cent. Lowering the course price below an active amount promotion is refused. No codes, no customer
   segments. Audited.
-- **Quiz answer keys**: `quiz_answers.is_correct` / `explanation` are readable by staff only. Phase C serves
-  corrections through a function, after an answer is submitted.
+- **Quiz answer keys**: `quiz_answers.is_correct` / `explanation` are readable by staff only. Learners get
+  corrections from `answer_quiz_question()` / `submit_quiz_answers()`, after an answer is recorded (iteration 22).
 - **Access**: staff (`is_staff`) read everything; `manage_training` writes; visitors and customers read what
   iteration 21 opens (below) — none of the content or answers.
 - Suite: `tests/iteration20_validation.sql`.
@@ -741,7 +742,7 @@ as an anonymous visitor (server, publishable key) or any signed-in account:
   `quiz_answers`: the lesson content and the answer keys wait for phase C's entitlements.
 - **Cover image**: the `training_media` row and published translations of a published course's cover, and its
   file in the private `training-media` bucket (storage policy `private.is_public_course_cover_path()`). No other
-  media of the library, nor a draft's or a withdrawn course's cover. The webapp serves it at
+  media of the library, nor a draft's cover; a withdrawn course's cover only to its holders (iteration 22). The webapp serves it at
   `/media/formations/<media id>` (Route Handler reading with the publishable key, CDN-cached an hour, `?v=` changes
   when the file is replaced).
 - **Promotions are staff-only** now: visitors and customers see the discounted price and its end date through the
@@ -754,6 +755,64 @@ as an anonymous visitor (server, publishable key) or any signed-in account:
 - The outline policies use `private.is_published_course(course_id)` (SECURITY DEFINER, stable).
 - Suite: `tests/iteration21_validation.sql` (visitor, customer, staff viewer, withdrawal). Suite 20's customer
   check now expects the published course's cover to be readable.
+
+### Academy learner access (iteration 22)
+
+What a member reads and writes of the courses they hold (webapp `lib/progress.tsx`, `lib/learning/`), and how the
+back office gives a course by hand (`/admin/formations/<id>/acces`).
+
+```
+course_entitlements (user, course, source purchase | manual_grant | bundle | promotion, order_id, granted_by,
+                     note, starts_at, expires_at, revoked_at, revoked_by) — active = not revoked, started, not expired
+lesson_progress  (user, course, step_id)            one row per validated step
+quiz_attempts    (user, course, module_id, quiz_id, open | submitted, answers snapshot, score, pass mark snapshot)
+course_completions (user, course, completed_at, average_score, min_score, certificate_code) — once per course
+```
+
+- **Entitlements**: written only by functions — `admin_grant_course(email, course, expires_at, note)` (finds the
+  member by exact e-mail, course ever published, refuses an active duplicate, closes an expired one first),
+  `admin_revoke_course_entitlement(id)`, both `manage_training`, both audited (`audit_logs`, table
+  `course_entitlements`); `admin_course_entitlements(course)` lists holders with name, e-mail, steps done and
+  completion. Phase D adds `purchase` rows (with `order_id`) from the verified Stripe webhook. Members read their own
+  rows, staff all of them. Account deletion cascades.
+- **Reading a course**: `learner_courses()` (SECURITY DEFINER) returns the courses the caller holds now, newest
+  first: the header, the whole tree of a published course with published English translations (answer texts only —
+  never `is_correct`, an answer's `explanation` nor a question's feedback), the media it uses (`training_media` id →
+  storage path, kind, alt texts) and the caller's progress. A withdrawn (`unpublished`) course comes back as a
+  header and cover only. The content tables keep their staff-only RLS for blocks, questions and answers.
+- **Withdrawn course visible to its holders**: the `courses` and `course_translations` policies and the cover
+  policies (`training_media`, translations, storage) also let a holder read their `unpublished` course
+  (`private.holds_course()`, `private.can_see_course()`, `private.is_held_course_cover()`), so the member area
+  can show it greyed out ("back soon"). Nothing else of it.
+- **Media**: storage policy "learners read their courses' media" (`private.can_read_learner_media_path()`): the cover
+  of a held course, and the block media, posters, module covers and question images of a held *published* course.
+  The browser signs them (`createSignedUrls`, 4 h, renewed every 3 h).
+- **Progress writes** — functions only, each re-checking the entitlement and that the course is published (row lock
+  on the entitlement serialises one member's writes), then the path rules of `webapp/src/lib/learning/path.ts`
+  (`private.learner_path()`: each module's steps by position, then its check; required = `complete_all_steps` /
+  `complete_all_quizzes`; a node is open up to the first required node not done, or when done):
+  - `complete_course_step(step)` — idempotent; refused (`learning: locked`) when the step is not open.
+  - `answer_quiz_question(module, question, answer)` — immediate-feedback checks only: opens an attempt if none
+    (unlocked, not passed, an attempt left: `allow_retry ? max(1, max_attempts) : 1`; pass mark snapshotted),
+    records the **first** answer to the question and returns its correction; answering again returns the recorded
+    one. No probing every option before submitting.
+  - `submit_quiz_answers(module, {question: answer})` — recorded answers stand, the payload fills the others,
+    unanswered = wrong; score `round(correct × 100 / questions)`, pass = score ≥ snapshotted pass mark; returns
+    every correction and the new progress.
+  - A correction names the correct answer only when the check has `show_answers` on, or the learner chose it; it
+    carries the chosen answer's explanation, the question's right/wrong feedback and its "go further" note.
+- **Completion and certificate**: after each write, `private.refresh_course_completion()` inserts
+  `course_completions` once — non-empty path, every required node done, average of the best check scores (checks
+  attempted) ≥ `courses.min_score` (null average passes) — with the average and the minimum snapshotted, and a
+  certificate code `GTC-XXXX-XXXX-XXXX` when the course issues certificates. Sticky: later course edits or a
+  revocation never take it back.
+- **Soft references to the authored tree** (decision 51): `lesson_progress.step_id`, `quiz_attempts.module_id` /
+  `quiz_id` and the answers snapshot are plain uuids, so an author deleting a step, a check, a question or an
+  answer of a published course is never blocked, and members' rows are never erased; keys the course no longer has
+  are ignored by the rules.
+- Suite: `tests/iteration22_validation.sql` (grants and their audit, another member refused content, answers,
+  media, progress and holders list, path locking, end-of-check and immediate-feedback scoring, attempt limit,
+  completion and certificate, withdrawn course, revocation and re-grant).
 
 ### Integrity guarantees
 
@@ -1025,7 +1084,8 @@ VAT rates, shipping zones/rates mirroring the Settings prototype. Media rows ref
     explicit column lists (or an RPC) and granting the same columns to `authenticated`.
 50. **Course sales pages before courses can be bought**: until phase D, a published course's page shows its price
     and "enrolment opens soon" instead of a start button, its structured data has no `offers`, and it has no
-    sticky purchase bar. The learner pages stay on the prototype's seeded courses until phase C.
+    sticky purchase bar. A signed-in member who holds the course (manual grant, iteration 22) gets "continue the
+    training" instead.
 
 49. **"Collected" figure of the order book** (agent, 2026-10-01, to confirm): per currency, never added across
     currencies; for orders whose payment was received (`paid`, `partially_refunded`, `refunded`) and that are not
@@ -1042,6 +1102,27 @@ VAT rates, shipping zones/rates mirroring the Settings prototype. Media rows ref
     permanent deletion of a staff account that has been used (suspend instead), mandatory two-factor for staff
     (`staff_directory()` only reports it), a single "owner" role above administrators (today administrators can
     demote each other; the screen only keeps the last active administrator in place, the database does not).
+
+51. **Learner rows keep soft references to the course tree** (agent, 2026-10-01, phase C): `lesson_progress.step_id`,
+    `quiz_attempts.module_id` / `quiz_id` and the attempts' answer snapshots have no foreign key. CASCADE would erase
+    what members did when an author deletes or replaces a node of a published course; RESTRICT would block the
+    author's save. With soft references nothing members earned is lost (completions and certificates only reference
+    the course); progress on a node the course no longer has simply stops counting. A check is keyed by its
+    module, because `admin_save_course()` recreates a module's quiz row when the check is replaced: a member who
+    passed the old check keeps the pass. A step moved out of a module that the same save deletes is re-created
+    under its id, so its progress rows still match.
+52. **Immediate-feedback checks lock the first answer** (agent, 2026-10-01): the first `answer_quiz_question()` call
+    opens an attempt that counts against the allowed attempts, and the first answer to each question stands until
+    the attempt is submitted (a member who leaves resumes the same attempt). Otherwise a member could probe every
+    option before submitting. End-of-check mode is one `submit_quiz_answers()` call.
+53. **Manual grants** (agent, 2026-10-01, to confirm): only for a course that was ever published; by exact account
+    e-mail (no invitation for someone without an account); optional end date (end of that day, the trainer's time
+    zone) and internal note; one unrevoked entitlement per member and course (an expired one is closed when access
+    is given again). Revoking keeps completions and certificates. Access ends with a revocation or the end date;
+    a withdrawn course stays on the account, greyed out.
+54. **Certificates** (agent, 2026-10-01): a certificate is the `course_completions` row of a course that issues
+    certificates, with a random verification code `GTC-XXXX-XXXX-XXXX` (48 bits); no public verification page yet
+    (post-launch). The completion date and the scores are snapshotted when the rules are first met.
 
 ## Done
 
@@ -1090,6 +1171,9 @@ VAT rates, shipping zones/rates mirroring the Settings prototype. Media rows ref
   (private bucket), course price and course promotions, publication rules, `admin_save_course()`.
 - Iteration 21: Academy public pages (phase B) — outline, cover and current price of published courses readable by
   visitors, promotions staff-only, column grants for visitors.
+- Iteration 22: Academy learner access (phase C) — entitlements with audited manual grants, content served without
+  answer keys, server-side progress, attempts and scoring, completions with certificate codes, lesson media gated
+  on the entitlement, withdrawn courses greyed out for their holders.
 
 ## Next iterations (not implemented)
 
@@ -1097,9 +1181,8 @@ VAT rates, shipping zones/rates mirroring the Settings prototype. Media rows ref
    in the cart (the function already accepts them), Stripe refunds from the back office, `charge.refunded` /
    `charge.dispute.created` webhooks.
 2. Academy, after the authoring schema (iteration 20):
-   (**B**, public pages, done in iteration 21); **C** `course_entitlements` (manual grant, audited), content and signed URLs gated on
-   entitlement, quiz answers checked by a function, server-side progress and attempts, certificates, unpublished
-   courses greyed for their buyers; **D** selling courses: a course line in `create_order()` and the Stripe
+   (**B**, public pages, done in iteration 21; **C**, learner access, done in iteration 22 — follow-ups: a public
+   certificate verification page, learner figures in the back office's course list and statistics); **D** selling courses: a course line in `create_order()` and the Stripe
    Checkout functions (VAT category `training`, course promotions applied server-side). Kit QR links; course
    reviews (`course_id` on `reviews`). Invoices / credit notes (sequential numbering), carrier tracking events.
 3. Store settings table (legal identity, order number format, tax display options), VAT numbers /
