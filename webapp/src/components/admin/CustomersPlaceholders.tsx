@@ -1,5 +1,5 @@
 import { useTranslation } from "react-i18next";
-import { SearchX, UsersRound } from "lucide-react";
+import { SearchX, TriangleAlert, UsersRound } from "lucide-react";
 import { Button } from "../ui/Button";
 
 /**
@@ -42,8 +42,12 @@ export function CustomerTableSkeleton({ rows = 8 }: { rows?: number }) {
   );
 }
 
-/** The base itself is empty — a state this prototype's seed never reaches. */
-export function NoCustomersYet({ onAdd }: { onAdd: () => void }) {
+/**
+ * The base itself is empty. Customers create their own accounts, so there is
+ * no "add" action: the copy says where they come from. Without Supabase (local
+ * mock mode) the same panel says there is no base to read.
+ */
+export function NoCustomersYet({ available = true }: { available?: boolean }) {
   const { t } = useTranslation();
   return (
     <div className="grid justify-items-center gap-3 rounded-[var(--radius-card)] border border-dashed border-[var(--border-default)] bg-[var(--surface-card)] px-6 py-[clamp(32px,7vw,64px)] text-center">
@@ -55,10 +59,32 @@ export function NoCustomersYet({ onAdd }: { onAdd: () => void }) {
       </span>
       <h2 className="text-[length:var(--text-h4)]">{t("admin.customers.emptyNoCustomersTitle")}</h2>
       <p className="m-0 max-w-[44ch] text-[length:var(--text-body-sm)] text-[var(--text-muted)]">
-        {t("admin.customers.emptyNoCustomersBody")}
+        {t(available ? "admin.customers.emptyNoCustomersBody" : "admin.customers.unavailableBody")}
       </p>
-      <Button size="sm" variant="outline" onClick={onAdd}>
-        {t("admin.customers.addCustomer")}
+    </div>
+  );
+}
+
+/** The base could not be read: said as such, never shown as an empty base. */
+export function CustomersLoadError({ onRetry }: { onRetry: () => void }) {
+  const { t } = useTranslation();
+  return (
+    <div
+      role="alert"
+      className="grid justify-items-center gap-3 rounded-[var(--radius-card)] border border-[var(--gt-red-400)] bg-[var(--status-error-bg)] px-6 py-[clamp(32px,7vw,64px)] text-center"
+    >
+      <span
+        aria-hidden="true"
+        className="grid h-12 w-12 place-items-center rounded-[var(--radius-lg)] bg-[var(--surface-card)] text-[var(--status-error-fg)]"
+      >
+        <TriangleAlert size={22} />
+      </span>
+      <h2 className="text-[length:var(--text-h4)]">{t("admin.customers.loadErrorTitle")}</h2>
+      <p className="m-0 max-w-[46ch] text-[length:var(--text-body-sm)] text-[var(--status-error-fg)]">
+        {t("admin.customers.loadErrorBody")}
+      </p>
+      <Button size="sm" variant="outline" onClick={onRetry}>
+        {t("admin.customers.retry")}
       </Button>
     </div>
   );

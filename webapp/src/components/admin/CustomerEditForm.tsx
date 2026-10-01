@@ -1,38 +1,54 @@
 import { useState } from "react";
 import { useTranslation } from "react-i18next";
-import { Save, X } from "lucide-react";
+import { Lock, Save, X } from "lucide-react";
+import { Badge } from "../ui/Badge";
 import { Button } from "../ui/Button";
 import { FormField } from "./FormField";
 import { CustomerTags } from "./CustomerTags";
 import { CustomerStatusBadge } from "./CustomerBadges";
 import { DELIVERY_COUNTRIES, countryLabelKey } from "../../data/countries";
 import {
-  CUSTOMER_STATUSES,
+  STAFF_SETTABLE_STATUSES,
   type AdminCustomerRecord,
-  type CustomerStatus,
   type CustomerTag,
+  type StaffSettableStatus,
 } from "../../data/adminCustomers";
-import type { CustomerProfileDraft } from "../../lib/adminCustomers";
+import {
+  BIRTH_DATE_MAX,
+  BIRTH_DATE_MIN,
+  draftOf,
+  validateDraft,
+  type CustomerProfileDraft,
+  type DraftError,
+  type DraftField,
+} from "../../lib/adminCustomerMapping";
 
 /**
  * Editing a customer.
  *
- * Grouped into three fieldsets — identity, address, account — because a flat
- * column of twelve inputs makes an operator read every label to find the one
- * they came to change. The groups are also the natural permission boundary a
- * real implementation would need: changing an email is an identity operation,
- * changing a status is an access one.
+ * Only what the back office may write is editable: names, phone, birth date,
+ * country, status and tags (`profiles` under `manage_customers`). The e-mail
+ * is the sign-in identity, marketing consent is the customer's own decision
+ * and the address book is theirs too — those are shown read-only, with where
+ * they are changed, rather than offered as fields the database would refuse.
  *
- * Validation is deliberately thin. The two fields that can be *wrong* rather
- * than merely empty — the name and the email — are checked on submit, and
- * nothing is checked while typing: a form that turns red between the third and
- * the eighth character of an address is a form people learn to fight.
+ * Validation mirrors the database CHECKs (`validateDraft`) and runs on submit
+ * only: a form that turns red between the third and the eighth character of a
+ * name is a form people learn to fight.
  *
  * Status lives here *and* in the status dialog on purpose. The dialog is for
  * the operator who came to change access and needs the consequences spelled
- * out; the field is for the one already editing the record who should not have
- * to leave the form. Both write the same history entry (`lib/adminCustomers`).
+ * out; the field is for the one already editing the record. Both write the
+ * same audited column.
  */
+
+const ERROR_KEY: Record<DraftError, string> = {
+  required: "admin.customers.errorRequired",
+  tooLong: "admin.customers.errorTooLong",
+  phone: "admin.customers.errorPhone",
+  birthDate: "admin.customers.errorBirthDate",
+  country: "admin.customers.errorCountry",
+};
 
 export function CustomerEditForm({
   customer,
@@ -47,37 +63,18 @@ export function CustomerEditForm({
 }) {
   const { t } = useTranslation();
 
-  const [draft, setDraft] = useState<CustomerProfileDraft>({
-    firstName: customer.firstName,
-    lastName: customer.lastName,
-    email: customer.email,
-    phone: customer.phone,
-    birthDate: customer.birthDate ?? "",
-    addressLine: customer.addressLine,
-    postalCode: customer.postalCode,
-    city: customer.city,
-    country: customer.country,
-    status: customer.status,
-    tags: customer.tags,
-    marketingOptIn: customer.marketingOptIn,
-  });
-  const [errors, setErrors] = useState<Partial<Record<keyof CustomerProfileDraft, string>>>({});
+  const [draft, setDraft] = useState<CustomerProfileDraft>(() => draftOf(customer));
+  const [errors, setErrors] = useState<Partial<Record<DraftField, DraftError>>>({});
 
   const set = <K extends keyof CustomerProfileDraft>(key: K, value: CustomerProfileDraft[K]) => {
     setDraft((prev) => ({ ...prev, [key]: value }));
     // Clearing the error as soon as the field is touched, rather than
-    // re-validating: the operator is already fixing it, and a message that
-    // survives the correction reads as the form not having noticed.
-    setErrors((prev) => (prev[key] ? { ...prev, [key]: undefined } : prev));
+    // re-validating: the operator is already fixing it.
+    setErrors((prev) => (prev[key as DraftField] ? { ...prev, [key]: undefined } : prev));
   };
 
   const submit = () => {
-    const next: Partial<Record<keyof CustomerProfileDraft, string>> = {};
-    if (!draft.firstName.trim()) next.firstName = t("admin.customers.errorRequired");
-    if (!draft.lastName.trim()) next.lastName = t("admin.customers.errorRequired");
-    if (!draft.email.trim()) next.email = t("admin.customers.errorRequired");
-    else if (!/^[^\s@]+@[^\s@]+\.[^\s@]{2,}$/.test(draft.email.trim())) next.email = t("admin.customers.errorEmail");
-
+    const next = validateDraft(draft);
     if (Object.keys(next).length > 0) {
       setErrors(next);
       // Focus the first field in error, so a form taller than the viewport does
@@ -88,6 +85,12 @@ export function CustomerEditForm({
     }
     onSave(draft);
   };
+
+  const errorOf = (field: DraftField) => (errors[field] ? t(ERROR_KEY[errors[field]!]) : undefined);
+
+  // A country outside the delivery list (set by the customer elsewhere) stays selectable.
+  const countries: string[] = [...DELIVERY_COUNTRIES];
+  if (customer.country && !countries.includes(customer.country)) countries.push(customer.country);
 
   return (
     <form
@@ -102,54 +105,37 @@ export function CustomerEditForm({
         <legend className="px-2 text-[length:var(--text-h4)]">{t("admin.customers.formIdentity")}</legend>
 
         <div className="grid gap-4 sm:grid-cols-2">
-          <FormField label={t("admin.customers.fieldFirstName")} required error={errors.firstName}>
+          <FormField label={t("admin.customers.fieldFirstName")} required error={errorOf("firstName")}>
             {(props) => (
               <input
                 {...props}
                 data-field="firstName"
                 type="text"
+                maxLength={100}
                 value={draft.firstName}
                 onChange={(e) => set("firstName", e.target.value)}
-                autoComplete="given-name"
+                autoComplete="off"
                 className="gt-admin-field"
               />
             )}
           </FormField>
 
-          <FormField label={t("admin.customers.fieldLastName")} required error={errors.lastName}>
+          <FormField label={t("admin.customers.fieldLastName")} required error={errorOf("lastName")}>
             {(props) => (
               <input
                 {...props}
                 data-field="lastName"
                 type="text"
+                maxLength={100}
                 value={draft.lastName}
                 onChange={(e) => set("lastName", e.target.value)}
-                autoComplete="family-name"
+                autoComplete="off"
                 className="gt-admin-field"
               />
             )}
           </FormField>
 
-          <FormField
-            label={t("admin.customers.fieldEmail")}
-            required
-            error={errors.email}
-            hint={t("admin.customers.fieldEmailHint")}
-          >
-            {(props) => (
-              <input
-                {...props}
-                data-field="email"
-                type="email"
-                value={draft.email}
-                onChange={(e) => set("email", e.target.value)}
-                autoComplete="email"
-                className="gt-admin-field"
-              />
-            )}
-          </FormField>
-
-          <FormField label={t("admin.customers.fieldPhone")}>
+          <FormField label={t("admin.customers.fieldPhone")} error={errorOf("phone")}>
             {(props) => (
               <input
                 {...props}
@@ -157,74 +143,32 @@ export function CustomerEditForm({
                 type="tel"
                 value={draft.phone}
                 onChange={(e) => set("phone", e.target.value)}
-                autoComplete="tel"
+                autoComplete="off"
                 className="gt-admin-field"
               />
             )}
           </FormField>
 
-          <FormField label={t("admin.customers.fieldBirthDate")} hint={t("admin.customers.fieldBirthDateHint")}>
+          <FormField
+            label={t("admin.customers.fieldBirthDate")}
+            hint={t("admin.customers.fieldBirthDateHint")}
+            error={errorOf("birthDate")}
+          >
             {(props) => (
               <input
                 {...props}
                 data-field="birthDate"
                 type="date"
+                min={BIRTH_DATE_MIN}
+                max={BIRTH_DATE_MAX}
                 value={draft.birthDate}
                 onChange={(e) => set("birthDate", e.target.value)}
                 className="gt-admin-field"
               />
             )}
           </FormField>
-        </div>
-      </fieldset>
 
-      <fieldset className="m-0 grid gap-4 rounded-[var(--radius-card)] border border-[var(--border-subtle)] bg-[var(--surface-card)] p-[var(--space-5)] shadow-[var(--shadow-xs)]">
-        <legend className="px-2 text-[length:var(--text-h4)]">{t("admin.customers.formAddress")}</legend>
-
-        <FormField label={t("admin.customers.fieldAddressLine")}>
-          {(props) => (
-            <input
-              {...props}
-              data-field="addressLine"
-              type="text"
-              value={draft.addressLine}
-              onChange={(e) => set("addressLine", e.target.value)}
-              autoComplete="street-address"
-              className="gt-admin-field"
-            />
-          )}
-        </FormField>
-
-        <div className="grid gap-4 sm:grid-cols-[minmax(0,1fr)_minmax(0,2fr)_minmax(0,1.4fr)]">
-          <FormField label={t("admin.customers.fieldPostalCode")}>
-            {(props) => (
-              <input
-                {...props}
-                data-field="postalCode"
-                type="text"
-                value={draft.postalCode}
-                onChange={(e) => set("postalCode", e.target.value)}
-                autoComplete="postal-code"
-                className="gt-admin-field"
-              />
-            )}
-          </FormField>
-
-          <FormField label={t("admin.customers.fieldCity")}>
-            {(props) => (
-              <input
-                {...props}
-                data-field="city"
-                type="text"
-                value={draft.city}
-                onChange={(e) => set("city", e.target.value)}
-                autoComplete="address-level2"
-                className="gt-admin-field"
-              />
-            )}
-          </FormField>
-
-          <FormField label={t("admin.customers.fieldCountry")}>
+          <FormField label={t("admin.customers.fieldCountry")} error={errorOf("country")}>
             {(props) => (
               <select
                 {...props}
@@ -233,9 +177,10 @@ export function CustomerEditForm({
                 onChange={(e) => set("country", e.target.value)}
                 className="gt-admin-field"
               >
-                {DELIVERY_COUNTRIES.map((code) => (
+                <option value="">{t("admin.customers.notProvided")}</option>
+                {countries.map((code) => (
                   <option key={code} value={code}>
-                    {t(countryLabelKey(code))}
+                    {t(countryLabelKey(code), { defaultValue: code.toUpperCase() })}
                   </option>
                 ))}
               </select>
@@ -244,31 +189,85 @@ export function CustomerEditForm({
         </div>
       </fieldset>
 
+      {/* What belongs to the customer: shown, with where it is changed. */}
+      <section className="grid gap-4 rounded-[var(--radius-card)] border border-[var(--border-subtle)] bg-[var(--surface-sunken)] p-[var(--space-5)]">
+        <h3 className="flex items-center gap-2 text-[length:var(--text-h4)]">
+          <Lock size={14} aria-hidden="true" className="text-[var(--text-muted)]" />
+          {t("admin.customers.formCustomerOwned")}
+        </h3>
+        <dl className="m-0 grid gap-4 sm:grid-cols-3">
+          <div className="grid gap-1">
+            <dt className="text-[length:var(--text-caption)] font-semibold text-[var(--text-primary)]">
+              {t("admin.customers.fieldEmail")}
+            </dt>
+            <dd className="m-0 break-all text-[length:var(--text-body-sm)] text-[var(--text-body)]">{customer.email}</dd>
+          </div>
+          <div className="grid gap-1">
+            <dt className="text-[length:var(--text-caption)] font-semibold text-[var(--text-primary)]">
+              {t("admin.customers.fieldAddress")}
+            </dt>
+            <dd className="m-0 text-[length:var(--text-body-sm)] text-[var(--text-body)]">
+              {customer.address ? (
+                <>
+                  {customer.address.line1}
+                  <br />
+                  {customer.address.postalCode} {customer.address.city}
+                </>
+              ) : (
+                <span className="text-[var(--text-subtle)]">{t("admin.customers.noAddress")}</span>
+              )}
+            </dd>
+          </div>
+          <div className="grid gap-1">
+            <dt className="text-[length:var(--text-caption)] font-semibold text-[var(--text-primary)]">
+              {t("admin.customers.fieldMarketing")}
+            </dt>
+            <dd className="m-0">
+              <Badge tone={customer.marketingOptIn ? "success" : "neutral"} size="sm">
+                {t(customer.marketingOptIn ? "admin.customers.optedIn" : "admin.customers.optedOut")}
+              </Badge>
+            </dd>
+          </div>
+        </dl>
+        <p className="m-0 text-[length:var(--text-caption)] text-[var(--text-muted)]">
+          {t("admin.customers.formCustomerOwnedHint")}
+        </p>
+      </section>
+
       <fieldset className="m-0 grid gap-4 rounded-[var(--radius-card)] border border-[var(--border-subtle)] bg-[var(--surface-card)] p-[var(--space-5)] shadow-[var(--shadow-xs)]">
         <legend className="px-2 text-[length:var(--text-h4)]">{t("admin.customers.formAccount")}</legend>
 
-        <FormField label={t("admin.customers.fieldStatus")} hint={t(`admin.customers.statusConsequence.${draft.status}`)}>
-          {(props) => (
-            <select
-              {...props}
-              data-field="status"
-              value={draft.status}
-              onChange={(e) => set("status", e.target.value as CustomerStatus)}
-              className="gt-admin-field"
-            >
-              {CUSTOMER_STATUSES.map((status) => (
-                <option key={status} value={status}>
-                  {t(`admin.customers.status.${status}`)}
-                </option>
-              ))}
-            </select>
-          )}
-        </FormField>
+        {draft.status === null ? (
+          <p className="m-0 flex flex-wrap items-center gap-2 text-[length:var(--text-body-sm)] text-[var(--text-muted)]">
+            <CustomerStatusBadge status={customer.status} size="sm" />
+            {t("admin.customers.statusConsequence.deactivated")}
+          </p>
+        ) : (
+          <FormField
+            label={t("admin.customers.fieldStatus")}
+            hint={t(`admin.customers.statusConsequence.${draft.status}`)}
+          >
+            {(props) => (
+              <select
+                {...props}
+                data-field="status"
+                value={draft.status ?? ""}
+                onChange={(e) => set("status", e.target.value as StaffSettableStatus)}
+                className="gt-admin-field"
+              >
+                {STAFF_SETTABLE_STATUSES.map((status) => (
+                  <option key={status} value={status}>
+                    {t(`admin.customers.status.${status}`)}
+                  </option>
+                ))}
+              </select>
+            )}
+          </FormField>
+        )}
 
         {/* The chosen status shown as the badge the rest of the interface uses,
-            so the operator recognises what they are about to save rather than
-            matching a word in a select to a colour in a table. */}
-        {draft.status !== customer.status && (
+            so the operator recognises what they are about to save. */}
+        {draft.status !== null && draft.status !== customer.status && (
           <p className="m-0 flex flex-wrap items-center gap-2 rounded-[var(--radius-sm)] border border-[var(--gt-amber-400)] bg-[var(--status-warning-bg)] p-3 text-[length:var(--text-caption)] text-[var(--status-warning-fg)]">
             {t("admin.customers.statusWillChange")}
             <CustomerStatusBadge status={customer.status} size="sm" />
@@ -290,23 +289,6 @@ export function CustomerEditForm({
             {t("admin.customers.fieldTagsHint")}
           </p>
         </div>
-
-        <label className="flex cursor-pointer items-start gap-3 rounded-[var(--radius-md)] border border-[var(--border-subtle)] p-3.5">
-          <input
-            type="checkbox"
-            checked={draft.marketingOptIn}
-            onChange={(e) => set("marketingOptIn", e.target.checked)}
-            className="mt-0.5 h-4 w-4 flex-none accent-[var(--gt-ink-900)]"
-          />
-          <span className="grid gap-0.5">
-            <span className="text-[length:var(--text-body-sm)] font-semibold text-[var(--text-primary)]">
-              {t("admin.customers.fieldMarketing")}
-            </span>
-            <span className="text-[length:var(--text-caption)] text-[var(--text-muted)]">
-              {t("admin.customers.fieldMarketingHint")}
-            </span>
-          </span>
-        </label>
       </fieldset>
 
       {/* The action bar sticks to the bottom of the form's own scroll area: the
@@ -328,4 +310,3 @@ export function CustomerEditForm({
     </form>
   );
 }
-

@@ -2,7 +2,7 @@
 
 The production web application of Global Toothgems: storefront, Academy, member area, Studio 3D and back office, in one Next.js (App Router) application backed by Supabase (see `supabase/README.md`) and deployed on Vercel. It was migrated from Vite + React Router in five phases (done on 2026-09-30): every screen is an App Router segment, public pages are rendered on the server, the private areas in the browser under server-checked layouts — see `docs/migration-nextjs.md` for the phases and the per-route checklist.
 
-> **Status: being industrialised.** The app started as a fully clickable implementation of the Claude Design prototype, with every domain on in-memory mock data. Domains are now connected to Supabase one by one; the up-to-date live/mock table is in the root `AGENTS.md` §4. With the Supabase variables set, these are **live**: the storefront catalogue, back-office product management and categories, member and staff authentication, favourites (`wishlist_items`), reviews and moderation, member and admin order reading, the Studio 3D workspace, and the Academy's back-office authoring and its public pages (catalogue, course sales pages). Cart/checkout/payment (no Stripe yet), promotions, gift cards, loyalty, customers/users/statistics/settings in the back office, contact and newsletter, and the Academy's learner side still run on mock data.
+> **Status: being industrialised.** The app started as a fully clickable implementation of the Claude Design prototype, with every domain on in-memory mock data. Domains are now connected to Supabase one by one; the up-to-date live/mock table is in the root `AGENTS.md` §4. With the Supabase variables set, these are **live**: the storefront catalogue, back-office product management and categories, member and staff authentication, favourites (`wishlist_items`), reviews and moderation, member and admin order reading, the back-office customers workspace, the Studio 3D workspace, and the Academy's back-office authoring and its public pages (catalogue, course sales pages). Cart/checkout/payment (no Stripe yet), promotions, gift cards, loyalty, statistics/settings in the back office, contact and newsletter, and the Academy's learner side still run on mock data.
 >
 > Architecture (decided): Next.js App Router on Vercel, business rules in Postgres (RLS + functions), server code in Supabase Edge Functions, payments by Stripe with webhook-driven fulfilment. Sections below that describe "prototype" behaviour, "Prototype controls" panels or mock stores document code that is **still mock and scheduled to be replaced**, not a target design.
 
@@ -93,7 +93,7 @@ What is not wired to the database yet, on purpose:
 - **Categories and families** are read from the database but not editable; a product's family is picked in the product form.
 - **The activity feed** shows this session's actions only; the full history is in `audit_logs` and `inventory_movements`.
 - **The seeded products' images** point at files that were never uploaded, so they show broken until replaced.
-- **Orders and reviews** are connected too (see "Orders and reviews on Supabase" below). **Other admin workspaces** (promotions, statistics, training…) still use their mock stores, so e.g. promotions refer to prototype product ids. The customers workspace reads its order counts from the order book, so it mixes mock customers with real orders.
+- **Orders and reviews** are connected too (see "Orders and reviews on Supabase" below). **Other admin workspaces** (promotions, statistics, training…) still use their mock stores, so e.g. promotions refer to prototype product ids. The customers workspace is live (see "Customers on Supabase" below).
 
 Code: `lib/supabase/` (client + generated `database.types.ts`), `lib/adminCatalogMapping.ts` (pure row ↔ form mapping, unit-tested), `lib/adminCatalogSupabase.tsx` (the Supabase store), `lib/adminCatalog.tsx` (the mock store, and the switch between the two), `lib/adminAuth.tsx`.
 
@@ -528,7 +528,7 @@ A separate, desktop-first management workspace for the product catalogue. Produc
 | `/admin/produits/:id` | Edit a product |
 | `/admin/categories` | Categories, read-only, with per-category counts and price ranges |
 
-Without Supabase, sign in with `camille@globaltoothgems.com` / `toothgems2026`; the screen prints both. With Supabase, use a staff account. Customers, Training, Analytics and Settings are drawn in the rail and permanently disabled — they show how the workspace could grow without pretending they exist.
+Without Supabase, sign in with `camille@globaltoothgems.com` / `toothgems2026`; the screen prints both. With Supabase, use a staff account. The customers workspace (`/admin/clients`) is described in "Customers on Supabase" below.
 
 ### How it is put together
 
@@ -701,6 +701,34 @@ Live on Supabase; without the Supabase variables the screen says the directory i
 - **Not offered:** permanent deletion of a member (suspend instead), editing the sign-in e-mail (it belongs to the person's account), an activity history (the audit log needs `manage_settings`; not wired). `deactivated` accounts (database status) are shown and can be reactivated; the screen never deactivates.
 - **Known limits:** an edit writes `profiles` then `staff_profiles` in two requests (not one transaction). For an account bootstrapped by SQL without staff details, the first edit creates them and stamps the editor as "invited by".
 
+## Customers on Supabase (`/admin/clients`)
+
+Live on Supabase; without the Supabase variables the workspace says the base is not connected (no invented people).
+
+- **One persistence boundary:** `src/lib/adminCustomers.tsx`, inside `AdminOrdersProvider`. Reads `profiles` (role
+  `customer`), the default shipping address (`customer_addresses`), `customer_tags`, `customer_notes` with their
+  author, the course seats of `admin_customer_courses()` and `my_permissions()`, 1 000 rows per request until all
+  are read; the status history of one account comes from `admin_customer_status_history()` on the detail page.
+  Row ↔ UI mapping (statuses, tags `follow_up` ↔ `followUp`, seats, validation mirroring the `profiles` CHECKs,
+  error codes) is pure and tested in `src/lib/adminCustomerMapping.ts`; vocabulary and derived facts in
+  `src/data/adminCustomers.ts` (no fixtures).
+- **Figures from the order book.** Order count, last order and net spend come from the live book
+  (`useAdminOrders`): spend per currency with the member area's rule (`spendOf`), never added across currencies;
+  sorting and the spend filter rank on euros only (`spendRank`, minor units). When the book is cut at
+  `BOOK_LIMIT` a notice says the figures cover the newest orders only.
+- **Training** shows each seat with the learner's own progress rule (steps validated + checks passed, over steps +
+  checks), completion, score and certificate from `course_completions`; a withdrawn course is labelled. Seats are
+  granted from `/admin/formations/:id/acces`.
+- **Writes under the member's JWT and `manage_customers`:** names, phone, birth date, country and status
+  (`UPDATE profiles`, guarded by `private.guard_profile_update()`, status audited), tags (insert/delete, audited),
+  notes (add, delete; edit only one's own — RLS). Every write re-reads the base; a refusal is a toast with the
+  reason, never a success. Without `manage_customers` the page is read-only (no selection, no edit tab).
+- **Not written from here:** the e-mail (sign-in identity), marketing consent and the address book belong to the
+  customer and are shown read-only. A closed (`deactivated`) account is shown and filtered but never reopened;
+  staff choose between active and suspended only.
+- **Not offered (no server side yet):** export, e-mail sending (the e-mail action opens the operator's own mail
+  client), creating a customer account.
+
 ## Remaining mock behaviour (to replace before launch)
 
 Without the Supabase variables every domain runs on its mock store. With them, the following still do not touch the database:
@@ -710,6 +738,6 @@ Without the Supabase variables every domain runs on its mock store. With them, t
 - **Artist Community.** Fixtures and in-memory posting; access derived client-side from the courses on the account. Post-launch.
 - **Loyalty Club.** Display only (`data/loyalty.ts` with a demo switch); the database already awards stamps on paid orders — the UI must read `loyalty_overview`.
 - **Security page:** data export and account deletion are simulated (they need backend jobs).
-- **Back-office promotions, gift cards, customers, statistics, settings and translations:** mock stores over a schema that already exists.
+- **Back-office promotions, gift cards, statistics, settings and translations:** mock stores over a schema that already exists.
 
 The mock stores, fixtures in `data/`, demo accounts and "Prototype controls" panels are removed domain by domain as each goes live; a production build must never fall back to them.

@@ -63,6 +63,7 @@ supabase/
   tests/iteration21_validation.sql  iteration 21 Academy public pages (what visitors and customers read) suite (always rolls back)
   tests/admin_orders_validation.sql back-office order book: what staff read, viewer/customer/visitor refusals (always rolls back)
   tests/admin_users_validation.sql  back-office team: viewer read-only, manager rank limits, no self change, customer/suspended/visitor refusals, audit (always rolls back)
+  tests/admin_customers_validation.sql back-office customers: customer refused, viewer read-only, manager writes and read-only columns, notes by their author, status history, course progress (always rolls back)
   config.toml   CLI settings this repo relies on (verify_jwt of the Edge Functions)
   functions/    Edge Functions (Deno): create-checkout-session, stripe-webhook, invite-staff-member, _shared/ (pure modules + clients),
                 *_test.ts (deno test), .env.example (secret names)
@@ -115,6 +116,7 @@ supabase/
 | 20261001071006 | `academy_published_integrity` | a price cut below an active amount promotion is refused (the course would become free); a deferred constraint trigger re-checks `course_publication_problems()` when a published course is saved, so it cannot become unpublishable while online |
 | 20261001121248 | `academy_public_pages` | Academy phase B: visitors and customers read the outline of a published course (modules, steps, knowledge checks' titles and pass marks, published translations — never blocks, questions or answers), its cover (`training_media` row + translations + the file in the private bucket) and its current price; `course_promotions` staff-only (the price view reads the running promotion through `private.course_running_promotion()`, SECURITY DEFINER); column grants hide `courses.created_by`/`updated_by` and the media's internal columns from `anon`; policies widened in place (ALTER POLICY) |
 | 20261001170703 | `academy_learner_access` | Academy phase C: `course_entitlements` (manual grants by `manage_training`, audited; `purchase` rows from phase D), `lesson_progress`, `quiz_attempts`, `course_completions` (sticky, certificate code); `learner_courses()` serves the held courses' content without answer keys or feedback; `complete_course_step()`, `answer_quiz_question()`, `submit_quiz_answers()` port the path rules of `lib/learning/path.ts` and score server-side; storage policy for the media of held courses; holders see their withdrawn course (row, translations, cover); `admin_grant_course()`, `admin_revoke_course_entitlement()`, `admin_course_entitlements()` |
+| 20261001220721 | `admin_customers` | back-office customers: `admin_customer_status_history(user)` (status changes of one account from `audit_logs` — date, old, new, actor name — for any active staff member; `audit_logs` itself stays `manage_settings`-only) and `admin_customer_courses(user \| null)` (course seats not revoked, with the learner's progress rule: validated steps that still exist + checks passed, over steps + checks; completion, score, certificate code). Both `SECURITY DEFINER`, staff only |
 
 RLS is **enabled in the same migration that creates each table** (deny by default);
 policies are granted back in `rls_policies`.
@@ -1128,6 +1130,19 @@ VAT rates, shipping zones/rates mirroring the Settings prototype. Media rows ref
     expiring mid-way. Consequence: a signed URL keeps working up to 4 h after a revocation, an expiry or a
     withdrawal, and for anyone the member passes it to. Shorten `LEARNER_SIGNED_URL_SECONDS`
     (`webapp/src/lib/learning/learnerApi.ts`) or move to a streaming provider (Mux) if that is not acceptable.
+56. **Back-office customers are read whole** (agent, 2026-10-02): `/admin/clients` reads every customer profile,
+    default shipping address, tag, note and course seat (1 000 rows per request) and filters in the browser, with
+    order counts and spend from the order book — the same deliberate choice as the order book. Plan when the base
+    grows: `range()` + filters on `profiles` and an aggregate RPC for the KPI row and the spend per customer.
+57. **Staff set customer status to active or suspended only** (agent, 2026-10-02, to confirm): `deactivated` is
+    treated as a closed account — shown and filtered, never set or reopened from the back office. A suspension is
+    enforced by the app's sign-in (non-active profiles get no session) and by `create_order()`; it does not revoke
+    a session already open on another device, and the learner functions do not check the profile status. Revoking
+    sessions (Auth admin API, Edge Function) and a status check in the learner RPCs are to decide.
+58. **The customer owns their e-mail, marketing consent and address book** (agent, 2026-10-02): the back office
+    shows them read-only (the profile guard already refuses `email` and `marketing_opt_in`; addresses are
+    owner-only under RLS). Export of the base, bulk e-mail and staff-created customer accounts are not offered:
+    each needs a server side (audited export job, Resend, Auth admin API) and a decision.
 
 ## Done
 
@@ -1172,6 +1187,9 @@ VAT rates, shipping zones/rates mirroring the Settings prototype. Media rows ref
 - Back-office team (`/admin/utilisateurs`): Edge Function `invite-staff-member` (invite, promote a customer, resend,
   cancel a pending invitation), screen on `staff_directory()` / `my_permissions()` / the matrix tables,
   `admin_users_validation.sql`. No schema change.
+- Back-office customers (`/admin/clients`): `admin_customer_status_history()`, `admin_customer_courses()`, screen on
+  `profiles` / `customer_addresses` / `customer_tags` / `customer_notes` and the order book,
+  `admin_customers_validation.sql`.
 - Iteration 20: Academy authoring — courses, modules, steps, content blocks, quizzes, training media library
   (private bucket), course price and course promotions, publication rules, `admin_save_course()`.
 - Iteration 21: Academy public pages (phase B) — outline, cover and current price of published courses readable by

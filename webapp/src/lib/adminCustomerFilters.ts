@@ -1,5 +1,4 @@
 import {
-  BASE_TODAY,
   customerName,
   customerSegment,
   trainingState,
@@ -74,12 +73,15 @@ export type SpendBand = "all" | "none" | "low" | "mid" | "high";
 
 export const SPEND_BANDS: SpendBand[] = ["all", "none", "low", "mid", "high"];
 
-/** Inclusive floor and exclusive ceiling of each band, in euros. */
+/**
+ * Inclusive floor and exclusive ceiling of each band, in minor units of the
+ * store currency (`spendRank`): "none" is nothing spent, "low" under 250 €.
+ */
 export const SPEND_RANGES: Record<Exclude<SpendBand, "all">, { min: number; max: number }> = {
-  none: { min: 0, max: 1 },
-  low: { min: 1, max: 250 },
-  mid: { min: 250, max: 1000 },
-  high: { min: 1000, max: Number.POSITIVE_INFINITY },
+  none: { min: Number.NEGATIVE_INFINITY, max: 1 },
+  low: { min: 1, max: 25_000 },
+  mid: { min: 25_000, max: 100_000 },
+  high: { min: 100_000, max: Number.POSITIVE_INFINITY },
 };
 
 export type CustomerSortKey =
@@ -139,6 +141,12 @@ export const PARAM = {
   pageSize: "taille",
 } as const;
 
+/** Today as a local ISO date: registration dates are compared as days. */
+export function localToday(now: Date = new Date()): string {
+  const pad = (n: number) => String(n).padStart(2, "0");
+  return `${now.getFullYear()}-${pad(now.getMonth() + 1)}-${pad(now.getDate())}`;
+}
+
 function addDays(isoDate: string, days: number): string {
   const d = new Date(`${isoDate}T12:00:00`);
   d.setDate(d.getDate() + days);
@@ -149,7 +157,7 @@ function oneOf<T extends string>(value: string | null, allowed: T[], fallback: T
   return value && (allowed as string[]).includes(value) ? (value as T) : fallback;
 }
 
-const STATUS_VALUES: string[] = ["active", "inactive", "suspended"];
+const STATUS_VALUES: string[] = ["active", "suspended", "deactivated"];
 const SEGMENT_VALUES: (CustomerSegment | "all")[] = ["all", "customer", "student", "vip"];
 
 export function readFilters(params: URLSearchParams): CustomerFilters {
@@ -177,16 +185,16 @@ export function readFilters(params: URLSearchParams): CustomerFilters {
 }
 
 /** Inclusive `[from, to]` registration window implied by the preset. */
-export function dateWindow(filters: CustomerFilters): { from: string; to: string } | null {
+export function dateWindow(filters: CustomerFilters, today: string = localToday()): { from: string; to: string } | null {
   switch (filters.datePreset) {
     case "today":
-      return { from: BASE_TODAY, to: BASE_TODAY };
+      return { from: today, to: today };
     case "last7":
-      return { from: addDays(BASE_TODAY, -6), to: BASE_TODAY };
+      return { from: addDays(today, -6), to: today };
     case "last30":
-      return { from: addDays(BASE_TODAY, -29), to: BASE_TODAY };
+      return { from: addDays(today, -29), to: today };
     case "thisYear":
-      return { from: `${BASE_TODAY.slice(0, 4)}-01-01`, to: BASE_TODAY };
+      return { from: `${today.slice(0, 4)}-01-01`, to: today };
     case "custom":
       if (!filters.from && !filters.to) return null;
       return { from: filters.from || "0000-01-01", to: filters.to || "9999-12-31" };
@@ -196,8 +204,8 @@ export function dateWindow(filters: CustomerFilters): { from: string; to: string
 }
 
 /**
- * Free-text match across the four things an administrator actually types: the
- * name, the email, the customer id and the phone number.
+ * Free-text match across what an administrator actually types: the name, the
+ * email, the customer id, the city and the phone number.
  *
  * Phone numbers are stored in international form (`+33 6 45 19 72 36`) and
  * typed in national form (`06 45 19 72 36`), so a plain substring match on the
@@ -222,7 +230,7 @@ function matchesSearch(customer: AdminCustomerRecord, term: string): boolean {
   if (!q) return true;
   if (matchesPhone(customer.phone, q)) return true;
 
-  return [customer.firstName, customer.lastName, customerName(customer), customer.email, customer.id, customer.city]
+  return [customer.firstName, customer.lastName, customerName(customer), customer.email, customer.id, customer.address?.city ?? ""]
     .join(" ")
     .toLowerCase()
     .includes(q);
@@ -260,14 +268,15 @@ function matchesTraining(customer: AdminCustomerRecord, filter: TrainingFilter):
 function matchesSpend(customer: AdminCustomerRecord, band: SpendBand): boolean {
   if (band === "all") return true;
   const { min, max } = SPEND_RANGES[band];
-  return customer.lifetimeValue >= min && customer.lifetimeValue < max;
+  return customer.spendRank >= min && customer.spendRank < max;
 }
 
 export function applyFilters(
   customers: AdminCustomerRecord[],
   filters: CustomerFilters,
+  today: string = localToday(),
 ): AdminCustomerRecord[] {
-  const window = dateWindow(filters);
+  const window = dateWindow(filters, today);
 
   const kept = customers.filter((customer) => {
     if (!matchesSearch(customer, filters.search)) return false;
@@ -296,10 +305,10 @@ export function applyFilters(
       sorted.sort((a, b) => customerName(b).localeCompare(customerName(a), "fr"));
       break;
     case "spentDesc":
-      sorted.sort((a, b) => b.lifetimeValue - a.lifetimeValue);
+      sorted.sort((a, b) => b.spendRank - a.spendRank);
       break;
     case "spentAsc":
-      sorted.sort((a, b) => a.lifetimeValue - b.lifetimeValue);
+      sorted.sort((a, b) => a.spendRank - b.spendRank);
       break;
     case "ordersDesc":
       sorted.sort((a, b) => b.orderCount - a.orderCount);
@@ -333,7 +342,7 @@ export function activeFilterCount(filters: CustomerFilters): number {
 
 export interface CustomerMetrics {
   total: number;
-  /** Registered within the calendar month of `BASE_TODAY`. */
+  /** Registered within the current calendar month. */
   newThisMonth: number;
   active: number;
   withTraining: number;
@@ -341,8 +350,6 @@ export interface CustomerMetrics {
   repeat: number;
   /** `repeat` as a whole percentage of the base. */
   repeatShare: number;
-  /** Everything the base has spent to date. */
-  lifetimeValue: number;
 }
 
 /**
@@ -353,8 +360,8 @@ export interface CustomerMetrics {
  * it looks, because suspending an account has to move "Active" while the
  * operator is watching — that is the whole reason the tile is on the page.
  */
-export function metrics(customers: AdminCustomerRecord[]): CustomerMetrics {
-  const month = BASE_TODAY.slice(0, 7);
+export function metrics(customers: AdminCustomerRecord[], today: string = localToday()): CustomerMetrics {
+  const month = today.slice(0, 7);
   const count = (predicate: (c: AdminCustomerRecord) => boolean) => customers.filter(predicate).length;
   const repeat = count((c) => c.orderCount > 1);
 
@@ -365,7 +372,6 @@ export function metrics(customers: AdminCustomerRecord[]): CustomerMetrics {
     withTraining: count((c) => c.enrollments.length > 0),
     repeat,
     repeatShare: customers.length === 0 ? 0 : Math.round((repeat / customers.length) * 100),
-    lifetimeValue: customers.reduce((sum, c) => sum + c.lifetimeValue, 0),
   };
 }
 

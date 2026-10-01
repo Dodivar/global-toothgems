@@ -29,6 +29,7 @@ import { CustomerStatusBadge, SegmentBadge } from "../../components/admin/Custom
 import { CustomerTags } from "../../components/admin/CustomerTags";
 import { CustomerNotes } from "../../components/admin/CustomerNotes";
 import { CustomerEditForm } from "../../components/admin/CustomerEditForm";
+import { CustomerTableSkeleton, CustomersLoadError } from "../../components/admin/CustomersPlaceholders";
 import {
   ActivityPanel,
   CustomerSummary,
@@ -36,8 +37,13 @@ import {
   OverviewPanel,
   TrainingPanel,
 } from "../../components/admin/CustomerPanels";
-import { DisableDialog, EmailDialog, StatusDialog } from "../../components/admin/CustomerDialogs";
-import { CURRENT_OPERATOR, useAdminCustomers, type CustomerProfileDraft } from "../../lib/adminCustomers";
+import { DisableDialog, StatusDialog } from "../../components/admin/CustomerDialogs";
+import {
+  useAdminCustomers,
+  type CustomerProfileDraft,
+  type CustomerWriteError,
+  type CustomerWriteResult,
+} from "../../lib/adminCustomers";
 import { useAdminOrders } from "../../lib/adminOrders";
 import { useToast } from "../../lib/toast";
 import { useFormat } from "../../lib/format";
@@ -46,10 +52,12 @@ import {
   customerName,
   customerOrders,
   customerSegment,
+  customerShortId,
   lastOrderAt,
   type AdminCustomerRecord,
-  type CustomerStatus,
   type CustomerTag,
+  type StaffSettableStatus,
+  type StatusChange,
 } from "../../data/adminCustomers";
 import type { AdminOrder } from "../../data/adminOrders";
 import { useAdminShell } from "./AdminLayout";
@@ -57,20 +65,17 @@ import { useAdminShell } from "./AdminLayout";
 /**
  * One customer, in full.
  *
- * A route rather than a drawer, for the three reasons `OrderDetail` sets out
- * and one of its own. The three: the member area established one URL per
- * section and `vercel.json` rewrites every path, so a deep link survives a
- * refresh; a customer is the thing a colleague pastes into a message, and a
- * drawer has no address; and the record is too tall to read in a panel. The
- * fourth is this page specifically — it holds five tabs, one of which is a
- * twelve-field form, and a drawer would put that behind a scroll inside a
- * scroll. The brief allows either; this is the one that fits the content.
+ * A route rather than a drawer: a customer is the thing a colleague pastes into
+ * a message, and a drawer has no address; and the record is too tall to read in
+ * a panel. The list's own query string travels in the URL, so the breadcrumb,
+ * the back link and the previous/next arrows all return to the same filtered
+ * page of the same table. The active tab is in the URL too (`?onglet=`).
  *
- * Context is not lost, which is what the brief actually asks for: the list's
- * own query string travels in the URL, so the breadcrumb, the back link and the
- * previous/next arrows all return to the same filtered page of the same table
- * rather than to row one. The active tab is in the URL too (`?onglet=`), so a
- * link to someone's training activity opens on their training activity.
+ * Everything shown is read from Supabase through `useAdminCustomers`; the
+ * status changes come from the audit trail (`admin_customer_status_history()`),
+ * read again whenever the status moves. Editing, tags, status and notes need
+ * `manage_customers`: read-only staff get the same page without those controls
+ * (and without the edit tab).
  */
 
 /** Tabs, in the order they are read. URL values are French like every route. */
@@ -86,9 +91,6 @@ const TAB_META: Record<Tab, { labelKey: string; icon: typeof LayoutGrid }> = {
   edition: { labelKey: "admin.customers.tabEdit", icon: Pencil },
 };
 
-/** How long "Saving…" is shown before the success flash. */
-const SAVE_DELAY = 620;
-
 export function CustomerDetail() {
   const { formatDateShort } = useFormat();
   const { t } = useTranslation();
@@ -98,7 +100,23 @@ export function CustomerDetail() {
   const [params, setParams] = useSearchParams();
   const { openNav } = useAdminShell();
   const { showToast } = useToast();
-  const { customers, setStatus, addTag, removeTag, addNote, editNote, deleteNote, saveProfile } = useAdminCustomers();
+  const {
+    customers,
+    loading,
+    failed,
+    reload,
+    canManage,
+    currentUserId,
+    operatorName,
+    setStatus,
+    addTag,
+    removeTag,
+    addNote,
+    editNote,
+    deleteNote,
+    saveProfile,
+    readStatusHistory,
+  } = useAdminCustomers();
   const { orders } = useAdminOrders();
 
   const customer = customers.find((c) => c.id === id);
@@ -107,8 +125,9 @@ export function CustomerDetail() {
   /* Tab                                                                    */
   /* ---------------------------------------------------------------------- */
 
+  const tabs: readonly Tab[] = canManage ? TABS : TABS.filter((tab) => tab !== "edition");
   const rawTab = params.get("onglet");
-  const tab: Tab = TABS.includes(rawTab as Tab) ? (rawTab as Tab) : "apercu";
+  const tab: Tab = tabs.includes(rawTab as Tab) ? (rawTab as Tab) : "apercu";
 
   const setTab = useCallback(
     (next: Tab) => {
@@ -146,26 +165,86 @@ export function CustomerDetail() {
   }, [customers, id]);
 
   /* ---------------------------------------------------------------------- */
+  /* Status history                                                         */
+  /* ---------------------------------------------------------------------- */
+
+  const [history, setHistory] = useState<StatusChange[]>([]);
+  const currentStatus = customer?.status;
+
+  // Read again whenever the status moves, so the activity tab shows the change
+  // the operator just made, as the audit trail recorded it.
+  useEffect(() => {
+    if (!currentStatus) return;
+    let live = true;
+    readStatusHistory(id).then((changes) => {
+      if (live) setHistory(changes ?? []);
+    });
+    return () => {
+      live = false;
+    };
+  }, [id, currentStatus, readStatusHistory]);
+
+  /* ---------------------------------------------------------------------- */
   /* Dialogs and saving                                                     */
   /* ---------------------------------------------------------------------- */
 
   const [statusOpen, setStatusOpen] = useState(false);
   const [disableOpen, setDisableOpen] = useState(false);
-  const [emailOpen, setEmailOpen] = useState(false);
   const [saving, setSaving] = useState(false);
-
-  // A pending save must not outlive the component, or React sets state on an
-  // unmounted tree when the operator navigates away mid-save.
-  useEffect(() => () => setSaving(false), []);
 
   const derived = useMemo(() => {
     if (!customer) return null;
     return {
       orders: customerOrders(customer, orders),
-      activity: customerActivity(customer, orders),
+      activity: customerActivity(customer, orders, history),
       lastOrder: lastOrderAt(customer, orders),
     };
-  }, [customer, orders]);
+  }, [customer, orders, history]);
+
+  const refused = (error: CustomerWriteError) =>
+    showToast(t("admin.customers.writeErrorTitle"), t(`admin.customers.writeError.${error}`), "error");
+
+  /** Shows the refusal, if any; true when the write went through. */
+  const settle = (result: CustomerWriteResult): boolean => {
+    if (!result.ok) refused(result.error);
+    return result.ok;
+  };
+
+  if (loading) {
+    return (
+      <>
+        <AdminHeader
+          title={t("admin.customers.title")}
+          crumbs={[
+            { label: t("admin.nav.dashboard"), to: "/admin" },
+            { label: t("admin.nav.customers"), to: backTo },
+          ]}
+          onOpenNav={openNav}
+        />
+        <div className="px-[var(--admin-gutter)] pt-5">
+          <CustomerTableSkeleton rows={4} />
+        </div>
+      </>
+    );
+  }
+
+  if (failed) {
+    return (
+      <>
+        <AdminHeader
+          title={t("admin.customers.title")}
+          crumbs={[
+            { label: t("admin.nav.dashboard"), to: "/admin" },
+            { label: t("admin.nav.customers"), to: backTo },
+          ]}
+          onOpenNav={openNav}
+        />
+        <div className="px-[var(--admin-gutter)] pt-5">
+          <CustomersLoadError onRetry={reload} />
+        </div>
+      </>
+    );
+  }
 
   if (!customer || !derived) {
     return (
@@ -188,7 +267,7 @@ export function CustomerDetail() {
             </span>
             <h2 className="text-[length:var(--text-h3)]">{t("admin.customers.detailMissingTitle")}</h2>
             <p className="m-0 max-w-[48ch] text-[length:var(--text-body-sm)] text-[var(--text-muted)]">
-              {t("admin.customers.detailMissingBody", { id })}
+              {t("admin.customers.detailMissingBody")}
             </p>
             <Button size="sm" variant="outline" iconLeft={ArrowLeft} onClick={() => navigate("/admin/clients")}>
               {t("admin.customers.backToCustomers")}
@@ -221,11 +300,22 @@ export function CustomerDetail() {
     );
   };
 
-  const moreItems: MenuItem[] = [
-    { id: "status", label: t("admin.customers.actionChangeStatus"), icon: CircleCheck, onSelect: () => setStatusOpen(true) },
-    { id: "notes", label: t("admin.customers.actionAddNote"), icon: FileText, onSelect: () => setTab("notes") },
-  ];
-  if (!suspended) {
+  const moreItems: MenuItem[] = [];
+  if (canManage && customer.status !== "deactivated") {
+    moreItems.push({
+      id: "status",
+      label: t("admin.customers.actionChangeStatus"),
+      icon: CircleCheck,
+      onSelect: () => setStatusOpen(true),
+    });
+  }
+  moreItems.push({
+    id: "notes",
+    label: t(canManage ? "admin.customers.actionAddNote" : "admin.customers.tabNotes"),
+    icon: FileText,
+    onSelect: () => setTab("notes"),
+  });
+  if (canManage && customer.status === "active") {
     moreItems.push({
       id: "disable",
       label: t("admin.customers.actionDisable"),
@@ -235,16 +325,32 @@ export function CustomerDetail() {
     });
   }
 
-  const handleSave = (draft: CustomerProfileDraft) => {
+  const changeStatus = async (status: StaffSettableStatus): Promise<boolean> => {
     setSaving(true);
-    // The delay stands in for a request, so the form shows its saving state the
-    // way it would against a real endpoint rather than flipping instantly.
-    setTimeout(() => {
-      saveProfile(customer.id, draft);
-      setSaving(false);
-      setTab("apercu");
-      showToast(t("admin.customers.toastSavedTitle"), t("admin.customers.toastSavedBody", { name }));
-    }, SAVE_DELAY);
+    const result = await setStatus([customer.id], status);
+    setSaving(false);
+    if (!result.ok) {
+      refused(result.error);
+      return false;
+    }
+    if (status === "suspended") {
+      showToast(t("admin.customers.toastDisableTitle", { name }), t("admin.customers.toastDisableBody"), "warning");
+    } else {
+      showToast(
+        t("admin.customers.toastStatusTitle", { name }),
+        t("admin.customers.toastStatusBody", { status: t(`admin.customers.status.${status}`) }),
+      );
+    }
+    return true;
+  };
+
+  const handleSave = async (draft: CustomerProfileDraft) => {
+    setSaving(true);
+    const result = await saveProfile(customer.id, draft);
+    setSaving(false);
+    if (!settle(result)) return;
+    setTab("apercu");
+    showToast(t("admin.customers.toastSavedTitle"), t("admin.customers.toastSavedBody", { name }));
   };
 
   return (
@@ -258,16 +364,19 @@ export function CustomerDetail() {
         ]}
         onOpenNav={openNav}
         actions={
-          <AdminButton variant="primary" iconLeft={Mail} onClick={() => setEmailOpen(true)}>
+          // The operator's own mail client: the shop sends no message from here.
+          <AdminButton
+            variant="primary"
+            iconLeft={Mail}
+            onClick={() => window.location.assign(`mailto:${customer.email}`)}
+          >
             {t("admin.customers.actionEmail")}
           </AdminButton>
         }
       />
 
       <div className="grid gap-5 px-[var(--admin-gutter)] pb-[clamp(32px,5vw,56px)] pt-5">
-        {/* Back link and queue navigation. The breadcrumb above already leads to
-            the list; this row is for working through a filtered list customer
-            by customer without going back to it. */}
+        {/* Back link and queue navigation. */}
         <div className="flex flex-wrap items-center gap-2">
           <Link
             to={backTo}
@@ -283,7 +392,7 @@ export function CustomerDetail() {
         </div>
 
         {/* Profile header: who they are, what state the account is in, and the
-            three actions worth reaching for without opening a tab. */}
+            actions worth reaching for without opening a tab. */}
         <div className="gt-admin-panel grid gap-4 p-[var(--space-5)]">
           <div className="flex flex-wrap items-start gap-4">
             <Avatar customer={customer} size={64} />
@@ -295,24 +404,28 @@ export function CustomerDetail() {
                 <SegmentBadge segment={customerSegment(customer)} size="sm" />
               </div>
               <p className="m-0 flex flex-wrap items-center gap-x-3 gap-y-1 text-[length:var(--text-caption)] text-[var(--text-muted)]">
-                <span className="uppercase tracking-[var(--tracking-wide)]">
+                <span className="uppercase tracking-[var(--tracking-wide)]" title={customer.id}>
                   {t("admin.customers.idPrefix")}
-                  {customer.id}
+                  {customerShortId(customer)}
                 </span>
                 <a href={`mailto:${customer.email}`} className="break-all underline decoration-1 underline-offset-4">
                   {customer.email}
                 </a>
-                <a href={`tel:${customer.phone.replace(/\s/g, "")}`} className="underline decoration-1 underline-offset-4">
-                  {customer.phone}
-                </a>
+                {customer.phone && (
+                  <a href={`tel:${customer.phone.replace(/\s/g, "")}`} className="underline decoration-1 underline-offset-4">
+                    {customer.phone}
+                  </a>
+                )}
                 <span>{t("admin.customers.registeredOn", { date: formatDateShort(customer.since) })}</span>
               </p>
             </div>
 
             <div className="flex flex-none flex-wrap items-center gap-2">
-              <Button size="sm" variant="outline" iconLeft={Pencil} onClick={() => setTab("edition")}>
-                {t("admin.customers.actionEdit")}
-              </Button>
+              {canManage && (
+                <Button size="sm" variant="outline" iconLeft={Pencil} onClick={() => setTab("edition")}>
+                  {t("admin.customers.actionEdit")}
+                </Button>
+              )}
               <Button size="sm" variant="ghost" iconLeft={ShoppingBag} onClick={() => setTab("commandes")}>
                 {t("admin.customers.actionViewOrders")}
               </Button>
@@ -332,32 +445,34 @@ export function CustomerDetail() {
             </div>
           </div>
 
-          {/* A suspended account says so in words at the top of its own record.
-              The badge alone is enough to scan a table; it is not enough to stop
-              an operator from spending five minutes on an account that cannot
-              currently be used. */}
+          {/* A suspended account says so in words at the top of its own record:
+              the badge alone is enough to scan a table, not to stop an operator
+              from spending five minutes on an account that cannot be used. */}
           {suspended && (
             <p className="m-0 flex flex-wrap items-center gap-3 rounded-[var(--radius-md)] border border-[var(--gt-red-400)] bg-[var(--status-error-bg)] p-3 text-[length:var(--text-body-sm)] text-[var(--status-error-fg)]">
               <Ban size={15} aria-hidden="true" className="flex-none" />
               <span className="flex-1">{t("admin.customers.suspendedBanner")}</span>
-              <Button size="sm" variant="ghost" onClick={() => setStatusOpen(true)}>
-                {t("admin.customers.actionChangeStatus")}
-              </Button>
+              {canManage && (
+                <Button size="sm" variant="ghost" onClick={() => setStatusOpen(true)}>
+                  {t("admin.customers.actionChangeStatus")}
+                </Button>
+              )}
             </p>
           )}
 
           <div className="border-t border-[var(--border-subtle)] pt-4">
             <CustomerTags
               tags={customer.tags}
-              onAdd={(tag: CustomerTag) => {
-                addTag(customer.id, tag);
+              editable={canManage}
+              onAdd={async (tag: CustomerTag) => {
+                if (!settle(await addTag(customer.id, tag))) return;
                 showToast(
                   t("admin.customers.toastTagAddedTitle"),
                   t("admin.customers.toastTagAddedBody", { tag: t(`admin.customers.tag.${tag}`), name }),
                 );
               }}
-              onRemove={(tag: CustomerTag) => {
-                removeTag(customer.id, tag);
+              onRemove={async (tag: CustomerTag) => {
+                if (!settle(await removeTag(customer.id, tag))) return;
                 showToast(
                   t("admin.customers.toastTagRemovedTitle"),
                   t("admin.customers.toastTagRemovedBody", { tag: t(`admin.customers.tag.${tag}`) }),
@@ -368,16 +483,10 @@ export function CustomerDetail() {
           </div>
         </div>
 
-        <CustomerSummary
-          customer={customer}
-          orderCountInBook={derived.orders.length}
-          lastOrder={derived.lastOrder}
-        />
+        <CustomerSummary customer={customer} orders={derived.orders} lastOrder={derived.lastOrder} />
 
-        {/* The tabs. A real tablist: arrow keys move between them, which is what
-            a keyboard user expects from a row of tabs and what `role="tab"`
-            promises. They scroll horizontally on a phone rather than wrapping
-            to three lines. */}
+        {/* The tabs. A real tablist: arrow keys move between them. They scroll
+            horizontally on a phone rather than wrapping to three lines. */}
         <div className="grid gap-4">
           <div
             role="tablist"
@@ -386,16 +495,14 @@ export function CustomerDetail() {
             onKeyDown={(event) => {
               if (event.key !== "ArrowRight" && event.key !== "ArrowLeft") return;
               event.preventDefault();
-              const index = TABS.indexOf(tab);
+              const index = tabs.indexOf(tab);
               const nextIndex =
-                event.key === "ArrowRight"
-                  ? (index + 1) % TABS.length
-                  : (index - 1 + TABS.length) % TABS.length;
-              setTab(TABS[nextIndex]);
-              document.getElementById(`gt-tab-${TABS[nextIndex]}`)?.focus();
+                event.key === "ArrowRight" ? (index + 1) % tabs.length : (index - 1 + tabs.length) % tabs.length;
+              setTab(tabs[nextIndex]);
+              document.getElementById(`gt-tab-${tabs[nextIndex]}`)?.focus();
             }}
           >
-            {TABS.map((value) => {
+            {tabs.map((value) => {
               const meta = TAB_META[value];
               const Icon = meta.icon;
               const selected = tab === value;
@@ -446,18 +553,12 @@ export function CustomerDetail() {
               <OverviewPanel
                 customer={customer}
                 recent={derived.activity.slice(-3)}
-                onEdit={() => setTab("edition")}
+                onEdit={canManage ? () => setTab("edition") : undefined}
                 onSeeAllActivity={() => setTab("activite")}
               />
             )}
 
-            {tab === "commandes" && (
-              <OrdersPanel
-                orders={derived.orders}
-                lifetimeCount={customer.orderCount}
-                hrefForOrder={hrefForOrder}
-              />
-            )}
+            {tab === "commandes" && <OrdersPanel orders={derived.orders} hrefForOrder={hrefForOrder} />}
 
             {tab === "formation" && <TrainingPanel customer={customer} />}
 
@@ -466,27 +567,32 @@ export function CustomerDetail() {
             {tab === "notes" && (
               <CustomerNotes
                 notes={customer.notes}
-                author={CURRENT_OPERATOR}
-                onAdd={(body) => {
-                  addNote(customer.id, body);
+                author={operatorName}
+                canWrite={canManage}
+                currentUserId={currentUserId}
+                onAdd={async (body) => {
+                  if (!settle(await addNote(customer.id, body))) return false;
                   showToast(t("admin.customers.toastNoteAddedTitle"), t("admin.customers.toastNoteAddedBody"));
+                  return true;
                 }}
-                onEdit={(noteId, body) => {
-                  editNote(customer.id, noteId, body);
+                onEdit={async (noteId, body) => {
+                  if (!settle(await editNote(noteId, body))) return false;
                   showToast(t("admin.customers.toastNoteEditedTitle"), t("admin.customers.toastNoteEditedBody"));
+                  return true;
                 }}
-                onDelete={(noteId) => {
-                  deleteNote(customer.id, noteId);
+                onDelete={async (noteId) => {
+                  if (!settle(await deleteNote(noteId))) return false;
                   showToast(
                     t("admin.customers.toastNoteDeletedTitle"),
                     t("admin.customers.toastNoteDeletedBody"),
                     "info",
                   );
+                  return true;
                 }}
               />
             )}
 
-            {tab === "edition" && (
+            {tab === "edition" && canManage && (
               <CustomerEditForm
                 key={customer.id}
                 customer={customer}
@@ -500,42 +606,19 @@ export function CustomerDetail() {
 
         <StatusDialog
           customer={statusOpen ? customer : null}
+          busy={saving}
           onClose={() => setStatusOpen(false)}
-          onConfirm={(status: CustomerStatus) => {
-            setStatus(customer.id, status);
-            showToast(
-              t("admin.customers.toastStatusTitle", { name }),
-              t("admin.customers.toastStatusBody", { status: t(`admin.customers.status.${status}`) }),
-              status === "suspended" ? "warning" : "success",
-            );
-            setStatusOpen(false);
+          onConfirm={async (status) => {
+            if (await changeStatus(status)) setStatusOpen(false);
           }}
         />
 
         <DisableDialog
           customers={disableOpen ? [customer] : []}
+          busy={saving}
           onClose={() => setDisableOpen(false)}
-          onConfirm={() => {
-            setStatus(customer.id, "suspended");
-            showToast(
-              t("admin.customers.toastDisableTitle", { name }),
-              t("admin.customers.toastDisableBody"),
-              "warning",
-            );
-            setDisableOpen(false);
-          }}
-        />
-
-        <EmailDialog
-          customers={emailOpen ? [customer] : []}
-          onClose={() => setEmailOpen(false)}
-          onConfirm={(subject) => {
-            setEmailOpen(false);
-            showToast(
-              t("admin.customers.toastEmailTitle", { count: 1 }),
-              t("admin.customers.toastEmailBody", { subject }),
-              "info",
-            );
+          onConfirm={async () => {
+            if (await changeStatus("suspended")) setDisableOpen(false);
           }}
         />
       </div>

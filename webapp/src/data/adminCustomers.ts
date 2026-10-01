@@ -1,256 +1,35 @@
 import type { Localized } from "./types";
-import type { AdminNote, AdminOrder } from "./adminOrders";
+import type { AdminOrder } from "./adminOrders";
+import type { SpentTotal } from "./orders";
 
 /**
- * The customer base as the back office sees it — mock data, front-end only.
+ * The customer base as the back office sees it: vocabulary and derived facts.
  *
- * The customers workspace is not connected to Supabase yet (`AGENTS.md` §4):
- * these records, their tags, training and notes are fixtures. A real customer
- * record is a server-side row behind RBAC, a status change is an audited
- * transition, and none of this is authorization.
- *
- * The order book is live, so it no longer seeds these people: their
- * `orderCount` and `lifetimeValue` are seeded lifetime figures, while the
- * orders tab lists the orders of the live book whose customer id matches —
- * none, for these fixtures. The interface keeps the two apart ("15 orders ·
- * 2,380 € lifetime" against "0 orders in this workspace").
+ * The records come from Supabase (`lib/adminCustomers.tsx`, mapped by
+ * `lib/adminCustomerMapping.ts`): `profiles` (role `customer`), the default
+ * shipping address, `customer_tags`, `customer_notes`, the course seats of
+ * `admin_customer_courses()` and the live order book. Nothing here is seeded.
  */
-
-/* -------------------------------------------------------------------------- */
-/* Identity                                                                   */
-/* -------------------------------------------------------------------------- */
-
-export interface AdminCustomer {
-  id: string;
-  firstName: string;
-  lastName: string;
-  email: string;
-  phone: string;
-  /** Lifetime orders, seeded. */
-  orderCount: number;
-  /** ISO date (YYYY-MM-DD) of the first order. */
-  since: string;
-  /** Everything spent to date, in the order currency. */
-  lifetimeValue: number;
-  addressLine: string;
-  postalCode: string;
-  city: string;
-  /** One of `DELIVERY_COUNTRIES`. */
-  country: string;
-}
-
-/** The seeded customers. */
-const CUSTOMERS = {
-  camille: {
-    id: "camille",
-    firstName: "Camille",
-    lastName: "Reynaud",
-    email: "camille.reynaud@studiolumi.fr",
-    phone: "+33 6 12 44 08 71",
-    orderCount: 11,
-    since: "2024-03-14",
-    lifetimeValue: 1840,
-    addressLine: "18 rue des Lices",
-    postalCode: "49100",
-    city: "Angers",
-    country: "fr",
-  },
-  nora: {
-    id: "nora",
-    firstName: "Nora",
-    lastName: "Benali",
-    email: "nora.benali@gmail.com",
-    phone: "+33 7 61 20 93 15",
-    orderCount: 5,
-    since: "2025-06-02",
-    lifetimeValue: 412,
-    addressLine: "7 quai Saint-Antoine",
-    postalCode: "69002",
-    city: "Lyon",
-    country: "fr",
-  },
-  elodie: {
-    id: "elodie",
-    firstName: "Élodie",
-    lastName: "Marchand",
-    email: "elodie@atelier-perle.fr",
-    phone: "+33 6 88 51 30 42",
-    orderCount: 8,
-    since: "2024-11-09",
-    lifetimeValue: 1120,
-    addressLine: "24 rue Crébillon",
-    postalCode: "44000",
-    city: "Nantes",
-    country: "fr",
-  },
-  lucas: {
-    id: "lucas",
-    firstName: "Lucas",
-    lastName: "Fontaine",
-    email: "lucas.fontaine@outlook.fr",
-    phone: "+33 6 34 77 12 90",
-    orderCount: 1,
-    since: "2026-09-17",
-    lifetimeValue: 0,
-    addressLine: "9 cours Victor Hugo",
-    postalCode: "33000",
-    city: "Bordeaux",
-    country: "fr",
-  },
-  sofia: {
-    id: "sofia",
-    firstName: "Sofia",
-    lastName: "Duarte",
-    email: "sofia.duarte@brightsmile.be",
-    phone: "+32 470 21 88 04",
-    orderCount: 4,
-    since: "2025-09-21",
-    lifetimeValue: 288,
-    addressLine: "Rue Antoine Dansaert 112",
-    postalCode: "1000",
-    city: "Bruxelles",
-    country: "be",
-  },
-  mathis: {
-    id: "mathis",
-    firstName: "Mathis",
-    lastName: "Perrot",
-    email: "mathis.perrot@proton.me",
-    phone: "+33 6 07 55 41 23",
-    orderCount: 2,
-    since: "2026-04-18",
-    lifetimeValue: 96,
-    addressLine: "Résidence Les Tilleuls",
-    postalCode: "59000",
-    city: "Lille",
-    country: "fr",
-  },
-  aisling: {
-    id: "aisling",
-    firstName: "Aisling",
-    lastName: "O’Connor",
-    email: "aisling.oconnor@gemstudio.ie",
-    phone: "+353 85 214 7760",
-    orderCount: 7,
-    since: "2025-02-27",
-    lifetimeValue: 940,
-    addressLine: "42 Camden Street Lower",
-    postalCode: "D02 XE80",
-    city: "Dublin",
-    country: "ie",
-  },
-  hannah: {
-    id: "hannah",
-    firstName: "Hannah",
-    lastName: "Weber",
-    email: "hannah.weber@zahnglanz.de",
-    phone: "+49 151 2277 4108",
-    orderCount: 12,
-    since: "2024-08-05",
-    lifetimeValue: 1655,
-    addressLine: "Torstraße 96",
-    postalCode: "10119",
-    city: "Berlin",
-    country: "de",
-  },
-  ines: {
-    id: "ines",
-    firstName: "Inès",
-    lastName: "Lambert",
-    email: "ines.lambert@icloud.com",
-    phone: "+33 6 45 19 72 36",
-    orderCount: 3,
-    since: "2026-02-11",
-    lifetimeValue: 118,
-    addressLine: "3 place Wilson",
-    postalCode: "31000",
-    city: "Toulouse",
-    country: "fr",
-  },
-  theo: {
-    id: "theo",
-    firstName: "Théo",
-    lastName: "Marchal",
-    email: "theo.marchal@gmail.com",
-    phone: "+33 7 82 30 66 51",
-    orderCount: 6,
-    since: "2025-05-30",
-    lifetimeValue: 640,
-    addressLine: "11 rue Saint-Michel",
-    postalCode: "35000",
-    city: "Rennes",
-    country: "fr",
-  },
-  clara: {
-    id: "clara",
-    firstName: "Clara",
-    lastName: "Vidal",
-    email: "clara.vidal@studioclara.fr",
-    phone: "+33 6 71 04 28 93",
-    orderCount: 15,
-    since: "2023-10-07",
-    lifetimeValue: 2380,
-    addressLine: "5 rue de l’Aiguillerie",
-    postalCode: "34000",
-    city: "Montpellier",
-    country: "fr",
-  },
-  julien: {
-    id: "julien",
-    firstName: "Julien",
-    lastName: "Roussel",
-    email: "julien.roussel@yahoo.fr",
-    phone: "+33 6 90 13 47 25",
-    orderCount: 2,
-    since: "2026-06-24",
-    lifetimeValue: 189,
-    addressLine: "28 route des Romains",
-    postalCode: "67000",
-    city: "Strasbourg",
-    country: "fr",
-  },
-  maelys: {
-    id: "maelys",
-    firstName: "Maëlys",
-    lastName: "Girard",
-    email: "maelys.girard@gmail.com",
-    phone: "+33 6 58 92 11 64",
-    orderCount: 4,
-    since: "2025-12-03",
-    lifetimeValue: 214,
-    addressLine: "16 rue Colbert",
-    postalCode: "37000",
-    city: "Tours",
-    country: "fr",
-  },
-  fatou: {
-    id: "fatou",
-    firstName: "Fatou",
-    lastName: "Diallo",
-    email: "fatou.diallo@eclatstudio.fr",
-    phone: "+33 6 22 85 70 39",
-    orderCount: 9,
-    since: "2024-06-19",
-    lifetimeValue: 1310,
-    addressLine: "47 rue Paradis",
-    postalCode: "13006",
-    city: "Marseille",
-    country: "fr",
-  },
-} satisfies Record<string, AdminCustomer>;
-
-export const ADMIN_CUSTOMERS: AdminCustomer[] = Object.values(CUSTOMERS);
 
 /* -------------------------------------------------------------------------- */
 /* Vocabulary                                                                 */
 /* -------------------------------------------------------------------------- */
 
-export type CustomerStatus = "active" | "inactive" | "suspended";
+/** `profiles.status`, as the database spells it. */
+export type CustomerStatus = "active" | "suspended" | "deactivated";
 
-export const CUSTOMER_STATUSES: CustomerStatus[] = ["active", "inactive", "suspended"];
+export const CUSTOMER_STATUSES: CustomerStatus[] = ["active", "suspended", "deactivated"];
 
 /**
- * Tags an administrator assigns by hand.
+ * What staff may set. A deactivated account is a closed one: it is shown and
+ * filtered, never chosen from the back office.
+ */
+export type StaffSettableStatus = Exclude<CustomerStatus, "deactivated">;
+
+export const STAFF_SETTABLE_STATUSES: StaffSettableStatus[] = ["active", "suspended"];
+
+/**
+ * Tags an administrator assigns by hand (`customer_tags.tag`, camel-cased).
  *
  * Deliberately not derived from the figures: "needs follow-up" is a judgement,
  * and a tag the system can rewrite under the operator is not a tag they can
@@ -285,601 +64,230 @@ export type CustomerSegment = "customer" | "student" | "vip";
 
 export const CUSTOMER_SEGMENTS: CustomerSegment[] = ["customer", "student", "vip"];
 
-/** One seat in one course. */
+/** One course seat (`admin_customer_courses()`), revoked seats left out. */
 export interface Enrollment {
-  /** A real id from `data/courses.ts`. */
   courseId: string;
-  /** ISO date the seat was bought. */
+  title: Localized;
+  /** ISO timestamp the seat starts. */
   enrolledAt: string;
-  /** Lessons completed, 0–100. */
+  /** The learner's own rule: steps validated + checks passed, 0–100. */
   progress: number;
-  /** Final quiz score, once the course is finished. */
+  /** Average check score once the course is completed. */
   score?: number;
-  /** Whether the certificate has been issued. */
-  certificate?: boolean;
-  /** ISO date of the last lesson opened. */
-  lastActivity: string;
+  /** ISO timestamp the course was completed, from `course_completions`. */
+  completedAt?: string;
+  /** Whether a certificate code was issued. */
+  certificate: boolean;
+  /** ISO timestamp of the last step validated or check submitted. */
+  lastActivity?: string;
+  /** The course is no longer published (the learner sees it greyed out). */
+  withdrawn: boolean;
 }
 
-/**
- * Something that happened on the account.
- *
- * Most of these are *derived* rather than seeded — see `customerActivity`. Only
- * the events that leave no other trace (a profile edit, a suspension) are typed
- * out, which is the same rule `adminOrders` applies to order timelines: a
- * history that can disagree with the record above it is worse than no history.
- */
+/** An internal note (`customer_notes`). */
+export interface CustomerNote {
+  id: string;
+  /** Null when the author's account no longer exists. */
+  authorId: string | null;
+  author: string;
+  /** ISO timestamp. */
+  at: string;
+  body: string;
+}
+
+/** A status change read from the audit trail (`admin_customer_status_history()`). */
+export interface StatusChange {
+  at: string;
+  from: CustomerStatus | null;
+  to: CustomerStatus;
+  actor: string | null;
+}
+
 export type CustomerEventKind =
   | "accountCreated"
   | "orderPlaced"
   | "orderDelivered"
   | "trainingPurchased"
-  | "courseStarted"
   | "courseCompleted"
   | "diplomaIssued"
-  | "profileUpdated"
   | "statusChanged"
   | "noteAdded";
 
+/** Something that happened on the account, assembled from the records. */
 export interface CustomerEvent {
   kind: CustomerEventKind;
-  /** ISO datetime (YYYY-MM-DDTHH:mm) or ISO date. */
+  /** ISO date or timestamp. */
   at: string;
-  /** Free detail shown after the event name: an order reference, a course id. */
+  /** Free detail shown after the event name: an order reference, an author, a status. */
   detail?: string;
+  /** The course an Academy event is about. */
+  course?: Localized;
 }
 
-export interface AdminCustomerRecord extends AdminCustomer {
+/** The default shipping address of the customer's own address book. */
+export interface CustomerAddress {
+  line1: string;
+  line2: string;
+  postalCode: string;
+  city: string;
+  /** Lower-case ISO code. */
+  country: string;
+}
+
+export interface AdminCustomerRecord {
+  id: string;
+  firstName: string;
+  lastName: string;
+  email: string;
+  /** Empty when not given. */
+  phone: string;
+  /** ISO date (YYYY-MM-DD) of registration. */
+  since: string;
+  /** `profiles.country_code`, lower-case, empty when not given. */
+  country: string;
+  address: CustomerAddress | null;
   status: CustomerStatus;
   tags: CustomerTag[];
-  /** ISO date. Absent for the customers who never filled it in — most of them. */
+  /** ISO date. */
   birthDate?: string;
-  enrollments: Enrollment[];
-  notes: AdminNote[];
-  /** Hand-written history only. `customerActivity` merges it with the rest. */
-  events: CustomerEvent[];
+  /** The consent cache the customer controls; read-only here. */
   marketingOptIn: boolean;
+  enrollments: Enrollment[];
+  notes: CustomerNote[];
+  /** Orders of the live book. */
+  orderCount: number;
+  /** Net spend per currency, minor units, never added across currencies. */
+  spend: SpentTotal[];
+  /** Net spend in the store currency (EUR), minor units: sorting and filtering only. */
+  spendRank: number;
 }
-
-/* -------------------------------------------------------------------------- */
-/* The customers who have ordered                                             */
-/* -------------------------------------------------------------------------- */
-
-/**
- * CRM fields for the fourteen identities `adminOrders` already defines.
- *
- * Keyed by their existing id so the two files cannot fall out of step: adding a
- * customer to the order book without giving them a relationship here throws at
- * module load rather than rendering a blank row nobody notices.
- */
-type Relationship = Omit<AdminCustomerRecord, keyof AdminCustomer>;
-
-const RELATIONSHIPS: Record<string, Relationship> = {
-  camille: {
-    status: "active",
-    tags: ["vip", "repeat", "highValue"],
-    birthDate: "1994-05-22",
-    marketingOptIn: true,
-    enrollments: [
-      { courseId: "fondation", enrolledAt: "2024-04-02", progress: 100, score: 92, certificate: true, lastActivity: "2024-05-18" },
-      { courseId: "avance", enrolledAt: "2026-06-11", progress: 64, lastActivity: "2026-09-11" },
-    ],
-    notes: [
-      {
-        id: "camille-n1",
-        author: "Léa — Support",
-        at: "2026-08-28T10:20",
-        body: {
-          fr: "Studio partenaire depuis 2024. Commande pour son salon, facturation au nom de la société — vérifier le champ société avant chaque facture.",
-          en: "Partner studio since 2024. Orders for her salon, invoiced to the company — check the company field before every invoice.",
-        },
-      },
-    ],
-    events: [{ kind: "profileUpdated", at: "2026-07-02T09:15" }],
-  },
-  nora: {
-    status: "active",
-    tags: ["repeat"],
-    marketingOptIn: true,
-    enrollments: [],
-    notes: [],
-    events: [],
-  },
-  elodie: {
-    status: "active",
-    tags: ["repeat", "highValue", "trainingCompleted"],
-    birthDate: "1991-11-30",
-    marketingOptIn: false,
-    enrollments: [
-      { courseId: "fondation", enrolledAt: "2024-11-20", progress: 100, score: 88, certificate: true, lastActivity: "2025-01-14" },
-      { courseId: "business", enrolledAt: "2025-03-08", progress: 100, score: 95, certificate: true, lastActivity: "2025-05-02" },
-    ],
-    notes: [],
-    events: [{ kind: "profileUpdated", at: "2026-03-19T16:40" }],
-  },
-  lucas: {
-    status: "active",
-    tags: ["newCustomer", "followUp"],
-    marketingOptIn: true,
-    enrollments: [],
-    notes: [
-      {
-        id: "lucas-n1",
-        author: "Léa — Support",
-        at: "2026-09-17T12:14",
-        body: {
-          fr: "Première commande, paiement refusé par la banque. Lien de paiement renvoyé — à rappeler si rien sous 48 h.",
-          en: "First order, payment declined by the bank. Payment link resent — call back if nothing within 48 h.",
-        },
-      },
-    ],
-    events: [],
-  },
-  sofia: {
-    status: "active",
-    tags: ["repeat"],
-    marketingOptIn: true,
-    enrollments: [{ courseId: "fondation", enrolledAt: "2026-08-30", progress: 38, lastActivity: "2026-09-14" }],
-    notes: [],
-    events: [],
-  },
-  mathis: {
-    status: "active",
-    tags: [],
-    marketingOptIn: false,
-    enrollments: [],
-    notes: [],
-    events: [],
-  },
-  aisling: {
-    status: "active",
-    tags: ["repeat", "trainingStudent", "highValue"],
-    birthDate: "1996-02-08",
-    marketingOptIn: true,
-    enrollments: [
-      { courseId: "fondation", enrolledAt: "2025-03-14", progress: 100, score: 79, certificate: true, lastActivity: "2025-04-29" },
-      { courseId: "avance", enrolledAt: "2026-09-02", progress: 22, lastActivity: "2026-09-16" },
-    ],
-    notes: [
-      {
-        id: "aisling-n1",
-        author: "Marc — Logistique",
-        at: "2026-09-08T11:05",
-        body: {
-          fr: "Livraisons Irlande : privilégier l'expédition express, le standard dépasse souvent 10 jours sur cette adresse.",
-          en: "Ireland deliveries: prefer express shipping, standard regularly exceeds 10 days to this address.",
-        },
-      },
-    ],
-    events: [],
-  },
-  hannah: {
-    status: "active",
-    tags: ["vip", "repeat", "highValue", "trainingCompleted"],
-    birthDate: "1989-07-17",
-    marketingOptIn: true,
-    enrollments: [
-      { courseId: "fondation", enrolledAt: "2024-08-21", progress: 100, score: 96, certificate: true, lastActivity: "2024-10-03" },
-      { courseId: "avance", enrolledAt: "2025-01-16", progress: 100, score: 91, certificate: true, lastActivity: "2025-03-11" },
-      { courseId: "business", enrolledAt: "2026-05-04", progress: 71, lastActivity: "2026-09-13" },
-    ],
-    notes: [],
-    events: [{ kind: "profileUpdated", at: "2026-01-23T14:02" }],
-  },
-  ines: {
-    status: "active",
-    tags: [],
-    marketingOptIn: true,
-    enrollments: [],
-    notes: [],
-    events: [],
-  },
-  theo: {
-    status: "active",
-    tags: ["repeat", "trainingStudent"],
-    marketingOptIn: false,
-    enrollments: [{ courseId: "fondation", enrolledAt: "2026-07-19", progress: 55, lastActivity: "2026-09-15" }],
-    notes: [],
-    events: [],
-  },
-  clara: {
-    status: "active",
-    tags: ["vip", "repeat", "highValue", "trainingCompleted"],
-    birthDate: "1987-09-04",
-    marketingOptIn: true,
-    enrollments: [
-      { courseId: "fondation", enrolledAt: "2023-10-15", progress: 100, score: 94, certificate: true, lastActivity: "2023-12-01" },
-      { courseId: "avance", enrolledAt: "2024-02-27", progress: 100, score: 98, certificate: true, lastActivity: "2024-04-16" },
-      { courseId: "business", enrolledAt: "2024-09-10", progress: 100, score: 90, certificate: true, lastActivity: "2024-11-22" },
-    ],
-    notes: [
-      {
-        id: "clara-n1",
-        author: "Léa — Support",
-        at: "2026-06-04T09:40",
-        body: {
-          fr: "Meilleure cliente du fichier. Formatrice invitée sur l'atelier de novembre — accord verbal, à confirmer par écrit.",
-          en: "Highest-value customer on file. Guest trainer for the November workshop — verbal agreement, to be confirmed in writing.",
-        },
-      },
-      {
-        id: "clara-n2",
-        author: "Marc — Logistique",
-        at: "2026-09-10T15:28",
-        body: {
-          fr: "Commandes groupées pour son studio : préparer en une seule expédition quand deux commandes tombent le même jour.",
-          en: "Bulk orders for her studio: combine into a single shipment when two orders land on the same day.",
-        },
-      },
-    ],
-    events: [{ kind: "profileUpdated", at: "2025-11-08T10:11" }],
-  },
-  julien: {
-    status: "active",
-    tags: ["newCustomer"],
-    marketingOptIn: true,
-    enrollments: [],
-    notes: [],
-    events: [],
-  },
-  maelys: {
-    status: "active",
-    tags: ["repeat", "trainingStudent"],
-    marketingOptIn: true,
-    enrollments: [{ courseId: "fondation", enrolledAt: "2026-08-12", progress: 47, lastActivity: "2026-09-16" }],
-    notes: [],
-    events: [],
-  },
-  fatou: {
-    status: "active",
-    tags: ["repeat", "highValue", "trainingCompleted"],
-    birthDate: "1993-03-26",
-    marketingOptIn: false,
-    enrollments: [
-      { courseId: "fondation", enrolledAt: "2024-07-02", progress: 100, score: 85, certificate: true, lastActivity: "2024-08-20" },
-      { courseId: "avance", enrolledAt: "2025-10-14", progress: 100, score: 87, certificate: true, lastActivity: "2025-12-05" },
-    ],
-    notes: [],
-    events: [],
-  },
-};
-
-/* -------------------------------------------------------------------------- */
-/* The customers who have not                                                 */
-/* -------------------------------------------------------------------------- */
-
-/**
- * Accounts with no order in the current book.
- *
- * They exist because the states an administrator has to be able to *find* —
- * a suspended account, a dormant one, someone who registered yesterday and has
- * bought nothing — are exactly the ones the order book cannot contain. A
- * customer list seeded only from orders would have no empty rows in it, and the
- * "no orders" filter would be untestable.
- */
-const EXTRA: AdminCustomerRecord[] = [
-  {
-    id: "ilhan",
-    firstName: "Ilhan",
-    lastName: "Yilmaz",
-    email: "ilhan.yilmaz@gmail.com",
-    phone: "+33 6 12 77 40 18",
-    orderCount: 0,
-    since: "2026-09-16",
-    lifetimeValue: 0,
-    addressLine: "9 rue des Trois Frères",
-    postalCode: "75018",
-    city: "Paris",
-    country: "fr",
-    status: "active",
-    tags: ["newCustomer"],
-    marketingOptIn: true,
-    enrollments: [],
-    notes: [],
-    events: [],
-  },
-  {
-    id: "margot",
-    firstName: "Margot",
-    lastName: "Lefèvre",
-    email: "margot.lefevre@outlook.fr",
-    phone: "+33 7 61 05 93 22",
-    orderCount: 0,
-    since: "2026-09-12",
-    lifetimeValue: 0,
-    addressLine: "24 quai Saint-Vincent",
-    postalCode: "69001",
-    city: "Lyon",
-    country: "fr",
-    status: "active",
-    tags: ["newCustomer", "followUp"],
-    marketingOptIn: true,
-    enrollments: [],
-    notes: [
-      {
-        id: "margot-n1",
-        author: "Léa — Support",
-        at: "2026-09-15T14:35",
-        body: {
-          fr: "A demandé par mail si la Fondation couvre le matériel. Réponse envoyée, panier abandonné depuis — relancer en fin de semaine.",
-          en: "Asked by email whether the Foundation course covers equipment. Answered; cart abandoned since — follow up at the end of the week.",
-        },
-      },
-    ],
-    events: [],
-  },
-  {
-    id: "priya",
-    firstName: "Priya",
-    lastName: "Raman",
-    email: "priya.raman@studiolumen.de",
-    phone: "+49 151 2277 9043",
-    orderCount: 1,
-    since: "2026-09-04",
-    lifetimeValue: 249,
-    addressLine: "Kastanienallee 71",
-    postalCode: "10435",
-    city: "Berlin",
-    country: "de",
-    status: "active",
-    tags: ["newCustomer", "trainingStudent"],
-    marketingOptIn: true,
-    enrollments: [{ courseId: "fondation", enrolledAt: "2026-09-04", progress: 12, lastActivity: "2026-09-15" }],
-    notes: [],
-    events: [],
-  },
-  {
-    id: "yasmine",
-    firstName: "Yasmine",
-    lastName: "Benali",
-    email: "yasmine.benali@gmail.com",
-    phone: "+32 470 88 21 06",
-    orderCount: 2,
-    since: "2025-04-11",
-    lifetimeValue: 164,
-    addressLine: "18 rue du Marché aux Herbes",
-    postalCode: "1000",
-    city: "Bruxelles",
-    country: "be",
-    status: "inactive",
-    tags: [],
-    marketingOptIn: false,
-    enrollments: [],
-    notes: [
-      {
-        id: "yasmine-n1",
-        author: "Léa — Support",
-        at: "2026-05-02T09:50",
-        body: {
-          fr: "Aucune commande depuis avril 2025. Désinscrite de la newsletter à sa demande — ne pas inclure dans les relances marketing.",
-          en: "No order since April 2025. Unsubscribed from the newsletter at her request — do not include in marketing follow-ups.",
-        },
-      },
-    ],
-    events: [{ kind: "profileUpdated", at: "2026-05-02T09:44" }],
-  },
-  {
-    id: "romain",
-    firstName: "Romain",
-    lastName: "Delcourt",
-    email: "romain.delcourt@laposte.net",
-    phone: "+33 6 33 51 08 74",
-    orderCount: 1,
-    since: "2024-01-29",
-    lifetimeValue: 42,
-    addressLine: "6 rue Gambetta",
-    postalCode: "59000",
-    city: "Lille",
-    country: "fr",
-    status: "inactive",
-    tags: [],
-    marketingOptIn: false,
-    enrollments: [],
-    notes: [],
-    events: [],
-  },
-  {
-    id: "noemie",
-    firstName: "Noémie",
-    lastName: "Carpentier",
-    email: "noemie.carpentier@gmail.com",
-    phone: "+33 7 14 62 39 55",
-    orderCount: 3,
-    since: "2025-08-07",
-    lifetimeValue: 231,
-    addressLine: "12 rue Sainte-Catherine",
-    postalCode: "33000",
-    city: "Bordeaux",
-    country: "fr",
-    status: "suspended",
-    tags: ["followUp"],
-    marketingOptIn: false,
-    enrollments: [{ courseId: "fondation", enrolledAt: "2025-09-19", progress: 31, lastActivity: "2025-11-24" }],
-    notes: [
-      {
-        id: "noemie-n1",
-        author: "Marc — Logistique",
-        at: "2026-02-17T11:22",
-        body: {
-          fr: "Compte suspendu : trois litiges bancaires ouverts sur des commandes livrées. Dossier transmis à la comptabilité.",
-          en: "Account suspended: three chargebacks opened on delivered orders. File passed to accounting.",
-        },
-      },
-    ],
-    events: [{ kind: "statusChanged", at: "2026-02-17T11:20", detail: "suspended" }],
-  },
-  {
-    id: "dieter",
-    firstName: "Dieter",
-    lastName: "Hoffmann",
-    email: "dieter.hoffmann@web.de",
-    phone: "+49 172 5510 288",
-    orderCount: 0,
-    since: "2026-03-22",
-    lifetimeValue: 0,
-    addressLine: "Lindenstraße 14",
-    postalCode: "50667",
-    city: "Köln",
-    country: "de",
-    status: "suspended",
-    tags: [],
-    marketingOptIn: false,
-    enrollments: [],
-    notes: [
-      {
-        id: "dieter-n1",
-        author: "Léa — Support",
-        at: "2026-04-05T16:10",
-        body: {
-          fr: "Compte suspendu après signalement : tentatives répétées de création de comptes multiples avec la même carte.",
-          en: "Account suspended after a report: repeated attempts to create multiple accounts with the same card.",
-        },
-      },
-    ],
-    events: [{ kind: "statusChanged", at: "2026-04-05T16:08", detail: "suspended" }],
-  },
-  {
-    id: "siobhan",
-    firstName: "Siobhán",
-    lastName: "Murphy",
-    email: "siobhan.murphy@gemstudio.ie",
-    phone: "+353 85 774 1290",
-    orderCount: 6,
-    since: "2024-10-16",
-    lifetimeValue: 870,
-    addressLine: "31 South William Street",
-    postalCode: "D02 XK75",
-    city: "Dublin",
-    country: "ie",
-    status: "active",
-    tags: ["repeat", "trainingCompleted", "highValue"],
-    birthDate: "1990-12-19",
-    marketingOptIn: true,
-    enrollments: [
-      { courseId: "fondation", enrolledAt: "2024-11-03", progress: 100, score: 82, certificate: true, lastActivity: "2025-01-08" },
-      { courseId: "business", enrolledAt: "2026-09-09", progress: 8, lastActivity: "2026-09-17" },
-    ],
-    notes: [],
-    events: [],
-  },
-];
-
-/* -------------------------------------------------------------------------- */
-/* The base                                                                   */
-/* -------------------------------------------------------------------------- */
-
-/**
- * Every customer, newest registration first — the order the table opens on.
- *
- * Built by joining `ADMIN_CUSTOMERS` to `RELATIONSHIPS`, so the identity has
- * exactly one definition in the codebase.
- */
-export const ADMIN_CUSTOMER_RECORDS: AdminCustomerRecord[] = [
-  ...ADMIN_CUSTOMERS.map((customer) => {
-    const relationship = RELATIONSHIPS[customer.id];
-    if (!relationship) throw new Error(`No admin relationship seeded for customer "${customer.id}"`);
-    return { ...customer, ...relationship };
-  }),
-  ...EXTRA,
-].sort((a, b) => b.since.localeCompare(a.since));
-
-/**
- * "Today" for the registration-date presets, anchored to the most recent
- * registration for the same reason `adminOrderFilters` anchors to the newest
- * order: the data is fixed, and a "Today" preset that returns nothing reads as
- * a broken filter rather than as a quiet seed date.
- */
-export const BASE_TODAY: string = ADMIN_CUSTOMER_RECORDS.reduce(
-  (latest, c) => (c.since > latest ? c.since : latest),
-  ADMIN_CUSTOMER_RECORDS[0].since,
-);
 
 /* -------------------------------------------------------------------------- */
 /* Derived facts                                                              */
 /* -------------------------------------------------------------------------- */
+
+/** The currency spend is ranked and filtered in. Amounts in others are shown, never converted. */
+export const RANK_CURRENCY = "EUR";
 
 /**
  * Where the customer stands with the Academy, as one value.
  *
  * Derived from the seats rather than stored, so the training badge in the table
  * cannot contradict the course list on the detail page. "Completed" means every
- * seat is finished; a student who finished one course and started another is
+ * seat is completed; a student who finished one course and started another is
  * still in progress, because that is what an administrator needs to know before
  * sending them anything.
  */
-export function trainingState(customer: AdminCustomerRecord): TrainingState {
+export function trainingState(customer: Pick<AdminCustomerRecord, "enrollments">): TrainingState {
   if (customer.enrollments.length === 0) return "none";
-  if (customer.enrollments.every((e) => e.progress >= 100)) return "completed";
-  if (customer.enrollments.some((e) => e.progress > 0)) return "inProgress";
+  if (customer.enrollments.every((e) => e.completedAt)) return "completed";
+  if (customer.enrollments.some((e) => e.progress > 0 || e.completedAt)) return "inProgress";
   return "enrolled";
 }
 
 /** The segment filter's value. Judged from the relationship, not stored. */
-export function customerSegment(customer: AdminCustomerRecord): CustomerSegment {
+export function customerSegment(customer: Pick<AdminCustomerRecord, "tags" | "enrollments">): CustomerSegment {
   if (customer.tags.includes("vip") || customer.tags.includes("highValue")) return "vip";
   if (customer.enrollments.length > 0) return "student";
   return "customer";
 }
 
-/** Lifetime average basket. Zero orders has no average, so it reports zero. */
-export function averageOrderValue(customer: AdminCustomerRecord): number {
-  if (customer.orderCount === 0) return 0;
-  return Math.round((customer.lifetimeValue / customer.orderCount) * 100) / 100;
-}
-
-/** This customer's orders in the current book, newest first. */
-export function customerOrders(customer: AdminCustomerRecord, orders: AdminOrder[]): AdminOrder[] {
+/** This customer's orders in the book, newest first. */
+export function customerOrders(customer: Pick<AdminCustomerRecord, "id">, orders: AdminOrder[]): AdminOrder[] {
   return orders
     .filter((o) => o.customer.id === customer.id)
     .sort((a, b) => b.placedAt.localeCompare(a.placedAt));
 }
 
-/** ISO datetime of the most recent order in the book, if there is one. */
-export function lastOrderAt(customer: AdminCustomerRecord, orders: AdminOrder[]): string | undefined {
+/** ISO timestamp of the customer's most recent order, if there is one. */
+export function lastOrderAt(customer: Pick<AdminCustomerRecord, "id">, orders: AdminOrder[]): string | undefined {
   return customerOrders(customer, orders)[0]?.placedAt;
+}
+
+/**
+ * Average basket, minor units, when every paid order is in one currency.
+ * Null otherwise: an average across currencies is not a number.
+ */
+export function averageBasket(
+  customer: Pick<AdminCustomerRecord, "spend">,
+  orders: AdminOrder[],
+): SpentTotal | null {
+  if (customer.spend.length !== 1) return null;
+  const { currency, amount } = customer.spend[0];
+  const paid = orders.filter(
+    (o) =>
+      o.currency === currency &&
+      o.status !== "cancelled" &&
+      (o.payment.status === "paid" || o.payment.status === "partiallyRefunded" || o.payment.status === "refunded"),
+  ).length;
+  return paid === 0 ? null : { currency, amount: Math.round(amount / paid) };
 }
 
 /**
  * The account's history, oldest first.
  *
- * Assembled from the facts rather than typed out: the account's own
- * registration date, the orders the book holds, and each course seat's dates.
- * Only what leaves no other trace — a profile edit, a suspension — is seeded.
- * The rule is `adminOrders`': a timeline that can disagree with the record
- * above it is worse than no timeline.
+ * Assembled from the facts rather than typed out: the registration date, the
+ * orders the book holds, each course seat's dates, the notes and the status
+ * changes the audit trail recorded. A timeline that can disagree with the
+ * record above it is worse than no timeline.
  */
-export function customerActivity(customer: AdminCustomerRecord, orders: AdminOrder[]): CustomerEvent[] {
+export function customerActivity(
+  customer: AdminCustomerRecord,
+  orders: AdminOrder[],
+  statusHistory: StatusChange[] = [],
+): CustomerEvent[] {
   const events: CustomerEvent[] = [{ kind: "accountCreated", at: customer.since }];
 
   customerOrders(customer, orders).forEach((order) => {
     events.push({ kind: "orderPlaced", at: order.placedAt, detail: `#${order.reference}` });
-    if (order.status === "delivered") {
-      const delivered = order.timeline.find((e) => e.kind === "delivered");
-      if (delivered) events.push({ kind: "orderDelivered", at: delivered.at, detail: `#${order.reference}` });
-    }
+    const delivered = order.timeline.find((e) => e.kind === "delivered");
+    if (delivered) events.push({ kind: "orderDelivered", at: delivered.at, detail: `#${order.reference}` });
   });
 
   customer.enrollments.forEach((seat) => {
-    events.push({ kind: "trainingPurchased", at: seat.enrolledAt, detail: seat.courseId });
-    if (seat.progress > 0) events.push({ kind: "courseStarted", at: seat.enrolledAt, detail: seat.courseId });
-    if (seat.progress >= 100) {
-      events.push({ kind: "courseCompleted", at: seat.lastActivity, detail: seat.courseId });
-      if (seat.certificate) events.push({ kind: "diplomaIssued", at: seat.lastActivity, detail: seat.courseId });
+    events.push({ kind: "trainingPurchased", at: seat.enrolledAt, course: seat.title });
+    if (seat.completedAt) {
+      events.push({ kind: "courseCompleted", at: seat.completedAt, course: seat.title });
+      if (seat.certificate) events.push({ kind: "diplomaIssued", at: seat.completedAt, course: seat.title });
     }
   });
 
   customer.notes.forEach((note) => events.push({ kind: "noteAdded", at: note.at, detail: note.author }));
-  customer.events.forEach((event) => events.push(event));
+  statusHistory.forEach((change) =>
+    events.push({ kind: "statusChanged", at: change.at, detail: change.to }),
+  );
 
-  return events.sort((a, b) => a.at.localeCompare(b.at));
+  return events.sort((a, b) => toDate(a.at).getTime() - toDate(b.at).getTime());
 }
 
-export function customerName(customer: AdminCustomerRecord): string {
-  return `${customer.firstName} ${customer.lastName}`;
+/**
+ * A date or timestamp as a `Date`. Plain days are read at noon, so a time zone
+ * can never move them to the day before.
+ */
+export function toDate(at: string): Date {
+  if (/^\d{4}-\d{2}-\d{2}$/.test(at)) return new Date(`${at}T12:00:00`);
+  return new Date(at);
 }
 
-export function customerInitials(customer: AdminCustomerRecord): string {
-  return `${customer.firstName[0]}${customer.lastName[0]}`.toUpperCase();
+/** True when `at` carries a time of day (a timestamp rather than a plain date). */
+export function hasTime(at: string): boolean {
+  return at.includes("T");
+}
+
+/** The name to show: first and last name, else the e-mail's local part. */
+export function customerName(customer: Pick<AdminCustomerRecord, "firstName" | "lastName" | "email">): string {
+  const name = `${customer.firstName} ${customer.lastName}`.trim();
+  return name || customer.email.split("@")[0];
+}
+
+export function customerInitials(customer: Pick<AdminCustomerRecord, "firstName" | "lastName" | "email">): string {
+  const initials = `${customer.firstName.trim()[0] ?? ""}${customer.lastName.trim()[0] ?? ""}`;
+  return (initials || customer.email[0] || "?").toUpperCase();
+}
+
+/** The first block of the account id: enough to tell two people apart on screen. */
+export function customerShortId(customer: Pick<AdminCustomerRecord, "id">): string {
+  return customer.id.slice(0, 8);
 }
 
 /**
@@ -903,9 +311,4 @@ export function avatarTint(id: string): string {
   let sum = 0;
   for (let i = 0; i < id.length; i += 1) sum += id.charCodeAt(i);
   return AVATAR_TINTS[sum % AVATAR_TINTS.length];
-}
-
-/** A `Localized` body for a note typed now, in whichever language it was typed. */
-export function noteBody(body: string): Localized {
-  return { fr: body, en: body };
 }

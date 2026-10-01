@@ -7116,6 +7116,34 @@ export type Database = {
           user_id: string
         }[]
       }
+      admin_customer_courses: {
+        Args: { p_user_id?: string }
+        Returns: {
+          average_score: number
+          certificate_code: string
+          completed_at: string
+          course_id: string
+          course_status: string
+          expires_at: string
+          last_activity: string
+          nodes_done: number
+          nodes_total: number
+          source: string
+          starts_at: string
+          title: string
+          title_en: string
+          user_id: string
+        }[]
+      }
+      admin_customer_status_history: {
+        Args: { p_user_id: string }
+        Returns: {
+          actor_name: string
+          changed_at: string
+          new_status: string
+          old_status: string
+        }[]
+      }
       admin_delete_gem_color: { Args: { p_id: string }; Returns: undefined }
       admin_delete_product: {
         Args: { p_product_id: string }
@@ -7246,7 +7274,6 @@ export type Database = {
           isSetofReturn: false
         }
       }
-      complete_course_step: { Args: { p_step_id: string }; Returns: Json }
       checkout_session_status: {
         Args: { p_session_id: string }
         Returns: {
@@ -7254,6 +7281,7 @@ export type Database = {
           state: string
         }[]
       }
+      complete_course_step: { Args: { p_step_id: string }; Returns: Json }
       consume_inventory: {
         Args: { p_inventory_item_id: string; p_quantity: number }
         Returns: {

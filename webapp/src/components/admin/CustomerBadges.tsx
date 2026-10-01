@@ -31,19 +31,19 @@ import type {
  * Same contract as `StatusBadges` for orders, and for the same reason: every
  * badge carries a tone *and* an icon *and* the word itself. Colour alone would
  * fail WCAG 2.2 1.4.1, and on this page the stakes are concrete — "suspended"
- * and "inactive" are a decision apart, and an operator who cannot separate the
+ * and "deactivated" are a decision apart, and an operator who cannot separate the
  * amber from the red is one click from disabling the wrong account.
  *
  * Tones are spent as sparingly as the design system asks: emerald for an
- * account in good standing, ink for a dormant one, red only for a suspension.
+ * account in good standing, ink for a closed one, red only for a suspension.
  * Training is blue while it is in progress and emerald once it is finished,
  * which keeps green meaning "done" everywhere in the workspace.
  */
 
 const STATUS_META: Record<CustomerStatus, { tone: BadgeTone; icon: LucideIcon }> = {
   active: { tone: "success", icon: CircleCheck },
-  inactive: { tone: "neutral", icon: CircleMinus },
   suspended: { tone: "error", icon: CircleSlash },
+  deactivated: { tone: "neutral", icon: CircleMinus },
 };
 
 const TRAINING_META: Record<TrainingState, { tone: BadgeTone; icon: LucideIcon }> = {

@@ -1,10 +1,8 @@
 "use client";
 
-import { useCallback, useEffect, useMemo, useRef, useState } from "react";
+import { useCallback, useEffect, useMemo, useState } from "react";
 import { useTranslation } from "react-i18next";
 import { useNavigate, useSearchParams } from "../../lib/navigation";
-import { Download, UserPlus } from "lucide-react";
-import { AdminButton } from "../../components/admin/AdminButton";
 import { AdminHeader } from "../../components/admin/AdminHeader";
 import { CustomerMetricsRow } from "../../components/admin/CustomerMetricsRow";
 import { CustomersToolbar } from "../../components/admin/CustomersToolbar";
@@ -13,24 +11,19 @@ import { CustomerBulkBar } from "../../components/admin/CustomerBulkBar";
 import { Pagination } from "../../components/admin/Pagination";
 import {
   CustomerTableSkeleton,
+  CustomersLoadError,
   NoCustomerResults,
   NoCustomersYet,
 } from "../../components/admin/CustomersPlaceholders";
-import {
-  AddCustomerDialog,
-  DisableDialog,
-  EmailDialog,
-  ExportDialog,
-  StatusDialog,
-  type ExportFormat,
-  type ExportScope,
-} from "../../components/admin/CustomerDialogs";
-import { useAdminCustomers } from "../../lib/adminCustomers";
+import { DisableDialog, StatusDialog } from "../../components/admin/CustomerDialogs";
+import { useAdminCustomers, type CustomerWriteError } from "../../lib/adminCustomers";
 import { useAdminOrders } from "../../lib/adminOrders";
+import { BOOK_LIMIT } from "../../data/adminOrders";
 import { useToast } from "../../lib/toast";
 import {
   activeFilterCount,
   applyFilters,
+  localToday,
   metrics,
   paginate,
   PARAM,
@@ -45,44 +38,40 @@ import {
   lastOrderAt,
   type AdminCustomerRecord,
   type CustomerStatus,
+  type StaffSettableStatus,
 } from "../../data/adminCustomers";
 import { useAdminShell } from "./AdminLayout";
 
 /**
- * Customers — the second workspace of the back office.
+ * Customers — the customer base of the back office, read from Supabase.
  *
  * The page answers five questions without being learned first: how large the
  * base is, how much of it is active, who signed up recently, who is studying,
- * and where Clara Vidal is. The reading order is fixed and matches Orders, so
- * an administrator who has learned one screen has learned this one: the header
- * says where you are, the KPI row answers the counting questions *and* filters,
- * the toolbar answers the finding question, and everything below is the table.
+ * and where a given person is. The reading order matches Orders: the header
+ * says where you are, the KPI row answers the counting questions *and*
+ * filters, the toolbar answers the finding question, and everything below is
+ * the table.
  *
  * State lives in three places, on purpose, exactly as it does on Orders:
  *
  * - **The URL** holds what the table is showing (`lib/adminCustomerFilters`),
  *   so a filtered view is a shareable link and the back button works.
- * - **`useAdminCustomers`** holds the base, so suspending an account moves the
- *   badge, the "Active" tile and that account's own history at once rather than
- *   just raising a toast.
- * - **This component** holds only what is genuinely transient: which rows are
- *   ticked, which dialog is open, and the short pending flash that stands in
- *   for a request.
+ * - **`useAdminCustomers`** holds the base and every write; each write re-reads
+ *   it, so a suspension moves the badge and the "Active" tile from what the
+ *   database now says.
+ * - **This component** holds only what is transient: which rows are ticked,
+ *   which dialog is open, and whether a write is in flight.
  *
- * The workspace shell — the rail and the sticky `AdminHeader` — comes from
- * `AdminLayout`, so this file owns the workspace and nothing about the chrome
- * around it.
+ * Account actions need `manage_customers`; read-only staff see the base without
+ * them. Customers create their own accounts, so there is no "add" action.
  */
-
-/** How long the simulated refetch shows skeleton rows. */
-const FILTER_DELAY = 420;
 
 export function Customers() {
   const { t } = useTranslation();
   const navigate = useNavigate();
   const { openNav } = useAdminShell();
   const { showToast } = useToast();
-  const { customers, setStatus, setStatusMany } = useAdminCustomers();
+  const { customers, loading, failed, available, ordersTruncated, reload, canManage, setStatus } = useAdminCustomers();
   const { orders } = useAdminOrders();
   const [params, setParams] = useSearchParams();
 
@@ -103,8 +92,7 @@ export function Customers() {
       const next = new URLSearchParams(params);
       Object.entries(changes).forEach(([key, value]) => {
         // A filter at its default is absent from the URL rather than spelled
-        // out: `?statut=&formation=all` is a link nobody can read, and it makes
-        // "are any filters on" a parsing question instead of a lookup.
+        // out: `?statut=&formation=all` is a link nobody can read.
         if (value == null || value === "" || value === "all") next.delete(key);
         else next.set(key, value);
       });
@@ -152,19 +140,16 @@ export function Customers() {
   /* Results                                                                */
   /* ---------------------------------------------------------------------- */
 
-  const overview = useMemo(() => metrics(customers), [customers]);
-  const filtered = useMemo(() => applyFilters(customers, filters), [customers, filters]);
+  const today = localToday();
+  const overview = useMemo(() => metrics(customers, today), [customers, today]);
+  const filtered = useMemo(() => applyFilters(customers, filters, today), [customers, filters, today]);
   const page = useMemo(
     () => paginate(filtered, filters.page, filters.pageSize),
     [filtered, filters.page, filters.pageSize],
   );
   const availableTags = useMemo(() => tagsInUse(customers), [customers]);
 
-  /**
-   * Last order per customer, computed once for the whole page rather than per
-   * row: `lastOrderAt` filters the order book, and doing that inside twenty-five
-   * rows is twenty-five passes over forty-six orders on every keystroke.
-   */
+  /** Last order per customer of the page, computed once rather than per row. */
   const lastOrders = useMemo(() => {
     const map = new Map<string, string>();
     page.items.forEach((customer) => {
@@ -173,31 +158,6 @@ export function Customers() {
     });
     return map;
   }, [page.items, orders]);
-
-  /**
-   * The filtering flash.
-   *
-   * Filtering is synchronous here, so the skeleton exists to show the *shape* of
-   * the state a real implementation would have — and it is keyed on the query
-   * string rather than on a click, so it also appears when a filter changes from
-   * a KPI tile, a chip or a pasted URL.
-   *
-   * The guard compares the query to the last one seen rather than counting
-   * renders: a "first render" boolean is flipped by StrictMode's double effect
-   * invocation in development, which makes the page open into skeletons with no
-   * filter having changed at all.
-   */
-  const [pending, setPending] = useState(false);
-  const querySignature = params.toString();
-  const lastQuery = useRef(querySignature);
-
-  useEffect(() => {
-    if (lastQuery.current === querySignature) return;
-    lastQuery.current = querySignature;
-    setPending(true);
-    const id = setTimeout(() => setPending(false), FILTER_DELAY);
-    return () => clearTimeout(id);
-  }, [querySignature]);
 
   /* ---------------------------------------------------------------------- */
   /* Selection                                                              */
@@ -240,16 +200,50 @@ export function Customers() {
   );
 
   /* ---------------------------------------------------------------------- */
-  /* Dialogs and feedback                                                   */
+  /* Writes and feedback                                                    */
   /* ---------------------------------------------------------------------- */
 
   const [statusTarget, setStatusTarget] = useState<AdminCustomerRecord | null>(null);
   const [disableTargets, setDisableTargets] = useState<AdminCustomerRecord[]>([]);
-  const [emailTargets, setEmailTargets] = useState<AdminCustomerRecord[]>([]);
-  const [exportOpen, setExportOpen] = useState(false);
-  const [addOpen, setAddOpen] = useState(false);
+  const [busy, setBusy] = useState(false);
+
+  const refused = (error: CustomerWriteError) =>
+    showToast(t("admin.customers.writeErrorTitle"), t(`admin.customers.writeError.${error}`), "error");
+
+  /** Changes the status of `targets`; true when the database accepted it. */
+  const changeStatus = async (targets: AdminCustomerRecord[], status: StaffSettableStatus): Promise<boolean> => {
+    setBusy(true);
+    const result = await setStatus(targets.map((c) => c.id), status);
+    setBusy(false);
+    if (!result.ok) {
+      refused(result.error);
+      return false;
+    }
+    if (result.changed === 0) return true;
+    if (status === "suspended") {
+      showToast(
+        result.changed === 1 && targets.length === 1
+          ? t("admin.customers.toastDisableTitle", { name: customerName(targets[0]) })
+          : t("admin.customers.toastDisableTitleMany", { count: result.changed }),
+        t("admin.customers.toastDisableBody"),
+        "warning",
+      );
+    } else if (targets.length === 1) {
+      showToast(
+        t("admin.customers.toastStatusTitle", { name: customerName(targets[0]) }),
+        t("admin.customers.toastStatusBody", { status: t(`admin.customers.status.${status}`) }),
+      );
+    } else {
+      showToast(
+        t("admin.customers.toastBulkStatusTitle", { count: result.changed }),
+        t("admin.customers.toastBulkStatusBody", { status: t(`admin.customers.status.${status}`) }),
+      );
+    }
+    return true;
+  };
 
   /** Detail path carrying the list's current query, so "back" returns here. */
+  const querySignature = params.toString();
   const hrefFor = (customer: AdminCustomerRecord) =>
     `/admin/clients/${customer.id}${querySignature ? `?${querySignature}` : ""}`;
 
@@ -258,16 +252,6 @@ export function Customers() {
     const next = new URLSearchParams(params);
     next.set("onglet", tab);
     return `/admin/clients/${customer.id}?${next.toString()}`;
-  };
-
-  const applyStatusToSelection = (status: CustomerStatus) => {
-    const ids = [...selected];
-    setStatusMany(ids, status);
-    setSelected(new Set());
-    showToast(
-      t("admin.customers.toastBulkStatusTitle", { count: ids.length }),
-      t("admin.customers.toastBulkStatusBody", { status: t(`admin.customers.status.${status}`) }),
-    );
   };
 
   const tableProps = {
@@ -280,38 +264,30 @@ export function Customers() {
     onEdit: (customer: AdminCustomerRecord) => navigate(hrefForTab(customer, "edition")),
     onViewOrders: (customer: AdminCustomerRecord) => navigate(hrefForTab(customer, "commandes")),
     onViewTraining: (customer: AdminCustomerRecord) => navigate(hrefForTab(customer, "formation")),
-    onEmail: (customer: AdminCustomerRecord) => setEmailTargets([customer]),
+    // The operator's own mail client: the shop sends no message from here.
+    onEmail: (customer: AdminCustomerRecord) => window.location.assign(`mailto:${customer.email}`),
     onToggleAccount: (customer: AdminCustomerRecord) => {
       // Reactivating is not destructive, so it does not need a confirmation —
-      // it opens the status dialog, where the operator sees the three states
-      // and what each one means. Suspending goes straight to the confirmation.
+      // it opens the status dialog, where the operator sees what each status
+      // means. Suspending goes straight to the confirmation.
       if (customer.status === "suspended") setStatusTarget(customer);
       else setDisableTargets([customer]);
     },
+    canManage,
     lastOrders,
     hrefFor,
   };
 
   const hasCustomers = customers.length > 0;
-  const showEmptyResults = !pending && hasCustomers && filtered.length === 0;
+  const showEmptyResults = hasCustomers && filtered.length === 0;
 
   return (
     <>
-      {/* The workspace's own header, so Customers starts at the same vertical
-          position as Orders and the Dashboard. One action only: the header's
-          action slot is `flex-none`, and a second button there overflows a
-          375px screen — so Export lives in the panel below, beside the table it
-          would act on. */}
       <AdminHeader
         title={t("admin.customers.title")}
         description={t("admin.customers.description")}
         crumbs={[{ label: t("admin.nav.dashboard"), to: "/admin" }, { label: t("admin.nav.customers") }]}
         onOpenNav={openNav}
-        actions={
-          <AdminButton variant="primary" iconLeft={UserPlus} onClick={() => setAddOpen(true)}>
-            {t("admin.customers.addCustomer")}
-          </AdminButton>
-        }
       />
 
       <div className="grid gap-4 px-[var(--admin-gutter)] pb-[clamp(32px,5vw,56px)] pt-5">
@@ -346,21 +322,23 @@ export function Customers() {
             onDatePreset={onDatePreset}
             onReset={onReset}
           />
-
-          {/* Export sits with the table rather than in the header: it acts on
-              what the toolbar above has narrowed to, and the dialog's scope
-              options only make sense next to the result count. */}
-          <div className="flex flex-wrap items-center justify-end gap-2 border-t border-[var(--border-subtle)] pt-3">
-            <AdminButton variant="outline" iconLeft={Download} onClick={() => setExportOpen(true)}>
-              {t("admin.customers.exportCustomers")}
-            </AdminButton>
-          </div>
         </div>
 
-        {!hasCustomers ? (
-          <NoCustomersYet onAdd={() => setAddOpen(true)} />
-        ) : pending ? (
-          <CustomerTableSkeleton rows={Math.min(8, Math.max(3, page.items.length || 6))} />
+        {ordersTruncated && (
+          <p
+            role="status"
+            className="m-0 rounded-[var(--radius-md)] border border-[var(--gt-amber-400)] bg-[var(--status-warning-bg)] p-3 text-[length:var(--text-body-sm)] text-[var(--status-warning-fg)]"
+          >
+            {t("admin.customers.ordersTruncatedNotice", { count: BOOK_LIMIT })}
+          </p>
+        )}
+
+        {loading ? (
+          <CustomerTableSkeleton rows={6} />
+        ) : failed ? (
+          <CustomersLoadError onRetry={reload} />
+        ) : !hasCustomers ? (
+          <NoCustomersYet available={available} />
         ) : showEmptyResults ? (
           <NoCustomerResults onReset={onReset} />
         ) : (
@@ -378,92 +356,44 @@ export function Customers() {
           </>
         )}
 
-        <CustomerBulkBar
-          count={selected.size}
-          onClear={() => setSelected(new Set())}
-          onExport={() => setExportOpen(true)}
-          onEmail={() => setEmailTargets(selectedCustomers)}
-          onStatus={applyStatusToSelection}
-          onDisable={() => setDisableTargets(selectedCustomers)}
-        />
+        {canManage && (
+          <CustomerBulkBar
+            count={selected.size}
+            busy={busy}
+            onClear={() => setSelected(new Set())}
+            onReactivate={async () => {
+              if (await changeStatus(selectedCustomers.filter((c) => c.status === "suspended"), "active")) {
+                setSelected(new Set());
+              }
+            }}
+            onDisable={() => setDisableTargets(selectedCustomers)}
+          />
+        )}
 
         <StatusDialog
           customer={statusTarget}
+          busy={busy}
           onClose={() => setStatusTarget(null)}
-          onConfirm={(status) => {
+          onConfirm={async (status) => {
             if (!statusTarget) return;
-            setStatus(statusTarget.id, status);
-            showToast(
-              t("admin.customers.toastStatusTitle", { name: customerName(statusTarget) }),
-              t("admin.customers.toastStatusBody", { status: t(`admin.customers.status.${status}`) }),
-              status === "suspended" ? "warning" : "success",
-            );
-            setStatusTarget(null);
+            if (await changeStatus([statusTarget], status)) setStatusTarget(null);
           }}
         />
 
         <DisableDialog
           customers={disableTargets}
+          busy={busy}
           onClose={() => setDisableTargets([])}
-          onConfirm={() => {
+          onConfirm={async () => {
             // The accounts this actually changes, not the whole selection: with
             // two already-suspended rows ticked alongside one active, the count
-            // is 1 — and naming `disableTargets[0]` would put an untouched
-            // account's name on the confirmation of a consequential action.
-            const affected = disableTargets.filter((c) => c.status !== "suspended");
-            setStatusMany(affected.map((c) => c.id), "suspended");
-            showToast(
-              affected.length === 1
-                ? t("admin.customers.toastDisableTitle", { name: customerName(affected[0]) })
-                : t("admin.customers.toastDisableTitleMany", { count: affected.length }),
-              t("admin.customers.toastDisableBody"),
-              "warning",
-            );
-            setDisableTargets([]);
-            setSelected(new Set());
-          }}
-        />
-
-        <EmailDialog
-          customers={emailTargets}
-          onClose={() => setEmailTargets([])}
-          onConfirm={(subject, recipients) => {
-            setEmailTargets([]);
-            showToast(
-              t("admin.customers.toastEmailTitle", { count: recipients }),
-              t("admin.customers.toastEmailBody", { subject }),
-              "info",
-            );
-          }}
-        />
-
-        <ExportDialog
-          open={exportOpen}
-          onClose={() => setExportOpen(false)}
-          selectionCount={selected.size}
-          filteredCount={filtered.length}
-          totalCount={customers.length}
-          onConfirm={(scope: ExportScope, format: ExportFormat) => {
-            const count =
-              scope === "selection" ? selected.size : scope === "filtered" ? filtered.length : customers.length;
-            setExportOpen(false);
-            showToast(
-              t("admin.customers.toastExportTitle"),
-              t("admin.customers.toastExportBody", {
-                count,
-                format: t(`admin.customers.exportFormats.${format}`),
-              }),
-              "info",
-            );
-          }}
-        />
-
-        <AddCustomerDialog
-          open={addOpen}
-          onClose={() => setAddOpen(false)}
-          onConfirm={(email) => {
-            setAddOpen(false);
-            showToast(t("admin.customers.toastInviteTitle"), t("admin.customers.toastInviteBody", { email }), "info");
+            // is 1 — and naming another account on the confirmation of a
+            // consequential action would be wrong.
+            const affected = disableTargets.filter((c) => c.status === "active");
+            if (await changeStatus(affected, "suspended")) {
+              setDisableTargets([]);
+              setSelected(new Set());
+            }
           }}
         />
       </div>

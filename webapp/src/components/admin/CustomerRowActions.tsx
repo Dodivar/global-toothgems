@@ -24,6 +24,7 @@ export function CustomerRowActions({
   onViewTraining,
   onEmail,
   onToggleAccount,
+  canManage,
 }: {
   customer: AdminCustomerRecord;
   onEdit: () => void;
@@ -31,13 +32,15 @@ export function CustomerRowActions({
   onViewTraining: () => void;
   onEmail: () => void;
   onToggleAccount: () => void;
+  /** `manage_customers`: editing and access actions are offered. */
+  canManage: boolean;
 }) {
   const { t } = useTranslation();
   const suspended = customer.status === "suspended";
 
-  const items: MenuItem[] = [
-    { id: "edit", label: t("admin.customers.actionEdit"), icon: Pencil, onSelect: onEdit },
-  ];
+  const items: MenuItem[] = canManage
+    ? [{ id: "edit", label: t("admin.customers.actionEdit"), icon: Pencil, onSelect: onEdit }]
+    : [];
 
   if (customer.orderCount > 0) {
     items.push({
@@ -60,7 +63,8 @@ export function CustomerRowActions({
 
   // Reactivating is not destructive, but it shares the slot with the action it
   // replaces so the menu's last entry is always "the one that changes access".
-  items.push(
+  // A closed (deactivated) account is not reopened from here.
+  if (canManage && customer.status !== "deactivated") items.push(
     suspended
       ? {
           id: "reactivate",
