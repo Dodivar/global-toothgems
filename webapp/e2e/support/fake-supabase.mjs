@@ -4,10 +4,11 @@
 // them itself (with a shared-secret project, `getClaims()` asks Auth, i.e. this
 // server). Not a Supabase emulator: only what e2e/auth-server.spec.ts needs.
 //
-//   POST /auth/v1/verify   token_hash "valid-…" → session; "expired" → otp_expired;
+//   POST /auth/v1/verify   token_hash "valid-…" → session ("valid-staff…": the staff
+//                          member's); "expired" → otp_expired;
 //                          type email_change + "halfway" → accepted, no session
-//   GET  /auth/v1/user     200 for a token issued here, 401 otherwise
-//   GET  /rest/v1/profiles the member's profile row
+//   GET  /auth/v1/user     200 (the token's user) for a token issued here, 401 otherwise
+//   GET  /rest/v1/profiles the member's or the staff member's profile row (`id=eq.`)
 //   GET  /rest/v1/products, /product_translations, /product_review_stats:
 //                          one product with a French and an English slug, for
 //                          the per-language product addresses (locale tests);
@@ -32,29 +33,35 @@ const USER = {
   updated_at: "2026-01-01T00:00:00Z",
 };
 
+const STAFF_USER = { ...USER, id: "00000000-0000-4000-8000-00000000e2e1", email: "staff.e2e@example.com" };
+const USERS = [USER, STAFF_USER];
+
 const b64 = (value) => Buffer.from(JSON.stringify(value)).toString("base64url");
 
-function accessToken() {
+function accessToken(user) {
   const now = Math.floor(Date.now() / 1000);
-  const claims = { sub: USER.id, email: USER.email, aud: "authenticated", role: "authenticated", iat: now, exp: now + 3600, session_id: "e2e", aal: "aal1", is_anonymous: false };
+  const claims = { sub: user.id, email: user.email, aud: "authenticated", role: "authenticated", iat: now, exp: now + 3600, session_id: "e2e", aal: "aal1", is_anonymous: false };
   return `${b64({ alg: "HS256", typ: "JWT" })}.${b64(claims)}.e2e`;
 }
 
-function issuedHere(token) {
+/** The user of a valid token issued here, else null. */
+function userOf(token) {
   const [header, payload, signature] = (token ?? "").split(".");
-  if (!header || !payload || signature !== "e2e") return false;
+  if (!header || !payload || signature !== "e2e") return null;
   try {
-    return JSON.parse(Buffer.from(payload, "base64url").toString()).exp > Date.now() / 1000;
+    const claims = JSON.parse(Buffer.from(payload, "base64url").toString());
+    return claims.exp > Date.now() / 1000 ? (USERS.find((user) => user.id === claims.sub) ?? null) : null;
   } catch {
-    return false;
+    return null;
   }
 }
 
-function session() {
-  return { access_token: accessToken(), token_type: "bearer", expires_in: 3600, expires_at: Math.floor(Date.now() / 1000) + 3600, refresh_token: "e2e-refresh", user: USER };
+function session(user = USER) {
+  return { access_token: accessToken(user), token_type: "bearer", expires_in: 3600, expires_at: Math.floor(Date.now() / 1000) + 3600, refresh_token: "e2e-refresh", user };
 }
 
-const PROFILE = { first_name: "Membre", last_name: "E2E", email: USER.email, phone: null, country_code: "FR", marketing_opt_in: false, status: "active", role: "customer" };
+const PROFILE = { id: USER.id, first_name: "Membre", last_name: "E2E", email: USER.email, phone: null, country_code: "FR", marketing_opt_in: false, status: "active", role: "customer", roles: { is_staff: false } };
+const STAFF_PROFILE = { ...PROFILE, id: STAFF_USER.id, first_name: "Staff", email: STAFF_USER.email, role: "admin", roles: { is_staff: true } };
 
 const PRODUCT = {
   id: "00000000-0000-4000-8000-0000000000a1",
@@ -118,13 +125,15 @@ createServer(async (req, res) => {
   if (url.pathname === "/auth/v1/verify" && req.method === "POST") {
     const { token_hash: hash, type } = body;
     if (type === "email_change" && hash === "halfway") return send(200, { msg: "Confirmation link accepted. Please proceed to confirm link sent to the other email", code: 200 });
+    if (typeof hash === "string" && hash.startsWith("valid-staff")) return send(200, session(STAFF_USER));
     if (typeof hash === "string" && hash.startsWith("valid-")) return send(200, session());
     if (hash === "expired") return send(403, { code: 403, error_code: "otp_expired", msg: "Email link is invalid or has expired" });
     return send(403, { code: 403, error_code: "otp_disabled", msg: "Token has expired or is invalid" });
   }
   if (url.pathname === "/auth/v1/user" && req.method === "GET") {
     const token = (req.headers.authorization ?? "").replace(/^Bearer /, "");
-    return issuedHere(token) ? send(200, USER) : send(401, { code: 401, error_code: "bad_jwt", msg: "invalid JWT" });
+    const user = userOf(token);
+    return user ? send(200, user) : send(401, { code: 401, error_code: "bad_jwt", msg: "invalid JWT" });
   }
   if (url.pathname === "/auth/v1/token") {
     return send(400, { code: 400, error_code: "refresh_token_not_found", msg: "Invalid Refresh Token" });
@@ -132,7 +141,8 @@ createServer(async (req, res) => {
   if (url.pathname === "/auth/v1/logout") return send(204, {});
   if (url.pathname === "/rest/v1/profiles") {
     const single = (req.headers.accept ?? "").includes("vnd.pgrst.object");
-    return send(200, single ? PROFILE : [PROFILE]);
+    const rows = [PROFILE, STAFF_PROFILE].filter((row) => matches(url, row));
+    return send(200, single ? (rows[0] ?? null) : rows);
   }
   if (url.pathname === "/rest/v1/products") return send(200, [PRODUCT].filter((row) => matches(url, row)));
   if (url.pathname === "/rest/v1/product_translations") {

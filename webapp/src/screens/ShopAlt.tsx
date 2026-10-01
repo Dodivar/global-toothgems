@@ -103,6 +103,33 @@ export function ShopAlt() {
   const shownCount = shown.signature === signature ? shown.count : STEP;
   const visible = results.slice(0, shownCount);
 
+  // The next step is revealed on its own once the shopper nears the end of the
+  // grid. The whole catalogue is already in memory (and cached), so this costs
+  // no request: it only keeps the page light to render. The observer is set up
+  // again after every step, so if the sentinel is still in range (a tall
+  // screen, a short step) it fires again instead of waiting for a scroll.
+  // The button stays only where IntersectionObserver does not exist.
+  const sentinelRef = useRef<HTMLDivElement>(null);
+  const [autoLoad, setAutoLoad] = useState(true);
+  const hasMore = results.length > visible.length;
+  useEffect(() => {
+    if (typeof IntersectionObserver === "undefined") {
+      setAutoLoad(false);
+      return;
+    }
+    const sentinel = sentinelRef.current;
+    if (!sentinel || !hasMore) return;
+    const observer = new IntersectionObserver(
+      ([entry]) => {
+        if (entry.isIntersecting) setShown({ signature, count: shownCount + STEP });
+      },
+      // Start early, about two rows ahead, so the next cards are there before the shopper reaches them.
+      { rootMargin: "0px 0px 700px 0px" },
+    );
+    observer.observe(sentinel);
+    return () => observer.disconnect();
+  }, [hasMore, shownCount, signature]);
+
   // A short skeleton on each change acknowledges it, instead of the grid
   // snapping to a new length with no sign that anything happened.
   const [pending, setPending] = useState(false);
@@ -375,8 +402,8 @@ export function ShopAlt() {
               </ul>
             )}
 
-            {!pending && status === "ready" && results.length > visible.length && (
-              <div className="grid justify-items-center gap-3 pt-10">
+            {!pending && status === "ready" && hasMore && (
+              <div ref={sentinelRef} className="grid justify-items-center gap-3 pt-10">
                 <span className="text-xs text-[var(--text-muted)]">
                   {t("shopAlt.shown", { shown: visible.length, total: results.length })}
                 </span>
@@ -386,9 +413,11 @@ export function ShopAlt() {
                     style={{ width: `${(visible.length / results.length) * 100}%` }}
                   />
                 </span>
-                <Button variant="outline" onClick={() => setShown({ signature, count: shownCount + STEP })}>
-                  {t("shopAlt.showMore")}
-                </Button>
+                {!autoLoad && (
+                  <Button variant="outline" onClick={() => setShown({ signature, count: shownCount + STEP })}>
+                    {t("shopAlt.showMore")}
+                  </Button>
+                )}
               </div>
             )}
           </section>

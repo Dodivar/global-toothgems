@@ -2,6 +2,7 @@ import { createServerClient } from "@supabase/ssr";
 import { NextResponse, type NextRequest } from "next/server";
 import type { Database } from "./database.types";
 import { supabasePublishableKey, supabaseUrl } from "./env";
+import { isActiveStaff, STAFF_PROFILE_COLUMNS, type StaffProfileRow } from "../staffProfile";
 
 /** `sb-<ref>-auth-token`, possibly split into `.0`, `.1`… chunks. */
 const hasAuthCookie = (request: NextRequest) =>
@@ -16,14 +17,19 @@ const hasAuthCookie = (request: NextRequest) =>
  * (locally against the project's signing keys, or with Auth when the project
  * still uses a shared secret) — the cookie alone is never trusted. Without an
  * auth cookie there is nothing to check and Supabase is not called.
+ *
+ * `checkStaff` (back-office pages): also reads the account's own profile
+ * (RLS) to tell whether it is an active staff member (`staffProfile.ts`);
+ * `staff` is false when it is not, or when the profile cannot be read.
  */
 export async function refreshSession(
   request: NextRequest,
   requestHeaders: Headers,
-): Promise<{ response: NextResponse; signedIn: boolean }> {
+  { checkStaff = false }: { checkStaff?: boolean } = {},
+): Promise<{ response: NextResponse; signedIn: boolean; staff: boolean }> {
   const next = () => NextResponse.next({ request: { headers: requestHeaders } });
   let response = next();
-  if (!hasAuthCookie(request)) return { response, signedIn: false };
+  if (!hasAuthCookie(request)) return { response, signedIn: false, staff: false };
 
   const supabase = createServerClient<Database>(supabaseUrl, supabasePublishableKey, {
     cookies: {
@@ -44,5 +50,9 @@ export async function refreshSession(
   // Nothing between creating the client and this call (Supabase's guidance):
   // it is what refreshes the session.
   const { data, error } = await supabase.auth.getClaims();
-  return { response, signedIn: !error && Boolean(data?.claims) };
+  const user = !error ? data?.claims?.sub : undefined;
+  if (typeof user !== "string") return { response, signedIn: false, staff: false };
+  if (!checkStaff) return { response, signedIn: true, staff: false };
+  const profile = await supabase.from("profiles").select(STAFF_PROFILE_COLUMNS).eq("id", user).maybeSingle();
+  return { response, signedIn: true, staff: !profile.error && isActiveStaff(profile.data as StaffProfileRow | null) };
 }
