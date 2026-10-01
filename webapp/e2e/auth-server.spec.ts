@@ -41,7 +41,7 @@ test.describe("proxy", () => {
     });
   }
 
-  for (const path of ["/fr", "/en/shop", "/connexion", "/admin/connexion", "/fr/academy/formation/fondation", "/fr/studio-3d", "/studio-3d/atelier", "/studio-3d/partage/abc"]) {
+  for (const path of ["/fr", "/en/shop", "/connexion", "/admin/connexion", "/fr/academy/formation/pose-essentielle", "/fr/studio-3d", "/studio-3d/atelier", "/studio-3d/partage/abc"]) {
     test(`leaves ${path} open`, async ({ request }) => {
       const response = await request.get(path, noRedirect);
       expect(response.status()).toBe(200);
@@ -216,5 +216,82 @@ test("product links and the language switch use each language's slug", async ({ 
   await expect(page.getByRole("heading", { level: 1 }).first()).toHaveText(/Chrome Heart/);
   await expect(page).toHaveTitle("Chrome Heart · Global Toothgems");
   // The server-rendered pages hydrated from the same catalogue, without a mismatch.
+  expect(problems).toEqual([]);
+});
+
+/*
+ * The Academy's public pages read from the database (phase B): the fake
+ * Supabase publishes one course, `pose-essentielle` in French and
+ * `essential-placement` in English, 300 € reduced to 240 €, with a cover.
+ */
+test.describe("course pages", () => {
+  test("each language has its own slug; other keys move there, unknown ones are 404", async ({ request }) => {
+    for (const [from, to] of [
+      ["/en/academy/course/pose-essentielle", "/en/academy/course/essential-placement"],
+      ["/fr/academy/formation/essential-placement?ref=x", "/fr/academy/formation/pose-essentielle?ref=x"],
+      ["/fr/academy/formation/00000000-0000-4000-8000-0000000000b1", "/fr/academy/formation/pose-essentielle"],
+    ]) {
+      const response = await request.get(from, noRedirect);
+      expect(response.status(), from).toBe(308);
+      expect(location(response), from).toBe(to);
+    }
+    // The prototype's courses do not exist in a real project.
+    expect((await request.get("/fr/academy/formation/fondation")).status()).toBe(404);
+    expect((await request.get("/en/academy/course/n-existe-pas")).status()).toBe(404);
+  });
+
+  test("the page is the course's: head, structured data, price, outline, no fake enrolment", async ({ request }) => {
+    const html = await (await request.get("/en/academy/course/essential-placement")).text();
+    expect(html).toContain("<title>Essential placement · Global Toothgems</title>");
+    expect(html).toContain('<meta name="description" content="The basic moves, step by step."/>');
+    expect(html).toMatch(/<link rel="alternate" hrefLang="fr" href="[^"]*\/fr\/academy\/formation\/pose-essentielle"\/>/);
+    expect(html).toMatch(/<meta property="og:image" content="[^"]*\/media\/formations\/00000000-0000-4000-8000-0000000000c0\?v=\d+"\/>/);
+    const jsonLd = /<script type="application\/ld\+json">(.*?)<\/script>/.exec(html)?.[1];
+    expect(JSON.parse(jsonLd ?? "{}")).toMatchObject({ "@type": "Course", name: "Essential placement", timeRequired: "PT1H35M" });
+    // Rendered on the server from the published course.
+    expect(html).toMatch(/<h1[^>]*>Essential placement<\/h1>/);
+    expect(html).toContain("€240");
+    expect(html).toContain("Prepare the enamel");
+    expect(html).toContain("Pass mark 80%");
+    expect(html).toContain("Enrolment opens soon");
+    expect(html).not.toContain("Start this training");
+
+    const sitemap = await (await request.get("/sitemap.xml")).text();
+    expect(sitemap).toMatch(/<loc>[^<]*\/fr\/academy\/formation\/pose-essentielle<\/loc>/);
+    expect(sitemap).toMatch(/<loc>[^<]*\/en\/academy\/course\/essential-placement<\/loc>/);
+  });
+
+  test("the catalogue, the header and the footer list the published courses", async ({ request }) => {
+    const html = await (await request.get("/fr/academy")).text();
+    expect(html).toContain('href="/fr/academy/formation/pose-essentielle"');
+    expect(html).not.toContain("/academy/formation/fondation");
+    const english = await (await request.get("/en/shop")).text();
+    expect(english).toContain('href="/en/academy/course/essential-placement"');
+  });
+
+  test("the cover is served from the private bucket at a stable address", async ({ request }) => {
+    const cover = await request.get("/media/formations/00000000-0000-4000-8000-0000000000c0?v=1");
+    expect(cover.status()).toBe(200);
+    expect(cover.headers()["content-type"]).toBe("image/png");
+    expect(cover.headers()["cache-control"]).toContain("s-maxage=3600");
+    expect((await request.get("/media/formations/00000000-0000-4000-8000-0000000000ff")).status()).toBe(404);
+    expect((await request.get("/media/formations/not-an-id")).status()).toBe(404);
+  });
+});
+
+test("course links and the language switch use each language's slug", async ({ page }) => {
+  const problems: string[] = [];
+  await page.route(/fonts\.(googleapis|gstatic)\.com/, (route) => route.fulfill({ status: 200, body: "", contentType: "text/css" }));
+  page.on("console", (message) => {
+    if (message.type() === "error") problems.push(`console: ${message.text()}`);
+  });
+  page.on("pageerror", (error) => problems.push(`exception: ${error.message}`));
+  await page.goto("/fr/academy/formation/pose-essentielle");
+  await page.waitForLoadState("networkidle");
+  await expect(page.getByRole("heading", { level: 1 }).first()).toHaveText(/Pose essentielle/);
+  await page.getByRole("button", { name: "Afficher le site en anglais" }).first().click();
+  await expect(page).toHaveURL((url) => url.pathname === "/en/academy/course/essential-placement");
+  await expect(page.getByRole("heading", { level: 1 }).first()).toHaveText(/Essential placement/);
+  await expect(page).toHaveTitle("Essential placement · Global Toothgems");
   expect(problems).toEqual([]);
 });

@@ -13,6 +13,10 @@
 //                          one product with a French and an English slug, for
 //                          the per-language product addresses (locale tests);
 //                          `slug=eq.` / `id=eq.` filters honoured
+//   GET  /rest/v1/courses, /course_current_prices, /training_media: one published
+//                          course with a French and an English slug and a cover,
+//                          for the Academy's public pages (phase B)
+//   GET  /storage/v1/object/training-media/<its cover's path>: a 1×1 PNG
 //   other /rest/v1 → []
 //   GET  /__server-reads   how many REST reads each table got from the Next.js
 //                          server (requests without an Origin header), for the
@@ -84,6 +88,41 @@ const PRODUCT = {
   inventory_items: [{ stock_status: "in_stock" }],
 };
 
+const COVER_ID = "00000000-0000-4000-8000-0000000000c0";
+const COVER = { id: COVER_ID, kind: "image", storage_path: `media/${COVER_ID}/cover.png`, mime_type: "image/png", alt_text: "Une gem posée", updated_at: "2026-10-01T10:00:00Z", training_media_translations: [{ locale: "en", status: "published", alt_text: "A placed gem" }] };
+const PNG = Buffer.from("iVBORw0KGgoAAAANSUhEUgAAAAEAAAABCAQAAAC1HAwCAAAAC0lEQVR42mP8/x8AAwMCAO+ip1sAAAAASUVORK5CYII=", "base64");
+
+const COURSE = {
+  id: "00000000-0000-4000-8000-0000000000b1",
+  slug: "pose-essentielle",
+  title: "Pose essentielle",
+  short_description: "Les gestes de base, pas à pas.",
+  description: null,
+  level: "beginner",
+  duration_minutes: 95,
+  objectives: ["Préparer l’émail"],
+  requirements: [],
+  min_score: 75,
+  issues_certificate: true,
+  price: 300,
+  currency: "EUR",
+  published_at: "2026-10-01T09:00:00Z",
+  course_translations: [{ locale: "en", status: "published", title: "Essential placement", slug: "essential-placement", short_description: "The basic moves, step by step.", description: null, objectives: ["Prepare the enamel"], requirements: [] }],
+  cover: COVER,
+  course_modules: [
+    {
+      id: "00000000-0000-4000-8000-0000000000d1",
+      position: 0,
+      title: "Préparer",
+      description: null,
+      course_module_translations: [{ locale: "en", status: "published", title: "Prepare", description: null }],
+      course_steps: [{ id: "00000000-0000-4000-8000-0000000000e1", position: 0, title: "Hygiène du poste", duration_minutes: 12, course_step_translations: [] }],
+      course_quizzes: { title: "Contrôle", passing_score: 80, course_quiz_translations: [] },
+    },
+  ],
+};
+const COURSE_PRICE = { course_id: COURSE.id, current_price: 240, promotion_ends_at: "2026-12-31T23:00:00Z" };
+
 /** PostgREST `column=eq.value` filters of a request (only `eq` is faked). */
 function matches(url, row) {
   for (const [column, filter] of url.searchParams) {
@@ -148,6 +187,17 @@ createServer(async (req, res) => {
   if (url.pathname === "/rest/v1/product_translations") {
     const rows = PRODUCT.product_translations.map((t) => ({ ...t, product_id: PRODUCT.id }));
     return send(200, rows.filter((row) => matches(url, row)));
+  }
+  if (url.pathname === "/rest/v1/courses") return send(200, [COURSE].filter((row) => matches(url, row)));
+  if (url.pathname === "/rest/v1/course_current_prices") return send(200, [COURSE_PRICE]);
+  if (url.pathname === "/rest/v1/training_media") {
+    const single = (req.headers.accept ?? "").includes("vnd.pgrst.object");
+    const rows = [COVER].filter((row) => matches(url, row));
+    return send(200, single ? (rows[0] ?? null) : rows);
+  }
+  if (url.pathname === `/storage/v1/object/training-media/${COVER.storage_path}`) {
+    res.writeHead(200, { "content-type": "image/png" });
+    return res.end(PNG);
   }
   if (url.pathname.startsWith("/rest/v1/")) return send(200, []);
   if (url.pathname === "/health") return send(200, { ok: true });

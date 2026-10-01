@@ -7,7 +7,7 @@ description: Academy rules and target architecture — courses, modules, lessons
 
 ## Current state
 
-The Academy is fully designed in the UI (catalogue, course sales pages, lesson player, quizzes, certificates, admin Training workspace and course builder). **Authoring schema is live (phase A, migration `academy_authoring`, 2026-10-01)**: courses, modules, steps, content blocks, quizzes, the training media library, course price and course promotions, written by the back office (`lib/adminTraining.tsx` + `lib/adminTrainingBackend.ts`, `lib/trainingMedia.tsx`, `/admin/formations/medias`). Still on mock data: the public Academy pages (phase B: `data/courses.ts`), the learner side — access, progress, quiz attempts, certificates (phase C: `lib/progress.tsx`, `lib/learning/`), and selling a course (phase D, with checkout). See `supabase/README.md` → *Academy authoring*.
+The Academy is fully designed in the UI (catalogue, course sales pages, lesson player, quizzes, certificates, admin Training workspace and course builder). **Authoring schema is live (phase A, migration `academy_authoring`, 2026-10-01)**: courses, modules, steps, content blocks, quizzes, the training media library, course price and course promotions, written by the back office (`lib/adminTraining.tsx` + `lib/adminTrainingBackend.ts`, `lib/trainingMedia.tsx`, `/admin/formations/medias`). **Public pages are live (phase B, migration `academy_public_pages`, 2026-10-01)**: the catalogue, course sales pages, home band and header/footer entries read the published courses, their outline (modules, steps, knowledge checks' pass marks — never content or answers), cover and current price (`lib/academy/`, server-rendered from `app/_public/coursePage.tsx`). Until phase D a course page shows its price and "enrolment opens soon" — never a fake enrolment. Still on mock data: the learner side — access, progress, quiz attempts, certificates (phase C: `lib/progress.tsx`, `lib/learning/`, `data/courses.ts`), and selling a course (phase D, with checkout). See `supabase/README.md` → *Academy authoring* and *Academy public pages*.
 
 ## Decisions (owner, 2026-10-01)
 
@@ -43,13 +43,13 @@ Draft → published ⇄ unpublished (enforced by the `courses_guard` trigger; pu
 - Access = an active `course_entitlements` row, granted by the Stripe webhook for purchases, or by staff (audited) for manual grants.
 - Never infer access from URL parameters, client state, hidden buttons, local storage or the success page.
 - Lesson content (video URLs, text, correct answers) is readable only with an entitlement — or for `is_preview` lessons. Correct answers and explanations are returned **after** an answer is submitted, by a function, never shipped in advance to the browser.
-- The course sales page (`/academy/formation/:id`) stays public and crawlable; only the player is gated.
+- The course sales page (`/fr/academy/formation/<slug>`, `/en/academy/course/<English slug>`) stays public and crawlable; only the player is gated. Its outline is public; a step's content is not.
 
 ## Progress and quizzes
 
 - Progress persisted server-side; opening a URL does not complete a lesson. Completion rules (video watched threshold, quiz passed) are enforced by a database function.
 - Gated sequences: prerequisites validated server-side; the UI explains why a step is locked; changing the URL does not bypass a gate.
-- Scoring deterministic and reproducible; store score, threshold version and timestamp. The pass mark (`PASS_SCORE` in `data/lessons.ts` today) moves to the course record.
+- Scoring deterministic and reproducible; store score, threshold version and timestamp. The pass mark is on the course record (`courses.min_score`, per check `course_quizzes.passing_score`); the sales pages show it, and the prototype's `PASS_SCORE` (`data/lessons.ts`) is only left in the learner fixtures until phase C.
 - Incorrect answers teach: explain why, show the correct answer, never shame.
 
 ## Media

@@ -60,7 +60,8 @@ export async function proxy(request: NextRequest) {
 
 export const config = {
   matcher: [
-    // Pages only: not the build output, the image optimizer, nor files from public/ or bundled assets.
-    "/((?!_next/static|_next/image|videos/|.*\\.(?:svg|png|jpg|jpeg|gif|webp|avif|ico|glb|mp4|webm|txt|xml|json|webmanifest)$).*)",
+    // Pages only: not the build output, the image optimizer, files from public/ or bundled assets,
+    // nor the Academy's public course covers (`app/media/formations`, read with the publishable key).
+    "/((?!_next/static|_next/image|videos/|media/formations/|.*\\.(?:svg|png|jpg|jpeg|gif|webp|avif|ico|glb|mp4|webm|txt|xml|json|webmanifest)$).*)",
   ],
 };

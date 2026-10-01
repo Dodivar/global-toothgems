@@ -3,7 +3,7 @@ import { useCallback } from "react";
 import { useTranslation } from "react-i18next";
 import i18n from "../../i18n";
 import { saveLanguagePreference } from "../../i18n/preference";
-import { useSlugTranslator } from "../catalog/CatalogProvider";
+import { useSlugTranslator } from "./slugs";
 import { parsePath, toAddress, type Locale } from "../localeRoutes";
 
 /**

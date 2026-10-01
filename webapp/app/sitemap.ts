@@ -1,14 +1,16 @@
 import type { MetadataRoute } from "next";
 import { productSlug } from "../src/lib/catalog/productSlugs";
 import { listPublicProductSlugs } from "../src/lib/catalog/serverCatalog";
+import { courseSlug } from "../src/lib/academy/publicCourse";
+import { listPublicCourses } from "../src/lib/academy/serverAcademy";
 import { LOCALES, localizedPath, PUBLIC_ROUTES } from "../src/lib/localeRoutes";
 import { siteUrl } from "../src/lib/siteUrl";
 
 /**
- * The indexed public pages and every product page, each in French and
- * English with its alternate (a product with its slug in each language).
- * Course pages join once the Academy has real data (docs/migration-nextjs.md,
- * phase 3.2). Rendered per request: the catalogue changes without a deploy.
+ * The indexed public pages, every product page and every published course's
+ * sales page, each in French and English with its alternate (with its slug in
+ * each language). Rendered per request: the catalogue and the Academy change
+ * without a deploy.
  */
 export const dynamic = "force-dynamic";
 
@@ -27,5 +29,11 @@ export default async function sitemap(): Promise<MetadataRoute.Sitemap> {
       en: localizedPath("product", "en", { id: productSlug(product, "en") }),
     }),
   );
-  return [...pages, ...products];
+  const courses = (await listPublicCourses()).flatMap((course) =>
+    entry({
+      fr: localizedPath("course", "fr", { id: courseSlug(course, "fr") }),
+      en: localizedPath("course", "en", { id: courseSlug(course, "en") }),
+    }),
+  );
+  return [...pages, ...products, ...courses];
 }

@@ -26,7 +26,7 @@ test("the server reads the catalogue once for many page renders (cache)", async 
     expect((await request.get(path)).status(), path).toBe(200);
   }
   const after = await reads();
-  for (const table of ["products", "gem_colors", "categories"]) expect(after[table] ?? 0, table).toBe(before[table] ?? 0);
+  for (const table of ["products", "gem_colors", "categories", "courses"]) expect(after[table] ?? 0, table).toBe(before[table] ?? 0);
   // The count does see server reads: a key never asked before is read from the database.
   expect((await request.get(`/fr/boutique/inconnu-${Date.now()}`)).status()).toBe(404);
   expect((await reads()).products ?? 0).toBeGreaterThan(after.products ?? 0);

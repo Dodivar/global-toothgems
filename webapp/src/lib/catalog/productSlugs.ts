@@ -1,4 +1,4 @@
-import type { Locale, ParamTranslator } from "../localeRoutes";
+import type { Locale, ParamTranslator, PublicRouteId } from "../localeRoutes";
 
 /**
  * Product addresses per language (decided 2026-09-30): `/fr/boutique/<French
@@ -48,8 +48,12 @@ export function resolveProductAddress<P extends SluggedProduct>(products: readon
   return slug === key ? { kind: "found", product } : { kind: "moved", product, slug };
 }
 
-/** Translates product slugs between languages in addresses (`lib/localeRoutes.ts`). */
-export function productSlugTranslator(products: readonly SluggedProduct[]): ParamTranslator {
+/**
+ * Translates product slugs between languages in addresses
+ * (`lib/localeRoutes.ts`). Courses have the same kind of slugs and use it
+ * for the course page (`route: "course"`).
+ */
+export function productSlugTranslator(products: readonly SluggedProduct[], route: PublicRouteId = "product"): ParamTranslator {
   const byKey = new Map<string, SluggedProduct>();
   // Row ids and older slugs first, so a current slug always wins a clash.
   for (const product of products) {
@@ -62,7 +66,7 @@ export function productSlugTranslator(products: readonly SluggedProduct[]): Para
   for (const product of products) byKey.set(product.id, product);
 
   return (id, params, locale) => {
-    if (id !== "product" || !params.id) return params;
+    if (id !== route || !params.id) return params;
     const product = byKey.get(params.id);
     return product ? { ...params, id: productSlug(product, locale) } : params;
   };

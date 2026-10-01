@@ -271,7 +271,8 @@ begin
   if v_cnt <> 0 then raise exception 'FAIL C1: customer reads answer keys'; end if;
   select count(*) into v_cnt from public.course_blocks;
   if v_cnt <> 0 then raise exception 'FAIL C1: customer reads lesson content'; end if;
-  select count(*) into v_cnt from public.training_media;
+  -- The published course's cover is public since iteration 21; nothing else is.
+  select count(*) into v_cnt from public.training_media where id <> img;
   if v_cnt <> 0 then raise exception 'FAIL C1: customer reads the media library'; end if;
   begin
     perform public.admin_save_course(v_doc);

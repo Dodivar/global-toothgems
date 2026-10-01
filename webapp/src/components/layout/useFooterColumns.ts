@@ -1,4 +1,7 @@
 import { useTranslation } from "react-i18next";
+import { pick } from "../../data/types";
+import { useAcademy } from "../../lib/academy/AcademyProvider";
+import { courseSlug } from "../../lib/academy/publicCourse";
 import { courseHref } from "../../lib/academyUrl";
 import { useToast } from "../../lib/toast";
 import { useCookieConsent } from "../../lib/cookieConsent";
@@ -36,13 +39,14 @@ const SHOP_TARGETS: (string | null)[] = [
   "/carte-cadeau",
   "/fidelite",
 ];
-/* The first three entries name the three courses, so they lead to each
-   training's own page; "Certification" is a theme, not a course, and stays on
-   the catalogue. */
-const ACADEMY_TARGETS: (string | null)[] = [courseHref("fondation"), courseHref("avance"), courseHref("business"), "/academy"];
+/** How many published courses the Academy column names before "all courses". */
+const FOOTER_COURSES = 3;
 
 export function useFooterColumns(): FooterColumn[] {
-  const { t } = useTranslation();
+  const { t, i18n } = useTranslation();
+  const { courses } = useAcademy();
+  const lang = i18n.language;
+  const locale = lang.startsWith("en") ? "en" : "fr";
   const { showToast } = useToast();
   const { openSettings } = useCookieConsent();
 
@@ -55,7 +59,15 @@ export function useFooterColumns(): FooterColumn[] {
 
   return [
     { id: "shop", heading: t("footer.colShop"), items: fromList("footer.shopItems", SHOP_TARGETS) },
-    { id: "academy", heading: t("footer.colAcademy"), items: fromList("footer.academyItems", ACADEMY_TARGETS) },
+    {
+      id: "academy",
+      heading: t("footer.colAcademy"),
+      // The first published courses, each to its own page, then the catalogue.
+      items: [
+        ...courses.slice(0, FOOTER_COURSES).map((course) => ({ label: pick(course.title, lang), to: courseHref(courseSlug(course, locale)) })),
+        { label: t("footer.academyAll"), to: "/academy" },
+      ],
+    },
     {
       id: "service",
       heading: t("footer.colService"),

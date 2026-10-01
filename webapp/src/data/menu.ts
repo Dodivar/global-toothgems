@@ -30,33 +30,14 @@ export const TAXONOMY_THUMBS: Record<string, string> = {
 
 export const DEFAULT_MENU_THUMB = img("mouth-01.jpg");
 
-/* The shop's entries are the taxonomy itself (`ShopMenu`). The Academy
-   entries point at the trainings' public pages, not at the lesson player: the
-   menu is navigation, and it must not drop a signed-out visitor onto a login
-   wall. */
-export const ACADEMY_MENU: MenuItem[] = [
-  {
-    title: { fr: "Fondation Tooth Gem", en: "Tooth Gem Foundation" },
-    sub: { fr: "9 leçons · 1 h 30", en: "9 lessons · 1h30" },
-    thumb: img("img-12.jpg"),
-    to: "/academy/formation/fondation",
-  },
-  {
-    title: { fr: "Placement avancé", en: "Advanced placement" },
-    sub: { fr: "9 leçons · 1 h 30", en: "9 lessons · 1h30" },
-    thumb: img("mouth-02.jpg"),
-    to: "/academy/formation/avance",
-  },
-  {
-    title: { fr: "Business studio", en: "Business studio" },
-    sub: { fr: "9 leçons · 1 h 30", en: "9 lessons · 1h30" },
-    thumb: img("mouth-03.jpg"),
-    to: "/academy/formation/business",
-  },
-  {
-    title: { fr: "Mon espace membre", en: "My member area" },
-    sub: { fr: "Progression, attestations, commandes", en: "Progress, certificates, orders" },
-    thumb: img("mouth-04.jpg"),
-    to: "/compte",
-  },
-];
+/* The shop's entries are the taxonomy itself (`ShopMenu`). The Academy's
+   are the published courses (`components/layout/useAcademyMenu.ts`), which
+   point at the trainings' public pages, not at the lesson player: the menu is
+   navigation, and it must not drop a signed-out visitor onto a login wall.
+   The member area closes the list. */
+export const ACADEMY_MEMBER_ITEM: MenuItem = {
+  title: { fr: "Mon espace membre", en: "My member area" },
+  sub: { fr: "Progression, attestations, commandes", en: "Progress, certificates, orders" },
+  thumb: img("mouth-04.jpg"),
+  to: "/compte",
+};

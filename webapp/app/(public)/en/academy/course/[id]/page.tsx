@@ -1,6 +1,10 @@
-import { publicScreen } from "../../../../../_public/publicPage";
-import { CourseDetail } from "../../../../../../src/screens/CourseDetail";
+import { CoursePage, courseMetadata, type CoursePageProps } from "../../../../../_public/coursePage";
 
-const page = publicScreen("course", "en", <CourseDetail />);
-export const generateMetadata = page.generateMetadata;
-export default page.Page;
+/** A course sales page in English: `/en/academy/course/<English slug>` (see `app/_public/coursePage.tsx`). */
+export function generateMetadata(props: CoursePageProps) {
+  return courseMetadata(props, "en");
+}
+
+export default function Page(props: CoursePageProps) {
+  return <CoursePage props={props} locale="en" />;
+}

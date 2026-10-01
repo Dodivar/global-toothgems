@@ -59,6 +59,8 @@ supabase/
   tests/iteration17_validation.sql  iteration 17 member wishlist (favourites) suite (always rolls back)
   tests/iteration18_validation.sql  iteration 18 "My orders" isolation + staff order notes suite (always rolls back)
   tests/iteration19_validation.sql  iteration 19 Stripe Checkout wiring (expiry job, webhook idempotency, return page) suite (always rolls back)
+  tests/iteration20_validation.sql  iteration 20 Academy authoring suite (always rolls back)
+  tests/iteration21_validation.sql  iteration 21 Academy public pages (what visitors and customers read) suite (always rolls back)
   tests/admin_orders_validation.sql back-office order book: what staff read, viewer/customer/visitor refusals (always rolls back)
   config.toml   CLI settings this repo relies on (verify_jwt of the two Edge Functions)
   functions/    Edge Functions (Deno): create-checkout-session, stripe-webhook, _shared/ (pure modules + clients),
@@ -109,6 +111,7 @@ supabase/
 | 20261001063310 | `course_promotion_guard_permission` | fix: the promotion guard refuses callers without `manage_training` before answering "overlap" (caught by the iteration 20 suite) |
 | 20261001063421 | `academy_merge_read_policies` | one SELECT policy per role on `courses`, `course_translations`, `course_promotions` (performance advisor) |
 | 20261001071006 | `academy_published_integrity` | a price cut below an active amount promotion is refused (the course would become free); a deferred constraint trigger re-checks `course_publication_problems()` when a published course is saved, so it cannot become unpublishable while online |
+| 20261001121248 | `academy_public_pages` | Academy phase B: visitors and customers read the outline of a published course (modules, steps, knowledge checks' titles and pass marks, published translations — never blocks, questions or answers), its cover (`training_media` row + translations + the file in the private bucket) and its current price; `course_promotions` staff-only (the price view reads the running promotion through `private.course_running_promotion()`, SECURITY DEFINER); column grants hide `courses.created_by`/`updated_by` and the media's internal columns from `anon`; policies widened in place (ALTER POLICY) |
 
 RLS is **enabled in the same migration that creates each table** (deny by default);
 policies are granted back in `rls_policies`.
@@ -652,7 +655,7 @@ The hearts of the storefront (shop cards, home rail, product page) and the shop'
 
 What the back-office course builder (`/admin/formations`) and the training media library
 (`/admin/formations/medias`) read and write. Learner access, progress and quiz attempts come next (phase C);
-the public Academy pages read `courses` and `course_current_prices` (phase B).
+the public Academy pages read the published courses since iteration 21 (phase B, below).
 
 ```
 training_media (image | video, storage media/<id>/<file> in the private training-media bucket)
@@ -689,10 +692,35 @@ media references: courses.cover_media_id, course_modules.cover_media_id, course_
   segments. Audited.
 - **Quiz answer keys**: `quiz_answers.is_correct` / `explanation` are readable by staff only. Phase C serves
   corrections through a function, after an answer is submitted.
-- **Access in this phase**: staff (`is_staff`) read everything; `manage_training` writes; visitors and customers read
-  published courses, their published translations, their active promotions and their current price — none of the
-  content, media or answers.
+- **Access**: staff (`is_staff`) read everything; `manage_training` writes; visitors and customers read what
+  iteration 21 opens (below) — none of the content or answers.
 - Suite: `tests/iteration20_validation.sql`.
+
+### Academy public pages (iteration 21)
+
+What the public Academy pages read (webapp `lib/academy/`: catalogue `/fr/academy`, sales pages
+`/fr/academy/formation/<slug>` ↔ `/en/academy/course/<English slug>`, the home band, the header and footer entries),
+as an anonymous visitor (server, publishable key) or any signed-in account:
+
+- **Published courses** and their published translations (as before), the **outline** — `course_modules`,
+  `course_steps`, `course_quizzes` (title, pass mark, settings) and their published translations, for published
+  courses only — and the **current price** (`course_current_prices`). Never `course_blocks`, `quiz_questions`,
+  `quiz_answers`: the lesson content and the answer keys wait for phase C's entitlements.
+- **Cover image**: the `training_media` row and published translations of a published course's cover, and its
+  file in the private `training-media` bucket (storage policy `private.is_public_course_cover_path()`). No other
+  media of the library, nor a draft's or a withdrawn course's cover. The webapp serves it at
+  `/media/formations/<media id>` (Route Handler reading with the publishable key, CDN-cached an hour, `?v=` changes
+  when the file is replaced).
+- **Promotions are staff-only** now: visitors and customers see the discounted price and its end date through the
+  view, which reads the running promotion with the SECURITY DEFINER helper `private.course_running_promotion()`;
+  the internal `label` and `created_by` never leave the back office.
+- **Column grants for `anon`**: `courses` without `created_by`/`updated_by`; `training_media` only `id`, `kind`,
+  `storage_path`, `mime_type`, `alt_text`, `width`, `height`, `updated_at`. `authenticated` keeps table-wide
+  SELECT (staff use `select=*`), so a signed-in customer could still read those columns on the rows RLS shows
+  them (published courses, public covers) — see deliberate decision 49.
+- The outline policies use `private.is_published_course(course_id)` (SECURITY DEFINER, stable).
+- Suite: `tests/iteration21_validation.sql` (visitor, customer, staff viewer, withdrawal). Suite 20's customer
+  check now expects the published course's cover to be readable.
 
 ### Integrity guarantees
 
@@ -957,6 +985,14 @@ VAT rates, shipping zones/rates mirroring the Settings prototype. Media rows ref
 48. **Training media bucket without its own size limit**: the project's global upload limit applies (50 MB on the
     free plan); raise it in the dashboard when moving to Pro. Objects uploaded but never recorded (upload succeeded,
     row insert failed) stay in the bucket until a clean-up job exists.
+49. **Staff columns of public Academy rows readable by signed-in customers**: column grants hide
+    `courses.created_by`/`updated_by` and the media's internal columns from `anon` only, because staff read those
+    tables with `select=*` as `authenticated` too. A customer calling the REST API with their own token could read
+    the staff uuid that created a published course or its cover, nothing else. Close it by moving the back office to
+    explicit column lists (or an RPC) and granting the same columns to `authenticated`.
+50. **Course sales pages before courses can be bought**: until phase D, a published course's page shows its price
+    and "enrolment opens soon" instead of a start button, its structured data has no `offers`, and it has no
+    sticky purchase bar. The learner pages stay on the prototype's seeded courses until phase C.
 
 49. **"Collected" figure of the order book** (agent, 2026-10-01, to confirm): per currency, never added across
     currencies; for orders whose payment was received (`paid`, `partially_refunded`, `refunded`) and that are not
@@ -1008,6 +1044,8 @@ VAT rates, shipping zones/rates mirroring the Settings prototype. Media rows ref
   (`order_notes`), isolation suite for everything the member area reads of an order.
 - Iteration 20: Academy authoring — courses, modules, steps, content blocks, quizzes, training media library
   (private bucket), course price and course promotions, publication rules, `admin_save_course()`.
+- Iteration 21: Academy public pages (phase B) — outline, cover and current price of published courses readable by
+  visitors, promotions staff-only, column grants for visitors.
 
 ## Next iterations (not implemented)
 
@@ -1015,9 +1053,7 @@ VAT rates, shipping zones/rates mirroring the Settings prototype. Media rows ref
    in the cart (the function already accepts them), Stripe refunds from the back office, `charge.refunded` /
    `charge.dispute.created` webhooks.
 2. Academy, after the authoring schema (iteration 20):
-   **B** public Academy pages from `courses` / `course_current_prices` (cover images readable by visitors from the
-   private bucket, column grants hiding `created_by`/`updated_by` and the internal promotion `label` from visitors,
-   per-language slugs); **C** `course_entitlements` (manual grant, audited), content and signed URLs gated on
+   (**B**, public pages, done in iteration 21); **C** `course_entitlements` (manual grant, audited), content and signed URLs gated on
    entitlement, quiz answers checked by a function, server-side progress and attempts, certificates, unpublished
    courses greyed for their buyers; **D** selling courses: a course line in `create_order()` and the Stripe
    Checkout functions (VAT category `training`, course promotions applied server-side). Kit QR links; course
