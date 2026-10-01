@@ -1,6 +1,6 @@
 import { useEffect, useMemo, useRef, useState, type CSSProperties, type Ref } from "react";
 import { useTranslation } from "react-i18next";
-import { Link } from "react-router-dom";
+import { Link } from "../../lib/navigation";
 import { ArrowUpRight, GraduationCap, ShoppingBag } from "lucide-react";
 import clsx from "clsx";
 import { Button } from "../ui/Button";
@@ -11,7 +11,7 @@ import { getProduct } from "../../data/products";
 import { pick } from "../../data/types";
 import { useCatalog } from "../../lib/catalog/CatalogProvider";
 import { courseHref } from "../../lib/academyUrl";
-import { formatDate } from "../../lib/format";
+import { useFormat } from "../../lib/format";
 import { publicDate } from "../../lib/reviewRules";
 import { useReviewAuthor, useReviews } from "../../lib/reviews";
 import { useReveal } from "../../lib/useReveal";
@@ -180,6 +180,7 @@ function FeedSection({ published, loading }: { published: CustomerReview[]; load
 }
 
 function ReviewPin({ review, pinRef }: { review: CustomerReview; pinRef?: Ref<HTMLElement> }) {
+  const { formatDate } = useFormat();
   const { t, i18n } = useTranslation();
   const { products } = useCatalog();
   const authorOf = useReviewAuthor();

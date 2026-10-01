@@ -1,5 +1,6 @@
 import { useCallback, useEffect, useState } from "react";
 import { PASSWORD_RULES, TAKEN_EMAILS, isCommonPassword, passwordRuleMet } from "./registration";
+import { RESET_PASSWORD_PATH, VERIFY_EMAIL_PATH } from "./authRoutes";
 
 /**
  * Account recovery and account security: the simulated service and the state
@@ -80,8 +81,8 @@ export function verifyOutcomeOf(token: string | null): VerifyOutcome {
   return "verified";
 }
 
-export const RESET_PATH = "/reinitialiser-mot-de-passe";
-export const VERIFY_PATH = "/verifier-email";
+export const RESET_PATH = RESET_PASSWORD_PATH;
+export const VERIFY_PATH = VERIFY_EMAIL_PATH;
 export const FORGOT_PATH = "/mot-de-passe-oublie";
 
 /** `kind=changement` marks a link confirming a new address rather than a first one. */

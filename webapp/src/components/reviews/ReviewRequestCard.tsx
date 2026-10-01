@@ -5,7 +5,7 @@ import clsx from "clsx";
 import { Button } from "../ui/Button";
 import { useReviewSubjects, useReviews, type ReviewRequest } from "../../lib/reviews";
 import { subjectKey } from "../../data/reviewSystem";
-import { formatDate } from "../../lib/format";
+import { useFormat } from "../../lib/format";
 
 /**
  * "How was your Global Toothgems experience?"
@@ -32,6 +32,7 @@ export function ReviewRequestCard({
   variant?: "feature" | "compact" | "dark";
   className?: string;
 }) {
+  const { formatDate } = useFormat();
   const { t, i18n } = useTranslation();
   const lang = i18n.language;
   const { openForm, dismissRequest, drafts } = useReviews();

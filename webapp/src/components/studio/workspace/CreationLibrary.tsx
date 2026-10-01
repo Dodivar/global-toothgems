@@ -1,6 +1,6 @@
 import { useMemo, useState } from "react";
 import { BookOpen, Plus, RotateCw } from "lucide-react";
-import { useNavigate } from "react-router-dom";
+import { useNavigate } from "../../../lib/navigation";
 import { Button } from "../../ui/Button";
 import { useStudio } from "../../../lib/studio3d/store";
 import { studioSectionPath } from "../../../lib/studioUrl";

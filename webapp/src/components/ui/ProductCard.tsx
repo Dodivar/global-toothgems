@@ -1,9 +1,9 @@
 import { useMemo, useState, type ReactNode } from "react";
-import { Link } from "react-router-dom";
+import { Link } from "../../lib/navigation";
 import { useTranslation } from "react-i18next";
 import { Heart, Image as ImageIcon } from "lucide-react";
 import { Badge, type BadgeTone } from "./Badge";
-import { formatPrice } from "../../lib/format";
+import { useFormat } from "../../lib/format";
 import { gemAxes, isGemOptionSet } from "../../lib/gemOptions";
 import { pick } from "../../data/types";
 import type { ProductVariant } from "../../data/products";
@@ -47,6 +47,7 @@ interface ProductCardProps {
 }
 
 export function ProductCard({ product, to, onSave, saved = false, eager = false, quickAction }: ProductCardProps) {
+  const { formatPrice } = useFormat();
   const { t, i18n } = useTranslation();
   const {
     name, subtitle, price, compareAtPrice, image, hoverImage, imageLabel,
@@ -116,7 +117,9 @@ export function ProductCard({ product, to, onSave, saved = false, eager = false,
         {quickAction && <span className="absolute bottom-2 left-2 z-10">{quickAction}</span>}
         {onSave && (
           /* z-10 keeps this above the stretched link below; it must stay a sibling
-             of that link rather than a child, or it would be nested interactive content. */
+             of that link rather than a child, or it would be nested interactive content.
+             Hidden until hover only where there is a mouse: a touch screen has no
+             hover, so the heart is always there. */
           <button
             type="button"
             onClick={(e) => {
@@ -126,7 +129,7 @@ export function ProductCard({ product, to, onSave, saved = false, eager = false,
             }}
             aria-label={t("product.saveAria", { name })}
             aria-pressed={saved}
-            className={`gt-glass absolute bottom-2 right-2 z-10 flex h-9 w-9 items-center justify-center rounded-full transition-opacity focus-visible:opacity-100 ${saved ? "opacity-100" : "opacity-0 group-hover:opacity-100 group-focus-within:opacity-100"}`}
+            className={`gt-glass absolute bottom-2 right-2 z-10 flex h-9 w-9 items-center justify-center rounded-full transition-opacity focus-visible:opacity-100 ${saved ? "opacity-100" : "pointer-fine:opacity-0 pointer-fine:group-hover:opacity-100 pointer-fine:group-focus-within:opacity-100"}`}
           >
             <Heart size={16} fill={saved ? "var(--accent-highlight)" : "none"} color={saved ? "var(--accent-highlight)" : "currentColor"} />
           </button>

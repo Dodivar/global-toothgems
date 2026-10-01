@@ -14,7 +14,8 @@ import {
   XCircle,
 } from "lucide-react";
 import type { LucideIcon } from "lucide-react";
-import type { TimelineEvent, TimelineKind } from "../../data/adminOrders";
+import { useFormat } from "../../lib/format";
+import { parseInstant, type TimelineEvent, type TimelineKind } from "../../data/adminOrders";
 
 /**
  * The order's history, oldest first.
@@ -41,6 +42,7 @@ const META: Record<TimelineKind, { icon: LucideIcon; tone: "neutral" | "good" | 
   refundRequested: { icon: RotateCcw, tone: "warn" },
   refunded: { icon: RotateCcw, tone: "neutral" },
   partiallyRefunded: { icon: Split, tone: "warn" },
+  refundFailed: { icon: XCircle, tone: "bad" },
   addressFlagged: { icon: MapPinOff, tone: "warn" },
   stockFlagged: { icon: PackageX, tone: "warn" },
   delayFlagged: { icon: Timer, tone: "warn" },
@@ -55,8 +57,8 @@ const TONE_CLASS = {
 } as const;
 
 export function OrderTimeline({ events }: { events: TimelineEvent[] }) {
-  const { t, i18n } = useTranslation();
-  const locale = i18n.language.startsWith("en") ? "en-IE" : "fr-FR";
+  const { t } = useTranslation();
+  const { locale } = useFormat();
   const dateFormat = new Intl.DateTimeFormat(locale, { day: "numeric", month: "short", year: "numeric" });
   const timeFormat = new Intl.DateTimeFormat(locale, { hour: "2-digit", minute: "2-digit" });
 
@@ -65,7 +67,7 @@ export function OrderTimeline({ events }: { events: TimelineEvent[] }) {
       {events.map((event, index) => {
         const meta = META[event.kind];
         const Icon = meta.icon;
-        const when = new Date(`${event.at}:00`);
+        const when = parseInstant(event.at);
         const last = index === events.length - 1;
         return (
           <li key={`${event.kind}-${event.at}-${index}`} className="grid grid-cols-[28px_minmax(0,1fr)] gap-3">

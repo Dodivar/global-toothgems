@@ -1,5 +1,5 @@
 import { useTranslation } from "react-i18next";
-import { formatPrice } from "./format";
+import { useFormat } from "./format";
 import {
   QUALIFYING_AMOUNT,
   REWARD_PERCENT,
@@ -26,6 +26,7 @@ export interface LoyaltyCopy {
  * symbol.
  */
 export function useLoyaltyCopy(state: LoyaltyState): LoyaltyCopy {
+  const { formatPrice } = useFormat();
   const { t } = useTranslation();
   const values = {
     amount: formatPrice(QUALIFYING_AMOUNT),

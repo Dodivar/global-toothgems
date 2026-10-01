@@ -2,7 +2,7 @@ import { useTranslation } from "react-i18next";
 import { Images, MessagesSquare, Sparkles, Users } from "lucide-react";
 import { StatTile } from "../account/StatTile";
 import { COMMUNITY_STATS } from "../../data/community";
-import { formatCount } from "../../lib/format";
+import { useFormat } from "../../lib/format";
 
 /**
  * The community in four figures.
@@ -13,6 +13,7 @@ import { formatCount } from "../../lib/format";
  * no trend, no comparison, no chart.
  */
 export function CommunityStats() {
+  const { formatCount } = useFormat();
   const { t } = useTranslation();
 
   return (

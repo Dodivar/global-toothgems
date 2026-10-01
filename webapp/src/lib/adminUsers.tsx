@@ -1,221 +1,277 @@
-import { createContext, useCallback, useContext, useEffect, useMemo, useRef, useState, type ReactNode } from "react";
+import { createContext, useCallback, useContext, useEffect, useMemo, useState, type ReactNode } from "react";
+import { FunctionsHttpError } from "@supabase/supabase-js";
+import type { AdminUser, PermissionMatrix, UserRole } from "../data/adminUsers";
 import {
-  ADMIN_USERS,
-  type AdminUser,
-  type UserActivity,
-  type UserActivityKind,
-  type UserRole,
-  type UserStatus,
-  type UserTeam,
-} from "../data/adminUsers";
-import type { Localized } from "../data/types";
+  editPatches,
+  functionErrorOf,
+  inviteBody,
+  mapPermissionMatrix,
+  mapStaffDirectory,
+  roleToDb,
+  writeErrorOf,
+  type PermissionRow,
+  type RolePermissionRow,
+  type RoleRow,
+  type StaffDirectoryRow,
+  type UserDraft,
+  type UserWriteError,
+} from "./adminUserMapping";
+import { isSupabaseConfigured, requireSupabase } from "./supabase/client";
+import type { TablesUpdate } from "./supabase/database.types";
 
 /**
- * The administration users, as the Users workspace edits them, held in memory.
+ * The back-office team, as the Users workspace reads and changes it — the
+ * single persistence boundary of this domain (screens never call Supabase).
  *
- * Same contract as `adminCustomers.tsx`: a change moves the data, not just a
- * toast. Changing a role moves the badge in the table, the Managers and
- * Administrators tiles, the permission summary in the drawer and that user's own
- * history at once.
+ * Reads: `staff_directory()` (needs `view_users`), `my_permissions()`, and
+ * the permission matrix from `roles`, `permissions`, `role_permissions`.
  *
- * The write operations are asynchronous on purpose. Each one waits a moment and
- * can be refused, the way a real request can, so the forms have genuine
- * pending, success and error states to show rather than pretending every save
- * lands instantly. The one refusal simulated here — an email address that is
- * already in use — is decided in this file, not in the form, because the
- * server is the only place that can know it.
+ * Writes, all under the signed-in member's own JWT:
+ * - names, role and status: `UPDATE profiles` — RLS, then
+ *   `private.guard_profile_update()`: `manage_users`, ranks ≤ the caller's,
+ *   never one's own role or status, audited;
+ * - job title and team: `UPSERT staff_profiles` (RLS + `guard_staff_profile()`);
+ * - invitations (send, resend, cancel): the Edge Function
+ *   `invite-staff-member`, the only place holding the service role.
  *
- * None of this is authorization. A real role change is a server-side
- * transition behind explicit RBAC, written to an audit log; a suspension must
- * revoke the user's sessions. Nothing here may be relied on by the production
- * app (`AGENTS.md` sections 7 and 12).
+ * Every write re-reads the directory; a refusal is returned as a reason the
+ * screen words, never turned into a success. `permissions` and `callerRank`
+ * only decide what the screen offers — the database decides what happens.
+ *
+ * Without Supabase (local mock mode) the team is empty and nothing can be
+ * changed: this is a live domain and never shows invented people.
  */
 
-/** Fields the add and edit forms write. Everything else is read-only. */
-export interface UserDraft {
-  firstName: string;
-  lastName: string;
-  email: string;
-  role: UserRole;
-  status: UserStatus;
-  jobTitle: string;
-  team: UserTeam;
-}
-
-export type UserWriteError = "emailTaken" | "notFound";
-export type UserWriteResult = { ok: true; user: AdminUser } | { ok: false; error: UserWriteError };
+export type { UserDraft, UserWriteError };
+export type UserWriteResult = { ok: true } | { ok: false; error: UserWriteError };
+export type InviteResult = { ok: true; outcome: "invited" | "promoted" } | { ok: false; error: UserWriteError };
 
 interface AdminUsersContextValue {
   users: AdminUser[];
-  createUser: (draft: UserDraft) => Promise<UserWriteResult>;
+  /** True until the first read has answered. */
+  loading: boolean;
+  /** The last read failed: the empty list is not "no team". */
+  failed: boolean;
+  /** False in local mock mode: there is no team to read. */
+  available: boolean;
+  reload: () => void;
+  /** Null while loading or when the matrix could not be read. */
+  matrix: PermissionMatrix | null;
+  /** The signed-in member's id (the "you" marker and the self guard). */
+  currentUserId: string | null;
+  /** `my_permissions()`: navigation only. */
+  permissions: ReadonlySet<string>;
+  /** The rank of the signed-in member's role (0 when unknown). */
+  callerRank: number;
+  inviteUser: (draft: UserDraft) => Promise<InviteResult>;
   updateUser: (id: string, draft: UserDraft) => Promise<UserWriteResult>;
   changeRole: (id: string, role: UserRole) => Promise<UserWriteResult>;
-  setStatus: (id: string, status: UserStatus) => Promise<UserWriteResult>;
+  setStatus: (id: string, status: "active" | "suspended") => Promise<UserWriteResult>;
   resendInvitation: (id: string) => Promise<UserWriteResult>;
-  deleteUser: (id: string) => Promise<UserWriteResult>;
+  cancelInvitation: (id: string) => Promise<UserWriteResult>;
 }
 
 const AdminUsersContext = createContext<AdminUsersContextValue | null>(null);
 
-/** How long a simulated write takes. Long enough to read the pending state. */
-const WRITE_DELAY = 650;
-
-const wait = () => new Promise((resolve) => setTimeout(resolve, WRITE_DELAY));
-
-function localizedTitle(value: string, previous?: Localized): Localized {
-  // A job title typed in the form is kept verbatim in both languages unless it
-  // is unchanged — overwriting a curated translation with the same text would
-  // quietly lose the other language.
-  if (previous && (previous.fr === value || previous.en === value)) return previous;
-  return { fr: value, en: value };
+interface Snapshot {
+  users: AdminUser[];
+  matrix: PermissionMatrix | null;
+  currentUserId: string | null;
+  permissions: ReadonlySet<string>;
+  callerRank: number;
 }
 
-/** The history entry a status transition writes. */
-function statusKind(from: UserStatus, to: UserStatus): UserActivityKind {
-  if (to === "suspended") return "suspended";
-  if (from === "suspended") return "reactivated";
-  return to === "active" ? "activated" : "invitationSent";
+const EMPTY: Snapshot = { users: [], matrix: null, currentUserId: null, permissions: new Set(), callerRank: 0 };
+
+async function readTeam(signal: AbortSignal): Promise<Snapshot> {
+  const client = requireSupabase();
+  const [session, directory, mine, roles, permissions, grants] = await Promise.all([
+    client.auth.getSession(),
+    client.rpc("staff_directory").abortSignal(signal),
+    client.rpc("my_permissions").abortSignal(signal),
+    client.from("roles").select("key, rank, is_staff").abortSignal(signal),
+    client.from("permissions").select("key, name").abortSignal(signal),
+    client.from("role_permissions").select("role_key, permission_key").abortSignal(signal),
+  ]);
+  for (const result of [directory, mine, roles, permissions, grants]) {
+    if (result.error) throw result.error;
+  }
+  const currentUserId = session.data.session?.user.id ?? null;
+  const roleRows = (roles.data ?? []) as RoleRow[];
+  const directoryRows = (directory.data ?? []) as unknown as StaffDirectoryRow[];
+  const self = directoryRows.find((row) => row.user_id === currentUserId);
+  return {
+    users: mapStaffDirectory(directoryRows),
+    matrix: mapPermissionMatrix(roleRows, (permissions.data ?? []) as PermissionRow[], (grants.data ?? []) as RolePermissionRow[]),
+    currentUserId,
+    permissions: new Set(mine.data ?? []),
+    callerRank: self && self.status === "active" ? self.role_rank : 0,
+  };
 }
 
-export function AdminUsersProvider({ actor, children }: { actor: string; children: ReactNode }) {
-  const [users, setUsers] = useState<AdminUser[]>(ADMIN_USERS);
-  // The async writes read the latest list after their delay, not the one that
-  // was current when they started — two saves in a row must not undo each other.
-  const latest = useRef(users);
+/** Calls `invite-staff-member`; its `{ error }` codes become the screen's reasons. */
+async function callInviteFunction(body: Record<string, unknown>): Promise<{ status?: string; error?: UserWriteError }> {
+  const { data, error } = await requireSupabase().functions.invoke("invite-staff-member", { body });
+  if (!error) return { status: (data as { status?: string } | null)?.status };
+  if (error instanceof FunctionsHttpError) {
+    try {
+      const answer = (await (error.context as Response).json()) as { error?: unknown };
+      return { error: functionErrorOf(answer.error) };
+    } catch {
+      return { error: "unavailable" };
+    }
+  }
+  return { error: "unavailable" };
+}
+
+export function AdminUsersProvider({ children }: { children: ReactNode }) {
+  return isSupabaseConfigured ? (
+    <SupabaseAdminUsersProvider>{children}</SupabaseAdminUsersProvider>
+  ) : (
+    <UnavailableAdminUsersProvider>{children}</UnavailableAdminUsersProvider>
+  );
+}
+
+function SupabaseAdminUsersProvider({ children }: { children: ReactNode }) {
+  const [snapshot, setSnapshot] = useState<Snapshot | null>(null);
+  const [failed, setFailed] = useState(false);
+  const [attempt, setAttempt] = useState(0);
+
   useEffect(() => {
-    latest.current = users;
-  }, [users]);
-  const sequence = useRef(0);
+    const controller = new AbortController();
+    readTeam(controller.signal)
+      .then((next) => {
+        if (controller.signal.aborted) return;
+        setFailed(false);
+        setSnapshot(next);
+      })
+      .catch((error: unknown) => {
+        if (controller.signal.aborted) return;
+        console.error("[admin users] load failed", error);
+        setFailed(true);
+        setSnapshot(EMPTY);
+      });
+    return () => controller.abort();
+  }, [attempt]);
 
-  const entry = useCallback(
-    (kind: UserActivityKind, params?: Record<string, string>): UserActivity => {
-      sequence.current += 1;
-      return {
-        id: `session-${sequence.current}`,
-        at: new Date().toISOString(),
-        kind,
-        params: { by: actor, ...params },
-      };
+  const reload = useCallback(() => setAttempt((n) => n + 1), []);
+
+  /** Runs one write, then re-reads the team whatever happened. */
+  const run = useCallback(
+    async (write: () => Promise<UserWriteError | null>): Promise<UserWriteResult> => {
+      try {
+        const error = await write();
+        return error ? { ok: false, error } : { ok: true };
+      } catch (error) {
+        console.error("[admin users] write failed", error);
+        return { ok: false, error: "unavailable" };
+      } finally {
+        reload();
+      }
     },
-    [actor],
+    [reload],
   );
 
-  const emailTaken = useCallback(
-    (email: string, exceptId?: string) =>
-      latest.current.some((u) => u.id !== exceptId && u.email.toLowerCase() === email.trim().toLowerCase()),
-    [],
-  );
+  /** `UPDATE profiles` for one member; an update RLS let touch no row is a refusal, not a success. */
+  const updateProfile = useCallback(async (id: string, patch: TablesUpdate<"profiles">): Promise<UserWriteError | null> => {
+    const { error } = await requireSupabase().from("profiles").update(patch).eq("id", id).select("id").single();
+    return error ? writeErrorOf(error) : null;
+  }, []);
 
-  const patch = useCallback(
-    async (id: string, update: (user: AdminUser) => AdminUser): Promise<UserWriteResult> => {
-      await wait();
-      const current = latest.current.find((u) => u.id === id);
-      if (!current) return { ok: false, error: "notFound" };
-      const next = update(current);
-      setUsers((prev) => prev.map((u) => (u.id === id ? next : u)));
-      return { ok: true, user: next };
+  const inviteUser = useCallback(
+    async (draft: UserDraft): Promise<InviteResult> => {
+      try {
+        const answer = await callInviteFunction(inviteBody(draft));
+        if (answer.error) return { ok: false, error: answer.error };
+        return { ok: true, outcome: answer.status === "promoted" ? "promoted" : "invited" };
+      } catch (error) {
+        console.error("[admin users] invitation failed", error);
+        return { ok: false, error: "unavailable" };
+      } finally {
+        reload();
+      }
     },
-    [],
-  );
-
-  const createUser = useCallback(
-    async (draft: UserDraft): Promise<UserWriteResult> => {
-      await wait();
-      if (emailTaken(draft.email)) return { ok: false, error: "emailTaken" };
-      const now = new Date().toISOString();
-      sequence.current += 1;
-      const user: AdminUser = {
-        id: `u-new-${sequence.current}`,
-        firstName: draft.firstName.trim(),
-        lastName: draft.lastName.trim(),
-        email: draft.email.trim().toLowerCase(),
-        role: draft.role,
-        status: draft.status,
-        jobTitle: localizedTitle(draft.jobTitle.trim()),
-        team: draft.team,
-        createdAt: now,
-        // An invited user has not signed in; an account created as active has
-        // not either, so neither gets an activity date it has not earned.
-        lastActiveAt: null,
-        invitedBy: actor,
-        twoFactor: false,
-        activity: [entry(draft.status === "invited" ? "invitationSent" : "accountCreated")],
-      };
-      setUsers((prev) => [user, ...prev]);
-      return { ok: true, user };
-    },
-    [actor, entry, emailTaken],
+    [reload],
   );
 
   const updateUser = useCallback(
-    async (id: string, draft: UserDraft): Promise<UserWriteResult> => {
-      await wait();
-      if (emailTaken(draft.email, id)) return { ok: false, error: "emailTaken" };
-      const current = latest.current.find((u) => u.id === id);
-      if (!current) return { ok: false, error: "notFound" };
-      const history: UserActivity[] = [entry("profileUpdated")];
-      if (current.role !== draft.role) {
-        history.unshift(entry("roleChanged", { from: current.role, to: draft.role }));
-      }
-      if (current.status !== draft.status) {
-        history.unshift(entry(statusKind(current.status, draft.status)));
-      }
-      const next: AdminUser = {
-        ...current,
-        firstName: draft.firstName.trim(),
-        lastName: draft.lastName.trim(),
-        email: draft.email.trim().toLowerCase(),
-        role: draft.role,
-        status: draft.status,
-        jobTitle: localizedTitle(draft.jobTitle.trim(), current.jobTitle),
-        team: draft.team,
-        activity: [...history, ...current.activity],
-      };
-      setUsers((prev) => prev.map((u) => (u.id === id ? next : u)));
-      return { ok: true, user: next };
-    },
-    [entry, emailTaken],
+    (id: string, draft: UserDraft) =>
+      run(async () => {
+        const user = snapshot?.users.find((u) => u.id === id);
+        if (!user) return "notFound";
+        const { profile, staff } = editPatches(user, draft);
+        const refused = await updateProfile(id, profile);
+        if (refused) return refused;
+        const { error } = await requireSupabase()
+          .from("staff_profiles")
+          .upsert(staff, { onConflict: "user_id" })
+          .select("user_id")
+          .single();
+        return error ? writeErrorOf(error) : null;
+      }),
+    [run, snapshot, updateProfile],
   );
 
   const changeRole = useCallback(
-    (id: string, role: UserRole) =>
-      patch(id, (user) => ({
-        ...user,
-        role,
-        activity: [entry("roleChanged", { from: user.role, to: role }), ...user.activity],
-      })),
-    [patch, entry],
+    (id: string, role: UserRole) => run(() => updateProfile(id, { role: roleToDb(role) })),
+    [run, updateProfile],
   );
 
   const setStatus = useCallback(
-    (id: string, status: UserStatus) =>
-      patch(id, (user) => ({
-        ...user,
-        status,
-        activity: [entry(statusKind(user.status, status)), ...user.activity],
-      })),
-    [patch, entry],
+    (id: string, status: "active" | "suspended") => run(() => updateProfile(id, { status })),
+    [run, updateProfile],
   );
 
   const resendInvitation = useCallback(
-    (id: string) =>
-      patch(id, (user) => ({ ...user, activity: [entry("invitationResent"), ...user.activity] })),
-    [patch, entry],
+    (id: string) => run(async () => (await callInviteFunction({ action: "resend", user_id: id })).error ?? null),
+    [run],
   );
 
-  const deleteUser = useCallback(async (id: string): Promise<UserWriteResult> => {
-    await wait();
-    const current = latest.current.find((u) => u.id === id);
-    if (!current) return { ok: false, error: "notFound" };
-    setUsers((prev) => prev.filter((u) => u.id !== id));
-    return { ok: true, user: current };
-  }, []);
+  const cancelInvitation = useCallback(
+    (id: string) => run(async () => (await callInviteFunction({ action: "cancel", user_id: id })).error ?? null),
+    [run],
+  );
 
   const value = useMemo<AdminUsersContextValue>(
-    () => ({ users, createUser, updateUser, changeRole, setStatus, resendInvitation, deleteUser }),
-    [users, createUser, updateUser, changeRole, setStatus, resendInvitation, deleteUser],
+    () => ({
+      ...(snapshot ?? EMPTY),
+      loading: snapshot === null,
+      failed,
+      available: true,
+      reload,
+      inviteUser,
+      updateUser,
+      changeRole,
+      setStatus,
+      resendInvitation,
+      cancelInvitation,
+    }),
+    [snapshot, failed, reload, inviteUser, updateUser, changeRole, setStatus, resendInvitation, cancelInvitation],
   );
 
+  return <AdminUsersContext.Provider value={value}>{children}</AdminUsersContext.Provider>;
+}
+
+const refuse = () => Promise.resolve({ ok: false as const, error: "unavailable" as const });
+
+/** Local mock mode: no team, no matrix, every write refused. */
+function UnavailableAdminUsersProvider({ children }: { children: ReactNode }) {
+  const value = useMemo<AdminUsersContextValue>(
+    () => ({
+      ...EMPTY,
+      loading: false,
+      failed: false,
+      available: false,
+      reload: () => undefined,
+      inviteUser: refuse,
+      updateUser: refuse,
+      changeRole: refuse,
+      setStatus: refuse,
+      resendInvitation: refuse,
+      cancelInvitation: refuse,
+    }),
+    [],
+  );
   return <AdminUsersContext.Provider value={value}>{children}</AdminUsersContext.Provider>;
 }
 

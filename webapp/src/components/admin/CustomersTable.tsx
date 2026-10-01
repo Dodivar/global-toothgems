@@ -1,8 +1,8 @@
 import { useTranslation } from "react-i18next";
-import { Link, useNavigate } from "react-router-dom";
+import { Link, useNavigate } from "../../lib/navigation";
 import { ArrowDown, ArrowUp, ChevronRight } from "lucide-react";
 import clsx from "clsx";
-import { formatPrice } from "../../lib/format";
+import { useFormat } from "../../lib/format";
 import type { CustomerSortKey } from "../../lib/adminCustomerFilters";
 import {
   customerName,
@@ -106,6 +106,7 @@ function SortableHead({
 }
 
 export function CustomersTable(props: CustomersTableProps) {
+  const { formatPrice } = useFormat();
   const { t, i18n } = useTranslation();
   const navigate = useNavigate();
   const locale = i18n.language.startsWith("en") ? "en-IE" : "fr-FR";
@@ -308,6 +309,7 @@ export function CustomersTable(props: CustomersTableProps) {
  * than a 14px name.
  */
 export function CustomerCardList(props: CustomersTableProps) {
+  const { formatPrice } = useFormat();
   const { t, i18n } = useTranslation();
   const locale = i18n.language.startsWith("en") ? "en-IE" : "fr-FR";
   const { customers, selected, onToggle, lastOrders, hrefFor } = props;

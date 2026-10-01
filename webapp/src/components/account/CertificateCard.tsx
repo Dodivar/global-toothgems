@@ -3,19 +3,41 @@ import { Download, Expand, Lock } from "lucide-react";
 import clsx from "clsx";
 import { Button } from "../ui/Button";
 import { ProgressBar } from "../ui/ProgressBar";
-import { CertificateDocument } from "./CertificateDocument";
-import type { Course } from "../../data/courses";
+import type { TFunction } from "i18next";
+import { CertificateDocument, type CertificateCourse } from "./CertificateDocument";
 import { pick } from "../../data/types";
-import type { CourseProgress } from "../../lib/progress";
-import { formatDate } from "../../lib/format";
+import type { CourseProgress, LearnerCourseCard } from "../../lib/progress";
+import { useFormat } from "../../lib/format";
+import { formatDuration } from "../../lib/trainingFilters";
 
 /**
- * Certificate reference shown on an unlocked attestation. Derived from the
- * course and the award date rather than stored, for the same reason the
- * unlocked state itself is derived from progress reaching 100 %.
+ * Certificate reference shown on an unlocked attestation: the verification
+ * code the server issued with the completion record (`course_completions`).
+ * The prototype (mock mode) has no server, so it derives one from the course
+ * and the award date.
  */
-export function certificateRef(courseId: string, awardedOn: string): string {
+export function certificateRef(course: LearnerCourseCard, progress: CourseProgress): string {
+  return progress.certificateCode ?? sampleCertificateRef(course.id, progress.completedOn ?? "");
+}
+
+/** A reference in the certificate's format, for the prototype and the sales page's sample diploma. */
+export function sampleCertificateRef(courseId: string, awardedOn: string): string {
   return `GT-${courseId.toUpperCase()}-${awardedOn.slice(0, 4)}-${awardedOn.slice(5, 7)}`;
+}
+
+/**
+ * What the certificate prints about a held course, in the page's language. A
+ * withdrawn course has no content to count (its certificate outlives it): the
+ * lesson count is then left out and the advertised length is printed.
+ */
+export function certificateCourse(course: LearnerCourseCard, progress: CourseProgress, lang: string, t: TFunction): CertificateCourse {
+  const minutes = progress.totalMinutes || course.minutes;
+  return {
+    title: course.title,
+    level: t(`academy.levels.${course.level}`),
+    lessonCount: progress.total,
+    duration: minutes > 0 ? formatDuration(minutes, lang) : "",
+  };
 }
 
 /** Collection numbering: "01", "02"… two digits is enough for a member's shelf. */
@@ -32,12 +54,14 @@ function DocumentFrame({
   course,
   holder,
   awardedOn,
+  reference,
   lang,
   className,
 }: {
-  course: Course;
+  course: CertificateCourse;
   holder: string;
   awardedOn: string;
+  reference: string;
   lang: string;
   className?: string;
 }) {
@@ -53,7 +77,7 @@ function DocumentFrame({
           course={course}
           holder={holder}
           awardedOn={awardedOn}
-          reference={certificateRef(course.id, awardedOn)}
+          reference={reference}
           lang={lang}
         />
       </div>
@@ -62,7 +86,7 @@ function DocumentFrame({
 }
 
 interface EarnedProps {
-  course: Course;
+  course: LearnerCourseCard;
   progress: CourseProgress;
   holder: string;
   lang: string;
@@ -93,10 +117,11 @@ export function CertificateCard({
   onOpen,
   onDownload,
 }: EarnedProps) {
+  const { formatDate } = useFormat();
   const { t } = useTranslation();
   // The caller only renders this for completed courses, so the date is present.
   const awardedOn = progress.completedOn!;
-  const reference = certificateRef(course.id, awardedOn);
+  const reference = certificateRef(course, progress);
   const title = pick(course.title, lang);
 
   const meta = (
@@ -127,7 +152,7 @@ export function CertificateCard({
 
       {featured && (
         <p className="m-0 max-w-[var(--max-width-prose)] text-[length:var(--text-body-sm)] text-[var(--text-muted)]">
-          {pick(course.copy, lang)}
+          {pick(course.summary, lang)}
         </p>
       )}
 
@@ -154,9 +179,10 @@ export function CertificateCard({
       )}
     >
       <DocumentFrame
-        course={course}
+        course={certificateCourse(course, progress, lang, t)}
         holder={holder}
         awardedOn={awardedOn}
+        reference={reference}
         lang={lang}
         className="transition-transform duration-[var(--duration-normal)] ease-[var(--ease-out-soft)] group-hover:-translate-y-[2px] group-focus-within:-translate-y-[2px]"
       />
@@ -175,7 +201,7 @@ export function PendingCertificateCard({
   progress,
   lang,
 }: {
-  course: Course;
+  course: LearnerCourseCard;
   progress: CourseProgress;
   lang: string;
 }) {

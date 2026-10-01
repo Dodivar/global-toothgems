@@ -5,12 +5,11 @@ import {
   Eye,
   MoreHorizontal,
   Printer,
-  RotateCcw,
   Truck,
   UserRound,
 } from "lucide-react";
 import { Menu, type MenuItem } from "../ui/Menu";
-import type { AdminOrder } from "../../data/adminOrders";
+import { holdsMoney, type AdminOrder } from "../../data/adminOrders";
 
 /**
  * Secondary actions for one order.
@@ -22,15 +21,15 @@ import type { AdminOrder } from "../../data/adminOrders";
  * a rule, in the error tone, at the end: an operator reaching for "print
  * invoice" should never land on "cancel order".
  *
- * Which entries appear depends on the order. A pending order cannot be
- * refunded, and a delivered one cannot be cancelled — offering an action that
- * will be refused is worse than not offering it.
+ * Which entries appear depends on the order. A delivered order, or one whose
+ * money is held, cannot be cancelled here (its refund goes through Stripe) —
+ * offering an action that will be refused is worse than not offering it.
+ * Refunds are not offered: they are Stripe calls confirmed by its webhook.
  */
 export function RowActions({
   order,
   onView,
   onAdvance,
-  onRefund,
   onCancel,
   onViewCustomer,
   onInvoice,
@@ -39,7 +38,6 @@ export function RowActions({
   onView: () => void;
   /** Move the order one step along its track. Absent for closed orders. */
   onAdvance?: (label: string) => void;
-  onRefund: () => void;
   onCancel: () => void;
   onViewCustomer: () => void;
   onInvoice: (kind: "print" | "download") => void;
@@ -47,7 +45,6 @@ export function RowActions({
   const { t } = useTranslation();
 
   const closed = order.status === "cancelled" || order.status === "refunded";
-  const captured = order.payment.status === "paid" || order.payment.status === "partiallyRefunded";
 
   const items: MenuItem[] = [
     { id: "view", label: t("admin.orders.actionView"), icon: Eye, onSelect: onView },
@@ -63,10 +60,7 @@ export function RowActions({
     { id: "download", label: t("admin.orders.actionDownloadInvoice"), icon: Download, onSelect: () => onInvoice("download") },
   );
 
-  if (captured) {
-    items.push({ id: "refund", label: t("admin.orders.actionRefund"), icon: RotateCcw, destructive: true, onSelect: onRefund });
-  }
-  if (!closed && order.status !== "delivered") {
+  if (!closed && order.status !== "delivered" && !holdsMoney(order)) {
     items.push({ id: "cancel", label: t("admin.orders.actionCancel"), icon: Ban, destructive: true, onSelect: onCancel });
   }
 

@@ -5,7 +5,7 @@ import type { LucideIcon } from "lucide-react";
 import type { StockState } from "../../../data/adminCatalog";
 import type { ProductDatum } from "../../../data/adminAnalytics";
 import { formatChange, formatPercent, sortProducts, type ProductSortKey } from "../../../lib/adminAnalytics";
-import { formatCount, formatPrice } from "../../../lib/format";
+import { useFormat } from "../../../lib/format";
 import { useLocalized } from "../../../lib/localized";
 import { AdminSelect } from "../AdminSelect";
 
@@ -78,6 +78,7 @@ export function TopProducts({
   ascending: boolean;
   onSort: (key: ProductSortKey, ascending: boolean) => void;
 }) {
+  const { formatCount, formatPrice } = useFormat();
   const { t } = useTranslation();
   const L = useLocalized();
   const rows = sortProducts(products, sort, ascending);

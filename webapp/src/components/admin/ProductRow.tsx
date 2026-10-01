@@ -23,7 +23,7 @@ import { ProductStatusBadge } from "./ProductStatusBadge";
 import { StockIndicator, VariantStockIndicator } from "./StockIndicator";
 import { useAdminCatalog } from "../../lib/adminCatalog";
 import { useLocalized } from "../../lib/localized";
-import { formatDateShort, formatPrice } from "../../lib/format";
+import { useFormat } from "../../lib/format";
 import {
   displayState,
   effectivePrice,
@@ -84,6 +84,7 @@ export function ProductRow({
   /** Start with the option rows unfolded. */
   defaultExpanded?: boolean;
 }) {
+  const { formatDateShort, formatPrice } = useFormat();
   const { t } = useTranslation();
   const L = useLocalized();
   const { categoryById } = useAdminCatalog();
@@ -407,6 +408,7 @@ function OptionRow({
   variant: VariantStock;
   onEdit: () => void;
 }) {
+  const { formatPrice } = useFormat();
   const { t } = useTranslation();
   const L = useLocalized();
   const state = inventoryState(variant);

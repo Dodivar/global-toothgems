@@ -1,7 +1,7 @@
 import clsx from "clsx";
 import { useCallback, useEffect, useState } from "react";
 import { useTranslation } from "react-i18next";
-import { formatCount, formatPrice } from "../../../lib/format";
+import { useFormat } from "../../../lib/format";
 import { formatRelative } from "../../../lib/studioWorkspace/relativeTime";
 
 /**
@@ -40,6 +40,7 @@ export const eyebrow = "m-0 text-[10.5px] font-bold uppercase tracking-[var(--tr
 
 /** Prices, counts and relative dates in the UI language; relative dates refresh each minute. */
 export function useWorkspaceFormat() {
+  const { formatCount, formatPrice } = useFormat();
   const { t, i18n } = useTranslation();
   const [now, setNow] = useState(() => Date.now());
   useEffect(() => {
@@ -47,8 +48,8 @@ export function useWorkspaceFormat() {
     return () => clearInterval(timer);
   }, []);
 
-  const price = useCallback((minor: number) => formatPrice(minor / 100), []);
-  const count = useCallback((n: number) => formatCount(n), []);
+  const price = useCallback((minor: number) => formatPrice(minor / 100), [formatPrice]);
+  const count = useCallback((n: number) => formatCount(n), [formatCount]);
   const ago = useCallback(
     (iso: string) => formatRelative(iso, i18n.language.slice(0, 2), t("studio.workspace.justNow"), now),
     [i18n.language, t, now],

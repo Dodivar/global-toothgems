@@ -1,7 +1,9 @@
 import { createContext, useCallback, useContext, useEffect, useMemo, useState, type ReactNode } from "react";
-import { Navigate, useLocation } from "react-router-dom";
+import { Navigate, useLocation } from "./navigation";
+import { isActiveStaff, type StaffProfileRow } from "./staffProfile";
 import type { User } from "@supabase/supabase-js";
-import { isSupabaseConfigured, supabase } from "./supabase/client";
+import { isSupabaseConfigured, sessionReady, supabase } from "./supabase/client";
+import { useHydrated } from "./useHydrated";
 
 /**
  * Administrator session.
@@ -75,10 +77,7 @@ async function staffIdentity(user: User): Promise<AdminIdentity | null> {
     .select("first_name, last_name, display_name, email, role, status, roles ( is_staff )")
     .eq("id", user.id)
     .maybeSingle();
-  if (error || !data) return null;
-  const role = data.roles as { is_staff: boolean } | { is_staff: boolean }[] | null;
-  const isStaff = Array.isArray(role) ? role[0]?.is_staff : role?.is_staff;
-  if (!isStaff || data.status !== "active") return null;
+  if (error || !data || !isActiveStaff(data as StaffProfileRow)) return null;
 
   const email = data.email ?? user.email ?? "";
   const name =
@@ -108,18 +107,25 @@ function SupabaseAdminAuthProvider({ children }: { children: ReactNode }) {
     // member login opens the same session: a staff member who signs in there
     // is recognised without a reload (the member space then offers the way
     // to the back office). A non-staff account simply resolves to null.
-    const { data } = supabase.auth.onAuthStateChange((_event, session) => {
-      // Supabase warns against awaiting its own calls inside this callback.
-      setTimeout(async () => {
-        const identity = session?.user ? await staffIdentity(session.user) : null;
-        if (!active) return;
-        setAdmin(identity);
-        setRestoring(false);
-      }, 0);
+    // Subscribes once a pre-migration session has been carried over (`sessionReady`).
+    const client = supabase;
+    let unsubscribe = () => {};
+    void sessionReady.then(() => {
+      if (!active) return;
+      const { data } = client.auth.onAuthStateChange((_event, session) => {
+        // Supabase warns against awaiting its own calls inside this callback.
+        setTimeout(async () => {
+          const identity = session?.user ? await staffIdentity(session.user) : null;
+          if (!active) return;
+          setAdmin(identity);
+          setRestoring(false);
+        }, 0);
+      });
+      unsubscribe = () => data.subscription.unsubscribe();
     });
     return () => {
       active = false;
-      data.subscription.unsubscribe();
+      unsubscribe();
     };
   }, []);
 
@@ -150,8 +156,43 @@ function SupabaseAdminAuthProvider({ children }: { children: ReactNode }) {
   return <AdminAuthContext.Provider value={value}>{children}</AdminAuthContext.Provider>;
 }
 
+/**
+ * The mock staff session is kept for the browser tab (sessionStorage), like
+ * the member's (docs/migration-nextjs.md, phases 4–5): it survives a reload or
+ * an address typed in. Mock mode only.
+ */
+const DEMO_ADMIN_SESSION_KEY = "gt-demo-admin-session";
+
+function readDemoAdmin(): AdminIdentity | null {
+  try {
+    const raw = window.sessionStorage.getItem(DEMO_ADMIN_SESSION_KEY);
+    const stored = raw ? (JSON.parse(raw) as Partial<AdminIdentity>) : null;
+    return stored && typeof stored.email === "string" && typeof stored.name === "string" ? { ...(stored as AdminIdentity) } : null;
+  } catch {
+    return null;
+  }
+}
+
+function writeDemoAdmin(admin: AdminIdentity | null) {
+  try {
+    if (admin) window.sessionStorage.setItem(DEMO_ADMIN_SESSION_KEY, JSON.stringify(admin));
+    else window.sessionStorage.removeItem(DEMO_ADMIN_SESSION_KEY);
+  } catch {
+    // Blocked storage: the demo session lasts this page.
+  }
+}
+
 function DemoAdminAuthProvider({ children }: { children: ReactNode }) {
-  const [admin, setAdmin] = useState<AdminIdentity | null>(null);
+  // Read once hydrated (server-rendered pages carry this provider too);
+  // `changed` is the session as changed on this page.
+  const hydrated = useHydrated();
+  const stored = useMemo(() => (hydrated ? readDemoAdmin() : null), [hydrated]);
+  const [changed, setChanged] = useState<AdminIdentity | null | undefined>(undefined);
+  const admin = changed === undefined ? stored : changed;
+  const setAdmin = useCallback((value: AdminIdentity | null) => {
+    writeDemoAdmin(value);
+    setChanged(value);
+  }, []);
 
   const signIn = useCallback(async (email: string, password: string): Promise<AdminSignInResult> => {
     await new Promise((resolve) => setTimeout(resolve, SIGN_IN_DELAY_MS));
@@ -161,13 +202,13 @@ function DemoAdminAuthProvider({ children }: { children: ReactNode }) {
     const name = email.toLowerCase() === DEMO_ADMIN_EMAIL ? "Camille Dubois" : nameFromEmail(email);
     setAdmin({ name, email: email.trim(), role: "owner", initials: initialsOf(name) });
     return "accepted";
-  }, []);
+  }, [setAdmin]);
 
-  const signOut = useCallback(() => setAdmin(null), []);
+  const signOut = useCallback(() => setAdmin(null), [setAdmin]);
 
   const value = useMemo<AdminAuthValue>(
-    () => ({ admin, signedIn: admin !== null, restoring: false, realAuth: false, signIn, signOut }),
-    [admin, signIn, signOut],
+    () => ({ admin, signedIn: admin !== null, restoring: !hydrated, realAuth: false, signIn, signOut }),
+    [admin, hydrated, signIn, signOut],
   );
 
   return <AdminAuthContext.Provider value={value}>{children}</AdminAuthContext.Provider>;

@@ -10,3 +10,8 @@ export const MEMBER_SPACE_PATH = "/compte";
 export function isMemberSpacePath(pathname: string): boolean {
   return pathname === MEMBER_SPACE_PATH || pathname.startsWith(`${MEMBER_SPACE_PATH}/`);
 }
+
+/** Address of one order's detail page in the member space. */
+export function orderHref(reference: string): string {
+  return `${MEMBER_SPACE_PATH}/commandes/${encodeURIComponent(reference)}`;
+}

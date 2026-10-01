@@ -1,5 +1,5 @@
 import { useTranslation } from "react-i18next";
-import { Link } from "react-router-dom";
+import { Link } from "../../../lib/navigation";
 import { BadgeCheck } from "lucide-react";
 import { PasswordField, TextField } from "../Field";
 import { PasswordStrength } from "../PasswordStrength";

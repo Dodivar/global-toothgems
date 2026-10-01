@@ -1,7 +1,7 @@
 import { useCallback } from "react";
 import { useTranslation } from "react-i18next";
 import { FREE_TOOTH, isFinishId, toothKeys, type PlacedJewelry } from "../../../data/studioEditor";
-import { formatPrice } from "../../../lib/format";
+import { useFormat } from "../../../lib/format";
 
 /**
  * Customer-facing names of the editor's data, in the UI language.
@@ -11,6 +11,7 @@ import { formatPrice } from "../../../lib/format";
  * so the panels, the context menu and the quote sheet all say the same thing.
  */
 export function useEditorLabels() {
+  const { formatPrice } = useFormat();
   const { t } = useTranslation();
 
   const pieceName = useCallback((typeId: string) => t(`studio.editor.pieces.${typeId}`, { defaultValue: typeId }), [t]);
@@ -45,7 +46,7 @@ export function useEditorLabels() {
   /** The tooth number as a customer reads it: "11", or "—" off the labelled arch. */
   const toothTag = useCallback((fdi: string) => (fdi === FREE_TOOTH ? "—" : fdi), []);
 
-  const formatEstimate = useCallback((cents: number) => formatPrice(cents / 100), []);
+  const formatEstimate = useCallback((cents: number) => formatPrice(cents / 100), [formatPrice]);
 
   return { t, pieceName, finishName, toothShort, toothName, toothTag, formatEstimate };
 }

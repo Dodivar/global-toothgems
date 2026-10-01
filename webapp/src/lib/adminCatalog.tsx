@@ -34,7 +34,7 @@ export { useAdminCatalog, CatalogError, type AdminCatalogValue, type CatalogStat
 /**
  * The administration catalogue store.
  *
- * With `VITE_SUPABASE_URL` and `VITE_SUPABASE_PUBLISHABLE_KEY` set, products,
+ * With `NEXT_PUBLIC_SUPABASE_URL` and `NEXT_PUBLIC_SUPABASE_PUBLISHABLE_KEY` set, products,
  * stock, media and recommendations are read from and written to Supabase
  * (`adminCatalogSupabase.tsx`). Without them the prototype keeps running on
  * the in-memory fixtures below, so a preview deployment without a database

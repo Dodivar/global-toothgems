@@ -1,6 +1,6 @@
 import { useCallback, useMemo, useState } from "react";
 import { useTranslation } from "react-i18next";
-import { useNavigate, useSearchParams } from "react-router-dom";
+import { useNavigate, useSearchParams } from "../../lib/navigation";
 import { Archive, CalendarRange, FolderMinus, FolderPlus, Plus, SearchX, Sparkles, TicketPercent } from "lucide-react";
 import { AdminButton } from "../admin/AdminButton";
 import { AdminSelect } from "../admin/AdminSelect";

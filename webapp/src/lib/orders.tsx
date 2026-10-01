@@ -1,10 +1,11 @@
 import { createContext, useCallback, useContext, useEffect, useMemo, useState, type ReactNode } from "react";
-import { SEED_ORDERS, orderTotal, type Order, type OrderLine } from "../data/orders";
+import { SEED_ORDERS, mockOrder, spentByCurrency, type Order, type OrderLine, type SpentTotal } from "../data/orders";
 import { getProduct } from "../data/products";
 import type { CartLine } from "./cart";
+import { toMajorUnits } from "./catalog/money";
 import { useAuth } from "./auth";
 import { useCatalog } from "./catalog/CatalogProvider";
-import { CUSTOMER_VISIBLE_PAYMENT_STATUSES, mapOrder, type OrderRow } from "./orderMapping";
+import { CUSTOMER_ORDER_SELECT, CUSTOMER_VISIBLE_PAYMENT_STATUSES, mapOrder, type OrderRow } from "./orderMapping";
 import { isSupabaseConfigured, supabase } from "./supabase/client";
 
 /**
@@ -31,8 +32,11 @@ interface OrdersContextValue {
    * so the demo cart's "payment" adds nothing to the real history.
    */
   placeOrder: (lines: CartLine[], shipping: number) => string;
-  /** Lifetime spend, cancelled orders excluded. */
-  totalSpent: number;
+  /**
+   * Lifetime spend per currency, minor units: recorded totals of the orders
+   * that stand, less refunds (`spentByCurrency`).
+   */
+  totalSpent: SpentTotal[];
   /** ISO date of the oldest order — what "member since" is derived from. */
   memberSince: string | null;
 }
@@ -49,7 +53,7 @@ export function OrdersProvider({ children }: { children: ReactNode }) {
 
 function summary(orders: Order[]) {
   return {
-    totalSpent: orders.reduce((sum, o) => (o.status === "cancelled" ? sum : sum + orderTotal(o)), 0),
+    totalSpent: spentByCurrency(orders),
     memberSince: orders.reduce<string | null>((oldest, o) => (oldest && oldest < o.placedOn ? oldest : o.placedOn), null),
   };
 }
@@ -57,12 +61,6 @@ function summary(orders: Order[]) {
 /* ------------------------------------------------------------------ */
 /* Supabase                                                           */
 /* ------------------------------------------------------------------ */
-
-const ORDER_SELECT = `
-  order_number, created_at, status, payment_status, currency, shipping_amount,
-  order_items ( product_name, variant_name, unit_price, quantity, product:products ( slug ) ),
-  shipments ( status, carrier, tracking_number, estimated_delivery, delivered_at, created_at )
-`;
 
 function SupabaseOrdersProvider({ children }: { children: ReactNode }) {
   const { userId } = useAuth();
@@ -79,7 +77,7 @@ function SupabaseOrdersProvider({ children }: { children: ReactNode }) {
     const controller = new AbortController();
     supabase
       .from("orders")
-      .select(ORDER_SELECT)
+      .select(CUSTOMER_ORDER_SELECT)
       .eq("user_id", userId)
       .in("payment_status", [...CUSTOMER_VISIBLE_PAYMENT_STATUSES])
       .order("created_at", { ascending: false })
@@ -149,7 +147,7 @@ function toOrderLine(line: CartLine): OrderLine {
         ? { fr: line.variant, en: line.variant }
         : undefined,
     image: line.image,
-    unitPrice: line.price,
+    unitPrice: toMajorUnits(line.unitPrice),
     qty: line.qty,
   };
 }
@@ -159,14 +157,13 @@ function MockOrdersProvider({ children }: { children: ReactNode }) {
 
   const placeOrder = useCallback((lines: CartLine[], shipping: number) => {
     const reference = nextReference(orders);
-    const order: Order = {
+    const order = mockOrder({
       reference,
       placedOn: new Date().toISOString().slice(0, 10),
       status: "processing",
-      currency: "EUR",
       shipping,
       lines: lines.map(toOrderLine),
-    };
+    });
     setOrders((prev) => [order, ...prev]);
     return reference;
   }, [orders]);

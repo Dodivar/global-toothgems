@@ -1,5 +1,5 @@
 import { useTranslation } from "react-i18next";
-import { Link } from "react-router-dom";
+import { Link } from "../../lib/navigation";
 import {
   Award,
   BadgeCheck,
@@ -24,11 +24,11 @@ import { Badge } from "../ui/Badge";
 import { Button } from "../ui/Button";
 import { ProgressBar } from "../ui/ProgressBar";
 import { FulfillmentBadge, OrderStatusBadge, PaymentStatusBadge } from "./StatusBadges";
-import { formatDateShort, formatPrice } from "../../lib/format";
+import { useFormat } from "../../lib/format";
 import { pick } from "../../data/types";
 import { COURSES } from "../../data/courses";
 import { countryLabelKey } from "../../data/countries";
-import { orderItemCount, orderTotal, type AdminOrder } from "../../data/adminOrders";
+import { orderItemCount, type AdminOrder } from "../../data/adminOrders";
 import {
   averageOrderValue,
   trainingState,
@@ -79,6 +79,7 @@ export function CustomerSummary({
   orderCountInBook: number;
   lastOrder?: string;
 }) {
+  const { formatDateShort, formatPrice } = useFormat();
   const { t } = useTranslation();
   const state = trainingState(customer);
 
@@ -206,6 +207,7 @@ export function OverviewPanel({
   onEdit: () => void;
   onSeeAllActivity: () => void;
 }) {
+  const { formatDateShort } = useFormat();
   const { t } = useTranslation();
 
   return (
@@ -328,6 +330,7 @@ export function OrdersPanel({
   lifetimeCount: number;
   hrefForOrder: (order: AdminOrder) => string;
 }) {
+  const { formatDateShort, formatMoney } = useFormat();
   const { t, i18n } = useTranslation();
   const lang = i18n.language;
 
@@ -392,7 +395,7 @@ export function OrdersPanel({
 
               <span className="flex items-center justify-between gap-3 sm:justify-end">
                 <strong className="text-[length:var(--text-body-md)] tabular-nums text-[var(--text-primary)]">
-                  {formatPrice(orderTotal(order))}
+                  {formatMoney(order.amounts.total, order.currency)}
                 </strong>
                 <ChevronRight size={16} aria-hidden="true" className="flex-none text-[var(--text-subtle)]" />
               </span>
@@ -455,6 +458,7 @@ export function TrainingPanel({ customer }: { customer: AdminCustomerRecord }) {
 }
 
 function EnrollmentRow({ seat, title }: { seat: Enrollment; title: string }) {
+  const { formatDateShort } = useFormat();
   const { t } = useTranslation();
   const done = seat.progress >= 100;
 

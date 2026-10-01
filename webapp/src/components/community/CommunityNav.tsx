@@ -1,5 +1,5 @@
 import { useTranslation } from "react-i18next";
-import { NavLink } from "react-router-dom";
+import { NavLink } from "../../lib/navigation";
 import { Bookmark, Compass, MessageCircle, PenLine, ScrollText, Users } from "lucide-react";
 import type { LucideIcon } from "lucide-react";
 import clsx from "clsx";

@@ -1,6 +1,6 @@
 import type { LucideIcon } from "lucide-react";
 import { formatPercent } from "../../../lib/adminAnalytics";
-import { formatCount } from "../../../lib/format";
+import { useFormat } from "../../../lib/format";
 
 /**
  * A whole split into its parts, as one bar plus a list.
@@ -31,6 +31,7 @@ export function SplitBar({
   total: number;
   barLabel: string;
 }) {
+  const { formatCount } = useFormat();
   const visible = segments.filter((segment) => segment.value > 0);
   const share = (value: number) => (total > 0 ? (value / total) * 100 : 0);
 

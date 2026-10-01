@@ -59,6 +59,8 @@ export function StepEditor({
   } = useAdminTraining();
 
   const [openBlock, setOpenBlock] = useState<string | null>(null);
+  /** A just-added image block opens the training image library straight away. */
+  const [freshImage, setFreshImage] = useState<string | null>(null);
   const [removing, setRemoving] = useState<ContentBlock | null>(null);
   const [removingStep, setRemovingStep] = useState(false);
 
@@ -72,6 +74,7 @@ export function StepEditor({
     // A new block opens straight into its editor: adding one is always the
     // first half of filling it in.
     if (id) setOpenBlock(id);
+    if (id && type === "image") setFreshImage(id);
     showToast(t("admin.training.toasts.blockAddedTitle"), t(`admin.training.blocks.${type}`));
   };
 
@@ -199,6 +202,8 @@ export function StepEditor({
                   <BlockEditor
                     block={block}
                     lang={lang}
+                    openLibrary={block.id === freshImage}
+                    onLibraryDone={() => setFreshImage(null)}
                     onChange={(patch) => updateBlock(courseId, module.id, step.id, block.id, patch)}
                   />
                 </BlockCard>
@@ -250,16 +255,28 @@ function BlockEditor({
   block,
   lang,
   onChange,
+  openLibrary,
+  onLibraryDone,
 }: {
   block: ContentBlock;
   lang: ContentLang;
   onChange: (patch: Partial<ContentBlock>) => void;
+  openLibrary?: boolean;
+  onLibraryDone?: () => void;
 }) {
   if (block.type === "text") {
     return <TextBlockEditor block={block} lang={lang} onChange={onChange as (p: Partial<TextBlock>) => void} />;
   }
   if (block.type === "image") {
-    return <ImageBlockEditor block={block} lang={lang} onChange={onChange as (p: Partial<ImageBlock>) => void} />;
+    return (
+      <ImageBlockEditor
+        block={block}
+        lang={lang}
+        openLibrary={openLibrary}
+        onLibraryDone={onLibraryDone}
+        onChange={onChange as (p: Partial<ImageBlock>) => void}
+      />
+    );
   }
   return <VideoBlockEditor block={block} lang={lang} onChange={onChange as (p: Partial<VideoBlock>) => void} />;
 }

@@ -1,9 +1,10 @@
 import { createContext, useCallback, useContext, useEffect, useMemo, useState, type ReactNode } from "react";
-import { Navigate, useLocation } from "react-router-dom";
+import { Navigate, useLocation } from "./navigation";
 import type { AuthError, User } from "@supabase/supabase-js";
-import { isSupabaseConfigured, supabase } from "./supabase/client";
+import { isSupabaseConfigured, sessionReady, supabase } from "./supabase/client";
 import { DELIVERY_COUNTRIES } from "../data/countries";
 import { LEGAL_POLICY_VERSION, registrationMetadata, type RegistrationData } from "./registration";
+import { useHydrated } from "./useHydrated";
 
 /**
  * Member session.
@@ -15,7 +16,7 @@ import { LEGAL_POLICY_VERSION, registrationMetadata, type RegistrationData } fro
  * Level Security in Postgres, never by this file.
  *
  * Without Supabase it falls back to the prototype's mock: no credential is
- * verified and nothing is persisted, so the journeys can still be clicked
+ * verified and only the browser tab keeps the session, so the journeys can still be clicked
  * through. Nothing may rely on the mock for access control.
  */
 
@@ -231,19 +232,26 @@ function SupabaseAuthProvider({ children }: { children: ReactNode }) {
     if (!supabase) return;
     let active = true;
     // Restores a kept session, and follows sign-in from the confirmation link,
-    // sign-outs and token expiry from any tab.
-    const { data } = supabase.auth.onAuthStateChange((event, session) => {
-      if (event === "TOKEN_REFRESHED" || event === "USER_UPDATED") return;
-      // Supabase warns against awaiting its own calls inside this callback.
-      setTimeout(async () => {
-        if (!active) return;
-        await applyUser(session?.user ?? null);
-        if (active) setRestoring(false);
-      }, 0);
+    // sign-outs and token expiry from any tab. Subscribes once a pre-migration
+    // session has been carried over (`sessionReady`).
+    const client = supabase;
+    let unsubscribe = () => {};
+    void sessionReady.then(() => {
+      if (!active) return;
+      const { data } = client.auth.onAuthStateChange((event, session) => {
+        if (event === "TOKEN_REFRESHED" || event === "USER_UPDATED") return;
+        // Supabase warns against awaiting its own calls inside this callback.
+        setTimeout(async () => {
+          if (!active) return;
+          await applyUser(session?.user ?? null);
+          if (active) setRestoring(false);
+        }, 0);
+      });
+      unsubscribe = () => data.subscription.unsubscribe();
     });
     return () => {
       active = false;
-      data.subscription.unsubscribe();
+      unsubscribe();
     };
   }, [applyUser]);
 
@@ -386,8 +394,49 @@ function SupabaseAuthProvider({ children }: { children: ReactNode }) {
 
 const wait = (ms: number) => new Promise((resolve) => setTimeout(resolve, ms));
 
+/**
+ * The mock session is kept for the browser tab (sessionStorage), like the
+ * cart (docs/migration-nextjs.md, phases 4–5): a signed-in demo survives a
+ * reload or an address typed in. Mock mode only.
+ */
+const DEMO_SESSION_KEY = "gt-demo-session";
+
+function readDemoSession(): Profile | null {
+  try {
+    const raw = window.sessionStorage.getItem(DEMO_SESSION_KEY);
+    const stored = raw ? (JSON.parse(raw) as Partial<Profile>) : null;
+    return stored && typeof stored.email === "string" ? { ...(stored as Profile) } : null;
+  } catch {
+    return null;
+  }
+}
+
+function writeDemoSession(profile: Profile | null) {
+  try {
+    if (profile) window.sessionStorage.setItem(DEMO_SESSION_KEY, JSON.stringify(profile));
+    else window.sessionStorage.removeItem(DEMO_SESSION_KEY);
+  } catch {
+    // Blocked storage: the demo session lasts this page.
+  }
+}
+
 function DemoAuthProvider({ children }: { children: ReactNode }) {
-  const [profile, setProfile] = useState<Profile | null>(null);
+  // Read once hydrated, so a server-rendered page hydrates with the server's
+  // markup; `changed` is the session as changed on this page.
+  const hydrated = useHydrated();
+  const stored = useMemo(() => (hydrated ? readDemoSession() : null), [hydrated]);
+  const [changed, setChanged] = useState<Profile | null | undefined>(undefined);
+  const profile = changed === undefined ? stored : changed;
+
+  const setProfile = useCallback(
+    (next: Profile | null | ((prev: Profile | null) => Profile | null)) =>
+      setChanged((prev) => {
+        const value = typeof next === "function" ? next(prev === undefined ? stored : prev) : next;
+        writeDemoSession(value);
+        return value;
+      }),
+    [stored],
+  );
 
   const signIn = useCallback((email: string, identity?: SignInIdentity) => {
     setProfile({
@@ -399,7 +448,7 @@ function DemoAuthProvider({ children }: { children: ReactNode }) {
       ...(identity?.phone ? { phone: identity.phone } : {}),
       ...(identity?.country ? { country: identity.country } : {}),
     });
-  }, []);
+  }, [setProfile]);
 
   const signInWithPassword = useCallback(
     async (email: string): Promise<SignInResult> => {
@@ -416,16 +465,20 @@ function DemoAuthProvider({ children }: { children: ReactNode }) {
   const signUp = useCallback(async (): Promise<SignUpResult> => "confirmationSent", []);
   const resendConfirmation = useCallback(async (): Promise<ResendResult> => "sent", []);
 
-  const signOut = useCallback(() => setProfile(null), []);
+  const signOut = useCallback(() => setProfile(null), [setProfile]);
 
-  const updateProfile = useCallback((patch: ProfilePatch) => {
-    setProfile((prev) => (prev ? { ...prev, ...patch } : prev));
-  }, []);
+  const updateProfile = useCallback(
+    (patch: ProfilePatch) => {
+      setProfile((prev) => (prev ? { ...prev, ...patch } : prev));
+    },
+    [setProfile],
+  );
 
   const value = useMemo(
     () =>
       contextValue(profile, {
-        restoring: false,
+        // Until hydrated the kept demo session is unknown, as a Supabase session is.
+        restoring: !hydrated,
         realAuth: false,
         // Mock mode: a stable id per demo email, so each demo account keeps its own library.
         userId: profile ? `demo-${profile.email.trim().toLowerCase()}` : null,
@@ -436,7 +489,7 @@ function DemoAuthProvider({ children }: { children: ReactNode }) {
         signOut,
         updateProfile,
       }),
-    [profile, signInWithPassword, signUp, resendConfirmation, signIn, signOut, updateProfile],
+    [profile, hydrated, signInWithPassword, signUp, resendConfirmation, signIn, signOut, updateProfile],
   );
 
   return <AuthContext.Provider value={value}>{children}</AuthContext.Provider>;

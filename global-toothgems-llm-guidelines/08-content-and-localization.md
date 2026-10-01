@@ -1,76 +1,59 @@
 ---
 name: global-toothgems-content-localization
-description: Multilingual content, translation, copywriting, SEO and content-management rules.
+description: UI localization with react-i18next, content translations in the database, copywriting tone, SEO with Next.js server rendering, user-generated content.
 ---
 
-# Content & Localization
+# Content, Localization & SEO
 
 ## Languages
 
-Supported launch languages:
-- FR;
-- EN;
-- DE.
+- Launch: **French** (default, reference, base columns) and **English**.
+- German: enabled in the `languages` table, planned, not launch-blocking. Do not add partial `de` UI files; adding German is a deliberate project step (UI JSON + content translations + review).
+- Adding a locale must not require redesign: locale lists come from configuration/`languages`, not scattered conditionals.
 
-French is the reference language unless product requirements specify otherwise.
+## UI strings (react-i18next)
 
-## Localization
+react-i18next stays the UI translation library during the Next.js migration (decided 2026-09-30); the JSON files and keys below are kept as they are. Moving to next-intl or another server-aware library is a separate decision, not part of the migration phases. Server-rendered pages will need the active language on the server (today it is read from `localStorage` key `gt-lang` in the browser): with the `/fr` / `/en` prefixes decided below, the URL carries it.
 
-Never concatenate translated fragments in application logic.
+- All customer-facing and staff-facing text in `webapp/src/i18n/locales/` (`fr.json`, `en.json`, and namespaced files such as `promotions.*`, `reviews.*`, `settings.*`, `studio.*`). Every key in both languages.
+- Complete sentences with interpolation; never concatenate translated fragments. Pluralization via i18next plurals.
+- Dates, numbers and currencies with `Intl` in the active locale (`lib/format.ts`).
+- Error messages from Supabase or Edge Functions are mapped to translation keys, never shown raw.
 
-Prefer translation keys and complete localized strings.
+## Content translations (database)
 
-Dates, numbers, currencies and pluralization must use locale-aware formatting.
+- Products, variants, media alt text, categories, gem colours, promotions, campaigns, e-mail templates and content pages: base columns in French, other locales in `*_translations` rows with `draft`/`published` status; only published rows are public; fallback to French.
+- Future Academy content follows the same model. Never add `name_en`-style columns.
+- `translation_status` reports missing/outdated translations for the back office.
+
+## Commerce localization
+
+Language, country, currency, tax regime and shipping zone are independent. Selecting English does not change currency, VAT or shipping.
+
+## Translation workflow
+
+Translations are explicit and reviewable. Do not silently machine-translate commercial, legal or instructional content; if you draft a translation, mark it as a draft for review.
 
 ## Tone
 
-Customer-facing copy should be:
-- professional;
-- friendly;
-- confident;
-- reassuring;
-- premium;
-- concise.
-
-Avoid:
-- excessive jargon;
-- aggressive sales language;
-- childish wording;
-- unsupported claims;
-- medical/technical claims that have not been validated.
-
-## Product content
-
-Product descriptions should clearly distinguish:
-- factual specifications;
-- usage instructions;
-- recommendations;
-- marketing copy.
-
-Never invent product properties.
+Professional, friendly, confident, reassuring, premium, concise. Avoid jargon, aggressive sales language, childish wording, unsupported claims, and medical/technical claims that have not been validated. Product descriptions separate specifications, usage instructions, recommendations and marketing copy. Never invent product properties, legal terms or company identifiers — use a visible placeholder and flag it.
 
 ## Training content
 
-Educational explanations should be:
-- clear;
-- structured;
-- encouraging;
-- actionable.
-
-Incorrect quiz answers should teach rather than shame.
-
-## SEO
-
-Public product and course pages should be designed for:
-- crawlability;
-- meaningful titles;
-- descriptions;
-- semantic headings;
-- structured content where appropriate;
-- clean URLs.
-
-Do not sacrifice usability for keyword stuffing.
+Clear, structured, encouraging, actionable. Incorrect quiz answers teach rather than shame.
 
 ## User-generated content
 
-Reviews are user-generated content and should not be translated, altered or attributed to the user without an explicit product decision.
+Reviews, community posts and Studio creation names are the author's words: never translated, altered or re-attributed without an explicit product decision.
+
+## SEO (Next.js)
+
+Public pages (home, shop, product, course sales pages, legal, help) must be indexable and shareable. This is the main reason for the move to Next.js App Router (decision 2026-09-30, `guidelines/02`). Since phase 3.1 the server gives every public page its `<head>` (title, description, canonical, hreflang, Open Graph), answers 404 for unknown addresses and serves `sitemap.xml` / `robots.txt`; since phase 3.2 the content of public pages is rendered on the server, product pages have their own title, description, Open Graph image and schema.org `Product`, unknown product slugs answer 404 and the sitemap lists every product. Course pages keep the generic head until the Academy decision (`docs/migration-nextjs.md`, Open decisions).
+
+- server-rendered HTML for public pages; per-route, localized `<title>` and meta description through the App Router `metadata` / `generateMetadata` APIs; canonical URL; Open Graph tags for product and course pages;
+- semantic headings, crawlable links (`<a href>`, never click handlers), clean stable URLs: product pages use each language's slug (`/fr/boutique/<products.slug>`, `/en/shop/<published product_translations.slug>`, else the French one; decided 2026-09-30), another key moves there (308) — so a published English slug is part of the product's address: changing it moves the page;
+- structured data (Product, Course) where appropriate;
+- a real HTTP 404 (`notFound()`) for unknown slugs and addresses (in place for addresses and product slugs; course ids wait for the Academy decision);
+- `sitemap.xml` and `robots.txt` generated by the app once public pages are migrated.
+
+**Locale URLs (decided 2026-09-30, built in phase 3.1):** every public page is prefixed with its language, `/fr/...` and `/en/...`, English pages with English segments (`/en/shop`), `hreflang` alternates between the two (x-default: `/` for the home, else the English page). `/` goes to the saved choice, else the browser's language, else English. Old unprefixed addresses redirect permanently. The member space, sign-in pages, learner pages, Studio workspace and back office are not prefixed and are `noindex`. One table holds it all: `webapp/src/lib/localeRoutes.ts` — a new public page gets its French and English address there (ask the user for the English wording), and its title/description source in `src/lib/pageMeta.ts` (text the page already shows; do not write copy for search engines without asking).

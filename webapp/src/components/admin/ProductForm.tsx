@@ -14,7 +14,7 @@ import { RichTextArea } from "./RichTextArea";
 import { ShapePicker } from "./ShapePicker";
 import { ToggleSwitch } from "./ToggleSwitch";
 import { CONTENT_LANGS, type ContentLang } from "../../lib/localized";
-import { formatDate } from "../../lib/format";
+import { useFormat } from "../../lib/format";
 import { useAdminCatalog } from "../../lib/adminCatalog";
 import {
   offeredGemVariants,
@@ -77,6 +77,7 @@ export function ProductForm({
   onArchive,
   focusOption,
 }: ProductFormProps) {
+  const { formatDate } = useFormat();
   const { t } = useTranslation();
   const { source, categories, uploadImage, gemColors } = useAdminCatalog();
   // The database has no promotional price: discounts are the promotions

@@ -1,6 +1,6 @@
 import type { InputHTMLAttributes, ReactNode } from "react";
 import { useTranslation } from "react-i18next";
-import { Link } from "react-router-dom";
+import { Link } from "../../lib/navigation";
 import { CircleAlert } from "lucide-react";
 import { ShapeGlyph, GLYPH_PATHS } from "../ui/ShapeGlyph";
 import { photo } from "../../lib/images";

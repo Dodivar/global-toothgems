@@ -8,16 +8,9 @@ import { FormField } from "./FormField";
 import { SheetBody, SheetFooter } from "./AdminSheet";
 import { RoleMatrix } from "./RolePermissions";
 import { LastActivity } from "./UserBadges";
-import { ROLE_META, STATUS_META, formatDate, useAdminLocale } from "./userMeta";
-import {
-  EMAIL_PATTERN,
-  USER_ROLES,
-  USER_TEAMS,
-  type AdminUser,
-  type UserRole,
-  type UserStatus,
-} from "../../data/adminUsers";
-import type { UserDraft } from "../../lib/adminUsers";
+import { ROLE_META, formatDate, useAdminLocale } from "./userMeta";
+import { EMAIL_PATTERN, USER_ROLES, USER_TEAMS, type AdminUser, type UserRole } from "../../data/adminUsers";
+import { useAdminUsers, type UserDraft } from "../../lib/adminUsers";
 import type { GuardReason } from "../../lib/adminUserFilters";
 
 /**
@@ -25,8 +18,11 @@ import type { GuardReason } from "../../lib/adminUserFilters";
  *
  * Shared rather than duplicated so the two flows cannot drift: the same labels,
  * the same validation, the same role picker with the same explanations. What
- * differs is passed in — the statuses on offer, whether the read-only account
- * facts are shown above the fields, and the submit label.
+ * differs is passed in — whether the e-mail can be typed (only for an
+ * invitation: the sign-in address belongs to the person's account), whether
+ * the read-only account facts are shown above the fields, and the submit
+ * label. The status is not a field: suspending and reactivating are their own
+ * confirmed actions, and a new member is always invited.
  *
  * Validation runs on submit and then live on every field that has been
  * touched, so an operator is never scolded for a field they have not reached
@@ -36,10 +32,11 @@ import type { GuardReason } from "../../lib/adminUserFilters";
  *
  * Checking that an email is not already in use is the server's job, not this
  * form's: it arrives as `serverError` after a submit and is shown on the email
- * field exactly like a local error.
+ * field exactly like a local error. Roles above the signed-in member's own
+ * are offered disabled, with the reason (the database refuses them anyway).
  */
 
-type FieldKey = "firstName" | "lastName" | "email";
+type FieldKey = "firstName" | "lastName" | "email" | "team";
 type Errors = Partial<Record<FieldKey, string>>;
 
 export function RolePicker({
@@ -58,8 +55,13 @@ export function RolePicker({
 }) {
   const { t } = useTranslation();
   const hintId = useId();
+  const aboveId = useId();
+  const { matrix, callerRank } = useAdminUsers();
+  // Display only: the ranks come from `roles`, and the database refuses a role above the caller's.
+  const aboveCaller = (role: UserRole) => Boolean(matrix && matrix.rank[role] > callerRank);
+  const anyAbove = USER_ROLES.some(aboveCaller);
   return (
-    <fieldset className="m-0 grid gap-2 border-0 p-0" aria-describedby={disabledReason ? hintId : undefined}>
+    <fieldset className="m-0 grid gap-2 border-0 p-0" aria-describedby={disabledReason ? hintId : anyAbove ? aboveId : undefined}>
       <legend className="mb-1.5 text-[length:var(--text-caption)] font-semibold text-[var(--text-primary)]">
         {legend}
         <span className="ml-1 text-[var(--accent-highlight-ink)]" aria-hidden="true">
@@ -69,6 +71,7 @@ export function RolePicker({
       {USER_ROLES.map((role) => {
         const Icon = ROLE_META[role].icon;
         const checked = value === role;
+        const locked = Boolean(disabledReason) || aboveCaller(role);
         return (
           <label
             key={role}
@@ -78,7 +81,7 @@ export function RolePicker({
               checked
                 ? "border-[var(--gt-ink-900)] bg-[var(--surface-brand-wash)] shadow-[var(--shadow-xs)]"
                 : "border-[var(--border-subtle)] bg-[var(--admin-panel)] hover:border-[var(--border-default)] hover:bg-[var(--admin-panel-sunken)]",
-              disabledReason && "cursor-not-allowed opacity-60",
+              locked && "cursor-not-allowed opacity-60",
             )}
           >
             <input
@@ -86,7 +89,7 @@ export function RolePicker({
               name={name}
               value={role}
               checked={checked}
-              disabled={Boolean(disabledReason)}
+              disabled={locked}
               onChange={() => onChange(role)}
               className="sr-only"
             />
@@ -127,77 +130,19 @@ export function RolePicker({
           </label>
         );
       })}
-      {disabledReason && (
+      {disabledReason ? (
         <p id={hintId} className="m-0 flex items-start gap-1.5 text-[length:var(--text-caption)] text-[var(--text-muted)]">
           <Lock size={13} aria-hidden="true" className="mt-0.5 flex-none" />
           {disabledReason}
         </p>
-      )}
-    </fieldset>
-  );
-}
-
-/** Compact segmented choice for the account status. */
-function StatusChoice({
-  value,
-  options,
-  onChange,
-  disabledReason,
-}: {
-  value: UserStatus;
-  options: UserStatus[];
-  onChange: (status: UserStatus) => void;
-  disabledReason?: string;
-}) {
-  const { t } = useTranslation();
-  const name = useId();
-  const hintId = useId();
-  return (
-    <fieldset className="m-0 grid gap-2 border-0 p-0" aria-describedby={hintId}>
-      <legend className="mb-1.5 text-[length:var(--text-caption)] font-semibold text-[var(--text-primary)]">
-        {t("admin.users.fieldStatus")}
-      </legend>
-      <div className="flex flex-wrap gap-2">
-        {options.map((status) => {
-          const Icon = STATUS_META[status].icon;
-          const checked = value === status;
-          return (
-            <label
-              key={status}
-              className={clsx(
-                "inline-flex cursor-pointer items-center gap-2 rounded-[var(--radius-pill)] border px-3.5 py-2 text-[length:var(--text-body-sm)] transition-colors",
-                "has-[:focus-visible]:outline has-[:focus-visible]:outline-2 has-[:focus-visible]:outline-offset-2 has-[:focus-visible]:outline-[var(--focus-ring)]",
-                checked
-                  ? "border-[var(--gt-ink-900)] bg-[var(--gt-ink-900)] font-semibold text-[var(--text-inverse)]"
-                  : "border-[var(--border-default)] bg-[var(--admin-panel)] text-[var(--text-body)] hover:border-[var(--gt-ink-400)]",
-                disabledReason && "cursor-not-allowed opacity-60",
-              )}
-            >
-              <input
-                type="radio"
-                name={name}
-                value={status}
-                checked={checked}
-                disabled={Boolean(disabledReason)}
-                onChange={() => onChange(status)}
-                className="sr-only"
-              />
-              <Icon size={14} strokeWidth={2} aria-hidden="true" />
-              {t(`admin.users.status.${status}`)}
-            </label>
-          );
-        })}
-      </div>
-      <p id={hintId} className="m-0 flex items-start gap-1.5 text-[length:var(--text-caption)] text-[var(--text-muted)]">
-        {disabledReason ? (
-          <>
+      ) : (
+        anyAbove && (
+          <p id={aboveId} className="m-0 flex items-start gap-1.5 text-[length:var(--text-caption)] text-[var(--text-muted)]">
             <Lock size={13} aria-hidden="true" className="mt-0.5 flex-none" />
-            {disabledReason}
-          </>
-        ) : (
-          t(`admin.users.statusHint.${value}`)
-        )}
-      </p>
+            {t("admin.users.roleAboveYours")}
+          </p>
+        )
+      )}
     </fieldset>
   );
 }
@@ -208,6 +153,7 @@ function validateUserDraft(draft: UserDraft, t: (key: string) => string): Errors
   if (!draft.lastName.trim()) errors.lastName = t("admin.users.errorLastName");
   if (!draft.email.trim()) errors.email = t("admin.users.errorEmailRequired");
   else if (!EMAIL_PATTERN.test(draft.email.trim())) errors.email = t("admin.users.errorEmailInvalid");
+  if (!draft.team) errors.team = t("admin.users.errorTeam");
   return errors;
 }
 
@@ -229,7 +175,7 @@ export function UserForm({
   /** Why role and status are locked for this record, if they are. */
   guard?: GuardReason;
   submitting: boolean;
-  /** An error the simulated server returned for the email field. */
+  /** An error the server returned for the email field. */
   serverError?: string;
   onClearServerError: () => void;
   onSubmit: (draft: UserDraft) => void;
@@ -275,8 +221,6 @@ export function UserForm({
   };
 
   const guardText = guard ? t(`admin.users.guard.${guard}`) : undefined;
-  const statusOptions: UserStatus[] =
-    mode === "create" ? ["invited", "active"] : user?.status === "invited" ? ["invited", "active", "suspended"] : ["active", "suspended"];
   const errorCount = Object.keys(errors).length + (serverError ? 1 : 0);
 
   return (
@@ -366,6 +310,7 @@ export function UserForm({
                   autoComplete="off"
                   spellCheck={false}
                   placeholder={t("admin.users.emailPlaceholder")}
+                  readOnly={mode === "edit"}
                   value={draft.email}
                   onChange={(e) => set("email", e.target.value)}
                   onBlur={() => setTouched((p) => ({ ...p, email: true }))}
@@ -389,13 +334,19 @@ export function UserForm({
                   />
                 )}
               </FormField>
-              <FormField label={t("admin.users.fieldTeam")}>
+              <FormField label={t("admin.users.fieldTeam")} required error={visible("team")}>
                 {(props) => (
                   <AdminSelect
                     {...props}
                     value={draft.team}
-                    onChange={(e) => set("team", e.target.value as UserDraft["team"])}
-                    options={USER_TEAMS.map((team) => ({ value: team, label: t(`admin.users.team.${team}`) }))}
+                    onChange={(e) => {
+                      set("team", e.target.value as UserDraft["team"]);
+                      setTouched((p) => ({ ...p, team: true }));
+                    }}
+                    options={[
+                      ...(draft.team ? [] : [{ value: "", label: t("admin.users.teamPlaceholder") }]),
+                      ...USER_TEAMS.map((team) => ({ value: team, label: t(`admin.users.team.${team}`) })),
+                    ]}
                   />
                 )}
               </FormField>
@@ -441,13 +392,6 @@ export function UserForm({
                 <RoleMatrix highlight={draft.role} compact />
               </div>
             </div>
-
-            <StatusChoice
-              value={draft.status}
-              options={statusOptions}
-              onChange={(status) => set("status", status)}
-              disabledReason={guardText}
-            />
           </section>
         </div>
       </SheetBody>
@@ -467,7 +411,7 @@ export function UserForm({
             {submitting
               ? t("admin.users.saving")
               : mode === "create"
-                ? t("admin.users.createUser")
+                ? t("admin.users.sendInvitation")
                 : t("admin.users.saveChanges")}
           </AdminButton>
         </span>

@@ -41,7 +41,7 @@ import {
   useUserPresets,
   type StudioSnapshot,
 } from "../../../lib/studio3d/store";
-import { formatDate } from "../../../lib/format";
+import { useFormat } from "../../../lib/format";
 
 const toolButton = clsx(
   "inline-grid h-9 w-9 flex-none place-items-center rounded-[var(--radius-sm)] text-[var(--gt-ink-600)] transition-colors",
@@ -71,7 +71,7 @@ export function EditorTopBar({ snap, onOpenMenu }: { snap: StudioSnapshot; onOpe
         <Menu size={18} aria-hidden="true" />
       </button>
       <div className="flex min-w-[80px] items-center gap-2.5 pr-1 max-sm:flex-1 sm:min-w-[140px]">
-        <img src={monogram} alt="" aria-hidden="true" className="hidden h-7 w-7 flex-none object-contain sm:block lg:hidden" />
+        <img src={monogram.src} alt="" aria-hidden="true" className="hidden h-7 w-7 flex-none object-contain sm:block lg:hidden" />
         <div className="grid min-w-0 leading-none">
           <h1 className="m-0 flex min-w-0 items-baseline gap-2 truncate text-[15px] font-[var(--weight-black)] tracking-[var(--tracking-tight)] text-[var(--text-primary)]">
             <span className="flex-none max-sm:sr-only">{t("studio.editor.appName")}</span>
@@ -315,6 +315,7 @@ function PresetMenu() {
 }
 
 function ExportMenu() {
+  const { formatDate } = useFormat();
   const labels = useEditorLabels();
   const { t } = labels;
   const [open, setOpen] = useState(false);

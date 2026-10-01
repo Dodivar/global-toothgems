@@ -1,6 +1,6 @@
 import { useCallback, useRef, useState, type KeyboardEvent, type ReactNode } from "react";
 import { useTranslation } from "react-i18next";
-import { Link, useNavigate } from "react-router-dom";
+import { Link, useNavigate } from "../../lib/navigation";
 import { ArrowRight, Check, ChevronLeft, ChevronRight, Pause, Play } from "lucide-react";
 import clsx from "clsx";
 import { Button } from "../ui/Button";

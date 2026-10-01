@@ -1,11 +1,11 @@
 import { createContext, useCallback, useContext, useId, useMemo, useState, type ReactNode } from "react";
 import { useTranslation } from "react-i18next";
-import { Link } from "react-router-dom";
+import { Link } from "../../lib/navigation";
 import { MapPin, MessageCircle } from "lucide-react";
 import clsx from "clsx";
 import { pick } from "../../data/types";
 import type { Member } from "../../data/community";
-import { formatMonthYear } from "../../lib/format";
+import { useFormat } from "../../lib/format";
 import { useCommunity, VIEWER_ID } from "../../lib/community";
 import { MemberAvatar, type AvatarSize } from "./MemberAvatar";
 import { MemberBadges } from "./MemberBadges";
@@ -89,6 +89,7 @@ export function MemberButton({
 
 /** The artist's card: who they are, what they bring, what they last wrote. */
 function MemberProfileDialog({ memberId, onClose }: { memberId: string; onClose: () => void }) {
+  const { formatMonthYear } = useFormat();
   const { t, i18n } = useTranslation();
   const lang = i18n.language;
   const titleId = useId();

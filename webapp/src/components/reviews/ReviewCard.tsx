@@ -8,7 +8,7 @@ import { VerifiedBadge } from "./ReviewBadges";
 import { type CustomerReview } from "../../data/reviewSystem";
 import { publicDate } from "../../lib/reviewRules";
 import { useReviewAuthor, useReviews } from "../../lib/reviews";
-import { formatDate } from "../../lib/format";
+import { useFormat } from "../../lib/format";
 
 const focusRing =
   "focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-[var(--focus-ring)]";
@@ -34,6 +34,7 @@ function toneFor(name: string): string {
  * card as quiet text buttons: the review is the content, not its controls.
  */
 export function ReviewCard({ review, featured = false }: { review: CustomerReview; featured?: boolean }) {
+  const { formatDate } = useFormat();
   const { t, i18n } = useTranslation();
   const lang = i18n.language.startsWith("en") ? "en" : "fr";
   const authorOf = useReviewAuthor();
@@ -157,7 +158,7 @@ export function ReviewCard({ review, featured = false }: { review: CustomerRevie
       {review.response && (
         <div className="grid gap-2 rounded-[var(--radius-md)] border-l-2 border-[var(--gt-blue-300)] bg-[var(--surface-brand-wash)] px-4 py-3">
           <span className="flex flex-wrap items-center gap-2 text-[length:var(--text-caption)]">
-            <img src={monogram} alt="" aria-hidden="true" className="h-4 w-auto" />
+            <img src={monogram.src} alt="" aria-hidden="true" className="h-4 w-auto" />
             <strong className="text-[var(--text-primary)]">{t("reviews.response.from")}</strong>
             <span className="text-[var(--text-muted)]">
               · <time dateTime={review.response.at}>{formatDate(review.response.at)}</time>

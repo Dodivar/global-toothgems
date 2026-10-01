@@ -1,8 +1,12 @@
 import { useTranslation } from "react-i18next";
 import { getProduct } from "../../data/products";
-import { getCourse } from "../../data/courses";
+import { DEFAULT_MENU_THUMB } from "../../data/menu";
+import { useAcademy } from "../../lib/academy/AcademyProvider";
+import { lessonCount } from "../../lib/academy/publicCourse";
+import { formatDuration } from "../../lib/trainingFilters";
 import { pick } from "../../data/types";
 import { useCart } from "../../lib/cart";
+import { toMajorUnits } from "../../lib/catalog/money";
 import type { RegistrationContext } from "../../lib/registration";
 
 /** What the summary card shows, resolved from the context and the live cart. */
@@ -27,17 +31,19 @@ export interface ContextItem {
 export function useContextItem(context: RegistrationContext): ContextItem | null {
   const { t, i18n } = useTranslation();
   const { lines, count, subtotal } = useCart();
+  const { findCourse } = useAcademy();
   const lang = i18n.language;
 
   if (context.kind === "training") {
-    const course = getCourse(context.courseId);
+    // A published course (the fixtures in mock mode), by any of its slugs.
+    const course = findCourse(context.courseId);
     if (!course) return null;
     return {
-      image: course.image,
+      image: course.cover?.src ?? DEFAULT_MENU_THUMB,
       title: pick(course.title, lang),
-      subtitle: pick(course.copy, lang),
-      price: course.price,
-      priceNote: `${pick(course.level, lang)} · ${pick(course.meta, lang)}`,
+      subtitle: course.summary ? pick(course.summary, lang) : undefined,
+      price: toMajorUnits(course.currentPrice.minor),
+      priceNote: [t(`academy.levels.${course.level}`), t("course.lessonCount", { count: lessonCount(course) }), formatDuration(course.minutes, lang)].join(" · "),
     };
   }
 
@@ -58,10 +64,10 @@ export function useContextItem(context: RegistrationContext): ContextItem | null
       image: first.image,
       title: first.name,
       subtitle: first.variant,
-      price: first.price,
+      price: toMajorUnits(first.unitPrice),
       qty: first.qty,
       moreCount: count - first.qty,
-      subtotal,
+      subtotal: toMajorUnits(subtotal),
       priceNote: t("register.context.cartSaved"),
     };
   }

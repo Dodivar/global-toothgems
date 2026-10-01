@@ -1,4 +1,7 @@
+import { useMemo } from "react";
+import { useTranslation } from "react-i18next";
 import i18n from "../i18n";
+import { toMajorUnits } from "./catalog/money";
 
 /**
  * Number-formatting locale per UI language. Currency stays EUR across all of
@@ -10,9 +13,15 @@ const PRICE_LOCALES: Record<string, string> = {
   en: "en-IE",
 };
 
+/** The number and date locale of a UI language: `en` → `en-IE`. */
+export function formatLocale(language: string | undefined): string {
+  return PRICE_LOCALES[(language ?? "fr").slice(0, 2)] ?? PRICE_LOCALES.fr;
+}
+
+/* Outside React only (the shared i18next instance's language). Components use
+   `useFormat()`, which follows the language of the tree they render in. */
 function priceLocale(): string {
-  const lang = (i18n.language ?? "fr").slice(0, 2);
-  return PRICE_LOCALES[lang] ?? PRICE_LOCALES.fr;
+  return formatLocale(i18n.language);
 }
 
 export function formatPrice(value: number, locale: string = priceLocale(), currency: string = "EUR") {
@@ -22,6 +31,14 @@ export function formatPrice(value: number, locale: string = priceLocale(), curre
     minimumFractionDigits: value % 1 === 0 ? 0 : 2,
     maximumFractionDigits: 2,
   }).format(value);
+}
+
+/**
+ * An amount kept in integer minor units (cents) with its currency, as the
+ * orders are: converted to major units only here, for display.
+ */
+export function formatMoney(minor: number, currency: string, locale: string = priceLocale()) {
+  return formatPrice(toMajorUnits(minor), locale, currency);
 }
 
 /**
@@ -45,6 +62,30 @@ export function formatMonthYear(iso: string, locale: string = priceLocale()) {
 /** Whole numbers with the language's separators: "1 248" / "1,248". */
 export function formatCount(value: number, locale: string = priceLocale()) {
   return new Intl.NumberFormat(locale).format(value);
+}
+
+/**
+ * The helpers above in the language of the rendering tree
+ * (docs/migration-nextjs.md, phase 5): on the server, the page's language,
+ * whatever other request is being rendered at the same time; in the browser,
+ * the UI language. Every component formatting prices, dates or counts uses it.
+ */
+export function useFormat() {
+  const { i18n: tree } = useTranslation();
+  const locale = formatLocale(tree.language);
+  return useMemo(
+    () => ({
+      locale,
+      // Same signatures as the plain helpers; the locale defaults to the tree's.
+      formatPrice: (value: number, at: string = locale, currency?: string) => formatPrice(value, at, currency),
+      formatMoney: (minor: number, currency: string, at: string = locale) => formatMoney(minor, currency, at),
+      formatDate: (iso: string, at: string = locale) => formatDate(iso, at),
+      formatDateShort: (iso: string, at: string = locale) => formatDateShort(iso, at),
+      formatMonthYear: (iso: string, at: string = locale) => formatMonthYear(iso, at),
+      formatCount: (value: number, at: string = locale) => formatCount(value, at),
+    }),
+    [locale],
+  );
 }
 
 /**

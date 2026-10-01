@@ -24,7 +24,7 @@ import { useAuth } from "../../lib/auth";
 import { useOrders } from "../../lib/orders";
 import { useProgress } from "../../lib/progress";
 import { useToast } from "../../lib/toast";
-import { formatDate } from "../../lib/format";
+import { useFormat } from "../../lib/format";
 import { EXPORT_AVAILABLE_DAYS, submitExportRequest, type ServiceOutcome } from "../../lib/accountSecurity";
 import { useAccountSecurity } from "../../lib/securityState";
 
@@ -57,6 +57,7 @@ function formatTime(iso: string, lang: string) {
  * authenticated link.
  */
 export function DataExportCard({ outcome }: { outcome: ServiceOutcome }) {
+  const { formatDate } = useFormat();
   const { t, i18n } = useTranslation();
   const { dataExport, startExport } = useAccountSecurity();
   const { profile } = useAuth();

@@ -1,6 +1,6 @@
 import { useState, type ReactNode } from "react";
 import { useTranslation } from "react-i18next";
-import { Link } from "react-router-dom";
+import { Link } from "../../../lib/navigation";
 import {
   ArrowUpRight,
   CheckCircle2,
@@ -28,10 +28,11 @@ import { useAdminOrders } from "../../../lib/adminOrders";
 import { isEditedPending } from "../../../lib/reviewRules";
 import { subjectPath, useReviewCustomer, useReviewSubjects, useReviews } from "../../../lib/reviews";
 import { useToast } from "../../../lib/toast";
-import { formatDateShort } from "../../../lib/format";
+import { useFormat } from "../../../lib/format";
 import { useModerator, type DialogAction } from "./ModerationDialogs";
 
 export function useWhen() {
+  const { formatDateShort } = useFormat();
   const { i18n } = useTranslation();
   return (iso: string) => {
     const time = new Intl.DateTimeFormat(i18n.language.startsWith("en") ? "en-IE" : "fr-FR", { hour: "2-digit", minute: "2-digit" }).format(new Date(iso));
@@ -485,7 +486,7 @@ function ResponsePreview({ body, meta }: { body: string; meta?: string }) {
   return (
     <div className="grid gap-1.5 rounded-[var(--admin-radius-sm)] border-l-2 border-[var(--gt-blue-300)] bg-[var(--surface-brand-wash)] px-3.5 py-2.5">
       <span className="flex flex-wrap items-center gap-2 text-[length:var(--text-caption)] font-semibold text-[var(--text-primary)]">
-        <img src={monogram} alt="" aria-hidden="true" className="h-4 w-auto" />
+        <img src={monogram.src} alt="" aria-hidden="true" className="h-4 w-auto" />
         {t("reviews.response.from")}
         {meta && <span className="font-normal text-[var(--text-muted)]">· {meta}</span>}
       </span>

@@ -1,6 +1,5 @@
-import { useState } from "react";
 import { useTranslation } from "react-i18next";
-import { useNavigate } from "react-router-dom";
+import { useNavigate } from "../../lib/navigation";
 import { ArrowRight, ChevronLeft, ChevronRight } from "lucide-react";
 import { Button } from "../ui/Button";
 import { IconButton } from "../ui/IconButton";
@@ -10,7 +9,7 @@ import { canQuickAdd } from "../../lib/quickAdd";
 import { pick } from "../../data/types";
 import type { Product } from "../../data/products";
 import { useCatalog } from "../../lib/catalog/CatalogProvider";
-import { useToast } from "../../lib/toast";
+import { useFavorites } from "../../lib/favorites";
 import { useReveal } from "../../lib/useReveal";
 import { useScrollRail } from "./useScrollRail";
 
@@ -37,12 +36,11 @@ function railProducts(products: Product[]): Product[] {
 export function BestSellersRail() {
   const { t, i18n } = useTranslation();
   const navigate = useNavigate();
-  const { showToast } = useToast();
+  const { isFavorite, toggleFavorite } = useFavorites();
   const { products, source } = useCatalog();
   const lang = i18n.language;
   const ref = useReveal<HTMLElement>();
   const { ref: railRef, atStart, atEnd, page } = useScrollRail<HTMLUListElement>();
-  const [saved, setSaved] = useState<Record<string, boolean>>({});
 
   const items = railProducts(products);
 
@@ -80,11 +78,8 @@ export function BestSellersRail() {
                 <ProductCard
                   to={`/boutique/${p.id}`}
                   eager={i < 3}
-                  saved={Boolean(saved[p.id])}
-                  onSave={(next) => {
-                    setSaved((s) => ({ ...s, [p.id]: next }));
-                    if (next) showToast(t("product.toastSavedTitle"), t("product.toastSavedBody", { name }));
-                  }}
+                  saved={isFavorite(p)}
+                  onSave={() => toggleFavorite(p)}
                   quickAction={
                     quickAdd ? (
                       <QuickAdd

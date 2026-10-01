@@ -3,7 +3,7 @@ import { useTranslation } from "react-i18next";
 import clsx from "clsx";
 import { CATEGORY_COLOR, type CategoryDatum } from "../../../data/adminAnalytics";
 import { formatPercent } from "../../../lib/adminAnalytics";
-import { formatPrice } from "../../../lib/format";
+import { useFormat } from "../../../lib/format";
 
 /**
  * Where the period's revenue came from.
@@ -20,6 +20,7 @@ import { formatPrice } from "../../../lib/format";
  * what the palette was checked against for colour-blind separation.
  */
 export function DonutChart({ data, total }: { data: CategoryDatum[]; total: number }) {
+  const { formatPrice } = useFormat();
   const { t } = useTranslation();
   const [active, setActive] = useState<string | null>(null);
 

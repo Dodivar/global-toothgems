@@ -1,5 +1,5 @@
 import { useTranslation } from "react-i18next";
-import { useLocation, useNavigate } from "react-router-dom";
+import { useLocation, useNavigate } from "../../lib/navigation";
 import { Lock, PenLine, ShieldCheck, Truck } from "lucide-react";
 import { Button } from "../ui/Button";
 import { ReviewStatusBadge } from "./ReviewBadges";

@@ -1,5 +1,5 @@
 import { useTranslation } from "react-i18next";
-import { Link } from "react-router-dom";
+import { Link } from "../../../lib/navigation";
 import { CircleCheck, Clock, FileText, Image as ImageIcon, ListChecks, TriangleAlert, Video } from "lucide-react";
 import clsx from "clsx";
 import { QuizSettingsPanel } from "./QuizBuilder";

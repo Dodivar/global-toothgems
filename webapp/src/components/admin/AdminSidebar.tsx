@@ -1,5 +1,5 @@
 import { useTranslation } from "react-i18next";
-import { Link, NavLink, useNavigate } from "react-router-dom";
+import { Link, NavLink, useNavigate, useLanguageSwitch } from "../../lib/navigation";
 import {
   BarChart3,
   ChevronsLeft,
@@ -85,7 +85,8 @@ export function AdminSidebar({
   /** Lets the small-screen drawer close itself when a destination is chosen. */
   onNavigate?: () => void;
 }) {
-  const { t, i18n } = useTranslation();
+  const { t } = useTranslation();
+  const switchLanguage = useLanguageSwitch();
   const navigate = useNavigate();
   const { admin, signOut } = useAdminAuth();
 
@@ -108,7 +109,7 @@ export function AdminSidebar({
           onClick={onNavigate}
           className={clsx("flex items-center gap-3 rounded-[var(--admin-radius-sm)]", railFocus)}
         >
-          <img src={monogram} alt="" aria-hidden="true" className="h-7 w-auto flex-none" />
+          <img src={monogram.src} alt="" aria-hidden="true" className="h-7 w-auto flex-none" />
           {!collapsed && (
             <span className="grid leading-tight">
               <span className="text-[length:var(--text-body-sm)] font-bold tracking-[var(--tracking-tight)]">
@@ -271,7 +272,7 @@ export function AdminSidebar({
           </Link>
           <button
             type="button"
-            onClick={() => i18n.changeLanguage(i18n.language?.startsWith("en") ? "fr" : "en")}
+            onClick={switchLanguage}
             aria-label={t("common.langSwitchAria")}
             title={collapsed ? t("common.langSwitchAria") : undefined}
             className={clsx(footPill(collapsed), "uppercase", railFocus)}

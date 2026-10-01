@@ -20,7 +20,7 @@ export function AuthShell({ demo, children, footer }: { demo?: ReactNode; childr
         {demo}
         <section className="relative grid min-w-0 gap-6 rounded-[var(--radius-xl)] border border-[var(--border-subtle)] bg-white/95 p-5 pt-12 shadow-[var(--shadow-lg)] backdrop-blur-[6px] sm:p-9 sm:pt-14">
           <img
-            src={monogram}
+            src={monogram.src}
             alt="Global Toothgems"
             className="absolute left-1/2 top-0 h-14 w-14 -translate-x-1/2 -translate-y-1/2 rounded-full border border-[var(--border-subtle)] bg-[var(--gt-ink-900)] object-contain p-2.5 shadow-[var(--shadow-md)]"
           />

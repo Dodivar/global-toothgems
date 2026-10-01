@@ -20,7 +20,7 @@ import { RichText } from "../ui/RichText";
 import { useFocusTrap } from "../../lib/useFocusTrap";
 import { useLocalized } from "../../lib/localized";
 import { useAdminCatalog } from "../../lib/adminCatalog";
-import { formatDate, formatPrice } from "../../lib/format";
+import { useFormat } from "../../lib/format";
 import {
   displayState,
   effectivePrice,
@@ -46,6 +46,7 @@ export function ProductPreview({
   onClose: () => void;
   actions: ProductRowActions;
 }) {
+  const { formatDate, formatPrice } = useFormat();
   const { t } = useTranslation();
   const L = useLocalized();
   const { categoryById } = useAdminCatalog();

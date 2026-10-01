@@ -1,7 +1,7 @@
 import {
   USER_ROLES,
   USER_STATUSES,
-  roleRank,
+  roleOrder,
   userName,
   type AdminUser,
   type UserRole,
@@ -136,9 +136,9 @@ function compare(a: AdminUser, b: AdminUser, sort: UserSortKey): number {
     case "createdAsc":
       return new Date(a.createdAt).getTime() - new Date(b.createdAt).getTime() || byName;
     case "roleDesc":
-      return roleRank(b.role) - roleRank(a.role) || byName;
+      return roleOrder(b.role) - roleOrder(a.role) || byName;
     case "roleAsc":
-      return roleRank(a.role) - roleRank(b.role) || byName;
+      return roleOrder(a.role) - roleOrder(b.role) || byName;
   }
 }
 
@@ -184,21 +184,38 @@ export function userMetrics(users: AdminUser[]): UserMetrics {
 /**
  * Why an action is unavailable for this user, or null when it is available.
  *
- * Two rules, both about not locking the team out of its own back office: you
- * cannot demote, suspend or delete yourself, and the last active administrator
- * cannot be demoted, suspended or deleted by anyone. The UI disables the action
- * and says why, rather than hiding it — a missing button teaches nothing, a
- * disabled one with a reason teaches the rule.
+ * The database's own rules, read ahead so the screen can say why instead of
+ * letting a request fail (`private.guard_profile_update()`): without
+ * `manage_users` nothing can be changed; nobody changes their own role or
+ * status; nobody acts on a member whose role ranks above their own. One rule
+ * is the screen's alone, about not locking the team out of its own back
+ * office: the last active administrator is not demoted or suspended from
+ * here. The UI disables the action and says why, rather than hiding it.
  *
- * A UX courtesy only. The server must enforce the same rules.
+ * A UX courtesy only: the database refuses every one of these anyway.
  */
-export type GuardReason = "self" | "lastAdmin" | null;
+export type GuardReason = "noPermission" | "self" | "rank" | "lastAdmin" | null;
 
-export function guardFor(user: AdminUser, users: AdminUser[], currentUserId: string): GuardReason {
-  if (user.id === currentUserId) return "self";
+export interface GuardContext {
+  currentUserId: string | null;
+  /** `my_permissions()` holds `manage_users`. */
+  canManage: boolean;
+  /** Rank of the signed-in member's role. */
+  callerRank: number;
+}
+
+export function guardFor(user: AdminUser, users: AdminUser[], context: GuardContext): GuardReason {
+  if (!context.canManage) return "noPermission";
+  if (user.id === context.currentUserId) return "self";
+  if (user.rank > context.callerRank) return "rank";
   if (user.role === "administrator" && user.status === "active") {
     const activeAdmins = users.filter((u) => u.role === "administrator" && u.status === "active").length;
     if (activeAdmins <= 1) return "lastAdmin";
   }
   return null;
+}
+
+/** Names, job title and team stay editable on one's own account and on the last administrator. */
+export function blocksEditing(guard: GuardReason): boolean {
+  return guard === "noPermission" || guard === "rank";
 }

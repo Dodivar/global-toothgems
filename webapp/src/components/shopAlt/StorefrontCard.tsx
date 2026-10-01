@@ -1,12 +1,12 @@
 import { useMemo, useState } from "react";
-import { Link } from "react-router-dom";
+import { Link } from "../../lib/navigation";
 import { useTranslation } from "react-i18next";
 import { Heart, Image as ImageIcon, Star } from "lucide-react";
 import { Badge } from "../ui/Badge";
 import { QuickAdd } from "../shop/QuickAdd";
 import { canQuickAdd } from "../../lib/quickAdd";
 import { useSubjectReviews } from "../reviews/ReviewsSection";
-import { formatPrice } from "../../lib/format";
+import { useFormat } from "../../lib/format";
 import { gemAxes, isGemOptionSet } from "../../lib/gemOptions";
 import { pick } from "../../data/types";
 import { useTaxonomy } from "../../lib/catalog/useTaxonomy";
@@ -38,6 +38,7 @@ interface StorefrontCardProps {
  * page where the choice is made.
  */
 export function StorefrontCard({ product, source, saved, onSave, eager = false }: StorefrontCardProps) {
+  const { formatPrice } = useFormat();
   const { t, i18n } = useTranslation();
   const lang = i18n.language;
   const name = pick(product.name, lang);

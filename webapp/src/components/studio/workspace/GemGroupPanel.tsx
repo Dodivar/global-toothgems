@@ -2,7 +2,7 @@ import { useEffect, useRef, useState } from "react";
 import { createPortal } from "react-dom";
 import clsx from "clsx";
 import { ArrowRight, Layers } from "lucide-react";
-import { Link } from "react-router-dom";
+import { Link } from "../../../lib/navigation";
 import { FREE_TOOTH } from "../../../data/studioEditor";
 import { getEngine } from "../../../lib/studio3d/engine";
 import type { StudioSnapshot } from "../../../lib/studio3d/store";

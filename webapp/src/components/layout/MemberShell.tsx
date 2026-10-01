@@ -1,6 +1,6 @@
 import { useState, type ReactNode } from "react";
 import { useTranslation } from "react-i18next";
-import { Link, NavLink, Outlet, useLocation, useNavigate } from "react-router-dom";
+import { Link, NavLink, useLocation, useNavigate, useLanguageSwitch } from "../../lib/navigation";
 import {
   Award,
   Cookie,
@@ -28,7 +28,7 @@ import { useCart } from "../../lib/cart";
 import { useCommunity } from "../../lib/community";
 import { useCookieConsent } from "../../lib/cookieConsent";
 import { useOrders } from "../../lib/orders";
-import { formatMonthYear } from "../../lib/format";
+import { useFormat } from "../../lib/format";
 import { useFocusTrap } from "../../lib/useFocusTrap";
 import { LEGAL_PATHS } from "../../data/legal/routes";
 import { NewTag } from "../studio/NewTag";
@@ -88,7 +88,7 @@ const rowBase =
   "flex items-center gap-3 rounded-[var(--radius-md)] px-3 py-2 text-[length:var(--text-body-sm)] font-semibold transition-colors";
 const rowIdle = "text-[var(--text-body)] hover:bg-[var(--gt-ink-100)] hover:text-[var(--text-primary)]";
 
-export function MemberShell() {
+export function MemberShell({ children }: { children: ReactNode }) {
   const { t } = useTranslation();
   const { pathname } = useLocation();
   const { count } = useCart();
@@ -117,7 +117,7 @@ export function MemberShell() {
             <Menu size={20} aria-hidden="true" />
           </button>
           <Link to="/" aria-label={t("nav.home")} className={clsx("grid h-10 w-10 flex-none place-items-center rounded-[var(--radius-sm)]", focusRing)}>
-            <img src={monogram} alt="" className="h-7 w-7 object-contain" />
+            <img src={monogram.src} alt="" className="h-7 w-7 object-contain" />
           </Link>
           <p className="m-0 min-w-0 flex-1 truncate text-[15px] font-[var(--weight-black)] text-[var(--text-primary)]">
             {section ? t(section.labelKey) : t("account.eyebrow")}
@@ -125,7 +125,7 @@ export function MemberShell() {
           <CartLink count={count} compact />
         </div>
 
-        <Outlet />
+        {children}
       </div>
 
       {drawerOpen && <Drawer onClose={() => setDrawerPath(null)} />}
@@ -172,7 +172,9 @@ function Drawer({ onClose }: { onClose: () => void }) {
  * Rendered once in the desktop sidebar and once in the mobile drawer.
  */
 function SidebarBody({ onNavigate, closeButton }: { onNavigate?: () => void; closeButton?: ReactNode }) {
-  const { t, i18n } = useTranslation();
+  const { formatMonthYear } = useFormat();
+  const { t } = useTranslation();
+  const switchLanguage = useLanguageSwitch();
   const navigate = useNavigate();
   const { displayName, initials, email, signOut } = useAuth();
   const { memberSince } = useOrders();
@@ -192,7 +194,7 @@ function SidebarBody({ onNavigate, closeButton }: { onNavigate?: () => void; clo
     <>
       <div className="flex h-16 flex-none items-center gap-2 border-b border-[var(--border-subtle)] px-5">
         <Link to="/" onClick={onNavigate} className={clsx("flex-1 rounded-[var(--radius-sm)]", focusRing)}>
-          <img src={logoBlack} alt={t("account.shell.homeAlt")} className="h-5 w-auto" />
+          <img src={logoBlack.src} alt={t("account.shell.homeAlt")} className="h-5 w-auto" />
         </Link>
         {closeButton}
       </div>
@@ -289,7 +291,7 @@ function SidebarBody({ onNavigate, closeButton }: { onNavigate?: () => void; clo
           )}
           <button
             type="button"
-            onClick={() => i18n.changeLanguage(i18n.language.startsWith("en") ? "fr" : "en")}
+            onClick={switchLanguage}
             aria-label={t("common.langSwitchAria")}
             className={clsx(
               "inline-flex items-center gap-1.5 rounded-[var(--radius-pill)] px-2.5 py-1.5 text-[length:var(--text-caption)] font-semibold uppercase text-[var(--text-muted)] hover:bg-[var(--gt-ink-100)] hover:text-[var(--text-primary)]",

@@ -21,8 +21,12 @@ import { AdminButton } from "../AdminButton";
 import { FormField } from "../FormField";
 import { AdminSelect } from "../AdminSelect";
 import { BlockTypeBadge } from "./TrainingPrimitives";
+import { MediaImage } from "./MediaImage";
 import { MediaPicker } from "./MediaPicker";
-import { RichTextEditor, RichTextView } from "./RichTextEditor";
+import { secondsToClock } from "../../../lib/adminTrainingMapping";
+import { useTrainingMedia } from "../../../lib/trainingMedia";
+import { RichTextEditor } from "./RichTextEditor";
+import { LessonBlock } from "../../learning/LessonBlocks";
 import { BLOCK_TYPES, type BlockType, type ContentBlock, type ImageBlock, type TextBlock, type VideoBlock } from "../../../data/adminTraining";
 import type { ContentLang } from "../../../lib/localized";
 import type { DragItemProps } from "../../../lib/useDragReorder";
@@ -319,7 +323,7 @@ function BlockSummary({ block, lang }: { block: ContentBlock; lang: ContentLang 
   if (block.type === "image") {
     return (
       <div className="mt-1.5 flex items-center gap-2.5">
-        <img src={block.src} alt="" aria-hidden="true" className="h-10 w-14 flex-none rounded-[var(--radius-xs)] object-cover" />
+        <MediaImage mediaRef={block.src} className="h-10 w-14 flex-none rounded-[var(--radius-xs)] object-cover" />
         <p className="m-0 line-clamp-2 text-[length:var(--text-caption)] text-[var(--text-muted)]">
           {block.caption[lang] || block.alt[lang] || t("admin.training.blocks.imageHint")}
         </p>
@@ -330,7 +334,7 @@ function BlockSummary({ block, lang }: { block: ContentBlock; lang: ContentLang 
   return (
     <div className="mt-1.5 flex items-center gap-2.5">
       <span className="relative h-10 w-14 flex-none overflow-hidden rounded-[var(--radius-xs)]">
-        <img src={block.poster} alt="" aria-hidden="true" className="h-full w-full object-cover" />
+        <MediaImage mediaRef={block.poster} className="h-full w-full object-cover" />
         <span className="absolute inset-0 grid place-items-center bg-[rgba(17,17,17,.34)] text-[var(--gt-white)]">
           <Play size={12} strokeWidth={2.5} fill="currentColor" aria-hidden="true" />
         </span>
@@ -379,10 +383,15 @@ export function ImageBlockEditor({
   block,
   lang,
   onChange,
+  openLibrary = false,
+  onLibraryDone,
 }: {
   block: ImageBlock;
   lang: ContentLang;
   onChange: (patch: Partial<ImageBlock>) => void;
+  /** Set for a block that was just added: choosing its image comes first. */
+  openLibrary?: boolean;
+  onLibraryDone?: () => void;
 }) {
   const { t } = useTranslation();
 
@@ -390,10 +399,10 @@ export function ImageBlockEditor({
     <div className="grid gap-4">
       <div className="grid gap-4 md:grid-cols-[minmax(0,260px)_minmax(0,1fr)]">
         <figure className="m-0 grid gap-2">
-          <img
-            src={block.src}
+          <MediaImage
+            mediaRef={block.src}
             alt={block.alt[lang] || ""}
-            className="w-full rounded-[var(--admin-radius-sm)] border border-[var(--border-subtle)] object-cover"
+            className="aspect-[4/3] w-full rounded-[var(--admin-radius-sm)] border border-[var(--border-subtle)] object-cover"
           />
           <figcaption className="text-[length:var(--text-caption)] text-[var(--text-subtle)]">
             {t("admin.training.blocks.previewLabel")}
@@ -449,7 +458,17 @@ export function ImageBlockEditor({
 
       <MediaPicker
         value={block.src}
-        onChange={(src) => onChange({ src })}
+        autoOpen={openLibrary}
+        onCancel={onLibraryDone}
+        // The library's own description is offered where the block has none,
+        // in both languages; an author's wording is never overwritten.
+        onPick={(media) => {
+          onLibraryDone?.();
+          onChange({
+            src: media.ref,
+            alt: { fr: block.alt.fr || media.alt.fr, en: block.alt.en || media.alt.en },
+          });
+        }}
         label={t("admin.training.blocks.imageReplace")}
       />
     </div>
@@ -466,14 +485,30 @@ export function VideoBlockEditor({
   onChange: (patch: Partial<VideoBlock>) => void;
 }) {
   const { t } = useTranslation();
+  const { urlOf } = useTrainingMedia();
+  const videoUrl = urlOf(block.source);
 
   return (
     <div className="grid gap-4">
       <div className="grid gap-4 md:grid-cols-[minmax(0,260px)_minmax(0,1fr)]">
         <div className="grid gap-2">
-          <VideoFrame poster={block.poster} title={block.title[lang]} duration={block.duration} />
+          {videoUrl ? (
+            // The real file, as a learner will get it: controls, no autoplay, no sound until asked.
+            <video
+              src={videoUrl}
+              poster={urlOf(block.poster) || undefined}
+              controls
+              preload="metadata"
+              playsInline
+              className="aspect-video w-full rounded-[var(--admin-radius-sm)] border border-[var(--border-subtle)] bg-[var(--gt-ink-900)]"
+            >
+              <track kind="captions" />
+            </video>
+          ) : (
+            <VideoFrame poster={block.poster} title={block.title[lang]} duration={block.duration} />
+          )}
           <p className="m-0 text-[length:var(--text-caption)] text-[var(--text-subtle)]">
-            {t("admin.training.blocks.videoMock")}
+            {videoUrl ? t("admin.training.blocks.previewLabel") : t("admin.training.blocks.videoNone")}
           </p>
         </div>
 
@@ -518,36 +553,39 @@ export function VideoBlockEditor({
             </FormField>
           </div>
 
-          <FormField label={t("admin.training.blocks.videoSource")} hint={t("admin.training.blocks.videoSourceHint")}>
-            {(props) => (
-              <input
-                {...props}
-                type="text"
-                className="gt-admin-field font-[family-name:var(--gt-font-mono)] text-[length:var(--text-caption)]"
-                value={block.source}
-                onChange={(e) => onChange({ source: e.target.value })}
-              />
-            )}
-          </FormField>
         </div>
       </div>
+
+      <MediaPicker
+        kind="video"
+        value={block.source}
+        // The file's own length fills the duration, which the author can still adjust.
+        onPick={(media) =>
+          onChange({
+            source: media.ref,
+            duration: media.durationSeconds !== null ? secondsToClock(media.durationSeconds) : block.duration,
+          })
+        }
+        label={t("admin.training.blocks.videoSource")}
+        hint={t("admin.training.blocks.videoSourceHint")}
+      />
 
       <MediaPicker
         value={block.poster}
         onChange={(poster) => onChange({ poster })}
         label={t("admin.training.blocks.videoPoster")}
         hint={t("admin.training.blocks.videoPosterHint")}
+        clearable
       />
     </div>
   );
 }
 
 /**
- * The video placeholder, shared by the editor and the learner preview.
+ * The video placeholder, shown while a video block has no file yet.
  *
- * It is plainly a still with a play affordance — nothing streams in the
- * prototype, and a control that looks like it plays and then does nothing is
- * worse than one that says what it is.
+ * It is plainly a still with a play affordance: a control that looks like it
+ * plays and then does nothing is worse than one that says what it is.
  */
 export function VideoFrame({
   poster,
@@ -563,7 +601,7 @@ export function VideoFrame({
   const { t } = useTranslation();
   return (
     <div className="relative overflow-hidden rounded-[var(--admin-radius-sm)] border border-[var(--border-subtle)] bg-[var(--gt-ink-900)]">
-      <img src={poster} alt="" aria-hidden="true" className="aspect-video w-full object-cover opacity-80" />
+      <MediaImage mediaRef={poster} className="aspect-video w-full object-cover opacity-80" />
       <div className="absolute inset-0 grid place-items-center">
         <span
           aria-hidden="true"
@@ -591,38 +629,13 @@ export function VideoFrame({
 /* Read-only rendering                                                         */
 /* -------------------------------------------------------------------------- */
 
-/** How a block looks to a learner. Used by the preview and the step preview. */
+/**
+ * How a block looks to a learner. Used by the preview and the step preview.
+ *
+ * It is the learner's own renderer (`components/learning/LessonBlocks.tsx`),
+ * not a lookalike: what an administrator previews is exactly what a learner
+ * reads, video player and sanitised text included.
+ */
 export function BlockView({ block, lang }: { block: ContentBlock; lang: ContentLang }) {
-  if (block.type === "text") {
-    return <RichTextView html={block.html[lang]} />;
-  }
-
-  if (block.type === "image") {
-    const width = block.align === "full" ? "w-full" : block.align === "center" ? "mx-auto max-w-[520px]" : "max-w-[420px]";
-    return (
-      <figure className={clsx("m-0 grid gap-2", width)}>
-        <img
-          src={block.src}
-          alt={block.alt[lang]}
-          className="w-full rounded-[var(--radius-media)] border border-[var(--border-subtle)] object-cover"
-        />
-        {block.caption[lang] && (
-          <figcaption className="text-[length:var(--text-caption)] text-[var(--text-muted)]">
-            {block.caption[lang]}
-          </figcaption>
-        )}
-      </figure>
-    );
-  }
-
-  return (
-    <figure className="m-0 grid gap-2">
-      <VideoFrame poster={block.poster} title={block.title[lang]} duration={block.duration} large />
-      {block.caption[lang] && (
-        <figcaption className="text-[length:var(--text-caption)] text-[var(--text-muted)]">
-          {block.caption[lang]}
-        </figcaption>
-      )}
-    </figure>
-  );
+  return <LessonBlock block={block} lang={lang} />;
 }

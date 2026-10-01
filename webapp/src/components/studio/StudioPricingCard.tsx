@@ -3,7 +3,7 @@ import { useTranslation } from "react-i18next";
 import clsx from "clsx";
 import { Check, RefreshCcw } from "lucide-react";
 import { GemIcon } from "./Gem";
-import { formatPrice } from "../../lib/format";
+import { useFormat } from "../../lib/format";
 import { STUDIO_PRICE } from "../../data/studio";
 
 /**
@@ -21,6 +21,7 @@ export function StudioPricingCard({
   action?: ReactNode;
   className?: string;
 }) {
+  const { formatPrice } = useFormat();
   const { t } = useTranslation();
   const benefits = t("studio.pricing.benefits", { returnObjects: true }) as string[];
   const focus = variant === "focus";

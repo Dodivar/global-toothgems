@@ -6,7 +6,6 @@ import {
   CircleDot,
   Clock,
   FileText,
-  HelpCircle,
   Image as ImageIcon,
   Layers,
   ListChecks,
@@ -35,13 +34,11 @@ import type { Localized } from "../../../data/types";
  * Publication status.
  *
  * Colour carries the meaning fastest, so it is never the only carrier: each
- * badge also has a word and a shape. The four statuses are close enough in
- * meaning — draft, review, published, unpublished — that a tint alone would
- * make them guesswork.
+ * badge also has a word and a shape: draft, published and unpublished are
+ * close enough in meaning that a tint alone would make them guesswork.
  */
 const STATUS_STYLE: Record<CourseStatus, { className: string; icon: LucideIcon }> = {
   draft: { className: "bg-[var(--surface-sunken)] text-[var(--text-body)]", icon: CircleDashed },
-  review: { className: "bg-[var(--status-warning-bg)] text-[var(--status-warning-fg)]", icon: HelpCircle },
   published: { className: "bg-[var(--status-success-bg)] text-[var(--status-success-fg)]", icon: Check },
   unpublished: { className: "bg-[var(--gt-blue-100)] text-[var(--gt-blue-700)]", icon: CircleDot },
 };

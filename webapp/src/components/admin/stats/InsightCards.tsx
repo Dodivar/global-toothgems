@@ -4,7 +4,7 @@ import clsx from "clsx";
 import type { InsightDatum } from "../../../data/adminAnalytics";
 import { ADMIN_PRODUCTS } from "../../../data/adminCatalog";
 import { formatPercent } from "../../../lib/adminAnalytics";
-import { formatPrice } from "../../../lib/format";
+import { useFormat } from "../../../lib/format";
 import { useLocalized } from "../../../lib/localized";
 
 /**
@@ -25,6 +25,7 @@ const TONE: Record<InsightDatum["tone"], { icon: LucideIcon; chip: string }> = {
 };
 
 export function InsightCards({ insights }: { insights: InsightDatum[] }) {
+  const { formatPrice } = useFormat();
   const { t } = useTranslation();
   const L = useLocalized();
 

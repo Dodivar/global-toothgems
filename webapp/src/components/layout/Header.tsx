@@ -1,13 +1,14 @@
 import { useEffect, useRef, useState } from "react";
-import { Link, useNavigate, useLocation } from "react-router-dom";
+import { Link, useNavigate, useLocation, useLanguageSwitch } from "../../lib/navigation";
 import { useTranslation } from "react-i18next";
 import { ArrowRight, Box, ChevronDown, Heart, Menu, Search, ShoppingBag, User, X } from "lucide-react";
 import { IconButton } from "../ui/IconButton";
 import { useAuth } from "../../lib/auth";
+import { useFavorites } from "../../lib/favorites";
+import { FAVORITES_HREF } from "../../lib/favoritesState";
 import { useCart } from "../../lib/cart";
 import { useToast } from "../../lib/toast";
-import { ACADEMY_MENU } from "../../data/menu";
-import { pick } from "../../data/types";
+import { useAcademyMenu } from "./useAcademyMenu";
 import { NewTag } from "../studio/NewTag";
 import { ShopMenu } from "./ShopMenu";
 import { STUDIO_PATH } from "../../lib/studioUrl";
@@ -23,13 +24,15 @@ const HOVER_OPEN_MS = 120;
 const HOVER_CLOSE_MS = 250;
 
 export function Header() {
-  const { t, i18n } = useTranslation();
+  const { t } = useTranslation();
+  const academyMenu = useAcademyMenu();
+  const switchLanguage = useLanguageSwitch();
   const navigate = useNavigate();
   const location = useLocation();
   const { count } = useCart();
   const { signedIn, initials } = useAuth();
+  const { favoriteProducts } = useFavorites();
   const { showToast } = useToast();
-  const lang = i18n.language;
 
   const [panel, setPanel] = useState<PanelKey>(null);
   const [menuOpen, setMenuOpen] = useState(false);
@@ -124,11 +127,18 @@ export function Header() {
     menuTab === "academy" ? { label: t("nav.viewAllAcademy"), to: "/academy" } : { label: t("nav.viewAllShop"), to: "/boutique" };
 
   const cartLabel = count > 0 ? t("nav.cartWithCount", { count }) : t("nav.cart");
+  const favoriteCount = signedIn ? favoriteProducts.length : 0;
+  const wishlistLabel = favoriteCount > 0 ? t("nav.wishlistWithCount", { count: favoriteCount }) : t("nav.wishlist");
+  /** The shop narrowed to the member's favourites; signed out, it explains that they need an account. */
+  const openFavorites = () => {
+    closeAll();
+    navigate(FAVORITES_HREF);
+  };
 
   const langButton = (
     <button
       type="button"
-      onClick={() => i18n.changeLanguage(lang.startsWith("en") ? "fr" : "en")}
+      onClick={switchLanguage}
       aria-label={t("common.langSwitchAria")}
       className="rounded-[var(--radius-pill)] px-2 py-1 text-xs font-semibold uppercase tracking-[var(--tracking-wide)] text-[var(--text-muted)] transition-colors hover:text-[var(--text-primary)]"
     >
@@ -143,7 +153,7 @@ export function Header() {
       <div className="relative hidden md:block" onMouseLeave={() => hoverTo(null)}>
         <header className="flex h-[76px] items-center gap-8 px-[var(--gutter-page-lg)]">
           <Link to="/" className="flex-none" onClick={closeAll}>
-            <img src={logoBlack} alt="Global Toothgems" className="h-6 w-auto" />
+            <img src={logoBlack.src} alt="Global Toothgems" className="h-6 w-auto" />
           </Link>
           <nav aria-label={t("nav.primary")} className="flex flex-1 items-center gap-6 overflow-hidden">
             {links.map((link) => {
@@ -204,6 +214,7 @@ export function Header() {
           <div className="flex items-center gap-1">
             {langButton}
             <IconButton icon={Search} label={t("nav.search")} onClick={notIncluded} />
+            <IconButton icon={Heart} label={wishlistLabel} badge={favoriteCount} onClick={openFavorites} />
             {signedIn ? (
               /* Signed in, the account is a named place — "My space", with the
                  member's initials — rather than an anonymous person icon: it is
@@ -248,9 +259,9 @@ export function Header() {
                 <ShopMenu layout="columns" onNavigate={closeAll} />
               ) : (
                 <div className="grid grid-cols-[repeat(auto-fill,minmax(230px,1fr))] gap-4">
-                  {ACADEMY_MENU.map((item) => (
+                  {academyMenu.map((item) => (
                     <Link
-                      key={pick(item.title, lang)}
+                      key={item.key}
                       to={item.to}
                       onClick={closeAll}
                       className="flex items-center gap-3 rounded-[var(--radius-card)] border border-[var(--border-subtle)] bg-[var(--surface-card)] p-2.5 text-left shadow-[var(--shadow-card)] outline-none transition-[transform,box-shadow,border-color] duration-[var(--duration-normal)] ease-[var(--ease-out-soft)] hover:-translate-y-0.5 hover:border-[var(--gt-blue-300)] hover:shadow-[var(--shadow-card-hover)] focus-visible:border-[var(--gt-blue-400)] focus-visible:shadow-[var(--shadow-focus),var(--shadow-card-hover)]"
@@ -264,9 +275,9 @@ export function Header() {
                       />
                       <span className="grid min-w-0 gap-0.5">
                         <span className="truncate text-[11px] font-semibold uppercase tracking-[.06em] text-[var(--text-primary)]">
-                          {pick(item.title, lang)}
+                          {item.title}
                         </span>
-                        <span className="text-xs text-[var(--text-muted)]">{pick(item.sub, lang)}</span>
+                        <span className="text-xs text-[var(--text-muted)]">{item.sub}</span>
                       </span>
                     </Link>
                   ))}
@@ -304,9 +315,9 @@ export function Header() {
             onClick={closeAll}
             className="absolute left-1/2 top-1/2 grid -translate-x-1/2 -translate-y-1/2 place-items-center"
           >
-            <img src={logoBlack} alt="Global Toothgems" className="h-4 w-auto" />
+            <img src={logoBlack.src} alt="Global Toothgems" className="h-4 w-auto" />
           </Link>
-          <IconButton icon={Heart} label={t("nav.wishlist")} onClick={notIncluded} />
+          <IconButton icon={Heart} label={wishlistLabel} badge={favoriteCount} onClick={openFavorites} />
           <IconButton icon={User} label={signedIn ? t("nav.mySpace") : t("nav.signIn")} onClick={openAccount} />
           <IconButton icon={ShoppingBag} label={cartLabel} badge={count} onClick={() => navigate("/panier")} />
         </div>
@@ -356,9 +367,9 @@ export function Header() {
               <ShopMenu layout="stack" onNavigate={closeAll} />
             ) : (
               <div className="grid gap-2.5">
-                {ACADEMY_MENU.map((item) => (
+                {academyMenu.map((item) => (
                   <Link
-                    key={pick(item.title, lang)}
+                    key={item.key}
                     to={item.to}
                     onClick={closeAll}
                     className="flex items-center gap-3.5 rounded-[var(--radius-card)] border border-[var(--border-subtle)] bg-[var(--surface-card)] p-3 text-left shadow-[var(--shadow-xs)]"
@@ -372,9 +383,9 @@ export function Header() {
                     />
                     <span className="grid min-w-0 gap-0.5">
                       <span className="truncate text-[11.5px] font-semibold uppercase tracking-[.06em] text-[var(--text-primary)]">
-                        {pick(item.title, lang)}
+                        {item.title}
                       </span>
-                      <span className="text-xs text-[var(--text-muted)]">{pick(item.sub, lang)}</span>
+                      <span className="text-xs text-[var(--text-muted)]">{item.sub}</span>
                     </span>
                   </Link>
                 ))}

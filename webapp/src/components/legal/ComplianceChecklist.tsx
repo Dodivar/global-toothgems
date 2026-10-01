@@ -1,10 +1,11 @@
-import { useState } from "react";
-import { Link } from "react-router-dom";
+import { useMemo, useState } from "react";
+import { Link } from "../../lib/navigation";
 import { useTranslation } from "react-i18next";
 import { ArrowUpRight, ClipboardCheck } from "lucide-react";
 import { LAUNCH_CHECKLIST } from "../../data/legal/checklist";
 import { pick } from "../../data/types";
 import { useReviewMode } from "../../lib/reviewMode";
+import { useHydrated } from "../../lib/useHydrated";
 import { ReviewNote } from "./ReviewNote";
 
 const STORAGE_KEY = "gt-launch-checklist";
@@ -27,7 +28,11 @@ function readChecked(): Record<string, boolean> {
 export function ComplianceChecklist() {
   const { t, i18n } = useTranslation();
   const { showNotes } = useReviewMode();
-  const [checked, setChecked] = useState<Record<string, boolean>>(readChecked);
+  // Ticks are read once a server-rendered page is hydrated (they live in localStorage).
+  const hydrated = useHydrated();
+  const stored = useMemo(() => (hydrated ? readChecked() : {}), [hydrated]);
+  const [ticked, setChecked] = useState<Record<string, boolean> | null>(null);
+  const checked = ticked ?? stored;
 
   if (!showNotes) return null;
 

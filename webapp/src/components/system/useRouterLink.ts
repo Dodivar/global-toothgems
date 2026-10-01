@@ -1,5 +1,5 @@
 import type { MouseEvent } from "react";
-import { useNavigate } from "react-router-dom";
+import { useNavigate } from "../../lib/navigation";
 
 /**
  * Props that turn the shared `Button` into a real link with client-side

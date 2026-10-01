@@ -1,5 +1,6 @@
 import type { Localized } from "./types";
 import type { BadgeTone } from "../components/ui/Badge";
+import { photo } from "../lib/images";
 
 /**
  * Cut of a gem, as an ASCII slug. The slug is what travels in the `forme` URL
@@ -121,11 +122,20 @@ export interface ProductVariant {
 export interface Product {
   /** URL key: the product slug in the default language. */
   id: string;
+  /** Row id in the database. Absent on the prototype's mock products. */
+  dbId?: string;
   /** Localized slugs that also resolve to this product (e.g. the English URL). */
   aliases?: string[];
+  /**
+   * The published slug of each other language, for its address
+   * (`/en/shop/<slug>`); absent = the French slug (`lib/catalog/productSlugs.ts`).
+   */
+  slugs?: Partial<Record<"fr" | "en", string>>;
   name: Localized;
   subtitle: Localized;
   price: number;
+  /** ISO 4217 code of the prices; absent on the mock products (euros). */
+  currency?: string;
   compareAtPrice?: number;
   badge?: Localized;
   badgeTone?: BadgeTone;
@@ -153,7 +163,7 @@ export interface Product {
   isFeatured?: boolean;
 }
 
-const img = (name: string) => new URL(`../assets/photos/${name}`, import.meta.url).href;
+const img = photo;
 
 export const PRODUCTS: Product[] = [
   {

@@ -1,6 +1,6 @@
 import { useMemo, useState } from "react";
 import { useTranslation } from "react-i18next";
-import { Link, useNavigate } from "react-router-dom";
+import { Link, useNavigate } from "../../lib/navigation";
 import { Megaphone, Plus, SearchX } from "lucide-react";
 import clsx from "clsx";
 import { AdminButton } from "../admin/AdminButton";

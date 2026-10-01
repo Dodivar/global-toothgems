@@ -1,5 +1,5 @@
 import { useId } from "react";
-import { Link } from "react-router-dom";
+import { Link } from "../../lib/navigation";
 import { useTranslation } from "react-i18next";
 import { Cookie, SlidersHorizontal } from "lucide-react";
 import { Button } from "../ui/Button";
@@ -20,11 +20,11 @@ import { LEGAL_PATHS } from "../../data/legal/routes";
  */
 export function CookieBanner() {
   const { t } = useTranslation();
-  const { record, settingsOpen, acceptAll, rejectAll, openSettings } = useCookieConsent();
+  const { record, known, settingsOpen, acceptAll, rejectAll, openSettings } = useCookieConsent();
   const titleId = useId();
   const bodyId = useId();
 
-  if (record || settingsOpen) return null;
+  if (!known || record || settingsOpen) return null;
 
   return (
     <section

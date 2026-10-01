@@ -1,6 +1,7 @@
 import type { AuthError } from "@supabase/supabase-js";
 import { supabase } from "./supabase/client";
 import { RESET_PATH } from "./accountSecurity";
+import { authConfirmUrl } from "./authRoutes";
 
 /**
  * Password recovery through Supabase Auth, used by `/mot-de-passe-oublie` and
@@ -21,7 +22,8 @@ const isRateLimit = (error: AuthError) =>
 export async function sendPasswordReset(email: string): Promise<RecoveryRequestResult> {
   if (!supabase) return "failed";
   const { error } = await supabase.auth.resetPasswordForEmail(email.trim(), {
-    redirectTo: new URL(RESET_PATH, window.location.origin).toString(),
+    // Through `/auth/confirm`, which opens the recovery session server-side.
+    redirectTo: authConfirmUrl(RESET_PATH, window.location.origin),
   });
   if (!error) return "sent";
   return isRateLimit(error) ? "rateLimited" : "failed";

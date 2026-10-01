@@ -1,15 +1,17 @@
 import type { RefObject } from "react";
 import { useTranslation } from "react-i18next";
-import { Link } from "react-router-dom";
-import { Award, Check, Clock, Layers, ListVideo, Lock, PlayCircle, SignalHigh } from "lucide-react";
+import { Link } from "../../lib/navigation";
+import { Award, Check, Clock, GraduationCap, Layers, ListVideo, Lock, PlayCircle, SignalHigh } from "lucide-react";
 import { Badge } from "../ui/Badge";
 import { Button } from "../ui/Button";
 import { ProgressBar } from "../ui/ProgressBar";
 import { MetaPill } from "./TrainingPrimitives";
-import type { Course } from "../../data/courses";
+import { EnrolmentSoon } from "./EnrolmentSoon";
 import { pick } from "../../data/types";
+import { isDiscounted, lessonCount, type PublicCourse } from "../../lib/academy/publicCourse";
 import type { CourseProgress } from "../../lib/progress";
-import { formatPrice } from "../../lib/format";
+import { useFormat } from "../../lib/format";
+import { formatDuration } from "../../lib/trainingFilters";
 
 /**
  * The training hero.
@@ -31,9 +33,10 @@ export function TrainingHero({
   moduleCount,
   ctaRef,
   onStart,
+  holder = false,
   onExploreCurriculum,
 }: {
-  course: Course;
+  course: PublicCourse;
   lang: string;
   progress: CourseProgress;
   signedIn: boolean;
@@ -41,10 +44,17 @@ export function TrainingHero({
   /** Watched by the page so the sticky mobile bar only appears once this scrolls away. */
   ctaRef: RefObject<HTMLDivElement | null>;
   onStart: () => void;
+  /** The signed-in member holds this course: the button opens it instead of "enrolment opens soon". */
+  holder?: boolean;
   onExploreCurriculum: () => void;
 }) {
+  const { formatMoney, formatDate } = useFormat();
   const { t } = useTranslation();
   const title = pick(course.title, lang);
+  const level = t(`academy.levels.${course.level}`);
+  const demo = course.enrolment === "demo";
+  const canStart = demo || holder;
+  const discounted = isDiscounted(course);
 
   const startLabel = progress.completed
     ? t("training.ctaReview")
@@ -52,7 +62,9 @@ export function TrainingHero({
       ? t("training.ctaResume")
       : t("training.ctaStart");
 
-  const included = [t("training.heroCardItem1"), t("training.heroCardItem2"), t("training.heroCardItem3")];
+  const included = [course.issuesCertificate && t("training.heroCardItem1"), t("training.heroCardItem2"), t("training.heroCardItem3")].filter(
+    (item): item is string => Boolean(item),
+  );
 
   return (
     <header className="relative overflow-hidden bg-[var(--surface-page)] px-[clamp(14px,4vw,48px)] pb-[clamp(40px,6vw,72px)] pt-[clamp(20px,3vw,36px)]">
@@ -85,7 +97,7 @@ export function TrainingHero({
           <div className="grid gap-5">
             <div className="flex flex-wrap items-center gap-2">
               <Badge tone="brand">{t("training.eyebrow")}</Badge>
-              <Badge tone="neutral">{pick(course.level, lang)}</Badge>
+              <Badge tone="neutral">{level}</Badge>
               {progress.completed && <Badge tone="success">{t("course.stateCompleted")}</Badge>}
               {progress.enrolled && !progress.completed && <Badge tone="highlight">{t("course.stateEnrolled")}</Badge>}
             </div>
@@ -97,21 +109,29 @@ export function TrainingHero({
             <h1 className="max-w-[16ch] text-[length:var(--text-display-2)] font-[var(--weight-black)] leading-[var(--leading-tight)] tracking-[var(--tracking-display)]">
               {title}
             </h1>
-            <p className="m-0 max-w-[var(--max-width-prose)] text-[length:var(--text-body-lg)] text-[var(--text-body)]">
-              {pick(course.copy, lang)}
-            </p>
+            {course.summary && (
+              <p className="m-0 max-w-[var(--max-width-prose)] text-[length:var(--text-body-lg)] text-[var(--text-body)]">
+                {pick(course.summary, lang)}
+              </p>
+            )}
           </div>
 
           {/* Artwork column: spans both rows of the left column on wide screens. */}
           <div className="relative lg:row-span-2">
             <div className="gt-sparkle relative aspect-[4/5] overflow-hidden rounded-[var(--radius-xl)] bg-[var(--surface-sunken)] shadow-[var(--shadow-lg)] sm:aspect-[3/2] lg:aspect-[4/5]">
-              <img
-                src={course.image}
-                alt={t("training.heroImageAlt")}
-                fetchPriority="high"
-                decoding="async"
-                className="h-full w-full object-cover"
-              />
+              {course.cover ? (
+                <img
+                  src={course.cover.src}
+                  alt={course.cover.alt ? pick(course.cover.alt, lang) : ""}
+                  fetchPriority="high"
+                  decoding="async"
+                  className="h-full w-full object-cover"
+                />
+              ) : (
+                <div aria-hidden="true" className="flex h-full w-full items-center justify-center bg-[var(--surface-brand-wash)] text-[var(--gt-blue-500)]">
+                  <GraduationCap size={40} strokeWidth={1.5} />
+                </div>
+              )}
             </div>
             {/* What the purchase includes, on the page's one deep-glass panel.
                 Overlaid from `sm` up, stacked underneath on a phone where an
@@ -131,11 +151,15 @@ export function TrainingHero({
 
           <div className="grid gap-6">
             <dl aria-label={t("training.heroMetaLabel")} className="m-0 flex flex-wrap gap-2.5">
-              <MetaPill icon={SignalHigh} label={t("training.metaLevel")} value={pick(course.level, lang)} />
+              <MetaPill icon={SignalHigh} label={t("training.metaLevel")} value={level} />
               <MetaPill icon={Layers} label={t("training.metaModulesLabel")} value={t("training.metaModules", { count: moduleCount })} />
-              <MetaPill icon={ListVideo} label={t("training.metaLessonsLabel")} value={t("course.lessonCount", { count: course.lessonCount })} />
-              <MetaPill icon={Clock} label={t("training.metaDurationLabel")} value={course.duration} />
-              <MetaPill icon={Award} label={t("training.metaDiplomaLabel")} value={t("training.metaDiploma")} />
+              <MetaPill icon={ListVideo} label={t("training.metaLessonsLabel")} value={t("course.lessonCount", { count: lessonCount(course) })} />
+              {course.minutes > 0 && (
+                <MetaPill icon={Clock} label={t("training.metaDurationLabel")} value={formatDuration(course.minutes, lang)} />
+              )}
+              {course.issuesCertificate && (
+                <MetaPill icon={Award} label={t("training.metaDiplomaLabel")} value={t("training.metaDiploma")} />
+              )}
             </dl>
 
             {progress.enrolled && !progress.completed && (
@@ -148,22 +172,39 @@ export function TrainingHero({
 
             <div ref={ctaRef} className="flex flex-wrap items-center gap-x-6 gap-y-4">
               <div className="grid gap-0.5">
-                <strong className="text-[32px] font-[var(--weight-black)] leading-none tracking-[var(--tracking-tight)] text-[var(--text-primary)]">
-                  {formatPrice(course.price)}
-                </strong>
-                <span className="text-[length:var(--text-caption)] text-[var(--text-muted)]">{t("training.priceNote")}</span>
+                <span className="flex flex-wrap items-baseline gap-x-3 gap-y-1">
+                  <strong className="text-[32px] font-[var(--weight-black)] leading-none tracking-[var(--tracking-tight)] text-[var(--text-primary)]">
+                    {discounted && <span className="sr-only">{t("training.priceNow")} </span>}
+                    {formatMoney(course.currentPrice.minor, course.currentPrice.currency)}
+                  </strong>
+                  {discounted && (
+                    <s className="text-[length:var(--text-body-md)] text-[var(--text-subtle)]">
+                      <span className="sr-only">{t("training.priceWas")} </span>
+                      {formatMoney(course.price.minor, course.price.currency)}
+                    </s>
+                  )}
+                </span>
+                <span className="text-[length:var(--text-caption)] text-[var(--text-muted)]">
+                  {discounted && course.promotionEndsAt
+                    ? `${t("training.promoUntil", { date: formatDate(course.promotionEndsAt) })} · ${t("training.priceNote")}`
+                    : t("training.priceNote")}
+                </span>
               </div>
               <div className="flex flex-wrap gap-3">
-                <Button variant="primary" size="lg" onClick={onStart}>
-                  {startLabel}
-                </Button>
+                {canStart && (
+                  <Button variant="primary" size="lg" onClick={onStart}>
+                    {startLabel}
+                  </Button>
+                )}
                 <Button variant="ghost" size="lg" iconLeft={PlayCircle} onClick={onExploreCurriculum}>
                   {t("training.ctaCurriculum")}
                 </Button>
               </div>
             </div>
 
-            {!signedIn && (
+            {!canStart && <EnrolmentSoon />}
+
+            {demo && !signedIn && (
               <p className="m-0 flex items-center gap-2 text-[length:var(--text-body-sm)] text-[var(--text-muted)]">
                 <Lock size={14} aria-hidden="true" />
                 <span>

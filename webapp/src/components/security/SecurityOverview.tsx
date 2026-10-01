@@ -4,7 +4,7 @@ import { ArrowDown, BadgeCheck, Clock, Download, FileArchive, KeyRound, LoaderCi
 import type { LucideIcon } from "lucide-react";
 import { Badge, type BadgeTone } from "../ui/Badge";
 import { useAccountSecurity } from "../../lib/securityState";
-import { formatDate } from "../../lib/format";
+import { useFormat } from "../../lib/format";
 
 function Tile({
   href,
@@ -66,6 +66,7 @@ function Tile({
  * there is no tile pretending otherwise.
  */
 export function SecurityOverview() {
+  const { formatDate } = useFormat();
   const { t } = useTranslation();
   const { pendingEmail, passwordChangedAt, dataExport } = useAccountSecurity();
   const needsAttention = pendingEmail !== null || dataExport.status === "ready";

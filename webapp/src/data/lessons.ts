@@ -116,37 +116,12 @@ export const QUIZ = {
   },
 };
 
-export const DEFAULT_LESSON_STATE = { activeIdx: 4, doneCount: 4 };
-
 /**
- * Score a learner must reach on the validation questions before the training is
- * validated and the diploma is issued.
- *
- * Prototype value, flagged as a business rule that is not settled yet
- * (`AGENTS.md` §15): the real pass mark belongs with the course record and has
- * to be enforced server-side, never read back from the browser. It lives here —
- * once — so the sales page and the player can never advertise two numbers.
+ * Pass mark of the prototype's courses (mock mode: `lib/academy/fixtures.ts`).
+ * Real courses carry their own (`courses.min_score`, and each knowledge
+ * check's `passing_score`), enforced server-side in phase C.
  */
 export const PASS_SCORE = 80;
-
-/**
- * Questions in the whole validation assessment: the authored per-module quiz
- * (`QUIZ.total`), once per module. Derived rather than authored, so adding a
- * module cannot leave the sales page advertising a stale count.
- */
-export const ASSESSMENT_QUESTION_TOTAL = MODULES.length * QUIZ.total;
-
-/**
- * The lesson offered as a free preview — the one the Academy's "preview a
- * lesson" call to action opens (`academy.toastPreviewBody`). Named here so the
- * curriculum badge and that call to action cannot drift apart.
- */
-export const PREVIEW_LESSON_INDEX = DEFAULT_LESSON_STATE.activeIdx;
-
-/** Total run time of a module's lessons, as "42 min". */
-export function moduleMinutes(module: Module): number {
-  return Math.round(module.lessons.reduce((sum, l) => sum + parseDuration(l.duration), 0) / 60);
-}
 
 /** "12:15" -> 735. The authored durations are always mm:ss. */
 export function parseDuration(d: string): number {
@@ -158,11 +133,3 @@ export function parseDuration(d: string): number {
 export function remainingSeconds(doneCount: number): number {
   return FLAT.reduce((sum, l, i) => (i >= doneCount ? sum + parseDuration(l.duration) : sum), 0);
 }
-
-/**
- * Flat index of the first lesson of each module, so a caller holding a single
- * `doneCount` can map course progress back onto the module breakdown.
- */
-export const MODULE_OFFSETS: number[] = MODULES.map((_, i) =>
-  MODULES.slice(0, i).reduce((sum, m) => sum + m.lessons.length, 0),
-);

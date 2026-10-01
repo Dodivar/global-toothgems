@@ -21,6 +21,7 @@ import { ConfirmationDialog } from "../ConfirmationDialog";
 import { EmptyState } from "../EmptyState";
 import { FormField } from "../FormField";
 import { ToggleSwitch } from "../ToggleSwitch";
+import { MediaImage } from "./MediaImage";
 import { MediaPicker } from "./MediaPicker";
 import { Section } from "./TrainingPrimitives";
 import type { Module, Question, Quiz } from "../../../data/adminTraining";
@@ -356,24 +357,24 @@ function QuestionCard({
             </div>
 
             {question.image && (
-              <img
-                src={question.image}
-                alt=""
-                aria-hidden="true"
-                className="max-w-[280px] rounded-[var(--admin-radius-sm)] border border-[var(--border-subtle)] object-cover"
+              <MediaImage
+                mediaRef={question.image}
+                className="aspect-[4/3] max-w-[280px] rounded-[var(--admin-radius-sm)] border border-[var(--border-subtle)] object-cover"
               />
             )}
 
             {(showImagePicker || question.image) && (
               <MediaPicker
                 value={question.image ?? ""}
+                autoOpen={showImagePicker && !question.image}
+                onCancel={() => setShowImagePicker(false)}
+                showPreview={false}
                 onChange={(image) => {
                   updateQuestion(courseId, moduleId, question.id, { image });
                   setShowImagePicker(false);
                 }}
                 label={t("admin.training.quiz.questionImage")}
                 hint={t("admin.training.quiz.questionImageHint")}
-                columns={4}
               />
             )}
           </div>
