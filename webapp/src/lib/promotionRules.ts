@@ -2,15 +2,9 @@ import {
   COLLECTIONS,
   NOW_TIME,
   campaignStatus,
-  giftCardBalance,
-  giftCardInitial,
-  giftCardStatus,
   promotionStatus,
   toTime,
   type Campaign,
-  type GiftCard,
-  type GiftCardStatus,
-  type DeliveryStatus,
   type Promotion,
   type PromotionStatus,
   type PromotionType,
@@ -205,12 +199,10 @@ export interface PromotionOverview {
   activeCampaigns: number;
   revenueCents: number;
   orders: number;
-  giftCardRevenueCents: number;
-  giftCardsSold: number;
   endingSoon: number;
 }
 
-export function overview(promotions: Promotion[], campaigns: Campaign[], cards: GiftCard[]): PromotionOverview {
+export function overview(promotions: Promotion[], campaigns: Campaign[]): PromotionOverview {
   const statuses = promotions.map((p) => promotionStatus(p));
   return {
     active: statuses.filter((s) => s === "active").length,
@@ -219,47 +211,12 @@ export function overview(promotions: Promotion[], campaigns: Campaign[], cards: 
     activeCampaigns: campaigns.filter((c) => campaignStatus(c) === "active").length,
     revenueCents: promotions.reduce((s, p) => s + p.stats.revenueCents, 0),
     orders: promotions.reduce((s, p) => s + p.stats.orders, 0),
-    giftCardRevenueCents: cards.filter((c) => !c.cancelled).reduce((s, c) => s + giftCardInitial(c), 0),
-    giftCardsSold: cards.filter((c) => !c.cancelled).length,
     endingSoon: promotions.filter(
       (p) =>
         promotionStatus(p) === "active" &&
         p.schedule.endsAt &&
         toTime(p.schedule.endsAt) - NOW_TIME < 7 * 86_400_000,
     ).length,
-  };
-}
-
-export interface GiftCardMetrics {
-  sold: number;
-  revenueCents: number;
-  outstandingCents: number;
-  redeemedCents: number;
-  unredeemedCents: number;
-  expired: number;
-  expiredValueCents: number;
-}
-
-export function giftCardMetrics(cards: GiftCard[]): GiftCardMetrics {
-  const live = cards.filter((c) => !c.cancelled);
-  const revenueCents = live.reduce((s, c) => s + giftCardInitial(c), 0);
-  const redeemedCents = live.reduce(
-    (s, c) => s + c.ledger.filter((t) => t.kind === "redemption").reduce((a, t) => a - t.amountCents, 0),
-    0,
-  );
-  const expiredCards = live.filter((c) => giftCardStatus(c) === "expired");
-  const outstandingCents = live
-    .filter((c) => giftCardStatus(c) !== "expired")
-    .reduce((s, c) => s + Math.max(0, giftCardBalance(c)), 0);
-  const expiredValueCents = expiredCards.reduce((s, c) => s + giftCardBalance(c), 0);
-  return {
-    sold: live.length,
-    revenueCents,
-    outstandingCents,
-    redeemedCents,
-    unredeemedCents: outstandingCents + expiredValueCents,
-    expired: expiredCards.length,
-    expiredValueCents,
   };
 }
 
@@ -384,44 +341,4 @@ export function filterPromotions(
         return toTime(b.createdAt) - toTime(a.createdAt);
     }
   });
-}
-
-export type GiftCardSort = "newest" | "balance" | "expiry";
-
-export interface GiftCardFilters {
-  query: string;
-  status: GiftCardStatus | "all";
-  delivery: DeliveryStatus | "all";
-  sort: GiftCardSort;
-}
-
-export const EMPTY_GIFT_CARD_FILTERS: GiftCardFilters = { query: "", status: "all", delivery: "all", sort: "newest" };
-
-export function filterGiftCards(cards: GiftCard[], f: GiftCardFilters): GiftCard[] {
-  const q = f.query.trim().toLowerCase().replace(/[\s-]/g, "");
-  return cards
-    .filter((c) => {
-      if (f.status !== "all" && giftCardStatus(c) !== f.status) return false;
-      if (f.delivery !== "all" && c.delivery !== f.delivery) return false;
-      if (q) {
-        const hay = [c.code, c.recipientName, c.recipientEmail, c.purchaserName, c.purchaserEmail, c.orderRef]
-          .join(" ")
-          .toLowerCase()
-          .replace(/[\s-]/g, "");
-        if (!hay.includes(q)) return false;
-      }
-      return true;
-    })
-    .sort((a, b) => {
-      if (f.sort === "balance") return giftCardBalance(b) - giftCardBalance(a);
-      if (f.sort === "expiry") return toTime(a.expiresAt) - toTime(b.expiresAt);
-      return toTime(b.purchasedAt) - toTime(a.purchasedAt);
-    });
-}
-
-/** "GTGC-7K2M-Q9XA" → "GTGC-••••-Q9XA", for places a full code has no business being. */
-export function maskCode(code: string): string {
-  const parts = code.split("-");
-  if (parts.length < 3) return code;
-  return [parts[0], ...parts.slice(1, -1).map(() => "••••"), parts[parts.length - 1]].join("-");
 }

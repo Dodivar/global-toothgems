@@ -20,6 +20,8 @@ import { AdminButton } from "../../components/admin/AdminButton";
 import { AdminHeader } from "../../components/admin/AdminHeader";
 import { OverflowMenu } from "../../components/admin/OverflowMenu";
 import { usePromotions } from "../../lib/adminPromotions";
+import { useAdminGiftCards } from "../../lib/giftCards/AdminGiftCardsProvider";
+import { giftCardMetrics } from "../../lib/giftCards/giftCardMapping";
 import { overview, PROMOTION_TABS, tabStatuses, type PromotionTab } from "../../lib/promotionRules";
 import { promotionStatus } from "../../data/adminPromotions";
 import { PromoKpi, PromoTabs, PrototypeBar, type TabItem } from "../../components/promotions/PromoUi";
@@ -71,12 +73,18 @@ export function Promotions() {
   const navigate = useNavigate();
   const { openNav } = useAdminShell();
   const [params] = useSearchParams();
-  const { promotions, campaigns, giftCards, loading } = usePromotions();
+  const { promotions, campaigns, loading } = usePromotions();
+  // Gift cards are live (Supabase); promotions and campaigns are still the mock store.
+  const giftCards = useAdminGiftCards();
   const money = useMoney();
 
   const slug = params.get("vue") ?? "";
   const tab = (PROMOTION_TABS.find((id) => TAB_SLUG[id] === slug) ?? "all") as PromotionTab;
-  const kpi = useMemo(() => overview(promotions, campaigns, giftCards), [promotions, campaigns, giftCards]);
+  const kpi = useMemo(() => overview(promotions, campaigns), [promotions, campaigns]);
+  const cardMetrics = useMemo(
+    () => giftCardMetrics(giftCards.cards, giftCards.settings?.currency ?? "EUR"),
+    [giftCards.cards, giftCards.settings],
+  );
 
   // Revenue per day across every promotion, for the revenue tile's sparkline.
   const trend = useMemo(() => {
@@ -91,13 +99,13 @@ export function Promotions() {
     scheduled: promotions.filter((p) => tabStatuses("scheduled")!.includes(promotionStatus(p))).length,
     expired: promotions.filter((p) => tabStatuses("expired")!.includes(promotionStatus(p))).length,
     campaigns: campaigns.length,
-    giftCards: giftCards.length,
+    giftCards: giftCards.cards.length,
   };
 
   const tabs: TabItem[] = PROMOTION_TABS.map((id) => ({
     id,
     label: t(`promo.tabs.${id}`),
-    count: loading ? undefined : counts[id],
+    count: (id === "giftCards" ? giftCards.loading : loading) ? undefined : counts[id],
     icon: TAB_ICON[id],
     to: promotionsHref(id),
   }));
@@ -150,7 +158,7 @@ export function Promotions() {
           <PromoKpi loading={loading} icon={Megaphone} tone="highlight" label={t("promo.kpi.campaigns")} value={String(kpi.activeCampaigns)} hint={t("promo.kpi.campaignsHint", { count: campaigns.length })} to={promotionsHref("campaigns")} />
           <PromoKpi loading={loading} icon={BadgeEuro} tone="success" label={t("promo.kpi.revenueLabel")} value={money(kpi.revenueCents)} hint={t("promo.kpi.revenueHint")} trend={trend.some((v) => v > 0) ? trend : undefined} />
           <PromoKpi loading={loading} icon={ShoppingBag} tone="neutral" label={t("promo.kpi.ordersLabel")} value={String(kpi.orders)} hint={t("promo.kpi.ordersHint")} />
-          <PromoKpi loading={loading} icon={TicketPercent} tone="highlight" label={t("promo.kpi.giftCardRevenue")} value={money(kpi.giftCardRevenueCents)} hint={t("promo.kpi.giftCardHint", { count: kpi.giftCardsSold })} to={promotionsHref("giftCards")} />
+          <PromoKpi loading={giftCards.loading} icon={TicketPercent} tone="highlight" label={t("promo.kpi.giftCardRevenue")} value={money(cardMetrics.soldMinor)} hint={t("promo.gc.kpi.issuedCount", { count: cardMetrics.issued })} to={promotionsHref("giftCards")} />
         </section>
 
         <div className="grid grid-cols-[minmax(0,1fr)] gap-4">

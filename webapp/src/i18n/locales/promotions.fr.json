@@ -68,13 +68,17 @@
     "redeemed": "Entièrement utilisée",
     "scheduled": "Programmée",
     "expired": "Expirée",
-    "cancelled": "Annulée"
+    "cancelled": "Annulée",
+    "pendingPayment": "Paiement en attente",
+    "void": "Jamais payée"
   },
   "delivery": {
     "delivered": "Délivrée",
     "opened": "Ouverte",
     "scheduled": "Programmée",
-    "bounced": "Non distribuée"
+    "bounced": "Non distribuée",
+    "pending": "Non envoyée",
+    "sent": "Envoyée"
   },
   "type": {
     "percentage": "Pourcentage",
@@ -739,7 +743,6 @@
     "balance": "Solde",
     "currentBalance": "Solde actuel",
     "ofOriginal": "sur {{amount}} à l’origine",
-    "spent": "{{amount}} dépensés ({{percent}} %)",
     "details": "Détails",
     "deliveryDate": "Date d’envoi",
     "order": "Commande d’achat",
@@ -747,7 +750,6 @@
     "history": "Historique d’utilisation",
     "adjust": "Ajuster le solde",
     "extend": "Prolonger la validité",
-    "viewOrder": "Voir la commande liée",
     "cancel": "Annuler la carte",
     "cancelledTitle": "Annulée le {{date}}",
     "redeemedTitle": "Entièrement utilisée",
@@ -758,14 +760,10 @@
     "scheduledBody": "Envoyée à {{email}} à cette date. Impossible de la renvoyer avant.",
     "bouncedTitle": "L’e-mail à {{email}} n’a pas été distribué",
     "bouncedBody": "La bénéficiaire n’a jamais reçu la carte. Vérifiez l’adresse avec l’acheteur, puis renvoyez-la.",
-    "fixAndResend": "Corriger et renvoyer",
     "expiringTitle_one": "Expire demain",
     "expiringTitle_other": "Expire dans {{count}} jours",
     "expiringBody": "{{amount}} restent à dépenser. Un rappel est envoyé à la bénéficiaire 30 jours avant.",
-    "resendTitle": "Renvoyer la carte cadeau",
-    "resendBody": "La bénéficiaire reçoit à nouveau le même e-mail, avec le même code.",
     "recipientEmail": "E-mail de la bénéficiaire",
-    "bouncedHint": "L’adresse précédente a échoué — corrigez-la avant de renvoyer.",
     "adjustTitle": "Ajuster le solde",
     "adjustBody": "Pour un geste commercial ou une correction. Chaque ajustement est inscrit dans l’historique à votre nom.",
     "direction": "Ajustement",
@@ -790,17 +788,8 @@
     "cancelTitle": "Annuler la carte {{code}} ?",
     "cancelBody": "Les {{amount}} restants ne seront plus utilisables par {{name}}.",
     "cancelIrreversible": "C’est irréversible. Remboursez l’acheteur séparément si nécessaire.",
-    "typeCode": "Tapez {{code}} pour confirmer",
     "cancelConfirm": "Annuler la carte",
-    "keepCard": "Garder la carte",
-    "cancelNote": "Annulée depuis l’administration.",
-    "orderTitle": "Commande {{ref}}",
-    "orderMock": "Résumé de la commande d’achat — la fiche complète se trouve dans Commandes.",
-    "customer": "Client",
-    "payment": "Paiement",
-    "orderLine": "Carte cadeau Global Toothgems",
-    "emailDelivery": "Par e-mail — offert",
-    "vatNote": "La carte cadeau n’est pas soumise à la TVA à l’achat ; la TVA s’applique lors de son utilisation."
+    "keepCard": "Garder la carte"
   },
   "ledger": {
     "purchase": "Achat",
@@ -811,7 +800,10 @@
     "resend": "E-mail renvoyé",
     "extendedTo": "Valable désormais jusqu’au {{date}}",
     "after": "reste {{amount}}",
-    "remaining": "Solde restant"
+    "remaining": "Solde restant",
+    "issue": "Émission",
+    "reversal": "Recréditée (commande annulée)",
+    "refund": "Remboursement sur la carte"
   },
   "config": {
     "title": "Produit carte cadeau",
@@ -966,7 +958,9 @@
       "secure": "Achat sécurisé",
       "secureBody": "Paiement chiffré, aucune donnée stockée ici",
       "valid": "Valable sur les achats éligibles",
-      "validBody": "Gems, kits et formations pendant {{months}} mois"
+      "validBody": "Gems, kits et formations pendant {{months}} mois",
+      "validBodyGeneric": "Gems, kits et soins éligibles",
+      "validBodyNoExpiry": "Gems, kits et soins, sans date limite"
     },
     "configIntro": "Quatre étapes rapides. La carte se met à jour au fil de la saisie.",
     "step": {
@@ -989,12 +983,9 @@
     "schedule": "Programmer l’envoi",
     "scheduleBody": "Choisissez le jour — à 9 h, heure locale.",
     "deliveryDate": "Date d’envoi",
-    "buy": "Acheter la carte cadeau",
     "securePay": "Paiement sécurisé · sans frais cachés",
     "total": "Total",
     "previewLabel": "Votre carte cadeau",
-    "prototypeNote": "Prototype — aucun paiement n’est pris et aucun e-mail n’est envoyé.",
-    "now": "tout de suite",
     "summary": {
       "amount": "Montant",
       "to": "Pour",
@@ -1017,10 +1008,6 @@
       "summary_one": "{{count}} information demande votre attention ci-dessus.",
       "summary_other": "{{count}} informations demandent votre attention ci-dessus."
     },
-    "doneTitle": "Votre cadeau est prêt ✨",
-    "doneBody": "Une carte cadeau de {{amount}} pour {{name}} sera envoyée à {{email}} {{when}}.",
-    "doneNote": "Prototype : dans la boutique réelle, cette étape mène au paiement sécurisé, et la carte n’est envoyée qu’une fois le paiement confirmé.",
-    "another": "Offrir une autre carte",
     "backToShop": "Retour à la boutique",
     "unavailableTitle": "Les cartes cadeaux font une courte pause",
     "unavailableBody": "Elles reviennent très vite. En attendant, nos gems et nos kits sont toujours là pour faire briller quelqu’un.",
@@ -1032,10 +1019,92 @@
     },
     "faqTitle": "Bon à savoir",
     "faq": {
-      "1": { "q": "Combien de temps est-elle valable ?", "a": "{{months}} mois à partir de la date d’envoi. Le solde restant est toujours affiché au paiement." },
-      "2": { "q": "Peut-on l’utiliser en plusieurs fois ?", "a": "Oui. Ce qui n’est pas dépensé reste sur la carte pour la commande suivante." },
-      "3": { "q": "Sur quoi peut-on l’utiliser ?", "a": "Gems, kits, soins et formations éligibles. Elle ne permet pas d’acheter une autre carte cadeau." },
-      "4": { "q": "Et si l’e-mail n’arrive pas ?", "a": "Vérifiez les spams, puis contactez-nous — nous le renvoyons à la bonne adresse en quelques minutes." }
+      "1": {
+        "q": "Combien de temps est-elle valable ?",
+        "a": "{{months}} mois à partir du paiement de la carte. Le montant utilisé est déduit de chaque commande.",
+        "aGeneric": "La durée de validité est indiquée au moment de l’achat. Le montant utilisé est déduit de chaque commande.",
+        "aNoExpiry": "Elle n’expire pas. Le montant utilisé est déduit de chaque commande."
+      },
+      "2": {
+        "q": "Peut-on l’utiliser en plusieurs fois ?",
+        "a": "Oui. Ce qui n’est pas dépensé reste sur la carte pour la commande suivante."
+      },
+      "3": {
+        "q": "Sur quoi peut-on l’utiliser ?",
+        "a": "Gems, kits, soins et formations éligibles. Elle ne permet pas d’acheter une autre carte cadeau."
+      },
+      "4": {
+        "q": "Et si l’e-mail n’arrive pas ?",
+        "a": "Vérifiez les spams, puis contactez-nous : nous vérifions l’adresse du destinataire avec vous."
+      }
+    },
+    "heroBody": "Une carte cadeau envoyée par e-mail, à dépenser en une ou plusieurs fois sur les gems, les kits et les soins.",
+    "configTitle": "Composer la carte cadeau",
+    "loading": "Chargement des options de la carte cadeau…",
+    "loadError": "Les options de la carte cadeau n’ont pas pu être chargées.",
+    "retry": "Réessayer",
+    "addToCart": "Ajouter au panier",
+    "cartLine": "Pour {{email}}",
+    "payNote": "Le paiement se fait au panier. La carte devient utilisable une fois le paiement confirmé."
+  },
+  "gc": {
+    "manual": "Émise par l’équipe",
+    "origin": "Origine",
+    "created": "Créée le",
+    "openCard": "Ouvrir la carte se terminant par {{last4}}",
+    "kpi": {
+      "issued": "Cartes en circulation",
+      "issuedHint": "Payées ou émises, hors annulées avant paiement",
+      "issuedCount_one": "{{count}} carte en circulation",
+      "issuedCount_other": "{{count}} cartes en circulation",
+      "soldHint": "Valeur faciale des cartes achetées",
+      "awaiting": "À remettre",
+      "awaitingHint": "Utilisables, e-mail pas encore envoyé"
+    },
+    "deliveryTitle_one": "{{count}} carte attend d’être remise à son destinataire",
+    "deliveryTitle_other": "{{count}} cartes attendent d’être remises à leur destinataire",
+    "deliveryBody": "L’envoi des cartes par e-mail n’est pas encore en place. Le code n’est visible par personne dans l’administration : la remise sera automatique dès que la fonction d’envoi sera déployée.",
+    "loadError": "Les cartes cadeaux n’ont pas pu être chargées. Vérifiez votre connexion puis réessayez.",
+    "offlineTitle": "Base de données non connectée",
+    "offlineBody": "Cet environnement local n’est relié à aucun projet Supabase : aucune carte cadeau ne peut être lue ni créée.",
+    "issue": "Émettre une carte",
+    "issueTitle": "Émettre une carte cadeau",
+    "issueBody": "Une carte utilisable immédiatement (geste commercial, remboursement, partenariat). Elle est enregistrée dans l’historique avec votre nom et la raison saisie.",
+    "issueConfirm": "Émettre {{amount}}",
+    "issuedToast": "Carte de {{amount}} émise",
+    "issuedToastBody": "Elle sera envoyée au destinataire dès que l’envoi par e-mail sera en place.",
+    "emptyBody": "Les cartes achetées dans la boutique et celles émises par l’équipe apparaîtront ici avec leur solde.",
+    "search": "Rechercher (4 derniers caractères, destinataire, e-mail, commande)",
+    "amountInvalid": "Saisissez un montant en euros, deux décimales au plus (10 000 € maximum).",
+    "recipientName": "Nom du destinataire",
+    "message": "Message",
+    "expiry": "Expiration",
+    "expiryHint": "Vide : la durée de validité des réglages s’applique.",
+    "noteHint": "Visible dans l’historique de la carte et le journal d’audit.",
+    "notePlaceholder": "Ex. : geste commercial suite à la commande GT-100231",
+    "notFoundBody": "Cette carte n’existe pas, ou votre compte ne peut pas la consulter.",
+    "readOnly": "Lecture seule : votre rôle ne permet pas de modifier les cartes cadeaux.",
+    "onPayment": "Dès le paiement",
+    "voidTitle": "Commande jamais payée",
+    "voidBody": "La commande a été annulée ou a expiré avant paiement : cette carte n’a jamais été active.",
+    "pendingTitle": "En attente de paiement",
+    "pendingBody": "La carte devient utilisable quand le paiement de la commande est confirmé par Stripe.",
+    "scheduledBody": "Elle sera remise à {{email}} à cette date.",
+    "notSentTitle": "Pas encore remise",
+    "notSentBody": "L’envoi par e-mail n’est pas encore en place : le destinataire n’a pas reçu son code.",
+    "system": "Système",
+    "extendNote": "Note (facultative)",
+    "cancelPlaceholder": "Ex. : carte émise par erreur",
+    "typeLast4": "Saisissez {{last4}} pour confirmer",
+    "productTextHint": "Le nom et la description affichés dans la boutique sont ceux du produit « Carte cadeau » (écran Produits).",
+    "errors": {
+      "forbidden": "Votre rôle ne permet pas cette action sur les cartes cadeaux.",
+      "noteRequired": "Une raison est obligatoire.",
+      "insufficient": "Le solde de la carte est insuffisant pour ce débit.",
+      "notActive": "Cette carte n’est plus active : l’action n’est pas possible.",
+      "invalid": "Certaines valeurs ne sont pas acceptées. Vérifiez le montant, l’adresse et les dates.",
+      "network": "Le serveur n’a pas répondu. Vérifiez votre connexion et réessayez.",
+      "unknown": "L’action n’a pas abouti. Réessayez dans un instant."
     }
   }
 }

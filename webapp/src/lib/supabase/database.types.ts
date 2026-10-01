@@ -7169,39 +7169,7 @@ export type Database = {
       }
       cancel_gift_card: {
         Args: { p_gift_card_id: string; p_note: string }
-        Returns: {
-          balance: number
-          cancelled_at: string | null
-          code: string
-          code_last4: string | null
-          created_at: string
-          currency: string
-          deliver_at: string | null
-          delivered_at: string | null
-          delivery_status: string
-          design: string
-          expires_at: string | null
-          id: string
-          initial_amount: number
-          issued_at: string | null
-          message: string | null
-          order_id: string | null
-          order_item_id: string | null
-          purchaser_email: string | null
-          purchaser_user_id: string | null
-          recipient_email: string
-          recipient_name: string | null
-          sender_name: string | null
-          source: string
-          state: string
-          updated_at: string
-        }
-        SetofOptions: {
-          from: "*"
-          to: "gift_cards"
-          isOneToOne: true
-          isSetofReturn: false
-        }
+        Returns: string
       }
       cancel_order: {
         Args: { p_order_id: string; p_reason?: string }
@@ -7352,39 +7320,7 @@ export type Database = {
       expire_stale_orders: { Args: never; Returns: number }
       extend_gift_card: {
         Args: { p_expires_at: string; p_gift_card_id: string; p_note?: string }
-        Returns: {
-          balance: number
-          cancelled_at: string | null
-          code: string
-          code_last4: string | null
-          created_at: string
-          currency: string
-          deliver_at: string | null
-          delivered_at: string | null
-          delivery_status: string
-          design: string
-          expires_at: string | null
-          id: string
-          initial_amount: number
-          issued_at: string | null
-          message: string | null
-          order_id: string | null
-          order_item_id: string | null
-          purchaser_email: string | null
-          purchaser_user_id: string | null
-          recipient_email: string
-          recipient_name: string | null
-          sender_name: string | null
-          source: string
-          state: string
-          updated_at: string
-        }
-        SetofOptions: {
-          from: "*"
-          to: "gift_cards"
-          isOneToOne: true
-          isSetofReturn: false
-        }
+        Returns: string
       }
       generate_promotion_codes: {
         Args: { p_count: number; p_prefix?: string; p_promotion_id: string }

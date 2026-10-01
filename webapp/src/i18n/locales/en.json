@@ -321,12 +321,7 @@
     "shippingError": "Delivery options could not be loaded.",
     "shippingNone": "No delivery option serves this country for this basket.",
     "shippingDays": "{{min}} to {{max}} working days",
-    "shippingKind": {
-      "standard": "Standard delivery",
-      "express": "Express delivery",
-      "free": "Free delivery",
-      "pickup": "Studio pickup"
-    },
+    "shippingKind": { "standard": "Standard delivery", "express": "Express delivery", "free": "Free delivery", "pickup": "Studio pickup" },
     "retry": "Try again",
     "payNoShipping": "Choose a delivery option",
     "paymentRedirect": "You will be taken to the secure payment page of our provider, Stripe. Your card details never go through our site.",
@@ -342,7 +337,8 @@
       "maintenance": "The shop is under maintenance: orders are paused for now. Nothing has been charged.",
       "session_expired": "Your session has expired. Sign in again and retry.",
       "server_error": "Something went wrong. Nothing has been charged; try again in a few minutes.",
-      "network": "Cannot connect. Check your network and try again."
+      "network": "Cannot connect. Check your network and try again.",
+      "gift_card_details_invalid": "The details of a gift card in your cart are no longer accepted (amount, recipient or date). Remove it and build it again."
     },
     "pendingBadge": "Payment in progress",
     "pendingTitle": "Confirming your payment",
@@ -357,7 +353,27 @@
     "notPaidBody": "Nothing has been charged and your order has been cancelled. Your basket is waiting if you want to try again.",
     "invalidTitle": "Invalid confirmation link",
     "invalidBody": "This link does not match any payment. If you have just paid, check your orders in your member area.",
-    "backToCart": "Back to basket"
+    "backToCart": "Back to basket",
+    "giftCard": {
+      "title": "Gift card",
+      "hint": "Have a gift card? Add its code: the available amount is deducted at payment.",
+      "label": "Gift card code",
+      "add": "Add",
+      "added": "Gift cards added",
+      "remove": "Remove the card ending in {{last4}}",
+      "errors": {
+        "format": "This code does not have the right format (GT-XXXX-XXXX-XXXX).",
+        "duplicate": "This card is already added.",
+        "limit": "At most {{max}} gift cards per order."
+      },
+      "summary_one": "1 gift card will be applied at payment: what is left to pay is computed by our server.",
+      "summary_other": "{{count}} gift cards will be applied at payment: what is left to pay is computed by our server.",
+      "payWithCards": "Pay with my gift cards",
+      "noShipping": "Your cart only holds gift cards: they are sent by email, there is no delivery to choose.",
+      "emailDelivery": "By email",
+      "byEmail": "Sent by email after payment",
+      "scheduled": "Scheduled delivery"
+    }
   },
   "auth": {
     "eyebrow": "Account",
