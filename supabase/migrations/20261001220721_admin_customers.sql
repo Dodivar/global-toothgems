@@ -39,7 +39,7 @@ begin
        and a.action = 'update'
        and a.record_id = p_user_id::text
        and a.changes ? 'status'
-     order by a.occurred_at, a.id;
+     order by a.occurred_at;
 end;
 $$;
 

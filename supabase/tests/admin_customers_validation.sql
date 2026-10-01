@@ -119,6 +119,19 @@ begin
   passed := array_append(passed, 'H1 status history: old, new, actor, one account only');
 
   -- ===========================================================================
+  -- H2 the history of a team member is not readable here
+  -- ===========================================================================
+  execute 'reset role';
+  update public.profiles set status = 'suspended' where id = mg2;
+  update public.profiles set status = 'active' where id = mg2;
+  perform set_config('role', 'authenticated', true);
+  perform set_config('request.jwt.claims', json_build_object('sub', vwr, 'role', 'authenticated')::text, true);
+  select count(*) into v_cnt from public.admin_customer_status_history(mg2);
+  if v_cnt <> 0 then raise exception 'FAIL H2: a team member''s history is readable (% rows)', v_cnt; end if;
+  perform set_config('request.jwt.claims', json_build_object('sub', mgr, 'role', 'authenticated')::text, true);
+  passed := array_append(passed, 'H2 status history of team accounts: no rows');
+
+  -- ===========================================================================
   -- T1 tags and notes; a note is edited by its author only
   -- ===========================================================================
   insert into public.customer_tags (user_id, tag) values (cst, 'vip');

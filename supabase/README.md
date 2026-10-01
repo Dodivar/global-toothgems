@@ -117,6 +117,7 @@ supabase/
 | 20261001121248 | `academy_public_pages` | Academy phase B: visitors and customers read the outline of a published course (modules, steps, knowledge checks' titles and pass marks, published translations — never blocks, questions or answers), its cover (`training_media` row + translations + the file in the private bucket) and its current price; `course_promotions` staff-only (the price view reads the running promotion through `private.course_running_promotion()`, SECURITY DEFINER); column grants hide `courses.created_by`/`updated_by` and the media's internal columns from `anon`; policies widened in place (ALTER POLICY) |
 | 20261001170703 | `academy_learner_access` | Academy phase C: `course_entitlements` (manual grants by `manage_training`, audited; `purchase` rows from phase D), `lesson_progress`, `quiz_attempts`, `course_completions` (sticky, certificate code); `learner_courses()` serves the held courses' content without answer keys or feedback; `complete_course_step()`, `answer_quiz_question()`, `submit_quiz_answers()` port the path rules of `lib/learning/path.ts` and score server-side; storage policy for the media of held courses; holders see their withdrawn course (row, translations, cover); `admin_grant_course()`, `admin_revoke_course_entitlement()`, `admin_course_entitlements()` |
 | 20261001220721 | `admin_customers` | back-office customers: `admin_customer_status_history(user)` (status changes of one account from `audit_logs` — date, old, new, actor name — for any active staff member; `audit_logs` itself stays `manage_settings`-only) and `admin_customer_courses(user \| null)` (course seats not revoked, with the learner's progress rule: validated steps that still exist + checks passed, over steps + checks; completion, score, certificate code). Both `SECURITY DEFINER`, staff only |
+| 20261001223230 | `admin_customer_history_scope` | `admin_customer_status_history()` answers for customer accounts only (a team member's history stays out of reach of read-only staff); orders changes by `occurred_at, id` (two changes in one transaction share a timestamp — first fixed in place, now recorded) |
 
 RLS is **enabled in the same migration that creates each table** (deny by default);
 policies are granted back in `rls_policies`.
@@ -1142,7 +1143,9 @@ VAT rates, shipping zones/rates mirroring the Settings prototype. Media rows ref
 58. **The customer owns their e-mail, marketing consent and address book** (agent, 2026-10-02): the back office
     shows them read-only (the profile guard already refuses `email` and `marketing_opt_in`; addresses are
     owner-only under RLS). Export of the base, bulk e-mail and staff-created customer accounts are not offered:
-    each needs a server side (audited export job, Resend, Auth admin API) and a decision.
+    each needs a server side (audited export job, Resend, Auth admin API) and a decision. A customer's order
+    count is every order of the book (as on the order page), including unpaid or failed ones; spend counts paid
+    orders only. An edit saves the profile, then the tag difference, in separate requests (not one transaction).
 
 ## Done
 
