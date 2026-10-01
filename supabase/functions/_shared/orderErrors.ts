@@ -10,6 +10,7 @@ export type CheckoutErrorCode =
   | "shipping_unavailable"
   | "promotion_code_invalid"
   | "gift_card_invalid"
+  | "gift_card_details_invalid"
   | "payment_unavailable"
   | "server_error";
 
@@ -18,11 +19,24 @@ export interface DbError {
   message?: string;
 }
 
+/**
+ * Gift cards appear in two roles. As a means of payment, every refusal (unknown
+ * code, expired, empty, cancelled, other currency, too many) is the same
+ * "not usable" answer, so the response never tells a guesser which codes exist.
+ * As a line being bought, the buyer's details or amount were refused.
+ * The ledger trigger raises P0001 too: checked before the stock meaning of P0001.
+ */
+const GIFT_CARD_PAYMENT_RE = /gift card not usable|gift card is not usable|gift card balance insufficient|gift cards per order/;
+const GIFT_CARD_PURCHASE_RE = /gift card amount not allowed|gift card details|one gift card per line|delivery date not allowed/;
+
 export function checkoutErrorCode(error: DbError): CheckoutErrorCode {
   const message = error.message ?? "";
+  if (GIFT_CARD_PAYMENT_RE.test(message)) return "gift_card_invalid";
+  if (GIFT_CARD_PURCHASE_RE.test(message)) return "gift_card_details_invalid";
+  // "gift cards are not on sale" / "are sold in": the gift card product is unavailable.
+  if (/gift cards are/.test(message)) return "unavailable";
   if (error.code === "P0001") return "out_of_stock";
   if (/promotion code|loyalty reward/.test(message)) return "promotion_code_invalid";
-  if (/gift card/.test(message)) return "gift_card_invalid";
   if (/shipping/.test(message)) return "shipping_unavailable";
   if (error.code === "P0002") return "unavailable";
   if (error.code === "22023" || error.code === "22P02" || error.code === "42501") return "invalid_request";

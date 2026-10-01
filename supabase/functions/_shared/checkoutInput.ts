@@ -22,17 +22,38 @@ export interface CheckoutAddress {
   phone?: string;
 }
 
+export const GIFT_CARD_DESIGNS = ["sparkle", "blush", "noir", "mint", "photo"] as const;
+export type GiftCardDesign = (typeof GIFT_CARD_DESIGNS)[number];
+
+/**
+ * What the buyer types for a gift card line. The amount is the one value of a
+ * checkout chosen by the customer: integer minor units, checked by
+ * create_order() against gift_card_settings (presets or the custom range).
+ */
+export interface GiftCardLine {
+  amount_minor: number;
+  recipient_email: string;
+  recipient_name: string | null;
+  sender_name: string | null;
+  message: string | null;
+  design: GiftCardDesign | null;
+  /** ISO 8601 with an offset; null = sent as soon as the order is paid. */
+  deliver_at: string | null;
+}
+
 export interface CheckoutItem {
   product_id: string;
   variant_id: string | null;
   quantity: number;
+  gift_card?: GiftCardLine;
 }
 
 export interface CheckoutInput {
   items: CheckoutItem[];
   email: string;
   address: CheckoutAddress;
-  shipping_rate_id: string;
+  /** Null when the basket has nothing to ship (gift cards only); create_order() decides. */
+  shipping_rate_id: string | null;
   locale: CheckoutLocale;
   promotion_codes: string[];
   gift_card_codes: string[];
@@ -45,6 +66,8 @@ export type ValidationResult =
 
 /** Same bounds as create_order(): 1–100 lines, 1–1000 per line, ≤ 3 codes, ≤ 5 gift cards. */
 export const MAX_ITEMS = 100;
+/** Upper bound of a gift card amount accepted at all (€100,000); the shop's own range is checked in SQL. */
+export const MAX_GIFT_CARD_MINOR = 10_000_000;
 export const MAX_QUANTITY = 1000;
 export const MAX_PROMOTION_CODES = 3;
 export const MAX_GIFT_CARDS = 5;
@@ -58,6 +81,9 @@ const PROMO_RE = /^[A-Z0-9][A-Z0-9_-]{0,63}$/;
 const GIFT_CARD_RE = /^GT-[A-Z0-9]{4}-[A-Z0-9]{4}-[A-Z0-9]{4}$/;
 // Control characters have no business in a name or an address.
 const CONTROL_RE = /[\u0000-\u001f\u007f]/;
+// A gift message may span lines; nothing else below U+0020.
+const MESSAGE_CONTROL_RE = /[\u0000-\u0009\u000b-\u001f\u007f]/;
+const DATE_TIME_RE = /^\d{4}-\d{2}-\d{2}T\d{2}:\d{2}(:\d{2}(\.\d{1,6})?)?(Z|[+-]\d{2}:\d{2})$/;
 
 type Fail = { ok: false; field: string };
 const fail = (field: string): Fail => ({ ok: false, field });
@@ -128,12 +154,63 @@ function parseAddress(value: unknown): { ok: true; value: CheckoutAddress } | Fa
   };
 }
 
+const GIFT_CARD_KEYS = [
+  "amount_minor",
+  "recipient_email",
+  "recipient_name",
+  "sender_name",
+  "message",
+  "design",
+  "deliver_at",
+] as const;
+
+function parseGiftCard(value: unknown, path: string): { ok: true; value: GiftCardLine } | Fail {
+  if (!isObject(value)) return fail(path);
+  const unknown = onlyKeys(value, GIFT_CARD_KEYS);
+  if (unknown) return fail(`${path}.${unknown}`);
+  const amount = value.amount_minor;
+  if (typeof amount !== "number" || !Number.isSafeInteger(amount) || amount < 1 || amount > MAX_GIFT_CARD_MINOR) {
+    return fail(`${path}.amount_minor`);
+  }
+  const email = typeof value.recipient_email === "string" ? value.recipient_email.trim().toLowerCase() : "";
+  if (email.length > 254 || !EMAIL_RE.test(email) || CONTROL_RE.test(email)) return fail(`${path}.recipient_email`);
+  const recipientName = text(value.recipient_name, 100, { optional: true });
+  if (recipientName === null) return fail(`${path}.recipient_name`);
+  const senderName = text(value.sender_name, 100, { optional: true });
+  if (senderName === null) return fail(`${path}.sender_name`);
+  let message: string | null = null;
+  if (value.message !== undefined && value.message !== null && value.message !== "") {
+    if (typeof value.message !== "string") return fail(`${path}.message`);
+    const trimmed = value.message.replace(/\r\n?/g, "\n").trim();
+    if (trimmed.length > 1000 || MESSAGE_CONTROL_RE.test(trimmed)) return fail(`${path}.message`);
+    message = trimmed || null;
+  }
+  const design = value.design ?? null;
+  if (design !== null && !(GIFT_CARD_DESIGNS as readonly unknown[]).includes(design)) return fail(`${path}.design`);
+  const deliverAt = value.deliver_at ?? null;
+  if (deliverAt !== null && (typeof deliverAt !== "string" || !DATE_TIME_RE.test(deliverAt) || Number.isNaN(Date.parse(deliverAt)))) {
+    return fail(`${path}.deliver_at`);
+  }
+  return {
+    ok: true,
+    value: {
+      amount_minor: amount,
+      recipient_email: email,
+      recipient_name: recipientName ?? null,
+      sender_name: senderName ?? null,
+      message,
+      design: design as GiftCardDesign | null,
+      deliver_at: deliverAt as string | null,
+    },
+  };
+}
+
 function parseItems(value: unknown): { ok: true; value: CheckoutItem[] } | Fail {
   if (!Array.isArray(value) || value.length === 0 || value.length > MAX_ITEMS) return fail("items");
   const items: CheckoutItem[] = [];
   const seen = new Set<string>();
   for (const [index, raw] of value.entries()) {
-    if (!isObject(raw) || onlyKeys(raw, ["product_id", "variant_id", "quantity"])) return fail(`items.${index}`);
+    if (!isObject(raw) || onlyKeys(raw, ["product_id", "variant_id", "quantity", "gift_card"])) return fail(`items.${index}`);
     const { product_id, variant_id, quantity } = raw;
     if (typeof product_id !== "string" || !UUID_RE.test(product_id)) return fail(`items.${index}.product_id`);
     if (variant_id !== undefined && variant_id !== null && (typeof variant_id !== "string" || !UUID_RE.test(variant_id))) {
@@ -143,6 +220,14 @@ function parseItems(value: unknown): { ok: true; value: CheckoutItem[] } | Fail 
       return fail(`items.${index}.quantity`);
     }
     const variant = typeof variant_id === "string" ? variant_id.toLowerCase() : null;
+    if (raw.gift_card !== undefined) {
+      // One card per line, several lines allowed (one per recipient).
+      if (variant !== null || quantity !== 1) return fail(`items.${index}`);
+      const card = parseGiftCard(raw.gift_card, `items.${index}.gift_card`);
+      if (!card.ok) return card;
+      items.push({ product_id: product_id.toLowerCase(), variant_id: null, quantity: 1, gift_card: card.value });
+      continue;
+    }
     const key = `${product_id.toLowerCase()}::${variant ?? ""}`;
     if (seen.has(key)) return fail(`items.${index}`);
     seen.add(key);
@@ -189,7 +274,8 @@ export function parseCheckoutInput(body: unknown): ValidationResult {
   const address = parseAddress(body.address);
   if (!address.ok) return address;
 
-  if (typeof body.shipping_rate_id !== "string" || !UUID_RE.test(body.shipping_rate_id)) return fail("shipping_rate_id");
+  const rate = body.shipping_rate_id ?? null;
+  if (rate !== null && (typeof rate !== "string" || !UUID_RE.test(rate))) return fail("shipping_rate_id");
 
   if (typeof body.locale !== "string" || !(CHECKOUT_LOCALES as readonly string[]).includes(body.locale)) {
     return fail("locale");
@@ -209,11 +295,47 @@ export function parseCheckoutInput(body: unknown): ValidationResult {
       items: items.value,
       email,
       address: address.value,
-      shipping_rate_id: body.shipping_rate_id.toLowerCase(),
+      shipping_rate_id: rate === null ? null : (rate as string).toLowerCase(),
       locale: body.locale as CheckoutLocale,
       promotion_codes: promotionCodes,
       gift_card_codes: giftCardCodes,
       customer_note: note ?? null,
     },
   };
+}
+
+/** A line as create_order() reads it (`p_items`). */
+export interface OrderItem {
+  product_id: string;
+  variant_id: string | null;
+  quantity: number;
+  /** Decimal string of the gift card amount (numeric argument), gift card lines only. */
+  amount?: string;
+  gift_card?: {
+    recipient_email: string;
+    recipient_name: string | null;
+    sender_name: string | null;
+    message: string | null;
+    design?: GiftCardDesign;
+    deliver_at: string | null;
+  };
+}
+
+/**
+ * Validated items → create_order()'s `p_items`: the gift card amount crosses
+ * from minor units to the decimal string Postgres reads (AGENTS.md §8), the
+ * design is left out when the buyer kept the shop's default.
+ */
+export function orderItems(items: CheckoutItem[], toDecimal: (minor: number) => string): OrderItem[] {
+  return items.map((item) => {
+    if (!item.gift_card) return { product_id: item.product_id, variant_id: item.variant_id, quantity: item.quantity };
+    const { amount_minor, design, ...details } = item.gift_card;
+    return {
+      product_id: item.product_id,
+      variant_id: null,
+      quantity: 1,
+      amount: toDecimal(amount_minor),
+      gift_card: { ...details, ...(design ? { design } : {}) },
+    };
+  });
 }
