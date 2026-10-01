@@ -3609,7 +3609,9 @@
         "saveDraft": "Save draft",
         "save": "Save",
         "lastSaved": "Saved at {{time}}",
-        "neverSaved": "Not saved in this session"
+        "neverSaved": "Not saved in this session",
+        "savePublished": "Save (live)",
+        "savePublishedHint": "Live course: every save is visible to its buyers straight away."
       },
       "publish": {
         "title": "Ready to publish?",

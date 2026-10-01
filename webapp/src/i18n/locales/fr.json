@@ -3609,7 +3609,9 @@
         "saveDraft": "Enregistrer le brouillon",
         "save": "Enregistrer",
         "lastSaved": "Enregistré à {{time}}",
-        "neverSaved": "Jamais enregistré dans cette session"
+        "neverSaved": "Jamais enregistré dans cette session",
+        "savePublished": "Enregistrer (en ligne)",
+        "savePublishedHint": "Formation en ligne : chaque enregistrement est visible immédiatement par ses acheteurs."
       },
       "publish": {
         "title": "Prêt à publier ?",

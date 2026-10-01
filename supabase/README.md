@@ -107,6 +107,7 @@ supabase/
 | 20261001062943 | `academy_authoring` | Academy authoring (phase A): `training_media` (+ translations, private `training-media` bucket), `courses` (price, lifecycle draft → published ⇄ unpublished, `published_at`), `course_modules`, `course_steps`, `course_blocks` (text / image / video), `course_quizzes`, `quiz_questions`, `quiz_answers` (one correct per question), a translation table per level, `course_promotions` + `course_current_prices` view, `course_publication_problems()`, lifecycle guard, `admin_save_course(jsonb)`; audited |
 | 20261001063310 | `course_promotion_guard_permission` | fix: the promotion guard refuses callers without `manage_training` before answering "overlap" (caught by the iteration 20 suite) |
 | 20261001063421 | `academy_merge_read_policies` | one SELECT policy per role on `courses`, `course_translations`, `course_promotions` (performance advisor) |
+| 20261001071006 | `academy_published_integrity` | a price cut below an active amount promotion is refused (the course would become free); a deferred constraint trigger re-checks `course_publication_problems()` when a published course is saved, so it cannot become unpublishable while online |
 
 RLS is **enabled in the same migration that creates each table** (deny by default);
 policies are granted back in `rls_policies`.
@@ -661,13 +662,17 @@ media references: courses.cover_media_id, course_modules.cover_media_id, course_
   `course_publication_problems()` is empty (at least one module, no empty module, every image/video block has its
   file, every quiz has questions, every question ≥ 2 answers and one correct); `published_at` set once, by the
   trigger; `published ⇄ unpublished`; never back to `draft`; the slug of a course that was ever published is
-  frozen; only never-published courses can be deleted (RLS). Status, price, slug, creation and deletion audited.
+  frozen; only never-published courses can be deleted (RLS). A published course stays publishable: every save
+  is re-checked at commit (deferred trigger `courses_published_ready`). Saving a published course changes what
+  its buyers read at once — there is no separate draft of a published course. Status, price, slug, creation and
+  deletion audited.
 - **Unpublished course** (owner, 2026-10-01): its buyers still see it in their space, greyed out with a "back soon"
   message, and cannot open it (phase C enforces it in RLS). Visitors no longer see it.
 - **Course promotions**: `percentage` (< 100) or `amount` (< the course price) off one course between `starts_at`
   and `ends_at` (open-ended allowed); at most one active promotion per course at any instant (guard locks the
   course row, then checks overlaps); `course_current_prices` gives the price now, rounded half away from zero to
-  the cent. No codes, no customer segments. Audited.
+  the cent. Lowering the course price below an active amount promotion is refused. No codes, no customer
+  segments. Audited.
 - **Quiz answer keys**: `quiz_answers.is_correct` / `explanation` are readable by staff only. Phase C serves
   corrections through a function, after an answer is submitted.
 - **Access in this phase**: staff (`is_staff`) read everything; `manage_training` writes; visitors and customers read
@@ -987,12 +992,16 @@ VAT rates, shipping zones/rates mirroring the Settings prototype. Media rows ref
 1. Checkout follow-ups: order confirmation e-mail (Resend, Edge Function), promotion code and gift card fields
    in the cart (the function already accepts them), Stripe refunds from the back office, `charge.refunded` /
    `charge.dispute.created` webhooks.
-2. Training MVP: courses, modules, lessons, enrollments granted on payment, progress, quizzes,
-   private course media, kit QR links; course reviews (`course_id` on `reviews`).
-   Invoices / credit notes (sequential numbering), carrier tracking events.
+2. Academy, after the authoring schema (iteration 20):
+   **B** public Academy pages from `courses` / `course_current_prices` (cover images readable by visitors from the
+   private bucket, column grants hiding `created_by`/`updated_by` and the internal promotion `label` from visitors,
+   per-language slugs); **C** `course_entitlements` (manual grant, audited), content and signed URLs gated on
+   entitlement, quiz answers checked by a function, server-side progress and attempts, certificates, unpublished
+   courses greyed for their buyers; **D** selling courses: a course line in `create_order()` and the Stripe
+   Checkout functions (VAT category `training`, course promotions applied server-side). Kit QR links; course
+   reviews (`course_id` on `reviews`). Invoices / credit notes (sequential numbering), carrier tracking events.
 3. Store settings table (legal identity, order number format, tax display options), VAT numbers /
    B2B reverse charge, multi-currency price lists.
 4. Guest checkout linking (attach guest orders to an account by verified email).
 5. Structured product attributes (gem shape/colour), multiple signed order notes.
-6. Education (courses, modules, lessons, quizzes, attempts, certificates, entitlements), community
-   (unlocked by a training purchase), 3D Studio subscription — each as its own migration set referencing `profiles` and `products`.
+6. Community (unlocked by a training purchase), 3D Studio subscription — each as its own migration set referencing `profiles` and `products`.

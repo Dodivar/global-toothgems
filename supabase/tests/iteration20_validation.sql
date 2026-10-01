@@ -218,6 +218,25 @@ begin
   values (c1, 'Après', 'amount', 49.99, now() + interval '1 day');  -- starts when the first ends
   passed := passed || 'R1'::text;
 
+  -- R2: a price cut below a coming amount promotion is refused (the course would be free)
+  begin
+    update public.courses set price = 40 where id = c1;
+    raise exception 'FAIL R2: price cut below an amount promotion accepted';
+  exception when invalid_parameter_value then null;
+  end;
+  update public.courses set price = 300 where id = c1;
+  passed := passed || 'R2'::text;
+
+  -- P4: saving a published course into an unpublishable state is refused at commit
+  begin
+    perform public.admin_save_course(jsonb_set(v_doc, '{modules,0,steps}', '[]'::jsonb));
+    set constraints public.courses_published_ready immediate;
+    raise exception 'FAIL P4: published course saved with an empty module';
+  exception when invalid_parameter_value then null;
+  end;
+  set constraints public.courses_published_ready deferred;
+  passed := passed || 'P4'::text;
+
   -- Act as the viewer (staff, read only) -------------------------------------------
   perform set_config('request.jwt.claims', json_build_object('sub', vwr, 'role', 'authenticated')::text, true);
 
@@ -247,7 +266,7 @@ begin
   select count(*) into v_cnt from public.courses where id = c1;
   if v_cnt <> 1 then raise exception 'FAIL C1: published course hidden'; end if;
   select current_price into v_num from public.course_current_prices where course_id = c1;
-  if v_num <> 279.20 then raise exception 'FAIL C1: customer price %', v_num; end if;
+  if v_num <> 240.00 then raise exception 'FAIL C1: customer price %', v_num; end if;
   select count(*) into v_cnt from public.quiz_answers;
   if v_cnt <> 0 then raise exception 'FAIL C1: customer reads answer keys'; end if;
   select count(*) into v_cnt from public.course_blocks;

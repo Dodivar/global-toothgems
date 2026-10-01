@@ -167,8 +167,18 @@ export function TrainingBuilder() {
             <AdminButton variant="outline" iconLeft={Eye} onClick={() => navigate(previewPath())}>
               <span className="hidden xl:inline">{t("admin.training.actions.preview")}</span>
             </AdminButton>
-            <AdminButton variant="outline" iconLeft={Save} loading={saving} onClick={save}>
-              <span className="hidden xl:inline">{t("admin.training.save.saveDraft")}</span>
+            <AdminButton
+              variant="outline"
+              iconLeft={Save}
+              loading={saving}
+              onClick={save}
+              // A published course has no separate draft: a save reaches its buyers at once.
+              aria-label={t(course.status === "published" ? "admin.training.save.savePublished" : "admin.training.save.saveDraft")}
+              title={course.status === "published" ? t("admin.training.save.savePublishedHint") : undefined}
+            >
+              <span className="hidden xl:inline">
+                {t(course.status === "published" ? "admin.training.save.savePublished" : "admin.training.save.saveDraft")}
+              </span>
             </AdminButton>
             <AdminButton
               variant="primary"

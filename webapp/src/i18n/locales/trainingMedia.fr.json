@@ -104,7 +104,7 @@
     "title": "Médiathèque des formations",
     "crumb": "Médiathèque",
     "description": "Importez, décrivez et gérez les images et vidéos utilisées dans les formations.",
-    "limits": "Images jusqu’à {{image}}, vidéos jusqu’à {{video}} par fichier. Les fichiers sont privés : seuls l’équipe et, plus tard, les membres inscrits y ont accès."
+    "limits": "Images jusqu’à {{image}}, vidéos jusqu’à {{video}} par fichier. Les fichiers sont privés : seuls l’équipe et, plus tard, les membres inscrits y ont accès. Pour les vidéos, privilégiez le MP4 (H.264) : c’est le format que tous les navigateurs et téléphones lisent."
   },
   "toasts": {
     "uploaded_one": "{{count}} fichier ajouté à la médiathèque",

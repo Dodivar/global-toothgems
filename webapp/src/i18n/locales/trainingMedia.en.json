@@ -104,7 +104,7 @@
     "title": "Training media library",
     "crumb": "Media library",
     "description": "Upload, describe and manage the images and videos used in courses.",
-    "limits": "Images up to {{image}}, videos up to {{video}} per file. Files are private: only the team and, later, enrolled members can access them."
+    "limits": "Images up to {{image}}, videos up to {{video}} per file. Files are private: only the team and, later, enrolled members can access them. For videos, prefer MP4 (H.264): it is the format every browser and phone plays."
   },
   "toasts": {
     "uploaded_one": "{{count}} file added to the library",
