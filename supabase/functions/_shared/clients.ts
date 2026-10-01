@@ -33,4 +33,16 @@ export function serviceClient(): SupabaseClient {
   });
 }
 
+/**
+ * A client acting AS the caller: the publishable/anon key plus the caller's own
+ * JWT, so every read and write goes through RLS and the guard triggers exactly
+ * as if the browser had made it. SUPABASE_ANON_KEY is provided by Supabase.
+ */
+export function callerClient(token: string): SupabaseClient {
+  return createClient(requireEnv("SUPABASE_URL"), requireEnv("SUPABASE_ANON_KEY"), {
+    global: { headers: { Authorization: `Bearer ${token}` } },
+    auth: { persistSession: false, autoRefreshToken: false },
+  });
+}
+
 export type { Stripe, SupabaseClient };

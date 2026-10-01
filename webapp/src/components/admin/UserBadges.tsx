@@ -67,7 +67,7 @@ export function UserAvatar({
       }}
       className={clsx(
         "grid flex-none place-items-center rounded-full font-[var(--weight-black)] uppercase tracking-[var(--tracking-tight)] text-[var(--gt-ink-900)] ring-2 ring-[var(--surface-card)]",
-        user.status === "suspended" && "opacity-55 grayscale",
+        (user.status === "suspended" || user.status === "deactivated") && "opacity-55 grayscale",
         className,
       )}
     >

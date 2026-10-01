@@ -686,6 +686,17 @@ How it is put together:
 
 Tax rates and exemption rules are **illustrative** and say so on screen: they, and every check here (zone overlap, rate ranges, VAT number validation), must be confirmed with an accountant and enforced server-side in the real implementation.
 
+## Users and roles (`/admin/utilisateurs`)
+
+Live on Supabase; without the Supabase variables the screen says the directory is unavailable (no invented team).
+
+- **One persistence boundary:** `src/lib/adminUsers.tsx`. Reads `staff_directory()` (needs `view_users`), `my_permissions()` and the permission matrix from `roles`, `permissions`, `role_permissions`. Row ↔ UI mapping (roles `viewer`/`manager`/`admin` ↔ read only / manager / administrator, `customer_care` ↔ `customerCare`, statuses, matrix order, error codes) is pure and tested in `src/lib/adminUserMapping.ts`.
+- **Writes under the member's own JWT:** names, role and status are `UPDATE profiles` (RLS + `private.guard_profile_update()`: `manage_users`, ranks ≤ one's own, never one's own role/status, audited); job title and team are `UPSERT staff_profiles`. An update RLS lets touch no row is reported as refused, never as success. Every write re-reads the directory.
+- **Invitations** go through the Edge Function `invite-staff-member` (`supabase.functions.invoke`): invite (new address → Supabase invitation e-mail; existing active customer → promoted, no e-mail), resend and cancel a pending invitation. The link lands on `/auth/confirm?…&type=invite`, then `/reinitialiser-mot-de-passe` where the invitee chooses a password.
+- **What is offered** follows `my_permissions()` and the member's rank (`lib/adminUserFilters.ts` `guardFor`): without `manage_users` the Invite button is hidden and every action disabled with the reason; roles above one's own are disabled in the role picker; one's own role/status and the last active administrator are locked. UX only — the database refuses all of it anyway.
+- **Not offered:** permanent deletion of a member (suspend instead), editing the sign-in e-mail (it belongs to the person's account), an activity history (the audit log needs `manage_settings`; not wired). `deactivated` accounts (database status) are shown and can be reactivated; the screen never deactivates.
+- **Known limits:** an edit writes `profiles` then `staff_profiles` in two requests (not one transaction). For an account bootstrapped by SQL without staff details, the first edit creates them and stamps the editor as "invited by".
+
 ## Remaining mock behaviour (to replace before launch)
 
 Without the Supabase variables every domain runs on its mock store. With them, the following still do not touch the database:
@@ -695,6 +706,6 @@ Without the Supabase variables every domain runs on its mock store. With them, t
 - **Artist Community.** Fixtures and in-memory posting; access derived client-side from the courses on the account. Post-launch.
 - **Loyalty Club.** Display only (`data/loyalty.ts` with a demo switch); the database already awards stamps on paid orders — the UI must read `loyalty_overview`.
 - **Security page:** data export and account deletion are simulated (they need backend jobs).
-- **Back-office promotions, gift cards, customers, users, statistics, settings and translations:** mock stores over a schema that already exists.
+- **Back-office promotions, gift cards, customers, statistics, settings and translations:** mock stores over a schema that already exists.
 
 The mock stores, fixtures in `data/`, demo accounts and "Prototype controls" panels are removed domain by domain as each goes live; a production build must never fall back to them.

@@ -1,5 +1,5 @@
 import { useTranslation } from "react-i18next";
-import { CircleCheck, CircleSlash, Clock3, Eye, PenLine, ShieldCheck } from "lucide-react";
+import { CircleCheck, CircleSlash, Clock3, Eye, PenLine, ShieldCheck, UserX } from "lucide-react";
 import type { LucideIcon } from "lucide-react";
 import type { BadgeTone } from "../ui/Badge";
 import type { UserRole, UserStatus } from "../../data/adminUsers";
@@ -20,6 +20,7 @@ export const STATUS_META: Record<UserStatus, { tone: BadgeTone; icon: LucideIcon
   active: { tone: "success", icon: CircleCheck },
   invited: { tone: "warning", icon: Clock3 },
   suspended: { tone: "error", icon: CircleSlash },
+  deactivated: { tone: "neutral", icon: UserX },
 };
 
 export function useAdminLocale(): string {

@@ -58,13 +58,16 @@ export function returnPathFrom(search: string): string | undefined {
 }
 
 /** E-mail link kinds `/auth/confirm` accepts: the ones the app sends. */
-export type ConfirmType = "signup" | "email" | "recovery" | "email_change";
+export type ConfirmType = "signup" | "email" | "recovery" | "email_change" | "invite";
 
 const DEFAULT_NEXT: Record<ConfirmType, string> = {
   signup: CONFIRM_ACCOUNT_PATH,
   email: CONFIRM_ACCOUNT_PATH,
   recovery: RESET_PASSWORD_PATH,
   email_change: EMAIL_CHANGE_LANDING,
+  // A team invitation (Edge Function invite-staff-member): the invitee has no
+  // password yet and chooses one with the session the link opened.
+  invite: RESET_PASSWORD_PATH,
 };
 
 export function parseConfirmType(value: string | null): ConfirmType | null {

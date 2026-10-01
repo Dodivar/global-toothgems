@@ -108,9 +108,14 @@ test.describe("/auth/confirm", () => {
     expect(location(response)).toBe("/verifier-email?type=changement&message=confirm_other_address");
   });
 
+  test("lands a team invitation on the page where the invitee chooses a password", async ({ request }) => {
+    const response = await request.get("/auth/confirm?token_hash=valid-invite&type=invite&next=%2Freinitialiser-mot-de-passe", noRedirect);
+    expect(location(response)).toBe("/reinitialiser-mot-de-passe");
+  });
+
   test("refuses link kinds the app never sends and codes without their verifier", async ({ request }) => {
-    const invite = await request.get("/auth/confirm?token_hash=valid-x&type=invite", noRedirect);
-    expect(location(invite)).toBe("/confirmation-compte?error=access_denied&error_code=invalid_link");
+    const magic = await request.get("/auth/confirm?token_hash=valid-x&type=magiclink", noRedirect);
+    expect(location(magic)).toBe("/confirmation-compte?error=access_denied&error_code=invalid_link");
     const code = await request.get("/auth/confirm?code=abc&next=%2Freinitialiser-mot-de-passe", noRedirect);
     expect(location(code)).toMatch(/^\/reinitialiser-mot-de-passe\?error=access_denied&error_code=/);
   });

@@ -1,14 +1,14 @@
 import { useCallback, useEffect, useId, useRef, useState } from "react";
 import { useTranslation } from "react-i18next";
-import { ArrowRight, Ban, ShieldAlert, Trash2, UserCog } from "lucide-react";
+import { ArrowRight, Ban, MailX, UserCog } from "lucide-react";
 import { Dialog } from "../ui/Dialog";
 import { AdminButton } from "./AdminButton";
 import { AdminPortal } from "./AdminSheet";
 import { ConfirmationDialog } from "./ConfirmationDialog";
 import { RolePicker } from "./UserForm";
 import { RoleChangeSummary } from "./RolePermissions";
-import { RoleBadge, UserAvatar, UserStatusBadge } from "./UserBadges";
-import { roleRank, userName, type AdminUser, type UserRole } from "../../data/adminUsers";
+import { RoleBadge, UserAvatar } from "./UserBadges";
+import { roleOrder, userName, type AdminUser, type UserRole } from "../../data/adminUsers";
 
 /**
  * The confirmations of the Users workspace.
@@ -18,7 +18,7 @@ import { roleRank, userName, type AdminUser, type UserRole } from "../../data/ad
  * will happen to whom, in plain words, before anything happens.
  *
  * Their confirming buttons are never where focus lands. The role change opens
- * on the role picker, the suspension and deletion on Cancel — a hurried Enter
+ * on the role picker, the suspension and the withdrawal on Cancel — a hurried Enter
  * must never be the thing that removes someone's access.
  */
 
@@ -91,7 +91,7 @@ function RoleChangeBody({
   const dismiss = useStableDismiss(onClose, loading);
 
   const changed = choice !== user.role;
-  const direction = roleRank(choice) > roleRank(user.role) ? "up" : "down";
+  const direction = roleOrder(choice) > roleOrder(user.role) ? "up" : "down";
   const from = t(`admin.users.role.${user.role}`);
   const to = t(`admin.users.role.${choice}`);
 
@@ -199,18 +199,19 @@ export function SuspendUserDialog({
 }
 
 /* -------------------------------------------------------------------------- */
-/* Delete                                                                     */
+/* Cancel an invitation                                                       */
 /* -------------------------------------------------------------------------- */
 
 /**
- * Deleting a user.
+ * Withdrawing an invitation that was never accepted.
  *
- * Destructive, so it says so in red — once, on the icon and the button — and
- * nowhere else: a dialog painted red from edge to edge reads as an error
- * rather than a decision. Suspending is offered as the alternative in the body,
- * because it is what most "remove this person" requests actually want.
+ * The only removal the workspace offers: the account was created by the
+ * invitation and never used, so the Edge Function `invite-staff-member`
+ * deletes it (after the database has checked permission and rank). Removing a
+ * member who has worked in the back office is not offered — suspend instead;
+ * permanent deletion is a decision still to be made.
  */
-export function DeleteUserDialog({
+export function CancelInvitationDialog({
   user,
   loading,
   onClose,
@@ -229,31 +230,24 @@ export function DeleteUserDialog({
       <ConfirmationDialog
         open
         tone="danger"
-        icon={Trash2}
-        title={t("admin.users.deleteTitle")}
+        icon={MailX}
+        title={t("admin.users.cancelInviteTitle")}
         body={
           <div className="grid gap-3">
-            <p className="m-0">{t("admin.users.deleteBody", { name: userName(user) })}</p>
+            <p className="m-0">{t("admin.users.cancelInviteBody", { email: user.email })}</p>
             <div className="flex items-center gap-3 rounded-[var(--admin-radius-sm)] bg-[var(--surface-sunken)] p-2.5">
               <UserAvatar user={user} size={32} />
               <span className="grid min-w-0 flex-1">
                 <span className="truncate font-semibold text-[var(--text-primary)]">{userName(user)}</span>
                 <span className="truncate text-[length:var(--text-caption)] text-[var(--text-muted)]">{user.email}</span>
               </span>
-              <span className="hidden flex-none flex-col items-end gap-1 sm:flex">
+              <span className="hidden flex-none sm:flex">
                 <RoleBadge role={user.role} />
-                <UserStatusBadge status={user.status} />
               </span>
             </div>
-            {user.status !== "suspended" && (
-              <p className="m-0 flex items-start gap-2 text-[length:var(--text-caption)] text-[var(--text-muted)]">
-                <ShieldAlert size={14} aria-hidden="true" className="mt-px flex-none" />
-                {t("admin.users.deleteAlternative")}
-              </p>
-            )}
           </div>
         }
-        confirmLabel={t("admin.users.deleteConfirm")}
+        confirmLabel={t("admin.users.cancelInviteConfirm")}
         cancelLabel={t("common.cancel")}
         loading={loading}
         onConfirm={onConfirm}

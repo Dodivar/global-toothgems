@@ -58,7 +58,9 @@ describe("e-mail links", () => {
   it("accepts only the link kinds the app sends", () => {
     expect(parseConfirmType("signup")).toBe("signup");
     expect(parseConfirmType("email_change")).toBe("email_change");
-    expect(parseConfirmType("invite")).toBeNull();
+    // Team invitations (Edge Function invite-staff-member).
+    expect(parseConfirmType("invite")).toBe("invite");
+    expect(parseConfirmType("magiclink")).toBeNull();
     expect(parseConfirmType("toString")).toBeNull();
     expect(parseConfirmType(null)).toBeNull();
   });
@@ -67,6 +69,7 @@ describe("e-mail links", () => {
     expect(confirmNext("/confirmation-compte?suite=/panier", "signup")).toBe("/confirmation-compte?suite=/panier");
     expect(confirmNext("https://evil.example", "recovery")).toBe("/reinitialiser-mot-de-passe");
     expect(confirmNext(null, "email_change")).toBe("/verifier-email?type=changement");
+    expect(confirmNext(null, "invite")).toBe("/reinitialiser-mot-de-passe");
     expect(confirmNext(null, null)).toBe("/confirmation-compte");
   });
 

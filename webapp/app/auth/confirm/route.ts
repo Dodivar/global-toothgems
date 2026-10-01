@@ -5,7 +5,7 @@ import { createServerSupabase } from "../../../src/lib/supabase/server";
 
 /**
  * Where every Supabase Auth e-mail link lands: account confirmation, password
- * recovery, e-mail change. It opens the session server-side (cookies), then
+ * recovery, e-mail change, team invitation. It opens the session server-side (cookies), then
  * sends the member on to the page that shows the outcome — the pages that
  * already existed for it (`/confirmation-compte`, `/reinitialiser-mot-de-passe`,
  * `/verifier-email?type=changement`, or the safe `next` the app asked for).

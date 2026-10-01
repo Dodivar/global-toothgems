@@ -3,14 +3,20 @@
 # `supabase link --project-ref <ref>` (never written here).
 project_id = "global-toothgems"
 
-# Both functions check their callers themselves:
+# These functions check their callers themselves:
 # - stripe-webhook: Stripe sends no Supabase token; the Stripe signature
 #   (STRIPE_WEBHOOK_SECRET) is the authentication.
 # - create-checkout-session: guest checkout is the default, and the browser
 #   calls it with the publishable key, which is not a JWT. A user token, when
 #   present, is verified inside the function (auth.getUser).
+# - invite-staff-member: a signed-in team member's JWT is required, but it is
+#   verified inside the function (auth.getUser, then my_permissions() read with
+#   that JWT), which also works with the project's asymmetric JWT signing keys.
 [functions.create-checkout-session]
 verify_jwt = false
 
 [functions.stripe-webhook]
+verify_jwt = false
+
+[functions.invite-staff-member]
 verify_jwt = false

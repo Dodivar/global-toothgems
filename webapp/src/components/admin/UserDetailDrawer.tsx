@@ -1,44 +1,23 @@
 import { useEffect, useRef, type ReactNode } from "react";
 import { useTranslation } from "react-i18next";
-import {
-  Ban,
-  CircleCheck,
-  Clock3,
-  Eye,
-  KeyRound,
-  LogIn,
-  Mail,
-  PackageCheck,
-  Pencil,
-  RotateCcw,
-  Send,
-  Settings2,
-  ShieldCheck,
-  ShieldOff,
-  Trash2,
-  UserCog,
-  UserPlus,
-  type LucideIcon,
-} from "lucide-react";
-import clsx from "clsx";
+import { Ban, CircleCheck, Clock3, KeyRound, MailX, Pencil, RotateCcw, ShieldCheck, ShieldOff, UserCog } from "lucide-react";
 import { AdminButton } from "./AdminButton";
 import { AdminSheet, SheetBody, SheetFooter } from "./AdminSheet";
 import { PermissionSummary } from "./RolePermissions";
 import { UserForm } from "./UserForm";
 import { LastActivity, RoleBadge, UserAvatar, UserStatusBadge, YouTag } from "./UserBadges";
-import { formatDate, formatDateTime, formatRelative, useAdminLocale } from "./userMeta";
-import { useLocalized } from "../../lib/localized";
-import { CURRENT_USER_ID, userName, type AdminUser, type UserActivityKind } from "../../data/adminUsers";
+import { formatDate, useAdminLocale } from "./userMeta";
+import { userName, type AdminUser } from "../../data/adminUsers";
 import type { UserDraft } from "../../lib/adminUsers";
-import type { GuardReason } from "../../lib/adminUserFilters";
+import { blocksEditing, type GuardReason } from "../../lib/adminUserFilters";
 
 /**
  * A user's profile, in a drawer over the list.
  *
  * A drawer rather than a route, unlike customers and orders. A staff account is
- * a short record — who, what role, what they did lately — and the job done on
- * it is almost always a side trip from the list: check a role, suspend someone,
- * fix a typo in an address. The list staying in place behind it is worth more
+ * a short record — who, what role, how they sign in — and the job done on it
+ * is almost always a side trip from the list: check a role, suspend someone,
+ * fix a typo in a name. The list staying in place behind it is worth more
  * here than a full page. It still has an address: the open user is in the query
  * string (`?utilisateur=…`), so the view can be pasted to a colleague and the
  * back button closes it.
@@ -46,51 +25,13 @@ import type { GuardReason } from "../../lib/adminUserFilters";
  * The drawer has two modes, reading and editing, and editing reuses the exact
  * form the "Add user" panel uses. The role and status are also editable from
  * the reading mode, through their own confirmations, because those are the two
- * changes that alter what a person can do — they deserve a deliberate step
- * rather than being one field among six.
+ * changes that alter what a person can do.
  *
- * Actions that would lock the team out — demoting or removing yourself, or the
- * last active administrator — are disabled with the reason written beside
- * them, never hidden.
+ * Actions the signed-in member may not take — without `manage_users`, on
+ * their own account, on a role above theirs, or on the last active
+ * administrator — are disabled with the reason written beside them, never
+ * hidden. The database refuses them anyway; this only saves a round trip.
  */
-
-const ACTIVITY_ICON: Record<UserActivityKind, LucideIcon> = {
-  signedIn: LogIn,
-  viewedDashboard: Eye,
-  viewedStatistics: Eye,
-  viewedOrders: Eye,
-  viewedCustomers: Eye,
-  updatedOrder: PackageCheck,
-  updatedStock: PackageCheck,
-  updatedProduct: Pencil,
-  publishedLesson: Send,
-  updatedCourse: Pencil,
-  repliedCustomer: Mail,
-  exportedOrders: PackageCheck,
-  changedSettings: Settings2,
-  invitedUser: UserPlus,
-  uploadedMedia: Pencil,
-  accountCreated: UserPlus,
-  invitationSent: Send,
-  invitationResent: RotateCcw,
-  profileUpdated: Pencil,
-  roleChanged: UserCog,
-  activated: CircleCheck,
-  suspended: Ban,
-  reactivated: CircleCheck,
-};
-
-/** Entries written by an administrator's action, rather than the user's own work. */
-const ADMINISTRATIVE: UserActivityKind[] = [
-  "accountCreated",
-  "invitationSent",
-  "invitationResent",
-  "profileUpdated",
-  "roleChanged",
-  "activated",
-  "suspended",
-  "reactivated",
-];
 
 export function UserDetailDrawer({
   user,
@@ -108,9 +49,12 @@ export function UserDetailDrawer({
   onReactivate,
   onResendInvitation,
   resending,
-  onDelete,
+  onCancelInvitation,
+  isSelf,
 }: {
   user: AdminUser | null;
+  /** The profile is the signed-in member's own ("you" marker). */
+  isSelf: boolean;
   mode: "view" | "edit";
   guard: GuardReason;
   editSubmitting: boolean;
@@ -125,11 +69,10 @@ export function UserDetailDrawer({
   onReactivate: () => void;
   onResendInvitation: () => void;
   resending: boolean;
-  onDelete: () => void;
+  onCancelInvitation: () => void;
 }) {
   const { t } = useTranslation();
   const locale = useAdminLocale();
-  const localized = useLocalized();
 
   // Leaving the form unmounts the control that had focus. Hand it to the
   // button that opened the form, so a keyboard user lands where they started.
@@ -143,7 +86,6 @@ export function UserDetailDrawer({
 
   if (!user) return null;
 
-  const isSelf = user.id === CURRENT_USER_ID;
   const guardText = guard ? t(`admin.users.guard.${guard}`) : undefined;
   const editing = mode === "edit";
 
@@ -164,7 +106,7 @@ export function UserDetailDrawer({
           {user.email}
         </a>
         <p className="m-0 truncate text-[length:var(--text-caption)] text-[var(--text-muted)]">
-          {localized(user.jobTitle) || "—"} · {t(`admin.users.team.${user.team}`)}
+          {user.jobTitle || "—"} · {user.team ? t(`admin.users.team.${user.team}`) : "—"}
         </p>
         <div className="flex flex-wrap gap-1.5 pt-0.5">
           <RoleBadge role={user.role} />
@@ -195,9 +137,8 @@ export function UserDetailDrawer({
             lastName: user.lastName,
             email: user.email,
             role: user.role,
-            status: user.status,
-            jobTitle: localized(user.jobTitle),
-            team: user.team,
+            jobTitle: user.jobTitle,
+            team: user.team ?? "",
           }}
           submitting={editSubmitting}
           serverError={editError}
@@ -213,17 +154,26 @@ export function UserDetailDrawer({
                 <div className="flex flex-wrap items-center gap-3 rounded-[var(--admin-radius)] border border-[var(--gt-amber-400)] bg-[var(--status-warning-bg)] p-3.5">
                   <Clock3 size={17} aria-hidden="true" className="flex-none text-[var(--status-warning-fg)]" />
                   <p className="m-0 min-w-0 flex-1 text-[length:var(--text-caption)] text-[var(--text-body)]">
-                    {t("admin.users.invitedBanner", { date: formatDate(user.createdAt, locale) })}
+                    {t("admin.users.invitedBanner", { date: formatDate(user.invitedAt ?? user.createdAt, locale) })}
                   </p>
-                  <AdminButton size="sm" variant="outline" iconLeft={RotateCcw} loading={resending} onClick={onResendInvitation}>
+                  <AdminButton
+                    size="sm"
+                    variant="outline"
+                    iconLeft={RotateCcw}
+                    loading={resending}
+                    disabled={Boolean(guard)}
+                    onClick={onResendInvitation}
+                  >
                     {t("admin.users.resendInvitation")}
                   </AdminButton>
                 </div>
               )}
-              {user.status === "suspended" && (
+              {(user.status === "suspended" || user.status === "deactivated") && (
                 <div className="flex items-start gap-3 rounded-[var(--admin-radius)] border border-[var(--gt-red-400)] bg-[var(--status-error-bg)] p-3.5">
                   <ShieldOff size={17} aria-hidden="true" className="mt-px flex-none text-[var(--status-error-fg)]" />
-                  <p className="m-0 text-[length:var(--text-caption)] text-[var(--text-body)]">{t("admin.users.suspendedBanner")}</p>
+                  <p className="m-0 text-[length:var(--text-caption)] text-[var(--text-body)]">
+                    {t(user.status === "suspended" ? "admin.users.suspendedBanner" : "admin.users.deactivatedBanner")}
+                  </p>
                 </div>
               )}
 
@@ -234,8 +184,8 @@ export function UserDetailDrawer({
                 <dl className="m-0 grid grid-cols-2 gap-px overflow-hidden rounded-[var(--admin-radius)] border border-[var(--border-subtle)] bg-[var(--border-subtle)]">
                   <Fact label={t("admin.users.factCreated")} value={formatDate(user.createdAt, locale)} />
                   <Fact label={t("admin.users.factLastActive")} value={<LastActivity user={user} />} />
-                  <Fact label={t("admin.users.factInvitedBy")} value={user.invitedBy ?? t("admin.users.founderAccount")} />
-                  <Fact label={t("admin.users.factTeam")} value={t(`admin.users.team.${user.team}`)} />
+                  <Fact label={t("admin.users.factInvitedBy")} value={user.invitedBy ?? "—"} />
+                  <Fact label={t("admin.users.factTeam")} value={user.team ? t(`admin.users.team.${user.team}`) : "—"} />
                   <Fact
                     label={t("admin.users.factTwoFactor")}
                     value={
@@ -272,66 +222,24 @@ export function UserDetailDrawer({
                 </div>
                 {guardText && <GuardNote text={guardText} />}
               </section>
-
-              <section aria-labelledby="gt-user-activity-title" className="grid gap-3">
-                <h3 id="gt-user-activity-title" className="text-[length:var(--text-body-md)] font-semibold">
-                  {t("admin.users.sectionActivity")}
-                </h3>
-                <ol className="m-0 grid list-none gap-0 p-0">
-                  {user.activity.slice(0, 8).map((entry, index, list) => {
-                    const Icon = ACTIVITY_ICON[entry.kind];
-                    const administrative = ADMINISTRATIVE.includes(entry.kind);
-                    const params = { ...entry.params };
-                    if (entry.kind === "roleChanged" && entry.params) {
-                      params.from = t(`admin.users.role.${entry.params.from}`);
-                      params.to = t(`admin.users.role.${entry.params.to}`);
-                    }
-                    if (entry.kind === "changedSettings" && entry.params?.area) {
-                      params.area = t(`admin.users.settingsArea.${entry.params.area}`);
-                    }
-                    return (
-                      <li key={entry.id} className="relative flex gap-3 pb-4 last:pb-0">
-                        {index < list.length - 1 && (
-                          <span aria-hidden="true" className="absolute bottom-0 left-[13px] top-7 w-px bg-[var(--border-subtle)]" />
-                        )}
-                        <span
-                          aria-hidden="true"
-                          className={clsx(
-                            "relative grid h-7 w-7 flex-none place-items-center rounded-full border",
-                            administrative
-                              ? "border-[var(--gt-blue-200)] bg-[var(--surface-brand-wash)] text-[var(--gt-blue-700)]"
-                              : "border-[var(--border-subtle)] bg-[var(--admin-panel)] text-[var(--text-muted)]",
-                          )}
-                        >
-                          <Icon size={13} strokeWidth={2} />
-                        </span>
-                        <div className="grid min-w-0 gap-0.5 pt-0.5">
-                          <p className="m-0 text-[length:var(--text-body-sm)] text-[var(--text-primary)]">
-                            {t(`admin.users.activity.${entry.kind}`, params)}
-                          </p>
-                          <time
-                            dateTime={entry.at}
-                            title={formatDateTime(entry.at, locale)}
-                            className="text-[11px] text-[var(--text-muted)]"
-                          >
-                            {formatRelative(entry.at, locale)} · {formatDateTime(entry.at, locale)}
-                          </time>
-                        </div>
-                      </li>
-                    );
-                  })}
-                </ol>
-              </section>
             </div>
           </SheetBody>
 
           <SheetFooter>
-            <AdminButton variant="ghost" iconLeft={Trash2} disabled={Boolean(guard)} onClick={onDelete} className="text-[var(--status-error-fg)] hover:bg-[var(--status-error-bg)] hover:text-[var(--status-error-fg)]">
-              {t("admin.users.deleteUser")}
-            </AdminButton>
+            {user.status === "invited" && (
+              <AdminButton
+                variant="ghost"
+                iconLeft={MailX}
+                disabled={Boolean(guard)}
+                onClick={onCancelInvitation}
+                className="text-[var(--status-error-fg)] hover:bg-[var(--status-error-bg)] hover:text-[var(--status-error-fg)]"
+              >
+                {t("admin.users.cancelInvitation")}
+              </AdminButton>
+            )}
             <span className="ml-auto flex flex-wrap items-center gap-2">
-              {user.status === "suspended" ? (
-                <AdminButton variant="outline" iconLeft={CircleCheck} onClick={onReactivate}>
+              {user.status === "suspended" || user.status === "deactivated" ? (
+                <AdminButton variant="outline" iconLeft={CircleCheck} disabled={Boolean(guard)} onClick={onReactivate}>
                   {t("admin.users.reactivate")}
                 </AdminButton>
               ) : (
@@ -339,7 +247,13 @@ export function UserDetailDrawer({
                   {t("admin.users.suspend")}
                 </AdminButton>
               )}
-              <AdminButton variant="primary" iconLeft={Pencil} onClick={onEdit} data-user-edit-trigger>
+              <AdminButton
+                variant="primary"
+                iconLeft={Pencil}
+                disabled={blocksEditing(guard)}
+                onClick={onEdit}
+                data-user-edit-trigger
+              >
                 {t("admin.users.editUser")}
               </AdminButton>
             </span>

@@ -1,6 +1,6 @@
 "use client";
 
-import { useCallback, useEffect, useMemo, useRef, useState } from "react";
+import { useCallback, useMemo, useState } from "react";
 import { useTranslation } from "react-i18next";
 import { useSearchParams } from "../../lib/navigation";
 import { UserPlus } from "lucide-react";
@@ -11,12 +11,12 @@ import { Pagination } from "../../components/admin/Pagination";
 import { RoleMatrix } from "../../components/admin/RolePermissions";
 import { ROLE_META } from "../../components/admin/userMeta";
 import { UserDetailDrawer } from "../../components/admin/UserDetailDrawer";
-import { DeleteUserDialog, RoleChangeDialog, SuspendUserDialog } from "../../components/admin/UserDialogs";
+import { CancelInvitationDialog, RoleChangeDialog, SuspendUserDialog } from "../../components/admin/UserDialogs";
 import { UserForm } from "../../components/admin/UserForm";
 import { UserMetricsRow } from "../../components/admin/UserMetricsRow";
-import { NoUserResults, NoUsersYet, UserCardList, UsersSkeleton, UsersTable } from "../../components/admin/UsersTable";
+import { NoUserResults, NoUsersYet, UserCardList, UsersLoadProblem, UsersSkeleton, UsersTable } from "../../components/admin/UsersTable";
 import { UsersToolbar } from "../../components/admin/UsersToolbar";
-import { useAdminUsers, type UserDraft } from "../../lib/adminUsers";
+import { useAdminUsers, type UserDraft, type UserWriteError } from "../../lib/adminUsers";
 import {
   DEFAULT_USER_PAGE_SIZE,
   DEFAULT_USER_SORT,
@@ -30,7 +30,7 @@ import {
   type UserSortKey,
 } from "../../lib/adminUserFilters";
 import { useToast } from "../../lib/toast";
-import { CURRENT_USER_ID, USER_ROLES, userName, type AdminUser, type UserRole } from "../../data/adminUsers";
+import { USER_ROLES, userName, type AdminUser, type UserRole } from "../../data/adminUsers";
 import { useAdminShell } from "./AdminLayout";
 
 /**
@@ -51,41 +51,43 @@ import { useAdminShell } from "./AdminLayout";
  * - **This component** holds what is genuinely transient: which dialog is open
  *   and which request is in flight.
  *
- * Front-end only. The guards here (you cannot demote yourself, the last
- * administrator cannot be removed) are courtesies that explain the rules; the
- * rules themselves belong on the server, behind RBAC and an audit log.
+ * The team, the permission matrix and every change live in Supabase
+ * (`lib/adminUsers.tsx`). What the signed-in member may do comes from
+ * `my_permissions()` and only decides what is offered: the guards here explain
+ * the database's rules (`private.guard_profile_update()`), which refuse the
+ * same actions anyway — a refusal is shown as such, never as a success.
  */
-
-/** How long the simulated fetch shows skeleton rows. */
-const INITIAL_LOAD = 700;
-const FILTER_DELAY = 380;
-
-/** Query keys that change what the list shows — the drawer's own key is not one. */
-const LIST_KEYS = [
-  USER_PARAM.search,
-  USER_PARAM.role,
-  USER_PARAM.status,
-  USER_PARAM.activity,
-  USER_PARAM.sort,
-  USER_PARAM.page,
-  USER_PARAM.pageSize,
-];
 
 const EMPTY_DRAFT: UserDraft = {
   firstName: "",
   lastName: "",
   email: "",
   role: "readOnly",
-  status: "invited",
   jobTitle: "",
-  team: "operations",
+  team: "",
 };
 
 export function Users() {
   const { t } = useTranslation();
   const { openNav } = useAdminShell();
   const { showToast } = useToast();
-  const { users, createUser, updateUser, changeRole, setStatus, resendInvitation, deleteUser } = useAdminUsers();
+  const {
+    users,
+    loading,
+    failed,
+    available,
+    reload,
+    currentUserId,
+    permissions,
+    callerRank,
+    inviteUser,
+    updateUser,
+    changeRole,
+    setStatus,
+    resendInvitation,
+    cancelInvitation,
+  } = useAdminUsers();
+  const canManage = permissions.has("manage_users");
   const [params, setParams] = useSearchParams();
 
   const filters = useMemo(() => readUserFilters(params), [params]);
@@ -147,26 +149,6 @@ export function Users() {
   const filtered = useMemo(() => applyUserFilters(users, filters), [users, filters]);
   const page = useMemo(() => paginateUsers(filtered, filters), [filtered, filters]);
 
-  // The first visit shows the loading state a real fetch would have.
-  const [loading, setLoading] = useState(true);
-  useEffect(() => {
-    const id = setTimeout(() => setLoading(false), INITIAL_LOAD);
-    return () => clearTimeout(id);
-  }, []);
-
-  // A short flash on every change to what the list shows — keyed on the list's
-  // own query keys, so opening a profile does not blank the table behind it.
-  const listSignature = LIST_KEYS.map((key) => `${key}=${params.get(key) ?? ""}`).join("&");
-  const lastSignature = useRef(listSignature);
-  const [pending, setPending] = useState(false);
-  useEffect(() => {
-    if (lastSignature.current === listSignature) return;
-    lastSignature.current = listSignature;
-    setPending(true);
-    const id = setTimeout(() => setPending(false), FILTER_DELAY);
-    return () => clearTimeout(id);
-  }, [listSignature]);
-
   /* ---------------------------------------------------------------------- */
   /* Drawer                                                                 */
   /* ---------------------------------------------------------------------- */
@@ -206,25 +188,28 @@ export function Users() {
     setParams(next, { replace: true });
   }, [params, setParams, setEditingId, setEditError]);
 
-  const guardOf = useCallback((user: AdminUser) => guardFor(user, users, CURRENT_USER_ID), [users]);
+  const guardOf = useCallback(
+    (user: AdminUser) => guardFor(user, users, { currentUserId, canManage, callerRank }),
+    [users, currentUserId, canManage, callerRank],
+  );
 
   /* ---------------------------------------------------------------------- */
   /* Writes                                                                 */
   /* ---------------------------------------------------------------------- */
 
   const roleLabel = (role: UserRole) => t(`admin.users.role.${role}`);
+  const reason = (error: UserWriteError) => t(`admin.users.toastError.${error}`);
 
   const saveEdit = async (user: AdminUser, draft: UserDraft) => {
     setEditSubmitting(true);
     const result = await updateUser(user.id, draft);
     setEditSubmitting(false);
     if (!result.ok) {
-      if (result.error === "emailTaken") setEditError(t("admin.users.errorEmailTaken"));
-      showToast(t("admin.users.toastSaveErrorTitle"), t(`admin.users.toastError.${result.error}`), "error");
+      showToast(t("admin.users.toastSaveErrorTitle"), reason(result.error), "error");
       return false;
     }
     setEditingId(null);
-    showToast(t("admin.users.toastSavedTitle"), t("admin.users.toastSavedBody", { name: userName(result.user) }));
+    showToast(t("admin.users.toastSavedTitle"), t("admin.users.toastSavedBody", { name: userName({ ...draft }) }));
     return true;
   };
 
@@ -238,7 +223,7 @@ export function Users() {
     const { user, draft } = roleTarget;
     setRoleSubmitting(true);
     if (draft) {
-      // A failed save leaves the form open with the error on its field.
+      // A failed save leaves the form open, its draft intact.
       await saveEdit(user, { ...draft, role });
       setRoleSubmitting(false);
       setRoleTarget(null);
@@ -248,7 +233,7 @@ export function Users() {
     setRoleSubmitting(false);
     setRoleTarget(null);
     if (!result.ok) {
-      showToast(t("admin.users.toastRoleErrorTitle"), t(`admin.users.toastError.${result.error}`), "error");
+      showToast(t("admin.users.toastRoleErrorTitle"), reason(result.error), "error");
       return;
     }
     showToast(t("admin.users.toastRoleTitle"), t("admin.users.toastRoleBody", { name: userName(user), role: roleLabel(role) }));
@@ -265,7 +250,7 @@ export function Users() {
     setSuspendSubmitting(false);
     setSuspendTarget(null);
     if (!result.ok) {
-      showToast(t("admin.users.toastStatusErrorTitle"), t(`admin.users.toastError.${result.error}`), "error");
+      showToast(t("admin.users.toastStatusErrorTitle"), reason(result.error), "error");
       return;
     }
     showToast(t("admin.users.toastSuspendedTitle"), t("admin.users.toastSuspendedBody", { name: userName(suspendTarget) }), "warning");
@@ -274,7 +259,7 @@ export function Users() {
   const reactivate = async (user: AdminUser) => {
     const result = await setStatus(user.id, "active");
     if (!result.ok) {
-      showToast(t("admin.users.toastStatusErrorTitle"), t(`admin.users.toastError.${result.error}`), "error");
+      showToast(t("admin.users.toastStatusErrorTitle"), reason(result.error), "error");
       return;
     }
     showToast(t("admin.users.toastReactivatedTitle"), t("admin.users.toastReactivatedBody", { name: userName(user) }));
@@ -286,29 +271,29 @@ export function Users() {
     const result = await resendInvitation(user.id);
     setResendingId(null);
     if (result.ok) showToast(t("admin.users.toastResentTitle"), t("admin.users.toastResentBody", { email: user.email }), "info");
-    else showToast(t("admin.users.toastStatusErrorTitle"), t(`admin.users.toastError.${result.error}`), "error");
+    else showToast(t("admin.users.toastResendErrorTitle"), reason(result.error), "error");
   };
 
-  const [deleteTarget, setDeleteTarget] = useState<AdminUser | null>(null);
-  const [deleteSubmitting, setDeleteSubmitting] = useState(false);
-  const closeDelete = useCallback(() => setDeleteTarget(null), [setDeleteTarget]);
+  const [cancelTarget, setCancelTarget] = useState<AdminUser | null>(null);
+  const [cancelSubmitting, setCancelSubmitting] = useState(false);
+  const closeCancel = useCallback(() => setCancelTarget(null), [setCancelTarget]);
 
-  const confirmDelete = async () => {
-    if (!deleteTarget) return;
-    const target = deleteTarget;
-    setDeleteSubmitting(true);
-    const result = await deleteUser(target.id);
-    setDeleteSubmitting(false);
-    setDeleteTarget(null);
+  const confirmCancel = async () => {
+    if (!cancelTarget) return;
+    const target = cancelTarget;
+    setCancelSubmitting(true);
+    const result = await cancelInvitation(target.id);
+    setCancelSubmitting(false);
+    setCancelTarget(null);
     if (!result.ok) {
-      showToast(t("admin.users.toastDeleteErrorTitle"), t(`admin.users.toastError.${result.error}`), "error");
+      showToast(t("admin.users.toastCancelInviteErrorTitle"), reason(result.error), "error");
       return;
     }
     if (openId === target.id) closeProfile();
-    showToast(t("admin.users.toastDeletedTitle"), t("admin.users.toastDeletedBody", { name: userName(target) }));
+    showToast(t("admin.users.toastCancelInviteTitle"), t("admin.users.toastCancelInviteBody", { email: target.email }));
   };
 
-  // Add user
+  // Invite
   const [addOpen, setAddOpen] = useState(false);
   const [addSubmitting, setAddSubmitting] = useState(false);
   const [addError, setAddError] = useState<string>();
@@ -319,20 +304,21 @@ export function Users() {
 
   const submitAdd = async (draft: UserDraft) => {
     setAddSubmitting(true);
-    const result = await createUser(draft);
+    const result = await inviteUser(draft);
     setAddSubmitting(false);
     if (!result.ok) {
-      if (result.error === "emailTaken") setAddError(t("admin.users.errorEmailTaken"));
-      showToast(t("admin.users.toastCreateErrorTitle"), t(`admin.users.toastError.${result.error}`), "error");
+      if (result.error === "alreadyMember" || result.error === "accountUnavailable") setAddError(reason(result.error));
+      showToast(t("admin.users.toastCreateErrorTitle"), reason(result.error), "error");
       return;
     }
     setAddOpen(false);
     setAddError(undefined);
+    const email = draft.email.trim().toLowerCase();
     showToast(
       t("admin.users.toastCreatedTitle"),
-      draft.status === "invited"
-        ? t("admin.users.toastCreatedInvited", { email: result.user.email })
-        : t("admin.users.toastCreatedActive", { name: userName(result.user), role: roleLabel(result.user.role) }),
+      result.outcome === "promoted"
+        ? t("admin.users.toastPromoted", { email, role: roleLabel(draft.role) })
+        : t("admin.users.toastCreatedInvited", { email }),
     );
   };
 
@@ -352,7 +338,8 @@ export function Users() {
     onSuspend: (user: AdminUser) => setSuspendTarget(user),
     onReactivate: reactivate,
     onResend: resend,
-    onDelete: (user: AdminUser) => setDeleteTarget(user),
+    onCancelInvitation: (user: AdminUser) => setCancelTarget(user),
+    currentUserId,
   };
 
   const roleCounts = useMemo(
@@ -368,10 +355,13 @@ export function Users() {
         crumbs={[{ label: t("admin.nav.dashboard"), to: "/admin" }, { label: t("admin.users.title") }]}
         onOpenNav={openNav}
         actions={
-          <AdminButton variant="primary" iconLeft={UserPlus} onClick={() => setAddOpen(true)}>
-            <span className="hidden sm:inline">{t("admin.users.addUser")}</span>
-            <span className="sm:hidden">{t("admin.users.addUserShort")}</span>
-          </AdminButton>
+          // Offered to members holding manage_users only; the Edge Function checks it again.
+          canManage ? (
+            <AdminButton variant="primary" iconLeft={UserPlus} onClick={() => setAddOpen(true)}>
+              <span className="hidden sm:inline">{t("admin.users.addUser")}</span>
+              <span className="sm:hidden">{t("admin.users.addUserShort")}</span>
+            </AdminButton>
+          ) : undefined
         }
       />
 
@@ -395,10 +385,14 @@ export function Users() {
           />
         </div>
 
-        {loading || pending ? (
-          <UsersSkeleton rows={Math.min(8, Math.max(3, page.items.length || 6))} />
+        {!available ? (
+          <UsersLoadProblem />
+        ) : loading ? (
+          <UsersSkeleton rows={6} />
+        ) : failed ? (
+          <UsersLoadProblem onRetry={reload} />
         ) : users.length === 0 ? (
-          <NoUsersYet onAdd={() => setAddOpen(true)} />
+          <NoUsersYet onAdd={canManage ? () => setAddOpen(true) : undefined} />
         ) : filtered.length === 0 ? (
           <NoUserResults search={filters.search} onReset={onReset} />
         ) : (
@@ -516,7 +510,8 @@ export function Users() {
         onReactivate={() => openUser && void reactivate(openUser)}
         onResendInvitation={() => openUser && void resend(openUser)}
         resending={Boolean(openUser && resendingId === openUser.id)}
-        onDelete={() => openUser && setDeleteTarget(openUser)}
+        onCancelInvitation={() => openUser && setCancelTarget(openUser)}
+        isSelf={Boolean(openUser && openUser.id === currentUserId)}
       />
 
       <RoleChangeDialog
@@ -527,7 +522,7 @@ export function Users() {
         onConfirm={(role) => void confirmRole(role)}
       />
       <SuspendUserDialog user={suspendTarget} loading={suspendSubmitting} onClose={closeSuspend} onConfirm={() => void confirmSuspend()} />
-      <DeleteUserDialog user={deleteTarget} loading={deleteSubmitting} onClose={closeDelete} onConfirm={() => void confirmDelete()} />
+      <CancelInvitationDialog user={cancelTarget} loading={cancelSubmitting} onClose={closeCancel} onConfirm={() => void confirmCancel()} />
     </>
   );
 }

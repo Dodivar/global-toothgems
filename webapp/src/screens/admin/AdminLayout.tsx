@@ -55,7 +55,7 @@ export function AdminLayout({ children }: { children: ReactNode }) {
       <AdminCustomersProvider>
       {/* Staff accounts are independent of the commerce data; the provider
           sits here only so the list survives moving between sections. */}
-      <AdminUsersProvider actor={admin?.name ?? "Camille Dubois"}>
+      <AdminUsersProvider>
       {/* Settings drafts live above the pages so unsaved work survives a
           detour to another section of the admin. */}
       <AdminSettingsProvider>

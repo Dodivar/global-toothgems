@@ -5,12 +5,13 @@ import {
   ArrowUp,
   Ban,
   ChevronRight,
+  CircleAlert,
   CircleCheck,
   Eye,
   Pencil,
   RotateCcw,
+  MailX,
   SearchX,
-  Trash2,
   UserCog,
   UserPlus,
   UsersRound,
@@ -20,10 +21,9 @@ import { AdminButton } from "./AdminButton";
 import { OverflowMenu, type MenuAction } from "./OverflowMenu";
 import { LastActivity, RoleBadge, UserAvatar, UserStatusBadge, YouTag } from "./UserBadges";
 import { formatDate, useAdminLocale } from "./userMeta";
-import { useLocalized } from "../../lib/localized";
 import type { UserSortKey } from "../../lib/adminUserFilters";
-import type { GuardReason } from "../../lib/adminUserFilters";
-import { CURRENT_USER_ID, userName, type AdminUser } from "../../data/adminUsers";
+import { blocksEditing, type GuardReason } from "../../lib/adminUserFilters";
+import { userName, type AdminUser } from "../../data/adminUsers";
 
 /**
  * The user list: a table above `xl`, cards below it.
@@ -54,7 +54,9 @@ export interface UsersListProps {
   onSuspend: (user: AdminUser) => void;
   onReactivate: (user: AdminUser) => void;
   onResend: (user: AdminUser) => void;
-  onDelete: (user: AdminUser) => void;
+  onCancelInvitation: (user: AdminUser) => void;
+  /** The signed-in member's id: the "you" marker. */
+  currentUserId: string | null;
 }
 
 const headCell =
@@ -118,34 +120,31 @@ function SortableHead({
 function UserRowActions({ user, props }: { user: AdminUser; props: UsersListProps }) {
   const { t } = useTranslation();
   const guard = props.guardFor(user);
+  const locked = Boolean(guard);
   const actions: MenuAction[] = [
     { id: "view", label: t("admin.users.actionView"), icon: Eye, onSelect: () => props.onOpen(user) },
-    { id: "edit", label: t("admin.users.editUser"), icon: Pencil, onSelect: () => props.onEdit(user) },
-    {
-      id: "role",
-      label: t("admin.users.changeRole"),
-      icon: UserCog,
-      disabled: Boolean(guard),
-      onSelect: () => props.onChangeRole(user),
-    },
+    { id: "edit", label: t("admin.users.editUser"), icon: Pencil, disabled: blocksEditing(guard), onSelect: () => props.onEdit(user) },
+    { id: "role", label: t("admin.users.changeRole"), icon: UserCog, disabled: locked, onSelect: () => props.onChangeRole(user) },
   ];
   if (user.status === "invited") {
-    actions.push({ id: "resend", label: t("admin.users.resendInvitation"), icon: RotateCcw, onSelect: () => props.onResend(user) });
+    actions.push({ id: "resend", label: t("admin.users.resendInvitation"), icon: RotateCcw, disabled: locked, onSelect: () => props.onResend(user) });
   }
   actions.push(
-    user.status === "suspended"
-      ? { id: "reactivate", label: t("admin.users.reactivate"), icon: CircleCheck, onSelect: () => props.onReactivate(user) }
-      : { id: "suspend", label: t("admin.users.suspend"), icon: Ban, disabled: Boolean(guard), onSelect: () => props.onSuspend(user) },
+    user.status === "suspended" || user.status === "deactivated"
+      ? { id: "reactivate", label: t("admin.users.reactivate"), icon: CircleCheck, disabled: locked, onSelect: () => props.onReactivate(user) }
+      : { id: "suspend", label: t("admin.users.suspend"), icon: Ban, disabled: locked, onSelect: () => props.onSuspend(user) },
   );
-  actions.push({
-    id: "delete",
-    label: t("admin.users.deleteUser"),
-    icon: Trash2,
-    tone: "danger",
-    separated: true,
-    disabled: Boolean(guard),
-    onSelect: () => props.onDelete(user),
-  });
+  if (user.status === "invited") {
+    actions.push({
+      id: "cancel-invitation",
+      label: t("admin.users.cancelInvitation"),
+      icon: MailX,
+      tone: "danger",
+      separated: true,
+      disabled: locked,
+      onSelect: () => props.onCancelInvitation(user),
+    });
+  }
 
   return (
     <OverflowMenu
@@ -159,7 +158,6 @@ function UserRowActions({ user, props }: { user: AdminUser; props: UsersListProp
 export function UsersTable(props: UsersListProps) {
   const { t } = useTranslation();
   const locale = useAdminLocale();
-  const localized = useLocalized();
   const { users, sort, onSort, hrefFor, onOpen } = props;
 
   return (
@@ -209,7 +207,7 @@ export function UsersTable(props: UsersListProps) {
           </thead>
           <tbody>
             {users.map((user) => {
-              const suspended = user.status === "suspended";
+              const suspended = user.status === "suspended" || user.status === "deactivated";
               return (
                 <tr
                   key={user.id}
@@ -238,9 +236,9 @@ export function UsersTable(props: UsersListProps) {
                           >
                             {userName(user)}
                           </Link>
-                          {user.id === CURRENT_USER_ID && <YouTag />}
+                          {user.id === props.currentUserId && <YouTag />}
                         </span>
-                        <span className="truncate text-[12px] text-[var(--text-muted)]">{localized(user.jobTitle)}</span>
+                        <span className="truncate text-[12px] text-[var(--text-muted)]">{user.jobTitle}</span>
                       </span>
                     </span>
                   </td>
@@ -290,13 +288,12 @@ export function UsersTable(props: UsersListProps) {
 export function UserCardList(props: UsersListProps) {
   const { t } = useTranslation();
   const locale = useAdminLocale();
-  const localized = useLocalized();
   const { users, hrefFor, onOpen } = props;
 
   return (
     <ul className="m-0 grid list-none gap-2.5 p-0 md:grid-cols-2 xl:hidden">
       {users.map((user) => {
-        const suspended = user.status === "suspended";
+        const suspended = user.status === "suspended" || user.status === "deactivated";
         return (
           <li key={user.id} className="min-w-0">
             <article className="relative grid h-full gap-3 overflow-hidden rounded-[var(--radius-card)] border border-[var(--border-subtle)] bg-[var(--surface-card)] p-4 shadow-[var(--shadow-xs)]">
@@ -308,7 +305,7 @@ export function UserCardList(props: UsersListProps) {
                     <h3 className="m-0 truncate text-[length:var(--text-body-md)] font-[var(--weight-bold)] text-[var(--text-primary)]">
                       {userName(user)}
                     </h3>
-                    {user.id === CURRENT_USER_ID && <YouTag />}
+                    {user.id === props.currentUserId && <YouTag />}
                   </span>
                   <a
                     href={`mailto:${user.email}`}
@@ -316,7 +313,7 @@ export function UserCardList(props: UsersListProps) {
                   >
                     {user.email}
                   </a>
-                  <span className="truncate text-[11px] text-[var(--text-muted)]">{localized(user.jobTitle)}</span>
+                  <span className="truncate text-[11px] text-[var(--text-muted)]">{user.jobTitle}</span>
                 </div>
                 <UserRowActions user={user} props={props} />
               </div>
@@ -417,7 +414,7 @@ export function NoUserResults({ search, onReset }: { search: string; onReset: ()
   );
 }
 
-export function NoUsersYet({ onAdd }: { onAdd: () => void }) {
+export function NoUsersYet({ onAdd }: { onAdd?: () => void }) {
   const { t } = useTranslation();
   return (
     <div className="grid justify-items-center gap-3 rounded-[var(--radius-card)] border border-dashed border-[var(--border-default)] bg-[var(--surface-card)] px-6 py-[clamp(32px,7vw,64px)] text-center">
@@ -426,9 +423,39 @@ export function NoUsersYet({ onAdd }: { onAdd: () => void }) {
       </span>
       <h2 className="text-[length:var(--text-h4)]">{t("admin.users.emptyTitle")}</h2>
       <p className="m-0 max-w-[44ch] text-[length:var(--text-body-sm)] text-[var(--text-muted)]">{t("admin.users.emptyBody")}</p>
-      <AdminButton variant="primary" iconLeft={UserPlus} onClick={onAdd}>
-        {t("admin.users.addUser")}
-      </AdminButton>
+      {onAdd && (
+        <AdminButton variant="primary" iconLeft={UserPlus} onClick={onAdd}>
+          {t("admin.users.addUser")}
+        </AdminButton>
+      )}
+    </div>
+  );
+}
+
+/**
+ * The team could not be read (network, or the database refused). Said as
+ * such — an empty list here would read as "nobody has access", which is false.
+ * Without a database (local mock mode) there is no team to read at all.
+ */
+export function UsersLoadProblem({ onRetry }: { onRetry?: () => void }) {
+  const { t } = useTranslation();
+  return (
+    <div
+      role="alert"
+      className="grid justify-items-center gap-3 rounded-[var(--radius-card)] border border-dashed border-[var(--border-default)] bg-[var(--surface-card)] px-6 py-[clamp(32px,7vw,64px)] text-center"
+    >
+      <span aria-hidden="true" className="grid h-12 w-12 place-items-center rounded-[var(--radius-lg)] bg-[var(--status-error-bg)] text-[var(--status-error-fg)]">
+        <CircleAlert size={22} />
+      </span>
+      <h2 className="text-[length:var(--text-h4)]">{t(onRetry ? "admin.users.loadErrorTitle" : "admin.users.unavailableTitle")}</h2>
+      <p className="m-0 max-w-[46ch] text-[length:var(--text-body-sm)] text-[var(--text-muted)]">
+        {t(onRetry ? "admin.users.loadErrorBody" : "admin.users.unavailableBody")}
+      </p>
+      {onRetry && (
+        <AdminButton variant="outline" iconLeft={RotateCcw} onClick={onRetry}>
+          {t("admin.users.retry")}
+        </AdminButton>
+      )}
     </div>
   );
 }

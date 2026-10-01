@@ -62,10 +62,12 @@ supabase/
   tests/iteration20_validation.sql  iteration 20 Academy authoring suite (always rolls back)
   tests/iteration21_validation.sql  iteration 21 Academy public pages (what visitors and customers read) suite (always rolls back)
   tests/admin_orders_validation.sql back-office order book: what staff read, viewer/customer/visitor refusals (always rolls back)
-  config.toml   CLI settings this repo relies on (verify_jwt of the two Edge Functions)
-  functions/    Edge Functions (Deno): create-checkout-session, stripe-webhook, _shared/ (pure modules + clients),
+  tests/admin_users_validation.sql  back-office team: viewer read-only, manager rank limits, no self change, customer/suspended/visitor refusals, audit (always rolls back)
+  config.toml   CLI settings this repo relies on (verify_jwt of the Edge Functions)
+  functions/    Edge Functions (Deno): create-checkout-session, stripe-webhook, invite-staff-member, _shared/ (pure modules + clients),
                 *_test.ts (deno test), .env.example (secret names)
   templates/confirm-signup.html     French "Confirm signup" email, to paste into the Auth settings
+  templates/invite-staff.html       French "Invite user" email (team invitations), to paste into the Auth settings
 ```
 
 ## Migrations
@@ -455,9 +457,40 @@ Mirrors the Users workspace (`webapp/src/data/adminUsers.ts`, `lib/adminUserFilt
 - `my_permissions()` gives the signed-in user's permissions (navigation only — the database checks every call).
 - `private.is_admin()` is kept for compatibility but no policy or function uses it any more.
 
-**Inviting a team member** (server code with the service role): `auth.admin.inviteUserByEmail()` → set
-`profiles.role` → insert `staff_profiles`. Check first, with the caller's JWT, that `my_permissions()` contains
-`manage_users` — the database then enforces the rank rules on the role change.
+**Inviting a team member**: Edge Function `invite-staff-member` (see *Team invitations* below).
+
+### Team invitations (Edge Function `invite-staff-member`)
+
+```
+back office  POST functions/v1/invite-staff-member  (caller's JWT; verify_jwt = false, checked inside)
+               → auth.getUser(token); my_permissions() READ WITH THE CALLER'S JWT must hold manage_users
+                 (otherwise 401/403 before any lookup: nothing is revealed about an address)
+               → strict input (invite-staff-member/input.ts): action invite {email, first_name, last_name,
+                 role viewer|manager|admin, team, job_title?} | resend {user_id} | cancel {user_id}
+  invite       → target role rank > caller rank → rank_forbidden, before any e-mail
+               → no account: auth.admin.inviteUserByEmail(email, redirectTo = <allowed origin>/auth/confirm
+                 ?next=/reinitialiser-mot-de-passe, data {first_name, last_name}) [service role], then
+                 app_metadata.staff_invitation = true [service role]
+               → active customer: promoted, no e-mail (keeps their password and their own names)
+               → already staff: already_member (the same pending invitation retried answers "invited")
+               → UPDATE profiles (role, names) + UPSERT staff_profiles WITH THE CALLER'S JWT → RLS,
+                 guard_profile_update() and guard_staff_profile() apply the rank rules and audit;
+                 refused → the account this call created is deleted again
+  resend       → pending invitation only (never signed in, e-mail unconfirmed), explicit rank check,
+                 inviteUserByEmail again (Supabase re-sends to an unconfirmed user)
+  cancel       → pending invitation created by this function only (app_metadata.staff_invitation): staff row
+                 deleted + role back to customer WITH THE CALLER'S JWT, then auth.admin.deleteUser [service role]
+```
+
+Error codes: `invalid_request`, `unauthorized`, `forbidden`, `rank_forbidden`, `already_member`,
+`account_unavailable` (suspended customer), `not_pending`, `not_found`, `rate_limited`, `server_error`. Auth and SQL
+messages are logged, never returned. Unit tests: `cd supabase/functions && deno test invite-staff-member`.
+
+**Deploy (after the user's go-ahead):** `supabase functions deploy invite-staff-member` (`verify_jwt = false` from
+`config.toml`). Secrets: `SITE_URL` and `ALLOWED_RETURN_ORIGINS` (already used by checkout) build the invitation
+link; `SUPABASE_URL`, `SUPABASE_ANON_KEY` and `SUPABASE_SERVICE_ROLE_KEY` are provided by Supabase. Auth dashboard
+(user's settings): paste `templates/invite-staff.html` into Emails → *Invite user*; `<SITE_URL>/auth/confirm` must be
+in the redirect allow-list (already needed by sign-up); SMTP sender limits apply to invitations.
 
 ### Promotions (iteration 6)
 
@@ -1002,6 +1035,14 @@ VAT rates, shipping zones/rates mirroring the Settings prototype. Media rows ref
     by design. A buyer's "spent" on the order page is the member area's rule (recorded totals of paid orders that
     stand, less refunds).
 
+50. **Team invitations** (agent, 2026-10-01, to confirm): an existing active customer invited by address is promoted
+    in place without an e-mail (their account, password and names are kept); a suspended customer is refused.
+    Cancelling a pending invitation deletes the auth account only when this function created it and it was never
+    used (`app_metadata.staff_invitation`, never signed in, unconfirmed). **Not implemented, decisions for the owner:**
+    permanent deletion of a staff account that has been used (suspend instead), mandatory two-factor for staff
+    (`staff_directory()` only reports it), a single "owner" role above administrators (today administrators can
+    demote each other; the screen only keeps the last active administrator in place, the database does not).
+
 ## Done
 
 - Iteration 2: translations, shipping zones/rates, VAT rates, stock reservations + ledger,
@@ -1042,6 +1083,9 @@ VAT rates, shipping zones/rates mirroring the Settings prototype. Media rows ref
   change, `admin_save_product()` family input, visitor RLS on families and their translations.
 - Iteration 18 ("My orders"): internal order notes out of the customer's reach
   (`order_notes`), isolation suite for everything the member area reads of an order.
+- Back-office team (`/admin/utilisateurs`): Edge Function `invite-staff-member` (invite, promote a customer, resend,
+  cancel a pending invitation), screen on `staff_directory()` / `my_permissions()` / the matrix tables,
+  `admin_users_validation.sql`. No schema change.
 - Iteration 20: Academy authoring — courses, modules, steps, content blocks, quizzes, training media library
   (private bucket), course price and course promotions, publication rules, `admin_save_course()`.
 - Iteration 21: Academy public pages (phase B) — outline, cover and current price of published courses readable by
