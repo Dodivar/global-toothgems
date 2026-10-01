@@ -386,8 +386,22 @@ export type Database = {
             foreignKeyName: "category_families_created_by_fkey"
             columns: ["created_by"]
             isOneToOne: false
+            referencedRelation: "loyalty_overview"
+            referencedColumns: ["user_id"]
+          },
+          {
+            foreignKeyName: "category_families_created_by_fkey"
+            columns: ["created_by"]
+            isOneToOne: false
             referencedRelation: "profiles"
             referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "category_families_updated_by_fkey"
+            columns: ["updated_by"]
+            isOneToOne: false
+            referencedRelation: "loyalty_overview"
+            referencedColumns: ["user_id"]
           },
           {
             foreignKeyName: "category_families_updated_by_fkey"
@@ -446,6 +460,13 @@ export type Database = {
             isOneToOne: false
             referencedRelation: "languages"
             referencedColumns: ["code"]
+          },
+          {
+            foreignKeyName: "category_family_translations_updated_by_fkey"
+            columns: ["updated_by"]
+            isOneToOne: false
+            referencedRelation: "loyalty_overview"
+            referencedColumns: ["user_id"]
           },
           {
             foreignKeyName: "category_family_translations_updated_by_fkey"
@@ -1073,6 +1094,669 @@ export type Database = {
           },
           {
             foreignKeyName: "content_pages_updated_by_fkey"
+            columns: ["updated_by"]
+            isOneToOne: false
+            referencedRelation: "profiles"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      course_block_translations: {
+        Row: {
+          alt_text: string | null
+          block_id: string
+          body_html: string | null
+          caption: string | null
+          created_at: string
+          locale: string
+          status: string
+          title: string | null
+          updated_at: string
+        }
+        Insert: {
+          alt_text?: string | null
+          block_id: string
+          body_html?: string | null
+          caption?: string | null
+          created_at?: string
+          locale: string
+          status?: string
+          title?: string | null
+          updated_at?: string
+        }
+        Update: {
+          alt_text?: string | null
+          block_id?: string
+          body_html?: string | null
+          caption?: string | null
+          created_at?: string
+          locale?: string
+          status?: string
+          title?: string | null
+          updated_at?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "course_block_translations_block_id_fkey"
+            columns: ["block_id"]
+            isOneToOne: false
+            referencedRelation: "course_blocks"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "course_block_translations_locale_fkey"
+            columns: ["locale"]
+            isOneToOne: false
+            referencedRelation: "languages"
+            referencedColumns: ["code"]
+          },
+        ]
+      }
+      course_blocks: {
+        Row: {
+          align: string | null
+          alt_text: string | null
+          body_html: string | null
+          caption: string | null
+          created_at: string
+          duration_seconds: number | null
+          id: string
+          kind: string
+          media_id: string | null
+          position: number
+          poster_media_id: string | null
+          step_id: string
+          title: string | null
+          updated_at: string
+        }
+        Insert: {
+          align?: string | null
+          alt_text?: string | null
+          body_html?: string | null
+          caption?: string | null
+          created_at?: string
+          duration_seconds?: number | null
+          id?: string
+          kind: string
+          media_id?: string | null
+          position: number
+          poster_media_id?: string | null
+          step_id: string
+          title?: string | null
+          updated_at?: string
+        }
+        Update: {
+          align?: string | null
+          alt_text?: string | null
+          body_html?: string | null
+          caption?: string | null
+          created_at?: string
+          duration_seconds?: number | null
+          id?: string
+          kind?: string
+          media_id?: string | null
+          position?: number
+          poster_media_id?: string | null
+          step_id?: string
+          title?: string | null
+          updated_at?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "course_blocks_media_id_fkey"
+            columns: ["media_id"]
+            isOneToOne: false
+            referencedRelation: "training_media"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "course_blocks_poster_media_id_fkey"
+            columns: ["poster_media_id"]
+            isOneToOne: false
+            referencedRelation: "training_media"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "course_blocks_step_id_fkey"
+            columns: ["step_id"]
+            isOneToOne: false
+            referencedRelation: "course_steps"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      course_module_translations: {
+        Row: {
+          created_at: string
+          description: string | null
+          locale: string
+          module_id: string
+          objectives: string[]
+          status: string
+          title: string
+          updated_at: string
+        }
+        Insert: {
+          created_at?: string
+          description?: string | null
+          locale: string
+          module_id: string
+          objectives?: string[]
+          status?: string
+          title: string
+          updated_at?: string
+        }
+        Update: {
+          created_at?: string
+          description?: string | null
+          locale?: string
+          module_id?: string
+          objectives?: string[]
+          status?: string
+          title?: string
+          updated_at?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "course_module_translations_locale_fkey"
+            columns: ["locale"]
+            isOneToOne: false
+            referencedRelation: "languages"
+            referencedColumns: ["code"]
+          },
+          {
+            foreignKeyName: "course_module_translations_module_id_fkey"
+            columns: ["module_id"]
+            isOneToOne: false
+            referencedRelation: "course_modules"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      course_modules: {
+        Row: {
+          course_id: string
+          cover_media_id: string | null
+          created_at: string
+          description: string | null
+          id: string
+          objectives: string[]
+          position: number
+          title: string
+          updated_at: string
+        }
+        Insert: {
+          course_id: string
+          cover_media_id?: string | null
+          created_at?: string
+          description?: string | null
+          id?: string
+          objectives?: string[]
+          position: number
+          title: string
+          updated_at?: string
+        }
+        Update: {
+          course_id?: string
+          cover_media_id?: string | null
+          created_at?: string
+          description?: string | null
+          id?: string
+          objectives?: string[]
+          position?: number
+          title?: string
+          updated_at?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "course_modules_course_id_fkey"
+            columns: ["course_id"]
+            isOneToOne: false
+            referencedRelation: "course_current_prices"
+            referencedColumns: ["course_id"]
+          },
+          {
+            foreignKeyName: "course_modules_course_id_fkey"
+            columns: ["course_id"]
+            isOneToOne: false
+            referencedRelation: "courses"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "course_modules_cover_media_id_fkey"
+            columns: ["cover_media_id"]
+            isOneToOne: false
+            referencedRelation: "training_media"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      course_promotions: {
+        Row: {
+          course_id: string
+          created_at: string
+          created_by: string | null
+          discount_type: string
+          discount_value: number
+          ends_at: string | null
+          id: string
+          is_active: boolean
+          label: string
+          starts_at: string
+          updated_at: string
+        }
+        Insert: {
+          course_id: string
+          created_at?: string
+          created_by?: string | null
+          discount_type: string
+          discount_value: number
+          ends_at?: string | null
+          id?: string
+          is_active?: boolean
+          label: string
+          starts_at: string
+          updated_at?: string
+        }
+        Update: {
+          course_id?: string
+          created_at?: string
+          created_by?: string | null
+          discount_type?: string
+          discount_value?: number
+          ends_at?: string | null
+          id?: string
+          is_active?: boolean
+          label?: string
+          starts_at?: string
+          updated_at?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "course_promotions_course_id_fkey"
+            columns: ["course_id"]
+            isOneToOne: false
+            referencedRelation: "course_current_prices"
+            referencedColumns: ["course_id"]
+          },
+          {
+            foreignKeyName: "course_promotions_course_id_fkey"
+            columns: ["course_id"]
+            isOneToOne: false
+            referencedRelation: "courses"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "course_promotions_created_by_fkey"
+            columns: ["created_by"]
+            isOneToOne: false
+            referencedRelation: "loyalty_overview"
+            referencedColumns: ["user_id"]
+          },
+          {
+            foreignKeyName: "course_promotions_created_by_fkey"
+            columns: ["created_by"]
+            isOneToOne: false
+            referencedRelation: "profiles"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      course_quiz_translations: {
+        Row: {
+          created_at: string
+          intro: string | null
+          locale: string
+          quiz_id: string
+          status: string
+          title: string
+          updated_at: string
+        }
+        Insert: {
+          created_at?: string
+          intro?: string | null
+          locale: string
+          quiz_id: string
+          status?: string
+          title: string
+          updated_at?: string
+        }
+        Update: {
+          created_at?: string
+          intro?: string | null
+          locale?: string
+          quiz_id?: string
+          status?: string
+          title?: string
+          updated_at?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "course_quiz_translations_locale_fkey"
+            columns: ["locale"]
+            isOneToOne: false
+            referencedRelation: "languages"
+            referencedColumns: ["code"]
+          },
+          {
+            foreignKeyName: "course_quiz_translations_quiz_id_fkey"
+            columns: ["quiz_id"]
+            isOneToOne: false
+            referencedRelation: "course_quizzes"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      course_quizzes: {
+        Row: {
+          allow_retry: boolean
+          created_at: string
+          id: string
+          immediate_feedback: boolean
+          intro: string | null
+          max_attempts: number
+          module_id: string
+          passing_score: number
+          show_answers: boolean
+          shuffle_answers: boolean
+          title: string
+          updated_at: string
+        }
+        Insert: {
+          allow_retry?: boolean
+          created_at?: string
+          id?: string
+          immediate_feedback?: boolean
+          intro?: string | null
+          max_attempts?: number
+          module_id: string
+          passing_score?: number
+          show_answers?: boolean
+          shuffle_answers?: boolean
+          title: string
+          updated_at?: string
+        }
+        Update: {
+          allow_retry?: boolean
+          created_at?: string
+          id?: string
+          immediate_feedback?: boolean
+          intro?: string | null
+          max_attempts?: number
+          module_id?: string
+          passing_score?: number
+          show_answers?: boolean
+          shuffle_answers?: boolean
+          title?: string
+          updated_at?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "course_quizzes_module_id_fkey"
+            columns: ["module_id"]
+            isOneToOne: true
+            referencedRelation: "course_modules"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      course_step_translations: {
+        Row: {
+          created_at: string
+          locale: string
+          status: string
+          step_id: string
+          summary: string | null
+          title: string
+          updated_at: string
+        }
+        Insert: {
+          created_at?: string
+          locale: string
+          status?: string
+          step_id: string
+          summary?: string | null
+          title: string
+          updated_at?: string
+        }
+        Update: {
+          created_at?: string
+          locale?: string
+          status?: string
+          step_id?: string
+          summary?: string | null
+          title?: string
+          updated_at?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "course_step_translations_locale_fkey"
+            columns: ["locale"]
+            isOneToOne: false
+            referencedRelation: "languages"
+            referencedColumns: ["code"]
+          },
+          {
+            foreignKeyName: "course_step_translations_step_id_fkey"
+            columns: ["step_id"]
+            isOneToOne: false
+            referencedRelation: "course_steps"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      course_steps: {
+        Row: {
+          created_at: string
+          duration_minutes: number
+          id: string
+          module_id: string
+          position: number
+          summary: string | null
+          title: string
+          updated_at: string
+        }
+        Insert: {
+          created_at?: string
+          duration_minutes?: number
+          id?: string
+          module_id: string
+          position: number
+          summary?: string | null
+          title: string
+          updated_at?: string
+        }
+        Update: {
+          created_at?: string
+          duration_minutes?: number
+          id?: string
+          module_id?: string
+          position?: number
+          summary?: string | null
+          title?: string
+          updated_at?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "course_steps_module_id_fkey"
+            columns: ["module_id"]
+            isOneToOne: false
+            referencedRelation: "course_modules"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      course_translations: {
+        Row: {
+          course_id: string
+          created_at: string
+          description: string | null
+          locale: string
+          objectives: string[]
+          requirements: string[]
+          short_description: string | null
+          slug: string | null
+          status: string
+          title: string
+          updated_at: string
+        }
+        Insert: {
+          course_id: string
+          created_at?: string
+          description?: string | null
+          locale: string
+          objectives?: string[]
+          requirements?: string[]
+          short_description?: string | null
+          slug?: string | null
+          status?: string
+          title: string
+          updated_at?: string
+        }
+        Update: {
+          course_id?: string
+          created_at?: string
+          description?: string | null
+          locale?: string
+          objectives?: string[]
+          requirements?: string[]
+          short_description?: string | null
+          slug?: string | null
+          status?: string
+          title?: string
+          updated_at?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "course_translations_course_id_fkey"
+            columns: ["course_id"]
+            isOneToOne: false
+            referencedRelation: "course_current_prices"
+            referencedColumns: ["course_id"]
+          },
+          {
+            foreignKeyName: "course_translations_course_id_fkey"
+            columns: ["course_id"]
+            isOneToOne: false
+            referencedRelation: "courses"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "course_translations_locale_fkey"
+            columns: ["locale"]
+            isOneToOne: false
+            referencedRelation: "languages"
+            referencedColumns: ["code"]
+          },
+        ]
+      }
+      courses: {
+        Row: {
+          category: string
+          complete_all_quizzes: boolean
+          complete_all_steps: boolean
+          cover_media_id: string | null
+          created_at: string
+          created_by: string | null
+          currency: string
+          description: string | null
+          duration_minutes: number
+          id: string
+          issues_certificate: boolean
+          level: string
+          min_score: number
+          objectives: string[]
+          price: number
+          published_at: string | null
+          requirements: string[]
+          short_description: string | null
+          slug: string
+          status: string
+          title: string
+          updated_at: string
+          updated_by: string | null
+        }
+        Insert: {
+          category?: string
+          complete_all_quizzes?: boolean
+          complete_all_steps?: boolean
+          cover_media_id?: string | null
+          created_at?: string
+          created_by?: string | null
+          currency?: string
+          description?: string | null
+          duration_minutes?: number
+          id?: string
+          issues_certificate?: boolean
+          level?: string
+          min_score?: number
+          objectives?: string[]
+          price?: number
+          published_at?: string | null
+          requirements?: string[]
+          short_description?: string | null
+          slug: string
+          status?: string
+          title: string
+          updated_at?: string
+          updated_by?: string | null
+        }
+        Update: {
+          category?: string
+          complete_all_quizzes?: boolean
+          complete_all_steps?: boolean
+          cover_media_id?: string | null
+          created_at?: string
+          created_by?: string | null
+          currency?: string
+          description?: string | null
+          duration_minutes?: number
+          id?: string
+          issues_certificate?: boolean
+          level?: string
+          min_score?: number
+          objectives?: string[]
+          price?: number
+          published_at?: string | null
+          requirements?: string[]
+          short_description?: string | null
+          slug?: string
+          status?: string
+          title?: string
+          updated_at?: string
+          updated_by?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "courses_cover_media_id_fkey"
+            columns: ["cover_media_id"]
+            isOneToOne: false
+            referencedRelation: "training_media"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "courses_created_by_fkey"
+            columns: ["created_by"]
+            isOneToOne: false
+            referencedRelation: "loyalty_overview"
+            referencedColumns: ["user_id"]
+          },
+          {
+            foreignKeyName: "courses_created_by_fkey"
+            columns: ["created_by"]
+            isOneToOne: false
+            referencedRelation: "profiles"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "courses_updated_by_fkey"
+            columns: ["updated_by"]
+            isOneToOne: false
+            referencedRelation: "loyalty_overview"
+            referencedColumns: ["user_id"]
+          },
+          {
+            foreignKeyName: "courses_updated_by_fkey"
             columns: ["updated_by"]
             isOneToOne: false
             referencedRelation: "profiles"
@@ -2897,6 +3581,13 @@ export type Database = {
             referencedColumns: ["id"]
           },
           {
+            foreignKeyName: "order_notes_order_id_fkey"
+            columns: ["order_id"]
+            isOneToOne: true
+            referencedRelation: "review_requests"
+            referencedColumns: ["order_id"]
+          },
+          {
             foreignKeyName: "order_notes_updated_by_fkey"
             columns: ["updated_by"]
             isOneToOne: false
@@ -3664,13 +4355,6 @@ export type Database = {
             referencedColumns: ["id"]
           },
           {
-            foreignKeyName: "products_family_fkey"
-            columns: ["category_id", "family_id"]
-            isOneToOne: false
-            referencedRelation: "category_families"
-            referencedColumns: ["category_id", "id"]
-          },
-          {
             foreignKeyName: "products_created_by_fkey"
             columns: ["created_by"]
             isOneToOne: false
@@ -3683,6 +4367,13 @@ export type Database = {
             isOneToOne: false
             referencedRelation: "profiles"
             referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "products_family_fkey"
+            columns: ["category_id", "family_id"]
+            isOneToOne: false
+            referencedRelation: "category_families"
+            referencedColumns: ["category_id", "id"]
           },
           {
             foreignKeyName: "products_updated_by_fkey"
@@ -4263,6 +4954,197 @@ export type Database = {
             columns: ["updated_by"]
             isOneToOne: false
             referencedRelation: "profiles"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      quiz_answer_translations: {
+        Row: {
+          answer_id: string
+          created_at: string
+          explanation: string | null
+          locale: string
+          status: string
+          text: string
+          updated_at: string
+        }
+        Insert: {
+          answer_id: string
+          created_at?: string
+          explanation?: string | null
+          locale: string
+          status?: string
+          text: string
+          updated_at?: string
+        }
+        Update: {
+          answer_id?: string
+          created_at?: string
+          explanation?: string | null
+          locale?: string
+          status?: string
+          text?: string
+          updated_at?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "quiz_answer_translations_answer_id_fkey"
+            columns: ["answer_id"]
+            isOneToOne: false
+            referencedRelation: "quiz_answers"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "quiz_answer_translations_locale_fkey"
+            columns: ["locale"]
+            isOneToOne: false
+            referencedRelation: "languages"
+            referencedColumns: ["code"]
+          },
+        ]
+      }
+      quiz_answers: {
+        Row: {
+          created_at: string
+          explanation: string | null
+          id: string
+          is_correct: boolean
+          position: number
+          question_id: string
+          text: string
+          updated_at: string
+        }
+        Insert: {
+          created_at?: string
+          explanation?: string | null
+          id?: string
+          is_correct?: boolean
+          position: number
+          question_id: string
+          text: string
+          updated_at?: string
+        }
+        Update: {
+          created_at?: string
+          explanation?: string | null
+          id?: string
+          is_correct?: boolean
+          position?: number
+          question_id?: string
+          text?: string
+          updated_at?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "quiz_answers_question_id_fkey"
+            columns: ["question_id"]
+            isOneToOne: false
+            referencedRelation: "quiz_questions"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      quiz_question_translations: {
+        Row: {
+          correct_feedback: string | null
+          created_at: string
+          incorrect_feedback: string | null
+          learn_more: string | null
+          locale: string
+          question_id: string
+          status: string
+          text: string
+          updated_at: string
+        }
+        Insert: {
+          correct_feedback?: string | null
+          created_at?: string
+          incorrect_feedback?: string | null
+          learn_more?: string | null
+          locale: string
+          question_id: string
+          status?: string
+          text: string
+          updated_at?: string
+        }
+        Update: {
+          correct_feedback?: string | null
+          created_at?: string
+          incorrect_feedback?: string | null
+          learn_more?: string | null
+          locale?: string
+          question_id?: string
+          status?: string
+          text?: string
+          updated_at?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "quiz_question_translations_locale_fkey"
+            columns: ["locale"]
+            isOneToOne: false
+            referencedRelation: "languages"
+            referencedColumns: ["code"]
+          },
+          {
+            foreignKeyName: "quiz_question_translations_question_id_fkey"
+            columns: ["question_id"]
+            isOneToOne: false
+            referencedRelation: "quiz_questions"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      quiz_questions: {
+        Row: {
+          correct_feedback: string | null
+          created_at: string
+          id: string
+          image_media_id: string | null
+          incorrect_feedback: string | null
+          learn_more: string | null
+          position: number
+          quiz_id: string
+          text: string
+          updated_at: string
+        }
+        Insert: {
+          correct_feedback?: string | null
+          created_at?: string
+          id?: string
+          image_media_id?: string | null
+          incorrect_feedback?: string | null
+          learn_more?: string | null
+          position: number
+          quiz_id: string
+          text: string
+          updated_at?: string
+        }
+        Update: {
+          correct_feedback?: string | null
+          created_at?: string
+          id?: string
+          image_media_id?: string | null
+          incorrect_feedback?: string | null
+          learn_more?: string | null
+          position?: number
+          quiz_id?: string
+          text?: string
+          updated_at?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "quiz_questions_image_media_id_fkey"
+            columns: ["image_media_id"]
+            isOneToOne: false
+            referencedRelation: "training_media"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "quiz_questions_quiz_id_fkey"
+            columns: ["quiz_id"]
+            isOneToOne: false
+            referencedRelation: "course_quizzes"
             referencedColumns: ["id"]
           },
         ]
@@ -5389,6 +6271,117 @@ export type Database = {
           },
         ]
       }
+      training_media: {
+        Row: {
+          alt_text: string | null
+          bytes: number
+          category: string
+          created_at: string
+          created_by: string | null
+          duration_seconds: number | null
+          height: number | null
+          id: string
+          kind: string
+          mime_type: string
+          name: string
+          storage_path: string
+          tags: string[]
+          updated_at: string
+          width: number | null
+        }
+        Insert: {
+          alt_text?: string | null
+          bytes: number
+          category?: string
+          created_at?: string
+          created_by?: string | null
+          duration_seconds?: number | null
+          height?: number | null
+          id?: string
+          kind: string
+          mime_type: string
+          name: string
+          storage_path: string
+          tags?: string[]
+          updated_at?: string
+          width?: number | null
+        }
+        Update: {
+          alt_text?: string | null
+          bytes?: number
+          category?: string
+          created_at?: string
+          created_by?: string | null
+          duration_seconds?: number | null
+          height?: number | null
+          id?: string
+          kind?: string
+          mime_type?: string
+          name?: string
+          storage_path?: string
+          tags?: string[]
+          updated_at?: string
+          width?: number | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "training_media_created_by_fkey"
+            columns: ["created_by"]
+            isOneToOne: false
+            referencedRelation: "loyalty_overview"
+            referencedColumns: ["user_id"]
+          },
+          {
+            foreignKeyName: "training_media_created_by_fkey"
+            columns: ["created_by"]
+            isOneToOne: false
+            referencedRelation: "profiles"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      training_media_translations: {
+        Row: {
+          alt_text: string
+          created_at: string
+          locale: string
+          media_id: string
+          status: string
+          updated_at: string
+        }
+        Insert: {
+          alt_text: string
+          created_at?: string
+          locale: string
+          media_id: string
+          status?: string
+          updated_at?: string
+        }
+        Update: {
+          alt_text?: string
+          created_at?: string
+          locale?: string
+          media_id?: string
+          status?: string
+          updated_at?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "training_media_translations_locale_fkey"
+            columns: ["locale"]
+            isOneToOne: false
+            referencedRelation: "languages"
+            referencedColumns: ["code"]
+          },
+          {
+            foreignKeyName: "training_media_translations_media_id_fkey"
+            columns: ["media_id"]
+            isOneToOne: false
+            referencedRelation: "training_media"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       wishlist_items: {
         Row: {
           created_at: string
@@ -5412,6 +6405,13 @@ export type Database = {
             isOneToOne: false
             referencedRelation: "products"
             referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "wishlist_items_user_id_fkey"
+            columns: ["user_id"]
+            isOneToOne: false
+            referencedRelation: "loyalty_overview"
+            referencedColumns: ["user_id"]
           },
           {
             foreignKeyName: "wishlist_items_user_id_fkey"
@@ -5443,6 +6443,19 @@ export type Database = {
           timezone: string | null
           title: string | null
           updated_at: string | null
+        }
+        Relationships: []
+      }
+      course_current_prices: {
+        Row: {
+          course_id: string | null
+          currency: string | null
+          current_price: number | null
+          discount_type: string | null
+          discount_value: number | null
+          price: number | null
+          promotion_ends_at: string | null
+          promotion_id: string | null
         }
         Relationships: []
       }
@@ -5786,6 +6799,7 @@ export type Database = {
         Args: { p_ids: string[] }
         Returns: undefined
       }
+      admin_save_course: { Args: { p_course: Json }; Returns: Json }
       admin_save_gem_color: { Args: { p_color: Json }; Returns: Json }
       admin_save_product: { Args: { p_product: Json }; Returns: Json }
       admin_save_product_recommendations: {
@@ -5914,6 +6928,10 @@ export type Database = {
           isOneToOne: true
           isSetofReturn: false
         }
+      }
+      course_publication_problems: {
+        Args: { p_course_id: string }
+        Returns: string[]
       }
       create_order: {
         Args: {
