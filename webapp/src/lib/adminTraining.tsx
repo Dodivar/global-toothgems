@@ -204,17 +204,17 @@ export function newBlock(type: BlockType): ContentBlock {
 }
 
 function newQuestion(index: number): Question {
-  const id = newId();
   return {
-    id,
+    id: newId(),
     text: {
       fr: `Question ${String(index).padStart(2, "0")}`,
       en: `Question ${String(index).padStart(2, "0")}`,
     },
+    // Answer ids are database uuids: admin_save_course() casts them.
     answers: [
-      { id: `${id}-a1`, text: { fr: "Réponse correcte", en: "Correct answer" }, correct: true },
-      { id: `${id}-a2`, text: { fr: "Réponse incorrecte", en: "Incorrect answer" }, correct: false },
-      { id: `${id}-a3`, text: { fr: "Réponse incorrecte", en: "Incorrect answer" }, correct: false },
+      { id: newId(), text: { fr: "Réponse correcte", en: "Correct answer" }, correct: true },
+      { id: newId(), text: { fr: "Réponse incorrecte", en: "Incorrect answer" }, correct: false },
+      { id: newId(), text: { fr: "Réponse incorrecte", en: "Incorrect answer" }, correct: false },
     ],
     correctFeedback: { fr: "Exact !", en: "Correct!" },
     incorrectFeedback: { fr: "Pas tout à fait.", en: "Not quite." },
