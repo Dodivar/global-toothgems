@@ -116,6 +116,7 @@ supabase/
 | 20261001071006 | `academy_published_integrity` | a price cut below an active amount promotion is refused (the course would become free); a deferred constraint trigger re-checks `course_publication_problems()` when a published course is saved, so it cannot become unpublishable while online |
 | 20261001121248 | `academy_public_pages` | Academy phase B: visitors and customers read the outline of a published course (modules, steps, knowledge checks' titles and pass marks, published translations — never blocks, questions or answers), its cover (`training_media` row + translations + the file in the private bucket) and its current price; `course_promotions` staff-only (the price view reads the running promotion through `private.course_running_promotion()`, SECURITY DEFINER); column grants hide `courses.created_by`/`updated_by` and the media's internal columns from `anon`; policies widened in place (ALTER POLICY) |
 | 20261001170703 | `academy_learner_access` | Academy phase C: `course_entitlements` (manual grants by `manage_training`, audited; `purchase` rows from phase D), `lesson_progress`, `quiz_attempts`, `course_completions` (sticky, certificate code); `learner_courses()` serves the held courses' content without answer keys or feedback; `complete_course_step()`, `answer_quiz_question()`, `submit_quiz_answers()` port the path rules of `lib/learning/path.ts` and score server-side; storage policy for the media of held courses; holders see their withdrawn course (row, translations, cover); `admin_grant_course()`, `admin_revoke_course_entitlement()`, `admin_course_entitlements()` |
+| 20261001200000 | `gift_card_staff_functions` | **Not applied yet (awaits the user's go-ahead).** `extend_gift_card()` / `cancel_gift_card()` return the card id instead of the whole `gift_cards` row — as SECURITY DEFINER functions they handed the full bearer **code** to any `manage_promotions` caller (confirmed on the project before the fix by `gift_cards_validation.sql`); `issue_gift_card()` / `adjust_gift_card()` refuse sub-cent amounts (they were rounded), amounts above 10 000, a malformed recipient e-mail and a past expiry. Same names, arguments and permission |
 | 20261001220721 | `admin_customers` | back-office customers: `admin_customer_status_history(user)` (status changes of one account from `audit_logs` — date, old, new, actor name — for any active staff member; `audit_logs` itself stays `manage_settings`-only) and `admin_customer_courses(user \| null)` (course seats not revoked, with the learner's progress rule: validated steps that still exist + checks passed, over steps + checks; completion, score, certificate code). Both `SECURITY DEFINER`, staff only |
 | 20261001223230 | `admin_customer_history_scope` | `admin_customer_status_history()` answers for customer accounts only (a team member's history stays out of reach of read-only staff); orders changes by `occurred_at, id` (two changes in one transaction share a timestamp — first fixed in place, now recorded) |
 
@@ -250,8 +251,15 @@ browser  /fr/panier/confirmation?session_id=cs_… → checkout_session_status(c
   at the last minute still finds its stock. Delayed methods (bank debits) can confirm days later: the order has
   expired by then and the documented late-payment path applies (stock re-taken if still there, otherwise flagged).
 - Error codes returned to the browser: `invalid_request`, `unavailable`, `out_of_stock`, `shipping_unavailable`,
-  `promotion_code_invalid`, `gift_card_invalid`, `payment_unavailable`, `maintenance`, `session_expired`, `server_error`
-  (`_shared/orderErrors.ts`). SQL messages are logged, never returned.
+  `promotion_code_invalid`, `gift_card_invalid`, `gift_card_details_invalid`, `payment_unavailable`, `maintenance`,
+  `session_expired`, `server_error` (`_shared/orderErrors.ts`). SQL messages are logged, never returned. Every refusal
+  of a gift card *used as payment* (unknown, expired, cancelled, empty, too many) is `gift_card_invalid`; a gift card
+  *being bought* with refused details is `gift_card_details_invalid`.
+- Gift card lines (2026-10-01): `items[]` may hold `{product_id, quantity: 1, gift_card: {amount_minor, recipient_email,
+  recipient_name?, sender_name?, message?, design?, deliver_at?}}` — the one customer-chosen amount of a checkout, in
+  integer minor units, converted to a decimal string for `create_order()` (`orderItems()`), which checks it against
+  `gift_card_settings`. Several gift card lines are allowed (one per recipient). `shipping_rate_id` may be `null` when
+  nothing is shipped (create_order() ignores the rate then, and requires it otherwise).
 
 **Deploy (test mode, after the user's go-ahead for the target project):**
 
@@ -358,7 +366,7 @@ their own orders.
 
 ### Gift cards (iteration 4)
 
-Mirrors the Promotions & Gift Cards workspace (`webapp/src/data/adminPromotions.ts`).
+Used by the webapp's gift card domain (`webapp/src/lib/giftCards/`): back office, `/carte-cadeau`, codes in the cart.
 
 ```
 purchase   create_order(items: [{product_id: <carte-cadeau>, quantity: 1, amount, gift_card: {recipient_*, sender_name, message, design, deliver_at}}])
@@ -386,6 +394,36 @@ refund     request_refund = card (Stripe) payments only; refund_to_gift_cards() 
   (active, partially_redeemed, redeemed, scheduled, expired, cancelled, pending_payment, void).
 - `gift_card_settings` (single row) mirrors the storefront configuration: preset amounts, custom amount bounds,
   expiry months, field modes, message length, designs, published flag. Public read when published.
+
+**Wired to the webapp (2026-10-01).** The back office reads `gift_card_overview` (every active staff member; status
+from `display_status`, never recomputed), the ledger and `gift_cards.message`, and calls the four staff functions
+under the member's own JWT (`manage_promotions` checked inside each function); settings are updated through RLS
+(`manage_promotions`, zero rows = refused). `/carte-cadeau` reads the published settings and sells through the
+checkout (`create-checkout-session` accepts gift card lines); the cart sends up to 5 `gift_card_codes`. Migration
+`20261001200000_gift_card_staff_functions` (not applied yet) stops `extend_gift_card` / `cancel_gift_card` from
+returning the code. Suite: `tests/gift_cards_validation.sql` (GC1–GC7).
+
+**Proposed, not built — delivering the code (needs the user's decision on the e-mail provider, Resend in §5):**
+
+```
+Edge Function deliver-gift-cards (service role, verify_jwt = false, called by pg_cron every 5 min + after mark_order_paid)
+  select active cards with delivery_status in ('pending','scheduled') and (deliver_at is null or deliver_at <= now())
+    (index gift_cards_delivery_due_idx already exists), a few dozen per run, oldest first, row lock skip locked
+  per card: code := gift_card_code_for_delivery(id)        -- service role only, never logged
+            render the localized e-mail (email_templates, order locale) with design, amount, sender, message, expiry
+            send through the provider with an idempotency key "gift-card:<id>:<attempt>"
+            record_gift_card_delivery(id, 'sent')             -- 'delivered' / 'opened' / 'bounced' from provider webhooks
+  resend from the back office: a staff-only Edge Function (manage_promotions) calling the same path, optional corrected
+  address through record_gift_card_delivery(id, 'sent', new_email); the code is never returned to the browser.
+```
+
+**Proposed, not built — public balance check.** `gift_card_balance(code)` stays service-role only. A public Edge
+Function `gift-card-balance` would: accept `{code, captcha_token}`, verify the captcha, rate-limit per IP *and* per
+code prefix (e.g. 5 lookups / 10 min / IP, 20 / day / IP) with `private.hit_rate_limit()` (the contact form's
+throttle table, keyed by a hashed IP — storing hashed IPs is the decision to take), answer the same shape for
+unknown and inactive codes, and return only `{balance, currency, expires_at, redeemable}` — never the order,
+names or e-mails. Not implemented: the throttle storage (hashed IP retention) and the captcha provider are
+decisions, and the codes' 60 bits already make blind guessing impractical; the cart reveals nothing either.
 
 ### Member account (iteration 5)
 
@@ -1126,21 +1164,36 @@ VAT rates, shipping zones/rates mirroring the Settings prototype. Media rows ref
 54. **Certificates** (agent, 2026-10-01): a certificate is the `course_completions` row of a course that issues
     certificates, with a random verification code `GTC-XXXX-XXXX-XXXX` (48 bits); no public verification page yet
     (post-launch). The completion date and the scores are snapshotted when the rules are first met.
+56. **Gift card purchase VAT** (unchanged, to confirm with the accountant): cards are sold without VAT and taxed when
+    spent (multi-purpose voucher, decision 10). The storefront and the back office now sell and issue real cards on
+    that basis.
+57. **Gift cards are not shown in the member area** (agent, 2026-10-01, to confirm): a buyer sees the card line of their
+    order, never the card, its balance or its code; a recipient has no view at all. Showing "my cards" needs a decision
+    on who owns a card (buyer, recipient e-mail, or whoever redeems it) and a column grant that still hides `code`.
+58. **Refunding a purchased gift card** (to confirm): not built. Today a paid order containing a card can only be
+    refunded through Stripe by the team, and nothing voids the card; the safe rule would be "refund only if the card
+    was never used, then cancel it with `cancel_gift_card`" — a business and accounting decision.
+59. **Manual cards** (agent, 2026-10-01): `issue_gift_card()` accepts at most 10 000 in the shop currency, two decimals,
+    a future expiry (else the settings' validity); the back office asks for a reason (≥ 3 characters) recorded in the
+    ledger. Adjustments are capped at ±10 000 and need a reason (≥ 5 characters in the screen, non-empty in SQL).
+60. **Gift card codes in the cart** are kept in memory only (never in `sessionStorage`), shown masked once added; the
+    recipient details of a gift card being bought stay in the tab's cart storage like the rest of the cart.
+
 55. **Lesson media signed for 4 hours** (agent, 2026-10-01, to confirm): the member's browser signs the media of the
     courses they hold for 4 h (renewed every 3 h), so a long lesson video can be watched and sought through without
     expiring mid-way. Consequence: a signed URL keeps working up to 4 h after a revocation, an expiry or a
     withdrawal, and for anyone the member passes it to. Shorten `LEARNER_SIGNED_URL_SECONDS`
     (`webapp/src/lib/learning/learnerApi.ts`) or move to a streaming provider (Mux) if that is not acceptable.
-56. **Back-office customers are read whole** (agent, 2026-10-02): `/admin/clients` reads every customer profile,
+61. **Back-office customers are read whole** (agent, 2026-10-02): `/admin/clients` reads every customer profile,
     default shipping address, tag, note and course seat (1 000 rows per request) and filters in the browser, with
     order counts and spend from the order book — the same deliberate choice as the order book. Plan when the base
     grows: `range()` + filters on `profiles` and an aggregate RPC for the KPI row and the spend per customer.
-57. **Staff set customer status to active or suspended only** (agent, 2026-10-02, to confirm): `deactivated` is
+62. **Staff set customer status to active or suspended only** (agent, 2026-10-02, to confirm): `deactivated` is
     treated as a closed account — shown and filtered, never set or reopened from the back office. A suspension is
     enforced by the app's sign-in (non-active profiles get no session) and by `create_order()`; it does not revoke
     a session already open on another device, and the learner functions do not check the profile status. Revoking
     sessions (Auth admin API, Edge Function) and a status check in the learner RPCs are to decide.
-58. **The customer owns their e-mail, marketing consent and address book** (agent, 2026-10-02): the back office
+63. **The customer owns their e-mail, marketing consent and address book** (agent, 2026-10-02): the back office
     shows them read-only (the profile guard already refuses `email` and `marketing_opt_in`; addresses are
     owner-only under RLS). Export of the base, bulk e-mail and staff-created customer accounts are not offered:
     each needs a server side (audited export job, Resend, Auth admin API) and a decision. A customer's order
@@ -1197,14 +1250,17 @@ VAT rates, shipping zones/rates mirroring the Settings prototype. Media rows ref
   (private bucket), course price and course promotions, publication rules, `admin_save_course()`.
 - Iteration 21: Academy public pages (phase B) — outline, cover and current price of published courses readable by
   visitors, promotions staff-only, column grants for visitors.
+- Gift cards wired (2026-10-01): back office and `/carte-cadeau` on Supabase, gift card lines and codes through
+  `create-checkout-session`, migration `20261001200000_gift_card_staff_functions` (codes no longer returned by staff
+  functions, input validation) **pending application**, `gift_cards_validation.sql`.
 - Iteration 22: Academy learner access (phase C) — entitlements with audited manual grants, content served without
   answer keys, server-side progress, attempts and scoring, completions with certificate codes, lesson media gated
   on the entitlement, withdrawn courses greyed out for their holders.
 
 ## Next iterations (not implemented)
 
-1. Checkout follow-ups: order confirmation e-mail (Resend, Edge Function), promotion code and gift card fields
-   in the cart (the function already accepts them), Stripe refunds from the back office, `charge.refunded` /
+1. Checkout follow-ups: order confirmation e-mail (Resend, Edge Function), gift card delivery e-mail
+   (`deliver-gift-cards`, design in *Gift cards*), promotion code field in the cart (the function already accepts it), Stripe refunds from the back office, `charge.refunded` /
    `charge.dispute.created` webhooks.
 2. Academy, after the authoring schema (iteration 20):
    (**B**, public pages, done in iteration 21; **C**, learner access, done in iteration 22 — follow-ups: a public

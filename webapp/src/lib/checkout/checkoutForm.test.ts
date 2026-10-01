@@ -73,3 +73,35 @@ describe("checkout answers", () => {
     expect(isCheckoutSessionId(null)).toBe(false);
   });
 });
+
+describe("checkout with gift cards", () => {
+  const card: CartLine = {
+    id: "gift-card::a",
+    productId: "carte-cadeau",
+    dbProductId: "9a8b7c6d-5e4f-4a3b-8c2d-1e0f9a8b7c6d",
+    name: "Carte cadeau",
+    image: "",
+    unitPrice: 5000,
+    currency: "EUR",
+    qty: 1,
+    giftCard: { recipientEmail: "jade@example.fr", design: "sparkle" },
+  };
+
+  it("asks for no delivery when nothing is shipped", () => {
+    expect(invalidFields(form, null, false)).toEqual([]);
+    expect(invalidFields(form, null, true)).toEqual(["shipping"]);
+  });
+
+  it("sends no rate for a gift-card-only basket and the codes typed", () => {
+    const request = buildCheckoutRequest([card], form, null, "en", ["GT-AAAA-BBBB-CCCC"]);
+    expect(request?.shipping_rate_id).toBeNull();
+    expect(request?.gift_card_codes).toEqual(["GT-AAAA-BBBB-CCCC"]);
+    expect(request?.items[0].gift_card?.amount_minor).toBe(5000);
+    expect(buildCheckoutRequest([line], form, "rate", "fr")).not.toHaveProperty("gift_card_codes");
+  });
+
+  it("knows the code for gift card details refused by the database", () => {
+    expect(readCheckoutAnswer({ error: "gift_card_details_invalid" })).toEqual({ kind: "error", error: "gift_card_details_invalid" });
+    expect(readCheckoutAnswer({ error: "gift_card_invalid" })).toEqual({ kind: "error", error: "gift_card_invalid" });
+  });
+});

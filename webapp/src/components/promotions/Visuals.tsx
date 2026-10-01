@@ -3,7 +3,8 @@ import clsx from "clsx";
 import monogramWhite from "../../assets/monogram-white.png";
 import monogramBlue from "../../assets/monogram-blue.png";
 import { photo } from "../../lib/images";
-import type { CampaignTheme, GiftCardDesign } from "../../data/adminPromotions";
+import type { CampaignTheme } from "../../data/adminPromotions";
+import type { GiftCardDesign } from "../../lib/giftCards/giftCardMapping";
 import { useMoney } from "./PromoBadges";
 
 /**

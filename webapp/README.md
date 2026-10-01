@@ -2,7 +2,7 @@
 
 The production web application of Global Toothgems: storefront, Academy, member area, Studio 3D and back office, in one Next.js (App Router) application backed by Supabase (see `supabase/README.md`) and deployed on Vercel. It was migrated from Vite + React Router in five phases (done on 2026-09-30): every screen is an App Router segment, public pages are rendered on the server, the private areas in the browser under server-checked layouts — see `docs/migration-nextjs.md` for the phases and the per-route checklist.
 
-> **Status: being industrialised.** The app started as a fully clickable implementation of the Claude Design prototype, with every domain on in-memory mock data. Domains are now connected to Supabase one by one; the up-to-date live/mock table is in the root `AGENTS.md` §4. With the Supabase variables set, these are **live**: the storefront catalogue, back-office product management and categories, member and staff authentication, favourites (`wishlist_items`), reviews and moderation, member and admin order reading, the back-office customers workspace, the Studio 3D workspace, and the Academy's back-office authoring and its public pages (catalogue, course sales pages). Cart/checkout/payment (no Stripe yet), promotions, gift cards, loyalty, statistics/settings in the back office, contact and newsletter, and the Academy's learner side still run on mock data.
+> **Status: being industrialised.** The app started as a fully clickable implementation of the Claude Design prototype, with every domain on in-memory mock data. Domains are now connected to Supabase one by one; the up-to-date live/mock table is in the root `AGENTS.md` §4. With the Supabase variables set, these are **live**: the storefront catalogue, back-office product management and categories, member and staff authentication, favourites (`wishlist_items`), reviews and moderation, member and admin order reading, the back-office customers workspace, the Studio 3D workspace, and the Academy's back-office authoring and its public pages (catalogue, course sales pages). Gift cards (back office, `/carte-cadeau`, codes in the cart) are live too, paid through the checkout. Cart/checkout/payment (Stripe functions not deployed yet), promotions, loyalty, statistics/settings in the back office, contact and newsletter, and the Academy's learner side still run on mock data.
 >
 > Architecture (decided): Next.js App Router on Vercel, business rules in Postgres (RLS + functions), server code in Supabase Edge Functions, payments by Stripe with webhook-driven fulfilment. Sections below that describe "prototype" behaviour, "Prototype controls" panels or mock stores document code that is **still mock and scheduled to be replaced**, not a target design.
 
@@ -237,6 +237,20 @@ With the Supabase variables set, `screens/Cart.tsx`:
    `create-checkout-session` (`lib/checkout/api.ts`, `supabase.functions.invoke`), which creates the order with
    `create_order()` and a Stripe Checkout Session for the amount the database computed;
 3. follows the returned URL, only if it is `https://checkout.stripe.com/…`.
+
+Gift cards in the cart (`lib/giftCards/`, `components/shop/GiftCardCodes.tsx`):
+
+- **Buying one.** `/carte-cadeau` adds a gift card line (`CartLine.giftCard`: recipient, sender, message, design,
+  delivery date; the amount is the line's `unitPrice` in minor units). Each card is its own line, quantity 1. The
+  checkout sends it as `{product_id, quantity: 1, gift_card: {amount_minor, …}}`; `create_order()` checks the amount
+  and the details against `gift_card_settings` and creates the card *pending*; it becomes usable only when the
+  verified webhook marks the order paid. A basket of gift cards only asks for no delivery (`shipping_rate_id: null`).
+- **Paying with one.** Up to 5 codes are typed in the cart (format checked in the browser only, kept in memory,
+  never stored), shown masked, removable, and sent as `gift_card_codes`. The browser never reads a balance: the
+  database applies the cards and computes `amount_due`; a fully covered order is paid at once (`status: paid`).
+  Every refusal (unknown, expired, empty, cancelled code) is the same "cannot be used" message.
+- **Not deployed.** If `create-checkout-session` does not exist yet (HTTP 404) the cart says payment is unavailable;
+  nothing is ever confirmed without the function's answer.
 
 Stripe sends the customer back to `/fr/panier/confirmation?session_id=cs_…` (`/en/cart/confirmation`,
 `screens/CheckoutReturn.tsx`). That page only reads `checkout_session_status()` — order number and state — and
@@ -608,30 +622,40 @@ publication.
 
 ## Promotions, campaigns & gift cards (`/admin/promotions`)
 
-A front-end-only prototype of the promotional side of the back office, plus the customer-facing gift card page. No backend, no payment, no persistence: every change lives in memory and a reload restores the seed. It adds one entry, **Promotions**, to the rail's main group; nothing else in the rail changed.
+Promotions and campaigns are still a front-end-only prototype (in-memory, a reload restores the seed). **Gift cards
+are live** on Supabase (since 2026-10-01): their screens share the workspace's tab and look, not its store.
 
 | Route | Screen |
 | --- | --- |
-| `/admin/promotions` | Overview — KPI row, then tabs in the query string (`?vue=actives`, `programmees`, `expirees`, `campagnes`, `cartes-cadeaux`). The "All" tab adds a six-week "what runs when" calendar above the list |
-| `/admin/promotions/nouvelle` · `/:id/modifier` | Promotion editor — six lettered sections (basics, discount type, eligibility, usage rules, scheduling, promo code), a sticky summary with a publish checklist and a live product-card preview. `?campagne=<id>` pre-fills the campaign |
-| `/admin/promotions/:id` | Promotion detail — state banner (paused, expired, scheduled, invalid), performance, configuration, code, campaign, customer view, history |
-| `/admin/promotions/campagnes/nouvelle` · `/:id` · `/:id/modifier` | Campaign editor with live storefront preview (desktop / mobile), and campaign detail: banner, promotions, products, dates, banner preview, activity |
-| `/admin/promotions/cartes-cadeaux/:code` | Gift card detail — card visual, balance, ledger with running balance, resend / adjust / extend / cancel (cancel requires typing the code), related order sheet |
-| `/admin/promotions/cartes-cadeaux/configuration` | Gift card product settings — denominations (reorder by buttons or drag), custom amount range, validity, scheduled delivery, field rules, designs |
-| `/admin/promotions/apercu` | Customer preview — one promotion on the product card, product page, cart, checkout summary and campaign landing |
-| `/carte-cadeau` (`/gift-card`) | Storefront gift card page, driven by the configuration above |
+| `/admin/promotions` | Overview — KPI row, then tabs in the query string (`?vue=actives`, `programmees`, `expirees`, `campagnes`, `cartes-cadeaux`). The "All" tab adds a six-week "what runs when" calendar above the list. The gift card tile and tab count are live |
+| `/admin/promotions/nouvelle` · `/:id/modifier` | Promotion editor (mock) — six lettered sections, sticky summary with a publish checklist and a live product-card preview |
+| `/admin/promotions/:id` | Promotion detail (mock) |
+| `/admin/promotions/campagnes/nouvelle` · `/:id` · `/:id/modifier` | Campaign editor and detail (mock) |
+| `?vue=cartes-cadeaux` | Gift cards (live) — KPIs (in circulation, sold, outstanding, expired, awaiting delivery), product summary, **Issue a card** (`manage_promotions`), search by last 4 / people / order, status and delivery filters |
+| `/admin/promotions/cartes-cadeaux/:id` | Gift card detail (live) — card visual, balance, the database's ledger (balance after each line, who, order), adjust (reason required) / extend / cancel (reason + the last 4 typed). Addressed by id: **the code is never shown**, only `•••• last4` |
+| `/admin/promotions/cartes-cadeaux/configuration` | Gift card settings (live, `gift_card_settings`) — published switch, denominations (reorder by buttons or drag), custom amount range, validity, scheduled delivery, field rules, designs. Read-only without `manage_promotions` |
+| `/admin/promotions/apercu` | Customer preview of a promotion (mock) |
+| `/carte-cadeau` (`/gift-card`) | Storefront gift card page (live): published settings, adds a gift card line to the cart (see *Cart and checkout*) |
 
 How it is put together:
 
-- `data/adminPromotions.ts` — types and seed: 15 promotions, 7 campaigns, 14 gift cards and the gift card product. **Money is integer cents.** **Statuses are derived** from a stored lifecycle (draft / live / paused / archived) and the dates, against a fixed prototype date `PROMO_NOW` (24 Nov 2027, printed on every screen) so the 2027 campaigns of the brief keep their states. Gift card balances are the sum of each card's ledger, never a stored number.
-- `lib/adminPromotions.tsx` — the store (async, simulated latency), mounted in `AppProviders.tsx` (root layout) rather than the admin layout so the storefront page reads the same gift card configuration: since phase 5 a prototype edit reaches `/carte-cadeau` again when the visitor goes there by a link (a reload starts from the seed).
-- `lib/promotionRules.ts` — pure rules: validation, scope resolution, campaign roll-ups, KPIs, list filtering and sorting.
-- `components/promotions/` — badges, the CSS-drawn gift card and campaign banner (`.gt-giftcard`, `.gt-campaign-cover` in `index.css`), product picker, timelines, tables, storefront previews, dialogs and bottom sheet.
-- Copy lives in `i18n/locales/promotions.{fr,en}.json`, mounted under the `promo` key.
+- Gift cards: `lib/giftCards/giftCardMapping.ts` (pure, tested: rows ↔ UI shapes in minor units, statuses from
+  `gift_card_overview.display_status`, ledger, filters, metrics, code normalisation, error reasons),
+  `lib/giftCards/api.ts` (the domain's single persistence boundary: overview, ledger, settings, the staff RPCs),
+  `lib/giftCards/AdminGiftCardsProvider.tsx` (back-office store in `AdminLayout`, loaded on first use, re-read after
+  every write; empty and read-only in local mock mode) and `lib/giftCards/useStorefrontGiftCard.ts` (published
+  settings for `/carte-cadeau` and the home page band, read once hydrated). Permissions come from `my_permissions()`
+  for display only; the database enforces them (`manage_promotions` writes, every active staff member reads).
+- Promotions and campaigns: `data/adminPromotions.ts` (types and seed, money in integer cents, statuses derived
+  against the fixed prototype date `PROMO_NOW`), `lib/adminPromotions.tsx` (mock store, still in `AppProviders.tsx`),
+  `lib/promotionRules.ts` (pure rules).
+- `components/promotions/` — badges, the CSS-drawn gift card and campaign banner (`.gt-giftcard`, `.gt-campaign-cover`
+  in `index.css`), tables, timelines, previews, dialogs.
+- Copy lives in `i18n/locales/promotions.{fr,en}.json`, mounted under the `promo` key (gift card back office: `promo.gc`).
 
-A labelled **Prototype** bar on the overview switches between sample data, an empty shop and a loading error. "Christmas Early Bird -15%" is deliberately invalid (end before start, missing code) to show the invalid-configuration state; "Spring Studio Days" is a campaign with no promotions and no products.
-
-Everything that matters for money or access — code uniqueness, discount calculation, balance changes, cancellation, delivery — must be enforced server-side in the real implementation; the checks here are presentation only.
+**Not built (gift cards):** delivery of the code to the recipient (no transactional e-mail yet: cards show "not sent"
+and nobody can read the code, by design), a public balance check, refunds of a purchased card, cards in the member
+area. See `../supabase/README.md` (*Gift cards*).
 
 ## Reviews and moderation (`/admin/avis`, `/compte/avis`)
 
@@ -733,11 +757,12 @@ Live on Supabase; without the Supabase variables the workspace says the base is 
 
 Without the Supabase variables every domain runs on its mock store. With them, the following still do not touch the database:
 
-- **Checkout extras.** Payment runs through Stripe (see *Cart and checkout*), but promotion codes, gift cards and the loyalty reward cannot be entered in the cart yet (the Edge Function accepts codes), no confirmation e-mail is sent, and saving the address on the account is not offered.
+- **Checkout extras.** Payment runs through Stripe (see *Cart and checkout*) and gift card codes can be used in the cart, but promotion codes and the loyalty reward cannot be entered yet (the Edge Function accepts promotion codes), no confirmation e-mail is sent, and saving the address on the account is not offered.
 - **Academy.** Authoring, public pages and the learner side are on Supabase (phases A–C). Courses cannot be bought yet (phase D): members get one by a manual grant (`/admin/formations/:id/acces`). The back office's course list and statistics still show placeholder learner figures (`enrolled`, `completionRate`, `data/adminAnalytics.ts`).
 - **Artist Community.** Fixtures and in-memory posting; access derived client-side from the courses on the account. Post-launch.
 - **Loyalty Club.** Display only (`data/loyalty.ts` with a demo switch); the database already awards stamps on paid orders — the UI must read `loyalty_overview`.
 - **Security page:** data export and account deletion are simulated (they need backend jobs).
-- **Back-office promotions, gift cards, statistics, settings and translations:** mock stores over a schema that already exists.
+- **Back-office promotions and campaigns, statistics, settings and translations:** mock stores over a schema that already exists.
+- **Gift card delivery:** cards are created and activated in the database, but nothing sends the code to the recipient yet (needs the e-mail Edge Function).
 
 The mock stores, fixtures in `data/`, demo accounts and "Prototype controls" panels are removed domain by domain as each goes live; a production build must never fall back to them.

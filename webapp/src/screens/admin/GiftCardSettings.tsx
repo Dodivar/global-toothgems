@@ -10,23 +10,29 @@ import { AdminHeader } from "../../components/admin/AdminHeader";
 import { AdminSelect } from "../../components/admin/AdminSelect";
 import { FormField } from "../../components/admin/FormField";
 import { ToggleSwitch } from "../../components/admin/ToggleSwitch";
-import { usePromotions } from "../../lib/adminPromotions";
 import { useToast } from "../../lib/toast";
-import { CONTENT_LANGS, useLocalized, type ContentLang } from "../../lib/localized";
-import { centsToInput, parseEuros } from "../../lib/promotionRules";
-import { type FieldMode, type GiftCardDesign, type GiftCardProductConfig } from "../../data/adminPromotions";
+import { useAdminGiftCards } from "../../lib/giftCards/AdminGiftCardsProvider";
+import {
+  GIFT_CARD_DESIGNS,
+  amountToInput,
+  configIssues,
+  parseAmountInput,
+  type FieldMode,
+  type GiftCardConfig,
+  type GiftCardDesign,
+} from "../../lib/giftCards/giftCardMapping";
 import { useMoney } from "../../components/promotions/PromoBadges";
-import { FormSection, Notice, PrototypeBar, Segmented, UnitInput } from "../../components/promotions/PromoUi";
+import { ErrorPanel, FormSection, Notice, Segmented, UnitInput } from "../../components/promotions/PromoUi";
 import { GiftCardVisual } from "../../components/promotions/Visuals";
 import { PreviewFrame } from "../../components/promotions/StorefrontPreviews";
 import { useAdminShell } from "./AdminLayout";
 
 /**
- * The gift card as a product: what a customer can choose on `/carte-cadeau`.
- *
- * Everything here feeds the storefront page directly (same store), so the
- * preview on the right is the real component the customer sees, and "View on
- * storefront" opens the page with these settings applied.
+ * The gift card as a product: what a customer can choose on `/carte-cadeau`,
+ * read from and saved to `gift_card_settings` (one row). Saving needs
+ * `manage_promotions`, which RLS checks: read-only staff see the form
+ * disabled, and a refused save is reported, never shown as saved. The product's
+ * name and description are the gift card product's own (Products screen).
  *
  * Denominations are reordered with explicit move up / move down buttons — the
  * keyboard path — and by dragging the grip on a pointer device. The order on
@@ -34,34 +40,74 @@ import { useAdminShell } from "./AdminLayout";
  */
 export function GiftCardSettings() {
   const { t } = useTranslation();
+  const { openNav } = useAdminShell();
+  const store = useAdminGiftCards();
+  const header = (
+    <AdminHeader
+      title={t("promo.config.title")}
+      description={t("promo.config.description")}
+      crumbs={[
+        { label: t("admin.nav.promotions"), to: "/admin/promotions" },
+        { label: t("promo.tabs.giftCards"), to: "/admin/promotions?vue=cartes-cadeaux" },
+        { label: t("promo.config.crumb") },
+      ]}
+      onOpenNav={openNav}
+    />
+  );
+
+  if (store.loading || (!store.settings && store.available && !store.failed)) {
+    return (
+      <>
+        {header}
+        <div className="grid gap-3 px-[var(--admin-gutter)] pt-5" role="status" aria-label={t("promo.common.loading")}>
+          <div className="gt-skeleton h-40 rounded-[var(--admin-radius-sm)]" />
+          <div className="gt-skeleton h-64 rounded-[var(--admin-radius-sm)]" />
+        </div>
+      </>
+    );
+  }
+  if (!store.settings) {
+    return (
+      <>
+        {header}
+        <div className="grid gap-4 px-[var(--admin-gutter)] pt-5">
+          {store.available ? (
+            <ErrorPanel title={t("promo.error.title")} body={t("promo.gc.loadError")} retryLabel={t("promo.error.retry")} onRetry={() => void store.reload()} />
+          ) : (
+            <Notice tone="info" title={t("promo.gc.offlineTitle")}>{t("promo.gc.offlineBody")}</Notice>
+          )}
+        </div>
+      </>
+    );
+  }
+  return <SettingsForm initial={store.settings} />;
+}
+
+function SettingsForm({ initial }: { initial: GiftCardConfig }) {
+  const { t } = useTranslation();
   const navigate = useNavigate();
-  const l = useLocalized();
   const money = useMoney();
   const { openNav } = useAdminShell();
   const { showToast } = useToast();
-  const store = usePromotions();
-  const [draft, setDraft] = useState<GiftCardProductConfig>(store.config);
+  const store = useAdminGiftCards();
+  const readOnly = !store.canManage;
+  const [draft, setDraft] = useState<GiftCardConfig>(initial);
   const [dirty, setDirty] = useState(false);
   const [saving, setSaving] = useState(false);
-  const [lang, setLang] = useState<ContentLang>("fr");
+  const [saveError, setSaveError] = useState<string | null>(null);
   const [newAmount, setNewAmount] = useState("");
+  const [minInput, setMinInput] = useState(amountToInput(initial.minMinor));
+  const [maxInput, setMaxInput] = useState(amountToInput(initial.maxMinor));
   const [previewAmount, setPreviewAmount] = useState<number | null>(null);
   const [announce, setAnnounce] = useState("");
   const dragFrom = useRef<number | null>(null);
 
-  const set = (patch: Partial<GiftCardProductConfig>) => {
+  const set = (patch: Partial<GiftCardConfig>) => {
     setDraft((d) => ({ ...d, ...patch }));
     setDirty(true);
   };
 
-  const errors = useMemo(() => {
-    const e: string[] = [];
-    if (draft.amounts.length === 0) e.push(t("promo.config.errors.noAmount"));
-    if (draft.allowCustomAmount && draft.minCents >= draft.maxCents) e.push(t("promo.config.errors.minMax"));
-    if (!draft.designs.some((d) => d.enabled)) e.push(t("promo.config.errors.noDesign"));
-    if (!draft.designs.find((d) => d.id === draft.defaultDesign)?.enabled) e.push(t("promo.config.errors.defaultDisabled"));
-    return e;
-  }, [draft, t]);
+  const errors = useMemo(() => configIssues(draft).map((issue) => t(`promo.config.errors.${issue}`)), [draft, t]);
 
   const move = (from: number, to: number) => {
     if (to < 0 || to >= draft.amounts.length) return;
@@ -73,12 +119,12 @@ export function GiftCardSettings() {
   };
 
   const addAmount = () => {
-    const cents = parseEuros(newAmount);
+    const cents = parseAmountInput(newAmount);
     if (!cents || draft.amounts.includes(cents)) return;
     set({ amounts: [...draft.amounts, cents] });
     setNewAmount("");
   };
-  const newCents = parseEuros(newAmount);
+  const newCents = parseAmountInput(newAmount);
   const newError = newAmount && (!newCents ? t("promo.config.errors.invalidAmount") : draft.amounts.includes(newCents) ? t("promo.config.errors.duplicate") : undefined);
 
   const save = async () => {
@@ -87,13 +133,19 @@ export function GiftCardSettings() {
       return;
     }
     setSaving(true);
-    await store.saveConfig(draft);
+    setSaveError(null);
+    const result = await store.saveSettings(draft);
     setSaving(false);
+    if (!result.ok) {
+      setSaveError(t(`promo.gc.errors.${result.error}`));
+      return;
+    }
     setDirty(false);
     showToast(t("promo.config.saved"), t("promo.config.savedBody"));
   };
 
   const fieldKeys = ["recipientName", "recipientEmail", "senderName", "message"] as const;
+  const designRows = GIFT_CARD_DESIGNS.map((id) => ({ id, enabled: draft.designs.includes(id) }));
   const shown = previewAmount ?? draft.amounts[0] ?? null;
 
   return (
@@ -112,10 +164,10 @@ export function GiftCardSettings() {
             <span><span className="hidden md:inline-flex"><AdminButton variant="ghost" iconLeft={ExternalLink} onClick={() => navigate("/carte-cadeau")} disabled={dirty}>
               {t("promo.cards.viewStore")}
             </AdminButton></span></span>
-            <span><span className="hidden sm:inline-flex"><AdminButton variant="outline" iconLeft={RotateCcw} disabled={!dirty || saving} onClick={() => { setDraft(store.config); setDirty(false); }}>
+            <span><span className="hidden sm:inline-flex"><AdminButton variant="outline" iconLeft={RotateCcw} disabled={!dirty || saving} onClick={() => { setDraft(initial); setMinInput(amountToInput(initial.minMinor)); setMaxInput(amountToInput(initial.maxMinor)); setDirty(false); }}>
               {t("promo.config.revert")}
             </AdminButton></span></span>
-            <AdminButton variant="primary" iconLeft={Save} loading={saving} disabled={!dirty} onClick={save}>
+            <AdminButton variant="primary" iconLeft={Save} loading={saving} disabled={!dirty || readOnly} onClick={save}>
               {t("promo.config.save")}
             </AdminButton>
           </>
@@ -123,7 +175,8 @@ export function GiftCardSettings() {
       />
 
       <div className="grid grid-cols-[minmax(0,1fr)] gap-5 px-[var(--admin-gutter)] pb-[clamp(32px,5vw,56px)] pt-5">
-        <PrototypeBar showModes={false} />
+        {readOnly && <Notice tone="info" title={t("promo.gc.readOnly")} />}
+        {saveError && <Notice tone="error" title={saveError} />}
         {dirty && <Notice tone="info" title={t("promo.config.unsaved")}>{t("promo.config.unsavedBody")}</Notice>}
         {errors.length > 0 && (
           <Notice tone="error" title={t("promo.editor.invalidTitle", { count: errors.length })}>
@@ -132,15 +185,11 @@ export function GiftCardSettings() {
         )}
 
         <div className="grid items-start gap-5 xl:grid-cols-[minmax(0,1fr)_400px]">
-          <div className="grid min-w-0 gap-4">
+          <fieldset disabled={readOnly} className="m-0 grid min-w-0 gap-4 border-0 p-0">
+            <legend className="sr-only">{t("promo.config.title")}</legend>
             <FormSection id="gc-product" letter="A" title={t("promo.config.product")}>
               <ToggleSwitch label={t("promo.config.publishedLabel")} description={draft.published ? t("promo.config.publishedOn") : t("promo.config.publishedOff")} checked={draft.published} onChange={(published) => set({ published })} />
-              <FormField label={t("promo.config.titleField", { lang: lang.toUpperCase() })} aside={<Segmented label={t("promo.editor.contentLanguage")} hideLabel size="sm" value={lang} onChange={setLang} options={CONTENT_LANGS.map((c) => ({ value: c, label: c.toUpperCase() }))} />}>
-                {(a) => <input {...a} lang={lang} type="text" value={draft.title[lang]} onChange={(e) => set({ title: { ...draft.title, [lang]: e.target.value } })} className="gt-admin-field" />}
-              </FormField>
-              <FormField label={t("promo.config.descriptionField", { lang: lang.toUpperCase() })}>
-                {(a) => <textarea {...a} lang={lang} rows={3} value={draft.description[lang]} onChange={(e) => set({ description: { ...draft.description, [lang]: e.target.value } })} className="gt-admin-field" />}
-              </FormField>
+              <p className="m-0 text-[length:var(--text-caption)] text-[var(--text-muted)]">{t("promo.gc.productTextHint")}</p>
             </FormSection>
 
             <FormSection id="gc-amounts" letter="B" title={t("promo.config.amounts")} description={t("promo.config.amountsHint")} state={draft.amounts.length === 0 ? "issue" : undefined}>
@@ -189,10 +238,10 @@ export function GiftCardSettings() {
                 <ToggleSwitch label={t("promo.config.custom")} description={t("promo.config.customHint")} checked={draft.allowCustomAmount} onChange={(allowCustomAmount) => set({ allowCustomAmount })} />
                 <div className={clsx("grid gap-4 sm:grid-cols-2", !draft.allowCustomAmount && "opacity-50")}>
                   <FormField label={t("promo.config.min")}>
-                    {(a) => <UnitInput id={a.id} describedBy={a["aria-describedby"]} disabled={!draft.allowCustomAmount} unit="€" value={centsToInput(draft.minCents)} onChange={(v) => set({ minCents: parseEuros(v) ?? 0 })} />}
+                    {(a) => <UnitInput id={a.id} describedBy={a["aria-describedby"]} disabled={!draft.allowCustomAmount} unit="€" value={minInput} onChange={(v) => { setMinInput(v); set({ minMinor: parseAmountInput(v) ?? 0 }); }} />}
                   </FormField>
-                  <FormField label={t("promo.config.max")} error={draft.allowCustomAmount && draft.minCents >= draft.maxCents ? t("promo.config.errors.minMax") : undefined}>
-                    {(a) => <UnitInput id={a.id} describedBy={a["aria-describedby"]} invalid={a["aria-invalid"]} disabled={!draft.allowCustomAmount} unit="€" value={centsToInput(draft.maxCents)} onChange={(v) => set({ maxCents: parseEuros(v) ?? 0 })} />}
+                  <FormField label={t("promo.config.max")} error={draft.maxMinor < draft.minMinor ? t("promo.config.errors.minMax") : undefined}>
+                    {(a) => <UnitInput id={a.id} describedBy={a["aria-describedby"]} invalid={a["aria-invalid"]} disabled={!draft.allowCustomAmount} unit="€" value={maxInput} onChange={(v) => { setMaxInput(v); set({ maxMinor: parseAmountInput(v) ?? 0 }); }} />}
                   </FormField>
                 </div>
               </div>
@@ -229,7 +278,7 @@ export function GiftCardSettings() {
                         label={t(`promo.config.field.${key}`)}
                         hideLabel
                         size="sm"
-                        value={draft.fields[key]}
+                        value={draft.fields[key as "recipientName" | "senderName" | "message"]}
                         onChange={(mode: FieldMode) => set({ fields: { ...draft.fields, [key]: mode } })}
                         options={(["required", "optional", "hidden"] as const).map((m) => ({ value: m, label: t(`promo.config.mode.${m}`) }))}
                       />
@@ -246,7 +295,7 @@ export function GiftCardSettings() {
 
             <FormSection id="gc-designs" letter="D" title={t("promo.config.designs")} description={t("promo.config.designsHint")}>
               <ul className="m-0 grid list-none gap-3 p-0 sm:grid-cols-2 xl:grid-cols-3">
-                {draft.designs.map((d) => {
+                {designRows.map((d) => {
                   const isDefault = draft.defaultDesign === d.id;
                   return (
                     <li key={d.id} className={clsx("grid gap-2 rounded-[var(--admin-radius)] border p-2.5 transition-colors", d.enabled ? "border-[var(--border-default)]" : "border-dashed border-[var(--border-default)] bg-[var(--admin-panel-sunken)]")}>
@@ -260,22 +309,20 @@ export function GiftCardSettings() {
                           {t("promo.config.default")}
                         </label>
                       </div>
-                      <ToggleSwitch label={d.enabled ? t("promo.config.offered") : t("promo.config.notOffered")} checked={d.enabled} onChange={(enabled) => set({ designs: draft.designs.map((x) => (x.id === d.id ? { ...x, enabled } : x)) })} />
+                      <ToggleSwitch label={d.enabled ? t("promo.config.offered") : t("promo.config.notOffered")} checked={d.enabled} onChange={(enabled) => set({ designs: GIFT_CARD_DESIGNS.filter((x) => (x === d.id ? enabled : draft.designs.includes(x))) })} />
                     </li>
                   );
                 })}
               </ul>
             </FormSection>
-          </div>
-
+          </fieldset>
           <aside aria-label={t("promo.config.preview")} className="grid grid-cols-[minmax(0,1fr)] gap-3 xl:sticky xl:top-[calc(var(--admin-header-h)+16px)]">
             <h2 className="text-[length:var(--text-body-md)]">{t("promo.config.preview")}</h2>
             <PreviewFrame label="globaltoothgems.com/carte-cadeau">
               <div className="grid grid-cols-[minmax(0,1fr)] gap-4 bg-[radial-gradient(500px_260px_at_90%_0%,var(--gt-blue-100),transparent),var(--gt-white)] p-4">
                 <GiftCardVisual design={draft.defaultDesign} amountCents={shown} recipient="Jade" sender="Manon" message={t("promo.config.sampleMessage")} size="md" />
                 <div className="grid grid-cols-[minmax(0,1fr)] gap-1">
-                  <strong className="text-[length:var(--text-body-md)] text-[var(--text-primary)]">{l(draft.title) || "—"}</strong>
-                  <p className="m-0 line-clamp-3 text-[length:var(--text-caption)] text-[var(--text-body)]">{l(draft.description)}</p>
+                  <strong className="text-[length:var(--text-body-md)] text-[var(--text-primary)]">{t("promo.cards.productTitle")}</strong>
                 </div>
                 <div className="flex flex-wrap gap-1.5" role="group" aria-label={t("promo.config.previewAmounts")}>
                   {draft.amounts.map((c) => (
@@ -283,7 +330,7 @@ export function GiftCardSettings() {
                       {money(c)}
                     </button>
                   ))}
-                  {draft.allowCustomAmount && <span className="inline-flex h-9 items-center rounded-[var(--radius-pill)] border border-dashed border-[var(--border-default)] px-3.5 text-[length:var(--text-caption)] font-semibold text-[var(--text-muted)]">{t("promo.config.otherAmount", { min: money(draft.minCents), max: money(draft.maxCents) })}</span>}
+                  {draft.allowCustomAmount && <span className="inline-flex h-9 items-center rounded-[var(--radius-pill)] border border-dashed border-[var(--border-default)] px-3.5 text-[length:var(--text-caption)] font-semibold text-[var(--text-muted)]">{t("promo.config.otherAmount", { min: money(draft.minMinor), max: money(draft.maxMinor) })}</span>}
                 </div>
                 <p className="m-0 text-[11px] text-[var(--text-muted)]">
                   {draft.expiryMonths ? t("promo.config.validFor", { count: draft.expiryMonths }) : t("promo.config.noExpiry")}

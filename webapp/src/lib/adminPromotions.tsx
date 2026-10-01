@@ -2,17 +2,12 @@ import { createContext, useCallback, useContext, useEffect, useMemo, useState, t
 import {
   PROMO_NOW,
   SEED_CAMPAIGNS,
-  SEED_GIFT_CARDS,
-  SEED_GIFT_CARD_CONFIG,
   SEED_PROMOTIONS,
   newPromotionId,
   randomCode,
   type Campaign,
   type CampaignActivity,
   type CampaignLifecycle,
-  type GiftCard,
-  type GiftCardProductConfig,
-  type GiftCardTransaction,
   type Promotion,
   type PromotionLifecycle,
 } from "../data/adminPromotions";
@@ -20,21 +15,16 @@ import type { Localized } from "../data/types";
 import { useAdminAuth } from "./adminAuth";
 
 /**
- * Frontend store for promotions, campaigns and gift cards.
+ * Frontend store for promotions and campaigns (mock, until their own
+ * iteration wires them to Supabase). Gift cards are their own live domain:
+ * `lib/giftCards/`.
  *
  * Shaped like `lib/adminCatalog.tsx`: every mutation is async and takes a
  * simulated round trip, so every button above it already has a real busy state,
  * and replacing these bodies with server calls is the whole migration.
  *
- * It sits in `App.tsx` rather than in the admin layout for one reason: the
- * storefront gift card page reads the same product configuration. Editing the
- * preset amounts in the back office and opening `/carte-cadeau` shows the edit,
- * which is the relationship the prototype exists to demonstrate. Nothing
- * persists; a reload restores the seed.
- *
- * Authorisation, code uniqueness, balance arithmetic and the audit trail are
- * all things the real server owns. The ledger entries written here show the
- * shape of that trail, not a substitute for it.
+ * Nothing persists; a reload restores the seed. Authorisation, code
+ * uniqueness and the audit trail are things the real server owns.
  */
 
 export const PROMO_SAVE_DELAY_MS = 650;
@@ -50,15 +40,12 @@ export type PromoDemoMode = "live" | "empty" | "error";
 interface PromotionsValue {
   promotions: Promotion[];
   campaigns: Campaign[];
-  giftCards: GiftCard[];
-  config: GiftCardProductConfig;
   loading: boolean;
   demoMode: PromoDemoMode;
   setDemoMode: (mode: PromoDemoMode) => void;
 
   getPromotion: (id: string) => Promotion | undefined;
   getCampaign: (id: string) => Campaign | undefined;
-  getGiftCard: (code: string) => GiftCard | undefined;
   campaignName: (id: string | null) => string;
 
   savePromotion: (promotion: Promotion) => Promise<Promotion>;
@@ -71,12 +58,6 @@ interface PromotionsValue {
   duplicateCampaign: (id: string) => Promise<Campaign | undefined>;
   addCampaignProducts: (id: string, productIds: string[]) => Promise<void>;
 
-  resendGiftCard: (code: string, email?: string) => Promise<void>;
-  adjustGiftCard: (code: string, deltaCents: number, note: string) => Promise<void>;
-  cancelGiftCard: (code: string, note: string) => Promise<void>;
-  extendGiftCard: (code: string, expiresAt: string) => Promise<void>;
-
-  saveConfig: (config: GiftCardProductConfig) => Promise<void>;
 }
 
 const PromotionsContext = createContext<PromotionsValue | null>(null);
@@ -90,8 +71,6 @@ export function PromotionsProvider({ children }: { children: ReactNode }) {
 
   const [promotions, setPromotions] = useState<Promotion[]>(SEED_PROMOTIONS);
   const [campaigns, setCampaigns] = useState<Campaign[]>(SEED_CAMPAIGNS);
-  const [giftCards, setGiftCards] = useState<GiftCard[]>(SEED_GIFT_CARDS);
-  const [config, setConfig] = useState<GiftCardProductConfig>(SEED_GIFT_CARD_CONFIG);
   const [loading, setLoading] = useState(true);
   const [demoMode, setDemoMode] = useState<PromoDemoMode>("live");
 
@@ -104,7 +83,6 @@ export function PromotionsProvider({ children }: { children: ReactNode }) {
   const empty = demoMode === "empty";
   const visiblePromotions = useMemo(() => (empty ? [] : promotions), [empty, promotions]);
   const visibleCampaigns = useMemo(() => (empty ? [] : campaigns), [empty, campaigns]);
-  const visibleCards = useMemo(() => (empty ? [] : giftCards), [empty, giftCards]);
 
   const logCampaign = useCallback(
     (campaignId: string, kind: CampaignActivity["kind"], detail: Localized) => {
@@ -289,72 +267,10 @@ export function PromotionsProvider({ children }: { children: ReactNode }) {
     [logCampaign],
   );
 
-  /* Gift cards ------------------------------------------------------------ */
-
-  const appendLedger = useCallback(
-    (code: string, entry: Omit<GiftCardTransaction, "id" | "at" | "actor">, patch: Partial<GiftCard> = {}) => {
-      setGiftCards((prev) =>
-        prev.map((c) =>
-          c.code === code
-            ? { ...c, ...patch, ledger: [...c.ledger, { id: nextId("tx"), at: PROMO_NOW, actor, ...entry }] }
-            : c,
-        ),
-      );
-    },
-    [actor],
-  );
-
-  const resendGiftCard = useCallback(
-    async (code: string, email?: string) => {
-      await wait(PROMO_SAVE_DELAY_MS);
-      appendLedger(
-        code,
-        { kind: "resend", amountCents: 0, note: email ? `→ ${email}` : undefined },
-        { delivery: "delivered", ...(email ? { recipientEmail: email } : {}) },
-      );
-    },
-    [appendLedger],
-  );
-
-  const adjustGiftCard = useCallback(
-    async (code: string, deltaCents: number, note: string) => {
-      await wait(PROMO_SAVE_DELAY_MS);
-      appendLedger(code, { kind: "adjustment", amountCents: deltaCents, note });
-    },
-    [appendLedger],
-  );
-
-  const cancelGiftCard = useCallback(
-    async (code: string, note: string) => {
-      await wait(PROMO_SAVE_DELAY_MS);
-      const card = giftCards.find((c) => c.code === code);
-      const balance = card ? card.ledger.reduce((s, t) => s + t.amountCents, 0) : 0;
-      appendLedger(code, { kind: "cancellation", amountCents: -balance, note }, { cancelled: true });
-    },
-    [appendLedger, giftCards],
-  );
-
-  const extendGiftCard = useCallback(
-    async (code: string, expiresAt: string) => {
-      await wait(PROMO_SAVE_DELAY_MS);
-      appendLedger(code, { kind: "extension", amountCents: 0, note: expiresAt }, { expiresAt });
-    },
-    [appendLedger],
-  );
-
-  const saveConfig = useCallback(async (next: GiftCardProductConfig) => {
-    await wait(PROMO_SAVE_DELAY_MS);
-    setConfig(next);
-  }, []);
-
   /* Lookups --------------------------------------------------------------- */
 
   const getPromotion = useCallback((id: string) => visiblePromotions.find((p) => p.id === id), [visiblePromotions]);
   const getCampaign = useCallback((id: string) => visibleCampaigns.find((c) => c.id === id), [visibleCampaigns]);
-  const getGiftCard = useCallback(
-    (code: string) => visibleCards.find((c) => c.code.toLowerCase() === code.toLowerCase()),
-    [visibleCards],
-  );
   const campaignName = useCallback(
     (id: string | null) => (id ? (campaigns.find((c) => c.id === id)?.name ?? "") : ""),
     [campaigns],
@@ -364,14 +280,11 @@ export function PromotionsProvider({ children }: { children: ReactNode }) {
     () => ({
       promotions: visiblePromotions,
       campaigns: visibleCampaigns,
-      giftCards: visibleCards,
-      config,
       loading,
       demoMode,
       setDemoMode,
       getPromotion,
       getCampaign,
-      getGiftCard,
       campaignName,
       savePromotion,
       setPromotionLifecycle,
@@ -381,22 +294,14 @@ export function PromotionsProvider({ children }: { children: ReactNode }) {
       setCampaignLifecycle,
       duplicateCampaign,
       addCampaignProducts,
-      resendGiftCard,
-      adjustGiftCard,
-      cancelGiftCard,
-      extendGiftCard,
-      saveConfig,
     }),
     [
       visiblePromotions,
       visibleCampaigns,
-      visibleCards,
-      config,
       loading,
       demoMode,
       getPromotion,
       getCampaign,
-      getGiftCard,
       campaignName,
       savePromotion,
       setPromotionLifecycle,
@@ -406,11 +311,6 @@ export function PromotionsProvider({ children }: { children: ReactNode }) {
       setCampaignLifecycle,
       duplicateCampaign,
       addCampaignProducts,
-      resendGiftCard,
-      adjustGiftCard,
-      cancelGiftCard,
-      extendGiftCard,
-      saveConfig,
     ],
   );
 

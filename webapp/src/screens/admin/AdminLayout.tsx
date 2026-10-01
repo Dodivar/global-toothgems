@@ -8,6 +8,7 @@ import { AdminOrdersProvider } from "../../lib/adminOrders";
 import { AdminCustomersProvider } from "../../lib/adminCustomers";
 import { AdminUsersProvider } from "../../lib/adminUsers";
 import { AdminSettingsProvider } from "../../lib/adminSettings";
+import { AdminGiftCardsProvider } from "../../lib/giftCards/AdminGiftCardsProvider";
 import { useAdminAuth } from "../../lib/adminAuth";
 import { useFocusTrap } from "../../lib/useFocusTrap";
 
@@ -59,6 +60,9 @@ export function AdminLayout({ children }: { children: ReactNode }) {
       {/* Settings drafts live above the pages so unsaved work survives a
           detour to another section of the admin. */}
       <AdminSettingsProvider>
+      {/* Gift cards (live, read on demand by the gift card screens and the
+          promotions overview's tile). */}
+      <AdminGiftCardsProvider>
       {/* The training catalogue and its image library live above the whole
           app: the learner reads the same courses (see App.tsx). */}
       <div
@@ -104,6 +108,7 @@ export function AdminLayout({ children }: { children: ReactNode }) {
           <AdminShell.Provider value={shell}>{children}</AdminShell.Provider>
         </div>
       </div>
+      </AdminGiftCardsProvider>
       </AdminSettingsProvider>
       </AdminUsersProvider>
       </AdminCustomersProvider>

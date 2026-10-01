@@ -3,7 +3,7 @@ import { useTranslation } from "react-i18next";
 import { getProduct } from "../data/products";
 import { photo } from "./images";
 import { readStoredCart, writeStoredCart } from "./cartStorage";
-import { addToLines, cartCount, cartSubtotal, setLineQty, type CartLine } from "./checkout/cartLines";
+import { addGiftCardToLines, addToLines, cartCount, cartSubtotal, setLineQty, type CartLine } from "./checkout/cartLines";
 import { isSupabaseConfigured } from "./supabase/client";
 import { useHydrated } from "./useHydrated";
 
@@ -15,6 +15,8 @@ interface CartContextValue {
   /** Indicative, in minor units: the order is priced by the database. */
   subtotal: number;
   addLine: (line: Omit<CartLine, "id">) => void;
+  /** A gift card for one recipient: always its own line. */
+  addGiftCard: (line: Omit<CartLine, "id" | "qty">) => void;
   updateQty: (id: string, qty: number) => void;
   removeLine: (id: string) => void;
   /** Empties the cart once its contents have become an order. */
@@ -76,6 +78,14 @@ export function CartProvider({ children }: { children: ReactNode }) {
   );
 
   const addLine = useCallback((line: Omit<CartLine, "id">) => setLines((prev) => addToLines(prev, line)), [setLines]);
+  const addGiftCard = useCallback(
+    (line: Omit<CartLine, "id" | "qty">) => {
+      // Drawn outside the updater, which React may run twice.
+      const id = crypto.randomUUID();
+      setLines((prev) => addGiftCardToLines(prev, line, id));
+    },
+    [setLines],
+  );
   const updateQty = useCallback((id: string, qty: number) => setLines((prev) => setLineQty(prev, id, qty)), [setLines]);
   const removeLine = useCallback((id: string) => setLines((prev) => prev.filter((l) => l.id !== id)), [setLines]);
   const clearCart = useCallback(() => setLines(() => []), [setLines]);
@@ -84,7 +94,7 @@ export function CartProvider({ children }: { children: ReactNode }) {
   const subtotal = useMemo(() => cartSubtotal(lines), [lines]);
 
   return (
-    <CartContext.Provider value={{ lines, count, subtotal, addLine, updateQty, removeLine, clearCart }}>
+    <CartContext.Provider value={{ lines, count, subtotal, addLine, addGiftCard, updateQty, removeLine, clearCart }}>
       {children}
     </CartContext.Provider>
   );

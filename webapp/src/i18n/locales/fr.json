@@ -342,7 +342,8 @@
       "maintenance": "La boutique est en maintenance : les commandes sont suspendues pour le moment. Aucun montant n’a été débité.",
       "session_expired": "Votre session a expiré. Reconnectez-vous puis réessayez.",
       "server_error": "Une erreur est survenue. Aucun montant n’a été débité ; réessayez dans quelques minutes.",
-      "network": "Connexion impossible. Vérifiez votre réseau puis réessayez."
+      "network": "Connexion impossible. Vérifiez votre réseau puis réessayez.",
+      "gift_card_details_invalid": "Les informations d’une carte cadeau du panier ne sont plus acceptées (montant, destinataire ou date). Retirez-la puis composez-la à nouveau."
     },
     "pendingBadge": "Paiement en cours",
     "pendingTitle": "Paiement en cours de confirmation",
@@ -357,7 +358,27 @@
     "notPaidBody": "Aucun montant n’a été débité et votre commande a été annulée. Votre panier vous attend si vous souhaitez réessayer.",
     "invalidTitle": "Lien de confirmation invalide",
     "invalidBody": "Ce lien ne correspond à aucun paiement. Si vous venez de payer, vérifiez vos commandes dans votre espace membre.",
-    "backToCart": "Retour au panier"
+    "backToCart": "Retour au panier",
+    "giftCard": {
+      "title": "Carte cadeau",
+      "hint": "Vous avez une carte cadeau ? Ajoutez son code : le montant disponible est déduit au paiement.",
+      "label": "Code de la carte cadeau",
+      "add": "Ajouter",
+      "added": "Cartes cadeaux ajoutées",
+      "remove": "Retirer la carte se terminant par {{last4}}",
+      "errors": {
+        "format": "Ce code n’a pas le bon format (GT-XXXX-XXXX-XXXX).",
+        "duplicate": "Cette carte est déjà ajoutée.",
+        "limit": "{{max}} cartes cadeaux au plus par commande."
+      },
+      "summary_one": "1 carte cadeau sera appliquée au paiement : le montant restant à payer est calculé par notre serveur.",
+      "summary_other": "{{count}} cartes cadeaux seront appliquées au paiement : le montant restant à payer est calculé par notre serveur.",
+      "payWithCards": "Payer avec mes cartes cadeaux",
+      "noShipping": "Votre panier ne contient que des cartes cadeaux : elles sont envoyées par e-mail, aucune livraison à choisir.",
+      "emailDelivery": "Par e-mail",
+      "byEmail": "Envoyée par e-mail après paiement",
+      "scheduled": "Envoi programmé"
+    }
   },
   "auth": {
     "eyebrow": "Compte",

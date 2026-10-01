@@ -1,5 +1,5 @@
 import { describe, expect, it } from "vitest";
-import { addToLines, cartCount, cartSubtotal, checkoutItems, MAX_LINE_QTY, setLineQty, type CartLine } from "./cartLines";
+import { addGiftCardToLines, addToLines, cartCount, cartSubtotal, checkoutItems, MAX_LINE_QTY, needsShipping, setLineQty, shippableSubtotal, type CartLine } from "./cartLines";
 
 const gel: Omit<CartLine, "id"> = {
   productId: "gel-de-suivi",
@@ -48,5 +48,56 @@ describe("cart lines", () => {
     ]);
     const { dbProductId: _db, ...mockLine } = gel;
     expect(checkoutItems(addToLines(lines, { ...mockLine, productId: "aurora-heart" }))).toBeNull();
+  });
+});
+
+describe("gift card lines", () => {
+  const giftLine = {
+    productId: "carte-cadeau",
+    dbProductId: "9a8b7c6d-5e4f-4a3b-8c2d-1e0f9a8b7c6d",
+    name: "Carte cadeau",
+    image: "",
+    unitPrice: 5000,
+    currency: "EUR",
+    giftCard: { recipientEmail: "jade@example.fr", recipientName: "Jade", design: "noir", message: "" },
+  };
+
+  it("keeps one line per card, quantity fixed at 1", () => {
+    let lines = addGiftCardToLines([], giftLine, "a");
+    lines = addGiftCardToLines(lines, giftLine, "b");
+    expect(lines.map((l) => [l.id, l.qty])).toEqual([
+      ["gift-card::a", 1],
+      ["gift-card::b", 1],
+    ]);
+    expect(setLineQty(lines, "gift-card::a", 4)[0].qty).toBe(1);
+  });
+
+  it("ships nothing and leaves gift cards out of delivery thresholds", () => {
+    const cards = addGiftCardToLines([], giftLine, "a");
+    expect(needsShipping(cards)).toBe(false);
+    const mixed = addToLines(cards, { ...gel, qty: 2 });
+    expect(needsShipping(mixed)).toBe(true);
+    expect(shippableSubtotal(mixed)).toBe(3980);
+    expect(cartSubtotal(mixed)).toBe(8980);
+  });
+
+  it("sends the card's details and amount in minor units", () => {
+    const items = checkoutItems(addGiftCardToLines([], { ...giftLine, giftCard: { ...giftLine.giftCard, deliverAt: "2026-12-24T08:00:00.000Z" } }, "a"));
+    expect(items).toEqual([
+      {
+        product_id: giftLine.dbProductId,
+        variant_id: null,
+        quantity: 1,
+        gift_card: {
+          amount_minor: 5000,
+          recipient_email: "jade@example.fr",
+          recipient_name: "Jade",
+          sender_name: null,
+          message: null,
+          design: "noir",
+          deliver_at: "2026-12-24T08:00:00.000Z",
+        },
+      },
+    ]);
   });
 });

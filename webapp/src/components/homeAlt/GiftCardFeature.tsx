@@ -7,7 +7,7 @@ import { Button } from "../ui/Button";
 import { Badge } from "../ui/Badge";
 import { GiftCardVisual } from "../promotions/Visuals";
 import { useMoney } from "../promotions/PromoBadges";
-import { usePromotions } from "../../lib/adminPromotions";
+import { useStorefrontGiftCard } from "../../lib/giftCards/useStorefrontGiftCard";
 import { useReveal } from "../../lib/useReveal";
 
 const FACTS = [
@@ -18,21 +18,28 @@ const FACTS = [
 
 /**
  * The gift card as a gift, not a product tile: the card itself, large and
- * lit, and a row of amounts that re-print it. The amounts are the back
- * office's gift card configuration — the same list /carte-cadeau offers — as
- * is the validity, so the two can never disagree. Picking one here only previews it; buying
- * happens on the gift card page.
+ * lit, and a row of amounts that re-print it. The amounts and the validity
+ * are the published gift card settings — the same list /carte-cadeau offers —
+ * read once the page is hydrated; until then (or when gift cards are not on
+ * sale) the band shows no amount rather than invented ones. Picking one here
+ * only previews it; buying happens on the gift card page.
  */
 export function GiftCardFeature() {
-  const { t } = useTranslation();
+  const { t, i18n } = useTranslation();
   const navigate = useNavigate();
   const money = useMoney();
-  const { config } = usePromotions();
+  const state = useStorefrontGiftCard(i18n.language.startsWith("en") ? "en" : "fr");
+  const config = state.status === "ready" ? state.config : null;
   const ref = useReveal<HTMLElement>();
-  const amounts = config.amounts.slice(0, 4);
-  const [amount, setAmount] = useState<number | undefined>(amounts[1] ?? amounts[0]);
+  const amounts = config ? config.amounts.slice(0, 4) : [];
+  const [picked, setAmount] = useState<number | undefined>(undefined);
+  const amount = picked ?? amounts[1] ?? amounts[0];
   // Validity is a back-office setting too: read it rather than restate it.
-  const validity = config.expiryMonths ? t("promo.config.validFor", { count: config.expiryMonths }) : t("promo.config.noExpiry");
+  const validity = !config
+    ? t("homeAlt.gift.fact2")
+    : config.expiryMonths
+      ? t("promo.config.validFor", { count: config.expiryMonths })
+      : t("promo.config.noExpiry");
 
   return (
     <section ref={ref} aria-labelledby="gt-alt-gift-title" className="gt-reveal gt-alt-section w-full bg-[var(--surface-card)]">
@@ -41,7 +48,7 @@ export function GiftCardFeature() {
           <div className="gt-alt-giftcard-stage relative w-[min(86%,460px)] -rotate-3 transition-transform duration-[var(--duration-slow)] hover:rotate-0 motion-reduce:rotate-0 motion-reduce:transition-none">
             <GiftCardVisual
               key={amount}
-              design={config.defaultDesign}
+              design={config?.defaultDesign ?? "sparkle"}
               amountCents={amount ?? null}
               recipient={t("homeAlt.gift.exampleRecipient")}
               sender={t("homeAlt.gift.exampleSender")}

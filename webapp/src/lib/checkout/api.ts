@@ -22,8 +22,10 @@ export interface CheckoutRequest {
   items: CheckoutItem[];
   email: string;
   address: CheckoutAddress;
-  shipping_rate_id: string;
+  /** Null for a basket with nothing to ship (gift cards only). */
+  shipping_rate_id: string | null;
   locale: "fr" | "en";
+  gift_card_codes?: string[];
 }
 
 /** Codes the function answers with (`supabase/functions/_shared/orderErrors.ts`), plus the client's own. */
@@ -34,6 +36,7 @@ export const CHECKOUT_ERRORS = [
   "shipping_unavailable",
   "promotion_code_invalid",
   "gift_card_invalid",
+  "gift_card_details_invalid",
   "payment_unavailable",
   "maintenance",
   "session_expired",
@@ -72,8 +75,11 @@ export async function startCheckout(request: CheckoutRequest): Promise<CheckoutR
   const { data, error } = await requireSupabase().functions.invoke("create-checkout-session", { body: request });
   if (!error) return readCheckoutAnswer(data);
   if (error instanceof FunctionsHttpError) {
+    const response = error.context as Response;
+    // The function is not deployed (yet): payment is not available, nothing was created.
+    if (response.status === 404) return { kind: "error", error: "payment_unavailable" };
     try {
-      return readCheckoutAnswer(await (error.context as Response).json());
+      return readCheckoutAnswer(await response.json());
     } catch {
       return { kind: "error", error: "server_error" };
     }

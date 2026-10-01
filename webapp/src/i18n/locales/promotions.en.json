@@ -68,13 +68,17 @@
     "redeemed": "Fully redeemed",
     "scheduled": "Scheduled",
     "expired": "Expired",
-    "cancelled": "Cancelled"
+    "cancelled": "Cancelled",
+    "pendingPayment": "Awaiting payment",
+    "void": "Never paid"
   },
   "delivery": {
     "delivered": "Delivered",
     "opened": "Opened",
     "scheduled": "Scheduled",
-    "bounced": "Bounced"
+    "bounced": "Bounced",
+    "pending": "Not sent",
+    "sent": "Sent"
   },
   "type": {
     "percentage": "Percentage",
@@ -739,7 +743,6 @@
     "balance": "Balance",
     "currentBalance": "Current balance",
     "ofOriginal": "of {{amount}} originally",
-    "spent": "{{amount}} spent ({{percent}} %)",
     "details": "Details",
     "deliveryDate": "Delivery date",
     "order": "Purchase order",
@@ -747,7 +750,6 @@
     "history": "Redemption history",
     "adjust": "Adjust balance",
     "extend": "Extend expiration",
-    "viewOrder": "View related order",
     "cancel": "Cancel gift card",
     "cancelledTitle": "Cancelled on {{date}}",
     "redeemedTitle": "Fully redeemed",
@@ -758,14 +760,10 @@
     "scheduledBody": "Sent to {{email}} on that date. It can’t be resent before then.",
     "bouncedTitle": "The email to {{email}} bounced",
     "bouncedBody": "The recipient never received the card. Check the address with the purchaser, then resend.",
-    "fixAndResend": "Fix & resend",
     "expiringTitle_one": "Expires tomorrow",
     "expiringTitle_other": "Expires in {{count}} days",
     "expiringBody": "{{amount}} is still unspent. A reminder is sent to the recipient 30 days before.",
-    "resendTitle": "Resend the gift card",
-    "resendBody": "The recipient receives the same email again, with the same code.",
     "recipientEmail": "Recipient email",
-    "bouncedHint": "The previous address bounced — correct it before resending.",
     "adjustTitle": "Adjust the balance",
     "adjustBody": "For goodwill gestures or corrections. Every adjustment is recorded in the history with your name.",
     "direction": "Adjustment",
@@ -790,17 +788,8 @@
     "cancelTitle": "Cancel gift card {{code}}?",
     "cancelBody": "The remaining {{amount}} will no longer be spendable by {{name}}.",
     "cancelIrreversible": "This can’t be undone. Refund the purchaser separately if needed.",
-    "typeCode": "Type {{code}} to confirm",
     "cancelConfirm": "Cancel the card",
-    "keepCard": "Keep the card",
-    "cancelNote": "Cancelled from the back office.",
-    "orderTitle": "Order {{ref}}",
-    "orderMock": "Summary of the purchase order — the full order record lives in Orders.",
-    "customer": "Customer",
-    "payment": "Payment",
-    "orderLine": "Global Toothgems gift card",
-    "emailDelivery": "By email — free",
-    "vatNote": "Gift cards are not subject to VAT at purchase; VAT applies when they are spent."
+    "keepCard": "Keep the card"
   },
   "ledger": {
     "purchase": "Purchased",
@@ -811,7 +800,10 @@
     "resend": "Email resent",
     "extendedTo": "Now valid until {{date}}",
     "after": "{{amount}} left",
-    "remaining": "Remaining"
+    "remaining": "Remaining",
+    "issue": "Issued",
+    "reversal": "Credited back (order cancelled)",
+    "refund": "Refund onto the card"
   },
   "config": {
     "title": "Gift card product",
@@ -966,15 +958,12 @@
       "secure": "Secure purchase",
       "secureBody": "Encrypted payment, no data stored here",
       "valid": "Valid on eligible purchases",
-      "validBody": "Gems, kits and trainings for {{months}} months"
+      "validBody": "Gems, kits and trainings for {{months}} months",
+      "validBodyGeneric": "Eligible gems, kits and aftercare",
+      "validBodyNoExpiry": "Gems, kits and aftercare, no expiry date"
     },
     "configIntro": "Four quick steps. The card updates as you go.",
-    "step": {
-      "amount": "Choose an amount",
-      "design": "Pick a design",
-      "who": "Who is it for?",
-      "when": "When should it arrive?"
-    },
+    "step": { "amount": "Choose an amount", "design": "Pick a design", "who": "Who is it for?", "when": "When should it arrive?" },
     "otherAmount": "Other amount",
     "customLabel": "Amount between {{min}} and {{max}}",
     "recipientName": "Recipient’s name",
@@ -989,12 +978,9 @@
     "schedule": "Schedule it",
     "scheduleBody": "Pick the day — at 9 am their time.",
     "deliveryDate": "Delivery date",
-    "buy": "Buy gift card",
     "securePay": "Secure checkout · no hidden fees",
     "total": "Total",
     "previewLabel": "Your gift card",
-    "prototypeNote": "Prototype — no payment is taken and no email is sent.",
-    "now": "right away",
     "summary": {
       "amount": "Amount",
       "to": "For",
@@ -1017,10 +1003,6 @@
       "summary_one": "{{count}} detail needs your attention above.",
       "summary_other": "{{count}} details need your attention above."
     },
-    "doneTitle": "Your gift is ready ✨",
-    "doneBody": "A {{amount}} gift card for {{name}} will be emailed to {{email}} {{when}}.",
-    "doneNote": "Prototype: in the live shop this step continues to secure payment, and the card is only sent once payment is confirmed.",
-    "another": "Send another card",
     "backToShop": "Back to the shop",
     "unavailableTitle": "Gift cards are taking a short break",
     "unavailableBody": "They’ll be back very soon. In the meantime, our gems and kits are still here to make someone sparkle.",
@@ -1032,10 +1014,89 @@
     },
     "faqTitle": "Good to know",
     "faq": {
-      "1": { "q": "How long is it valid?", "a": "{{months}} months from the delivery date. The remaining balance is always shown at checkout." },
+      "1": {
+        "q": "How long is it valid?",
+        "a": "{{months}} months from the card’s payment. The amount used is deducted from each order.",
+        "aGeneric": "The validity is shown when you buy the card. The amount used is deducted from each order.",
+        "aNoExpiry": "It does not expire. The amount used is deducted from each order."
+      },
       "2": { "q": "Can it be used in several orders?", "a": "Yes. Whatever isn’t spent stays on the card for the next order." },
-      "3": { "q": "What can it be spent on?", "a": "Eligible gems, kits, aftercare and trainings. It can’t be used to buy another gift card." },
-      "4": { "q": "What if the email doesn’t arrive?", "a": "Check the spam folder, then contact us — we can resend it to the right address in minutes." }
+      "3": {
+        "q": "What can it be spent on?",
+        "a": "Eligible gems, kits, aftercare and trainings. It can’t be used to buy another gift card."
+      },
+      "4": {
+        "q": "What if the email doesn’t arrive?",
+        "a": "Check the spam folder, then contact us: we will check the recipient’s address with you."
+      }
+    },
+    "heroBody": "A gift card sent by email, to spend in one go or several on gems, kits and aftercare.",
+    "configTitle": "Build the gift card",
+    "loading": "Loading the gift card options…",
+    "loadError": "The gift card options could not be loaded.",
+    "retry": "Try again",
+    "addToCart": "Add to cart",
+    "cartLine": "For {{email}}",
+    "payNote": "Payment happens in the cart. The card becomes usable once the payment is confirmed."
+  },
+  "gc": {
+    "manual": "Issued by the team",
+    "origin": "Origin",
+    "created": "Created",
+    "openCard": "Open the card ending in {{last4}}",
+    "kpi": {
+      "issued": "Cards in circulation",
+      "issuedHint": "Paid or issued, excluding orders never paid",
+      "issuedCount_one": "{{count}} card in circulation",
+      "issuedCount_other": "{{count}} cards in circulation",
+      "soldHint": "Face value of purchased cards",
+      "awaiting": "To deliver",
+      "awaitingHint": "Usable, email not sent yet"
+    },
+    "deliveryTitle_one": "{{count}} card is waiting to reach its recipient",
+    "deliveryTitle_other": "{{count}} cards are waiting to reach their recipients",
+    "deliveryBody": "Sending cards by email is not in place yet. Nobody can see the code in the back office: delivery will be automatic once the sending function is deployed.",
+    "loadError": "Gift cards could not be loaded. Check your connection and try again.",
+    "offlineTitle": "No database connected",
+    "offlineBody": "This local environment is not linked to a Supabase project: no gift card can be read or created.",
+    "issue": "Issue a card",
+    "issueTitle": "Issue a gift card",
+    "issueBody": "A card usable at once (goodwill, refund, partnership). It is recorded in the history with your name and the reason you give.",
+    "issueConfirm": "Issue {{amount}}",
+    "issuedToast": "{{amount}} card issued",
+    "issuedToastBody": "It will be sent to the recipient once email delivery is in place.",
+    "emptyBody": "Cards bought in the shop and cards issued by the team will appear here with their balance.",
+    "search": "Search (last 4 characters, recipient, email, order)",
+    "amountInvalid": "Enter an amount in euros, at most two decimals (€10,000 maximum).",
+    "recipientName": "Recipient name",
+    "message": "Message",
+    "expiry": "Expiry",
+    "expiryHint": "Empty: the validity in the settings applies.",
+    "noteHint": "Shown in the card’s history and the audit log.",
+    "notePlaceholder": "E.g. goodwill gesture after order GT-100231",
+    "notFoundBody": "This card does not exist, or your account cannot view it.",
+    "readOnly": "Read only: your role cannot change gift cards.",
+    "onPayment": "When paid",
+    "voidTitle": "Order never paid",
+    "voidBody": "The order was cancelled or expired before payment: this card was never active.",
+    "pendingTitle": "Awaiting payment",
+    "pendingBody": "The card becomes usable when Stripe confirms the order’s payment.",
+    "scheduledBody": "It will be delivered to {{email}} on that date.",
+    "notSentTitle": "Not delivered yet",
+    "notSentBody": "Email delivery is not in place yet: the recipient has not received their code.",
+    "system": "System",
+    "extendNote": "Note (optional)",
+    "cancelPlaceholder": "E.g. card issued by mistake",
+    "typeLast4": "Type {{last4}} to confirm",
+    "productTextHint": "The name and description shown in the shop are those of the “Gift card” product (Products screen).",
+    "errors": {
+      "forbidden": "Your role does not allow this action on gift cards.",
+      "noteRequired": "A reason is required.",
+      "insufficient": "The card’s balance is too low for this debit.",
+      "notActive": "This card is no longer active: the action is not possible.",
+      "invalid": "Some values are not accepted. Check the amount, the address and the dates.",
+      "network": "The server did not respond. Check your connection and try again.",
+      "unknown": "The action did not go through. Try again in a moment."
     }
   }
 }
