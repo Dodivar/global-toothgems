@@ -101,7 +101,7 @@ function courseJson(overrides: Partial<LearnerCourseJson> = {}): LearnerCourseJs
 describe("toHeldCourse", () => {
   it("keys the course by its French slug and maps the tree without answer keys", () => {
     const held = toHeldCourse(courseJson());
-    expect(held.card).toMatchObject({ id: "pose-essentielle", status: "published", level: "beginner", cover: IMG });
+    expect(held.card).toMatchObject({ id: "pose-essentielle", status: "published", level: "beginner", minutes: 90, cover: IMG });
     expect(held.card.title).toEqual({ fr: "Pose essentielle", en: "Essential placement" });
     const quiz = held.training!.modules[0].quiz!;
     expect(quiz.questions[0].answers.every((a) => a.correct === false)).toBe(true);

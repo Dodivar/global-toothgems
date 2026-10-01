@@ -201,6 +201,7 @@ function useMockLearning(): ProgressContextValue {
         title: course.title,
         summary: course.copy,
         level: FIXTURE_LEVELS[course.id] ?? "all",
+        minutes: training?.duration ?? 0,
         cover: course.image,
         status: training?.status ?? "published",
         issuesCertificate: training?.completion.certificate ?? true,

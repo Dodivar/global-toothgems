@@ -33,6 +33,8 @@ export interface LearnerCourseCard {
   title: Localized;
   summary: Localized;
   level: CourseLevel;
+  /** Advertised length in minutes, authored (also known for a withdrawn course). */
+  minutes: number;
   /** Media reference of the cover: resolve it with `useCourseMediaUrl()`. */
   cover: string;
   /** `unpublished`: shown greyed out, "back soon", and cannot be opened (owner, 2026-10-01). */
@@ -376,6 +378,7 @@ export function toHeldCourse(json: LearnerCourseJson): HeldCourse {
       title: loc(json.title, json.en?.title),
       summary: loc(json.short_description, json.en?.short_description),
       level: asLevel(json.level),
+      minutes: json.duration_minutes,
       cover: json.cover_media_id ?? "",
       status: json.status,
       issuesCertificate: json.issues_certificate,

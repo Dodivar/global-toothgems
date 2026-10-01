@@ -97,8 +97,9 @@ export function CertificateDocument({
             {pick(course.title, lang)}
           </strong>
           <span className="text-[length:1.4cqw] uppercase leading-none tracking-[var(--tracking-wide)] text-[var(--text-subtle)]">
-            {typeof course.level === "string" ? course.level : pick(course.level, lang)} &middot; {t("course.lessonCount", { count: course.lessonCount })} &middot;{" "}
-            {course.duration}
+            {typeof course.level === "string" ? course.level : pick(course.level, lang)}
+            {course.lessonCount > 0 && <> &middot; {t("course.lessonCount", { count: course.lessonCount })}</>}
+            {course.duration && <> &middot; {course.duration}</>}
           </span>
         </div>
 

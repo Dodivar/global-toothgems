@@ -25,13 +25,18 @@ export function sampleCertificateRef(courseId: string, awardedOn: string): strin
   return `GT-${courseId.toUpperCase()}-${awardedOn.slice(0, 4)}-${awardedOn.slice(5, 7)}`;
 }
 
-/** What the certificate prints about a held course, in the page's language. */
+/**
+ * What the certificate prints about a held course, in the page's language. A
+ * withdrawn course has no content to count (its certificate outlives it): the
+ * lesson count is then left out and the advertised length is printed.
+ */
 export function certificateCourse(course: LearnerCourseCard, progress: CourseProgress, lang: string, t: TFunction): CertificateCourse {
+  const minutes = progress.totalMinutes || course.minutes;
   return {
     title: course.title,
     level: t(`academy.levels.${course.level}`),
     lessonCount: progress.total,
-    duration: formatDuration(progress.totalMinutes, lang),
+    duration: minutes > 0 ? formatDuration(minutes, lang) : "",
   };
 }
 

@@ -1123,6 +1123,11 @@ VAT rates, shipping zones/rates mirroring the Settings prototype. Media rows ref
 54. **Certificates** (agent, 2026-10-01): a certificate is the `course_completions` row of a course that issues
     certificates, with a random verification code `GTC-XXXX-XXXX-XXXX` (48 bits); no public verification page yet
     (post-launch). The completion date and the scores are snapshotted when the rules are first met.
+55. **Lesson media signed for 4 hours** (agent, 2026-10-01, to confirm): the member's browser signs the media of the
+    courses they hold for 4 h (renewed every 3 h), so a long lesson video can be watched and sought through without
+    expiring mid-way. Consequence: a signed URL keeps working up to 4 h after a revocation, an expiry or a
+    withdrawal, and for anyone the member passes it to. Shorten `LEARNER_SIGNED_URL_SECONDS`
+    (`webapp/src/lib/learning/learnerApi.ts`) or move to a streaming provider (Mux) if that is not acceptable.
 
 ## Done
 

@@ -94,7 +94,7 @@ export function CertificateViewer({
     { label: t("account.certificateMetaLevel"), value: String(printed.level) },
     {
       label: t("account.certificateMetaLessons"),
-      value: `${t("course.lessonCount", { count: progress.total })} · ${printed.duration}`,
+      value: [progress.total > 0 ? t("course.lessonCount", { count: progress.total }) : "", printed.duration].filter(Boolean).join(" · ") || "—",
     },
     { label: t("account.certificateMetaDate"), value: formatDate(awardedOn) },
     { label: t("account.certificateMetaRef"), value: reference, mono: true },

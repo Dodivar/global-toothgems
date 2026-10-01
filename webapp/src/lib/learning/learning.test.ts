@@ -144,6 +144,7 @@ describe("learnerAccess", () => {
     title: { fr: "", en: "" },
     summary: { fr: "", en: "" },
     level: "all",
+    minutes: 0,
     cover: "",
     status: course?.status ?? "published",
     issuesCertificate: true,

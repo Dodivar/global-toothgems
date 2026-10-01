@@ -49,7 +49,8 @@ export function Dashboard() {
   const progressByCourse = enrolled.map((course) => ({ course, progress: progressFor(course.id) }));
 
   const inProgress = progressByCourse.filter(({ course, progress }) => course.status !== "unpublished" && !progress.completed);
-  const certificates = progressByCourse.filter(({ progress }) => progress.completed).length;
+  // The same count as the certificates page: completed courses that issue one.
+  const certificates = progressByCourse.filter(({ course, progress }) => course.issuesCertificate && progress.completed).length;
   const lessonsDone = progressByCourse.reduce((sum, { progress }) => sum + progress.doneCount, 0);
   /** The course the "resume" card offers: the least advanced one still open. */
   const resume = inProgress.slice().sort((a, b) => a.progress.pct - b.progress.pct)[0] ?? null;
