@@ -1,5 +1,6 @@
 import { assert, assertEquals } from "jsr:@std/assert@1";
-import { parseCheckoutInput } from "./checkoutInput.ts";
+import { orderItems, parseCheckoutInput } from "./checkoutInput.ts";
+import { toDecimalString } from "./money.ts";
 
 const P1 = "0b5e6a52-7d0c-4a55-9d7e-1f6f6b2c1a01";
 const V1 = "7c1d2e3f-4a5b-4c6d-8e9f-0a1b2c3d4e5f";
@@ -83,4 +84,69 @@ Deno.test("gift card codes are upper-cased", () => {
   const result = parseCheckoutInput({ ...valid(), gift_card_codes: ["gt-abcd-efgh-jkmn"] });
   assert(result.ok);
   assertEquals(result.value.gift_card_codes, ["GT-ABCD-EFGH-JKMN"]);
+});
+
+const GIFT = "9a8b7c6d-5e4f-4a3b-8c2d-1e0f9a8b7c6d";
+const giftLine = (card: Record<string, unknown> = {}) => ({
+  product_id: GIFT,
+  quantity: 1,
+  gift_card: { amount_minor: 5000, recipient_email: " Jade@Example.fr ", ...card },
+});
+
+Deno.test("accepts gift card lines, one per recipient, without a delivery rate", () => {
+  const result = parseCheckoutInput({
+    ...valid(),
+    shipping_rate_id: null,
+    items: [
+      giftLine({ recipient_name: " Jade ", message: "Joyeux\r\nanniversaire", design: "noir", deliver_at: "2026-12-24T09:00:00+01:00" }),
+      giftLine({ recipient_email: "lea@example.fr" }),
+    ],
+  });
+  assert(result.ok);
+  assertEquals(result.value.shipping_rate_id, null);
+  assertEquals(result.value.items[0].gift_card, {
+    amount_minor: 5000,
+    recipient_email: "jade@example.fr",
+    recipient_name: "Jade",
+    sender_name: null,
+    message: "Joyeux\nanniversaire",
+    design: "noir",
+    deliver_at: "2026-12-24T09:00:00+01:00",
+  });
+  assertEquals(result.value.items[1].gift_card?.design, null);
+});
+
+Deno.test("rejects malformed gift card lines", () => {
+  const bad = [
+    { ...giftLine(), quantity: 2 },
+    { ...giftLine(), variant_id: V1 },
+    { product_id: GIFT, quantity: 1, gift_card: "50" },
+    giftLine({ amount_minor: 0 }),
+    giftLine({ amount_minor: 49.5 }),
+    giftLine({ amount_minor: "5000" }),
+    giftLine({ amount_minor: 10_000_001 }),
+    giftLine({ recipient_email: "nobody" }),
+    giftLine({ recipient_name: "x".repeat(101) }),
+    giftLine({ sender_name: "Ma\u0000non" }),
+    giftLine({ message: "x".repeat(1001) }),
+    giftLine({ message: "bell\u0007" }),
+    giftLine({ design: "gold" }),
+    giftLine({ deliver_at: "24/12/2026" }),
+    giftLine({ deliver_at: "2026-12-24" }),
+    giftLine({ code: "GT-AAAA-BBBB-CCCC" }),
+    giftLine({ balance: 100 }),
+  ];
+  for (const line of bad) assert(!parseCheckoutInput({ ...valid(), items: [line] }).ok, JSON.stringify(line).slice(0, 100));
+});
+
+Deno.test("gift card lines become create_order() lines with a decimal amount", () => {
+  const result = parseCheckoutInput({ ...valid(), items: [valid().items[0], giftLine({ amount_minor: 2550, design: "mint" }), giftLine()] });
+  assert(result.ok);
+  const lines = orderItems(result.value.items, toDecimalString);
+  assertEquals(lines[0], { product_id: P1, variant_id: null, quantity: 2 });
+  assertEquals(lines[1].amount, "25.50");
+  assertEquals(lines[1].gift_card?.design, "mint");
+  assertEquals(lines[1].quantity, 1);
+  assert(!("amount_minor" in (lines[1].gift_card ?? {})));
+  assert(!("design" in (lines[2].gift_card ?? {})), "the shop's default design is left to create_order()");
 });
