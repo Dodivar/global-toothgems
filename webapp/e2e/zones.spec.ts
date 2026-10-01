@@ -84,11 +84,13 @@ test("member space: the sidebar and the community's links are client-side naviga
   expect(problems).toEqual([]);
 });
 
-test("member space: an unknown address is the 404 screen inside the shell", async ({ page, problems }) => {
-  await signInMember(page);
-  await expectScreen(page, "/compte/nimporte-quoi", /Oups, cette page a fait un petit détour/);
-  expect(problems).toEqual([]);
-});
+for (const path of ["/compte/nimporte-quoi", "/compte/communaute/nimporte-quoi"]) {
+  test(`member space: ${path} is the 404 screen inside the shell`, async ({ page, problems }) => {
+    await signInMember(page);
+    await expectScreen(page, path, /Oups, cette page a fait un petit détour/);
+    expect(problems).toEqual([]);
+  });
+}
 
 const LEARNER_SCREENS: { path: string; heading: RegExp }[] = [
   { path: "/academy/mes-formations/fondation", heading: /^Pose professionnelle de tooth gems$/ },

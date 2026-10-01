@@ -1,16 +1,16 @@
 # Global Toothgems — web application
 
-The production web application of Global Toothgems: storefront, Academy, member area, Studio 3D and back office, in one Next.js (App Router) application backed by Supabase (see `supabase/README.md`) and deployed on Vercel. It is being migrated from Vite + React Router: during the migration the React Router app runs inside a catch-all Next.js page, rendered on the server for public pages and in the browser only elsewhere — see `docs/migration-nextjs.md` for the phases and the per-route checklist.
+The production web application of Global Toothgems: storefront, Academy, member area, Studio 3D and back office, in one Next.js (App Router) application backed by Supabase (see `supabase/README.md`) and deployed on Vercel. It was migrated from Vite + React Router in five phases (done on 2026-09-30): every screen is an App Router segment, public pages are rendered on the server, the private areas in the browser under server-checked layouts — see `docs/migration-nextjs.md` for the phases and the per-route checklist.
 
 > **Status: being industrialised.** The app started as a fully clickable implementation of the Claude Design prototype, with every domain on in-memory mock data. Domains are now connected to Supabase one by one; the up-to-date live/mock table is in the root `AGENTS.md` §4. With the Supabase variables set, these are **live**: the storefront catalogue, back-office product management and categories, member and staff authentication, favourites (`wishlist_items`), reviews and moderation, member and admin order reading, and the Studio 3D workspace. Cart/checkout/payment (no Stripe yet), promotions, gift cards, loyalty, customers/users/statistics/settings in the back office, contact and newsletter, and the whole Academy still run on mock data.
 >
-> Architecture (decided): Next.js App Router on Vercel (migration in progress), business rules in Postgres (RLS + functions), server code in Supabase Edge Functions, payments by Stripe with webhook-driven fulfilment. Sections below that describe "prototype" behaviour, "Prototype controls" panels or mock stores document code that is **still mock and scheduled to be replaced**, not a target design.
+> Architecture (decided): Next.js App Router on Vercel, business rules in Postgres (RLS + functions), server code in Supabase Edge Functions, payments by Stripe with webhook-driven fulfilment. Sections below that describe "prototype" behaviour, "Prototype controls" panels or mock stores document code that is **still mock and scheduled to be replaced**, not a target design.
 
 ## Stack
 
 - **Next.js 16 (App Router, Turbopack) + React 19 + TypeScript**
 - **Tailwind CSS v4** through PostCSS (`postcss.config.mjs`), driven by the design system's CSS variable tokens (`src/index.css`)
-- **react-router-dom** for routing inside the catch-all page `app/[[...slug]]` (transitional: rendered on the server for public pages since phase 3.2, removed in phase 5 of the migration). Inside `src/`, keep using its `Link` / `useNavigate` with the internal French paths; `next/link` and `next/navigation` only in `app/`
+- **Navigation**: `next/link` and `next/navigation` behind `src/lib/navigation` (`Link`, `NavLink`, `Navigate`, `useNavigate`, `useLocation`, `useParams`, `useSearchParams`, with React Router's former names and shapes). Screens write the internal French paths (`<Link to="/boutique">`); the module writes the address in the page's language. Import from it rather than from `next/navigation` in `src/`
 - **react-i18next** for French/English. Public pages carry their language in the address (`/fr/…`, `/en/…`, `src/lib/localeRoutes.ts`); elsewhere the saved choice (FR/EN switches), else the browser's language, else English
 - **lucide-react** for icons
 
@@ -28,43 +28,44 @@ npm run dev
 
 This starts the Next.js dev server on [http://localhost:5173](http://localhost:5173) — the port the app has always used, which the Supabase Auth redirect allow-list knows (`scripts/dev.mjs`; set `PORT` to use another one). `npm run dev:mock` runs the same server on the mock data, whatever `.env.local` says.
 
-How the app is mounted (phases 1–4 of `docs/migration-nextjs.md`):
+How the app is mounted (`docs/migration-nextjs.md`, phases 1–5):
 
 ```
-app/layout.tsx                 root layout: <html lang>, fonts, favicon, src/index.css
-app/[[...slug]]/page.tsx       the public zone: every path without a page of its own: head, 404, then the app
-app/[[...slug]]/client.tsx     ServerRendered (public pages: rendered on the server, hydrated)
-                               and ClientOnly (sign-in, recovery, system pages: dynamic(..., { ssr: false }))
+app/layout.tsx                 root layout: <html lang>, fonts, favicon, src/index.css, the stores
+                               (src/AppProviders.tsx) with the catalogue the server read for a public page
+app/(public)/                  the public zone, in the storefront's chrome, rendered on the server:
+  fr/…, en/…                   public pages, one segment per page and language (app/_public/publicPage.tsx),
+                               product pages (app/_public/productPage.tsx: 404/308, head, JSON-LD)
+  connexion/, inscription/, … sign-in, registration, recovery, /erreur, /maintenance (browser only)
+  error.tsx                    the server-error screen in place of a page that failed
 app/compte/, app/academy/(learner)/, app/admin/, app/studio-3d/
-                               the private zones (phase 4): each mounts its zone app in the browser
-                               only; server layouts + pages turn signed-out visitors away (app/_zones/)
-app/fr/boutique/[slug]/page.tsx, app/en/shop/[slug]/page.tsx
-                               product pages: product found on the server, 404/308, head, JSON-LD
-app/_public/                   shared server code of public pages (product page, metadata)
+                               the private zones: one segment per screen, rendered in the browser only;
+                               server layouts + pages turn signed-out visitors away (app/_zones/)
+app/not-found.tsx, error.tsx   404 (status 404) and errors outside the public zone
 app/auth/confirm/route.ts      where every Supabase Auth e-mail link lands (server)
-proxy.ts                       before every page: language, session refresh, sign-in redirects
-src/ClientApp.tsx              ClientApp (browser) and ServerApp (server): i18n + router + App
-src/AppRoot.tsx                i18n + router around any zone app; the browser history
-src/AppShell.tsx               what every zone shares: the stores (in their justified order) and the chrome
-src/App.tsx                    the public zone's React Router routes
-src/zones/                     the other zones' apps (AccountApp, LearnApp, AdminApp, StudioApp) and ZoneExit
-src/lib/appZones.ts            which zone owns an address
+proxy.ts                       before every page: language, session refresh, sign-in redirects, old addresses
+src/AppProviders.tsx           the stores of the whole site, in their justified order; i18next instance per page
+src/AppShell.tsx               the chrome: skip link, cookie banner and dialog, header, footer
+src/zones/                     each zone's client layouts (PublicChrome, ZoneChrome, MemberShellLayout,
+                               AdminStaffLayout, LearnerLayout, the Studio's lazy screens), BrowserOnly
+src/screens/                   one client component per screen ("use client"), imported by its page
+src/lib/navigation/            links and router hooks on next/link + next/navigation, localized addresses
 ```
 
-**Zones (phase 4).** Each zone is its own App Router segment mounting a React Router app reduced to its screens, so a page downloads only its zone's code (the back office's screens are no longer in the public pages). A link to another zone reaches the zone's `*` route, `ZoneExit`, which reloads the page into the right zone (history state survives the reload); an address no zone owns is the 404 screen. When adding a screen, add its route to the zone app that owns its address (`zoneOf`; a unit test checks the routes against it). The cart is kept for the tab in sessionStorage (`src/lib/cartStorage.ts`), and so are the mock member and staff sessions; other mock stores (orders placed by the demo checkout, learning progress, promotions, training, community) reset when the visitor changes zone, as they do on a reload.
+**Pages.** Each screen has its own App Router segment and imports its own screen module, so a page downloads its screen and the shared code only (stores, fixtures, translations, chrome). Links between pages, zones included, are client-side navigations: the stores (in the root layout) keep their state, mock stores included. When adding a screen: a `"use client"` component in `src/screens/`, and a `page.tsx` in the segment of its address — `zoneScreen(path, <Screen />)` for a private page (it checks the session with the page's address; a unit test checks every gated page does), `publicScreen(id, locale, <Screen />)` for a public page in each language. The cart is kept for the tab in sessionStorage (`src/lib/cartStorage.ts`), and so are the mock member and staff sessions, so a reload keeps them.
 
-Public pages (`/fr/…`, `/en/…`) are rendered on the server: `ServerApp` renders the React Router app at the requested address, in its language, from the catalogue the server read with the publishable key (`src/lib/catalog/serverCatalog.ts`; fixtures in mock mode), and the browser hydrates it. Their first browser render must match the server's: state that only the browser knows (localStorage, media queries) is read once hydrated (`src/lib/useHydrated.ts`), never in a `useState` initializer. Sign-in, recovery, the system pages and the private zones (member space, learner pages, back office, Studio workspace) render in the browser only.
+Public pages (`/fr/…`, `/en/…`) are rendered on the server from the catalogue the server read with the publishable key (`src/lib/catalog/serverCatalog.ts`, loaded by the root layout for the address; fixtures in mock mode), in the language of the address, and hydrated by the browser. Their first browser render must match the server's: state that only the browser knows (localStorage, media queries) is read once hydrated (`src/lib/useHydrated.ts`), never in a `useState` initializer. Sign-in, recovery, the system pages and the private zones (member space, learner pages, back office, Studio workspace) render in the browser only (`BrowserOnly`, `ZoneChrome`). State a navigation hands to the page it opens (the page to return to after signing in, an e-mail already typed) is kept for the tab with that page's address (`src/lib/navigation/state.ts`).
 
-### Addresses and language (phase 3.1)
+### Addresses and language (phases 3.1 and 5)
 
-Public pages live at `/fr/…` and `/en/…` with English segments (`/fr/boutique/coeur-chrome` ↔ `/en/shop/chrome-heart-tooth-gem`: product pages use each language's slug, `product_translations.slug`, see `src/lib/catalog/productSlugs.ts`); the full table is `src/lib/localeRoutes.ts`, and `docs/migration-nextjs.md` lists it. The React Router app still uses its French paths everywhere (`<Link to="/boutique">`, `navigate("/aide")`): `src/lib/localizedHistory.ts` translates them to the address of the current language and back, so write internal paths as before. When adding a public page: add its route to `App.tsx` as usual **and** its French/English addresses to `localeRoutes.ts` (a unit test fails if a route of `App.tsx` is unknown to the server), and its title/description source to `src/lib/pageMeta.ts`. `/` is sent by the proxy to the saved language (`gt-lang` cookie), else the browser's, else English; old unprefixed addresses are moved permanently. Screens live in `src/screens/` (not `src/pages/`, which Next.js would treat as a Pages Router directory). Image imports resolve to `{ src, width, height }` in Next.js: use `.src` in an `<img>`.
+Public pages live at `/fr/…` and `/en/…` with English segments (`/fr/boutique/coeur-chrome` ↔ `/en/shop/chrome-heart-tooth-gem`: product pages use each language's slug, `product_translations.slug`, see `src/lib/catalog/productSlugs.ts`); the full table is `src/lib/localeRoutes.ts`, and `docs/migration-nextjs.md` lists it. Screens use the French paths everywhere (`<Link to="/boutique">`, `navigate("/aide")`): `src/lib/navigation` writes the address of the current language (with the product's slug in that language) and reads addresses back, so write internal paths. A public page's language is its address: the root providers give it that language's i18next instance, on the server and in the browser, and the FR/EN switch moves to the other language's address. When adding a public page: its French/English addresses in `localeRoutes.ts`, a segment in `app/(public)/fr` and `app/(public)/en` (a unit test fails if one is missing), and its title/description source in `src/lib/pageMeta.ts`. `/` is sent by the proxy to the saved language (`gt-lang` cookie), else the browser's, else English; old unprefixed addresses are moved permanently. Screens live in `src/screens/` (not `src/pages/`, which Next.js would treat as a Pages Router directory). Image imports resolve to `{ src, width, height }` in Next.js: use `.src` in an `<img>`.
 
 ## Sessions and e-mail links (server side)
 
 With Supabase configured (phase 2 of `docs/migration-nextjs.md`):
 
 - **The session lives in cookies** (`@supabase/ssr`): `src/lib/supabase/client.ts` is the browser client, `server.ts` the one for route handlers (the visitor's session, publishable key, RLS), `proxySession.ts` the proxy's. A member signed in before the switch had the session in `localStorage`; the browser client carries it over once into cookies (`sessionReady`, which the auth providers wait for).
-- **`proxy.ts`** refreshes the session on every page request (`getClaims()`, which validates the token rather than trusting the cookie) and redirects a signed-out visitor away from `/compte/*`, `/academy/lecon`, `/academy/mes-formations/*` (to `/connexion`) and `/admin/*` except its sign-in screen (to `/admin/connexion`), with `?suite=<page>`; both sign-in pages read it to send the visitor back. The client guards (`RequireAccount`, `RequireAdmin`) stay; the staff role is checked by the back office and by RLS, not by the proxy. The zones' server layouts and pages check the session again with the same rule (`app/_zones/guard.ts`, server client, never the service role). In mock mode the proxy and those checks do nothing.
+- **`proxy.ts`** refreshes the session on every page request (`getClaims()`, which validates the token rather than trusting the cookie) and redirects a signed-out visitor away from `/compte/*`, `/academy/lecon`, `/academy/mes-formations/*` (to `/connexion`) and `/admin/*` except its sign-in screen (to `/admin/connexion`), with `?suite=<page>`; both sign-in pages read it to send the visitor back. The client guards (`RequireAccount`, `RequireAdmin`) stay; the staff role is checked by the back office and by RLS, not by the proxy. The private zones' server layouts and pages check the session again with the same rule (`app/_zones/guard.ts`, server client, never the service role). In mock mode the proxy and those checks do nothing.
 - **`/auth/confirm`** receives every Auth e-mail link — `?token_hash=…&type=…` (the templates in `supabase/templates/`, any device) or `?code=…` (Supabase's default templates, same browser only) — opens the session and forwards to `next` (a same-site path only) or to the page for the kind of link, with `error`/`error_code` when the link is refused. The app passes `…/auth/confirm?next=…` as the redirect of sign-up, resend, password reset and e-mail change. Supabase dashboard settings: `supabase/README.md`, "Member sign-up".
 - The rules (which paths need a session, safe redirects, link kinds) are pure and unit-tested in `src/lib/authRoutes.ts`.
 
@@ -104,15 +105,15 @@ npm start         # serve the production build (next start)
 npm run typecheck # tsc on the app, then on e2e/ + the tool configs
 npm run lint      # oxlint
 npm test          # vitest (catalogue mapping and money rules; vitest.config.ts)
-npm run test:e2e  # Playwright: smoke tests in mock mode (dev server on 5199) + auth-server tests
-                  # (dev server on 5198 against e2e/support/fake-supabase.mjs on 54399)
+npm run test:e2e  # Playwright: smoke tests in mock mode (dev server on 5199) + auth-server and auth-cache
+                  # tests (dev server on 5198 against e2e/support/fake-supabase.mjs on 54399)
 ```
 
 `npm run test:e2e` needs a Chromium: `npx playwright install chromium` once on a workstation (cloud sessions use the preinstalled one). `E2E_BASE_URL=http://localhost:3000 npm run test:e2e` runs the same tests against a server you started yourself (e.g. `npm run build && npm start`, built without the Supabase variables).
 
 ## Deploying (Vercel)
 
-The Vercel project builds from the **Root Directory** `webapp` with the **Next.js** framework preset (`next build`, output managed by Vercel). There is no `vercel.json` any more: under Vite a rewrite sent every unknown path to `index.html`; now the optional catch-all route `app/[[...slug]]` answers every path itself, and real files in `public/` (`favicon.svg`, `icons.svg`, videos) are still served as themselves. An address without a screen, and a product slug the shop does not sell, answer HTTP 404 (the app renders its 404 page); the member space and back office answer 200 for their unknown sub-addresses (their 404 screen lives inside their shell).
+The Vercel project builds from the **Root Directory** `webapp` with the **Next.js** framework preset (`next build`, output managed by Vercel). There is no `vercel.json` any more: every screen is an App Router segment, and real files in `public/` (`favicon.svg`, `icons.svg`, videos) are served as themselves. An address without a screen, and a product slug the shop does not sell, answer HTTP 404 (the 404 page); the member space and back office answer 200 for their unknown sub-addresses (their 404 screen lives inside their shell).
 
 Environment variables (Production and Preview): `NEXT_PUBLIC_SUPABASE_URL`, `NEXT_PUBLIC_SUPABASE_PUBLISHABLE_KEY`. They are inlined at build time, so a change needs a redeploy.
 
@@ -407,7 +408,7 @@ The sidebar also links out to the course catalogue (`/academy`) and signs the me
 
 The member area is capped at `--max-width-account` rather than `--max-width-content`: it spends a 248 px sidebar, the column gap and its own gutters out of the width every other screen gives entirely to content, so the wider cap is what makes its content column measure the same 1240 px as the shop grid.
 
-The sections own no state of their own. Learning progress lives in `lib/progress.tsx`, order history in `lib/orders.tsx` and the member profile in `lib/auth.tsx` — in-memory contexts shaped like the existing `lib/cart.tsx`. The lesson player writes to the first and the cart writes to the second; since the member space became its own zone (a full page load away, phase 4 of `docs/migration-nextjs.md`), those mock writes reset before the dashboard shows them, as on a reload. Certificates are derived from a course reaching 100 %, never stored as a separate flag, and the delivery timeline is derived from the order's recorded status and fulfilment for the same reason. Order amounts are integer minor units plus the order's currency (`data/orders.ts`), taken as recorded — never re-added from the lines — and formatted only at display (`formatMoney`); an order has three independent state axes (status, payment, fulfilment), a refund is not a cancellation. Editing the profile moves the greeting and the avatar, because both are derived from the stored name rather than copied from it.
+The sections own no state of their own. Learning progress lives in `lib/progress.tsx`, order history in `lib/orders.tsx` and the member profile in `lib/auth.tsx` — in-memory contexts shaped like the existing `lib/cart.tsx`. The lesson player writes to the first and the cart writes to the second; since phase 5 of `docs/migration-nextjs.md` the member space is reached by a client-side navigation again, so those mock writes show on the dashboard (a reload resets them). Certificates are derived from a course reaching 100 %, never stored as a separate flag, and the delivery timeline is derived from the order's recorded status and fulfilment for the same reason. Order amounts are integer minor units plus the order's currency (`data/orders.ts`), taken as recorded — never re-added from the lines — and formatted only at display (`formatMoney`); an order has three independent state axes (status, payment, fulfilment), a refund is not a cancellation. Editing the profile moves the greeting and the avatar, because both are derived from the stored name rather than copied from it.
 
 Progress is computed against the course each product opens (`Course.trainingId`), as authored in the back office — see the learning experience below. The Academy sales pages still advertise the single syllabus in `data/lessons.ts`; moving them onto the authored courses is the next step.
 
@@ -580,7 +581,7 @@ A front-end-only prototype of the promotional side of the back office, plus the 
 How it is put together:
 
 - `data/adminPromotions.ts` — types and seed: 15 promotions, 7 campaigns, 14 gift cards and the gift card product. **Money is integer cents.** **Statuses are derived** from a stored lifecycle (draft / live / paused / archived) and the dates, against a fixed prototype date `PROMO_NOW` (24 Nov 2027, printed on every screen) so the 2027 campaigns of the brief keep their states. Gift card balances are the sum of each card's ledger, never a stored number.
-- `lib/adminPromotions.tsx` — the store (async, simulated latency), mounted in `AppShell.tsx` rather than the admin layout so the storefront page reads the same gift card configuration. Since phase 4 the back office and the storefront are separate zones (a full page load between them), so a prototype edit no longer reaches `/carte-cadeau`: the storefront shows the seed until the store is connected to Supabase.
+- `lib/adminPromotions.tsx` — the store (async, simulated latency), mounted in `AppProviders.tsx` (root layout) rather than the admin layout so the storefront page reads the same gift card configuration: since phase 5 a prototype edit reaches `/carte-cadeau` again when the visitor goes there by a link (a reload starts from the seed).
 - `lib/promotionRules.ts` — pure rules: validation, scope resolution, campaign roll-ups, KPIs, list filtering and sorting.
 - `components/promotions/` — badges, the CSS-drawn gift card and campaign banner (`.gt-giftcard`, `.gt-campaign-cover` in `index.css`), product picker, timelines, tables, storefront previews, dialogs and bottom sheet.
 - Copy lives in `i18n/locales/promotions.{fr,en}.json`, mounted under the `promo` key.
@@ -608,7 +609,7 @@ How it is put together:
 
 - `data/reviewSystem.ts` — types and seed (~45 reviews across products and trainings: every status, photos, responses, reports, an unverified gift review, an edited review back in moderation). The prototype's "today" is `REVIEW_NOW` (23 Sept 2026).
 - `lib/reviewRules.ts` — pure rules: summaries, public filters and sorts, featured review, form validation, queue filters, dashboard statistics.
-- `lib/reviews.tsx` — the store switch (Supabase: `lib/reviewsSupabase.tsx`; otherwise the in-memory store in the same file), mounted in `AppShell.tsx` in every zone; with Supabase, a review approved in the back office appears on the product page (the in-memory store resets between zones). Also the eligibility hooks and `useReviewSubjects` (product names and photos from the catalogue). The contract and the three overlays' state (form, report, photo viewer) live in `lib/reviewsContext.ts`; the overlays render once in `components/reviews/ReviewOverlays.tsx`.
+- `lib/reviews.tsx` — the store switch (Supabase: `lib/reviewsSupabase.tsx`; otherwise the in-memory store in the same file), mounted in `AppProviders.tsx` (root layout); with Supabase, a review approved in the back office appears on the product page (the in-memory store lasts until a reload). Also the eligibility hooks and `useReviewSubjects` (product names and photos from the catalogue). The contract and the three overlays' state (form, report, photo viewer) live in `lib/reviewsContext.ts`; the overlays render once in `components/reviews/ReviewOverlays.tsx`.
 - `components/reviews/` — stars (display and radio-group input), badges, card, section, form, request, eligibility panel; `components/reviews/admin/` — dashboard, queue, reported view, moderation sheet and action dialogs.
 - Copy lives in `i18n/locales/reviews.{fr,en}.json`, mounted under the `reviews` key.
 

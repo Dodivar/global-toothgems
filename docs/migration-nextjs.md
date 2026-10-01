@@ -48,7 +48,7 @@ Other facts that shape the plan:
 | 3.1 | Language in the address + SEO head | `/fr/…` and `/en/…` with English segments for public pages, `/` negotiated, old addresses moved (308), localized history for the React Router app, server `<head>` per page (title, description, canonical, hreflang, Open Graph, noindex for private areas), real 404 status, `sitemap.xml`, `robots.txt` | done (2026-09-30) |
 | 3.2 | Public pages rendered on the server | Home, shop, shapes, colours, product, gift card, loyalty, Studio and Academy sales pages, help and legal pages as App Router segments whose content is rendered on the server (data read with the publishable key); product and course titles/descriptions and structured data (Product, Course); 404 for unknown product/course slugs; per-locale product slugs (`product_translations`); products and courses in the sitemap; `window`/`localStorage` code behind client boundaries | **done except the course pages' own head** (2026-09-30): every public page's content is rendered on the server and hydrated; product pages have per-language slugs, 404/308, their own head, Product structured data and sitemap entries. Course titles, Course structured data, 404 for unknown courses and courses in the sitemap wait for a decision (Academy is mock data, see Open decisions) |
 | 4 | Account, back office, Studio | `/compte/*`, community, learner pages, `/admin/*`, Studio editor/share as App Router segments (mostly client components under server-protected layouts); Studio stays client-only | **done** (2026-09-30): one segment per zone, each mounting a React Router app reduced to its screens (see "Phase 4"); public pages download 29 % less JavaScript (992 → 709 kB gzip) |
-| 5 | Cleanup | Remove the catch-all shell, react-router-dom, SPA-only helpers (`ScrollToTop`, `DocumentLanguage`…), dead Vite leftovers; update READMEs | **plan proposed, awaiting the user's validation** (2026-09-30); baseline in the log |
+| 5 | Cleanup | Remove the catch-all shell, react-router-dom, SPA-only helpers (`ScrollToTop`, `DocumentLanguage`…), dead Vite leftovers; update READMEs | **done** (2026-09-30 → 10-01): every screen its own segment, React Router removed, links are client-side navigations across the whole site, each page downloads its own screen (public pages 726 → 589–624 kB gzip, `/admin` 1 007 → 625 kB; see "Phase 5") |
 
 A route leaves the catch-all shell only when its App Router page exists, its smoke test (added if missing) passes, and every link to it still works from the shell (a full page load between the two worlds is acceptable during phases 3–4).
 
@@ -128,6 +128,8 @@ Known limits, accepted: internal links still point to the unprefixed French path
 
 ## Phase 3.2 — public pages rendered on the server
 
+Historical where it names React Router, `ServerApp` or the catch-all page: since phase 5 each public page is its own segment (see "Phase 5"); the catalogue seed, slugs, cache and hydration rules below still hold.
+
 Decided by the product owner (2026-09-30): **product slugs per language**, `/fr/boutique/<French slug>` and `/en/shop/<English slug>`, from `product_translations.slug` (`products.slug` is the French one); hreflang, canonical, sitemap and the FR/EN switch point to the other language's slug; another language's slug or an old identifier moves (308) to the right address; an unknown slug is a 404. No schema change was needed: every product of the Supabase project already has a published English slug (90 active products checked on 2026-09-30). Mock fixtures have no English slug: both languages use their id, as before.
 
 How it works:
@@ -141,12 +143,14 @@ How it works:
 - **Metadata is not streamed** (`htmlLimitedBots: /.*/` in `next.config.ts`): with streaming, a page hydrated quickly could switch language before its `<title>` arrived and have it overwritten (seen once in the smoke tests). Every response now has its whole `<head>` up front; the pages await the same data anyway.
 
 Known limits, accepted for now:
-- Prices and dates are formatted with the shared i18next instance (`lib/format.ts`), whose language `ServerApp` sets before rendering; safe because no public page suspends while rendering. Moving `format.ts` to the language of the rendering tree removes that assumption (phase 5 at the latest).
+- ~~Prices and dates are formatted with the shared i18next instance (`lib/format.ts`)~~ — done in phase 5: `useFormat()` uses the rendering tree's language.
 - Catalogue pages carry the whole catalogue in their payload (measure on the production site: 90 products). Server reads are cached across requests since the catalogue-cache step below.
 - The cookie banner is not in the server HTML: it appears once the page is hydrated (as it did before, when everything rendered in the browser). The legal review notes show by default on the server and disappear after hydration for a reviewer who turned them off.
 - Course pages are rendered on the server from the mock fixtures, as the browser rendered them; their head, 404 and sitemap entries wait for the Academy decision.
 
 ## Phase 4 — zones
+
+Historical since phase 5 (zones are still the site's areas, but no longer React Router apps; see "Phase 5").
 
 Decided by the user (2026-09-30): one catch-all segment per zone mounting a React Router app reduced to that zone's routes and providers, under a server-protected layout (native segments for each screen come with phase 5, when React Router is removed); the cart kept for the browser tab in sessionStorage; the mock member session kept for the tab; sign-in, registration and recovery stay in the public zone; `/erreur` and `/maintenance` stay there too (`error.tsx` in phase 5); the Studio aliases stay browser redirects; the other mock stores reset between zones (accepted).
 
@@ -179,126 +183,163 @@ Bundle sizes (production build in mock mode, JavaScript actually downloaded by C
 
 (Before, `/compte`, `/admin` and the learner pages were measured signed out, i.e. redirected to a sign-in page, which loaded the same single bundle.) What remains shared by every zone: the stores and their mock fixtures, both locale files, the header and footer. Known limits, accepted: the mock stores other than the cart and the demo sessions (orders placed by the demo checkout, learning progress, promotions, training, community, in-memory reviews) reset when the visitor changes zone; a cart line keeps the image address it was added with (after a deployment a mock photo's hashed address may change until the tab is closed); `/studio-3d/editor/*` and `/studio-3d/share/*` still redirect in the browser (one extra load).
 
+## Phase 5 — one segment per screen, React Router removed
+
+Decided by the user (2026-09-30): the plan below, in this order (zone by zone: Studio, learner pages, member space, back office, then the public zone); **option A** for the state a navigation hands to the page it opens; `/erreur` keeps its address (and `error.tsx` shows the same screen); the Studio aliases are moved by the server (308, the default the plan proposed — the user asked why, answered in the session report).
+
+How it works:
+- **Segments**: every screen is its own App Router segment and imports its own `"use client"` module from `src/screens/`, so a page downloads its screen plus the shared code (stores, fixtures, translations, chrome). Public pages: `app/(public)/fr/…` and `app/(public)/en/…`, one segment per page and language, built from `PUBLIC_ROUTES` (`app/_public/publicPage.tsx`: `<head>` from `pageMeta`, as before); product pages `app/(public)/{fr/boutique,en/shop}/[slug]` (`productPage.tsx`, unchanged 404/308/JSON-LD); sign-in, registration, recovery, e-mail landings, `/erreur`, `/maintenance` under `app/(public)/<address>`, still rendered in the browser only (`src/zones/BrowserOnly.tsx`). Private zones: `app/compte` (`MemberShell`, then `(space)` with `AccountLayout` and `communaute` with `CommunityLayout`), `app/academy/(learner)`, `app/admin` (`(staff)` with `RequireAdmin` + `AdminLayout`, whose outlet context became a React context), `app/studio-3d`; rendered in the browser only (`ZoneChrome`), each page checking the session with its own address (`app/_zones/zonePage.tsx`, `zoneScreen`) under the layouts' check (`guardRequest`), as in phase 4. `src/lib/privateSegments.test.ts` fails if a gated page or layout loses its check (checked by removing one).
+- **Navigation** (`src/lib/navigation`): `Link`, `NavLink`, `Navigate`, `useNavigate`, `useLocation`, `useParams`, `useSearchParams` with React Router's names and shapes, on `next/link` and `next/navigation`; ~160 files only changed their import. Screens write internal French paths; `href.ts` writes the address in the page's language (the address's, else the UI's) with the product slug of that language from the catalogue the page holds (`useSlugTranslator`, the same seed on the server and on the first browser render). Search-parameter updates use the history API (no server round trip). Next.js's own scrolling and prefetching are off: `ScrollToTop` keeps "every new page starts at the top", and pages are rendered per request.
+- **State handed to a page** (option A, `state.ts`): kept for the tab in sessionStorage with the address it is for; the page at that exact address (path and query) reads it, also after a reload; every other navigation clears it. Addresses never change. Known limit: back/forward to an earlier page does not bring back what that page was given.
+- **Stores** in the root layout (`src/AppProviders.tsx`, same order and comments as before), so they outlive navigations between pages and zones — the phase-4 limit "other mock stores reset between zones" is gone. The catalogue seed is read by the root layout for the address the proxy saw (`x-gt-path`); a later client-side navigation keeps what the stores hold and they load the rest. The cart and the demo sessions stay in sessionStorage (decided in phase 4), for reloads. The favourites account dialog moved from its provider into the chrome (`FavoriteAccountDialogHost`).
+- **Language**: a public page speaks the language of its address with that language's i18next instance (`src/i18n/instances.ts`), on the server and in the browser, so `/fr/…` → `/en/…` renders in English at once and concurrent server renders never share an instance; the main instance (other pages) follows the last public page shown, as before. The FR/EN switches (`useLanguageSwitch`) save the choice and, on a public page, replace the address with the other language's (slug, query and fragment kept). Prices and dates are formatted in the rendering tree's language (`useFormat()` in `lib/format.ts`, 72 files), not the shared instance's. `DocumentLanguage` stays: the root layout's `<html lang>` is not rendered again by a client-side navigation.
+- **Kept on purpose**: `ScrollToTop` (above), `DocumentLanguage` (above), screens' own `useDocumentTitle`. Removed: `DocumentTitle` (the metadata of each segment titles the tab on every navigation), `ZoneExit`/`ZoneArrival`, `localizedHistory`, `AppRoot`, `ClientApp`/`ServerApp`, the zone apps, `appZones.ts`, `productSlugRegistry.ts`, `isKnownPath` (unknown addresses are 404 because no segment exists), `react-router-dom`. `vite` stays: it is Vitest's peer dependency (`^6.4.0 || ^7.0.0 || ^8.0.0`, checked in `node_modules/vitest/package.json`).
+- **404 "back" action**: React Router numbered its history entries; `NotFound` now offers "back" when another page of the site was shown in this tab, or the page was opened from the site (`history.ts`).
+- **Redirects**: `/studio-3d/editor/*` (section kept) and `/studio-3d/share(/<token>)` (the browser keeps the fragment) and `/connexion-b` are moved by the proxy (308, `legacyAddress`).
+
+Bundle sizes (production build in mock mode, JavaScript downloaded by Chromium after `networkidle` + 1.5 s, gzip via zlib; same throwaway script before and after):
+
+| Page | Before (1be0eb5) raw / gzip | After raw / gzip |
+| --- | --- | --- |
+| `/fr` | 2 562 / 726 kB | 2 095 / 624 kB |
+| `/fr/boutique` | 2 562 / 726 kB | 2 021 / 606 kB |
+| `/fr/academy` | 2 562 / 726 kB | 1 961 / 589 kB |
+| `/connexion` | 2 562 / 726 kB | 1 966 / 591 kB |
+| `/compte` (demo member) | 2 753 / 769 kB | 2 009 / 599 kB |
+| `/compte/communaute` | 2 753 / 769 kB | 2 003 / 596 kB |
+| `/academy/mes-formations/fondation` | 2 658 / 752 kB | 1 961 / 587 kB |
+| `/admin` (demo staff) | 3 828 / 1 007 kB | 2 086 / 625 kB |
+| `/studio-3d/atelier` | 3 624 / 1 008 kB | 2 985 / 858 kB |
+| `/studio-3d/partage` | 3 333 / 932 kB | 2 693 / 782 kB |
+
+What every page still shares: the stores and their mock fixtures, both locale files, the chrome. A client-side navigation then downloads only the next screen's chunk.
+
+Known limits, accepted (to check on the first preview):
+- A client-side navigation asks the server for the next segment (RSC request) — also between two sections of one screen (Studio editor sections, back-office detail pages); it used to be immediate in the browser. In headless Chromium, which draws WebGL in software, a navigation away from a moving 3D stage waits seconds for the main thread (React transition); on a real GPU it should not — to verify on a phone.
+- The member space, learner pages, back office and Studio send no content in their HTML (as before); the storefront chrome of sign-in, recovery and system pages is now in the server HTML, their content still appears once hydrated.
+- `error.tsx` was not exercised by a test (no page fails on purpose); `/erreur` is.
+- Once, on a dev server, Turbopack aborted with an internal panic after dozens of segments were deleted and created (`turbo-tasks … inner_of_upper_lost_follower`); not reproduced after clearing `.next`. A dev-only tool bug.
+
 ## Route checklist
 
-Legend (phase 1 done: every route below is served by the catch-all shell; phase 2 done: "account" and "staff" routes are also turned away server-side by `proxy.ts`; phase 3.2: public pages rendered on the server; phase 4: private zones have their own segments — **Native** below means the zone segment serving the route) — **Access**: open / account (`RequireAccount` + proxy + zone layout/page) / staff (`RequireAdmin` + proxy + zone layout/page) / studio (`RequireStudioAccess`) / redirect (client-side `Navigate`). **P1**: served by the catch-all shell. **Smoke**: covered by `webapp/e2e/`. **Native**: App Router segment exists. **SSR**: "head" = server `<head>` done (3.1), "body" = content rendered on the server (3.2). Public routes now live at `/fr/…` / `/en/…` (table in phase 3.1); the address in the first column is the internal one and, when unprefixed, redirects (308). Target phase in the last column.
+Legend (phase 1 done: every route below was served by the catch-all shell; phase 2 done: "account" and "staff" routes are also turned away server-side by `proxy.ts`; phase 3.2: public pages rendered on the server; phase 4: private zones had their own segments; phase 5 done: every screen is its own App Router segment and the catch-all shell is gone — **Native** below is the segment serving the route) — **Access**: open / account (`RequireAccount` + proxy + zone layout/page) / staff (`RequireAdmin` + proxy + zone layout/page) / studio (`RequireStudioAccess`) / redirect (308 from the proxy since phase 5). **P1**: was served by the catch-all shell in phase 1. **Smoke**: covered by `webapp/e2e/`. **Native**: App Router segment exists. **SSR**: "head" = server `<head>` done (3.1), "body" = content rendered on the server (3.2). Public routes now live at `/fr/…` / `/en/…` (table in phase 3.1); the address in the first column is the internal one and, when unprefixed, redirects (308). Target phase in the last column.
 
 ### Storefront
 
 | Route | Access | P1 | Smoke | Native | SSR | Target |
 | --- | --- | --- | --- | --- | --- | --- |
-| `/` | open | ✅ | ✅ | ⬜ | head ✅ body ✅ | done (3.2); own segment in 5 |
-| `/accueil-b` → `/` | redirect | ✅ | ✅ | ⬜ | — | server redirect ✅ (3.1) |
-| `/boutique` | open | ✅ | ✅ (+ distinct product photos) | ⬜ | head ✅ body ✅ | done (3.2); own segment in 5 |
-| `/boutique-b` → `/boutique` | redirect | ✅ | ✅ | ⬜ | — | server redirect ✅ (3.1) |
-| `/boutique/:id` (`/fr/boutique/<French slug>`, `/en/shop/<English slug>`) | open | ✅ | ✅ (+ 404, 308, head, JSON-LD, slugs in `auth-server`) | ✅ `app/fr/boutique/[slug]`, `app/en/shop/[slug]` | head ✅ (product) body ✅ | done (3.2) |
-| `/formes` | open | ✅ | ✅ | ⬜ | head ✅ body ✅ | done (3.2); own segment in 5 |
-| `/couleurs` | open | ✅ | ✅ | ⬜ | head ✅ body ✅ | done (3.2); own segment in 5 |
-| `/panier` | open | ✅ | ✅ (cart flow) | ⬜ | head ✅ (noindex) body ✅ | done (3.2); own segment in 5 |
-| `/panier/confirmation` (Stripe return, added with the checkout) | open | ✅ | ✅ (`cart.spec`) | ⬜ | head ✅ (noindex) body ✅ (state read once hydrated) | done; own segment in 5 |
-| `/fidelite` | open | ✅ | ✅ | ⬜ | head ✅ body ✅ | done (3.2); own segment in 5 |
-| `/carte-cadeau` | open | ✅ | ✅ | ⬜ | head ✅ body ✅ | done (3.2); own segment in 5 |
-| `/gift-card` (alias) | redirect | ✅ | ✅ (`locale.spec.ts`) | ⬜ | — | server redirect to `/en/gift-card` ✅ (3.1) |
+| `/` | open | ✅ | ✅ | ✅ `app/(public)/fr/…`, `app/(public)/en/…` | head ✅ body ✅ | done (5) |
+| `/accueil-b` → `/` | redirect | ✅ | ✅ | — | — | server redirect ✅ (3.1) |
+| `/boutique` | open | ✅ | ✅ (+ distinct product photos) | ✅ `app/(public)/fr/…`, `app/(public)/en/…` | head ✅ body ✅ | done (5) |
+| `/boutique-b` → `/boutique` | redirect | ✅ | ✅ | — | — | server redirect ✅ (3.1) |
+| `/boutique/:id` (`/fr/boutique/<French slug>`, `/en/shop/<English slug>`) | open | ✅ | ✅ (+ 404, 308, head, JSON-LD, slugs in `auth-server`) | ✅ `app/(public)/fr/boutique/[slug]`, `app/(public)/en/shop/[slug]` | head ✅ (product) body ✅ | done (3.2) |
+| `/formes` | open | ✅ | ✅ | ✅ `app/(public)/fr/…`, `app/(public)/en/…` | head ✅ body ✅ | done (5) |
+| `/couleurs` | open | ✅ | ✅ | ✅ `app/(public)/fr/…`, `app/(public)/en/…` | head ✅ body ✅ | done (5) |
+| `/panier` | open | ✅ | ✅ (cart flow) | ✅ `app/(public)/fr/…`, `app/(public)/en/…` | head ✅ (noindex) body ✅ | done (5) |
+| `/panier/confirmation` (Stripe return, added with the checkout) | open | ✅ | ✅ (`cart.spec`) | ✅ `app/(public)/fr/panier/confirmation`, `…/en/cart/confirmation` | head ✅ (noindex) body ✅ (state read once hydrated) | done (5) |
+| `/fidelite` | open | ✅ | ✅ | ✅ `app/(public)/fr/…`, `app/(public)/en/…` | head ✅ body ✅ | done (5) |
+| `/carte-cadeau` | open | ✅ | ✅ | ✅ `app/(public)/fr/…`, `app/(public)/en/…` | head ✅ body ✅ | done (5) |
+| `/gift-card` (alias) | redirect | ✅ | ✅ (`locale.spec.ts`) | — | — | server redirect to `/en/gift-card` ✅ (3.1) |
 
 ### Sign-in, registration, recovery
 
 | Route | Access | P1 | Smoke | Native | SSR | Target |
 | --- | --- | --- | --- | --- | --- | --- |
-| `/connexion` | open | ✅ | ✅ (mock sign-in; return to the page asked for, `zones.spec.ts`) | ⬜ | — | public zone (decided, phase 4: stays with the cart); own segment in 5 |
-| `/connexion-b` → `/connexion` | redirect | ✅ | ✅ | ⬜ | — | public zone (decided, phase 4: stays with the cart); own segment in 5 |
-| `/inscription` | open | ✅ | ✅ (mock registration) | ⬜ | — | public zone (decided, phase 4: stays with the cart); own segment in 5 |
-| `/mot-de-passe-oublie`, `/forgot-password` | open | ✅ | ✅ (FR) | ⬜ | — | public zone (decided, phase 4: stays with the cart); own segment in 5 |
-| `/reinitialiser-mot-de-passe`, `/reset-password` | open (e-mail link) | ✅ | ✅ (FR) | ⬜ | — | public zone (decided, phase 4: stays with the cart); own segment in 5 |
-| `/verifier-email`, `/verify-email` | open (e-mail link) | ✅ | ✅ (FR) | ⬜ | — | public zone (decided, phase 4: stays with the cart); own segment in 5 |
-| `/confirmation-compte` | open (after `/auth/confirm`) | ✅ | ✅ | ⬜ | — | public zone (decided, phase 4: stays with the cart); own segment in 5 |
+| `/connexion` | open | ✅ | ✅ (mock sign-in; return to the page asked for, `zones.spec.ts`) | ✅ `app/(public)/<address>` (browser only) | — | done (5) |
+| `/connexion-b` → `/connexion` | redirect | ✅ | ✅ | ✅ `app/(public)/<address>` (browser only) | — | done (5) |
+| `/inscription` | open | ✅ | ✅ (mock registration) | ✅ `app/(public)/<address>` (browser only) | — | done (5) |
+| `/mot-de-passe-oublie`, `/forgot-password` | open | ✅ | ✅ (FR) | ✅ `app/(public)/<address>` (browser only) | — | done (5) |
+| `/reinitialiser-mot-de-passe`, `/reset-password` | open (e-mail link) | ✅ | ✅ (FR) | ✅ `app/(public)/<address>` (browser only) | — | done (5) |
+| `/verifier-email`, `/verify-email` | open (e-mail link) | ✅ | ✅ (FR) | ✅ `app/(public)/<address>` (browser only) | — | done (5) |
+| `/confirmation-compte` | open (after `/auth/confirm`) | ✅ | ✅ | ✅ `app/(public)/<address>` (browser only) | — | done (5) |
 | `/auth/confirm` (route handler, phase 2) | open (e-mail links) | — | ✅ (`auth-server`) | ✅ | — | done |
 
 ### Studio 3D
 
 | Route | Access | P1 | Smoke | Native | SSR | Target |
 | --- | --- | --- | --- | --- | --- | --- |
-| `/studio-3d` | open | ✅ | ✅ | ⬜ | head ✅ body ✅ | done (3.2); own segment in 5 |
-| `/studio-3d/abonnement` | open | ✅ | ✅ | ⬜ | head ✅ body ✅ | done (3.2); own segment in 5 |
-| `/studio-3d/subscribe` → `/en/3d-studio/subscribe` | redirect | ✅ | ✅ | ⬜ | — | server redirect ✅ (3.1) |
-| `/studio-3d/atelier/*` (editor, lazy three.js) | studio | ✅ | ✅ (canvas renders) | ✅ `app/studio-3d/atelier/[[...slug]]` | — (client only) | done (4) |
-| `/studio-3d/editor/*` → `/studio-3d/atelier/*` | redirect | ✅ | ✅ (`zones.spec.ts`) | ⬜ | — | browser redirect from the public zone (decided, 4); server redirect in 5 |
-| `/studio-3d/partage`, `/studio-3d/partage/:token` | open (lazy three.js) | ✅ | ✅ (no token; open on the server) | ✅ `app/studio-3d/partage/[[...slug]]` | — (client only) | done (4) |
-| `/studio-3d/share`, `/studio-3d/share/:token` → `partage` | redirect | ✅ | ✅ (`zones.spec.ts`) | ⬜ | — | browser redirect from the public zone (decided, 4); server redirect in 5 |
+| `/studio-3d` | open | ✅ | ✅ | ✅ `app/(public)/fr/…`, `app/(public)/en/…` | head ✅ body ✅ | done (5) |
+| `/studio-3d/abonnement` | open | ✅ | ✅ | ✅ `app/(public)/fr/…`, `app/(public)/en/…` | head ✅ body ✅ | done (5) |
+| `/studio-3d/subscribe` → `/en/3d-studio/subscribe` | redirect | ✅ | ✅ | — | — | server redirect ✅ (3.1) |
+| `/studio-3d/atelier/*` (editor, lazy three.js) | studio | ✅ | ✅ (canvas renders) | ✅ `app/studio-3d/atelier/[[...slug]]` | — (client only) | done (5): one segment per screen |
+| `/studio-3d/editor/*` → `/studio-3d/atelier/*` | redirect | ✅ | ✅ (`zones.spec.ts`) | — | — | server redirect (308) ✅ (5), fragment kept by the browser |
+| `/studio-3d/partage`, `/studio-3d/partage/:token` | open (lazy three.js) | ✅ | ✅ (no token; open on the server) | ✅ `app/studio-3d/partage/[[...slug]]` | — (client only) | done (5): one segment per screen |
+| `/studio-3d/share`, `/studio-3d/share/:token` → `partage` | redirect | ✅ | ✅ (`zones.spec.ts`) | — | — | server redirect (308) ✅ (5), fragment kept by the browser |
 
 ### Academy
 
 | Route | Access | P1 | Smoke | Native | SSR | Target |
 | --- | --- | --- | --- | --- | --- | --- |
-| `/academy` | open | ✅ | ✅ | ⬜ | head ✅ body ✅ | done (3.2); own segment in 5 |
-| `/academy/formation/:id` | open | ✅ | ✅ | ⬜ | head: generic (site name) body ✅ (fixtures) | course title, Course JSON-LD, 404, sitemap: **decision needed** (Academy mock) |
-| `/academy/lecon` | account | ✅ | ✅ (proxy redirect; forwards to the course, `zones.spec.ts`) | ✅ `app/academy/(learner)` | — | done (4) |
-| `/academy/mes-formations/:courseId` | account | ✅ | ✅ | ✅ `app/academy/(learner)` | — | done (4) |
-| `/academy/mes-formations/:courseId/lecon/:nodeKey` | account | ✅ | ✅ (proxy redirect) | ✅ `app/academy/(learner)` | — | done (4) |
-| `/academy/mes-formations/:courseId/terminee` | account | ✅ | ✅ (+ server refusal) | ✅ `app/academy/(learner)` | — | done (4) |
+| `/academy` | open | ✅ | ✅ | ✅ `app/(public)/fr/…`, `app/(public)/en/…` | head ✅ body ✅ | done (5) |
+| `/academy/formation/:id` | open | ✅ | ✅ | ✅ `app/(public)/fr/academy/formation/[id]`, `…/en/academy/course/[id]` | head: generic (site name) body ✅ (fixtures) | course title, Course JSON-LD, 404, sitemap: **decision needed** (Academy mock) |
+| `/academy/lecon` | account | ✅ | ✅ (proxy redirect; forwards to the course, `zones.spec.ts`) | ✅ `app/academy/(learner)` | — | done (5): one segment per screen |
+| `/academy/mes-formations/:courseId` | account | ✅ | ✅ | ✅ `app/academy/(learner)` | — | done (5): one segment per screen |
+| `/academy/mes-formations/:courseId/lecon/:nodeKey` | account | ✅ | ✅ (proxy redirect) | ✅ `app/academy/(learner)` | — | done (5): one segment per screen |
+| `/academy/mes-formations/:courseId/terminee` | account | ✅ | ✅ (+ server refusal) | ✅ `app/academy/(learner)` | — | done (5): one segment per screen |
 
 ### Member area (`MemberShell`, account)
 
 | Route | Access | P1 | Smoke | Native | SSR | Target |
 | --- | --- | --- | --- | --- | --- | --- |
-| `/compte` | account | ✅ | ✅ (redirect + mock sign-in; proxy redirect and cookie session in `auth-server`) | ✅ `app/compte` | — | done (4) |
-| `/compte/attestations` | account | ✅ | ✅ (`zones.spec.ts`) | ✅ `app/compte` | — | done (4) |
-| `/compte/commandes` | account | ✅ | ✅ (redirect, `zones.spec.ts`) | ✅ `app/compte` | — | done (4) |
-| `/compte/commandes/:reference` | account | ✅ | ✅ (`orders.spec.ts`; proxy redirect in `auth-server`) | ✅ `app/compte` | — | done (4) — added 2026-09-30 (order detail, zone route in `AccountApp`) |
-| `/compte/profil` | account | ✅ | ✅ (`zones.spec.ts`) | ✅ `app/compte` | — | done (4) |
-| `/compte/securite` | account | ✅ | ✅ (`zones.spec.ts`) | ✅ `app/compte` | — | done (4) |
-| `/compte/fidelite` | account | ✅ | ✅ (`zones.spec.ts`) | ✅ `app/compte` | — | done (4) |
-| `/compte/avis` | account | ✅ | ✅ (`zones.spec.ts`) | ✅ `app/compte` | — | done (4) |
-| `/compte/*` (404 inside the shell) | account | ✅ | ✅ (`zones.spec.ts`) | ✅ `app/compte` | — | done (4) |
-| `/compte/communaute` | account | ✅ | ✅ (`zones.spec.ts`) | ✅ `app/compte` | — | done (4) |
-| `/compte/communaute/canal/:channelId` | account | ✅ | ⬜ (its zone is: `/compte/communaute`) | ✅ `app/compte` | — | done (4) |
-| `/compte/communaute/discussion/:discussionId` | account | ✅ | ⬜ (its zone is: `/compte/communaute`) | ✅ `app/compte` | — | done (4) |
-| `/compte/communaute/activite/:view` | account | ✅ | ⬜ (its zone is: `/compte/communaute`) | ✅ `app/compte` | — | done (4) |
-| `/compte/communaute/membres` | account | ✅ | ✅ (`zones.spec.ts`) | ✅ `app/compte` | — | done (4) |
-| `/compte/communaute/charte` | account | ✅ | ✅ (`zones.spec.ts`) | ✅ `app/compte` | — | done (4) |
-| `/compte/communaute/*` (404) | account | ✅ | ⬜ (its zone is: `/compte/*` 404) | ✅ `app/compte` | — | done (4) |
+| `/compte` | account | ✅ | ✅ (redirect + mock sign-in; proxy redirect and cookie session in `auth-server`) | ✅ `app/compte/…` | — | done (5): one segment per screen |
+| `/compte/attestations` | account | ✅ | ✅ (`zones.spec.ts`) | ✅ `app/compte/…` | — | done (5): one segment per screen |
+| `/compte/commandes` | account | ✅ | ✅ (redirect, `zones.spec.ts`) | ✅ `app/compte/…` | — | done (5): one segment per screen |
+| `/compte/commandes/:reference` | account | ✅ | ✅ (`orders.spec.ts`; proxy redirect in `auth-server`) | ✅ `app/compte/…` | — | done (5) — added 2026-09-30 (order detail, zone route in `AccountApp`) |
+| `/compte/profil` | account | ✅ | ✅ (`zones.spec.ts`) | ✅ `app/compte/…` | — | done (5): one segment per screen |
+| `/compte/securite` | account | ✅ | ✅ (`zones.spec.ts`) | ✅ `app/compte/…` | — | done (5): one segment per screen |
+| `/compte/fidelite` | account | ✅ | ✅ (`zones.spec.ts`) | ✅ `app/compte/…` | — | done (5): one segment per screen |
+| `/compte/avis` | account | ✅ | ✅ (`zones.spec.ts`) | ✅ `app/compte/…` | — | done (5): one segment per screen |
+| `/compte/*` (404 inside the shell) | account | ✅ | ✅ (`zones.spec.ts`) | ✅ `app/compte/…` | — | done (5): one segment per screen |
+| `/compte/communaute` | account | ✅ | ✅ (`zones.spec.ts`) | ✅ `app/compte/…` | — | done (5): one segment per screen |
+| `/compte/communaute/canal/:channelId` | account | ✅ | ✅ (client-side navigation, `zones.spec.ts`) | ✅ `app/compte/…` | — | done (5): one segment per screen |
+| `/compte/communaute/discussion/:discussionId` | account | ✅ | ✅ (client-side navigation, `zones.spec.ts`) | ✅ `app/compte/…` | — | done (5): one segment per screen |
+| `/compte/communaute/activite/:view` | account | ✅ | ✅ (client-side navigation, `zones.spec.ts`) | ✅ `app/compte/…` | — | done (5): one segment per screen |
+| `/compte/communaute/membres` | account | ✅ | ✅ (`zones.spec.ts`) | ✅ `app/compte/…` | — | done (5): one segment per screen |
+| `/compte/communaute/charte` | account | ✅ | ✅ (`zones.spec.ts`) | ✅ `app/compte/…` | — | done (5): one segment per screen |
+| `/compte/communaute/*` (404) | account | ✅ | ✅ (`zones.spec.ts`) | ✅ `app/compte/…` | — | done (5): one segment per screen |
 
 ### Back office (`AdminLayout`, staff)
 
 | Route | Access | P1 | Smoke | Native | SSR | Target |
 | --- | --- | --- | --- | --- | --- | --- |
-| `/admin/connexion` | open | ✅ | ✅ | ✅ `app/admin/connexion` | — | done (4) |
-| `/admin` | staff | ✅ | ✅ (client and proxy redirects) | ✅ `app/admin/(staff)` | — | done (4) |
-| `/admin/commandes`, `/admin/commandes/:reference` | staff | ✅ | ✅ list only (`zones.spec.ts`) | ✅ `app/admin/(staff)` | — | done (4) |
-| `/admin/clients`, `/admin/clients/:id` | staff | ✅ | ✅ list only (`zones.spec.ts`) | ✅ `app/admin/(staff)` | — | done (4) |
-| `/admin/utilisateurs` | staff | ✅ | ✅ (`zones.spec.ts`) | ✅ `app/admin/(staff)` | — | done (4) |
-| `/admin/statistiques` | staff | ✅ | ✅ (`zones.spec.ts`) | ✅ `app/admin/(staff)` | — | done (4) |
-| `/admin/produits` | staff | ✅ | ✅ (redirect, sign-in return, `zones.spec.ts`) | ✅ `app/admin/(staff)` | — | done (4) |
-| `/admin/produits/nouveau`, `/admin/produits/:id`, `/admin/produits/:id/recommandations` | staff | ✅ | ⬜ (its zone is, via the list pages) | ✅ `app/admin/(staff)` | — | done (4) |
-| `/admin/categories` | staff | ✅ | ✅ (`zones.spec.ts`) | ✅ `app/admin/(staff)` | — | done (4) |
-| `/admin/promotions`, `/nouvelle`, `/apercu`, `/:id`, `/:id/modifier` | staff | ✅ | ✅ list only (`zones.spec.ts`) | ✅ `app/admin/(staff)` | — | done (4) |
-| `/admin/promotions/cartes-cadeaux/configuration`, `/cartes-cadeaux/:code` | staff | ✅ | ⬜ (its zone is, via the list pages) | ✅ `app/admin/(staff)` | — | done (4) |
-| `/admin/promotions/campagnes/nouvelle`, `/:id`, `/:id/modifier` | staff | ✅ | ⬜ (its zone is, via the list pages) | ✅ `app/admin/(staff)` | — | done (4) |
-| `/admin/avis` | staff | ✅ | ✅ (`zones.spec.ts`) | ✅ `app/admin/(staff)` | — | done (4) |
-| `/admin/parametres` | staff | ✅ | ✅ (`zones.spec.ts`) | ✅ `app/admin/(staff)` | — | done (4) |
-| `/admin/formations`, `/nouvelle`, `/:id`, `/:id/apercu`, `/:id/publication` | staff | ✅ | ✅ list only (`zones.spec.ts`) | ✅ `app/admin/(staff)` | — | done (4) |
+| `/admin/connexion` | open | ✅ | ✅ | ✅ `app/admin/connexion` | — | done (5): one segment per screen |
+| `/admin` | staff | ✅ | ✅ (client and proxy redirects) | ✅ `app/admin/(staff)/…` | — | done (5): one segment per screen |
+| `/admin/commandes`, `/admin/commandes/:reference` | staff | ✅ | ✅ list only (`zones.spec.ts`) | ✅ `app/admin/(staff)/…` | — | done (5): one segment per screen |
+| `/admin/clients`, `/admin/clients/:id` | staff | ✅ | ✅ list only (`zones.spec.ts`) | ✅ `app/admin/(staff)/…` | — | done (5): one segment per screen |
+| `/admin/utilisateurs` | staff | ✅ | ✅ (`zones.spec.ts`) | ✅ `app/admin/(staff)/…` | — | done (5): one segment per screen |
+| `/admin/statistiques` | staff | ✅ | ✅ (`zones.spec.ts`) | ✅ `app/admin/(staff)/…` | — | done (5): one segment per screen |
+| `/admin/produits` | staff | ✅ | ✅ (redirect, sign-in return, `zones.spec.ts`) | ✅ `app/admin/(staff)/…` | — | done (5): one segment per screen |
+| `/admin/produits/nouveau`, `/admin/produits/:id`, `/admin/produits/:id/recommandations` | staff | ✅ | ✅ `/nouveau` (`zones.spec.ts`) | ✅ `app/admin/(staff)/…` | — | done (5): one segment per screen |
+| `/admin/categories` | staff | ✅ | ✅ (`zones.spec.ts`) | ✅ `app/admin/(staff)/…` | — | done (5): one segment per screen |
+| `/admin/promotions`, `/nouvelle`, `/apercu`, `/:id`, `/:id/modifier` | staff | ✅ | ✅ list only (`zones.spec.ts`) | ✅ `app/admin/(staff)/…` | — | done (5): one segment per screen |
+| `/admin/promotions/cartes-cadeaux/configuration`, `/cartes-cadeaux/:code` | staff | ✅ | ✅ `/configuration` (`zones.spec.ts`) | ✅ `app/admin/(staff)/…` | — | done (5): one segment per screen |
+| `/admin/promotions/campagnes/nouvelle`, `/:id`, `/:id/modifier` | staff | ✅ | ✅ `/nouvelle` (`zones.spec.ts`) | ✅ `app/admin/(staff)/…` | — | done (5): one segment per screen |
+| `/admin/avis` | staff | ✅ | ✅ (`zones.spec.ts`) | ✅ `app/admin/(staff)/…` | — | done (5): one segment per screen |
+| `/admin/parametres` | staff | ✅ | ✅ (`zones.spec.ts`) | ✅ `app/admin/(staff)/…` | — | done (5): one segment per screen |
+| `/admin/formations`, `/nouvelle`, `/:id`, `/:id/apercu`, `/:id/publication` | staff | ✅ | ✅ list only (`zones.spec.ts`) | ✅ `app/admin/(staff)/…` | — | done (5): one segment per screen |
 
 ### Help centre and legal pages
 
 | Route | Access | P1 | Smoke | Native | SSR | Target |
 | --- | --- | --- | --- | --- | --- | --- |
-| `/aide` | open | ✅ | ✅ | ⬜ | head ✅ body ✅ | done (3.2); own segment in 5 |
-| `/aide/faq` | open | ✅ | ✅ | ⬜ | head ✅ body ✅ | done (3.2); own segment in 5 |
-| `/contact` | open | ✅ | ✅ | ⬜ | head ✅ body ✅ | done (3.2); own segment in 5 |
-| `/a-propos` | open | ✅ | ✅ | ⬜ | head ✅ body ✅ | done (3.2); own segment in 5 |
-| `/mentions-legales` | open | ✅ | ✅ | ⬜ | head ✅ body ✅ | done (3.2); own segment in 5 |
-| `/conditions-generales` | open | ✅ | ✅ | ⬜ | head ✅ body ✅ | done (3.2); own segment in 5 |
-| `/confidentialite` | open | ✅ | ✅ | ⬜ | head ✅ body ✅ | done (3.2); own segment in 5 |
-| `/cookies` | open | ✅ | ✅ | ⬜ | head ✅ body ✅ | done (3.2); own segment in 5 |
-| `/livraison` | open | ✅ | ✅ | ⬜ | head ✅ body ✅ | done (3.2); own segment in 5 |
-| `/retours-remboursements` | open | ✅ | ✅ | ⬜ | head ✅ body ✅ | done (3.2); own segment in 5 |
-| English aliases `/help`, `/faq`, `/shipping`, `/returns`, `/legal-notice`, `/terms-of-sale`, `/privacy-policy`, `/cookie-policy`, `/about` | redirect | ✅ | ✅ (`/help`, `/privacy-policy`, `/terms-of-sale`) | ⬜ | — | server redirects to `/en/…` ✅ (3.1) |
+| `/aide` | open | ✅ | ✅ | ✅ `app/(public)/fr/…`, `app/(public)/en/…` | head ✅ body ✅ | done (5) |
+| `/aide/faq` | open | ✅ | ✅ | ✅ `app/(public)/fr/…`, `app/(public)/en/…` | head ✅ body ✅ | done (5) |
+| `/contact` | open | ✅ | ✅ | ✅ `app/(public)/fr/…`, `app/(public)/en/…` | head ✅ body ✅ | done (5) |
+| `/a-propos` | open | ✅ | ✅ | ✅ `app/(public)/fr/…`, `app/(public)/en/…` | head ✅ body ✅ | done (5) |
+| `/mentions-legales` | open | ✅ | ✅ | ✅ `app/(public)/fr/…`, `app/(public)/en/…` | head ✅ body ✅ | done (5) |
+| `/conditions-generales` | open | ✅ | ✅ | ✅ `app/(public)/fr/…`, `app/(public)/en/…` | head ✅ body ✅ | done (5) |
+| `/confidentialite` | open | ✅ | ✅ | ✅ `app/(public)/fr/…`, `app/(public)/en/…` | head ✅ body ✅ | done (5) |
+| `/cookies` | open | ✅ | ✅ | ✅ `app/(public)/fr/…`, `app/(public)/en/…` | head ✅ body ✅ | done (5) |
+| `/livraison` | open | ✅ | ✅ | ✅ `app/(public)/fr/…`, `app/(public)/en/…` | head ✅ body ✅ | done (5) |
+| `/retours-remboursements` | open | ✅ | ✅ | ✅ `app/(public)/fr/…`, `app/(public)/en/…` | head ✅ body ✅ | done (5) |
+| English aliases `/help`, `/faq`, `/shipping`, `/returns`, `/legal-notice`, `/terms-of-sale`, `/privacy-policy`, `/cookie-policy`, `/about` | redirect | ✅ | ✅ (`/help`, `/privacy-policy`, `/terms-of-sale`) | — | — | server redirects to `/en/…` ✅ (3.1) |
 
 ### System pages
 
 | Route | Access | P1 | Smoke | Native | SSR | Target |
 | --- | --- | --- | --- | --- | --- | --- |
-| `/erreur` | open | ✅ | ✅ | ⬜ | — | public zone (decided, 4); becomes `error.tsx` in 5 |
-| `/maintenance` | open | ✅ | ✅ | ⬜ | — | public zone (decided, 4); own segment in 5 |
+| `/erreur` | open | ✅ | ✅ | ✅ `app/(public)/erreur` (browser only) | — | done (5): address kept (decided); `error.tsx` shows the same screen for a page that fails |
+| `/maintenance` | open | ✅ | ✅ | ✅ `app/(public)/maintenance` (browser only) | — | done (5) |
 | `*` (404) | open | ✅ | ✅ (status 404) | `not-found.tsx` ✅ | — | real 404 status ✅ (3.1) |
 
 ## Open decisions (ask the user)
@@ -319,15 +360,26 @@ Legend (phase 1 done: every route below is served by the catch-all shell; phase 
 | Phase 4 shape: one catch-all segment per zone vs native segments now | phase 4 | **decided** (2026-09-30): one per zone, native segments in phase 5 |
 | Cart lost when changing zone (it lived in memory only) | phase 4 | **decided** (2026-09-30): kept for the tab in sessionStorage until the real cart/checkout; demo (mock) sessions kept the same way; other mock stores reset between zones (accepted) |
 | Where sign-in, registration, recovery, `/erreur`, `/maintenance` live | phase 4 | **decided** (2026-09-30): public zone; Studio aliases stay browser redirects |
+| Phase 5 shape (order, navigation helper, providers, history state, commits) | phase 5 | **decided** (2026-09-30): zone by zone; navigation module with React Router's API over next/link + next/navigation; providers in the root layout; history state handed over in sessionStorage (option A); `/erreur` kept beside `error.tsx` |
+| Studio aliases: permanent (308) server redirects | phase 5 | applied as proposed (reversible, one table entry in `legacyAddress`); the user asked why — to confirm |
 | Refusing a signed-in non-staff visitor on the server for `/admin` | if wanted | open — not built (navigation only; RLS is the authority); ask the user |
 
 ## Log
 
 Newest first. For each session: what changed, the commands run and their real results.
 
-### 2026-09-30 — Phase 5: baseline before any change (plan awaiting validation)
+### 2026-09-30 → 10-01 — Phase 5 (one segment per screen, React Router removed)
 
-- No code changed. Plan proposed to the user (order by zone, localized navigation module over `next/link` / `next/navigation`, providers in the root layout, history state, commit split); this document gets the decided plan once validated.
+- User decisions: plan validated (zone by zone; option A for history state; `/erreur` kept); Studio aliases 308 applied as proposed (see Open decisions).
+- Commits (each with typecheck, unit tests and dev smoke tests green; production builds at the end): navigation module + imports; `useFormat`; stores in the root layout; Studio; learner pages; member space; back office; public zone; React Router removal and one chunk per screen; this documentation. Two rebases on other sessions' work (orders detail, Stripe checkout) on the way, re-checked before pushing.
+- Tests added: `src/lib/navigation/navigation.test.ts` (addresses, active links, handed-over state), `src/lib/privateSegments.test.ts` (every gated page and layout checks the session; checked to fail by removing one page's check), Studio alias redirects (308, section, fragment), `/connexion-b` (308), client-side navigation within and across zones (a marker on `window` survives: learner pages, member space and community channel/discussion/activity pages, back office lists and details, public → member space and back, language switch), six back-office screens without a smoke test, the community's 404; the public-route segments are checked against `PUBLIC_ROUTES` (unit). Changed: the bundle test now compares `/fr` with four back-office pages (the access screen alone no longer carries the back office); the cache test moved to its own project `auth-cache`, run after `auth-server` (the fake Supabase's read counter saw the other tests' reads: 1 failure in each full run before, at 1be0eb5 too).
+- Results at the end: `npm run typecheck` OK; `npm run lint` 0 errors, 96 warnings (95 before; +1 `only-export-components` for the `useSlugTranslator` hook beside `useCatalog`); `npm test` 34 files / 349 tests passed; `npm run build` OK (mock build and `NEXT_DIST_DIR=.next-e2e-auth` build against the fake Supabase); `npm run test:e2e` 157 passed on the dev servers and 157 passed on the production builds (`next start -p 5199` and `-p 5198`, `E2E_BASE_URL` / `E2E_AUTH_BASE_URL`).
+- Bundle sizes before/after: table in "Phase 5".
+- Not verified here: the site against the real Supabase project and on Vercel (to check on the first preview: an English product page and its language switch, signing in from a member page, the back office's lists, the Studio on a phone).
+
+### 2026-09-30 — Phase 5: baseline before any change
+
+- No code changed. Plan proposed to the user (order by zone, localized navigation module over `next/link` / `next/navigation`, providers in the root layout, history state, commit split), then validated (see the entry above).
 - Results on `dev` at 1be0eb5 (fresh `npm ci`): `npm run typecheck` OK; `npm run lint` 0 errors, 95 warnings; `npm test` 30 files / 312 tests passed; `npm run test:e2e` (dev servers) 136 passed, 1 failed: `auth-server` "the server reads the catalogue once for many page renders (cache)" — passed when run again alone (15.8 s). Likely cause, not yet proven: the 60 s cache entry filled by an earlier test more than a minute before is served stale and revalidated in the background during the loop, counting a read. Pre-existing, unrelated to phase 5; to fix in the test if it recurs.
 - Bundle baseline (mock production build, `next start`, JavaScript bodies received by Chromium after `networkidle` + 1.5 s, gzip via zlib; throwaway script rewritten this session, hence slightly higher than the phase 4 table): `/fr`, `/fr/boutique`, `/fr/academy` 2 562 / 726 kB; `/connexion` 2 562 / 726 kB; `/compte`, `/compte/communaute` (demo member) 2 753 / 769 kB; `/academy/mes-formations/fondation` 2 658 / 752 kB; `/admin` (demo staff) 3 828 / 1 007 kB; `/studio-3d/atelier` 3 624 / 1 008 kB; `/studio-3d/partage` 3 333 / 932 kB (raw / gzip). The after-measure will use the same script.
 

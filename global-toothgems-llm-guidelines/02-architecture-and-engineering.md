@@ -11,11 +11,11 @@ description: Production architecture, runtime boundaries, the mock-to-live migra
 
 ## Framework decision (2026-09-30)
 
-`webapp/` is migrating from Vite + React Router to **Next.js App Router, deployed on Vercel**. This replaces the "Vite SPA, no Next.js" decision introduced by commit `1c73d35`.
+`webapp/` moved from Vite + React Router to **Next.js App Router, deployed on Vercel** (migration done on 2026-09-30). This replaces the "Vite SPA, no Next.js" decision introduced by commit `1c73d35`.
 
 - **Why:** public pages (home, shop, product, Academy sales pages, legal, help) need server rendering, per-route metadata, canonical/Open Graph tags and real HTTP status codes for search engines and social previews; member and back-office routes need protection on the server (middleware — `proxy.ts` since Next.js 16 — refreshing the Supabase session with `@supabase/ssr`) rather than only client-side guards.
 - **Unchanged:** Supabase (schema, RLS, the migrations, Auth and its users), Edge Functions for Stripe, e-mail and service-role jobs, react-i18next for UI strings while the migration runs (moving to next-intl is a separate, undecided step), Tailwind v4 and the design tokens, Vitest.
-- **How:** phases tracked in `docs/migration-nextjs.md` — (1) the existing app runs unchanged in a catch-all client page, (2) auth with `@supabase/ssr` + middleware, (3) public pages as server-rendered App Router routes with SEO, (4) account, back office and Studio as App Router routes, (5) removal of React Router and SPA-only code. Every session touching `webapp/` routing or rendering reads that file first and updates its checklist.
+- **How:** phases tracked in `docs/migration-nextjs.md` — (1) the existing app runs unchanged in a catch-all client page, (2) auth with `@supabase/ssr` + middleware, (3) public pages as server-rendered App Router routes with SEO, (4) account, back office and Studio as App Router routes, (5) removal of React Router and SPA-only code (every screen its own segment). Every session touching `webapp/` routing or rendering reads that file first and keeps it current.
 - **Decided since:** e-mail links land on `/auth/confirm` (phase 2, done); locale URLs `/fr/…` and `/en/…` (phase 3.1, done); product slugs per language (phase 3.2, done). **Still the user's:** Vercel project settings and Supabase Auth dashboard settings (both applied on 2026-09-30), the open points of `docs/migration-nextjs.md`.
 
 ## Runtime boundaries
@@ -37,9 +37,9 @@ Rules of thumb:
 
 ## Front-end structure (`webapp/`)
 
-- `app/` Next.js App Router: the root layout and, during the migration, one segment per zone (`src/lib/appZones.ts`, phase 4), each running a React Router app reduced to its screens: the catch-all page `app/[[...slug]]` for the public zone (rendered on the server and hydrated for public pages since phase 3.2), and `app/compte`, `app/academy/(learner)`, `app/admin`, `app/studio-3d` for the private zones (browser-only, signed-out visitors turned away by server layouts in `app/_zones/`); product pages have their own segments (`app/fr/boutique/[slug]`, `app/en/shop/[slug]`). Server reads of public data use `src/lib/supabase/publicServer.ts` (publishable key, no session). A component rendered on the server must render the same markup on its first browser render: read browser-only state (localStorage, media queries) once hydrated (`src/lib/useHydrated.ts`).
+- `app/` Next.js App Router, one segment per screen: the root layout holds the stores (`src/AppProviders.tsx`); `app/(public)` the public zone in the storefront's chrome — public pages under `fr/…` and `en/…` (`app/_public/publicPage.tsx`, product pages `app/_public/productPage.tsx`), rendered on the server and hydrated, and sign-in, recovery and system pages rendered in the browser; `app/compte`, `app/academy/(learner)`, `app/admin`, `app/studio-3d` the private zones (browser-only, signed-out visitors turned away by server layouts and again by each page, `app/_zones/`). Server reads of public data use `src/lib/supabase/publicServer.ts` (publishable key, no session). A component rendered on the server must render the same markup on its first browser render: read browser-only state (localStorage, media queries) once hydrated (`src/lib/useHydrated.ts`).
 
-- `src/screens/` one component per route (React Router screens, moved to `app/` route by route; not `src/pages/`, which Next.js would read as a Pages Router); `components/<domain>/` presentational pieces; `components/ui/` and `components/admin/` shared primitives.
+- `src/screens/` one `"use client"` component per screen, imported by its page (not `src/pages/`, which Next.js would read as a Pages Router); `src/lib/navigation` the links and router hooks (next/link + next/navigation, internal French paths written as localized addresses); `components/<domain>/` presentational pieces; `components/ui/` and `components/admin/` shared primitives.
 - `src/lib/<domain>.tsx` one store/context per domain — the only place a domain's data changes. Screens never import the Supabase client directly.
 - `src/lib/*Mapping.ts` pure row ↔ UI conversions (money to minor units, locale fallback, statuses), unit-tested.
 - `src/lib/supabase/` typed client (`client.ts`), generated `database.types.ts`, storage helpers.
@@ -63,7 +63,7 @@ Mock-only code that remains must never look real to a customer: no fake payment 
 - Browser configuration: only `NEXT_PUBLIC_SUPABASE_URL` and `NEXT_PUBLIC_SUPABASE_PUBLISHABLE_KEY` (`webapp/.env.example`, Vercel project settings). `NEXT_PUBLIC_*` values are inlined into the client bundle: never a secret there. Anything else secret is an Edge Function secret.
 - Supabase: today a single project, "Global Toothgems" (`abvuyvryerpzlvibttxp`), used for development and holding seed/demo data. Production needs its own project (or an explicit, documented promotion of this one) — see `09-supabase-workflow.md`.
 - Stripe: test mode keys everywhere until the owner provides production keys; test and live never mixed in one environment.
-- Vercel: root directory `webapp`, framework preset Next.js (no rewrite file: the catch-all route serves every path the zone segments do not); preview deployments per branch.
+- Vercel: root directory `webapp`, framework preset Next.js (no rewrite file: every screen is a segment); preview deployments per branch.
 
 ## Data model
 
