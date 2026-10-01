@@ -124,6 +124,7 @@ const STAFF_SCREENS: { path: string; heading: RegExp }[] = [
   { path: "/admin/avis", heading: /^Avis$/ },
   { path: "/admin/parametres", heading: /^Paramètres$/ },
   { path: "/admin/formations", heading: /^Formations$/ },
+  { path: "/admin/formations/medias", heading: /^Médiathèque des formations$/ },
 ];
 
 for (const { path, heading } of STAFF_SCREENS) {
@@ -168,10 +169,19 @@ test("back office: the rail and the lists' links are client-side navigations", a
   };
   await follow('aside a[href="/admin/produits"]');
   await follow('aside a[href="/admin/commandes"]');
-  await follow('main a[href^="/admin/commandes/"]:visible');
   await follow('aside a[href="/admin/clients"]');
   await follow('main a[href^="/admin/clients/"]:visible');
   await page.waitForLoadState("networkidle");
+  expect(problems).toEqual([]);
+});
+
+test("back office: without Supabase the order book is empty, never invented", async ({ page, problems }) => {
+  await signInStaff(page);
+  await open(page, "/admin/commandes");
+  await expect(page.getByRole("heading", { level: 2, name: "Aucune commande pour l’instant" })).toBeVisible({ timeout: 30_000 });
+  await expect(page.locator('main a[href^="/admin/commandes/"]')).toHaveCount(0);
+  await open(page, "/admin/commandes/GT-2026-0001");
+  await expect(page.getByRole("heading", { level: 1 })).toHaveText("Commande introuvable", { timeout: 30_000 });
   expect(problems).toEqual([]);
 });
 
@@ -185,20 +195,6 @@ test("back office: signing in on the access screen opens the page asked for", as
   expect(problems).toEqual([]);
 });
 
-for (const [from, to] of [
-  ["/studio-3d/share/abc", "/studio-3d/partage/abc"],
-  ["/studio-3d/editor", "/studio-3d/atelier"],
-  ["/studio-3d/editor/groups", "/studio-3d/atelier/mes-groupes"],
-]) {
-  test(`Studio alias ${from} moves to ${to}`, async ({ page, problems }) => {
-    await page.goto(from);
-    // The Studio zone's first compilation on a dev server can take a while.
-    await expect(page).toHaveURL((url) => url.pathname === to, { timeout: 30_000 });
-    await expect(page.locator("main#main")).toBeVisible({ timeout: 30_000 });
-    await page.waitForLoadState("networkidle");
-    expect(problems).toEqual([]);
-  });
-}
 
 test("a link to another zone opens it, and the back button returns", async ({ page, problems }) => {
   await signInMember(page);
@@ -214,12 +210,10 @@ test("a link to another zone opens it, and the back button returns", async ({ pa
   await page.waitForLoadState("networkidle");
   expect(problems).toEqual([]);
 });
-test("the Studio aliases are moved by the server, the shared design's fragment kept", async ({ page, request }) => {
-  const response = await request.get("/studio-3d/share/abc?x=1", { maxRedirects: 0 });
-  expect(response.status()).toBe(308);
-  expect(response.headers().location).toMatch(/\/studio-3d\/partage\/abc\?x=1$/);
-  await page.goto("/studio-3d/share#design");
-  await expect(page).toHaveURL((url) => url.pathname === "/studio-3d/partage" && url.hash === "#design", { timeout: 30_000 });
+test("the Studio workspace's former English aliases are not kept (404)", async ({ request }) => {
+  for (const path of ["/studio-3d/editor", "/studio-3d/editor/groups", "/studio-3d/share", "/studio-3d/share/abc"]) {
+    expect((await request.get(path, { maxRedirects: 0 })).status(), path).toBe(404);
+  }
 });
 
 test("learner pages: opening a lesson from the course stays on the page (client-side navigation)", async ({ page, problems }) => {

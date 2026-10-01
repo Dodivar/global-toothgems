@@ -1,6 +1,6 @@
-import { ADMIN_ORDERS, orderItemCount, orderTotal, type AdminOrder } from "../data/adminOrders";
+import { customerName, orderItemCount, type AdminOrder } from "../data/adminOrders";
+import type { SpentTotal } from "../data/orders";
 import { pick } from "../data/types";
-import { isSupabaseConfigured } from "./supabase/client";
 
 /**
  * Filtering, searching, sorting and paging of the order book — all of it
@@ -26,16 +26,18 @@ export type SortKey = "dateDesc" | "dateAsc" | "totalDesc" | "totalAsc";
 export const SORT_KEYS: SortKey[] = ["dateDesc", "dateAsc", "totalDesc", "totalAsc"];
 
 /**
- * "Today" for the date presets.
- *
- * With Supabase the book is live, so today is the calendar day. The mock book
- * is fixed data instead: it is anchored to the newest seeded order, because a
- * real `new Date()` would make every preset empty the day after the prototype
- * was authored, and "Today" returning nothing would read as a bug.
+ * "Today" for the date presets: the calendar day in the browser's time zone.
+ * The back office renders in the browser only (`app/admin`), so reading the
+ * clock here cannot cause a hydration mismatch.
  */
-export const BOOK_TODAY: string = isSupabaseConfigured
-  ? new Date().toLocaleDateString("sv-SE")
-  : ADMIN_ORDERS.reduce((latest, o) => (o.placedAt > latest ? o.placedAt : latest), ADMIN_ORDERS[0].placedAt).slice(0, 10);
+export function bookToday(): string {
+  return new Date().toLocaleDateString("sv-SE");
+}
+
+/** Calendar day (YYYY-MM-DD, browser time zone) of a recorded timestamp. */
+export function localDay(iso: string): string {
+  return new Date(iso).toLocaleDateString("sv-SE");
+}
 
 function addDays(isoDate: string, days: number): string {
   const d = new Date(`${isoDate}T12:00:00`);
@@ -124,20 +126,20 @@ export function readFilters(params: URLSearchParams): OrderFilters {
 }
 
 /** Inclusive `[from, to]` date window implied by the preset, or null for "all". */
-export function dateWindow(filters: OrderFilters): { from: string; to: string } | null {
+export function dateWindow(filters: OrderFilters, today: string = bookToday()): { from: string; to: string } | null {
   switch (filters.datePreset) {
     case "today":
-      return { from: BOOK_TODAY, to: BOOK_TODAY };
+      return { from: today, to: today };
     case "yesterday": {
-      const day = addDays(BOOK_TODAY, -1);
+      const day = addDays(today, -1);
       return { from: day, to: day };
     }
     case "last7":
-      return { from: addDays(BOOK_TODAY, -6), to: BOOK_TODAY };
+      return { from: addDays(today, -6), to: today };
     case "last30":
-      return { from: addDays(BOOK_TODAY, -29), to: BOOK_TODAY };
+      return { from: addDays(today, -29), to: today };
     case "thisMonth":
-      return { from: `${BOOK_TODAY.slice(0, 7)}-01`, to: BOOK_TODAY };
+      return { from: `${today.slice(0, 7)}-01`, to: today };
     case "custom":
       if (!filters.from && !filters.to) return null;
       return { from: filters.from || "0000-01-01", to: filters.to || "9999-12-31" };
@@ -162,7 +164,8 @@ function matchesSearch(order: AdminOrder, term: string): boolean {
     order.customer.lastName,
     `${order.customer.firstName} ${order.customer.lastName}`,
     order.customer.email,
-    order.customer.city,
+    order.shippingAddress?.city ?? "",
+    order.billingAddress?.city ?? "",
     ...order.lines.flatMap((l) => [l.name.fr, l.name.en]),
   ]
     .join(" ")
@@ -170,8 +173,8 @@ function matchesSearch(order: AdminOrder, term: string): boolean {
   return haystack.includes(q);
 }
 
-export function applyFilters(orders: AdminOrder[], filters: OrderFilters): AdminOrder[] {
-  const window = dateWindow(filters);
+export function applyFilters(orders: AdminOrder[], filters: OrderFilters, today: string = bookToday()): AdminOrder[] {
+  const window = dateWindow(filters, today);
 
   const kept = orders.filter((order) => {
     if (!matchesSearch(order, filters.search)) return false;
@@ -185,7 +188,7 @@ export function applyFilters(orders: AdminOrder[], filters: OrderFilters): Admin
     }
     if (filters.attention && !order.attention) return false;
     if (window) {
-      const day = order.placedAt.slice(0, 10);
+      const day = localDay(order.placedAt);
       if (day < window.from || day > window.to) return false;
     }
     return true;
@@ -196,11 +199,12 @@ export function applyFilters(orders: AdminOrder[], filters: OrderFilters): Admin
     case "dateAsc":
       sorted.sort((a, b) => a.placedAt.localeCompare(b.placedAt));
       break;
+    // Totals sort by amount within a currency; currencies are grouped, never compared.
     case "totalDesc":
-      sorted.sort((a, b) => orderTotal(b) - orderTotal(a));
+      sorted.sort((a, b) => a.currency.localeCompare(b.currency) || b.amounts.total - a.amounts.total);
       break;
     case "totalAsc":
-      sorted.sort((a, b) => orderTotal(a) - orderTotal(b));
+      sorted.sort((a, b) => a.currency.localeCompare(b.currency) || a.amounts.total - b.amounts.total);
       break;
     default:
       sorted.sort((a, b) => b.placedAt.localeCompare(a.placedAt));
@@ -272,9 +276,29 @@ export interface OrderMetrics {
   shipped: number;
   delivered: number;
   attention: number;
-  /** Revenue of everything not cancelled or refunded. */
-  revenue: number;
+  /**
+   * Money collected, per currency, never added across currencies: for each
+   * order whose payment was received and that is not cancelled, what the card
+   * provider collected (`amount_due`: the total less gift cards) less the
+   * refunds that succeeded. Gift cards count once, when they are sold, not
+   * again when they are spent; unpaid, failed and cancelled orders count for
+   * nothing.
+   */
+  revenue: SpentTotal[];
   items: number;
+}
+
+/** The `revenue` rule of `OrderMetrics`, alone. */
+export function collectedByCurrency(orders: AdminOrder[]): SpentTotal[] {
+  const totals = new Map<string, number>();
+  for (const o of orders) {
+    if (o.status === "cancelled") continue;
+    if (o.payment.status !== "paid" && o.payment.status !== "partiallyRefunded" && o.payment.status !== "refunded") continue;
+    totals.set(o.currency, (totals.get(o.currency) ?? 0) + o.amounts.charged - o.amounts.refunded);
+  }
+  return [...totals.entries()]
+    .sort(([a], [b]) => a.localeCompare(b))
+    .map(([currency, amount]) => ({ currency, amount }));
 }
 
 /**
@@ -291,12 +315,31 @@ export function metrics(orders: AdminOrder[]): OrderMetrics {
     shipped: count((o) => o.status === "shipped"),
     delivered: count((o) => o.status === "delivered"),
     attention: count((o) => Boolean(o.attention)),
-    revenue: orders.reduce((sum, o) => (o.status === "cancelled" || o.status === "refunded" ? sum : sum + orderTotal(o)), 0),
+    revenue: collectedByCurrency(orders),
     items: orders.reduce((sum, o) => sum + orderItemCount(o), 0),
   };
 }
 
-/** Label of a line for the product filter, in the active language. */
-export function lineLabel(order: AdminOrder, lang: string): string {
-  return pick(order.lines[0].name, lang);
+export interface FilterOption {
+  value: string;
+  label: string;
+}
+
+/** The buyers of the book, for the customer filter, by name. */
+export function customerOptions(orders: AdminOrder[]): FilterOption[] {
+  const seen = new Map<string, string>();
+  for (const o of orders) if (!seen.has(o.customer.id)) seen.set(o.customer.id, `${customerName(o.customer)} · ${o.customer.email}`);
+  return [...seen.entries()].map(([value, label]) => ({ value, label })).sort((a, b) => a.label.localeCompare(b.label));
+}
+
+/** The products sold in the book (still in the shop), for the product filter, by name. */
+export function productOptions(orders: AdminOrder[], lang: string): FilterOption[] {
+  const seen = new Map<string, string>();
+  for (const o of orders) {
+    for (const l of o.lines) {
+      const value = l.productId ?? l.courseId;
+      if (value && !seen.has(value)) seen.set(value, pick(l.name, lang));
+    }
+  }
+  return [...seen.entries()].map(([value, label]) => ({ value, label })).sort((a, b) => a.label.localeCompare(b.label));
 }

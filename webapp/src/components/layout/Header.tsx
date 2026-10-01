@@ -8,8 +8,7 @@ import { useFavorites } from "../../lib/favorites";
 import { FAVORITES_HREF } from "../../lib/favoritesState";
 import { useCart } from "../../lib/cart";
 import { useToast } from "../../lib/toast";
-import { ACADEMY_MENU } from "../../data/menu";
-import { pick } from "../../data/types";
+import { useAcademyMenu } from "./useAcademyMenu";
 import { NewTag } from "../studio/NewTag";
 import { ShopMenu } from "./ShopMenu";
 import { STUDIO_PATH } from "../../lib/studioUrl";
@@ -25,7 +24,8 @@ const HOVER_OPEN_MS = 120;
 const HOVER_CLOSE_MS = 250;
 
 export function Header() {
-  const { t, i18n } = useTranslation();
+  const { t } = useTranslation();
+  const academyMenu = useAcademyMenu();
   const switchLanguage = useLanguageSwitch();
   const navigate = useNavigate();
   const location = useLocation();
@@ -33,7 +33,6 @@ export function Header() {
   const { signedIn, initials } = useAuth();
   const { favoriteProducts } = useFavorites();
   const { showToast } = useToast();
-  const lang = i18n.language;
 
   const [panel, setPanel] = useState<PanelKey>(null);
   const [menuOpen, setMenuOpen] = useState(false);
@@ -260,9 +259,9 @@ export function Header() {
                 <ShopMenu layout="columns" onNavigate={closeAll} />
               ) : (
                 <div className="grid grid-cols-[repeat(auto-fill,minmax(230px,1fr))] gap-4">
-                  {ACADEMY_MENU.map((item) => (
+                  {academyMenu.map((item) => (
                     <Link
-                      key={pick(item.title, lang)}
+                      key={item.key}
                       to={item.to}
                       onClick={closeAll}
                       className="flex items-center gap-3 rounded-[var(--radius-card)] border border-[var(--border-subtle)] bg-[var(--surface-card)] p-2.5 text-left shadow-[var(--shadow-card)] outline-none transition-[transform,box-shadow,border-color] duration-[var(--duration-normal)] ease-[var(--ease-out-soft)] hover:-translate-y-0.5 hover:border-[var(--gt-blue-300)] hover:shadow-[var(--shadow-card-hover)] focus-visible:border-[var(--gt-blue-400)] focus-visible:shadow-[var(--shadow-focus),var(--shadow-card-hover)]"
@@ -276,9 +275,9 @@ export function Header() {
                       />
                       <span className="grid min-w-0 gap-0.5">
                         <span className="truncate text-[11px] font-semibold uppercase tracking-[.06em] text-[var(--text-primary)]">
-                          {pick(item.title, lang)}
+                          {item.title}
                         </span>
-                        <span className="text-xs text-[var(--text-muted)]">{pick(item.sub, lang)}</span>
+                        <span className="text-xs text-[var(--text-muted)]">{item.sub}</span>
                       </span>
                     </Link>
                   ))}
@@ -368,9 +367,9 @@ export function Header() {
               <ShopMenu layout="stack" onNavigate={closeAll} />
             ) : (
               <div className="grid gap-2.5">
-                {ACADEMY_MENU.map((item) => (
+                {academyMenu.map((item) => (
                   <Link
-                    key={pick(item.title, lang)}
+                    key={item.key}
                     to={item.to}
                     onClick={closeAll}
                     className="flex items-center gap-3.5 rounded-[var(--radius-card)] border border-[var(--border-subtle)] bg-[var(--surface-card)] p-3 text-left shadow-[var(--shadow-xs)]"
@@ -384,9 +383,9 @@ export function Header() {
                     />
                     <span className="grid min-w-0 gap-0.5">
                       <span className="truncate text-[11.5px] font-semibold uppercase tracking-[.06em] text-[var(--text-primary)]">
-                        {pick(item.title, lang)}
+                        {item.title}
                       </span>
-                      <span className="text-xs text-[var(--text-muted)]">{pick(item.sub, lang)}</span>
+                      <span className="text-xs text-[var(--text-muted)]">{item.sub}</span>
                     </span>
                   </Link>
                 ))}

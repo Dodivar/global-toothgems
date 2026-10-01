@@ -1,5 +1,5 @@
 import { useTranslation } from "react-i18next";
-import type { Course } from "../../data/courses";
+import type { Localized } from "../../data/types";
 import { pick } from "../../data/types";
 import { useFormat } from "../../lib/format";
 
@@ -18,6 +18,18 @@ import { useFormat } from "../../lib/format";
  * length below is a fraction of the document's own width.
  */
 
+/**
+ * What the document prints about the course: a member's course
+ * (`data/courses.ts`) or the sales page's published course, its level
+ * already in the page's language there.
+ */
+export interface CertificateCourse {
+  title: Localized;
+  level: Localized | string;
+  lessonCount: number;
+  duration: string;
+}
+
 export function CertificateDocument({
   course,
   holder,
@@ -25,7 +37,7 @@ export function CertificateDocument({
   reference,
   lang,
 }: {
-  course: Course;
+  course: CertificateCourse;
   holder: string;
   awardedOn: string;
   reference: string;
@@ -85,7 +97,7 @@ export function CertificateDocument({
             {pick(course.title, lang)}
           </strong>
           <span className="text-[length:1.4cqw] uppercase leading-none tracking-[var(--tracking-wide)] text-[var(--text-subtle)]">
-            {pick(course.level, lang)} &middot; {t("course.lessonCount", { count: course.lessonCount })} &middot;{" "}
+            {typeof course.level === "string" ? course.level : pick(course.level, lang)} &middot; {t("course.lessonCount", { count: course.lessonCount })} &middot;{" "}
             {course.duration}
           </span>
         </div>

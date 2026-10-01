@@ -3,11 +3,12 @@
 import { useMemo, useState } from "react";
 import { useTranslation } from "react-i18next";
 import { Link, useLocation, useNavigate, useParams } from "../../lib/navigation";
-import { ArrowLeft, Ban, ChevronLeft, ChevronRight, History, Printer, RotateCcw, SlidersHorizontal } from "lucide-react";
+import { ArrowLeft, Ban, ChevronLeft, ChevronRight, History, Printer, SlidersHorizontal } from "lucide-react";
 import { AdminButton } from "../../components/admin/AdminButton";
 import { AdminHeader } from "../../components/admin/AdminHeader";
 import { Button } from "../../components/ui/Button";
-import { Card, CustomerCard, ItemsCard, PaymentCard, ShippingCard } from "../../components/admin/DetailPanels";
+import { Card, CustomerCard, ItemsCard, PaymentCard, RefundsCard, ShippingCard } from "../../components/admin/DetailPanels";
+import { LoadError } from "../../components/admin/OrdersPlaceholders";
 import { OrderTimeline } from "../../components/admin/OrderTimeline";
 import { OrderNotes } from "../../components/admin/OrderNotes";
 import {
@@ -17,11 +18,12 @@ import {
   PaymentStatusBadge,
   StatusTrack,
 } from "../../components/admin/StatusBadges";
-import { CancelDialog, RefundDialog, StatusDialog } from "../../components/admin/OrderDialogs";
+import { CancelDialog, StatusDialog } from "../../components/admin/OrderDialogs";
 import { useAdminOrders } from "../../lib/adminOrders";
 import { useToast } from "../../lib/toast";
 import { useFormat } from "../../lib/format";
-import { orderItemCount, orderTotal, type AdminOrder } from "../../data/adminOrders";
+import { holdsMoney, orderItemCount, parseInstant, type AdminOrder } from "../../data/adminOrders";
+import { useAdminAuth } from "../../lib/adminAuth";
 import { useAdminShell } from "./AdminLayout";
 
 /**
@@ -46,18 +48,17 @@ import { useAdminShell } from "./AdminLayout";
  * width and keeps "cancel" off a bar the cursor crosses all day.
  */
 
-/** The author every note typed in this prototype is attributed to. */
-const CURRENT_OPERATOR = "Léa — Support";
-
 export function OrderDetail() {
-  const { formatPrice } = useFormat();
+  const { formatMoney, locale } = useFormat();
   const { t } = useTranslation();
   const { reference = "" } = useParams();
   const navigate = useNavigate();
   const { search } = useLocation();
   const { openNav } = useAdminShell();
   const { showToast } = useToast();
-  const { orders, loading, setStatus, refund, cancel, addNote } = useAdminOrders();
+  const { orders, loading, failed, reload, setStatus, cancel, addNote } = useAdminOrders();
+  /** Notes are signed with the signed-in team member's name. */
+  const operator = useAdminAuth().admin?.name ?? "";
 
   const order = orders.find((o) => o.reference === reference);
 
@@ -71,13 +72,20 @@ export function OrderDetail() {
   }, [orders, reference]);
 
   const [statusOpen, setStatusOpen] = useState(false);
-  const [refundOpen, setRefundOpen] = useState(false);
   const [cancelOpen, setCancelOpen] = useState(false);
 
   const backTo = `/admin/commandes${search}`;
 
   if (!order && loading) {
     return <section aria-busy="true" className="min-h-[40vh]" />;
+  }
+
+  if (!order && failed) {
+    return (
+      <div className="px-[var(--admin-gutter)] pt-5">
+        <LoadError onRetry={reload} />
+      </div>
+    );
   }
 
   if (!order) {
@@ -95,7 +103,6 @@ export function OrderDetail() {
   }
 
   const closed = order.status === "cancelled" || order.status === "refunded";
-  const refundable = order.payment.status === "paid" || order.payment.status === "partiallyRefunded";
   const notWired = () => showToast(t("common.notIncludedTitle"), t("admin.orders.toastNotWired"), "info");
 
   const neighbourLink = (target: AdminOrder | undefined, direction: "previous" | "next") => {
@@ -163,13 +170,13 @@ export function OrderDetail() {
             <span className="gt-eyebrow">{t("admin.orders.detailEyebrow")}</span>
             <p className="m-0 text-[length:var(--text-body-sm)] text-[var(--text-muted)]">
               {t("admin.orders.detailPlaced", {
-                date: new Intl.DateTimeFormat(undefined, {
+                date: new Intl.DateTimeFormat(locale, {
                   day: "numeric",
                   month: "long",
                   year: "numeric",
                   hour: "2-digit",
                   minute: "2-digit",
-                }).format(new Date(`${order.placedAt}:00`)),
+                }).format(parseInstant(order.placedAt)),
               })}
               {" · "}
               {t("admin.orders.itemsUnits", { count: orderItemCount(order) })}
@@ -179,7 +186,7 @@ export function OrderDetail() {
           <div className="grid justify-items-start gap-1 sm:justify-items-end">
             <span className="gt-eyebrow">{t("admin.orders.summaryTotal")}</span>
             <strong className="text-[length:var(--text-h2)] font-[var(--weight-black)] tabular-nums leading-none text-[var(--text-primary)]">
-              {formatPrice(orderTotal(order))}
+              {formatMoney(order.amounts.total, order.currency)}
             </strong>
           </div>
         </div>
@@ -211,12 +218,7 @@ export function OrderDetail() {
             {t("admin.orders.actionPrintInvoice")}
           </AdminButton>
           <span className="ml-auto flex flex-wrap items-center gap-2">
-            {refundable && (
-              <Button size="sm" variant="ghost" iconLeft={RotateCcw} onClick={() => setRefundOpen(true)}>
-                {t("admin.orders.actionRefund")}
-              </Button>
-            )}
-            {!closed && order.status !== "delivered" && (
+            {!closed && order.status !== "delivered" && !holdsMoney(order) && (
               <button
                 type="button"
                 onClick={() => setCancelOpen(true)}
@@ -235,22 +237,15 @@ export function OrderDetail() {
       <div className="grid items-start gap-4 xl:grid-cols-[minmax(0,2fr)_minmax(320px,1fr)]">
         <div className="grid min-w-0 gap-4">
           <ItemsCard order={order} />
-          <ShippingCard
-            order={order}
-            onTrack={() =>
-              showToast(
-                t("admin.orders.toastTrackTitle", { carrier: order.shipment?.carrier ?? "" }),
-                t("admin.orders.toastTrackBody", { number: order.shipment?.number ?? "" }),
-                "info",
-              )
-            }
-          />
+          <ShippingCard order={order} />
+          <RefundsCard order={order} />
           <OrderNotes
             notes={order.notes}
-            author={CURRENT_OPERATOR}
+            author={operator}
             onAdd={(body) => {
-              addNote(order.reference, body, CURRENT_OPERATOR);
-              showToast(t("admin.orders.toastNoteTitle"), t("admin.orders.toastNoteBody"));
+              if (addNote(order.reference, body, operator)) {
+                showToast(t("admin.orders.toastNoteTitle"), t("admin.orders.toastNoteBody"));
+              }
             }}
           />
         </div>
@@ -258,16 +253,7 @@ export function OrderDetail() {
         <div className="grid min-w-0 gap-4">
           <CustomerCard
             order={order}
-            onViewProfile={() => {
-              navigate(`/admin/commandes?client=${order.customer.id}`);
-              showToast(
-                t("admin.orders.toastCustomerTitle"),
-                t("admin.orders.toastCustomerBody", {
-                  name: `${order.customer.firstName} ${order.customer.lastName}`,
-                }),
-                "info",
-              );
-            }}
+            onViewOrders={() => navigate(`/admin/commandes?client=${encodeURIComponent(order.customer.id)}`)}
           />
           <PaymentCard order={order} />
           <Card title={t("admin.orders.timelineTitle")} icon={History}>
@@ -287,20 +273,6 @@ export function OrderDetail() {
             );
           }
           setStatusOpen(false);
-        }}
-      />
-
-      <RefundDialog
-        order={refundOpen ? order : null}
-        onClose={() => setRefundOpen(false)}
-        onConfirm={(amount, full) => {
-          if (refund(order.reference, amount, full)) {
-            showToast(
-              t("admin.orders.toastRefundTitle", { reference: `#${order.reference}` }),
-              t("admin.orders.toastRefundBody", { amount: formatPrice(amount) }),
-            );
-          }
-          setRefundOpen(false);
         }}
       />
 

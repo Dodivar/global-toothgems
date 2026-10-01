@@ -1,5 +1,6 @@
 import { createContext, useCallback, useContext, useEffect, useMemo, useState, type ReactNode } from "react";
 import { Navigate, useLocation } from "./navigation";
+import { isActiveStaff, type StaffProfileRow } from "./staffProfile";
 import type { User } from "@supabase/supabase-js";
 import { isSupabaseConfigured, sessionReady, supabase } from "./supabase/client";
 import { useHydrated } from "./useHydrated";
@@ -76,10 +77,7 @@ async function staffIdentity(user: User): Promise<AdminIdentity | null> {
     .select("first_name, last_name, display_name, email, role, status, roles ( is_staff )")
     .eq("id", user.id)
     .maybeSingle();
-  if (error || !data) return null;
-  const role = data.roles as { is_staff: boolean } | { is_staff: boolean }[] | null;
-  const isStaff = Array.isArray(role) ? role[0]?.is_staff : role?.is_staff;
-  if (!isStaff || data.status !== "active") return null;
+  if (error || !data || !isActiveStaff(data as StaffProfileRow)) return null;
 
   const email = data.email ?? user.email ?? "";
   const name =

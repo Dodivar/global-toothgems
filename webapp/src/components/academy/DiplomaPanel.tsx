@@ -5,9 +5,9 @@ import { Badge } from "../ui/Badge";
 import { CertificateDocument } from "../account/CertificateDocument";
 import { certificateRef } from "../account/CertificateCard";
 import { CheckItem } from "./TrainingPrimitives";
-import type { Course } from "../../data/courses";
 import { pick } from "../../data/types";
-import { PASS_SCORE } from "../../data/lessons";
+import { lessonCount, type PublicCourse } from "../../lib/academy/publicCourse";
+import { formatDuration } from "../../lib/trainingFilters";
 
 /**
  * The reward at the end of the training, shown as the document itself.
@@ -24,7 +24,7 @@ export function DiplomaPanel({
   holder,
   signedIn,
 }: {
-  course: Course;
+  course: PublicCourse;
   lang: string;
   holder: string;
   signedIn: boolean;
@@ -32,6 +32,13 @@ export function DiplomaPanel({
   const { t } = useTranslation();
   // Dated today: a preview of the document as it would be issued now.
   const previewDate = new Date().toISOString().slice(0, 10);
+  const lessons = lessonCount(course);
+  const printed = {
+    title: course.title,
+    level: t(`academy.levels.${course.level}`),
+    lessonCount: lessons,
+    duration: formatDuration(course.minutes, lang),
+  };
 
   return (
     <div className="grid items-center gap-[clamp(28px,4vw,56px)] lg:grid-cols-[minmax(0,.95fr)_minmax(0,1.05fr)]">
@@ -40,8 +47,8 @@ export function DiplomaPanel({
           {t("training.diplomaLead")}
         </p>
         <ul className="m-0 grid list-none gap-3 p-0">
-          <CheckItem dark>{t("training.diplomaPoint1", { count: course.lessonCount })}</CheckItem>
-          <CheckItem dark>{t("training.diplomaPoint2", { score: PASS_SCORE })}</CheckItem>
+          <CheckItem dark>{t("training.diplomaPoint1", { count: lessons })}</CheckItem>
+          <CheckItem dark>{t("training.diplomaPoint2", { score: course.minScore })}</CheckItem>
           <CheckItem dark>{t("training.diplomaPoint3")}</CheckItem>
           <CheckItem dark>{t("training.diplomaPoint4")}</CheckItem>
         </ul>
@@ -66,7 +73,7 @@ export function DiplomaPanel({
         >
           <div className="overflow-hidden rounded-[2px] shadow-[0_0_0_1px_var(--gt-ink-200)]">
             <CertificateDocument
-              course={course}
+              course={printed}
               holder={holder}
               awardedOn={previewDate}
               reference={certificateRef(course.id, previewDate)}

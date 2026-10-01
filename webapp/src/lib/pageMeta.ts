@@ -15,7 +15,8 @@ import { alternates, parsePath, type Locale, type ParsedPath, type PublicRouteId
  * client-side navigation. Only text the
  * pages already show is used (their heading and introduction); no copy is
  * written for search engines. Product pages are titled by their product
- * (`lib/catalog/productMeta.ts`); course pages keep the site name for now.
+ * (`lib/catalog/productMeta.ts`), course pages by their course
+ * (`lib/academy/courseMeta.ts`).
  */
 
 export const SITE_NAME = "Global Toothgems";

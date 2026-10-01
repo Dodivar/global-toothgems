@@ -2,7 +2,7 @@
 
 The production web application of Global Toothgems: storefront, Academy, member area, Studio 3D and back office, in one Next.js (App Router) application backed by Supabase (see `supabase/README.md`) and deployed on Vercel. It was migrated from Vite + React Router in five phases (done on 2026-09-30): every screen is an App Router segment, public pages are rendered on the server, the private areas in the browser under server-checked layouts — see `docs/migration-nextjs.md` for the phases and the per-route checklist.
 
-> **Status: being industrialised.** The app started as a fully clickable implementation of the Claude Design prototype, with every domain on in-memory mock data. Domains are now connected to Supabase one by one; the up-to-date live/mock table is in the root `AGENTS.md` §4. With the Supabase variables set, these are **live**: the storefront catalogue, back-office product management and categories, member and staff authentication, favourites (`wishlist_items`), reviews and moderation, member and admin order reading, and the Studio 3D workspace. Cart/checkout/payment (no Stripe yet), promotions, gift cards, loyalty, customers/users/statistics/settings in the back office, contact and newsletter, and the whole Academy still run on mock data.
+> **Status: being industrialised.** The app started as a fully clickable implementation of the Claude Design prototype, with every domain on in-memory mock data. Domains are now connected to Supabase one by one; the up-to-date live/mock table is in the root `AGENTS.md` §4. With the Supabase variables set, these are **live**: the storefront catalogue, back-office product management and categories, member and staff authentication, favourites (`wishlist_items`), reviews and moderation, member and admin order reading, the Studio 3D workspace, and the Academy's back-office authoring and its public pages (catalogue, course sales pages). Cart/checkout/payment (no Stripe yet), promotions, gift cards, loyalty, customers/users/statistics/settings in the back office, contact and newsletter, and the Academy's learner side still run on mock data.
 >
 > Architecture (decided): Next.js App Router on Vercel, business rules in Postgres (RLS + functions), server code in Supabase Edge Functions, payments by Stripe with webhook-driven fulfilment. Sections below that describe "prototype" behaviour, "Prototype controls" panels or mock stores document code that is **still mock and scheduled to be replaced**, not a target design.
 
@@ -65,7 +65,7 @@ Public pages live at `/fr/…` and `/en/…` with English segments (`/fr/boutiqu
 With Supabase configured (phase 2 of `docs/migration-nextjs.md`):
 
 - **The session lives in cookies** (`@supabase/ssr`): `src/lib/supabase/client.ts` is the browser client, `server.ts` the one for route handlers (the visitor's session, publishable key, RLS), `proxySession.ts` the proxy's. A member signed in before the switch had the session in `localStorage`; the browser client carries it over once into cookies (`sessionReady`, which the auth providers wait for).
-- **`proxy.ts`** refreshes the session on every page request (`getClaims()`, which validates the token rather than trusting the cookie) and redirects a signed-out visitor away from `/compte/*`, `/academy/lecon`, `/academy/mes-formations/*` (to `/connexion`) and `/admin/*` except its sign-in screen (to `/admin/connexion`), with `?suite=<page>`; both sign-in pages read it to send the visitor back. The client guards (`RequireAccount`, `RequireAdmin`) stay; the staff role is checked by the back office and by RLS, not by the proxy. The private zones' server layouts and pages check the session again with the same rule (`app/_zones/guard.ts`, server client, never the service role). In mock mode the proxy and those checks do nothing.
+- **`proxy.ts`** refreshes the session on every page request (`getClaims()`, which validates the token rather than trusting the cookie) and redirects a signed-out visitor away from `/compte/*`, `/academy/lecon`, `/academy/mes-formations/*` (to `/connexion`) and `/admin/*` except its sign-in screen (to `/admin/connexion`), with `?suite=<page>`; both sign-in pages read it to send the visitor back. The back office also turns away a signed-in account that is not an active staff member (its own profile read under RLS, `src/lib/staffProfile.ts`; decided 2026-10-01) to `/admin/connexion?suite=…`. The client guards (`RequireAccount`, `RequireAdmin`) stay. The private zones' server layouts and pages check again with the same rules (`app/_zones/guard.ts`, server client, never the service role; their redirect reaches the browser within the streamed page, the proxy's is a 307). RLS remains the authority. In mock mode the proxy and those checks do nothing.
 - **`/auth/confirm`** receives every Auth e-mail link — `?token_hash=…&type=…` (the templates in `supabase/templates/`, any device) or `?code=…` (Supabase's default templates, same browser only) — opens the session and forwards to `next` (a same-site path only) or to the page for the kind of link, with `error`/`error_code` when the link is refused. The app passes `…/auth/confirm?next=…` as the redirect of sign-up, resend, password reset and e-mail change. Supabase dashboard settings: `supabase/README.md`, "Member sign-up".
 - The rules (which paths need a session, safe redirects, link kinds) are pure and unit-tested in `src/lib/authRoutes.ts`.
 
@@ -174,13 +174,14 @@ section).
 
 ## Orders and reviews on Supabase
 
-With the Supabase variables set, three stores read and write the database
-instead of their mock data; without them the mock stores run unchanged.
+With the Supabase variables set, three stores read and write the database.
+Without them, the member's orders and reviews run on their mock data, and the
+back office's order book is empty (it never shows invented orders).
 
 | Store | Reads | Writes |
 | --- | --- | --- |
 | `lib/orders.tsx` (member area) | the account's own paid orders (`payment_status` paid / refunded / partially refunded): recorded amounts (subtotal, discount, shipping, VAT, total, gift cards, amount due), items, discounts (`order_discounts`), parcels with their contents, refunds, address snapshots — never the internal fields (`CUSTOMER_ORDER_SELECT`) | nothing: orders come from the checkout (`create-checkout-session`) and the Stripe webhook |
-| `lib/adminOrders.tsx` (back office) | every order except expired unpaid checkouts, with items, parcels and payments; the staff notes from `order_notes` (falls back to `orders.admin_note` until migration `20260930210000_order_staff_notes` is applied) | status (+ implied fulfilment), cancellation (`cancel_order`), notes (written to `orders.admin_note`, which a trigger appends to `order_notes`). Refunds — and cancelling or marking refunded an order that holds money — are refused with a message: they go through Stripe |
+| `lib/adminOrders.tsx` (back office) | every order except expired unpaid checkouts (`ADMIN_ORDER_SELECT`): recorded amounts, items with their VAT rate and amount, discounts with code and source (promotion / loyalty), every payment row (card and gift card, `gift_cards.code_last4` only), parcels with their contents, refunds of every status, address snapshots, `paid_at` / `cancelled_at`; the staff notes from `order_notes` (migration `20260930210000_order_staff_notes`). Read 1 000 rows at a time (the Supabase `max_rows` cap), up to `BOOK_LIMIT` | status (+ implied fulfilment), cancellation of an unpaid order (`cancel_order`), notes (written to `orders.admin_note`, which a trigger appends to `order_notes`). Refunds are not offered, and cancelling or marking refunded an order that holds money is refused: they go through Stripe |
 | `lib/reviewsSupabase.tsx` | published reviews for visitors (public columns only); own reviews, votes and reports for customers; everything for staff | submit / edit (photos to the private `review-photos` bucket), helpful votes, reports, and every moderation action |
 
 The database enforces the review rules: only a customer whose order with the
@@ -194,6 +195,33 @@ the profile's first and last name ("Client" when both are empty).
 Course reviews are not stored yet (the table has no course column), so with
 Supabase they are not offered. Mapping lives in pure, unit-tested modules:
 `lib/orderMapping.ts`, `lib/adminOrderMapping.ts`, `lib/reviewMapping.ts`.
+
+### Orders in the back office (`/admin/commandes`)
+
+- **Amounts as recorded.** `adminOrderMapping.ts` builds on the member area's `mapOrder`, so both sides show
+  the same figures: integer minor units of the order's currency, formatted only on screen (`formatMoney`). The
+  detail page lists each line's VAT rate and amount and its share of the discounts, the discounts by name and
+  code (loyalty rewards apart), shipping, the total, the VAT by rate (what the order's VAT holds beyond its lines
+  is the shipping's, shown without a rate because `create_order` does not store it), gift cards by their last
+  four characters, the amount paid online, refunds, both address snapshots, each parcel with its contents and
+  tracking link, and the payment (method, last four digits, Stripe reference shortened).
+- **Collected, per currency.** The header figure is never added across currencies: for orders whose payment was
+  received and that are not cancelled, `amount_due` (total less gift cards) less succeeded refunds
+  (`collectedByCurrency`). Gift cards count when sold, not again when spent. A buyer's "spent" is the member
+  area's rule (`spentByCurrency`: recorded totals of paid orders that stand, less refunds).
+- **Timeline from recorded dates only:** placed (`created_at`), paid (`paid_at`), payment failed (the failed
+  payment row), shipped / delivered (each parcel), cancelled (`cancelled_at`), refund requested / refunded /
+  partially refunded / failed (each refund). `orders.updated_at` is never used: a status set by hand without a
+  dated fact has no event.
+- **States:** skeleton while loading, an error panel with "Try again" when the read fails (never an empty
+  book), "no orders yet", "no result" for filters.
+- **Volume.** The whole book is read (1 000 rows per request, up to `BOOK_LIMIT` = 10 000 orders, beyond which a
+  notice says only the newest are loaded) and filtered, sorted and paged in the browser, with the state in the
+  URL. That is deliberate for now: the KPI row, the buyers' order counts and the customers workspace read the
+  same book, and paging on the server needs an aggregate function for the KPIs (a new migration). Plan when the
+  book grows: `range()` + filters on `orders` for the table (search on `order_number` / `customer_email` /
+  address names, `order_items!inner` for the product filter), counts with `head: true`, a `SECURITY INVOKER`
+  RPC for the collected figure per currency, and the buyer's figures read on the detail page.
 
 ## Cart and checkout (Stripe)
 
@@ -246,16 +274,16 @@ src/
   lib/                Auth, cart, learning-progress and order contexts, toasts, price/date helpers
 ```
 
-## The training detail page (`/academy/formation/:id`)
+## The training detail page (`/fr/academy/formation/<slug>`, `/en/academy/course/<slug>`)
 
-The Academy catalogue opens one page per training — the sales page for that course, open to visitors like `/academy` itself, since gating it would hide what it advertises. It runs the visitor through the decision in order: what the training is, what they will experience, what they will be able to do, the curriculum module by module, how the journey runs, how the assessment works, the diploma, the artist community included with the purchase, why it is worth taking, and a closing call to action. A sticky bar carries the price and the call to action on small screens once the hero's own button scrolls away.
+The Academy catalogue opens one page per training — the sales page for that course, open to visitors like `/academy` itself, since gating it would hide what it advertises. It runs the visitor through the decision in order: what the training is, what they will experience, what they will be able to do, the curriculum module by module, how the journey runs, how the assessment works, the diploma, the artist community included with the purchase, why it is worth taking, and a closing call to action.
+
+**Live since Academy phase B (2026-10-01).** With Supabase configured, the catalogue (`screens/Academy.tsx`), this page, the home page's Academy band and the header's and footer's Academy entries read the **published courses** (`src/lib/academy/`): `api.ts` (one query: course, published translations, cover, outline — modules, steps, knowledge checks' titles and pass marks; plus `course_current_prices`), `publicCourseMapping.ts` (rows → `PublicCourse`, money in minor units, tested), `serverAcademy.ts` (server reads with the publishable key, cached 60 s like the catalogue, tag `academy`), `AcademyProvider.tsx` (the store, seeded by the root layout on every public page, loaded in the browser elsewhere), `courseMeta.ts` (title, description, Course JSON-LD, tested). Without Supabase, `fixtures.ts` turns the prototype's courses (`data/courses.ts`, `data/lessons.ts`) into the same shape. The page itself is given its course by `app/_public/coursePage.tsx`, which also answers 404 (unknown, draft or withdrawn course) and 308 (another language's slug, the row id) and writes the head. Covers come from the private bucket through `/media/formations/<media id>` (`app/media/formations/[id]/route.ts`). Lesson content, questions and answers are never read here.
 
 Two rules shape its content:
 
-- **Nothing is invented.** Title, level, price, duration, modules and lessons come from `data/courses.ts` and `data/lessons.ts`; the diploma is rendered with the member area's own `CertificateDocument`; the sample question is the lesson player's own quiz.
-- **What the prototype does not have is labelled.** The forum preview says it is a preview, and the assessment meter says it is an example — a visitor reading a sales page has no score, and showing one as if it were theirs would be a lie dressed as reassurance.
-
-The pass mark lives once, as `PASS_SCORE` in `data/lessons.ts`. It is a prototype value: the real rule belongs with the course record and has to be enforced server-side.
+- **Nothing is invented.** Title, level, summary, description, objectives, prerequisites, price (and a running promotion), duration, modules, steps, knowledge checks and the pass mark are the course's own; sections without data are left out (no objectives → no outcomes list, no certificate → no diploma section). The catalogue's figures are counted from the published courses. The diploma is rendered with the member area's own `CertificateDocument`; the playable question is labelled as a sample.
+- **What the platform does not have is labelled.** The forum preview says it is a preview, and the assessment meter says it is an example. Until courses are sold (phase D), a real course says **"enrolment opens soon"** instead of a start button (`components/academy/EnrolmentSoon.tsx`), has no sticky purchase bar, and its structured data has no offer. The prototype's courses (mock mode, `enrolment: "demo"`) keep the demo enrolment described below.
 
 The hero reflects the visitor's own state — enrolled, in progress, completed — but only when signed in: the seeded demo enrolments exist regardless of the session, and this page is public.
 
@@ -410,15 +438,15 @@ The member area is capped at `--max-width-account` rather than `--max-width-cont
 
 The sections own no state of their own. Learning progress lives in `lib/progress.tsx`, order history in `lib/orders.tsx` and the member profile in `lib/auth.tsx` — in-memory contexts shaped like the existing `lib/cart.tsx`. The lesson player writes to the first and the cart writes to the second; since phase 5 of `docs/migration-nextjs.md` the member space is reached by a client-side navigation again, so those mock writes show on the dashboard (a reload resets them). Certificates are derived from a course reaching 100 %, never stored as a separate flag, and the delivery timeline is derived from the order's recorded status and fulfilment for the same reason. Order amounts are integer minor units plus the order's currency (`data/orders.ts`), taken as recorded — never re-added from the lines — and formatted only at display (`formatMoney`); an order has three independent state axes (status, payment, fulfilment), a refund is not a cancellation. Editing the profile moves the greeting and the avatar, because both are derived from the stored name rather than copied from it.
 
-Progress is computed against the course each product opens (`Course.trainingId`), as authored in the back office — see the learning experience below. The Academy sales pages still advertise the single syllabus in `data/lessons.ts`; moving them onto the authored courses is the next step.
+Progress is computed against the course each product opens (`Course.trainingId`), as authored in the back office — see the learning experience below. The Academy sales pages read the published courses (phase B, above); the member area stays on the prototype courses until phase C.
 
 ## The learning experience (`/academy/mes-formations/:courseId`)
 
-What a customer who owns a training reads. The course is the one built in the back office (`/admin/formations`), never a separate copy: the training store (`lib/adminTraining.tsx`) is mounted above the whole app, each storefront product names the training it opens (`trainingId` in `data/courses.ts`), and the administrator's preview renders blocks and knowledge checks with the learner's own components. Admin preview and learner view are two views of one course.
+What a customer who owns a training reads. The course is the one built in the back office (`/admin/formations`), never a separate copy: the training store (`lib/adminTraining.tsx`) is mounted above the whole app, each storefront product names the training it opens (`trainingId` in `data/courses.ts`), and the administrator's preview renders blocks and knowledge checks with the learner's own components. Admin preview and learner view are two views of one course. **Still the prototype (phase C):** with Supabase configured, the learner pages keep reading the seeded courses (`data/adminTrainingSeed.ts`, see `lib/progress.tsx`) — the back office's courses carry database ids the prototype enrolments do not point at — until entitlements, progress and quiz attempts exist server-side.
 
 | Route | Screen |
 | --- | --- |
-| `/academy/mes-formations/:courseId` | Course overview: cover, instructor, progress ring, modules and steps completed, time left, the next unfinished lesson behind one "Continue training" button, module cards with status badges, recently completed lessons, objectives and completion rules |
+| `/academy/mes-formations/:courseId` | Course overview: cover, progress ring, modules and steps completed, time left, the next unfinished lesson behind one "Continue training" button, module cards with status badges, recently completed lessons, objectives and completion rules |
 | `/academy/mes-formations/:courseId/lecon/:nodeKey` | The lesson player, a full-screen workspace (no storefront header/footer): lesson content in authored order (text, image, video, any mix), the module's knowledge check after its last step, a side panel with the course outline on desktop, and a progress strip, a contents sheet and a bottom action bar on phones |
 | `/academy/mes-formations/:courseId/terminee` | Completion: medal, course, date, average score, certificate when the course issues one, back to the dashboard, review the course |
 | `/academy/lecon` | Forwards to the overview of the course just opened (every existing "open this course" action lands here) |
@@ -432,11 +460,22 @@ How it works:
 - **Knowledge checks** follow the settings chosen in the builder: immediate or end-of-check feedback, revealed answers, shuffling once per attempt, retries and attempt limits. Wrong answers are explained in the administrator's words, never punished.
 - `lib/progress.tsx` keeps the same public API, so the dashboard, certificates, community access and review eligibility all read the real course numbers.
 
-## Training image library (back office)
+## Course authoring on Supabase (back office)
 
-Every image field of the course builder — image blocks, module covers, video thumbnails, question images — opens the **training image library** (`components/admin/training/TrainingMediaLibrary.tsx`): search, category chips, usage filter, upload by button or drag and drop (JPG/PNG/WebP/AVIF, 10 MB max, validated), a thumbnail grid with an obvious selection, a details panel (dimensions, size, date, usage count, name, category, FR/EN description, tags), delete (refused while the image is used in a course) and insert. Adding an image block opens it straight away, and the library's description pre-fills an empty alt text.
+The course builder (`/admin/formations`, `/nouvelle`, `/:id`, `/:id/apercu`, `/:id/publication`) reads and writes the Academy tables (`supabase/README.md` → *Academy authoring*) when Supabase is configured, and the prototype fixtures otherwise:
 
-It is deliberately separate from the shop's product media. In the prototype uploads are real files previewed from local object URLs with a simulated progress bar; the production home is a **private** `training-media` bucket served through signed URLs (paid training material must not be publicly listable), which is not created yet.
+- `lib/adminTraining.tsx` — the store. Structural edits stay in memory (instant); **Save** sends the whole course to `admin_save_course()`; publishing saves first, then changes `courses.status` (the database checks readiness: `course_publication_problems()`). It loads nothing until a staff session is open (it sits in the root layout). Writes reject with a `TrainingError`, shown by the screens (`components/admin/training/trainingErrors.ts`).
+- `lib/adminTrainingBackend.ts` — mock and Supabase backends; `lib/adminTrainingMapping.ts` — rows ↔ builder, payloads, error kinds (unit-tested). Node ids are browser-generated uuids kept across saves.
+- **Price and promotions**: the price is typed in the course form (`lib/coursePricing.ts`, minor units, no float); `components/admin/training/CoursePromotions.tsx` manages dated percentage/amount promotions of one course (saved immediately; one active at a time). Courses are not shop products and never appear in the shop.
+- Status: draft → published ⇄ unpublished, no "review" state; a course ever published cannot be deleted (the card hides the action, RLS refuses it). No instructor field.
+
+## Training media library (`/admin/formations/medias`)
+
+The course editor's images **and videos** are managed on their own screen (`screens/admin/TrainingMedia.tsx`): upload by button or drag and drop (JPG/PNG/WebP/AVIF up to 10 MB; MP4/WebM/MOV up to 50 MB, the Supabase free plan's per-file limit — raise `MAX_VIDEO_BYTES` in `lib/trainingMediaRules.ts` and the dashboard setting on Pro), search, kind / category / usage filters, a details panel (preview or player, length, dimensions, size, date, usage count, name, category, FR/EN description, tags — saved with a button) and delete (refused while a course uses the file; the database refuses it too).
+
+The builder's media fields (`components/admin/training/MediaPicker.tsx`) only **pick**: a select-only dialog (`MediaPickerDialog.tsx`) with search and categories, a link opening the library in a new tab and a *Refresh* button. Picking a video fills the block's duration from the file.
+
+With Supabase, files go to the private `training-media` bucket under `media/<id>/` through resumable TUS uploads (`tus-js-client`, 6 MB chunks, direct storage hostname), each with a `training_media` row; the back office displays them through signed URLs renewed every 45 minutes (`lib/trainingMedia.tsx`). Course fields hold the media **id**, never a URL: every screen resolves it with `useTrainingMedia().urlOf()` (`components/admin/training/MediaImage.tsx`, the learner's `LessonBlocks`/`QuizPlayer`). In the prototype the library is the seeded photographs and uploads stay in the page.
 
 ## The Artist Community (`/compte/communaute`)
 
@@ -493,9 +532,9 @@ Without Supabase, sign in with `camille@globaltoothgems.com` / `toothgems2026`; 
 - `lib/adminCatalog.tsx` — the one place any product changes. It picks the Supabase store (`lib/adminCatalogSupabase.tsx`) when the environment is configured and the in-memory prototype store otherwise; both implement the same contract (`lib/adminCatalogContext.ts`), so no screen knows which one it is on. A failed write is reported by a toast from the store and rejects, so the screen keeps the form and skips its success path.
 - `lib/adminAuth.tsx` — the administrator session, kept separate from the customer session in `lib/auth.tsx`: Supabase Auth restricted to staff accounts when configured, the demo account otherwise. A rejected password leaves no session behind.
 - `lib/productFilters.ts` — search, filtering and sorting as pure functions on plain state; the product list holds its filters in the URL, so a filtered view can be linked to and stepped back through.
-- `data/adminOrders.ts` — the back office's order book: 38 orders across every status, payment and fulfilment state, 14 customers in four countries, six flagged for attention (one per reason) and seven internal notes. Deliberately a separate model from `data/orders.ts`, which is the *member's* view of their own purchases and is written to by `lib/orders.tsx` when the cart is paid; only the line-item shape is shared. Timelines, tracking numbers and payment references are derived from each order's own state rather than typed out, so a status can never disagree with the history beside it. Every line refers to a real catalogue id, because `productLine()` throws on an unknown one.
-- `lib/adminOrders.tsx` — the one place any order changes, shaped like `lib/adminCatalog.tsx`. Marking an order shipped moves the badge, the fulfilment column, the KPI row and that order's timeline together. It never invents a payment: an unpaid order marked shipped stays unpaid.
-- `lib/adminOrderFilters.ts` — search, filtering, sorting and paging as pure functions over URL state, the same convention as `lib/productFilters.ts`. With Supabase the date presets use the calendar day; on the mock book they are anchored to the newest order rather than to the wall clock, so "Today" never silently returns nothing on fixed mock data.
+- `data/adminOrders.ts` — the back office's order model (types only; the mock book is gone). A separate model from the member's `data/orders.ts`, sharing its amounts, lines, discounts, parcels, refunds and addresses. See *Orders in the back office* above.
+- `lib/adminOrders.tsx` — the one place any order changes (Supabase only; without it the book is empty).
+- `lib/adminOrderFilters.ts` — search, filtering, sorting and paging as pure functions over URL state, the same convention as `lib/productFilters.ts`; the KPI row and the filter options come from the book itself.
 - `components/admin/` — the workspace's own primitives (rail, header, table, row, status badge, filters, form, media uploader, preview drawer, confirmation dialog, empty and loading states, form field, search input, category badge), plus the orders workspace's own pieces.
 - `components/ui/Dialog.tsx` and `components/ui/Menu.tsx` — a modal with a focus trap and a keyboard-navigable dropdown, added for the orders screens. See the scope note below: they overlap with `components/admin/ConfirmationDialog.tsx`, `OverflowMenu.tsx` and `lib/useFocusTrap.ts` and should be consolidated onto those.
 
@@ -514,9 +553,9 @@ Without Supabase, sign in with `camille@globaltoothgems.com` / `toothgems2026`; 
 
 ### Scope
 
-Product management and order management are the two functional sections. With Supabase configured, product management is real: Supabase Auth, the `manage_products` permission and RLS decide every read and write, and `RequireAdmin` remains a navigation gate only. Everything else — and product management without Supabase — has no database, no server-side validation and no real authorization; a page reload restores the seeded data and signs the administrator out.
+Product management and order management are the two functional sections. With Supabase configured, product management and the order book are real: Supabase Auth, the `manage_products` / `manage_orders` permissions and RLS decide every read and write, and `RequireAdmin` remains a navigation gate only. The screens still on mock data — and product management without Supabase — have no database, no server-side validation and no real authorization; a page reload restores the seeded data and signs the administrator out.
 
-In the orders screens specifically, changing a status, refunding, cancelling, exporting, printing an invoice and tracking a parcel all stop at the screen. A real status transition is a server-side change behind explicit RBAC with an audit entry, and a real refund is a Stripe call whose webhook — not the browser — writes the new state. Each dialog says so where the action is taken.
+In the orders screens, status changes, cancellations of unpaid orders and notes are written to Supabase under `manage_orders` (audited); refunds are not offered (a Stripe call confirmed by its webhook, not the browser); exporting and printing an invoice are not wired and say so.
 
 **Known duplication to consolidate.** The orders screens were built against their own primitives before the rest of this workspace existed, so they carry a second modal (`components/ui/Dialog.tsx`), dropdown (`components/ui/Menu.tsx`), KPI tile, empty state and loading state alongside the workspace's `ConfirmationDialog`, `OverflowMenu`, `StatCard`, `EmptyState`, `LoadingState`, `SearchInput` and `AdminButton`. The shell, the header, the rail, the guard and the route structure are shared; these presentational pieces are not, and porting the orders screens onto the workspace primitives is open work.
 

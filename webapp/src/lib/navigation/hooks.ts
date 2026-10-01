@@ -1,7 +1,7 @@
 import { useParams as useNextParams, usePathname, useRouter, useSearchParams as useNextSearchParams } from "next/navigation";
 import { useCallback, useMemo, useSyncExternalStore } from "react";
 import { useTranslation } from "react-i18next";
-import { useSlugTranslator } from "../catalog/CatalogProvider";
+import { useSlugTranslator } from "./slugs";
 import { internalParams, parsePath, type Locale } from "../localeRoutes";
 import { resolveAddress } from "./href";
 import { handOff, stateFor } from "./state";

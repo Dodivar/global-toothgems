@@ -6,6 +6,7 @@ import { AdminButton } from "../AdminButton";
 import { ConfirmationDialog } from "../ConfirmationDialog";
 import { EmptyState } from "../EmptyState";
 import { FormField } from "../FormField";
+import { MediaImage } from "./MediaImage";
 import { MediaPicker } from "./MediaPicker";
 import { ObjectiveList } from "./ObjectiveList";
 import { MetaPill, Section } from "./TrainingPrimitives";
@@ -60,12 +61,7 @@ export function ModuleEditor({
       {/* Visual summary */}
       <section className="gt-admin-panel overflow-hidden">
         <div className="grid gap-0 sm:grid-cols-[200px_minmax(0,1fr)]">
-          <img
-            src={module.cover}
-            alt=""
-            aria-hidden="true"
-            className="h-full max-h-[190px] w-full object-cover sm:max-h-none"
-          />
+          <MediaImage mediaRef={module.cover} className="h-full min-h-[120px] max-h-[190px] w-full object-cover sm:max-h-none" />
           <div className="grid content-start gap-3 p-5">
             <div className="grid gap-0.5">
               <span className="text-[10px] font-semibold uppercase tracking-[var(--tracking-eyebrow)] text-[var(--text-subtle)]">

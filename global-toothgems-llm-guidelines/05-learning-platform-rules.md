@@ -7,7 +7,16 @@ description: Academy rules and target architecture — courses, modules, lessons
 
 ## Current state
 
-The Academy is fully designed in the UI (catalogue, course sales pages, lesson player, quizzes, certificates, admin Training workspace and course builder) but runs on mock data (`webapp/src/data/courses.ts`, `lessons.ts`, `adminTraining*.ts`, `lib/progress.tsx`, `lib/adminTraining.tsx`). **There is no Academy schema yet.** Designing it is launch-blocking work: start from what the admin course builder and the lesson player already need, so the UI can be wired without redesign.
+The Academy is fully designed in the UI (catalogue, course sales pages, lesson player, quizzes, certificates, admin Training workspace and course builder). **Authoring schema is live (phase A, migration `academy_authoring`, 2026-10-01)**: courses, modules, steps, content blocks, quizzes, the training media library, course price and course promotions, written by the back office (`lib/adminTraining.tsx` + `lib/adminTrainingBackend.ts`, `lib/trainingMedia.tsx`, `/admin/formations/medias`). **Public pages are live (phase B, migration `academy_public_pages`, 2026-10-01)**: the catalogue, course sales pages, home band and header/footer entries read the published courses, their outline (modules, steps, knowledge checks' pass marks — never content or answers), cover and current price (`lib/academy/`, server-rendered from `app/_public/coursePage.tsx`). Until phase D a course page shows its price and "enrolment opens soon" — never a fake enrolment. Still on mock data: the learner side — access, progress, quiz attempts, certificates (phase C: `lib/progress.tsx`, `lib/learning/`, `data/courses.ts`), and selling a course (phase D, with checkout). See `supabase/README.md` → *Academy authoring* and *Academy public pages*.
+
+## Decisions (owner, 2026-10-01)
+
+- **A course is not a product** and never appears in the shop. Its price lives on `courses` and is edited with `manage_training` only. Selling courses needs a course line in `create_order()` / Stripe Checkout (phase D).
+- **Course promotions** are their own mechanism (`course_promotions`): a dated percentage or amount off one course, one at a time, no codes. Shop promotions do not apply to courses.
+- **No instructor field**: a single trainer authors every course.
+- **No "review" status**: draft → published ⇄ unpublished. A course that was ever published is never deleted nor turned back into a draft.
+- **Unpublished course**: its buyers still see it in their space, greyed out, not selectable, with a "back soon" message; nobody can open its content until it is published again.
+- **Media library** is a dedicated back-office screen (`/admin/formations/medias`); the course builder only *picks* media (select-only picker linking to the library). Videos are uploaded (resumable TUS uploads) to the private `training-media` bucket; 50 MB per file on the free plan, raised on Pro.
 
 ## Target model
 
@@ -27,20 +36,20 @@ Names are indicative; the invariants are not. Same conventions as the rest of th
 
 ## Lifecycle
 
-Draft → published → unpublished/hidden → archived. Draft and hidden content is never readable by learners (RLS), only by staff with `manage_training`. Teasing a course before publication is a published sales page with unpublished lessons, not a leak of drafts.
+Draft → published ⇄ unpublished (enforced by the `courses_guard` trigger; publication requires `course_publication_problems()` to be empty). Draft and unpublished content is never readable by learners (RLS), only by staff. An unpublished course stays listed, greyed out, for the members who own it. Teasing a course before publication is a published sales page with unpublished lessons, not a leak of drafts.
 
 ## Access
 
 - Access = an active `course_entitlements` row, granted by the Stripe webhook for purchases, or by staff (audited) for manual grants.
 - Never infer access from URL parameters, client state, hidden buttons, local storage or the success page.
 - Lesson content (video URLs, text, correct answers) is readable only with an entitlement — or for `is_preview` lessons. Correct answers and explanations are returned **after** an answer is submitted, by a function, never shipped in advance to the browser.
-- The course sales page (`/academy/formation/:id`) stays public and crawlable; only the player is gated.
+- The course sales page (`/fr/academy/formation/<slug>`, `/en/academy/course/<English slug>`) stays public and crawlable; only the player is gated. Its outline is public; a step's content is not.
 
 ## Progress and quizzes
 
 - Progress persisted server-side; opening a URL does not complete a lesson. Completion rules (video watched threshold, quiz passed) are enforced by a database function.
 - Gated sequences: prerequisites validated server-side; the UI explains why a step is locked; changing the URL does not bypass a gate.
-- Scoring deterministic and reproducible; store score, threshold version and timestamp. The pass mark (`PASS_SCORE` in `data/lessons.ts` today) moves to the course record.
+- Scoring deterministic and reproducible; store score, threshold version and timestamp. The pass mark is on the course record (`courses.min_score`, per check `course_quizzes.passing_score`); the sales pages show it, and the prototype's `PASS_SCORE` (`data/lessons.ts`) is only left in the learner fixtures until phase C.
 - Incorrect answers teach: explain why, show the correct answer, never shame.
 
 ## Media

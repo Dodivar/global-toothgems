@@ -66,7 +66,7 @@ Stripe  payment source of truth; fulfilment only from verified, idempotent webho
 - Business rules that protect money, stock, access or permissions live in Postgres (functions, constraints, triggers, RLS) or in Edge Functions — never only in the browser or in a page. Front-end and middleware checks are UX and navigation; RLS is the authority.
 - The service-role key and every provider secret exist only in Edge Function secrets / Supabase — never in `NEXT_PUBLIC_*` variables (Next.js inlines them into the public bundle).
 - Decided by the user (2026-09-30): e-mail links land on `/auth/confirm` (server route opening the session, phase 2); public pages are prefixed `/fr/…` and `/en/…` with English segments (`/fr/boutique` ↔ `/en/shop`), `/` goes to the saved choice, else the browser's language, else English; the member space, sign-in and the back office are not prefixed (phase 3.1, done). The address table is `webapp/src/lib/localeRoutes.ts`: add every new public page there, in both languages, with its segment in each language. Screens keep writing French paths internally (`src/lib/navigation` writes the address). Decided by the owner (2026-09-30): product slugs per language (`/fr/boutique/<products.slug>`, `/en/shop/<product_translations.slug>`), other keys moved (308), unknown slugs 404 (phase 3.2, done).
-- Sessions live in cookies (`@supabase/ssr`); `webapp/proxy.ts` refreshes them and turns signed-out visitors away from `/compte`, the learner pages and `/admin` before anything is sent.
+- Sessions live in cookies (`@supabase/ssr`); `webapp/proxy.ts` refreshes them and turns signed-out visitors away from `/compte`, the learner pages and `/admin` before anything is sent, and, for `/admin`, a signed-in account that is not an active staff member too (decided 2026-10-01; `webapp/src/lib/staffProfile.ts`).
 - Still the user's call, never improvise: Vercel project settings and the Supabase Auth dashboard settings (redirect allow-list, e-mail templates; both set by the user on 2026-09-30), the English wording of new public addresses, and the open points of `docs/migration-nextjs.md`.
 
 ### Domain status (update this table when a domain goes live)
@@ -81,7 +81,9 @@ Stripe  payment source of truth; fulfilment only from verified, idempotent webho
 | Promotions, gift cards, loyalty | yes | yes | **Mock UI** over a ready schema |
 | Admin customers, users/roles, statistics, settings, translations | yes | mostly yes | **Mock UI** over a ready schema |
 | Contact form, newsletter, transactional e-mails | yes | yes | **Mock** — needs Edge Functions + Resend |
-| Academy (courses, lessons, quizzes, progress, certificates), admin training | yes | **no** | **Mock** — schema to design |
+| Academy authoring (admin courses, content, quizzes, training media library, course price and promotions) | yes | yes (`academy_authoring`) | **Live** (2026-10-01): builder, `/admin/formations/medias`, price and course promotions on Supabase. Courses are not products; see `guidelines/05` decisions |
+| Academy public pages (catalogue, course sales pages, home band, header/footer entries) | yes | yes (`academy_public_pages`) | **Live** (2026-10-01, phase B): published courses, outline, cover, current price, per-language slugs, 404/308, head + Course JSON-LD, sitemap. No purchase yet: a course page says enrolment opens soon |
+| Academy learner access, progress, quizzes, certificates, course sales | yes | no (no entitlements/progress tables yet) | **Mock** — phases C (learner), D (checkout) |
 | Artist community | yes | no | **Mock**, post-launch |
 | Legal pages | yes | `content_pages` ready | Placeholders awaiting business/legal review |
 

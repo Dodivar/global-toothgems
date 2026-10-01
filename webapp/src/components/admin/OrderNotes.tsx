@@ -2,7 +2,7 @@ import { useState } from "react";
 import { useTranslation } from "react-i18next";
 import { Lock, MessageSquarePlus, Send } from "lucide-react";
 import { Button } from "../ui/Button";
-import type { AdminNote } from "../../data/adminOrders";
+import { parseInstant, type AdminNote } from "../../data/adminOrders";
 import { pick } from "../../data/types";
 
 /**
@@ -38,7 +38,7 @@ export function OrderNotes({
       month: "short",
       hour: "2-digit",
       minute: "2-digit",
-    }).format(new Date(`${at}:00`));
+    }).format(parseInstant(at));
 
   const submit = () => {
     const body = draft.trim();
@@ -78,10 +78,10 @@ export function OrderNotes({
               className="grid gap-1.5 rounded-[var(--radius-md)] border border-[var(--border-subtle)] bg-[var(--surface-card)] p-3.5"
             >
               <span className="flex flex-wrap items-baseline justify-between gap-2">
-                <strong className="text-[length:var(--text-body-sm)] text-[var(--text-primary)]">{note.author}</strong>
+                <strong className="text-[length:var(--text-body-sm)] text-[var(--text-primary)]">{note.author || t("admin.orders.notesTeam")}</strong>
                 <span className="text-[11px] tabular-nums text-[var(--text-subtle)]">{stamp(note.at)}</span>
               </span>
-              <p className="m-0 text-[length:var(--text-body-sm)] leading-[var(--leading-normal)] text-[var(--text-body)]">
+              <p className="m-0 whitespace-pre-line text-[length:var(--text-body-sm)] leading-[var(--leading-normal)] text-[var(--text-body)]">
                 {pick(note.body, lang)}
               </p>
             </li>

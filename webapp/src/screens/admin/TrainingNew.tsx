@@ -7,6 +7,7 @@ import { ArrowRight, CircleAlert, Wrench } from "lucide-react";
 import { AdminButton } from "../../components/admin/AdminButton";
 import { AdminHeader } from "../../components/admin/AdminHeader";
 import { CourseForm } from "../../components/admin/training/CourseForm";
+import { trainingErrorMessage } from "../../components/admin/training/trainingErrors";
 import { blankCourse, useAdminTraining } from "../../lib/adminTraining";
 import { useLocalized, type ContentLang } from "../../lib/localized";
 import { useToast } from "../../lib/toast";
@@ -36,29 +37,35 @@ export function TrainingNew() {
 
   const errors = useMemo(() => {
     const result: { title?: string; shortDescription?: string } = {};
-    // Validated on the language being edited: demanding both translations
-    // before a course exists would stop anyone starting one.
-    if (draft.title[lang].trim() === "") result.title = t("admin.training.create.errorTitle");
-    if (draft.shortDescription[lang].trim() === "") {
+    // French is the reference language (base columns): it is the one a course
+    // needs to exist. English can follow in the builder.
+    if (draft.title.fr.trim() === "") result.title = t("admin.training.create.errorTitle");
+    if (draft.shortDescription.fr.trim() === "") {
       result.shortDescription = t("admin.training.create.errorShort");
     }
     return result;
-  }, [draft, lang, t]);
+  }, [draft, t]);
 
   const invalid = Object.keys(errors).length > 0;
 
   const submit = async () => {
     setSubmitted(true);
     if (invalid) {
-      document.querySelector<HTMLElement>("[aria-invalid='true']")?.focus();
+      setLang("fr");
+      requestAnimationFrame(() => document.querySelector<HTMLElement>("[aria-invalid='true']")?.focus());
       return;
     }
-    const saved = await createCourse(draft);
-    showToast(
-      t("admin.training.toasts.createdTitle"),
-      t("admin.training.toasts.createdBody", { name: L(saved.title) }),
-    );
-    navigate(`/admin/formations/${saved.id}`);
+    try {
+      const saved = await createCourse(draft);
+      showToast(
+        t("admin.training.toasts.createdTitle"),
+        t("admin.training.toasts.createdBody", { name: L(saved.title) }),
+      );
+      navigate(`/admin/formations/${saved.id}`);
+    } catch (error) {
+      const message = trainingErrorMessage(t, error);
+      showToast(message.title, message.body, "error");
+    }
   };
 
   return (

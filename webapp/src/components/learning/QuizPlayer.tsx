@@ -6,6 +6,7 @@ import clsx from "clsx";
 import { Button } from "../ui/Button";
 import type { Answer, Question, Quiz } from "../../data/adminTraining";
 import type { ContentLang } from "../../lib/localized";
+import { useTrainingMedia } from "../../lib/trainingMedia";
 import { attemptsLeft, scoreQuiz, type QuizResult, type QuizScore } from "../../lib/learning/path";
 import { contactHref } from "../../data/legal/routes";
 import { ProgressRing, ThinProgress } from "./LearningStatus";
@@ -63,6 +64,7 @@ export function QuizPlayer({
   reviewHref?: string;
 }) {
   const { t } = useTranslation();
+  const { urlOf } = useTrainingMedia();
   const [phase, setPhase] = useState<Phase>("intro");
   const [order, setOrder] = useState<Record<string, Answer[]>>({});
   const [index, setIndex] = useState(0);
@@ -269,8 +271,8 @@ export function QuizPlayer({
           </h2>
         </legend>
 
-        {question.image && (
-          <img src={question.image} alt="" className="max-h-[320px] w-full max-w-[480px] rounded-[var(--radius-media)] object-cover" />
+        {question.image && urlOf(question.image) && (
+          <img src={urlOf(question.image)} alt="" className="max-h-[320px] w-full max-w-[480px] rounded-[var(--radius-media)] object-cover" />
         )}
 
         <div className="grid gap-2.5">

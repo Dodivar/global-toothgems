@@ -15,7 +15,9 @@ import { refreshSession } from "./src/lib/supabase/proxySession";
  *    request is passed on to the root layout (`<html lang>`).
  * 2. Session (phase 2): keeps the Supabase session fresh and turns signed-out
  *    visitors away from the member space, the learner pages and the back
- *    office, to the matching sign-in page with `?suite=<the page asked for>`.
+ *    office, to the matching sign-in page with `?suite=<the page asked for>`;
+ *    the back office also turns away a signed-in account that is not an active
+ *    staff member (its own profile, read under RLS; decided 2026-10-01).
  *    Navigation, not authorization: RLS decides every read and write. In mock
  *    mode (no Supabase variables) the client guards decide, as before. The
  *    zones' server layouts and pages check again (`app/_zones/guard.ts`).
@@ -44,9 +46,11 @@ export async function proxy(request: NextRequest) {
 
   if (!isSupabaseConfigured) return NextResponse.next({ request: { headers: requestHeaders } });
 
-  const { response, signedIn } = await refreshSession(request, requestHeaders);
   const gate = gateFor(pathname);
-  if (!gate || signedIn) return response;
+  const { response, signedIn, staff } = await refreshSession(request, requestHeaders, { checkStaff: gate === "staff" });
+  // The back office also turns away a signed-in account that is not an
+  // active staff member (decided 2026-10-01): to its access screen.
+  if (!gate || (signedIn && (gate !== "staff" || staff))) return response;
 
   const redirect = NextResponse.redirect(new URL(signInRedirect(gate, pathname, search), request.url));
   // Keep whatever the refresh wrote (a cleared, expired session included).
@@ -56,7 +60,8 @@ export async function proxy(request: NextRequest) {
 
 export const config = {
   matcher: [
-    // Pages only: not the build output, the image optimizer, nor files from public/ or bundled assets.
-    "/((?!_next/static|_next/image|videos/|.*\\.(?:svg|png|jpg|jpeg|gif|webp|avif|ico|glb|mp4|webm|txt|xml|json|webmanifest)$).*)",
+    // Pages only: not the build output, the image optimizer, files from public/ or bundled assets,
+    // nor the Academy's public course covers (`app/media/formations`, read with the publishable key).
+    "/((?!_next/static|_next/image|videos/|media/formations/|.*\\.(?:svg|png|jpg|jpeg|gif|webp|avif|ico|glb|mp4|webm|txt|xml|json|webmanifest)$).*)",
   ],
 };

@@ -3,7 +3,7 @@ import { useTranslation } from "react-i18next";
 import { RefreshCw } from "lucide-react";
 import { Badge } from "../ui/Badge";
 import { QuizQuestion } from "../ui/QuizQuestion";
-import { ASSESSMENT_QUESTION_TOTAL, PASS_SCORE, QUIZ } from "../../data/lessons";
+import { QUIZ } from "../../data/lessons";
 import { pick } from "../../data/types";
 
 /**
@@ -99,7 +99,12 @@ function LearningLoop() {
   );
 }
 
-export function AssessmentPanel({ lang }: { lang: string }) {
+/**
+ * `passScore` is the course's own required average (`courses.min_score`). The
+ * playable question is a sample (labelled so): a course's real questions and
+ * answers are never sent to a visitor.
+ */
+export function AssessmentPanel({ lang, passScore }: { lang: string; passScore: number }) {
   const { t } = useTranslation();
   // Remounting the question is the reset: `QuizQuestion` owns its own answer
   // state, and replaying is exactly what the section is promising.
@@ -115,7 +120,7 @@ export function AssessmentPanel({ lang }: { lang: string }) {
               {t("training.quizMeterExample")}
             </Badge>
           </div>
-          <ScoreMeter score={EXAMPLE_SCORE} required={PASS_SCORE} />
+          <ScoreMeter score={EXAMPLE_SCORE} required={passScore} />
           <p className="m-0 rounded-[var(--radius-md)] bg-[var(--gt-emerald-50)] p-4 text-[length:var(--text-body-sm)] text-[var(--text-body)]">
             {t("training.quizReassure")}
           </p>
@@ -127,7 +132,7 @@ export function AssessmentPanel({ lang }: { lang: string }) {
           {[
             { title: t("training.quizPoint1Title"), body: t("training.quizPoint1Body") },
             { title: t("training.quizPoint2Title"), body: t("training.quizPoint2Body") },
-            { title: t("training.quizPoint3Title"), body: t("training.quizPoint3Body", { score: PASS_SCORE }) },
+            { title: t("training.quizPoint3Title"), body: t("training.quizPoint3Body", { score: passScore }) },
           ].map((point) => (
             <li key={point.title} className="grid gap-1 border-l-2 border-[var(--gt-blue-300)] pl-4">
               <strong className="text-[length:var(--text-body-md)] text-[var(--text-primary)]">{point.title}</strong>
@@ -137,12 +142,11 @@ export function AssessmentPanel({ lang }: { lang: string }) {
         </ul>
       </div>
 
-      {/* A real question from this training's player, playable and replayable. */}
+      {/* A sample question in the player's own component, playable and replayable. */}
       <div className="grid gap-3 rounded-[var(--radius-xl)] bg-[var(--surface-card)] p-[clamp(16px,2vw,24px)] shadow-[var(--shadow-sm)]">
         <div className="flex flex-wrap items-center justify-between gap-2">
           <span className="gt-eyebrow">{t("training.quizSampleEyebrow")}</span>
           <span className="flex items-center gap-2 text-[length:var(--text-caption)] text-[var(--text-muted)]">
-            {t("training.quizSampleTotal", { count: ASSESSMENT_QUESTION_TOTAL })}
             {/* Replaying is the whole message of this section, so the attempt
                 count is shown and announced rather than silently reset. */}
             {attempt > 0 && (

@@ -10,6 +10,8 @@ import { AdminHeader } from "../../components/admin/AdminHeader";
 import { ConfirmationDialog } from "../../components/admin/ConfirmationDialog";
 import { EmptyState } from "../../components/admin/EmptyState";
 import { CourseForm } from "../../components/admin/training/CourseForm";
+import { CoursePromotions } from "../../components/admin/training/CoursePromotions";
+import { trainingErrorMessage } from "../../components/admin/training/trainingErrors";
 import { ModuleEditor } from "../../components/admin/training/ModuleEditor";
 import { PropertiesPanel } from "../../components/admin/training/PropertiesPanel";
 import { QuizBuilder } from "../../components/admin/training/QuizBuilder";
@@ -48,6 +50,7 @@ export function TrainingBuilder() {
   const training = useAdminTraining();
   const {
     getCourse,
+    loading,
     updateCourse,
     saveDraft,
     dirty,
@@ -91,7 +94,7 @@ export function TrainingBuilder() {
     [setParams],
   );
 
-  if (!course) return <Navigate to="/admin/formations" replace />;
+  if (!course) return loading ? <BuilderLoading /> : <Navigate to="/admin/formations" replace />;
 
   const title = L(course.title) || t("admin.training.create.fieldTitlePlaceholder");
 
@@ -139,8 +142,13 @@ export function TrainingBuilder() {
     `/admin/formations/${course.id}/apercu${extra && extra.toString() ? `?${extra}` : ""}`;
 
   const save = async () => {
-    await saveDraft(course.id);
-    showToast(t("admin.training.toasts.savedTitle"), t("admin.training.toasts.savedBody"));
+    try {
+      await saveDraft(course.id);
+      showToast(t("admin.training.toasts.savedTitle"), t("admin.training.toasts.savedBody"));
+    } catch (error) {
+      const message = trainingErrorMessage(t, error);
+      showToast(message.title, message.body, "error");
+    }
   };
 
   return (
@@ -159,8 +167,18 @@ export function TrainingBuilder() {
             <AdminButton variant="outline" iconLeft={Eye} onClick={() => navigate(previewPath())}>
               <span className="hidden xl:inline">{t("admin.training.actions.preview")}</span>
             </AdminButton>
-            <AdminButton variant="outline" iconLeft={Save} loading={saving} onClick={save}>
-              <span className="hidden xl:inline">{t("admin.training.save.saveDraft")}</span>
+            <AdminButton
+              variant="outline"
+              iconLeft={Save}
+              loading={saving}
+              onClick={save}
+              // A published course has no separate draft: a save reaches its buyers at once.
+              aria-label={t(course.status === "published" ? "admin.training.save.savePublished" : "admin.training.save.saveDraft")}
+              title={course.status === "published" ? t("admin.training.save.savePublishedHint") : undefined}
+            >
+              <span className="hidden xl:inline">
+                {t(course.status === "published" ? "admin.training.save.savePublished" : "admin.training.save.saveDraft")}
+              </span>
             </AdminButton>
             <AdminButton
               variant="primary"
@@ -322,6 +340,20 @@ export function TrainingBuilder() {
 
 /* -------------------------------------------------------------------------- */
 
+/** While the courses load (a direct link or a reload lands here first). */
+function BuilderLoading() {
+  const { t } = useTranslation();
+  return (
+    <div className="grid gap-4 px-[var(--admin-gutter)] pt-6" aria-busy="true">
+      <div className="gt-skeleton h-8 w-1/3 rounded-[var(--radius-xs)]" />
+      <div className="gt-skeleton h-64 w-full rounded-[var(--admin-radius)]" />
+      <p className="sr-only" role="status">
+        {t("admin.training.builder.loading")}
+      </p>
+    </div>
+  );
+}
+
 /** Chooses the centre panel for the current selection. */
 function EditorPanel({
   course,
@@ -365,13 +397,16 @@ function EditorPanel({
       );
     }
     return (
-      <CourseForm
-        draft={course}
-        onChange={onChangeCourse}
-        lang={lang}
-        onLangChange={onLangChange}
-        showPreview={false}
-      />
+      <div className="grid gap-4">
+        <CourseForm
+          draft={course}
+          onChange={onChangeCourse}
+          lang={lang}
+          onLangChange={onLangChange}
+          showPreview={false}
+        />
+        <CoursePromotions course={course} />
+      </div>
     );
   }
 

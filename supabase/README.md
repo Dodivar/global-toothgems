@@ -59,6 +59,9 @@ supabase/
   tests/iteration17_validation.sql  iteration 17 member wishlist (favourites) suite (always rolls back)
   tests/iteration18_validation.sql  iteration 18 "My orders" isolation + staff order notes suite (always rolls back)
   tests/iteration19_validation.sql  iteration 19 Stripe Checkout wiring (expiry job, webhook idempotency, return page) suite (always rolls back)
+  tests/iteration20_validation.sql  iteration 20 Academy authoring suite (always rolls back)
+  tests/iteration21_validation.sql  iteration 21 Academy public pages (what visitors and customers read) suite (always rolls back)
+  tests/admin_orders_validation.sql back-office order book: what staff read, viewer/customer/visitor refusals (always rolls back)
   config.toml   CLI settings this repo relies on (verify_jwt of the two Edge Functions)
   functions/    Edge Functions (Deno): create-checkout-session, stripe-webhook, _shared/ (pure modules + clients),
                 *_test.ts (deno test), .env.example (secret names)
@@ -103,7 +106,12 @@ supabase/
 | 20260928223009 | `product_custom_variants` | `admin_save_product()` gains an optional `custom_variants` list (every variant that is not a pack/SS option: browser-generated id, fr + en name, optional `attributes.swatch` `#rrggbb` merged into the other attributes, optional price, stock) and an optional `media[].variant_id`; SKU derived once from the product SKU + French name, unique; names can be swapped in one save; a variant left out is deleted, or deactivated when ordered; refused alongside `variants` or on a product selling pack/SS options; returns `custom_variants` |
 | 20260929120000 | `category_families` | second level of the shop taxonomy: `category_families` (under one category, `slug` unique across categories = `famille` URL value, `is_active`, `position`, audited) + `category_family_translations`; optional `products.family_id` with a composite FK `(category_id, family_id)` and a trigger clearing a family the new category does not have; categories reorganised into `gems` (Toothgems), `materiel` (former `outils`), `kits`, `lip-gloss`, `entretien` / `accessoires` emptied into `materiel` and hidden; hosted products classified by slug; `admin_save_product()` gains an optional `family_id` (absent = unchanged) and returns it |
 | 20260930090111 | `wishlist` | `wishlist_items` (member × product, composite key, `user_id` defaults to `auth.uid()`, both CASCADE); members read, add and remove only their own rows; adding needs an active account and an active product; only `product_id` is insertable, nothing is updatable; no visitor or staff access |
-| 20260930210000 | `order_staff_notes` | **Not applied yet (awaiting the owner's go).** `order_notes` (one per order, staff read, `manage_orders` writes, audited); trigger `orders_zz_move_admin_note` appends anything written to `orders.admin_note` (staff edits, the checkout's automatic notes) to `order_notes` and empties the column; check `orders_admin_note_moved` (column always NULL); existing notes moved. Reason: RLS filters rows, not columns, so members could read the internal notes of their own orders |
+| 20260930210000 | `order_staff_notes` | Applied (recorded 2026-10-01; iteration 18 suite passed on the project). `order_notes` (one per order, staff read, `manage_orders` writes, audited); trigger `orders_zz_move_admin_note` appends anything written to `orders.admin_note` (staff edits, the checkout's automatic notes) to `order_notes` and empties the column; check `orders_admin_note_moved` (column always NULL); existing notes moved. Reason: RLS filters rows, not columns, so members could read the internal notes of their own orders |
+| 20261001062943 | `academy_authoring` | Academy authoring (phase A): `training_media` (+ translations, private `training-media` bucket), `courses` (price, lifecycle draft → published ⇄ unpublished, `published_at`), `course_modules`, `course_steps`, `course_blocks` (text / image / video), `course_quizzes`, `quiz_questions`, `quiz_answers` (one correct per question), a translation table per level, `course_promotions` + `course_current_prices` view, `course_publication_problems()`, lifecycle guard, `admin_save_course(jsonb)`; audited |
+| 20261001063310 | `course_promotion_guard_permission` | fix: the promotion guard refuses callers without `manage_training` before answering "overlap" (caught by the iteration 20 suite) |
+| 20261001063421 | `academy_merge_read_policies` | one SELECT policy per role on `courses`, `course_translations`, `course_promotions` (performance advisor) |
+| 20261001071006 | `academy_published_integrity` | a price cut below an active amount promotion is refused (the course would become free); a deferred constraint trigger re-checks `course_publication_problems()` when a published course is saved, so it cannot become unpublishable while online |
+| 20261001121248 | `academy_public_pages` | Academy phase B: visitors and customers read the outline of a published course (modules, steps, knowledge checks' titles and pass marks, published translations — never blocks, questions or answers), its cover (`training_media` row + translations + the file in the private bucket) and its current price; `course_promotions` staff-only (the price view reads the running promotion through `private.course_running_promotion()`, SECURITY DEFINER); column grants hide `courses.created_by`/`updated_by` and the media's internal columns from `anon`; policies widened in place (ALTER POLICY) |
 
 RLS is **enabled in the same migration that creates each table** (deny by default);
 policies are granted back in `rls_policies`.
@@ -165,7 +173,7 @@ statuses as `text` + `CHECK` (easy to extend, no enum migrations), money as
 | `product_media` | Storage object path + `media_type`, `alt_text`, `position`, `is_primary` (max one per product), optional `variant_id`. No binaries in Postgres. |
 | `inventory_items` | exactly one of `product_id`/`variant_id`; `quantity_on_hand`, `quantity_reserved` (≤ on hand), `low_stock_threshold`, `track_inventory`, manual `availability`; generated `stock_status` (`in_stock`/`low_stock`/`out_of_stock`/`preorder`). |
 | `customer_addresses` | many per user, `address_type` shipping/billing, one default per type (setting a new default clears the old one), ISO `country_code`, nullable `postal_code`/`region`. |
-| `orders` | `order_number` `GT-100001…`, `user_id` (SET NULL on account deletion — accounting records survive), `customer_email` + `billing_address`/`shipping_address` **JSONB snapshots**, subtotal/discount/shipping/tax/total, `prices_include_tax` (EU VAT-inclusive default), `status`, `payment_status`, `fulfillment_status`, `customer_note`, `admin_note` (deprecated, always NULL once `order_staff_notes` is applied: notes live in `order_notes`, staff only). |
+| `orders` | `order_number` `GT-100001…`, `user_id` (SET NULL on account deletion — accounting records survive), `customer_email` + `billing_address`/`shipping_address` **JSONB snapshots**, subtotal/discount/shipping/tax/total, `prices_include_tax` (EU VAT-inclusive default), `status`, `payment_status`, `fulfillment_status`, `customer_note`, `admin_note` (deprecated, always NULL since `order_staff_notes`: notes live in `order_notes`, staff only). |
 | `order_items` | frozen `product_name`, `variant_name`, `sku`, `unit_price`, `quantity`, generated `subtotal_amount`. |
 | `languages` | `fr` (default = language of base columns), `en`, `de` enabled; `it`, `es`, `pt`, `nl` disabled. |
 | `*_translations` | one row per (entity, non-default locale); product translations carry a localized `slug` (unique per locale) and `meta_title`/`meta_description`; `status` draft/published — only published rows are public. A translation for the default locale is rejected. |
@@ -301,6 +309,19 @@ RLS is row-level: a member can technically also read, on their **own** rows, `or
 customer-safe (decision 38). The internal notes are the exception that had to move (`order_notes`).
 `supabase/tests/iteration18_validation.sql` checks own-rows-only for every table above and that notes stay
 staff-only.
+
+### What the back office reads of an order (`/admin/commandes`)
+
+No schema of its own: `webapp/src/lib/adminOrders.tsx` (`ADMIN_ORDER_SELECT`) reads, as staff, every order
+with `order_items` (incl. `tax_rate_bp`, `tax_amount`), `order_discounts` (with `source`), `payments` (card and
+gift-card rows, `gift_cards.code_last4` embedded — the code column is granted to no API role), `shipments` +
+`shipment_items`, `refunds` + `refund_items`, `orders.paid_at` / `cancelled_at`, and `order_notes`. Amounts are
+shown as recorded; the timeline is dated by these columns, never by `orders.updated_at`; `orders.admin_note`
+(always NULL) is not read. Writes: `orders.status`
+/ `fulfillment_status`, `cancel_order()`, notes through `orders.admin_note` — all under `manage_orders`.
+`supabase/tests/admin_orders_validation.sql` proves a `viewer` reads all of it and changes nothing (no update,
+no note, no cancellation), a manager can, a customer reads only their own orders and no note or gift card, a
+visitor nothing, and nobody reads a gift-card code. Revenue rule of the order book: decision 49.
 
 ### Shipments and tracking (iteration 3)
 
@@ -630,6 +651,77 @@ The hearts of the storefront (shop cards, home rail, product page) and the shop'
 - **Personal data**: deleted with the account (CASCADE). To include in the personal-data export when that job is built.
 - Not audited: a customer preference, neither money nor security.
 
+### Academy authoring (iteration 20)
+
+What the back-office course builder (`/admin/formations`) and the training media library
+(`/admin/formations/medias`) read and write. Learner access, progress and quiz attempts come next (phase C);
+the public Academy pages read the published courses since iteration 21 (phase B, below).
+
+```
+training_media (image | video, storage media/<id>/<file> in the private training-media bucket)
+courses ─* course_modules ─* course_steps ─* course_blocks (text | image | video)
+                 └─ course_quizzes (0..1 per module) ─* quiz_questions ─* quiz_answers
+courses ─* course_promotions            every level ─* <level>_translations (English; French in the base columns)
+media references: courses.cover_media_id, course_modules.cover_media_id, course_blocks.media_id / poster_media_id,
+                  quiz_questions.image_media_id — ON DELETE RESTRICT
+```
+
+- **A course is not a product** (owner, 2026-10-01): it never shows in the shop. Price `numeric(12,2)` + `currency`
+  on `courses`, edited with `manage_training` only. Phase D (selling courses) needs a course line in
+  `create_order()` and the Stripe Checkout functions, with the `training` VAT category.
+- **One save per course**: `admin_save_course(jsonb)` (SECURITY INVOKER, `manage_training`) writes the course, its
+  English translation and the whole tree in one transaction. Ids come from the browser; nodes are upserted by id
+  and only the ids missing from the payload are deleted, so step / quiz / answer ids survive every save (phase C's
+  progress rows will point at them). An id already stored under another course is refused. Money arrives as a
+  decimal string. Each media slot is checked for kind (image slot ← image, video block ← video). An English field
+  left empty removes that node's English row (the French text is shown).
+- **Lifecycle** (trigger `courses_guard`): created as `draft`; `published` only when
+  `course_publication_problems()` is empty (at least one module, no empty module, every image/video block has its
+  file, every quiz has questions, every question ≥ 2 answers and one correct); `published_at` set once, by the
+  trigger; `published ⇄ unpublished`; never back to `draft`; the slug of a course that was ever published is
+  frozen; only never-published courses can be deleted (RLS). A published course stays publishable: every save
+  is re-checked at commit (deferred trigger `courses_published_ready`). Saving a published course changes what
+  its buyers read at once — there is no separate draft of a published course. Status, price, slug, creation and
+  deletion audited.
+- **Unpublished course** (owner, 2026-10-01): its buyers still see it in their space, greyed out with a "back soon"
+  message, and cannot open it (phase C enforces it in RLS). Visitors no longer see it.
+- **Course promotions**: `percentage` (< 100) or `amount` (< the course price) off one course between `starts_at`
+  and `ends_at` (open-ended allowed); at most one active promotion per course at any instant (guard locks the
+  course row, then checks overlaps); `course_current_prices` gives the price now, rounded half away from zero to
+  the cent. Lowering the course price below an active amount promotion is refused. No codes, no customer
+  segments. Audited.
+- **Quiz answer keys**: `quiz_answers.is_correct` / `explanation` are readable by staff only. Phase C serves
+  corrections through a function, after an answer is submitted.
+- **Access**: staff (`is_staff`) read everything; `manage_training` writes; visitors and customers read what
+  iteration 21 opens (below) — none of the content or answers.
+- Suite: `tests/iteration20_validation.sql`.
+
+### Academy public pages (iteration 21)
+
+What the public Academy pages read (webapp `lib/academy/`: catalogue `/fr/academy`, sales pages
+`/fr/academy/formation/<slug>` ↔ `/en/academy/course/<English slug>`, the home band, the header and footer entries),
+as an anonymous visitor (server, publishable key) or any signed-in account:
+
+- **Published courses** and their published translations (as before), the **outline** — `course_modules`,
+  `course_steps`, `course_quizzes` (title, pass mark, settings) and their published translations, for published
+  courses only — and the **current price** (`course_current_prices`). Never `course_blocks`, `quiz_questions`,
+  `quiz_answers`: the lesson content and the answer keys wait for phase C's entitlements.
+- **Cover image**: the `training_media` row and published translations of a published course's cover, and its
+  file in the private `training-media` bucket (storage policy `private.is_public_course_cover_path()`). No other
+  media of the library, nor a draft's or a withdrawn course's cover. The webapp serves it at
+  `/media/formations/<media id>` (Route Handler reading with the publishable key, CDN-cached an hour, `?v=` changes
+  when the file is replaced).
+- **Promotions are staff-only** now: visitors and customers see the discounted price and its end date through the
+  view, which reads the running promotion with the SECURITY DEFINER helper `private.course_running_promotion()`;
+  the internal `label` and `created_by` never leave the back office.
+- **Column grants for `anon`**: `courses` without `created_by`/`updated_by`; `training_media` only `id`, `kind`,
+  `storage_path`, `mime_type`, `alt_text`, `width`, `height`, `updated_at`. `authenticated` keeps table-wide
+  SELECT (staff use `select=*`), so a signed-in customer could still read those columns on the rows RLS shows
+  them (published courses, public covers) — see deliberate decision 49.
+- The outline policies use `private.is_published_course(course_id)` (SECURITY DEFINER, stable).
+- Suite: `tests/iteration21_validation.sql` (visitor, customer, staff viewer, withdrawal). Suite 20's customer
+  check now expects the published course's cover to be readable.
+
 ### Integrity guarantees
 
 - `orders_total_matches`: `total = subtotal − discount + shipping (+ tax when prices exclude tax)`; discount ≤ subtotal; all amounts ≥ 0.
@@ -688,6 +780,7 @@ Iteration 6: "admin" in the lines above now reads "a team member holding the mat
 | `avatars` (private, 2 MB, jpeg/png/webp) | owner reads/uploads/replaces/deletes inside `<user_id>/`; admins read and delete (moderation); served with signed URLs. `profiles.avatar_path` must start with the owner's id. |
 | `data-exports` (private, 100 MB, zip/json) | owners read their own `<user_id>/` folder through signed URLs; only the backend (service role) writes and deletes. |
 | `review-photos` (private, 8 MB, jpeg/png/webp) | authors upload into `<user_id>/`; authors and admins read and delete; **anyone** can read a photo once its review is published. |
+| `training-media` (private, no bucket limit: the project's global upload limit applies — 50 MB on the free plan; jpeg/png/webp/avif/mp4/webm/quicktime) | staff read; `manage_training` uploads, replaces and deletes under `media/`; the back office shows files through signed URLs. Learners get signed URLs after the entitlement check in phase C. Large videos are sent with resumable (TUS) uploads. |
 
 Path convention: `products/<product-slug>/<file>`, `categories/<category-slug>/<file>`, `<user_id>/<file>` for avatars and review photos.
 Never put private customer or paid training files in this bucket.
@@ -860,7 +953,7 @@ VAT rates, shipping zones/rates mirroring the Settings prototype. Media rows ref
     moves the product page: old slugs are not kept, and an old link to a renamed product becomes a 404. A slug
     history table would be the fix if renames become common. `meta_title` / `meta_description` are not used yet
     (empty, not editable in the back office).
-38. **Internal order notes moved to `order_notes` (proposed Sept 2026, migration not applied yet).** The
+38. **Internal order notes moved to `order_notes` (applied, Oct 2026).** The
     column stays (always NULL, a check forbids a value) because the checkout's stock trigger still writes
     `new.admin_note`; dropping it means rewriting those functions — a follow-up once the Stripe work settles.
     Other staff-written fields remain readable by the owner of the order (`cancellation_reason`,
@@ -882,6 +975,32 @@ VAT rates, shipping zones/rates mirroring the Settings prototype. Media rows ref
     the storefront labels them by kind (standard / express / free / pickup). Confirm the offer with the business.
 44. **Split payment ("payer en 4 fois") removed from the cart** until a provider is decided (Klarna through Stripe
     would be a dashboard setting, not code). The methods offered are those enabled in the Stripe dashboard.
+45. **Courses are not products** (owner, 2026-10-01): price on `courses`, `manage_training` only; selling them
+    (phase D) needs a course line in checkout. **Course promotions** are a separate, simpler mechanism (dated
+    percentage or amount off one course, one at a time, no codes) — proposed by the agent, to confirm.
+46. **No "review" status for courses** (owner, 2026-10-01): a single trainer authors them; draft is the not-ready
+    state. A course that was ever published is withdrawn (`unpublished`), never deleted nor turned back into a draft.
+47. **English course content without a review step**: every Academy `*_translations` row is written `published`
+    on save (the course lifecycle decides visibility), like the product form does.
+48. **Training media bucket without its own size limit**: the project's global upload limit applies (50 MB on the
+    free plan); raise it in the dashboard when moving to Pro. Objects uploaded but never recorded (upload succeeded,
+    row insert failed) stay in the bucket until a clean-up job exists.
+49. **Staff columns of public Academy rows readable by signed-in customers**: column grants hide
+    `courses.created_by`/`updated_by` and the media's internal columns from `anon` only, because staff read those
+    tables with `select=*` as `authenticated` too. A customer calling the REST API with their own token could read
+    the staff uuid that created a published course or its cover, nothing else. Close it by moving the back office to
+    explicit column lists (or an RPC) and granting the same columns to `authenticated`.
+50. **Course sales pages before courses can be bought**: until phase D, a published course's page shows its price
+    and "enrolment opens soon" instead of a start button, its structured data has no `offers`, and it has no
+    sticky purchase bar. The learner pages stay on the prototype's seeded courses until phase C.
+
+49. **"Collected" figure of the order book** (agent, 2026-10-01, to confirm): per currency, never added across
+    currencies; for orders whose payment was received (`paid`, `partially_refunded`, `refunded`) and that are not
+    cancelled, `amount_due` (total less gift cards) less succeeded refunds. Gift cards therefore count once, when
+    sold, not again when spent; unpaid, failed and cancelled orders count for nothing. The statistics screen
+    (`analytics_snapshot`) measures goods sold instead (gift-card products excluded), so the two figures differ
+    by design. A buyer's "spent" on the order page is the member area's rule (recorded totals of paid orders that
+    stand, less refunds).
 
 ## Done
 
@@ -921,20 +1040,26 @@ VAT rates, shipping zones/rates mirroring the Settings prototype. Media rows ref
   `expire-stale-orders`, `record_stripe_webhook_event()`, `checkout_session_status()` for the payment return page.
 - Iteration 16: product families — categories › families taxonomy, composite FK, family cleared on a category
   change, `admin_save_product()` family input, visitor RLS on families and their translations.
-- Iteration 18 ("My orders", migration **not applied yet**): internal order notes out of the customer's reach
+- Iteration 18 ("My orders"): internal order notes out of the customer's reach
   (`order_notes`), isolation suite for everything the member area reads of an order.
+- Iteration 20: Academy authoring — courses, modules, steps, content blocks, quizzes, training media library
+  (private bucket), course price and course promotions, publication rules, `admin_save_course()`.
+- Iteration 21: Academy public pages (phase B) — outline, cover and current price of published courses readable by
+  visitors, promotions staff-only, column grants for visitors.
 
 ## Next iterations (not implemented)
 
 1. Checkout follow-ups: order confirmation e-mail (Resend, Edge Function), promotion code and gift card fields
    in the cart (the function already accepts them), Stripe refunds from the back office, `charge.refunded` /
    `charge.dispute.created` webhooks.
-2. Training MVP: courses, modules, lessons, enrollments granted on payment, progress, quizzes,
-   private course media, kit QR links; course reviews (`course_id` on `reviews`).
-   Invoices / credit notes (sequential numbering), carrier tracking events.
+2. Academy, after the authoring schema (iteration 20):
+   (**B**, public pages, done in iteration 21); **C** `course_entitlements` (manual grant, audited), content and signed URLs gated on
+   entitlement, quiz answers checked by a function, server-side progress and attempts, certificates, unpublished
+   courses greyed for their buyers; **D** selling courses: a course line in `create_order()` and the Stripe
+   Checkout functions (VAT category `training`, course promotions applied server-side). Kit QR links; course
+   reviews (`course_id` on `reviews`). Invoices / credit notes (sequential numbering), carrier tracking events.
 3. Store settings table (legal identity, order number format, tax display options), VAT numbers /
    B2B reverse charge, multi-currency price lists.
 4. Guest checkout linking (attach guest orders to an account by verified email).
 5. Structured product attributes (gem shape/colour), multiple signed order notes.
-6. Education (courses, modules, lessons, quizzes, attempts, certificates, entitlements), community
-   (unlocked by a training purchase), 3D Studio subscription — each as its own migration set referencing `profiles` and `products`.
+6. Community (unlocked by a training purchase), 3D Studio subscription — each as its own migration set referencing `profiles` and `products`.

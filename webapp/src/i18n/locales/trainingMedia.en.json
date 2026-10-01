@@ -1,15 +1,14 @@
 {
-  "title": "Training image library",
-  "badge": "Courses only",
-  "subtitle": "Images for courses, modules and lessons. Separate from the shop’s product photos.",
+  "title": "Training media library",
+  "subtitle": "Images and videos for courses, modules and lessons. Kept apart from the shop's product photos.",
   "close": "Close the image library",
-  "search": "Search training images",
+  "search": "Search training media",
   "searchPlaceholder": "Search by name, description or tag",
   "usageFilter": "Show",
   "usage": {
-    "all": "All images",
+    "all": "All files",
     "unused": "Not used yet",
-    "uploads": "Uploaded in this session"
+    "uploads": "Uploaded this session"
   },
   "categoryFilter": "Filter by category",
   "category": {
@@ -20,35 +19,38 @@
     "results": "Results",
     "studio": "Studio & clients"
   },
-  "upload": "Upload images",
+  "upload": "Upload files",
   "uploading": "Uploads in progress",
   "uploadingFile": "Uploading… {{progress}}%",
-  "dropHere": "Drop to add to the training library",
+  "dropHere": "Drop to add to the training media library",
   "rejectedTitle_one": "{{count}} file wasn’t added",
   "rejectedTitle_other": "{{count}} files weren’t added",
   "rejected": {
-    "type": "JPG, PNG, WebP or AVIF images only.",
-    "size": "larger than {{max}}.",
-    "empty": "the file is empty."
+    "type": "JPG, PNG, WebP, AVIF images or MP4, WebM, MOV videos only.",
+    "size": "image larger than {{max}}.",
+    "empty": "the file is empty.",
+    "videoSize": "video larger than {{max}} (current hosting limit).",
+    "failed": "the upload failed. Check the connection and try again."
   },
-  "emptyTitle": "No training images yet",
-  "emptyBody": "Upload the photos you’ll use in your lessons. Drag them here or pick them from your computer.",
-  "emptyCta": "Upload your first image",
-  "noMatch": "No image matches these filters.",
+  "emptyTitle": "No training media yet",
+  "emptyBody": "Upload the photos and videos of your lessons: drop them here or choose them on your computer.",
+  "emptyCta": "Upload your first file",
+  "noMatch": "No media matches these filters.",
   "clearFilters": "Clear filters",
-  "gridLabel": "Training images",
-  "count_one": "{{count}} image",
-  "count_other": "{{count}} images",
+  "gridLabel": "Training media",
+  "count_one": "{{count}} file",
+  "count_other": "{{count}} files",
   "inUse_one": "Used once",
   "inUse_other": "Used {{count}}×",
   "new": "New",
   "selected": "selected",
-  "details": "Image details",
-  "detailsEmpty": "Select an image to see its details, describe it and insert it.",
+  "details": "File details",
+  "detailsEmpty": "Select a file to see its details, describe it or delete it.",
   "meta": {
     "size": "Size",
     "added": "Added",
-    "usage": "Usage"
+    "usage": "Usage",
+    "kind": "Type"
   },
   "usedIn_one": "Used in {{count}} place",
   "usedIn_other": "Used in {{count}} places",
@@ -63,18 +65,54 @@
     "tagsHint": "Comma-separated, to find the image again."
   },
   "delete": "Delete",
-  "deleteConfirm": "Delete this image from the library? This can’t be undone.",
+  "deleteConfirm": "Delete this file from the library? This cannot be undone.",
   "deleteBlocked_one": "Used in {{count}} place of a course. Replace it there before deleting it.",
   "deleteBlocked_other": "Used in {{count}} places across courses. Replace it there before deleting it.",
   "cancel": "Cancel",
   "insert": "Insert image",
-  "noneSelected": "No image selected",
+  "noneSelected": "No file selected",
   "selectedName": "Selected: {{name}}",
   "picker": {
-    "choose": "Open the image library",
-    "change": "Change image",
+    "choose": "Choose from the library",
+    "change": "Change",
     "none": "No image chosen",
     "current": "Current image",
-    "from": "From the training image library"
+    "from": "From the training image library",
+    "noneVideo": "No video chosen",
+    "clear": "Remove",
+    "titleImage": "Choose an image",
+    "titleVideo": "Choose a video",
+    "subtitle": "From the training media library. To upload or describe a file, open the library.",
+    "refresh": "Refresh",
+    "manage": "Open the media library",
+    "newTab": "(new tab)",
+    "emptyImage": "No image in the library",
+    "emptyVideo": "No video in the library",
+    "emptyBody": "Upload it in the media library (new tab), then click “Refresh”."
+  },
+  "insertVideo": "Insert the video",
+  "kindFilter": "File type",
+  "kind": {
+    "all": "Images and videos",
+    "image": "Image",
+    "video": "Video"
+  },
+  "save": "Save",
+  "loadFailed": "The media library could not be loaded.",
+  "retry": "Try again",
+  "page": {
+    "title": "Training media library",
+    "crumb": "Media library",
+    "description": "Upload, describe and manage the images and videos used in courses.",
+    "limits": "Images up to {{image}}, videos up to {{video}} per file. Files are private: only the team and, later, enrolled members can access them. For videos, prefer MP4 (H.264): it is the format every browser and phone plays."
+  },
+  "toasts": {
+    "uploaded_one": "{{count}} file added to the library",
+    "uploaded_other": "{{count}} files added to the library",
+    "saved": "File updated",
+    "saveFailed": "The file could not be updated. Try again.",
+    "inUse": "This file is used in a course: replace it there before deleting it.",
+    "deleted": "File deleted",
+    "deleteFailed": "The file could not be deleted. Try again."
   }
 }

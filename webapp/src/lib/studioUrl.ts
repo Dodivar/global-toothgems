@@ -8,8 +8,6 @@ export const STUDIO_SUBSCRIBE_PATH = "/studio-3d/abonnement";
 export const STUDIO_SUBSCRIBE_ALIAS = "/studio-3d/subscribe";
 /** The editor itself — the Studio's workshop ("atelier"). */
 export const STUDIO_EDITOR_PATH = "/studio-3d/atelier";
-/** English alias of the editor. */
-export const STUDIO_EDITOR_ALIAS = "/studio-3d/editor";
 /**
  * A design shared read-only: `/studio-3d/partage/<token>` for a saved
  * creation, `/studio-3d/partage#…` for a snapshot (see
@@ -17,8 +15,6 @@ export const STUDIO_EDITOR_ALIAS = "/studio-3d/editor";
  * workspace section, and viewing a shared design needs no Studio access.
  */
 export const STUDIO_SHARE_PATH = "/studio-3d/partage";
-/** English alias of the shared-design page; the token or the fragment carries the design either way. */
-export const STUDIO_SHARE_ALIAS = "/studio-3d/share";
 
 /**
  * The workspace sections around the editor, under its path

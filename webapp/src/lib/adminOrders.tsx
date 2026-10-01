@@ -1,34 +1,36 @@
 import { createContext, useCallback, useContext, useEffect, useMemo, useState, type ReactNode } from "react";
 import { useTranslation } from "react-i18next";
-import {
-  ADMIN_ORDERS,
-  orderTotal,
-  type AdminNote,
-  type AdminOrder,
-  type AdminOrderStatus,
-  type FulfillmentStatus,
-  type TimelineEvent,
-  type TimelineKind,
-} from "../data/adminOrders";
+import { BOOK_LIMIT, holdsMoney, type AdminOrder, type AdminOrderStatus, type FulfillmentStatus } from "../data/adminOrders";
 import { useCatalog } from "./catalog/CatalogProvider";
-import { fulfillmentToDb, mapAdminOrders, type AdminOrderRow } from "./adminOrderMapping";
+import {
+  ADMIN_ORDER_SELECT,
+  fulfillmentToDb,
+  mapAdminOrders,
+  type AdminOrderRow,
+  type OrderNoteRow,
+} from "./adminOrderMapping";
 import { isSupabaseConfigured, requireSupabase } from "./supabase/client";
 import { useToast } from "./toast";
 
 /**
  * The order book as the back office sees it.
  *
- * With Supabase configured it is read from `orders` (RLS: staff read every
- * order) and status changes, cancellations and notes are written there; the
- * database's triggers apply stock, loyalty and audit-log effects. Refunds are
- * not offered: a refund is a Stripe API call whose webhook — not the browser —
- * writes the new state (`AGENTS.md` sections 7 and 8), and that backend does
- * not exist yet.
+ * Read from `orders` with their lines, discounts, payments, parcels and
+ * refunds (RLS: every active staff member reads every order; a customer only
+ * their own, a visitor nothing) and from `order_notes` (staff only, migration
+ * `20260930210000_order_staff_notes`). Amounts
+ * are those recorded by `create_order()`, mapped in `adminOrderMapping.ts`.
+ * Status changes, cancellations (`cancel_order`) and notes are written there
+ * under `manage_orders`; the database's triggers apply stock, loyalty and
+ * audit-log effects.
  *
- * Without Supabase, the prototype's in-memory book is used. Marking an order
- * shipped there moves the KPI row, the badge, the fulfilment column and the
- * order's own timeline at once, so the prototype does not show a toast without
- * moving the data. None of the mock is authorization or fulfilment.
+ * Refunds are not offered: a refund is a Stripe API call whose webhook — not
+ * the browser — records the new state (`AGENTS.md` §7–8). For the same
+ * reason, cancelling (or marking refunded) an order whose money is held is
+ * refused here: it would claim a refund that nobody made.
+ *
+ * Without Supabase (local mock mode) the book is empty: the order book is a
+ * live domain, and the back office never shows invented orders.
  */
 
 /** What a status change implies for fulfilment, so the two never disagree. */
@@ -38,33 +40,29 @@ const FULFILLMENT_FOR: Partial<Record<AdminOrderStatus, FulfillmentStatus>> = {
   delivered: "fulfilled",
 };
 
-/** The timeline entry a status change writes, when it writes one. */
-const EVENT_FOR: Partial<Record<AdminOrderStatus, TimelineKind>> = {
-  processing: "processing",
-  shipped: "shipped",
-  delivered: "delivered",
-  cancelled: "cancelled",
-  refunded: "refunded",
-};
+/** PostgREST answers at most this many rows per request (Supabase `max_rows`). */
+const PAGE_ROWS = 1000;
 
 export interface AdminOrdersContextValue {
   orders: AdminOrder[];
   /** True until the first read of the book has answered. */
   loading: boolean;
+  /** The last read failed: the book shown is empty, not "no orders". */
+  failed: boolean;
+  /** The book holds more orders than `BOOK_LIMIT`; only the newest were read. */
+  truncated: boolean;
+  /** Reads the book again. */
+  reload: () => void;
   /*
    * The actions below return false when they are refused before anything is
    * sent — the store has already said why — so the caller skips its success
    * message.
    */
-  /** Moves one order along, updating fulfilment and timeline with it. */
   setStatus: (reference: string, status: AdminOrderStatus) => boolean;
-  /** Same, for a batch selected in the table. */
   setStatusMany: (references: string[], status: AdminOrderStatus) => boolean;
-  /** Records a refund: full or partial, with the amount actually given back. */
-  refund: (reference: string, amount: number, full: boolean) => boolean;
   cancel: (reference: string) => boolean;
   cancelMany: (references: string[]) => boolean;
-  addNote: (reference: string, body: string, author: string) => void;
+  addNote: (reference: string, body: string, author: string) => boolean;
 }
 
 const AdminOrdersContext = createContext<AdminOrdersContextValue | null>(null);
@@ -73,76 +71,89 @@ export function AdminOrdersProvider({ children }: { children: ReactNode }) {
   return isSupabaseConfigured ? (
     <SupabaseAdminOrdersProvider>{children}</SupabaseAdminOrdersProvider>
   ) : (
-    <MockAdminOrdersProvider>{children}</MockAdminOrdersProvider>
+    <EmptyAdminOrdersProvider>{children}</EmptyAdminOrdersProvider>
   );
 }
 
-/* ------------------------------------------------------------------ */
-/* Supabase                                                           */
-/* ------------------------------------------------------------------ */
-
-const ADMIN_ORDER_SELECT = `
-  id, order_number, user_id, customer_email, billing_address, shipping_address, status, payment_status,
-  fulfillment_status, discount_amount, shipping_amount, currency, admin_note, created_at, updated_at,
-  order_items ( product_name, variant_name, unit_price, quantity, product:products ( slug ) ),
-  shipments ( status, carrier, tracking_number, estimated_delivery, shipped_at, delivered_at, created_at ),
-  payments ( provider_payment_id, provider_checkout_id, status, amount, amount_refunded, payment_method_type,
-             card_brand, card_last4, created_at )
-`;
+interface Book {
+  rows: AdminOrderRow[];
+  /** Staff notes by order id, from `order_notes`. */
+  notes: Map<string, OrderNoteRow>;
+  truncated: boolean;
+}
 
 /** Unpaid checkouts that expired are noise in the book; failed payments stay visible. */
 function isInBook(row: AdminOrderRow): boolean {
   return !(row.status === "cancelled" && row.payment_status === "pending");
 }
 
+/** The whole book, newest first, read page by page so no row is silently cut off. */
+async function readBook(signal: AbortSignal): Promise<Book> {
+  const client = requireSupabase();
+  const rows: AdminOrderRow[] = [];
+  let truncated = false;
+  for (let from = 0; ; from += PAGE_ROWS) {
+    if (from >= BOOK_LIMIT) {
+      truncated = true;
+      break;
+    }
+    const { data, error } = await client
+      .from("orders")
+      .select(ADMIN_ORDER_SELECT)
+      .order("created_at", { ascending: false })
+      .order("id", { ascending: true })
+      .range(from, from + PAGE_ROWS - 1)
+      .abortSignal(signal);
+    if (error) throw error;
+    const page = data as unknown as AdminOrderRow[];
+    rows.push(...page);
+    if (page.length < PAGE_ROWS) break;
+  }
+
+  const { data: noteRows, error: notesError } = await client
+    .from("order_notes")
+    .select("order_id, body, updated_at")
+    .abortSignal(signal);
+  if (notesError) throw notesError;
+  const notes = new Map(noteRows.map((n) => [n.order_id, { body: n.body, updated_at: n.updated_at }]));
+
+  return { rows: rows.filter(isInBook), notes, truncated };
+}
+
 function SupabaseAdminOrdersProvider({ children }: { children: ReactNode }) {
   const { t } = useTranslation();
   const { showToast } = useToast();
   const { findProduct } = useCatalog();
-  const [rows, setRows] = useState<AdminOrderRow[] | null>(null);
+  const [book, setBook] = useState<Book | null>(null);
+  const [failed, setFailed] = useState(false);
   const [attempt, setAttempt] = useState(0);
-
-  /**
-   * Whether the staff notes live in `order_notes` (migration
-   * `20260930210000_order_staff_notes`), where customers cannot read them.
-   * Until that migration is applied, the book falls back to the old
-   * `orders.admin_note` column, so it keeps working either way.
-   */
-  const [notesTable, setNotesTable] = useState(false);
 
   useEffect(() => {
     const controller = new AbortController();
-    const client = requireSupabase();
-    void Promise.all([
-      client.from("orders").select(ADMIN_ORDER_SELECT).order("created_at", { ascending: false }).abortSignal(controller.signal),
-      client.from("order_notes").select("order_id, body").abortSignal(controller.signal),
-    ]).then(([{ data, error }, notes]) => {
-      if (controller.signal.aborted) return;
-      if (error) {
-        console.error("[admin orders] load failed", error.message);
-        setRows([]);
-        showToast(t("admin.orders.loadErrorTitle"), t("admin.orders.loadErrorBody"), "error");
-        return;
-      }
-      const loaded = (data as unknown as AdminOrderRow[]).filter(isInBook);
-      if (notes.error) {
-        setNotesTable(false);
-        setRows(loaded);
-        return;
-      }
-      const byOrder = new Map(notes.data.map((n) => [n.order_id, n.body]));
-      setNotesTable(true);
-      setRows(loaded.map((row) => ({ ...row, admin_note: byOrder.get(row.id) ?? row.admin_note })));
-    });
+    readBook(controller.signal)
+      .then((next) => {
+        if (controller.signal.aborted) return;
+        setFailed(false);
+        setBook(next);
+      })
+      .catch((error: unknown) => {
+        if (controller.signal.aborted) return;
+        console.error("[admin orders] load failed", error);
+        setFailed(true);
+        setBook({ rows: [], notes: new Map(), truncated: false });
+      });
     return () => controller.abort();
-  }, [attempt, showToast, t]);
+  }, [attempt]);
 
   const reload = useCallback(() => setAttempt((n) => n + 1), []);
-  const orders = useMemo(() => (rows ? mapAdminOrders(rows, findProduct) : []), [rows, findProduct]);
+  const orders = useMemo(
+    () => (book ? mapAdminOrders(book.rows, findProduct, book.notes) : []),
+    [book, findProduct],
+  );
 
-  const idsOf = useCallback(
-    (references: string[]) => (rows ?? []).filter((r) => references.includes(r.order_number)).map((r) => r.id),
-    [rows],
+  const rowsOf = useCallback(
+    (references: string[]) => (book?.rows ?? []).filter((r) => references.includes(r.order_number)),
+    [book],
   );
 
   /** Runs the writes, then re-reads the book; a refusal is said, never hidden. */
@@ -150,8 +161,8 @@ function SupabaseAdminOrdersProvider({ children }: { children: ReactNode }) {
     (run: () => Promise<{ error: unknown }[]>) => {
       void run()
         .then((results) => {
-          const failed = results.find((r) => r.error);
-          if (failed) throw failed.error;
+          const refused = results.find((r) => r.error);
+          if (refused) throw refused.error;
         })
         .catch((error: unknown) => {
           console.error("[admin orders] write refused", error);
@@ -162,196 +173,97 @@ function SupabaseAdminOrdersProvider({ children }: { children: ReactNode }) {
     [reload, showToast, t],
   );
 
-  const refuseMoney = useCallback(() => {
-    showToast(t("admin.orders.refundUnavailableTitle"), t("admin.orders.refundUnavailableBody"), "info");
-    return false;
-  }, [showToast, t]);
-
-  /**
-   * Whether any of these orders holds money. Cancelling one, or marking it
-   * refunded, would claim a refund that no one made: that goes through
-   * Stripe, so it is refused here like `refund` itself.
-   */
-  const holdsMoney = useCallback(
-    (references: string[]) =>
-      (rows ?? []).some((r) => references.includes(r.order_number) && (r.payment_status === "paid" || r.payment_status === "partially_refunded")),
-    [rows],
+  /** Refuses a change that would claim a refund nobody made. */
+  const refusesMoney = useCallback(
+    (references: string[]) => {
+      if (!orders.some((o) => references.includes(o.reference) && holdsMoney(o))) return false;
+      showToast(t("admin.orders.refundUnavailableTitle"), t("admin.orders.refundUnavailableBody"), "info");
+      return true;
+    },
+    [orders, showToast, t],
   );
 
   const setStatusMany = useCallback(
     (references: string[], status: AdminOrderStatus) => {
-      if ((status === "cancelled" || status === "refunded") && holdsMoney(references)) return refuseMoney();
+      if ((status === "cancelled" || status === "refunded") && refusesMoney(references)) return false;
       const fulfillment = FULFILLMENT_FOR[status];
       const patch = { status, ...(fulfillment ? { fulfillment_status: fulfillmentToDb(fulfillment) } : {}) };
-      write(async () => [await requireSupabase().from("orders").update(patch).in("id", idsOf(references))]);
+      const ids = rowsOf(references).map((r) => r.id);
+      write(async () => [await requireSupabase().from("orders").update(patch).in("id", ids)]);
       return true;
     },
-    [write, idsOf, holdsMoney, refuseMoney],
+    [write, rowsOf, refusesMoney],
   );
 
   const setStatus = useCallback((reference: string, status: AdminOrderStatus) => setStatusMany([reference], status), [setStatusMany]);
 
   const cancelMany = useCallback(
     (references: string[]) => {
-      if (holdsMoney(references)) return refuseMoney();
-      write(() => Promise.all(idsOf(references).map((id) => requireSupabase().rpc("cancel_order", { p_order_id: id }))));
+      if (refusesMoney(references)) return false;
+      const ids = rowsOf(references).map((r) => r.id);
+      write(() => Promise.all(ids.map((id) => requireSupabase().rpc("cancel_order", { p_order_id: id }))));
       return true;
     },
-    [write, idsOf, holdsMoney, refuseMoney],
+    [write, rowsOf, refusesMoney],
   );
 
   const cancel = useCallback((reference: string) => cancelMany([reference]), [cancelMany]);
 
-  const refund = refuseMoney;
-
   /**
-   * Appended to the order's note, signed and dated. Written through
-   * `orders.admin_note`: with `order_notes` in place, a database trigger
-   * appends the entry there and empties the column; before it, the whole
-   * note is rewritten in the column as it always was.
+   * Appended to the order's notes, signed and dated (UTC). Written through
+   * `orders.admin_note`: the trigger `orders_zz_move_admin_note` appends the
+   * entry to `order_notes` (staff only) and empties the column, in one
+   * statement under `manage_orders`.
    */
   const addNote = useCallback(
     (reference: string, body: string, author: string) => {
-      const row = rows?.find((r) => r.order_number === reference);
-      if (!row) return;
-      const entry = `${author} · ${new Date().toLocaleString()}\n${body.trim()}`;
-      const note = notesTable || !row.admin_note ? entry : `${row.admin_note}\n\n${entry}`;
-      write(async () => [await requireSupabase().from("orders").update({ admin_note: note }).eq("id", row.id)]);
+      const row = rowsOf([reference])[0];
+      if (!row) return false;
+      const stamp = `${new Date().toISOString().slice(0, 16).replace("T", " ")} UTC`;
+      const entry = `${author} · ${stamp}\n${body.trim()}`;
+      write(async () => [await requireSupabase().from("orders").update({ admin_note: entry }).eq("id", row.id)]);
+      return true;
     },
-    [rows, write, notesTable],
+    [rowsOf, write],
   );
 
   const value = useMemo<AdminOrdersContextValue>(
-    () => ({ orders, loading: rows === null, setStatus, setStatusMany, refund, cancel, cancelMany, addNote }),
-    [orders, rows, setStatus, setStatusMany, refund, cancel, cancelMany, addNote],
+    () => ({
+      orders,
+      loading: book === null,
+      failed,
+      truncated: book?.truncated ?? false,
+      reload,
+      setStatus,
+      setStatusMany,
+      cancel,
+      cancelMany,
+      addNote,
+    }),
+    [orders, book, failed, reload, setStatus, setStatusMany, cancel, cancelMany, addNote],
   );
 
   return <AdminOrdersContext.Provider value={value}>{children}</AdminOrdersContext.Provider>;
 }
 
-/* ------------------------------------------------------------------ */
-/* Mock (no Supabase configured)                                      */
-/* ------------------------------------------------------------------ */
+const refused = () => false;
 
-/** Now, in the `YYYY-MM-DDTHH:mm` shape the seeded data uses. */
-function now(): string {
-  const d = new Date();
-  const pad = (n: number) => String(n).padStart(2, "0");
-  return `${d.getFullYear()}-${pad(d.getMonth() + 1)}-${pad(d.getDate())}T${pad(d.getHours())}:${pad(d.getMinutes())}`;
-}
+const EMPTY_BOOK: AdminOrdersContextValue = {
+  orders: [],
+  loading: false,
+  failed: false,
+  truncated: false,
+  reload: () => {},
+  setStatus: refused,
+  setStatusMany: refused,
+  cancel: refused,
+  cancelMany: refused,
+  addNote: refused,
+};
 
-function withEvent(order: AdminOrder, kind: TimelineKind | undefined): TimelineEvent[] {
-  if (!kind) return order.timeline;
-  return [...order.timeline, { kind, at: now() }];
-}
-
-function MockAdminOrdersProvider({ children }: { children: ReactNode }) {
-  const [orders, setOrders] = useState<AdminOrder[]>(ADMIN_ORDERS);
-
-  const patch = useCallback((references: string[], update: (order: AdminOrder) => AdminOrder) => {
-    const set = new Set(references);
-    setOrders((prev) => prev.map((o) => (set.has(o.reference) ? update(o) : o)));
-  }, []);
-
-  const applyStatus = useCallback(
-    (references: string[], status: AdminOrderStatus) => {
-      patch(references, (order) => ({
-        ...order,
-        status,
-        fulfillment: FULFILLMENT_FOR[status] ?? order.fulfillment,
-        // A status change never invents a payment: an unpaid order marked
-        // "processing" stays unpaid, and the attention flag stays until the
-        // reason behind it is actually resolved.
-        timeline: withEvent(order, EVENT_FOR[status]),
-      }));
-      return true;
-    },
-    [patch],
-  );
-
-  const setStatus = useCallback((reference: string, status: AdminOrderStatus) => applyStatus([reference], status), [applyStatus]);
-  const setStatusMany = useCallback((references: string[], status: AdminOrderStatus) => applyStatus(references, status), [applyStatus]);
-
-  const refund = useCallback(
-    (reference: string, amount: number, full: boolean) => {
-      patch([reference], (order) => ({
-        ...order,
-        status: full ? "refunded" : order.status,
-        payment: {
-          ...order.payment,
-          status: full ? "refunded" : "partiallyRefunded",
-          refunded: amount,
-        },
-        // The refund answers the request, so the queue marker goes with it.
-        attention: order.attention === "refundRequested" ? undefined : order.attention,
-        timeline: withEvent(order, full ? "refunded" : "partiallyRefunded"),
-      }));
-      return true;
-    },
-    [patch],
-  );
-
-  /**
-   * One cancellation, or a whole selection, in a single update.
-   *
-   * Written as one `patch` rather than a loop over single cancellations: the
-   * loop worked — React applies queued functional updaters in order — but it
-   * spent one updater per order and stamped each one with its own `now()`, so
-   * twelve orders cancelled by one click carried twelve different times. The
-   * refunded amount is still each order's own total, because it is read from
-   * the order being mapped.
-   */
-  const cancelAll = useCallback(
-    (references: string[]) => {
-      const at = now();
-      patch(references, (order) => {
-        const paid = order.payment.status === "paid";
-        return {
-          ...order,
-          status: "cancelled",
-          fulfillment: "unfulfilled",
-          payment: paid ? { ...order.payment, status: "refunded", refunded: orderTotal(order) } : order.payment,
-          timeline: paid
-            ? [
-                ...order.timeline,
-                { kind: "cancelled" as TimelineKind, at },
-                { kind: "refunded" as TimelineKind, at },
-              ]
-            : [...order.timeline, { kind: "cancelled" as TimelineKind, at }],
-        };
-      });
-      return true;
-    },
-    [patch],
-  );
-
-  const cancel = useCallback((reference: string) => cancelAll([reference]), [cancelAll]);
-  const cancelMany = cancelAll;
-
-  const addNote = useCallback(
-    (reference: string, body: string, author: string) => {
-      patch([reference], (order) => {
-        const note: AdminNote = {
-          id: `${reference}-n${order.notes.length + 1}`,
-          author,
-          at: now(),
-          // A note typed now exists in one language only. Storing the same
-          // string under both keys is honest about that: it is what was
-          // written, not a translation of it.
-          body: { fr: body, en: body },
-        };
-        return { ...order, notes: [...order.notes, note] };
-      });
-    },
-    [patch],
-  );
-
-  const value = useMemo<AdminOrdersContextValue>(
-    () => ({ orders, loading: false, setStatus, setStatusMany, refund, cancel, cancelMany, addNote }),
-    [orders, setStatus, setStatusMany, refund, cancel, cancelMany, addNote],
-  );
-
-  return <AdminOrdersContext.Provider value={value}>{children}</AdminOrdersContext.Provider>;
+/** No Supabase configured: no orders exist, and none are invented. */
+function EmptyAdminOrdersProvider({ children }: { children: ReactNode }) {
+  return <AdminOrdersContext.Provider value={EMPTY_BOOK}>{children}</AdminOrdersContext.Provider>;
 }
 
 export function useAdminOrders() {

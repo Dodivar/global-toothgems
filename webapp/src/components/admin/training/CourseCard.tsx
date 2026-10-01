@@ -16,20 +16,16 @@ import {
 import { OverflowMenu, type MenuAction } from "../OverflowMenu";
 import { AdminButton } from "../AdminButton";
 import { CountRow, MetaPill, StatusBadge } from "./TrainingPrimitives";
-import {
-  getInstructor,
-  questionCount,
-  quizCount,
-  stepCount,
-  type TrainingCourse,
-} from "../../../data/adminTraining";
+import { MediaImage } from "./MediaImage";
+import { questionCount, quizCount, stepCount, type TrainingCourse } from "../../../data/adminTraining";
 import { formatDuration } from "../../../lib/trainingFilters";
 import { useLocalized } from "../../../lib/localized";
+import { useFormat } from "../../../lib/format";
 
 export interface CourseActions {
   onEdit: (course: TrainingCourse) => void;
   onPreview: (course: TrainingCourse) => void;
-  onDuplicate: (course: TrainingCourse) => void;
+  onDuplicate: (course: TrainingCourse) => void | Promise<void>;
   onReview: (course: TrainingCourse) => void;
   onUnpublish: (course: TrainingCourse) => void;
   onDelete: (course: TrainingCourse) => void;
@@ -49,7 +45,7 @@ export function CourseCard({ course, actions }: { course: TrainingCourse; action
   const L = useLocalized();
 
   const title = L(course.title) || t("admin.training.create.fieldTitlePlaceholder");
-  const instructor = getInstructor(course.instructorId);
+  const { formatMoney } = useFormat();
   const steps = stepCount(course);
   const quizzes = quizCount(course);
   const questions = questionCount(course);
@@ -70,21 +66,26 @@ export function CourseCard({ course, actions }: { course: TrainingCourse; action
           } satisfies MenuAction,
         ]
       : []),
-    {
-      id: "delete",
-      label: t("admin.training.actions.delete"),
-      icon: Trash2,
-      tone: "danger",
-      separated: true,
-      onSelect: () => actions.onDelete(course),
-    },
+    // A course that was ever published has buyers: it is withdrawn, never deleted.
+    ...(course.publishedAt
+      ? []
+      : [
+          {
+            id: "delete",
+            label: t("admin.training.actions.delete"),
+            icon: Trash2,
+            tone: "danger",
+            separated: true,
+            onSelect: () => actions.onDelete(course),
+          } satisfies MenuAction,
+        ]),
   ];
 
   return (
     <article className="gt-admin-panel grid grid-rows-[auto_1fr_auto] overflow-hidden transition-[border-color,box-shadow] hover:border-[var(--gt-ink-400)] hover:shadow-[var(--shadow-sm)]">
       <div className="relative">
-        <img
-          src={course.cover}
+        <MediaImage
+          mediaRef={course.cover}
           alt={t("admin.training.list.thumbAlt", { name: title })}
           className="aspect-[16/9] w-full object-cover"
         />
@@ -161,7 +162,9 @@ export function CourseCard({ course, actions }: { course: TrainingCourse; action
                 year: "numeric",
               })}
             </span>
-            {instructor && <span>{instructor.name}</span>}
+            <span className="font-semibold tabular-nums text-[var(--text-primary)]">
+              {course.priceMinor > 0 ? formatMoney(course.priceMinor, course.currency) : t("admin.training.price.free")}
+            </span>
           </div>
         </div>
       </div>

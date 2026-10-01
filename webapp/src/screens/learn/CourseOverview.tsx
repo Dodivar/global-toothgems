@@ -21,7 +21,7 @@ import clsx from "clsx";
 import { Button } from "../../components/ui/Button";
 import { Badge } from "../../components/ui/Badge";
 import { ModuleStatusBadge, NodeMarker, ProgressRing, ThinProgress, type NodeStatus } from "../../components/learning/LearningStatus";
-import { getInstructor, type TrainingCourse } from "../../data/adminTraining";
+import type { TrainingCourse } from "../../data/adminTraining";
 import { pick } from "../../data/types";
 import { completionHref, lessonHref } from "../../lib/academyUrl";
 import { useFormat } from "../../lib/format";
@@ -55,7 +55,6 @@ export function CourseOverview() {
     return <LearnAccessState access={access} courseId={courseId} />;
   }
 
-  const instructor = getInstructor(training.instructorId);
   const next = summary.path[summary.nextIndex];
   const started = summary.doneCount > 0;
   const completed = progress.completed;
@@ -91,17 +90,6 @@ export function CourseOverview() {
               {pick(training.title, lang)}
             </h1>
             <p className="m-0 max-w-[52ch] text-[length:var(--text-body-md)] text-[rgba(250,250,248,.82)]">{pick(training.shortDescription, lang)}</p>
-            {instructor && (
-              <div className="flex items-center gap-3 pt-1">
-                <span aria-hidden="true" className="grid h-10 w-10 place-items-center rounded-full bg-[var(--gt-blue-300)] text-[length:var(--text-caption)] font-bold text-[var(--gt-ink-900)]">
-                  {instructor.initials}
-                </span>
-                <span className="grid leading-tight">
-                  <span className="text-[length:var(--text-body-sm)] font-semibold">{instructor.name}</span>
-                  <span className="text-[length:var(--text-caption)] text-[rgba(250,250,248,.7)]">{pick(instructor.role, lang)}</span>
-                </span>
-              </div>
-            )}
           </div>
         </div>
 

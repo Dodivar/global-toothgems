@@ -2,24 +2,17 @@
 
 import { useEffect, useRef, useState } from "react";
 import { useTranslation } from "react-i18next";
-import { useNavigate } from "../lib/navigation";
-import { ArrowRight, Lock, Play } from "lucide-react";
+import { ArrowRight, GraduationCap, Lock } from "lucide-react";
 import { Button } from "../components/ui/Button";
 import { CourseCard } from "../components/ui/CourseCard";
-import { COURSES } from "../data/courses";
+import { courseCardData } from "../components/academy/courseCard";
 import { courseHref } from "../lib/academyUrl";
-import { pick } from "../data/types";
+import { useAcademy } from "../lib/academy/AcademyProvider";
+import { courseSlug, lessonCount } from "../lib/academy/publicCourse";
 import { useAuth } from "../lib/auth";
-import { useProgress } from "../lib/progress";
 import { useToast } from "../lib/toast";
 import { photo } from "../lib/images";
 import { useReveal } from "../lib/useReveal";
-
-const STATS = [
-  { value: 1840, labelKey: "academy.stat1Label" },
-  { value: 14, labelKey: "academy.stat2Label" },
-  { value: 39, labelKey: "academy.stat3Label" },
-];
 
 /**
  * Counts up to `value` once the number scrolls into view. Renders the final
@@ -69,39 +62,38 @@ function CountUp({ value, locale }: { value: number; locale: string }) {
   return <span ref={ref}>{new Intl.NumberFormat(locale).format(shown)}</span>;
 }
 
+/**
+ * The Academy catalogue (phase B): the published courses, from the database
+ * (`lib/academy`, the prototype's fixtures in mock mode). The figures under
+ * the hero are counted from that catalogue — nothing on the page is invented.
+ * Every card opens the course's sales page, where the decision is made.
+ */
 export function Academy() {
   const { t, i18n } = useTranslation();
-  const navigate = useNavigate();
   const { signedIn } = useAuth();
-  const { openCourse } = useProgress();
+  const { courses, status, reload } = useAcademy();
   const { showToast } = useToast();
   const lang = i18n.language;
+  const locale = lang.startsWith("en") ? "en" : "fr";
   const numberLocale = lang.startsWith("en") ? "en-IE" : "fr-FR";
 
   const coursesRef = useReveal<HTMLDivElement>();
   const communityRef = useReveal<HTMLElement>();
 
-  /**
-   * Course content requires an account. RequireAccount already guards the route,
-   * but these handlers have to check too: otherwise they would announce
-   * "enrolment saved" a moment before the guard threw the visitor back out.
-   *
-   * Opening a course also puts it on the account, so the member dashboard shows
-   * it straight away — the toast says it is enrolled, so it has to be true.
-   */
-  const openLesson = (courseId: string, toastTitle: string, toastBody: string) => {
-    if (!signedIn) {
-      navigate("/connexion", { state: { from: "/academy/lecon" } });
-      return;
-    }
-    openCourse(courseId);
-    navigate("/academy/lecon");
-    showToast(toastTitle, toastBody);
-  };
+  const stats = [
+    { key: "academy.statCourses", value: courses.length },
+    { key: "academy.statModules", value: courses.reduce((sum, c) => sum + c.modules.length, 0) },
+    { key: "academy.statLessons", value: courses.reduce((sum, c) => sum + lessonCount(c), 0) },
+  ];
 
-  /** The hero CTAs sell the entry-level course. */
-  const enroll = () => openLesson("fondation", t("academy.toastEnrollTitle"), t("academy.toastEnrollBody"));
-  const preview = () => openLesson("fondation", t("academy.toastPreviewTitle"), t("academy.toastPreviewBody"));
+  /** Moves the reader to the catalogue and puts the keyboard there with them. */
+  const showCourses = () => {
+    const el = coursesRef.current;
+    if (!el) return;
+    const reduced = window.matchMedia("(prefers-reduced-motion: reduce)").matches;
+    el.scrollIntoView({ behavior: reduced ? "auto" : "smooth", block: "start" });
+    el.focus({ preventScroll: true });
+  };
 
   return (
     <div>
@@ -125,10 +117,11 @@ export function Academy() {
               dangerouslySetInnerHTML={{ __html: t("academy.title") }}
             />
             <p className="m-0 max-w-[var(--max-width-prose)] text-[length:var(--text-body-lg)] text-[var(--gt-ink-300)]">{t("academy.body")}</p>
-            <div className="flex flex-wrap gap-3">
-              <Button variant="primary" size="lg" onClick={enroll}>{t("academy.ctaEnroll")}</Button>
-              <Button variant="glass" size="lg" iconLeft={Play} onClick={preview}>{t("academy.ctaPreview")}</Button>
-            </div>
+            {courses.length > 0 && (
+              <div className="flex flex-wrap gap-3">
+                <Button variant="primary" size="lg" iconRight={ArrowRight} onClick={showCourses}>{t("academy.ctaCourses")}</Button>
+              </div>
+            )}
             {!signedIn && (
               <p className="m-0 flex items-center gap-2 text-[length:var(--text-body-sm)] text-[var(--gt-ink-300)]">
                 <Lock size={14} aria-hidden="true" />
@@ -136,39 +129,55 @@ export function Academy() {
               </p>
             )}
           </div>
-          <dl aria-label={t("academy.statsLabel")} className="m-0 grid grid-cols-3 gap-6 border-t border-white/15 pt-8">
-            {STATS.map((s) => (
-              <div key={s.labelKey} className="flex flex-col-reverse gap-1">
-                <dt className="text-sm text-[var(--gt-ink-300)]">{t(s.labelKey)}</dt>
-                <dd className="m-0 text-[28px] font-[var(--weight-black)] text-[var(--gt-off-white)]">
-                  <CountUp value={s.value} locale={numberLocale} />
-                </dd>
+          {courses.length > 0 && (
+            <dl aria-label={t("academy.statsLabel")} className="m-0 grid grid-cols-3 gap-6 border-t border-white/15 pt-8">
+              {stats.map((s) => (
+                <div key={s.key} className="flex flex-col-reverse gap-1">
+                  <dt className="text-sm text-[var(--gt-ink-300)]">{t(s.key, { count: s.value })}</dt>
+                  <dd className="m-0 text-[28px] font-[var(--weight-black)] text-[var(--gt-off-white)]">
+                    <CountUp value={s.value} locale={numberLocale} />
+                  </dd>
+                </div>
+              ))}
+            </dl>
+          )}
+          <div
+            ref={coursesRef}
+            id="formations"
+            tabIndex={-1}
+            aria-label={t("academy.coursesLabel")}
+            aria-busy={status === "loading" || status === "idle"}
+            className="gt-reveal scroll-mt-6 outline-none"
+          >
+            {courses.length > 0 ? (
+              <ul className="m-0 grid list-none grid-cols-1 gap-6 p-0 sm:grid-cols-2 lg:grid-cols-3">
+                {courses.map((c) => (
+                  <li key={c.id}>
+                    <CourseCard
+                      tone="ink"
+                      course={courseCardData(c, lang, t)}
+                      /* The catalogue opens the training's own page: the
+                         curriculum, the assessment and the diploma are
+                         explained there, and it is open to everyone. */
+                      to={courseHref(courseSlug(c, locale))}
+                    />
+                  </li>
+                ))}
+              </ul>
+            ) : status === "error" ? (
+              <div role="alert" className="grid justify-items-start gap-3 rounded-[var(--radius-card)] border border-white/15 p-[var(--space-6)]">
+                <p className="m-0 text-[length:var(--text-body-md)] text-[var(--gt-off-white)]">{t("academy.loadError")}</p>
+                <Button variant="glass" onClick={reload}>{t("academy.retry")}</Button>
               </div>
-            ))}
-          </dl>
-          <div ref={coursesRef} className="gt-reveal grid grid-cols-1 gap-6 sm:grid-cols-2 lg:grid-cols-3">
-            {COURSES.map((c) => (
-              <CourseCard
-                key={c.id}
-                tone="ink"
-                course={{
-                  id: c.id,
-                  title: pick(c.title, lang),
-                  level: pick(c.level, lang),
-                  lessonCount: c.lessonCount,
-                  duration: c.duration,
-                  price: c.price,
-                  image: c.image,
-                }}
-                /* The catalogue opens the training's own page rather than
-                   dropping the visitor straight into the player: the detail
-                   page is where the curriculum, the assessment, the diploma and
-                   the community access are explained, and it is open to
-                   everyone. The hero buttons above still start the Foundation
-                   directly, which is the purchase and does need an account. */
-                to={courseHref(c.id)}
-              />
-            ))}
+            ) : status === "ready" ? (
+              <div className="grid justify-items-start gap-2 rounded-[var(--radius-card)] border border-white/15 p-[var(--space-6)]">
+                <GraduationCap size={22} aria-hidden="true" className="text-[var(--gt-blue-300)]" />
+                <h2 className="text-[length:var(--text-h4)] text-[var(--gt-off-white)]">{t("academy.emptyTitle")}</h2>
+                <p className="m-0 text-[length:var(--text-body-sm)] text-[var(--gt-ink-300)]">{t("academy.emptyBody")}</p>
+              </div>
+            ) : (
+              <p className="m-0 text-[length:var(--text-body-sm)] text-[var(--gt-ink-300)]" role="status">{t("academy.loading")}</p>
+            )}
           </div>
         </div>
       </section>
@@ -205,11 +214,13 @@ export function Academy() {
         </div>
       </section>
 
-      <section className="px-[clamp(14px,4vw,48px)] pb-[var(--section-y)] text-center">
-        <div className="mx-auto flex max-w-[var(--max-width-content)] flex-wrap justify-center gap-3">
-          <Button variant="primary" size="lg" iconRight={ArrowRight} onClick={enroll}>{t("academy.ctaEnroll")}</Button>
-        </div>
-      </section>
+      {courses.length > 0 && (
+        <section className="px-[clamp(14px,4vw,48px)] pb-[var(--section-y)] text-center">
+          <div className="mx-auto flex max-w-[var(--max-width-content)] flex-wrap justify-center gap-3">
+            <Button variant="primary" size="lg" iconRight={ArrowRight} onClick={showCourses}>{t("academy.ctaCourses")}</Button>
+          </div>
+        </section>
+      )}
     </div>
   );
 }

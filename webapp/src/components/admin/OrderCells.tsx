@@ -1,6 +1,6 @@
 import { useTranslation } from "react-i18next";
 import { GraduationCap } from "lucide-react";
-import type { AdminCustomer, AdminOrder } from "../../data/adminOrders";
+import type { AdminOrder, OrderBuyer } from "../../data/adminOrders";
 import { customerInitials, customerName, orderItemCount } from "../../data/adminOrders";
 import { pick } from "../../data/types";
 
@@ -19,12 +19,12 @@ const AVATAR_TINTS = [
   "var(--gt-sand)",
 ];
 
-function tint(customer: AdminCustomer): string {
+function tint(customer: OrderBuyer): string {
   const seed = customer.id.split("").reduce((sum, c) => sum + c.charCodeAt(0), 0);
   return AVATAR_TINTS[seed % AVATAR_TINTS.length];
 }
 
-export function CustomerCell({ customer, compact = false }: { customer: AdminCustomer; compact?: boolean }) {
+export function CustomerCell({ customer, compact = false }: { customer: OrderBuyer; compact?: boolean }) {
   return (
     <span className="flex min-w-0 items-center gap-2.5">
       <span
@@ -65,15 +65,15 @@ export function ItemsCell({ order, className }: { order: AdminOrder; className?:
       <span aria-hidden="true" className="flex flex-none items-center">
         {shown.map((line, index) => (
           <span
-            key={`${line.productId ?? line.courseId}-${index}`}
+            key={line.id}
             className="grid h-8 w-8 place-items-center overflow-hidden rounded-[var(--radius-sm)] border border-[var(--border-subtle)] bg-[var(--surface-sunken)]"
             style={{ marginLeft: index === 0 ? 0 : -10, zIndex: shown.length - index }}
           >
             {line.courseId ? (
               <GraduationCap size={14} className="text-[var(--gt-blue-700)]" />
-            ) : (
+            ) : line.image ? (
               <img src={line.image} alt="" loading="lazy" className="h-full w-full object-cover" />
-            )}
+            ) : null}
           </span>
         ))}
         {extra > 0 && (

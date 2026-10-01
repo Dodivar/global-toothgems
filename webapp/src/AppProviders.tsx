@@ -9,6 +9,8 @@ import { AuthProvider } from "./lib/auth";
 import { AdminAuthProvider } from "./lib/adminAuth";
 import { CartProvider } from "./lib/cart";
 import { CatalogProvider, type CatalogSeed } from "./lib/catalog/CatalogProvider";
+import { AcademyProvider } from "./lib/academy/AcademyProvider";
+import type { PublicCourse } from "./lib/academy/publicCourse";
 import { OrdersProvider } from "./lib/orders";
 import { ProgressProvider } from "./lib/progress";
 import { AdminTrainingProvider } from "./lib/adminTraining";
@@ -35,9 +37,20 @@ import { NavigationTracker } from "./lib/navigation";
  * and concurrent server renders never share one. Other pages use the UI's
  * instance (saved choice, else the browser's language); on the server, the
  * language the proxy negotiated (`locale`). `catalog`: what the server read
- * of the catalogue for a public page it renders.
+ * of the catalogue for a public page it renders; `academy`: the published
+ * courses it read for one (header, footer, home and Academy pages list them).
  */
-export function AppProviders({ locale, catalog, children }: { locale: Locale; catalog?: CatalogSeed; children: ReactNode }) {
+export function AppProviders({
+  locale,
+  catalog,
+  academy,
+  children,
+}: {
+  locale: Locale;
+  catalog?: CatalogSeed;
+  academy?: PublicCourse[];
+  children: ReactNode;
+}) {
   const addressLocale = parsePath(usePathname() ?? "/").locale;
   // The UI's language follows the public page last shown, as before: the
   // member space opened from an English page speaks English.
@@ -49,6 +62,9 @@ export function AppProviders({ locale, catalog, children }: { locale: Locale; ca
     <I18nextProvider i18n={instance}>
     <NavigationTracker />
     <CatalogProvider seed={catalog}>
+    {/* The published Academy, for the public pages (phase B). Not the
+        authoring store below, which only staff load. */}
+    <AcademyProvider seed={academy}>
     <AuthProvider>
       {/* Pending email change, password date and data-export status: read by
           the member area and by the verification page a link lands on. */}
@@ -101,6 +117,7 @@ export function AppProviders({ locale, catalog, children }: { locale: Locale; ca
       </AdminAuthProvider>
       </SecurityProvider>
     </AuthProvider>
+    </AcademyProvider>
     </CatalogProvider>
     </I18nextProvider>
   );

@@ -12,6 +12,10 @@ export interface CourseCardData {
   lessonCount: number;
   duration: string;
   price?: number;
+  /** Currency of `price` and `compareAt` (EUR when absent). */
+  currency?: string;
+  /** Usual price, shown struck through when `price` is a promotion. */
+  compareAt?: number;
   image?: string;
   imageLabel?: string;
   progress?: number | null;
@@ -41,7 +45,7 @@ export function CourseCard({
 }) {
   const { formatPrice } = useFormat();
   const { t } = useTranslation();
-  const { title, level, lessonCount, duration, price, image, imageLabel, progress, state = "available", locked = false } = course;
+  const { title, level, lessonCount, duration, price, currency, compareAt, image, imageLabel, progress, state = "available", locked = false } = course;
   const badge = stateBadge[state];
   const ink = tone === "ink";
 
@@ -129,9 +133,18 @@ export function CourseCard({
         </h4>
         {progress != null && <ProgressBar value={progress} size="sm" label={t("course.progress")} />}
         {price != null && (
-          <strong className="text-[15px] font-bold" style={{ color: ink ? "var(--gt-off-white)" : "var(--text-primary)" }}>
-            {formatPrice(price)}
-          </strong>
+          <span className="flex flex-wrap items-baseline gap-2">
+            <strong className="text-[15px] font-bold" style={{ color: ink ? "var(--gt-off-white)" : "var(--text-primary)" }}>
+              {compareAt != null && compareAt > price && <span className="sr-only">{t("training.priceNow")} </span>}
+              {formatPrice(price, undefined, currency)}
+            </strong>
+            {compareAt != null && compareAt > price && (
+              <s className="text-xs" style={{ color: ink ? "var(--gt-ink-300)" : "var(--text-subtle)" }}>
+                <span className="sr-only">{t("training.priceWas")} </span>
+                {formatPrice(compareAt, undefined, currency)}
+              </s>
+            )}
+          </span>
         )}
       </div>
     </article>

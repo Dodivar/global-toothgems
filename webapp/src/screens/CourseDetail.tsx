@@ -2,7 +2,7 @@
 
 import { useEffect, useRef, useState } from "react";
 import { useTranslation } from "react-i18next";
-import { Link, useNavigate, useParams } from "../lib/navigation";
+import { Link, useNavigate } from "../lib/navigation";
 import {
   ArrowRight,
   BookOpen,
@@ -23,9 +23,10 @@ import { DiplomaPanel } from "../components/academy/DiplomaPanel";
 import { TrainingHero } from "../components/academy/TrainingHero";
 import { CheckItem, FeatureCard, Section, SectionIntro, StepCard } from "../components/academy/TrainingPrimitives";
 import { ReviewsSection } from "../components/reviews/ReviewsSection";
-import { getCourse } from "../data/courses";
-import { MODULES } from "../data/lessons";
+import { EnrolmentSoon } from "../components/academy/EnrolmentSoon";
 import { pick } from "../data/types";
+import { lessonCount, type PublicCourse } from "../lib/academy/publicCourse";
+import { formatDuration } from "../lib/trainingFilters";
 import { useAuth } from "../lib/auth";
 import { useProgress } from "../lib/progress";
 import { useToast } from "../lib/toast";
@@ -38,25 +39,28 @@ import { useFormat } from "../lib/format";
  * why it matters, what they will be able to do, what is inside, how it runs, how
  * the assessment works, what they earn, who they join, why now — and only then
  * asks for the decision. Nothing on it is invented: the title, level, price,
- * duration, modules and lessons come from `data/courses.ts` and `data/lessons.ts`,
- * the diploma is the member area's own document, and the two things this
- * prototype does not have — a live forum, a learner's real quiz score — are
- * labelled as a preview and as an example rather than dressed up as real.
+ * duration, objectives, modules, steps and pass marks are the published
+ * course's (`lib/academy`, read by the server page: `app/_public/coursePage.tsx`),
+ * the diploma is the member area's own document, and what the platform does
+ * not have yet — a live forum, a learner's real quiz score — is labelled as a
+ * preview and as an example rather than dressed up as real.
+ *
+ * Until courses are sold (phase D), a real course says its enrolment opens
+ * soon (`enrolment: "soon"`) instead of offering a button that would pretend
+ * to enrol; the prototype's courses (mock mode) keep the demo enrolment.
  *
  * The route is open, like `/academy`: this is what sells the training, so gating
  * it would hide the thing it advertises. Only the lesson player is gated.
  */
-export function CourseDetail() {
-  const { formatPrice } = useFormat();
-  const { id } = useParams();
+export function CourseDetail({ course }: { course: PublicCourse }) {
+  const { formatMoney } = useFormat();
   const { t, i18n } = useTranslation();
   const navigate = useNavigate();
   const { signedIn, displayName } = useAuth();
   const { openCourse, progressFor } = useProgress();
   const { showToast } = useToast();
   const lang = i18n.language;
-
-  const course = getCourse(id ?? "");
+  const demo = course.enrolment === "demo";
 
   const curriculumRef = useRef<HTMLElement>(null);
   const heroCtaRef = useRef<HTMLDivElement>(null);
@@ -70,30 +74,22 @@ export function CourseDetail() {
     const observer = new IntersectionObserver(([entry]) => setShowStickyBar(!entry.isIntersecting), { threshold: 0 });
     observer.observe(el);
     return () => observer.disconnect();
-  }, [course?.id]);
-
-  if (!course) {
-    return (
-      <div className="mx-auto grid max-w-[var(--max-width-prose)] justify-items-start gap-4 px-[clamp(14px,4vw,48px)] py-[var(--section-y)]">
-        <h1 className="text-[length:var(--text-h2)]">{t("training.notFoundTitle")}</h1>
-        <p className="m-0 text-[length:var(--text-body-md)] text-[var(--text-muted)]">{t("training.notFoundBody")}</p>
-        <Button variant="dark" iconRight={ArrowRight} onClick={() => navigate("/academy")}>
-          {t("training.notFoundCta")}
-        </Button>
-      </div>
-    );
-  }
+  }, [course.id]);
 
   const title = pick(course.title, lang);
   /**
    * The seeded demo enrolments exist whether or not anyone is signed in, and
    * this page is public: a visitor must never be told they are already enrolled
-   * on somebody else's progress. Signed out, the training reads as new.
+   * on somebody else's progress. Signed out, the training reads as new — and so
+   * does a real course, which nobody can hold before phase C.
    */
   const stored = progressFor(course.id);
-  const progress = signedIn
-    ? stored
-    : { ...stored, enrolled: false, completed: false, doneCount: 0, pct: 0, completedOn: null, startedOn: null };
+  const progress =
+    signedIn && demo
+      ? stored
+      : { ...stored, enrolled: false, completed: false, doneCount: 0, pct: 0, completedOn: null, startedOn: null };
+  const lessons = lessonCount(course);
+  const duration = formatDuration(course.minutes, lang);
 
   /**
    * Course content requires an account — it is the one thing on this page that
@@ -105,6 +101,7 @@ export function CourseDetail() {
    * stays true.
    */
   const start = () => {
+    if (!demo) return;
     if (!signedIn) {
       navigate("/connexion", { state: { from: "/academy/lecon", course: course.id } });
       return;
@@ -131,7 +128,9 @@ export function CourseDetail() {
     { icon: Target, title: t("training.exp5Title"), body: t("training.exp5Body"), tone: "emerald" as const },
   ];
 
-  const outcomes = [1, 2, 3, 4, 5, 6, 7].map((n) => t(`training.outcome${n}`));
+  const outcomes = course.objectives.map((objective) => pick(objective, lang));
+  const requirements = course.requirements.map((requirement) => pick(requirement, lang));
+  const description = course.description ? pick(course.description, lang).split(/\n{2,}/).filter((p) => p.trim()) : [];
 
   const journey = [1, 2, 3, 4, 5].map((n) => ({
     title: t(`training.journey${n}Title`),
@@ -154,7 +153,7 @@ export function CourseDetail() {
         lang={lang}
         progress={progress}
         signedIn={signedIn}
-        moduleCount={MODULES.length}
+        moduleCount={course.modules.length}
         ctaRef={heroCtaRef}
         onStart={start}
         onExploreCurriculum={exploreCurriculum}
@@ -184,22 +183,45 @@ export function CourseDetail() {
         </div>
       </Section>
 
-      {/* 3 — Learning outcomes */}
-      <Section tone="sand" labelledBy="training-outcomes">
-        <div className="grid gap-[clamp(24px,4vw,56px)] lg:grid-cols-[minmax(0,.85fr)_minmax(0,1.15fr)] lg:items-start">
-          <SectionIntro
-            id="training-outcomes"
-            eyebrow={t("training.outcomesEyebrow")}
-            title={t("training.outcomesTitle")}
-            lead={t("training.outcomesLead", { count: course.lessonCount })}
-          />
-          <ul aria-label={t("training.outcomesListLabel")} className="m-0 grid list-none gap-3 p-0 sm:grid-cols-2">
-            {outcomes.map((outcome) => (
-              <CheckItem key={outcome}>{outcome}</CheckItem>
-            ))}
-          </ul>
-        </div>
-      </Section>
+      {/* 3 — Learning outcomes: the course's own objectives and prerequisites */}
+      {(outcomes.length > 0 || requirements.length > 0 || description.length > 0) && (
+        <Section tone="sand" labelledBy="training-outcomes">
+          <div className="grid gap-[clamp(24px,4vw,56px)] lg:grid-cols-[minmax(0,.85fr)_minmax(0,1.15fr)] lg:items-start">
+            <div className="grid gap-4">
+              <SectionIntro
+                id="training-outcomes"
+                eyebrow={t("training.outcomesEyebrow")}
+                title={t("training.outcomesTitle")}
+                lead={t("training.outcomesLead", { count: lessons })}
+              />
+              {description.map((paragraph, i) => (
+                <p key={i} className="m-0 max-w-[var(--max-width-prose)] whitespace-pre-line text-[length:var(--text-body-md)] text-[var(--text-body)]">
+                  {paragraph}
+                </p>
+              ))}
+            </div>
+            <div className="grid gap-6">
+              {outcomes.length > 0 && (
+                <ul aria-label={t("training.outcomesListLabel")} className="m-0 grid list-none gap-3 p-0 sm:grid-cols-2">
+                  {outcomes.map((outcome) => (
+                    <CheckItem key={outcome}>{outcome}</CheckItem>
+                  ))}
+                </ul>
+              )}
+              {requirements.length > 0 && (
+                <div className="grid gap-3">
+                  <h3 className="text-[length:var(--text-h4)]">{t("training.requirementsTitle")}</h3>
+                  <ul className="m-0 grid list-disc gap-1.5 pl-5 text-[length:var(--text-body-sm)] text-[var(--text-body)]">
+                    {requirements.map((requirement) => (
+                      <li key={requirement}>{requirement}</li>
+                    ))}
+                  </ul>
+                </div>
+              )}
+            </div>
+          </div>
+        </Section>
+      )}
 
       {/* 4 — Curriculum */}
       <section
@@ -215,12 +237,12 @@ export function CourseDetail() {
             eyebrow={t("training.curriculumEyebrow")}
             title={t("training.curriculumTitle")}
             lead={t("training.curriculumLead", {
-              modules: MODULES.length,
-              lessons: course.lessonCount,
-              duration: course.duration,
+              modules: course.modules.length,
+              lessons,
+              duration,
             })}
           />
-          <CurriculumAccordion lang={lang} />
+          <CurriculumAccordion course={course} lang={lang} />
         </div>
       </section>
 
@@ -248,24 +270,26 @@ export function CourseDetail() {
           title={t("training.quizTitle")}
           lead={t("training.quizLead")}
         />
-        <AssessmentPanel lang={lang} />
+        <AssessmentPanel lang={lang} passScore={course.minScore} />
       </Section>
 
-      {/* 7 — Diploma */}
-      <Section tone="ink" labelledBy="training-diploma">
-        <SectionIntro
-          id="training-diploma"
-          eyebrow={t("training.diplomaEyebrow")}
-          title={t("training.diplomaTitle")}
-          dark
-        />
-        <DiplomaPanel
-          course={course}
-          lang={lang}
-          holder={signedIn ? displayName : t("training.diplomaHolderPlaceholder")}
-          signedIn={signedIn}
-        />
-      </Section>
+      {/* 7 — Diploma, when the course issues one */}
+      {course.issuesCertificate && (
+        <Section tone="ink" labelledBy="training-diploma">
+          <SectionIntro
+            id="training-diploma"
+            eyebrow={t("training.diplomaEyebrow")}
+            title={t("training.diplomaTitle")}
+            dark
+          />
+          <DiplomaPanel
+            course={course}
+            lang={lang}
+            holder={signedIn ? displayName : t("training.diplomaHolderPlaceholder")}
+            signedIn={signedIn}
+          />
+        </Section>
+      )}
 
       {/* 8 — Artist community */}
       <Section labelledBy="training-community">
@@ -317,9 +341,13 @@ export function CourseDetail() {
             {t("training.finalTitle")}
           </h2>
           <p className="m-0 text-[length:var(--text-body-lg)] text-[var(--gt-ink-300)]">{t("training.finalBody")}</p>
-          <Button variant="primary" size="lg" iconRight={ArrowRight} onClick={start}>
-            {progress.enrolled ? t("training.ctaResume") : t("training.ctaStart")}
-          </Button>
+          {demo ? (
+            <Button variant="primary" size="lg" iconRight={ArrowRight} onClick={start}>
+              {progress.enrolled ? t("training.ctaResume") : t("training.ctaStart")}
+            </Button>
+          ) : (
+            <EnrolmentSoon dark />
+          )}
           <ul className="m-0 flex list-none flex-wrap justify-center gap-x-5 gap-y-2 p-0">
             {finalPoints.map((point) => (
               <li key={point} className="flex items-center gap-2 text-[length:var(--text-body-sm)] text-[var(--gt-ink-300)]">
@@ -338,22 +366,25 @@ export function CourseDetail() {
       </section>
 
       {/* Sticky mobile bar: the page is long, and the decision should never be
-          more than a thumb away once the hero's own button has scrolled off. */}
-      <div
-        className="fixed inset-x-0 bottom-0 z-50 border-t border-[var(--border-subtle)] bg-[var(--surface-card)] px-4 py-3 shadow-[var(--shadow-lg)] transition-transform duration-[var(--duration-normal)] ease-[var(--ease-out-soft)] lg:hidden"
-        style={{ transform: showStickyBar ? "translateY(0)" : "translateY(120%)" }}
-        aria-hidden={!showStickyBar}
-      >
-        <div className="flex items-center gap-3">
-          <div className="grid min-w-0 flex-1 gap-0.5">
-            <span className="truncate text-xs text-[var(--text-muted)]">{title}</span>
-            <strong className="text-sm text-[var(--text-primary)]">{formatPrice(course.price)}</strong>
+          more than a thumb away once the hero's own button has scrolled off.
+          Only where there is a decision to make (not before enrolment opens). */}
+      {demo && (
+        <div
+          className="fixed inset-x-0 bottom-0 z-50 border-t border-[var(--border-subtle)] bg-[var(--surface-card)] px-4 py-3 shadow-[var(--shadow-lg)] transition-transform duration-[var(--duration-normal)] ease-[var(--ease-out-soft)] lg:hidden"
+          style={{ transform: showStickyBar ? "translateY(0)" : "translateY(120%)" }}
+          aria-hidden={!showStickyBar}
+        >
+          <div className="flex items-center gap-3">
+            <div className="grid min-w-0 flex-1 gap-0.5">
+              <span className="truncate text-xs text-[var(--text-muted)]">{title}</span>
+              <strong className="text-sm text-[var(--text-primary)]">{formatMoney(course.currentPrice.minor, course.currentPrice.currency)}</strong>
+            </div>
+            <Button variant="primary" onClick={start} tabIndex={showStickyBar ? 0 : -1}>
+              {progress.enrolled ? t("training.ctaResume") : t("training.stickyCta")}
+            </Button>
           </div>
-          <Button variant="primary" onClick={start} tabIndex={showStickyBar ? 0 : -1}>
-            {progress.enrolled ? t("training.ctaResume") : t("training.stickyCta")}
-          </Button>
         </div>
-      </div>
+      )}
     </div>
   );
 }

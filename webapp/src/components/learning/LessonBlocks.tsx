@@ -3,6 +3,7 @@ import clsx from "clsx";
 import type { ContentBlock, ImageBlock, VideoBlock } from "../../data/adminTraining";
 import type { ContentLang } from "../../lib/localized";
 import { sanitizeHtml } from "../../lib/learning/sanitizeHtml";
+import { useTrainingMedia } from "../../lib/trainingMedia";
 import { VideoPlayer } from "./VideoPlayer";
 
 /**
@@ -14,6 +15,9 @@ import { VideoPlayer } from "./VideoPlayer";
  * text, image, text, video, image… Text keeps a reading measure (~68
  * characters); images and video take the wider column so they read as part of
  * the lesson rather than as attachments.
+ *
+ * Image and video fields are media references, resolved to URLs by the
+ * training media store (`urlOf`).
  */
 
 export function LessonBlocks({ blocks, lang }: { blocks: ContentBlock[]; lang: ContentLang }) {
@@ -39,6 +43,8 @@ export function RichText({ html, className }: { html: string; className?: string
 }
 
 function LessonImage({ block, lang }: { block: ImageBlock; lang: ContentLang }) {
+  const { urlOf } = useTrainingMedia();
+  const src = urlOf(block.src);
   const caption = block.caption[lang];
   const layout =
     block.align === "full"
@@ -49,7 +55,7 @@ function LessonImage({ block, lang }: { block: ImageBlock; lang: ContentLang }) 
   return (
     <figure className={clsx("m-0 grid gap-2.5", layout)}>
       <img
-        src={block.src}
+        src={src || undefined}
         // An image the author left without a description is treated as
         // decorative rather than read out as a file name.
         alt={block.alt[lang] ?? ""}
@@ -71,10 +77,11 @@ function LessonImage({ block, lang }: { block: ImageBlock; lang: ContentLang }) 
 }
 
 function LessonVideo({ block, lang }: { block: VideoBlock; lang: ContentLang }) {
+  const { urlOf } = useTrainingMedia();
   const caption = block.caption[lang];
   return (
     <figure className="m-0 grid gap-2.5">
-      <VideoPlayer source={block.source} poster={block.poster} title={block.title[lang]} duration={block.duration} />
+      <VideoPlayer source={urlOf(block.source)} poster={urlOf(block.poster)} title={block.title[lang]} duration={block.duration} />
       {(block.title[lang] || caption) && (
         <figcaption className="grid gap-0.5">
           {block.title[lang] && (

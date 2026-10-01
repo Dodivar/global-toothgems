@@ -4,6 +4,7 @@ import type { ReactNode } from "react";
 import { isLocale, parsePath } from "../src/lib/localeRoutes";
 import { LOCALE_HEADER, PATH_HEADER } from "../src/lib/localeHeader";
 import { loadCatalogSeed } from "../src/lib/catalog/serverCatalog";
+import { loadAcademySeed } from "../src/lib/academy/serverAcademy";
 import { AppProviders } from "../src/AppProviders";
 import { siteUrl } from "../src/lib/siteUrl";
 import "../src/index.css";
@@ -22,11 +23,12 @@ export default async function RootLayout({ children }: { children: ReactNode }) 
   const asked = requestHeaders.get(LOCALE_HEADER);
   const locale = isLocale(asked) ? asked : "fr";
   // What the stores start from on a public page: the part of the catalogue it
-  // shows (`loadCatalogSeed`), read for the address the proxy saw. Read once
+  // shows (`loadCatalogSeed`), read for the address the proxy saw, and the
+  // published courses (header, footer, home and Academy pages). Read once
   // per page load: a later client-side navigation keeps what the stores hold
   // and they load the rest themselves.
   const route = parsePath((requestHeaders.get(PATH_HEADER) ?? "/").split("?")[0]).route;
-  const catalog = route ? await loadCatalogSeed(route.id) : undefined;
+  const [catalog, academy] = route ? await Promise.all([loadCatalogSeed(route.id), loadAcademySeed()]) : [undefined, undefined];
   return (
     <html lang={locale}>
       <head>
@@ -39,7 +41,7 @@ export default async function RootLayout({ children }: { children: ReactNode }) 
       </head>
       <body>
         <div id="root">
-          <AppProviders locale={locale} catalog={catalog}>
+          <AppProviders locale={locale} catalog={catalog} academy={academy}>
             {children}
           </AppProviders>
         </div>

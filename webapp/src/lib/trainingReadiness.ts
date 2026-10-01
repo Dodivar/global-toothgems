@@ -138,6 +138,17 @@ export function analyseCourse(course: TrainingCourse): Readiness {
       }
 
       for (const block of step.blocks) {
+        // The database refuses to publish an image or video block without its file.
+        if ((block.type === "image" && !block.src) || (block.type === "video" && !block.source)) {
+          issues.push({
+            id: `media-${block.id}`,
+            severity: "blocking",
+            messageKey: block.type === "image" ? "imageMissing" : "videoMissing",
+            params: { module: label, step: stepLabel },
+            moduleId: module.id,
+            stepId: step.id,
+          });
+        }
         if (block.type === "image" && !filled(block.alt)) {
           issues.push({
             id: `alt-${block.id}`,
