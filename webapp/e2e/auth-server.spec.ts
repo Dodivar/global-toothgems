@@ -67,8 +67,22 @@ test.describe("/auth/confirm", () => {
     // The request context keeps the cookies it was given.
     const account = await request.get("/compte", noRedirect);
     expect(account.status()).toBe(200);
-    // Every private zone lets the member in (the staff role is not a server check).
-    for (const path of ["/compte/communaute", "/academy/lecon", "/admin/produits"]) {
+    // The member's private zones let the member in.
+    for (const path of ["/compte/communaute", "/academy/lecon"]) {
+      expect((await request.get(path, noRedirect)).status(), path).toBe(200);
+    }
+    // The back office does not: a signed-in account that is not staff is sent
+    // to its access screen (decided 2026-10-01), by the page's own check.
+    const admin = await request.get("/admin/produits?vue=archives", noRedirect);
+    expect(admin.status()).toBe(307);
+    expect(location(admin)).toBe("/admin/connexion?suite=%2Fadmin%2Fproduits%3Fvue%3Darchives");
+    expect((await request.get("/admin/connexion", noRedirect)).status()).toBe(200);
+  });
+
+  test("lets an active staff member into the back office", async ({ request }) => {
+    const response = await request.get("/auth/confirm?token_hash=valid-staff&type=signup&next=%2Fadmin", noRedirect);
+    expect(location(response)).toBe("/admin");
+    for (const path of ["/admin", "/admin/produits", "/admin/commandes/GT-1", "/compte"]) {
       expect((await request.get(path, noRedirect)).status(), path).toBe(200);
     }
   });
