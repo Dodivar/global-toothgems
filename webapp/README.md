@@ -414,11 +414,11 @@ Progress is computed against the course each product opens (`Course.trainingId`)
 
 ## The learning experience (`/academy/mes-formations/:courseId`)
 
-What a customer who owns a training reads. The course is the one built in the back office (`/admin/formations`), never a separate copy: the training store (`lib/adminTraining.tsx`) is mounted above the whole app, each storefront product names the training it opens (`trainingId` in `data/courses.ts`), and the administrator's preview renders blocks and knowledge checks with the learner's own components. Admin preview and learner view are two views of one course.
+What a customer who owns a training reads. The course is the one built in the back office (`/admin/formations`), never a separate copy: the training store (`lib/adminTraining.tsx`) is mounted above the whole app, each storefront product names the training it opens (`trainingId` in `data/courses.ts`), and the administrator's preview renders blocks and knowledge checks with the learner's own components. Admin preview and learner view are two views of one course. **Still the prototype (phase C):** with Supabase configured, the learner pages keep reading the seeded courses (`data/adminTrainingSeed.ts`, see `lib/progress.tsx`) — the back office's courses carry database ids the prototype enrolments do not point at — until entitlements, progress and quiz attempts exist server-side.
 
 | Route | Screen |
 | --- | --- |
-| `/academy/mes-formations/:courseId` | Course overview: cover, instructor, progress ring, modules and steps completed, time left, the next unfinished lesson behind one "Continue training" button, module cards with status badges, recently completed lessons, objectives and completion rules |
+| `/academy/mes-formations/:courseId` | Course overview: cover, progress ring, modules and steps completed, time left, the next unfinished lesson behind one "Continue training" button, module cards with status badges, recently completed lessons, objectives and completion rules |
 | `/academy/mes-formations/:courseId/lecon/:nodeKey` | The lesson player, a full-screen workspace (no storefront header/footer): lesson content in authored order (text, image, video, any mix), the module's knowledge check after its last step, a side panel with the course outline on desktop, and a progress strip, a contents sheet and a bottom action bar on phones |
 | `/academy/mes-formations/:courseId/terminee` | Completion: medal, course, date, average score, certificate when the course issues one, back to the dashboard, review the course |
 | `/academy/lecon` | Forwards to the overview of the course just opened (every existing "open this course" action lands here) |
@@ -432,11 +432,22 @@ How it works:
 - **Knowledge checks** follow the settings chosen in the builder: immediate or end-of-check feedback, revealed answers, shuffling once per attempt, retries and attempt limits. Wrong answers are explained in the administrator's words, never punished.
 - `lib/progress.tsx` keeps the same public API, so the dashboard, certificates, community access and review eligibility all read the real course numbers.
 
-## Training image library (back office)
+## Course authoring on Supabase (back office)
 
-Every image field of the course builder — image blocks, module covers, video thumbnails, question images — opens the **training image library** (`components/admin/training/TrainingMediaLibrary.tsx`): search, category chips, usage filter, upload by button or drag and drop (JPG/PNG/WebP/AVIF, 10 MB max, validated), a thumbnail grid with an obvious selection, a details panel (dimensions, size, date, usage count, name, category, FR/EN description, tags), delete (refused while the image is used in a course) and insert. Adding an image block opens it straight away, and the library's description pre-fills an empty alt text.
+The course builder (`/admin/formations`, `/nouvelle`, `/:id`, `/:id/apercu`, `/:id/publication`) reads and writes the Academy tables (`supabase/README.md` → *Academy authoring*) when Supabase is configured, and the prototype fixtures otherwise:
 
-It is deliberately separate from the shop's product media. In the prototype uploads are real files previewed from local object URLs with a simulated progress bar; the production home is a **private** `training-media` bucket served through signed URLs (paid training material must not be publicly listable), which is not created yet.
+- `lib/adminTraining.tsx` — the store. Structural edits stay in memory (instant); **Save** sends the whole course to `admin_save_course()`; publishing saves first, then changes `courses.status` (the database checks readiness: `course_publication_problems()`). It loads nothing until a staff session is open (it sits in the root layout). Writes reject with a `TrainingError`, shown by the screens (`components/admin/training/trainingErrors.ts`).
+- `lib/adminTrainingBackend.ts` — mock and Supabase backends; `lib/adminTrainingMapping.ts` — rows ↔ builder, payloads, error kinds (unit-tested). Node ids are browser-generated uuids kept across saves.
+- **Price and promotions**: the price is typed in the course form (`lib/coursePricing.ts`, minor units, no float); `components/admin/training/CoursePromotions.tsx` manages dated percentage/amount promotions of one course (saved immediately; one active at a time). Courses are not shop products and never appear in the shop.
+- Status: draft → published ⇄ unpublished, no "review" state; a course ever published cannot be deleted (the card hides the action, RLS refuses it). No instructor field.
+
+## Training media library (`/admin/formations/medias`)
+
+The course editor's images **and videos** are managed on their own screen (`screens/admin/TrainingMedia.tsx`): upload by button or drag and drop (JPG/PNG/WebP/AVIF up to 10 MB; MP4/WebM/MOV up to 50 MB, the Supabase free plan's per-file limit — raise `MAX_VIDEO_BYTES` in `lib/trainingMediaRules.ts` and the dashboard setting on Pro), search, kind / category / usage filters, a details panel (preview or player, length, dimensions, size, date, usage count, name, category, FR/EN description, tags — saved with a button) and delete (refused while a course uses the file; the database refuses it too).
+
+The builder's media fields (`components/admin/training/MediaPicker.tsx`) only **pick**: a select-only dialog (`MediaPickerDialog.tsx`) with search and categories, a link opening the library in a new tab and a *Refresh* button. Picking a video fills the block's duration from the file.
+
+With Supabase, files go to the private `training-media` bucket under `media/<id>/` through resumable TUS uploads (`tus-js-client`, 6 MB chunks, direct storage hostname), each with a `training_media` row; the back office displays them through signed URLs renewed every 45 minutes (`lib/trainingMedia.tsx`). Course fields hold the media **id**, never a URL: every screen resolves it with `useTrainingMedia().urlOf()` (`components/admin/training/MediaImage.tsx`, the learner's `LessonBlocks`/`QuizPlayer`). In the prototype the library is the seeded photographs and uploads stay in the page.
 
 ## The Artist Community (`/compte/communaute`)
 

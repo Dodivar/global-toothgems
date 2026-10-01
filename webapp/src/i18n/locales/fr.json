@@ -3189,15 +3189,13 @@
       },
       "status": {
         "draft": "Brouillon",
-        "review": "À relire",
         "published": "En ligne",
         "unpublished": "Retirée"
       },
       "statusHelp": {
         "draft": "En cours d’écriture, invisible pour les membres.",
-        "review": "Complète, en attente de validation.",
         "published": "Accessible aux membres éligibles.",
-        "unpublished": "Déjà publiée puis retirée du catalogue."
+        "unpublished": "Retirée : ses acheteurs la voient grisée (« bientôt de retour ») sans pouvoir l’ouvrir."
       },
       "level": {
         "beginner": "Débutant",
@@ -3222,7 +3220,8 @@
         "review": "Vérifier et publier",
         "delete": "Supprimer",
         "more": "Autres actions pour {{name}}",
-        "back": "Retour aux formations"
+        "back": "Retour aux formations",
+        "mediaLibrary": "Médiathèque"
       },
       "create": {
         "title": "Créer une formation",
@@ -3249,12 +3248,10 @@
         "fieldCover": "Image de couverture",
         "fieldCoverHint": "Format paysage recommandé.",
         "coverAlt": "Couverture sélectionnée",
-        "coverOption": "Choisir cette image",
         "fieldCategory": "Catégorie",
         "fieldLevel": "Niveau",
         "fieldDuration": "Durée estimée",
         "fieldDurationHint": "En minutes. Vous pourrez l’ajuster une fois les étapes créées.",
-        "fieldInstructor": "Formateur",
         "objectives": "Objectifs pédagogiques",
         "objectivesHint": "Un objectif par ligne, formulé à l’infinitif.",
         "objectiveAdd": "Ajouter un objectif",
@@ -3332,7 +3329,8 @@
         "blocks_one": "{{count}} bloc",
         "blocks_other": "{{count}} blocs",
         "emptyStep": "Vide",
-        "treeLabel": "Structure de la formation"
+        "treeLabel": "Structure de la formation",
+        "loading": "Chargement de la formation…"
       },
       "module": {
         "title": "Module",
@@ -3439,15 +3437,15 @@
         "videoTitleHint": "Affiché sur le lecteur.",
         "videoDuration": "Durée",
         "videoDurationHint": "Au format mm:ss.",
-        "videoSource": "Source de la vidéo",
-        "videoSourceHint": "Emplacement du fichier une fois l’hébergement raccordé.",
+        "videoSource": "Fichier vidéo",
+        "videoSourceHint": "Choisissez une vidéo importée dans la médiathèque des formations. Sa durée est reprise automatiquement.",
         "videoCaption": "Légende",
         "videoPoster": "Miniature",
         "videoPosterHint": "Image affichée avant la lecture.",
         "videoPreview": "Prévisualiser",
-        "videoMock": "Vidéo de démonstration — aucune lecture dans le prototype.",
         "typeLabel": "Type de contenu",
-        "previewLabel": "Aperçu du bloc"
+        "previewLabel": "Aperçu du bloc",
+        "videoNone": "Aucune vidéo choisie pour l’instant."
       },
       "quiz": {
         "title": "Quiz",
@@ -3519,7 +3517,6 @@
         "bannerBody": "Vous consultez cette formation comme un apprenant.",
         "exit": "Quitter l’aperçu",
         "contents": "Sommaire",
-        "by": "Animée par {{name}}",
         "progress": "{{done}} sur {{total}} étapes",
         "progressLabel": "Progression dans la formation",
         "previous": "Précédent",
@@ -3593,7 +3590,9 @@
           "questionTooFewAnswers": "La question {{question}} du module {{module}} a moins de deux réponses.",
           "questionNoCorrect": "La question {{question}} du module {{module}} n’a pas de bonne réponse.",
           "questionManyCorrect": "La question {{question}} du module {{module}} a plusieurs bonnes réponses.",
-          "questionNoFeedback": "Les retours de la question {{question}} (module {{module}}) sont incomplets."
+          "questionNoFeedback": "Les retours de la question {{question}} (module {{module}}) sont incomplets.",
+          "imageMissing": "L’étape {{step}} du module {{module}} contient un bloc image sans image.",
+          "videoMissing": "L’étape {{step}} du module {{module}} contient un bloc vidéo sans vidéo."
         },
         "fix": "Corriger",
         "summaryTitle": "Récapitulatif",
@@ -3619,7 +3618,7 @@
         "warningsBody_other": "{{count}} recommandations restent ouvertes. Vous pouvez publier quand même.",
         "confirm": "Publier la formation",
         "unpublishTitle": "Retirer cette formation ?",
-        "unpublishBody": "Elle disparaîtra du catalogue. Les membres déjà inscrits conservent leur progression.",
+        "unpublishBody": "Elle disparaîtra du catalogue. Ses acheteurs la verront grisée avec un message « bientôt de retour », sans pouvoir l’ouvrir, jusqu’à sa republication.",
         "unpublishConfirm": "Retirer du catalogue",
         "deleteTitle": "Supprimer cette formation ?",
         "deleteBody": "« {{name}} », ses modules, ses étapes et ses quiz seront supprimés.",
@@ -3658,6 +3657,81 @@
         "questionDuplicatedTitle": "Question dupliquée",
         "questionDeletedTitle": "Question supprimée",
         "reorderedTitle": "Ordre mis à jour"
+      },
+      "price": {
+        "section": "Prix",
+        "sectionHint": "Le prix de vente de la formation, TTC. Les formations ne sont pas vendues dans la boutique.",
+        "field": "Prix (TTC)",
+        "fieldHint": "0 pour une formation gratuite.",
+        "invalid": "Saisissez un montant, par exemple 349 ou 349,90.",
+        "free": "Gratuite"
+      },
+      "promotions": {
+        "title": "Promotions",
+        "hint": "Une réduction datée sur cette formation, en pourcentage ou en montant. Une seule promotion active à la fois. Enregistrée immédiatement.",
+        "add": "Ajouter une promotion",
+        "current": "Prix actuel : {{price}}",
+        "currentDiscounted": "Prix actuel : {{price}} au lieu de {{regular}}",
+        "empty": "Aucune promotion pour cette formation.",
+        "state": {
+          "running": "En cours",
+          "scheduled": "Programmée",
+          "ended": "Terminée",
+          "inactive": "Désactivée"
+        },
+        "percentOff": "−{{value}} %",
+        "amountOff": "−{{value}}",
+        "period": "du {{from}} au {{to}}",
+        "openEnded": "à partir du {{from}}, sans fin",
+        "edit": "Modifier",
+        "editNamed": "Modifier la promotion {{name}}",
+        "deleteNamed": "Supprimer la promotion {{name}}",
+        "deleteTitle": "Supprimer cette promotion ?",
+        "deleteBody": "La promotion « {{name}} » sera supprimée. Le prix de la formation n’est pas modifié.",
+        "saved": "Promotion enregistrée",
+        "deleted": "Promotion supprimée",
+        "label": "Nom interne",
+        "labelPlaceholder": "Ex. : Rentrée 2026",
+        "type": "Type de réduction",
+        "typePercentage": "Pourcentage",
+        "typeAmount": "Montant",
+        "valuePercent": "Réduction (%)",
+        "valueAmount": "Réduction ({{currency}})",
+        "starts": "Début",
+        "ends": "Fin (facultative)",
+        "endsHint": "Laissez vide pour une promotion sans date de fin.",
+        "active": "Active",
+        "activeHint": "Une promotion désactivée n’est jamais appliquée.",
+        "resulting": "Prix pendant la promotion : {{price}}",
+        "save": "Enregistrer la promotion",
+        "problems": {
+          "label": "Donnez un nom à la promotion.",
+          "value": "Saisissez une réduction valide (un nombre entier de 1 à 99 pour un pourcentage, un montant pour une réduction fixe).",
+          "percentRange": "Une réduction en pourcentage doit être inférieure à 100 %.",
+          "amountTooHigh": "La réduction doit être inférieure au prix de la formation.",
+          "start": "Indiquez la date de début.",
+          "period": "La fin doit être après le début.",
+          "overlap": "Une autre promotion active couvre déjà cette période."
+        }
+      },
+      "errors": {
+        "title": "L’opération n’a pas abouti",
+        "forbidden": "Votre rôle ne permet pas de modifier les formations.",
+        "notReady": "La formation n’est pas encore prête à être publiée.",
+        "published": "Une formation déjà publiée ne peut être ni supprimée ni remise en brouillon : retirez-la du catalogue.",
+        "overlap": "Une autre promotion active couvre déjà cette période.",
+        "amountTooHigh": "La réduction doit être inférieure au prix enregistré de la formation.",
+        "invalid": "Certaines informations ne sont pas valides. Vérifiez les champs et réessayez.",
+        "network": "Impossible de joindre le serveur. Vos modifications sont conservées ici : réessayez.",
+        "loadFailed": "Les formations n’ont pas pu être chargées.",
+        "retry": "Réessayer",
+        "ready": {
+          "no_modules": "Ajoutez au moins un module.",
+          "empty_module": "Chaque module doit contenir au moins une étape.",
+          "block_without_media": "Chaque bloc image ou vidéo doit avoir son fichier.",
+          "empty_quiz": "Chaque quiz doit contenir au moins une question.",
+          "question_incomplete": "Chaque question doit avoir au moins deux réponses, dont une correcte."
+        }
       }
     },
     "errors": {

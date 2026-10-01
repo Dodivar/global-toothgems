@@ -81,7 +81,7 @@ Stripe  payment source of truth; fulfilment only from verified, idempotent webho
 | Promotions, gift cards, loyalty | yes | yes | **Mock UI** over a ready schema |
 | Admin customers, users/roles, statistics, settings, translations | yes | mostly yes | **Mock UI** over a ready schema |
 | Contact form, newsletter, transactional e-mails | yes | yes | **Mock** — needs Edge Functions + Resend |
-| Academy authoring (admin courses, content, quizzes, training media library, course price and promotions) | yes | yes (`academy_authoring`) | **Schema live** (2026-10-01), back-office wiring in progress. Courses are not products; see `guidelines/05` decisions |
+| Academy authoring (admin courses, content, quizzes, training media library, course price and promotions) | yes | yes (`academy_authoring`) | **Live** (2026-10-01): builder, `/admin/formations/medias`, price and course promotions on Supabase. Courses are not products; see `guidelines/05` decisions |
 | Academy public pages, learner access, progress, quizzes, certificates, course sales | yes | partly (courses readable; no entitlements/progress tables yet) | **Mock** — phases B (public pages), C (learner), D (checkout) |
 | Artist community | yes | no | **Mock**, post-launch |
 | Legal pages | yes | `content_pages` ready | Placeholders awaiting business/legal review |

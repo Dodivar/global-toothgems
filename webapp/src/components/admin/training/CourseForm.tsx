@@ -1,21 +1,19 @@
+import { useState } from "react";
 import { useTranslation } from "react-i18next";
-import { Award, BookOpen, GraduationCap, ImageIcon, Target } from "lucide-react";
+import { Award, BookOpen, Euro, GraduationCap, ImageIcon, Target } from "lucide-react";
 import clsx from "clsx";
 import { AdminSelect } from "../AdminSelect";
 import { FormField } from "../FormField";
 import { ToggleSwitch } from "../ToggleSwitch";
+import { MediaImage } from "./MediaImage";
+import { MediaPicker } from "./MediaPicker";
 import { ObjectiveList } from "./ObjectiveList";
 import { LangSwitch, MetaPill, Section, StatusBadge } from "./TrainingPrimitives";
-import {
-  COURSE_CATEGORIES,
-  COURSE_LEVELS,
-  COVER_LIBRARY,
-  INSTRUCTORS,
-  getInstructor,
-  type TrainingCourse,
-} from "../../../data/adminTraining";
+import { COURSE_CATEGORIES, COURSE_LEVELS, type TrainingCourse } from "../../../data/adminTraining";
+import { minorToDecimalString, parsePriceInput } from "../../../lib/coursePricing";
+import { useFormat } from "../../../lib/format";
 import { formatDuration } from "../../../lib/trainingFilters";
-import { useLocalized, type ContentLang } from "../../../lib/localized";
+import { type ContentLang } from "../../../lib/localized";
 
 /**
  * Course information: everything about a training that is not its structure.
@@ -106,7 +104,7 @@ export function CourseForm({
               )}
             </FormField>
 
-            <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-4">
+            <div className="grid gap-4 sm:grid-cols-3">
               <FormField label={t("admin.training.create.fieldCategory")}>
                 {(props) => (
                   <AdminSelect
@@ -148,17 +146,6 @@ export function CourseForm({
                   />
                 )}
               </FormField>
-
-              <FormField label={t("admin.training.create.fieldInstructor")}>
-                {(props) => (
-                  <AdminSelect
-                    {...props}
-                    value={draft.instructorId}
-                    onChange={(e) => onChange({ instructorId: e.target.value })}
-                    options={INSTRUCTORS.map((i) => ({ value: i.id, label: i.name }))}
-                  />
-                )}
-              </FormField>
             </div>
           </div>
         </Section>
@@ -168,38 +155,16 @@ export function CourseForm({
           description={t("admin.training.create.sectionMediaHint")}
           icon={ImageIcon}
         >
-          <fieldset className="m-0 grid gap-3 border-0 p-0">
-            <legend className="sr-only">{t("admin.training.create.fieldCover")}</legend>
-            <div className="grid grid-cols-2 gap-2 sm:grid-cols-4">
-              {COVER_LIBRARY.map((src, index) => {
-                const selected = src === draft.cover;
-                return (
-                  <label
-                    key={src}
-                    className={clsx(
-                      "relative block cursor-pointer overflow-hidden rounded-[var(--admin-radius-sm)] border-2 transition-colors",
-                      "focus-within:outline focus-within:outline-2 focus-within:outline-offset-2 focus-within:outline-[var(--focus-ring)]",
-                      selected ? "border-[var(--gt-emerald-500)]" : "border-transparent hover:border-[var(--gt-ink-400)]",
-                    )}
-                  >
-                    <input
-                      type="radio"
-                      name="course-cover"
-                      checked={selected}
-                      onChange={() => onChange({ cover: src })}
-                      className="sr-only"
-                    />
-                    <span className="sr-only">{`${t("admin.training.create.coverOption")} ${index + 1}`}</span>
-                    <img src={src} alt="" aria-hidden="true" className="aspect-[16/10] w-full object-cover" />
-                  </label>
-                );
-              })}
-            </div>
-            <p className="m-0 text-[length:var(--text-caption)] text-[var(--text-muted)]">
-              {t("admin.training.create.fieldCoverHint")}
-            </p>
-          </fieldset>
+          <MediaPicker
+            kind="image"
+            value={draft.cover}
+            onChange={(cover) => onChange({ cover })}
+            label={t("admin.training.create.fieldCover")}
+            hint={t("admin.training.create.fieldCoverHint")}
+          />
         </Section>
+
+        <PriceSection draft={draft} onChange={onChange} />
 
         <Section
           title={t("admin.training.create.sectionGoals")}
@@ -294,6 +259,51 @@ export function CourseForm({
 }
 
 /**
+ * The course price. A course is not a shop product: its price lives on the
+ * course and is typed here, as text so "349,90" works and no float is ever
+ * involved (`parsePriceInput` splits the digits). Promotions are set in the
+ * builder once the course exists (`CoursePromotions`).
+ */
+function PriceSection({ draft, onChange }: { draft: TrainingCourse; onChange: (patch: Partial<TrainingCourse>) => void }) {
+  const { t } = useTranslation();
+  const [text, setText] = useState(() => minorToDecimalString(draft.priceMinor).replace(".", ","));
+  const invalid = parsePriceInput(text) === null;
+
+  return (
+    <Section title={t("admin.training.price.section")} description={t("admin.training.price.sectionHint")} icon={Euro}>
+      <div className="grid gap-4 sm:max-w-[260px]">
+        <FormField
+          label={t("admin.training.price.field")}
+          hint={t("admin.training.price.fieldHint")}
+          error={invalid ? t("admin.training.price.invalid") : undefined}
+          required
+        >
+          {(props) => (
+            <div className="relative">
+              <input
+                {...props}
+                type="text"
+                inputMode="decimal"
+                className="gt-admin-field pr-10 tabular-nums"
+                value={text}
+                onChange={(e) => {
+                  setText(e.target.value);
+                  const minor = parsePriceInput(e.target.value);
+                  if (minor !== null) onChange({ priceMinor: minor });
+                }}
+              />
+              <span aria-hidden="true" className="pointer-events-none absolute right-3 top-1/2 -translate-y-1/2 text-[var(--text-muted)]">
+                {draft.currency === "EUR" ? "€" : draft.currency}
+              </span>
+            </div>
+          )}
+        </FormField>
+      </div>
+    </Section>
+  );
+}
+
+/**
  * How the course will look in the Academy catalogue.
  *
  * Sticky beside the form rather than behind a "Preview" button: the brief asks
@@ -310,8 +320,7 @@ function CoursePreviewCard({
   language: string;
 }) {
   const { t } = useTranslation();
-  const L = useLocalized();
-  const instructor = getInstructor(draft.instructorId);
+  const { formatMoney } = useFormat();
   const empty = draft.title[lang].trim() === "" && draft.shortDescription[lang].trim() === "";
 
   return (
@@ -325,7 +334,7 @@ function CoursePreviewCard({
       </p>
 
       <div className="gt-admin-panel overflow-hidden">
-        <img src={draft.cover} alt="" aria-hidden="true" className="aspect-[16/10] w-full object-cover" />
+        <MediaImage mediaRef={draft.cover} className="aspect-[16/10] w-full object-cover" />
         <div className="grid gap-2.5 p-4">
           {empty ? (
             <div className="grid gap-1 py-4 text-center">
@@ -355,20 +364,9 @@ function CoursePreviewCard({
                 {draft.shortDescription[lang]}
               </p>
 
-              {instructor && (
-                <p className="m-0 flex items-center gap-2 border-t border-[var(--border-subtle)] pt-2.5 text-[length:var(--text-caption)] text-[var(--text-muted)]">
-                  <span
-                    aria-hidden="true"
-                    className="grid h-7 w-7 flex-none place-items-center rounded-full bg-[var(--surface-brand)] text-[10px] font-bold text-[var(--gt-ink-900)]"
-                  >
-                    {instructor.initials}
-                  </span>
-                  <span className="grid leading-tight">
-                    <strong className="font-semibold text-[var(--text-primary)]">{instructor.name}</strong>
-                    <span>{L(instructor.role)}</span>
-                  </span>
-                </p>
-              )}
+              <p className="m-0 border-t border-[var(--border-subtle)] pt-2.5 text-[length:var(--text-body-sm)] font-semibold tabular-nums text-[var(--text-primary)]">
+                {draft.priceMinor > 0 ? formatMoney(draft.priceMinor, draft.currency) : t("admin.training.price.free")}
+              </p>
 
               {draft.objectives.length > 0 && (
                 <ul className="m-0 grid list-none gap-1 border-t border-[var(--border-subtle)] p-0 pt-2.5">

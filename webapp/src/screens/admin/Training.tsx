@@ -3,7 +3,7 @@
 import { useMemo, useState } from "react";
 import { useTranslation } from "react-i18next";
 import { useNavigate, useSearchParams } from "../../lib/navigation";
-import { GraduationCap, Plus, Trash2, Upload } from "lucide-react";
+import { GraduationCap, Images, Plus, Trash2, TriangleAlert, Upload } from "lucide-react";
 import { AdminButton } from "../../components/admin/AdminButton";
 import { AdminHeader } from "../../components/admin/AdminHeader";
 import { ConfirmationDialog } from "../../components/admin/ConfirmationDialog";
@@ -11,6 +11,8 @@ import { EmptyState } from "../../components/admin/EmptyState";
 import { StatCard } from "../../components/admin/StatCard";
 import { CourseCard, type CourseActions } from "../../components/admin/training/CourseCard";
 import { TrainingToolbar } from "../../components/admin/training/TrainingToolbar";
+import { trainingErrorMessage } from "../../components/admin/training/trainingErrors";
+import { MEDIA_LIBRARY_PATH } from "../../components/admin/training/MediaPickerDialog";
 import { useAdminTraining } from "../../lib/adminTraining";
 import { useLocalized } from "../../lib/localized";
 import { useToast } from "../../lib/toast";
@@ -39,7 +41,7 @@ export function Training() {
   const navigate = useNavigate();
   const { openNav } = useAdminShell();
   const { showToast } = useToast();
-  const { courses, loading, duplicateCourse, deleteCourse, setCourseStatus } = useAdminTraining();
+  const { courses, loading, loadError, reload, duplicateCourse, deleteCourse, setCourseStatus } = useAdminTraining();
 
   const [params, setParams] = useSearchParams();
   const [deleting, setDeleting] = useState<TrainingCourse | null>(null);
@@ -76,7 +78,7 @@ export function Training() {
     () => ({
       total: courses.length,
       published: courses.filter((c) => c.status === "published").length,
-      drafts: courses.filter((c) => c.status === "draft" || c.status === "review").length,
+      drafts: courses.filter((c) => c.status === "draft").length,
       learners: courses.reduce((total, c) => total + c.enrolled, 0),
     }),
     [courses],
@@ -86,13 +88,18 @@ export function Training() {
     onEdit: (course) => navigate(`/admin/formations/${course.id}`),
     onPreview: (course) => navigate(`/admin/formations/${course.id}/apercu`),
     onReview: (course) => navigate(`/admin/formations/${course.id}/publication`),
-    onDuplicate: (course) => {
-      const copy = duplicateCourse(course.id);
-      if (copy) {
-        showToast(
-          t("admin.training.toasts.duplicatedTitle"),
-          t("admin.training.toasts.duplicatedBody", { name: L(copy.title) }),
-        );
+    onDuplicate: async (course) => {
+      try {
+        const copy = await duplicateCourse(course.id);
+        if (copy) {
+          showToast(
+            t("admin.training.toasts.duplicatedTitle"),
+            t("admin.training.toasts.duplicatedBody", { name: L(copy.title) }),
+          );
+        }
+      } catch (error) {
+        const message = trainingErrorMessage(t, error);
+        showToast(message.title, message.body, "error");
       }
     },
     onUnpublish: (course) => setUnpublishing(course),
@@ -109,9 +116,19 @@ export function Training() {
         crumbs={[{ label: t("admin.nav.dashboard"), to: "/admin" }, { label: t("admin.nav.training") }]}
         onOpenNav={openNav}
         actions={
-          <AdminButton variant="primary" iconLeft={Plus} onClick={() => navigate("/admin/formations/nouvelle")}>
-            {t("admin.training.list.create")}
-          </AdminButton>
+          <>
+            <AdminButton
+              variant="outline"
+              iconLeft={Images}
+              onClick={() => navigate(MEDIA_LIBRARY_PATH)}
+              aria-label={t("admin.training.actions.mediaLibrary")}
+            >
+              <span className="hidden sm:inline">{t("admin.training.actions.mediaLibrary")}</span>
+            </AdminButton>
+            <AdminButton variant="primary" iconLeft={Plus} onClick={() => navigate("/admin/formations/nouvelle")}>
+              {t("admin.training.list.create")}
+            </AdminButton>
+          </>
         }
       />
 
@@ -161,7 +178,15 @@ export function Training() {
           totalCount={courses.length}
         />
 
-        {loading ? (
+        {loadError ? (
+          <div role="alert" className="gt-admin-panel grid justify-items-center gap-3 p-10 text-center">
+            <TriangleAlert size={26} aria-hidden="true" className="text-[var(--status-error-fg)]" />
+            <p className="m-0 font-semibold">{t("admin.training.errors.loadFailed")}</p>
+            <AdminButton variant="outline" size="sm" onClick={reload}>
+              {t("admin.training.errors.retry")}
+            </AdminButton>
+          </div>
+        ) : loading ? (
           <div className="grid gap-4 md:grid-cols-2 2xl:grid-cols-3">
             {Array.from({ length: 3 }).map((_, index) => (
               <div key={index} className="gt-admin-panel overflow-hidden" aria-hidden="true">
@@ -222,14 +247,20 @@ export function Training() {
         onConfirm={async () => {
           if (!unpublishing) return;
           setPending(true);
-          await setCourseStatus(unpublishing.id, "unpublished");
-          setPending(false);
-          showToast(
-            t("admin.training.toasts.unpublishedTitle"),
-            t("admin.training.toasts.unpublishedBody", { name: L(unpublishing.title) }),
-            "info",
-          );
-          setUnpublishing(null);
+          try {
+            await setCourseStatus(unpublishing.id, "unpublished");
+            showToast(
+              t("admin.training.toasts.unpublishedTitle"),
+              t("admin.training.toasts.unpublishedBody", { name: L(unpublishing.title) }),
+              "info",
+            );
+          } catch (error) {
+            const message = trainingErrorMessage(t, error);
+            showToast(message.title, message.body, "error");
+          } finally {
+            setPending(false);
+            setUnpublishing(null);
+          }
         }}
         onCancel={() => setUnpublishing(null)}
       />
@@ -252,15 +283,24 @@ export function Training() {
         confirmLabel={t("admin.training.publish.deleteConfirm")}
         cancelLabel={t("common.cancel")}
         confirmPhrase={deleting ? L(deleting.title) : undefined}
-        onConfirm={() => {
+        loading={pending}
+        onConfirm={async () => {
           if (!deleting) return;
-          deleteCourse(deleting.id);
-          showToast(
-            t("admin.training.toasts.deletedTitle"),
-            t("admin.training.toasts.deletedBody", { name: L(deleting.title) }),
-            "warning",
-          );
-          setDeleting(null);
+          setPending(true);
+          try {
+            await deleteCourse(deleting.id);
+            showToast(
+              t("admin.training.toasts.deletedTitle"),
+              t("admin.training.toasts.deletedBody", { name: L(deleting.title) }),
+              "warning",
+            );
+          } catch (error) {
+            const message = trainingErrorMessage(t, error);
+            showToast(message.title, message.body, "error");
+          } finally {
+            setPending(false);
+            setDeleting(null);
+          }
         }}
         onCancel={() => setDeleting(null)}
       />

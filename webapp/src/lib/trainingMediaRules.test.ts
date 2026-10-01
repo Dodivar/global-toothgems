@@ -2,7 +2,9 @@ import { describe, expect, it } from "vitest";
 import { TRAINING_COURSES } from "../data/adminTrainingSeed";
 import {
   MAX_UPLOAD_BYTES,
+  MAX_VIDEO_BYTES,
   displayName,
+  storageFileName,
   filterMedia,
   formatBytes,
   mediaUsage,
@@ -12,6 +14,10 @@ import {
 
 const item = (patch: Partial<TrainingMedia>): TrainingMedia => ({
   id: "m",
+  ref: patch.src ?? "/a.jpg",
+  kind: "image",
+  mimeType: "image/jpeg",
+  durationSeconds: null,
   src: "/a.jpg",
   name: "Image",
   alt: { fr: "", en: "" },
@@ -37,6 +43,13 @@ describe("validateUpload", () => {
     expect(validateUpload({ type: "image/png", size: 0 })).toBe("empty");
     expect(validateUpload({ type: "image/png", size: MAX_UPLOAD_BYTES + 1 })).toBe("size");
   });
+
+  it("accepts videos up to the plan's upload limit", () => {
+    expect(validateUpload({ type: "video/mp4", size: MAX_VIDEO_BYTES })).toBeNull();
+    expect(validateUpload({ type: "video/quicktime", size: 30_000_000 })).toBeNull();
+    expect(validateUpload({ type: "video/mp4", size: MAX_VIDEO_BYTES + 1 })).toBe("videoSize");
+    expect(validateUpload({ type: "video/x-msvideo", size: 10 })).toBe("type");
+  });
 });
 
 describe("filterMedia", () => {
@@ -55,6 +68,12 @@ describe("filterMedia", () => {
   it("searches names, descriptions and tags, ignoring accents and case", () => {
     expect(filterMedia(items, { ...all, query: "HYGIENE" }, usage, "fr").map((i) => i.id)).toEqual(["b"]);
     expect(filterMedia(items, { ...all, query: "polymerisation" }, usage, "fr").map((i) => i.id)).toEqual(["a"]);
+  });
+
+  it("filters by kind", () => {
+    const withVideo = [...items, item({ id: "v", src: "/v.mp4", kind: "video", createdAt: "2026-09-04T00:00:00.000Z" })];
+    expect(filterMedia(withVideo, { ...all, kind: "video" }, usage, "fr").map((i) => i.id)).toEqual(["v"]);
+    expect(filterMedia(withVideo, { ...all, kind: "image" }, usage, "fr")).toHaveLength(3);
   });
 
   it("filters by category and by usage", () => {
@@ -77,6 +96,12 @@ describe("mediaUsage", () => {
 describe("helpers", () => {
   it("derives a readable name from a file name", () => {
     expect(displayName("pose_de-la-gem.JPG")).toBe("pose de la gem");
+  });
+
+  it("makes a storage-safe file name", () => {
+    expect(storageFileName("Poser la gem (1).JPG")).toBe("poser-la-gem-1.jpg");
+    expect(storageFileName("Démo vidéo.MOV")).toBe("demo-video.mov");
+    expect(storageFileName("!!!.mp4")).toBe("media.mp4");
   });
 
   it("formats sizes per language", () => {

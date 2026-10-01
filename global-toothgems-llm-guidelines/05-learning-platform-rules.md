@@ -7,7 +7,7 @@ description: Academy rules and target architecture — courses, modules, lessons
 
 ## Current state
 
-The Academy is fully designed in the UI (catalogue, course sales pages, lesson player, quizzes, certificates, admin Training workspace and course builder). **Authoring schema is live (phase A, migration `academy_authoring`, 2026-10-01)**: courses, modules, steps, content blocks, quizzes, the training media library, course price and course promotions. Still on mock data: the public Academy pages (phase B: `data/courses.ts`), the learner side — access, progress, quiz attempts, certificates (phase C: `lib/progress.tsx`, `lib/learning/`), and selling a course (phase D, with checkout). See `supabase/README.md` → *Academy authoring*.
+The Academy is fully designed in the UI (catalogue, course sales pages, lesson player, quizzes, certificates, admin Training workspace and course builder). **Authoring schema is live (phase A, migration `academy_authoring`, 2026-10-01)**: courses, modules, steps, content blocks, quizzes, the training media library, course price and course promotions, written by the back office (`lib/adminTraining.tsx` + `lib/adminTrainingBackend.ts`, `lib/trainingMedia.tsx`, `/admin/formations/medias`). Still on mock data: the public Academy pages (phase B: `data/courses.ts`), the learner side — access, progress, quiz attempts, certificates (phase C: `lib/progress.tsx`, `lib/learning/`), and selling a course (phase D, with checkout). See `supabase/README.md` → *Academy authoring*.
 
 ## Decisions (owner, 2026-10-01)
 

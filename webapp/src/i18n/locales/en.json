@@ -3189,15 +3189,13 @@
       },
       "status": {
         "draft": "Draft",
-        "review": "Needs review",
         "published": "Published",
         "unpublished": "Unpublished"
       },
       "statusHelp": {
         "draft": "Being written, invisible to members.",
-        "review": "Complete, waiting for approval.",
         "published": "Available to eligible members.",
-        "unpublished": "Published before, then taken off the catalogue."
+        "unpublished": "Withdrawn: its buyers see it greyed out (“back soon”) and cannot open it."
       },
       "level": {
         "beginner": "Beginner",
@@ -3222,7 +3220,8 @@
         "review": "Review & publish",
         "delete": "Delete",
         "more": "More actions for {{name}}",
-        "back": "Back to training"
+        "back": "Back to training",
+        "mediaLibrary": "Media library"
       },
       "create": {
         "title": "Create training",
@@ -3249,12 +3248,10 @@
         "fieldCover": "Cover image",
         "fieldCoverHint": "Landscape format recommended.",
         "coverAlt": "Selected cover",
-        "coverOption": "Use this image",
         "fieldCategory": "Category",
         "fieldLevel": "Difficulty level",
         "fieldDuration": "Estimated duration",
         "fieldDurationHint": "In minutes. You can adjust it once the steps exist.",
-        "fieldInstructor": "Instructor",
         "objectives": "Learning objectives",
         "objectivesHint": "One objective per line, phrased as an action.",
         "objectiveAdd": "Add objective",
@@ -3332,7 +3329,8 @@
         "blocks_one": "{{count}} block",
         "blocks_other": "{{count}} blocks",
         "emptyStep": "Empty",
-        "treeLabel": "Course structure"
+        "treeLabel": "Course structure",
+        "loading": "Loading the course…"
       },
       "module": {
         "title": "Module",
@@ -3439,15 +3437,15 @@
         "videoTitleHint": "Shown on the player.",
         "videoDuration": "Duration",
         "videoDurationHint": "In mm:ss format.",
-        "videoSource": "Video source",
-        "videoSourceHint": "Where the file will live once hosting is connected.",
+        "videoSource": "Video file",
+        "videoSourceHint": "Choose a video uploaded to the training media library. Its length is filled in automatically.",
         "videoCaption": "Caption",
         "videoPoster": "Thumbnail",
         "videoPosterHint": "Image shown before playback.",
         "videoPreview": "Preview",
-        "videoMock": "Mock video — nothing plays in the prototype.",
         "typeLabel": "Content type",
-        "previewLabel": "Block preview"
+        "previewLabel": "Block preview",
+        "videoNone": "No video chosen yet."
       },
       "quiz": {
         "title": "Quiz",
@@ -3519,7 +3517,6 @@
         "bannerBody": "You're viewing this training as a learner.",
         "exit": "Exit preview",
         "contents": "Contents",
-        "by": "With {{name}}",
         "progress": "{{done}} of {{total}} steps",
         "progressLabel": "Course progress",
         "previous": "Previous",
@@ -3593,7 +3590,9 @@
           "questionTooFewAnswers": "Question {{question}} in module {{module}} has fewer than two answers.",
           "questionNoCorrect": "Question {{question}} in module {{module}} has no correct answer.",
           "questionManyCorrect": "Question {{question}} in module {{module}} has several correct answers.",
-          "questionNoFeedback": "Feedback for question {{question}} (module {{module}}) is incomplete."
+          "questionNoFeedback": "Feedback for question {{question}} (module {{module}}) is incomplete.",
+          "imageMissing": "Step {{step}} in module {{module}} contains an image block without an image.",
+          "videoMissing": "Step {{step}} in module {{module}} contains a video block without a video."
         },
         "fix": "Fix",
         "summaryTitle": "Summary",
@@ -3619,7 +3618,7 @@
         "warningsBody_other": "{{count}} recommendations are still open. You can publish anyway.",
         "confirm": "Publish training",
         "unpublishTitle": "Unpublish this course?",
-        "unpublishBody": "It will disappear from the catalogue. Members already enrolled keep their progress.",
+        "unpublishBody": "It will disappear from the catalogue. Its buyers will see it greyed out with a “back soon” message, without being able to open it, until it is published again.",
         "unpublishConfirm": "Unpublish",
         "deleteTitle": "Delete this course?",
         "deleteBody": "“{{name}}”, its modules, steps and quizzes will be removed.",
@@ -3658,6 +3657,81 @@
         "questionDuplicatedTitle": "Question duplicated",
         "questionDeletedTitle": "Question deleted",
         "reorderedTitle": "Order updated"
+      },
+      "price": {
+        "section": "Price",
+        "sectionHint": "The course's selling price, tax included. Courses are not sold in the shop.",
+        "field": "Price (tax incl.)",
+        "fieldHint": "0 for a free course.",
+        "invalid": "Enter an amount, for example 349 or 349.90.",
+        "free": "Free"
+      },
+      "promotions": {
+        "title": "Promotions",
+        "hint": "A dated discount on this course, as a percentage or an amount. One active promotion at a time. Saved immediately.",
+        "add": "Add a promotion",
+        "current": "Current price: {{price}}",
+        "currentDiscounted": "Current price: {{price}} instead of {{regular}}",
+        "empty": "No promotion for this course.",
+        "state": {
+          "running": "Running",
+          "scheduled": "Scheduled",
+          "ended": "Ended",
+          "inactive": "Disabled"
+        },
+        "percentOff": "−{{value}}%",
+        "amountOff": "−{{value}}",
+        "period": "from {{from}} to {{to}}",
+        "openEnded": "from {{from}}, no end date",
+        "edit": "Edit",
+        "editNamed": "Edit the promotion {{name}}",
+        "deleteNamed": "Delete the promotion {{name}}",
+        "deleteTitle": "Delete this promotion?",
+        "deleteBody": "The promotion “{{name}}” will be deleted. The course price does not change.",
+        "saved": "Promotion saved",
+        "deleted": "Promotion deleted",
+        "label": "Internal name",
+        "labelPlaceholder": "E.g. Back to school 2026",
+        "type": "Discount type",
+        "typePercentage": "Percentage",
+        "typeAmount": "Amount",
+        "valuePercent": "Discount (%)",
+        "valueAmount": "Discount ({{currency}})",
+        "starts": "Start",
+        "ends": "End (optional)",
+        "endsHint": "Leave empty for a promotion with no end date.",
+        "active": "Active",
+        "activeHint": "A disabled promotion is never applied.",
+        "resulting": "Price during the promotion: {{price}}",
+        "save": "Save the promotion",
+        "problems": {
+          "label": "Give the promotion a name.",
+          "value": "Enter a valid discount (a whole number from 1 to 99 for a percentage, an amount for a fixed discount).",
+          "percentRange": "A percentage discount must be below 100%.",
+          "amountTooHigh": "The discount must be lower than the course price.",
+          "start": "Enter the start date.",
+          "period": "The end must be after the start.",
+          "overlap": "Another active promotion already covers this period."
+        }
+      },
+      "errors": {
+        "title": "That did not go through",
+        "forbidden": "Your role does not allow editing courses.",
+        "notReady": "The course is not ready to be published yet.",
+        "published": "A course that was published cannot be deleted or turned back into a draft: take it off the catalogue instead.",
+        "overlap": "Another active promotion already covers this period.",
+        "amountTooHigh": "The discount must be lower than the course's saved price.",
+        "invalid": "Some information is not valid. Check the fields and try again.",
+        "network": "The server could not be reached. Your changes are kept here: try again.",
+        "loadFailed": "The courses could not be loaded.",
+        "retry": "Try again",
+        "ready": {
+          "no_modules": "Add at least one module.",
+          "empty_module": "Every module needs at least one step.",
+          "block_without_media": "Every image or video block needs its file.",
+          "empty_quiz": "Every quiz needs at least one question.",
+          "question_incomplete": "Every question needs at least two answers, one of them correct."
+        }
       }
     },
     "errors": {

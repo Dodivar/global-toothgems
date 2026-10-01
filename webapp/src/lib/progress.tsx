@@ -134,7 +134,15 @@ function today(): string {
 }
 
 export function ProgressProvider({ children }: { children: ReactNode }) {
-  const { getCourse: getTraining } = useAdminTraining();
+  const { getCourse: getAuthored, source } = useAdminTraining();
+  // The learner pages are still the prototype (phase C wires them to the
+  // database): with Supabase, the back office's store holds real courses with
+  // database ids, which the prototype enrolments do not point at — so they
+  // keep reading the seeded courses until then.
+  const getTraining = useCallback(
+    (id: string) => (source === "supabase" ? TRAINING_COURSES.find((c) => c.id === id) : getAuthored(id)),
+    [source, getAuthored],
+  );
   const [enrollments, setEnrollments] = useState<Record<string, Enrollment>>(seedEnrollments);
   const [activeCourseId, setActiveCourseId] = useState(DEFAULT_COURSE_ID);
 

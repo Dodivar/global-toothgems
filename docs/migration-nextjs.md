@@ -317,7 +317,7 @@ Legend (phase 1 done: every route below was served by the catch-all shell; phase
 | `/admin/promotions/campagnes/nouvelle`, `/:id`, `/:id/modifier` | staff | ✅ | ✅ `/nouvelle` (`zones.spec.ts`) | ✅ `app/admin/(staff)/…` | — | done (5): one segment per screen |
 | `/admin/avis` | staff | ✅ | ✅ (`zones.spec.ts`) | ✅ `app/admin/(staff)/…` | — | done (5): one segment per screen |
 | `/admin/parametres` | staff | ✅ | ✅ (`zones.spec.ts`) | ✅ `app/admin/(staff)/…` | — | done (5): one segment per screen |
-| `/admin/formations`, `/nouvelle`, `/:id`, `/:id/apercu`, `/:id/publication` | staff | ✅ | ✅ list only (`zones.spec.ts`) | ✅ `app/admin/(staff)/…` | — | done (5): one segment per screen |
+| `/admin/formations`, `/nouvelle`, `/medias`, `/:id`, `/:id/apercu`, `/:id/publication` | staff | ✅ | ✅ list only (`zones.spec.ts`) | ✅ `app/admin/(staff)/…` | — | done (5): one segment per screen |
 
 ### Help centre and legal pages
 

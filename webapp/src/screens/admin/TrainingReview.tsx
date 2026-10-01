@@ -17,6 +17,8 @@ import { AdminButton } from "../../components/admin/AdminButton";
 import { AdminHeader } from "../../components/admin/AdminHeader";
 import { ConfirmationDialog } from "../../components/admin/ConfirmationDialog";
 import { CountRow, StatusBadge } from "../../components/admin/training/TrainingPrimitives";
+import { MediaImage } from "../../components/admin/training/MediaImage";
+import { trainingErrorMessage } from "../../components/admin/training/trainingErrors";
 import { questionCount, quizCount, stepCount } from "../../data/adminTraining";
 import { useAdminTraining } from "../../lib/adminTraining";
 import { analyseCourse, type ReadinessIssue } from "../../lib/trainingReadiness";
@@ -44,7 +46,7 @@ export function TrainingReview() {
   const navigate = useNavigate();
   const { openNav } = useAdminShell();
   const { showToast } = useToast();
-  const { getCourse, setCourseStatus, saving } = useAdminTraining();
+  const { getCourse, setCourseStatus, saving, loading } = useAdminTraining();
 
   const [publishing, setPublishing] = useState(false);
   const [unpublishing, setUnpublishing] = useState(false);
@@ -52,7 +54,9 @@ export function TrainingReview() {
   const course = getCourse(id);
   const readiness = useMemo(() => (course ? analyseCourse(course) : null), [course]);
 
-  if (!course || !readiness) return <Navigate to="/admin/formations" replace />;
+  if (!course || !readiness) {
+    return loading ? <p className="m-0 p-8 text-center text-[var(--text-muted)]" role="status">{t("admin.training.builder.loading")}</p> : <Navigate to="/admin/formations" replace />;
+  }
 
   const title = L(course.title) || t("admin.training.create.fieldTitlePlaceholder");
   const builderPath = `/admin/formations/${course.id}`;
@@ -65,12 +69,18 @@ export function TrainingReview() {
   };
 
   const publish = async () => {
-    await setCourseStatus(course.id, "published");
-    setPublishing(false);
-    showToast(
-      t("admin.training.toasts.publishedTitle"),
-      t("admin.training.toasts.publishedBody", { name: title }),
-    );
+    try {
+      await setCourseStatus(course.id, "published");
+      showToast(
+        t("admin.training.toasts.publishedTitle"),
+        t("admin.training.toasts.publishedBody", { name: title }),
+      );
+    } catch (error) {
+      const message = trainingErrorMessage(t, error);
+      showToast(message.title, message.body, "error");
+    } finally {
+      setPublishing(false);
+    }
   };
 
   return (
@@ -253,7 +263,7 @@ export function TrainingReview() {
         {/* Summary */}
         <aside className="grid h-fit gap-3 xl:sticky xl:top-[calc(var(--admin-header-h)+20px)]">
           <section className="gt-admin-panel overflow-hidden">
-            <img src={course.cover} alt="" aria-hidden="true" className="aspect-[16/9] w-full object-cover" />
+            <MediaImage mediaRef={course.cover} className="aspect-[16/9] w-full object-cover" />
             <div className="grid gap-3 p-4">
               <h2 className="text-[length:var(--text-h4)]">{title}</h2>
               <p className="m-0 text-[length:var(--text-body-sm)] text-[var(--text-muted)]">
@@ -345,13 +355,19 @@ export function TrainingReview() {
         cancelLabel={t("common.cancel")}
         loading={saving}
         onConfirm={async () => {
-          await setCourseStatus(course.id, "unpublished");
-          setUnpublishing(false);
-          showToast(
-            t("admin.training.toasts.unpublishedTitle"),
-            t("admin.training.toasts.unpublishedBody", { name: title }),
-            "info",
-          );
+          try {
+            await setCourseStatus(course.id, "unpublished");
+            showToast(
+              t("admin.training.toasts.unpublishedTitle"),
+              t("admin.training.toasts.unpublishedBody", { name: title }),
+              "info",
+            );
+          } catch (error) {
+            const message = trainingErrorMessage(t, error);
+            showToast(message.title, message.body, "error");
+          } finally {
+            setUnpublishing(false);
+          }
         }}
         onCancel={() => setUnpublishing(false)}
       />

@@ -1,8 +1,6 @@
 import { createContext, useCallback, useContext, useEffect, useMemo, useRef, useState, type ReactNode } from "react";
 import {
-  COVER_LIBRARY,
   DEFAULT_QUIZ_SETTINGS,
-  MEDIA_LIBRARY,
   type Answer,
   type ContentBlock,
   type BlockType,
@@ -13,40 +11,38 @@ import {
   type Step,
   type TrainingCourse,
 } from "../data/adminTraining";
-import { TRAINING_COURSES } from "../data/adminTrainingSeed";
 import type { Localized } from "../data/types";
+import { useAdminAuth } from "./adminAuth";
+import { mockTrainingBackend, supabaseTrainingBackend, TrainingError, type TrainingBackend } from "./adminTrainingBackend";
+import { courseSlug } from "./adminTrainingMapping";
+import type { CoursePromotion } from "./coursePricing";
+import { isSupabaseConfigured, requireSupabase } from "./supabase/client";
 
 /**
- * Frontend training store: the authored course catalogue.
+ * The course builder's store: the authored course catalogue.
  *
- * Written by the back office and read by the learner experience
- * (`lib/progress.tsx`, `screens/learn/`), so the provider is mounted above the
- * whole app. The learner side only ever reads — and only published content.
+ * Read by the back office and, until the learner side is wired (phase C), by
+ * the prototype learner pages in mock mode (`lib/progress.tsx`).
  *
  * Structural edits — adding a step, reordering a module, marking an answer
- * correct — are synchronous. A builder where every click waits on a spinner is
- * a builder nobody wants to use, and the latency a real backend would add
- * belongs to saving, not to typing.
+ * correct — are synchronous and stay in memory: a builder where every click
+ * waits on the network is a builder nobody wants to use. Saving sends the
+ * whole course at once (`admin_save_course()`), and that is what the
+ * unsaved/saved indicator tracks. Persistence goes through a backend
+ * (`lib/adminTrainingBackend.ts`): Supabase when configured, the prototype's
+ * fixtures otherwise. With Supabase, nothing is read until a staff session is
+ * open — this provider sits under the root layout, above public pages too.
  *
- * Saving is therefore the only asynchronous operation, and it is what the
- * unsaved/saved indicator tracks. Everything lives in React state: a refresh
- * restores the seeded catalogue and nothing leaves the browser. Routing every
- * mutation through this one module is what will let the screens above it stay
- * unchanged when these bodies become server calls.
+ * Writes reject with a `TrainingError`; the screens turn it into a message
+ * (the toasts live below this provider).
  */
-
-/** How long a simulated save takes, so the save button has a real busy state. */
-export const SAVE_DELAY_MS = 700;
-
-/** Initial list fetch, so the catalogue can show its skeleton at least once. */
-const LOAD_DELAY_MS = 500;
 
 /* -------------------------------------------------------------------------- */
 /* Identity and array helpers                                                  */
 /* -------------------------------------------------------------------------- */
 
-let seq = 0;
-const newId = (prefix: string) => `${prefix}-${Date.now().toString(36)}-${(++seq).toString(36)}`;
+/** Node ids are created here, so a new node keeps its id once stored (uuid columns). */
+const newId = () => crypto.randomUUID();
 
 function move<T>(list: T[], from: number, to: number): T[] {
   if (from === to || from < 0 || to < 0 || from >= list.length || to >= list.length) return list;
@@ -74,32 +70,32 @@ function copyLabel(value: Localized): Localized {
 /* -------------------------------------------------------------------------- */
 
 function cloneBlock(block: ContentBlock): ContentBlock {
-  return { ...block, id: newId("b") };
+  return { ...block, id: newId() };
 }
 
 function cloneStep(step: Step, rename = true): Step {
   return {
     ...step,
-    id: newId("s"),
+    id: newId(),
     title: rename ? copyLabel(step.title) : step.title,
     blocks: step.blocks.map(cloneBlock),
   };
 }
 
 function cloneQuestion(question: Question, rename = false): Question {
-  const id = newId("q");
+  const id = newId();
   return {
     ...question,
     id,
     text: rename ? copyLabel(question.text) : question.text,
-    answers: question.answers.map((a, index) => ({ ...a, id: `${id}-a${index + 1}` })),
+    answers: question.answers.map((a) => ({ ...a, id: newId() })),
   };
 }
 
 function cloneQuiz(quiz: Quiz): Quiz {
   return {
     ...quiz,
-    id: newId("qz"),
+    id: newId(),
     settings: { ...quiz.settings },
     questions: quiz.questions.map((q) => cloneQuestion(q)),
   };
@@ -108,7 +104,7 @@ function cloneQuiz(quiz: Quiz): Quiz {
 function cloneModule(module: Module, rename = true): Module {
   return {
     ...module,
-    id: newId("m"),
+    id: newId(),
     title: rename ? copyLabel(module.title) : module.title,
     objectives: module.objectives.map((o) => ({ ...o })),
     steps: module.steps.map((s) => cloneStep(s, false)),
@@ -123,19 +119,22 @@ function cloneModule(module: Module, rename = true): Module {
 export function blankCourse(): TrainingCourse {
   const now = new Date().toISOString();
   return {
-    id: newId("course"),
+    id: newId(),
     title: empty(),
     shortDescription: empty(),
     fullDescription: empty(),
-    cover: COVER_LIBRARY[0],
+    cover: "",
     category: "technique",
     level: "beginner",
     duration: 0,
-    instructorId: "ins-camille",
     objectives: [],
     requirements: [],
     completion: { allSteps: true, allQuizzes: true, minScore: 70, certificate: true },
+    priceMinor: 0,
+    currency: "EUR",
+    slug: "",
     status: "draft",
+    publishedAt: null,
     createdAt: now,
     updatedAt: now,
     completionRate: 0,
@@ -146,10 +145,10 @@ export function blankCourse(): TrainingCourse {
 
 function newModule(index: number): Module {
   return {
-    id: newId("m"),
+    id: newId(),
     title: { fr: `Nouveau module ${index}`, en: `New module ${index}` },
     description: empty(),
-    cover: MEDIA_LIBRARY[index % MEDIA_LIBRARY.length].src,
+    cover: "",
     objectives: [],
     steps: [],
     quiz: null,
@@ -158,7 +157,7 @@ function newModule(index: number): Module {
 
 function newStep(index: number): Step {
   return {
-    id: newId("s"),
+    id: newId(),
     title: { fr: `Nouvelle étape ${index}`, en: `New step ${index}` },
     summary: empty(),
     duration: 5,
@@ -167,14 +166,12 @@ function newStep(index: number): Step {
 }
 
 /**
- * A new block arrives with placeholder content rather than empty.
- *
- * An empty image block renders as a hole in the page, which reads as a fault
- * rather than as something waiting to be filled; a visible placeholder the
- * administrator then replaces is both clearer and quicker.
+ * A new block arrives with placeholder text; image and video blocks arrive
+ * without a file, shown as an empty slot to fill from the media library (the
+ * publication check reports any left empty).
  */
 export function newBlock(type: BlockType): ContentBlock {
-  const id = newId("b");
+  const id = newId();
   if (type === "text") {
     return {
       id,
@@ -189,7 +186,7 @@ export function newBlock(type: BlockType): ContentBlock {
     return {
       id,
       type: "image",
-      src: MEDIA_LIBRARY[0].src,
+      src: "",
       alt: empty(),
       caption: empty(),
       align: "full",
@@ -198,16 +195,16 @@ export function newBlock(type: BlockType): ContentBlock {
   return {
     id,
     type: "video",
-    poster: MEDIA_LIBRARY[11].src,
+    poster: "",
     title: { fr: "Nouvelle vidéo", en: "New video" },
     duration: "00:00",
-    source: `gtg-media://training/${id}.mp4`,
+    source: "",
     caption: empty(),
   };
 }
 
 function newQuestion(index: number): Question {
-  const id = newId("q");
+  const id = newId();
   return {
     id,
     text: {
@@ -226,7 +223,7 @@ function newQuestion(index: number): Question {
 
 function newQuiz(): Quiz {
   return {
-    id: newId("qz"),
+    id: newId(),
     title: { fr: "Point de connaissances", en: "Knowledge check" },
     intro: {
       fr: "Quelques questions pour valider ce module.",
@@ -237,9 +234,9 @@ function newQuiz(): Quiz {
   };
 }
 
-export function newAnswer(questionId: string, index: number): Answer {
+export function newAnswer(): Answer {
   return {
-    id: `${questionId}-a${index}-${(++seq).toString(36)}`,
+    id: newId(),
     text: { fr: "Nouvelle réponse", en: "New answer" },
     correct: false,
   };
@@ -252,8 +249,13 @@ export function newAnswer(questionId: string, index: number): Answer {
 export type MoveDirection = "up" | "down";
 
 interface AdminTrainingValue {
+  /** Where courses are kept: the prototype fixtures or the Supabase database. */
+  source: "mock" | "supabase";
   courses: TrainingCourse[];
   loading: boolean;
+  /** Set when the last load failed. */
+  loadError: TrainingError | null;
+  reload: () => void;
   /** True once anything has been edited and not yet saved. */
   dirty: boolean;
   saving: boolean;
@@ -262,10 +264,17 @@ interface AdminTrainingValue {
   getCourse: (id: string) => TrainingCourse | undefined;
   createCourse: (course: TrainingCourse) => Promise<TrainingCourse>;
   updateCourse: (id: string, patch: Partial<TrainingCourse>) => void;
-  duplicateCourse: (id: string) => TrainingCourse | undefined;
-  deleteCourse: (id: string) => void;
+  /** Saves a draft copy (new ids, status draft) and resolves with it. */
+  duplicateCourse: (id: string) => Promise<TrainingCourse | undefined>;
+  /** Refused (`TrainingError("published")`) for a course that was ever published. */
+  deleteCourse: (id: string) => Promise<void>;
+  /** Saves the course first, so the database checks what the builder shows. */
   setCourseStatus: (id: string, status: CourseStatus) => Promise<void>;
   saveDraft: (id: string) => Promise<void>;
+
+  promotionsFor: (courseId: string) => CoursePromotion[];
+  savePromotion: (promotion: CoursePromotion) => Promise<CoursePromotion>;
+  deletePromotion: (id: string) => Promise<void>;
 
   addModule: (courseId: string) => string | undefined;
   updateModule: (courseId: string, moduleId: string, patch: Partial<Module>) => void;
@@ -304,10 +313,6 @@ interface AdminTrainingValue {
 
 const AdminTrainingContext = createContext<AdminTrainingValue | null>(null);
 
-function wait(ms: number) {
-  return new Promise((resolve) => setTimeout(resolve, ms));
-}
-
 /** Resolves a direction against a current index; a number passes through. */
 function target(to: number | MoveDirection, index: number): number {
   if (to === "up") return index - 1;
@@ -316,20 +321,71 @@ function target(to: number | MoveDirection, index: number): number {
 }
 
 export function AdminTrainingProvider({ children }: { children: ReactNode }) {
-  const [courses, setCourses] = useState<TrainingCourse[]>(TRAINING_COURSES);
+  const backend = useMemo<TrainingBackend>(
+    () => (isSupabaseConfigured ? supabaseTrainingBackend(requireSupabase) : mockTrainingBackend),
+    [],
+  );
+  const { admin, restoring } = useAdminAuth();
+  // The database is read only for a staff session (RLS would return nothing else anyway).
+  const enabled = backend.source === "mock" || (!restoring && admin !== null);
+
+  const [courses, setCourses] = useState<TrainingCourse[]>([]);
+  const [promotions, setPromotions] = useState<CoursePromotion[]>([]);
   const [loading, setLoading] = useState(true);
+  const [loadError, setLoadError] = useState<TrainingError | null>(null);
+  const [loadCount, setLoadCount] = useState(0);
   const [dirty, setDirty] = useState(false);
   const [saving, setSaving] = useState(false);
   const [lastSavedAt, setLastSavedAt] = useState<string | null>(null);
-  const savedRef = useRef<number | null>(null);
+
+  // Writes read the latest courses without being rebuilt on every keystroke.
+  const coursesRef = useRef(courses);
+  useEffect(() => {
+    coursesRef.current = courses;
+  }, [courses]);
 
   useEffect(() => {
-    const timer = setTimeout(() => setLoading(false), LOAD_DELAY_MS);
-    return () => clearTimeout(timer);
+    if (!enabled) return;
+    let cancelled = false;
+    setLoading(true);
+    backend
+      .load()
+      .then((result) => {
+        if (cancelled) return;
+        setCourses(result.courses);
+        setPromotions(result.promotions);
+        setLoadError(null);
+      })
+      .catch((error: unknown) => {
+        if (!cancelled) setLoadError(error instanceof TrainingError ? error : new TrainingError("network"));
+      })
+      .finally(() => {
+        if (!cancelled) setLoading(false);
+      });
+    return () => {
+      cancelled = true;
+    };
+  }, [backend, enabled, loadCount]);
+
+  const reload = useCallback(() => setLoadCount((n) => n + 1), []);
+
+  /** Runs one write with the busy flag, whatever its outcome. */
+  const persist = useCallback(async <T,>(write: () => Promise<T>): Promise<T> => {
+    setSaving(true);
+    try {
+      return await write();
+    } finally {
+      setSaving(false);
+    }
   }, []);
 
-  useEffect(() => () => {
-    if (savedRef.current) clearTimeout(savedRef.current);
+  /** Puts a stored course back into the list (the database's slug and dates win). */
+  const storeCourse = useCallback((saved: TrainingCourse) => {
+    setCourses((prev) =>
+      prev.some((c) => c.id === saved.id) ? prev.map((c) => (c.id === saved.id ? saved : c)) : [saved, ...prev],
+    );
+    setDirty(false);
+    setLastSavedAt(new Date().toISOString());
   }, []);
 
   /**
@@ -389,17 +445,14 @@ export function AdminTrainingProvider({ children }: { children: ReactNode }) {
 
   const getCourse = useCallback((id: string) => courses.find((c) => c.id === id), [courses]);
 
-  const createCourse = useCallback(async (course: TrainingCourse) => {
-    setSaving(true);
-    await wait(SAVE_DELAY_MS);
-    const now = new Date().toISOString();
-    const saved: TrainingCourse = { ...course, createdAt: now, updatedAt: now };
-    setCourses((prev) => [saved, ...prev]);
-    setSaving(false);
-    setDirty(false);
-    setLastSavedAt(now);
-    return saved;
-  }, []);
+  const createCourse = useCallback(
+    async (course: TrainingCourse) => {
+      const saved = await persist(() => backend.saveCourse({ ...course, slug: course.slug || courseSlug(course.title.fr) }));
+      storeCourse(saved);
+      return saved;
+    },
+    [backend, persist, storeCourse],
+  );
 
   const updateCourse = useCallback(
     (id: string, patch: Partial<TrainingCourse>) => edit(id, (course) => ({ ...course, ...patch })),
@@ -407,53 +460,89 @@ export function AdminTrainingProvider({ children }: { children: ReactNode }) {
   );
 
   const duplicateCourse = useCallback(
-    (id: string) => {
-      const source = courses.find((c) => c.id === id);
+    async (id: string) => {
+      const source = coursesRef.current.find((c) => c.id === id);
       if (!source) return undefined;
       const now = new Date().toISOString();
+      const title = copyLabel(source.title);
       const copy: TrainingCourse = {
         ...source,
-        id: newId("course"),
-        title: copyLabel(source.title),
+        id: newId(),
+        title,
+        slug: courseSlug(title.fr),
         // A copy always starts as a draft, whatever the original was: nothing
         // should reach learners because someone duplicated a published course.
         status: "draft",
+        publishedAt: null,
         createdAt: now,
         updatedAt: now,
         completionRate: 0,
         enrolled: 0,
         modules: source.modules.map((m) => cloneModule(m, false)),
       };
-      setCourses((prev) => [copy, ...prev]);
-      return copy;
+      const saved = await persist(() => backend.saveCourse(copy));
+      storeCourse(saved);
+      return saved;
     },
-    [courses],
+    [backend, persist, storeCourse],
   );
 
-  const deleteCourse = useCallback((id: string) => {
-    setCourses((prev) => prev.filter((c) => c.id !== id));
-  }, []);
+  const deleteCourse = useCallback(
+    async (id: string) => {
+      const course = coursesRef.current.find((c) => c.id === id);
+      if (!course) return;
+      await persist(() => backend.deleteCourse(course));
+      setCourses((prev) => prev.filter((c) => c.id !== id));
+      setPromotions((prev) => prev.filter((p) => p.courseId !== id));
+    },
+    [backend, persist],
+  );
+
+  const saveDraft = useCallback(
+    async (id: string) => {
+      const course = coursesRef.current.find((c) => c.id === id);
+      if (!course) return;
+      storeCourse(await persist(() => backend.saveCourse(course)));
+    },
+    [backend, persist, storeCourse],
+  );
 
   const setCourseStatus = useCallback(
     async (id: string, status: CourseStatus) => {
-      setSaving(true);
-      await wait(SAVE_DELAY_MS);
-      const now = new Date().toISOString();
-      setCourses((prev) => prev.map((c) => (c.id === id ? { ...c, status, updatedAt: now } : c)));
-      setSaving(false);
-      setDirty(false);
-      setLastSavedAt(now);
+      const course = coursesRef.current.find((c) => c.id === id);
+      if (!course) return;
+      await persist(async () => {
+        const saved = await backend.saveCourse(course);
+        const next = await backend.setStatus(saved, status);
+        storeCourse({ ...saved, ...next });
+      });
     },
-    [],
+    [backend, persist, storeCourse],
   );
 
-  const saveDraft = useCallback(async (_id: string) => {
-    setSaving(true);
-    await wait(SAVE_DELAY_MS);
-    setSaving(false);
-    setDirty(false);
-    setLastSavedAt(new Date().toISOString());
-  }, []);
+  const promotionsFor = useCallback(
+    (courseId: string) => promotions.filter((p) => p.courseId === courseId),
+    [promotions],
+  );
+
+  const savePromotion = useCallback(
+    async (promotion: CoursePromotion) => {
+      const saved = await persist(() => backend.savePromotion(promotion));
+      setPromotions((prev) =>
+        prev.some((p) => p.id === saved.id) ? prev.map((p) => (p.id === saved.id ? saved : p)) : [...prev, saved],
+      );
+      return saved;
+    },
+    [backend, persist],
+  );
+
+  const deletePromotion = useCallback(
+    async (id: string) => {
+      await persist(() => backend.deletePromotion(id));
+      setPromotions((prev) => prev.filter((p) => p.id !== id));
+    },
+    [backend, persist],
+  );
 
   /* ----------------------------------------------------------------------- */
   /* Modules                                                                  */
@@ -680,7 +769,7 @@ export function AdminTrainingProvider({ children }: { children: ReactNode }) {
     (courseId: string, moduleId: string, questionId: string) =>
       editQuestion(courseId, moduleId, questionId, (question) => ({
         ...question,
-        answers: [...question.answers, newAnswer(question.id, question.answers.length + 1)],
+        answers: [...question.answers, newAnswer()],
       })),
     [editQuestion],
   );
@@ -720,8 +809,11 @@ export function AdminTrainingProvider({ children }: { children: ReactNode }) {
 
   const value = useMemo<AdminTrainingValue>(
     () => ({
+      source: backend.source,
       courses,
       loading,
+      loadError,
+      reload,
       dirty,
       saving,
       lastSavedAt,
@@ -759,10 +851,16 @@ export function AdminTrainingProvider({ children }: { children: ReactNode }) {
       updateAnswer,
       deleteAnswer,
       setCorrectAnswer,
+      promotionsFor,
+      savePromotion,
+      deletePromotion,
     }),
     [
+      backend.source,
       courses,
       loading,
+      loadError,
+      reload,
       dirty,
       saving,
       lastSavedAt,
@@ -800,6 +898,9 @@ export function AdminTrainingProvider({ children }: { children: ReactNode }) {
       updateAnswer,
       deleteAnswer,
       setCorrectAnswer,
+      promotionsFor,
+      savePromotion,
+      deletePromotion,
     ],
   );
 

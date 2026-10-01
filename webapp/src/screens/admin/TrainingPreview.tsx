@@ -20,7 +20,8 @@ import { AdminButton } from "../../components/admin/AdminButton";
 import { EmptyState } from "../../components/admin/EmptyState";
 import { BlockView } from "../../components/admin/training/ContentBlocks";
 import { QuizPlayer } from "../../components/learning/QuizPlayer";
-import { getInstructor, type TrainingCourse } from "../../data/adminTraining";
+import type { TrainingCourse } from "../../data/adminTraining";
+import { MediaImage } from "../../components/admin/training/MediaImage";
 import { useAdminTraining } from "../../lib/adminTraining";
 import { useLocalized, type ContentLang } from "../../lib/localized";
 
@@ -46,7 +47,7 @@ export function TrainingPreview() {
   const { id = "" } = useParams();
   const navigate = useNavigate();
   const [params] = useSearchParams();
-  const { getCourse } = useAdminTraining();
+  const { getCourse, loading } = useAdminTraining();
 
   const course = getCourse(id);
   const lang: ContentLang = i18n.language.startsWith("en") ? "en" : "fr";
@@ -78,7 +79,9 @@ export function TrainingPreview() {
     if (index >= 0) setCurrent(index);
   }, [wantedModule, wantedStep, nodes]);
 
-  if (!course) return <Navigate to="/admin/formations" replace />;
+  if (!course) {
+    return loading ? <p className="m-0 p-8 text-center text-[var(--text-muted)]" role="status">{t("admin.training.builder.loading")}</p> : <Navigate to="/admin/formations" replace />;
+  }
 
   const exit = () => navigate(`/admin/formations/${course.id}`);
   const nodeKey = (node: Node) => (node.kind === "step" ? node.stepId : `quiz-${node.moduleId}`);
@@ -228,19 +231,13 @@ function Contents({
 }) {
   const { t } = useTranslation();
   const L = useLocalized();
-  const instructor = getInstructor(course.instructorId);
 
   return (
     <aside className="grid h-fit gap-4 lg:sticky lg:top-[84px]">
       <div className="gt-admin-panel overflow-hidden">
-        <img src={course.cover} alt="" aria-hidden="true" className="aspect-[16/9] w-full object-cover" />
+        <MediaImage mediaRef={course.cover} className="aspect-[16/9] w-full object-cover" />
         <div className="grid gap-2 p-4">
           <h1 className="text-[length:var(--text-h4)]">{L(course.title)}</h1>
-          {instructor && (
-            <p className="m-0 text-[length:var(--text-caption)] text-[var(--text-muted)]">
-              {t("admin.training.preview.by", { name: instructor.name })}
-            </p>
-          )}
 
           <div className="grid gap-1.5 pt-1">
             <div className="flex items-baseline justify-between gap-2">

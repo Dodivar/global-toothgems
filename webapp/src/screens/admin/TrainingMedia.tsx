@@ -1,87 +1,79 @@
-import { useId, useMemo, useRef, useState, type DragEvent } from "react";
+"use client";
+
+import { useId, useMemo, useRef, useState, type DragEvent, type ReactNode } from "react";
 import { useTranslation } from "react-i18next";
-import { Check, GraduationCap, ImagePlus, Images, Search, Trash2, TriangleAlert, UploadCloud, X } from "lucide-react";
+import { Check, Images, Save, Search, Trash2, TriangleAlert, UploadCloud } from "lucide-react";
 import clsx from "clsx";
-import { AdminButton } from "../AdminButton";
-import { AdminSelect } from "../AdminSelect";
-import { useAdminTraining } from "../../../lib/adminTraining";
-import { useFocusTrap } from "../../../lib/useFocusTrap";
-import { useTrainingMedia } from "../../../lib/trainingMedia";
+import { AdminButton } from "../../components/admin/AdminButton";
+import { AdminHeader } from "../../components/admin/AdminHeader";
+import { AdminSelect } from "../../components/admin/AdminSelect";
+import { MediaThumb } from "../../components/admin/training/MediaThumb";
+import { useAdminTraining } from "../../lib/adminTraining";
+import { useFormat } from "../../lib/format";
+import { useToast } from "../../lib/toast";
+import { useTrainingMedia, type RejectedUpload } from "../../lib/trainingMedia";
 import {
   ACCEPTED_TYPES,
-  MAX_UPLOAD_BYTES,
+  MAX_IMAGE_BYTES,
+  MAX_VIDEO_BYTES,
   MEDIA_CATEGORIES,
   filterMedia,
   formatBytes,
   mediaUsage,
   type MediaCategory,
-  type UploadRejection,
-  type TrainingMedia,
+  type MediaKind,
+  type TrainingMedia as Media,
   type UsageFilter,
-} from "../../../lib/trainingMediaRules";
-import { useFormat } from "../../../lib/format";
+} from "../../lib/trainingMediaRules";
+import { secondsToClock } from "../../lib/adminTrainingMapping";
+import { useAdminShell } from "./AdminLayout";
 
 /**
- * The training image library: the course editor's own media collection.
+ * The training media library: the course editor's images and videos, managed
+ * on their own screen (owner's decision, 2026-10-01) — upload (button or drag
+ * and drop), find, describe, delete. The course builder only picks from it.
  *
- * Opened from any image field of the course editor — an image block, a module
- * cover, a video thumbnail, a question illustration — to upload (button or
- * drag and drop), search, filter, inspect, describe, delete and finally insert
- * an image. It never lists product photographs, and says so in its header:
- * training material and shop media are different collections.
+ * Videos go to the private bucket through resumable uploads; the size limit
+ * shown is the plan's (50 MB per file on the free plan).
  *
- * The grid is a radio group: one image is selected at a time, which is what
- * arrow keys then move. Selection shows as a ring, a tick and the details
- * panel, never as a colour alone. An image used in a course cannot be deleted;
- * the panel says where the problem is instead of breaking a lesson.
+ * A file used by a course cannot be deleted: the panel says where the problem
+ * is, and the database refuses it anyway.
  */
-export function TrainingMediaLibrary({
-  initialSrc,
-  onInsert,
-  onClose,
-}: {
-  initialSrc?: string;
-  onInsert: (media: TrainingMedia) => void;
-  onClose: () => void;
-}) {
+export function TrainingMedia() {
   const { t, i18n } = useTranslation();
   const lang = i18n.language.startsWith("en") ? "en" : "fr";
+  const { openNav } = useAdminShell();
+  const { showToast } = useToast();
   const { courses } = useAdminTraining();
-  const { items, pending, upload, updateMedia, deleteMedia, findBySrc } = useTrainingMedia();
-  const ref = useFocusTrap<HTMLDivElement>(true, onClose);
+  const { items, loading, loadFailed, reload, pending, upload, updateMedia, deleteMedia } = useTrainingMedia();
   const fileInput = useRef<HTMLInputElement>(null);
-  const titleId = useId();
   const searchId = useId();
 
   const [query, setQuery] = useState("");
+  const [kind, setKind] = useState<MediaKind | "all">("all");
   const [category, setCategory] = useState<MediaCategory | "all">("all");
   const [usageFilter, setUsageFilter] = useState<UsageFilter>("all");
-  const [selectedId, setSelectedId] = useState<string | null>(() => (initialSrc ? findBySrc(initialSrc)?.id ?? null : null));
+  const [selectedId, setSelectedId] = useState<string | null>(null);
   const [dragging, setDragging] = useState(false);
-  const [rejected, setRejected] = useState<{ name: string; reason: UploadRejection }[]>([]);
-  const [confirmDelete, setConfirmDelete] = useState(false);
+  const [rejected, setRejected] = useState<RejectedUpload[]>([]);
 
   const usage = useMemo(() => mediaUsage(courses), [courses]);
   const visible = useMemo(
-    () => filterMedia(items, { query, category, usage: usageFilter }, usage, lang),
-    [items, query, category, usageFilter, usage, lang],
+    () => filterMedia(items, { query, category, usage: usageFilter, kind }, usage, lang),
+    [items, query, category, usageFilter, kind, usage, lang],
   );
   const selected = items.find((item) => item.id === selectedId) ?? null;
-  const filtered = query !== "" || category !== "all" || usageFilter !== "all";
-
-  const select = (id: string) => {
-    setSelectedId(id);
-    setConfirmDelete(false);
-  };
+  const filtered = query !== "" || category !== "all" || usageFilter !== "all" || kind !== "all";
 
   const receive = async (files: File[]) => {
     if (files.length === 0) return;
     const result = await upload(files, category === "all" ? "technique" : category);
     setRejected(result.rejected);
-    if (result.added[0]) {
+    if (result.added.length > 0) {
       setUsageFilter("all");
       setQuery("");
-      select(result.added[0].id);
+      setSelectedId(result.added[0].id);
+      showToast(t("trainingMedia.toasts.uploaded", { count: result.added.length }));
     }
   };
 
@@ -93,6 +85,7 @@ export function TrainingMediaLibrary({
 
   const clearFilters = () => {
     setQuery("");
+    setKind("all");
     setCategory("all");
     setUsageFilter("all");
   };
@@ -100,14 +93,38 @@ export function TrainingMediaLibrary({
   const openPicker = () => fileInput.current?.click();
 
   return (
-    <div className="fixed inset-0 z-[400] grid place-items-center p-0 sm:p-4">
-      <button type="button" aria-hidden="true" tabIndex={-1} onClick={onClose} className="gt-admin-scrim absolute inset-0 cursor-default bg-[rgba(17,17,17,.46)]" />
-      <div
-        ref={ref}
-        role="dialog"
-        aria-modal="true"
-        aria-labelledby={titleId}
+    <>
+      <AdminHeader
+        title={t("trainingMedia.page.title")}
+        description={t("trainingMedia.page.description")}
+        crumbs={[
+          { label: t("admin.nav.dashboard"), to: "/admin" },
+          { label: t("admin.nav.training"), to: "/admin/formations" },
+          { label: t("trainingMedia.page.crumb") },
+        ]}
+        onOpenNav={openNav}
+        actions={
+          <AdminButton variant="primary" iconLeft={UploadCloud} onClick={openPicker}>
+            {t("trainingMedia.upload")}
+          </AdminButton>
+        }
+      />
+      <input
+        ref={fileInput}
+        type="file"
+        accept={ACCEPTED_TYPES.join(",")}
+        multiple
+        className="sr-only"
         tabIndex={-1}
+        aria-hidden="true"
+        onChange={(e) => {
+          void receive(Array.from(e.target.files ?? []));
+          e.target.value = "";
+        }}
+      />
+
+      <div
+        className="relative grid gap-4 px-[var(--admin-gutter)] pb-[clamp(32px,5vw,56px)] pt-5"
         onDragOver={(e) => {
           e.preventDefault();
           setDragging(true);
@@ -116,37 +133,12 @@ export function TrainingMediaLibrary({
           if (!e.currentTarget.contains(e.relatedTarget as Node)) setDragging(false);
         }}
         onDrop={onDrop}
-        className="gt-admin gt-admin-dialog relative grid h-full w-full max-w-[1120px] grid-rows-[auto_auto_minmax(0,1fr)_auto] overflow-hidden bg-[var(--admin-panel)] shadow-[var(--shadow-lg)] sm:h-[min(800px,94vh)] sm:rounded-[var(--admin-radius)]"
       >
-        {/* Header */}
-        <header className="flex items-start gap-3 border-b border-[var(--border-subtle)] px-5 py-4">
-          <span aria-hidden="true" className="grid h-10 w-10 flex-none place-items-center rounded-[var(--admin-radius-sm)] bg-[var(--gt-blue-100)] text-[var(--gt-blue-700)]">
-            <Images size={19} strokeWidth={2} />
-          </span>
-          <div className="grid min-w-0 flex-1 gap-1">
-            <div className="flex flex-wrap items-center gap-2">
-              <h2 id={titleId} className="text-[length:var(--text-h4)]">
-                {t("trainingMedia.title")}
-              </h2>
-              <span className="inline-flex items-center gap-1 rounded-[var(--radius-pill)] bg-[var(--gt-emerald-50)] px-2 py-0.5 text-[10px] font-semibold uppercase tracking-[var(--tracking-wide)] text-[var(--accent-cta-ink)]">
-                <GraduationCap size={11} aria-hidden="true" />
-                {t("trainingMedia.badge")}
-              </span>
-            </div>
-            <p className="m-0 text-[length:var(--text-caption)] text-[var(--text-muted)]">{t("trainingMedia.subtitle")}</p>
-          </div>
-          <button
-            type="button"
-            onClick={onClose}
-            aria-label={t("trainingMedia.close")}
-            className="grid h-9 w-9 flex-none place-items-center rounded-[var(--admin-radius-sm)] text-[var(--text-muted)] hover:bg-[var(--gt-ink-100)] hover:text-[var(--text-primary)]"
-          >
-            <X size={17} aria-hidden="true" />
-          </button>
-        </header>
+        <p className="m-0 text-[length:var(--text-caption)] text-[var(--text-muted)]">
+          {t("trainingMedia.page.limits", { image: formatBytes(MAX_IMAGE_BYTES, lang), video: formatBytes(MAX_VIDEO_BYTES, lang) })}
+        </p>
 
-        {/* Toolbar */}
-        <div className="grid gap-3 border-b border-[var(--border-subtle)] px-5 py-3">
+        <div className="gt-admin-panel grid gap-3 p-3">
           <div className="flex flex-wrap items-center gap-2">
             <div className="relative min-w-[200px] flex-1">
               <label htmlFor={searchId} className="sr-only">
@@ -162,6 +154,18 @@ export function TrainingMediaLibrary({
                 className="gt-admin-field pl-9"
               />
             </div>
+            <div className="w-[160px]">
+              <AdminSelect
+                aria-label={t("trainingMedia.kindFilter")}
+                value={kind}
+                onChange={(e) => setKind(e.target.value as MediaKind | "all")}
+                options={[
+                  { value: "all", label: t("trainingMedia.kind.all") },
+                  { value: "image", label: t("trainingMedia.kind.image") },
+                  { value: "video", label: t("trainingMedia.kind.video") },
+                ]}
+              />
+            </div>
             <div className="w-[190px]">
               <AdminSelect
                 aria-label={t("trainingMedia.usageFilter")}
@@ -174,22 +178,6 @@ export function TrainingMediaLibrary({
                 ]}
               />
             </div>
-            <AdminButton variant="primary" iconLeft={UploadCloud} onClick={openPicker}>
-              {t("trainingMedia.upload")}
-            </AdminButton>
-            <input
-              ref={fileInput}
-              type="file"
-              accept={ACCEPTED_TYPES.join(",")}
-              multiple
-              className="sr-only"
-              tabIndex={-1}
-              aria-hidden="true"
-              onChange={(e) => {
-                void receive(Array.from(e.target.files ?? []));
-                e.target.value = "";
-              }}
-            />
           </div>
           <div role="group" aria-label={t("trainingMedia.categoryFilter")} className="gt-scroller -mx-1 flex gap-1.5 px-1">
             {(["all", ...MEDIA_CATEGORIES] as const).map((value) => (
@@ -212,41 +200,54 @@ export function TrainingMediaLibrary({
           </div>
         </div>
 
-        {/* Body */}
-        <div className="grid min-h-0 grid-rows-[minmax(0,1fr)_auto] md:grid-cols-[minmax(0,1fr)_300px] md:grid-rows-1">
-          <div className="gt-admin-scroll relative min-h-0 overflow-y-auto p-5">
-            {rejected.length > 0 && (
-              <div role="alert" className="mb-4 grid gap-1 rounded-[var(--admin-radius-sm)] bg-[var(--status-error-bg)] p-3 text-[length:var(--text-caption)] text-[var(--status-error-fg)]">
-                <strong className="flex items-center gap-1.5">
-                  <TriangleAlert size={13} aria-hidden="true" />
-                  {t("trainingMedia.rejectedTitle", { count: rejected.length })}
-                </strong>
-                <ul className="m-0 grid list-none gap-0.5 p-0">
-                  {rejected.map((r) => (
-                    <li key={r.name}>
-                      {r.name} — {t(`trainingMedia.rejected.${r.reason}`, { max: formatBytes(MAX_UPLOAD_BYTES, lang) })}
-                    </li>
-                  ))}
-                </ul>
-              </div>
-            )}
+        {rejected.length > 0 && (
+          <div role="alert" className="grid gap-1 rounded-[var(--admin-radius-sm)] bg-[var(--status-error-bg)] p-3 text-[length:var(--text-caption)] text-[var(--status-error-fg)]">
+            <strong className="flex items-center gap-1.5">
+              <TriangleAlert size={13} aria-hidden="true" />
+              {t("trainingMedia.rejectedTitle", { count: rejected.length })}
+            </strong>
+            <ul className="m-0 grid list-none gap-0.5 p-0">
+              {rejected.map((r) => (
+                <li key={r.name}>
+                  {r.name} — {t(`trainingMedia.rejected.${r.reason}`, { max: formatBytes(r.reason === "videoSize" ? MAX_VIDEO_BYTES : MAX_IMAGE_BYTES, lang) })}
+                </li>
+              ))}
+            </ul>
+          </div>
+        )}
 
-            {items.length === 0 && pending.length === 0 ? (
+        <div className="grid items-start gap-4 lg:grid-cols-[minmax(0,1fr)_320px]">
+          <section aria-label={t("trainingMedia.gridLabel")} className="gt-admin-panel relative min-h-[320px] p-4">
+            {loadFailed ? (
+              <div role="alert" className="grid justify-items-center gap-3 py-16 text-center">
+                <TriangleAlert size={26} aria-hidden="true" className="text-[var(--status-error-fg)]" />
+                <p className="m-0 font-semibold">{t("trainingMedia.loadFailed")}</p>
+                <AdminButton variant="outline" size="sm" onClick={reload}>
+                  {t("trainingMedia.retry")}
+                </AdminButton>
+              </div>
+            ) : loading && items.length === 0 ? (
+              <div className="grid grid-cols-2 gap-3 sm:grid-cols-3 xl:grid-cols-4" aria-hidden="true">
+                {Array.from({ length: 8 }).map((_, index) => (
+                  <span key={index} className="gt-skeleton block aspect-square rounded-[var(--admin-radius-sm)]" />
+                ))}
+              </div>
+            ) : items.length === 0 && pending.length === 0 ? (
               <EmptyLibrary onUpload={openPicker} />
             ) : (
               <>
                 {pending.length > 0 && (
-                  <ul aria-label={t("trainingMedia.uploading")} className="m-0 mb-4 grid list-none grid-cols-2 gap-3 p-0 sm:grid-cols-3 lg:grid-cols-4">
+                  <ul aria-label={t("trainingMedia.uploading")} className="m-0 mb-4 grid list-none grid-cols-2 gap-3 p-0 sm:grid-cols-3 xl:grid-cols-4">
                     {pending.map((p) => (
                       <li key={p.id} className="grid gap-1.5">
                         <span className="relative block aspect-square overflow-hidden rounded-[var(--admin-radius-sm)] bg-[var(--surface-sunken)]">
-                          <img src={p.preview} alt="" className="h-full w-full object-cover opacity-50" />
+                          {p.kind === "image" && <img src={p.preview} alt="" className="h-full w-full object-cover opacity-50" />}
                           <span className="absolute inset-x-2 bottom-2 h-1.5 overflow-hidden rounded-full bg-[rgba(255,255,255,.7)]">
                             <span className="block h-full bg-[var(--accent-cta)] transition-[width]" style={{ width: `${p.progress}%` }} />
                           </span>
                         </span>
                         <span className="truncate text-[length:var(--text-caption)] text-[var(--text-muted)]">
-                          {t("trainingMedia.uploadingFile", { progress: p.progress })}
+                          {p.name} — {t("trainingMedia.uploadingFile", { progress: p.progress })}
                         </span>
                       </li>
                     ))}
@@ -269,21 +270,21 @@ export function TrainingMediaLibrary({
                     <p className="m-0 mb-3 text-[length:var(--text-caption)] text-[var(--text-muted)]" aria-live="polite">
                       {t("trainingMedia.count", { count: visible.length })}
                     </p>
-                    <div className="grid grid-cols-2 gap-3 sm:grid-cols-3 lg:grid-cols-4">
+                    <div className="grid grid-cols-2 gap-3 sm:grid-cols-3 xl:grid-cols-4">
                       {visible.map((item) => {
                         const isSelected = item.id === selectedId;
-                        const used = usage.get(item.src) ?? 0;
+                        const used = usage.get(item.ref) ?? 0;
                         return (
                           <label key={item.id} className="group grid cursor-pointer gap-1.5">
-                            <input type="radio" name="training-media" checked={isSelected} onChange={() => select(item.id)} className="peer sr-only" />
+                            <input type="radio" name="training-media" checked={isSelected} onChange={() => setSelectedId(item.id)} className="peer sr-only" />
                             <span
                               className={clsx(
-                                "relative block aspect-square overflow-hidden rounded-[var(--admin-radius-sm)] bg-[var(--surface-sunken)] ring-offset-2 transition-shadow",
+                                "relative block aspect-square overflow-hidden rounded-[var(--admin-radius-sm)] ring-offset-2 transition-shadow",
                                 "peer-focus-visible:outline peer-focus-visible:outline-2 peer-focus-visible:outline-offset-4 peer-focus-visible:outline-[var(--focus-ring)]",
                                 isSelected ? "ring-[3px] ring-[var(--gt-emerald-500)]" : "ring-1 ring-[var(--border-subtle)] group-hover:ring-[var(--gt-ink-400)]",
                               )}
                             >
-                              <img src={item.src} alt="" loading="lazy" className="h-full w-full object-cover" />
+                              <MediaThumb media={item} className="h-full w-full" />
                               {isSelected && (
                                 <span aria-hidden="true" className="absolute right-2 top-2 grid h-6 w-6 place-items-center rounded-full bg-[var(--gt-emerald-500)] text-[var(--gt-white)] shadow-[var(--shadow-sm)]">
                                   <Check size={14} strokeWidth={3} />
@@ -302,7 +303,10 @@ export function TrainingMediaLibrary({
                             </span>
                             <span className={clsx("truncate text-[length:var(--text-caption)]", isSelected ? "font-semibold text-[var(--text-primary)]" : "text-[var(--text-body)]")}>
                               {item.name}
-                              {isSelected && <span className="sr-only"> — {t("trainingMedia.selected")}</span>}
+                              <span className="sr-only">
+                                {" "}— {t(`trainingMedia.kind.${item.kind}`)}
+                                {isSelected ? `, ${t("trainingMedia.selected")}` : ""}
+                              </span>
                             </span>
                           </label>
                         );
@@ -321,47 +325,46 @@ export function TrainingMediaLibrary({
                 </span>
               </div>
             )}
-          </div>
+          </section>
 
           <DetailsPanel
+            key={selected?.id ?? "none"}
             media={selected}
-            used={selected ? usage.get(selected.src) ?? 0 : 0}
-            confirmDelete={confirmDelete}
-            onAskDelete={() => setConfirmDelete(true)}
-            onCancelDelete={() => setConfirmDelete(false)}
-            onDelete={() => {
+            used={selected ? usage.get(selected.ref) ?? 0 : 0}
+            onSave={async (patch) => {
               if (!selected) return;
-              deleteMedia(selected.id);
-              setSelectedId(null);
-              setConfirmDelete(false);
+              try {
+                await updateMedia(selected.id, patch);
+                showToast(t("trainingMedia.toasts.saved"));
+              } catch {
+                showToast(t("trainingMedia.toasts.saveFailed"), undefined, "error");
+              }
             }}
-            onChange={(patch) => selected && updateMedia(selected.id, patch)}
+            onDelete={async () => {
+              if (!selected) return;
+              try {
+                const outcome = await deleteMedia(selected.id);
+                if (outcome === "inUse") {
+                  showToast(t("trainingMedia.toasts.inUse"), undefined, "warning");
+                  return;
+                }
+                setSelectedId(null);
+                showToast(t("trainingMedia.toasts.deleted"), undefined, "info");
+              } catch {
+                showToast(t("trainingMedia.toasts.deleteFailed"), undefined, "error");
+              }
+            }}
           />
         </div>
-
-        {/* Footer */}
-        <footer className="flex flex-wrap items-center justify-between gap-3 border-t border-[var(--border-subtle)] bg-[var(--admin-panel-sunken)] px-5 py-3">
-          <p className="m-0 min-w-0 truncate text-[length:var(--text-caption)] text-[var(--text-muted)]">
-            {selected ? t("trainingMedia.selectedName", { name: selected.name }) : t("trainingMedia.noneSelected")}
-          </p>
-          <div className="flex gap-2">
-            <AdminButton variant="outline" onClick={onClose}>
-              {t("trainingMedia.cancel")}
-            </AdminButton>
-            <AdminButton variant="primary" iconLeft={ImagePlus} disabled={!selected} onClick={() => selected && onInsert(selected)}>
-              {t("trainingMedia.insert")}
-            </AdminButton>
-          </div>
-        </footer>
       </div>
-    </div>
+    </>
   );
 }
 
 function EmptyLibrary({ onUpload }: { onUpload: () => void }) {
   const { t } = useTranslation();
   return (
-    <div className="grid h-full min-h-[320px] place-items-center rounded-[var(--admin-radius)] border-2 border-dashed border-[var(--border-default)] p-8 text-center">
+    <div className="grid h-full min-h-[300px] place-items-center rounded-[var(--admin-radius)] border-2 border-dashed border-[var(--border-default)] p-8 text-center">
       <div className="grid justify-items-center gap-3">
         <span className="grid h-14 w-14 place-items-center rounded-full bg-[var(--gt-blue-100)] text-[var(--gt-blue-700)]">
           <Images size={26} aria-hidden="true" />
@@ -376,43 +379,63 @@ function EmptyLibrary({ onUpload }: { onUpload: () => void }) {
   );
 }
 
+type DraftPatch = Pick<Media, "name" | "alt" | "category" | "tags">;
+
+/** The selected file: preview, facts, description (saved explicitly) and deletion. */
 function DetailsPanel({
   media,
   used,
-  confirmDelete,
-  onAskDelete,
-  onCancelDelete,
+  onSave,
   onDelete,
-  onChange,
 }: {
-  media: TrainingMedia | null;
+  media: Media | null;
   used: number;
-  confirmDelete: boolean;
-  onAskDelete: () => void;
-  onCancelDelete: () => void;
-  onDelete: () => void;
-  onChange: (patch: Partial<Pick<TrainingMedia, "name" | "alt" | "category" | "tags">>) => void;
+  onSave: (patch: DraftPatch) => Promise<void>;
+  onDelete: () => Promise<void>;
 }) {
   const { formatDate } = useFormat();
   const { t, i18n } = useTranslation();
   const lang = i18n.language;
   const ids = { name: useId(), altFr: useId(), altEn: useId(), tags: useId(), category: useId() };
+  const [draft, setDraft] = useState<DraftPatch | null>(() =>
+    media ? { name: media.name, alt: { ...media.alt }, category: media.category, tags: media.tags } : null,
+  );
+  const [tagsText, setTagsText] = useState(media?.tags.join(", ") ?? "");
+  const [busy, setBusy] = useState(false);
+  const [confirmDelete, setConfirmDelete] = useState(false);
 
-  if (!media) {
+
+  if (!media || !draft) {
     return (
-      <aside className="hidden border-l border-[var(--border-subtle)] bg-[var(--admin-panel-sunken)] p-5 md:grid md:place-items-center">
-        <p className="m-0 max-w-[24ch] text-center text-[length:var(--text-caption)] text-[var(--text-muted)]">{t("trainingMedia.detailsEmpty")}</p>
+      <aside className="gt-admin-panel hidden p-5 text-center lg:grid lg:min-h-[320px] lg:place-items-center">
+        <p className="m-0 max-w-[24ch] text-[length:var(--text-caption)] text-[var(--text-muted)]">{t("trainingMedia.detailsEmpty")}</p>
       </aside>
     );
   }
 
+  const tags = tagsText.split(",").map((tag) => tag.trim()).filter(Boolean);
+  const changed =
+    draft.name !== media.name ||
+    draft.alt.fr !== media.alt.fr ||
+    draft.alt.en !== media.alt.en ||
+    draft.category !== media.category ||
+    tags.join("|") !== media.tags.join("|");
+
   return (
-    <aside
-      aria-label={t("trainingMedia.details")}
-      className="gt-admin-scroll grid max-h-[40vh] content-start gap-3 overflow-y-auto border-t border-[var(--border-subtle)] bg-[var(--admin-panel-sunken)] p-4 md:max-h-none md:border-l md:border-t-0 md:p-5"
-    >
-      <img src={media.src} alt="" className="aspect-[4/3] w-full rounded-[var(--admin-radius-sm)] bg-[var(--surface-sunken)] object-contain max-md:hidden" />
+    <aside aria-label={t("trainingMedia.details")} className="gt-admin-panel grid content-start gap-3 p-4 lg:sticky lg:top-[calc(var(--admin-header-h)+16px)]">
+      {media.kind === "video" && media.src ? (
+        <video src={media.src} controls preload="metadata" playsInline className="aspect-video w-full rounded-[var(--admin-radius-sm)] bg-[var(--gt-ink-900)]">
+          <track kind="captions" />
+        </video>
+      ) : (
+        <MediaThumb media={media} className="aspect-[4/3] w-full overflow-hidden rounded-[var(--admin-radius-sm)] object-contain" />
+      )}
       <dl className="m-0 grid grid-cols-[auto_1fr] gap-x-3 gap-y-1 text-[length:var(--text-caption)]">
+        <dt className="text-[var(--text-muted)]">{t("trainingMedia.meta.kind")}</dt>
+        <dd className="m-0 text-[var(--text-primary)]">
+          {t(`trainingMedia.kind.${media.kind}`)}
+          {media.durationSeconds !== null ? ` · ${secondsToClock(media.durationSeconds)}` : ""}
+        </dd>
         <dt className="text-[var(--text-muted)]">{t("trainingMedia.meta.size")}</dt>
         <dd className="m-0 tabular-nums text-[var(--text-primary)]">
           {media.width > 0 ? `${media.width} × ${media.height} px · ` : ""}
@@ -425,32 +448,41 @@ function DetailsPanel({
       </dl>
 
       <Field id={ids.name} label={t("trainingMedia.fields.name")}>
-        <input id={ids.name} type="text" className="gt-admin-field" value={media.name} onChange={(e) => onChange({ name: e.target.value })} />
+        <input id={ids.name} type="text" maxLength={200} className="gt-admin-field" value={draft.name} onChange={(e) => setDraft({ ...draft, name: e.target.value })} />
       </Field>
       <Field id={ids.category} label={t("trainingMedia.fields.category")}>
         <AdminSelect
           id={ids.category}
-          value={media.category}
-          onChange={(e) => onChange({ category: e.target.value as MediaCategory })}
+          value={draft.category}
+          onChange={(e) => setDraft({ ...draft, category: e.target.value as MediaCategory })}
           options={MEDIA_CATEGORIES.map((value) => ({ value, label: t(`trainingMedia.category.${value}`) }))}
         />
       </Field>
       <Field id={ids.altFr} label={t("trainingMedia.fields.altFr")} hint={t("trainingMedia.fields.altHint")}>
-        <input id={ids.altFr} type="text" className="gt-admin-field" value={media.alt.fr} onChange={(e) => onChange({ alt: { ...media.alt, fr: e.target.value } })} />
+        <input id={ids.altFr} type="text" maxLength={500} className="gt-admin-field" value={draft.alt.fr} onChange={(e) => setDraft({ ...draft, alt: { ...draft.alt, fr: e.target.value } })} />
       </Field>
       <Field id={ids.altEn} label={t("trainingMedia.fields.altEn")}>
-        <input id={ids.altEn} type="text" className="gt-admin-field" value={media.alt.en} onChange={(e) => onChange({ alt: { ...media.alt, en: e.target.value } })} />
+        <input id={ids.altEn} type="text" maxLength={500} className="gt-admin-field" value={draft.alt.en} onChange={(e) => setDraft({ ...draft, alt: { ...draft.alt, en: e.target.value } })} />
       </Field>
       <Field id={ids.tags} label={t("trainingMedia.fields.tags")} hint={t("trainingMedia.fields.tagsHint")}>
-        <input
-          id={ids.tags}
-          type="text"
-          className="gt-admin-field"
-          defaultValue={media.tags.join(", ")}
-          key={media.id}
-          onBlur={(e) => onChange({ tags: e.target.value.split(",").map((tag) => tag.trim()).filter(Boolean) })}
-        />
+        <input id={ids.tags} type="text" className="gt-admin-field" value={tagsText} onChange={(e) => setTagsText(e.target.value)} />
       </Field>
+
+      <AdminButton
+        variant="primary"
+        size="sm"
+        iconLeft={Save}
+        disabled={!changed || draft.name.trim() === ""}
+        loading={busy}
+        className="justify-self-start"
+        onClick={async () => {
+          setBusy(true);
+          await onSave({ ...draft, tags });
+          setBusy(false);
+        }}
+      >
+        {t("trainingMedia.save")}
+      </AdminButton>
 
       <div className="grid gap-2 border-t border-[var(--border-subtle)] pt-3">
         {used > 0 ? (
@@ -462,10 +494,21 @@ function DetailsPanel({
           <div role="alert" className="grid gap-2 rounded-[var(--admin-radius-sm)] bg-[var(--status-error-bg)] p-3 text-[length:var(--text-caption)] text-[var(--status-error-fg)]">
             <strong>{t("trainingMedia.deleteConfirm")}</strong>
             <div className="flex gap-2">
-              <AdminButton size="sm" variant="danger" iconLeft={Trash2} onClick={onDelete}>
+              <AdminButton
+                size="sm"
+                variant="danger"
+                iconLeft={Trash2}
+                loading={busy}
+                onClick={async () => {
+                  setBusy(true);
+                  await onDelete();
+                  setBusy(false);
+                  setConfirmDelete(false);
+                }}
+              >
                 {t("trainingMedia.delete")}
               </AdminButton>
-              <AdminButton size="sm" variant="outline" onClick={onCancelDelete}>
+              <AdminButton size="sm" variant="outline" onClick={() => setConfirmDelete(false)}>
                 {t("trainingMedia.cancel")}
               </AdminButton>
             </div>
@@ -475,7 +518,7 @@ function DetailsPanel({
             size="sm"
             variant="ghost"
             iconLeft={Trash2}
-            onClick={onAskDelete}
+            onClick={() => setConfirmDelete(true)}
             className="justify-self-start text-[var(--status-error-fg)] hover:bg-[var(--status-error-bg)]"
           >
             {t("trainingMedia.delete")}
@@ -486,7 +529,7 @@ function DetailsPanel({
   );
 }
 
-function Field({ id, label, hint, children }: { id: string; label: string; hint?: string; children: React.ReactNode }) {
+function Field({ id, label, hint, children }: { id: string; label: string; hint?: string; children: ReactNode }) {
   return (
     <div className="grid gap-1">
       <label htmlFor={id} className="text-[length:var(--text-caption)] font-semibold text-[var(--text-primary)]">

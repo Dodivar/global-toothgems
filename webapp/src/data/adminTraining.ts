@@ -26,13 +26,14 @@ const L = (fr: string, en: string): Localized => ({ fr, en });
 
 /**
  * `unpublished` is not `draft`: a course that was live and was taken down has
- * been reviewed and has learners, and the list has to tell the two apart.
- * `review` is the state an author hands over in — complete enough to read, not
- * yet approved.
+ * buyers, and the list has to tell the two apart. There is no "review" state:
+ * a single trainer authors every course, and a draft is already "not ready"
+ * (owner's decision, 2026-10-01). The database enforces the transitions
+ * (draft → published ⇄ unpublished, never back to draft).
  */
-export type CourseStatus = "draft" | "review" | "published" | "unpublished";
+export type CourseStatus = "draft" | "published" | "unpublished";
 
-export const COURSE_STATUSES: CourseStatus[] = ["draft", "review", "published", "unpublished"];
+export const COURSE_STATUSES: CourseStatus[] = ["draft", "published", "unpublished"];
 
 export type CourseLevel = "beginner" | "intermediate" | "advanced" | "all";
 
@@ -53,9 +54,16 @@ export interface TextBlock {
   html: Localized;
 }
 
+/**
+ * Image and video fields hold a *media reference*: the training media library
+ * entry the course points at (its id once stored in Supabase, a URL in the
+ * prototype). Screens turn a reference into something displayable with
+ * `useTrainingMedia().urlOf()` — never by using it as a URL directly.
+ */
 export interface ImageBlock {
   id: string;
   type: "image";
+  /** Media reference (image). Empty while drafting; publication requires it. */
   src: string;
   /** Empty is a state the review screen reports on, not an error here. */
   alt: Localized;
@@ -66,12 +74,12 @@ export interface ImageBlock {
 export interface VideoBlock {
   id: string;
   type: "video";
-  /** Poster frame. Mock footage: nothing is streamed in the prototype. */
+  /** Poster frame: media reference (image), optional. */
   poster: string;
   title: Localized;
   /** mm:ss, as authored. */
   duration: string;
-  /** Where the file will come from once media hosting is wired up. */
+  /** The video file: media reference (video). Empty while drafting. */
   source: string;
   caption: Localized;
 }
@@ -137,13 +145,6 @@ export interface Module {
   quiz: Quiz | null;
 }
 
-export interface Instructor {
-  id: string;
-  name: string;
-  role: Localized;
-  initials: string;
-}
-
 export interface CompletionCriteria {
   allSteps: boolean;
   allQuizzes: boolean;
@@ -162,11 +163,17 @@ export interface TrainingCourse {
   level: CourseLevel;
   /** Minutes, authored: the advertised length, not the sum of the steps. */
   duration: number;
-  instructorId: string;
   objectives: Localized[];
   requirements: Localized[];
   completion: CompletionCriteria;
+  /** Price in minor units (cents) of `currency`. A course is not a shop product. */
+  priceMinor: number;
+  currency: string;
+  /** URL key of the sales page; set at creation, frozen once published. */
+  slug: string;
   status: CourseStatus;
+  /** First publication, set by the database. A course ever published cannot be deleted. */
+  publishedAt: string | null;
   createdAt: string;
   updatedAt: string;
   /** Share of enrolled learners who finished, percent. Reporting, not input. */
@@ -208,18 +215,7 @@ export function blockCount(module: Module): number {
 /* Reference data                                                              */
 /* -------------------------------------------------------------------------- */
 
-export const INSTRUCTORS: Instructor[] = [
-  { id: "ins-camille", name: "Camille Duforest", role: L("Formatrice principale", "Lead instructor"), initials: "CD" },
-  { id: "ins-lena", name: "Lena Marchetti", role: L("Experte hygiène et sécurité", "Hygiene & safety expert"), initials: "LM" },
-  { id: "ins-sofia", name: "Sofia Bramante", role: L("Artiste tooth gem", "Tooth gem artist"), initials: "SB" },
-  { id: "ins-noor", name: "Noor Idrissi", role: L("Coach studio et business", "Studio & business coach"), initials: "NI" },
-];
-
-export function getInstructor(id: string): Instructor | undefined {
-  return INSTRUCTORS.find((i) => i.id === id);
-}
-
-/** Stand-in media library, so image and video blocks have something real to show. */
+/** Prototype media library (mock mode only), so image blocks have something real to show. */
 export const MEDIA_LIBRARY: { id: string; src: string; label: Localized }[] = [
   { id: "med-01", src: img("mouth-01.jpg"), label: L("Sourire terminé, gem centrale", "Finished smile, centre gem") },
   { id: "med-02", src: img("mouth-02.jpg"), label: L("Composition multi-gems", "Multi-gem composition") },
