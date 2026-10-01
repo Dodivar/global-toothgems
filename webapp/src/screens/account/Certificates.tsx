@@ -19,10 +19,10 @@ import { useFormat } from "../../lib/format";
 /**
  * The member's certificate collection.
  *
- * Unlocking is derived from progress reaching 100 %, never stored as a flag: a
- * flag would drift the moment a lesson is validated. The page reads the same
- * progress state as the lesson player, so finishing a course adds a certificate
- * here immediately.
+ * A certificate is the completion record the server writes once the course's
+ * rules are met (`course_completions`, with its verification code); the page
+ * reads the same progress state as the lesson player, so finishing a course
+ * adds a certificate here immediately. The prototype derives it from progress.
  *
  * Three states, all reachable from the seeded demo account: no course at all,
  * courses under way with nothing earned yet, and a collection holding one or
@@ -41,12 +41,18 @@ export function Certificates() {
   /** Course id of the certificate open in the viewer, or null. */
   const [viewing, setViewing] = useState<string | null>(null);
 
-  const rows = enrolledCourses().map((course) => ({ course, progress: progressFor(course.id) }));
-  /** Most recent first: the collection is chronological, not a ranking. */
+  // Only courses that issue a certificate belong on this page.
+  const rows = enrolledCourses()
+    .filter((course) => course.issuesCertificate)
+    .map((course) => ({ course, progress: progressFor(course.id) }));
+  /** Most recent first: the collection is chronological, not a ranking. A certificate outlives a withdrawn course. */
   const earned = rows
     .filter((row) => row.progress.completed && row.progress.completedOn !== null)
     .sort((a, b) => b.progress.completedOn!.localeCompare(a.progress.completedOn!));
-  const pending = rows.filter((row) => !row.progress.completed || row.progress.completedOn === null);
+  // A withdrawn course cannot be followed until it is back: it is not "under way".
+  const pending = rows.filter(
+    (row) => row.course.status !== "unpublished" && (!row.progress.completed || row.progress.completedOn === null),
+  );
 
   const [featured, ...rest] = earned;
   const open = viewing ? earned.find((row) => row.course.id === viewing) : undefined;

@@ -3,7 +3,7 @@ import { Link } from "../../lib/navigation";
 import { ArrowRight } from "lucide-react";
 import { Badge } from "../ui/Badge";
 import { CertificateDocument } from "../account/CertificateDocument";
-import { certificateRef } from "../account/CertificateCard";
+import { sampleCertificateRef } from "../account/CertificateCard";
 import { CheckItem } from "./TrainingPrimitives";
 import { pick } from "../../data/types";
 import { lessonCount, type PublicCourse } from "../../lib/academy/publicCourse";
@@ -76,7 +76,7 @@ export function DiplomaPanel({
               course={printed}
               holder={holder}
               awardedOn={previewDate}
-              reference={certificateRef(course.id, previewDate)}
+              reference={sampleCertificateRef(course.id, previewDate)}
               lang={lang}
             />
           </div>

@@ -103,7 +103,9 @@
     "lessonDone": "Leçon terminée",
     "upNext": "À suivre : {{title}}",
     "quizPassed": "Point de connaissances réussi",
-    "quizPassedBody": "{{score}} % — le module suivant est ouvert."
+    "quizPassedBody": "{{score}} % — le module suivant est ouvert.",
+    "saveFailedTitle": "Leçon non enregistrée",
+    "saveFailedBody": "Nous n’avons pas pu valider cette leçon. Vérifiez votre connexion et réessayez."
   },
   "access": {
     "notFoundTitle": "Nous n’avons pas trouvé cette formation",
@@ -113,7 +115,13 @@
     "preparingTitle": "Cette formation est en préparation",
     "preparingBody": "Notre équipe y apporte la touche finale. Elle s’ouvrira ici dès qu’elle sera prête.",
     "toCourse": "Découvrir la formation",
-    "toDashboard": "Aller à mon espace"
+    "toDashboard": "Aller à mon espace",
+    "loading": "Chargement de vos formations…",
+    "errorTitle": "Vos formations n’ont pas pu être chargées",
+    "errorBody": "Vérifiez votre connexion, puis réessayez. Votre progression est enregistrée.",
+    "retry": "Réessayer",
+    "unavailableTitle": "Cette formation revient bientôt",
+    "unavailableBody": "« {{title}} » est momentanément indisponible pendant que nous la mettons à jour. Elle reste sur votre compte et votre progression est conservée : vous la retrouverez ici dès son retour."
   },
   "video": {
     "label": "Vidéo : {{title}}",
@@ -168,6 +176,7 @@
     "reviewModule": "Revoir le module",
     "noAttemptsTitle": "Vous avez utilisé toutes vos tentatives",
     "noAttemptsBody": "Prenez le temps de revoir le module. Notre équipe peut rouvrir le point de connaissances pour vous : il suffit de nous écrire.",
-    "contact": "Contacter l’équipe"
+    "contact": "Contacter l’équipe",
+    "saveFailed": "Votre réponse n’a pas pu être envoyée. Vérifiez votre connexion et réessayez : vos réponses sont conservées."
   }
 }

@@ -17,6 +17,7 @@
 //                          course with a French and an English slug and a cover,
 //                          for the Academy's public pages (phase B)
 //   GET  /storage/v1/object/training-media/<its cover's path>: a 1×1 PNG
+//   POST /rest/v1/rpc/learner_courses → [] (no course held)
 //   other /rest/v1 → []
 //   GET  /__server-reads   how many REST reads each table got from the Next.js
 //                          server (requests without an Origin header), for the
@@ -199,6 +200,8 @@ createServer(async (req, res) => {
     res.writeHead(200, { "content-type": "image/png" });
     return res.end(PNG);
   }
+  // The member holds no course (phase C's learner_courses()).
+  if (url.pathname === "/rest/v1/rpc/learner_courses") return send(200, []);
   if (url.pathname.startsWith("/rest/v1/")) return send(200, []);
   if (url.pathname === "/health") return send(200, { ok: true });
   if (url.pathname === "/__server-reads") return send(200, serverReads);

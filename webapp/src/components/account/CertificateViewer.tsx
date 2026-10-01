@@ -4,10 +4,9 @@ import { Download, X } from "lucide-react";
 import { Button } from "../ui/Button";
 import { IconButton } from "../ui/IconButton";
 import { CertificateDocument } from "./CertificateDocument";
-import { certificateRef } from "./CertificateCard";
-import type { Course } from "../../data/courses";
+import { certificateCourse, certificateRef } from "./CertificateCard";
 import { pick } from "../../data/types";
-import type { CourseProgress } from "../../lib/progress";
+import type { CourseProgress, LearnerCourseCard } from "../../lib/progress";
 import { useFormat } from "../../lib/format";
 
 /**
@@ -29,7 +28,7 @@ export function CertificateViewer({
   onClose,
   onDownload,
 }: {
-  course: Course;
+  course: LearnerCourseCard;
   progress: CourseProgress;
   holder: string;
   lang: string;
@@ -87,14 +86,15 @@ export function CertificateViewer({
 
   // The page only opens the viewer for completed courses.
   const awardedOn = progress.completedOn!;
-  const reference = certificateRef(course.id, awardedOn);
+  const reference = certificateRef(course, progress);
+  const printed = certificateCourse(course, progress, lang, t);
 
   const rows: Array<{ label: string; value: string; mono?: boolean }> = [
     { label: t("account.certificateMetaCourse"), value: pick(course.title, lang) },
-    { label: t("account.certificateMetaLevel"), value: pick(course.level, lang) },
+    { label: t("account.certificateMetaLevel"), value: String(printed.level) },
     {
       label: t("account.certificateMetaLessons"),
-      value: `${t("course.lessonCount", { count: progress.total })} · ${course.duration}`,
+      value: `${t("course.lessonCount", { count: progress.total })} · ${printed.duration}`,
     },
     { label: t("account.certificateMetaDate"), value: formatDate(awardedOn) },
     { label: t("account.certificateMetaRef"), value: reference, mono: true },
@@ -138,7 +138,7 @@ export function CertificateViewer({
           <div className="overflow-hidden rounded-[var(--radius-md)] bg-[var(--gt-white)] p-[2.5%] shadow-[var(--shadow-inset-hairline),var(--shadow-sm)]">
             <div className="overflow-hidden rounded-[2px] shadow-[0_0_0_1px_var(--gt-ink-200)]">
               <CertificateDocument
-                course={course}
+                course={printed}
                 holder={holder}
                 awardedOn={awardedOn}
                 reference={reference}

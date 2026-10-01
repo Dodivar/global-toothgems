@@ -88,6 +88,7 @@ export function Training() {
     onEdit: (course) => navigate(`/admin/formations/${course.id}`),
     onPreview: (course) => navigate(`/admin/formations/${course.id}/apercu`),
     onReview: (course) => navigate(`/admin/formations/${course.id}/publication`),
+    onAccess: (course) => navigate(`/admin/formations/${course.id}/acces`),
     onDuplicate: async (course) => {
       try {
         const copy = await duplicateCourse(course.id);

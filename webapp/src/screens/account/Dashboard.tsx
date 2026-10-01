@@ -5,6 +5,7 @@ import { Link, useNavigate } from "../../lib/navigation";
 import { ArrowRight, Award, BookOpen, GraduationCap, ListVideo, Package, PlayCircle } from "lucide-react";
 import { Button } from "../../components/ui/Button";
 import { CourseCard } from "../../components/ui/CourseCard";
+import { courseCardData } from "../../components/academy/courseCard";
 import { EnrolledCourseRow } from "../../components/account/EnrolledCourseRow";
 import { EmptyPanel, SectionHeader } from "../../components/account/SectionHeader";
 import { StatTile } from "../../components/account/StatTile";
@@ -12,33 +13,42 @@ import { ReviewRequestCard } from "../../components/reviews/ReviewRequestCard";
 import { pick } from "../../data/types";
 import { useAuth } from "../../lib/auth";
 import { useOrders } from "../../lib/orders";
-import { useProgress } from "../../lib/progress";
+import { useCourseMediaUrl, useProgress } from "../../lib/progress";
 import { useReviewRequests } from "../../lib/reviews";
-import { learnHref, lessonHref } from "../../lib/academyUrl";
+import { useAcademy } from "../../lib/academy/AcademyProvider";
+import { courseSlug } from "../../lib/academy/publicCourse";
+import { courseHref, learnHref, lessonHref } from "../../lib/academyUrl";
 
 /**
  * Home of the member area: what the account is worth in figures, the lesson to
  * resume, the courses being followed and the ones still available.
  *
- * It owns no state. Progress comes from `lib/progress.tsx` and orders from
- * `lib/orders.tsx`, so validating a lesson in the player or paying in the cart
- * moves these numbers immediately.
+ * It owns no state. Progress comes from `lib/progress.tsx` (the courses the
+ * member holds, from the server), orders from `lib/orders.tsx`, and the
+ * courses still available from the published Academy (`lib/academy`), so
+ * validating a lesson in the player moves these numbers immediately. A
+ * withdrawn course stays listed, greyed out ("back soon"), and is never offered
+ * to resume.
  */
 export function Dashboard() {
   const { t, i18n } = useTranslation();
   const navigate = useNavigate();
   const lang = i18n.language;
   const { displayName } = useAuth();
-  const { openCourse, progressFor, enrolledCourses, availableCourses, trainingFor } = useProgress();
+  const { openCourse, progressFor, enrolledCourses, trainingFor } = useProgress();
+  const { courses: catalogue } = useAcademy();
+  const mediaUrl = useCourseMediaUrl();
+  const locale = lang.startsWith("en") ? "en" : "fr";
   const { orders, status: ordersStatus } = useOrders();
   // The one thing the member could review next, if anything.
   const [reviewRequest] = useReviewRequests();
 
   const enrolled = enrolledCourses();
-  const available = availableCourses();
+  const held = new Set(enrolled.map((course) => course.id));
+  const available = catalogue.filter((course) => !held.has(course.id));
   const progressByCourse = enrolled.map((course) => ({ course, progress: progressFor(course.id) }));
 
-  const inProgress = progressByCourse.filter(({ progress }) => !progress.completed);
+  const inProgress = progressByCourse.filter(({ course, progress }) => course.status !== "unpublished" && !progress.completed);
   const certificates = progressByCourse.filter(({ progress }) => progress.completed).length;
   const lessonsDone = progressByCourse.reduce((sum, { progress }) => sum + progress.doneCount, 0);
   /** The course the "resume" card offers: the least advanced one still open. */
@@ -77,7 +87,7 @@ export function Dashboard() {
           <div className="grid grid-cols-1 gap-5 rounded-[var(--radius-card)] bg-[var(--surface-inverse)] p-[var(--space-5)] text-[var(--text-inverse)] sm:grid-cols-[minmax(0,220px)_minmax(0,1fr)]">
             <div className="relative aspect-video overflow-hidden rounded-[var(--radius-md)]">
               <img
-                src={resume.course.image}
+                src={mediaUrl(resume.course.cover) || undefined}
                 alt=""
                 loading="lazy"
                 decoding="async"
@@ -189,17 +199,8 @@ export function Dashboard() {
             {available.map((course) => (
               <CourseCard
                 key={course.id}
-                course={{
-                  id: course.id,
-                  title: pick(course.title, lang),
-                  level: pick(course.level, lang),
-                  lessonCount: course.lessonCount,
-                  duration: course.duration,
-                  price: course.price,
-                  image: course.image,
-                  state: "available",
-                }}
-                onSelect={() => open(course.id)}
+                course={courseCardData(course, lang, t)}
+                to={courseHref(courseSlug(course, locale))}
               />
             ))}
           </div>

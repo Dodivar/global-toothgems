@@ -38,9 +38,9 @@ export function CourseCompleted() {
   const { t, i18n } = useTranslation();
   const lang = i18n.language;
   const navigate = useNavigate();
-  const { product, access, training, summary, progress } = useLearnerCourse(courseId);
+  const { access, training, summary, progress } = useLearnerCourse(courseId);
 
-  if (!product || !access || access.state !== "open" || !training || !summary) {
+  if (access.state !== "open" || !training || !summary) {
     return <LearnAccessState access={access} courseId={courseId} />;
   }
 

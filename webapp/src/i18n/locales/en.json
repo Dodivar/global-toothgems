@@ -1179,7 +1179,9 @@
       "recapNotice": "This order summary is not an invoice.",
       "notFoundTitle": "Order not found",
       "notFoundBody": "This order does not exist or is not linked to your account."
-    }
+    },
+    "courseBackSoonBadge": "Back soon",
+    "courseBackSoon": "This course is being updated and will be back soon. It stays on your account, with your progress."
   },
   "footer": {
     "blurb": "Professional gems, tools and training. Shipped across Europe from Lyon.",
@@ -3232,7 +3234,8 @@
         "delete": "Delete",
         "more": "More actions for {{name}}",
         "back": "Back to training",
-        "mediaLibrary": "Media library"
+        "mediaLibrary": "Media library",
+        "access": "Member access"
       },
       "create": {
         "title": "Create training",
@@ -3744,6 +3747,60 @@
           "block_without_media": "Every image or video block needs its file.",
           "empty_quiz": "Every quiz needs at least one question.",
           "question_incomplete": "Every question needs at least two answers, one of them correct."
+        }
+      },
+      "access": {
+        "title": "Course access",
+        "holdersTitle_one": "{{count}} member has access",
+        "holdersTitle_other": "{{count}} members have access",
+        "holdersBody": "The members who hold this course, their progress and past access. Revoking keeps what they completed and their certificate.",
+        "loading": "Loading access…",
+        "loadFailed": "The access list could not be loaded.",
+        "retry": "Try again",
+        "emptyTitle": "Nobody has access yet",
+        "emptyBody": "Give the course to a member with the form. Purchases will appear here once course sales open.",
+        "source": {
+          "purchase": "Purchase",
+          "manual_grant": "Granted access",
+          "bundle": "Bundle",
+          "promotion": "Promotion"
+        },
+        "since": "since {{date}}",
+        "until": "until {{date}}",
+        "by": "by {{name}}",
+        "completed": "Completed on {{date}}",
+        "progress": "{{done}} / {{total}} lessons validated",
+        "revoke": "Revoke access",
+        "revokeFor": "Revoke access for {{email}}",
+        "revokedOn": "Access revoked on {{date}}",
+        "expired": "Access expired",
+        "revokeTitle": "Revoke access to this course?",
+        "revokeBody": "{{email}} will no longer be able to open “{{title}}”. Their completed lessons and certificate stay on record; you can give access again later.",
+        "cancel": "Cancel",
+        "grantTitle": "Give the course to a member",
+        "grantBody": "The member must already have an account. They find the course in their space as soon as it is given.",
+        "notPublished": "Publish the course first: a draft has nothing a member could open.",
+        "email": "Account e-mail",
+        "emailHint": "The exact address the member signs in with.",
+        "expires": "Access ends",
+        "expiresHint": "Optional. Without a date, access does not expire.",
+        "note": "Internal note",
+        "noteHint": "Optional, only visible in the back office (e.g. “Instagram contest”).",
+        "grant": "Give access",
+        "granting": "Saving…",
+        "grantedTitle": "Access given",
+        "grantedBody": "{{email}} now has access to “{{title}}”.",
+        "revokedTitle": "Access revoked",
+        "revokedBody": "{{email}} no longer has access to this course.",
+        "failedTitle": "Could not complete the action",
+        "errors": {
+          "email": "Enter a valid e-mail address.",
+          "memberNotFound": "No account uses this address. The member must create their account first.",
+          "alreadyHeld": "This member already has access to this course.",
+          "notPublished": "This course was never published: it cannot be given yet.",
+          "invalidExpiry": "The end of access must be in the future.",
+          "forbidden": "Your role does not allow managing course access.",
+          "network": "The server did not respond. Check your connection and try again."
         }
       }
     },

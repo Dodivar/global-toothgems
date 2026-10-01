@@ -1,6 +1,6 @@
 "use client";
 
-import { useEffect, useRef, useState } from "react";
+import { useEffect, useMemo, useRef, useState } from "react";
 import { useTranslation } from "react-i18next";
 import { Link, Navigate, useNavigate, useParams } from "../../lib/navigation";
 import { ArrowLeft, ArrowRight, Check, Clock, FileText, Flag, Image as ImageIcon, ListChecks, ListTree, Lock, PlayCircle, X } from "lucide-react";
@@ -43,15 +43,22 @@ export function LessonPlayer() {
   const contentLang: ContentLang = lang.startsWith("en") ? "en" : "fr";
   const navigate = useNavigate();
   const { showToast } = useToast();
-  const { visitNode, completeStep, recordQuizAttempt } = useProgress();
-  const { product, access, training, record, summary, progress } = useLearnerCourse(courseId);
+  const { visitNode, completeStep, quizGrader } = useProgress();
+  const { card, access, training, record, summary, progress } = useLearnerCourse(courseId);
   const [sheetOpen, setSheetOpen] = useState(false);
+  const [saving, setSaving] = useState(false);
   const [justCompleted, setJustCompleted] = useState<string | null>(null);
   const heading = useRef<HTMLHeadingElement>(null);
 
   const index = summary ? summary.path.findIndex((n) => n.key === nodeKey) : -1;
   const node = summary && index >= 0 ? summary.path[index] : undefined;
   const unlocked = Boolean(node && training && record && summary && isUnlocked(index, summary.path, record, training));
+  const nodeKind = node?.kind;
+  // One grader per check on screen: it holds the attempt being answered.
+  const grader = useMemo(
+    () => (nodeKind === "quiz" ? quizGrader(courseId, nodeKey) : null),
+    [courseId, nodeKey, nodeKind, quizGrader],
+  );
 
   useEffect(() => {
     if (node && unlocked) visitNode(courseId, node.key);
@@ -68,10 +75,10 @@ export function LessonPlayer() {
     return () => clearTimeout(timer);
   }, [justCompleted]);
 
-  if (!product || !access || access.state !== "open" || !training || !record || !summary) {
+  if (access.state !== "open" || !training || !record || !summary) {
     return (
       <div className="min-h-screen bg-[var(--surface-page)]">
-        <PlayerBar courseId={courseId} title={product ? pick(product.title, lang) : ""} />
+        <PlayerBar courseId={courseId} title={card ? pick(card.title, lang) : ""} />
         <LearnAccessState access={access} courseId={courseId} />
       </div>
     );
@@ -93,9 +100,17 @@ export function LessonPlayer() {
         ? t("learning.nav.nextModule")
         : t("learning.nav.nextLesson");
 
-  const advance = () => {
+  const advance = async () => {
+    if (saving) return;
     if (node.kind === "step" && !done) {
-      completeStep(courseId, node.key);
+      // The server validates the step (and refuses a locked one); move on only once it is recorded.
+      setSaving(true);
+      const saved = await completeStep(courseId, node.key);
+      setSaving(false);
+      if (!saved) {
+        showToast(t("learning.toast.saveFailedTitle"), t("learning.toast.saveFailedBody"), "error");
+        return;
+      }
       setJustCompleted(node.key);
       showToast(
         t("learning.toast.lessonDone"),
@@ -159,14 +174,14 @@ export function LessonPlayer() {
               ) : (
                 <LessonBlocks blocks={step.blocks} lang={contentLang} />
               )
-            ) : module.quiz ? (
+            ) : module.quiz && grader ? (
               <QuizPlayer
                 key={node.key}
                 quiz={module.quiz}
                 lang={contentLang}
                 result={record.quizResults[node.key]}
-                onSubmit={(score) => {
-                  recordQuizAttempt(courseId, node.key, score.score);
+                grader={grader}
+                onSubmitted={(score) => {
                   if (score.passed) {
                     setJustCompleted(node.key);
                     showToast(t("learning.toast.quizPassed"), t("learning.toast.quizPassedBody", { score: score.score }));

@@ -11,7 +11,8 @@ import type { CourseLevel, PublicCourse, PublicModule } from "./publicCourse";
  * Never used when Supabase is configured.
  */
 
-const LEVELS: Record<string, CourseLevel> = { fondation: "beginner", avance: "advanced", business: "all" };
+/** The prototype courses' levels (also read by the learner fixtures, `lib/progress.tsx`). */
+export const FIXTURE_LEVELS: Record<string, CourseLevel> = { fondation: "beginner", avance: "advanced", business: "all" };
 
 const OUTLINE: PublicModule[] = MODULES.map((module, m) => ({
   id: `module-${m + 1}`,
@@ -45,7 +46,7 @@ export const FIXTURE_COURSES: PublicCourse[] = COURSES.map((course) => {
     title: course.title,
     summary: course.copy,
     description: null,
-    level: LEVELS[course.id] ?? "all",
+    level: FIXTURE_LEVELS[course.id] ?? "all",
     minutes: MINUTES,
     objectives: OBJECTIVES,
     requirements: [],

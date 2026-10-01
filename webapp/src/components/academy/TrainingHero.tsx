@@ -33,6 +33,7 @@ export function TrainingHero({
   moduleCount,
   ctaRef,
   onStart,
+  holder = false,
   onExploreCurriculum,
 }: {
   course: PublicCourse;
@@ -43,6 +44,8 @@ export function TrainingHero({
   /** Watched by the page so the sticky mobile bar only appears once this scrolls away. */
   ctaRef: RefObject<HTMLDivElement | null>;
   onStart: () => void;
+  /** The signed-in member holds this course: the button opens it instead of "enrolment opens soon". */
+  holder?: boolean;
   onExploreCurriculum: () => void;
 }) {
   const { formatMoney, formatDate } = useFormat();
@@ -50,6 +53,7 @@ export function TrainingHero({
   const title = pick(course.title, lang);
   const level = t(`academy.levels.${course.level}`);
   const demo = course.enrolment === "demo";
+  const canStart = demo || holder;
   const discounted = isDiscounted(course);
 
   const startLabel = progress.completed
@@ -187,7 +191,7 @@ export function TrainingHero({
                 </span>
               </div>
               <div className="flex flex-wrap gap-3">
-                {demo && (
+                {canStart && (
                   <Button variant="primary" size="lg" onClick={onStart}>
                     {startLabel}
                   </Button>
@@ -198,7 +202,7 @@ export function TrainingHero({
               </div>
             </div>
 
-            {!demo && <EnrolmentSoon />}
+            {!canStart && <EnrolmentSoon />}
 
             {demo && !signedIn && (
               <p className="m-0 flex items-center gap-2 text-[length:var(--text-body-sm)] text-[var(--text-muted)]">

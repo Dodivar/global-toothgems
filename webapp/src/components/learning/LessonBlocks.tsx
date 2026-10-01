@@ -3,7 +3,7 @@ import clsx from "clsx";
 import type { ContentBlock, ImageBlock, VideoBlock } from "../../data/adminTraining";
 import type { ContentLang } from "../../lib/localized";
 import { sanitizeHtml } from "../../lib/learning/sanitizeHtml";
-import { useTrainingMedia } from "../../lib/trainingMedia";
+import { useCourseMediaUrl } from "../../lib/progress";
 import { VideoPlayer } from "./VideoPlayer";
 
 /**
@@ -17,7 +17,7 @@ import { VideoPlayer } from "./VideoPlayer";
  * the lesson rather than as attachments.
  *
  * Image and video fields are media references, resolved to URLs by the
- * training media store (`urlOf`).
+ * member's signed URLs or the back office's media library (`useCourseMediaUrl`).
  */
 
 export function LessonBlocks({ blocks, lang }: { blocks: ContentBlock[]; lang: ContentLang }) {
@@ -43,7 +43,7 @@ export function RichText({ html, className }: { html: string; className?: string
 }
 
 function LessonImage({ block, lang }: { block: ImageBlock; lang: ContentLang }) {
-  const { urlOf } = useTrainingMedia();
+  const urlOf = useCourseMediaUrl();
   const src = urlOf(block.src);
   const caption = block.caption[lang];
   const layout =
@@ -77,7 +77,7 @@ function LessonImage({ block, lang }: { block: ImageBlock; lang: ContentLang }) 
 }
 
 function LessonVideo({ block, lang }: { block: VideoBlock; lang: ContentLang }) {
-  const { urlOf } = useTrainingMedia();
+  const urlOf = useCourseMediaUrl();
   const caption = block.caption[lang];
   return (
     <figure className="m-0 grid gap-2.5">

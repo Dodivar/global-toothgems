@@ -1179,7 +1179,9 @@
       "recapNotice": "Ce récapitulatif de commande n’est pas une facture.",
       "notFoundTitle": "Commande introuvable",
       "notFoundBody": "Cette commande n’existe pas ou n’est pas rattachée à votre compte."
-    }
+    },
+    "courseBackSoonBadge": "Bientôt de retour",
+    "courseBackSoon": "Cette formation est en cours de mise à jour et revient bientôt. Elle reste sur votre compte, avec votre progression."
   },
   "footer": {
     "blurb": "Gems, outils et formation professionnels. Expédié dans toute l’Europe depuis Lyon.",
@@ -3232,7 +3234,8 @@
         "delete": "Supprimer",
         "more": "Autres actions pour {{name}}",
         "back": "Retour aux formations",
-        "mediaLibrary": "Médiathèque"
+        "mediaLibrary": "Médiathèque",
+        "access": "Accès des membres"
       },
       "create": {
         "title": "Créer une formation",
@@ -3744,6 +3747,60 @@
           "block_without_media": "Chaque bloc image ou vidéo doit avoir son fichier.",
           "empty_quiz": "Chaque quiz doit contenir au moins une question.",
           "question_incomplete": "Chaque question doit avoir au moins deux réponses, dont une correcte."
+        }
+      },
+      "access": {
+        "title": "Accès à la formation",
+        "holdersTitle_one": "{{count}} membre a accès",
+        "holdersTitle_other": "{{count}} membres ont accès",
+        "holdersBody": "Les membres qui détiennent cette formation, leur progression et leurs accès passés. Retirer l’accès conserve ce qu’ils ont terminé et leur attestation.",
+        "loading": "Chargement des accès…",
+        "loadFailed": "La liste des accès n’a pas pu être chargée.",
+        "retry": "Réessayer",
+        "emptyTitle": "Personne n’a encore accès",
+        "emptyBody": "Donnez la formation à un membre avec le formulaire. Les achats s’y ajouteront quand la vente des formations ouvrira.",
+        "source": {
+          "purchase": "Achat",
+          "manual_grant": "Accès offert",
+          "bundle": "Pack",
+          "promotion": "Promotion"
+        },
+        "since": "depuis le {{date}}",
+        "until": "jusqu’au {{date}}",
+        "by": "par {{name}}",
+        "completed": "Terminée le {{date}}",
+        "progress": "{{done}} / {{total}} leçons validées",
+        "revoke": "Retirer l’accès",
+        "revokeFor": "Retirer l’accès de {{email}}",
+        "revokedOn": "Accès retiré le {{date}}",
+        "expired": "Accès expiré",
+        "revokeTitle": "Retirer l’accès à cette formation ?",
+        "revokeBody": "{{email}} ne pourra plus ouvrir « {{title}} ». Ses leçons terminées et son attestation restent enregistrées ; vous pourrez lui redonner l’accès plus tard.",
+        "cancel": "Annuler",
+        "grantTitle": "Donner la formation à un membre",
+        "grantBody": "Le membre doit déjà avoir un compte. Il retrouve la formation dans son espace dès qu’elle lui est donnée.",
+        "notPublished": "Publiez d’abord la formation : un brouillon n’a rien qu’un membre puisse ouvrir.",
+        "email": "E-mail du compte",
+        "emailHint": "L’adresse exacte avec laquelle le membre se connecte.",
+        "expires": "Fin de l’accès",
+        "expiresHint": "Facultatif. Sans date, l’accès n’expire pas.",
+        "note": "Note interne",
+        "noteHint": "Facultatif, visible du back-office seulement (ex. : « Concours Instagram »).",
+        "grant": "Donner l’accès",
+        "granting": "Enregistrement…",
+        "grantedTitle": "Accès donné",
+        "grantedBody": "{{email}} a maintenant accès à « {{title}} ».",
+        "revokedTitle": "Accès retiré",
+        "revokedBody": "{{email}} n’a plus accès à cette formation.",
+        "failedTitle": "Action impossible",
+        "errors": {
+          "email": "Saisissez une adresse e-mail valide.",
+          "memberNotFound": "Aucun compte n’utilise cette adresse. Le membre doit d’abord créer son compte.",
+          "alreadyHeld": "Ce membre a déjà accès à cette formation.",
+          "notPublished": "Cette formation n’a jamais été publiée : elle ne peut pas encore être donnée.",
+          "invalidExpiry": "La fin de l’accès doit être dans le futur.",
+          "forbidden": "Votre rôle ne permet pas de gérer les accès aux formations.",
+          "network": "Le serveur n’a pas répondu. Vérifiez votre connexion et réessayez."
         }
       }
     },

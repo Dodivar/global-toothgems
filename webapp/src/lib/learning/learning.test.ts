@@ -2,6 +2,7 @@ import { describe, expect, it } from "vitest";
 import { TRAINING_COURSES } from "../../data/adminTrainingSeed";
 import type { TrainingCourse } from "../../data/adminTraining";
 import { learnerAccess } from "./access";
+import type { LearnerCourseCard } from "./learnerCourse";
 import {
   attemptsLeft,
   buildPath,
@@ -138,20 +139,42 @@ describe("knowledge checks", () => {
 
 describe("learnerAccess", () => {
   const byId = (id: string) => TRAINING_COURSES.find((c) => c.id === id)!;
+  const cardOf = (course: TrainingCourse | undefined): LearnerCourseCard => ({
+    id: "course",
+    title: { fr: "", en: "" },
+    summary: { fr: "", en: "" },
+    level: "all",
+    cover: "",
+    status: course?.status ?? "published",
+    issuesCertificate: true,
+  });
+  const access = (course: TrainingCourse | undefined, enrolled = true) =>
+    learnerAccess("ready", cardOf(course), course, enrolled).state;
+
+  it("waits for the held courses, and says when they failed", () => {
+    expect(learnerAccess("loading", undefined, undefined, false).state).toBe("loading");
+    expect(learnerAccess("idle", undefined, undefined, false).state).toBe("loading");
+    expect(learnerAccess("error", undefined, undefined, false).state).toBe("error");
+  });
 
   it("requires an enrolment", () => {
-    expect(learnerAccess(byId("pose-professionnelle"), false).state).toBe("notEnrolled");
+    expect(access(byId("pose-professionnelle"), false)).toBe("notEnrolled");
+    expect(learnerAccess("ready", undefined, undefined, true).state).toBe("notEnrolled");
   });
 
-  it("never opens a draft or a course in review", () => {
-    expect(learnerAccess(byId("cristaux-charms"), true).state).toBe("preparing");
-    expect(learnerAccess(byId("design-creatif"), true).state).toBe("preparing");
-    expect(learnerAccess(undefined, true).state).toBe("preparing");
+  it("never opens a draft", () => {
+    expect(access(byId("cristaux-charms"))).toBe("preparing");
+    expect(access(undefined)).toBe("preparing");
   });
 
-  it("opens published and, for enrolled learners, unpublished courses", () => {
-    expect(learnerAccess(byId("pose-professionnelle"), true).state).toBe("open");
-    expect(learnerAccess(byId("hygiene-securite"), true).state).toBe("open");
+  it("opens a published course", () => {
+    expect(access(byId("pose-professionnelle"))).toBe("open");
+  });
+
+  it("keeps a withdrawn course closed, even for its holders (owner, 2026-10-01)", () => {
+    const withdrawn = { ...byId("pose-professionnelle"), status: "unpublished" as const };
+    expect(access(withdrawn)).toBe("unavailable");
+    expect(learnerAccess("ready", { ...cardOf(withdrawn), status: "unpublished" }, undefined, true).state).toBe("unavailable");
   });
 });
 

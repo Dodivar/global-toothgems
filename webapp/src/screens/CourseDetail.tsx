@@ -29,6 +29,7 @@ import { lessonCount, type PublicCourse } from "../lib/academy/publicCourse";
 import { formatDuration } from "../lib/trainingFilters";
 import { useAuth } from "../lib/auth";
 import { useProgress } from "../lib/progress";
+import { learnHref } from "../lib/academyUrl";
 import { useToast } from "../lib/toast";
 import { useFormat } from "../lib/format";
 
@@ -57,7 +58,7 @@ export function CourseDetail({ course }: { course: PublicCourse }) {
   const { t, i18n } = useTranslation();
   const navigate = useNavigate();
   const { signedIn, displayName } = useAuth();
-  const { openCourse, progressFor } = useProgress();
+  const { openCourse, progressFor, courseFor } = useProgress();
   const { showToast } = useToast();
   const lang = i18n.language;
   const demo = course.enrolment === "demo";
@@ -80,12 +81,14 @@ export function CourseDetail({ course }: { course: PublicCourse }) {
   /**
    * The seeded demo enrolments exist whether or not anyone is signed in, and
    * this page is public: a visitor must never be told they are already enrolled
-   * on somebody else's progress. Signed out, the training reads as new — and so
-   * does a real course, which nobody can hold before phase C.
+   * on somebody else's progress. Signed out, the training reads as new; signed
+   * in, a real course shows the member's own progress only when they hold it.
    */
   const stored = progressFor(course.id);
+  // A real course the member holds (granted, or bought from phase D on) opens from here.
+  const holder = signedIn && !demo && stored.enrolled && courseFor(course.id)?.status === "published";
   const progress =
-    signedIn && demo
+    signedIn && (demo || holder)
       ? stored
       : { ...stored, enrolled: false, completed: false, doneCount: 0, pct: 0, completedOn: null, startedOn: null };
   const lessons = lessonCount(course);
@@ -101,6 +104,11 @@ export function CourseDetail({ course }: { course: PublicCourse }) {
    * stays true.
    */
   const start = () => {
+    if (holder) {
+      openCourse(course.id);
+      navigate(learnHref(course.id));
+      return;
+    }
     if (!demo) return;
     if (!signedIn) {
       navigate("/connexion", { state: { from: "/academy/lecon", course: course.id } });
@@ -156,6 +164,7 @@ export function CourseDetail({ course }: { course: PublicCourse }) {
         moduleCount={course.modules.length}
         ctaRef={heroCtaRef}
         onStart={start}
+        holder={holder}
         onExploreCurriculum={exploreCurriculum}
       />
 
@@ -341,7 +350,7 @@ export function CourseDetail({ course }: { course: PublicCourse }) {
             {t("training.finalTitle")}
           </h2>
           <p className="m-0 text-[length:var(--text-body-lg)] text-[var(--gt-ink-300)]">{t("training.finalBody")}</p>
-          {demo ? (
+          {demo || holder ? (
             <Button variant="primary" size="lg" iconRight={ArrowRight} onClick={start}>
               {progress.enrolled ? t("training.ctaResume") : t("training.ctaStart")}
             </Button>

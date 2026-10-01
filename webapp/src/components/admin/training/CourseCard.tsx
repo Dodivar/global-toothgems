@@ -27,6 +27,8 @@ export interface CourseActions {
   onPreview: (course: TrainingCourse) => void;
   onDuplicate: (course: TrainingCourse) => void | Promise<void>;
   onReview: (course: TrainingCourse) => void;
+  /** Who holds the course; giving it to a member by hand. */
+  onAccess: (course: TrainingCourse) => void;
   onUnpublish: (course: TrainingCourse) => void;
   onDelete: (course: TrainingCourse) => void;
 }
@@ -56,6 +58,10 @@ export function CourseCard({ course, actions }: { course: TrainingCourse; action
     { id: "preview", label: t("admin.training.actions.preview"), icon: Eye, onSelect: () => actions.onPreview(course) },
     { id: "review", label: t("admin.training.actions.review"), icon: CircleCheck, onSelect: () => actions.onReview(course) },
     { id: "duplicate", label: t("admin.training.actions.duplicate"), icon: Copy, onSelect: () => actions.onDuplicate(course) },
+    // Only a course that was ever published can be given to a member.
+    ...(course.publishedAt
+      ? [{ id: "access", label: t("admin.training.actions.access"), icon: Users, onSelect: () => actions.onAccess(course) } satisfies MenuAction]
+      : []),
     ...(course.status === "published"
       ? [
           {

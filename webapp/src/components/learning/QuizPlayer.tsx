@@ -6,8 +6,9 @@ import clsx from "clsx";
 import { Button } from "../ui/Button";
 import type { Answer, Question, Quiz } from "../../data/adminTraining";
 import type { ContentLang } from "../../lib/localized";
-import { useTrainingMedia } from "../../lib/trainingMedia";
-import { attemptsLeft, scoreQuiz, type QuizResult, type QuizScore } from "../../lib/learning/path";
+import { useCourseMediaUrl } from "../../lib/progress";
+import { attemptsLeft, type QuizResult, type QuizScore } from "../../lib/learning/path";
+import type { Correction, QuizGrader } from "../../lib/learning/grading";
 import { contactHref } from "../../data/legal/routes";
 import { ProgressRing, ThinProgress } from "./LearningStatus";
 
@@ -24,9 +25,10 @@ import { ProgressRing, ThinProgress } from "./LearningStatus";
  * explanation it unlocks, never in red capitals. Right and wrong always carry
  * an icon and a word, not just a colour.
  *
- * Scoring is `scoreQuiz` — the same deterministic rule the server applies. In
- * production the submitted answers go to the server, which scores and records
- * the attempt; the browser never decides a pass.
+ * Correcting is the `grader`'s job (`lib/learning/grading.ts`): for a learner
+ * it is the server, which records the attempt, scores it and only then returns
+ * which answers were right — the browser never holds the answer keys nor
+ * decides a pass. The administrator's preview grades locally.
  */
 
 type Phase = "intro" | "question" | "result";
@@ -47,7 +49,8 @@ export function QuizPlayer({
   lang,
   result,
   unlimited = false,
-  onSubmit,
+  grader,
+  onSubmitted,
   continueAction,
   reviewHref,
 }: {
@@ -57,26 +60,30 @@ export function QuizPlayer({
   result?: QuizResult;
   /** Preview: attempts are not counted. */
   unlimited?: boolean;
-  onSubmit: (score: QuizScore) => void;
+  grader: QuizGrader;
+  /** After the attempt was scored (and recorded, for a learner). */
+  onSubmitted?: (score: QuizScore) => void;
   /** Shown once the check is passed: the way on through the course. */
   continueAction?: { label: string; onClick: () => void };
   /** The module's first lesson, offered as revision after a miss. */
   reviewHref?: string;
 }) {
   const { t } = useTranslation();
-  const { urlOf } = useTrainingMedia();
+  const urlOf = useCourseMediaUrl();
   const [phase, setPhase] = useState<Phase>("intro");
   const [order, setOrder] = useState<Record<string, Answer[]>>({});
   const [index, setIndex] = useState(0);
   const [chosen, setChosen] = useState<Record<string, string>>({});
-  const [revealed, setRevealed] = useState<Record<string, boolean>>({});
+  const [corrections, setCorrections] = useState<Record<string, Correction>>({});
   const [score, setScore] = useState<QuizScore | null>(null);
+  const [busy, setBusy] = useState(false);
+  const [failed, setFailed] = useState(false);
   const heading = useRef<HTMLHeadingElement>(null);
 
   const left = unlimited ? Number.POSITIVE_INFINITY : attemptsLeft(quiz, result);
   const passedBefore = Boolean(result?.passed);
   const total = quiz.questions.length;
-  const { immediateFeedback, showAnswers, passingScore, allowRetry } = quiz.settings;
+  const { immediateFeedback, passingScore, allowRetry } = quiz.settings;
 
   // Moving between questions moves the reader too: focus lands on the new
   // question, so a screen reader announces it instead of staying on "Next".
@@ -99,18 +106,44 @@ export function QuizPlayer({
     }
     setOrder(next);
     setChosen({});
-    setRevealed({});
+    setCorrections({});
+    setFailed(false);
     setIndex(0);
     setScore(null);
     setPhase("question");
   };
 
-  const submit = () => {
-    const outcome = scoreQuiz(quiz, chosen);
-    setScore(outcome);
-    setPhase("result");
-    onSubmit(outcome);
+  /** Runs one call to the grader; a failure keeps the learner's answers and says so. */
+  const run = async (work: () => Promise<void>) => {
+    if (busy) return;
+    setBusy(true);
+    setFailed(false);
+    try {
+      await work();
+    } catch {
+      setFailed(true);
+    } finally {
+      setBusy(false);
+    }
   };
+
+  const submit = () =>
+    run(async () => {
+      const graded = await grader.submit(chosen);
+      setCorrections(graded.corrections);
+      setScore(graded.score);
+      setPhase("result");
+      onSubmitted?.(graded.score);
+    });
+
+  const check = (questionId: string, answerId: string) =>
+    run(async () => {
+      const correction = await grader.check(questionId, answerId);
+      // With immediate feedback the first recorded answer stands.
+      const recorded = correction.answerId;
+      if (recorded) setChosen((prev) => ({ ...prev, [questionId]: recorded }));
+      setCorrections((prev) => ({ ...prev, [questionId]: correction }));
+    });
 
   /* ------------------------------------------------------------------------ */
 
@@ -205,7 +238,7 @@ export function QuizPlayer({
         {!immediateFeedback && (
           <ol className="m-0 grid list-none gap-3 p-0">
             {quiz.questions.map((question, i) => (
-              <ReviewRow key={question.id} question={question} number={i + 1} chosenId={chosen[question.id]} lang={lang} showAnswers={showAnswers} />
+              <ReviewRow key={question.id} question={question} number={i + 1} correction={corrections[question.id]} lang={lang} />
             ))}
           </ol>
         )}
@@ -246,9 +279,9 @@ export function QuizPlayer({
   const question = quiz.questions[index];
   const answers = order[question.id] ?? question.answers;
   const answerId = chosen[question.id];
-  const reveal = immediateFeedback && Boolean(revealed[question.id]);
+  const correction: Correction | undefined = corrections[question.id];
+  const reveal = immediateFeedback && Boolean(correction);
   const last = index === total - 1;
-  const selectedAnswer = question.answers.find((a) => a.id === answerId);
 
   const advance = () => (last ? submit() : setIndex(index + 1));
 
@@ -278,8 +311,8 @@ export function QuizPlayer({
         <div className="grid gap-2.5">
           {answers.map((option, i) => {
             const selected = answerId === option.id;
-            const showAsCorrect = reveal && option.correct && (showAnswers || selected);
-            const showAsWrong = reveal && selected && !option.correct;
+            const showAsCorrect = reveal && correction?.correctAnswerId === option.id;
+            const showAsWrong = reveal && selected && !correction?.correct;
             return (
               <label
                 key={option.id}
@@ -300,7 +333,7 @@ export function QuizPlayer({
                   type="radio"
                   name={`quiz-${question.id}`}
                   checked={selected}
-                  disabled={reveal}
+                  disabled={reveal || busy}
                   onChange={() => setChosen((prev) => ({ ...prev, [question.id]: option.id }))}
                   className="sr-only"
                 />
@@ -336,7 +369,12 @@ export function QuizPlayer({
         </div>
       </fieldset>
 
-      {reveal && selectedAnswer && <Feedback question={question} answer={selectedAnswer} lang={lang} showAnswers={showAnswers} />}
+      {reveal && correction && <Feedback question={question} correction={correction} lang={lang} />}
+      {failed && (
+        <p role="alert" className="m-0 rounded-[var(--radius-md)] bg-[var(--status-error-bg)] p-3 text-[length:var(--text-body-sm)] text-[var(--status-error-fg)]">
+          {t("learning.quiz.saveFailed")}
+        </p>
+      )}
 
       <div className="flex flex-wrap items-center gap-3 border-t border-[var(--border-subtle)] pt-4">
         {!immediateFeedback && index > 0 && (
@@ -345,15 +383,11 @@ export function QuizPlayer({
           </Button>
         )}
         {immediateFeedback && !reveal ? (
-          <Button
-            variant="dark"
-            disabled={!answerId}
-            onClick={() => setRevealed((prev) => ({ ...prev, [question.id]: true }))}
-          >
+          <Button variant="dark" disabled={!answerId || busy} onClick={() => answerId && check(question.id, answerId)}>
             {t("learning.quiz.check")}
           </Button>
         ) : (
-          <Button variant={last ? "primary" : "dark"} iconRight={ArrowRight} disabled={!answerId} onClick={advance}>
+          <Button variant={last ? "primary" : "dark"} iconRight={ArrowRight} disabled={!answerId || busy} onClick={advance}>
             {last ? (immediateFeedback ? t("learning.quiz.seeResult") : t("learning.quiz.submit")) : t("learning.quiz.nextQuestion")}
           </Button>
         )}
@@ -364,10 +398,10 @@ export function QuizPlayer({
 }
 
 /** Feedback after one answer, in the administrator's own words. */
-function Feedback({ question, answer, lang, showAnswers }: { question: Question; answer: Answer; lang: ContentLang; showAnswers: boolean }) {
+function Feedback({ question, correction, lang }: { question: Question; correction: Correction; lang: ContentLang }) {
   const { t } = useTranslation();
-  const right = answer.correct;
-  const correctAnswer = question.answers.find((a) => a.correct);
+  const right = correction.correct;
+  const correctAnswer = right ? undefined : question.answers.find((a) => a.id === correction.correctAnswerId);
   return (
     <div
       role="status"
@@ -382,19 +416,19 @@ function Feedback({ question, answer, lang, showAnswers }: { question: Question;
         {right ? <CircleCheck size={18} strokeWidth={2.2} aria-hidden="true" /> : <Lightbulb size={18} strokeWidth={2.2} aria-hidden="true" />}
         {right ? t("learning.quiz.correctTitle") : t("learning.quiz.incorrectTitle")}
       </strong>
-      <p className="m-0">{right ? question.correctFeedback[lang] : question.incorrectFeedback[lang]}</p>
-      {answer.explanation?.[lang] && <p className="m-0 text-[var(--text-muted)]">{answer.explanation[lang]}</p>}
-      {!right && showAnswers && correctAnswer && (
+      {correction.feedback[lang] && <p className="m-0">{correction.feedback[lang]}</p>}
+      {correction.explanation?.[lang] && <p className="m-0 text-[var(--text-muted)]">{correction.explanation[lang]}</p>}
+      {correctAnswer && (
         <p className="m-0">
           <strong>{t("learning.quiz.rightAnswer")}</strong> {correctAnswer.text[lang]}
         </p>
       )}
-      {question.learnMore?.[lang] && (
+      {correction.learnMore?.[lang] && (
         <p className="m-0 flex items-start gap-1.5 border-t border-[rgba(17,17,17,.08)] pt-2 text-[var(--text-muted)]">
           <Sparkles size={14} aria-hidden="true" className="mt-0.5 flex-none text-[var(--accent-highlight)]" />
           <span>
             <strong className="text-[var(--text-primary)]">{t("learning.quiz.goFurther")} </strong>
-            {question.learnMore[lang]}
+            {correction.learnMore[lang]}
           </span>
         </p>
       )}
@@ -406,20 +440,18 @@ function Feedback({ question, answer, lang, showAnswers }: { question: Question;
 function ReviewRow({
   question,
   number,
-  chosenId,
+  correction,
   lang,
-  showAnswers,
 }: {
   question: Question;
   number: number;
-  chosenId: string | undefined;
+  correction: Correction | undefined;
   lang: ContentLang;
-  showAnswers: boolean;
 }) {
   const { t } = useTranslation();
-  const answer = question.answers.find((a) => a.id === chosenId);
-  const right = Boolean(answer?.correct);
-  const correct = question.answers.find((a) => a.correct);
+  const answer = question.answers.find((a) => a.id === correction?.answerId);
+  const right = Boolean(correction?.correct);
+  const correct = right ? undefined : question.answers.find((a) => a.id === correction?.correctAnswerId);
   return (
     <li className="grid gap-1.5 rounded-[var(--radius-md)] border border-[var(--border-subtle)] p-4">
       <p className="m-0 flex items-start gap-2 text-[length:var(--text-body-sm)] font-semibold text-[var(--text-primary)]">
@@ -439,16 +471,16 @@ function ReviewRow({
       </p>
       <p className="m-0 pl-7 text-[length:var(--text-caption)] text-[var(--text-muted)]">
         {t("learning.quiz.yourAnswer")} : {answer?.text[lang] ?? "—"}
-        {!right && showAnswers && correct && (
+        {correct && (
           <>
             {" · "}
             {t("learning.quiz.rightAnswer")} {correct.text[lang]}
           </>
         )}
       </p>
-      <p className="m-0 pl-7 text-[length:var(--text-caption)] text-[var(--text-body)]">
-        {right ? question.correctFeedback[lang] : question.incorrectFeedback[lang]}
-      </p>
+      {correction?.feedback[lang] && (
+        <p className="m-0 pl-7 text-[length:var(--text-caption)] text-[var(--text-body)]">{correction.feedback[lang]}</p>
+      )}
     </li>
   );
 }

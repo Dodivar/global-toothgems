@@ -20,7 +20,8 @@ import { AdminButton } from "../../components/admin/AdminButton";
 import { EmptyState } from "../../components/admin/EmptyState";
 import { BlockView } from "../../components/admin/training/ContentBlocks";
 import { QuizPlayer } from "../../components/learning/QuizPlayer";
-import type { TrainingCourse } from "../../data/adminTraining";
+import type { Quiz, TrainingCourse } from "../../data/adminTraining";
+import { localGrader } from "../../lib/learning/grading";
 import { MediaImage } from "../../components/admin/training/MediaImage";
 import { useAdminTraining } from "../../lib/adminTraining";
 import { useLocalized, type ContentLang } from "../../lib/localized";
@@ -366,7 +367,7 @@ function NodeView({
     return (
       <article className="grid gap-4">
         {eyebrow}
-        <QuizPlayer key={module.quiz.id} quiz={module.quiz} lang={lang} unlimited onSubmit={(score) => score.passed && onComplete()} />
+        <PreviewQuiz key={module.quiz.id} quiz={module.quiz} lang={lang} onPassed={onComplete} />
       </article>
     );
   }
@@ -447,4 +448,10 @@ function CompletionCard({
       </div>
     </article>
   );
+}
+
+/** The learner's check, graded in the browser: the preview holds the answer keys. */
+function PreviewQuiz({ quiz, lang, onPassed }: { quiz: Quiz; lang: ContentLang; onPassed: () => void }) {
+  const grader = useMemo(() => localGrader(quiz), [quiz]);
+  return <QuizPlayer quiz={quiz} lang={lang} unlimited grader={grader} onSubmitted={(score) => score.passed && onPassed()} />;
 }

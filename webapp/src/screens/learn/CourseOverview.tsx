@@ -25,6 +25,7 @@ import type { TrainingCourse } from "../../data/adminTraining";
 import { pick } from "../../data/types";
 import { completionHref, lessonHref } from "../../lib/academyUrl";
 import { useFormat } from "../../lib/format";
+import { useCourseMediaUrl } from "../../lib/progress";
 import { isNodeDone, isUnlocked, type CourseSummary, type LearnerRecord } from "../../lib/learning/path";
 import { formatDuration } from "../../lib/trainingFilters";
 import { ReviewRequestCard } from "../../components/reviews/ReviewRequestCard";
@@ -46,17 +47,19 @@ export function CourseOverview() {
   const { t, i18n } = useTranslation();
   const lang = i18n.language;
   const navigate = useNavigate();
-  const { product, access, training, record, summary, progress } = useLearnerCourse(courseId);
+  const { access, training, record, summary, progress } = useLearnerCourse(courseId);
+  const mediaUrl = useCourseMediaUrl();
   // Halfway through (or finished), the course can be reviewed: asked once,
   // quietly, beside the progress rather than inside a lesson.
   const reviewRequest = useReviewRequests().find((r) => r.subject.kind === "course" && r.subject.id === courseId);
 
-  if (!product || !access || access.state !== "open" || !training || !record || !summary) {
+  if (access.state !== "open" || !training || !record || !summary) {
     return <LearnAccessState access={access} courseId={courseId} />;
   }
 
   const next = summary.path[summary.nextIndex];
   const started = summary.doneCount > 0;
+  const cover = mediaUrl(training.cover);
   const completed = progress.completed;
   const nextModule = next ? training.modules[next.moduleIndex] : undefined;
 
@@ -75,7 +78,7 @@ export function CourseOverview() {
       {/* Hero: identity on the left, the next action on the right. */}
       <section className="grid gap-6 lg:grid-cols-[minmax(0,1.25fr)_minmax(0,1fr)] lg:items-stretch">
         <div className="relative isolate overflow-hidden rounded-[var(--radius-xl)] bg-[var(--gt-ink-900)] text-[var(--text-inverse)]">
-          <img src={training.cover} alt="" aria-hidden="true" className="absolute inset-0 -z-10 h-full w-full object-cover opacity-55" />
+          {cover && <img src={cover} alt="" aria-hidden="true" className="absolute inset-0 -z-10 h-full w-full object-cover opacity-55" />}
           <div className="absolute inset-0 -z-10 bg-gradient-to-t from-[rgba(17,17,17,.92)] via-[rgba(17,17,17,.5)] to-[rgba(17,17,17,.1)]" />
           <div className="grid min-h-[340px] content-end gap-4 p-[clamp(20px,3.5vw,40px)]">
             <div className="flex flex-wrap items-center gap-2">
@@ -246,6 +249,7 @@ function ModuleCard({
 }) {
   const { t, i18n } = useTranslation();
   const lang = i18n.language;
+  const mediaUrl = useCourseMediaUrl();
   const module = course.modules[moduleIndex];
   const moduleSummary = summary.modules[moduleIndex];
   const [open, setOpen] = useState(defaultOpen);
@@ -268,7 +272,9 @@ function ModuleCard({
         className="grid w-full grid-cols-[72px_minmax(0,1fr)_auto] items-center gap-4 p-4 text-left transition-colors hover:bg-[var(--gt-blue-50)] focus-visible:outline focus-visible:outline-2 focus-visible:-outline-offset-2 focus-visible:outline-[var(--focus-ring)] sm:grid-cols-[112px_minmax(0,1fr)_auto]"
       >
         <span className="relative block aspect-square overflow-hidden rounded-[var(--radius-md)] bg-[var(--surface-sunken)] sm:aspect-[4/3]">
-          <img src={module.cover} alt="" aria-hidden="true" loading="lazy" className={clsx("h-full w-full object-cover", moduleSummary.status === "locked" && "opacity-60 grayscale")} />
+          {mediaUrl(module.cover) && (
+            <img src={mediaUrl(module.cover)} alt="" aria-hidden="true" loading="lazy" className={clsx("h-full w-full object-cover", moduleSummary.status === "locked" && "opacity-60 grayscale")} />
+          )}
           <span className="absolute left-1.5 top-1.5 rounded-[var(--radius-pill)] bg-[rgba(17,17,17,.72)] px-2 py-0.5 text-[10px] font-bold tabular-nums text-[var(--gt-white)]">
             {String(moduleIndex + 1).padStart(2, "0")}
           </span>

@@ -1,32 +1,43 @@
-import type { CourseStatus, TrainingCourse } from "../../data/adminTraining";
+import type { TrainingCourse } from "../../data/adminTraining";
+import type { LearnerCourseCard } from "./learnerCourse";
 
 /**
- * Whether a learner may open an authored course.
+ * Which screen a learner gets for a course address.
  *
  * Access comes from an entitlement (the course on the account), never from the
- * URL. Then the publication status decides what an entitled learner sees:
+ * URL; the server enforces it (`learner_courses()` and the progress functions
+ * refuse a course the member does not hold or that is not published). This
+ * function only picks the screen:
  *
- * - `published` — the course is open.
- * - `unpublished` — the course was live and was taken down. A learner who
- *   already holds it keeps reading it: they paid for it, and the builder's own
- *   status notes say an unpublished course still has learners. **Assumption to
- *   confirm with the business** (AGENTS.md §15); the rule lives here, once.
- * - `draft` / `review` — never shown to a learner (`05-learning-platform-rules`).
- *
- * In production the same decision is made by RLS on the enrolment and course
- * tables; this function is what the interface uses to pick the right screen.
+ * - `loading` / `error` — the held courses are not known yet, or failed to load.
+ * - `notEnrolled` — not on the account.
+ * - `unavailable` — the course was withdrawn (`unpublished`). Owner's decision
+ *   (2026-10-01): its holders still see it in their space, greyed out with a
+ *   "back soon" message, and nobody opens its content until it is published again.
+ * - `preparing` — on the account but with no content to read (a draft in the prototype).
+ * - `empty` — published with nothing in it yet.
+ * - `open` — the course can be read.
  */
 export type LearnerAccess =
-  | { state: "open"; course: TrainingCourse }
+  | { state: "loading" }
+  | { state: "error" }
   | { state: "notEnrolled" }
+  | { state: "unavailable" }
   | { state: "preparing" }
-  | { state: "empty"; course: TrainingCourse };
+  | { state: "empty"; course: TrainingCourse }
+  | { state: "open"; course: TrainingCourse };
 
-const READABLE_BY_ENROLLED: CourseStatus[] = ["published", "unpublished"];
-
-export function learnerAccess(course: TrainingCourse | undefined, enrolled: boolean): LearnerAccess {
-  if (!enrolled) return { state: "notEnrolled" };
-  if (!course || !READABLE_BY_ENROLLED.includes(course.status)) return { state: "preparing" };
+export function learnerAccess(
+  status: "idle" | "loading" | "ready" | "error",
+  card: LearnerCourseCard | undefined,
+  course: TrainingCourse | undefined,
+  enrolled: boolean,
+): LearnerAccess {
+  if (status === "error") return { state: "error" };
+  if (status !== "ready") return { state: "loading" };
+  if (!enrolled || !card) return { state: "notEnrolled" };
+  if (card.status === "unpublished") return { state: "unavailable" };
+  if (!course || course.status !== "published") return { state: "preparing" };
   if (course.modules.every((m) => m.steps.length === 0 && !m.quiz)) return { state: "empty", course };
   return { state: "open", course };
 }

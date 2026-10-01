@@ -103,7 +103,9 @@
     "lessonDone": "Lesson completed",
     "upNext": "Up next: {{title}}",
     "quizPassed": "Knowledge check passed",
-    "quizPassedBody": "{{score}}% — the next module is open."
+    "quizPassedBody": "{{score}}% — the next module is open.",
+    "saveFailedTitle": "Lesson not saved",
+    "saveFailedBody": "We could not validate this lesson. Check your connection and try again."
   },
   "access": {
     "notFoundTitle": "We couldn’t find this training",
@@ -113,7 +115,13 @@
     "preparingTitle": "This training is being prepared",
     "preparingBody": "Our team is putting the finishing touches to it. It will open here as soon as it’s ready.",
     "toCourse": "Discover the training",
-    "toDashboard": "Go to my account"
+    "toDashboard": "Go to my account",
+    "loading": "Loading your courses…",
+    "errorTitle": "Your courses could not be loaded",
+    "errorBody": "Check your connection, then try again. Your progress is saved.",
+    "retry": "Try again",
+    "unavailableTitle": "This course is coming back soon",
+    "unavailableBody": "“{{title}}” is briefly unavailable while we update it. It stays on your account and your progress is kept: you will find it here as soon as it is back."
   },
   "video": {
     "label": "Video: {{title}}",
@@ -168,6 +176,7 @@
     "reviewModule": "Review the module",
     "noAttemptsTitle": "You’ve used all your attempts",
     "noAttemptsBody": "Take a moment to review the module. Our team can reopen the knowledge check for you — just get in touch.",
-    "contact": "Contact the team"
+    "contact": "Contact the team",
+    "saveFailed": "Your answer could not be sent. Check your connection and try again: your answers are kept."
   }
 }
