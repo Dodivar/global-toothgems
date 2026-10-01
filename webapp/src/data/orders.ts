@@ -222,7 +222,9 @@ export interface SpentTotal {
  * are never added): the recorded totals of the orders that stand, less what
  * was refunded. Sorted by currency code.
  */
-export function spentByCurrency(orders: Order[]): SpentTotal[] {
+export function spentByCurrency(
+  orders: { status: string; currency: string; amounts: Pick<OrderAmounts, "total" | "refunded"> }[],
+): SpentTotal[] {
   const totals = new Map<string, number>();
   for (const order of orders) {
     if (order.status === "cancelled") continue;

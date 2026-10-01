@@ -1,38 +1,245 @@
 import type { Localized } from "./types";
-import { ADMIN_CUSTOMERS, type AdminCustomer, type AdminNote, type AdminOrder } from "./adminOrders";
+import type { AdminNote, AdminOrder } from "./adminOrders";
 
 /**
- * The customer base as the back office sees it.
+ * The customer base as the back office sees it — mock data, front-end only.
  *
- * This file *extends* `data/adminOrders.ts` rather than replacing it. That file
- * already owns `AdminCustomer` — the identity an order is attached to — and the
- * fourteen people who have ordered in the current book. Re-declaring them here
- * would give the same person two records, and the order detail page's customer
- * card and this page's table would drift apart on the first edit.
+ * The customers workspace is not connected to Supabase yet (`AGENTS.md` §4):
+ * these records, their tags, training and notes are fixtures. A real customer
+ * record is a server-side row behind RBAC, a status change is an audited
+ * transition, and none of this is authorization.
  *
- * So the split is: `adminOrders` owns *who the customer is*, and this file owns
- * *what the relationship is* — account status, tags, training, internal notes.
- * `AGENTS.md` section 6 keeps commerce and learning separate while sharing one
- * customer identity, and this is what that looks like in the prototype.
- *
- * Two figures are worth being explicit about, because they look like a bug
- * until you know the shape of the data:
- *
- * - `orderCount` and `lifetimeValue` are **lifetime** totals, seeded per
- *   customer. They are what `DetailPanels`' customer card already shows.
- * - `ADMIN_ORDERS` is a **recent window** — 46 orders over eleven days. A
- *   customer with fifteen lifetime orders has four of them in the book.
- *
- * Both are true at once, so the interface never presents them as the same
- * number: the summary says "15 orders · 2,380 € lifetime", and the orders tab
- * says "4 orders in this workspace". A single figure derived from the book
- * would contradict the order pages; a single seeded figure would contradict the
- * list of orders printed under it.
- *
- * Mock data, front-end only. A real customer record is a server-side row behind
- * RBAC, a status change is an audited transition, and none of this is
- * authorization.
+ * The order book is live, so it no longer seeds these people: their
+ * `orderCount` and `lifetimeValue` are seeded lifetime figures, while the
+ * orders tab lists the orders of the live book whose customer id matches —
+ * none, for these fixtures. The interface keeps the two apart ("15 orders ·
+ * 2,380 € lifetime" against "0 orders in this workspace").
  */
+
+/* -------------------------------------------------------------------------- */
+/* Identity                                                                   */
+/* -------------------------------------------------------------------------- */
+
+export interface AdminCustomer {
+  id: string;
+  firstName: string;
+  lastName: string;
+  email: string;
+  phone: string;
+  /** Lifetime orders, seeded. */
+  orderCount: number;
+  /** ISO date (YYYY-MM-DD) of the first order. */
+  since: string;
+  /** Everything spent to date, in the order currency. */
+  lifetimeValue: number;
+  addressLine: string;
+  postalCode: string;
+  city: string;
+  /** One of `DELIVERY_COUNTRIES`. */
+  country: string;
+}
+
+/** The seeded customers. */
+const CUSTOMERS = {
+  camille: {
+    id: "camille",
+    firstName: "Camille",
+    lastName: "Reynaud",
+    email: "camille.reynaud@studiolumi.fr",
+    phone: "+33 6 12 44 08 71",
+    orderCount: 11,
+    since: "2024-03-14",
+    lifetimeValue: 1840,
+    addressLine: "18 rue des Lices",
+    postalCode: "49100",
+    city: "Angers",
+    country: "fr",
+  },
+  nora: {
+    id: "nora",
+    firstName: "Nora",
+    lastName: "Benali",
+    email: "nora.benali@gmail.com",
+    phone: "+33 7 61 20 93 15",
+    orderCount: 5,
+    since: "2025-06-02",
+    lifetimeValue: 412,
+    addressLine: "7 quai Saint-Antoine",
+    postalCode: "69002",
+    city: "Lyon",
+    country: "fr",
+  },
+  elodie: {
+    id: "elodie",
+    firstName: "Élodie",
+    lastName: "Marchand",
+    email: "elodie@atelier-perle.fr",
+    phone: "+33 6 88 51 30 42",
+    orderCount: 8,
+    since: "2024-11-09",
+    lifetimeValue: 1120,
+    addressLine: "24 rue Crébillon",
+    postalCode: "44000",
+    city: "Nantes",
+    country: "fr",
+  },
+  lucas: {
+    id: "lucas",
+    firstName: "Lucas",
+    lastName: "Fontaine",
+    email: "lucas.fontaine@outlook.fr",
+    phone: "+33 6 34 77 12 90",
+    orderCount: 1,
+    since: "2026-09-17",
+    lifetimeValue: 0,
+    addressLine: "9 cours Victor Hugo",
+    postalCode: "33000",
+    city: "Bordeaux",
+    country: "fr",
+  },
+  sofia: {
+    id: "sofia",
+    firstName: "Sofia",
+    lastName: "Duarte",
+    email: "sofia.duarte@brightsmile.be",
+    phone: "+32 470 21 88 04",
+    orderCount: 4,
+    since: "2025-09-21",
+    lifetimeValue: 288,
+    addressLine: "Rue Antoine Dansaert 112",
+    postalCode: "1000",
+    city: "Bruxelles",
+    country: "be",
+  },
+  mathis: {
+    id: "mathis",
+    firstName: "Mathis",
+    lastName: "Perrot",
+    email: "mathis.perrot@proton.me",
+    phone: "+33 6 07 55 41 23",
+    orderCount: 2,
+    since: "2026-04-18",
+    lifetimeValue: 96,
+    addressLine: "Résidence Les Tilleuls",
+    postalCode: "59000",
+    city: "Lille",
+    country: "fr",
+  },
+  aisling: {
+    id: "aisling",
+    firstName: "Aisling",
+    lastName: "O’Connor",
+    email: "aisling.oconnor@gemstudio.ie",
+    phone: "+353 85 214 7760",
+    orderCount: 7,
+    since: "2025-02-27",
+    lifetimeValue: 940,
+    addressLine: "42 Camden Street Lower",
+    postalCode: "D02 XE80",
+    city: "Dublin",
+    country: "ie",
+  },
+  hannah: {
+    id: "hannah",
+    firstName: "Hannah",
+    lastName: "Weber",
+    email: "hannah.weber@zahnglanz.de",
+    phone: "+49 151 2277 4108",
+    orderCount: 12,
+    since: "2024-08-05",
+    lifetimeValue: 1655,
+    addressLine: "Torstraße 96",
+    postalCode: "10119",
+    city: "Berlin",
+    country: "de",
+  },
+  ines: {
+    id: "ines",
+    firstName: "Inès",
+    lastName: "Lambert",
+    email: "ines.lambert@icloud.com",
+    phone: "+33 6 45 19 72 36",
+    orderCount: 3,
+    since: "2026-02-11",
+    lifetimeValue: 118,
+    addressLine: "3 place Wilson",
+    postalCode: "31000",
+    city: "Toulouse",
+    country: "fr",
+  },
+  theo: {
+    id: "theo",
+    firstName: "Théo",
+    lastName: "Marchal",
+    email: "theo.marchal@gmail.com",
+    phone: "+33 7 82 30 66 51",
+    orderCount: 6,
+    since: "2025-05-30",
+    lifetimeValue: 640,
+    addressLine: "11 rue Saint-Michel",
+    postalCode: "35000",
+    city: "Rennes",
+    country: "fr",
+  },
+  clara: {
+    id: "clara",
+    firstName: "Clara",
+    lastName: "Vidal",
+    email: "clara.vidal@studioclara.fr",
+    phone: "+33 6 71 04 28 93",
+    orderCount: 15,
+    since: "2023-10-07",
+    lifetimeValue: 2380,
+    addressLine: "5 rue de l’Aiguillerie",
+    postalCode: "34000",
+    city: "Montpellier",
+    country: "fr",
+  },
+  julien: {
+    id: "julien",
+    firstName: "Julien",
+    lastName: "Roussel",
+    email: "julien.roussel@yahoo.fr",
+    phone: "+33 6 90 13 47 25",
+    orderCount: 2,
+    since: "2026-06-24",
+    lifetimeValue: 189,
+    addressLine: "28 route des Romains",
+    postalCode: "67000",
+    city: "Strasbourg",
+    country: "fr",
+  },
+  maelys: {
+    id: "maelys",
+    firstName: "Maëlys",
+    lastName: "Girard",
+    email: "maelys.girard@gmail.com",
+    phone: "+33 6 58 92 11 64",
+    orderCount: 4,
+    since: "2025-12-03",
+    lifetimeValue: 214,
+    addressLine: "16 rue Colbert",
+    postalCode: "37000",
+    city: "Tours",
+    country: "fr",
+  },
+  fatou: {
+    id: "fatou",
+    firstName: "Fatou",
+    lastName: "Diallo",
+    email: "fatou.diallo@eclatstudio.fr",
+    phone: "+33 6 22 85 70 39",
+    orderCount: 9,
+    since: "2024-06-19",
+    lifetimeValue: 1310,
+    addressLine: "47 rue Paradis",
+    postalCode: "13006",
+    city: "Marseille",
+    country: "fr",
+  },
+} satisfies Record<string, AdminCustomer>;
+
+export const ADMIN_CUSTOMERS: AdminCustomer[] = Object.values(CUSTOMERS);
 
 /* -------------------------------------------------------------------------- */
 /* Vocabulary                                                                 */

@@ -28,7 +28,7 @@ import { useFormat } from "../../lib/format";
 import { pick } from "../../data/types";
 import { COURSES } from "../../data/courses";
 import { countryLabelKey } from "../../data/countries";
-import { orderItemCount, orderTotal, type AdminOrder } from "../../data/adminOrders";
+import { orderItemCount, type AdminOrder } from "../../data/adminOrders";
 import {
   averageOrderValue,
   trainingState,
@@ -330,7 +330,7 @@ export function OrdersPanel({
   lifetimeCount: number;
   hrefForOrder: (order: AdminOrder) => string;
 }) {
-  const { formatDateShort, formatPrice } = useFormat();
+  const { formatDateShort, formatMoney } = useFormat();
   const { t, i18n } = useTranslation();
   const lang = i18n.language;
 
@@ -395,7 +395,7 @@ export function OrdersPanel({
 
               <span className="flex items-center justify-between gap-3 sm:justify-end">
                 <strong className="text-[length:var(--text-body-md)] tabular-nums text-[var(--text-primary)]">
-                  {formatPrice(orderTotal(order))}
+                  {formatMoney(order.amounts.total, order.currency)}
                 </strong>
                 <ChevronRight size={16} aria-hidden="true" className="flex-none text-[var(--text-subtle)]" />
               </span>

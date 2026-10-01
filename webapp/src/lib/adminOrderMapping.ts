@@ -1,67 +1,116 @@
 import type {
-  AdminCustomer,
+  AdminDiscount,
+  AdminGiftCardUse,
+  AdminNote,
   AdminOrder,
   AdminOrderStatus,
   AdminPayment,
+  AdminTaxLine,
   FulfillmentStatus,
+  OrderBuyer,
   PaymentMethod,
   PaymentStatus,
   TimelineEvent,
 } from "../data/adminOrders";
-import { orderTotal } from "../data/adminOrders";
+import { spentByCurrency, type SpentTotal } from "../data/orders";
 import type { Product } from "../data/products";
-import { mapOrderLine, money, type OrderItemRow, type ShipmentRow } from "./orderMapping";
+import { toMinorUnits } from "./catalog/money";
+import {
+  mapOrder,
+  type CustomerOrderItemRow,
+  type OrderDiscountRow,
+  type OrderRow,
+} from "./orderMapping";
 
 /**
  * `orders` rows → the back office's `AdminOrder`. Pure, so it is unit-tested
  * without a Supabase client (`adminOrderMapping.test.ts`).
  *
- * Customer details come from the order's own snapshot (addresses, email),
- * never from the live profile: an order shows who it was sent to.
+ * Built on the member area's `mapOrder` (`orderMapping.ts`): amounts, lines,
+ * discounts, parcels, refunds and address snapshots follow exactly the same
+ * rules on both sides — recorded values in integer minor units, never
+ * recomputed. This module adds what only staff read: payment references, gift
+ * cards used, VAT by rate, the buyer's history in the book, a timeline dated
+ * by the rows themselves, and the internal notes.
  */
 
-export interface AddressSnapshot {
-  first_name?: string;
-  last_name?: string;
-  address_line1?: string;
-  postal_code?: string;
-  city?: string;
-  country_code?: string;
-  phone?: string;
+type Amount = number | string;
+
+export interface AdminOrderItemRow extends CustomerOrderItemRow {
+  tax_rate_bp: number;
+  tax_amount: Amount;
+}
+
+export interface AdminOrderDiscountRow extends OrderDiscountRow {
+  source: string;
 }
 
 export interface PaymentRow {
+  /** `stripe` (card provider) or `gift_card`. */
+  provider: string;
   provider_payment_id: string | null;
   provider_checkout_id: string | null;
   status: string;
-  amount: number | string;
-  amount_refunded: number | string;
+  amount: Amount;
+  amount_refunded: Amount;
   payment_method_type: string | null;
   card_brand: string | null;
   card_last4: string | null;
   created_at: string;
+  updated_at: string;
+  /** Gift card payments only; staff can read `code_last4`, never the code. */
+  gift_card: { code_last4: string | null } | null;
 }
 
-export interface AdminOrderRow {
+export interface AdminOrderRow
+  extends Omit<OrderRow, "order_items" | "order_discounts"> {
   id: string;
-  order_number: string;
   user_id: string | null;
   customer_email: string;
-  billing_address: AddressSnapshot;
-  shipping_address: AddressSnapshot | null;
-  status: string;
-  payment_status: string;
-  fulfillment_status: string;
-  discount_amount: number | string;
-  shipping_amount: number | string;
-  currency: string;
-  admin_note: string | null;
-  created_at: string;
   updated_at: string;
-  order_items: OrderItemRow[];
-  shipments: (ShipmentRow & { shipped_at: string | null })[];
+  paid_at: string | null;
+  cancelled_at: string | null;
+  order_items: AdminOrderItemRow[];
+  order_discounts: AdminOrderDiscountRow[];
   payments: PaymentRow[];
 }
+
+/** A staff note as `order_notes` holds it: one text per order. */
+export interface OrderNoteRow {
+  body: string;
+  updated_at: string;
+}
+
+/**
+ * Exactly the columns `AdminOrderRow` maps. Staff notes are read from
+ * `order_notes`; `orders.admin_note` is always NULL and not read.
+ */
+export const ADMIN_ORDER_SELECT = `
+  id, order_number, user_id, customer_email, created_at, updated_at, paid_at, cancelled_at,
+  status, payment_status, fulfillment_status, currency,
+  subtotal_amount, discount_amount, shipping_amount, tax_amount, total_amount,
+  gift_card_amount, amount_due, prices_include_tax, shipping_method_name,
+  billing_address, shipping_address,
+  order_items ( id, product_name, variant_name, unit_price, quantity, discount_amount, tax_rate_bp, tax_amount,
+                product:products ( slug ) ),
+  order_discounts ( label, code, goods_amount, shipping_amount, source ),
+  shipments ( id, status, carrier, service, tracking_number, tracking_url, estimated_delivery,
+              shipped_at, delivered_at, created_at, shipment_items ( order_item_id, quantity ) ),
+  refunds ( amount, status, reason, created_at, processed_at, refund_items ( order_item_id, quantity ) ),
+  payments ( provider, provider_payment_id, provider_checkout_id, status, amount, amount_refunded,
+             payment_method_type, card_brand, card_last4, created_at, updated_at,
+             gift_card:gift_cards ( code_last4 ) )
+`;
+
+const ORDER_STATUS: readonly AdminOrderStatus[] = [
+  "pending",
+  "confirmed",
+  "processing",
+  "shipped",
+  "delivered",
+  "cancelled",
+  "refunded",
+];
 
 const PAYMENT_STATUS: Record<string, PaymentStatus> = {
   paid: "paid",
@@ -78,9 +127,16 @@ const FULFILLMENT: Record<string, FulfillmentStatus> = {
   fulfilled: "fulfilled",
 };
 
+/** Payment rows that hold money: collected, possibly refunded since. */
+const COLLECTED = new Set(["succeeded", "partially_refunded", "refunded"]);
+
 /** Back-office fulfilment value → database column. */
 export function fulfillmentToDb(value: FulfillmentStatus): string {
   return value === "partiallyFulfilled" ? "partially_fulfilled" : value;
+}
+
+function byTime(a: string, b: string): number {
+  return Date.parse(a) - Date.parse(b);
 }
 
 function paymentMethod(row: PaymentRow | undefined): PaymentMethod {
@@ -93,6 +149,7 @@ function paymentMethod(row: PaymentRow | undefined): PaymentMethod {
       return "applePay";
     case "sepa_debit":
     case "bank_transfer":
+    case "customer_balance":
       return "bankTransfer";
     case "card":
       return "card";
@@ -101,108 +158,183 @@ function paymentMethod(row: PaymentRow | undefined): PaymentMethod {
   }
 }
 
-function mapPayment(order: AdminOrderRow, status: PaymentStatus): AdminPayment {
-  const row = [...order.payments].sort((a, b) => b.created_at.localeCompare(a.created_at))[0];
-  const captured = row && (row.status === "succeeded" || row.status.includes("refunded")) ? money(row.amount) : 0;
-  const refunded = row ? money(row.amount_refunded) : 0;
+/**
+ * The card provider's side of the payment. Several Checkout attempts can
+ * exist (an expired session, then a paid one): the method and reference shown
+ * are those of the latest attempt that collected money, else the latest one.
+ */
+function mapPayment(row: AdminOrderRow, status: PaymentStatus): AdminPayment {
+  const card = row.payments.filter((p) => p.provider !== "gift_card");
+  const collected = card.filter((p) => COLLECTED.has(p.status));
+  const shown = [...(collected.length > 0 ? collected : card)].sort((a, b) => byTime(b.created_at, a.created_at))[0];
   return {
-    method: paymentMethod(row),
-    last4: row?.card_last4 ?? undefined,
+    method: paymentMethod(shown),
+    last4: shown?.card_last4 ?? undefined,
     status,
-    reference: row?.provider_payment_id ?? row?.provider_checkout_id ?? "—",
-    capturedAt: captured > 0 ? row!.created_at : undefined,
-    captured,
-    refunded: refunded > 0 ? refunded : undefined,
+    reference: shown?.provider_payment_id ?? shown?.provider_checkout_id ?? undefined,
+    capturedAt: row.paid_at ?? undefined,
+    captured: collected.reduce((sum, p) => sum + toMinorUnits(p.amount), 0),
+    refunded: collected.reduce((sum, p) => sum + toMinorUnits(p.amount_refunded), 0),
   };
 }
 
-/** The history the row's own dates can vouch for. */
-function timelineOf(order: AdminOrderRow, payment: AdminPayment): TimelineEvent[] {
-  const events: TimelineEvent[] = [{ kind: "placed", at: order.created_at }];
-  if (payment.capturedAt) events.push({ kind: "paymentConfirmed", at: payment.capturedAt });
-  if (order.payment_status === "failed") events.push({ kind: "paymentFailed", at: order.updated_at });
-  for (const s of order.shipments) {
+function giftCardsOf(row: AdminOrderRow): AdminGiftCardUse[] {
+  return row.payments
+    .filter((p) => p.provider === "gift_card" && COLLECTED.has(p.status))
+    .sort((a, b) => byTime(a.created_at, b.created_at))
+    .map((p) => ({ last4: p.gift_card?.code_last4 ?? undefined, amount: toMinorUnits(p.amount), status: p.status }));
+}
+
+/**
+ * VAT by rate, from the lines' own rates and amounts, highest rate first.
+ * `create_order` also taxes the shipping at the standard rate without storing
+ * that rate: what the order's VAT holds beyond its lines is shown as the
+ * shipping's VAT, without a rate rather than with a guessed one.
+ */
+export function taxesOf(row: Pick<AdminOrderRow, "tax_amount" | "order_items">): AdminTaxLine[] {
+  const byRate = new Map<number, number>();
+  for (const item of row.order_items) {
+    const amount = toMinorUnits(item.tax_amount);
+    if (amount !== 0) byRate.set(item.tax_rate_bp, (byRate.get(item.tax_rate_bp) ?? 0) + amount);
+  }
+  const lines: AdminTaxLine[] = [...byRate.entries()]
+    .sort(([a], [b]) => b - a)
+    .map(([rateBp, amount]) => ({ rateBp, amount }));
+  const shipping = toMinorUnits(row.tax_amount) - lines.reduce((sum, l) => sum + l.amount, 0);
+  if (shipping > 0) lines.push({ rateBp: null, amount: shipping });
+  return lines;
+}
+
+/**
+ * The history the rows can vouch for, oldest first. Every event carries the
+ * date of the fact itself — never `orders.updated_at`, which moves with any
+ * edit. A fact with no recorded date (an order marked "processing" by hand, a
+ * status set without a parcel) has no event rather than an invented one.
+ */
+export function timelineOf(row: AdminOrderRow, captured: number): TimelineEvent[] {
+  const events: TimelineEvent[] = [{ kind: "placed", at: row.created_at }];
+  if (row.paid_at) events.push({ kind: "paymentConfirmed", at: row.paid_at });
+  for (const p of row.payments) {
+    // A payment row is closed as `failed` once and not touched again.
+    if (p.provider !== "gift_card" && p.status === "failed") events.push({ kind: "paymentFailed", at: p.updated_at });
+  }
+  for (const s of row.shipments ?? []) {
     if (s.shipped_at) events.push({ kind: "shipped", at: s.shipped_at });
     if (s.delivered_at) events.push({ kind: "delivered", at: s.delivered_at });
   }
-  if (order.status === "cancelled") events.push({ kind: "cancelled", at: order.updated_at });
-  if (order.payment_status === "refunded") events.push({ kind: "refunded", at: order.updated_at });
-  if (order.payment_status === "partially_refunded") events.push({ kind: "partiallyRefunded", at: order.updated_at });
-  return events.sort((a, b) => a.at.localeCompare(b.at));
+  if (row.cancelled_at) events.push({ kind: "cancelled", at: row.cancelled_at });
+
+  let refunded = 0;
+  const refunds = [...(row.refunds ?? [])].sort((a, b) => byTime(a.processed_at ?? a.created_at, b.processed_at ?? b.created_at));
+  for (const r of refunds) {
+    events.push({ kind: "refundRequested", at: r.created_at });
+    if (!r.processed_at) continue;
+    if (r.status === "succeeded") {
+      refunded += toMinorUnits(r.amount);
+      events.push({ kind: captured > 0 && refunded >= captured ? "refunded" : "partiallyRefunded", at: r.processed_at });
+    } else if (r.status === "failed") {
+      events.push({ kind: "refundFailed", at: r.processed_at });
+    }
+  }
+  return events.sort((a, b) => byTime(a.at, b.at));
 }
 
-function customerOf(order: AdminOrderRow): AdminCustomer {
-  const address = order.shipping_address ?? order.billing_address;
+function buyerOf(row: AdminOrderRow): OrderBuyer {
+  const address = row.billing_address ?? row.shipping_address ?? {};
+  const first = address.first_name?.trim();
   return {
-    id: order.user_id ?? `guest:${order.customer_email.toLowerCase()}`,
-    firstName: address.first_name?.trim() || order.customer_email.split("@")[0],
-    lastName: address.last_name?.trim() ?? "",
-    email: order.customer_email,
-    phone: address.phone ?? "",
-    // Filled in by `mapAdminOrders`, which sees the customer's other orders.
+    id: row.user_id ?? `guest:${row.customer_email.toLowerCase()}`,
+    firstName: first || row.customer_email.split("@")[0],
+    lastName: first ? (address.last_name?.trim() ?? "") : "",
+    email: row.customer_email,
+    phone: (row.billing_address?.phone ?? row.shipping_address?.phone ?? "").trim(),
+    // Filled in by `mapAdminOrders`, which sees the buyer's other orders.
     orderCount: 1,
-    since: order.created_at.slice(0, 10),
-    lifetimeValue: 0,
-    addressLine: address.address_line1 ?? "",
-    postalCode: address.postal_code ?? "",
-    city: address.city ?? "",
-    country: (address.country_code ?? "").toLowerCase(),
+    since: row.created_at.slice(0, 10),
+    spend: [],
   };
 }
 
-export function mapAdminOrder(row: AdminOrderRow, findProduct: (slug: string) => Product | undefined): AdminOrder {
+function notesOf(row: AdminOrderRow, note: OrderNoteRow | undefined): AdminNote[] {
+  // One text per order, each entry signed and dated inside it by whoever wrote it.
+  if (!note?.body.trim()) return [];
+  return [{ id: `${row.order_number}-notes`, author: "", at: note.updated_at, body: { fr: note.body, en: note.body } }];
+}
+
+export function mapAdminOrder(
+  row: AdminOrderRow,
+  findProduct: (slug: string) => Product | undefined,
+  note?: OrderNoteRow,
+): AdminOrder {
+  const order = mapOrder(row, findProduct);
   const paymentStatus = PAYMENT_STATUS[row.payment_status] ?? "pending";
   const payment = mapPayment(row, paymentStatus);
-  const parcel = [...row.shipments]
-    .filter((s) => s.carrier && s.tracking_number && s.status !== "cancelled")
-    .sort((a, b) => b.created_at.localeCompare(a.created_at))[0];
+  const status = (ORDER_STATUS as readonly string[]).includes(row.status) ? (row.status as AdminOrderStatus) : "pending";
   return {
     reference: row.order_number,
     placedAt: row.created_at,
-    status: row.status as AdminOrderStatus,
+    status,
     payment,
     fulfillment: FULFILLMENT[row.fulfillment_status] ?? "unfulfilled",
-    attention: paymentStatus === "failed" && row.status !== "cancelled" ? "paymentFailed" : undefined,
-    customer: customerOf(row),
-    lines: row.order_items.map((item) => mapOrderLine(item, findProduct)),
+    attention: paymentStatus === "failed" && status !== "cancelled" ? "paymentFailed" : undefined,
+    customer: buyerOf(row),
+    lines: order.lines.map((line, index) => ({
+      ...line,
+      taxRateBp: row.order_items[index].tax_rate_bp,
+      taxAmount: toMinorUnits(row.order_items[index].tax_amount),
+    })),
     currency: row.currency,
-    shippingMethod: row.shipping_address ? "standard" : "digital",
-    shippingCost: money(row.shipping_amount),
-    discount: money(row.discount_amount),
-    shipment: parcel
-      ? {
-          carrier: parcel.carrier!,
-          number: parcel.tracking_number!,
-          estimatedDelivery: parcel.estimated_delivery ?? parcel.delivered_at?.slice(0, 10) ?? "",
-        }
-      : undefined,
-    timeline: timelineOf(row, payment),
-    // One free-text column holds the team's notes for now.
-    notes: row.admin_note
-      ? [{ id: `${row.order_number}-note`, author: "Global Toothgems", at: row.updated_at, body: { fr: row.admin_note, en: row.admin_note } }]
-      : [],
+    shippingMethod: order.ships ? "standard" : "digital",
+    shippingMethodName: order.shippingMethod,
+    amounts: order.amounts,
+    discounts: order.discounts.map(
+      (d, index): AdminDiscount => ({ ...d, source: row.order_discounts[index].source === "loyalty" ? "loyalty" : "promotion" }),
+    ),
+    giftCards: giftCardsOf(row),
+    taxes: taxesOf(row),
+    parcels: order.parcels,
+    refunds: order.refunds,
+    shippingAddress: order.shippingAddress,
+    billingAddress: order.billingAddress,
+    shipment: order.tracking,
+    timeline: timelineOf(row, payment.captured),
+    notes: notesOf(row, note),
   };
 }
 
 /**
- * The whole book, with each customer's order count, first order and lifetime
- * value computed across it. Lifetime value counts paid money that stayed paid.
+ * Net spend per currency of a set of orders: the recorded totals of the paid
+ * orders that stand, less what was refunded — the member area's rule
+ * (`spentByCurrency`), restricted to orders whose money was received.
  */
-export function mapAdminOrders(rows: AdminOrderRow[], findProduct: (slug: string) => Product | undefined): AdminOrder[] {
-  const orders = rows.map((row) => mapAdminOrder(row, findProduct));
-  const byCustomer = new Map<string, AdminOrder[]>();
-  for (const o of orders) byCustomer.set(o.customer.id, [...(byCustomer.get(o.customer.id) ?? []), o]);
+export function spendOf(orders: AdminOrder[]): SpentTotal[] {
+  const paid = orders.filter(
+    (o) => o.payment.status === "paid" || o.payment.status === "partiallyRefunded" || o.payment.status === "refunded",
+  );
+  return spentByCurrency(paid);
+}
+
+/**
+ * The whole book, with each buyer's order count, first order and spend
+ * computed across it. `notes` are the staff notes by order id.
+ */
+export function mapAdminOrders(
+  rows: AdminOrderRow[],
+  findProduct: (slug: string) => Product | undefined,
+  notes: Map<string, OrderNoteRow> = new Map(),
+): AdminOrder[] {
+  const orders = rows.map((row) => mapAdminOrder(row, findProduct, notes.get(row.id)));
+  const byBuyer = new Map<string, AdminOrder[]>();
+  for (const o of orders) byBuyer.set(o.customer.id, [...(byBuyer.get(o.customer.id) ?? []), o]);
   return orders.map((o) => {
-    const mine = byCustomer.get(o.customer.id)!;
+    const mine = byBuyer.get(o.customer.id)!;
     return {
       ...o,
       customer: {
         ...o.customer,
         orderCount: mine.length,
         since: mine.reduce((min, x) => (x.placedAt < min ? x.placedAt : min), o.placedAt).slice(0, 10),
-        lifetimeValue: mine
-          .filter((x) => x.payment.status === "paid" && x.status !== "cancelled" && x.status !== "refunded")
-          .reduce((sum, x) => sum + orderTotal(x), 0),
+        spend: spendOf(mine),
       },
     };
   });

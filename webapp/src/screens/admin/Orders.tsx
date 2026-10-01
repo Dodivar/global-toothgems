@@ -1,6 +1,6 @@
 "use client";
 
-import { useCallback, useEffect, useMemo, useRef, useState } from "react";
+import { useCallback, useEffect, useMemo, useState } from "react";
 import { useTranslation } from "react-i18next";
 import { useNavigate, useSearchParams } from "../../lib/navigation";
 import { Download, RefreshCw } from "lucide-react";
@@ -11,11 +11,10 @@ import { OrdersToolbar } from "../../components/admin/OrdersToolbar";
 import { OrderCardList, OrdersTable } from "../../components/admin/OrdersTable";
 import { BulkBar } from "../../components/admin/BulkBar";
 import { Pagination } from "../../components/admin/Pagination";
-import { NoOrdersYet, NoResults, TableSkeleton } from "../../components/admin/OrdersPlaceholders";
+import { LoadError, NoOrdersYet, NoResults, TableSkeleton } from "../../components/admin/OrdersPlaceholders";
 import {
   CancelDialog,
   ExportDialog,
-  RefundDialog,
   StatusDialog,
   type ExportFormat,
   type ExportScope,
@@ -26,16 +25,19 @@ import { useFormat } from "../../lib/format";
 import {
   applyFilters,
   activeFilterCount,
+  bookToday,
+  customerOptions,
   dateWindow,
   metrics,
   paginate,
   PARAM,
+  productOptions,
   readFilters,
   type DatePreset,
   type OrderFilters,
   type SortKey,
 } from "../../lib/adminOrderFilters";
-import { orderTotal, type AdminOrder, type AdminOrderStatus } from "../../data/adminOrders";
+import { BOOK_LIMIT, type AdminOrder, type AdminOrderStatus } from "../../data/adminOrders";
 import { useAdminShell } from "./AdminLayout";
 
 /**
@@ -56,24 +58,25 @@ import { useAdminShell } from "./AdminLayout";
  *
  * - **The URL** holds what the table is showing (`lib/adminOrderFilters`), so a
  *   filtered view is a shareable link and the back button works.
- * - **`useAdminOrders`** holds the order book, so a status change moves the
- *   badge, the fulfilment column, the KPI row and the order's own timeline at
- *   once rather than just raising a toast.
+ * - **`useAdminOrders`** holds the order book read from Supabase (amounts as
+ *   recorded, in minor units), re-read after every write, so the badge, the
+ *   KPI row and the order's own timeline move together.
  * - **This component** holds only what is genuinely transient: which rows are
- *   ticked, which dialog is open, and the short pending flash that stands in
- *   for a request.
+ *   ticked and which dialog is open.
+ *
+ * Filtering, sorting and paging run in the browser over the whole book: the
+ * KPI row, the buyers' order counts and the customers workspace all read the
+ * same book. `webapp/README.md` (Orders) records the limit and the plan for
+ * paging on the server.
  */
 
-/** How long the simulated refetch shows skeleton rows. */
-const FILTER_DELAY = 420;
-
 export function Orders() {
-  const { formatPrice } = useFormat();
-  const { t } = useTranslation();
+  const { formatMoney } = useFormat();
+  const { t, i18n } = useTranslation();
   const navigate = useNavigate();
   const { openNav } = useAdminShell();
   const { showToast } = useToast();
-  const { orders, setStatus, setStatusMany, refund, cancel, cancelMany } = useAdminOrders();
+  const { orders, loading, failed, truncated, reload, setStatus, setStatusMany, cancel, cancelMany } = useAdminOrders();
   const [params, setParams] = useSearchParams();
 
   const filters = useMemo(() => readFilters(params), [params]);
@@ -143,33 +146,13 @@ export function Orders() {
   /* ---------------------------------------------------------------------- */
 
   const overview = useMemo(() => metrics(orders), [orders]);
-  const filtered = useMemo(() => applyFilters(orders, filters), [orders, filters]);
+  const today = bookToday();
+  const filtered = useMemo(() => applyFilters(orders, filters, today), [orders, filters, today]);
+  const customers = useMemo(() => customerOptions(orders), [orders]);
+  const products = useMemo(() => productOptions(orders, i18n.language), [orders, i18n.language]);
   const page = useMemo(() => paginate(filtered, filters.page, filters.pageSize), [filtered, filters.page, filters.pageSize]);
 
-  /**
-   * The filtering flash.
-   *
-   * Filtering is synchronous here, so the skeleton exists to show the *shape* of
-   * the state a real implementation would have — and it is keyed on the query
-   * string rather than on a click, so it also appears when a filter changes from
-   * a KPI tile, a chip or a pasted URL.
-   *
-   * The guard compares the query to the last one seen rather than counting
-   * renders: a "first render" boolean is flipped by StrictMode's double effect
-   * invocation in development, which made the page open into skeletons with no
-   * filter having changed at all.
-   */
-  const [pending, setPending] = useState(false);
   const querySignature = params.toString();
-  const lastQuery = useRef(querySignature);
-
-  useEffect(() => {
-    if (lastQuery.current === querySignature) return;
-    lastQuery.current = querySignature;
-    setPending(true);
-    const id = setTimeout(() => setPending(false), FILTER_DELAY);
-    return () => clearTimeout(id);
-  }, [querySignature]);
 
   /* ---------------------------------------------------------------------- */
   /* Selection                                                              */
@@ -216,7 +199,6 @@ export function Orders() {
   /* ---------------------------------------------------------------------- */
 
   const [statusTarget, setStatusTarget] = useState<AdminOrder | null>(null);
-  const [refundTarget, setRefundTarget] = useState<AdminOrder | null>(null);
   const [cancelTargets, setCancelTargets] = useState<AdminOrder[]>([]);
   const [exportOpen, setExportOpen] = useState(false);
 
@@ -249,7 +231,6 @@ export function Orders() {
     sort: filters.sort,
     onSort: (sort: SortKey) => write({ [PARAM.sort]: sort === "dateDesc" ? null : sort }),
     onAdvance: (order: AdminOrder) => setStatusTarget(order),
-    onRefund: (order: AdminOrder) => setRefundTarget(order),
     onCancel: (order: AdminOrder) => setCancelTargets([order]),
     onViewCustomer: (order: AdminOrder) => {
       // The customer record is not part of this prototype, so filtering the
@@ -267,7 +248,7 @@ export function Orders() {
   };
 
   const hasOrders = orders.length > 0;
-  const showEmptyResults = !pending && hasOrders && filtered.length === 0;
+  const showEmptyResults = hasOrders && filtered.length === 0;
 
   return (
     <>
@@ -282,23 +263,22 @@ export function Orders() {
         onOpenNav={openNav}
         actions={
           <>
-            <span className="mr-1 hidden flex-col items-end sm:flex">
+            {/* Never one figure across currencies: one line per currency. */}
+            <span className="mr-1 hidden flex-col items-end sm:flex" title={t("admin.orders.revenueHint")}>
               <span className="text-[length:var(--text-caption)] text-[var(--text-muted)]">
                 {t("admin.orders.revenue")}
               </span>
-              <strong className="text-[length:var(--text-h4)] tabular-nums leading-none text-[var(--text-primary)]">
-                {formatPrice(overview.revenue)}
-              </strong>
+              {overview.revenue.length === 0 ? (
+                <strong className="text-[length:var(--text-h4)] tabular-nums leading-none text-[var(--text-primary)]">—</strong>
+              ) : (
+                overview.revenue.map((r) => (
+                  <strong key={r.currency} className="text-[length:var(--text-h4)] tabular-nums leading-none text-[var(--text-primary)]">
+                    {formatMoney(r.amount, r.currency)}
+                  </strong>
+                ))
+              )}
             </span>
-            <AdminButton
-              variant="outline"
-              iconLeft={RefreshCw}
-              onClick={() => {
-                setPending(true);
-                setTimeout(() => setPending(false), FILTER_DELAY);
-                showToast(t("admin.orders.toastRefreshTitle"), t("admin.orders.toastRefreshBody"), "info");
-              }}
-            >
+            <AdminButton variant="outline" iconLeft={RefreshCw} onClick={reload}>
               {t("admin.orders.refresh")}
             </AdminButton>
             <AdminButton variant="primary" iconLeft={Download} onClick={() => setExportOpen(true)}>
@@ -325,6 +305,8 @@ export function Orders() {
         <OrdersToolbar
           filters={filters}
           resultCount={filtered.length}
+          customers={customers}
+          products={products}
           activeCount={activeCount}
           onSearch={onSearch}
           onToggleStatus={onToggleStatus}
@@ -334,10 +316,18 @@ export function Orders() {
         />
       </div>
 
-      {!hasOrders ? (
+      {truncated && (
+        <p role="status" className="m-0 rounded-[var(--radius-md)] border border-[var(--gt-amber-400)] bg-[var(--status-warning-bg)] p-3 text-[length:var(--text-body-sm)] text-[var(--status-warning-fg)]">
+          {t("admin.orders.truncatedNotice", { count: BOOK_LIMIT })}
+        </p>
+      )}
+
+      {loading ? (
+        <TableSkeleton rows={6} />
+      ) : failed ? (
+        <LoadError onRetry={reload} />
+      ) : !hasOrders ? (
         <NoOrdersYet />
-      ) : pending ? (
-        <TableSkeleton rows={Math.min(8, Math.max(3, page.items.length || 6))} />
       ) : showEmptyResults ? (
         <NoResults onReset={onReset} />
       ) : (
@@ -375,21 +365,6 @@ export function Orders() {
             );
           }
           setStatusTarget(null);
-        }}
-      />
-
-      <RefundDialog
-        order={refundTarget}
-        onClose={() => setRefundTarget(null)}
-        onConfirm={(amount, full) => {
-          if (!refundTarget) return;
-          if (refund(refundTarget.reference, amount, full)) {
-            showToast(
-              t("admin.orders.toastRefundTitle", { reference: `#${refundTarget.reference}` }),
-              t("admin.orders.toastRefundBody", { amount: formatPrice(amount) }),
-            );
-          }
-          setRefundTarget(null);
         }}
       />
 
@@ -442,7 +417,7 @@ export function Orders() {
             onClick={() => navigate(hrefFor(page.items[0]))}
             className="font-semibold text-[var(--text-primary)] underline decoration-1 underline-offset-4 focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-[var(--focus-ring)]"
           >
-            #{page.items[0].reference} · {formatPrice(orderTotal(page.items[0]))}
+            #{page.items[0].reference} · {formatMoney(page.items[0].amounts.total, page.items[0].currency)}
           </button>
         </p>
       )}

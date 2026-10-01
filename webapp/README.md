@@ -174,13 +174,14 @@ section).
 
 ## Orders and reviews on Supabase
 
-With the Supabase variables set, three stores read and write the database
-instead of their mock data; without them the mock stores run unchanged.
+With the Supabase variables set, three stores read and write the database.
+Without them, the member's orders and reviews run on their mock data, and the
+back office's order book is empty (it never shows invented orders).
 
 | Store | Reads | Writes |
 | --- | --- | --- |
 | `lib/orders.tsx` (member area) | the account's own paid orders (`payment_status` paid / refunded / partially refunded): recorded amounts (subtotal, discount, shipping, VAT, total, gift cards, amount due), items, discounts (`order_discounts`), parcels with their contents, refunds, address snapshots — never the internal fields (`CUSTOMER_ORDER_SELECT`) | nothing: orders come from the checkout (`create-checkout-session`) and the Stripe webhook |
-| `lib/adminOrders.tsx` (back office) | every order except expired unpaid checkouts, with items, parcels and payments; the staff notes from `order_notes` (falls back to `orders.admin_note` until migration `20260930210000_order_staff_notes` is applied) | status (+ implied fulfilment), cancellation (`cancel_order`), notes (written to `orders.admin_note`, which a trigger appends to `order_notes`). Refunds — and cancelling or marking refunded an order that holds money — are refused with a message: they go through Stripe |
+| `lib/adminOrders.tsx` (back office) | every order except expired unpaid checkouts (`ADMIN_ORDER_SELECT`): recorded amounts, items with their VAT rate and amount, discounts with code and source (promotion / loyalty), every payment row (card and gift card, `gift_cards.code_last4` only), parcels with their contents, refunds of every status, address snapshots, `paid_at` / `cancelled_at`; the staff notes from `order_notes` (migration `20260930210000_order_staff_notes`). Read 1 000 rows at a time (the Supabase `max_rows` cap), up to `BOOK_LIMIT` | status (+ implied fulfilment), cancellation of an unpaid order (`cancel_order`), notes (written to `orders.admin_note`, which a trigger appends to `order_notes`). Refunds are not offered, and cancelling or marking refunded an order that holds money is refused: they go through Stripe |
 | `lib/reviewsSupabase.tsx` | published reviews for visitors (public columns only); own reviews, votes and reports for customers; everything for staff | submit / edit (photos to the private `review-photos` bucket), helpful votes, reports, and every moderation action |
 
 The database enforces the review rules: only a customer whose order with the
@@ -194,6 +195,33 @@ the profile's first and last name ("Client" when both are empty).
 Course reviews are not stored yet (the table has no course column), so with
 Supabase they are not offered. Mapping lives in pure, unit-tested modules:
 `lib/orderMapping.ts`, `lib/adminOrderMapping.ts`, `lib/reviewMapping.ts`.
+
+### Orders in the back office (`/admin/commandes`)
+
+- **Amounts as recorded.** `adminOrderMapping.ts` builds on the member area's `mapOrder`, so both sides show
+  the same figures: integer minor units of the order's currency, formatted only on screen (`formatMoney`). The
+  detail page lists each line's VAT rate and amount and its share of the discounts, the discounts by name and
+  code (loyalty rewards apart), shipping, the total, the VAT by rate (what the order's VAT holds beyond its lines
+  is the shipping's, shown without a rate because `create_order` does not store it), gift cards by their last
+  four characters, the amount paid online, refunds, both address snapshots, each parcel with its contents and
+  tracking link, and the payment (method, last four digits, Stripe reference shortened).
+- **Collected, per currency.** The header figure is never added across currencies: for orders whose payment was
+  received and that are not cancelled, `amount_due` (total less gift cards) less succeeded refunds
+  (`collectedByCurrency`). Gift cards count when sold, not again when spent. A buyer's "spent" is the member
+  area's rule (`spentByCurrency`: recorded totals of paid orders that stand, less refunds).
+- **Timeline from recorded dates only:** placed (`created_at`), paid (`paid_at`), payment failed (the failed
+  payment row), shipped / delivered (each parcel), cancelled (`cancelled_at`), refund requested / refunded /
+  partially refunded / failed (each refund). `orders.updated_at` is never used: a status set by hand without a
+  dated fact has no event.
+- **States:** skeleton while loading, an error panel with "Try again" when the read fails (never an empty
+  book), "no orders yet", "no result" for filters.
+- **Volume.** The whole book is read (1 000 rows per request, up to `BOOK_LIMIT` = 10 000 orders, beyond which a
+  notice says only the newest are loaded) and filtered, sorted and paged in the browser, with the state in the
+  URL. That is deliberate for now: the KPI row, the buyers' order counts and the customers workspace read the
+  same book, and paging on the server needs an aggregate function for the KPIs (a new migration). Plan when the
+  book grows: `range()` + filters on `orders` for the table (search on `order_number` / `customer_email` /
+  address names, `order_items!inner` for the product filter), counts with `head: true`, a `SECURITY INVOKER`
+  RPC for the collected figure per currency, and the buyer's figures read on the detail page.
 
 ## Cart and checkout (Stripe)
 
@@ -504,9 +532,9 @@ Without Supabase, sign in with `camille@globaltoothgems.com` / `toothgems2026`; 
 - `lib/adminCatalog.tsx` — the one place any product changes. It picks the Supabase store (`lib/adminCatalogSupabase.tsx`) when the environment is configured and the in-memory prototype store otherwise; both implement the same contract (`lib/adminCatalogContext.ts`), so no screen knows which one it is on. A failed write is reported by a toast from the store and rejects, so the screen keeps the form and skips its success path.
 - `lib/adminAuth.tsx` — the administrator session, kept separate from the customer session in `lib/auth.tsx`: Supabase Auth restricted to staff accounts when configured, the demo account otherwise. A rejected password leaves no session behind.
 - `lib/productFilters.ts` — search, filtering and sorting as pure functions on plain state; the product list holds its filters in the URL, so a filtered view can be linked to and stepped back through.
-- `data/adminOrders.ts` — the back office's order book: 38 orders across every status, payment and fulfilment state, 14 customers in four countries, six flagged for attention (one per reason) and seven internal notes. Deliberately a separate model from `data/orders.ts`, which is the *member's* view of their own purchases and is written to by `lib/orders.tsx` when the cart is paid; only the line-item shape is shared. Timelines, tracking numbers and payment references are derived from each order's own state rather than typed out, so a status can never disagree with the history beside it. Every line refers to a real catalogue id, because `productLine()` throws on an unknown one.
-- `lib/adminOrders.tsx` — the one place any order changes, shaped like `lib/adminCatalog.tsx`. Marking an order shipped moves the badge, the fulfilment column, the KPI row and that order's timeline together. It never invents a payment: an unpaid order marked shipped stays unpaid.
-- `lib/adminOrderFilters.ts` — search, filtering, sorting and paging as pure functions over URL state, the same convention as `lib/productFilters.ts`. With Supabase the date presets use the calendar day; on the mock book they are anchored to the newest order rather than to the wall clock, so "Today" never silently returns nothing on fixed mock data.
+- `data/adminOrders.ts` — the back office's order model (types only; the mock book is gone). A separate model from the member's `data/orders.ts`, sharing its amounts, lines, discounts, parcels, refunds and addresses. See *Orders in the back office* above.
+- `lib/adminOrders.tsx` — the one place any order changes (Supabase only; without it the book is empty).
+- `lib/adminOrderFilters.ts` — search, filtering, sorting and paging as pure functions over URL state, the same convention as `lib/productFilters.ts`; the KPI row and the filter options come from the book itself.
 - `components/admin/` — the workspace's own primitives (rail, header, table, row, status badge, filters, form, media uploader, preview drawer, confirmation dialog, empty and loading states, form field, search input, category badge), plus the orders workspace's own pieces.
 - `components/ui/Dialog.tsx` and `components/ui/Menu.tsx` — a modal with a focus trap and a keyboard-navigable dropdown, added for the orders screens. See the scope note below: they overlap with `components/admin/ConfirmationDialog.tsx`, `OverflowMenu.tsx` and `lib/useFocusTrap.ts` and should be consolidated onto those.
 
@@ -525,9 +553,9 @@ Without Supabase, sign in with `camille@globaltoothgems.com` / `toothgems2026`; 
 
 ### Scope
 
-Product management and order management are the two functional sections. With Supabase configured, product management is real: Supabase Auth, the `manage_products` permission and RLS decide every read and write, and `RequireAdmin` remains a navigation gate only. Everything else — and product management without Supabase — has no database, no server-side validation and no real authorization; a page reload restores the seeded data and signs the administrator out.
+Product management and order management are the two functional sections. With Supabase configured, product management and the order book are real: Supabase Auth, the `manage_products` / `manage_orders` permissions and RLS decide every read and write, and `RequireAdmin` remains a navigation gate only. The screens still on mock data — and product management without Supabase — have no database, no server-side validation and no real authorization; a page reload restores the seeded data and signs the administrator out.
 
-In the orders screens specifically, changing a status, refunding, cancelling, exporting, printing an invoice and tracking a parcel all stop at the screen. A real status transition is a server-side change behind explicit RBAC with an audit entry, and a real refund is a Stripe call whose webhook — not the browser — writes the new state. Each dialog says so where the action is taken.
+In the orders screens, status changes, cancellations of unpaid orders and notes are written to Supabase under `manage_orders` (audited); refunds are not offered (a Stripe call confirmed by its webhook, not the browser); exporting and printing an invoice are not wired and say so.
 
 **Known duplication to consolidate.** The orders screens were built against their own primitives before the rest of this workspace existed, so they carry a second modal (`components/ui/Dialog.tsx`), dropdown (`components/ui/Menu.tsx`), KPI tile, empty state and loading state alongside the workspace's `ConfirmationDialog`, `OverflowMenu`, `StatCard`, `EmptyState`, `LoadingState`, `SearchInput` and `AdminButton`. The shell, the header, the rail, the guard and the route structure are shared; these presentational pieces are not, and porting the orders screens onto the workspace primitives is open work.
 

@@ -169,10 +169,19 @@ test("back office: the rail and the lists' links are client-side navigations", a
   };
   await follow('aside a[href="/admin/produits"]');
   await follow('aside a[href="/admin/commandes"]');
-  await follow('main a[href^="/admin/commandes/"]:visible');
   await follow('aside a[href="/admin/clients"]');
   await follow('main a[href^="/admin/clients/"]:visible');
   await page.waitForLoadState("networkidle");
+  expect(problems).toEqual([]);
+});
+
+test("back office: without Supabase the order book is empty, never invented", async ({ page, problems }) => {
+  await signInStaff(page);
+  await open(page, "/admin/commandes");
+  await expect(page.getByRole("heading", { level: 2, name: "Aucune commande pour l’instant" })).toBeVisible({ timeout: 30_000 });
+  await expect(page.locator('main a[href^="/admin/commandes/"]')).toHaveCount(0);
+  await open(page, "/admin/commandes/GT-2026-0001");
+  await expect(page.getByRole("heading", { level: 1 })).toHaveText("Commande introuvable", { timeout: 30_000 });
   expect(problems).toEqual([]);
 });
 

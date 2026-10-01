@@ -1,5 +1,5 @@
 import { useTranslation } from "react-i18next";
-import { PackageSearch, SearchX } from "lucide-react";
+import { PackageSearch, SearchX, TriangleAlert } from "lucide-react";
 import { Button } from "../ui/Button";
 
 /**
@@ -72,6 +72,28 @@ export function NoResults({ onReset }: { onReset: () => void }) {
       </p>
       <Button size="sm" variant="outline" onClick={onReset}>
         {t("admin.orders.clearFilters")}
+      </Button>
+    </div>
+  );
+}
+
+/** The book could not be read: said as such, never shown as an empty book. */
+export function LoadError({ onRetry }: { onRetry: () => void }) {
+  const { t } = useTranslation();
+  return (
+    <div
+      role="alert"
+      className="grid justify-items-center gap-3 rounded-[var(--radius-card)] border border-[var(--gt-red-400)] bg-[var(--status-error-bg)] px-6 py-[clamp(32px,7vw,64px)] text-center"
+    >
+      <span aria-hidden="true" className="grid h-12 w-12 place-items-center rounded-[var(--radius-lg)] bg-[var(--surface-card)] text-[var(--status-error-fg)]">
+        <TriangleAlert size={22} />
+      </span>
+      <h2 className="text-[length:var(--text-h4)]">{t("admin.orders.loadErrorTitle")}</h2>
+      <p className="m-0 max-w-[46ch] text-[length:var(--text-body-sm)] text-[var(--status-error-fg)]">
+        {t("admin.orders.loadErrorBody")}
+      </p>
+      <Button size="sm" variant="outline" onClick={onRetry}>
+        {t("admin.orders.retry")}
       </Button>
     </div>
   );

@@ -7,19 +7,15 @@ import { Menu } from "../ui/Menu";
 import {
   DATE_PRESETS,
   type DatePreset,
+  type FilterOption,
   type OrderFilters,
 } from "../../lib/adminOrderFilters";
 import {
-  ADMIN_CUSTOMERS,
   FULFILLMENT_STATUSES,
   ORDER_STATUSES,
   PAYMENT_STATUSES,
   SHIPPING_METHODS,
-  customerName,
 } from "../../data/adminOrders";
-import { PRODUCTS } from "../../data/products";
-import { COURSES } from "../../data/courses";
-import { pick } from "../../data/types";
 
 /**
  * Search and filtering for the order book.
@@ -43,6 +39,9 @@ interface ToolbarProps {
   /** Result count under the current filters, shown beside the reset action. */
   resultCount: number;
   activeCount: number;
+  /** The book's buyers and products, for their filters (`customerOptions`, `productOptions`). */
+  customers: FilterOption[];
+  products: FilterOption[];
   onSearch: (value: string) => void;
   onToggleStatus: (status: string) => void;
   onSet: (key: keyof OrderFilters, value: string) => void;
@@ -101,14 +100,15 @@ export function OrdersToolbar({
   filters,
   resultCount,
   activeCount,
+  customers,
+  products,
   onSearch,
   onToggleStatus,
   onSet,
   onDatePreset,
   onReset,
 }: ToolbarProps) {
-  const { t, i18n } = useTranslation();
-  const lang = i18n.language;
+  const { t } = useTranslation();
   const [draft, setDraft] = useState(filters.search);
   const [advancedOpen, setAdvancedOpen] = useState(false);
   const [customFrom, setCustomFrom] = useState(filters.from);
@@ -125,10 +125,6 @@ export function OrdersToolbar({
   }, [draft, filters.search, onSearch]);
 
   const statusOptions = ORDER_STATUSES.map((s) => ({ value: s, label: t(`admin.orders.orderStatus.${s}`) }));
-  const productOptions = [
-    ...PRODUCTS.map((p) => ({ value: p.id, label: pick(p.name, lang) })),
-    ...COURSES.map((c) => ({ value: c.id, label: pick(c.title, lang) })),
-  ];
 
   return (
     <div className="grid gap-3">
@@ -310,14 +306,14 @@ export function OrdersToolbar({
           label={t("admin.orders.customerFilterLabel")}
           value={filters.customer}
           allLabel={t("admin.orders.filterAllCustomers")}
-          options={ADMIN_CUSTOMERS.map((c) => ({ value: c.id, label: customerName(c) }))}
+          options={customers}
           onChange={(v) => onSet("customer", v)}
         />
         <PopoverSelect
           label={t("admin.orders.productFilterLabel")}
           value={filters.product}
           allLabel={t("admin.orders.filterAllProducts")}
-          options={productOptions}
+          options={products}
           onChange={(v) => onSet("product", v)}
         />
       </div>
@@ -326,6 +322,8 @@ export function OrdersToolbar({
         <ActiveChips
           filters={filters}
           resultCount={resultCount}
+          customers={customers}
+          products={products}
           onToggleStatus={onToggleStatus}
           onSearch={onSearch}
           onSet={onSet}
@@ -347,6 +345,8 @@ export function OrdersToolbar({
 function ActiveChips({
   filters,
   resultCount,
+  customers,
+  products,
   onToggleStatus,
   onSearch,
   onSet,
@@ -355,14 +355,15 @@ function ActiveChips({
 }: {
   filters: OrderFilters;
   resultCount: number;
+  customers: FilterOption[];
+  products: FilterOption[];
   onToggleStatus: (status: string) => void;
   onSearch: (value: string) => void;
   onSet: (key: keyof OrderFilters, value: string) => void;
   onDatePreset: (preset: DatePreset) => void;
   onReset: () => void;
 }) {
-  const { t, i18n } = useTranslation();
-  const lang = i18n.language;
+  const { t } = useTranslation();
 
   const chips: { id: string; label: string; onRemove: () => void }[] = [];
 
@@ -402,17 +403,15 @@ function ActiveChips({
     });
   }
   if (filters.customer !== "all") {
-    const customer = ADMIN_CUSTOMERS.find((c) => c.id === filters.customer);
+    const customer = customers.find((c) => c.value === filters.customer);
     chips.push({
       id: "customer",
-      label: `${t("admin.orders.chipCustomer")}: ${customer ? customerName(customer) : filters.customer}`,
+      label: `${t("admin.orders.chipCustomer")}: ${customer ? customer.label : filters.customer}`,
       onRemove: () => onSet("customer", "all"),
     });
   }
   if (filters.product !== "all") {
-    const product = PRODUCTS.find((p) => p.id === filters.product);
-    const course = COURSES.find((c) => c.id === filters.product);
-    const label = product ? pick(product.name, lang) : course ? pick(course.title, lang) : filters.product;
+    const label = products.find((p) => p.value === filters.product)?.label ?? filters.product;
     chips.push({
       id: "product",
       label: `${t("admin.orders.chipProduct")}: ${label}`,

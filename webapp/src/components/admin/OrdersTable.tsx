@@ -3,7 +3,7 @@ import { Link, useNavigate } from "../../lib/navigation";
 import { ArrowDown, ArrowUp, ChevronRight } from "lucide-react";
 import clsx from "clsx";
 import type { AdminOrder } from "../../data/adminOrders";
-import { orderTotal } from "../../data/adminOrders";
+import { parseInstant } from "../../data/adminOrders";
 import { useFormat } from "../../lib/format";
 import type { SortKey } from "../../lib/adminOrderFilters";
 import { AttentionBadge, FulfillmentBadge, OrderStatusBadge, PaymentStatusBadge } from "./StatusBadges";
@@ -41,7 +41,6 @@ export interface OrdersTableProps {
   sort: SortKey;
   onSort: (sort: SortKey) => void;
   onAdvance: (order: AdminOrder) => void;
-  onRefund: (order: AdminOrder) => void;
   onCancel: (order: AdminOrder) => void;
   onViewCustomer: (order: AdminOrder) => void;
   onInvoice: (order: AdminOrder, kind: "print" | "download") => void;
@@ -103,7 +102,7 @@ function SortableHead({
 
 /** Time of day beside the date: two orders on the same day need separating. */
 function placedCell(placedAt: string, locale: string): { day: string; time: string } {
-  const date = new Date(`${placedAt}:00`);
+  const date = parseInstant(placedAt);
   return {
     day: new Intl.DateTimeFormat(locale, { day: "2-digit", month: "short" }).format(date),
     time: new Intl.DateTimeFormat(locale, { hour: "2-digit", minute: "2-digit" }).format(date),
@@ -111,7 +110,7 @@ function placedCell(placedAt: string, locale: string): { day: string; time: stri
 }
 
 export function OrdersTable(props: OrdersTableProps) {
-  const { formatPrice } = useFormat();
+  const { formatMoney } = useFormat();
   const { t, i18n } = useTranslation();
   const navigate = useNavigate();
   const locale = i18n.language.startsWith("en") ? "en-IE" : "fr-FR";
@@ -269,7 +268,7 @@ export function OrdersTable(props: OrdersTableProps) {
                   </td>
 
                   <td className="whitespace-nowrap px-3 py-3 text-right align-middle font-[var(--weight-bold)] tabular-nums text-[var(--text-primary)]">
-                    {formatPrice(orderTotal(order))}
+                    {formatMoney(order.amounts.total, order.currency)}
                   </td>
 
                   <td className="px-3 py-3 align-middle">
@@ -290,7 +289,6 @@ export function OrdersTable(props: OrdersTableProps) {
                         order={order}
                         onView={() => navigate(hrefFor(order))}
                         onAdvance={() => props.onAdvance(order)}
-                        onRefund={() => props.onRefund(order)}
                         onCancel={() => props.onCancel(order)}
                         onViewCustomer={() => props.onViewCustomer(order)}
                         onInvoice={(kind) => props.onInvoice(order, kind)}
@@ -317,7 +315,7 @@ export function OrdersTable(props: OrdersTableProps) {
  * reference.
  */
 export function OrderCardList(props: OrdersTableProps) {
-  const { formatPrice } = useFormat();
+  const { formatMoney } = useFormat();
   const { t, i18n } = useTranslation();
   const navigate = useNavigate();
   const locale = i18n.language.startsWith("en") ? "en-IE" : "fr-FR";
@@ -370,13 +368,12 @@ export function OrderCardList(props: OrdersTableProps) {
                     </span>
                     <span className="flex flex-none items-center gap-1">
                       <span className="text-[length:var(--text-body-md)] font-[var(--weight-bold)] tabular-nums text-[var(--text-primary)]">
-                        {formatPrice(orderTotal(order))}
+                        {formatMoney(order.amounts.total, order.currency)}
                       </span>
                       <RowActions
                         order={order}
                         onView={() => navigate(hrefFor(order))}
                         onAdvance={() => props.onAdvance(order)}
-                        onRefund={() => props.onRefund(order)}
                         onCancel={() => props.onCancel(order)}
                         onViewCustomer={() => props.onViewCustomer(order)}
                         onInvoice={(kind) => props.onInvoice(order, kind)}

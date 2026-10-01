@@ -59,6 +59,7 @@ supabase/
   tests/iteration17_validation.sql  iteration 17 member wishlist (favourites) suite (always rolls back)
   tests/iteration18_validation.sql  iteration 18 "My orders" isolation + staff order notes suite (always rolls back)
   tests/iteration19_validation.sql  iteration 19 Stripe Checkout wiring (expiry job, webhook idempotency, return page) suite (always rolls back)
+  tests/admin_orders_validation.sql back-office order book: what staff read, viewer/customer/visitor refusals (always rolls back)
   config.toml   CLI settings this repo relies on (verify_jwt of the two Edge Functions)
   functions/    Edge Functions (Deno): create-checkout-session, stripe-webhook, _shared/ (pure modules + clients),
                 *_test.ts (deno test), .env.example (secret names)
@@ -305,6 +306,19 @@ RLS is row-level: a member can technically also read, on their **own** rows, `or
 customer-safe (decision 38). The internal notes are the exception that had to move (`order_notes`).
 `supabase/tests/iteration18_validation.sql` checks own-rows-only for every table above and that notes stay
 staff-only.
+
+### What the back office reads of an order (`/admin/commandes`)
+
+No schema of its own: `webapp/src/lib/adminOrders.tsx` (`ADMIN_ORDER_SELECT`) reads, as staff, every order
+with `order_items` (incl. `tax_rate_bp`, `tax_amount`), `order_discounts` (with `source`), `payments` (card and
+gift-card rows, `gift_cards.code_last4` embedded — the code column is granted to no API role), `shipments` +
+`shipment_items`, `refunds` + `refund_items`, `orders.paid_at` / `cancelled_at`, and `order_notes`. Amounts are
+shown as recorded; the timeline is dated by these columns, never by `orders.updated_at`; `orders.admin_note`
+(always NULL) is not read. Writes: `orders.status`
+/ `fulfillment_status`, `cancel_order()`, notes through `orders.admin_note` — all under `manage_orders`.
+`supabase/tests/admin_orders_validation.sql` proves a `viewer` reads all of it and changes nothing (no update,
+no note, no cancellation), a manager can, a customer reads only their own orders and no note or gift card, a
+visitor nothing, and nobody reads a gift-card code. Revenue rule of the order book: decision 49.
 
 ### Shipments and tracking (iteration 3)
 
@@ -943,6 +957,14 @@ VAT rates, shipping zones/rates mirroring the Settings prototype. Media rows ref
 48. **Training media bucket without its own size limit**: the project's global upload limit applies (50 MB on the
     free plan); raise it in the dashboard when moving to Pro. Objects uploaded but never recorded (upload succeeded,
     row insert failed) stay in the bucket until a clean-up job exists.
+
+49. **"Collected" figure of the order book** (agent, 2026-10-01, to confirm): per currency, never added across
+    currencies; for orders whose payment was received (`paid`, `partially_refunded`, `refunded`) and that are not
+    cancelled, `amount_due` (total less gift cards) less succeeded refunds. Gift cards therefore count once, when
+    sold, not again when spent; unpaid, failed and cancelled orders count for nothing. The statistics screen
+    (`analytics_snapshot`) measures goods sold instead (gift-card products excluded), so the two figures differ
+    by design. A buyer's "spent" on the order page is the member area's rule (recorded totals of paid orders that
+    stand, less refunds).
 
 ## Done
 

@@ -3,7 +3,6 @@ import type {
   Order,
   OrderAddress,
   OrderFulfilment,
-  OrderLine,
   OrderParcel,
   OrderPaymentState,
   OrderRefund,
@@ -13,7 +12,7 @@ import type {
   RefundReason,
 } from "../data/orders";
 import type { Product } from "../data/products";
-import { toMajorUnits, toMinorUnits } from "./catalog/money";
+import { toMinorUnits } from "./catalog/money";
 
 /**
  * Database rows → the member area's `Order` model. Pure, so it is unit-tested
@@ -199,11 +198,6 @@ function oneOf<T extends string>(value: string, allowed: readonly T[], fallback:
   return (allowed as readonly string[]).includes(value) ? (value as T) : fallback;
 }
 
-/** Back office prototype only (`adminOrderMapping.ts`): an amount in major units. */
-export function money(value: Amount): number {
-  return toMajorUnits(toMinorUnits(value));
-}
-
 /** The date part of a timestamp or date column. */
 function day(value: string | null | undefined): string | undefined {
   return value ? value.slice(0, 10) : undefined;
@@ -229,21 +223,6 @@ export function mapAddress(row: AddressSnapshotRow | null): OrderAddress | undef
   };
 }
 
-/** A line for the back office prototype (`unitPrice` in major units). */
-export function mapOrderLine(row: OrderItemRow, findProduct: (slug: string) => Product | undefined): OrderLine {
-  const slug = row.product?.slug;
-  const product = slug ? findProduct(slug) : undefined;
-  return {
-    // Linked only while the product is still in the shop; the name stays the snapshot.
-    productId: product ? slug : undefined,
-    name: { fr: row.product_name, en: row.product_name },
-    variant: row.variant_name ? { fr: row.variant_name, en: row.variant_name } : undefined,
-    image: product?.image ?? "",
-    unitPrice: money(row.unit_price),
-    qty: row.quantity,
-  };
-}
-
 export function mapCustomerLine(
   row: CustomerOrderItemRow,
   findProduct: (slug: string) => Product | undefined,
@@ -264,7 +243,7 @@ export function mapCustomerLine(
   };
 }
 
-function mapParcel(row: CustomerShipmentRow): OrderParcel {
+export function mapParcel(row: CustomerShipmentRow): OrderParcel {
   return {
     id: row.id,
     status: oneOf(row.status, PARCEL_STATUSES, "preparing"),
@@ -279,7 +258,7 @@ function mapParcel(row: CustomerShipmentRow): OrderParcel {
   };
 }
 
-function mapRefund(row: RefundRow): OrderRefund {
+export function mapRefund(row: RefundRow): OrderRefund {
   return {
     amount: toMinorUnits(row.amount),
     status: oneOf(row.status, REFUND_STATUSES, "pending"),
@@ -291,7 +270,7 @@ function mapRefund(row: RefundRow): OrderRefund {
 }
 
 /** The parcel to follow: the latest one that has a carrier and a number. */
-function trackingOf(shipments: ShipmentRow[]): OrderTracking | undefined {
+export function trackingOf(shipments: ShipmentRow[]): OrderTracking | undefined {
   const parcel = [...shipments]
     .filter((s) => s.carrier && s.tracking_number && s.status !== "cancelled")
     .sort((a, b) => b.created_at.localeCompare(a.created_at))[0];
