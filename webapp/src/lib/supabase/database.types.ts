@@ -1225,6 +1225,184 @@ export type Database = {
           },
         ]
       }
+      course_completions: {
+        Row: {
+          average_score: number | null
+          certificate_code: string | null
+          completed_at: string
+          course_id: string
+          id: string
+          min_score: number
+          user_id: string
+        }
+        Insert: {
+          average_score?: number | null
+          certificate_code?: string | null
+          completed_at?: string
+          course_id: string
+          id?: string
+          min_score: number
+          user_id: string
+        }
+        Update: {
+          average_score?: number | null
+          certificate_code?: string | null
+          completed_at?: string
+          course_id?: string
+          id?: string
+          min_score?: number
+          user_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "course_completions_course_id_fkey"
+            columns: ["course_id"]
+            isOneToOne: false
+            referencedRelation: "course_current_prices"
+            referencedColumns: ["course_id"]
+          },
+          {
+            foreignKeyName: "course_completions_course_id_fkey"
+            columns: ["course_id"]
+            isOneToOne: false
+            referencedRelation: "courses"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "course_completions_user_id_fkey"
+            columns: ["user_id"]
+            isOneToOne: false
+            referencedRelation: "loyalty_overview"
+            referencedColumns: ["user_id"]
+          },
+          {
+            foreignKeyName: "course_completions_user_id_fkey"
+            columns: ["user_id"]
+            isOneToOne: false
+            referencedRelation: "profiles"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      course_entitlements: {
+        Row: {
+          course_id: string
+          created_at: string
+          expires_at: string | null
+          granted_by: string | null
+          id: string
+          note: string | null
+          order_id: string | null
+          revoked_at: string | null
+          revoked_by: string | null
+          source: string
+          starts_at: string
+          updated_at: string
+          user_id: string
+        }
+        Insert: {
+          course_id: string
+          created_at?: string
+          expires_at?: string | null
+          granted_by?: string | null
+          id?: string
+          note?: string | null
+          order_id?: string | null
+          revoked_at?: string | null
+          revoked_by?: string | null
+          source: string
+          starts_at?: string
+          updated_at?: string
+          user_id: string
+        }
+        Update: {
+          course_id?: string
+          created_at?: string
+          expires_at?: string | null
+          granted_by?: string | null
+          id?: string
+          note?: string | null
+          order_id?: string | null
+          revoked_at?: string | null
+          revoked_by?: string | null
+          source?: string
+          starts_at?: string
+          updated_at?: string
+          user_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "course_entitlements_course_id_fkey"
+            columns: ["course_id"]
+            isOneToOne: false
+            referencedRelation: "course_current_prices"
+            referencedColumns: ["course_id"]
+          },
+          {
+            foreignKeyName: "course_entitlements_course_id_fkey"
+            columns: ["course_id"]
+            isOneToOne: false
+            referencedRelation: "courses"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "course_entitlements_granted_by_fkey"
+            columns: ["granted_by"]
+            isOneToOne: false
+            referencedRelation: "loyalty_overview"
+            referencedColumns: ["user_id"]
+          },
+          {
+            foreignKeyName: "course_entitlements_granted_by_fkey"
+            columns: ["granted_by"]
+            isOneToOne: false
+            referencedRelation: "profiles"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "course_entitlements_order_id_fkey"
+            columns: ["order_id"]
+            isOneToOne: false
+            referencedRelation: "orders"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "course_entitlements_order_id_fkey"
+            columns: ["order_id"]
+            isOneToOne: false
+            referencedRelation: "review_requests"
+            referencedColumns: ["order_id"]
+          },
+          {
+            foreignKeyName: "course_entitlements_revoked_by_fkey"
+            columns: ["revoked_by"]
+            isOneToOne: false
+            referencedRelation: "loyalty_overview"
+            referencedColumns: ["user_id"]
+          },
+          {
+            foreignKeyName: "course_entitlements_revoked_by_fkey"
+            columns: ["revoked_by"]
+            isOneToOne: false
+            referencedRelation: "profiles"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "course_entitlements_user_id_fkey"
+            columns: ["user_id"]
+            isOneToOne: false
+            referencedRelation: "loyalty_overview"
+            referencedColumns: ["user_id"]
+          },
+          {
+            foreignKeyName: "course_entitlements_user_id_fkey"
+            columns: ["user_id"]
+            isOneToOne: false
+            referencedRelation: "profiles"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       course_module_translations: {
         Row: {
           created_at: string
@@ -3061,6 +3239,56 @@ export type Database = {
           updated_at?: string
         }
         Relationships: []
+      }
+      lesson_progress: {
+        Row: {
+          completed_at: string
+          course_id: string
+          step_id: string
+          user_id: string
+        }
+        Insert: {
+          completed_at?: string
+          course_id: string
+          step_id: string
+          user_id: string
+        }
+        Update: {
+          completed_at?: string
+          course_id?: string
+          step_id?: string
+          user_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "lesson_progress_course_id_fkey"
+            columns: ["course_id"]
+            isOneToOne: false
+            referencedRelation: "course_current_prices"
+            referencedColumns: ["course_id"]
+          },
+          {
+            foreignKeyName: "lesson_progress_course_id_fkey"
+            columns: ["course_id"]
+            isOneToOne: false
+            referencedRelation: "courses"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "lesson_progress_user_id_fkey"
+            columns: ["user_id"]
+            isOneToOne: false
+            referencedRelation: "loyalty_overview"
+            referencedColumns: ["user_id"]
+          },
+          {
+            foreignKeyName: "lesson_progress_user_id_fkey"
+            columns: ["user_id"]
+            isOneToOne: false
+            referencedRelation: "profiles"
+            referencedColumns: ["id"]
+          },
+        ]
       }
       loyalty_cards: {
         Row: {
@@ -5044,6 +5272,86 @@ export type Database = {
           },
         ]
       }
+      quiz_attempts: {
+        Row: {
+          answers: Json
+          correct_count: number | null
+          course_id: string
+          id: string
+          module_id: string
+          passed: boolean
+          passing_score: number
+          question_count: number | null
+          quiz_id: string
+          score: number | null
+          started_at: string
+          status: string
+          submitted_at: string | null
+          user_id: string
+        }
+        Insert: {
+          answers?: Json
+          correct_count?: number | null
+          course_id: string
+          id?: string
+          module_id: string
+          passed?: boolean
+          passing_score: number
+          question_count?: number | null
+          quiz_id: string
+          score?: number | null
+          started_at?: string
+          status?: string
+          submitted_at?: string | null
+          user_id: string
+        }
+        Update: {
+          answers?: Json
+          correct_count?: number | null
+          course_id?: string
+          id?: string
+          module_id?: string
+          passed?: boolean
+          passing_score?: number
+          question_count?: number | null
+          quiz_id?: string
+          score?: number | null
+          started_at?: string
+          status?: string
+          submitted_at?: string | null
+          user_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "quiz_attempts_course_id_fkey"
+            columns: ["course_id"]
+            isOneToOne: false
+            referencedRelation: "course_current_prices"
+            referencedColumns: ["course_id"]
+          },
+          {
+            foreignKeyName: "quiz_attempts_course_id_fkey"
+            columns: ["course_id"]
+            isOneToOne: false
+            referencedRelation: "courses"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "quiz_attempts_user_id_fkey"
+            columns: ["user_id"]
+            isOneToOne: false
+            referencedRelation: "loyalty_overview"
+            referencedColumns: ["user_id"]
+          },
+          {
+            foreignKeyName: "quiz_attempts_user_id_fkey"
+            columns: ["user_id"]
+            isOneToOne: false
+            referencedRelation: "profiles"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       quiz_question_translations: {
         Row: {
           correct_feedback: string | null
@@ -6790,13 +7098,44 @@ export type Database = {
           isSetofReturn: false
         }
       }
+      admin_course_entitlements: {
+        Args: { p_course_id: string }
+        Returns: {
+          certificate_code: string
+          completed_at: string
+          display_name: string
+          email: string
+          expires_at: string
+          granted_by_name: string
+          id: string
+          note: string
+          revoked_at: string
+          source: string
+          starts_at: string
+          steps_done: number
+          user_id: string
+        }[]
+      }
       admin_delete_gem_color: { Args: { p_id: string }; Returns: undefined }
       admin_delete_product: {
         Args: { p_product_id: string }
         Returns: string[]
       }
+      admin_grant_course: {
+        Args: {
+          p_course_id: string
+          p_email: string
+          p_expires_at?: string
+          p_note?: string
+        }
+        Returns: string
+      }
       admin_reorder_gem_colors: {
         Args: { p_ids: string[] }
+        Returns: undefined
+      }
+      admin_revoke_course_entitlement: {
+        Args: { p_entitlement_id: string }
         Returns: undefined
       }
       admin_save_course: { Args: { p_course: Json }; Returns: Json }
@@ -6817,6 +7156,14 @@ export type Database = {
           p_from: string
           p_timezone?: string
           p_to: string
+        }
+        Returns: Json
+      }
+      answer_quiz_question: {
+        Args: {
+          p_answer_id: string
+          p_module_id: string
+          p_question_id: string
         }
         Returns: Json
       }
@@ -6899,6 +7246,7 @@ export type Database = {
           isSetofReturn: false
         }
       }
+      complete_course_step: { Args: { p_step_id: string }; Returns: Json }
       checkout_session_status: {
         Args: { p_session_id: string }
         Returns: {
@@ -7083,6 +7431,7 @@ export type Database = {
         }
         Returns: string
       }
+      learner_courses: { Args: never; Returns: Json }
       mark_order_paid: {
         Args: {
           p_amount: number
@@ -7338,6 +7687,10 @@ export type Database = {
           p_subject: string
         }
         Returns: string
+      }
+      submit_quiz_answers: {
+        Args: { p_answers: Json; p_module_id: string }
+        Returns: Json
       }
       vat_included: {
         Args: { p_amount: number; p_rate_bp: number }
