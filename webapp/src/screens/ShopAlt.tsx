@@ -103,6 +103,20 @@ export function ShopAlt() {
   const shownCount = shown.signature === signature ? shown.count : STEP;
   const visible = results.slice(0, shownCount);
 
+  // A short skeleton on each change acknowledges it, instead of the grid
+  // snapping to a new length with no sign that anything happened.
+  const [pending, setPending] = useState(false);
+  const firstRender = useRef(true);
+  useEffect(() => {
+    if (firstRender.current) {
+      firstRender.current = false;
+      return;
+    }
+    setPending(true);
+    const id = window.setTimeout(() => setPending(false), 220);
+    return () => window.clearTimeout(id);
+  }, [signature]);
+
   // The next step is revealed on its own once the shopper nears the end of the
   // grid. The whole catalogue is already in memory (and cached), so this costs
   // no request: it only keeps the page light to render. The observer is set up
@@ -128,21 +142,9 @@ export function ShopAlt() {
     );
     observer.observe(sentinel);
     return () => observer.disconnect();
-  }, [hasMore, shownCount, signature]);
-
-  // A short skeleton on each change acknowledges it, instead of the grid
-  // snapping to a new length with no sign that anything happened.
-  const [pending, setPending] = useState(false);
-  const firstRender = useRef(true);
-  useEffect(() => {
-    if (firstRender.current) {
-      firstRender.current = false;
-      return;
-    }
-    setPending(true);
-    const id = window.setTimeout(() => setPending(false), 220);
-    return () => window.clearTimeout(id);
-  }, [signature]);
+    // `pending` and `status`: the sentinel is unmounted while the skeleton
+    // shows, so the observer must be set up again once it is back.
+  }, [hasMore, shownCount, signature, pending, status]);
 
   const [drawerOpen, setDrawerOpen] = useState(false);
   const setFilters = (next: StorefrontFilters) => setParams(writeFilters(params, next));
