@@ -26,7 +26,8 @@ export function LearnerReviews({ courses, lang }: { courses: PublicCourse[]; lan
     const ids = new Set(courses.map((course) => course.id));
     return reviews
       .filter((review) => review.status === "published" && review.subject.kind === "course" && ids.has(review.subject.id))
-      .sort((a, b) => b.rating - a.rating || publicDate(b).localeCompare(publicDate(a)))
+      // Newest first, like the home page's feed: never picked by rating.
+      .sort((a, b) => publicDate(b).localeCompare(publicDate(a)))
       .slice(0, LIMIT);
   }, [reviews, courses]);
 
