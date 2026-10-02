@@ -132,7 +132,7 @@ describe("mapPublicCourse", () => {
   });
 
   it("is never enrollable before courses are sold", () => {
-    expect(mapPublicCourse(row(), undefined).enrolment).toBe("soon");
+    expect(mapPublicCourse(row(), undefined).enrolment).toBe("sale");
     expect(mapPublicCourse(row({ level: "expert" }), undefined).level).toBe("all");
   });
 

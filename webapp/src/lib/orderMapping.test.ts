@@ -123,6 +123,13 @@ describe("mapOrder — lines, parcels, refunds, addresses", () => {
     expect(order.lines[1].variant).toEqual({ fr: "SS6", en: "SS6" });
   });
 
+  it("links a course line to its course, never to the shop", () => {
+    const course = { id: "i3", product_name: "Pose professionnelle", variant_name: null, unit_price: "349.00", quantity: 1,
+      discount_amount: "0.00", product: null, course: { slug: "pose-professionnelle" } };
+    const order = mapOrder({ ...row, order_items: [course] }, find);
+    expect(order.lines[0]).toMatchObject({ productId: undefined, courseId: "pose-professionnelle", unitAmount: 34900, qty: 1 });
+  });
+
   it("lists the parcels oldest first with their contents and a safe tracking link", () => {
     const [parcel, cancelled] = mapOrder(row, find).parcels;
     expect(cancelled).toMatchObject({ id: "s-old", status: "cancelled", trackingUrl: undefined });

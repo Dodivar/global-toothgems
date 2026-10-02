@@ -3,7 +3,7 @@ import { useTranslation } from "react-i18next";
 import { getProduct } from "../data/products";
 import { photo } from "./images";
 import { readStoredCart, writeStoredCart } from "./cartStorage";
-import { addGiftCardToLines, addToLines, cartCount, cartSubtotal, setLineQty, type CartLine } from "./checkout/cartLines";
+import { addCourseToLines, addGiftCardToLines, addToLines, cartCount, cartSubtotal, setLineQty, type CartLine } from "./checkout/cartLines";
 import { isSupabaseConfigured } from "./supabase/client";
 import { useHydrated } from "./useHydrated";
 
@@ -17,6 +17,8 @@ interface CartContextValue {
   addLine: (line: Omit<CartLine, "id">) => void;
   /** A gift card for one recipient: always its own line. */
   addGiftCard: (line: Omit<CartLine, "id" | "qty">) => void;
+  /** An Academy course: one seat, added once. */
+  addCourse: (line: Omit<CartLine, "id" | "qty"> & { courseId: string }) => void;
   updateQty: (id: string, qty: number) => void;
   removeLine: (id: string) => void;
   /** Empties the cart once its contents have become an order. */
@@ -86,6 +88,10 @@ export function CartProvider({ children }: { children: ReactNode }) {
     },
     [setLines],
   );
+  const addCourse = useCallback(
+    (line: Omit<CartLine, "id" | "qty"> & { courseId: string }) => setLines((prev) => addCourseToLines(prev, line)),
+    [setLines],
+  );
   const updateQty = useCallback((id: string, qty: number) => setLines((prev) => setLineQty(prev, id, qty)), [setLines]);
   const removeLine = useCallback((id: string) => setLines((prev) => prev.filter((l) => l.id !== id)), [setLines]);
   const clearCart = useCallback(() => setLines(() => []), [setLines]);
@@ -94,7 +100,7 @@ export function CartProvider({ children }: { children: ReactNode }) {
   const subtotal = useMemo(() => cartSubtotal(lines), [lines]);
 
   return (
-    <CartContext.Provider value={{ lines, count, subtotal, addLine, addGiftCard, updateQty, removeLine, clearCart }}>
+    <CartContext.Provider value={{ lines, count, subtotal, addLine, addGiftCard, addCourse, updateQty, removeLine, clearCart }}>
       {children}
     </CartContext.Provider>
   );

@@ -338,7 +338,9 @@
       "session_expired": "Your session has expired. Sign in again and retry.",
       "server_error": "Something went wrong. Nothing has been charged; try again in a few minutes.",
       "network": "Cannot connect. Check your network and try again.",
-      "gift_card_details_invalid": "The details of a gift card in your cart are no longer accepted (amount, recipient or date). Remove it and build it again."
+      "gift_card_details_invalid": "The details of a gift card in your cart are no longer accepted (amount, recipient or date). Remove it and build it again.",
+      "account_required": "An account is needed to buy a course: access opens on your account. Sign in and try again.",
+      "course_owned": "You already have access to a course in your basket. Remove it and try again."
     },
     "pendingBadge": "Payment in progress",
     "pendingTitle": "Confirming your payment",
@@ -369,11 +371,21 @@
       "summary_one": "1 gift card will be applied at payment: what is left to pay is computed by our server.",
       "summary_other": "{{count}} gift cards will be applied at payment: what is left to pay is computed by our server.",
       "payWithCards": "Pay with my gift cards",
-      "noShipping": "Your cart only holds gift cards: they are sent by email, there is no delivery to choose.",
       "emailDelivery": "By email",
       "byEmail": "Sent by email after payment",
       "scheduled": "Scheduled delivery"
-    }
+    },
+    "course": {
+      "line": "Online course · access on your account",
+      "noDelivery": "No delivery",
+      "accountTitle": "Sign in to buy a course",
+      "accountBody": "The course opens on your account as soon as the payment is confirmed. Your basket will wait for you.",
+      "signIn": "Sign in",
+      "createAccount": "Create an account",
+      "openCourses": "Go to my courses",
+      "paidBody": "Your courses are available in your member space."
+    },
+    "noShipping": "Nothing to ship: gift cards are sent by email and courses open in your member space."
   },
   "auth": {
     "eyebrow": "Account",
@@ -897,8 +909,6 @@
     "finalPoint4": "Artist community included",
     "notFoundCta": "See all trainings",
     "createAccount": "Create an account",
-    "enrolSoonTitle": "Enrolment opens soon",
-    "enrolSoonBody": "Online course sales open shortly.",
     "priceWas": "Usual price",
     "priceNow": "Current price",
     "promoUntil": "Offer valid until {{date}}",
@@ -906,7 +916,10 @@
     "moduleCheckScore": "Pass mark {{score}}%",
     "moduleValidationMeta_one": "{{count}} knowledge check · average score required {{score}}%",
     "moduleValidationMeta_other": "{{count}} knowledge checks · average score required {{score}}%",
-    "moduleValidationNoCheck": "Average score required {{score}}%"
+    "moduleValidationNoCheck": "Average score required {{score}}%",
+    "ctaBuy": "Buy this course",
+    "ctaInCart": "View basket",
+    "stickyBuy": "Buy"
   },
   "lesson": {
     "eyebrow": "Course in progress",

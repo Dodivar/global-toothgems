@@ -3687,6 +3687,7 @@ export type Database = {
       }
       order_items: {
         Row: {
+          course_id: string | null
           created_at: string
           discount_amount: number
           id: string
@@ -3704,6 +3705,7 @@ export type Database = {
           variant_name: string | null
         }
         Insert: {
+          course_id?: string | null
           created_at?: string
           discount_amount?: number
           id?: string
@@ -3721,6 +3723,7 @@ export type Database = {
           variant_name?: string | null
         }
         Update: {
+          course_id?: string | null
           created_at?: string
           discount_amount?: number
           id?: string
@@ -3738,6 +3741,20 @@ export type Database = {
           variant_name?: string | null
         }
         Relationships: [
+          {
+            foreignKeyName: "order_items_course_id_fkey"
+            columns: ["course_id"]
+            isOneToOne: false
+            referencedRelation: "course_current_prices"
+            referencedColumns: ["course_id"]
+          },
+          {
+            foreignKeyName: "order_items_course_id_fkey"
+            columns: ["course_id"]
+            isOneToOne: false
+            referencedRelation: "courses"
+            referencedColumns: ["id"]
+          },
           {
             foreignKeyName: "order_items_inventory_item_id_fkey"
             columns: ["inventory_item_id"]

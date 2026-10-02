@@ -11,6 +11,8 @@ export type CheckoutErrorCode =
   | "promotion_code_invalid"
   | "gift_card_invalid"
   | "gift_card_details_invalid"
+  | "account_required"
+  | "course_owned"
   | "payment_unavailable"
   | "server_error";
 
@@ -31,6 +33,10 @@ const GIFT_CARD_PURCHASE_RE = /gift card amount not allowed|gift card details|on
 
 export function checkoutErrorCode(error: DbError): CheckoutErrorCode {
   const message = error.message ?? "";
+  // Courses: sold to an account (access is granted to it), once per member.
+  if (/a course requires a customer account/.test(message)) return "account_required";
+  if (/course .* is already held/.test(message)) return "course_owned";
+  if (/course .* is not (available|sold in)|course .* has no price/.test(message)) return "unavailable";
   if (GIFT_CARD_PAYMENT_RE.test(message)) return "gift_card_invalid";
   if (GIFT_CARD_PURCHASE_RE.test(message)) return "gift_card_details_invalid";
   // "gift cards are not on sale" / "are sold in": the gift card product is unavailable.

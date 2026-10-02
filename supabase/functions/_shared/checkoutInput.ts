@@ -49,7 +49,14 @@ export interface CheckoutItem {
 }
 
 export interface CheckoutInput {
+  /** Product and gift card lines (may be empty when the basket holds courses only). */
   items: CheckoutItem[];
+  /**
+   * Academy courses (`courses.id`), one seat each, sent as `{course_id, quantity: 1}`
+   * lines of `items`. A course is not a product: create_order() prices it, requires
+   * the buyer's account and refuses a course they already hold.
+   */
+  course_ids: string[];
   email: string;
   address: CheckoutAddress;
   /** Null when the basket has nothing to ship (gift cards only); create_order() decides. */
@@ -205,11 +212,23 @@ function parseGiftCard(value: unknown, path: string): { ok: true; value: GiftCar
   };
 }
 
-function parseItems(value: unknown): { ok: true; value: CheckoutItem[] } | Fail {
+function parseItems(value: unknown): { ok: true; value: CheckoutItem[]; courses: string[] } | Fail {
   if (!Array.isArray(value) || value.length === 0 || value.length > MAX_ITEMS) return fail("items");
   const items: CheckoutItem[] = [];
+  const courses: string[] = [];
   const seen = new Set<string>();
   for (const [index, raw] of value.entries()) {
+    if (isObject(raw) && "course_id" in raw) {
+      // A course line names the course and nothing else; one seat, never merged.
+      if (onlyKeys(raw, ["course_id", "quantity"])) return fail(`items.${index}`);
+      const { course_id, quantity } = raw;
+      if (typeof course_id !== "string" || !UUID_RE.test(course_id)) return fail(`items.${index}.course_id`);
+      if (quantity !== undefined && quantity !== 1) return fail(`items.${index}.quantity`);
+      const id = course_id.toLowerCase();
+      if (courses.includes(id)) return fail(`items.${index}`);
+      courses.push(id);
+      continue;
+    }
     if (!isObject(raw) || onlyKeys(raw, ["product_id", "variant_id", "quantity", "gift_card"])) return fail(`items.${index}`);
     const { product_id, variant_id, quantity } = raw;
     if (typeof product_id !== "string" || !UUID_RE.test(product_id)) return fail(`items.${index}.product_id`);
@@ -233,7 +252,7 @@ function parseItems(value: unknown): { ok: true; value: CheckoutItem[] } | Fail 
     seen.add(key);
     items.push({ product_id: product_id.toLowerCase(), variant_id: variant, quantity });
   }
-  return { ok: true, value: items };
+  return { ok: true, value: items, courses };
 }
 
 function parseCodes(value: unknown, max: number, pattern: RegExp): string[] | null {
@@ -293,6 +312,7 @@ export function parseCheckoutInput(body: unknown): ValidationResult {
     ok: true,
     value: {
       items: items.value,
+      course_ids: items.courses,
       email,
       address: address.value,
       shipping_rate_id: rate === null ? null : (rate as string).toLowerCase(),
@@ -302,6 +322,12 @@ export function parseCheckoutInput(body: unknown): ValidationResult {
       customer_note: note ?? null,
     },
   };
+}
+
+/** A course line as create_order() reads it. */
+export interface OrderCourseItem {
+  course_id: string;
+  quantity: 1;
 }
 
 /** A line as create_order() reads it (`p_items`). */
@@ -339,3 +365,7 @@ export function orderItems(items: CheckoutItem[], toDecimal: (minor: number) => 
     };
   });
 }
+
+/** Validated course ids → create_order() course lines, after the shop lines. */
+export const courseOrderItems = (courseIds: string[]): OrderCourseItem[] =>
+  courseIds.map((course_id) => ({ course_id, quantity: 1 }));

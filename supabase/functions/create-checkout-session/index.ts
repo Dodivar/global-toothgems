@@ -1,4 +1,4 @@
-import { orderItems } from "../_shared/checkoutInput.ts";
+import { courseOrderItems, orderItems } from "../_shared/checkoutInput.ts";
 import { serviceClient, stripeClient, requireEnv } from "../_shared/clients.ts";
 import { toDecimalString } from "../_shared/money.ts";
 import { readSiteOrigins } from "../_shared/http.ts";
@@ -28,7 +28,7 @@ const deps: CheckoutDeps = {
     const { data, error } = await supabase.rpc("create_order", {
       p_user_id: userId,
       p_customer_email: input.email,
-      p_items: orderItems(input.items, toDecimalString),
+      p_items: [...orderItems(input.items, toDecimalString), ...courseOrderItems(input.course_ids)],
       p_billing_address: input.address,
       p_shipping_address: input.address,
       p_shipping_rate_id: input.shipping_rate_id,

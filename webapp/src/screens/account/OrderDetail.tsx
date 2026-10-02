@@ -13,6 +13,7 @@ import { isActiveOrder, isShipment, type Order, type OrderAddress, type OrderPar
 import { pick } from "../../data/types";
 import { useFormat } from "../../lib/format";
 import { useOrders } from "../../lib/orders";
+import { courseHref } from "../../lib/academyUrl";
 
 /**
  * One order, as recorded: the lines frozen at purchase time, every amount the
@@ -163,8 +164,11 @@ function Lines({ order, lang }: { order: Order; lang: string }) {
               )}
               <span className="grid min-w-0 flex-1 gap-0.5">
                 <span className="text-[length:var(--text-body-sm)] font-semibold text-[var(--text-primary)]">
-                  {line.productId ? (
-                    <Link to={`/boutique/${line.productId}`} className="underline decoration-1 underline-offset-4 hover:text-[var(--text-link-hover)]">
+                  {line.productId || line.courseId ? (
+                    <Link
+                      to={line.productId ? `/boutique/${line.productId}` : courseHref(line.courseId!)}
+                      className="underline decoration-1 underline-offset-4 hover:text-[var(--text-link-hover)]"
+                    >
                       {name}
                     </Link>
                   ) : (

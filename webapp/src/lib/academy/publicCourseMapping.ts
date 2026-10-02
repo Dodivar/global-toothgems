@@ -165,7 +165,7 @@ export function mapPublicCourse(row: PublicCourseRow, price: CoursePriceRow | un
         }
       : null,
     modules: byPosition(row.course_modules).map(mapModule),
-    enrolment: "soon",
+    enrolment: "sale",
   };
 }
 

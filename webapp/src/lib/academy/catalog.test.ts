@@ -31,7 +31,7 @@ function course(id: string, overrides: Partial<PublicCourse> = {}): PublicCourse
     promotionEndsAt: null,
     cover: null,
     modules: [],
-    enrolment: "soon",
+    enrolment: "sale",
     ...overrides,
   };
 }

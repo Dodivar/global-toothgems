@@ -54,6 +54,11 @@ function parseLine(value: unknown): CartLine | null {
     if (!parsed || qty !== 1) return null;
     giftCard = parsed;
   }
+  const { courseId } = line;
+  if (courseId !== undefined) {
+    // A course line is exactly what the course page writes: one seat, no product.
+    if (!isText(courseId) || qty !== 1 || giftCard || dbProductId !== undefined || variantId !== undefined) return null;
+  }
   return {
     id,
     productId,
@@ -66,6 +71,7 @@ function parseLine(value: unknown): CartLine | null {
     ...(variantId === undefined ? {} : { variantId: variantId as string }),
     ...(variant === undefined ? {} : { variant: variant as string }),
     ...(giftCard ? { giftCard } : {}),
+    ...(courseId === undefined ? {} : { courseId: courseId as string }),
   };
 }
 

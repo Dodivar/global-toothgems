@@ -17,6 +17,7 @@ import {
 import { pick } from "../../data/types";
 import { useFormat } from "../../lib/format";
 import { orderHref } from "../../lib/memberSpace";
+import { courseHref } from "../../lib/academyUrl";
 
 const statusTone: Record<OrderStatus, BadgeTone> = {
   processing: "warning",
@@ -141,7 +142,7 @@ export function OrderCard({
       <ul className="m-0 grid list-none gap-3 p-0">
         {order.lines.map((line) => {
           const name = pick(line.name, lang);
-          const to = line.productId ? `/boutique/${line.productId}` : null;
+          const to = line.productId ? `/boutique/${line.productId}` : line.courseId ? courseHref(line.courseId) : null;
           return (
             <li key={line.id} className="flex items-center gap-3">
               {line.image ? (

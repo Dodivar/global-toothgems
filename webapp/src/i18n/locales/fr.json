@@ -343,7 +343,9 @@
       "session_expired": "Votre session a expiré. Reconnectez-vous puis réessayez.",
       "server_error": "Une erreur est survenue. Aucun montant n’a été débité ; réessayez dans quelques minutes.",
       "network": "Connexion impossible. Vérifiez votre réseau puis réessayez.",
-      "gift_card_details_invalid": "Les informations d’une carte cadeau du panier ne sont plus acceptées (montant, destinataire ou date). Retirez-la puis composez-la à nouveau."
+      "gift_card_details_invalid": "Les informations d’une carte cadeau du panier ne sont plus acceptées (montant, destinataire ou date). Retirez-la puis composez-la à nouveau.",
+      "account_required": "Un compte est nécessaire pour acheter une formation : l’accès s’ouvre sur votre compte. Connectez-vous puis réessayez.",
+      "course_owned": "Vous avez déjà accès à une formation de votre panier. Retirez-la puis réessayez."
     },
     "pendingBadge": "Paiement en cours",
     "pendingTitle": "Paiement en cours de confirmation",
@@ -374,11 +376,21 @@
       "summary_one": "1 carte cadeau sera appliquée au paiement : le montant restant à payer est calculé par notre serveur.",
       "summary_other": "{{count}} cartes cadeaux seront appliquées au paiement : le montant restant à payer est calculé par notre serveur.",
       "payWithCards": "Payer avec mes cartes cadeaux",
-      "noShipping": "Votre panier ne contient que des cartes cadeaux : elles sont envoyées par e-mail, aucune livraison à choisir.",
       "emailDelivery": "Par e-mail",
       "byEmail": "Envoyée par e-mail après paiement",
       "scheduled": "Envoi programmé"
-    }
+    },
+    "course": {
+      "line": "Formation en ligne · accès sur votre compte",
+      "noDelivery": "Sans livraison",
+      "accountTitle": "Connectez-vous pour acheter une formation",
+      "accountBody": "La formation s’ouvre sur votre compte dès que le paiement est confirmé. Votre panier vous attend.",
+      "signIn": "Se connecter",
+      "createAccount": "Créer un compte",
+      "openCourses": "Accéder à mes formations",
+      "paidBody": "Vos formations sont disponibles dans votre espace membre."
+    },
+    "noShipping": "Rien à expédier : les cartes cadeaux sont envoyées par e-mail et les formations s’ouvrent dans votre espace membre."
   },
   "auth": {
     "eyebrow": "Compte",
@@ -902,8 +914,6 @@
     "finalPoint4": "Forum des artistes inclus",
     "notFoundCta": "Voir toutes les formations",
     "createAccount": "Créer un compte",
-    "enrolSoonTitle": "Inscriptions bientôt ouvertes",
-    "enrolSoonBody": "La vente en ligne des formations ouvre prochainement.",
     "priceWas": "Prix habituel",
     "priceNow": "Prix actuel",
     "promoUntil": "Offre valable jusqu’au {{date}}",
@@ -911,7 +921,10 @@
     "moduleCheckScore": "Réussite à {{score}} %",
     "moduleValidationMeta_one": "{{count}} contrôle des acquis · score moyen requis {{score}} %",
     "moduleValidationMeta_other": "{{count}} contrôles des acquis · score moyen requis {{score}} %",
-    "moduleValidationNoCheck": "Score moyen requis {{score}} %"
+    "moduleValidationNoCheck": "Score moyen requis {{score}} %",
+    "ctaBuy": "Acheter la formation",
+    "ctaInCart": "Voir le panier",
+    "stickyBuy": "Acheter"
   },
   "lesson": {
     "eyebrow": "Formation en cours",

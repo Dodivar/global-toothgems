@@ -63,3 +63,26 @@ describe("stored gift card lines", () => {
     expect(JSON.stringify(stored)).not.toContain("GT-AAAA");
   });
 });
+
+describe("stored course lines", () => {
+  const course = {
+    id: "course::3a9b8c7d-6e5f-4a3b-9c2d-1e0f9a8b7c6d",
+    productId: "pose-professionnelle",
+    courseId: "3a9b8c7d-6e5f-4a3b-9c2d-1e0f9a8b7c6d",
+    name: "Pose professionnelle",
+    image: "",
+    unitPrice: 34900,
+    currency: "EUR",
+    qty: 1,
+  };
+
+  it("reads back a course line", () => {
+    expect(parseStoredCart(JSON.stringify([course]))).toEqual([course]);
+  });
+
+  it("refuses a course line that is not exactly one seat of one course", () => {
+    for (const bad of [{ qty: 2 }, { courseId: "" }, { courseId: 7 }, { dbProductId: "p-uuid" }, { variantId: "v" }]) {
+      expect(parseStoredCart(JSON.stringify([{ ...course, ...bad }])), JSON.stringify(bad)).toBeNull();
+    }
+  });
+});

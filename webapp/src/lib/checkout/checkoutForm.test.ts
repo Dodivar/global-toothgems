@@ -96,12 +96,38 @@ describe("checkout with gift cards", () => {
     const request = buildCheckoutRequest([card], form, null, "en", ["GT-AAAA-BBBB-CCCC"]);
     expect(request?.shipping_rate_id).toBeNull();
     expect(request?.gift_card_codes).toEqual(["GT-AAAA-BBBB-CCCC"]);
-    expect(request?.items[0].gift_card?.amount_minor).toBe(5000);
+    const item = request?.items[0];
+    expect(item && "gift_card" in item ? item.gift_card?.amount_minor : null).toBe(5000);
     expect(buildCheckoutRequest([line], form, "rate", "fr")).not.toHaveProperty("gift_card_codes");
   });
 
   it("knows the code for gift card details refused by the database", () => {
     expect(readCheckoutAnswer({ error: "gift_card_details_invalid" })).toEqual({ kind: "error", error: "gift_card_details_invalid" });
     expect(readCheckoutAnswer({ error: "gift_card_invalid" })).toEqual({ kind: "error", error: "gift_card_invalid" });
+  });
+});
+
+describe("course lines in the checkout request", () => {
+  const course: CartLine = {
+    id: "course::3a9b8c7d-6e5f-4a3b-9c2d-1e0f9a8b7c6d",
+    productId: "pose-professionnelle",
+    courseId: "3a9b8c7d-6e5f-4a3b-9c2d-1e0f9a8b7c6d",
+    name: "Pose professionnelle",
+    image: "",
+    unitPrice: 34900,
+    currency: "EUR",
+    qty: 1,
+  };
+
+  it("sends the course id only, and no rate when nothing is shipped", () => {
+    const request = buildCheckoutRequest([course], form, null, "fr");
+    expect(request?.items).toEqual([{ course_id: course.courseId, quantity: 1 }]);
+    expect(request?.shipping_rate_id).toBeNull();
+    expect(JSON.stringify(request)).not.toContain("34900");
+  });
+
+  it("knows the course refusals", () => {
+    expect(readCheckoutAnswer({ error: "account_required" })).toEqual({ kind: "error", error: "account_required" });
+    expect(readCheckoutAnswer({ error: "course_owned" })).toEqual({ kind: "error", error: "course_owned" });
   });
 });

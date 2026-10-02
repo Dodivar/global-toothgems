@@ -249,6 +249,19 @@ Gift cards in the cart (`lib/giftCards/`, `components/shop/GiftCardCodes.tsx`):
   never stored), shown masked, removable, and sent as `gift_card_codes`. The browser never reads a balance: the
   database applies the cards and computes `amount_due`; a fully covered order is paid at once (`status: paid`).
   Every refusal (unknown, expired, empty, cancelled code) is the same "cannot be used" message.
+Academy courses in the cart (phase D):
+
+- **Buying one.** The course page's "Buy" adds a course line (`CartLine.courseId` = `courses.id`, `productId` = the
+  French slug, cover as image, current price as indicative `unitPrice`), once per course, quantity 1, never
+  shipped (`needsShipping` / `shippableSubtotal` leave it out, as `create_order()` does). The checkout sends
+  `{course_id, quantity: 1}`.
+- **Account required.** A visitor with a course in the basket is asked to sign in or create an account first (the
+  basket waits in `sessionStorage`; pay is disabled). The database refuses a guest course line anyway
+  (`account_required`) and a course the member already holds (`course_owned`).
+- **After payment.** Access comes from the database once the order is paid; the return page (or the cart when gift
+  cards covered everything) reloads the member's courses (`useProgress().reload`) and offers "Go to my courses".
+  Order history links a course line to its course page (`course:courses(slug)`).
+
 - **Not deployed.** If `create-checkout-session` does not exist yet (HTTP 404) the cart says payment is unavailable;
   nothing is ever confirmed without the function's answer.
 
@@ -307,7 +320,7 @@ The Academy catalogue opens one page per training — the sales page for that co
 Two rules shape its content:
 
 - **Nothing is invented.** Title, level, summary, description, objectives, prerequisites, price (and a running promotion), duration, modules, steps, knowledge checks and the pass mark are the course's own; sections without data are left out (no objectives → no outcomes list, no certificate → no diploma section). The catalogue's figures are counted from the published courses. The diploma is rendered with the member area's own `CertificateDocument`; the playable question is labelled as a sample.
-- **What the platform does not have is labelled.** The forum preview says it is a preview, and the assessment meter says it is an example. Until courses are sold (phase D), a real course says **"enrolment opens soon"** instead of a start button (`components/academy/EnrolmentSoon.tsx`), has no sticky purchase bar, and its structured data has no offer. The prototype's courses (mock mode, `enrolment: "demo"`) keep the demo enrolment described below.
+- **What the platform does not have is labelled.** The forum preview says it is a preview, and the assessment meter says it is an example. A real course (`enrolment: "sale"`, phase D) offers **"Buy this course"**: one seat goes into the cart (`useCart().addCourse`, `courseId` = `courses.id`) and the visitor lands on the cart; a signed-in member who holds it gets "continue" instead (the button waits while their courses are being read). Its structured data has no offer yet. The prototype's courses (mock mode, `enrolment: "demo"`) keep the demo enrolment described below.
 
 The hero reflects the visitor's own state — enrolled, in progress, completed — but only when signed in: the seeded demo enrolments exist regardless of the session, and this page is public.
 
@@ -495,7 +508,7 @@ The course builder (`/admin/formations`, `/nouvelle`, `/:id`, `/:id/apercu`, `/:
 
 ## Course access (`/admin/formations/:id/acces`)
 
-Until checkout sells courses (phase D), a course reaches a member by hand: the screen (`screens/admin/TrainingAccess.tsx`, reached from a published course's card menu, "Member access") lists the holders with their source, dates, steps validated, completion and certificate code, gives the course to an account by exact e-mail (optional end date and internal note) and revokes an access after confirmation. `lib/adminCourseAccess.ts` calls `admin_course_entitlements()`, `admin_grant_course()` and `admin_revoke_course_entitlement()` — `manage_training`, audited — and keeps a page-local list in mock mode.
+Besides purchases (phase D: a `purchase` entitlement from the paid order), a course reaches a member by hand: the screen (`screens/admin/TrainingAccess.tsx`, reached from a published course's card menu, "Member access") lists the holders with their source, dates, steps validated, completion and certificate code, gives the course to an account by exact e-mail (optional end date and internal note) and revokes an access after confirmation. `lib/adminCourseAccess.ts` calls `admin_course_entitlements()`, `admin_grant_course()` and `admin_revoke_course_entitlement()` — `manage_training`, audited — and keeps a page-local list in mock mode.
 
 ## Training media library (`/admin/formations/medias`)
 
@@ -769,7 +782,7 @@ Live on Supabase; without the Supabase variables the workspace says the base is 
 Without the Supabase variables every domain runs on its mock store. With them, the following still do not touch the database:
 
 - **Checkout extras.** Payment runs through Stripe (see *Cart and checkout*) and gift card codes can be used in the cart, but promotion codes and the loyalty reward cannot be entered yet (the Edge Function accepts promotion codes), no confirmation e-mail is sent, and saving the address on the account is not offered.
-- **Academy.** Authoring, public pages and the learner side are on Supabase (phases A–C). Courses cannot be bought yet (phase D): members get one by a manual grant (`/admin/formations/:id/acces`). The back office's course list and statistics still show placeholder learner figures (`enrolled`, `completionRate`, `data/adminAnalytics.ts`).
+- **Academy.** Authoring, public pages and the learner side are on Supabase (phases A–C). Courses are bought through the cart (phase D, migration `20261002100000_course_checkout` not applied yet) or granted by hand (`/admin/formations/:id/acces`). The back office's course list and statistics still show placeholder learner figures (`enrolled`, `completionRate`, `data/adminAnalytics.ts`).
 - **Artist Community.** Fixtures and in-memory posting; access derived client-side from the courses on the account. Post-launch.
 - **Loyalty Club.** Display only (`data/loyalty.ts` with a demo switch); the database already awards stamps on paid orders — the UI must read `loyalty_overview`.
 - **Security page:** data export and account deletion are simulated (they need backend jobs).

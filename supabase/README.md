@@ -120,6 +120,7 @@ supabase/
 | 20261001220721 | `admin_customers` | back-office customers: `admin_customer_status_history(user)` (status changes of one account from `audit_logs` — date, old, new, actor name — for any active staff member; `audit_logs` itself stays `manage_settings`-only) and `admin_customer_courses(user \| null)` (course seats not revoked, with the learner's progress rule: validated steps that still exist + checks passed, over steps + checks; completion, score, certificate code). Both `SECURITY DEFINER`, staff only |
 | 20261001223230 | `admin_customer_history_scope` | `admin_customer_status_history()` answers for customer accounts only (a team member's history stays out of reach of read-only staff); orders changes by `occurred_at, id` (two changes in one transaction share a timestamp — first fixed in place, now recorded) |
 | 20261002064611 | `settings_workspace` | Settings workspace on the database: `store_settings` gains the business identity, legal mentions (legal form, share capital, registration and VAT numbers, publication director, host), contact details, address, opening hours (`private.valid_opening_hours()` CHECK) and the contact page switches + `store_settings_translations` (support message per non-default locale, audited); `admin_save_store_details()`, `admin_save_shipping()` (whole configuration, atomic), `admin_save_tax_rates()` (whole set), `admin_save_languages()` — SECURITY INVOKER, `manage_settings`; `languages`: API may update `is_enabled`/`position` only, `fr`/`en` cannot be switched off (trigger), switches audited; audit trigger identifies rows by `code`/`locale`; standard VAT rates for AT BG CY CZ DK EE FI GR HR HU LT LU LV MT PL RO SE SI SK + MC, IE switched on |
+| 20261002100000 | `course_checkout` | **Not applied yet (awaits the user's go-ahead; validated on the project inside a rolled-back transaction).** Academy phase D: `order_items.course_id` (exclusive with product/variant, RESTRICT); `create_order()` accepts `{course_id, quantity: 1}` lines (published course, account required, not already held, current price incl. course promotion, VAT `training`, outside shop discounts and shipping thresholds); trigger `orders_stock_transitions_zc_courses` grants a `purchase` entitlement when the order becomes paid and revokes it on a full refund; course lines refused in parcels and ignored by the fulfilment status |
 | 20261002064949 | `settings_shipping_positions` | `admin_save_shipping()` numbers zones and rates from 1 like every existing row, so saving an unchanged configuration writes nothing |
 
 RLS is **enabled in the same migration that creates each table** (deny by default);
@@ -225,7 +226,7 @@ note (restock or refund) — it never oversells.
 ### Edge Functions (iteration 19)
 
 ```
-browser  POST functions/v1/create-checkout-session  {items[{product_id, variant_id, quantity}], email, address,
+browser  POST functions/v1/create-checkout-session  {items[{product_id, variant_id, quantity} | {course_id, quantity: 1}], email, address,
                                                       shipping_rate_id, locale, promotion_codes?, gift_card_codes?}
            → strict validation (_shared/checkoutInput.ts): no amount, total or currency is accepted
            → user = auth.getUser(Bearer token) when a user token is sent, else guest
@@ -254,7 +255,7 @@ browser  /fr/panier/confirmation?session_id=cs_… → checkout_session_status(c
   at the last minute still finds its stock. Delayed methods (bank debits) can confirm days later: the order has
   expired by then and the documented late-payment path applies (stock re-taken if still there, otherwise flagged).
 - Error codes returned to the browser: `invalid_request`, `unavailable`, `out_of_stock`, `shipping_unavailable`,
-  `promotion_code_invalid`, `gift_card_invalid`, `gift_card_details_invalid`, `payment_unavailable`, `maintenance`,
+  `promotion_code_invalid`, `gift_card_invalid`, `gift_card_details_invalid`, `account_required`, `course_owned`, `payment_unavailable`, `maintenance`,
   `session_expired`, `server_error` (`_shared/orderErrors.ts`). SQL messages are logged, never returned. Every refusal
   of a gift card *used as payment* (unknown, expired, cancelled, empty, too many) is `gift_card_invalid`; a gift card
   *being bought* with refused details is `gift_card_details_invalid`.
@@ -745,8 +746,7 @@ media references: courses.cover_media_id, course_modules.cover_media_id, course_
 ```
 
 - **A course is not a product** (owner, 2026-10-01): it never shows in the shop. Price `numeric(12,2)` + `currency`
-  on `courses`, edited with `manage_training` only. Phase D (selling courses) needs a course line in
-  `create_order()` and the Stripe Checkout functions, with the `training` VAT category.
+  on `courses`, edited with `manage_training` only. Sold through the cart since phase D (*Academy course sales*).
 - **One save per course**: `admin_save_course(jsonb)` (SECURITY INVOKER, `manage_training`) writes the course, its
   English translation and the whole tree in one transaction. Ids come from the browser; nodes are upserted by id
   and only the ids missing from the payload are deleted, so step / quiz / answer ids survive every save (phase C's
@@ -817,7 +817,7 @@ course_completions (user, course, completed_at, average_score, min_score, certif
   member by exact e-mail, course ever published, refuses an active duplicate, closes an expired one first),
   `admin_revoke_course_entitlement(id)`, both `manage_training`, both audited (`audit_logs`, table
   `course_entitlements`); `admin_course_entitlements(course)` lists holders with name, e-mail, steps done and
-  completion. Phase D adds `purchase` rows (with `order_id`) from the verified Stripe webhook. Members read their own
+  completion. Phase D adds `purchase` rows (with `order_id`) when the order is paid (*Academy course sales*). Members read their own
   rows, staff all of them. Account deletion cascades.
 - **Reading a course**: `learner_courses()` (SECURITY DEFINER) returns the courses the caller holds now, newest
   first: the header, the whole tree of a published course with published English translations (answer texts only —
@@ -857,6 +857,33 @@ course_completions (user, course, completed_at, average_score, min_score, certif
 - Suite: `tests/iteration22_validation.sql` (grants and their audit, another member refused content, answers,
   media, progress and holders list, path locking, end-of-check and immediate-feedback scoring, attempt limit,
   completion and certificate, withdrawn course, revocation and re-grant).
+
+### Academy course sales (iteration 23, phase D)
+
+Migration `20261002100000_course_checkout` (**not applied yet**), suite `tests/iteration23_validation.sql`.
+
+```
+course page   "Buy" → cart line {courseId} (one seat, nothing shipped; indicative price only)
+cart          course in basket + visitor → sign-in asked first (the basket waits); pay disabled
+edge fn       items[{course_id, quantity: 1}] → create_order(user, …)  (guest → account_required)
+create_order  course published, currency, one seat, not already held (course_owned), price = course_current_prices,
+              order_items.course_id, VAT `training` (billing country when nothing ships), no stock, no shop discount
+payment       mark_order_paid (verified webhook) / gift cards covering everything / staff marking paid
+                → trigger orders_stock_transitions_zc_courses → course_entitlements (source 'purchase', order_id)
+full refund   payment_status or status → refunded → the order's purchase entitlements revoked
+```
+
+- Courses are bought in the same basket and the same Stripe session as products and gift cards (one Stripe line
+  for `orders.amount_due`, see *Edge Functions*). Gift cards can pay for them.
+- Already held at payment time (bought twice in parallel, granted by hand meanwhile): no second entitlement, an
+  `[auto]` note in `order_notes` asks the team to refund the line. Paid without an account (cannot happen through
+  `create_order()`, only by hand): note, no access.
+- An expired, unrevoked entitlement is closed when the course is bought again. Purchase entitlements have no end
+  date (decision 72).
+- Course lines are invisible to analytics (`analytics_sale_lines` joins products — training figures stay null),
+  review requests and loyalty stamps (decision 71). Parcels refuse them; `sync_order_fulfillment()` ignores them,
+  so an order of courses only stays `unfulfilled` like an order of gift cards.
+- Members read their course lines through the existing order RLS (`course:courses(slug)` for the link).
 
 ### Integrity guarantees
 
@@ -1126,10 +1153,9 @@ VAT rates, shipping zones/rates mirroring the Settings prototype. Media rows ref
     tables with `select=*` as `authenticated` too. A customer calling the REST API with their own token could read
     the staff uuid that created a published course or its cover, nothing else. Close it by moving the back office to
     explicit column lists (or an RPC) and granting the same columns to `authenticated`.
-50. **Course sales pages before courses can be bought**: until phase D, a published course's page shows its price
-    and "enrolment opens soon" instead of a start button, its structured data has no `offers`, and it has no
-    sticky purchase bar. A signed-in member who holds the course (manual grant, iteration 22) gets "continue the
-    training" instead.
+50. **Course sales pages** (phase D, 2026-10-02): a published course's page offers "Buy this course" (cart), or
+    "continue the training" to a signed-in member who holds it. Its structured data still has no `offers`
+    (to add if search previews should show the price).
 
 49. **"Collected" figure of the order book** (agent, 2026-10-01, to confirm): per currency, never added across
     currencies; for orders whose payment was received (`paid`, `partially_refunded`, `refunded`) and that are not
@@ -1224,6 +1250,21 @@ VAT rates, shipping zones/rates mirroring the Settings prototype. Media rows ref
 70. **Public pages show saved store details within 60 s** (agent, 2026-10-02): the legal notice and contact page read
     `store_settings` on the server with the catalogue cache (`CATALOGUE_TTL_SECONDS`); a save made in the browser
     cannot invalidate it.
+71. **Courses earn no loyalty stamp and get no shop discount** (agent, 2026-10-02, to confirm): the loyalty stamp basis
+    joins products, and shop promotions, codes and the loyalty reward are computed on shop lines only (owner's
+    decision that shop promotions do not apply to courses). Courses do not count for free-delivery thresholds.
+72. **Purchased course access has no end date** (agent, 2026-10-02, to confirm): the course page's price note says
+    "accès 24 mois / 24-month access", but `purchase` entitlements are created without `expires_at` (the more
+    generous reading, reversible). Either set `expires_at = now() + 24 months` in
+    `private.apply_order_course_transitions()` or change the page's wording.
+73. **A course needs an account** (agent, 2026-10-02): access is granted to an account, so `create_order()` refuses a
+    course line in a guest order (`account_required`); the cart asks the visitor to sign in first. Guest checkout
+    stays the default for everything else.
+74. **A full refund revokes the course** (agent, 2026-10-02, to confirm): when an order becomes `refunded`, its
+    purchase entitlements are revoked (progress and certificates are kept). A partial refund of a course line does
+    not revoke it automatically — staff revoke by hand from the course's access screen.
+75. **One seat per course per order, for oneself** (agent, 2026-10-02): no buying a course for someone else, no
+    multi-seat purchase (studios training several artists) — both would need a gift / seat model.
 
 ## Done
 
@@ -1280,6 +1321,9 @@ VAT rates, shipping zones/rates mirroring the Settings prototype. Media rows ref
 - Gift cards wired (2026-10-01): back office and `/carte-cadeau` on Supabase, gift card lines and codes through
   `create-checkout-session`, migration `20261001200000_gift_card_staff_functions` (codes no longer returned by staff
   functions, input validation) **pending application**, `gift_cards_validation.sql`.
+- Iteration 23: Academy course sales (phase D) — course lines in `create_order()` and `create-checkout-session`,
+  purchase entitlements granted on payment and revoked by a full refund, course page "Buy" through the cart.
+  Migration `20261002100000_course_checkout` **pending application**.
 - Iteration 22: Academy learner access (phase C) — entitlements with audited manual grants, content served without
   answer keys, server-side progress, attempts and scoring, completions with certificate codes, lesson media gated
   on the entitlement, withdrawn courses greyed out for their holders.
@@ -1291,8 +1335,8 @@ VAT rates, shipping zones/rates mirroring the Settings prototype. Media rows ref
    `charge.dispute.created` webhooks.
 2. Academy, after the authoring schema (iteration 20):
    (**B**, public pages, done in iteration 21; **C**, learner access, done in iteration 22 — follow-ups: a public
-   certificate verification page, learner figures in the back office's course list and statistics); **D** selling courses: a course line in `create_order()` and the Stripe
-   Checkout functions (VAT category `training`, course promotions applied server-side). Kit QR links; course
+   certificate verification page, learner figures in the back office's course list and statistics; **D**, course
+   sales, built in iteration 23 — follow-ups: `offers` in the course JSON-LD, training figures in the statistics). Kit QR links; course
    reviews (`course_id` on `reviews`). Invoices / credit notes (sequential numbering), carrier tracking events.
 3. Store settings table (legal identity, order number format, tax display options), VAT numbers /
    B2B reverse charge, multi-currency price lists.

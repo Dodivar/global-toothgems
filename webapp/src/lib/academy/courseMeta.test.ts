@@ -22,7 +22,7 @@ const course: PublicCourse = {
   promotionEndsAt: null,
   cover: { src: "/media/formations/abc?v=1", alt: null },
   modules: [],
-  enrolment: "soon",
+  enrolment: "sale",
 };
 
 describe("course head", () => {

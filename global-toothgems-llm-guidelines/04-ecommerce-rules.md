@@ -17,7 +17,7 @@ The commerce schema is largely built. Before writing commerce code, read the mat
 
 The client is never authoritative for price, discount, tax, shipping, stock, payment status or order status. Prices shown in the browser are indicative; `create_order()` recomputes everything.
 
-The catalogue represents physical products, digital products, gift cards, variants (JSONB `attributes`, e.g. gem pack × stone size) and will represent courses and subscriptions as purchasable products granting entitlements.
+The catalogue represents physical products, digital products, gift cards and variants (JSONB `attributes`, e.g. gem pack × stone size). Courses are not products (owner, 2026-10-01): they are sold as course lines of the same order (`order_items.course_id`, one seat, account required), and the paid order grants a `course_entitlements` row (`supabase/README.md` → *Academy course sales*). Subscriptions are not modelled yet.
 
 ## Cart
 

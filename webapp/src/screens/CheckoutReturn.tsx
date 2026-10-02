@@ -7,6 +7,9 @@ import { useNavigate, useSearchParams } from "../lib/navigation";
 import { Badge } from "../components/ui/Badge";
 import { Button } from "../components/ui/Button";
 import { useCart } from "../lib/cart";
+import { LEARN_BASE } from "../lib/academyUrl";
+import { hasCourse } from "../lib/checkout/cartLines";
+import { useProgress } from "../lib/progress";
 import { fetchCheckoutStatus, isCheckoutSessionId, type CheckoutStatus } from "../lib/checkout/api";
 import { isSupabaseConfigured } from "../lib/supabase/client";
 import { useHydrated } from "../lib/useHydrated";
@@ -27,13 +30,20 @@ type View =
   | { kind: "slow" }
   | { kind: "invalid" }
   | { kind: "error" }
-  | { kind: "done"; status: CheckoutStatus };
+  /** `course`: the basket being paid held a course (noted before it is emptied). */
+  | { kind: "done"; status: CheckoutStatus; course: boolean };
 
 export function CheckoutReturn() {
   const { t } = useTranslation();
   const navigate = useNavigate();
   const [params] = useSearchParams();
-  const { clearCart } = useCart();
+  const { lines, clearCart } = useCart();
+  const { reload: reloadCourses } = useProgress();
+  // The basket as it is now, read when the order's state arrives.
+  const linesRef = useRef(lines);
+  useEffect(() => {
+    linesRef.current = lines;
+  }, [lines]);
   const hydrated = useHydrated();
   const sessionId = params.get("session_id");
   const validLink = isSupabaseConfigured && isCheckoutSessionId(sessionId);
@@ -53,7 +63,7 @@ export function CheckoutReturn() {
         .then((status) => {
           if (!active) return;
           if (status && status.state !== "pending") {
-            setView({ kind: "done", status });
+            setView({ kind: "done", status, course: hasCourse(linesRef.current) });
             return;
           }
           polls += 1;
@@ -77,12 +87,15 @@ export function CheckoutReturn() {
 
   // The basket became a paid order: it is emptied once, on the database's word.
   const paid = view.kind === "done" && view.status.state === "paid";
+  const boughtCourse = paid && view.course;
   useEffect(() => {
     if (paid && !cleared.current) {
       cleared.current = true;
+      // The webhook has granted access by now: read the member's courses again.
+      if (boughtCourse) reloadCourses();
       clearCart();
     }
-  }, [paid, clearCart]);
+  }, [paid, boughtCourse, clearCart, reloadCourses]);
 
   const retry = () => {
     setView({ kind: "checking" });
@@ -96,12 +109,19 @@ export function CheckoutReturn() {
         <Badge tone="success" icon={CheckCircle2}>{t("cart.confirmedBadge")}</Badge>
         <span className="gt-accent text-[clamp(28px,4vw,40px)] leading-none text-[var(--gt-blue-600)]">{t("cart.confirmedScript")}</span>
         <h1 className="text-[length:var(--text-h1)]">{t("cart.confirmedTitle")}</h1>
-        <p className="m-0 max-w-[480px] text-[length:var(--text-body-md)] text-[var(--text-body)]">{t("checkout.paidBody")}</p>
+        <p className="m-0 max-w-[480px] text-[length:var(--text-body-md)] text-[var(--text-body)]">
+          {t("checkout.paidBody")}
+          {boughtCourse && ` ${t("checkout.course.paidBody")}`}
+        </p>
         <p className="m-0 text-[length:var(--text-body-sm)] text-[var(--text-muted)]">
           {t("checkout.reference", { reference: view.status.orderNumber })}
         </p>
         <div className="flex flex-wrap justify-center gap-3">
-          <Button variant="primary" onClick={() => navigate("/compte")}>{t("cart.confirmedOpenAccount")}</Button>
+          {boughtCourse ? (
+            <Button variant="primary" onClick={() => navigate(LEARN_BASE)}>{t("checkout.course.openCourses")}</Button>
+          ) : (
+            <Button variant="primary" onClick={() => navigate("/compte")}>{t("cart.confirmedOpenAccount")}</Button>
+          )}
           <Button variant="outline" onClick={() => navigate("/boutique")}>{t("cart.confirmedContinueShopping")}</Button>
         </div>
       </>

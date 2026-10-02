@@ -71,11 +71,11 @@ export interface PublicCourse extends SluggedProduct {
   modules: PublicModule[];
   /**
    * What the sales page can do about it. `demo`: the prototype's enrolment
-   * (mock mode, the course exists in the learner fixtures). `soon`: a real
-   * course, which cannot be bought before phase D — the page says enrolment
-   * opens soon instead of pretending to enrol.
+   * (mock mode, the course exists in the learner fixtures). `sale`: a real
+   * course, bought through the cart and Stripe Checkout (phase D); access is
+   * granted by the database once the payment is confirmed.
    */
-  enrolment: "demo" | "soon";
+  enrolment: "demo" | "sale";
 }
 
 export function lessonCount(course: Pick<PublicCourse, "modules">): number {

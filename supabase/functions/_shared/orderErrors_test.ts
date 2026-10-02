@@ -31,3 +31,14 @@ Deno.test("other errors keep their meaning", () => {
   assertEquals(checkoutErrorCode({ code: "22023", message: "create_order: promotion code WELCOME is not valid" }), "promotion_code_invalid");
   assertEquals(checkoutErrorCode({ code: "XX000", message: "boom" }), "server_error");
 });
+
+Deno.test("course refusals: account required, already held, not on sale", () => {
+  assertEquals(
+    checkoutErrorCode({ code: "42501", message: "create_order: a course requires a customer account" }),
+    "account_required",
+  );
+  assertEquals(checkoutErrorCode({ code: "23505", message: "create_order: course pose is already held" }), "course_owned");
+  assertEquals(checkoutErrorCode({ code: "P0002", message: "create_order: course 0b5e… is not available" }), "unavailable");
+  assertEquals(checkoutErrorCode({ code: "22023", message: "create_order: course pose is not sold in USD" }), "unavailable");
+  assertEquals(checkoutErrorCode({ code: "22023", message: "create_order: one seat per course line" }), "invalid_request");
+});
