@@ -34,6 +34,8 @@ begin
     (bob,   'authenticated', 'authenticated', 'bob.test@example.invalid',   '{"first_name":"Bob"}',   now(), now()),
     (admin, 'authenticated', 'authenticated', 'admin.test@example.invalid', '{"first_name":"Ada"}',   now(), now());
   update public.profiles set role = 'admin' where id = admin;
+  -- An inactive VAT rate to resolve and hide (Ireland's is live since settings_workspace).
+  update public.tax_rates set is_active = false where country_code = 'IE' and tax_category = 'standard';
 
   select id into p_star from public.products where slug = 'etoile-cristal';
   select id into v_saphir from public.product_variants where sku = 'GEM-STAR-001-SAP';

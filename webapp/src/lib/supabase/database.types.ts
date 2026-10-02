@@ -6352,37 +6352,112 @@ export type Database = {
       }
       store_settings: {
         Row: {
+          address_line1: string | null
+          address_line2: string | null
+          business_email: string | null
+          city: string | null
+          country_code: string
           created_at: string
           created_by: string | null
+          host_address: string | null
+          host_contact: string | null
+          host_name: string | null
           id: boolean
+          legal_form: string | null
+          legal_name: string | null
           maintenance_enabled: boolean
           maintenance_expected_end: string | null
           maintenance_staff_bypass: boolean
           maintenance_started_at: string | null
+          opening_hours: Json
+          phone: string | null
+          postal_code: string | null
+          publication_director: string | null
+          publication_director_role: string | null
+          region: string | null
+          registration_number: string | null
+          share_capital: string | null
+          show_address: boolean
+          show_email: boolean
+          show_phone: boolean
+          store_name: string
+          support_email: string | null
+          support_message: string | null
           updated_at: string
           updated_by: string | null
+          vat_number: string | null
         }
         Insert: {
+          address_line1?: string | null
+          address_line2?: string | null
+          business_email?: string | null
+          city?: string | null
+          country_code?: string
           created_at?: string
           created_by?: string | null
+          host_address?: string | null
+          host_contact?: string | null
+          host_name?: string | null
           id?: boolean
+          legal_form?: string | null
+          legal_name?: string | null
           maintenance_enabled?: boolean
           maintenance_expected_end?: string | null
           maintenance_staff_bypass?: boolean
           maintenance_started_at?: string | null
+          opening_hours?: Json
+          phone?: string | null
+          postal_code?: string | null
+          publication_director?: string | null
+          publication_director_role?: string | null
+          region?: string | null
+          registration_number?: string | null
+          share_capital?: string | null
+          show_address?: boolean
+          show_email?: boolean
+          show_phone?: boolean
+          store_name?: string
+          support_email?: string | null
+          support_message?: string | null
           updated_at?: string
           updated_by?: string | null
+          vat_number?: string | null
         }
         Update: {
+          address_line1?: string | null
+          address_line2?: string | null
+          business_email?: string | null
+          city?: string | null
+          country_code?: string
           created_at?: string
           created_by?: string | null
+          host_address?: string | null
+          host_contact?: string | null
+          host_name?: string | null
           id?: boolean
+          legal_form?: string | null
+          legal_name?: string | null
           maintenance_enabled?: boolean
           maintenance_expected_end?: string | null
           maintenance_staff_bypass?: boolean
           maintenance_started_at?: string | null
+          opening_hours?: Json
+          phone?: string | null
+          postal_code?: string | null
+          publication_director?: string | null
+          publication_director_role?: string | null
+          region?: string | null
+          registration_number?: string | null
+          share_capital?: string | null
+          show_address?: boolean
+          show_email?: boolean
+          show_phone?: boolean
+          store_name?: string
+          support_email?: string | null
+          support_message?: string | null
           updated_at?: string
           updated_by?: string | null
+          vat_number?: string | null
         }
         Relationships: [
           {
@@ -6408,6 +6483,69 @@ export type Database = {
           },
           {
             foreignKeyName: "store_settings_updated_by_fkey"
+            columns: ["updated_by"]
+            isOneToOne: false
+            referencedRelation: "profiles"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      store_settings_translations: {
+        Row: {
+          created_at: string
+          created_by: string | null
+          locale: string
+          support_message: string | null
+          updated_at: string
+          updated_by: string | null
+        }
+        Insert: {
+          created_at?: string
+          created_by?: string | null
+          locale: string
+          support_message?: string | null
+          updated_at?: string
+          updated_by?: string | null
+        }
+        Update: {
+          created_at?: string
+          created_by?: string | null
+          locale?: string
+          support_message?: string | null
+          updated_at?: string
+          updated_by?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "store_settings_translations_created_by_fkey"
+            columns: ["created_by"]
+            isOneToOne: false
+            referencedRelation: "loyalty_overview"
+            referencedColumns: ["user_id"]
+          },
+          {
+            foreignKeyName: "store_settings_translations_created_by_fkey"
+            columns: ["created_by"]
+            isOneToOne: false
+            referencedRelation: "profiles"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "store_settings_translations_locale_fkey"
+            columns: ["locale"]
+            isOneToOne: true
+            referencedRelation: "languages"
+            referencedColumns: ["code"]
+          },
+          {
+            foreignKeyName: "store_settings_translations_updated_by_fkey"
+            columns: ["updated_by"]
+            isOneToOne: false
+            referencedRelation: "loyalty_overview"
+            referencedColumns: ["user_id"]
+          },
+          {
+            foreignKeyName: "store_settings_translations_updated_by_fkey"
             columns: ["updated_by"]
             isOneToOne: false
             referencedRelation: "profiles"
@@ -7168,6 +7306,7 @@ export type Database = {
       }
       admin_save_course: { Args: { p_course: Json }; Returns: Json }
       admin_save_gem_color: { Args: { p_color: Json }; Returns: Json }
+      admin_save_languages: { Args: { p_languages: Json }; Returns: undefined }
       admin_save_product: { Args: { p_product: Json }; Returns: Json }
       admin_save_product_recommendations: {
         Args: {
@@ -7177,6 +7316,12 @@ export type Database = {
         }
         Returns: undefined
       }
+      admin_save_shipping: { Args: { p_zones: Json }; Returns: undefined }
+      admin_save_store_details: {
+        Args: { p_details: Json }
+        Returns: undefined
+      }
+      admin_save_tax_rates: { Args: { p_rates: Json }; Returns: undefined }
       analytics_snapshot: {
         Args: {
           p_currency?: string
