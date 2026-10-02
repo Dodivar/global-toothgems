@@ -4486,6 +4486,7 @@
       },
       "successTitle": "Merci {{name}}, votre message est bien envoyé",
       "successBody": "Nous vous répondrons à {{email}}. Délai de réponse habituel :",
+      "closed": "Fermé",
       "responseTimePlaceholder": "Délai de réponse du service client",
       "demoNote": "Maquette : aucun message n’a été transmis, et la pièce jointe n’a pas quitté votre navigateur.",
       "sendAnother": "Envoyer un autre message",

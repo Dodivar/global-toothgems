@@ -119,6 +119,8 @@ supabase/
 | 20261001200000 | `gift_card_staff_functions` | **Not applied yet (awaits the user's go-ahead).** `extend_gift_card()` / `cancel_gift_card()` return the card id instead of the whole `gift_cards` row — as SECURITY DEFINER functions they handed the full bearer **code** to any `manage_promotions` caller (confirmed on the project before the fix by `gift_cards_validation.sql`); `issue_gift_card()` / `adjust_gift_card()` refuse sub-cent amounts (they were rounded), amounts above 10 000, a malformed recipient e-mail and a past expiry. Same names, arguments and permission |
 | 20261001220721 | `admin_customers` | back-office customers: `admin_customer_status_history(user)` (status changes of one account from `audit_logs` — date, old, new, actor name — for any active staff member; `audit_logs` itself stays `manage_settings`-only) and `admin_customer_courses(user \| null)` (course seats not revoked, with the learner's progress rule: validated steps that still exist + checks passed, over steps + checks; completion, score, certificate code). Both `SECURITY DEFINER`, staff only |
 | 20261001223230 | `admin_customer_history_scope` | `admin_customer_status_history()` answers for customer accounts only (a team member's history stays out of reach of read-only staff); orders changes by `occurred_at, id` (two changes in one transaction share a timestamp — first fixed in place, now recorded) |
+| 20261002064611 | `settings_workspace` | Settings workspace on the database: `store_settings` gains the business identity, legal mentions (legal form, share capital, registration and VAT numbers, publication director, host), contact details, address, opening hours (`private.valid_opening_hours()` CHECK) and the contact page switches + `store_settings_translations` (support message per non-default locale, audited); `admin_save_store_details()`, `admin_save_shipping()` (whole configuration, atomic), `admin_save_tax_rates()` (whole set), `admin_save_languages()` — SECURITY INVOKER, `manage_settings`; `languages`: API may update `is_enabled`/`position` only, `fr`/`en` cannot be switched off (trigger), switches audited; audit trigger identifies rows by `code`/`locale`; standard VAT rates for AT BG CY CZ DK EE FI GR HR HU LT LU LV MT PL RO SE SI SK + MC, IE switched on |
+| 20261002064949 | `settings_shipping_positions` | `admin_save_shipping()` numbers zones and rates from 1 like every existing row, so saving an unchanged configuration writes nothing |
 
 RLS is **enabled in the same migration that creates each table** (deny by default);
 policies are granted back in `rls_policies`.
@@ -160,7 +162,7 @@ orders 1─* order_discounts ─→ promotions / promotion_codes / loyalty_cards
 contact_requests ─* contact_request_notes   (─→ profiles, orders when it is the requester's own)
 newsletter_subscriptions ─→ profiles (members)   ⇄ consent_records (marketing_email)
 email_templates 1─* email_template_translations   content_pages 1─* content_page_translations
-store_settings (single row)
+store_settings (single row) + store_settings_translations (one row per non-default locale)
 ```
 
 Conventions: plural snake_case tables, `uuid` keys, `timestamptz created_at/updated_at`,
@@ -182,10 +184,11 @@ statuses as `text` + `CHECK` (easy to extend, no enum migrations), money as
 | `customer_addresses` | many per user, `address_type` shipping/billing, one default per type (setting a new default clears the old one), ISO `country_code`, nullable `postal_code`/`region`. |
 | `orders` | `order_number` `GT-100001…`, `user_id` (SET NULL on account deletion — accounting records survive), `customer_email` + `billing_address`/`shipping_address` **JSONB snapshots**, subtotal/discount/shipping/tax/total, `prices_include_tax` (EU VAT-inclusive default), `status`, `payment_status`, `fulfillment_status`, `customer_note`, `admin_note` (deprecated, always NULL since `order_staff_notes`: notes live in `order_notes`, staff only). |
 | `order_items` | frozen `product_name`, `variant_name`, `sku`, `unit_price`, `quantity`, generated `subtotal_amount`. |
-| `languages` | `fr` (default = language of base columns), `en`, `de` enabled; `it`, `es`, `pt`, `nl` disabled. |
+| `languages` | `fr` (default = language of base columns), `en`, `de` enabled; `it`, `es`, `pt`, `nl` disabled. The API can only switch `is_enabled` / `position` (through `admin_save_languages()`); `fr` and `en`, the storefront languages, cannot be switched off. |
 | `*_translations` | one row per (entity, non-default locale); product translations carry a localized `slug` (unique per locale) and `meta_title`/`meta_description`; `status` draft/published — only published rows are public. A translation for the default locale is rejected. |
 | `shipping_zones` / `shipping_zone_countries` / `shipping_rates` | zones of ISO countries + optional single "rest of world" zone; rates `standard`/`express`/`free`/`pickup` with delivery days, price, `free_over_amount`, basket-amount and weight bounds. |
-| `tax_rates` | VAT per country and `tax_category` (`standard`, `books`, `training`, `hygiene`, `digital`) in **basis points** (2000 = 20 %). Reduced rate → else standard → else 0. |
+| `tax_rates` | VAT per country and `tax_category` (`standard`, `books`, `training`, `hygiene`, `digital`) in **basis points** (2000 = 20 %). Reduced rate → else standard → else 0. Every EU country an active zone serves (and Monaco) has a standard rate since `settings_workspace`. |
+| `store_settings` / `store_settings_translations` | single row: maintenance switch, business identity and legal mentions (published on the legal notice), contact details, registered office, opening hours (`{mon…sun: {open, from, to}}`), what the contact page shows, support message (French; other locales in the translations table). Public read — only public information belongs there. |
 | `inventory_movements` | append-only ledger: `initial`, `adjustment` (admin edit, with actor), `reservation`, `release`, `sale`, `return`, with deltas and resulting quantities. Written only by trigger. |
 | `stripe_webhook_events` | one row per Stripe event id (`evt_…`), status, attempts, error — dedup/idempotency. No payload stored (personal data). |
 | `audit_logs` | append-only, trigger-written: who (`actor_id`, `actor_role`), what (`table_name`, `record_id`, `action`), and the changed columns old → new. |
@@ -991,10 +994,9 @@ VAT rates, shipping zones/rates mirroring the Settings prototype. Media rows ref
    currency; TypeScript and Stripe use integer minor units; conversion only at boundaries
    (`amount * 100` for 2-decimal currencies, `webapp/src/lib/catalog/money.ts`). 3-decimal currencies
    (KWD, BHD…) would need a wider scale.
-2. **Default content language = French.** Base columns hold French (matches the storefront
-   `fallbackLng: "fr"`), but the Settings prototype declares `SOURCE_LANGUAGE = "en"`. The repo is
-   inconsistent; switching the default later means moving base text into an `fr` translation and
-   `en` into the base columns (a data migration, not a schema change).
+2. **Default content language = French** — decided, and locked since `settings_workspace` (`is_default` is not
+   writable from the API; the Settings page shows it as the original language). Switching the default later means
+   moving base text into an `fr` translation and `en` into the base columns (a data migration, not a schema change).
 3. **Stock of active products is public** (enables "only 3 left" / out-of-stock badges). Restrict to
    `stock_status` only via a view if quantities become sensitive.
 4. **Admins may set `payment_status`** manually (e.g. bank transfer). Stripe webhooks remain the
@@ -1003,7 +1005,8 @@ VAT rates, shipping zones/rates mirroring the Settings prototype. Media rows ref
    country (billing for digital-only), per-line rounding, shipping taxed at the standard rate,
    destinations without a configured rate → 0 % (exports). **Rates are illustrative — have the
    accountant confirm them.** OSS thresholds, B2B reverse charge and VAT-number validation are not
-   modelled yet. Stripe Tax could replace `vat_rate_bp()` later.
+   modelled yet. Stripe Tax could replace `vat_rate_bp()` later. The Settings page edits the rates only and shows
+   these rules read-only (decision 66).
 6. **Reservation window** defaults to 60 minutes (`p_reservation_minutes`, 5–1440). Stripe Checkout
    sessions can live longer; set the session `expires_at` to match.
 7. **Reviews are deleted with the customer's account** (their text is personal data), and customers
@@ -1062,8 +1065,8 @@ VAT rates, shipping zones/rates mirroring the Settings prototype. Media rows ref
     confirms the account e-mail); confirm this is enough for the countries served (e.g. Germany).
 29. **Legal documents and FAQ stay in the frontend** (`data/legal/*`) until their placeholders are validated;
     `content_pages` is ready to receive them (kind `legal` requires a `policy_version`).
-30. **`store_settings` holds only the maintenance switch**: the store-settings iteration adds the rest of the
-    Settings workspace to the same row.
+30. **`store_settings` is the store's identity** (`settings_workspace`): maintenance switch, business identity and
+    legal mentions, contact details, opening hours, contact page switches — one row, public read.
 31. **Revenue = merchandise charged, VAT included**, net of discounts; shipping, gift cards (money held until spent)
     and refunds are reported apart, not deducted. If finance wants revenue excluding VAT or net of refunds, it is a
     change in `private.analytics_sale_lines()` only.
@@ -1200,8 +1203,32 @@ VAT rates, shipping zones/rates mirroring the Settings prototype. Media rows ref
     count is every order of the book (as on the order page), including unpaid or failed ones; spend counts paid
     orders only. An edit saves the profile, then the tag difference, in separate requests (not one transaction).
 
+64. **Store texts have no draft/published status** (agent, 2026-10-02): `store_settings_translations` holds one short
+    sentence per locale (the contact page's response time), edited beside the French one and live on save.
+65. **Storefront languages are locked** (agent, 2026-10-02): `fr` (default) and `en` cannot be switched off — the
+    public routes (`webapp/src/lib/localeRoutes.ts`), checkout locales and member preferences rely on them. Enabling
+    another language opens content translation in it; it does not add it to the public site.
+66. **VAT in Settings = rates only** (user, 2026-10-02: "keep simple settings, revisit later"): standard rate per country,
+    reduced rate per category; the calculation rules stay fixed in `create_order()` and are shown read-only. The
+    prototype's switches (prices excluding VAT, tax basis, rounding, taxing shipping, B2B VAT numbers / VIES, reverse
+    charge, exemptions, a default rate) were removed rather than stored unused; each needs `create_order()` work.
+67. **Order numbering is not configurable** (agent's reading of the user's answer, 2026-10-02 — to confirm): numbers stay
+    `GT-` + `order_number_seq`, continuous; the prototype's prefix / next number / padding controls were removed.
+68. **VAT rates added on 2026-10-02 to confirm with the accountant**: AT 20, BG 20, CY 19, CZ 21, DK 25, EE 24, FI 25.5,
+    GR 24, HR 25, HU 27, LT 21, LU 17, LV 21, MT 18, PL 23, RO 21, SE 25, SI 22, SK 23, MC 20 (French VAT territory); IE 23
+    switched on. Published standard rates as of 2025; OSS registration or the French rate below the EU distance-selling
+    threshold is the accountant's call.
+69. **Shipping and VAT are saved as whole sets** (agent, 2026-10-02): a zone, rate or VAT row left out of the save is
+    deleted; orders keep their snapshotted method name and VAT (`shipping_rate_id` is set null on a deleted rate).
+    Unchanged rows are not rewritten, so the audit log records real changes only.
+70. **Public pages show saved store details within 60 s** (agent, 2026-10-02): the legal notice and contact page read
+    `store_settings` on the server with the catalogue cache (`CATALOGUE_TTL_SECONDS`); a save made in the browser
+    cannot invalidate it.
+
 ## Done
 
+- Settings workspace (2026-10-02): store identity and legal mentions, shipping, VAT rates and content languages saved
+  from `/admin/parametres` through `admin_save_*()`; legal notice and contact page publish the store details.
 - Iteration 2: translations, shipping zones/rates, VAT rates, stock reservations + ledger,
   server-side order functions, Stripe webhook idempotency, admin audit log, private avatars.
 - Iteration 3: reviews with moderation, reports, votes and photos; shipments and tracking with

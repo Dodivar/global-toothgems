@@ -4481,6 +4481,7 @@
       },
       "successTitle": "Thank you {{name}}, your message has been sent",
       "successBody": "We will reply to {{email}}. Usual response time:",
+      "closed": "Closed",
       "responseTimePlaceholder": "Customer service response time",
       "demoNote": "Prototype: no message was sent, and the attachment never left your browser.",
       "sendAnother": "Send another message",

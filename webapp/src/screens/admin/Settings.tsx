@@ -6,9 +6,11 @@ import { useSearchParams } from "../../lib/navigation";
 import {
   CircleAlert,
   CircleCheck,
-  FlaskConical,
+  CloudOff,
   Languages,
+  Lock,
   Percent,
+  RefreshCw,
   RotateCcw,
   Save,
   Store,
@@ -18,11 +20,11 @@ import {
 import clsx from "clsx";
 import { AdminButton } from "../../components/admin/AdminButton";
 import { AdminHeader } from "../../components/admin/AdminHeader";
-import { ToggleSwitch } from "../../components/admin/ToggleSwitch";
+import { CardLoadingState } from "../../components/admin/LoadingState";
+import { EmptyState } from "../../components/admin/EmptyState";
 import { useToast } from "../../lib/toast";
-import { useAdminSettings, SETTINGS_SECTIONS, type SettingsSection } from "../../lib/adminSettings";
-import { languageCoverage, shippingIssues, validateStore, validateTaxes } from "../../lib/settingsRules";
-import { SOURCE_LANGUAGE } from "../../data/adminSettings";
+import { useAdminSettings, SETTINGS_SECTIONS, type SettingsSection, type SettingsStatus, type SettingsWriteError } from "../../lib/adminSettings";
+import { servedWithoutVat, shippingIssues, validateStore } from "../../lib/settingsRules";
 import { focusRing } from "../../components/settings/SettingsUi";
 import { StoreDetailsSection } from "../../components/settings/StoreDetailsSection";
 import { ShippingSection } from "../../components/settings/ShippingSection";
@@ -41,7 +43,8 @@ import { useAdminShell } from "./AdminLayout";
  *
  * Drafts survive moving between sections (and leaving Settings), so the
  * section navigation marks each one with unsaved changes; the browser's own
- * leave-page prompt covers a closed tab.
+ * leave-page prompt covers a closed tab. Members without `manage_settings`
+ * read everything and change nothing (the database refuses it anyway).
  */
 
 const SLUGS: Record<SettingsSection, string> = {
@@ -74,12 +77,12 @@ export function Settings() {
   const [params, setParams] = useSearchParams();
   const section = sectionFromSlug(params.get("section"));
   const settings = useAdminSettings();
-  const { draft, isDirty, discard, save, setAttempted, savedAt, failSaves, setFailSaves, translations } = settings;
+  const { draft, saved, isDirty, discard, save, setAttempted, savedAt, status, canManage, reload } = settings;
   const [saving, setSaving] = useState(false);
   // A failed save is about the section it happened in.
-  const [failedSection, setFailedSection] = useState<SettingsSection | null>(null);
-  const saveFailed = failedSection === section;
-  const setSaveFailed = (v: boolean) => setFailedSection(v ? section : null);
+  const [failure, setFailure] = useState<{ section: SettingsSection; error: SettingsWriteError } | null>(null);
+  const saveFailed = failure?.section === section ? failure.error : null;
+  const ready = status === "ready";
   const summaryRef = useRef<HTMLDivElement>(null);
 
   const dirty = isDirty(section);
@@ -95,25 +98,20 @@ export function Settings() {
     return () => window.removeEventListener("beforeunload", onBeforeUnload);
   }, [anyDirty]);
 
-  const errorCount = useMemo(() => {
-    if (section === "store") return Object.keys(validateStore(draft.store)).length;
-    if (section === "taxes") return Object.keys(validateTaxes(draft.taxes)).length;
-    return 0;
-  }, [section, draft.store, draft.taxes]);
+  const errorCount = useMemo(() => (section === "store" ? Object.keys(validateStore(draft.store)).length : 0), [section, draft.store]);
 
   const showSummary = settings.attempted[section] && errorCount > 0;
 
   /** Items that need a look, per section — shown as a count in the navigation. */
-  const attention: Record<SettingsSection, number> = useMemo(() => {
-    const enabled = draft.languages.languages.filter((l) => l.enabled && l.code !== SOURCE_LANGUAGE).map((l) => l.code);
-    const gaps = enabled.reduce((sum, code) => sum + languageCoverage(translations, code, false).missing, 0);
-    return {
+  const attention: Record<SettingsSection, number> = useMemo(
+    () => ({
       store: 0,
       shipping: shippingIssues(draft.shipping).length,
-      taxes: 0,
-      languages: gaps,
-    };
-  }, [draft.languages, draft.shipping, translations]);
+      taxes: servedWithoutVat(saved.shipping, draft.taxes).length,
+      languages: 0,
+    }),
+    [draft.shipping, saved.shipping, draft.taxes],
+  );
 
   const go = (next: SettingsSection) => {
     setParams({ section: SLUGS[next] });
@@ -128,20 +126,20 @@ export function Settings() {
       return;
     }
     setSaving(true);
-    const ok = await save(section);
+    const result = await save(section);
     setSaving(false);
-    if (ok) {
-      setSaveFailed(false);
+    if (result.ok) {
+      setFailure(null);
       showToast(t("settings.toast.saved", { section: t(`settings.sections.${section}.title`) }), t(`settings.toast.savedBody.${section}`));
     } else {
-      setSaveFailed(true);
-      showToast(t("settings.toast.failed"), t("settings.toast.failedBody"), "error");
+      setFailure({ section, error: result.error });
+      showToast(t("settings.toast.failed"), t(`settings.saveError.reasons.${result.error}`), "error");
     }
   };
 
   const onDiscard = () => {
     discard(section);
-    setSaveFailed(false);
+    setFailure(null);
     showToast(t("settings.toast.discarded"), undefined, "info");
   };
 
@@ -186,10 +184,10 @@ export function Settings() {
         actions={
           <div className="hidden items-center gap-3 xl:flex">
             {stateLine}
-            <AdminButton variant="outline" iconLeft={RotateCcw} disabled={!dirty || saving} onClick={onDiscard}>
+            <AdminButton variant="outline" iconLeft={RotateCcw} disabled={!dirty || saving || !canManage} onClick={onDiscard}>
               {t("settings.actions.discard")}
             </AdminButton>
-            <AdminButton variant="primary" iconLeft={Save} disabled={!dirty} loading={saving} onClick={onSave}>
+            <AdminButton variant="primary" iconLeft={Save} disabled={!dirty || !canManage} loading={saving} onClick={onSave}>
               {t("settings.actions.save")}
             </AdminButton>
           </div>
@@ -197,13 +195,21 @@ export function Settings() {
       />
 
       <div className="grid grid-cols-[minmax(0,1fr)] gap-5 px-[var(--admin-gutter)] pb-[clamp(96px,10vw,120px)] pt-5 xl:pb-[clamp(32px,5vw,56px)]">
-        <PrototypeBar failSaves={failSaves} onChange={setFailSaves} />
-
+        {!ready ? (
+          <StatusPanel status={status} onRetry={reload} />
+        ) : (
         <div className="grid grid-cols-[minmax(0,1fr)] gap-6 xl:grid-cols-[248px_minmax(0,1fr)] xl:items-start">
           <SectionNav current={section} onSelect={go} isDirty={isDirty} attention={attention} />
 
           <div className="grid min-w-0 grid-cols-[minmax(0,1fr)] gap-5">
             <SectionIntro section={section} />
+
+            {!canManage && (
+              <div role="note" className="flex items-start gap-3 rounded-[var(--admin-radius)] border border-[var(--border-default)] bg-[var(--surface-sunken)] p-4 text-[length:var(--text-caption)] text-[var(--text-body)]">
+                <Lock size={16} aria-hidden="true" className="mt-px flex-none text-[var(--text-muted)]" />
+                <p className="m-0">{t("settings.readOnly")}</p>
+              </div>
+            )}
 
             {showSummary && (
               <div
@@ -225,28 +231,33 @@ export function Settings() {
                 <CircleAlert size={18} strokeWidth={2} aria-hidden="true" className="flex-none" />
                 <div className="grid min-w-[14rem] flex-1 gap-0.5">
                   <p className="m-0 text-[length:var(--text-body-sm)] font-semibold">{t("settings.saveError.title")}</p>
-                  <p className="m-0 text-[length:var(--text-caption)] text-[var(--text-body)]">{t("settings.saveError.body")}</p>
+                  <p className="m-0 text-[length:var(--text-caption)] text-[var(--text-body)]">{t(`settings.saveError.reasons.${saveFailed}`)}</p>
                 </div>
-                <AdminButton variant="dark" size="sm" loading={saving} onClick={onSave}>
-                  {t("settings.saveError.retry")}
-                </AdminButton>
+                {saveFailed === "unavailable" && (
+                  <AdminButton variant="dark" size="sm" loading={saving} onClick={onSave}>
+                    {t("settings.saveError.retry")}
+                  </AdminButton>
+                )}
               </div>
             )}
 
-            <div key={section} className="gt-settings-enter grid min-w-0 grid-cols-[minmax(0,1fr)] gap-5">
+            {/* Read-only members see every value; a disabled fieldset disables every control in it. */}
+            <fieldset key={section} disabled={!canManage} className="gt-settings-enter m-0 grid min-w-0 grid-cols-[minmax(0,1fr)] gap-5 border-0 p-0">
+              <legend className="sr-only">{t(`settings.sections.${section}.title`)}</legend>
               {section === "store" && <StoreDetailsSection />}
               {section === "shipping" && <ShippingSection />}
               {section === "taxes" && <TaxesSection />}
               {section === "languages" && <LanguagesSection />}
-            </div>
+            </fieldset>
           </div>
         </div>
+        )}
       </div>
 
       {/* Below 1280px the header has no room for the save actions beside the
           title, so they ride in a bar at the bottom while there is something
           to save. */}
-      {dirty && (
+      {dirty && canManage && (
         <div className="gt-settings-savebar gt-sheet-up fixed inset-x-3 bottom-3 z-[80] sm:left-auto sm:right-[var(--admin-gutter)] sm:w-[min(560px,calc(100%-2*var(--admin-gutter)))] xl:hidden">
           <div className="gt-glass flex items-center gap-2 rounded-[var(--admin-radius)] p-2.5 pl-4 shadow-[var(--shadow-lg)]">
             <span className="min-w-0 flex-1 truncate">{stateLine}</span>
@@ -429,22 +440,26 @@ function SectionIntro({ section }: { section: SettingsSection }) {
   );
 }
 
-/**
- * Prototype controls, labelled as such — like the other workspaces' demo
- * switches — so the save-failure path can be reviewed without a backend.
- */
-function PrototypeBar({ failSaves, onChange }: { failSaves: boolean; onChange: (v: boolean) => void }) {
+/** What stands in for the sections until the settings are read (or when they cannot be). */
+function StatusPanel({ status, onRetry }: { status: SettingsStatus; onRetry: () => void }) {
   const { t } = useTranslation();
+  if (status === "loading") return <CardLoadingState label={t("settings.status.loading")} />;
   return (
-    <div className="flex flex-wrap items-center gap-x-4 gap-y-2 rounded-[var(--admin-radius)] border border-dashed border-[var(--gt-blue-400)] bg-[var(--gt-blue-50)] px-3.5 py-2 text-[length:var(--text-caption)] text-[var(--gt-blue-700)]">
-      <span className="inline-flex items-center gap-1.5 font-semibold">
-        <FlaskConical size={14} aria-hidden="true" />
-        {t("settings.proto.label")}
-      </span>
-      <span className="min-w-[12rem] flex-1">{t("settings.proto.body")}</span>
-      <div className="min-w-[14rem]">
-        <ToggleSwitch label={t("settings.proto.fail")} checked={failSaves} onChange={onChange} />
-      </div>
+    <div className="gt-admin-panel">
+      {status === "failed" ? (
+        <EmptyState
+          icon={CircleAlert}
+          title={t("settings.status.failedTitle")}
+          body={t("settings.status.failedBody")}
+          action={
+            <AdminButton variant="primary" iconLeft={RefreshCw} onClick={onRetry}>
+              {t("settings.status.retry")}
+            </AdminButton>
+          }
+        />
+      ) : (
+        <EmptyState icon={CloudOff} title={t("settings.status.unavailableTitle")} body={t("settings.status.unavailableBody")} />
+      )}
     </div>
   );
 }
