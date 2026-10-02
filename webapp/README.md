@@ -2,7 +2,7 @@
 
 The production web application of Global Toothgems: storefront, Academy, member area, Studio 3D and back office, in one Next.js (App Router) application backed by Supabase (see `supabase/README.md`) and deployed on Vercel. It was migrated from Vite + React Router in five phases (done on 2026-09-30): every screen is an App Router segment, public pages are rendered on the server, the private areas in the browser under server-checked layouts — see `docs/migration-nextjs.md` for the phases and the per-route checklist.
 
-> **Status: being industrialised.** The app started as a fully clickable implementation of the Claude Design prototype, with every domain on in-memory mock data. Domains are now connected to Supabase one by one; the up-to-date live/mock table is in the root `AGENTS.md` §4. With the Supabase variables set, these are **live**: the storefront catalogue, back-office product management and categories, member and staff authentication, favourites (`wishlist_items`), reviews and moderation, member and admin order reading, the Studio 3D workspace, and the Academy's back-office authoring and its public pages (catalogue, course sales pages). Cart/checkout/payment (no Stripe yet), promotions, gift cards, loyalty, customers/users/statistics/settings in the back office, contact and newsletter, and the Academy's learner side still run on mock data.
+> **Status: being industrialised.** The app started as a fully clickable implementation of the Claude Design prototype, with every domain on in-memory mock data. Domains are now connected to Supabase one by one; the up-to-date live/mock table is in the root `AGENTS.md` §4. With the Supabase variables set, these are **live**: the storefront catalogue, back-office product management and categories, member and staff authentication, favourites (`wishlist_items`), reviews and moderation, member and admin order reading, the back-office customers workspace, the Studio 3D workspace, and the Academy's back-office authoring and its public pages (catalogue, course sales pages). Gift cards (back office, `/carte-cadeau`, codes in the cart) are live too, paid through the checkout. The back-office settings (store details, shipping, VAT rates, languages) are live too. Cart/checkout/payment (Stripe functions not deployed yet), promotions, loyalty, statistics in the back office, contact and newsletter, and the Academy's learner side still run on mock data.
 >
 > Architecture (decided): Next.js App Router on Vercel, business rules in Postgres (RLS + functions), server code in Supabase Edge Functions, payments by Stripe with webhook-driven fulfilment. Sections below that describe "prototype" behaviour, "Prototype controls" panels or mock stores document code that is **still mock and scheduled to be replaced**, not a target design.
 
@@ -93,7 +93,7 @@ What is not wired to the database yet, on purpose:
 - **Categories and families** are read from the database but not editable; a product's family is picked in the product form.
 - **The activity feed** shows this session's actions only; the full history is in `audit_logs` and `inventory_movements`.
 - **The seeded products' images** point at files that were never uploaded, so they show broken until replaced.
-- **Orders and reviews** are connected too (see "Orders and reviews on Supabase" below). **Other admin workspaces** (promotions, statistics, training…) still use their mock stores, so e.g. promotions refer to prototype product ids. The customers workspace reads its order counts from the order book, so it mixes mock customers with real orders.
+- **Orders and reviews** are connected too (see "Orders and reviews on Supabase" below). **Other admin workspaces** (promotions, statistics, training…) still use their mock stores, so e.g. promotions refer to prototype product ids. The customers workspace is live (see "Customers on Supabase" below).
 
 Code: `lib/supabase/` (client + generated `database.types.ts`), `lib/adminCatalogMapping.ts` (pure row ↔ form mapping, unit-tested), `lib/adminCatalogSupabase.tsx` (the Supabase store), `lib/adminCatalog.tsx` (the mock store, and the switch between the two), `lib/adminAuth.tsx`.
 
@@ -238,6 +238,33 @@ With the Supabase variables set, `screens/Cart.tsx`:
    `create_order()` and a Stripe Checkout Session for the amount the database computed;
 3. follows the returned URL, only if it is `https://checkout.stripe.com/…`.
 
+Gift cards in the cart (`lib/giftCards/`, `components/shop/GiftCardCodes.tsx`):
+
+- **Buying one.** `/carte-cadeau` adds a gift card line (`CartLine.giftCard`: recipient, sender, message, design,
+  delivery date; the amount is the line's `unitPrice` in minor units). Each card is its own line, quantity 1. The
+  checkout sends it as `{product_id, quantity: 1, gift_card: {amount_minor, …}}`; `create_order()` checks the amount
+  and the details against `gift_card_settings` and creates the card *pending*; it becomes usable only when the
+  verified webhook marks the order paid. A basket of gift cards only asks for no delivery (`shipping_rate_id: null`).
+- **Paying with one.** Up to 5 codes are typed in the cart (format checked in the browser only, kept in memory,
+  never stored), shown masked, removable, and sent as `gift_card_codes`. The browser never reads a balance: the
+  database applies the cards and computes `amount_due`; a fully covered order is paid at once (`status: paid`).
+  Every refusal (unknown, expired, empty, cancelled code) is the same "cannot be used" message.
+Academy courses in the cart (phase D):
+
+- **Buying one.** The course page's "Buy" adds a course line (`CartLine.courseId` = `courses.id`, `productId` = the
+  French slug, cover as image, current price as indicative `unitPrice`), once per course, quantity 1, never
+  shipped (`needsShipping` / `shippableSubtotal` leave it out, as `create_order()` does). The checkout sends
+  `{course_id, quantity: 1}`.
+- **Account required.** A visitor with a course in the basket is asked to sign in or create an account first (the
+  basket waits in `sessionStorage`; pay is disabled). The database refuses a guest course line anyway
+  (`account_required`) and a course the member already holds (`course_owned`).
+- **After payment.** Access comes from the database once the order is paid; the return page (or the cart when gift
+  cards covered everything) reloads the member's courses (`useProgress().reload`) and offers "Go to my courses".
+  Order history links a course line to its course page (`course:courses(slug)`).
+
+- **Not deployed.** If `create-checkout-session` does not exist yet (HTTP 404) the cart says payment is unavailable;
+  nothing is ever confirmed without the function's answer.
+
 Stripe sends the customer back to `/fr/panier/confirmation?session_id=cs_…` (`/en/cart/confirmation`,
 `screens/CheckoutReturn.tsx`). That page only reads `checkout_session_status()` — order number and state — and
 checks again for about a minute; the order becomes paid solely through the verified `stripe-webhook`. The cart
@@ -274,6 +301,16 @@ src/
   lib/                Auth, cart, learning-progress and order contexts, toasts, price/date helpers
 ```
 
+## The Academy marketplace (`/fr/academy`, `/en/academy`)
+
+The marketplace is where a visitor discovers, compares and chooses a training; the training's own page (next section) is where they understand it and decide. The two are kept apart on purpose: the marketplace never repeats a curriculum, a lesson list, quiz mechanics, certification rules or a course FAQ.
+
+`screens/Academy.tsx` composes `components/academyPage/`, in the order the visitor's questions come: the hero (`AcademyHero`: the promise, "explore" and "find my starting point", the real featured course on a glass card, figures counted from the catalogue), why learn with Global Toothgems (`ValueSection`, outcomes rather than contents), the catalogue (`CourseCatalog`: the featured course as an editorial panel, the starting-point picker, the controls and the grid), how the Academy works (`HowItWorks`, six platform-level steps; the certificate step only when a published course issues one), "from curiosity to confidence" (`JourneyBand`), the wider Global Toothgems world (`Ecosystem`: the 3D Studio and the shop as links, artist exchange marked "coming soon" — there is no live space for it), learner reviews (`LearnerReviews`) and a closing call. Copy lives in `i18n/locales/academyPage.{fr,en}.json` (under `academyPage`); course themes and levels are `academy.categories` and `academy.levels`. The visual language is the home page's (`gt-alt`), with its own `gt-academy-*` rules in `index.css`.
+
+- **Real data only.** Every course, price, badge and filter comes from the published catalogue (`AcademyProvider`); the browsing rules are pure functions in `lib/academy/catalog.ts` (tested): the featured course is the most recently published (no editorial flag exists yet), "new" means published within 60 days (read once hydrated, since it reads the clock), filters offer only the themes and levels the courses actually use, sorts are curated / newest / price / length. There is no popularity signal, so nothing is labelled "popular". The reviews section shows published course reviews from the review store and is left out of the page when there are none — on a live project that is always, until course reviews are stored in the database.
+- **It scales with the catalogue.** One course: the featured panel alone. Two: the picker and the other course as a card. From three: every course in a filterable grid (theme chips, level, sort; a search field from seven), on a phone through a bottom sheet (the shared `Dialog`). Starting points (`new`, `improve`, `professional`, `refine`) never hide a course: the ones that suit (by level and theme) move to the top with a "for you" badge and a ring, and a starting point no course suits yet says so.
+- **Server-rendered.** Filters are local state with fixed defaults (never read from the address), so the server's HTML lists every course as a real link (`e2e/auth-server.spec.ts` checks it).
+
 ## The training detail page (`/fr/academy/formation/<slug>`, `/en/academy/course/<slug>`)
 
 The Academy catalogue opens one page per training — the sales page for that course, open to visitors like `/academy` itself, since gating it would hide what it advertises. It runs the visitor through the decision in order: what the training is, what they will experience, what they will be able to do, the curriculum module by module, how the journey runs, how the assessment works, the diploma, the artist community included with the purchase, why it is worth taking, and a closing call to action.
@@ -283,11 +320,11 @@ The Academy catalogue opens one page per training — the sales page for that co
 Two rules shape its content:
 
 - **Nothing is invented.** Title, level, summary, description, objectives, prerequisites, price (and a running promotion), duration, modules, steps, knowledge checks and the pass mark are the course's own; sections without data are left out (no objectives → no outcomes list, no certificate → no diploma section). The catalogue's figures are counted from the published courses. The diploma is rendered with the member area's own `CertificateDocument`; the playable question is labelled as a sample.
-- **What the platform does not have is labelled.** The forum preview says it is a preview, and the assessment meter says it is an example. Until courses are sold (phase D), a real course says **"enrolment opens soon"** instead of a start button (`components/academy/EnrolmentSoon.tsx`), has no sticky purchase bar, and its structured data has no offer. The prototype's courses (mock mode, `enrolment: "demo"`) keep the demo enrolment described below.
+- **What the platform does not have is labelled.** The forum preview says it is a preview, and the assessment meter says it is an example. A real course (`enrolment: "sale"`, phase D) offers **"Buy this course"**: one seat goes into the cart (`useCart().addCourse`, `courseId` = `courses.id`) and the visitor lands on the cart; a signed-in member who holds it gets "continue" instead (the button waits while their courses are being read). Its structured data has no offer yet. The prototype's courses (mock mode, `enrolment: "demo"`) keep the demo enrolment described below.
 
 The hero reflects the visitor's own state — enrolled, in progress, completed — but only when signed in: the seeded demo enrolments exist regardless of the session, and this page is public.
 
-Every route into a training now lands here rather than on the login form: both home pages, the Academy grid, the header's Academy panel and both footers' Academy columns. `CourseCard` takes a `to` so those cards are real links — a public page has to be openable in a new tab and crawlable — and `lib/academyUrl.ts` holds the path the way `lib/shopUrl.ts` holds the filtered-collection ones. Only the learner's own pages (`/academy/mes-formations/…`, and `/academy/lecon`, which forwards to them) stay behind `RequireAccount`: the lessons are the paid content.
+Every route into a training now lands here rather than on the login form: both home pages, the Academy marketplace, the header's Academy panel and both footers' Academy columns. The course cards are real links (`components/academy/AcademyCourseCard.tsx`, shared by the home page's band and the marketplace; `CourseCard` takes a `to` for the same reason) — a public page has to be openable in a new tab and crawlable — and `lib/academyUrl.ts` holds the path the way `lib/shopUrl.ts` holds the filtered-collection ones. Only the learner's own pages (`/academy/mes-formations/…`, and `/academy/lecon`, which forwards to them) stay behind `RequireAccount`: the lessons are the paid content.
 
 The account is asked for at the purchase, and the training asked for travels with the visitor: pressing "start" while signed out puts the course id in the navigation state, and signing in adds that course to the account before opening the player, so the purchase resumes instead of opening whichever course happened to be active.
 
@@ -471,7 +508,7 @@ The course builder (`/admin/formations`, `/nouvelle`, `/:id`, `/:id/apercu`, `/:
 
 ## Course access (`/admin/formations/:id/acces`)
 
-Until checkout sells courses (phase D), a course reaches a member by hand: the screen (`screens/admin/TrainingAccess.tsx`, reached from a published course's card menu, "Member access") lists the holders with their source, dates, steps validated, completion and certificate code, gives the course to an account by exact e-mail (optional end date and internal note) and revokes an access after confirmation. `lib/adminCourseAccess.ts` calls `admin_course_entitlements()`, `admin_grant_course()` and `admin_revoke_course_entitlement()` — `manage_training`, audited — and keeps a page-local list in mock mode.
+Besides purchases (phase D: a `purchase` entitlement from the paid order), a course reaches a member by hand: the screen (`screens/admin/TrainingAccess.tsx`, reached from a published course's card menu, "Member access") lists the holders with their source, dates, steps validated, completion and certificate code, gives the course to an account by exact e-mail (optional end date and internal note) and revokes an access after confirmation. `lib/adminCourseAccess.ts` calls `admin_course_entitlements()`, `admin_grant_course()` and `admin_revoke_course_entitlement()` — `manage_training`, audited — and keeps a page-local list in mock mode.
 
 ## Training media library (`/admin/formations/medias`)
 
@@ -528,7 +565,7 @@ A separate, desktop-first management workspace for the product catalogue. Produc
 | `/admin/produits/:id` | Edit a product |
 | `/admin/categories` | Categories, read-only, with per-category counts and price ranges |
 
-Without Supabase, sign in with `camille@globaltoothgems.com` / `toothgems2026`; the screen prints both. With Supabase, use a staff account. Customers, Training, Analytics and Settings are drawn in the rail and permanently disabled — they show how the workspace could grow without pretending they exist.
+Without Supabase, sign in with `camille@globaltoothgems.com` / `toothgems2026`; the screen prints both. With Supabase, use a staff account. The customers workspace (`/admin/clients`) is described in "Customers on Supabase" below.
 
 ### How it is put together
 
@@ -608,30 +645,40 @@ publication.
 
 ## Promotions, campaigns & gift cards (`/admin/promotions`)
 
-A front-end-only prototype of the promotional side of the back office, plus the customer-facing gift card page. No backend, no payment, no persistence: every change lives in memory and a reload restores the seed. It adds one entry, **Promotions**, to the rail's main group; nothing else in the rail changed.
+Promotions and campaigns are still a front-end-only prototype (in-memory, a reload restores the seed). **Gift cards
+are live** on Supabase (since 2026-10-01): their screens share the workspace's tab and look, not its store.
 
 | Route | Screen |
 | --- | --- |
-| `/admin/promotions` | Overview — KPI row, then tabs in the query string (`?vue=actives`, `programmees`, `expirees`, `campagnes`, `cartes-cadeaux`). The "All" tab adds a six-week "what runs when" calendar above the list |
-| `/admin/promotions/nouvelle` · `/:id/modifier` | Promotion editor — six lettered sections (basics, discount type, eligibility, usage rules, scheduling, promo code), a sticky summary with a publish checklist and a live product-card preview. `?campagne=<id>` pre-fills the campaign |
-| `/admin/promotions/:id` | Promotion detail — state banner (paused, expired, scheduled, invalid), performance, configuration, code, campaign, customer view, history |
-| `/admin/promotions/campagnes/nouvelle` · `/:id` · `/:id/modifier` | Campaign editor with live storefront preview (desktop / mobile), and campaign detail: banner, promotions, products, dates, banner preview, activity |
-| `/admin/promotions/cartes-cadeaux/:code` | Gift card detail — card visual, balance, ledger with running balance, resend / adjust / extend / cancel (cancel requires typing the code), related order sheet |
-| `/admin/promotions/cartes-cadeaux/configuration` | Gift card product settings — denominations (reorder by buttons or drag), custom amount range, validity, scheduled delivery, field rules, designs |
-| `/admin/promotions/apercu` | Customer preview — one promotion on the product card, product page, cart, checkout summary and campaign landing |
-| `/carte-cadeau` (`/gift-card`) | Storefront gift card page, driven by the configuration above |
+| `/admin/promotions` | Overview — KPI row, then tabs in the query string (`?vue=actives`, `programmees`, `expirees`, `campagnes`, `cartes-cadeaux`). The "All" tab adds a six-week "what runs when" calendar above the list. The gift card tile and tab count are live |
+| `/admin/promotions/nouvelle` · `/:id/modifier` | Promotion editor (mock) — six lettered sections, sticky summary with a publish checklist and a live product-card preview |
+| `/admin/promotions/:id` | Promotion detail (mock) |
+| `/admin/promotions/campagnes/nouvelle` · `/:id` · `/:id/modifier` | Campaign editor and detail (mock) |
+| `?vue=cartes-cadeaux` | Gift cards (live) — KPIs (in circulation, sold, outstanding, expired, awaiting delivery), product summary, **Issue a card** (`manage_promotions`), search by last 4 / people / order, status and delivery filters |
+| `/admin/promotions/cartes-cadeaux/:id` | Gift card detail (live) — card visual, balance, the database's ledger (balance after each line, who, order), adjust (reason required) / extend / cancel (reason + the last 4 typed). Addressed by id: **the code is never shown**, only `•••• last4` |
+| `/admin/promotions/cartes-cadeaux/configuration` | Gift card settings (live, `gift_card_settings`) — published switch, denominations (reorder by buttons or drag), custom amount range, validity, scheduled delivery, field rules, designs. Read-only without `manage_promotions` |
+| `/admin/promotions/apercu` | Customer preview of a promotion (mock) |
+| `/carte-cadeau` (`/gift-card`) | Storefront gift card page (live): published settings, adds a gift card line to the cart (see *Cart and checkout*) |
 
 How it is put together:
 
-- `data/adminPromotions.ts` — types and seed: 15 promotions, 7 campaigns, 14 gift cards and the gift card product. **Money is integer cents.** **Statuses are derived** from a stored lifecycle (draft / live / paused / archived) and the dates, against a fixed prototype date `PROMO_NOW` (24 Nov 2027, printed on every screen) so the 2027 campaigns of the brief keep their states. Gift card balances are the sum of each card's ledger, never a stored number.
-- `lib/adminPromotions.tsx` — the store (async, simulated latency), mounted in `AppProviders.tsx` (root layout) rather than the admin layout so the storefront page reads the same gift card configuration: since phase 5 a prototype edit reaches `/carte-cadeau` again when the visitor goes there by a link (a reload starts from the seed).
-- `lib/promotionRules.ts` — pure rules: validation, scope resolution, campaign roll-ups, KPIs, list filtering and sorting.
-- `components/promotions/` — badges, the CSS-drawn gift card and campaign banner (`.gt-giftcard`, `.gt-campaign-cover` in `index.css`), product picker, timelines, tables, storefront previews, dialogs and bottom sheet.
-- Copy lives in `i18n/locales/promotions.{fr,en}.json`, mounted under the `promo` key.
+- Gift cards: `lib/giftCards/giftCardMapping.ts` (pure, tested: rows ↔ UI shapes in minor units, statuses from
+  `gift_card_overview.display_status`, ledger, filters, metrics, code normalisation, error reasons),
+  `lib/giftCards/api.ts` (the domain's single persistence boundary: overview, ledger, settings, the staff RPCs),
+  `lib/giftCards/AdminGiftCardsProvider.tsx` (back-office store in `AdminLayout`, loaded on first use, re-read after
+  every write; empty and read-only in local mock mode) and `lib/giftCards/useStorefrontGiftCard.ts` (published
+  settings for `/carte-cadeau` and the home page band, read once hydrated). Permissions come from `my_permissions()`
+  for display only; the database enforces them (`manage_promotions` writes, every active staff member reads).
+- Promotions and campaigns: `data/adminPromotions.ts` (types and seed, money in integer cents, statuses derived
+  against the fixed prototype date `PROMO_NOW`), `lib/adminPromotions.tsx` (mock store, still in `AppProviders.tsx`),
+  `lib/promotionRules.ts` (pure rules).
+- `components/promotions/` — badges, the CSS-drawn gift card and campaign banner (`.gt-giftcard`, `.gt-campaign-cover`
+  in `index.css`), tables, timelines, previews, dialogs.
+- Copy lives in `i18n/locales/promotions.{fr,en}.json`, mounted under the `promo` key (gift card back office: `promo.gc`).
 
-A labelled **Prototype** bar on the overview switches between sample data, an empty shop and a loading error. "Christmas Early Bird -15%" is deliberately invalid (end before start, missing code) to show the invalid-configuration state; "Spring Studio Days" is a campaign with no promotions and no products.
-
-Everything that matters for money or access — code uniqueness, discount calculation, balance changes, cancellation, delivery — must be enforced server-side in the real implementation; the checks here are presentation only.
+**Not built (gift cards):** delivery of the code to the recipient (no transactional e-mail yet: cards show "not sent"
+and nobody can read the code, by design), a public balance check, refunds of a purchased card, cards in the member
+area. See `../supabase/README.md` (*Gift cards*).
 
 ## Reviews and moderation (`/admin/avis`, `/compte/avis`)
 
@@ -668,27 +715,28 @@ Prototype controls: the admin bar switches between sample data, no reviews and a
 
 ## Store settings (`/admin/parametres`)
 
-Store configuration in four sections, one route, the section in the query string (`?section=boutique`, `livraison`, `taxes`, `langues`). Front-end only: everything lives in memory for the session. The rail's existing **Settings** entry, until now drawn as "coming soon", became a destination (same label, same icon, moved into the main group like Analytics before it); nothing else in the rail changed.
+Store configuration in four sections, one route, the section in the query string (`?section=boutique`, `livraison`, `taxes`, `langues`). **Live on Supabase** (2026-10-02): read by any active staff member, saved with `manage_settings` (read-only notice and disabled controls otherwise). In mock mode the page says the settings are unavailable — it never shows invented values.
 
-Every section edits a **draft** and commits it with **Save changes** — including edits made in a drawer or dialog (a zone, a rate, a VAT row, a language switched off). The header shows whether what you see is live, Save/Discard are disabled while nothing changed, the section navigation marks sections with unsaved drafts, drafts survive moving between sections, and the browser warns before a reload. Below 1280px the actions ride in a bottom bar that appears only when there is something to save. Validation shows inline once a field is left or a save is attempted, with an error summary; a **Prototype** bar can make saves fail to show the error path.
+Every section edits a **draft** and commits it with **Save changes** — including edits made in a drawer or dialog. Each section is saved whole and atomically by its database function, then re-read alone, so unsaved work in another section survives a save. The header shows whether what you see is saved, the section navigation marks sections with unsaved drafts, drafts survive moving between sections, and the browser warns before a reload. A refused save says why (not allowed / a value refused / server unreachable) and keeps the draft.
 
-| Section | What it covers |
-| --- | --- |
-| Store details | Business information, address, preferences (currency, time zone, date format, units, order number format with live preview), customer-facing contact, support hours, description and message, with a live customer preview |
-| Shipping | Zone cards (countries first, then methods), enable/disable, duplicate (copies start off and empty — a country lives in one zone only), delete with confirmation; zone drawer with grouped country picker that shows and spells out moves between zones; rate drawer (standard / express / free / pickup, delivery estimate, price, free-from threshold, order and weight ranges) with a checkout preview; a "check a destination" panel answering what a customer in a given country is offered |
-| Taxes & VAT | Three tiers on one rail — store default (with a live price example), country rates table, advanced rules (reduced rates, VAT numbers and VIES, exempt customers, calculation basis, rounding, shipping) — plus a precedence explainer with a per-country checker. Toggletips on the settings that are easy to misread |
-| Languages | Enabled languages (order by arrows or drag, default, disable with confirmation, enable), coverage per language with a "Needs attention · N missing" button that filters the list below, coverage by content type, and **Missing translations**: summary chips that filter, search, language / type / status filters and four sorts, all in the query string |
+| Section | What it covers | Saved by |
+| --- | --- | --- |
+| Store | Business identity (trading and legal name, legal form, share capital, registration and VAT numbers), contact e-mails and phone, registered office, publication director and host, contact page switches, opening hours, response-time sentence in French and English, with a live contact page preview. Currency shown read-only (EUR) | `admin_save_store_details()` |
+| Shipping | Zone cards (countries first, then methods), enable/disable, duplicate, delete; zone drawer with grouped country picker (moves between zones spelled out); rate drawer (standard / express / free / pickup, delivery estimate, price, free-from threshold, order and weight ranges); a destination checker | `admin_save_shipping()` |
+| Taxes & VAT | The checkout's VAT rules, read-only; a destination checker; standard rate per country; reduced rates per product category; a warning listing served EU countries with no active rate | `admin_save_tax_rates()` |
+| Languages | Content languages from `languages`: French (original, locked), English (storefront, locked), the others switchable; the page says the public site stays French/English | `admin_save_languages()` |
 
-The translation editor opens from the list with the missing language selected (`?traduire=<id>&langue=it`, so it is a link too): English original beside the target field, missing fields highlighted, "needs review" fields that can be confirmed as they are, next/previous missing field, placeholder checks for email variables, "Save & next item" to work down the list, and a guard against closing with unsaved text.
+Published elsewhere: the **legal notice** (`/fr/mentions-legales`) and the **contact page** (`/fr/contact`) are rendered with the saved store details (`lib/storeDetailsServer.ts`, cached 60 s, `app/_public/storePages.tsx`); a detail not supplied keeps its "to be supplied" placeholder, and the contact page shows only what the business chose to show.
 
 How it is put together:
 
-- `data/adminSettings.ts`, `data/adminTranslations.ts` — types and fictional seed. **Money is integer cents, VAT rates integer basis points, weights grams.** Content is authored in English (`SOURCE_LANGUAGE`); only items with gaps are listed, and coverage is computed against a catalogue field count, so every percentage and count on the page comes from the same functions.
-- `lib/adminSettings.tsx` — drafts, saved values, simulated save latency and failure; mounted in the admin layout so drafts survive leaving Settings.
-- `lib/settingsRules.ts` — pure rules: validation, destination-to-zone resolution, VAT precedence and price splitting, translation progress, filters and sorts.
-- `components/settings/` — one file per section plus the drawers, the missing list and the editor; copy in `i18n/locales/settings.{fr,en}.json` under the `settings` key.
+- `data/adminSettings.ts` — shapes and fixed lists only. **Money is integer cents, VAT rates integer basis points, weights grams.**
+- `lib/adminSettings.tsx` — the domain's single persistence boundary: reads, drafts, per-section saves, `canManage` from `my_permissions()`; mounted in the admin layout.
+- `lib/adminSettingsMapping.ts` (shipping, VAT, languages) and `lib/storeDetails.ts` (store row, shared with the public pages) — row ↔ screen mapping, normalised so reading back a save gives the same value; amounts sent as decimal strings built from cents. Tested in `adminSettingsMapping.test.ts`.
+- `lib/settingsRules.ts` — pure rules mirroring the database: validation, destination-to-zone resolution, `vat_rate_bp()` resolution, served countries without VAT.
+- `components/settings/` — one file per section plus the shipping drawers; copy in `i18n/locales/settings.{fr,en}.json` under the `settings` key.
 
-Tax rates and exemption rules are **illustrative** and say so on screen: they, and every check here (zone overlap, rate ranges, VAT number validation), must be confirmed with an accountant and enforced server-side in the real implementation.
+Removed with the move to Supabase (recoverable from commit `9e95108`): the prototype's VAT switches (prices excluding VAT, tax basis, rounding, VAT numbers and VIES, exemptions — not implemented by `create_order()`), the order-number format, time zone / date format / units, the language order and default switch, and the **translation coverage panel and editor**, which ran on fictional items (`data/adminTranslations.ts`); a real translation workflow is not built.
 
 ## Users and roles (`/admin/utilisateurs`)
 
@@ -701,15 +749,44 @@ Live on Supabase; without the Supabase variables the screen says the directory i
 - **Not offered:** permanent deletion of a member (suspend instead), editing the sign-in e-mail (it belongs to the person's account), an activity history (the audit log needs `manage_settings`; not wired). `deactivated` accounts (database status) are shown and can be reactivated; the screen never deactivates.
 - **Known limits:** an edit writes `profiles` then `staff_profiles` in two requests (not one transaction). For an account bootstrapped by SQL without staff details, the first edit creates them and stamps the editor as "invited by".
 
+## Customers on Supabase (`/admin/clients`)
+
+Live on Supabase; without the Supabase variables the workspace says the base is not connected (no invented people).
+
+- **One persistence boundary:** `src/lib/adminCustomers.tsx`, inside `AdminOrdersProvider`. Reads `profiles` (role
+  `customer`), the default shipping address (`customer_addresses`), `customer_tags`, `customer_notes` with their
+  author, the course seats of `admin_customer_courses()` and `my_permissions()`, 1 000 rows per request until all
+  are read; the status history of one account comes from `admin_customer_status_history()` on the detail page.
+  Row ↔ UI mapping (statuses, tags `follow_up` ↔ `followUp`, seats, validation mirroring the `profiles` CHECKs,
+  error codes) is pure and tested in `src/lib/adminCustomerMapping.ts`; vocabulary and derived facts in
+  `src/data/adminCustomers.ts` (no fixtures).
+- **Figures from the order book.** Order count, last order and net spend come from the live book
+  (`useAdminOrders`): spend per currency with the member area's rule (`spendOf`), never added across currencies;
+  sorting and the spend filter rank on euros only (`spendRank`, minor units). When the book is cut at
+  `BOOK_LIMIT` a notice says the figures cover the newest orders only.
+- **Training** shows each seat with the learner's own progress rule (steps validated + checks passed, over steps +
+  checks), completion, score and certificate from `course_completions`; a withdrawn course is labelled. Seats are
+  granted from `/admin/formations/:id/acces`.
+- **Writes under the member's JWT and `manage_customers`:** names, phone, birth date, country and status
+  (`UPDATE profiles`, guarded by `private.guard_profile_update()`, status audited), tags (insert/delete, audited),
+  notes (add, delete; edit only one's own — RLS). Every write re-reads the base; a refusal is a toast with the
+  reason, never a success. Without `manage_customers` the page is read-only (no selection, no edit tab).
+- **Not written from here:** the e-mail (sign-in identity), marketing consent and the address book belong to the
+  customer and are shown read-only. A closed (`deactivated`) account is shown and filtered but never reopened;
+  staff choose between active and suspended only.
+- **Not offered (no server side yet):** export, e-mail sending (the e-mail action opens the operator's own mail
+  client), creating a customer account.
+
 ## Remaining mock behaviour (to replace before launch)
 
 Without the Supabase variables every domain runs on its mock store. With them, the following still do not touch the database:
 
-- **Checkout extras.** Payment runs through Stripe (see *Cart and checkout*), but promotion codes, gift cards and the loyalty reward cannot be entered in the cart yet (the Edge Function accepts codes), no confirmation e-mail is sent, and saving the address on the account is not offered.
-- **Academy.** Authoring, public pages and the learner side are on Supabase (phases A–C). Courses cannot be bought yet (phase D): members get one by a manual grant (`/admin/formations/:id/acces`). The back office's course list and statistics still show placeholder learner figures (`enrolled`, `completionRate`, `data/adminAnalytics.ts`).
+- **Checkout extras.** Payment runs through Stripe (see *Cart and checkout*) and gift card codes can be used in the cart, but promotion codes and the loyalty reward cannot be entered yet (the Edge Function accepts promotion codes), no confirmation e-mail is sent, and saving the address on the account is not offered.
+- **Academy.** Authoring, public pages and the learner side are on Supabase (phases A–C). Courses are bought through the cart (phase D, migration `20261002100000_course_checkout` not applied yet) or granted by hand (`/admin/formations/:id/acces`). The back office's course list and statistics still show placeholder learner figures (`enrolled`, `completionRate`, `data/adminAnalytics.ts`).
 - **Artist Community.** Fixtures and in-memory posting; access derived client-side from the courses on the account. Post-launch.
 - **Loyalty Club.** Display only (`data/loyalty.ts` with a demo switch); the database already awards stamps on paid orders — the UI must read `loyalty_overview`.
 - **Security page:** data export and account deletion are simulated (they need backend jobs).
-- **Back-office promotions, gift cards, customers, statistics, settings and translations:** mock stores over a schema that already exists.
+- **Back-office promotions and campaigns, statistics:** mock stores over a schema that already exists. A translation workflow (coverage, editor) is not built.
+- **Gift card delivery:** cards are created and activated in the database, but nothing sends the code to the recipient yet (needs the e-mail Edge Function).
 
 The mock stores, fixtures in `data/`, demo accounts and "Prototype controls" panels are removed domain by domain as each goes live; a production build must never fall back to them.

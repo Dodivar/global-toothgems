@@ -1,5 +1,5 @@
 import { describe, expect, it } from "vitest";
-import { addToLines, cartCount, cartSubtotal, checkoutItems, MAX_LINE_QTY, setLineQty, type CartLine } from "./cartLines";
+import { addCourseToLines, addGiftCardToLines, addToLines, courseLineId, hasCourse, cartCount, cartSubtotal, checkoutItems, MAX_LINE_QTY, needsShipping, setLineQty, shippableSubtotal, type CartLine } from "./cartLines";
 
 const gel: Omit<CartLine, "id"> = {
   productId: "gel-de-suivi",
@@ -48,5 +48,93 @@ describe("cart lines", () => {
     ]);
     const { dbProductId: _db, ...mockLine } = gel;
     expect(checkoutItems(addToLines(lines, { ...mockLine, productId: "aurora-heart" }))).toBeNull();
+  });
+});
+
+describe("gift card lines", () => {
+  const giftLine = {
+    productId: "carte-cadeau",
+    dbProductId: "9a8b7c6d-5e4f-4a3b-8c2d-1e0f9a8b7c6d",
+    name: "Carte cadeau",
+    image: "",
+    unitPrice: 5000,
+    currency: "EUR",
+    giftCard: { recipientEmail: "jade@example.fr", recipientName: "Jade", design: "noir", message: "" },
+  };
+
+  it("keeps one line per card, quantity fixed at 1", () => {
+    let lines = addGiftCardToLines([], giftLine, "a");
+    lines = addGiftCardToLines(lines, giftLine, "b");
+    expect(lines.map((l) => [l.id, l.qty])).toEqual([
+      ["gift-card::a", 1],
+      ["gift-card::b", 1],
+    ]);
+    expect(setLineQty(lines, "gift-card::a", 4)[0].qty).toBe(1);
+  });
+
+  it("ships nothing and leaves gift cards out of delivery thresholds", () => {
+    const cards = addGiftCardToLines([], giftLine, "a");
+    expect(needsShipping(cards)).toBe(false);
+    const mixed = addToLines(cards, { ...gel, qty: 2 });
+    expect(needsShipping(mixed)).toBe(true);
+    expect(shippableSubtotal(mixed)).toBe(3980);
+    expect(cartSubtotal(mixed)).toBe(8980);
+  });
+
+  it("sends the card's details and amount in minor units", () => {
+    const items = checkoutItems(addGiftCardToLines([], { ...giftLine, giftCard: { ...giftLine.giftCard, deliverAt: "2026-12-24T08:00:00.000Z" } }, "a"));
+    expect(items).toEqual([
+      {
+        product_id: giftLine.dbProductId,
+        variant_id: null,
+        quantity: 1,
+        gift_card: {
+          amount_minor: 5000,
+          recipient_email: "jade@example.fr",
+          recipient_name: "Jade",
+          sender_name: null,
+          message: null,
+          design: "noir",
+          deliver_at: "2026-12-24T08:00:00.000Z",
+        },
+      },
+    ]);
+  });
+});
+
+describe("course lines", () => {
+  const course = {
+    courseId: "3a9b8c7d-6e5f-4a3b-9c2d-1e0f9a8b7c6d",
+    productId: "pose-professionnelle",
+    name: "Pose professionnelle",
+    image: "",
+    unitPrice: 34900,
+    currency: "EUR",
+  };
+
+  it("adds a course once, one seat, whatever is asked", () => {
+    const once = addCourseToLines([], course);
+    const twice = addCourseToLines(once, course);
+    expect(twice).toEqual(once);
+    expect(once[0]).toMatchObject({ id: courseLineId(course.courseId), qty: 1 });
+    expect(setLineQty(once, once[0].id, 4)[0].qty).toBe(1);
+    expect(setLineQty(once, once[0].id, 0)).toEqual([]);
+  });
+
+  it("is neither shipped nor counted for delivery thresholds", () => {
+    const lines = addCourseToLines(addToLines([], gel), course);
+    expect(hasCourse(lines)).toBe(true);
+    expect(needsShipping(addCourseToLines([], course))).toBe(false);
+    expect(needsShipping(lines)).toBe(true);
+    expect(shippableSubtotal(lines)).toBe(1990);
+    expect(cartSubtotal(lines)).toBe(1990 + 34900);
+  });
+
+  it("goes to the checkout as a course id, after nothing else", () => {
+    const lines = addCourseToLines(addToLines([], gel), course);
+    expect(checkoutItems(lines)).toEqual([
+      { product_id: gel.dbProductId, variant_id: null, quantity: 1 },
+      { course_id: course.courseId, quantity: 1 },
+    ]);
   });
 });

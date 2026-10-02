@@ -10,6 +10,8 @@ const course: PublicCourse = {
   summary: { fr: "Les bases   de la pose.", en: "Placement basics." },
   description: null,
   level: "beginner",
+  category: "technique",
+  publishedAt: "2026-10-01T09:00:00Z",
   minutes: 95,
   objectives: [],
   requirements: [],
@@ -20,7 +22,7 @@ const course: PublicCourse = {
   promotionEndsAt: null,
   cover: { src: "/media/formations/abc?v=1", alt: null },
   modules: [],
-  enrolment: "soon",
+  enrolment: "sale",
 };
 
 describe("course head", () => {

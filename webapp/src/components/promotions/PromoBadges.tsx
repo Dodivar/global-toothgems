@@ -25,13 +25,12 @@ import clsx from "clsx";
 import { Badge, type BadgeTone } from "../ui/Badge";
 import type {
   CampaignStatus,
-  DeliveryStatus,
-  GiftCardStatus,
   Promotion,
   PromotionStatus,
   PromotionType,
 } from "../../data/adminPromotions";
 import { useFormat } from "../../lib/format";
+import type { DeliveryStatus, GiftCardStatus } from "../../lib/giftCards/giftCardMapping";
 import { euros } from "../../lib/promotionRules";
 
 /**
@@ -72,9 +71,13 @@ const CARD_META: Record<GiftCardStatus, { tone: BadgeTone; icon: LucideIcon }> =
   scheduled: { tone: "brand", icon: CalendarClock },
   expired: { tone: "warning", icon: Hourglass },
   cancelled: { tone: "error", icon: Ban },
+  pendingPayment: { tone: "warning", icon: Hourglass },
+  void: { tone: "neutral", icon: Ban },
 };
 
 const DELIVERY_META: Record<DeliveryStatus, { tone: BadgeTone; icon: LucideIcon }> = {
+  pending: { tone: "warning", icon: MailWarning },
+  sent: { tone: "brand", icon: MailCheck },
   delivered: { tone: "success", icon: MailCheck },
   opened: { tone: "success", icon: MailOpen },
   scheduled: { tone: "brand", icon: CalendarClock },

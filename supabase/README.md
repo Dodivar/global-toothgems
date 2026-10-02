@@ -63,6 +63,7 @@ supabase/
   tests/iteration21_validation.sql  iteration 21 Academy public pages (what visitors and customers read) suite (always rolls back)
   tests/admin_orders_validation.sql back-office order book: what staff read, viewer/customer/visitor refusals (always rolls back)
   tests/admin_users_validation.sql  back-office team: viewer read-only, manager rank limits, no self change, customer/suspended/visitor refusals, audit (always rolls back)
+  tests/admin_customers_validation.sql back-office customers: customer refused, viewer read-only, manager writes and read-only columns, notes by their author, status history, course progress (always rolls back)
   config.toml   CLI settings this repo relies on (verify_jwt of the Edge Functions)
   functions/    Edge Functions (Deno): create-checkout-session, stripe-webhook, invite-staff-member, _shared/ (pure modules + clients),
                 *_test.ts (deno test), .env.example (secret names)
@@ -115,6 +116,12 @@ supabase/
 | 20261001071006 | `academy_published_integrity` | a price cut below an active amount promotion is refused (the course would become free); a deferred constraint trigger re-checks `course_publication_problems()` when a published course is saved, so it cannot become unpublishable while online |
 | 20261001121248 | `academy_public_pages` | Academy phase B: visitors and customers read the outline of a published course (modules, steps, knowledge checks' titles and pass marks, published translations — never blocks, questions or answers), its cover (`training_media` row + translations + the file in the private bucket) and its current price; `course_promotions` staff-only (the price view reads the running promotion through `private.course_running_promotion()`, SECURITY DEFINER); column grants hide `courses.created_by`/`updated_by` and the media's internal columns from `anon`; policies widened in place (ALTER POLICY) |
 | 20261001170703 | `academy_learner_access` | Academy phase C: `course_entitlements` (manual grants by `manage_training`, audited; `purchase` rows from phase D), `lesson_progress`, `quiz_attempts`, `course_completions` (sticky, certificate code); `learner_courses()` serves the held courses' content without answer keys or feedback; `complete_course_step()`, `answer_quiz_question()`, `submit_quiz_answers()` port the path rules of `lib/learning/path.ts` and score server-side; storage policy for the media of held courses; holders see their withdrawn course (row, translations, cover); `admin_grant_course()`, `admin_revoke_course_entitlement()`, `admin_course_entitlements()` |
+| 20261001200000 | `gift_card_staff_functions` | **Not applied yet (awaits the user's go-ahead).** `extend_gift_card()` / `cancel_gift_card()` return the card id instead of the whole `gift_cards` row — as SECURITY DEFINER functions they handed the full bearer **code** to any `manage_promotions` caller (confirmed on the project before the fix by `gift_cards_validation.sql`); `issue_gift_card()` / `adjust_gift_card()` refuse sub-cent amounts (they were rounded), amounts above 10 000, a malformed recipient e-mail and a past expiry. Same names, arguments and permission |
+| 20261001220721 | `admin_customers` | back-office customers: `admin_customer_status_history(user)` (status changes of one account from `audit_logs` — date, old, new, actor name — for any active staff member; `audit_logs` itself stays `manage_settings`-only) and `admin_customer_courses(user \| null)` (course seats not revoked, with the learner's progress rule: validated steps that still exist + checks passed, over steps + checks; completion, score, certificate code). Both `SECURITY DEFINER`, staff only |
+| 20261001223230 | `admin_customer_history_scope` | `admin_customer_status_history()` answers for customer accounts only (a team member's history stays out of reach of read-only staff); orders changes by `occurred_at, id` (two changes in one transaction share a timestamp — first fixed in place, now recorded) |
+| 20261002064611 | `settings_workspace` | Settings workspace on the database: `store_settings` gains the business identity, legal mentions (legal form, share capital, registration and VAT numbers, publication director, host), contact details, address, opening hours (`private.valid_opening_hours()` CHECK) and the contact page switches + `store_settings_translations` (support message per non-default locale, audited); `admin_save_store_details()`, `admin_save_shipping()` (whole configuration, atomic), `admin_save_tax_rates()` (whole set), `admin_save_languages()` — SECURITY INVOKER, `manage_settings`; `languages`: API may update `is_enabled`/`position` only, `fr`/`en` cannot be switched off (trigger), switches audited; audit trigger identifies rows by `code`/`locale`; standard VAT rates for AT BG CY CZ DK EE FI GR HR HU LT LU LV MT PL RO SE SI SK + MC, IE switched on |
+| 20261002100000 | `course_checkout` | **Not applied yet (awaits the user's go-ahead; validated on the project inside a rolled-back transaction).** Academy phase D: `order_items.course_id` (exclusive with product/variant, RESTRICT); `create_order()` accepts `{course_id, quantity: 1}` lines (published course, account required, not already held, current price incl. course promotion, VAT `training`, outside shop discounts and shipping thresholds); trigger `orders_stock_transitions_zc_courses` grants a `purchase` entitlement when the order becomes paid and revokes it on a full refund; course lines refused in parcels and ignored by the fulfilment status |
+| 20261002064949 | `settings_shipping_positions` | `admin_save_shipping()` numbers zones and rates from 1 like every existing row, so saving an unchanged configuration writes nothing |
 
 RLS is **enabled in the same migration that creates each table** (deny by default);
 policies are granted back in `rls_policies`.
@@ -156,7 +163,7 @@ orders 1─* order_discounts ─→ promotions / promotion_codes / loyalty_cards
 contact_requests ─* contact_request_notes   (─→ profiles, orders when it is the requester's own)
 newsletter_subscriptions ─→ profiles (members)   ⇄ consent_records (marketing_email)
 email_templates 1─* email_template_translations   content_pages 1─* content_page_translations
-store_settings (single row)
+store_settings (single row) + store_settings_translations (one row per non-default locale)
 ```
 
 Conventions: plural snake_case tables, `uuid` keys, `timestamptz created_at/updated_at`,
@@ -178,10 +185,11 @@ statuses as `text` + `CHECK` (easy to extend, no enum migrations), money as
 | `customer_addresses` | many per user, `address_type` shipping/billing, one default per type (setting a new default clears the old one), ISO `country_code`, nullable `postal_code`/`region`. |
 | `orders` | `order_number` `GT-100001…`, `user_id` (SET NULL on account deletion — accounting records survive), `customer_email` + `billing_address`/`shipping_address` **JSONB snapshots**, subtotal/discount/shipping/tax/total, `prices_include_tax` (EU VAT-inclusive default), `status`, `payment_status`, `fulfillment_status`, `customer_note`, `admin_note` (deprecated, always NULL since `order_staff_notes`: notes live in `order_notes`, staff only). |
 | `order_items` | frozen `product_name`, `variant_name`, `sku`, `unit_price`, `quantity`, generated `subtotal_amount`. |
-| `languages` | `fr` (default = language of base columns), `en`, `de` enabled; `it`, `es`, `pt`, `nl` disabled. |
+| `languages` | `fr` (default = language of base columns), `en`, `de` enabled; `it`, `es`, `pt`, `nl` disabled. The API can only switch `is_enabled` / `position` (through `admin_save_languages()`); `fr` and `en`, the storefront languages, cannot be switched off. |
 | `*_translations` | one row per (entity, non-default locale); product translations carry a localized `slug` (unique per locale) and `meta_title`/`meta_description`; `status` draft/published — only published rows are public. A translation for the default locale is rejected. |
 | `shipping_zones` / `shipping_zone_countries` / `shipping_rates` | zones of ISO countries + optional single "rest of world" zone; rates `standard`/`express`/`free`/`pickup` with delivery days, price, `free_over_amount`, basket-amount and weight bounds. |
-| `tax_rates` | VAT per country and `tax_category` (`standard`, `books`, `training`, `hygiene`, `digital`) in **basis points** (2000 = 20 %). Reduced rate → else standard → else 0. |
+| `tax_rates` | VAT per country and `tax_category` (`standard`, `books`, `training`, `hygiene`, `digital`) in **basis points** (2000 = 20 %). Reduced rate → else standard → else 0. Every EU country an active zone serves (and Monaco) has a standard rate since `settings_workspace`. |
+| `store_settings` / `store_settings_translations` | single row: maintenance switch, business identity and legal mentions (published on the legal notice), contact details, registered office, opening hours (`{mon…sun: {open, from, to}}`), what the contact page shows, support message (French; other locales in the translations table). Public read — only public information belongs there. |
 | `inventory_movements` | append-only ledger: `initial`, `adjustment` (admin edit, with actor), `reservation`, `release`, `sale`, `return`, with deltas and resulting quantities. Written only by trigger. |
 | `stripe_webhook_events` | one row per Stripe event id (`evt_…`), status, attempts, error — dedup/idempotency. No payload stored (personal data). |
 | `audit_logs` | append-only, trigger-written: who (`actor_id`, `actor_role`), what (`table_name`, `record_id`, `action`), and the changed columns old → new. |
@@ -218,7 +226,7 @@ note (restock or refund) — it never oversells.
 ### Edge Functions (iteration 19)
 
 ```
-browser  POST functions/v1/create-checkout-session  {items[{product_id, variant_id, quantity}], email, address,
+browser  POST functions/v1/create-checkout-session  {items[{product_id, variant_id, quantity} | {course_id, quantity: 1}], email, address,
                                                       shipping_rate_id, locale, promotion_codes?, gift_card_codes?}
            → strict validation (_shared/checkoutInput.ts): no amount, total or currency is accepted
            → user = auth.getUser(Bearer token) when a user token is sent, else guest
@@ -247,8 +255,15 @@ browser  /fr/panier/confirmation?session_id=cs_… → checkout_session_status(c
   at the last minute still finds its stock. Delayed methods (bank debits) can confirm days later: the order has
   expired by then and the documented late-payment path applies (stock re-taken if still there, otherwise flagged).
 - Error codes returned to the browser: `invalid_request`, `unavailable`, `out_of_stock`, `shipping_unavailable`,
-  `promotion_code_invalid`, `gift_card_invalid`, `payment_unavailable`, `maintenance`, `session_expired`, `server_error`
-  (`_shared/orderErrors.ts`). SQL messages are logged, never returned.
+  `promotion_code_invalid`, `gift_card_invalid`, `gift_card_details_invalid`, `account_required`, `course_owned`, `payment_unavailable`, `maintenance`,
+  `session_expired`, `server_error` (`_shared/orderErrors.ts`). SQL messages are logged, never returned. Every refusal
+  of a gift card *used as payment* (unknown, expired, cancelled, empty, too many) is `gift_card_invalid`; a gift card
+  *being bought* with refused details is `gift_card_details_invalid`.
+- Gift card lines (2026-10-01): `items[]` may hold `{product_id, quantity: 1, gift_card: {amount_minor, recipient_email,
+  recipient_name?, sender_name?, message?, design?, deliver_at?}}` — the one customer-chosen amount of a checkout, in
+  integer minor units, converted to a decimal string for `create_order()` (`orderItems()`), which checks it against
+  `gift_card_settings`. Several gift card lines are allowed (one per recipient). `shipping_rate_id` may be `null` when
+  nothing is shipped (create_order() ignores the rate then, and requires it otherwise).
 
 **Deploy (test mode, after the user's go-ahead for the target project):**
 
@@ -355,7 +370,7 @@ their own orders.
 
 ### Gift cards (iteration 4)
 
-Mirrors the Promotions & Gift Cards workspace (`webapp/src/data/adminPromotions.ts`).
+Used by the webapp's gift card domain (`webapp/src/lib/giftCards/`): back office, `/carte-cadeau`, codes in the cart.
 
 ```
 purchase   create_order(items: [{product_id: <carte-cadeau>, quantity: 1, amount, gift_card: {recipient_*, sender_name, message, design, deliver_at}}])
@@ -383,6 +398,36 @@ refund     request_refund = card (Stripe) payments only; refund_to_gift_cards() 
   (active, partially_redeemed, redeemed, scheduled, expired, cancelled, pending_payment, void).
 - `gift_card_settings` (single row) mirrors the storefront configuration: preset amounts, custom amount bounds,
   expiry months, field modes, message length, designs, published flag. Public read when published.
+
+**Wired to the webapp (2026-10-01).** The back office reads `gift_card_overview` (every active staff member; status
+from `display_status`, never recomputed), the ledger and `gift_cards.message`, and calls the four staff functions
+under the member's own JWT (`manage_promotions` checked inside each function); settings are updated through RLS
+(`manage_promotions`, zero rows = refused). `/carte-cadeau` reads the published settings and sells through the
+checkout (`create-checkout-session` accepts gift card lines); the cart sends up to 5 `gift_card_codes`. Migration
+`20261001200000_gift_card_staff_functions` (not applied yet) stops `extend_gift_card` / `cancel_gift_card` from
+returning the code. Suite: `tests/gift_cards_validation.sql` (GC1–GC7).
+
+**Proposed, not built — delivering the code (needs the user's decision on the e-mail provider, Resend in §5):**
+
+```
+Edge Function deliver-gift-cards (service role, verify_jwt = false, called by pg_cron every 5 min + after mark_order_paid)
+  select active cards with delivery_status in ('pending','scheduled') and (deliver_at is null or deliver_at <= now())
+    (index gift_cards_delivery_due_idx already exists), a few dozen per run, oldest first, row lock skip locked
+  per card: code := gift_card_code_for_delivery(id)        -- service role only, never logged
+            render the localized e-mail (email_templates, order locale) with design, amount, sender, message, expiry
+            send through the provider with an idempotency key "gift-card:<id>:<attempt>"
+            record_gift_card_delivery(id, 'sent')             -- 'delivered' / 'opened' / 'bounced' from provider webhooks
+  resend from the back office: a staff-only Edge Function (manage_promotions) calling the same path, optional corrected
+  address through record_gift_card_delivery(id, 'sent', new_email); the code is never returned to the browser.
+```
+
+**Proposed, not built — public balance check.** `gift_card_balance(code)` stays service-role only. A public Edge
+Function `gift-card-balance` would: accept `{code, captcha_token}`, verify the captcha, rate-limit per IP *and* per
+code prefix (e.g. 5 lookups / 10 min / IP, 20 / day / IP) with `private.hit_rate_limit()` (the contact form's
+throttle table, keyed by a hashed IP — storing hashed IPs is the decision to take), answer the same shape for
+unknown and inactive codes, and return only `{balance, currency, expires_at, redeemable}` — never the order,
+names or e-mails. Not implemented: the throttle storage (hashed IP retention) and the captcha provider are
+decisions, and the codes' 60 bits already make blind guessing impractical; the cart reveals nothing either.
 
 ### Member account (iteration 5)
 
@@ -701,8 +746,7 @@ media references: courses.cover_media_id, course_modules.cover_media_id, course_
 ```
 
 - **A course is not a product** (owner, 2026-10-01): it never shows in the shop. Price `numeric(12,2)` + `currency`
-  on `courses`, edited with `manage_training` only. Phase D (selling courses) needs a course line in
-  `create_order()` and the Stripe Checkout functions, with the `training` VAT category.
+  on `courses`, edited with `manage_training` only. Sold through the cart since phase D (*Academy course sales*).
 - **One save per course**: `admin_save_course(jsonb)` (SECURITY INVOKER, `manage_training`) writes the course, its
   English translation and the whole tree in one transaction. Ids come from the browser; nodes are upserted by id
   and only the ids missing from the payload are deleted, so step / quiz / answer ids survive every save (phase C's
@@ -773,7 +817,7 @@ course_completions (user, course, completed_at, average_score, min_score, certif
   member by exact e-mail, course ever published, refuses an active duplicate, closes an expired one first),
   `admin_revoke_course_entitlement(id)`, both `manage_training`, both audited (`audit_logs`, table
   `course_entitlements`); `admin_course_entitlements(course)` lists holders with name, e-mail, steps done and
-  completion. Phase D adds `purchase` rows (with `order_id`) from the verified Stripe webhook. Members read their own
+  completion. Phase D adds `purchase` rows (with `order_id`) when the order is paid (*Academy course sales*). Members read their own
   rows, staff all of them. Account deletion cascades.
 - **Reading a course**: `learner_courses()` (SECURITY DEFINER) returns the courses the caller holds now, newest
   first: the header, the whole tree of a published course with published English translations (answer texts only —
@@ -813,6 +857,33 @@ course_completions (user, course, completed_at, average_score, min_score, certif
 - Suite: `tests/iteration22_validation.sql` (grants and their audit, another member refused content, answers,
   media, progress and holders list, path locking, end-of-check and immediate-feedback scoring, attempt limit,
   completion and certificate, withdrawn course, revocation and re-grant).
+
+### Academy course sales (iteration 23, phase D)
+
+Migration `20261002100000_course_checkout` (**not applied yet**), suite `tests/iteration23_validation.sql`.
+
+```
+course page   "Buy" → cart line {courseId} (one seat, nothing shipped; indicative price only)
+cart          course in basket + visitor → sign-in asked first (the basket waits); pay disabled
+edge fn       items[{course_id, quantity: 1}] → create_order(user, …)  (guest → account_required)
+create_order  course published, currency, one seat, not already held (course_owned), price = course_current_prices,
+              order_items.course_id, VAT `training` (billing country when nothing ships), no stock, no shop discount
+payment       mark_order_paid (verified webhook) / gift cards covering everything / staff marking paid
+                → trigger orders_stock_transitions_zc_courses → course_entitlements (source 'purchase', order_id)
+full refund   payment_status or status → refunded → the order's purchase entitlements revoked
+```
+
+- Courses are bought in the same basket and the same Stripe session as products and gift cards (one Stripe line
+  for `orders.amount_due`, see *Edge Functions*). Gift cards can pay for them.
+- Already held at payment time (bought twice in parallel, granted by hand meanwhile): no second entitlement, an
+  `[auto]` note in `order_notes` asks the team to refund the line. Paid without an account (cannot happen through
+  `create_order()`, only by hand): note, no access.
+- An expired, unrevoked entitlement is closed when the course is bought again. Purchase entitlements have no end
+  date (decision 72).
+- Course lines are invisible to analytics (`analytics_sale_lines` joins products — training figures stay null),
+  review requests and loyalty stamps (decision 71). Parcels refuse them; `sync_order_fulfillment()` ignores them,
+  so an order of courses only stays `unfulfilled` like an order of gift cards.
+- Members read their course lines through the existing order RLS (`course:courses(slug)` for the link).
 
 ### Integrity guarantees
 
@@ -950,10 +1021,9 @@ VAT rates, shipping zones/rates mirroring the Settings prototype. Media rows ref
    currency; TypeScript and Stripe use integer minor units; conversion only at boundaries
    (`amount * 100` for 2-decimal currencies, `webapp/src/lib/catalog/money.ts`). 3-decimal currencies
    (KWD, BHD…) would need a wider scale.
-2. **Default content language = French.** Base columns hold French (matches the storefront
-   `fallbackLng: "fr"`), but the Settings prototype declares `SOURCE_LANGUAGE = "en"`. The repo is
-   inconsistent; switching the default later means moving base text into an `fr` translation and
-   `en` into the base columns (a data migration, not a schema change).
+2. **Default content language = French** — decided, and locked since `settings_workspace` (`is_default` is not
+   writable from the API; the Settings page shows it as the original language). Switching the default later means
+   moving base text into an `fr` translation and `en` into the base columns (a data migration, not a schema change).
 3. **Stock of active products is public** (enables "only 3 left" / out-of-stock badges). Restrict to
    `stock_status` only via a view if quantities become sensitive.
 4. **Admins may set `payment_status`** manually (e.g. bank transfer). Stripe webhooks remain the
@@ -962,7 +1032,8 @@ VAT rates, shipping zones/rates mirroring the Settings prototype. Media rows ref
    country (billing for digital-only), per-line rounding, shipping taxed at the standard rate,
    destinations without a configured rate → 0 % (exports). **Rates are illustrative — have the
    accountant confirm them.** OSS thresholds, B2B reverse charge and VAT-number validation are not
-   modelled yet. Stripe Tax could replace `vat_rate_bp()` later.
+   modelled yet. Stripe Tax could replace `vat_rate_bp()` later. The Settings page edits the rates only and shows
+   these rules read-only (decision 66).
 6. **Reservation window** defaults to 60 minutes (`p_reservation_minutes`, 5–1440). Stripe Checkout
    sessions can live longer; set the session `expires_at` to match.
 7. **Reviews are deleted with the customer's account** (their text is personal data), and customers
@@ -1021,8 +1092,8 @@ VAT rates, shipping zones/rates mirroring the Settings prototype. Media rows ref
     confirms the account e-mail); confirm this is enough for the countries served (e.g. Germany).
 29. **Legal documents and FAQ stay in the frontend** (`data/legal/*`) until their placeholders are validated;
     `content_pages` is ready to receive them (kind `legal` requires a `policy_version`).
-30. **`store_settings` holds only the maintenance switch**: the store-settings iteration adds the rest of the
-    Settings workspace to the same row.
+30. **`store_settings` is the store's identity** (`settings_workspace`): maintenance switch, business identity and
+    legal mentions, contact details, opening hours, contact page switches — one row, public read.
 31. **Revenue = merchandise charged, VAT included**, net of discounts; shipping, gift cards (money held until spent)
     and refunds are reported apart, not deducted. If finance wants revenue excluding VAT or net of refunds, it is a
     change in `private.analytics_sale_lines()` only.
@@ -1082,10 +1153,9 @@ VAT rates, shipping zones/rates mirroring the Settings prototype. Media rows ref
     tables with `select=*` as `authenticated` too. A customer calling the REST API with their own token could read
     the staff uuid that created a published course or its cover, nothing else. Close it by moving the back office to
     explicit column lists (or an RPC) and granting the same columns to `authenticated`.
-50. **Course sales pages before courses can be bought**: until phase D, a published course's page shows its price
-    and "enrolment opens soon" instead of a start button, its structured data has no `offers`, and it has no
-    sticky purchase bar. A signed-in member who holds the course (manual grant, iteration 22) gets "continue the
-    training" instead.
+50. **Course sales pages** (phase D, 2026-10-02): a published course's page offers "Buy this course" (cart), or
+    "continue the training" to a signed-in member who holds it. Its structured data still has no `offers`
+    (to add if search previews should show the price).
 
 49. **"Collected" figure of the order book** (agent, 2026-10-01, to confirm): per currency, never added across
     currencies; for orders whose payment was received (`paid`, `partially_refunded`, `refunded`) and that are not
@@ -1123,14 +1193,83 @@ VAT rates, shipping zones/rates mirroring the Settings prototype. Media rows ref
 54. **Certificates** (agent, 2026-10-01): a certificate is the `course_completions` row of a course that issues
     certificates, with a random verification code `GTC-XXXX-XXXX-XXXX` (48 bits); no public verification page yet
     (post-launch). The completion date and the scores are snapshotted when the rules are first met.
+56. **Gift card purchase VAT** (unchanged, to confirm with the accountant): cards are sold without VAT and taxed when
+    spent (multi-purpose voucher, decision 10). The storefront and the back office now sell and issue real cards on
+    that basis.
+57. **Gift cards are not shown in the member area** (agent, 2026-10-01, to confirm): a buyer sees the card line of their
+    order, never the card, its balance or its code; a recipient has no view at all. Showing "my cards" needs a decision
+    on who owns a card (buyer, recipient e-mail, or whoever redeems it) and a column grant that still hides `code`.
+58. **Refunding a purchased gift card** (to confirm): not built. Today a paid order containing a card can only be
+    refunded through Stripe by the team, and nothing voids the card; the safe rule would be "refund only if the card
+    was never used, then cancel it with `cancel_gift_card`" — a business and accounting decision.
+59. **Manual cards** (agent, 2026-10-01): `issue_gift_card()` accepts at most 10 000 in the shop currency, two decimals,
+    a future expiry (else the settings' validity); the back office asks for a reason (≥ 3 characters) recorded in the
+    ledger. Adjustments are capped at ±10 000 and need a reason (≥ 5 characters in the screen, non-empty in SQL).
+60. **Gift card codes in the cart** are kept in memory only (never in `sessionStorage`), shown masked once added; the
+    recipient details of a gift card being bought stay in the tab's cart storage like the rest of the cart.
+
 55. **Lesson media signed for 4 hours** (agent, 2026-10-01, to confirm): the member's browser signs the media of the
     courses they hold for 4 h (renewed every 3 h), so a long lesson video can be watched and sought through without
     expiring mid-way. Consequence: a signed URL keeps working up to 4 h after a revocation, an expiry or a
     withdrawal, and for anyone the member passes it to. Shorten `LEARNER_SIGNED_URL_SECONDS`
     (`webapp/src/lib/learning/learnerApi.ts`) or move to a streaming provider (Mux) if that is not acceptable.
+61. **Back-office customers are read whole** (agent, 2026-10-02): `/admin/clients` reads every customer profile,
+    default shipping address, tag, note and course seat (1 000 rows per request) and filters in the browser, with
+    order counts and spend from the order book — the same deliberate choice as the order book. Plan when the base
+    grows: `range()` + filters on `profiles` and an aggregate RPC for the KPI row and the spend per customer.
+62. **Staff set customer status to active or suspended only** (agent, 2026-10-02, to confirm): `deactivated` is
+    treated as a closed account — shown and filtered, never set or reopened from the back office. A suspension is
+    enforced by the app's sign-in (non-active profiles get no session) and by `create_order()`; it does not revoke
+    a session already open on another device, and the learner functions do not check the profile status. Revoking
+    sessions (Auth admin API, Edge Function) and a status check in the learner RPCs are to decide.
+63. **The customer owns their e-mail, marketing consent and address book** (agent, 2026-10-02): the back office
+    shows them read-only (the profile guard already refuses `email` and `marketing_opt_in`; addresses are
+    owner-only under RLS). Export of the base, bulk e-mail and staff-created customer accounts are not offered:
+    each needs a server side (audited export job, Resend, Auth admin API) and a decision. A customer's order
+    count is every order of the book (as on the order page), including unpaid or failed ones; spend counts paid
+    orders only. An edit saves the profile, then the tag difference, in separate requests (not one transaction).
+
+64. **Store texts have no draft/published status** (agent, 2026-10-02): `store_settings_translations` holds one short
+    sentence per locale (the contact page's response time), edited beside the French one and live on save.
+65. **Storefront languages are locked** (agent, 2026-10-02): `fr` (default) and `en` cannot be switched off — the
+    public routes (`webapp/src/lib/localeRoutes.ts`), checkout locales and member preferences rely on them. Enabling
+    another language opens content translation in it; it does not add it to the public site.
+66. **VAT in Settings = rates only** (user, 2026-10-02: "keep simple settings, revisit later"): standard rate per country,
+    reduced rate per category; the calculation rules stay fixed in `create_order()` and are shown read-only. The
+    prototype's switches (prices excluding VAT, tax basis, rounding, taxing shipping, B2B VAT numbers / VIES, reverse
+    charge, exemptions, a default rate) were removed rather than stored unused; each needs `create_order()` work.
+67. **Order numbering is not configurable** (agent's reading of the user's answer, 2026-10-02 — to confirm): numbers stay
+    `GT-` + `order_number_seq`, continuous; the prototype's prefix / next number / padding controls were removed.
+68. **VAT rates added on 2026-10-02 to confirm with the accountant**: AT 20, BG 20, CY 19, CZ 21, DK 25, EE 24, FI 25.5,
+    GR 24, HR 25, HU 27, LT 21, LU 17, LV 21, MT 18, PL 23, RO 21, SE 25, SI 22, SK 23, MC 20 (French VAT territory); IE 23
+    switched on. Published standard rates as of 2025; OSS registration or the French rate below the EU distance-selling
+    threshold is the accountant's call.
+69. **Shipping and VAT are saved as whole sets** (agent, 2026-10-02): a zone, rate or VAT row left out of the save is
+    deleted; orders keep their snapshotted method name and VAT (`shipping_rate_id` is set null on a deleted rate).
+    Unchanged rows are not rewritten, so the audit log records real changes only.
+70. **Public pages show saved store details within 60 s** (agent, 2026-10-02): the legal notice and contact page read
+    `store_settings` on the server with the catalogue cache (`CATALOGUE_TTL_SECONDS`); a save made in the browser
+    cannot invalidate it.
+71. **Courses earn no loyalty stamp and get no shop discount** (agent, 2026-10-02, to confirm): the loyalty stamp basis
+    joins products, and shop promotions, codes and the loyalty reward are computed on shop lines only (owner's
+    decision that shop promotions do not apply to courses). Courses do not count for free-delivery thresholds.
+72. **Purchased course access has no end date** (agent, 2026-10-02, to confirm): the course page's price note says
+    "accès 24 mois / 24-month access", but `purchase` entitlements are created without `expires_at` (the more
+    generous reading, reversible). Either set `expires_at = now() + 24 months` in
+    `private.apply_order_course_transitions()` or change the page's wording.
+73. **A course needs an account** (agent, 2026-10-02): access is granted to an account, so `create_order()` refuses a
+    course line in a guest order (`account_required`); the cart asks the visitor to sign in first. Guest checkout
+    stays the default for everything else.
+74. **A full refund revokes the course** (agent, 2026-10-02, to confirm): when an order becomes `refunded`, its
+    purchase entitlements are revoked (progress and certificates are kept). A partial refund of a course line does
+    not revoke it automatically — staff revoke by hand from the course's access screen.
+75. **One seat per course per order, for oneself** (agent, 2026-10-02): no buying a course for someone else, no
+    multi-seat purchase (studios training several artists) — both would need a gift / seat model.
 
 ## Done
 
+- Settings workspace (2026-10-02): store identity and legal mentions, shipping, VAT rates and content languages saved
+  from `/admin/parametres` through `admin_save_*()`; legal notice and contact page publish the store details.
 - Iteration 2: translations, shipping zones/rates, VAT rates, stock reservations + ledger,
   server-side order functions, Stripe webhook idempotency, admin audit log, private avatars.
 - Iteration 3: reviews with moderation, reports, votes and photos; shipments and tracking with
@@ -1172,23 +1311,32 @@ VAT rates, shipping zones/rates mirroring the Settings prototype. Media rows ref
 - Back-office team (`/admin/utilisateurs`): Edge Function `invite-staff-member` (invite, promote a customer, resend,
   cancel a pending invitation), screen on `staff_directory()` / `my_permissions()` / the matrix tables,
   `admin_users_validation.sql`. No schema change.
+- Back-office customers (`/admin/clients`): `admin_customer_status_history()`, `admin_customer_courses()`, screen on
+  `profiles` / `customer_addresses` / `customer_tags` / `customer_notes` and the order book,
+  `admin_customers_validation.sql`.
 - Iteration 20: Academy authoring — courses, modules, steps, content blocks, quizzes, training media library
   (private bucket), course price and course promotions, publication rules, `admin_save_course()`.
 - Iteration 21: Academy public pages (phase B) — outline, cover and current price of published courses readable by
   visitors, promotions staff-only, column grants for visitors.
+- Gift cards wired (2026-10-01): back office and `/carte-cadeau` on Supabase, gift card lines and codes through
+  `create-checkout-session`, migration `20261001200000_gift_card_staff_functions` (codes no longer returned by staff
+  functions, input validation) **pending application**, `gift_cards_validation.sql`.
+- Iteration 23: Academy course sales (phase D) — course lines in `create_order()` and `create-checkout-session`,
+  purchase entitlements granted on payment and revoked by a full refund, course page "Buy" through the cart.
+  Migration `20261002100000_course_checkout` **pending application**.
 - Iteration 22: Academy learner access (phase C) — entitlements with audited manual grants, content served without
   answer keys, server-side progress, attempts and scoring, completions with certificate codes, lesson media gated
   on the entitlement, withdrawn courses greyed out for their holders.
 
 ## Next iterations (not implemented)
 
-1. Checkout follow-ups: order confirmation e-mail (Resend, Edge Function), promotion code and gift card fields
-   in the cart (the function already accepts them), Stripe refunds from the back office, `charge.refunded` /
+1. Checkout follow-ups: order confirmation e-mail (Resend, Edge Function), gift card delivery e-mail
+   (`deliver-gift-cards`, design in *Gift cards*), promotion code field in the cart (the function already accepts it), Stripe refunds from the back office, `charge.refunded` /
    `charge.dispute.created` webhooks.
 2. Academy, after the authoring schema (iteration 20):
    (**B**, public pages, done in iteration 21; **C**, learner access, done in iteration 22 — follow-ups: a public
-   certificate verification page, learner figures in the back office's course list and statistics); **D** selling courses: a course line in `create_order()` and the Stripe
-   Checkout functions (VAT category `training`, course promotions applied server-side). Kit QR links; course
+   certificate verification page, learner figures in the back office's course list and statistics; **D**, course
+   sales, built in iteration 23 — follow-ups: `offers` in the course JSON-LD, training figures in the statistics). Kit QR links; course
    reviews (`course_id` on `reviews`). Invoices / credit notes (sequential numbering), carrier tracking events.
 3. Store settings table (legal identity, order number format, tax display options), VAT numbers /
    B2B reverse charge, multi-currency price lists.

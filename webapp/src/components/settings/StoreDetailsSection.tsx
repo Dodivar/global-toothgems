@@ -1,60 +1,46 @@
 import { useMemo, useState } from "react";
 import { useTranslation } from "react-i18next";
-import { Building2, Clock, Eye, Hash, Mail, MapPin, MessageSquareHeart, Phone, SlidersHorizontal, TriangleAlert } from "lucide-react";
+import { Building2, Clock, Eye, Landmark, Mail, MapPin, MessageSquareHeart, Phone, Server } from "lucide-react";
 import clsx from "clsx";
 import { AdminSelect } from "../admin/AdminSelect";
 import { FormField } from "../admin/FormField";
 import { ToggleSwitch } from "../admin/ToggleSwitch";
-import { Segmented } from "../promotions/PromoUi";
 import { useAdminSettings } from "../../lib/adminSettings";
-import { countryName, flagOf, orderNumberPreview, validateStore } from "../../lib/settingsRules";
-import {
-  COUNTRY_GROUPS,
-  CURRENCIES,
-  DATE_FORMATS,
-  TIMEZONES,
-  WEEKDAYS,
-  type DateFormat,
-  type StoreDetails,
-  type Weekday,
-} from "../../data/adminSettings";
-import { Eyebrow, FieldGrid, InfoTip, RowSwitch, SettingsCard, SubHeading, TextField } from "./SettingsUi";
+import { SUPPORT_MESSAGE_MAX, countryName, flagOf, validateStore, type StoreErrors } from "../../lib/settingsRules";
+import { addressLines, hasOpeningHours, hoursSummary, weekdayName } from "../../lib/storeDetails";
+import { COUNTRY_GROUPS, STORE_CURRENCY, WEEKDAYS, type StoreDetails, type Weekday } from "../../data/adminSettings";
+import { Eyebrow, FieldGrid, RowSwitch, SettingsCard, SubHeading, TextField } from "./SettingsUi";
 
 /**
- * The store's identity: who it is, where it is, how it counts, and what
- * customers are told. Four cards, from the legal facts to the friendly ones,
- * with a live preview of the customer-facing block beside the fields that
- * feed it.
+ * The store's identity, from the legal facts to the friendly ones: who the
+ * business is (published on the legal notice), how to reach it, who publishes
+ * and hosts the site (legal notice again), and what the contact page shows —
+ * with a live preview of that block beside the fields that feed it.
  */
 
-const ALL_COUNTRIES = Array.from(new Set(COUNTRY_GROUPS.flatMap((g) => g.countries)));
-const SAMPLE_DATE = new Date(2026, 8, 23);
+type FieldKey = keyof StoreErrors;
 
-function formatSample(format: DateFormat, lang: string): string {
-  const d = SAMPLE_DATE;
-  const dd = String(d.getDate()).padStart(2, "0");
-  const mm = String(d.getMonth() + 1).padStart(2, "0");
-  if (format === "DD/MM/YYYY") return `${dd}/${mm}/${d.getFullYear()}`;
-  if (format === "MM/DD/YYYY") return `${mm}/${dd}/${d.getFullYear()}`;
-  if (format === "YYYY-MM-DD") return `${d.getFullYear()}-${mm}-${dd}`;
-  return new Intl.DateTimeFormat(lang.startsWith("fr") ? "fr-FR" : "en-GB", { day: "numeric", month: "short", year: "numeric" }).format(d);
-}
+const ALL_COUNTRIES = Array.from(new Set(COUNTRY_GROUPS.flatMap((g) => g.countries)));
 
 export function StoreDetailsSection() {
   const { t, i18n } = useTranslation();
   const lang = i18n.language;
-  const { draft, saved, update, attempted } = useAdminSettings();
+  const { draft, update, attempted } = useAdminSettings();
   const d = draft.store;
-  const [touched, setTouched] = useState<Set<keyof StoreDetails>>(new Set());
+  const [touched, setTouched] = useState<Set<FieldKey>>(new Set());
 
   const errors = useMemo(() => validateStore(d), [d]);
   const set = <K extends keyof StoreDetails>(key: K, value: StoreDetails[K]) => update("store", (s) => ({ ...s, [key]: value }));
-  const touch = (key: keyof StoreDetails) => () => setTouched((prev) => (prev.has(key) ? prev : new Set(prev).add(key)));
-  const err = (key: keyof StoreDetails) => (errors[key] ? t(`settings.errors.${errors[key]}`) : undefined);
-  const shown = (key: keyof StoreDetails) => attempted.store || touched.has(key);
+  const touch = (key: FieldKey) => () => setTouched((prev) => (prev.has(key) ? prev : new Set(prev).add(key)));
+  const err = (key: FieldKey) => (errors[key] ? t(`settings.errors.${errors[key]}`) : undefined);
+  const shown = (key: FieldKey) => attempted.store || touched.has(key);
+
+  type TextKey = {
+    [K in keyof StoreDetails]: StoreDetails[K] extends string ? K : never;
+  }[keyof StoreDetails];
 
   /** Shorthand for the plain text inputs. */
-  const text = (key: "storeName" | "legalName" | "businessEmail" | "supportEmail" | "phone" | "website" | "address1" | "address2" | "postalCode" | "city" | "region", extra: Partial<Parameters<typeof TextField>[0]> = {}) => (
+  const text = (key: TextKey, extra: Partial<Parameters<typeof TextField>[0]> = {}) => (
     <TextField
       label={t(`settings.store.fields.${key}`)}
       hint={t(`settings.store.hints.${key}`, { defaultValue: "" }) || undefined}
@@ -75,19 +61,33 @@ export function StoreDetailsSection() {
     [lang],
   );
 
-  const currencyChanged = d.currency !== saved.store.currency;
+  const setMessage = (which: "fr" | "en", value: string) => update("store", (s) => ({ ...s, supportMessage: { ...s.supportMessage, [which]: value } }));
 
   return (
     <>
-      {/* Business information ------------------------------------------- */}
+      {/* Business identity --------------------------------------------- */}
       <SettingsCard icon={Building2} title={t("settings.store.business.title")} description={t("settings.store.business.description")}>
+        <div className="grid gap-4">
+          <FieldGrid>
+            {text("storeName", { required: true, autoComplete: "organization" })}
+            {text("legalName", { required: true })}
+            {text("legalForm", { placeholder: t("settings.store.placeholders.legalForm") })}
+            {text("shareCapital", { placeholder: t("settings.store.placeholders.shareCapital") })}
+            {text("registrationNumber", { placeholder: t("settings.store.placeholders.registrationNumber") })}
+            {text("vatNumber", { placeholder: "FR12345678901", autoComplete: "off" })}
+          </FieldGrid>
+          <p className="m-0 text-[length:var(--text-caption)] text-[var(--text-muted)]">
+            {t("settings.store.currency", { currency: STORE_CURRENCY })}
+          </p>
+        </div>
+      </SettingsCard>
+
+      {/* Contact ---------------------------------------------------------- */}
+      <SettingsCard icon={Mail} title={t("settings.store.contact.title")} description={t("settings.store.contact.description")}>
         <FieldGrid>
-          {text("storeName", { required: true, autoComplete: "organization" })}
-          {text("legalName", { required: true })}
-          {text("businessEmail", { required: true, type: "email", inputMode: "email", autoComplete: "email" })}
           {text("supportEmail", { required: true, type: "email", inputMode: "email" })}
+          {text("businessEmail", { type: "email", inputMode: "email", autoComplete: "email" })}
           {text("phone", { type: "tel", inputMode: "tel", autoComplete: "tel", placeholder: "+33 1 23 45 67 89" })}
-          {text("website", { type: "url", inputMode: "url", placeholder: "https://" })}
         </FieldGrid>
       </SettingsCard>
 
@@ -98,117 +98,36 @@ export function StoreDetailsSection() {
             {(props) => <AdminSelect {...props} value={d.country} onChange={(e) => set("country", e.target.value)} options={countryOptions} />}
           </FormField>
           {text("region")}
-          {text("address1", { required: true, autoComplete: "address-line1", className: "md:col-span-2" })}
+          {text("address1", { autoComplete: "address-line1", className: "md:col-span-2" })}
           {text("address2", { autoComplete: "address-line2", className: "md:col-span-2" })}
-          {text("postalCode", { required: true, autoComplete: "postal-code" })}
-          {text("city", { required: true, autoComplete: "address-level2" })}
+          {text("postalCode", { autoComplete: "postal-code" })}
+          {text("city", { autoComplete: "address-level2" })}
         </FieldGrid>
       </SettingsCard>
 
-      {/* Preferences ------------------------------------------------------ */}
-      <SettingsCard icon={SlidersHorizontal} title={t("settings.store.prefs.title")} description={t("settings.store.prefs.description")}>
+      {/* Legal notice: publisher and host --------------------------------- */}
+      <SettingsCard icon={Landmark} title={t("settings.store.legal.title")} description={t("settings.store.legal.description")}>
         <div className="grid gap-5">
+          <SubHeading>{t("settings.store.legal.director")}</SubHeading>
           <FieldGrid>
-            <FormField label={t("settings.store.fields.currency")} hint={t("settings.store.hints.currency")}>
-              {(props) => (
-                <AdminSelect
-                  {...props}
-                  value={d.currency}
-                  onChange={(e) => set("currency", e.target.value)}
-                  options={CURRENCIES.map((c) => ({ value: c, label: t(`settings.store.currencies.${c}`) }))}
-                />
-              )}
-            </FormField>
-            <FormField label={t("settings.store.fields.timezone")} hint={t("settings.store.hints.timezone")}>
-              {(props) => (
-                <AdminSelect
-                  {...props}
-                  value={d.timezone}
-                  onChange={(e) => set("timezone", e.target.value)}
-                  options={TIMEZONES.map((z) => ({ value: z, label: z.replace("_", " ").replace("/", " — ") }))}
-                />
-              )}
-            </FormField>
-            {currencyChanged && (
-              <div className="md:col-span-2 flex items-start gap-2.5 rounded-[var(--admin-radius-sm)] border border-[var(--gt-amber-400)] bg-[var(--status-warning-bg)] p-3 text-[length:var(--text-caption)] text-[var(--status-warning-fg)]">
-                <TriangleAlert size={15} strokeWidth={2} aria-hidden="true" className="mt-px flex-none" />
-                <span>
-                  <strong className="font-semibold">{t("settings.store.currencyWarning.title")}</strong> {t("settings.store.currencyWarning.body")}
-                </span>
-              </div>
-            )}
-            <FormField label={t("settings.store.fields.dateFormat")}>
-              {(props) => (
-                <AdminSelect
-                  {...props}
-                  value={d.dateFormat}
-                  onChange={(e) => set("dateFormat", e.target.value as DateFormat)}
-                  options={DATE_FORMATS.map((f) => ({ value: f, label: `${formatSample(f, lang)}  ·  ${f}` }))}
-                />
-              )}
-            </FormField>
-            <Segmented
-              label={t("settings.store.fields.measurement")}
-              value={d.measurement}
-              onChange={(v) => set("measurement", v)}
-              options={[
-                { value: "metric", label: t("settings.store.measurement.metric") },
-                { value: "imperial", label: t("settings.store.measurement.imperial") },
-              ]}
-            />
+            {text("publicationDirector")}
+            {text("publicationDirectorRole", { placeholder: t("settings.store.placeholders.publicationDirectorRole") })}
           </FieldGrid>
-
-          <SubHeading hint={t("settings.store.order.hint")}>
+          <SubHeading hint={t("settings.store.legal.hostHint")}>
             <span className="inline-flex items-center gap-1.5">
-              {t("settings.store.order.title")}
-              <InfoTip label={t("settings.store.order.title")}>{t("settings.store.order.tip")}</InfoTip>
+              <Server size={15} aria-hidden="true" className="text-[var(--text-muted)]" />
+              {t("settings.store.legal.host")}
             </span>
           </SubHeading>
-          <div className="grid gap-4 lg:grid-cols-[minmax(0,1fr)_240px] lg:items-end">
-            <div className="grid grid-cols-3 gap-3">
-              <TextField
-                label={t("settings.store.fields.orderPrefix")}
-                value={d.orderPrefix}
-                maxLength={6}
-                onChange={(v) => set("orderPrefix", v.toUpperCase())}
-                onBlur={touch("orderPrefix")}
-                error={err("orderPrefix")}
-                showError={shown("orderPrefix")}
-              />
-              <TextField
-                label={t("settings.store.fields.orderNextNumber")}
-                value={String(d.orderNextNumber || "")}
-                inputMode="numeric"
-                onChange={(v) => set("orderNextNumber", Number(v.replace(/\D/g, "")) || 0)}
-                onBlur={touch("orderNextNumber")}
-                error={err("orderNextNumber")}
-                showError={shown("orderNextNumber")}
-              />
-              <TextField
-                label={t("settings.store.fields.orderSuffix")}
-                value={d.orderSuffix}
-                maxLength={6}
-                placeholder={t("settings.store.order.none")}
-                onChange={(v) => set("orderSuffix", v.toUpperCase())}
-                onBlur={touch("orderSuffix")}
-                error={err("orderSuffix")}
-                showError={shown("orderSuffix")}
-              />
-            </div>
-            <div className="flex items-center gap-3 rounded-[var(--admin-radius-sm)] border border-[var(--gt-blue-200)] bg-[var(--gt-blue-50)] px-3.5 py-2.5">
-              <Hash size={16} aria-hidden="true" className="flex-none text-[var(--gt-blue-700)]" />
-              <span className="grid min-w-0">
-                <Eyebrow>{t("settings.store.order.preview")}</Eyebrow>
-                <span className="truncate font-[family-name:var(--gt-font-mono)] text-[length:var(--text-body-sm)] font-bold text-[var(--text-primary)]" aria-live="polite">
-                  {orderNumberPreview(d)}
-                </span>
-              </span>
-            </div>
-          </div>
+          <FieldGrid>
+            {text("hostName")}
+            {text("hostContact")}
+            {text("hostAddress", { className: "md:col-span-2" })}
+          </FieldGrid>
         </div>
       </SettingsCard>
 
-      {/* Customer-facing ------------------------------------------------- */}
+      {/* Contact page ------------------------------------------------------ */}
       <SettingsCard icon={MessageSquareHeart} tone="fuchsia" title={t("settings.store.public.title")} description={t("settings.store.public.description")}>
         <div className="grid gap-6 2xl:grid-cols-[minmax(0,1fr)_340px]">
           <div className="grid min-w-0 gap-5">
@@ -232,32 +151,32 @@ export function StoreDetailsSection() {
             />
 
             <TextField
-              label={t("settings.store.fields.description")}
-              hint={t("settings.store.hints.description")}
-              value={d.description}
-              onChange={(v) => set("description", v)}
-              onBlur={touch("description")}
-              counter={200}
+              label={t("settings.store.fields.supportMessage")}
+              hint={t("settings.store.hints.supportMessage")}
+              value={d.supportMessage.fr}
+              onChange={(v) => setMessage("fr", v)}
+              onBlur={touch("supportMessage")}
+              counter={SUPPORT_MESSAGE_MAX}
               multiline
-              rows={3}
-              error={err("description")}
+              rows={2}
+              error={err("supportMessage")}
               showError
             />
             <TextField
-              label={t("settings.store.fields.supportMessage")}
-              hint={t("settings.store.hints.supportMessage")}
-              value={d.supportMessage}
-              onChange={(v) => set("supportMessage", v)}
-              onBlur={touch("supportMessage")}
-              counter={280}
+              label={t("settings.store.fields.supportMessageEn")}
+              hint={t("settings.store.hints.supportMessageEn")}
+              value={d.supportMessage.en}
+              onChange={(v) => setMessage("en", v)}
+              onBlur={touch("supportMessageEn")}
+              counter={SUPPORT_MESSAGE_MAX}
               multiline
-              rows={3}
-              error={err("supportMessage")}
+              rows={2}
+              error={err("supportMessageEn")}
               showError
             />
           </div>
 
-          <CustomerPreview store={d} />
+          <ContactPreview store={d} />
         </div>
       </SettingsCard>
     </>
@@ -277,7 +196,7 @@ function HoursEditor({
   error?: string;
   onBlur: () => void;
 }) {
-  const { t } = useTranslation();
+  const { t, i18n } = useTranslation();
   return (
     <fieldset className="m-0 grid gap-2 border-0 p-0" onBlur={onBlur}>
       <legend className="mb-1 flex items-center gap-1.5 p-0 text-[length:var(--text-body-sm)] font-bold text-[var(--text-primary)]">
@@ -288,7 +207,7 @@ function HoursEditor({
       <ul className="m-0 grid list-none gap-1 rounded-[var(--admin-radius-sm)] border border-[var(--border-subtle)] p-1.5">
         {WEEKDAYS.map((day) => {
           const slot = hours[day];
-          const dayLabel = t(`settings.store.hours.days.${day}`);
+          const dayLabel = weekdayName(day, i18n.language, "long");
           const invalid = slot.open && slot.from >= slot.to;
           return (
             <li
@@ -298,7 +217,7 @@ function HoursEditor({
                 !slot.open && "bg-[var(--admin-panel-sunken)]",
               )}
             >
-              <span className="text-[length:var(--text-body-sm)] font-semibold text-[var(--text-primary)]">{dayLabel}</span>
+              <span className="text-[length:var(--text-body-sm)] font-semibold capitalize text-[var(--text-primary)]">{dayLabel}</span>
               <RowSwitch
                 checked={slot.open}
                 onChange={(open) => onChange(day, { ...slot, open })}
@@ -340,32 +259,13 @@ function HoursEditor({
   );
 }
 
-/** Groups consecutive days with the same hours: "Mon – Thu · 09:30 – 18:00". */
-function useHoursSummary(hours: StoreDetails["hours"]) {
-  const { t } = useTranslation();
-  const lines: string[] = [];
-  let i = 0;
-  while (i < WEEKDAYS.length) {
-    const slot = hours[WEEKDAYS[i]];
-    let j = i;
-    while (
-      j + 1 < WEEKDAYS.length &&
-      hours[WEEKDAYS[j + 1]].open === slot.open &&
-      (!slot.open || (hours[WEEKDAYS[j + 1]].from === slot.from && hours[WEEKDAYS[j + 1]].to === slot.to))
-    )
-      j++;
-    const first = t(`settings.store.hours.short.${WEEKDAYS[i]}`);
-    const last = t(`settings.store.hours.short.${WEEKDAYS[j]}`);
-    const days = i === j ? first : `${first} – ${last}`;
-    lines.push(`${days} · ${slot.open ? `${slot.from} – ${slot.to}` : t("settings.store.hours.closed")}`);
-    i = j + 1;
-  }
-  return lines;
-}
-
-function CustomerPreview({ store }: { store: StoreDetails }) {
+/** The "Other ways to reach us" block of the contact page, as it will read in the UI language. */
+function ContactPreview({ store }: { store: StoreDetails }) {
   const { t, i18n } = useTranslation();
-  const lines = useHoursSummary(store.hours);
+  const lang = i18n.language;
+  const lines = hoursSummary(store.hours, lang, t("settings.store.hours.closed"));
+  const address = addressLines(store);
+  const message = lang.startsWith("fr") ? store.supportMessage.fr : store.supportMessage.en;
   return (
     <aside aria-label={t("settings.store.preview.label")} className="grid content-start gap-2">
       <span className="inline-flex items-center gap-1.5 text-[length:var(--text-caption)] font-semibold text-[var(--text-muted)]">
@@ -382,10 +282,7 @@ function CustomerPreview({ store }: { store: StoreDetails }) {
         }}
       >
         <div className="gt-glass grid gap-3 rounded-[var(--radius-md)] p-4">
-          <div className="grid gap-1">
-            <p className="m-0 text-[length:var(--text-body-md)] font-bold text-[var(--text-primary)]">{store.storeName || t("settings.store.fields.storeName")}</p>
-            <p className="m-0 text-[length:var(--text-caption)] leading-[var(--leading-normal)] text-[var(--text-body)]">{store.description}</p>
-          </div>
+          <p className="m-0 text-[length:var(--text-body-md)] font-bold text-[var(--text-primary)]">{store.storeName || t("settings.store.fields.storeName")}</p>
           {(store.showEmail || store.showPhone || store.showAddress) && (
             <ul className="m-0 grid list-none gap-1.5 border-t border-[var(--glass-border)] p-0 pt-3 text-[length:var(--text-caption)] text-[var(--text-primary)]">
               {store.showEmail && store.supportEmail && (
@@ -400,14 +297,16 @@ function CustomerPreview({ store }: { store: StoreDetails }) {
                   {store.phone}
                 </li>
               )}
-              {store.showAddress && (
+              {store.showAddress && address.length > 0 && (
                 <li className="flex items-start gap-2">
                   <MapPin size={13} aria-hidden="true" className="mt-0.5 text-[var(--text-muted)]" />
                   <span>
-                    {store.address1}
-                    {store.address2 && `, ${store.address2}`}
-                    <br />
-                    {store.postalCode} {store.city}, {countryName(store.country, i18n.language)}
+                    {address.map((line) => (
+                      <span key={line} className="block">
+                        {line}
+                      </span>
+                    ))}
+                    {countryName(store.country, lang)}
                   </span>
                 </li>
               )}
@@ -415,15 +314,19 @@ function CustomerPreview({ store }: { store: StoreDetails }) {
           )}
           <div className="grid gap-1 border-t border-[var(--glass-border)] pt-3">
             <Eyebrow>{t("settings.store.preview.hours")}</Eyebrow>
-            <ul className="m-0 grid list-none gap-0.5 p-0 text-[length:var(--text-caption)] tabular-nums text-[var(--text-primary)]">
-              {lines.map((l) => (
-                <li key={l}>{l}</li>
-              ))}
-            </ul>
+            {hasOpeningHours(store.hours) ? (
+              <ul className="m-0 grid list-none gap-0.5 p-0 text-[length:var(--text-caption)] tabular-nums text-[var(--text-primary)]">
+                {lines.map((l) => (
+                  <li key={l}>{l}</li>
+                ))}
+              </ul>
+            ) : (
+              <p className="m-0 text-[length:var(--text-caption)] text-[var(--text-muted)]">{t("settings.store.preview.noHours")}</p>
+            )}
           </div>
-          {store.supportMessage && (
+          {message && (
             <p className="m-0 rounded-[var(--radius-sm)] bg-[var(--gt-white)]/70 p-2.5 text-[length:var(--text-caption)] leading-[var(--leading-normal)] text-[var(--text-body)]">
-              {store.supportMessage}
+              {message}
             </p>
           )}
         </div>

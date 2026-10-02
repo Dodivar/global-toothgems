@@ -3,8 +3,7 @@ import { useTranslation } from "react-i18next";
 import { Lock, MessageSquarePlus, Pencil, Send, Trash2 } from "lucide-react";
 import { Button } from "../ui/Button";
 import { Dialog } from "../ui/Dialog";
-import type { AdminNote } from "../../data/adminOrders";
-import { pick } from "../../data/types";
+import { toDate, type CustomerNote } from "../../data/adminCustomers";
 
 /**
  * Internal notes on a customer.
@@ -23,19 +22,33 @@ import { pick } from "../../data/types";
  * than to a selection mode: there are rarely more than three, and a mode is a
  * concept to learn in front of a two-click operation. Deleting asks first,
  * because a deleted note is the one thing on this page with nothing behind it.
+ *
+ * Writing needs `manage_customers`; a note can be edited by its author only
+ * (the database refuses anyone else), so the pencil appears on one's own notes.
+ * A write the parent reports as failed keeps the text in the field.
  */
+
+/** `customer_notes.body` CHECK: 1–2000 characters once trimmed. */
+const NOTE_MAX = 2000;
+
 export function CustomerNotes({
   notes,
   author,
+  canWrite,
+  currentUserId,
   onAdd,
   onEdit,
   onDelete,
 }: {
-  notes: AdminNote[];
+  notes: CustomerNote[];
   author: string;
-  onAdd: (body: string) => void;
-  onEdit: (noteId: string, body: string) => void;
-  onDelete: (noteId: string) => void;
+  /** `manage_customers`. */
+  canWrite: boolean;
+  /** The signed-in member: their own notes can be edited. */
+  currentUserId: string | null;
+  onAdd: (body: string) => Promise<boolean>;
+  onEdit: (noteId: string, body: string) => Promise<boolean>;
+  onDelete: (noteId: string) => Promise<boolean>;
 }) {
   const { t, i18n } = useTranslation();
   const lang = i18n.language;
@@ -45,7 +58,8 @@ export function CustomerNotes({
   const [composing, setComposing] = useState(false);
   const [editingId, setEditingId] = useState<string | null>(null);
   const [editDraft, setEditDraft] = useState("");
-  const [deleteTarget, setDeleteTarget] = useState<AdminNote | null>(null);
+  const [deleteTarget, setDeleteTarget] = useState<CustomerNote | null>(null);
+  const [busy, setBusy] = useState(false);
 
   const stamp = (at: string) =>
     new Intl.DateTimeFormat(locale, {
@@ -54,27 +68,33 @@ export function CustomerNotes({
       year: "numeric",
       hour: "2-digit",
       minute: "2-digit",
-    }).format(new Date(`${at}:00`));
+    }).format(toDate(at));
 
-  const submit = () => {
+  const submit = async () => {
     const body = draft.trim();
-    if (!body) return;
-    onAdd(body);
+    if (!body || busy) return;
+    setBusy(true);
+    const ok = await onAdd(body);
+    setBusy(false);
+    if (!ok) return;
     setDraft("");
     setComposing(false);
   };
 
-  const submitEdit = () => {
+  const submitEdit = async () => {
     const body = editDraft.trim();
-    if (!body || !editingId) return;
-    onEdit(editingId, body);
+    if (!body || !editingId || busy) return;
+    setBusy(true);
+    const ok = await onEdit(editingId, body);
+    setBusy(false);
+    if (!ok) return;
     setEditingId(null);
     setEditDraft("");
   };
 
-  const startEdit = (note: AdminNote) => {
+  const startEdit = (note: CustomerNote) => {
     setEditingId(note.id);
-    setEditDraft(pick(note.body, lang));
+    setEditDraft(note.body);
   };
 
   return (
@@ -84,7 +104,7 @@ export function CustomerNotes({
           <Lock size={15} aria-hidden="true" className="text-[var(--text-muted)]" />
           {t("admin.customers.notesTitle")}
         </h2>
-        {!composing && (
+        {canWrite && !composing && (
           <Button size="sm" variant="outline" iconLeft={MessageSquarePlus} onClick={() => setComposing(true)}>
             {t("admin.customers.notesAdd")}
           </Button>
@@ -103,9 +123,11 @@ export function CustomerNotes({
           <p className="m-0 text-[length:var(--text-body-sm)] text-[var(--text-muted)]">
             {t("admin.customers.notesEmpty")}
           </p>
-          <Button size="sm" variant="outline" iconLeft={MessageSquarePlus} onClick={() => setComposing(true)}>
-            {t("admin.customers.notesAdd")}
-          </Button>
+          {canWrite && (
+            <Button size="sm" variant="outline" iconLeft={MessageSquarePlus} onClick={() => setComposing(true)}>
+              {t("admin.customers.notesAdd")}
+            </Button>
+          )}
         </div>
       )}
 
@@ -117,9 +139,12 @@ export function CustomerNotes({
               className="grid gap-1.5 rounded-[var(--radius-md)] border border-[var(--border-subtle)] bg-[var(--surface-card)] p-3.5"
             >
               <span className="flex flex-wrap items-baseline justify-between gap-2">
-                <strong className="text-[length:var(--text-body-sm)] text-[var(--text-primary)]">{note.author}</strong>
+                <strong className="text-[length:var(--text-body-sm)] text-[var(--text-primary)]">
+                  {note.author || t("admin.customers.notesFormerMember")}
+                </strong>
                 <span className="flex items-center gap-1">
                   <span className="mr-1 text-[11px] tabular-nums text-[var(--text-subtle)]">{stamp(note.at)}</span>
+                  {canWrite && note.authorId !== null && note.authorId === currentUserId && (
                   <button
                     type="button"
                     onClick={() => startEdit(note)}
@@ -128,6 +153,8 @@ export function CustomerNotes({
                   >
                     <Pencil size={13} aria-hidden="true" />
                   </button>
+                  )}
+                  {canWrite && (
                   <button
                     type="button"
                     onClick={() => setDeleteTarget(note)}
@@ -136,6 +163,7 @@ export function CustomerNotes({
                   >
                     <Trash2 size={13} aria-hidden="true" />
                   </button>
+                  )}
                 </span>
               </span>
 
@@ -147,6 +175,7 @@ export function CustomerNotes({
                       value={editDraft}
                       autoFocus
                       rows={3}
+                      maxLength={NOTE_MAX}
                       onChange={(e) => setEditDraft(e.target.value)}
                       onKeyDown={(e) => {
                         if ((e.metaKey || e.ctrlKey) && e.key === "Enter") submitEdit();
@@ -169,14 +198,14 @@ export function CustomerNotes({
                     >
                       {t("common.cancel")}
                     </Button>
-                    <Button size="sm" disabled={!editDraft.trim()} onClick={submitEdit}>
+                    <Button size="sm" disabled={!editDraft.trim() || busy} loading={busy} onClick={submitEdit}>
                       {t("admin.customers.notesSave")}
                     </Button>
                   </span>
                 </div>
               ) : (
                 <p className="m-0 whitespace-pre-line text-[length:var(--text-body-sm)] leading-[var(--leading-normal)] text-[var(--text-body)]">
-                  {pick(note.body, lang)}
+                  {note.body}
                 </p>
               )}
             </li>
@@ -194,6 +223,7 @@ export function CustomerNotes({
               value={draft}
               autoFocus
               rows={3}
+              maxLength={NOTE_MAX}
               onChange={(e) => setDraft(e.target.value)}
               onKeyDown={(e) => {
                 // Enter would be ambiguous in a multi-line field, so the
@@ -224,7 +254,7 @@ export function CustomerNotes({
               >
                 {t("common.cancel")}
               </Button>
-              <Button size="sm" iconLeft={Send} disabled={!draft.trim()} onClick={submit}>
+              <Button size="sm" iconLeft={Send} disabled={!draft.trim() || busy} loading={busy} onClick={submit}>
                 {t("admin.customers.notesSave")}
               </Button>
             </span>
@@ -250,9 +280,14 @@ export function CustomerNotes({
                 size="sm"
                 variant="dark"
                 iconLeft={Trash2}
-                onClick={() => {
-                  if (deleteTarget) onDelete(deleteTarget.id);
-                  setDeleteTarget(null);
+                disabled={busy}
+                loading={busy}
+                onClick={async () => {
+                  if (!deleteTarget) return;
+                  setBusy(true);
+                  const ok = await onDelete(deleteTarget.id);
+                  setBusy(false);
+                  if (ok) setDeleteTarget(null);
                 }}
               >
                 {t("admin.customers.notesDeleteConfirm")}
@@ -263,7 +298,7 @@ export function CustomerNotes({
       >
         {deleteTarget && (
           <p className="m-0 rounded-[var(--radius-sm)] bg-[var(--surface-sunken)] p-3 text-[length:var(--text-body-sm)] italic text-[var(--text-body)]">
-            {pick(deleteTarget.body, lang)}
+            {deleteTarget.body}
           </p>
         )}
       </Dialog>

@@ -1,0 +1,225 @@
+{
+  "meta": {
+    "title": "Academy : formations tooth gem en ligne",
+    "description": "Les formations en ligne de la Global Toothgems Academy : apprenez la pose de tooth gems, gagnez en confiance et développez votre style, à votre rythme."
+  },
+  "hero": {
+    "eyebrow": "Global Toothgems Academy",
+    "script": "votre art, votre rythme",
+    "title": "Apprenez. Créez. Maîtrisez votre art.",
+    "body": "Des formations en ligne pour développer votre geste, votre confiance et votre signature — que vous posiez votre toute première gem ou que vous fassiez de votre passion un métier.",
+    "cta": "Explorer les formations",
+    "ctaSecondary": "Trouver mon point de départ",
+    "chipCourses_one": "{{count}} formation en ligne",
+    "chipCourses_other": "{{count}} formations en ligne",
+    "chipPace": "En ligne, à votre rythme",
+    "chipCertificate": "Certificat à la clé",
+    "highlightsLabel": "L’Academy en bref",
+    "featuredLabel": "À la une",
+    "imageAlt": "Sourire orné de tooth gems, encadré de mains aux ongles colorés"
+  },
+  "value": {
+    "eyebrow": "Pourquoi se former avec nous",
+    "title": "Plus qu’une technique : une vraie montée en compétences.",
+    "lead": "Ce que vous gagnez en vous formant avec Global Toothgems, quelle que soit la formation choisie.",
+    "technique": {
+      "title": "Un geste professionnel",
+      "body": "Des techniques de pose précises, expliquées pas à pas."
+    },
+    "confidence": {
+      "title": "La confiance en cabine",
+      "body": "Savoir quoi faire, et pourquoi, à chaque étape."
+    },
+    "practice": {
+      "title": "Les bonnes pratiques",
+      "body": "Hygiène, sécurité et respect de l’émail au cœur de chaque geste."
+    },
+    "results": {
+      "title": "Des résultats qui durent",
+      "body": "Des poses nettes, bien placées et faites pour tenir."
+    },
+    "identity": {
+      "title": "Votre signature",
+      "body": "Composez, osez, et affirmez votre propre style."
+    },
+    "business": {
+      "title": "Une activité structurée",
+      "body": "Les bases pour faire de votre passion une activité professionnelle."
+    }
+  },
+  "market": {
+    "eyebrow": "Le catalogue",
+    "title": "Choisissez la formation qui vous ressemble.",
+    "lead": "Comparez en un coup d’œil, puis ouvrez une formation pour découvrir son programme en détail.",
+    "allTitle": "Toutes les formations"
+  },
+  "featured": {
+    "label": "Formation à la une",
+    "cta": "Découvrir la formation",
+    "metaLabel": "En bref"
+  },
+  "pathways": {
+    "eyebrow": "Votre point de départ",
+    "title": "Où en êtes-vous dans votre parcours ?",
+    "lead": "Choisissez ce qui vous ressemble : les formations adaptées remontent en tête du catalogue.",
+    "groupLabel": "Votre point de départ",
+    "new": {
+      "title": "Je débute complètement",
+      "body": "Découvrir les bases en toute sérénité."
+    },
+    "improve": {
+      "title": "Je pratique déjà et veux progresser",
+      "body": "Gagner en précision et en régularité."
+    },
+    "professional": {
+      "title": "Je veux professionnaliser mon activité",
+      "body": "Structurer ma pratique et mon offre."
+    },
+    "refine": {
+      "title": "Je veux perfectionner ma technique",
+      "body": "Aller plus loin : cas avancés et créativité."
+    },
+    "matches_one": "{{count}} formation adaptée à votre point de départ, en tête du catalogue.",
+    "matches_other": "{{count}} formations adaptées à votre point de départ, en tête du catalogue.",
+    "none": "Aucune formation n’est encore dédiée à ce point de départ : tout le catalogue reste affiché.",
+    "reset": "Revenir à tout le catalogue"
+  },
+  "filters": {
+    "label": "Filtrer les formations",
+    "search": "Rechercher",
+    "searchPlaceholder": "Titre, thème…",
+    "category": "Thème",
+    "level": "Niveau",
+    "sort": "Trier par",
+    "anyCategory": "Tout",
+    "anyLevel": "Peu importe",
+    "sorts": {
+      "curated": "Notre sélection",
+      "newest": "Nouveautés",
+      "price-asc": "Prix croissant",
+      "price-desc": "Prix décroissant",
+      "duration-asc": "Durée la plus courte"
+    },
+    "open": "Filtres",
+    "dialogTitle": "Filtrer et trier",
+    "apply_one": "Afficher {{count}} formation",
+    "apply_other": "Afficher {{count}} formations",
+    "clear": "Effacer les filtres",
+    "close": "Fermer",
+    "results_one": "{{count}} formation",
+    "results_other": "{{count}} formations"
+  },
+  "card": {
+    "cta": "Découvrir",
+    "new": "Nouveau",
+    "forYou": "Pour vous",
+    "certificate": "Certificat"
+  },
+  "noMatch": {
+    "title": "Aucune formation ne correspond",
+    "body": "Élargissez votre recherche ou effacez les filtres pour revoir tout le catalogue."
+  },
+  "empty": {
+    "title": "Les premières formations arrivent bientôt",
+    "body": "Elles seront présentées ici dès leur mise en ligne."
+  },
+  "loading": "Chargement des formations…",
+  "loadError": "Les formations n’ont pas pu être chargées.",
+  "retry": "Réessayer",
+  "steps": {
+    "eyebrow": "Comment ça marche",
+    "title": "Un parcours clair, du premier clic à la maîtrise.",
+    "lead": "Le programme détaillé de chaque formation se trouve sur sa page. Voici les grandes étapes.",
+    "s1": {
+      "title": "Choisissez votre formation",
+      "body": "Selon votre niveau et vos envies."
+    },
+    "s2": {
+      "title": "Apprenez à votre rythme",
+      "body": "En ligne, quand vous voulez."
+    },
+    "s3": {
+      "title": "Pratiquez",
+      "body": "Mettez chaque geste en application."
+    },
+    "s4": {
+      "title": "Avancez pas à pas",
+      "body": "Votre progression est enregistrée au fil du parcours."
+    },
+    "s5": {
+      "title": "Validez vos acquis",
+      "body": "Testez vos connaissances au fil des modules."
+    },
+    "s6": {
+      "title": "Recevez votre certificat",
+      "body": "Quand la formation en délivre un."
+    }
+  },
+  "journey": {
+    "eyebrow": "Votre progression",
+    "script": "votre histoire commence ici",
+    "title": "De la curiosité à la confiance.",
+    "lead": "Une formation, ce n’est pas qu’une série de vidéos : c’est un savoir-faire, de l’assurance et la liberté de créer.",
+    "stagesLabel": "Les étapes de votre progression",
+    "discover": {
+      "title": "Découvrir",
+      "body": "L’envie naît d’un sourire qui brille."
+    },
+    "learn": {
+      "title": "Apprendre",
+      "body": "Comprendre l’émail, les matériaux et les bons gestes."
+    },
+    "practice": {
+      "title": "Pratiquer",
+      "body": "Répéter jusqu’à ce que le geste devienne naturel."
+    },
+    "create": {
+      "title": "Créer",
+      "body": "Composer des poses qui vous ressemblent."
+    },
+    "grow": {
+      "title": "Grandir",
+      "body": "Partager votre art, et pourquoi pas en vivre."
+    },
+    "cta": "Commencer mon parcours",
+    "imageAlt": "Doigts aux ongles roses dévoilant des tooth gems argentées"
+  },
+  "ecosystem": {
+    "eyebrow": "L’univers Global Toothgems",
+    "title": "Vous ne suivez pas un cours : vous rejoignez un univers.",
+    "lead": "L’Academy fait partie d’un écosystème pensé autour de l’art du tooth gem.",
+    "learn": {
+      "title": "Apprendre",
+      "body": "Les formations de l’Academy, à votre rythme.",
+      "cta": "Voir les formations"
+    },
+    "create": {
+      "title": "Créer",
+      "body": "Imaginez vos compositions sur un sourire en 3D.",
+      "cta": "Ouvrir le Studio 3D"
+    },
+    "equip": {
+      "title": "S’équiper",
+      "body": "Gems, outils et kits choisis pour les artistes.",
+      "cta": "Visiter la boutique"
+    },
+    "share": {
+      "title": "Partager & échanger",
+      "body": "Un espace d’échange entre artistes est en préparation."
+    },
+    "soon": "Bientôt"
+  },
+  "proof": {
+    "eyebrow": "Ils se sont formés",
+    "title": "Ce que la formation a changé pour eux.",
+    "lead": "Des avis d’apprenants, publiés après modération.",
+    "course": "Formation : {{title}}"
+  },
+  "final": {
+    "script": "à vous de jouer",
+    "title": "Votre prochaine pose commence ici.",
+    "body": "Explorez le catalogue et choisissez la formation qui vous fera passer un cap.",
+    "cta": "Explorer les formations",
+    "ctaSecondary": "Trouver mon point de départ"
+  }
+}

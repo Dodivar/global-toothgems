@@ -3687,6 +3687,7 @@ export type Database = {
       }
       order_items: {
         Row: {
+          course_id: string | null
           created_at: string
           discount_amount: number
           id: string
@@ -3704,6 +3705,7 @@ export type Database = {
           variant_name: string | null
         }
         Insert: {
+          course_id?: string | null
           created_at?: string
           discount_amount?: number
           id?: string
@@ -3721,6 +3723,7 @@ export type Database = {
           variant_name?: string | null
         }
         Update: {
+          course_id?: string | null
           created_at?: string
           discount_amount?: number
           id?: string
@@ -3738,6 +3741,20 @@ export type Database = {
           variant_name?: string | null
         }
         Relationships: [
+          {
+            foreignKeyName: "order_items_course_id_fkey"
+            columns: ["course_id"]
+            isOneToOne: false
+            referencedRelation: "course_current_prices"
+            referencedColumns: ["course_id"]
+          },
+          {
+            foreignKeyName: "order_items_course_id_fkey"
+            columns: ["course_id"]
+            isOneToOne: false
+            referencedRelation: "courses"
+            referencedColumns: ["id"]
+          },
           {
             foreignKeyName: "order_items_inventory_item_id_fkey"
             columns: ["inventory_item_id"]
@@ -6352,37 +6369,112 @@ export type Database = {
       }
       store_settings: {
         Row: {
+          address_line1: string | null
+          address_line2: string | null
+          business_email: string | null
+          city: string | null
+          country_code: string
           created_at: string
           created_by: string | null
+          host_address: string | null
+          host_contact: string | null
+          host_name: string | null
           id: boolean
+          legal_form: string | null
+          legal_name: string | null
           maintenance_enabled: boolean
           maintenance_expected_end: string | null
           maintenance_staff_bypass: boolean
           maintenance_started_at: string | null
+          opening_hours: Json
+          phone: string | null
+          postal_code: string | null
+          publication_director: string | null
+          publication_director_role: string | null
+          region: string | null
+          registration_number: string | null
+          share_capital: string | null
+          show_address: boolean
+          show_email: boolean
+          show_phone: boolean
+          store_name: string
+          support_email: string | null
+          support_message: string | null
           updated_at: string
           updated_by: string | null
+          vat_number: string | null
         }
         Insert: {
+          address_line1?: string | null
+          address_line2?: string | null
+          business_email?: string | null
+          city?: string | null
+          country_code?: string
           created_at?: string
           created_by?: string | null
+          host_address?: string | null
+          host_contact?: string | null
+          host_name?: string | null
           id?: boolean
+          legal_form?: string | null
+          legal_name?: string | null
           maintenance_enabled?: boolean
           maintenance_expected_end?: string | null
           maintenance_staff_bypass?: boolean
           maintenance_started_at?: string | null
+          opening_hours?: Json
+          phone?: string | null
+          postal_code?: string | null
+          publication_director?: string | null
+          publication_director_role?: string | null
+          region?: string | null
+          registration_number?: string | null
+          share_capital?: string | null
+          show_address?: boolean
+          show_email?: boolean
+          show_phone?: boolean
+          store_name?: string
+          support_email?: string | null
+          support_message?: string | null
           updated_at?: string
           updated_by?: string | null
+          vat_number?: string | null
         }
         Update: {
+          address_line1?: string | null
+          address_line2?: string | null
+          business_email?: string | null
+          city?: string | null
+          country_code?: string
           created_at?: string
           created_by?: string | null
+          host_address?: string | null
+          host_contact?: string | null
+          host_name?: string | null
           id?: boolean
+          legal_form?: string | null
+          legal_name?: string | null
           maintenance_enabled?: boolean
           maintenance_expected_end?: string | null
           maintenance_staff_bypass?: boolean
           maintenance_started_at?: string | null
+          opening_hours?: Json
+          phone?: string | null
+          postal_code?: string | null
+          publication_director?: string | null
+          publication_director_role?: string | null
+          region?: string | null
+          registration_number?: string | null
+          share_capital?: string | null
+          show_address?: boolean
+          show_email?: boolean
+          show_phone?: boolean
+          store_name?: string
+          support_email?: string | null
+          support_message?: string | null
           updated_at?: string
           updated_by?: string | null
+          vat_number?: string | null
         }
         Relationships: [
           {
@@ -6408,6 +6500,69 @@ export type Database = {
           },
           {
             foreignKeyName: "store_settings_updated_by_fkey"
+            columns: ["updated_by"]
+            isOneToOne: false
+            referencedRelation: "profiles"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      store_settings_translations: {
+        Row: {
+          created_at: string
+          created_by: string | null
+          locale: string
+          support_message: string | null
+          updated_at: string
+          updated_by: string | null
+        }
+        Insert: {
+          created_at?: string
+          created_by?: string | null
+          locale: string
+          support_message?: string | null
+          updated_at?: string
+          updated_by?: string | null
+        }
+        Update: {
+          created_at?: string
+          created_by?: string | null
+          locale?: string
+          support_message?: string | null
+          updated_at?: string
+          updated_by?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "store_settings_translations_created_by_fkey"
+            columns: ["created_by"]
+            isOneToOne: false
+            referencedRelation: "loyalty_overview"
+            referencedColumns: ["user_id"]
+          },
+          {
+            foreignKeyName: "store_settings_translations_created_by_fkey"
+            columns: ["created_by"]
+            isOneToOne: false
+            referencedRelation: "profiles"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "store_settings_translations_locale_fkey"
+            columns: ["locale"]
+            isOneToOne: true
+            referencedRelation: "languages"
+            referencedColumns: ["code"]
+          },
+          {
+            foreignKeyName: "store_settings_translations_updated_by_fkey"
+            columns: ["updated_by"]
+            isOneToOne: false
+            referencedRelation: "loyalty_overview"
+            referencedColumns: ["user_id"]
+          },
+          {
+            foreignKeyName: "store_settings_translations_updated_by_fkey"
             columns: ["updated_by"]
             isOneToOne: false
             referencedRelation: "profiles"
@@ -7116,6 +7271,34 @@ export type Database = {
           user_id: string
         }[]
       }
+      admin_customer_courses: {
+        Args: { p_user_id?: string }
+        Returns: {
+          average_score: number
+          certificate_code: string
+          completed_at: string
+          course_id: string
+          course_status: string
+          expires_at: string
+          last_activity: string
+          nodes_done: number
+          nodes_total: number
+          source: string
+          starts_at: string
+          title: string
+          title_en: string
+          user_id: string
+        }[]
+      }
+      admin_customer_status_history: {
+        Args: { p_user_id: string }
+        Returns: {
+          actor_name: string
+          changed_at: string
+          new_status: string
+          old_status: string
+        }[]
+      }
       admin_delete_gem_color: { Args: { p_id: string }; Returns: undefined }
       admin_delete_product: {
         Args: { p_product_id: string }
@@ -7140,6 +7323,7 @@ export type Database = {
       }
       admin_save_course: { Args: { p_course: Json }; Returns: Json }
       admin_save_gem_color: { Args: { p_color: Json }; Returns: Json }
+      admin_save_languages: { Args: { p_languages: Json }; Returns: undefined }
       admin_save_product: { Args: { p_product: Json }; Returns: Json }
       admin_save_product_recommendations: {
         Args: {
@@ -7149,6 +7333,12 @@ export type Database = {
         }
         Returns: undefined
       }
+      admin_save_shipping: { Args: { p_zones: Json }; Returns: undefined }
+      admin_save_store_details: {
+        Args: { p_details: Json }
+        Returns: undefined
+      }
+      admin_save_tax_rates: { Args: { p_rates: Json }; Returns: undefined }
       analytics_snapshot: {
         Args: {
           p_currency?: string
@@ -7169,39 +7359,7 @@ export type Database = {
       }
       cancel_gift_card: {
         Args: { p_gift_card_id: string; p_note: string }
-        Returns: {
-          balance: number
-          cancelled_at: string | null
-          code: string
-          code_last4: string | null
-          created_at: string
-          currency: string
-          deliver_at: string | null
-          delivered_at: string | null
-          delivery_status: string
-          design: string
-          expires_at: string | null
-          id: string
-          initial_amount: number
-          issued_at: string | null
-          message: string | null
-          order_id: string | null
-          order_item_id: string | null
-          purchaser_email: string | null
-          purchaser_user_id: string | null
-          recipient_email: string
-          recipient_name: string | null
-          sender_name: string | null
-          source: string
-          state: string
-          updated_at: string
-        }
-        SetofOptions: {
-          from: "*"
-          to: "gift_cards"
-          isOneToOne: true
-          isSetofReturn: false
-        }
+        Returns: string
       }
       cancel_order: {
         Args: { p_order_id: string; p_reason?: string }
@@ -7246,7 +7404,6 @@ export type Database = {
           isSetofReturn: false
         }
       }
-      complete_course_step: { Args: { p_step_id: string }; Returns: Json }
       checkout_session_status: {
         Args: { p_session_id: string }
         Returns: {
@@ -7254,6 +7411,7 @@ export type Database = {
           state: string
         }[]
       }
+      complete_course_step: { Args: { p_step_id: string }; Returns: Json }
       consume_inventory: {
         Args: { p_inventory_item_id: string; p_quantity: number }
         Returns: {
@@ -7352,39 +7510,7 @@ export type Database = {
       expire_stale_orders: { Args: never; Returns: number }
       extend_gift_card: {
         Args: { p_expires_at: string; p_gift_card_id: string; p_note?: string }
-        Returns: {
-          balance: number
-          cancelled_at: string | null
-          code: string
-          code_last4: string | null
-          created_at: string
-          currency: string
-          deliver_at: string | null
-          delivered_at: string | null
-          delivery_status: string
-          design: string
-          expires_at: string | null
-          id: string
-          initial_amount: number
-          issued_at: string | null
-          message: string | null
-          order_id: string | null
-          order_item_id: string | null
-          purchaser_email: string | null
-          purchaser_user_id: string | null
-          recipient_email: string
-          recipient_name: string | null
-          sender_name: string | null
-          source: string
-          state: string
-          updated_at: string
-        }
-        SetofOptions: {
-          from: "*"
-          to: "gift_cards"
-          isOneToOne: true
-          isSetofReturn: false
-        }
+        Returns: string
       }
       generate_promotion_codes: {
         Args: { p_count: number; p_prefix?: string; p_promotion_id: string }

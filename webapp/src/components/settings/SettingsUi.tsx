@@ -368,41 +368,6 @@ export function RowSwitch({
   );
 }
 
-/* -------------------------------------------------------------------------- */
-/* Progress                                                                   */
-/* -------------------------------------------------------------------------- */
-
-/**
- * A thin coverage bar. The percentage is always printed next to it by the
- * caller; the bar is the at-a-glance support, so it is hidden from assistive
- * technology rather than announced as a second, identical number.
- */
-export function CoverageBar({ percent, size = "md", className }: { percent: number; size?: "sm" | "md"; className?: string }) {
-  const tone =
-    percent >= 100
-      ? "bg-[var(--gt-emerald-500)]"
-      : percent >= 90
-        ? "bg-[var(--gt-emerald-400)]"
-        : percent >= 80
-          ? "bg-[var(--gt-blue-500)]"
-          : "bg-[var(--gt-amber-400)]";
-  return (
-    <span
-      aria-hidden="true"
-      className={clsx(
-        "block w-full overflow-hidden rounded-full bg-[var(--gt-ink-100)]",
-        size === "sm" ? "h-1.5" : "h-2",
-        className,
-      )}
-    >
-      <span
-        className={clsx("block h-full rounded-full transition-[width] duration-[var(--duration-slow)] ease-[var(--ease-out-soft)]", tone)}
-        style={{ width: `${Math.max(2, Math.min(100, percent))}%` }}
-      />
-    </span>
-  );
-}
-
 /** Flag glyph, decorative: always paired with the name or code in text. */
 export function Flag({ glyph, className }: { glyph: string; className?: string }) {
   return (

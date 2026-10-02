@@ -26,11 +26,12 @@ import { ProgressBar } from "../ui/ProgressBar";
 import { FulfillmentBadge, OrderStatusBadge, PaymentStatusBadge } from "./StatusBadges";
 import { useFormat } from "../../lib/format";
 import { pick } from "../../data/types";
-import { COURSES } from "../../data/courses";
 import { countryLabelKey } from "../../data/countries";
 import { orderItemCount, type AdminOrder } from "../../data/adminOrders";
 import {
-  averageOrderValue,
+  averageBasket,
+  hasTime,
+  toDate,
   trainingState,
   type AdminCustomerRecord,
   type CustomerEvent,
@@ -48,12 +49,6 @@ import {
  * internally — and each tab is the shortest complete answer to one of them.
  */
 
-/** Course title in the active language, or the id if the course is gone. */
-function courseTitle(courseId: string, lang: string): string {
-  const course = COURSES.find((c) => c.id === courseId);
-  return course ? pick(course.title, lang) : courseId;
-}
-
 /* -------------------------------------------------------------------------- */
 /* Summary                                                                    */
 /* -------------------------------------------------------------------------- */
@@ -65,47 +60,46 @@ function courseTitle(courseId: string, lang: string): string {
  * header, and six bordered cards there would push the tabs — the thing the
  * operator came to use — below the fold on a laptop.
  *
- * "Total orders" and "Total spent" are the customer's **lifetime** figures, and
- * they are labelled as such, because the orders tab underneath lists only what
- * the current book holds. Presenting either as the other is the one genuinely
- * misleading thing this page could do.
+ * Orders and spend come from the order book; spend is net of refunds and
+ * printed per currency, never added across currencies.
  */
 export function CustomerSummary({
   customer,
-  orderCountInBook,
+  orders,
   lastOrder,
 }: {
   customer: AdminCustomerRecord;
-  orderCountInBook: number;
+  /** This customer's orders in the book. */
+  orders: AdminOrder[];
   lastOrder?: string;
 }) {
-  const { formatDateShort, formatPrice } = useFormat();
+  const { formatDateShort, formatMoney } = useFormat();
   const { t } = useTranslation();
   const state = trainingState(customer);
+  const basket = averageBasket(customer, orders);
 
   const cells: { key: string; label: string; value: string; hint?: string }[] = [
     {
       key: "orders",
       label: t("admin.customers.summaryOrders"),
       value: String(customer.orderCount),
-      hint: t("admin.customers.summaryLifetime"),
     },
     {
       key: "spent",
       label: t("admin.customers.summarySpent"),
-      value: customer.lifetimeValue === 0 ? "—" : formatPrice(customer.lifetimeValue),
-      hint: t("admin.customers.summaryLifetime"),
+      value:
+        customer.spend.length === 0 ? "—" : customer.spend.map((s) => formatMoney(s.amount, s.currency)).join(" · "),
+      hint: t("admin.customers.summarySpentHint"),
     },
     {
       key: "aov",
       label: t("admin.customers.summaryAverage"),
-      value: customer.orderCount === 0 ? "—" : formatPrice(averageOrderValue(customer)),
+      value: basket ? formatMoney(basket.amount, basket.currency) : "—",
     },
     {
       key: "last",
       label: t("admin.customers.summaryLastOrder"),
-      value: lastOrder ? formatDateShort(lastOrder.slice(0, 10)) : "—",
-      hint: lastOrder ? undefined : t("admin.customers.summaryNoneInBook"),
+      value: lastOrder ? formatDateShort(lastOrder) : "—",
     },
     {
       key: "training",
@@ -138,12 +132,6 @@ export function CustomerSummary({
           </dd>
         </div>
       ))}
-      {/* The one place the two order figures could be read as contradicting
-          each other, said out loud for a screen reader. A `div`, not a `p`:
-          only `dt`, `dd` and `div` are permitted children of a `dl`. */}
-      {orderCountInBook !== customer.orderCount && (
-        <div className="sr-only">{t("admin.customers.summaryBookNote", { count: orderCountInBook })}</div>
-      )}
     </dl>
   );
 }
@@ -204,11 +192,13 @@ export function OverviewPanel({
 }: {
   customer: AdminCustomerRecord;
   recent: CustomerEvent[];
-  onEdit: () => void;
+  /** Absent for read-only staff. */
+  onEdit?: () => void;
   onSeeAllActivity: () => void;
 }) {
   const { formatDateShort } = useFormat();
   const { t } = useTranslation();
+  const country = (code: string) => t(countryLabelKey(code), { defaultValue: code.toUpperCase() });
 
   return (
     <div className="grid items-start gap-4 xl:grid-cols-[minmax(0,1.2fr)_minmax(320px,1fr)]">
@@ -216,9 +206,11 @@ export function OverviewPanel({
         title={t("admin.customers.detailsTitle")}
         icon={UserRound}
         action={
-          <Button size="sm" variant="ghost" iconLeft={Pencil} onClick={onEdit}>
-            {t("admin.customers.actionEdit")}
-          </Button>
+          onEdit && (
+            <Button size="sm" variant="ghost" iconLeft={Pencil} onClick={onEdit}>
+              {t("admin.customers.actionEdit")}
+            </Button>
+          )
         }
       >
         <dl className="m-0 grid gap-4 sm:grid-cols-2">
@@ -237,31 +229,55 @@ export function OverviewPanel({
           <Field
             label={t("admin.customers.fieldPhone")}
             value={
-              <a
-                href={`tel:${customer.phone.replace(/\s/g, "")}`}
-                className="flex items-center gap-1.5 underline decoration-1 underline-offset-4 hover:text-[var(--accent-highlight-ink)]"
-              >
-                <Phone size={13} aria-hidden="true" className="flex-none text-[var(--text-muted)]" />
-                {customer.phone}
-              </a>
+              customer.phone ? (
+                <a
+                  href={`tel:${customer.phone.replace(/\s/g, "")}`}
+                  className="flex items-center gap-1.5 underline decoration-1 underline-offset-4 hover:text-[var(--accent-highlight-ink)]"
+                >
+                  <Phone size={13} aria-hidden="true" className="flex-none text-[var(--text-muted)]" />
+                  {customer.phone}
+                </a>
+              ) : (
+                <span className="text-[var(--text-subtle)]">{t("admin.customers.notProvided")}</span>
+              )
             }
           />
           <Field
             label={t("admin.customers.fieldAddress")}
             value={
-              <span className="flex items-start gap-1.5">
-                <MapPin size={13} aria-hidden="true" className="mt-1 flex-none text-[var(--text-muted)]" />
-                <span>
-                  {customer.addressLine}
-                  <br />
-                  {customer.postalCode} {customer.city}
-                  <br />
-                  {t(countryLabelKey(customer.country))}
+              customer.address ? (
+                <span className="flex items-start gap-1.5">
+                  <MapPin size={13} aria-hidden="true" className="mt-1 flex-none text-[var(--text-muted)]" />
+                  <span>
+                    {customer.address.line1}
+                    {customer.address.line2 && (
+                      <>
+                        <br />
+                        {customer.address.line2}
+                      </>
+                    )}
+                    <br />
+                    {customer.address.postalCode} {customer.address.city}
+                    <br />
+                    {country(customer.address.country)}
+                  </span>
                 </span>
-              </span>
+              ) : (
+                <span className="text-[var(--text-subtle)]">{t("admin.customers.noAddress")}</span>
+              )
             }
           />
           <div className="grid gap-4">
+            <Field
+              label={t("admin.customers.fieldCountry")}
+              value={
+                customer.country ? (
+                  country(customer.country)
+                ) : (
+                  <span className="text-[var(--text-subtle)]">{t("admin.customers.notProvided")}</span>
+                )
+              }
+            />
             <Field
               label={t("admin.customers.fieldBirthDate")}
               value={
@@ -310,12 +326,7 @@ export function OverviewPanel({
 /* -------------------------------------------------------------------------- */
 
 /**
- * The orders tab.
- *
- * The heading says "orders in this workspace" rather than "orders": the book is
- * a recent window, and a customer whose summary says fifteen will see four
- * listed here. Naming the scope is a line of copy; letting the two numbers
- * contradict each other unexplained is a support ticket.
+ * The orders tab: this customer's orders in the order book.
  *
  * Each row links to the real order page rather than reproducing it — the order
  * detail already exists, and a second rendering of an order inside a customer
@@ -323,11 +334,9 @@ export function OverviewPanel({
  */
 export function OrdersPanel({
   orders,
-  lifetimeCount,
   hrefForOrder,
 }: {
   orders: AdminOrder[];
-  lifetimeCount: number;
   hrefForOrder: (order: AdminOrder) => string;
 }) {
   const { formatDateShort, formatMoney } = useFormat();
@@ -346,9 +355,7 @@ export function OrdersPanel({
           </span>
           <h3 className="text-[length:var(--text-body-md)]">{t("admin.customers.ordersEmptyTitle")}</h3>
           <p className="m-0 max-w-[44ch] text-[length:var(--text-body-sm)] text-[var(--text-muted)]">
-            {lifetimeCount > 0
-              ? t("admin.customers.ordersEmptyOutsideWindow", { count: lifetimeCount })
-              : t("admin.customers.ordersEmptyBody")}
+            {t("admin.customers.ordersEmptyBody")}
           </p>
         </div>
       </Panel>
@@ -356,15 +363,7 @@ export function OrdersPanel({
   }
 
   return (
-    <Panel
-      title={t("admin.customers.ordersTitle")}
-      icon={ShoppingBag}
-      action={
-        <span className="text-[length:var(--text-caption)] text-[var(--text-muted)]">
-          {t("admin.customers.ordersScope", { shown: orders.length, lifetime: lifetimeCount })}
-        </span>
-      }
-    >
+    <Panel title={t("admin.customers.ordersTitle")} icon={ShoppingBag}>
       <ul className="m-0 grid list-none gap-2 p-0">
         {orders.map((order) => (
           <li key={order.reference}>
@@ -376,7 +375,7 @@ export function OrdersPanel({
                 <span className="flex flex-wrap items-baseline gap-2">
                   <strong className="tabular-nums text-[var(--text-primary)]">#{order.reference}</strong>
                   <span className="text-[length:var(--text-caption)] text-[var(--text-muted)]">
-                    {formatDateShort(order.placedAt.slice(0, 10))}
+                    {formatDateShort(order.placedAt)}
                     {" · "}
                     {t("admin.customers.ordersItems", { count: orderItemCount(order) })}
                   </span>
@@ -418,10 +417,11 @@ export function OrdersPanel({
  * each row — and the percentage is printed beside it, because a bar alone is
  * unreadable for anyone who cannot see it and imprecise for everyone else.
  *
- * A finished course shows its score and whether the certificate has been
- * issued. Those are two different facts: a student can pass and still be
- * waiting on the diploma, and that gap is exactly the thing an administrator
- * opens this tab to check.
+ * A completed course shows its score and whether the certificate has been
+ * issued. Those are two different facts: a course can be completed without
+ * issuing certificates, and that gap is exactly the thing an administrator
+ * opens this tab to check. Seats are granted from the course's access page
+ * (`/admin/formations/<id>/acces`), not from here.
  */
 export function TrainingPanel({ customer }: { customer: AdminCustomerRecord }) {
   const { t, i18n } = useTranslation();
@@ -450,7 +450,7 @@ export function TrainingPanel({ customer }: { customer: AdminCustomerRecord }) {
     <Panel title={t("admin.customers.trainingTitle")} icon={GraduationCap}>
       <ul className="m-0 grid list-none gap-3 p-0">
         {customer.enrollments.map((seat) => (
-          <EnrollmentRow key={seat.courseId} seat={seat} title={courseTitle(seat.courseId, lang)} />
+          <EnrollmentRow key={seat.courseId} seat={seat} title={pick(seat.title, lang)} />
         ))}
       </ul>
     </Panel>
@@ -460,7 +460,7 @@ export function TrainingPanel({ customer }: { customer: AdminCustomerRecord }) {
 function EnrollmentRow({ seat, title }: { seat: Enrollment; title: string }) {
   const { formatDateShort } = useFormat();
   const { t } = useTranslation();
-  const done = seat.progress >= 100;
+  const done = Boolean(seat.completedAt);
 
   return (
     <li className="grid gap-3 rounded-[var(--radius-md)] border border-[var(--border-subtle)] p-4">
@@ -471,9 +471,22 @@ function EnrollmentRow({ seat, title }: { seat: Enrollment; title: string }) {
             {t("admin.customers.trainingEnrolled", { date: formatDateShort(seat.enrolledAt) })}
           </span>
         </span>
-        <Badge tone={done ? "success" : "brand"} size="sm" icon={done ? Award : BookOpen}>
-          {t(done ? "admin.customers.training.completed" : "admin.customers.training.inProgress")}
-        </Badge>
+        <span className="flex flex-wrap items-center gap-1.5">
+          {seat.withdrawn && (
+            <Badge tone="neutral" size="sm" icon={CircleSlash}>
+              {t("admin.customers.trainingWithdrawn")}
+            </Badge>
+          )}
+          <Badge tone={done ? "success" : "brand"} size="sm" icon={done ? Award : BookOpen}>
+            {t(
+              done
+                ? "admin.customers.training.completed"
+                : seat.progress > 0
+                  ? "admin.customers.training.inProgress"
+                  : "admin.customers.training.enrolled",
+            )}
+          </Badge>
+        </span>
       </div>
 
       {/* `ProgressBar` draws its own label-and-percentage row, so the caption
@@ -506,7 +519,10 @@ function EnrollmentRow({ seat, title }: { seat: Enrollment; title: string }) {
             )
           }
         />
-        <Field label={t("admin.customers.trainingLastActivity")} value={formatDateShort(seat.lastActivity)} />
+        <Field
+          label={t("admin.customers.trainingLastActivity")}
+          value={seat.lastActivity ? formatDateShort(seat.lastActivity) : <span className="text-[var(--text-subtle)]">—</span>}
+        />
       </dl>
     </li>
   );
@@ -521,10 +537,8 @@ const EVENT_META: Record<CustomerEventKind, { icon: LucideIcon; tone: "neutral" 
   orderPlaced: { icon: ShoppingBag, tone: "neutral" },
   orderDelivered: { icon: BadgeCheck, tone: "good" },
   trainingPurchased: { icon: GraduationCap, tone: "neutral" },
-  courseStarted: { icon: BookOpen, tone: "neutral" },
   courseCompleted: { icon: Award, tone: "good" },
   diplomaIssued: { icon: BadgeCheck, tone: "good" },
-  profileUpdated: { icon: Pencil, tone: "neutral" },
   statusChanged: { icon: ShieldAlert, tone: "warn" },
   noteAdded: { icon: FileText, tone: "neutral" },
 };
@@ -554,22 +568,19 @@ export function ActivityTimeline({ events }: { events: CustomerEvent[] }) {
   const stamp = (at: string) => {
     // Registration dates are plain days; everything else carries a time. A
     // midnight printed beside "Account created" would be invented precision.
-    const hasTime = at.includes("T");
-    const date = new Date(hasTime ? `${at}:00` : `${at}T12:00:00`);
+    const timed = hasTime(at);
     return new Intl.DateTimeFormat(locale, {
       day: "numeric",
       month: "short",
       year: "numeric",
-      ...(hasTime ? { hour: "2-digit" as const, minute: "2-digit" as const } : {}),
-    }).format(date);
+      ...(timed ? { hour: "2-digit" as const, minute: "2-digit" as const } : {}),
+    }).format(toDate(at));
   };
 
   const detailFor = (event: CustomerEvent): string | undefined => {
+    if (event.course) return pick(event.course, lang);
     if (!event.detail) return undefined;
     if (event.kind === "statusChanged") return t(`admin.customers.status.${event.detail}`);
-    if (["trainingPurchased", "courseStarted", "courseCompleted", "diplomaIssued"].includes(event.kind)) {
-      return courseTitle(event.detail, lang);
-    }
     return event.detail;
   };
 

@@ -28,6 +28,9 @@ import { Placeholder } from "../../components/legal/RichText";
 import { ReviewNote } from "../../components/legal/ReviewNote";
 import { CONTACT_CATEGORY_PARAM, LEGAL_PATHS } from "../../data/legal/routes";
 import type { ContactCategory } from "../../data/legal/types";
+import type { StoreDetails } from "../../data/adminSettings";
+import { countryName } from "../../lib/settingsRules";
+import { addressLines, hasOpeningHours, hasVisibleContact, hoursSummary, supportMessageIn } from "../../lib/storeDetails";
 
 const CATEGORIES: ContactCategory[] = ["order", "delivery", "returns", "product", "training", "technical", "privacy", "professional", "other"];
 
@@ -61,9 +64,14 @@ function isCategory(value: string | null): value is ContactCategory {
  * links here with `?sujet=…`, so "a question about a return" starts in the
  * right place. Validation runs on submit and then live, errors are tied to
  * their fields, and focus moves to the first one that needs attention.
+ *
+ * "Other ways to reach us" shows the contact details saved in Settings › Store
+ * (`store`, read by the server): only what the business chose to show. Without
+ * them (mock mode, failed read) it lists what is still to be supplied.
  */
-export function Contact() {
-  const { t } = useTranslation();
+export function Contact({ store = null }: { store?: StoreDetails | null }) {
+  const { t, i18n } = useTranslation();
+  const showOther = !store || hasVisibleContact(store, i18n.language);
   const [params] = useSearchParams();
   const preset = params.get(CONTACT_CATEGORY_PARAM);
 
@@ -392,19 +400,29 @@ export function Contact() {
           )}
         </div>
 
-        <aside aria-labelledby="contact-other" className="grid content-start gap-4">
-          <div className="grid gap-4 rounded-[var(--radius-card)] border border-[var(--border-subtle)] bg-[var(--surface-card)] p-5">
-            <h2 id="contact-other" className="text-[length:var(--text-h4)]">
-              {t("legal.contact.otherTitle")}
-            </h2>
-            <ul className="m-0 grid list-none gap-4 p-0">
-              <ContactLine icon={Mail} label={t("legal.contact.lines.email")} value={<Placeholder business label={t("legal.contact.lines.emailPlaceholder")} />} />
-              <ContactLine icon={Phone} label={t("legal.contact.lines.phone")} value={<Placeholder label={t("legal.contact.lines.phonePlaceholder")} />} />
-              <ContactLine icon={MapPin} label={t("legal.contact.lines.address")} value={<Placeholder label={t("legal.contact.lines.addressPlaceholder")} />} />
-              <ContactLine icon={Clock} label={t("legal.contact.lines.hours")} value={<Placeholder business label={t("legal.contact.lines.hoursPlaceholder")} />} />
-              <ContactLine icon={Timer} label={t("legal.contact.lines.response")} value={<Placeholder label={t("legal.contact.responseTimePlaceholder")} />} />
-            </ul>
-          </div>
+        <aside
+          aria-labelledby={showOther ? "contact-other" : undefined}
+          aria-label={showOther ? undefined : t("legal.contact.quickTitle")}
+          className="grid content-start gap-4"
+        >
+          {showOther && (
+            <div className="grid gap-4 rounded-[var(--radius-card)] border border-[var(--border-subtle)] bg-[var(--surface-card)] p-5">
+              <h2 id="contact-other" className="text-[length:var(--text-h4)]">
+                {t("legal.contact.otherTitle")}
+              </h2>
+              {store ? (
+                <StoreContactLines store={store} />
+              ) : (
+                <ul className="m-0 grid list-none gap-4 p-0">
+                  <ContactLine icon={Mail} label={t("legal.contact.lines.email")} value={<Placeholder business label={t("legal.contact.lines.emailPlaceholder")} />} />
+                  <ContactLine icon={Phone} label={t("legal.contact.lines.phone")} value={<Placeholder label={t("legal.contact.lines.phonePlaceholder")} />} />
+                  <ContactLine icon={MapPin} label={t("legal.contact.lines.address")} value={<Placeholder label={t("legal.contact.lines.addressPlaceholder")} />} />
+                  <ContactLine icon={Clock} label={t("legal.contact.lines.hours")} value={<Placeholder business label={t("legal.contact.lines.hoursPlaceholder")} />} />
+                  <ContactLine icon={Timer} label={t("legal.contact.lines.response")} value={<Placeholder label={t("legal.contact.responseTimePlaceholder")} />} />
+                </ul>
+              )}
+            </div>
+          )}
           <nav aria-label={t("legal.contact.quickTitle")} className="grid gap-1 rounded-[var(--radius-card)] bg-[var(--surface-sunken)] p-3">
             <span className="gt-eyebrow px-2 pb-1 pt-1">{t("legal.contact.quickTitle")}</span>
             {[
@@ -426,6 +444,65 @@ export function Contact() {
         </aside>
       </div>
     </LegalLayout>
+  );
+}
+
+/** The saved contact details the business chose to show; the form stays the main way in. */
+function StoreContactLines({ store }: { store: StoreDetails }) {
+  const { t, i18n } = useTranslation();
+  const lang = i18n.language;
+  const address = addressLines(store);
+  const message = supportMessageIn(store, lang);
+  const email = store.showEmail ? store.supportEmail.trim() : "";
+  const phone = store.showPhone ? store.phone.trim() : "";
+  return (
+    <ul className="m-0 grid list-none gap-4 p-0">
+      {email && (
+        <ContactLine
+          icon={Mail}
+          label={t("legal.contact.lines.email")}
+          value={
+            <a href={`mailto:${email}`} className="gt-legal-link">
+              {email}
+            </a>
+          }
+        />
+      )}
+      {phone && (
+        <ContactLine
+          icon={Phone}
+          label={t("legal.contact.lines.phone")}
+          value={
+            <a href={`tel:${phone.replace(/[^\d+]/g, "")}`} className="gt-legal-link">
+              {phone}
+            </a>
+          }
+        />
+      )}
+      {store.showAddress && address.length > 0 && (
+        <ContactLine
+          icon={MapPin}
+          label={t("legal.contact.lines.address")}
+          value={[...address, countryName(store.country, lang)].map((line) => (
+            <span key={line} className="block">
+              {line}
+            </span>
+          ))}
+        />
+      )}
+      {hasOpeningHours(store.hours) && (
+        <ContactLine
+          icon={Clock}
+          label={t("legal.contact.lines.hours")}
+          value={hoursSummary(store.hours, lang, t("legal.contact.closed")).map((line) => (
+            <span key={line} className="block tabular-nums">
+              {line}
+            </span>
+          ))}
+        />
+      )}
+      {message && <ContactLine icon={Timer} label={t("legal.contact.lines.response")} value={message} />}
+    </ul>
   );
 }
 

@@ -36,11 +36,11 @@ import { Eyebrow, RowSwitch, SettingsCard, StatusPill, focusRing } from "./Setti
  * uncomfortable answer "nothing, this zone is switched off".
  */
 
-let seq = 0;
-const newId = (prefix: string) => `${prefix}-new-${Date.now().toString(36)}-${++seq}`;
+/** New zones and rates get their final id here: the database keeps the one the browser chose. */
+const newId = () => crypto.randomUUID();
 
 const blankRate = (): ShippingRate => ({
-  id: newId("rate"),
+  id: newId(),
   kind: "standard",
   name: "",
   minDays: 2,
@@ -102,12 +102,12 @@ export function ShippingSection() {
     // live in one zone, and a copy going live by accident would double-list.
     const copy: ShippingZone = {
       ...zone,
-      id: newId("zone"),
+      id: newId(),
       name: t("settings.shipping.copyName", { name: zone.name }),
       countries: [],
       restOfWorld: false,
       active: false,
-      rates: zone.rates.map((r) => ({ ...r, id: newId("rate") })),
+      rates: zone.rates.map((r) => ({ ...r, id: newId() })),
     };
     setZones((all) => [...all, copy]);
     setSheet({ type: "zone", zone: copy, isNew: false });
@@ -143,7 +143,7 @@ export function ShippingSection() {
     setConfirm(null);
   };
 
-  const newZone = (): ShippingZone => ({ id: newId("zone"), name: "", countries: [], restOfWorld: false, active: true, rates: [] });
+  const newZone = (): ShippingZone => ({ id: newId(), name: "", countries: [], restOfWorld: false, active: true, rates: [] });
   const sheetZone = sheet?.type === "rate" ? zones.find((z) => z.id === sheet.zoneId) : undefined;
 
   return (

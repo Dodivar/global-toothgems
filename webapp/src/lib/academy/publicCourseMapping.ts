@@ -1,6 +1,6 @@
 import type { Localized } from "../../data/types";
 import { toMinorUnits } from "../catalog/money";
-import { COURSE_LEVELS, type CourseLevel, type PublicCourse, type PublicModule } from "./publicCourse";
+import { COURSE_CATEGORIES, COURSE_LEVELS, type CourseCategory, type CourseLevel, type PublicCourse, type PublicModule } from "./publicCourse";
 
 /**
  * Rows of the published Academy (`lib/academy/api.ts`) → `PublicCourse`.
@@ -22,6 +22,8 @@ export interface PublicCourseRow {
   short_description: string | null;
   description: string | null;
   level: string;
+  category?: string | null;
+  published_at?: string | null;
   duration_minutes: number;
   objectives: string[];
   requirements: string[];
@@ -102,6 +104,8 @@ const byPosition = <T extends { position: number }>(rows: T[] | null | undefined
   [...(rows ?? [])].sort((a, b) => a.position - b.position);
 
 const isLevel = (value: string): value is CourseLevel => (COURSE_LEVELS as readonly string[]).includes(value);
+const isCategory = (value: string | null | undefined): value is CourseCategory =>
+  value != null && (COURSE_CATEGORIES as readonly string[]).includes(value);
 
 /** Where a cover is served from: the public cover route, versioned so a replaced file is fetched again. */
 export function coverSrc(mediaId: string, updatedAt: string): string {
@@ -143,6 +147,9 @@ export function mapPublicCourse(row: PublicCourseRow, price: CoursePriceRow | un
     summary: optional(row.short_description, t?.short_description),
     description: optional(row.description, t?.description),
     level: isLevel(row.level) ? row.level : "all",
+    // The column's default, should a row ever carry a theme this build does not know.
+    category: isCategory(row.category) ? row.category : "technique",
+    publishedAt: row.published_at ?? null,
     minutes: row.duration_minutes,
     objectives: list(row.objectives, t?.objectives),
     requirements: list(row.requirements, t?.requirements),
@@ -158,7 +165,7 @@ export function mapPublicCourse(row: PublicCourseRow, price: CoursePriceRow | un
         }
       : null,
     modules: byPosition(row.course_modules).map(mapModule),
-    enrolment: "soon",
+    enrolment: "sale",
   };
 }
 

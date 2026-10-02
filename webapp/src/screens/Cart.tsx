@@ -3,7 +3,7 @@
 import { useEffect, useState } from "react";
 import { useTranslation } from "react-i18next";
 import { Link, useNavigate } from "../lib/navigation";
-import { ArrowRight, CheckCircle2, CircleAlert, Lock, Minus, Plus, ShoppingBag, Trash2, Truck, UserRound } from "lucide-react";
+import { ArrowRight, CheckCircle2, CircleAlert, Gift, GraduationCap, Lock, LogIn, Mail, Minus, Plus, ShoppingBag, Trash2, Truck, UserRound } from "lucide-react";
 import { Button } from "../components/ui/Button";
 import { Badge } from "../components/ui/Badge";
 import { DELIVERY_COUNTRIES, countryLabelKey } from "../data/countries";
@@ -18,6 +18,8 @@ import { DEFAULT_LOYALTY_STATE, LOYALTY_STATES } from "../data/loyalty";
 import { useCart } from "../lib/cart";
 import { useOrders } from "../lib/orders";
 import { useAuth } from "../lib/auth";
+import { useProgress } from "../lib/progress";
+import { LEARN_BASE } from "../lib/academyUrl";
 import { bestSellers } from "../data/products";
 import { useCatalog } from "../lib/catalog/CatalogProvider";
 import { toMajorUnits } from "../lib/catalog/money";
@@ -26,6 +28,10 @@ import { useFormat } from "../lib/format";
 import { isSupabaseConfigured } from "../lib/supabase/client";
 import { fetchShippingRates, startCheckout, type CheckoutError } from "../lib/checkout/api";
 import { buildCheckoutRequest, EMPTY_CHECKOUT_FORM, invalidFields, type CheckoutForm } from "../lib/checkout/checkoutForm";
+import { hasCourse, needsShipping, shippableSubtotal } from "../lib/checkout/cartLines";
+import { GiftCardVisual } from "../components/promotions/Visuals";
+import { GiftCardCodes } from "../components/shop/GiftCardCodes";
+import type { GiftCardDesign } from "../lib/giftCards/giftCardMapping";
 import {
   applicableRates,
   freeShippingThreshold,
@@ -70,11 +76,13 @@ export function Cart() {
   const { products } = useCatalog();
   const { placeOrder } = useOrders();
   const { signedIn } = useAuth();
+  const { reload: reloadCourses } = useProgress();
   const lang = i18n.language;
   const live = isSupabaseConfigured;
   const money = (minor: number) => formatPrice(toMajorUnits(minor));
 
   const [reference, setReference] = useState<string | null>(null);
+  const [boughtCourse, setBoughtCourse] = useState(false);
   const [saveInfo, setSaveInfo] = useState(true);
   const [form, setForm] = useState<CheckoutForm>(live ? EMPTY_CHECKOUT_FORM : MOCK_FORM);
   const [chosenRate, setChosenRate] = useState<string | null>(null);
@@ -82,11 +90,20 @@ export function Cart() {
   const [submitting, setSubmitting] = useState(false);
   const [showErrors, setShowErrors] = useState(false);
   const [checkoutError, setCheckoutError] = useState<CheckoutError | null>(null);
+  // Gift card codes are bearer credentials: kept in memory for this page only, never stored.
+  const [giftCodes, setGiftCodes] = useState<string[]>([]);
+  // Gift cards are sent by e-mail: a basket of gift cards only has no delivery to choose.
+  const shipped = needsShipping(lines);
+  const goods = shippableSubtotal(lines);
+  // A course opens on an account: the basket waits while the visitor signs in.
+  const courseInBasket = hasCourse(lines);
+  const accountMissing = live && courseInBasket && !signedIn;
 
   // Delivery rates of the destination's zone (public tables), read again when the country changes.
   const [ratesAttempt, setRatesAttempt] = useState(0);
   useEffect(() => {
-    if (!live) return;
+    // Nothing to ship (gift cards, courses): no rate to read.
+    if (!live || !shipped) return;
     let current = true;
     fetchShippingRates(form.country)
       .then((rows) => current && setRates({ country: form.country, status: "ready", rows }))
@@ -97,20 +114,20 @@ export function Cart() {
     return () => {
       current = false;
     };
-  }, [live, form.country, ratesAttempt]);
+  }, [live, shipped, form.country, ratesAttempt]);
 
-  const ratesReady = !live || (rates.status === "ready" && rates.country === form.country);
-  const ratesFailed = live && rates.status === "error" && rates.country === form.country;
+  const ratesReady = !live || !shipped || (rates.status === "ready" && rates.country === form.country);
+  const ratesFailed = live && shipped && rates.status === "error" && rates.country === form.country;
   const currency = lines[0]?.currency ?? "EUR";
-  const options: ShippingOption[] = ratesReady ? applicableRates(rates.rows, subtotal, currency) : [];
+  const options: ShippingOption[] = ratesReady && shipped ? applicableRates(rates.rows, goods, currency) : [];
   const rateId = pickRate(options, chosenRate);
   const selected = options.find((o) => o.id === rateId) ?? null;
   const shipping = selected?.price ?? 0;
   const total = subtotal + shipping;
-  const threshold = ratesReady ? freeShippingThreshold(rates.rows, currency) : null;
-  const remainingForFreeShipping = threshold === null ? null : Math.max(0, threshold - subtotal);
+  const threshold = ratesReady && shipped ? freeShippingThreshold(rates.rows, currency) : null;
+  const remainingForFreeShipping = threshold === null ? null : Math.max(0, threshold - goods);
 
-  const invalid = invalidFields(form, rateId);
+  const invalid = invalidFields(form, rateId, shipped);
   const steps = [t("cart.step0"), t("cart.step1"), t("cart.step2"), t("cart.step3")];
   const countryOptions = DELIVERY_COUNTRIES.map((c) => ({ value: c, label: t(countryLabelKey(c)) }));
 
@@ -123,7 +140,11 @@ export function Cart() {
 
   const pay = async () => {
     setCheckoutError(null);
-    if (invalid.length > 0 || !rateId) {
+    if (accountMissing) {
+      setCheckoutError("account_required");
+      return;
+    }
+    if (invalid.length > 0 || (shipped && !rateId)) {
       setShowErrors(true);
       return;
     }
@@ -133,7 +154,7 @@ export function Cart() {
       clearCart();
       return;
     }
-    const request = buildCheckoutRequest(lines, form, rateId, lang.startsWith("en") ? "en" : "fr");
+    const request = buildCheckoutRequest(lines, form, shipped ? rateId : null, lang.startsWith("en") ? "en" : "fr", giftCodes);
     if (!request) {
       setCheckoutError("unavailable");
       return;
@@ -148,7 +169,14 @@ export function Cart() {
     }
     setSubmitting(false);
     if (result.kind === "paid") {
+      // Entirely covered by gift cards: create_order() recorded the payment itself
+      // (and granted the courses it held).
       setReference(result.orderNumber);
+      if (courseInBasket) {
+        setBoughtCourse(true);
+        reloadCourses();
+      }
+      setGiftCodes([]);
       clearCart();
       return;
     }
@@ -166,12 +194,17 @@ export function Cart() {
           <h1 className="text-[length:var(--text-h1)]">{t("cart.confirmedTitle")}</h1>
           <p className="m-0 max-w-[480px] text-[length:var(--text-body-md)] text-[var(--text-body)]">
             {live ? t("checkout.paidBody") : t("cart.confirmedBody")}
+            {boughtCourse && ` ${t("checkout.course.paidBody")}`}
           </p>
           <p className="m-0 text-[length:var(--text-body-sm)] text-[var(--text-muted)]">
             {live ? t("checkout.reference", { reference }) : t("cart.confirmedReference", { reference })}
           </p>
           <div className="flex flex-wrap justify-center gap-3">
-            <Button variant="primary" onClick={() => navigate("/compte")}>{t("cart.confirmedOpenAccount")}</Button>
+            {boughtCourse ? (
+              <Button variant="primary" onClick={() => navigate(LEARN_BASE)}>{t("checkout.course.openCourses")}</Button>
+            ) : (
+              <Button variant="primary" onClick={() => navigate("/compte")}>{t("cart.confirmedOpenAccount")}</Button>
+            )}
             <Button variant="outline" onClick={() => navigate("/boutique")}>{t("cart.confirmedContinueShopping")}</Button>
           </div>
         </div>
@@ -215,9 +248,13 @@ export function Cart() {
   }
 
   const fieldError = (field: keyof CheckoutForm) => showErrors && invalid.includes(field);
-  const payLabel = selected ? t("cart.pay", { amount: money(total) }) : t("checkout.payNoShipping");
+  const payLabel = giftCodes.length > 0
+    ? t("checkout.giftCard.payWithCards")
+    : selected || !shipped
+      ? t("cart.pay", { amount: money(total) })
+      : t("checkout.payNoShipping");
   const payButton = (
-    <Button variant="primary" fullWidth size="lg" onClick={pay} loading={submitting} disabled={submitting || !ratesReady}>
+    <Button variant="primary" fullWidth size="lg" onClick={pay} loading={submitting} disabled={submitting || !ratesReady || accountMissing}>
       {payLabel}
     </Button>
   );
@@ -264,7 +301,7 @@ export function Cart() {
                     : t("cart.freeShippingReached")}
                 </span>
                 <ProgressBar
-                  value={Math.min(100, (subtotal / threshold) * 100)}
+                  value={Math.min(100, (goods / threshold) * 100)}
                   size="sm"
                   tone={remainingForFreeShipping > 0 ? "brand" : "emerald"}
                   showValue={false}
@@ -276,13 +313,23 @@ export function Cart() {
             <ul className="m-0 grid list-none gap-0 p-0">
               {lines.map((line) => (
                 <li key={line.id} className="flex flex-wrap items-center gap-4 border-b border-[var(--border-subtle)] py-4 last:border-0 last:pb-0">
-                  <img
-                    src={line.image}
-                    alt=""
-                    loading="lazy"
-                    decoding="async"
-                    className="h-16 w-16 flex-none rounded-[var(--radius-sm)] object-cover"
-                  />
+                  {line.giftCard ? (
+                    <span className="w-16 flex-none">
+                      <GiftCardVisual design={line.giftCard.design as GiftCardDesign} amountCents={line.unitPrice} size="sm" label="" />
+                    </span>
+                  ) : line.courseId && !line.image ? (
+                    <span aria-hidden="true" className="grid h-16 w-16 flex-none place-items-center rounded-[var(--radius-sm)] bg-[var(--gt-blue-100)] text-[var(--gt-blue-700)]">
+                      <GraduationCap size={24} />
+                    </span>
+                  ) : (
+                    <img
+                      src={line.image}
+                      alt=""
+                      loading="lazy"
+                      decoding="async"
+                      className="h-16 w-16 flex-none rounded-[var(--radius-sm)] object-cover"
+                    />
+                  )}
                   <div className="grid min-w-[150px] flex-1 gap-1">
                     <strong className="text-sm text-[var(--text-primary)]">{line.name}</strong>
                     {line.variant && <span className="text-xs text-[var(--text-muted)]">{line.variant}</span>}
@@ -296,11 +343,23 @@ export function Cart() {
                       {t("cart.remove")}
                     </button>
                   </div>
-                  <div className="flex items-center gap-1 rounded-[var(--radius-control)] border border-[var(--border-default)]">
-                    <IconButton icon={Minus} label={t("cart.decrease")} variant="ghost" size="sm" disabled={submitting} onClick={() => updateQty(line.id, Math.max(1, line.qty - 1))} />
-                    <span className="w-6 text-center text-sm font-semibold">{line.qty}</span>
-                    <IconButton icon={Plus} label={t("cart.increase")} variant="ghost" size="sm" disabled={submitting} onClick={() => updateQty(line.id, line.qty + 1)} />
-                  </div>
+                  {line.giftCard ? (
+                    <span className="inline-flex items-center gap-1.5 text-xs text-[var(--text-muted)]">
+                      <Mail size={13} aria-hidden="true" />
+                      {line.giftCard.deliverAt ? t("checkout.giftCard.scheduled") : t("checkout.giftCard.byEmail")}
+                    </span>
+                  ) : line.courseId ? (
+                    <span className="inline-flex items-center gap-1.5 text-xs text-[var(--text-muted)]">
+                      <GraduationCap size={13} aria-hidden="true" />
+                      {t("checkout.course.line")}
+                    </span>
+                  ) : (
+                    <div className="flex items-center gap-1 rounded-[var(--radius-control)] border border-[var(--border-default)]">
+                      <IconButton icon={Minus} label={t("cart.decrease")} variant="ghost" size="sm" disabled={submitting} onClick={() => updateQty(line.id, Math.max(1, line.qty - 1))} />
+                      <span className="w-6 text-center text-sm font-semibold">{line.qty}</span>
+                      <IconButton icon={Plus} label={t("cart.increase")} variant="ghost" size="sm" disabled={submitting} onClick={() => updateQty(line.id, line.qty + 1)} />
+                    </div>
+                  )}
                   <strong className="w-20 text-right text-sm text-[var(--text-primary)]" aria-label={t("cart.lineTotalAria")}>
                     {money(line.unitPrice * line.qty)}
                   </strong>
@@ -312,8 +371,26 @@ export function Cart() {
             <CheckoutLoyaltyBanner subtotal={toMajorUnits(subtotal)} state={LOYALTY_STATES[DEFAULT_LOYALTY_STATE]} />
           </section>
 
-          {/* Optional, never a wall: guest checkout stays the default. */}
-          {!signedIn && (
+          {/* A course is the one thing that needs an account; otherwise
+              an account stays optional, never a wall. */}
+          {accountMissing && (
+            <section className="grid gap-3 rounded-[var(--radius-card)] border border-[var(--gt-blue-300)] bg-[var(--surface-brand-wash-strong)] p-[var(--space-6)]">
+              <h2 className="flex items-center gap-2 text-[length:var(--text-h4)]">
+                <GraduationCap size={18} aria-hidden="true" className="flex-none text-[var(--gt-blue-700)]" />
+                {t("checkout.course.accountTitle")}
+              </h2>
+              <p className="m-0 text-sm text-[var(--text-body)]">{t("checkout.course.accountBody")}</p>
+              <div className="flex flex-wrap gap-3">
+                <Button variant="primary" iconLeft={LogIn} onClick={() => navigate("/connexion", { state: { from: "/panier" } })}>
+                  {t("checkout.course.signIn")}
+                </Button>
+                <Button variant="outline" onClick={() => navigate("/inscription?contexte=achat")}>
+                  {t("checkout.course.createAccount")}
+                </Button>
+              </div>
+            </section>
+          )}
+          {!signedIn && !courseInBasket && (
             <Link
               to="/inscription?contexte=achat"
               className="group flex items-center gap-4 rounded-[var(--radius-card)] border border-[var(--gt-blue-200)] bg-[var(--surface-brand-wash-strong)] p-4 transition-colors hover:border-[var(--gt-blue-400)]"
@@ -352,6 +429,19 @@ export function Cart() {
             )}
           </section>
 
+          {!shipped ? (
+            <section className="grid gap-2 rounded-[var(--radius-card)] border border-[var(--border-subtle)] bg-[var(--surface-card)] p-[var(--space-6)]">
+              <h2 className="text-[length:var(--text-h3)]">{t("checkout.shippingTitle")}</h2>
+              <p className="m-0 flex items-start gap-2 text-sm text-[var(--text-body)]">
+                {courseInBasket ? (
+                  <GraduationCap size={16} aria-hidden="true" className="mt-0.5 flex-none" />
+                ) : (
+                  <Gift size={16} aria-hidden="true" className="mt-0.5 flex-none" />
+                )}
+                {t("checkout.noShipping")}
+              </p>
+            </section>
+          ) : (
           <section className="grid gap-4 rounded-[var(--radius-card)] border border-[var(--border-subtle)] bg-[var(--surface-card)] p-[var(--space-6)]">
             <h2 className="text-[length:var(--text-h3)]">{t("checkout.shippingTitle")}</h2>
             {!ratesReady && !ratesFailed && (
@@ -397,6 +487,19 @@ export function Cart() {
               </fieldset>
             )}
           </section>
+          )}
+
+          {live && (
+            <GiftCardCodes
+              codes={giftCodes}
+              onChange={(codes) => {
+                setGiftCodes(codes);
+                if (checkoutError === "gift_card_invalid") setCheckoutError(null);
+              }}
+              disabled={submitting}
+              refused={checkoutError === "gift_card_invalid"}
+            />
+          )}
 
           <section className="grid gap-3 rounded-[var(--radius-card)] border border-[var(--border-subtle)] bg-[var(--surface-card)] p-[var(--space-6)]">
             <h2 className="text-[length:var(--text-h3)]">{t("cart.paymentTitle")}</h2>
@@ -417,7 +520,9 @@ export function Cart() {
             </div>
             <div className="flex justify-between text-[var(--text-body)]">
               <span>{t("cart.shipping")}</span>
-              {selected ? (
+              {!shipped ? (
+                <span>{courseInBasket ? t("checkout.course.noDelivery") : t("checkout.giftCard.emailDelivery")}</span>
+              ) : selected ? (
                 <span className={shipping === 0 ? "font-semibold text-[var(--status-success-fg)]" : undefined}>
                   {shipping === 0 ? t("cart.shippingFree") : money(shipping)}
                 </span>
@@ -429,6 +534,13 @@ export function Cart() {
               <span>{t("cart.total")}</span>
               <span>{money(total)}</span>
             </div>
+            {giftCodes.length > 0 && (
+              // Balances are never read by the browser: the database applies the cards and computes what is left to pay.
+              <p className="m-0 flex items-start gap-2 rounded-[var(--radius-md)] bg-[var(--surface-brand-wash)] px-3 py-2 text-xs text-[var(--gt-blue-700)]">
+                <Gift size={14} aria-hidden="true" className="mt-0.5 flex-none" />
+                {t("checkout.giftCard.summary", { count: giftCodes.length })}
+              </p>
+            )}
           </div>
           <div className="hidden gap-3 lg:grid">
             {alerts}

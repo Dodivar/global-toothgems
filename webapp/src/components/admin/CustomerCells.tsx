@@ -1,6 +1,14 @@
 import { useTranslation } from "react-i18next";
 import clsx from "clsx";
-import { avatarTint, customerInitials, customerName, type AdminCustomerRecord } from "../../data/adminCustomers";
+import { useFormat } from "../../lib/format";
+import {
+  avatarTint,
+  customerInitials,
+  customerName,
+  customerShortId,
+  toDate,
+  type AdminCustomerRecord,
+} from "../../data/adminCustomers";
 
 /**
  * The repeated fragments of the customer table.
@@ -56,7 +64,7 @@ export function IdentityCell({
         <span className="truncate font-semibold text-[var(--text-primary)]">{customerName(customer)}</span>
         <span className="truncate text-[11px] uppercase tracking-[var(--tracking-wide)] text-[var(--text-subtle)]">
           {t("admin.customers.idPrefix")}
-          {customer.id}
+          {customerShortId(customer)}
         </span>
       </span>
     </span>
@@ -82,26 +90,22 @@ export function ContactCell({ customer }: { customer: AdminCustomerRecord }) {
       >
         {customer.email}
       </a>
-      <a
-        href={`tel:${customer.phone.replace(/\s/g, "")}`}
-        onClick={(event) => event.stopPropagation()}
-        className="w-fit whitespace-nowrap text-[11px] tabular-nums text-[var(--text-muted)] transition-colors hover:text-[var(--text-primary)] focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-[var(--focus-ring)]"
-      >
-        {customer.phone}
-      </a>
+      {customer.phone ? (
+        <a
+          href={`tel:${customer.phone.replace(/\s/g, "")}`}
+          onClick={(event) => event.stopPropagation()}
+          className="w-fit whitespace-nowrap text-[11px] tabular-nums text-[var(--text-muted)] transition-colors hover:text-[var(--text-primary)] focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-[var(--focus-ring)]"
+        >
+          {customer.phone}
+        </a>
+      ) : (
+        <span className="text-[11px] text-[var(--text-subtle)]">—</span>
+      )}
     </span>
   );
 }
 
-/**
- * Order count over the date of the last order in the book.
- *
- * The count is the lifetime figure and the date comes from the current book, so
- * they are never presented as the same fact: "6 orders" sits above "last 14
- * Sep", and a customer whose recent orders are all outside the eleven-day
- * window shows the count with a dash under it rather than a date that would
- * imply they had stopped buying.
- */
+/** Order count over the date of the last order, both from the order book. */
 export function OrdersCell({
   customer,
   lastOrder,
@@ -124,12 +128,26 @@ export function OrdersCell({
       <span className="whitespace-nowrap text-[11px] text-[var(--text-muted)]">
         {lastOrder
           ? t("admin.customers.lastOrderShort", {
-              date: new Intl.DateTimeFormat(locale, { day: "2-digit", month: "short" }).format(
-                new Date(`${lastOrder}:00`),
-              ),
+              date: new Intl.DateTimeFormat(locale, { day: "2-digit", month: "short" }).format(toDate(lastOrder)),
             })
           : "—"}
       </span>
+    </span>
+  );
+}
+
+/**
+ * Net spend, one line per currency (amounts in different currencies are never
+ * added), or a dash when nothing was spent.
+ */
+export function SpendValue({ customer }: { customer: AdminCustomerRecord }) {
+  const { formatMoney } = useFormat();
+  if (customer.spend.length === 0) return <span className="font-normal text-[var(--text-subtle)]">—</span>;
+  return (
+    <span className="inline-grid tabular-nums">
+      {customer.spend.map((s) => (
+        <span key={s.currency}>{formatMoney(s.amount, s.currency)}</span>
+      ))}
     </span>
   );
 }

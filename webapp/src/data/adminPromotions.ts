@@ -1,7 +1,8 @@
 import type { Localized } from "./types";
 
 /**
- * Mock data behind the Promotions & Gift Cards workspace.
+ * Mock data behind the Promotions workspace (promotions and campaigns). Gift
+ * cards left this file for their live domain (`lib/giftCards/`).
  *
  * Like `adminCatalog.ts`, this file is the seam a real backend replaces: the
  * screens only read the types declared here and call the store in
@@ -9,14 +10,12 @@ import type { Localized } from "./types";
  *
  * Two rules shape it:
  *
- * - **Money is integer cents.** Gift card balances are the one place in the
- *   prototype where amounts are added and subtracted, so they follow the money
- *   rule in `AGENTS.md` rather than the catalogue's plain euros.
+ * - **Money is integer cents**, following the money rule in `AGENTS.md`.
  * - **Status is derived, never stored.** A promotion stores its lifecycle
  *   (draft, live, paused, archived) and its dates; "active", "scheduled" and
  *   "expired" are read off the calendar against `PROMO_NOW`. A badge can
  *   therefore never disagree with the schedule printed beside it. The same goes
- *   for campaigns and for gift card balances, which are the sum of their ledger.
+ *   for campaigns.
  */
 
 /**
@@ -225,81 +224,6 @@ export interface Campaign {
 }
 
 /* -------------------------------------------------------------------------- */
-/* Gift cards                                                                 */
-/* -------------------------------------------------------------------------- */
-
-export type GiftCardDesign = "sparkle" | "blush" | "noir" | "mint" | "photo";
-export const GIFT_CARD_DESIGNS: GiftCardDesign[] = ["sparkle", "blush", "noir", "mint", "photo"];
-
-export type GiftCardStatus = "active" | "partiallyRedeemed" | "redeemed" | "scheduled" | "expired" | "cancelled";
-export const GIFT_CARD_STATUSES: GiftCardStatus[] = [
-  "active",
-  "partiallyRedeemed",
-  "redeemed",
-  "scheduled",
-  "expired",
-  "cancelled",
-];
-
-export type DeliveryStatus = "delivered" | "opened" | "scheduled" | "bounced";
-export const DELIVERY_STATUSES: DeliveryStatus[] = ["delivered", "opened", "scheduled", "bounced"];
-
-export interface GiftCardTransaction {
-  id: string;
-  kind: "purchase" | "redemption" | "adjustment" | "extension" | "cancellation" | "resend";
-  /** Signed: + credits the card, − spends it. Zero for events that move no money. */
-  amountCents: number;
-  at: string;
-  actor: string;
-  orderRef?: string;
-  note?: string;
-}
-
-export interface GiftCard {
-  code: string;
-  recipientName: string;
-  recipientEmail: string;
-  purchaserName: string;
-  purchaserEmail: string;
-  senderName: string;
-  message: string;
-  design: GiftCardDesign;
-  purchasedAt: string;
-  deliverAt: string;
-  expiresAt: string;
-  orderRef: string;
-  cancelled: boolean;
-  delivery: DeliveryStatus;
-  ledger: GiftCardTransaction[];
-}
-
-/** The storefront product — what a customer configures on `/carte-cadeau`. */
-export interface GiftCardProductConfig {
-  title: Localized;
-  description: Localized;
-  /** Ordered, in cents. Order is the order on the storefront. */
-  amounts: number[];
-  allowCustomAmount: boolean;
-  minCents: number;
-  maxCents: number;
-  /** Months of validity; null means the card does not expire. */
-  expiryMonths: number | null;
-  allowScheduledDelivery: boolean;
-  fields: {
-    recipientName: FieldMode;
-    recipientEmail: FieldMode;
-    senderName: FieldMode;
-    message: FieldMode;
-  };
-  messageMaxLength: number;
-  designs: { id: GiftCardDesign; enabled: boolean }[];
-  defaultDesign: GiftCardDesign;
-  published: boolean;
-}
-
-export type FieldMode = "required" | "optional" | "hidden";
-
-/* -------------------------------------------------------------------------- */
 /* Derivations                                                                */
 /* -------------------------------------------------------------------------- */
 
@@ -329,24 +253,6 @@ export function campaignStatus(c: Pick<Campaign, "lifecycle" | "startsAt" | "end
   if (c.lifecycle === "paused") return "paused";
   if (toTime(c.startsAt) > now) return "scheduled";
   return "active";
-}
-
-export function giftCardBalance(card: GiftCard): number {
-  return card.ledger.reduce((sum, tx) => sum + tx.amountCents, 0);
-}
-
-/** What the card was worth at purchase — the first ledger line. */
-export function giftCardInitial(card: GiftCard): number {
-  return card.ledger.find((tx) => tx.kind === "purchase")?.amountCents ?? 0;
-}
-
-export function giftCardStatus(card: GiftCard, now = NOW_TIME): GiftCardStatus {
-  if (card.cancelled) return "cancelled";
-  const balance = giftCardBalance(card);
-  if (balance <= 0) return "redeemed";
-  if (toTime(card.expiresAt) < now) return "expired";
-  if (toTime(card.deliverAt) > now) return "scheduled";
-  return balance < giftCardInitial(card) ? "partiallyRedeemed" : "active";
 }
 
 /** Days between two stored dates, rounded. */
@@ -914,285 +820,6 @@ export const SEED_CAMPAIGNS: Campaign[] = [
     updatedAt: "2027-05-02T10:00:00+02:00",
   },
 ];
-
-/* -------------------------------------------------------------------------- */
-/* Seed: gift cards                                                           */
-/* -------------------------------------------------------------------------- */
-
-let txSeq = 0;
-function tx(
-  kind: GiftCardTransaction["kind"],
-  euros: number,
-  at: string,
-  extra: Partial<GiftCardTransaction> = {},
-): GiftCardTransaction {
-  return { id: `tx-${++txSeq}`, kind, amountCents: Math.round(euros * 100), at, actor: "Client", ...extra };
-}
-
-interface CardSeed {
-  code: string;
-  to: [string, string];
-  from: [string, string];
-  sender?: string;
-  value: number;
-  bought: string;
-  deliver?: string;
-  months?: number;
-  design: GiftCardDesign;
-  order: string;
-  message: string;
-  spend?: [number, string, string][];
-  delivery?: DeliveryStatus;
-  cancelled?: boolean;
-  extra?: GiftCardTransaction[];
-}
-
-function addMonths(date: string, months: number): string {
-  const d = new Date(`${date.slice(0, 10)}T12:00:00Z`);
-  d.setUTCMonth(d.getUTCMonth() + months);
-  return `${d.toISOString().slice(0, 10)}T23:59`;
-}
-
-function card(seed: CardSeed): GiftCard {
-  const deliverAt = seed.deliver ?? seed.bought;
-  return {
-    code: seed.code,
-    recipientName: seed.to[0],
-    recipientEmail: seed.to[1],
-    purchaserName: seed.from[0],
-    purchaserEmail: seed.from[1],
-    senderName: seed.sender ?? seed.from[0].split(" ")[0],
-    message: seed.message,
-    design: seed.design,
-    purchasedAt: seed.bought,
-    deliverAt,
-    expiresAt: addMonths(deliverAt, seed.months ?? 12),
-    orderRef: seed.order,
-    cancelled: seed.cancelled ?? false,
-    delivery: seed.delivery ?? "opened",
-    ledger: [
-      tx("purchase", seed.value, seed.bought, { actor: seed.from[0], orderRef: seed.order }),
-      ...(seed.spend ?? []).map(([amount, at, order]) => tx("redemption", -amount, at, { actor: seed.to[0], orderRef: order })),
-      ...(seed.extra ?? []),
-    ],
-  };
-}
-
-export const SEED_GIFT_CARDS: GiftCard[] = [
-  card({
-    code: "GTGC-7K2M-Q9XA",
-    to: ["Jade Lefèvre", "jade.lefevre@gmail.com"],
-    from: ["Manon Lefèvre", "manon.lefevre@orange.fr"],
-    value: 100,
-    bought: "2027-09-02T18:24",
-    design: "sparkle",
-    order: "GT-11702",
-    message: "Joyeux anniversaire ma sœur ! Fais-toi plaisir avec une nouvelle gem ✨",
-    spend: [
-      [35, "2027-09-14T11:02", "GT-11758"],
-      [20, "2027-10-21T16:40", "GT-11869"],
-    ],
-  }),
-  card({
-    code: "GTGC-3PLV-8HRD",
-    to: ["Aisling Byrne", "aisling.byrne@eircom.net"],
-    from: ["Ciara Byrne", "ciara.byrne@gmail.com"],
-    value: 50,
-    bought: "2027-11-18T09:15",
-    design: "blush",
-    order: "GT-11941",
-    message: "For your first gem — you’ve been talking about it all year!",
-  }),
-  card({
-    code: "GTGC-X4TN-2WQE",
-    to: ["Hannah Weber", "hannah.weber@web.de"],
-    from: ["Studio Glanz", "hallo@studio-glanz.de"],
-    sender: "Team Studio Glanz",
-    value: 200,
-    bought: "2027-06-11T14:00",
-    design: "noir",
-    order: "GT-11420",
-    message: "Danke für ein großartiges erstes Jahr im Studio!",
-    spend: [
-      [120, "2027-06-20T10:18", "GT-11455"],
-      [80, "2027-08-03T15:27", "GT-11561"],
-    ],
-  }),
-  card({
-    code: "GTGC-9DFB-6YUK",
-    to: ["Léa Martin", "lea.martin@gmail.com"],
-    from: ["Thomas Martin", "thomas.martin@free.fr"],
-    value: 75,
-    bought: "2027-11-20T21:47",
-    deliver: "2027-12-24T08:00",
-    design: "mint",
-    order: "GT-11960",
-    message: "Joyeux Noël mon amour. Rendez-vous chez ton artiste préférée 💎",
-    delivery: "scheduled",
-  }),
-  card({
-    code: "GTGC-5RMA-1ZCT",
-    to: ["Clara Vidal", "clara.vidal@studio-vidal.fr"],
-    from: ["Nora Benali", "nora.benali@hotmail.fr"],
-    value: 25,
-    bought: "2026-10-03T12:30",
-    design: "sparkle",
-    order: "GT-10512",
-    message: "Merci pour la formation, tu es une super coach !",
-    delivery: "opened",
-  }),
-  card({
-    code: "GTGC-2HQS-7NVP",
-    to: ["Sofia Rossi", "sofia.rossi@libero.it"],
-    from: ["Giulia Rossi", "giulia.rossi@gmail.com"],
-    value: 150,
-    bought: "2027-11-10T17:05",
-    design: "photo",
-    order: "GT-11903",
-    message: "Tanti auguri! Un piccolo gioiello per il tuo sorriso.",
-    spend: [[42, "2027-11-19T13:33", "GT-11952"]],
-  }),
-  card({
-    code: "GTGC-8WEX-4LJG",
-    to: ["Inès Morel", "ines.morel@laposte.net"],
-    from: ["Camille Morel", "camille.morel@gmail.com"],
-    value: 50,
-    bought: "2027-11-22T10:12",
-    design: "blush",
-    order: "GT-11968",
-    message: "Pour ton premier tooth gem, avec tout mon amour.",
-    delivery: "bounced",
-  }),
-  card({
-    code: "GTGC-6BYR-3KDM",
-    to: ["Lucas Petit", "lucas.petit@outlook.fr"],
-    from: ["Emma Petit", "emma.petit@gmail.com"],
-    value: 100,
-    bought: "2027-07-14T19:40",
-    design: "noir",
-    order: "GT-11503",
-    message: "Bon anniversaire ! On ira ensemble au studio 😉",
-    cancelled: true,
-    delivery: "delivered",
-    extra: [
-      tx("cancellation", -100, "2027-07-15T09:30", {
-        actor: "Camille Dubois",
-        note: "Commande remboursée à la demande de l’acheteuse (erreur de destinataire).",
-      }),
-    ],
-  }),
-  card({
-    code: "GTGC-4TUP-9QWS",
-    to: ["Maëlle Garnier", "maelle.garnier@icloud.com"],
-    from: ["Studio Éclat", "contact@studio-eclat.fr"],
-    sender: "L’équipe Studio Éclat",
-    value: 200,
-    bought: "2027-10-01T10:00",
-    design: "sparkle",
-    order: "GT-11790",
-    message: "Bienvenue dans l’équipe ! Pour ton premier kit.",
-    spend: [
-      [89, "2027-10-04T14:10", "GT-11801"],
-      [32, "2027-11-02T11:45", "GT-11884"],
-    ],
-    extra: [
-      tx("adjustment", 15, "2027-11-03T09:20", {
-        actor: "Inès Moreau",
-        note: "Geste commercial : colis livré avec 5 jours de retard.",
-      }),
-    ],
-  }),
-  card({
-    code: "GTGC-1NZH-5EFA",
-    to: ["Élodie Blanc", "elodie.blanc@gmail.com"],
-    from: ["Julie Blanc", "julie.blanc@yahoo.fr"],
-    value: 25,
-    bought: "2027-11-23T20:18",
-    design: "mint",
-    order: "GT-11973",
-    message: "Un petit rien qui brille, juste parce que.",
-    delivery: "delivered",
-  }),
-  card({
-    code: "GTGC-7CVL-8RTB",
-    to: ["Amélie Roux", "amelie.roux@sfr.fr"],
-    from: ["Paul Roux", "paul.roux@gmail.com"],
-    value: 100,
-    bought: "2027-02-10T08:55",
-    design: "blush",
-    order: "GT-11112",
-    message: "Bonne Saint-Valentin ❤️",
-    spend: [[100, "2027-02-18T17:02", "GT-11139"]],
-  }),
-  card({
-    code: "GTGC-3JMW-6PXN",
-    to: ["Noémie Faure", "noemie.faure@gmail.com"],
-    from: ["Chloé Faure", "chloe.faure@orange.fr"],
-    value: 75,
-    bought: "2026-11-05T15:20",
-    design: "noir",
-    order: "GT-10598",
-    message: "Pour ton diplôme d’artiste !",
-    spend: [[30, "2027-01-12T10:30", "GT-10877"]],
-  }),
-  card({
-    code: "GTGC-9KSD-2VHY",
-    to: ["Zoé Lambert", "zoe.lambert@gmail.com"],
-    from: ["Hugo Lambert", "hugo.lambert@proton.me"],
-    value: 150,
-    bought: "2027-11-21T22:31",
-    deliver: "2027-12-01T09:00",
-    design: "photo",
-    order: "GT-11964",
-    message: "Un avant-goût de Noël. Je t’aime.",
-    delivery: "scheduled",
-  }),
-  card({
-    code: "GTGC-5GWQ-4MBE",
-    to: ["Sarah Cohen", "sarah.cohen@gmail.com"],
-    from: ["Rebecca Cohen", "rebecca.cohen@gmail.com"],
-    value: 50,
-    bought: "2027-08-19T13:14",
-    design: "sparkle",
-    order: "GT-11588",
-    message: "Pour ton sourire, le plus beau du monde.",
-    spend: [[18, "2027-09-30T18:05", "GT-11782"]],
-  }),
-];
-
-/* -------------------------------------------------------------------------- */
-/* Seed: gift card product                                                    */
-/* -------------------------------------------------------------------------- */
-
-export const SEED_GIFT_CARD_CONFIG: GiftCardProductConfig = {
-  title: { fr: "Carte cadeau Global Toothgems", en: "Global Toothgems gift card" },
-  description: {
-    fr: "Une carte cadeau livrée par e-mail, à dépenser en une ou plusieurs fois sur les gems, les kits et les formations éligibles.",
-    en: "A gift card delivered by email, to spend in one go or several on eligible gems, kits and trainings.",
-  },
-  amounts: [2500, 5000, 7500, 10000, 15000, 20000],
-  allowCustomAmount: true,
-  minCents: 1500,
-  maxCents: 50000,
-  expiryMonths: 12,
-  allowScheduledDelivery: true,
-  fields: {
-    recipientName: "required",
-    recipientEmail: "required",
-    senderName: "required",
-    message: "optional",
-  },
-  messageMaxLength: 240,
-  designs: [
-    { id: "sparkle", enabled: true },
-    { id: "blush", enabled: true },
-    { id: "noir", enabled: true },
-    { id: "mint", enabled: true },
-    { id: "photo", enabled: false },
-  ],
-  defaultDesign: "sparkle",
-  published: true,
-};
 
 /* -------------------------------------------------------------------------- */
 /* Helpers                                                                    */

@@ -34,6 +34,8 @@ export interface OrderItemRow {
   quantity: number;
   /** The product as it is now, for the link and the photo. Null once deleted. */
   product: { slug: string } | null;
+  /** The Academy course of a course line, for the link (null when not a course line, or not readable). */
+  course?: { slug: string } | null;
 }
 
 export interface CustomerOrderItemRow extends OrderItemRow {
@@ -123,7 +125,8 @@ export const CUSTOMER_ORDER_SELECT = `
   subtotal_amount, discount_amount, shipping_amount, tax_amount, total_amount,
   gift_card_amount, amount_due, prices_include_tax, shipping_method_name,
   billing_address, shipping_address,
-  order_items ( id, product_name, variant_name, unit_price, quantity, discount_amount, product:products ( slug ) ),
+  order_items ( id, product_name, variant_name, unit_price, quantity, discount_amount, product:products ( slug ),
+                course:courses ( slug ) ),
   order_discounts ( label, code, goods_amount, shipping_amount ),
   shipments ( id, status, carrier, service, tracking_number, tracking_url, estimated_delivery,
               shipped_at, delivered_at, created_at, shipment_items ( order_item_id, quantity ) ),
@@ -233,6 +236,7 @@ export function mapCustomerLine(
   return {
     id: row.id,
     productId: product ? slug : undefined,
+    courseId: row.course?.slug ?? undefined,
     name: { fr: row.product_name, en: row.product_name },
     variant: row.variant_name ? { fr: row.variant_name, en: row.variant_name } : undefined,
     image: product?.image ?? "",

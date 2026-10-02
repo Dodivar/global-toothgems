@@ -14,6 +14,8 @@ function row(overrides: Partial<PublicCourseRow> = {}): PublicCourseRow {
     short_description: "Les bases",
     description: null,
     level: "beginner",
+    category: "hygiene",
+    published_at: "2026-10-01T09:00:00Z",
     duration_minutes: 95,
     objectives: ["Poser", " ", "Retirer"],
     requirements: [],
@@ -130,8 +132,16 @@ describe("mapPublicCourse", () => {
   });
 
   it("is never enrollable before courses are sold", () => {
-    expect(mapPublicCourse(row(), undefined).enrolment).toBe("soon");
+    expect(mapPublicCourse(row(), undefined).enrolment).toBe("sale");
     expect(mapPublicCourse(row({ level: "expert" }), undefined).level).toBe("all");
+  });
+
+  it("keeps the theme and the publication date, defaulting an unknown theme", () => {
+    const course = mapPublicCourse(row(), undefined);
+    expect(course.category).toBe("hygiene");
+    expect(course.publishedAt).toBe("2026-10-01T09:00:00Z");
+    expect(mapPublicCourse(row({ category: "astrology" }), undefined).category).toBe("technique");
+    expect(mapPublicCourse(row({ category: null, published_at: null }), undefined)).toMatchObject({ category: "technique", publishedAt: null });
   });
 
   it("matches prices to their course", () => {

@@ -372,7 +372,7 @@ Newest first. For each session: what changed, the commands run and their real re
 ### 2026-10-01 — Academy phase B: course pages on the database
 
 - The Academy catalogue, course sales pages, home band and the header's and footer's Academy entries read the published courses (`src/lib/academy/`: mapping + tests, server cache shared with the catalogue's 60 s, tag `academy`, a client store seeded by the root layout on every public page; mock mode keeps the fixtures). Course pages follow the product pages' rules (per-language slug, 308, 404, own head, Course JSON-LD, sitemap). Covers come from the private bucket through `app/media/formations/[id]/route.ts` (publishable key; excluded from the proxy matcher). Slug translation for links and the language switch now combines products and courses (`src/lib/navigation/slugs.ts`).
-- Tests: `locale.spec.ts` (course head and JSON-LD, sitemap, 404 in mock mode), `auth-server.spec.ts` (fake Supabase publishes one course: 308/404, head, outline, "enrolment opens soon", cover route, language switch), `auth-cache.spec.ts` (courses read once per cache lifetime).
+- Tests: `locale.spec.ts` (course head and JSON-LD, sitemap, 404 in mock mode), `auth-server.spec.ts` (fake Supabase publishes one course: 308/404, head, outline, "Buy this course" then the cart asking a visitor to sign in, cover route, language switch), `auth-cache.spec.ts` (courses read once per cache lifetime).
 
 ### 2026-10-01 — After phase 5: Studio aliases dropped, back office refused to non-staff
 

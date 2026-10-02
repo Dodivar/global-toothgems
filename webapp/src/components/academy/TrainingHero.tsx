@@ -6,7 +6,6 @@ import { Badge } from "../ui/Badge";
 import { Button } from "../ui/Button";
 import { ProgressBar } from "../ui/ProgressBar";
 import { MetaPill } from "./TrainingPrimitives";
-import { EnrolmentSoon } from "./EnrolmentSoon";
 import { pick } from "../../data/types";
 import { isDiscounted, lessonCount, type PublicCourse } from "../../lib/academy/publicCourse";
 import type { CourseProgress } from "../../lib/progress";
@@ -33,7 +32,8 @@ export function TrainingHero({
   moduleCount,
   ctaRef,
   onStart,
-  holder = false,
+  ctaLabel,
+  ctaBusy = false,
   onExploreCurriculum,
 }: {
   course: PublicCourse;
@@ -44,23 +44,17 @@ export function TrainingHero({
   /** Watched by the page so the sticky mobile bar only appears once this scrolls away. */
   ctaRef: RefObject<HTMLDivElement | null>;
   onStart: () => void;
-  /** The signed-in member holds this course: the button opens it instead of "enrolment opens soon". */
-  holder?: boolean;
+  /** The page's call to action (buy, open, resume…), decided by the page; null: none. */
+  ctaLabel: string | null;
+  /** The member's courses are still being read: the button waits rather than offer a purchase they may not need. */
+  ctaBusy?: boolean;
   onExploreCurriculum: () => void;
 }) {
   const { formatMoney, formatDate } = useFormat();
   const { t } = useTranslation();
   const title = pick(course.title, lang);
   const level = t(`academy.levels.${course.level}`);
-  const demo = course.enrolment === "demo";
-  const canStart = demo || holder;
   const discounted = isDiscounted(course);
-
-  const startLabel = progress.completed
-    ? t("training.ctaReview")
-    : progress.enrolled
-      ? t("training.ctaResume")
-      : t("training.ctaStart");
 
   const included = [course.issuesCertificate && t("training.heroCardItem1"), t("training.heroCardItem2"), t("training.heroCardItem3")].filter(
     (item): item is string => Boolean(item),
@@ -191,9 +185,9 @@ export function TrainingHero({
                 </span>
               </div>
               <div className="flex flex-wrap gap-3">
-                {canStart && (
-                  <Button variant="primary" size="lg" onClick={onStart}>
-                    {startLabel}
+                {ctaLabel && (
+                  <Button variant="primary" size="lg" onClick={onStart} loading={ctaBusy} disabled={ctaBusy}>
+                    {ctaLabel}
                   </Button>
                 )}
                 <Button variant="ghost" size="lg" iconLeft={PlayCircle} onClick={onExploreCurriculum}>
@@ -202,9 +196,7 @@ export function TrainingHero({
               </div>
             </div>
 
-            {!canStart && <EnrolmentSoon />}
-
-            {demo && !signedIn && (
+            {!signedIn && (
               <p className="m-0 flex items-center gap-2 text-[length:var(--text-body-sm)] text-[var(--text-muted)]">
                 <Lock size={14} aria-hidden="true" />
                 <span>

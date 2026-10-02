@@ -245,7 +245,7 @@ test.describe("course pages", () => {
     expect((await request.get("/en/academy/course/n-existe-pas")).status()).toBe(404);
   });
 
-  test("the page is the course's: head, structured data, price, outline, no fake enrolment", async ({ request }) => {
+  test("the page is the course's: head, structured data, price, outline, a real purchase", async ({ request }) => {
     const html = await (await request.get("/en/academy/course/essential-placement")).text();
     expect(html).toContain("<title>Essential placement · Global Toothgems</title>");
     expect(html).toContain('<meta name="description" content="The basic moves, step by step."/>');
@@ -258,12 +258,32 @@ test.describe("course pages", () => {
     expect(html).toContain("€240");
     expect(html).toContain("Prepare the enamel");
     expect(html).toContain("Pass mark 80%");
-    expect(html).toContain("Enrolment opens soon");
+    // Sold through the cart (phase D), never a fake enrolment.
+    expect(html).toContain("Buy this course");
     expect(html).not.toContain("Start this training");
 
     const sitemap = await (await request.get("/sitemap.xml")).text();
     expect(sitemap).toMatch(/<loc>[^<]*\/fr\/academy\/formation\/pose-essentielle<\/loc>/);
     expect(sitemap).toMatch(/<loc>[^<]*\/en\/academy\/course\/essential-placement<\/loc>/);
+  });
+
+  test("buying puts one seat in the cart, which asks a visitor to sign in", async ({ page }) => {
+    const problems: string[] = [];
+    await page.route(/fonts\.(googleapis|gstatic)\.com/, (route) => route.fulfill({ status: 200, body: "", contentType: "text/css" }));
+    page.on("console", (message) => {
+      if (message.type() === "error") problems.push(`console: ${message.text()}`);
+    });
+    page.on("pageerror", (error) => problems.push(`exception: ${error.message}`));
+    await page.goto("/fr/academy/formation/pose-essentielle");
+    await page.waitForLoadState("networkidle");
+    await page.getByRole("button", { name: "Acheter la formation" }).first().click();
+    await expect(page).toHaveURL((url) => url.pathname === "/fr/panier");
+    await expect(page.getByText("Pose essentielle").first()).toBeVisible();
+    await expect(page.getByRole("heading", { name: "Connectez-vous pour acheter une formation" })).toBeVisible();
+    // Nothing to ship, and no payment before the visitor has an account.
+    await expect(page.getByText(/Rien à expédier/)).toBeVisible();
+    for (const pay of await page.getByRole("button", { name: /^Payer/ }).all()) await expect(pay).toBeDisabled();
+    expect(problems).toEqual([]);
   });
 
   test("the catalogue, the header and the footer list the published courses", async ({ request }) => {

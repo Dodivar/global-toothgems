@@ -2,15 +2,16 @@ import { useTranslation } from "react-i18next";
 import { Link, useNavigate } from "../../lib/navigation";
 import { ArrowDown, ArrowUp, ChevronRight } from "lucide-react";
 import clsx from "clsx";
-import { useFormat } from "../../lib/format";
 import type { CustomerSortKey } from "../../lib/adminCustomerFilters";
 import {
   customerName,
+  customerShortId,
+  toDate,
   trainingState,
   type AdminCustomerRecord,
 } from "../../data/adminCustomers";
 import { CustomerStatusBadge, TagBadge, TrainingBadge } from "./CustomerBadges";
-import { Avatar, ContactCell, IdentityCell, OrdersCell } from "./CustomerCells";
+import { Avatar, ContactCell, IdentityCell, OrdersCell, SpendValue } from "./CustomerCells";
 import { CustomerRowActions } from "./CustomerRowActions";
 
 /**
@@ -47,7 +48,9 @@ export interface CustomersTableProps {
   onViewTraining: (customer: AdminCustomerRecord) => void;
   onEmail: (customer: AdminCustomerRecord) => void;
   onToggleAccount: (customer: AdminCustomerRecord) => void;
-  /** Last order in the current book, keyed by customer id. */
+  /** `manage_customers`: selection and account actions are offered. */
+  canManage: boolean;
+  /** Last order in the book, keyed by customer id. */
   lastOrders: Map<string, string>;
   /** Path of the detail page, including the current filters as a return target. */
   hrefFor: (customer: AdminCustomerRecord) => string;
@@ -106,11 +109,10 @@ function SortableHead({
 }
 
 export function CustomersTable(props: CustomersTableProps) {
-  const { formatPrice } = useFormat();
   const { t, i18n } = useTranslation();
   const navigate = useNavigate();
   const locale = i18n.language.startsWith("en") ? "en-IE" : "fr-FR";
-  const { customers, selected, onToggle, onToggleAll, sort, onSort, lastOrders, hrefFor } = props;
+  const { customers, selected, onToggle, onToggleAll, sort, onSort, lastOrders, hrefFor, canManage } = props;
 
   const allSelected = customers.length > 0 && customers.every((c) => selected.has(c.id));
   const someSelected = customers.some((c) => selected.has(c.id));
@@ -140,6 +142,7 @@ export function CustomersTable(props: CustomersTableProps) {
           <thead>
             <tr>
               <th scope="col" className={clsx(headCell, "pl-4")}>
+                {canManage && (
                 <input
                   type="checkbox"
                   checked={allSelected}
@@ -153,6 +156,7 @@ export function CustomersTable(props: CustomersTableProps) {
                   aria-label={t("admin.customers.selectAllOnPage")}
                   className="h-4 w-4 accent-[var(--gt-ink-900)]"
                 />
+                )}
               </th>
               <SortableHead
                 label={t("admin.customers.colCustomer")}
@@ -225,13 +229,15 @@ export function CustomersTable(props: CustomersTableProps) {
                     {suspended && (
                       <span aria-hidden="true" className="absolute inset-y-0 left-0 w-[3px] bg-[var(--gt-red-500)]" />
                     )}
-                    <input
-                      type="checkbox"
-                      checked={isSelected}
-                      onChange={() => onToggle(customer.id)}
-                      aria-label={t("admin.customers.selectCustomer", { name: customerName(customer) })}
-                      className="h-4 w-4 accent-[var(--gt-ink-900)]"
-                    />
+                    {canManage && (
+                      <input
+                        type="checkbox"
+                        checked={isSelected}
+                        onChange={() => onToggle(customer.id)}
+                        aria-label={t("admin.customers.selectCustomer", { name: customerName(customer) })}
+                        className="h-4 w-4 accent-[var(--gt-ink-900)]"
+                      />
+                    )}
                   </td>
 
                   <td className="px-3 py-3 align-middle">
@@ -252,11 +258,7 @@ export function CustomersTable(props: CustomersTableProps) {
                   </td>
 
                   <td className="whitespace-nowrap px-3 py-3 text-right align-middle font-[var(--weight-bold)] tabular-nums text-[var(--text-primary)]">
-                    {customer.lifetimeValue === 0 ? (
-                      <span className="font-normal text-[var(--text-subtle)]">—</span>
-                    ) : (
-                      formatPrice(customer.lifetimeValue)
-                    )}
+                    <SpendValue customer={customer} />
                   </td>
 
                   <td className="px-3 py-3 align-middle">
@@ -269,7 +271,7 @@ export function CustomersTable(props: CustomersTableProps) {
 
                   <td className="whitespace-nowrap px-3 py-3 align-middle text-[var(--text-body)]">
                     {new Intl.DateTimeFormat(locale, { day: "2-digit", month: "short", year: "numeric" }).format(
-                      new Date(`${customer.since}T12:00:00`),
+                      toDate(customer.since),
                     )}
                   </td>
 
@@ -282,6 +284,7 @@ export function CustomersTable(props: CustomersTableProps) {
                         onViewTraining={() => props.onViewTraining(customer)}
                         onEmail={() => props.onEmail(customer)}
                         onToggleAccount={() => props.onToggleAccount(customer)}
+                        canManage={canManage}
                       />
                     </span>
                   </td>
@@ -309,10 +312,9 @@ export function CustomersTable(props: CustomersTableProps) {
  * than a 14px name.
  */
 export function CustomerCardList(props: CustomersTableProps) {
-  const { formatPrice } = useFormat();
   const { t, i18n } = useTranslation();
   const locale = i18n.language.startsWith("en") ? "en-IE" : "fr-FR";
-  const { customers, selected, onToggle, lastOrders, hrefFor } = props;
+  const { customers, selected, onToggle, lastOrders, hrefFor, canManage } = props;
 
   return (
     <ul className="m-0 grid list-none gap-2.5 p-0 xl:hidden">
@@ -338,13 +340,15 @@ export function CustomerCardList(props: CustomersTableProps) {
               )}
 
               <div className="flex items-start gap-3">
-                <input
-                  type="checkbox"
-                  checked={isSelected}
-                  onChange={() => onToggle(customer.id)}
-                  aria-label={t("admin.customers.selectCustomer", { name: customerName(customer) })}
-                  className="mt-1.5 h-[18px] w-[18px] flex-none accent-[var(--gt-ink-900)]"
-                />
+                {canManage && (
+                  <input
+                    type="checkbox"
+                    checked={isSelected}
+                    onChange={() => onToggle(customer.id)}
+                    aria-label={t("admin.customers.selectCustomer", { name: customerName(customer) })}
+                    className="mt-1.5 h-[18px] w-[18px] flex-none accent-[var(--gt-ink-900)]"
+                  />
+                )}
 
                 <div className="grid min-w-0 flex-1 gap-3">
                   <div className="flex items-start justify-between gap-2">
@@ -359,7 +363,7 @@ export function CustomerCardList(props: CustomersTableProps) {
                         </Link>
                         <span className="truncate text-[11px] uppercase tracking-[var(--tracking-wide)] text-[var(--text-subtle)]">
                           {t("admin.customers.idPrefix")}
-                          {customer.id}
+                          {customerShortId(customer)}
                         </span>
                       </span>
                     </span>
@@ -370,6 +374,7 @@ export function CustomerCardList(props: CustomersTableProps) {
                       onViewTraining={() => props.onViewTraining(customer)}
                       onEmail={() => props.onEmail(customer)}
                       onToggleAccount={() => props.onToggleAccount(customer)}
+                      canManage={canManage}
                     />
                   </div>
 
@@ -395,7 +400,7 @@ export function CustomerCardList(props: CustomersTableProps) {
                           <span className="ml-1.5 text-[11px] font-normal text-[var(--text-muted)]">
                             {t("admin.customers.lastOrderShort", {
                               date: new Intl.DateTimeFormat(locale, { day: "2-digit", month: "short" }).format(
-                                new Date(`${lastOrder}:00`),
+                                toDate(lastOrder),
                               ),
                             })}
                           </span>
@@ -407,7 +412,7 @@ export function CustomerCardList(props: CustomersTableProps) {
                         {t("admin.customers.colSpent")}
                       </dt>
                       <dd className="m-0 text-[length:var(--text-body-sm)] font-[var(--weight-bold)] tabular-nums text-[var(--text-primary)]">
-                        {customer.lifetimeValue === 0 ? "—" : formatPrice(customer.lifetimeValue)}
+                        <SpendValue customer={customer} />
                       </dd>
                     </div>
                   </dl>

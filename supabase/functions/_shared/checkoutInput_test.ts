@@ -1,5 +1,5 @@
 import { assert, assertEquals } from "jsr:@std/assert@1";
-import { orderItems, parseCheckoutInput } from "./checkoutInput.ts";
+import { courseOrderItems, orderItems, parseCheckoutInput } from "./checkoutInput.ts";
 import { toDecimalString } from "./money.ts";
 
 const P1 = "0b5e6a52-7d0c-4a55-9d7e-1f6f6b2c1a01";
@@ -149,4 +149,42 @@ Deno.test("gift card lines become create_order() lines with a decimal amount", (
   assertEquals(lines[1].quantity, 1);
   assert(!("amount_minor" in (lines[1].gift_card ?? {})));
   assert(!("design" in (lines[2].gift_card ?? {})), "the shop's default design is left to create_order()");
+});
+
+const C1 = "3a9b8c7d-6e5f-4a3b-9c2d-1e0f9a8b7c6d";
+const C2 = "4b0c9d8e-7f6a-4b5c-8d3e-2f1a0b9c8d7e";
+
+Deno.test("course lines: one seat per course, kept apart from the shop lines", () => {
+  const result = parseCheckoutInput({
+    ...valid(),
+    items: [valid().items[0], { course_id: C1.toUpperCase(), quantity: 1 }, { course_id: C2 }],
+  });
+  assert(result.ok);
+  assertEquals(result.value.items, [{ product_id: P1, variant_id: null, quantity: 2 }]);
+  assertEquals(result.value.course_ids, [C1, C2]);
+  assertEquals(courseOrderItems(result.value.course_ids), [
+    { course_id: C1, quantity: 1 },
+    { course_id: C2, quantity: 1 },
+  ]);
+});
+
+Deno.test("a basket of courses only needs no delivery rate", () => {
+  const result = parseCheckoutInput({ ...valid(), items: [{ course_id: C1, quantity: 1 }], shipping_rate_id: null });
+  assert(result.ok);
+  assertEquals(result.value.items, []);
+  assertEquals(result.value.course_ids, [C1]);
+  assertEquals(result.value.shipping_rate_id, null);
+});
+
+Deno.test("course lines refuse anything but an id and a single seat", () => {
+  const bad: unknown[] = [
+    { course_id: "fondation" },
+    { course_id: C1, quantity: 2 },
+    { course_id: C1, quantity: "1" },
+    { course_id: C1, quantity: 1, unit_price: 1 },
+    { course_id: C1, product_id: P1, quantity: 1 },
+    { course_id: C1, variant_id: null },
+  ];
+  for (const line of bad) assert(!parseCheckoutInput({ ...valid(), items: [line] }).ok, JSON.stringify(line));
+  assert(!parseCheckoutInput({ ...valid(), items: [{ course_id: C1 }, { course_id: C1.toUpperCase() }] }).ok, "same course twice");
 });

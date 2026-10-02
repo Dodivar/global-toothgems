@@ -23,11 +23,12 @@ import { DiplomaPanel } from "../components/academy/DiplomaPanel";
 import { TrainingHero } from "../components/academy/TrainingHero";
 import { CheckItem, FeatureCard, Section, SectionIntro, StepCard } from "../components/academy/TrainingPrimitives";
 import { ReviewsSection } from "../components/reviews/ReviewsSection";
-import { EnrolmentSoon } from "../components/academy/EnrolmentSoon";
 import { pick } from "../data/types";
 import { lessonCount, type PublicCourse } from "../lib/academy/publicCourse";
 import { formatDuration } from "../lib/trainingFilters";
 import { useAuth } from "../lib/auth";
+import { useCart } from "../lib/cart";
+import { courseLineId } from "../lib/checkout/cartLines";
 import { useProgress } from "../lib/progress";
 import { learnHref } from "../lib/academyUrl";
 import { useToast } from "../lib/toast";
@@ -46,9 +47,11 @@ import { useFormat } from "../lib/format";
  * not have yet — a live forum, a learner's real quiz score — is labelled as a
  * preview and as an example rather than dressed up as real.
  *
- * Until courses are sold (phase D), a real course says its enrolment opens
- * soon (`enrolment: "soon"`) instead of offering a button that would pretend
- * to enrol; the prototype's courses (mock mode) keep the demo enrolment.
+ * A real course is sold (`enrolment: "sale"`, phase D): "Buy" puts one seat
+ * in the cart, which goes through the same checkout and Stripe payment as the
+ * shop; the database grants access once the payment is confirmed, so a member
+ * who holds the course is offered to open it instead. The prototype's courses
+ * (mock mode) keep the demo enrolment.
  *
  * The route is open, like `/academy`: this is what sells the training, so gating
  * it would hide the thing it advertises. Only the lesson player is gated.
@@ -58,10 +61,12 @@ export function CourseDetail({ course }: { course: PublicCourse }) {
   const { t, i18n } = useTranslation();
   const navigate = useNavigate();
   const { signedIn, displayName } = useAuth();
-  const { openCourse, progressFor, courseFor } = useProgress();
+  const { openCourse, progressFor, courseFor, status: learningStatus } = useProgress();
+  const { lines, addCourse } = useCart();
   const { showToast } = useToast();
   const lang = i18n.language;
   const demo = course.enrolment === "demo";
+  const forSale = course.enrolment === "sale" && Boolean(course.dbId);
 
   const curriculumRef = useRef<HTMLElement>(null);
   const heroCtaRef = useRef<HTMLDivElement>(null);
@@ -91,6 +96,15 @@ export function CourseDetail({ course }: { course: PublicCourse }) {
     signedIn && (demo || holder)
       ? stored
       : { ...stored, enrolled: false, completed: false, doneCount: 0, pct: 0, completedOn: null, startedOn: null };
+  // While a signed-in member's courses are being read, "buy" waits: they may already hold it.
+  const checkingAccess = signedIn && forSale && (learningStatus === "idle" || learningStatus === "loading");
+  const inCart = forSale && lines.some((line) => line.id === courseLineId(course.dbId!));
+  const startLabel = progress.completed
+    ? t("training.ctaReview")
+    : progress.enrolled
+      ? t("training.ctaResume")
+      : t("training.ctaStart");
+  const ctaLabel = demo || holder ? startLabel : forSale ? (inCart ? t("training.ctaInCart") : t("training.ctaBuy")) : null;
   const lessons = lessonCount(course);
   const duration = formatDuration(course.minutes, lang);
 
@@ -107,6 +121,22 @@ export function CourseDetail({ course }: { course: PublicCourse }) {
     if (holder) {
       openCourse(course.id);
       navigate(learnHref(course.id));
+      return;
+    }
+    if (forSale) {
+      // Indicative price only: create_order() prices the seat again. An account
+      // is asked for in the cart, where the basket waits for the sign-in.
+      if (!checkingAccess) {
+        addCourse({
+          courseId: course.dbId!,
+          productId: course.id,
+          name: title,
+          image: course.cover?.src ?? "",
+          unitPrice: course.currentPrice.minor,
+          currency: course.currentPrice.currency,
+        });
+        navigate("/panier");
+      }
       return;
     }
     if (!demo) return;
@@ -164,7 +194,8 @@ export function CourseDetail({ course }: { course: PublicCourse }) {
         moduleCount={course.modules.length}
         ctaRef={heroCtaRef}
         onStart={start}
-        holder={holder}
+        ctaLabel={ctaLabel}
+        ctaBusy={checkingAccess}
         onExploreCurriculum={exploreCurriculum}
       />
 
@@ -350,12 +381,10 @@ export function CourseDetail({ course }: { course: PublicCourse }) {
             {t("training.finalTitle")}
           </h2>
           <p className="m-0 text-[length:var(--text-body-lg)] text-[var(--gt-ink-300)]">{t("training.finalBody")}</p>
-          {demo || holder ? (
-            <Button variant="primary" size="lg" iconRight={ArrowRight} onClick={start}>
-              {progress.enrolled ? t("training.ctaResume") : t("training.ctaStart")}
+          {ctaLabel && (
+            <Button variant="primary" size="lg" iconRight={ArrowRight} onClick={start} loading={checkingAccess} disabled={checkingAccess}>
+              {ctaLabel}
             </Button>
-          ) : (
-            <EnrolmentSoon dark />
           )}
           <ul className="m-0 flex list-none flex-wrap justify-center gap-x-5 gap-y-2 p-0">
             {finalPoints.map((point) => (
@@ -376,8 +405,8 @@ export function CourseDetail({ course }: { course: PublicCourse }) {
 
       {/* Sticky mobile bar: the page is long, and the decision should never be
           more than a thumb away once the hero's own button has scrolled off.
-          Only where there is a decision to make (not before enrolment opens). */}
-      {demo && (
+          Only where there is a decision to make. */}
+      {ctaLabel && (
         <div
           className="fixed inset-x-0 bottom-0 z-50 border-t border-[var(--border-subtle)] bg-[var(--surface-card)] px-4 py-3 shadow-[var(--shadow-lg)] transition-transform duration-[var(--duration-normal)] ease-[var(--ease-out-soft)] lg:hidden"
           style={{ transform: showStickyBar ? "translateY(0)" : "translateY(120%)" }}
@@ -388,8 +417,8 @@ export function CourseDetail({ course }: { course: PublicCourse }) {
               <span className="truncate text-xs text-[var(--text-muted)]">{title}</span>
               <strong className="text-sm text-[var(--text-primary)]">{formatMoney(course.currentPrice.minor, course.currentPrice.currency)}</strong>
             </div>
-            <Button variant="primary" onClick={start} tabIndex={showStickyBar ? 0 : -1}>
-              {progress.enrolled ? t("training.ctaResume") : t("training.stickyCta")}
+            <Button variant="primary" onClick={start} tabIndex={showStickyBar ? 0 : -1} loading={checkingAccess} disabled={checkingAccess}>
+              {progress.enrolled ? t("training.ctaResume") : forSale && !holder ? (inCart ? t("training.ctaInCart") : t("training.stickyBuy")) : t("training.stickyCta")}
             </Button>
           </div>
         </div>

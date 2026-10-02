@@ -20,6 +20,10 @@ import { findProductByKey, productSlug, resolveProductAddress, type ProductAddre
 export type CourseLevel = "beginner" | "intermediate" | "advanced" | "all";
 export const COURSE_LEVELS: readonly CourseLevel[] = ["beginner", "intermediate", "advanced", "all"];
 
+/** The course's theme, authored in the back office (`courses.category`). */
+export type CourseCategory = "technique" | "hygiene" | "business" | "creative";
+export const COURSE_CATEGORIES: readonly CourseCategory[] = ["technique", "hygiene", "business", "creative"];
+
 /** An amount in integer minor units with its currency (AGENTS.md §8). */
 export interface Money {
   minor: number;
@@ -48,6 +52,9 @@ export interface PublicCourse extends SluggedProduct {
   summary: Localized | null;
   description: Localized | null;
   level: CourseLevel;
+  category: CourseCategory;
+  /** When the course went online (ISO timestamp), null when unknown. */
+  publishedAt: string | null;
   /** Advertised length, authored in the back office. */
   minutes: number;
   objectives: Localized[];
@@ -64,11 +71,11 @@ export interface PublicCourse extends SluggedProduct {
   modules: PublicModule[];
   /**
    * What the sales page can do about it. `demo`: the prototype's enrolment
-   * (mock mode, the course exists in the learner fixtures). `soon`: a real
-   * course, which cannot be bought before phase D — the page says enrolment
-   * opens soon instead of pretending to enrol.
+   * (mock mode, the course exists in the learner fixtures). `sale`: a real
+   * course, bought through the cart and Stripe Checkout (phase D); access is
+   * granted by the database once the payment is confirmed.
    */
-  enrolment: "demo" | "soon";
+  enrolment: "demo" | "sale";
 }
 
 export function lessonCount(course: Pick<PublicCourse, "modules">): number {

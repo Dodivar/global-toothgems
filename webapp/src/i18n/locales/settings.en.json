@@ -3,9 +3,9 @@
   "subtitle": "The store's operational configuration — what customers see, where you ship, how you tax, which languages you publish in.",
   "sections": {
     "store": {
-      "title": "Store details",
-      "nav": "Identity, address, preferences",
-      "intro": "Who you are and how the store counts. These details appear on invoices, emails and the contact page, and set the currency, time zone and formats used across the admin."
+      "title": "Store",
+      "nav": "Identity, legal notice, contact",
+      "intro": "Who you are and how to reach you. This information is published on the legal notice and the contact page."
     },
     "shipping": {
       "title": "Shipping",
@@ -14,13 +14,13 @@
     },
     "taxes": {
       "title": "Taxes & VAT",
-      "nav": "Default rate, countries, rules",
-      "intro": "How VAT is charged and shown. Start with the store default, override it country by country, then add the rules for particular products and customers."
+      "nav": "Rates by country, reduced rates",
+      "intro": "The VAT rates applied at checkout, country by country, and the reduced rates of some product categories. The calculation rules are fixed and listed below."
     },
     "languages": {
       "title": "Languages",
-      "nav": "Storefront languages, translations",
-      "intro": "The languages customers can shop and learn in, their order and the default — and what is still left to translate in each, one click from the editor."
+      "nav": "Content languages",
+      "intro": "The languages content can be translated into. French is the original language; the public site is offered in French and English."
     }
   },
   "nav": {
@@ -31,10 +31,8 @@
       "store_other": "{{count}} items need attention",
       "shipping_one": "{{count}} shipping zone needs attention",
       "shipping_other": "{{count}} shipping zones need attention",
-      "taxes_one": "{{count}} item needs attention",
-      "taxes_other": "{{count}} items need attention",
-      "languages_one": "{{count}} field left to translate",
-      "languages_other": "{{count}} fields left to translate"
+      "taxes_one": "{{count}} country shipped to without VAT",
+      "taxes_other": "{{count}} countries shipped to without VAT"
     }
   },
   "state": {
@@ -50,13 +48,12 @@
   "toast": {
     "saved": "{{section}} saved",
     "savedBody": {
-      "store": "Your store details are live on invoices, emails and the contact page.",
+      "store": "The legal notice and contact page show your details (public pages update within a few minutes).",
       "shipping": "Checkout now offers the updated zones and rates.",
-      "taxes": "New orders use the updated VAT settings. Past orders keep the tax they were charged.",
-      "languages": "The storefront uses the updated languages."
+      "taxes": "New orders use the updated rates. Past orders keep the VAT they were charged.",
+      "languages": "Content languages are up to date."
     },
     "failed": "Changes not saved",
-    "failedBody": "The server did not respond. Your edits are still here — try again in a moment.",
     "fixErrors_one": "Fix {{count}} field before saving",
     "fixErrors_other": "Fix {{count}} fields before saving",
     "discarded": "Changes discarded",
@@ -68,14 +65,13 @@
     "body": "They are marked below. Nothing has been saved yet."
   },
   "saveError": {
-    "title": "We couldn't save your changes",
-    "body": "Nothing was lost: your edits are still on this page. Check your connection and try again.",
-    "retry": "Try again"
-  },
-  "proto": {
-    "label": "Prototype",
-    "body": "Settings are kept in memory for this session only. Nothing is sent anywhere.",
-    "fail": "Simulate a failed save"
+    "title": "Your changes could not be saved",
+    "retry": "Try again",
+    "reasons": {
+      "forbidden": "Your role does not allow changing the settings. Ask an administrator.",
+      "invalid": "A value was refused. Check the fields in this section, then try again.",
+      "unavailable": "The server did not answer. Your changes are still here — try again in a moment."
+    }
   },
   "ui": {
     "active": "Active",
@@ -93,10 +89,7 @@
     "required": "This field is required.",
     "email": "Enter a valid email address, like name@example.com.",
     "phone": "Enter a phone number with digits only, spaces allowed (e.g. +33 1 23 45 67 89).",
-    "url": "Enter a full address starting with https://",
     "postalFr": "A French postal code has 5 digits.",
-    "orderAffix": "Up to 6 letters, digits or hyphens.",
-    "positive": "Enter a number greater than zero.",
     "tooLong": "Too long — shorten it to fit the limit.",
     "hours": "Check the opening hours: each open day needs a start before its end.",
     "days": "Enter whole days, with the maximum at least equal to the minimum.",
@@ -106,87 +99,90 @@
     "zoneNameTaken": "Another zone already has this name.",
     "zoneNoCountry": "Choose at least one country.",
     "percent": "Enter a percentage between 0 and 100.",
-    "vatCountryTaken": "This country already has a rate."
+    "vatCountryTaken": "This country already has a rate.",
+    "vatNumber": "Enter the number with its country code, e.g. FR12345678901.",
+    "requiredShown": "Fill this in, or don't show it to customers.",
+    "reducedTaken": "This country already has a reduced rate for this category.",
+    "positive": "Enter a number greater than zero."
   },
   "store": {
     "business": {
-      "title": "Business information",
-      "description": "Your trading and legal identity, and where customers and the platform reach you."
+      "title": "Business identity",
+      "description": "Published on the legal notice. The store name is the one customers see."
+    },
+    "currency": "Store currency: {{currency}}. Every price, shipping rate and order is in this currency.",
+    "contact": {
+      "title": "Contact details",
+      "description": "How customers and partners reach you."
     },
     "address": {
-      "title": "Business address",
-      "description": "Printed on invoices and used as the return address for parcels."
+      "title": "Registered office",
+      "description": "The address published on the legal notice — and on the contact page if you choose to show it."
     },
-    "prefs": {
-      "title": "Store preferences",
-      "description": "The units, formats and numbering used throughout the store and the admin."
+    "legal": {
+      "title": "Publisher and hosting",
+      "description": "The website's other mandatory disclosures.",
+      "director": "Publication director",
+      "host": "Hosting provider",
+      "hostHint": "The company hosting the website. If several providers host the application and its data, name the main one here."
     },
     "public": {
-      "title": "Customer-facing information",
-      "description": "What customers read on the contact page, in the footer and in order emails.",
-      "contactTitle": "Show on the storefront",
-      "showEmail": "Support email",
+      "title": "Contact page",
+      "description": "What customers read under “Other ways to reach us”.",
+      "contactTitle": "Show on the contact page",
+      "showEmail": "Customer service email",
       "showPhone": "Phone number",
-      "showAddress": "Studio address",
-      "showAddressHint": "Only if customers can visit or collect orders."
+      "showAddress": "Address",
+      "showAddressHint": "Only if customers can visit or collect their orders."
     },
     "fields": {
       "storeName": "Store name",
       "legalName": "Legal business name",
-      "businessEmail": "Business email",
-      "supportEmail": "Customer support email",
-      "phone": "Phone number",
-      "website": "Website",
+      "legalForm": "Legal entity type",
+      "shareCapital": "Share capital",
+      "registrationNumber": "Registration number",
+      "vatNumber": "EU VAT number",
+      "businessEmail": "Contact email (legal notice)",
+      "supportEmail": "Customer service email",
+      "phone": "Phone",
       "country": "Country",
       "address1": "Address",
-      "address2": "Apartment, suite, floor",
+      "address2": "Address line 2",
       "postalCode": "Postal code",
       "city": "City",
-      "region": "State / region",
-      "currency": "Default currency",
-      "timezone": "Time zone",
-      "dateFormat": "Date format",
-      "measurement": "Measurement system",
-      "orderPrefix": "Prefix",
-      "orderNextNumber": "Next number",
-      "orderSuffix": "Suffix",
-      "description": "Short store description",
-      "supportMessage": "Customer support message"
+      "region": "Region / State",
+      "publicationDirector": "Name",
+      "publicationDirectorRole": "Role",
+      "hostName": "Hosting provider name",
+      "hostAddress": "Hosting provider address",
+      "hostContact": "Hosting provider phone or website",
+      "supportMessage": "Response time (French)",
+      "supportMessageEn": "Response time (English)"
     },
     "hints": {
-      "storeName": "The name customers see in the header, emails and browser tab.",
-      "legalName": "As registered — shown on invoices and legal pages.",
-      "businessEmail": "Receives order notifications and platform messages. Never shown to customers.",
-      "supportEmail": "Shown to customers and used as the reply-to address on emails.",
+      "storeName": "The trading name customers know you by.",
+      "legalName": "As registered.",
+      "shareCapital": "Where the legal form requires it.",
+      "registrationNumber": "Number and register, e.g. RCS Paris 123 456 789.",
+      "vatNumber": "Only if the business is registered for VAT.",
+      "businessEmail": "Published on the legal notice. Leave empty to publish the customer service email.",
+      "supportEmail": "The address customers write to.",
       "phone": "Include the country code.",
-      "website": "",
       "address2": "Optional",
       "region": "Optional in most countries",
-      "currency": "Used for prices, orders and reports.",
-      "timezone": "Order times, reports and scheduled promotions follow this zone.",
-      "description": "Used in the footer, search results and link previews.",
-      "supportMessage": "Shown on the contact page and at the end of order emails."
+      "supportMessage": "One short sentence, e.g. “Nous répondons sous un jour ouvré”.",
+      "supportMessageEn": "The same sentence for the English contact page."
     },
-    "currencies": {
-      "EUR": "Euro (EUR, €)",
-      "GBP": "British pound (GBP, £)",
-      "CHF": "Swiss franc (CHF)",
-      "USD": "US dollar (USD, $)"
+    "placeholders": {
+      "legalForm": "SAS, SARL, sole trader…",
+      "shareCapital": "€10,000",
+      "registrationNumber": "RCS Paris 123 456 789",
+      "publicationDirectorRole": "President, managing director…"
     },
-    "currencyWarning": {
-      "title": "Existing prices won't be converted.",
-      "body": "Product and shipping prices keep their amounts in the new currency. Past orders keep the currency they were paid in."
-    },
-    "measurement": {
-      "metric": "Metric · kg, cm",
-      "imperial": "Imperial · lb, in"
-    },
-    "order": {
-      "title": "Order number format",
-      "hint": "Applies to new orders only. Existing order numbers never change.",
-      "tip": "Order numbers are what customers quote when they contact you. A short prefix makes them recognisable in an inbox; the next number must be higher than any existing order.",
-      "none": "None",
-      "preview": "Next order number"
+    "preview": {
+      "label": "Contact page preview",
+      "hours": "Hours",
+      "noHours": "No hours shown."
     },
     "hours": {
       "title": "Support availability",
@@ -194,29 +190,7 @@
       "closed": "Closed",
       "openOn": "Open on {{day}}",
       "from": "{{day}} opening time",
-      "to": "{{day}} closing time",
-      "days": {
-        "mon": "Monday",
-        "tue": "Tuesday",
-        "wed": "Wednesday",
-        "thu": "Thursday",
-        "fri": "Friday",
-        "sat": "Saturday",
-        "sun": "Sunday"
-      },
-      "short": {
-        "mon": "Mon",
-        "tue": "Tue",
-        "wed": "Wed",
-        "thu": "Thu",
-        "fri": "Fri",
-        "sat": "Sat",
-        "sun": "Sun"
-      }
-    },
-    "preview": {
-      "label": "Customer preview",
-      "hours": "We're available"
+      "to": "{{day}} closing time"
     }
   },
   "shipping": {
@@ -392,171 +366,85 @@
     }
   },
   "taxes": {
-    "enabled": "Charge VAT",
-    "enabledOn": "VAT is calculated on every order using the rules below.",
-    "enabledOff": "No VAT is added to orders.",
-    "disabledTitle": "VAT is switched off",
-    "disabledBody": "Only do this if your business is not VAT-registered. Your rates and rules are kept and come back when you switch VAT on again.",
-    "rules": "VAT rules",
-    "disclaimer": "Rates shown are examples for this prototype. Confirm every rate and rule with your accountant before going live.",
-    "tier1": {
-      "title": "Store default",
-      "caption": "Applies everywhere, unless a country has its own rate."
+    "disclaimer": "Have every rate confirmed by your accountant before launch (OSS registration, distance-selling thresholds, reduced rates).",
+    "missing": {
+      "title_one": "{{count}} country shipped to without VAT",
+      "title_other": "{{count}} countries shipped to without VAT",
+      "body": "An active shipping zone serves {{countries}} with no active rate: those orders would pay no VAT. Add or switch on their rate."
     },
-    "tier2": {
-      "title": "Country rates",
-      "caption": "Replace the default for customers in these countries."
+    "rules": {
+      "title": "Rules applied at checkout",
+      "description": "Fixed for now: the database computes them on every order.",
+      "items": {
+        "inclusive": "Prices entered include VAT.",
+        "destination": "The rate is the delivery country's; for an order with nothing shipped (gift card), the billing country's.",
+        "rounding": "VAT is computed and rounded line by line.",
+        "shipping": "Shipping is taxed at the delivery country's standard rate.",
+        "none": "A country without an active rate pays no VAT (exports outside the EU).",
+        "giftCards": "Buying a gift card carries no VAT: it is due when the card is spent."
+      }
     },
-    "tier3": {
-      "title": "Advanced rules",
-      "caption": "Adjust the rate for particular products or customers."
-    },
-    "precedence": {
-      "title": "How VAT is chosen at checkout",
-      "body": "The country rate wins over the default when one exists; advanced rules then lower or remove it for specific products and customers.",
-      "checker": "Check a destination",
-      "country": "{{country}}: {{rate}} — its own country rate.",
-      "default": "{{country}}: {{rate}} — no country rate, the store default applies.",
-      "export": "{{country}} is outside the EU: exports are usually zero-rated when the export rule is on.",
-      "off": "VAT is switched off — no VAT is charged."
-    },
-    "default": {
-      "title": "Default VAT",
-      "description": "The rate and display rules used whenever nothing more specific applies.",
-      "country": "Default VAT country",
-      "countryHint": "Where your business is registered for VAT.",
-      "rate": "Default VAT rate",
-      "rateHint": "The standard rate of that country.",
-      "pricesInclude": "Prices include VAT",
-      "pricesIncludeHint": "The prices you enter on products already contain VAT.",
-      "showProduct": "Show VAT on product pages",
-      "showProductHint": "Adds “incl. VAT” or “excl. VAT” under every price.",
-      "showCheckout": "Show VAT at checkout",
-      "showCheckoutHint": "Lists the VAT amount as its own line in the basket and on the receipt.",
-      "display": "Show prices to customers"
-    },
-    "display": {
-      "included": "VAT included",
-      "excluded": "VAT excluded"
-    },
-    "tips": {
-      "pricesInclude": "Turn this on if the price you type on a product is the price the customer pays. Turn it off if you type prices before tax and want VAT added on top.",
-      "display": "Consumers in the EU must see prices with VAT included. Show them excluded only if you sell mainly to businesses.",
-      "vies": "VIES is the European Commission's service that confirms a business VAT number is valid. Checking it protects you when you don't charge VAT to a business.",
-      "exempt": "Some customers must not be charged VAT — businesses in another EU country with a valid VAT number (reverse charge), or orders shipped outside the EU. The customer's situation is checked at checkout.",
-      "basis": "The address used to choose the VAT rate. For sales to consumers in the EU, the rate of the delivery country normally applies.",
-      "rounding": "Per line rounds VAT on each product, then adds the lines up. Per order adds everything up first, then rounds once. The result can differ by a cent.",
-      "reduced": "Some products are taxed at a lower rate in some countries — books or certain training, for example. Each reduced rate applies to one category in one country."
-    },
-    "example": {
-      "label": "Example",
-      "enteredGross": "You enter {{price}} on a product (VAT included).",
-      "enteredNet": "You enter {{price}} on a product (before VAT).",
-      "productPage": "Product page shows",
-      "incl": "incl. VAT ({{rate}})",
-      "excl": "excl. VAT",
-      "net": "Price before VAT",
-      "vat": "VAT {{rate}}",
-      "total": "Customer pays",
-      "checkoutHidden": "The VAT line is hidden at checkout."
+    "checker": {
+      "title": "Check a destination",
+      "description": "What an order shipped to this country pays, with the rates shown here.",
+      "country": "Delivery country",
+      "rate": "{{country}}: {{rate}} VAT.",
+      "missing": "{{country}}: no rate — no VAT would be charged.",
+      "export": "{{country}}: outside the EU, no VAT charged (export).",
+      "example": "On an item at {{price}} including VAT, the VAT included is {{tax}}."
     },
     "rates": {
-      "title": "VAT rates by country",
-      "description": "Countries not listed here use the store default ({{rate}}).",
-      "add": "Add VAT rate",
+      "title": "Standard rates by country",
+      "description": "The rate applied to orders shipped to each country.",
+      "add": "Add a rate",
       "country": "Country",
       "rate": "Standard rate",
-      "rateHint": "The country's standard VAT rate, in percent.",
+      "rateHint": "The country's standard VAT rate, as a percentage.",
       "reduced": "Reduced rates",
       "reducedCount_one": "{{count}} reduced rate",
       "reducedCount_other": "{{count}} reduced rates",
       "status": "Status",
-      "storeCountry": "store country",
-      "activeFor": "Apply the {{country}} rate",
-      "edit": "Edit {{country}} rate",
-      "delete": "Delete {{country}} rate",
-      "fallback": "Inactive and unlisted countries fall back to the store default of {{rate}}.",
-      "emptyTitle": "No country rates",
-      "emptyBody": "Every order uses the store default. Add a rate for each country with a different VAT rate.",
+      "activeFor": "Apply the rate: {{country}}",
+      "edit": "Edit the rate: {{country}}",
+      "delete": "Delete the rate: {{country}}",
+      "fallback": "A country that is missing or switched off pays no VAT.",
+      "emptyTitle": "No VAT rates",
+      "emptyBody": "Without a rate, no order carries VAT. Add the rate of every country you ship to.",
       "addTitle": "Add a VAT rate",
-      "editTitle": "Edit the {{country}} rate",
-      "dialogBody": "Customers delivered to this country are charged this rate instead of the store default.",
+      "editTitle": "Edit the rate: {{country}}",
+      "dialogBody": "Orders shipped to this country pay this rate.",
       "chooseCountry": "Choose a country…",
       "activeLabel": "Active",
-      "activeHint": "When off, the store default applies to this country.",
-      "addConfirm": "Add rate",
-      "editConfirm": "Apply changes",
-      "deleteTitle": "Delete the {{country}} rate?",
-      "deleteBody": "Customers in this country will be charged the store default ({{rate}}) instead. Past orders keep the VAT they were charged.",
-      "deleteConfirm": "Delete rate"
+      "activeHint": "Switched off, this country pays no VAT.",
+      "addConfirm": "Add the rate",
+      "editConfirm": "Apply",
+      "deleteTitle": "Delete the rate: {{country}}?",
+      "deleteBody": "Orders shipped to this country will pay no VAT. Past orders keep the VAT they were charged.",
+      "deleteConfirm": "Delete the rate"
     },
     "reduced": {
-      "title": "Reduced VAT rates",
-      "description": "Lower rates for particular product categories, country by country.",
-      "enable": "Use reduced rates",
-      "empty": "No reduced rates yet.",
-      "add": "Add reduced rate",
+      "title": "Reduced rates",
+      "description": "Replace the standard rate for the products of one category, in one country. The category is chosen on the product page.",
+      "empty": "No reduced rates.",
+      "add": "Add a reduced rate",
       "addTitle": "Add a reduced rate",
-      "addBody": "Applies to products of this category delivered to this country.",
-      "addConfirm": "Add reduced rate",
+      "addBody": "Applies to products in this category shipped to this country.",
+      "addConfirm": "Add the reduced rate",
       "category": "Product category",
       "rate": "Reduced rate",
-      "activeFor": "Apply the {{category}} rate in {{country}}",
-      "remove": "Remove the {{category}} rate in {{country}}",
+      "activeFor": "Apply the {{category}} rate — {{country}}",
+      "remove": "Remove the {{category}} rate — {{country}}",
       "categories": {
-        "training": "Training courses",
-        "books": "Books & printed guides",
+        "training": "Training",
+        "books": "Printed books and guides",
         "hygiene": "Hygiene products",
         "digital": "Digital publications"
       }
     },
-    "b2b": {
-      "title": "Business customers & VAT numbers",
-      "description": "Let professional customers identify their business at checkout.",
-      "collect": "Ask for a VAT number at checkout",
-      "collectHint": "An optional field for customers buying as a business.",
-      "validate": "Check VAT numbers with VIES",
-      "validateHint": "Numbers are checked before the order is placed."
-    },
-    "exempt": {
-      "title": "Tax-exempt customers",
-      "description": "Orders that are not charged VAT, and why.",
-      "enable": "Allow VAT-exempt orders",
-      "groups": {
-        "reverseCharge": {
-          "label": "EU businesses with a valid VAT number",
-          "hint": "Reverse charge: the customer accounts for VAT in their own country. Needs VAT numbers at checkout."
-        },
-        "export": {
-          "label": "Orders shipped outside the EU",
-          "hint": "Exports are zero-rated; local import taxes may apply on delivery."
-        },
-        "trainingBodies": {
-          "label": "Approved training organisations",
-          "hint": "Only for organisations whose exemption you have verified and recorded."
-        }
-      }
-    },
-    "calc": {
-      "title": "Tax calculation",
-      "description": "Which address sets the rate, and how amounts are rounded.",
-      "basis": "Calculate VAT based on",
-      "basisOptions": {
-        "shipping": { "label": "Delivery address", "hint": "Where the order is sent." },
-        "billing": { "label": "Billing address", "hint": "Where the customer is invoiced." },
-        "store": { "label": "Store address", "hint": "Always your own country's rate." }
-      },
-      "recommended": "Recommended",
-      "rounding": "Rounding",
-      "roundLine": "Per line",
-      "roundOrder": "Per order",
-      "shipping": "Charge VAT on shipping",
-      "shippingHint": "Shipping is taxed at the same rate as the products in the order."
-    },
     "toast": {
-      "rateAdded": "{{country}} rate added",
-      "rateUpdated": "{{country}} rate updated",
-      "rateDeleted": "{{country}} rate deleted",
+      "rateAdded": "Rate added: {{country}}",
+      "rateUpdated": "Rate updated: {{country}}",
+      "rateDeleted": "Rate deleted: {{country}}",
       "reducedAdded": "Reduced rate added",
       "reducedRemoved": "Reduced rate removed"
     }
@@ -571,194 +459,34 @@
       "pt": "Portuguese",
       "nl": "Dutch"
     },
+    "storefront": {
+      "title": "The public site is in French and English",
+      "body": "Switching another language on opens content translation in it (products, pages, emails, member preferences); it is not added to the site until its pages exist."
+    },
     "enabled": {
-      "title": "Enabled languages",
-      "description": "Available to customers, in the order of the storefront's language menu. Drag a row, or use the arrows, to reorder.",
-      "order": "Enabled languages, in storefront order"
+      "title": "Content languages",
+      "description": "When on, they can receive translations and be chosen for an order or an account."
     },
-    "available": "Available languages",
-    "new": "New",
+    "onStorefront": "On the site",
     "off": "Off",
-    "enable": "Enable",
-    "source": "Source language",
-    "original": "Original content",
-    "coverage": "{{percent}}% translated",
-    "complete": "Complete",
-    "notStarted": "Not started",
-    "missingCount_one": "Needs attention · {{count}} missing",
-    "missingCount_other": "Needs attention · {{count}} missing",
-    "showMissingFor": "show what's missing in {{name}}",
-    "moveUp": "Move {{name}} up",
-    "moveDown": "Move {{name}} down",
-    "moved": "{{name}} moved to position {{position}} of {{total}}.",
-    "menu": "More actions for {{name}}",
-    "setDefault": "Set as default",
-    "viewMissing": "View missing translations",
-    "disable": "Disable language",
-    "defaultNote": "The default language can't be disabled. Choose another default first.",
-    "options": "Language behaviour",
-    "detect": "Suggest the visitor's browser language",
-    "detectHint": "First-time visitors see the storefront in their browser's language when it is enabled.",
-    "fallback": "Fall back to the default language",
-    "fallbackHint": "Untranslated fields show in {{name}} instead of appearing empty.",
-    "disableTitle": "Disable {{name}}?",
-    "disableBody": "{{name}} will no longer be available to customers. Its pages, products, trainings and emails stop being published, and customers who chose {{name}} will see {{fallback}} instead.",
-    "disableKeep": "Translations are kept. Enable the language again to bring everything back.",
-    "disableConfirm": "Disable language",
-    "defaultTitle": "Make {{name}} the default language?",
-    "defaultBody": "{{name}} becomes the language new visitors see first, and the one used when a customer's language isn't available.",
-    "defaultWarning": "{{percent}}% of content is translated in this language. Untranslated fields will show the original English.",
-    "defaultSource": "Content is still written in English and translated from it — only what customers see first changes.",
-    "defaultConfirm": "Set as default",
+    "changed": "Changed",
+    "source": "Original language of the content",
+    "lockedDefault": "Original language",
+    "lockedStorefront": "Always on",
+    "enableLabel": "Switch on: {{name}}",
+    "effect": "Switching a language off keeps its translations; they come back when you switch it on again.",
     "toast": {
-      "enabled": "{{name}} enabled",
-      "enabledBody": "Nothing is translated yet. Save to make it available to customers.",
-      "disabled": "{{name}} disabled",
-      "default": "{{name}} is now the default"
-    },
-    "coveragePanel": {
-      "title": "Translation coverage",
-      "description": "Share of content translated into every enabled language, by type.",
-      "overall_one": "across {{count}} language",
-      "overall_other": "across {{count}} languages"
+      "enabled": "{{name}} switched on",
+      "disabled": "{{name}} switched off"
     }
   },
-  "tr": {
-    "title": "Missing translations",
-    "description": "Everything customers would see untranslated. Pick an item and translate it in place — the list updates as you save.",
-    "itemsToTranslate_one": "item needs translating",
-    "itemsToTranslate_other": "items need translating",
-    "fieldsToTranslate_one": "{{count}} field in total",
-    "fieldsToTranslate_other": "{{count}} fields in total",
-    "itemsShort_one": "{{count}} item",
-    "itemsShort_other": "{{count}} items",
-    "byType": "Filter by content type",
-    "byLanguage": "Filter by language",
-    "untracked": "{{names}}: nothing translated yet. Content is shown in the default language until translations are added.",
-    "search": "Search content by name",
-    "showing": "Showing {{shown}} of {{total}}",
-    "clearFilters": "Clear filters",
-    "edit": "Edit translation",
-    "updatedOn": "Updated {{date}}",
-    "openIn": "Translate {{item}} into {{name}} — {{done}} of {{total}} fields done",
-    "filters": {
-      "language": "Language",
-      "type": "Content type",
-      "status": "Status",
-      "sort": "Sort by",
-      "allLanguages": "All languages",
-      "allTypes": "All content",
-      "allStatuses": "All statuses"
-    },
-    "sort": {
-      "priority": "Priority first",
-      "recent": "Recently updated",
-      "incomplete": "Most incomplete",
-      "name": "Name A–Z"
-    },
-    "col": {
-      "content": "Content",
-      "missing": "Missing in",
-      "status": "Status",
-      "progress": "Translated"
-    },
-    "status": {
-      "missing": "Missing",
-      "partial": "Partial",
-      "outdated": "Needs review",
-      "complete": "Complete"
-    },
-    "priority": {
-      "high": "High priority",
-      "normal": "Normal",
-      "low": "Low"
-    },
-    "type": {
-      "product": "Product",
-      "category": "Category",
-      "module": "Training module",
-      "email": "Email template",
-      "content": "Page"
-    },
-    "typePlural": {
-      "product_one": "product",
-      "product_other": "products",
-      "category_one": "category",
-      "category_other": "categories",
-      "module_one": "training module",
-      "module_other": "training modules",
-      "email_one": "email template",
-      "email_other": "email templates",
-      "content_one": "other content item",
-      "content_other": "other content items"
-    },
-    "area": {
-      "storefront": "Storefront",
-      "product": "Products",
-      "category": "Categories",
-      "module": "Training courses",
-      "email": "Emails",
-      "content": "Pages"
-    },
-    "field": {
-      "name": "Name",
-      "shortDescription": "Short description",
-      "description": "Description",
-      "seoTitle": "SEO title",
-      "title": "Title",
-      "summary": "Summary",
-      "objectives": "Learning objectives",
-      "subject": "Subject line",
-      "preheader": "Preview text",
-      "body": "Body"
-    },
-    "fieldState": {
-      "missing": "Missing",
-      "outdated": "Needs review",
-      "translated": "Translated"
-    },
-    "allDone": {
-      "title": "Everything is translated",
-      "body": "Every enabled language is complete. New content will appear here as soon as it needs translating."
-    },
-    "noMatch": {
-      "title": "Nothing matches these filters",
-      "body": "Try another language or content type, or clear the filters to see everything that is missing."
-    },
-    "editor": {
-      "description": "Translate side by side with the English original. Missing fields are highlighted.",
-      "languages": "Translation language",
-      "completeTitle": "Already fully translated",
-      "progress": "{{name}} · {{done}} of {{total}} fields translated",
-      "left_one": "{{count}} missing",
-      "left_other": "{{count}} missing",
-      "toReview_one": "{{count}} to review",
-      "toReview_other": "{{count}} to review",
-      "prev": "Previous gap",
-      "next": "Next missing field",
-      "fields": "Fields",
-      "original": "English — original",
-      "placeholder": "Add {{name}} translation",
-      "placeholders": "Keep {{list}} — it is replaced with the customer's details when the email is sent.",
-      "outdated": "The English changed on {{date}}, after this was translated.",
-      "keep": "Still correct",
-      "reviewMany_one": "{{count}} field was translated before the English changed.",
-      "reviewMany_other": "{{count}} fields were translated before the English changed.",
-      "confirmAll": "Mark all as reviewed",
-      "alreadyComplete": "{{name}} is already fully translated for this item.",
-      "unsaved_one": "Unsaved edits in {{count}} language",
-      "unsaved_other": "Unsaved edits in {{count}} languages",
-      "noChanges": "No changes yet",
-      "save": "Save translation",
-      "saveNext": "Save & next item",
-      "skip": "Skip to next item",
-      "saved": "Translation saved — {{name}}",
-      "failed": "Translation not saved",
-      "failedInline": "Not saved — your text is still here. Try again.",
-      "leaveTitle": "Leave without saving?",
-      "leaveBody": "Your translation edits for this item will be lost.",
-      "leaveConfirm": "Discard edits",
-      "leaveCancel": "Keep editing"
-    }
-  }
+  "status": {
+    "loading": "Loading the settings",
+    "failedTitle": "The settings could not be loaded",
+    "failedBody": "The server did not answer. Check your connection and try again.",
+    "retry": "Try again",
+    "unavailableTitle": "Settings unavailable",
+    "unavailableBody": "This environment is not connected to the database: the store settings can neither be read nor changed here."
+  },
+  "readOnly": "Read only: your role can view the settings, not change them."
 }
