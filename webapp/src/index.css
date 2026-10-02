@@ -1934,6 +1934,155 @@
 }
 
 /* ---------------------------------------------------------------------------
+   Academy marketplace (/academy)
+
+   The home page's editorial language (`gt-alt`), carried into the Academy:
+   a pastel-blue hero, the catalogue on the warm off-white the home page's
+   Academy band uses, one dark band for the learner's progression, and the
+   pastel blue again for the ecosystem and the closing call. Emerald stays on
+   the calls to action, fuchsia marks only the featured label and "for you".
+   Every entrance and loop stops under reduced motion.
+--------------------------------------------------------------------------- */
+@layer components {
+  .gt-academy-hero {
+    background:
+      radial-gradient(50% 60% at 85% 20%, rgba(255, 255, 255, .7), transparent 70%),
+      radial-gradient(45% 55% at 5% 95%, rgba(255, 255, 255, .45), transparent 70%),
+      linear-gradient(160deg, var(--gt-blue-100) 0%, var(--gt-blue-200) 100%);
+  }
+
+  .gt-academy-market { background: linear-gradient(180deg, var(--gt-off-white) 0%, var(--gt-sand) 100%); }
+
+  /* Featured course: the magazine feature. */
+  .gt-academy-featured {
+    background:
+      radial-gradient(60% 80% at 100% 0%, rgba(122, 149, 184, .28), transparent 70%),
+      var(--gt-ink-900);
+    transition: transform var(--duration-normal) var(--ease-out-soft), box-shadow var(--duration-normal) var(--ease-out-soft);
+  }
+  .gt-academy-featured:hover,
+  .gt-academy-featured:focus-within { transform: translateY(-3px); }
+  .gt-academy-featured:hover .gt-alt-tile-art,
+  .gt-academy-featured:focus-within .gt-alt-tile-art { transform: scale(1.04); }
+  .gt-academy-featured-cta { box-shadow: 0 10px 24px -12px rgba(18, 168, 122, .55); transition: box-shadow var(--duration-normal) var(--ease-out-soft); }
+  .gt-academy-featured:hover .gt-academy-featured-cta { box-shadow: 0 16px 32px -12px rgba(18, 168, 122, .75); }
+  .gt-academy-featured:hover .gt-alt-tile-arrow,
+  .gt-academy-featured:focus-within .gt-alt-tile-arrow { transform: translateX(3px); }
+
+  /* Starting points and theme chips: a pressed state that is a fill, a
+     check and `aria-pressed`, never the colour alone. */
+  .gt-academy-path,
+  .gt-academy-chip {
+    transition:
+      background-color var(--duration-fast) var(--ease-standard),
+      border-color var(--duration-fast) var(--ease-standard),
+      color var(--duration-fast) var(--ease-standard),
+      transform var(--duration-fast) var(--ease-standard);
+  }
+  .gt-academy-path:active,
+  .gt-academy-chip:active { transform: scale(.98); }
+  .gt-academy-path:focus-visible,
+  .gt-academy-chip:focus-visible { outline: 2px solid var(--focus-ring); outline-offset: 3px; }
+
+  /* Course cards settle in one after another when the result changes. */
+  .gt-academy-card-in { animation: gt-alt-rise var(--duration-slow) var(--ease-out-soft) both; animation-delay: var(--gt-delay, 0ms); }
+
+  /* How it works: a line joins the numbered steps on wide screens. */
+  @media (min-width: 1280px) {
+    .gt-academy-step:not(:last-child)::before {
+      content: "";
+      position: absolute;
+      top: 20px;
+      left: 52px;
+      right: -12px;
+      height: 1px;
+      background: linear-gradient(90deg, var(--gt-blue-300), color-mix(in srgb, var(--gt-blue-300) 30%, transparent));
+    }
+  }
+
+  /* From curiosity to confidence: the dark band. */
+  .gt-academy-journey {
+    background:
+      radial-gradient(45% 60% at 0% 0%, rgba(122, 149, 184, .32), transparent 70%),
+      radial-gradient(40% 50% at 100% 100%, rgba(185, 205, 229, .14), transparent 70%),
+      linear-gradient(180deg, var(--gt-ink-900) 0%, #151b23 100%);
+  }
+  .gt-academy-stages { position: relative; }
+  .gt-academy-stages::before {
+    content: "";
+    position: absolute;
+    left: 15.5px;
+    top: 16px;
+    bottom: 16px;
+    width: 1px;
+    background: linear-gradient(180deg, var(--gt-blue-300), var(--gt-emerald-400));
+    transform: scaleY(0);
+    transform-origin: top;
+    transition: transform 1200ms var(--ease-out-soft) 200ms;
+  }
+  @media (min-width: 640px) {
+    .gt-academy-stages::before {
+      left: 16px;
+      right: 16px;
+      top: 15.5px;
+      bottom: auto;
+      width: auto;
+      height: 1px;
+      background: linear-gradient(90deg, var(--gt-blue-300), var(--gt-emerald-400));
+      transform: scaleX(0);
+      transform-origin: left;
+    }
+  }
+  .gt-academy-journey.is-visible .gt-academy-stages::before { transform: none; }
+  .gt-academy-stage-dot {
+    color: var(--gt-blue-300);
+    background: var(--gt-ink-900);
+    border: 1px solid var(--gt-blue-300);
+  }
+  .gt-academy-stage:last-child .gt-academy-stage-dot {
+    color: var(--text-on-accent);
+    background: var(--accent-cta);
+    border-color: var(--accent-cta);
+  }
+
+  /* The ecosystem and the closing call: the pastel blue. */
+  .gt-academy-ecosystem {
+    background:
+      radial-gradient(55% 80% at 92% 8%, rgba(255, 255, 255, .6), transparent 60%),
+      linear-gradient(160deg, var(--gt-blue-100) 0%, var(--gt-blue-200) 100%);
+  }
+  .gt-academy-eco-tile { transition: transform var(--duration-normal) var(--ease-out-soft), box-shadow var(--duration-normal) var(--ease-out-soft); }
+  .gt-academy-eco-tile:has(a, button):hover,
+  .gt-academy-eco-tile:has(a, button):focus-within { transform: translateY(-4px); box-shadow: var(--shadow-card-hover); }
+  .gt-academy-eco-tile:hover .gt-alt-tile-arrow,
+  .gt-academy-eco-tile:focus-within .gt-alt-tile-arrow { transform: translate(2px, -2px); }
+  .gt-academy-final {
+    background:
+      radial-gradient(60% 90% at 50% 0%, rgba(255, 255, 255, .9), transparent 70%),
+      linear-gradient(160deg, var(--gt-blue-100) 0%, var(--gt-blue-300) 100%);
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .gt-academy-card-in { animation: none; }
+  .gt-academy-featured,
+  .gt-academy-featured-cta,
+  .gt-academy-path,
+  .gt-academy-chip,
+  .gt-academy-eco-tile,
+  .gt-academy-stages::before { transition: none; }
+  .gt-academy-featured:hover,
+  .gt-academy-featured:focus-within,
+  .gt-academy-eco-tile:has(a, button):hover,
+  .gt-academy-eco-tile:has(a, button):focus-within,
+  .gt-academy-featured:hover .gt-alt-tile-art,
+  .gt-academy-featured:focus-within .gt-alt-tile-art,
+  .gt-academy-path:active,
+  .gt-academy-chip:active { transform: none; }
+  .gt-academy-stages::before { transform: none; }
+}
+
+/* ---------------------------------------------------------------------------
    Alternative shop (/boutique)
 
    The products come first: a wider container than the rest of the storefront

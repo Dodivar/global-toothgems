@@ -749,35 +749,20 @@
     }
   },
   "academy": {
-    "eyebrow": "Academy",
-    "title": "Une formation<br>qui tient en cabine",
-    "body": "Préparation, pose, retrait et suivi client. Vidéos en FR · EN · DE, quiz de validation et attestation professionnelle à la fin du parcours.",
-    "communityEyebrow": "Communauté",
-    "communityTitle": "Vous n’apprenez pas seul",
-    "communityBody": "Chaque module se termine par une revue de cas : vous envoyez vos photos de pose, un formateur répond sous 48 h. Les artistes certifiés apparaissent ensuite dans l’annuaire public.",
-    "communityCta": "Voir l’annuaire",
     "toastCourseTitle": "Formation ouverte",
     "toastCourseBody": "{{title}} · reprise à la leçon en cours.",
-    "statsLabel": "L’Academy en chiffres",
     "accountRequired": "Un compte est nécessaire pour suivre une formation.",
-    "ctaCourses": "Voir les formations",
-    "coursesLabel": "Les formations",
-    "statCourses_one": "formation",
-    "statCourses_other": "formations",
-    "statModules_one": "module",
-    "statModules_other": "modules",
-    "statLessons_one": "leçon",
-    "statLessons_other": "leçons",
-    "emptyTitle": "Les premières formations arrivent bientôt",
-    "emptyBody": "Elles seront présentées ici dès leur mise en ligne.",
-    "loadError": "Les formations n’ont pas pu être chargées.",
-    "retry": "Réessayer",
-    "loading": "Chargement des formations…",
     "levels": {
       "beginner": "Débutant",
       "intermediate": "Intermédiaire",
       "advanced": "Avancé",
       "all": "Tous niveaux"
+    },
+    "categories": {
+      "technique": "Technique",
+      "hygiene": "Hygiène & sécurité",
+      "business": "Business",
+      "creative": "Créativité"
     }
   },
   "training": {
