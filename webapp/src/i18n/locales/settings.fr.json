@@ -102,7 +102,8 @@
     "vatCountryTaken": "Ce pays a déjà un taux.",
     "vatNumber": "Saisissez le numéro avec le code pays, par exemple FR12345678901.",
     "requiredShown": "Renseignez ce champ ou ne l'affichez pas aux clients.",
-    "reducedTaken": "Ce pays a déjà un taux réduit pour cette catégorie."
+    "reducedTaken": "Ce pays a déjà un taux réduit pour cette catégorie.",
+    "positive": "Saisissez un nombre supérieur à zéro."
   },
   "store": {
     "business": {

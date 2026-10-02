@@ -102,7 +102,8 @@
     "vatCountryTaken": "This country already has a rate.",
     "vatNumber": "Enter the number with its country code, e.g. FR12345678901.",
     "requiredShown": "Fill this in, or don't show it to customers.",
-    "reducedTaken": "This country already has a reduced rate for this category."
+    "reducedTaken": "This country already has a reduced rate for this category.",
+    "positive": "Enter a number greater than zero."
   },
   "store": {
     "business": {
