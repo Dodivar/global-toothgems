@@ -11,7 +11,7 @@ import { mapPublicCourses, type CoursePriceRow, type PublicCourseRow } from "./p
  * Lesson content, questions and answers are not part of it.
  */
 const PUBLIC_COURSE_SELECT = `
-  id, slug, title, short_description, description, level, duration_minutes, objectives, requirements,
+  id, slug, title, short_description, description, category, level, duration_minutes, objectives, requirements,
   min_score, issues_certificate, price, currency, published_at,
   course_translations ( locale, status, title, slug, short_description, description, objectives, requirements ),
   cover:training_media!courses_cover_media_id_fkey ( id, alt_text, updated_at,

@@ -99,6 +99,7 @@ const COURSE = {
   title: "Pose essentielle",
   short_description: "Les gestes de base, pas à pas.",
   description: null,
+  category: "technique",
   level: "beginner",
   duration_minutes: 95,
   objectives: ["Préparer l’émail"],

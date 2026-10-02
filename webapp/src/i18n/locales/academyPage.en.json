@@ -1,0 +1,225 @@
+{
+  "meta": {
+    "title": "Academy: online tooth gem training",
+    "description": "The Global Toothgems Academy's online training: learn tooth gem placement, build your confidence and develop your style, at your own pace."
+  },
+  "hero": {
+    "eyebrow": "Global Toothgems Academy",
+    "script": "your craft, your pace",
+    "title": "Learn. Create. Master your craft.",
+    "body": "Online training to develop your technique, your confidence and your signature — whether you are placing your very first gem or turning your passion into a profession.",
+    "cta": "Explore the courses",
+    "ctaSecondary": "Find my starting point",
+    "chipCourses_one": "{{count}} online course",
+    "chipCourses_other": "{{count}} online courses",
+    "chipPace": "Online, at your own pace",
+    "chipCertificate": "Earn a certificate",
+    "highlightsLabel": "The Academy at a glance",
+    "featuredLabel": "Featured",
+    "imageAlt": "A smile adorned with tooth gems, framed by hands with colourful nails"
+  },
+  "value": {
+    "eyebrow": "Why learn with us",
+    "title": "More than a technique: real skills that grow with you.",
+    "lead": "What you gain by training with Global Toothgems, whichever course you choose.",
+    "technique": {
+      "title": "A professional touch",
+      "body": "Precise placement techniques, explained step by step."
+    },
+    "confidence": {
+      "title": "Confidence at the chair",
+      "body": "Knowing what to do, and why, at every step."
+    },
+    "practice": {
+      "title": "Best practices",
+      "body": "Hygiene, safety and care for the enamel in every move."
+    },
+    "results": {
+      "title": "Results that last",
+      "body": "Clean, well-placed gems made to stay."
+    },
+    "identity": {
+      "title": "Your signature",
+      "body": "Compose, experiment and assert your own style."
+    },
+    "business": {
+      "title": "A structured practice",
+      "body": "The foundations for turning your passion into a professional activity."
+    }
+  },
+  "market": {
+    "eyebrow": "The catalogue",
+    "title": "Choose the course that suits you.",
+    "lead": "Compare at a glance, then open a course to see its full programme.",
+    "allTitle": "All courses"
+  },
+  "featured": {
+    "label": "Featured course",
+    "cta": "Discover the course",
+    "metaLabel": "At a glance"
+  },
+  "pathways": {
+    "eyebrow": "Your starting point",
+    "title": "Where are you in your tooth gem journey?",
+    "lead": "Pick the one that sounds like you: the courses that suit it move to the top of the catalogue.",
+    "groupLabel": "Your starting point",
+    "new": {
+      "title": "I’m completely new",
+      "body": "Discover the basics with peace of mind."
+    },
+    "improve": {
+      "title": "I already practise and want to improve",
+      "body": "Gain precision and consistency."
+    },
+    "professional": {
+      "title": "I want to professionalise my activity",
+      "body": "Structure my practice and my offer."
+    },
+    "refine": {
+      "title": "I want to refine my technique",
+      "body": "Go further: advanced cases and creativity."
+    },
+    "matches_one": "{{count}} course suits your starting point, at the top of the catalogue.",
+    "matches_other": "{{count}} courses suit your starting point, at the top of the catalogue.",
+    "none": "No course is dedicated to this starting point yet: the whole catalogue stays on show.",
+    "reset": "Back to the whole catalogue"
+  },
+  "filters": {
+    "label": "Filter the courses",
+    "search": "Search",
+    "searchPlaceholder": "Title, theme…",
+    "category": "Theme",
+    "level": "Level",
+    "sort": "Sort by",
+    "anyCategory": "All",
+    "anyLevel": "Any level",
+    "sorts": {
+      "curated": "Our selection",
+      "newest": "Newest",
+      "price-asc": "Price, low to high",
+      "price-desc": "Price, high to low",
+      "duration-asc": "Shortest first"
+    },
+    "open": "Filters",
+    "dialogTitle": "Filter and sort",
+    "apply_one": "Show {{count}} course",
+    "apply_other": "Show {{count}} courses",
+    "clear": "Clear filters",
+    "close": "Close",
+    "results_one": "{{count}} course",
+    "results_other": "{{count}} courses"
+  },
+  "card": {
+    "cta": "Explore",
+    "new": "New",
+    "forYou": "For you",
+    "certificate": "Certificate"
+  },
+  "noMatch": {
+    "title": "No course matches",
+    "body": "Broaden your search or clear the filters to see the whole catalogue again."
+  },
+  "empty": {
+    "title": "The first courses are coming soon",
+    "body": "They will appear here as soon as they go online."
+  },
+  "loading": "Loading the courses…",
+  "loadError": "The courses could not be loaded.",
+  "retry": "Try again",
+  "steps": {
+    "eyebrow": "How it works",
+    "title": "A clear path, from your first click to mastery.",
+    "lead": "Each course’s detailed programme is on its own page. Here are the main steps.",
+    "s1": {
+      "title": "Choose your course",
+      "body": "To match your level and your goals."
+    },
+    "s2": {
+      "title": "Learn at your own pace",
+      "body": "Online, whenever suits you."
+    },
+    "s3": {
+      "title": "Practise",
+      "body": "Put every move into practice."
+    },
+    "s4": {
+      "title": "Progress step by step",
+      "body": "Your progress is saved as you go."
+    },
+    "s5": {
+      "title": "Check your knowledge",
+      "body": "Test what you have learnt along the modules."
+    },
+    "s6": {
+      "title": "Receive your certificate",
+      "body": "When the course issues one."
+    }
+  },
+  "journey": {
+    "eyebrow": "Your progression",
+    "script": "your story starts here",
+    "title": "From curiosity to confidence.",
+    "lead": "A course is more than a series of videos: it is know-how, self-assurance and the freedom to create.",
+    "stagesLabel": "The stages of your progression",
+    "discover": {
+      "title": "Discover",
+      "body": "It starts with a smile that sparkles."
+    },
+    "learn": {
+      "title": "Learn",
+      "body": "Understand enamel, materials and the right moves."
+    },
+    "practice": {
+      "title": "Practise",
+      "body": "Repeat until the move feels natural."
+    },
+    "create": {
+      "title": "Create",
+      "body": "Compose placements that look like you."
+    },
+    "grow": {
+      "title": "Grow",
+      "body": "Share your art, and perhaps make a living from it."
+    },
+    "cta": "Start my journey",
+    "imageAlt": "Pink-nailed fingers revealing silver tooth gems"
+  },
+  "ecosystem": {
+    "eyebrow": "The Global Toothgems world",
+    "title": "You are not just taking a course: you are joining a world.",
+    "lead": "The Academy is part of an ecosystem built around the art of tooth gems.",
+    "learn": {
+      "title": "Learn",
+      "body": "The Academy’s courses, at your own pace.",
+      "cta": "See the courses"
+    },
+    "create": {
+      "title": "Create",
+      "body": "Design your compositions on a 3D smile.",
+      "cta": "Open the 3D Studio"
+    },
+    "equip": {
+      "title": "Get equipped",
+      "body": "Gems, tools and kits chosen for artists.",
+      "cta": "Visit the shop"
+    },
+    "share": {
+      "title": "Share & connect",
+      "body": "A space for artists to exchange is in the works."
+    },
+    "soon": "Coming soon"
+  },
+  "proof": {
+    "eyebrow": "They trained with us",
+    "title": "What the training changed for them.",
+    "lead": "Learner reviews, published after moderation.",
+    "course": "Course: {{title}}"
+  },
+  "final": {
+    "script": "your turn",
+    "title": "Your next placement starts here.",
+    "body": "Explore the catalogue and choose the course that takes you to the next level.",
+    "cta": "Explore the courses",
+    "ctaSecondary": "Find my starting point"
+  }
+}

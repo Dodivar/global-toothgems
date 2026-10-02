@@ -744,35 +744,20 @@
     }
   },
   "academy": {
-    "eyebrow": "Academy",
-    "title": "Training that holds up<br>in the chair",
-    "body": "Prep, application, removal and aftercare. Videos in FR · EN · DE, validation quizzes and a professional certificate at the end of the track.",
-    "communityEyebrow": "Community",
-    "communityTitle": "You don’t learn alone",
-    "communityBody": "Every module ends with a case review: you send in photos of your work, a trainer replies within 48h. Certified artists then appear in the public directory.",
-    "communityCta": "View the directory",
     "toastCourseTitle": "Course opened",
     "toastCourseBody": "{{title}} · resuming at your current lesson.",
-    "statsLabel": "The Academy in numbers",
     "accountRequired": "An account is required to take a course.",
-    "ctaCourses": "See the courses",
-    "coursesLabel": "The courses",
-    "statCourses_one": "course",
-    "statCourses_other": "courses",
-    "statModules_one": "module",
-    "statModules_other": "modules",
-    "statLessons_one": "lesson",
-    "statLessons_other": "lessons",
-    "emptyTitle": "The first courses are coming soon",
-    "emptyBody": "They will be listed here as soon as they go online.",
-    "loadError": "The courses could not be loaded.",
-    "retry": "Try again",
-    "loading": "Loading the courses…",
     "levels": {
       "beginner": "Beginner",
       "intermediate": "Intermediate",
       "advanced": "Advanced",
       "all": "All levels"
+    },
+    "categories": {
+      "technique": "Technique",
+      "hygiene": "Hygiene & safety",
+      "business": "Business",
+      "creative": "Creativity"
     }
   },
   "training": {

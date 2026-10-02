@@ -1,7 +1,7 @@
 import { COURSES } from "../../data/courses";
 import { MODULES, PASS_SCORE, parseDuration } from "../../data/lessons";
 import { toMinorUnits } from "../catalog/money";
-import type { CourseLevel, PublicCourse, PublicModule } from "./publicCourse";
+import type { CourseCategory, CourseLevel, PublicCourse, PublicModule } from "./publicCourse";
 
 /**
  * The public Academy in mock mode (no Supabase configured): the prototype's
@@ -13,6 +13,14 @@ import type { CourseLevel, PublicCourse, PublicModule } from "./publicCourse";
 
 /** The prototype courses' levels (also read by the learner fixtures, `lib/progress.tsx`). */
 export const FIXTURE_LEVELS: Record<string, CourseLevel> = { fondation: "beginner", avance: "advanced", business: "all" };
+
+/** Their themes and the order they went online in, so the catalogue's filters and sorts have something to work on. */
+const FIXTURE_CATEGORIES: Record<string, CourseCategory> = { fondation: "technique", avance: "technique", business: "business" };
+const FIXTURE_PUBLISHED: Record<string, string> = {
+  fondation: "2026-06-02T09:00:00Z",
+  avance: "2026-07-15T09:00:00Z",
+  business: "2026-09-01T09:00:00Z",
+};
 
 const OUTLINE: PublicModule[] = MODULES.map((module, m) => ({
   id: `module-${m + 1}`,
@@ -47,6 +55,8 @@ export const FIXTURE_COURSES: PublicCourse[] = COURSES.map((course) => {
     summary: course.copy,
     description: null,
     level: FIXTURE_LEVELS[course.id] ?? "all",
+    category: FIXTURE_CATEGORIES[course.id] ?? "technique",
+    publishedAt: FIXTURE_PUBLISHED[course.id] ?? null,
     minutes: MINUTES,
     objectives: OBJECTIVES,
     requirements: [],
