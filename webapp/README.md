@@ -467,7 +467,7 @@ The signed-in area is an administration dashboard: a left sidebar on desktop, a 
 | `/compte/commandes` | Order history, with parcel tracking and lifetime spend per currency |
 | `/compte/commandes/:reference` | One order: lines as bought, recorded amounts, parcels and tracking, refunds, addresses; "Print the summary" (an order summary, explicitly not an invoice) |
 | `/compte/fidelite` | Loyalty card — the stamp card, the reward, and the demo controls |
-| `/compte/profil` | Profile details, editable |
+| `/compte/profil` | Profile details, editable and saved: name/phone on `profiles`, newsletter as a `marketing_email` consent record, address as the default shipping row of `customer_addresses` (emptying it deletes the row; a partial address is refused client-side) |
 
 The sidebar also links out to the course catalogue (`/academy`) and signs the member out. `RequireAccount` wraps the layout, so every section is gated at once.
 
