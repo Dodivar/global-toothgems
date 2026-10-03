@@ -7,6 +7,7 @@ import {
   useState,
   type ReactNode,
 } from "react";
+import posthog from "posthog-js";
 import { useTranslation } from "react-i18next";
 import { useNavigate } from "../../lib/navigation";
 import { ChevronDown, ImagePlus, Plus, Send, X } from "lucide-react";
@@ -116,6 +117,10 @@ function NewDiscussionDialog({ channelId, onClose }: { channelId: string; onClos
         title: title.trim(),
         body: body.trim(),
         image: attachment ?? undefined,
+      });
+      posthog.capture("discussion_created", {
+        channel_id: channel,
+        has_attachment: Boolean(attachment),
       });
       showToast(t("community.toastPosted"), t("community.toastPostedBody"));
       onClose();

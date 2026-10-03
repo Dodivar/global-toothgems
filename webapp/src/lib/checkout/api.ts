@@ -26,6 +26,8 @@ export interface CheckoutRequest {
   shipping_rate_id: string | null;
   locale: "fr" | "en";
   gift_card_codes?: string[];
+  /** A request to spend the completed loyalty card; the database computes the discount. */
+  use_loyalty_reward?: boolean;
 }
 
 /** Codes the function answers with (`supabase/functions/_shared/orderErrors.ts`), plus the client's own. */
@@ -35,6 +37,7 @@ export const CHECKOUT_ERRORS = [
   "out_of_stock",
   "shipping_unavailable",
   "promotion_code_invalid",
+  "loyalty_reward_unavailable",
   "gift_card_invalid",
   "gift_card_details_invalid",
   "account_required",

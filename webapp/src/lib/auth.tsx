@@ -1,4 +1,5 @@
-import { createContext, useCallback, useContext, useEffect, useMemo, useState, type ReactNode } from "react";
+import { createContext, useCallback, useContext, useEffect, useMemo, useRef, useState, type ReactNode } from "react";
+import posthog from "posthog-js";
 import { Navigate, useLocation } from "./navigation";
 import type { AuthError, User } from "@supabase/supabase-js";
 import { isSupabaseConfigured, sessionReady, supabase } from "./supabase/client";
@@ -101,8 +102,11 @@ interface AuthContextValue {
    */
   signIn: (email: string, identity?: SignInIdentity) => void;
   signOut: () => void;
-  /** Applies an edit from the profile form. No-op while signed out. */
-  updateProfile: (patch: ProfilePatch) => void;
+  /**
+   * Applies an edit from the profile form. Resolves to false when the change
+   * was refused (incomplete address, rejected write); no-op while signed out.
+   */
+  updateProfile: (patch: ProfilePatch) => Promise<boolean>;
 }
 
 /**
@@ -168,6 +172,38 @@ export function AuthProvider({ children }: { children: ReactNode }) {
   );
 }
 
+/**
+ * Synchronizes the persisted browser analytics identity with the account
+ * session. It intentionally runs at the auth boundary rather than at event
+ * call sites, so automatic exception capture inherits the same identity.
+ */
+function PostHogIdentity() {
+  const { profile, userId } = useAuth();
+  const identifiedUserId = useRef<string | null>(null);
+
+  useEffect(() => {
+    if (!userId || !profile) {
+      if (identifiedUserId.current) posthog.reset();
+      identifiedUserId.current = null;
+      return;
+    }
+    if (identifiedUserId.current === userId) return;
+
+    // An account change without an intervening logout must not join the two
+    // users' anonymous histories.
+    if (identifiedUserId.current) posthog.reset();
+
+    const name = `${profile.firstName} ${profile.lastName}`.trim();
+    posthog.identify(userId, {
+      ...(profile.email ? { email: profile.email } : {}),
+      ...(name ? { name } : {}),
+    });
+    identifiedUserId.current = userId;
+  }, [profile, userId]);
+
+  return null;
+}
+
 /* ------------------------------------------------------------------ */
 /* Supabase Auth                                                      */
 /* ------------------------------------------------------------------ */
@@ -176,30 +212,40 @@ type ProfileLoad = { profile: Profile } | { suspended: true } | null;
 
 /**
  * The member profile behind a Supabase user (own row, allowed by RLS). The
- * postal fields stay empty: addresses live in the address book, not here.
+ * postal fields come from the default shipping address of the address book.
  */
 async function loadProfile(user: User): Promise<ProfileLoad> {
   if (!supabase) return null;
-  const { data, error } = await supabase
-    .from("profiles")
-    .select("first_name, last_name, email, phone, country_code, marketing_opt_in, status")
-    .eq("id", user.id)
-    .maybeSingle();
+  const [{ data, error }, { data: address }] = await Promise.all([
+    supabase
+      .from("profiles")
+      .select("first_name, last_name, email, phone, country_code, marketing_opt_in, status")
+      .eq("id", user.id)
+      .maybeSingle(),
+    supabase
+      .from("customer_addresses")
+      .select("address_line1, postal_code, city, country_code")
+      .eq("user_id", user.id)
+      .eq("address_type", "shipping")
+      .eq("is_default", true)
+      .maybeSingle(),
+  ]);
   if (error || !data) return null;
   if (data.status !== "active") return { suspended: true };
 
   // `country_code` is the declared country, any ISO code; the profile form's
-  // country is a delivery country, so only those carry over.
-  const country = (data.country_code ?? "").toLowerCase();
+  // country is a delivery country, so only those carry over. A saved delivery
+  // address wins over the country declared at sign-up.
+  const country = (address?.country_code ?? data.country_code ?? "").toLowerCase();
   return {
     profile: {
       firstName: data.first_name ?? "",
       lastName: data.last_name ?? "",
       email: data.email ?? user.email ?? "",
       phone: data.phone ?? "",
-      addressLine: "",
-      postalCode: "",
-      city: "",
+      addressLine: address?.address_line1 ?? "",
+      postalCode: address?.postal_code ?? "",
+      city: address?.city ?? "",
       country: (DELIVERY_COUNTRIES as readonly string[]).includes(country) ? country : "",
       newsletter: data.marketing_opt_in,
     },
@@ -329,15 +375,34 @@ function SupabaseAuthProvider({ children }: { children: ReactNode }) {
   /**
    * Shows the edit at once, then writes what the database holds for the
    * profile: name and phone on `profiles`, the newsletter choice as a consent
-   * record (the opt-in column is a cache the database maintains). Postal
-   * fields belong to the address book and email changes to Supabase Auth, so
-   * they stay local here. A refused write reloads the stored profile.
+   * record (the opt-in column is a cache the database maintains), the postal
+   * fields as the default shipping address of the address book (emptied
+   * fields remove it). Email changes belong to Supabase Auth and stay local
+   * here. A refused write reloads the stored profile and resolves to false.
    */
   const updateProfile = useCallback(
-    (patch: ProfilePatch) => {
-      if (!profile || !userId || !supabase) return;
-      setProfile((prev) => (prev ? { ...prev, ...patch } : prev));
+    async (patch: ProfilePatch): Promise<boolean> => {
+      if (!profile || !userId || !supabase) return false;
       const client = supabase;
+      const next = { ...profile, ...patch };
+      const line = next.addressLine.trim();
+      const city = next.city.trim();
+      const postal = next.postalCode.trim();
+      const addressTouched =
+        (patch.addressLine !== undefined && line !== profile.addressLine.trim()) ||
+        (patch.city !== undefined && city !== profile.city.trim()) ||
+        (patch.postalCode !== undefined && postal !== profile.postalCode.trim()) ||
+        (patch.country !== undefined && patch.country !== profile.country);
+      const addressCleared = !line && !city && !postal;
+      const firstName = next.firstName.trim();
+      const lastName = next.lastName.trim();
+      // A profile without a country shows the first delivery country in the
+      // form's list, so that is the one saved.
+      const country = next.country || DELIVERY_COUNTRIES[0];
+      // The address book needs a recipient name, a street, a city and a country.
+      if (addressTouched && !addressCleared && !(line && city && country && firstName && lastName)) return false;
+
+      setProfile(next);
 
       const writes: PromiseLike<{ error: unknown }>[] = [];
       const row: { first_name?: string | null; last_name?: string | null; phone?: string | null } = {};
@@ -356,13 +421,46 @@ function SupabaseAuthProvider({ children }: { children: ReactNode }) {
           }),
         );
       }
-      if (writes.length === 0) return;
-      void Promise.all(writes).then(async (results) => {
-        if (results.some((r) => r.error)) {
-          const { data } = await client.auth.getUser();
-          await applyUser(data.user);
-        }
-      });
+      if (addressTouched) {
+        writes.push(
+          (async () => {
+            const { data: existing, error } = await client
+              .from("customer_addresses")
+              .select("id")
+              .eq("user_id", userId)
+              .eq("address_type", "shipping")
+              .eq("is_default", true)
+              .maybeSingle();
+            if (error) return { error };
+            if (addressCleared) {
+              return existing
+                ? client.from("customer_addresses").delete().eq("id", existing.id)
+                : { error: null };
+            }
+            const values = {
+              first_name: firstName,
+              last_name: lastName,
+              address_line1: line,
+              postal_code: postal || null,
+              city,
+              country_code: country.toUpperCase(),
+            };
+            return existing
+              ? client.from("customer_addresses").update(values).eq("id", existing.id)
+              : client
+                  .from("customer_addresses")
+                  .insert({ ...values, user_id: userId, address_type: "shipping", is_default: true });
+          })(),
+        );
+      }
+      if (writes.length === 0) return true;
+      const results = await Promise.all(writes);
+      if (results.some((r) => r.error)) {
+        const { data } = await client.auth.getUser();
+        await applyUser(data.user);
+        return false;
+      }
+      return true;
     },
     [profile, userId, applyUser],
   );
@@ -385,7 +483,12 @@ function SupabaseAuthProvider({ children }: { children: ReactNode }) {
     [profile, restoring, userId, signInWithPassword, signUp, resendConfirmation, signIn, signOut, updateProfile],
   );
 
-  return <AuthContext.Provider value={value}>{children}</AuthContext.Provider>;
+  return (
+    <AuthContext.Provider value={value}>
+      <PostHogIdentity />
+      {children}
+    </AuthContext.Provider>
+  );
 }
 
 /* ------------------------------------------------------------------ */
@@ -468,8 +571,9 @@ function DemoAuthProvider({ children }: { children: ReactNode }) {
   const signOut = useCallback(() => setProfile(null), [setProfile]);
 
   const updateProfile = useCallback(
-    (patch: ProfilePatch) => {
+    async (patch: ProfilePatch): Promise<boolean> => {
       setProfile((prev) => (prev ? { ...prev, ...patch } : prev));
+      return true;
     },
     [setProfile],
   );
@@ -492,7 +596,12 @@ function DemoAuthProvider({ children }: { children: ReactNode }) {
     [profile, hydrated, signInWithPassword, signUp, resendConfirmation, signIn, signOut, updateProfile],
   );
 
-  return <AuthContext.Provider value={value}>{children}</AuthContext.Provider>;
+  return (
+    <AuthContext.Provider value={value}>
+      <PostHogIdentity />
+      {children}
+    </AuthContext.Provider>
+  );
 }
 
 export function useAuth() {

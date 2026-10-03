@@ -292,7 +292,7 @@ src/
   components/community/ Forum pieces (navigation, discussion card, showcase card, reactions, member card, composer, locked preview)
   components/reviews/ Customer reviews: stars, badges, review card, section, form, request, overlays; admin/ holds the moderation workspace
   components/studio/ The 3D Studio mockups (and editor/, the working editor UI): smile canvas, rendered gems, interactive Studio window, feature cards, media placeholders, inspiration boards, steps, pricing card, FAQ, home teaser
-  components/loyalty/ The Loyalty Club: stamp, card, progress, reward, steps, journey, FAQ, checkout banner, demo switcher
+  components/loyalty/ The Loyalty Club: stamp, card, progress, reward, steps, journey, FAQ, checkout banner
   components/layout/ Header (desktop nav + mega panel, mobile burger menu) and Footer
   screens/admin/    The administration workspace: access screen, shell, dashboard, orders, products, categories
   components/admin/ Workspace primitives (rail, header, product table, form, media uploader, drawer, dialogs) and the orders workspace (KPI row, filter toolbar, order table + card list, row actions, bulk bar, pagination, detail cards, timeline, notes)
@@ -466,8 +466,8 @@ The signed-in area is an administration dashboard: a left sidebar on desktop, a 
 | `/compte/attestations` | Certificates |
 | `/compte/commandes` | Order history, with parcel tracking and lifetime spend per currency |
 | `/compte/commandes/:reference` | One order: lines as bought, recorded amounts, parcels and tracking, refunds, addresses; "Print the summary" (an order summary, explicitly not an invoice) |
-| `/compte/fidelite` | Loyalty card — the stamp card, the reward, and the demo controls |
-| `/compte/profil` | Profile details, editable |
+| `/compte/fidelite` | Loyalty card — the member's real stamp card and reward (`lib/loyalty.tsx`, `loyalty_overview`), read again on arrival |
+| `/compte/profil` | Profile details, editable and saved: name/phone on `profiles`, newsletter as a `marketing_email` consent record, address as the default shipping row of `customer_addresses` (emptying it deletes the row; a partial address is refused client-side) |
 
 The sidebar also links out to the course catalogue (`/academy`) and signs the member out. `RequireAccount` wraps the layout, so every section is gated at once.
 
@@ -784,7 +784,7 @@ Without the Supabase variables every domain runs on its mock store. With them, t
 - **Checkout extras.** Payment runs through Stripe (see *Cart and checkout*) and gift card codes can be used in the cart, but promotion codes and the loyalty reward cannot be entered yet (the Edge Function accepts promotion codes), no confirmation e-mail is sent, and saving the address on the account is not offered.
 - **Academy.** Authoring, public pages and the learner side are on Supabase (phases A–C). Courses are bought through the cart (phase D, migration `20261002100000_course_checkout` not applied yet) or granted by hand (`/admin/formations/:id/acces`). The back office's course list and statistics still show placeholder learner figures (`enrolled`, `completionRate`, `data/adminAnalytics.ts`).
 - **Artist Community.** Fixtures and in-memory posting; access derived client-side from the courses on the account. Post-launch.
-- **Loyalty Club.** Display only (`data/loyalty.ts` with a demo switch); the database already awards stamps on paid orders — the UI must read `loyalty_overview`.
+- **Loyalty Club.** Live (2026-10-03). `lib/loyalty.tsx` reads the public rules (`loyalty_settings`) and the member's card (`loyalty_overview`, RLS-limited); `lib/loyaltyMapping.ts` derives the card state (unit-tested); `data/loyalty.ts` holds the types and the example cards of the marketing pages. The database awards the stamp when the Stripe webhook marks an order paid; the browser only reads. The cart banner counts shop goods only (no gift card, no course) and invites guests to sign in. The cart offers a checkbox to spend a completed card (`use_loyalty_reward` in the checkout request, previewed with `rewardDiscount`; the database refuses with `loyalty_reward_unavailable` when the card is gone or reserved). Not built: e-mail on stamp/reward.
 - **Security page:** data export and account deletion are simulated (they need backend jobs).
 - **Back-office promotions and campaigns, statistics:** mock stores over a schema that already exists. A translation workflow (coverage, editor) is not built.
 - **Gift card delivery:** cards are created and activated in the database, but nothing sends the code to the recipient yet (needs the e-mail Edge Function).
