@@ -10,6 +10,22 @@ import { ScenePreview } from "./ScenePreview";
 import { useWorkspaceActions } from "./useWorkspaceActions";
 import { focusRing, iconButton, tagChip, useWorkspaceFormat } from "./workspaceStyles";
 
+/** The group's saved render (its pieces alone on the smile) when there is one, else its drawn front view. */
+export function GroupThumb({ group, minWidth, className }: { group: GemGroup; minWidth: number; className?: string }) {
+  return group.thumbnailUrl ? (
+    <img
+      src={group.thumbnailUrl}
+      alt=""
+      loading="lazy"
+      decoding="async"
+      draggable={false}
+      className={clsx("h-full w-full object-cover", className)}
+    />
+  ) : (
+    <ScenePreview pieces={groupPreviewPieces(group.data)} minWidth={minWidth} className={className} />
+  );
+}
+
 /** One reusable Gem Group: its arrangement, size, estimate and last use; "Use in Studio" first. */
 export function GemGroupCard({ group }: { group: GemGroup }) {
   const { t, price, ago } = useWorkspaceFormat();
@@ -19,8 +35,8 @@ export function GemGroupCard({ group }: { group: GemGroup }) {
   return (
     <article className="group/card relative flex flex-col overflow-hidden rounded-[var(--radius-lg)] border border-[var(--border-subtle)] bg-[var(--surface-card)] shadow-[var(--shadow-sm)] transition-[box-shadow,transform] duration-[var(--duration-normal)] ease-[var(--ease-out-soft)] hover:-translate-y-0.5 hover:shadow-[var(--shadow-md)]">
       <div className="relative aspect-[16/10] overflow-hidden bg-[var(--gt-blue-100)]">
-        <ScenePreview
-          pieces={groupPreviewPieces(group.data)}
+        <GroupThumb
+          group={group}
           minWidth={18}
           className="transition-transform duration-[var(--duration-slow)] ease-[var(--ease-out-soft)] group-hover/card:scale-[1.05]"
         />
