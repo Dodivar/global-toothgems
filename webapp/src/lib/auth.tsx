@@ -1,4 +1,5 @@
-import { createContext, useCallback, useContext, useEffect, useMemo, useState, type ReactNode } from "react";
+import { createContext, useCallback, useContext, useEffect, useMemo, useRef, useState, type ReactNode } from "react";
+import posthog from "posthog-js";
 import { Navigate, useLocation } from "./navigation";
 import type { AuthError, User } from "@supabase/supabase-js";
 import { isSupabaseConfigured, sessionReady, supabase } from "./supabase/client";
@@ -166,6 +167,38 @@ export function AuthProvider({ children }: { children: ReactNode }) {
   ) : (
     <DemoAuthProvider>{children}</DemoAuthProvider>
   );
+}
+
+/**
+ * Synchronizes the persisted browser analytics identity with the account
+ * session. It intentionally runs at the auth boundary rather than at event
+ * call sites, so automatic exception capture inherits the same identity.
+ */
+function PostHogIdentity() {
+  const { profile, userId } = useAuth();
+  const identifiedUserId = useRef<string | null>(null);
+
+  useEffect(() => {
+    if (!userId || !profile) {
+      if (identifiedUserId.current) posthog.reset();
+      identifiedUserId.current = null;
+      return;
+    }
+    if (identifiedUserId.current === userId) return;
+
+    // An account change without an intervening logout must not join the two
+    // users' anonymous histories.
+    if (identifiedUserId.current) posthog.reset();
+
+    const name = `${profile.firstName} ${profile.lastName}`.trim();
+    posthog.identify(userId, {
+      ...(profile.email ? { email: profile.email } : {}),
+      ...(name ? { name } : {}),
+    });
+    identifiedUserId.current = userId;
+  }, [profile, userId]);
+
+  return null;
 }
 
 /* ------------------------------------------------------------------ */
@@ -385,7 +418,12 @@ function SupabaseAuthProvider({ children }: { children: ReactNode }) {
     [profile, restoring, userId, signInWithPassword, signUp, resendConfirmation, signIn, signOut, updateProfile],
   );
 
-  return <AuthContext.Provider value={value}>{children}</AuthContext.Provider>;
+  return (
+    <AuthContext.Provider value={value}>
+      <PostHogIdentity />
+      {children}
+    </AuthContext.Provider>
+  );
 }
 
 /* ------------------------------------------------------------------ */
@@ -492,7 +530,12 @@ function DemoAuthProvider({ children }: { children: ReactNode }) {
     [profile, hydrated, signInWithPassword, signUp, resendConfirmation, signIn, signOut, updateProfile],
   );
 
-  return <AuthContext.Provider value={value}>{children}</AuthContext.Provider>;
+  return (
+    <AuthContext.Provider value={value}>
+      <PostHogIdentity />
+      {children}
+    </AuthContext.Provider>
+  );
 }
 
 export function useAuth() {

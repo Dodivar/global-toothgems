@@ -25,6 +25,7 @@
     "react": "^19.2.8",
     "react-dom": "^19.2.8",
     "react-i18next": "^17.0.14",
+    "posthog-js": "^1.407.2",
     "server-only": "^0.0.1",
     "three": "^0.170.0",
     "three-mesh-bvh": "^0.9.15",
