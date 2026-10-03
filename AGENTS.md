@@ -99,7 +99,7 @@ The switch between mock and live stores is `isSupabaseConfigured` (`webapp/src/l
 
 In use: Next.js 16 (App Router, Turbopack), React 19, TypeScript 6 (`strict`), Tailwind CSS v4 via PostCSS with the design tokens in `webapp/src/index.css`, react-i18next (FR default, EN), lucide-react, three.js (Studio 3D only, lazy-loaded), supabase-js, Vitest, Playwright (smoke tests), oxlint. Supabase (Postgres 17, Auth, Storage, Edge Functions), Stripe, Vercel.
 
-Stripe Checkout + webhooks are Edge Functions (`supabase/functions/`, `npm:stripe` pinned, tested with `deno test`). Planned, when the matching work starts: Resend (+ React Email if useful) for e-mail, Sentry for monitoring, Playwright for the critical journeys against a real project, GitHub Actions CI. Optional only with a concrete need: Mux (serious video), Cloudflare, PostHog, Algolia/Typesense.
+Stripe Checkout + webhooks are Edge Functions (`supabase/functions/`, `npm:stripe` pinned, tested with `deno test`). Planned, when the matching work starts: Resend (+ React Email if useful) for e-mail, Sentry for monitoring, Playwright for the critical journeys against a real project, GitHub Actions CI. In use since 2026-10-03: PostHog (browser analytics in `webapp/instrumentation-client.ts`, identity in `src/lib/auth.tsx`, exception capture, Node log export in `instrumentation.ts`; token + host in `NEXT_PUBLIC_POSTHOG_*`, disabled in e2e). Optional only with a concrete need: Mux (serious video), Cloudflare, Algolia/Typesense.
 
 Not used and not to introduce: shadcn/ui (the project has its own component set), next-intl (not decided: react-i18next stays during the Next.js migration), Shopify/WooCommerce, Firebase, MongoDB, microservices. A new dependency needs a concrete justification (§12).
 
