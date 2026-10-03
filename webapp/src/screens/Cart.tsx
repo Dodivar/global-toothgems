@@ -1,6 +1,7 @@
 "use client";
 
 import { useEffect, useState } from "react";
+import posthog from "posthog-js";
 import { useTranslation } from "react-i18next";
 import { Link, useNavigate } from "../lib/navigation";
 import { ArrowRight, CheckCircle2, CircleAlert, Gift, GraduationCap, Lock, LogIn, Mail, Minus, Plus, ShoppingBag, Trash2, Truck, UserRound } from "lucide-react";
@@ -150,6 +151,15 @@ export function Cart() {
     }
     if (!live) {
       // Mock mode: records the cart as a demo order, as the prototype did.
+      posthog.capture("checkout_started", {
+        item_count: lines.reduce((count, line) => count + line.qty, 0),
+        cart_subtotal: subtotal,
+        shipping_amount: shipping,
+        total_amount: total,
+        currency,
+        contains_course: courseInBasket,
+        checkout_mode: "mock",
+      });
       setReference(placeOrder(lines, toMajorUnits(shipping)));
       clearCart();
       return;
@@ -159,6 +169,15 @@ export function Cart() {
       setCheckoutError("unavailable");
       return;
     }
+    posthog.capture("checkout_started", {
+      item_count: lines.reduce((count, line) => count + line.qty, 0),
+      cart_subtotal: subtotal,
+      shipping_amount: shipping,
+      total_amount: total,
+      currency,
+      contains_course: courseInBasket,
+      checkout_mode: "stripe",
+    });
     setSubmitting(true);
     const result = await startCheckout(request);
     if (result.kind === "redirect") {
