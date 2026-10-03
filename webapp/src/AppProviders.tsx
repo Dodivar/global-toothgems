@@ -23,6 +23,7 @@ import { ReviewModeProvider } from "./lib/reviewMode";
 import { PromotionsProvider } from "./lib/adminPromotions";
 import { ReviewsProvider } from "./lib/reviews";
 import { FavoritesProvider } from "./lib/favorites";
+import { LoyaltyProvider } from "./lib/loyalty";
 import { parsePath, type Locale } from "./lib/localeRoutes";
 import { NavigationTracker } from "./lib/navigation";
 
@@ -101,7 +102,11 @@ export function AppProviders({
                 {/* The member's favourite products: reads the account and the
                     catalogue above it, and confirms with a toast. */}
                 <FavoritesProvider>
+                {/* The Loyalty Club: public rules and the member's card, read
+                    only (stamps are awarded by the database on a paid order). */}
+                <LoyaltyProvider>
                   {children}
+                </LoyaltyProvider>
                 </FavoritesProvider>
                 </ReviewsProvider>
                 </ReviewModeProvider>

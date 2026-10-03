@@ -18,8 +18,8 @@ import { useToast } from "../../lib/toast";
  *
  * The form keeps a draft and only writes it back to the session on submit, so
  * the greeting and the avatar change once — when the member saves — rather than
- * on every keystroke. Nothing is persisted: like the rest of this prototype the
- * session lives in memory, which the note under the form states plainly.
+ * on every keystroke. With Supabase the save writes the profile, the default
+ * shipping address and the newsletter consent (`lib/auth.tsx`).
  */
 
 export function Profile() {
@@ -37,10 +37,16 @@ export function Profile() {
   const setText = (key: keyof MemberProfile) => (e: React.ChangeEvent<HTMLInputElement>) =>
     setDraft((d) => ({ ...d, [key]: e.target.value }));
 
-  const submit = (e: FormEvent) => {
+  const [saving, setSaving] = useState(false);
+
+  const submit = async (e: FormEvent) => {
     e.preventDefault();
-    updateProfile(draft);
-    showToast(t("account.toastProfileTitle"), t("account.toastProfileBody"));
+    if (saving) return;
+    setSaving(true);
+    const saved = await updateProfile(draft);
+    setSaving(false);
+    if (saved) showToast(t("account.toastProfileTitle"), t("account.toastProfileBody"));
+    else showToast(t("account.toastProfileErrorTitle"), t("account.toastProfileErrorBody"));
   };
 
   return (
@@ -176,13 +182,12 @@ export function Profile() {
       </Panel>
 
       <div className="flex flex-wrap items-center gap-3">
-        <Button type="submit" variant="primary" iconLeft={Check} disabled={!dirty}>
+        <Button type="submit" variant="primary" iconLeft={Check} disabled={!dirty || saving}>
           {t("account.profileSave")}
         </Button>
         <Button type="button" variant="ghost" disabled={!dirty} onClick={() => setDraft(profile!)}>
           {t("account.profileCancel")}
         </Button>
-        <span className="text-[length:var(--text-caption)] text-[var(--text-muted)]">{t("account.detailsNote")}</span>
       </div>
     </form>
   );
