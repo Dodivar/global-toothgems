@@ -3,7 +3,8 @@ import { useTranslation } from "react-i18next";
 import { Pause, Play, Stamp } from "lucide-react";
 import { IconButton } from "../ui/IconButton";
 import { LoyaltyCard } from "../loyalty/LoyaltyCard";
-import { LOYALTY_STATES, STAMPS_PER_CARD, type LoyaltyState } from "../../data/loyalty";
+import { exampleLoyaltyState, type LoyaltyState } from "../../data/loyalty";
+import { useLoyalty } from "../../lib/loyalty";
 import { usePrefersReducedMotion } from "./usePrefersReducedMotion";
 
 /** Time each stamp stays on the card before the next one is pressed. */
@@ -13,11 +14,11 @@ const STAMP_INTERVAL_MS = 3000;
  * The card for a given stamp count. Zero reads as "renewed" rather than "start"
  * because the loop only reaches it straight after a completed card.
  */
-function stateForStamps(stamps: number): LoyaltyState {
-  if (stamps === 0) return LOYALTY_STATES.renewed;
-  if (stamps === STAMPS_PER_CARD) return LOYALTY_STATES.unlocked;
-  if (stamps === STAMPS_PER_CARD - 1) return LOYALTY_STATES.oneAway;
-  return { ...LOYALTY_STATES.collecting, stamps };
+function stateForStamps(stamps: number, total: number): LoyaltyState {
+  if (stamps === 0) return exampleLoyaltyState("renewed", total);
+  if (stamps === total) return exampleLoyaltyState("unlocked", total);
+  if (stamps === total - 1) return exampleLoyaltyState("oneAway", total);
+  return { ...exampleLoyaltyState("collecting", total), stamps };
 }
 
 /**
@@ -34,7 +35,9 @@ export function AnimatedLoyaltyCard() {
   const { t } = useTranslation();
   const reducedMotion = usePrefersReducedMotion();
   const ref = useRef<HTMLDivElement>(null);
-  const [stamps, setStamps] = useState(LOYALTY_STATES.collecting.stamps);
+  const { programme } = useLoyalty();
+  const total = programme.stampsPerCard;
+  const [stamps, setStamps] = useState(() => exampleLoyaltyState("collecting", total).stamps);
   /** Set only by a tick, so the stamp already inked on first paint is not re-pressed. */
   const [pressed, setPressed] = useState(-1);
   const [inView, setInView] = useState(false);
@@ -58,15 +61,15 @@ export function AnimatedLoyaltyCard() {
     if (!running) return;
     const id = window.setInterval(() => {
       setStamps((current) => {
-        const next = (current + 1) % (STAMPS_PER_CARD + 1);
+        const next = (current + 1) % (total + 1);
         setPressed(next - 1);
         return next;
       });
     }, STAMP_INTERVAL_MS);
     return () => window.clearInterval(id);
-  }, [running]);
+  }, [running, total]);
 
-  const state = reducedMotion ? LOYALTY_STATES.collecting : stateForStamps(stamps);
+  const state = reducedMotion ? exampleLoyaltyState("collecting", total) : stateForStamps(Math.min(stamps, total), total);
 
   return (
     <div

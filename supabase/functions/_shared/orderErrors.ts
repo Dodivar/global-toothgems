@@ -9,6 +9,7 @@ export type CheckoutErrorCode =
   | "out_of_stock"
   | "shipping_unavailable"
   | "promotion_code_invalid"
+  | "loyalty_reward_unavailable"
   | "gift_card_invalid"
   | "gift_card_details_invalid"
   | "account_required"
@@ -42,7 +43,9 @@ export function checkoutErrorCode(error: DbError): CheckoutErrorCode {
   // "gift cards are not on sale" / "are sold in": the gift card product is unavailable.
   if (/gift cards are/.test(message)) return "unavailable";
   if (error.code === "P0001") return "out_of_stock";
-  if (/promotion code|loyalty reward/.test(message)) return "promotion_code_invalid";
+  // Spending the card: no completed card (or already reserved by an unpaid order), no account, other currency.
+  if (/loyalty reward/.test(message)) return "loyalty_reward_unavailable";
+  if (/promotion code/.test(message)) return "promotion_code_invalid";
   if (/shipping/.test(message)) return "shipping_unavailable";
   if (error.code === "P0002") return "unavailable";
   if (error.code === "22023" || error.code === "22P02" || error.code === "42501") return "invalid_request";

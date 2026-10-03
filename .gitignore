@@ -15,3 +15,4 @@ supabase/.temp/
 
 # Edge Function secrets (names in supabase/functions/.env.example)
 supabase/functions/.env
+.env.local

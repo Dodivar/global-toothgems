@@ -1,5 +1,6 @@
 import { isSupabaseConfigured } from "../../../../src/lib/supabase/env";
 import { createPublicServerSupabase } from "../../../../src/lib/supabase/publicServer";
+import { getPostHogLogger } from "../../../../src/lib/posthogLogs";
 
 /**
  * The cover image of a published course (Academy phase B), from the private
@@ -31,6 +32,12 @@ export async function GET(_request: Request, { params }: { params: Promise<{ id:
     return notFound();
   }
 
+  getPostHogLogger()?.emit({
+    severityText: "INFO",
+    body: "academy_cover_served",
+    attributes: { "academy.cover.delivery": "success" },
+  });
+
   return new Response(file.data, {
     headers: {
       "Content-Type": media.data.mime_type,
@@ -46,5 +53,10 @@ function notFound() {
 
 function unavailable(error: unknown) {
   console.error("[academy] cover read failed", error);
+  getPostHogLogger()?.emit({
+    severityText: "ERROR",
+    body: "academy_cover_unavailable",
+    attributes: { "academy.cover.delivery": "unavailable" },
+  });
   return new Response("Unavailable", { status: 503, headers: { "Cache-Control": "no-store" } });
 }

@@ -38,7 +38,7 @@ const deps: CheckoutDeps = {
       p_reservation_minutes: reservationMinutes,
       p_gift_card_codes: input.gift_card_codes.length > 0 ? input.gift_card_codes : null,
       p_promotion_codes: input.promotion_codes.length > 0 ? input.promotion_codes : null,
-      p_use_loyalty_reward: false,
+      p_use_loyalty_reward: input.use_loyalty_reward,
     });
     if (error) return { error };
     return { order: data };

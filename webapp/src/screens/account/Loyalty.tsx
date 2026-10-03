@@ -1,44 +1,46 @@
 "use client";
 
-import { useState } from "react";
+import { useEffect, useRef } from "react";
 import { useTranslation } from "react-i18next";
 import { Link, useNavigate } from "../../lib/navigation";
-import { ArrowRight, ArrowUpRight, Sparkles } from "lucide-react";
+import { ArrowRight, ArrowUpRight, RotateCw, Sparkles } from "lucide-react";
 import { Button } from "../../components/ui/Button";
-import { SectionHeader } from "../../components/account/SectionHeader";
+import { EmptyPanel, SectionHeader } from "../../components/account/SectionHeader";
 import { LoyaltyCard } from "../../components/loyalty/LoyaltyCard";
 import { LoyaltyReward } from "../../components/loyalty/LoyaltyReward";
 import { LoyaltySteps } from "../../components/loyalty/LoyaltySteps";
-import { LoyaltyStateDemo } from "../../components/loyalty/LoyaltyStateDemo";
-import { CheckoutLoyaltyBanner } from "../../components/loyalty/CheckoutLoyaltyBanner";
+import { deriveLoyaltyState } from "../../data/loyalty";
+import { useLoyalty } from "../../lib/loyalty";
 import { useLoyaltyCopy } from "../../lib/loyaltyCopy";
 import { useFormat } from "../../lib/format";
-import {
-  DEFAULT_LOYALTY_STATE,
-  DEMO_CART_ABOVE,
-  DEMO_CART_BELOW,
-  LOYALTY_STATES,
-  QUALIFYING_AMOUNT,
-  REWARD_PERCENT,
-  STAMPS_PER_CARD,
-  type LoyaltyStateId,
-} from "../../data/loyalty";
 
 /**
- * The member's loyalty card.
+ * The member's loyalty card, read from the database.
  *
- * The card state is local component state seeded from the mock data, because
- * there is no loyalty backend: nothing is fetched, nothing is saved, and
- * switching states here changes only what this page is drawing. The demo
- * controls sit below the member-facing content, in their own dashed panel, so
- * the production surface reads as production even while it is a prototype.
+ * Stamps are written by the database when Stripe confirms the payment of an
+ * order of at least the qualifying amount; this page only shows them. The card
+ * is read again on arrival, because the member usually lands here from a
+ * payment whose stamp may have been awarded after the session was first read.
  */
 export function Loyalty() {
   const { formatPrice } = useFormat();
   const { t } = useTranslation();
   const navigate = useNavigate();
-  const [stateId, setStateId] = useState<LoyaltyStateId>(DEFAULT_LOYALTY_STATE);
-  const state = LOYALTY_STATES[stateId];
+  const { programme, card, status, reload } = useLoyalty();
+
+  // A card read before this visit may predate a payment: read it again once.
+  const refreshed = useRef(false);
+  useEffect(() => {
+    if (status === "ready" && !refreshed.current) {
+      refreshed.current = true;
+      reload();
+    }
+  }, [status, reload]);
+
+  // Without a backend (the smoke tests' mock mode) no card was ever read: an empty one.
+  const state =
+    card ??
+    deriveLoyaltyState({ currentStamps: 0, total: programme.stampsPerCard, rewardsAvailable: 0, cardsRedeemed: 0 });
   const copy = useLoyaltyCopy(state);
 
   return (
@@ -49,31 +51,49 @@ export function Loyalty() {
           eyebrow={t("loyalty.clubName")}
           title={t("loyalty.memberTitle")}
           description={t("loyalty.memberBody", {
-            total: STAMPS_PER_CARD,
-            amount: formatPrice(QUALIFYING_AMOUNT),
-            percent: REWARD_PERCENT,
+            total: programme.stampsPerCard,
+            amount: formatPrice(programme.qualifyingAmount),
+            percent: programme.rewardPercent,
           })}
         />
 
-        <LoyaltyCard
-          state={state}
-          action={
-            <Button
-              variant={state.rewardReady ? "primary" : "outline"}
-              size="sm"
-              iconRight={ArrowRight}
-              onClick={() => navigate("/boutique")}
-            >
-              {copy.cta}
-            </Button>
-          }
-        />
+        {status === "loading" ? (
+          <p role="status" aria-busy="true" className="m-0 text-[length:var(--text-body-sm)] text-[var(--text-muted)]">
+            {t("loyalty.loading")}
+          </p>
+        ) : status === "error" ? (
+          <EmptyPanel
+            action={
+              <Button variant="outline" size="sm" iconLeft={RotateCw} onClick={reload}>
+                {t("loyalty.retry")}
+              </Button>
+            }
+          >
+            {t("loyalty.loadError")}
+          </EmptyPanel>
+        ) : (
+          <>
+            <LoyaltyCard
+              state={state}
+              action={
+                <Button
+                  variant={state.rewardReady ? "primary" : "outline"}
+                  size="sm"
+                  iconRight={ArrowRight}
+                  onClick={() => navigate("/boutique")}
+                >
+                  {copy.cta}
+                </Button>
+              }
+            />
 
-        {state.rewardReady && (
-          <LoyaltyReward
-            title={t("loyalty.rewardPanelTitle", { percent: REWARD_PERCENT })}
-            body={t("loyalty.rewardPanelBody", { percent: REWARD_PERCENT })}
-          />
+            {state.rewardReady && (
+              <LoyaltyReward
+                title={t("loyalty.rewardPanelTitle", { percent: programme.rewardPercent })}
+                body={t("loyalty.rewardPanelBody", { percent: programme.rewardPercent })}
+              />
+            )}
+          </>
         )}
       </section>
 
@@ -92,23 +112,6 @@ export function Loyalty() {
           </Link>
         </div>
         <LoyaltySteps />
-      </section>
-
-      {/* Everything below is preview scaffolding, not the member's own card. */}
-      <section aria-labelledby="gt-loyalty-demo" className="grid gap-4 border-t border-dashed border-[var(--border-default)] pt-8">
-        <h2 id="gt-loyalty-demo" className="text-[length:var(--text-h4)] text-[var(--text-muted)]">
-          {t("loyalty.demoHeading")}
-        </h2>
-
-        <LoyaltyStateDemo value={stateId} onChange={setStateId} />
-
-        <div className="grid gap-4">
-          <p className="m-0 text-[length:var(--text-caption)] text-[var(--text-muted)]">{t("loyalty.demoCheckoutNote")}</p>
-          <div className="grid gap-4 lg:grid-cols-2">
-            <CheckoutLoyaltyBanner subtotal={DEMO_CART_BELOW} state={state} />
-            <CheckoutLoyaltyBanner subtotal={DEMO_CART_ABOVE} state={state} />
-          </div>
-        </div>
       </section>
     </>
   );

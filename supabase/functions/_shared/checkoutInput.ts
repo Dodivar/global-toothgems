@@ -64,6 +64,12 @@ export interface CheckoutInput {
   locale: CheckoutLocale;
   promotion_codes: string[];
   gift_card_codes: string[];
+  /**
+   * Spend the member's completed loyalty card on this order. A request, never an
+   * amount: create_order() checks the account, the card and the currency, and
+   * computes the discount.
+   */
+  use_loyalty_reward: boolean;
   customer_note: string | null;
 }
 
@@ -276,6 +282,7 @@ const INPUT_KEYS = [
   "locale",
   "promotion_codes",
   "gift_card_codes",
+  "use_loyalty_reward",
   "customer_note",
 ] as const;
 
@@ -305,6 +312,9 @@ export function parseCheckoutInput(body: unknown): ValidationResult {
   const giftCardCodes = parseCodes(body.gift_card_codes, MAX_GIFT_CARDS, GIFT_CARD_RE);
   if (!giftCardCodes) return fail("gift_card_codes");
 
+  const useLoyaltyReward = body.use_loyalty_reward ?? false;
+  if (typeof useLoyaltyReward !== "boolean") return fail("use_loyalty_reward");
+
   const note = text(body.customer_note, 1000, { optional: true });
   if (note === null) return fail("customer_note");
 
@@ -319,6 +329,7 @@ export function parseCheckoutInput(body: unknown): ValidationResult {
       locale: body.locale as CheckoutLocale,
       promotion_codes: promotionCodes,
       gift_card_codes: giftCardCodes,
+      use_loyalty_reward: useLoyaltyReward,
       customer_note: note ?? null,
     },
   };

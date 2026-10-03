@@ -99,6 +99,8 @@ describe("checkout with gift cards", () => {
     const item = request?.items[0];
     expect(item && "gift_card" in item ? item.gift_card?.amount_minor : null).toBe(5000);
     expect(buildCheckoutRequest([line], form, "rate", "fr")).not.toHaveProperty("gift_card_codes");
+    expect(buildCheckoutRequest([line], form, "rate", "fr")).not.toHaveProperty("use_loyalty_reward");
+    expect(buildCheckoutRequest([line], form, "rate", "fr", [], true)?.use_loyalty_reward).toBe(true);
   });
 
   it("knows the code for gift card details refused by the database", () => {

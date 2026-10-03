@@ -337,6 +337,7 @@
       "out_of_stock": "Un article de votre panier n’est plus en stock en quantité suffisante. Ajustez la quantité puis réessayez.",
       "shipping_unavailable": "Cette livraison n’est pas disponible pour ce panier ou cette destination. Choisissez-en une autre.",
       "promotion_code_invalid": "Ce code promo ne s’applique pas à cette commande.",
+      "loyalty_reward_unavailable": "Votre récompense fidélité n’est plus disponible pour cette commande (déjà réservée par un paiement en cours ou utilisée). Décochez-la et réessayez.",
       "gift_card_invalid": "Cette carte cadeau ne peut pas être utilisée.",
       "payment_unavailable": "Le paiement est momentanément indisponible. Aucun montant n’a été débité ; réessayez dans quelques minutes.",
       "maintenance": "La boutique est en maintenance : les commandes sont suspendues pour le moment. Aucun montant n’a été débité.",
@@ -1118,8 +1119,9 @@
     "profileSave": "Enregistrer",
     "profileCancel": "Annuler",
     "toastProfileTitle": "Profil mis à jour",
-    "toastProfileBody": "Vos informations ont été modifiées pour cette session.",
-    "detailsNote": "Maquette : ces informations ne sont pas enregistrées et la session se termine au rechargement de la page.",
+    "toastProfileBody": "Vos informations ont été enregistrées.",
+    "toastProfileErrorTitle": "Profil non enregistré",
+    "toastProfileErrorBody": "Vérifiez l’adresse (rue, ville et pays sont nécessaires, ainsi que votre prénom et votre nom) puis réessayez.",
     "navLoyalty": "Fidélité",
     "navSecurity": "Sécurité et confidentialité",
     "profileEmailNote": "Votre e-mail de connexion se modifie avec une étape de vérification.",
@@ -1274,7 +1276,10 @@
     "minimumNote": "Achat éligible : {{amount}} minimum",
     "sealAria": "Sceau de récompense : {{percent}} % de remise",
     "sealOff": "REMISE",
-    "demoNote": "Prototype visuel — aucune récompense n’est appliquée à ce stade.",
+    "rewardNote": "Cochez « Utiliser ma récompense » dans votre panier pour en profiter.",
+    "loading": "Chargement de votre carte…",
+    "loadError": "Impossible de lire votre carte de fidélité pour le moment.",
+    "retry": "Réessayer",
     "memberTitle": "Ma carte de fidélité",
     "memberBody": "Collectionnez {{total}} tampons sur vos achats éligibles de {{amount}} ou plus et débloquez {{percent}} % de remise sur votre prochaine commande.",
     "rewardPanelTitle": "Récompense de {{percent}} % prête",
@@ -1282,10 +1287,6 @@
     "howEyebrow": "Comment ça marche",
     "howTitle": "Quatre étapes vers votre récompense",
     "aboutLink": "Découvrir le programme",
-    "demoHeading": "Aperçu de démonstration",
-    "demoTitle": "État de démonstration",
-    "demoBody": "Basculez entre les cinq états de la carte. Rien n’est enregistré : ce prototype n’a pas de back-end fidélité.",
-    "demoCheckoutNote": "Rendu du même état dans le tunnel de commande, sous puis au-dessus du montant éligible.",
     "heroScript": "Merci",
     "heroTitle": "Votre sourire. Votre style. Vos récompenses.",
     "heroBody": "Collectionnez {{total}} tampons sur vos achats éligibles de {{amount}} ou plus et débloquez {{percent}} % de remise sur votre prochaine commande.",
@@ -1305,14 +1306,12 @@
     "state": {
       "start": {
         "badge": "Nouvelle carte",
-        "demoLabel": "Départ",
         "title": "Commencez votre parcours fidélité",
         "body": "Chaque achat éligible de {{amount}} ou plus vous rapporte un tampon.",
         "cta": "Découvrir la boutique"
       },
       "collecting": {
         "badge": "En cours",
-        "demoLabel": "En cours",
         "title_one": "{{done}} tampon sur {{total}}",
         "title_other": "{{done}} tampons sur {{total}}",
         "body_one": "Encore {{count}} achat éligible pour débloquer {{percent}} % sur votre prochaine commande.",
@@ -1321,14 +1320,12 @@
       },
       "oneAway": {
         "badge": "Presque",
-        "demoLabel": "Dernier tampon",
         "title": "Plus qu’un tampon",
         "body": "Effectuez un dernier achat éligible pour débloquer votre récompense de {{percent}} %.",
         "cta": "Découvrir la boutique"
       },
       "unlocked": {
         "badge": "Récompense prête",
-        "demoLabel": "Débloquée",
         "script": "Bravo",
         "title": "{{percent}} % débloqués",
         "body": "Votre récompense fidélité est prête pour votre prochaine commande.",
@@ -1336,7 +1333,6 @@
       },
       "renewed": {
         "badge": "Nouvelle carte",
-        "demoLabel": "Réinitialisée",
         "title": "Nouveau parcours fidélité",
         "body": "Votre récompense de {{percent}} % a été utilisée. Recommencez à collectionner vos tampons.",
         "cta": "Découvrir la boutique"
@@ -1351,13 +1347,17 @@
       "finalBody": "Cette commande donne droit à votre dernier tampon.",
       "rewardTitle": "Récompense fidélité de {{percent}} % prête",
       "rewardBody": "Votre prochaine commande peut bénéficier de {{percent}} % de remise.",
-      "apply": "Appliquer les {{percent}} %",
-      "applyNote": "Démonstration uniquement — le total de la commande reste inchangé."
+      "guest": "Connectez-vous pour que cette commande vous rapporte un tampon de fidélité.",
+      "guestLink": "Se connecter",
+      "use": "Utiliser ma récompense ({{percent}} %)",
+      "saving": "Remise estimée : −{{amount}}, appliquée au paiement.",
+      "needsGoods": "Ajoutez un article de la boutique pour utiliser votre récompense (hors cartes cadeaux et formations).",
+      "summaryLine": "Récompense fidélité (−{{percent}} %)"
     },
     "steps": [
       {
         "title": "Acheter",
-        "body": "Effectuez un achat éligible de 20 € ou plus."
+        "body": "Effectuez un achat éligible de {{amount}} ou plus."
       },
       {
         "title": "Collectionner",
@@ -1365,37 +1365,41 @@
       },
       {
         "title": "Compléter",
-        "body": "Réunissez les 5 tampons."
+        "body": "Réunissez les {{total}} tampons."
       },
       {
         "title": "Récompense",
-        "body": "Débloquez 10 % de remise sur votre prochaine commande."
+        "body": "Débloquez {{percent}} % de remise sur votre prochaine commande."
       }
     ],
     "faq": [
       {
         "question": "Qu’est-ce qu’un achat éligible ?",
-        "answer": "Toute commande d’un montant de 20 € ou plus."
+        "answer": "Une commande payée dont les articles de la boutique atteignent {{amount}} ou plus, une fois les remises déduites. Les frais de livraison, les cartes cadeaux et les formations ne comptent pas."
       },
       {
-        "question": "Quel montant dois-je dépenser ?",
-        "answer": "20 € ou plus sur une même commande donnent droit à un tampon."
+        "question": "Quand mon tampon apparaît-il ?",
+        "answer": "Dès que le paiement de votre commande est confirmé. Il faut être connecté à votre compte au moment de commander : une commande passée sans compte ne rapporte pas de tampon."
       },
       {
         "question": "Comment collectionner les tampons ?",
         "answer": "Chaque commande éligible ajoute un tampon à votre carte, que vous retrouvez dans votre espace membre."
       },
       {
-        "question": "Que se passe-t-il après 5 tampons ?",
-        "answer": "Votre carte est complète et débloque 10 % de remise sur votre prochaine commande."
+        "question": "Que se passe-t-il après {{total}} tampons ?",
+        "answer": "Votre carte est complète et débloque {{percent}} % de remise sur votre prochaine commande."
       },
       {
-        "question": "Quand puis-je utiliser ma remise de 10 % ?",
+        "question": "Quand puis-je utiliser ma remise de {{percent}} % ?",
         "answer": "Sur votre prochaine commande, une fois votre carte complète."
       },
       {
+        "question": "Que devient mon tampon si ma commande est annulée ou remboursée ?",
+        "answer": "Si la commande est annulée ou remboursée en totalité alors que la carte est en cours, le tampon est retiré. Une carte déjà complète est conservée."
+      },
+      {
         "question": "Puis-je obtenir un tampon sur chaque commande ?",
-        "answer": "Chaque commande de 20 € ou plus rapporte un tampon."
+        "answer": "Chaque commande éligible de {{amount}} ou plus rapporte un tampon."
       }
     ]
   },

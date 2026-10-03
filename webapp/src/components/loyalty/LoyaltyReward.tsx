@@ -1,14 +1,15 @@
 import type { ReactNode } from "react";
 import { useTranslation } from "react-i18next";
 import clsx from "clsx";
-import { REWARD_PERCENT } from "../../data/loyalty";
+import { useLoyalty } from "../../lib/loyalty";
 
 /**
  * The reward itself: a foil seal, what it is worth, and what to do with it.
  *
  * Shown on the member page once a card is complete, and reused inside the
  * checkout banner so the reward looks the same wherever it turns up. Like every
- * other piece of this prototype it only displays — no discount exists behind it.
+ * other piece of the programme it only displays; the discount itself is applied
+ * by the database (`create_order()`).
  */
 
 /**
@@ -31,6 +32,8 @@ const SCALLOP = scallopPath();
 
 export function RewardSeal({ size = 88, className }: { size?: number; className?: string }) {
   const { t } = useTranslation();
+  const { programme } = useLoyalty();
+  const percent = programme.rewardPercent;
   return (
     <svg
       width={size}
@@ -38,7 +41,7 @@ export function RewardSeal({ size = 88, className }: { size?: number; className?
       viewBox="0 0 64 64"
       fill="none"
       role="img"
-      aria-label={t("loyalty.sealAria", { percent: REWARD_PERCENT })}
+      aria-label={t("loyalty.sealAria", { percent })}
       className={clsx("flex-none", className)}
     >
       <path d={SCALLOP} fill="currentColor" fillOpacity={0.14} stroke="currentColor" strokeWidth={1.4} strokeLinejoin="round" />
@@ -54,7 +57,7 @@ export function RewardSeal({ size = 88, className }: { size?: number; className?
         fontWeight={800}
         letterSpacing="-0.5"
       >
-        {REWARD_PERCENT}%
+        {percent}%
       </text>
       <text
         x={32}
@@ -112,7 +115,7 @@ export function LoyaltyReward({
         <p className="m-0 text-[length:var(--text-body-sm)]">{body}</p>
         {action}
         <p className={clsx("m-0 text-[length:var(--text-caption)]", ink ? "text-[var(--gt-ink-400)]" : "text-[var(--text-muted)]")}>
-          {t("loyalty.demoNote")}
+          {t("loyalty.rewardNote")}
         </p>
       </div>
     </section>
