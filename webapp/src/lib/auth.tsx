@@ -363,8 +363,11 @@ function SupabaseAuthProvider({ children }: { children: ReactNode }) {
       const addressCleared = !line && !city && !postal;
       const firstName = next.firstName.trim();
       const lastName = next.lastName.trim();
+      // A profile without a country shows the first delivery country in the
+      // form's list, so that is the one saved.
+      const country = next.country || DELIVERY_COUNTRIES[0];
       // The address book needs a recipient name, a street, a city and a country.
-      if (addressTouched && !addressCleared && !(line && city && next.country && firstName && lastName)) return false;
+      if (addressTouched && !addressCleared && !(line && city && country && firstName && lastName)) return false;
 
       setProfile(next);
 
@@ -407,7 +410,7 @@ function SupabaseAuthProvider({ children }: { children: ReactNode }) {
               address_line1: line,
               postal_code: postal || null,
               city,
-              country_code: next.country.toUpperCase(),
+              country_code: country.toUpperCase(),
             };
             return existing
               ? client.from("customer_addresses").update(values).eq("id", existing.id)
