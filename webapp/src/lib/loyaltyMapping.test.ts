@@ -1,6 +1,6 @@
 import { describe, expect, it } from "vitest";
 import { DEFAULT_PROGRAMME } from "../data/loyalty";
-import { mapOverview, mapProgramme, qualifyingSubtotal } from "./loyaltyMapping";
+import { mapOverview, mapProgramme, qualifyingSubtotal, rewardDiscount } from "./loyaltyMapping";
 
 const overview = (over: Partial<Parameters<typeof mapOverview>[0]> = {}) => ({
   current_stamps: 0,
@@ -47,6 +47,14 @@ describe("mapOverview", () => {
 
   it("falls back to the programme size when the row has none", () => {
     expect(mapOverview(overview({ stamps_required: null }), { ...DEFAULT_PROGRAMME, stampsPerCard: 8 }).total).toBe(8);
+  });
+});
+
+describe("rewardDiscount", () => {
+  it("takes the percentage of the shop goods, to the cent", () => {
+    expect(rewardDiscount(3000, 10)).toBe(300);
+    expect(rewardDiscount(5790, 10)).toBe(579);
+    expect(rewardDiscount(0, 10)).toBe(0);
   });
 });
 

@@ -63,6 +63,15 @@ export function mapOverview(row: LoyaltyOverviewRow, programme: LoyaltyProgramme
 }
 
 /**
+ * The reward's estimated discount, minor units: the percentage of the shop goods,
+ * rounded like `create_order()` (to the cent). The database computes the real
+ * amount; this only previews it in the basket.
+ */
+export function rewardDiscount(qualifyingMinor: number, percent: number): number {
+  return Math.round((qualifyingMinor * percent) / 100);
+}
+
+/**
  * Value of a basket that counts towards a stamp, in minor units: shop goods
  * only. Gift cards and courses never earn a stamp (the database applies the
  * same rule when the order is paid).

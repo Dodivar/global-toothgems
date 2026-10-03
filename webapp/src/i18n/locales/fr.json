@@ -337,6 +337,7 @@
       "out_of_stock": "Un article de votre panier n’est plus en stock en quantité suffisante. Ajustez la quantité puis réessayez.",
       "shipping_unavailable": "Cette livraison n’est pas disponible pour ce panier ou cette destination. Choisissez-en une autre.",
       "promotion_code_invalid": "Ce code promo ne s’applique pas à cette commande.",
+      "loyalty_reward_unavailable": "Votre récompense fidélité n’est plus disponible pour cette commande (déjà réservée par un paiement en cours ou utilisée). Décochez-la et réessayez.",
       "gift_card_invalid": "Cette carte cadeau ne peut pas être utilisée.",
       "payment_unavailable": "Le paiement est momentanément indisponible. Aucun montant n’a été débité ; réessayez dans quelques minutes.",
       "maintenance": "La boutique est en maintenance : les commandes sont suspendues pour le moment. Aucun montant n’a été débité.",
@@ -1275,7 +1276,7 @@
     "minimumNote": "Achat éligible : {{amount}} minimum",
     "sealAria": "Sceau de récompense : {{percent}} % de remise",
     "sealOff": "REMISE",
-    "rewardNote": "Son application directement au paiement n’est pas encore disponible en ligne.",
+    "rewardNote": "Cochez « Utiliser ma récompense » dans votre panier pour en profiter.",
     "loading": "Chargement de votre carte…",
     "loadError": "Impossible de lire votre carte de fidélité pour le moment.",
     "retry": "Réessayer",
@@ -1347,7 +1348,11 @@
       "rewardTitle": "Récompense fidélité de {{percent}} % prête",
       "rewardBody": "Votre prochaine commande peut bénéficier de {{percent}} % de remise.",
       "guest": "Connectez-vous pour que cette commande vous rapporte un tampon de fidélité.",
-      "guestLink": "Se connecter"
+      "guestLink": "Se connecter",
+      "use": "Utiliser ma récompense ({{percent}} %)",
+      "saving": "Remise estimée : −{{amount}}, appliquée au paiement.",
+      "needsGoods": "Ajoutez un article de la boutique pour utiliser votre récompense (hors cartes cadeaux et formations).",
+      "summaryLine": "Récompense fidélité (−{{percent}} %)"
     },
     "steps": [
       {

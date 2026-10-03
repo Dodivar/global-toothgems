@@ -14,7 +14,8 @@ import { useLoyalty } from "../../lib/loyalty";
  * Strictly informational. It reads the basket's qualifying subtotal and the
  * member's real card and renders a sentence; it never touches the totals and
  * never talks to the order system. The stamp itself is awarded by the database
- * when the payment is confirmed.
+ * when the payment is confirmed. For a completed card it also offers to spend the
+ * reward: that is only a request, the database computes the discount.
  *
  * The cart already carries a progress bar towards free delivery, so the walk to
  * the qualifying amount is shown as a stamp filling with ink instead — a second
@@ -35,7 +36,17 @@ function FillingStamp({ index, pct }: { index: number; pct: number }) {
   );
 }
 
-export function CheckoutLoyaltyBanner({ subtotal, className }: { subtotal: number; className?: string }) {
+export function CheckoutLoyaltyBanner({
+  subtotal,
+  reward: spending,
+  className,
+}: {
+  /** Value of the shop goods in the basket, major units. */
+  subtotal: number;
+  /** Spending the completed card on this order: the choice, its estimated saving, and where it is changed. */
+  reward: { checked: boolean; saving: number; onChange: (checked: boolean) => void; disabled?: boolean };
+  className?: string;
+}) {
   const { formatPrice } = useFormat();
   const { t } = useTranslation();
   const { signedIn } = useAuth();
@@ -167,7 +178,27 @@ export function CheckoutLoyaltyBanner({ subtotal, className }: { subtotal: numbe
               </span>
             </span>
           </div>
-          <p className="m-0 text-[length:var(--text-caption)] text-[var(--text-muted)]">{t("loyalty.rewardNote")}</p>
+          {subtotal > 0 ? (
+            <>
+              <label className="flex cursor-pointer items-center gap-2 text-[length:var(--text-body-sm)] font-semibold text-[var(--text-primary)]">
+                <input
+                  type="checkbox"
+                  checked={spending.checked}
+                  disabled={spending.disabled}
+                  onChange={(event) => spending.onChange(event.target.checked)}
+                  className="h-4 w-4 flex-none accent-[var(--accent-cta-ink)]"
+                />
+                {t("loyalty.checkout.use", { percent })}
+              </label>
+              {spending.checked && (
+                <p role="status" className="m-0 text-[length:var(--text-caption)] text-[var(--text-muted)]">
+                  {t("loyalty.checkout.saving", { amount: formatPrice(spending.saving) })}
+                </p>
+              )}
+            </>
+          ) : (
+            <p className="m-0 text-[length:var(--text-caption)] text-[var(--text-muted)]">{t("loyalty.checkout.needsGoods")}</p>
+          )}
         </div>
       )}
     </section>

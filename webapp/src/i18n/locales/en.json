@@ -332,6 +332,7 @@
       "out_of_stock": "An item in your basket is no longer in stock in that quantity. Adjust the quantity and try again.",
       "shipping_unavailable": "This delivery option is not available for this basket or destination. Choose another one.",
       "promotion_code_invalid": "This promo code does not apply to this order.",
+      "loyalty_reward_unavailable": "Your loyalty reward is no longer available for this order (already reserved by a payment in progress, or used). Untick it and try again.",
       "gift_card_invalid": "This gift card cannot be used.",
       "payment_unavailable": "Payment is temporarily unavailable. Nothing has been charged; try again in a few minutes.",
       "maintenance": "The shop is under maintenance: orders are paused for now. Nothing has been charged.",
@@ -1270,7 +1271,7 @@
     "minimumNote": "Qualifying purchase: {{amount}} minimum",
     "sealAria": "Reward seal: {{percent}}% off",
     "sealOff": "OFF",
-    "rewardNote": "Applying it at checkout is not available online yet.",
+    "rewardNote": "Tick “Use my reward” in your basket to enjoy it.",
     "loading": "Loading your card…",
     "loadError": "We couldn’t load your loyalty card right now.",
     "retry": "Try again",
@@ -1342,7 +1343,11 @@
       "rewardTitle": "{{percent}}% loyalty reward ready",
       "rewardBody": "Your next order can receive {{percent}}% off.",
       "guest": "Sign in so this order earns you a loyalty stamp.",
-      "guestLink": "Sign in"
+      "guestLink": "Sign in",
+      "use": "Use my reward ({{percent}}% off)",
+      "saving": "Estimated discount: −{{amount}}, applied at payment.",
+      "needsGoods": "Add a shop item to use your reward (gift cards and courses are excluded).",
+      "summaryLine": "Loyalty reward (−{{percent}}%)"
     },
     "steps": [
       {

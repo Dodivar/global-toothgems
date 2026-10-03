@@ -73,6 +73,8 @@ Deno.test("rejects bad contact details, rate, locale and codes", () => {
     { promotion_codes: ["A", "B", "C", "D"] },
     { promotion_codes: ["bad code"] },
     { gift_card_codes: ["GT-1234"] },
+    { use_loyalty_reward: "yes" },
+    { use_loyalty_reward: 1 },
     { customer_note: "x".repeat(1001) },
   ];
   for (const patch of cases) assert(!parseCheckoutInput({ ...valid(), ...patch }).ok, JSON.stringify(patch).slice(0, 80));
@@ -187,4 +189,13 @@ Deno.test("course lines refuse anything but an id and a single seat", () => {
   ];
   for (const line of bad) assert(!parseCheckoutInput({ ...valid(), items: [line] }).ok, JSON.stringify(line));
   assert(!parseCheckoutInput({ ...valid(), items: [{ course_id: C1 }, { course_id: C1.toUpperCase() }] }).ok, "same course twice");
+});
+
+Deno.test("the loyalty reward is a request that defaults to off", () => {
+  const off = parseCheckoutInput(valid());
+  assert(off.ok);
+  assertEquals(off.value.use_loyalty_reward, false);
+  const on = parseCheckoutInput({ ...valid(), use_loyalty_reward: true });
+  assert(on.ok);
+  assertEquals(on.value.use_loyalty_reward, true);
 });
