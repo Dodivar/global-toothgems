@@ -14,7 +14,7 @@ import { ProgressBar } from "../components/ui/ProgressBar";
 import { ProductCard } from "../components/ui/ProductCard";
 import { IconButton } from "../components/ui/IconButton";
 import { CheckoutLoyaltyBanner } from "../components/loyalty/CheckoutLoyaltyBanner";
-import { DEFAULT_LOYALTY_STATE, LOYALTY_STATES } from "../data/loyalty";
+import { qualifyingSubtotal } from "../lib/loyaltyMapping";
 import { useCart } from "../lib/cart";
 import { useOrders } from "../lib/orders";
 import { useAuth } from "../lib/auth";
@@ -367,8 +367,9 @@ export function Cart() {
               ))}
             </ul>
 
-            {/* Loyalty is shown, never applied (mock card): no discount, no change to what is charged. */}
-            <CheckoutLoyaltyBanner subtotal={toMajorUnits(subtotal)} state={LOYALTY_STATES[DEFAULT_LOYALTY_STATE]} />
+            {/* The member's real card: shown, never applied here. The stamp is awarded
+                when the payment is confirmed, on shop goods only (no gift card, no course). */}
+            <CheckoutLoyaltyBanner subtotal={toMajorUnits(qualifyingSubtotal(lines))} />
           </section>
 
           {/* A course is the one thing that needs an account; otherwise

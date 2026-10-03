@@ -38,7 +38,7 @@ Catalogue, variants and gem options, categories/families, gem colours, recommend
 
 ## Promoted into scope by the product owner (already built at least in UI)
 
-- **Loyalty Club** (stamps per qualifying order, reward) — schema done; UI display-only. Rules in `supabase/README.md` decisions 13, 21.
+- **Loyalty Club** (stamps per qualifying order, reward) — live: schema, member card and public rules read from Supabase; reward redemption at checkout not built. Rules in `supabase/README.md` decisions 13, 21.
 - **Gift cards** — schema done; storefront page and admin UI on mock data.
 - **Promotions & campaigns** — schema and discount engine done; admin UI on mock data.
 - **Studio 3D** — editor and workspace live; paid subscription (Stripe subscription + server-side entitlement) not built, access is `preview` (`webapp/src/lib/studioAccess.tsx`).

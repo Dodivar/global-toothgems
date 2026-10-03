@@ -1,6 +1,8 @@
 import { useTranslation } from "react-i18next";
 import { CheckCheck, Gift, ShoppingBag, Sparkles } from "lucide-react";
 import type { LucideIcon } from "lucide-react";
+import { useFormat } from "../../lib/format";
+import { useLoyalty } from "../../lib/loyalty";
 
 /**
  * How the programme works, in four moves.
@@ -19,7 +21,14 @@ const ICONS: LucideIcon[] = [ShoppingBag, Sparkles, CheckCheck, Gift];
 
 export function LoyaltySteps() {
   const { t } = useTranslation();
-  const steps = t("loyalty.steps", { returnObjects: true }) as Step[];
+  const { formatPrice } = useFormat();
+  const { programme } = useLoyalty();
+  const steps = t("loyalty.steps", {
+    returnObjects: true,
+    amount: formatPrice(programme.qualifyingAmount),
+    total: programme.stampsPerCard,
+    percent: programme.rewardPercent,
+  }) as Step[];
 
   return (
     <ol className="m-0 grid list-none grid-cols-1 gap-4 p-0 sm:grid-cols-2 xl:grid-cols-4">

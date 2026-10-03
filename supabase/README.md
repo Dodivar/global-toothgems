@@ -1265,6 +1265,11 @@ VAT rates, shipping zones/rates mirroring the Settings prototype. Media rows ref
     not revoke it automatically — staff revoke by hand from the course's access screen.
 75. **One seat per course per order, for oneself** (agent, 2026-10-02): no buying a course for someone else, no
     multi-seat purchase (studios training several artists) — both would need a gift / seat model.
+76. **Loyalty stamps need a signed-in order, and the reward is not yet redeemable online** (agent, 2026-10-03, to
+    confirm): the stamp trigger ignores orders without `user_id`, so a guest checkout earns nothing (the cart invites
+    the visitor to sign in first; the FAQ says so). The UI shows the member's card from `loyalty_overview`, but
+    `create-checkout-session` still passes `p_use_loyalty_reward => false`: a completed card cannot be spent from the
+    website until the cart offers it and the function is redeployed.
 
 ## Done
 

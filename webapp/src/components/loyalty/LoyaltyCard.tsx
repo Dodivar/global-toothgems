@@ -5,7 +5,8 @@ import { LoyaltyStamp } from "./LoyaltyStamp";
 import { LoyaltyProgress } from "./LoyaltyProgress";
 import { useLoyaltyCopy } from "../../lib/loyaltyCopy";
 import { useFormat } from "../../lib/format";
-import { QUALIFYING_AMOUNT, STAMPS_PER_CARD, type LoyaltyState } from "../../data/loyalty";
+import type { LoyaltyState } from "../../data/loyalty";
+import { useLoyalty } from "../../lib/loyalty";
 import monogramBlue from "../../assets/monogram-blue.png";
 import monogramWhite from "../../assets/monogram-white.png";
 
@@ -44,6 +45,7 @@ const STOCK_PAPER =
 export function LoyaltyCard({ state, action, titleAs = "h2", compact = false, pressedIndex = -1, className }: LoyaltyCardProps) {
   const { formatPrice } = useFormat();
   const { t } = useTranslation();
+  const { programme } = useLoyalty();
   const copy = useLoyaltyCopy(state);
   const complete = state.rewardReady;
   const Title = titleAs;
@@ -141,7 +143,7 @@ export function LoyaltyCard({ state, action, titleAs = "h2", compact = false, pr
           aria-hidden="true"
           className={clsx("flex items-center justify-between", compact ? "gap-1.5" : "gap-[clamp(6px,2vw,18px)]")}
         >
-          {Array.from({ length: STAMPS_PER_CARD }, (_, i) => (
+          {Array.from({ length: state.total }, (_, i) => (
             <LoyaltyStamp
               key={i}
               index={i}
@@ -156,7 +158,7 @@ export function LoyaltyCard({ state, action, titleAs = "h2", compact = false, pr
           ))}
         </div>
 
-        <LoyaltyProgress stamps={state.stamps} total={STAMPS_PER_CARD} tone={complete ? "ink" : "paper"} />
+        <LoyaltyProgress stamps={state.stamps} total={state.total} tone={complete ? "ink" : "paper"} />
 
         <div className="grid gap-2">
           {/* The one editorial accent in the programme, saved for the
@@ -192,7 +194,7 @@ export function LoyaltyCard({ state, action, titleAs = "h2", compact = false, pr
               complete ? "text-[var(--gt-ink-400)]" : "text-[var(--text-muted)]",
             )}
           >
-            {t("loyalty.minimumNote", { amount: formatPrice(QUALIFYING_AMOUNT) })}
+            {t("loyalty.minimumNote", { amount: formatPrice(programme.qualifyingAmount) })}
           </span>
           {action}
         </footer>

@@ -1,26 +1,27 @@
 import { useTranslation } from "react-i18next";
 import { Check, Sparkles } from "lucide-react";
 import clsx from "clsx";
-import { Button } from "../ui/Button";
 import { LoyaltyStamp } from "./LoyaltyStamp";
 import { RewardSeal } from "./LoyaltyReward";
 import { useFormat } from "../../lib/format";
-import { QUALIFYING_AMOUNT, REWARD_PERCENT, STAMPS_PER_CARD, type LoyaltyState } from "../../data/loyalty";
+import { useAuth } from "../../lib/auth";
+import { Link } from "../../lib/navigation";
+import { useLoyalty } from "../../lib/loyalty";
 
 /**
  * How the programme shows up in checkout.
  *
- * Strictly informational. It reads the cart subtotal and a mock loyalty state and
- * renders a sentence; it never touches the totals, never applies a discount and
- * never talks to the order system. The apply button is inert on purpose and says
- * so.
+ * Strictly informational. It reads the basket's qualifying subtotal and the
+ * member's real card and renders a sentence; it never touches the totals and
+ * never talks to the order system. The stamp itself is awarded by the database
+ * when the payment is confirmed.
  *
  * The cart already carries a progress bar towards free delivery, so the walk to
  * the qualifying amount is shown as a stamp filling with ink instead — a second
  * near-identical bar on the same screen would read as a bug.
  */
 
-type Variant = "reward" | "below" | "final" | "qualifies";
+type Variant = "guest" | "reward" | "below" | "final" | "qualifies";
 
 /** The next stamp, inked from the bottom in proportion to the basket. */
 function FillingStamp({ index, pct }: { index: number; pct: number }) {
@@ -34,31 +35,34 @@ function FillingStamp({ index, pct }: { index: number; pct: number }) {
   );
 }
 
-export function CheckoutLoyaltyBanner({
-  subtotal,
-  state,
-  className,
-}: {
-  subtotal: number;
-  state: LoyaltyState;
-  className?: string;
-}) {
+export function CheckoutLoyaltyBanner({ subtotal, className }: { subtotal: number; className?: string }) {
   const { formatPrice } = useFormat();
   const { t } = useTranslation();
+  const { signedIn } = useAuth();
+  const { programme, card } = useLoyalty();
+  const threshold = programme.qualifyingAmount;
+  const percent = programme.rewardPercent;
+
+  // Nothing to say while the programme is off, or until the member's card has
+  // been read: a banner that flips from "start" to the real card would mislead.
+  if (!programme.active || (signedIn && !card)) return null;
+  const stamps = card?.stamps ?? 0;
 
   // A ready reward outranks everything: it is worth money on this order. Below
   // the threshold comes next, because nothing else is true yet. Only then does
   // the card's own position matter.
-  const variant: Variant = state.rewardReady
+  const variant: Variant = card?.rewardReady
     ? "reward"
-    : subtotal < QUALIFYING_AMOUNT
+    : subtotal < threshold
       ? "below"
-      : state.stamps === STAMPS_PER_CARD - 1
-        ? "final"
-        : "qualifies";
+      : !signedIn
+        ? "guest"
+        : stamps === programme.stampsPerCard - 1
+          ? "final"
+          : "qualifies";
 
-  const missing = Math.max(0, QUALIFYING_AMOUNT - subtotal);
-  const pct = Math.max(0, Math.min(100, (subtotal / QUALIFYING_AMOUNT) * 100));
+  const missing = Math.max(0, threshold - subtotal);
+  const pct = Math.max(0, Math.min(100, (subtotal / threshold) * 100));
   const reward = variant === "reward";
 
   const heading = (
@@ -88,17 +92,17 @@ export function CheckoutLoyaltyBanner({
         <div
           role="progressbar"
           aria-valuemin={0}
-          aria-valuemax={QUALIFYING_AMOUNT}
+          aria-valuemax={threshold}
           aria-valuenow={subtotal}
           aria-valuetext={t("loyalty.checkout.belowAria", {
             current: formatPrice(subtotal),
-            threshold: formatPrice(QUALIFYING_AMOUNT),
+            threshold: formatPrice(threshold),
             missing: formatPrice(missing),
           })}
           className="flex items-center gap-4"
         >
           <span aria-hidden="true">
-            <FillingStamp index={state.stamps} pct={pct} />
+            <FillingStamp index={stamps} pct={pct} />
           </span>
           <span aria-hidden="true" className="grid gap-1">
             <strong className="text-[length:var(--text-body-sm)] text-[var(--text-primary)]">
@@ -107,7 +111,7 @@ export function CheckoutLoyaltyBanner({
             <span className="text-[length:var(--text-caption)] tabular-nums text-[var(--text-muted)]">
               {t("loyalty.checkout.belowCount", {
                 current: formatPrice(subtotal),
-                threshold: formatPrice(QUALIFYING_AMOUNT),
+                threshold: formatPrice(threshold),
               })}
             </span>
           </span>
@@ -121,12 +125,27 @@ export function CheckoutLoyaltyBanner({
         </p>
       )}
 
+      {variant === "guest" && (
+        <p className="m-0 flex items-start gap-2 text-[length:var(--text-body-sm)] text-[var(--text-body)]">
+          <Sparkles size={16} aria-hidden="true" className="mt-0.5 flex-none text-[var(--gt-blue-700)]" />
+          <span>
+            {t("loyalty.checkout.guest")}{" "}
+            <Link
+              to="/connexion"
+              className="font-semibold text-[var(--text-primary)] underline decoration-1 underline-offset-4"
+            >
+              {t("loyalty.checkout.guestLink")}
+            </Link>
+          </span>
+        </p>
+      )}
+
       {variant === "final" && (
         <div className="flex items-center gap-4">
-          <LoyaltyStamp index={state.stamps} state="next" size={56} className="text-[var(--accent-highlight)]" />
+          <LoyaltyStamp index={stamps} state="next" size={56} className="text-[var(--accent-highlight)]" />
           <span className="grid gap-1">
             <strong className="text-[length:var(--text-body-sm)] uppercase tracking-[var(--tracking-tight)] text-[var(--text-primary)]">
-              {t("loyalty.checkout.finalTitle", { percent: REWARD_PERCENT })}
+              {t("loyalty.checkout.finalTitle", { percent })}
             </strong>
             <span className="text-[length:var(--text-body-sm)] text-[var(--text-body)]">
               {t("loyalty.checkout.finalBody")}
@@ -141,19 +160,14 @@ export function CheckoutLoyaltyBanner({
             <RewardSeal size={64} className="text-[var(--accent-cta-ink)]" />
             <span className="grid gap-1">
               <strong className="text-[length:var(--text-body-sm)] uppercase tracking-[var(--tracking-tight)] text-[var(--text-primary)]">
-                {t("loyalty.checkout.rewardTitle", { percent: REWARD_PERCENT })}
+                {t("loyalty.checkout.rewardTitle", { percent })}
               </strong>
               <span className="text-[length:var(--text-body-sm)] text-[var(--text-body)]">
-                {t("loyalty.checkout.rewardBody", { percent: REWARD_PERCENT })}
+                {t("loyalty.checkout.rewardBody", { percent })}
               </span>
             </span>
           </div>
-          {/* Inert by design: applying a discount is a server's job, and no
-              loyalty backend exists. The note below says so in as many words. */}
-          <Button variant="outline" size="sm" fullWidth disabled>
-            {t("loyalty.checkout.apply", { percent: REWARD_PERCENT })}
-          </Button>
-          <p className="m-0 text-[length:var(--text-caption)] text-[var(--text-muted)]">{t("loyalty.checkout.applyNote")}</p>
+          <p className="m-0 text-[length:var(--text-caption)] text-[var(--text-muted)]">{t("loyalty.rewardNote")}</p>
         </div>
       )}
     </section>

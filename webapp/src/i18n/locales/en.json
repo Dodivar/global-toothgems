@@ -1269,7 +1269,10 @@
     "minimumNote": "Qualifying purchase: {{amount}} minimum",
     "sealAria": "Reward seal: {{percent}}% off",
     "sealOff": "OFF",
-    "demoNote": "Visual prototype — no reward is applied at this stage.",
+    "rewardNote": "Applying it at checkout is not available online yet.",
+    "loading": "Loading your card…",
+    "loadError": "We couldn’t load your loyalty card right now.",
+    "retry": "Try again",
     "memberTitle": "My loyalty card",
     "memberBody": "Collect {{total}} stamps from qualifying purchases of {{amount}} or more and unlock {{percent}}% off your next order.",
     "rewardPanelTitle": "{{percent}}% reward ready",
@@ -1277,10 +1280,6 @@
     "howEyebrow": "How it works",
     "howTitle": "Four steps to your reward",
     "aboutLink": "About the programme",
-    "demoHeading": "Demo preview",
-    "demoTitle": "Demo state",
-    "demoBody": "Switch between the five card states. Nothing is saved: this prototype has no loyalty backend.",
-    "demoCheckoutNote": "The same state in checkout, below and then above the qualifying amount.",
     "heroScript": "Merci",
     "heroTitle": "Your smile. Your style. Your rewards.",
     "heroBody": "Collect {{total}} loyalty stamps from qualifying purchases of {{amount}} or more and unlock {{percent}}% off your next order.",
@@ -1300,14 +1299,12 @@
     "state": {
       "start": {
         "badge": "New card",
-        "demoLabel": "Start",
         "title": "Start your loyalty journey",
         "body": "Every qualifying purchase of {{amount}} or more earns you one stamp.",
         "cta": "Shop now"
       },
       "collecting": {
         "badge": "In progress",
-        "demoLabel": "Collecting",
         "title_one": "{{done}} of {{total}} stamps",
         "title_other": "{{done}} of {{total}} stamps",
         "body_one": "{{count}} more qualifying purchase to unlock {{percent}}% off your next order.",
@@ -1316,14 +1313,12 @@
       },
       "oneAway": {
         "badge": "Almost there",
-        "demoLabel": "One away",
         "title": "One stamp away",
         "body": "Complete one more qualifying purchase to unlock your {{percent}}% reward.",
         "cta": "Shop now"
       },
       "unlocked": {
         "badge": "Reward ready",
-        "demoLabel": "Unlocked",
         "script": "Bravo",
         "title": "{{percent}}% off unlocked",
         "body": "Your loyalty reward is ready to use on your next order.",
@@ -1331,7 +1326,6 @@
       },
       "renewed": {
         "badge": "New card",
-        "demoLabel": "Reset",
         "title": "New loyalty journey",
         "body": "Your {{percent}}% reward has been used. Start collecting stamps again.",
         "cta": "Shop now"
@@ -1346,13 +1340,13 @@
       "finalBody": "This order qualifies for your final stamp.",
       "rewardTitle": "{{percent}}% loyalty reward ready",
       "rewardBody": "Your next order can receive {{percent}}% off.",
-      "apply": "Apply {{percent}}% reward",
-      "applyNote": "Demo only — the order total is unchanged."
+      "guest": "Sign in so this order earns you a loyalty stamp.",
+      "guestLink": "Sign in"
     },
     "steps": [
       {
         "title": "Shop",
-        "body": "Make a qualifying purchase of €20 or more."
+        "body": "Make a qualifying purchase of {{amount}} or more."
       },
       {
         "title": "Collect",
@@ -1360,37 +1354,41 @@
       },
       {
         "title": "Complete",
-        "body": "Collect all 5 stamps."
+        "body": "Collect all {{total}} stamps."
       },
       {
         "title": "Reward",
-        "body": "Unlock 10% off your next order."
+        "body": "Unlock {{percent}}% off your next order."
       }
     ],
     "faq": [
       {
         "question": "What counts as a qualifying purchase?",
-        "answer": "Any order of €20 or more."
+        "answer": "A paid order whose shop items add up to {{amount}} or more once discounts are deducted. Shipping, gift cards and courses do not count."
       },
       {
-        "question": "How much do I need to spend?",
-        "answer": "€20 or more on a single order earns one stamp."
+        "question": "When does my stamp appear?",
+        "answer": "As soon as the payment for your order is confirmed. You need to be signed in when you order: an order placed without an account does not earn a stamp."
       },
       {
         "question": "How do I collect stamps?",
         "answer": "Each qualifying order adds one stamp to your card, which you will find in your member area."
       },
       {
-        "question": "What happens after 5 stamps?",
-        "answer": "Your card is complete and unlocks 10% off your next order."
+        "question": "What happens after {{total}} stamps?",
+        "answer": "Your card is complete and unlocks {{percent}}% off your next order."
       },
       {
-        "question": "When can I use my 10% reward?",
+        "question": "When can I use my {{percent}}% reward?",
         "answer": "On your next order, once your card is complete."
       },
       {
+        "question": "What happens to my stamp if my order is cancelled or refunded?",
+        "answer": "If the order is cancelled or fully refunded while the card is still being collected, the stamp is removed. A card that is already complete is kept."
+      },
+      {
         "question": "Can I earn a stamp on every order?",
-        "answer": "Every order of €20 or more earns one stamp."
+        "answer": "Every qualifying order of {{amount}} or more earns one stamp."
       }
     ]
   },
