@@ -13,6 +13,7 @@ import { useProgress } from "../lib/progress";
 import { fetchCheckoutStatus, isCheckoutSessionId, type CheckoutStatus } from "../lib/checkout/api";
 import { isSupabaseConfigured } from "../lib/supabase/client";
 import { useHydrated } from "../lib/useHydrated";
+import { useLoyalty } from "../lib/loyalty";
 
 /**
  * Where Stripe sends the customer back (`/fr/panier/confirmation?session_id=cs_…`).
@@ -39,6 +40,7 @@ export function CheckoutReturn() {
   const [params] = useSearchParams();
   const { lines, clearCart } = useCart();
   const { reload: reloadCourses } = useProgress();
+  const { reload: reloadLoyalty } = useLoyalty();
   // The basket as it is now, read when the order's state arrives.
   const linesRef = useRef(lines);
   useEffect(() => {
@@ -93,9 +95,11 @@ export function CheckoutReturn() {
       cleared.current = true;
       // The webhook has granted access by now: read the member's courses again.
       if (boughtCourse) reloadCourses();
+      // The stamp (or the spent reward) was settled by the same webhook.
+      reloadLoyalty();
       clearCart();
     }
-  }, [paid, boughtCourse, clearCart, reloadCourses]);
+  }, [paid, boughtCourse, clearCart, reloadCourses, reloadLoyalty]);
 
   const retry = () => {
     setView({ kind: "checking" });

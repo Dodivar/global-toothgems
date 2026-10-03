@@ -1,4 +1,5 @@
 import { useEffect, useId, useRef, useState, type FormEvent } from "react";
+import posthog from "posthog-js";
 import { useTranslation } from "react-i18next";
 import { useNavigate } from "../../lib/navigation";
 import { ChevronDown, ImagePlus, Info, MessageSquareHeart, Sparkles, X } from "lucide-react";
@@ -168,7 +169,16 @@ function FormDialogBody({ target, onClose, closeLabel }: { target: FormTarget; o
         ? submitReview(target.subject, input, { orderRef: e.orderRef, progressPct: e.progressPct })
         : Promise.reject(new Error("reviews: not eligible"));
     sent.then(
-      () => setPhase("done"),
+      () => {
+        posthog.capture("review_submitted", {
+          subject_kind: target.subject.kind,
+          is_edit: Boolean(editing),
+          rating: input.rating,
+          photo_count: input.photos.length,
+          tag_count: input.tags.length,
+        });
+        setPhase("done");
+      }, 
       (error: unknown) => {
         // The form stays filled in: nothing the customer wrote is lost.
         console.error("[reviews] submission refused", error);

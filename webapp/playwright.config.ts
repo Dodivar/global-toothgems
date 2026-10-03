@@ -42,7 +42,7 @@ if (!process.env.E2E_BASE_URL) {
     url: baseURL,
     reuseExistingServer: !process.env.CI,
     timeout: 180_000,
-    env: { PORT: String(PORT), NEXT_PUBLIC_SUPABASE_URL: "", NEXT_PUBLIC_SUPABASE_PUBLISHABLE_KEY: "" },
+    env: { PORT: String(PORT), NEXT_PUBLIC_SUPABASE_URL: "", NEXT_PUBLIC_SUPABASE_PUBLISHABLE_KEY: "", NEXT_PUBLIC_POSTHOG_PROJECT_TOKEN: "" },
   });
 }
 if (!process.env.E2E_AUTH_BASE_URL) {

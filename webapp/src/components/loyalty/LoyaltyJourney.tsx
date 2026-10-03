@@ -4,7 +4,7 @@ import clsx from "clsx";
 import { LoyaltyStamp } from "./LoyaltyStamp";
 import { RewardSeal } from "./LoyaltyReward";
 import { useReveal } from "../../lib/useReveal";
-import { REWARD_PERCENT, STAMPS_PER_CARD } from "../../data/loyalty";
+import { useLoyalty } from "../../lib/loyalty";
 
 /**
  * The collection, one stamp at a time, from an empty card to the reward.
@@ -14,15 +14,15 @@ import { REWARD_PERCENT, STAMPS_PER_CARD } from "../../data/loyalty";
  * `prefers-reduced-motion`, so no new motion needs guarding here.
  */
 
-function JourneyRow({ filled, count, sentence }: { filled: number; count: string; sentence: string }) {
+function JourneyRow({ filled, total, count, sentence }: { filled: number; total: number; count: string; sentence: string }) {
   /** The full card is the row that pays off, so its caption carries the reward tone. */
-  const complete = filled === STAMPS_PER_CARD;
+  const complete = filled === total;
   const ref = useReveal<HTMLLIElement>({ trigger: 0.95 });
 
   return (
     <li ref={ref} className="gt-reveal grid justify-items-center gap-3">
       <div aria-hidden="true" className="flex items-center gap-[clamp(6px,2vw,14px)]">
-        {Array.from({ length: STAMPS_PER_CARD }, (_, i) => (
+        {Array.from({ length: total }, (_, i) => (
           <LoyaltyStamp
             key={i}
             index={i}
@@ -54,22 +54,25 @@ function JourneyRow({ filled, count, sentence }: { filled: number; count: string
 
 export function LoyaltyJourney() {
   const { t } = useTranslation();
+  const { programme } = useLoyalty();
+  const total = programme.stampsPerCard;
   const rewardRef = useReveal<HTMLLIElement>({ trigger: 0.95 });
 
   return (
     <ol className="m-0 grid list-none gap-5 p-0">
-      {Array.from({ length: STAMPS_PER_CARD + 1 }, (_, filled) => (
+      {Array.from({ length: total + 1 }, (_, filled) => (
         <JourneyRow
           key={filled}
           filled={filled}
-          count={t("loyalty.progressValue", { done: filled, total: STAMPS_PER_CARD })}
-          sentence={t("loyalty.progressAria", { count: filled, total: STAMPS_PER_CARD })}
+          total={total}
+          count={t("loyalty.progressValue", { done: filled, total })}
+          sentence={t("loyalty.progressAria", { count: filled, total })}
         />
       ))}
       <li ref={rewardRef} className="gt-reveal grid justify-items-center gap-3">
         <RewardSeal size={96} className="text-[var(--accent-cta-ink)]" />
         <strong className="text-[length:var(--text-h3)] uppercase tracking-[var(--tracking-tight)] text-[var(--text-primary)]">
-          {t("loyalty.journeyReward", { percent: REWARD_PERCENT })}
+          {t("loyalty.journeyReward", { percent: programme.rewardPercent })}
         </strong>
       </li>
     </ol>

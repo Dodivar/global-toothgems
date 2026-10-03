@@ -1,5 +1,7 @@
 import { useTranslation } from "react-i18next";
 import { Plus } from "lucide-react";
+import { useFormat } from "../../lib/format";
+import { useLoyalty } from "../../lib/loyalty";
 
 /**
  * The programme's rules, in the member's own words.
@@ -7,10 +9,9 @@ import { Plus } from "lucide-react";
  * Native `<details>`: it is keyboard-operable, announced as expandable and works
  * before any JavaScript runs, which no hand-rolled accordion gets for free.
  *
- * The answers restate exactly the rules the interface shows — a qualifying
- * purchase, five stamps, ten percent — and add none of their own. There is no
- * loyalty backend to define expiry, exclusions or stacking, so this page does
- * not invent any.
+ * The answers restate the rules the database applies (`loyalty_settings`,
+ * `apply_loyalty_on_order()`), with the figures read from the stored programme,
+ * and add none of their own.
  */
 
 interface Entry {
@@ -20,7 +21,14 @@ interface Entry {
 
 export function LoyaltyFAQ() {
   const { t } = useTranslation();
-  const entries = t("loyalty.faq", { returnObjects: true }) as Entry[];
+  const { formatPrice } = useFormat();
+  const { programme } = useLoyalty();
+  const entries = t("loyalty.faq", {
+    returnObjects: true,
+    amount: formatPrice(programme.qualifyingAmount),
+    total: programme.stampsPerCard,
+    percent: programme.rewardPercent,
+  }) as Entry[];
 
   return (
     <div className="grid gap-3">

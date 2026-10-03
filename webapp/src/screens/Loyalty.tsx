@@ -11,26 +11,24 @@ import { LoyaltyFAQ } from "../components/loyalty/LoyaltyFAQ";
 import { useReveal } from "../lib/useReveal";
 import { photo } from "../lib/images";
 import { useFormat } from "../lib/format";
-import {
-  LOYALTY_STATES,
-  LOYALTY_STATE_ORDER,
-  QUALIFYING_AMOUNT,
-  REWARD_PERCENT,
-  STAMPS_PER_CARD,
-} from "../data/loyalty";
+import { LOYALTY_STATE_ORDER, exampleLoyaltyState } from "../data/loyalty";
+import { useLoyalty } from "../lib/loyalty";
 
 /**
  * The public page for the Loyalty Club: what it is, how it works, what a full
  * card is worth.
  *
  * Open to everyone, like the Academy landing page — it is the sales page for the
- * programme, and gating it would hide the thing it is meant to advertise. Every
- * card on it is static mock data.
+ * programme, and gating it would hide the thing it is meant to advertise. The
+ * cards on it are examples that explain the programme, drawn from its stored
+ * rules; none of them is a member's own card.
  */
 export function Loyalty() {
   const { formatPrice } = useFormat();
   const { t } = useTranslation();
   const navigate = useNavigate();
+  const { programme } = useLoyalty();
+  const total = programme.stampsPerCard;
 
   const stepsRef = useReveal<HTMLDivElement>();
   const journeyRef = useReveal<HTMLDivElement>();
@@ -62,9 +60,9 @@ export function Loyalty() {
             </h1>
             <p className="m-0 max-w-[48ch] text-[length:var(--text-body-lg)] text-[var(--gt-ink-900)]">
               {t("loyalty.heroBody", {
-                total: STAMPS_PER_CARD,
-                amount: formatPrice(QUALIFYING_AMOUNT),
-                percent: REWARD_PERCENT,
+                total,
+                amount: formatPrice(programme.qualifyingAmount),
+                percent: programme.rewardPercent,
               })}
             </p>
             <div className="flex flex-wrap gap-3">
@@ -77,7 +75,7 @@ export function Loyalty() {
             </div>
           </div>
 
-          <LoyaltyCard state={LOYALTY_STATES.collecting} titleAs="h2" className="justify-self-stretch" />
+          <LoyaltyCard state={exampleLoyaltyState("collecting", total)} titleAs="h2" className="justify-self-stretch" />
         </div>
       </section>
 
@@ -124,7 +122,7 @@ export function Loyalty() {
           </div>
           <div className="grid grid-cols-1 gap-5 md:grid-cols-2 xl:grid-cols-3">
             {LOYALTY_STATE_ORDER.map((id) => (
-              <LoyaltyCard key={id} state={LOYALTY_STATES[id]} titleAs="h3" compact />
+              <LoyaltyCard key={id} state={exampleLoyaltyState(id, total)} titleAs="h3" compact />
             ))}
           </div>
         </div>
@@ -151,7 +149,7 @@ export function Loyalty() {
               {t("loyalty.closingTitle")}
             </h2>
             <p className="m-0 text-[length:var(--text-body-md)] text-[var(--gt-ink-300)]">
-              {t("loyalty.closingBody", { amount: formatPrice(QUALIFYING_AMOUNT) })}
+              {t("loyalty.closingBody", { amount: formatPrice(programme.qualifyingAmount) })}
             </p>
           </div>
           <Button variant="primary" size="lg" iconRight={ArrowRight} onClick={() => navigate("/boutique")}>

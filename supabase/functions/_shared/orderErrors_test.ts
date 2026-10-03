@@ -29,6 +29,9 @@ Deno.test("other errors keep their meaning", () => {
   assertEquals(checkoutErrorCode({ code: "P0001", message: "create_order: insufficient stock for X" }), "out_of_stock");
   assertEquals(checkoutErrorCode({ code: "22023", message: "create_order: shipping address and rate are required" }), "shipping_unavailable");
   assertEquals(checkoutErrorCode({ code: "22023", message: "create_order: promotion code WELCOME is not valid" }), "promotion_code_invalid");
+  assertEquals(checkoutErrorCode({ code: "P0002", message: "create_order: no loyalty reward available" }), "loyalty_reward_unavailable");
+  assertEquals(checkoutErrorCode({ code: "42501", message: "create_order: the loyalty reward requires an account" }), "loyalty_reward_unavailable");
+  assertEquals(checkoutErrorCode({ code: "22023", message: "create_order: the loyalty reward cannot be combined with a promotion code" }), "loyalty_reward_unavailable");
   assertEquals(checkoutErrorCode({ code: "XX000", message: "boom" }), "server_error");
 });
 

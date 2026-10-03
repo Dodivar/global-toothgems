@@ -1,6 +1,7 @@
 "use client";
 
 import { useEffect, useState } from "react";
+import posthog from "posthog-js";
 import { useTranslation } from "react-i18next";
 import { Link, useNavigate } from "../lib/navigation";
 import { ArrowRight, CheckCircle2, CircleAlert, Gift, GraduationCap, Lock, LogIn, Mail, Minus, Plus, ShoppingBag, Trash2, Truck, UserRound } from "lucide-react";
@@ -14,7 +15,8 @@ import { ProgressBar } from "../components/ui/ProgressBar";
 import { ProductCard } from "../components/ui/ProductCard";
 import { IconButton } from "../components/ui/IconButton";
 import { CheckoutLoyaltyBanner } from "../components/loyalty/CheckoutLoyaltyBanner";
-import { DEFAULT_LOYALTY_STATE, LOYALTY_STATES } from "../data/loyalty";
+import { qualifyingSubtotal, rewardDiscount } from "../lib/loyaltyMapping";
+import { useLoyalty } from "../lib/loyalty";
 import { useCart } from "../lib/cart";
 import { useOrders } from "../lib/orders";
 import { useAuth } from "../lib/auth";
@@ -92,6 +94,9 @@ export function Cart() {
   const [checkoutError, setCheckoutError] = useState<CheckoutError | null>(null);
   // Gift card codes are bearer credentials: kept in memory for this page only, never stored.
   const [giftCodes, setGiftCodes] = useState<string[]>([]);
+  // Spending the completed loyalty card is a request: the database checks and prices it.
+  const [wantsReward, setWantsReward] = useState(false);
+  const { programme, card, reload: reloadLoyalty } = useLoyalty();
   // Gift cards are sent by e-mail: a basket of gift cards only has no delivery to choose.
   const shipped = needsShipping(lines);
   const goods = shippableSubtotal(lines);
@@ -123,7 +128,10 @@ export function Cart() {
   const rateId = pickRate(options, chosenRate);
   const selected = options.find((o) => o.id === rateId) ?? null;
   const shipping = selected?.price ?? 0;
-  const total = subtotal + shipping;
+  const shopGoods = qualifyingSubtotal(lines);
+  const rewardOn = live && wantsReward && !!card?.rewardReady && shopGoods > 0;
+  const rewardSaving = rewardOn ? rewardDiscount(shopGoods, programme.rewardPercent) : 0;
+  const total = subtotal + shipping - rewardSaving;
   const threshold = ratesReady && shipped ? freeShippingThreshold(rates.rows, currency) : null;
   const remainingForFreeShipping = threshold === null ? null : Math.max(0, threshold - goods);
 
@@ -150,15 +158,33 @@ export function Cart() {
     }
     if (!live) {
       // Mock mode: records the cart as a demo order, as the prototype did.
+      posthog.capture("checkout_started", {
+        item_count: lines.reduce((count, line) => count + line.qty, 0),
+        cart_subtotal: subtotal,
+        shipping_amount: shipping,
+        total_amount: total,
+        currency,
+        contains_course: courseInBasket,
+        checkout_mode: "mock",
+      });
       setReference(placeOrder(lines, toMajorUnits(shipping)));
       clearCart();
       return;
     }
-    const request = buildCheckoutRequest(lines, form, shipped ? rateId : null, lang.startsWith("en") ? "en" : "fr", giftCodes);
+    const request = buildCheckoutRequest(lines, form, shipped ? rateId : null, lang.startsWith("en") ? "en" : "fr", giftCodes, rewardOn);
     if (!request) {
       setCheckoutError("unavailable");
       return;
     }
+    posthog.capture("checkout_started", {
+      item_count: lines.reduce((count, line) => count + line.qty, 0),
+      cart_subtotal: subtotal,
+      shipping_amount: shipping,
+      total_amount: total,
+      currency,
+      contains_course: courseInBasket,
+      checkout_mode: "stripe",
+    });
     setSubmitting(true);
     const result = await startCheckout(request);
     if (result.kind === "redirect") {
@@ -177,6 +203,8 @@ export function Cart() {
         reloadCourses();
       }
       setGiftCodes([]);
+      setWantsReward(false);
+      reloadLoyalty();
       clearCart();
       return;
     }
@@ -367,8 +395,20 @@ export function Cart() {
               ))}
             </ul>
 
-            {/* Loyalty is shown, never applied (mock card): no discount, no change to what is charged. */}
-            <CheckoutLoyaltyBanner subtotal={toMajorUnits(subtotal)} state={LOYALTY_STATES[DEFAULT_LOYALTY_STATE]} />
+            {/* The member's real card: shown, never applied here. The stamp is awarded
+                when the payment is confirmed, on shop goods only (no gift card, no course). */}
+            <CheckoutLoyaltyBanner
+              subtotal={toMajorUnits(shopGoods)}
+              reward={{
+                checked: rewardOn,
+                saving: toMajorUnits(rewardSaving),
+                disabled: submitting || !live,
+                onChange: (checked) => {
+                  setWantsReward(checked);
+                  if (checkoutError === "loyalty_reward_unavailable") setCheckoutError(null);
+                },
+              }}
+            />
           </section>
 
           {/* A course is the one thing that needs an account; otherwise
@@ -530,6 +570,12 @@ export function Cart() {
                 <span className="text-[var(--text-muted)]">—</span>
               )}
             </div>
+            {rewardOn && (
+              <div className="flex justify-between text-[var(--status-success-fg)]">
+                <span>{t("loyalty.checkout.summaryLine", { percent: programme.rewardPercent })}</span>
+                <span>−{money(rewardSaving)}</span>
+              </div>
+            )}
             <div className="flex justify-between border-t border-[var(--border-subtle)] pt-2 text-base font-bold text-[var(--text-primary)]">
               <span>{t("cart.total")}</span>
               <span>{money(total)}</span>
