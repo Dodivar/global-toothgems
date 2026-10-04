@@ -91,7 +91,7 @@ export const ADMIN_ORDER_SELECT = `
   subtotal_amount, discount_amount, shipping_amount, tax_amount, total_amount,
   gift_card_amount, amount_due, prices_include_tax, shipping_method_name,
   billing_address, shipping_address,
-  order_items ( id, product_name, variant_name, unit_price, quantity, discount_amount, tax_rate_bp, tax_amount,
+  order_items ( id, product_name, variant_name, variant_id, unit_price, quantity, discount_amount, tax_rate_bp, tax_amount,
                 product:products ( slug ), course:courses ( slug ) ),
   order_discounts ( label, code, goods_amount, shipping_amount, source ),
   shipments ( id, status, carrier, service, tracking_number, tracking_url, estimated_delivery,

@@ -10,6 +10,7 @@ import { StepProgress } from "../components/register/StepProgress";
 import { ContextSummary } from "../components/register/ContextSummary";
 import { AuthCard, AuthLayout } from "../components/auth/AuthScene";
 import { GoogleDialog, type GoogleIdentity } from "../components/register/GoogleDialog";
+import { GoogleTermsDialog } from "../components/register/GoogleTermsDialog";
 import { LegalDialog, type LegalDoc } from "../components/register/LegalDialog";
 import { VerifyEmail } from "../components/register/VerifyEmail";
 import { CheckInbox } from "../components/register/CheckInbox";
@@ -70,7 +71,7 @@ export function Register() {
   const navigate = useNavigate();
   const location = useLocation();
   const [params, setParams] = useSearchParams();
-  const { signedIn, restoring, realAuth, signIn, signUp, signOut, email: sessionEmail } = useAuth();
+  const { signedIn, restoring, realAuth, signIn, signUp, signInWithGoogle, signOut, email: sessionEmail } = useAuth();
   const { openCourse } = useProgress();
   const { showToast } = useToast();
 
@@ -97,6 +98,8 @@ export function Register() {
 
   const [viaGoogle, setViaGoogle] = useState(false);
   const [googleOpen, setGoogleOpen] = useState(false);
+  /** Real auth: the terms are accepted in this dialog before the browser leaves for Google. */
+  const [googleTermsOpen, setGoogleTermsOpen] = useState(false);
   const [legalDoc, setLegalDoc] = useState<LegalDoc | null>(null);
   const [creating, setCreating] = useState(false);
   const [failure, setFailure] = useState<CreateFailure>(null);
@@ -352,9 +355,13 @@ export function Register() {
         ? "/panier"
         : returnPath ?? "/compte";
 
-  /** Google sign-in is not connected to Supabase yet: say so rather than pretend. */
+  /**
+   * With Supabase, Google creates the account or signs the member in, then
+   * returns to the page the visitor was heading to. The mock keeps its
+   * simulated account chooser.
+   */
   const openGoogle = () => {
-    if (realAuth) showToast(t("authAlt.googleToastTitle"), t("authAlt.googleToastBody"), "info");
+    if (realAuth) setGoogleTermsOpen(true);
     else setGoogleOpen(true);
   };
 
@@ -643,6 +650,20 @@ export function Register() {
           onClose={() => setGoogleOpen(false)}
           onComplete={completeGoogle}
           onSignIn={() => navigate("/connexion", { state: signInState })}
+        />
+      )}
+      {googleTermsOpen && (
+        <GoogleTermsDialog
+          onClose={() => setGoogleTermsOpen(false)}
+          onAccept={async () => {
+            const result = await signInWithGoogle(afterConfirmation, { termsAccepted: true });
+            if (result === "unavailable") {
+              setGoogleTermsOpen(false);
+              showToast(t("authAlt.googleErrorTitle"), t("authAlt.googleErrorBody"), "error");
+              return false;
+            }
+            return true;
+          }}
         />
       )}
       <LegalDialog doc={legalDoc} onClose={() => setLegalDoc(null)} />

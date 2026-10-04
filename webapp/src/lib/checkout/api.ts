@@ -41,6 +41,7 @@ export const CHECKOUT_ERRORS = [
   "gift_card_invalid",
   "gift_card_details_invalid",
   "account_required",
+  "terms_required",
   "course_owned",
   "payment_unavailable",
   "maintenance",

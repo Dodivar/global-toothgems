@@ -39,6 +39,8 @@ export interface GemGroup {
   name: string;
   description: string;
   data: GemGroupData;
+  /** Captured render of the group alone on the smile; null falls back to the drawn preview. */
+  thumbnailUrl: string | null;
   elementCount: number;
   estimatedPriceMinor: number;
   currency: string;

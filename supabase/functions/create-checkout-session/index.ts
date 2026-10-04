@@ -24,6 +24,18 @@ const deps: CheckoutDeps = {
     return error || !data.user ? null : data.user.id;
   },
 
+  async termsAccepted(userId) {
+    const { data, error } = await supabase
+      .from("consent_records")
+      .select("id")
+      .eq("user_id", userId)
+      .eq("purpose", "terms")
+      .eq("granted", true)
+      .limit(1);
+    if (error) throw new Error(error.message);
+    return data.length > 0;
+  },
+
   async createOrder(input, userId, reservationMinutes) {
     const { data, error } = await supabase.rpc("create_order", {
       p_user_id: userId,

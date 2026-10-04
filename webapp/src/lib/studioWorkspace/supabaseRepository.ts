@@ -27,7 +27,8 @@ import { normalizeDetails, normalizeTags, validateDetails, validateFeedback } fr
  *
  * Thumbnails are best effort, as in the local store: the design is saved first,
  * then its render is uploaded to `studio-thumbnails/<user id>/<creation id>.jpg`
- * and served by signed URL. A failed upload leaves the card on its drawn preview.
+ * (a Gem Group's to `<user id>/groups/<group id>.jpg`) and served by signed
+ * URL. A failed upload leaves the card on its drawn preview.
  */
 
 type CreationRow = Tables<"creations">;
@@ -93,7 +94,7 @@ function toCreation(row: CreationRow, thumbnailUrl: string | null): Creation {
   };
 }
 
-function toGroup(row: GroupRow): GemGroup | null {
+function toGroup(row: GroupRow, thumbnailUrl: string | null): GemGroup | null {
   const data = sanitizeGroupData(row.group_data);
   if (!data) return null;
   return {
@@ -103,6 +104,7 @@ function toGroup(row: GroupRow): GemGroup | null {
     description: row.description,
     tags: normalizeTags(row.tags ?? []),
     data,
+    thumbnailUrl,
     elementCount: data.pieces.length,
     estimatedPriceMinor: groupEstimateCents(data.pieces),
     currency: row.currency,
@@ -122,6 +124,7 @@ async function thumbnailBlob(dataUrl: string): Promise<Blob | null> {
 
 export function createSupabaseRepositories(client: TypedSupabaseClient, userId: string): StudioRepositories {
   const thumbPath = (creationId: string) => `${userId}/${creationId}.jpg`;
+  const groupThumbPath = (groupId: string) => `${userId}/groups/${groupId}.jpg`;
   const thumbs = () => client.storage.from(THUMB_BUCKET);
 
   async function signed(paths: string[]): Promise<Map<string, string>> {
@@ -158,6 +161,30 @@ export function createSupabaseRepositories(client: TypedSupabaseClient, userId: 
       if (error) return { row, url: null };
       if (row.thumbnail_path === path) return { row, url: dataUrl };
       const { data } = await client.from("creations").update({ thumbnail_path: path }).eq("id", row.id).select().single();
+      return { row: data ?? row, url: data ? dataUrl : null };
+    } catch {
+      return { row, url: null };
+    }
+  }
+
+  async function withSignedGroupThumb(row: GroupRow): Promise<GemGroup | null> {
+    const url = row.thumbnail_path ? (await signed([row.thumbnail_path]).catch(() => new Map<string, string>())).get(row.thumbnail_path) : null;
+    return toGroup(row, url ?? null);
+  }
+
+  /**
+   * Store a new group's render and point the row at it. Best effort, like the
+   * creations': returns the row as it stands and the URL to show, never throws.
+   * A group's arrangement never changes after it is made, so neither does its render.
+   */
+  async function writeGroupThumb(row: GroupRow, dataUrl: string | null): Promise<{ row: GroupRow; url: string | null }> {
+    try {
+      const blob = dataUrl ? await thumbnailBlob(dataUrl) : null;
+      if (!blob) return { row, url: null };
+      const path = groupThumbPath(row.id);
+      const { error } = await thumbs().upload(path, blob, { upsert: true, contentType: blob.type, cacheControl: "3600" });
+      if (error) return { row, url: null };
+      const { data } = await client.from("gem_groups").update({ thumbnail_path: path }).eq("id", row.id).select().single();
       return { row: data ?? row, url: data ? dataUrl : null };
     } catch {
       return { row, url: null };
@@ -313,7 +340,8 @@ export function createSupabaseRepositories(client: TypedSupabaseClient, userId: 
       async list() {
         const { data, error } = await client.from("gem_groups").select("*").order("updated_at", { ascending: false });
         if (error) throw storeError(error);
-        return data.flatMap((r) => toGroup(r) ?? []);
+        const urls = await signed(data.flatMap((r) => (r.thumbnail_path ? [r.thumbnail_path] : []))).catch(() => new Map<string, string>());
+        return data.flatMap((r) => toGroup(r, r.thumbnail_path ? (urls.get(r.thumbnail_path) ?? null) : null) ?? []);
       },
 
       async create(input: GemGroupInput) {
@@ -331,7 +359,8 @@ export function createSupabaseRepositories(client: TypedSupabaseClient, userId: 
           .select()
           .single();
         if (error) throw storeError(error);
-        const group = toGroup(data);
+        const { row, url } = await writeGroupThumb(data, input.thumbnail);
+        const group = toGroup(row, url);
         if (!group) throw new StudioStoreError("invalid");
         return group;
       },
@@ -357,7 +386,7 @@ export function createSupabaseRepositories(client: TypedSupabaseClient, userId: 
           : client.from("gem_groups").select("*").eq("id", id).single();
         const { data, error } = await query;
         if (error) throw storeError(error);
-        const group = toGroup(data);
+        const group = await withSignedGroupThumb(data);
         if (!group) throw new StudioStoreError("invalid");
         return group;
       },
@@ -377,15 +406,39 @@ export function createSupabaseRepositories(client: TypedSupabaseClient, userId: 
           .select()
           .single();
         if (error) throw storeError(error);
-        const group = toGroup(data);
+        if (!source.thumbnail_path) {
+          const group = toGroup(data, null);
+          if (!group) throw new StudioStoreError("invalid");
+          return group;
+        }
+        // The copy gets its own render file, so deleting either one leaves the other intact.
+        let row = data;
+        try {
+          const { error: copyError } = await thumbs().copy(source.thumbnail_path, groupThumbPath(data.id));
+          if (!copyError) {
+            const { data: linked } = await client
+              .from("gem_groups")
+              .update({ thumbnail_path: groupThumbPath(data.id) })
+              .eq("id", data.id)
+              .select()
+              .single();
+            row = linked ?? data;
+          }
+        } catch {
+          /* the copy keeps its drawn preview */
+        }
+        const group = await withSignedGroupThumb(row);
         if (!group) throw new StudioStoreError("invalid");
         return group;
       },
 
       async remove(id: string) {
-        const { data, error } = await client.from("gem_groups").delete().eq("id", id).select("id");
+        const { data, error } = await client.from("gem_groups").delete().eq("id", id).select("id, thumbnail_path");
         if (error) throw storeError(error);
         if (!data.length) throw new StudioStoreError("notFound");
+        const path = data[0].thumbnail_path;
+        // An orphaned image is harmless and private; the group is already gone.
+        if (path) await thumbs().remove([path]).catch(() => undefined);
       },
     },
 

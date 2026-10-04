@@ -92,6 +92,7 @@ describe("route table", () => {
     expect(publicRoute("contact").fr).toBe(LEGAL_PATHS.contact);
     expect(publicRoute("legalNotice").fr).toBe(LEGAL_PATHS.legalNotice);
     expect(publicRoute("terms").fr).toBe(LEGAL_PATHS.terms);
+    expect(publicRoute("termsOfUse").fr).toBe(LEGAL_PATHS.termsOfUse);
     expect(publicRoute("privacy").fr).toBe(LEGAL_PATHS.privacy);
     expect(publicRoute("cookies").fr).toBe(LEGAL_PATHS.cookies);
     expect(publicRoute("about").fr).toBe(LEGAL_PATHS.about);

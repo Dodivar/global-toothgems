@@ -33,6 +33,7 @@ function fakeDeps(overrides: Partial<CheckoutDeps> = {}) {
     maintenanceEnabled: () => Promise.resolve(false),
     origins: readSiteOrigins("https://globaltoothgems.com", "http://localhost:5173, https://preview.example.app"),
     userFromToken: (token) => Promise.resolve(token === "a.valid.jwt" ? "user-1" : null),
+    termsAccepted: () => Promise.resolve(true),
     createOrder: (_input, userId, minutes) => {
       calls.createOrder.push({ userId, minutes });
       return Promise.resolve({ order: ORDER });
@@ -101,6 +102,22 @@ Deno.test("signed-in customer: the order is attached to the verified account", a
   const guest = fakeDeps();
   await handleCheckout(post(BODY, { authorization: "Bearer sb_publishable_abc" }), guest.deps);
   assertEquals(guest.calls.createOrder[0].userId, null);
+});
+
+Deno.test("an account that has not accepted the terms creates no order (a guest is not asked)", async () => {
+  const { deps, calls } = fakeDeps({ termsAccepted: () => Promise.resolve(false) });
+  const res = await handleCheckout(post(BODY, { authorization: "Bearer a.valid.jwt" }), deps);
+  assertEquals(res.status, 409);
+  assertEquals((await res.json()).error, "terms_required");
+  assertEquals(calls.createOrder.length, 0);
+  const guest = await handleCheckout(post(BODY), deps);
+  assertEquals(guest.status, 200);
+  assertEquals(calls.createOrder.length, 1);
+  // An unreadable record is a server error, never a free pass.
+  const broken = fakeDeps({ termsAccepted: () => Promise.reject(new Error("db down")) });
+  const failed = await handleCheckout(post(BODY, { authorization: "Bearer a.valid.jwt" }), broken.deps);
+  assertEquals(failed.status, 500);
+  assertEquals(broken.calls.createOrder.length, 0);
 });
 
 Deno.test("an expired session token is refused, not turned into a guest order", async () => {

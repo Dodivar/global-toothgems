@@ -2530,8 +2530,17 @@ export class StudioEngine {
       });
   }
   /** Clean capture of the current view (overlays + highlights hidden) —
-      shared by the PNG export and the quote sheet. */
-  captureView(opts: { transparent?: boolean; camera?: THREE.PerspectiveCamera } = {}): string {
+      shared by the PNG export and the quote sheet. With `only`, every other
+      piece is hidden for the capture and shown again before it returns. */
+  captureView(opts: { transparent?: boolean; camera?: THREE.PerspectiveCamera; only?: ReadonlySet<string> } = {}): string {
+    const hidden: THREE.Group[] = [];
+    if (opts.only) {
+      const only = opts.only;
+      [...this.jewelRigs.values()].filter((r) => !only.has(r.id)).concat(this.dyingJewels).forEach((r) => {
+        if (r.group.visible) hidden.push(r.group);
+        r.group.visible = false;
+      });
+    }
     const outlineVis: boolean[] = [];
     this.jewelRigs.forEach((r) => {
       outlineVis.push(r.outline.visible);
@@ -2567,6 +2576,9 @@ export class StudioEngine {
     if (this.ghost) this.ghost.root.visible = this.ghost.ringRoot.visible = ghostVis;
     this.backdrop.visible = bd;
     this.floor.visible = fl;
+    hidden.forEach((g) => {
+      g.visible = true;
+    });
     this.renderer.render(this.scene, this.camera);
     return url;
   }
@@ -2671,7 +2683,26 @@ export class StudioEngine {
    * (no outlines, no highlights) on the stage's own blue, cropped to fill.
    */
   async captureThumbnail(width = 480, height = 360): Promise<string> {
-    const render = await decodeImage(this.captureView({ camera: this.thumbnailCamera(width / height) }));
+    const camera = this.thumbnailCamera(this.store.jewels, width / height, 26);
+    return this.thumbnailFrom(this.captureView({ camera }), width, height);
+  }
+
+  /**
+   * The same card render for a Gem Group: only the chosen pieces on the
+   * smile, every other piece of the stage hidden, framed closer.
+   */
+  async captureGroupThumbnail(ids: string[], width = 480, height = 360): Promise<string> {
+    const only = new Set(ids);
+    const camera = this.thumbnailCamera(
+      this.store.jewels.filter((j) => only.has(j.id)),
+      width / height,
+      18,
+    );
+    return this.thumbnailFrom(this.captureView({ camera, only }), width, height);
+  }
+
+  private async thumbnailFrom(capture: string, width: number, height: number): Promise<string> {
+    const render = await decodeImage(capture);
     const c = document.createElement("canvas");
     c.width = width;
     c.height = height;
@@ -2688,19 +2719,19 @@ export class StudioEngine {
   }
 
   /**
-   * A camera for the saved-design card, independent of where the artist left
-   * the view: slightly above the front, centred on the pieces and pulled back
-   * until they fit the card (`cardAspect`) with a little of the smile around.
+   * A camera for a saved card, independent of where the artist left the view:
+   * slightly above the front, centred on `jewels` and pulled back until they
+   * fit the card (`cardAspect`), at least `minWidth` mm wide so a little of
+   * the smile shows around them.
    */
-  private thumbnailCamera(cardAspect: number): THREE.PerspectiveCamera {
+  private thumbnailCamera(jewels: PlacedJewelry[], cardAspect: number, minWidth: number): THREE.PerspectiveCamera {
     const cam = this.camera.clone();
-    const jewels = this.store.jewels;
     const box = new THREE.Box3();
     if (jewels.length) jewels.forEach((j) => box.expandByPoint(new THREE.Vector3(j.position.x, j.position.y, j.position.z)));
     else box.setFromCenterAndSize(new THREE.Vector3(0, 0, 0), new THREE.Vector3(24, 10, 1));
     const size = box.getSize(new THREE.Vector3());
     const target = box.getCenter(new THREE.Vector3());
-    const w = Math.max(size.x + 10, 26);
+    const w = Math.max(size.x + 10, minWidth);
     const h = Math.max(size.y + 8, w / cardAspect);
     const tanV = Math.tan(THREE.MathUtils.degToRad(cam.fov / 2));
     // The capture is cropped to the card from the canvas: fit both ways.

@@ -64,6 +64,8 @@ export interface CreationsRepository {
 
 export interface GemGroupInput extends RecordDetails {
   data: GemGroupData;
+  /** A JPEG data URL of the selected pieces alone on the stage, or null to keep the drawn preview. */
+  thumbnail: string | null;
 }
 
 export interface GemGroupPatch extends Partial<RecordDetails> {

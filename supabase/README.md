@@ -122,6 +122,7 @@ supabase/
 | 20261002064611 | `settings_workspace` | Settings workspace on the database: `store_settings` gains the business identity, legal mentions (legal form, share capital, registration and VAT numbers, publication director, host), contact details, address, opening hours (`private.valid_opening_hours()` CHECK) and the contact page switches + `store_settings_translations` (support message per non-default locale, audited); `admin_save_store_details()`, `admin_save_shipping()` (whole configuration, atomic), `admin_save_tax_rates()` (whole set), `admin_save_languages()` — SECURITY INVOKER, `manage_settings`; `languages`: API may update `is_enabled`/`position` only, `fr`/`en` cannot be switched off (trigger), switches audited; audit trigger identifies rows by `code`/`locale`; standard VAT rates for AT BG CY CZ DK EE FI GR HR HU LT LU LV MT PL RO SE SI SK + MC, IE switched on |
 | 20261002100000 | `course_checkout` | **Not applied yet (awaits the user's go-ahead; validated on the project inside a rolled-back transaction).** Academy phase D: `order_items.course_id` (exclusive with product/variant, RESTRICT); `create_order()` accepts `{course_id, quantity: 1}` lines (published course, account required, not already held, current price incl. course promotion, VAT `training`, outside shop discounts and shipping thresholds); trigger `orders_stock_transitions_zc_courses` grants a `purchase` entitlement when the order becomes paid and revokes it on a full refund; course lines refused in parcels and ignored by the fulfilment status |
 | 20261002064949 | `settings_shipping_positions` | `admin_save_shipping()` numbers zones and rates from 1 like every existing row, so saving an unchanged configuration writes nothing |
+| 20261003131220 | `studio_gem_group_thumbnails` | `gem_groups.thumbnail_path` (null or inside the owner's folder, column grants for insert/update): each new Gem Group keeps a captured render of its pieces alone on the smile at `studio-thumbnails/<user id>/groups/<group id>.jpg` (bucket policies unchanged: they check the first folder). Suite `tests/studio_workspace_validation.sql` |
 
 RLS is **enabled in the same migration that creates each table** (deny by default);
 policies are granted back in `rls_policies`.
@@ -996,6 +997,23 @@ then set `status = 'processed'` (or `failed` + `error`). Events in `failed` need
   With Supabase's default `{{ .ConfirmationURL }}` links still work, but only in the browser that asked for them.
   An e-mail sent from the dashboard rather than by the app carries the Site URL as `.RedirectTo`: send
   confirmations and resets from the app.
+- Authentication → Sign In / Providers → Google (**Continue with Google**, since 2026-10-04): the webapp calls
+  `supabase.auth.signInWithOAuth({ provider: "google", redirectTo: …/auth/confirm?next=… })`; Google returns to
+  `https://<project ref>.supabase.co/auth/v1/callback` (to be listed as an *Authorised redirect URI* of the Google
+  OAuth client), Supabase then lands on `/auth/confirm?code=…`, which exchanges it for the cookie session. Signing in and
+  signing up are the same step. Migration `20261004152751_google_signin_profile_metadata` makes `handle_new_auth_user`
+  read Google's `given_name` / `family_name` / `full_name` as a fallback of the form keys (suite
+  `tests/google_signin_validation.sql`). A Google sign-up skips the registration form, so the terms are accepted in
+  one click instead (no schema change, members may insert their own `terms` + `privacy` records, source `account` /
+  `checkout`): on `/inscription` a dialog ("J'accepte et je continue avec Google") precedes the redirect and the
+  acceptance is recorded once the new account is open (`webapp/src/lib/googleTerms.ts`, 15-minute note in
+  localStorage); on `/connexion` the button cannot ask (it also serves existing members), so any account without a
+  granted `terms` record is stopped by `RequireAccount` (member space, learner pages) with a one-click page, and by
+  the cart. The authority is the Edge Function `create-checkout-session`, which answers `terms_required` (409)
+  before reserving anything for an account without that record (deployed as v8, 2026-10-04). Accounts created
+  before this (invited staff, seeded members) are asked once too. Not decided: what happens to a Google account
+  that declines (today: sign out, the account stays). Google accounts whose address already exists as an e-mail/password account are linked automatically by Supabase (same
+  verified address).
 - Authentication → Emails → SMTP: the built-in sender is rate-limited to a few emails per hour and meant
   for testing; production needs custom SMTP (Resend, per the project stack).
 
@@ -1273,6 +1291,9 @@ VAT rates, shipping zones/rates mirroring the Settings prototype. Media rows ref
     already reserved by an order awaiting payment, guest, other currency, combined with a promotion code) map to
     `loyalty_reward_unavailable`. A visitor who abandons Stripe keeps the card reserved until the order's reservation
     expires; the cart then shows that message. The discount is computed on shop goods only (no gift card, no course).
+78. **The order that spends the loyalty reward earns no stamp** (agent, 2026-10-04, to confirm): migration
+    `20261004200155_loyalty_reward_order_no_stamp` makes `apply_loyalty_on_order()` skip an order carrying a
+    `loyalty` row in `order_discounts`, so after spending the reward the member's card is back at 0 instead of 1/5.
 
 ## Done
 

@@ -9,6 +9,7 @@ import { copyName, validateDetails, type DetailsError } from "../../../lib/studi
 import { useWorkspace } from "../../../lib/studioWorkspace/workspace";
 import { DetailsFields } from "./DetailsFields";
 import { ScenePreview } from "./ScenePreview";
+import { useStageCapture } from "./useStageCapture";
 import { useTagSuggestions } from "./useTagSuggestions";
 import { useWorkspaceFormat } from "./workspaceStyles";
 
@@ -43,6 +44,9 @@ export function SaveCreationDialog({
   const [busy, setBusy] = useState(false);
 
   const pieces = mode === "edit" && creation ? creation.scene.pieces : snap.jewels;
+  // A new save shows the render its card will keep, not the drawn preview.
+  const capture = useStageCapture(mode === "edit" ? null : (engine) => engine.captureThumbnail());
+  const shown = mode === "edit" ? (creation?.thumbnailUrl ?? null) : (capture ?? null);
   const count = pieces.length;
 
   const submit = async (e: FormEvent) => {
@@ -51,7 +55,7 @@ export function SaveCreationDialog({
     setError(problem);
     if (problem || busy) return;
     setBusy(true);
-    const ok = mode === "edit" && creation ? await updateCreationDetails(creation, details) : !!(await saveDesign("new", details));
+    const ok = mode === "edit" && creation ? await updateCreationDetails(creation, details) : !!(await saveDesign("new", details, capture));
     setBusy(false);
     if (ok) onClose();
   };
@@ -76,8 +80,10 @@ export function SaveCreationDialog({
       <form id="gt-save-creation" onSubmit={submit} className="grid gap-5 sm:grid-cols-[180px_minmax(0,1fr)]">
         <figure className="m-0 grid content-start gap-2">
           <div className="aspect-[4/3] overflow-hidden rounded-[var(--radius-md)] border border-[var(--border-subtle)]">
-            {mode === "edit" && creation?.thumbnailUrl ? (
-              <img src={creation.thumbnailUrl} alt="" className="h-full w-full object-cover" />
+            {shown ? (
+              <img src={shown} alt="" className="h-full w-full object-cover" />
+            ) : capture === undefined ? (
+              <div className="h-full w-full animate-pulse bg-[var(--gt-blue-100)] motion-reduce:animate-none" />
             ) : (
               <ScenePreview pieces={pieces} />
             )}

@@ -28,6 +28,7 @@ import { toMajorUnits } from "../lib/catalog/money";
 import { pick } from "../data/types";
 import { useFormat } from "../lib/format";
 import { isSupabaseConfigured } from "../lib/supabase/client";
+import { TermsNotice } from "../components/auth/TermsNotice";
 import { fetchShippingRates, startCheckout, type CheckoutError } from "../lib/checkout/api";
 import { buildCheckoutRequest, EMPTY_CHECKOUT_FORM, invalidFields, type CheckoutForm } from "../lib/checkout/checkoutForm";
 import { hasCourse, needsShipping, shippableSubtotal } from "../lib/checkout/cartLines";
@@ -77,7 +78,9 @@ export function Cart() {
   const { lines, subtotal, updateQty, removeLine, clearCart } = useCart();
   const { products } = useCatalog();
   const { placeOrder } = useOrders();
-  const { signedIn } = useAuth();
+  const { signedIn, profile, updateProfile, termsAccepted, acceptTerms } = useAuth();
+  const [acceptingTerms, setAcceptingTerms] = useState(false);
+  const [termsFailed, setTermsFailed] = useState(false);
   const { reload: reloadCourses } = useProgress();
   const lang = i18n.language;
   const live = isSupabaseConfigured;
@@ -103,6 +106,25 @@ export function Cart() {
   // A course opens on an account: the basket waits while the visitor signs in.
   const courseInBasket = hasCourse(lines);
   const accountMissing = live && courseInBasket && !signedIn;
+
+  // The saved profile fills the form once it is loaded, never over what the customer typed.
+  const [prefilled, setPrefilled] = useState(false);
+  useEffect(() => {
+    if (!live || prefilled || !profile) return;
+    setPrefilled(true);
+    setForm((f) => ({
+      firstName: f.firstName || profile.firstName,
+      lastName: f.lastName || profile.lastName,
+      email: f.email || profile.email,
+      street: f.street || profile.addressLine,
+      postalCode: f.postalCode || profile.postalCode,
+      city: f.city || profile.city,
+      country: profile.addressLine && profile.country ? profile.country : f.country,
+    }));
+  }, [live, prefilled, profile]);
+  // Offered while the account has no delivery address yet.
+  const offerSaveAddress = live && signedIn && !!profile && !profile.addressLine.trim() && shipped;
+  const [saveAddress, setSaveAddress] = useState(true);
 
   // Delivery rates of the destination's zone (public tables), read again when the country changes.
   const [ratesAttempt, setRatesAttempt] = useState(0);
@@ -146,10 +168,16 @@ export function Cart() {
   const set = (key: keyof CheckoutForm) => (e: React.ChangeEvent<HTMLInputElement>) =>
     setForm((f) => ({ ...f, [key]: e.target.value }));
 
-  const pay = async () => {
+  const pay = async (termsJustAccepted = false) => {
     setCheckoutError(null);
     if (accountMissing) {
       setCheckoutError("account_required");
+      return;
+    }
+    // Created through Google, the account has not accepted the terms yet: the
+    // notice below the button settles it in one click, then the payment goes on.
+    if (live && signedIn && termsAccepted === false && !termsJustAccepted) {
+      setCheckoutError("terms_required");
       return;
     }
     if (invalid.length > 0 || (shipped && !rateId)) {
@@ -186,6 +214,17 @@ export function Cart() {
       checkout_mode: "stripe",
     });
     setSubmitting(true);
+    if (offerSaveAddress && saveAddress) {
+      // Saved before leaving for Stripe; a refused write must not block the payment.
+      await updateProfile({
+        ...(profile?.firstName ? {} : { firstName: form.firstName.trim() }),
+        ...(profile?.lastName ? {} : { lastName: form.lastName.trim() }),
+        addressLine: form.street.trim(),
+        postalCode: form.postalCode.trim(),
+        city: form.city.trim(),
+        country: form.country,
+      }).catch(() => false);
+    }
     const result = await startCheckout(request);
     if (result.kind === "redirect") {
       // Stays "submitting" while the browser leaves for Stripe. Nothing is
@@ -209,6 +248,18 @@ export function Cart() {
       return;
     }
     setCheckoutError(result.error);
+  };
+
+  const acceptAndPay = async () => {
+    setAcceptingTerms(true);
+    setTermsFailed(false);
+    const done = await acceptTerms("checkout");
+    setAcceptingTerms(false);
+    if (!done) {
+      setTermsFailed(true);
+      return;
+    }
+    await pay(true);
   };
 
   if (reference) {
@@ -282,7 +333,7 @@ export function Cart() {
       ? t("cart.pay", { amount: money(total) })
       : t("checkout.payNoShipping");
   const payButton = (
-    <Button variant="primary" fullWidth size="lg" onClick={pay} loading={submitting} disabled={submitting || !ratesReady || accountMissing}>
+    <Button variant="primary" fullWidth size="lg" onClick={() => void pay()} loading={submitting} disabled={submitting || !ratesReady || accountMissing}>
       {payLabel}
     </Button>
   );
@@ -298,7 +349,13 @@ export function Cart() {
           <CircleAlert size={16} aria-hidden="true" className="flex-none" /> {t("checkout.formIncomplete")}
         </p>
       )}
-      {checkoutError && (
+      {checkoutError === "terms_required" && (
+        <div className="grid gap-3 rounded-[var(--radius-md)] border border-[var(--border-subtle)] bg-[var(--surface-sunken)] p-4">
+          <p className="m-0 text-[length:var(--text-body-sm)] font-semibold text-[var(--text-primary)]">{t("checkout.errors.terms_required")}</p>
+          <TermsNotice cta={t("termsAccept.checkoutCta")} busy={acceptingTerms} failed={termsFailed} onAccept={() => void acceptAndPay()} />
+        </div>
+      )}
+      {checkoutError && checkoutError !== "terms_required" && (
         <p role="alert" className={alertClass}>
           <CircleAlert size={16} aria-hidden="true" className="flex-none" /> {t(`checkout.errors.${checkoutError}`)}
         </p>
@@ -320,23 +377,6 @@ export function Cart() {
           <section className="grid gap-4 rounded-[var(--radius-card)] border border-[var(--border-subtle)] bg-[var(--surface-card)] p-[var(--space-6)]">
             <h2 className="text-[length:var(--text-h3)]">{t("cart.cartTitle")}</h2>
 
-            {threshold !== null && remainingForFreeShipping !== null && (
-              <div className="grid gap-2 rounded-[var(--radius-md)] bg-[var(--surface-brand-wash)] p-4">
-                <span className="flex items-center gap-2 text-sm font-medium text-[var(--gt-blue-700)]">
-                  <Truck size={16} aria-hidden="true" />
-                  {remainingForFreeShipping > 0
-                    ? t("cart.freeShippingProgress", { amount: money(remainingForFreeShipping) })
-                    : t("cart.freeShippingReached")}
-                </span>
-                <ProgressBar
-                  value={Math.min(100, (goods / threshold) * 100)}
-                  size="sm"
-                  tone={remainingForFreeShipping > 0 ? "brand" : "emerald"}
-                  showValue={false}
-                  label={t("cart.freeShippingLabel", { threshold: money(threshold) })}
-                />
-              </div>
-            )}
 
             <ul className="m-0 grid list-none gap-0 p-0">
               {lines.map((line) => (
@@ -463,9 +503,11 @@ export function Cart() {
                 <Select label={t("cart.country")} options={countryOptions} value={form.country} onChange={(country) => setForm((f) => ({ ...f, country }))} />
               </div>
             </div>
-            {/* Saving the address on the account is not built yet: offered in the demo only. */}
             {!live && (
               <Checkbox label={t("cart.saveInfo")} description={t("cart.saveInfoDescription")} checked={saveInfo} onChange={setSaveInfo} />
+            )}
+            {offerSaveAddress && (
+              <Checkbox label={t("cart.saveAddress")} description={t("cart.saveAddressDescription")} checked={saveAddress} onChange={setSaveAddress} />
             )}
           </section>
 
@@ -529,17 +571,6 @@ export function Cart() {
           </section>
           )}
 
-          {live && (
-            <GiftCardCodes
-              codes={giftCodes}
-              onChange={(codes) => {
-                setGiftCodes(codes);
-                if (checkoutError === "gift_card_invalid") setCheckoutError(null);
-              }}
-              disabled={submitting}
-              refused={checkoutError === "gift_card_invalid"}
-            />
-          )}
 
           <section className="grid gap-3 rounded-[var(--radius-card)] border border-[var(--border-subtle)] bg-[var(--surface-card)] p-[var(--space-6)]">
             <h2 className="text-[length:var(--text-h3)]">{t("cart.paymentTitle")}</h2>
@@ -553,6 +584,23 @@ export function Cart() {
 
         <aside className="grid content-start gap-4 rounded-[var(--radius-card)] border border-[var(--border-subtle)] bg-[var(--surface-card)] p-[var(--space-6)] shadow-[var(--shadow-xs)] lg:sticky lg:top-24">
           <h2 className="text-[length:var(--text-h4)]">{t("cart.summaryTitle")}</h2>
+          {threshold !== null && remainingForFreeShipping !== null && (
+            <div className="grid gap-2 rounded-[var(--radius-md)] bg-[var(--surface-brand-wash)] p-4">
+              <span className="flex items-center gap-2 text-sm font-medium text-[var(--gt-blue-700)]">
+                <Truck size={16} aria-hidden="true" />
+                {remainingForFreeShipping > 0
+                  ? t("cart.freeShippingProgress", { amount: money(remainingForFreeShipping) })
+                  : t("cart.freeShippingReached")}
+              </span>
+              <ProgressBar
+                value={Math.min(100, (goods / threshold) * 100)}
+                size="sm"
+                tone={remainingForFreeShipping > 0 ? "brand" : "emerald"}
+                showValue={false}
+                label={t("cart.freeShippingLabel", { threshold: money(threshold) })}
+              />
+            </div>
+          )}
           <div className="grid gap-2 text-sm">
             <div className="flex justify-between text-[var(--text-body)]">
               <span>{t("cart.subtotal")}</span>
@@ -588,6 +636,18 @@ export function Cart() {
               </p>
             )}
           </div>
+          {live && (
+            <GiftCardCodes
+              embedded
+              codes={giftCodes}
+              onChange={(codes) => {
+                setGiftCodes(codes);
+                if (checkoutError === "gift_card_invalid") setCheckoutError(null);
+              }}
+              disabled={submitting}
+              refused={checkoutError === "gift_card_invalid"}
+            />
+          )}
           <div className="hidden gap-3 lg:grid">
             {alerts}
             {payButton}

@@ -257,7 +257,7 @@ export function seedCreations(userId: string, now = Date.now()): Omit<Creation, 
   });
 }
 
-export function seedGroups(userId: string, now = Date.now()): GemGroup[] {
+export function seedGroups(userId: string, now = Date.now()): Omit<GemGroup, "thumbnailUrl">[] {
   return GROUPS.map((g) => {
     const pieces: GroupPiece[] = g.pieces.map(([type, finish, scale, x, y]) => ({
       jewelryTypeId: type,

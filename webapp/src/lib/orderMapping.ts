@@ -30,6 +30,8 @@ type Amount = number | string;
 export interface OrderItemRow {
   product_name: string;
   variant_name: string | null;
+  /** The variant bought, to pick its own photo (null for a variant-less line or once deleted). */
+  variant_id?: string | null;
   unit_price: Amount;
   quantity: number;
   /** The product as it is now, for the link and the photo. Null once deleted. */
@@ -125,7 +127,7 @@ export const CUSTOMER_ORDER_SELECT = `
   subtotal_amount, discount_amount, shipping_amount, tax_amount, total_amount,
   gift_card_amount, amount_due, prices_include_tax, shipping_method_name,
   billing_address, shipping_address,
-  order_items ( id, product_name, variant_name, unit_price, quantity, discount_amount, product:products ( slug ),
+  order_items ( id, product_name, variant_name, variant_id, unit_price, quantity, discount_amount, product:products ( slug ),
                 course:courses ( slug ) ),
   order_discounts ( label, code, goods_amount, shipping_amount ),
   shipments ( id, status, carrier, service, tracking_number, tracking_url, estimated_delivery,
@@ -239,7 +241,11 @@ export function mapCustomerLine(
     courseId: row.course?.slug ?? undefined,
     name: { fr: row.product_name, en: row.product_name },
     variant: row.variant_name ? { fr: row.variant_name, en: row.variant_name } : undefined,
-    image: product?.image ?? "",
+    // The photo of the variant bought, else the product's.
+    image:
+      (row.variant_id ? product?.variants?.find((v) => v.id === row.variant_id)?.image : undefined) ??
+      product?.image ??
+      "",
     qty: row.quantity,
     unitAmount,
     totalAmount: unitAmount * row.quantity,
