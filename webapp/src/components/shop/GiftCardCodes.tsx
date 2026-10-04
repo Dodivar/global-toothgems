@@ -17,12 +17,15 @@ export function GiftCardCodes({
   onChange,
   disabled,
   refused,
+  embedded,
 }: {
   codes: string[];
   onChange: (codes: string[]) => void;
   disabled?: boolean;
   /** The last checkout refused one of the codes (which one is not said). */
   refused?: boolean;
+  /** Rendered inside another card (the order summary): no frame of its own, a smaller title. */
+  embedded?: boolean;
 }) {
   const { t } = useTranslation();
   const id = useId();
@@ -43,9 +46,16 @@ export function GiftCardCodes({
   const message = error ? t(`checkout.giftCard.errors.${error}`, { max: MAX_GIFT_CARD_CODES }) : refused ? t("checkout.errors.gift_card_invalid") : null;
 
   return (
-    <section aria-labelledby={`${id}-title`} className="grid gap-3 rounded-[var(--radius-card)] border border-[var(--border-subtle)] bg-[var(--surface-card)] p-[var(--space-6)]">
-      <h2 id={`${id}-title`} className="flex items-center gap-2 text-[length:var(--text-h3)]">
-        <Gift size={20} aria-hidden="true" />
+    <section
+      aria-labelledby={`${id}-title`}
+      className={
+        embedded
+          ? "grid gap-3 border-t border-[var(--border-subtle)] pt-4"
+          : "grid gap-3 rounded-[var(--radius-card)] border border-[var(--border-subtle)] bg-[var(--surface-card)] p-[var(--space-6)]"
+      }
+    >
+      <h2 id={`${id}-title`} className={`flex items-center gap-2 ${embedded ? "text-[length:var(--text-body)] font-semibold" : "text-[length:var(--text-h3)]"}`}>
+        <Gift size={embedded ? 16 : 20} aria-hidden="true" />
         {t("checkout.giftCard.title")}
       </h2>
       <p className="m-0 text-sm text-[var(--text-muted)]">{t("checkout.giftCard.hint")}</p>

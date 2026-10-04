@@ -347,23 +347,6 @@ export function Cart() {
           <section className="grid gap-4 rounded-[var(--radius-card)] border border-[var(--border-subtle)] bg-[var(--surface-card)] p-[var(--space-6)]">
             <h2 className="text-[length:var(--text-h3)]">{t("cart.cartTitle")}</h2>
 
-            {threshold !== null && remainingForFreeShipping !== null && (
-              <div className="grid gap-2 rounded-[var(--radius-md)] bg-[var(--surface-brand-wash)] p-4">
-                <span className="flex items-center gap-2 text-sm font-medium text-[var(--gt-blue-700)]">
-                  <Truck size={16} aria-hidden="true" />
-                  {remainingForFreeShipping > 0
-                    ? t("cart.freeShippingProgress", { amount: money(remainingForFreeShipping) })
-                    : t("cart.freeShippingReached")}
-                </span>
-                <ProgressBar
-                  value={Math.min(100, (goods / threshold) * 100)}
-                  size="sm"
-                  tone={remainingForFreeShipping > 0 ? "brand" : "emerald"}
-                  showValue={false}
-                  label={t("cart.freeShippingLabel", { threshold: money(threshold) })}
-                />
-              </div>
-            )}
 
             <ul className="m-0 grid list-none gap-0 p-0">
               {lines.map((line) => (
@@ -556,17 +539,6 @@ export function Cart() {
           </section>
           )}
 
-          {live && (
-            <GiftCardCodes
-              codes={giftCodes}
-              onChange={(codes) => {
-                setGiftCodes(codes);
-                if (checkoutError === "gift_card_invalid") setCheckoutError(null);
-              }}
-              disabled={submitting}
-              refused={checkoutError === "gift_card_invalid"}
-            />
-          )}
 
           <section className="grid gap-3 rounded-[var(--radius-card)] border border-[var(--border-subtle)] bg-[var(--surface-card)] p-[var(--space-6)]">
             <h2 className="text-[length:var(--text-h3)]">{t("cart.paymentTitle")}</h2>
@@ -580,6 +552,23 @@ export function Cart() {
 
         <aside className="grid content-start gap-4 rounded-[var(--radius-card)] border border-[var(--border-subtle)] bg-[var(--surface-card)] p-[var(--space-6)] shadow-[var(--shadow-xs)] lg:sticky lg:top-24">
           <h2 className="text-[length:var(--text-h4)]">{t("cart.summaryTitle")}</h2>
+          {threshold !== null && remainingForFreeShipping !== null && (
+            <div className="grid gap-2 rounded-[var(--radius-md)] bg-[var(--surface-brand-wash)] p-4">
+              <span className="flex items-center gap-2 text-sm font-medium text-[var(--gt-blue-700)]">
+                <Truck size={16} aria-hidden="true" />
+                {remainingForFreeShipping > 0
+                  ? t("cart.freeShippingProgress", { amount: money(remainingForFreeShipping) })
+                  : t("cart.freeShippingReached")}
+              </span>
+              <ProgressBar
+                value={Math.min(100, (goods / threshold) * 100)}
+                size="sm"
+                tone={remainingForFreeShipping > 0 ? "brand" : "emerald"}
+                showValue={false}
+                label={t("cart.freeShippingLabel", { threshold: money(threshold) })}
+              />
+            </div>
+          )}
           <div className="grid gap-2 text-sm">
             <div className="flex justify-between text-[var(--text-body)]">
               <span>{t("cart.subtotal")}</span>
@@ -615,6 +604,18 @@ export function Cart() {
               </p>
             )}
           </div>
+          {live && (
+            <GiftCardCodes
+              embedded
+              codes={giftCodes}
+              onChange={(codes) => {
+                setGiftCodes(codes);
+                if (checkoutError === "gift_card_invalid") setCheckoutError(null);
+              }}
+              disabled={submitting}
+              refused={checkoutError === "gift_card_invalid"}
+            />
+          )}
           <div className="hidden gap-3 lg:grid">
             {alerts}
             {payButton}
