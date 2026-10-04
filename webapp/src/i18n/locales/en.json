@@ -4353,6 +4353,7 @@
       "contact": "Contact us",
       "legalNotice": "Legal notice",
       "terms": "Terms of sale",
+      "termsOfUse": "Terms of use",
       "privacy": "Privacy policy",
       "cookies": "Cookie policy"
     },
@@ -4369,6 +4370,7 @@
         "contact": "Write to us: a real person will answer.",
         "legalNotice": "Publisher, host and intellectual property.",
         "terms": "The rules that govern your purchases.",
+        "termsOfUse": "The rules for using the site and your account.",
         "privacy": "Your data, how it is used and your rights.",
         "cookies": "Cookies and how to manage your choices."
       }

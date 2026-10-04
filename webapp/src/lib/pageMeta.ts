@@ -5,6 +5,7 @@ import { PRIVACY } from "../data/legal/privacy";
 import { RETURNS } from "../data/legal/returns";
 import { SHIPPING } from "../data/legal/shipping";
 import { TERMS } from "../data/legal/terms";
+import { TERMS_OF_USE } from "../data/legal/termsOfUse";
 import type { LegalDocument } from "../data/legal/types";
 import { alternates, parsePath, type Locale, type ParsedPath, type PublicRouteId } from "./localeRoutes";
 
@@ -41,6 +42,7 @@ const PAGES: Partial<Record<PublicRouteId, { title: Text; description?: Text }>>
   about: { title: { key: "legal.about.title" }, description: { key: "legal.about.intro" } },
   legalNotice: { title: { legal: LEGAL_NOTICE }, description: { legal: LEGAL_NOTICE } },
   terms: { title: { legal: TERMS }, description: { legal: TERMS } },
+  termsOfUse: { title: { legal: TERMS_OF_USE }, description: { legal: TERMS_OF_USE } },
   privacy: { title: { legal: PRIVACY }, description: { legal: PRIVACY } },
   cookies: { title: { legal: COOKIE_POLICY }, description: { legal: COOKIE_POLICY } },
   shipping: { title: { legal: SHIPPING }, description: { legal: SHIPPING } },

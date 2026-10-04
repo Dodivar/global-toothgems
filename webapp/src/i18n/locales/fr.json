@@ -4358,6 +4358,7 @@
       "contact": "Contact",
       "legalNotice": "Mentions légales",
       "terms": "Conditions générales de vente",
+      "termsOfUse": "Conditions générales d’utilisation",
       "privacy": "Politique de confidentialité",
       "cookies": "Politique cookies"
     },
@@ -4374,6 +4375,7 @@
         "contact": "Écrivez-nous : nous vous répondons personnellement.",
         "legalNotice": "Éditeur, hébergeur et propriété intellectuelle.",
         "terms": "Les règles qui encadrent vos achats.",
+        "termsOfUse": "Les règles d’utilisation du site et de votre compte.",
         "privacy": "Vos données, leur usage et vos droits.",
         "cookies": "Les cookies et comment gérer vos choix."
       }
