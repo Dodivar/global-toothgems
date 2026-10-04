@@ -4600,5 +4600,21 @@
       "errorBody": "We could not load them. Check your connection and try again.",
       "errorCta": "Try again"
     }
+  },
+  "siteSearch": {
+    "label": "Search the site",
+    "placeholder": "Product, course, page…",
+    "open": "Open search",
+    "close": "Close search",
+    "clear": "Clear search",
+    "groupProducts": "Products",
+    "groupCourses": "Courses",
+    "groupPages": "Pages",
+    "noResults": "No results found.",
+    "noResultsHint": "Try another word or check the spelling.",
+    "keepTyping": "Type at least 2 characters.",
+    "loading": "Loading the catalogue…",
+    "resultCount_one": "{{count}} result",
+    "resultCount_other": "{{count}} results"
   }
 }

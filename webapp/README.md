@@ -293,7 +293,7 @@ src/
   components/reviews/ Customer reviews: stars, badges, review card, section, form, request, overlays; admin/ holds the moderation workspace
   components/studio/ The 3D Studio mockups (and editor/, the working editor UI): smile canvas, rendered gems, interactive Studio window, feature cards, media placeholders, inspiration boards, steps, pricing card, FAQ, home teaser
   components/loyalty/ The Loyalty Club: stamp, card, progress, reward, steps, journey, FAQ, checkout banner
-  components/layout/ Header (desktop nav + mega panel, mobile burger menu) and Footer
+  components/layout/ Header (desktop nav + mega panel, mobile burger menu, site search: HeaderSearch over lib/siteSearch.ts) and Footer
   screens/admin/    The administration workspace: access screen, shell, dashboard, orders, products, categories
   components/admin/ Workspace primitives (rail, header, product table, form, media uploader, drawer, dialogs) and the orders workspace (KPI row, filter toolbar, order table + card list, row actions, bulk bar, pagination, detail cards, timeline, notes)
   data/               Bilingual product/course/review/lesson/order data (the storefront's order history and the back office's order book are separate models)
