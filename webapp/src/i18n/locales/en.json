@@ -431,6 +431,8 @@
     "google": "Continue with Google",
     "googleToastTitle": "Visual mockup",
     "googleToastBody": "Google sign-in is shown for the design only — nothing is connected yet.",
+    "googleErrorTitle": "Google sign-in unavailable",
+    "googleErrorBody": "We could not reach Google. Try again in a moment or use your email.",
     "switchToSignUpPrompt": "No account yet?",
     "errorEmail": "Enter a valid email address."
   },

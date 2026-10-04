@@ -51,7 +51,7 @@ interface LibraryFile {
   v: 1;
   seeded: boolean;
   creations: Omit<Creation, "thumbnailUrl">[];
-  groups: GemGroup[];
+  groups: Omit<GemGroup, "thumbnailUrl">[];
   feedback: (FeedbackInput & { id: string; createdAt: string })[];
 }
 
@@ -66,7 +66,9 @@ export function createLocalRepositories(userId: string, opts: LocalRepositoryOpt
   const { storage, latency = 0, seed = false } = opts;
   const now = opts.now ?? Date.now;
   const libKey = `${LIBRARY_KEY}:${userId}`;
+  // Groups and creations have separate id spaces: a group's render gets its own prefix.
   const thumbKey = (id: string) => `${THUMB_KEY}:${userId}:${id}`;
+  const groupThumbId = (id: string) => `group:${id}`;
   const iso = () => new Date(now()).toISOString();
 
   function read(): LibraryFile {
@@ -143,6 +145,7 @@ export function createLocalRepositories(userId: string, opts: LocalRepositoryOpt
   }
 
   const withThumb = (c: Omit<Creation, "thumbnailUrl">): Creation => ({ ...c, thumbnailUrl: readThumb(c.id) });
+  const withGroupThumb = (g: Omit<GemGroup, "thumbnailUrl">): GemGroup => ({ ...g, thumbnailUrl: readThumb(groupThumbId(g.id)) });
 
   function checkDetails(details: { name: string; description: string; tags: string[] }) {
     const problem = validateDetails(details);
@@ -260,7 +263,7 @@ export function createLocalRepositories(userId: string, opts: LocalRepositoryOpt
     groups: {
       async list() {
         await wait(latency);
-        return read().groups;
+        return read().groups.map(withGroupThumb);
       },
       async create(input: GemGroupInput) {
         await wait(latency);
@@ -269,7 +272,7 @@ export function createLocalRepositories(userId: string, opts: LocalRepositoryOpt
         if (!data) throw new StudioStoreError("invalid", "groupTooSmall");
         const file = read();
         const at = iso();
-        const row: GemGroup = {
+        const row: Omit<GemGroup, "thumbnailUrl"> = {
           id: uid() + uid(),
           userId,
           ...details,
@@ -284,7 +287,8 @@ export function createLocalRepositories(userId: string, opts: LocalRepositoryOpt
         };
         file.groups.unshift(row);
         write(file);
-        return row;
+        writeThumb(groupThumbId(row.id), input.thumbnail);
+        return withGroupThumb(row);
       },
       async update(id: string, patch: GemGroupPatch) {
         await wait(latency);
@@ -299,7 +303,7 @@ export function createLocalRepositories(userId: string, opts: LocalRepositoryOpt
                 tags: patch.tags ?? current.tags,
               })
             : null;
-        const next: GemGroup = {
+        const next: Omit<GemGroup, "thumbnailUrl"> = {
           ...current,
           ...(details ?? {}),
           ...(patch.isFavorite !== undefined ? { isFavorite: patch.isFavorite } : {}),
@@ -308,7 +312,7 @@ export function createLocalRepositories(userId: string, opts: LocalRepositoryOpt
         };
         file.groups[index] = next;
         write(file);
-        return next;
+        return withGroupThumb(next);
       },
       async duplicate(id: string, name: string) {
         await wait(latency);
@@ -316,7 +320,7 @@ export function createLocalRepositories(userId: string, opts: LocalRepositoryOpt
         const source = file.groups[findGroup(file, id)];
         const details = checkDetails({ ...source, name });
         const at = iso();
-        const row: GemGroup = {
+        const row: Omit<GemGroup, "thumbnailUrl"> = {
           ...structuredClone(source),
           ...details,
           id: uid() + uid(),
@@ -327,13 +331,15 @@ export function createLocalRepositories(userId: string, opts: LocalRepositoryOpt
         };
         file.groups.unshift(row);
         write(file);
-        return row;
+        writeThumb(groupThumbId(row.id), readThumb(groupThumbId(id)));
+        return withGroupThumb(row);
       },
       async remove(id: string) {
         await wait(latency);
         const file = read();
         file.groups.splice(findGroup(file, id), 1);
         write(file);
+        writeThumb(groupThumbId(id), null);
       },
     },
 

@@ -36,7 +36,7 @@ export function Login() {
   const { t } = useTranslation();
   const navigate = useNavigate();
   const location = useLocation();
-  const { signedIn, restoring, realAuth, email: sessionEmail, signInWithPassword, resendConfirmation, signOut } = useAuth();
+  const { signedIn, restoring, realAuth, email: sessionEmail, signInWithPassword, signInWithGoogle, resendConfirmation, signOut } = useAuth();
   const { openCourse } = useProgress();
   const { showToast } = useToast();
 
@@ -103,6 +103,20 @@ export function Login() {
     // `replace` so Back returns to the page the visitor came from rather than
     // bouncing them into the login wall again.
     navigate(target, { replace: true });
+  };
+
+  /** Real auth leaves for Google and comes back signed in; the mock only says it is a mock-up. */
+  const continueWithGoogle = async () => {
+    if (!realAuth) {
+      showToast(t("authAlt.googleToastTitle"), t("authAlt.googleToastBody"), "info");
+      return;
+    }
+    setBusy(true);
+    const result = await signInWithGoogle(target);
+    if (result === "unavailable") {
+      setBusy(false);
+      showToast(t("authAlt.googleErrorTitle"), t("authAlt.googleErrorBody"), "error");
+    }
   };
 
   const sendConfirmation = async () => {
@@ -267,7 +281,7 @@ export function Login() {
             <GoogleButton
               label={t("authAlt.google")}
               disabled={busy}
-              onClick={() => showToast(t("authAlt.googleToastTitle"), t("authAlt.googleToastBody"), "info")}
+              onClick={() => void continueWithGoogle()}
             />
           </form>
 

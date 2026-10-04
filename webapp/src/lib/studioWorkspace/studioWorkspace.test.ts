@@ -187,7 +187,7 @@ describe("library", () => {
   });
 
   it("puts favourite groups first and sums the studio", () => {
-    const groups = seedGroups("u1", now);
+    const groups = seedGroups("u1", now).map((g) => ({ ...g, thumbnailUrl: null }));
     expect(queryGroups(groups, "")[0].name).toBe("Butterfly Wings");
     const s = summarize(creations, groups);
     expect(s.creations).toBe(6);
@@ -260,7 +260,29 @@ describe("local repository", () => {
       code: "invalid",
     });
     const one = { version: 1 as const, anchorToothId: "11", pieces: [] };
-    await expect(repo.groups.create({ name: "Solo", description: "", tags: [], data: one })).rejects.toMatchObject({ code: "invalid" });
+    await expect(repo.groups.create({ name: "Solo", description: "", tags: [], data: one, thumbnail: null })).rejects.toMatchObject({
+      code: "invalid",
+    });
+  });
+
+  it("keeps a group's render through create, duplicate and delete; older groups have none", async () => {
+    const storage = memoryStorage();
+    const repo = createLocalRepositories("u1", { storage, now, seed: true });
+    const seeded = await repo.groups.list();
+    expect(seeded.every((g) => g.thumbnailUrl === null)).toBe(true);
+
+    const render = "data:image/jpeg;base64,BBBB";
+    const created = await repo.groups.create({ name: "Papillon", description: "", tags: [], data: seeded[0].data, thumbnail: render });
+    expect(created.thumbnailUrl).toBe(render);
+    expect((await repo.groups.update(created.id, { name: "Papillon bleu" })).thumbnailUrl).toBe(render);
+
+    const copy = await repo.groups.duplicate(created.id, "Papillon (copy)");
+    expect(copy.thumbnailUrl).toBe(render);
+    await repo.groups.remove(created.id);
+    expect((await repo.groups.list()).find((g) => g.id === copy.id)?.thumbnailUrl).toBe(render);
+
+    // A group and a creation never share a render, even under the same id.
+    expect(storage.getItem(`gt-studio-thumb-v1:u1:${created.id}`)).toBeNull();
   });
 
   it("seeds a new account once, and not again after the library is emptied", async () => {

@@ -436,6 +436,8 @@
     "google": "Continuer avec Google",
     "googleToastTitle": "Maquette visuelle",
     "googleToastBody": "La connexion Google est présentée pour le design uniquement — rien n’est branché.",
+    "googleErrorTitle": "Connexion Google impossible",
+    "googleErrorBody": "Nous n’avons pas pu joindre Google. Réessayez dans un instant ou utilisez votre e-mail.",
     "switchToSignUpPrompt": "Pas encore de compte ?",
     "errorEmail": "Indiquez une adresse e-mail valide."
   },

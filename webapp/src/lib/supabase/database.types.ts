@@ -2721,6 +2721,7 @@ export type Database = {
           last_used_at: string | null
           name: string
           tags: string[]
+          thumbnail_path: string | null
           updated_at: string
           user_id: string
         }
@@ -2736,6 +2737,7 @@ export type Database = {
           last_used_at?: string | null
           name: string
           tags?: string[]
+          thumbnail_path?: string | null
           updated_at?: string
           user_id?: string
         }
@@ -2751,6 +2753,7 @@ export type Database = {
           last_used_at?: string | null
           name?: string
           tags?: string[]
+          thumbnail_path?: string | null
           updated_at?: string
           user_id?: string
         }

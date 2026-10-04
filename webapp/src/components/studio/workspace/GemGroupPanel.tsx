@@ -7,13 +7,12 @@ import { FREE_TOOTH } from "../../../data/studioEditor";
 import { getEngine } from "../../../lib/studio3d/engine";
 import type { StudioSnapshot } from "../../../lib/studio3d/store";
 import { studioSectionPath } from "../../../lib/studioUrl";
-import { groupPreviewPieces } from "../../../lib/studioWorkspace/gemGroup";
 import { queryGroups } from "../../../lib/studioWorkspace/library";
 import type { GemGroup } from "../../../lib/studioWorkspace/types";
 import { useWorkspace } from "../../../lib/studioWorkspace/workspace";
 import { useEditorLabels } from "../editor/editorLabels";
 import { HelpHint } from "./HelpHint";
-import { ScenePreview } from "./ScenePreview";
+import { GroupThumb } from "./GemGroupCard";
 import { SignInPrompt } from "./SignInPrompt";
 import { focusRing, useWorkspaceFormat } from "./workspaceStyles";
 
@@ -150,7 +149,7 @@ export function GemGroupPanel({ snap }: { snap: StudioSnapshot }) {
                 )}
               >
                 <span className="h-[50px] w-[66px] flex-none overflow-hidden rounded-[var(--radius-sm)] border border-white">
-                  <ScenePreview pieces={groupPreviewPieces(g.data)} minWidth={16} />
+                  <GroupThumb group={g} minWidth={16} />
                 </span>
                 <span className="grid min-w-0 flex-1">
                   <span className="truncate text-[12.5px] font-bold text-[var(--text-primary)]">{g.name}</span>

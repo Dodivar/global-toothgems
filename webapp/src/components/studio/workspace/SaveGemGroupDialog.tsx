@@ -11,6 +11,7 @@ import { useWorkspace } from "../../../lib/studioWorkspace/workspace";
 import { DetailsFields } from "./DetailsFields";
 import { HelpHint } from "./HelpHint";
 import { ScenePreview } from "./ScenePreview";
+import { useStageCapture } from "./useStageCapture";
 import { useTagSuggestions } from "./useTagSuggestions";
 import { useWorkspaceFormat } from "./workspaceStyles";
 
@@ -38,6 +39,9 @@ export function SaveGemGroupDialog({
 
   const selected = snap.jewels.filter((j) => pieceIds?.includes(j.id));
   const previewPieces = group ? groupPreviewPieces(group.data) : selected;
+  // A new group is photographed alone on the smile: every other piece is hidden for the capture.
+  const capture = useStageCapture(group ? null : (engine) => engine.captureGroupThumbnail(pieceIds ?? []));
+  const shown = group ? group.thumbnailUrl : (capture ?? null);
   const count = group ? group.elementCount : selected.length;
   const estimate = group ? group.estimatedPriceMinor : estimateTotalCents(selected);
 
@@ -53,7 +57,7 @@ export function SaveGemGroupDialog({
     setError(problem);
     if (problem || busy) return;
     setBusy(true);
-    const ok = group ? await updateGroupDetails(group, details) : !!(await saveSelectionAsGroup(pieceIds ?? [], details));
+    const ok = group ? await updateGroupDetails(group, details) : !!(await saveSelectionAsGroup(pieceIds ?? [], details, capture));
     setBusy(false);
     if (ok) onClose();
   };
@@ -71,7 +75,13 @@ export function SaveGemGroupDialog({
       <form id="gt-save-group" onSubmit={submit} className="grid gap-5 sm:grid-cols-[180px_minmax(0,1fr)]">
         <figure className="m-0 grid content-start gap-2">
           <div className="aspect-[4/3] overflow-hidden rounded-[var(--radius-md)] border border-[var(--border-subtle)]">
-            <ScenePreview pieces={previewPieces} minWidth={20} />
+            {shown ? (
+              <img src={shown} alt="" className="h-full w-full object-cover" />
+            ) : !group && capture === undefined ? (
+              <div className="h-full w-full animate-pulse bg-[var(--gt-blue-100)] motion-reduce:animate-none" />
+            ) : (
+              <ScenePreview pieces={previewPieces} minWidth={20} />
+            )}
           </div>
           <figcaption className="flex items-start gap-1 text-[12px] leading-snug text-[var(--text-muted)]">
             <span>

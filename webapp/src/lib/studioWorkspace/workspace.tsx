@@ -44,7 +44,8 @@ interface WorkspaceValue {
   /** The stage differs from the linked creation (or holds an unsaved new design). */
   dirty: boolean;
   /** Save the stage: as a new creation (`details` required) or into the linked one. */
-  saveDesign: (mode: "new" | "update", details?: RecordDetails) => Promise<Creation | null>;
+  /** `thumbnail`: the render the save dialog already showed; captured now when omitted. */
+  saveDesign: (mode: "new" | "update", details?: RecordDetails, thumbnail?: string | null) => Promise<Creation | null>;
   openCreation: (c: Creation) => void;
   startNewDesign: () => void;
   updateCreationDetails: (c: Creation, details: RecordDetails) => Promise<boolean>;
@@ -57,7 +58,8 @@ interface WorkspaceValue {
   existingShareLink: (c: Creation) => Promise<ShareLink | null>;
   /** Disable the creation's link: whoever has it can no longer open the design. */
   revokeShare: (c: Creation) => Promise<boolean>;
-  saveSelectionAsGroup: (ids: string[], details: RecordDetails) => Promise<GemGroup | null>;
+  /** `thumbnail`: the render the save dialog already showed; captured now when omitted. */
+  saveSelectionAsGroup: (ids: string[], details: RecordDetails, thumbnail?: string | null) => Promise<GemGroup | null>;
   insertGroup: (g: GemGroup, toothId?: string | null) => boolean;
   updateGroupDetails: (g: GemGroup, details: RecordDetails) => Promise<boolean>;
   duplicateGroup: (g: GemGroup) => Promise<GemGroup | null>;
@@ -180,7 +182,7 @@ export function StudioWorkspaceProvider({ children }: { children: ReactNode }) {
   const replaceGroup = useCallback((g: GemGroup) => setGroups((list) => list.map((x) => (x.id === g.id ? g : x))), [setGroups]);
 
   const saveDesign = useCallback(
-    async (mode: "new" | "update", details?: RecordDetails): Promise<Creation | null> => {
+    async (mode: "new" | "update", details?: RecordDetails, captured?: string | null): Promise<Creation | null> => {
       if (!repos || !userId) return null;
       const active = studioStore.active;
       if (mode === "update" && !active) return null;
@@ -191,7 +193,7 @@ export function StudioWorkspaceProvider({ children }: { children: ReactNode }) {
       setSaving(true);
       setFailedKey(null);
       try {
-        const thumbnail = engine ? await engine.captureThumbnail().catch(() => null) : null;
+        const thumbnail = captured !== undefined ? captured : engine ? await engine.captureThumbnail().catch(() => null) : null;
         const saved =
           mode === "update" && active
             ? await repos.creations.update(active.creationId, { scene, thumbnail })
@@ -324,14 +326,16 @@ export function StudioWorkspaceProvider({ children }: { children: ReactNode }) {
   );
 
   const saveSelectionAsGroup = useCallback(
-    async (ids: string[], details: RecordDetails) => {
-      const data = getEngine()?.captureGroup(ids);
-      if (!repos || !data) {
+    async (ids: string[], details: RecordDetails, captured?: string | null) => {
+      const engine = getEngine();
+      const data = engine?.captureGroup(ids);
+      if (!repos || !engine || !data) {
         say("groupNeedsTwo", "warning");
         return null;
       }
       try {
-        const g = await repos.groups.create({ ...details, data });
+        const thumbnail = captured !== undefined ? captured : await engine.captureGroupThumbnail(ids).catch(() => null);
+        const g = await repos.groups.create({ ...details, data, thumbnail });
         setGroups((list) => [g, ...list]);
         say("groupSaved", "success", { name: g.name });
         return g;
