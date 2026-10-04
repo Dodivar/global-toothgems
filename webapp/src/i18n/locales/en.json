@@ -343,6 +343,7 @@
       "network": "Cannot connect. Check your network and try again.",
       "gift_card_details_invalid": "The details of a gift card in your cart are no longer accepted (amount, recipient or date). Remove it and build it again.",
       "account_required": "An account is needed to buy a course: access opens on your account. Sign in and try again.",
+      "terms_required": "One last thing before paying: your account has not accepted our terms yet.",
       "course_owned": "You already have access to a course in your basket. Remove it and try again."
     },
     "pendingBadge": "Payment in progress",
@@ -423,6 +424,19 @@
     "toastSignInTitle": "Signed in",
     "toastSignInBody": "Your training space is open.",
     "forgotPassword": "Forgot your password?"
+  },
+  "termsAccept": {
+    "before": "By continuing, you accept the",
+    "failed": "We could not save that. Please try again in a moment.",
+    "eyebrow": "Last step",
+    "gateTitle": "One last thing before you come in",
+    "gateBody": "Your account is ready. We only need your agreement to our terms to open it.",
+    "gateCta": "I accept and continue",
+    "decline": "I would rather not accept — sign me out",
+    "dialogTitle": "Before continuing with Google",
+    "dialogBody": "An account will be created with your Google address, or found if you already have one.",
+    "googleCta": "I accept and continue with Google",
+    "checkoutCta": "I accept and pay for my order"
   },
   "authAlt": {
     "showPassword": "Show password",
@@ -595,7 +609,7 @@
       "countryInvalid": "Choose a country from the list.",
       "phoneCharacters": "Use only digits, spaces and a leading + for the phone number.",
       "phoneLength": "This phone number looks too short or too long. Include your country code.",
-      "termsRequired": "Please accept the Terms of Service and Privacy Policy to create your account."
+      "termsRequired": "Please accept the Terms of Use, the Terms of Sale and the Privacy Policy to create your account."
     },
     "persona": {
       "legend": "Which best describes you?",
@@ -618,7 +632,9 @@
     "consent": {
       "legend": "Before we create your account",
       "termsBefore": "I agree to the",
-      "terms": "Terms of Service",
+      "termsOfUse": "Terms of Use",
+      "then": "the",
+      "terms": "Terms of Sale",
       "and": "and the",
       "privacy": "Privacy Policy",
       "termsAfter": ".",
@@ -657,7 +673,16 @@
       "summaryNote": "Key points, in plain language. The full legal text will be published with the live site.",
       "back": "Back to my account",
       "terms": {
-        "title": "Terms of Service",
+        "title": "Terms of Sale",
+        "points": [
+          "Prices, delivery and taxes are shown before you confirm your order.",
+          "You generally have a 14-day right of withdrawal on physical products, with the exceptions set out in the full terms.",
+          "Access to a course opens once the order is paid.",
+          "If anything here differs from the full terms, the full terms apply."
+        ]
+      },
+      "termsOfUse": {
+        "title": "Terms of Use",
         "points": [
           "Your account is personal: keep your sign-in details to yourself.",
           "Orders, training access and certificates are attached to your account.",
@@ -4357,6 +4382,7 @@
       "contact": "Contact us",
       "legalNotice": "Legal notice",
       "terms": "Terms of sale",
+      "termsOfUse": "Terms of use",
       "privacy": "Privacy policy",
       "cookies": "Cookie policy"
     },
@@ -4373,6 +4399,7 @@
         "contact": "Write to us: a real person will answer.",
         "legalNotice": "Publisher, host and intellectual property.",
         "terms": "The rules that govern your purchases.",
+        "termsOfUse": "The rules for using the site and your account.",
         "privacy": "Your data, how it is used and your rights.",
         "cookies": "Cookies and how to manage your choices."
       }

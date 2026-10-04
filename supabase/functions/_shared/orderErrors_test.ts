@@ -1,5 +1,5 @@
 import { assertEquals } from "jsr:@std/assert@1";
-import { checkoutErrorCode } from "./orderErrors.ts";
+import { checkoutErrorCode, checkoutErrorStatus } from "./orderErrors.ts";
 
 Deno.test("every refusal of a gift card used as payment is the same generic code", () => {
   for (const error of [
@@ -33,6 +33,10 @@ Deno.test("other errors keep their meaning", () => {
   assertEquals(checkoutErrorCode({ code: "42501", message: "create_order: the loyalty reward requires an account" }), "loyalty_reward_unavailable");
   assertEquals(checkoutErrorCode({ code: "22023", message: "create_order: the loyalty reward cannot be combined with a promotion code" }), "loyalty_reward_unavailable");
   assertEquals(checkoutErrorCode({ code: "XX000", message: "boom" }), "server_error");
+});
+
+Deno.test("terms_required is a customer-side conflict, not a server error", () => {
+  assertEquals(checkoutErrorStatus("terms_required"), 409);
 });
 
 Deno.test("course refusals: account required, already held, not on sale", () => {

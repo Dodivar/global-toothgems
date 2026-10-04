@@ -348,6 +348,7 @@
       "network": "Connexion impossible. Vérifiez votre réseau puis réessayez.",
       "gift_card_details_invalid": "Les informations d’une carte cadeau du panier ne sont plus acceptées (montant, destinataire ou date). Retirez-la puis composez-la à nouveau.",
       "account_required": "Un compte est nécessaire pour acheter une formation : l’accès s’ouvre sur votre compte. Connectez-vous puis réessayez.",
+      "terms_required": "Dernier point avant de payer : votre compte n’a pas encore accepté nos conditions.",
       "course_owned": "Vous avez déjà accès à une formation de votre panier. Retirez-la puis réessayez."
     },
     "pendingBadge": "Paiement en cours",
@@ -428,6 +429,19 @@
     "toastSignInTitle": "Connexion réussie",
     "toastSignInBody": "Votre espace formation est ouvert.",
     "forgotPassword": "Mot de passe oublié ?"
+  },
+  "termsAccept": {
+    "before": "En continuant, vous acceptez les",
+    "failed": "L’enregistrement a échoué. Réessayez dans un instant.",
+    "eyebrow": "Dernière étape",
+    "gateTitle": "Un dernier point avant d’entrer",
+    "gateBody": "Votre compte est prêt. Il nous faut simplement votre accord sur nos conditions pour y accéder.",
+    "gateCta": "J’accepte et je continue",
+    "decline": "Je ne souhaite pas accepter — me déconnecter",
+    "dialogTitle": "Avant de continuer avec Google",
+    "dialogBody": "Un compte sera créé avec votre adresse Google, ou retrouvé s’il existe déjà.",
+    "googleCta": "J’accepte et je continue avec Google",
+    "checkoutCta": "J’accepte et je règle ma commande"
   },
   "authAlt": {
     "showPassword": "Afficher le mot de passe",
@@ -600,7 +614,7 @@
       "countryInvalid": "Choisissez un pays dans la liste.",
       "phoneCharacters": "Utilisez uniquement des chiffres, des espaces et un + au début.",
       "phoneLength": "Ce numéro semble trop court ou trop long. Ajoutez l’indicatif du pays.",
-      "termsRequired": "Acceptez les Conditions d’utilisation et la Politique de confidentialité pour créer votre compte."
+      "termsRequired": "Acceptez les Conditions générales d’utilisation, les Conditions générales de vente et la Politique de confidentialité pour créer votre compte."
     },
     "persona": {
       "legend": "Qu’est-ce qui vous décrit le mieux ?",
@@ -623,7 +637,9 @@
     "consent": {
       "legend": "Avant de créer votre compte",
       "termsBefore": "J’accepte les",
-      "terms": "Conditions d’utilisation",
+      "termsOfUse": "Conditions générales d’utilisation",
+      "then": "les",
+      "terms": "Conditions générales de vente",
       "and": "et la",
       "privacy": "Politique de confidentialité",
       "termsAfter": ".",
@@ -662,7 +678,16 @@
       "summaryNote": "L’essentiel, en langage clair. Le texte juridique complet sera publié avec le site.",
       "back": "Revenir à mon inscription",
       "terms": {
-        "title": "Conditions d’utilisation",
+        "title": "Conditions générales de vente",
+        "points": [
+          "Les prix, la livraison et les taxes sont affichés avant que vous ne validiez votre commande.",
+          "Vous disposez en général d’un droit de rétractation de 14 jours sur les produits physiques, hors exceptions précisées dans les conditions complètes.",
+          "L’accès à une formation s’ouvre une fois la commande payée.",
+          "En cas de différence avec les conditions complètes, ce sont elles qui s’appliquent."
+        ]
+      },
+      "termsOfUse": {
+        "title": "Conditions générales d’utilisation",
         "points": [
           "Votre compte est personnel : gardez vos identifiants pour vous.",
           "Commandes, accès aux formations et attestations sont rattachés à votre compte.",
@@ -4362,6 +4387,7 @@
       "contact": "Contact",
       "legalNotice": "Mentions légales",
       "terms": "Conditions générales de vente",
+      "termsOfUse": "Conditions générales d’utilisation",
       "privacy": "Politique de confidentialité",
       "cookies": "Politique cookies"
     },
@@ -4378,6 +4404,7 @@
         "contact": "Écrivez-nous : nous vous répondons personnellement.",
         "legalNotice": "Éditeur, hébergeur et propriété intellectuelle.",
         "terms": "Les règles qui encadrent vos achats.",
+        "termsOfUse": "Les règles d’utilisation du site et de votre compte.",
         "privacy": "Vos données, leur usage et vos droits.",
         "cookies": "Les cookies et comment gérer vos choix."
       }

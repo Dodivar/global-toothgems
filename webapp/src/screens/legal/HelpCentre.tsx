@@ -2,7 +2,7 @@
 
 import { Link } from "../../lib/navigation";
 import { useTranslation } from "react-i18next";
-import { ArrowRight, Cookie, FileText, HelpCircle, Landmark, Mail, RotateCcw, ShieldCheck, Truck, type LucideIcon } from "lucide-react";
+import { ArrowRight, Cookie, FileText, HelpCircle, Landmark, Mail, RotateCcw, ScrollText, ShieldCheck, Truck, type LucideIcon } from "lucide-react";
 import { LegalLayout } from "../../components/legal/LegalLayout";
 import { ComplianceChecklist } from "../../components/legal/ComplianceChecklist";
 import { LEGAL_PATHS } from "../../data/legal/routes";
@@ -24,6 +24,7 @@ const HELP: Tile[] = [
 const LEGAL: Tile[] = [
   { to: LEGAL_PATHS.legalNotice, icon: Landmark, key: "legalNotice" },
   { to: LEGAL_PATHS.terms, icon: FileText, key: "terms" },
+  { to: LEGAL_PATHS.termsOfUse, icon: ScrollText, key: "termsOfUse" },
   { to: LEGAL_PATHS.privacy, icon: ShieldCheck, key: "privacy" },
   { to: LEGAL_PATHS.cookies, icon: Cookie, key: "cookies" },
 ];

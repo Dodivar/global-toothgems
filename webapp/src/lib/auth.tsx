@@ -6,6 +6,8 @@ import { isSupabaseConfigured, sessionReady, supabase } from "./supabase/client"
 import { DELIVERY_COUNTRIES } from "../data/countries";
 import { LEGAL_POLICY_VERSION, registrationMetadata, type RegistrationData } from "./registration";
 import { authConfirmUrl, isSafeNext } from "./authRoutes";
+import { rememberGoogleTerms, takeGoogleTerms } from "./googleTerms";
+import { TermsGate } from "../components/auth/TermsGate";
 import { useHydrated } from "./useHydrated";
 
 /**
@@ -107,7 +109,17 @@ interface AuthContextValue {
    * "redirecting" means the browser is leaving; "unavailable" in mock mode or
    * when the redirect could not start.
    */
-  signInWithGoogle: (next?: string) => Promise<GoogleSignInResult>;
+  signInWithGoogle: (next?: string, options?: { termsAccepted?: boolean }) => Promise<GoogleSignInResult>;
+  /**
+   * Whether the account has accepted the terms and the privacy policy:
+   * null while signed out or unknown. False for an account created through
+   * Google without the registration form, which the member space, the learner
+   * pages and the checkout then ask to settle (the database refuses the
+   * payment meanwhile).
+   */
+  termsAccepted: boolean | null;
+  /** Records the acceptance for the open session. `source` is where it was given. */
+  acceptTerms: (source: "account" | "checkout") => Promise<boolean>;
   /**
    * Mock mode only: opens a session without any check. The registration
    * journey uses it to finish its simulated verification. A no-op with real auth.
@@ -264,6 +276,28 @@ async function loadProfile(user: User): Promise<ProfileLoad> {
   };
 }
 
+/** True when a granted `terms` record exists; null when it could not be read (the database still refuses a payment). */
+async function loadTermsAccepted(userId: string): Promise<boolean | null> {
+  if (!supabase) return null;
+  const { data, error } = await supabase
+    .from("member_consents")
+    .select("granted")
+    .eq("user_id", userId)
+    .eq("purpose", "terms")
+    .maybeSingle();
+  return error ? null : data?.granted === true;
+}
+
+/** Terms and privacy are always accepted together; the database only keeps accepted ones. */
+async function recordTerms(userId: string, source: "account" | "checkout"): Promise<boolean> {
+  if (!supabase) return false;
+  const base = { user_id: userId, granted: true, policy_version: LEGAL_POLICY_VERSION, source };
+  const { error } = await supabase
+    .from("consent_records")
+    .insert([{ ...base, purpose: "terms" }, { ...base, purpose: "privacy" }]);
+  return !error;
+}
+
 const isRateLimit = (error: AuthError) =>
   error.status === 429 || error.code === "over_email_send_rate_limit" || error.code === "over_request_rate_limit";
 
@@ -271,6 +305,7 @@ function SupabaseAuthProvider({ children }: { children: ReactNode }) {
   const [profile, setProfile] = useState<Profile | null>(null);
   const [userId, setUserId] = useState<string | null>(null);
   const [restoring, setRestoring] = useState(true);
+  const [termsAccepted, setTermsAccepted] = useState<boolean | null>(null);
 
   const applyUser = useCallback(async (user: User | null): Promise<ProfileLoad> => {
     const loaded = user ? await loadProfile(user) : null;
@@ -279,10 +314,16 @@ function SupabaseAuthProvider({ children }: { children: ReactNode }) {
       await supabase?.auth.signOut();
       setProfile(null);
       setUserId(null);
+      setTermsAccepted(null);
       return loaded;
     }
+    let accepted = loaded ? await loadTermsAccepted(user!.id) : null;
+    // Back from Google after accepting in the registration dialog: that
+    // acceptance is recorded now that the account exists.
+    if (loaded && accepted === false && takeGoogleTerms() && (await recordTerms(user!.id, "account"))) accepted = true;
     setProfile(loaded?.profile ?? null);
     setUserId(loaded ? user!.id : null);
+    setTermsAccepted(accepted);
     return loaded;
   }, []);
 
@@ -378,8 +419,19 @@ function SupabaseAuthProvider({ children }: { children: ReactNode }) {
     return isRateLimit(error) ? "rateLimited" : "failed";
   }, []);
 
-  const signInWithGoogle = useCallback(async (next?: string): Promise<GoogleSignInResult> => {
+  const acceptTerms = useCallback(
+    async (source: "account" | "checkout"): Promise<boolean> => {
+      if (!userId) return false;
+      const recorded = await recordTerms(userId, source);
+      if (recorded) setTermsAccepted(true);
+      return recorded;
+    },
+    [userId],
+  );
+
+  const signInWithGoogle = useCallback(async (next?: string, options?: { termsAccepted?: boolean }): Promise<GoogleSignInResult> => {
     if (!supabase) return "unavailable";
+    if (options?.termsAccepted) rememberGoogleTerms();
     const landing = next && isSafeNext(next) ? next : "/compte";
     const { error } = await supabase.auth.signInWithOAuth({
       provider: "google",
@@ -499,11 +551,13 @@ function SupabaseAuthProvider({ children }: { children: ReactNode }) {
         signUp,
         resendConfirmation,
         signInWithGoogle,
+        termsAccepted,
+        acceptTerms,
         signIn,
         signOut,
         updateProfile,
       }),
-    [profile, restoring, userId, signInWithPassword, signUp, resendConfirmation, signInWithGoogle, signIn, signOut, updateProfile],
+    [profile, restoring, userId, signInWithPassword, signUp, resendConfirmation, signInWithGoogle, termsAccepted, acceptTerms, signIn, signOut, updateProfile],
   );
 
   return (
@@ -614,6 +668,9 @@ function DemoAuthProvider({ children }: { children: ReactNode }) {
         signUp,
         resendConfirmation,
         signInWithGoogle,
+        // The mock has no consent records.
+        termsAccepted: profile ? true : null,
+        acceptTerms: async () => true,
         signIn,
         signOut,
         updateProfile,
@@ -642,7 +699,7 @@ export function useAuth() {
  * send the visitor straight there afterwards.
  */
 export function RequireAccount({ children }: { children: ReactNode }) {
-  const { signedIn, restoring } = useAuth();
+  const { signedIn, restoring, termsAccepted, acceptTerms, signOut } = useAuth();
   const location = useLocation();
 
   // Wait for a kept session before deciding, or a refresh would bounce a
@@ -653,5 +710,8 @@ export function RequireAccount({ children }: { children: ReactNode }) {
   if (!signedIn) {
     return <Navigate to="/connexion" state={{ from: location.pathname + location.search }} replace />;
   }
+  // An account created through Google has not seen the terms yet: one click
+  // settles it and the page the member asked for opens in place.
+  if (termsAccepted === false) return <TermsGate onAccept={() => acceptTerms("account")} onSignOut={signOut} />;
   return <>{children}</>;
 }

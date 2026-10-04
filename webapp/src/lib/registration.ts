@@ -400,11 +400,11 @@ export async function verifyLink(scenario: Scenario, linkNumber: number): Promis
 /* ------------------------------------------------------------------ */
 
 /**
- * Version of the terms and privacy policy the registration form asks to
+ * Version of the terms of use, terms of sale and privacy policy the registration form asks to
  * accept. Stored with every consent record, so it must change whenever the
  * legal texts do. The database writes no consent row without it.
  */
-export const LEGAL_POLICY_VERSION = "2026-09-26";
+export const LEGAL_POLICY_VERSION = "2026-10-04";
 
 /**
  * Metadata sent with `supabase.auth.signUp`. The keys are the ones the

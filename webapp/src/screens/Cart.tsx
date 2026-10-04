@@ -28,6 +28,7 @@ import { toMajorUnits } from "../lib/catalog/money";
 import { pick } from "../data/types";
 import { useFormat } from "../lib/format";
 import { isSupabaseConfigured } from "../lib/supabase/client";
+import { TermsNotice } from "../components/auth/TermsNotice";
 import { fetchShippingRates, startCheckout, type CheckoutError } from "../lib/checkout/api";
 import { buildCheckoutRequest, EMPTY_CHECKOUT_FORM, invalidFields, type CheckoutForm } from "../lib/checkout/checkoutForm";
 import { hasCourse, needsShipping, shippableSubtotal } from "../lib/checkout/cartLines";
@@ -77,7 +78,9 @@ export function Cart() {
   const { lines, subtotal, updateQty, removeLine, clearCart } = useCart();
   const { products } = useCatalog();
   const { placeOrder } = useOrders();
-  const { signedIn, profile, updateProfile } = useAuth();
+  const { signedIn, profile, updateProfile, termsAccepted, acceptTerms } = useAuth();
+  const [acceptingTerms, setAcceptingTerms] = useState(false);
+  const [termsFailed, setTermsFailed] = useState(false);
   const { reload: reloadCourses } = useProgress();
   const lang = i18n.language;
   const live = isSupabaseConfigured;
@@ -165,10 +168,16 @@ export function Cart() {
   const set = (key: keyof CheckoutForm) => (e: React.ChangeEvent<HTMLInputElement>) =>
     setForm((f) => ({ ...f, [key]: e.target.value }));
 
-  const pay = async () => {
+  const pay = async (termsJustAccepted = false) => {
     setCheckoutError(null);
     if (accountMissing) {
       setCheckoutError("account_required");
+      return;
+    }
+    // Created through Google, the account has not accepted the terms yet: the
+    // notice below the button settles it in one click, then the payment goes on.
+    if (live && signedIn && termsAccepted === false && !termsJustAccepted) {
+      setCheckoutError("terms_required");
       return;
     }
     if (invalid.length > 0 || (shipped && !rateId)) {
@@ -239,6 +248,18 @@ export function Cart() {
       return;
     }
     setCheckoutError(result.error);
+  };
+
+  const acceptAndPay = async () => {
+    setAcceptingTerms(true);
+    setTermsFailed(false);
+    const done = await acceptTerms("checkout");
+    setAcceptingTerms(false);
+    if (!done) {
+      setTermsFailed(true);
+      return;
+    }
+    await pay(true);
   };
 
   if (reference) {
@@ -312,7 +333,7 @@ export function Cart() {
       ? t("cart.pay", { amount: money(total) })
       : t("checkout.payNoShipping");
   const payButton = (
-    <Button variant="primary" fullWidth size="lg" onClick={pay} loading={submitting} disabled={submitting || !ratesReady || accountMissing}>
+    <Button variant="primary" fullWidth size="lg" onClick={() => void pay()} loading={submitting} disabled={submitting || !ratesReady || accountMissing}>
       {payLabel}
     </Button>
   );
@@ -328,7 +349,13 @@ export function Cart() {
           <CircleAlert size={16} aria-hidden="true" className="flex-none" /> {t("checkout.formIncomplete")}
         </p>
       )}
-      {checkoutError && (
+      {checkoutError === "terms_required" && (
+        <div className="grid gap-3 rounded-[var(--radius-md)] border border-[var(--border-subtle)] bg-[var(--surface-sunken)] p-4">
+          <p className="m-0 text-[length:var(--text-body-sm)] font-semibold text-[var(--text-primary)]">{t("checkout.errors.terms_required")}</p>
+          <TermsNotice cta={t("termsAccept.checkoutCta")} busy={acceptingTerms} failed={termsFailed} onAccept={() => void acceptAndPay()} />
+        </div>
+      )}
+      {checkoutError && checkoutError !== "terms_required" && (
         <p role="alert" className={alertClass}>
           <CircleAlert size={16} aria-hidden="true" className="flex-none" /> {t(`checkout.errors.${checkoutError}`)}
         </p>

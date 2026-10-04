@@ -51,6 +51,8 @@ export interface CheckoutDeps {
   maintenanceEnabled(): Promise<boolean>;
   /** The signed-in customer behind a bearer token, or null (guest, invalid or publishable key). */
   userFromToken(token: string): Promise<string | null>;
+  /** Whether the account holds a granted `terms` consent record. */
+  termsAccepted(userId: string): Promise<boolean>;
   createOrder(input: CheckoutInput, userId: string | null, reservationMinutes: number): Promise<
     { order: OrderRow; error?: undefined } | { order?: undefined; error: DbError }
   >;
@@ -119,6 +121,17 @@ export async function handleCheckout(req: Request, deps: CheckoutDeps): Promise<
     // A token that is present but no longer valid is refused rather than
     // silently turned into a guest order the customer would not find.
     if (!userId) return json({ error: "session_expired" }, 401, cors);
+  }
+
+  // An account created through Google may not have accepted the terms yet:
+  // nothing is reserved or charged until it has (the storefront asks for it).
+  if (userId) {
+    try {
+      if (!(await deps.termsAccepted(userId))) return fail("terms_required");
+    } catch (error) {
+      deps.log("terms acceptance unreadable", error instanceof Error ? error.message : error);
+      return fail("server_error");
+    }
   }
 
   const created = await deps.createOrder(input, userId, RESERVATION_MINUTES);
