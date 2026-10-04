@@ -3,10 +3,10 @@ import { FileText, ShieldCheck } from "lucide-react";
 import { Dialog } from "../ui/Dialog";
 import { Button } from "../ui/Button";
 
-export type LegalDoc = "terms" | "privacy";
+export type LegalDoc = "terms" | "termsOfUse" | "privacy";
 
 /**
- * The terms and the privacy policy, summarised in a dialog.
+ * The terms of use, the terms of sale and the privacy policy, summarised in a dialog.
  *
  * Opening them in place keeps everything typed in the form, which a new page
  * would not. The full legal texts do not exist in this prototype; the dialog
@@ -23,7 +23,7 @@ export function LegalDialog({ doc, onClose }: { doc: LegalDoc | null; onClose: (
       onClose={onClose}
       title={t(`register.legal.${key}.title`)}
       description={t("register.legal.summaryNote")}
-      icon={key === "terms" ? <FileText size={17} /> : <ShieldCheck size={17} />}
+      icon={key === "privacy" ? <ShieldCheck size={17} /> : <FileText size={17} />}
       closeLabel={t("common.close")}
       footer={
         <Button variant="dark" onClick={onClose} className="ml-auto">

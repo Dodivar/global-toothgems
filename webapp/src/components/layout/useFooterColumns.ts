@@ -84,6 +84,7 @@ export function useFooterColumns(): FooterColumn[] {
       items: [
         { label: t("legal.pages.legalNotice"), to: LEGAL_PATHS.legalNotice },
         { label: t("legal.pages.terms"), to: LEGAL_PATHS.terms },
+        { label: t("legal.pages.termsOfUse"), to: LEGAL_PATHS.termsOfUse },
         { label: t("legal.pages.privacy"), to: LEGAL_PATHS.privacy },
         { label: t("legal.pages.cookies"), to: LEGAL_PATHS.cookies },
         { label: t("legal.cookies.settingsLink"), action: openSettings },
