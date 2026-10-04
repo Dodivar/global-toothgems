@@ -1291,6 +1291,9 @@ VAT rates, shipping zones/rates mirroring the Settings prototype. Media rows ref
     already reserved by an order awaiting payment, guest, other currency, combined with a promotion code) map to
     `loyalty_reward_unavailable`. A visitor who abandons Stripe keeps the card reserved until the order's reservation
     expires; the cart then shows that message. The discount is computed on shop goods only (no gift card, no course).
+78. **The order that spends the loyalty reward earns no stamp** (agent, 2026-10-04, to confirm): migration
+    `20261004200155_loyalty_reward_order_no_stamp` makes `apply_loyalty_on_order()` skip an order carrying a
+    `loyalty` row in `order_discounts`, so after spending the reward the member's card is back at 0 instead of 1/5.
 
 ## Done
 
