@@ -593,7 +593,7 @@
       "countryInvalid": "Choose a country from the list.",
       "phoneCharacters": "Use only digits, spaces and a leading + for the phone number.",
       "phoneLength": "This phone number looks too short or too long. Include your country code.",
-      "termsRequired": "Please accept the Terms of Service and Privacy Policy to create your account."
+      "termsRequired": "Please accept the Terms of Use, the Terms of Sale and the Privacy Policy to create your account."
     },
     "persona": {
       "legend": "Which best describes you?",
@@ -616,7 +616,9 @@
     "consent": {
       "legend": "Before we create your account",
       "termsBefore": "I agree to the",
-      "terms": "Terms of Service",
+      "termsOfUse": "Terms of Use",
+      "then": "the",
+      "terms": "Terms of Sale",
       "and": "and the",
       "privacy": "Privacy Policy",
       "termsAfter": ".",
@@ -655,7 +657,16 @@
       "summaryNote": "Key points, in plain language. The full legal text will be published with the live site.",
       "back": "Back to my account",
       "terms": {
-        "title": "Terms of Service",
+        "title": "Terms of Sale",
+        "points": [
+          "Prices, delivery and taxes are shown before you confirm your order.",
+          "You generally have a 14-day right of withdrawal on physical products, with the exceptions set out in the full terms.",
+          "Access to a course opens once the order is paid.",
+          "If anything here differs from the full terms, the full terms apply."
+        ]
+      },
+      "termsOfUse": {
+        "title": "Terms of Use",
         "points": [
           "Your account is personal: keep your sign-in details to yourself.",
           "Orders, training access and certificates are attached to your account.",

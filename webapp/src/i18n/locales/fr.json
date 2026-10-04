@@ -598,7 +598,7 @@
       "countryInvalid": "Choisissez un pays dans la liste.",
       "phoneCharacters": "Utilisez uniquement des chiffres, des espaces et un + au début.",
       "phoneLength": "Ce numéro semble trop court ou trop long. Ajoutez l’indicatif du pays.",
-      "termsRequired": "Acceptez les Conditions d’utilisation et la Politique de confidentialité pour créer votre compte."
+      "termsRequired": "Acceptez les Conditions générales d’utilisation, les Conditions générales de vente et la Politique de confidentialité pour créer votre compte."
     },
     "persona": {
       "legend": "Qu’est-ce qui vous décrit le mieux ?",
@@ -621,7 +621,9 @@
     "consent": {
       "legend": "Avant de créer votre compte",
       "termsBefore": "J’accepte les",
-      "terms": "Conditions d’utilisation",
+      "termsOfUse": "Conditions générales d’utilisation",
+      "then": "les",
+      "terms": "Conditions générales de vente",
       "and": "et la",
       "privacy": "Politique de confidentialité",
       "termsAfter": ".",
@@ -660,7 +662,16 @@
       "summaryNote": "L’essentiel, en langage clair. Le texte juridique complet sera publié avec le site.",
       "back": "Revenir à mon inscription",
       "terms": {
-        "title": "Conditions d’utilisation",
+        "title": "Conditions générales de vente",
+        "points": [
+          "Les prix, la livraison et les taxes sont affichés avant que vous ne validiez votre commande.",
+          "Vous disposez en général d’un droit de rétractation de 14 jours sur les produits physiques, hors exceptions précisées dans les conditions complètes.",
+          "L’accès à une formation s’ouvre une fois la commande payée.",
+          "En cas de différence avec les conditions complètes, ce sont elles qui s’appliquent."
+        ]
+      },
+      "termsOfUse": {
+        "title": "Conditions générales d’utilisation",
         "points": [
           "Votre compte est personnel : gardez vos identifiants pour vous.",
           "Commandes, accès aux formations et attestations sont rattachés à votre compte.",

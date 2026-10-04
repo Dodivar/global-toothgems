@@ -9,6 +9,12 @@ import type { LegalDoc } from "../LegalDialog";
 import type { Interest, Persona } from "../../../lib/registration";
 import type { StepProps } from "./types";
 
+const LEGAL_HREF: Record<LegalDoc, string> = {
+  terms: "/conditions-generales",
+  termsOfUse: "/conditions-generales-utilisation",
+  privacy: "/confidentialite",
+};
+
 export type CreateFailure = "network" | "server" | "rateLimited" | "weakPassword" | "emailSend" | null;
 
 /**
@@ -53,7 +59,7 @@ export function PreferencesStep({
 
   const legalLink = (doc: LegalDoc, label: string) => (
     <a
-      href={doc === "terms" ? "/conditions-generales" : "/confidentialite"}
+      href={LEGAL_HREF[doc]}
       onClick={(e) => {
         e.preventDefault();
         onOpenLegal(doc);
@@ -108,7 +114,8 @@ export function PreferencesStep({
             onChange={(v) => set("terms", v)}
             error={errors.terms}
           >
-            {t("register.consent.termsBefore")} {legalLink("terms", t("register.consent.terms"))}{" "}
+            {t("register.consent.termsBefore")} {legalLink("termsOfUse", t("register.consent.termsOfUse"))},{" "}
+            {t("register.consent.then")} {legalLink("terms", t("register.consent.terms"))}{" "}
             {t("register.consent.and")} {legalLink("privacy", t("register.consent.privacy"))}
             {t("register.consent.termsAfter")}
             <span className="sr-only"> ({t("register.consent.required")})</span>
