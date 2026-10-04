@@ -45,7 +45,7 @@ export function QuickAdd({ product, name, className }: { product: Product; name:
           variantId: variant?.id,
           variant: variant ? pick(variant.name, i18n.language) : undefined,
           name,
-          image: product.image,
+          image: variant?.image ?? product.image,
           unitPrice: toMinorUnits(variant?.price ?? product.price),
           currency: product.currency ?? "EUR",
           qty: 1,

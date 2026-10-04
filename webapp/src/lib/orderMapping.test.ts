@@ -74,6 +74,33 @@ const row: OrderRow = {
   ],
 };
 
+describe("mapOrder — line photo", () => {
+  const withVariants = {
+    ...product,
+    variants: [
+      { id: "v-yellow", image: "https://cdn.example/yellow.jpg" },
+      { id: "v-white", image: "https://cdn.example/white.jpg" },
+      { id: "v-bare" },
+    ],
+  } as Product;
+  const photo = (variantId: string | null) =>
+    mapOrder(
+      { ...row, order_items: [{ ...row.order_items[0], variant_id: variantId }] },
+      () => withVariants,
+    ).lines[0].image;
+
+  it("shows the photo of the variant bought", () => {
+    expect(photo("v-white")).toBe("https://cdn.example/white.jpg");
+    expect(photo("v-yellow")).toBe("https://cdn.example/yellow.jpg");
+  });
+
+  it("falls back to the product photo when the variant has none or is gone", () => {
+    expect(photo("v-bare")).toBe(product.image);
+    expect(photo("deleted")).toBe(product.image);
+    expect(photo(null)).toBe(product.image);
+  });
+});
+
 describe("mapOrder — amounts", () => {
   it("takes every amount as recorded, in integer minor units", () => {
     const { amounts, currency } = mapOrder(row, find);
