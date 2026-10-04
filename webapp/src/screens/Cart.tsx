@@ -78,7 +78,7 @@ export function Cart() {
   const { lines, subtotal, updateQty, removeLine, clearCart } = useCart();
   const { products } = useCatalog();
   const { placeOrder } = useOrders();
-  const { signedIn, termsAccepted, acceptTerms } = useAuth();
+  const { signedIn, profile, updateProfile, termsAccepted, acceptTerms } = useAuth();
   const [acceptingTerms, setAcceptingTerms] = useState(false);
   const [termsFailed, setTermsFailed] = useState(false);
   const { reload: reloadCourses } = useProgress();
@@ -106,6 +106,25 @@ export function Cart() {
   // A course opens on an account: the basket waits while the visitor signs in.
   const courseInBasket = hasCourse(lines);
   const accountMissing = live && courseInBasket && !signedIn;
+
+  // The saved profile fills the form once it is loaded, never over what the customer typed.
+  const [prefilled, setPrefilled] = useState(false);
+  useEffect(() => {
+    if (!live || prefilled || !profile) return;
+    setPrefilled(true);
+    setForm((f) => ({
+      firstName: f.firstName || profile.firstName,
+      lastName: f.lastName || profile.lastName,
+      email: f.email || profile.email,
+      street: f.street || profile.addressLine,
+      postalCode: f.postalCode || profile.postalCode,
+      city: f.city || profile.city,
+      country: profile.addressLine && profile.country ? profile.country : f.country,
+    }));
+  }, [live, prefilled, profile]);
+  // Offered while the account has no delivery address yet.
+  const offerSaveAddress = live && signedIn && !!profile && !profile.addressLine.trim() && shipped;
+  const [saveAddress, setSaveAddress] = useState(true);
 
   // Delivery rates of the destination's zone (public tables), read again when the country changes.
   const [ratesAttempt, setRatesAttempt] = useState(0);
@@ -195,6 +214,17 @@ export function Cart() {
       checkout_mode: "stripe",
     });
     setSubmitting(true);
+    if (offerSaveAddress && saveAddress) {
+      // Saved before leaving for Stripe; a refused write must not block the payment.
+      await updateProfile({
+        ...(profile?.firstName ? {} : { firstName: form.firstName.trim() }),
+        ...(profile?.lastName ? {} : { lastName: form.lastName.trim() }),
+        addressLine: form.street.trim(),
+        postalCode: form.postalCode.trim(),
+        city: form.city.trim(),
+        country: form.country,
+      }).catch(() => false);
+    }
     const result = await startCheckout(request);
     if (result.kind === "redirect") {
       // Stays "submitting" while the browser leaves for Stripe. Nothing is
@@ -473,9 +503,11 @@ export function Cart() {
                 <Select label={t("cart.country")} options={countryOptions} value={form.country} onChange={(country) => setForm((f) => ({ ...f, country }))} />
               </div>
             </div>
-            {/* Saving the address on the account is not built yet: offered in the demo only. */}
             {!live && (
               <Checkbox label={t("cart.saveInfo")} description={t("cart.saveInfoDescription")} checked={saveInfo} onChange={setSaveInfo} />
+            )}
+            {offerSaveAddress && (
+              <Checkbox label={t("cart.saveAddress")} description={t("cart.saveAddressDescription")} checked={saveAddress} onChange={setSaveAddress} />
             )}
           </section>
 
