@@ -1003,9 +1003,16 @@ then set `status = 'processed'` (or `failed` + `error`). Events in `failed` need
   OAuth client), Supabase then lands on `/auth/confirm?code=…`, which exchanges it for the cookie session. Signing in and
   signing up are the same step. Migration `20261004152751_google_signin_profile_metadata` makes `handle_new_auth_user`
   read Google's `given_name` / `family_name` / `full_name` as a fallback of the form keys (suite
-  `tests/google_signin_validation.sql`). Decision to confirm: a Google sign-up records **no** `terms` / `privacy`
-  consent (the registration form is skipped); acceptance should be collected on first visit to the account. Google
-  accounts whose address already exists as an e-mail/password account are linked automatically by Supabase (same
+  `tests/google_signin_validation.sql`). A Google sign-up skips the registration form, so the terms are accepted in
+  one click instead (no schema change, members may insert their own `terms` + `privacy` records, source `account` /
+  `checkout`): on `/inscription` a dialog ("J'accepte et je continue avec Google") precedes the redirect and the
+  acceptance is recorded once the new account is open (`webapp/src/lib/googleTerms.ts`, 15-minute note in
+  localStorage); on `/connexion` the button cannot ask (it also serves existing members), so any account without a
+  granted `terms` record is stopped by `RequireAccount` (member space, learner pages) with a one-click page, and by
+  the cart. The authority is the Edge Function `create-checkout-session`, which answers `terms_required` (409)
+  before reserving anything for an account without that record (deployed as v8, 2026-10-04). Accounts created
+  before this (invited staff, seeded members) are asked once too. Not decided: what happens to a Google account
+  that declines (today: sign out, the account stays). Google accounts whose address already exists as an e-mail/password account are linked automatically by Supabase (same
   verified address).
 - Authentication → Emails → SMTP: the built-in sender is rate-limited to a few emails per hour and meant
   for testing; production needs custom SMTP (Resend, per the project stack).

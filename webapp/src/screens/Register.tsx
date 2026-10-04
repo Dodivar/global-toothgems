@@ -10,6 +10,7 @@ import { StepProgress } from "../components/register/StepProgress";
 import { ContextSummary } from "../components/register/ContextSummary";
 import { AuthCard, AuthLayout } from "../components/auth/AuthScene";
 import { GoogleDialog, type GoogleIdentity } from "../components/register/GoogleDialog";
+import { GoogleTermsDialog } from "../components/register/GoogleTermsDialog";
 import { LegalDialog, type LegalDoc } from "../components/register/LegalDialog";
 import { VerifyEmail } from "../components/register/VerifyEmail";
 import { CheckInbox } from "../components/register/CheckInbox";
@@ -97,6 +98,8 @@ export function Register() {
 
   const [viaGoogle, setViaGoogle] = useState(false);
   const [googleOpen, setGoogleOpen] = useState(false);
+  /** Real auth: the terms are accepted in this dialog before the browser leaves for Google. */
+  const [googleTermsOpen, setGoogleTermsOpen] = useState(false);
   const [legalDoc, setLegalDoc] = useState<LegalDoc | null>(null);
   const [creating, setCreating] = useState(false);
   const [failure, setFailure] = useState<CreateFailure>(null);
@@ -357,13 +360,9 @@ export function Register() {
    * returns to the page the visitor was heading to. The mock keeps its
    * simulated account chooser.
    */
-  const openGoogle = async () => {
-    if (!realAuth) {
-      setGoogleOpen(true);
-      return;
-    }
-    const result = await signInWithGoogle(afterConfirmation);
-    if (result === "unavailable") showToast(t("authAlt.googleErrorTitle"), t("authAlt.googleErrorBody"), "error");
+  const openGoogle = () => {
+    if (realAuth) setGoogleTermsOpen(true);
+    else setGoogleOpen(true);
   };
 
   const changeContext = (kind: ContextKind) => {
@@ -537,7 +536,7 @@ export function Register() {
                               checkingEmail={checkingEmail}
                               emailTaken={emailTaken}
                               viaGoogle={viaGoogle}
-                              onGoogle={() => void openGoogle()}
+                              onGoogle={openGoogle}
                               onUseEmail={useEmailInstead}
                               signInState={signInState}
                               onForgotPassword={() => navigate(FORGOT_PATH, { state: { email: data.email.trim() } })}
@@ -651,6 +650,20 @@ export function Register() {
           onClose={() => setGoogleOpen(false)}
           onComplete={completeGoogle}
           onSignIn={() => navigate("/connexion", { state: signInState })}
+        />
+      )}
+      {googleTermsOpen && (
+        <GoogleTermsDialog
+          onClose={() => setGoogleTermsOpen(false)}
+          onAccept={async () => {
+            const result = await signInWithGoogle(afterConfirmation, { termsAccepted: true });
+            if (result === "unavailable") {
+              setGoogleTermsOpen(false);
+              showToast(t("authAlt.googleErrorTitle"), t("authAlt.googleErrorBody"), "error");
+              return false;
+            }
+            return true;
+          }}
         />
       )}
       <LegalDialog doc={legalDoc} onClose={() => setLegalDoc(null)} />
