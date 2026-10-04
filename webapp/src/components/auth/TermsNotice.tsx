@@ -6,10 +6,18 @@ import { ArrowRight, CircleAlert } from "lucide-react";
 import { Button } from "../ui/Button";
 import { LegalDialog, type LegalDoc } from "../register/LegalDialog";
 
+const LEGAL_HREF: Record<LegalDoc, string> = {
+  terms: "/conditions-generales",
+  termsOfUse: "/conditions-generales-utilisation",
+  privacy: "/confidentialite",
+};
+
+const WRAP = "h-auto! min-h-[46px] whitespace-normal! py-2.5 text-center";
+
 /**
- * The acceptance of the terms and the privacy policy in one click.
+ * The acceptance of the terms of use, the terms of sale and the privacy policy in one click.
  *
- * The sentence names both documents (each opens in place, so nothing the
+ * The sentence names the documents (each opens in place, so nothing the
  * visitor is doing is lost) and the button that follows is the acceptance: its
  * label says so. Used wherever an account has not accepted yet — the page that
  * stands in for the member space, the cart, the dialog before Google — so the
@@ -31,7 +39,7 @@ export function TermsNotice({
 
   const legalLink = (which: LegalDoc, label: string) => (
     <a
-      href={which === "terms" ? "/conditions-generales" : "/confidentialite"}
+      href={LEGAL_HREF[which]}
       onClick={(e) => {
         e.preventDefault();
         setDoc(which);
@@ -43,9 +51,10 @@ export function TermsNotice({
   );
 
   return (
-    <div className="grid gap-4">
+    <div className="grid grid-cols-[minmax(0,1fr)] gap-4">
       <p className="m-0 text-[length:var(--text-body-sm)] leading-[1.6] text-[var(--text-body)]">
-        {t("termsAccept.before")} {legalLink("terms", t("register.consent.terms"))} {t("register.consent.and")}{" "}
+        {t("termsAccept.before")} {legalLink("termsOfUse", t("register.consent.termsOfUse"))},{" "}
+        {t("register.consent.then")} {legalLink("terms", t("register.consent.terms"))} {t("register.consent.and")}{" "}
         {legalLink("privacy", t("register.consent.privacy"))}
         {t("register.consent.termsAfter")}
       </p>
@@ -55,7 +64,7 @@ export function TermsNotice({
           {t("termsAccept.failed")}
         </p>
       )}
-      <Button variant="primary" size="lg" fullWidth iconRight={ArrowRight} loading={busy} onClick={onAccept}>
+      <Button variant="primary" size="lg" fullWidth iconRight={ArrowRight} loading={busy} onClick={onAccept} className={WRAP}>
         {cta}
       </Button>
       <LegalDialog doc={doc} onClose={() => setDoc(null)} />

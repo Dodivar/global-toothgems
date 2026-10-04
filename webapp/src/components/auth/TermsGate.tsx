@@ -7,6 +7,8 @@ import { Button } from "../ui/Button";
 import { AuthCard, AuthLayout } from "./AuthScene";
 import { TermsNotice } from "./TermsNotice";
 
+const WRAP = "h-auto! min-h-[46px] whitespace-normal! py-2.5 text-center";
+
 /**
  * Stands in for the member space until the account has accepted the terms —
  * the case of an account created through Google, which skipped the
@@ -32,13 +34,13 @@ export function TermsGate({ onAccept, onSignOut }: { onAccept: () => Promise<boo
   return (
     <AuthLayout>
       <AuthCard crown={<span className="gt-eyebrow text-[var(--gt-blue-700)]">{t("termsAccept.eyebrow")}</span>}>
-        <div className="grid gap-5">
+        <div className="grid grid-cols-[minmax(0,1fr)] gap-5">
           <div className="grid gap-2">
             <h1 className="text-[clamp(26px,3.4vw,34px)]">{t("termsAccept.gateTitle")}</h1>
             <p className="m-0 text-[length:var(--text-body-sm)] text-[var(--text-body)]">{t("termsAccept.gateBody")}</p>
           </div>
           <TermsNotice cta={t("termsAccept.gateCta")} busy={busy} failed={failed} onAccept={() => void accept()} />
-          <Button variant="ghost" fullWidth iconLeft={LogOut} onClick={onSignOut}>
+          <Button variant="ghost" fullWidth iconLeft={LogOut} onClick={onSignOut} className={WRAP}>
             {t("termsAccept.decline")}
           </Button>
         </div>
