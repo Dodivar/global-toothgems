@@ -293,6 +293,8 @@
     "country": "Country",
     "saveInfo": "Save this information to my artist account",
     "saveInfoDescription": "One account covers the shop and the Academy.",
+    "saveAddress": "Save this delivery address to my account",
+    "saveAddressDescription": "It will be filled in for your next orders.",
     "paymentTitle": "Payment",
     "payCardDetail": "Visa · Mastercard · Amex",
     "summaryTitle": "Summary",

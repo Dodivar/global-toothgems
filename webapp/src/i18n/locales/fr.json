@@ -293,6 +293,8 @@
     "country": "Pays",
     "saveInfo": "Enregistrer ces informations sur mon compte artiste",
     "saveInfoDescription": "Un seul compte couvre la boutique et l’Academy.",
+    "saveAddress": "Enregistrer cette adresse de livraison sur mon compte",
+    "saveAddressDescription": "Elle sera préremplie lors de vos prochaines commandes.",
     "paymentTitle": "Paiement",
     "payCardDetail": "Visa · Mastercard · Amex",
     "summaryTitle": "Récapitulatif",
