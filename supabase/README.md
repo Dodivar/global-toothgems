@@ -997,6 +997,16 @@ then set `status = 'processed'` (or `failed` + `error`). Events in `failed` need
   With Supabase's default `{{ .ConfirmationURL }}` links still work, but only in the browser that asked for them.
   An e-mail sent from the dashboard rather than by the app carries the Site URL as `.RedirectTo`: send
   confirmations and resets from the app.
+- Authentication → Sign In / Providers → Google (**Continue with Google**, since 2026-10-04): the webapp calls
+  `supabase.auth.signInWithOAuth({ provider: "google", redirectTo: …/auth/confirm?next=… })`; Google returns to
+  `https://<project ref>.supabase.co/auth/v1/callback` (to be listed as an *Authorised redirect URI* of the Google
+  OAuth client), Supabase then lands on `/auth/confirm?code=…`, which exchanges it for the cookie session. Signing in and
+  signing up are the same step. Migration `20261004152751_google_signin_profile_metadata` makes `handle_new_auth_user`
+  read Google's `given_name` / `family_name` / `full_name` as a fallback of the form keys (suite
+  `tests/google_signin_validation.sql`). Decision to confirm: a Google sign-up records **no** `terms` / `privacy`
+  consent (the registration form is skipped); acceptance should be collected on first visit to the account. Google
+  accounts whose address already exists as an e-mail/password account are linked automatically by Supabase (same
+  verified address).
 - Authentication → Emails → SMTP: the built-in sender is rate-limited to a few emails per hour and meant
   for testing; production needs custom SMTP (Resend, per the project stack).
 

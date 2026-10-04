@@ -74,7 +74,7 @@ Stripe  payment source of truth; fulfilment only from verified, idempotent webho
 | Domain | UI | Database | State |
 | --- | --- | --- | --- |
 | Catalogue, categories/families, gem colours, variants, recommendations | storefront + back office | yes | **Live** |
-| Customer & staff auth (sign-up, sign-in, recovery, email/password change) | yes | yes | **Live** (Google sign-in, data export and account deletion not wired). Next.js side (cookie sessions, proxy, `/auth/confirm`) live since 2026-09-30 (Vercel switched, Supabase dashboard settings applied by the user) |
+| Customer & staff auth (sign-up, sign-in, recovery, email/password change) | yes | yes | **Live** (Google sign-in coded 2026-10-04 and live once the provider is enabled in the Supabase dashboard — see `supabase/README.md`; data export and account deletion not wired). Next.js side (cookie sessions, proxy, `/auth/confirm`) live since 2026-09-30 (Vercel switched, Supabase dashboard settings applied by the user) |
 | Favourites, reviews + moderation, member & admin order reading | yes | yes | **Live** |
 | Studio 3D workspace (creations, Gem Groups, share links) | yes | yes | **Live** (subscription/paywall not built: preview access) |
 | Cart, checkout, payment, order creation | yes | `create_order`, `mark_order_paid`, webhook log, `checkout_session_status` | **Built, not deployed** — Edge Functions `create-checkout-session` + `stripe-webhook`, cart in minor units, Stripe return page; migration `20260930200000` and functions await the user's go-ahead (test mode). Gift card codes and gift card purchase lines in the cart (2026-10-01); Academy course lines (2026-10-02, migration `20261002100000` awaits the go-ahead too); promotion codes not in the cart UI, no confirmation e-mail |

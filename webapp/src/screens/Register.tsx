@@ -70,7 +70,7 @@ export function Register() {
   const navigate = useNavigate();
   const location = useLocation();
   const [params, setParams] = useSearchParams();
-  const { signedIn, restoring, realAuth, signIn, signUp, signOut, email: sessionEmail } = useAuth();
+  const { signedIn, restoring, realAuth, signIn, signUp, signInWithGoogle, signOut, email: sessionEmail } = useAuth();
   const { openCourse } = useProgress();
   const { showToast } = useToast();
 
@@ -352,10 +352,18 @@ export function Register() {
         ? "/panier"
         : returnPath ?? "/compte";
 
-  /** Google sign-in is not connected to Supabase yet: say so rather than pretend. */
-  const openGoogle = () => {
-    if (realAuth) showToast(t("authAlt.googleToastTitle"), t("authAlt.googleToastBody"), "info");
-    else setGoogleOpen(true);
+  /**
+   * With Supabase, Google creates the account or signs the member in, then
+   * returns to the page the visitor was heading to. The mock keeps its
+   * simulated account chooser.
+   */
+  const openGoogle = async () => {
+    if (!realAuth) {
+      setGoogleOpen(true);
+      return;
+    }
+    const result = await signInWithGoogle(afterConfirmation);
+    if (result === "unavailable") showToast(t("authAlt.googleErrorTitle"), t("authAlt.googleErrorBody"), "error");
   };
 
   const changeContext = (kind: ContextKind) => {
@@ -529,7 +537,7 @@ export function Register() {
                               checkingEmail={checkingEmail}
                               emailTaken={emailTaken}
                               viaGoogle={viaGoogle}
-                              onGoogle={openGoogle}
+                              onGoogle={() => void openGoogle()}
                               onUseEmail={useEmailInstead}
                               signInState={signInState}
                               onForgotPassword={() => navigate(FORGOT_PATH, { state: { email: data.email.trim() } })}

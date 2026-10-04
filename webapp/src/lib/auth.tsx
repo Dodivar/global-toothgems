@@ -5,6 +5,7 @@ import type { AuthError, User } from "@supabase/supabase-js";
 import { isSupabaseConfigured, sessionReady, supabase } from "./supabase/client";
 import { DELIVERY_COUNTRIES } from "../data/countries";
 import { LEGAL_POLICY_VERSION, registrationMetadata, type RegistrationData } from "./registration";
+import { authConfirmUrl, isSafeNext } from "./authRoutes";
 import { useHydrated } from "./useHydrated";
 
 /**
@@ -69,6 +70,9 @@ export type SignUpResult =
   | "network"
   | "server";
 
+/** Outcome of starting the Google sign-in. */
+export type GoogleSignInResult = "redirecting" | "unavailable";
+
 /** Outcome of asking for a new confirmation email. */
 export type ResendResult = "sent" | "rateLimited" | "failed";
 
@@ -96,6 +100,14 @@ interface AuthContextValue {
   /** Creates the account. `redirectTo` is where the confirmation link lands. */
   signUp: (data: RegistrationData, locale: string, redirectTo: string) => Promise<SignUpResult>;
   resendConfirmation: (email: string, redirectTo: string) => Promise<ResendResult>;
+  /**
+   * Sends the browser to Google, which brings it back through `/auth/confirm`
+   * to `next` (a safe same-site path) with the session open. Signing in and
+   * signing up are the same step: an unknown Google account gets an account.
+   * "redirecting" means the browser is leaving; "unavailable" in mock mode or
+   * when the redirect could not start.
+   */
+  signInWithGoogle: (next?: string) => Promise<GoogleSignInResult>;
   /**
    * Mock mode only: opens a session without any check. The registration
    * journey uses it to finish its simulated verification. A no-op with real auth.
@@ -366,6 +378,16 @@ function SupabaseAuthProvider({ children }: { children: ReactNode }) {
     return isRateLimit(error) ? "rateLimited" : "failed";
   }, []);
 
+  const signInWithGoogle = useCallback(async (next?: string): Promise<GoogleSignInResult> => {
+    if (!supabase) return "unavailable";
+    const landing = next && isSafeNext(next) ? next : "/compte";
+    const { error } = await supabase.auth.signInWithOAuth({
+      provider: "google",
+      options: { redirectTo: authConfirmUrl(landing, window.location.origin) },
+    });
+    return error ? "unavailable" : "redirecting";
+  }, []);
+
   const signOut = useCallback(() => {
     setProfile(null);
     setUserId(null);
@@ -476,11 +498,12 @@ function SupabaseAuthProvider({ children }: { children: ReactNode }) {
         signInWithPassword,
         signUp,
         resendConfirmation,
+        signInWithGoogle,
         signIn,
         signOut,
         updateProfile,
       }),
-    [profile, restoring, userId, signInWithPassword, signUp, resendConfirmation, signIn, signOut, updateProfile],
+    [profile, restoring, userId, signInWithPassword, signUp, resendConfirmation, signInWithGoogle, signIn, signOut, updateProfile],
   );
 
   return (
@@ -567,6 +590,7 @@ function DemoAuthProvider({ children }: { children: ReactNode }) {
   // (`lib/registration.ts`); these exist so the interface is complete.
   const signUp = useCallback(async (): Promise<SignUpResult> => "confirmationSent", []);
   const resendConfirmation = useCallback(async (): Promise<ResendResult> => "sent", []);
+  const signInWithGoogle = useCallback(async (): Promise<GoogleSignInResult> => "unavailable", []);
 
   const signOut = useCallback(() => setProfile(null), [setProfile]);
 
@@ -589,11 +613,12 @@ function DemoAuthProvider({ children }: { children: ReactNode }) {
         signInWithPassword,
         signUp,
         resendConfirmation,
+        signInWithGoogle,
         signIn,
         signOut,
         updateProfile,
       }),
-    [profile, hydrated, signInWithPassword, signUp, resendConfirmation, signIn, signOut, updateProfile],
+    [profile, hydrated, signInWithPassword, signUp, resendConfirmation, signInWithGoogle, signIn, signOut, updateProfile],
   );
 
   return (
