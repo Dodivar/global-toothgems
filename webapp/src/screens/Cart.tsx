@@ -382,7 +382,8 @@ export function Cart() {
               {lines.map((line) => (
                 <li key={line.id} className="flex flex-wrap items-center gap-4 border-b border-[var(--border-subtle)] py-4 last:border-0 last:pb-0">
                   {line.giftCard ? (
-                    <span className="w-16 flex-none">
+                    // The "sm" card needs ~110px: its padding and 20px amount overflow in a 64px thumbnail.
+                    <span className="w-28 flex-none">
                       <GiftCardVisual design={line.giftCard.design as GiftCardDesign} amountCents={line.unitPrice} size="sm" label="" />
                     </span>
                   ) : line.courseId && !line.image ? (
