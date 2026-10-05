@@ -65,7 +65,7 @@ supabase/
   tests/admin_users_validation.sql  back-office team: viewer read-only, manager rank limits, no self change, customer/suspended/visitor refusals, audit (always rolls back)
   tests/admin_customers_validation.sql back-office customers: customer refused, viewer read-only, manager writes and read-only columns, notes by their author, status history, course progress (always rolls back)
   config.toml   CLI settings this repo relies on (verify_jwt of the Edge Functions)
-  functions/    Edge Functions (Deno): create-checkout-session, stripe-webhook, deliver-gift-cards, send-email, resend-webhook, invite-staff-member, _shared/ (pure modules + clients),
+  functions/    Edge Functions (Deno): create-checkout-session, stripe-webhook, deliver-gift-cards, send-email, resend-webhook, send-pending-emails, invite-staff-member, _shared/ (pure modules + clients),
                 *_test.ts (deno test), .env.example (secret names)
   templates/confirm-signup.html     French "Confirm signup" email, to paste into the Auth settings
   templates/invite-staff.html       French "Invite user" email (team invitations), to paste into the Auth settings
@@ -124,6 +124,7 @@ supabase/
 | 20261005092414 | `email_log` | **Applied 2026-10-05.** E-mail sending, decision 79: `email_log` (one row per business event, unique `event_key`, hashed recipient, backend only), `email_log_claim()` / `email_log_finish()` (service role: atomic claim, a failed or abandoned attempt can be claimed again, a sent one never), templates `gift_card_delivery` and `order_refunded` (fr + en) |
 | 20261005092859 | `email_attempt_cap_gift_card_wording` | **Applied 2026-10-05.** `email_log_claim()` gains `p_max_attempts` (default 5: a failing event stops being retried, left `failed` for the team); the `gift_card_delivery` e-mail prints `Date d'expiration : {{expires_on}}` ("aucune" / "none" without expiry) |
 | 20261005121753 | `email_log_apply_event` | **Applied 2026-10-05.** `email_log_apply_event(provider_id, status)` (service role): moves an `email_log` row forward to delivered / opened / bounced / complained, never back, so a replayed or out-of-order Resend event changes nothing (`applied` says whether it moved; unknown ids answer `matched = false`); a bounce or complaint of a `newsletter*` e-mail also marks the subscriber, found through the new expression index `newsletter_subscriptions_email_hash_idx` on `sha256(lower(email))` (email_log only holds that hash, so no column was added) |
+| 20261005122328 | `email_pending_events` | **Applied 2026-10-05.** What the `send-pending-emails` sweep still has to e-mail, decided in SQL (service role only, last 7 days, minus what `email_log` already holds, `private.email_event_open()`): `pending_shipping_emails()` (parcels `shipped`, paid order, one per parcel), `pending_course_enrolment_emails(order?)` (`purchase` entitlements of a paid order, not revoked, course title in the order's language), `pending_refund_emails()` (`succeeded` rows of `refunds`) |
 | 20261002064949 | `settings_shipping_positions` | `admin_save_shipping()` numbers zones and rates from 1 like every existing row, so saving an unchanged configuration writes nothing |
 | 20261003131220 | `studio_gem_group_thumbnails` | `gem_groups.thumbnail_path` (null or inside the owner's folder, column grants for insert/update): each new Gem Group keeps a captured render of its pieces alone on the smile at `studio-thumbnails/<user id>/groups/<group id>.jpg` (bucket policies unchanged: they check the first folder). Suite `tests/studio_workspace_validation.sql` |
 
@@ -1359,9 +1360,32 @@ VAT rates, shipping zones/rates mirroring the Settings prototype. Media rows ref
       consent records are left alone (decision to confirm: a complaint could also revoke `marketing_email`).
       A webhook arriving before `email_log_finish` stored the provider id would not match; it is a window of
       milliseconds against seconds of delivery time.
-    - **Still to build:** the back-office resend of a card, the
-      other e-mails (shipping, course enrolment, refund). To do by hand: the Resend domain and the secrets, then
-      deploy the three functions and schedule the cron once, with the secret in the vault:
+    - **Shipping, course enrolment and refund e-mails built (2026-10-05), not deployed:** one sweep, the function
+      `send-pending-emails` (`verify_jwt = false`, `x-internal-secret`, pg_cron every 5 minutes, body `{limit}` optional),
+      `_shared/email/events.ts`. Mechanism: no trigger and nothing the browser or the back office must call — the SQL
+      functions of migration `email_pending_events` list the source rows (shipment `shipped`, `purchase` entitlement, refund
+      `succeeded`) that have no finished `email_log` row, the sweep sends them through the usual once-per-event claim, so a
+      failed send is retried by the next run (cap of 5 attempts, then left `failed` for the team) and a crash loses nothing.
+      Only the last 7 days are looked at: switching the sweep on never mails old history.
+      - **Shipping** — `shipping_notification`, event `shipping:<shipment id>`, **per parcel** (not per order): every parcel has
+        its own carrier and tracking number, and `orders.status` is `processing` until the last parcel leaves, so an
+        order-level e-mail would either wait for the last parcel or hide the others' tracking links. Only a parcel still
+        `shipped` is mailed (one already `delivered` when seen would be told "on its way" too late). The link is the
+        parcel's `tracking_url`; without one, a member gets their orders page (`/compte/commandes`); a guest parcel with no
+        link is skipped and picked up once staff add the URL (within the 7 days).
+      - **Course enrolment** — `course_enrolment`, event `course_enrolment:<entitlement id>`, for `purchase` entitlements
+        only (a paid order); manual grants by staff, bundles and promotions send nothing (decision to confirm). Sent at
+        once by the payment hook for the order just paid (`notifyOrderPaid`), the sweep catching what failed. A revoked
+        entitlement (full refund before the e-mail left) is not mailed.
+      - **Refund** — `order_refunded`, event `refund:<refund id>`, for each `succeeded` card refund of the `refunds` table, with
+        the refunded amount of that refund (not the order total) formatted in the order's language and currency. A refund
+        credited back onto gift cards (`refund_to_gift_cards`) is not in that table and sends nothing: the template speaks
+        of the bank; a wording for it is to write if wanted.
+      Cron, once, with the secret in the vault (not in a migration): `select cron.schedule('send-pending-emails', '*/5 * * * *', $$ select net.http_post(url := 'https://<project-ref>.supabase.co/functions/v1/send-pending-emails', headers := jsonb_build_object('x-internal-secret', (select decrypted_secret from vault.decrypted_secrets where name = 'email_internal_secret')), body := '{}'::jsonb) $$);`
+    - **Still to build:** the back-office resend of a card. To do by hand: the Resend domain and the secrets, then
+      deploy the functions (`deliver-gift-cards`, `send-email`, `resend-webhook`, `send-pending-emails`, and redeploy
+      `stripe-webhook` and `create-checkout-session`), declare the `resend-webhook` endpoint in Resend (events delivered, opened, bounced, complained), and schedule the two
+      crons (`deliver-gift-cards` below, `send-pending-emails` above) once, with the secret in the vault:
       `select cron.schedule('deliver-gift-cards', '*/5 * * * *', $$ select net.http_post(url := 'https://<project-ref>.supabase.co/functions/v1/deliver-gift-cards', headers := jsonb_build_object('x-internal-secret', (select decrypted_secret from vault.decrypted_secrets where name = 'email_internal_secret')), body := '{}'::jsonb) $$);`
       (needs `pg_net` and a vault secret `email_internal_secret`; not part of a migration because of the secret).
 

@@ -14,6 +14,7 @@
  * never logged.
  */
 import type { SupabaseClient } from "npm:@supabase/supabase-js@2.57.4";
+import { formatAmount } from "./format.ts";
 import { type EmailDeps, sendTemplatedEmail } from "./send.ts";
 
 export interface DueGiftCard {
@@ -58,14 +59,6 @@ const NO_EXPIRY: Record<string, string> = { fr: "aucune", en: "none" };
 
 function localised(map: Record<string, string>, locale: string): string {
   return map[locale] ?? map.en;
-}
-
-function formatAmount(amount: number, currency: string, locale: string): string {
-  try {
-    return new Intl.NumberFormat(locale, { style: "currency", currency }).format(amount);
-  } catch {
-    return `${amount.toFixed(2)} ${currency}`;
-  }
 }
 
 function formatDate(iso: string, locale: string): string {

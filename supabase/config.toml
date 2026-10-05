@@ -16,6 +16,8 @@ project_id = "global-toothgems"
 #   EMAIL_INTERNAL_SECRET in the x-internal-secret header is the authentication.
 # - send-email: called by the webapp's server routes (contact acknowledgement,
 #   newsletter confirmation), not a browser; same shared secret.
+# - send-pending-emails: called by pg_cron (shipping, course enrolment and
+#   refund e-mails), not a browser; same shared secret.
 # - resend-webhook: Resend sends no Supabase token; the Svix signature
 #   (RESEND_WEBHOOK_SECRET, five-minute tolerance) is the authentication.
 [functions.create-checkout-session]
@@ -28,6 +30,9 @@ verify_jwt = false
 verify_jwt = false
 
 [functions.send-email]
+verify_jwt = false
+
+[functions.send-pending-emails]
 verify_jwt = false
 
 [functions.resend-webhook]
