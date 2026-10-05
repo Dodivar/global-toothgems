@@ -97,7 +97,7 @@ export function StructureTree({
   const courseSelected = selection.kind === "course";
 
   return (
-    <div className="flex h-full min-h-0 flex-col">
+    <div className="flex min-h-0 flex-1 flex-col">
       {/* The course itself is a selectable row: its information is part of the
           structure, not a separate screen you leave the builder for. */}
       <button
