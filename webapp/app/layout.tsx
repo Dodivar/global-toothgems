@@ -7,6 +7,7 @@ import { loadCatalogSeed } from "../src/lib/catalog/serverCatalog";
 import { loadAcademySeed } from "../src/lib/academy/serverAcademy";
 import { AppProviders } from "../src/AppProviders";
 import { siteUrl } from "../src/lib/siteUrl";
+import { SpeedInsights } from "@vercel/speed-insights/next";
 import "../src/index.css";
 
 /* What `index.html` carried under Vite. Next.js adds the charset and viewport
@@ -44,6 +45,7 @@ export default async function RootLayout({ children }: { children: ReactNode }) 
           <AppProviders locale={locale} catalog={catalog} academy={academy}>
             {children}
           </AppProviders>
+          <SpeedInsights />
         </div>
       </body>
     </html>
