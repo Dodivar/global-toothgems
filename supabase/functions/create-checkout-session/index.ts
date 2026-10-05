@@ -1,5 +1,6 @@
 import { courseOrderItems, orderItems } from "../_shared/checkoutInput.ts";
 import { serviceClient, stripeClient, requireEnv } from "../_shared/clients.ts";
+import { notifyOrderPaid } from "../_shared/email/notify.ts";
 import { toDecimalString } from "../_shared/money.ts";
 import { readSiteOrigins } from "../_shared/http.ts";
 import { handleCheckout, type CheckoutDeps } from "./handler.ts";
@@ -60,6 +61,8 @@ const deps: CheckoutDeps = {
     const { error } = await supabase.rpc("cancel_order", { p_order_id: orderId, p_reason: reason });
     if (error) throw new Error(error.message);
   },
+
+  orderPaid: (orderId) => notifyOrderPaid(orderId, (message, detail) => console.error(`[create-checkout-session] ${message}`, detail ?? "")),
 
   async createStripeSession(params, idempotencyKey) {
     const metadata = { order_id: params.orderId, order_number: params.orderNumber };
