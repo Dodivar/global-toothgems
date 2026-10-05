@@ -1329,7 +1329,7 @@ VAT rates, shipping zones/rates mirroring the Settings prototype. Media rows ref
       `_shared/internalAuth.ts`, the function `deliver-gift-cards`, and migrations `email_log` and
       `email_attempt_cap_gift_card_wording` (applied). After a payment (`stripe-webhook`, or `create-checkout-session`
       for an order fully paid with gift cards) the `orderPaid` hook calls `notifyOrderPaid()`: order confirmation
-      (`order_confirmation:<order id>`), then the gift cards of the order. It never throws and does nothing without
+      (`order_confirmation:<order id>`), then the gift cards of the order, then the enrolment e-mail of each course it bought. It never throws and does nothing without
       `RESEND_API_KEY`. Limit: a confirmation that fails once is not retried by Stripe (the event is already
       processed); `email_log` keeps it as `failed` — a sweep of paid orders without a sent confirmation is to add.
     - **`send-email` built (2026-10-05), not deployed:** `supabase/functions/send-email/` (`verify_jwt = false`,
