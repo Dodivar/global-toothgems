@@ -408,15 +408,15 @@ checkout (`create-checkout-session` accepts gift card lines); the cart sends up 
 `20261001200000_gift_card_staff_functions` (not applied yet) stops `extend_gift_card` / `cancel_gift_card` from
 returning the code. Suite: `tests/gift_cards_validation.sql` (GC1–GC7).
 
-**Proposed, not built — delivering the code (needs the user's decision on the e-mail provider, Resend in §5):**
+**Proposed, not built — delivering the code (e-mail provider decided: Resend, sent from Edge Functions, decision 79):**
 
 ```
 Edge Function deliver-gift-cards (service role, verify_jwt = false, called by pg_cron every 5 min + after mark_order_paid)
   select active cards with delivery_status in ('pending','scheduled') and (deliver_at is null or deliver_at <= now())
     (index gift_cards_delivery_due_idx already exists), a few dozen per run, oldest first, row lock skip locked
   per card: code := gift_card_code_for_delivery(id)        -- service role only, never logged
-            render the localized e-mail (email_templates, order locale) with design, amount, sender, message, expiry
-            send through the provider with an idempotency key "gift-card:<id>:<attempt>"
+            render the localized e-mail (email_template_for('gift_card_delivery', locale), shared layout) with design, amount, sender, message, expiry
+            send through Resend (_shared/email) with an idempotency key "gift-card:<id>:<attempt>"
             record_gift_card_delivery(id, 'sent')             -- 'delivered' / 'opened' / 'bounced' from provider webhooks
   resend from the back office: a staff-only Edge Function (manage_promotions) calling the same path, optional corrected
   address through record_gift_card_delivery(id, 'sent', new_email); the code is never returned to the browser.
@@ -1294,6 +1294,29 @@ VAT rates, shipping zones/rates mirroring the Settings prototype. Media rows ref
 78. **The order that spends the loyalty reward earns no stamp** (agent, 2026-10-04, to confirm): migration
     `20261004200155_loyalty_reward_order_no_stamp` makes `apply_loyalty_on_order()` skip an order carrying a
     `loyalty` row in `order_discounts`, so after spending the reward the member's card is back at 0 instead of 1/5.
+79. **E-mail: Resend REST API from Edge Functions, templates in the database, no React Email** (agent, 2026-10-05,
+    to confirm). Next.js does not make React Email unusable (it renders in Node), but it does not fit here: the
+    store's e-mails are *data* (`email_templates` + translations, edited by staff in the Translations workspace,
+    `{{variables}}` checked by the database), whereas React Email templates are code that needs a deploy per
+    wording change, and most e-mails (order paid, gift card, shipping) leave from Deno Edge Functions, not Next.js.
+    - `supabase/functions/_shared/email/`: `render.ts` (`email_template_for(key, locale)` → substitute variables,
+      HTML-escape every value, wrap the body in one shared brand layout with inline CSS and a plain-text twin),
+      `resend.ts` (`fetch` to `https://api.resend.com/emails`, `Idempotency-Key`, typed errors, no SDK), unit-tested
+      with `deno test` and an injected `fetch`. No new dependency.
+    - Edge Functions call the module directly (`stripe-webhook` → `order_confirmation`, `deliver-gift-cards`).
+    - The Next.js server routes (contact, newsletter confirmation) call an internal Edge Function `send-email`
+      `{template_key, to, locale, variables}`: `verify_jwt = false`, authenticated by the `EMAIL_INTERNAL_SECRET`
+      header (constant-time compare), recipient and template allow-listed per caller; one place holds `RESEND_API_KEY`.
+    - Secrets: `RESEND_API_KEY`, `RESEND_WEBHOOK_SECRET`, `EMAIL_FROM` (`Global Tooth Gems <no-reply@globaltoothgems.com>`),
+      `EMAIL_REPLY_TO`, `EMAIL_INTERNAL_SECRET`; the Next.js side holds `EMAIL_INTERNAL_SECRET` only.
+    - Webhook `resend-webhook` (Svix signature): `email.delivered` / `opened` / `bounced` / `complained` →
+      `record_gift_card_delivery` and `newsletter_subscriptions.status`.
+    - Auth e-mails (confirmation, recovery, invitation, change) keep going through Supabase Auth, over Resend SMTP
+      (`smtp.resend.com`, user `resend`, API key as password); their templates are edited in the Supabase dashboard.
+    - A visual preview of the layout is a script rendering the layout to a file, not a React Email dev server.
+    - To add when the first e-mail ships: a `email_log` table (template, recipient hash, resend id, status, order or
+      card id) with a unique key per business event, so a retried webhook cannot send an order e-mail twice.
+    - Missing templates to seed: `gift_card_delivery`, `order_refunded` (and `course_enrolment` already exists).
 
 ## Done
 
