@@ -1,4 +1,4 @@
-import { useEffect, useRef, useState } from "react";
+import { useCallback, useEffect, useRef, useState } from "react";
 import { Link, useNavigate, useLocation, useLanguageSwitch } from "../../lib/navigation";
 import { useTranslation } from "react-i18next";
 import { ArrowRight, Box, ChevronDown, Heart, Menu, Search, ShoppingBag, User, X } from "lucide-react";
@@ -7,10 +7,10 @@ import { useAuth } from "../../lib/auth";
 import { useFavorites } from "../../lib/favorites";
 import { FAVORITES_HREF } from "../../lib/favoritesState";
 import { useCart } from "../../lib/cart";
-import { useToast } from "../../lib/toast";
 import { useAcademyMenu } from "./useAcademyMenu";
 import { NewTag } from "../studio/NewTag";
 import { ShopMenu } from "./ShopMenu";
+import { HeaderSearch } from "./HeaderSearch";
 import { STUDIO_PATH } from "../../lib/studioUrl";
 import logoBlack from "../../assets/logo-wordmark-black.png";
 
@@ -32,11 +32,11 @@ export function Header() {
   const { count } = useCart();
   const { signedIn, initials } = useAuth();
   const { favoriteProducts } = useFavorites();
-  const { showToast } = useToast();
 
   const [panel, setPanel] = useState<PanelKey>(null);
   const [menuOpen, setMenuOpen] = useState(false);
   const [menuTab, setMenuTab] = useState<MobileTab>("shop");
+  const [searchOpen, setSearchOpen] = useState(false);
   const rootRef = useRef<HTMLDivElement>(null);
   const hoverTimer = useRef<number | null>(null);
   /** Panel the user just closed on purpose, held until the pointer leaves that
@@ -55,6 +55,15 @@ export function Header() {
   const closeAll = () => {
     setPanel(null);
     setMenuOpen(false);
+    setSearchOpen(false);
+  };
+  const closeSearch = useCallback(() => setSearchOpen(false), []);
+  /** The search replaces whatever panel or menu was open, and the other way round. */
+  const toggleSearch = () => {
+    clearHoverTimer();
+    setPanel(null);
+    setMenuOpen(false);
+    setSearchOpen((open) => !open);
   };
 
   // Hover is an addition on top of the chevron button, never a replacement: the
@@ -70,6 +79,8 @@ export function Header() {
   const hoverTo = (next: PanelKey) => {
     if (!canHover()) return;
     if (next && dismissed.current === next) return;
+    // A pointer crossing the nav must not cover the open search with a panel.
+    if (next && searchOpen) return;
     clearHoverTimer();
     hoverTimer.current = window.setTimeout(() => setPanel(next), next ? HOVER_OPEN_MS : HOVER_CLOSE_MS);
   };
@@ -79,6 +90,7 @@ export function Header() {
   useEffect(() => {
     setPanel(null);
     setMenuOpen(false);
+    setSearchOpen(false);
   }, [location.pathname]);
 
   // Escape and outside clicks close whatever is open.
@@ -105,8 +117,6 @@ export function Header() {
       document.removeEventListener("pointerdown", onPointerDown);
     };
   }, [panel, menuOpen]);
-
-  const notIncluded = () => showToast(t("common.notIncludedTitle"), t("common.notIncludedScreen"), "info");
 
   /** The account entry point: the member dashboard once signed in, the login page otherwise. */
   const openAccount = () => {
@@ -192,6 +202,7 @@ export function Header() {
                       type="button"
                       onClick={() => {
                         clearHoverTimer();
+                        setSearchOpen(false);
                         setPanel((p) => {
                           const next = p === link.panel ? null : link.panel ?? null;
                           dismissed.current = next === null ? link.panel ?? null : null;
@@ -213,7 +224,14 @@ export function Header() {
           </nav>
           <div className="flex items-center gap-1">
             {langButton}
-            <IconButton icon={Search} label={t("nav.search")} onClick={notIncluded} />
+            <IconButton
+              icon={searchOpen ? X : Search}
+              label={searchOpen ? t("siteSearch.close") : t("siteSearch.open")}
+              aria-expanded={searchOpen}
+              aria-controls="gt-site-search"
+              data-search-toggle=""
+              onClick={toggleSearch}
+            />
             <IconButton icon={Heart} label={wishlistLabel} badge={favoriteCount} onClick={openFavorites} />
             {signedIn ? (
               /* Signed in, the account is a named place — "My space", with the
@@ -306,9 +324,19 @@ export function Header() {
             label={menuOpen ? t("nav.closeMenu") : t("nav.menu")}
             aria-expanded={menuOpen}
             aria-controls="gt-mobile-menu"
-            onClick={() => setMenuOpen((v) => !v)}
+            onClick={() => {
+              setSearchOpen(false);
+              setMenuOpen((v) => !v);
+            }}
           />
-          <IconButton icon={Search} label={t("nav.search")} onClick={notIncluded} />
+          <IconButton
+            icon={searchOpen ? X : Search}
+            label={searchOpen ? t("siteSearch.close") : t("siteSearch.open")}
+            aria-expanded={searchOpen}
+            aria-controls="gt-site-search"
+            data-search-toggle=""
+            onClick={toggleSearch}
+          />
           <div className="flex-1" />
           <Link
             to="/"
@@ -404,6 +432,7 @@ export function Header() {
           </div>
         )}
       </div>
+      {searchOpen && <HeaderSearch id="gt-site-search" onClose={closeSearch} />}
     </div>
   );
 }

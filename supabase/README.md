@@ -64,8 +64,9 @@ supabase/
   tests/admin_orders_validation.sql back-office order book: what staff read, viewer/customer/visitor refusals (always rolls back)
   tests/admin_users_validation.sql  back-office team: viewer read-only, manager rank limits, no self change, customer/suspended/visitor refusals, audit (always rolls back)
   tests/admin_customers_validation.sql back-office customers: customer refused, viewer read-only, manager writes and read-only columns, notes by their author, status history, course progress (always rolls back)
+  tests/email_validation.sql        e-mail delivery events (forward-only, newsletter bounce/complaint) and the pending shipping / refund / enrolment queries, service role only (always rolls back)
   config.toml   CLI settings this repo relies on (verify_jwt of the Edge Functions)
-  functions/    Edge Functions (Deno): create-checkout-session, stripe-webhook, invite-staff-member, _shared/ (pure modules + clients),
+  functions/    Edge Functions (Deno): create-checkout-session, stripe-webhook, deliver-gift-cards, send-email, resend-webhook, send-pending-emails, invite-staff-member, _shared/ (pure modules + clients),
                 *_test.ts (deno test), .env.example (secret names)
   templates/confirm-signup.html     French "Confirm signup" email, to paste into the Auth settings
   templates/invite-staff.html       French "Invite user" email (team invitations), to paste into the Auth settings
@@ -121,6 +122,11 @@ supabase/
 | 20261001223230 | `admin_customer_history_scope` | `admin_customer_status_history()` answers for customer accounts only (a team member's history stays out of reach of read-only staff); orders changes by `occurred_at, id` (two changes in one transaction share a timestamp — first fixed in place, now recorded) |
 | 20261002064611 | `settings_workspace` | Settings workspace on the database: `store_settings` gains the business identity, legal mentions (legal form, share capital, registration and VAT numbers, publication director, host), contact details, address, opening hours (`private.valid_opening_hours()` CHECK) and the contact page switches + `store_settings_translations` (support message per non-default locale, audited); `admin_save_store_details()`, `admin_save_shipping()` (whole configuration, atomic), `admin_save_tax_rates()` (whole set), `admin_save_languages()` — SECURITY INVOKER, `manage_settings`; `languages`: API may update `is_enabled`/`position` only, `fr`/`en` cannot be switched off (trigger), switches audited; audit trigger identifies rows by `code`/`locale`; standard VAT rates for AT BG CY CZ DK EE FI GR HR HU LT LU LV MT PL RO SE SI SK + MC, IE switched on |
 | 20261002100000 | `course_checkout` | **Not applied yet (awaits the user's go-ahead; validated on the project inside a rolled-back transaction).** Academy phase D: `order_items.course_id` (exclusive with product/variant, RESTRICT); `create_order()` accepts `{course_id, quantity: 1}` lines (published course, account required, not already held, current price incl. course promotion, VAT `training`, outside shop discounts and shipping thresholds); trigger `orders_stock_transitions_zc_courses` grants a `purchase` entitlement when the order becomes paid and revokes it on a full refund; course lines refused in parcels and ignored by the fulfilment status |
+| 20261005092414 | `email_log` | **Applied 2026-10-05.** E-mail sending, decision 79: `email_log` (one row per business event, unique `event_key`, hashed recipient, backend only), `email_log_claim()` / `email_log_finish()` (service role: atomic claim, a failed or abandoned attempt can be claimed again, a sent one never), templates `gift_card_delivery` and `order_refunded` (fr + en) |
+| 20261005092859 | `email_attempt_cap_gift_card_wording` | **Applied 2026-10-05.** `email_log_claim()` gains `p_max_attempts` (default 5: a failing event stops being retried, left `failed` for the team); the `gift_card_delivery` e-mail prints `Date d'expiration : {{expires_on}}` ("aucune" / "none" without expiry) |
+| 20261005121753 | `email_log_apply_event` | **Applied 2026-10-05.** `email_log_apply_event(provider_id, status)` (service role): moves an `email_log` row forward to delivered / opened / bounced / complained, never back, so a replayed or out-of-order Resend event changes nothing (`applied` says whether it moved; unknown ids answer `matched = false`); a bounce or complaint of a `newsletter*` e-mail also marks the subscriber, found through the new expression index `newsletter_subscriptions_email_hash_idx` on `sha256(lower(email))` (email_log only holds that hash, so no column was added) |
+| 20261005122328 | `email_pending_events` | **Applied 2026-10-05.** What the `send-pending-emails` sweep still has to e-mail, decided in SQL (service role only, last 7 days, minus what `email_log` already holds, `private.email_event_open()`): `pending_shipping_emails()` (parcels `shipped`, paid order, one per parcel), `pending_course_enrolment_emails(order?)` (`purchase` entitlements of a paid order, not revoked, course title in the order's language), `pending_refund_emails()` (`succeeded` rows of `refunds`) |
+| 20261005131234 | `email_cron_jobs` | **Applied 2026-10-05.** The two pg_cron jobs `deliver-gift-cards` and `send-pending-emails` (every 5 minutes) through `private.call_email_function(name)`, which reads the Vault secret `email_internal_secret` at each run and does nothing while it is missing; change a schedule with `cron.alter_job` in a new migration |
 | 20261002064949 | `settings_shipping_positions` | `admin_save_shipping()` numbers zones and rates from 1 like every existing row, so saving an unchanged configuration writes nothing |
 | 20261003131220 | `studio_gem_group_thumbnails` | `gem_groups.thumbnail_path` (null or inside the owner's folder, column grants for insert/update): each new Gem Group keeps a captured render of its pieces alone on the smile at `studio-thumbnails/<user id>/groups/<group id>.jpg` (bucket policies unchanged: they check the first folder). Suite `tests/studio_workspace_validation.sql` |
 
@@ -408,16 +414,19 @@ checkout (`create-checkout-session` accepts gift card lines); the cart sends up 
 `20261001200000_gift_card_staff_functions` (not applied yet) stops `extend_gift_card` / `cancel_gift_card` from
 returning the code. Suite: `tests/gift_cards_validation.sql` (GC1–GC7).
 
-**Proposed, not built — delivering the code (needs the user's decision on the e-mail provider, Resend in §5):**
+**Built (2026-10-05) — delivering the code** (Resend, Edge Functions, decision 79; `_shared/email/giftCards.ts`, function `deliver-gift-cards`). Not yet deployed. Design:
 
 ```
-Edge Function deliver-gift-cards (service role, verify_jwt = false, called by pg_cron every 5 min + after mark_order_paid)
+Edge Function deliver-gift-cards (service role, verify_jwt = false, header x-internal-secret = EMAIL_INTERNAL_SECRET, called by pg_cron every 5 min;
+  the cards of an order are also delivered right after payment by the webhook / checkout hook)
   select active cards with delivery_status in ('pending','scheduled') and (deliver_at is null or deliver_at <= now())
     (index gift_cards_delivery_due_idx already exists), a few dozen per run, oldest first, row lock skip locked
   per card: code := gift_card_code_for_delivery(id)        -- service role only, never logged
-            render the localized e-mail (email_templates, order locale) with design, amount, sender, message, expiry
-            send through the provider with an idempotency key "gift-card:<id>:<attempt>"
+            render the localized e-mail (email_template_for('gift_card_delivery', locale), shared layout) with design, amount, sender, message, expiry
+            send through Resend (_shared/email), claimed in email_log as event "gift_card:<id>" (Resend idempotency key <event>:<attempt>,
+            5 attempts then left failed); a retry finding the e-mail already sent only records the delivery
             record_gift_card_delivery(id, 'sent')             -- 'delivered' / 'opened' / 'bounced' from provider webhooks
+  Not built: the resend below, and the delivery statuses coming back from Resend (resend-webhook).
   resend from the back office: a staff-only Edge Function (manage_promotions) calling the same path, optional corrected
   address through record_gift_card_delivery(id, 'sent', new_email); the code is never returned to the browser.
 ```
@@ -1294,6 +1303,93 @@ VAT rates, shipping zones/rates mirroring the Settings prototype. Media rows ref
 78. **The order that spends the loyalty reward earns no stamp** (agent, 2026-10-04, to confirm): migration
     `20261004200155_loyalty_reward_order_no_stamp` makes `apply_loyalty_on_order()` skip an order carrying a
     `loyalty` row in `order_discounts`, so after spending the reward the member's card is back at 0 instead of 1/5.
+79. **E-mail: Resend REST API from Edge Functions, templates in the database, no React Email** (agent, 2026-10-05,
+    to confirm). Next.js does not make React Email unusable (it renders in Node), but it does not fit here: the
+    store's e-mails are *data* (`email_templates` + translations, edited by staff in the Translations workspace,
+    `{{variables}}` checked by the database), whereas React Email templates are code that needs a deploy per
+    wording change, and most e-mails (order paid, gift card, shipping) leave from Deno Edge Functions, not Next.js.
+    - `supabase/functions/_shared/email/`: `render.ts` (`email_template_for(key, locale)` → substitute variables,
+      HTML-escape every value, wrap the body in one shared brand layout with inline CSS and a plain-text twin),
+      `resend.ts` (`fetch` to `https://api.resend.com/emails`, `Idempotency-Key`, typed errors, no SDK), unit-tested
+      with `deno test` and an injected `fetch`. No new dependency.
+    - Edge Functions call the module directly (`stripe-webhook` → `order_confirmation`, `deliver-gift-cards`).
+    - The Next.js server routes (contact, newsletter confirmation) call an internal Edge Function `send-email`
+      `{template_key, to, locale, variables}`: `verify_jwt = false`, authenticated by the `EMAIL_INTERNAL_SECRET`
+      header (constant-time compare), recipient and template allow-listed per caller; one place holds `RESEND_API_KEY`.
+    - Secrets: `RESEND_API_KEY`, `RESEND_WEBHOOK_SECRET`, `EMAIL_FROM` (`Global Tooth Gems <no-reply@globaltoothgems.com>`),
+      `EMAIL_REPLY_TO`, `EMAIL_INTERNAL_SECRET`; the Next.js side holds `EMAIL_INTERNAL_SECRET` only.
+    - Webhook `resend-webhook` (Svix signature): `email.delivered` / `opened` / `bounced` / `complained` →
+      `record_gift_card_delivery` and `newsletter_subscriptions.status`.
+    - Auth e-mails (confirmation, recovery, invitation, change) keep going through Supabase Auth, over Resend SMTP
+      (`smtp.resend.com`, user `resend`, API key as password); their templates are edited in the Supabase dashboard.
+    - A visual preview of the layout is a script rendering the layout to a file, not a React Email dev server.
+    - To add when the first e-mail ships: a `email_log` table (template, recipient hash, resend id, status, order or
+      card id) with a unique key per business event, so a retried webhook cannot send an order e-mail twice.
+    - Missing templates to seed: `gift_card_delivery`, `order_refunded` (and `course_enrolment` already exists).
+    - **Built (2026-10-05), not deployed:** `_shared/email/` (`render.ts`, `resend.ts`, `send.ts` =
+      `sendTemplatedEmail()`, `store.ts`, `mod.ts` = `emailDepsFromEnv()`, `orders.ts`, `giftCards.ts`, `notify.ts`),
+      `_shared/internalAuth.ts`, the function `deliver-gift-cards`, and migrations `email_log` and
+      `email_attempt_cap_gift_card_wording` (applied). After a payment (`stripe-webhook`, or `create-checkout-session`
+      for an order fully paid with gift cards) the `orderPaid` hook calls `notifyOrderPaid()`: order confirmation
+      (`order_confirmation:<order id>`), then the gift cards of the order, then the enrolment e-mail of each course it bought. It never throws and does nothing without
+      `RESEND_API_KEY`. Limit: a confirmation that fails once is not retried by Stripe (the event is already
+      processed); `email_log` keeps it as `failed` — a sweep of paid orders without a sent confirmation is to add.
+    - **`send-email` built (2026-10-05), not deployed:** `supabase/functions/send-email/` (`verify_jwt = false`,
+      `x-internal-secret`). Body `{template_key, to, locale, variables, event_key}`; allow-list of two templates
+      (`contact_acknowledgement`: name, subject, ticket_number; `newsletter_confirmation`: confirm_url), exactly the
+      template's own variables as non-empty short strings, locale fr/en/de, event key prefixed by the template
+      (`contact_acknowledgement:<ticket>`, `newsletter_confirmation:<hash of the token>`), body ≤ 8 KB, and the
+      newsletter link must start with `SITE_URL`. Answers `{ok, status: sent|duplicate}` or a generic error; never the
+      e-mail content or the provider's text. Webapp side: `webapp/src/lib/visitorEmail.ts` (request builder + never-throwing
+      caller, tested) and `visitorEmailServer.ts` (`server-only`; reads `EMAIL_INTERNAL_SECRET` and
+      `SUPABASE_FUNCTIONS_URL` or `<NEXT_PUBLIC_SUPABASE_URL>/functions/v1`).
+      **The contact and newsletter forms are not wired yet**: `submit_contact_request()` (guests) and
+      `newsletter_subscribe()` are service-role only, and the Next.js server must not hold the service-role key
+      (AGENTS.md §4). The guest path therefore needs a small Edge Function (captcha / IP limit, then the RPC, then
+      the e-mail) — a decision to confirm (captcha provider), together with the page behind the newsletter link
+      (`newsletter_confirm(token)`).
+    - **`resend-webhook` built (2026-10-05), not deployed:** `supabase/functions/resend-webhook/`
+      (`verify_jwt = false`), Svix signature checked with Web Crypto in `_shared/svix.ts` (`svix-id` / `svix-timestamp` /
+      `svix-signature`, HMAC-SHA256 under the base64 part of `RESEND_WEBHOOK_SECRET`, several `v1,` entries accepted for
+      rotation, 5 minutes of tolerance, no dependency). `email.delivered|opened|bounced|complained` →
+      `email_log_apply_event()` (forward only: that is the idempotence on replays, no separate `svix-id` table);
+      a gift card e-mail then sets the card's `delivery_status` to the log's status through `record_gift_card_delivery`
+      (delivered / opened / bounced; a complaint has no card status; a card no longer active is skipped), taken from the
+      log so a retry after a failed update heals the card instead of regressing it; a newsletter bounce / complaint marks
+      the subscriber in the same SQL function (a complaint never goes back to subscribed: `newsletter_subscribe` and the
+      consent sync already refuse to re-activate bounced / complained). Other events and e-mails not in the log (Auth
+      e-mails also leave through Resend) answer 200 and are ignored; a database error answers 500 so Svix retries. Members'
+      consent records are left alone (decision to confirm: a complaint could also revoke `marketing_email`).
+      A webhook arriving before `email_log_finish` stored the provider id would not match; it is a window of
+      milliseconds against seconds of delivery time.
+    - **Shipping, course enrolment and refund e-mails built (2026-10-05), not deployed:** one sweep, the function
+      `send-pending-emails` (`verify_jwt = false`, `x-internal-secret`, pg_cron every 5 minutes, body `{limit}` optional),
+      `_shared/email/events.ts`. Mechanism: no trigger and nothing the browser or the back office must call — the SQL
+      functions of migration `email_pending_events` list the source rows (shipment `shipped`, `purchase` entitlement, refund
+      `succeeded`) that have no finished `email_log` row, the sweep sends them through the usual once-per-event claim, so a
+      failed send is retried by the next run (cap of 5 attempts, then left `failed` for the team) and a crash loses nothing.
+      Only the last 7 days are looked at: switching the sweep on never mails old history.
+      - **Shipping** — `shipping_notification`, event `shipping:<shipment id>`, **per parcel** (not per order): every parcel has
+        its own carrier and tracking number, and `orders.status` is `processing` until the last parcel leaves, so an
+        order-level e-mail would either wait for the last parcel or hide the others' tracking links. Only a parcel still
+        `shipped` is mailed (one already `delivered` when seen would be told "on its way" too late). The link is the
+        parcel's `tracking_url`; without one, a member gets their orders page (`/compte/commandes`); a guest parcel with no
+        link is skipped and picked up once staff add the URL (within the 7 days).
+      - **Course enrolment** — `course_enrolment`, event `course_enrolment:<entitlement id>`, for `purchase` entitlements
+        only (a paid order); manual grants by staff, bundles and promotions send nothing (decision to confirm). Sent at
+        once by the payment hook for the order just paid (`notifyOrderPaid`), the sweep catching what failed. A revoked
+        entitlement (full refund before the e-mail left) is not mailed.
+      - **Refund** — `order_refunded`, event `refund:<refund id>`, for each `succeeded` card refund of the `refunds` table, with
+        the refunded amount of that refund (not the order total) formatted in the order's language and currency. A refund
+        credited back onto gift cards (`refund_to_gift_cards`) is not in that table and sends nothing: the template speaks
+        of the bank; a wording for it is to write if wanted.
+      (Cron: scheduled by migration `email_cron_jobs`, no manual step beyond the Vault secret.) Former manual form: `select cron.schedule('send-pending-emails', '*/5 * * * *', $$ select net.http_post(url := 'https://<project-ref>.supabase.co/functions/v1/send-pending-emails', headers := jsonb_build_object('x-internal-secret', (select decrypted_secret from vault.decrypted_secrets where name = 'email_internal_secret')), body := '{}'::jsonb) $$);`
+    - **Still to build:** the back-office resend of a card. To do by hand: the Resend domain and the secrets, then
+      deploy the functions (`deliver-gift-cards`, `send-email`, `resend-webhook`, `send-pending-emails`, and redeploy
+      `stripe-webhook` and `create-checkout-session`), declare the `resend-webhook` endpoint in Resend (events delivered, opened, bounced, complained), and make sure the Vault secret
+      `email_internal_secret` holds the same value as `EMAIL_INTERNAL_SECRET` (the crons themselves are in migration `email_cron_jobs`; the manual form below is kept for reference):
+      `select cron.schedule('deliver-gift-cards', '*/5 * * * *', $$ select net.http_post(url := 'https://<project-ref>.supabase.co/functions/v1/deliver-gift-cards', headers := jsonb_build_object('x-internal-secret', (select decrypted_secret from vault.decrypted_secrets where name = 'email_internal_secret')), body := '{}'::jsonb) $$);`
+      (needs `pg_net` and a vault secret `email_internal_secret`; not part of a migration because of the secret).
 
 ## Done
 
@@ -1359,8 +1455,8 @@ VAT rates, shipping zones/rates mirroring the Settings prototype. Media rows ref
 
 ## Next iterations (not implemented)
 
-1. Checkout follow-ups: order confirmation e-mail (Resend, Edge Function), gift card delivery e-mail
-   (`deliver-gift-cards`, design in *Gift cards*), promotion code field in the cart (the function already accepts it), Stripe refunds from the back office, `charge.refunded` /
+1. Checkout follow-ups: order confirmation e-mail and gift card delivery e-mail (built 2026-10-05, not deployed:
+   decision 79), promotion code field in the cart (the function already accepts it), Stripe refunds from the back office, `charge.refunded` /
    `charge.dispute.created` webhooks.
 2. Academy, after the authoring schema (iteration 20):
    (**B**, public pages, done in iteration 21; **C**, learner access, done in iteration 22 — follow-ups: a public

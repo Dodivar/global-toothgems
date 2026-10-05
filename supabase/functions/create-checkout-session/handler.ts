@@ -57,6 +57,8 @@ export interface CheckoutDeps {
     { order: OrderRow; error?: undefined } | { order?: undefined; error: DbError }
   >;
   cancelOrder(orderId: string, reason: string): Promise<void>;
+  /** An order paid in full at creation (gift cards): confirmation e-mail. Must never throw. */
+  orderPaid?(orderId: string): Promise<void>;
   createStripeSession(params: CheckoutSessionParams, idempotencyKey: string): Promise<{ id: string; url: string }>;
   recordCheckoutPayment(orderId: string, sessionId: string, amountDue: number | string, currency: string): Promise<void>;
   now(): number;
@@ -145,6 +147,11 @@ export async function handleCheckout(req: Request, deps: CheckoutDeps): Promise<
   // Entirely paid with gift cards: create_order() already marked it paid.
   const amountDue = toMinorUnits(order.amount_due);
   if (amountDue === 0) {
+    try {
+      await deps.orderPaid?.(order.id);
+    } catch (error) {
+      deps.log("order follow-ups failed", error instanceof Error ? error.message : error);
+    }
     return json({ status: "paid", order_number: order.order_number }, 200, cors);
   }
 

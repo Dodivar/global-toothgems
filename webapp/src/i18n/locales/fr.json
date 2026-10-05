@@ -4605,5 +4605,21 @@
       "errorBody": "Nous n’avons pas pu les charger. Vérifiez votre connexion puis réessayez.",
       "errorCta": "Réessayer"
     }
+  },
+  "siteSearch": {
+    "label": "Rechercher sur le site",
+    "placeholder": "Produit, formation, page…",
+    "open": "Ouvrir la recherche",
+    "close": "Fermer la recherche",
+    "clear": "Effacer la recherche",
+    "groupProducts": "Produits",
+    "groupCourses": "Formations",
+    "groupPages": "Pages",
+    "noResults": "Aucun résultat.",
+    "noResultsHint": "Essayez un autre mot ou vérifiez l’orthographe.",
+    "keepTyping": "Saisissez au moins 2 caractères.",
+    "loading": "Chargement du catalogue…",
+    "resultCount_one": "{{count}} résultat",
+    "resultCount_other": "{{count}} résultats"
   }
 }

@@ -89,6 +89,16 @@ export function pageMeta(parsed: ParsedPath): PageMeta {
   };
 }
 
+/** A page's own heading and introduction, without the site name (the header's search lists pages by them). */
+export function pageText(id: PublicRouteId, locale: Locale): { title: string; description?: string } | null {
+  const page = PAGES[id];
+  if (!page) return null;
+  return {
+    title: read(page.title, "title", locale).replace(/[.!]$/, ""),
+    description: page.description ? read(page.description, "intro", locale) : undefined,
+  };
+}
+
 /** The tab title for an address. */
 export function titleFor(address: string | ParsedPath): string {
   return pageMeta(typeof address === "string" ? parsePath(address) : address).title;

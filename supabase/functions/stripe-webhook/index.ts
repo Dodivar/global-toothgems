@@ -1,4 +1,5 @@
 import { requireEnv, serviceClient, stripeClient, stripeCryptoProvider } from "../_shared/clients.ts";
+import { notifyOrderPaid } from "../_shared/email/notify.ts";
 import { DbCallError, handleWebhook, type WebhookDeps, type WebhookEvent } from "./handler.ts";
 
 /*
@@ -86,6 +87,8 @@ const deps: WebhookDeps = {
     const { error } = await supabase.rpc("cancel_order", { p_order_id: orderId, p_reason: reason });
     if (error) throw dbError(error);
   },
+
+  orderPaid: (orderId) => notifyOrderPaid(orderId, (message, detail) => console.error(`[stripe-webhook] ${message}`, detail ?? "")),
 
   async closeCheckoutPayment(checkoutId, status, reason) {
     const { error } = await supabase

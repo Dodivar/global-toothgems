@@ -171,3 +171,30 @@ Deno.test("a database outage while recording answers 500 (Stripe retries)", asyn
   assertEquals((await handleWebhook(await signed(sessionEvent("checkout.session.completed")), deps)).status, 500);
   assertEquals(state.paid.length, 0);
 });
+
+Deno.test("a paid order triggers its follow-ups; a failing follow-up never fails the event", async () => {
+  const ok = fakeDb();
+  const followed: string[] = [];
+  ok.deps.orderPaid = (orderId) => {
+    followed.push(orderId);
+    return Promise.resolve();
+  };
+  assertEquals((await handleWebhook(await signed(sessionEvent("checkout.session.completed")), ok.deps)).status, 200);
+  assertEquals(followed, [ORDER_ID]);
+
+  const broken = fakeDb();
+  broken.deps.orderPaid = () => Promise.reject(new Error("resend down"));
+  const res = await handleWebhook(await signed(sessionEvent("checkout.session.completed")), broken.deps);
+  assertEquals(res.status, 200);
+  assertEquals(broken.state.events.get("evt_test_1")?.status, "processed");
+
+  // No follow-up when the payment is not recorded (delayed method, amount mismatch).
+  const unpaid = fakeDb();
+  const none: string[] = [];
+  unpaid.deps.orderPaid = (orderId) => {
+    none.push(orderId);
+    return Promise.resolve();
+  };
+  await handleWebhook(await signed(sessionEvent("checkout.session.completed", { payment_status: "unpaid" })), unpaid.deps);
+  assertEquals(none, []);
+});

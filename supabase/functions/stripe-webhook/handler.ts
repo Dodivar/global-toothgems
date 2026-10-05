@@ -11,6 +11,7 @@ import { toDecimalString } from "../_shared/money.ts";
  *      checkout.session.async_payment_succeeded → mark_order_paid()
  *      checkout.session.expired, checkout.session.async_payment_failed
  *        → cancel_order() while the order is still unpaid
+ *      then the order's follow-ups run (`orderPaid`: e-mails), never failing the event
  *   4. the event is marked `processed` (or `failed` + error)
  *
  * Replays are harmless: mark_order_paid() returns a paid order unchanged and
@@ -72,6 +73,13 @@ export interface WebhookDeps {
     details: PaymentDetails;
   }): Promise<void>;
   cancelOrder(orderId: string, reason: string): Promise<void>;
+  /**
+   * Follow-ups once the order is paid (confirmation e-mail, gift card delivery).
+   * Called after every successful mark_order_paid, replays included: the
+   * implementation must be idempotent and must never throw (a failure here must
+   * not turn a recorded payment into a failed webhook).
+   */
+  orderPaid?(orderId: string): Promise<void>;
   closeCheckoutPayment(checkoutId: string, status: "cancelled" | "failed", reason: string): Promise<void>;
   log(message: string, detail?: unknown): void;
 }
@@ -142,6 +150,11 @@ async function applyEvent(event: WebhookEvent, session: CheckoutSessionObject, o
         paymentId,
         details,
       });
+      try {
+        await deps.orderPaid?.(orderId);
+      } catch (error) {
+        deps.log("order follow-ups failed", error instanceof Error ? error.message : error);
+      }
       return "processed" as const;
     }
     case "checkout.session.expired":

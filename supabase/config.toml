@@ -12,10 +12,30 @@ project_id = "global-toothgems"
 # - invite-staff-member: a signed-in team member's JWT is required, but it is
 #   verified inside the function (auth.getUser, then my_permissions() read with
 #   that JWT), which also works with the project's asymmetric JWT signing keys.
+# - deliver-gift-cards: called by pg_cron, not a browser; the shared secret
+#   EMAIL_INTERNAL_SECRET in the x-internal-secret header is the authentication.
+# - send-email: called by the webapp's server routes (contact acknowledgement,
+#   newsletter confirmation), not a browser; same shared secret.
+# - send-pending-emails: called by pg_cron (shipping, course enrolment and
+#   refund e-mails), not a browser; same shared secret.
+# - resend-webhook: Resend sends no Supabase token; the Svix signature
+#   (RESEND_WEBHOOK_SECRET, five-minute tolerance) is the authentication.
 [functions.create-checkout-session]
 verify_jwt = false
 
 [functions.stripe-webhook]
+verify_jwt = false
+
+[functions.deliver-gift-cards]
+verify_jwt = false
+
+[functions.send-email]
+verify_jwt = false
+
+[functions.send-pending-emails]
+verify_jwt = false
+
+[functions.resend-webhook]
 verify_jwt = false
 
 [functions.invite-staff-member]

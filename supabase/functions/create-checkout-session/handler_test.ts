@@ -184,3 +184,22 @@ Deno.test("no order while the shop is in maintenance (and none if the switch can
   assertEquals((await handleCheckout(post(BODY), unknown.deps)).status, 500);
   assertEquals(unknown.calls.createOrder.length, 0);
 });
+
+Deno.test("fully paid with gift cards: the order's follow-ups run, and a failure there changes nothing", async () => {
+  const followed: string[] = [];
+  const { deps } = fakeDeps({
+    createOrder: () => Promise.resolve({ order: { ...ORDER, amount_due: 0, payment_status: "paid" } }),
+    orderPaid: (orderId: string) => {
+      followed.push(orderId);
+      return Promise.reject(new Error("resend down"));
+    },
+  });
+  const res = await handleCheckout(post(BODY), deps);
+  assertEquals(await res.json(), { status: "paid", order_number: "GT-100042" });
+  assertEquals(followed, [ORDER.id]);
+
+  // A card order is paid later, by the webhook: nothing is sent at creation.
+  const card = fakeDeps({ orderPaid: (orderId: string) => { followed.push(orderId); return Promise.resolve(); } });
+  await handleCheckout(post(BODY), card.deps);
+  assertEquals(followed.length, 1);
+});
