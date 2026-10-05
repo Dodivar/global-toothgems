@@ -14,6 +14,8 @@ project_id = "global-toothgems"
 #   that JWT), which also works with the project's asymmetric JWT signing keys.
 # - deliver-gift-cards: called by pg_cron, not a browser; the shared secret
 #   EMAIL_INTERNAL_SECRET in the x-internal-secret header is the authentication.
+# - send-email: called by the webapp's server routes (contact acknowledgement,
+#   newsletter confirmation), not a browser; same shared secret.
 [functions.create-checkout-session]
 verify_jwt = false
 
@@ -21,6 +23,9 @@ verify_jwt = false
 verify_jwt = false
 
 [functions.deliver-gift-cards]
+verify_jwt = false
+
+[functions.send-email]
 verify_jwt = false
 
 [functions.invite-staff-member]

@@ -65,7 +65,7 @@ supabase/
   tests/admin_users_validation.sql  back-office team: viewer read-only, manager rank limits, no self change, customer/suspended/visitor refusals, audit (always rolls back)
   tests/admin_customers_validation.sql back-office customers: customer refused, viewer read-only, manager writes and read-only columns, notes by their author, status history, course progress (always rolls back)
   config.toml   CLI settings this repo relies on (verify_jwt of the Edge Functions)
-  functions/    Edge Functions (Deno): create-checkout-session, stripe-webhook, deliver-gift-cards, invite-staff-member, _shared/ (pure modules + clients),
+  functions/    Edge Functions (Deno): create-checkout-session, stripe-webhook, deliver-gift-cards, send-email, invite-staff-member, _shared/ (pure modules + clients),
                 *_test.ts (deno test), .env.example (secret names)
   templates/confirm-signup.html     French "Confirm signup" email, to paste into the Auth settings
   templates/invite-staff.html       French "Invite user" email (team invitations), to paste into the Auth settings
@@ -1330,6 +1330,20 @@ VAT rates, shipping zones/rates mirroring the Settings prototype. Media rows ref
       (`order_confirmation:<order id>`), then the gift cards of the order. It never throws and does nothing without
       `RESEND_API_KEY`. Limit: a confirmation that fails once is not retried by Stripe (the event is already
       processed); `email_log` keeps it as `failed` — a sweep of paid orders without a sent confirmation is to add.
+    - **`send-email` built (2026-10-05), not deployed:** `supabase/functions/send-email/` (`verify_jwt = false`,
+      `x-internal-secret`). Body `{template_key, to, locale, variables, event_key}`; allow-list of two templates
+      (`contact_acknowledgement`: name, subject, ticket_number; `newsletter_confirmation`: confirm_url), exactly the
+      template's own variables as non-empty short strings, locale fr/en/de, event key prefixed by the template
+      (`contact_acknowledgement:<ticket>`, `newsletter_confirmation:<hash of the token>`), body ≤ 8 KB, and the
+      newsletter link must start with `SITE_URL`. Answers `{ok, status: sent|duplicate}` or a generic error; never the
+      e-mail content or the provider's text. Webapp side: `webapp/src/lib/visitorEmail.ts` (request builder + never-throwing
+      caller, tested) and `visitorEmailServer.ts` (`server-only`; reads `EMAIL_INTERNAL_SECRET` and
+      `SUPABASE_FUNCTIONS_URL` or `<NEXT_PUBLIC_SUPABASE_URL>/functions/v1`).
+      **The contact and newsletter forms are not wired yet**: `submit_contact_request()` (guests) and
+      `newsletter_subscribe()` are service-role only, and the Next.js server must not hold the service-role key
+      (AGENTS.md §4). The guest path therefore needs a small Edge Function (captcha / IP limit, then the RPC, then
+      the e-mail) — a decision to confirm (captcha provider), together with the page behind the newsletter link
+      (`newsletter_confirm(token)`).
     - **Still to build:** `send-email` (Next.js routes), `resend-webhook`, the back-office resend of a card, the
       other e-mails (shipping, course enrolment, refund). To do by hand: the Resend domain and the secrets, then
       deploy the three functions and schedule the cron once, with the secret in the vault:
