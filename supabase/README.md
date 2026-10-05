@@ -121,6 +121,7 @@ supabase/
 | 20261001223230 | `admin_customer_history_scope` | `admin_customer_status_history()` answers for customer accounts only (a team member's history stays out of reach of read-only staff); orders changes by `occurred_at, id` (two changes in one transaction share a timestamp — first fixed in place, now recorded) |
 | 20261002064611 | `settings_workspace` | Settings workspace on the database: `store_settings` gains the business identity, legal mentions (legal form, share capital, registration and VAT numbers, publication director, host), contact details, address, opening hours (`private.valid_opening_hours()` CHECK) and the contact page switches + `store_settings_translations` (support message per non-default locale, audited); `admin_save_store_details()`, `admin_save_shipping()` (whole configuration, atomic), `admin_save_tax_rates()` (whole set), `admin_save_languages()` — SECURITY INVOKER, `manage_settings`; `languages`: API may update `is_enabled`/`position` only, `fr`/`en` cannot be switched off (trigger), switches audited; audit trigger identifies rows by `code`/`locale`; standard VAT rates for AT BG CY CZ DK EE FI GR HR HU LT LU LV MT PL RO SE SI SK + MC, IE switched on |
 | 20261002100000 | `course_checkout` | **Not applied yet (awaits the user's go-ahead; validated on the project inside a rolled-back transaction).** Academy phase D: `order_items.course_id` (exclusive with product/variant, RESTRICT); `create_order()` accepts `{course_id, quantity: 1}` lines (published course, account required, not already held, current price incl. course promotion, VAT `training`, outside shop discounts and shipping thresholds); trigger `orders_stock_transitions_zc_courses` grants a `purchase` entitlement when the order becomes paid and revokes it on a full refund; course lines refused in parcels and ignored by the fulfilment status |
+| 20261005120000 | `email_log` | **Not applied yet (validated on the project inside a rolled-back transaction).** E-mail sending, decision 79: `email_log` (one row per business event, unique `event_key`, hashed recipient, backend only), `email_log_claim()` / `email_log_finish()` (service role: atomic claim, a failed or abandoned attempt can be claimed again, a sent one never), templates `gift_card_delivery` and `order_refunded` (fr + en) |
 | 20261002064949 | `settings_shipping_positions` | `admin_save_shipping()` numbers zones and rates from 1 like every existing row, so saving an unchanged configuration writes nothing |
 | 20261003131220 | `studio_gem_group_thumbnails` | `gem_groups.thumbnail_path` (null or inside the owner's folder, column grants for insert/update): each new Gem Group keeps a captured render of its pieces alone on the smile at `studio-thumbnails/<user id>/groups/<group id>.jpg` (bucket policies unchanged: they check the first folder). Suite `tests/studio_workspace_validation.sql` |
 
@@ -1317,6 +1318,10 @@ VAT rates, shipping zones/rates mirroring the Settings prototype. Media rows ref
     - To add when the first e-mail ships: a `email_log` table (template, recipient hash, resend id, status, order or
       card id) with a unique key per business event, so a retried webhook cannot send an order e-mail twice.
     - Missing templates to seed: `gift_card_delivery`, `order_refunded` (and `course_enrolment` already exists).
+    - **Built (2026-10-05), nothing calls it yet:** `_shared/email/` (`render.ts`, `resend.ts`, `send.ts` =
+      `sendTemplatedEmail()`, `store.ts`, `mod.ts` = `emailDepsFromEnv()`), 21 `deno test` cases, and migration
+      `20261005120000_email_log` (not applied). Still to build: the callers (`stripe-webhook`, `deliver-gift-cards`,
+      `send-email`), `resend-webhook`, the Resend domain and secrets.
 
 ## Done
 
