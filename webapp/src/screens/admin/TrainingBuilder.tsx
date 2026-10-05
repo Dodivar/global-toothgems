@@ -243,8 +243,8 @@ export function TrainingBuilder() {
         <aside
           aria-label={t("admin.training.builder.treeLabel")}
           className={clsx(
-            "gt-admin-panel h-fit max-h-[calc(100vh-var(--admin-header-h)-120px)] overflow-hidden p-3 md:sticky md:top-[calc(var(--admin-header-h)+16px)]",
-            mobileView === "structure" ? "block" : "hidden md:block",
+            "gt-admin-panel h-fit max-h-[calc(100vh-var(--admin-header-h)-120px)] flex-col overflow-hidden p-3 md:sticky md:top-[calc(var(--admin-header-h)+16px)]",
+            mobileView === "structure" ? "flex" : "hidden md:flex",
           )}
         >
           <StructureTree course={course} selection={selection} actions={treeActions} lang={i18n.language} />
