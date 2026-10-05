@@ -12,10 +12,15 @@ project_id = "global-toothgems"
 # - invite-staff-member: a signed-in team member's JWT is required, but it is
 #   verified inside the function (auth.getUser, then my_permissions() read with
 #   that JWT), which also works with the project's asymmetric JWT signing keys.
+# - deliver-gift-cards: called by pg_cron, not a browser; the shared secret
+#   EMAIL_INTERNAL_SECRET in the x-internal-secret header is the authentication.
 [functions.create-checkout-session]
 verify_jwt = false
 
 [functions.stripe-webhook]
+verify_jwt = false
+
+[functions.deliver-gift-cards]
 verify_jwt = false
 
 [functions.invite-staff-member]
