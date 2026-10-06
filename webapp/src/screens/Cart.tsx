@@ -583,7 +583,7 @@ export function Cart() {
           </section>
         </div>
 
-        <aside className="grid content-start gap-4 rounded-[var(--radius-card)] border border-[var(--border-subtle)] bg-[var(--surface-card)] p-[var(--space-6)] shadow-[var(--shadow-xs)] lg:sticky lg:top-24">
+        <aside className="grid min-w-0 grid-cols-[minmax(0,1fr)] content-start gap-4 rounded-[var(--radius-card)] border border-[var(--border-subtle)] bg-[var(--surface-card)] p-[var(--space-6)] shadow-[var(--shadow-xs)] lg:sticky lg:top-24">
           <h2 className="text-[length:var(--text-h4)]">{t("cart.summaryTitle")}</h2>
           {threshold !== null && remainingForFreeShipping !== null && (
             <div className="grid gap-2 rounded-[var(--radius-md)] bg-[var(--surface-brand-wash)] p-4">

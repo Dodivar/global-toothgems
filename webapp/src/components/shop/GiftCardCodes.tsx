@@ -67,7 +67,7 @@ export function GiftCardCodes({
           add();
         }}
       >
-        <div className="grid min-w-[220px] flex-1 gap-1.5">
+        <div className="grid min-w-[200px] flex-1 grid-cols-[minmax(0,1fr)] gap-1.5">
           <label htmlFor={`${id}-code`} className="gt-field-label">{t("checkout.giftCard.label")}</label>
           <input
             id={`${id}-code`}

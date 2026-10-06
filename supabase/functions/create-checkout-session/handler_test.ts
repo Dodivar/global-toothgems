@@ -203,3 +203,31 @@ Deno.test("fully paid with gift cards: the order's follow-ups run, and a failure
   await handleCheckout(post(BODY), card.deps);
   assertEquals(followed.length, 1);
 });
+
+Deno.test("gift card codes: cards held by an abandoned payment are released before the new order", async () => {
+  const order: string[] = [];
+  const { deps } = fakeDeps({
+    releaseHeldGiftCards: (codes) => {
+      order.push(`release:${codes.join(",")}`);
+      return Promise.resolve(1);
+    },
+    createOrder: () => {
+      order.push("create");
+      return Promise.resolve({ order: ORDER });
+    },
+  });
+  const res = await handleCheckout(post({ ...BODY, gift_card_codes: ["GT-ABCD-EFGH-JKLM"] }), deps);
+  assertEquals(res.status, 200);
+  assertEquals(order, ["release:GT-ABCD-EFGH-JKLM", "create"]);
+});
+
+Deno.test("no gift card code: nothing is released; a failed release never blocks the checkout", async () => {
+  let released = 0;
+  const none = fakeDeps({ releaseHeldGiftCards: () => (released++, Promise.resolve(0)) });
+  await handleCheckout(post(BODY), none.deps);
+  assertEquals(released, 0);
+  const failing = fakeDeps({ releaseHeldGiftCards: () => Promise.reject(new Error("stripe down")) });
+  const res = await handleCheckout(post({ ...BODY, gift_card_codes: ["GT-ABCD-EFGH-JKLM"] }), failing.deps);
+  assertEquals(res.status, 200);
+  assertEquals(failing.calls.createOrder.length, 1);
+});

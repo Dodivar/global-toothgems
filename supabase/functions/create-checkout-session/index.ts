@@ -62,6 +62,29 @@ const deps: CheckoutDeps = {
     if (error) throw new Error(error.message);
   },
 
+  async releaseHeldGiftCards(codes) {
+    const { data, error } = await supabase.rpc("unpaid_orders_holding_gift_cards", { p_codes: codes });
+    if (error) throw new Error(error.message);
+    let released = 0;
+    for (const held of data ?? []) {
+      // The session must be provably closed before the order is cancelled: a payment
+      // being completed right now must not be cancelled under the customer.
+      let closed = true;
+      for (const sessionId of held.checkout_session_ids ?? []) {
+        try {
+          await stripe.checkout.sessions.expire(sessionId);
+        } catch {
+          const session = await stripe.checkout.sessions.retrieve(sessionId);
+          if (session.status !== "expired") closed = false;
+        }
+      }
+      if (!closed) continue;
+      await supabase.rpc("cancel_order", { p_order_id: held.order_id, p_reason: "payment_retried" });
+      released += 1;
+    }
+    return released;
+  },
+
   orderPaid: (orderId) => notifyOrderPaid(orderId, (message, detail) => console.error(`[create-checkout-session] ${message}`, detail ?? "")),
 
   async createStripeSession(params, idempotencyKey) {

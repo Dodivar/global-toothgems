@@ -57,6 +57,12 @@ export interface CheckoutDeps {
     { order: OrderRow; error?: undefined } | { order?: undefined; error: DbError }
   >;
   cancelOrder(orderId: string, reason: string): Promise<void>;
+  /**
+   * Unpaid orders of an abandoned payment still holding these gift cards: their Stripe sessions
+   * are expired and the orders cancelled (the cards are credited back). Orders whose session
+   * cannot be proven closed are left alone. Returns how many were released.
+   */
+  releaseHeldGiftCards?(codes: string[]): Promise<number>;
   /** An order paid in full at creation (gift cards): confirmation e-mail. Must never throw. */
   orderPaid?(orderId: string): Promise<void>;
   createStripeSession(params: CheckoutSessionParams, idempotencyKey: string): Promise<{ id: string; url: string }>;
@@ -133,6 +139,16 @@ export async function handleCheckout(req: Request, deps: CheckoutDeps): Promise<
     } catch (error) {
       deps.log("terms acceptance unreadable", error instanceof Error ? error.message : error);
       return fail("server_error");
+    }
+  }
+
+  // A card still held by an abandoned payment (cancelled on Stripe, not yet expired) is released
+  // first, so retrying with the same code works. Never blocks the checkout.
+  if (input.gift_card_codes.length > 0 && deps.releaseHeldGiftCards) {
+    try {
+      await deps.releaseHeldGiftCards(input.gift_card_codes);
+    } catch (error) {
+      deps.log("gift cards held by an earlier payment not released", error instanceof Error ? error.message : error);
     }
   }
 
