@@ -21,6 +21,8 @@ const BODY = {
 };
 
 const NOW = Date.UTC(2026, 8, 30, 12, 0, 0);
+const SECRET = "cs_test_a1B2c3D4e5F6g7H8_secret_Zz9Yy8Xx7Ww6";
+const PREVIOUS = "cs_test_Old0Old0Old0Old0_secret_Pp1Qq2Rr3Ss4";
 
 function fakeDeps(overrides: Partial<CheckoutDeps> = {}) {
   const calls = {
@@ -28,8 +30,10 @@ function fakeDeps(overrides: Partial<CheckoutDeps> = {}) {
     sessions: [] as { params: CheckoutSessionParams; key: string }[],
     cancelled: [] as string[],
     recorded: [] as string[],
+    released: [] as { sessionId: string; secret: string }[],
   };
   const deps: CheckoutDeps = {
+    publishableKey: "pk_test_123",
     maintenanceEnabled: () => Promise.resolve(false),
     origins: readSiteOrigins("https://globaltoothgems.com", "http://localhost:5173, https://preview.example.app"),
     userFromToken: (token) => Promise.resolve(token === "a.valid.jwt" ? "user-1" : null),
@@ -44,7 +48,11 @@ function fakeDeps(overrides: Partial<CheckoutDeps> = {}) {
     },
     createStripeSession: (params, key) => {
       calls.sessions.push({ params, key });
-      return Promise.resolve({ id: "cs_test_123", url: "https://checkout.stripe.com/c/pay/cs_test_123" });
+      return Promise.resolve({ id: "cs_test_123", clientSecret: SECRET });
+    },
+    releasePaymentStep: (sessionId, secret) => {
+      calls.released.push({ sessionId, secret });
+      return Promise.resolve("released");
     },
     recordCheckoutPayment: (_order, sessionId) => {
       calls.recorded.push(sessionId);
@@ -69,7 +77,15 @@ Deno.test("guest checkout: order from the database, session for its amount due",
   const { deps, calls } = fakeDeps();
   const res = await handleCheckout(post(BODY, { origin: "https://evil.example" }), deps);
   assertEquals(res.status, 200);
-  assertEquals(await res.json(), { status: "redirect", url: "https://checkout.stripe.com/c/pay/cs_test_123" });
+  assertEquals(await res.json(), {
+    status: "payment",
+    client_secret: SECRET,
+    publishable_key: "pk_test_123",
+    order_number: "GT-100042",
+    amount_due: 4290,
+    currency: "EUR",
+    expires_at: new Date(NOW + SESSION_MINUTES * 60_000).toISOString(),
+  });
   assertEquals(calls.createOrder, [{ userId: null, minutes: RESERVATION_MINUTES }]);
   const [{ params, key }] = calls.sessions;
   assertEquals(params.amountDue, 4290);
@@ -79,8 +95,7 @@ Deno.test("guest checkout: order from the database, session for its amount due",
   assertEquals(params.expiresAt, NOW / 1000 + SESSION_MINUTES * 60);
   assert(params.expiresAt - NOW / 1000 >= 30 * 60, "Stripe needs ≥ 30 minutes");
   // An origin outside the allow-list gets production addresses and no CORS grant.
-  assertEquals(params.successUrl, "https://globaltoothgems.com/en/cart/confirmation?session_id={CHECKOUT_SESSION_ID}");
-  assertEquals(params.cancelUrl, "https://globaltoothgems.com/en/cart");
+  assertEquals(params.returnUrl, "https://globaltoothgems.com/en/cart/confirmation?session_id={CHECKOUT_SESSION_ID}");
   assertEquals(res.headers.get("access-control-allow-origin"), null);
   assertEquals(calls.recorded, ["cs_test_123"]);
 });
@@ -89,7 +104,7 @@ Deno.test("an allowed origin gets its own return addresses and CORS", async () =
   const { deps, calls } = fakeDeps();
   const res = await handleCheckout(post({ ...BODY, locale: "fr" }, { origin: "http://localhost:5173" }), deps);
   assertEquals(res.headers.get("access-control-allow-origin"), "http://localhost:5173");
-  assertEquals(calls.sessions[0].params.cancelUrl, "http://localhost:5173/fr/panier");
+  assertEquals(calls.sessions[0].params.returnUrl, "http://localhost:5173/fr/panier/confirmation?session_id={CHECKOUT_SESSION_ID}");
   const preflight = await handleCheckout(new Request("https://x/f", { method: "OPTIONS", headers: { origin: "http://localhost:5173" } }), deps);
   assertEquals(preflight.status, 204);
 });
@@ -230,4 +245,53 @@ Deno.test("no gift card code: nothing is released; a failed release never blocks
   const res = await handleCheckout(post({ ...BODY, gift_card_codes: ["GT-ABCD-EFGH-JKLM"] }), failing.deps);
   assertEquals(res.status, 200);
   assertEquals(failing.calls.createOrder.length, 1);
+});
+
+Deno.test("no publishable key: payment unavailable before anything is reserved", async () => {
+  const { deps, calls } = fakeDeps({ publishableKey: null });
+  const res = await handleCheckout(post(BODY), deps);
+  assertEquals(res.status, 502);
+  assertEquals(await res.json(), { error: "payment_unavailable" });
+  assertEquals(calls.createOrder.length, 0);
+});
+
+Deno.test("a previous payment step is closed before the new order; a failure never blocks", async () => {
+  const order: string[] = [];
+  const { deps, calls } = fakeDeps({
+    releasePaymentStep: (sessionId) => {
+      order.push(`release:${sessionId}`);
+      return Promise.resolve("released");
+    },
+    createOrder: () => {
+      order.push("create");
+      return Promise.resolve({ order: ORDER });
+    },
+  });
+  const res = await handleCheckout(post({ ...BODY, previous_client_secret: PREVIOUS }), deps);
+  assertEquals(res.status, 200);
+  assertEquals(order, ["release:cs_test_Old0Old0Old0Old0", "create"]);
+  assertEquals(calls.sessions.length, 1);
+
+  const failing = fakeDeps({ releasePaymentStep: () => Promise.reject(new Error("stripe down")) });
+  const ok = await handleCheckout(post({ ...BODY, previous_client_secret: PREVIOUS }), failing.deps);
+  assertEquals(ok.status, 200);
+  assertEquals(failing.calls.createOrder.length, 1);
+});
+
+Deno.test("leaving the payment step: released by its client secret only, same answer whatever was found", async () => {
+  const { deps, calls } = fakeDeps({ releasePaymentStep: (sessionId, secret) => {
+    calls.released.push({ sessionId, secret });
+    return Promise.resolve("not_found");
+  } });
+  const res = await handleCheckout(post({ release_client_secret: PREVIOUS }), deps);
+  assertEquals(res.status, 200);
+  assertEquals(await res.json(), { status: "released" });
+  assertEquals(calls.released, [{ sessionId: "cs_test_Old0Old0Old0Old0", secret: PREVIOUS }]);
+  assertEquals(calls.createOrder.length, 0);
+
+  for (const body of [{ release_client_secret: "cs_test_Old0Old0Old0Old0" }, { release_client_secret: PREVIOUS, items: [] }]) {
+    const bad = await handleCheckout(post(body), deps);
+    assertEquals(bad.status, 400);
+  }
+  assertEquals(calls.released.length, 1);
 });

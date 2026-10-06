@@ -71,6 +71,12 @@ export interface CheckoutInput {
    */
   use_loyalty_reward: boolean;
   customer_note: string | null;
+  /**
+   * The client secret of this customer's previous, still unpaid payment step
+   * (they went back to change the basket or the address): its session is closed
+   * and its order cancelled before the new one, so nothing stays reserved twice.
+   */
+  previous_client_secret: string | null;
 }
 
 export type ValidationResult =
@@ -96,6 +102,8 @@ const GIFT_CARD_RE = /^GT-[A-Z0-9]{4}-[A-Z0-9]{4}-[A-Z0-9]{4}$/;
 const CONTROL_RE = /[\u0000-\u001f\u007f]/;
 // A gift message may span lines; nothing else below U+0020.
 const MESSAGE_CONTROL_RE = /[\u0000-\u0009\u000b-\u001f\u007f]/;
+/** A Checkout Session client secret: `cs_test_…_secret_…`. */
+const CLIENT_SECRET_RE = /^(cs_(?:test|live)_[A-Za-z0-9]{10,250})_secret_[A-Za-z0-9]{8,250}$/;
 const DATE_TIME_RE = /^\d{4}-\d{2}-\d{2}T\d{2}:\d{2}(:\d{2}(\.\d{1,6})?)?(Z|[+-]\d{2}:\d{2})$/;
 
 type Fail = { ok: false; field: string };
@@ -284,7 +292,18 @@ const INPUT_KEYS = [
   "gift_card_codes",
   "use_loyalty_reward",
   "customer_note",
+  "previous_client_secret",
 ] as const;
+
+/**
+ * A Checkout Session client secret and the session id it starts with, or null.
+ * Holding the secret is what lets a browser close its own unpaid payment step.
+ */
+export function parseClientSecret(value: unknown): { secret: string; sessionId: string } | null {
+  if (typeof value !== "string") return null;
+  const match = CLIENT_SECRET_RE.exec(value);
+  return match ? { secret: value, sessionId: match[1] } : null;
+}
 
 export function parseCheckoutInput(body: unknown): ValidationResult {
   if (!isObject(body)) return fail("body");
@@ -318,6 +337,9 @@ export function parseCheckoutInput(body: unknown): ValidationResult {
   const note = text(body.customer_note, 1000, { optional: true });
   if (note === null) return fail("customer_note");
 
+  const previous = body.previous_client_secret ?? null;
+  if (previous !== null && !parseClientSecret(previous)) return fail("previous_client_secret");
+
   return {
     ok: true,
     value: {
@@ -331,6 +353,7 @@ export function parseCheckoutInput(body: unknown): ValidationResult {
       gift_card_codes: giftCardCodes,
       use_loyalty_reward: useLoyaltyReward,
       customer_note: note ?? null,
+      previous_client_secret: previous as string | null,
     },
   };
 }

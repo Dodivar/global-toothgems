@@ -446,6 +446,9 @@
   /* Completion moment - order confirmed, lesson finished. */
   .gt-celebrate { animation: gt-pop var(--duration-slow) var(--ease-out-soft) both; }
 
+  /* A checkout step coming in (the payment step, the payment form once loaded). */
+  .gt-step-in { animation: gt-auth-swap var(--duration-slow) var(--ease-out-soft) both; }
+
   /* Authentication panel swapping between sign-in and sign-up. One short lift,
      replayed by keying the block on the mode: the movement is what says "same
      panel, other state" rather than "new page". */
@@ -548,6 +551,7 @@
   .gt-kenburns,
   .gt-sparkle::after,
   .gt-celebrate,
+  .gt-step-in,
   .gt-auth-swap,
   .gt-stamp-next,
   .gt-stamp-press,

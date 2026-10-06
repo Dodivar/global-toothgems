@@ -216,7 +216,7 @@ server  create_order(user, email, items[{product_id, variant_id, quantity}], bil
           → prices from products/variants, shipping from shipping_rates (zone, bounds, free-over),
             VAT per line at the destination rate (prices include VAT, rounded per line; shipping at standard rate),
             snapshots, stock RESERVED, expires_at = now + 60 min            → order 'pending'
-server  create Stripe Checkout Session for order.amount_due / currency
+server  create Stripe Checkout Session (ui_mode custom: payment form on our page) for order.amount_due / currency
 webhook checkout.session.completed → record stripe_webhook_events → mark_order_paid(order, amount, currency, cs_…, pi_…)
           → amount/currency must match; payment row upserted; reserved stock becomes a SALE → order 'confirmed'
 webhook checkout.session.expired   → cancel_order(order, 'expired')   → reservation RELEASED
@@ -235,16 +235,29 @@ note (restock or refund) — it never oversells.
 
 ```
 browser  POST functions/v1/create-checkout-session  {items[{product_id, variant_id, quantity} | {course_id, quantity: 1}], email, address,
-                                                      shipping_rate_id, locale, promotion_codes?, gift_card_codes?}
+                                                      shipping_rate_id, locale, promotion_codes?, gift_card_codes?,
+                                                      previous_client_secret?}
            → strict validation (_shared/checkoutInput.ts): no amount, total or currency is accepted
            → user = auth.getUser(Bearer token) when a user token is sent, else guest
+           → previous_client_secret: that unpaid payment step is closed first (see release below)
+           → no STRIPE_PUBLISHABLE_KEY of the secret key's mode → payment_unavailable, nothing reserved
            → create_order(…, reservation 70 min) with the service role
-           → amount_due = 0 (gift cards) → {status: 'paid'}; otherwise Stripe Checkout Session:
+           → amount_due = 0 (gift cards) → {status: 'paid'}; otherwise Stripe Checkout Session, ui_mode 'custom'
+               (decision 80: the Payment Element is mounted on our own cart page, no redirect to Stripe):
                one line "Commande GT-…" for orders.amount_due in minor units, metadata.order_id,
                idempotency key checkout-session:<order id>, expires_at = now + 60 min,
-               success/cancel URLs on SITE_URL or an allowed origin (ALLOWED_RETURN_ORIGINS)
-           → payments row 'pending' with the cs_… id → {status: 'redirect', url}
+               return_url = confirmation page on SITE_URL or an allowed origin (ALLOWED_RETURN_ORIGINS)
+           → payments row 'pending' with the cs_… id → {status: 'payment', client_secret, publishable_key,
+             order_number, amount_due (minor units), currency, expires_at}
            → Stripe unreachable: cancel_order(order, 'checkout_failed') → reservation released
+browser  POST functions/v1/create-checkout-session  {release_client_secret}   (the customer left the payment step)
+           → session retrieved; its client_secret must equal the one sent; open → expired on Stripe (a session
+             that cannot be expired, i.e. being paid, is left alone); then cancel_order(order, 'payment_step_left')
+             while the order is pending and unpaid → stock and gift cards released. Always {status: 'released'}.
+browser  Payment Element (Stripe.js, @stripe/stripe-js 7 = "basil", same release as the functions' API version)
+           → checkout.confirm({billingAddress, redirect: 'if_required'}): cards and wallets confirm in place
+             (3-D Secure in Stripe's modal) then the page goes to the confirmation page; bank redirects come back
+             to return_url. Confirming grants nothing: the webhook below does.
 Stripe   POST functions/v1/stripe-webhook (verify_jwt = false; the Stripe signature is the authentication)
            → constructEventAsync + SubtleCrypto provider; bad signature → 400, nothing recorded
            → record_stripe_webhook_event(): processed / ignored → 200 without doing anything
@@ -284,6 +297,7 @@ supabase functions deploy stripe-webhook          # verify_jwt = false comes fro
 ```
 
 Secrets (Edge Function environment only, never `NEXT_PUBLIC_*`): `STRIPE_SECRET_KEY` (sk_test_…),
+`STRIPE_PUBLISHABLE_KEY` (pk_test_…, same account and mode: returned to the browser to mount the payment form),
 `STRIPE_WEBHOOK_SECRET` (whsec_…), `SITE_URL` (production origin), `ALLOWED_RETURN_ORIGINS` (comma-separated
 exact origins, e.g. `http://localhost:5173`). `SUPABASE_URL` / `SUPABASE_SERVICE_ROLE_KEY` are provided by Supabase.
 
@@ -1392,6 +1406,24 @@ VAT rates, shipping zones/rates mirroring the Settings prototype. Media rows ref
       `email_internal_secret` holds the same value as `EMAIL_INTERNAL_SECRET` (the crons themselves are in migration `email_cron_jobs`; the manual form below is kept for reference):
       `select cron.schedule('deliver-gift-cards', '*/5 * * * *', $$ select net.http_post(url := 'https://<project-ref>.supabase.co/functions/v1/deliver-gift-cards', headers := jsonb_build_object('x-internal-secret', (select decrypted_secret from vault.decrypted_secrets where name = 'email_internal_secret')), body := '{}'::jsonb) $$);`
       (needs `pg_net` and a vault secret `email_internal_secret`; not part of a migration because of the secret).
+
+80. **The payment form is on our own page** (user request, 2026-10-07): the Checkout Session is created with
+    `ui_mode: 'custom'` and Stripe's Payment Element is mounted in the cart's last step (`webapp/src/components/checkout/`),
+    instead of redirecting to Stripe's hosted page. Same session, same webhook events, same return page, same
+    amount (one line = `orders.amount_due`). Card data stays in Stripe's iframes (PCI SAQ A unchanged).
+    - Stripe.js is pinned to the same release as the functions (`@stripe/stripe-js` 7.x = basil,
+      `@stripe/react-stripe-js` 4.0.x, API `2025-08-27.basil`, where the mode is called `custom`; newer releases
+      rename it `elements`). Upgrade both sides together.
+    - The publishable key comes from the function (`STRIPE_PUBLISHABLE_KEY` secret, checked to be in the secret
+      key's mode), not from a `NEXT_PUBLIC_*` variable, so test and live keys cannot drift apart.
+    - Going back from the payment step (or a basket changed in another tab) closes the step: session expired,
+      order cancelled with reason `payment_step_left`. The client secret is the proof of ownership; it lives in the
+      page and in the tab's sessionStorage only. A step left by closing the tab expires with its reservation.
+    - Billing name and address are the ones typed in the details step, sent with the confirmation (the form does
+      not ask twice). Below the pay button: "By clicking Pay you place an order with an obligation to pay and accept
+      our terms of sale" (link) — **to confirm** by the owner / legal review (guests never ticked the terms before).
+    - Apple Pay / Google Pay appear in the Payment Element once enabled in Stripe, Apple Pay after domain
+      verification of the production domain in the Stripe dashboard (user action).
 
 ## Done
 

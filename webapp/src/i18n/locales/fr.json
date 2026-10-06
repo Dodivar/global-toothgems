@@ -296,7 +296,6 @@
     "saveAddress": "Enregistrer cette adresse de livraison sur mon compte",
     "saveAddressDescription": "Elle sera préremplie lors de vos prochaines commandes.",
     "paymentTitle": "Paiement",
-    "payCardDetail": "Visa · Mastercard · Amex",
     "summaryTitle": "Récapitulatif",
     "subtotal": "Sous-total",
     "shipping": "Livraison",
@@ -331,7 +330,8 @@
     },
     "retry": "Réessayer",
     "payNoShipping": "Choisir une livraison",
-    "paymentRedirect": "Vous serez redirigé vers la page de paiement sécurisée de notre prestataire Stripe. Vos données de carte ne transitent jamais par notre site.",
+    "continueToPayment": "Continuer vers le paiement",
+    "paymentNext": "À l’étape suivante, vous réglez directement sur cette page, par carte ou avec le moyen de paiement de votre choix. Vos articles sont réservés le temps du paiement.",
     "formIncomplete": "Complétez les champs signalés et choisissez une livraison pour continuer.",
     "errors": {
       "invalid_request": "Certaines informations ne sont pas valides. Vérifiez vos coordonnées puis réessayez.",
@@ -349,7 +349,8 @@
       "gift_card_details_invalid": "Les informations d’une carte cadeau du panier ne sont plus acceptées (montant, destinataire ou date). Retirez-la puis composez-la à nouveau.",
       "account_required": "Un compte est nécessaire pour acheter une formation : l’accès s’ouvre sur votre compte. Connectez-vous puis réessayez.",
       "terms_required": "Dernier point avant de payer : votre compte n’a pas encore accepté nos conditions.",
-      "course_owned": "Vous avez déjà accès à une formation de votre panier. Retirez-la puis réessayez."
+      "course_owned": "Vous avez déjà accès à une formation de votre panier. Retirez-la puis réessayez.",
+      "basket_changed": "Votre panier a changé pendant le paiement : vérifiez-le, puis reprenez le paiement."
     },
     "pendingBadge": "Paiement en cours",
     "pendingTitle": "Paiement en cours de confirmation",
@@ -394,7 +395,46 @@
       "openCourses": "Accéder à mes formations",
       "paidBody": "Vos formations sont disponibles dans votre espace membre."
     },
-    "noShipping": "Rien à expédier : les cartes cadeaux sont envoyées par e-mail et les formations s’ouvrent dans votre espace membre."
+    "noShipping": "Rien à expédier : les cartes cadeaux sont envoyées par e-mail et les formations s’ouvrent dans votre espace membre.",
+    "recap": {
+      "title": "Vos informations",
+      "contact": "Contact",
+      "shipTo": "Livraison à",
+      "billTo": "Facturation",
+      "method": "Livraison",
+      "edit": "Modifier",
+      "editContact": "Modifier l’adresse e-mail",
+      "editAddress": "Modifier l’adresse",
+      "editMethod": "Modifier le mode de livraison"
+    },
+    "payment": {
+      "title": "Paiement sécurisé",
+      "secureBadge": "Paiement sécurisé",
+      "intro": "Choisissez votre moyen de paiement. Vos données bancaires sont chiffrées et transmises directement à notre prestataire de paiement : elles ne sont jamais stockées par Global Toothgems.",
+      "loading": "Chargement du formulaire de paiement sécurisé…",
+      "loadErrorTitle": "Le formulaire de paiement ne s’affiche pas",
+      "loadError": "Vérifiez votre connexion (ou un bloqueur de contenu), puis relancez le paiement. Aucun montant n’a été débité.",
+      "expiredTitle": "Votre session de paiement a expiré",
+      "expiredBody": "Pour votre sécurité, une session de paiement reste ouverte une heure. Relancez-la : votre panier et vos informations sont conservés.",
+      "restart": "Relancer le paiement",
+      "pay": "Payer {{amount}}",
+      "processing": "Paiement en cours…",
+      "failed": "Le paiement n’a pas abouti. Vérifiez vos informations ou essayez un autre moyen de paiement.",
+      "consentBefore": "En cliquant sur « Payer », vous passez une commande avec obligation de paiement et acceptez nos",
+      "consentLink": "conditions générales de vente",
+      "consentAfter": ".",
+      "trustEncrypted": "Connexion chiffrée (HTTPS)",
+      "trust3ds": "Authentification forte 3-D Secure prise en charge",
+      "trustNoStorage": "Données de carte jamais stockées chez nous",
+      "poweredBy": "Paiement opéré par Stripe, prestataire certifié PCI DSS niveau 1.",
+      "due": "À payer",
+      "vatIncluded": "TVA incluse",
+      "giftCards_one": "Carte cadeau",
+      "giftCards_other": "{{count}} cartes cadeaux",
+      "reserved": "Commande {{reference}} : vos articles sont réservés pendant le paiement.",
+      "showSummary": "Afficher le récapitulatif",
+      "hideSummary": "Masquer le récapitulatif"
+    }
   },
   "auth": {
     "eyebrow": "Compte",

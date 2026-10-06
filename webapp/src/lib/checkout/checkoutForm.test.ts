@@ -1,7 +1,7 @@
 import { describe, expect, it } from "vitest";
 import { buildCheckoutRequest, EMPTY_CHECKOUT_FORM, invalidFields, type CheckoutForm } from "./checkoutForm";
 import type { CartLine } from "./cartLines";
-import { isCheckoutSessionId, isStripeCheckoutUrl, readCheckoutAnswer } from "./api";
+import { isCheckoutSessionId, isClientSecret, readCheckoutAnswer } from "./api";
 
 const form: CheckoutForm = {
   firstName: " Camille ",
@@ -52,13 +52,48 @@ describe("checkout form", () => {
 });
 
 describe("checkout answers", () => {
-  it("follows Stripe's hosted page only", () => {
-    expect(readCheckoutAnswer({ status: "redirect", url: "https://checkout.stripe.com/c/pay/cs_test_1" })).toEqual({
-      kind: "redirect",
-      url: "https://checkout.stripe.com/c/pay/cs_test_1",
+  const payment = {
+    status: "payment",
+    client_secret: "cs_test_a1B2c3D4e5F6g7H8_secret_Zz9Yy8Xx7Ww6",
+    publishable_key: "pk_test_51AbCdEfGhIjKlMn",
+    order_number: "GT-100042",
+    amount_due: 4290,
+    currency: "EUR",
+    expires_at: "2026-10-07T13:00:00.000Z",
+  };
+
+  it("opens the payment step from a well-formed answer only", () => {
+    expect(readCheckoutAnswer(payment)).toEqual({
+      kind: "payment",
+      payment: {
+        clientSecret: payment.client_secret,
+        publishableKey: payment.publishable_key,
+        orderNumber: "GT-100042",
+        amountDue: 4290,
+        currency: "EUR",
+        expiresAt: Date.parse(payment.expires_at),
+      },
     });
-    expect(readCheckoutAnswer({ status: "redirect", url: "https://evil.example/pay" })).toEqual({ kind: "error", error: "server_error" });
-    expect(isStripeCheckoutUrl("http://checkout.stripe.com/x")).toBe(false);
+    const broken = [
+      { client_secret: "cs_test_a1B2c3D4e5F6g7H8" },
+      { publishable_key: "sk_test_51AbCdEfGhIjKlMn" },
+      // A live key cannot open a test session.
+      { publishable_key: "pk_live_51AbCdEfGhIjKlMn" },
+      { amount_due: 42.9 },
+      { amount_due: 0 },
+      { currency: "eur" },
+      { expires_at: "soon" },
+    ];
+    for (const patch of broken) {
+      expect(readCheckoutAnswer({ ...payment, ...patch })).toEqual({ kind: "error", error: "payment_unavailable" });
+    }
+    expect(readCheckoutAnswer({ status: "redirect", url: "https://checkout.stripe.com/c/pay/cs_test_1" })).toEqual({ kind: "error", error: "server_error" });
+  });
+
+  it("recognises client secrets", () => {
+    expect(isClientSecret(payment.client_secret)).toBe(true);
+    expect(isClientSecret("pi_123_secret_abcdefghij")).toBe(false);
+    expect(isClientSecret(null)).toBe(false);
   });
 
   it("maps codes it knows and nothing else", () => {

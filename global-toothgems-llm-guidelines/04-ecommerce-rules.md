@@ -30,8 +30,9 @@ The catalogue represents physical products, digital products, gift cards and var
 browser   POST to Edge Function `create-checkout-session` with {items[{product_id, variant_id, quantity}], email, address, rate, locale, codes}
 edge fn   verifies the JWT (or guest e-mail), checks maintenance mode,
           calls create_order() with the service role → order 'pending', stock reserved, totals computed in SQL
-          creates a Stripe Checkout Session for order.amount_due / currency (metadata: order id), expires_at aligned with the reservation
-browser   redirected to Stripe; returns to a confirmation page that READS the order state (pending → confirmed)
+          creates a Stripe Checkout Session (ui_mode custom) for order.amount_due / currency (metadata: order id), expires_at aligned with the reservation
+browser   pays on OUR page: Payment Element mounted from the session's client secret (cart's last step, no redirect to Stripe);
+          going back closes the step (session expired, order cancelled); then a confirmation page that READS the order state
 webhook   Edge Function `stripe-webhook`: verify signature → insert stripe_webhook_events (dedup) →
           checkout.session.completed → mark_order_paid(order, amount, currency, cs_…, pi_…)
           checkout.session.expired   → cancel_order(order, 'expired')

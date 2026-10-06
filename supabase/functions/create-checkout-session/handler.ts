@@ -1,4 +1,4 @@
-import { parseCheckoutInput, type CheckoutInput, type CheckoutLocale } from "../_shared/checkoutInput.ts";
+import { parseCheckoutInput, parseClientSecret, type CheckoutInput, type CheckoutLocale } from "../_shared/checkoutInput.ts";
 import { corsHeaders, json, readJson, returnOrigin, type SiteOrigins } from "../_shared/http.ts";
 import { toMinorUnits } from "../_shared/money.ts";
 import { checkoutErrorCode, checkoutErrorStatus, type DbError } from "../_shared/orderErrors.ts";
@@ -9,11 +9,20 @@ import { checkoutErrorCode, checkoutErrorStatus, type DbError } from "../_shared
  *   browser ──(cart ids + quantities, contact, rate id)──▶ this function
  *     1. validates the input strictly (no amount is accepted from the browser),
  *        refuses while the shop is in maintenance
- *     2. create_order() with the service role → order 'pending', stock reserved,
+ *     2. closes the customer's previous unpaid payment step, if they name it
+ *        (they went back to change something): nothing stays reserved twice
+ *     3. create_order() with the service role → order 'pending', stock reserved,
  *        every amount computed by Postgres
- *     3. Stripe Checkout Session for orders.amount_due / orders.currency
- *        (integer minor units), metadata.order_id, idempotency key per order
- *     4. records the session id on a pending `payments` row, returns its URL
+ *     4. Stripe Checkout Session (`ui_mode: "custom"`: the payment form is
+ *        Stripe's Payment Element inside our own checkout page) for
+ *        orders.amount_due / orders.currency (integer minor units),
+ *        metadata.order_id, idempotency key per order
+ *     5. records the session id on a pending `payments` row, returns the
+ *        session's client secret and the publishable key to mount the form
+ *
+ *   browser ──{ release_client_secret }──▶ this function
+ *     closes that unpaid payment step (session expired, order cancelled):
+ *     the customer left the payment step to change their order.
  *
  * Nothing is paid or granted here: the order becomes paid only through the
  * verified `stripe-webhook`. If Stripe cannot be reached the order is cancelled
@@ -41,12 +50,20 @@ export interface CheckoutSessionParams {
   amountDue: number;
   locale: CheckoutLocale;
   expiresAt: number;
-  successUrl: string;
-  cancelUrl: string;
+  /** Where Stripe sends the customer after a payment that needs a redirect (3-D Secure, wallets, banks). */
+  returnUrl: string;
 }
+
+/** What closing a payment step found. Never told to the browser. */
+export type ReleaseOutcome = "released" | "not_found" | "kept";
 
 export interface CheckoutDeps {
   origins: SiteOrigins;
+  /**
+   * Stripe publishable key of the same account and mode as the secret key, or
+   * null when it is not configured (or does not match): no order is then created.
+   */
+  publishableKey: string | null;
   /** store_settings.maintenance_enabled: the checkout refuses orders while it is on. */
   maintenanceEnabled(): Promise<boolean>;
   /** The signed-in customer behind a bearer token, or null (guest, invalid or publishable key). */
@@ -65,7 +82,13 @@ export interface CheckoutDeps {
   releaseHeldGiftCards?(codes: string[]): Promise<number>;
   /** An order paid in full at creation (gift cards): confirmation e-mail. Must never throw. */
   orderPaid?(orderId: string): Promise<void>;
-  createStripeSession(params: CheckoutSessionParams, idempotencyKey: string): Promise<{ id: string; url: string }>;
+  createStripeSession(params: CheckoutSessionParams, idempotencyKey: string): Promise<{ id: string; clientSecret: string }>;
+  /**
+   * Closes an unpaid payment step named by its client secret: the session must
+   * carry exactly that secret, is expired on Stripe and, once provably closed,
+   * its order cancelled. A completed (or completing) payment is left alone.
+   */
+  releasePaymentStep?(sessionId: string, clientSecret: string): Promise<ReleaseOutcome>;
   recordCheckoutPayment(orderId: string, sessionId: string, amountDue: number | string, currency: string): Promise<void>;
   now(): number;
   log(message: string, detail?: unknown): void;
@@ -80,18 +103,14 @@ export const RESERVATION_MINUTES = 70;
 export const SESSION_MINUTES = 60;
 const MAX_BODY_BYTES = 32 * 1024;
 
-const PATHS: Record<CheckoutLocale, { cart: string; confirmation: string }> = {
-  fr: { cart: "/fr/panier", confirmation: "/fr/panier/confirmation" },
-  en: { cart: "/en/cart", confirmation: "/en/cart/confirmation" },
+const CONFIRMATION_PATHS: Record<CheckoutLocale, string> = {
+  fr: "/fr/panier/confirmation",
+  en: "/en/cart/confirmation",
 };
 
-export function returnUrls(origin: string, locale: CheckoutLocale) {
-  return {
-    // Stripe replaces {CHECKOUT_SESSION_ID}; the page only reads the order's state with it.
-    successUrl: `${origin}${PATHS[locale].confirmation}?session_id={CHECKOUT_SESSION_ID}`,
-    cancelUrl: `${origin}${PATHS[locale].cart}`,
-  };
-}
+/** Stripe replaces {CHECKOUT_SESSION_ID}; the page only reads the order's state with it. */
+export const returnUrl = (origin: string, locale: CheckoutLocale) =>
+  `${origin}${CONFIRMATION_PATHS[locale]}?session_id={CHECKOUT_SESSION_ID}`;
 
 function bearer(req: Request): string | null {
   const header = req.headers.get("authorization") ?? "";
@@ -111,6 +130,17 @@ export async function handleCheckout(req: Request, deps: CheckoutDeps): Promise<
   if (req.method !== "POST") return json({ error: "invalid_request" }, 405, { ...cors, Allow: "POST, OPTIONS" });
 
   const body = await readJson(req, MAX_BODY_BYTES);
+
+  // Leaving the payment step: close it. The answer is the same whatever was found.
+  if (body && typeof body === "object" && !Array.isArray(body) && "release_client_secret" in body) {
+    const named = parseClientSecret((body as Record<string, unknown>).release_client_secret);
+    if (Object.keys(body).length !== 1 || !named) {
+      return json({ error: "invalid_request", field: "release_client_secret" }, 400, cors);
+    }
+    await release(deps, named);
+    return json({ status: "released" }, 200, cors);
+  }
+
   const parsed = parseCheckoutInput(body);
   if (!parsed.ok) return json({ error: "invalid_request", field: parsed.field }, 400, cors);
   const input = parsed.value;
@@ -142,6 +172,11 @@ export async function handleCheckout(req: Request, deps: CheckoutDeps): Promise<
     }
   }
 
+  // The previous payment step of this basket is closed first, so its stock and
+  // gift cards are free for the new order. Never blocks the checkout.
+  const previous = parseClientSecret(input.previous_client_secret);
+  if (previous) await release(deps, previous);
+
   // A card still held by an abandoned payment (cancelled on Stripe, not yet expired) is released
   // first, so retrying with the same code works. Never blocks the checkout.
   if (input.gift_card_codes.length > 0 && deps.releaseHeldGiftCards) {
@@ -150,6 +185,12 @@ export async function handleCheckout(req: Request, deps: CheckoutDeps): Promise<
     } catch (error) {
       deps.log("gift cards held by an earlier payment not released", error instanceof Error ? error.message : error);
     }
+  }
+
+  // Without the publishable key the payment form cannot be shown: nothing is reserved.
+  if (!deps.publishableKey) {
+    deps.log("STRIPE_PUBLISHABLE_KEY missing or not matching the secret key's mode");
+    return fail("payment_unavailable");
   }
 
   const created = await deps.createOrder(input, userId, RESERVATION_MINUTES);
@@ -172,7 +213,8 @@ export async function handleCheckout(req: Request, deps: CheckoutDeps): Promise<
   }
 
   const origin = returnOrigin(deps.origins, requestOrigin);
-  let session: { id: string; url: string };
+  const expiresAt = Math.floor(deps.now() / 1000) + SESSION_MINUTES * 60;
+  let session: { id: string; clientSecret: string };
   try {
     session = await deps.createStripeSession(
       {
@@ -182,8 +224,8 @@ export async function handleCheckout(req: Request, deps: CheckoutDeps): Promise<
         currency: order.currency,
         amountDue,
         locale: input.locale,
-        expiresAt: Math.floor(deps.now() / 1000) + SESSION_MINUTES * 60,
-        ...returnUrls(origin, input.locale),
+        expiresAt,
+        returnUrl: returnUrl(origin, input.locale),
       },
       `checkout-session:${order.id}`,
     );
@@ -206,5 +248,28 @@ export async function handleCheckout(req: Request, deps: CheckoutDeps): Promise<
     deps.log("pending payment row not recorded", error instanceof Error ? error.message : error);
   }
 
-  return json({ status: "redirect", url: session.url }, 200, cors);
+  return json(
+    {
+      status: "payment",
+      client_secret: session.clientSecret,
+      publishable_key: deps.publishableKey,
+      order_number: order.order_number,
+      // What Stripe will charge, as Postgres computed it (gift cards and discounts deducted).
+      amount_due: amountDue,
+      currency: order.currency,
+      expires_at: new Date(expiresAt * 1000).toISOString(),
+    },
+    200,
+    cors,
+  );
+}
+
+async function release(deps: CheckoutDeps, named: { secret: string; sessionId: string }) {
+  if (!deps.releasePaymentStep) return;
+  try {
+    await deps.releasePaymentStep(named.sessionId, named.secret);
+  } catch (error) {
+    // The expiry job releases it anyway once the reservation is over.
+    deps.log("previous payment step not released", error instanceof Error ? error.message : error);
+  }
 }

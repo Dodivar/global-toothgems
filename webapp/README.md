@@ -235,8 +235,16 @@ With the Supabase variables set, `screens/Cart.tsx`:
    (`lib/checkout/shippingRates.ts`, cheapest pre-selected);
 2. sends identifiers, quantities, contact details and the rate id — never an amount — to the Edge Function
    `create-checkout-session` (`lib/checkout/api.ts`, `supabase.functions.invoke`), which creates the order with
-   `create_order()` and a Stripe Checkout Session for the amount the database computed;
-3. follows the returned URL, only if it is `https://checkout.stripe.com/…`.
+   `create_order()` and a Stripe Checkout Session (`ui_mode: custom`) for the amount the database computed;
+3. switches to its payment step on the same page (`components/checkout/PaymentView.tsx`): a recap of the
+   details with "Change", the order summary with the amount due as the database computed it, and Stripe's
+   Payment Element (`components/checkout/PaymentStep.tsx`, lazy-loaded: Stripe.js is fetched only then, never in
+   mock mode) drawn with the site's tokens (`lib/checkout/stripe.ts`, Appearance API + Montserrat). "Pay" calls
+   `checkout.confirm()`; card payments confirm in place (3-D Secure in Stripe's modal) and go to the confirmation
+   page, bank redirects come back to it. "Change" (or a basket changed in another tab) closes the step through the
+   function (`release_client_secret`: order cancelled, stock and gift cards released); an expired step (60 min)
+   offers "Restart payment". The step's client secret is kept in the tab's `sessionStorage` so a reload's next
+   checkout closes it first (`previous_client_secret`).
 
 Gift cards in the cart (`lib/giftCards/`, `components/shop/GiftCardCodes.tsx`):
 
@@ -265,7 +273,7 @@ Academy courses in the cart (phase D):
 - **Not deployed.** If `create-checkout-session` does not exist yet (HTTP 404) the cart says payment is unavailable;
   nothing is ever confirmed without the function's answer.
 
-Stripe sends the customer back to `/fr/panier/confirmation?session_id=cs_…` (`/en/cart/confirmation`,
+After the payment the customer lands on `/fr/panier/confirmation?session_id=cs_…` (`/en/cart/confirmation`,
 `screens/CheckoutReturn.tsx`). That page only reads `checkout_session_status()` — order number and state — and
 checks again for about a minute; the order becomes paid solely through the verified `stripe-webhook`. The cart
 is emptied once the database says the order is paid. Errors are shown as translated messages (`checkout.errors.*`).

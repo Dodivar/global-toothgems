@@ -11,8 +11,23 @@ const origins = readSiteOrigins(requireEnv("SITE_URL"), Deno.env.get("ALLOWED_RE
 
 const LABELS = { fr: "Commande", en: "Order" } as const;
 
+/**
+ * The publishable key mounts the payment form in the browser. It must belong to
+ * the same mode as the secret key (test with test, live with live), otherwise
+ * Stripe.js cannot open the session: a mismatch counts as not configured.
+ */
+function matchingPublishableKey(): string | null {
+  const publishable = Deno.env.get("STRIPE_PUBLISHABLE_KEY")?.trim() ?? "";
+  const secret = Deno.env.get("STRIPE_SECRET_KEY")?.trim() ?? "";
+  const mode = (key: string) => /^(?:pk|sk|rk)_(test|live)_/.exec(key)?.[1] ?? null;
+  return publishable.startsWith("pk_") && mode(publishable) !== null && mode(publishable) === mode(secret) ? publishable : null;
+}
+
+const UNPAID = new Set(["pending", "failed"]);
+
 const deps: CheckoutDeps = {
   origins,
+  publishableKey: matchingPublishableKey(),
 
   async maintenanceEnabled() {
     const { data, error } = await supabase.from("store_settings").select("maintenance_enabled").limit(1).maybeSingle();
@@ -85,12 +100,44 @@ const deps: CheckoutDeps = {
     return released;
   },
 
+  async releasePaymentStep(sessionId, clientSecret) {
+    let session;
+    try {
+      session = await stripe.checkout.sessions.retrieve(sessionId);
+    } catch {
+      return "not_found";
+    }
+    // Only the browser that received this payment step can close it.
+    if (session.client_secret !== clientSecret) return "not_found";
+    if (session.status === "complete") return "kept";
+    if (session.status === "open") {
+      try {
+        await stripe.checkout.sessions.expire(sessionId);
+      } catch {
+        // A payment being confirmed right now cannot be expired: leave it alone.
+        const again = await stripe.checkout.sessions.retrieve(sessionId);
+        if (again.status !== "expired") return "kept";
+      }
+    }
+    const orderId = session.metadata?.order_id;
+    if (!orderId) return "released";
+    const { data, error } = await supabase.from("orders").select("status, payment_status").eq("id", orderId).maybeSingle();
+    if (error) throw new Error(error.message);
+    if (data && data.status === "pending" && UNPAID.has(data.payment_status)) {
+      const cancelled = await supabase.rpc("cancel_order", { p_order_id: orderId, p_reason: "payment_step_left" });
+      if (cancelled.error) throw new Error(cancelled.error.message);
+    }
+    return "released";
+  },
+
   orderPaid: (orderId) => notifyOrderPaid(orderId, (message, detail) => console.error(`[create-checkout-session] ${message}`, detail ?? "")),
 
   async createStripeSession(params, idempotencyKey) {
     const metadata = { order_id: params.orderId, order_number: params.orderNumber };
     const session = await stripe.checkout.sessions.create(
       {
+        // The payment form (Payment Element) is mounted inside our own checkout page.
+        ui_mode: "custom",
         mode: "payment",
         customer_email: params.email,
         client_reference_id: params.orderId,
@@ -110,13 +157,12 @@ const deps: CheckoutDeps = {
         metadata,
         payment_intent_data: { metadata },
         expires_at: params.expiresAt,
-        success_url: params.successUrl,
-        cancel_url: params.cancelUrl,
+        return_url: params.returnUrl,
       },
       { idempotencyKey },
     );
-    if (!session.url) throw new Error("Stripe returned a session without URL");
-    return { id: session.id, url: session.url };
+    if (!session.client_secret) throw new Error("Stripe returned a session without client secret");
+    return { id: session.id, clientSecret: session.client_secret };
   },
 
   async recordCheckoutPayment(orderId, sessionId, amountDue, currency) {

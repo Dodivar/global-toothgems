@@ -1,5 +1,5 @@
 import { assert, assertEquals } from "jsr:@std/assert@1";
-import { courseOrderItems, orderItems, parseCheckoutInput } from "./checkoutInput.ts";
+import { courseOrderItems, orderItems, parseCheckoutInput, parseClientSecret } from "./checkoutInput.ts";
 import { toDecimalString } from "./money.ts";
 
 const P1 = "0b5e6a52-7d0c-4a55-9d7e-1f6f6b2c1a01";
@@ -76,10 +76,27 @@ Deno.test("rejects bad contact details, rate, locale and codes", () => {
     { use_loyalty_reward: "yes" },
     { use_loyalty_reward: 1 },
     { customer_note: "x".repeat(1001) },
+    { previous_client_secret: "cs_test_a1B2c3D4e5F6" },
+    { previous_client_secret: "pi_123_secret_abcdefghij" },
+    { previous_client_secret: 42 },
   ];
   for (const patch of cases) assert(!parseCheckoutInput({ ...valid(), ...patch }).ok, JSON.stringify(patch).slice(0, 80));
   assert(!parseCheckoutInput(null).ok);
   assert(!parseCheckoutInput([]).ok);
+});
+
+Deno.test("a previous payment step is named by its client secret only", () => {
+  const secret = "cs_test_a1B2c3D4e5F6g7H8_secret_Zz9Yy8Xx7Ww6";
+  const result = parseCheckoutInput({ ...valid(), previous_client_secret: secret });
+  assert(result.ok);
+  assertEquals(result.value.previous_client_secret, secret);
+  assertEquals(parseClientSecret(secret), { secret, sessionId: "cs_test_a1B2c3D4e5F6g7H8" });
+  assertEquals(parseClientSecret("cs_test_a1B2c3D4e5F6g7H8"), null);
+  assertEquals(parseClientSecret(`${secret}
+`), null);
+  const none = parseCheckoutInput(valid());
+  assert(none.ok);
+  assertEquals(none.value.previous_client_secret, null);
 });
 
 Deno.test("gift card codes are upper-cased", () => {
