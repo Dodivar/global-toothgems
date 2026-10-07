@@ -15,6 +15,7 @@
  */
 import type { SupabaseClient } from "npm:@supabase/supabase-js@2.57.4";
 import { formatAmount } from "./format.ts";
+import { refundContent, shippingContent } from "./orderContent.ts";
 import { type EmailDeps, type SendResult, sendTemplatedEmail } from "./send.ts";
 
 type Log = (message: string, detail?: unknown) => void;
@@ -138,6 +139,7 @@ export function sendShippingEmails(
         variables: { first_name: parcel.firstName, order_number: parcel.orderNumber, tracking_url: link },
         eventKey: `shipping:${parcel.shipmentId}`,
         orderId: parcel.orderId,
+        content: (locale) => shippingContent({ orderNumber: parcel.orderNumber, trackingLink: link }, locale),
       });
     }, log)
   );
@@ -181,6 +183,7 @@ export function sendRefundEmails(
         },
         eventKey: `refund:${refund.refundId}`,
         orderId: refund.orderId,
+        content: (locale) => refundContent(refund, locale),
       }), log)
   );
 }
