@@ -143,14 +143,6 @@ export function LessonPlayer() {
 
           <article className="mx-auto grid max-w-[820px] gap-7">
             <header className="grid gap-3">
-              {moduleCover && (
-                <img
-                  src={moduleCover}
-                  alt=""
-                  aria-hidden="true"
-                  className="mb-2 aspect-[21/9] w-full rounded-[var(--radius-card)] object-cover"
-                />
-              )}
               <p className="m-0 flex flex-wrap items-center gap-x-2 gap-y-1 text-[length:var(--text-eyebrow)] font-semibold uppercase tracking-[var(--tracking-eyebrow)] text-[var(--text-muted)]">
                 <span>{t("learning.moduleNumber", { number: node.moduleIndex + 1 })}</span>
                 <span aria-hidden="true">·</span>
@@ -169,6 +161,14 @@ export function LessonPlayer() {
                 </p>
               )}
               <LessonMeta node={node} blocks={step?.blocks ?? []} done={done} />
+              {moduleCover && (
+                <img
+                  src={moduleCover}
+                  alt=""
+                  aria-hidden="true"
+                  className="mt-2 aspect-[21/9] w-full rounded-[var(--radius-card)] object-cover"
+                />
+              )}
             </header>
 
             {!unlocked ? (

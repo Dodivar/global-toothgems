@@ -1,6 +1,6 @@
 import { useState } from "react";
 import { useTranslation } from "react-i18next";
-import { Clock, Eye, FileText, Images, Layers, ListChecks, Plus, Trash2 } from "lucide-react";
+import { Clock, Eye, FileText, Layers, ListChecks, Plus, Trash2 } from "lucide-react";
 import clsx from "clsx";
 import { AdminButton } from "../AdminButton";
 import { ConfirmationDialog } from "../ConfirmationDialog";
@@ -8,7 +8,6 @@ import { EmptyState } from "../EmptyState";
 import { FormField } from "../FormField";
 import { MediaImage } from "./MediaImage";
 import { MediaPicker } from "./MediaPicker";
-import { MediaPickerDialog } from "./MediaPickerDialog";
 import { ObjectiveList } from "./ObjectiveList";
 import { MetaPill, Section } from "./TrainingPrimitives";
 import { blockCount, moduleDuration, type Module } from "../../../data/adminTraining";
@@ -47,7 +46,6 @@ export function ModuleEditor({
   const { showToast } = useToast();
   const { updateModule, addStep, addQuiz, deleteModule } = useAdminTraining();
   const [removing, setRemoving] = useState(false);
-  const [choosingCover, setChoosingCover] = useState(false);
 
   const number = String(index + 1).padStart(2, "0");
   const steps = module.steps.length;
@@ -63,18 +61,7 @@ export function ModuleEditor({
       {/* Visual summary */}
       <section className="gt-admin-panel overflow-hidden">
         <div className="grid gap-0 sm:grid-cols-[200px_minmax(0,1fr)]">
-          <div className="relative min-h-[120px]">
-            <MediaImage mediaRef={module.cover} className="h-full min-h-[120px] max-h-[190px] w-full object-cover sm:max-h-none" />
-            <AdminButton
-              variant="outline"
-              size="sm"
-              iconLeft={Images}
-              onClick={() => setChoosingCover(true)}
-              className="absolute bottom-2 left-2 bg-[var(--surface-card)]"
-            >
-              {module.cover ? t("trainingMedia.picker.change") : t("trainingMedia.picker.choose")}
-            </AdminButton>
-          </div>
+          <MediaImage mediaRef={module.cover} className="h-full min-h-[120px] max-h-[190px] w-full object-cover sm:max-h-none" />
           <div className="grid content-start gap-3 p-5">
             <div className="grid gap-0.5">
               <span className="text-[10px] font-semibold uppercase tracking-[var(--tracking-eyebrow)] text-[var(--text-subtle)]">
@@ -345,18 +332,6 @@ export function ModuleEditor({
           {t("admin.training.module.deleteTitle")}
         </AdminButton>
       </div>
-
-      {choosingCover && (
-        <MediaPickerDialog
-          kind="image"
-          initialRef={module.cover}
-          onClose={() => setChoosingCover(false)}
-          onInsert={(media) => {
-            setChoosingCover(false);
-            updateModule(courseId, module.id, { cover: media.ref });
-          }}
-        />
-      )}
 
       <ConfirmationDialog
         open={removing}
