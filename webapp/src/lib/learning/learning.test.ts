@@ -4,7 +4,6 @@ import type { TrainingCourse } from "../../data/adminTraining";
 import { learnerAccess } from "./access";
 import type { LearnerCourseCard } from "./learnerCourse";
 import {
-  attemptsLeft,
   buildPath,
   completeStep,
   emptyRecord,
@@ -117,14 +116,6 @@ describe("knowledge checks", () => {
     const allRight = Object.fromEntries(quiz.questions.map((q) => [q.id, q.answers.find((a) => a.correct)!.id]));
     expect(scoreQuiz(quiz, allRight)).toMatchObject({ correct: quiz.questions.length, score: 100, passed: true });
     expect(scoreQuiz(quiz, {})).toMatchObject({ correct: 0, score: 0, passed: false });
-  });
-
-  it("counts attempts down and stops accepting them", () => {
-    const limited = { ...quiz, settings: { ...quiz.settings, allowRetry: true, attempts: 2 } };
-    expect(attemptsLeft(limited, undefined)).toBe(2);
-    expect(attemptsLeft(limited, { attempts: 1, bestScore: 20, passed: false })).toBe(1);
-    expect(attemptsLeft(limited, { attempts: 2, bestScore: 20, passed: false })).toBe(0);
-    expect(attemptsLeft({ ...limited, settings: { ...limited.settings, allowRetry: false } }, undefined)).toBe(1);
   });
 
   it("keeps the best score and a pass once earned", () => {

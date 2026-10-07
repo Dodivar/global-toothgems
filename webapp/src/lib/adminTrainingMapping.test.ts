@@ -79,8 +79,6 @@ const row = {
         title: "Quiz",
         intro: null,
         passing_score: 70,
-        allow_retry: true,
-        max_attempts: 3,
         shuffle_answers: true,
         immediate_feedback: true,
         show_answers: false,

@@ -1,10 +1,10 @@
 "use client";
 
-import { useEffect, useState } from "react";
+import { useEffect, useRef, useState } from "react";
 import posthog from "posthog-js";
 import { useTranslation } from "react-i18next";
 import { Link, useNavigate } from "../lib/navigation";
-import { ArrowRight, CheckCircle2, CircleAlert, Gift, GraduationCap, Lock, LogIn, Mail, Minus, Plus, ShoppingBag, Trash2, Truck, UserRound } from "lucide-react";
+import { ArrowRight, CheckCircle2, CircleAlert, CreditCard, Gift, GraduationCap, Lock, LogIn, Mail, Minus, Plus, ShieldCheck, ShoppingBag, Trash2, Truck, UserRound } from "lucide-react";
 import { Button } from "../components/ui/Button";
 import { Badge } from "../components/ui/Badge";
 import { DELIVERY_COUNTRIES, countryLabelKey } from "../data/countries";
@@ -29,7 +29,8 @@ import { pick } from "../data/types";
 import { useFormat } from "../lib/format";
 import { isSupabaseConfigured } from "../lib/supabase/client";
 import { TermsNotice } from "../components/auth/TermsNotice";
-import { fetchShippingRates, startCheckout, type CheckoutError } from "../lib/checkout/api";
+import { fetchShippingRates, releasePaymentStep, startCheckout, type CheckoutError, type PaymentStep } from "../lib/checkout/api";
+import { PaymentView } from "../components/checkout/PaymentView";
 import { buildCheckoutRequest, EMPTY_CHECKOUT_FORM, invalidFields, type CheckoutForm } from "../lib/checkout/checkoutForm";
 import { hasCourse, needsShipping, shippableSubtotal } from "../lib/checkout/cartLines";
 import { GiftCardVisual } from "../components/promotions/Visuals";
@@ -71,6 +72,31 @@ const MOCK_FORM: CheckoutForm = {
 
 type RatesState = { country: string; status: "loading" | "ready" | "error"; rows: ShippingRateRow[] };
 
+/**
+ * The client secret of the last payment step this tab opened. After a reload the
+ * next checkout names it, so the function closes it before reserving again.
+ * Session storage only: it dies with the tab, and only closes an unpaid step.
+ */
+const OPEN_STEP_KEY = "gt-checkout-open-step";
+const readOpenStep = () => {
+  try {
+    return window.sessionStorage.getItem(OPEN_STEP_KEY);
+  } catch {
+    return null;
+  }
+};
+const writeOpenStep = (secret: string | null) => {
+  try {
+    if (secret) window.sessionStorage.setItem(OPEN_STEP_KEY, secret);
+    else window.sessionStorage.removeItem(OPEN_STEP_KEY);
+  } catch {
+    // Storage blocked: the reservation simply runs out on its own.
+  }
+};
+
+/** What the payment step was opened for: changing it means a new order. */
+const basketKey = (lines: { id: string; qty: number }[]) => lines.map((line) => `${line.id}×${line.qty}`).join("|");
+
 export function Cart() {
   const { formatPrice } = useFormat();
   const { t, i18n } = useTranslation();
@@ -95,6 +121,13 @@ export function Cart() {
   const [submitting, setSubmitting] = useState(false);
   const [showErrors, setShowErrors] = useState(false);
   const [checkoutError, setCheckoutError] = useState<CheckoutError | null>(null);
+  // The order is created and reserved: its card payment happens on this page.
+  const [payment, setPayment] = useState<PaymentStep | null>(null);
+  const previousStep = useRef<string | null>(null);
+  const paymentBasket = useRef("");
+  useEffect(() => {
+    previousStep.current = readOpenStep();
+  }, []);
   // Gift card codes are bearer credentials: kept in memory for this page only, never stored.
   const [giftCodes, setGiftCodes] = useState<string[]>([]);
   // Spending the completed loyalty card is a request: the database checks and prices it.
@@ -162,8 +195,15 @@ export function Cart() {
   const countryOptions = DELIVERY_COUNTRIES.map((c) => ({ value: c, label: t(countryLabelKey(c)) }));
 
   // Derived from what the customer has actually supplied.
-  const currentStep =
-    lines.length === 0 ? 0 : invalid.some((field) => field !== "shipping" && field !== "country") ? 1 : invalid.length > 0 ? 2 : 3;
+  const currentStep = payment
+    ? 3
+    : lines.length === 0
+      ? 0
+      : invalid.some((field) => field !== "shipping" && field !== "country")
+        ? 1
+        : invalid.length > 0
+          ? 2
+          : 3;
 
   const set = (key: keyof CheckoutForm) => (e: React.ChangeEvent<HTMLInputElement>) =>
     setForm((f) => ({ ...f, [key]: e.target.value }));
@@ -199,11 +239,12 @@ export function Cart() {
       clearCart();
       return;
     }
-    const request = buildCheckoutRequest(lines, form, shipped ? rateId : null, lang.startsWith("en") ? "en" : "fr", giftCodes, rewardOn);
-    if (!request) {
+    const built = buildCheckoutRequest(lines, form, shipped ? rateId : null, lang.startsWith("en") ? "en" : "fr", giftCodes, rewardOn);
+    if (!built) {
       setCheckoutError("unavailable");
       return;
     }
+    const request = previousStep.current ? { ...built, previous_client_secret: previousStep.current } : built;
     posthog.capture("checkout_started", {
       item_count: lines.reduce((count, line) => count + line.qty, 0),
       cart_subtotal: subtotal,
@@ -215,7 +256,7 @@ export function Cart() {
     });
     setSubmitting(true);
     if (offerSaveAddress && saveAddress) {
-      // Saved before leaving for Stripe; a refused write must not block the payment.
+      // Saved before the payment step; a refused write must not block the payment.
       await updateProfile({
         ...(profile?.firstName ? {} : { firstName: form.firstName.trim() }),
         ...(profile?.lastName ? {} : { lastName: form.lastName.trim() }),
@@ -226,13 +267,18 @@ export function Cart() {
       }).catch(() => false);
     }
     const result = await startCheckout(request);
-    if (result.kind === "redirect") {
-      // Stays "submitting" while the browser leaves for Stripe. Nothing is
-      // granted by coming back: the webhook confirms the payment.
-      window.location.assign(result.url);
+    setSubmitting(false);
+    // The previous step (if any) was closed by the function along the way.
+    previousStep.current = null;
+    writeOpenStep(result.kind === "payment" ? result.payment.clientSecret : null);
+    if (result.kind === "payment") {
+      // The order is reserved; the card is taken on this page. Nothing is granted
+      // by confirming it here: the verified webhook marks the order paid.
+      paymentBasket.current = basketKey(lines);
+      setPayment(result.payment);
+      posthog.capture("payment_step_opened", { amount_due: result.payment.amountDue, currency: result.payment.currency });
       return;
     }
-    setSubmitting(false);
     if (result.kind === "paid") {
       // Entirely covered by gift cards: create_order() recorded the payment itself
       // (and granted the courses it held).
@@ -249,6 +295,31 @@ export function Cart() {
     }
     setCheckoutError(result.error);
   };
+
+  // Back to the details: the reserved order is closed (stock and gift cards released).
+  const leavePayment = () => {
+    if (!payment) return;
+    previousStep.current = payment.clientSecret;
+    void releasePaymentStep(payment.clientSecret);
+    setPayment(null);
+  };
+
+  // A session that expired or a form that could not load: a fresh step for the same basket.
+  const restartPayment = () => {
+    leavePayment();
+    void pay();
+  };
+
+  // The basket changed under an open payment step (another tab): the step no longer matches it.
+  const currentBasket = basketKey(lines);
+  useEffect(() => {
+    if (payment && currentBasket !== paymentBasket.current) {
+      previousStep.current = payment.clientSecret;
+      void releasePaymentStep(payment.clientSecret);
+      setPayment(null);
+      setCheckoutError("basket_changed");
+    }
+  }, [payment, currentBasket]);
 
   const acceptAndPay = async () => {
     setAcceptingTerms(true);
@@ -326,14 +397,57 @@ export function Cart() {
     );
   }
 
+  const progress = (
+    <>
+      <div className="mb-10 hidden sm:block">
+        <ProgressBar variant="steps" steps={steps} current={currentStep} />
+      </div>
+      <div className="mb-10 sm:hidden">
+        <ProgressBar value={(currentStep / (steps.length - 1)) * 100} label={steps[currentStep]} showValue={false} />
+      </div>
+    </>
+  );
+
+  if (payment) {
+    return (
+      <div className="mx-auto max-w-[var(--max-width-content)] px-[clamp(14px,4vw,48px)] py-[clamp(32px,4vw,56px)]">
+        {progress}
+        <PaymentView
+          payment={payment}
+          locale={lang.startsWith("en") ? "en" : "fr"}
+          lines={lines}
+          form={form}
+          shipped={shipped}
+          courseInBasket={courseInBasket}
+          shippingOption={selected}
+          amounts={{ subtotal, shipping, reward: rewardSaving, rewardPercent: programme.rewardPercent, total }}
+          giftCardCount={giftCodes.length}
+          onEdit={leavePayment}
+          onRestart={restartPayment}
+        />
+      </div>
+    );
+  }
+
   const fieldError = (field: keyof CheckoutForm) => showErrors && invalid.includes(field);
-  const payLabel = giftCodes.length > 0
-    ? t("checkout.giftCard.payWithCards")
-    : selected || !shipped
+  // Live: the card is taken at the next step, on this page. Mock: the demo order is placed at once.
+  const payLabel = !selected && shipped
+    ? t("checkout.payNoShipping")
+    : !live
       ? t("cart.pay", { amount: money(total) })
-      : t("checkout.payNoShipping");
+      : giftCodes.length > 0
+        ? t("checkout.giftCard.payWithCards")
+        : t("checkout.continueToPayment");
   const payButton = (
-    <Button variant="primary" fullWidth size="lg" onClick={() => void pay()} loading={submitting} disabled={submitting || !ratesReady || accountMissing}>
+    <Button
+      variant="primary"
+      fullWidth
+      size="lg"
+      iconRight={live && (selected || !shipped) ? ArrowRight : undefined}
+      onClick={() => void pay()}
+      loading={submitting}
+      disabled={submitting || !ratesReady || accountMissing}
+    >
       {payLabel}
     </Button>
   );
@@ -365,12 +479,7 @@ export function Cart() {
 
   return (
     <div className="mx-auto max-w-[var(--max-width-content)] px-[clamp(14px,4vw,48px)] py-[clamp(32px,4vw,56px)] pb-28 lg:pb-[clamp(32px,4vw,56px)]">
-      <div className="mb-10 hidden sm:block">
-        <ProgressBar variant="steps" steps={steps} current={currentStep} />
-      </div>
-      <div className="mb-10 sm:hidden">
-        <ProgressBar value={(currentStep / (steps.length - 1)) * 100} label={steps[currentStep]} showValue={false} />
-      </div>
+      {progress}
 
       <div className="grid grid-cols-1 gap-8 lg:grid-cols-[minmax(0,1fr)_360px]">
         <div className="grid gap-8">
@@ -382,7 +491,8 @@ export function Cart() {
               {lines.map((line) => (
                 <li key={line.id} className="flex flex-wrap items-center gap-4 border-b border-[var(--border-subtle)] py-4 last:border-0 last:pb-0">
                   {line.giftCard ? (
-                    <span className="w-16 flex-none">
+                    // The "sm" card needs ~110px: its padding and 20px amount overflow in a 64px thumbnail.
+                    <span className="w-28 flex-none">
                       <GiftCardVisual design={line.giftCard.design as GiftCardDesign} amountCents={line.unitPrice} size="sm" label="" />
                     </span>
                   ) : line.courseId && !line.image ? (
@@ -572,17 +682,25 @@ export function Cart() {
           )}
 
 
-          <section className="grid gap-3 rounded-[var(--radius-card)] border border-[var(--border-subtle)] bg-[var(--surface-card)] p-[var(--space-6)]">
-            <h2 className="text-[length:var(--text-h3)]">{t("cart.paymentTitle")}</h2>
+          <section className="grid gap-3 rounded-[var(--radius-card)] border border-dashed border-[var(--border-default)] bg-[var(--surface-card)] p-[var(--space-6)]">
+            <div className="flex flex-wrap items-center justify-between gap-3">
+              <h2 className="flex items-center gap-2 text-[length:var(--text-h3)]">
+                <Lock size={18} aria-hidden="true" className="flex-none" />
+                {t("cart.paymentTitle")}
+              </h2>
+              <span className="inline-flex items-center gap-1.5 rounded-full bg-[var(--status-success-bg)] px-3 py-1 text-xs font-semibold text-[var(--status-success-fg)]">
+                <ShieldCheck size={14} aria-hidden="true" />
+                {t("checkout.payment.secureBadge")}
+              </span>
+            </div>
             <p className="m-0 flex items-start gap-2 text-sm text-[var(--text-body)]">
-              <Lock size={16} aria-hidden="true" className="mt-0.5 flex-none" />
-              {t("checkout.paymentRedirect")}
+              <CreditCard size={16} aria-hidden="true" className="mt-0.5 flex-none" />
+              {t("checkout.paymentNext")}
             </p>
-            <p className="m-0 text-xs text-[var(--text-muted)]">{t("cart.payCardDetail")}</p>
           </section>
         </div>
 
-        <aside className="grid content-start gap-4 rounded-[var(--radius-card)] border border-[var(--border-subtle)] bg-[var(--surface-card)] p-[var(--space-6)] shadow-[var(--shadow-xs)] lg:sticky lg:top-24">
+        <aside className="grid min-w-0 grid-cols-[minmax(0,1fr)] content-start gap-4 rounded-[var(--radius-card)] border border-[var(--border-subtle)] bg-[var(--surface-card)] p-[var(--space-6)] shadow-[var(--shadow-xs)] lg:sticky lg:top-24">
           <h2 className="text-[length:var(--text-h4)]">{t("cart.summaryTitle")}</h2>
           {threshold !== null && remainingForFreeShipping !== null && (
             <div className="grid gap-2 rounded-[var(--radius-md)] bg-[var(--surface-brand-wash)] p-4">

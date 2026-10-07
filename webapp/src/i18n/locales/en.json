@@ -236,15 +236,12 @@
     "crossSellEyebrow": "Pairs with",
     "crossSellTitle": "Complete the kit",
     "crossSellCta": "View cart",
-    "toastAddedTitle": "Added to cart",
     "stockLow": "Low stock",
     "stockOut": "Sold out",
     "saveAria": "Save {{name}} to favourites",
     "quickAdd": "Add",
     "quickAddAria": "Add {{name}} to the cart",
     "quickAddDone": "Added",
-    "quickAddToastTitle": "Added to your cart",
-    "quickAddToastBody": "{{name}} is waiting in your cart.",
     "imagePlaceholder": "Product",
     "galleryLabel": "Product images",
     "viewImage": "View image {{index}} of {{total}}",
@@ -296,7 +293,6 @@
     "saveAddress": "Save this delivery address to my account",
     "saveAddressDescription": "It will be filled in for your next orders.",
     "paymentTitle": "Payment",
-    "payCardDetail": "Visa · Mastercard · Amex",
     "summaryTitle": "Summary",
     "subtotal": "Subtotal",
     "shipping": "Shipping",
@@ -323,10 +319,16 @@
     "shippingError": "Delivery options could not be loaded.",
     "shippingNone": "No delivery option serves this country for this basket.",
     "shippingDays": "{{min}} to {{max}} working days",
-    "shippingKind": { "standard": "Standard delivery", "express": "Express delivery", "free": "Free delivery", "pickup": "Studio pickup" },
+    "shippingKind": {
+      "standard": "Standard delivery",
+      "express": "Express delivery",
+      "free": "Free delivery",
+      "pickup": "Studio pickup"
+    },
     "retry": "Try again",
     "payNoShipping": "Choose a delivery option",
-    "paymentRedirect": "You will be taken to the secure payment page of our provider, Stripe. Your card details never go through our site.",
+    "continueToPayment": "Continue to payment",
+    "paymentNext": "At the next step you pay right here on this page, by card or with the payment method of your choice. Your items are reserved while you pay.",
     "formIncomplete": "Complete the highlighted fields and choose a delivery option to continue.",
     "errors": {
       "invalid_request": "Some details are not valid. Check your information and try again.",
@@ -344,7 +346,8 @@
       "gift_card_details_invalid": "The details of a gift card in your cart are no longer accepted (amount, recipient or date). Remove it and build it again.",
       "account_required": "An account is needed to buy a course: access opens on your account. Sign in and try again.",
       "terms_required": "One last thing before paying: your account has not accepted our terms yet.",
-      "course_owned": "You already have access to a course in your basket. Remove it and try again."
+      "course_owned": "You already have access to a course in your basket. Remove it and try again.",
+      "basket_changed": "Your basket changed during payment: check it, then continue to payment again."
     },
     "pendingBadge": "Payment in progress",
     "pendingTitle": "Confirming your payment",
@@ -389,7 +392,46 @@
       "openCourses": "Go to my courses",
       "paidBody": "Your courses are available in your member space."
     },
-    "noShipping": "Nothing to ship: gift cards are sent by email and courses open in your member space."
+    "noShipping": "Nothing to ship: gift cards are sent by email and courses open in your member space.",
+    "recap": {
+      "title": "Your information",
+      "contact": "Contact",
+      "shipTo": "Ship to",
+      "billTo": "Billing",
+      "method": "Delivery",
+      "edit": "Change",
+      "editContact": "Change email address",
+      "editAddress": "Change address",
+      "editMethod": "Change delivery method"
+    },
+    "payment": {
+      "title": "Secure payment",
+      "secureBadge": "Secure payment",
+      "intro": "Choose your payment method. Your card details are encrypted and sent straight to our payment provider: Global Toothgems never stores them.",
+      "loading": "Loading the secure payment form…",
+      "loadErrorTitle": "The payment form did not load",
+      "loadError": "Check your connection (or a content blocker), then restart the payment. Nothing has been charged.",
+      "expiredTitle": "Your payment session has expired",
+      "expiredBody": "For your security, a payment session stays open for one hour. Restart it: your basket and details are kept.",
+      "restart": "Restart payment",
+      "pay": "Pay {{amount}}",
+      "processing": "Processing payment…",
+      "failed": "The payment did not go through. Check your details or try another payment method.",
+      "consentBefore": "By clicking “Pay”, you place an order with an obligation to pay and accept our",
+      "consentLink": "terms of sale",
+      "consentAfter": ".",
+      "trustEncrypted": "Encrypted connection (HTTPS)",
+      "trust3ds": "3-D Secure strong authentication supported",
+      "trustNoStorage": "Card details never stored by us",
+      "poweredBy": "Payment processed by Stripe, a PCI DSS Level 1 certified provider.",
+      "due": "Amount due",
+      "vatIncluded": "VAT included",
+      "giftCards_one": "Gift card",
+      "giftCards_other": "{{count}} gift cards",
+      "reserved": "Order {{reference}}: your items are reserved while you pay.",
+      "showSummary": "Show order summary",
+      "hideSummary": "Hide order summary"
+    }
   },
   "auth": {
     "eyebrow": "Account",
@@ -3509,10 +3551,6 @@
         "settingsHint": "These settings apply to every question in the module.",
         "passingScore": "Passing score",
         "passingScoreHint": "Share of correct answers needed to pass.",
-        "allowRetry": "Allow another attempt",
-        "allowRetryHint": "Learners can retry the knowledge check if they don't pass on their first attempt.",
-        "attempts": "Number of attempts",
-        "attemptsHint": "Attempts allowed before the check locks.",
         "shuffle": "Shuffle answers",
         "shuffleHint": "The answer order changes on every attempt.",
         "immediate": "Show feedback immediately",
@@ -4616,5 +4654,13 @@
     "loading": "Loading the catalogue…",
     "resultCount_one": "{{count}} result",
     "resultCount_other": "{{count}} results"
+  },
+  "cartNotice": {
+    "title": "Added to your cart",
+    "announce": "{{name}} added to your cart.",
+    "qty": "Qty {{count}}",
+    "undo": "Undo",
+    "undoAria": "Undo adding {{name}} to the cart",
+    "viewCart": "View cart"
   }
 }

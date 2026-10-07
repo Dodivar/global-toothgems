@@ -3,7 +3,7 @@ import { serviceClient, stripeClient, requireEnv } from "../_shared/clients.ts";
 import { notifyOrderPaid } from "../_shared/email/notify.ts";
 import { toDecimalString } from "../_shared/money.ts";
 import { readSiteOrigins } from "../_shared/http.ts";
-import { handleCheckout, type CheckoutDeps } from "./handler.ts";
+import { handleCheckout, releasePaymentStep, type CheckoutDeps, type ReleaseDeps } from "./handler.ts";
 
 const supabase = serviceClient();
 const stripe = stripeClient();
@@ -11,8 +11,40 @@ const origins = readSiteOrigins(requireEnv("SITE_URL"), Deno.env.get("ALLOWED_RE
 
 const LABELS = { fr: "Commande", en: "Order" } as const;
 
+/**
+ * The publishable key mounts the payment form in the browser. It must belong to
+ * the same mode as the secret key (test with test, live with live), otherwise
+ * Stripe.js cannot open the session: a mismatch counts as not configured.
+ */
+function matchingPublishableKey(): string | null {
+  const publishable = Deno.env.get("STRIPE_PUBLISHABLE_KEY")?.trim() ?? "";
+  const secret = Deno.env.get("STRIPE_SECRET_KEY")?.trim() ?? "";
+  const mode = (key: string) => /^(?:pk|sk|rk)_(test|live)_/.exec(key)?.[1] ?? null;
+  return publishable.startsWith("pk_") && mode(publishable) !== null && mode(publishable) === mode(secret) ? publishable : null;
+}
+
+const releaseDeps: ReleaseDeps = {
+  async retrieveSession(sessionId) {
+    const session = await stripe.checkout.sessions.retrieve(sessionId);
+    return { clientSecret: session.client_secret, status: session.status, orderId: session.metadata?.order_id ?? null };
+  },
+  async expireSession(sessionId) {
+    await stripe.checkout.sessions.expire(sessionId);
+  },
+  async orderState(orderId) {
+    const { data, error } = await supabase.from("orders").select("status, payment_status").eq("id", orderId).maybeSingle();
+    if (error) throw new Error(error.message);
+    return data ? { status: data.status, paymentStatus: data.payment_status } : null;
+  },
+  async cancelOrder(orderId, reason) {
+    const { error } = await supabase.rpc("cancel_order", { p_order_id: orderId, p_reason: reason });
+    if (error) throw new Error(error.message);
+  },
+};
+
 const deps: CheckoutDeps = {
   origins,
+  publishableKey: matchingPublishableKey(),
 
   async maintenanceEnabled() {
     const { data, error } = await supabase.from("store_settings").select("maintenance_enabled").limit(1).maybeSingle();
@@ -62,12 +94,39 @@ const deps: CheckoutDeps = {
     if (error) throw new Error(error.message);
   },
 
+  async releaseHeldGiftCards(codes) {
+    const { data, error } = await supabase.rpc("unpaid_orders_holding_gift_cards", { p_codes: codes });
+    if (error) throw new Error(error.message);
+    let released = 0;
+    for (const held of data ?? []) {
+      // The session must be provably closed before the order is cancelled: a payment
+      // being completed right now must not be cancelled under the customer.
+      let closed = true;
+      for (const sessionId of held.checkout_session_ids ?? []) {
+        try {
+          await stripe.checkout.sessions.expire(sessionId);
+        } catch {
+          const session = await stripe.checkout.sessions.retrieve(sessionId);
+          if (session.status !== "expired") closed = false;
+        }
+      }
+      if (!closed) continue;
+      await supabase.rpc("cancel_order", { p_order_id: held.order_id, p_reason: "payment_retried" });
+      released += 1;
+    }
+    return released;
+  },
+
+  releasePaymentStep: (sessionId, clientSecret) => releasePaymentStep(sessionId, clientSecret, releaseDeps),
+
   orderPaid: (orderId) => notifyOrderPaid(orderId, (message, detail) => console.error(`[create-checkout-session] ${message}`, detail ?? "")),
 
   async createStripeSession(params, idempotencyKey) {
     const metadata = { order_id: params.orderId, order_number: params.orderNumber };
     const session = await stripe.checkout.sessions.create(
       {
+        // The payment form (Payment Element) is mounted inside our own checkout page.
+        ui_mode: "custom",
         mode: "payment",
         customer_email: params.email,
         client_reference_id: params.orderId,
@@ -87,13 +146,12 @@ const deps: CheckoutDeps = {
         metadata,
         payment_intent_data: { metadata },
         expires_at: params.expiresAt,
-        success_url: params.successUrl,
-        cancel_url: params.cancelUrl,
+        return_url: params.returnUrl,
       },
       { idempotencyKey },
     );
-    if (!session.url) throw new Error("Stripe returned a session without URL");
-    return { id: session.id, url: session.url };
+    if (!session.client_secret) throw new Error("Stripe returned a session without client secret");
+    return { id: session.id, clientSecret: session.client_secret };
   },
 
   async recordCheckoutPayment(orderId, sessionId, amountDue, currency) {

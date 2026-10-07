@@ -118,9 +118,6 @@ export interface Question {
 export interface QuizSettings {
   /** Share of correct answers required to pass, percent. */
   passingScore: number;
-  allowRetry: boolean;
-  /** Only meaningful while `allowRetry` is true. */
-  attempts: number;
   shuffleAnswers: boolean;
   immediateFeedback: boolean;
   showAnswers: boolean;
@@ -244,8 +241,6 @@ export const COVER_LIBRARY: string[] = [
 
 export const DEFAULT_QUIZ_SETTINGS: QuizSettings = {
   passingScore: 70,
-  allowRetry: true,
-  attempts: 3,
   shuffleAnswers: true,
   immediateFeedback: true,
   showAnswers: true,

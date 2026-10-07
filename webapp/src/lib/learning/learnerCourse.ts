@@ -110,8 +110,6 @@ interface QuizJson {
   title: string;
   intro: string | null;
   passing_score: number;
-  allow_retry: boolean;
-  max_attempts: number;
   shuffle_answers: boolean;
   immediate_feedback: boolean;
   show_answers: boolean;
@@ -273,8 +271,6 @@ function toQuiz(json: QuizJson): Quiz {
     questions: json.questions.map(toQuestion),
     settings: {
       passingScore: json.passing_score,
-      allowRetry: json.allow_retry,
-      attempts: json.max_attempts,
       shuffleAnswers: json.shuffle_answers,
       immediateFeedback: json.immediate_feedback,
       showAnswers: json.show_answers,

@@ -229,14 +229,28 @@ The cart (`lib/cart.tsx`, pure rules in `lib/checkout/cartLines.ts`) holds integ
 catalogue's `products.id` / `product_variants.id` on each line; it is kept for the tab in `sessionStorage`
 (`lib/cartStorage.ts`, a cart stored in the older float format is discarded). Its prices are indicative.
 
+A product added with `addLine` (product page, quick add on the cards) opens a notice under the header's cart
+icon (`components/layout/CartAddedNotice.tsx`, styles `.gt-cart-notice` in `index.css`) instead of a toast: the
+line, "Undo", "View cart" and a 4-second countdown bar held while the notice is hovered or focused. It closes
+on a click elsewhere, Escape or a page change. Undo takes back the units the addition really put on the line
+(`addedQty` / `undoAddition`, capped merges included). Gift cards and courses open the cart page instead.
+
 With the Supabase variables set, `screens/Cart.tsx`:
 
 1. reads the delivery rates of the destination's zone (public tables) and lets the customer pick one
    (`lib/checkout/shippingRates.ts`, cheapest pre-selected);
 2. sends identifiers, quantities, contact details and the rate id — never an amount — to the Edge Function
    `create-checkout-session` (`lib/checkout/api.ts`, `supabase.functions.invoke`), which creates the order with
-   `create_order()` and a Stripe Checkout Session for the amount the database computed;
-3. follows the returned URL, only if it is `https://checkout.stripe.com/…`.
+   `create_order()` and a Stripe Checkout Session (`ui_mode: custom`) for the amount the database computed;
+3. switches to its payment step on the same page (`components/checkout/PaymentView.tsx`): a recap of the
+   details with "Change", the order summary with the amount due as the database computed it, and Stripe's
+   Payment Element (`components/checkout/PaymentStep.tsx`, lazy-loaded: Stripe.js is fetched only then, never in
+   mock mode) drawn with the site's tokens (`lib/checkout/stripe.ts`, Appearance API + Montserrat). "Pay" calls
+   `checkout.confirm()`; card payments confirm in place (3-D Secure in Stripe's modal) and go to the confirmation
+   page, bank redirects come back to it. "Change" (or a basket changed in another tab) closes the step through the
+   function (`release_client_secret`: order cancelled, stock and gift cards released); an expired step (60 min)
+   offers "Restart payment". The step's client secret is kept in the tab's `sessionStorage` so a reload's next
+   checkout closes it first (`previous_client_secret`).
 
 Gift cards in the cart (`lib/giftCards/`, `components/shop/GiftCardCodes.tsx`):
 
@@ -265,7 +279,7 @@ Academy courses in the cart (phase D):
 - **Not deployed.** If `create-checkout-session` does not exist yet (HTTP 404) the cart says payment is unavailable;
   nothing is ever confirmed without the function's answer.
 
-Stripe sends the customer back to `/fr/panier/confirmation?session_id=cs_…` (`/en/cart/confirmation`,
+After the payment the customer lands on `/fr/panier/confirmation?session_id=cs_…` (`/en/cart/confirmation`,
 `screens/CheckoutReturn.tsx`). That page only reads `checkout_session_status()` — order number and state — and
 checks again for about a minute; the order becomes paid solely through the verified `stripe-webhook`. The cart
 is emptied once the database says the order is paid. Errors are shown as translated messages (`checkout.errors.*`).
@@ -494,7 +508,7 @@ How it works:
 - **Access** (`lib/learning/access.ts`, enforced by the database functions): an entitlement is required; a draft is never shown; a course that was *unpublished* (owner, 2026-10-01) stays on its holders' dashboard, greyed out with a "back soon" message, and its pages show the same message instead of the content. Loading and load errors have their own screens.
 - **Authored HTML is sanitised** before a learner reads it (`lib/learning/sanitizeHtml.ts`, allow-list, tested).
 - **Video**: real sources (http(s), blob) play in a native `<video>` behind custom controls; the prototype's placeholder sources (`gtg-media://…`) run on a simulated clock labelled "demo footage". Keyboard: Space/K, ←/→, M, F.
-- **Knowledge checks** follow the settings chosen in the builder: immediate or end-of-check feedback, revealed answers, shuffling once per attempt, retries and attempt limits. Wrong answers are explained in the administrator's words, never punished. The browser never holds the answer keys: `QuizPlayer` asks a grader, which is the server for a learner and the local answer keys in the administrator's preview. With immediate feedback the first answer to a question stands.
+- **Knowledge checks** follow the settings chosen in the builder: immediate or end-of-check feedback, revealed answers, shuffling once per attempt; a learner can retake a check as often as needed until they pass it (no attempt limit). Wrong answers are explained in the administrator's words, never punished. The browser never holds the answer keys: `QuizPlayer` asks a grader, which is the server for a learner and the local answer keys in the administrator's preview. With immediate feedback the first answer to a question stands.
 - `lib/progress.tsx` is the one source for the dashboard, certificates (the server's verification code), community access and review eligibility. The dashboard's "available" courses are the published Academy (`useAcademy()`) minus the held ones; a course's sales page offers "continue the training" to a member who holds it.
 
 ## Course authoring on Supabase (back office)

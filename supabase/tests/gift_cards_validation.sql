@@ -211,6 +211,34 @@ begin
   end if;
   passed := array_append(passed, 'GC5 unknown / expired / cancelled / empty / malformed codes: one identical error; a valid one pays');
 
+  -- GC5b a card held by an abandoned (unpaid) order is listed, releasable, and usable again --
+  v_id := public.issue_gift_card(5, 'held.gc@example.invalid');
+  select code into v_code_empty from public.gift_cards where id = v_id;
+  o := public.create_order(null, 'guest.gc@example.invalid',
+         jsonb_build_array(jsonb_build_object('product_id', p_gel, 'quantity', 1)), fr, fr, r_std,
+         p_gift_card_codes => array[v_code_empty]);
+  if o.payment_status = 'paid' then raise exception 'FAIL GC5b: fixture order paid in full, pick a cheaper card'; end if;
+  select count(*) into v_cnt from public.unpaid_orders_holding_gift_cards(array[lower(v_code_empty)]) where order_id = o.id;
+  if v_cnt <> 1 then raise exception 'FAIL GC5b: the held order is not listed'; end if;
+  select count(*) into v_cnt from public.unpaid_orders_holding_gift_cards(array[v_code]) where order_id = o.id;
+  if v_cnt <> 0 then raise exception 'FAIL GC5b: an order is listed for a card it does not hold'; end if;
+  if (select balance from public.gift_cards where id = v_id) <> 0 then raise exception 'FAIL GC5b: the card was not held'; end if;
+  perform public.cancel_order(o.id, 'payment_retried');
+  if (select balance from public.gift_cards where id = v_id) <> 5 then raise exception 'FAIL GC5b: cancelling did not credit the card back'; end if;
+  select count(*) into v_cnt from public.unpaid_orders_holding_gift_cards(array[v_code_empty]);
+  if v_cnt <> 0 then raise exception 'FAIL GC5b: a released order is still listed'; end if;
+  perform set_config('role', 'authenticated', true);
+  perform set_config('request.jwt.claims', json_build_object('sub', alice, 'role', 'authenticated')::text, true);
+  v_state := null;
+  begin
+    perform public.unpaid_orders_holding_gift_cards(array[v_code_empty]);
+  exception when others then v_state := sqlstate;
+  end;
+  perform set_config('role', 'service_role', true);
+  perform set_config('request.jwt.claims', json_build_object('role', 'service_role')::text, true);
+  if v_state is distinct from '42501' then raise exception 'FAIL GC5b: a customer may call the release lookup (%)', v_state; end if;
+  passed := array_append(passed, 'GC5b held cards listed for the backend only, balance restored by cancelling, never listed after');
+
   -- GC6 staff input validation -------------------------------------------------------
   perform set_config('role', 'authenticated', true);
   perform set_config('request.jwt.claims', json_build_object('sub', mgr, 'role', 'authenticated')::text, true);

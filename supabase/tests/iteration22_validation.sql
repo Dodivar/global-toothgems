@@ -14,7 +14,7 @@ declare
   mgr   uuid := '00000000-0000-4000-a000-000000220001';  -- manager: manage_training
   cst   uuid := '00000000-0000-4000-a000-000000220002';  -- member who is granted the course
   oth   uuid := '00000000-0000-4000-a000-000000220003';  -- another member, never granted
-  cs2   uuid := '00000000-0000-4000-a000-000000220004';  -- member used for the attempt limit
+  cs2   uuid := '00000000-0000-4000-a000-000000220004';  -- member used for the unlimited attempts
   c1    uuid := '00000000-0000-4000-a000-0000002200c1';  -- published, granted
   c2    uuid := '00000000-0000-4000-a000-0000002200c2';  -- draft
   m1    uuid := '00000000-0000-4000-a000-0000002200a1';
@@ -70,7 +70,7 @@ begin
             jsonb_build_object('id', b1, 'kind', 'image', 'media_id', img, 'alt_text', 'Poste'))),
           jsonb_build_object('id', s2, 'title', 'Matériel', 'duration_minutes', 5)),
         'quiz', jsonb_build_object('id', qz1, 'title', 'Contrôle 1', 'passing_score', 80,
-          'allow_retry', true, 'max_attempts', 3, 'immediate_feedback', false, 'show_answers', true,
+          'immediate_feedback', false, 'show_answers', true,
           'questions', jsonb_build_array(
             jsonb_build_object('id', q1, 'text', 'Q1', 'correct_feedback', 'BRAVO-SECRET',
               'incorrect_feedback', 'RATE-SECRET', 'answers', jsonb_build_array(
@@ -82,7 +82,7 @@ begin
       jsonb_build_object('id', m2, 'title', 'Poser', 'steps', jsonb_build_array(
           jsonb_build_object('id', s3, 'title', 'Pose', 'duration_minutes', 20)),
         'quiz', jsonb_build_object('id', qz2, 'title', 'Contrôle 2', 'passing_score', 50,
-          'allow_retry', true, 'max_attempts', 2, 'immediate_feedback', true, 'show_answers', false,
+          'immediate_feedback', true, 'show_answers', false,
           'questions', jsonb_build_array(
             jsonb_build_object('id', q3, 'text', 'Q3', 'answers', jsonb_build_array(
                 jsonb_build_object('id', a5, 'text', 'Cinq', 'is_correct', true),
@@ -279,7 +279,7 @@ begin
   if jsonb_array_length(v -> 0 -> 'progress' -> 'attempts') <> 4 then raise exception 'FAIL C1: attempts %', v; end if;
   passed := passed || 'C1'::text;
 
-  -- A1: attempts are limited by the check's settings -----------------------------------
+  -- A1: attempts are not limited: a failing member retries until they pass -----------------------------------
   perform set_config('request.jwt.claims', json_build_object('sub', cs2, 'role', 'authenticated')::text, true);
   perform public.complete_course_step(s1);
   perform public.complete_course_step(s2);
@@ -287,9 +287,12 @@ begin
   perform public.complete_course_step(s3);
   perform public.submit_quiz_answers(m2, jsonb_build_object(q3, a6));
   perform public.submit_quiz_answers(m2, jsonb_build_object(q3, a6));
+  perform public.submit_quiz_answers(m2, jsonb_build_object(q3, a6));
+  v := public.submit_quiz_answers(m2, jsonb_build_object(q3, a5));
+  if not (v ->> 'passed')::boolean then raise exception 'FAIL A1: fourth attempt not scored as passed %', v; end if;
   begin
     perform public.submit_quiz_answers(m2, jsonb_build_object(q3, a5));
-    raise exception 'FAIL A1: third attempt accepted (max 2)';
+    raise exception 'FAIL A1: attempt accepted after the check was passed';
   exception when invalid_parameter_value then null;
   end;
   select count(*) into v_cnt from public.lesson_progress;

@@ -1,8 +1,10 @@
 /**
  * Entry point of the e-mail module (decision 79): what the Edge Functions import.
  *
- *   import { emailDepsFromEnv, sendTemplatedEmail } from "../_shared/email/mod.ts";
- *   const result = await sendTemplatedEmail(emailDepsFromEnv(), { templateKey: "order_confirmation", … });
+ * Functions import `emailDepsFromEnv` and `sendTemplatedEmail` from this module, then call
+ * `sendTemplatedEmail(emailDepsFromEnv(), { templateKey: "order_confirmation", … })`.
+ * (No import line in this comment: the Supabase CLI scans comments for import paths and warns
+ * when one does not resolve from this file.)
  */
 import { requireEnv, serviceClient } from "../clients.ts";
 import { parseOrigin } from "../http.ts";

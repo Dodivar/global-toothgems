@@ -155,7 +155,11 @@ export function CheckoutReturn() {
         <p role="status" className="m-0 max-w-[480px] text-[var(--text-body)]">
           {view.kind === "slow" ? t("checkout.slowBody") : t("checkout.statusError")}
         </p>
-        <Button variant="primary" onClick={retry}>{t("checkout.checkAgain")}</Button>
+        <div className="flex flex-wrap justify-center gap-3">
+          <Button variant="primary" onClick={retry}>{t("checkout.checkAgain")}</Button>
+          {/* A bank redirect that failed leaves the order unpaid: the basket is still there. */}
+          <Button variant="outline" onClick={() => navigate("/panier")}>{t("checkout.backToCart")}</Button>
+        </div>
       </>
     );
   } else {

@@ -127,8 +127,11 @@ supabase/
 | 20261005121753 | `email_log_apply_event` | **Applied 2026-10-05.** `email_log_apply_event(provider_id, status)` (service role): moves an `email_log` row forward to delivered / opened / bounced / complained, never back, so a replayed or out-of-order Resend event changes nothing (`applied` says whether it moved; unknown ids answer `matched = false`); a bounce or complaint of a `newsletter*` e-mail also marks the subscriber, found through the new expression index `newsletter_subscriptions_email_hash_idx` on `sha256(lower(email))` (email_log only holds that hash, so no column was added) |
 | 20261005122328 | `email_pending_events` | **Applied 2026-10-05.** What the `send-pending-emails` sweep still has to e-mail, decided in SQL (service role only, last 7 days, minus what `email_log` already holds, `private.email_event_open()`): `pending_shipping_emails()` (parcels `shipped`, paid order, one per parcel), `pending_course_enrolment_emails(order?)` (`purchase` entitlements of a paid order, not revoked, course title in the order's language), `pending_refund_emails()` (`succeeded` rows of `refunds`) |
 | 20261005131234 | `email_cron_jobs` | **Applied 2026-10-05.** The two pg_cron jobs `deliver-gift-cards` and `send-pending-emails` (every 5 minutes) through `private.call_email_function(name)`, which reads the Vault secret `email_internal_secret` at each run and does nothing while it is missing; change a schedule with `cron.alter_job` in a new migration |
+| 20261006172723 | `release_held_gift_card_orders` | **Applied 2026-10-06.** `unpaid_orders_holding_gift_cards(codes)` (service role): unpaid orders holding those gift cards + their pending Stripe session ids. `create-checkout-session` expires the sessions and cancels the orders (cards credited back) before a new order, so retrying after cancelling on Stripe works |
 | 20261002064949 | `settings_shipping_positions` | `admin_save_shipping()` numbers zones and rates from 1 like every existing row, so saving an unchanged configuration writes nothing |
 | 20261003131220 | `studio_gem_group_thumbnails` | `gem_groups.thumbnail_path` (null or inside the owner's folder, column grants for insert/update): each new Gem Group keeps a captured render of its pieces alone on the smile at `studio-thumbnails/<user id>/groups/<group id>.jpg` (bucket policies unchanged: they check the first folder). Suite `tests/studio_workspace_validation.sql` |
+| 20261007072551 | `quiz_unlimited_attempts` | **Applied 2026-10-07.** Knowledge checks have no attempt limit: `private.open_quiz_attempt()` no longer raises `no_attempts_left` (a passed check still refuses new attempts) |
+| 20261007072552 | `quiz_unlimited_attempts_cleanup` | **Partly applied 2026-10-07.** `admin_save_course()` and `private.learner_course_json()` rewritten without `allow_retry` / `max_attempts` (applied live through SQL, not recorded in the migration history). `drop column` on `course_quizzes` **not applied yet**: the MCP call timed out three times with no lock or session visible; the columns are unused and keep their defaults, so nothing depends on the drop |
 
 RLS is **enabled in the same migration that creates each table** (deny by default);
 policies are granted back in `rls_policies`.
@@ -215,7 +218,7 @@ server  create_order(user, email, items[{product_id, variant_id, quantity}], bil
           → prices from products/variants, shipping from shipping_rates (zone, bounds, free-over),
             VAT per line at the destination rate (prices include VAT, rounded per line; shipping at standard rate),
             snapshots, stock RESERVED, expires_at = now + 60 min            → order 'pending'
-server  create Stripe Checkout Session for order.amount_due / currency
+server  create Stripe Checkout Session (ui_mode custom: payment form on our page) for order.amount_due / currency
 webhook checkout.session.completed → record stripe_webhook_events → mark_order_paid(order, amount, currency, cs_…, pi_…)
           → amount/currency must match; payment row upserted; reserved stock becomes a SALE → order 'confirmed'
 webhook checkout.session.expired   → cancel_order(order, 'expired')   → reservation RELEASED
@@ -234,16 +237,29 @@ note (restock or refund) — it never oversells.
 
 ```
 browser  POST functions/v1/create-checkout-session  {items[{product_id, variant_id, quantity} | {course_id, quantity: 1}], email, address,
-                                                      shipping_rate_id, locale, promotion_codes?, gift_card_codes?}
+                                                      shipping_rate_id, locale, promotion_codes?, gift_card_codes?,
+                                                      previous_client_secret?}
            → strict validation (_shared/checkoutInput.ts): no amount, total or currency is accepted
            → user = auth.getUser(Bearer token) when a user token is sent, else guest
+           → previous_client_secret: that unpaid payment step is closed first (see release below)
+           → no STRIPE_PUBLISHABLE_KEY of the secret key's mode → payment_unavailable, nothing reserved
            → create_order(…, reservation 70 min) with the service role
-           → amount_due = 0 (gift cards) → {status: 'paid'}; otherwise Stripe Checkout Session:
+           → amount_due = 0 (gift cards) → {status: 'paid'}; otherwise Stripe Checkout Session, ui_mode 'custom'
+               (decision 80: the Payment Element is mounted on our own cart page, no redirect to Stripe):
                one line "Commande GT-…" for orders.amount_due in minor units, metadata.order_id,
                idempotency key checkout-session:<order id>, expires_at = now + 60 min,
-               success/cancel URLs on SITE_URL or an allowed origin (ALLOWED_RETURN_ORIGINS)
-           → payments row 'pending' with the cs_… id → {status: 'redirect', url}
+               return_url = confirmation page on SITE_URL or an allowed origin (ALLOWED_RETURN_ORIGINS)
+           → payments row 'pending' with the cs_… id → {status: 'payment', client_secret, publishable_key,
+             order_number, amount_due (minor units), currency, expires_at}
            → Stripe unreachable: cancel_order(order, 'checkout_failed') → reservation released
+browser  POST functions/v1/create-checkout-session  {release_client_secret}   (the customer left the payment step)
+           → session retrieved; its client_secret must equal the one sent; open → expired on Stripe (a session
+             that cannot be expired, i.e. being paid, is left alone); then cancel_order(order, 'payment_step_left')
+             while the order is pending and unpaid → stock and gift cards released. Always {status: 'released'}.
+browser  Payment Element (Stripe.js, @stripe/stripe-js 7 = "basil", same release as the functions' API version)
+           → checkout.confirm({billingAddress, redirect: 'if_required'}): cards and wallets confirm in place
+             (3-D Secure in Stripe's modal) then the page goes to the confirmation page; bank redirects come back
+             to return_url. Confirming grants nothing: the webhook below does.
 Stripe   POST functions/v1/stripe-webhook (verify_jwt = false; the Stripe signature is the authentication)
            → constructEventAsync + SubtleCrypto provider; bad signature → 400, nothing recorded
            → record_stripe_webhook_event(): processed / ignored → 200 without doing anything
@@ -283,6 +299,7 @@ supabase functions deploy stripe-webhook          # verify_jwt = false comes fro
 ```
 
 Secrets (Edge Function environment only, never `NEXT_PUBLIC_*`): `STRIPE_SECRET_KEY` (sk_test_…),
+`STRIPE_PUBLISHABLE_KEY` (pk_test_…, same account and mode: returned to the browser to mount the payment form),
 `STRIPE_WEBHOOK_SECRET` (whsec_…), `SITE_URL` (production origin), `ALLOWED_RETURN_ORIGINS` (comma-separated
 exact origins, e.g. `http://localhost:5173`). `SUPABASE_URL` / `SUPABASE_SERVICE_ROLE_KEY` are provided by Supabase.
 
@@ -394,6 +411,7 @@ refund     request_refund = card (Stripe) payments only; refund_to_gift_cards() 
   cache that can never go negative. Kinds: purchase, issue, redemption, reversal, refund, adjustment,
   extension, cancellation, resend.
 - **Gift cards are a payment, not a discount**: order totals and VAT are unchanged when a card is used.
+- **Retry after an abandoned payment** (2026-10-06): a card is debited while its order is unpaid, so `create-checkout-session` first releases unpaid orders holding the submitted codes (Stripe session expired — or proven expired — then `cancel_order`; a session that may be paid is left alone). Whoever presents the code may release it: it is a bearer credential.
 - Cards cannot pay for gift cards; must be active, delivered (not future-scheduled), unexpired, same currency;
   max 5 per order; one generic "not usable" error for unknown/empty/expired codes.
 - **Codes are bearer credentials** (`GT-XXXX-XXXX-XXXX`, 60 random bits, no 0/O/1/I): never granted to any API
@@ -847,7 +865,7 @@ course_completions (user, course, completed_at, average_score, min_score, certif
   `complete_all_quizzes`; a node is open up to the first required node not done, or when done):
   - `complete_course_step(step)` — idempotent; refused (`learning: locked`) when the step is not open.
   - `answer_quiz_question(module, question, answer)` — immediate-feedback checks only: opens an attempt if none
-    (unlocked, not passed, an attempt left: `allow_retry ? max(1, max_attempts) : 1`; pass mark snapshotted),
+    (unlocked, not passed; no attempt limit since `20261007072551`; pass mark snapshotted),
     records the **first** answer to the question and returns its correction; answering again returns the recorded
     one. No probing every option before submitting.
   - `submit_quiz_answers(module, {question: answer})` — recorded answers stand, the payload fills the others,
@@ -865,7 +883,7 @@ course_completions (user, course, completed_at, average_score, min_score, certif
   answer of a published course is never blocked, and members' rows are never erased; keys the course no longer has
   are ignored by the rules.
 - Suite: `tests/iteration22_validation.sql` (grants and their audit, another member refused content, answers,
-  media, progress and holders list, path locking, end-of-check and immediate-feedback scoring, attempt limit,
+  media, progress and holders list, path locking, end-of-check and immediate-feedback scoring, unlimited attempts until passed,
   completion and certificate, withdrawn course, revocation and re-grant).
 
 ### Academy course sales (iteration 23, phase D)
@@ -1209,7 +1227,7 @@ VAT rates, shipping zones/rates mirroring the Settings prototype. Media rows ref
     passed the old check keeps the pass. A step moved out of a module that the same save deletes is re-created
     under its id, so its progress rows still match.
 52. **Immediate-feedback checks lock the first answer** (agent, 2026-10-01): the first `answer_quiz_question()` call
-    opens an attempt that counts against the allowed attempts, and the first answer to each question stands until
+    opens an attempt (attempts are unlimited until the check is passed, `20261007072551`), and the first answer to each question stands until
     the attempt is submitted (a member who leaves resumes the same attempt). Otherwise a member could probe every
     option before submitting. End-of-check mode is one `submit_quiz_answers()` call.
 53. **Manual grants** (agent, 2026-10-01, to confirm): only for a course that was ever published; by exact account
@@ -1390,6 +1408,24 @@ VAT rates, shipping zones/rates mirroring the Settings prototype. Media rows ref
       `email_internal_secret` holds the same value as `EMAIL_INTERNAL_SECRET` (the crons themselves are in migration `email_cron_jobs`; the manual form below is kept for reference):
       `select cron.schedule('deliver-gift-cards', '*/5 * * * *', $$ select net.http_post(url := 'https://<project-ref>.supabase.co/functions/v1/deliver-gift-cards', headers := jsonb_build_object('x-internal-secret', (select decrypted_secret from vault.decrypted_secrets where name = 'email_internal_secret')), body := '{}'::jsonb) $$);`
       (needs `pg_net` and a vault secret `email_internal_secret`; not part of a migration because of the secret).
+
+80. **The payment form is on our own page** (user request, 2026-10-07): the Checkout Session is created with
+    `ui_mode: 'custom'` and Stripe's Payment Element is mounted in the cart's last step (`webapp/src/components/checkout/`),
+    instead of redirecting to Stripe's hosted page. Same session, same webhook events, same return page, same
+    amount (one line = `orders.amount_due`). Card data stays in Stripe's iframes (PCI SAQ A unchanged).
+    - Stripe.js is pinned to the same release as the functions (`@stripe/stripe-js` 7.x = basil,
+      `@stripe/react-stripe-js` 4.0.x, API `2025-08-27.basil`, where the mode is called `custom`; newer releases
+      rename it `elements`). Upgrade both sides together.
+    - The publishable key comes from the function (`STRIPE_PUBLISHABLE_KEY` secret, checked to be in the secret
+      key's mode), not from a `NEXT_PUBLIC_*` variable, so test and live keys cannot drift apart.
+    - Going back from the payment step (or a basket changed in another tab) closes the step: session expired,
+      order cancelled with reason `payment_step_left`. The client secret is the proof of ownership; it lives in the
+      page and in the tab's sessionStorage only. A step left by closing the tab expires with its reservation.
+    - Billing name and address are the ones typed in the details step, sent with the confirmation (the form does
+      not ask twice). Below the pay button: "By clicking Pay you place an order with an obligation to pay and accept
+      our terms of sale" (link) — **to confirm** by the owner / legal review (guests never ticked the terms before).
+    - Apple Pay / Google Pay appear in the Payment Element once enabled in Stripe, Apple Pay after domain
+      verification of the production domain in the Stripe dashboard (user action).
 
 ## Done
 

@@ -71,8 +71,6 @@ function courseJson(overrides: Partial<LearnerCourseJson> = {}): LearnerCourseJs
           title: "Contrôle",
           intro: null,
           passing_score: 80,
-          allow_retry: true,
-          max_attempts: 3,
           shuffle_answers: false,
           immediate_feedback: false,
           show_answers: true,

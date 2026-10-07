@@ -7,9 +7,8 @@ import { Button } from "../ui/Button";
 import type { Answer, Question, Quiz } from "../../data/adminTraining";
 import type { ContentLang } from "../../lib/localized";
 import { useCourseMediaUrl } from "../../lib/progress";
-import { attemptsLeft, type QuizResult, type QuizScore } from "../../lib/learning/path";
+import type { QuizResult, QuizScore } from "../../lib/learning/path";
 import type { Correction, QuizGrader } from "../../lib/learning/grading";
-import { contactHref } from "../../data/legal/routes";
 import { ProgressRing, ThinProgress } from "./LearningStatus";
 
 /**
@@ -48,7 +47,6 @@ export function QuizPlayer({
   quiz,
   lang,
   result,
-  unlimited = false,
   grader,
   onSubmitted,
   continueAction,
@@ -58,8 +56,6 @@ export function QuizPlayer({
   lang: ContentLang;
   /** The learner's record for this check; absent in the administrator's preview. */
   result?: QuizResult;
-  /** Preview: attempts are not counted. */
-  unlimited?: boolean;
   grader: QuizGrader;
   /** After the attempt was scored (and recorded, for a learner). */
   onSubmitted?: (score: QuizScore) => void;
@@ -80,10 +76,9 @@ export function QuizPlayer({
   const [failed, setFailed] = useState(false);
   const heading = useRef<HTMLHeadingElement>(null);
 
-  const left = unlimited ? Number.POSITIVE_INFINITY : attemptsLeft(quiz, result);
   const passedBefore = Boolean(result?.passed);
   const total = quiz.questions.length;
-  const { immediateFeedback, passingScore, allowRetry } = quiz.settings;
+  const { immediateFeedback, passingScore } = quiz.settings;
 
   // Moving between questions moves the reader too: focus lands on the new
   // question, so a screen reader announces it instead of staying on "Next".
@@ -166,11 +161,6 @@ export function QuizPlayer({
           <li className="rounded-[var(--radius-pill)] bg-[var(--surface-sunken)] px-3 py-1.5">
             {t("learning.quiz.passMark", { score: passingScore })}
           </li>
-          {!unlimited && !passedBefore && (
-            <li className="rounded-[var(--radius-pill)] bg-[var(--surface-sunken)] px-3 py-1.5">
-              {t("learning.quiz.attemptsLeft", { count: left })}
-            </li>
-          )}
         </ul>
 
         {passedBefore ? (
@@ -190,7 +180,7 @@ export function QuizPlayer({
               </div>
             )}
           </div>
-        ) : left > 0 ? (
+        ) : (
           <div className="grid gap-3">
             <p className="m-0 flex items-start gap-2 text-[length:var(--text-body-sm)] text-[var(--text-muted)]">
               <Sparkles size={16} aria-hidden="true" className="mt-0.5 flex-none text-[var(--accent-highlight)]" />
@@ -202,8 +192,6 @@ export function QuizPlayer({
               </Button>
             </div>
           </div>
-        ) : (
-          <NoAttemptsLeft reviewHref={reviewHref} />
         )}
       </section>
     );
@@ -212,7 +200,7 @@ export function QuizPlayer({
   /* ------------------------------------------------------------------------ */
 
   if (phase === "result" && score) {
-    const canRetry = !score.passed && (unlimited || (allowRetry && left > 0));
+    const canRetry = !score.passed;
     return (
       <section className="grid gap-6 rounded-[var(--radius-card)] border border-[var(--border-subtle)] bg-[var(--surface-card)] p-[clamp(20px,3.4vw,36px)] shadow-[var(--shadow-xs)]">
         <div className="flex flex-wrap items-center gap-5">
@@ -263,13 +251,7 @@ export function QuizPlayer({
               {t("learning.quiz.reviewModule")}
             </Link>
           )}
-          {!score.passed && !unlimited && allowRetry && left > 0 && (
-            <span className="text-[length:var(--text-caption)] text-[var(--text-muted)]">
-              {t("learning.quiz.attemptsLeft", { count: left })}
-            </span>
-          )}
         </div>
-        {!score.passed && !canRetry && <NoAttemptsLeft />}
       </section>
     );
   }
@@ -482,25 +464,5 @@ function ReviewRow({
         <p className="m-0 pl-7 text-[length:var(--text-caption)] text-[var(--text-body)]">{correction.feedback[lang]}</p>
       )}
     </li>
-  );
-}
-
-function NoAttemptsLeft({ reviewHref }: { reviewHref?: string }) {
-  const { t } = useTranslation();
-  return (
-    <div className="grid gap-2 rounded-[var(--radius-md)] bg-[var(--surface-brand-wash-strong)] p-4 text-[length:var(--text-body-sm)] text-[var(--text-body)]">
-      <strong className="text-[var(--text-primary)]">{t("learning.quiz.noAttemptsTitle")}</strong>
-      <p className="m-0">{t("learning.quiz.noAttemptsBody")}</p>
-      <div className="flex flex-wrap gap-4">
-        {reviewHref && (
-          <Link to={reviewHref} className="font-semibold underline decoration-1 underline-offset-4">
-            {t("learning.quiz.reviewModule")}
-          </Link>
-        )}
-        <Link to={contactHref()} className="font-semibold underline decoration-1 underline-offset-4">
-          {t("learning.quiz.contact")}
-        </Link>
-      </div>
-    </div>
   );
 }
