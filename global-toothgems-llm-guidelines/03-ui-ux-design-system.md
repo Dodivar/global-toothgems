@@ -146,3 +146,13 @@ Use subtle motion:
 
 Respect `prefers-reduced-motion`.
 Avoid motion that delays checkout or learning.
+
+## E-mail
+
+Customer e-mails share one layout and component set
+(`supabase/functions/_shared/email/`: `tokens.ts`, `components.ts`, `layout.ts`;
+preview with `preview.ts`). A new e-mail changes content blocks only, never the
+header, footer, colours or button styles. Same rules as the site: one emerald
+primary action per e-mail with ink text, fuchsia only in promotional blocks, no
+script face (Montserrat italic accent only), states named in words, https-only
+links and images, no information carried by an image alone.

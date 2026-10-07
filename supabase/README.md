@@ -1341,7 +1341,27 @@ VAT rates, shipping zones/rates mirroring the Settings prototype. Media rows ref
       `record_gift_card_delivery` and `newsletter_subscriptions.status`.
     - Auth e-mails (confirmation, recovery, invitation, change) keep going through Supabase Auth, over Resend SMTP
       (`smtp.resend.com`, user `resend`, API key as password); their templates are edited in the Supabase dashboard.
-    - A visual preview of the layout is a script rendering the layout to a file, not a React Email dev server.
+    - A visual preview of the layout is a script rendering the layout to a file, not a React Email dev server:
+      `deno run --allow-write=<dir> _shared/email/preview.ts <dir>` (from `supabase/functions`).
+    - **Master layout and components (2026-10-07):** every e-mail, database template or not, goes through one
+      layout. `tokens.ts` (the site's colours as literals: emerald = the one primary action, fuchsia = promotions
+      only, pastel blue on surfaces), `html.ts` (escaping, https-only links and images), `components.ts` (title,
+      intro, eyebrow, heading, paragraph, Montserrat-italic accent line, primary/secondary buttons, text link,
+      badge, info/success/warning/important notices, divider, image, label/value details, order summary, product
+      card, course card, promotion block — each returns HTML and its plain-text twin), `layout.ts` (fluid 600px
+      card, logo header, footer with support link, localized help/legal/privacy/terms links, optional social links,
+      postal address and unsubscribe, copyright). `renderEmail(template, values, layout, content?)` keeps its
+      contract; the optional `content` (eyebrow, title — defaults to the subject —, intro, actions, blocks,
+      unsubscribe URL) is built by the calling code, never from substituted values. Logo:
+      `webapp/public/email/logo-wordmark.png` (360×99, flattened on white so dark-mode clients keep it legible),
+      served at `<SITE_URL>/email/logo-wordmark.png` — it shows only once the webapp is deployed with it. Montserrat
+      loads where clients allow web fonts, else Helvetica/Arial (Outlook forced to Arial). Brand name in the layout:
+      "Global Toothgems", as on the site (the `EMAIL_FROM` display name is a secret, unchanged).
+      Not done: the existing callers (`orders.ts`, `giftCards.ts`, `events.ts`) still send body-only templates
+      (title = subject); giving them order summaries and buttons needs fr/en labels per e-mail. Product images
+      are WebP in `product-media`, which Outlook desktop does not show: render a JPEG/PNG through the image
+      transformation endpoint before using them in an e-mail. Auth e-mails (Supabase dashboard templates) do not
+      use this layout yet.
     - To add when the first e-mail ships: a `email_log` table (template, recipient hash, resend id, status, order or
       card id) with a unique key per business event, so a retried webhook cannot send an order e-mail twice.
     - Missing templates to seed: `gift_card_delivery`, `order_refunded` (and `course_enrolment` already exists).
