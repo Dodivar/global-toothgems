@@ -54,7 +54,7 @@ export function QuickColorPanel({
         isSelected={(fid) => selected.every((j) => !j.customColor && j.color === fid)}
         onPick={(fid) => {
           studioStore.pushHistory();
-          studioStore.updateSelected({ color: fid, customColor: undefined });
+          studioStore.paintSelected({ color: fid, customColor: undefined });
         }}
         custom={sharedCustom}
       />
@@ -64,10 +64,10 @@ export function QuickColorPanel({
         </p>
         <ColorWheel
           hex={sharedCustom}
-          onPick={(hex) => studioStore.updateSelected({ customColor: hex })}
+          onPick={(hex) => studioStore.paintSelected({ customColor: hex })}
           onClear={() => {
             studioStore.pushHistory();
-            studioStore.updateSelected({ customColor: undefined });
+            studioStore.paintSelected({ customColor: undefined });
           }}
         />
       </div>

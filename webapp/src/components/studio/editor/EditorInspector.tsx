@@ -385,7 +385,7 @@ function MultiPanel({ selected }: { selected: PlacedJewelry[] }) {
         isSelected={(fid) => selected.every((j) => !j.customColor && j.color === fid)}
         onPick={(fid) => {
           studioStore.pushHistory();
-          studioStore.updateSelected({ color: fid, customColor: undefined });
+          studioStore.paintSelected({ color: fid, customColor: undefined });
         }}
         custom={sharedCustom}
       />
@@ -393,10 +393,10 @@ function MultiPanel({ selected }: { selected: PlacedJewelry[] }) {
       <SectionLabel>{t("studio.editor.inspector.customColorAll")}</SectionLabel>
       <ColorWheel
         hex={first.customColor ?? null}
-        onPick={(hex) => studioStore.updateSelected({ customColor: hex })}
+        onPick={(hex) => studioStore.paintSelected({ customColor: hex })}
         onClear={() => {
           studioStore.pushHistory();
-          studioStore.updateSelected({ customColor: undefined });
+          studioStore.paintSelected({ customColor: undefined });
         }}
       />
 
@@ -560,15 +560,21 @@ function SinglePanel({ jewel, snap }: { jewel: PlacedJewelry; snap: StudioSnapsh
       <SectionLabel>{t("studio.editor.inspector.finish")}</SectionLabel>
       <Swatches
         isSelected={(fid) => !jewel.customColor && jewel.color === fid}
-        onPick={(fid) => set({ color: fid, customColor: undefined })}
+        onPick={(fid) => {
+          studioStore.pushHistory();
+          studioStore.paintSelected({ color: fid, customColor: undefined });
+        }}
         custom={jewel.customColor ?? null}
       />
 
       <SectionLabel>{t("studio.editor.inspector.customColor")}</SectionLabel>
       <ColorWheel
         hex={jewel.customColor ?? null}
-        onPick={(hex) => studioStore.updateJewel(jewel.id, { customColor: hex })}
-        onClear={() => set({ customColor: undefined })}
+        onPick={(hex) => studioStore.paintSelected({ customColor: hex })}
+        onClear={() => {
+          studioStore.pushHistory();
+          studioStore.paintSelected({ customColor: undefined });
+        }}
       />
 
       <SectionLabel info={t("studio.editor.inspector.standoffHint")}>{t("studio.editor.inspector.mounting")}</SectionLabel>
