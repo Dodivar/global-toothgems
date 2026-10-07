@@ -236,15 +236,12 @@
     "crossSellEyebrow": "Pairs with",
     "crossSellTitle": "Complete the kit",
     "crossSellCta": "View cart",
-    "toastAddedTitle": "Added to cart",
     "stockLow": "Low stock",
     "stockOut": "Sold out",
     "saveAria": "Save {{name}} to favourites",
     "quickAdd": "Add",
     "quickAddAria": "Add {{name}} to the cart",
     "quickAddDone": "Added",
-    "quickAddToastTitle": "Added to your cart",
-    "quickAddToastBody": "{{name}} is waiting in your cart.",
     "imagePlaceholder": "Product",
     "galleryLabel": "Product images",
     "viewImage": "View image {{index}} of {{total}}",
@@ -4657,5 +4654,13 @@
     "loading": "Loading the catalogue…",
     "resultCount_one": "{{count}} result",
     "resultCount_other": "{{count}} results"
+  },
+  "cartNotice": {
+    "title": "Added to your cart",
+    "announce": "{{name}} added to your cart.",
+    "qty": "Qty {{count}}",
+    "undo": "Undo",
+    "undoAria": "Undo adding {{name}} to the cart",
+    "viewCart": "View cart"
   }
 }

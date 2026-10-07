@@ -229,6 +229,12 @@ The cart (`lib/cart.tsx`, pure rules in `lib/checkout/cartLines.ts`) holds integ
 catalogue's `products.id` / `product_variants.id` on each line; it is kept for the tab in `sessionStorage`
 (`lib/cartStorage.ts`, a cart stored in the older float format is discarded). Its prices are indicative.
 
+A product added with `addLine` (product page, quick add on the cards) opens a notice under the header's cart
+icon (`components/layout/CartAddedNotice.tsx`, styles `.gt-cart-notice` in `index.css`) instead of a toast: the
+line, "Undo", "View cart" and a 4-second countdown bar held while the notice is hovered or focused. It closes
+on a click elsewhere, Escape or a page change. Undo takes back the units the addition really put on the line
+(`addedQty` / `undoAddition`, capped merges included). Gift cards and courses open the cart page instead.
+
 With the Supabase variables set, `screens/Cart.tsx`:
 
 1. reads the delivery rates of the destination's zone (public tables) and lets the customer pick one

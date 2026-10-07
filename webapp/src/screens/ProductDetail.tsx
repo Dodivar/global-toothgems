@@ -17,7 +17,6 @@ import { relatedProducts, type Product } from "../data/products";
 import { pick } from "../data/types";
 import { useFormat } from "../lib/format";
 import { useCart } from "../lib/cart";
-import { useToast } from "../lib/toast";
 import { useFavorites } from "../lib/favorites";
 import { useReveal } from "../lib/useReveal";
 import { useCatalog } from "../lib/catalog/CatalogProvider";
@@ -83,7 +82,6 @@ function ProductView({ product }: { product: Product }) {
   const { t, i18n } = useTranslation();
   const navigate = useNavigate();
   const { addLine } = useCart();
-  const { showToast } = useToast();
   const { isFavorite, toggleFavorite } = useFavorites();
   const { products, source } = useCatalog();
   const { categoryName, familyName } = useTaxonomy();
@@ -194,7 +192,6 @@ function ProductView({ product }: { product: Product }) {
       unit_price: toMinorUnits(unitPrice),
       currency: product.currency ?? "EUR",
     });
-    showToast(t("product.toastAddedTitle"), variantLabel ? `${name} · ${variantLabel}` : name);
   };
 
   return (

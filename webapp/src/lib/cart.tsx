@@ -1,13 +1,25 @@
-import { createContext, useCallback, useContext, useMemo, useState, type ReactNode } from "react";
+import { createContext, useCallback, useContext, useEffect, useMemo, useRef, useState, type ReactNode } from "react";
 import { useTranslation } from "react-i18next";
 import { getProduct } from "../data/products";
 import { photo } from "./images";
 import { readStoredCart, writeStoredCart } from "./cartStorage";
-import { addCourseToLines, addGiftCardToLines, addToLines, cartCount, cartSubtotal, setLineQty, type CartLine } from "./checkout/cartLines";
+import { addCourseToLines, addedQty, addGiftCardToLines, addToLines, cartCount, cartSubtotal, lineKey, setLineQty, undoAddition, type CartLine } from "./checkout/cartLines";
 import { isSupabaseConfigured } from "./supabase/client";
 import { useHydrated } from "./useHydrated";
 
 export type { CartLine } from "./checkout/cartLines";
+
+/**
+ * The product a shopper just added, for the notice under the header's cart
+ * icon (`CartAddedNotice`): the line as it now reads, and how many units the
+ * addition really put on it, which is what "undo" takes back.
+ */
+export interface CartAddition {
+  /** Changes at every addition, so a second one replaces the notice. */
+  seq: number;
+  line: CartLine;
+  added: number;
+}
 
 interface CartContextValue {
   lines: CartLine[];
@@ -23,6 +35,11 @@ interface CartContextValue {
   removeLine: (id: string) => void;
   /** Empties the cart once its contents have become an order. */
   clearCart: () => void;
+  /** The last product added with `addLine`, until its notice is dismissed. */
+  lastAddition: CartAddition | null;
+  /** Takes back the units of that addition (the rest of the cart is untouched). */
+  undoAddition: (addition: CartAddition) => void;
+  dismissAddition: () => void;
 }
 
 const CartContext = createContext<CartContextValue | null>(null);
@@ -79,7 +96,34 @@ export function CartProvider({ children }: { children: ReactNode }) {
     [stored, seed],
   );
 
-  const addLine = useCallback((line: Omit<CartLine, "id">) => setLines((prev) => addToLines(prev, line)), [setLines]);
+  // The cart as last rendered, to measure an addition outside the updater
+  // (React may run an updater twice; the notice must be raised once).
+  const linesRef = useRef(lines);
+  useEffect(() => {
+    linesRef.current = lines;
+  }, [lines]);
+  const [lastAddition, setLastAddition] = useState<CartAddition | null>(null);
+  const seqRef = useRef(0);
+
+  const addLine = useCallback(
+    (line: Omit<CartLine, "id">) => {
+      const before = linesRef.current;
+      const after = addToLines(before, line);
+      linesRef.current = after;
+      setLines((prev) => addToLines(prev, line));
+      const id = lineKey(line);
+      const added = addedQty(before, after, id);
+      const next = after.find((l) => l.id === id);
+      // Nothing to announce when the line was already at its cap.
+      if (added > 0 && next) setLastAddition({ seq: ++seqRef.current, line: next, added });
+    },
+    [setLines],
+  );
+  const undoLastAddition = useCallback(
+    (addition: CartAddition) => setLines((prev) => undoAddition(prev, addition.line.id, addition.added)),
+    [setLines],
+  );
+  const dismissAddition = useCallback(() => setLastAddition(null), []);
   const addGiftCard = useCallback(
     (line: Omit<CartLine, "id" | "qty">) => {
       // Drawn outside the updater, which React may run twice.
@@ -100,7 +144,9 @@ export function CartProvider({ children }: { children: ReactNode }) {
   const subtotal = useMemo(() => cartSubtotal(lines), [lines]);
 
   return (
-    <CartContext.Provider value={{ lines, count, subtotal, addLine, addGiftCard, addCourse, updateQty, removeLine, clearCart }}>
+    <CartContext.Provider
+      value={{ lines, count, subtotal, addLine, addGiftCard, addCourse, updateQty, removeLine, clearCart, lastAddition, undoAddition: undoLastAddition, dismissAddition }}
+    >
       {children}
     </CartContext.Provider>
   );
