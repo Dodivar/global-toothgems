@@ -335,6 +335,7 @@
       "unavailable": "An item in your basket is no longer available. Remove it and try again.",
       "out_of_stock": "An item in your basket is no longer in stock in that quantity. Adjust the quantity and try again.",
       "shipping_unavailable": "This delivery option is not available for this basket or destination. Choose another one.",
+      "free_order": "This order is entirely free through a promotion: free checkout is not available yet. Remove the code or add an item.",
       "promotion_code_invalid": "This promo code does not apply to this order.",
       "loyalty_reward_unavailable": "Your loyalty reward is no longer available for this order (already reserved by a payment in progress, or used). Untick it and try again.",
       "gift_card_invalid": "This gift card cannot be used.",
@@ -431,6 +432,29 @@
       "reserved": "Order {{reference}}: your items are reserved while you pay.",
       "showSummary": "Show order summary",
       "hideSummary": "Hide order summary"
+    },
+    "promo": {
+      "title": "Promo code",
+      "label": "Promo code",
+      "apply": "Apply",
+      "added": "Promo codes added",
+      "remove": "Remove code {{code}}",
+      "checking": "Checking the code…",
+      "errors": {
+        "format": "This code is not in the right format (letters, digits, - and _).",
+        "duplicate": "This code is already added.",
+        "limit": "At most {{max}} promo codes per order."
+      },
+      "refusal": {
+        "invalid": "This code does not apply to your basket: it was removed.",
+        "too_many_attempts": "Too many refused codes. Try again in a few minutes.",
+        "dropped": "A code no longer applies to your basket: it was removed."
+      },
+      "blockedByReward": "The loyalty reward cannot be combined with a promo code: untick it to enter a code.",
+      "rewardBlockedByCode": "Cannot be combined with a promo code: remove the code to spend your reward.",
+      "discountLine": "{{label}} ({{code}})",
+      "gift": "Free gift: {{name}}",
+      "freeOrder": "This order is entirely free through a promotion: free checkout is not available yet. Remove the code or add an item."
     }
   },
   "auth": {

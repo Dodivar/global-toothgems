@@ -71,10 +71,6 @@ export function AppProviders({
           the member area and by the verification page a link lands on. */}
       <SecurityProvider>
       <AdminAuthProvider>
-      {/* Promotions, campaigns and gift cards. Above the routes rather than in
-          the admin layout: the storefront gift card page reads the same product
-          configuration, so an edit in the back office shows on /carte-cadeau. */}
-      <PromotionsProvider>
         {/* The authored training catalogue: what the back office builds is
             exactly what a learner reads, so the store sits above both rather
             than inside the admin layout. Learning progress reads it. */}
@@ -92,6 +88,9 @@ export function AppProviders({
                   under both rather than owning that fact itself. */}
               <CommunityProvider>
                 <ToastProvider>
+                {/* Promotions and campaigns (back office): loaded only once a promotions
+                    screen asks for them, and refusals are reported through the toasts. */}
+                <PromotionsProvider>
                 <CookieConsentProvider>
                 <ReviewModeProvider>
                 {/* Customer reviews and their moderation. Inside the toasts and
@@ -111,6 +110,7 @@ export function AppProviders({
                 </ReviewsProvider>
                 </ReviewModeProvider>
                 </CookieConsentProvider>
+                </PromotionsProvider>
                 </ToastProvider>
               </CommunityProvider>
             </CartProvider>
@@ -118,7 +118,6 @@ export function AppProviders({
         </ProgressProvider>
         </TrainingMediaProvider>
         </AdminTrainingProvider>
-      </PromotionsProvider>
       </AdminAuthProvider>
       </SecurityProvider>
     </AuthProvider>

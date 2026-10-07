@@ -9,7 +9,6 @@ import {
   BarChart3,
   CalendarRange,
   Copy,
-  Gauge,
   History,
   KeyRound,
   Megaphone,
@@ -36,8 +35,7 @@ import { useToast } from "../../lib/toast";
 import { useLocalized } from "../../lib/localized";
 import { useAdminCatalog } from "../../lib/adminCatalog";
 import { coveredProductIds, validatePromotion } from "../../lib/promotionRules";
-import { COLLECTIONS, SEGMENTS, daysFromNow, promotionStatus, type Promotion, type PromotionLifecycle } from "../../data/adminPromotions";
-import { categoryById, type CategoryId } from "../../data/adminCatalog";
+import { daysFromNow, promotionStatus, type Promotion, type PromotionLifecycle } from "../../data/adminPromotions";
 import {
   CampaignStatusBadge,
   CodeTag,
@@ -48,7 +46,7 @@ import {
   useMoney,
   usePromoDates,
 } from "../../components/promotions/PromoBadges";
-import { CopyButton, Fact, Notice, Panel, PromoKpi, PrototypeBar, UsageMeter } from "../../components/promotions/PromoUi";
+import { CopyButton, Fact, Notice, Panel, PromoKpi, UsageMeter } from "../../components/promotions/PromoUi";
 import { ProductStrip, useProductsByCategory } from "../../components/promotions/ProductPicker";
 import { ScheduleTimeline } from "../../components/promotions/Timeline";
 import { CampaignCover } from "../../components/promotions/Visuals";
@@ -158,7 +156,6 @@ export function PromotionDetail() {
       />
 
       <div className="grid grid-cols-[minmax(0,1fr)] gap-5 px-[var(--admin-gutter)] pb-[clamp(32px,5vw,56px)] pt-5">
-        <PrototypeBar showModes={false} />
         <Hero promotion={promotion} onActivate={() => setLifecycle("live")} onDuplicate={duplicate} busy={busy} />
         <Performance promotion={promotion} />
         <div className="grid items-start gap-4 xl:grid-cols-[minmax(0,1fr)_360px]">
@@ -263,7 +260,7 @@ function Hero({ promotion, onActivate, onDuplicate, busy }: { promotion: Promoti
         <Notice
           tone="warning"
           icon={Pause}
-          title={t("promo.detail.pausedTitle", { date: date(promotion.updatedAt), name: promotion.updatedBy })}
+          title={t("promo.detail.pausedTitle", { date: date(promotion.updatedAt) })}
           action={
             <AdminButton size="sm" variant="primary" iconLeft={Play} onClick={onActivate} loading={busy}>
               {t("promo.detail.resume")}
@@ -274,7 +271,7 @@ function Hero({ promotion, onActivate, onDuplicate, busy }: { promotion: Promoti
         </Notice>
       )}
       {status === "scheduled" && (
-        <Notice tone="info" icon={CalendarRange} title={t("promo.detail.scheduledTitle", { count: Math.max(1, daysFromNow(promotion.schedule.startsAt)) })}>
+        <Notice tone="info" icon={CalendarRange} title={t("promo.detail.scheduledTitle", { count: Math.max(1, daysFromNow(promotion.schedule.startsAt, promotion.schedule.timezone)) })}>
           {t("promo.detail.scheduledBody", { date: dateTime(promotion.schedule.startsAt) })}
         </Notice>
       )}
@@ -329,7 +326,6 @@ function Performance({ promotion }: { promotion: Promotion }) {
             <PromoKpi icon={ShoppingBag} label={t("promo.metrics.orders")} value={String(s.orders)} />
             <PromoKpi icon={Receipt} label={t("promo.metrics.aov")} value={money(aov)} />
             <PromoKpi icon={TicketPercent} tone="brand" label={t("promo.metrics.uses")} value={String(s.uses)} hint={promotion.usage.maxTotal ? t("promo.metrics.ofMax", { max: promotion.usage.maxTotal }) : undefined} />
-            <PromoKpi icon={Gauge} tone="brand" label={t("promo.metrics.conversion")} value={`${s.conversionRate.toLocaleString()} %`} />
             <PromoKpi icon={Percent} tone="highlight" label={t("promo.metrics.discount")} value={money(s.discountCents)} hint={s.revenueCents ? t("promo.metrics.discountShare", { value: Math.round((s.discountCents / (s.revenueCents + s.discountCents)) * 100) }) : undefined} />
           </div>
           <div className="rounded-[var(--admin-radius)] border border-[var(--border-subtle)] p-4">
@@ -346,12 +342,13 @@ function Configuration({ promotion }: { promotion: Promotion }) {
   const { t } = useTranslation();
   const l = useLocalized();
   const money = useMoney();
-  const { products } = useAdminCatalog();
+  const { products, categoryById } = useAdminCatalog();
+  const { collections, segments } = usePromotions();
   const byCategory = useProductsByCategory();
   const d = promotion.discount;
   const e = promotion.eligibility;
   const u = promotion.usage;
-  const covered = coveredProductIds(promotion, byCategory);
+  const covered = coveredProductIds(promotion, byCategory, collections);
   const productName = (id?: string) => l(products.find((p) => p.id === id)?.name ?? { fr: "—", en: "—" });
   const yes = (v: boolean) => (v ? t("promo.common.yes") : t("promo.common.no"));
 
@@ -369,7 +366,7 @@ function Configuration({ promotion }: { promotion: Promotion }) {
           {d.type === "fixed" && (
             <>
               <Fact label={t("promo.editor.discount.amount")} value={money(d.amountCents ?? 0)} />
-              <Fact label={t("promo.editor.discount.minOrder")} value={d.minOrderCents ? money(d.minOrderCents) : t("promo.editor.noMinimum")} />
+              <Fact label={t("promo.editor.discount.minOrder")} value={e.minCartCents ? money(e.minCartCents) : t("promo.editor.noMinimum")} />
             </>
           )}
           {d.type === "bxgy" && (
@@ -378,7 +375,7 @@ function Configuration({ promotion }: { promotion: Promotion }) {
               <Fact label={t("promo.editor.discount.getQty")} value={`${d.getQty} · ${d.rewardPercent === 50 ? t("promo.editor.discount.rewardHalf") : t("promo.editor.discount.rewardFree")}`} />
             </>
           )}
-          {d.type === "freeShipping" && <Fact label={t("promo.editor.discount.minOrder")} value={d.minOrderCents ? money(d.minOrderCents) : t("promo.editor.noMinimum")} />}
+          {d.type === "freeShipping" && <Fact label={t("promo.editor.discount.minOrder")} value={e.minCartCents ? money(e.minCartCents) : t("promo.editor.noMinimum")} />}
           {d.type === "bundle" && (
             <>
               <Fact label={t("promo.editor.discount.bundleProducts")} value={(d.bundleProductIds ?? []).map(productName).join(" + ")} />
@@ -388,7 +385,7 @@ function Configuration({ promotion }: { promotion: Promotion }) {
           {d.type === "gift" && (
             <>
               <Fact label={t("promo.editor.discount.giftProduct")} value={productName(d.giftProductId)} />
-              <Fact label={t("promo.editor.discount.minOrder")} value={d.minOrderCents ? money(d.minOrderCents) : t("promo.editor.noMinimum")} />
+              <Fact label={t("promo.editor.discount.minOrder")} value={e.minCartCents ? money(e.minCartCents) : t("promo.editor.noMinimum")} />
             </>
           )}
         </dl>
@@ -401,12 +398,12 @@ function Configuration({ promotion }: { promotion: Promotion }) {
           <>
             {e.scope === "categories" && (
               <p className="m-0 text-[length:var(--text-caption)] text-[var(--text-muted)]">
-                {t("promo.detail.viaCategories", { names: e.categoryIds.map((c) => l(categoryById(c as CategoryId).name)).join(", ") })}
+                {t("promo.detail.viaCategories", { names: e.categoryIds.map((c) => l(categoryById(c).name)).join(", ") })}
               </p>
             )}
             {e.scope === "collections" && (
               <p className="m-0 text-[length:var(--text-caption)] text-[var(--text-muted)]">
-                {t("promo.detail.viaCollections", { names: e.collectionIds.map((c) => l(COLLECTIONS.find((x) => x.id === c)?.name ?? { fr: c, en: c })).join(", ") })}
+                {t("promo.detail.viaCollections", { names: e.collectionIds.map((c) => l(collections.find((x) => x.id === c)?.name ?? { fr: "—", en: "—" })).join(", ") })}
               </p>
             )}
             <ProductStrip ids={covered} emptyLabel={t("promo.detail.noProducts")} />
@@ -421,7 +418,7 @@ function Configuration({ promotion }: { promotion: Promotion }) {
               label={t("promo.editor.eligibility.customersHeading")}
               value={
                 e.customers === "segments"
-                  ? e.segmentIds.map((s) => l(SEGMENTS.find((x) => x.id === s)?.name ?? { fr: s, en: s })).join(", ")
+                  ? e.segmentIds.map((s) => segments.find((x) => x.id === s)?.name ?? "—").join(", ")
                   : t(`promo.editor.eligibility.customers.${e.customers}`)
               }
             />
@@ -439,7 +436,7 @@ function Configuration({ promotion }: { promotion: Promotion }) {
             <Fact label={t("promo.editor.usage.maxPerCustomer")} value={u.maxPerCustomer ?? t("promo.editor.noLimit")} />
             <Fact label={t("promo.editor.usage.combinableShort")} value={yes(u.combinable)} />
             <Fact label={t("promo.editor.usage.excludeDiscounted")} value={yes(u.excludeDiscounted)} />
-            <Fact label={t("promo.editor.usage.excludeGiftCards")} value={yes(u.excludeGiftCards)} />
+            <Fact label={t("promo.editor.usage.excludeGiftCards")} value={yes(true)} />
           </dl>
           {u.excludedProductIds.length > 0 && (
             <p className="m-0 text-[length:var(--text-caption)] text-[var(--text-body)]">
@@ -478,7 +475,7 @@ function Aside({ promotion }: { promotion: Promotion }) {
               <CopyButton value={c.code} label={t("promo.editor.code.copy")} copiedLabel={t("promo.editor.code.copied")} onCopied={() => showToast(t("promo.toast.codeCopied"), c.code, "info")} />
             </div>
             <p className="m-0 text-[length:var(--text-caption)] text-[var(--text-muted)]">
-              {c.caseSensitive ? t("promo.editor.code.caseSensitiveOn") : t("promo.detail.caseInsensitive")}
+              {t("promo.detail.caseInsensitive")}
               {" · "}
               {c.kind === "unique" ? t("promo.detail.uniqueCodes", { count: c.uniqueCount ?? 0 }) : t("promo.editor.code.shared")}
             </p>
@@ -514,8 +511,8 @@ function Aside({ promotion }: { promotion: Promotion }) {
 
       <Panel title={t("promo.detail.history")} icon={History}>
         <dl className="m-0 grid gap-3">
-          <Fact label={t("promo.detail.created")} value={t("promo.detail.byOn", { name: promotion.createdBy, date: dateTime(promotion.createdAt) })} />
-          <Fact label={t("promo.detail.updated")} value={t("promo.detail.byOn", { name: promotion.updatedBy, date: dateTime(promotion.updatedAt) })} />
+          <Fact label={t("promo.detail.created")} value={dateTime(promotion.createdAt)} />
+          <Fact label={t("promo.detail.updated")} value={dateTime(promotion.updatedAt)} />
           <Fact label={t("promo.detail.reference")} value={<CodeTag code={promotion.id} muted />} />
         </dl>
       </Panel>

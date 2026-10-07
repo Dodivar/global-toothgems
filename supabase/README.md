@@ -48,6 +48,7 @@ supabase/
   tests/iteration4_validation.sql   iteration 4 gift card suite (always rolls back)
   tests/iteration5_validation.sql   iteration 5 member account suite (always rolls back)
   tests/iteration6_validation.sql   iteration 6 roles/permissions + promotions suite (always rolls back)
+  tests/promotions_live_validation.sql   promotions & campaigns on live data: save RPCs, quote, throttle (always rolls back)
   tests/iteration7_validation.sql   iteration 7 contact / newsletter / e-mails / content / maintenance suite (always rolls back)
   tests/iteration8_validation.sql   iteration 8 statistics suite (always rolls back)
   tests/iteration9_validation.sql   iteration 9 product recommendations suite (always rolls back)
@@ -132,6 +133,8 @@ supabase/
 | 20261003131220 | `studio_gem_group_thumbnails` | `gem_groups.thumbnail_path` (null or inside the owner's folder, column grants for insert/update): each new Gem Group keeps a captured render of its pieces alone on the smile at `studio-thumbnails/<user id>/groups/<group id>.jpg` (bucket policies unchanged: they check the first folder). Suite `tests/studio_workspace_validation.sql` |
 | 20261007072551 | `quiz_unlimited_attempts` | **Applied 2026-10-07.** Knowledge checks have no attempt limit: `private.open_quiz_attempt()` no longer raises `no_attempts_left` (a passed check still refuses new attempts) |
 | 20261007141456 | `studio_shop_gems` | **Applied 2026-10-07.** The 3D Studio's gems are the shop's (decision 81): `studio_gem_appearances` — how a shop gem is drawn in the editor (`shape` on the product row, `material` crystal/metal, `color` `#rrggbb`, `effect` none/iridescent; one row per product plus one per colour variant such as yellow / white gold), seeded from the product photos (84 gems, 12 gold variants); public read for active products, `manage_products` writes, audited, a variant row must belong to its product. Scenes and Gem Groups now require format **2** (piece = product, variant, SS, look snapshot); the format-1 test designs, their share links and groups were deleted first (owner's request, pre-launch). Suite `tests/studio_workspace_validation.sql` (T5–T8) |
+| 20261007184926 | `promotions_live` | **Applied 2026-10-07.** Promotions and campaigns on live data (decision 82): `admin_save_promotion(jsonb)` / `admin_save_campaign(jsonb)` (SECURITY INVOKER, `manage_promotions`, one transaction each: the row, its scope / segments / code / English translation or products, the lifecycle last), view `promotion_daily_usage`, table `promotion_code_attempts` (no policies: never readable through the API) and `quote_basket(...)` (SECURITY DEFINER, callable by visitors: what a shop basket would get, same engine as `create_order()`). Suite `tests/promotions_live_validation.sql` (PL1–PL8) |
+| 20261007185808 | `promotions_draft_code` | **Applied 2026-10-07.** `admin_save_promotion()`: a draft in "code" mode may be saved before its shared code is typed (empty code = no active code); publishing without one is still refused by `validate_promotion()` (PL8) |
 | 20261007181011 | `gift_card_design_everywhere` | **Applied 2026-10-07.** The design/names/message chosen at checkout are shown back (WYSIWYG): policy `gift_cards: purchaser reads own` (a buyer reads the cards of their purchases through the existing column grant — never the code) so the member's order pages draw the card in its design; the `gift_card_delivery` template bodies (fr + en) lose their `{{message}}` paragraph because the e-mail now draws the card itself (`giftCardVisual()`, message included). Test: a buyer sees only their own cards (to add to `gift_cards_validation.sql`) |
 | 20261007072552 | `quiz_unlimited_attempts_cleanup` | **Partly applied 2026-10-07.** `admin_save_course()` and `private.learner_course_json()` rewritten without `allow_retry` / `max_attempts` (applied live through SQL, not recorded in the migration history). `drop column` on `course_quizzes` **not applied yet**: the MCP call timed out three times with no lock or session visible; the columns are unused and keep their defaults, so nothing depends on the drop |
 
@@ -609,6 +612,31 @@ server  create_order(..., p_promotion_codes => ['WELCOME15'], p_use_loyalty_rewa
 - Visitors read running automatic promotions (customer-facing columns only), running campaigns, active collections and
   published translations; customers read the discounts of their own orders; staff read everything; `manage_promotions`
   writes.
+
+**Back office and cart on live data** (migrations `promotions_live`, `promotions_draft_code`)
+
+- `admin_save_promotion(p jsonb) returns uuid` — creates (no `id`) or updates a promotion with everything around it:
+  scope (`product_ids`, `excluded_product_ids`, `bundle_product_ids`, `category_ids`, `collection_ids`), `segment_ids`,
+  the shared code (`code`) or unique codes (`unique_code_count` → `generate_promotion_codes()` for what is missing,
+  `unique_code_prefix`), and the English text (French stays in the base columns, English becomes a *published*
+  `promotion_translations` row, deleted when emptied). `starts_at` / `ends_at` are local `YYYY-MM-DDTHH:mm` in the
+  promotion's `timezone` and converted in Postgres (summer time honoured). The promotion is written as a draft, its
+  children replaced, and the requested lifecycle applied **last**, so `validate_promotion()` sees the finished
+  promotion (a live promotion being edited goes through `draft` inside the transaction: nobody sees it half written).
+  A changed code switches the old one off; a code of another promotion (archived included) is `23505`; switching to
+  automatic, or from shared to unique, switches the old codes off first.
+- `admin_save_campaign(p jsonb) returns uuid` — the campaign, its ordered `product_ids` and the English text.
+- `promotion_daily_usage` — orders per promotion per day of payment (shop time), last 30 days, for the detail page's chart.
+  Promotion figures come from `promotion_overview` (paid orders only).
+- `quote_basket(p_items, p_promotion_codes, p_shipping_rate_id, p_use_loyalty_reward, p_currency, p_locale) → jsonb` —
+  the cart's preview: `{ok, goods_discount, shipping_discount, discounts[{label, code, type, goods_amount,
+  shipping_amount}], gift_lines[]}` or `{ok:false, error: promotion_code_invalid | loyalty_reward_unavailable |
+  too_many_attempts | unavailable}`. It builds the shop lines like `create_order()` (price, variant, VAT category; stock
+  and gift cards ignored), then calls `private.compute_order_discounts()`. The caller's account (`auth.uid()`) counts
+  for "new customer" and per-customer limits; **a guest is quoted without e-mail**. Nothing is reserved or consumed.
+  **Throttle:** every refused typed code is logged in `promotion_code_attempts` (actor = the account, else the first
+  `x-forwarded-for` address); 10 refusals in 10 minutes → `too_many_attempts` for codes (the codeless quote still
+  works); rows older than a day are purged on the next refusal. Codes stay unreadable to visitors and customers.
 
 ### Public pages and customer service (iteration 7)
 
@@ -1473,6 +1501,21 @@ VAT rates, shipping zones/rates mirroring the Settings prototype. Media rows ref
       and colour counts **once** (its price, or its colour variant's); metal charms count **per piece**. Never
       charged, never sent to checkout; the value stored with a creation is the one computed at its last save.
 
+82. **Promotions and campaigns are saved by two RPCs, previewed by a third** (agent, 2026-10-07, to confirm the
+    throttle numbers): the back office never writes the promotion tables itself — a promotion spans seven tables and a
+    trigger forbids publishing it before its children exist, so `admin_save_promotion()` / `admin_save_campaign()`
+    do it in one transaction (SECURITY INVOKER: RLS and `manage_promotions` still decide). The cart shows what
+    `quote_basket()` answers instead of computing a discount (decision 21: the engine is server-side only). It is
+    callable by visitors, so refused codes are throttled (10 per 10 minutes per account or address) — a shared
+    code such as `WELCOME15` is guessable; unique codes (10 random characters) are not. Collections and customer
+    segments have no back-office screen yet (read-only in the editor). The campaign activity feed was dropped:
+    `audit_logs` is readable by administrators only, so the screen shows created / updated dates.
+83. **Orders made free by a promotion are not offered yet** (agent, 2026-10-08, to confirm): `create_order()` marks an
+    order paid at creation only when gift cards cover it; a 100 % promotion with no gift card would leave a pending
+    order with nothing to charge on Stripe. The cart disables the button with an explanation, and
+    `create-checkout-session` cancels such an order and answers `free_order` (it used to answer `paid` for any
+    zero amount). Marking a zero-total order paid (stock committed, stamps, courses) needs the owner's decision.
+
 ## Done
 
 - Settings workspace (2026-10-02): store identity and legal mentions, shipping, VAT rates and content languages saved
@@ -1538,7 +1581,7 @@ VAT rates, shipping zones/rates mirroring the Settings prototype. Media rows ref
 ## Next iterations (not implemented)
 
 1. Checkout follow-ups: order confirmation e-mail and gift card delivery e-mail (built 2026-10-05, not deployed:
-   decision 79), promotion code field in the cart (the function already accepts it), Stripe refunds from the back office, `charge.refunded` /
+   decision 79), Stripe refunds from the back office, `charge.refunded` /
    `charge.dispute.created` webhooks.
 2. Academy, after the authoring schema (iteration 20):
    (**B**, public pages, done in iteration 21; **C**, learner access, done in iteration 22 — follow-ups: a public

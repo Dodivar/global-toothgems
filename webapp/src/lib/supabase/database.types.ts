@@ -4751,6 +4751,24 @@ export type Database = {
           },
         ]
       }
+      promotion_code_attempts: {
+        Row: {
+          actor: string
+          created_at: string
+          id: number
+        }
+        Insert: {
+          actor: string
+          created_at?: string
+          id?: never
+        }
+        Update: {
+          actor?: string
+          created_at?: string
+          id?: never
+        }
+        Relationships: []
+      }
       promotion_codes: {
         Row: {
           code: string
@@ -7196,6 +7214,14 @@ export type Database = {
           },
         ]
       }
+      promotion_daily_usage: {
+        Row: {
+          day: string | null
+          promotion_id: string | null
+          uses: number | null
+        }
+        Relationships: []
+      }
       promotion_overview: {
         Row: {
           activation: string | null
@@ -7403,10 +7429,12 @@ export type Database = {
         Args: { p_entitlement_id: string }
         Returns: undefined
       }
+      admin_save_campaign: { Args: { p: Json }; Returns: string }
       admin_save_course: { Args: { p_course: Json }; Returns: Json }
       admin_save_gem_color: { Args: { p_color: Json }; Returns: Json }
       admin_save_languages: { Args: { p_languages: Json }; Returns: undefined }
       admin_save_product: { Args: { p_product: Json }; Returns: Json }
+      admin_save_promotion: { Args: { p: Json }; Returns: string }
       admin_save_product_recommendations: {
         Args: {
           p_complementary: string[]
@@ -7754,6 +7782,17 @@ export type Database = {
         Returns: Json
       }
       newsletter_unsubscribe: { Args: { p_token: string }; Returns: boolean }
+      quote_basket: {
+        Args: {
+          p_currency?: string
+          p_items: Json
+          p_locale?: string
+          p_promotion_codes?: string[]
+          p_shipping_rate_id?: string
+          p_use_loyalty_reward?: boolean
+        }
+        Returns: Json
+      }
       recommended_products: {
         Args: { p_kind?: string; p_limit?: number; p_product_ids?: string[] }
         Returns: {

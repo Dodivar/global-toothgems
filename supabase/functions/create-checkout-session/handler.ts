@@ -241,6 +241,16 @@ export async function handleCheckout(req: Request, deps: CheckoutDeps): Promise<
   // Entirely paid with gift cards: create_order() already marked it paid.
   const amountDue = toMinorUnits(order.amount_due);
   if (amountDue === 0) {
+    // Nothing to pay but no gift card covered it (a promotion made the basket free): create_order() leaves such an
+    // order pending, and there is nothing to charge on Stripe. Free orders are not offered yet: release it.
+    if (order.payment_status !== "paid") {
+      try {
+        await deps.cancelOrder(order.id, "free_order");
+      } catch (cancelError) {
+        deps.log("cancel_order of a free order failed", cancelError instanceof Error ? cancelError.message : cancelError);
+      }
+      return fail("free_order");
+    }
     try {
       await deps.orderPaid?.(order.id);
     } catch (error) {

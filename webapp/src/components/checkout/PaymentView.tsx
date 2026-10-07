@@ -24,9 +24,8 @@ const PaymentStep = lazy(() => import("./PaymentStep"));
 export interface PaymentAmounts {
   subtotal: number;
   shipping: number;
-  /** Loyalty reward discount shown in the cart (the database applied the same rule). */
-  reward: number;
-  rewardPercent: number;
+  /** Discounts the database quoted in the cart (promotions, codes, loyalty reward), already worded. */
+  discounts: { label: string; amount: number }[];
   /** Total before gift cards, as the cart computed it. */
   total: number;
 }
@@ -122,9 +121,9 @@ export function PaymentView({
           }
           success={shipped && amounts.shipping === 0}
         />
-        {amounts.reward > 0 && (
-          <Row label={t("loyalty.checkout.summaryLine", { percent: amounts.rewardPercent })} value={`−${money(amounts.reward)}`} success />
-        )}
+        {amounts.discounts.map((discount) => (
+          <Row key={discount.label} label={discount.label} value={`−${money(discount.amount)}`} success />
+        ))}
         {giftCardsApplied > 0 && <Row label={t("checkout.payment.giftCards", { count: giftCardCount })} value={`−${money(giftCardsApplied)}`} success />}
         <div className="mt-1 flex items-baseline justify-between border-t border-[var(--border-subtle)] pt-3">
           <dt className="text-base font-bold text-[var(--text-primary)]">{t("checkout.payment.due")}</dt>

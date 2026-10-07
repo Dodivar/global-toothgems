@@ -11,19 +11,19 @@ import { ConfirmationDialog } from "../../components/admin/ConfirmationDialog";
 import { FormField } from "../../components/admin/FormField";
 import { usePromotions } from "../../lib/adminPromotions";
 import { useToast } from "../../lib/toast";
+import { useNow } from "../../lib/useNow";
 import { CONTENT_LANGS, type ContentLang } from "../../lib/localized";
 import { photo } from "../../lib/images";
 import {
   CAMPAIGN_THEMES,
   COVER_LIBRARY,
-  NOW_TIME,
   blankCampaign,
   promotionStatus,
   toTime,
   type Campaign,
 } from "../../data/adminPromotions";
 import { DiscountChip, PromotionStatusBadge, useDiscountLabel } from "../../components/promotions/PromoBadges";
-import { FormSection, Notice, PrototypeBar, Segmented } from "../../components/promotions/PromoUi";
+import { FormSection, Notice, Segmented } from "../../components/promotions/PromoUi";
 import { ProductPicker } from "../../components/promotions/ProductPicker";
 import { PreviewCampaignLanding, PreviewFrame, PreviewProductCard } from "../../components/promotions/StorefrontPreviews";
 import { PromoEmpty } from "../../components/promotions/PromoEmpty";
@@ -69,6 +69,7 @@ function CampaignForm({ initial, isNew }: { initial: Campaign; isNew: boolean })
   const { openNav } = useAdminShell();
   const { showToast } = useToast();
   const store = usePromotions();
+  const now = useNow();
   const discount = useDiscountLabel();
   const { products } = useAdminCatalog();
 
@@ -108,12 +109,17 @@ function CampaignForm({ initial, isNew }: { initial: Campaign; isNew: boolean })
     }
     setSaving(mode);
     const saved = await store.saveCampaign({ ...draft, lifecycle: mode === "publish" ? "live" : isNew ? "draft" : draft.lifecycle });
+    if (!saved) {
+      setSaving(null);
+      return;
+    }
     const previously = store.promotions.filter((p) => p.campaignId === saved.id).map((p) => p.id);
     const toAdd = attached.filter((pid) => !previously.includes(pid));
     const toRemove = previously.filter((pid) => !attached.includes(pid));
-    if (toAdd.length) await store.assignCampaign(toAdd, saved.id);
-    if (toRemove.length) await store.assignCampaign(toRemove, null);
+    const linked = (!toAdd.length || (await store.assignCampaign(toAdd, saved.id))) && (!toRemove.length || (await store.assignCampaign(toRemove, null)));
     setSaving(null);
+    // The campaign is saved but one of its promotions could not be linked (already reported): stay to retry.
+    if (!linked) return;
     setDirty(false);
     showToast(mode === "publish" ? t("promo.campaigns.toastPublished", { name: saved.name }) : t("promo.editor.toast.saved", { name: saved.name }));
     navigate(`/admin/promotions/campagnes/${saved.id}`);
@@ -142,14 +148,13 @@ function CampaignForm({ initial, isNew }: { initial: Campaign; isNew: boolean })
               {t("promo.editor.saveDraft")}
             </AdminButton></span>
             <AdminButton variant="primary" iconLeft={Rocket} loading={saving === "publish"} disabled={!!saving} onClick={() => save("publish")}>
-              {toTime(draft.startsAt) > NOW_TIME ? t("promo.campaigns.schedule") : t("promo.campaigns.publish")}
+              {toTime(draft.startsAt, draft.timezone) > now ? t("promo.campaigns.schedule") : t("promo.campaigns.publish")}
             </AdminButton>
           </span>
         }
       />
 
       <div className="grid grid-cols-[minmax(0,1fr)] gap-5 px-[var(--admin-gutter)] pb-[clamp(32px,5vw,56px)] pt-5">
-        <PrototypeBar showModes={false} />
         {showErrors && Object.keys(errors).length > 0 && <Notice tone="error" title={t("promo.editor.invalidTitle", { count: Object.keys(errors).length })}>{Object.values(errors).join(" · ")}</Notice>}
 
         <div className="grid items-start gap-5 xl:grid-cols-[minmax(0,1fr)_minmax(380px,.8fr)]">

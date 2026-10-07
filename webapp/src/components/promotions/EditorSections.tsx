@@ -8,12 +8,12 @@ import { FormField } from "../admin/FormField";
 import { ToggleSwitch } from "../admin/ToggleSwitch";
 import { useLocalized, CONTENT_LANGS, type ContentLang } from "../../lib/localized";
 import { useAdminCatalog } from "../../lib/adminCatalog";
-import { CATEGORIES } from "../../data/adminCatalog";
+import { usePromotions } from "../../lib/adminPromotions";
+import { useProductVariants } from "../../lib/useProductVariants";
 import {
-  COLLECTIONS,
   PROMOTION_TYPES,
-  SEGMENTS,
   TIMEZONES,
+  localDay,
   randomCode,
   type Campaign,
   type Promotion,
@@ -197,16 +197,20 @@ export function DiscountSection(props: SectionProps) {
     update((p) => {
       const defaults: Record<PromotionType, Promotion["discount"]> = {
         percentage: { type, percent: 20, maxDiscountCents: null },
-        fixed: { type, amountCents: 1000, minOrderCents: 5000 },
+        fixed: { type, amountCents: 1000 },
         bxgy: { type, buyQty: 2, getQty: 1, rewardPercent: 100 },
-        freeShipping: { type, minOrderCents: 4000 },
+        freeShipping: { type },
         bundle: { type, bundleProductIds: [], bundlePriceCents: undefined },
-        gift: { type, giftProductId: undefined, minOrderCents: 10000 },
+        gift: { type, giftProductId: undefined, giftVariantId: null },
       };
       return { ...p, discount: p.discount.type === type ? p.discount : defaults[type] };
     });
 
+  const giftVariants = useProductVariants(d.type === "gift" ? d.giftProductId : undefined);
   const patch = (next: Partial<Promotion["discount"]>) => update((p) => ({ ...p, discount: { ...p.discount, ...next } }));
+  // One minimum for the whole promotion (the basket's goods before discounts): section C shows the same value.
+  const setMin = (minCartCents: number | null) => update((p) => ({ ...p, eligibility: { ...p.eligibility, minCartCents } }));
+  const minCart = draft.eligibility.minCartCents;
 
   const bundleFull = (d.bundleProductIds ?? []).reduce((s, id) => s + Math.round((products.find((x) => x.id === id)?.price ?? 0) * 100), 0);
 
@@ -309,10 +313,10 @@ export function DiscountSection(props: SectionProps) {
             </FormField>
             <FormField label={t("promo.editor.discount.minOrder")} hint={t("promo.editor.discount.minOrderHint")}>
               {(a) => (
-                <UnitInput id={a.id} describedBy={a["aria-describedby"]} unit="€" value={centsToInput(d.minOrderCents)} onChange={(v) => patch({ minOrderCents: parseEuros(v) })} placeholder={t("promo.editor.noMinimum")} />
+                <UnitInput id={a.id} describedBy={a["aria-describedby"]} unit="€" value={centsToInput(minCart)} onChange={(v) => setMin(parseEuros(v))} placeholder={t("promo.editor.noMinimum")} />
               )}
             </FormField>
-            {d.amountCents && d.minOrderCents && d.amountCents >= d.minOrderCents ? (
+            {d.amountCents && minCart && d.amountCents >= minCart ? (
               <p className="m-0 text-[length:var(--text-caption)] font-medium text-[var(--status-warning-fg)] md:col-span-2">
                 {t("promo.editor.discount.amountAboveMin")}
               </p>
@@ -359,7 +363,7 @@ export function DiscountSection(props: SectionProps) {
 
         {d.type === "freeShipping" && (
           <FormField label={t("promo.editor.discount.minOrder")} hint={t("promo.editor.discount.freeShippingHint")}>
-            {(a) => <UnitInput id={a.id} describedBy={a["aria-describedby"]} unit="€" value={centsToInput(d.minOrderCents)} onChange={(v) => patch({ minOrderCents: parseEuros(v) })} placeholder={t("promo.editor.noMinimum")} />}
+            {(a) => <UnitInput id={a.id} describedBy={a["aria-describedby"]} unit="€" value={centsToInput(minCart)} onChange={(v) => setMin(parseEuros(v))} placeholder={t("promo.editor.noMinimum")} />}
           </FormField>
         )}
 
@@ -405,8 +409,20 @@ export function DiscountSection(props: SectionProps) {
               />
             </div>
             <FormField label={t("promo.editor.discount.minOrder")}>
-              {(a) => <UnitInput id={a.id} describedBy={a["aria-describedby"]} unit="€" value={centsToInput(d.minOrderCents)} onChange={(v) => patch({ minOrderCents: parseEuros(v) })} placeholder={t("promo.editor.noMinimum")} />}
+              {(a) => <UnitInput id={a.id} describedBy={a["aria-describedby"]} unit="€" value={centsToInput(minCart)} onChange={(v) => setMin(parseEuros(v))} placeholder={t("promo.editor.noMinimum")} />}
             </FormField>
+            {giftVariants.length > 0 && (
+              <FormField label={t("promo.editor.discount.giftVariant")} hint={t("promo.editor.discount.giftVariantHint")} error={issue("gift")}>
+                {(a) => (
+                  <AdminSelect
+                    {...a}
+                    value={d.giftVariantId ?? ""}
+                    onChange={(e) => patch({ giftVariantId: e.target.value || null })}
+                    options={[{ value: "", label: t("promo.editor.discount.giftVariantNone") }, ...giftVariants.map((v) => ({ value: v.id, label: v.name }))]}
+                  />
+                )}
+              </FormField>
+            )}
             {d.giftProductId && (
               <p className="m-0 self-end text-[length:var(--text-caption)] text-[var(--text-body)]">
                 {t("promo.editor.discount.giftStock", {
@@ -429,6 +445,8 @@ export function DiscountSection(props: SectionProps) {
 export function EligibilitySection(props: SectionProps) {
   const { t } = useTranslation();
   const l = useLocalized();
+  const { categories } = useAdminCatalog();
+  const { collections, segments } = usePromotions();
   const { draft, update } = props;
   const issue = useIssue(props);
   const e = draft.eligibility;
@@ -475,7 +493,7 @@ export function EligibilitySection(props: SectionProps) {
               <fieldset className="m-0 border-0 p-0">
                 <legend className="mb-2 p-0 text-[length:var(--text-caption)] font-semibold">{t("promo.editor.eligibility.pickCategories")}</legend>
                 <div className="flex flex-wrap gap-2">
-                  {CATEGORIES.map((c) => (
+                  {categories.filter((c) => c.isActive !== false).map((c) => (
                     <label key={c.id} className={chip(e.categoryIds.includes(c.id))}>
                       <input type="checkbox" className="sr-only" checked={e.categoryIds.includes(c.id)} onChange={() => set({ categoryIds: toggleIn(e.categoryIds, c.id) })} />
                       {e.categoryIds.includes(c.id) && <Check size={13} aria-hidden="true" />}
@@ -489,8 +507,9 @@ export function EligibilitySection(props: SectionProps) {
             {e.scope === "collections" && (
               <fieldset className="m-0 border-0 p-0">
                 <legend className="mb-2 p-0 text-[length:var(--text-caption)] font-semibold">{t("promo.editor.eligibility.pickCollections")}</legend>
+                {collections.length === 0 && <p className="m-0 text-[length:var(--text-caption)] text-[var(--text-muted)]">{t("promo.editor.eligibility.noCollections")}</p>}
                 <div className="flex flex-wrap gap-2">
-                  {COLLECTIONS.map((c) => (
+                  {collections.map((c) => (
                     <label key={c.id} className={chip(e.collectionIds.includes(c.id))}>
                       <input type="checkbox" className="sr-only" checked={e.collectionIds.includes(c.id)} onChange={() => set({ collectionIds: toggleIn(e.collectionIds, c.id) })} />
                       {e.collectionIds.includes(c.id) && <Check size={13} aria-hidden="true" />}
@@ -521,7 +540,8 @@ export function EligibilitySection(props: SectionProps) {
         {e.customers === "segments" && (
           <fieldset className="m-0 grid gap-2 border-0 p-0 sm:grid-cols-2">
             <legend className="mb-2 p-0 text-[length:var(--text-caption)] font-semibold">{t("promo.editor.eligibility.pickSegments")}</legend>
-            {SEGMENTS.map((s) => {
+            {segments.length === 0 && <p className="m-0 text-[length:var(--text-caption)] text-[var(--text-muted)] sm:col-span-2">{t("promo.editor.eligibility.noSegments")}</p>}
+            {segments.map((s) => {
               const on = e.segmentIds.includes(s.id);
               return (
                 <label
@@ -533,7 +553,7 @@ export function EligibilitySection(props: SectionProps) {
                 >
                   <input type="checkbox" checked={on} onChange={() => set({ segmentIds: toggleIn(e.segmentIds, s.id) })} className="h-4 w-4 accent-[var(--gt-ink-900)]" />
                   <span className="grid flex-1 leading-tight">
-                    <span className="text-[length:var(--text-body-sm)] font-semibold">{l(s.name)}</span>
+                    <span className="text-[length:var(--text-body-sm)] font-semibold">{s.name}</span>
                     <span className="text-[11px] text-[var(--text-muted)]">{t("promo.editor.eligibility.segmentSize", { count: s.size })}</span>
                   </span>
                 </label>
@@ -596,7 +616,8 @@ export function UsageSection(props: SectionProps) {
       <div className="grid grid-cols-[minmax(0,1fr)] gap-4 rounded-[var(--admin-radius)] border border-[var(--border-subtle)] p-4">
         <ToggleSwitch label={t("promo.editor.usage.combinable")} description={t("promo.editor.usage.combinableHint")} checked={u.combinable} onChange={(combinable) => set({ combinable })} />
         <ToggleSwitch label={t("promo.editor.usage.excludeDiscounted")} description={t("promo.editor.usage.excludeDiscountedHint")} checked={u.excludeDiscounted} onChange={(excludeDiscounted) => set({ excludeDiscounted })} />
-        <ToggleSwitch label={t("promo.editor.usage.excludeGiftCards")} description={t("promo.editor.usage.excludeGiftCardsHint")} checked={u.excludeGiftCards} onChange={(excludeGiftCards) => set({ excludeGiftCards })} />
+        {/* Always on: a gift card is money, never discounted (the database enforces it). */}
+        <ToggleSwitch label={t("promo.editor.usage.excludeGiftCards")} description={t("promo.editor.usage.excludeGiftCardsHint")} checked disabled onChange={() => undefined} />
         <ToggleSwitch
           label={t("promo.editor.usage.excludeProducts")}
           description={t("promo.editor.usage.excludeProductsHint")}
@@ -643,12 +664,15 @@ export function ScheduleSection(props: SectionProps) {
   const set = (next: Partial<Promotion["schedule"]>) => update((p) => ({ ...p, schedule: { ...p.schedule, ...next } }));
   const invalid = issue("schedule");
 
+  const base = startDate || localDay(1).slice(0, 10);
+  const nextSaturday = shiftDays(localDay(0).slice(0, 10), (6 - new Date(`${localDay(0).slice(0, 10)}T12:00:00Z`).getUTCDay() + 7) % 7 || 7);
+  const nextMonth = shiftDays(localDay(0).slice(0, 8) + "01", 32).slice(0, 8) + "01";
   const presets: { id: string; start: string; end: string | null }[] = [
-    { id: "weekend", start: "2027-11-27T00:00", end: "2027-11-28T23:59" },
-    { id: "week", start: `${startDate || "2027-11-25"}T00:00`, end: `${shiftDays(startDate || "2027-11-25", 6)}T23:59` },
-    { id: "twoWeeks", start: `${startDate || "2027-11-25"}T00:00`, end: `${shiftDays(startDate || "2027-11-25", 13)}T23:59` },
-    { id: "december", start: "2027-12-01T00:00", end: "2027-12-31T23:59" },
-    { id: "evergreen", start: `${startDate || "2027-11-25"}T00:00`, end: null },
+    { id: "weekend", start: `${nextSaturday}T00:00`, end: `${shiftDays(nextSaturday, 1)}T23:59` },
+    { id: "week", start: `${base}T00:00`, end: `${shiftDays(base, 6)}T23:59` },
+    { id: "twoWeeks", start: `${base}T00:00`, end: `${shiftDays(base, 13)}T23:59` },
+    { id: "nextMonth", start: `${nextMonth}T00:00`, end: `${shiftDays(shiftDays(nextMonth, 32).slice(0, 8) + "01", -1)}T23:59` },
+    { id: "evergreen", start: `${base}T00:00`, end: null },
   ];
 
   return (
@@ -712,7 +736,7 @@ export function ScheduleSection(props: SectionProps) {
           <CheckRow
             label={t("promo.editor.schedule.noEnd")}
             checked={!s.endsAt}
-            onChange={(noEnd) => set({ endsAt: noEnd ? null : `${shiftDays(startDate || "2027-11-25", 13)}T23:59` })}
+            onChange={(noEnd) => set({ endsAt: noEnd ? null : `${shiftDays(base, 13)}T23:59` })}
           />
         </fieldset>
       </div>
@@ -728,7 +752,7 @@ export function ScheduleSection(props: SectionProps) {
 
       <div className="rounded-[var(--admin-radius)] border border-[var(--border-subtle)] bg-[var(--admin-panel-sunken)] p-4">
         <p className="m-0 mb-2 text-[11px] font-semibold uppercase tracking-[var(--tracking-wide)] text-[var(--text-muted)]">{t("promo.editor.schedule.preview")}</p>
-        <ScheduleTimeline startsAt={s.startsAt} endsAt={s.endsAt} invalid={!!props.issues.find((i) => i.field === "schedule")} />
+        <ScheduleTimeline startsAt={s.startsAt} endsAt={s.endsAt} timezone={s.timezone} invalid={!!props.issues.find((i) => i.field === "schedule")} />
       </div>
     </FormSection>
   );
@@ -801,7 +825,7 @@ export function CodeSection(props: SectionProps & { codeTaken: boolean }) {
                   maxLength={24}
                   spellCheck={false}
                   autoComplete="off"
-                  onChange={(e) => set({ code: c.caseSensitive ? e.target.value.replace(/\s/g, "") : e.target.value.toUpperCase().replace(/\s/g, "") })}
+                  onChange={(e) => set({ code: e.target.value.toUpperCase().replace(/\s/g, "") })}
                   placeholder="SPARKLE20"
                   aria-invalid={codeError ? true : undefined}
                   className="gt-admin-field min-w-[180px] flex-1 font-[family-name:var(--gt-font-mono)] font-semibold tracking-[.06em]"
@@ -827,12 +851,9 @@ export function CodeSection(props: SectionProps & { codeTaken: boolean }) {
             ))}
           </div>
           <div className="grid grid-cols-[minmax(0,1fr)] gap-4 rounded-[var(--admin-radius)] border border-[var(--border-subtle)] p-4">
-            <ToggleSwitch
-              label={t("promo.editor.code.caseSensitive")}
-              description={c.caseSensitive ? t("promo.editor.code.caseSensitiveOn") : t("promo.editor.code.caseSensitiveOff", { code: c.code || "SPARKLE20", lower: (c.code || "SPARKLE20").toLowerCase() })}
-              checked={c.caseSensitive}
-              onChange={(caseSensitive) => set({ caseSensitive })}
-            />
+            <p className="m-0 text-[length:var(--text-caption)] text-[var(--text-muted)]">
+              {t("promo.editor.code.caseInsensitive", { code: c.code || "SPARKLE20", lower: (c.code || "SPARKLE20").toLowerCase() })}
+            </p>
             <Segmented
               label={t("promo.editor.code.kind")}
               value={c.kind}

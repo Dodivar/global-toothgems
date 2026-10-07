@@ -189,6 +189,17 @@ Deno.test("fully paid with gift cards: no Stripe session", async () => {
   assertEquals(calls.sessions.length, 0);
 });
 
+Deno.test("a basket made free by a promotion (no gift card): the order is released, not reported as paid", async () => {
+  const { deps, calls } = fakeDeps({
+    createOrder: () => Promise.resolve({ order: { ...ORDER, amount_due: 0, payment_status: "pending" } }),
+  });
+  const res = await handleCheckout(post(BODY), deps);
+  assertEquals(res.status, 409);
+  assertEquals(await res.json(), { error: "free_order" });
+  assertEquals(calls.cancelled, [ORDER.id]);
+  assertEquals(calls.sessions.length, 0);
+});
+
 Deno.test("no order while the shop is in maintenance (and none if the switch cannot be read)", async () => {
   const on = fakeDeps({ maintenanceEnabled: () => Promise.resolve(true) });
   const res = await handleCheckout(post(BODY), on.deps);

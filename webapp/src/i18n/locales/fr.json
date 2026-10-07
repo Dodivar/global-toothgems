@@ -335,6 +335,7 @@
       "unavailable": "Un article de votre panier n’est plus disponible. Retirez-le puis réessayez.",
       "out_of_stock": "Un article de votre panier n’est plus en stock en quantité suffisante. Ajustez la quantité puis réessayez.",
       "shipping_unavailable": "Cette livraison n’est pas disponible pour ce panier ou cette destination. Choisissez-en une autre.",
+      "free_order": "Cette commande est entièrement offerte par une promotion : le paiement gratuit n’est pas encore possible. Retirez le code ou ajoutez un article.",
       "promotion_code_invalid": "Ce code promo ne s’applique pas à cette commande.",
       "loyalty_reward_unavailable": "Votre récompense fidélité n’est plus disponible pour cette commande (déjà réservée par un paiement en cours ou utilisée). Décochez-la et réessayez.",
       "gift_card_invalid": "Cette carte cadeau ne peut pas être utilisée.",
@@ -431,6 +432,29 @@
       "reserved": "Commande {{reference}} : vos articles sont réservés pendant le paiement.",
       "showSummary": "Afficher le récapitulatif",
       "hideSummary": "Masquer le récapitulatif"
+    },
+    "promo": {
+      "title": "Code promo",
+      "label": "Code promo",
+      "apply": "Appliquer",
+      "added": "Codes promo ajoutés",
+      "remove": "Retirer le code {{code}}",
+      "checking": "Vérification du code…",
+      "errors": {
+        "format": "Ce code n’a pas le bon format (lettres, chiffres, - et _).",
+        "duplicate": "Ce code est déjà ajouté.",
+        "limit": "{{max}} codes promo au plus par commande."
+      },
+      "refusal": {
+        "invalid": "Ce code ne s’applique pas à votre panier : il a été retiré.",
+        "too_many_attempts": "Trop de codes refusés. Réessayez dans quelques minutes.",
+        "dropped": "Un code ne s’applique plus à votre panier : il a été retiré."
+      },
+      "blockedByReward": "La récompense fidélité ne se cumule pas avec un code promo : décochez-la pour saisir un code.",
+      "rewardBlockedByCode": "Ne se cumule pas avec un code promo : retirez le code pour utiliser votre récompense.",
+      "discountLine": "{{label}} ({{code}})",
+      "gift": "Offert : {{name}}",
+      "freeOrder": "Cette commande est entièrement offerte par une promotion : le paiement gratuit n’est pas encore possible. Retirez le code ou ajoutez un article."
     }
   },
   "auth": {

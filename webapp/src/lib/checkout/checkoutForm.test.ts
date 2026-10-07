@@ -139,6 +139,11 @@ describe("checkout with gift cards", () => {
     expect(buildCheckoutRequest([line], form, "rate", "fr", [], true)?.use_loyalty_reward).toBe(true);
   });
 
+  it("sends the promotion codes typed, and none otherwise", () => {
+    expect(buildCheckoutRequest([line], form, "rate", "fr", [], false, ["WELCOME15"])?.promotion_codes).toEqual(["WELCOME15"]);
+    expect(buildCheckoutRequest([line], form, "rate", "fr")).not.toHaveProperty("promotion_codes");
+  });
+
   it("knows the code for gift card details refused by the database", () => {
     expect(readCheckoutAnswer({ error: "gift_card_details_invalid" })).toEqual({ kind: "error", error: "gift_card_details_invalid" });
     expect(readCheckoutAnswer({ error: "gift_card_invalid" })).toEqual({ kind: "error", error: "gift_card_invalid" });
