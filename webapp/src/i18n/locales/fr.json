@@ -236,15 +236,12 @@
     "crossSellEyebrow": "Va avec",
     "crossSellTitle": "Compléter la trousse",
     "crossSellCta": "Voir le panier",
-    "toastAddedTitle": "Ajouté au panier",
     "stockLow": "Stock limité",
     "stockOut": "Épuisé",
     "saveAria": "Mettre {{name}} en favori",
     "quickAdd": "Ajouter",
     "quickAddAria": "Ajouter {{name}} au panier",
     "quickAddDone": "Ajouté",
-    "quickAddToastTitle": "Ajouté au panier",
-    "quickAddToastBody": "{{name}} vous attend dans votre panier.",
     "imagePlaceholder": "Produit",
     "galleryLabel": "Images du produit",
     "viewImage": "Voir l’image {{index}} sur {{total}}",
@@ -4657,5 +4654,13 @@
     "loading": "Chargement du catalogue…",
     "resultCount_one": "{{count}} résultat",
     "resultCount_other": "{{count}} résultats"
+  },
+  "cartNotice": {
+    "title": "Ajouté au panier",
+    "announce": "{{name}} ajouté au panier.",
+    "qty": "Qté {{count}}",
+    "undo": "Annuler",
+    "undoAria": "Annuler l’ajout de {{name}} au panier",
+    "viewCart": "Voir le panier"
   }
 }

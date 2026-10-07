@@ -1,5 +1,5 @@
 import { describe, expect, it } from "vitest";
-import { addCourseToLines, addGiftCardToLines, addToLines, courseLineId, hasCourse, cartCount, cartSubtotal, checkoutItems, MAX_LINE_QTY, needsShipping, setLineQty, shippableSubtotal, type CartLine } from "./cartLines";
+import { addCourseToLines, addedQty, addGiftCardToLines, addToLines, courseLineId, hasCourse, lineKey, cartCount, cartSubtotal, checkoutItems, MAX_LINE_QTY, needsShipping, setLineQty, shippableSubtotal, undoAddition, type CartLine } from "./cartLines";
 
 const gel: Omit<CartLine, "id"> = {
   productId: "gel-de-suivi",
@@ -38,6 +38,28 @@ describe("cart lines", () => {
     lines = addToLines(lines, gel);
     expect(lines[0].qty).toBe(MAX_LINE_QTY);
     expect(setLineQty(lines, lines[0].id, 0)).toEqual([]);
+  });
+
+  it("undoes an addition by the units it really added", () => {
+    // Merged into a line already in the cart: the line goes back to what it held.
+    const before = addToLines([], { ...gel, qty: 2 });
+    const merged = addToLines(before, { ...gel, qty: 3 });
+    const id = merged[0].id;
+    expect(addedQty(before, merged, id)).toBe(3);
+    expect(undoAddition(merged, id, 3)).toEqual(before);
+
+    // A new line: undone, it leaves the cart; the other lines stay as they are.
+    const added = addToLines(before, strass);
+    const strassId = lineKey(strass);
+    expect(addedQty(before, added, strassId)).toBe(1);
+    expect(undoAddition(added, strassId, 1)).toEqual(before);
+
+    // At the cap, nothing was added: nothing is taken back.
+    const full = addToLines([], { ...gel, qty: MAX_LINE_QTY - 1 });
+    const capped = addToLines(full, { ...gel, qty: 5 });
+    expect(addedQty(full, capped, id)).toBe(1);
+    expect(addedQty(capped, addToLines(capped, gel), id)).toBe(0);
+    expect(undoAddition(capped, id, 1)).toEqual(full);
   });
 
   it("sends identifiers and quantities only, or nothing for a line outside the database catalogue", () => {

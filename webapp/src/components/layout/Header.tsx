@@ -11,6 +11,7 @@ import { useAcademyMenu } from "./useAcademyMenu";
 import { NewTag } from "../studio/NewTag";
 import { ShopMenu } from "./ShopMenu";
 import { HeaderSearch } from "./HeaderSearch";
+import { CartAddedNotice } from "./CartAddedNotice";
 import { STUDIO_PATH } from "../../lib/studioUrl";
 import logoBlack from "../../assets/logo-wordmark-black.png";
 
@@ -433,6 +434,7 @@ export function Header() {
         )}
       </div>
       {searchOpen && <HeaderSearch id="gt-site-search" onClose={closeSearch} />}
+      <CartAddedNotice />
     </div>
   );
 }

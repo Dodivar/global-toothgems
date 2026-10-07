@@ -1082,6 +1082,54 @@
   html:focus-within { scroll-behavior: auto; }
 }
 
+/* ---------------------------------------------------------------------------
+   Cart notice — under the header's cart icon when a product is added
+   (CartAddedNotice). It grows out of the icon and folds back into it. The
+   component closes on `animationend`, so no rule here may set
+   `animation: none`: reduced motion keeps a plain fade instead of a movement.
+   The countdown is a literal 4s, not a token, since the tokens drop to 1ms
+   under reduced motion and the notice would vanish at once.
+--------------------------------------------------------------------------- */
+@layer components {
+  .gt-cart-notice {
+    transform-origin: calc(100% - 20px) 0;
+    animation: gt-cart-notice-in var(--duration-slow) var(--ease-out-soft) both;
+  }
+  .gt-cart-notice[data-leaving] {
+    pointer-events: none;
+    animation: gt-cart-notice-out var(--duration-normal) var(--ease-in-out) both;
+  }
+  .gt-cart-notice-bar {
+    transform-origin: left center;
+    animation: gt-cart-notice-countdown 4s linear both;
+  }
+  /* Held while the pointer or the keyboard is on the notice. */
+  .gt-cart-notice:hover .gt-cart-notice-bar,
+  .gt-cart-notice:focus-within .gt-cart-notice-bar { animation-play-state: paused; }
+}
+
+@keyframes gt-cart-notice-in {
+  from { opacity: 0; transform: translateY(-8px) scale(.96); }
+  to { opacity: 1; transform: none; }
+}
+@keyframes gt-cart-notice-out {
+  from { opacity: 1; transform: none; }
+  to { opacity: 0; transform: translateY(-6px) scale(.97); }
+}
+@keyframes gt-cart-notice-countdown {
+  from { transform: scaleX(1); }
+  to { transform: scaleX(0); }
+}
+@keyframes gt-cart-notice-fade-out {
+  from { opacity: 1; }
+  to { opacity: 0; }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .gt-cart-notice { animation: gt-fade-in 160ms linear both; }
+  .gt-cart-notice[data-leaving] { animation: gt-cart-notice-fade-out 160ms linear both; }
+}
+
 @media print {
   .gt-review-note,
   .gt-cookie-banner { display: none !important; }
