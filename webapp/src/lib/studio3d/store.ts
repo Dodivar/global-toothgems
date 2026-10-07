@@ -74,7 +74,6 @@ export interface StudioSnapshot {
   placingTypeId: string | null;
   /** The lasso tool is on: a press on the stage draws a loop that selects the pieces inside. */
   lasso: boolean;
-  hoveredToothId: string | null;
   modelMode: ModelMode;
   /** True while a model is being fetched and prepared: the stage says so. */
   modelLoading: boolean;
@@ -127,7 +126,6 @@ export class DesignStore {
   armedTypeId: string | null = null;
   placingTypeId: string | null = null;
   lasso = false;
-  hoveredToothId: string | null = null;
   modelMode: ModelMode = "dentition";
   modelLoading = true;
   issues: DesignIssue[] = [];
@@ -199,7 +197,6 @@ export class DesignStore {
       armedTypeId: this.armedTypeId,
       placingTypeId: this.placingTypeId,
       lasso: this.lasso,
-      hoveredToothId: this.hoveredToothId,
       modelMode: this.modelMode,
       modelLoading: this.modelLoading,
       issues: this.issues,
@@ -372,12 +369,6 @@ export class DesignStore {
     this.contextMenu = null;
     this.commit();
   }
-  setHoveredTooth(id: string | null) {
-    if (this.hoveredToothId !== id) {
-      this.hoveredToothId = id;
-      this.commit();
-    }
-  }
   setModelMode(m: ModelMode) {
     if (this.modelMode !== m) {
       this.modelMode = m;
@@ -460,7 +451,6 @@ export class DesignStore {
     this.armedTypeId = null;
     this.placingTypeId = null;
     this.lasso = false;
-    this.hoveredToothId = null;
     this.contextMenu = null;
     // The next editor session loads the default dentition afresh.
     this.modelMode = "dentition";

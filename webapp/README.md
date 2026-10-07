@@ -477,7 +477,7 @@ The signed-in area is an administration dashboard: a left sidebar on desktop, a 
 | Route | Section |
 | --- | --- |
 | `/compte` | Dashboard — summary tiles, the "resume where you left off" card, the courses being followed with their module breakdown, and the courses still available |
-| `/compte/attestations` | Certificates |
+| `/compte/attestations` | Certificates — the collection (newest featured), each with view (zoomable viewer), download (A4 PDF) and share (image + caption); courses under way as locked cards; an encouraging empty state. The document is `lib/certificate/layout.ts`, drawn as SVG on screen and on a canvas for the files (`lib/certificate/render.ts`, `pdf.ts`); sharing is `components/certificate/ShareAchievementDialog.tsx` (no public certificate page, by decision) |
 | `/compte/commandes` | Order history, with parcel tracking and lifetime spend per currency |
 | `/compte/commandes/:reference` | One order: lines as bought, recorded amounts, parcels and tracking, refunds, addresses; "Print the summary" (an order summary, explicitly not an invoice) |
 | `/compte/fidelite` | Loyalty card — the member's real stamp card and reward (`lib/loyalty.tsx`, `loyalty_overview`), read again on arrival |
@@ -499,7 +499,7 @@ What a member who holds a course reads. The course is the one built in the back 
 | --- | --- |
 | `/academy/mes-formations/:courseId` | Course overview: cover, progress ring, modules and steps completed, time left, the next unfinished lesson behind one "Continue training" button, module cards with status badges, recently completed lessons, objectives and completion rules |
 | `/academy/mes-formations/:courseId/lecon/:nodeKey` | The lesson player, a full-screen workspace (no storefront header/footer): lesson content in authored order (text, image, video, any mix), the module's knowledge check after its last step, a side panel with the course outline on desktop, and a progress strip, a contents sheet and a bottom action bar on phones |
-| `/academy/mes-formations/:courseId/terminee` | Completion: medal, course, date, average score, certificate when the course issues one, back to the dashboard, review the course |
+| `/academy/mes-formations/:courseId/terminee` | Completion: the ring closing on 100 %, the badge, the certificate revealed with a short confetti fall (none under reduced motion), download and share in place, the figures that earned it, then the way on (other courses, review the course) |
 | `/academy/lecon` | Forwards to the overview of the course just opened (every existing "open this course" action lands here) |
 
 How it works:
