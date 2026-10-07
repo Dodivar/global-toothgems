@@ -103,7 +103,7 @@ const CONTROL_RE = /[\u0000-\u001f\u007f]/;
 // A gift message may span lines; nothing else below U+0020.
 const MESSAGE_CONTROL_RE = /[\u0000-\u0009\u000b-\u001f\u007f]/;
 /** A Checkout Session client secret: `cs_test_…_secret_…`. */
-const CLIENT_SECRET_RE = /^(cs_(?:test|live)_[A-Za-z0-9]{10,250})_secret_[A-Za-z0-9]{8,250}$/;
+const CLIENT_SECRET_RE = /^(cs_(?:test|live)_[A-Za-z0-9]{10,250})_secret_[A-Za-z0-9%_.~-]{8,1000}$/;
 const DATE_TIME_RE = /^\d{4}-\d{2}-\d{2}T\d{2}:\d{2}(:\d{2}(\.\d{1,6})?)?(Z|[+-]\d{2}:\d{2})$/;
 
 type Fail = { ok: false; field: string };
