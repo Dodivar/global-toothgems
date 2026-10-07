@@ -564,6 +564,22 @@ The seeded account owns two courses, so the locked state would be unreachable in
 
 Interactions are simulated against in-memory state in `lib/community.tsx`: reacting, saving, replying, starting a discussion (with a sample photograph in place of an upload) and opening member profiles all work and move the same counters the navigation reads, and all of it resets on reload. Nothing is sent, stored or authorised — real membership, moderation and authorization belong to the server, driven by the same verified payment event as course access.
 
+## The Members' Lounge (`/compte/salons`)
+
+The community's private chat — *Salon des membres* / *Members' Lounge* — beside, not instead of, the Artist Community's feed of posts. Same door: an account with a training on it (`useCommunity().hasAccess`, the same rule and the same **Aperçu prototype** switch, reachable from the flask in the lounge's user panel). Without access, the page is an invitation (`LockedLounge`): the real lounge blurred behind one card, *Découvrir les formations*, and the way back to the account. The member-space sidebar carries both entries, each marked "accès avec une formation" when locked.
+
+One page, everything else is state: language lounges (English by default, French, German, Spanish; Italian and Portuguese announced in the switcher) with the same five channels each (introductions, general, inspiration, techniques & tips, business & growth), and private conversations that belong to the community, not to a lounge. Desktop is three columns inside the member shell — lounge sidebar | conversation | members (from 1440 px; a drawer below, toggled from the header). Below 1024 px the sidebar is a drawer opened from the conversation header, which also carries the private messages and the inbox.
+
+| Piece | Where |
+| --- | --- |
+| Fixtures (members, lounges, channels, messages, private conversations) | `data/communityChat.ts` — `minutesAgo` ages, mentions stored as `{ type: "mention", memberId }` tokens, message text written in the lounge's language (content, not UI) |
+| Pure rules (reactions, mention parsing and autocomplete, grouping, search) | `lib/communityChat/chatLogic.ts`, tested in `chatLogic.test.ts` |
+| State (one reducer: open, send, react, mark read, mute, start a conversation, notifications derived from the rooms) | `lib/communityChat/chatStore.tsx`, mounted by the page only |
+| Screen and components | `screens/communityChat/MembersLounge.tsx`, `components/communityChat/` |
+| Copy | `i18n/locales/communityChat.{fr,en}.json`, under `lounge` |
+
+Simulated, in memory, reset on reload: sending (text, `@mentions`, emoji, images kept as object URLs in the tab), replies shown as a compact quote with a connector, reactions, unread counts and the "New" marker, muting, mark-as-read, the inbox (mentions, replies, reactions, private messages), search (messages, members, channels of the current lounge and the private conversations), member profiles, presence, and — prototype only — a typing indicator and a canned answer when you write privately to someone online (`DEMO_AUTO_REPLY`). Nothing is sent, stored or authorised. A live version needs tables for lounges, channels, messages, reactions, read markers and conversations with RLS on the same course entitlement, Realtime for delivery, private Storage for images, and moderation — none of it exists yet.
+
 ## The administration area (`/admin`)
 
 A separate, desktop-first management workspace for the product catalogue. Product management and sign-in run on Supabase when it is configured (see [Supabase connection](#supabase-connection-back-office-products)); without it, and for every other section, it is an interactive visual prototype with no persistence. It is deliberately not the storefront in a sidebar — same palette, same Montserrat, but squarer controls, denser rows and its own near-black navigation rail, because a catalogue table and a product page are not the same job.
@@ -798,6 +814,7 @@ Without the Supabase variables every domain runs on its mock store. With them, t
 - **Checkout extras.** Payment runs through Stripe (see *Cart and checkout*) and gift card codes can be used in the cart, but promotion codes and the loyalty reward cannot be entered yet (the Edge Function accepts promotion codes), no confirmation e-mail is sent, and saving the address on the account is not offered.
 - **Academy.** Authoring, public pages and the learner side are on Supabase (phases A–C). Courses are bought through the cart (phase D, migration `20261002100000_course_checkout` not applied yet) or granted by hand (`/admin/formations/:id/acces`). The back office's course list and statistics still show placeholder learner figures (`enrolled`, `completionRate`, `data/adminAnalytics.ts`).
 - **Artist Community.** Fixtures and in-memory posting; access derived client-side from the courses on the account. Post-launch.
+- **Members' Lounge** (`/compte/salons`). UI prototype of the community chat: fixtures and in-memory messages, same client-side access rule as the Artist Community. No backend. Post-launch.
 - **Loyalty Club.** Live (2026-10-03). `lib/loyalty.tsx` reads the public rules (`loyalty_settings`) and the member's card (`loyalty_overview`, RLS-limited); `lib/loyaltyMapping.ts` derives the card state (unit-tested); `data/loyalty.ts` holds the types and the example cards of the marketing pages. The database awards the stamp when the Stripe webhook marks an order paid; the browser only reads. The cart banner counts shop goods only (no gift card, no course) and invites guests to sign in. The cart offers a checkbox to spend a completed card (`use_loyalty_reward` in the checkout request, previewed with `rewardDiscount`; the database refuses with `loyalty_reward_unavailable` when the card is gone or reserved). Not built: e-mail on stamp/reward.
 - **Security page:** data export and account deletion are simulated (they need backend jobs).
 - **Back-office promotions and campaigns, statistics:** mock stores over a schema that already exists. A translation workflow (coverage, editor) is not built.

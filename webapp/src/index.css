@@ -539,6 +539,22 @@
   to { opacity: 1; transform: none; }
 }
 
+/* Members' Lounge: a message reached from search or the inbox glows once. */
+@keyframes gt-lounge-flash {
+  0%, 35% { background-color: var(--gt-blue-100); }
+  100% { background-color: transparent; }
+}
+.gt-lounge-flash { animation: gt-lounge-flash 2.2s var(--ease-standard) both; }
+
+/* Members' Lounge: the three dots of "… is typing". */
+@keyframes gt-lounge-typing {
+  0%, 60%, 100% { opacity: .25; transform: none; }
+  30% { opacity: 1; transform: translateY(-2px); }
+}
+.gt-lounge-typing > span { animation: gt-lounge-typing 1.2s var(--ease-standard) infinite; }
+.gt-lounge-typing > span:nth-child(2) { animation-delay: .15s; }
+.gt-lounge-typing > span:nth-child(3) { animation-delay: .3s; }
+
 @keyframes gt-skeleton {
   from { background-position: 100% 50%; }
   to { background-position: 0 50%; }
@@ -555,7 +571,9 @@
   .gt-auth-swap,
   .gt-stamp-next,
   .gt-stamp-press,
+  .gt-lounge-typing > span,
   .gt-skeleton { animation: none; }
+  .gt-lounge-flash { animation: none; background-color: var(--gt-blue-100); }
   .gt-diploma { transform: none; transition: none; }
   .gt-sparkle::after { display: none; }
 }
