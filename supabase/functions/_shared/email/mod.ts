@@ -15,8 +15,8 @@ export { sendTemplatedEmail } from "./send.ts";
 export type { EmailDeps, EmailStore, SendRequest, SendResult } from "./send.ts";
 export { EmailRenderError, renderEmail } from "./render.ts";
 
-/** The brand name shown in the layout header and footer. */
-const BRAND_NAME = "Global Tooth Gems";
+/** The brand name of the layout (logo alt text, footer, copyright), as written on the site. */
+const BRAND_NAME = "Global Toothgems";
 
 /** Reads the secrets from the function environment (names in functions/.env.example). */
 export function emailDepsFromEnv(): EmailDeps {

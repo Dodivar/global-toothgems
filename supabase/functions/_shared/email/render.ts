@@ -10,8 +10,17 @@
  *   - every value is HTML-escaped; a value is only turned into a link when it is,
  *     as a whole, an https address (a customer's gift message never becomes one);
  *   - the subject is one line, whatever the values contain (no header injection).
+ * The page around the body is the master layout (`layout.ts`) and its
+ * components (`components.ts`); see `preview.ts` to look at it.
  * No React, no template engine: pure functions, tested without I/O.
  */
+import { actions, type Block, eyebrow, intro, type Link, paragraphStyle, title } from "./components.ts";
+import { EmailRenderError, escapeHtml, HTTPS_VALUE } from "./html.ts";
+import { emailDocument, type LayoutOptions } from "./layout.ts";
+import { color } from "./tokens.ts";
+
+export { EmailRenderError, escapeHtml } from "./html.ts";
+export type { LayoutOptions } from "./layout.ts";
 
 export interface TemplateRow {
   locale: string;
@@ -22,12 +31,6 @@ export interface TemplateRow {
   outdated?: boolean;
 }
 
-export interface LayoutOptions {
-  brandName: string;
-  /** Production origin, shown in the footer (e.g. https://globaltoothgems.com). */
-  siteUrl: string;
-}
-
 export interface RenderedEmail {
   subject: string;
   preheader: string;
@@ -35,25 +38,26 @@ export interface RenderedEmail {
   text: string;
 }
 
-export class EmailRenderError extends Error {
-  constructor(message: string) {
-    super(message);
-    this.name = "EmailRenderError";
-  }
+/**
+ * What the calling code adds around the staff-written body, built from the
+ * components (never from substituted values, so a customer's text cannot become
+ * a button). Order in the card: eyebrow, title, intro, body, actions, blocks.
+ */
+export interface EmailContent {
+  eyebrow?: string;
+  /** The `<h1>`. Defaults to the rendered subject; `null` leaves the e-mail without one. */
+  title?: string | null;
+  intro?: string;
+  primaryAction?: Link;
+  secondaryAction?: Link;
+  /** Order summary, course card, notices… placed after the body and the actions. */
+  blocks?: Block[];
+  /** Marketing e-mails only. */
+  unsubscribeUrl?: string;
 }
 
 const PLACEHOLDER = /\{\{\s*([a-z_][a-z0-9_]*)\s*\}\}/g;
-const HTTPS_VALUE = /^https:\/\/[^\s<>"']+$/;
 const HTTPS_IN_TEXT = /https:\/\/[^\s<>"']+/g;
-
-export function escapeHtml(value: string): string {
-  return value
-    .replaceAll("&", "&amp;")
-    .replaceAll("<", "&lt;")
-    .replaceAll(">", "&gt;")
-    .replaceAll('"', "&quot;")
-    .replaceAll("'", "&#39;");
-}
 
 function lookup(name: string, template: TemplateRow, values: Record<string, string>): string {
   if (!template.variables.includes(name)) {
@@ -74,7 +78,7 @@ function renderLine(source: string, template: TemplateRow, values: Record<string
 
 function linkHtml(address: string): string {
   const safe = escapeHtml(address);
-  return `<a href="${safe}" style="color:#3f5a75;text-decoration:underline;">${safe}</a>`;
+  return `<a href="${safe}" style="color:${color.ink};text-decoration:underline;font-weight:600;word-break:break-all;">${safe}</a>`;
 }
 
 /** Staff-written text: escaped, https addresses linked. */
@@ -114,7 +118,7 @@ function bodyToHtml(template: TemplateRow, values: Record<string, string>): stri
     .map((paragraph) => paragraph.trim())
     .filter((paragraph) => paragraph.length > 0)
     .map((paragraph) =>
-      `<p style="margin:0 0 16px;font-size:16px;line-height:1.6;color:#2b2b2b;">${paragraph.replaceAll("\n", "<br>")}</p>`
+      `<p style="${paragraphStyle}">${paragraph.replaceAll("\n", "<br>")}</p>`
     )
     .join("\n");
 }
@@ -132,39 +136,29 @@ export function renderEmail(
   template: TemplateRow,
   values: Record<string, string>,
   layout: LayoutOptions,
+  content: EmailContent = {},
 ): RenderedEmail {
   const subject = renderLine(template.subject, template, values);
   if (!subject) throw new EmailRenderError("the subject is empty once rendered");
   const preheader = renderLine(template.preheader ?? "", template, values);
-  const content = bodyToHtml(template, values);
-  const text = bodyToText(template, values);
-  if (!text) throw new EmailRenderError("the body is empty once rendered");
+  const bodyHtml = bodyToHtml(template, values);
+  const bodyText = bodyToText(template, values);
+  if (!bodyText) throw new EmailRenderError("the body is empty once rendered");
 
-  const brand = escapeHtml(layout.brandName);
-  const site = escapeHtml(layout.siteUrl);
-  const html = `<!doctype html>
-<html lang="${escapeHtml(template.locale)}">
-<head>
-<meta charset="utf-8">
-<meta name="viewport" content="width=device-width, initial-scale=1">
-<meta name="color-scheme" content="light">
-<title>${escapeHtml(subject)}</title>
-</head>
-<body style="margin:0;padding:0;background:#f2f1ed;">
-<div style="display:none;max-height:0;overflow:hidden;opacity:0;color:transparent;">${escapeHtml(preheader)}</div>
-<table role="presentation" width="100%" cellpadding="0" cellspacing="0" style="background:#f2f1ed;">
-<tr><td align="center" style="padding:24px 12px;">
-<table role="presentation" width="600" cellpadding="0" cellspacing="0" style="width:100%;max-width:600px;background:#ffffff;border-radius:12px;font-family:-apple-system,'Segoe UI',Helvetica,Arial,sans-serif;">
-<tr><td style="padding:28px 32px 8px;font-size:13px;letter-spacing:0.14em;text-transform:uppercase;color:#3f5a75;">${brand}</td></tr>
-<tr><td style="padding:16px 32px 8px;">
-${content}
-</td></tr>
-<tr><td style="padding:16px 32px 28px;border-top:1px solid #e4e3df;font-size:12px;line-height:1.5;color:#8a8a8a;">${brand} · <a href="${site}" style="color:#8a8a8a;">${site.replace(/^https?:\/\//, "")}</a></td></tr>
-</table>
-</td></tr>
-</table>
-</body>
-</html>`;
-
-  return { subject, preheader, html, text: `${text}\n\n— ${layout.brandName}\n${layout.siteUrl}\n` };
+  const heading = content.title === undefined ? subject : content.title;
+  const blocks: Block[] = [
+    ...(content.eyebrow ? [eyebrow(content.eyebrow)] : []),
+    ...(heading ? [title(heading)] : []),
+    ...(content.intro ? [intro(content.intro)] : []),
+    { html: `<div style="margin:16px 0 0;">${bodyHtml}</div>`, text: bodyText },
+    ...(content.primaryAction || content.secondaryAction
+      ? [actions(content.primaryAction ?? null, content.secondaryAction ?? null)]
+      : []),
+    ...(content.blocks ?? []),
+  ];
+  const { html, text } = emailDocument(
+    { locale: template.locale, subject, preheader, blocks, unsubscribeUrl: content.unsubscribeUrl },
+    layout,
+  );
+  return { subject, preheader, html, text };
 }
