@@ -137,11 +137,11 @@ export function LessonPlayer() {
         onOpenContents={() => setSheetOpen(true)}
       />
 
-      <div className="mx-auto grid max-w-[1360px] gap-8 px-[clamp(16px,3vw,40px)] pb-32 pt-5 lg:grid-cols-[minmax(0,1fr)_348px] lg:pb-16 lg:pt-8">
+      <div className="mx-auto grid max-w-[1680px] gap-8 px-[clamp(16px,3vw,40px)] pb-32 pt-5 lg:grid-cols-[minmax(0,1fr)_348px] lg:pb-16 lg:pt-8">
         <div className="min-w-0">
           <MobileProgress node={node} course={training} summary={summary} />
 
-          <article className="mx-auto grid max-w-[820px] gap-7">
+          <article className="mx-auto grid max-w-[1080px] gap-7">
             <header className="grid gap-3">
               <p className="m-0 flex flex-wrap items-center gap-x-2 gap-y-1 text-[length:var(--text-eyebrow)] font-semibold uppercase tracking-[var(--tracking-eyebrow)] text-[var(--text-muted)]">
                 <span>{t("learning.moduleNumber", { number: node.moduleIndex + 1 })}</span>
@@ -275,7 +275,7 @@ function PlayerBar({
   const { t } = useTranslation();
   return (
     <header className="sticky top-0 z-40 border-b border-[var(--border-subtle)] bg-[rgba(255,255,255,.88)] backdrop-blur-md">
-      <div className="mx-auto flex h-16 max-w-[1360px] items-center gap-3 px-[clamp(12px,3vw,40px)]">
+      <div className="mx-auto flex h-16 max-w-[1680px] items-center gap-3 px-[clamp(12px,3vw,40px)]">
         <Link
           to={learnHref(courseId)}
           className="flex min-w-0 items-center gap-2.5 rounded-[var(--radius-pill)] py-1 pr-3 text-[length:var(--text-body-sm)] font-semibold text-[var(--text-primary)] hover:text-[var(--text-link-hover)]"

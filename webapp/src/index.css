@@ -1576,7 +1576,7 @@
 --------------------------------------------------------------------------- */
 @layer components {
   .gt-learn-prose {
-    max-width: 68ch;
+    max-width: 80ch;
     font-size: var(--text-body-lg);
     line-height: var(--leading-relaxed);
     color: var(--text-body);
