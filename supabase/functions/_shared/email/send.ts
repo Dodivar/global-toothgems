@@ -9,7 +9,7 @@
  * e-mail; a failed attempt can be claimed again, a delivered one never.
  * Everything external (database, Resend) is injected: the flow is tested without I/O.
  */
-import { EmailRenderError, type LayoutOptions, renderEmail, type TemplateRow } from "./render.ts";
+import { type EmailContent, EmailRenderError, type LayoutOptions, renderEmail, type TemplateRow } from "./render.ts";
 import { type OutgoingEmail, type ResendConfig, ResendError, sendWithResend } from "./resend.ts";
 
 export interface ClaimEntry {
@@ -50,6 +50,12 @@ export interface SendRequest {
   giftCardId?: string;
   /** Extra headers, e.g. `List-Unsubscribe` for marketing e-mails. */
   headers?: Record<string, string>;
+  /**
+   * Layout content around the template body (title, actions, order summary…), built from
+   * `components.ts`. A function receives the locale of the template actually found
+   * (it may differ from the requested one), so its labels match the body's language.
+   */
+  content?: EmailContent | ((locale: string) => EmailContent);
 }
 
 export type SendResult =
@@ -87,7 +93,8 @@ export async function sendTemplatedEmail(deps: EmailDeps, request: SendRequest):
 
   let rendered;
   try {
-    rendered = renderEmail(template, request.variables, deps.layout);
+    const content = typeof request.content === "function" ? request.content(template.locale) : request.content;
+    rendered = renderEmail(template, request.variables, deps.layout, content);
   } catch (error) {
     if (error instanceof EmailRenderError) return { status: "invalid", error: error.message };
     throw error;

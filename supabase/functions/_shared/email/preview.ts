@@ -7,7 +7,7 @@
  * Writes two HTML files into <dir>, to open in a browser or paste into an e-mail
  * testing tool:
  *   - components.fr.html — every component of the layout, with EXAMPLE content;
- *   - template.en.html — a database template as it is sent today (body only, no extras).
+ *   - template.en.html — a database template with no extras, as a marketing e-mail (unsubscribe footer).
  * Nothing here is sent or deployed; the content is placeholder text, not real wording.
  */
 import {
@@ -122,7 +122,6 @@ const components = renderEmail(exampleTemplate, { first_name: "Camille", order_n
     divider(),
     textLink({ label: "Consulter nos conseils d’entretien", url: `${SITE}/fr/aide` }),
   ],
-  unsubscribeUrl: `${SITE}/newsletter/desinscription?token=example`,
 });
 
 const plain = renderEmail(
@@ -136,6 +135,8 @@ const plain = renderEmail(
   },
   { recipient_name: "Alex", sender_name: "Sam", amount: "€50.00", code: "GT-XXXX-XXXX-1234", shop_url: `${SITE}/en` },
   layout,
+  // Only to show the marketing footer: a real gift card e-mail is transactional and has no unsubscribe link.
+  { unsubscribeUrl: `${SITE}/newsletter/unsubscribe?token=example` },
 );
 
 const dir = Deno.args[0];

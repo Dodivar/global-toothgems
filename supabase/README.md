@@ -1352,7 +1352,8 @@ VAT rates, shipping zones/rates mirroring the Settings prototype. Media rows ref
       card, logo header, footer with support link, localized help/legal/privacy/terms links, optional social links,
       postal address and unsubscribe, copyright). `renderEmail(template, values, layout, content?)` keeps its
       contract; the optional `content` (eyebrow, title — defaults to the subject —, intro, actions, blocks,
-      unsubscribe URL) is built by the calling code, never from substituted values. Logo:
+      unsubscribe URL) is built by the calling code, never from substituted values, and passed as
+      `SendRequest.content` (an object, or a function of the template's locale so labels match the body). Logo:
       `webapp/public/email/logo-wordmark.png` (360×99, flattened on white so dark-mode clients keep it legible),
       served at `<SITE_URL>/email/logo-wordmark.png` — it shows only once the webapp is deployed with it. Montserrat
       loads where clients allow web fonts, else Helvetica/Arial (Outlook forced to Arial). Brand name in the layout:

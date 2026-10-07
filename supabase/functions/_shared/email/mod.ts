@@ -14,6 +14,8 @@ import type { EmailDeps } from "./send.ts";
 export { sendTemplatedEmail } from "./send.ts";
 export type { EmailDeps, EmailStore, SendRequest, SendResult } from "./send.ts";
 export { EmailRenderError, renderEmail } from "./render.ts";
+export type { EmailContent } from "./render.ts";
+export * as emailBlocks from "./components.ts";
 
 /** The brand name of the layout (logo alt text, footer, copyright), as written on the site. */
 const BRAND_NAME = "Global Toothgems";
