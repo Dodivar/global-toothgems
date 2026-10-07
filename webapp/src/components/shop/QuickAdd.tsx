@@ -5,7 +5,6 @@ import { pick } from "../../data/types";
 import type { Product } from "../../data/products";
 import { useCart } from "../../lib/cart";
 import { toMinorUnits } from "../../lib/catalog/money";
-import { useToast } from "../../lib/toast";
 
 /** How long the button says "Added" before offering itself again. */
 const ADDED_MS = 1800;
@@ -21,7 +20,6 @@ const ADDED_MS = 1800;
 export function QuickAdd({ product, name, className }: { product: Product; name: string; className?: string }) {
   const { t, i18n } = useTranslation();
   const { addLine } = useCart();
-  const { showToast } = useToast();
   const [added, setAdded] = useState(false);
 
   useEffect(() => {
@@ -51,7 +49,6 @@ export function QuickAdd({ product, name, className }: { product: Product; name:
           qty: 1,
         });
         setAdded(true);
-        showToast(t("product.quickAddToastTitle"), t("product.quickAddToastBody", { name }));
       }}
       className={className}
       data-added={added}

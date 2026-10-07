@@ -130,7 +130,8 @@ supabase/
 | 20261006172723 | `release_held_gift_card_orders` | **Applied 2026-10-06.** `unpaid_orders_holding_gift_cards(codes)` (service role): unpaid orders holding those gift cards + their pending Stripe session ids. `create-checkout-session` expires the sessions and cancels the orders (cards credited back) before a new order, so retrying after cancelling on Stripe works |
 | 20261002064949 | `settings_shipping_positions` | `admin_save_shipping()` numbers zones and rates from 1 like every existing row, so saving an unchanged configuration writes nothing |
 | 20261003131220 | `studio_gem_group_thumbnails` | `gem_groups.thumbnail_path` (null or inside the owner's folder, column grants for insert/update): each new Gem Group keeps a captured render of its pieces alone on the smile at `studio-thumbnails/<user id>/groups/<group id>.jpg` (bucket policies unchanged: they check the first folder). Suite `tests/studio_workspace_validation.sql` |
-| 20261007120000 | `quiz_unlimited_attempts` | **Not applied yet (awaits the user's go-ahead).** Knowledge checks have no attempt limit: `open_quiz_attempt()` no longer raises `no_attempts_left` (a passed check still refuses new attempts); `course_quizzes.allow_retry` / `max_attempts` dropped, `admin_save_course()` and `learner_course_json()` rewritten without them |
+| 20261007072551 | `quiz_unlimited_attempts` | **Applied 2026-10-07.** Knowledge checks have no attempt limit: `private.open_quiz_attempt()` no longer raises `no_attempts_left` (a passed check still refuses new attempts) |
+| 20261007072552 | `quiz_unlimited_attempts_cleanup` | **Partly applied 2026-10-07.** `admin_save_course()` and `private.learner_course_json()` rewritten without `allow_retry` / `max_attempts` (applied live through SQL, not recorded in the migration history). `drop column` on `course_quizzes` **not applied yet**: the MCP call timed out three times with no lock or session visible; the columns are unused and keep their defaults, so nothing depends on the drop |
 
 RLS is **enabled in the same migration that creates each table** (deny by default);
 policies are granted back in `rls_policies`.
@@ -864,7 +865,7 @@ course_completions (user, course, completed_at, average_score, min_score, certif
   `complete_all_quizzes`; a node is open up to the first required node not done, or when done):
   - `complete_course_step(step)` — idempotent; refused (`learning: locked`) when the step is not open.
   - `answer_quiz_question(module, question, answer)` — immediate-feedback checks only: opens an attempt if none
-    (unlocked, not passed; no attempt limit since `20261007120000`; pass mark snapshotted),
+    (unlocked, not passed; no attempt limit since `20261007072551`; pass mark snapshotted),
     records the **first** answer to the question and returns its correction; answering again returns the recorded
     one. No probing every option before submitting.
   - `submit_quiz_answers(module, {question: answer})` — recorded answers stand, the payload fills the others,
@@ -1226,7 +1227,7 @@ VAT rates, shipping zones/rates mirroring the Settings prototype. Media rows ref
     passed the old check keeps the pass. A step moved out of a module that the same save deletes is re-created
     under its id, so its progress rows still match.
 52. **Immediate-feedback checks lock the first answer** (agent, 2026-10-01): the first `answer_quiz_question()` call
-    opens an attempt (attempts are unlimited until the check is passed, `20261007120000`), and the first answer to each question stands until
+    opens an attempt (attempts are unlimited until the check is passed, `20261007072551`), and the first answer to each question stands until
     the attempt is submitted (a member who leaves resumes the same attempt). Otherwise a member could probe every
     option before submitting. End-of-check mode is one `submit_quiz_answers()` call.
 53. **Manual grants** (agent, 2026-10-01, to confirm): only for a course that was ever published; by exact account

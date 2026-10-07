@@ -60,6 +60,21 @@ export function addToLines(lines: CartLine[], line: Omit<CartLine, "id">): CartL
   return [...lines, { ...line, id, qty: Math.min(MAX_LINE_QTY, line.qty) }];
 }
 
+/** How many units an addition really put on its line: merging is capped at `MAX_LINE_QTY`. */
+export function addedQty(before: CartLine[], after: CartLine[], id: string): number {
+  const qty = (lines: CartLine[]) => lines.find((l) => l.id === id)?.qty ?? 0;
+  return qty(after) - qty(before);
+}
+
+/** Takes back the units an addition put on a line, removing the line once none is left. */
+export function undoAddition(lines: CartLine[], id: string, added: number): CartLine[] {
+  return lines.flatMap((l) => {
+    if (l.id !== id) return [l];
+    const qty = l.qty - added;
+    return qty > 0 ? [{ ...l, qty }] : [];
+  });
+}
+
 /** Gift cards and courses are bought one per line. */
 const singleUnit = (line: CartLine) => Boolean(line.giftCard || line.courseId);
 
