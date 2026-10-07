@@ -344,7 +344,8 @@ function MessageItem({
       id={`msg-${message.id}`}
       data-message-id={message.id}
       onPointerUp={(event) => {
-        if (event.pointerType === "touch" && event.target === event.currentTarget) setTouched((v) => !v);
+        /* No hover on a phone: a tap on the message (not on one of its controls) shows its actions. */
+        if (event.pointerType === "touch" && !(event.target as Element).closest("button, a, input, textarea")) setTouched((v) => !v);
       }}
       className={clsx(
         "group relative scroll-mt-24 px-3 transition-colors duration-[var(--duration-normal)] sm:px-4",
@@ -614,24 +615,27 @@ export function MessageList() {
       className="min-h-0 flex-1 overflow-y-auto overscroll-contain pb-4 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-inset focus-visible:ring-[var(--focus-ring)]"
     >
       <RoomIntro />
-      <ol role="log" aria-label={t("lounge.message.list", { room: roomLabel })} className="m-0 list-none p-0">
-        {rows.map((row) =>
-          row.kind === "day" ? (
-            <DayDivider key={`day-${row.key}`} label={row.label} />
-          ) : row.kind === "new" ? (
-            <NewDivider key="new" count={row.count} />
-          ) : (
-            <MessageItem
-              key={row.message.id}
-              message={row.message}
-              grouped={row.grouped}
-              now={now}
-              highlighted={flash?.id === row.message.id}
-              onJump={jumpTo}
-            />
-          ),
-        )}
-      </ol>
+      {/* Keyed by room: a new room is a new live region, so its history is not announced as new messages. */}
+      <div key={roomKey} role="log">
+        <ol className="m-0 list-none p-0">
+          {rows.map((row) =>
+            row.kind === "day" ? (
+              <DayDivider key={`day-${row.key}`} label={row.label} />
+            ) : row.kind === "new" ? (
+              <NewDivider key="new" count={row.count} />
+            ) : (
+              <MessageItem
+                key={row.message.id}
+                message={row.message}
+                grouped={row.grouped}
+                now={now}
+                highlighted={flash?.id === row.message.id}
+                onJump={jumpTo}
+              />
+            ),
+          )}
+        </ol>
+      </div>
     </div>
   );
 }

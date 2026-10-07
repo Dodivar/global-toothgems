@@ -302,7 +302,7 @@ export function Composer() {
             value={draft}
             placeholder={placeholder}
             aria-label={placeholder}
-            aria-describedby={clsx(hintId, error && errorId)}
+            aria-describedby={error ? errorId : hintId}
             aria-autocomplete="list"
             aria-controls={listOpen && candidates.length > 0 ? listId : undefined}
             aria-activedescendant={listOpen && active ? `${listId}-${active.id}` : undefined}

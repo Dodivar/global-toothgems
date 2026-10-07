@@ -160,7 +160,7 @@
     "sendMessage": "Send a message",
     "mention": "Mention",
     "self": "This is you",
-    "selfNote": "Your profile follows your account name and your trainings.",
+    "selfNote": "Your profile follows your account name.",
     "statMessages": "Messages",
     "statHelpful": "Helpful replies",
     "statSince": "Member since"

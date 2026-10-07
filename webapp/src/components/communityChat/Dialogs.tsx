@@ -68,17 +68,19 @@ export function ProfileDialog({ memberId, onClose }: { memberId: string; onClose
 
         <p className="m-0 text-[14px] leading-relaxed text-[var(--text-body)]">{isSelf ? t("lounge.profile.selfNote") : pick(member.bio, i18n.language)}</p>
 
-        <section className="grid gap-2">
-          <h3 className={sectionTitle}>{t("lounge.profile.trainings")}</h3>
-          <ul className="m-0 flex list-none flex-wrap gap-1.5 p-0">
-            {member.trainings.map((training) => (
-              <li key={training} className="inline-flex items-center gap-1.5 rounded-[var(--radius-pill)] border border-[var(--gt-emerald-300)] bg-[var(--gt-emerald-50)] px-2.5 py-1 text-[12px] font-semibold text-[var(--gt-emerald-600)]">
-                <GraduationCap size={13} aria-hidden="true" />
-                {t(`lounge.trainings.${training}`)}
-              </li>
-            ))}
-          </ul>
-        </section>
+        {!isSelf && (
+          <section className="grid gap-2">
+            <h3 className={sectionTitle}>{t("lounge.profile.trainings")}</h3>
+            <ul className="m-0 flex list-none flex-wrap gap-1.5 p-0">
+              {member.trainings.map((training) => (
+                <li key={training} className="inline-flex items-center gap-1.5 rounded-[var(--radius-pill)] border border-[var(--gt-emerald-300)] bg-[var(--gt-emerald-50)] px-2.5 py-1 text-[12px] font-semibold text-[var(--gt-emerald-600)]">
+                  <GraduationCap size={13} aria-hidden="true" />
+                  {t(`lounge.trainings.${training}`)}
+                </li>
+              ))}
+            </ul>
+          </section>
+        )}
 
         <section className="grid gap-2">
           <h3 className={sectionTitle}>{t("lounge.profile.languages")}</h3>
