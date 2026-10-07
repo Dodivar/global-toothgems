@@ -1236,8 +1236,9 @@ VAT rates, shipping zones/rates mirroring the Settings prototype. Media rows ref
     is given again). Revoking keeps completions and certificates. Access ends with a revocation or the end date;
     a withdrawn course stays on the account, greyed out.
 54. **Certificates** (agent, 2026-10-01): a certificate is the `course_completions` row of a course that issues
-    certificates, with a random verification code `GTC-XXXX-XXXX-XXXX` (48 bits); no public verification page yet
-    (post-launch). The completion date and the scores are snapshotted when the rules are first met.
+    certificates, with a random verification code `GTC-XXXX-XXXX-XXXX` (48 bits). No public verification page
+    (decided by the owner, 2026-10-07: members share an image of their certificate, never a link that exposes them;
+    the PDF and the image are drawn in the browser from data the member can already read). The completion date and the scores are snapshotted when the rules are first met.
 56. **Gift card purchase VAT** (unchanged, to confirm with the accountant): cards are sold without VAT and taxed when
     spent (multi-purpose voucher, decision 10). The storefront and the back office now sell and issue real cards on
     that basis.

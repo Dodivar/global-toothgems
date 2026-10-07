@@ -1,27 +1,29 @@
+import { useId } from "react";
 import { useTranslation } from "react-i18next";
+import type { TFunction } from "i18next";
 import type { Localized } from "../../data/types";
 import { pick } from "../../data/types";
 import { useFormat } from "../../lib/format";
+import { layoutCertificate, PAGE, type CertificateContent, type CertificateOp, type Paint } from "../../lib/certificate/layout";
+import { ISSUER } from "../../lib/certificate/share";
 
 /**
  * The certificate itself, drawn as a document rather than shown as a thumbnail.
  *
- * There is no certificate asset to preview in this prototype — the signed PDF is
- * served from private storage and is not part of the mockup (see the download
- * toast). So the page renders the document from the data it actually has: the
- * holder's name, the course, the completion date and the derived reference.
- * Nothing here is invented: no signature, no seal of authority, no accreditation
- * body, no verification registry.
+ * The page is an inline SVG built from `lib/certificate/layout.ts` — the same
+ * operations the download draws on a canvas (`lib/certificate/render.ts`), so
+ * the PDF a member keeps is exactly what the screen showed them. The SVG scales
+ * with its box: one component serves the card thumbnail, the completion
+ * screen, the full-size viewer and the course page's sample.
  *
- * Sizing is done in container-query units, so one component serves the card
- * preview and the full-size viewer without a second set of type scales: every
- * length below is a fraction of the document's own width.
+ * Nothing on it is invented: the issuer is the Academy itself (decided by the
+ * owner, 2026-10-07), with no hand-drawn signature, no accreditation body and
+ * no verification registry.
  */
 
 /**
- * What the document prints about the course: a member's course
- * (`data/courses.ts`) or the sales page's published course, its level
- * already in the page's language there.
+ * What the document prints about the course: a member's course or the sales
+ * page's published course, its level already in the page's language there.
  */
 export interface CertificateCourse {
   title: Localized;
@@ -30,87 +32,131 @@ export interface CertificateCourse {
   duration: string;
 }
 
-export function CertificateDocument({
-  course,
-  holder,
-  awardedOn,
-  reference,
-  lang,
-}: {
+export interface CertificateInput {
   course: CertificateCourse;
   holder: string;
+  /** ISO date of completion. */
   awardedOn: string;
   reference: string;
   lang: string;
-}) {
-  const { formatDate } = useFormat();
-  const { t } = useTranslation();
+}
 
+/** The document's text in the given language — shared by the screen and the exported file. */
+export function certificateContent(
+  { course, holder, awardedOn, reference, lang }: CertificateInput,
+  t: TFunction,
+  formatDate: (iso: string) => string,
+): CertificateContent {
+  const level = typeof course.level === "string" ? course.level : pick(course.level, lang);
+  const details = [
+    level,
+    course.lessonCount > 0 ? t("course.lessonCount", { count: course.lessonCount }) : "",
+    course.duration,
+  ].filter(Boolean);
+  return {
+    brand: ISSUER,
+    academy: "Academy",
+    title: t("account.certificateDocEyebrow"),
+    awardedTo: t("account.certificateDocAwardedTo"),
+    holder,
+    statement: t("account.certificateDocCompleted"),
+    courseTitle: pick(course.title, lang),
+    details: details.join("  ·  "),
+    dateLabel: t("account.certificateDocDateLabel"),
+    date: formatDate(awardedOn),
+    referenceLabel: t("account.certificateDocRefLabel"),
+    reference,
+    seal: t("account.certificateDocSeal"),
+    issuer: `${ISSUER} Academy`,
+    issuerLabel: t("account.certificateDocIssuer"),
+  };
+}
+
+/** `certificateContent` with the tree's translations and date format. */
+export function useCertificateContent(input: CertificateInput): CertificateContent {
+  const { t } = useTranslation();
+  const { formatDate } = useFormat();
+  return certificateContent(input, t, formatDate);
+}
+
+function SvgPaint({ id, paint }: { id: string; paint: Paint }) {
+  if (typeof paint === "string") return null;
+  const stops = paint.stops.map((stop) => <stop key={stop.offset} offset={stop.offset} stopColor={stop.color} />);
+  return paint.kind === "linear" ? (
+    <linearGradient id={id} gradientUnits="userSpaceOnUse" x1={paint.x1} y1={paint.y1} x2={paint.x2} y2={paint.y2}>
+      {stops}
+    </linearGradient>
+  ) : (
+    <radialGradient id={id} gradientUnits="userSpaceOnUse" cx={paint.cx} cy={paint.cy} r={paint.r}>
+      {stops}
+    </radialGradient>
+  );
+}
+
+function SvgOp({ op, uid, index }: { op: CertificateOp; uid: string; index: number }) {
+  if (op.kind === "text") {
+    return (
+      <text
+        x={op.x}
+        y={op.y}
+        textAnchor={op.align}
+        fill={op.color}
+        fontSize={op.size}
+        fontWeight={op.weight}
+        fontStyle={op.italic ? "italic" : undefined}
+        letterSpacing={op.tracking ? `${op.tracking}em` : undefined}
+        fontFamily={op.mono ? "var(--gt-font-mono)" : "var(--gt-font-sans)"}
+        textLength={op.fitWidth}
+        lengthAdjust={op.fitWidth ? "spacingAndGlyphs" : undefined}
+      >
+        {op.text}
+      </text>
+    );
+  }
+  const ref = (paint: Paint | undefined, kind: string) =>
+    paint === undefined ? "none" : typeof paint === "string" ? paint : `url(#${uid}-${index}-${kind})`;
+  const common = {
+    fill: ref(op.fill, "f"),
+    stroke: ref(op.stroke, "s"),
+    strokeWidth: op.stroke ? (op.lineWidth ?? 0.25) : undefined,
+    strokeLinecap: "round" as const,
+    strokeLinejoin: "round" as const,
+    opacity: op.opacity,
+  };
+  return (
+    <>
+      {op.fill && <SvgPaint id={`${uid}-${index}-f`} paint={op.fill} />}
+      {op.stroke && <SvgPaint id={`${uid}-${index}-s`} paint={op.stroke} />}
+      {op.kind === "rect" && <rect x={op.x} y={op.y} width={op.w} height={op.h} {...common} />}
+      {op.kind === "circle" && <circle cx={op.cx} cy={op.cy} r={op.r} {...common} />}
+      {op.kind === "path" && <path d={op.d} {...common} />}
+    </>
+  );
+}
+
+/** The document drawn from ready content (the completion screen builds it once for screen and file). */
+export function CertificateSheet({ content, className }: { content: CertificateContent; className?: string }) {
+  // Gradient ids must be unique per instance: a page can show several certificates.
+  const uid = useId().replace(/[^a-zA-Z0-9_-]/g, "");
   return (
     /* Decorative as far as assistive technology is concerned: every value shown
-       here is repeated as real text by the card and the viewer around it, so
-       reading the document too would say everything twice. */
-    <div
+       here is repeated as real text around it, so reading the document too
+       would say everything twice. */
+    <svg
       aria-hidden="true"
-      className="@container relative aspect-[297/210] w-full overflow-hidden bg-[var(--gt-off-white)] text-[var(--text-primary)]"
+      focusable="false"
+      viewBox={`0 0 ${PAGE.width} ${PAGE.height}`}
+      className={className ?? "block h-auto w-full"}
+      style={{ aspectRatio: `${PAGE.width} / ${PAGE.height}` }}
     >
-      {/* Paper: a faint wash from the top-left corner, nothing more. */}
-      <span
-        className="pointer-events-none absolute inset-0"
-        style={{
-          background:
-            "radial-gradient(120% 90% at 8% 0%, var(--gt-blue-50) 0%, transparent 58%), radial-gradient(90% 80% at 100% 100%, rgba(185,205,229,.18) 0%, transparent 60%)",
-        }}
-      />
-      {/* Inner rule: the frame a printed document would have. */}
-      <span className="pointer-events-none absolute inset-[3.2cqw] border border-[var(--gt-ink-200)]" />
-
-      <div className="relative grid h-full grid-rows-[auto_minmax(0,1fr)_auto] p-[6.4cqw]">
-        <header className="flex items-start justify-between gap-[3cqw]">
-          <span className="flex items-center gap-[1.4cqw] text-[length:1.45cqw] font-semibold uppercase leading-none tracking-[var(--tracking-logo)] text-[var(--text-primary)]">
-            <span className="text-[length:1.9cqw] text-[var(--gt-blue-500)]">&#10022;</span>
-            Global Toothgems
-          </span>
-          <span
-            className="text-[length:1.35cqw] uppercase leading-none tracking-[var(--tracking-wide)] text-[var(--text-subtle)]"
-            style={{ fontFamily: "var(--gt-font-mono)" }}
-          >
-            {reference}
-          </span>
-        </header>
-
-        <div className="grid content-center justify-items-center gap-[1.4cqw] text-center">
-          <span className="text-[length:1.5cqw] font-semibold uppercase leading-none tracking-[var(--tracking-eyebrow)] text-[var(--gt-blue-600)]">
-            {t("account.certificateDocEyebrow")}
-          </span>
-          <span className="text-[length:1.5cqw] leading-none text-[var(--text-muted)]">
-            {t("account.certificateDocAwardedTo")}
-          </span>
-          <strong className="max-w-full break-words text-[length:6cqw] font-[var(--weight-bold)] leading-[1.05] tracking-[var(--tracking-display)]">
-            {holder}
-          </strong>
-          <span className="my-[0.6cqw] h-px w-[16cqw] bg-[var(--gt-blue-300)]" />
-          <span className="text-[length:1.5cqw] leading-none text-[var(--text-muted)]">
-            {t("account.certificateDocCompleted")}
-          </span>
-          <strong className="max-w-[72cqw] break-words text-[length:3cqw] font-[var(--weight-semibold)] leading-[1.2] tracking-[var(--tracking-tight)]">
-            {pick(course.title, lang)}
-          </strong>
-          <span className="text-[length:1.4cqw] uppercase leading-none tracking-[var(--tracking-wide)] text-[var(--text-subtle)]">
-            {typeof course.level === "string" ? course.level : pick(course.level, lang)}
-            {course.lessonCount > 0 && <> &middot; {t("course.lessonCount", { count: course.lessonCount })}</>}
-            {course.duration && <> &middot; {course.duration}</>}
-          </span>
-        </div>
-
-        <footer className="flex items-end justify-between gap-[3cqw]">
-          <span className="text-[length:1.4cqw] leading-none text-[var(--text-muted)]">
-            {t("account.certificateDocIssuedOn", { date: formatDate(awardedOn) })}
-          </span>
-          {/* The one decorative accent on the document. */}
-          <span className="text-[length:1.5cqw] font-bold uppercase leading-none tracking-[var(--tracking-logo)] text-[var(--gt-blue-600)]">Global Toothgems</span>
-        </footer>
-      </div>
-    </div>
+      {layoutCertificate(content).map((op, i) => (
+        <SvgOp key={i} op={op} uid={uid} index={i} />
+      ))}
+    </svg>
   );
+}
+
+export function CertificateDocument(props: CertificateInput & { className?: string }) {
+  const content = useCertificateContent(props);
+  return <CertificateSheet content={content} className={props.className} />;
 }
