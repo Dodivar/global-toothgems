@@ -92,7 +92,7 @@ export const ADMIN_ORDER_SELECT = `
   gift_card_amount, amount_due, prices_include_tax, shipping_method_name,
   billing_address, shipping_address,
   order_items ( id, product_name, variant_name, variant_id, unit_price, quantity, discount_amount, tax_rate_bp, tax_amount,
-                product:products ( slug ), course:courses ( slug ) ),
+                product:products ( slug ), course:courses ( slug ), gift_cards ( design ) ),
   order_discounts ( label, code, goods_amount, shipping_amount, source ),
   shipments ( id, status, carrier, service, tracking_number, tracking_url, estimated_delivery,
               shipped_at, delivered_at, created_at, shipment_items ( order_item_id, quantity ) ),
