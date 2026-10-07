@@ -1,5 +1,5 @@
 import { useSyncExternalStore } from "react";
-import { JEWELRY_BY_ID, sanitizeJewels, type PlacedJewelry, type Vec3 } from "../../data/studioEditor";
+import { isFinishId, JEWELRY_BY_ID, sanitizeJewels, type PlacedJewelry, type Vec3 } from "../../data/studioEditor";
 import { uid, v3 } from "./math";
 import { piecesKey, pruneGroups, sanitizeScene, type SceneCamera, type SceneGroupRef, type StudioScene } from "../studioWorkspace/scene";
 
@@ -89,6 +89,8 @@ export interface StudioSnapshot {
 /** Browser-storage keys, namespaced like the site's other keys (`gt-lang`). */
 const DESIGN_KEY = "gt-studio3d-design-v1";
 const PRESETS_KEY = "gt-studio3d-presets-v1";
+/** The finish picked last: a per-browser preference, not part of any design. */
+const LAST_FINISH_KEY = "gt-studio3d-last-finish-v1";
 const HISTORY_LIMIT = 60;
 const SAVE_DEBOUNCE_MS = 500;
 export const PRESET_NAME_MAX = 40;
@@ -109,6 +111,13 @@ function writeStorage(key: string, value: unknown) {
   } catch {
     /* quota exceeded or storage blocked: the design stays in memory */
   }
+}
+
+function readLastFinish(): { color: string; customColor?: string } | null {
+  const raw = readStorage(LAST_FINISH_KEY) as { color?: unknown; customColor?: unknown } | null;
+  if (!raw || typeof raw.color !== "string" || !isFinishId(raw.color)) return null;
+  const custom = typeof raw.customColor === "string" && /^#[0-9a-f]{6}$/i.test(raw.customColor) ? raw.customColor.toLowerCase() : undefined;
+  return { color: raw.color, ...(custom ? { customColor: custom } : {}) };
 }
 
 export class DesignStore {
@@ -133,6 +142,7 @@ export class DesignStore {
   groups: SceneGroupRef[] = [];
   active: ActiveCreation | null = null;
   private pendingLoad: PendingLoad | null = null;
+  private lastFinish: { color: string; customColor?: string } | null = null;
   /** True when the design was restored from a previous visit. */
   restored = false;
   private past: string[] = [];
@@ -160,6 +170,7 @@ export class DesignStore {
       this.groups = sanitizeScene({ pieces: this.jewels, groups: data.groups }).groups;
       this.active = readActive(data.active);
     }
+    this.lastFinish = this.persist ? readLastFinish() : null;
     this.snap = this.buildSnap();
   }
 
@@ -215,6 +226,24 @@ export class DesignStore {
     }
   }
 
+  /**
+   * The finish a new piece of this type starts with: the last one the customer
+   * picked on this browser, else the type's own. Metal pieces keep their metal.
+   */
+  initialFinish(typeId: string): { color: string; customColor?: string } {
+    const def = JEWELRY_BY_ID[typeId];
+    if (this.lastFinish && def.category !== "precious") return this.lastFinish;
+    return { color: def.defaultColor };
+  }
+  /** Colour the selection, and remember the result as the finish of the next pieces. */
+  paintSelected(patch: Pick<Partial<PlacedJewelry>, "color" | "customColor">) {
+    this.updateSelected(patch);
+    const first = this.jewels.find((j) => j.id === this.selectedJewelIds[0]);
+    if (!first) return;
+    this.lastFinish = { color: first.color, ...(first.customColor ? { customColor: first.customColor } : {}) };
+    if (this.persist) writeStorage(LAST_FINISH_KEY, this.lastFinish);
+  }
+
   addJewel(typeId: string, toothId: string, position: Vec3, normal: Vec3): string {
     this.pushHistory();
     const def = JEWELRY_BY_ID[typeId];
@@ -226,7 +255,7 @@ export class DesignStore {
       normal,
       rotation: 0,
       scale: def.defaultScale,
-      color: def.defaultColor,
+      ...this.initialFinish(typeId),
     };
     this.jewels = [...this.jewels, j];
     this.selectedJewelIds = [j.id];
