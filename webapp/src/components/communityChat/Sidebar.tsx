@@ -2,7 +2,7 @@
 
 import type { ReactNode } from "react";
 import { useTranslation } from "react-i18next";
-import { BellOff, Check, CheckCheck, ChevronDown, FlaskConical, Globe2, Inbox, Plus, Search, Users } from "lucide-react";
+import { ArrowLeft, BellOff, Check, CheckCheck, ChevronDown, FlaskConical, Globe2, Inbox, Plus, Search, Users } from "lucide-react";
 import clsx from "clsx";
 import { Link } from "../../lib/navigation";
 import { CHAT_VIEWER_ID, UPCOMING_SERVERS, type Presence } from "../../data/communityChat";
@@ -14,6 +14,7 @@ import { ChatAvatar, CountBadge, Popover, PopoverItem, PresenceDot, ToolButton, 
 import { ChannelIcon } from "./channelIcons";
 import { LanguageFlag } from "./LanguageFlag";
 import { useLoungeUi } from "./loungeUi";
+import { useMemberShellMenu } from "../layout/MemberShell";
 import monogram from "../../assets/monogram-blue.png";
 
 /* ----------------------------------------------------------- server switch */
@@ -375,11 +376,33 @@ export function UserPanel() {
 export function ChatSidebar() {
   const { t } = useTranslation();
   const { unreadNotifications } = useChat();
-  const { openSearch, openInbox } = useLoungeUi();
+  const { openSearch, openInbox, closeNav } = useLoungeUi();
+  const shellMenu = useMemberShellMenu();
 
   return (
     <div className="flex h-full min-h-0 flex-col bg-[var(--surface-chrome)]">
-      <div className="grid flex-none gap-3 border-b border-[var(--border-subtle)] px-3 pb-3 pt-4">
+      {/* Phones: the lounge replaces the member space's top bar, so the way
+          back to the account's menu starts here. Desktop has the rail. */}
+      {shellMenu && (
+        <button
+          type="button"
+          onClick={() => {
+            closeNav();
+            shellMenu.openMenu();
+          }}
+          className={clsx(
+            "flex flex-none items-center gap-3 border-b border-[var(--border-subtle)] bg-[var(--surface-card)] px-4 py-3 text-left transition-colors hover:bg-[var(--gt-ink-100)] lg:hidden",
+            focusRing,
+          )}
+        >
+          <ArrowLeft size={18} aria-hidden="true" className="flex-none text-[var(--text-body)]" />
+          <span className="grid min-w-0">
+            <span className="text-[14px] font-bold text-[var(--text-primary)]">{t("lounge.nav.backToSpace")}</span>
+            <span className="text-[12px] text-[var(--text-muted)]">{t("lounge.nav.backToSpaceHint")}</span>
+          </span>
+        </button>
+      )}
+      <div className="grid flex-none grid-cols-[minmax(0,1fr)] gap-3 border-b border-[var(--border-subtle)] px-3 pb-3 pt-4">
         <div className="flex items-center gap-2.5 px-1">
           <img src={monogram.src} alt="" className="h-8 w-8 flex-none object-contain" />
           <span className="grid min-w-0">
@@ -415,7 +438,7 @@ export function ChatSidebar() {
         </div>
       </div>
 
-      <div className="min-h-0 flex-1 overflow-y-auto overflow-x-hidden overscroll-contain px-2 pb-4">
+      <div className="min-h-0 min-w-0 flex-1 overflow-y-auto overflow-x-hidden overscroll-contain px-2 pb-4">
         <ChannelList />
         <DirectMessageList />
         <div className="mt-5 grid gap-2 px-2.5">

@@ -234,5 +234,23 @@
     "previewLabel": "Preview of the Lounge",
     "online_one": "{{count}} artist online now",
     "online_other": "{{count}} artists online now"
+  },
+  "nav": {
+    "attention_one": "{{count}} message for you",
+    "attention_other": "{{count}} messages for you",
+    "unread": "New messages",
+    "backToSpace": "Member space",
+    "backToSpaceHint": "Your account menu",
+    "dashboardTitle": "The Members' Lounge",
+    "dashboardAttention_one": "{{count}} message is waiting for you",
+    "dashboardAttention_other": "{{count}} messages are waiting for you",
+    "dashboardUnread_one": "{{count}} new message in the lounges",
+    "dashboardUnread_other": "{{count}} new messages in the lounges",
+    "dashboardQuiet": "Artists are talking right now.",
+    "dashboardFrom": "From {{names}}",
+    "dashboardOnline_one": "{{count}} artist online",
+    "dashboardOnline_other": "{{count}} artists online",
+    "dashboardCta": "Open the Lounge",
+    "myProfile": "Edit my profile"
   }
 }

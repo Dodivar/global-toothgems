@@ -1,9 +1,12 @@
 "use client";
 
-import { useCallback, useEffect, useMemo, useRef, useState, useSyncExternalStore, type ReactNode } from "react";
+import { useCallback, useEffect, useLayoutEffect, useMemo, useRef, useState, useSyncExternalStore, type ReactNode } from "react";
 import { useTranslation } from "react-i18next";
 import { useCommunity } from "../../lib/community";
-import { ChatProvider } from "../../lib/communityChat/chatStore";
+import { useChat } from "../../lib/communityChat/chatStore";
+import { DEFAULT_LOUNGE_PATH, parseLoungePath, type LoungeRoute } from "../../lib/communityChat/loungeRoutes";
+import { useLocation, useNavigate } from "../../lib/navigation";
+import { NotFound } from "../NotFound";
 import { useFocusTrap } from "../../lib/useFocusTrap";
 import { LoungeUiContext, type LoungeUi, type NavTab } from "../../components/communityChat/loungeUi";
 import { ChatSidebar } from "../../components/communityChat/Sidebar";
@@ -15,25 +18,78 @@ import { InboxDialog, NewMessageDialog, ProfileDialog, SearchDialog } from "../.
 import { LockedLounge } from "../../components/communityChat/LockedLounge";
 
 /**
- * The Members' Lounge (`/compte/salons`): the community's private chat,
+ * The Members' Lounge (`/compte/salons/…`): the community's private chat,
  * beside — not instead of — the Artist Community's feed of posts.
  *
- * Same door as the forum: an account with a training on it. Below that,
- * the locked screen, never an error. Prototype: conversations are fixtures
- * and local state (`lib/communityChat`), nothing leaves the browser.
+ * Rendered by the section's layout, so it stays on screen while the address
+ * moves from room to room; `children` is the page, which only checks the
+ * session. Same door as the forum: an account with a training on it. Below
+ * that, the locked screen, never an error. Prototype: conversations are
+ * fixtures and local state (`lib/communityChat`), nothing leaves the browser.
  */
-export function MembersLounge() {
+export function MembersLounge({ children }: { children?: ReactNode }) {
   const { hasAccess } = useCommunity();
-  if (!hasAccess) return <LockedLounge />;
+  const { pathname } = useLocation();
+  const route = parseLoungePath(pathname);
+
+  if (route.kind === "notFound") return <NotFound />;
   return (
-    <ChatProvider>
-      <LoungeLayout />
-    </ChatProvider>
+    <>
+      {hasAccess ? <LoungeRoom route={route} /> : <LockedLounge />}
+      {children}
+    </>
   );
 }
 
+const LAST_ROOM_KEY = "gt-lounge-last";
+
+/**
+ * Keeps the lounge on the room of its address: opens it (which marks it
+ * read), remembers it on this device, and sends the bare `/compte/salons`
+ * to the room visited last.
+ */
+function LoungeRoom({ route }: { route: Exclude<LoungeRoute, { kind: "notFound" }> }) {
+  const { syncRoute, leave } = useChat();
+  const navigate = useNavigate();
+  const { pathname } = useLocation();
+  const routeKey = route.kind === "room" ? pathname : "index";
+  /* The values of the render that changed the address, read by the effect below. */
+  const latest = useRef({ route, pathname, navigate, syncRoute });
+  useLayoutEffect(() => {
+    latest.current = { route, pathname, navigate, syncRoute };
+  });
+
+  /* Runs when the address changes, and only then. */
+  useLayoutEffect(() => {
+    const { route, pathname, navigate, syncRoute } = latest.current;
+    if (route.kind === "index") {
+      let last: string | null = null;
+      try {
+        last = window.localStorage.getItem(LAST_ROOM_KEY);
+      } catch {
+        /* Storage unavailable: the default room. */
+      }
+      const target = last && parseLoungePath(last).kind === "room" ? last : DEFAULT_LOUNGE_PATH;
+      navigate(target, { replace: true });
+      return;
+    }
+    syncRoute(route.room, route.serverId);
+    try {
+      window.localStorage.setItem(LAST_ROOM_KEY, pathname);
+    } catch {
+      /* Not remembered: the default room next time. */
+    }
+  }, [routeKey]);
+
+  useEffect(() => leave, [leave]);
+
+  /* The bare address shows nothing while it forwards to a room. */
+  if (route.kind === "index") return <div className="h-[100dvh]" aria-busy="true" />;
+  return <LoungeLayout />;
+}
+
 /** Width from which the members column sits beside the conversation. */
-const WIDE = "(min-width: 1440px)";
+const WIDE = "(min-width: 1280px)";
 
 function useMediaQuery(query: string): boolean {
   const subscribe = useCallback(
@@ -137,7 +193,7 @@ function LoungeLayout() {
 
   return (
     <LoungeUiContext.Provider value={ui}>
-      <div className="flex h-[calc(100dvh-3.5rem)] min-w-0 overflow-hidden bg-[var(--surface-card)] lg:h-[100dvh]">
+      <div className="flex h-[100dvh] min-w-0 overflow-hidden bg-[var(--surface-card)]">
         <h1 className="sr-only">{t("lounge.title")}</h1>
 
         <aside aria-label={t("lounge.drawer.title")} className="hidden w-[264px] flex-none border-r border-[var(--border-subtle)] lg:block">

@@ -568,13 +568,20 @@ Interactions are simulated against in-memory state in `lib/community.tsx`: react
 
 The community's private chat — *Salon des membres* / *Members' Lounge* — beside, not instead of, the Artist Community's feed of posts. Same door: an account with a training on it (`useCommunity().hasAccess`, the same rule and the same **Aperçu prototype** switch, reachable from the flask in the lounge's user panel). Without access, the page is an invitation (`LockedLounge`): the real lounge blurred behind one card, *Découvrir les formations*, and the way back to the account. The member-space sidebar carries both entries, each marked "accès avec une formation" when locked.
 
-One page, everything else is state: language lounges (English by default, French, German, Spanish; Italian and Portuguese announced in the switcher) with the same five channels each (introductions, general, inspiration, techniques & tips, business & growth), and private conversations that belong to the community, not to a lounge. Desktop is three columns inside the member shell — lounge sidebar | conversation | members (from 1440 px; a drawer below, toggled from the header). Below 1024 px the sidebar is a drawer opened from the conversation header, which also carries the private messages and the inbox.
+Language lounges (English by default, French, German, Spanish; Italian and Portuguese announced in the switcher) with the same five channels each (introductions, general, inspiration, techniques & tips, business & growth), and private conversations that belong to the community, not to a lounge.
+
+**One address per room** (`lib/communityChat/loungeRoutes.ts`), so Back walks from room to room and a channel can be linked to: `/compte/salons/<en|fr|de|es>/<presentations|discussion|inspiration|techniques|business>`, `/compte/salons/messages/<member>`. The bare `/compte/salons` forwards to the room visited last on this device (`gt-lounge-last`), else `/compte/salons/en/discussion`; anything else is the 404 inside the shell. The lounge is the section's layout (`app/compte/salons/layout.tsx` → `MembersLounge`), so it stays mounted while the address changes; the optional catch-all page (`[[...room]]`) only checks the session.
+
+**With the member space.** In the lounge the shell steps back rather than stacking two menus: on desktop its sidebar narrows to an 88 px rail of the same sections (icon + short label, like the Studio rail), whose "Menu" opens the full sidebar over the page; on phones the shell's top bar is left out and the lounge's drawer starts with "← Espace membre", which opens the same menu (`useMemberShellMenu`). The locked lounge and its 404 keep the full shell. The lounge state (`ChatProvider`) is mounted by the account zone (`zones/account.tsx`), so the sidebar's *Salon des membres* entry shows its activity on every member page — a fuchsia count for what is addressed to you (mentions, private messages), a dot for other unread messages — and the dashboard shows a lounge card (`LoungeActivityCard`) leading to the waiting private message, or to the last room.
+
+Desktop is three columns beside the rail — lounge sidebar | conversation | members (from 1280 px; a drawer below, toggled from the header). Below 1024 px the lounge sidebar is a drawer opened from the conversation header, which also carries the private messages and the inbox.
 
 | Piece | Where |
 | --- | --- |
 | Fixtures (members, lounges, channels, messages, private conversations) | `data/communityChat.ts` — `minutesAgo` ages, mentions stored as `{ type: "mention", memberId }` tokens, message text written in the lounge's language (content, not UI) |
 | Pure rules (reactions, mention parsing and autocomplete, grouping, search) | `lib/communityChat/chatLogic.ts`, tested in `chatLogic.test.ts` |
-| State (one reducer: open, send, react, mark read, mute, start a conversation, notifications derived from the rooms) | `lib/communityChat/chatStore.tsx`, mounted by the page only |
+| State (one reducer: open the room of the address, send, react, mark read, mute, notifications derived from the rooms) | `lib/communityChat/chatStore.tsx`, mounted by the account zone |
+| Addresses | `lib/communityChat/loungeRoutes.ts`, tested in `loungeRoutes.test.ts` |
 | Screen and components | `screens/communityChat/MembersLounge.tsx`, `components/communityChat/` |
 | Copy | `i18n/locales/communityChat.{fr,en}.json`, under `lounge` |
 

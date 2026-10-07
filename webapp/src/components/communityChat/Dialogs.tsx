@@ -2,8 +2,9 @@
 
 import { useId, useMemo, useState, type ReactNode } from "react";
 import { useTranslation } from "react-i18next";
-import { AtSign, CheckCheck, Inbox, GraduationCap, Heart, Lock, MapPin, MessageCircle, Reply, Search, SearchX } from "lucide-react";
+import { AtSign, CheckCheck, Inbox, UserRound, GraduationCap, Heart, Lock, MapPin, MessageCircle, Reply, Search, SearchX } from "lucide-react";
 import clsx from "clsx";
+import { Link } from "../../lib/navigation";
 import { CHAT_SERVERS, CHAT_VIEWER_ID, type ChatMember } from "../../data/communityChat";
 import { pick } from "../../data/types";
 import { useChat, type ChatNotification, type NotificationKind } from "../../lib/communityChat/chatStore";
@@ -113,7 +114,20 @@ export function ProfileDialog({ memberId, onClose }: { memberId: string; onClose
         )}
 
         {isSelf ? (
-          <p className="m-0 rounded-[var(--radius-md)] bg-[var(--gt-blue-50)] px-3 py-2 text-[13px] font-semibold text-[var(--gt-blue-700)]">{t("lounge.profile.self")}</p>
+          <div className="flex flex-wrap items-center gap-2">
+            <p className="m-0 flex-1 rounded-[var(--radius-md)] bg-[var(--gt-blue-50)] px-3 py-2 text-[13px] font-semibold text-[var(--gt-blue-700)]">{t("lounge.profile.self")}</p>
+            <Link
+              to="/compte/profil"
+              onClick={onClose}
+              className={clsx(
+                "inline-flex h-10 items-center gap-2 rounded-[var(--radius-pill)] border border-[var(--border-default)] bg-white px-4 text-[14px] font-bold text-[var(--text-primary)] transition-colors hover:bg-[var(--gt-ink-100)]",
+                focusRing,
+              )}
+            >
+              <UserRound size={15} aria-hidden="true" />
+              {t("lounge.nav.myProfile")}
+            </Link>
+          </div>
         ) : (
           <div className="flex flex-wrap gap-2">
             <button

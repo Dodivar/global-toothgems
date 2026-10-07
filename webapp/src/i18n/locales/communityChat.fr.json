@@ -234,5 +234,23 @@
     "previewLabel": "Aperçu du Salon",
     "online_one": "{{count}} artiste en ligne en ce moment",
     "online_other": "{{count}} artistes en ligne en ce moment"
+  },
+  "nav": {
+    "attention_one": "{{count}} message pour vous",
+    "attention_other": "{{count}} messages pour vous",
+    "unread": "Nouveaux messages",
+    "backToSpace": "Espace membre",
+    "backToSpaceHint": "Menu de votre compte",
+    "dashboardTitle": "Le Salon des membres",
+    "dashboardAttention_one": "{{count}} message vous attend",
+    "dashboardAttention_other": "{{count}} messages vous attendent",
+    "dashboardUnread_one": "{{count}} nouveau message dans les salons",
+    "dashboardUnread_other": "{{count}} nouveaux messages dans les salons",
+    "dashboardQuiet": "Les artistes échangent en ce moment.",
+    "dashboardFrom": "De {{names}}",
+    "dashboardOnline_one": "{{count}} artiste en ligne",
+    "dashboardOnline_other": "{{count}} artistes en ligne",
+    "dashboardCta": "Ouvrir le Salon",
+    "myProfile": "Modifier mon profil"
   }
 }
