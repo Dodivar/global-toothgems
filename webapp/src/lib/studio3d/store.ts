@@ -1,5 +1,6 @@
 import { useSyncExternalStore } from "react";
-import { isFinishId, JEWELRY_BY_ID, sanitizeJewels, type PlacedJewelry, type Vec3 } from "../../data/studioEditor";
+import { sanitizeJewels, type PlacedJewelry, type Vec3 } from "../../data/studioEditor";
+import type { PieceSpec } from "./gemCatalog";
 import { uid, v3 } from "./math";
 import { piecesKey, pruneGroups, sanitizeScene, type SceneCamera, type SceneGroupRef, type StudioScene } from "../studioWorkspace/scene";
 
@@ -85,10 +86,12 @@ export interface StudioSnapshot {
   canRedo: boolean;
 }
 
-/** Browser-storage keys, namespaced like the site's other keys (`gt-lang`). */
-const DESIGN_KEY = "gt-studio3d-design-v1";
-/** The finish picked last: a per-browser preference, not part of any design. */
-const LAST_FINISH_KEY = "gt-studio3d-last-finish-v1";
+/**
+ * Browser-storage key, namespaced like the site's other keys (`gt-lang`).
+ * v2: pieces are the shop's gems (product, colour, stone size); drafts made
+ * of the former built-in pieces are left behind.
+ */
+const DESIGN_KEY = "gt-studio3d-design-v2";
 const HISTORY_LIMIT = 60;
 const SAVE_DEBOUNCE_MS = 500;
 export const CLIENT_NAME_MAX = 48;
@@ -110,12 +113,6 @@ function writeStorage(key: string, value: unknown) {
   }
 }
 
-function readLastFinish(): { color: string; customColor?: string } | null {
-  const raw = readStorage(LAST_FINISH_KEY) as { color?: unknown; customColor?: unknown } | null;
-  if (!raw || typeof raw.color !== "string" || !isFinishId(raw.color)) return null;
-  const custom = typeof raw.customColor === "string" && /^#[0-9a-f]{6}$/i.test(raw.customColor) ? raw.customColor.toLowerCase() : undefined;
-  return { color: raw.color, ...(custom ? { customColor: custom } : {}) };
-}
 
 export class DesignStore {
   jewels: PlacedJewelry[] = [];
@@ -138,7 +135,6 @@ export class DesignStore {
   groups: SceneGroupRef[] = [];
   active: ActiveCreation | null = null;
   private pendingLoad: PendingLoad | null = null;
-  private lastFinish: { color: string; customColor?: string } | null = null;
   /** True when the design was restored from a previous visit. */
   restored = false;
   private past: string[] = [];
@@ -166,7 +162,6 @@ export class DesignStore {
       this.groups = sanitizeScene({ pieces: this.jewels, groups: data.groups }).groups;
       this.active = readActive(data.active);
     }
-    this.lastFinish = this.persist ? readLastFinish() : null;
     this.snap = this.buildSnap();
   }
 
@@ -221,36 +216,20 @@ export class DesignStore {
     }
   }
 
-  /**
-   * The finish a new piece of this type starts with: the last one the customer
-   * picked on this browser, else the type's own. Metal pieces keep their metal.
-   */
-  initialFinish(typeId: string): { color: string; customColor?: string } {
-    const def = JEWELRY_BY_ID[typeId];
-    if (this.lastFinish && def.category !== "precious") return this.lastFinish;
-    return { color: def.defaultColor };
-  }
-  /** Colour the selection, and remember the result as the finish of the next pieces. */
-  paintSelected(patch: Pick<Partial<PlacedJewelry>, "color" | "customColor">) {
-    this.updateSelected(patch);
-    const first = this.jewels.find((j) => j.id === this.selectedJewelIds[0]);
-    if (!first) return;
-    this.lastFinish = { color: first.color, ...(first.customColor ? { customColor: first.customColor } : {}) };
-    if (this.persist) writeStorage(LAST_FINISH_KEY, this.lastFinish);
-  }
-
-  addJewel(typeId: string, toothId: string, position: Vec3, normal: Vec3): string {
+  /** Place a new piece of a shop gem (its default colour and size, see `pieceSpec`). */
+  addJewel(spec: PieceSpec, toothId: string, position: Vec3, normal: Vec3): string {
     this.pushHistory();
-    const def = JEWELRY_BY_ID[typeId];
     const j: PlacedJewelry = {
       id: uid(),
-      jewelryTypeId: typeId,
+      productId: spec.productId,
+      ...(spec.variantId ? { variantId: spec.variantId } : {}),
+      ss: spec.ss,
+      look: spec.look,
       toothId,
       position,
       normal,
       rotation: 0,
-      scale: def.defaultScale,
-      ...this.initialFinish(typeId),
+      scale: spec.scale,
     };
     this.jewels = [...this.jewels, j];
     this.selectedJewelIds = [j.id];
@@ -461,7 +440,7 @@ export class DesignStore {
     this.saveTimer = null;
     if (!this.persist) return;
     writeStorage(DESIGN_KEY, {
-      v: 1,
+      v: 2,
       jewels: this.jewels,
       clientName: this.clientName,
       model: this.designModel,
@@ -475,8 +454,9 @@ export class DesignStore {
   /** The design as a `scene_data` document. */
   toScene(extra: { model: StudioScene["model"]; camera: SceneCamera | null }): StudioScene {
     return {
-      version: 1,
+      version: 2,
       model: extra.model,
+
       lightPreset: this.lightPreset,
       camera: extra.camera,
       pieces: structuredClone(this.jewels),

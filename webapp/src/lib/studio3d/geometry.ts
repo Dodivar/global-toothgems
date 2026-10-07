@@ -1,64 +1,56 @@
 import * as THREE from "three";
-import { FINISHES, isFinishId, type JewelryGeometry, type PlacedJewelry, type ToothSpec } from "../../data/studioEditor";
+import type { GemLook, StudioShape, ToothSpec } from "../../data/studioEditor";
 import { ss01 } from "./math";
 
 /**
  * Procedural geometry and materials of the 3D Studio: the teeth of the
- * reference arch, the piece shapes of the library, and their finishes.
+ * reference arch, the outlines of the shop's gems, and their materials.
  *
- * Templates and materials are cached per shape and per finish, because a
+ * Templates and materials are cached per shape and per look, because a
  * design reuses the same few dozen of them. `disposeGeometryCaches` releases
  * them when the editor unmounts, so a later visit starts from fresh GPU
  * resources instead of reusing ones a disposed renderer already freed.
  */
 
-/* ---- material resolution: preset finish OR custom wheel colour ---- */
-interface MaterialSpec {
-  kind: "crystal" | "metal";
-  hex: string;
-  dispersion: number;
-}
-export function resolveFinishRaw(color: string, customColor?: string): MaterialSpec {
-  if (customColor) return { kind: "crystal", hex: customColor, dispersion: 0.18 };
-  const f = isFinishId(color) ? FINISHES[color] : FINISHES.clear;
-  return { kind: f.kind, hex: f.color, dispersion: f.dispersion };
-}
-function resolveFinish(j: PlacedJewelry): MaterialSpec {
-  return resolveFinishRaw(j.color, j.customColor);
-}
-export function matKeyFor(j: PlacedJewelry): string {
-  const s = resolveFinish(j);
-  return `${s.kind}|${s.hex}|${s.dispersion}`;
+/* ---- materials: one per look (crystal or metal, tint, effect) ---- */
+type LookMaterial = Pick<GemLook, "material" | "color" | "effect">;
+
+export function matKeyFor(look: LookMaterial): string {
+  return `${look.material}|${look.color}|${look.effect}`;
 }
 
 const materialCache = new Map<string, THREE.MeshPhysicalMaterial>();
-export function getJewelMaterial(j: PlacedJewelry): THREE.MeshPhysicalMaterial {
-  const s = resolveFinish(j);
-  const key = `${s.kind}|${s.hex}|${s.dispersion}`;
+export function getJewelMaterial(look: LookMaterial): THREE.MeshPhysicalMaterial {
+  const key = matKeyFor(look);
   let m = materialCache.get(key);
   if (m) return m;
+  const iridescent = look.effect === "iridescent";
+  const hsl = new THREE.Color(look.color).getHSL({ h: 0, s: 0, l: 0 });
   m =
-    s.kind === "metal"
+    look.material === "metal"
       ? new THREE.MeshPhysicalMaterial({
-          color: s.hex,
+          color: look.color,
           metalness: 1,
-          roughness: s.hex.toLowerCase() === "#e9edf4" ? 0.24 : 0.16,
+          // white gold and chrome read better a touch less glossy than yellow gold
+          roughness: hsl.s < 0.2 ? 0.22 : 0.15,
           envMapIntensity: 1.7,
         })
       : new THREE.MeshPhysicalMaterial({
-          color: s.hex,
+          color: look.color,
           metalness: 0,
           roughness: 0.05,
           transmission: 0.92,
           thickness: 1.6,
           ior: 2.1,
-          dispersion: s.dispersion,
-          attenuationColor: new THREE.Color(s.hex),
+          dispersion: iridescent ? 0.3 : 0.12,
+          attenuationColor: new THREE.Color(look.color),
           attenuationDistance: 2.4,
           envMapIntensity: 2.4,
           specularIntensity: 1.1,
           clearcoat: 0.8,
           clearcoatRoughness: 0.06,
+          // AB / Shimmer / Vitrail coatings: a thin-film rainbow over the tint
+          ...(iridescent ? { iridescence: 1, iridescenceIOR: 1.6, iridescenceThicknessRange: [180, 620] as [number, number] } : {}),
         });
   materialCache.set(key, m);
   return m;
@@ -198,26 +190,61 @@ function flattenBack(g: THREE.BufferGeometry, cutZ: number): THREE.BufferGeometr
   g.computeVertexNormals();
   return g;
 }
-const templateCache = new Map<JewelryGeometry, JewelTemplate>();
+const templateCache = new Map<StudioShape, JewelTemplate>();
 
-function extrudeJewel(shape: THREE.Shape, depth = 0.3): THREE.BufferGeometry {
+const v2 = (pts: number[][]) => pts.map((p) => new THREE.Vector2(p[0], p[1]));
+
+function extrudeJewel(shape: THREE.Shape, depth = 0.3, rounded = false): THREE.BufferGeometry {
   const g = new THREE.ExtrudeGeometry(shape, {
     depth,
     bevelEnabled: true,
-    bevelThickness: 0.1,
-    bevelSize: 0.07,
-    bevelSegments: 2,
+    // metal charms are polished and rounded; crystals keep a crisp table and girdle
+    bevelThickness: rounded ? 0.16 : 0.1,
+    bevelSize: rounded ? 0.1 : 0.07,
+    bevelSegments: rounded ? 4 : 2,
     curveSegments: 32,
   });
   g.center();
   // the rear bevel would round the back off: press it onto the back face
   return flattenBack(g, -depth / 2);
 }
-function starShape(outer: number, inner: number): THREE.Shape {
+
+/** A round wire along a path (open or closed), tapered by `radiusAt(t)` — the polished metal charms. */
+function wire(points: THREE.Vector3[], radius: number, closed = false, radiusAt?: (t: number) => number): THREE.BufferGeometry {
+  const curve = new THREE.CatmullRomCurve3(points, closed, "centripetal");
+  const tubular = Math.max(48, points.length * 16);
+  const radial = 12;
+  const g = new THREE.TubeGeometry(curve, tubular, radius, radial, closed);
+  if (radiusAt) {
+    const pos = g.attributes.position as THREE.BufferAttribute;
+    const centre = new THREE.Vector3();
+    const v = new THREE.Vector3();
+    for (let i = 0; i <= tubular; i++) {
+      const t = i / tubular;
+      curve.getPointAt(t, centre);
+      const k = radiusAt(t);
+      for (let j = 0; j <= radial; j++) {
+        const idx = i * (radial + 1) + j;
+        v.fromBufferAttribute(pos, idx).sub(centre).multiplyScalar(k).add(centre);
+        pos.setXYZ(idx, v.x, v.y, v.z);
+      }
+    }
+  }
+  return flattenBack(g, -radius * 0.45);
+}
+
+function blob(x: number, y: number, rx: number, ry: number, rz: number): THREE.BufferGeometry {
+  const g = new THREE.SphereGeometry(1, 28, 20);
+  g.scale(rx, ry, rz);
+  g.translate(x, y, 0);
+  return flattenBack(g, -rz * 0.45);
+}
+
+function starShape(outer: number, inner: number, points = 5): THREE.Shape {
   const s = new THREE.Shape();
-  for (let i = 0; i < 10; i++) {
+  for (let i = 0; i < points * 2; i++) {
     const r = i % 2 ? inner : outer;
-    const a = -Math.PI / 2 + (i * Math.PI) / 5;
+    const a = Math.PI / 2 + (i * Math.PI) / points;
     const x = Math.cos(a) * r,
       y = Math.sin(a) * r;
     if (i === 0) s.moveTo(x, y);
@@ -226,186 +253,170 @@ function starShape(outer: number, inner: number): THREE.Shape {
   s.closePath();
   return s;
 }
-function heartShape(): THREE.Shape {
-  const s = new THREE.Shape();
-  s.moveTo(0, -0.85);
-  s.bezierCurveTo(-0.95, -0.35, -1.2, 0.35, -0.55, 0.72);
-  s.bezierCurveTo(-0.25, 0.9, -0.1, 0.72, 0, 0.45);
-  s.bezierCurveTo(0.1, 0.72, 0.25, 0.9, 0.55, 0.72);
-  s.bezierCurveTo(1.2, 0.35, 0.95, -0.35, 0, -0.85);
-  return s;
-}
-function butterflyShape(): THREE.Shape {
-  const segs: number[][][] = [
-    [
-      [0, 0.14],
-      [-0.42, 0.86],
-      [-1.04, 0.78],
-      [-0.9, 0.32],
-    ],
-    [
-      [-0.9, 0.32],
-      [-1.18, 0.16],
-      [-1.08, -0.14],
-      [-0.68, -0.13],
-    ],
-    [
-      [-0.68, -0.13],
-      [-0.42, -0.1],
-      [-0.22, -0.02],
-      [-0.05, 0.02],
-    ],
-    [
-      [-0.05, 0.02],
-      [-0.52, -0.06],
-      [-0.82, -0.3],
-      [-0.66, -0.6],
-    ],
-    [
-      [-0.66, -0.6],
-      [-0.55, -0.88],
-      [-0.22, -0.74],
-      [-0.04, -0.4],
-    ],
-  ];
-  const s = new THREE.Shape();
-  s.moveTo(0, 0.14);
-  for (const seg of segs) s.bezierCurveTo(seg[1][0], seg[1][1], seg[2][0], seg[2][1], seg[3][0], seg[3][1]);
-  s.lineTo(0.04, -0.4);
-  for (let i = segs.length - 1; i >= 0; i--) {
-    const seg = segs[i];
-    s.bezierCurveTo(-seg[2][0], seg[2][1], -seg[1][0], seg[1][1], -seg[0][0], seg[0][1]);
+function starPath(outer: number, inner: number, z = 0): THREE.Vector3[] {
+  const out: THREE.Vector3[] = [];
+  for (let i = 0; i < 10; i++) {
+    const r = i % 2 ? inner : outer;
+    const a = Math.PI / 2 + (i * Math.PI) / 5;
+    out.push(new THREE.Vector3(Math.cos(a) * r, Math.sin(a) * r, z));
   }
-  s.closePath();
+  return out;
+}
+function heartShape(scale = 1): THREE.Shape {
+  const s = new THREE.Shape();
+  const k = (x: number, y: number): [number, number] => [x * scale, y * scale];
+  s.moveTo(...k(0, -0.85));
+  s.bezierCurveTo(...k(-0.95, -0.35), ...k(-1.2, 0.35), ...k(-0.55, 0.72));
+  s.bezierCurveTo(...k(-0.25, 0.9), ...k(-0.1, 0.72), ...k(0, 0.45));
+  s.bezierCurveTo(...k(0.1, 0.72), ...k(0.25, 0.9), ...k(0.55, 0.72));
+  s.bezierCurveTo(...k(1.2, 0.35), ...k(0.95, -0.35), ...k(0, -0.85));
   return s;
 }
-export function getJewelTemplate(geometryId: JewelryGeometry): JewelTemplate {
-  const hit = templateCache.get(geometryId);
-  if (hit) return hit;
-  const parts: THREE.BufferGeometry[] = [];
-  const faceted = (g: THREE.BufferGeometry) => {
-    g.computeVertexNormals();
-    return g;
-  };
-  switch (geometryId) {
+function heartPath(): THREE.Vector3[] {
+  const pts = heartShape(1).getSpacedPoints(48);
+  pts.pop(); // closed: the first point comes back on its own
+  return pts.map((p) => new THREE.Vector3(p.x, p.y, 0));
+}
+
+/** The outline of each shape, as the shop's photos show it. Sizes are normalised afterwards. */
+function buildParts(shape: StudioShape): THREE.BufferGeometry[] {
+  switch (shape) {
     case "round":
       // faceted dome on a flat base, cut just behind the girdle
-      parts.push(flattenBack(new THREE.IcosahedronGeometry(0.8, 1).scale(1, 1, 0.62), -0.06));
-      break;
-    case "diamond":
-      parts.push(flattenBack(new THREE.OctahedronGeometry(0.92, 0).scale(0.8, 1.08, 0.55), 0));
-      break;
-    case "square": {
-      const g = new THREE.CylinderGeometry(0.66, 0.66, 0.5, 4, 1);
-      g.rotateY(Math.PI / 4);
-      g.rotateX(Math.PI / 2);
-      parts.push(faceted(g.toNonIndexed()));
-      break;
-    }
-    case "dot": {
-      const g = new THREE.SphereGeometry(0.52, 24, 18);
-      g.scale(1, 1, 0.62);
-      parts.push(flattenBack(g, -0.03));
-      break;
-    }
-    case "star":
-      parts.push(extrudeJewel(starShape(0.95, 0.4), 0.28));
-      break;
+      return [flattenBack(new THREE.IcosahedronGeometry(0.8, 1).scale(1, 1, 0.62), -0.06)];
+    case "baguette":
+      // a 1:2 step-cut rectangle with barely clipped corners
+      return [extrudeJewel(new THREE.Shape(v2([[0.42, 1], [-0.42, 1], [-0.5, 0.92], [-0.5, -0.92], [-0.42, -1], [0.42, -1], [0.5, -0.92], [0.5, 0.92]])), 0.24)];
+    case "square":
+      return [extrudeJewel(new THREE.Shape(v2([[0.84, 0.92], [-0.84, 0.92], [-0.92, 0.84], [-0.92, -0.84], [-0.84, -0.92], [0.84, -0.92], [0.92, -0.84], [0.92, 0.84]])), 0.26)];
     case "heart":
-      parts.push(extrudeJewel(heartShape(), 0.3));
-      break;
-    case "triangle": {
-      const pts = [new THREE.Vector2(0, 0.95), new THREE.Vector2(-0.84, -0.62), new THREE.Vector2(0.84, -0.62)];
-      parts.push(extrudeJewel(new THREE.Shape(pts), 0.26));
-      break;
-    }
-    case "drop": {
+      return [extrudeJewel(heartShape(), 0.3)];
+    case "open-heart":
+      return [wire(heartPath(), 0.13, true)];
+    case "kite":
+      // Swarovski "Diamond Shape": a flat lozenge, taller than wide
+      return [extrudeJewel(new THREE.Shape(v2([[0, 1], [0.6, 0], [0, -1], [-0.6, 0]])), 0.3)];
+    case "navette":
+      // an elongated hexagon pointed at both ends
+      return [extrudeJewel(new THREE.Shape(v2([[0, 1], [0.5, 0.5], [0.5, -0.5], [0, -1], [-0.5, -0.5], [-0.5, 0.5]])), 0.3)];
+    case "raindrop": {
+      // slim drop: pointed tip up, round foot
       const s = new THREE.Shape();
-      s.moveTo(0, 1.02);
-      s.bezierCurveTo(0.05, 0.55, 0.64, 0.2, 0.64, -0.32);
-      s.bezierCurveTo(0.64, -0.92, -0.64, -0.92, -0.64, -0.32);
-      s.bezierCurveTo(-0.64, 0.2, -0.05, 0.55, 0, 1.02);
-      parts.push(extrudeJewel(s, 0.3));
-      break;
+      s.moveTo(0, 1);
+      s.bezierCurveTo(0.08, 0.7, 0.34, -0.2, 0.33, -0.66);
+      s.bezierCurveTo(0.32, -1.02, -0.32, -1.02, -0.33, -0.66);
+      s.bezierCurveTo(-0.34, -0.2, -0.08, 0.7, 0, 1);
+      return [extrudeJewel(s, 0.28)];
     }
-    case "navette": {
-      const s = new THREE.Shape();
-      s.moveTo(0, 1.05);
-      s.bezierCurveTo(0.62, 0.5, 0.62, -0.5, 0, -1.05);
-      s.bezierCurveTo(-0.62, -0.5, -0.62, 0.5, 0, 1.05);
-      parts.push(extrudeJewel(s, 0.28));
-      break;
-    }
-    case "baguette": {
-      const pts = [
-        [0.3, 0.98],
-        [-0.3, 0.98],
-        [-0.52, 0.76],
-        [-0.52, -0.76],
-        [-0.3, -0.98],
-        [0.3, -0.98],
-        [0.52, -0.76],
-        [0.52, 0.76],
-      ].map((p) => new THREE.Vector2(p[0], p[1]));
-      parts.push(extrudeJewel(new THREE.Shape(pts), 0.26));
-      break;
-    }
-    case "butterfly": {
-      parts.push(extrudeJewel(butterflyShape(), 0.24));
-      const body = new THREE.SphereGeometry(1, 16, 12);
-      body.scale(0.16, 0.62, 0.34);
-      body.translate(0, 0.02, 0.16);
-      parts.push(flattenBack(body, -0.12));
-      break;
-    }
-    case "moon": {
-      const s = new THREE.Shape();
-      s.absarc(0, 0, 0.85, Math.PI * 0.28, Math.PI * 1.72, false);
-      s.absarc(0.32, 0, 0.69, 1.243, -1.243, true);
-      parts.push(extrudeJewel(s, 0.26));
-      break;
-    }
-    case "bolt": {
-      const pts = [
-        [0.5, 1],
-        [-0.5, -0.1],
-        [-0.05, -0.1],
-        [-0.5, -1],
-        [0.5, 0.1],
-        [0.05, 0.1],
-      ].map((p) => new THREE.Vector2(p[0], p[1]));
-      parts.push(extrudeJewel(new THREE.Shape(pts), 0.24));
-      break;
-    }
-    case "blossom": {
+    case "triangle":
+      return [extrudeJewel(new THREE.Shape(v2([[0, 0.95], [-0.84, -0.62], [0.84, -0.62]])), 0.26)];
+    case "rivoli-star":
+      return [extrudeJewel(starShape(1, 0.46), 0.3)];
+    case "starflower": {
+      // a chubby star with round points
       const pts: THREE.Vector2[] = [];
       for (let i = 0; i < 160; i++) {
-        const t = (i / 160) * Math.PI * 2;
-        const r = 0.36 + 0.52 * Math.abs(Math.cos(t * 2.5));
-        pts.push(new THREE.Vector2(Math.cos(t) * r, Math.sin(t) * r));
+        const a = (i / 160) * Math.PI * 2;
+        const r = 0.8 + 0.2 * Math.cos(5 * (a - Math.PI / 2));
+        pts.push(new THREE.Vector2(Math.cos(a) * r, Math.sin(a) * r));
       }
-      parts.push(extrudeJewel(new THREE.Shape(pts), 0.24));
-      break;
+      return [extrudeJewel(new THREE.Shape(pts), 0.3)];
+    }
+    case "halo-star":
+      return [wire(starPath(1, 0.5), 0.12, true)];
+    case "bolt":
+      return [extrudeJewel(new THREE.Shape(v2([[0.42, 1], [-0.5, -0.08], [-0.04, -0.08], [-0.42, -1], [0.5, 0.1], [0.06, 0.1]])), 0.24, true)];
+    case "cherries": {
+      const stemL = wire([new THREE.Vector3(-0.36, -0.3, 0), new THREE.Vector3(-0.2, 0.15, 0), new THREE.Vector3(0.12, 0.56, 0)], 0.06);
+      const stemR = wire([new THREE.Vector3(0.38, -0.3, 0), new THREE.Vector3(0.3, 0.2, 0), new THREE.Vector3(0.12, 0.56, 0)], 0.06);
+      const leaf = new THREE.Shape();
+      leaf.moveTo(0.1, 0.58);
+      leaf.bezierCurveTo(-0.15, 0.95, -0.55, 0.92, -0.7, 0.78);
+      leaf.bezierCurveTo(-0.45, 0.6, -0.1, 0.52, 0.1, 0.58);
+      const leafGeo = new THREE.ExtrudeGeometry(leaf, { depth: 0.08, bevelEnabled: true, bevelThickness: 0.05, bevelSize: 0.04, bevelSegments: 3, curveSegments: 24 });
+      leafGeo.translate(0, 0, -0.04);
+      return [blob(-0.4, -0.58, 0.34, 0.33, 0.3), blob(0.42, -0.58, 0.34, 0.33, 0.3), stemL, stemR, flattenBack(leafGeo, -0.06)];
+    }
+    case "snake": {
+      const body = [
+        [-0.28, -1],
+        [0.12, -0.86],
+        [0.3, -0.62],
+        [0.1, -0.4],
+        [-0.26, -0.24],
+        [-0.3, 0.02],
+        [0.0, 0.18],
+        [0.28, 0.36],
+        [0.26, 0.6],
+        [0.06, 0.74],
+      ].map(([x, y]) => new THREE.Vector3(x, y, 0));
+      // thin at the tail, full at the neck
+      const tube = wire(body, 0.13, false, (t) => 0.35 + 0.65 * Math.min(1, t * 1.6));
+      return [tube, blob(0.08, 0.84, 0.17, 0.2, 0.15)];
+    }
+    case "dachshund": {
+      const s = new THREE.Shape();
+      const outline = v2([
+        [-0.98, 0.42],
+        [-0.8, 0.14],
+        [-0.3, 0.16],
+        [0.3, 0.18],
+        [0.48, 0.36],
+        [0.62, 0.54],
+        [0.8, 0.55],
+        [0.97, 0.38],
+        [0.99, 0.3],
+        [0.86, 0.24],
+        [0.66, 0.2],
+        [0.55, 0.0],
+        [0.5, -0.22],
+        [0.5, -0.5],
+        [0.36, -0.52],
+        [0.34, -0.26],
+        [-0.44, -0.26],
+        [-0.48, -0.5],
+        [-0.62, -0.52],
+        [-0.68, -0.2],
+        [-0.8, 0.0],
+        [-0.86, 0.16],
+      ]);
+      s.moveTo(outline[0].x, outline[0].y);
+      s.splineThru([...outline.slice(1), outline[0]]);
+      return [extrudeJewel(s, 0.26, true)];
     }
   }
+}
+
+export function getJewelTemplate(shape: StudioShape): JewelTemplate {
+  const hit = templateCache.get(shape);
+  if (hit) return hit;
+  const parts = buildParts(shape);
   const box = new THREE.Box3();
   for (const p of parts) {
     p.computeBoundingBox();
     box.union(p.boundingBox!);
   }
-  // centre the piece in depth, so its flat back sits exactly `halfDepth` behind the origin
-  const midZ = (box.min.z + box.max.z) / 2;
-  if (Math.abs(midZ) > 1e-6) {
-    for (const p of parts) p.translate(0, 0, -midZ);
-    box.translate(new THREE.Vector3(0, 0, -midZ));
-  }
+  // Normalise: centre the outline, put the flat back exactly `halfDepth` behind
+  // the origin, and make the longest half-side 1 — so a piece's `scale` (half
+  // its stone size, in mm) gives its real size whatever the outline.
+  const centre = new THREE.Vector3();
+  box.getCenter(centre);
   const size = new THREE.Vector3();
+  box.getSize(size);
+  const k = 2 / Math.max(size.x, size.y);
+  for (const p of parts) {
+    p.translate(-centre.x, -centre.y, -centre.z);
+    p.scale(k, k, k);
+    p.computeBoundingBox();
+  }
+  box.makeEmpty();
+  for (const p of parts) box.union(p.boundingBox!);
   box.getSize(size);
   const footprint = buildFootprint(parts, box);
   let reach = 0;
   for (let i = 0; i < footprint.edge.length; i += 2) reach = Math.max(reach, Math.hypot(footprint.edge[i], footprint.edge[i + 1]));
   const tpl = { parts, halfDepth: size.z / 2, radius: Math.max(size.x, size.y) / 2, reach: reach + footprint.cell, footprint };
-  templateCache.set(geometryId, tpl);
+  templateCache.set(shape, tpl);
   return tpl;
 }
 

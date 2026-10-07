@@ -1,4 +1,5 @@
-import { SCALE_RANGE } from "../../data/studioEditor";
+import { scaleForSs } from "../../data/studioEditor";
+import { studioGem } from "./gemRegistry";
 import { getEngine, MAX_MODEL_BYTES, ModelImportError } from "./engine";
 import { notify } from "./notices";
 import { studioStore } from "./store";
@@ -44,17 +45,26 @@ export function rotatePieces(ids: string[], clockwiseDeg = 90) {
 }
 
 /**
- * Grow (`steps > 0`) or shrink the pieces by whole slider steps, each within
- * the allowed diameters. One undo step; says so when every piece is already
- * at the limit.
+ * Move each piece `steps` stone sizes up (`> 0`) or down, among the sizes its
+ * gem is sold in. One undo step; a piece already at its largest / smallest
+ * size, or whose gem the shop no longer sells, stays as it is.
  */
 export function resizePieces(ids: string[], steps: number) {
   const pieces = studioStore.jewels.filter((j) => ids.includes(j.id));
   if (!pieces.length || !steps) return;
-  const { min, max, step } = SCALE_RANGE;
-  // Rounded to the slider's grid, so repeated taps never drift (0.95 + 0.05 stays 1).
-  const next = (s: number) => Math.min(max, Math.max(min, Number((Math.round(s / step + steps) * step).toFixed(2))));
-  const updates = pieces.filter((j) => next(j.scale) !== j.scale).map((j) => ({ id: j.id, patch: { scale: next(j.scale) } }));
+  const next = (productId: string, ss: number) => {
+    const sizes = studioGem(productId)?.sizes;
+    if (!sizes?.length) return ss;
+    const at = sizes.indexOf(ss);
+    // a size the gem no longer offers first snaps to the nearest one it does
+    if (at < 0) return sizes.reduce((best, s) => (Math.abs(s - ss) < Math.abs(best - ss) ? s : best), sizes[0]);
+    return sizes[Math.min(sizes.length - 1, Math.max(0, at + steps))];
+  };
+  const updates = pieces
+    .map((j) => ({ j, ss: next(j.productId, j.ss) }))
+    .filter(({ j, ss }) => ss !== j.ss)
+    .map(({ j, ss }) => ({ id: j.id, patch: { ss, scale: scaleForSs(ss) } }));
+
   if (!updates.length) {
     return;
   }

@@ -1,7 +1,7 @@
-import { ESTIMATE_PRICING } from "../../data/studioEditor";
 import { uid } from "../studio3d/math";
 import { STUDIO_SHARE_PATH } from "../studioUrl";
-import { groupEstimateCents, sanitizeGroupData } from "./gemGroup";
+import { sanitizeGroupData } from "./gemGroup";
+import { currentEstimate } from "../studio3d/gemRegistry";
 import {
   StudioStoreError,
   type CreationInput,
@@ -55,8 +55,9 @@ interface LibraryFile {
   feedback: (FeedbackInput & { id: string; createdAt: string })[];
 }
 
-const LIBRARY_KEY = "gt-studio-library-v1";
-const THUMB_KEY = "gt-studio-thumb-v1";
+/** v2: designs of the shop's gems (scene format 2); v1 libraries are left behind. */
+const LIBRARY_KEY = "gt-studio-library-v2";
+const THUMB_KEY = "gt-studio-thumb-v2";
 /** A captured JPEG is ~30–60 kB; anything far larger is not one of ours. */
 const THUMB_MAX_CHARS = 400_000;
 
@@ -101,15 +102,15 @@ export function createLocalRepositories(userId: string, opts: LocalRepositoryOpt
       .filter((c) => c && c.userId === userId && typeof c.id === "string")
       .map((c) => {
         const scene = sanitizeScene(c.scene);
-        const stats = sceneStats(scene.pieces);
-        return { ...c, scene, ...stats, tags: normalizeTags(Array.isArray(c.tags) ? c.tags : []) };
+        // the estimate stays the one stored at the last save, like the database's
+        return { ...c, scene, elementCount: scene.pieces.length, tags: normalizeTags(Array.isArray(c.tags) ? c.tags : []) };
       });
     file.groups = file.groups
       .filter((g) => g && g.userId === userId && typeof g.id === "string")
       .flatMap((g) => {
         const data = sanitizeGroupData(g.data);
         if (!data) return [];
-        return [{ ...g, data, elementCount: data.pieces.length, estimatedPriceMinor: groupEstimateCents(data.pieces) }];
+        return [{ ...g, data, elementCount: data.pieces.length }];
       });
     return file;
   }
@@ -278,8 +279,8 @@ export function createLocalRepositories(userId: string, opts: LocalRepositoryOpt
           ...details,
           data,
           elementCount: data.pieces.length,
-          estimatedPriceMinor: groupEstimateCents(data.pieces),
-          currency: ESTIMATE_PRICING.currency,
+          estimatedPriceMinor: currentEstimate(data.pieces).totalMinor,
+          currency: currentEstimate(data.pieces).currency,
           isFavorite: false,
           createdAt: at,
           updatedAt: at,

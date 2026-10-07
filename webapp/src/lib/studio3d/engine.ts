@@ -4,13 +4,12 @@ import watermark from "../../assets/logo-wordmark-blue.png";
 import { OrbitControls } from "three/addons/controls/OrbitControls.js";
 import { RoomEnvironment } from "three/addons/environments/RoomEnvironment.js";
 import {
-  estimateTotalCents,
-  ESTIMATE_PRICING,
   FREE_TOOTH,
-  JEWELRY_BY_ID,
   QUADRANT_TEETH,
+  scaleForSs,
   TOOTH_SPECS,
   type PlacedJewelry,
+  type StudioShape,
   type ToothSpec,
   type Vec3,
 } from "../../data/studioEditor";
@@ -22,9 +21,10 @@ import {
   getJewelMaterial,
   getJewelTemplate,
   matKeyFor,
-  resolveFinishRaw,
   type Footprint,
 } from "./geometry";
+import { pieceSpec, type PieceSpec } from "./gemCatalog";
+import { currentEstimate, studioGem } from "./gemRegistry";
 import { ARCH_K, backOut, clamp, easeInOutCubic, pointInPolygon, seeded, ss01, uid, v3, xForArc, type Point2 } from "./math";
 import { ARCH_FRAMES } from "./archLayout";
 import { anchorToothOf, groupToWorld, piecesToGroup, type Frame, type GemGroupData } from "../studioWorkspace/gemGroup";
@@ -97,7 +97,7 @@ interface JewelRig {
   meshes: THREE.Mesh[];
   material: THREE.MeshPhysicalMaterial | null;
   outlineMaterial: THREE.MeshBasicMaterial;
-  typeId: string;
+  shape: StudioShape | null;
   matKey: string;
   halfDepth: number;
   radius: number;
@@ -123,7 +123,7 @@ const GLB_FIT = {
    two pieces collide when an edge point of one lands inside the other's
    outline. Touching edges stay within one footprint cell and are allowed. */
 interface GemPose {
-  typeId: string;
+  shape: StudioShape;
   scale: number;
   offset: number;
   rotation: number;
@@ -154,7 +154,16 @@ const ALIGN_MAX_DRIFT = 3;
 /** Aligning on screen may seat a piece this far past the edge of the facet it rests on (world units, ~mm). */
 const ALIGN_FACET_SLACK = 0.5;
 function poseOf(j: PlacedJewelry): GemPose {
-  return { typeId: j.jewelryTypeId, scale: j.scale, offset: j.offset ?? 0, rotation: j.rotation };
+  return { shape: j.look.shape, scale: j.scale, offset: j.offset ?? 0, rotation: j.rotation };
+}
+/** A fresh library piece, before it has been turned or nudged. */
+function specPose(spec: PieceSpec): GemPose {
+  return { shape: spec.look.shape, scale: spec.scale, offset: 0, rotation: 0 };
+}
+/** What a library gem places, or null while the catalogue has not loaded it. */
+function specFor(gemKey: string): PieceSpec | null {
+  const gem = studioGem(gemKey);
+  return gem ? pieceSpec(gem) : null;
 }
 const _ov = new THREE.Vector3();
 function edgeInside(a: Blocker, b: Blocker): boolean {
@@ -443,12 +452,14 @@ export class StudioEngine {
   private dragFollowerSpots = new Map<string, SurfaceHit>();
   private hoverJewelId: string | null = null;
   private hoverToothId: string | null = null;
-  private placing: { typeId: string; startX: number; startY: number; started: boolean } | null = null;
+  private placing: { gemKey: string; startX: number; startY: number; started: boolean } | null = null;
   private ghost: {
     root: THREE.Group;
     ringRoot: THREE.Group;
     ring: THREE.Mesh;
     ringScale: number;
+    /** The piece the drop will place. */
+    spec: PieceSpec;
     halfDepth: number;
     material: THREE.MeshBasicMaterial;
     ringMaterial: THREE.MeshBasicMaterial;
@@ -1299,14 +1310,14 @@ export class StudioEngine {
   /* ---------- collision system: pieces may touch, never overlap ---------- */
 
   /** Visual centre of a piece (surface point pushed out along its normal). */
-  private gemCenterRaw(point: THREE.Vector3, normal: THREE.Vector3, typeId: string, scale: number, offset: number): THREE.Vector3 {
-    const tpl = getJewelTemplate(JEWELRY_BY_ID[typeId].geometry);
+  private gemCenterRaw(point: THREE.Vector3, normal: THREE.Vector3, shape: StudioShape, scale: number, offset: number): THREE.Vector3 {
+    const tpl = getJewelTemplate(shape);
     return point.clone().addScaledVector(normal.clone().normalize(), tpl.halfDepth * scale + mountGap(scale, offset));
   }
   /** A piece at a surface spot, as a collision blocker: its real outline, posed exactly as it renders. */
   private blockerAt(point: THREE.Vector3, normal: THREE.Vector3, pose: GemPose): Blocker {
-    const tpl = getJewelTemplate(JEWELRY_BY_ID[pose.typeId].geometry);
-    const center = this.gemCenterRaw(point, normal, pose.typeId, pose.scale, pose.offset);
+    const tpl = getJewelTemplate(pose.shape);
+    const center = this.gemCenterRaw(point, normal, pose.shape, pose.scale, pose.offset);
     const q = new THREE.Quaternion()
       .setFromUnitVectors(_Z, normal.clone().normalize())
       .multiply(new THREE.Quaternion().setFromAxisAngle(_Z, THREE.MathUtils.degToRad(pose.rotation)));
@@ -1384,9 +1395,8 @@ export class StudioEngine {
     return free;
   }
   /** Collision check for a fresh library placement at its default size. */
-  private placementBlocked(hit: SurfaceHit, typeId: string): boolean {
-    const def = JEWELRY_BY_ID[typeId];
-    return this.hitBlocked(hit, { typeId, scale: def.defaultScale, offset: 0, rotation: 0 }, this.blockersFor(new Set()));
+  private placementBlocked(hit: SurfaceHit, spec: PieceSpec): boolean {
+    return this.hitBlocked(hit, specPose(spec), this.blockersFor(new Set()));
   }
   /** Collision-aware duplication: each copy slides to the nearest free spot. */
   duplicateSelection(ids: string[]): number {
@@ -1452,14 +1462,14 @@ export class StudioEngine {
     return this.store.insertJewels(copies);
   }
   /** Place a library piece without a pointer (keyboard): the tooth's labial centre, or the nearest free spot. */
-  placeOnTooth(typeId: string, toothId: string): boolean {
-    const def = JEWELRY_BY_ID[typeId];
-    if (!def || !this.toothRigs.has(toothId)) return false;
+  placeOnTooth(gemKey: string, toothId: string): boolean {
+    const spec = specFor(gemKey);
+    if (!spec || !this.toothRigs.has(toothId)) return false;
     const anchor = this.getSurfacePoint(toothId, 0, 0);
-    const free = this.findFreeSpot(anchor, { typeId, scale: def.defaultScale, offset: 0, rotation: 0 }, this.blockersFor(new Set()));
+    const free = this.findFreeSpot(anchor, specPose(spec), this.blockersFor(new Set()));
     if (!free) return false;
     this.store.addJewel(
-      typeId,
+      spec,
       free.toothId,
       v3(free.point.x, free.point.y, free.point.z),
       v3(free.normal.x, free.normal.y, free.normal.z),
@@ -1690,7 +1700,7 @@ export class StudioEngine {
   }
   /** A piece's visible centre on screen, in normalized device coordinates (x, y in −1..1; |z| > 1 is off screen). */
   private screenCentre(point: THREE.Vector3, normal: THREE.Vector3, pose: GemPose): THREE.Vector3 {
-    return this.gemCenterRaw(point, normal, pose.typeId, pose.scale, pose.offset).project(this.camera);
+    return this.gemCenterRaw(point, normal, pose.shape, pose.scale, pose.offset).project(this.camera);
   }
   /**
    * The spot on the enamel where a piece shows its centre exactly at (x, y) on
@@ -1721,7 +1731,7 @@ export class StudioEngine {
       ndc.y += dy;
     }
     if (!hit) return null;
-    const standoff = this.gemCenterRaw(hit.point, hit.normal, pose.typeId, pose.scale, pose.offset).distanceTo(hit.point);
+    const standoff = this.gemCenterRaw(hit.point, hit.normal, pose.shape, pose.scale, pose.offset).distanceTo(hit.point);
     const lifted = new THREE.Plane().setFromNormalAndCoplanarPoint(hit.normal, hit.point.clone().addScaledVector(hit.normal, standoff));
     this.raycaster.setFromCamera(new THREE.Vector2(x, y), this.camera);
     const centre = this.raycaster.ray.intersectPlane(lifted, new THREE.Vector3());
@@ -1886,9 +1896,8 @@ export class StudioEngine {
     this.unregisterMeshes(rig);
     rig.content.clear();
     rig.outline.clear();
-    const def = JEWELRY_BY_ID[j.jewelryTypeId];
-    const tpl = getJewelTemplate(def.geometry);
-    const material = getJewelMaterial(j); // shared, cached — never disposed per rig
+    const tpl = getJewelTemplate(j.look.shape);
+    const material = getJewelMaterial(j.look); // shared, cached — never disposed per rig
     rig.meshes = tpl.parts.map((g) => {
       const m = new THREE.Mesh(g, material);
       m.castShadow = true;
@@ -1908,8 +1917,8 @@ export class StudioEngine {
     outline.scale.setScalar(1.16);
     rig.outline.add(outline);
     rig.material = material;
-    rig.matKey = matKeyFor(j);
-    rig.typeId = j.jewelryTypeId;
+    rig.matKey = matKeyFor(j.look);
+    rig.shape = j.look.shape;
     rig.halfDepth = tpl.halfDepth;
     rig.radius = tpl.radius;
     this.jewelMeshes.push(...rig.meshes);
@@ -1928,7 +1937,7 @@ export class StudioEngine {
         transparent: true,
         opacity: 0,
       }),
-      typeId: "",
+      shape: null,
       matKey: "",
       halfDepth: 0.5,
       radius: 0.8,
@@ -1950,16 +1959,16 @@ export class StudioEngine {
     for (const j of jewels) {
       seen.add(j.id);
       let rig = this.jewelRigs.get(j.id);
-      const mk = matKeyFor(j);
+      const mk = matKeyFor(j.look);
       if (!rig) {
         rig = this.createJewelRig(j);
         this.jewelRigs.set(j.id, rig);
         this.jewelsGroup.add(rig.group);
         rig.birth = performance.now();
-      } else if (rig.typeId !== j.jewelryTypeId) {
+      } else if (rig.shape !== j.look.shape) {
         this.buildRigContent(rig, j);
       } else if (rig.matKey !== mk) {
-        const material = getJewelMaterial(j);
+        const material = getJewelMaterial(j.look);
         rig.meshes.forEach((m) => {
           m.material = material;
         });
@@ -2151,7 +2160,8 @@ export class StudioEngine {
     } else if (this.mode === "armed-press" && quick) {
       this.setNDC(e);
       const hit = this.raycastTeeth();
-      if (hit) this.placeJewel(this.store.getSnapshot().armedTypeId!, hit);
+      const spec = specFor(this.store.getSnapshot().armedTypeId!);
+      if (hit && spec) this.placeJewel(spec, hit);
     } else if (this.mode === "tooth-press" && quick && this.press?.toothId) {
       this.store.selectTooth(this.press.toothId);
     } else if (this.mode === "bg-press" && quick) {
@@ -2321,18 +2331,20 @@ export class StudioEngine {
 
   /* ---------- library placement (drag from panel / armed click) ---------- */
 
-  beginPlacing(typeId: string, e: { clientX: number; clientY: number; preventDefault: () => void }) {
+  beginPlacing(gemKey: string, e: { clientX: number; clientY: number; preventDefault: () => void }) {
     if (this.placing) return;
     e.preventDefault();
-    this.placing = { typeId, startX: e.clientX, startY: e.clientY, started: false };
+    this.placing = { gemKey, startX: e.clientX, startY: e.clientY, started: false };
   }
   private updatePlacing(e: PointerEvent) {
     const p = this.placing!;
     if (!p.started) {
       if (Math.hypot(e.clientX - p.startX, e.clientY - p.startY) > 6) {
+        const spec = specFor(p.gemKey);
+        if (!spec) return;
         p.started = true;
-        this.store.setPlacing(p.typeId);
-        this.createGhost(p.typeId);
+        this.store.setPlacing(p.gemKey);
+        this.createGhost(spec);
       } else return;
     }
     const overCanvas = e.target instanceof Node && this.container.contains(e.target);
@@ -2346,12 +2358,12 @@ export class StudioEngine {
     if (hit) {
       const g = this.ghost!;
       g.root.visible = g.ringRoot.visible = true;
-      this.poseObject(g.root, hit.point, hit.normal, 0, g.halfDepth, JEWELRY_BY_ID[p.typeId].defaultScale, 0);
+      this.poseObject(g.root, hit.point, hit.normal, 0, g.halfDepth, g.spec.scale, 0);
       g.ringRoot.position.copy(hit.point);
       _q1.setFromUnitVectors(_Z, _nn.copy(hit.normal).normalize());
       g.ringRoot.quaternion.copy(_q1);
       // live collision feedback: the ghost turns red over an occupied spot
-      const blocked = this.placementBlocked(hit, p.typeId);
+      const blocked = this.placementBlocked(hit, g.spec);
       g.material.color.setHex(blocked ? BLOCK_COLOR : g.baseColor);
       g.material.opacity = blocked ? 0.4 : 0.55;
       g.ringMaterial.color.setHex(blocked ? BLOCK_COLOR : OUTLINE_COLOR);
@@ -2372,11 +2384,11 @@ export class StudioEngine {
         this.setNDC(e);
         hit = this.raycastTeeth();
       }
-      if (hit) this.placeJewel(p.typeId, hit);
+      if (hit && this.ghost) this.placeJewel(this.ghost.spec, hit);
       this.destroyGhost();
       this.store.setPlacing(null);
     } else {
-      this.store.setArmed(this.store.getSnapshot().armedTypeId === p.typeId ? null : p.typeId);
+      this.store.setArmed(this.store.getSnapshot().armedTypeId === p.gemKey ? null : p.gemKey);
     }
     this.placing = null;
   }
@@ -2388,19 +2400,16 @@ export class StudioEngine {
     }
     this.placing = null;
   }
-  private placeJewel(typeId: string, hit: SurfaceHit) {
-    if (this.placementBlocked(hit, typeId)) {
+  private placeJewel(spec: PieceSpec, hit: SurfaceHit) {
+    if (this.placementBlocked(hit, spec)) {
       notify("spotTaken", undefined, "warning");
       return;
     }
-    this.store.addJewel(typeId, hit.toothId, v3(hit.point.x, hit.point.y, hit.point.z), v3(hit.normal.x, hit.normal.y, hit.normal.z));
+    this.store.addJewel(spec, hit.toothId, v3(hit.point.x, hit.point.y, hit.point.z), v3(hit.normal.x, hit.normal.y, hit.normal.z));
   }
-  private createGhost(typeId: string) {
-    const def = JEWELRY_BY_ID[typeId];
-    const tpl = getJewelTemplate(def.geometry);
-    const finish = this.store.initialFinish(typeId);
-    const spec = resolveFinishRaw(finish.color, finish.customColor);
-    const baseColor = new THREE.Color(spec.hex).getHex();
+  private createGhost(spec: PieceSpec) {
+    const tpl = getJewelTemplate(spec.look.shape);
+    const baseColor = new THREE.Color(spec.look.color).getHex();
     const material = new THREE.MeshBasicMaterial({ color: baseColor, transparent: true, opacity: 0.55, depthWrite: false });
     const root = new THREE.Group();
     tpl.parts.forEach((g) => {
@@ -2423,7 +2432,8 @@ export class StudioEngine {
       root,
       ringRoot,
       ring,
-      ringScale: tpl.radius * def.defaultScale * 1.4,
+      ringScale: tpl.radius * spec.scale * 1.4,
+      spec,
       halfDepth: tpl.halfDepth,
       material,
       ringMaterial,
@@ -2609,7 +2619,7 @@ export class StudioEngine {
       model: EXPORT_MODEL_NAMES[this.modelMode],
       lightPreset: this.store.getSnapshot().lightPreset,
       // Indicative estimate only, in minor units — never a price to charge.
-      estimate: { currency: ESTIMATE_PRICING.currency, totalMinor: estimateTotalCents(this.store.jewels) },
+      estimate: (({ currency, totalMinor }) => ({ currency, totalMinor }))(currentEstimate(this.store.jewels)),
       camera: { position: this.camera.position.toArray(), target: this.controls.target.toArray() },
       jewels: this.store.jewels,
     };
@@ -2739,7 +2749,7 @@ export class StudioEngine {
     const anchor = anchorToothOf(pieces.filter((p) => this.toothRigs.has(p.toothId)));
     const frame = anchor ? this.toothFrame(anchor) : null;
     if (!anchor || !frame || pieces.length < 2) return null;
-    return { version: 1, anchorToothId: anchor, pieces: piecesToGroup(pieces, frame) };
+    return { version: 2, anchorToothId: anchor, pieces: piecesToGroup(pieces, frame) };
   }
 
   /**
@@ -2758,21 +2768,24 @@ export class StudioEngine {
     for (const { piece, position, normal } of groupToWorld(data.pieces, frame)) {
       const hit = this.snapToSurface(new THREE.Vector3(position.x, position.y, position.z), new THREE.Vector3(normal.x, normal.y, normal.z));
       if (!hit) continue;
-      const pose: GemPose = { typeId: piece.jewelryTypeId, scale: piece.scale, offset: piece.offset ?? 0, rotation: piece.rotation };
+      const scale = scaleForSs(piece.ss);
+      const pose: GemPose = { shape: piece.look.shape, scale, offset: piece.offset ?? 0, rotation: piece.rotation };
       const free = this.findFreeSpot(hit, pose, blockers);
       if (!free) continue;
       const copy: PlacedJewelry = {
         id: uid(),
-        jewelryTypeId: piece.jewelryTypeId,
+        productId: piece.productId,
+        ...(piece.variantId ? { variantId: piece.variantId } : {}),
+        ss: piece.ss,
+        look: piece.look,
         toothId: free.toothId,
         position: v3(free.point.x, free.point.y, free.point.z),
         normal: v3(free.normal.x, free.normal.y, free.normal.z),
         rotation: piece.rotation,
-        scale: piece.scale,
-        color: piece.color,
-        ...(piece.customColor ? { customColor: piece.customColor } : {}),
+        scale,
         ...(piece.offset ? { offset: piece.offset } : {}),
       };
+
       copies.push(copy);
       blockers.push(this.jewelBlocker(copy));
     }

@@ -2,7 +2,7 @@ import { useState, type FormEvent } from "react";
 import { Layers, PencilLine } from "lucide-react";
 import { Dialog } from "../../ui/Dialog";
 import { Button } from "../../ui/Button";
-import { estimateTotalCents } from "../../../data/studioEditor";
+import { useCompositionEstimate } from "../../../lib/studio3d/useStudioGems";
 import { useStudio } from "../../../lib/studio3d/store";
 import { groupPreviewPieces } from "../../../lib/studioWorkspace/gemGroup";
 import type { GemGroup, RecordDetails } from "../../../lib/studioWorkspace/types";
@@ -43,7 +43,8 @@ export function SaveGemGroupDialog({
   const capture = useStageCapture(group ? null : (engine) => engine.captureGroupThumbnail(pieceIds ?? []));
   const shown = group ? group.thumbnailUrl : (capture ?? null);
   const count = group ? group.elementCount : selected.length;
-  const estimate = group ? group.estimatedPriceMinor : estimateTotalCents(selected);
+  const selectedEstimate = useCompositionEstimate(selected).totalMinor;
+  const estimate = group ? group.estimatedPriceMinor : selectedEstimate;
 
   const [details, setDetails] = useState<RecordDetails>(() =>
     group ? { name: group.name, description: group.description, tags: group.tags } : { name: "", description: "", tags: [] },

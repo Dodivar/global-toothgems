@@ -1,11 +1,14 @@
 /**
  * Reference data for the 3D Studio editor (`/studio-3d/atelier`).
  *
- * Pure data and pure functions only — no three.js, no React — so the catalog,
- * the dentition and the price estimate can be read and tested on their own.
- * Every label shown to a customer lives in the `studio.editor` translations;
- * this file only holds identifiers, geometry and numbers.
+ * Pure data and pure functions only — no three.js, no React — so the piece
+ * model and the dentition can be read and tested on their own. The pieces
+ * themselves are the shop's gems (`lib/studio3d/gemCatalog.ts`). Every label
+ * shown to a customer lives in the `studio.editor` translations or comes from
+ * the catalogue; this file only holds identifiers, geometry and numbers.
  */
+
+import { SS_MAX, SS_MIN, stoneSizeMmApprox } from "../lib/gemOptions";
 
 /* ------------------------------------------------------------------ types */
 
@@ -16,22 +19,86 @@ export interface Vec3 {
   z: number;
 }
 
+/**
+ * Outline of a piece in the 3D editor. Every shape is drawn procedurally
+ * (`lib/studio3d/geometry.ts`); `studio_gem_appearances.shape` holds the same
+ * names, and the database check lists the same values.
+ */
+export type StudioShape =
+  | "round"
+  | "baguette"
+  | "square"
+  | "heart"
+  | "open-heart"
+  | "kite"
+  | "navette"
+  | "raindrop"
+  | "triangle"
+  | "rivoli-star"
+  | "starflower"
+  | "halo-star"
+  | "bolt"
+  | "cherries"
+  | "snake"
+  | "dachshund";
+
+export const STUDIO_SHAPES: StudioShape[] = [
+  "round",
+  "baguette",
+  "square",
+  "heart",
+  "open-heart",
+  "kite",
+  "navette",
+  "raindrop",
+  "triangle",
+  "rivoli-star",
+  "starflower",
+  "halo-star",
+  "bolt",
+  "cherries",
+  "snake",
+  "dachshund",
+];
+
+export type GemMaterial = "crystal" | "metal";
+/** `iridescent`: an AB / Shimmer / Vitrail coating, rainbow reflections over the tint. */
+export type GemEffect = "none" | "iridescent";
+
+/**
+ * How a piece is drawn. Copied onto every placed piece when it is placed, so
+ * a design keeps rendering (share links, thumbnails, previews) even when its
+ * product later leaves the shop or the catalogue has not loaded yet.
+ */
+export interface GemLook {
+  shape: StudioShape;
+  material: GemMaterial;
+  /** Tint, lowercase `#rrggbb`. */
+  color: string;
+  effect: GemEffect;
+}
+
 /** One piece placed on the dentition. Serialisable as-is: this is the saved design. */
 export interface PlacedJewelry {
   id: string;
-  jewelryTypeId: string;
+  /** The shop product (`products.id`; the slug on the prototype's mock products). */
+  productId: string;
+  /** The colour variant (yellow / white gold…), when the product has several looks. */
+  variantId?: string;
+  /** Stone size (SS, `lib/gemOptions.ts`). */
+  ss: number;
+  look: GemLook;
   /** FDI tooth number, or `FREE_TOOTH` on an unlabelled region of an imported model. */
   toothId: string;
   position: Vec3;
   normal: Vec3;
   /** Spin around the surface normal, in degrees. */
   rotation: number;
-  /** Radius in millimetres; the diameter shown to the customer is twice this. */
+  /**
+   * Half the piece's longest side, in millimetres — derived from `ss`
+   * (`scaleForSs`) and kept on the piece because the engine poses with it.
+   */
   scale: number;
-  /** A `FinishId`. */
-  color: string;
-  /** Hex override from the colour wheel. */
-  customColor?: string;
   /** Manual standoff fine-tune from the enamel, in world units. */
   offset?: number;
 }
@@ -104,153 +171,23 @@ export function isLowerTooth(fdi: string): boolean {
   return fdi[0] === "3" || fdi[0] === "4";
 }
 
-/* --------------------------------------------------------------- catalog */
+/* ----------------------------------------------------------------- sizes */
 
-export type FinishId = "clear" | "diamond" | "rose" | "sapphire" | "ruby" | "emerald" | "gold" | "silver";
+/** Sizes a shop gem is offered in until the team sets its real ones (its `ss` variants). */
+export const DEFAULT_STUDIO_SIZES = [2, 5, 7];
 
-export interface FinishDef {
-  color: string;
-  kind: "crystal" | "metal";
-  dispersion: number;
-  /** CSS background of the finish's swatch. */
-  swatch: string;
+/**
+ * Half the longest side of a piece of this stone size, in millimetres. SS is
+ * the gauge of round stones; a shaped piece is drawn with its longest side
+ * equal to that diameter.
+ */
+export function scaleForSs(ss: number): number {
+  return stoneSizeMmApprox(ss) / 2;
 }
-
-export const FINISHES: Record<FinishId, FinishDef> = {
-  clear: { color: "#ffffff", kind: "crystal", dispersion: 0.12, swatch: "radial-gradient(circle at 35% 30%, #ffffff, #dfe9ee 60%, #b9c9d4)" },
-  diamond: { color: "#eef6ff", kind: "crystal", dispersion: 0.3, swatch: "radial-gradient(circle at 35% 30%, #f4fbff, #cfe4f5 55%, #9fc3de)" },
-  rose: { color: "#ff9dc0", kind: "crystal", dispersion: 0.12, swatch: "radial-gradient(circle at 35% 30%, #ffd3e2, #ff9dc0 60%, #e0719b)" },
-  sapphire: { color: "#4d7cff", kind: "crystal", dispersion: 0.12, swatch: "radial-gradient(circle at 35% 30%, #9db9ff, #4d7cff 65%, #2c53c9)" },
-  ruby: { color: "#ff2e55", kind: "crystal", dispersion: 0.12, swatch: "radial-gradient(circle at 35% 30%, #ff9bb0, #ff2e55 65%, #c90f34)" },
-  emerald: { color: "#22c47c", kind: "crystal", dispersion: 0.12, swatch: "radial-gradient(circle at 35% 30%, #8fe8bd, #22c47c 65%, #0d9159)" },
-  gold: { color: "#f6c05a", kind: "metal", dispersion: 0, swatch: "linear-gradient(135deg, #ffe3a0, #f0b34e 55%, #c8872c)" },
-  silver: { color: "#e9edf4", kind: "metal", dispersion: 0, swatch: "linear-gradient(135deg, #ffffff, #ccd3dc 55%, #97a2b0)" },
-};
-
-export const FINISH_IDS = Object.keys(FINISHES) as FinishId[];
-
-export function isFinishId(value: string): value is FinishId {
-  return value in FINISHES;
-}
-
-export type JewelryCategory = "crystals" | "shapes" | "precious";
-export const JEWELRY_CATEGORIES: JewelryCategory[] = ["crystals", "shapes", "precious"];
-
-export type JewelryGeometry =
-  | "round"
-  | "diamond"
-  | "square"
-  | "dot"
-  | "star"
-  | "heart"
-  | "triangle"
-  | "drop"
-  | "navette"
-  | "baguette"
-  | "butterfly"
-  | "moon"
-  | "bolt"
-  | "blossom";
-
-export interface JewelryTypeDef {
-  id: string;
-  category: JewelryCategory;
-  geometry: JewelryGeometry;
-  defaultScale: number;
-  defaultColor: FinishId;
-}
-
-/** The library. Names are translated under `studio.editor.pieces.<id>`. */
-export const CATALOG: JewelryTypeDef[] = [
-  { id: "crystal-round", category: "crystals", geometry: "round", defaultScale: 0.95, defaultColor: "clear" },
-  { id: "crystal-diamond", category: "crystals", geometry: "diamond", defaultScale: 1.0, defaultColor: "clear" },
-  { id: "crystal-square", category: "crystals", geometry: "square", defaultScale: 0.95, defaultColor: "clear" },
-  { id: "crystal-petite", category: "crystals", geometry: "round", defaultScale: 0.55, defaultColor: "clear" },
-  { id: "crystal-grand", category: "crystals", geometry: "round", defaultScale: 1.4, defaultColor: "clear" },
-  { id: "shape-star", category: "shapes", geometry: "star", defaultScale: 0.85, defaultColor: "clear" },
-  { id: "shape-heart", category: "shapes", geometry: "heart", defaultScale: 0.8, defaultColor: "ruby" },
-  { id: "shape-triangle", category: "shapes", geometry: "triangle", defaultScale: 0.8, defaultColor: "clear" },
-  { id: "shape-drop", category: "shapes", geometry: "drop", defaultScale: 0.85, defaultColor: "clear" },
-  { id: "shape-navette", category: "shapes", geometry: "navette", defaultScale: 0.9, defaultColor: "clear" },
-  { id: "shape-baguette", category: "shapes", geometry: "baguette", defaultScale: 0.85, defaultColor: "clear" },
-  { id: "shape-butterfly", category: "shapes", geometry: "butterfly", defaultScale: 0.85, defaultColor: "gold" },
-  { id: "shape-moon", category: "shapes", geometry: "moon", defaultScale: 0.85, defaultColor: "clear" },
-  { id: "shape-bolt", category: "shapes", geometry: "bolt", defaultScale: 0.8, defaultColor: "sapphire" },
-  { id: "shape-blossom", category: "shapes", geometry: "blossom", defaultScale: 0.85, defaultColor: "rose" },
-  { id: "metal-gold-dot", category: "precious", geometry: "dot", defaultScale: 0.9, defaultColor: "gold" },
-  { id: "metal-gold-star", category: "precious", geometry: "star", defaultScale: 0.85, defaultColor: "gold" },
-  { id: "metal-gold-heart", category: "precious", geometry: "heart", defaultScale: 0.8, defaultColor: "gold" },
-  { id: "metal-silver", category: "precious", geometry: "diamond", defaultScale: 1.0, defaultColor: "silver" },
-];
-
-export const JEWELRY_BY_ID: Record<string, JewelryTypeDef> = Object.fromEntries(CATALOG.map((t) => [t.id, t]));
 
 /* ---------------------------------------------------------------- limits */
 
-/** Slider ranges, shared by the inspector and the validation of restored designs. */
-export const SCALE_RANGE = { min: 0.25, max: 1.8, step: 0.05 } as const;
 export const OFFSET_RANGE = { min: -0.5, max: 1.5, step: 0.05 } as const;
-
-/* --------------------------------------------------------------- presets */
-
-/* ------------------------------------------------------------ estimate */
-
-/**
- * INDICATIVE price list for the design estimate.
- *
- * Prototype values carried over from the standalone Studio, in integer minor
- * units (cents) with an explicit currency, never floats. The estimate is a
- * conversation aid for the artist and the client: it is not a catalogue price,
- * it is never sent to checkout and nothing is charged from it. When the Studio
- * is wired to the catalogue, these come from the products' own prices.
- */
-export const ESTIMATE_PRICING = {
-  currency: "EUR",
-  /** Price of one piece, per type, in cents. */
-  baseCents: {
-    "crystal-round": 2500,
-    "crystal-diamond": 2800,
-    "crystal-square": 2600,
-    "crystal-petite": 1800,
-    "crystal-grand": 3500,
-    "shape-star": 2600,
-    "shape-heart": 2600,
-    "shape-triangle": 2400,
-    "shape-drop": 2400,
-    "shape-navette": 2600,
-    "shape-baguette": 2600,
-    "shape-butterfly": 3400,
-    "shape-moon": 2600,
-    "shape-bolt": 2600,
-    "shape-blossom": 2800,
-    "metal-gold-dot": 3200,
-    "metal-gold-star": 3800,
-    "metal-gold-heart": 3800,
-    "metal-silver": 3000,
-  } as Record<string, number>,
-  /** Used for a type missing from `baseCents`. */
-  fallbackCents: 2000,
-  /** Multiplier by the piece's diameter in millimetres (upper bound inclusive). */
-  sizeBands: [
-    { upToMm: 1.4, factor: 0.85 },
-    { upToMm: 2.2, factor: 1.0 },
-    { upToMm: 3.0, factor: 1.35 },
-    { upToMm: Number.POSITIVE_INFINITY, factor: 1.7 },
-  ],
-} as const;
-
-/** Estimated price of one piece, in whole-euro cents. */
-export function estimateCents(j: Pick<PlacedJewelry, "jewelryTypeId" | "scale">): number {
-  const base = ESTIMATE_PRICING.baseCents[j.jewelryTypeId] ?? ESTIMATE_PRICING.fallbackCents;
-  const diameter = j.scale * 2;
-  const band = ESTIMATE_PRICING.sizeBands.find((b) => diameter <= b.upToMm) ?? ESTIMATE_PRICING.sizeBands[ESTIMATE_PRICING.sizeBands.length - 1];
-  // Rounded to the whole euro, as the price list is expressed in euros.
-  return Math.round((base * band.factor) / 100) * 100;
-}
-
-export function estimateTotalCents(jewels: PlacedJewelry[]): number {
-  return jewels.reduce((sum, j) => sum + estimateCents(j), 0);
-}
 
 /* ----------------------------------------------------------- validation */
 
@@ -258,12 +195,47 @@ const isNum = (v: unknown): v is number => typeof v === "number" && Number.isFin
 const isVec = (v: unknown): v is Vec3 =>
   !!v && typeof v === "object" && isNum((v as Vec3).x) && isNum((v as Vec3).y) && isNum((v as Vec3).z);
 const HEX_RE = /^#[0-9a-f]{6}$/i;
+/** A product or variant reference: a uuid, or a mock product's slug. */
+const REF_RE = /^[a-z0-9][a-z0-9-]{0,63}$/i;
 const clampTo = (v: number, min: number, max: number) => Math.min(max, Math.max(min, v));
 
+export function isStudioShape(value: unknown): value is StudioShape {
+  return typeof value === "string" && (STUDIO_SHAPES as string[]).includes(value);
+}
+
+/** A look read back from storage, or null when it is not one the editor could have written. */
+export function sanitizeLook(input: unknown): GemLook | null {
+  if (!input || typeof input !== "object") return null;
+  const l = input as Record<string, unknown>;
+  if (!isStudioShape(l.shape) || typeof l.color !== "string" || !HEX_RE.test(l.color)) return null;
+  return {
+    shape: l.shape,
+    material: l.material === "metal" ? "metal" : "crystal",
+    color: l.color.toLowerCase(),
+    effect: l.effect === "iridescent" ? "iridescent" : "none",
+  };
+}
+
+/** A stone size read back from storage: a whole SS within the database's bounds. */
+export function sanitizeSs(value: unknown): number | null {
+  return typeof value === "number" && Number.isInteger(value) && value >= SS_MIN && value <= SS_MAX ? value : null;
+}
+
+/** A product / variant reference read back from storage. */
+export function isGemRef(value: unknown): value is string {
+  return typeof value === "string" && REF_RE.test(value);
+}
+
 /**
- * A design read back from browser storage is untrusted: it may be stale, from
- * an older version, or edited by hand. Keep only well-formed pieces, with
- * values clamped to what the editor itself could have produced.
+ * A design read back from browser storage or the database is untrusted: it
+ * may be stale, from an older version, or edited by hand. Keep only
+ * well-formed pieces, with values clamped to what the editor itself could
+ * have produced.
+ *
+ * Deliberately structural: a piece is NOT checked against the shop's
+ * catalogue, which loads later than a draft is read and which a product may
+ * leave. Its look travels with it, so it still renders; the panels say when
+ * its product is no longer sold.
  */
 export function sanitizeJewels(input: unknown): PlacedJewelry[] {
   if (!Array.isArray(input)) return [];
@@ -271,21 +243,23 @@ export function sanitizeJewels(input: unknown): PlacedJewelry[] {
   for (const raw of input) {
     if (!raw || typeof raw !== "object") continue;
     const j = raw as Record<string, unknown>;
-    if (typeof j.id !== "string" || typeof j.jewelryTypeId !== "string" || typeof j.toothId !== "string") continue;
-    if (!JEWELRY_BY_ID[j.jewelryTypeId]) continue;
+    if (typeof j.id !== "string" || !isGemRef(j.productId) || typeof j.toothId !== "string") continue;
     if (!ALL_TEETH.includes(j.toothId) && j.toothId !== FREE_TOOTH) continue;
     if (!isVec(j.position) || !isVec(j.normal)) continue;
-    const color = typeof j.color === "string" && isFinishId(j.color) ? j.color : JEWELRY_BY_ID[j.jewelryTypeId].defaultColor;
+    const look = sanitizeLook(j.look);
+    const ss = sanitizeSs(j.ss);
+    if (!look || ss === null) continue;
     out.push({
       id: j.id.slice(0, 40),
-      jewelryTypeId: j.jewelryTypeId,
+      productId: j.productId,
+      ...(isGemRef(j.variantId) ? { variantId: j.variantId } : {}),
+      ss,
+      look,
       toothId: j.toothId,
       position: { x: j.position.x, y: j.position.y, z: j.position.z },
       normal: { x: j.normal.x, y: j.normal.y, z: j.normal.z },
       rotation: isNum(j.rotation) ? ((j.rotation % 360) + 360) % 360 : 0,
-      scale: isNum(j.scale) ? clampTo(j.scale, SCALE_RANGE.min, SCALE_RANGE.max) : JEWELRY_BY_ID[j.jewelryTypeId].defaultScale,
-      color,
-      ...(typeof j.customColor === "string" && HEX_RE.test(j.customColor) ? { customColor: j.customColor.toLowerCase() } : {}),
+      scale: scaleForSs(ss),
       ...(isNum(j.offset) ? { offset: clampTo(j.offset, OFFSET_RANGE.min, OFFSET_RANGE.max) } : {}),
     });
   }

@@ -1,9 +1,9 @@
-import { ESTIMATE_PRICING } from "../../data/studioEditor";
 import type { TypedSupabaseClient } from "../supabase/client";
 import type { Json, Tables } from "../supabase/database.types";
 import { BUCKETS, SIGNED_URL_TTL_SECONDS } from "../supabase/storage";
 import { STUDIO_SHARE_PATH } from "../studioUrl";
-import { groupEstimateCents, sanitizeGroupData } from "./gemGroup";
+import { sanitizeGroupData } from "./gemGroup";
+import { currentEstimate } from "../studio3d/gemRegistry";
 import {
   StudioStoreError,
   type CreationInput,
@@ -84,8 +84,11 @@ function toCreation(row: CreationRow, thumbnailUrl: string | null): Creation {
     description: row.description,
     tags: normalizeTags(row.tags ?? []),
     scene,
-    // The count and estimate follow the scene as read back, so the card never disagrees with it.
-    ...sceneStats(scene.pieces),
+    // The count follows the scene as read back, so the card never disagrees with
+    // it; the estimate is the one stored at the last save (shop prices then).
+    elementCount: scene.pieces.length,
+    estimatedPriceMinor: row.estimated_price_minor,
+    currency: row.currency,
     thumbnailUrl,
     isFavorite: row.is_favorite,
     createdAt: row.created_at,
@@ -106,7 +109,7 @@ function toGroup(row: GroupRow, thumbnailUrl: string | null): GemGroup | null {
     data,
     thumbnailUrl,
     elementCount: data.pieces.length,
-    estimatedPriceMinor: groupEstimateCents(data.pieces),
+    estimatedPriceMinor: row.estimated_price_minor,
     currency: row.currency,
     isFavorite: row.is_favorite,
     createdAt: row.created_at,
@@ -348,13 +351,14 @@ export function createSupabaseRepositories(client: TypedSupabaseClient, userId: 
         const details = checkDetails(input);
         const groupData = sanitizeGroupData(input.data);
         if (!groupData) throw new StudioStoreError("invalid", "groupTooSmall");
+        const groupEstimate = currentEstimate(groupData.pieces);
         const { data, error } = await client
           .from("gem_groups")
           .insert({
             ...details,
             group_data: groupData as unknown as Json,
-            estimated_price_minor: groupEstimateCents(groupData.pieces),
-            currency: ESTIMATE_PRICING.currency,
+            estimated_price_minor: groupEstimate.totalMinor,
+            currency: groupEstimate.currency,
           })
           .select()
           .single();

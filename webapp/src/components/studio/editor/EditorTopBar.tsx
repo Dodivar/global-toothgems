@@ -23,7 +23,9 @@ import { ShareMenu } from "./ShareMenu";
 import { HelpHint } from "../workspace/HelpHint";
 import { SaveControls } from "../workspace/SaveControls";
 import { SaveStatus } from "../workspace/SaveStatus";
-import { estimateCents, estimateTotalCents, FREE_TOOTH } from "../../../data/studioEditor";
+import { FREE_TOOTH } from "../../../data/studioEditor";
+import { estimateComposition } from "../../../lib/studio3d/gemCatalog";
+import { useCompositionEstimate, useStudioGems } from "../../../lib/studio3d/useStudioGems";
 import { importModelFile, resetModel } from "../../../lib/studio3d/actions";
 import { downloadURL, getEngine } from "../../../lib/studio3d/engine";
 import { notify } from "../../../lib/studio3d/notices";
@@ -48,7 +50,7 @@ const inputClass =
 export function EditorTopBar({ snap, onOpenMenu }: { snap: StudioSnapshot; onOpenMenu: () => void }) {
   const { t, formatEstimate } = useEditorLabels();
   const fileRef = useRef<HTMLInputElement>(null);
-  const total = estimateTotalCents(snap.jewels);
+  const total = useCompositionEstimate(snap.jewels).totalMinor;
 
   const handleFile = async (e: React.ChangeEvent<HTMLInputElement>) => {
     const f = e.target.files?.[0];
@@ -160,6 +162,7 @@ function ExportMenu() {
   const { formatDate } = useFormat();
   const labels = useEditorLabels();
   const { t } = labels;
+  const { byKey } = useStudioGems();
   const [open, setOpen] = useState(false);
   const [quoting, setQuoting] = useState(false);
   const [client, setClient] = useState(studioStore.clientName);
@@ -192,17 +195,27 @@ function ExportMenu() {
     notify("quoteBuilding", undefined, "info");
     try {
       const jewels = studioStore.jewels;
+      // One row per shop item to buy: a product in one colour, with the teeth and sizes it covers.
+      const estimate = estimateComposition(jewels, (key) => byKey.get(key));
+      const rows = estimate.lines.map((line) => {
+        const pieces = jewels.filter((j) => j.productId === line.productId && (j.variantId ?? null) === line.variantId);
+        const teeth = [...new Set(pieces.map((j) => (j.toothId === FREE_TOOTH ? "—" : j.toothId)))];
+        const sizes = [...new Set(pieces.map((j) => j.ss))].sort((a, b) => a - b);
+        return {
+          name: `${labels.pieceName(pieces[0])} ×${line.pieces}`,
+          tooth: teeth.join(", "),
+          size: sizes.map((ss) => `SS${ss}`).join(", "),
+          finish: labels.finishName(pieces[0]) ?? "—",
+          price: `${line.quantity} × ${labels.formatEstimate(line.unitMinor)}`,
+        };
+      });
+      if (estimate.unavailable)
+        rows.push({ name: t("studio.editor.pieceUnavailable"), tooth: "—", size: "—", finish: "—", price: `×${estimate.unavailable}` });
       const url = await buildQuoteSheetDataURL({
         renderURL: engine.captureView(),
         clientName: client,
-        rows: jewels.map((j) => ({
-          name: labels.pieceName(j.jewelryTypeId),
-          tooth: j.toothId === FREE_TOOTH ? "—" : j.toothId,
-          size: t("studio.editor.inspector.mm", { value: (j.scale * 2).toFixed(1) }),
-          finish: labels.finishName(j),
-          price: labels.formatEstimate(estimateCents(j)),
-        })),
-        total: labels.formatEstimate(estimateTotalCents(jewels)),
+        rows,
+        total: labels.formatEstimate(estimate.totalMinor),
         labels: {
           title: t("studio.editor.quote.title"),
           date: formatDate(new Date().toISOString()),

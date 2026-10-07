@@ -30,7 +30,9 @@ import {
 import { useEditorLabels } from "./editorLabels";
 import { QuickColorPanel } from "./QuickColorPanel";
 import { IssueFrames, IssuePanel } from "./StageIssues";
-import { FINISHES, isFinishId, type PlacedJewelry } from "../../../data/studioEditor";
+import type { PlacedJewelry } from "../../../data/studioEditor";
+import { lookSwatch } from "./lookSwatch";
+import { formatSs } from "../../../lib/gemOptions";
 import {
   beginRotation,
   duplicateMirroredPieces,
@@ -117,7 +119,7 @@ export function EditorViewport({ snap }: { snap: StudioSnapshot }) {
     };
   }, []);
 
-  const armedName = snap.armedTypeId ? pieceName(snap.armedTypeId) : null;
+  const armedName = snap.armedTypeId ? pieceName({ productId: snap.armedTypeId }) : null;
   const quick = useQuickActions();
 
   return (
@@ -303,7 +305,7 @@ const quickButton = clsx(
  * is dragged or off screen.
  */
 function QuickBar({ ids, jewels, actions }: { ids: string[]; jewels: PlacedJewelry[]; actions: QuickActionId[] }) {
-  const { t } = useEditorLabels();
+  const { t, sizeName } = useEditorLabels();
   const barRef = useRef<HTMLDivElement>(null);
   const panelRef = useRef<HTMLDivElement>(null);
   const colorButtonRef = useRef<HTMLButtonElement>(null);
@@ -330,14 +332,14 @@ function QuickBar({ ids, jewels, actions }: { ids: string[]; jewels: PlacedJewel
   }, []);
 
   const selected = jewels.filter((j) => ids.includes(j.id));
-  // One diameter for the whole selection, or none when the pieces differ.
-  const scales = new Set(selected.map((j) => j.scale));
-  const scale = scales.size === 1 ? [...scales][0] : null;
+  // One stone size for the whole selection, or none when the pieces differ.
+  const sizes = new Set(selected.map((j) => j.ss));
+  const ss = sizes.size === 1 ? [...sizes][0] : null;
 
   // The bar's width changes with its buttons and the size readout, the panel comes and goes: stay placed.
   useLayoutEffect(() => {
     if (anchorRef.current) placeBarAndPanel(barRef.current, panelRef.current, anchorRef.current, !!gestureRef.current);
-  }, [actions, scale, colorOpen]);
+  }, [actions, ss, colorOpen]);
 
   // The panel grows when the custom colour wheel opens: place it again.
   useEffect(() => {
@@ -476,11 +478,11 @@ function QuickBar({ ids, jewels, actions }: { ids: string[]; jewels: PlacedJewel
         );
       case "size":
         return (
-          <div role="group" aria-label={t("studio.editor.inspector.diameter")} className="flex flex-none items-center">
+          <div role="group" aria-label={t("studio.editor.inspector.size")} className="flex flex-none items-center">
             {icon(t("studio.editor.viewport.quick.smaller", { count }), Minus, () => resizePieces(ids, -1))}
-            {scale !== null && (
-              <span aria-live="polite" className="min-w-[46px] text-center text-[12px] font-bold tabular-nums">
-                {t("studio.editor.inspector.mm", { value: (scale * 2).toFixed(1) })}
+            {ss !== null && (
+              <span aria-live="polite" title={sizeName(ss)} className="min-w-[46px] text-center text-[12px] font-bold tabular-nums">
+                {formatSs(ss)}
               </span>
             )}
             {icon(t("studio.editor.viewport.quick.larger", { count }), Plus, () => resizePieces(ids, 1))}
@@ -588,8 +590,8 @@ function placeBarAndPanel(bar: HTMLElement | null, panel: HTMLElement | null, a:
 function swatchOf(pieces: PlacedJewelry[]): string {
   const first = pieces[0];
   if (!first) return "transparent";
-  if (pieces.every((j) => j.customColor && j.customColor === first.customColor)) return first.customColor!;
-  if (pieces.every((j) => !j.customColor && j.color === first.color) && isFinishId(first.color)) return FINISHES[first.color].swatch;
+  const same = (a: PlacedJewelry["look"], b: PlacedJewelry["look"]) => a.material === b.material && a.color === b.color && a.effect === b.effect;
+  if (pieces.every((j) => same(j.look, first.look))) return lookSwatch(first.look);
   return "conic-gradient(#ff9dc0, #4d7cff, #22c47c, #f6c05a, #ff9dc0)";
 }
 
@@ -690,7 +692,7 @@ function ContextMenu({ cm, snap }: { cm: ContextMenuState; snap: StudioSnapshot 
     </button>
   );
 
-  const heading = count > 1 ? t("studio.editor.context.selected", { count }) : pieceName(gems[0].jewelryTypeId);
+  const heading = count > 1 ? t("studio.editor.context.selected", { count }) : pieceName(gems[0]);
   return (
     <div
       ref={ref}

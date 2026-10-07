@@ -6,6 +6,7 @@ import {
   AlignHorizontalSpaceAround,
   ChevronDown,
   Copy,
+  ExternalLink,
   Crosshair,
   FlipHorizontal2,
   FlipVertical2,
@@ -15,24 +16,14 @@ import {
   SquareSplitVertical,
   Trash2,
 } from "lucide-react";
-import { ColorWheel } from "./ColorWheel";
+import { ColorOptions, SizeOptions } from "./GemPickers";
 import { InfoTip, InfoTipText } from "./InfoTip";
-import { PieceIcon } from "./PieceIcon";
+import { GemPhoto, PieceIcon } from "./PieceIcon";
 import { useEditorLabels } from "./editorLabels";
-import {
-  ALL_TEETH,
-  CATALOG,
-  estimateCents,
-  FINISH_IDS,
-  FINISHES,
-  FREE_TOOTH,
-  JEWELRY_BY_ID,
-  JEWELRY_CATEGORIES,
-  OFFSET_RANGE,
-  SCALE_RANGE,
-  UPPER_TEETH,
-  type PlacedJewelry,
-} from "../../../data/studioEditor";
+import { ALL_TEETH, FREE_TOOTH, OFFSET_RANGE, UPPER_TEETH, type PlacedJewelry } from "../../../data/studioEditor";
+import { Link } from "../../../lib/navigation";
+import { estimateComposition, findFinish } from "../../../lib/studio3d/gemCatalog";
+import { useStudioGems } from "../../../lib/studio3d/useStudioGems";
 import {
   alignSelection,
   centerOnTeeth,
@@ -171,30 +162,6 @@ function Slider({
   );
 }
 
-function TypeSelect({ value, onChange, label }: { value: string; onChange: (typeId: string) => void; label: string }) {
-  const { t, pieceName } = useEditorLabels();
-  return (
-    <span className="relative block">
-      <select aria-label={label} className={selectClass} value={value} onChange={(e) => onChange(e.target.value)}>
-        {JEWELRY_CATEGORIES.map((cat) => (
-          <optgroup key={cat} label={t(`studio.editor.library.categories.${cat}`)}>
-            {CATALOG.filter((item) => item.category === cat).map((item) => (
-              <option key={item.id} value={item.id}>
-                {pieceName(item.id)}
-              </option>
-            ))}
-          </optgroup>
-        ))}
-      </select>
-      <ChevronDown
-        size={15}
-        aria-hidden="true"
-        className="pointer-events-none absolute right-3.5 top-1/2 -translate-y-1/2 text-[var(--text-muted)]"
-      />
-    </span>
-  );
-}
-
 /** Absolute quarter turns, plus a +90° step. */
 function QuickRotate({ isOn, onSet, onPlus90 }: { isOn: (deg: number) => boolean; onSet: (deg: number) => void; onPlus90: () => void }) {
   const { t } = useEditorLabels();
@@ -227,48 +194,6 @@ function QuickRotate({ isOn, onSet, onPlus90 }: { isOn: (deg: number) => boolean
       <button type="button" className={clsx(miniButton, "flex-none")} onClick={onPlus90}>
         +90°
       </button>
-    </div>
-  );
-}
-
-/** The finish swatches, plus the custom colour when one is set. Shared with the stage's colour quick action. */
-export function Swatches({
-  isSelected,
-  onPick,
-  custom,
-}: {
-  isSelected: (finish: string) => boolean;
-  onPick: (finish: string) => void;
-  custom: string | null;
-}) {
-  const { t } = useEditorLabels();
-  return (
-    <div className="grid grid-cols-4 gap-2">
-      {FINISH_IDS.map((fid) => (
-        <button
-          key={fid}
-          type="button"
-          aria-pressed={isSelected(fid)}
-          aria-label={t(`studio.editor.finishes.${fid}`)}
-          title={t(`studio.editor.finishes.${fid}`)}
-          onClick={() => onPick(fid)}
-          style={{ background: FINISHES[fid].swatch }}
-          className={clsx(
-            "h-10 rounded-[var(--radius-sm)] border-2 shadow-[inset_0_1px_3px_rgba(0,0,0,.14)] transition-transform hover:-translate-y-px",
-            focusRing,
-            isSelected(fid) ? "border-[var(--gt-ink-900)] ring-2 ring-[var(--gt-blue-300)] ring-offset-2" : "border-black/5",
-          )}
-        />
-      ))}
-      {custom && (
-        <span
-          role="img"
-          aria-label={t("studio.editor.finishes.customValue", { hex: custom.toUpperCase() })}
-          title={t("studio.editor.finishes.custom")}
-          style={{ background: custom }}
-          className="h-10 rounded-[var(--radius-sm)] border-2 border-[var(--gt-ink-900)] ring-2 ring-[var(--gt-blue-300)] ring-offset-2"
-        />
-      )}
     </div>
   );
 }
@@ -331,8 +256,6 @@ function ActionRow({ onDuplicate, onDelete, count }: { onDuplicate: () => void; 
   );
 }
 
-const mm = (t: (k: string, o?: Record<string, unknown>) => string) => (v: number) =>
-  t("studio.editor.inspector.mm", { value: (v * 2).toFixed(1) });
 const offsetText = (v: number) => `${v >= 0 ? "+" : ""}${v.toFixed(2)}`;
 
 /* -------------------------------------------------------------------- panels */
@@ -342,7 +265,6 @@ function MultiPanel({ selected }: { selected: PlacedJewelry[] }) {
   const first = selected[0];
   const ids = selected.map((j) => j.id);
   const teethUsed = new Set(selected.map((j) => j.toothId)).size;
-  const sharedCustom = selected.every((j) => j.customColor && j.customColor === first.customColor) ? first.customColor! : null;
   const alignLabelId = useId();
 
   return (
@@ -358,47 +280,14 @@ function MultiPanel({ selected }: { selected: PlacedJewelry[] }) {
       <Hint className="mt-1.5">{t("studio.editor.inspector.multiSub", { count: teethUsed })}</Hint>
       <SaveSelectionAsGroup ids={ids} />
 
-      <SectionLabel>{t("studio.editor.inspector.typeAll")}</SectionLabel>
-      <TypeSelect
-        label={t("studio.editor.inspector.typeAll")}
-        value={first.jewelryTypeId}
-        onChange={(typeId) => {
-          studioStore.pushHistory();
-          studioStore.updateSelected({ jewelryTypeId: typeId });
-        }}
-      />
+      <SectionLabel info={t("studio.editor.inspector.colorHint")}>{t("studio.editor.inspector.colorAll")}</SectionLabel>
+      <ColorOptions selected={selected} />
 
-      <SectionLabel>{t("studio.editor.inspector.sizeAll")}</SectionLabel>
-      <Slider
-        label={t("studio.editor.inspector.diameter")}
-        value={first.scale}
-        {...SCALE_RANGE}
-        format={mm(t)}
-        onCommit={(v) => studioStore.updateSelected({ scale: v })}
-      />
+      <SectionLabel info={t("studio.editor.inspector.sizeHint")}>{t("studio.editor.inspector.sizeAll")}</SectionLabel>
+      <SizeOptions selected={selected} />
 
       <SectionLabel info={t("studio.editor.inspector.rotationGroupHint")}>{t("studio.editor.inspector.rotationAll")}</SectionLabel>
       <GroupTurnButtons ids={ids} />
-
-      <SectionLabel>{t("studio.editor.inspector.finishAll")}</SectionLabel>
-      <Swatches
-        isSelected={(fid) => selected.every((j) => !j.customColor && j.color === fid)}
-        onPick={(fid) => {
-          studioStore.pushHistory();
-          studioStore.paintSelected({ color: fid, customColor: undefined });
-        }}
-        custom={sharedCustom}
-      />
-
-      <SectionLabel>{t("studio.editor.inspector.customColorAll")}</SectionLabel>
-      <ColorWheel
-        hex={first.customColor ?? null}
-        onPick={(hex) => studioStore.paintSelected({ customColor: hex })}
-        onClear={() => {
-          studioStore.pushHistory();
-          studioStore.paintSelected({ customColor: undefined });
-        }}
-      />
 
       <SectionLabel>{t("studio.editor.inspector.mountingAll")}</SectionLabel>
       <Slider
@@ -488,8 +377,10 @@ function GroupTurnButtons({ ids }: { ids: string[] }) {
 }
 
 function SinglePanel({ jewel, snap }: { jewel: PlacedJewelry; snap: StudioSnapshot }) {
-  const { t, pieceName, toothName, toothShort, formatEstimate } = useEditorLabels();
-  const def = JEWELRY_BY_ID[jewel.jewelryTypeId];
+  const { t, pieceName, finishName, toothName, toothShort, formatEstimate } = useEditorLabels();
+  const gem = useStudioGems().byKey.get(jewel.productId);
+  const finish = gem ? findFinish(gem, jewel.variantId) : null;
+  const colour = finishName(jewel);
   const surface = getEngine()?.describeSurface(jewel) ?? null;
   const set = (patch: Partial<PlacedJewelry>, history = true) => {
     if (history) studioStore.pushHistory();
@@ -503,43 +394,42 @@ function SinglePanel({ jewel, snap }: { jewel: PlacedJewelry; snap: StudioSnapsh
           aria-hidden="true"
           className="grid h-11 w-11 flex-none place-items-center rounded-[var(--radius-md)] bg-[var(--surface-brand-wash)] text-[var(--gt-blue-700)]"
         >
-          <PieceIcon id={jewel.jewelryTypeId} size={24} />
+          <GemPhoto src={finish?.image ?? gem?.image} look={jewel.look} size={36} />
         </span>
         <div className="grid min-w-0 gap-1">
           <h2 className="m-0 text-[length:var(--text-h4)] font-[var(--weight-black)] leading-tight text-[var(--text-primary)]">
-            {pieceName(jewel.jewelryTypeId)}
+            {pieceName(jewel)}
           </h2>
+          {colour && <p className="m-0 text-[12px] font-semibold text-[var(--text-body)]">{colour}</p>}
           <Hint>
             {jewel.toothId === FREE_TOOTH
               ? t("studio.editor.freePlacement")
               : t("studio.editor.inspector.onTooth", { fdi: jewel.toothId, name: toothName(jewel.toothId) })}
           </Hint>
-          <p className="m-0 text-[12px] font-semibold text-[var(--text-primary)]" title={t("studio.editor.estimateHint")}>
-            {t("studio.editor.estimateShort", { total: formatEstimate(estimateCents(jewel)) })}
-          </p>
+          {gem && finish ? (
+            <p className="m-0 flex flex-wrap items-center gap-x-2 text-[12px] font-semibold text-[var(--text-primary)]">
+              <span title={t("studio.editor.estimateHint")}>{t("studio.editor.shopPrice", { price: formatEstimate(finish.priceMinor) })}</span>
+              <Link
+                to={`/boutique/${gem.slug}`}
+                target="_blank"
+                rel="noopener"
+                className={clsx("inline-flex items-center gap-1 text-[var(--gt-blue-700)] underline-offset-2 hover:underline", focusRing)}
+              >
+                {t("studio.editor.inspector.viewInShop")}
+                <ExternalLink size={12} aria-hidden="true" />
+              </Link>
+            </p>
+          ) : (
+            <Hint>{t("studio.editor.inspector.unavailable")}</Hint>
+          )}
         </div>
       </div>
 
-      <SectionLabel>{t("studio.editor.inspector.type")}</SectionLabel>
-      <TypeSelect
-        label={t("studio.editor.inspector.type")}
-        value={jewel.jewelryTypeId}
-        onChange={(typeId) => {
-          const next = JEWELRY_BY_ID[typeId];
-          // Keep a finish the customer chose; follow the new piece's default otherwise.
-          const adoptColor = jewel.color === def.defaultColor;
-          set({ jewelryTypeId: next.id, color: adoptColor ? next.defaultColor : jewel.color });
-        }}
-      />
+      <SectionLabel info={t("studio.editor.inspector.colorHint")}>{t("studio.editor.inspector.color")}</SectionLabel>
+      <ColorOptions selected={[jewel]} />
 
-      <SectionLabel>{t("studio.editor.inspector.size")}</SectionLabel>
-      <Slider
-        label={t("studio.editor.inspector.diameter")}
-        value={jewel.scale}
-        {...SCALE_RANGE}
-        format={mm(t)}
-        onCommit={(v) => set({ scale: v }, false)}
-      />
+      <SectionLabel info={t("studio.editor.inspector.sizeHint")}>{t("studio.editor.inspector.size")}</SectionLabel>
+      <SizeOptions selected={[jewel]} />
 
       <SectionLabel>{t("studio.editor.inspector.rotation")}</SectionLabel>
       <QuickRotate
@@ -555,26 +445,6 @@ function SinglePanel({ jewel, snap }: { jewel: PlacedJewelry; snap: StudioSnapsh
         step={1}
         format={(v) => `${Math.round(v)}°`}
         onCommit={(v) => set({ rotation: v }, false)}
-      />
-
-      <SectionLabel>{t("studio.editor.inspector.finish")}</SectionLabel>
-      <Swatches
-        isSelected={(fid) => !jewel.customColor && jewel.color === fid}
-        onPick={(fid) => {
-          studioStore.pushHistory();
-          studioStore.paintSelected({ color: fid, customColor: undefined });
-        }}
-        custom={jewel.customColor ?? null}
-      />
-
-      <SectionLabel>{t("studio.editor.inspector.customColor")}</SectionLabel>
-      <ColorWheel
-        hex={jewel.customColor ?? null}
-        onPick={(hex) => studioStore.paintSelected({ customColor: hex })}
-        onClear={() => {
-          studioStore.pushHistory();
-          studioStore.paintSelected({ customColor: undefined });
-        }}
       />
 
       <SectionLabel info={t("studio.editor.inspector.standoffHint")}>{t("studio.editor.inspector.mounting")}</SectionLabel>
@@ -654,15 +524,16 @@ function ToothPanel({ snap, toothId }: { snap: StudioSnapshot; toothId: string }
 
       <SectionLabel>{t("studio.editor.inspector.piecesOnTooth")}</SectionLabel>
       {onTooth.length === 0 && <Hint>{t("studio.editor.inspector.toothEmpty")}</Hint>}
-      <PieceList jewels={onTooth} label={(j) => pieceName(j.jewelryTypeId)} />
+      <PieceList jewels={onTooth} label={pieceName} />
     </>
   );
 }
 
 function OverviewPanel({ snap }: { snap: StudioSnapshot }) {
   const { t, pieceName, formatEstimate } = useEditorLabels();
+  const { byKey } = useStudioGems();
   const zones = new Set(snap.jewels.map((j) => j.toothId)).size;
-  const total = snap.jewels.reduce((s, j) => s + estimateCents(j), 0);
+  const total = estimateComposition(snap.jewels, (key) => byKey.get(key)).totalMinor;
   const stat = (value: string | number, label: string) => (
     <div className="grid flex-1 gap-0.5 rounded-[var(--radius-md)] border border-[var(--border-subtle)] bg-[var(--surface-page)] p-3 text-center">
       <strong className="text-[22px] font-[var(--weight-black)] leading-none text-[var(--text-primary)]">{value}</strong>
@@ -703,7 +574,7 @@ function OverviewPanel({ snap }: { snap: StudioSnapshot }) {
 
       <SectionLabel info={t("studio.editor.inspector.noOverlap")}>{t("studio.editor.inspector.design")}</SectionLabel>
       {snap.jewels.length === 0 && <Hint>{t("studio.editor.inspector.designEmpty")}</Hint>}
-      <PieceList jewels={snap.jewels} label={(j) => pieceName(j.jewelryTypeId)} focusCamera />
+      <PieceList jewels={snap.jewels} label={pieceName} focusCamera />
 
       {/* Keyboard and mouse shortcuts mean nothing on a touch screen. */}
       <div className="max-lg:hidden">
@@ -761,7 +632,7 @@ function PieceList({
             <span className="rounded-[6px] border border-[var(--border-subtle)] bg-[var(--surface-card)] px-1.5 py-0.5 text-[10.5px] tabular-nums text-[var(--text-muted)]">
               {toothTag(j.toothId)}
             </span>
-            <PieceIcon id={j.jewelryTypeId} size={15} className="text-[var(--gt-blue-600)]" />
+            <PieceIcon look={j.look} size={15} />
             <span className="truncate">{label(j)}</span>
           </button>
         </li>
