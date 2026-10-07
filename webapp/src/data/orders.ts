@@ -44,6 +44,8 @@ export interface PurchasedItem {
   productId?: string;
   /** Set for courses, so the history can link back to the course. */
   courseId?: string;
+  /** Set for a gift card purchase: the design the buyer chose, so the history draws that card. */
+  giftCardDesign?: string;
   name: Localized;
   variant?: Localized;
   image: string;

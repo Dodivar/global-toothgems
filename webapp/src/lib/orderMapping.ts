@@ -43,6 +43,8 @@ export interface OrderItemRow {
 export interface CustomerOrderItemRow extends OrderItemRow {
   id: string;
   discount_amount: Amount;
+  /** The card sold by a gift card line (readable by its purchaser only). */
+  gift_cards?: { design: string }[] | { design: string } | null;
 }
 
 export interface ShipmentRow {
@@ -128,7 +130,7 @@ export const CUSTOMER_ORDER_SELECT = `
   gift_card_amount, amount_due, prices_include_tax, shipping_method_name,
   billing_address, shipping_address,
   order_items ( id, product_name, variant_name, variant_id, unit_price, quantity, discount_amount, product:products ( slug ),
-                course:courses ( slug ) ),
+                course:courses ( slug ), gift_cards ( design ) ),
   order_discounts ( label, code, goods_amount, shipping_amount ),
   shipments ( id, status, carrier, service, tracking_number, tracking_url, estimated_delivery,
               shipped_at, delivered_at, created_at, shipment_items ( order_item_id, quantity ) ),
@@ -235,8 +237,10 @@ export function mapCustomerLine(
   const slug = row.product?.slug;
   const product = slug ? findProduct(slug) : undefined;
   const unitAmount = toMinorUnits(row.unit_price);
+  const card = Array.isArray(row.gift_cards) ? row.gift_cards[0] : row.gift_cards;
   return {
     id: row.id,
+    giftCardDesign: card?.design,
     productId: product ? slug : undefined,
     courseId: row.course?.slug ?? undefined,
     name: { fr: row.product_name, en: row.product_name },

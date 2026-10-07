@@ -8,6 +8,7 @@ import { Button } from "../../components/ui/Button";
 import { Badge } from "../../components/ui/Badge";
 import { EmptyPanel } from "../../components/account/SectionHeader";
 import { OrderStatusBadges, ShipmentTracking } from "../../components/account/OrderCard";
+import { OrderLineThumb } from "../../components/account/OrderLineThumb";
 import { OrderLineReviewAction } from "../../components/reviews/OrderLineReviewAction";
 import { isActiveOrder, isShipment, type Order, type OrderAddress, type OrderParcel } from "../../data/orders";
 import { pick } from "../../data/types";
@@ -157,11 +158,7 @@ function Lines({ order, lang }: { order: Order; lang: string }) {
           const name = pick(line.name, lang);
           return (
             <li key={line.id} className="flex items-start gap-3">
-              {line.image ? (
-                <img src={line.image} alt="" loading="lazy" decoding="async" className="h-14 w-14 flex-none rounded-[var(--radius-sm)] object-cover" />
-              ) : (
-                <span aria-hidden="true" className="h-14 w-14 flex-none rounded-[var(--radius-sm)] bg-[var(--surface-sunken)]" />
-              )}
+              <OrderLineThumb line={line} size={56} />
               <span className="grid min-w-0 flex-1 gap-0.5">
                 <span className="text-[length:var(--text-body-sm)] font-semibold text-[var(--text-primary)]">
                   {line.productId || line.courseId ? (

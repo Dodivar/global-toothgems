@@ -3,6 +3,7 @@ import { useTranslation } from "react-i18next";
 import { Link } from "../../lib/navigation";
 import { ArrowRight, Truck } from "lucide-react";
 import { Badge, type BadgeTone } from "../ui/Badge";
+import { OrderLineThumb } from "./OrderLineThumb";
 import { ProgressBar } from "../ui/ProgressBar";
 import {
   isActiveOrder,
@@ -145,18 +146,7 @@ export function OrderCard({
           const to = line.productId ? `/boutique/${line.productId}` : line.courseId ? courseHref(line.courseId) : null;
           return (
             <li key={line.id} className="flex items-center gap-3">
-              {line.image ? (
-                <img
-                  src={line.image}
-                  alt=""
-                  loading="lazy"
-                  decoding="async"
-                  className="h-12 w-12 flex-none rounded-[var(--radius-sm)] object-cover"
-                  style={{ opacity: active ? 1 : 0.5 }}
-                />
-              ) : (
-                <span aria-hidden="true" className="h-12 w-12 flex-none rounded-[var(--radius-sm)] bg-[var(--surface-sunken)]" />
-              )}
+              <OrderLineThumb line={line} size={48} dimmed={!active} />
               <span className="grid min-w-0 flex-1 gap-0.5">
                 <span className="truncate text-[length:var(--text-body-sm)] font-semibold text-[var(--text-primary)]">
                   {to ? (

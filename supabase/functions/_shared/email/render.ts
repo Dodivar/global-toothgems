@@ -50,6 +50,8 @@ export interface EmailContent {
   intro?: string;
   primaryAction?: Link;
   secondaryAction?: Link;
+  /** Visual placed between the intro and the body (a gift card, say). */
+  lead?: Block[];
   /** Order summary, course card, notices… placed after the body and the actions. */
   blocks?: Block[];
   /** Marketing e-mails only. */
@@ -150,6 +152,7 @@ export function renderEmail(
     ...(content.eyebrow ? [eyebrow(content.eyebrow)] : []),
     ...(heading ? [title(heading)] : []),
     ...(content.intro ? [intro(content.intro)] : []),
+    ...(content.lead ?? []),
     { html: `<div style="margin:16px 0 0;">${bodyHtml}</div>`, text: bodyText },
     ...(content.primaryAction || content.secondaryAction
       ? [actions(content.primaryAction ?? null, content.secondaryAction ?? null)]
