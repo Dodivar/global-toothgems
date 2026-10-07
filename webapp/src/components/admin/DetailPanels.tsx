@@ -19,6 +19,7 @@ import {
 } from "lucide-react";
 import type { LucideIcon } from "lucide-react";
 import { Button } from "../ui/Button";
+import { OrderLineThumb } from "../account/OrderLineThumb";
 import { Badge, type BadgeTone } from "../ui/Badge";
 import {
   customerInitials,
@@ -221,6 +222,9 @@ export function ItemsCard({ order }: { order: AdminOrder }) {
               key={line.id}
               className="flex flex-wrap items-center gap-3 border-b border-[var(--border-subtle)] py-3 first:pt-0 last:border-b-0 last:pb-0"
             >
+              {line.giftCardDesign ? (
+                <OrderLineThumb line={line} size={56} />
+              ) : (
               <span className="grid h-14 w-14 flex-none place-items-center overflow-hidden rounded-[var(--radius-sm)] border border-[var(--border-subtle)] bg-[var(--surface-sunken)]">
                 {line.courseId ? (
                   <GraduationCap size={20} className="text-[var(--gt-blue-700)]" aria-hidden="true" />
@@ -230,6 +234,7 @@ export function ItemsCard({ order }: { order: AdminOrder }) {
                   <Package size={20} className="text-[var(--text-subtle)]" aria-hidden="true" />
                 )}
               </span>
+              )}
 
               <span className="grid min-w-[140px] flex-1 gap-0.5">
                 {to ? (
