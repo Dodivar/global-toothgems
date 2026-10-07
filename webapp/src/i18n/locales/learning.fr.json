@@ -146,8 +146,6 @@
     "questions_one": "{{count}} question",
     "questions_other": "{{count}} questions",
     "passMark": "{{score}} % pour réussir",
-    "attemptsLeft_one": "{{count}} tentative restante",
-    "attemptsLeft_other": "{{count}} tentatives restantes",
     "reassure": "Aucune question piège — chaque réponse est expliquée, juste ou non.",
     "start": "Commencer",
     "retry": "Réessayer",
@@ -174,9 +172,6 @@
     "failedTitle": "Vous y êtes presque",
     "failedBody": "Relisez les explications — c’est le chemin le plus court vers les bonnes réponses — puis réessayez quand vous êtes prête ou prêt.",
     "reviewModule": "Revoir le module",
-    "noAttemptsTitle": "Vous avez utilisé toutes vos tentatives",
-    "noAttemptsBody": "Prenez le temps de revoir le module. Notre équipe peut rouvrir le point de connaissances pour vous : il suffit de nous écrire.",
-    "contact": "Contacter l’équipe",
     "saveFailed": "Votre réponse n’a pas pu être envoyée. Vérifiez votre connexion et réessayez : vos réponses sont conservées."
   }
 }

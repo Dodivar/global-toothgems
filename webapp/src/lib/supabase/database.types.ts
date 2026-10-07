@@ -1627,12 +1627,10 @@ export type Database = {
       }
       course_quizzes: {
         Row: {
-          allow_retry: boolean
           created_at: string
           id: string
           immediate_feedback: boolean
           intro: string | null
-          max_attempts: number
           module_id: string
           passing_score: number
           show_answers: boolean
@@ -1641,12 +1639,10 @@ export type Database = {
           updated_at: string
         }
         Insert: {
-          allow_retry?: boolean
           created_at?: string
           id?: string
           immediate_feedback?: boolean
           intro?: string | null
-          max_attempts?: number
           module_id: string
           passing_score?: number
           show_answers?: boolean
@@ -1655,12 +1651,10 @@ export type Database = {
           updated_at?: string
         }
         Update: {
-          allow_retry?: boolean
           created_at?: string
           id?: string
           immediate_feedback?: boolean
           intro?: string | null
-          max_attempts?: number
           module_id?: string
           passing_score?: number
           show_answers?: boolean

@@ -295,7 +295,8 @@ export function recordQuizAttempt(
   const quiz = course.modules[path[index].moduleIndex].quiz;
   if (!quiz) return record;
   const previous = record.quizResults[key];
-  if (previous && attemptsLeft(quiz, previous) === 0) return record;
+  // A passed check has nothing left to prove (the server refuses a new attempt).
+  if (previous?.passed) return record;
 
   const passed = score >= quiz.settings.passingScore;
   const result: QuizResult = {
@@ -314,17 +315,6 @@ export function recordQuizAttempt(
 /* -------------------------------------------------------------------------- */
 /* Knowledge checks                                                            */
 /* -------------------------------------------------------------------------- */
-
-/**
- * Attempts still available. A passed check has nothing left to prove; without
- * "allow another attempt" there is exactly one; otherwise the authored count.
- */
-export function attemptsLeft(quiz: Quiz, result: QuizResult | undefined): number {
-  const used = result?.attempts ?? 0;
-  if (result?.passed) return 0;
-  const allowed = quiz.settings.allowRetry ? Math.max(1, quiz.settings.attempts) : 1;
-  return Math.max(0, allowed - used);
-}
 
 export interface QuizScore {
   correct: number;

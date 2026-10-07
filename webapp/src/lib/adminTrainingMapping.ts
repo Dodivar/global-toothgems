@@ -179,8 +179,6 @@ function rowToQuiz(row: QuizRow): Quiz {
     questions: byPosition(row.quiz_questions).map(rowToQuestion),
     settings: {
       passingScore: row.passing_score,
-      allowRetry: row.allow_retry,
-      attempts: row.max_attempts,
       shuffleAnswers: row.shuffle_answers,
       immediateFeedback: row.immediate_feedback,
       showAnswers: row.show_answers,
@@ -312,8 +310,6 @@ function quizPayload(quiz: Quiz) {
     title: trim(quiz.title.fr),
     intro: trim(quiz.intro.fr),
     passing_score: quiz.settings.passingScore,
-    allow_retry: quiz.settings.allowRetry,
-    max_attempts: quiz.settings.attempts,
     shuffle_answers: quiz.settings.shuffleAnswers,
     immediate_feedback: quiz.settings.immediateFeedback,
     show_answers: quiz.settings.showAnswers,

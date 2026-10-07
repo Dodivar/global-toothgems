@@ -453,5 +453,5 @@ function CompletionCard({
 /** The learner's check, graded in the browser: the preview holds the answer keys. */
 function PreviewQuiz({ quiz, lang, onPassed }: { quiz: Quiz; lang: ContentLang; onPassed: () => void }) {
   const grader = useMemo(() => localGrader(quiz), [quiz]);
-  return <QuizPlayer quiz={quiz} lang={lang} unlimited grader={grader} onSubmitted={(score) => score.passed && onPassed()} />;
+  return <QuizPlayer quiz={quiz} lang={lang} grader={grader} onSubmitted={(score) => score.passed && onPassed()} />;
 }

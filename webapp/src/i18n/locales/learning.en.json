@@ -146,8 +146,6 @@
     "questions_one": "{{count}} question",
     "questions_other": "{{count}} questions",
     "passMark": "{{score}}% to pass",
-    "attemptsLeft_one": "{{count}} attempt left",
-    "attemptsLeft_other": "{{count}} attempts left",
     "reassure": "No trick questions — each answer comes with an explanation, right or wrong.",
     "start": "Start",
     "retry": "Try again",
@@ -174,9 +172,6 @@
     "failedTitle": "Almost there",
     "failedBody": "Read through the explanations — they’re the quickest way to the answers — then try again when you’re ready.",
     "reviewModule": "Review the module",
-    "noAttemptsTitle": "You’ve used all your attempts",
-    "noAttemptsBody": "Take a moment to review the module. Our team can reopen the knowledge check for you — just get in touch.",
-    "contact": "Contact the team",
     "saveFailed": "Your answer could not be sent. Check your connection and try again: your answers are kept."
   }
 }

@@ -653,31 +653,6 @@ export function QuizSettingsPanel({
       <span aria-hidden="true" className="block h-px bg-[var(--border-subtle)]" />
 
       <ToggleSwitch
-        label={t("admin.training.quiz.allowRetry")}
-        description={t("admin.training.quiz.allowRetryHint")}
-        checked={settings.allowRetry}
-        onChange={(v) => set("allowRetry", v)}
-      />
-
-      {settings.allowRetry && (
-        <FormField label={t("admin.training.quiz.attempts")} hint={t("admin.training.quiz.attemptsHint")}>
-          {(props) => (
-            <input
-              {...props}
-              type="number"
-              min={1}
-              max={10}
-              className="gt-admin-field tabular-nums"
-              value={settings.attempts}
-              onChange={(e) => set("attempts", Math.max(1, Number(e.target.value) || 1))}
-            />
-          )}
-        </FormField>
-      )}
-
-      <span aria-hidden="true" className="block h-px bg-[var(--border-subtle)]" />
-
-      <ToggleSwitch
         label={t("admin.training.quiz.shuffle")}
         description={t("admin.training.quiz.shuffleHint")}
         checked={settings.shuffleAnswers}
