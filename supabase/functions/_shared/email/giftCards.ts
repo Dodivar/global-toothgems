@@ -14,14 +14,18 @@
  * never logged.
  */
 import type { SupabaseClient } from "npm:@supabase/supabase-js@2.57.4";
+import { giftCardVisual } from "./components.ts";
 import { formatAmount } from "./format.ts";
 import { type EmailDeps, sendTemplatedEmail } from "./send.ts";
 
 export interface DueGiftCard {
   id: string;
   recipientEmail: string;
+  recipientName: string | null;
   senderName: string | null;
   message: string | null;
+  /** The design the buyer picked (`gift_cards.design`). */
+  design: string;
   currency: string;
   amount: number;
   expiresAt: string | null;
@@ -56,6 +60,10 @@ const SENT_STATUSES = new Set(["sent", "delivered", "opened", "bounced", "compla
 
 const ANONYMOUS_SENDER: Record<string, string> = { fr: "Quelqu’un", en: "Someone" };
 const NO_EXPIRY: Record<string, string> = { fr: "aucune", en: "none" };
+// Same wording as the storefront's card preview (promo.visual.*).
+const CARD_LABEL: Record<string, string> = { fr: "Carte cadeau", en: "Gift card" };
+const FOR: Record<string, string> = { fr: "Pour {name}", en: "For {name}" };
+const FROM: Record<string, string> = { fr: "De la part de {name}", en: "From {name}" };
 
 function localised(map: Record<string, string>, locale: string): string {
   return map[locale] ?? map.en;
@@ -104,6 +112,19 @@ export async function deliverGiftCards(
           expires_on: card.expiresAt ? formatDate(card.expiresAt, card.locale) : localised(NO_EXPIRY, card.locale),
           shop_url: `${deps.layout.siteUrl}/${card.locale === "en" ? "en" : "fr"}`,
         },
+        // The card as the buyer composed it (design, names, message), like the checkout preview.
+        content: (locale) => ({
+          lead: [
+            giftCardVisual({
+              design: card.design,
+              amount: formatAmount(card.amount, card.currency, locale),
+              label: localised(CARD_LABEL, locale),
+              recipient: card.recipientName ? localised(FOR, locale).replace("{name}", card.recipientName.trim()) : undefined,
+              sender: card.senderName ? localised(FROM, locale).replace("{name}", card.senderName.trim()) : undefined,
+              message: card.message ?? undefined,
+            }),
+          ],
+        }),
         eventKey: `gift_card:${card.id}`,
         giftCardId: card.id,
         orderId: card.orderId ?? undefined,
@@ -143,7 +164,7 @@ export function supabaseGiftCardSource(db: SupabaseClient): GiftCardSource {
     async listDue({ orderId, limit, now }) {
       let query = db
         .from("gift_cards")
-        .select("id, recipient_email, sender_name, message, currency, initial_amount, expires_at, order_id, orders(locale)")
+        .select("id, recipient_email, recipient_name, sender_name, message, design, currency, initial_amount, expires_at, order_id, orders(locale)")
         .eq("state", "active")
         .in("delivery_status", ["pending", "scheduled"])
         .or(`deliver_at.is.null,deliver_at.lte.${now.toISOString()}`)
@@ -158,8 +179,10 @@ export function supabaseGiftCardSource(db: SupabaseClient): GiftCardSource {
         return {
           id: row.id as string,
           recipientEmail: row.recipient_email as string,
+          recipientName: (row.recipient_name as string | null) ?? null,
           senderName: (row.sender_name as string | null) ?? null,
           message: (row.message as string | null) ?? null,
+          design: (row.design as string | null) ?? "sparkle",
           currency: row.currency as string,
           amount: Number(row.initial_amount),
           expiresAt: (row.expires_at as string | null) ?? null,

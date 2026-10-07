@@ -101,6 +101,21 @@ describe("mapOrder — line photo", () => {
   });
 });
 
+describe("mapOrder — gift card lines", () => {
+  const design = (gift_cards: unknown) =>
+    mapOrder({ ...row, order_items: [{ ...row.order_items[0], gift_cards } as never] }, find).lines[0].giftCardDesign;
+
+  it("carries the design the buyer chose, whether the API sends one card or a list", () => {
+    expect(design([{ design: "noir" }])).toBe("noir");
+    expect(design({ design: "blush" })).toBe("blush");
+  });
+
+  it("has no design for an ordinary line", () => {
+    expect(design([])).toBeUndefined();
+    expect(design(null)).toBeUndefined();
+  });
+});
+
 describe("mapOrder — amounts", () => {
   it("takes every amount as recorded, in integer minor units", () => {
     const { amounts, currency } = mapOrder(row, find);

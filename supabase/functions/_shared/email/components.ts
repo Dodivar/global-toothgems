@@ -374,6 +374,62 @@ export function courseCard(options: CourseCardOptions): Block {
   };
 }
 
+export type GiftCardDesignName = "sparkle" | "blush" | "mint" | "noir" | "photo";
+
+export interface GiftCardVisualOptions {
+  /** The design chosen by the buyer; anything unknown falls back to `sparkle`. */
+  design: string;
+  /** Formatted amount ("50,00 €"). */
+  amount: string;
+  /** "Carte cadeau" */
+  label: string;
+  /** "Pour Léa" */
+  recipient?: string;
+  /** "De la part de Camille" */
+  sender?: string;
+  /** The buyer's message, as written. */
+  message?: string;
+}
+
+// The site's `.gt-giftcard[data-design]` washes (webapp/src/index.css) as literals:
+// a solid fallback for clients that drop gradients, the gradient on top.
+const CARD_DESIGNS: Record<GiftCardDesignName, { from: string; to: string; ink: string; dark: boolean; bubble: string }> = {
+  sparkle: { from: "#e7eef7", to: "#9cb4d3", ink: color.ink, dark: false, bubble: "rgba(255,255,255,0.6)" },
+  blush: { from: "#fdeaf3", to: "#f59cc7", ink: color.ink, dark: false, bubble: "rgba(255,255,255,0.6)" },
+  mint: { from: "#e4f9f0", to: "#8ff0cb", ink: color.ink, dark: false, bubble: "rgba(255,255,255,0.6)" },
+  noir: { from: color.ink, to: color.body, ink: "#fafaf8", dark: true, bubble: "rgba(17,17,17,0.35)" },
+  // The photo card is a picture on the site; an e-mail keeps its dark wash.
+  photo: { from: color.ink, to: color.body, ink: "#fafaf8", dark: true, bubble: "rgba(17,17,17,0.35)" },
+};
+
+/**
+ * The gift card as the buyer designed it: same colours, same arrangement
+ * (label top, message, "for", amount, "from") as the storefront's preview, so
+ * what was written at checkout is what the recipient opens. The code is not on
+ * the card; it is given in the text under it.
+ */
+export function giftCardVisual(options: GiftCardVisualOptions): Block {
+  const d = CARD_DESIGNS[options.design as GiftCardDesignName] ?? CARD_DESIGNS.sparkle;
+  const message = options.message?.trim()
+    ? `<tr><td style="padding:14px 0 0;"><table ${TABLE}><tr><td style="background:${d.dark ? "#2a2a2a" : "#ffffff"};background:${d.bubble};border-radius:10px;padding:8px 12px;${font}font-size:13px;line-height:1.45;font-style:italic;color:${d.dark ? d.ink : color.body};">“${textHtml(options.message)}”</td></tr></table></td></tr>`
+    : "";
+  const recipient = options.recipient?.trim()
+    ? `<p style="margin:0 0 4px;${font}font-size:11px;line-height:1.3;font-weight:600;letter-spacing:0.08em;text-transform:uppercase;color:${d.ink};opacity:0.8;">${escapeHtml(options.recipient.trim())}</p>`
+    : "";
+  const sender = options.sender?.trim()
+    ? `<td align="right" valign="bottom" style="${font}font-size:11px;line-height:1.3;color:${d.ink};opacity:0.8;">${escapeHtml(options.sender.trim())}</td>`
+    : "";
+  return {
+    html: `<table ${TABLE} width="100%" style="width:100%;margin:0 0 24px;border-collapse:separate;"><tr><td bgcolor="${d.from}" style="background:${d.from};background-image:linear-gradient(135deg,${d.from},${d.to});border-radius:16px;padding:22px 24px;"><table ${TABLE} width="100%" style="width:100%;"><tr><td style="${font}font-size:11px;line-height:1.3;font-weight:700;letter-spacing:0.18em;text-transform:uppercase;color:${d.ink};">Global Toothgems</td><td align="right" style="${font}font-size:10px;line-height:1.3;font-weight:600;letter-spacing:0.18em;text-transform:uppercase;color:${d.ink};">${escapeHtml(options.label)}</td></tr>${message}<tr><td colspan="2" style="padding:${message ? "18" : "40"}px 0 0;">${recipient}</td></tr><tr><td valign="bottom" style="${font}font-size:36px;line-height:1.1;font-weight:700;letter-spacing:-0.01em;color:${d.ink};">${escapeHtml(options.amount)}</td>${sender}</tr></table></td></tr></table>`,
+    text: lines(
+      `${options.label.toUpperCase()} — ${options.amount}`,
+      options.recipient?.trim(),
+      options.message?.trim() && `“${options.message.trim()}”`,
+      options.sender?.trim(),
+    ),
+  };
+}
+
 export interface PromoOptions {
   eyebrow?: string;
   title: string;

@@ -16,8 +16,10 @@ const TEMPLATE: TemplateRow = {
 const CARD: DueGiftCard = {
   id: "c1",
   recipientEmail: "lea@example.com",
+  recipientName: "Léa",
   senderName: "Camille",
   message: "Joyeux anniversaire !",
+  design: "blush",
   currency: "EUR",
   amount: 50,
   expiresAt: "2027-10-05T00:00:00Z",
@@ -81,6 +83,12 @@ Deno.test("a due card is e-mailed with its code, then recorded as sent", async (
   assertStringIncludes(text, "GT-ABCD-EFGH-JKLM");
   assertStringIncludes(text, "5 octobre 2027");
   assertStringIncludes(text, "https://globaltoothgems.com/fr");
+  // The card is drawn in the buyer's design, with their names and message.
+  const html = mail.html as string;
+  assertStringIncludes(html, "#f59cc7");
+  assertStringIncludes(html, "Pour Léa");
+  assertStringIncludes(html, "De la part de Camille");
+  assertStringIncludes(html, "Joyeux anniversaire !");
   // The code never reaches the logs.
   assertEquals(JSON.stringify(seen.logged).includes("GT-ABCD"), false);
 });
