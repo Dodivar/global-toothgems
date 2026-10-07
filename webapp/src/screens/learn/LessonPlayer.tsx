@@ -17,7 +17,7 @@ import { pick } from "../../data/types";
 import { completionHref, learnHref, lessonHref } from "../../lib/academyUrl";
 import { isNodeDone, isRequired, isUnlocked, type CourseSummary, type PathNode } from "../../lib/learning/path";
 import type { ContentLang } from "../../lib/localized";
-import { useProgress } from "../../lib/progress";
+import { useCourseMediaUrl, useProgress } from "../../lib/progress";
 import { useToast } from "../../lib/toast";
 import { useFocusTrap } from "../../lib/useFocusTrap";
 import { formatDuration } from "../../lib/trainingFilters";
@@ -44,6 +44,7 @@ export function LessonPlayer() {
   const navigate = useNavigate();
   const { showToast } = useToast();
   const { visitNode, completeStep, quizGrader } = useProgress();
+  const mediaUrl = useCourseMediaUrl();
   const { card, access, training, record, summary, progress } = useLearnerCourse(courseId);
   const [sheetOpen, setSheetOpen] = useState(false);
   const [saving, setSaving] = useState(false);
@@ -86,6 +87,7 @@ export function LessonPlayer() {
   if (!node) return <Navigate to={learnHref(courseId)} replace />;
 
   const module = training.modules[node.moduleIndex];
+  const moduleCover = node.kind === "step" && node.indexInModule === 0 ? mediaUrl(module.cover) : "";
   const step = node.kind === "step" ? module.steps.find((s) => s.id === node.key) : undefined;
   const done = isNodeDone(node, record);
   const nextNode = summary.path[index + 1];
@@ -135,11 +137,11 @@ export function LessonPlayer() {
         onOpenContents={() => setSheetOpen(true)}
       />
 
-      <div className="mx-auto grid max-w-[1360px] gap-8 px-[clamp(16px,3vw,40px)] pb-32 pt-5 lg:grid-cols-[minmax(0,1fr)_348px] lg:pb-16 lg:pt-8">
+      <div className="mx-auto grid max-w-[1680px] gap-8 px-[clamp(16px,3vw,40px)] pb-32 pt-5 lg:grid-cols-[minmax(0,1fr)_348px] lg:pb-16 lg:pt-8">
         <div className="min-w-0">
           <MobileProgress node={node} course={training} summary={summary} />
 
-          <article className="mx-auto grid max-w-[820px] gap-7">
+          <article className="mx-auto grid max-w-[1080px] gap-7">
             <header className="grid gap-3">
               <p className="m-0 flex flex-wrap items-center gap-x-2 gap-y-1 text-[length:var(--text-eyebrow)] font-semibold uppercase tracking-[var(--tracking-eyebrow)] text-[var(--text-muted)]">
                 <span>{t("learning.moduleNumber", { number: node.moduleIndex + 1 })}</span>
@@ -159,6 +161,14 @@ export function LessonPlayer() {
                 </p>
               )}
               <LessonMeta node={node} blocks={step?.blocks ?? []} done={done} />
+              {moduleCover && (
+                <img
+                  src={moduleCover}
+                  alt=""
+                  aria-hidden="true"
+                  className="mt-2 aspect-[21/9] w-full rounded-[var(--radius-card)] object-cover"
+                />
+              )}
             </header>
 
             {!unlocked ? (
@@ -265,7 +275,7 @@ function PlayerBar({
   const { t } = useTranslation();
   return (
     <header className="sticky top-0 z-40 border-b border-[var(--border-subtle)] bg-[rgba(255,255,255,.88)] backdrop-blur-md">
-      <div className="mx-auto flex h-16 max-w-[1360px] items-center gap-3 px-[clamp(12px,3vw,40px)]">
+      <div className="mx-auto flex h-16 max-w-[1680px] items-center gap-3 px-[clamp(12px,3vw,40px)]">
         <Link
           to={learnHref(courseId)}
           className="flex min-w-0 items-center gap-2.5 rounded-[var(--radius-pill)] py-1 pr-3 text-[length:var(--text-body-sm)] font-semibold text-[var(--text-primary)] hover:text-[var(--text-link-hover)]"

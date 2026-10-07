@@ -11,7 +11,6 @@ import {
   QUADRANT_TEETH,
   TOOTH_SPECS,
   type PlacedJewelry,
-  type PresetItem,
   type ToothSpec,
   type Vec3,
 } from "../../data/studioEditor";
@@ -2313,7 +2312,7 @@ export class StudioEngine {
   private setHoverTooth(id: string | null) {
     if (this.hoverToothId !== id) {
       this.hoverToothId = id;
-      this.store.setHoveredTooth(id);
+      this.wake();
     }
   }
   private setCursor(css: string) {
@@ -2399,7 +2398,8 @@ export class StudioEngine {
   private createGhost(typeId: string) {
     const def = JEWELRY_BY_ID[typeId];
     const tpl = getJewelTemplate(def.geometry);
-    const spec = resolveFinishRaw(def.defaultColor);
+    const finish = this.store.initialFinish(typeId);
+    const spec = resolveFinishRaw(finish.color, finish.customColor);
     const baseColor = new THREE.Color(spec.hex).getHex();
     const material = new THREE.MeshBasicMaterial({ color: baseColor, transparent: true, opacity: 0.55, depthWrite: false });
     const root = new THREE.Group();
@@ -2509,26 +2509,8 @@ export class StudioEngine {
     if (tHit) this.focusTooth(tHit.toothId);
   };
 
-  /* ---------- presets & export ---------- */
+  /* ---------- export ---------- */
 
-  /** Build a preset's pieces on the current model; items whose tooth this model lacks are left out. */
-  buildPresetJewels(items: PresetItem[]): PlacedJewelry[] {
-    return items
-      .filter((it) => this.toothRigs.has(it.tooth) && JEWELRY_BY_ID[it.type])
-      .map((it) => {
-        const hit = this.getSurfacePoint(it.tooth, it.u ?? 0, it.v ?? 0);
-        return {
-          id: uid(),
-          jewelryTypeId: it.type,
-          toothId: it.tooth,
-          position: v3(hit.point.x, hit.point.y, hit.point.z),
-          normal: v3(hit.normal.x, hit.normal.y, hit.normal.z),
-          rotation: it.rot ?? 0,
-          scale: it.scale ?? JEWELRY_BY_ID[it.type].defaultScale,
-          color: it.finish ?? JEWELRY_BY_ID[it.type].defaultColor,
-        };
-      });
-  }
   /** Clean capture of the current view (overlays + highlights hidden) —
       shared by the PNG export and the quote sheet. With `only`, every other
       piece is hidden for the capture and shown again before it returns. */
@@ -2989,7 +2971,6 @@ export class StudioEngine {
     if (length < LASSO_MIN_LENGTH) return;
     const ids = this.piecesInLoop(l.points);
     if (!ids.length) {
-      notify("lassoEmpty", undefined, "info");
       return;
     }
     const current = this.store.getSnapshot().selectedJewelIds;

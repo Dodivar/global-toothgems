@@ -1,4 +1,4 @@
-import { assertEquals } from "jsr:@std/assert@1";
+import { assertEquals, assertStringIncludes } from "jsr:@std/assert@1";
 import { type OrderMailRow, sendOrderConfirmation } from "./orders.ts";
 import type { EmailDeps, EmailStore } from "./send.ts";
 
@@ -9,6 +9,20 @@ const ORDER: OrderMailRow = {
   locale: "en",
   firstName: "Camille",
   paymentStatus: "paid",
+  userId: "22222222-2222-4222-8222-222222222222",
+  currency: "EUR",
+  paidAt: "2026-10-07T10:00:00Z",
+  subtotal: 54.7,
+  discount: 0,
+  shipping: 4.9,
+  tax: 9.94,
+  total: 59.6,
+  giftCard: 0,
+  amountDue: 59.6,
+  pricesIncludeTax: true,
+  shippingMethodName: "Colissimo",
+  shippingAddress: { first_name: "Camille", last_name: "Martin", address_line1: "2 rue X", postal_code: "69002", city: "Lyon", country_code: "FR" },
+  lines: [{ productName: "Heart <Crystal>", variantName: "2 mm", quantity: 2, subtotal: 54.7 }],
 };
 
 function setup() {
@@ -69,4 +83,16 @@ Deno.test("an unpaid or unknown order sends nothing", async () => {
     { status: "skipped", reason: "order_not_found" },
   );
   assertEquals(unpaid.seen.requests.length + unknown.seen.requests.length, 0);
+});
+
+Deno.test("the confirmation carries the order summary, the address and a button to the member's order", async () => {
+  const { deps, seen } = setup();
+  await sendOrderConfirmation(deps, { loadOrder: () => Promise.resolve(ORDER) }, ORDER.id);
+  const body = await seen.requests[0].json();
+  assertStringIncludes(body.html, "Heart &lt;Crystal&gt;");
+  assertStringIncludes(body.html, "€59.60");
+  assertStringIncludes(body.html, "Lyon, France");
+  assertStringIncludes(body.html, 'href="https://globaltoothgems.com/compte/commandes/GT-100042"');
+  assertStringIncludes(body.text, "View my order: https://globaltoothgems.com/compte/commandes/GT-100042");
+  assertStringIncludes(body.text, "Total incl. VAT: €59.60");
 });

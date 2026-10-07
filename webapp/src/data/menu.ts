@@ -16,8 +16,8 @@ const img = photo;
  * slug missing here shows the brand's generic shot.
  */
 export const TAXONOMY_THUMBS: Record<string, string> = {
-  swarovski: img("img-05.jpg"),
-  preciosa: img("img-15.jpg"),
+  swarovski: "/brands/swarovski.webp",
+  preciosa: "/brands/preciosa.webp",
   "bijoux-or-18ct": img("img-04.jpg"),
   opales: img("img-14.jpg"),
   "micro-gems": img("img-07.jpg"),

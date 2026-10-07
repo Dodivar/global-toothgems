@@ -1,44 +1,59 @@
 "use client";
 
+import { useState } from "react";
 import { useTranslation } from "react-i18next";
-import { useNavigate, useParams } from "../../lib/navigation";
-import { ArrowRight, Award, LayoutDashboard, RotateCcw, Trophy } from "lucide-react";
+import { Link, useNavigate, useParams } from "../../lib/navigation";
+import { ArrowRight, Award, BookOpenCheck, CalendarCheck, Clock, Compass, Hash, LayoutDashboard, RotateCcw, Share2, Sparkles, Target } from "lucide-react";
 import { Button } from "../../components/ui/Button";
 import { ProgressRing } from "../../components/learning/LearningStatus";
-import { pick } from "../../data/types";
+import { certificateCourse, certificateRef } from "../../components/account/CertificateCard";
+import { CertificateSheet, useCertificateContent } from "../../components/account/CertificateDocument";
+import { AchievementBadge, AchievementStats, type AchievementStat } from "../../components/certificate/Achievement";
+import { Celebration } from "../../components/certificate/Celebration";
+import { DownloadCertificateButton } from "../../components/certificate/DownloadCertificateButton";
+import { ShareAchievementDialog } from "../../components/certificate/ShareAchievementDialog";
+import { CertificateNameForm } from "../../components/certificate/CertificateNameForm";
+import { pick, type Localized } from "../../data/types";
 import { learnHref, lessonHref } from "../../lib/academyUrl";
+import { useAuth } from "../../lib/auth";
+import { certificateHolder } from "../../lib/certificate/holder";
+import { useCertificateExport } from "../../lib/certificate/useCertificateExport";
 import { useFormat } from "../../lib/format";
+import type { CourseProgress, LearnerCourseCard } from "../../lib/progress";
+import { useToast } from "../../lib/toast";
 import { formatDuration } from "../../lib/trainingFilters";
 import { LearnAccessState } from "./LearnAccessState";
 import { useLearnerCourse } from "./useLearnerCourse";
 
-/** Spark positions around the medal: a festive frame, not a confetti storm. */
-const SPARKS = [
-  { x: "-110px", y: "-54px", r: "20deg", c: "var(--accent-cta)" },
-  { x: "112px", y: "-40px", r: "-30deg", c: "var(--gt-blue-300)" },
-  { x: "-86px", y: "58px", r: "45deg", c: "var(--gt-blue-400)" },
-  { x: "94px", y: "64px", r: "-12deg", c: "var(--accent-cta)" },
-  { x: "0px", y: "-104px", r: "60deg", c: "var(--gt-fuchsia-300)" },
-  { x: "-130px", y: "6px", r: "10deg", c: "var(--gt-emerald-300)" },
-  { x: "134px", y: "12px", r: "-50deg", c: "var(--gt-blue-200)" },
-];
+/** The ring around the badge: a progress ring closing on 100 %. */
+const RING = { size: 148, stroke: 4 } as const;
+const RING_R = (RING.size - RING.stroke) / 2;
+const RING_C = 2 * Math.PI * RING_R;
+
+/** Delay step of an element in the entrance sequence (`.gt-cert-seq`). */
+function seq(n: number) {
+  return { "--seq": n } as React.CSSProperties;
+}
 
 /**
- * The end of a training.
+ * The end of a training: a milestone, not a notice.
  *
- * A moment, briefly: a medal, a few sparks that settle (and simply sit still
- * under reduced motion), the course, the date and the numbers that earned it,
- * then the ways on — the certificate first when the course issues one. Opened
- * before the course is actually complete, it says what is left instead of
- * congratulating anyone early.
+ * The sequence reads before the words do: the progress ring closes on 100 %,
+ * the Academy's badge turns in, the headline and the course arrive, and the
+ * certificate — already made out to the member — rises into place with a
+ * short fall of confetti behind it. Then the two things to do with it,
+ * download and share, side by side, and the figures that earned it. Under
+ * reduced motion everything is simply there.
+ *
+ * Opened before the course is actually complete, it says what is left instead
+ * of congratulating anyone early. A course that issues no certificate still
+ * gets its moment, without a document.
  */
 export function CourseCompleted() {
-  const { formatDate } = useFormat();
   const { courseId = "" } = useParams();
-  const { t, i18n } = useTranslation();
-  const lang = i18n.language;
+  const { t } = useTranslation();
   const navigate = useNavigate();
-  const { access, training, summary, progress } = useLearnerCourse(courseId);
+  const { access, card, training, summary, progress } = useLearnerCourse(courseId);
 
   if (access.state !== "open" || !training || !summary) {
     return <LearnAccessState access={access} courseId={courseId} />;
@@ -64,67 +79,204 @@ export function CourseCompleted() {
     );
   }
 
+  const issues = training.completion.certificate && card !== undefined && progress.completedOn !== null;
+  return (
+    <CompletionMoment
+      courseId={courseId}
+      title={training.title}
+      card={issues ? card : undefined}
+      progress={progress}
+      stats={{ done: summary.doneCount, total: summary.total, average: summary.quizAverage, minutes: summary.totalMinutes }}
+    />
+  );
+}
+
+function CompletionMoment({
+  courseId,
+  title,
+  card,
+  progress,
+  stats,
+}: {
+  courseId: string;
+  title: Localized;
+  /** The course as the member area lists it — set only when a certificate was issued. */
+  card: LearnerCourseCard | undefined;
+  progress: CourseProgress;
+  stats: { done: number; total: number; average: number | null; minutes: number };
+}) {
+  const { t, i18n } = useTranslation();
+  const lang = i18n.language;
+  const { formatDate } = useFormat();
+  const navigate = useNavigate();
+  const { showToast } = useToast();
+  const { displayName, profile } = useAuth();
+  const [sharing, setSharing] = useState(false);
+  // The certificate's wording of the course when there is one, so the page and the document agree.
+  const courseTitle = pick(card?.title ?? title, lang);
+  const firstName = profile?.firstName?.trim() || displayName.split(" ")[0] || "";
+  // The profile's first and last name, required before the certificate is downloaded or shared.
+  const holder = certificateHolder(profile);
+  const holderName = holder.name || t("certificate.holderPlaceholder");
+
+  const awardedOn = progress.completedOn ?? "";
+  const reference = card ? certificateRef(card, progress) : "";
+  const content = useCertificateContent({
+    course: card ? certificateCourse(card, progress, lang, t) : { title, level: "", lessonCount: 0, duration: "" },
+    holder: holderName,
+    awardedOn: awardedOn || "1970-01-01",
+    reference,
+    lang,
+  });
+  const { status, download } = useCertificateExport(content);
+
+  const onDownload = () =>
+    void download("pdf").then((ok) =>
+      ok
+        ? showToast(t("certificate.downloadDoneLive"), t("certificate.downloadDoneBody"), "success")
+        : showToast(t("certificate.downloadError"), undefined, "error"),
+    );
+
+  const figures: AchievementStat[] = [
+    { icon: CalendarCheck, label: t("learning.stats.date"), value: awardedOn ? formatDate(awardedOn) : "—" },
+    { icon: BookOpenCheck, label: t("learning.stats.lessons"), value: `${stats.done}/${stats.total}` },
+    ...(stats.average !== null ? [{ icon: Target, label: t("learning.stats.average"), value: `${stats.average} %` }] : []),
+    ...(stats.minutes > 0 ? [{ icon: Clock, label: t("certificate.statLearning"), value: formatDuration(stats.minutes, lang) }] : []),
+    ...(card ? [{ icon: Hash, label: t("certificate.statReference"), value: reference, mono: true }] : []),
+  ];
+
   return (
     <div className="relative isolate overflow-hidden">
-      <div aria-hidden="true" className="absolute inset-0 -z-10 bg-[radial-gradient(ellipse_at_top,var(--gt-blue-100),transparent_65%)]" />
-      <section className="mx-auto grid max-w-[720px] justify-items-center gap-6 px-4 py-[clamp(48px,8vw,96px)] text-center">
-        <div className="relative grid h-[168px] w-[168px] place-items-center">
-          {SPARKS.map((spark, i) => (
-            <span
-              key={i}
-              aria-hidden="true"
-              className="gt-learn-spark absolute left-1/2 top-1/2 h-2.5 w-2.5 rounded-[3px]"
-              style={{ "--x": spark.x, "--y": spark.y, "--r": spark.r, background: spark.c, animationDelay: `${i * 40}ms` } as React.CSSProperties}
-            />
-          ))}
-          <span className="gt-celebrate grid h-[132px] w-[132px] place-items-center rounded-full bg-[conic-gradient(from_210deg,var(--gt-emerald-300),var(--gt-blue-300),var(--gt-emerald-400),var(--gt-emerald-300))] p-2 shadow-[var(--shadow-lg)]">
-            <span className="grid h-full w-full place-items-center rounded-full bg-[var(--surface-card)] text-[var(--accent-cta-ink)]">
-              <Trophy size={52} strokeWidth={1.6} aria-hidden="true" />
-            </span>
+      <Celebration />
+
+      <section
+        aria-labelledby="gt-completion-title"
+        className="mx-auto grid max-w-[1120px] grid-cols-[minmax(0,1fr)] gap-x-[clamp(32px,5vw,72px)] gap-y-7 px-4 pb-10 pt-[clamp(32px,6vw,72px)] text-center lg:grid-cols-[minmax(0,.9fr)_minmax(0,1.1fr)] lg:items-center lg:text-left lg:[grid-template-areas:'head_cert'_'actions_cert']"
+      >
+        {/* The moment: ring, badge, headline. */}
+        <div className="grid justify-items-center gap-4 lg:justify-items-start lg:[grid-area:head]">
+          <div className="relative grid place-items-center max-sm:-my-3 max-sm:scale-[.8]" style={{ width: RING.size, height: RING.size }}>
+            <svg width={RING.size} height={RING.size} viewBox={`0 0 ${RING.size} ${RING.size}`} aria-hidden="true" className="absolute inset-0 -rotate-90">
+              <circle cx={RING.size / 2} cy={RING.size / 2} r={RING_R} fill="none" stroke="var(--gt-blue-100)" strokeWidth={RING.stroke} />
+              <circle
+                className="gt-cert-ring-arc"
+                cx={RING.size / 2}
+                cy={RING.size / 2}
+                r={RING_R}
+                fill="none"
+                stroke="var(--accent-cta)"
+                strokeWidth={RING.stroke}
+                strokeLinecap="round"
+                strokeDasharray={RING_C}
+                strokeDashoffset={0}
+                style={{ "--circ": RING_C } as React.CSSProperties}
+              />
+            </svg>
+            <AchievementBadge size="lg" reveal />
+            <span className="sr-only">{t("certificate.progressDone")}</span>
+          </div>
+
+          <span
+            className="gt-cert-seq inline-flex items-center gap-2 rounded-full border border-white/80 bg-white/70 px-3.5 py-1.5 text-[11px] font-semibold uppercase tracking-[var(--tracking-eyebrow)] text-[var(--accent-highlight-ink)] shadow-[var(--shadow-xs)] backdrop-blur-[6px]"
+            style={seq(0)}
+          >
+            <Sparkles size={13} aria-hidden="true" />
+            {t("certificate.unlocked")}
           </span>
+
+          <div className="grid gap-2.5">
+            <p className="gt-cert-seq gt-accent m-0 text-[clamp(22px,3vw,30px)] text-[var(--gt-blue-600)]" style={seq(1)}>
+              {firstName ? t("certificate.bravoName", { name: firstName }) : t("learning.bravo")}
+            </p>
+            <h1 id="gt-completion-title" className="gt-cert-seq text-[clamp(30px,4.6vw,48px)] leading-[1.05]" style={seq(1)}>
+              {t("certificate.heroTitle")}
+            </h1>
+            <p className="gt-cert-seq m-0 text-[length:var(--text-body-lg)] font-semibold text-[var(--text-primary)]" style={seq(2)}>
+              {courseTitle}
+            </p>
+            <p className="gt-cert-seq m-0 mx-auto max-w-[46ch] text-[length:var(--text-body-md)] text-[var(--text-muted)] lg:mx-0" style={seq(3)}>
+              {card ? t("certificate.heroBody") : t("learning.completeBody")}
+            </p>
+          </div>
         </div>
 
-        <p aria-hidden="true" className="m-0 font-[family-name:var(--font-decorative)] text-[clamp(40px,6vw,60px)] leading-none text-[var(--gt-blue-500)]">
-          {t("learning.bravo")}
-        </p>
-        <div className="grid gap-2">
-          <h1 className="text-[clamp(28px,4vw,40px)]">{t("learning.completeTitle")}</h1>
-          <p className="m-0 text-[length:var(--text-body-lg)] font-semibold text-[var(--text-primary)]">{pick(training.title, lang)}</p>
-          <p className="m-0 max-w-[52ch] text-[length:var(--text-body-md)] text-[var(--text-muted)]">{t("learning.completeBody")}</p>
-        </div>
-
-        <dl className="m-0 grid w-full grid-cols-2 gap-3 sm:grid-cols-4">
-          {[
-            [t("learning.stats.status"), t("learning.courseStatus.completed")],
-            [t("learning.stats.date"), progress.completedOn ? formatDate(progress.completedOn) : "—"],
-            [t("learning.stats.lessons"), `${summary.doneCount}/${summary.total}`],
-            [t("learning.stats.average"), summary.quizAverage !== null ? `${summary.quizAverage}%` : "—"],
-          ].map(([label, value]) => (
-            <div key={label} className="flex flex-col-reverse gap-1 rounded-[var(--radius-md)] border border-[var(--border-subtle)] bg-[var(--surface-card)] p-3.5">
-              <dt className="text-[length:var(--text-caption)] text-[var(--text-muted)]">{label}</dt>
-              <dd className="m-0 text-[length:var(--text-body-md)] font-bold tabular-nums text-[var(--text-primary)]">{value}</dd>
+        {/* The certificate, made out to the member. */}
+        {card && (
+          <figure className="m-0 grid justify-items-center gap-3 lg:[grid-area:cert]">
+            <div className="gt-cert-reveal relative w-full max-w-[640px]">
+              <span aria-hidden="true" className="absolute -inset-3 -z-10 rounded-[var(--radius-card)] border border-white/70 bg-white/45 shadow-[var(--shadow-sm)] backdrop-blur-[8px] sm:-inset-5" />
+              <div className="overflow-hidden rounded-[var(--radius-sm)] bg-[var(--gt-white)] p-[2.5%] shadow-[var(--shadow-lg)]">
+                <div className="overflow-hidden rounded-[2px] shadow-[0_0_0_1px_var(--gt-ink-200)]">
+                  <CertificateSheet content={content} />
+                </div>
+              </div>
             </div>
-          ))}
-        </dl>
-        <p className="m-0 text-[length:var(--text-caption)] text-[var(--text-muted)]">
-          {t("learning.stats.timeTotal", { time: formatDuration(summary.totalMinutes, lang) })}
-        </p>
+            <figcaption className="gt-cert-seq mt-2 flex items-center gap-2 text-[length:var(--text-caption)] text-[var(--text-muted)]" style={seq(4)}>
+              <Award size={14} aria-hidden="true" className="text-[var(--accent-cta-ink)]" />
+              {t("certificate.figcaption", { name: holderName, title: courseTitle, date: formatDate(awardedOn) })}
+            </figcaption>
+          </figure>
+        )}
 
-        <div className="flex flex-wrap justify-center gap-3">
-          {training.completion.certificate && (
-            <Button variant="primary" size="lg" iconLeft={Award} onClick={() => navigate("/compte/attestations")}>
-              {t("learning.certificateCta")}
-            </Button>
+        {/* What to do with it. */}
+        <div className="gt-cert-seq grid justify-items-center gap-4 lg:justify-items-start lg:[grid-area:actions]" style={seq(4)}>
+          {card ? (
+            <>
+              {holder.complete ? (
+                <div className="flex w-full flex-col gap-3 sm:w-auto sm:flex-row sm:flex-wrap sm:justify-center lg:justify-start">
+                  <DownloadCertificateButton status={status.pdf} onDownload={onDownload} size="lg" className="w-full sm:w-auto max-sm:h-auto max-sm:min-h-[52px] max-sm:whitespace-normal max-sm:px-5 max-sm:py-3 max-sm:text-[length:var(--text-body-sm)]" />
+                  <Button variant="dark" size="lg" iconLeft={Share2} className="gt-cert-cta w-full sm:w-auto max-sm:h-auto max-sm:min-h-[52px] max-sm:whitespace-normal max-sm:px-5 max-sm:py-3 max-sm:text-[length:var(--text-body-sm)]" onClick={() => setSharing(true)}>
+                    {t("certificate.shareCta")}
+                  </Button>
+                </div>
+              ) : (
+                // The name goes on the document: asked for here, before the file can leave the screen.
+                <CertificateNameForm className="w-full max-w-[560px]" />
+              )}
+              <p className="m-0 flex items-center gap-2 text-[length:var(--text-caption)] text-[var(--text-muted)]">
+                <Award size={14} aria-hidden="true" />
+                <span>
+                  {t("certificate.savedToProfile")}{" "}
+                  <Link to="/compte/attestations" className="font-semibold text-[var(--text-primary)] underline underline-offset-2 hover:text-[var(--text-link-hover)]">
+                    {t("certificate.savedToProfileLink")}
+                  </Link>
+                </span>
+              </p>
+            </>
+          ) : (
+            <>
+              <Button variant="primary" size="lg" iconLeft={LayoutDashboard} onClick={() => navigate("/compte")}>
+                {t("learning.toDashboard")}
+              </Button>
+              <p className="m-0 text-[length:var(--text-caption)] text-[var(--text-muted)]">{t("learning.criteriaNoCertificate")}</p>
+            </>
           )}
-          <Button variant={training.completion.certificate ? "dark" : "primary"} size="lg" iconLeft={LayoutDashboard} onClick={() => navigate("/compte")}>
-            {t("learning.toDashboard")}
-          </Button>
         </div>
-        <Button variant="ghost" iconLeft={RotateCcw} onClick={() => navigate(learnHref(courseId))}>
-          {t("learning.reviewCourse")}
-        </Button>
-        {!training.completion.certificate && <p className="m-0 text-[length:var(--text-caption)] text-[var(--text-muted)]">{t("learning.criteriaNoCertificate")}</p>}
       </section>
+
+      {/* The figures that earned it, then the way on. */}
+      <section aria-label={t("certificate.statsLabel")} className="gt-cert-seq mx-auto grid max-w-[1120px] grid-cols-[minmax(0,1fr)] gap-8 px-4 pb-[clamp(40px,7vw,88px)]" style={seq(5)}>
+        <AchievementStats stats={figures} />
+
+        <div className="flex flex-col items-center justify-between gap-4 rounded-[var(--radius-card)] bg-[var(--surface-inverse)] px-[clamp(20px,4vw,40px)] py-6 text-center text-[var(--text-inverse)] sm:flex-row sm:text-left">
+          <div className="grid gap-1">
+            <span className="text-[length:var(--text-eyebrow)] font-semibold uppercase tracking-[var(--tracking-eyebrow)] text-[var(--gt-blue-300)]">
+              {t("certificate.nextEyebrow")}
+            </span>
+            <p className="m-0 text-[length:var(--text-body-md)] font-semibold text-[var(--gt-off-white)]">{t("certificate.nextTitle")}</p>
+          </div>
+          <div className="flex flex-wrap justify-center gap-2">
+            <Button variant="primary" iconLeft={Compass} onClick={() => navigate("/academy")}>
+              {t("certificate.nextCta")}
+            </Button>
+            <Button variant="ghost" iconLeft={RotateCcw} className="text-[var(--gt-off-white)] hover:bg-white/10" onClick={() => navigate(learnHref(courseId))}>
+              {t("learning.reviewCourse")}
+            </Button>
+          </div>
+        </div>
+      </section>
+
+      {sharing && card && holder.complete && <ShareAchievementDialog content={content} awardedOn={awardedOn} onClose={() => setSharing(false)} />}
     </div>
   );
 }

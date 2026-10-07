@@ -30,7 +30,7 @@ import {
 import { useEditorLabels } from "./editorLabels";
 import { QuickColorPanel } from "./QuickColorPanel";
 import { IssueFrames, IssuePanel } from "./StageIssues";
-import { FINISHES, FREE_TOOTH, isFinishId, type PlacedJewelry } from "../../../data/studioEditor";
+import { FINISHES, isFinishId, type PlacedJewelry } from "../../../data/studioEditor";
 import {
   beginRotation,
   duplicateMirroredPieces,
@@ -61,7 +61,7 @@ const stageButton = clsx(
  * the placement hints, the piece context menu and the camera bar over it.
  */
 export function EditorViewport({ snap }: { snap: StudioSnapshot }) {
-  const { t, pieceName, toothName } = useEditorLabels();
+  const { t, pieceName } = useEditorLabels();
   const hostRef = useRef<HTMLDivElement>(null);
   const [failed, setFailed] = useState(false);
   const [dragOver, setDragOver] = useState(false);
@@ -117,8 +117,6 @@ export function EditorViewport({ snap }: { snap: StudioSnapshot }) {
     };
   }, []);
 
-  const jewel = snap.jewels.find((j) => j.id === snap.selectedJewelIds[0]);
-  const chipTooth = snap.hoveredToothId ?? (jewel ? jewel.toothId : snap.selectedToothId);
   const armedName = snap.armedTypeId ? pieceName(snap.armedTypeId) : null;
   const quick = useQuickActions();
 
@@ -144,21 +142,6 @@ export function EditorViewport({ snap }: { snap: StudioSnapshot }) {
           aria-hidden="true"
           className="pointer-events-none absolute inset-3 z-10 rounded-[var(--radius-lg)] border-2 border-dashed border-[var(--gt-blue-300)]"
         />
-      )}
-
-      {chipTooth && chipTooth !== FREE_TOOTH && (
-        <div
-          key={chipTooth}
-          className={clsx(
-            "gt-editor-chip pointer-events-none absolute left-1/2 top-3.5 z-[5] flex -translate-x-1/2 items-center gap-2 rounded-full py-1.5 pl-1.5 pr-3.5",
-            stageGlass,
-          )}
-        >
-          <span className="rounded-full bg-[var(--gt-blue-300)] px-2 py-0.5 text-[11px] font-bold text-[var(--gt-ink-900)]">
-            {chipTooth}
-          </span>
-          <span className="text-[12px] font-semibold text-white/90">{toothName(chipTooth)}</span>
-        </div>
       )}
 
       {armedName && (
