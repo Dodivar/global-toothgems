@@ -54,6 +54,12 @@ export const INK = {
   fuchsia400: "#e0479b",
 } as const;
 
+/** Brand images the document draws. */
+export type CertificateAsset = "wordmark";
+
+/** Width over height of `assets/logo-wordmark-black.png` (1019 × 281). */
+export const WORDMARK_RATIO = 1019 / 281;
+
 export interface GradientStop {
   offset: number;
   color: string;
@@ -74,6 +80,8 @@ export type CertificateOp =
   | ({ kind: "rect"; x: number; y: number; w: number; h: number } & Shape)
   | ({ kind: "circle"; cx: number; cy: number; r: number } & Shape)
   | ({ kind: "path"; d: string } & Shape)
+  /** A brand asset; each renderer knows where to load it from. */
+  | { kind: "image"; asset: CertificateAsset; x: number; y: number; w: number; h: number }
   | {
       kind: "text";
       x: number;
@@ -207,12 +215,10 @@ export function layoutCertificate(content: CertificateContent): CertificateOp[] 
   ops.push({ kind: "path", d: sparklePath(251, 28, 1.6), fill: INK.fuchsia300 });
   ops.push({ kind: "path", d: sparklePath(258, 37, 1), fill: INK.blue500, opacity: 0.7 });
 
-  /* Header: the wordmark and the Academy. */
-  const brand = content.brand.toUpperCase();
-  const brandWidth = textWidth(brand, 3.4, 600, 0.32);
-  ops.push({ kind: "path", d: sparklePath(CX - brandWidth / 2 - 4.2, 25.6 - 1.2, 1.9), fill: INK.blue500 });
-  text({ x: CX, y: 26, text: brand, size: 3.4, weight: 600, color: INK.ink, align: "middle", tracking: 0.32 });
-  text({ x: CX, y: 32, text: content.academy.toUpperCase(), size: 2.2, weight: 600, color: INK.blue600, align: "middle", tracking: 0.5 });
+  /* Header: the brand's logo (the black wordmark) and the Academy. */
+  const logoWidth = 44;
+  ops.push({ kind: "image", asset: "wordmark", x: CX - logoWidth / 2, y: 15.5, w: logoWidth, h: logoWidth / WORDMARK_RATIO });
+  text({ x: CX, y: 34, text: content.academy.toUpperCase(), size: 2.2, weight: 600, color: INK.blue600, align: "middle", tracking: 0.5 });
 
   /* The document's title, then the two focal points: the holder and the course. */
   text({ x: CX, y: 57, text: content.title.toUpperCase(), size: 4.4, weight: 600, color: INK.blue600, align: "middle", tracking: 0.2 });

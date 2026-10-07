@@ -4732,6 +4732,15 @@
     "emptyStep2": "Follow the lessons",
     "emptyStep2Body": "Videos, techniques and knowledge checks.",
     "emptyStep3": "Receive your certificate",
-    "emptyStep3Body": "In your name, to download and share."
+    "emptyStep3Body": "In your name, to download and share.",
+    "holderPlaceholder": "Your name",
+    "nameTitle": "Your name on the certificate",
+    "nameBody": "Enter your first and last name as they should appear on your certificates. They are saved to your profile.",
+    "nameFirst": "First name",
+    "nameLast": "Last name",
+    "nameSave": "Save my name",
+    "nameMissing": "Your first and last name are needed to issue the certificate.",
+    "nameError": "Your name couldn’t be saved. Please try again in a moment.",
+    "nameLockedHint": "Add your first and last name to download or share this certificate."
   }
 }

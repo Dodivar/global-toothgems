@@ -1,5 +1,5 @@
 import { useTranslation } from "react-i18next";
-import { Expand, Lock, Share2 } from "lucide-react";
+import { Expand, Lock, PenLine, Share2 } from "lucide-react";
 import clsx from "clsx";
 import { Button } from "../ui/Button";
 import { ProgressBar } from "../ui/ProgressBar";
@@ -90,6 +90,8 @@ interface EarnedProps {
   featured?: boolean;
   onOpen: () => void;
   onShare: () => void;
+  /** No name on the profile yet: the certificate can be viewed, not downloaded or shared. */
+  locked?: boolean;
 }
 
 /**
@@ -100,7 +102,7 @@ interface EarnedProps {
  * Hover and focus only *emphasise*: the card lifts and the actions are there
  * at rest, so a touch user is never left without them (AGENTS.md §11).
  */
-export function CertificateCard({ course, progress, holder, lang, index, total, featured = false, onOpen, onShare }: EarnedProps) {
+export function CertificateCard({ course, progress, holder, lang, index, total, featured = false, onOpen, onShare, locked = false }: EarnedProps) {
   const { formatDate } = useFormat();
   const { t } = useTranslation();
   const { showToast } = useToast();
@@ -167,11 +169,21 @@ export function CertificateCard({ course, progress, holder, lang, index, total, 
 
         {featured && <p className="m-0 max-w-[var(--max-width-prose)] text-[length:var(--text-body-sm)] text-[var(--text-muted)]">{pick(course.summary, lang)}</p>}
 
+        {locked && (
+          <p className="m-0 flex items-center gap-2 text-[length:var(--text-caption)] text-[var(--text-muted)]">
+            <PenLine size={14} aria-hidden="true" className="flex-none" />
+            {t("certificate.nameLockedHint")}
+          </p>
+        )}
         <div className="flex flex-wrap items-center gap-2">
-          <DownloadCertificateButton status={status.pdf} onDownload={onDownload} size="sm" variant="primary" label={t("account.certificateDownload")} />
-          <Button variant="dark" size="sm" iconLeft={Share2} className="gt-cert-cta" onClick={onShare}>
-            {t("certificate.shareShort")}
-          </Button>
+          {!locked && (
+            <>
+              <DownloadCertificateButton status={status.pdf} onDownload={onDownload} size="sm" variant="primary" label={t("account.certificateDownload")} />
+              <Button variant="dark" size="sm" iconLeft={Share2} className="gt-cert-cta" onClick={onShare}>
+                {t("certificate.shareShort")}
+              </Button>
+            </>
+          )}
           <Button variant="ghost" size="sm" iconLeft={Expand} onClick={onOpen}>
             {t("account.certificateView")}
           </Button>

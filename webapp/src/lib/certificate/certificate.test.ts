@@ -1,6 +1,7 @@
 import { describe, expect, it } from "vitest";
 import { A4_LANDSCAPE_PT, jpegToPdf } from "./pdf";
-import { fitSize, layoutCertificate, PAGE, textWidth, wrapLines, type CertificateContent } from "./layout";
+import { fitSize, layoutCertificate, PAGE, textWidth, WORDMARK_RATIO, wrapLines, type CertificateContent } from "./layout";
+import { certificateHolder } from "./holder";
 import { certificateFileName, linkedInCertificationUrl, SHARE_NETWORKS, shareDestination } from "./share";
 import { sampleCertificateRef } from "../../components/account/CertificateCard";
 
@@ -149,5 +150,29 @@ describe("sampleCertificateRef", () => {
     expect(ref).toMatch(/^GTC-[0-9A-F]{4}-[0-9A-F]{4}-[0-9A-F]{4}$/);
     expect(sampleCertificateRef("bases", "2026-10-07")).toBe(ref);
     expect(sampleCertificateRef("bases", "2026-10-08")).not.toBe(ref);
+  });
+});
+
+describe("certificateHolder", () => {
+  it("needs both a first and a last name", () => {
+    expect(certificateHolder({ firstName: " Camille ", lastName: "Martin" })).toEqual({ name: "Camille Martin", complete: true });
+    expect(certificateHolder({ firstName: "Camille", lastName: "  " })).toEqual({ name: "Camille", complete: false });
+    expect(certificateHolder({ firstName: "", lastName: "" })).toEqual({ name: "", complete: false });
+    expect(certificateHolder(null)).toEqual({ name: "", complete: false });
+  });
+
+  it("never falls back to the e-mail", () => {
+    expect(certificateHolder({ firstName: null, lastName: null }).name).toBe("");
+  });
+});
+
+describe("logo", () => {
+  it("draws the wordmark at its own proportions, in the header", () => {
+    const logo = layoutCertificate(CONTENT).find((op) => op.kind === "image");
+    expect(logo).toMatchObject({ asset: "wordmark" });
+    if (logo?.kind !== "image") throw new Error("no logo");
+    expect(logo.w / logo.h).toBeCloseTo(WORDMARK_RATIO, 5);
+    expect(logo.x + logo.w / 2).toBeCloseTo(PAGE.width / 2, 5);
+    expect(logo.y + logo.h).toBeLessThan(40);
   });
 });

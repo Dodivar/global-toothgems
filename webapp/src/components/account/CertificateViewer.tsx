@@ -8,6 +8,7 @@ import { certificateCourse, useHeldCertificate } from "./CertificateCard";
 import { AchievementBadge, CertificateStatus } from "../certificate/Achievement";
 import { DownloadCertificateButton } from "../certificate/DownloadCertificateButton";
 import { useNativeDialog } from "../certificate/useNativeDialog";
+import { CertificateNameForm } from "../certificate/CertificateNameForm";
 import { pick } from "../../data/types";
 import { useCertificateExport } from "../../lib/certificate/useCertificateExport";
 import type { CourseProgress, LearnerCourseCard } from "../../lib/progress";
@@ -35,6 +36,7 @@ export function CertificateViewer({
   lang,
   onClose,
   onShare,
+  locked = false,
 }: {
   course: LearnerCourseCard;
   progress: CourseProgress;
@@ -42,6 +44,8 @@ export function CertificateViewer({
   lang: string;
   onClose: () => void;
   onShare: () => void;
+  /** No name on the profile yet: the name form takes the place of the downloads. */
+  locked?: boolean;
 }) {
   const { formatDate } = useFormat();
   const { t } = useTranslation();
@@ -128,6 +132,9 @@ export function CertificateViewer({
           </div>
 
           <div className="grid content-start gap-[var(--space-5)]">
+            {locked ? (
+              <CertificateNameForm />
+            ) : (
             <div className="grid gap-2">
               <DownloadCertificateButton status={status.pdf} onDownload={() => void download("pdf")} fullWidth />
               <div className="grid grid-cols-2 gap-2">
@@ -137,6 +144,7 @@ export function CertificateViewer({
                 </Button>
               </div>
             </div>
+            )}
 
             <dl className="m-0 grid gap-3">
               {rows.map((row) => (

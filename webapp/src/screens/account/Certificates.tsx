@@ -9,10 +9,12 @@ import { CertificateCard, HeldCertificateShare, PendingCertificateCard } from ".
 import { CertificateViewer } from "../../components/account/CertificateViewer";
 import { SectionHeader } from "../../components/account/SectionHeader";
 import { AchievementBadge } from "../../components/certificate/Achievement";
+import { CertificateNameForm } from "../../components/certificate/CertificateNameForm";
 import { ReviewRequestCard } from "../../components/reviews/ReviewRequestCard";
 import { pick } from "../../data/types";
 import { learnHref } from "../../lib/academyUrl";
 import { useAuth } from "../../lib/auth";
+import { certificateHolder } from "../../lib/certificate/holder";
 import { useProgress } from "../../lib/progress";
 import { useReviewRequests } from "../../lib/reviews";
 import { useFormat } from "../../lib/format";
@@ -39,7 +41,7 @@ export function Certificates() {
   const { t, i18n } = useTranslation();
   const navigate = useNavigate();
   const lang = i18n.language;
-  const { displayName } = useAuth();
+  const { profile } = useAuth();
   const { progressFor, enrolledCourses } = useProgress();
   // A finished training is the natural moment to review it.
   const courseRequest = useReviewRequests().find((r) => r.subject.kind === "course" && r.context === "completed");
@@ -64,8 +66,11 @@ export function Certificates() {
   const [featured, ...rest] = earned;
   const open = viewing ? earned.find((row) => row.course.id === viewing) : undefined;
   const shared = sharing ? earned.find((row) => row.course.id === sharing) : undefined;
-  // The name printed on the certificates: the profile's, as the account shows it.
-  const holder = displayName;
+  // The name printed on the certificates: the profile's first and last name,
+  // required before any of them is downloaded or shared.
+  const named = certificateHolder(profile);
+  const holder = named.name || t("certificate.holderPlaceholder");
+  const locked = !named.complete;
 
   return (
     <>
@@ -120,7 +125,10 @@ export function Certificates() {
               <h2 className="text-[length:var(--text-h3)]">{t("account.certificatesFeaturedTitle")}</h2>
             </div>
 
+            {locked && <CertificateNameForm />}
+
             <CertificateCard
+              locked={locked}
               course={featured.course}
               progress={featured.progress}
               holder={holder}
@@ -145,6 +153,7 @@ export function Certificates() {
                   {rest.map((row, i) => (
                     <CertificateCard
                       key={row.course.id}
+                      locked={locked}
                       course={row.course}
                       progress={row.progress}
                       holder={holder}
@@ -213,10 +222,11 @@ export function Certificates() {
           lang={lang}
           onClose={() => setViewing(null)}
           onShare={() => setSharing(open.course.id)}
+          locked={locked}
         />
       )}
 
-      {shared && (
+      {shared && !locked && (
         <HeldCertificateShare course={shared.course} progress={shared.progress} holder={holder} lang={lang} onClose={() => setSharing(null)} />
       )}
     </>

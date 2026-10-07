@@ -4732,6 +4732,15 @@
     "emptyStep2": "Suivez les leçons",
     "emptyStep2Body": "Vidéos, gestes et points de connaissances.",
     "emptyStep3": "Recevez votre attestation",
-    "emptyStep3Body": "À télécharger et à partager, à votre nom."
+    "emptyStep3Body": "À télécharger et à partager, à votre nom.",
+    "holderPlaceholder": "Votre nom",
+    "nameTitle": "Votre nom sur l’attestation",
+    "nameBody": "Indiquez votre prénom et votre nom tels qu’ils doivent figurer sur vos attestations. Ils sont enregistrés dans votre profil.",
+    "nameFirst": "Prénom",
+    "nameLast": "Nom",
+    "nameSave": "Enregistrer mon nom",
+    "nameMissing": "Le prénom et le nom sont nécessaires pour délivrer l’attestation.",
+    "nameError": "Votre nom n’a pas pu être enregistré. Réessayez dans un instant.",
+    "nameLockedHint": "Ajoutez votre prénom et votre nom pour télécharger ou partager cette attestation."
   }
 }

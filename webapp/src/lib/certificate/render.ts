@@ -1,5 +1,6 @@
 import { jpegToPdf } from "./pdf";
-import { layoutCertificate, PAGE, type CertificateContent, type CertificateOp, type Paint } from "./layout";
+import { CERTIFICATE_ASSETS } from "./assets";
+import { layoutCertificate, PAGE, type CertificateAsset, type CertificateContent, type CertificateOp, type Paint } from "./layout";
 
 /**
  * The certificate as a file: the operations of `layout.ts` drawn on a canvas,
@@ -60,8 +61,25 @@ function drawText(ctx: CanvasRenderingContext2D, op: Extract<CertificateOp, { ki
   ctx.restore();
 }
 
-function draw(ctx: CanvasRenderingContext2D, op: CertificateOp, k: number) {
+/** Loads a brand image; the export fails rather than ship a certificate without its logo. */
+function loadImage(src: string): Promise<HTMLImageElement> {
+  return new Promise((resolve, reject) => {
+    const image = new Image();
+    image.onload = () => resolve(image);
+    image.onerror = () => reject(new Error("image unavailable"));
+    image.src = src;
+  });
+}
+
+type Images = Partial<Record<CertificateAsset, HTMLImageElement>>;
+
+function draw(ctx: CanvasRenderingContext2D, op: CertificateOp, k: number, images: Images) {
   if (op.kind === "text") return drawText(ctx, op, k);
+  if (op.kind === "image") {
+    const image = images[op.asset];
+    if (image) ctx.drawImage(image, op.x, op.y, op.w, op.h);
+    return;
+  }
   ctx.save();
   ctx.globalAlpha = op.opacity ?? 1;
   const path = new Path2D();
@@ -86,6 +104,11 @@ async function renderCanvas(content: CertificateContent, scale: number): Promise
   if (typeof document !== "undefined" && document.fonts) {
     await Promise.all(FONTS.map((font) => document.fonts.load(font).catch(() => [])));
   }
+  const ops = layoutCertificate(content);
+  const needed = [...new Set(ops.flatMap((op) => (op.kind === "image" ? [op.asset] : [])))];
+  const images: Images = Object.fromEntries(
+    await Promise.all(needed.map(async (asset) => [asset, await loadImage(CERTIFICATE_ASSETS[asset])] as const)),
+  );
   const canvas = document.createElement("canvas");
   canvas.width = Math.round(PAGE.width * scale);
   canvas.height = Math.round(PAGE.height * scale);
@@ -93,7 +116,7 @@ async function renderCanvas(content: CertificateContent, scale: number): Promise
   if (!ctx) throw new Error("canvas unavailable");
   const k = canvas.width / PAGE.width;
   ctx.scale(k, k);
-  for (const op of layoutCertificate(content)) draw(ctx, op, k);
+  for (const op of ops) draw(ctx, op, k, images);
   return canvas;
 }
 

@@ -12,9 +12,11 @@ import { AchievementBadge, AchievementStats, type AchievementStat } from "../../
 import { Celebration } from "../../components/certificate/Celebration";
 import { DownloadCertificateButton } from "../../components/certificate/DownloadCertificateButton";
 import { ShareAchievementDialog } from "../../components/certificate/ShareAchievementDialog";
+import { CertificateNameForm } from "../../components/certificate/CertificateNameForm";
 import { pick, type Localized } from "../../data/types";
 import { learnHref, lessonHref } from "../../lib/academyUrl";
 import { useAuth } from "../../lib/auth";
+import { certificateHolder } from "../../lib/certificate/holder";
 import { useCertificateExport } from "../../lib/certificate/useCertificateExport";
 import { useFormat } from "../../lib/format";
 import type { CourseProgress, LearnerCourseCard } from "../../lib/progress";
@@ -113,12 +115,15 @@ function CompletionMoment({
   // The certificate's wording of the course when there is one, so the page and the document agree.
   const courseTitle = pick(card?.title ?? title, lang);
   const firstName = profile?.firstName?.trim() || displayName.split(" ")[0] || "";
+  // The profile's first and last name, required before the certificate is downloaded or shared.
+  const holder = certificateHolder(profile);
+  const holderName = holder.name || t("certificate.holderPlaceholder");
 
   const awardedOn = progress.completedOn ?? "";
   const reference = card ? certificateRef(card, progress) : "";
   const content = useCertificateContent({
     course: card ? certificateCourse(card, progress, lang, t) : { title, level: "", lessonCount: 0, duration: "" },
-    holder: displayName,
+    holder: holderName,
     awardedOn: awardedOn || "1970-01-01",
     reference,
     lang,
@@ -208,7 +213,7 @@ function CompletionMoment({
             </div>
             <figcaption className="gt-cert-seq mt-2 flex items-center gap-2 text-[length:var(--text-caption)] text-[var(--text-muted)]" style={seq(4)}>
               <Award size={14} aria-hidden="true" className="text-[var(--accent-cta-ink)]" />
-              {t("certificate.figcaption", { name: displayName, title: courseTitle, date: formatDate(awardedOn) })}
+              {t("certificate.figcaption", { name: holderName, title: courseTitle, date: formatDate(awardedOn) })}
             </figcaption>
           </figure>
         )}
@@ -217,12 +222,17 @@ function CompletionMoment({
         <div className="gt-cert-seq grid justify-items-center gap-4 lg:justify-items-start lg:[grid-area:actions]" style={seq(4)}>
           {card ? (
             <>
-              <div className="flex w-full flex-col gap-3 sm:w-auto sm:flex-row sm:flex-wrap sm:justify-center lg:justify-start">
-                <DownloadCertificateButton status={status.pdf} onDownload={onDownload} size="lg" className="w-full sm:w-auto max-sm:h-auto max-sm:min-h-[52px] max-sm:whitespace-normal max-sm:px-5 max-sm:py-3 max-sm:text-[length:var(--text-body-sm)]" />
-                <Button variant="dark" size="lg" iconLeft={Share2} className="gt-cert-cta w-full sm:w-auto max-sm:h-auto max-sm:min-h-[52px] max-sm:whitespace-normal max-sm:px-5 max-sm:py-3 max-sm:text-[length:var(--text-body-sm)]" onClick={() => setSharing(true)}>
-                  {t("certificate.shareCta")}
-                </Button>
-              </div>
+              {holder.complete ? (
+                <div className="flex w-full flex-col gap-3 sm:w-auto sm:flex-row sm:flex-wrap sm:justify-center lg:justify-start">
+                  <DownloadCertificateButton status={status.pdf} onDownload={onDownload} size="lg" className="w-full sm:w-auto max-sm:h-auto max-sm:min-h-[52px] max-sm:whitespace-normal max-sm:px-5 max-sm:py-3 max-sm:text-[length:var(--text-body-sm)]" />
+                  <Button variant="dark" size="lg" iconLeft={Share2} className="gt-cert-cta w-full sm:w-auto max-sm:h-auto max-sm:min-h-[52px] max-sm:whitespace-normal max-sm:px-5 max-sm:py-3 max-sm:text-[length:var(--text-body-sm)]" onClick={() => setSharing(true)}>
+                    {t("certificate.shareCta")}
+                  </Button>
+                </div>
+              ) : (
+                // The name goes on the document: asked for here, before the file can leave the screen.
+                <CertificateNameForm className="w-full max-w-[560px]" />
+              )}
               <p className="m-0 flex items-center gap-2 text-[length:var(--text-caption)] text-[var(--text-muted)]">
                 <Award size={14} aria-hidden="true" />
                 <span>
@@ -266,7 +276,7 @@ function CompletionMoment({
         </div>
       </section>
 
-      {sharing && card && <ShareAchievementDialog content={content} awardedOn={awardedOn} onClose={() => setSharing(false)} />}
+      {sharing && card && holder.complete && <ShareAchievementDialog content={content} awardedOn={awardedOn} onClose={() => setSharing(false)} />}
     </div>
   );
 }

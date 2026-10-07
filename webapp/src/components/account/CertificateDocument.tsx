@@ -6,6 +6,7 @@ import { pick } from "../../data/types";
 import { useFormat } from "../../lib/format";
 import { layoutCertificate, PAGE, type CertificateContent, type CertificateOp, type Paint } from "../../lib/certificate/layout";
 import { ISSUER } from "../../lib/certificate/share";
+import { CERTIFICATE_ASSETS } from "../../lib/certificate/assets";
 
 /**
  * The certificate itself, drawn as a document rather than shown as a thumbnail.
@@ -94,6 +95,9 @@ function SvgPaint({ id, paint }: { id: string; paint: Paint }) {
 }
 
 function SvgOp({ op, uid, index }: { op: CertificateOp; uid: string; index: number }) {
+  if (op.kind === "image") {
+    return <image href={CERTIFICATE_ASSETS[op.asset]} x={op.x} y={op.y} width={op.w} height={op.h} preserveAspectRatio="xMidYMid meet" />;
+  }
   if (op.kind === "text") {
     return (
       <text
