@@ -38,19 +38,24 @@ export function getJewelMaterial(look: LookMaterial): THREE.MeshPhysicalMaterial
       : new THREE.MeshPhysicalMaterial({
           color: look.color,
           metalness: 0,
-          roughness: 0.05,
-          transmission: 0.92,
-          thickness: 1.6,
-          ior: 2.1,
-          dispersion: iridescent ? 0.3 : 0.12,
+          roughness: 0.02,
+          // a little less see-through than glass: the facets, not the tooth behind, make the stone
+          transmission: 0.86,
+          thickness: 1.2,
+          ior: 2.3,
+          // the "fire" of a lead crystal: white light split into colour along the facet edges
+          dispersion: iridescent ? 0.45 : 0.28,
           attenuationColor: new THREE.Color(look.color),
-          attenuationDistance: 2.4,
-          envMapIntensity: 2.4,
-          specularIntensity: 1.1,
-          clearcoat: 0.8,
-          clearcoatRoughness: 0.06,
-          // AB / Shimmer / Vitrail coatings: a thin-film rainbow over the tint
-          ...(iridescent ? { iridescence: 1, iridescenceIOR: 1.6, iridescenceThicknessRange: [180, 620] as [number, number] } : {}),
+          attenuationDistance: 1.3,
+          envMapIntensity: 3.2,
+          specularIntensity: 1,
+          specularColor: new THREE.Color(0xffffff),
+          clearcoat: 1,
+          clearcoatRoughness: 0.02,
+          // a faint rainbow film even on plain stones, strong on AB / Shimmer / Vitrail
+          iridescence: iridescent ? 1 : 0.22,
+          iridescenceIOR: 1.6,
+          iridescenceThicknessRange: [180, 620] as [number, number],
         });
   materialCache.set(key, m);
   return m;
@@ -195,18 +200,65 @@ const templateCache = new Map<StudioShape, JewelTemplate>();
 const v2 = (pts: number[][]) => pts.map((p) => new THREE.Vector2(p[0], p[1]));
 
 function extrudeJewel(shape: THREE.Shape, depth = 0.3, rounded = false): THREE.BufferGeometry {
+  // crystals are cut facet by facet; metal charms are polished and rounded
+  if (!rounded) return crystalCut(shape);
   const g = new THREE.ExtrudeGeometry(shape, {
     depth,
     bevelEnabled: true,
-    // metal charms are polished and rounded; crystals keep a crisp table and girdle
-    bevelThickness: rounded ? 0.16 : 0.1,
-    bevelSize: rounded ? 0.1 : 0.07,
-    bevelSegments: rounded ? 4 : 2,
+    bevelThickness: 0.16,
+    bevelSize: 0.1,
+    bevelSegments: 4,
     curveSegments: 32,
   });
   g.center();
   // the rear bevel would round the back off: press it onto the back face
   return flattenBack(g, -depth / 2);
+}
+
+/**
+ * A flat-back crystal: a straight girdle, two stepped rings of crown facets
+ * (the upper one zig-zagging so neighbouring facets catch different light),
+ * and a table cut as a shallow pyramid instead of one mirror — the many small
+ * flat faces are what make a stone sparkle as it moves. The outline is scaled
+ * towards its centre for each ring, which suits every convex or star-shaped
+ * crystal outline of the library.
+ */
+function crystalCut(shape: THREE.Shape): THREE.BufferGeometry {
+  const raw = shape.extractPoints(5).shape;
+  if (raw.length > 1 && raw[0].distanceTo(raw[raw.length - 1]) < 1e-6) raw.pop();
+  if (THREE.ShapeUtils.isClockWise(raw)) raw.reverse();
+  const n = raw.length;
+  const c = new THREE.Vector2();
+  raw.forEach((p) => c.add(p));
+  c.divideScalar(n);
+  const ring = (k: number, z: number, wobble = 0) =>
+    raw.map((p, i) => new THREE.Vector3(c.x + (p.x - c.x) * k, c.y + (p.y - c.y) * k, z + (i % 2 ? wobble : -wobble)));
+  const girdle = 0.1;
+  const back = ring(1, -girdle);
+  const rim = ring(1, 0);
+  const crown = ring(0.84, 0.13, 0.028);
+  const table = ring(0.5, 0.215);
+  const apex = new THREE.Vector3(c.x, c.y, 0.255);
+  const tri: number[] = [];
+  const push = (...v: THREE.Vector3[]) => v.forEach((p) => tri.push(p.x, p.y, p.z));
+  const band = (a: THREE.Vector3[], b: THREE.Vector3[]) => {
+    for (let i = 0; i < n; i++) {
+      const j = (i + 1) % n;
+      push(a[i], a[j], b[j]);
+      push(a[i], b[j], b[i]);
+    }
+  };
+  band(back, rim); // girdle wall
+  band(rim, crown);
+  band(crown, table);
+  for (let i = 0; i < n; i++) {
+    push(table[i], table[(i + 1) % n], apex); // table pyramid
+    push(back[(i + 1) % n], back[i], new THREE.Vector3(c.x, c.y, -girdle)); // flat back
+  }
+  const g = new THREE.BufferGeometry();
+  g.setAttribute("position", new THREE.Float32BufferAttribute(tri, 3));
+  g.computeVertexNormals(); // non-indexed: every triangle keeps its own flat normal
+  return g;
 }
 
 /** A round wire along a path (open or closed), tapered by `radiusAt(t)` — the polished metal charms. */

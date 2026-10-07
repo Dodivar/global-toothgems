@@ -545,8 +545,24 @@ export class StudioEngine {
   private buildEnvironment() {
     const pmrem = new THREE.PMREMGenerator(this.renderer);
     const room = new RoomEnvironment();
+    // Pin-point studio lamps around the room: invisible on the matte enamel,
+    // but each facet of a crystal mirrors one of them, so the stones glitter.
+    const spotMaterial = new THREE.MeshBasicMaterial();
+    spotMaterial.color.setScalar(140);
+    const spotGeometry = new THREE.BoxGeometry(0.7, 0.7, 0.7);
+    const spots = 22;
+    for (let i = 0; i < spots; i++) {
+      const y = 1 - (i + 0.5) / spots; // spread over a golden-angle spiral
+      const r = Math.sqrt(1 - y * y);
+      const a = i * 2.399963;
+      const spot = new THREE.Mesh(spotGeometry, spotMaterial);
+      spot.position.set(Math.cos(a) * r * 12, 11 + y * 9, Math.sin(a) * r * 12);
+      room.add(spot);
+    }
     this.scene.environment = pmrem.fromScene(room, 0.04).texture;
     room.dispose();
+    spotMaterial.dispose();
+    spotGeometry.dispose();
     pmrem.dispose();
     this.scene.environmentIntensity = 1;
 
