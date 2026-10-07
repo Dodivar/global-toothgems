@@ -130,11 +130,6 @@ export function centerOnTeeth(ids: string[]) {
   if (r && !r.moved && r.skipped > 0) notify("centerNoRoom", undefined, "warning");
 }
 
-export function clearDesign() {
-  if (!studioStore.jewels.length) return;
-  studioStore.setJewels([]);
-}
-
 /** Place a piece from the library on a tooth without a pointer (keyboard). */
 export function placeOnTooth(typeId: string, toothId: string) {
   const ok = getEngine()?.placeOnTooth(typeId, toothId);

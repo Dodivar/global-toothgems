@@ -1,18 +1,15 @@
-import { useEffect, useRef, useState } from "react";
+import { useRef, useState } from "react";
 import clsx from "clsx";
 import {
   Braces,
-  Check,
   ChevronDown,
   Download,
   Image as ImageIcon,
   Menu,
-  Plus,
   Redo2,
   RotateCcw,
   Sparkles,
   SquareDashed,
-  Trash2,
   Undo2,
   Upload,
   ReceiptText,
@@ -27,18 +24,13 @@ import { HelpHint } from "../workspace/HelpHint";
 import { SaveControls } from "../workspace/SaveControls";
 import { SaveStatus } from "../workspace/SaveStatus";
 import { estimateCents, estimateTotalCents, FREE_TOOTH } from "../../../data/studioEditor";
-import { clearDesign, importModelFile, resetModel } from "../../../lib/studio3d/actions";
+import { importModelFile, resetModel } from "../../../lib/studio3d/actions";
 import { downloadURL, getEngine } from "../../../lib/studio3d/engine";
 import { notify } from "../../../lib/studio3d/notices";
 import { buildQuoteSheetDataURL } from "../../../lib/studio3d/quoteSheet";
 import {
-  applyUserPreset,
   CLIENT_NAME_MAX,
-  deleteUserPreset,
-  PRESET_NAME_MAX,
-  saveUserPreset,
   studioStore,
-  useUserPresets,
   type StudioSnapshot,
 } from "../../../lib/studio3d/store";
 import { useFormat } from "../../../lib/format";
@@ -155,146 +147,12 @@ export function EditorTopBar({ snap, onOpenMenu }: { snap: StudioSnapshot; onOpe
         </button>
       )}
       <span aria-hidden="true" className="mx-0.5 hidden h-5 w-px bg-[var(--border-subtle)] sm:block" />
-      <PresetMenu />
       {/* On a phone the quick actions keep their defaults: their settings step aside for Share. */}
       <QuickActionsMenu triggerClassName={clsx(toolButton, "max-sm:hidden")} />
       <ExportMenu />
       <ShareMenu triggerClassName={toolButton} />
       <SaveControls />
     </header>
-  );
-}
-
-function PresetMenu() {
-  const { t } = useEditorLabels();
-  const [open, setOpen] = useState(false);
-  const [saving, setSaving] = useState(false);
-  const [name, setName] = useState("");
-  const [confirmDel, setConfirmDel] = useState<string | null>(null);
-  const presets = useUserPresets();
-
-  // A delete asks once more, then forgets the question after a moment.
-  useEffect(() => {
-    if (!confirmDel) return;
-    const timer = setTimeout(() => setConfirmDel(null), 2600);
-    return () => clearTimeout(timer);
-  }, [confirmDel]);
-
-  const close = () => {
-    setOpen(false);
-    setSaving(false);
-  };
-  const doSave = () => {
-    const clean = name.trim();
-    if (!clean) return notify("presetNameMissing", undefined, "warning");
-    if (!studioStore.jewels.length) return notify("presetEmpty", undefined, "warning");
-    if (saveUserPreset(clean)) {
-      setName("");
-      close();
-      notify("presetSaved", { name: clean });
-    }
-  };
-
-  return (
-    <EditorPopover
-      label={t("studio.editor.presets.menu")}
-      open={open}
-      onOpenChange={(next) => (next ? setOpen(true) : close())}
-      width={320}
-      trigger={(props) => (
-        <button
-          type="button"
-          {...props}
-          className="inline-flex h-9 items-center gap-1.5 rounded-[var(--radius-pill)] border border-[var(--border-default)] px-3 text-[11px] font-semibold uppercase tracking-[var(--tracking-wide)] text-[var(--text-primary)] transition-colors hover:border-[var(--border-strong)] focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-[var(--focus-ring)] max-sm:w-9 max-sm:justify-center max-sm:px-0"
-        >
-          <Sparkles size={14} aria-hidden="true" className="sm:hidden" />
-          <span className="hidden sm:inline">{t("studio.editor.presets.menu")}</span>
-          <span className="sr-only sm:hidden">{t("studio.editor.presets.menu")}</span>
-          <ChevronDown size={13} aria-hidden="true" className="max-sm:hidden" />
-        </button>
-      )}
-    >
-      <PopoverLabel>{t("studio.editor.presets.mine")}</PopoverLabel>
-      {presets.length === 0 && !saving && (
-        <p className="m-0 px-2.5 pb-2 text-[12px] leading-snug text-[var(--text-muted)]">{t("studio.editor.presets.mineEmpty")}</p>
-      )}
-      {presets.map((p) => (
-        <div key={p.id} className="flex items-stretch gap-1">
-          <div className="min-w-0 flex-1">
-            <PopoverItem
-              icon={<Sparkles size={14} />}
-              label={p.name}
-              sub={t("studio.editor.pieceCount", { count: p.jewels.length })}
-              onClick={() => {
-                applyUserPreset(p, (jewels, from) => getEngine()?.adaptDesign(jewels, from) ?? jewels);
-                close();
-              }}
-            />
-          </div>
-          <button
-            type="button"
-            aria-label={
-              confirmDel === p.id
-                ? t("studio.editor.presets.confirmDelete", { name: p.name })
-                : t("studio.editor.presets.delete", { name: p.name })
-            }
-            title={
-              confirmDel === p.id
-                ? t("studio.editor.presets.confirmDelete", { name: p.name })
-                : t("studio.editor.presets.delete", { name: p.name })
-            }
-            onClick={() => {
-              if (confirmDel === p.id) {
-                deleteUserPreset(p.id);
-                setConfirmDel(null);
-              } else setConfirmDel(p.id);
-            }}
-            className={clsx(
-              "grid w-9 flex-none place-items-center rounded-[var(--radius-sm)] transition-colors focus-visible:outline focus-visible:outline-2 focus-visible:-outline-offset-2 focus-visible:outline-[var(--focus-ring)]",
-              confirmDel === p.id
-                ? "bg-[var(--gt-red-600)] text-white"
-                : "text-[var(--text-subtle)] hover:bg-[var(--status-error-bg)] hover:text-[var(--status-error-fg)]",
-            )}
-          >
-            {confirmDel === p.id ? <Check size={13} aria-hidden="true" /> : <Trash2 size={13} aria-hidden="true" />}
-          </button>
-        </div>
-      ))}
-      {saving ? (
-        <form
-          className="flex gap-1.5 p-1.5"
-          onSubmit={(e) => {
-            e.preventDefault();
-            doSave();
-          }}
-        >
-          <input
-            autoFocus
-            aria-label={t("studio.editor.presets.nameLabel")}
-            placeholder={t("studio.editor.presets.namePlaceholder")}
-            value={name}
-            maxLength={PRESET_NAME_MAX}
-            onChange={(e) => setName(e.target.value)}
-            className={inputClass}
-          />
-          <Button type="submit" variant="dark" size="sm">
-            {t("studio.editor.presets.save")}
-          </Button>
-        </form>
-      ) : (
-        <PopoverItem icon={<Plus size={14} />} label={t("studio.editor.presets.saveCurrent")} onClick={() => setSaving(true)} />
-      )}
-      <PopoverSeparator />
-      <PopoverItem
-        destructive
-        icon={<Trash2 size={14} />}
-        label={t("studio.editor.presets.clearAll")}
-        onClick={() => {
-          clearDesign();
-          close();
-        }}
-      />
-    </EditorPopover>
   );
 }
 

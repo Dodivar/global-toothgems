@@ -370,18 +370,6 @@
       "custom": "Couleur personnalisée",
       "customValue": "Personnalisée {{hex}}"
     },
-    "presets": {
-      "menu": "Modèles",
-      "mine": "Mes modèles",
-      "mineEmpty": "Enregistrez votre création sous un nom pour la réutiliser à tout moment.",
-      "saveCurrent": "Enregistrer la création comme modèle…",
-      "nameLabel": "Nom du modèle",
-      "namePlaceholder": "Nom du modèle…",
-      "save": "Enregistrer",
-      "delete": "Supprimer le modèle « {{name}} »",
-      "confirmDelete": "Confirmer : supprimer « {{name}} »",
-      "clearAll": "Retirer toutes les pièces"
-    },
     "export": {
       "menu": "Exporter",
       "images": "Images",
@@ -688,9 +676,6 @@
       "centeredPartial_one": "Centrées — {{count}} pièce laissée en place (emplacement occupé)",
       "centeredPartial_other": "Centrées — {{count}} pièces laissées en place (emplacements occupés)",
       "centerNoRoom": "Aucune pièce centrée : le milieu de leur dent est déjà occupé",
-      "presetNameMissing": "Donnez d’abord un nom à votre modèle",
-      "presetEmpty": "Posez au moins une pièce avant d’enregistrer un modèle",
-      "presetSaved": "Modèle « {{name}} » enregistré",
       "saveEmpty": "Ajoutez au moins une gemme avant d’enregistrer.",
       "saveEmptyLinked": "Cette création est vide. Annulez ou ajoutez une gemme avant d’enregistrer ; pour la retirer, supprimez-la depuis Mes créations.",
       "exportedPng": "Capture PNG téléchargée",
