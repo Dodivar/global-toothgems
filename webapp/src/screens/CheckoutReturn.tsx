@@ -14,6 +14,7 @@ import { fetchCheckoutStatus, isCheckoutSessionId, type CheckoutStatus } from ".
 import { isSupabaseConfigured } from "../lib/supabase/client";
 import { useHydrated } from "../lib/useHydrated";
 import { useLoyalty } from "../lib/loyalty";
+import { useOrders } from "../lib/orders";
 
 /**
  * Where Stripe sends the customer back (`/fr/panier/confirmation?session_id=cs_…`).
@@ -41,6 +42,7 @@ export function CheckoutReturn() {
   const { lines, clearCart } = useCart();
   const { reload: reloadCourses } = useProgress();
   const { reload: reloadLoyalty } = useLoyalty();
+  const { reload: reloadOrders } = useOrders();
   // The basket as it is now, read when the order's state arrives.
   const linesRef = useRef(lines);
   useEffect(() => {
@@ -97,9 +99,11 @@ export function CheckoutReturn() {
       if (boughtCourse) reloadCourses();
       // The stamp (or the spent reward) was settled by the same webhook.
       reloadLoyalty();
+      // The order was marked paid by the same webhook: the history read earlier lacks it.
+      reloadOrders();
       clearCart();
     }
-  }, [paid, boughtCourse, clearCart, reloadCourses, reloadLoyalty]);
+  }, [paid, boughtCourse, clearCart, reloadCourses, reloadLoyalty, reloadOrders]);
 
   const retry = () => {
     setView({ kind: "checking" });
@@ -124,7 +128,7 @@ export function CheckoutReturn() {
           {boughtCourse ? (
             <Button variant="primary" onClick={() => navigate(LEARN_BASE)}>{t("checkout.course.openCourses")}</Button>
           ) : (
-            <Button variant="primary" onClick={() => navigate("/compte")}>{t("cart.confirmedOpenAccount")}</Button>
+            <Button variant="primary" onClick={() => navigate("/compte/commandes")}>{t("cart.confirmedOpenAccount")}</Button>
           )}
           <Button variant="outline" onClick={() => navigate("/boutique")}>{t("cart.confirmedContinueShopping")}</Button>
         </div>
