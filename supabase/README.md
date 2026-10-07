@@ -66,7 +66,7 @@ supabase/
   tests/admin_customers_validation.sql back-office customers: customer refused, viewer read-only, manager writes and read-only columns, notes by their author, status history, course progress (always rolls back)
   tests/email_validation.sql        e-mail delivery events (forward-only, newsletter bounce/complaint) and the pending shipping / refund / enrolment queries, service role only (always rolls back)
   config.toml   CLI settings this repo relies on (verify_jwt of the Edge Functions)
-  functions/    Edge Functions (Deno): create-checkout-session, stripe-webhook, deliver-gift-cards, send-email, resend-webhook, send-pending-emails, invite-staff-member, _shared/ (pure modules + clients),
+  functions/    Edge Functions (Deno): create-checkout-session, stripe-webhook, refund-order, deliver-gift-cards, send-email, resend-webhook, send-pending-emails, invite-staff-member, _shared/ (pure modules + clients),
                 *_test.ts (deno test), .env.example (secret names)
   templates/confirm-signup.html     French "Confirm signup" email, to paste into the Auth settings
   templates/invite-staff.html       French "Invite user" email (team invitations), to paste into the Auth settings
@@ -133,6 +133,7 @@ supabase/
 | 20261007072551 | `quiz_unlimited_attempts` | **Applied 2026-10-07.** Knowledge checks have no attempt limit: `private.open_quiz_attempt()` no longer raises `no_attempts_left` (a passed check still refuses new attempts) |
 | 20261007141456 | `studio_shop_gems` | **Applied 2026-10-07.** The 3D Studio's gems are the shop's (decision 81): `studio_gem_appearances` — how a shop gem is drawn in the editor (`shape` on the product row, `material` crystal/metal, `color` `#rrggbb`, `effect` none/iridescent; one row per product plus one per colour variant such as yellow / white gold), seeded from the product photos (84 gems, 12 gold variants); public read for active products, `manage_products` writes, audited, a variant row must belong to its product. Scenes and Gem Groups now require format **2** (piece = product, variant, SS, look snapshot); the format-1 test designs, their share links and groups were deleted first (owner's request, pre-launch). Suite `tests/studio_workspace_validation.sql` (T5–T8) |
 | 20261007181011 | `gift_card_design_everywhere` | **Applied 2026-10-07.** The design/names/message chosen at checkout are shown back (WYSIWYG): policy `gift_cards: purchaser reads own` (a buyer reads the cards of their purchases through the existing column grant — never the code) so the member's order pages draw the card in its design; the `gift_card_delivery` template bodies (fr + en) lose their `{{message}}` paragraph because the e-mail now draws the card itself (`giftCardVisual()`, message included). Test: a buyer sees only their own cards (to add to `gift_cards_validation.sql`) |
+| 20261007184209 | `shipping_refunds` | **Applied 2026-10-07** (decision 82). Back-office shipping and card refunds: `create_shipment()` (a parcel and its lines in one transaction, `manage_orders`, carrier + tracking to ship) and `set_shipment_status()` (forward-only; same status again only corrects the details); refunded units no longer count as "to ship" (`sync_order_fulfillment`, `guard_shipment_item`, via `private.refunded_units()`) and a confirmed refund recomputes the order's fulfilment (`apply_refund_success`); `pending_refund_emails()` lists card refunds only (gift-card credits are not e-mailed); trigger `refunds_guard_zz_gift_cards` refuses a refund while a gift card bought in the order is active; `record_external_refund()` (backend only) records a refund made in the Stripe dashboard. Suite: `supabase/tests/shipping_refunds_validation.sql` |
 | 20261007072552 | `quiz_unlimited_attempts_cleanup` | **Partly applied 2026-10-07.** `admin_save_course()` and `private.learner_course_json()` rewritten without `allow_retry` / `max_attempts` (applied live through SQL, not recorded in the migration history). `drop column` on `course_quizzes` **not applied yet**: the MCP call timed out three times with no lock or session visible; the columns are unused and keep their defaults, so nothing depends on the drop |
 
 RLS is **enabled in the same migration that creates each table** (deny by default);
@@ -298,6 +299,7 @@ supabase db push                                  # applies 20260930200000_strip
 supabase secrets set --env-file supabase/functions/.env   # names in functions/.env.example
 supabase functions deploy create-checkout-session
 supabase functions deploy stripe-webhook          # verify_jwt = false comes from config.toml
+supabase functions deploy refund-order            # verify_jwt = false comes from config.toml (staff JWT checked inside)
 ```
 
 Secrets (Edge Function environment only, never `NEXT_PUBLIC_*`): `STRIPE_SECRET_KEY` (sk_test_…),
@@ -307,8 +309,9 @@ exact origins, e.g. `http://localhost:5173`). `SUPABASE_URL` / `SUPABASE_SERVICE
 
 **Stripe webhook (test mode):** Dashboard → Developers → Webhooks → Add endpoint
 `https://<project ref>.supabase.co/functions/v1/stripe-webhook`, events `checkout.session.completed`,
-`checkout.session.async_payment_succeeded`, `checkout.session.async_payment_failed`, `checkout.session.expired`;
-copy its signing secret into `STRIPE_WEBHOOK_SECRET`. Payment methods offered are those enabled in the Stripe
+`checkout.session.async_payment_succeeded`, `checkout.session.async_payment_failed`, `checkout.session.expired`,
+and, since decision 82, `refund.created`, `refund.updated`, `refund.failed` (**add them to the existing endpoint: dashboard
+step**); copy its signing secret into `STRIPE_WEBHOOK_SECRET`. Payment methods offered are those enabled in the Stripe
 dashboard (the session does not force a list).
 
 **Locally:** `supabase start`, then `supabase functions serve --env-file supabase/functions/.env` and
@@ -378,6 +381,16 @@ visitor nothing, and nobody reads a gift-card code. Revenue rule of the order bo
   `orders.status` are recomputed from the parcels**: preparing → processing; some units shipped →
   `partially_fulfilled`; all shipped → `fulfilled` + `shipped`; all delivered → `delivered`.
 - Customers read their own parcels (tracking page); staff create and update them.
+- **Back office (decision 82):** `create_shipment(order, items, carrier, service, tracking_number, tracking_url,
+  estimated_delivery, status)` writes the parcel and its lines in ONE transaction (status `preparing`, or `shipped`
+  with carrier + tracking number), because the e-mail sweep mails any `shipped` parcel. `set_shipment_status(parcel,
+  status, details…)` is forward-only: preparing → shipped | cancelled; shipped → delivered | returned | lost;
+  delivered → returned; the same status again (preparing / shipped) only corrects carrier, tracking and dates. Both
+  are SECURITY INVOKER under `manage_orders` (viewer, customer and visitor are refused). The shipping e-mail is sent
+  once per parcel by the `send-pending-emails` sweep (≤ 5 minutes); a guest's parcel without a tracking page is
+  not announced, so the parcel form proposes the carrier's page (`webapp/src/lib/carriers.ts`).
+- Units refunded (succeeded) are no longer "to ship" and units being refunded (pending included) cannot be put in a
+  parcel; a confirmed partial refund recomputes `fulfillment_status` / `status`.
 
 ### Refunds (iteration 3)
 
@@ -393,6 +406,32 @@ webhook        mark_refund_succeeded(refund, re_…)  |  mark_refund_failed(refu
 Staff can cancel a pending refund; only the backend can confirm or fail one; confirmed, failed and
 cancelled refunds are final. Line quantities can never be refunded twice. Customers see refunds on
 their own orders.
+
+**Operated from the back office (decision 82)** — Edge Function `refund-order` (`verify_jwt = false`, the caller's
+JWT is checked inside, like `invite-staff-member`):
+
+```
+browser  POST functions/v1/refund-order {action: 'request', order_id, amount_minor, reason, items[], restock}
+           → my_permissions() with the caller's JWT must hold manage_orders
+           → request_refund() WITH THE CALLER'S JWT: permission, paid card payment, amount ≤ refundable balance
+             (payment row locked), lines not refunded twice, no active purchased gift card → refund 'pending'
+           → Stripe refunds.create({payment_intent, amount, metadata:{refund_id, order_id}}, idempotency 'refund:<id>')
+           → provider_refund_id saved on the row; NOT confirmed here
+           → a Stripe refusal calls mark_refund_failed (balance freed); a Stripe outage leaves the row pending
+browser  POST … {action: 'cancel', refund_id}: only a pending refund WITHOUT a Stripe refund id
+Stripe   refund.created / refund.updated / refund.failed → stripe-webhook (verified, deduplicated in stripe_webhook_events)
+           succeeded → mark_refund_succeeded (row found by metadata.refund_id, else by provider_refund_id)
+                       payment + order states, restock, fulfilment, course access revoked on a FULL refund (trigger)
+                       then the refund e-mail sweep runs (and the 5-minute sweep catches what failed)
+           failed / canceled → mark_refund_failed;  pending / requires_action → recorded, nothing yet
+           no refund row (refund made in the Stripe dashboard) → record_external_refund(payment_intent, re_…)
+```
+
+The browser never sets a refund's outcome: the order shows the refund as pending until Stripe's event. The amount
+sent to Stripe is the very integer received (`toDecimalString` for Postgres). Error codes: `invalid_request`,
+`unauthorized`, `forbidden`, `no_card_payment`, `amount_too_high`, `gift_card_active`, `refund_refused`,
+`stripe_refused`, `stripe_unavailable`, `not_found`, `already_sent`, `server_error`. Refunds credited onto gift cards
+(`refund_to_gift_cards`) are immediate and not e-mailed. No Stripe secret other than the existing ones.
 
 ### Gift cards (iteration 4)
 
@@ -1473,6 +1512,34 @@ VAT rates, shipping zones/rates mirroring the Settings prototype. Media rows ref
       and colour counts **once** (its price, or its colour variant's); metal charms count **per piece**. Never
       charged, never sent to checkout; the value stored with a creation is the one computed at its last save.
 
+82. **Shipping and card refunds are operated from the back office** (agent, 2026-10-07, asked by the user). What
+    exists: `/admin/commandes/<ref>` creates parcels (one or several per order, lines and quantities, carrier,
+    tracking number and page, estimated date), marks them shipped / delivered / returned / lost / cancelled, and
+    requests a card refund (total or partial, with the lines coming back and an optional restock). See *Shipments and
+    tracking* and *Refunds*; migration `20261007184209_shipping_refunds`, Edge Function `refund-order`, refund events in
+    `stripe-webhook`.
+    - The status dialog no longer sets `shipped`, `delivered` or `refunded` by hand: parcels drive the first two, a
+      refund confirmed by Stripe the third. Cancelling a paid order stays refused: refund it first.
+    - **Decisions to confirm (agent's safest reading, reversible):**
+      1. *Purchased gift cards.* A refund of an order that bought a gift card still active is **refused** (the card must
+         be cancelled first): otherwise the money goes back and the card stays usable. A refund recorded by the Stripe
+         webhook (money already returned in the dashboard) is never blocked.
+      2. *Partial refunds of course lines* keep the course access; only a **full** refund revokes it (existing trigger).
+         Decide whether refunding a course line partially, or by line, should revoke access.
+      3. *Loyalty stamps* of a refunded order are kept (nothing removes them). Decide whether a full refund should take
+         the stamp back.
+      4. *Restock* is a team choice per refund (a checkbox, lines required): refunded units are also removed from what
+         is "to ship". Unshipped units of a fully refunded order are not returned to stock automatically.
+      5. *Carrier pages.* The parcel form proposes the public tracking page of Colissimo, Chronopost, Mondial Relay, DHL,
+         UPS, FedEx and GLS from the tracking number (`webapp/src/lib/carriers.ts`, editable): confirm the list and the
+         address patterns. Without a page, a **guest** customer gets no shipping e-mail (members get a link to their
+         orders).
+      6. *Refund e-mail only for card refunds*; credits onto gift cards (`refund_to_gift_cards`) send nothing.
+      7. *Stripe outage while refunding*: the refund stays `pending` (and cannot be cancelled once a Stripe refund id is
+         attached); the team checks it in the Stripe dashboard before trying again. A refund made directly in the Stripe
+         dashboard is recorded automatically (reason `other`, no restock).
+    - Awaits the user: add `refund.created`, `refund.updated`, `refund.failed` to the Stripe webhook endpoint (dashboard).
+
 ## Done
 
 - Settings workspace (2026-10-02): store identity and legal mentions, shipping, VAT rates and content languages saved
@@ -1538,8 +1605,8 @@ VAT rates, shipping zones/rates mirroring the Settings prototype. Media rows ref
 ## Next iterations (not implemented)
 
 1. Checkout follow-ups: order confirmation e-mail and gift card delivery e-mail (built 2026-10-05, not deployed:
-   decision 79), promotion code field in the cart (the function already accepts it), Stripe refunds from the back office, `charge.refunded` /
-   `charge.dispute.created` webhooks.
+   decision 79), promotion code field in the cart (the function already accepts it), `charge.dispute.created` webhook (card refunds from the
+   back office: done, decision 82).
 2. Academy, after the authoring schema (iteration 20):
    (**B**, public pages, done in iteration 21; **C**, learner access, done in iteration 22 — follow-ups: a public
    certificate verification page, learner figures in the back office's course list and statistics; **D**, course
