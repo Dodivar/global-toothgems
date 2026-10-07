@@ -128,3 +128,28 @@ Deno.test("refuses a malformed recipient, event key or header before touching an
 Deno.test("the address hash ignores case and surrounding spaces", async () => {
   assertEquals(await hashAddress("  Camille@Example.com "), await hashAddress("camille@example.com"));
 });
+
+Deno.test("caller content reaches the sent html and text, in the language of the template found", async () => {
+  const { deps, calls } = harness({ template: { ...TEMPLATE, locale: "en" } });
+  const result = await sendTemplatedEmail(deps, {
+    ...REQUEST,
+    content: (locale) => ({
+      primaryAction: { label: locale === "en" ? "Track my order" : "Suivre ma commande", url: "https://globaltoothgems.com/compte" },
+    }),
+  });
+  assertEquals(result.status, "sent");
+  const body = await calls.requests[0].json();
+  assertEquals(body.html.includes("Track my order"), true);
+  assertEquals(body.text.includes("Track my order: https://globaltoothgems.com/compte"), true);
+});
+
+Deno.test("a caller action that is not https is refused before anything is claimed or sent", async () => {
+  const { deps, calls } = harness();
+  const result = await sendTemplatedEmail(deps, {
+    ...REQUEST,
+    content: { primaryAction: { label: "Go", url: "http://globaltoothgems.com" } },
+  });
+  assertEquals(result.status, "invalid");
+  assertEquals(calls.claims.length, 0);
+  assertEquals(calls.requests.length, 0);
+});

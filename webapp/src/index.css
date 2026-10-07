@@ -539,6 +539,22 @@
   to { opacity: 1; transform: none; }
 }
 
+/* Members' Lounge: a message reached from search or the inbox glows once. */
+@keyframes gt-lounge-flash {
+  0%, 35% { background-color: var(--gt-blue-100); }
+  100% { background-color: transparent; }
+}
+.gt-lounge-flash { animation: gt-lounge-flash 2.2s var(--ease-standard) both; }
+
+/* Members' Lounge: the three dots of "… is typing". */
+@keyframes gt-lounge-typing {
+  0%, 60%, 100% { opacity: .25; transform: none; }
+  30% { opacity: 1; transform: translateY(-2px); }
+}
+.gt-lounge-typing > span { animation: gt-lounge-typing 1.2s var(--ease-standard) infinite; }
+.gt-lounge-typing > span:nth-child(2) { animation-delay: .15s; }
+.gt-lounge-typing > span:nth-child(3) { animation-delay: .3s; }
+
 @keyframes gt-skeleton {
   from { background-position: 100% 50%; }
   to { background-position: 0 50%; }
@@ -555,7 +571,9 @@
   .gt-auth-swap,
   .gt-stamp-next,
   .gt-stamp-press,
+  .gt-lounge-typing > span,
   .gt-skeleton { animation: none; }
+  .gt-lounge-flash { animation: none; background-color: var(--gt-blue-100); }
   .gt-diploma { transform: none; transition: none; }
   .gt-sparkle::after { display: none; }
 }
@@ -1576,7 +1594,7 @@
 --------------------------------------------------------------------------- */
 @layer components {
   .gt-learn-prose {
-    max-width: 68ch;
+    max-width: 80ch;
     font-size: var(--text-body-lg);
     line-height: var(--leading-relaxed);
     color: var(--text-body);
@@ -2343,4 +2361,100 @@
   .gt-shopb-card:focus-within .gt-shopb-card-img { transform: none; }
   .gt-shopb-backdrop,
   .gt-shopb-sheet { animation: none; }
+}
+
+/* ---------------------------------------------------------------------------
+   Certificates: the completion moment, the collection, sharing.
+   One entrance per element, played once: the ring closes, the badge turns in
+   and catches the light, the certificate rises into place, a short fall of
+   confetti. Under reduced motion everything is simply there, and the confetti
+   is not drawn at all.
+--------------------------------------------------------------------------- */
+@layer components {
+  .gt-cert-seq {
+    animation: gt-cert-rise var(--duration-slow) var(--ease-out-soft) both;
+    animation-delay: calc(var(--seq, 0) * 110ms + 900ms);
+  }
+  .gt-cert-rise { animation: gt-cert-rise var(--duration-normal) var(--ease-out-soft) both; }
+
+  .gt-cert-ring-arc {
+    animation: gt-cert-ring 1100ms var(--ease-out-soft) 150ms both;
+  }
+  .gt-cert-badge { animation: gt-cert-badge 760ms var(--ease-out-soft) 850ms both; }
+  .gt-cert-sheen {
+    background: linear-gradient(115deg, transparent 35%, rgba(255, 255, 255, .85) 50%, transparent 65%);
+    transform: translateX(-120%);
+    animation: gt-cert-sheen 900ms var(--ease-in-out) 1500ms both;
+  }
+  .gt-cert-reveal {
+    transform-origin: 50% 100%;
+    animation: gt-cert-reveal 900ms var(--ease-out-soft) 1250ms both;
+  }
+  .gt-cert-pop { animation: gt-pop var(--duration-normal) var(--ease-out-soft) both; }
+
+  .gt-confetti {
+    opacity: 0;
+    animation-name: gt-confetti;
+    animation-timing-function: cubic-bezier(.25, .6, .4, 1);
+    animation-fill-mode: forwards;
+  }
+  .gt-cert-float { animation: gt-cert-float 16s var(--ease-in-out) infinite alternate; }
+
+  .gt-cert-cta { transition: background-color var(--duration-fast), color var(--duration-fast), border-color var(--duration-fast), box-shadow var(--duration-normal) var(--ease-out-soft), transform var(--duration-normal) var(--ease-out-soft); }
+  .gt-cert-cta:hover { transform: translateY(-1px); box-shadow: var(--shadow-md); }
+  .gt-cert-cta:active { transform: scale(.98); }
+
+  .gt-cert-network { transition: transform var(--duration-normal) var(--ease-out-soft), box-shadow var(--duration-normal) var(--ease-out-soft), border-color var(--duration-fast); }
+  .gt-cert-network:hover { transform: translateY(-2px); box-shadow: var(--shadow-sm); border-color: var(--border-default); }
+  .gt-cert-network:active { transform: scale(.97); }
+
+  /* The viewer's zoom: the page grows inside a scrolling stage. */
+  .gt-cert-zoom { transition: width var(--duration-normal) var(--ease-out-soft); }
+}
+
+@keyframes gt-cert-rise {
+  from { opacity: 0; transform: translateY(14px); }
+  to { opacity: 1; transform: none; }
+}
+@keyframes gt-cert-ring {
+  from { stroke-dashoffset: var(--circ); }
+  to { stroke-dashoffset: 0; }
+}
+@keyframes gt-cert-badge {
+  0% { opacity: 0; transform: scale(.4) rotate(-24deg); }
+  60% { opacity: 1; transform: scale(1.08) rotate(4deg); }
+  100% { opacity: 1; transform: none; }
+}
+@keyframes gt-cert-sheen {
+  from { transform: translateX(-120%); opacity: 1; }
+  to { transform: translateX(120%); opacity: 0; }
+}
+@keyframes gt-cert-reveal {
+  0% { opacity: 0; transform: perspective(1200px) translateY(40px) rotateX(14deg) scale(.94); }
+  100% { opacity: 1; transform: none; }
+}
+@keyframes gt-confetti {
+  0% { opacity: 0; transform: translate(0, -24px) rotate(var(--rot)); }
+  12% { opacity: 1; }
+  75% { opacity: .9; }
+  100% { opacity: 0; transform: translate(var(--drift), 62vh) rotate(calc(var(--rot) + 260deg)); }
+}
+@keyframes gt-cert-float {
+  from { transform: translate(0, 0) scale(1); }
+  to { transform: translate(24px, 18px) scale(1.08); }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .gt-cert-seq,
+  .gt-cert-rise,
+  .gt-cert-ring-arc,
+  .gt-cert-badge,
+  .gt-cert-reveal,
+  .gt-cert-pop,
+  .gt-cert-float { animation: none; }
+  .gt-cert-sheen,
+  .gt-confetti { display: none; }
+  .gt-cert-cta:hover,
+  .gt-cert-network:hover { transform: none; }
+  .gt-cert-zoom { transition: none; }
 }

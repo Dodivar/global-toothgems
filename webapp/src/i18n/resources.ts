@@ -35,8 +35,11 @@ import trainingMediaEn from "./locales/trainingMedia.en.json";
 // The Academy marketplace at /academy, under `academyPage`.
 import academyPageFr from "./locales/academyPage.fr.json";
 import academyPageEn from "./locales/academyPage.en.json";
+// The Members' Lounge (community chat at /compte/salons), under `lounge`.
+import loungeFr from "./locales/communityChat.fr.json";
+import loungeEn from "./locales/communityChat.en.json";
 
 export const resources = {
-  fr: { translation: { ...fr, promo: promoFr, reviews: reviewsFr, settings: settingsFr, studio: { ...studioFr, workspace: studioWorkspaceFr }, homeAlt: homeAltFr, shopAlt: shopAltFr, learning: learningFr, trainingMedia: trainingMediaFr, academyPage: academyPageFr } },
-  en: { translation: { ...en, promo: promoEn, reviews: reviewsEn, settings: settingsEn, studio: { ...studioEn, workspace: studioWorkspaceEn }, homeAlt: homeAltEn, shopAlt: shopAltEn, learning: learningEn, trainingMedia: trainingMediaEn, academyPage: academyPageEn } },
+  fr: { translation: { ...fr, promo: promoFr, reviews: reviewsFr, settings: settingsFr, studio: { ...studioFr, workspace: studioWorkspaceFr }, homeAlt: homeAltFr, shopAlt: shopAltFr, learning: learningFr, trainingMedia: trainingMediaFr, academyPage: academyPageFr, lounge: loungeFr } },
+  en: { translation: { ...en, promo: promoEn, reviews: reviewsEn, settings: settingsEn, studio: { ...studioEn, workspace: studioWorkspaceEn }, homeAlt: homeAltEn, shopAlt: shopAltEn, learning: learningEn, trainingMedia: trainingMediaEn, academyPage: academyPageEn, lounge: loungeEn } },
 };

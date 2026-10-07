@@ -477,7 +477,7 @@ The signed-in area is an administration dashboard: a left sidebar on desktop, a 
 | Route | Section |
 | --- | --- |
 | `/compte` | Dashboard — summary tiles, the "resume where you left off" card, the courses being followed with their module breakdown, and the courses still available |
-| `/compte/attestations` | Certificates |
+| `/compte/attestations` | Certificates — the collection (newest featured), each with view (zoomable viewer), download (A4 PDF) and share (image + caption); courses under way as locked cards; an encouraging empty state. The document is `lib/certificate/layout.ts`, drawn as SVG on screen and on a canvas for the files (`lib/certificate/render.ts`, `pdf.ts`); sharing is `components/certificate/ShareAchievementDialog.tsx` (no public certificate page, by decision) |
 | `/compte/commandes` | Order history, with parcel tracking and lifetime spend per currency |
 | `/compte/commandes/:reference` | One order: lines as bought, recorded amounts, parcels and tracking, refunds, addresses; "Print the summary" (an order summary, explicitly not an invoice) |
 | `/compte/fidelite` | Loyalty card — the member's real stamp card and reward (`lib/loyalty.tsx`, `loyalty_overview`), read again on arrival |
@@ -499,7 +499,7 @@ What a member who holds a course reads. The course is the one built in the back 
 | --- | --- |
 | `/academy/mes-formations/:courseId` | Course overview: cover, progress ring, modules and steps completed, time left, the next unfinished lesson behind one "Continue training" button, module cards with status badges, recently completed lessons, objectives and completion rules |
 | `/academy/mes-formations/:courseId/lecon/:nodeKey` | The lesson player, a full-screen workspace (no storefront header/footer): lesson content in authored order (text, image, video, any mix), the module's knowledge check after its last step, a side panel with the course outline on desktop, and a progress strip, a contents sheet and a bottom action bar on phones |
-| `/academy/mes-formations/:courseId/terminee` | Completion: medal, course, date, average score, certificate when the course issues one, back to the dashboard, review the course |
+| `/academy/mes-formations/:courseId/terminee` | Completion: the ring closing on 100 %, the badge, the certificate revealed with a short confetti fall (none under reduced motion), download and share in place, the figures that earned it, then the way on (other courses, review the course) |
 | `/academy/lecon` | Forwards to the overview of the course just opened (every existing "open this course" action lands here) |
 
 How it works:
@@ -563,6 +563,29 @@ The seeded account owns two courses, so the locked state would be unreachable in
 ### Scope
 
 Interactions are simulated against in-memory state in `lib/community.tsx`: reacting, saving, replying, starting a discussion (with a sample photograph in place of an upload) and opening member profiles all work and move the same counters the navigation reads, and all of it resets on reload. Nothing is sent, stored or authorised — real membership, moderation and authorization belong to the server, driven by the same verified payment event as course access.
+
+## The Members' Lounge (`/compte/salons`)
+
+The community's private chat — *Salon des membres* / *Members' Lounge* — beside, not instead of, the Artist Community's feed of posts. Same door: an account with a training on it (`useCommunity().hasAccess`, the same rule and the same **Aperçu prototype** switch, reachable from the flask in the lounge's user panel). Without access, the page is an invitation (`LockedLounge`): the real lounge blurred behind one card, *Découvrir les formations*, and the way back to the account. The member-space sidebar carries both entries, each marked "accès avec une formation" when locked.
+
+Language lounges (English by default, French, German, Spanish; Italian and Portuguese announced in the switcher) with the same five channels each (introductions, general, inspiration, techniques & tips, business & growth), and private conversations that belong to the community, not to a lounge.
+
+**One address per room** (`lib/communityChat/loungeRoutes.ts`), so Back walks from room to room and a channel can be linked to: `/compte/salons/<en|fr|de|es>/<presentations|discussion|inspiration|techniques|business>`, `/compte/salons/messages/<member>`. The bare `/compte/salons` forwards to the room visited last on this device (`gt-lounge-last`), else `/compte/salons/en/discussion`; anything else is the 404 inside the shell. The lounge is the section's layout (`app/compte/salons/layout.tsx` → `MembersLounge`), so it stays mounted while the address changes; the optional catch-all page (`[[...room]]`) only checks the session.
+
+**With the member space.** In the lounge the shell steps back rather than stacking two menus: on desktop its sidebar narrows to an 88 px rail of the same sections (icon + short label, like the Studio rail), whose "Menu" opens the full sidebar over the page; on phones the shell's top bar is left out and the lounge's drawer starts with "← Espace membre", which opens the same menu (`useMemberShellMenu`). The locked lounge and its 404 keep the full shell. The lounge state (`ChatProvider`) is mounted by the account zone (`zones/account.tsx`), so the sidebar's *Salon des membres* entry shows its activity on every member page — a fuchsia count for what is addressed to you (mentions, private messages), a dot for other unread messages — and the dashboard shows a lounge card (`LoungeActivityCard`) leading to the waiting private message, or to the last room.
+
+Desktop is three columns beside the rail — lounge sidebar | conversation | members (from 1280 px; a drawer below, toggled from the header). Below 1024 px the lounge sidebar is a drawer opened from the conversation header, which also carries the private messages and the inbox.
+
+| Piece | Where |
+| --- | --- |
+| Fixtures (members, lounges, channels, messages, private conversations) | `data/communityChat.ts` — `minutesAgo` ages, mentions stored as `{ type: "mention", memberId }` tokens, message text written in the lounge's language (content, not UI) |
+| Pure rules (reactions, mention parsing and autocomplete, grouping, search) | `lib/communityChat/chatLogic.ts`, tested in `chatLogic.test.ts` |
+| State (one reducer: open the room of the address, send, react, mark read, mute, notifications derived from the rooms) | `lib/communityChat/chatStore.tsx`, mounted by the account zone |
+| Addresses | `lib/communityChat/loungeRoutes.ts`, tested in `loungeRoutes.test.ts` |
+| Screen and components | `screens/communityChat/MembersLounge.tsx`, `components/communityChat/` |
+| Copy | `i18n/locales/communityChat.{fr,en}.json`, under `lounge` |
+
+Simulated, in memory, reset on reload: sending (text, `@mentions`, emoji, images kept as object URLs in the tab), replies shown as a compact quote with a connector, reactions, unread counts and the "New" marker, muting, mark-as-read, the inbox (mentions, replies, reactions, private messages), search (messages, members, channels of the current lounge and the private conversations), member profiles, presence, and — prototype only — a typing indicator and a canned answer when you write privately to someone online (`DEMO_AUTO_REPLY`). Nothing is sent, stored or authorised. A live version needs tables for lounges, channels, messages, reactions, read markers and conversations with RLS on the same course entitlement, Realtime for delivery, private Storage for images, and moderation — none of it exists yet.
 
 ## The administration area (`/admin`)
 
@@ -798,6 +821,7 @@ Without the Supabase variables every domain runs on its mock store. With them, t
 - **Checkout extras.** Payment runs through Stripe (see *Cart and checkout*) and gift card codes can be used in the cart, but promotion codes and the loyalty reward cannot be entered yet (the Edge Function accepts promotion codes), no confirmation e-mail is sent, and saving the address on the account is not offered.
 - **Academy.** Authoring, public pages and the learner side are on Supabase (phases A–C). Courses are bought through the cart (phase D, migration `20261002100000_course_checkout` not applied yet) or granted by hand (`/admin/formations/:id/acces`). The back office's course list and statistics still show placeholder learner figures (`enrolled`, `completionRate`, `data/adminAnalytics.ts`).
 - **Artist Community.** Fixtures and in-memory posting; access derived client-side from the courses on the account. Post-launch.
+- **Members' Lounge** (`/compte/salons`). UI prototype of the community chat: fixtures and in-memory messages, same client-side access rule as the Artist Community. No backend. Post-launch.
 - **Loyalty Club.** Live (2026-10-03). `lib/loyalty.tsx` reads the public rules (`loyalty_settings`) and the member's card (`loyalty_overview`, RLS-limited); `lib/loyaltyMapping.ts` derives the card state (unit-tested); `data/loyalty.ts` holds the types and the example cards of the marketing pages. The database awards the stamp when the Stripe webhook marks an order paid; the browser only reads. The cart banner counts shop goods only (no gift card, no course) and invites guests to sign in. The cart offers a checkbox to spend a completed card (`use_loyalty_reward` in the checkout request, previewed with `rewardDiscount`; the database refuses with `loyalty_reward_unavailable` when the card is gone or reserved). Not built: e-mail on stamp/reward.
 - **Security page:** data export and account deletion are simulated (they need backend jobs).
 - **Back-office promotions and campaigns, statistics:** mock stores over a schema that already exists. A translation workflow (coverage, editor) is not built.

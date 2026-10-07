@@ -64,7 +64,7 @@ export function CourseOverview() {
   const nextModule = next ? training.modules[next.moduleIndex] : undefined;
 
   return (
-    <div className="mx-auto grid max-w-[var(--max-width-content)] gap-[clamp(28px,4vw,48px)] px-[clamp(16px,4vw,48px)] py-[clamp(20px,3vw,40px)]">
+    <div className="mx-auto grid max-w-[1680px] gap-[clamp(28px,4vw,48px)] px-[clamp(16px,4vw,48px)] py-[clamp(20px,3vw,40px)]">
       <nav aria-label={t("learning.breadcrumb")} className="flex flex-wrap items-center gap-1.5 text-[length:var(--text-caption)] text-[var(--text-muted)]">
         <Link to="/compte" className="underline decoration-1 underline-offset-2 hover:text-[var(--text-primary)]">
           {t("learning.myAccount")}

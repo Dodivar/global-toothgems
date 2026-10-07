@@ -63,7 +63,9 @@ Draft → published ⇄ unpublished (enforced by the `courses_guard` trigger; pu
 
 ## Certificates
 
-A certificate shown as real must be a durable record (recipient, course, issue date, verification code, score) created by a server rule when completion conditions are met — not a flag computed in the browser. It is the `course_completions` row of a course that issues certificates (code `GTC-XXXX-XXXX-XXXX`), written once and kept after a revocation or later course edits. Social verification pages, graduate-only areas and celebrations are post-launch (`01`).
+A certificate shown as real must be a durable record (recipient, course, issue date, verification code, score) created by a server rule when completion conditions are met — not a flag computed in the browser. It is the `course_completions` row of a course that issues certificates (code `GTC-XXXX-XXXX-XXXX`), written once and kept after a revocation or later course edits.
+
+The document (decided by the owner, 2026-10-07): issued by "Global Toothgems Academy" with no hand-drawn signature, and carries the Global Toothgems logo (the header's black wordmark). The holder's name is the profile's first and last name at display time, never the e-mail fallback: a certificate cannot be downloaded or shared until both are filled in, and the member is asked for them in place (decided by the owner, 2026-10-07). It is drawn once (`webapp/src/lib/certificate/layout.ts`) and rendered both on screen (SVG) and as the member's file (canvas → A4 PDF or PNG, in the browser, no dependency), so what is downloaded is what was shown. **No public certificate page**: sharing is the certificate's image plus an editable caption (device share sheet, or image + copied caption + the network opened) and LinkedIn's pre-filled "add a certification" form; nothing of ours exposes the holder. The completion screen celebrates (once, still under reduced motion) and offers download and share in place. Graduate-only areas stay post-launch (`01`).
 
 ## Community
 

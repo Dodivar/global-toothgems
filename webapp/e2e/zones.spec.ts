@@ -48,6 +48,8 @@ const MEMBER_SCREENS: { path: string; heading: RegExp }[] = [
   { path: "/compte/communaute", heading: /^Bienvenue dans la communauté des artistes$/ },
   { path: "/compte/communaute/membres", heading: /^Les artistes de la communauté$/ },
   { path: "/compte/communaute/charte", heading: /^Notre façon de faire$/ },
+  { path: "/compte/salons/en/discussion", heading: /^Salon des membres$/ },
+  { path: "/compte/salons/messages/emma", heading: /^Salon des membres$/ },
 ];
 
 for (const { path, heading } of MEMBER_SCREENS) {
@@ -84,7 +86,20 @@ test("member space: the sidebar and the community's links are client-side naviga
   expect(problems).toEqual([]);
 });
 
-for (const path of ["/compte/nimporte-quoi", "/compte/communaute/nimporte-quoi"]) {
+test("member space: the lounge's bare address opens a room, and channels have their own addresses", async ({ page, problems }) => {
+  await signInMember(page);
+  await open(page, "/compte/salons");
+  await expect(page).toHaveURL((url) => url.pathname === "/compte/salons/en/discussion", { timeout: 30_000 });
+  await dismissCookieBanner(page);
+  await page.getByRole("button", { name: "Techniques & Tips" }).first().click();
+  await expect(page).toHaveURL((url) => url.pathname === "/compte/salons/en/techniques", { timeout: 30_000 });
+  await page.goBack();
+  await expect(page).toHaveURL((url) => url.pathname === "/compte/salons/en/discussion", { timeout: 30_000 });
+  await expect(page.getByRole("heading", { level: 2, name: "General Discussion" })).toBeVisible();
+  expect(problems).toEqual([]);
+});
+
+for (const path of ["/compte/nimporte-quoi", "/compte/communaute/nimporte-quoi", "/compte/salons/nimporte-quoi", "/compte/salons/en/nimporte-quoi"]) {
   test(`member space: ${path} is the 404 screen inside the shell`, async ({ page, problems }) => {
     await signInMember(page);
     await expectScreen(page, path, /Oups, cette page a fait un petit détour/);

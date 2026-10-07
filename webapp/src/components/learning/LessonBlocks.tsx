@@ -50,8 +50,8 @@ function LessonImage({ block, lang }: { block: ImageBlock; lang: ContentLang }) 
     block.align === "full"
       ? "w-full"
       : block.align === "center"
-        ? "mx-auto w-full max-w-[560px]"
-        : "w-full max-w-[420px]";
+        ? "mx-auto w-full max-w-[720px]"
+        : "w-full max-w-[520px]";
   return (
     <figure className={clsx("m-0 grid gap-2.5", layout)}>
       <img
@@ -61,9 +61,12 @@ function LessonImage({ block, lang }: { block: ImageBlock; lang: ContentLang }) 
         alt={block.alt[lang] ?? ""}
         loading="lazy"
         decoding="async"
+        // The image keeps its own proportions: nothing is cropped, whatever the
+        // format. A very tall picture is capped in height and centred in its
+        // column rather than cut.
         className={clsx(
-          "w-full rounded-[var(--radius-media)] bg-[var(--surface-sunken)] object-cover shadow-[var(--shadow-sm)]",
-          block.align === "full" ? "aspect-[16/9]" : "aspect-[4/3]",
+          "h-auto max-h-[80vh] w-full rounded-[var(--radius-media)] bg-[var(--surface-sunken)] object-contain shadow-[var(--shadow-sm)]",
+          block.align === "left" && "object-left",
         )}
       />
       {caption && (
