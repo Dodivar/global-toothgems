@@ -10,7 +10,7 @@ import { piecesKey, pruneGroups, sanitizeScene, type SceneCamera, type SceneGrou
  * because two very different readers share it: the React panels, and the
  * three.js engine, which renders every frame and must not wait for React.
  *
- * The working draft and the named presets live in this browser's storage, as
+ * The working draft lives in this browser's storage, as
  * in the standalone Studio it comes from. Saving a design to the account is
  * the Studio workspace's job (`lib/studioWorkspace`): this store only loads a
  * saved scene onto the stage, serialises the stage back into one, and
@@ -87,12 +87,10 @@ export interface StudioSnapshot {
 
 /** Browser-storage keys, namespaced like the site's other keys (`gt-lang`). */
 const DESIGN_KEY = "gt-studio3d-design-v1";
-const PRESETS_KEY = "gt-studio3d-presets-v1";
 /** The finish picked last: a per-browser preference, not part of any design. */
 const LAST_FINISH_KEY = "gt-studio3d-last-finish-v1";
 const HISTORY_LIMIT = 60;
 const SAVE_DEBOUNCE_MS = 500;
-export const PRESET_NAME_MAX = 40;
 export const CLIENT_NAME_MAX = 48;
 
 function readStorage(key: string): unknown {
@@ -592,79 +590,4 @@ export const studioStore = new DesignStore();
 
 export function useStudio(): StudioSnapshot {
   return useSyncExternalStore(studioStore.subscribe, studioStore.getSnapshot);
-}
-
-/* ------------------------------------------------------ named presets */
-
-export interface UserPreset {
-  id: string;
-  name: string;
-  createdAt: number;
-  jewels: PlacedJewelry[];
-  /** The model the pieces were placed on; untagged presets predate the default dentition. */
-  model: ModelMode;
-}
-
-function loadUserPresets(): UserPreset[] {
-  const arr = readStorage(PRESETS_KEY);
-  if (!Array.isArray(arr)) return [];
-  return arr
-    .filter((p) => p && typeof p.id === "string" && typeof p.name === "string")
-    .map((p) => ({
-      id: p.id as string,
-      name: (p.name as string).slice(0, PRESET_NAME_MAX),
-      createdAt: typeof p.createdAt === "number" ? p.createdAt : 0,
-      jewels: sanitizeJewels(p.jewels),
-      model: isModelMode(p.model) ? p.model : ("studio" as const),
-    }))
-    .filter((p) => p.jewels.length > 0);
-}
-
-let userPresets: UserPreset[] = loadUserPresets();
-const presetListeners = new Set<() => void>();
-
-function emitPresets() {
-  writeStorage(PRESETS_KEY, userPresets);
-  presetListeners.forEach((l) => l());
-}
-
-export function saveUserPreset(name: string): UserPreset | null {
-  const clean = name.trim().slice(0, PRESET_NAME_MAX);
-  if (!clean || !studioStore.jewels.length) return null;
-  const p: UserPreset = {
-    id: uid(),
-    name: clean,
-    createdAt: Date.now(),
-    jewels: structuredClone(studioStore.jewels),
-    model: studioStore.designModel,
-  };
-  userPresets = [p, ...userPresets];
-  emitPresets();
-  return p;
-}
-
-export function deleteUserPreset(id: string) {
-  userPresets = userPresets.filter((p) => p.id !== id);
-  emitPresets();
-}
-
-/**
- * Replace the design with a saved preset. `adapt` re-seats pieces saved on
- * another model onto the one on stage (the engine's `adaptDesign`).
- */
-export function applyUserPreset(p: UserPreset, adapt?: (jewels: PlacedJewelry[], from: ModelMode) => PlacedJewelry[]) {
-  const jewels = p.jewels.map((j) => ({ ...j, id: uid() }));
-  studioStore.setJewels(adapt ? adapt(jewels, p.model) : jewels);
-}
-
-export function useUserPresets(): UserPreset[] {
-  return useSyncExternalStore(
-    (cb) => {
-      presetListeners.add(cb);
-      return () => {
-        presetListeners.delete(cb);
-      };
-    },
-    () => userPresets,
-  );
 }

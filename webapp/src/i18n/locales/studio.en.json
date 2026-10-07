@@ -370,18 +370,6 @@
       "custom": "Custom colour",
       "customValue": "Custom {{hex}}"
     },
-    "presets": {
-      "menu": "Presets",
-      "mine": "My presets",
-      "mineEmpty": "Save your current design under a name to reuse it any time.",
-      "saveCurrent": "Save current design as a preset…",
-      "nameLabel": "Preset name",
-      "namePlaceholder": "Preset name…",
-      "save": "Save",
-      "delete": "Delete the preset “{{name}}”",
-      "confirmDelete": "Confirm: delete “{{name}}”",
-      "clearAll": "Clear all pieces"
-    },
     "export": {
       "menu": "Export",
       "images": "Images",
@@ -688,9 +676,6 @@
       "centeredPartial_one": "Centred — {{count}} piece kept in place (spot taken)",
       "centeredPartial_other": "Centred — {{count}} pieces kept in place (spots taken)",
       "centerNoRoom": "No piece centred: the middle of their tooth is already taken",
-      "presetNameMissing": "Give your preset a name first",
-      "presetEmpty": "Place at least one piece before saving a preset",
-      "presetSaved": "Preset “{{name}}” saved",
       "saveEmpty": "Add at least one gem before saving.",
       "saveEmptyLinked": "This design is empty. Undo, or add a gem, before saving — to remove the creation, delete it from My Creations.",
       "exportedPng": "PNG snapshot downloaded",
