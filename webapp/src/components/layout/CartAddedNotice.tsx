@@ -47,22 +47,23 @@ function Notice({ addition, onDone, onUndo }: { addition: CartAddition; onDone: 
   const [undone, setUndone] = useState(false);
   const { line, added } = addition;
 
-  // A click anywhere else, or Escape, closes it. `click` rather than
-  // `pointerdown`: a finger starting to scroll the page is not a click. The
-  // click that added the product has already passed the document by the time
-  // this listener exists, so it cannot close the notice it opened.
+  // A click or a tap anywhere else, or Escape, closes it. `pointerup` rather
+  // than `pointerdown`: a finger that starts scrolling the page ends in
+  // `pointercancel`, not `pointerup`, so scrolling leaves the notice open; and
+  // unlike `click`, iOS Safari sends it for a tap on blank page too. The press
+  // that added the product has ended before this listener exists.
   useEffect(() => {
     if (leaving) return;
-    const onClick = (e: MouseEvent) => {
+    const onPointerUp = (e: PointerEvent) => {
       if (!ref.current?.contains(e.target as Node)) setLeaving(true);
     };
     const onKey = (e: KeyboardEvent) => {
       if (e.key === "Escape") setLeaving(true);
     };
-    document.addEventListener("click", onClick, true);
+    document.addEventListener("pointerup", onPointerUp, true);
     document.addEventListener("keydown", onKey);
     return () => {
-      document.removeEventListener("click", onClick, true);
+      document.removeEventListener("pointerup", onPointerUp, true);
       document.removeEventListener("keydown", onKey);
     };
   }, [leaving]);
