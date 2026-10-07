@@ -81,7 +81,7 @@ const asError = (value: unknown): CheckoutError =>
 
 /** A Checkout Session client secret (`cs_test_…_secret_…`), as the function returns it. */
 export const isClientSecret = (value: unknown): value is string =>
-  typeof value === "string" && /^cs_(test|live)_[A-Za-z0-9]{10,250}_secret_[A-Za-z0-9]{8,250}$/.test(value);
+  typeof value === "string" && /^cs_(test|live)_[A-Za-z0-9]{10,250}_secret_[A-Za-z0-9%_.~-]{8,1000}$/.test(value);
 
 /** A Stripe publishable key; only ever a `pk_` key reaches Stripe.js. */
 export const isPublishableKey = (value: unknown): value is string =>

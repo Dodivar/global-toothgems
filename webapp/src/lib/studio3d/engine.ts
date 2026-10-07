@@ -2399,7 +2399,8 @@ export class StudioEngine {
   private createGhost(typeId: string) {
     const def = JEWELRY_BY_ID[typeId];
     const tpl = getJewelTemplate(def.geometry);
-    const spec = resolveFinishRaw(def.defaultColor);
+    const finish = this.store.initialFinish(typeId);
+    const spec = resolveFinishRaw(finish.color, finish.customColor);
     const baseColor = new THREE.Color(spec.hex).getHex();
     const material = new THREE.MeshBasicMaterial({ color: baseColor, transparent: true, opacity: 0.55, depthWrite: false });
     const root = new THREE.Group();

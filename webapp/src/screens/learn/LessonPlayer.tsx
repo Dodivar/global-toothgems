@@ -17,7 +17,7 @@ import { pick } from "../../data/types";
 import { completionHref, learnHref, lessonHref } from "../../lib/academyUrl";
 import { isNodeDone, isRequired, isUnlocked, type CourseSummary, type PathNode } from "../../lib/learning/path";
 import type { ContentLang } from "../../lib/localized";
-import { useProgress } from "../../lib/progress";
+import { useCourseMediaUrl, useProgress } from "../../lib/progress";
 import { useToast } from "../../lib/toast";
 import { useFocusTrap } from "../../lib/useFocusTrap";
 import { formatDuration } from "../../lib/trainingFilters";
@@ -44,6 +44,7 @@ export function LessonPlayer() {
   const navigate = useNavigate();
   const { showToast } = useToast();
   const { visitNode, completeStep, quizGrader } = useProgress();
+  const mediaUrl = useCourseMediaUrl();
   const { card, access, training, record, summary, progress } = useLearnerCourse(courseId);
   const [sheetOpen, setSheetOpen] = useState(false);
   const [saving, setSaving] = useState(false);
@@ -86,6 +87,7 @@ export function LessonPlayer() {
   if (!node) return <Navigate to={learnHref(courseId)} replace />;
 
   const module = training.modules[node.moduleIndex];
+  const moduleCover = node.kind === "step" && node.indexInModule === 0 ? mediaUrl(module.cover) : "";
   const step = node.kind === "step" ? module.steps.find((s) => s.id === node.key) : undefined;
   const done = isNodeDone(node, record);
   const nextNode = summary.path[index + 1];
@@ -159,6 +161,14 @@ export function LessonPlayer() {
                 </p>
               )}
               <LessonMeta node={node} blocks={step?.blocks ?? []} done={done} />
+              {moduleCover && (
+                <img
+                  src={moduleCover}
+                  alt=""
+                  aria-hidden="true"
+                  className="mt-2 aspect-[21/9] w-full rounded-[var(--radius-card)] object-cover"
+                />
+              )}
             </header>
 
             {!unlocked ? (

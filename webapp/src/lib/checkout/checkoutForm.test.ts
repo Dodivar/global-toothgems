@@ -92,6 +92,7 @@ describe("checkout answers", () => {
 
   it("recognises client secrets", () => {
     expect(isClientSecret(payment.client_secret)).toBe(true);
+    expect(isClientSecret("cs_test_a1B2c3D4e5F6g7H8_secret_fidkdWxOYHwnPyd1blpx%2FJ2FgY2RwaXEn%27KSdkdWxOYHw_-")).toBe(true);
     expect(isClientSecret("pi_123_secret_abcdefghij")).toBe(false);
     expect(isClientSecret(null)).toBe(false);
   });
