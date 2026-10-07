@@ -48,6 +48,7 @@ const MEMBER_SCREENS: { path: string; heading: RegExp }[] = [
   { path: "/compte/communaute", heading: /^Bienvenue dans la communauté des artistes$/ },
   { path: "/compte/communaute/membres", heading: /^Les artistes de la communauté$/ },
   { path: "/compte/communaute/charte", heading: /^Notre façon de faire$/ },
+  { path: "/compte/salons", heading: /^Salon des membres$/ },
 ];
 
 for (const { path, heading } of MEMBER_SCREENS) {

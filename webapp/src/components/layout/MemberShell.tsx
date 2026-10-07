@@ -11,6 +11,7 @@ import {
   LogOut,
   Menu,
   MessageSquareText,
+  MessagesSquare,
   Package,
   ShieldCheck,
   ShoppingBag,
@@ -58,9 +59,10 @@ interface SectionItem {
   /** Only the dashboard needs it: every other path is a distinct prefix. */
   end?: boolean;
   /**
-   * The Artist Community, the one entry whose availability depends on what
-   * the account owns. It is never removed and never disabled: without a
-   * training it still leads somewhere, to the preview of what is behind it.
+   * The Artist Community and the Members' Lounge, the entries whose
+   * availability depends on what the account owns. They are never removed and
+   * never disabled: without a training they still lead somewhere, to the
+   * preview of what is behind them.
    */
   community?: boolean;
 }
@@ -68,6 +70,7 @@ interface SectionItem {
 const SECTIONS: SectionItem[] = [
   { to: "/compte", labelKey: "account.navDashboard", icon: LayoutDashboard, end: true },
   { to: "/compte/communaute", labelKey: "community.navEntry", icon: Users, community: true },
+  { to: "/compte/salons", labelKey: "lounge.navEntry", icon: MessagesSquare, community: true },
   { to: "/compte/attestations", labelKey: "account.navCertificates", icon: Award },
   { to: "/compte/commandes", labelKey: "account.navOrders", icon: Package },
   { to: "/compte/avis", labelKey: "reviews.nav.account", icon: MessageSquareText },
@@ -316,7 +319,7 @@ function SectionLink({ item, onNavigate }: { item: SectionItem; onNavigate?: () 
   const { t } = useTranslation();
   const { hasAccess } = useCommunity();
   const Icon = item.icon;
-  /* The community is the only entry that can be locked, and a lock icon alone
+  /* The community entries are the only ones that can be locked, and a lock icon alone
      would say it in colour and shape only — so the state is also written out. */
   const locked = item.community === true && !hasAccess;
 
