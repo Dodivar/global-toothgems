@@ -1358,8 +1358,12 @@ VAT rates, shipping zones/rates mirroring the Settings prototype. Media rows ref
       served at `<SITE_URL>/email/logo-wordmark.png` — it shows only once the webapp is deployed with it. Montserrat
       loads where clients allow web fonts, else Helvetica/Arial (Outlook forced to Arial). Brand name in the layout:
       "Global Toothgems", as on the site (the `EMAIL_FROM` display name is a secret, unchanged).
-      Not done: the existing callers (`orders.ts`, `giftCards.ts`, `events.ts`) still send body-only templates
-      (title = subject); giving them order summaries and buttons needs fr/en labels per e-mail. Product images
+      Order e-mails (2026-10-07, `orderContent.ts`): the confirmation carries an "Order GT-…" eyebrow, a payment
+      notice, the order summary (lines, discount, shipping, gift card, total, VAT — the amounts frozen on the
+      order, formatted, never recomputed), the delivery address and method, and a "View my order" button
+      (`/compte/commandes/<order number>`) for members or "Continue shopping" for guests; the shipping e-mail a
+      "Track my parcel" button; the refund e-mail a notice and an order / amount block. Labels fr/en in code,
+      in the language of the template found. Gift card and course enrolment e-mails stay body-only. Product images
       are WebP in `product-media`, which Outlook desktop does not show: render a JPEG/PNG through the image
       transformation endpoint before using them in an e-mail. Auth e-mails (Supabase dashboard templates) do not
       use this layout yet.
