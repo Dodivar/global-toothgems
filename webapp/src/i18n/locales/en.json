@@ -1069,7 +1069,21 @@
       "homeAlt": "Global Toothgems — home",
       "help": "Help",
       "cookies": "Cookies",
-      "adminSpace": "Administration"
+      "adminSpace": "Administration",
+      "expandMenu": "Open the full menu",
+      "short": {
+        "dashboard": "Home",
+        "community": "Community",
+        "lounge": "Lounge",
+        "certificates": "Certificates",
+        "orders": "Orders",
+        "reviews": "Reviews",
+        "loyalty": "Loyalty",
+        "profile": "Profile",
+        "security": "Security",
+        "menu": "Menu",
+        "cart": "Cart"
+      }
     },
     "statsLabel": "Your account in numbers",
     "statCourses": "courses in progress",

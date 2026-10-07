@@ -15,18 +15,26 @@ import {
 
 const piece = (over: Partial<PlacedJewelry> = {}): PlacedJewelry => ({
   id: "a",
-  jewelryTypeId: "crystal-round",
+  productId: "solitaire",
+  ss: 5,
+  look: { shape: "round", material: "crystal", color: "#ffffff", effect: "none" },
   toothId: "11",
   position: { x: -4.123456789, y: 0.5, z: 3 },
   normal: { x: -0.2, y: 0, z: 0.98 },
   rotation: 12.5,
-  scale: 0.95,
-  color: "clear",
+  scale: 0.9,
   ...over,
 });
 
 const scene = createScene({
-  pieces: [piece(), piece({ id: "b", toothId: "21", position: { x: 4, y: 0.5, z: 3 }, customColor: "#ff00aa" })],
+  pieces: [piece(), piece({
+      id: "b",
+      productId: "etoile",
+      variantId: "white-gold",
+      look: { shape: "halo-star", material: "metal", color: "#e3e6ea", effect: "none" },
+      toothId: "21",
+      position: { x: 4, y: 0.5, z: 3 },
+    })],
   groups: [{ id: "g1", gemGroupId: "grp", name: "Pair", pieceIds: ["a", "b"] }],
   lightPreset: "lamp",
   camera: { position: [0, 9, 66], target: [0, 0.5, -6] },
@@ -51,7 +59,7 @@ describe("share links", () => {
     expect(back?.scene.camera).toEqual(scene.camera);
     expect(back?.scene.groups).toEqual([{ id: "g1", gemGroupId: null, name: "Pair", pieceIds: ["a", "b"] }]);
     expect(back?.scene.pieces.map((p) => p.id)).toEqual(["a", "b"]);
-    expect(back?.scene.pieces[1].customColor).toBe("#ff00aa");
+    expect(back?.scene.pieces[1]).toMatchObject({ productId: "etoile", variantId: "white-gold", ss: 5, look: { shape: "halo-star", material: "metal" } });
     // Rounded to a ten-thousandth of a millimetre to keep the link short.
     expect(back?.scene.pieces[0].position.x).toBe(-4.1235);
   });
@@ -92,11 +100,11 @@ describe("share links", () => {
       name: "x".repeat(500),
       description: 42,
       scene: {
-        version: 1,
+        version: 2,
         model: "evil",
         lightPreset: "lamp",
         camera: { position: [0, "a", 1], target: [0, 0, 0] },
-        pieces: [piece(), { id: "bad", jewelryTypeId: "no-such-piece", toothId: "11", position: { x: 0, y: 0, z: 0 }, normal: { x: 0, y: 0, z: 1 } }],
+        pieces: [piece(), { id: "bad", productId: "x", ss: 5, look: { shape: "hexagon", color: "#fff" }, toothId: "11", position: { x: 0, y: 0, z: 0 }, normal: { x: 0, y: 0, z: 1 } }],
         groups: [],
       },
     };

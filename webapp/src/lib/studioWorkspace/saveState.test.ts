@@ -12,13 +12,14 @@ import { createScene, piecesKey } from "./scene";
 
 const piece = (over: Partial<PlacedJewelry> = {}): PlacedJewelry => ({
   id: "a",
-  jewelryTypeId: "crystal-round",
+  productId: "solitaire",
+  ss: 5,
+  look: { shape: "round", material: "crystal", color: "#ffffff", effect: "none" },
   toothId: "11",
   position: { x: -4, y: 0.5, z: 3 },
   normal: { x: -0.2, y: 0, z: 0.98 },
   rotation: 0,
-  scale: 0.95,
-  color: "clear",
+  scale: 0.9,
   ...over,
 });
 const link = { creationId: "c1", ownerId: "u1", name: "Crystal Smile", savedAt: "2026-09-27T10:00:00.000Z" };
@@ -59,17 +60,17 @@ describe("design store and saved creations", () => {
     expect(clean(store)).toBe(true);
   });
 
-  it("counts a slider change (no history step) as an edit", () => {
+  it("counts a change without a history step as an edit", () => {
     const store = loaded();
-    store.updateSelected({ scale: 1.2 }); // nothing selected: no change
+    store.updateSelected({ ss: 7, scale: 1.1 }); // nothing selected: no change
     expect(clean(store)).toBe(true);
-    store.updateJewel("b", { scale: 1.2 });
+    store.updateJewel("b", { ss: 7, scale: 1.1 });
     expect(clean(store)).toBe(false);
   });
 
   it("takes the saved pieces as the new baseline", () => {
     const store = loaded();
-    store.updateJewel("a", { color: "rose" });
+    store.updateJewel("a", { productId: "aquamarine" });
     const saved = structuredClone(store.jewels);
     store.markSaved({ ...link, savedAt: "2026-09-27T11:00:00.000Z" }, saved);
     expect(clean(store)).toBe(true);

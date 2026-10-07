@@ -1,16 +1,13 @@
-import { useId } from "react";
 import clsx from "clsx";
-import { ColorWheel } from "./ColorWheel";
-import { Swatches } from "./EditorInspector";
+import { ColorOptions } from "./GemPickers";
 import { useEditorLabels } from "./editorLabels";
 import type { PlacedJewelry } from "../../../data/studioEditor";
-import { studioStore } from "../../../lib/studio3d/store";
 
 /**
  * The colour quick action's panel, floating on the stage beside the quick
- * bar: the finishes, and the custom colour wheel right under them. It acts on the whole
- * selection like the inspector does — one undo step per pick, one per drag of
- * the wheel. Positioned by the quick bar, which knows where the selection is.
+ * bar: the colours the shop sells this cut in. It acts on the whole selection
+ * like the inspector does — one undo step per pick. Positioned by the quick
+ * bar, which knows where the selection is.
  */
 export function QuickColorPanel({
   ref,
@@ -26,10 +23,7 @@ export function QuickColorPanel({
   onClose: () => void;
 }) {
   const { t } = useEditorLabels();
-  const first = selected[0];
-  const sharedCustom = first && selected.every((j) => j.customColor && j.customColor === first.customColor) ? first.customColor! : null;
-  const customId = useId();
-  if (!first) return null;
+  if (!selected.length) return null;
   return (
     <div
       ref={ref}
@@ -43,34 +37,14 @@ export function QuickColorPanel({
         onClose();
       }}
       className={clsx(
-        "absolute left-0 top-0 z-[9] w-[212px] rounded-[var(--radius-md)] border border-[var(--border-subtle)] bg-[var(--surface-card)] p-2.5 shadow-[var(--shadow-lg)] motion-safe:animate-[gt-menu-in_var(--duration-fast)_var(--ease-out-soft)_both]",
+        "absolute left-0 top-0 z-[9] max-h-[320px] w-[232px] overflow-y-auto rounded-[var(--radius-md)] border border-[var(--border-subtle)] bg-[var(--surface-card)] p-2.5 shadow-[var(--shadow-lg)] motion-safe:animate-[gt-menu-in_var(--duration-fast)_var(--ease-out-soft)_both]",
         hidden && "invisible",
       )}
     >
       <p className="m-0 mb-2 px-0.5 text-[10.5px] font-extrabold uppercase tracking-[.1em] text-[var(--text-subtle)]">
         {t("studio.editor.viewport.colorPanel")}
       </p>
-      <Swatches
-        isSelected={(fid) => selected.every((j) => !j.customColor && j.color === fid)}
-        onPick={(fid) => {
-          studioStore.pushHistory();
-          studioStore.paintSelected({ color: fid, customColor: undefined });
-        }}
-        custom={sharedCustom}
-      />
-      <div role="group" aria-labelledby={customId} className="mt-2.5 border-t border-[var(--border-subtle)] pt-2">
-        <p id={customId} className="m-0 mb-1.5 px-0.5 text-[12px] font-semibold text-[var(--text-body)]">
-          {t("studio.editor.viewport.customColor")}
-        </p>
-        <ColorWheel
-          hex={sharedCustom}
-          onPick={(hex) => studioStore.paintSelected({ customColor: hex })}
-          onClear={() => {
-            studioStore.pushHistory();
-            studioStore.paintSelected({ customColor: undefined });
-          }}
-        />
-      </div>
+      <ColorOptions selected={selected} />
     </div>
   );
 }

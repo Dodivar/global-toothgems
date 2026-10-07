@@ -38,6 +38,7 @@ export function isValidPack(pack: number): boolean {
  * a tenth of a millimetre or so, hence "≈" wherever the mm value is shown.
  */
 export const STONE_SIZES: { ss: number; mm: number }[] = [
+  { ss: 2, mm: 1.3 },
   { ss: 3, mm: 1.4 },
   { ss: 4, mm: 1.6 },
   { ss: 5, mm: 1.8 },
@@ -91,6 +92,23 @@ function asInt(value: unknown): number | null | undefined {
 
 export function stoneSizeMm(ss: number): number | undefined {
   return STONE_SIZES.find((size) => size.ss === ss)?.mm;
+}
+
+/**
+ * Diameter of any stone size, in mm: the table's value, else read off the
+ * table between its two neighbours (or past its ends, along the nearest
+ * step). For drawing only — never shown as an exact size.
+ */
+export function stoneSizeMmApprox(ss: number): number {
+  const exact = stoneSizeMm(ss);
+  if (exact != null) return exact;
+  const sizes = STONE_SIZES;
+  let i = sizes.findIndex((size) => size.ss > ss);
+  if (i <= 0) i = i === 0 ? 1 : sizes.length - 1;
+  const a = sizes[i - 1];
+  const b = sizes[i];
+  const mm = a.mm + ((b.mm - a.mm) * (ss - a.ss)) / (b.ss - a.ss);
+  return Math.max(0.8, Math.round(mm * 100) / 100);
 }
 
 export function formatSs(ss: number): string {

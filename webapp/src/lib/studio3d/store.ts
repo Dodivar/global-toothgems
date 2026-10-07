@@ -1,5 +1,6 @@
 import { useSyncExternalStore } from "react";
-import { isFinishId, JEWELRY_BY_ID, sanitizeJewels, type PlacedJewelry, type Vec3 } from "../../data/studioEditor";
+import { sanitizeJewels, type PlacedJewelry, type Vec3 } from "../../data/studioEditor";
+import type { PieceSpec } from "./gemCatalog";
 import { uid, v3 } from "./math";
 import { piecesKey, pruneGroups, sanitizeScene, type SceneCamera, type SceneGroupRef, type StudioScene } from "../studioWorkspace/scene";
 
@@ -10,7 +11,7 @@ import { piecesKey, pruneGroups, sanitizeScene, type SceneCamera, type SceneGrou
  * because two very different readers share it: the React panels, and the
  * three.js engine, which renders every frame and must not wait for React.
  *
- * The working draft and the named presets live in this browser's storage, as
+ * The working draft lives in this browser's storage, as
  * in the standalone Studio it comes from. Saving a design to the account is
  * the Studio workspace's job (`lib/studioWorkspace`): this store only loads a
  * saved scene onto the stage, serialises the stage back into one, and
@@ -85,14 +86,14 @@ export interface StudioSnapshot {
   canRedo: boolean;
 }
 
-/** Browser-storage keys, namespaced like the site's other keys (`gt-lang`). */
-const DESIGN_KEY = "gt-studio3d-design-v1";
-const PRESETS_KEY = "gt-studio3d-presets-v1";
-/** The finish picked last: a per-browser preference, not part of any design. */
-const LAST_FINISH_KEY = "gt-studio3d-last-finish-v1";
+/**
+ * Browser-storage key, namespaced like the site's other keys (`gt-lang`).
+ * v2: pieces are the shop's gems (product, colour, stone size); drafts made
+ * of the former built-in pieces are left behind.
+ */
+const DESIGN_KEY = "gt-studio3d-design-v2";
 const HISTORY_LIMIT = 60;
 const SAVE_DEBOUNCE_MS = 500;
-export const PRESET_NAME_MAX = 40;
 export const CLIENT_NAME_MAX = 48;
 
 function readStorage(key: string): unknown {
@@ -112,12 +113,6 @@ function writeStorage(key: string, value: unknown) {
   }
 }
 
-function readLastFinish(): { color: string; customColor?: string } | null {
-  const raw = readStorage(LAST_FINISH_KEY) as { color?: unknown; customColor?: unknown } | null;
-  if (!raw || typeof raw.color !== "string" || !isFinishId(raw.color)) return null;
-  const custom = typeof raw.customColor === "string" && /^#[0-9a-f]{6}$/i.test(raw.customColor) ? raw.customColor.toLowerCase() : undefined;
-  return { color: raw.color, ...(custom ? { customColor: custom } : {}) };
-}
 
 export class DesignStore {
   jewels: PlacedJewelry[] = [];
@@ -140,7 +135,6 @@ export class DesignStore {
   groups: SceneGroupRef[] = [];
   active: ActiveCreation | null = null;
   private pendingLoad: PendingLoad | null = null;
-  private lastFinish: { color: string; customColor?: string } | null = null;
   /** True when the design was restored from a previous visit. */
   restored = false;
   private past: string[] = [];
@@ -168,7 +162,6 @@ export class DesignStore {
       this.groups = sanitizeScene({ pieces: this.jewels, groups: data.groups }).groups;
       this.active = readActive(data.active);
     }
-    this.lastFinish = this.persist ? readLastFinish() : null;
     this.snap = this.buildSnap();
   }
 
@@ -223,36 +216,20 @@ export class DesignStore {
     }
   }
 
-  /**
-   * The finish a new piece of this type starts with: the last one the customer
-   * picked on this browser, else the type's own. Metal pieces keep their metal.
-   */
-  initialFinish(typeId: string): { color: string; customColor?: string } {
-    const def = JEWELRY_BY_ID[typeId];
-    if (this.lastFinish && def.category !== "precious") return this.lastFinish;
-    return { color: def.defaultColor };
-  }
-  /** Colour the selection, and remember the result as the finish of the next pieces. */
-  paintSelected(patch: Pick<Partial<PlacedJewelry>, "color" | "customColor">) {
-    this.updateSelected(patch);
-    const first = this.jewels.find((j) => j.id === this.selectedJewelIds[0]);
-    if (!first) return;
-    this.lastFinish = { color: first.color, ...(first.customColor ? { customColor: first.customColor } : {}) };
-    if (this.persist) writeStorage(LAST_FINISH_KEY, this.lastFinish);
-  }
-
-  addJewel(typeId: string, toothId: string, position: Vec3, normal: Vec3): string {
+  /** Place a new piece of a shop gem (its default colour and size, see `pieceSpec`). */
+  addJewel(spec: PieceSpec, toothId: string, position: Vec3, normal: Vec3): string {
     this.pushHistory();
-    const def = JEWELRY_BY_ID[typeId];
     const j: PlacedJewelry = {
       id: uid(),
-      jewelryTypeId: typeId,
+      productId: spec.productId,
+      ...(spec.variantId ? { variantId: spec.variantId } : {}),
+      ss: spec.ss,
+      look: spec.look,
       toothId,
       position,
       normal,
       rotation: 0,
-      scale: def.defaultScale,
-      ...this.initialFinish(typeId),
+      scale: spec.scale,
     };
     this.jewels = [...this.jewels, j];
     this.selectedJewelIds = [j.id];
@@ -463,7 +440,7 @@ export class DesignStore {
     this.saveTimer = null;
     if (!this.persist) return;
     writeStorage(DESIGN_KEY, {
-      v: 1,
+      v: 2,
       jewels: this.jewels,
       clientName: this.clientName,
       model: this.designModel,
@@ -477,8 +454,9 @@ export class DesignStore {
   /** The design as a `scene_data` document. */
   toScene(extra: { model: StudioScene["model"]; camera: SceneCamera | null }): StudioScene {
     return {
-      version: 1,
+      version: 2,
       model: extra.model,
+
       lightPreset: this.lightPreset,
       camera: extra.camera,
       pieces: structuredClone(this.jewels),
@@ -592,79 +570,4 @@ export const studioStore = new DesignStore();
 
 export function useStudio(): StudioSnapshot {
   return useSyncExternalStore(studioStore.subscribe, studioStore.getSnapshot);
-}
-
-/* ------------------------------------------------------ named presets */
-
-export interface UserPreset {
-  id: string;
-  name: string;
-  createdAt: number;
-  jewels: PlacedJewelry[];
-  /** The model the pieces were placed on; untagged presets predate the default dentition. */
-  model: ModelMode;
-}
-
-function loadUserPresets(): UserPreset[] {
-  const arr = readStorage(PRESETS_KEY);
-  if (!Array.isArray(arr)) return [];
-  return arr
-    .filter((p) => p && typeof p.id === "string" && typeof p.name === "string")
-    .map((p) => ({
-      id: p.id as string,
-      name: (p.name as string).slice(0, PRESET_NAME_MAX),
-      createdAt: typeof p.createdAt === "number" ? p.createdAt : 0,
-      jewels: sanitizeJewels(p.jewels),
-      model: isModelMode(p.model) ? p.model : ("studio" as const),
-    }))
-    .filter((p) => p.jewels.length > 0);
-}
-
-let userPresets: UserPreset[] = loadUserPresets();
-const presetListeners = new Set<() => void>();
-
-function emitPresets() {
-  writeStorage(PRESETS_KEY, userPresets);
-  presetListeners.forEach((l) => l());
-}
-
-export function saveUserPreset(name: string): UserPreset | null {
-  const clean = name.trim().slice(0, PRESET_NAME_MAX);
-  if (!clean || !studioStore.jewels.length) return null;
-  const p: UserPreset = {
-    id: uid(),
-    name: clean,
-    createdAt: Date.now(),
-    jewels: structuredClone(studioStore.jewels),
-    model: studioStore.designModel,
-  };
-  userPresets = [p, ...userPresets];
-  emitPresets();
-  return p;
-}
-
-export function deleteUserPreset(id: string) {
-  userPresets = userPresets.filter((p) => p.id !== id);
-  emitPresets();
-}
-
-/**
- * Replace the design with a saved preset. `adapt` re-seats pieces saved on
- * another model onto the one on stage (the engine's `adaptDesign`).
- */
-export function applyUserPreset(p: UserPreset, adapt?: (jewels: PlacedJewelry[], from: ModelMode) => PlacedJewelry[]) {
-  const jewels = p.jewels.map((j) => ({ ...j, id: uid() }));
-  studioStore.setJewels(adapt ? adapt(jewels, p.model) : jewels);
-}
-
-export function useUserPresets(): UserPreset[] {
-  return useSyncExternalStore(
-    (cb) => {
-      presetListeners.add(cb);
-      return () => {
-        presetListeners.delete(cb);
-      };
-    },
-    () => userPresets,
-  );
 }

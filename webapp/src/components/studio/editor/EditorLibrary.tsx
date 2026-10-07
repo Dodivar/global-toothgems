@@ -1,40 +1,58 @@
-import { useState } from "react";
+import { useMemo, useState } from "react";
 import clsx from "clsx";
 import { Search } from "lucide-react";
-import { PieceIcon } from "./PieceIcon";
+import { GemPhoto } from "./PieceIcon";
 import { GemGroupPanel } from "../workspace/GemGroupPanel";
 import { useEditorLabels } from "./editorLabels";
-import { CATALOG, FREE_TOOTH, JEWELRY_CATEGORIES } from "../../../data/studioEditor";
+import { FREE_TOOTH } from "../../../data/studioEditor";
+import { useTaxonomy } from "../../../lib/catalog/useTaxonomy";
+import { useLocalized } from "../../../lib/localized";
 import { placeOnTooth } from "../../../lib/studio3d/actions";
 import { getEngine } from "../../../lib/studio3d/engine";
+import type { StudioGem } from "../../../lib/studio3d/gemCatalog";
 import type { StudioSnapshot } from "../../../lib/studio3d/store";
+import { useStudioGems } from "../../../lib/studio3d/useStudioGems";
 
 /** Where a keyboard placement lands when no tooth is selected: the upper right central incisor. */
 const DEFAULT_TOOTH = "11";
 
 /**
- * The jewelry library.
+ * The jewelry library: the shop's gems, whatever their stock (decided by the
+ * owner, 2026-10-07), with their shop photo and name. Grouped by cut — the
+ * shop's shape — and, for gems without one (the 18ct charms), by family.
  *
  * Three ways in, all reaching the same placement logic: drag a piece onto a
  * tooth; click it to "arm" it, then click a tooth; or, from the keyboard,
  * press Enter on it to place it on the selected tooth.
  */
 export function EditorLibrary({ snap }: { snap: StudioSnapshot }) {
-  const { t, pieceName, toothName } = useEditorLabels();
+  const { t, toothName } = useEditorLabels();
+  const { status, gems, reload } = useStudioGems();
+  const { familyName } = useTaxonomy();
+  const l = useLocalized();
   const [q, setQ] = useState("");
   const [tab, setTab] = useState<"gems" | "groups">("gems");
   const query = q.trim().toLocaleLowerCase();
 
-  const groups = JEWELRY_CATEGORIES.map((cat) => ({
-    cat,
-    items: CATALOG.filter(
-      (item) =>
-        item.category === cat &&
-        (!query ||
-          pieceName(item.id).toLocaleLowerCase().includes(query) ||
-          t(`studio.editor.library.categories.${cat}`).toLocaleLowerCase().includes(query)),
-    ),
-  })).filter((g) => g.items.length);
+  const sections = useMemo(() => {
+    const bySection = new Map<string, { id: string; label: string; byShape: boolean; items: StudioGem[] }>();
+    for (const gem of gems) {
+      const byShape = gem.shopShape !== null;
+      const id = byShape ? `shape-${gem.shopShape}` : `family-${gem.family ?? "other"}`;
+      const label = byShape
+        ? t(`shop.shapes.${gem.shopShape}`)
+        : gem.family
+          ? familyName(gem.family)
+          : t("studio.editor.library.otherGems");
+      const section = bySection.get(id) ?? { id, label, byShape, items: [] };
+      if (!query || l(gem.name).toLocaleLowerCase().includes(query) || label.toLocaleLowerCase().includes(query)) section.items.push(gem);
+      bySection.set(id, section);
+    }
+    // Cuts first, alphabetically; then the families of charms.
+    return [...bySection.values()]
+      .filter((s) => s.items.length)
+      .sort((a, b) => Number(b.byShape) - Number(a.byShape) || a.label.localeCompare(b.label));
+  }, [gems, query, t, familyName, l]);
 
   const selectedPiece = snap.jewels.find((j) => j.id === snap.selectedJewelIds[0]);
   const targetTooth =
@@ -98,32 +116,49 @@ export function EditorLibrary({ snap }: { snap: StudioSnapshot }) {
             {t("studio.editor.library.keyboardHint", { tooth: toothName(targetTooth), fdi: targetTooth })}
           </p>
           <div className="gt-editor-scroll min-h-0 flex-1 overflow-y-auto px-4 pb-5">
-            {groups.map((g) => (
-              <section key={g.cat} aria-labelledby={`gt-editor-cat-${g.cat}`}>
+            {status === "loading" && (
+              <p role="status" className="m-0 py-3 text-[12px] text-[var(--text-muted)]">
+                {t("studio.editor.library.loading")}
+              </p>
+            )}
+            {status === "error" && (
+              <div role="alert" className="grid gap-2 py-3">
+                <p className="m-0 text-[12px] text-[var(--text-muted)]">{t("studio.editor.library.error")}</p>
+                <button
+                  type="button"
+                  onClick={reload}
+                  className="h-8 justify-self-start rounded-[var(--radius-pill)] border border-[var(--border-default)] px-3 text-[11px] font-semibold text-[var(--text-primary)] focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-[var(--focus-ring)]"
+                >
+                  {t("studio.editor.library.retry")}
+                </button>
+              </div>
+            )}
+            {sections.map((g) => (
+              <section key={g.id} aria-labelledby={`gt-editor-cat-${g.id}`}>
                 <h3
-                  id={`gt-editor-cat-${g.cat}`}
+                  id={`gt-editor-cat-${g.id}`}
                   className="mb-2 mt-4 flex items-center gap-2 text-[10px] font-bold uppercase tracking-[var(--tracking-eyebrow)] text-[var(--text-subtle)] after:h-px after:flex-1 after:bg-[var(--border-subtle)]"
                 >
-                  {t(`studio.editor.library.categories.${g.cat}`)}
+                  {g.label}
                 </h3>
                 <ul className="m-0 grid list-none grid-cols-[repeat(auto-fill,minmax(96px,1fr))] gap-2 p-0 lg:grid-cols-2">
                   {g.items.map((item) => {
-                    const armed = snap.armedTypeId === item.id;
-                    const name = pieceName(item.id);
+                    const armed = snap.armedTypeId === item.key;
+                    const name = l(item.name);
                     return (
-                      <li key={item.id}>
+                      <li key={item.key}>
                         <button
                           type="button"
                           aria-pressed={armed}
                           aria-describedby="gt-editor-library-keys"
                           title={t("studio.editor.library.cardHint", { name })}
                           onPointerDown={(e) => {
-                            if (e.button === 0) getEngine()?.beginPlacing(item.id, e);
+                            if (e.button === 0) getEngine()?.beginPlacing(item.key, e);
                           }}
                           onClick={(e) => {
                             // A pointer click is handled by the engine (arm / drag);
                             // `detail === 0` is Enter or Space on the focused card.
-                            if (e.detail === 0) placeOnTooth(item.id, targetTooth);
+                            if (e.detail === 0) placeOnTooth(item.key, targetTooth);
                           }}
                           className={clsx(
                             "flex w-full cursor-grab flex-col items-center gap-2 rounded-[var(--radius-md)] border px-2 pb-2.5 pt-3 transition-[border-color,background-color,transform,box-shadow] duration-[var(--duration-fast)]",
@@ -134,8 +169,8 @@ export function EditorLibrary({ snap }: { snap: StudioSnapshot }) {
                               : "border-[var(--border-subtle)] bg-[var(--surface-page)] text-[var(--gt-ink-600)] hover:border-[var(--gt-blue-300)]",
                           )}
                         >
-                          <PieceIcon id={item.id} size={24} />
-                          <span className="text-center text-[11.5px] font-semibold leading-tight">{name}</span>
+                          <GemPhoto src={item.image} look={item.finishes[0].look} size={44} className="pointer-events-none" />
+                          <span className="line-clamp-2 text-center text-[11px] font-semibold leading-tight">{name}</span>
                         </button>
                       </li>
                     );
@@ -143,7 +178,7 @@ export function EditorLibrary({ snap }: { snap: StudioSnapshot }) {
                 </ul>
               </section>
             ))}
-            {!groups.length && <p className="m-0 py-3 text-[12px] text-[var(--text-muted)]">{t("studio.editor.library.empty")}</p>}
+            {status === "ready" && !sections.length && <p className="m-0 py-3 text-[12px] text-[var(--text-muted)]">{t("studio.editor.library.empty")}</p>}
           </div>
         </div>
       )}

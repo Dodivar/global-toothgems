@@ -1,5 +1,8 @@
-import { describe, expect, it } from "vitest";
+import { beforeAll, describe, expect, it } from "vitest";
+import { FALLBACK_GEM_COLORS, PRODUCTS } from "../../data/products";
 import type { PlacedJewelry } from "../../data/studioEditor";
+import { buildStudioGems } from "../studio3d/gemCatalog";
+import { setStudioGems } from "../studio3d/gemRegistry";
 import { ARCH_FRAME_BY_ID } from "../studio3d/archLayout";
 import { anchorToothOf, groupToWorld, piecesToGroup, sanitizeGroupData, type Frame } from "./gemGroup";
 import { matchesFilter, matchesQuery, queryCreations, queryGroups, summarize } from "./library";
@@ -12,15 +15,19 @@ import { copyName, normalizeTags, parseTagList, validateDetails, validateFeedbac
 
 const piece = (over: Partial<PlacedJewelry> = {}): PlacedJewelry => ({
   id: "a",
-  jewelryTypeId: "crystal-round",
+  productId: "solitaire",
+  ss: 5,
+  look: { shape: "round", material: "crystal", color: "#ffffff", effect: "none" },
   toothId: "11",
   position: { x: -4, y: 0.5, z: 3 },
   normal: { x: -0.2, y: 0, z: 0.98 },
   rotation: 0,
-  scale: 0.95,
-  color: "clear",
+  scale: 0.9,
   ...over,
 });
+
+// Estimates are read at the prices of the gems last loaded: the prototype's mock shop here.
+beforeAll(() => setStudioGems(buildStudioGems(PRODUCTS, [], FALLBACK_GEM_COLORS)));
 
 function memoryStorage(): KeyValueStorage & { data: Map<string, string>; failWrites: boolean } {
   const data = new Map<string, string>();
@@ -52,7 +59,7 @@ describe("scene", () => {
       model: "weird",
       lightPreset: 12,
       camera: { position: [1, 2], target: [0, 0, 0] },
-      pieces: [piece(), { id: "x", jewelryTypeId: "not-a-gem", toothId: "11", position: {}, normal: {} }],
+      pieces: [piece(), { id: "x", productId: "solitaire", ss: 5, look: { shape: "hexagon", color: "#ffffff" }, toothId: "11", position: {}, normal: {} }],
       groups: [
         { id: "g", pieceIds: ["a", "x"], name: "G" },
         { id: "gone", pieceIds: ["x"] },
@@ -69,13 +76,16 @@ describe("scene", () => {
     expect(piecesKey([piece()])).toBe(piecesKey([structuredClone(piece())]));
     expect(piecesKey([piece()])).not.toBe(piecesKey([piece({ rotation: 90 })]));
     expect(piecesKey([piece()])).not.toBe(piecesKey([piece({ offset: 0.2 })]));
+    expect(piecesKey([piece()])).not.toBe(piecesKey([piece({ ss: 7 })]));
+    expect(piecesKey([piece()])).not.toBe(piecesKey([piece({ variantId: "v2" })]));
   });
 
   it("recognises a mirror-symmetric design", () => {
     const left = piece({ id: "l", position: { x: -4, y: 0.5, z: 3 } });
     const right = piece({ id: "r", toothId: "21", position: { x: 4.3, y: 0.4, z: 3 } });
     expect(isSymmetrical([left, right])).toBe(true);
-    expect(isSymmetrical([left, { ...right, color: "rose" }])).toBe(false);
+    expect(isSymmetrical([left, { ...right, productId: "aquamarine" }])).toBe(false);
+    expect(isSymmetrical([left, { ...right, ss: 7 }])).toBe(false);
     expect(isSymmetrical([left])).toBe(false);
   });
 });
@@ -87,8 +97,8 @@ describe("gem groups", () => {
   };
   const pieces = [
     piece({ id: "1", position: { x: -3.2, y: 1, z: 2.9 } }),
-    piece({ id: "2", position: { x: -5.1, y: -0.8, z: 2.7 }, rotation: 45, color: "rose" }),
-    piece({ id: "3", position: { x: -1.4, y: 0.2, z: 3.1 }, jewelryTypeId: "shape-star", scale: 0.6 }),
+    piece({ id: "2", position: { x: -5.1, y: -0.8, z: 2.7 }, rotation: 45, variantId: "white-gold" }),
+    piece({ id: "3", position: { x: -1.4, y: 0.2, z: 3.1 }, productId: "etoile", ss: 2, look: { shape: "halo-star", material: "metal", color: "#f2c25c", effect: "none" } }),
   ];
 
   it("maps back onto its own frame exactly", () => {
@@ -101,14 +111,14 @@ describe("gem groups", () => {
     });
   });
 
-  it("keeps the spacing, spin and finish when moved to another tooth", () => {
+  it("keeps the spacing, spin, gem, colour and size when moved to another tooth", () => {
     const moved = groupToWorld(piecesToGroup(pieces, frameOf("11")), frameOf("23"));
     const dist = (a: { x: number; y: number; z: number }, b: typeof a) => Math.hypot(a.x - b.x, a.y - b.y, a.z - b.z);
     expect(dist(moved[0].position, moved[1].position)).toBeCloseTo(dist(pieces[0].position, pieces[1].position), 2);
     expect(dist(moved[1].position, moved[2].position)).toBeCloseTo(dist(pieces[1].position, pieces[2].position), 2);
     expect(moved[1].piece.rotation).toBe(45);
-    expect(moved[1].piece.color).toBe("rose");
-    expect(moved[2].piece.scale).toBe(0.6);
+    expect(moved[1].piece.variantId).toBe("white-gold");
+    expect(moved[2].piece).toMatchObject({ productId: "etoile", ss: 2, look: { shape: "halo-star", material: "metal" } });
   });
 
   it("anchors on the tooth holding most of the selection", () => {
@@ -117,7 +127,10 @@ describe("gem groups", () => {
   });
 
   it("refuses an arrangement with fewer than two usable pieces", () => {
-    const one = { anchorToothId: "11", pieces: [{ jewelryTypeId: "crystal-round", at: { x: 0, y: 0, z: 0 }, facing: { x: 0, y: 0, z: 1 } }] };
+    const one = {
+      anchorToothId: "11",
+      pieces: [{ productId: "solitaire", ss: 5, look: piece().look, at: { x: 0, y: 0, z: 0 }, facing: { x: 0, y: 0, z: 1 } }],
+    };
     expect(sanitizeGroupData(one)).toBeNull();
     expect(sanitizeGroupData({ ...one, pieces: [...one.pieces, { ...one.pieces[0], at: { x: 400, y: 0, z: 0 } }] })).toBeNull();
     expect(sanitizeGroupData({ ...one, pieces: [...one.pieces, one.pieces[0]] })?.pieces).toHaveLength(2);
@@ -150,37 +163,30 @@ describe("library", () => {
   const creations = seedCreations("u1", now) as Creation[];
 
   it("seeds every designed piece and a usable arrangement for every group", () => {
-    expect(creations.map((c) => c.name)).toEqual([
-      "Minimal Butterfly",
-      "Crystal Smile",
-      "Pink Star Cluster",
-      "Symmetrical Flower",
-      "Micro Heart",
-      "Celestial Row",
-    ]);
-    expect(creations.find((c) => c.name === "Crystal Smile")?.elementCount).toBe(12);
+    expect(creations.map((c) => c.name)).toEqual(["Crystal Smile", "Golden Stars", "Micro Heart", "Evening Row"]);
+    expect(creations.find((c) => c.name === "Crystal Smile")?.elementCount).toBe(8);
+    expect(creations.every((c) => c.estimatedPriceMinor > 0)).toBe(true);
     for (const g of seedGroups("u1", now)) expect(sanitizeGroupData(g.data)?.pieces).toHaveLength(g.elementCount);
   });
 
   it("searches name, description and tags, ignoring accents and case", () => {
     const c = creations[0];
-    expect(matchesQuery(c, "butterfly")).toBe(true);
-    expect(matchesQuery(c, "SYMMÉTRICAL front")).toBe(true);
+    expect(matchesQuery(c, "crystal")).toBe(true);
+    expect(matchesQuery(c, "SYMMÉTRICAL appointment")).toBe(true);
     expect(matchesQuery(c, "ruby")).toBe(false);
   });
 
   it("filters and sorts", () => {
     const names = (list: Creation[]) => list.map((c) => c.name);
-    expect(names(creations.filter((c) => matchesFilter(c, "favorites")))).toEqual(["Minimal Butterfly", "Crystal Smile"]);
+    expect(names(creations.filter((c) => matchesFilter(c, "favorites")))).toEqual(["Crystal Smile"]);
     expect(names(creations.filter((c) => matchesFilter(c, "minimal")))).toEqual(["Micro Heart"]);
     expect(creations.filter((c) => matchesFilter(c, "symmetrical")).map((c) => c.name)).toContain("Crystal Smile");
-    expect(creations.filter((c) => matchesFilter(c, "symmetrical")).map((c) => c.name)).not.toContain("Pink Star Cluster");
-    expect(names(queryCreations(creations, { query: "", filter: "all", sort: "name", locale: "en" }))[0]).toBe("Celestial Row");
-    expect(names(queryCreations(creations, { query: "", filter: "all", sort: "updated" }))[0]).toBe("Pink Star Cluster");
+    expect(creations.filter((c) => matchesFilter(c, "symmetrical")).map((c) => c.name)).not.toContain("Golden Stars");
+    expect(names(queryCreations(creations, { query: "", filter: "all", sort: "name", locale: "en" }))[0]).toBe("Crystal Smile");
+    expect(names(queryCreations(creations, { query: "", filter: "all", sort: "updated" }))[0]).toBe("Golden Stars");
     expect(names(queryCreations(creations, { query: "", filter: "all", sort: "elements" }))[0]).toBe("Crystal Smile");
     expect(names(queryCreations(creations, { query: "", filter: "recent", sort: "updated", now }))).toEqual([
-      "Pink Star Cluster",
-      "Minimal Butterfly",
+      "Golden Stars",
       "Crystal Smile",
       "Micro Heart",
     ]);
@@ -188,10 +194,10 @@ describe("library", () => {
 
   it("puts favourite groups first and sums the studio", () => {
     const groups = seedGroups("u1", now).map((g) => ({ ...g, thumbnailUrl: null }));
-    expect(queryGroups(groups, "")[0].name).toBe("Butterfly Wings");
+    expect(queryGroups(groups, "")[0].name).toBe("Mini Flower");
     const s = summarize(creations, groups);
-    expect(s.creations).toBe(6);
-    expect(s.groups).toBe(4);
+    expect(s.creations).toBe(4);
+    expect(s.groups).toBe(2);
     expect(s.gemsUsed).toBe(creations.reduce((n, c) => n + c.elementCount, 0));
     expect(Number.isInteger(s.totalEstimateMinor)).toBe(true);
   });
@@ -259,7 +265,7 @@ describe("local repository", () => {
     await expect(repo.creations.create({ name: "", description: "", tags: [], scene, thumbnail: null })).rejects.toMatchObject({
       code: "invalid",
     });
-    const one = { version: 1 as const, anchorToothId: "11", pieces: [] };
+    const one = { version: 2 as const, anchorToothId: "11", pieces: [] };
     await expect(repo.groups.create({ name: "Solo", description: "", tags: [], data: one, thumbnail: null })).rejects.toMatchObject({
       code: "invalid",
     });
@@ -289,8 +295,8 @@ describe("local repository", () => {
     const storage = memoryStorage();
     const repo = createLocalRepositories("u1", { storage, now, seed: true });
     const first = await repo.creations.list();
-    expect(first).toHaveLength(6);
-    expect(await repo.groups.list()).toHaveLength(4);
+    expect(first).toHaveLength(4);
+    expect(await repo.groups.list()).toHaveLength(2);
     for (const c of first) await repo.creations.remove(c.id);
     expect(await createLocalRepositories("u1", { storage, now, seed: true }).creations.list()).toEqual([]);
   });
@@ -303,7 +309,7 @@ describe("local repository", () => {
     await expect(repo.feedback.submit({ rating: 5, category: "feature", message: "", context })).rejects.toMatchObject({
       code: "invalid",
     });
-    const raw = JSON.parse(storage.data.get("gt-studio-library-v1:u1")!);
+    const raw = JSON.parse(storage.data.get("gt-studio-library-v2:u1")!);
     expect(raw.feedback[0].message).toBe("Love the groups");
   });
 });

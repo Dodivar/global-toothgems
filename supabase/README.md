@@ -131,6 +131,7 @@ supabase/
 | 20261002064949 | `settings_shipping_positions` | `admin_save_shipping()` numbers zones and rates from 1 like every existing row, so saving an unchanged configuration writes nothing |
 | 20261003131220 | `studio_gem_group_thumbnails` | `gem_groups.thumbnail_path` (null or inside the owner's folder, column grants for insert/update): each new Gem Group keeps a captured render of its pieces alone on the smile at `studio-thumbnails/<user id>/groups/<group id>.jpg` (bucket policies unchanged: they check the first folder). Suite `tests/studio_workspace_validation.sql` |
 | 20261007072551 | `quiz_unlimited_attempts` | **Applied 2026-10-07.** Knowledge checks have no attempt limit: `private.open_quiz_attempt()` no longer raises `no_attempts_left` (a passed check still refuses new attempts) |
+| 20261007141456 | `studio_shop_gems` | **Applied 2026-10-07.** The 3D Studio's gems are the shop's (decision 81): `studio_gem_appearances` — how a shop gem is drawn in the editor (`shape` on the product row, `material` crystal/metal, `color` `#rrggbb`, `effect` none/iridescent; one row per product plus one per colour variant such as yellow / white gold), seeded from the product photos (84 gems, 12 gold variants); public read for active products, `manage_products` writes, audited, a variant row must belong to its product. Scenes and Gem Groups now require format **2** (piece = product, variant, SS, look snapshot); the format-1 test designs, their share links and groups were deleted first (owner's request, pre-launch). Suite `tests/studio_workspace_validation.sql` (T5–T8) |
 | 20261007072552 | `quiz_unlimited_attempts_cleanup` | **Partly applied 2026-10-07.** `admin_save_course()` and `private.learner_course_json()` rewritten without `allow_retry` / `max_attempts` (applied live through SQL, not recorded in the migration history). `drop column` on `course_quizzes` **not applied yet**: the MCP call timed out three times with no lock or session visible; the columns are unused and keep their defaults, so nothing depends on the drop |
 
 RLS is **enabled in the same migration that creates each table** (deny by default);
@@ -1452,6 +1453,24 @@ VAT rates, shipping zones/rates mirroring the Settings prototype. Media rows ref
       our terms of sale" (link) — **to confirm** by the owner / legal review (guests never ticked the terms before).
     - Apple Pay / Google Pay appear in the Payment Element once enabled in Stripe, Apple Pay after domain
       verification of the production domain in the Stripe dashboard (user action).
+81. **The 3D Studio composes with the shop's gems** (owner, 2026-10-07): the Studio's library is every active product
+    of the `gems` category, **whatever its stock**, so a composition is a set of jewellery a customer can buy. No
+    built-in pieces, no free colour wheel.
+    - Drawing data lives in `studio_gem_appearances` (presentation only, never price, stock or availability). A gem
+      without a row still appears, drawn from its shop shape and colour family (`webapp/src/lib/studio3d/gemCatalog.ts`),
+      so a gem added in the back office shows up straight away. The rows were set from the product photos on
+      2026-10-07; there is no back-office screen for them yet (edit with SQL / a migration).
+    - Colours of a piece: the gems of the same cut (each shop product is one colour), plus a product's colour
+      variants (`swatch`: yellow / white gold of the 18ct pieces, one appearance row each).
+    - **Sizes** are a gem's active `ss` variants (the back office's pack × SS options); a gem without any is offered
+      in **SS2, SS5 and SS7** until the team sets its real sizes (owner, 2026-10-07). A shaped piece is drawn with
+      its longest side equal to the SS diameter (≈ values of `STONE_SIZES`, SS2 ≈ 1.3 mm added).
+    - A placed piece stores its product id, colour variant id, SS and a **snapshot of its look**: a design keeps
+      rendering (share links, thumbnails) when its product leaves the shop or before the catalogue has loaded; the
+      editor says "no longer in the shop" and leaves it out of the value.
+    - **Indicative value** (`estimateComposition`, to confirm): crystals are sold in packs, so each crystal product
+      and colour counts **once** (its price, or its colour variant's); metal charms count **per piece**. Never
+      charged, never sent to checkout; the value stored with a creation is the one computed at its last save.
 
 ## Done
 

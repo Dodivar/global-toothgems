@@ -1,16 +1,14 @@
-import {
-  ESTIMATE_PRICING,
-  estimateTotalCents,
-  sanitizeJewels,
-  type PlacedJewelry,
-} from "../../data/studioEditor";
+import { sanitizeJewels, type PlacedJewelry } from "../../data/studioEditor";
+import { currentEstimate } from "../studio3d/gemRegistry";
 
 /**
  * A saved design's `scene_data`: everything needed to rebuild the composition
  * in the 3D editor.
  *
  * The pieces are stored with their full transform (surface point, surface
- * normal, spin, size, finish, stand-off) exactly as the engine placed them —
+ * normal, spin, stand-off) and what they are — the shop product, its colour
+ * variant, the stone size and a snapshot of its look — exactly as the engine
+ * placed them —
  * never flattened to "which gem on which tooth", which could not be put back
  * where the artist left it. Versioned, so a later format can migrate old rows.
  *
@@ -18,7 +16,8 @@ import {
  * through `sanitizeScene` on the way in, like the local draft does.
  */
 
-export const SCENE_VERSION = 1;
+/** 2: pieces are the shop's gems (format 1 named pieces of a built-in library, discarded). */
+export const SCENE_VERSION = 2;
 /** Upper bound on pieces per design; far above any real smile, it keeps a row small. */
 export const SCENE_MAX_PIECES = 200;
 
@@ -119,17 +118,15 @@ export function sanitizeScene(input: unknown): StudioScene {
 
 export interface SceneStats {
   elementCount: number;
-  /** Indicative estimate in minor units — never a price to charge. */
+  /** Indicative value at shop prices, in minor units — never a price to charge. */
   estimatedPriceMinor: number;
   currency: string;
 }
 
+/** Count and indicative value of a design, at the shop prices last loaded (`gemRegistry`). */
 export function sceneStats(pieces: PlacedJewelry[]): SceneStats {
-  return {
-    elementCount: pieces.length,
-    estimatedPriceMinor: estimateTotalCents(pieces),
-    currency: ESTIMATE_PRICING.currency,
-  };
+  const estimate = currentEstimate(pieces);
+  return { elementCount: pieces.length, estimatedPriceMinor: estimate.totalMinor, currency: estimate.currency };
 }
 
 /**
@@ -140,7 +137,9 @@ export function piecesKey(pieces: PlacedJewelry[]): string {
   return JSON.stringify(
     pieces.map((p) => [
       p.id,
-      p.jewelryTypeId,
+      p.productId,
+      p.variantId ?? null,
+      p.ss,
       p.toothId,
       p.position.x,
       p.position.y,
@@ -149,9 +148,6 @@ export function piecesKey(pieces: PlacedJewelry[]): string {
       p.normal.y,
       p.normal.z,
       p.rotation,
-      p.scale,
-      p.color,
-      p.customColor ?? null,
       p.offset ?? 0,
     ]),
   );
@@ -159,7 +155,7 @@ export function piecesKey(pieces: PlacedJewelry[]): string {
 
 /**
  * Mirror-symmetric across the midline: every piece has a twin of the same
- * type, finish and size at the mirrored position (tolerance in millimetres).
+ * gem, colour and size at the mirrored position (tolerance in millimetres).
  * A single centred piece counts as its own twin.
  */
 export function isSymmetrical(pieces: PlacedJewelry[], tolerance = 1.2): boolean {
@@ -170,9 +166,9 @@ export function isSymmetrical(pieces: PlacedJewelry[], tolerance = 1.2): boolean
     const twin = pieces.findIndex(
       (q, k) =>
         !used.has(k) &&
-        q.jewelryTypeId === p.jewelryTypeId &&
-        (q.customColor ?? q.color) === (p.customColor ?? p.color) &&
-        Math.abs(q.scale - p.scale) < 0.051 &&
+        q.productId === p.productId &&
+        (q.variantId ?? null) === (p.variantId ?? null) &&
+        q.ss === p.ss &&
         Math.abs(q.position.x + p.position.x) <= tolerance &&
         Math.abs(q.position.y - p.position.y) <= tolerance,
     );

@@ -74,7 +74,7 @@ export function IssuePanel({ issues, jewels }: { issues: DesignIssue[]; jewels: 
             {issues.map((i) => {
               const j = jewels.find((x) => x.id === i.id);
               if (!j) return null;
-              const name = pieceName(j.jewelryTypeId);
+              const name = pieceName(j);
               return (
                 <li key={i.id}>
                   <button

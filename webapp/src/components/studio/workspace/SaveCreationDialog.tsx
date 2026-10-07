@@ -2,7 +2,7 @@ import { useState, type FormEvent } from "react";
 import { PencilLine, Save } from "lucide-react";
 import { Dialog } from "../../ui/Dialog";
 import { Button } from "../../ui/Button";
-import { estimateTotalCents } from "../../../data/studioEditor";
+import { useCompositionEstimate } from "../../../lib/studio3d/useStudioGems";
 import { useStudio } from "../../../lib/studio3d/store";
 import type { Creation, RecordDetails } from "../../../lib/studioWorkspace/types";
 import { copyName, validateDetails, type DetailsError } from "../../../lib/studioWorkspace/validation";
@@ -44,6 +44,9 @@ export function SaveCreationDialog({
   const [busy, setBusy] = useState(false);
 
   const pieces = mode === "edit" && creation ? creation.scene.pieces : snap.jewels;
+  const liveEstimate = useCompositionEstimate(pieces).totalMinor;
+  // A saved creation shows the value stored with it; the stage, today's shop prices.
+  const estimate = mode === "edit" && creation ? creation.estimatedPriceMinor : liveEstimate;
   // A new save shows the render its card will keep, not the drawn preview.
   const capture = useStageCapture(mode === "edit" ? null : (engine) => engine.captureThumbnail());
   const shown = mode === "edit" ? (creation?.thumbnailUrl ?? null) : (capture ?? null);
@@ -91,7 +94,7 @@ export function SaveCreationDialog({
           <figcaption className="text-[12px] leading-snug text-[var(--text-muted)]">
             <strong className="text-[var(--text-primary)]">{t("studio.workspace.gems", { count })}</strong>
             <br />
-            {t("studio.workspace.estimatedValue", { price: price(estimateTotalCents(pieces)) })}
+            {t("studio.workspace.estimatedValue", { price: price(estimate) })}
           </figcaption>
         </figure>
         <DetailsFields

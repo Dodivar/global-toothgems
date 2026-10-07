@@ -10,6 +10,7 @@ import { EnrolledCourseRow } from "../../components/account/EnrolledCourseRow";
 import { EmptyPanel, SectionHeader } from "../../components/account/SectionHeader";
 import { StatTile } from "../../components/account/StatTile";
 import { ReviewRequestCard } from "../../components/reviews/ReviewRequestCard";
+import { LoungeActivityCard } from "../../components/communityChat/LoungeActivityCard";
 import { pick } from "../../data/types";
 import { useAuth } from "../../lib/auth";
 import { useOrders } from "../../lib/orders";
@@ -143,6 +144,8 @@ export function Dashboard() {
       </section>
 
       {reviewRequest && <ReviewRequestCard request={reviewRequest} />}
+
+      <LoungeActivityCard />
 
       <section className="grid gap-5">
         <div className="grid gap-2">

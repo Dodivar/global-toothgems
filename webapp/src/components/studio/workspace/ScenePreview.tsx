@@ -1,8 +1,8 @@
 import { useId, useMemo } from "react";
 import clsx from "clsx";
 import { ARCH_FRAMES } from "../../../lib/studio3d/archLayout";
-import { pieceSwatchColor, type PreviewPiece } from "../../../lib/studioWorkspace/gemGroup";
-import { TYPE_ICONS } from "../editor/pieceGlyphs";
+import type { PreviewPiece } from "../../../lib/studioWorkspace/gemGroup";
+import { shapeGlyph } from "../editor/pieceGlyphs";
 
 /**
  * A drawn front view of a saved design: the Studio's own arch, from the same
@@ -133,9 +133,9 @@ export function ScenePreview({
         );
       })}
       {pieces.map((p, i) => {
-        // A touch larger than life (×1.1) so a petite crystal still reads on a small card.
-        const size = (p.scale * 2 * 1.1) / 12.8;
-        const color = pieceSwatchColor(p);
+        // A touch larger than life (×1.1) so a small stone still reads on a small card.
+        const size = (p.scale * 2 * 1.1) / 13;
+        const color = p.look.color;
         return (
           <g
             key={i}
@@ -147,7 +147,7 @@ export function ScenePreview({
             strokeLinejoin="round"
             style={{ filter: "drop-shadow(0 0.25px 0.35px rgba(17,17,17,.35))" }}
           >
-            {TYPE_ICONS[p.jewelryTypeId] ?? TYPE_ICONS["crystal-round"]}
+            {shapeGlyph(p.look.shape)}
             <circle cx="6" cy="5.5" r="2.6" fill={`url(#${id}-shine)`} stroke="none" />
           </g>
         );

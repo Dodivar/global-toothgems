@@ -22,6 +22,8 @@ import {
   type ServerId,
 } from "../../data/communityChat";
 import { useCommunity } from "../community";
+import { useNavigate } from "../navigation";
+import { loungePath } from "./loungeRoutes";
 import {
   chronological,
   mentionsMember,
@@ -74,6 +76,8 @@ export interface ConversationView {
 interface State {
   serverId: ServerId;
   room: ChatRoom;
+  /** Whether the lounge is on screen: it reads `room`, and messages arriving there are read. */
+  active: boolean;
   /** Last channel open in each lounge, so switching back lands where you were. */
   lastChannel: Record<ServerId, string>;
   /** Messages written during the session, by room key. */
@@ -99,14 +103,13 @@ interface State {
 }
 
 type Action =
-  | { type: "server"; serverId: ServerId }
+  | { type: "leave" }
   | { type: "open"; room: ChatRoom; serverId?: ServerId; focusMessageId?: string }
   | { type: "send"; key: string; message: ChatMessage }
   | { type: "receive"; key: string; message: ChatMessage }
   | { type: "react"; messageId: string; current: ChatReaction[]; reaction: ChatReaction }
   | { type: "markRead"; keys: string[] }
   | { type: "mute"; key: string }
-  | { type: "startConversation"; memberId: string }
   | { type: "readNotifications"; ids: string[] }
   | { type: "draft"; key: string; text: string }
   | { type: "replyTo"; key: string; messageId?: string }
@@ -135,19 +138,16 @@ function initialState(): State {
     CHAT_SERVERS.map((server) => [server.id, server.channels.find((c) => c.key === "general")?.id ?? server.channels[0].id]),
   ) as Record<ServerId, string>;
 
-  const room = channelRoom(lastChannel[DEFAULT_SERVER]);
-  const key = roomKey(room);
-  const opened = unread[key] ?? 0;
-  unread[key] = 0;
-
+  /* Nothing is opened, nor read, until the lounge shows a room (`syncRoute`). */
   return {
     serverId: DEFAULT_SERVER,
-    room,
+    room: channelRoom(lastChannel[DEFAULT_SERVER]),
+    active: false,
     lastChannel,
     sent: {},
     mine: {},
     unread,
-    divider: opened > 0 ? { key, count: opened } : null,
+    divider: null,
     muted: [],
     started: [],
     readNotifications: [],
@@ -164,26 +164,34 @@ let focusNonce = 0;
 
 function reducer(state: State, action: Action): State {
   switch (action.type) {
-    case "server": {
-      if (action.serverId === state.serverId) return state;
-      return reducer({ ...state, serverId: action.serverId }, { type: "open", room: channelRoom(state.lastChannel[action.serverId]) });
-    }
+    case "leave":
+      return { ...state, active: false, focus: null };
     case "open": {
       const key = roomKey(action.room);
+      /* A private conversation opened by its address exists from then on. */
+      const started =
+        action.room.kind === "dm" &&
+        !DIRECT_CONVERSATIONS.some((c) => c.id === (action.room as { conversationId: string }).conversationId) &&
+        !state.started.some((c) => c.id === (action.room as { conversationId: string }).conversationId)
+          ? [{ id: action.room.conversationId, memberId: action.room.conversationId.replace(/^dm-/, ""), unread: 0, messages: [] }, ...state.started]
+          : state.started;
       const serverId =
         action.serverId ?? (action.room.kind === "channel" ? serverOf(action.room.channelId) : undefined) ?? state.serverId;
       const lastChannel =
         action.room.kind === "channel" ? { ...state.lastChannel, [serverId]: action.room.channelId } : state.lastChannel;
       const pending = state.unread[key] ?? 0;
-      const sameRoom = roomKey(state.room) === key;
+      const sameRoom = state.active && roomKey(state.room) === key;
       return {
         ...state,
+        started,
         serverId,
         room: action.room,
+        active: true,
         lastChannel,
         unread: { ...state.unread, [key]: 0 },
-        /* Reopening the room you are in keeps its marker; a new visit moves it. */
-        divider: sameRoom ? state.divider : pending > 0 ? { key, count: pending } : null,
+        /* Unread messages move the marker; reopening a room with none waiting
+           keeps the marker it had (the lounge may be mounted twice). */
+        divider: pending > 0 ? { key, count: pending } : sameRoom || state.divider?.key === key ? state.divider : null,
         focus: action.focusMessageId ? { messageId: action.focusMessageId, nonce: ++focusNonce } : null,
       };
     }
@@ -197,7 +205,7 @@ function reducer(state: State, action: Action): State {
         divider: state.divider?.key === action.key ? null : state.divider,
       };
     case "receive": {
-      const here = roomKey(state.room) === action.key;
+      const here = state.active && roomKey(state.room) === action.key;
       return {
         ...state,
         sent: { ...state.sent, [action.key]: [...(state.sent[action.key] ?? []), action.message] },
@@ -217,12 +225,6 @@ function reducer(state: State, action: Action): State {
         ...state,
         muted: state.muted.includes(action.key) ? state.muted.filter((k) => k !== action.key) : [...state.muted, action.key],
       };
-    case "startConversation": {
-      const id = directConversationId(action.memberId);
-      const exists = DIRECT_CONVERSATIONS.some((c) => c.id === id) || state.started.some((c) => c.id === id);
-      const started = exists ? state.started : [{ id, memberId: action.memberId, unread: 0, messages: [] }, ...state.started];
-      return reducer({ ...state, started, composerFocus: state.composerFocus + 1 }, { type: "open", room: { kind: "dm", conversationId: id } });
-    }
     case "readNotifications":
       return { ...state, readNotifications: [...new Set([...state.readNotifications, ...action.ids])] };
     case "draft":
@@ -291,7 +293,15 @@ interface ChatContextValue {
   composerFocus: number;
   presence: Presence;
 
+  /** Everything waiting across the lounges: unread messages, and what is addressed to you (mentions, private messages). */
+  activity: { unread: number; attention: number };
+
+  /** Called by the lounge with the room of its address (`loungeRoutes.ts`). */
+  syncRoute: (room: ChatRoom, serverId?: ServerId) => void;
+  /** Called when the lounge leaves the screen. */
+  leave: () => void;
   selectServer: (serverId: ServerId) => void;
+  /** Goes to a room's address; the room opens when the lounge reads it. */
   openRoom: (room: ChatRoom, focusMessageId?: string) => void;
   openConversationWith: (memberId: string) => void;
   send: (parts: MessagePart[], attachments?: ChatAttachment[]) => void;
@@ -313,6 +323,9 @@ export function ChatProvider({ children }: { children: ReactNode }) {
   const { viewer: communityViewer } = useCommunity();
   const [state, dispatch] = useReducer(reducer, undefined, initialState);
   const timers = useRef<number[]>([]);
+  const navigate = useNavigate();
+  /* A message to bring into view once the address it lives at is open. */
+  const pendingFocus = useRef<string | undefined>(undefined);
 
   useEffect(
     () => () => {
@@ -464,12 +477,37 @@ export function ChatProvider({ children }: { children: ReactNode }) {
   const typingId = state.typing[key];
   const typingMember = typingId ? getChatMember(typingId) : undefined;
 
-  const selectServer = useCallback((serverId: ServerId) => dispatch({ type: "server", serverId }), []);
+  const syncRoute = useCallback((room: ChatRoom, serverId?: ServerId) => {
+    const focusMessageId = pendingFocus.current;
+    pendingFocus.current = undefined;
+    dispatch({ type: "open", room, serverId, focusMessageId });
+  }, []);
+  const leave = useCallback(() => dispatch({ type: "leave" }), []);
+
   const openRoom = useCallback(
-    (room: ChatRoom, focusMessageId?: string) => dispatch({ type: "open", room, focusMessageId }),
-    [],
+    (room: ChatRoom, focusMessageId?: string) => {
+      if (state.active && roomKey(room) === roomKey(state.room)) {
+        dispatch({ type: "open", room, focusMessageId });
+        return;
+      }
+      pendingFocus.current = focusMessageId;
+      navigate(loungePath(room));
+    },
+    [navigate, state.active, state.room],
   );
-  const openConversationWith = useCallback((memberId: string) => dispatch({ type: "startConversation", memberId }), []);
+  const selectServer = useCallback(
+    (serverId: ServerId) => {
+      if (serverId !== state.serverId) navigate(loungePath(channelRoom(state.lastChannel[serverId])));
+    },
+    [navigate, state.serverId, state.lastChannel],
+  );
+  const openConversationWith = useCallback(
+    (memberId: string) => {
+      dispatch({ type: "focusComposer" });
+      openRoom({ kind: "dm", conversationId: directConversationId(memberId) });
+    },
+    [openRoom],
+  );
 
   const send = useCallback(
     (parts: MessagePart[], attachments?: ChatAttachment[]) => {
@@ -534,6 +572,17 @@ export function ChatProvider({ children }: { children: ReactNode }) {
   const setPresence = useCallback((presence: Presence) => dispatch({ type: "presence", presence }), []);
   const focusComposer = useCallback(() => dispatch({ type: "focusComposer" }), []);
 
+  const activity = useMemo(() => {
+    let unread = dmUnread;
+    let attention = dmUnread;
+    for (const s of CHAT_SERVERS) {
+      const totals = serverUnread(s.id);
+      unread += totals.unread;
+      attention += totals.mentions;
+    }
+    return { unread, attention };
+  }, [dmUnread, serverUnread]);
+
   const serverMembers = useMemo(
     () => server.memberIds.map((id) => getChatMember(id)).filter((m): m is ChatMember => Boolean(m)),
     [server],
@@ -569,6 +618,9 @@ export function ChatProvider({ children }: { children: ReactNode }) {
     focus: state.focus,
     composerFocus: state.composerFocus,
     presence: state.presence,
+    activity,
+    syncRoute,
+    leave,
     selectServer,
     openRoom,
     openConversationWith,

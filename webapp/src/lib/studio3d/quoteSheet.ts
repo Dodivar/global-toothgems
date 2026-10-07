@@ -4,10 +4,11 @@ import wordmarkImage from "../../assets/logo-wordmark-black.png";
  * The design estimate sheet: a PNG the artist can hand to a client.
  *
  * Composed on a 2D canvas from a render of the current view and the list of
- * pieces. It takes every label and every formatted amount ready-made, so the
- * sheet is in the customer's language and currency format without this module
- * knowing about either. The amounts are an indicative estimate (see
- * `ESTIMATE_PRICING`), and the sheet says so in its footer.
+ * shop items it uses (one row per product and colour). It takes every label
+ * and every formatted amount ready-made, so the sheet is in the customer's
+ * language and currency format without this module knowing about either. The
+ * amounts are an indicative value at shop prices (`gemCatalog.estimateComposition`),
+ * and the sheet says so in its footer.
  */
 
 export interface QuoteRow {
