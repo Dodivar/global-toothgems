@@ -1,4 +1,4 @@
-import { PRESETS, SCALE_RANGE } from "../../data/studioEditor";
+import { SCALE_RANGE } from "../../data/studioEditor";
 import { getEngine, MAX_MODEL_BYTES, ModelImportError } from "./engine";
 import { notify } from "./notices";
 import { studioStore } from "./store";
@@ -15,8 +15,6 @@ export function duplicatePieces(ids: string[]) {
   const engine = getEngine();
   const n = engine ? engine.duplicateSelection(ids) : studioStore.duplicateJewels(ids);
   if (!n) notify("noRoomBeside", undefined, "warning");
-  else if (n < ids.length) notify("duplicatedPartial", { count: n, total: ids.length }, "info");
-  else notify("duplicated", { count: n });
 }
 
 /**
@@ -28,14 +26,11 @@ export function duplicateMirroredPieces(ids: string[], axis: "h" | "v" = "h") {
   if (!ids.length) return;
   const n = getEngine()?.duplicateMirrored(ids, axis) ?? 0;
   if (!n) notify(axis === "h" ? "noRoomMirrored" : "noRoomMirroredV", undefined, "warning");
-  else if (n < ids.length) notify("duplicatedPartial", { count: n, total: ids.length }, "info");
-  else notify(axis === "h" ? "duplicatedMirrored" : "duplicatedMirroredV", { count: n });
 }
 
 export function removePieces(ids: string[]) {
   if (!ids.length) return;
   studioStore.removeJewels(ids);
-  notify("removed", { count: ids.length });
 }
 
 /**
@@ -61,7 +56,6 @@ export function resizePieces(ids: string[], steps: number) {
   const next = (s: number) => Math.min(max, Math.max(min, Number((Math.round(s / step + steps) * step).toFixed(2))));
   const updates = pieces.filter((j) => next(j.scale) !== j.scale).map((j) => ({ id: j.id, patch: { scale: next(j.scale) } }));
   if (!updates.length) {
-    notify(steps > 0 ? "sizeMax" : "sizeMin", undefined, "info");
     return;
   }
   studioStore.pushHistory();
@@ -106,23 +100,17 @@ export function beginRotation(ids: string[]): RotationSession {
       studioStore.applyPatches(turn.patchesFor(deg));
     },
     end() {
-      if (recorded && current % 360 !== 0) notify("rotated", { count: start.length });
+      /* the gesture was one undo step; nothing to announce */
     },
   };
 }
 
 export function mirrorSelection(axis: "h" | "v") {
-  const r = getEngine()?.mirrorSelection(axis);
-  if (!r) return;
-  if (r.skipped > 0) notify(axis === "h" ? "mirroredHPartial" : "mirroredVPartial", { count: r.skipped }, "info");
-  else notify(axis === "h" ? "mirroredH" : "mirroredV");
+  getEngine()?.mirrorSelection(axis);
 }
 
 export function distributeSelection() {
-  const r = getEngine()?.distributeSelectionAlongArch();
-  if (!r) notify("distributeNeedsThree", undefined, "info");
-  else if (r.skipped > 0) notify("distributedPartial", { count: r.skipped }, "info");
-  else notify("distributed");
+  getEngine()?.distributeSelectionAlongArch();
 }
 
 /**
@@ -133,46 +121,24 @@ export function distributeSelection() {
 export function alignSelection(axis: "h" | "v" = "h") {
   const engine = getEngine();
   const r = axis === "h" ? engine?.alignSelectionHorizontally() : engine?.alignSelectionVertically();
-  if (!r) notify(axis === "h" ? "nothingToAlign" : "nothingToAlignV", undefined, "info");
-  else if (!r.moved && r.skipped > 0) notify("alignNoRoom", undefined, "warning");
-  else if (r.skipped > 0) notify("alignedPartial", { count: r.skipped }, "info");
-  else notify(axis === "h" ? "aligned" : "alignedV");
+  if (r && !r.moved && r.skipped > 0) notify("alignNoRoom", undefined, "warning");
 }
 
 /** Bring one or several pieces to the middle of their tooth. */
 export function centerOnTeeth(ids: string[]) {
   const r = getEngine()?.centerSelectionOnTeeth(ids);
-  if (!r) notify("nothingToCenter", undefined, "info");
-  else if (!r.moved && r.skipped > 0) notify("centerNoRoom", undefined, "warning");
-  else if (r.skipped > 0) notify("centeredPartial", { count: r.skipped }, "info");
-  else notify("centered", { count: r.moved });
-}
-
-/** Replace the design with a ready-made preset (one undo step). */
-export function applyPreset(id: string) {
-  const engine = getEngine();
-  const preset = PRESETS.find((p) => p.id === id);
-  if (!engine || !preset) return;
-  const jewels = engine.buildPresetJewels(preset.items);
-  if (!jewels.length) {
-    notify("presetUnavailable", undefined, "warning");
-    return;
-  }
-  studioStore.setJewels(jewels);
-  notify("presetApplied", { name: `studio.editor.presets.${id}.name` });
+  if (r && !r.moved && r.skipped > 0) notify("centerNoRoom", undefined, "warning");
 }
 
 export function clearDesign() {
   if (!studioStore.jewels.length) return;
   studioStore.setJewels([]);
-  notify("cleared");
 }
 
 /** Place a piece from the library on a tooth without a pointer (keyboard). */
 export function placeOnTooth(typeId: string, toothId: string) {
   const ok = getEngine()?.placeOnTooth(typeId, toothId);
-  if (ok) notify("placedOnTooth", { tooth: toothId });
-  else notify("noRoomOnTooth", undefined, "warning");
+  if (!ok) notify("noRoomOnTooth", undefined, "warning");
 }
 
 /** Shared entry for a dentition model: toolbar button and drag-and-drop onto the stage. */
@@ -187,7 +153,6 @@ export async function importModelFile(file: File) {
     notify("import.tooLarge", { max: Math.round(MAX_MODEL_BYTES / (1024 * 1024)) }, "error");
     return;
   }
-  notify("import.started", { name: file.name }, "info");
   try {
     const res = await engine.importGLB(file);
     if (res.mode === "teeth") notify("import.teeth", { count: res.teeth });
@@ -201,6 +166,5 @@ export async function importModelFile(file: File) {
 
 /** Back to the Studio's own dentition, from an imported model (or after the default failed to load). */
 export async function resetModel() {
-  const ok = await getEngine()?.loadDefaultModel();
-  if (ok) notify("modelReset");
+  await getEngine()?.loadDefaultModel();
 }

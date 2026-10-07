@@ -43,7 +43,6 @@ export function useWorkspaceActions() {
     guardUnsaved(() => {
       ws.startNewDesign();
       toEditor();
-      notify("newDesign", undefined, "info");
     });
   }, [guardUnsaved, ws, toEditor]);
 

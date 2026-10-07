@@ -193,51 +193,6 @@ export const OFFSET_RANGE = { min: -0.5, max: 1.5, step: 0.05 } as const;
 
 /* --------------------------------------------------------------- presets */
 
-export interface PresetItem {
-  type: string;
-  tooth: string;
-  /** -1..1 across the labial face. */
-  u?: number;
-  /** -1..1 up the labial face. */
-  v?: number;
-  finish?: FinishId;
-  scale?: number;
-  rot?: number;
-}
-
-/** Ready-made designs. Names and descriptions under `studio.editor.presets.<id>`. */
-export const PRESETS: { id: string; items: PresetItem[] }[] = [
-  { id: "minimal", items: [{ type: "crystal-petite", tooth: "11", u: 0.05, v: -0.05, finish: "clear", scale: 0.75 }] },
-  {
-    id: "symmetry",
-    items: [
-      { type: "crystal-round", tooth: "11", u: 0, v: 0, finish: "clear", scale: 0.85 },
-      { type: "crystal-round", tooth: "21", u: 0, v: 0, finish: "clear", scale: 0.85 },
-    ],
-  },
-  {
-    id: "glam",
-    items: [
-      { type: "crystal-petite", tooth: "12", u: 0.1, v: 0, finish: "rose", scale: 0.6 },
-      { type: "crystal-round", tooth: "11", u: -0.05, v: 0.05, finish: "clear", scale: 0.95 },
-      { type: "crystal-round", tooth: "21", u: -0.05, v: 0.05, finish: "clear", scale: 0.95 },
-      { type: "crystal-petite", tooth: "22", u: 0.1, v: 0, finish: "rose", scale: 0.6 },
-      { type: "crystal-diamond", tooth: "13", u: 0, v: 0, finish: "sapphire", scale: 0.55 },
-      { type: "crystal-diamond", tooth: "23", u: 0, v: 0, finish: "sapphire", scale: 0.55 },
-    ],
-  },
-  {
-    id: "papillon",
-    items: [
-      { type: "shape-butterfly", tooth: "21", u: 0, v: 0.05, finish: "gold", scale: 0.9 },
-      { type: "crystal-petite", tooth: "11", u: 0.15, v: -0.25, finish: "clear", scale: 0.5 },
-      { type: "shape-heart", tooth: "22", u: -0.05, v: 0.1, finish: "ruby", scale: 0.5 },
-      { type: "shape-star", tooth: "12", u: 0, v: -0.1, finish: "silver", scale: 0.5 },
-      { type: "crystal-petite", tooth: "13", u: 0, v: 0.05, finish: "clear", scale: 0.5 },
-    ],
-  },
-];
-
 /* ------------------------------------------------------------ estimate */
 
 /**
