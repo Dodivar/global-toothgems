@@ -17,7 +17,7 @@ import { pick } from "../../data/types";
 import { completionHref, learnHref, lessonHref } from "../../lib/academyUrl";
 import { isNodeDone, isRequired, isUnlocked, type CourseSummary, type PathNode } from "../../lib/learning/path";
 import type { ContentLang } from "../../lib/localized";
-import { useProgress } from "../../lib/progress";
+import { useCourseMediaUrl, useProgress } from "../../lib/progress";
 import { useToast } from "../../lib/toast";
 import { useFocusTrap } from "../../lib/useFocusTrap";
 import { formatDuration } from "../../lib/trainingFilters";
@@ -44,6 +44,7 @@ export function LessonPlayer() {
   const navigate = useNavigate();
   const { showToast } = useToast();
   const { visitNode, completeStep, quizGrader } = useProgress();
+  const mediaUrl = useCourseMediaUrl();
   const { card, access, training, record, summary, progress } = useLearnerCourse(courseId);
   const [sheetOpen, setSheetOpen] = useState(false);
   const [saving, setSaving] = useState(false);
@@ -86,6 +87,7 @@ export function LessonPlayer() {
   if (!node) return <Navigate to={learnHref(courseId)} replace />;
 
   const module = training.modules[node.moduleIndex];
+  const moduleCover = node.kind === "step" && node.indexInModule === 0 ? mediaUrl(module.cover) : "";
   const step = node.kind === "step" ? module.steps.find((s) => s.id === node.key) : undefined;
   const done = isNodeDone(node, record);
   const nextNode = summary.path[index + 1];
@@ -141,6 +143,14 @@ export function LessonPlayer() {
 
           <article className="mx-auto grid max-w-[820px] gap-7">
             <header className="grid gap-3">
+              {moduleCover && (
+                <img
+                  src={moduleCover}
+                  alt=""
+                  aria-hidden="true"
+                  className="mb-2 aspect-[21/9] w-full rounded-[var(--radius-card)] object-cover"
+                />
+              )}
               <p className="m-0 flex flex-wrap items-center gap-x-2 gap-y-1 text-[length:var(--text-eyebrow)] font-semibold uppercase tracking-[var(--tracking-eyebrow)] text-[var(--text-muted)]">
                 <span>{t("learning.moduleNumber", { number: node.moduleIndex + 1 })}</span>
                 <span aria-hidden="true">·</span>
