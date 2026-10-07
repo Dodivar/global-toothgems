@@ -26,8 +26,8 @@ import { ShareMenu } from "./ShareMenu";
 import { HelpHint } from "../workspace/HelpHint";
 import { SaveControls } from "../workspace/SaveControls";
 import { SaveStatus } from "../workspace/SaveStatus";
-import { estimateCents, estimateTotalCents, FREE_TOOTH, PRESETS } from "../../../data/studioEditor";
-import { applyPreset, clearDesign, importModelFile, resetModel } from "../../../lib/studio3d/actions";
+import { estimateCents, estimateTotalCents, FREE_TOOTH } from "../../../data/studioEditor";
+import { clearDesign, importModelFile, resetModel } from "../../../lib/studio3d/actions";
 import { downloadURL, getEngine } from "../../../lib/studio3d/engine";
 import { notify } from "../../../lib/studio3d/notices";
 import { buildQuoteSheetDataURL } from "../../../lib/studio3d/quoteSheet";
@@ -214,20 +214,6 @@ function PresetMenu() {
         </button>
       )}
     >
-      <PopoverLabel>{t("studio.editor.presets.designPresets")}</PopoverLabel>
-      {PRESETS.map((p) => (
-        <PopoverItem
-          key={p.id}
-          icon={<Sparkles size={14} />}
-          label={t(`studio.editor.presets.${p.id}.name`)}
-          sub={t(`studio.editor.presets.${p.id}.desc`)}
-          onClick={() => {
-            applyPreset(p.id);
-            close();
-          }}
-        />
-      ))}
-      <PopoverSeparator />
       <PopoverLabel>{t("studio.editor.presets.mine")}</PopoverLabel>
       {presets.length === 0 && !saving && (
         <p className="m-0 px-2.5 pb-2 text-[12px] leading-snug text-[var(--text-muted)]">{t("studio.editor.presets.mineEmpty")}</p>
@@ -242,7 +228,6 @@ function PresetMenu() {
               onClick={() => {
                 applyUserPreset(p, (jewels, from) => getEngine()?.adaptDesign(jewels, from) ?? jewels);
                 close();
-                notify("presetApplied", { name: p.name });
               }}
             />
           </div>
@@ -262,7 +247,6 @@ function PresetMenu() {
               if (confirmDel === p.id) {
                 deleteUserPreset(p.id);
                 setConfirmDel(null);
-                notify("presetDeleted");
               } else setConfirmDel(p.id);
             }}
             className={clsx(

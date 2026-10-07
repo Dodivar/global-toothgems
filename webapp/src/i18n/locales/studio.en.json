@@ -30,13 +30,21 @@
     "library": "Library",
     "search": "Search pieces",
     "filterLabel": "Filter the library",
-    "filters": { "all": "All", "crystals": "Crystals", "gold": "Gold" },
+    "filters": {
+      "all": "All",
+      "crystals": "Crystals",
+      "gold": "Gold"
+    },
     "addHint": "Pick a piece to add it to the smile.",
     "swapHint": "Pick a piece to swap it for the selected one.",
     "canvasLabel": "Studio canvas — interactive preview",
     "pieceLabel": "{{name}}, piece {{index}}",
     "viewLabel": "View angle",
-    "views": { "front": "Front", "three": "¾", "profile": "Profile" },
+    "views": {
+      "front": "Front",
+      "three": "¾",
+      "profile": "Profile"
+    },
     "zoomLabel": "Zoom",
     "zoomIn": "Zoom in",
     "zoomOut": "Zoom out",
@@ -70,9 +78,18 @@
     "title": "Design. Experiment. Create.",
     "body": "Choose your jewellery, position your pieces and explore endless combinations to create a look that feels uniquely yours.",
     "points": {
-      "combine": { "title": "Combine pieces", "body": "Crystals, gold charms, shapes and colours, together on one smile." },
-      "position": { "title": "Place them freely", "body": "Move, resize and swap each piece tooth by tooth." },
-      "explore": { "title": "Try again, endlessly", "body": "Undo, compare, start over — nothing is final until you say so." }
+      "combine": {
+        "title": "Combine pieces",
+        "body": "Crystals, gold charms, shapes and colours, together on one smile."
+      },
+      "position": {
+        "title": "Place them freely",
+        "body": "Move, resize and swap each piece tooth by tooth."
+      },
+      "explore": {
+        "title": "Try again, endlessly",
+        "body": "Undo, compare, start over — nothing is final until you say so."
+      }
     },
     "playground": "Use it to test a combination before you order, or simply as a creative playground — no experience needed."
   },
@@ -80,19 +97,36 @@
     "eyebrow": "Inside the Studio",
     "title": "Everything you need to compose.",
     "body": "Simple tools, designed for tooth jewellery — not for engineers.",
-    "build": { "title": "Build your composition", "body": "Combine several tooth jewellery pieces into one unique design.", "videoLabel": "Studio 3D demo: placing gems on teeth, changing their colours, moving them and rotating them.",
-    "videoPlay": "Play the video",
-    "videoPause": "Pause the video" },
-    "experiment": { "title": "Experiment freely", "body": "Try different shapes, styles, positions and combinations." },
-    "visualize": { "title": "Visualise your idea", "body": "See how your composition could look before bringing it to life." },
-    "signature": { "title": "Create your signature style", "body": "Build designs that reflect your personality and artistic identity.", "script": "Signature" },
+    "build": {
+      "title": "Build your composition",
+      "body": "Combine several tooth jewellery pieces into one unique design.",
+      "videoLabel": "Studio 3D demo: placing gems on teeth, changing their colours, moving them and rotating them.",
+      "videoPlay": "Play the video",
+      "videoPause": "Pause the video"
+    },
+    "experiment": {
+      "title": "Experiment freely",
+      "body": "Try different shapes, styles, positions and combinations."
+    },
+    "visualize": {
+      "title": "Visualise your idea",
+      "body": "See how your composition could look before bringing it to life."
+    },
+    "signature": {
+      "title": "Create your signature style",
+      "body": "Build designs that reflect your personality and artistic identity.",
+      "script": "Signature"
+    },
     "save": {
       "title": "Save your creations",
       "body": "Keep every composition in your personal gallery and come back to it whenever inspiration strikes.",
       "listLabel": "Example saved compositions",
       "latest": "Latest"
     },
-    "share": { "title": "Share your ideas", "body": "Send a composition to friends, or to the artist who will set it." },
+    "share": {
+      "title": "Share your ideas",
+      "body": "Send a composition to friends, or to the artist who will set it."
+    },
     "before": "Before",
     "after": "After",
     "compareLabel": "Move the before/after divider",
@@ -143,9 +177,18 @@
     "eyebrow": "How it works",
     "title": "Three steps, one composition.",
     "stepLabel": "Step {{n}}:",
-    "choose": { "title": "Choose", "body": "Explore the available tooth jewellery pieces." },
-    "compose": { "title": "Compose", "body": "Arrange and combine them inside the Studio." },
-    "create": { "title": "Create", "body": "Save your idea and bring your composition into your Global Toothgems journey." }
+    "choose": {
+      "title": "Choose",
+      "body": "Explore the available tooth jewellery pieces."
+    },
+    "compose": {
+      "title": "Compose",
+      "body": "Arrange and combine them inside the Studio."
+    },
+    "create": {
+      "title": "Create",
+      "body": "Save your idea and bring your composition into your Global Toothgems journey."
+    }
   },
   "pricing": {
     "eyebrow": "3D Studio access",
@@ -165,7 +208,12 @@
     "eyebrow": "Studio 3D",
     "title": "Your next composition starts here.",
     "body": "Everything the Studio offers, for the price of a coffee each month.",
-    "points": ["Every piece in the library", "Unlimited experiments", "Desktop, tablet and mobile", "New tools as they arrive"],
+    "points": [
+      "Every piece in the library",
+      "Unlimited experiments",
+      "Desktop, tablet and mobile",
+      "New tools as they arrive"
+    ],
     "cta": "Access the 3D Studio"
   },
   "faq": {
@@ -211,7 +259,11 @@
     "body": "Your creative space for designing unique tooth jewellery compositions.",
     "stepsLabel": "Subscription steps",
     "stepDone": "done",
-    "steps": { "plan": "Plan", "account": "Account", "confirm": "Confirmation" },
+    "steps": {
+      "plan": "Plan",
+      "account": "Account",
+      "confirm": "Confirmation"
+    },
     "planLegend": "Your plan",
     "planMonthly": "Monthly",
     "planMonthlySub": "Billed every month · cancel anytime",
@@ -238,7 +290,11 @@
     "confirmedBody": "Your access is ready. A confirmation will be sent to {{email}}.",
     "prototypeConfirmed": "Prototype: nothing was charged and no access was created.",
     "openStudio": "Start creating",
-    "reassurance": { "secure": "Secure payment", "cancel": "Cancel anytime", "devices": "Desktop, tablet & mobile" }
+    "reassurance": {
+      "secure": "Secure payment",
+      "cancel": "Cancel anytime",
+      "devices": "Desktop, tablet & mobile"
+    }
   },
   "access": {
     "previewBadge": "Free preview",
@@ -316,7 +372,6 @@
     },
     "presets": {
       "menu": "Presets",
-      "designPresets": "Ready-made designs",
       "mine": "My presets",
       "mineEmpty": "Save your current design under a name to reuse it any time.",
       "saveCurrent": "Save current design as a preset…",
@@ -325,23 +380,7 @@
       "save": "Save",
       "delete": "Delete the preset “{{name}}”",
       "confirmDelete": "Confirm: delete “{{name}}”",
-      "clearAll": "Clear all pieces",
-      "minimal": {
-        "name": "Minimal",
-        "desc": "One petite crystal on the upper right central incisor."
-      },
-      "symmetry": {
-        "name": "Symmetry",
-        "desc": "Matching crystals on both central incisors."
-      },
-      "glam": {
-        "name": "Glam",
-        "desc": "A graduated cascade across the six front teeth."
-      },
-      "papillon": {
-        "name": "Papillon",
-        "desc": "A golden butterfly with scattered accents."
-      }
+      "clearAll": "Clear all pieces"
     },
     "export": {
       "menu": "Export",
@@ -623,56 +662,37 @@
       "spotTaken": "That spot overlaps a piece — pick a free spot",
       "noRoomBeside": "No free space beside the selection",
       "noRoomOnTooth": "No free space on that tooth",
-      "placedOnTooth": "Piece placed on tooth {{tooth}}",
       "duplicated_one": "Piece duplicated — drag it where you want it",
       "duplicated_other": "{{count}} pieces duplicated — try Mirror horizontally for a symmetrical smile",
-      "duplicatedPartial": "{{count}} of {{total}} duplicated — the others had no room",
       "duplicatedMirrored_one": "Piece duplicated on the other side of the arch",
       "duplicatedMirrored_other": "{{count}} pieces duplicated mirrored",
       "noRoomMirrored": "No free space on the other side of the arch",
       "duplicatedMirroredV_one": "Piece duplicated mirrored vertically",
       "duplicatedMirroredV_other": "{{count}} pieces duplicated mirrored vertically",
       "noRoomMirroredV": "No free enamel at the vertically mirrored spot",
-      "lassoEmpty": "No visible piece inside the lasso — draw around the pieces' centres",
       "removed_one": "Piece removed",
       "removed_other": "{{count}} pieces removed",
       "rotated_one": "Piece rotated",
       "rotated_other": "Selection rotated",
-      "sizeMax": "Already at the largest size",
-      "sizeMin": "Already at the smallest size",
-      "mirroredH": "Mirrored across the midline",
-      "mirroredV": "Mirrored vertically",
       "mirroredHPartial_one": "Mirrored — {{count}} piece kept in place (spot taken)",
       "mirroredHPartial_other": "Mirrored — {{count}} pieces kept in place (spots taken)",
       "mirroredVPartial_one": "Mirrored — {{count}} piece kept in place (spot taken)",
       "mirroredVPartial_other": "Mirrored — {{count}} pieces kept in place (spots taken)",
-      "distributeNeedsThree": "Select at least 3 pieces to space them evenly",
-      "distributed": "Pieces spaced evenly along the arch",
       "distributedPartial_one": "Spaced — {{count}} piece kept in place (spot taken)",
       "distributedPartial_other": "Spaced — {{count}} pieces kept in place (spots taken)",
-      "nothingToAlign": "Select at least 2 pieces on the same arch to align them",
-      "nothingToAlignV": "Select at least 2 pieces to align them",
-      "alignedV": "Pieces lined up on one vertical line",
-      "aligned": "Pieces lined up on one horizontal line",
       "alignedPartial_one": "Aligned — {{count}} piece kept in place (off the enamel or spot taken)",
       "alignedPartial_other": "Aligned — {{count}} pieces kept in place (off the enamel or spots taken)",
       "alignNoRoom": "No piece aligned: their spot on the line is off the enamel or already taken",
-      "nothingToCenter": "Nothing to centre",
       "centered_one": "Piece centred on its tooth",
       "centered_other": "Pieces centred on their teeth",
       "centeredPartial_one": "Centred — {{count}} piece kept in place (spot taken)",
       "centeredPartial_other": "Centred — {{count}} pieces kept in place (spots taken)",
       "centerNoRoom": "No piece centred: the middle of their tooth is already taken",
-      "presetApplied": "“{{name}}” applied — undo is available",
-      "presetUnavailable": "This preset's teeth aren't on the current model",
       "presetNameMissing": "Give your preset a name first",
       "presetEmpty": "Place at least one piece before saving a preset",
       "presetSaved": "Preset “{{name}}” saved",
-      "presetDeleted": "Preset deleted",
-      "cleared": "Design cleared — undo is available",
       "saveEmpty": "Add at least one gem before saving.",
       "saveEmptyLinked": "This design is empty. Undo, or add a gem, before saving — to remove the creation, delete it from My Creations.",
-      "newDesign": "New design — the stage is yours.",
       "exportedPng": "PNG snapshot downloaded",
       "exportedTransparent": "Transparent PNG downloaded",
       "exportedJson": "Design JSON downloaded",
@@ -686,7 +706,6 @@
       "shareFailed": "Sharing did not go through — download the image to post it",
       "linkCopied": "Studio link copied",
       "linkCopyFailed": "The link could not be copied",
-      "modelReset": "Reference dentition restored",
       "modelLoadFailed": "The reference dentition could not be loaded — the simplified arch stands in. Try again with “Back to the reference dentition”.",
       "import": {
         "started": "Importing {{name}}…",
