@@ -57,6 +57,43 @@ export interface CheckoutSessionParams {
 /** What closing a payment step found. Never told to the browser. */
 export type ReleaseOutcome = "released" | "not_found" | "kept";
 
+/** What closing a payment step needs from Stripe and the database. */
+export interface ReleaseDeps {
+  /** The session, or null when Stripe does not know it. */
+  retrieveSession(sessionId: string): Promise<{ clientSecret: string | null; status: string | null; orderId: string | null } | null>;
+  /** Throws when Stripe refuses (a payment being confirmed right now cannot be expired). */
+  expireSession(sessionId: string): Promise<void>;
+  orderState(orderId: string): Promise<{ status: string; paymentStatus: string } | null>;
+  cancelOrder(orderId: string, reason: string): Promise<void>;
+}
+
+const UNPAID = new Set(["pending", "failed"]);
+
+/**
+ * Closes an unpaid payment step. Only whoever holds the session's client secret
+ * (the browser it was given to) can close it; a completed payment, or one that
+ * Stripe will not let expire, is left alone; only a pending unpaid order is cancelled.
+ */
+export async function releasePaymentStep(sessionId: string, clientSecret: string, deps: ReleaseDeps): Promise<ReleaseOutcome> {
+  const session = await deps.retrieveSession(sessionId).catch(() => null);
+  if (!session || session.clientSecret === null || session.clientSecret !== clientSecret) return "not_found";
+  if (session.status === "complete") return "kept";
+  if (session.status === "open") {
+    try {
+      await deps.expireSession(sessionId);
+    } catch {
+      const again = await deps.retrieveSession(sessionId);
+      if (again?.status !== "expired") return "kept";
+    }
+  }
+  if (!session.orderId) return "released";
+  const order = await deps.orderState(session.orderId);
+  if (order && order.status === "pending" && UNPAID.has(order.paymentStatus)) {
+    await deps.cancelOrder(session.orderId, "payment_step_left");
+  }
+  return "released";
+}
+
 export interface CheckoutDeps {
   origins: SiteOrigins;
   /**

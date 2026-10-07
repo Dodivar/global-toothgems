@@ -1,6 +1,6 @@
 import { assert, assertEquals } from "jsr:@std/assert@1";
 import { readSiteOrigins } from "../_shared/http.ts";
-import { handleCheckout, RESERVATION_MINUTES, SESSION_MINUTES, type CheckoutDeps, type CheckoutSessionParams, type OrderRow } from "./handler.ts";
+import { handleCheckout, releasePaymentStep, RESERVATION_MINUTES, SESSION_MINUTES, type CheckoutDeps, type CheckoutSessionParams, type OrderRow, type ReleaseDeps } from "./handler.ts";
 
 const ORDER: OrderRow = {
   id: "11111111-2222-4333-8444-555555555555",
@@ -294,4 +294,59 @@ Deno.test("leaving the payment step: released by its client secret only, same an
     assertEquals(bad.status, 400);
   }
   assertEquals(calls.released.length, 1);
+});
+
+function releaseDeps(session: { clientSecret: string | null; status: string; orderId: string | null } | null, order = { status: "pending", paymentStatus: "pending" }, expireFails = false) {
+  const calls = { expired: [] as string[], cancelled: [] as { orderId: string; reason: string }[] };
+  const deps: ReleaseDeps = {
+    retrieveSession: () => Promise.resolve(session),
+    expireSession: (id) => {
+      if (expireFails) return Promise.reject(new Error("session is being paid"));
+      calls.expired.push(id);
+      return Promise.resolve();
+    },
+    orderState: () => Promise.resolve(order),
+    cancelOrder: (orderId, reason) => {
+      calls.cancelled.push({ orderId, reason });
+      return Promise.resolve();
+    },
+  };
+  return { deps, calls };
+}
+
+Deno.test("release: the owner's open step is expired and its unpaid order cancelled", async () => {
+  const { deps, calls } = releaseDeps({ clientSecret: PREVIOUS, status: "open", orderId: ORDER.id });
+  assertEquals(await releasePaymentStep("cs_test_Old0Old0Old0Old0", PREVIOUS, deps), "released");
+  assertEquals(calls.expired, ["cs_test_Old0Old0Old0Old0"]);
+  assertEquals(calls.cancelled, [{ orderId: ORDER.id, reason: "payment_step_left" }]);
+});
+
+Deno.test("release: someone without the session's own secret cannot close it", async () => {
+  for (const session of [
+    { clientSecret: SECRET, status: "open", orderId: ORDER.id },
+    { clientSecret: null, status: "open", orderId: ORDER.id },
+    null,
+  ]) {
+    const { deps, calls } = releaseDeps(session);
+    assertEquals(await releasePaymentStep("cs_test_Old0Old0Old0Old0", PREVIOUS, deps), "not_found");
+    assertEquals(calls.expired.length + calls.cancelled.length, 0);
+  }
+  const unknown = releaseDeps(null);
+  unknown.deps.retrieveSession = () => Promise.reject(new Error("No such checkout.session"));
+  assertEquals(await releasePaymentStep("cs_test_Old0Old0Old0Old0", PREVIOUS, unknown.deps), "not_found");
+});
+
+Deno.test("release: a completed or completing payment, or a paid order, is never cancelled", async () => {
+  const complete = releaseDeps({ clientSecret: PREVIOUS, status: "complete", orderId: ORDER.id });
+  assertEquals(await releasePaymentStep("cs_test_Old0Old0Old0Old0", PREVIOUS, complete.deps), "kept");
+  assertEquals(complete.calls.cancelled.length, 0);
+
+  const paying = releaseDeps({ clientSecret: PREVIOUS, status: "open", orderId: ORDER.id }, undefined, true);
+  assertEquals(await releasePaymentStep("cs_test_Old0Old0Old0Old0", PREVIOUS, paying.deps), "kept");
+  assertEquals(paying.calls.cancelled.length, 0);
+
+  const paid = releaseDeps({ clientSecret: PREVIOUS, status: "expired", orderId: ORDER.id }, { status: "confirmed", paymentStatus: "paid" });
+  assertEquals(await releasePaymentStep("cs_test_Old0Old0Old0Old0", PREVIOUS, paid.deps), "released");
+  assertEquals(paid.calls.cancelled.length, 0);
+  assertEquals(paid.calls.expired.length, 0);
 });
