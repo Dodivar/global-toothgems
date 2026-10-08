@@ -50,6 +50,10 @@ export interface SendRequest {
   giftCardId?: string;
   /** Extra headers, e.g. `List-Unsubscribe` for marketing e-mails. */
   headers?: Record<string, string>;
+  /** Replaces the default reply-to, e.g. the customer's address on an e-mail to the support inbox. */
+  replyTo?: string;
+  /** Files to attach (base64 content); the caller keeps them within the provider's size limit. */
+  attachments?: { filename: string; content: string }[];
   /**
    * Layout content around the template body (title, actions, order summary…), built from
    * `components.ts`. A function receives the locale of the template actually found
@@ -84,6 +88,9 @@ export async function sendTemplatedEmail(deps: EmailDeps, request: SendRequest):
   if (request.eventKey.length === 0 || request.eventKey.length > 200) {
     return { status: "invalid", error: "event key must be 1-200 characters" };
   }
+  if (request.replyTo !== undefined && !isValidAddress(request.replyTo)) {
+    return { status: "invalid", error: "invalid reply-to address" };
+  }
   for (const [name, value] of Object.entries(request.headers ?? {})) {
     if (/[\r\n]/.test(name + value)) return { status: "invalid", error: "header with a line break" };
   }
@@ -113,7 +120,7 @@ export async function sendTemplatedEmail(deps: EmailDeps, request: SendRequest):
   const mail: OutgoingEmail = {
     from: deps.from,
     to,
-    replyTo: deps.replyTo,
+    replyTo: request.replyTo ?? deps.replyTo,
     subject: rendered.subject,
     html: rendered.html,
     text: rendered.text,
@@ -121,6 +128,7 @@ export async function sendTemplatedEmail(deps: EmailDeps, request: SendRequest):
     idempotencyKey: `${request.eventKey}:${claim.attempt}`,
     headers: request.headers,
     tags: [{ name: "template", value: request.templateKey }],
+    attachments: request.attachments,
   };
 
   try {

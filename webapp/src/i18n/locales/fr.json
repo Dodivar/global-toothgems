@@ -4538,12 +4538,19 @@
         "order": "Numéro de commande",
         "subject": "Objet",
         "message": "Message",
-        "file": "Pièce jointe"
+        "file": "Pièces jointes"
       },
       "orderHint": "Il figure dans votre e-mail de confirmation.",
+      "placeholders": {
+        "name": "Ex. : Marie Dupont",
+        "email": "nom@exemple.fr",
+        "order": "Ex. : GT-100001",
+        "subject": "Ex. : Mon colis n’est pas arrivé",
+        "message": "Décrivez votre demande en quelques lignes : ce qui s’est passé, ce que vous attendez de notre part…"
+      },
       "messageHint": "20 caractères minimum. N’indiquez pas de données bancaires.",
-      "fileCta": "Ajouter un fichier",
-      "fileHint": "JPG, PNG ou PDF · 10 Mo maximum · une photo du produit ou du colis par exemple",
+      "fileCta": "Ajouter des fichiers",
+      "fileHint": "JPG, PNG ou PDF · 5 fichiers maximum · 20 Mo au total · une photo du produit ou du colis par exemple",
       "removeFile": "Retirer le fichier {{name}}",
       "sizeKb": "{{size}} Ko",
       "sizeMb": "{{size}} Mo",
@@ -4562,24 +4569,32 @@
         "category": "Choisissez le sujet de votre demande.",
         "subject": "Indiquez l’objet de votre message.",
         "message": "Votre message doit contenir au moins 20 caractères.",
-        "fileSize": "Ce fichier dépasse 10 Mo. Choisissez un fichier plus léger."
+        "fileSize": "Vos pièces jointes dépassent 20 Mo au total. Retirez-en une ou choisissez des fichiers plus légers.",
+        "fileCount": "Vous pouvez joindre 5 fichiers au maximum.",
+        "fileType": "Seuls les fichiers JPG, PNG et PDF sont acceptés.",
+        "send": {
+          "rate_limited": "Vous avez envoyé plusieurs messages à la suite. Patientez quelques minutes avant de réessayer.",
+          "file_type": "Une pièce jointe n’a pas été reconnue : seuls les fichiers JPG, PNG et PDF sont acceptés.",
+          "too_many_files": "Vous pouvez joindre 5 fichiers au maximum.",
+          "files_too_large": "Vos pièces jointes dépassent 20 Mo au total.",
+          "invalid_request": "Votre message n’a pas pu être envoyé : vérifiez les champs puis réessayez.",
+          "network": "La connexion a échoué. Vos informations restent dans ce formulaire — réessayez dans un instant.",
+          "unavailable": "L’envoi de messages n’est pas disponible pour le moment. Réessayez plus tard.",
+          "server_error": "Une erreur est survenue de notre côté. Vos informations restent dans ce formulaire — réessayez dans quelques minutes."
+        },
+        "sendTitle": "Message non envoyé"
       },
       "successTitle": "Merci {{name}}, votre message est bien envoyé",
-      "successBody": "Nous vous répondrons à {{email}}. Délai de réponse habituel :",
+      "successBody": "Nous vous répondrons à {{email}}. Un e-mail de confirmation vous a été envoyé.",
+      "successTicketLabel": "Référence",
       "closed": "Fermé",
-      "responseTimePlaceholder": "Délai de réponse du service client",
-      "demoNote": "Maquette : aucun message n’a été transmis, et la pièce jointe n’a pas quitté votre navigateur.",
       "sendAnother": "Envoyer un autre message",
       "otherTitle": "Autres moyens de nous joindre",
       "lines": {
         "email": "E-mail",
-        "emailPlaceholder": "E-mail du service client",
         "phone": "Téléphone",
-        "phonePlaceholder": "Numéro, si proposé",
         "address": "Adresse",
-        "addressPlaceholder": "Adresse postale, si publiée",
         "hours": "Horaires du service client",
-        "hoursPlaceholder": "Jours et horaires",
         "response": "Délai de réponse"
       },
       "quickTitle": "Réponses rapides",

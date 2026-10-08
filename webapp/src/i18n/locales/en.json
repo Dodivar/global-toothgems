@@ -4538,12 +4538,19 @@
         "order": "Order number",
         "subject": "Subject",
         "message": "Message",
-        "file": "Attachment"
+        "file": "Attachments"
       },
       "orderHint": "It is in your confirmation email.",
+      "placeholders": {
+        "name": "E.g. Mary Smith",
+        "email": "name@example.com",
+        "order": "E.g. GT-100001",
+        "subject": "E.g. My parcel has not arrived",
+        "message": "Describe your request in a few lines: what happened and what you expect from us…"
+      },
       "messageHint": "At least 20 characters. Please do not include bank details.",
-      "fileCta": "Add a file",
-      "fileHint": "JPG, PNG or PDF · up to 10 MB · a photo of the product or parcel, for example",
+      "fileCta": "Add files",
+      "fileHint": "JPG, PNG or PDF · up to 5 files · 20 MB in total · a photo of the product or parcel, for example",
       "removeFile": "Remove file {{name}}",
       "sizeKb": "{{size}} KB",
       "sizeMb": "{{size}} MB",
@@ -4562,24 +4569,32 @@
         "category": "Choose what your request is about.",
         "subject": "Enter a subject.",
         "message": "Your message must be at least 20 characters.",
-        "fileSize": "This file is over 10 MB. Choose a smaller file."
+        "fileSize": "Your attachments are over 20 MB in total. Remove one or choose smaller files.",
+        "fileCount": "You can attach up to 5 files.",
+        "fileType": "Only JPG, PNG and PDF files are accepted.",
+        "send": {
+          "rate_limited": "You have sent several messages in a row. Please wait a few minutes before trying again.",
+          "file_type": "An attachment was not recognised: only JPG, PNG and PDF files are accepted.",
+          "too_many_files": "You can attach up to 5 files.",
+          "files_too_large": "Your attachments are over 20 MB in total.",
+          "invalid_request": "Your message could not be sent: check the fields and try again.",
+          "network": "The connection failed. Your details are still in this form — try again in a moment.",
+          "unavailable": "Sending messages is not available right now. Please try again later.",
+          "server_error": "Something went wrong on our side. Your details are still in this form — try again in a few minutes."
+        },
+        "sendTitle": "Message not sent"
       },
       "successTitle": "Thank you {{name}}, your message has been sent",
-      "successBody": "We will reply to {{email}}. Usual response time:",
+      "successBody": "We will reply to {{email}}. A confirmation email has been sent to you.",
+      "successTicketLabel": "Reference",
       "closed": "Closed",
-      "responseTimePlaceholder": "Customer service response time",
-      "demoNote": "Prototype: no message was sent, and the attachment never left your browser.",
       "sendAnother": "Send another message",
       "otherTitle": "Other ways to reach us",
       "lines": {
         "email": "Email",
-        "emailPlaceholder": "Customer service email",
         "phone": "Phone",
-        "phonePlaceholder": "Number, if offered",
         "address": "Address",
-        "addressPlaceholder": "Postal address, if published",
         "hours": "Customer service hours",
-        "hoursPlaceholder": "Days and hours",
         "response": "Response time"
       },
       "quickTitle": "Quick answers",

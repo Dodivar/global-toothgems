@@ -805,7 +805,7 @@ export type Database = {
       contact_requests: {
         Row: {
           assigned_to: string | null
-          attachment_path: string | null
+          attachment_paths: string[]
           category: string
           created_at: string
           email: string
@@ -827,7 +827,7 @@ export type Database = {
         }
         Insert: {
           assigned_to?: string | null
-          attachment_path?: string | null
+          attachment_paths?: string[]
           category: string
           created_at?: string
           email: string
@@ -849,7 +849,7 @@ export type Database = {
         }
         Update: {
           assigned_to?: string | null
-          attachment_path?: string | null
+          attachment_paths?: string[]
           category?: string
           created_at?: string
           email?: string
@@ -7494,6 +7494,10 @@ export type Database = {
         }[]
       }
       complete_course_step: { Args: { p_step_id: string }; Returns: Json }
+      contact_ip_allowed: {
+        Args: { p_ip_hash: string }
+        Returns: boolean
+      }
       consume_inventory: {
         Args: { p_inventory_item_id: string; p_quantity: number }
         Returns: {
@@ -7885,7 +7889,7 @@ export type Database = {
       }
       submit_contact_request: {
         Args: {
-          p_attachment_path?: string
+          p_attachment_paths?: string[]
           p_category: string
           p_email: string
           p_locale?: string
