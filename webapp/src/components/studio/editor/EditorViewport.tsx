@@ -328,7 +328,8 @@ function Pill({ children, position, floating }: { children: React.ReactNode; pos
   return (
     <div
       className={clsx(
-        "absolute left-1/2 z-[6] flex max-w-[calc(100%-24px)] -translate-x-1/2 items-center gap-2.5 rounded-full py-2 pl-4 pr-2.5 text-[12px] font-semibold",
+        // Above the issue list, whose header shares the top band on a narrow stage.
+        "absolute left-1/2 z-[9] flex max-w-[calc(100%-24px)] -translate-x-1/2 items-center gap-2.5 rounded-full py-2 pl-4 pr-2.5 text-[12px] font-semibold",
         stageGlass,
         position === "top" ? "top-[58px]" : "bottom-[78px]",
         floating && "gt-editor-floaty",
