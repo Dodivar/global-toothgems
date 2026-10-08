@@ -1,9 +1,10 @@
+import type { GemShape } from "../../data/products";
 import type { StudioGem } from "./gemCatalog";
 
 /**
  * The editor library's sections: the shop's gems grouped by cut (the shop's
  * shape) and, for gems without one (the 18ct charms), by family. Each section
- * doubles as a filter chip. Pure, so the grouping, the search and the filter
+ * doubles as a filter in the shape picker. Pure, so the grouping, the search and the filter
  * are tested apart from the panel (`librarySections.test.ts`).
  */
 
@@ -12,6 +13,8 @@ export interface LibrarySection {
   id: string;
   label: string;
   byShape: boolean;
+  /** The shop's cut, drawn by the shop's own glyph; `null` for a family of charms. */
+  shape: GemShape | null;
   /** The section's gems matching the search, in catalogue order. */
   items: StudioGem[];
 }
@@ -41,7 +44,7 @@ export function librarySections(gems: readonly StudioGem[], labels: LibraryLabel
     if (!section) {
       const byShape = gem.shopShape !== null;
       const label = byShape ? labels.shape(gem.shopShape!) : gem.family ? labels.family(gem.family) : labels.other;
-      section = { id, label, byShape, items: [] };
+      section = { id, label, byShape, shape: gem.shopShape, items: [] };
       byId.set(id, section);
     }
     if (!q || labels.gemName(gem).toLocaleLowerCase().includes(q) || section.label.toLocaleLowerCase().includes(q)) section.items.push(gem);

@@ -404,7 +404,8 @@
       "allShapes": "All",
       "foldAll": "Collapse every shape",
       "unfoldAll": "Expand every shape",
-      "showAllShapes": "Show every shape"
+      "showAllShapes": "Show every shape",
+      "shapeLabel": "Shape"
     },
     "viewport": {
       "label": "3D view of the dental arch",

@@ -404,7 +404,8 @@
       "allShapes": "Toutes",
       "foldAll": "Replier toutes les formes",
       "unfoldAll": "Déplier toutes les formes",
-      "showAllShapes": "Voir toutes les formes"
+      "showAllShapes": "Voir toutes les formes",
+      "shapeLabel": "Forme"
     },
     "viewport": {
       "label": "Vue 3D de l’arcade dentaire",

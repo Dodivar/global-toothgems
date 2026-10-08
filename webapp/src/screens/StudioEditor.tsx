@@ -7,7 +7,7 @@ import { EditorTopBar } from "../components/studio/editor/EditorTopBar";
 import { EditorLibrary } from "../components/studio/editor/EditorLibrary";
 import { EditorViewport } from "../components/studio/editor/EditorViewport";
 import { EditorInspector } from "../components/studio/editor/EditorInspector";
-import { useEditorPanels } from "../components/studio/editor/useEditorPanels";
+import { useEditorPanels, usePanelPresence } from "../components/studio/editor/useEditorPanels";
 import { StudioSidebar } from "../components/studio/workspace/StudioSidebar";
 import { WorkspaceDialogs } from "../components/studio/workspace/WorkspaceDialogs";
 import { CreationLibrary } from "../components/studio/workspace/CreationLibrary";
@@ -60,6 +60,8 @@ function StudioWorkspace() {
   const [drawerOpen, setDrawerOpen] = useState(false);
   const { save } = useWorkspaceActions();
   const panels = useEditorPanels();
+  const library = usePanelPresence(panels.open.library);
+  const inspector = usePanelPresence(panels.open.inspector);
   // Read by the keyboard handler, which is registered once.
   const live = useRef({ section, save });
   useEffect(() => {
@@ -181,7 +183,7 @@ function StudioWorkspace() {
   }, []);
 
   return (
-    <div className="gt-editor flex min-h-[100dvh] bg-[var(--surface-page)] studio-side:h-[100dvh] studio-side:min-h-0">
+    <div className="gt-editor flex min-h-[100dvh] overflow-x-clip bg-[var(--surface-page)] studio-side:h-[100dvh] studio-side:min-h-0">
       <StudioSidebar section={section} drawerOpen={drawerOpen} onCloseDrawer={() => setDrawerOpen(false)} />
       <div className="relative flex min-w-0 flex-1 flex-col">
         {/* The editor stays mounted under a section — hidden but still measured —
@@ -190,12 +192,13 @@ function StudioWorkspace() {
           <EditorTopBar snap={snap} onOpenMenu={() => setDrawerOpen(true)} />
           {/* Side by side, a closed panel's column is zero wide and the panel is hidden,
               not unmounted: its search, tab and scroll are still there when it comes back.
-              The columns snap rather than slide, so the 3D canvas is resized once. */}
+              The panel slides in and out (`usePanelPresence`) but its column snaps,
+              so the 3D canvas is resized once rather than on every frame. */}
           <div
             className={clsx(
               "grid min-h-0 flex-1 grid-cols-1 studio-side:grid-cols-[var(--gt-lib)_minmax(0,1fr)_var(--gt-insp)]",
-              panels.open.library ? "[--gt-lib:236px] lg:[--gt-lib:264px] xl:[--gt-lib:288px]" : "[--gt-lib:0px]",
-              panels.open.inspector ? "[--gt-insp:296px] lg:[--gt-insp:316px] xl:[--gt-insp:332px]" : "[--gt-insp:0px]",
+              library.shown ? "[--gt-lib:236px] lg:[--gt-lib:264px] xl:[--gt-lib:288px]" : "[--gt-lib:0px]",
+              inspector.shown ? "[--gt-insp:296px] lg:[--gt-insp:316px] xl:[--gt-insp:332px]" : "[--gt-insp:0px]",
             )}
           >
             {/* Stage first on small screens: it is what the visitor came for. */}
@@ -204,13 +207,21 @@ function StudioWorkspace() {
             </div>
             <div
               id="gt-editor-library-panel"
-              className={clsx("order-2 grid min-h-0 min-w-0 grid-cols-[minmax(0,1fr)] studio-side:col-start-1 studio-side:row-start-1", !panels.open.library && "hidden")}
+              className={clsx(
+                "order-2 grid min-h-0 min-w-0 grid-cols-[minmax(0,1fr)] studio-side:col-start-1 studio-side:row-start-1",
+                !library.shown && "hidden",
+                library.phase && `gt-editor-side-${library.phase}-left`,
+              )}
             >
               <EditorLibrary snap={snap} />
             </div>
             <div
               id="gt-editor-inspector-panel"
-              className={clsx("order-3 grid min-h-0 min-w-0 grid-cols-[minmax(0,1fr)] studio-side:col-start-3 studio-side:row-start-1", !panels.open.inspector && "hidden")}
+              className={clsx(
+                "order-3 grid min-h-0 min-w-0 grid-cols-[minmax(0,1fr)] studio-side:col-start-3 studio-side:row-start-1",
+                !inspector.shown && "hidden",
+                inspector.phase && `gt-editor-side-${inspector.phase}-right`,
+              )}
             >
               <EditorInspector snap={snap} />
             </div>

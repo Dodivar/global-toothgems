@@ -120,3 +120,29 @@ export function useEditorPanels() {
     toggle: (panel: EditorPanel) => setPanel(panel, !panels[panel]),
   };
 }
+
+/** As long as `--duration-fast`, the length of the panels' slide (`index.css`). */
+const SLIDE_MS = 160;
+
+/**
+ * A side panel on its way in or out: it keeps its column while it slides
+ * away, then lets it go. `phase` names the slide to play — none on the first
+ * render, so the editor does not open with its panels flying in.
+ */
+export function usePanelPresence(open: boolean) {
+  const [prev, setPrev] = useState(open);
+  const [leaving, setLeaving] = useState(false);
+  const [moved, setMoved] = useState(false);
+  if (prev !== open) {
+    setPrev(open);
+    setLeaving(!open);
+    setMoved(true);
+  }
+  useEffect(() => {
+    if (!leaving) return;
+    const still = window.matchMedia("(prefers-reduced-motion: reduce)").matches;
+    const timer = setTimeout(() => setLeaving(false), still ? 0 : SLIDE_MS);
+    return () => clearTimeout(timer);
+  }, [leaving]);
+  return { shown: open || leaving, phase: !moved ? null : open ? ("in" as const) : leaving ? ("out" as const) : null };
+}
