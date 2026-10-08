@@ -231,6 +231,9 @@ export function Cart() {
     const found = products.find((p) => p.dbId === line.dbProductId);
     return found ? offerFor({ dbId: found.dbId, cat: found.cat, currency: found.currency ?? "EUR" }) : null;
   };
+  // The shop-window badge belongs to a promotion only: a cut that comes from the loyalty reward alone (the promotion is
+  // used up, or the reward beats it) carries no campaign badge.
+  const promotionApplied = quote?.discounts.some((d) => d.type !== "loyalty") ?? false;
   const freeOrder = live && quote !== null && total <= 0 && giftCodes.length === 0;
   const threshold = ratesReady && shipped ? freeShippingThreshold(rates.rows, currency) : null;
   const remainingForFreeShipping = threshold === null ? null : Math.max(0, threshold - goods);
@@ -587,7 +590,7 @@ export function Cart() {
                   <div className="grid min-w-[150px] flex-1 gap-1">
                     <strong className="text-sm text-[var(--text-primary)]">{line.name}</strong>
                     {line.variant && <span className="text-xs text-[var(--text-muted)]">{line.variant}</span>}
-                    {lineCut(line) > 0 && <OfferBadges offer={lineOffer(line)} className="sm:flex-row sm:flex-wrap" />}
+                    {lineCut(line) > 0 && promotionApplied && <OfferBadges offer={lineOffer(line)} className="sm:flex-row sm:flex-wrap" />}
                     <button
                       type="button"
                       onClick={() => removeLine(line.id)}
