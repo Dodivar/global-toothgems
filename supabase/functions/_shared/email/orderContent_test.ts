@@ -60,9 +60,14 @@ Deno.test("the address is written in lines with the country in the recipient's l
 });
 
 Deno.test("shipping and refund e-mails get their eyebrow, button and notice; German falls back to English", () => {
-  const ship = shippingContent({ orderNumber: "GT-1", trackingLink: "https://track.example/1" }, "de");
+  const ship = shippingContent({ orderNumber: "GT-1", trackingLink: "https://track.example/1", userId: "u1" }, "de", SITE);
   assertEquals(ship.primaryAction, { label: "Track my parcel", url: "https://track.example/1" });
+  assertEquals(ship.secondaryAction, { label: "View my order", url: `${SITE}/compte/commandes/GT-1` });
+  assertStringIncludes(ship.blocks!.map((b) => b.text).join("\n"), "Forgot something?");
+  assertStringIncludes(ship.blocks!.map((b) => b.text).join("\n"), `${SITE}/en/shop`);
   assertEquals(ship.eyebrow, "Shipping · Order GT-1");
+  const guestShip = shippingContent({ orderNumber: "GT-1", trackingLink: "https://track.example/1", userId: null }, "fr", SITE);
+  assertEquals(guestShip.secondaryAction, undefined);
   const refund = refundContent({ orderNumber: "GT-1", amount: 12.5, currency: "EUR" }, "fr");
   assertStringIncludes(plain(refund.blocks!.map((b) => b.text).join("\n")), "[Remboursement de 12,50 € effectué]");
 });

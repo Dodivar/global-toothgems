@@ -5,7 +5,16 @@
  * never recomputed. Labels are fr/en; anything else falls back to English, as
  * the layout chrome does.
  */
-import { details, type DetailRow, notice, type OrderLine, orderSummary, type OrderTotal } from "./components.ts";
+import {
+  actions,
+  details,
+  type DetailRow,
+  notice,
+  type OrderLine,
+  orderSummary,
+  type OrderTotal,
+  paragraph,
+} from "./components.ts";
 import { formatAmount } from "./format.ts";
 import { chromeLocale } from "./layout.ts";
 import type { EmailContent } from "./render.ts";
@@ -75,6 +84,7 @@ const LABELS = {
     viewOrder: "Voir ma commande",
     keepShopping: "Continuer mes achats",
     trackParcel: "Suivre mon colis",
+    forgotProduct: "Vous avez oublié un produit ? On a ce qu’il vous faut.",
     refundTitle: (amount: string) => `Remboursement de ${amount} effectué`,
     refundBody: "Le délai d’apparition sur votre relevé dépend de votre banque.",
     orderLabel: "Commande",
@@ -106,6 +116,7 @@ const LABELS = {
     viewOrder: "View my order",
     keepShopping: "Continue shopping",
     trackParcel: "Track my parcel",
+    forgotProduct: "Forgot something? We have just what you need.",
     refundTitle: (amount: string) => `Refund of ${amount} issued`,
     refundBody: "How soon it shows on your statement depends on your bank.",
     orderLabel: "Order",
@@ -217,13 +228,22 @@ export function orderConfirmationContent(order: OrderSnapshot, locale: string, s
 }
 
 export function shippingContent(
-  parcel: { orderNumber: string; trackingLink: string },
+  parcel: { orderNumber: string; trackingLink: string; userId: string | null },
   locale: string,
+  siteUrl: string,
 ): EmailContent {
-  const l = LABELS[chromeLocale(locale)];
+  const lang = chromeLocale(locale);
+  const l = LABELS[lang];
+  const orderUrl = parcel.userId ? memberOrderUrl(siteUrl, parcel.orderNumber) : null;
   return {
     eyebrow: `${l.shippingEyebrow} · ${l.order(parcel.orderNumber)}`,
     primaryAction: { label: l.trackParcel, url: parcel.trackingLink },
+    // The tracking link may itself be the member's order list: no second button then.
+    secondaryAction: orderUrl && orderUrl !== parcel.trackingLink ? { label: l.viewOrder, url: orderUrl } : undefined,
+    blocks: [
+      paragraph(l.forgotProduct),
+      actions(null, { label: l.keepShopping, url: shopUrl(siteUrl, lang) }),
+    ],
   };
 }
 
