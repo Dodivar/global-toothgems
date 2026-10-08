@@ -273,6 +273,17 @@ Promotions in the cart (`lib/checkout/basketQuote.ts`, `useBasketQuote.ts`, `com
 - **A guest is quoted without e-mail**, so "new customer" and per-customer limits are settled only when the order is
   created; the payment step always shows the amount the database computed.
 
+Offers in the shop window (`lib/storefrontOffers.ts` pure and tested, `storefrontOffersApi.ts`, `useStorefrontOffers.ts`,
+`components/shop/OfferBadges.tsx`, `OfferNotice.tsx`): visitors read the running automatic promotions and campaigns (RLS
+shows only those) once hydrated, and every shop card (`StorefrontCard`, `ProductCard`), the product page and the cart
+lines show them: the **campaign first** (ink badge), then the **promotion** (highlight badge), and the price. The unit
+price is cut only for a percentage promotion with no minimum basket/quantity and no cap; the struck-out price is the
+product's own "was" price when it has one, else the price before the cut; other kinds (x + y offered, bundle, gift,
+amount off, conditional) show their badge and wording only. Promotions for a type of customer, free shipping, and
+products already on sale (when the promotion excludes them) are not shown. The product page adds the customer's title
+and description and the days left. In the cart, `quote_basket().lines` gives the amount each line carries: net price
+in highlight, original struck out, the same badges. Display only: the database prices the order.
+
 Gift cards in the cart (`lib/giftCards/`, `components/shop/GiftCardCodes.tsx`):
 
 - **Buying one.** `/carte-cadeau` adds a gift card line (`CartLine.giftCard`: recipient, sender, message, design,

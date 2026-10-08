@@ -36,6 +36,8 @@ import { hasCourse, needsShipping, shippableSubtotal } from "../lib/checkout/car
 import { GiftCardVisual } from "../components/promotions/Visuals";
 import { GiftCardCodes } from "../components/shop/GiftCardCodes";
 import { PromotionCodes } from "../components/shop/PromotionCodes";
+import { OfferBadges } from "../components/shop/OfferBadges";
+import { useStorefrontOffers } from "../lib/useStorefrontOffers";
 import { quoteItems } from "../lib/checkout/basketQuote";
 import { useBasketQuote } from "../lib/checkout/useBasketQuote";
 import type { GiftCardDesign } from "../lib/giftCards/giftCardMapping";
@@ -221,6 +223,14 @@ export function Cart() {
   const shippingDue = shipping - shippingSaved;
   const total = subtotal - goodsDiscount + shippingDue;
   // A basket made free by a promotion would not go to Stripe (nothing to charge): not offered yet.
+  // What the database says a basket line carries of the discount, and the campaign / promotion it belongs to (as in the shop window).
+  const { offerFor } = useStorefrontOffers();
+  const lineCut = (line: (typeof lines)[number]) =>
+    quote?.lines.find((d) => d.productId === line.dbProductId && d.variantId === (line.variantId ?? null))?.amount ?? 0;
+  const lineOffer = (line: (typeof lines)[number]) => {
+    const found = products.find((p) => p.dbId === line.dbProductId);
+    return found ? offerFor({ dbId: found.dbId, cat: found.cat, currency: found.currency ?? "EUR" }) : null;
+  };
   const freeOrder = live && quote !== null && total <= 0 && giftCodes.length === 0;
   const threshold = ratesReady && shipped ? freeShippingThreshold(rates.rows, currency) : null;
   const remainingForFreeShipping = threshold === null ? null : Math.max(0, threshold - goods);
@@ -444,9 +454,11 @@ export function Cart() {
                   name: pick(p.name, lang),
                   subtitle: pick(p.subtitle, lang),
                   price: p.price,
+                  compareAtPrice: p.compareAtPrice,
                   image: p.image,
                   hoverImage: p.gallery?.[1]?.src,
                   stock: p.stock,
+                  offer: offerFor({ dbId: p.dbId, cat: p.cat, currency: p.currency ?? "EUR", compareAtPrice: p.compareAtPrice }),
                 }}
               />
             ))}
@@ -575,6 +587,7 @@ export function Cart() {
                   <div className="grid min-w-[150px] flex-1 gap-1">
                     <strong className="text-sm text-[var(--text-primary)]">{line.name}</strong>
                     {line.variant && <span className="text-xs text-[var(--text-muted)]">{line.variant}</span>}
+                    {lineCut(line) > 0 && <OfferBadges offer={lineOffer(line)} className="sm:flex-row sm:flex-wrap" />}
                     <button
                       type="button"
                       onClick={() => removeLine(line.id)}
@@ -602,9 +615,19 @@ export function Cart() {
                       <IconButton icon={Plus} label={t("cart.increase")} variant="ghost" size="sm" disabled={submitting} onClick={() => updateQty(line.id, line.qty + 1)} />
                     </div>
                   )}
-                  <strong className="w-20 text-right text-sm text-[var(--text-primary)]" aria-label={t("cart.lineTotalAria")}>
-                    {money(line.unitPrice * line.qty)}
-                  </strong>
+                  {(() => {
+                    // What the database says this line carries of the discount: struck-out original, net price, and the
+                    // campaign / promotion it belongs to (as shown in the shop window).
+                    const cut = lineCut(line);
+                    return (
+                      <span className="grid w-24 justify-items-end gap-0.5 text-right">
+                        <strong className={cut > 0 ? "text-sm text-[var(--accent-highlight-ink)]" : "text-sm text-[var(--text-primary)]"} aria-label={t("cart.lineTotalAria")}>
+                          {money(line.unitPrice * line.qty - cut)}
+                        </strong>
+                        {cut > 0 && <s className="text-xs text-[var(--text-subtle)]">{money(line.unitPrice * line.qty)}</s>}
+                      </span>
+                    );
+                  })()}
                 </li>
               ))}
             </ul>

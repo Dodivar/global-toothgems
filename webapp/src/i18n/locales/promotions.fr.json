@@ -905,6 +905,7 @@
   },
   "shop": {
     "partOf": "Édition {{name}}",
+    "conditional": "Sous conditions : le détail s’applique dans votre panier.",
     "useCode": "Code {{code}} à saisir au paiement.",
     "automatic": "Appliquée automatiquement dans votre panier.",
     "endsIn_one": "Se termine demain",

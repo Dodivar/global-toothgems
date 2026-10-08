@@ -11,6 +11,9 @@ import { gemAxes, isGemOptionSet } from "../../lib/gemOptions";
 import { pick } from "../../data/types";
 import { useTaxonomy } from "../../lib/catalog/useTaxonomy";
 import type { Product, ProductVariant } from "../../data/products";
+import { OfferBadges } from "../shop/OfferBadges";
+import { offerPrice } from "../../lib/storefrontOffers";
+import { useProductOffer } from "../../lib/useStorefrontOffers";
 
 interface StorefrontCardProps {
   product: Product;
@@ -50,6 +53,9 @@ export function StorefrontCard({ product, source, saved, onSave, eager = false }
   const eyebrow = product.family ? familyName(product.family) : categoryLabel;
   const quickAdd = canQuickAdd(product, source);
   const hoverImage = product.gallery?.[1]?.src;
+  // The running campaign and promotion of this product (read once hydrated), and the price they leave.
+  const offer = useProductOffer(product);
+  const shown = offerPrice(product.price, product.compareAtPrice, offer);
 
   // Same published reviews as the product page's rating line.
   const subject = useMemo(() => ({ kind: "product" as const, id: product.id }), [product.id]);
@@ -91,8 +97,9 @@ export function StorefrontCard({ product, source, saved, onSave, eager = false }
           </div>
         )}
 
-        {(product.badge || stock === "out") && (
-          <span className="absolute left-2.5 top-2.5 flex flex-col items-start gap-1">
+        {(product.badge || stock === "out" || offer) && (
+          <span className="absolute left-2.5 top-2.5 flex flex-col items-start gap-1 pr-12">
+            <OfferBadges offer={offer} />
             {product.badge && (
               <Badge tone={product.badgeTone ?? "highlight"} size="sm">
                 {pick(product.badge, lang)}
@@ -180,9 +187,9 @@ export function StorefrontCard({ product, source, saved, onSave, eager = false }
         <VariantAvailability variants={product.variants ?? []} />
         <div className="mt-auto flex flex-wrap items-baseline justify-between gap-x-2 gap-y-0.5 pt-1.5">
           <span className="flex items-baseline gap-1.5">
-            <strong className="text-[15px] font-bold text-[var(--text-primary)]">{formatPrice(product.price)}</strong>
-            {product.compareAtPrice && (
-              <span className="text-xs text-[var(--text-subtle)] line-through">{formatPrice(product.compareAtPrice)}</span>
+            <strong className={`text-[15px] font-bold ${shown.was !== undefined && offer?.promotion?.priceOffPercent ? "text-[var(--accent-highlight-ink)]" : "text-[var(--text-primary)]"}`}>{formatPrice(shown.price)}</strong>
+            {shown.was !== undefined && (
+              <span className="text-xs text-[var(--text-subtle)] line-through">{formatPrice(shown.was)}</span>
             )}
           </span>
           <Availability stock={stock} />
