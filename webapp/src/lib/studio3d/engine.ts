@@ -2407,7 +2407,7 @@ export class StudioEngine {
         this.createGhost(spec);
       } else return;
     }
-    const overCanvas = e.target instanceof Node && this.container.contains(e.target);
+    const overCanvas = this.overStage(e);
     if (!overCanvas) {
       if (this.ghost) this.ghost.root.visible = this.ghost.ringRoot.visible = false;
       this.setHoverTooth(null);
@@ -2435,10 +2435,19 @@ export class StudioEngine {
       this.setCursor("not-allowed");
     }
   }
+  /**
+   * Whether the pointer is over the stage, found by position: a finger's
+   * events keep targeting the library card it went down on (implicit pointer
+   * capture), so their target says nothing about where the finger now is.
+   */
+  private overStage(e: PointerEvent): boolean {
+    const el = document.elementFromPoint(e.clientX, e.clientY);
+    return !!el && this.container.contains(el);
+  }
   private finishPlacing(e: PointerEvent) {
     const p = this.placing!;
     if (p.started) {
-      const overCanvas = e.target instanceof Node && this.container.contains(e.target);
+      const overCanvas = this.overStage(e);
       let hit: SurfaceHit | null = null;
       if (overCanvas) {
         this.setNDC(e);

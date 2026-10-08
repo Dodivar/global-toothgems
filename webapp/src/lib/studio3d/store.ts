@@ -337,13 +337,13 @@ export class DesignStore {
   }
   setArmed(id: string | null) {
     this.armedTypeId = id;
-    // Placing a piece and drawing a lasso both want the next press on the stage.
-    if (id) this.lasso = false;
+    // Placing a piece, drawing a lasso and gathering pieces all want the next press on the stage.
+    if (id) this.lasso = this.multiSelect = false;
     this.commit();
   }
   setPlacing(id: string | null) {
     this.placingTypeId = id;
-    if (id) this.lasso = false;
+    if (id) this.lasso = this.multiSelect = false;
     this.commit();
   }
   /** Turn the lasso tool on or off. On, it takes over from a piece armed for placing. */
