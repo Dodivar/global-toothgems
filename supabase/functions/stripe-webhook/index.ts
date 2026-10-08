@@ -1,5 +1,5 @@
 import { requireEnv, serviceClient, stripeClient, stripeCryptoProvider } from "../_shared/clients.ts";
-import { notifyOrderPaid } from "../_shared/email/notify.ts";
+import { notifyOrderPaid, notifyRefundConfirmed } from "../_shared/email/notify.ts";
 import { DbCallError, handleWebhook, type WebhookDeps, type WebhookEvent } from "./handler.ts";
 
 /*
@@ -98,6 +98,46 @@ const deps: WebhookDeps = {
       .eq("status", "pending");
     if (error) throw dbError(error);
   },
+
+  async findRefund(refundId, providerRefundId) {
+    if (refundId) {
+      const { data, error } = await supabase.from("refunds").select("id, status").eq("id", refundId).maybeSingle();
+      if (error) throw dbError(error);
+      if (data) return data;
+    }
+    const { data, error } = await supabase
+      .from("refunds")
+      .select("id, status")
+      .eq("provider_refund_id", providerRefundId)
+      .maybeSingle();
+    if (error) throw dbError(error);
+    return data;
+  },
+
+  async markRefundSucceeded(refundId, providerRefundId) {
+    const { error } = await supabase.rpc("mark_refund_succeeded", {
+      p_refund_id: refundId,
+      p_provider_refund_id: providerRefundId,
+    });
+    if (error) throw dbError(error);
+  },
+
+  async markRefundFailed(refundId, reason) {
+    const { error } = await supabase.rpc("mark_refund_failed", { p_refund_id: refundId, p_reason: reason });
+    if (error) throw dbError(error);
+  },
+
+  async recordExternalRefund({ paymentIntentId, providerRefundId, amount, currency }) {
+    const { error } = await supabase.rpc("record_external_refund", {
+      p_provider_payment_id: paymentIntentId,
+      p_provider_refund_id: providerRefundId,
+      p_amount: amount,
+      p_currency: currency,
+    });
+    if (error) throw dbError(error);
+  },
+
+  refundConfirmed: () => notifyRefundConfirmed((message, detail) => console.error(`[stripe-webhook] ${message}`, detail ?? "")),
 
   log: (message, detail) => console.error(`[stripe-webhook] ${message}`, detail ?? ""),
 };

@@ -9,12 +9,6 @@
     "preview": "Customer preview",
     "moreActions": "More actions"
   },
-  "proto": {
-    "label": "Prototype",
-    "today": "Today is {{date}} in this mockup",
-    "simulate": "Simulate a state",
-    "mode": { "live": "Sample data", "empty": "Empty shop", "error": "Loading error" }
-  },
   "kpi": {
     "label": "Promotion activity",
     "active": "Active promotions",
@@ -235,7 +229,6 @@
       "title": "No promotions yet",
       "body": "Create your first offer — a percentage off, free shipping or a “buy 2, get 1” — and schedule it for when it matters."
     },
-    "loadExamples": "Show sample promotions",
     "noResults": {
       "titleQuery": "Nothing matches “{{query}}”",
       "body": "Try another name or code, or clear some filters to widen the list."
@@ -274,6 +267,15 @@
     "cardBody": "No gift card has the code {{code}}. Check it for typos — codes never contain O or I."
   },
   "toast": {
+    "error": {
+      "unavailable": "Promotions are not available without a database connection.",
+      "notAllowed": "You are not allowed to change promotions.",
+      "codeTaken": "This code is already used by another promotion (even an archived one): choose another.",
+      "incomplete": "The promotion is incomplete or a value is refused: check its products, segment, code and the gift's option, then try again.",
+      "invalid": "A value in this form is not valid: check the dates, amounts and code, then try again.",
+      "notFound": "This promotion or campaign no longer exists.",
+      "failed": "Saving failed. Nothing was changed — try again in a moment."
+    },
     "lifecycle": {
       "live": "“{{name}}” is active",
       "paused": "“{{name}}” is paused",
@@ -374,7 +376,7 @@
   },
   "validation": {
     "nameRequired": "Give it an internal name.",
-    "titleRequired": "Add a customer-facing title in at least one language.",
+    "titleRequired": "Add the customer-facing title in French (the reference language).",
     "percentRange": "Enter a percentage between 1 and 100.",
     "amountRequired": "Enter the amount to take off.",
     "buyGetRequired": "Set how many to buy and how many are rewarded.",
@@ -386,7 +388,8 @@
     "endBeforeStart": "The end must be after the start.",
     "codeRequired": "Enter a code, or switch to an automatic promotion.",
     "codeFormat": "Use 4 to 24 letters, digits, dashes or underscores.",
-    "codeTaken": "This code is already used by another live or scheduled promotion.",
+    "uniqueCountRequired": "Enter how many unique codes to generate.",
+    "codeTaken": "This code is already used by another promotion.",
     "perCustomerAboveTotal": "The per-customer limit can’t be higher than the total limit.",
     "email": "Enter a valid email address."
   },
@@ -418,6 +421,7 @@
     "invalidBody": "Each issue is marked next to its field and listed in the summary. A draft can still be saved.",
     "toast": {
       "nameNeeded": "A draft needs at least a name",
+      "draftNeeds": "A draft needs a name, a customer-facing title in French and a valid discount",
       "fix_one": "{{count}} thing to fix",
       "fix_other": "{{count}} things to fix",
       "fixBody": "We’ve taken you to the first one.",
@@ -469,7 +473,10 @@
       "bundleSaves": "Customers save {{amount}}.",
       "giftProduct": "Product offered",
       "giftProductHint": "Added to the cart for free once the conditions are met.",
-      "giftStock": "{{name}}: {{stock}} in stock."
+      "giftStock": "{{name}}: {{stock}} in stock.",
+      "giftVariant": "Option offered",
+      "giftVariantHint": "This product has options: choose the one that is offered.",
+      "giftVariantNone": "Choose an option"
     },
     "eligibility": {
       "title": "Eligibility",
@@ -480,6 +487,8 @@
       "pickProducts": "Choose products",
       "pickCategories": "Choose categories",
       "pickCollections": "Choose collections",
+      "noCollections": "No collection has been created yet: collections are prepared with the shop team.",
+      "noSegments": "No customer segment has been created yet.",
       "bundleNote": "A bundle applies to its own products, chosen in the discount section.",
       "customersHeading": "Customers",
       "customersLabel": "Who can use it",
@@ -499,6 +508,9 @@
       "maxPerCustomer": "Maximum uses per customer",
       "combinable": "Can be combined with other promotions",
       "combinableHint": "Otherwise, the best single offer applies.",
+      "withLoyalty": "Combinable with the loyalty reward",
+      "withLoyaltyHint": "A member can add their reward on top of this promotion (on what it leaves to pay). Otherwise the better of the two applies, never both.",
+      "withLoyaltyShort": "Combinable with loyalty",
       "combinableShort": "Combinable",
       "excludeDiscounted": "Exclude products already on sale",
       "excludeDiscountedHint": "Items with a reduced price keep that price only.",
@@ -521,7 +533,7 @@
         "weekend": "Black Friday weekend",
         "week": "One week",
         "twoWeeks": "Two weeks",
-        "december": "All of December",
+        "nextMonth": "Next month",
         "evergreen": "No end date"
       },
       "start": "Start",
@@ -547,9 +559,7 @@
       "copy": "Copy",
       "copied": "Copied",
       "examples": "Examples:",
-      "caseSensitive": "Case sensitive",
-      "caseSensitiveOn": "Customers must type the code exactly as written.",
-      "caseSensitiveOff": "“{{code}}” and “{{lower}}” both work.",
+      "caseInsensitive": "Codes are typed any way: “{{code}}” and “{{lower}}” both work.",
       "kind": "Code type",
       "shared": "One shared code",
       "unique": "Unique single-use codes",
@@ -585,7 +595,7 @@
     "expiredTitle": "Ended on {{date}}",
     "expiredBody": "Customers no longer see it. Its results stay below; duplicate it to run it again with new dates.",
     "runAgain": "Run it again",
-    "pausedTitle": "Paused on {{date}} by {{name}}",
+    "pausedTitle": "Paused on {{date}}",
     "pausedBody": "Customers don’t see it and codes are refused at checkout. Its schedule is unchanged.",
     "resume": "Resume",
     "scheduledTitle_one": "Starts tomorrow",
@@ -609,6 +619,7 @@
     "code": "Promotional code",
     "automaticBody": "No code — the discount applies by itself to eligible carts.",
     "caseInsensitive": "Not case sensitive",
+    "exportCodes": "Export the codes (CSV)",
     "uniqueCodes": "{{count}} unique codes",
     "campaign": "Campaign",
     "standalone": "Standalone — not part of a campaign.",

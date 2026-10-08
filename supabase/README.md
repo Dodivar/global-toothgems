@@ -48,6 +48,7 @@ supabase/
   tests/iteration4_validation.sql   iteration 4 gift card suite (always rolls back)
   tests/iteration5_validation.sql   iteration 5 member account suite (always rolls back)
   tests/iteration6_validation.sql   iteration 6 roles/permissions + promotions suite (always rolls back)
+  tests/promotions_live_validation.sql   promotions & campaigns on live data: save RPCs, quote, throttle (always rolls back)
   tests/iteration7_validation.sql   iteration 7 contact / newsletter / e-mails / content / maintenance suite (always rolls back)
   tests/iteration8_validation.sql   iteration 8 statistics suite (always rolls back)
   tests/iteration9_validation.sql   iteration 9 product recommendations suite (always rolls back)
@@ -66,7 +67,7 @@ supabase/
   tests/admin_customers_validation.sql back-office customers: customer refused, viewer read-only, manager writes and read-only columns, notes by their author, status history, course progress (always rolls back)
   tests/email_validation.sql        e-mail delivery events (forward-only, newsletter bounce/complaint) and the pending shipping / refund / enrolment queries, service role only (always rolls back)
   config.toml   CLI settings this repo relies on (verify_jwt of the Edge Functions)
-  functions/    Edge Functions (Deno): create-checkout-session, stripe-webhook, deliver-gift-cards, send-email, resend-webhook, send-pending-emails, invite-staff-member, _shared/ (pure modules + clients),
+  functions/    Edge Functions (Deno): create-checkout-session, stripe-webhook, refund-order, deliver-gift-cards, send-email, resend-webhook, send-pending-emails, invite-staff-member, _shared/ (pure modules + clients),
                 *_test.ts (deno test), .env.example (secret names)
   templates/confirm-signup.html     French "Confirm signup" email, to paste into the Auth settings
   templates/invite-staff.html       French "Invite user" email (team invitations), to paste into the Auth settings
@@ -132,9 +133,15 @@ supabase/
 | 20261003131220 | `studio_gem_group_thumbnails` | `gem_groups.thumbnail_path` (null or inside the owner's folder, column grants for insert/update): each new Gem Group keeps a captured render of its pieces alone on the smile at `studio-thumbnails/<user id>/groups/<group id>.jpg` (bucket policies unchanged: they check the first folder). Suite `tests/studio_workspace_validation.sql` |
 | 20261007072551 | `quiz_unlimited_attempts` | **Applied 2026-10-07.** Knowledge checks have no attempt limit: `private.open_quiz_attempt()` no longer raises `no_attempts_left` (a passed check still refuses new attempts) |
 | 20261007141456 | `studio_shop_gems` | **Applied 2026-10-07.** The 3D Studio's gems are the shop's (decision 81): `studio_gem_appearances` — how a shop gem is drawn in the editor (`shape` on the product row, `material` crystal/metal, `color` `#rrggbb`, `effect` none/iridescent; one row per product plus one per colour variant such as yellow / white gold), seeded from the product photos (84 gems, 12 gold variants); public read for active products, `manage_products` writes, audited, a variant row must belong to its product. Scenes and Gem Groups now require format **2** (piece = product, variant, SS, look snapshot); the format-1 test designs, their share links and groups were deleted first (owner's request, pre-launch). Suite `tests/studio_workspace_validation.sql` (T5–T8) |
+| 20261007184926 | `promotions_live` | **Applied 2026-10-07.** Promotions and campaigns on live data (decision 83): `admin_save_promotion(jsonb)` / `admin_save_campaign(jsonb)` (SECURITY INVOKER, `manage_promotions`, one transaction each: the row, its scope / segments / code / English translation or products, the lifecycle last), view `promotion_daily_usage`, table `promotion_code_attempts` (no policies: never readable through the API) and `quote_basket(...)` (SECURITY DEFINER, callable by visitors: what a shop basket would get, same engine as `create_order()`). Suite `tests/promotions_live_validation.sql` (PL1–PL8) |
+| 20261007185808 | `promotions_draft_code` | **Applied 2026-10-07.** `admin_save_promotion()`: a draft in "code" mode may be saved before its shared code is typed (empty code = no active code); publishing without one is still refused by `validate_promotion()` (PL8) |
+| 20261007191644 | `tmp_request_headers_probe` | **Applied 2026-10-07, dropped by the next one.** Probe used to verify which request headers the platform sets itself |
+| 20261007191747 | `promotions_quote_actor` | **Applied 2026-10-07.** `quote_basket()`: guests are throttled per `sb-forwarded-for`/`cf-connecting-ip` (the first `x-forwarded-for` entry is caller-writable); a free "gift with purchase" line no longer counts in `goods_discount` / the gift row's amount (it is not in the basket); drops the probe. Suite PL9–PL10 |
+| 20261008174607 | `loyalty_with_promotions` | **Applied 2026-10-08.** Decision 85: `promotions.combinable_with_loyalty` (default false, set by `admin_save_promotion`), `private.loyalty_on_top()`, and `compute_order_discounts()` rewritten: with the reward requested it compares promotions alone, the reward alone and "combinable promotions + reward" and applies the best (tie: promotions, so the reward is kept); a typed code no longer conflicts with the reward. Suite PL11 |
 | 20261008175722 | `contact_attachments_and_support_email` | **Applied 2026-10-08.** Contact form: `contact_requests.attachment_path` → `attachment_paths text[]` (≤ 5, `private.valid_contact_attachment_paths()`), bucket `contact-attachments` 20 MB per object, `submit_contact_request(…, p_attachment_paths text[])` (old signature dropped; ownership per path, no duplicates, ≤ 20 MB in all), guard trigger rebuilt, `contact_ip_allowed(ip_hash)` (service role), template `contact_request_received` (fr + en) for the support inbox. Suite: `iteration7_validation.sql` C3/C4 |
 | 20261008175809 | `contact_attachment_paths_check_grant` | **Applied 2026-10-08.** `execute` on the CHECK helper for `authenticated`/`service_role` (staff triage re-evaluates the CHECK) |
 | 20261007181011 | `gift_card_design_everywhere` | **Applied 2026-10-07.** The design/names/message chosen at checkout are shown back (WYSIWYG): policy `gift_cards: purchaser reads own` (a buyer reads the cards of their purchases through the existing column grant — never the code) so the member's order pages draw the card in its design; the `gift_card_delivery` template bodies (fr + en) lose their `{{message}}` paragraph because the e-mail now draws the card itself (`giftCardVisual()`, message included). Test: a buyer sees only their own cards (to add to `gift_cards_validation.sql`) |
+| 20261007184209 | `shipping_refunds` | **Applied 2026-10-07** (decision 82). Back-office shipping and card refunds: `create_shipment()` (a parcel and its lines in one transaction, `manage_orders`, carrier + tracking to ship) and `set_shipment_status()` (forward-only; same status again only corrects the details); refunded units no longer count as "to ship" (`sync_order_fulfillment`, `guard_shipment_item`, via `private.refunded_units()`) and a confirmed refund recomputes the order's fulfilment (`apply_refund_success`); `pending_refund_emails()` lists card refunds only (gift-card credits are not e-mailed); trigger `refunds_guard_zz_gift_cards` refuses a refund while a gift card bought in the order is active; `record_external_refund()` (backend only) records a refund made in the Stripe dashboard. Suite: `supabase/tests/shipping_refunds_validation.sql` |
 | 20261007072552 | `quiz_unlimited_attempts_cleanup` | **Partly applied 2026-10-07.** `admin_save_course()` and `private.learner_course_json()` rewritten without `allow_retry` / `max_attempts` (applied live through SQL, not recorded in the migration history). `drop column` on `course_quizzes` **not applied yet**: the MCP call timed out three times with no lock or session visible; the columns are unused and keep their defaults, so nothing depends on the drop |
 
 RLS is **enabled in the same migration that creates each table** (deny by default);
@@ -300,6 +307,7 @@ supabase db push                                  # applies 20260930200000_strip
 supabase secrets set --env-file supabase/functions/.env   # names in functions/.env.example
 supabase functions deploy create-checkout-session
 supabase functions deploy stripe-webhook          # verify_jwt = false comes from config.toml
+supabase functions deploy refund-order            # verify_jwt = false comes from config.toml (staff JWT checked inside)
 ```
 
 Secrets (Edge Function environment only, never `NEXT_PUBLIC_*`): `STRIPE_SECRET_KEY` (sk_test_…),
@@ -309,8 +317,9 @@ exact origins, e.g. `http://localhost:5173`). `SUPABASE_URL` / `SUPABASE_SERVICE
 
 **Stripe webhook (test mode):** Dashboard → Developers → Webhooks → Add endpoint
 `https://<project ref>.supabase.co/functions/v1/stripe-webhook`, events `checkout.session.completed`,
-`checkout.session.async_payment_succeeded`, `checkout.session.async_payment_failed`, `checkout.session.expired`;
-copy its signing secret into `STRIPE_WEBHOOK_SECRET`. Payment methods offered are those enabled in the Stripe
+`checkout.session.async_payment_succeeded`, `checkout.session.async_payment_failed`, `checkout.session.expired`,
+and, since decision 82, `refund.created`, `refund.updated`, `refund.failed` (**add them to the existing endpoint: dashboard
+step**); copy its signing secret into `STRIPE_WEBHOOK_SECRET`. Payment methods offered are those enabled in the Stripe
 dashboard (the session does not force a list).
 
 **Locally:** `supabase start`, then `supabase functions serve --env-file supabase/functions/.env` and
@@ -380,6 +389,16 @@ visitor nothing, and nobody reads a gift-card code. Revenue rule of the order bo
   `orders.status` are recomputed from the parcels**: preparing → processing; some units shipped →
   `partially_fulfilled`; all shipped → `fulfilled` + `shipped`; all delivered → `delivered`.
 - Customers read their own parcels (tracking page); staff create and update them.
+- **Back office (decision 82):** `create_shipment(order, items, carrier, service, tracking_number, tracking_url,
+  estimated_delivery, status)` writes the parcel and its lines in ONE transaction (status `preparing`, or `shipped`
+  with carrier + tracking number), because the e-mail sweep mails any `shipped` parcel. `set_shipment_status(parcel,
+  status, details…)` is forward-only: preparing → shipped | cancelled; shipped → delivered | returned | lost;
+  delivered → returned; the same status again (preparing / shipped) only corrects carrier, tracking and dates. Both
+  are SECURITY INVOKER under `manage_orders` (viewer, customer and visitor are refused). The shipping e-mail is sent
+  once per parcel by the `send-pending-emails` sweep (≤ 5 minutes); a guest's parcel without a tracking page is
+  not announced, so the parcel form proposes the carrier's page (`webapp/src/lib/carriers.ts`).
+- Units refunded (succeeded) are no longer "to ship" and units being refunded (pending included) cannot be put in a
+  parcel; a confirmed partial refund recomputes `fulfillment_status` / `status`.
 
 ### Refunds (iteration 3)
 
@@ -395,6 +414,32 @@ webhook        mark_refund_succeeded(refund, re_…)  |  mark_refund_failed(refu
 Staff can cancel a pending refund; only the backend can confirm or fail one; confirmed, failed and
 cancelled refunds are final. Line quantities can never be refunded twice. Customers see refunds on
 their own orders.
+
+**Operated from the back office (decision 82)** — Edge Function `refund-order` (`verify_jwt = false`, the caller's
+JWT is checked inside, like `invite-staff-member`):
+
+```
+browser  POST functions/v1/refund-order {action: 'request', order_id, amount_minor, reason, items[], restock}
+           → my_permissions() with the caller's JWT must hold manage_orders
+           → request_refund() WITH THE CALLER'S JWT: permission, paid card payment, amount ≤ refundable balance
+             (payment row locked), lines not refunded twice, no active purchased gift card → refund 'pending'
+           → Stripe refunds.create({payment_intent, amount, metadata:{refund_id, order_id}}, idempotency 'refund:<id>')
+           → provider_refund_id saved on the row; NOT confirmed here
+           → a Stripe refusal calls mark_refund_failed (balance freed); a Stripe outage leaves the row pending
+browser  POST … {action: 'cancel', refund_id}: only a pending refund WITHOUT a Stripe refund id
+Stripe   refund.created / refund.updated / refund.failed → stripe-webhook (verified, deduplicated in stripe_webhook_events)
+           succeeded → mark_refund_succeeded (row found by metadata.refund_id, else by provider_refund_id)
+                       payment + order states, restock, fulfilment, course access revoked on a FULL refund (trigger)
+                       then the refund e-mail sweep runs (and the 5-minute sweep catches what failed)
+           failed / canceled → mark_refund_failed;  pending / requires_action → recorded, nothing yet
+           no refund row (refund made in the Stripe dashboard) → record_external_refund(payment_intent, re_…)
+```
+
+The browser never sets a refund's outcome: the order shows the refund as pending until Stripe's event. The amount
+sent to Stripe is the very integer received (`toDecimalString` for Postgres). Error codes: `invalid_request`,
+`unauthorized`, `forbidden`, `no_card_payment`, `amount_too_high`, `gift_card_active`, `refund_refused`,
+`stripe_refused`, `stripe_unavailable`, `not_found`, `already_sent`, `server_error`. Refunds credited onto gift cards
+(`refund_to_gift_cards`) are immediate and not e-mailed. No Stripe secret other than the existing ones.
 
 ### Gift cards (iteration 4)
 
@@ -611,6 +656,31 @@ server  create_order(..., p_promotion_codes => ['WELCOME15'], p_use_loyalty_rewa
 - Visitors read running automatic promotions (customer-facing columns only), running campaigns, active collections and
   published translations; customers read the discounts of their own orders; staff read everything; `manage_promotions`
   writes.
+
+**Back office and cart on live data** (migrations `promotions_live`, `promotions_draft_code`)
+
+- `admin_save_promotion(p jsonb) returns uuid` — creates (no `id`) or updates a promotion with everything around it:
+  scope (`product_ids`, `excluded_product_ids`, `bundle_product_ids`, `category_ids`, `collection_ids`), `segment_ids`,
+  the shared code (`code`) or unique codes (`unique_code_count` → `generate_promotion_codes()` for what is missing,
+  `unique_code_prefix`), and the English text (French stays in the base columns, English becomes a *published*
+  `promotion_translations` row, deleted when emptied). `starts_at` / `ends_at` are local `YYYY-MM-DDTHH:mm` in the
+  promotion's `timezone` and converted in Postgres (summer time honoured). The promotion is written as a draft, its
+  children replaced, and the requested lifecycle applied **last**, so `validate_promotion()` sees the finished
+  promotion (a live promotion being edited goes through `draft` inside the transaction: nobody sees it half written).
+  A changed code switches the old one off; a code of another promotion (archived included) is `23505`; switching to
+  automatic, or from shared to unique, switches the old codes off first.
+- `admin_save_campaign(p jsonb) returns uuid` — the campaign, its ordered `product_ids` and the English text.
+- `promotion_daily_usage` — orders per promotion per day of payment (shop time), last 30 days, for the detail page's chart.
+  Promotion figures come from `promotion_overview` (paid orders only).
+- `quote_basket(p_items, p_promotion_codes, p_shipping_rate_id, p_use_loyalty_reward, p_currency, p_locale) → jsonb` —
+  the cart's preview: `{ok, goods_discount, shipping_discount, discounts[{label, code, type, goods_amount,
+  shipping_amount}], gift_lines[]}` or `{ok:false, error: promotion_code_invalid | loyalty_reward_unavailable |
+  too_many_attempts | unavailable}`. It builds the shop lines like `create_order()` (price, variant, VAT category; stock
+  and gift cards ignored), then calls `private.compute_order_discounts()`. The caller's account (`auth.uid()`) counts
+  for "new customer" and per-customer limits; **a guest is quoted without e-mail**. Nothing is reserved or consumed.
+  **Throttle:** every refused typed code is logged in `promotion_code_attempts` (actor = the account, else the first
+  `x-forwarded-for` address); 10 refusals in 10 minutes → `too_many_attempts` for codes (the codeless quote still
+  works); rows older than a day are purged on the next refusal. Codes stay unreadable to visitors and customers.
 
 ### Public pages and customer service (iteration 7)
 
@@ -1486,80 +1556,53 @@ VAT rates, shipping zones/rates mirroring the Settings prototype. Media rows ref
       and colour counts **once** (its price, or its colour variant's); metal charms count **per piece**. Never
       charged, never sent to checkout; the value stored with a creation is the one computed at its last save.
 
-## Done
-
-- Settings workspace (2026-10-02): store identity and legal mentions, shipping, VAT rates and content languages saved
-  from `/admin/parametres` through `admin_save_*()`; legal notice and contact page publish the store details.
-- Iteration 2: translations, shipping zones/rates, VAT rates, stock reservations + ledger,
-  server-side order functions, Stripe webhook idempotency, admin audit log, private avatars.
-- Iteration 3: reviews with moderation, reports, votes and photos; shipments and tracking with
-  order status sync; refunds with payment/order states and restocking.
-- Iteration 4: gift cards — purchase through checkout, ledger balances, redemption as payment,
-  reversal on cancellation, refunds onto cards, staff operations, scheduled delivery.
-- Iteration 5: member account — registration answers, consent records, data export requests, loyalty club
-  (stamps from paid orders), CRM tags/notes, review requests, seeded demo member.
-- Iteration 6: back-office roles and permissions (read only / manager / administrator, rank rules, staff directory);
-  promotions (six types, scope, customer segments, limits, automatic/shared/unique codes), campaigns, collections,
-  discounts and per-line VAT in `create_order()`, loyalty reward redemption.
-  The iteration 2 suite now reads the premium kit stock at start (the demo member seed had sold one).
-- Iteration 7: contact tickets (validated, throttled, own-order linking, private attachments, triage, notes),
-  visitor newsletter with double opt-in synced with member consents, e-mail templates and content pages with
-  translation status, maintenance switch.
-- Iteration 8: back-office statistics — `analytics_snapshot()` (KPIs vs previous period, series, category breakdown,
-  best sellers, customer base, orders, geography, cross-selling, extras), filters, category reporting groups.
-- Iteration 9: product recommendations — manual links per product (complementary / similar), `recommended_products()`
-  with bought-together, same-category and popular fallbacks, seed links.
-- Iteration 10: back-office product management — `admin_save_product()` (product + published English translation +
-  stock + ordered media, money as validated decimal strings, unique slugs, orphaned storage paths returned),
-  `admin_delete_product()` (order history protected by FK), `admin_save_product_recommendations()`.
-- Iteration 11: gem options — packs of 20 / 50 / 100 stones × stone sizes (SS) as variants with their own price
-  and stock, edited from the product form and picked on the product page; seed product `strass-cristal`.
-- Iteration 13: gem colours managed from the back office — `gem_colors` + translations, one exact shade per colour,
-  a single multicolour entry for gems with reflections / several colours, create / edit / hide / reorder / delete
-  (refused while used), product colour checked against the list.
-- Iteration 14: gem packs set per product — the administrator types any number of stones (1 to 10 000) instead of
-  choosing among 20 / 50 / 100; the storefront picker already reads the packs from the variants.
-- Iteration 15: variants of any kind edited from the product form — a list of named variants (colour, box, size…)
-  with an optional colour dot, price, stock and the photos that show them; the product page shows colour dots
-  and moves the gallery to the picked variant's photo.
-- Iteration 19: Stripe Checkout wiring — Edge Functions `create-checkout-session` and `stripe-webhook`, pg_cron job
-  `expire-stale-orders`, `record_stripe_webhook_event()`, `checkout_session_status()` for the payment return page.
-- Iteration 16: product families — categories › families taxonomy, composite FK, family cleared on a category
-  change, `admin_save_product()` family input, visitor RLS on families and their translations.
-- Iteration 18 ("My orders"): internal order notes out of the customer's reach
-  (`order_notes`), isolation suite for everything the member area reads of an order.
-- Back-office team (`/admin/utilisateurs`): Edge Function `invite-staff-member` (invite, promote a customer, resend,
-  cancel a pending invitation), screen on `staff_directory()` / `my_permissions()` / the matrix tables,
-  `admin_users_validation.sql`. No schema change.
-- Back-office customers (`/admin/clients`): `admin_customer_status_history()`, `admin_customer_courses()`, screen on
-  `profiles` / `customer_addresses` / `customer_tags` / `customer_notes` and the order book,
-  `admin_customers_validation.sql`.
-- Iteration 20: Academy authoring — courses, modules, steps, content blocks, quizzes, training media library
-  (private bucket), course price and course promotions, publication rules, `admin_save_course()`.
-- Iteration 21: Academy public pages (phase B) — outline, cover and current price of published courses readable by
-  visitors, promotions staff-only, column grants for visitors.
-- Gift cards wired (2026-10-01): back office and `/carte-cadeau` on Supabase, gift card lines and codes through
-  `create-checkout-session`, migration `20261001200000_gift_card_staff_functions` (codes no longer returned by staff
-  functions, input validation) **pending application**, `gift_cards_validation.sql`.
-- Iteration 23: Academy course sales (phase D) — course lines in `create_order()` and `create-checkout-session`,
-  purchase entitlements granted on payment and revoked by a full refund, course page "Buy" through the cart.
-  Migration `20261002100000_course_checkout` **pending application**.
-- Iteration 22: Academy learner access (phase C) — entitlements with audited manual grants, content served without
-  answer keys, server-side progress, attempts and scoring, completions with certificate codes, lesson media gated
-  on the entitlement, withdrawn courses greyed out for their holders.
-
-## Next iterations (not implemented)
-
-1. Checkout follow-ups: order confirmation e-mail and gift card delivery e-mail (built 2026-10-05, not deployed:
-   decision 79), promotion code field in the cart (the function already accepts it), Stripe refunds from the back office, `charge.refunded` /
-   `charge.dispute.created` webhooks.
-2. Academy, after the authoring schema (iteration 20):
-   (**B**, public pages, done in iteration 21; **C**, learner access, done in iteration 22 — follow-ups: a public
-   certificate verification page, learner figures in the back office's course list and statistics; **D**, course
-   sales, built in iteration 23 — follow-ups: `offers` in the course JSON-LD, training figures in the statistics). Kit QR links; course
-   reviews (`course_id` on `reviews`). Invoices / credit notes (sequential numbering), carrier tracking events.
-3. Store settings table (legal identity, order number format, tax display options), VAT numbers /
-   B2B reverse charge, multi-currency price lists.
-4. Guest checkout linking (attach guest orders to an account by verified email).
-5. Structured product attributes (gem shape/colour), multiple signed order notes.
-6. Community (unlocked by a training purchase), 3D Studio subscription — each as its own migration set referencing `profiles` and `products`.
+82. **Shipping and card refunds are operated from the back office** (agent, 2026-10-07, asked by the user). What
+    exists: `/admin/commandes/<ref>` creates parcels (one or several per order, lines and quantities, carrier,
+    tracking number and page, estimated date), marks them shipped / delivered / returned / lost / cancelled, and
+    requests a card refund (total or partial, with the lines coming back and an optional restock). See *Shipments and
+    tracking* and *Refunds*; migration `20261007184209_shipping_refunds`, Edge Function `refund-order`, refund events in
+    `stripe-webhook`.
+    - The status dialog no longer sets `shipped`, `delivered` or `refunded` by hand: parcels drive the first two, a
+      refund confirmed by Stripe the third. Cancelling a paid order stays refused: refund it first.
+    - **Decisions to confirm (agent's safest reading, reversible):**
+      1. *Purchased gift cards.* A refund of an order that bought a gift card still active is **refused** (the card must
+         be cancelled first): otherwise the money goes back and the card stays usable. A refund recorded by the Stripe
+         webhook (money already returned in the dashboard) is never blocked.
+      2. *Partial refunds of course lines* keep the course access; only a **full** refund revokes it (existing trigger).
+         Decide whether refunding a course line partially, or by line, should revoke access.
+      3. *Loyalty stamps* of a refunded order are kept (nothing removes them). Decide whether a full refund should take
+         the stamp back.
+      4. *Restock* is a team choice per refund (a checkbox, lines required): refunded units are also removed from what
+         is "to ship". Unshipped units of a fully refunded order are not returned to stock automatically.
+      5. *Carrier pages.* The parcel form proposes the public tracking page of Colissimo, Chronopost, Mondial Relay, DHL,
+         UPS, FedEx and GLS from the tracking number (`webapp/src/lib/carriers.ts`, editable): confirm the list and the
+         address patterns. Without a page, a **guest** customer gets no shipping e-mail (members get a link to their
+         orders).
+      6. *Refund e-mail only for card refunds*; credits onto gift cards (`refund_to_gift_cards`) send nothing.
+      7. *Stripe outage while refunding*: the refund stays `pending` (and cannot be cancelled once a Stripe refund id is
+         attached); the team checks it in the Stripe dashboard before trying again. A refund made directly in the Stripe
+         dashboard is recorded automatically (reason `other`, no restock).
+    - Awaits the user: add `refund.created`, `refund.updated`, `refund.failed` to the Stripe webhook endpoint (dashboard).
+83. **Promotions and campaigns are saved by two RPCs, previewed by a third** (agent, 2026-10-07, to confirm the
+    throttle numbers): the back office never writes the promotion tables itself — a promotion spans seven tables and a
+    trigger forbids publishing it before its children exist, so `admin_save_promotion()` / `admin_save_campaign()`
+    do it in one transaction (SECURITY INVOKER: RLS and `manage_promotions` still decide). The cart shows what
+    `quote_basket()` answers instead of computing a discount (decision 21: the engine is server-side only). It is
+    callable by visitors, so refused codes are throttled (10 per 10 minutes per account, else per address as the
+    platform saw it: `sb-forwarded-for`, never the caller-writable first `x-forwarded-for` entry). This only slows
+    casual guessing: `create-checkout-session` answers `promotion_code_invalid` without any throttle. A shared code such
+    as `WELCOME15` is guessable; unique codes (10 random characters) are not. Unique codes are exported as CSV from
+    the promotion's detail page (staff read `promotion_codes`). Collections and customer
+    segments have no back-office screen yet (read-only in the editor). The campaign activity feed was dropped:
+    `audit_logs` is readable by administrators only, so the screen shows created / updated dates.
+84. **Orders made free by a promotion are not offered yet** (agent, 2026-10-08, to confirm): `create_order()` marks an
+    order paid at creation only when gift cards cover it; a 100 % promotion with no gift card would leave a pending
+    order with nothing to charge on Stripe. The cart disables the button with an explanation, and
+    `create-checkout-session` cancels such an order and answers `free_order` (it used to answer `paid` for any
+    zero amount). Marking a zero-total order paid (stock committed, stamps, courses) needs the owner's decision.
+85. **The loyalty reward no longer switches promotions off: the best offer wins** (owner's request, 2026-10-08;
+    amends the "alone" rule of the Promotions section and decision 14): with the reward requested,
+    `compute_order_discounts()` applies the most favourable of promotions alone, the reward alone, or promotions
+    flagged `combinable_with_loyalty` plus the reward on what they leave (a tie keeps the reward unused). The reward
+    is reserved only when its `order_discounts` row exists. A typed code can be used with the reward. The cart says
+    when the reward or a code was not retained. Default stays "never both"; staff opt a promotion in per promotion.

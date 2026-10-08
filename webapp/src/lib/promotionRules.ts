@@ -1,10 +1,9 @@
 import {
-  COLLECTIONS,
-  NOW_TIME,
   campaignStatus,
   promotionStatus,
   toTime,
   type Campaign,
+  type Collection,
   type Promotion,
   type PromotionStatus,
   type PromotionType,
@@ -45,11 +44,18 @@ export interface Issue {
   section: "basics" | "discount" | "eligibility" | "usage" | "schedule" | "code";
 }
 
+/**
+ * What even a draft needs: the database refuses a promotion without a name or a French title, and one whose
+ * discount parameters are out of range (each type's CHECK). Everything else can wait for publishing.
+ */
+const DRAFT_FIELDS: IssueField[] = ["name", "customerTitle", "percent", "amount", "buyGet", "bundle", "gift"];
+export const draftIssues = (issues: Issue[]): Issue[] => issues.filter((i) => DRAFT_FIELDS.includes(i.field));
+
 export function validatePromotion(p: Promotion): Issue[] {
   const issues: Issue[] = [];
   if (!p.name.trim()) issues.push({ field: "name", key: "nameRequired", section: "basics" });
-  if (!p.customerTitle.fr.trim() && !p.customerTitle.en.trim())
-    issues.push({ field: "customerTitle", key: "titleRequired", section: "basics" });
+  // French is the base column of the customer-facing title (the database requires it, even for a draft).
+  if (!p.customerTitle.fr.trim()) issues.push({ field: "customerTitle", key: "titleRequired", section: "basics" });
 
   const d = p.discount;
   if (d.type === "percentage" && (!d.percent || d.percent < 1 || d.percent > 100))
@@ -73,13 +79,15 @@ export function validatePromotion(p: Promotion): Issue[] {
     issues.push({ field: "segments", key: "segmentsEmpty", section: "eligibility" });
 
   if (!p.schedule.startsAt) issues.push({ field: "schedule", key: "startRequired", section: "schedule" });
-  else if (p.schedule.endsAt && toTime(p.schedule.endsAt) <= toTime(p.schedule.startsAt))
+  else if (p.schedule.endsAt && toTime(p.schedule.endsAt, p.schedule.timezone) <= toTime(p.schedule.startsAt, p.schedule.timezone))
     issues.push({ field: "schedule", key: "endBeforeStart", section: "schedule" });
 
   if (p.code.mode === "code") {
-    if (!p.code.code.trim()) issues.push({ field: "code", key: "codeRequired", section: "code" });
-    else if (!/^[A-Za-z0-9_-]{4,24}$/.test(p.code.code.trim()))
+    if (p.code.kind === "shared" && !p.code.code.trim()) issues.push({ field: "code", key: "codeRequired", section: "code" });
+    else if (p.code.kind === "shared" && !/^[A-Za-z0-9_-]{4,24}$/.test(p.code.code.trim()))
       issues.push({ field: "code", key: "codeFormat", section: "code" });
+    else if (p.code.kind === "unique" && (p.code.uniqueCount ?? 0) < 1)
+      issues.push({ field: "code", key: "uniqueCountRequired", section: "code" });
   }
 
   if (p.usage.maxTotal != null && p.usage.maxPerCustomer != null && p.usage.maxPerCustomer > p.usage.maxTotal)
@@ -88,18 +96,11 @@ export function validatePromotion(p: Promotion): Issue[] {
   return issues;
 }
 
-/** Codes are unique across promotions that can still run. */
+/** A shared code is unique across every promotion, archived ones included (the database enforces it for all). */
 export function codeTaken(code: string, promotions: Promotion[], selfId: string): boolean {
   const wanted = code.trim().toUpperCase();
   if (!wanted) return false;
-  return promotions.some(
-    (p) =>
-      p.id !== selfId &&
-      p.code.mode === "code" &&
-      p.code.code.toUpperCase() === wanted &&
-      promotionStatus(p) !== "archived" &&
-      promotionStatus(p) !== "expired",
-  );
+  return promotions.some((p) => p.id !== selfId && p.code.mode === "code" && p.code.kind === "shared" && p.code.code.toUpperCase() === wanted);
 }
 
 /* -------------------------------------------------------------------------- */
@@ -138,7 +139,7 @@ export function discountedUnitCents(priceCents: number, p: Promotion): number {
     if (d.maxDiscountCents) off = Math.min(off, d.maxDiscountCents);
     return Math.max(0, priceCents - off);
   }
-  if (d.type === "fixed" && d.amountCents && !d.minOrderCents) return Math.max(0, priceCents - d.amountCents);
+  if (d.type === "fixed" && d.amountCents && !p.eligibility.minCartCents) return Math.max(0, priceCents - d.amountCents);
   return priceCents;
 }
 
@@ -150,6 +151,7 @@ export function discountedUnitCents(priceCents: number, p: Promotion): number {
 export function coveredProductIds(
   p: Promotion,
   productsByCategory: (categoryId: string) => string[],
+  collections: Collection[] = [],
 ): string[] | null {
   const e = p.eligibility;
   if (p.discount.type === "bundle") return p.discount.bundleProductIds ?? [];
@@ -161,7 +163,7 @@ export function coveredProductIds(
     case "categories":
       return e.categoryIds.flatMap(productsByCategory);
     case "collections":
-      return e.collectionIds.flatMap((id) => COLLECTIONS.find((c) => c.id === id)?.productIds ?? []);
+      return e.collectionIds.flatMap((id) => collections.find((c) => c.id === id)?.productIds ?? []);
   }
 }
 
@@ -215,7 +217,7 @@ export function overview(promotions: Promotion[], campaigns: Campaign[]): Promot
       (p) =>
         promotionStatus(p) === "active" &&
         p.schedule.endsAt &&
-        toTime(p.schedule.endsAt) - NOW_TIME < 7 * 86_400_000,
+        toTime(p.schedule.endsAt, p.schedule.timezone) - Date.now() < 7 * 86_400_000,
     ).length,
   };
 }
@@ -283,8 +285,10 @@ export function filterPromotions(
   tab: PromotionTab,
   campaignName: (id: string) => string,
   productsByCategory: (categoryId: string) => string[],
+  collections: Collection[] = [],
 ): Promotion[] {
   const q = f.query.trim().toLowerCase();
+  const now = Date.now();
   const tabOnly = tabStatuses(tab);
   const from = f.from ? toTime(f.from) : null;
   const to = f.to ? toTime(`${f.to}T23:59`) : null;
@@ -298,13 +302,13 @@ export function filterPromotions(
     if (f.campaign === "none" && p.campaignId) return false;
     if (f.campaign !== "all" && f.campaign !== "none" && p.campaignId !== f.campaign) return false;
     if (f.product !== "all") {
-      const covered = coveredProductIds(p, productsByCategory);
+      const covered = coveredProductIds(p, productsByCategory, collections);
       if (covered && !covered.includes(f.product)) return false;
     }
     // Date window: keep promotions whose run overlaps it.
     if (from != null || to != null) {
-      const start = toTime(p.schedule.startsAt);
-      const end = p.schedule.endsAt ? toTime(p.schedule.endsAt) : Number.POSITIVE_INFINITY;
+      const start = toTime(p.schedule.startsAt, p.schedule.timezone);
+      const end = p.schedule.endsAt ? toTime(p.schedule.endsAt, p.schedule.timezone) : Number.POSITIVE_INFINITY;
       if (from != null && end < from) return false;
       if (to != null && start > to) return false;
     }
@@ -323,22 +327,22 @@ export function filterPromotions(
     return true;
   });
 
-  const endOf = (p: Promotion) => (p.schedule.endsAt ? toTime(p.schedule.endsAt) : Number.POSITIVE_INFINITY);
+  const endOf = (p: Promotion) => (p.schedule.endsAt ? toTime(p.schedule.endsAt, p.schedule.timezone) : Number.POSITIVE_INFINITY);
   return out.sort((a, b) => {
     switch (f.sort) {
       case "performance":
         return b.stats.revenueCents - a.stats.revenueCents;
       case "expiration": {
         // Soonest-ending live promotion first; finished ones sink.
-        const aPast = endOf(a) < NOW_TIME;
-        const bPast = endOf(b) < NOW_TIME;
+        const aPast = endOf(a) < now;
+        const bPast = endOf(b) < now;
         if (aPast !== bPast) return aPast ? 1 : -1;
         return aPast ? endOf(b) - endOf(a) : endOf(a) - endOf(b);
       }
       case "name":
         return a.name.localeCompare(b.name);
       default:
-        return toTime(b.createdAt) - toTime(a.createdAt);
+        return Date.parse(b.createdAt) - Date.parse(a.createdAt);
     }
   });
 }

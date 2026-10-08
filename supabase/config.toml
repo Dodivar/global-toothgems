@@ -44,5 +44,10 @@ verify_jwt = false
 [functions.invite-staff-member]
 verify_jwt = false
 
+# Staff-only: the caller's JWT is checked inside the function (like invite-staff-member)
+# and the database enforces `manage_orders` on every write.
+[functions.refund-order]
+verify_jwt = false
+
 [functions.submit-contact-request]
 verify_jwt = false

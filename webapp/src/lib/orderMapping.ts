@@ -72,6 +72,9 @@ export interface OrderDiscountRow {
 }
 
 export interface RefundRow {
+  /** Selected by the back office only. */
+  id?: string;
+  provider_refund_id?: string | null;
   amount: Amount;
   status: string;
   reason: string;
@@ -274,6 +277,7 @@ export function mapParcel(row: CustomerShipmentRow): OrderParcel {
 
 export function mapRefund(row: RefundRow): OrderRefund {
   return {
+    ...(row.id ? { id: row.id, sentToProvider: Boolean(row.provider_refund_id) } : {}),
     amount: toMinorUnits(row.amount),
     status: oneOf(row.status, REFUND_STATUSES, "pending"),
     reason: oneOf(row.reason, REFUND_REASONS, "other"),

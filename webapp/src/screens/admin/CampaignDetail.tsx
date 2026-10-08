@@ -7,7 +7,6 @@ import {
   Archive,
   BadgeEuro,
   CalendarRange,
-  CircleDot,
   Copy,
   FolderMinus,
   History,
@@ -35,7 +34,7 @@ import { useLocalized } from "../../lib/localized";
 import { campaignRollup } from "../../lib/promotionRules";
 import { campaignStatus, daysFromNow, promotionStatus, type Campaign, type CampaignLifecycle } from "../../data/adminPromotions";
 import { CampaignStatusBadge, DiscountChip, PromotionStatusBadge, useDiscountLabel, useMoney, usePromoDates } from "../../components/promotions/PromoBadges";
-import { FormDialog, Notice, Panel, PromoKpi, PrototypeBar } from "../../components/promotions/PromoUi";
+import { Fact, FormDialog, Notice, Panel, PromoKpi } from "../../components/promotions/PromoUi";
 import { ProductPicker, ProductStrip } from "../../components/promotions/ProductPicker";
 import { CampaignCover } from "../../components/promotions/Visuals";
 import { PreviewCampaignLanding, PreviewFrame } from "../../components/promotions/StorefrontPreviews";
@@ -90,8 +89,9 @@ export function CampaignDetail() {
 
   const setLifecycle = async (lifecycle: CampaignLifecycle) => {
     setBusy(true);
-    await store.setCampaignLifecycle(campaign.id, lifecycle);
+    const done = await store.setCampaignLifecycle(campaign.id, lifecycle);
     setBusy(false);
+    if (!done) return;
     showToast(t(`promo.toast.campaign.${lifecycle}`, { name: campaign.name }), undefined, lifecycle === "paused" ? "warning" : lifecycle === "archived" ? "info" : "success");
   };
   const duplicate = async () => {
@@ -143,7 +143,6 @@ export function CampaignDetail() {
       />
 
       <div className="grid grid-cols-[minmax(0,1fr)] gap-5 px-[var(--admin-gutter)] pb-[clamp(32px,5vw,56px)] pt-5">
-        <PrototypeBar showModes={false} />
         <Hero campaign={campaign} onPause={() => setLifecycle("paused")} onResume={() => setLifecycle("live")} busy={busy} />
 
         <section aria-label={t("promo.campaigns.performance")} className="grid grid-cols-2 gap-3 md:grid-cols-5">
@@ -366,7 +365,7 @@ function PromotionsPanel({ campaign, onAdd }: { campaign: Campaign; onAdd: () =>
                   <button
                     type="button"
                     onClick={async () => {
-                      await store.assignCampaign([p.id], null);
+                      if (!(await store.assignCampaign([p.id], null))) return;
                       showToast(t("promo.toast.unassigned", { count: 1 }), p.name, "info");
                     }}
                     aria-label={t("promo.campaigns.removeNamed", { name: p.name })}
@@ -385,35 +384,16 @@ function PromotionsPanel({ campaign, onAdd }: { campaign: Campaign; onAdd: () =>
   );
 }
 
+/** When the campaign was created and last changed (the full audit trail is read by administrators only). */
 function ActivityPanel({ campaign }: { campaign: Campaign }) {
   const { t } = useTranslation();
-  const l = useLocalized();
   const { dateTime } = usePromoDates();
-  const entries = [...campaign.activity].reverse();
   return (
     <Panel title={t("promo.campaigns.activity")} icon={History}>
-      <ol className="m-0 grid list-none gap-0 p-0">
-        {entries.map((entry, i) => (
-          <li key={entry.id} className="relative grid grid-cols-[20px_minmax(0,1fr)] gap-3 pb-4 last:pb-0">
-            {i < entries.length - 1 && <span aria-hidden="true" className="absolute left-[9px] top-5 h-[calc(100%-12px)] w-px bg-[var(--border-subtle)]" />}
-            <span
-              aria-hidden="true"
-              className={clsx(
-                "mt-0.5 grid h-5 w-5 place-items-center rounded-full",
-                i === 0 ? "bg-[var(--gt-ink-900)] text-[var(--gt-white)]" : "bg-[var(--gt-blue-100)] text-[var(--gt-blue-700)]",
-              )}
-            >
-              <CircleDot size={11} />
-            </span>
-            <div className="grid grid-cols-[minmax(0,1fr)] gap-0.5">
-              <span className="text-[length:var(--text-body-sm)] font-semibold text-[var(--text-primary)]">{l(entry.detail)}</span>
-              <span className="text-[11px] text-[var(--text-muted)]">
-                {entry.actor} · <time dateTime={entry.at}>{dateTime(entry.at)}</time>
-              </span>
-            </div>
-          </li>
-        ))}
-      </ol>
+      <dl className="m-0 grid gap-3">
+        <Fact label={t("promo.detail.created")} value={<time dateTime={campaign.createdAt}>{dateTime(campaign.createdAt)}</time>} />
+        <Fact label={t("promo.detail.updated")} value={<time dateTime={campaign.updatedAt}>{dateTime(campaign.updatedAt)}</time>} />
+      </dl>
     </Panel>
   );
 }
@@ -445,8 +425,9 @@ function AddPromotionsDialog({ campaign, open, onClose }: { campaign: Campaign; 
       }}
       onConfirm={async () => {
         setBusy(true);
-        await store.assignCampaign(picked, campaign.id);
+        const done = await store.assignCampaign(picked, campaign.id);
         setBusy(false);
+        if (!done) return;
         showToast(t("promo.toast.assigned", { count: picked.length, name: campaign.name }));
         setPicked([]);
         onClose();
@@ -505,8 +486,9 @@ function AddProductsDialog({ campaign, open, onClose }: { campaign: Campaign; op
       }}
       onConfirm={async () => {
         setBusy(true);
-        await store.addCampaignProducts(campaign.id, picked);
+        const done = await store.addCampaignProducts(campaign.id, picked);
         setBusy(false);
+        if (!done) return;
         showToast(t("promo.toast.productsAdded", { count: picked.length, name: campaign.name }));
         setPicked([]);
         onClose();

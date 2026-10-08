@@ -124,10 +124,9 @@ function parseFields(form: FormData): ContactSubmission | null {
   return { name, email, category: category as Category, subject, message, orderReference: order || null, locale };
 }
 
+/** Only the headers the platform sets itself: `x-forwarded-for` can be written by the caller. */
 const clientAddress = (req: Request): string | null =>
-  req.headers.get("cf-connecting-ip")?.trim() ||
-  req.headers.get("x-forwarded-for")?.split(",")[0]?.trim() ||
-  null;
+  req.headers.get("sb-forwarded-for")?.trim() || req.headers.get("cf-connecting-ip")?.trim() || null;
 
 /** A file name safe to show in an e-mail: no path, no control characters, bounded. */
 function displayName(original: string, ext: string, index: number): string {

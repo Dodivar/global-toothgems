@@ -40,7 +40,7 @@ Catalogue, variants and gem options, categories/families, gem colours, recommend
 
 - **Loyalty Club** (stamps per qualifying order, reward) — live: schema, member card and public rules read from Supabase; reward spent from the cart (needs the checkout function redeployed). Rules in `supabase/README.md` decisions 13, 21.
 - **Gift cards** — schema done; storefront page and admin UI on mock data.
-- **Promotions & campaigns** — schema and discount engine done; admin UI on mock data.
+- **Promotions & campaigns** — live: back office on Supabase, promotion codes and automatic promotions in the cart (previewed by `quote_basket()`, applied by `create_order()`). Collections and customer segments have no back-office screen yet.
 - **Studio 3D** — editor and workspace live; paid subscription (Stripe subscription + server-side entitlement) not built, access is `preview` (`webapp/src/lib/studioAccess.tsx`).
 - **Certificates** — UI exists (derived from 100 % progress). Before being presented as real, a certificate must be a durable server-side record (see `05`).
 

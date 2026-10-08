@@ -62,6 +62,13 @@ describe("checkout answers", () => {
     expires_at: "2026-10-07T13:00:00.000Z",
   };
 
+  it("reads the order's own figures when the function sends them", () => {
+    const answer = readCheckoutAnswer({ ...payment, discount_amount: 285, shipping_amount: 490, total_amount: 2105 });
+    expect(answer.kind === "payment" && [answer.payment.discountAmount, answer.payment.shippingAmount, answer.payment.totalAmount]).toEqual([285, 490, 2105]);
+    const junk = readCheckoutAnswer({ ...payment, discount_amount: -1, shipping_amount: "4.90", total_amount: 1.5 });
+    expect(junk.kind === "payment" && [junk.payment.discountAmount, junk.payment.shippingAmount, junk.payment.totalAmount]).toEqual([null, null, null]);
+  });
+
   it("opens the payment step from a well-formed answer only", () => {
     expect(readCheckoutAnswer(payment)).toEqual({
       kind: "payment",
@@ -70,6 +77,9 @@ describe("checkout answers", () => {
         publishableKey: payment.publishable_key,
         orderNumber: "GT-100042",
         amountDue: 4290,
+        discountAmount: null,
+        shippingAmount: null,
+        totalAmount: null,
         currency: "EUR",
         expiresAt: Date.parse(payment.expires_at),
       },
@@ -137,6 +147,11 @@ describe("checkout with gift cards", () => {
     expect(buildCheckoutRequest([line], form, "rate", "fr")).not.toHaveProperty("gift_card_codes");
     expect(buildCheckoutRequest([line], form, "rate", "fr")).not.toHaveProperty("use_loyalty_reward");
     expect(buildCheckoutRequest([line], form, "rate", "fr", [], true)?.use_loyalty_reward).toBe(true);
+  });
+
+  it("sends the promotion codes typed, and none otherwise", () => {
+    expect(buildCheckoutRequest([line], form, "rate", "fr", [], false, ["WELCOME15"])?.promotion_codes).toEqual(["WELCOME15"]);
+    expect(buildCheckoutRequest([line], form, "rate", "fr")).not.toHaveProperty("promotion_codes");
   });
 
   it("knows the code for gift card details refused by the database", () => {

@@ -132,7 +132,7 @@ Deno.test("invalid fields are refused; the honeypot is answered as a success wit
 
 Deno.test("the address throttle and the database throttle both answer 429", async () => {
   const limited = makeDeps({ ipAllowed: () => Promise.resolve(false) });
-  const res = await handleContact(post(form(), { "x-forwarded-for": "203.0.113.9" }), limited.deps);
+  const res = await handleContact(post(form(), { "sb-forwarded-for": "203.0.113.9" }), limited.deps);
   assertEquals(res.status, 429);
   assertEquals(limited.submitted.length, 0);
 

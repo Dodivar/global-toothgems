@@ -2,14 +2,15 @@ import { useTranslation } from "react-i18next";
 import { Link } from "../../lib/navigation";
 import clsx from "clsx";
 import {
-  NOW_TIME,
-  PROMO_NOW,
+  PROMO_TIMEZONE,
   promotionStatus,
   toTime,
   type Promotion,
   type PromotionStatus,
+  type Timezone,
 } from "../../data/adminPromotions";
 import { usePromoDates } from "./PromoBadges";
+import { useNow } from "../../lib/useNow";
 
 const DAY = 86_400_000;
 
@@ -24,16 +25,19 @@ export function ScheduleTimeline({
   startsAt,
   endsAt,
   invalid,
+  timezone = PROMO_TIMEZONE,
 }: {
   startsAt: string;
   endsAt: string | null;
   invalid?: boolean;
+  timezone?: Timezone;
 }) {
   const { t } = useTranslation();
   const { dateTime, dayMonth } = usePromoDates();
+  const NOW_TIME = useNow();
 
-  const start = startsAt ? toTime(startsAt) : NOW_TIME;
-  const rawEnd = endsAt ? toTime(endsAt) : null;
+  const start = startsAt ? toTime(startsAt, timezone) : NOW_TIME;
+  const rawEnd = endsAt ? toTime(endsAt, timezone) : null;
   const end = rawEnd && rawEnd > start ? rawEnd : start + 30 * DAY;
   const span = end - start;
   const pad = Math.max(span * 0.18, 2 * DAY);
@@ -69,7 +73,7 @@ export function ScheduleTimeline({
           style={{ left: `${pos(start)}%`, width: `${Math.max(1.5, pos(end) - pos(start))}%` }}
         />
         {/* start / end pins */}
-        <Pin at={pos(start)} label={dayMonth(startsAt || PROMO_NOW)} tone="start" />
+        <Pin at={pos(start)} label={dayMonth(startsAt || new Date(NOW_TIME).toISOString())} tone="start" />
         {endsAt && !invalid && <Pin at={pos(end)} label={dayMonth(endsAt)} tone="end" />}
         {/* today */}
         <span className="absolute top-2 h-10 w-px bg-[var(--gt-fuchsia-400)]" style={{ left: `${pos(NOW_TIME)}%` }}>
@@ -146,6 +150,7 @@ const BAR_TONE: Record<PromotionStatus, string> = {
 export function PromotionCalendar({ promotions, campaignName }: { promotions: Promotion[]; campaignName: (id: string | null) => string }) {
   const { t } = useTranslation();
   const { dayMonth, date } = usePromoDates();
+  const NOW_TIME = useNow();
   const from = NOW_TIME - 14 * DAY;
   const to = NOW_TIME + 35 * DAY;
   const pct = (time: number) => ((Math.min(Math.max(time, from), to) - from) / (to - from)) * 100;
@@ -154,11 +159,11 @@ export function PromotionCalendar({ promotions, campaignName }: { promotions: Pr
     .filter((p) => {
       const s = promotionStatus(p);
       if (s === "archived" || s === "draft") return false;
-      const start = toTime(p.schedule.startsAt);
-      const end = p.schedule.endsAt ? toTime(p.schedule.endsAt) : Number.POSITIVE_INFINITY;
+      const start = toTime(p.schedule.startsAt, p.schedule.timezone);
+      const end = p.schedule.endsAt ? toTime(p.schedule.endsAt, p.schedule.timezone) : Number.POSITIVE_INFINITY;
       return end >= from && start <= to;
     })
-    .sort((a, b) => toTime(a.schedule.startsAt) - toTime(b.schedule.startsAt));
+    .sort((a, b) => toTime(a.schedule.startsAt, a.schedule.timezone) - toTime(b.schedule.startsAt, b.schedule.timezone));
 
   const weeks = Array.from({ length: 8 }, (_, i) => from + i * 7 * DAY);
 
@@ -189,8 +194,8 @@ export function PromotionCalendar({ promotions, campaignName }: { promotions: Pr
           />
           {rows.map((p) => {
             const status = promotionStatus(p);
-            const start = toTime(p.schedule.startsAt);
-            const end = p.schedule.endsAt ? toTime(p.schedule.endsAt) : to;
+            const start = toTime(p.schedule.startsAt, p.schedule.timezone);
+            const end = p.schedule.endsAt ? toTime(p.schedule.endsAt, p.schedule.timezone) : to;
             const left = pct(start);
             const width = Math.max(4, pct(end) - left);
             const range = p.schedule.endsAt

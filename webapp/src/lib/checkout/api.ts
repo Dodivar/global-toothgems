@@ -1,6 +1,7 @@
 import { FunctionsHttpError } from "@supabase/supabase-js";
 import { requireSupabase } from "../supabase/client";
 import type { CheckoutItem } from "./cartLines";
+import { readQuote, type QuoteItem, type QuoteResult } from "./basketQuote";
 import type { ShippingRateRow } from "./shippingRates";
 
 /**
@@ -27,6 +28,8 @@ export interface CheckoutRequest {
   shipping_rate_id: string | null;
   locale: "fr" | "en";
   gift_card_codes?: string[];
+  /** Promotion codes typed by the customer (up to 3, upper case); the database decides what they give. */
+  promotion_codes?: string[];
   /** A request to spend the completed loyalty card; the database computes the discount. */
   use_loyalty_reward?: boolean;
   /** The client secret of the payment step this basket opened before, closed by the function first. */
@@ -47,6 +50,7 @@ export const CHECKOUT_ERRORS = [
   "terms_required",
   "course_owned",
   "payment_unavailable",
+  "free_order",
   "maintenance",
   "session_expired",
   "server_error",
@@ -66,6 +70,10 @@ export interface PaymentStep {
   publishableKey: string;
   orderNumber: string;
   amountDue: number;
+  /** The order's own figures (minor units), null from a function that does not send them yet. */
+  discountAmount: number | null;
+  shippingAmount: number | null;
+  totalAmount: number | null;
   currency: string;
   /** When the session stops accepting a payment (ms since epoch). */
   expiresAt: number;
@@ -96,7 +104,18 @@ function readPaymentStep(body: Record<string, unknown>): PaymentStep | null {
   if (typeof amount_due !== "number" || !Number.isSafeInteger(amount_due) || amount_due <= 0) return null;
   const expiresAt = typeof expires_at === "string" ? Date.parse(expires_at) : Number.NaN;
   if (!Number.isFinite(expiresAt)) return null;
-  return { clientSecret: client_secret, publishableKey: publishable_key, orderNumber: order_number, amountDue: amount_due, currency, expiresAt };
+  const figure = (value: unknown) => (typeof value === "number" && Number.isSafeInteger(value) && value >= 0 ? value : null);
+  return {
+    clientSecret: client_secret,
+    publishableKey: publishable_key,
+    orderNumber: order_number,
+    amountDue: amount_due,
+    discountAmount: figure(body.discount_amount),
+    shippingAmount: figure(body.shipping_amount),
+    totalAmount: figure(body.total_amount),
+    currency,
+    expiresAt,
+  };
 }
 
 export function readCheckoutAnswer(data: unknown): CheckoutResult {
@@ -136,6 +155,30 @@ export async function releasePaymentStep(clientSecret: string): Promise<void> {
   } catch {
     // Not blocking: see above.
   }
+}
+
+/**
+ * The discounts the database would give this basket (promotions, typed codes
+ * or the loyalty reward): a preview for the summary, nothing is reserved.
+ */
+export async function fetchBasketQuote(params: {
+  items: QuoteItem[];
+  codes: string[];
+  rateId: string | null;
+  useReward: boolean;
+  currency: string;
+  locale: "fr" | "en";
+}): Promise<QuoteResult> {
+  const { data, error } = await requireSupabase().rpc("quote_basket", {
+    p_items: params.items,
+    p_promotion_codes: params.codes,
+    ...(params.rateId ? { p_shipping_rate_id: params.rateId } : {}),
+    p_use_loyalty_reward: params.useReward,
+    p_currency: params.currency,
+    p_locale: params.locale,
+  });
+  if (error) return { ok: false, error: "unavailable" };
+  return readQuote(data);
 }
 
 export async function fetchShippingRates(countryCode: string): Promise<ShippingRateRow[]> {

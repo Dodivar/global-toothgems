@@ -134,6 +134,10 @@ export type RefundReason =
   | "other";
 
 export interface OrderRefund {
+  /** The refund row id; read by the back office only (the member's query does not select it). */
+  id?: string;
+  /** The payment provider already holds this refund: it can no longer be cancelled here. */
+  sentToProvider?: boolean;
   /** Minor units of the order currency. */
   amount: number;
   status: "pending" | "succeeded" | "failed" | "cancelled";
