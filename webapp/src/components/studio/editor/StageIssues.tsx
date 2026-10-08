@@ -33,8 +33,10 @@ export function IssueFrames() {
  */
 export function IssuePanel({ issues, jewels }: { issues: DesignIssue[]; jewels: PlacedJewelry[] }) {
   const { t, pieceName, toothTag } = useEditorLabels();
-  // Open where there is room for it; a phone's small stage starts with the header only.
-  const [open, setOpen] = useState(() => typeof window === "undefined" || window.matchMedia("(min-width: 640px)").matches);
+  // Open where there is room for it; a phone's small stage — upright or sideways — starts with the header only.
+  const [open, setOpen] = useState(
+    () => typeof window === "undefined" || window.matchMedia("(min-width: 640px) and (min-height: 561px)").matches,
+  );
   const listId = useId();
   const count = issues.length;
   const title = t("studio.editor.viewport.issues.title", { count });
@@ -45,7 +47,7 @@ export function IssuePanel({ issues, jewels }: { issues: DesignIssue[]; jewels: 
   return (
     <section
       aria-label={title}
-      className="absolute left-3 top-3 z-[8] w-[min(276px,calc(100%-24px))] rounded-[var(--radius-md)] border border-[var(--gt-red-400)] bg-[var(--surface-card)] shadow-[var(--shadow-lg)] xl:top-10"
+      className="absolute left-3 top-3 z-[8] w-[min(276px,calc(100%-24px))] rounded-[var(--radius-md)] border border-[var(--gt-red-400)] bg-[var(--surface-card)] shadow-[var(--shadow-lg)] studio-side:top-14"
     >
       <div className="flex items-center gap-2 py-1 pl-3 pr-1">
         <TriangleAlert size={16} aria-hidden="true" className="flex-none text-[var(--gt-red-500)]" />

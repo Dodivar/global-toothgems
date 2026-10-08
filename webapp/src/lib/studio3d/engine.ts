@@ -354,6 +354,8 @@ const LASSO_STEP = 4;
 const LASSO_MAX_POINTS = 1500;
 /** Shorter than this (CSS pixels), the lasso was a tap, not a loop. */
 const LASSO_MIN_LENGTH = 24;
+/** Held this long (ms) without moving, a press on a piece adds it to the selection (multi-selection mode). */
+const LONG_PRESS_MS = 480;
 /** World units a tooth may stand in front of a piece's rim before the piece counts as hidden behind it. */
 const LASSO_OCCLUSION_SLACK = 1;
 
@@ -478,6 +480,11 @@ export class StudioEngine {
   // lasso selection (see `onLassoPath`)
   private lasso: { pointerId: number; originX: number; originY: number; points: Point2[]; additive: boolean } | null = null;
   private lassoListener: LassoListener | null = null;
+
+  // long press on a piece (see `onLongPress`)
+  private longPressTimer: ReturnType<typeof setTimeout> | null = null;
+  /** The last press came from a finger: the browser's long-press menu is not a right-click. */
+  private touchPress = false;
 
   constructor(container: HTMLElement, store: DesignStore, options: EngineOptions = {}) {
     this.container = container;
@@ -1229,6 +1236,7 @@ export class StudioEngine {
       this.endDrag();
       this.controls.enabled = true;
     }
+    this.clearLongPress();
     this.press = null;
     this.mode = "idle";
   }
@@ -2019,6 +2027,7 @@ export class StudioEngine {
 
   private onPointerDown = (e: PointerEvent) => {
     if (this.placing) return;
+    this.touchPress = e.pointerType === "touch";
     // One loop at a time: a second finger while drawing must not pinch the camera either.
     if (this.lasso) {
       e.stopPropagation();
@@ -2042,7 +2051,7 @@ export class StudioEngine {
         originX: r.left,
         originY: r.top,
         points: [{ x: e.clientX - r.left, y: e.clientY - r.top }],
-        additive: e.shiftKey || e.ctrlKey || e.metaKey,
+        additive: e.shiftKey || e.ctrlKey || e.metaKey || this.store.getSnapshot().multiSelect,
       };
       this.emitLasso();
       return;
@@ -2064,6 +2073,9 @@ export class StudioEngine {
       this.wake();
       this.mode = "jewel-press";
       this.press = { jewelId: jHit.jewelId, x: e.clientX, y: e.clientY, t: performance.now() };
+      this.clearLongPress();
+      // A mouse has Shift; a pause before dragging with it is not a request.
+      if (e.pointerType !== "mouse") this.longPressTimer = setTimeout(() => this.onLongPress(jHit.jewelId), LONG_PRESS_MS);
       return;
     }
     const tHit = this.raycastTeeth();
@@ -2099,6 +2111,7 @@ export class StudioEngine {
     }
     const moved = Math.hypot(e.clientX - this.press.x, e.clientY - this.press.y) > 5;
     if (this.mode === "jewel-press" && moved) {
+      this.clearLongPress();
       const rig = this.jewelRigs.get(this.press.jewelId!);
       if (rig) {
         this.store.pushHistory();
@@ -2145,9 +2158,12 @@ export class StudioEngine {
 
   private onPointerUp = (e: PointerEvent) => {
     if (this.placing) {
-      this.finishPlacing(e);
+      // The browser took the gesture over (a list being scrolled): nothing is placed nor armed.
+      if (e.type === "pointercancel") this.cancelPlacing();
+      else this.finishPlacing(e);
       return;
     }
+    this.clearLongPress();
     if (this.lasso) {
       if (e.pointerId !== this.lasso.pointerId) return;
       if (e.type === "pointercancel") this.cancelLasso();
@@ -2171,8 +2187,10 @@ export class StudioEngine {
       }
       this.endDrag();
     } else if (this.mode === "jewel-press" && quick && this.press?.jewelId) {
-      // Shift/Ctrl-click toggles the piece into/out of the multi-selection
-      this.store.selectJewel(this.press.jewelId, { toggle: e.shiftKey || e.ctrlKey || e.metaKey });
+      // Shift/Ctrl-click — or any tap in multi-selection mode — toggles the piece into/out of the selection
+      this.store.selectJewel(this.press.jewelId, { toggle: e.shiftKey || e.ctrlKey || e.metaKey || this.store.getSnapshot().multiSelect });
+    } else if ((this.mode === "tooth-press" || this.mode === "bg-press") && this.store.getSnapshot().multiSelect) {
+      // Gathering pieces: a tap beside one (often a near miss on a finger) keeps what was gathered.
     } else if (this.mode === "armed-press" && quick) {
       this.setNDC(e);
       const hit = this.raycastTeeth();
@@ -2188,6 +2206,27 @@ export class StudioEngine {
     this.controls.enabled = !this.camTween;
     this.updateHover(e);
   };
+
+  /**
+   * A press held still on a piece: the touch screen's Shift-click. The mode
+   * turns on (the stage says so and offers "Done") and the piece joins the
+   * selection; the rest of the press does nothing — no drag, no toggle back.
+   */
+  private onLongPress(jewelId: string) {
+    this.longPressTimer = null;
+    if (this.mode !== "jewel-press" || this.press?.jewelId !== jewelId) return;
+    this.press = null;
+    this.mode = "idle";
+    const snap = this.store.getSnapshot();
+    // A single piece already selected starts the gathering with it.
+    this.store.setMultiSelect(true);
+    if (!snap.selectedJewelIds.includes(jewelId)) this.store.selectJewel(jewelId, { toggle: true });
+    navigator.vibrate?.(12);
+  }
+  private clearLongPress() {
+    if (this.longPressTimer) clearTimeout(this.longPressTimer);
+    this.longPressTimer = null;
+  }
 
   /**
    * Take a piece in hand. When it belongs to a multi-selection, the whole
@@ -2271,6 +2310,11 @@ export class StudioEngine {
       to OrbitControls (pan) as before. */
   private onContextMenu = (e: MouseEvent) => {
     if (this.readOnly || e.target !== this.renderer.domElement) return;
+    // A finger held on the stage (Android sends it as a context menu) is the long press above.
+    if (this.touchPress) {
+      e.preventDefault();
+      return;
+    }
     if (this.placing) {
       this.cancelPlacing();
       e.preventDefault();
@@ -3229,6 +3273,7 @@ export class StudioEngine {
   }
   dispose() {
     this.disposed = true;
+    this.clearLongPress();
     cancelAnimationFrame(this.raf);
     this.ro.disconnect();
     this.container.removeEventListener("pointerdown", this.onPointerDown, true);

@@ -13,9 +13,12 @@ import {
   Layers,
   LampDesk,
   LassoSelect,
+  ListChecks,
   LoaderCircle,
   Minus,
   Orbit,
+  PanelLeft,
+  PanelRight,
   Plus,
   RotateCcw,
   RotateCw,
@@ -28,6 +31,7 @@ import {
   X,
 } from "lucide-react";
 import { useEditorLabels } from "./editorLabels";
+import type { EditorPanel, EditorPanels } from "./useEditorPanels";
 import { QuickColorPanel } from "./QuickColorPanel";
 import { IssueFrames, IssuePanel } from "./StageIssues";
 import type { PlacedJewelry } from "../../../data/studioEditor";
@@ -62,7 +66,13 @@ const stageButton = clsx(
  * The 3D stage: mounts the engine on a dark canvas, and floats the tooth chip,
  * the placement hints, the piece context menu and the camera bar over it.
  */
-export function EditorViewport({ snap }: { snap: StudioSnapshot }) {
+interface PanelControls {
+  side: boolean;
+  open: EditorPanels;
+  toggle: (panel: EditorPanel) => void;
+}
+
+export function EditorViewport({ snap, panels }: { snap: StudioSnapshot; panels?: PanelControls }) {
   const { t, pieceName } = useEditorLabels();
   const hostRef = useRef<HTMLDivElement>(null);
   const [failed, setFailed] = useState(false);
@@ -125,7 +135,7 @@ export function EditorViewport({ snap }: { snap: StudioSnapshot }) {
   return (
     <section
       aria-label={t("studio.editor.viewport.label")}
-      className="gt-editor-stage relative isolate h-[58vh] min-h-[380px] min-w-0 overflow-hidden lg:h-auto lg:min-h-0"
+      className="gt-editor-stage @container relative isolate h-[58vh] min-h-[380px] min-w-0 overflow-hidden studio-side:h-auto studio-side:min-h-0"
     >
       <div ref={hostRef} className="gt-editor-canvas absolute inset-0" />
 
@@ -162,7 +172,7 @@ export function EditorViewport({ snap }: { snap: StudioSnapshot }) {
       )}
       {snap.lasso && (
         <Pill position="top">
-          <span>{t("studio.editor.viewport.lassoActive")}</span>
+          <span>{t(snap.multiSelect ? "studio.editor.viewport.lassoActiveAdd" : "studio.editor.viewport.lassoActive")}</span>
           <button
             type="button"
             aria-label={t("studio.editor.viewport.cancelLasso")}
@@ -174,6 +184,31 @@ export function EditorViewport({ snap }: { snap: StudioSnapshot }) {
             className="grid h-6 w-6 flex-none place-items-center rounded-full text-[var(--gt-blue-200)] hover:bg-white/15"
           >
             <X size={13} aria-hidden="true" />
+          </button>
+        </Pill>
+      )}
+      {snap.multiSelect && !snap.lasso && (
+        <Pill position="top">
+          <span aria-live="polite">
+            <span className="@max-[560px]:hidden">{t("studio.editor.viewport.multiPrompt")} · </span>
+            {t("studio.editor.viewport.multiActive", { count: snap.selectedJewelIds.length })}
+          </span>
+          {snap.selectedJewelIds.length > 0 && (
+            <button
+              type="button"
+              onClick={() => studioStore.selectIdentical()}
+              title={t("studio.editor.viewport.selectIdenticalHint")}
+              className="h-7 flex-none rounded-full px-2.5 text-[11px] font-bold text-white hover:bg-white/15"
+            >
+              {t("studio.editor.viewport.selectIdentical")}
+            </button>
+          )}
+          <button
+            type="button"
+            onClick={() => studioStore.setMultiSelect(false)}
+            className="h-7 flex-none rounded-full bg-white px-3 text-[11px] font-bold text-[var(--gt-ink-900)] hover:bg-[var(--gt-blue-50)]"
+          >
+            {t("studio.editor.viewport.multiDone")}
           </button>
         </Pill>
       )}
@@ -203,11 +238,66 @@ export function EditorViewport({ snap }: { snap: StudioSnapshot }) {
         <QuickBar ids={snap.selectedJewelIds} jewels={snap.jewels} actions={quick.actions} />
       )}
       {snap.contextMenu && <ContextMenu cm={snap.contextMenu} snap={snap} />}
-      {!failed && <BottomBar lightPreset={snap.lightPreset} lasso={snap.lasso} />}
-      <p className="pointer-events-none absolute left-4 top-4 z-[3] m-0 hidden text-[9px] font-bold uppercase tracking-[.24em] text-[var(--gt-blue-700)]/70 xl:block">
+      {!failed && <BottomBar lightPreset={snap.lightPreset} lasso={snap.lasso} multiSelect={snap.multiSelect} />}
+      {panels?.side && <PanelToggles panels={panels} selectedCount={snap.selectedJewelIds.length} />}
+      <p className="pointer-events-none absolute left-1/2 top-5 z-[3] m-0 hidden -translate-x-1/2 whitespace-nowrap text-[9px] font-bold uppercase tracking-[.24em] text-[var(--gt-blue-700)]/70 xl:block">
         {t(`studio.editor.viewport.stage.${snap.modelMode}`)}
       </p>
     </section>
+  );
+}
+
+/**
+ * The two side panels' switches, in the stage's top corners: the library on
+ * the left, the inspector on the right. Closed, the inspector's switch counts
+ * the selected pieces, so the artist knows there is something to adjust there.
+ */
+function PanelToggles({ panels, selectedCount }: { panels: PanelControls; selectedCount: number }) {
+  const { t } = useEditorLabels();
+  const button = (panel: EditorPanel) =>
+    clsx(
+      "absolute top-3 z-[7] inline-flex h-9 items-center gap-1.5 rounded-full px-3 text-[11.5px] font-bold shadow-[var(--shadow-sm)] transition-colors",
+      "focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-[var(--focus-ring)]",
+      panels.open[panel]
+        ? "border border-[var(--border-subtle)] bg-[var(--surface-card)]/90 text-[var(--gt-ink-700)] hover:bg-[var(--surface-card)]"
+        : stageGlass,
+    );
+  const label = (panel: EditorPanel) => t(`studio.editor.panels.${panel}.${panels.open[panel] ? "hide" : "show"}`);
+  return (
+    <>
+      <button
+        type="button"
+        aria-expanded={panels.open.library}
+        aria-controls="gt-editor-library-panel"
+        aria-label={label("library")}
+        title={label("library")}
+        onClick={() => panels.toggle("library")}
+        className={clsx(button("library"), "left-3")}
+      >
+        <PanelLeft size={15} aria-hidden="true" />
+        <span aria-hidden="true">{t("studio.editor.panels.library.name")}</span>
+      </button>
+      <button
+        type="button"
+        aria-expanded={panels.open.inspector}
+        aria-controls="gt-editor-inspector-panel"
+        aria-label={label("inspector")}
+        title={label("inspector")}
+        onClick={() => panels.toggle("inspector")}
+        className={clsx(button("inspector"), "right-3")}
+      >
+        <span aria-hidden="true">{t("studio.editor.panels.inspector.name")}</span>
+        {!panels.open.inspector && selectedCount > 0 && (
+          <span
+            aria-hidden="true"
+            className="grid h-5 min-w-5 place-items-center rounded-full bg-[var(--gt-emerald-400)] px-1 text-[10.5px] font-black tabular-nums text-[var(--gt-ink-900)]"
+          >
+            {selectedCount}
+          </span>
+        )}
+        <PanelRight size={15} aria-hidden="true" />
+      </button>
+    </>
   );
 }
 
@@ -739,7 +829,7 @@ const VIEWS: { id: "front" | "top" | "side" | "reset"; Icon: typeof Copy }[] = [
  * shown by an icon (the chosen light's own), so the bar stays short enough
  * for a phone.
  */
-function BottomBar({ lightPreset, lasso }: { lightPreset: LightPreset; lasso: boolean }) {
+function BottomBar({ lightPreset, lasso, multiSelect }: { lightPreset: LightPreset; lasso: boolean; multiSelect: boolean }) {
   const { t } = useEditorLabels();
   const [orbit, setOrbit] = useState(false);
   const [menu, setMenu] = useState<"views" | "lights" | null>(null);
@@ -772,7 +862,7 @@ function BottomBar({ lightPreset, lasso }: { lightPreset: LightPreset; lasso: bo
         trigger={
           <>
             <Camera size={14} aria-hidden="true" />
-            <span className="max-sm:sr-only">{t("studio.editor.views.label")}</span>
+            <span className="@max-[620px]:sr-only">{t("studio.editor.views.label")}</span>
           </>
         }
         items={VIEWS.map(({ id, Icon }) => ({
@@ -810,7 +900,7 @@ function BottomBar({ lightPreset, lasso }: { lightPreset: LightPreset; lasso: bo
         trigger={
           <>
             <LightIcon size={14} aria-hidden="true" />
-            <span className="max-sm:sr-only">{lightName}</span>
+            <span className="@max-[620px]:sr-only">{lightName}</span>
           </>
         }
         items={LIGHTS.map(({ id, Icon }) => ({
@@ -835,7 +925,7 @@ function BottomBar({ lightPreset, lasso }: { lightPreset: LightPreset; lasso: bo
         className={clsx(stageButton, orbit && "bg-white text-[var(--gt-ink-900)] hover:bg-white")}
       >
         <Orbit size={14} aria-hidden="true" />
-        <span aria-hidden="true" className="max-sm:hidden">
+        <span aria-hidden="true" className="@max-[620px]:hidden">
           {t("studio.editor.orbit")}
         </span>
       </button>
@@ -851,8 +941,22 @@ function BottomBar({ lightPreset, lasso }: { lightPreset: LightPreset; lasso: bo
         className={clsx(stageButton, lasso && "bg-white text-[var(--gt-ink-900)] hover:bg-white")}
       >
         <LassoSelect size={14} aria-hidden="true" />
-        <span aria-hidden="true" className="max-sm:hidden">
+        <span aria-hidden="true" className="@max-[620px]:hidden">
           {t("studio.editor.viewport.lasso")}
+        </span>
+      </button>
+      {/* Shift-click for a finger: tap the gems one by one, wherever they are on the arch. */}
+      <button
+        type="button"
+        aria-pressed={multiSelect}
+        aria-label={t("studio.editor.viewport.multi")}
+        title={t("studio.editor.viewport.multiHint")}
+        onClick={() => studioStore.setMultiSelect(!multiSelect)}
+        className={clsx(stageButton, multiSelect && "bg-white text-[var(--gt-ink-900)] hover:bg-white")}
+      >
+        <ListChecks size={14} aria-hidden="true" />
+        <span aria-hidden="true" className="@max-[620px]:hidden">
+          {t("studio.editor.viewport.multi")}
         </span>
       </button>
     </div>

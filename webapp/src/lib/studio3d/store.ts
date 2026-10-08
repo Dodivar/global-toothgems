@@ -75,6 +75,12 @@ export interface StudioSnapshot {
   placingTypeId: string | null;
   /** The lasso tool is on: a press on the stage draws a loop that selects the pieces inside. */
   lasso: boolean;
+  /**
+   * Multi-selection mode, for touch screens where Shift is out of reach: a tap
+   * on a piece adds it to the selection or takes it out, a tap elsewhere keeps
+   * the selection, and a lasso adds to it.
+   */
+  multiSelect: boolean;
   modelMode: ModelMode;
   /** True while a model is being fetched and prepared: the stage says so. */
   modelLoading: boolean;
@@ -121,6 +127,7 @@ export class DesignStore {
   armedTypeId: string | null = null;
   placingTypeId: string | null = null;
   lasso = false;
+  multiSelect = false;
   modelMode: ModelMode = "dentition";
   modelLoading = true;
   issues: DesignIssue[] = [];
@@ -190,6 +197,7 @@ export class DesignStore {
       armedTypeId: this.armedTypeId,
       placingTypeId: this.placingTypeId,
       lasso: this.lasso,
+      multiSelect: this.multiSelect,
       modelMode: this.modelMode,
       modelLoading: this.modelLoading,
       issues: this.issues,
@@ -346,6 +354,22 @@ export class DesignStore {
     this.contextMenu = null;
     this.commit();
   }
+  /** Turn the multi-selection mode on or off. On, it disarms a piece waiting to be placed. */
+  setMultiSelect(on: boolean) {
+    if (this.multiSelect === on) return;
+    this.multiSelect = on;
+    if (on) this.armedTypeId = null;
+    this.contextMenu = null;
+    this.commit();
+  }
+  /** Select every piece of the same gem, colour and size as one of the selected pieces. */
+  selectIdentical() {
+    const keys = new Set(
+      this.jewels.filter((j) => this.selectedJewelIds.includes(j.id)).map((j) => `${j.productId}|${j.variantId ?? ""}|${j.ss}`),
+    );
+    if (!keys.size) return;
+    this.selectJewels(this.jewels.filter((j) => keys.has(`${j.productId}|${j.variantId ?? ""}|${j.ss}`)).map((j) => j.id));
+  }
   setModelMode(m: ModelMode) {
     if (this.modelMode !== m) {
       this.modelMode = m;
@@ -428,6 +452,7 @@ export class DesignStore {
     this.armedTypeId = null;
     this.placingTypeId = null;
     this.lasso = false;
+    this.multiSelect = false;
     this.contextMenu = null;
     // The next editor session loads the default dentition afresh.
     this.modelMode = "dentition";

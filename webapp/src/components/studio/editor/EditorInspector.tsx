@@ -65,7 +65,7 @@ export function EditorInspector({ snap }: { snap: StudioSnapshot }) {
   return (
     <aside
       aria-label={useEditorLabels().t("studio.editor.inspector.label")}
-      className="gt-editor-scroll min-h-0 overflow-y-auto border-t border-[var(--border-subtle)] bg-[var(--surface-card)] px-4 pb-7 pt-4 lg:border-l lg:border-t-0"
+      className="gt-editor-scroll min-h-0 overflow-y-auto border-t border-[var(--border-subtle)] bg-[var(--surface-card)] px-4 pb-7 pt-4 studio-side:border-l studio-side:border-t-0"
     >
       <div className="gt-editor-panel-in">{body}</div>
     </aside>
@@ -615,14 +615,16 @@ function PieceList({
   const { toothTag } = useEditorLabels();
   if (!jewels.length) return null;
   return (
-    <ul className="m-0 grid list-none gap-1.5 p-0">
+    <ul className="m-0 grid list-none grid-cols-[minmax(0,1fr)] gap-1.5 p-0">
       {jewels.map((j) => (
         <li key={j.id}>
           <button
             type="button"
             onClick={() => {
-              studioStore.selectJewel(j.id);
-              if (focusCamera) getEngine()?.focusTooth(j.toothId);
+              // Gathering pieces (multi-selection mode): the row adds or removes, the camera stays put.
+              const gathering = studioStore.multiSelect;
+              studioStore.selectJewel(j.id, { toggle: gathering });
+              if (focusCamera && !gathering) getEngine()?.focusTooth(j.toothId);
             }}
             className={clsx(
               "flex w-full items-center gap-2.5 rounded-[var(--radius-sm)] border border-[var(--border-subtle)] bg-[var(--surface-page)] px-2.5 py-2 text-left text-[12px] font-semibold text-[var(--text-body)] transition-[border-color,transform] hover:translate-x-0.5 hover:border-[var(--gt-blue-300)]",
