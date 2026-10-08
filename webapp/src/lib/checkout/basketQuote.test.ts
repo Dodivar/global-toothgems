@@ -86,7 +86,7 @@ describe("lineDiscount (promotion shown on a basket line)", () => {
   const promo: BasketQuote = {
     goodsDiscount: 899,
     shippingDiscount: 0,
-    discounts: [{ label: "Noël", code: null, type: "percentage", goods: 899, shipping: 0 }],
+    discounts: [{ label: "NoÃ«l", code: null, type: "percentage", goods: 899, shipping: 0 }],
     lines: [{ productId: "p1", variantId: "v1", amount: 899 }],
     gifts: [],
   };

@@ -128,7 +128,7 @@ export const quoteKey = (items: QuoteItem[], codes: string[], rateId: string | n
 
 /**
  * What a basket line carries of the discount (minor units). While a new answer is on its way (the customer just
- * ticked or unticked the loyalty reward, typed a code…) the line keeps what the previous answer gave it, so a
+ * ticked or unticked the loyalty reward, typed a codeâ€¦) the line keeps what the previous answer gave it, so a
  * promotion never vanishes for the time of the round trip; a refused or unavailable quote shows nothing.
  */
 export function lineDiscount(
