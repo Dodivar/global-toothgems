@@ -16,6 +16,8 @@ export type CheckoutErrorCode =
   | "terms_required"
   | "course_owned"
   | "payment_unavailable"
+  /** A promotion left nothing to pay and no gift card covered it: free orders are not offered (yet). */
+  | "free_order"
   | "server_error";
 
 export interface DbError {

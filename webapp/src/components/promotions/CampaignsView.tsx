@@ -27,7 +27,7 @@ export function CampaignsView() {
   const navigate = useNavigate();
   const { showToast } = useToast();
   const store = usePromotions();
-  const { campaigns, promotions, loading, demoMode, setDemoMode } = store;
+  const { campaigns, promotions, loading, failed, reload } = store;
   const [query, setQuery] = useState("");
   const [status, setStatus] = useState<CampaignStatus | "all">("all");
   const [archiveTarget, setArchiveTarget] = useState<Campaign | null>(null);
@@ -38,7 +38,7 @@ export function CampaignsView() {
     return campaigns
       .filter((c) => (status === "all" ? campaignStatus(c) !== "archived" : campaignStatus(c) === status))
       .filter((c) => !q || [c.name, c.title.fr, c.title.en].join(" ").toLowerCase().includes(q))
-      .sort((a, b) => ORDER[campaignStatus(a)] - ORDER[campaignStatus(b)] || toTime(a.startsAt) - toTime(b.startsAt));
+      .sort((a, b) => ORDER[campaignStatus(a)] - ORDER[campaignStatus(b)] || toTime(a.startsAt, a.timezone) - toTime(b.startsAt, b.timezone));
   }, [campaigns, query, status]);
 
   const onLifecycle = async (c: Campaign, lifecycle: CampaignLifecycle) => {
@@ -46,7 +46,7 @@ export function CampaignsView() {
       setArchiveTarget(c);
       return;
     }
-    await store.setCampaignLifecycle(c.id, lifecycle);
+    if (!(await store.setCampaignLifecycle(c.id, lifecycle))) return;
     showToast(t(`promo.toast.campaign.${lifecycle}`, { name: c.name }), undefined, lifecycle === "paused" ? "warning" : "success");
   };
 
@@ -58,8 +58,8 @@ export function CampaignsView() {
     }
   };
 
-  if (demoMode === "error")
-    return <ErrorPanel title={t("promo.error.title")} body={t("promo.error.body")} retryLabel={t("promo.error.retry")} onRetry={() => setDemoMode("live")} />;
+  if (failed)
+    return <ErrorPanel title={t("promo.error.title")} body={t("promo.error.body")} retryLabel={t("promo.error.retry")} onRetry={() => void reload()} />;
 
   if (!loading && campaigns.length === 0) {
     return (
@@ -172,8 +172,9 @@ export function CampaignsView() {
         onConfirm={async () => {
           if (!archiveTarget) return;
           setBusy(true);
-          await store.setCampaignLifecycle(archiveTarget.id, "archived");
+          const done = await store.setCampaignLifecycle(archiveTarget.id, "archived");
           setBusy(false);
+          if (!done) return;
           showToast(t("promo.toast.campaign.archived", { name: archiveTarget.name }), undefined, "info");
           setArchiveTarget(null);
         }}

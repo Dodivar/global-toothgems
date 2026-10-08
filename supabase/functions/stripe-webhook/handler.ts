@@ -12,6 +12,12 @@ import { toDecimalString } from "../_shared/money.ts";
  *      checkout.session.expired, checkout.session.async_payment_failed
  *        → cancel_order() while the order is still unpaid
  *      then the order's follow-ups run (`orderPaid`: e-mails), never failing the event
+ *   3b. refund.created / refund.updated / refund.failed (a Stripe Refund object):
+ *      succeeded -> mark_refund_succeeded() on the refund row the back office requested
+ *        (found by metadata.refund_id, else by the Stripe refund id), or, for a refund
+ *        made in the Stripe dashboard (no row), record_external_refund() by payment intent
+ *      failed / canceled -> mark_refund_failed(); pending / requires_action -> nothing yet
+ *      then the refund e-mail sweep runs (`refundConfirmed`), never failing the event
  *   4. the event is marked `processed` (or `failed` + error)
  *
  * Replays are harmless: mark_order_paid() returns a paid order unchanged and
@@ -25,6 +31,17 @@ export interface CheckoutSessionObject {
   amount_total: number | null;
   currency: string | null;
   payment_status: "paid" | "unpaid" | "no_payment_required";
+  payment_intent: string | { id: string } | null;
+  metadata: Record<string, string> | null;
+}
+
+export interface RefundObject {
+  id: string;
+  object: "refund";
+  amount: number;
+  currency: string;
+  status: string | null;
+  failure_reason?: string | null;
   payment_intent: string | { id: string } | null;
   metadata: Record<string, string> | null;
 }
@@ -81,6 +98,17 @@ export interface WebhookDeps {
    */
   orderPaid?(orderId: string): Promise<void>;
   closeCheckoutPayment(checkoutId: string, status: "cancelled" | "failed", reason: string): Promise<void>;
+  /** The refund row for a Stripe refund: by the id we put in its metadata, else by the Stripe refund id. */
+  findRefund(refundId: string | null, providerRefundId: string): Promise<{ id: string; status: string } | null>;
+  markRefundSucceeded(refundId: string, providerRefundId: string): Promise<void>;
+  markRefundFailed(refundId: string, reason: string | null): Promise<void>;
+  /** A refund made outside the back office (Stripe dashboard): recorded from the payment intent. */
+  recordExternalRefund(args: { paymentIntentId: string; providerRefundId: string; amount: string; currency: string }): Promise<void>;
+  /**
+   * Follow-ups once a refund is confirmed (refund e-mail). Same contract as
+   * `orderPaid`: idempotent, never throws.
+   */
+  refundConfirmed?(): Promise<void>;
   log(message: string, detail?: unknown): void;
 }
 
@@ -90,6 +118,8 @@ export const HANDLED_EVENTS = [
   "checkout.session.expired",
   "checkout.session.async_payment_failed",
 ] as const;
+
+export const HANDLED_REFUND_EVENTS = ["refund.created", "refund.updated", "refund.failed"] as const;
 
 const UUID_RE = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i;
 const MAX_BODY_BYTES = 512 * 1024;
@@ -111,6 +141,15 @@ function sessionOf(event: WebhookEvent): CheckoutSessionObject | null {
     : null;
 }
 
+function refundOf(event: WebhookEvent): RefundObject | null {
+  const object = event.data?.object as Partial<RefundObject> | undefined;
+  return object && object.object === "refund" && typeof object.id === "string" ? (object as RefundObject) : null;
+}
+
+function uuidOf(value: unknown): string | null {
+  return typeof value === "string" && UUID_RE.test(value) ? value.toLowerCase() : null;
+}
+
 function orderIdOf(session: CheckoutSessionObject | null): string | null {
   const id = session?.metadata?.order_id;
   return typeof id === "string" && UUID_RE.test(id) ? id.toLowerCase() : null;
@@ -120,6 +159,45 @@ function paymentIntentId(session: CheckoutSessionObject): string | null {
   const pi = session.payment_intent;
   if (typeof pi === "string") return pi;
   return pi && typeof pi.id === "string" ? pi.id : null;
+}
+
+async function applyRefundEvent(refund: RefundObject, deps: WebhookDeps) {
+  const requestedId = uuidOf(refund.metadata?.refund_id);
+  switch (refund.status) {
+    case "succeeded": {
+      const row = await deps.findRefund(requestedId, refund.id);
+      if (row) {
+        await deps.markRefundSucceeded(row.id, refund.id);
+      } else {
+        // We asked for this refund but its row is gone: never invent a second one.
+        if (requestedId) throw new DbCallError("refund row not found", "P0002");
+        const pi = typeof refund.payment_intent === "string" ? refund.payment_intent : refund.payment_intent?.id;
+        if (!pi) return "ignored" as const;
+        await deps.recordExternalRefund({
+          paymentIntentId: pi,
+          providerRefundId: refund.id,
+          amount: toDecimalString(refund.amount),
+          currency: refund.currency.toUpperCase(),
+        });
+      }
+      try {
+        await deps.refundConfirmed?.();
+      } catch (error) {
+        deps.log("refund follow-ups failed", error instanceof Error ? error.message : error);
+      }
+      return "processed" as const;
+    }
+    case "failed":
+    case "canceled": {
+      const row = await deps.findRefund(requestedId, refund.id);
+      if (!row) return "ignored" as const;
+      await deps.markRefundFailed(row.id, (refund.failure_reason ?? refund.status).slice(0, 500));
+      return "processed" as const;
+    }
+    default:
+      // pending / requires_action: the next event decides.
+      return "processed" as const;
+  }
 }
 
 const UNPAID = new Set(["pending", "failed"]);
@@ -190,13 +268,14 @@ export async function handleWebhook(req: Request, deps: WebhookDeps): Promise<Re
     return text({ error: "invalid_signature" }, 400);
   }
 
-  const session = sessionOf(event);
-  const orderId = orderIdOf(session);
-  const handled = (HANDLED_EVENTS as readonly string[]).includes(event.type);
+  const refund = (HANDLED_REFUND_EVENTS as readonly string[]).includes(event.type) ? refundOf(event) : null;
+  const session = refund ? null : sessionOf(event);
+  const orderId = refund ? uuidOf(refund.metadata?.order_id) : orderIdOf(session);
+  const handled = refund !== null || (HANDLED_EVENTS as readonly string[]).includes(event.type);
 
   let status: EventStatus;
   try {
-    status = await deps.recordEvent(event, session?.id ?? null, orderId);
+    status = await deps.recordEvent(event, refund?.id ?? session?.id ?? null, orderId);
   } catch (error) {
     deps.log("event not recorded", error instanceof Error ? error.message : error);
     return text({ error: "retry" }, 500);
@@ -204,7 +283,7 @@ export async function handleWebhook(req: Request, deps: WebhookDeps): Promise<Re
   if (status === "processed" || status === "ignored") return text({ received: true, duplicate: true }, 200);
 
   // Not an event of ours (other type, or a session this site did not create).
-  if (!handled || !session || !orderId) {
+  if (!handled || (!refund && (!session || !orderId))) {
     try {
       await deps.finishEvent(event.id, "ignored");
     } catch (error) {
@@ -215,7 +294,7 @@ export async function handleWebhook(req: Request, deps: WebhookDeps): Promise<Re
   }
 
   try {
-    const outcome = await applyEvent(event, session, orderId, deps);
+    const outcome = refund ? await applyRefundEvent(refund, deps) : await applyEvent(event, session!, orderId!, deps);
     await deps.finishEvent(event.id, outcome);
     return text({ received: true }, 200);
   } catch (error) {

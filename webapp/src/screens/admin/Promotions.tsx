@@ -24,7 +24,7 @@ import { useAdminGiftCards } from "../../lib/giftCards/AdminGiftCardsProvider";
 import { giftCardMetrics } from "../../lib/giftCards/giftCardMapping";
 import { overview, PROMOTION_TABS, tabStatuses, type PromotionTab } from "../../lib/promotionRules";
 import { promotionStatus } from "../../data/adminPromotions";
-import { PromoKpi, PromoTabs, PrototypeBar, type TabItem } from "../../components/promotions/PromoUi";
+import { PromoKpi, PromoTabs, type TabItem } from "../../components/promotions/PromoUi";
 import { useMoney } from "../../components/promotions/PromoBadges";
 import { PromotionsListView } from "../../components/promotions/PromotionsListView";
 import { CampaignsView } from "../../components/promotions/CampaignsView";
@@ -150,7 +150,6 @@ export function Promotions() {
       />
 
       <div className="grid grid-cols-[minmax(0,1fr)] gap-5 px-[var(--admin-gutter)] pb-[clamp(32px,5vw,56px)] pt-5">
-        <PrototypeBar />
 
         <section aria-label={t("promo.kpi.label")} className="grid grid-cols-2 gap-3 sm:grid-cols-3 xl:grid-cols-6">
           <PromoKpi loading={loading} icon={CircleCheck} tone="success" label={t("promo.kpi.active")} value={String(kpi.active)} hint={kpi.endingSoon ? t("promo.kpi.endingSoon", { count: kpi.endingSoon }) : t("promo.kpi.activeHint")} to={promotionsHref("active")} />

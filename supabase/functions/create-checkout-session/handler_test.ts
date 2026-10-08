@@ -8,6 +8,9 @@ const ORDER: OrderRow = {
   customer_email: "camille@example.com",
   currency: "EUR",
   amount_due: "42.90",
+  discount_amount: "0.00",
+  shipping_amount: "4.90",
+  total_amount: "42.90",
   payment_status: "pending",
   expires_at: null,
 };
@@ -83,6 +86,9 @@ Deno.test("guest checkout: order from the database, session for its amount due",
     publishable_key: "pk_test_123",
     order_number: "GT-100042",
     amount_due: 4290,
+    discount_amount: 0,
+    shipping_amount: 490,
+    total_amount: 4290,
     currency: "EUR",
     expires_at: new Date(NOW + SESSION_MINUTES * 60_000).toISOString(),
   });
@@ -186,6 +192,17 @@ Deno.test("fully paid with gift cards: no Stripe session", async () => {
   });
   const res = await handleCheckout(post(BODY), deps);
   assertEquals(await res.json(), { status: "paid", order_number: "GT-100042" });
+  assertEquals(calls.sessions.length, 0);
+});
+
+Deno.test("a basket made free by a promotion (no gift card): the order is released, not reported as paid", async () => {
+  const { deps, calls } = fakeDeps({
+    createOrder: () => Promise.resolve({ order: { ...ORDER, amount_due: 0, payment_status: "pending" } }),
+  });
+  const res = await handleCheckout(post(BODY), deps);
+  assertEquals(res.status, 409);
+  assertEquals(await res.json(), { error: "free_order" });
+  assertEquals(calls.cancelled, [ORDER.id]);
   assertEquals(calls.sessions.length, 0);
 });
 

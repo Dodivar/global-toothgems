@@ -399,7 +399,13 @@
       "loading": "Chargement des gemmes de la boutique…",
       "error": "Les gemmes de la boutique n’ont pas pu être chargées.",
       "retry": "Réessayer",
-      "otherGems": "Autres bijoux"
+      "otherGems": "Autres bijoux",
+      "shapesLabel": "Filtrer par forme",
+      "allShapes": "Toutes",
+      "foldAll": "Replier toutes les formes",
+      "unfoldAll": "Déplier toutes les formes",
+      "showAllShapes": "Voir toutes les formes",
+      "shapeLabel": "Forme"
     },
     "viewport": {
       "label": "Vue 3D de l’arcade dentaire",
@@ -443,7 +449,16 @@
         "selectAll": "Tout sélectionner",
         "collapse": "Réduire la liste des erreurs",
         "expand": "Afficher la liste des erreurs"
-      }
+      },
+      "multi": "Sélection",
+      "multiHint": "Sélection multiple : touchez les gemmes une à une pour les ajouter ou les retirer (ou maintenez le doigt sur une gemme)",
+      "multiActive_one": "{{count}} sélectionnée",
+      "multiActive_other": "{{count}} sélectionnées",
+      "multiDone": "Terminé",
+      "selectIdentical": "+ Identiques",
+      "selectIdenticalHint": "Ajouter toutes les gemmes identiques (même gemme, couleur et taille)",
+      "lassoActiveAdd": "Entourez les pièces à ajouter à la sélection",
+      "multiPrompt": "Touchez les gemmes à ajouter"
     },
     "views": {
       "label": "Caméra",
@@ -668,6 +683,18 @@
       }
     },
     "pieceUnavailable": "Gemme retirée de la boutique",
-    "shopPrice": "Prix boutique : {{price}}"
+    "shopPrice": "Prix boutique : {{price}}",
+    "panels": {
+      "library": {
+        "name": "Gemmes",
+        "show": "Afficher la bibliothèque",
+        "hide": "Masquer la bibliothèque"
+      },
+      "inspector": {
+        "name": "Réglages",
+        "show": "Afficher les réglages",
+        "hide": "Masquer les réglages"
+      }
+    }
   }
 }

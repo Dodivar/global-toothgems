@@ -59,7 +59,7 @@ export function EditorTopBar({ snap, onOpenMenu }: { snap: StudioSnapshot; onOpe
   };
 
   return (
-    <header className="relative z-20 flex h-14 min-w-0 items-center gap-1 border-b border-[var(--border-subtle)] bg-[var(--surface-card)] px-2 sm:gap-2 sm:px-3">
+    <header className="relative z-20 flex h-14 min-w-0 studio-short:h-12 items-center gap-1 border-b border-[var(--border-subtle)] bg-[var(--surface-card)] px-2 sm:gap-2 sm:px-3">
       {/* Below `lg` the workspace navigation lives in a drawer; on desktop it is the rail. */}
       <button type="button" className={clsx(toolButton, "lg:hidden")} aria-label={t("studio.workspace.nav.open")} title={t("studio.workspace.nav.open")} onClick={onOpenMenu}>
         <Menu size={18} aria-hidden="true" />

@@ -9,12 +9,6 @@
     "preview": "Aperçu client",
     "moreActions": "Plus d’actions"
   },
-  "proto": {
-    "label": "Prototype",
-    "today": "Nous sommes le {{date}} dans cette maquette",
-    "simulate": "Simuler un état",
-    "mode": { "live": "Données d’exemple", "empty": "Boutique vide", "error": "Erreur de chargement" }
-  },
   "kpi": {
     "label": "Activité promotionnelle",
     "active": "Promotions actives",
@@ -235,7 +229,6 @@
       "title": "Aucune promotion pour l’instant",
       "body": "Créez votre première offre — un pourcentage, la livraison offerte ou un « 2 achetés, 1 offert » — et programmez-la au bon moment."
     },
-    "loadExamples": "Afficher des exemples",
     "noResults": {
       "titleQuery": "Rien ne correspond à « {{query}} »",
       "body": "Essayez un autre nom ou code, ou retirez quelques filtres."
@@ -274,6 +267,15 @@
     "cardBody": "Aucune carte n’a le code {{code}}. Vérifiez la saisie — les codes ne contiennent jamais de O ni de I."
   },
   "toast": {
+    "error": {
+      "unavailable": "Les promotions ne sont pas disponibles sans connexion à la base de données.",
+      "notAllowed": "Vous n’avez pas la permission de modifier les promotions.",
+      "codeTaken": "Ce code est déjà utilisé par une autre promotion (même archivée) : choisissez-en un autre.",
+      "incomplete": "La promotion est incomplète ou une valeur est refusée : vérifiez ses produits, son segment, son code et l’option du cadeau, puis réessayez.",
+      "invalid": "Une valeur de ce formulaire n’est pas valide : vérifiez les dates, les montants et le code, puis réessayez.",
+      "notFound": "Cette promotion ou cette campagne n’existe plus.",
+      "failed": "L’enregistrement a échoué. Rien n’a été modifié — réessayez dans un instant."
+    },
     "lifecycle": {
       "live": "« {{name}} » est active",
       "paused": "« {{name}} » est en pause",
@@ -374,7 +376,7 @@
   },
   "validation": {
     "nameRequired": "Donnez-lui un nom interne.",
-    "titleRequired": "Ajoutez un titre client dans au moins une langue.",
+    "titleRequired": "Ajoutez le titre client en français (la langue de référence).",
     "percentRange": "Indiquez un pourcentage entre 1 et 100.",
     "amountRequired": "Indiquez le montant de la remise.",
     "buyGetRequired": "Indiquez combien acheter et combien sont offerts.",
@@ -386,7 +388,8 @@
     "endBeforeStart": "La fin doit être postérieure au début.",
     "codeRequired": "Saisissez un code, ou passez en promotion automatique.",
     "codeFormat": "De 4 à 24 lettres, chiffres, tirets ou underscores.",
-    "codeTaken": "Ce code est déjà utilisé par une autre promotion active ou programmée.",
+    "uniqueCountRequired": "Indiquez combien de codes uniques générer.",
+    "codeTaken": "Ce code est déjà utilisé par une autre promotion.",
     "perCustomerAboveTotal": "La limite par client ne peut pas dépasser la limite totale.",
     "email": "Saisissez une adresse e-mail valide."
   },
@@ -418,6 +421,7 @@
     "invalidBody": "Chaque point est signalé à côté de son champ et listé dans le récapitulatif. Le brouillon reste enregistrable.",
     "toast": {
       "nameNeeded": "Un brouillon a au moins besoin d’un nom",
+      "draftNeeds": "Un brouillon a besoin d’un nom, d’un titre client en français et d’une remise valide",
       "fix_one": "{{count}} point à corriger",
       "fix_other": "{{count}} points à corriger",
       "fixBody": "Nous vous avons amené au premier.",
@@ -469,7 +473,10 @@
       "bundleSaves": "Le client économise {{amount}}.",
       "giftProduct": "Produit offert",
       "giftProductHint": "Ajouté gratuitement au panier dès que les conditions sont remplies.",
-      "giftStock": "{{name}} : {{stock}} en stock."
+      "giftStock": "{{name}} : {{stock}} en stock.",
+      "giftVariant": "Option offerte",
+      "giftVariantHint": "Ce produit a des options : choisissez celle qui est offerte.",
+      "giftVariantNone": "Choisir une option"
     },
     "eligibility": {
       "title": "Éligibilité",
@@ -480,6 +487,8 @@
       "pickProducts": "Choisir des produits",
       "pickCategories": "Choisir des catégories",
       "pickCollections": "Choisir des collections",
+      "noCollections": "Aucune collection n’est encore créée : les collections se préparent avec l’équipe boutique.",
+      "noSegments": "Aucun segment de clients n’est encore créé.",
       "bundleNote": "Un lot s’applique à ses propres produits, choisis dans la section remise.",
       "customersHeading": "Clients",
       "customersLabel": "Qui peut en profiter",
@@ -499,6 +508,9 @@
       "maxPerCustomer": "Utilisations par client",
       "combinable": "Cumulable avec d’autres promotions",
       "combinableHint": "Sinon, seule la meilleure offre s’applique.",
+      "withLoyalty": "Cumulable avec la récompense fidélité",
+      "withLoyaltyHint": "Le membre peut ajouter sa récompense par-dessus cette promotion (sur ce qu’elle laisse à payer). Sinon, la meilleure des deux s’applique, jamais les deux.",
+      "withLoyaltyShort": "Cumulable avec la fidélité",
       "combinableShort": "Cumulable",
       "excludeDiscounted": "Exclure les produits déjà soldés",
       "excludeDiscountedHint": "Les articles à prix réduit gardent seulement ce prix.",
@@ -521,7 +533,7 @@
         "weekend": "Week-end du Black Friday",
         "week": "Une semaine",
         "twoWeeks": "Deux semaines",
-        "december": "Tout décembre",
+        "nextMonth": "Le mois prochain",
         "evergreen": "Sans date de fin"
       },
       "start": "Début",
@@ -547,9 +559,7 @@
       "copy": "Copier",
       "copied": "Copié",
       "examples": "Exemples :",
-      "caseSensitive": "Sensible à la casse",
-      "caseSensitiveOn": "Le client doit taper le code exactement tel qu’écrit.",
-      "caseSensitiveOff": "« {{code}} » et « {{lower}} » fonctionnent tous les deux.",
+      "caseInsensitive": "Un code se tape comme on veut : « {{code}} » et « {{lower}} » fonctionnent tous les deux.",
       "kind": "Type de code",
       "shared": "Un code partagé",
       "unique": "Codes uniques à usage unique",
@@ -585,7 +595,7 @@
     "expiredTitle": "Terminée le {{date}}",
     "expiredBody": "Les clients ne la voient plus. Ses résultats restent ci-dessous ; dupliquez-la pour la relancer avec de nouvelles dates.",
     "runAgain": "La relancer",
-    "pausedTitle": "Mise en pause le {{date}} par {{name}}",
+    "pausedTitle": "Mise en pause le {{date}}",
     "pausedBody": "Les clients ne la voient pas et les codes sont refusés au paiement. Sa programmation est inchangée.",
     "resume": "Reprendre",
     "scheduledTitle_one": "Démarre demain",
@@ -609,6 +619,7 @@
     "code": "Code promo",
     "automaticBody": "Sans code — la remise s’applique d’elle-même aux paniers éligibles.",
     "caseInsensitive": "Insensible à la casse",
+    "exportCodes": "Exporter les codes (CSV)",
     "uniqueCodes": "{{count}} codes uniques",
     "campaign": "Campagne",
     "standalone": "Autonome — ne fait partie d’aucune campagne.",
@@ -894,6 +905,7 @@
   },
   "shop": {
     "partOf": "Édition {{name}}",
+    "conditional": "Sous conditions : le détail s’applique dans votre panier.",
     "useCode": "Code {{code}} à saisir au paiement.",
     "automatic": "Appliquée automatiquement dans votre panier.",
     "endsIn_one": "Se termine demain",

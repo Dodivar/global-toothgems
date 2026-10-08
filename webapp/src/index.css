@@ -1,5 +1,20 @@
 @import "tailwindcss";
 
+/* The 3D Studio's side-by-side layout (library | stage | inspector): desktops
+   and tablets, and phones held sideways — a phone in landscape is wider than
+   it is tall, so stacking the panels under the stage would push the stage
+   off screen. `studio-short` is the landscape phone itself: less height, so
+   the bars and cards tighten. */
+@custom-variant studio-side {
+  @media (min-width: 1024px) {
+    @slot;
+  }
+  @media (orientation: landscape) and (min-width: 640px) {
+    @slot;
+  }
+}
+@custom-variant studio-short (@media (orientation: landscape) and (max-height: 560px));
+
 :root {
   /* Colors */
   --gt-blue-50: #f4f8fc;
@@ -878,7 +893,7 @@
 }
 
 @keyframes gt-admin-fade { from { opacity: 0; } to { opacity: 1; } }
-@keyframes gt-admin-slide { from { transform: translateX(24px); opacity: 0; } to { transform: none; opacity: 1; } }
+@keyframes gt-admin-slide { from { transform: translateX(32px); opacity: 0; } to { transform: none; opacity: 1; } }
 @keyframes gt-admin-rise { from { transform: translateY(8px) scale(.99); opacity: 0; } to { transform: none; opacity: 1; } }
 
 @media (prefers-reduced-motion: reduce) {
@@ -1576,12 +1591,37 @@
 @keyframes gt-editor-pulse {
   50% { opacity: .25; }
 }
+/* The editor's side panels slide in from their own edge and back out (`usePanelPresence`):
+   the column is set once, so the 3D canvas is resized once, not on every frame. */
+.gt-editor-side-in-left { animation: gt-editor-side-left var(--duration-fast) var(--ease-out-soft) both; }
+.gt-editor-side-in-right { animation: gt-editor-side-right var(--duration-fast) var(--ease-out-soft) both; }
+.gt-editor-side-out-left { animation: gt-editor-side-left-out var(--duration-fast) var(--ease-standard) both; }
+.gt-editor-side-out-right { animation: gt-editor-side-right-out var(--duration-fast) var(--ease-standard) both; }
+@keyframes gt-editor-side-left {
+  from { opacity: 0; transform: translateX(-32px); }
+  to { opacity: 1; transform: none; }
+}
+@keyframes gt-editor-side-right {
+  from { opacity: 0; transform: translateX(32px); }
+  to { opacity: 1; transform: none; }
+}
+/* Own names for the way out: a new animation name is what makes the browser play it again. */
+@keyframes gt-editor-side-left-out {
+  to { opacity: 0; transform: translateX(-32px); }
+}
+@keyframes gt-editor-side-right-out {
+  to { opacity: 0; transform: translateX(32px); }
+}
 
 @media (prefers-reduced-motion: reduce) {
   .gt-editor-panel-in,
   .gt-editor-chip,
   .gt-editor-floaty,
-  .gt-editor-pulse { animation: none; }
+  .gt-editor-pulse,
+  .gt-editor-side-in-left,
+  .gt-editor-side-in-right,
+  .gt-editor-side-out-left,
+  .gt-editor-side-out-right { animation: none; }
 }
 
 /* ---------------------------------------------------------------------------
@@ -1684,7 +1724,7 @@
 }
 
 @keyframes gt-ws-drawer-in {
-  from { transform: translateX(-24px); opacity: 0; }
+  from { transform: translateX(-32px); opacity: 0; }
   to { transform: none; opacity: 1; }
 }
 @keyframes gt-ws-pop {

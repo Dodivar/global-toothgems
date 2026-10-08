@@ -47,6 +47,11 @@ function fakeDb(initial: Partial<{ status: EventStatus; order: { status: string;
     paid: [] as { amount: string; currency: string; checkoutId: string; paymentId: string | null }[],
     cancelled: [] as string[],
     closed: [] as string[],
+    refunds: new Map<string, { id: string; status: string }>(),
+    succeededRefunds: [] as { id: string; providerRefundId: string }[],
+    failedRefunds: [] as { id: string; reason: string | null }[],
+    externalRefunds: [] as { paymentIntentId: string; providerRefundId: string; amount: string; currency: string }[],
+    refundFollowUps: 0,
   };
   const deps: WebhookDeps = {
     verify: (raw, sig) => stripe.webhooks.constructEventAsync(raw, sig, SECRET, undefined, crypto) as unknown as Promise<WebhookEvent>,
@@ -77,6 +82,24 @@ function fakeDb(initial: Partial<{ status: EventStatus; order: { status: string;
     },
     closeCheckoutPayment: (id) => {
       state.closed.push(id);
+      return Promise.resolve();
+    },
+    findRefund: (refundId, providerRefundId) =>
+      Promise.resolve((refundId && state.refunds.get(refundId)) || state.refunds.get(`provider:${providerRefundId}`) || null),
+    markRefundSucceeded: (id, providerRefundId) => {
+      state.succeededRefunds.push({ id, providerRefundId });
+      return Promise.resolve();
+    },
+    markRefundFailed: (id, reason) => {
+      state.failedRefunds.push({ id, reason });
+      return Promise.resolve();
+    },
+    recordExternalRefund: (args) => {
+      state.externalRefunds.push(args);
+      return Promise.resolve();
+    },
+    refundConfirmed: () => {
+      state.refundFollowUps++;
       return Promise.resolve();
     },
     log: () => {},
@@ -197,4 +220,100 @@ Deno.test("a paid order triggers its follow-ups; a failing follow-up never fails
   };
   await handleWebhook(await signed(sessionEvent("checkout.session.completed", { payment_status: "unpaid" })), unpaid.deps);
   assertEquals(none, []);
+});
+
+const REFUND_ID = "99999999-8888-4777-8666-555555555555";
+
+function refundEvent(type: string, refund: Record<string, unknown> = {}, id = "evt_refund_1") {
+  return {
+    id,
+    object: "event",
+    type,
+    livemode: false,
+    data: {
+      object: {
+        id: "re_test_1",
+        object: "refund",
+        amount: 1250,
+        currency: "eur",
+        status: "succeeded",
+        payment_intent: "pi_test_abc",
+        metadata: { refund_id: REFUND_ID, order_id: ORDER_ID },
+        ...refund,
+      },
+    },
+  };
+}
+
+Deno.test("refund.updated (succeeded) confirms the refund the back office requested, then runs its follow-ups", async () => {
+  const { deps, state } = fakeDb();
+  state.refunds.set(REFUND_ID, { id: REFUND_ID, status: "pending" });
+  const res = await handleWebhook(await signed(refundEvent("refund.updated")), deps);
+  assertEquals(res.status, 200);
+  assertEquals(state.succeededRefunds, [{ id: REFUND_ID, providerRefundId: "re_test_1" }]);
+  assertEquals(state.externalRefunds, []);
+  assertEquals(state.refundFollowUps, 1);
+  assertEquals(state.events.get("evt_refund_1")?.status, "processed");
+});
+
+Deno.test("a refund event is found by its Stripe id when the metadata is missing or the id was already saved", async () => {
+  const { deps, state } = fakeDb();
+  state.refunds.set("provider:re_test_1", { id: REFUND_ID, status: "pending" });
+  await handleWebhook(await signed(refundEvent("refund.created", { metadata: {} })), deps);
+  assertEquals(state.succeededRefunds.length, 1);
+  assertEquals(state.externalRefunds.length, 0);
+});
+
+Deno.test("a refund made in the Stripe dashboard is recorded from its payment intent", async () => {
+  const { deps, state } = fakeDb();
+  const res = await handleWebhook(await signed(refundEvent("refund.created", { metadata: {} })), deps);
+  assertEquals(res.status, 200);
+  assertEquals(state.externalRefunds, [
+    { paymentIntentId: "pi_test_abc", providerRefundId: "re_test_1", amount: "12.50", currency: "EUR" },
+  ]);
+  assertEquals(state.refundFollowUps, 1);
+});
+
+Deno.test("a refund we asked for whose row is gone is never recreated as an external refund", async () => {
+  const { deps, state } = fakeDb();
+  const res = await handleWebhook(await signed(refundEvent("refund.updated")), deps);
+  assertEquals(res.status, 200);
+  assertEquals(state.externalRefunds, []);
+  assertEquals(state.events.get("evt_refund_1")?.status, "failed");
+});
+
+Deno.test("failed and canceled refunds free the balance; pending ones wait", async () => {
+  const { deps, state } = fakeDb();
+  state.refunds.set(REFUND_ID, { id: REFUND_ID, status: "pending" });
+  await handleWebhook(await signed(refundEvent("refund.updated", { status: "pending" }, "evt_a")), deps);
+  assertEquals(state.succeededRefunds.length + state.failedRefunds.length, 0);
+  assertEquals(state.events.get("evt_a")?.status, "processed");
+  await handleWebhook(await signed(refundEvent("refund.failed", { status: "failed", failure_reason: "expired_or_canceled_card" }, "evt_b")), deps);
+  assertEquals(state.failedRefunds, [{ id: REFUND_ID, reason: "expired_or_canceled_card" }]);
+  await handleWebhook(await signed(refundEvent("refund.updated", { status: "canceled" }, "evt_c")), deps);
+  assertEquals(state.failedRefunds.length, 2);
+  assertEquals(state.refundFollowUps, 0);
+});
+
+Deno.test("a replayed refund event does nothing the second time; a failing follow-up never fails it", async () => {
+  const { deps, state } = fakeDb();
+  state.refunds.set(REFUND_ID, { id: REFUND_ID, status: "pending" });
+  const payload = refundEvent("refund.updated");
+  assertEquals((await handleWebhook(await signed(payload), deps)).status, 200);
+  assertEquals((await (await handleWebhook(await signed(payload), deps)).json()).duplicate, true);
+  assertEquals(state.succeededRefunds.length, 1);
+
+  const broken = fakeDb();
+  broken.state.refunds.set(REFUND_ID, { id: REFUND_ID, status: "pending" });
+  broken.deps.refundConfirmed = () => Promise.reject(new Error("resend down"));
+  assertEquals((await handleWebhook(await signed(refundEvent("refund.updated")), broken.deps)).status, 200);
+  assertEquals(broken.state.events.get("evt_refund_1")?.status, "processed");
+});
+
+Deno.test("a refund the database refuses permanently is stored as failed and acknowledged", async () => {
+  const { deps, state } = fakeDb();
+  deps.recordExternalRefund = () => Promise.reject(new DbCallError("refunds: 99 exceeds the refundable balance", "23514"));
+  const res = await handleWebhook(await signed(refundEvent("refund.created", { metadata: {} })), deps);
+  assertEquals(res.status, 200);
+  assertEquals(state.events.get("evt_refund_1")?.status, "failed");
 });

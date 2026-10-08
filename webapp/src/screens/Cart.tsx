@@ -35,6 +35,11 @@ import { buildCheckoutRequest, EMPTY_CHECKOUT_FORM, invalidFields, type Checkout
 import { hasCourse, needsShipping, shippableSubtotal } from "../lib/checkout/cartLines";
 import { GiftCardVisual } from "../components/promotions/Visuals";
 import { GiftCardCodes } from "../components/shop/GiftCardCodes";
+import { PromotionCodes } from "../components/shop/PromotionCodes";
+import { OfferBadges } from "../components/shop/OfferBadges";
+import { useStorefrontOffers } from "../lib/useStorefrontOffers";
+import { lineDiscount, quoteItems } from "../lib/checkout/basketQuote";
+import { useBasketQuote } from "../lib/checkout/useBasketQuote";
 import type { GiftCardDesign } from "../lib/giftCards/giftCardMapping";
 import {
   applicableRates,
@@ -130,6 +135,11 @@ export function Cart() {
   }, []);
   // Gift card codes are bearer credentials: kept in memory for this page only, never stored.
   const [giftCodes, setGiftCodes] = useState<string[]>([]);
+  // Promotion codes typed by the customer: the database decides what they give (basket quote below).
+  const [promoCodes, setPromoCodes] = useState<string[]>([]);
+  const [promoRefusal, setPromoRefusal] = useState<"invalid" | "too_many_attempts" | "dropped" | null>(null);
+  // The codes the last successful quote covered: a refusal drops the ones that came after it.
+  const verifiedCodes = useRef<string[]>([]);
   // Spending the completed loyalty card is a request: the database checks and prices it.
   const [wantsReward, setWantsReward] = useState(false);
   const { programme, card, reload: reloadLoyalty } = useLoyalty();
@@ -185,8 +195,46 @@ export function Cart() {
   const shipping = selected?.price ?? 0;
   const shopGoods = qualifyingSubtotal(lines);
   const rewardOn = live && wantsReward && !!card?.rewardReady && shopGoods > 0;
-  const rewardSaving = rewardOn ? rewardDiscount(shopGoods, programme.rewardPercent) : 0;
-  const total = subtotal + shipping - rewardSaving;
+  const locale = lang.startsWith("en") ? "en" : "fr";
+
+  // What the database says the basket receives: automatic promotions, typed codes or the loyalty reward.
+  const items = live ? quoteItems(lines) : null;
+  const quoteState = useBasketQuote({
+    enabled: live && items !== null && items.length > 0,
+    items: items ?? [],
+    codes: promoCodes,
+    rateId: shipped ? rateId : null,
+    useReward: rewardOn,
+    currency,
+    locale,
+  });
+  const quote = quoteState.status === "ready" ? quoteState.quote : null;
+  // Until the answer is in, the loyalty estimate stands in (same rule as the database); promotions show only once confirmed.
+  const rewardEstimate = rewardOn && !quote ? rewardDiscount(shopGoods, programme.rewardPercent) : 0;
+  const discountLines = quote
+    ? quote.discounts
+        .filter((d) => d.goods > 0)
+        .map((d) => ({ label: d.code ? t("checkout.promo.discountLine", { label: d.label, code: d.code }) : d.label, amount: d.goods }))
+    : rewardEstimate > 0
+      ? [{ label: t("loyalty.checkout.summaryLine", { percent: programme.rewardPercent }), amount: rewardEstimate }]
+      : [];
+  const goodsDiscount = quote ? quote.goodsDiscount : rewardEstimate;
+  const shippingSaved = quote ? Math.min(shipping, quote.shippingDiscount) : 0;
+  const shippingDue = shipping - shippingSaved;
+  const total = subtotal - goodsDiscount + shippingDue;
+  // A basket made free by a promotion would not go to Stripe (nothing to charge): not offered yet.
+  // What the database says a basket line carries of the discount, and the campaign / promotion it belongs to (as in the shop window).
+  const { offerFor } = useStorefrontOffers();
+  const lineCut = (line: (typeof lines)[number]) =>
+    lineDiscount(quoteState, line.dbProductId, line.variantId);
+  const lineOffer = (line: (typeof lines)[number]) => {
+    const found = products.find((p) => p.dbId === line.dbProductId);
+    return found ? offerFor({ dbId: found.dbId, cat: found.cat, currency: found.currency ?? "EUR" }) : null;
+  };
+  // The shop-window badge belongs to a promotion only: a cut that comes from the loyalty reward alone (the promotion is
+  // used up, or the reward beats it) carries no campaign badge.
+  const promotionApplied = quote?.discounts.some((d) => d.type !== "loyalty") ?? false;
+  const freeOrder = live && quote !== null && total <= 0 && giftCodes.length === 0;
   const threshold = ratesReady && shipped ? freeShippingThreshold(rates.rows, currency) : null;
   const remainingForFreeShipping = threshold === null ? null : Math.max(0, threshold - goods);
 
@@ -208,6 +256,28 @@ export function Cart() {
   const set = (key: keyof CheckoutForm) => (e: React.ChangeEvent<HTMLInputElement>) =>
     setForm((f) => ({ ...f, [key]: e.target.value }));
 
+  // The database's verdict on the codes: a refused one is taken out and said so, and a quote that
+  // went through becomes the reference for the next refusal.
+  useEffect(() => {
+    if (quoteState.status === "ready") {
+      verifiedCodes.current = promoCodes;
+      return;
+    }
+    if (quoteState.status !== "error") return;
+    if (quoteState.error === "too_many_attempts") {
+      setPromoCodes(verifiedCodes.current);
+      setPromoRefusal("too_many_attempts");
+    } else if (quoteState.error === "promotion_code_invalid" && promoCodes.length > 0) {
+      const kept = promoCodes.filter((code) => verifiedCodes.current.includes(code));
+      setPromoRefusal(kept.length < promoCodes.length ? "invalid" : "dropped");
+      // Nothing new to blame: the basket changed under a code that used to apply, so all codes go.
+      setPromoCodes(kept.length < promoCodes.length ? kept : []);
+      if (kept.length === promoCodes.length) verifiedCodes.current = [];
+    } else if (quoteState.error === "loyalty_reward_unavailable" && wantsReward) {
+      setWantsReward(false);
+      setCheckoutError("loyalty_reward_unavailable");
+    }
+  }, [quoteState, promoCodes, wantsReward]);
   const pay = async (termsJustAccepted = false) => {
     setCheckoutError(null);
     if (accountMissing) {
@@ -239,7 +309,8 @@ export function Cart() {
       clearCart();
       return;
     }
-    const built = buildCheckoutRequest(lines, form, shipped ? rateId : null, lang.startsWith("en") ? "en" : "fr", giftCodes, rewardOn);
+    if (freeOrder) return;
+    const built = buildCheckoutRequest(lines, form, shipped ? rateId : null, locale, giftCodes, rewardOn, promoCodes);
     if (!built) {
       setCheckoutError("unavailable");
       return;
@@ -288,6 +359,7 @@ export function Cart() {
         reloadCourses();
       }
       setGiftCodes([]);
+      setPromoCodes([]);
       setWantsReward(false);
       reloadLoyalty();
       clearCart();
@@ -385,9 +457,11 @@ export function Cart() {
                   name: pick(p.name, lang),
                   subtitle: pick(p.subtitle, lang),
                   price: p.price,
+                  compareAtPrice: p.compareAtPrice,
                   image: p.image,
                   hoverImage: p.gallery?.[1]?.src,
                   stock: p.stock,
+                  offer: offerFor({ dbId: p.dbId, cat: p.cat, currency: p.currency ?? "EUR", compareAtPrice: p.compareAtPrice }),
                 }}
               />
             ))}
@@ -414,13 +488,13 @@ export function Cart() {
         {progress}
         <PaymentView
           payment={payment}
-          locale={lang.startsWith("en") ? "en" : "fr"}
+          locale={locale}
           lines={lines}
           form={form}
           shipped={shipped}
           courseInBasket={courseInBasket}
           shippingOption={selected}
-          amounts={{ subtotal, shipping, reward: rewardSaving, rewardPercent: programme.rewardPercent, total }}
+          amounts={{ subtotal, shipping: shippingDue, discounts: discountLines, total }}
           giftCardCount={giftCodes.length}
           onEdit={leavePayment}
           onRestart={restartPayment}
@@ -446,7 +520,7 @@ export function Cart() {
       iconRight={live && (selected || !shipped) ? ArrowRight : undefined}
       onClick={() => void pay()}
       loading={submitting}
-      disabled={submitting || !ratesReady || accountMissing}
+      disabled={submitting || !ratesReady || accountMissing || freeOrder}
     >
       {payLabel}
     </Button>
@@ -468,6 +542,11 @@ export function Cart() {
           <p className="m-0 text-[length:var(--text-body-sm)] font-semibold text-[var(--text-primary)]">{t("checkout.errors.terms_required")}</p>
           <TermsNotice cta={t("termsAccept.checkoutCta")} busy={acceptingTerms} failed={termsFailed} onAccept={() => void acceptAndPay()} />
         </div>
+      )}
+      {freeOrder && (
+        <p role="alert" className={alertClass}>
+          <CircleAlert size={16} aria-hidden="true" className="flex-none" /> {t("checkout.promo.freeOrder")}
+        </p>
       )}
       {checkoutError && checkoutError !== "terms_required" && (
         <p role="alert" className={alertClass}>
@@ -511,6 +590,7 @@ export function Cart() {
                   <div className="grid min-w-[150px] flex-1 gap-1">
                     <strong className="text-sm text-[var(--text-primary)]">{line.name}</strong>
                     {line.variant && <span className="text-xs text-[var(--text-muted)]">{line.variant}</span>}
+                    {lineCut(line) > 0 && promotionApplied && <OfferBadges offer={lineOffer(line)} className="sm:flex-row sm:flex-wrap" />}
                     <button
                       type="button"
                       onClick={() => removeLine(line.id)}
@@ -538,9 +618,19 @@ export function Cart() {
                       <IconButton icon={Plus} label={t("cart.increase")} variant="ghost" size="sm" disabled={submitting} onClick={() => updateQty(line.id, line.qty + 1)} />
                     </div>
                   )}
-                  <strong className="w-20 text-right text-sm text-[var(--text-primary)]" aria-label={t("cart.lineTotalAria")}>
-                    {money(line.unitPrice * line.qty)}
-                  </strong>
+                  {(() => {
+                    // What the database says this line carries of the discount: struck-out original, net price, and the
+                    // campaign / promotion it belongs to (as shown in the shop window).
+                    const cut = lineCut(line);
+                    return (
+                      <span className="grid w-24 justify-items-end gap-0.5 text-right">
+                        <strong className={cut > 0 ? "text-sm text-[var(--accent-highlight-ink)]" : "text-sm text-[var(--text-primary)]"} aria-label={t("cart.lineTotalAria")}>
+                          {money(line.unitPrice * line.qty - cut)}
+                        </strong>
+                        {cut > 0 && <s className="text-xs text-[var(--text-subtle)]">{money(line.unitPrice * line.qty)}</s>}
+                      </span>
+                    );
+                  })()}
                 </li>
               ))}
             </ul>
@@ -551,8 +641,9 @@ export function Cart() {
               subtotal={toMajorUnits(shopGoods)}
               reward={{
                 checked: rewardOn,
-                saving: toMajorUnits(rewardSaving),
+                saving: toMajorUnits(goodsDiscount),
                 disabled: submitting || !live,
+                hint: t("checkout.promo.rewardHint"),
                 onChange: (checked) => {
                   setWantsReward(checked);
                   if (checkoutError === "loyalty_reward_unavailable") setCheckoutError(null);
@@ -729,19 +820,34 @@ export function Cart() {
               {!shipped ? (
                 <span>{courseInBasket ? t("checkout.course.noDelivery") : t("checkout.giftCard.emailDelivery")}</span>
               ) : selected ? (
-                <span className={shipping === 0 ? "font-semibold text-[var(--status-success-fg)]" : undefined}>
-                  {shipping === 0 ? t("cart.shippingFree") : money(shipping)}
+                <span className={shippingDue === 0 ? "font-semibold text-[var(--status-success-fg)]" : undefined}>
+                  {shippingDue === 0 ? t("cart.shippingFree") : money(shippingDue)}
                 </span>
               ) : (
                 <span className="text-[var(--text-muted)]">—</span>
               )}
             </div>
-            {rewardOn && (
-              <div className="flex justify-between text-[var(--status-success-fg)]">
-                <span>{t("loyalty.checkout.summaryLine", { percent: programme.rewardPercent })}</span>
-                <span>−{money(rewardSaving)}</span>
+            {discountLines.map((discount) => (
+              <div key={discount.label} className="flex justify-between gap-3 text-[var(--status-success-fg)]">
+                <span>{discount.label}</span>
+                <span className="flex-none">−{money(discount.amount)}</span>
               </div>
+            ))}
+            {/* What the database chose, when it is not what was asked: the better offer wins. */}
+            {quote && rewardOn && !quote.discounts.some((d) => d.type === "loyalty") && (
+              <p className="m-0 text-xs text-[var(--text-muted)]">{t("checkout.promo.rewardNotUsed")}</p>
             )}
+            {quote &&
+              promoCodes
+                .filter((code) => !quote.discounts.some((d) => d.code === code))
+                .map((code) => (
+                  <p key={code} className="m-0 text-xs text-[var(--text-muted)]">{t("checkout.promo.codeNotUsed", { code })}</p>
+                ))}
+            {quote?.gifts.map((gift) => (
+              <div key={`${gift.name}${gift.variant ?? ""}`} className="flex justify-between gap-3 text-[var(--status-success-fg)]">
+                <span>{t("checkout.promo.gift", { name: gift.variant ? `${gift.name} — ${gift.variant}` : gift.name })}</span>
+              </div>
+            ))}
             <div className="flex justify-between border-t border-[var(--border-subtle)] pt-2 text-base font-bold text-[var(--text-primary)]">
               <span>{t("cart.total")}</span>
               <span>{money(total)}</span>
@@ -754,6 +860,19 @@ export function Cart() {
               </p>
             )}
           </div>
+          {live && items !== null && items.length > 0 && (
+            <PromotionCodes
+              codes={promoCodes}
+              onChange={(codes) => {
+                setPromoCodes(codes);
+                setPromoRefusal(null);
+                if (checkoutError === "promotion_code_invalid") setCheckoutError(null);
+              }}
+              disabled={submitting}
+              checking={quoteState.status === "loading"}
+              refusal={promoRefusal}
+            />
+          )}
           {live && (
             <GiftCardCodes
               embedded

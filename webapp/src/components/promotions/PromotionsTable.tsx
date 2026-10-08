@@ -16,8 +16,8 @@ import {
 import clsx from "clsx";
 import { OverflowMenu, type MenuAction } from "../admin/OverflowMenu";
 import { useLocalized } from "../../lib/localized";
-import { COLLECTIONS, SEGMENTS, promotionStatus, type Promotion, type PromotionLifecycle } from "../../data/adminPromotions";
-import { categoryById, type CategoryId } from "../../data/adminCatalog";
+import { promotionStatus, type Promotion, type PromotionLifecycle } from "../../data/adminPromotions";
+import { usePromotions } from "../../lib/adminPromotions";
 import { useAdminCatalog } from "../../lib/adminCatalog";
 import { validatePromotion, type PromotionSort } from "../../lib/promotionRules";
 import { CodeTag, DiscountChip, PromotionStatusBadge, PromotionTypeLabel, useDiscountLabel, usePromoDates } from "./PromoBadges";
@@ -56,7 +56,8 @@ const head =
 export function useScopeLabel() {
   const { t } = useTranslation();
   const l = useLocalized();
-  const { products } = useAdminCatalog();
+  const { products, categoryById } = useAdminCatalog();
+  const { collections, segments } = usePromotions();
   return (p: Promotion) => {
     const e = p.eligibility;
     const d = p.discount;
@@ -78,16 +79,16 @@ export function useScopeLabel() {
             : t("promo.scope.products", { count: e.productIds.length });
         break;
       case "categories":
-        scope = e.categoryIds.map((id) => l(categoryById(id as CategoryId).name)).join(", ") || t("promo.scope.none");
+        scope = e.categoryIds.map((id) => l(categoryById(id).name)).join(", ") || t("promo.scope.none");
         break;
       case "collections":
-        scope = e.collectionIds.map((id) => l(COLLECTIONS.find((c) => c.id === id)?.name ?? { fr: id, en: id })).join(", ") || t("promo.scope.none");
+        scope = e.collectionIds.map((id) => l(collections.find((c) => c.id === id)?.name ?? { fr: "—", en: "—" })).join(", ") || t("promo.scope.none");
         break;
     }
     if (e.customers === "new") return `${scope} · ${t("promo.customers.new")}`;
     if (e.customers === "existing") return `${scope} · ${t("promo.customers.existing")}`;
     if (e.customers === "segments")
-      return `${scope} · ${e.segmentIds.map((id) => l(SEGMENTS.find((s) => s.id === id)?.name ?? { fr: id, en: id })).join(", ")}`;
+      return `${scope} · ${e.segmentIds.map((id) => segments.find((s) => s.id === id)?.name ?? "—").join(", ")}`;
     return scope;
   };
 }

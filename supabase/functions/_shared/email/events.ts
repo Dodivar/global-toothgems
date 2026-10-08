@@ -139,7 +139,11 @@ export function sendShippingEmails(
         variables: { first_name: parcel.firstName, order_number: parcel.orderNumber, tracking_url: link },
         eventKey: `shipping:${parcel.shipmentId}`,
         orderId: parcel.orderId,
-        content: (locale) => shippingContent({ orderNumber: parcel.orderNumber, trackingLink: link }, locale),
+        content: (locale) => shippingContent(
+          { orderNumber: parcel.orderNumber, trackingLink: link, userId: parcel.userId },
+          locale,
+          deps.layout.siteUrl,
+        ),
       });
     }, log)
   );

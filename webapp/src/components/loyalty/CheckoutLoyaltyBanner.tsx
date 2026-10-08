@@ -44,7 +44,14 @@ export function CheckoutLoyaltyBanner({
   /** Value of the shop goods in the basket, major units. */
   subtotal: number;
   /** Spending the completed card on this order: the choice, its estimated saving, and where it is changed. */
-  reward: { checked: boolean; saving: number; onChange: (checked: boolean) => void; disabled?: boolean };
+  reward: {
+    checked: boolean;
+    saving: number;
+    onChange: (checked: boolean) => void;
+    disabled?: boolean;
+    /** How the reward combines with promotions, said under the checkbox. */
+    hint?: string;
+  };
   className?: string;
 }) {
   const { formatPrice } = useFormat();
@@ -190,6 +197,7 @@ export function CheckoutLoyaltyBanner({
                 />
                 {t("loyalty.checkout.use", { percent })}
               </label>
+              {spending.hint && <p className="m-0 text-[length:var(--text-caption)] text-[var(--text-muted)]">{spending.hint}</p>}
               {spending.checked && (
                 <p role="status" className="m-0 text-[length:var(--text-caption)] text-[var(--text-muted)]">
                   {t("loyalty.checkout.saving", { amount: formatPrice(spending.saving) })}
