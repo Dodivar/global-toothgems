@@ -10,8 +10,9 @@ import { AdminHeader } from "../../components/admin/AdminHeader";
 import { ConfirmationDialog } from "../../components/admin/ConfirmationDialog";
 import { usePromotions } from "../../lib/adminPromotions";
 import { useToast } from "../../lib/toast";
-import { codeTaken as isCodeTaken, validatePromotion } from "../../lib/promotionRules";
-import { blankPromotion, NOW_TIME, promotionStatus, toTime, type Promotion } from "../../data/adminPromotions";
+import { useNow } from "../../lib/useNow";
+import { codeTaken as isCodeTaken, draftIssues, validatePromotion } from "../../lib/promotionRules";
+import { blankPromotion, promotionStatus, toTime, type Promotion } from "../../data/adminPromotions";
 import {
   BasicsSection,
   CodeSection,
@@ -21,7 +22,7 @@ import {
   UsageSection,
 } from "../../components/promotions/EditorSections";
 import { CodeTag, DiscountChip, PromotionStatusBadge, useDiscountLabel, usePromoDates } from "../../components/promotions/PromoBadges";
-import { Notice, PrototypeBar } from "../../components/promotions/PromoUi";
+import { Notice } from "../../components/promotions/PromoUi";
 import { PreviewFrame, PreviewProductCard, usePreviewProduct } from "../../components/promotions/StorefrontPreviews";
 import { useScopeLabel } from "../../components/promotions/PromotionsTable";
 import { PromoEmpty } from "../../components/promotions/PromoEmpty";
@@ -106,7 +107,8 @@ function EditorForm({ initial, isNew }: { initial: Promotion; isNew: boolean }) 
   const product = usePreviewProduct(draft);
   const campaign = draft.campaignId ? store.getCampaign(draft.campaignId) : null;
 
-  const startsInFuture = toTime(draft.schedule.startsAt) > NOW_TIME;
+  const now = useNow();
+  const startsInFuture = toTime(draft.schedule.startsAt, draft.schedule.timezone) > now;
   const publishLabel = startsInFuture ? t("promo.editor.schedulePublish") : t("promo.editor.activate");
   const currentStatus = promotionStatus(draft);
 
@@ -117,11 +119,14 @@ function EditorForm({ initial, isNew }: { initial: Promotion; isNew: boolean }) 
   };
 
   const save = async (mode: "draft" | "publish") => {
-    if (mode === "draft" && !draft.name.trim()) {
-      setShowErrors(true);
-      jump("basics");
-      showToast(t("promo.editor.toast.nameNeeded"), undefined, "error");
-      return;
+    if (mode === "draft") {
+      const required = draftIssues(issues);
+      if (required.length > 0) {
+        setShowErrors(true);
+        jump(required[0].section);
+        showToast(t("promo.editor.toast.draftNeeds"), t("promo.editor.toast.fixBody"), "error");
+        return;
+      }
     }
     if (mode === "publish" && blocking > 0) {
       setShowErrors(true);
@@ -136,6 +141,8 @@ function EditorForm({ initial, isNew }: { initial: Promotion; isNew: boolean }) 
       lifecycle: mode === "draft" ? (isNew ? "draft" : draft.lifecycle === "live" ? "live" : draft.lifecycle) : "live",
     });
     setSaving(null);
+    // Refused (already reported by the store): the form stays as it is.
+    if (!saved) return;
     setDirty(false);
     showToast(
       mode === "draft"
@@ -181,7 +188,6 @@ function EditorForm({ initial, isNew }: { initial: Promotion; isNew: boolean }) 
       />
 
       <div className="grid grid-cols-[minmax(0,1fr)] gap-5 px-[var(--admin-gutter)] pb-28 pt-5 md:pb-[clamp(32px,5vw,56px)]">
-        <PrototypeBar showModes={false} />
 
         {showErrors && blocking > 0 && (
           <Notice tone="error" title={t("promo.editor.invalidTitle", { count: blocking })}>

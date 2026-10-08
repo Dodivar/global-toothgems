@@ -59,6 +59,7 @@ export function buildCheckoutRequest(
   locale: "fr" | "en",
   giftCardCodes: string[] = [],
   useLoyaltyReward = false,
+  promotionCodes: string[] = [],
 ): CheckoutRequest | null {
   const items = checkoutItems(lines);
   if (!items || items.length === 0) return null;
@@ -77,6 +78,7 @@ export function buildCheckoutRequest(
     locale,
     // Codes go as typed (normalised); the function and the database decide what they cover.
     ...(giftCardCodes.length > 0 ? { gift_card_codes: giftCardCodes } : {}),
+    ...(promotionCodes.length > 0 ? { promotion_codes: promotionCodes } : {}),
     ...(useLoyaltyReward ? { use_loyalty_reward: true } : {}),
   };
 }

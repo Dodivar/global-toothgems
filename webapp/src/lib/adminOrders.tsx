@@ -9,7 +9,18 @@ import {
   type AdminOrderRow,
   type OrderNoteRow,
 } from "./adminOrderMapping";
+import {
+  cancelRefund as cancelRefundRequest,
+  createShipment,
+  requestRefund,
+  setShipmentStatus,
+  type FulfillmentResult,
+  type ParcelChange,
+  type ParcelInput,
+  type RefundInput,
+} from "./adminFulfillment";
 import { isSupabaseConfigured, requireSupabase } from "./supabase/client";
+import type { OrderParcel } from "../data/orders";
 import { useToast } from "./toast";
 
 /**
@@ -24,10 +35,13 @@ import { useToast } from "./toast";
  * under `manage_orders`; the database's triggers apply stock, loyalty and
  * audit-log effects.
  *
- * Refunds are not offered: a refund is a Stripe API call whose webhook — not
- * the browser — records the new state (`AGENTS.md` §7–8). For the same
- * reason, cancelling (or marking refunded) an order whose money is held is
- * refused here: it would claim a refund that nobody made.
+ * Parcels (`createParcel`, `changeParcel`) and card refunds (`refund`,
+ * `cancelRefund`) go through `adminFulfillment.ts`. A refund is a Stripe API
+ * call whose verified webhook — not the browser — records the new state
+ * (`AGENTS.md` §7–8): it shows as pending here until then. For the same
+ * reason, cancelling an order whose money is held is refused: refund it first.
+ * The status dialog no longer sets "shipped", "delivered" or "refunded" by
+ * hand: parcels and refunds drive them.
  *
  * Without Supabase (local mock mode) the book is empty: the order book is a
  * live domain, and the back office never shows invented orders.
@@ -36,8 +50,6 @@ import { useToast } from "./toast";
 /** What a status change implies for fulfilment, so the two never disagree. */
 const FULFILLMENT_FOR: Partial<Record<AdminOrderStatus, FulfillmentStatus>> = {
   processing: "preparing",
-  shipped: "fulfilled",
-  delivered: "fulfilled",
 };
 
 /** PostgREST answers at most this many rows per request (Supabase `max_rows`). */
@@ -63,6 +75,11 @@ export interface AdminOrdersContextValue {
   cancel: (reference: string) => boolean;
   cancelMany: (references: string[]) => boolean;
   addNote: (reference: string, body: string, author: string) => boolean;
+  /** Parcels and refunds: answer with the reason when refused, and re-read the book either way. */
+  createParcel: (reference: string, input: ParcelInput) => Promise<FulfillmentResult>;
+  changeParcel: (parcel: OrderParcel, change: ParcelChange) => Promise<FulfillmentResult>;
+  refund: (reference: string, input: RefundInput) => Promise<FulfillmentResult>;
+  cancelRefund: (refundId: string) => Promise<FulfillmentResult>;
 }
 
 const AdminOrdersContext = createContext<AdminOrdersContextValue | null>(null);
@@ -227,6 +244,41 @@ function SupabaseAdminOrdersProvider({ children }: { children: ReactNode }) {
     [rowsOf, write],
   );
 
+  /** Runs a fulfilment write, then re-reads the book whatever the answer was. */
+  const settle = useCallback(
+    async (run: () => Promise<FulfillmentResult>): Promise<FulfillmentResult> => {
+      try {
+        return await run();
+      } catch (error) {
+        console.error("[admin orders] fulfilment write failed", error);
+        return { ok: false, error: "unavailable" };
+      } finally {
+        reload();
+      }
+    },
+    [reload],
+  );
+
+  const createParcel = useCallback(
+    (reference: string, input: ParcelInput) => {
+      const row = rowsOf([reference])[0];
+      return row ? settle(() => createShipment(row.id, input)) : Promise.resolve<FulfillmentResult>({ ok: false, error: "notFound" });
+    },
+    [rowsOf, settle],
+  );
+  const changeParcel = useCallback(
+    (parcel: OrderParcel, change: ParcelChange) => settle(() => setShipmentStatus(parcel.id, change)),
+    [settle],
+  );
+  const refund = useCallback(
+    (reference: string, input: RefundInput) => {
+      const row = rowsOf([reference])[0];
+      return row ? settle(() => requestRefund(row.id, input)) : Promise.resolve<FulfillmentResult>({ ok: false, error: "notFound" });
+    },
+    [rowsOf, settle],
+  );
+  const cancelRefund = useCallback((refundId: string) => settle(() => cancelRefundRequest(refundId)), [settle]);
+
   const value = useMemo<AdminOrdersContextValue>(
     () => ({
       orders,
@@ -239,8 +291,12 @@ function SupabaseAdminOrdersProvider({ children }: { children: ReactNode }) {
       cancel,
       cancelMany,
       addNote,
+      createParcel,
+      changeParcel,
+      refund,
+      cancelRefund,
     }),
-    [orders, book, failed, reload, setStatus, setStatusMany, cancel, cancelMany, addNote],
+    [orders, book, failed, reload, setStatus, setStatusMany, cancel, cancelMany, addNote, createParcel, changeParcel, refund, cancelRefund],
   );
 
   return <AdminOrdersContext.Provider value={value}>{children}</AdminOrdersContext.Provider>;
@@ -259,6 +315,10 @@ const EMPTY_BOOK: AdminOrdersContextValue = {
   cancel: refused,
   cancelMany: refused,
   addNote: refused,
+  createParcel: () => Promise.resolve({ ok: false, error: "unavailable" }),
+  changeParcel: () => Promise.resolve({ ok: false, error: "unavailable" }),
+  refund: () => Promise.resolve({ ok: false, error: "unavailable" }),
+  cancelRefund: () => Promise.resolve({ ok: false, error: "unavailable" }),
 };
 
 /** No Supabase configured: no orders exist, and none are invented. */

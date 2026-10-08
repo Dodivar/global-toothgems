@@ -7,7 +7,6 @@ import {
   CircleAlert,
   CircleCheck,
   Copy,
-  FlaskConical,
   Info,
   RotateCw,
   TriangleAlert,
@@ -19,9 +18,6 @@ import { AdminButton } from "../admin/AdminButton";
 import { AdminPortal } from "../admin/AdminSheet";
 import { Sparkline } from "../admin/stats/Sparkline";
 import { useFocusTrap } from "../../lib/useFocusTrap";
-import { usePromotions, type PromoDemoMode } from "../../lib/adminPromotions";
-import { PROMO_NOW } from "../../data/adminPromotions";
-import { usePromoDates } from "./PromoBadges";
 
 const focusRing =
   "focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-[var(--focus-ring)]";
@@ -764,40 +760,6 @@ export function ErrorPanel({ title, body, onRetry, retryLabel }: { title: string
       <AdminButton variant="dark" iconLeft={RotateCw} onClick={onRetry}>
         {retryLabel}
       </AdminButton>
-    </div>
-  );
-}
-
-/**
- * Prototype controls. Visible and labelled as such — like the loyalty and
- * community demo switches — so a reviewer can reach the empty and error states
- * without anyone mistaking the switch for a product feature.
- */
-export function PrototypeBar({ showModes = true }: { showModes?: boolean }) {
-  const { t } = useTranslation();
-  const { demoMode, setDemoMode } = usePromotions();
-  const { dateLong } = usePromoDates();
-  const modes: PromoDemoMode[] = ["live", "empty", "error"];
-
-  return (
-    <div className="flex flex-wrap items-center gap-x-4 gap-y-2 rounded-[var(--admin-radius)] border border-dashed border-[var(--gt-blue-400)] bg-[var(--gt-blue-50)] px-3.5 py-2 text-[length:var(--text-caption)] text-[var(--gt-blue-700)]">
-      <span className="inline-flex items-center gap-1.5 font-semibold">
-        <FlaskConical size={14} aria-hidden="true" />
-        {t("promo.proto.label")}
-      </span>
-      <span>{t("promo.proto.today", { date: dateLong(PROMO_NOW) })}</span>
-      {showModes && (
-        <div className="ml-auto">
-          <Segmented
-            label={t("promo.proto.simulate")}
-            hideLabel
-            size="sm"
-            value={demoMode}
-            onChange={setDemoMode}
-            options={modes.map((m) => ({ value: m, label: t(`promo.proto.mode.${m}`) }))}
-          />
-        </div>
-      )}
     </div>
   );
 }

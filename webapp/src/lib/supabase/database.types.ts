@@ -805,7 +805,7 @@ export type Database = {
       contact_requests: {
         Row: {
           assigned_to: string | null
-          attachment_path: string | null
+          attachment_paths: string[]
           category: string
           created_at: string
           email: string
@@ -827,7 +827,7 @@ export type Database = {
         }
         Insert: {
           assigned_to?: string | null
-          attachment_path?: string | null
+          attachment_paths?: string[]
           category: string
           created_at?: string
           email: string
@@ -849,7 +849,7 @@ export type Database = {
         }
         Update: {
           assigned_to?: string | null
-          attachment_path?: string | null
+          attachment_paths?: string[]
           category?: string
           created_at?: string
           email?: string
@@ -4751,6 +4751,24 @@ export type Database = {
           },
         ]
       }
+      promotion_code_attempts: {
+        Row: {
+          actor: string
+          created_at: string
+          id: number
+        }
+        Insert: {
+          actor: string
+          created_at?: string
+          id?: never
+        }
+        Update: {
+          actor?: string
+          created_at?: string
+          id?: never
+        }
+        Relationships: []
+      }
       promotion_codes: {
         Row: {
           code: string
@@ -5039,6 +5057,7 @@ export type Database = {
           campaign_id: string | null
           code_kind: string | null
           combinable: boolean
+          combinable_with_loyalty: boolean
           created_at: string
           created_by: string | null
           currency: string
@@ -5076,6 +5095,7 @@ export type Database = {
           campaign_id?: string | null
           code_kind?: string | null
           combinable?: boolean
+          combinable_with_loyalty?: boolean
           created_at?: string
           created_by?: string | null
           currency?: string
@@ -5113,6 +5133,7 @@ export type Database = {
           campaign_id?: string | null
           code_kind?: string | null
           combinable?: boolean
+          combinable_with_loyalty?: boolean
           created_at?: string
           created_by?: string | null
           currency?: string
@@ -7196,6 +7217,14 @@ export type Database = {
           },
         ]
       }
+      promotion_daily_usage: {
+        Row: {
+          day: string | null
+          promotion_id: string | null
+          uses: number | null
+        }
+        Relationships: []
+      }
       promotion_overview: {
         Row: {
           activation: string | null
@@ -7403,10 +7432,12 @@ export type Database = {
         Args: { p_entitlement_id: string }
         Returns: undefined
       }
+      admin_save_campaign: { Args: { p: Json }; Returns: string }
       admin_save_course: { Args: { p_course: Json }; Returns: Json }
       admin_save_gem_color: { Args: { p_color: Json }; Returns: Json }
       admin_save_languages: { Args: { p_languages: Json }; Returns: undefined }
       admin_save_product: { Args: { p_product: Json }; Returns: Json }
+      admin_save_promotion: { Args: { p: Json }; Returns: string }
       admin_save_product_recommendations: {
         Args: {
           p_complementary: string[]
@@ -7494,6 +7525,10 @@ export type Database = {
         }[]
       }
       complete_course_step: { Args: { p_step_id: string }; Returns: Json }
+      contact_ip_allowed: {
+        Args: { p_ip_hash: string }
+        Returns: boolean
+      }
       consume_inventory: {
         Args: { p_inventory_item_id: string; p_quantity: number }
         Returns: {
@@ -7574,6 +7609,40 @@ export type Database = {
         SetofOptions: {
           from: "*"
           to: "orders"
+          isOneToOne: true
+          isSetofReturn: false
+        }
+      }
+      create_shipment: {
+        Args: {
+          p_carrier?: string
+          p_estimated_delivery?: string
+          p_items: Json
+          p_order_id: string
+          p_service?: string
+          p_status?: string
+          p_tracking_number?: string
+          p_tracking_url?: string
+        }
+        Returns: {
+          carrier: string | null
+          created_at: string
+          created_by: string | null
+          delivered_at: string | null
+          estimated_delivery: string | null
+          id: string
+          order_id: string
+          service: string | null
+          shipped_at: string | null
+          status: string
+          tracking_number: string | null
+          tracking_url: string | null
+          updated_at: string
+          updated_by: string | null
+        }
+        SetofOptions: {
+          from: "*"
+          to: "shipments"
           isOneToOne: true
           isSetofReturn: false
         }
@@ -7754,6 +7823,17 @@ export type Database = {
         Returns: Json
       }
       newsletter_unsubscribe: { Args: { p_token: string }; Returns: boolean }
+      quote_basket: {
+        Args: {
+          p_currency?: string
+          p_items: Json
+          p_locale?: string
+          p_promotion_codes?: string[]
+          p_shipping_rate_id?: string
+          p_use_loyalty_reward?: boolean
+        }
+        Returns: Json
+      }
       recommended_products: {
         Args: { p_kind?: string; p_limit?: number; p_product_ids?: string[] }
         Returns: {
@@ -7761,6 +7841,36 @@ export type Database = {
           rank: number
           source: string
         }[]
+      }
+      record_external_refund: {
+        Args: {
+          p_amount: number
+          p_currency: string
+          p_provider_payment_id: string
+          p_provider_refund_id: string
+        }
+        Returns: {
+          amount: number
+          created_at: string
+          currency: string
+          failure_reason: string | null
+          id: string
+          order_id: string
+          payment_id: string
+          processed_at: string | null
+          provider_refund_id: string | null
+          reason: string
+          requested_by: string | null
+          restock: boolean
+          status: string
+          updated_at: string
+        }
+        SetofOptions: {
+          from: "*"
+          to: "refunds"
+          isOneToOne: true
+          isSetofReturn: false
+        }
       }
       record_gift_card_delivery: {
         Args: { p_gift_card_id: string; p_new_email?: string; p_status: string }
@@ -7843,6 +7953,39 @@ export type Database = {
           isSetofReturn: false
         }
       }
+      set_shipment_status: {
+        Args: {
+          p_carrier?: string
+          p_estimated_delivery?: string
+          p_service?: string
+          p_shipment_id: string
+          p_status: string
+          p_tracking_number?: string
+          p_tracking_url?: string
+        }
+        Returns: {
+          carrier: string | null
+          created_at: string
+          created_by: string | null
+          delivered_at: string | null
+          estimated_delivery: string | null
+          id: string
+          order_id: string
+          service: string | null
+          shipped_at: string | null
+          status: string
+          tracking_number: string | null
+          tracking_url: string | null
+          updated_at: string
+          updated_by: string | null
+        }
+        SetofOptions: {
+          from: "*"
+          to: "shipments"
+          isOneToOne: true
+          isSetofReturn: false
+        }
+      }
       shipping_zone_for_country: {
         Args: { p_country_code: string }
         Returns: string
@@ -7885,7 +8028,7 @@ export type Database = {
       }
       submit_contact_request: {
         Args: {
-          p_attachment_path?: string
+          p_attachment_paths?: string[]
           p_category: string
           p_email: string
           p_locale?: string

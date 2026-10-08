@@ -69,7 +69,9 @@ export function ItemsCell({ order, className }: { order: AdminOrder; className?:
             className="grid h-8 w-8 place-items-center overflow-hidden rounded-[var(--radius-sm)] border border-[var(--border-subtle)] bg-[var(--surface-sunken)]"
             style={{ marginLeft: index === 0 ? 0 : -10, zIndex: shown.length - index }}
           >
-            {line.courseId ? (
+            {line.giftCardDesign ? (
+              <span data-design={line.giftCardDesign} className="gt-giftcard h-full w-full !rounded-none !border-0 !shadow-none" />
+            ) : line.courseId ? (
               <GraduationCap size={14} className="text-[var(--gt-blue-700)]" />
             ) : line.image ? (
               <img src={line.image} alt="" loading="lazy" className="h-full w-full object-cover" />

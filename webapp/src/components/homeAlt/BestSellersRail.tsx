@@ -10,6 +10,7 @@ import { pick } from "../../data/types";
 import type { Product } from "../../data/products";
 import { useCatalog } from "../../lib/catalog/CatalogProvider";
 import { useFavorites } from "../../lib/favorites";
+import { useStorefrontOffers } from "../../lib/useStorefrontOffers";
 import { useReveal } from "../../lib/useReveal";
 import { useScrollRail } from "./useScrollRail";
 
@@ -38,6 +39,7 @@ export function BestSellersRail() {
   const navigate = useNavigate();
   const { isFavorite, toggleFavorite } = useFavorites();
   const { products, source } = useCatalog();
+  const { offerFor } = useStorefrontOffers();
   const lang = i18n.language;
   const ref = useReveal<HTMLElement>();
   const { ref: railRef, atStart, atEnd, page } = useScrollRail<HTMLUListElement>();
@@ -101,6 +103,7 @@ export function BestSellersRail() {
                     badgeTone: i < 2 ? "ink" : p.badgeTone,
                     variants: p.variants,
                     stock: p.stock ?? "in",
+                    offer: offerFor({ dbId: p.dbId, cat: p.cat, currency: p.currency ?? "EUR", compareAtPrice: p.compareAtPrice }),
                   }}
                 />
               </li>

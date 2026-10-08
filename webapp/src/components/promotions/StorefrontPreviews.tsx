@@ -5,6 +5,7 @@ import clsx from "clsx";
 import { useAdminCatalog } from "../../lib/adminCatalog";
 import { useLocalized } from "../../lib/localized";
 import { coveredProductIds, discountedUnitCents } from "../../lib/promotionRules";
+import { usePromotions } from "../../lib/adminPromotions";
 import { daysFromNow, type Campaign, type Promotion } from "../../data/adminPromotions";
 import type { AdminProduct } from "../../data/adminCatalog";
 import { useDiscountLabel, useMoney } from "./PromoBadges";
@@ -64,9 +65,10 @@ export function ShopBadge({ children, tone = "highlight" }: { children: ReactNod
 /** The product a preview should use: the first covered one, else the first active product. */
 export function usePreviewProduct(promotion: Promotion | null): AdminProduct | undefined {
   const { products } = useAdminCatalog();
+  const { collections } = usePromotions();
   const byCategory = useProductsByCategory();
   if (!promotion) return products.find((p) => p.status === "active");
-  const covered = coveredProductIds(promotion, byCategory);
+  const covered = coveredProductIds(promotion, byCategory, collections);
   const first = covered?.map((id) => products.find((p) => p.id === id)).find(Boolean);
   return first ?? products.find((p) => p.status === "active");
 }
@@ -253,7 +255,7 @@ function buildCart(promotion: Promotion, products: AdminProduct[], main: AdminPr
   if (lines.length === 0) lines.push({ product: main, qty: 1, unitCents: toCents(main.price) });
 
   const subtotal = lines.reduce((s, l) => s + l.qty * l.unitCents, 0);
-  const min = d.minOrderCents ?? promotion.eligibility.minCartCents ?? 0;
+  const min = promotion.eligibility.minCartCents ?? 0;
   const qualifies = subtotal >= min;
   let discountCents = 0;
   let shipping = subtotal >= 8000 ? 0 : STANDARD_SHIPPING_CENTS;

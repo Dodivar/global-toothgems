@@ -8,7 +8,7 @@ import { AdminHeader } from "../../components/admin/AdminHeader";
 import { AdminSelect } from "../../components/admin/AdminSelect";
 import { usePromotions } from "../../lib/adminPromotions";
 import { campaignStatus, promotionStatus } from "../../data/adminPromotions";
-import { Notice, Panel, PrototypeBar, Segmented } from "../../components/promotions/PromoUi";
+import { Notice, Panel, Segmented } from "../../components/promotions/PromoUi";
 import { PromotionStatusBadge, useDiscountLabel } from "../../components/promotions/PromoBadges";
 import {
   PreviewCampaignLanding,
@@ -84,7 +84,6 @@ export function PromotionPreview() {
     <>
       {header}
       <div className="grid grid-cols-[minmax(0,1fr)] gap-5 px-[var(--admin-gutter)] pb-[clamp(32px,5vw,56px)] pt-5">
-        <PrototypeBar showModes={false} />
 
         <section className="gt-admin-panel grid gap-4 p-4 md:grid-cols-[minmax(0,1.3fr)_minmax(0,1fr)_auto] md:items-end">
           <label className="grid grid-cols-[minmax(0,1fr)] gap-1">

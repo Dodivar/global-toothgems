@@ -19,6 +19,9 @@ import { useFormat } from "../lib/format";
 import { useCart } from "../lib/cart";
 import { useFavorites } from "../lib/favorites";
 import { useReveal } from "../lib/useReveal";
+import { OfferNotice } from "../components/shop/OfferNotice";
+import { offerPrice } from "../lib/storefrontOffers";
+import { useProductOffer, useStorefrontOffers } from "../lib/useStorefrontOffers";
 import { useCatalog } from "../lib/catalog/CatalogProvider";
 import { toMinorUnits } from "../lib/catalog/money";
 import { useTaxonomy } from "../lib/catalog/useTaxonomy";
@@ -99,6 +102,10 @@ function ProductView({ product }: { product: Product }) {
   const colorVariants = variants.length > 0 && variants.every((v) => v.swatch);
   const unitPrice = variant?.price ?? product.price;
   const compareAtPrice = variant ? variant.compareAtPrice : product.compareAtPrice;
+  // The running campaign and promotion of this product, and the price they leave (the cart is quoted by the database).
+  const { offerFor } = useStorefrontOffers();
+  const offer = useProductOffer({ dbId: product.dbId, cat: product.cat, currency: product.currency, compareAtPrice });
+  const shown = offerPrice(unitPrice, compareAtPrice, offer);
   const stock = variant ? variant.stock : product.stock;
 
   const [shade, setShade] = useState(SHADES[0]);
@@ -312,12 +319,13 @@ function ProductView({ product }: { product: Product }) {
               {material && <span aria-hidden="true">· {material}{center !== material ? `, ${center}` : ""}</span>}
             </span>
             <div className="flex items-baseline gap-3">
-              <strong className="text-[28px] font-bold text-[var(--text-primary)]">{formatPrice(unitPrice)}</strong>
-              {compareAtPrice && (
-                <span className="text-sm text-[var(--text-subtle)] line-through">{formatPrice(compareAtPrice)}</span>
+              <strong className={`text-[28px] font-bold ${offer?.promotion?.priceOffPercent ? "text-[var(--accent-highlight-ink)]" : "text-[var(--text-primary)]"}`}>{formatPrice(shown.price)}</strong>
+              {shown.was !== undefined && (
+                <span className="text-sm text-[var(--text-subtle)] line-through">{formatPrice(shown.was)}</span>
               )}
               <span className="text-sm text-[var(--text-muted)]">{t("product.installment", { amount: installment })}</span>
             </div>
+            <OfferNotice offer={offer} />
             {/* Shade is a swatch radio group rather than a dropdown: colour is the
                 decision here, and a <select> hides the options behind a click. */}
             {gemPicker && <GemOptionPicker variants={variants} selected={variant} onSelect={selectVariant} />}
@@ -520,6 +528,7 @@ function ProductView({ product }: { product: Product }) {
                   hoverImage: p.gallery?.[1]?.src,
                   variants: p.variants,
                   stock: p.stock,
+                  offer: offerFor({ dbId: p.dbId, cat: p.cat, currency: p.currency ?? "EUR", compareAtPrice: p.compareAtPrice }),
                 }}
               />
             ))}
