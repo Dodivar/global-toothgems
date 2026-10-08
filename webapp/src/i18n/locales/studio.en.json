@@ -399,7 +399,12 @@
       "loading": "Loading the shop's gems…",
       "error": "The shop's gems could not be loaded.",
       "retry": "Try again",
-      "otherGems": "Other jewellery"
+      "otherGems": "Other jewellery",
+      "shapesLabel": "Filter by shape",
+      "allShapes": "All",
+      "foldAll": "Collapse every shape",
+      "unfoldAll": "Expand every shape",
+      "showAllShapes": "Show every shape"
     },
     "viewport": {
       "label": "3D view of the dental arch",
@@ -443,7 +448,16 @@
         "selectAll": "Select all",
         "collapse": "Collapse the error list",
         "expand": "Show the error list"
-      }
+      },
+      "multi": "Select",
+      "multiHint": "Multi-select: tap gems one by one to add or remove them (or hold a finger on a gem)",
+      "multiActive_one": "{{count}} selected",
+      "multiActive_other": "{{count}} selected",
+      "multiDone": "Done",
+      "selectIdentical": "+ Identical",
+      "selectIdenticalHint": "Add every identical gem (same gem, colour and size)",
+      "lassoActiveAdd": "Draw around the pieces to add to the selection",
+      "multiPrompt": "Tap the gems to add"
     },
     "views": {
       "label": "Camera",
@@ -668,6 +682,18 @@
       }
     },
     "pieceUnavailable": "Gem no longer in the shop",
-    "shopPrice": "Shop price: {{price}}"
+    "shopPrice": "Shop price: {{price}}",
+    "panels": {
+      "library": {
+        "name": "Gems",
+        "show": "Show the library",
+        "hide": "Hide the library"
+      },
+      "inspector": {
+        "name": "Settings",
+        "show": "Show the settings",
+        "hide": "Hide the settings"
+      }
+    }
   }
 }
