@@ -18,6 +18,9 @@ project_id = "global-toothgems"
 #   newsletter confirmation), not a browser; same shared secret.
 # - send-pending-emails: called by pg_cron (shipping, course enrolment and
 #   refund e-mails), not a browser; same shared secret.
+# - submit-contact-request: the contact form is open to visitors, who call it with the
+#   publishable key (not a JWT); a member's token is verified inside the function
+#   (auth.getUser). Honeypot, per-address and per-account/e-mail throttles stand in for a captcha.
 # - resend-webhook: Resend sends no Supabase token; the Svix signature
 #   (RESEND_WEBHOOK_SECRET, five-minute tolerance) is the authentication.
 [functions.create-checkout-session]
@@ -39,4 +42,12 @@ verify_jwt = false
 verify_jwt = false
 
 [functions.invite-staff-member]
+verify_jwt = false
+
+# Staff-only: the caller's JWT is checked inside the function (like invite-staff-member)
+# and the database enforces `manage_orders` on every write.
+[functions.refund-order]
+verify_jwt = false
+
+[functions.submit-contact-request]
 verify_jwt = false

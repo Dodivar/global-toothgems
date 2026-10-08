@@ -19,6 +19,7 @@ import {
 } from "lucide-react";
 import type { LucideIcon } from "lucide-react";
 import { Button } from "../ui/Button";
+import { OrderLineThumb } from "../account/OrderLineThumb";
 import { Badge, type BadgeTone } from "../ui/Badge";
 import {
   customerInitials,
@@ -33,6 +34,20 @@ import { countryLabelKey } from "../../data/countries";
 import { useFormat } from "../../lib/format";
 import { pick } from "../../data/types";
 import { PaymentStatusBadge } from "./StatusBadges";
+import { canCreateParcel, canRefund } from "../../lib/fulfillmentPlan";
+
+/** What the order desk can do to a parcel; the screen decides what each one opens or calls. */
+export type ParcelAction = "ship" | "edit" | "delivered" | "returned" | "lost" | "cancelled";
+
+/** Forward-only, as the database allows it (`set_shipment_status`). */
+const PARCEL_ACTIONS: Record<OrderParcel["status"], ParcelAction[]> = {
+  preparing: ["ship", "edit", "cancelled"],
+  shipped: ["delivered", "edit", "returned", "lost"],
+  delivered: ["returned"],
+  returned: [],
+  lost: [],
+  cancelled: [],
+};
 
 /**
  * The cards of the order detail page.
@@ -221,6 +236,9 @@ export function ItemsCard({ order }: { order: AdminOrder }) {
               key={line.id}
               className="flex flex-wrap items-center gap-3 border-b border-[var(--border-subtle)] py-3 first:pt-0 last:border-b-0 last:pb-0"
             >
+              {line.giftCardDesign ? (
+                <OrderLineThumb line={line} size={56} />
+              ) : (
               <span className="grid h-14 w-14 flex-none place-items-center overflow-hidden rounded-[var(--radius-sm)] border border-[var(--border-subtle)] bg-[var(--surface-sunken)]">
                 {line.courseId ? (
                   <GraduationCap size={20} className="text-[var(--gt-blue-700)]" aria-hidden="true" />
@@ -230,6 +248,7 @@ export function ItemsCard({ order }: { order: AdminOrder }) {
                   <Package size={20} className="text-[var(--text-subtle)]" aria-hidden="true" />
                 )}
               </span>
+              )}
 
               <span className="grid min-w-[140px] flex-1 gap-0.5">
                 {to ? (
@@ -404,7 +423,16 @@ const PARCEL_TONE: Record<OrderParcel["status"], BadgeTone> = {
   cancelled: "neutral",
 };
 
-export function ShippingCard({ order }: { order: AdminOrder }) {
+export function ShippingCard({
+  order,
+  onCreateParcel,
+  onParcelAction,
+}: {
+  order: AdminOrder;
+  /** Offered when the order has a unit left to ship. */
+  onCreateParcel?: () => void;
+  onParcelAction?: (parcel: OrderParcel, action: ParcelAction) => void;
+}) {
   const { t, i18n } = useTranslation();
   const lang = i18n.language;
   const f = useOrderFormat(order);
@@ -415,7 +443,17 @@ export function ShippingCard({ order }: { order: AdminOrder }) {
   };
 
   return (
-    <Card title={t("admin.orders.shippingTitle")} icon={MapPin}>
+    <Card
+      title={t("admin.orders.shippingTitle")}
+      icon={MapPin}
+      action={
+        onCreateParcel && canCreateParcel(order) ? (
+          <Button size="sm" variant="outline" iconLeft={Package} onClick={onCreateParcel}>
+            {t("admin.orders.fulfilment.createButton")}
+          </Button>
+        ) : undefined
+      }
+    >
       {digital && (
         <p className="m-0 flex items-start gap-2 rounded-[var(--radius-md)] bg-[var(--surface-brand-wash)] p-3 text-[length:var(--text-body-sm)] text-[var(--gt-blue-700)]">
           <GraduationCap size={15} aria-hidden="true" className="mt-0.5 flex-none" />
@@ -496,6 +534,20 @@ export function ShippingCard({ order }: { order: AdminOrder }) {
                       parcel.estimatedDelivery && <Field label={t("admin.orders.shippingEta")} value={f.day(parcel.estimatedDelivery)} />
                     )}
                   </dl>
+                  {onParcelAction && PARCEL_ACTIONS[parcel.status].length > 0 && (
+                    <div className="flex flex-wrap items-center gap-2 border-t border-[var(--border-subtle)] pt-2">
+                      {PARCEL_ACTIONS[parcel.status].map((action) => (
+                        <Button
+                          key={action}
+                          size="sm"
+                          variant={action === "ship" || action === "delivered" ? "primary" : "outline"}
+                          onClick={() => onParcelAction(parcel, action)}
+                        >
+                          {t(`admin.orders.fulfilment.parcelAction.${action}`)}
+                        </Button>
+                      ))}
+                    </div>
+                  )}
                   {parcel.items.length > 0 && (
                     <div className="grid gap-1">
                       <span className="text-[11px] font-semibold uppercase tracking-[var(--tracking-eyebrow)] text-[var(--text-subtle)]">
@@ -613,14 +665,38 @@ const REFUND_TONE: Record<OrderRefund["status"], BadgeTone> = {
 };
 
 /** Refunds recorded on the order (requested by staff, confirmed by the payment provider's webhook). */
-export function RefundsCard({ order }: { order: AdminOrder }) {
+export function RefundsCard({
+  order,
+  onRefund,
+  onCancelRefund,
+}: {
+  order: AdminOrder;
+  /** Offered while the card can still give money back. */
+  onRefund?: () => void;
+  /** A pending refund Stripe does not hold yet can be withdrawn. */
+  onCancelRefund?: (refund: OrderRefund) => void;
+}) {
   const { t, i18n } = useTranslation();
   const lang = i18n.language;
   const f = useOrderFormat(order);
-  if (order.refunds.length === 0) return null;
+  const offered = Boolean(onRefund) && canRefund(order);
+  if (order.refunds.length === 0 && !offered) return null;
 
   return (
-    <Card title={t("admin.orders.refundsTitle")} icon={RotateCcw}>
+    <Card
+      title={t("admin.orders.refundsTitle")}
+      icon={RotateCcw}
+      action={
+        offered ? (
+          <Button size="sm" variant="outline" iconLeft={RotateCcw} onClick={onRefund}>
+            {t("admin.orders.fulfilment.refundButton")}
+          </Button>
+        ) : undefined
+      }
+    >
+      {order.refunds.length === 0 && (
+        <p className="m-0 text-[length:var(--text-body-sm)] text-[var(--text-muted)]">{t("admin.orders.fulfilment.noRefunds")}</p>
+      )}
       <ul className="m-0 grid list-none gap-3 p-0">
         {order.refunds.map((refund, index) => (
           <li key={index} className="grid gap-2 rounded-[var(--radius-md)] border border-[var(--border-subtle)] p-3">
@@ -635,6 +711,18 @@ export function RefundsCard({ order }: { order: AdminOrder }) {
               <Field label={t("admin.orders.refundRequestedOn")} value={f.day(refund.requestedOn)} />
               {refund.processedOn && <Field label={t("admin.orders.refundProcessedOn")} value={f.day(refund.processedOn)} />}
             </dl>
+            {refund.status === "pending" && (
+              <p className="m-0 text-[length:var(--text-caption)] text-[var(--text-muted)]">
+                {t("admin.orders.fulfilment.refundPendingNote")}
+              </p>
+            )}
+            {refund.status === "pending" && onCancelRefund && refund.id && !refund.sentToProvider && (
+              <div>
+                <Button size="sm" variant="outline" onClick={() => onCancelRefund(refund)}>
+                  {t("admin.orders.fulfilment.refundCancel")}
+                </Button>
+              </div>
+            )}
             {refund.items.length > 0 && (
               <ul className="m-0 grid list-none gap-0.5 p-0 text-[length:var(--text-caption)] text-[var(--text-body)]">
                 {refund.items.map((item) => {

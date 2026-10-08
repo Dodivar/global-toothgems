@@ -43,7 +43,14 @@ begin
              jsonb_build_array(jsonb_build_object('product_id', p_gel, 'quantity', 1)), fr, fr, r_std);
   insert into storage.objects (bucket_id, name, owner) values
     ('contact-attachments', bob::text || '/photo.jpg', bob),
+    ('contact-attachments', bob::text || '/second.jpg', bob),
+    ('contact-attachments', bob::text || '/1.jpg', bob), ('contact-attachments', bob::text || '/2.jpg', bob),
+    ('contact-attachments', bob::text || '/3.jpg', bob), ('contact-attachments', bob::text || '/4.jpg', bob),
+    ('contact-attachments', bob::text || '/5.jpg', bob), ('contact-attachments', bob::text || '/6.jpg', bob),
     ('contact-attachments', 'guest/ticket.pdf', null);
+  insert into storage.objects (bucket_id, name, owner, metadata) values
+    ('contact-attachments', bob::text || '/big1.pdf', bob, '{"size": 12582912}'),
+    ('contact-attachments', bob::text || '/big2.pdf', bob, '{"size": 12582912}');
 
   -- ===========================================================================
   -- C1 who may submit
@@ -105,14 +112,37 @@ begin
     v_state := null;
     begin
       perform public.submit_contact_request('Bob', 'bob7.test@example.invalid', 'product', 'Photo',
-                'Voici une photo du produit reçu abîmé.', null, 'fr', v_txt);
+                'Voici une photo du produit reçu abîmé.', null, 'fr', array[v_txt]);
     exception when others then v_state := sqlstate;
     end;
     if v_state is distinct from '42501' then raise exception 'FAIL C3: attachment % accepted (%)', v_txt, v_state; end if;
   end loop;
   v_ticket := public.submit_contact_request('Bob', 'bob7.test@example.invalid', 'product', 'Photo',
-                'Voici une photo du produit reçu abîmé.', null, 'fr', bob::text || '/photo.jpg');
-  passed := array_append(passed, 'C3 attachments: own uploaded file only');
+                'Voici une photo du produit reçu abîmé.', null, 'fr', array[bob::text || '/photo.jpg']);
+  -- several files: the first of them being someone else's refuses the whole message; more than 5, duplicates and > 20 MB too
+  foreach v_txt in array array['mix', 'six', 'dup', 'big'] loop
+    v_state := null;
+    begin
+      perform public.submit_contact_request('Bob', 'bob7.test@example.invalid', 'product', 'Photos',
+                'Voici plusieurs photos du produit reçu abîmé.', null, 'fr',
+                case v_txt
+                  when 'mix' then array[bob::text || '/photo.jpg', alice::text || '/x.pdf']
+                  when 'six' then array[bob::text || '/1.jpg', bob::text || '/2.jpg', bob::text || '/3.jpg', bob::text || '/4.jpg', bob::text || '/5.jpg', bob::text || '/6.jpg']
+                  when 'dup' then array[bob::text || '/photo.jpg', bob::text || '/photo.jpg']
+                  else array[bob::text || '/big1.pdf', bob::text || '/big2.pdf']
+                end);
+    exception when others then v_state := sqlstate;
+    end;
+    if v_state is null or v_state not in ('42501', '22023') then
+      raise exception 'FAIL C3: attachment set % accepted (%)', v_txt, v_state;
+    end if;
+  end loop;
+  v_ticket := public.submit_contact_request('Bob', 'bob7.test@example.invalid', 'product', 'Photos',
+                'Voici deux photos du produit reçu abîmé.', null, 'fr',
+                array[bob::text || '/photo.jpg', bob::text || '/second.jpg']);
+  select cardinality(attachment_paths) into v_cnt from public.contact_requests where ticket_number = v_ticket;
+  if v_cnt <> 2 then raise exception 'FAIL C3: % attachments recorded', v_cnt; end if;
+  passed := array_append(passed, 'C3 attachments: own uploaded files only, at most 5, no duplicates, 20 MB in all');
 
   -- ===========================================================================
   -- C4 guests through the server (service role)
@@ -120,7 +150,7 @@ begin
   perform set_config('role', 'service_role', true);
   perform set_config('request.jwt.claims', json_build_object('role', 'service_role')::text, true);
   v_ticket := public.submit_contact_request('Bob invité', 'Bob7.Test@example.invalid', 'delivery', 'Colis',
-                'Mon colis n''est pas arrivé, pouvez-vous vérifier ?', o_bob.order_number, 'fr', 'guest/ticket.pdf');
+                'Mon colis n''est pas arrivé, pouvez-vous vérifier ?', o_bob.order_number, 'fr', array['guest/ticket.pdf']);
   select * into v_req from public.contact_requests where ticket_number = v_ticket;
   if v_req.user_id is not null or v_req.order_id <> o_bob.id then raise exception 'FAIL C4: guest order match %', row_to_json(v_req); end if;
   v_ticket := public.submit_contact_request('Eve', 'eve7@example.invalid', 'delivery', 'Colis',
@@ -130,7 +160,7 @@ begin
   v_state := null;
   begin
     perform public.submit_contact_request('Eve', 'eve7@example.invalid', 'other', 'Pièce jointe',
-              'Je joins le fichier d''un membre.', null, 'fr', bob::text || '/photo.jpg');
+              'Je joins le fichier d''un membre.', null, 'fr', array[bob::text || '/photo.jpg']);
   exception when others then v_state := sqlstate;
   end;
   if v_state is distinct from '42501' then raise exception 'FAIL C4: guest used a member file (%)', v_state; end if;

@@ -1,7 +1,7 @@
 import { useCallback, useMemo, useState } from "react";
 import { useTranslation } from "react-i18next";
 import { useNavigate, useSearchParams } from "../../lib/navigation";
-import { Archive, CalendarRange, FolderMinus, FolderPlus, Plus, SearchX, Sparkles, TicketPercent } from "lucide-react";
+import { Archive, CalendarRange, FolderMinus, FolderPlus, Plus, SearchX, TicketPercent } from "lucide-react";
 import { AdminButton } from "../admin/AdminButton";
 import { AdminSelect } from "../admin/AdminSelect";
 import { ConfirmationDialog } from "../admin/ConfirmationDialog";
@@ -54,7 +54,7 @@ export function PromotionsListView({ tab }: { tab: PromotionTab }) {
   const { showToast } = useToast();
   const [params, setParams] = useSearchParams();
   const store = usePromotions();
-  const { promotions, campaigns, loading, demoMode, setDemoMode, campaignName } = store;
+  const { promotions, campaigns, loading, failed, reload, campaignName } = store;
   const byCategory = useProductsByCategory();
 
   const filters = useMemo(() => readFilters(params), [params]);
@@ -87,8 +87,8 @@ export function PromotionsListView({ tab }: { tab: PromotionTab }) {
   };
 
   const filtered = useMemo(
-    () => filterPromotions(promotions, filters, tab, (id) => campaignName(id), byCategory),
-    [promotions, filters, tab, campaignName, byCategory],
+    () => filterPromotions(promotions, filters, tab, (id) => campaignName(id), byCategory, store.collections),
+    [promotions, filters, tab, campaignName, byCategory, store.collections],
   );
   const paged = useMemo(() => paginate(filtered, page, pageSize), [filtered, page, pageSize]);
 
@@ -130,12 +130,13 @@ export function PromotionsListView({ tab }: { tab: PromotionTab }) {
 
   const onLifecycle = async (p: Promotion, lifecycle: PromotionLifecycle) => {
     setPending((prev) => new Set(prev).add(p.id));
-    await store.setPromotionLifecycle([p.id], lifecycle);
+    const done = await store.setPromotionLifecycle([p.id], lifecycle);
     setPending((prev) => {
       const next = new Set(prev);
       next.delete(p.id);
       return next;
     });
+    if (!done) return;
     showToast(
       t(`promo.toast.lifecycle.${lifecycle}`, { name: p.name }),
       lifecycle === "paused" ? t("promo.toast.pausedBody") : lifecycle === "live" ? t("promo.toast.liveBody") : undefined,
@@ -148,6 +149,7 @@ export function PromotionsListView({ tab }: { tab: PromotionTab }) {
     const copies = await store.duplicatePromotions(ids);
     setBusy(false);
     setSelected(new Set());
+    if (copies.length === 0) return;
     showToast(t("promo.toast.duplicated", { count: copies.length }), t("promo.toast.duplicatedBody"));
     if (copies.length === 1) navigate(`/admin/promotions/${copies[0].id}/modifier`);
   };
@@ -155,16 +157,18 @@ export function PromotionsListView({ tab }: { tab: PromotionTab }) {
   const bulkLifecycle = async (lifecycle: PromotionLifecycle) => {
     const ids = [...selected];
     setBusy(true);
-    await store.setPromotionLifecycle(ids, lifecycle);
+    const done = await store.setPromotionLifecycle(ids, lifecycle);
     setBusy(false);
+    if (!done) return;
     setSelected(new Set());
     showToast(t(`promo.toast.bulk.${lifecycle}`, { count: ids.length }), undefined, lifecycle === "paused" ? "warning" : "success");
   };
 
   const confirmArchive = async () => {
     setBusy(true);
-    await store.setPromotionLifecycle(archiveTargets.map((p) => p.id), "archived");
+    const done = await store.setPromotionLifecycle(archiveTargets.map((p) => p.id), "archived");
     setBusy(false);
+    if (!done) return;
     showToast(t("promo.toast.archived", { count: archiveTargets.length }), t("promo.toast.archivedBody"), "info");
     setArchiveTargets([]);
     setSelected(new Set());
@@ -173,8 +177,9 @@ export function PromotionsListView({ tab }: { tab: PromotionTab }) {
   const confirmAssign = async () => {
     setBusy(true);
     const ids = [...selected];
-    await store.assignCampaign(ids, campaignChoice);
+    const done = await store.assignCampaign(ids, campaignChoice);
     setBusy(false);
+    if (!done) return;
     setCampaignDialog(false);
     setSelected(new Set());
     showToast(t("promo.toast.assigned", { count: ids.length, name: campaignName(campaignChoice) }));
@@ -183,8 +188,9 @@ export function PromotionsListView({ tab }: { tab: PromotionTab }) {
   const confirmRemove = async () => {
     setBusy(true);
     const ids = [...selected];
-    await store.assignCampaign(ids, null);
+    const done = await store.assignCampaign(ids, null);
     setBusy(false);
+    if (!done) return;
     setRemoveDialog(false);
     setSelected(new Set());
     showToast(t("promo.toast.unassigned", { count: ids.length }), undefined, "info");
@@ -209,13 +215,13 @@ export function PromotionsListView({ tab }: { tab: PromotionTab }) {
     onArchive: (p: Promotion) => setArchiveTargets([p]),
   };
 
-  if (demoMode === "error") {
+  if (failed) {
     return (
       <ErrorPanel
         title={t("promo.error.title")}
         body={t("promo.error.body")}
         retryLabel={t("promo.error.retry")}
-        onRetry={() => setDemoMode("live")}
+        onRetry={() => void reload()}
       />
     );
   }
@@ -232,9 +238,6 @@ export function PromotionsListView({ tab }: { tab: PromotionTab }) {
             <>
               <AdminButton variant="primary" iconLeft={Plus} onClick={() => navigate("/admin/promotions/nouvelle")}>
                 {t("promo.header.createPromotion")}
-              </AdminButton>
-              <AdminButton variant="outline" iconLeft={Sparkles} onClick={() => setDemoMode("live")}>
-                {t("promo.empty.loadExamples")}
               </AdminButton>
             </>
           }

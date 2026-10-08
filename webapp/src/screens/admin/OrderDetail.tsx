@@ -7,7 +7,16 @@ import { ArrowLeft, Ban, ChevronLeft, ChevronRight, History, Printer, SlidersHor
 import { AdminButton } from "../../components/admin/AdminButton";
 import { AdminHeader } from "../../components/admin/AdminHeader";
 import { Button } from "../../components/ui/Button";
-import { Card, CustomerCard, ItemsCard, PaymentCard, RefundsCard, ShippingCard } from "../../components/admin/DetailPanels";
+import {
+  Card,
+  CustomerCard,
+  ItemsCard,
+  PaymentCard,
+  RefundsCard,
+  ShippingCard,
+  type ParcelAction,
+} from "../../components/admin/DetailPanels";
+import { ParcelDialog, RefundDialog } from "../../components/admin/FulfillmentDialogs";
 import { LoadError } from "../../components/admin/OrdersPlaceholders";
 import { OrderTimeline } from "../../components/admin/OrderTimeline";
 import { OrderNotes } from "../../components/admin/OrderNotes";
@@ -23,6 +32,8 @@ import { useAdminOrders } from "../../lib/adminOrders";
 import { useToast } from "../../lib/toast";
 import { useFormat } from "../../lib/format";
 import { holdsMoney, orderItemCount, parseInstant, type AdminOrder } from "../../data/adminOrders";
+import type { OrderParcel } from "../../data/orders";
+import type { FulfillmentResult } from "../../lib/adminFulfillment";
 import { useAdminAuth } from "../../lib/adminAuth";
 import { useAdminShell } from "./AdminLayout";
 
@@ -56,7 +67,8 @@ export function OrderDetail() {
   const { search } = useLocation();
   const { openNav } = useAdminShell();
   const { showToast } = useToast();
-  const { orders, loading, failed, reload, setStatus, cancel, addNote } = useAdminOrders();
+  const { orders, loading, failed, reload, setStatus, cancel, addNote, createParcel, changeParcel, refund, cancelRefund } =
+    useAdminOrders();
   /** Notes are signed with the signed-in team member's name. */
   const operator = useAdminAuth().admin?.name ?? "";
 
@@ -73,6 +85,8 @@ export function OrderDetail() {
 
   const [statusOpen, setStatusOpen] = useState(false);
   const [cancelOpen, setCancelOpen] = useState(false);
+  const [parcelDialog, setParcelDialog] = useState<{ parcel?: OrderParcel; intent?: "ship" } | null>(null);
+  const [refundOpen, setRefundOpen] = useState(false);
 
   const backTo = `/admin/commandes${search}`;
 
@@ -103,6 +117,27 @@ export function OrderDetail() {
   }
 
   const closed = order.status === "cancelled" || order.status === "refunded";
+
+  /** Says what happened to a parcel or a refund: the reason is the database's, translated here. */
+  const report = (result: FulfillmentResult, title: string, body: string) => {
+    if (result.ok) showToast(title, body);
+    else showToast(t("admin.orders.fulfilment.failedTitle"), t(`admin.orders.fulfilment.error.${result.error}`), "error");
+  };
+
+  const onParcelAction = (parcel: OrderParcel, action: ParcelAction) => {
+    if (action === "edit") return setParcelDialog({ parcel });
+    if (action === "ship") {
+      // A parcel still without its carrier or tracking number is completed first.
+      if (!parcel.carrier || !parcel.trackingNumber) return setParcelDialog({ parcel, intent: "ship" });
+      void changeParcel(parcel, { status: "shipped" }).then((r) =>
+        report(r, t("admin.orders.fulfilment.toastShippedTitle"), t("admin.orders.fulfilment.toastShippedBody")),
+      );
+      return;
+    }
+    void changeParcel(parcel, { status: action }).then((r) =>
+      report(r, t("admin.orders.fulfilment.toastParcelTitle"), t(`admin.orders.fulfilment.toastParcel.${action}`)),
+    );
+  };
   const notWired = () => showToast(t("common.notIncludedTitle"), t("admin.orders.toastNotWired"), "info");
 
   const neighbourLink = (target: AdminOrder | undefined, direction: "previous" | "next") => {
@@ -237,8 +272,17 @@ export function OrderDetail() {
       <div className="grid items-start gap-4 xl:grid-cols-[minmax(0,2fr)_minmax(320px,1fr)]">
         <div className="grid min-w-0 gap-4">
           <ItemsCard order={order} />
-          <ShippingCard order={order} />
-          <RefundsCard order={order} />
+          <ShippingCard order={order} onCreateParcel={() => setParcelDialog({})} onParcelAction={onParcelAction} />
+          <RefundsCard
+            order={order}
+            onRefund={() => setRefundOpen(true)}
+            onCancelRefund={(r) => {
+              if (!r.id) return;
+              void cancelRefund(r.id).then((result) =>
+                report(result, t("admin.orders.fulfilment.toastRefundCancelledTitle"), t("admin.orders.fulfilment.toastRefundCancelledBody")),
+              );
+            }}
+          />
           <OrderNotes
             notes={order.notes}
             author={operator}
@@ -261,6 +305,47 @@ export function OrderDetail() {
           </Card>
         </div>
       </div>
+
+      <ParcelDialog
+        order={order}
+        parcel={parcelDialog?.parcel}
+        intent={parcelDialog?.intent}
+        open={parcelDialog !== null}
+        onClose={() => setParcelDialog(null)}
+        onCreate={async (input) => {
+          const result = await createParcel(order.reference, input);
+          if (result.ok) {
+            showToast(
+              t("admin.orders.fulfilment.toastCreatedTitle"),
+              t(input.status === "shipped" ? "admin.orders.fulfilment.toastShippedBody" : "admin.orders.fulfilment.toastCreatedBody"),
+            );
+          }
+          return result;
+        }}
+        onChange={async (parcel, change) => {
+          const result = await changeParcel(parcel, change);
+          if (result.ok) {
+            showToast(
+              t("admin.orders.fulfilment.toastParcelTitle"),
+              t(change.status === "shipped" && parcel.status === "preparing" ? "admin.orders.fulfilment.toastShippedBody" : "admin.orders.fulfilment.toastEditedBody"),
+            );
+          }
+          return result;
+        }}
+      />
+
+      <RefundDialog
+        order={order}
+        open={refundOpen}
+        onClose={() => setRefundOpen(false)}
+        onSubmit={async (input) => {
+          const result = await refund(order.reference, input);
+          if (result.ok) {
+            showToast(t("admin.orders.fulfilment.toastRefundTitle"), t("admin.orders.fulfilment.toastRefundBody"));
+          }
+          return result;
+        }}
+      />
 
       <StatusDialog
         order={statusOpen ? order : null}

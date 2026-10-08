@@ -2,7 +2,7 @@
 
 The production web application of Global Toothgems: storefront, Academy, member area, Studio 3D and back office, in one Next.js (App Router) application backed by Supabase (see `supabase/README.md`) and deployed on Vercel. It was migrated from Vite + React Router in five phases (done on 2026-09-30): every screen is an App Router segment, public pages are rendered on the server, the private areas in the browser under server-checked layouts — see `docs/migration-nextjs.md` for the phases and the per-route checklist.
 
-> **Status: being industrialised.** The app started as a fully clickable implementation of the Claude Design prototype, with every domain on in-memory mock data. Domains are now connected to Supabase one by one; the up-to-date live/mock table is in the root `AGENTS.md` §4. With the Supabase variables set, these are **live**: the storefront catalogue, back-office product management and categories, member and staff authentication, favourites (`wishlist_items`), reviews and moderation, member and admin order reading, the back-office customers workspace, the Studio 3D workspace, and the Academy's back-office authoring and its public pages (catalogue, course sales pages). Gift cards (back office, `/carte-cadeau`, codes in the cart) are live too, paid through the checkout. The back-office settings (store details, shipping, VAT rates, languages) are live too. Cart/checkout/payment (Stripe functions not deployed yet), promotions, loyalty, statistics in the back office, contact and newsletter, and the Academy's learner side still run on mock data.
+> **Status: being industrialised.** The app started as a fully clickable implementation of the Claude Design prototype, with every domain on in-memory mock data. Domains are now connected to Supabase one by one; the up-to-date live/mock table is in the root `AGENTS.md` §4. With the Supabase variables set, these are **live**: the storefront catalogue, back-office product management and categories, member and staff authentication, favourites (`wishlist_items`), reviews and moderation, member and admin order reading, the back-office customers workspace, the Studio 3D workspace, and the Academy's back-office authoring and its public pages (catalogue, course sales pages). Gift cards (back office, `/carte-cadeau`, codes in the cart) are live too, paid through the checkout. The back-office settings (store details, shipping, VAT rates, languages) are live too. Promotions and campaigns (back office, and promotion codes in the cart) are live too. Cart/checkout/payment (Stripe functions not deployed yet), statistics in the back office, contact and newsletter, and the Academy's learner side still run on mock data.
 >
 > Architecture (decided): Next.js App Router on Vercel, business rules in Postgres (RLS + functions), server code in Supabase Edge Functions, payments by Stripe with webhook-driven fulfilment. Sections below that describe "prototype" behaviour, "Prototype controls" panels or mock stores document code that is **still mock and scheduled to be replaced**, not a target design.
 
@@ -93,7 +93,7 @@ What is not wired to the database yet, on purpose:
 - **Categories and families** are read from the database but not editable; a product's family is picked in the product form.
 - **The activity feed** shows this session's actions only; the full history is in `audit_logs` and `inventory_movements`.
 - **The seeded products' images** point at files that were never uploaded, so they show broken until replaced.
-- **Orders and reviews** are connected too (see "Orders and reviews on Supabase" below). **Other admin workspaces** (promotions, statistics, training…) still use their mock stores, so e.g. promotions refer to prototype product ids. The customers workspace is live (see "Customers on Supabase" below).
+- **Orders and reviews** are connected too (see "Orders and reviews on Supabase" below). **Other admin workspaces** (statistics…) still use their mock stores. The customers workspace is live (see "Customers on Supabase" below).
 
 Code: `lib/supabase/` (client + generated `database.types.ts`), `lib/adminCatalogMapping.ts` (pure row ↔ form mapping, unit-tested), `lib/adminCatalogSupabase.tsx` (the Supabase store), `lib/adminCatalog.tsx` (the mock store, and the switch between the two), `lib/adminAuth.tsx`.
 
@@ -181,7 +181,7 @@ back office's order book is empty (it never shows invented orders).
 | Store | Reads | Writes |
 | --- | --- | --- |
 | `lib/orders.tsx` (member area) | the account's own paid orders (`payment_status` paid / refunded / partially refunded): recorded amounts (subtotal, discount, shipping, VAT, total, gift cards, amount due), items, discounts (`order_discounts`), parcels with their contents, refunds, address snapshots — never the internal fields (`CUSTOMER_ORDER_SELECT`) | nothing: orders come from the checkout (`create-checkout-session`) and the Stripe webhook |
-| `lib/adminOrders.tsx` (back office) | every order except expired unpaid checkouts (`ADMIN_ORDER_SELECT`): recorded amounts, items with their VAT rate and amount, discounts with code and source (promotion / loyalty), every payment row (card and gift card, `gift_cards.code_last4` only), parcels with their contents, refunds of every status, address snapshots, `paid_at` / `cancelled_at`; the staff notes from `order_notes` (migration `20260930210000_order_staff_notes`). Read 1 000 rows at a time (the Supabase `max_rows` cap), up to `BOOK_LIMIT` | status (+ implied fulfilment), cancellation of an unpaid order (`cancel_order`), notes (written to `orders.admin_note`, which a trigger appends to `order_notes`). Refunds are not offered, and cancelling or marking refunded an order that holds money is refused: they go through Stripe |
+| `lib/adminOrders.tsx` (back office) | every order except expired unpaid checkouts (`ADMIN_ORDER_SELECT`): recorded amounts, items with their VAT rate and amount, discounts with code and source (promotion / loyalty), every payment row (card and gift card, `gift_cards.code_last4` only), parcels with their contents, refunds of every status, address snapshots, `paid_at` / `cancelled_at`; the staff notes from `order_notes` (migration `20260930210000_order_staff_notes`). Read 1 000 rows at a time (the Supabase `max_rows` cap), up to `BOOK_LIMIT` | status (+ implied fulfilment), cancellation of an unpaid order (`cancel_order`), notes (written to `orders.admin_note`, which a trigger appends to `order_notes`). Parcels (`create_shipment`, `set_shipment_status`) and card refunds (Edge Function `refund-order`, confirmed by Stripe's webhook) through `lib/adminFulfillment.ts`; cancelling an order that holds money is refused (refund it first) |
 | `lib/reviewsSupabase.tsx` | published reviews for visitors (public columns only); own reviews, votes and reports for customers; everything for staff | submit / edit (photos to the private `review-photos` bucket), helpful votes, reports, and every moderation action |
 
 The database enforces the review rules: only a customer whose order with the
@@ -251,6 +251,27 @@ With the Supabase variables set, `screens/Cart.tsx`:
    function (`release_client_secret`: order cancelled, stock and gift cards released); an expired step (60 min)
    offers "Restart payment". The step's client secret is kept in the tab's `sessionStorage` so a reload's next
    checkout closes it first (`previous_client_secret`).
+
+Promotions in the cart (`lib/checkout/basketQuote.ts`, `useBasketQuote.ts`, `components/shop/PromotionCodes.tsx`):
+
+- **A preview from the database, never a computation.** The cart asks `quote_basket()` (an RPC callable by visitors) what
+  the shop goods would receive: running automatic promotions, the promotion codes typed, or the loyalty reward — the
+  same engine as `create_order()`. The hook asks again (after a 250 ms pause, newest answer wins) whenever a line, a
+  code, the delivery rate or the reward changes; only the answer for the exact basket is shown. The summary lists each
+  discount (label, code, amount), a free-shipping promotion shows in the delivery line, a "gift with purchase" as a
+  free line, and the payment step shows the same lines. Gift cards and courses are left out (they take no discount).
+- **Codes.** Up to 3, format checked in the browser (`^[A-Z0-9][A-Z0-9_-]{0,63}$`, upper-cased), sent as
+  `promotion_codes` with the checkout request. A code the database refuses is taken out of the list with a message
+  (it never says whether the code exists); 10 refusals in 10 minutes lock the codes for the caller
+  (`promotion_code_attempts`, `too_many_attempts`). **Reward and promotions (decision 85):** ticking the loyalty reward
+  does not switch promotions off any more: the database applies whichever gives the customer most (promotions alone,
+  the reward alone, or — for promotions marked "cumulable avec la fidélité" — both, the reward on what they leave).
+  The summary says when the reward was not used (it stays available) or a typed code was not retained.
+- **Free orders are not offered (yet).** A basket made entirely free by a promotion (and no gift card) has nothing to
+  charge on Stripe: the cart says so and disables the button, and the checkout function releases such an order
+  (`free_order`) instead of reporting it paid. Decision to confirm.
+- **A guest is quoted without e-mail**, so "new customer" and per-customer limits are settled only when the order is
+  created; the payment step always shows the amount the database computed.
 
 Gift cards in the cart (`lib/giftCards/`, `components/shop/GiftCardCodes.tsx`):
 
@@ -685,19 +706,19 @@ publication.
 
 ## Promotions, campaigns & gift cards (`/admin/promotions`)
 
-Promotions and campaigns are still a front-end-only prototype (in-memory, a reload restores the seed). **Gift cards
-are live** on Supabase (since 2026-10-01): their screens share the workspace's tab and look, not its store.
+Promotions and campaigns are **live** on Supabase (since 2026-10-08): no seed, no demo switch, no fixed "today".
+**Gift cards are live** too (since 2026-10-01): their screens share the workspace's tab and look, not its store.
 
 | Route | Screen |
 | --- | --- |
 | `/admin/promotions` | Overview — KPI row, then tabs in the query string (`?vue=actives`, `programmees`, `expirees`, `campagnes`, `cartes-cadeaux`). The "All" tab adds a six-week "what runs when" calendar above the list. The gift card tile and tab count are live |
-| `/admin/promotions/nouvelle` · `/:id/modifier` | Promotion editor (mock) — six lettered sections, sticky summary with a publish checklist and a live product-card preview |
-| `/admin/promotions/:id` | Promotion detail (mock) |
-| `/admin/promotions/campagnes/nouvelle` · `/:id` · `/:id/modifier` | Campaign editor and detail (mock) |
+| `/admin/promotions/nouvelle` · `/:id/modifier` | Promotion editor (live) — six lettered sections, sticky summary with a publish checklist and a live product-card preview. Saved in one call (`admin_save_promotion`): the promotion, its scope, segments, code and English text together. Saving a draft asks only for a name; publishing is checked again by the database |
+| `/admin/promotions/:id` | Promotion detail (live) — figures from paid orders (`promotion_overview`, `promotion_daily_usage`), lifecycle actions, copy |
+| `/admin/promotions/campagnes/nouvelle` · `/:id` · `/:id/modifier` | Campaign editor and detail (live) — products in order, English text, promotions attached; created/updated dates (the audit trail is read by administrators only) |
 | `?vue=cartes-cadeaux` | Gift cards (live) — KPIs (in circulation, sold, outstanding, expired, awaiting delivery), product summary, **Issue a card** (`manage_promotions`), search by last 4 / people / order, status and delivery filters |
 | `/admin/promotions/cartes-cadeaux/:id` | Gift card detail (live) — card visual, balance, the database's ledger (balance after each line, who, order), adjust (reason required) / extend / cancel (reason + the last 4 typed). Addressed by id: **the code is never shown**, only `•••• last4` |
 | `/admin/promotions/cartes-cadeaux/configuration` | Gift card settings (live, `gift_card_settings`) — published switch, denominations (reorder by buttons or drag), custom amount range, validity, scheduled delivery, field rules, designs. Read-only without `manage_promotions` |
-| `/admin/promotions/apercu` | Customer preview of a promotion (mock) |
+| `/admin/promotions/apercu` | Customer preview of a promotion (drawn from the promotion being viewed, over the live catalogue) |
 | `/carte-cadeau` (`/gift-card`) | Storefront gift card page (live): published settings, adds a gift card line to the cart (see *Cart and checkout*) |
 
 How it is put together:
@@ -709,9 +730,16 @@ How it is put together:
   every write; empty and read-only in local mock mode) and `lib/giftCards/useStorefrontGiftCard.ts` (published
   settings for `/carte-cadeau` and the home page band, read once hydrated). Permissions come from `my_permissions()`
   for display only; the database enforces them (`manage_promotions` writes, every active staff member reads).
-- Promotions and campaigns: `data/adminPromotions.ts` (types and seed, money in integer cents, statuses derived
-  against the fixed prototype date `PROMO_NOW`), `lib/adminPromotions.tsx` (mock store, still in `AppProviders.tsx`),
-  `lib/promotionRules.ts` (pure rules).
+- Promotions and campaigns: `data/adminPromotions.ts` (types and pure rules, money in integer cents, statuses derived
+  against the real clock and each promotion's own time zone — `toTime`, `toLocalInput`), `lib/promotionMapping.ts`
+  (pure, tested: rows ↔ UI shapes and the payloads of `admin_save_promotion` / `admin_save_campaign`, error
+  classification), `lib/promotionsApi.ts` (the domain's single persistence boundary: one embedded read of promotions
+  with their children, `promotion_overview`, `promotion_daily_usage`, campaigns, collections, segments; the two save
+  RPCs; lifecycle and campaign links as plain updates), `lib/adminPromotions.tsx` (store in `AppProviders.tsx`, loaded
+  the first time a promotions screen asks, re-read after every write; a refusal is reported by a toast and answered
+  with `null` / `false`; empty in local mock mode), `lib/promotionRules.ts` (pure rules: validation, filters, roll-ups).
+  Collections and customer segments are read, not edited: there is no back-office screen for them yet, so the pickers
+  show an empty state until some exist. Campaign covers are brand-library photos (`cover_path` keeps the file name).
 - `components/promotions/` — badges, the CSS-drawn gift card and campaign banner (`.gt-giftcard`, `.gt-campaign-cover`
   in `index.css`), tables, timelines, previews, dialogs.
 - Copy lives in `i18n/locales/promotions.{fr,en}.json`, mounted under the `promo` key (gift card back office: `promo.gc`).
@@ -821,13 +849,13 @@ Live on Supabase; without the Supabase variables the workspace says the base is 
 
 Without the Supabase variables every domain runs on its mock store. With them, the following still do not touch the database:
 
-- **Checkout extras.** Payment runs through Stripe (see *Cart and checkout*) and gift card codes can be used in the cart, but promotion codes and the loyalty reward cannot be entered yet (the Edge Function accepts promotion codes), no confirmation e-mail is sent, and saving the address on the account is not offered.
+- **Checkout extras.** Payment runs through Stripe (see *Cart and checkout*); gift card codes, promotion codes and the loyalty reward can be used in the cart. No confirmation e-mail is sent from the browser, and saving the address on the account is not offered.
 - **Academy.** Authoring, public pages and the learner side are on Supabase (phases A–C). Courses are bought through the cart (phase D, migration `20261002100000_course_checkout` not applied yet) or granted by hand (`/admin/formations/:id/acces`). The back office's course list and statistics still show placeholder learner figures (`enrolled`, `completionRate`, `data/adminAnalytics.ts`).
 - **Artist Community.** Fixtures and in-memory posting; access derived client-side from the courses on the account. Post-launch.
 - **Members' Lounge** (`/compte/salons`). UI prototype of the community chat: fixtures and in-memory messages, same client-side access rule as the Artist Community. No backend. Post-launch.
 - **Loyalty Club.** Live (2026-10-03). `lib/loyalty.tsx` reads the public rules (`loyalty_settings`) and the member's card (`loyalty_overview`, RLS-limited); `lib/loyaltyMapping.ts` derives the card state (unit-tested); `data/loyalty.ts` holds the types and the example cards of the marketing pages. The database awards the stamp when the Stripe webhook marks an order paid; the browser only reads. The cart banner counts shop goods only (no gift card, no course) and invites guests to sign in. The cart offers a checkbox to spend a completed card (`use_loyalty_reward` in the checkout request, previewed with `rewardDiscount`; the database refuses with `loyalty_reward_unavailable` when the card is gone or reserved). Not built: e-mail on stamp/reward.
 - **Security page:** data export and account deletion are simulated (they need backend jobs).
-- **Back-office promotions and campaigns, statistics:** mock stores over a schema that already exists. A translation workflow (coverage, editor) is not built.
+- **Back-office statistics:** a mock store over a schema that already exists. A translation workflow (coverage, editor) is not built.
 - **Gift card delivery:** cards are created and activated in the database, but nothing sends the code to the recipient yet (needs the e-mail Edge Function).
 
 The mock stores, fixtures in `data/`, demo accounts and "Prototype controls" panels are removed domain by domain as each goes live; a production build must never fall back to them.

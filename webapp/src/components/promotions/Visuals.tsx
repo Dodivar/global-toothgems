@@ -53,6 +53,7 @@ export function GiftCardVisual({
   size = "md",
   className,
   label,
+  amountOnly = false,
 }: {
   design: GiftCardDesign;
   amountCents: number | null;
@@ -64,6 +65,8 @@ export function GiftCardVisual({
   className?: string;
   /** Accessible description; defaults to a sentence built from the props. */
   label?: string;
+  /** Thumbnail: only the amount, centred, over the design's colours. */
+  amountOnly?: boolean;
 }) {
   const { t } = useTranslation();
   const money = useMoney();
@@ -98,6 +101,18 @@ export function GiftCardVisual({
       )}
       <Sparkles className={dark ? "text-[var(--gt-white)]" : "text-[var(--gt-white)]"} />
 
+      {amountOnly ? (
+        <div
+          aria-hidden="true"
+          className={clsx(
+            "relative grid h-full place-items-center font-bold leading-none tracking-[var(--tracking-display)] tabular-nums",
+            size === "sm" ? "text-[22px]" : "text-[clamp(26px,5vw,38px)]",
+            dark ? "text-[var(--gt-off-white)]" : "text-[var(--gt-ink-900)]",
+          )}
+        >
+          {amount}
+        </div>
+      ) : (
       <div
         aria-hidden="true"
         className={clsx(
@@ -162,6 +177,7 @@ export function GiftCardVisual({
           </div>
         </div>
       </div>
+      )}
     </figure>
   );
 }

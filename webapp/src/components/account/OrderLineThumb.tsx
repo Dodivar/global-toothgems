@@ -20,8 +20,8 @@ export function OrderLineThumb({
   const opacity = dimmed ? 0.5 : 1;
   if (line.giftCardDesign) {
     return (
-      <span className="block w-[72px] flex-none" style={{ opacity }}>
-        <GiftCardVisual design={line.giftCardDesign as GiftCardDesign} amountCents={line.unitAmount} size="sm" label="" />
+      <span className="block w-24 flex-none" style={{ opacity }}>
+        <GiftCardVisual design={line.giftCardDesign as GiftCardDesign} amountCents={line.unitAmount} size="sm" label="" amountOnly />
       </span>
     );
   }

@@ -67,7 +67,7 @@ Language, country, currency, tax jurisdiction and shipping zone are separate dim
 
 ## Promotions, gift cards, loyalty
 
-- The discount engine lives in `create_order()`; the UI previews but never decides. Stacking, eligibility, limits and code validity are server rules (decisions 21–24).
+- The discount engine lives in `create_order()`; the UI previews but never decides — the cart shows what `quote_basket()` answers (same engine, nothing reserved), never a discount computed in the browser. Promotions are saved by `admin_save_promotion()` (one transaction: promotion, scope, segments, code, English text), never by writing the tables from the browser. Stacking, eligibility, limits and code validity are server rules (decisions 21–24).
 - Gift cards are a payment, not a discount; balances are an append-only ledger; codes are bearer credentials never exposed to API roles (staff see `code_last4`); the public balance check must be rate-limited server-side.
 - Loyalty stamps are awarded by the database when an order is paid; the Loyalty Club UI must read `loyalty_overview`, never compute stamps client-side.
 - Referral: post-launch; do not add referral tables speculatively.
