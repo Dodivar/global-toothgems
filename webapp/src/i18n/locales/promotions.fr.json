@@ -376,7 +376,7 @@
   },
   "validation": {
     "nameRequired": "Donnez-lui un nom interne.",
-    "titleRequired": "Ajoutez un titre client dans au moins une langue.",
+    "titleRequired": "Ajoutez le titre client en français (la langue de référence).",
     "percentRange": "Indiquez un pourcentage entre 1 et 100.",
     "amountRequired": "Indiquez le montant de la remise.",
     "buyGetRequired": "Indiquez combien acheter et combien sont offerts.",
@@ -421,6 +421,7 @@
     "invalidBody": "Chaque point est signalé à côté de son champ et listé dans le récapitulatif. Le brouillon reste enregistrable.",
     "toast": {
       "nameNeeded": "Un brouillon a au moins besoin d’un nom",
+      "draftNeeds": "Un brouillon a besoin d’un nom, d’un titre client en français et d’une remise valide",
       "fix_one": "{{count}} point à corriger",
       "fix_other": "{{count}} points à corriger",
       "fixBody": "Nous vous avons amené au premier.",
@@ -615,6 +616,7 @@
     "code": "Code promo",
     "automaticBody": "Sans code — la remise s’applique d’elle-même aux paniers éligibles.",
     "caseInsensitive": "Insensible à la casse",
+    "exportCodes": "Exporter les codes (CSV)",
     "uniqueCodes": "{{count}} codes uniques",
     "campaign": "Campagne",
     "standalone": "Autonome — ne fait partie d’aucune campagne.",

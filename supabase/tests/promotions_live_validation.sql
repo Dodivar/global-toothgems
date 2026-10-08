@@ -17,6 +17,8 @@
 --       loyalty reward + code refused; visitors never read a code
 --   PL7 campaigns: saved with ordered products and an English translation, products replaced
 --   PL8 a draft may wait for its shared code; going live without one is refused
+--   PL9 a promotion needs its French title (base column), even as a draft
+--   PL10 a free gift line is listed but does not change the quoted amounts
 -- =============================================================================
 
 do $$
@@ -26,7 +28,7 @@ declare
   cst  uuid := '00000000-0000-4000-a000-0000000b0003';
   v_prod uuid;
   v_price numeric;
-  v_p1 uuid; v_p2 uuid; v_p3 uuid; v_p4 uuid; v_camp uuid;
+  v_p1 uuid; v_p2 uuid; v_p3 uuid; v_p4 uuid; v_camp uuid; v_gift uuid;
   v_cnt int; v_state text; v_txt text; v_num numeric; v_ts timestamptz;
   v_json jsonb;
   v_items jsonb;
@@ -212,6 +214,40 @@ begin
   exception when others then v_state := sqlstate; end;
   if v_state is distinct from '23514' then raise exception 'FAIL PL8: live without a code accepted (%)', v_state; end if;
   passed := array_append(passed, 'PL8 a draft may wait for its code, publishing without one is refused');
+
+  -- PL9: French is the base column — a promotion without a French title is refused, even as a draft -----
+  v_state := null;
+  begin perform public.admin_save_promotion(base || jsonb_build_object('title', jsonb_build_object('fr', '', 'en', 'Only English'), 'lifecycle', 'draft', 'code', 'plnotitle1'));
+  exception when others then v_state := sqlstate; end;
+  if v_state is distinct from '23514' then raise exception 'FAIL PL9: a promotion without a French title was saved (%)', v_state; end if;
+  passed := array_append(passed, 'PL9 a promotion needs its French title (the editors check it first)');
+
+  -- PL10: a free "gift with purchase" line is not in the basket: it must not lower the quoted total ----------
+  select p.id into v_gift from public.products p
+   where p.status = 'active' and p.currency = 'EUR' and p.product_type = 'physical' and p.price >= 1 and p.id <> v_prod
+     and not exists (select 1 from public.product_variants v where v.product_id = p.id and v.is_active)
+     and exists (select 1 from public.inventory_items i where i.product_id = p.id
+                  and ((i.track_inventory and i.quantity_on_hand - i.quantity_reserved >= 1)
+                       or (not i.track_inventory and i.availability <> 'out_of_stock')))
+   order by p.created_at limit 1;
+  if v_gift is not null then
+    -- the earlier automatic / code promotions must not compete with the gift one
+    update public.promotions set lifecycle = 'archived' where lifecycle = 'live';
+    v_p1 := public.admin_save_promotion(jsonb_build_object(
+      'name', 'Gift test', 'title', jsonb_build_object('fr', 'Cadeau', 'en', 'Gift'),
+      'description', jsonb_build_object('fr', '', 'en', ''), 'type', 'gift', 'gift_product_id', v_gift,
+      'applies_to', 'all', 'customer_eligibility', 'all', 'activation', 'automatic',
+      'starts_at', '2026-07-01T10:00', 'timezone', 'Europe/Paris', 'lifecycle', 'live'));
+    perform set_config('role', 'anon', true);
+    perform set_config('request.jwt.claims', json_build_object('role', 'anon')::text, true);
+    v_json := public.quote_basket(v_items);
+    if not (v_json ->> 'ok')::boolean or jsonb_array_length(v_json -> 'gift_lines') <> 1
+       or (v_json ->> 'goods_discount')::numeric <> 0 or jsonb_array_length(v_json -> 'discounts') <> 1
+       or (v_json #>> '{discounts,0,goods_amount}')::numeric <> 0 then
+      raise exception 'FAIL PL10: the free gift line changed the quoted amounts (%)', v_json;
+    end if;
+    passed := array_append(passed, 'PL10 a free gift line is listed but leaves the quoted amounts at zero');
+  end if;
 
   raise exception 'ALL PROMOTIONS LIVE TESTS PASSED (% checks): %', array_length(passed, 1), array_to_string(passed, ' | ');
 end;

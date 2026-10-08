@@ -70,6 +70,10 @@ export interface PaymentStep {
   publishableKey: string;
   orderNumber: string;
   amountDue: number;
+  /** The order's own figures (minor units), null from a function that does not send them yet. */
+  discountAmount: number | null;
+  shippingAmount: number | null;
+  totalAmount: number | null;
   currency: string;
   /** When the session stops accepting a payment (ms since epoch). */
   expiresAt: number;
@@ -100,7 +104,18 @@ function readPaymentStep(body: Record<string, unknown>): PaymentStep | null {
   if (typeof amount_due !== "number" || !Number.isSafeInteger(amount_due) || amount_due <= 0) return null;
   const expiresAt = typeof expires_at === "string" ? Date.parse(expires_at) : Number.NaN;
   if (!Number.isFinite(expiresAt)) return null;
-  return { clientSecret: client_secret, publishableKey: publishable_key, orderNumber: order_number, amountDue: amount_due, currency, expiresAt };
+  const figure = (value: unknown) => (typeof value === "number" && Number.isSafeInteger(value) && value >= 0 ? value : null);
+  return {
+    clientSecret: client_secret,
+    publishableKey: publishable_key,
+    orderNumber: order_number,
+    amountDue: amount_due,
+    discountAmount: figure(body.discount_amount),
+    shippingAmount: figure(body.shipping_amount),
+    totalAmount: figure(body.total_amount),
+    currency,
+    expiresAt,
+  };
 }
 
 export function readCheckoutAnswer(data: unknown): CheckoutResult {

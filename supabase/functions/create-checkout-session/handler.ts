@@ -38,6 +38,10 @@ export interface OrderRow {
   customer_email: string;
   currency: string;
   amount_due: number | string;
+  /** Goods discounts (promotions or loyalty reward), delivery after any free-shipping promotion, and the order's total before gift cards. */
+  discount_amount: number | string;
+  shipping_amount: number | string;
+  total_amount: number | string;
   payment_status: string;
   expires_at: string | null;
 }
@@ -303,6 +307,10 @@ export async function handleCheckout(req: Request, deps: CheckoutDeps): Promise<
       order_number: order.order_number,
       // What Stripe will charge, as Postgres computed it (gift cards and discounts deducted).
       amount_due: amountDue,
+      // The order's own figures, for the payment summary: what the cart previewed may differ (a guest is quoted without e-mail).
+      discount_amount: toMinorUnits(order.discount_amount),
+      shipping_amount: toMinorUnits(order.shipping_amount),
+      total_amount: toMinorUnits(order.total_amount),
       currency: order.currency,
       expires_at: new Date(expiresAt * 1000).toISOString(),
     },

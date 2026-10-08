@@ -11,7 +11,7 @@ import { ConfirmationDialog } from "../../components/admin/ConfirmationDialog";
 import { usePromotions } from "../../lib/adminPromotions";
 import { useToast } from "../../lib/toast";
 import { useNow } from "../../lib/useNow";
-import { codeTaken as isCodeTaken, validatePromotion } from "../../lib/promotionRules";
+import { codeTaken as isCodeTaken, draftIssues, validatePromotion } from "../../lib/promotionRules";
 import { blankPromotion, promotionStatus, toTime, type Promotion } from "../../data/adminPromotions";
 import {
   BasicsSection,
@@ -119,11 +119,14 @@ function EditorForm({ initial, isNew }: { initial: Promotion; isNew: boolean }) 
   };
 
   const save = async (mode: "draft" | "publish") => {
-    if (mode === "draft" && !draft.name.trim()) {
-      setShowErrors(true);
-      jump("basics");
-      showToast(t("promo.editor.toast.nameNeeded"), undefined, "error");
-      return;
+    if (mode === "draft") {
+      const required = draftIssues(issues);
+      if (required.length > 0) {
+        setShowErrors(true);
+        jump(required[0].section);
+        showToast(t("promo.editor.toast.draftNeeds"), t("promo.editor.toast.fixBody"), "error");
+        return;
+      }
     }
     if (mode === "publish" && blocking > 0) {
       setShowErrors(true);

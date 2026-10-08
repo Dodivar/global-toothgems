@@ -427,6 +427,7 @@
       "poweredBy": "Paiement opéré par Stripe, prestataire certifié PCI DSS niveau 1.",
       "due": "À payer",
       "vatIncluded": "TVA incluse",
+      "discounts": "Remises",
       "giftCards_one": "Carte cadeau",
       "giftCards_other": "{{count}} cartes cadeaux",
       "reserved": "Commande {{reference}} : vos articles sont réservés pendant le paiement.",

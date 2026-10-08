@@ -133,3 +133,15 @@ export async function fetchProductVariants(productId: string): Promise<{ id: str
   if (error) throw new Error(error.message);
   return (data ?? []).map((v) => ({ id: v.id, name: v.name ?? "—" }));
 }
+
+/** The codes of a promotion (staff only: row-level security hides them from everyone else), for the CSV export of unique codes. */
+export async function fetchPromotionCodes(promotionId: string): Promise<{ code: string; active: boolean }[]> {
+  const { data, error } = await requireSupabase()
+    .from("promotion_codes")
+    .select("code, is_active")
+    .eq("promotion_id", promotionId)
+    .order("created_at")
+    .limit(10000);
+  if (error) throw new Error(error.message);
+  return (data ?? []).map((row) => ({ code: row.code, active: row.is_active }));
+}

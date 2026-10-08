@@ -70,7 +70,18 @@ export function PaymentView({
   }, []);
 
   // Gift cards are applied by the database: what is left to pay is its amount.
-  const giftCardsApplied = giftCardCount > 0 ? Math.max(0, amounts.total - payment.amountDue) : 0;
+  // The order's own figures win over the cart's preview (a guest is quoted without e-mail, so a limit or an
+  // eligibility rule may differ): the summary never shows a discount the order did not get.
+  const total = payment.totalAmount ?? amounts.total;
+  const shipping = payment.shippingAmount ?? amounts.shipping;
+  const previewed = amounts.discounts.reduce((sum, d) => sum + d.amount, 0);
+  const discounts =
+    payment.discountAmount === null || payment.discountAmount === previewed
+      ? amounts.discounts
+      : payment.discountAmount > 0
+        ? [{ label: t("checkout.payment.discounts"), amount: payment.discountAmount }]
+        : [];
+  const giftCardsApplied = giftCardCount > 0 ? Math.max(0, total - payment.amountDue) : 0;
   const name = `${form.firstName.trim()} ${form.lastName.trim()}`.trim();
   const country = form.country.toUpperCase();
 
@@ -115,13 +126,13 @@ export function PaymentView({
               ? courseInBasket
                 ? t("checkout.course.noDelivery")
                 : t("checkout.giftCard.emailDelivery")
-              : amounts.shipping === 0
+              : shipping === 0
                 ? t("cart.shippingFree")
-                : money(amounts.shipping)
+                : money(shipping)
           }
-          success={shipped && amounts.shipping === 0}
+          success={shipped && shipping === 0}
         />
-        {amounts.discounts.map((discount) => (
+        {discounts.map((discount) => (
           <Row key={discount.label} label={discount.label} value={`−${money(discount.amount)}`} success />
         ))}
         {giftCardsApplied > 0 && <Row label={t("checkout.payment.giftCards", { count: giftCardCount })} value={`−${money(giftCardsApplied)}`} success />}

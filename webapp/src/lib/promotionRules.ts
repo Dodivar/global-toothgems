@@ -44,11 +44,18 @@ export interface Issue {
   section: "basics" | "discount" | "eligibility" | "usage" | "schedule" | "code";
 }
 
+/**
+ * What even a draft needs: the database refuses a promotion without a name or a French title, and one whose
+ * discount parameters are out of range (each type's CHECK). Everything else can wait for publishing.
+ */
+const DRAFT_FIELDS: IssueField[] = ["name", "customerTitle", "percent", "amount", "buyGet", "bundle", "gift"];
+export const draftIssues = (issues: Issue[]): Issue[] => issues.filter((i) => DRAFT_FIELDS.includes(i.field));
+
 export function validatePromotion(p: Promotion): Issue[] {
   const issues: Issue[] = [];
   if (!p.name.trim()) issues.push({ field: "name", key: "nameRequired", section: "basics" });
-  if (!p.customerTitle.fr.trim() && !p.customerTitle.en.trim())
-    issues.push({ field: "customerTitle", key: "titleRequired", section: "basics" });
+  // French is the base column of the customer-facing title (the database requires it, even for a draft).
+  if (!p.customerTitle.fr.trim()) issues.push({ field: "customerTitle", key: "titleRequired", section: "basics" });
 
   const d = p.discount;
   if (d.type === "percentage" && (!d.percent || d.percent < 1 || d.percent > 100))

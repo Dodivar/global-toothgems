@@ -14,6 +14,7 @@ import {
   Megaphone,
   MonitorSmartphone,
   Pause,
+  Download,
   Pencil,
   Percent,
   Play,
@@ -32,6 +33,7 @@ import { ConfirmationDialog } from "../../components/admin/ConfirmationDialog";
 import { OverflowMenu } from "../../components/admin/OverflowMenu";
 import { usePromotions } from "../../lib/adminPromotions";
 import { useToast } from "../../lib/toast";
+import { fetchPromotionCodes } from "../../lib/promotionsApi";
 import { useLocalized } from "../../lib/localized";
 import { useAdminCatalog } from "../../lib/adminCatalog";
 import { coveredProductIds, validatePromotion } from "../../lib/promotionRules";
@@ -479,6 +481,28 @@ function Aside({ promotion }: { promotion: Promotion }) {
               {" · "}
               {c.kind === "unique" ? t("promo.detail.uniqueCodes", { count: c.uniqueCount ?? 0 }) : t("promo.editor.code.shared")}
             </p>
+            {c.kind === "unique" && (
+              <AdminButton
+                variant="outline"
+                iconLeft={Download}
+                onClick={async () => {
+                  try {
+                    const rows = await fetchPromotionCodes(promotion.id);
+                    const csv = ["code,active", ...rows.map((r) => `${r.code},${r.active ? "yes" : "no"}`)].join("\n") + "\n";
+                    const url = URL.createObjectURL(new Blob([csv], { type: "text/csv;charset=utf-8" }));
+                    const link = document.createElement("a");
+                    link.href = url;
+                    link.download = `${promotion.name.replace(/[^A-Za-z0-9]+/g, "-").toLowerCase() || "codes"}-codes.csv`;
+                    link.click();
+                    URL.revokeObjectURL(url);
+                  } catch {
+                    showToast(t("promo.toast.error.failed"), undefined, "error");
+                  }
+                }}
+              >
+                {t("promo.detail.exportCodes")}
+              </AdminButton>
+            )}
           </div>
         ) : (
           <p className="m-0 text-[length:var(--text-body-sm)] font-medium text-[var(--status-error-fg)]">{t("promo.validation.codeRequired")}</p>

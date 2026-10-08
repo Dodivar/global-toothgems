@@ -90,8 +90,8 @@ function CampaignForm({ initial, isNew }: { initial: Campaign; isNew: boolean })
   const errors = useMemo(() => {
     const e: Record<string, string> = {};
     if (!draft.name.trim()) e.name = t("promo.validation.nameRequired");
-    if (!draft.title.fr.trim() && !draft.title.en.trim()) e.title = t("promo.validation.titleRequired");
-    if (toTime(draft.endsAt) <= toTime(draft.startsAt)) e.dates = t("promo.validation.endBeforeStart");
+    if (!draft.title.fr.trim()) e.title = t("promo.validation.titleRequired");
+    if (toTime(draft.endsAt, draft.timezone) <= toTime(draft.startsAt, draft.timezone)) e.dates = t("promo.validation.endBeforeStart");
     return e;
   }, [draft, t]);
 
@@ -100,7 +100,8 @@ function CampaignForm({ initial, isNew }: { initial: Campaign; isNew: boolean })
   const firstProduct = products.find((p) => p.id === draft.productIds[0]);
 
   const save = async (mode: "draft" | "publish") => {
-    const blocking = mode === "draft" ? (errors.name ? 1 : 0) : Object.keys(errors).length;
+    // A draft needs the same three things as a published campaign: the database requires a name, a French title and valid dates.
+    const blocking = Object.keys(errors).length;
     if (blocking) {
       setShowErrors(true);
       showToast(t("promo.editor.toast.fix", { count: blocking }), t("promo.editor.toast.fixBody"), "error");

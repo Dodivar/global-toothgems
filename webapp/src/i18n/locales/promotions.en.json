@@ -376,7 +376,7 @@
   },
   "validation": {
     "nameRequired": "Give it an internal name.",
-    "titleRequired": "Add a customer-facing title in at least one language.",
+    "titleRequired": "Add the customer-facing title in French (the reference language).",
     "percentRange": "Enter a percentage between 1 and 100.",
     "amountRequired": "Enter the amount to take off.",
     "buyGetRequired": "Set how many to buy and how many are rewarded.",
@@ -421,6 +421,7 @@
     "invalidBody": "Each issue is marked next to its field and listed in the summary. A draft can still be saved.",
     "toast": {
       "nameNeeded": "A draft needs at least a name",
+      "draftNeeds": "A draft needs a name, a customer-facing title in French and a valid discount",
       "fix_one": "{{count}} thing to fix",
       "fix_other": "{{count}} things to fix",
       "fixBody": "We’ve taken you to the first one.",
@@ -615,6 +616,7 @@
     "code": "Promotional code",
     "automaticBody": "No code — the discount applies by itself to eligible carts.",
     "caseInsensitive": "Not case sensitive",
+    "exportCodes": "Export the codes (CSV)",
     "uniqueCodes": "{{count}} unique codes",
     "campaign": "Campaign",
     "standalone": "Standalone — not part of a campaign.",
