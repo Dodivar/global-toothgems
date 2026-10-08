@@ -57,6 +57,7 @@ describe("reading the quote", () => {
       goods_discount: 7.6,
       shipping_discount: 4.9,
       discounts: [{ label: "Spring", code: "SPRING", type: "percentage", goods_amount: 7.6, shipping_amount: 0 }],
+      lines: [{ product_id: "p1", variant_id: null, discount_amount: 7.6 }, { product_id: "p2", variant_id: "v2", discount_amount: 0 }],
       gift_lines: [{ product_name: "Pouch", variant_name: null }],
     });
     expect(result).toEqual({
@@ -65,6 +66,7 @@ describe("reading the quote", () => {
         goodsDiscount: 760,
         shippingDiscount: 490,
         discounts: [{ label: "Spring", code: "SPRING", type: "percentage", goods: 760, shipping: 0 }],
+        lines: [{ productId: "p1", variantId: null, amount: 760 }],
         gifts: [{ name: "Pouch", variant: null }],
       },
     });

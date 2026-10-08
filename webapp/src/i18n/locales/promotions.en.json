@@ -905,6 +905,7 @@
   },
   "shop": {
     "partOf": "Part of {{name}}",
+    "conditional": "Conditions apply: the details are applied in your basket.",
     "useCode": "Use code {{code}} at checkout.",
     "automatic": "Applied automatically in your cart.",
     "endsIn_one": "Ends tomorrow",

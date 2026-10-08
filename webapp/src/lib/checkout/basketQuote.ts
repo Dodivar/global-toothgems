@@ -63,6 +63,8 @@ export interface BasketQuote {
   goodsDiscount: number;
   shippingDiscount: number;
   discounts: QuoteDiscount[];
+  /** What each basket line carries of the discount (minor units), for the lines the discount reaches. */
+  lines: { productId: string; variantId: string | null; amount: number }[];
   /** Products added free by a "gift with purchase" promotion. */
   gifts: { name: string; variant: string | null }[];
 }
@@ -104,9 +106,16 @@ export function readQuote(data: unknown): QuoteResult {
         ? [{ name: row.product_name, variant: typeof row.variant_name === "string" ? row.variant_name : null }]
         : [];
     });
+    const lines = (Array.isArray(body.lines) ? body.lines : []).flatMap((raw) => {
+      const row = object(raw);
+      const amount = row ? minor(row.discount_amount) : 0;
+      return row && typeof row.product_id === "string" && amount > 0
+        ? [{ productId: row.product_id, variantId: typeof row.variant_id === "string" ? row.variant_id : null, amount }]
+        : [];
+    });
     return {
       ok: true,
-      quote: { goodsDiscount: minor(body.goods_discount), shippingDiscount: minor(body.shipping_discount), discounts, gifts },
+      quote: { goodsDiscount: minor(body.goods_discount), shippingDiscount: minor(body.shipping_discount), discounts, lines, gifts },
     };
   } catch {
     return { ok: false, error: "unavailable" };
