@@ -263,8 +263,10 @@ Promotions in the cart (`lib/checkout/basketQuote.ts`, `useBasketQuote.ts`, `com
 - **Codes.** Up to 3, format checked in the browser (`^[A-Z0-9][A-Z0-9_-]{0,63}$`, upper-cased), sent as
   `promotion_codes` with the checkout request. A code the database refuses is taken out of the list with a message
   (it never says whether the code exists); 10 refusals in 10 minutes lock the codes for the caller
-  (`promotion_code_attempts`, `too_many_attempts`). The loyalty reward and a code exclude each other (the database
-  refuses both together): each is disabled, with the reason, while the other is on.
+  (`promotion_code_attempts`, `too_many_attempts`). **Reward and promotions (decision 85):** ticking the loyalty reward
+  does not switch promotions off any more: the database applies whichever gives the customer most (promotions alone,
+  the reward alone, or — for promotions marked "cumulable avec la fidélité" — both, the reward on what they leave).
+  The summary says when the reward was not used (it stays available) or a typed code was not retained.
 - **Free orders are not offered (yet).** A basket made entirely free by a promotion (and no gift card) has nothing to
   charge on Stripe: the cart says so and disables the button, and the checkout function releases such an order
   (`free_order`) instead of reporting it paid. Decision to confirm.

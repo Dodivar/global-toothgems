@@ -35,7 +35,7 @@ export const PROMOTION_SELECT = `
   id, name, internal_description, title, description, type, percent_off, max_discount_amount, amount_off,
   buy_quantity, get_quantity, reward_percent, bundle_price, gift_product_id, gift_variant_id,
   applies_to, customer_eligibility, min_subtotal_amount, min_quantity, max_uses_total, max_uses_per_customer,
-  combinable, exclude_discounted_products, activation, code_kind, starts_at, ends_at, timezone, lifecycle,
+  combinable, combinable_with_loyalty, exclude_discounted_products, activation, code_kind, starts_at, ends_at, timezone, lifecycle,
   campaign_id, created_at, updated_at,
   promotion_translations ( locale, title, description ),
   promotion_products ( product_id, role ),
@@ -68,6 +68,7 @@ export interface PromotionRow {
   max_uses_total: number | null;
   max_uses_per_customer: number | null;
   combinable: boolean;
+  combinable_with_loyalty: boolean;
   exclude_discounted_products: boolean;
   activation: string;
   code_kind: string | null;
@@ -212,6 +213,7 @@ export function mapPromotion(row: PromotionRow, overview: PromotionOverviewRow |
       maxTotal: row.max_uses_total,
       maxPerCustomer: row.max_uses_per_customer,
       combinable: row.combinable,
+      combinableWithLoyalty: row.combinable_with_loyalty,
       excludeDiscounted: row.exclude_discounted_products,
       excludedProductIds: productsOf("excluded"),
     },
@@ -320,6 +322,7 @@ export function promotionPayload(p: Promotion): Json {
     max_uses_total: p.usage.maxTotal,
     max_uses_per_customer: p.usage.maxPerCustomer,
     combinable: p.usage.combinable,
+    combinable_with_loyalty: p.usage.combinableWithLoyalty,
     exclude_discounted_products: p.usage.excludeDiscounted,
     activation: byCode ? "code" : "automatic",
     code_kind: byCode ? p.code.kind : null,

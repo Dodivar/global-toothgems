@@ -451,8 +451,9 @@
         "too_many_attempts": "Trop de codes refusés. Réessayez dans quelques minutes.",
         "dropped": "Un code ne s’applique plus à votre panier : il a été retiré."
       },
-      "blockedByReward": "La récompense fidélité ne se cumule pas avec un code promo : décochez-la pour saisir un code.",
-      "rewardBlockedByCode": "Ne se cumule pas avec un code promo : retirez le code pour utiliser votre récompense.",
+      "rewardHint": "Appliquée seule si elle est plus avantageuse que vos promotions ; cumulée seulement avec les promotions qui l’acceptent.",
+      "rewardNotUsed": "Une promotion plus avantageuse est appliquée : votre récompense fidélité reste disponible.",
+      "codeNotUsed": "Le code {{code}} n’est pas appliqué : une offre plus avantageuse est déjà retenue.",
       "discountLine": "{{label}} ({{code}})",
       "gift": "Offert : {{name}}",
       "freeOrder": "Cette commande est entièrement offerte par une promotion : le paiement gratuit n’est pas encore possible. Retirez le code ou ajoutez un article."

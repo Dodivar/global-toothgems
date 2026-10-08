@@ -49,8 +49,8 @@ export function CheckoutLoyaltyBanner({
     saving: number;
     onChange: (checked: boolean) => void;
     disabled?: boolean;
-    /** Why the choice is not offered right now (a promo code is in use), said under the checkbox. */
-    blockedReason?: string;
+    /** How the reward combines with promotions, said under the checkbox. */
+    hint?: string;
   };
   className?: string;
 }) {
@@ -197,9 +197,7 @@ export function CheckoutLoyaltyBanner({
                 />
                 {t("loyalty.checkout.use", { percent })}
               </label>
-              {spending.blockedReason && (
-                <p className="m-0 text-[length:var(--text-caption)] text-[var(--text-muted)]">{spending.blockedReason}</p>
-              )}
+              {spending.hint && <p className="m-0 text-[length:var(--text-caption)] text-[var(--text-muted)]">{spending.hint}</p>}
               {spending.checked && (
                 <p role="status" className="m-0 text-[length:var(--text-caption)] text-[var(--text-muted)]">
                   {t("loyalty.checkout.saving", { amount: formatPrice(spending.saving) })}

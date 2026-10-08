@@ -616,9 +616,8 @@ export function Cart() {
               reward={{
                 checked: rewardOn,
                 saving: toMajorUnits(goodsDiscount),
-                // The reward does not combine with a promo code (the database refuses both together).
-                disabled: submitting || !live || promoCodes.length > 0,
-                blockedReason: promoCodes.length > 0 ? t("checkout.promo.rewardBlockedByCode") : undefined,
+                disabled: submitting || !live,
+                hint: t("checkout.promo.rewardHint"),
                 onChange: (checked) => {
                   setWantsReward(checked);
                   if (checkoutError === "loyalty_reward_unavailable") setCheckoutError(null);
@@ -808,6 +807,16 @@ export function Cart() {
                 <span className="flex-none">−{money(discount.amount)}</span>
               </div>
             ))}
+            {/* What the database chose, when it is not what was asked: the better offer wins. */}
+            {quote && rewardOn && !quote.discounts.some((d) => d.type === "loyalty") && (
+              <p className="m-0 text-xs text-[var(--text-muted)]">{t("checkout.promo.rewardNotUsed")}</p>
+            )}
+            {quote &&
+              promoCodes
+                .filter((code) => !quote.discounts.some((d) => d.code === code))
+                .map((code) => (
+                  <p key={code} className="m-0 text-xs text-[var(--text-muted)]">{t("checkout.promo.codeNotUsed", { code })}</p>
+                ))}
             {quote?.gifts.map((gift) => (
               <div key={`${gift.name}${gift.variant ?? ""}`} className="flex justify-between gap-3 text-[var(--status-success-fg)]">
                 <span>{t("checkout.promo.gift", { name: gift.variant ? `${gift.name} — ${gift.variant}` : gift.name })}</span>
@@ -836,7 +845,6 @@ export function Cart() {
               disabled={submitting}
               checking={quoteState.status === "loading"}
               refusal={promoRefusal}
-              blockedReason={rewardOn ? t("checkout.promo.blockedByReward") : null}
             />
           )}
           {live && (

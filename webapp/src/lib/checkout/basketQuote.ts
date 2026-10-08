@@ -53,6 +53,8 @@ export interface QuoteDiscount {
   label: string;
   /** The typed code, null for an automatic promotion or the loyalty reward. */
   code: string | null;
+  /** The promotion's type, or `loyalty` for the reward. */
+  type: string;
   goods: number;
   shipping: number;
 }
@@ -91,6 +93,7 @@ export function readQuote(data: unknown): QuoteResult {
       discounts.push({
         label: row.label,
         code: typeof row.code === "string" ? row.code : null,
+        type: typeof row.type === "string" ? row.type : "",
         goods: minor(row.goods_amount),
         shipping: minor(row.shipping_amount),
       });

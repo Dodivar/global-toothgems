@@ -19,6 +19,7 @@
 --   PL8 a draft may wait for its shared code; going live without one is refused
 --   PL9 a promotion needs its French title (base column), even as a draft
 --   PL10 a free gift line is listed but does not change the quoted amounts
+--   PL11 reward vs promotions: the better wins; both when the promotion is combinable_with_loyalty; a code no longer conflicts
 -- =============================================================================
 
 do $$
@@ -248,6 +249,53 @@ begin
     end if;
     passed := array_append(passed, 'PL10 a free gift line is listed but leaves the quoted amounts at zero');
   end if;
+
+  -- PL11: the reward and promotions — the better one wins, or both when the promotion allows it -----------
+  perform set_config('role', 'postgres', true);
+  insert into public.loyalty_cards (user_id, status, stamps_required, reward_percent, stamps_count, completed_at)
+  values (cst, 'completed', 5, 10, 5, now());
+  perform set_config('role', 'authenticated', true);
+  perform set_config('request.jwt.claims', json_build_object('sub', mgr, 'role', 'authenticated')::text, true);
+  update public.promotions set lifecycle = 'archived' where lifecycle = 'live';
+  v_p1 := public.admin_save_promotion(base || jsonb_build_object('name', 'Auto 5', 'percent_off', 5, 'activation', 'automatic', 'code', '', 'code_kind', null));
+  perform set_config('request.jwt.claims', json_build_object('sub', cst, 'role', 'authenticated')::text, true);
+  -- a) 5 % promotion vs 10 % reward: the reward wins, alone
+  v_json := public.quote_basket(v_items, null, null, true);
+  if not (v_json ->> 'ok')::boolean or (v_json ->> 'goods_discount')::numeric <> round(v_price * 2 * 0.10, 2)
+     or jsonb_array_length(v_json -> 'discounts') <> 1 or v_json #>> '{discounts,0,type}' <> 'loyalty' then
+    raise exception 'FAIL PL11a: reward should beat a 5 %% promotion (%)', v_json;
+  end if;
+  -- without the reward the promotion applies
+  v_json := public.quote_basket(v_items);
+  if (v_json ->> 'goods_discount')::numeric <> round(v_price * 2 * 0.05, 2) then raise exception 'FAIL PL11: promotion lost (%)', v_json; end if;
+  -- b) 30 % promotion vs reward: the promotion wins and the reward is not used
+  perform set_config('request.jwt.claims', json_build_object('sub', mgr, 'role', 'authenticated')::text, true);
+  v_p2 := public.admin_save_promotion(base || jsonb_build_object('name', 'Auto 30', 'percent_off', 30, 'activation', 'automatic', 'code', '', 'code_kind', null));
+  perform set_config('request.jwt.claims', json_build_object('sub', cst, 'role', 'authenticated')::text, true);
+  v_json := public.quote_basket(v_items, null, null, true);
+  if (v_json ->> 'goods_discount')::numeric <> round(v_price * 2 * 0.30, 2) or v_json #>> '{discounts,0,type}' = 'loyalty' then
+    raise exception 'FAIL PL11b: a 30 %% promotion should beat the reward (%)', v_json;
+  end if;
+  -- c) a promotion that accepts the reward: both, the reward on what is left
+  perform set_config('request.jwt.claims', json_build_object('sub', mgr, 'role', 'authenticated')::text, true);
+  update public.promotions set lifecycle = 'archived' where id = v_p2;
+  perform public.admin_save_promotion(base || jsonb_build_object('id', v_p1, 'name', 'Auto 5', 'percent_off', 5, 'activation', 'automatic',
+                                      'code', '', 'code_kind', null, 'combinable_with_loyalty', true));
+  perform set_config('request.jwt.claims', json_build_object('sub', cst, 'role', 'authenticated')::text, true);
+  v_json := public.quote_basket(v_items, null, null, true);
+  if jsonb_array_length(v_json -> 'discounts') <> 2
+     or abs((v_json ->> 'goods_discount')::numeric - round(v_price * 2 * (0.05 + 0.95 * 0.10), 2)) > 0.02 then
+    raise exception 'FAIL PL11c: promotion + reward not combined (%)', v_json;
+  end if;
+  -- d) a typed code with the reward is no longer refused
+  perform set_config('request.jwt.claims', json_build_object('sub', mgr, 'role', 'authenticated')::text, true);
+  perform public.admin_save_promotion(base || jsonb_build_object('name', 'Code 20', 'percent_off', 20, 'code', 'plmix20'));
+  perform set_config('request.jwt.claims', json_build_object('sub', cst, 'role', 'authenticated')::text, true);
+  v_json := public.quote_basket(v_items, array['PLMIX20'], null, true);
+  if not (v_json ->> 'ok')::boolean or (v_json ->> 'goods_discount')::numeric < round(v_price * 2 * 0.20, 2) then
+    raise exception 'FAIL PL11d: code + reward (%)', v_json;
+  end if;
+  passed := array_append(passed, 'PL11 reward vs promotions: the better wins, both when the promotion allows it, a code no longer conflicts');
 
   raise exception 'ALL PROMOTIONS LIVE TESTS PASSED (% checks): %', array_length(passed, 1), array_to_string(passed, ' | ');
 end;

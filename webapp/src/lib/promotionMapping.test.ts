@@ -37,6 +37,7 @@ const row: PromotionRow = {
   max_uses_total: 500,
   max_uses_per_customer: 1,
   combinable: false,
+  combinable_with_loyalty: false,
   exclude_discounted_products: true,
   activation: "code",
   code_kind: "shared",

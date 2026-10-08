@@ -437,6 +437,7 @@ function Configuration({ promotion }: { promotion: Promotion }) {
           <dl className="m-0 grid grid-cols-2 gap-3">
             <Fact label={t("promo.editor.usage.maxPerCustomer")} value={u.maxPerCustomer ?? t("promo.editor.noLimit")} />
             <Fact label={t("promo.editor.usage.combinableShort")} value={yes(u.combinable)} />
+            <Fact label={t("promo.editor.usage.withLoyaltyShort")} value={yes(u.combinableWithLoyalty)} />
             <Fact label={t("promo.editor.usage.excludeDiscounted")} value={yes(u.excludeDiscounted)} />
             <Fact label={t("promo.editor.usage.excludeGiftCards")} value={yes(true)} />
           </dl>

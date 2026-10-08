@@ -5057,6 +5057,7 @@ export type Database = {
           campaign_id: string | null
           code_kind: string | null
           combinable: boolean
+          combinable_with_loyalty: boolean
           created_at: string
           created_by: string | null
           currency: string
@@ -5094,6 +5095,7 @@ export type Database = {
           campaign_id?: string | null
           code_kind?: string | null
           combinable?: boolean
+          combinable_with_loyalty?: boolean
           created_at?: string
           created_by?: string | null
           currency?: string
@@ -5131,6 +5133,7 @@ export type Database = {
           campaign_id?: string | null
           code_kind?: string | null
           combinable?: boolean
+          combinable_with_loyalty?: boolean
           created_at?: string
           created_by?: string | null
           currency?: string

@@ -18,7 +18,6 @@ export function PromotionCodes({
   disabled,
   checking,
   refusal,
-  blockedReason,
 }: {
   codes: string[];
   onChange: (codes: string[]) => void;
@@ -27,14 +26,12 @@ export function PromotionCodes({
   checking?: boolean;
   /** The verdict on the last code typed: it was refused and removed. */
   refusal?: "invalid" | "too_many_attempts" | "dropped" | null;
-  /** Why codes cannot be typed (the loyalty reward is being spent), or null. */
-  blockedReason?: string | null;
 }) {
   const { t } = useTranslation();
   const id = useId();
   const [input, setInput] = useState("");
   const [error, setError] = useState<"format" | "duplicate" | "limit" | null>(null);
-  const locked = disabled || Boolean(blockedReason);
+  const locked = disabled;
 
   const add = () => {
     const result = addPromotionCode(codes, input);
@@ -91,8 +88,7 @@ export function PromotionCodes({
         </Button>
       </form>
       <div id={`${id}-status`} aria-live="polite">
-        {blockedReason && <p className="m-0 text-sm text-[var(--text-muted)]">{blockedReason}</p>}
-        {!blockedReason && checking && codes.length > 0 && (
+        {checking && codes.length > 0 && (
           <p className="m-0 text-sm text-[var(--text-muted)]">{t("checkout.promo.checking")}</p>
         )}
         {message && (

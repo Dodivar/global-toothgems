@@ -76,6 +76,8 @@ export interface UsageRules {
   maxTotal: number | null;
   maxPerCustomer: number | null;
   combinable: boolean;
+  /** The loyalty reward may be added on top of this promotion (otherwise the better of the two applies). */
+  combinableWithLoyalty: boolean;
   excludeDiscounted: boolean;
   excludedProductIds: string[];
 }
@@ -285,7 +287,7 @@ export function blankPromotion(campaignId: string | null = null): Promotion {
       minCartCents: null,
       minQuantity: null,
     },
-    usage: { maxTotal: null, maxPerCustomer: 1, combinable: false, excludeDiscounted: true, excludedProductIds: [] },
+    usage: { maxTotal: null, maxPerCustomer: 1, combinable: false, combinableWithLoyalty: false, excludeDiscounted: true, excludedProductIds: [] },
     schedule: { startsAt: localDay(1), endsAt: localDay(15, "23:59"), timezone: "Europe/Paris" },
     code: { mode: "automatic", code: "", kind: "shared", uniqueCount: null },
     campaignId,

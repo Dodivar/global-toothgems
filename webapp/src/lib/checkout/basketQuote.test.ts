@@ -64,7 +64,7 @@ describe("reading the quote", () => {
       quote: {
         goodsDiscount: 760,
         shippingDiscount: 490,
-        discounts: [{ label: "Spring", code: "SPRING", goods: 760, shipping: 0 }],
+        discounts: [{ label: "Spring", code: "SPRING", type: "percentage", goods: 760, shipping: 0 }],
         gifts: [{ name: "Pouch", variant: null }],
       },
     });

@@ -451,8 +451,9 @@
         "too_many_attempts": "Too many refused codes. Try again in a few minutes.",
         "dropped": "A code no longer applies to your basket: it was removed."
       },
-      "blockedByReward": "The loyalty reward cannot be combined with a promo code: untick it to enter a code.",
-      "rewardBlockedByCode": "Cannot be combined with a promo code: remove the code to spend your reward.",
+      "rewardHint": "Applied alone when it beats your promotions; added only on top of promotions that accept it.",
+      "rewardNotUsed": "A better promotion is applied: your loyalty reward stays available.",
+      "codeNotUsed": "Code {{code}} is not applied: a better offer is already in place.",
       "discountLine": "{{label}} ({{code}})",
       "gift": "Free gift: {{name}}",
       "freeOrder": "This order is entirely free through a promotion: free checkout is not available yet. Remove the code or add an item."

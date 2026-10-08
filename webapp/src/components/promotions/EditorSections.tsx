@@ -598,6 +598,7 @@ export function UsageSection(props: SectionProps) {
         u.maxTotal ? t("promo.editor.usage.summaryTotal", { count: u.maxTotal }) : t("promo.editor.usage.unlimited"),
         u.maxPerCustomer ? t("promo.editor.usage.summaryPer", { count: u.maxPerCustomer }) : null,
         u.combinable ? t("promo.editor.usage.combinableShort") : null,
+        u.combinableWithLoyalty ? t("promo.editor.usage.withLoyaltyShort") : null,
       ]
         .filter(Boolean)
         .join(" · ")}
@@ -615,6 +616,7 @@ export function UsageSection(props: SectionProps) {
       </div>
       <div className="grid grid-cols-[minmax(0,1fr)] gap-4 rounded-[var(--admin-radius)] border border-[var(--border-subtle)] p-4">
         <ToggleSwitch label={t("promo.editor.usage.combinable")} description={t("promo.editor.usage.combinableHint")} checked={u.combinable} onChange={(combinable) => set({ combinable })} />
+        <ToggleSwitch label={t("promo.editor.usage.withLoyalty")} description={t("promo.editor.usage.withLoyaltyHint")} checked={u.combinableWithLoyalty} onChange={(combinableWithLoyalty) => set({ combinableWithLoyalty })} />
         <ToggleSwitch label={t("promo.editor.usage.excludeDiscounted")} description={t("promo.editor.usage.excludeDiscountedHint")} checked={u.excludeDiscounted} onChange={(excludeDiscounted) => set({ excludeDiscounted })} />
         {/* Always on: a gift card is money, never discounted (the database enforces it). */}
         <ToggleSwitch label={t("promo.editor.usage.excludeGiftCards")} description={t("promo.editor.usage.excludeGiftCardsHint")} checked disabled onChange={() => undefined} />
