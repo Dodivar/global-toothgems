@@ -9,6 +9,9 @@ const PHOTO_ASPECT: [StudioShape, number][] = [
   ["navette", 0.514],
   ["starflower", 1.031],
   ["rivoli-star", 1.069],
+  ["heart", 1.18],
+  ["snake", 0.573],
+  ["dachshund", 1.432],
 ];
 
 function extent(shape: StudioShape) {
@@ -20,30 +23,25 @@ function extent(shape: StudioShape) {
   return box;
 }
 
-describe("measured gem cuts", () => {
+describe("gem outlines traced from the shop photos", () => {
   it.each(PHOTO_ASPECT)("%s keeps the photo's proportions", (shape, aspect) => {
     const size = extent(shape).getSize(new THREE.Vector3());
     // the stars are drawn perfectly regular; the photos are up to 2 % wider than that
     expect(Math.abs(size.x / size.y - aspect)).toBeLessThan(0.025);
   });
 
-  it.each(PHOTO_ASPECT.map(([s]) => s))("%s faces every crown facet outwards", (shape) => {
+  it.each(PHOTO_ASPECT.map(([s]) => s))("%s faces every facet outwards", (shape) => {
+    const back = extent(shape).min.z;
     for (const g of getJewelTemplate(shape).parts) {
-      const pos = g.attributes.position as THREE.BufferAttribute;
-      const a = new THREE.Vector3(),
-        b = new THREE.Vector3(),
-        c = new THREE.Vector3();
-      const tpl = getJewelTemplate(shape);
+      const pos = (g.index ? g.toNonIndexed() : g).attributes.position as THREE.BufferAttribute;
+      const v = [new THREE.Vector3(), new THREE.Vector3(), new THREE.Vector3()];
       for (let i = 0; i < pos.count; i += 3) {
-        a.fromBufferAttribute(pos, i);
-        b.fromBufferAttribute(pos, i + 1);
-        c.fromBufferAttribute(pos, i + 2);
-        const normal = new THREE.Vector3().crossVectors(b.clone().sub(a), c.clone().sub(a));
+        v.forEach((p, k) => p.fromBufferAttribute(pos, i + k));
+        const normal = new THREE.Vector3().crossVectors(v[1].clone().sub(v[0]), v[2].clone().sub(v[0]));
         if (normal.lengthSq() < 1e-14) continue;
-        const z = (a.z + b.z + c.z) / 3;
-        // crown facets (above the girdle) face the viewer; the flat back faces the tooth
-        if (z > -tpl.halfDepth + 0.05) expect(normal.z).toBeGreaterThanOrEqual(-1e-9);
-        else if (Math.abs(normal.x) + Math.abs(normal.y) < 1e-9) expect(normal.z).toBeLessThan(0);
+        // the flat back faces the tooth; everything else (edge walls are vertical) faces the viewer
+        if (v.every((p) => Math.abs(p.z - back) < 1e-6)) expect(normal.z).toBeLessThan(0);
+        else expect(normal.z).toBeGreaterThanOrEqual(-1e-9);
       }
     }
   });
