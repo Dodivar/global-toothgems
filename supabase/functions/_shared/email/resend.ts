@@ -26,6 +26,8 @@ export interface OutgoingEmail {
   headers?: Record<string, string>;
   /** Resend tags: names and values are ASCII letters, digits, `_` or `-`. */
   tags?: { name: string; value: string }[];
+  /** Files sent with the e-mail; `content` is base64 (Resend accepts 40 MB in all, once encoded). */
+  attachments?: { filename: string; content: string }[];
 }
 
 export class ResendError extends Error {
@@ -62,6 +64,7 @@ export async function sendWithResend(config: ResendConfig, mail: OutgoingEmail):
         ...(mail.replyTo ? { reply_to: mail.replyTo } : {}),
         ...(mail.headers ? { headers: mail.headers } : {}),
         ...(mail.tags ? { tags: mail.tags } : {}),
+        ...(mail.attachments?.length ? { attachments: mail.attachments } : {}),
       }),
       signal: AbortSignal.timeout(config.timeoutMs ?? 10_000),
     });

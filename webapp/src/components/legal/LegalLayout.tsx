@@ -37,6 +37,7 @@ export function LegalLayout({
   showKey,
   contactCategory,
   aside,
+  hideReviewBar,
   children,
 }: {
   eyebrow: string;
@@ -52,6 +53,8 @@ export function LegalLayout({
   contactCategory?: ContactCategory;
   /** Right-hand column content on pages without a table of contents. */
   aside?: ReactNode;
+  /** A page that is production content (contact) drops the prototype review strip. */
+  hideReviewBar?: boolean;
   children: ReactNode;
 }) {
   const { t, i18n } = useTranslation();
@@ -76,7 +79,7 @@ export function LegalLayout({
       <div className="border-b border-[var(--border-subtle)] bg-[linear-gradient(180deg,var(--gt-blue-50),var(--surface-page))]">
         <header className="mx-auto grid max-w-[var(--max-width-content)] gap-5 px-[clamp(16px,4vw,48px)] pb-8 pt-5 sm:pb-10 sm:pt-6">
           <Breadcrumbs items={trail} />
-          <ReviewBar />
+          {!hideReviewBar && <ReviewBar />}
           <div className="grid max-w-[820px] gap-3">
             <span className="gt-eyebrow text-[var(--gt-blue-700)]">{eyebrow}</span>
             <h1 id={LEGAL_TITLE_ID} tabIndex={-1} className="text-[clamp(28px,4.2vw,var(--text-h1))] leading-[1.12] outline-none">

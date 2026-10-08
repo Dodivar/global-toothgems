@@ -139,7 +139,9 @@ supabase/
 | 20261007191747 | `promotions_quote_actor` | **Applied 2026-10-07.** `quote_basket()`: guests are throttled per `sb-forwarded-for`/`cf-connecting-ip` (the first `x-forwarded-for` entry is caller-writable); a free "gift with purchase" line no longer counts in `goods_discount` / the gift row's amount (it is not in the basket); drops the probe. Suite PL9–PL10 |
 | 20261008174607 | `loyalty_with_promotions` | **Applied 2026-10-08.** Decision 85: `promotions.combinable_with_loyalty` (default false, set by `admin_save_promotion`), `private.loyalty_on_top()`, and `compute_order_discounts()` rewritten: with the reward requested it compares promotions alone, the reward alone and "combinable promotions + reward" and applies the best (tie: promotions, so the reward is kept); a typed code no longer conflicts with the reward. Suite PL11 |
 | 20261008182346 | `quote_basket_lines` | **Applied 2026-10-08.** `quote_basket()` also answers `lines` (product, variant, discount amount) so the checkout shows the discount on the lines it reaches |
-| 20261008182500 | `promotions_public_lifecycle_column` | **Applied 2026-10-08.** `grant select (lifecycle)` on `promotions` and `campaigns` to `anon`: the policies of their child tables (scope, translations, products) read it, and a visitor only ever sees live rows. Needed by the shop window's offers |
+| 20261008182555 | `promotions_public_lifecycle_column` | **Applied 2026-10-08.** `grant select (lifecycle)` on `promotions` and `campaigns` to `anon`: the policies of their child tables (scope, translations, products) read it, and a visitor only ever sees live rows. Needed by the shop window's offers |
+| 20261008175722 | `contact_attachments_and_support_email` | **Applied 2026-10-08.** Contact form: `contact_requests.attachment_path` → `attachment_paths text[]` (≤ 5, `private.valid_contact_attachment_paths()`), bucket `contact-attachments` 20 MB per object, `submit_contact_request(…, p_attachment_paths text[])` (old signature dropped; ownership per path, no duplicates, ≤ 20 MB in all), guard trigger rebuilt, `contact_ip_allowed(ip_hash)` (service role), template `contact_request_received` (fr + en) for the support inbox. Suite: `iteration7_validation.sql` C3/C4 |
+| 20261008175809 | `contact_attachment_paths_check_grant` | **Applied 2026-10-08.** `execute` on the CHECK helper for `authenticated`/`service_role` (staff triage re-evaluates the CHECK) |
 | 20261007181011 | `gift_card_design_everywhere` | **Applied 2026-10-07.** The design/names/message chosen at checkout are shown back (WYSIWYG): policy `gift_cards: purchaser reads own` (a buyer reads the cards of their purchases through the existing column grant — never the code) so the member's order pages draw the card in its design; the `gift_card_delivery` template bodies (fr + en) lose their `{{message}}` paragraph because the e-mail now draws the card itself (`giftCardVisual()`, message included). Test: a buyer sees only their own cards (to add to `gift_cards_validation.sql`) |
 | 20261007184209 | `shipping_refunds` | **Applied 2026-10-07** (decision 82). Back-office shipping and card refunds: `create_shipment()` (a parcel and its lines in one transaction, `manage_orders`, carrier + tracking to ship) and `set_shipment_status()` (forward-only; same status again only corrects the details); refunded units no longer count as "to ship" (`sync_order_fulfillment`, `guard_shipment_item`, via `private.refunded_units()`) and a confirmed refund recomputes the order's fulfilment (`apply_refund_success`); `pending_refund_emails()` lists card refunds only (gift-card credits are not e-mailed); trigger `refunds_guard_zz_gift_cards` refuses a refund while a gift card bought in the order is active; `record_external_refund()` (backend only) records a refund made in the Stripe dashboard. Suite: `supabase/tests/shipping_refunds_validation.sql` |
 | 20261007072552 | `quiz_unlimited_attempts_cleanup` | **Partly applied 2026-10-07.** `admin_save_course()` and `private.learner_course_json()` rewritten without `allow_retry` / `max_attempts` (applied live through SQL, not recorded in the migration history). `drop column` on `course_quizzes` **not applied yet**: the MCP call timed out three times with no lock or session visible; the columns are unused and keep their defaults, so nothing depends on the drop |
@@ -685,19 +687,29 @@ server  create_order(..., p_promotion_codes => ['WELCOME15'], p_use_loyalty_rewa
 ### Public pages and customer service (iteration 7)
 
 **Contact form → tickets** (`webapp/src/screens/legal/Contact.tsx`)
-- Only path in: `submit_contact_request(name, email, category, subject, message, order_reference?, locale?, attachment_path?)`
-  → returns the ticket number (`SUP-100001…`). Members call it with their JWT; **visitors go through the server
-  route** (captcha, IP limit) which calls it with the service role — `anon` cannot call it.
+- Only path in: `submit_contact_request(name, email, category, subject, message, order_reference?, locale?, attachment_paths?)`
+  → returns the ticket number (`SUP-100001…`). The browser never calls it: it posts one multipart request to the
+  Edge Function `submit-contact-request` (`webapp/src/lib/contact/api.ts`), which calls the RPC with the member's
+  JWT, or with the service role for a visitor — `anon` cannot call it.
 - Validated in the database: 9 categories, subject, message 20–5000 characters, e-mail; `privacy` requests are
   `high` priority. Throttled: 3 per 10 minutes per account or e-mail (`PT429` → HTTP 429 through PostgREST).
 - The typed order number is linked to the order **only** when it is the requester's own (account, or same e-mail
   for a guest); the answer never says whether it matched.
-- Attachments: private bucket `contact-attachments` (10 MB, jpeg/png/pdf); members upload into `<user_id>/`, the
-  server writes guests' files under `guest/`; the function checks the file exists in the caller's folder.
+- Attachments (2026-10-08): at most **5 files, 20 MB in all** (read as a total, not per file — decision to confirm), JPG/PNG/PDF,
+  in the private bucket `contact-attachments` (20 MB per object). The Edge Function checks the type from the file's
+  first bytes, names the objects itself (`<user_id>/<uuid>.<ext>` for a member, `guest/<uuid>.<ext>` for a visitor)
+  and removes them if the ticket is refused. `contact_requests.attachment_paths text[]` (≤ 5 valid paths); the RPC checks
+  each path exists in the caller's folder, no duplicates, and the stored sizes add up to ≤ 20 MB.
 - Triage (`manage_customers`): status `new → open → waiting_customer → resolved/closed` (or `spam`), priority,
   assignee (active team member); `first_response_at` / `resolved_at` stamped; the customer's words never change;
   audited. Internal notes in `contact_request_notes`. Customers see their own tickets; all staff read them.
-- The server route sends the `contact_acknowledgement` e-mail (template below).
+- The Edge Function then sends two e-mails, best effort (the ticket is the record; failures are only logged):
+  `contact_acknowledgement` to the customer (event `contact_acknowledgement:<ticket>`) and `contact_request_received`
+  to the support inbox — French, `Reply-To` = the customer, the files attached (event `contact_request_received:<ticket>`).
+  Support address: `store_settings.support_email` (even when the contact page hides it), else the `EMAIL_REPLY_TO` secret.
+  No back-office screen reads the tickets yet, so this e-mail is how the team receives the message.
+- Protection until a captcha is chosen: a honeypot field, 10 attempts / 10 min per caller address (`contact_ip_allowed()`,
+  service role only, hashed address) and the database's 3 / 10 min per account or e-mail.
 
 **Newsletter for visitors** (storefront forms)
 ```
@@ -1199,7 +1211,8 @@ VAT rates, shipping zones/rates mirroring the Settings prototype. Media rows ref
     "case sensitive" option is not modelled).
 24. **Internal promotion/campaign names** are hidden from visitors (column grants) but readable by signed-in customers
     for *running automatic* promotions (same trade-off as decision 7). Do not put confidential text in them.
-25. **Contact form for visitors goes through a server route** (captcha, IP limit, service role); the database only
+25. **Contact form goes through the Edge Function `submit-contact-request`** (service role for visitors; the Next.js server
+    must not hold it). Captcha provider still to choose; honeypot + IP limit meanwhile (2026-10-08). The database also
     throttles per e-mail/account. `submit_contact_request`, `newsletter_confirm`, `newsletter_unsubscribe` are
     `SECURITY DEFINER` and reachable from the API on purpose (accepted advisor warnings): each validates its input
     and only acts on the caller's own data or on a bearer token.
@@ -1461,8 +1474,8 @@ VAT rates, shipping zones/rates mirroring the Settings prototype. Media rows ref
       e-mail content or the provider's text. Webapp side: `webapp/src/lib/visitorEmail.ts` (request builder + never-throwing
       caller, tested) and `visitorEmailServer.ts` (`server-only`; reads `EMAIL_INTERNAL_SECRET` and
       `SUPABASE_FUNCTIONS_URL` or `<NEXT_PUBLIC_SUPABASE_URL>/functions/v1`).
-      **The contact and newsletter forms are not wired yet**: `submit_contact_request()` (guests) and
-      `newsletter_subscribe()` are service-role only, and the Next.js server must not hold the service-role key
+      **The contact form is wired (2026-10-08) through its own Edge Function `submit-contact-request`, not through `send-email`**
+      (see Contact form above). **The newsletter form is not**: `newsletter_subscribe()` is service-role only, and the Next.js server must not hold the service-role key
       (AGENTS.md §4). The guest path therefore needs a small Edge Function (captcha / IP limit, then the RPC, then
       the e-mail) — a decision to confirm (captcha provider), together with the page behind the newsletter link
       (`newsletter_confirm(token)`).

@@ -67,7 +67,7 @@ function FieldShell({
           {label}
         </label>
         {optional && (
-          <span className="text-[length:var(--text-caption)] text-[var(--text-muted)]">{t("register.optional")}</span>
+          <span className="text-[length:var(--text-caption)] leading-none text-[var(--text-muted)]">{t("register.optional")}</span>
         )}
       </div>
       {children}

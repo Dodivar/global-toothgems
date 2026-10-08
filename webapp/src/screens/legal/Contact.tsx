@@ -3,6 +3,7 @@
 import { useRef, useState, type FormEvent, type ReactNode } from "react";
 import { Link, useSearchParams } from "../../lib/navigation";
 import { useTranslation } from "react-i18next";
+import type { TFunction } from "i18next";
 import {
   ArrowRight,
   CircleAlert,
@@ -24,19 +25,15 @@ import { TextField } from "../../components/register/Field";
 import { Notice } from "../../components/security/Notice";
 import { SuccessMark } from "../../components/security/SuccessMark";
 import { LegalLayout } from "../../components/legal/LegalLayout";
-import { Placeholder } from "../../components/legal/RichText";
-import { ReviewNote } from "../../components/legal/ReviewNote";
 import { CONTACT_CATEGORY_PARAM, LEGAL_PATHS } from "../../data/legal/routes";
 import type { ContactCategory } from "../../data/legal/types";
 import type { StoreDetails } from "../../data/adminSettings";
 import { countryName } from "../../lib/settingsRules";
 import { addressLines, hasOpeningHours, hasVisibleContact, hoursSummary, supportMessageIn } from "../../lib/storeDetails";
+import { sendContactMessage, type ContactError } from "../../lib/contact/api";
+import { ACCEPTED_ATTACHMENTS, attachmentProblem, MAX_ATTACHMENTS, mergeAttachments } from "../../lib/contact/attachments";
 
 const CATEGORIES: ContactCategory[] = ["order", "delivery", "returns", "product", "training", "technical", "privacy", "professional", "other"];
-
-/** Prototype limit for the attachment. A technical choice, not a business rule — adjust with the real upload service. */
-const MAX_FILE_BYTES = 10 * 1024 * 1024;
-const ACCEPTED_FILES = ".jpg,.jpeg,.png,.pdf";
 
 const EMAIL = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
 
@@ -51,6 +48,14 @@ interface Values {
 
 type Errors = Partial<Record<keyof Values | "file", string>>;
 
+function formatSize(bytes: number, t: TFunction): string {
+  return bytes < 1024 * 1024
+    ? t("legal.contact.sizeKb", { size: Math.max(1, Math.round(bytes / 1024)) })
+    : t("legal.contact.sizeMb", { size: (bytes / 1024 / 1024).toFixed(1) });
+}
+
+const FILE_ERROR_KEYS = { count: "fileCount", size: "fileSize", type: "fileType" } as const;
+
 function isCategory(value: string | null): value is ContactCategory {
   return value !== null && (CATEGORIES as string[]).includes(value);
 }
@@ -59,19 +64,20 @@ function isCategory(value: string | null): value is ContactCategory {
  * Contact page: the form, the other ways to reach us, and a confirmation once
  * sent.
  *
- * Nothing leaves the browser — the prototype has no backend — and the success
- * screen says so. The category can arrive pre-selected from any page that
- * links here with `?sujet=…`, so "a question about a return" starts in the
- * right place. Validation runs on submit and then live, errors are tied to
- * their fields, and focus moves to the first one that needs attention.
+ * Sending goes through `lib/contact/api.ts`: the message becomes a support
+ * ticket, the customer gets an acknowledgement and the team gets the message
+ * with its attachments (up to 5 files, 20 MB in all). The category can arrive
+ * pre-selected from any page that links here with `?sujet=…`, so "a question
+ * about a return" starts in the right place. Validation runs on submit and then
+ * live, errors are tied to their fields, and focus moves to the first one that
+ * needs attention.
  *
  * "Other ways to reach us" shows the contact details saved in Settings › Store
- * (`store`, read by the server): only what the business chose to show. Without
- * them (mock mode, failed read) it lists what is still to be supplied.
+ * (`store`, read by the server): only what the business chose to show.
  */
 export function Contact({ store = null }: { store?: StoreDetails | null }) {
   const { t, i18n } = useTranslation();
-  const showOther = !store || hasVisibleContact(store, i18n.language);
+  const showOther = store !== null && hasVisibleContact(store, i18n.language);
   const [params] = useSearchParams();
   const preset = params.get(CONTACT_CATEGORY_PARAM);
 
@@ -83,7 +89,9 @@ export function Contact({ store = null }: { store?: StoreDetails | null }) {
     subject: "",
     message: "",
   });
-  const [file, setFile] = useState<File | null>(null);
+  const [files, setFiles] = useState<File[]>([]);
+  const [ticket, setTicket] = useState<string | null>(null);
+  const [sendError, setSendError] = useState<ContactError | null>(null);
   const [errors, setErrors] = useState<Errors>({});
   const [submitted, setSubmitted] = useState(false);
   const [sending, setSending] = useState(false);
@@ -92,7 +100,7 @@ export function Contact({ store = null }: { store?: StoreDetails | null }) {
   const fileInput = useRef<HTMLInputElement>(null);
   const successHeading = useRef<HTMLHeadingElement>(null);
 
-  const validate = (v: Values, f: File | null): Errors => {
+  const validate = (v: Values, f: File[]): Errors => {
     const e: Errors = {};
     if (!v.name.trim()) e.name = t("legal.contact.errors.name");
     if (!v.email.trim()) e.email = t("legal.contact.errors.emailRequired");
@@ -100,25 +108,30 @@ export function Contact({ store = null }: { store?: StoreDetails | null }) {
     if (!v.category) e.category = t("legal.contact.errors.category");
     if (!v.subject.trim()) e.subject = t("legal.contact.errors.subject");
     if (v.message.trim().length < 20) e.message = t("legal.contact.errors.message");
-    if (f && f.size > MAX_FILE_BYTES) e.file = t("legal.contact.errors.fileSize");
+    const problem = attachmentProblem(f);
+    if (problem) e.file = t(`legal.contact.errors.${FILE_ERROR_KEYS[problem]}`);
     return e;
   };
 
   const update = <K extends keyof Values>(key: K, value: Values[K]) => {
     const next = { ...values, [key]: value };
     setValues(next);
-    if (submitted) setErrors(validate(next, file));
+    if (submitted) setErrors(validate(next, files));
   };
 
-  const onFile = (f: File | null) => {
-    setFile(f);
-    if (submitted || (f && f.size > MAX_FILE_BYTES)) setErrors(validate(values, f));
+  const onFiles = (next: File[]) => {
+    setFiles(next);
+    const problem = attachmentProblem(next);
+    setErrors((current) => {
+      const { file: _previous, ...rest } = current;
+      return problem ? { ...rest, file: t(`legal.contact.errors.${FILE_ERROR_KEYS[problem]}`) } : rest;
+    });
   };
 
   const onSubmit = (event: FormEvent) => {
     event.preventDefault();
     setSubmitted(true);
-    const found = validate(values, file);
+    const found = validate(values, files);
     setErrors(found);
     const firstKey = (["name", "email", "category", "subject", "message", "file"] as const).find((k) => found[k]);
     if (firstKey) {
@@ -127,27 +140,45 @@ export function Contact({ store = null }: { store?: StoreDetails | null }) {
       return;
     }
     setSending(true);
-    // Simulated round trip: long enough to show the sending state.
-    window.setTimeout(() => {
+    setSendError(null);
+    void sendContactMessage({
+      name: values.name,
+      email: values.email,
+      category: values.category,
+      subject: values.subject,
+      message: values.message,
+      orderReference: values.order,
+      locale: i18n.language.startsWith("fr") ? "fr" : "en",
+      files,
+    }).then((result) => {
       setSending(false);
+      if (!result.ok) {
+        setSendError(result.error);
+        return;
+      }
+      setTicket(result.ticketNumber);
       setSent(true);
       requestAnimationFrame(() => successHeading.current?.focus());
-    }, 900);
+    });
   };
 
   const reset = () => {
     setValues({ name: "", email: "", order: "", category: "", subject: "", message: "" });
-    setFile(null);
+    setFiles([]);
+    setTicket(null);
+    setSendError(null);
     setErrors({});
     setSubmitted(false);
     setSent(false);
   };
 
   const errorCount = Object.keys(errors).length;
+  const responseMessage = store ? supportMessageIn(store, i18n.language) : "";
 
   return (
     <LegalLayout
       eyebrow={t("legal.contact.eyebrow")}
+      hideReviewBar
       title={t("legal.contact.title")}
       intro={t("legal.contact.intro")}
       crumbs={[{ label: t("legal.hub.title"), to: LEGAL_PATHS.help }]}
@@ -164,8 +195,8 @@ export function Contact({ store = null }: { store?: StoreDetails | null }) {
                 {t("legal.contact.successTitle", { name: values.name.trim().split(" ")[0] })}
               </h2>
               <p className="m-0 max-w-[var(--max-width-prose)] text-[length:var(--text-body-md)] leading-[1.7] text-[var(--text-body)]">
-                {t("legal.contact.successBody", { email: values.email.trim() })}{" "}
-                <Placeholder label={t("legal.contact.responseTimePlaceholder")} />
+                {t("legal.contact.successBody", { email: values.email.trim() })}
+                {responseMessage && <> {responseMessage}</>}
               </p>
               <dl className="m-0 grid w-full gap-2 rounded-[var(--radius-md)] bg-[var(--surface-sunken)] p-4 text-[length:var(--text-body-sm)] sm:grid-cols-[140px_minmax(0,1fr)]">
                 <dt className="font-semibold text-[var(--text-primary)]">{t("legal.contact.fields.category")}</dt>
@@ -178,14 +209,19 @@ export function Contact({ store = null }: { store?: StoreDetails | null }) {
                     <dd className="m-0">{values.order}</dd>
                   </>
                 )}
-                {file && (
+                {files.length > 0 && (
                   <>
                     <dt className="font-semibold text-[var(--text-primary)]">{t("legal.contact.fields.file")}</dt>
-                    <dd className="m-0 break-all">{file.name}</dd>
+                    <dd className="m-0 break-all">{files.map((f) => f.name).join(", ")}</dd>
+                  </>
+                )}
+                {ticket && (
+                  <>
+                    <dt className="font-semibold text-[var(--text-primary)]">{t("legal.contact.successTicketLabel")}</dt>
+                    <dd className="m-0 tabular-nums">{ticket}</dd>
                   </>
                 )}
               </dl>
-              <ReviewNote className="w-full">{t("legal.contact.demoNote")}</ReviewNote>
               <div className="flex flex-wrap gap-3">
                 <Button variant="dark" onClick={reset}>
                   {t("legal.contact.sendAnother")}
@@ -252,9 +288,10 @@ export function Contact({ store = null }: { store?: StoreDetails | null }) {
                 )}
               </fieldset>
 
-              <div className="grid gap-5 sm:grid-cols-2">
+              <div className="grid items-start gap-5 sm:grid-cols-2">
                 <TextField
                   label={t("legal.contact.fields.name")}
+                  placeholder={t("legal.contact.placeholders.name")}
                   autoComplete="name"
                   value={values.name}
                   onChange={(e) => update("name", e.target.value)}
@@ -263,6 +300,7 @@ export function Contact({ store = null }: { store?: StoreDetails | null }) {
                 />
                 <TextField
                   label={t("legal.contact.fields.email")}
+                  placeholder={t("legal.contact.placeholders.email")}
                   type="email"
                   inputMode="email"
                   autoComplete="email"
@@ -273,9 +311,10 @@ export function Contact({ store = null }: { store?: StoreDetails | null }) {
                 />
               </div>
 
-              <div className="grid gap-5 sm:grid-cols-[minmax(0,1fr)_minmax(0,2fr)]">
+              <div className="grid items-start gap-5 sm:grid-cols-[minmax(0,1fr)_minmax(0,2fr)]">
                 <TextField
                   label={t("legal.contact.fields.order")}
+                  placeholder={t("legal.contact.placeholders.order")}
                   optional
                   value={values.order}
                   onChange={(e) => update("order", e.target.value)}
@@ -284,6 +323,7 @@ export function Contact({ store = null }: { store?: StoreDetails | null }) {
                 />
                 <TextField
                   label={t("legal.contact.fields.subject")}
+                  placeholder={t("legal.contact.placeholders.subject")}
                   value={values.subject}
                   onChange={(e) => update("subject", e.target.value)}
                   error={errors.subject}
@@ -300,6 +340,7 @@ export function Contact({ store = null }: { store?: StoreDetails | null }) {
                   id="contact-message"
                   data-field="message"
                   rows={7}
+                  placeholder={t("legal.contact.placeholders.message")}
                   value={values.message}
                   onChange={(e) => update("message", e.target.value)}
                   aria-invalid={errors.message ? true : undefined}
@@ -324,48 +365,52 @@ export function Contact({ store = null }: { store?: StoreDetails | null }) {
                   {t("legal.contact.fields.file")}{" "}
                   <span className="font-normal text-[var(--text-muted)]">· {t("register.optional")}</span>
                 </span>
-                {file ? (
-                  <div
-                    className={clsx(
-                      "flex items-center gap-3 rounded-[var(--radius-md)] border px-4 py-3",
-                      errors.file ? "border-[var(--gt-red-400)] bg-[var(--status-error-bg)]" : "border-[var(--border-default)] bg-[var(--surface-card)]",
-                    )}
-                  >
-                    <FileText size={18} aria-hidden="true" className="flex-none text-[var(--gt-blue-700)]" />
-                    <span className="min-w-0 flex-1 truncate text-[length:var(--text-body-sm)] text-[var(--text-primary)]">{file.name}</span>
-                    <span className="flex-none text-[length:var(--text-caption)] text-[var(--text-muted)]">
-                      {file.size < 1024 * 1024
-                        ? t("legal.contact.sizeKb", { size: Math.max(1, Math.round(file.size / 1024)) })
-                        : t("legal.contact.sizeMb", { size: (file.size / 1024 / 1024).toFixed(1) })}
-                    </span>
-                    <button
-                      type="button"
-                      data-field="file"
-                      onClick={() => {
-                        onFile(null);
-                        if (fileInput.current) fileInput.current.value = "";
-                        fileInput.current?.focus();
-                      }}
-                      aria-label={t("legal.contact.removeFile", { name: file.name })}
-                      className="grid h-9 w-9 flex-none place-items-center rounded-full text-[var(--text-muted)] hover:bg-[var(--gt-ink-100)] hover:text-[var(--text-primary)]"
-                    >
-                      <X size={16} aria-hidden="true" />
-                    </button>
-                  </div>
-                ) : null}
+                {files.length > 0 && (
+                  <ul className="m-0 grid list-none gap-2 p-0">
+                    {files.map((item, index) => (
+                      <li
+                        key={`${item.name}-${item.size}-${item.lastModified}`}
+                        className={clsx(
+                          "flex items-center gap-3 rounded-[var(--radius-md)] border px-4 py-3",
+                          errors.file ? "border-[var(--gt-red-400)] bg-[var(--status-error-bg)]" : "border-[var(--border-default)] bg-[var(--surface-card)]",
+                        )}
+                      >
+                        <FileText size={18} aria-hidden="true" className="flex-none text-[var(--gt-blue-700)]" />
+                        <span className="min-w-0 flex-1 truncate text-[length:var(--text-body-sm)] text-[var(--text-primary)]">{item.name}</span>
+                        <span className="flex-none text-[length:var(--text-caption)] text-[var(--text-muted)]">{formatSize(item.size, t)}</span>
+                        <button
+                          type="button"
+                          data-field={index === 0 ? "file" : undefined}
+                          onClick={() => {
+                            onFiles(files.filter((_, i) => i !== index));
+                            fileInput.current?.focus();
+                          }}
+                          aria-label={t("legal.contact.removeFile", { name: item.name })}
+                          className="grid h-9 w-9 flex-none place-items-center rounded-full text-[var(--text-muted)] hover:bg-[var(--gt-ink-100)] hover:text-[var(--text-primary)]"
+                        >
+                          <X size={16} aria-hidden="true" />
+                        </button>
+                      </li>
+                    ))}
+                  </ul>
+                )}
                 <label
                   className={clsx(
                     "flex cursor-pointer items-center gap-3 rounded-[var(--radius-md)] border border-dashed border-[var(--border-default)] bg-[var(--surface-card)] px-4 py-4 transition-colors hover:border-[var(--gt-blue-500)] hover:bg-[var(--surface-brand-wash)] focus-within:outline focus-within:outline-2 focus-within:outline-offset-2 focus-within:outline-[var(--focus-ring)]",
-                    file && "sr-only",
+                    files.length >= MAX_ATTACHMENTS && "sr-only",
                   )}
                 >
                   <input
                     ref={fileInput}
                     type="file"
-                    accept={ACCEPTED_FILES}
+                    multiple
+                    accept={ACCEPTED_ATTACHMENTS}
                     aria-labelledby="contact-file-label"
                     aria-describedby="contact-file-hint contact-file-error"
-                    onChange={(e) => onFile(e.target.files?.[0] ?? null)}
+                    onChange={(e) => {
+                      onFiles(mergeAttachments(files, Array.from(e.target.files ?? [])));
+                      e.target.value = "";
+                    }}
                     className="sr-only"
                   />
                   <Paperclip size={18} aria-hidden="true" className="flex-none text-[var(--gt-blue-700)]" />
@@ -391,6 +436,12 @@ export function Contact({ store = null }: { store?: StoreDetails | null }) {
                 </p>
               </div>
 
+              {sendError && (
+                <Notice tone="error" live="alert" title={t("legal.contact.errors.sendTitle")}>
+                  <p>{t(`legal.contact.errors.send.${sendError}`)}</p>
+                </Notice>
+              )}
+
               <div className="flex flex-wrap items-center gap-4">
                 <Button type="submit" size="lg" iconRight={Send} loading={sending}>
                   {sending ? t("legal.contact.sending") : t("legal.contact.submit")}
@@ -410,17 +461,7 @@ export function Contact({ store = null }: { store?: StoreDetails | null }) {
               <h2 id="contact-other" className="text-[length:var(--text-h4)]">
                 {t("legal.contact.otherTitle")}
               </h2>
-              {store ? (
-                <StoreContactLines store={store} />
-              ) : (
-                <ul className="m-0 grid list-none gap-4 p-0">
-                  <ContactLine icon={Mail} label={t("legal.contact.lines.email")} value={<Placeholder business label={t("legal.contact.lines.emailPlaceholder")} />} />
-                  <ContactLine icon={Phone} label={t("legal.contact.lines.phone")} value={<Placeholder label={t("legal.contact.lines.phonePlaceholder")} />} />
-                  <ContactLine icon={MapPin} label={t("legal.contact.lines.address")} value={<Placeholder label={t("legal.contact.lines.addressPlaceholder")} />} />
-                  <ContactLine icon={Clock} label={t("legal.contact.lines.hours")} value={<Placeholder business label={t("legal.contact.lines.hoursPlaceholder")} />} />
-                  <ContactLine icon={Timer} label={t("legal.contact.lines.response")} value={<Placeholder label={t("legal.contact.responseTimePlaceholder")} />} />
-                </ul>
-              )}
+              <StoreContactLines store={store} />
             </div>
           )}
           <nav aria-label={t("legal.contact.quickTitle")} className="grid gap-1 rounded-[var(--radius-card)] bg-[var(--surface-sunken)] p-3">
