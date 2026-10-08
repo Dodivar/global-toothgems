@@ -38,7 +38,7 @@ import { GiftCardCodes } from "../components/shop/GiftCardCodes";
 import { PromotionCodes } from "../components/shop/PromotionCodes";
 import { OfferBadges } from "../components/shop/OfferBadges";
 import { useStorefrontOffers } from "../lib/useStorefrontOffers";
-import { quoteItems } from "../lib/checkout/basketQuote";
+import { lineDiscount, quoteItems } from "../lib/checkout/basketQuote";
 import { useBasketQuote } from "../lib/checkout/useBasketQuote";
 import type { GiftCardDesign } from "../lib/giftCards/giftCardMapping";
 import {
@@ -226,7 +226,7 @@ export function Cart() {
   // What the database says a basket line carries of the discount, and the campaign / promotion it belongs to (as in the shop window).
   const { offerFor } = useStorefrontOffers();
   const lineCut = (line: (typeof lines)[number]) =>
-    quote?.lines.find((d) => d.productId === line.dbProductId && d.variantId === (line.variantId ?? null))?.amount ?? 0;
+    lineDiscount(quoteState, line.dbProductId, line.variantId);
   const lineOffer = (line: (typeof lines)[number]) => {
     const found = products.find((p) => p.dbId === line.dbProductId);
     return found ? offerFor({ dbId: found.dbId, cat: found.cat, currency: found.currency ?? "EUR" }) : null;

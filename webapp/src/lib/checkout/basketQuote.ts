@@ -125,3 +125,17 @@ export function readQuote(data: unknown): QuoteResult {
 /** What a quote depends on: when it changes, the previous answer no longer holds. */
 export const quoteKey = (items: QuoteItem[], codes: string[], rateId: string | null, useReward: boolean, currency: string) =>
   JSON.stringify([items, codes, rateId, useReward, currency]);
+
+/**
+ * What a basket line carries of the discount (minor units). While a new answer is on its way (the customer just
+ * ticked or unticked the loyalty reward, typed a code…) the line keeps what the previous answer gave it, so a
+ * promotion never vanishes for the time of the round trip; a refused or unavailable quote shows nothing.
+ */
+export function lineDiscount(
+  state: { status: string; quote?: BasketQuote; previous?: BasketQuote | null },
+  productId: string | null | undefined,
+  variantId: string | null | undefined,
+): number {
+  const quote = state.status === "ready" ? state.quote : state.status === "loading" ? state.previous : null;
+  return quote?.lines.find((d) => d.productId === productId && d.variantId === (variantId ?? null))?.amount ?? 0;
+}

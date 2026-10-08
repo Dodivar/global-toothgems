@@ -1,5 +1,6 @@
 import { describe, expect, it } from "vitest";
-import { addPromotionCode, MAX_PROMOTION_CODES, normalizePromotionCode, quoteItems, quoteKey, readQuote } from "./basketQuote";
+import { addPromotionCode, lineDiscount, MAX_PROMOTION_CODES, normalizePromotionCode, quoteItems, quoteKey, readQuote } from "./basketQuote";
+import type { BasketQuote } from "./basketQuote";
 import type { CartLine } from "./cartLines";
 
 const shop: CartLine = {
@@ -78,5 +79,33 @@ describe("reading the quote", () => {
     expect(readQuote({ ok: false, error: "boom" })).toEqual({ ok: false, error: "unavailable" });
     expect(readQuote(null)).toEqual({ ok: false, error: "unavailable" });
     expect(readQuote({ ok: true, discounts: [{ nope: 1 }] })).toEqual({ ok: false, error: "unavailable" });
+  });
+});
+
+describe("lineDiscount (promotion shown on a basket line)", () => {
+  const promo: BasketQuote = {
+    goodsDiscount: 899,
+    shippingDiscount: 0,
+    discounts: [{ label: "Noël", code: null, type: "percentage", goods: 899, shipping: 0 }],
+    lines: [{ productId: "p1", variantId: "v1", amount: 899 }],
+    gifts: [],
+  };
+  const reward: BasketQuote = { ...promo, goodsDiscount: 450, lines: [{ productId: "p1", variantId: "v1", amount: 450 }] };
+
+  it("shows the promotion with the reward off and the reward's cut with it on", () => {
+    expect(lineDiscount({ status: "ready", quote: promo }, "p1", "v1")).toBe(899);
+    expect(lineDiscount({ status: "ready", quote: reward }, "p1", "v1")).toBe(450);
+  });
+
+  it("keeps the previous answer on the line while the new one loads, so the promotion does not vanish", () => {
+    expect(lineDiscount({ status: "loading", previous: promo }, "p1", "v1")).toBe(899);
+  });
+
+  it("shows nothing without an answer, on error, or for another line", () => {
+    expect(lineDiscount({ status: "loading", previous: null }, "p1", "v1")).toBe(0);
+    expect(lineDiscount({ status: "error" }, "p1", "v1")).toBe(0);
+    expect(lineDiscount({ status: "idle" }, "p1", "v1")).toBe(0);
+    expect(lineDiscount({ status: "ready", quote: promo }, "p2", "v1")).toBe(0);
+    expect(lineDiscount({ status: "ready", quote: promo }, "p1", null)).toBe(0);
   });
 });
