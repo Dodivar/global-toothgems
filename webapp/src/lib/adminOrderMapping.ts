@@ -96,7 +96,7 @@ export const ADMIN_ORDER_SELECT = `
   order_discounts ( label, code, goods_amount, shipping_amount, source ),
   shipments ( id, status, carrier, service, tracking_number, tracking_url, estimated_delivery,
               shipped_at, delivered_at, created_at, shipment_items ( order_item_id, quantity ) ),
-  refunds ( amount, status, reason, created_at, processed_at, refund_items ( order_item_id, quantity ) ),
+  refunds ( id, provider_refund_id, amount, status, reason, created_at, processed_at, refund_items ( order_item_id, quantity ) ),
   payments ( provider, provider_payment_id, provider_checkout_id, status, amount, amount_refunded,
              payment_method_type, card_brand, card_last4, created_at, updated_at,
              gift_card:gift_cards ( code_last4 ) )

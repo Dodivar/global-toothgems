@@ -4,7 +4,7 @@ import { Ban, Download, TriangleAlert } from "lucide-react";
 import clsx from "clsx";
 import { Dialog } from "../ui/Dialog";
 import { Button } from "../ui/Button";
-import { ORDER_STATUSES, holdsMoney, type AdminOrder, type AdminOrderStatus } from "../../data/adminOrders";
+import { holdsMoney, type AdminOrder, type AdminOrderStatus } from "../../data/adminOrders";
 import { OrderStatusBadge } from "./StatusBadges";
 
 /**
@@ -12,10 +12,18 @@ import { OrderStatusBadge } from "./StatusBadges";
  *
  * Status changes and cancellations are written to Supabase by
  * `lib/adminOrders.tsx`; nothing here reaches a payment provider, a carrier or
- * a mailbox, so each dialog says plainly what it will and will not do. Refunds
- * are not offered: a refund is a Stripe call whose webhook writes the new
- * state (`AGENTS.md` §8). The export is not wired yet and says so.
+ * a mailbox, so each dialog says plainly what it will and will not do. Parcels
+ * and refunds have their own dialogs (`FulfillmentDialogs.tsx`): a refund is a
+ * Stripe call whose webhook writes the new state (`AGENTS.md` §8). The export
+ * is not wired yet and says so.
  */
+
+/**
+ * The statuses set by hand. "Shipped" and "delivered" follow the parcels, and
+ * "refunded" follows a refund confirmed by Stripe: none of them is a decision
+ * of this dialog (a manual "refunded" would claim money nobody returned).
+ */
+const MANUAL_STATUSES: AdminOrderStatus[] = ["pending", "confirmed", "processing", "cancelled"];
 
 /** Radio-style option row, used by the export choices. */
 function Option({
@@ -96,7 +104,7 @@ export function StatusDialog({
     >
       <fieldset className="m-0 grid gap-1.5 border-0 p-0">
         <legend className="sr-only">{t("admin.orders.statusDialogTitle")}</legend>
-        {ORDER_STATUSES.map((value) => (
+        {MANUAL_STATUSES.map((value) => (
           <label
             key={value}
             className={clsx(

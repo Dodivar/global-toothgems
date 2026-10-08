@@ -13,7 +13,7 @@
 import { serviceClient } from "../clients.ts";
 import { emailDepsFromEnv } from "./mod.ts";
 import { deliverGiftCards, supabaseGiftCardSource } from "./giftCards.ts";
-import { sendCourseEnrolmentEmails, supabasePendingSource } from "./events.ts";
+import { sendCourseEnrolmentEmails, sendRefundEmails, supabasePendingSource } from "./events.ts";
 import { sendOrderConfirmation, supabaseOrderSource } from "./orders.ts";
 import type { EmailDeps } from "./send.ts";
 
@@ -59,5 +59,22 @@ export async function notifyOrderPaid(orderId: string, log: Logger): Promise<voi
     await sendCourseEnrolmentEmails(deps, supabasePendingSource(db), { orderId, log });
   } catch (error) {
     log("course enrolment e-mails crashed", error instanceof Error ? error.message : error);
+  }
+}
+
+/**
+ * After a card refund is confirmed (stripe-webhook): the refund e-mail goes out
+ * now instead of waiting for the next sweep. Same contract as `notifyOrderPaid`:
+ * never throws, quiet without RESEND_API_KEY. The sweep catches whatever fails here.
+ */
+export async function notifyRefundConfirmed(log: Logger): Promise<void> {
+  if (!emailConfigured()) {
+    log("e-mail not configured (RESEND_API_KEY): refund e-mail skipped");
+    return;
+  }
+  try {
+    await sendRefundEmails(emailDepsFromEnv(), supabasePendingSource(serviceClient()), { log });
+  } catch (error) {
+    log("refund e-mail crashed", error instanceof Error ? error.message : error);
   }
 }

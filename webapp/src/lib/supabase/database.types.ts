@@ -7606,6 +7606,40 @@ export type Database = {
           isSetofReturn: false
         }
       }
+      create_shipment: {
+        Args: {
+          p_carrier?: string
+          p_estimated_delivery?: string
+          p_items: Json
+          p_order_id: string
+          p_service?: string
+          p_status?: string
+          p_tracking_number?: string
+          p_tracking_url?: string
+        }
+        Returns: {
+          carrier: string | null
+          created_at: string
+          created_by: string | null
+          delivered_at: string | null
+          estimated_delivery: string | null
+          id: string
+          order_id: string
+          service: string | null
+          shipped_at: string | null
+          status: string
+          tracking_number: string | null
+          tracking_url: string | null
+          updated_at: string
+          updated_by: string | null
+        }
+        SetofOptions: {
+          from: "*"
+          to: "shipments"
+          isOneToOne: true
+          isSetofReturn: false
+        }
+      }
       email_template_for: {
         Args: { p_key: string; p_locale: string }
         Returns: {
@@ -7801,6 +7835,36 @@ export type Database = {
           source: string
         }[]
       }
+      record_external_refund: {
+        Args: {
+          p_amount: number
+          p_currency: string
+          p_provider_payment_id: string
+          p_provider_refund_id: string
+        }
+        Returns: {
+          amount: number
+          created_at: string
+          currency: string
+          failure_reason: string | null
+          id: string
+          order_id: string
+          payment_id: string
+          processed_at: string | null
+          provider_refund_id: string | null
+          reason: string
+          requested_by: string | null
+          restock: boolean
+          status: string
+          updated_at: string
+        }
+        SetofOptions: {
+          from: "*"
+          to: "refunds"
+          isOneToOne: true
+          isSetofReturn: false
+        }
+      }
       record_gift_card_delivery: {
         Args: { p_gift_card_id: string; p_new_email?: string; p_status: string }
         Returns: {
@@ -7878,6 +7942,39 @@ export type Database = {
         SetofOptions: {
           from: "*"
           to: "refunds"
+          isOneToOne: true
+          isSetofReturn: false
+        }
+      }
+      set_shipment_status: {
+        Args: {
+          p_carrier?: string
+          p_estimated_delivery?: string
+          p_service?: string
+          p_shipment_id: string
+          p_status: string
+          p_tracking_number?: string
+          p_tracking_url?: string
+        }
+        Returns: {
+          carrier: string | null
+          created_at: string
+          created_by: string | null
+          delivered_at: string | null
+          estimated_delivery: string | null
+          id: string
+          order_id: string
+          service: string | null
+          shipped_at: string | null
+          status: string
+          tracking_number: string | null
+          tracking_url: string | null
+          updated_at: string
+          updated_by: string | null
+        }
+        SetofOptions: {
+          from: "*"
+          to: "shipments"
           isOneToOne: true
           isSetofReturn: false
         }
