@@ -166,65 +166,6 @@ export function AdminDashboard() {
           )}
         </section>
 
-        {/* Sales */}
-        <section className="gt-admin-panel overflow-hidden">
-          <header className={PANEL_HEADER}>
-            <div className="grid gap-0.5">
-              <h2 className="text-[length:var(--text-h4)]">{t("admin.dashboard.sales.title")}</h2>
-              <p className="m-0 text-[length:var(--text-caption)] text-[var(--text-muted)]">{t("admin.dashboard.sales.body")}</p>
-            </div>
-            <div role="group" aria-label={t("admin.dashboard.sales.windowLabel")} className="inline-flex rounded-[var(--admin-radius-sm)] border border-[var(--border-default)] p-0.5">
-              {DASHBOARD_WINDOWS.map((days) => (
-                <button
-                  key={days}
-                  type="button"
-                  aria-pressed={windowDays === days}
-                  onClick={() => setWindow(days)}
-                  className={clsx(
-                    "rounded-[calc(var(--admin-radius-sm)-2px)] px-3 py-1.5 text-[length:var(--text-caption)] font-semibold transition-colors focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-1 focus-visible:outline-[var(--focus-ring)]",
-                    windowDays === days
-                      ? "bg-[var(--gt-ink-900)] text-[var(--gt-off-white)]"
-                      : "text-[var(--text-body)] hover:bg-[var(--surface-sunken)]",
-                  )}
-                >
-                  {t(`admin.dashboard.sales.window${days}`)}
-                </button>
-              ))}
-            </div>
-          </header>
-
-          {ordersLoading ? (
-            <div className="p-5">
-              <CardLoadingState label={t("admin.dashboard.loading")} />
-            </div>
-          ) : ordersFailed ? (
-            <p role="alert" className="m-0 px-5 py-8 text-center text-[length:var(--text-body-sm)] text-[var(--status-error-fg)]">
-              {t("admin.dashboard.sales.failed")}
-            </p>
-          ) : (
-            <div className="grid gap-5 p-5">
-              <dl className="m-0 grid grid-cols-2 gap-x-6 gap-y-3 lg:grid-cols-4">
-                {salesTotals.map((total) => (
-                  <div key={total.label} className="grid gap-0.5">
-                    <dt className="text-[length:var(--text-caption)] text-[var(--text-muted)]">{total.label}</dt>
-                    <dd className="m-0 text-[length:var(--text-h4)] font-bold tabular-nums text-[var(--text-primary)]">{total.value}</dd>
-                  </div>
-                ))}
-              </dl>
-              {series.totals.orders === 0 ? (
-                <p className="m-0 py-6 text-center text-[length:var(--text-body-sm)] text-[var(--text-muted)]">
-                  {t("admin.dashboard.sales.empty")}
-                </p>
-              ) : (
-                <SalesChart series={series} />
-              )}
-              {truncated && (
-                <p className="m-0 text-[length:var(--text-caption)] text-[var(--text-muted)]">{t("admin.dashboard.sales.truncated")}</p>
-              )}
-            </div>
-          )}
-        </section>
-
         <div className="grid items-start gap-5 xl:grid-cols-2">
           {/* Stock */}
           <section className="gt-admin-panel overflow-hidden">
@@ -361,6 +302,65 @@ export function AdminDashboard() {
             )}
           </section>
         </div>
+
+        {/* Sales */}
+        <section className="gt-admin-panel overflow-hidden">
+          <header className={PANEL_HEADER}>
+            <div className="grid gap-0.5">
+              <h2 className="text-[length:var(--text-h4)]">{t("admin.dashboard.sales.title")}</h2>
+              <p className="m-0 text-[length:var(--text-caption)] text-[var(--text-muted)]">{t("admin.dashboard.sales.body")}</p>
+            </div>
+            <div role="group" aria-label={t("admin.dashboard.sales.windowLabel")} className="inline-flex rounded-[var(--admin-radius-sm)] border border-[var(--border-default)] p-0.5">
+              {DASHBOARD_WINDOWS.map((days) => (
+                <button
+                  key={days}
+                  type="button"
+                  aria-pressed={windowDays === days}
+                  onClick={() => setWindow(days)}
+                  className={clsx(
+                    "rounded-[calc(var(--admin-radius-sm)-2px)] px-3 py-1.5 text-[length:var(--text-caption)] font-semibold transition-colors focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-1 focus-visible:outline-[var(--focus-ring)]",
+                    windowDays === days
+                      ? "bg-[var(--gt-ink-900)] text-[var(--gt-off-white)]"
+                      : "text-[var(--text-body)] hover:bg-[var(--surface-sunken)]",
+                  )}
+                >
+                  {t(`admin.dashboard.sales.window${days}`)}
+                </button>
+              ))}
+            </div>
+          </header>
+
+          {ordersLoading ? (
+            <div className="p-5">
+              <CardLoadingState label={t("admin.dashboard.loading")} />
+            </div>
+          ) : ordersFailed ? (
+            <p role="alert" className="m-0 px-5 py-8 text-center text-[length:var(--text-body-sm)] text-[var(--status-error-fg)]">
+              {t("admin.dashboard.sales.failed")}
+            </p>
+          ) : (
+            <div className="grid gap-5 p-5">
+              <dl className="m-0 grid grid-cols-2 gap-x-6 gap-y-3 lg:grid-cols-4">
+                {salesTotals.map((total) => (
+                  <div key={total.label} className="grid gap-0.5">
+                    <dt className="text-[length:var(--text-caption)] text-[var(--text-muted)]">{total.label}</dt>
+                    <dd className="m-0 text-[length:var(--text-h4)] font-bold tabular-nums text-[var(--text-primary)]">{total.value}</dd>
+                  </div>
+                ))}
+              </dl>
+              {series.totals.orders === 0 ? (
+                <p className="m-0 py-6 text-center text-[length:var(--text-body-sm)] text-[var(--text-muted)]">
+                  {t("admin.dashboard.sales.empty")}
+                </p>
+              ) : (
+                <SalesChart series={series} />
+              )}
+              {truncated && (
+                <p className="m-0 text-[length:var(--text-caption)] text-[var(--text-muted)]">{t("admin.dashboard.sales.truncated")}</p>
+              )}
+            </div>
+          )}
+        </section>
       </div>
     </>
   );

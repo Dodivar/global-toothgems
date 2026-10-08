@@ -5,13 +5,12 @@ import { formatCount, formatMoney, useFormat } from "../../lib/format";
 import { axisScale, labelIndices, useMeasure } from "./stats/chart";
 
 /**
- * Sales of the last days, as two plots on one shared x-axis and one crosshair.
+ * Sales of the last days.
  *
- * Top: revenue and average basket as smooth lines (both money, one scale).
- * Bottom: products and courses bought as grouped bars (both counts, one
- * scale). Money and counts are never drawn against two y-axes on one grid —
- * the rule `stats/TrendChart.tsx` states — so the request for "lines and bars
- * in one chart" is answered by stacking them. A day without an order leaves a
+ * One plot: revenue and average basket as smooth lines against the money scale
+ * on the left, products and courses bought as grouped bars against the count
+ * scale on the right (asked for by the owner; the gridlines belong to the
+ * money axis and the count ticks sit on the same lines). A day without an order leaves a
  * gap in the basket line rather than a zero. The table under the chart is the
  * accessible twin of the drawing, and the way to read exact figures.
  */
@@ -21,11 +20,9 @@ const BASKET = "var(--gt-ink-700)";
 const PRODUCTS = "var(--gt-blue-400)";
 const COURSES = "var(--gt-emerald-500)";
 
-const PAD = { top: 10, right: 12, bottom: 4, left: 52 };
-const MONEY_H = 170;
-const COUNT_H = 100;
+const PAD = { top: 10, right: 40, bottom: 4, left: 52 };
+const PLOT_H = 260;
 const AXIS_H = 24;
-const GAP = 14;
 
 export function SalesChart({ series }: { series: SalesSeries }) {
   const { t } = useTranslation();
@@ -44,16 +41,14 @@ export function SalesChart({ series }: { series: SalesSeries }) {
     Math.max(...days.map((d) => Math.max(d.revenue, d.averageBasket ?? 0)), 0) / 100,
     4,
   );
-  const countScale = axisScale(Math.max(...days.map((d) => Math.max(d.products, d.courses)), 0), 2);
+  const countScale = axisScale(Math.max(...days.map((d) => Math.max(d.products, d.courses)), 0), 4);
 
-  const moneyTop = PAD.top;
-  const moneyBottom = moneyTop + MONEY_H;
-  const countTop = moneyBottom + GAP;
-  const countBottom = countTop + COUNT_H;
-  const totalH = countBottom + PAD.bottom + AXIS_H;
+  const top = PAD.top;
+  const bottom = top + PLOT_H;
+  const totalH = bottom + PAD.bottom + AXIS_H;
 
-  const yMoney = (minor: number) => moneyBottom - (Math.max(0, minor / 100) / moneyScale.max) * MONEY_H;
-  const yCount = (n: number) => countBottom - (Math.max(0, n) / countScale.max) * COUNT_H;
+  const yMoney = (minor: number) => bottom - (Math.max(0, minor / 100) / moneyScale.max) * PLOT_H;
+  const yCount = (n: number) => bottom - (Math.max(0, n) / countScale.max) * PLOT_H;
 
   const dayLabel = (iso: string, long = false) =>
     new Intl.DateTimeFormat(locale, long ? { weekday: "long", day: "numeric", month: "long" } : { day: "numeric", month: "short" }).format(
@@ -112,17 +107,21 @@ export function SalesChart({ series }: { series: SalesSeries }) {
               </g>
             ))}
             {countScale.ticks.map((tick) => (
-              <g key={`c${tick}`}>
-                <line x1={PAD.left} x2={width - PAD.right} y1={yCount(tick)} y2={yCount(tick)} stroke="var(--border-subtle)" />
-                <text x={PAD.left - 8} y={yCount(tick)} dy="0.32em" textAnchor="end" fontSize="11" fill="var(--text-muted)">
-                  {formatCount(tick, locale)}
-                </text>
-              </g>
+              <text key={`c${tick}`} x={width - PAD.right + 8} y={yCount(tick)} dy="0.32em" textAnchor="start" fontSize="11" fill="var(--text-muted)">
+                {formatCount(tick, locale)}
+              </text>
             ))}
 
             {hover !== null && (
-              <line x1={cx(hover)} x2={cx(hover)} y1={moneyTop} y2={countBottom} stroke="var(--gt-ink-300)" strokeDasharray="3 3" />
+              <line x1={cx(hover)} x2={cx(hover)} y1={top} y2={bottom} stroke="var(--gt-ink-300)" strokeDasharray="3 3" />
             )}
+
+            {days.map((d, i) => (
+              <g key={`b${d.day}`}>
+                <rect x={cx(i) - barW - 1} y={yCount(d.products)} width={barW} height={bottom - yCount(d.products)} rx="2" fill={PRODUCTS} />
+                <rect x={cx(i) + 1} y={yCount(d.courses)} width={barW} height={bottom - yCount(d.courses)} rx="2" fill={COURSES} />
+              </g>
+            ))}
 
             <path d={revenuePath} fill="none" stroke={REVENUE} strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round" />
             <path d={basketPath} fill="none" stroke={BASKET} strokeWidth="2" strokeDasharray="5 4" strokeLinecap="round" strokeLinejoin="round" />
@@ -140,16 +139,9 @@ export function SalesChart({ series }: { series: SalesSeries }) {
               </>
             )}
 
-            {days.map((d, i) => (
-              <g key={`b${d.day}`}>
-                <rect x={cx(i) - barW - 1} y={yCount(d.products)} width={barW} height={countBottom - yCount(d.products)} rx="2" fill={PRODUCTS} />
-                <rect x={cx(i) + 1} y={yCount(d.courses)} width={barW} height={countBottom - yCount(d.courses)} rx="2" fill={COURSES} />
-              </g>
-            ))}
-
             {days.map((d, i) =>
               labels.has(i) ? (
-                <text key={`x${d.day}`} x={cx(i)} y={countBottom + PAD.bottom + 16} textAnchor="middle" fontSize="11" fill="var(--text-muted)">
+                <text key={`x${d.day}`} x={cx(i)} y={bottom + PAD.bottom + 16} textAnchor="middle" fontSize="11" fill="var(--text-muted)">
                   {dayLabel(d.day)}
                 </text>
               ) : null,
