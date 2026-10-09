@@ -14,6 +14,7 @@
 --   * a refund made in the Stripe dashboard is recorded once (idempotent on the
 --     Stripe refund id), moves payment and order, and an over-refund is refused;
 --   * the refund e-mail lists card refunds only;
+--   * each confirmed refund of an invoiced order gets exactly one credit note (invoices);
 --   * a refund is refused while a gift card bought in the order is active.
 --
 -- Orders and payments are written as the table owner (the trusted backend).
@@ -241,6 +242,9 @@ begin
   if v_ord.fulfillment_status <> 'fulfilled' or v_ord.status <> 'shipped' or v_ord.payment_status <> 'partially_refunded' then
     raise exception 'FAIL R1: order % / % / %', v_ord.fulfillment_status, v_ord.status, v_ord.payment_status;
   end if;
+  if not exists (select 1 from public.invoices where refund_id = r1 and kind = 'credit_note' and total_incl_tax = 10.00) then
+    raise exception 'FAIL R1: no credit note for the item refund (invoices migration)';
+  end if;
   passed := passed || 'R1'::text;
 
   -- R2: a refund from the Stripe dashboard, recorded once
@@ -250,6 +254,8 @@ begin
   end if;
   v_ref2 := public.record_external_refund('pi_shiprefund_o1', 're_shiprefund_ext1', 5.00, 'EUR');
   if v_ref2.id <> v_ref.id then raise exception 'FAIL R2: replay created another refund'; end if;
+  select count(*) into v_cnt from public.invoices where refund_id = v_ref.id;
+  if v_cnt <> 1 then raise exception 'FAIL R2: % credit notes for one external refund', v_cnt; end if;
   select * into v_pay from public.payments where id = pay1;
   select * into v_ord from public.orders where id = o1;
   if v_pay.amount_refunded <> 5.00 or v_pay.status <> 'partially_refunded' or v_ord.payment_status <> 'partially_refunded' then

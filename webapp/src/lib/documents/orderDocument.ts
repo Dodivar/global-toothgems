@@ -89,21 +89,47 @@ export function sellerParty(store: StoreDetails | null, t: Translate, fmt: Docum
   };
 }
 
-/** The legal mentions printed at the foot of every page of every document. */
-export function legalFooter(store: StoreDetails | null, t: Translate): string[] {
-  if (!store) return ["Global Toothgems"];
-  const name = store.legalName.trim() || store.storeName.trim();
-  const form = [store.legalForm.trim(), store.shareCapital.trim() && t("documents.footer.capital", { amount: store.shareCapital.trim() })]
+/** What the legal mentions of a document are made of: the store now, or the seller frozen on an invoice. */
+export interface LegalIdentity {
+  name: string;
+  legalForm: string;
+  shareCapital: string;
+  registrationNumber: string;
+  vatNumber: string;
+  address: string;
+  email: string;
+}
+
+/** The legal mentions printed at the foot of every page. */
+export function legalFooterLines(identity: LegalIdentity, t: Translate): string[] {
+  const form = [identity.legalForm, identity.shareCapital && t("documents.footer.capital", { amount: identity.shareCapital })]
     .filter(Boolean)
     .join(" ");
-  const identity = [
-    name,
+  const line1 = [
+    identity.name,
     form,
-    store.registrationNumber.trim() && t("documents.footer.registration", { number: store.registrationNumber.trim() }),
-    store.vatNumber.trim() && t("documents.footer.vat", { number: store.vatNumber.trim() }),
+    identity.registrationNumber && t("documents.footer.registration", { number: identity.registrationNumber }),
+    identity.vatNumber && t("documents.footer.vat", { number: identity.vatNumber }),
   ].filter(Boolean);
-  const contact = [addressLines(store).join(", "), store.supportEmail.trim() || store.businessEmail.trim()].filter(Boolean);
-  return [identity.join(" · "), contact.join(" · ")].filter(Boolean);
+  const line2 = [identity.address, identity.email].filter(Boolean);
+  return [line1.join(" · "), line2.join(" · ")].filter(Boolean);
+}
+
+/** The store's legal mentions as Settings holds them today (the order form). */
+export function legalFooter(store: StoreDetails | null, t: Translate): string[] {
+  if (!store) return ["Global Toothgems"];
+  return legalFooterLines(
+    {
+      name: store.legalName.trim() || store.storeName.trim(),
+      legalForm: store.legalForm.trim(),
+      shareCapital: store.shareCapital.trim(),
+      registrationNumber: store.registrationNumber.trim(),
+      vatNumber: store.vatNumber.trim(),
+      address: addressLines(store).join(", "),
+      email: store.supportEmail.trim() || store.businessEmail.trim(),
+    },
+    t,
+  );
 }
 
 export function orderDocument(order: Order, store: StoreDetails | null, t: Translate, fmt: DocumentFormat, issuedOn: string): BusinessDocument {

@@ -1303,6 +1303,8 @@
       "downloadPdf": "Télécharger le bon de commande (PDF)",
       "downloadPdfWorking": "Préparation du PDF…",
       "downloadPdfError": "Le bon de commande n’a pas pu être préparé. Réessayez dans un instant.",
+      "downloadInvoice": "Télécharger la facture (PDF)",
+      "downloadCreditNote": "Avoir {{number}} (PDF)",
       "notFoundTitle": "Commande introuvable",
       "notFoundBody": "Cette commande n’existe pas ou n’est pas rattachée à votre compte."
     },
@@ -4909,7 +4911,8 @@
     "meta": {
       "reference": "Référence",
       "orderDate": "Commande du",
-      "issuedOn": "Édité le"
+      "issuedOn": "Édité le",
+      "order": "Commande"
     },
     "columns": {
       "item": "Article",
@@ -4920,7 +4923,13 @@
       "date": "Date",
       "reason": "Motif",
       "status": "Statut",
-      "amount": "Montant"
+      "amount": "Montant",
+      "unitPriceExcl": "PU HT",
+      "vatRate": "TVA",
+      "totalExcl": "Total HT",
+      "totalIncl": "Total TTC",
+      "base": "Base HT",
+      "vat": "Montant TVA"
     },
     "footer": {
       "capital": "au capital de {{amount}}",
@@ -4931,6 +4940,36 @@
       "title": "Bon de commande",
       "fileName": "bon-de-commande",
       "notice": "Ce bon de commande récapitule votre commande telle qu’elle a été enregistrée. Il ne constitue pas une facture."
+    },
+    "invoice": {
+      "title": "Facture",
+      "number": "Facture n°",
+      "issuedOn": "Date d’émission",
+      "saleDate": "Date de la vente",
+      "buyer": "Client",
+      "shipping": "Livraison",
+      "shippingNamed": "Livraison — {{method}}",
+      "adjustment": "Remboursement",
+      "giftCardVat": "hors champ de la TVA",
+      "lineDiscount": "remise de {{amount}} TTC",
+      "totalExcl": "Total HT",
+      "totalVat": "TVA",
+      "totalIncl": "Total TTC",
+      "vatTitle": "Récapitulatif de la TVA",
+      "paid": "Facture acquittée le {{date}} : paiement comptant à la commande, aucun escompte pour paiement anticipé.",
+      "giftCardNote": "Cartes cadeaux : bons à usages multiples, hors du champ de la TVA lors de leur achat ; la TVA est due lors de leur utilisation.",
+      "latePayment": "Clients professionnels : en cas de retard de paiement, pénalités au taux de trois fois le taux d’intérêt légal et indemnité forfaitaire de 40 € pour frais de recouvrement (art. L441-10 du Code de commerce).",
+      "fileName": "facture"
+    },
+    "creditNote": {
+      "title": "Avoir",
+      "number": "Avoir n°",
+      "credits": "Facture d’origine",
+      "totalIncl": "Total de l’avoir TTC",
+      "notice": "Avoir émis sur la facture {{invoice}} du {{date}}, au titre du remboursement confirmé le {{refundedOn}}.",
+      "toCard": "Le montant a été remboursé sur le moyen de paiement utilisé.",
+      "toGiftCard": "Le montant a été recrédité sur la carte cadeau utilisée.",
+      "fileName": "avoir"
     }
   }
 }

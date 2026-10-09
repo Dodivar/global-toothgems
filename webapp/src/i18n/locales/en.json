@@ -1303,6 +1303,8 @@
       "downloadPdf": "Download the order form (PDF)",
       "downloadPdfWorking": "Preparing the PDF…",
       "downloadPdfError": "The order form could not be prepared. Please try again in a moment.",
+      "downloadInvoice": "Download the invoice (PDF)",
+      "downloadCreditNote": "Credit note {{number}} (PDF)",
       "notFoundTitle": "Order not found",
       "notFoundBody": "This order does not exist or is not linked to your account."
     },
@@ -4909,7 +4911,8 @@
     "meta": {
       "reference": "Reference",
       "orderDate": "Order date",
-      "issuedOn": "Issued on"
+      "issuedOn": "Issued on",
+      "order": "Order"
     },
     "columns": {
       "item": "Item",
@@ -4920,7 +4923,13 @@
       "date": "Date",
       "reason": "Reason",
       "status": "Status",
-      "amount": "Amount"
+      "amount": "Amount",
+      "unitPriceExcl": "Unit price excl. VAT",
+      "vatRate": "VAT",
+      "totalExcl": "Total excl. VAT",
+      "totalIncl": "Total incl. VAT",
+      "base": "Net amount",
+      "vat": "VAT amount"
     },
     "footer": {
       "capital": "with a share capital of {{amount}}",
@@ -4931,6 +4940,36 @@
       "title": "Order form",
       "fileName": "order-form",
       "notice": "This order form summarises your order as it was recorded. It is not an invoice."
+    },
+    "invoice": {
+      "title": "Invoice",
+      "number": "Invoice no.",
+      "issuedOn": "Issue date",
+      "saleDate": "Date of sale",
+      "buyer": "Customer",
+      "shipping": "Shipping",
+      "shippingNamed": "Shipping — {{method}}",
+      "adjustment": "Refund",
+      "giftCardVat": "outside the scope of VAT",
+      "lineDiscount": "discount of {{amount}} incl. VAT",
+      "totalExcl": "Total excl. VAT",
+      "totalVat": "VAT",
+      "totalIncl": "Total incl. VAT",
+      "vatTitle": "VAT summary",
+      "paid": "Invoice paid on {{date}}: payment in full when ordering, no discount for early payment.",
+      "giftCardNote": "Gift cards: multi-purpose vouchers, outside the scope of VAT when bought; VAT is due when they are used.",
+      "latePayment": "Business customers: late payment incurs interest at three times the French legal rate and a fixed €40 recovery fee (French Commercial Code, art. L441-10).",
+      "fileName": "invoice"
+    },
+    "creditNote": {
+      "title": "Credit note",
+      "number": "Credit note no.",
+      "credits": "Original invoice",
+      "totalIncl": "Credit note total incl. VAT",
+      "notice": "Credit note issued against invoice {{invoice}} of {{date}}, for the refund confirmed on {{refundedOn}}.",
+      "toCard": "The amount was refunded to the payment method used.",
+      "toGiftCard": "The amount was credited back to the gift card used.",
+      "fileName": "credit-note"
     }
   }
 }

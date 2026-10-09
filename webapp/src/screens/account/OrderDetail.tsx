@@ -16,6 +16,8 @@ import { useFormat } from "../../lib/format";
 import { useOrders } from "../../lib/orders";
 import { courseHref } from "../../lib/academyUrl";
 import { orderAmountRows, orderDocument, orderDocumentFileName } from "../../lib/documents/orderDocument";
+import { invoiceDocument, invoiceFileName } from "../../lib/documents/invoiceDocument";
+import type { OrderInvoice } from "../../lib/invoiceMapping";
 import { useDocumentDownload } from "../../lib/documents/useDocumentDownload";
 import { fetchStoreDetails } from "../../lib/storeDetails";
 import { supabase } from "../../lib/supabase/client";
@@ -27,12 +29,11 @@ import { supabase } from "../../lib/supabase/client";
  * RLS decides which orders exist here: another account's reference is simply
  * not found.
  *
- * "Print the summary" prints this page as an order summary, and "Download
- * the order form" produces the same content as a PDF (`lib/documents/`, the
- * site's document template, with the store's legal identity read from
- * Settings). Both are labelled as not being an invoice: invoices need a legal
- * sequential numbering the database does not have yet (supabase/README.md,
- * "Next iterations").
+ * "Print the summary" prints this page as an order summary (not an invoice).
+ * The PDFs come from the site's document template (`lib/documents/`): the
+ * legal invoice the database numbered when the order was paid and the credit
+ * note of each confirmed refund (supabase/README.md, "Invoices"); an order
+ * paid before invoicing existed offers the order form instead.
  */
 export function OrderDetail() {
   const { t } = useTranslation();
@@ -145,32 +146,58 @@ function OrderDetailView({ order, back }: { order: Order; back: ReactNode }) {
   );
 }
 
-/** The order form as a PDF, with the seller's identity as Settings holds it today. */
+/**
+ * The order's documents as PDFs: its legal invoice and credit notes once the
+ * database has issued them (frozen snapshots, `lib/invoiceMapping.ts`), else
+ * the order form with the seller's identity as Settings holds it today.
+ */
 function OrderDocumentButton({ order }: { order: Order }) {
   const { t, i18n } = useTranslation();
   const { formatDate, formatMoney, locale } = useFormat();
   const { status, download } = useDocumentDownload();
   const working = status === "working";
+  const invoices = order.invoices ?? [];
+  const invoice = invoices.find((doc) => doc.kind === "invoice");
+  const creditNotes = invoices.filter((doc) => doc.kind === "creditNote");
 
-  const onDownload = () =>
+  const format = () => {
+    const percent = new Intl.NumberFormat(locale, { style: "percent", maximumFractionDigits: 2 });
+    return {
+      lang: i18n.language.startsWith("en") ? "en" : "fr",
+      money: (minor: number, currency: string) => formatMoney(minor, currency),
+      date: (iso: string) => formatDate(iso),
+      country: (code: string) => countryName(code, locale),
+      percent: (basisPoints: number) => percent.format(basisPoints / 10000),
+    };
+  };
+
+  const onOrderForm = () =>
     void download(async () => {
       const store = supabase ? await fetchStoreDetails(supabase) : null;
-      const lang = i18n.language.startsWith("en") ? "en" : "fr";
-      const fmt = {
-        lang,
-        money: (minor: number, currency: string) => formatMoney(minor, currency),
-        date: (iso: string) => formatDate(iso),
-        country: (code: string) => countryName(code, locale),
-      };
       const issuedOn = new Date().toISOString().slice(0, 10);
-      return { document: orderDocument(order, store, t, fmt, issuedOn), fileName: orderDocumentFileName(order.reference, t) };
+      return { document: orderDocument(order, store, t, format(), issuedOn), fileName: orderDocumentFileName(order.reference, t) };
     });
+  const onInvoice = (doc: OrderInvoice) =>
+    void download(async () => ({ document: invoiceDocument(doc, t, format(), invoice), fileName: invoiceFileName(doc, t) }));
 
   return (
     <span className="grid justify-items-end gap-1">
-      <Button variant="outline" size="sm" iconLeft={Download} onClick={onDownload} disabled={working} aria-busy={working}>
-        {working ? t("account.orderDetail.downloadPdfWorking") : t("account.orderDetail.downloadPdf")}
-      </Button>
+      <span className="flex flex-wrap justify-end gap-2">
+        {invoice ? (
+          <Button variant="outline" size="sm" iconLeft={Download} onClick={() => onInvoice(invoice)} disabled={working} aria-busy={working}>
+            {working ? t("account.orderDetail.downloadPdfWorking") : t("account.orderDetail.downloadInvoice")}
+          </Button>
+        ) : (
+          <Button variant="outline" size="sm" iconLeft={Download} onClick={onOrderForm} disabled={working} aria-busy={working}>
+            {working ? t("account.orderDetail.downloadPdfWorking") : t("account.orderDetail.downloadPdf")}
+          </Button>
+        )}
+        {creditNotes.map((note) => (
+          <Button key={note.id} variant="ghost" size="sm" iconLeft={Download} onClick={() => onInvoice(note)} disabled={working}>
+            {t("account.orderDetail.downloadCreditNote", { number: note.number })}
+          </Button>
+        ))}
+      </span>
       {status === "error" && (
         <span role="alert" className="max-w-[32ch] text-right text-[length:var(--text-caption)] text-[var(--status-error-fg)]">
           {t("account.orderDetail.downloadPdfError")}
