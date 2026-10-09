@@ -158,6 +158,8 @@ export function guestQuoteEmail(signedIn: boolean, email: string): string | null
  * What a basket line carries of the discount (minor units). While a new answer is on its way (the customer just
  * ticked or unticked the loyalty reward, typed a code…) the line keeps what the previous answer gave it, so a
  * promotion never vanishes for the time of the round trip; a refused or unavailable quote shows nothing.
+ * A line is shown on promotion only when a promotion applies: the loyalty reward alone is a basket discount, told
+ * in the summary, so a product whose promotion the customer has used up never looks discounted again.
  */
 export function lineDiscount(
   state: { status: string; quote?: BasketQuote; previous?: BasketQuote | null },
@@ -165,5 +167,6 @@ export function lineDiscount(
   variantId: string | null | undefined,
 ): number {
   const quote = state.status === "ready" ? state.quote : state.status === "loading" ? state.previous : null;
-  return quote?.lines.find((d) => d.productId === productId && d.variantId === (variantId ?? null))?.amount ?? 0;
+  if (!quote?.discounts.some((d) => d.type !== "loyalty")) return 0;
+  return quote.lines.find((d) => d.productId === productId && d.variantId === (variantId ?? null))?.amount ?? 0;
 }

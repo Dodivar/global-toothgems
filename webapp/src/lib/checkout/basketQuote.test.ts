@@ -115,6 +115,16 @@ describe("lineDiscount (promotion shown on a basket line)", () => {
     expect(lineDiscount({ status: "ready", quote: reward }, "p1", "v1")).toBe(450);
   });
 
+  it("never shows the loyalty reward alone as a promotion on the line (the promotion is used up, or the reward is better)", () => {
+    const rewardOnly: BasketQuote = {
+      ...reward,
+      discounts: [{ label: "Récompense fidélité -10 %", code: null, type: "loyalty", goods: 450, shipping: 0 }],
+      usedUp: [{ label: "Noël", maxUses: 1 }],
+    };
+    expect(lineDiscount({ status: "ready", quote: rewardOnly }, "p1", "v1")).toBe(0);
+    expect(lineDiscount({ status: "loading", previous: rewardOnly }, "p1", "v1")).toBe(0);
+  });
+
   it("keeps the previous answer on the line while the new one loads, so the promotion does not vanish", () => {
     expect(lineDiscount({ status: "loading", previous: promo }, "p1", "v1")).toBe(899);
   });
