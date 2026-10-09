@@ -1300,6 +1300,9 @@
       "billingAddress": "Billing address",
       "printRecap": "Print the summary",
       "recapNotice": "This order summary is not an invoice.",
+      "downloadPdf": "Download the order form (PDF)",
+      "downloadPdfWorking": "Preparing the PDF…",
+      "downloadPdfError": "The order form could not be prepared. Please try again in a moment.",
       "notFoundTitle": "Order not found",
       "notFoundBody": "This order does not exist or is not linked to your account."
     },
@@ -4899,5 +4902,35 @@
     "nameMissing": "Your first and last name are needed to issue the certificate.",
     "nameError": "Your name couldn’t be saved. Please try again in a moment.",
     "nameLockedHint": "Add your first and last name to download or share this certificate."
+  },
+  "documents": {
+    "seller": "Seller",
+    "page": "Page {{page}} of {{count}}",
+    "meta": {
+      "reference": "Reference",
+      "orderDate": "Order date",
+      "issuedOn": "Issued on"
+    },
+    "columns": {
+      "item": "Item",
+      "qty": "Qty",
+      "unitPrice": "Unit price",
+      "discount": "Discount",
+      "total": "Total",
+      "date": "Date",
+      "reason": "Reason",
+      "status": "Status",
+      "amount": "Amount"
+    },
+    "footer": {
+      "capital": "with a share capital of {{amount}}",
+      "registration": "Registration {{number}}",
+      "vat": "VAT number {{number}}"
+    },
+    "order": {
+      "title": "Order form",
+      "fileName": "order-form",
+      "notice": "This order form summarises your order as it was recorded. It is not an invoice."
+    }
   }
 }

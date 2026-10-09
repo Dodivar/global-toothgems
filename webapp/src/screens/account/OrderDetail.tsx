@@ -2,7 +2,7 @@
 
 import type { ReactNode } from "react";
 import { useTranslation } from "react-i18next";
-import { ArrowLeft, ExternalLink, MapPin, Package, Printer, Receipt, RotateCcw, RotateCw, Truck } from "lucide-react";
+import { ArrowLeft, Download, ExternalLink, MapPin, Package, Printer, Receipt, RotateCcw, RotateCw, Truck } from "lucide-react";
 import { Link, useParams } from "../../lib/navigation";
 import { Button } from "../../components/ui/Button";
 import { Badge } from "../../components/ui/Badge";
@@ -15,6 +15,10 @@ import { pick } from "../../data/types";
 import { useFormat } from "../../lib/format";
 import { useOrders } from "../../lib/orders";
 import { courseHref } from "../../lib/academyUrl";
+import { orderAmountRows, orderDocument, orderDocumentFileName } from "../../lib/documents/orderDocument";
+import { useDocumentDownload } from "../../lib/documents/useDocumentDownload";
+import { fetchStoreDetails } from "../../lib/storeDetails";
+import { supabase } from "../../lib/supabase/client";
 
 /**
  * One order, as recorded: the lines frozen at purchase time, every amount the
@@ -23,9 +27,12 @@ import { courseHref } from "../../lib/academyUrl";
  * RLS decides which orders exist here: another account's reference is simply
  * not found.
  *
- * "Print the summary" prints this page as an order summary, labelled as not
- * being an invoice: invoices need a legal sequential numbering the database
- * does not have yet (supabase/README.md, "Next iterations").
+ * "Print the summary" prints this page as an order summary, and "Download
+ * the order form" produces the same content as a PDF (`lib/documents/`, the
+ * site's document template, with the store's legal identity read from
+ * Settings). Both are labelled as not being an invoice: invoices need a legal
+ * sequential numbering the database does not have yet (supabase/README.md,
+ * "Next iterations").
  */
 export function OrderDetail() {
   const { t } = useTranslation();
@@ -107,9 +114,12 @@ function OrderDetailView({ order, back }: { order: Order; back: ReactNode }) {
               {t("account.orderPlacedOn", { date: formatDate(order.placedOn) })}
             </p>
           </div>
-          <Button variant="outline" size="sm" iconLeft={Printer} onClick={() => window.print()} className="gt-no-print">
-            {t("account.orderDetail.printRecap")}
-          </Button>
+          <div className="gt-no-print flex flex-wrap gap-2">
+            <OrderDocumentButton order={order} />
+            <Button variant="outline" size="sm" iconLeft={Printer} onClick={() => window.print()}>
+              {t("account.orderDetail.printRecap")}
+            </Button>
+          </div>
         </div>
         <div className="flex flex-wrap items-center gap-3">
           <span className="sr-only">{t("account.orderDetail.statusLabel")}</span>
@@ -132,6 +142,41 @@ function OrderDetailView({ order, back }: { order: Order; back: ReactNode }) {
         </div>
       </div>
     </article>
+  );
+}
+
+/** The order form as a PDF, with the seller's identity as Settings holds it today. */
+function OrderDocumentButton({ order }: { order: Order }) {
+  const { t, i18n } = useTranslation();
+  const { formatDate, formatMoney, locale } = useFormat();
+  const { status, download } = useDocumentDownload();
+  const working = status === "working";
+
+  const onDownload = () =>
+    void download(async () => {
+      const store = supabase ? await fetchStoreDetails(supabase) : null;
+      const lang = i18n.language.startsWith("en") ? "en" : "fr";
+      const fmt = {
+        lang,
+        money: (minor: number, currency: string) => formatMoney(minor, currency),
+        date: (iso: string) => formatDate(iso),
+        country: (code: string) => countryName(code, locale),
+      };
+      const issuedOn = new Date().toISOString().slice(0, 10);
+      return { document: orderDocument(order, store, t, fmt, issuedOn), fileName: orderDocumentFileName(order.reference, t) };
+    });
+
+  return (
+    <span className="grid justify-items-end gap-1">
+      <Button variant="outline" size="sm" iconLeft={Download} onClick={onDownload} disabled={working} aria-busy={working}>
+        {working ? t("account.orderDetail.downloadPdfWorking") : t("account.orderDetail.downloadPdf")}
+      </Button>
+      {status === "error" && (
+        <span role="alert" className="max-w-[32ch] text-right text-[length:var(--text-caption)] text-[var(--status-error-fg)]">
+          {t("account.orderDetail.downloadPdfError")}
+        </span>
+      )}
+    </span>
   );
 }
 
@@ -217,44 +262,18 @@ function Row({ label, value, strong, muted }: { label: string; value: string; st
   );
 }
 
-/** The recorded amounts, in the order they add up. Nothing is recomputed. */
+/** The recorded amounts, in the order they add up (`orderAmountRows`, shared with the PDF). Nothing is recomputed. */
 function Amounts({ order }: { order: Order }) {
   const { t } = useTranslation();
   const { formatMoney } = useFormat();
-  const money = (minor: number) => formatMoney(minor, order.currency);
-  const { amounts } = order;
-  const goodsDiscounts = order.discounts.filter((d) => d.goodsAmount > 0);
-  const shippingDiscounts = order.discounts.filter((d) => d.shippingAmount > 0);
-  const otherDiscount = amounts.discount - goodsDiscounts.reduce((sum, d) => sum + d.goodsAmount, 0);
+  const rows = orderAmountRows(order, t, (minor) => formatMoney(minor, order.currency));
 
   return (
     <Card title={t("account.orderDetail.summaryTitle")} icon={Receipt}>
       <dl className="m-0 grid gap-2 text-[length:var(--text-body-sm)]">
-        <Row label={t("account.orderDetail.subtotal")} value={money(amounts.subtotal)} />
-        {goodsDiscounts.map((d, i) => (
-          <Row key={`d${i}`} label={d.code ? `${d.label} (${d.code})` : d.label} value={`−${money(d.goodsAmount)}`} />
+        {rows.map((row) => (
+          <Row key={row.key} label={row.label} value={row.value} strong={row.emphasis === "strong"} muted={row.emphasis === "muted"} />
         ))}
-        {/* A discount not itemised in order_discounts (should not happen): shown as one line so the sum still reads. */}
-        {otherDiscount > 0 && <Row label={t("account.orderDetail.discount")} value={`−${money(otherDiscount)}`} />}
-        {order.ships && (
-          <Row
-            label={t("account.orderDetail.shipping")}
-            value={amounts.shipping === 0 ? t("account.orderDetail.shippingFree") : money(amounts.shipping)}
-          />
-        )}
-        {shippingDiscounts.map((d, i) => (
-          <Row key={`s${i}`} muted label={t("account.orderDetail.shippingDiscount", { label: d.label })} value={`−${money(d.shippingAmount)}`} />
-        ))}
-        {!amounts.taxIncluded && amounts.tax > 0 && <Row label={t("account.orderDetail.tax")} value={money(amounts.tax)} />}
-        <Row strong label={t("account.orderDetail.total")} value={money(amounts.total)} />
-        {amounts.taxIncluded && amounts.tax > 0 && <Row muted label={t("account.orderDetail.taxIncluded")} value={money(amounts.tax)} />}
-        {amounts.giftCard > 0 && (
-          <>
-            <Row label={t("account.orderDetail.giftCard")} value={money(amounts.giftCard)} />
-            <Row label={t("account.orderDetail.charged")} value={money(amounts.charged)} />
-          </>
-        )}
-        {amounts.refunded > 0 && <Row label={t("account.orderDetail.refunded")} value={`−${money(amounts.refunded)}`} />}
       </dl>
     </Card>
   );

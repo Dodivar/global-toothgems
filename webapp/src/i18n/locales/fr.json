@@ -1300,6 +1300,9 @@
       "billingAddress": "Adresse de facturation",
       "printRecap": "Imprimer le récapitulatif",
       "recapNotice": "Ce récapitulatif de commande n’est pas une facture.",
+      "downloadPdf": "Télécharger le bon de commande (PDF)",
+      "downloadPdfWorking": "Préparation du PDF…",
+      "downloadPdfError": "Le bon de commande n’a pas pu être préparé. Réessayez dans un instant.",
       "notFoundTitle": "Commande introuvable",
       "notFoundBody": "Cette commande n’existe pas ou n’est pas rattachée à votre compte."
     },
@@ -4899,5 +4902,35 @@
     "nameMissing": "Le prénom et le nom sont nécessaires pour délivrer l’attestation.",
     "nameError": "Votre nom n’a pas pu être enregistré. Réessayez dans un instant.",
     "nameLockedHint": "Ajoutez votre prénom et votre nom pour télécharger ou partager cette attestation."
+  },
+  "documents": {
+    "seller": "Vendeur",
+    "page": "Page {{page}} sur {{count}}",
+    "meta": {
+      "reference": "Référence",
+      "orderDate": "Commande du",
+      "issuedOn": "Édité le"
+    },
+    "columns": {
+      "item": "Article",
+      "qty": "Qté",
+      "unitPrice": "Prix unitaire",
+      "discount": "Remise",
+      "total": "Total",
+      "date": "Date",
+      "reason": "Motif",
+      "status": "Statut",
+      "amount": "Montant"
+    },
+    "footer": {
+      "capital": "au capital de {{amount}}",
+      "registration": "Immatriculation {{number}}",
+      "vat": "TVA intracommunautaire {{number}}"
+    },
+    "order": {
+      "title": "Bon de commande",
+      "fileName": "bon-de-commande",
+      "notice": "Ce bon de commande récapitule votre commande telle qu’elle a été enregistrée. Il ne constitue pas une facture."
+    }
   }
 }
