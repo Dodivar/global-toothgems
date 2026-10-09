@@ -9,7 +9,7 @@ import { useCallback, useEffect, useState } from "react";
  * The stage comes first: only a roomy desktop window opens the inspector by
  * default (on a tablet the quick bar over the selection covers most edits),
  * and a landscape phone starts on the stage alone. Where two panels would
- * squeeze the stage, opening one closes the other. The artist's own choice is
+ * cover most of the stage, opening one closes the other. The artist's own choice is
  * remembered per kind of screen, in this browser only.
  */
 
@@ -77,7 +77,7 @@ function fit(panels: EditorPanels, both: boolean, keep: EditorPanel): EditorPane
 
 export function useEditorPanels() {
   // The editor renders in the browser only (`zoneScreen`): the screen is known from the first render,
-  // so the canvas is not drawn once with a panel that closes right after.
+  // so the first render already shows the right drawers.
   const [layout, setLayout] = useState<Layout>(readLayout);
   const [panels, setPanels] = useState<EditorPanels>(() => {
     const first = readLayout();
@@ -125,7 +125,7 @@ export function useEditorPanels() {
 const SLIDE_MS = 160;
 
 /**
- * A side panel on its way in or out: it keeps its column while it slides
+ * A side panel on its way in or out: it stays drawn over the stage while it slides
  * away, then lets it go. `phase` names the slide to play — none on the first
  * render, so the editor does not open with its panels flying in.
  */

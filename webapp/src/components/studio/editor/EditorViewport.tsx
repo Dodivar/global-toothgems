@@ -55,6 +55,16 @@ import { studioStore, type ContextMenuState, type LightPreset, type StudioSnapsh
 import { GROUP_MIN_PIECES } from "../../../lib/studioWorkspace/gemGroup";
 import { openWorkspaceDialog } from "../../../lib/studioWorkspace/workspaceUi";
 
+/**
+ * Centred in the part of the stage the side drawers leave in view, and no wider
+ * (`--gt-lib-open` / `--gt-insp-open`, set by the editor's layout; 0 when stacked).
+ */
+const stageCentre = clsx(
+  "left-[calc(var(--gt-lib-open,0px)+(100%-var(--gt-lib-open,0px)-var(--gt-insp-open,0px))/2)]",
+  "max-w-[calc(100%-var(--gt-lib-open,0px)-var(--gt-insp-open,0px)-24px)]",
+  "transition-[left] duration-[var(--duration-fast)]",
+);
+
 /* Glass on the dark stage, as the Studio mockup draws its floating controls. */
 const stageGlass = "border border-white/15 bg-[rgba(22,26,32,.62)] text-white backdrop-blur-md";
 const stageButton = clsx(
@@ -256,7 +266,7 @@ function PanelToggles({ panels, selectedCount }: { panels: PanelControls; select
   const { t } = useEditorLabels();
   const button = (panel: EditorPanel) =>
     clsx(
-      "absolute top-3 z-[7] inline-flex h-9 items-center gap-1.5 rounded-full px-3 text-[11.5px] font-bold shadow-[var(--shadow-sm)] transition-colors",
+      "absolute top-3 z-[7] inline-flex h-9 items-center gap-1.5 rounded-full px-3 text-[11.5px] font-bold shadow-[var(--shadow-sm)] transition-[left,right,background-color,color] duration-[var(--duration-fast)]",
       "focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-[var(--focus-ring)]",
       panels.open[panel]
         ? "border border-[var(--border-subtle)] bg-[var(--surface-card)]/90 text-[var(--gt-ink-700)] hover:bg-[var(--surface-card)]"
@@ -272,7 +282,7 @@ function PanelToggles({ panels, selectedCount }: { panels: PanelControls; select
         aria-label={label("library")}
         title={label("library")}
         onClick={() => panels.toggle("library")}
-        className={clsx(button("library"), "left-3")}
+        className={clsx(button("library"), "left-[calc(var(--gt-lib-open,0px)+12px)]")}
       >
         <PanelLeft size={15} aria-hidden="true" />
         <span aria-hidden="true">{t("studio.editor.panels.library.name")}</span>
@@ -284,7 +294,7 @@ function PanelToggles({ panels, selectedCount }: { panels: PanelControls; select
         aria-label={label("inspector")}
         title={label("inspector")}
         onClick={() => panels.toggle("inspector")}
-        className={clsx(button("inspector"), "right-3")}
+        className={clsx(button("inspector"), "right-[calc(var(--gt-insp-open,0px)+12px)]")}
       >
         <span aria-hidden="true">{t("studio.editor.panels.inspector.name")}</span>
         {!panels.open.inspector && selectedCount > 0 && (
@@ -329,7 +339,8 @@ function Pill({ children, position, floating }: { children: React.ReactNode; pos
     <div
       className={clsx(
         // Above the issue list, whose header shares the top band on a narrow stage.
-        "absolute left-1/2 z-[9] flex max-w-[calc(100%-24px)] -translate-x-1/2 items-center gap-2.5 rounded-full py-2 pl-4 pr-2.5 text-[12px] font-semibold",
+        "absolute z-[9] flex -translate-x-1/2 items-center gap-2.5 rounded-full py-2 pl-4 pr-2.5 text-[12px] font-semibold",
+        stageCentre,
         stageGlass,
         position === "top" ? "top-[58px]" : "bottom-[78px]",
         floating && "gt-editor-floaty",
@@ -724,7 +735,12 @@ function placeColorPanel(panel: HTMLElement, bar: HTMLElement, a: SelectionAncho
 /** Centre the bar under the selection, above it when the camera bar is in the way, always inside the stage. */
 function placeQuickBar(el: HTMLElement, a: SelectionAnchor) {
   const half = el.offsetWidth / 2 || BAR_HEIGHT;
-  const x = Math.min(Math.max((a.left + a.right) / 2, STAGE_SIDE_MARGIN + half), a.width - STAGE_SIDE_MARGIN - half);
+  // Clear of the side drawers lying over the stage, when the space left allows it.
+  const covered = el.offsetParent ? getComputedStyle(el.offsetParent) : null;
+  let minX = STAGE_SIDE_MARGIN + (parseFloat(covered?.getPropertyValue("--gt-lib-open") ?? "") || 0) + half;
+  let maxX = a.width - STAGE_SIDE_MARGIN - (parseFloat(covered?.getPropertyValue("--gt-insp-open") ?? "") || 0) - half;
+  if (minX > maxX) [minX, maxX] = [STAGE_SIDE_MARGIN + half, a.width - STAGE_SIDE_MARGIN - half];
+  const x = Math.min(Math.max((a.left + a.right) / 2, minX), maxX);
   const maxTop = a.height - STAGE_BOTTOM_RESERVED - BAR_HEIGHT;
   const below = a.bottom + BAR_GAP;
   const above = a.top - BAR_GAP - BAR_HEIGHT;
@@ -850,7 +866,8 @@ function BottomBar({ lightPreset, lasso, multiSelect }: { lightPreset: LightPres
   return (
     <div
       className={clsx(
-        "absolute bottom-4 left-1/2 flex max-w-[calc(100%-24px)] -translate-x-1/2 items-center gap-0.5 rounded-full p-1",
+        "absolute bottom-4 flex -translate-x-1/2 items-center gap-0.5 rounded-full p-1",
+        stageCentre,
         stageGlass,
         // An open menu rises above the quick bar and the issue list.
         menu ? "z-[12]" : "z-[6]",
