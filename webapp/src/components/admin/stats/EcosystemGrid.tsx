@@ -1,30 +1,25 @@
 import { useTranslation } from "react-i18next";
-import { GraduationCap, HeartHandshake, Repeat2, Sprout, type LucideIcon } from "lucide-react";
-import type { CrossDatum } from "../../../data/adminAnalytics";
+import { HeartHandshake, Sprout, type LucideIcon } from "lucide-react";
+import { SHOP_CURRENCY, type CrossDatum } from "../../../data/adminAnalytics";
 import { formatPercent } from "../../../lib/adminAnalytics";
 import { useFormat } from "../../../lib/format";
 
 /**
- * Where the shop and the school meet.
- *
- * The platform's argument is that the two halves feed each other, and that
- * argument is only visible in figures that cross them. Each one is shown against
- * the store-wide equivalent, because "47 %" means nothing until you know the
- * house average is 25 %.
+ * What customers buy together. Today `analytics_snapshot()` measures one such
+ * figure (jewellery orders that also carry aftercare); a figure that comes with
+ * a store-wide benchmark is shown against it, because "47 %" means nothing until
+ * you know the house average.
  */
 
 const ICONS: Record<string, LucideIcon> = {
-  aftercareFollowUp: HeartHandshake,
-  trainedBuyers: Sprout,
-  graduateAov: GraduationCap,
-  graduateRepeat: Repeat2,
+  aftercareAttach: HeartHandshake,
 };
 
 export function EcosystemGrid({ rows }: { rows: CrossDatum[] }) {
-  const { formatPrice } = useFormat();
+  const { formatMoney } = useFormat();
   const { t } = useTranslation();
   const show = (value: number, format: CrossDatum["format"]) =>
-    format === "currency" ? formatPrice(value) : formatPercent(value);
+    format === "currency" ? formatMoney(value, SHOP_CURRENCY) : formatPercent(value);
 
   return (
     <ul className="m-0 grid list-none gap-3 p-0 sm:grid-cols-2 xl:grid-cols-4">

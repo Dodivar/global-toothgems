@@ -6,21 +6,22 @@ import { AdminButton } from "../AdminButton";
 import { AdminSelect, type AdminOption } from "../AdminSelect";
 import { useLocalized } from "../../../lib/localized";
 import {
-  COUNTRY_IDS,
+  MAX_RANGE_DAYS,
   ORDER_STATUS_IDS,
   RANGE_IDS,
-  REVENUE_CATEGORIES,
-  analyticsCourseOptions,
-  analyticsProductOptions,
+  SHOP_CATEGORIES,
   type AnalyticsFilters,
 } from "../../../data/adminAnalytics";
+import { useCountryName, type AnalyticsOptions } from "../../../lib/adminAnalytics";
+import type { Period } from "../../../lib/adminAnalyticsMapping";
 
 /**
  * The controls the whole report hangs off.
  *
  * Two rows, in the order the questions are asked: *when* first — the window and
- * whether it is measured against the one before it — then *what*, the six
- * narrowing filters. Everything applies on the spot; there is no Apply button,
+ * whether it is measured against the one before it — then *what*, the five
+ * narrowing filters `analytics_snapshot()` accepts. They narrow the shop's
+ * figures; the Academy panel is not narrowed by them. Everything applies on the spot; there is no Apply button,
  * because reading a report is a conversation and a two-step control turns every
  * question into two.
  *
@@ -30,6 +31,8 @@ import {
  */
 export function StatsToolbar({
   filters,
+  period,
+  options,
   compare,
   activeFilters,
   updatedMinutesAgo,
@@ -38,15 +41,20 @@ export function StatsToolbar({
   onReset,
 }: {
   filters: AnalyticsFilters;
+  /** The custom period's resolved days (an unset bound shows its default). */
+  period: Period | null;
+  options: AnalyticsOptions;
   compare: boolean;
   activeFilters: number;
-  updatedMinutesAgo: number;
+  /** Null until the first figures have been read. */
+  updatedMinutesAgo: number | null;
   onChange: (patch: Partial<AnalyticsFilters>) => void;
   onCompare: (value: boolean) => void;
   onReset: () => void;
 }) {
   const { t } = useTranslation();
   const L = useLocalized();
+  const countryName = useCountryName();
   const groupId = useId();
   const compareId = useId();
 
@@ -54,16 +62,20 @@ export function StatsToolbar({
 
   const categoryOptions = [
     option("all", t("admin.stats.filters.allCategories")),
-    ...REVENUE_CATEGORIES.map((id) => option(id, t(`admin.stats.category.${id}`))),
+    ...SHOP_CATEGORIES.map((id) => option(id, t(`admin.stats.category.${id}`))),
   ];
   const productOptions = [
     option("all", t("admin.stats.filters.allProducts")),
-    ...analyticsProductOptions().map((p) => option(p.id, L(p.name))),
+    ...options.products.map((p) => option(p.id, L(p.name))),
   ];
-  const courseOptions = [
-    option("all", t("admin.stats.filters.allCourses")),
-    ...analyticsCourseOptions().map((c) => option(c.id, L(c.title))),
-  ];
+  // A product from a shared link that is not in the list (yet) stays selectable.
+  if (filters.product !== "all" && !options.products.some((p) => p.id === filters.product)) {
+    productOptions.push(option(filters.product, t("admin.stats.filters.unknownProduct")));
+  }
+  // The shipping zones' countries, and the one a shared link names.
+  const countries = [...new Set([...options.countries, ...(filters.country !== "all" ? [filters.country] : [])])]
+    .map((code) => ({ code, name: countryName(code) }))
+    .sort((a, b) => a.name.localeCompare(b.name));
   const customerOptions = [
     option("all", t("admin.stats.filters.allCustomers")),
     option("new", t("admin.stats.customers.new")),
@@ -71,7 +83,7 @@ export function StatsToolbar({
   ];
   const countryOptions = [
     option("all", t("admin.stats.filters.allCountries")),
-    ...COUNTRY_IDS.map((id) => option(id, t(`admin.stats.country.${id}`))),
+    ...countries.map((country) => option(country.code, country.name)),
   ];
   const statusOptions = [
     option("all", t("admin.stats.filters.allStatuses")),
@@ -146,9 +158,11 @@ export function StatsToolbar({
 
           <span className="inline-flex items-center gap-1.5 text-[length:var(--text-caption)] text-[var(--text-muted)]">
             <History size={13} strokeWidth={1.9} aria-hidden="true" />
-            {updatedMinutesAgo === 0
-              ? t("admin.stats.updatedNow")
-              : t("admin.stats.updatedAgo", { count: updatedMinutesAgo })}
+            {updatedMinutesAgo === null
+              ? t("admin.stats.loading")
+              : updatedMinutesAgo === 0
+                ? t("admin.stats.updatedNow")
+                : t("admin.stats.updatedAgo", { count: updatedMinutesAgo })}
           </span>
         </div>
       </div>
@@ -163,8 +177,8 @@ export function StatsToolbar({
             <span className="text-[length:var(--text-caption)] text-[var(--text-muted)]">{t("admin.stats.range.from")}</span>
             <input
               type="date"
-              value={filters.customFrom}
-              max={filters.customTo}
+              value={filters.customFrom || period?.from || ""}
+              max={filters.customTo || period?.to || undefined}
               onChange={(event) => onChange({ customFrom: event.target.value || filters.customFrom })}
               className="gt-admin-field w-auto"
             />
@@ -173,12 +187,15 @@ export function StatsToolbar({
             <span className="text-[length:var(--text-caption)] text-[var(--text-muted)]">{t("admin.stats.range.to")}</span>
             <input
               type="date"
-              value={filters.customTo}
-              min={filters.customFrom}
+              value={filters.customTo || period?.to || ""}
+              min={filters.customFrom || period?.from || undefined}
               onChange={(event) => onChange({ customTo: event.target.value || filters.customTo })}
               className="gt-admin-field w-auto"
             />
           </label>
+          <p className="m-0 basis-full text-[length:var(--text-caption)] text-[var(--text-muted)]">
+            {t("admin.stats.range.max", { count: MAX_RANGE_DAYS })}
+          </p>
         </div>
       )}
 
@@ -196,12 +213,6 @@ export function StatsToolbar({
           onChange={(event) => onChange({ product: event.target.value })}
         />
         <AdminSelect
-          aria-label={t("admin.stats.filters.course")}
-          options={courseOptions}
-          value={filters.course}
-          onChange={(event) => onChange({ course: event.target.value })}
-        />
-        <AdminSelect
           aria-label={t("admin.stats.filters.customerType")}
           options={customerOptions}
           value={filters.customerType}
@@ -211,7 +222,7 @@ export function StatsToolbar({
           aria-label={t("admin.stats.filters.country")}
           options={countryOptions}
           value={filters.country}
-          onChange={(event) => onChange({ country: event.target.value as AnalyticsFilters["country"] })}
+          onChange={(event) => onChange({ country: event.target.value })}
         />
         <AdminSelect
           aria-label={t("admin.stats.filters.orderStatus")}

@@ -2,7 +2,7 @@
 
 The production web application of Global Toothgems: storefront, Academy, member area, Studio 3D and back office, in one Next.js (App Router) application backed by Supabase (see `supabase/README.md`) and deployed on Vercel. It was migrated from Vite + React Router in five phases (done on 2026-09-30): every screen is an App Router segment, public pages are rendered on the server, the private areas in the browser under server-checked layouts — see `docs/migration-nextjs.md` for the phases and the per-route checklist.
 
-> **Status: being industrialised.** The app started as a fully clickable implementation of the Claude Design prototype, with every domain on in-memory mock data. Domains are now connected to Supabase one by one; the up-to-date live/mock table is in the root `AGENTS.md` §4. With the Supabase variables set, these are **live**: the storefront catalogue, back-office product management and categories, member and staff authentication, favourites (`wishlist_items`), reviews and moderation, member and admin order reading, the back-office customers workspace, the Studio 3D workspace, and the Academy's back-office authoring and its public pages (catalogue, course sales pages). Gift cards (back office, `/carte-cadeau`, codes in the cart) are live too, paid through the checkout. The back-office settings (store details, shipping, VAT rates, languages) are live too. Promotions and campaigns (back office, and promotion codes in the cart) are live too. Cart/checkout/payment (Stripe functions not deployed yet), statistics in the back office, contact and newsletter, and the Academy's learner side still run on mock data.
+> **Status: being industrialised.** The app started as a fully clickable implementation of the Claude Design prototype, with every domain on in-memory mock data. Domains are now connected to Supabase one by one; the up-to-date live/mock table is in the root `AGENTS.md` §4. With the Supabase variables set, these are **live**: the storefront catalogue, back-office product management and categories, member and staff authentication, favourites (`wishlist_items`), reviews and moderation, member and admin order reading, the back-office customers workspace, the Studio 3D workspace, and the Academy's back-office authoring and its public pages (catalogue, course sales pages). Gift cards (back office, `/carte-cadeau`, codes in the cart) are live too, paid through the checkout. The back-office settings (store details, shipping, VAT rates, languages) are live too. Promotions and campaigns (back office, and promotion codes in the cart) are live too. The back-office statistics are live too (`analytics_snapshot()` and the Academy tables). Cart/checkout/payment (Stripe functions not deployed yet), contact and newsletter, and the Academy's learner side still run on mock data.
 >
 > Architecture (decided): Next.js App Router on Vercel, business rules in Postgres (RLS + functions), server code in Supabase Edge Functions, payments by Stripe with webhook-driven fulfilment. Sections below that describe "prototype" behaviour, "Prototype controls" panels or mock stores document code that is **still mock and scheduled to be replaced**, not a target design.
 
@@ -93,9 +93,21 @@ What is not wired to the database yet, on purpose:
 - **Categories and families** are read from the database but not editable; a product's family is picked in the product form.
 - **The activity feed** shows this session's actions only; the full history is in `audit_logs` and `inventory_movements`.
 - **The seeded products' images** point at files that were never uploaded, so they show broken until replaced.
-- **Orders and reviews** are connected too (see "Orders and reviews on Supabase" below). **Other admin workspaces** (statistics…) still use their mock stores. The customers workspace is live (see "Customers on Supabase" below).
+- **Orders and reviews** are connected too (see "Orders and reviews on Supabase" below). The statistics workspace is live (see "Statistics on Supabase" below). The customers workspace is live (see "Customers on Supabase" below).
 
 Code: `lib/supabase/` (client + generated `database.types.ts`), `lib/adminCatalogMapping.ts` (pure row ↔ form mapping, unit-tested), `lib/adminCatalogSupabase.tsx` (the Supabase store), `lib/adminCatalog.tsx` (the mock store, and the switch between the two), `lib/adminAuth.tsx`.
+
+## Downloadable documents (PDF template)
+
+Every business document the site hands out as a PDF goes through one template, `src/lib/documents/`, so they share a look: wordmark, title and references at the top, up to three party blocks (seller, billing, delivery…), then headings, tables (header repeated on each page they continue on), totals and paragraphs (a tinted "notice" for statements such as "not an invoice") flowing over A4 portrait pages, and the store's legal mentions (from Settings › Store, `store_settings`) with "Page n of N" at the foot of every page.
+
+- `template.ts` — the `BusinessDocument` model (text only, already translated and formatted) and its layout; `renderDocument()` returns the PDF bytes.
+- `pdfWriter.ts` + `text.ts` — the PDF written by hand (no dependency): real text in the standard Helvetica fonts (WinAnsi: French and English, €, typographic quotes), selectable and a few kilobytes; the wordmark is the only embedded image. Pure, so the same code can run in an Edge Function (e.g. to attach a document to an e-mail).
+- `assets.generated.ts` — Helvetica's advance widths and the wordmark mask, generated by `python3 scripts/document-assets.py` (reportlab, Pillow); regenerate it when the logo changes.
+- `useDocumentDownload.ts` — a click → build → render → save hook; the renderer is imported on first use.
+- One builder per document fills the model from real data: `orderDocument.ts` (the member's "bon de commande", amounts as recorded, shared with the order page through `orderAmountRows`) and `invoiceDocument.ts` (the legal invoice and credit notes, drawn from the frozen `invoices` snapshot read with the order — `lib/invoiceMapping.ts` — never from today's settings). The Studio 3D quote is the next one; it needs its pricing rule decided first (a creation's gems have no quoted price yet).
+
+Unit tests: `documents.test.ts` (encoding, wrapping, cross-reference table, page flow, the order form's content), `invoiceDocument.test.ts` (invoice rows, mandatory mentions, credit notes).
 
 ## Other scripts
 
@@ -517,7 +529,7 @@ The signed-in area is an administration dashboard: a left sidebar on desktop, a 
 | `/compte` | Dashboard — summary tiles, the "resume where you left off" card, the courses being followed with their module breakdown, and the courses still available |
 | `/compte/attestations` | Certificates — the collection (newest featured), each with view (zoomable viewer), download (A4 PDF) and share (image + caption); courses under way as locked cards; an encouraging empty state. The document is `lib/certificate/layout.ts`, drawn as SVG on screen and on a canvas for the files (`lib/certificate/render.ts`, `pdf.ts`); sharing is `components/certificate/ShareAchievementDialog.tsx` (no public certificate page, by decision) |
 | `/compte/commandes` | Order history, with parcel tracking and lifetime spend per currency |
-| `/compte/commandes/:reference` | One order: lines as bought, recorded amounts, parcels and tracking, refunds, addresses; "Print the summary" (an order summary, explicitly not an invoice) |
+| `/compte/commandes/:reference` | One order: lines as bought, recorded amounts, parcels and tracking, refunds, addresses; the legal invoice and each credit note as PDFs (issued by the database, `invoices`; an order paid before 2026-10-09 offers the order form instead) and "Print the summary" (not an invoice) |
 | `/compte/fidelite` | Loyalty card — the member's real stamp card and reward (`lib/loyalty.tsx`, `loyalty_overview`), read again on arrival |
 | `/compte/profil` | Profile details, editable and saved: name/phone on `profiles`, newsletter as a `marketing_email` consent record, address as the default shipping row of `customer_addresses` (emptying it deletes the row; a partial address is refused client-side) |
 
@@ -859,17 +871,27 @@ Live on Supabase; without the Supabase variables the workspace says the base is 
 - **Not offered (no server side yet):** export, e-mail sending (the e-mail action opens the operator's own mail
   client), creating a customer account.
 
+## Statistics on Supabase (`/admin/statistiques`)
+
+- **One boundary**: `lib/adminAnalytics.ts` (URL filters, reads, controller); pure mapping in `lib/adminAnalyticsMapping.ts` (periods in the shop's time zone, `analytics_snapshot()` JSON → `AnalyticsSnapshot`, insights, CSV) and `lib/adminAnalyticsTraining.ts` (Academy panel), both unit-tested. Shapes and vocabulary: `data/adminAnalytics.ts`.
+- **Shop figures**: `analytics_snapshot(from, to, filters, 'EUR', 'Europe/Paris')`, definitions in `supabase/README.md` ("Statistics"). Money is converted to minor units at the boundary. The always-empty "training" slice is left out of the breakdown and the category filter (course lines are not part of the shop's revenue).
+- **Academy panel and its two KPI cards** (enrolments, completion rate): aggregated in the browser from `course_entitlements`, `course_completions`, `lesson_progress`, `quiz_attempts`, the course lines of paid orders and `courses` (staff read them under RLS). Definitions in the module's header; the shop filters do not narrow them (the panel says so).
+- **Insights** are derived from the figures (`deriveInsights`); **cross-selling** shows the one figure the function measures (jewellery orders with aftercare). **Export**: CSV of the figures on screen (`;`, BOM, plain decimals).
+- **Filters**: period presets or custom days (≤ 400), category, product (uuid), customer type, country (shipping zones' countries, ISO codes), order status — what `p_filters` accepts. No course filter.
+- Without Supabase the screen says the figures are unavailable (e2e: `zones.spec.ts`).
+- Not available without a schema change: courses inside the revenue and its breakdown, a course filter, product-page conversion, trained buyers / graduates' basket and repeat rate, PDF export.
+
 ## Remaining mock behaviour (to replace before launch)
 
 Without the Supabase variables every domain runs on its mock store. With them, the following still do not touch the database:
 
 - **Checkout extras.** Payment runs through Stripe (see *Cart and checkout*); gift card codes, promotion codes and the loyalty reward can be used in the cart. No confirmation e-mail is sent from the browser, and saving the address on the account is not offered.
-- **Academy.** Authoring, public pages and the learner side are on Supabase (phases A–C). Courses are bought through the cart (phase D, migration `20261002100000_course_checkout` not applied yet) or granted by hand (`/admin/formations/:id/acces`). The back office's course list and statistics still show placeholder learner figures (`enrolled`, `completionRate`, `data/adminAnalytics.ts`).
+- **Academy.** Authoring, public pages and the learner side are on Supabase (phases A–C). Courses are bought through the cart (phase D, migration `20261002100000_course_checkout` not applied yet) or granted by hand (`/admin/formations/:id/acces`). The back office's course list still shows placeholder learner figures (`enrolled`, `completionRate`); the statistics screen reads real ones.
 - **Artist Community.** Fixtures and in-memory posting; access derived client-side from the courses on the account. Post-launch.
 - **Members' Lounge** (`/compte/salons`). UI prototype of the community chat: fixtures and in-memory messages, same client-side access rule as the Artist Community. No backend. Post-launch.
 - **Loyalty Club.** Live (2026-10-03). `lib/loyalty.tsx` reads the public rules (`loyalty_settings`) and the member's card (`loyalty_overview`, RLS-limited); `lib/loyaltyMapping.ts` derives the card state (unit-tested); `data/loyalty.ts` holds the types and the example cards of the marketing pages. The database awards the stamp when the Stripe webhook marks an order paid; the browser only reads. The cart banner counts shop goods only (no gift card, no course) and invites guests to sign in. The cart offers a checkbox to spend a completed card (`use_loyalty_reward` in the checkout request, previewed with `rewardDiscount`; the database refuses with `loyalty_reward_unavailable` when the card is gone or reserved). Not built: e-mail on stamp/reward.
 - **Security page:** data export and account deletion are simulated (they need backend jobs).
-- **Back-office statistics:** a mock store over a schema that already exists. A translation workflow (coverage, editor) is not built.
+- **Back-office statistics:** live, within the current schema (see "Statistics on Supabase"). A translation workflow (coverage, editor) is not built.
 - **Gift card delivery:** cards are created and activated in the database, but nothing sends the code to the recipient yet (needs the e-mail Edge Function).
 
 The mock stores, fixtures in `data/`, demo accounts and "Prototype controls" panels are removed domain by domain as each goes live; a production build must never fall back to them.
