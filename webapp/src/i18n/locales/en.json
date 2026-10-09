@@ -3083,7 +3083,7 @@
       "updatedAgo_one": "Updated {{count}} minute ago",
       "updatedAgo_other": "Updated {{count}} minutes ago",
       "relativeShare": "Relative weight: {{share}}%",
-      "disclaimer": "Sample figures: this screen is not connected to any real data source.",
+      "disclaimer": "Revenue: goods on orders paid in the period, VAT included, after discounts; excluding shipping, gift cards, courses and refunds. Dated by payment, Paris time.",
       "range": {
         "label": "Date range",
         "today": "Today",
@@ -3093,40 +3093,37 @@
         "year": "This year",
         "custom": "Custom range",
         "from": "From",
-        "to": "To"
+        "to": "To",
+        "max_one": "At most {{count}} day.",
+        "max_other": "At most {{count}} days."
       },
       "actions": {
         "refresh": "Refresh",
         "exportCsv": "Export CSV",
-        "exportPdf": "Export PDF",
-        "more": "More actions",
-        "showLoading": "Show the loading state",
-        "showError": "Show the error state"
+        "more": "More actions"
       },
       "toasts": {
-        "csvTitle": "CSV export prepared",
-        "pdfTitle": "PDF export prepared",
-        "exportBody": "Mockup: no file is actually generated.",
+        "csvTitle": "CSV export downloaded",
         "refreshTitle": "Statistics refreshed",
-        "refreshBody": "The figures on screen are current as of now."
+        "refreshBody": "The figures on screen are current as of now.",
+        "csvBody": "The file holds the figures on screen for this period and these filters."
       },
       "filters": {
         "label": "Date range and filters",
         "category": "Category",
         "product": "Product",
-        "course": "Course",
         "customerType": "Customer type",
         "country": "Country",
         "orderStatus": "Order status",
         "allCategories": "All categories",
         "allProducts": "All products",
-        "allCourses": "All courses",
         "allCustomers": "All customers",
         "allCountries": "All countries",
         "allStatuses": "All statuses",
         "active_one": "{{count}} filter active",
         "active_other": "{{count}} filters active",
-        "reset": "Reset filters"
+        "reset": "Reset filters",
+        "unknownProduct": "Selected product"
       },
       "kpi": {
         "explain": "What “{{name}}” means",
@@ -3134,36 +3131,37 @@
         "versusValue": "vs {{value}} last period",
         "revenue": {
           "label": "Total revenue",
-          "hint": "Everything taken in the period, after discounts and excluding shipping."
+          "hint": "Goods on orders paid in the period, VAT included and after discounts. Excludes shipping, gift cards, courses and refunds."
         },
         "orders": {
           "label": "Orders",
-          "hint": "Orders placed during the period, whatever their status."
+          "hint": "Orders paid in the period that hold at least one shop product."
         },
         "aov": {
           "label": "Average order value",
-          "hint": "Revenue divided by the number of orders in the period."
+          "hint": "Revenue divided by the number of orders paid in the period."
         },
         "units": {
           "label": "Products sold",
-          "hint": "Items sold across every reference in the catalogue."
+          "hint": "Items sold on paid orders, gift cards excluded."
         },
         "newCustomers": {
           "label": "New customers",
-          "hint": "Customers whose very first order falls inside the period."
+          "hint": "Customers (account or guest e-mail) whose very first purchase falls inside the period."
         },
         "returningCustomers": {
           "label": "Returning customers",
-          "hint": "Orders placed by customers the shop already knew."
+          "hint": "Customers who bought in the period after an earlier first purchase."
         },
         "enrollments": {
           "label": "Course enrolments",
-          "hint": "Access opened in the period, both purchased and included with a professional kit."
+          "hint": "Course access opened in the period and not revoked, bought or granted. Not narrowed by the shop filters."
         },
         "completionRate": {
           "label": "Completion rate",
-          "hint": "Share of enrolments carried through to the certificate."
-        }
+          "hint": "Share of the period's enrolments whose learner has since completed the course. Not narrowed by the shop filters."
+        },
+        "noReference": "No reference"
       },
       "metric": {
         "revenue": "Revenue",
@@ -3216,12 +3214,12 @@
         "units": "Units",
         "revenue": "Revenue",
         "orders": "Orders",
-        "conversion": "Conversion",
         "change": "Change",
         "stock": "Stock",
         "sortBy": "Sort by",
         "emptyTitle": "No products in this selection",
-        "emptyBody": "No sales match the active filters. Widen the period or remove a filter."
+        "emptyBody": "No sales match the active filters. Widen the period or remove a filter.",
+        "newInPeriod": "New"
       },
       "customers": {
         "title": "Customers",
@@ -3257,7 +3255,8 @@
         "course": "Course",
         "caption": "Courses ranked by enrolments",
         "emptyTitle": "No enrolments yet",
-        "emptyBody": "No enrolment matches this period or these filters."
+        "emptyBody": "No course enrolment, sale or completion in this period.",
+        "filtersIgnored": "Shop filters do not apply to courses: only the period counts here."
       },
       "insights": {
         "title": "Worth noting",
@@ -3291,37 +3290,22 @@
         "title": "Sales by location",
         "description": "The markets carrying the period.",
         "country": "Country",
-        "customers": "Customers",
-        "caption": "Revenue, orders and customers per country"
-      },
-      "country": {
-        "fr": "France",
-        "be": "Belgium",
-        "ch": "Switzerland",
-        "de": "Germany",
-        "uk": "United Kingdom",
-        "other": "Other countries"
+        "customers": "Customers (base)",
+        "caption": "Revenue, orders and customers per country",
+        "unknown": "Country not given",
+        "emptyTitle": "No sales in the period",
+        "emptyBody": "Countries appear as soon as an order is paid."
       },
       "cross": {
-        "title": "Shop and school",
-        "description": "What the two halves of the platform give each other.",
+        "title": "Cross-selling",
+        "description": "What customers buy together.",
         "benchmark": "Shop average: {{value}}",
-        "aftercareFollowUp": {
-          "label": "Aftercare bought after jewelry",
-          "hint": "Customers who come back for aftercare after a first gem."
+        "aftercareAttach": {
+          "label": "Jewelry sold with aftercare",
+          "hint": "Share of orders holding a gem that also hold an aftercare product."
         },
-        "trainedBuyers": {
-          "label": "Customers who became learners",
-          "hint": "Buyers who go on to enrol in a course."
-        },
-        "graduateAov": {
-          "label": "Average order value, graduates",
-          "hint": "Average order value of customers who completed a course."
-        },
-        "graduateRepeat": {
-          "label": "Repeat rate, trained artists",
-          "hint": "Repeat purchase rate of customers who completed a course."
-        }
+        "emptyTitle": "Nothing to cross",
+        "emptyBody": "No order in this selection."
       },
       "panel": {
         "collapse": "Collapse",
@@ -3335,6 +3319,19 @@
         "title": "Statistics unavailable",
         "body": "The figures could not be fetched. Nothing is lost — try again in a moment.",
         "retry": "Try again"
+      },
+      "unavailable": {
+        "title": "Statistics need the database",
+        "body": "This environment is not connected to Supabase: no figures are shown rather than invented ones."
+      },
+      "invalidRange": {
+        "title": "Period too long",
+        "body_one": "Choose a period of at most {{count}} day.",
+        "body_other": "Choose a period of at most {{count}} days."
+      },
+      "export": {
+        "value": "Value",
+        "previous": "Previous period"
       }
     },
     "training": {

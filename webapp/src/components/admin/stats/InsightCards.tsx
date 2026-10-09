@@ -1,8 +1,7 @@
 import { useTranslation } from "react-i18next";
 import { Lightbulb, Sparkles, TrendingDown, type LucideIcon } from "lucide-react";
 import clsx from "clsx";
-import type { InsightDatum } from "../../../data/adminAnalytics";
-import { ADMIN_PRODUCTS } from "../../../data/adminCatalog";
+import { SHOP_CURRENCY, type InsightDatum } from "../../../data/adminAnalytics";
 import { formatPercent } from "../../../lib/adminAnalytics";
 import { useFormat } from "../../../lib/format";
 import { useLocalized } from "../../../lib/localized";
@@ -25,25 +24,17 @@ const TONE: Record<InsightDatum["tone"], { icon: LucideIcon; chip: string }> = {
 };
 
 export function InsightCards({ insights }: { insights: InsightDatum[] }) {
-  const { formatPrice } = useFormat();
+  const { formatMoney } = useFormat();
   const { t } = useTranslation();
   const L = useLocalized();
 
-  /** Product ids and raw figures become words here, not in the fixture. */
-  const values = (insight: InsightDatum): Record<string, string> => {
-    const out: Record<string, string> = {};
-    for (const [key, value] of Object.entries(insight.values)) {
-      if (key === "name") {
-        const product = ADMIN_PRODUCTS.find((p) => p.id === value);
-        out[key] = product ? L(product.name) : String(value);
-      } else if (key === "revenue") {
-        out[key] = formatPrice(Number(value));
-      } else {
-        out[key] = formatPercent(Number(value));
-      }
-    }
-    return out;
-  };
+  /** Names and raw figures become words here, in the UI language. */
+  const values = (insight: InsightDatum): Record<string, string> => ({
+    ...(insight.name ? { name: L(insight.name) } : {}),
+    ...(insight.revenue !== undefined ? { revenue: formatMoney(insight.revenue, SHOP_CURRENCY) } : {}),
+    ...(insight.change !== undefined ? { change: formatPercent(insight.change) } : {}),
+    ...(insight.share !== undefined ? { share: formatPercent(insight.share) } : {}),
+  });
 
   return (
     <ul className="m-0 grid list-none gap-3 p-0 sm:grid-cols-2 xl:grid-cols-3">

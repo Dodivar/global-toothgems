@@ -6,8 +6,8 @@ import { useSearchParams } from "../../lib/navigation";
 import {
   Ban,
   ChartNoAxesCombined,
+  DatabaseZap,
   Download,
-  FileText,
   Globe2,
   GraduationCap,
   Hourglass,
@@ -15,7 +15,6 @@ import {
   PackageCheck,
   PackageSearch,
   PieChart,
-  PlugZap,
   RotateCcw,
   RotateCw,
   ShoppingBag,
@@ -48,13 +47,23 @@ import {
   readFilters,
   readMetric,
   useAnalytics,
+  useCountryName,
+  useMinutesSince,
   type ChartMetric,
   type ProductSortKey,
 } from "../../lib/adminAnalytics";
+import { csvAmount, emptySnapshot, toCsv } from "../../lib/adminAnalyticsMapping";
 import { useFormat } from "../../lib/format";
 import { useLocalized } from "../../lib/localized";
 import { useToast } from "../../lib/toast";
-import { DEFAULT_FILTERS, activeFilterCount, type AnalyticsFilters, type OrderStatusId } from "../../data/adminAnalytics";
+import {
+  DEFAULT_FILTERS,
+  MAX_RANGE_DAYS,
+  activeFilterCount,
+  type AnalyticsFilters,
+  type AnalyticsSnapshot,
+  type OrderStatusId,
+} from "../../data/adminAnalytics";
 import { useAdminShell } from "./AdminLayout";
 
 /**
@@ -66,15 +75,14 @@ import { useAdminShell } from "./AdminLayout";
  * panel, and every panel is drawn from a single snapshot — so a filter cannot
  * leave two sections disagreeing about the same period.
  *
- * Everything here is fixture data. There is no query, no reporting API and no
- * export: the export actions confirm what a real one would produce and stop
- * there, which is the honest version of a mockup. The seam a real backend
- * replaces is `data/adminAnalytics.ts`.
+ * The shop's figures are `analytics_snapshot()`'s, the Academy's are read from
+ * its tables (`lib/adminAnalytics.ts`, the only place that talks to Supabase).
  */
 export function Statistics() {
-  const { formatCount, formatDate, formatPrice } = useFormat();
+  const { formatCount, formatDate, formatMoney, locale } = useFormat();
   const { t } = useTranslation();
   const L = useLocalized();
+  const countryName = useCountryName();
   const { openNav } = useAdminShell();
   const { showToast } = useToast();
   const [params, setParams] = useSearchParams();
@@ -88,8 +96,12 @@ export function Statistics() {
   const [sort, setSort] = useState<ProductSortKey>("revenue");
   const [ascending, setAscending] = useState(false);
 
-  const { snapshot, state, updatedMinutesAgo, refresh, breakConnection } = useAnalytics(filters);
+  const { snapshot: loaded, options, period, state, fetchedAt, refresh } = useAnalytics(filters);
+  const updatedMinutesAgo = useMinutesSince(fetchedAt);
   const loading = state === "loading";
+  // Before the first answer the skeletons are laid out over an empty snapshot.
+  const snapshot = useMemo(() => loaded ?? emptySnapshot(), [loaded]);
+  const price = (minor: number) => formatMoney(minor, snapshot.currency);
 
   /**
    * One writer for the whole page, as on the order book: a filter at its
@@ -124,7 +136,6 @@ export function Statistics() {
         ...(patch.customTo !== undefined ? { [PARAM.to]: patch.customTo } : {}),
         ...(patch.category !== undefined ? { [PARAM.category]: patch.category } : {}),
         ...(patch.product !== undefined ? { [PARAM.product]: patch.product } : {}),
-        ...(patch.course !== undefined ? { [PARAM.course]: patch.course } : {}),
         ...(patch.customerType !== undefined ? { [PARAM.customerType]: patch.customerType } : {}),
         ...(patch.country !== undefined ? { [PARAM.country]: patch.country } : {}),
         ...(patch.orderStatus !== undefined ? { [PARAM.orderStatus]: patch.orderStatus } : {}),
@@ -138,7 +149,6 @@ export function Statistics() {
       write({
         [PARAM.category]: null,
         [PARAM.product]: null,
-        [PARAM.course]: null,
         [PARAM.customerType]: null,
         [PARAM.country]: null,
         [PARAM.orderStatus]: null,
@@ -146,16 +156,30 @@ export function Statistics() {
     [write],
   );
 
-  const onExport = (format: "csv" | "pdf") =>
-    showToast(t(`admin.stats.toasts.${format}Title`), t("admin.stats.toasts.exportBody"), "info");
+  /** The figures on screen as a spreadsheet: amounts as plain decimals, rates in percent. */
+  const onExport = () => {
+    if (!loaded) return;
+    const url = URL.createObjectURL(
+      new Blob([toCsv(exportRows(loaded, t, L, countryName))], { type: "text/csv;charset=utf-8" }),
+    );
+    const link = document.createElement("a");
+    link.href = url;
+    link.download = `statistiques-${loaded.start}-${loaded.end}.csv`;
+    link.click();
+    URL.revokeObjectURL(url);
+    showToast(t("admin.stats.toasts.csvTitle"), t("admin.stats.toasts.csvBody"), "success");
+  };
 
   const onRefresh = () =>
-    refresh(() => showToast(t("admin.stats.toasts.refreshTitle"), t("admin.stats.toasts.refreshBody"), "success"));
+    refresh((ok) =>
+      ok
+        ? showToast(t("admin.stats.toasts.refreshTitle"), t("admin.stats.toasts.refreshBody"), "success")
+        : undefined,
+    );
 
-  const rangeCaption = t("admin.stats.rangeCaption", {
-    from: formatDate(snapshot.start),
-    to: formatDate(snapshot.end),
-  });
+  const rangeCaption = snapshot.start
+    ? t("admin.stats.rangeCaption", { from: formatDate(snapshot.start), to: formatDate(snapshot.end) })
+    : "";
 
   /* ---------------------------------------------------------------- pieces */
 
@@ -188,9 +212,9 @@ export function Statistics() {
    */
   const utilityActions = [
     { id: "refresh", label: t("admin.stats.actions.refresh"), icon: RotateCw, onSelect: onRefresh },
-    { id: "csv", label: t("admin.stats.actions.exportCsv"), icon: Download, onSelect: () => onExport("csv") },
-    { id: "pdf", label: t("admin.stats.actions.exportPdf"), icon: FileText, onSelect: () => onExport("pdf") },
+    { id: "csv", label: t("admin.stats.actions.exportCsv"), icon: Download, onSelect: onExport },
   ];
+  const available = state !== "unavailable";
 
   const headerActions = (
     <>
@@ -201,6 +225,7 @@ export function Statistics() {
             variant="outline"
             iconLeft={action.icon}
             onClick={action.onSelect}
+            disabled={!available || (action.id === "csv" && (!loaded || loading))}
             loading={action.id === "refresh" && loading}
             aria-label={action.label}
           >
@@ -208,16 +233,11 @@ export function Statistics() {
           </AdminButton>
         ))}
       </span>
-      <OverflowMenu
-        label={t("admin.stats.actions.more")}
-        actions={[
-          ...utilityActions,
-          // The prototype's own states, reachable rather than described. A real
-          // screen would not carry these two.
-          { id: "loading", label: t("admin.stats.actions.showLoading"), icon: RotateCw, onSelect: () => refresh(), separated: true },
-          { id: "error", label: t("admin.stats.actions.showError"), icon: PlugZap, onSelect: breakConnection },
-        ]}
-      />
+      {available && (
+        <span className="sm:hidden">
+          <OverflowMenu label={t("admin.stats.actions.more")} actions={loaded ? utilityActions : utilityActions.slice(0, 1)} />
+        </span>
+      )}
     </>
   );
 
@@ -234,6 +254,8 @@ export function Statistics() {
       <div className="grid gap-5 px-[var(--admin-gutter)] pb-[clamp(32px,5vw,56px)] pt-5">
         <StatsToolbar
           filters={filters}
+          period={period}
+          options={options}
           compare={compare}
           activeFilters={activeFilters}
           updatedMinutesAgo={updatedMinutesAgo}
@@ -242,7 +264,23 @@ export function Statistics() {
           onReset={onReset}
         />
 
-        {state === "error" ? (
+        {state === "unavailable" ? (
+          <div className="gt-admin-panel">
+            <EmptyState
+              icon={DatabaseZap}
+              title={t("admin.stats.unavailable.title")}
+              body={t("admin.stats.unavailable.body")}
+            />
+          </div>
+        ) : state === "invalidRange" ? (
+          <div className="gt-admin-panel">
+            <EmptyState
+              icon={ChartNoAxesCombined}
+              title={t("admin.stats.invalidRange.title")}
+              body={t("admin.stats.invalidRange.body", { count: MAX_RANGE_DAYS })}
+            />
+          </div>
+        ) : state === "error" ? (
           <StatsError onRetry={() => refresh()} />
         ) : !snapshot.hasData && !loading ? (
           <div className="gt-admin-panel">
@@ -423,8 +461,8 @@ export function Statistics() {
                       items={[
                         { id: "total", label: t("admin.stats.customers.total"), value: formatCount(snapshot.customers.total), hint: t("admin.stats.customers.totalHint") },
                         { id: "repeat", label: t("admin.stats.customers.repeatRate"), value: formatPercent(snapshot.customers.repeatRate), hint: t("admin.stats.customers.repeatHint") },
-                        { id: "clv", label: t("admin.stats.customers.lifetimeValue"), value: formatPrice(snapshot.customers.lifetimeValue), hint: t("admin.stats.customers.lifetimeHint") },
-                        { id: "orders", label: t("admin.stats.customers.lifetimeOrders"), value: formatCount(snapshot.customers.lifetimeOrders), hint: t("admin.stats.customers.ordersHint") },
+                        { id: "clv", label: t("admin.stats.customers.lifetimeValue"), value: price(snapshot.customers.lifetimeValue), hint: t("admin.stats.customers.lifetimeHint") },
+                        { id: "orders", label: t("admin.stats.customers.lifetimeOrders"), value: new Intl.NumberFormat(locale, { maximumFractionDigits: 1 }).format(snapshot.customers.lifetimeOrders), hint: t("admin.stats.customers.ordersHint") },
                       ]}
                     />
                     <div className="grid gap-1.5 border-t border-[var(--border-subtle)] pt-4">
@@ -452,6 +490,11 @@ export function Statistics() {
                   />
                 ) : (
                   <div className="grid gap-5">
+                    {activeFilters > 0 && (
+                      <p className="m-0 rounded-[var(--admin-radius-sm)] bg-[var(--admin-panel-sunken)] px-3 py-2 text-[length:var(--text-caption)] text-[var(--text-muted)]">
+                        {t("admin.stats.training.filtersIgnored")}
+                      </p>
+                    )}
                     <StatList
                       columns={3}
                       items={[
@@ -459,8 +502,8 @@ export function Statistics() {
                         { id: "active", label: t("admin.stats.training.active"), value: formatCount(snapshot.training.activeLearners) },
                         { id: "completed", label: t("admin.stats.training.completed"), value: formatCount(snapshot.training.completed) },
                         { id: "rate", label: t("admin.stats.training.completionRate"), value: formatPercent(snapshot.training.completionRate) },
-                        { id: "score", label: t("admin.stats.training.averageScore"), value: `${snapshot.training.averageScore}/100` },
-                        { id: "days", label: t("admin.stats.training.timeToComplete"), value: t("admin.stats.training.days", { count: snapshot.training.daysToComplete }) },
+                        { id: "score", label: t("admin.stats.training.averageScore"), value: snapshot.training.averageScore === null ? "—" : `${snapshot.training.averageScore}/100` },
+                        { id: "days", label: t("admin.stats.training.timeToComplete"), value: snapshot.training.daysToComplete === null ? "—" : t("admin.stats.training.days", { count: snapshot.training.daysToComplete }) },
                       ]}
                     />
                     <div className="grid gap-2 border-t border-[var(--border-subtle)] pt-4">
@@ -474,7 +517,7 @@ export function Statistics() {
                         rows={snapshot.training.courses.map((course) => ({
                           id: course.id,
                           label: L(course.title),
-                          sub: L(course.level),
+                          sub: t(`academy.levels.${course.level}`, { defaultValue: course.level }),
                           share:
                             (course.enrollments /
                               Math.max(1, Math.max(...snapshot.training.courses.map((c) => c.enrollments)))) *
@@ -495,12 +538,12 @@ export function Statistics() {
                             key: "score",
                             label: t("admin.stats.training.scoreShort"),
                             secondary: true,
-                            value: (id) => `${snapshot.training.courses.find((c) => c.id === id)?.averageScore ?? 0}`,
+                            value: (id) => `${snapshot.training.courses.find((c) => c.id === id)?.averageScore ?? "—"}`,
                           },
                           {
                             key: "revenue",
                             label: t("admin.stats.metric.revenue"),
-                            value: (id) => formatPrice(snapshot.training.courses.find((c) => c.id === id)?.revenue ?? 0),
+                            value: (id) => price(snapshot.training.courses.find((c) => c.id === id)?.revenue ?? 0),
                           },
                         ]}
                       />
@@ -529,7 +572,7 @@ export function Statistics() {
                     <StatList
                       columns={3}
                       items={[
-                        { id: "processing", label: t("admin.stats.orders.processing"), value: t("admin.stats.orders.hours", { count: snapshot.orders.processingHours }) },
+                        { id: "processing", label: t("admin.stats.orders.processing"), value: snapshot.orders.processingHours === null ? "—" : t("admin.stats.orders.hours", { count: Math.round(snapshot.orders.processingHours) }) },
                         { id: "refund", label: t("admin.stats.orders.refundRate"), value: formatPercent(snapshot.orders.refundRate) },
                         { id: "cancel", label: t("admin.stats.orders.cancelRate"), value: formatPercent(snapshot.orders.cancellationRate) },
                       ]}
@@ -545,20 +588,22 @@ export function Statistics() {
               >
                 {loading ? (
                   <RowsSkeleton rows={6} label={t("admin.stats.loading")} />
+                ) : snapshot.geo.length === 0 ? (
+                  <EmptyState icon={Globe2} title={t("admin.stats.geo.emptyTitle")} body={t("admin.stats.geo.emptyBody")} />
                 ) : (
                   <RankedTable
                     caption={t("admin.stats.geo.caption")}
                     labelHeader={t("admin.stats.geo.country")}
                     rows={snapshot.geo.map((row) => ({
                       id: row.id,
-                      label: t(`admin.stats.country.${row.id}`),
+                      label: countryName(row.id),
                       share: geoTotalRevenue > 0 ? (row.revenue / geoTotalRevenue) * 100 : 0,
                     }))}
                     columns={[
                       {
                         key: "revenue",
                         label: t("admin.stats.metric.revenue"),
-                        value: (id) => formatPrice(snapshot.geo.find((row) => row.id === id)?.revenue ?? 0),
+                        value: (id) => price(snapshot.geo.find((row) => row.id === id)?.revenue ?? 0),
                       },
                       {
                         key: "orders",
@@ -586,6 +631,8 @@ export function Statistics() {
             >
               {loading ? (
                 <RowsSkeleton rows={2} label={t("admin.stats.loading")} />
+              ) : snapshot.cross.length === 0 ? (
+                <EmptyState icon={Sparkles} title={t("admin.stats.cross.emptyTitle")} body={t("admin.stats.cross.emptyBody")} />
               ) : (
                 <EcosystemGrid rows={snapshot.cross} />
               )}
@@ -599,4 +646,85 @@ export function Statistics() {
       </div>
     </>
   );
+}
+
+type Translate = ReturnType<typeof useTranslation>["t"];
+
+/**
+ * The export: one block per panel, headed by its title, in the UI language.
+ * Amounts are plain decimals in the snapshot's currency, rates are percentages.
+ */
+function exportRows(
+  snapshot: AnalyticsSnapshot,
+  t: Translate,
+  L: ReturnType<typeof useLocalized>,
+  countryName: (code: string) => string,
+): (string | number)[][] {
+  const amount = csvAmount;
+  const kpiValue = (format: string, value: number) => (format === "currency" ? amount(value) : value);
+  const rows: (string | number)[][] = [
+    [t("admin.stats.title"), snapshot.start, snapshot.end, snapshot.currency],
+    [],
+    [t("admin.stats.kpiLabel"), t("admin.stats.export.value"), t("admin.stats.export.previous")],
+    ...snapshot.kpis.map((kpi) => [
+      t(`admin.stats.kpi.${kpi.id}.label`),
+      kpiValue(kpi.format, kpi.value),
+      kpiValue(kpi.format, kpi.previous),
+    ]),
+    [],
+    [
+      t("admin.stats.chart.date"),
+      t("admin.stats.metric.revenue"),
+      t("admin.stats.metric.orders"),
+      `${t("admin.stats.metric.revenue")} (${t("admin.stats.chart.previous")})`,
+      `${t("admin.stats.metric.orders")} (${t("admin.stats.chart.previous")})`,
+    ],
+    ...snapshot.series.map((point) => [
+      point.key.slice(0, 16).replace("T", " "),
+      amount(point.revenue),
+      point.orders,
+      amount(point.previousRevenue),
+      point.previousOrders,
+    ]),
+    [],
+    [t("admin.stats.breakdown.category"), t("admin.stats.metric.revenue"), t("admin.stats.metric.orders"), t("admin.stats.breakdown.share")],
+    ...snapshot.breakdown.map((slice) => [t(`admin.stats.category.${slice.id}`), amount(slice.revenue), slice.orders, slice.share]),
+    [],
+    [
+      t("admin.stats.products.product"),
+      t("admin.stats.products.units"),
+      t("admin.stats.metric.revenue"),
+      t("admin.stats.products.orders"),
+      t("admin.stats.products.change"),
+    ],
+    ...snapshot.products.map((product) => [
+      L(product.name),
+      product.units,
+      amount(product.revenue),
+      product.orders,
+      product.change ?? "",
+    ]),
+    [],
+    [t("admin.stats.geo.country"), t("admin.stats.metric.revenue"), t("admin.stats.metric.orders"), t("admin.stats.geo.customers")],
+    ...snapshot.geo.map((row) => [countryName(row.id), amount(row.revenue), row.orders, row.customers]),
+    [],
+    [t("admin.stats.orders.title"), t("admin.stats.metric.orders"), t("admin.stats.breakdown.share")],
+    ...snapshot.orders.statuses.map((status) => [t(`admin.stats.orderStatus.${status.id}`), status.orders, status.share]),
+    [],
+    [
+      t("admin.stats.training.course"),
+      t("admin.stats.training.enrollments"),
+      t("admin.stats.training.completionRate"),
+      t("admin.stats.training.averageScore"),
+      t("admin.stats.metric.revenue"),
+    ],
+    ...snapshot.training.courses.map((course) => [
+      L(course.title),
+      course.enrollments,
+      course.completionRate,
+      course.averageScore ?? "",
+      amount(course.revenue),
+    ]),
+  ];
+  return rows;
 }

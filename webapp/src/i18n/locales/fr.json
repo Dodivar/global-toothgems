@@ -3083,7 +3083,7 @@
       "updatedAgo_one": "Mis à jour il y a {{count}} minute",
       "updatedAgo_other": "Mis à jour il y a {{count}} minutes",
       "relativeShare": "Poids relatif : {{share}} %",
-      "disclaimer": "Chiffres de démonstration : cet écran n’est relié à aucune source de données réelle.",
+      "disclaimer": "Chiffre d’affaires : marchandises payées sur la période, TVA incluse, remises déduites ; hors livraison, cartes cadeaux, formations et remboursements. Dates de paiement, heure de Paris.",
       "range": {
         "label": "Période analysée",
         "today": "Aujourd’hui",
@@ -3093,40 +3093,37 @@
         "year": "Cette année",
         "custom": "Période personnalisée",
         "from": "Du",
-        "to": "Au"
+        "to": "Au",
+        "max_one": "Période de {{count}} jour au plus.",
+        "max_other": "Période de {{count}} jours au plus."
       },
       "actions": {
         "refresh": "Actualiser",
         "exportCsv": "Export CSV",
-        "exportPdf": "Export PDF",
-        "more": "Plus d’actions",
-        "showLoading": "Afficher l’état de chargement",
-        "showError": "Afficher l’état d’erreur"
+        "more": "Plus d’actions"
       },
       "toasts": {
-        "csvTitle": "Export CSV préparé",
-        "pdfTitle": "Export PDF préparé",
-        "exportBody": "Maquette : aucun fichier n’est réellement généré.",
+        "csvTitle": "Export CSV téléchargé",
         "refreshTitle": "Statistiques actualisées",
-        "refreshBody": "Les chiffres affichés datent de maintenant."
+        "refreshBody": "Les chiffres affichés datent de maintenant.",
+        "csvBody": "Le fichier reprend les chiffres affichés pour cette période et ces filtres."
       },
       "filters": {
         "label": "Période et filtres",
         "category": "Catégorie",
         "product": "Produit",
-        "course": "Formation",
         "customerType": "Type de client",
         "country": "Pays",
         "orderStatus": "Statut de commande",
         "allCategories": "Toutes les catégories",
         "allProducts": "Tous les produits",
-        "allCourses": "Toutes les formations",
         "allCustomers": "Tous les clients",
         "allCountries": "Tous les pays",
         "allStatuses": "Tous les statuts",
         "active_one": "{{count}} filtre actif",
         "active_other": "{{count}} filtres actifs",
-        "reset": "Réinitialiser les filtres"
+        "reset": "Réinitialiser les filtres",
+        "unknownProduct": "Produit sélectionné"
       },
       "kpi": {
         "explain": "Définition de « {{name}} »",
@@ -3134,36 +3131,37 @@
         "versusValue": "vs {{value}} la période précédente",
         "revenue": {
           "label": "Chiffre d’affaires",
-          "hint": "Total encaissé sur la période, remises déduites et hors frais de livraison."
+          "hint": "Marchandises des commandes payées sur la période, TVA incluse et remises déduites. Hors livraison, cartes cadeaux, formations et remboursements."
         },
         "orders": {
           "label": "Commandes",
-          "hint": "Commandes passées sur la période, tous statuts confondus."
+          "hint": "Commandes payées sur la période contenant au moins un produit de la boutique."
         },
         "aov": {
           "label": "Panier moyen",
-          "hint": "Chiffre d’affaires divisé par le nombre de commandes de la période."
+          "hint": "Chiffre d’affaires divisé par le nombre de commandes payées de la période."
         },
         "units": {
           "label": "Produits vendus",
-          "hint": "Nombre d’articles vendus, toutes références confondues."
+          "hint": "Nombre d’articles vendus sur les commandes payées, cartes cadeaux exclues."
         },
         "newCustomers": {
           "label": "Nouveaux clients",
-          "hint": "Clients dont la toute première commande tombe dans la période."
+          "hint": "Clients (compte ou e-mail d’invité) dont le tout premier achat tombe dans la période."
         },
         "returningCustomers": {
           "label": "Clients fidèles",
-          "hint": "Commandes passées par des clients déjà connus de la boutique."
+          "hint": "Clients ayant acheté sur la période après un premier achat antérieur."
         },
         "enrollments": {
           "label": "Inscriptions formation",
-          "hint": "Accès ouverts sur la période, achats et places incluses dans un kit professionnel."
+          "hint": "Accès aux formations ouverts sur la période et non révoqués, achetés ou accordés. Non concerné par les filtres boutique."
         },
         "completionRate": {
           "label": "Taux de complétion",
-          "hint": "Part des inscriptions menées jusqu’au certificat."
-        }
+          "hint": "Part des inscriptions de la période dont l’apprenant a terminé la formation depuis. Non concerné par les filtres boutique."
+        },
+        "noReference": "Pas de référence"
       },
       "metric": {
         "revenue": "Chiffre d’affaires",
@@ -3216,12 +3214,12 @@
         "units": "Unités",
         "revenue": "CA",
         "orders": "Commandes",
-        "conversion": "Conversion",
         "change": "Évolution",
         "stock": "Stock",
         "sortBy": "Trier par",
         "emptyTitle": "Aucun produit sur cette sélection",
-        "emptyBody": "Aucune vente ne correspond aux filtres actifs. Élargissez la période ou retirez un filtre."
+        "emptyBody": "Aucune vente ne correspond aux filtres actifs. Élargissez la période ou retirez un filtre.",
+        "newInPeriod": "Nouveau"
       },
       "customers": {
         "title": "Clients",
@@ -3257,7 +3255,8 @@
         "course": "Formation",
         "caption": "Formations classées par nombre d’inscriptions",
         "emptyTitle": "Pas encore d’inscription",
-        "emptyBody": "Aucune inscription ne correspond à cette période ou à ces filtres."
+        "emptyBody": "Aucune inscription, vente ou complétion de formation sur cette période.",
+        "filtersIgnored": "Les filtres boutique ne s’appliquent pas aux formations : seule la période compte ici."
       },
       "insights": {
         "title": "À retenir",
@@ -3291,37 +3290,22 @@
         "title": "Ventes par pays",
         "description": "Les marchés qui portent la période.",
         "country": "Pays",
-        "customers": "Clients",
-        "caption": "Chiffre d’affaires, commandes et clients par pays"
-      },
-      "country": {
-        "fr": "France",
-        "be": "Belgique",
-        "ch": "Suisse",
-        "de": "Allemagne",
-        "uk": "Royaume-Uni",
-        "other": "Autres pays"
+        "customers": "Clients (base)",
+        "caption": "Chiffre d’affaires, commandes et clients par pays",
+        "unknown": "Pays non renseigné",
+        "emptyTitle": "Aucune vente sur la période",
+        "emptyBody": "Les pays apparaissent dès qu’une commande est payée."
       },
       "cross": {
-        "title": "Boutique et formations",
-        "description": "Ce que les deux moitiés de la plateforme s’apportent.",
+        "title": "Ventes croisées",
+        "description": "Ce que les clients achètent ensemble.",
         "benchmark": "Moyenne boutique : {{value}}",
-        "aftercareFollowUp": {
-          "label": "Suivi acheté après un bijou",
-          "hint": "Clients qui reviennent pour l’entretien après un premier bijou."
+        "aftercareAttach": {
+          "label": "Bijoux vendus avec l’entretien",
+          "hint": "Part des commandes contenant un bijou qui contiennent aussi un produit d’entretien."
         },
-        "trainedBuyers": {
-          "label": "Clients devenus élèves",
-          "hint": "Acheteurs qui s’inscrivent ensuite à une formation."
-        },
-        "graduateAov": {
-          "label": "Panier moyen des diplômés",
-          "hint": "Panier moyen des clients ayant terminé une formation."
-        },
-        "graduateRepeat": {
-          "label": "Réachat des artistes formés",
-          "hint": "Taux de réachat des clients ayant terminé une formation."
-        }
+        "emptyTitle": "Rien à croiser",
+        "emptyBody": "Aucune commande sur cette sélection."
       },
       "panel": {
         "collapse": "Réduire",
@@ -3335,6 +3319,19 @@
         "title": "Statistiques indisponibles",
         "body": "Les chiffres n’ont pas pu être récupérés. Rien n’est perdu : réessayez dans un instant.",
         "retry": "Réessayer"
+      },
+      "unavailable": {
+        "title": "Statistiques indisponibles hors connexion à la base",
+        "body": "Cet environnement n’est pas relié à Supabase : aucun chiffre n’est affiché plutôt que des chiffres inventés."
+      },
+      "invalidRange": {
+        "title": "Période trop longue",
+        "body_one": "Choisissez une période de {{count}} jour au plus.",
+        "body_other": "Choisissez une période de {{count}} jours au plus."
+      },
+      "export": {
+        "value": "Valeur",
+        "previous": "Période précédente"
       }
     },
     "training": {

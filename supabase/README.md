@@ -767,7 +767,7 @@ drift from them.
   12-point sparkline), `series`, `breakdown` (jewelry, aftercare, kits, training, other — fixed order), `products`
   (top 10 with stock, thumbnail and change), `customers` (base, repeat rate, lifetime value and orders, growth),
   `orders`, `geo` (delivery country, else billing), `cross` (share of jewellery orders that also carry aftercare),
-  `extras`. `training` is `null` and `insights` is `[]` (see decisions).
+  `extras`. `training` is `null` and `insights` is `[]` (see decisions; the screen fills both itself).
 - **Filters** (`p_filters`): `category`, `product`, `customerType` (`new`/`returning`), `country` narrow the sales;
   `country` and `orderStatus` narrow the orders section; the customer base is always the whole base.
 - **Reporting group**: `categories.report_group` maps catalogue categories onto the screen's buckets
@@ -1232,7 +1232,9 @@ VAT rates, shipping zones/rates mirroring the Settings prototype. Media rows ref
 32. **Sales are dated by payment (`paid_at`)** in the shop's time zone (default `Europe/Paris`); the orders section
     uses the placement date. A customer is an account, or a guest's e-mail (a guest who later signs up counts twice
     until guest orders are linked).
-33. **Training figures are `null`** until the training iteration; **product-page conversion** is not available (it
+33. **Training figures are `null`** in the snapshot: since 2026-10-09 the screen aggregates them in the browser from the
+    Academy rows staff read (`webapp/src/lib/adminAnalyticsTraining.ts`, definitions there), the schema being left
+    unchanged for statistics (owner's decision); moving them into the function is the next step if volume grows; **product-page conversion** is not available (it
     needs web analytics, not stored here); **insights** (written advice) are left to the frontend: the rules in
     `webapp/src/data/adminAnalytics.ts` derive them from the figures (its fixed "bundle 38 %" becomes `cross`).
 34. **No pre-aggregated tables**: each call recomputes from the orders (index on `paid_at`). Fine for the expected

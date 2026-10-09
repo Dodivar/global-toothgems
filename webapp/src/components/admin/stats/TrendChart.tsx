@@ -1,14 +1,14 @@
 import { useId, useState } from "react";
 import { useTranslation } from "react-i18next";
 import clsx from "clsx";
-import type { BucketStep, TimePoint } from "../../../data/adminAnalytics";
+import { SHOP_CURRENCY, type BucketStep, type TimePoint } from "../../../data/adminAnalytics";
 import {
   formatCompact,
   formatCompactMoney,
   useBucketLabel,
   type ChartMetric,
 } from "../../../lib/adminAnalytics";
-import { formatCount, formatPrice, useFormat } from "../../../lib/format";
+import { formatCount, formatMoney, useFormat } from "../../../lib/format";
 import { areaPath, axisScale, createPlot, labelIndices, linePath, useMeasure } from "./chart";
 
 /**
@@ -46,8 +46,8 @@ const SERIES: Record<"revenue" | "orders", SeriesSpec> = {
     compareColor: "var(--gt-blue-400)",
     value: (p) => p.revenue,
     previous: (p) => p.previousRevenue,
-    tick: formatCompactMoney,
-    full: (v, locale) => formatPrice(v, locale),
+    tick: (v) => formatCompactMoney(v),
+    full: (v, locale) => formatMoney(v, SHOP_CURRENCY, locale),
   },
   orders: {
     id: "orders",
@@ -282,7 +282,7 @@ export function TrendChart({
             <dl className="m-0 mt-1 grid grid-cols-[auto_1fr] items-baseline gap-x-3 gap-y-0.5">
               <dt className="text-[length:var(--text-caption)] text-[var(--text-muted)]">{t("admin.stats.metric.revenue")}</dt>
               <dd className="m-0 justify-self-end text-[length:var(--text-caption)] font-semibold tabular-nums text-[var(--text-primary)]">
-                {formatPrice(activePoint.revenue)}
+                {formatMoney(activePoint.revenue, SHOP_CURRENCY, locale)}
               </dd>
               <dt className="text-[length:var(--text-caption)] text-[var(--text-muted)]">{t("admin.stats.metric.orders")}</dt>
               <dd className="m-0 justify-self-end text-[length:var(--text-caption)] font-semibold tabular-nums text-[var(--text-primary)]">
@@ -292,7 +292,7 @@ export function TrendChart({
                 <>
                   <dt className="text-[length:var(--text-caption)] text-[var(--text-subtle)]">{t("admin.stats.chart.previous")}</dt>
                   <dd className="m-0 justify-self-end text-[length:var(--text-caption)] tabular-nums text-[var(--text-muted)]">
-                    {formatPrice(activePoint.previousRevenue)} · {formatCount(activePoint.previousOrders)}
+                    {formatMoney(activePoint.previousRevenue, SHOP_CURRENCY, locale)} · {formatCount(activePoint.previousOrders)}
                   </dd>
                 </>
               )}
@@ -311,7 +311,7 @@ export function TrendChart({
         {activePoint
           ? t("admin.stats.chart.point", {
               date: labelOf(activePoint.key, true),
-              revenue: formatPrice(activePoint.revenue),
+              revenue: formatMoney(activePoint.revenue, SHOP_CURRENCY, locale),
               orders: formatCount(activePoint.orders),
             })
           : ""}
@@ -369,11 +369,11 @@ export function TrendChart({
                   <th scope="row" className="px-3 py-1.5 text-left font-medium text-[var(--text-body)]">
                     {labelOf(point.key, true)}
                   </th>
-                  <td className="px-3 py-1.5 text-right tabular-nums text-[var(--text-body)]">{formatPrice(point.revenue)}</td>
+                  <td className="px-3 py-1.5 text-right tabular-nums text-[var(--text-body)]">{formatMoney(point.revenue, SHOP_CURRENCY, locale)}</td>
                   <td className="px-3 py-1.5 text-right tabular-nums text-[var(--text-body)]">{formatCount(point.orders)}</td>
                   {compare && (
                     <td className="px-3 py-1.5 text-right tabular-nums text-[var(--text-muted)]">
-                      {formatPrice(point.previousRevenue)}
+                      {formatMoney(point.previousRevenue, SHOP_CURRENCY, locale)}
                     </td>
                   )}
                 </tr>
