@@ -13,6 +13,7 @@ import type {
 } from "../data/orders";
 import type { Product } from "../data/products";
 import { toMinorUnits } from "./catalog/money";
+import { INVOICE_SELECT, mapInvoice, sortInvoices, type InvoiceRow } from "./invoiceMapping";
 
 /**
  * Database rows → the member area's `Order` model. Pure, so it is unit-tested
@@ -120,6 +121,8 @@ export interface OrderRow {
   order_discounts: OrderDiscountRow[];
   shipments: CustomerShipmentRow[];
   refunds: RefundRow[];
+  /** Read by the member area only (the back office does not select them yet). */
+  invoices?: InvoiceRow[];
 }
 
 /**
@@ -137,7 +140,8 @@ export const CUSTOMER_ORDER_SELECT = `
   order_discounts ( label, code, goods_amount, shipping_amount ),
   shipments ( id, status, carrier, service, tracking_number, tracking_url, estimated_delivery,
               shipped_at, delivered_at, created_at, shipment_items ( order_item_id, quantity ) ),
-  refunds ( amount, status, reason, created_at, processed_at, refund_items ( order_item_id, quantity ) )
+  refunds ( amount, status, reason, created_at, processed_at, refund_items ( order_item_id, quantity ) ),
+  invoices ( ${INVOICE_SELECT} )
 `;
 
 /**
@@ -342,5 +346,6 @@ export function mapOrder(row: OrderRow, findProduct: (slug: string) => Product |
     billingAddress: mapAddress(row.billing_address),
     shippingMethod: text(row.shipping_method_name),
     tracking: trackingOf(row.shipments ?? []),
+    invoices: sortInvoices((row.invoices ?? []).map(mapInvoice)),
   };
 }

@@ -2,7 +2,7 @@ import { useState } from "react";
 import { useTranslation } from "react-i18next";
 import { Info, Minus, TrendingDown, TrendingUp } from "lucide-react";
 import clsx from "clsx";
-import type { KpiDatum } from "../../../data/adminAnalytics";
+import { SHOP_CURRENCY, type KpiDatum } from "../../../data/adminAnalytics";
 import { formatChange, formatPercent } from "../../../lib/adminAnalytics";
 import { useFormat } from "../../../lib/format";
 import { Sparkline } from "./Sparkline";
@@ -20,20 +20,20 @@ import { Sparkline } from "./Sparkline";
  * and, for a screen reader, the period it is measured against.
  */
 export function KpiCard({ kpi, compare }: { kpi: KpiDatum; compare: boolean }) {
-  const { formatCount, formatPrice } = useFormat();
+  const { formatCount, formatMoney } = useFormat();
   const { t } = useTranslation();
   const [explained, setExplained] = useState(false);
 
   const value =
     kpi.format === "currency"
-      ? formatPrice(kpi.value)
+      ? formatMoney(kpi.value, SHOP_CURRENCY)
       : kpi.format === "percent"
         ? formatPercent(kpi.value)
         : formatCount(kpi.value);
 
   const previous =
     kpi.format === "currency"
-      ? formatPrice(kpi.previous)
+      ? formatMoney(kpi.previous, SHOP_CURRENCY)
       : kpi.format === "percent"
         ? formatPercent(kpi.previous)
         : formatCount(kpi.previous);
@@ -96,10 +96,12 @@ export function KpiCard({ kpi, compare }: { kpi: KpiDatum; compare: boolean }) {
           )}
         >
           <TrendIcon size={12} strokeWidth={2.4} aria-hidden="true" />
-          {formatChange(kpi.change, kpi.changeUnit)}
+          {kpi.change === null ? t("admin.stats.kpi.noReference") : formatChange(kpi.change, kpi.changeUnit)}
         </span>
         <span className="text-[length:var(--text-caption)] text-[var(--text-muted)]">
-          {compare ? t("admin.stats.kpi.versusValue", { value: previous }) : t("admin.stats.kpi.versus")}
+          {compare || kpi.change === null
+            ? t("admin.stats.kpi.versusValue", { value: previous })
+            : t("admin.stats.kpi.versus")}
         </span>
       </div>
 

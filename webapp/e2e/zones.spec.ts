@@ -211,6 +211,16 @@ test("back office: without Supabase the order book is empty, never invented", as
   expect(problems).toEqual([]);
 });
 
+test("back office: without Supabase the statistics show no figure, never invented ones", async ({ page, problems }) => {
+  await signInStaff(page);
+  await open(page, "/admin/statistiques");
+  await expect(page.getByRole("heading", { name: "Statistiques indisponibles hors connexion à la base" })).toBeVisible({
+    timeout: 30_000,
+  });
+  await expect(page.getByRole("region", { name: "Indicateurs clés de la période" })).toHaveCount(0);
+  expect(problems).toEqual([]);
+});
+
 test("back office: signing in on the access screen opens the page asked for", async ({ page, problems }) => {
   await open(page, "/admin/produits");
   await expect(page).toHaveURL((url) => url.pathname === "/admin/connexion");

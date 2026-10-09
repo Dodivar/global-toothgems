@@ -3201,6 +3201,132 @@ export type Database = {
           },
         ]
       }
+      invoice_sequences: {
+        Row: {
+          last_number: number
+          series: string
+          updated_at: string
+        }
+        Insert: {
+          last_number?: number
+          series: string
+          updated_at?: string
+        }
+        Update: {
+          last_number?: number
+          series?: string
+          updated_at?: string
+        }
+        Relationships: []
+      }
+      invoices: {
+        Row: {
+          buyer: Json
+          created_at: string
+          credited_invoice_id: string | null
+          currency: string
+          id: string
+          invoice_number: string
+          issued_at: string
+          kind: string
+          lines: Json
+          locale: string
+          order_id: string
+          payment: Json
+          refund_id: string | null
+          sale_date: string
+          seller: Json
+          sequence_number: number
+          series: string
+          total_excl_tax: number
+          total_incl_tax: number
+          total_tax: number
+          vat_breakdown: Json
+        }
+        Insert: {
+          buyer: Json
+          created_at?: string
+          credited_invoice_id?: string | null
+          currency: string
+          id?: string
+          invoice_number: string
+          issued_at: string
+          kind: string
+          lines: Json
+          locale: string
+          order_id: string
+          payment?: Json
+          refund_id?: string | null
+          sale_date: string
+          seller: Json
+          sequence_number: number
+          series: string
+          total_excl_tax: number
+          total_incl_tax: number
+          total_tax: number
+          vat_breakdown: Json
+        }
+        Update: {
+          buyer?: Json
+          created_at?: string
+          credited_invoice_id?: string | null
+          currency?: string
+          id?: string
+          invoice_number?: string
+          issued_at?: string
+          kind?: string
+          lines?: Json
+          locale?: string
+          order_id?: string
+          payment?: Json
+          refund_id?: string | null
+          sale_date?: string
+          seller?: Json
+          sequence_number?: number
+          series?: string
+          total_excl_tax?: number
+          total_incl_tax?: number
+          total_tax?: number
+          vat_breakdown?: Json
+        }
+        Relationships: [
+          {
+            foreignKeyName: "invoices_credited_invoice_id_fkey"
+            columns: ["credited_invoice_id"]
+            isOneToOne: false
+            referencedRelation: "invoices"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "invoices_order_id_fkey"
+            columns: ["order_id"]
+            isOneToOne: false
+            referencedRelation: "orders"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "invoices_order_id_fkey"
+            columns: ["order_id"]
+            isOneToOne: false
+            referencedRelation: "review_requests"
+            referencedColumns: ["order_id"]
+          },
+          {
+            foreignKeyName: "invoices_refund_id_fkey"
+            columns: ["refund_id"]
+            isOneToOne: true
+            referencedRelation: "refunds"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "invoices_series_fkey"
+            columns: ["series"]
+            isOneToOne: false
+            referencedRelation: "invoice_sequences"
+            referencedColumns: ["series"]
+          },
+        ]
+      }
       languages: {
         Row: {
           code: string

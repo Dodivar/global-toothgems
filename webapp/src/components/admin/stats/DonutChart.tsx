@@ -1,7 +1,7 @@
 import { useState } from "react";
 import { useTranslation } from "react-i18next";
 import clsx from "clsx";
-import { CATEGORY_COLOR, type CategoryDatum } from "../../../data/adminAnalytics";
+import { CATEGORY_COLOR, SHOP_CURRENCY, type CategoryDatum } from "../../../data/adminAnalytics";
 import { formatPercent } from "../../../lib/adminAnalytics";
 import { useFormat } from "../../../lib/format";
 
@@ -20,7 +20,8 @@ import { useFormat } from "../../../lib/format";
  * what the palette was checked against for colour-blind separation.
  */
 export function DonutChart({ data, total }: { data: CategoryDatum[]; total: number }) {
-  const { formatPrice } = useFormat();
+  const { formatMoney } = useFormat();
+  const formatPrice = (minor: number) => formatMoney(minor, SHOP_CURRENCY);
   const { t } = useTranslation();
   const [active, setActive] = useState<string | null>(null);
 
