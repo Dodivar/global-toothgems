@@ -1,5 +1,6 @@
 import { toMinorUnits } from "../catalog/money";
 import type { CartLine } from "./cartLines";
+import { EMAIL_RE } from "./checkoutForm";
 
 /**
  * What the database says a shop basket would receive (`quote_basket()`): the
@@ -67,6 +68,11 @@ export interface BasketQuote {
   lines: { productId: string; variantId: string | null; amount: number }[];
   /** Products added free by a "gift with purchase" promotion. */
   gifts: { name: string; variant: string | null }[];
+  /**
+   * Automatic promotions this basket would get but the customer (account, else the e-mail typed at the checkout)
+   * has already had as often as allowed: said at the checkout, since the shop window still shows their price.
+   */
+  usedUp: { label: string; maxUses: number }[];
 }
 
 export const QUOTE_ERRORS = ["promotion_code_invalid", "loyalty_reward_unavailable", "too_many_attempts", "unavailable"] as const;
@@ -113,18 +119,40 @@ export function readQuote(data: unknown): QuoteResult {
         ? [{ productId: row.product_id, variantId: typeof row.variant_id === "string" ? row.variant_id : null, amount }]
         : [];
     });
+    // Absent from an older version of the function: nothing to say then.
+    const usedUp = (Array.isArray(body.used_up) ? body.used_up : []).flatMap((raw) => {
+      const row = object(raw);
+      return row && typeof row.label === "string"
+        ? [{ label: row.label, maxUses: typeof row.max_uses === "number" && row.max_uses >= 1 ? row.max_uses : 1 }]
+        : [];
+    });
     return {
       ok: true,
-      quote: { goodsDiscount: minor(body.goods_discount), shippingDiscount: minor(body.shipping_discount), discounts, lines, gifts },
+      quote: { goodsDiscount: minor(body.goods_discount), shippingDiscount: minor(body.shipping_discount), discounts, lines, gifts, usedUp },
     };
   } catch {
     return { ok: false, error: "unavailable" };
   }
 }
 
-/** What a quote depends on: when it changes, the previous answer no longer holds. */
-export const quoteKey = (items: QuoteItem[], codes: string[], rateId: string | null, useReward: boolean, currency: string) =>
-  JSON.stringify([items, codes, rateId, useReward, currency]);
+/**
+ * What a quote depends on: when it changes, the previous answer no longer holds. `customer` is who is buying (the
+ * account, else the guest's e-mail): per-customer promotion limits depend on it.
+ */
+export const quoteKey = (
+  items: QuoteItem[],
+  codes: string[],
+  rateId: string | null,
+  useReward: boolean,
+  currency: string,
+  customer: string | null = null,
+) => JSON.stringify([items, codes, rateId, useReward, currency, customer]);
+
+/** The guest's e-mail as the quote may use it: only once it is a complete address (never while it is being typed). */
+export function guestQuoteEmail(signedIn: boolean, email: string): string | null {
+  const value = email.trim().toLowerCase();
+  return !signedIn && value.length <= 254 && EMAIL_RE.test(value) ? value : null;
+}
 
 /**
  * What a basket line carries of the discount (minor units). While a new answer is on its way (the customer just

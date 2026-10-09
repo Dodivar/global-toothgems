@@ -454,6 +454,8 @@
       "rewardHint": "Appliquée seule si elle est plus avantageuse que vos promotions ; cumulée seulement avec les promotions qui l’acceptent.",
       "rewardNotUsed": "Une promotion plus avantageuse est appliquée : votre récompense fidélité reste disponible.",
       "codeNotUsed": "Le code {{code}} n’est pas appliqué : une offre plus avantageuse est déjà retenue.",
+      "usedUp_one": "Vous avez déjà profité de l’offre « {{label}} » : elle est limitée à une utilisation par client, la remise ne s’applique donc pas à cette commande.",
+      "usedUp_other": "Vous avez déjà profité de l’offre « {{label}} » autant de fois que permis ({{count}} par client) : la remise ne s’applique donc pas à cette commande.",
       "discountLine": "{{label}} ({{code}})",
       "gift": "Offert : {{name}}",
       "freeOrder": "Cette commande est entièrement offerte par une promotion : le paiement gratuit n’est pas encore possible. Retirez le code ou ajoutez un article."

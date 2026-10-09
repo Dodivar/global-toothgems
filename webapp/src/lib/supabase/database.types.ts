@@ -2421,6 +2421,86 @@ export type Database = {
           },
         ]
       }
+      email_log: {
+        Row: {
+          attempt: number
+          created_at: string
+          error: string | null
+          event_key: string
+          gift_card_id: string | null
+          id: string
+          locale: string
+          order_id: string | null
+          provider_id: string | null
+          recipient_hash: string
+          sent_at: string | null
+          status: string
+          template_key: string
+          updated_at: string
+        }
+        Insert: {
+          attempt?: number
+          created_at?: string
+          error?: string | null
+          event_key: string
+          gift_card_id?: string | null
+          id?: string
+          locale: string
+          order_id?: string | null
+          provider_id?: string | null
+          recipient_hash: string
+          sent_at?: string | null
+          status?: string
+          template_key: string
+          updated_at?: string
+        }
+        Update: {
+          attempt?: number
+          created_at?: string
+          error?: string | null
+          event_key?: string
+          gift_card_id?: string | null
+          id?: string
+          locale?: string
+          order_id?: string | null
+          provider_id?: string | null
+          recipient_hash?: string
+          sent_at?: string | null
+          status?: string
+          template_key?: string
+          updated_at?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "email_log_gift_card_id_fkey"
+            columns: ["gift_card_id"]
+            isOneToOne: false
+            referencedRelation: "gift_card_overview"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "email_log_gift_card_id_fkey"
+            columns: ["gift_card_id"]
+            isOneToOne: false
+            referencedRelation: "gift_cards"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "email_log_order_id_fkey"
+            columns: ["order_id"]
+            isOneToOne: false
+            referencedRelation: "orders"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "email_log_order_id_fkey"
+            columns: ["order_id"]
+            isOneToOne: false
+            referencedRelation: "review_requests"
+            referencedColumns: ["order_id"]
+          },
+        ]
+      }
       email_template_translations: {
         Row: {
           body: string
@@ -5014,6 +5094,27 @@ export type Database = {
           },
         ]
       }
+      promotion_email_lookups: {
+        Row: {
+          actor: string
+          created_at: string
+          email_hash: string
+          id: number
+        }
+        Insert: {
+          actor: string
+          created_at?: string
+          email_hash: string
+          id?: never
+        }
+        Update: {
+          actor?: string
+          created_at?: string
+          email_hash?: string
+          id?: never
+        }
+        Relationships: []
+      }
       promotion_products: {
         Row: {
           created_at: string
@@ -7349,7 +7450,22 @@ export type Database = {
           promotion_id: string | null
           uses: number | null
         }
-        Relationships: []
+        Relationships: [
+          {
+            foreignKeyName: "order_discounts_promotion_id_fkey"
+            columns: ["promotion_id"]
+            isOneToOne: false
+            referencedRelation: "promotion_overview"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "order_discounts_promotion_id_fkey"
+            columns: ["promotion_id"]
+            isOneToOne: false
+            referencedRelation: "promotions"
+            referencedColumns: ["id"]
+          },
+        ]
       }
       promotion_overview: {
         Row: {
@@ -7563,7 +7679,6 @@ export type Database = {
       admin_save_gem_color: { Args: { p_color: Json }; Returns: Json }
       admin_save_languages: { Args: { p_languages: Json }; Returns: undefined }
       admin_save_product: { Args: { p_product: Json }; Returns: Json }
-      admin_save_promotion: { Args: { p: Json }; Returns: string }
       admin_save_product_recommendations: {
         Args: {
           p_complementary: string[]
@@ -7572,6 +7687,7 @@ export type Database = {
         }
         Returns: undefined
       }
+      admin_save_promotion: { Args: { p: Json }; Returns: string }
       admin_save_shipping: { Args: { p_zones: Json }; Returns: undefined }
       admin_save_store_details: {
         Args: { p_details: Json }
@@ -7651,10 +7767,6 @@ export type Database = {
         }[]
       }
       complete_course_step: { Args: { p_step_id: string }; Returns: Json }
-      contact_ip_allowed: {
-        Args: { p_ip_hash: string }
-        Returns: boolean
-      }
       consume_inventory: {
         Args: { p_inventory_item_id: string; p_quantity: number }
         Returns: {
@@ -7678,6 +7790,7 @@ export type Database = {
           isSetofReturn: false
         }
       }
+      contact_ip_allowed: { Args: { p_ip_hash: string }; Returns: boolean }
       course_publication_problems: {
         Args: { p_course_id: string }
         Returns: string[]
@@ -7772,6 +7885,41 @@ export type Database = {
           isOneToOne: true
           isSetofReturn: false
         }
+      }
+      email_log_apply_event: {
+        Args: { p_provider_id: string; p_status: string }
+        Returns: {
+          applied: boolean
+          gift_card: string
+          matched: boolean
+          new_status: string
+          template: string
+        }[]
+      }
+      email_log_claim: {
+        Args: {
+          p_event_key: string
+          p_gift_card_id?: string
+          p_locale: string
+          p_max_attempts?: number
+          p_order_id?: string
+          p_recipient_hash: string
+          p_template_key: string
+        }
+        Returns: {
+          attempt: number
+          claimed: boolean
+          status: string
+        }[]
+      }
+      email_log_finish: {
+        Args: {
+          p_error?: string
+          p_event_key: string
+          p_provider_id?: string
+          p_status: string
+        }
+        Returns: undefined
       }
       email_template_for: {
         Args: { p_key: string; p_locale: string }
@@ -7949,9 +8097,48 @@ export type Database = {
         Returns: Json
       }
       newsletter_unsubscribe: { Args: { p_token: string }; Returns: boolean }
+      pending_course_enrolment_emails: {
+        Args: { p_limit?: number; p_order_id?: string }
+        Returns: {
+          course_name: string
+          email: string
+          entitlement_id: string
+          first_name: string
+          locale: string
+          order_id: string
+          order_number: string
+        }[]
+      }
+      pending_refund_emails: {
+        Args: { p_limit?: number }
+        Returns: {
+          amount: number
+          currency: string
+          email: string
+          first_name: string
+          locale: string
+          order_id: string
+          order_number: string
+          refund_id: string
+        }[]
+      }
+      pending_shipping_emails: {
+        Args: { p_limit?: number }
+        Returns: {
+          email: string
+          first_name: string
+          locale: string
+          order_id: string
+          order_number: string
+          shipment_id: string
+          tracking_url: string
+          user_id: string
+        }[]
+      }
       quote_basket: {
         Args: {
           p_currency?: string
+          p_email?: string
           p_items: Json
           p_locale?: string
           p_promotion_codes?: string[]
@@ -8168,6 +8355,13 @@ export type Database = {
       submit_quiz_answers: {
         Args: { p_answers: Json; p_module_id: string }
         Returns: Json
+      }
+      unpaid_orders_holding_gift_cards: {
+        Args: { p_codes: string[] }
+        Returns: {
+          checkout_session_ids: string[]
+          order_id: string
+        }[]
       }
       vat_included: {
         Args: { p_amount: number; p_rate_bp: number }

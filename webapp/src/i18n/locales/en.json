@@ -454,6 +454,8 @@
       "rewardHint": "Applied alone when it beats your promotions; added only on top of promotions that accept it.",
       "rewardNotUsed": "A better promotion is applied: your loyalty reward stays available.",
       "codeNotUsed": "Code {{code}} is not applied: a better offer is already in place.",
+      "usedUp_one": "You have already used the “{{label}}” offer: it is limited to one use per customer, so the discount does not apply to this order.",
+      "usedUp_other": "You have already used the “{{label}}” offer as many times as allowed ({{count}} per customer), so the discount does not apply to this order.",
       "discountLine": "{{label}} ({{code}})",
       "gift": "Free gift: {{name}}",
       "freeOrder": "This order is entirely free through a promotion: free checkout is not available yet. Remove the code or add an item."

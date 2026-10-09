@@ -38,7 +38,7 @@ import { GiftCardCodes } from "../components/shop/GiftCardCodes";
 import { PromotionCodes } from "../components/shop/PromotionCodes";
 import { OfferBadges } from "../components/shop/OfferBadges";
 import { useStorefrontOffers } from "../lib/useStorefrontOffers";
-import { lineDiscount, quoteItems } from "../lib/checkout/basketQuote";
+import { guestQuoteEmail, lineDiscount, quoteItems } from "../lib/checkout/basketQuote";
 import { useBasketQuote } from "../lib/checkout/useBasketQuote";
 import type { GiftCardDesign } from "../lib/giftCards/giftCardMapping";
 import {
@@ -109,7 +109,7 @@ export function Cart() {
   const { lines, subtotal, updateQty, removeLine, clearCart } = useCart();
   const { products } = useCatalog();
   const { placeOrder } = useOrders();
-  const { signedIn, profile, updateProfile, termsAccepted, acceptTerms } = useAuth();
+  const { signedIn, userId, profile, updateProfile, termsAccepted, acceptTerms } = useAuth();
   const [acceptingTerms, setAcceptingTerms] = useState(false);
   const [termsFailed, setTermsFailed] = useState(false);
   const { reload: reloadCourses } = useProgress();
@@ -207,6 +207,9 @@ export function Cart() {
     useReward: rewardOn,
     currency,
     locale,
+    // Who is buying, for the per-customer promotion limits: the account, else the guest's e-mail once complete.
+    userId: signedIn ? userId : null,
+    email: guestQuoteEmail(signedIn, form.email),
   });
   const quote = quoteState.status === "ready" ? quoteState.quote : null;
   // Until the answer is in, the loyalty estimate stands in (same rule as the database); promotions show only once confirmed.
@@ -843,6 +846,17 @@ export function Cart() {
                 .map((code) => (
                   <p key={code} className="m-0 text-xs text-[var(--text-muted)]">{t("checkout.promo.codeNotUsed", { code })}</p>
                 ))}
+            {/* A promotion of the shop window this customer has already had as often as allowed: why its price is gone. */}
+            {quote?.usedUp.map((promotion) => (
+              <p
+                key={promotion.label}
+                role="status"
+                className="m-0 flex items-start gap-2 rounded-[var(--radius-md)] bg-[var(--status-warning-bg)] px-3 py-2 text-xs text-[var(--status-warning-fg)]"
+              >
+                <CircleAlert size={14} aria-hidden="true" className="mt-0.5 flex-none" />
+                {t("checkout.promo.usedUp", { label: promotion.label, count: promotion.maxUses })}
+              </p>
+            ))}
             {quote?.gifts.map((gift) => (
               <div key={`${gift.name}${gift.variant ?? ""}`} className="flex justify-between gap-3 text-[var(--status-success-fg)]">
                 <span>{t("checkout.promo.gift", { name: gift.variant ? `${gift.name} — ${gift.variant}` : gift.name })}</span>

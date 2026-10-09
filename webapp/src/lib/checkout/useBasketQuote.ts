@@ -26,15 +26,19 @@ export function useBasketQuote(params: {
   useReward: boolean;
   currency: string;
   locale: "fr" | "en";
+  /** Who is buying: the account id when signed in, else null. */
+  userId: string | null;
+  /** A guest's complete e-mail (`guestQuoteEmail`), else null. */
+  email: string | null;
 }): QuoteState {
-  const { enabled, items, codes, rateId, useReward, currency, locale } = params;
-  const key = quoteKey(items, codes, rateId, useReward, currency);
+  const { enabled, items, codes, rateId, useReward, currency, locale, userId, email } = params;
+  const key = quoteKey(items, codes, rateId, useReward, currency, userId ? `user:${userId}` : email);
   // The last answer received, whatever basket it was for: lets the lines keep their promotion while a new answer is on its way.
   const lastQuote = useRef<BasketQuote | null>(null);
   const [answer, setAnswer] = useState<{ key: string; state: QuoteState } | null>(null);
   // The request is rebuilt only when `key` (or the language) changes, however often the caller's arrays are recreated.
   // eslint-disable-next-line react-hooks/exhaustive-deps
-  const request = useMemo(() => ({ items, codes, rateId, useReward, currency, locale }), [key, locale]);
+  const request = useMemo(() => ({ items, codes, rateId, useReward, currency, locale, email: userId ? null : email }), [key, locale]);
 
   useEffect(() => {
     if (!enabled || request.items.length === 0) return;

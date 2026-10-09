@@ -141,6 +141,7 @@ supabase/
 | 20261008182346 | `quote_basket_lines` | **Applied 2026-10-08.** `quote_basket()` also answers `lines` (product, variant, discount amount) so the checkout shows the discount on the lines it reaches |
 | 20261008182555 | `promotions_public_lifecycle_column` | **Applied 2026-10-08.** `grant select (lifecycle)` on `promotions` and `campaigns` to `anon`: the policies of their child tables (scope, translations, products) read it, and a visitor only ever sees live rows. Needed by the shop window's offers |
 | 20261009152941 | `invoices` | **Applied 2026-10-09.** Legal invoices and credit notes (decision 86): `invoice_sequences` (one counter per series `FA-YYYY` / `AV-YYYY`, backend only), `invoices` (insert-only frozen snapshot: number, issue date, sale date, seller identity from `store_settings`, buyer, lines with VAT rate and excl./incl. amounts, shipping, VAT breakdown, payment; UPDATE/DELETE refused by trigger for every role; owner of the order and active staff read). Triggers `orders_zz_issue_invoice` (order becomes paid → `private.issue_order_invoice`) and `refunds_zz_issue_credit_note` (refund becomes succeeded → `private.issue_refund_credit_note`). Suite `tests/invoices_validation.sql` (I1–I9); `shipping_refunds_validation.sql` checks one credit note per confirmed refund |
+| 20261009162740 | `quote_basket_used_up` | **Applied 2026-10-09.** Decision 87: `quote_basket(..., p_email)` knows a guest by the e-mail typed at the checkout (ignored when signed in; 5 new addresses per caller per 10 minutes, table `promotion_email_lookups`, hashed, no policies) and answers `used_up` (automatic promotions the customer has already had as often as allowed, on paid orders). Suite PL12 (and PL11d unlocks the codes PL6 locked) |
 | 20261008175722 | `contact_attachments_and_support_email` | **Applied 2026-10-08.** Contact form: `contact_requests.attachment_path` → `attachment_paths text[]` (≤ 5, `private.valid_contact_attachment_paths()`), bucket `contact-attachments` 20 MB per object, `submit_contact_request(…, p_attachment_paths text[])` (old signature dropped; ownership per path, no duplicates, ≤ 20 MB in all), guard trigger rebuilt, `contact_ip_allowed(ip_hash)` (service role), template `contact_request_received` (fr + en) for the support inbox. Suite: `iteration7_validation.sql` C3/C4 |
 | 20261008175809 | `contact_attachment_paths_check_grant` | **Applied 2026-10-08.** `execute` on the CHECK helper for `authenticated`/`service_role` (staff triage re-evaluates the CHECK) |
 | 20261007181011 | `gift_card_design_everywhere` | **Applied 2026-10-07.** The design/names/message chosen at checkout are shown back (WYSIWYG): policy `gift_cards: purchaser reads own` (a buyer reads the cards of their purchases through the existing column grant — never the code) so the member's order pages draw the card in its design; the `gift_card_delivery` template bodies (fr + en) lose their `{{message}}` paragraph because the e-mail now draws the card itself (`giftCardVisual()`, message included). Test: a buyer sees only their own cards (to add to `gift_cards_validation.sql`) |
@@ -709,12 +710,16 @@ server  create_order(..., p_promotion_codes => ['WELCOME15'], p_use_loyalty_rewa
 - `admin_save_campaign(p jsonb) returns uuid` — the campaign, its ordered `product_ids` and the English text.
 - `promotion_daily_usage` — orders per promotion per day of payment (shop time), last 30 days, for the detail page's chart.
   Promotion figures come from `promotion_overview` (paid orders only).
-- `quote_basket(p_items, p_promotion_codes, p_shipping_rate_id, p_use_loyalty_reward, p_currency, p_locale) → jsonb` —
+- `quote_basket(p_items, p_promotion_codes, p_shipping_rate_id, p_use_loyalty_reward, p_currency, p_locale, p_email) → jsonb` —
   the cart's preview: `{ok, goods_discount, shipping_discount, discounts[{label, code, type, goods_amount,
-  shipping_amount}], gift_lines[]}` or `{ok:false, error: promotion_code_invalid | loyalty_reward_unavailable |
+  shipping_amount}], lines[], gift_lines[], used_up[{label, max_uses}]}` or `{ok:false, error: promotion_code_invalid | loyalty_reward_unavailable |
   too_many_attempts | unavailable}`. It builds the shop lines like `create_order()` (price, variant, VAT category; stock
   and gift cards ignored), then calls `private.compute_order_discounts()`. The caller's account (`auth.uid()`) counts
-  for "new customer" and per-customer limits; **a guest is quoted without e-mail**. Nothing is reserved or consumed.
+  for "new customer" and per-customer limits; a guest counts by `p_email` once typed in the checkout form (decision
+  87; at most 5 new addresses per caller per 10 minutes, logged hashed in `promotion_email_lookups`, else quoted
+  without e-mail). `used_up` lists the automatic promotions the basket would get but the customer has already had
+  `max_uses_per_customer` times on paid orders: the cart says so instead of a silently missing discount (a use held
+  by an unpaid order is not reported). Nothing is reserved or consumed.
   **Throttle:** every refused typed code is logged in `promotion_code_attempts` (actor = the account, else the first
   `x-forwarded-for` address); 10 refusals in 10 minutes → `too_many_attempts` for codes (the codeless quote still
   works); rows older than a day are purged on the next refusal. Codes stay unreadable to visitors and customers.
@@ -1655,3 +1660,14 @@ VAT rates, shipping zones/rates mirroring the Settings prototype. Media rows ref
     commerce); (f) the seller's identity on an invoice is whatever Settings holds at issue time — the legal name,
     registration (SIREN/RCS) and VAT numbers must be filled before launch; (g) no backfill for orders paid before the
     migration; (h) the PDF is drawn in the member's interface language (French or English).
+87. **The checkout says when a shop-window promotion is used up, and knows a guest by the e-mail typed** (user's request,
+    2026-10-09; agent's choices, to confirm). A product keeps its promotion price in the shop window for everyone; at
+    the checkout `quote_basket()` lists in `used_up` the automatic promotions this customer has already had as often
+    as allowed (paid orders only), and the cart shows "vous avez déjà profité de l'offre…" with no struck price. To
+    confirm: (a) a guest's e-mail is sent to the quote as soon as it is complete, so the preview matches the order
+    `create_order()` will price — the trade-off: anyone can learn, quietly, whether an address has already used a
+    given promotion or has paid orders ("new customers" promotions). The checkout already revealed it, but only by
+    creating an order; the quote is throttled (5 new addresses per caller per 10 minutes, then quoted without
+    e-mail). Removing it is one argument less in the cart. (b) A use held by an order still waiting for its payment
+    (≤ 60 min, released when the payment step is left or expires) blocks the promotion but is not announced as used.
+    (c) A typed code already used by the customer is still refused with the generic "code not valid" message.
