@@ -1,3 +1,4 @@
+import { INVOICE_SELECT } from "./invoiceMapping";
 import type {
   AdminDiscount,
   AdminGiftCardUse,
@@ -99,7 +100,8 @@ export const ADMIN_ORDER_SELECT = `
   refunds ( id, provider_refund_id, amount, status, reason, created_at, processed_at, refund_items ( order_item_id, quantity ) ),
   payments ( provider, provider_payment_id, provider_checkout_id, status, amount, amount_refunded,
              payment_method_type, card_brand, card_last4, created_at, updated_at,
-             gift_card:gift_cards ( code_last4 ) )
+             gift_card:gift_cards ( code_last4 ) ),
+  invoices ( ${INVOICE_SELECT} )
 `;
 
 const ORDER_STATUS: readonly AdminOrderStatus[] = [
@@ -299,6 +301,7 @@ export function mapAdminOrder(
     shipment: order.tracking,
     timeline: timelineOf(row, payment.captured),
     notes: notesOf(row, note),
+    invoices: order.invoices,
   };
 }
 

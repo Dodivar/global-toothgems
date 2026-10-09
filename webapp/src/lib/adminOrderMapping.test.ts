@@ -88,6 +88,20 @@ describe("mapAdminOrder: amounts as recorded", () => {
     });
   });
 
+  it("carries the order's invoice and credit notes, invoice first", () => {
+    const doc = {
+      id: "i", kind: "invoice", invoice_number: "FA-2026-000007", issued_at: "2026-10-09T08:00:00Z", sale_date: "2026-10-09",
+      currency: "EUR", total_excl_tax: "10.00", total_tax: "2.00", total_incl_tax: "12.00",
+      seller: {}, buyer: {}, lines: [], vat_breakdown: [], payment: {},
+    };
+    const order = mapAdminOrder(row({ invoices: [{ ...doc, id: "c", kind: "credit_note", invoice_number: "AV-2026-000002" }, doc] }), findProduct);
+    expect(order.invoices?.map((d) => [d.kind, d.number])).toEqual([
+      ["invoice", "FA-2026-000007"],
+      ["creditNote", "AV-2026-000002"],
+    ]);
+    expect(mapAdminOrder(row(), findProduct).invoices).toEqual([]);
+  });
+
   it("maps lines with their own price, discount and VAT", () => {
     const [first, second] = mapAdminOrder(row(), findProduct).lines;
     expect(first).toMatchObject({ id: "i1", productId: "aurora-heart", image: "/aurora.jpg", unitAmount: 2995, totalAmount: 5990, discountAmount: 500, taxRateBp: 2000, taxAmount: 915, qty: 2 });

@@ -287,3 +287,13 @@ export function layoutDocument(doc: BusinessDocument): PdfOp[][] {
 export function renderDocument(doc: BusinessDocument, createdAt: Date = new Date()): Uint8Array {
   return writePdf(layoutDocument(doc), { ...doc.info, lang: doc.lang, createdAt });
 }
+
+/**
+ * Several documents in one file (printing a batch of invoices): each keeps its
+ * own header, footer and page numbering; the file takes the first one's
+ * metadata unless `info` is given.
+ */
+export function renderDocuments(docs: BusinessDocument[], info?: { title: string; author: string }, createdAt: Date = new Date()): Uint8Array {
+  if (docs.length === 0) throw new Error("no document to render");
+  return writePdf(docs.flatMap(layoutDocument), { ...docs[0].info, ...info, lang: docs[0].lang, createdAt });
+}

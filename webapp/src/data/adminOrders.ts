@@ -1,4 +1,5 @@
 import type { Localized } from "./types";
+import type { OrderInvoice } from "../lib/invoiceMapping";
 import type {
   CustomerOrderLine,
   OrderAddress,
@@ -223,6 +224,8 @@ export interface AdminOrder {
   /** What the recorded dates vouch for, oldest first. */
   timeline: TimelineEvent[];
   notes: AdminNote[];
+  /** The legal invoice issued at payment, then its credit notes (`invoices`). Absent in mock mode. */
+  invoices?: OrderInvoice[];
 }
 
 /**

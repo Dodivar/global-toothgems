@@ -19,6 +19,7 @@ import { orderAmountRows, orderDocument, orderDocumentFileName } from "../../lib
 import { invoiceDocument, invoiceFileName } from "../../lib/documents/invoiceDocument";
 import type { OrderInvoice } from "../../lib/invoiceMapping";
 import { useDocumentDownload } from "../../lib/documents/useDocumentDownload";
+import { countryName, useDocumentFormat } from "../../lib/documents/useDocumentFormat";
 import { fetchStoreDetails } from "../../lib/storeDetails";
 import { supabase } from "../../lib/supabase/client";
 
@@ -152,33 +153,22 @@ function OrderDetailView({ order, back }: { order: Order; back: ReactNode }) {
  * the order form with the seller's identity as Settings holds it today.
  */
 function OrderDocumentButton({ order }: { order: Order }) {
-  const { t, i18n } = useTranslation();
-  const { formatDate, formatMoney, locale } = useFormat();
+  const { t } = useTranslation();
+  const fmt = useDocumentFormat();
   const { status, download } = useDocumentDownload();
   const working = status === "working";
   const invoices = order.invoices ?? [];
   const invoice = invoices.find((doc) => doc.kind === "invoice");
   const creditNotes = invoices.filter((doc) => doc.kind === "creditNote");
 
-  const format = () => {
-    const percent = new Intl.NumberFormat(locale, { style: "percent", maximumFractionDigits: 2 });
-    return {
-      lang: i18n.language.startsWith("en") ? "en" : "fr",
-      money: (minor: number, currency: string) => formatMoney(minor, currency),
-      date: (iso: string) => formatDate(iso),
-      country: (code: string) => countryName(code, locale),
-      percent: (basisPoints: number) => percent.format(basisPoints / 10000),
-    };
-  };
-
   const onOrderForm = () =>
     void download(async () => {
       const store = supabase ? await fetchStoreDetails(supabase) : null;
       const issuedOn = new Date().toISOString().slice(0, 10);
-      return { document: orderDocument(order, store, t, format(), issuedOn), fileName: orderDocumentFileName(order.reference, t) };
+      return { document: orderDocument(order, store, t, fmt, issuedOn), fileName: orderDocumentFileName(order.reference, t) };
     });
   const onInvoice = (doc: OrderInvoice) =>
-    void download(async () => ({ document: invoiceDocument(doc, t, format(), invoice), fileName: invoiceFileName(doc, t) }));
+    void download(async () => ({ document: invoiceDocument(doc, t, fmt, invoice), fileName: invoiceFileName(doc, t) }));
 
   return (
     <span className="grid justify-items-end gap-1">
@@ -471,14 +461,6 @@ function Addresses({ order }: { order: Order }) {
       </div>
     </Card>
   );
-}
-
-function countryName(code: string, locale: string): string {
-  try {
-    return new Intl.DisplayNames([locale], { type: "region" }).of(code) ?? code;
-  } catch {
-    return code;
-  }
 }
 
 function Address({ title, address }: { title: string; address: OrderAddress }) {

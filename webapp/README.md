@@ -225,6 +225,12 @@ Supabase they are not offered. Mapping lives in pure, unit-tested modules:
   payment row), shipped / delivered (each parcel), cancelled (`cancelled_at`), refund requested / refunded /
   partially refunded / failed (each refund). `orders.updated_at` is never used: a status set by hand without a
   dated fact has no event.
+- **Invoices.** The order's `invoices` rows are read with it (staff read them all). "Print the invoice" opens the
+  browser's print dialog on the PDF (hidden frame, `printFile`), "Download" saves it, each credit note has its own
+  button; the row menu does the same, and the bulk bar's "Invoices" prints the selection as one file, each invoice
+  keeping its own pages (`renderDocuments`). Drawn from the frozen snapshot by `lib/adminInvoices.ts` +
+  `documents/invoiceDocument.ts`; an order without an invoice (unpaid, or paid before 2026-10-09) says so in a
+  toast, never prints an order form in its place.
 - **States:** skeleton while loading, an error panel with "Try again" when the read fails (never an empty
   book), "no orders yet", "no result" for filters.
 - **Volume.** The whole book is read (1 000 rows per request, up to `BOOK_LIMIT` = 10 000 orders, beyond which a

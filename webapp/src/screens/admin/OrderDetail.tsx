@@ -3,7 +3,7 @@
 import { useMemo, useState } from "react";
 import { useTranslation } from "react-i18next";
 import { Link, useLocation, useNavigate, useParams } from "../../lib/navigation";
-import { ArrowLeft, Ban, ChevronLeft, ChevronRight, History, Printer, SlidersHorizontal } from "lucide-react";
+import { ArrowLeft, Ban, ChevronLeft, ChevronRight, Download, History, Printer, SlidersHorizontal } from "lucide-react";
 import { AdminButton } from "../../components/admin/AdminButton";
 import { AdminHeader } from "../../components/admin/AdminHeader";
 import { Button } from "../../components/ui/Button";
@@ -29,6 +29,7 @@ import {
 } from "../../components/admin/StatusBadges";
 import { CancelDialog, StatusDialog } from "../../components/admin/OrderDialogs";
 import { useAdminOrders } from "../../lib/adminOrders";
+import { creditNotesOf, useAdminInvoices } from "../../lib/adminInvoices";
 import { useToast } from "../../lib/toast";
 import { useFormat } from "../../lib/format";
 import { holdsMoney, orderItemCount, parseInstant, type AdminOrder } from "../../data/adminOrders";
@@ -73,6 +74,7 @@ export function OrderDetail() {
   const operator = useAdminAuth().admin?.name ?? "";
 
   const order = orders.find((o) => o.reference === reference);
+  const { working: invoiceWorking, invoices, creditNote } = useAdminInvoices();
 
   /** Neighbours in the book, so an operator can work through a queue in place. */
   const { previous, next } = useMemo(() => {
@@ -138,7 +140,6 @@ export function OrderDetail() {
       report(r, t("admin.orders.fulfilment.toastParcelTitle"), t(`admin.orders.fulfilment.toastParcel.${action}`)),
     );
   };
-  const notWired = () => showToast(t("common.notIncludedTitle"), t("admin.orders.toastNotWired"), "info");
 
   const neighbourLink = (target: AdminOrder | undefined, direction: "previous" | "next") => {
     if (!target) return null;
@@ -249,9 +250,17 @@ export function OrderDetail() {
             what keeps them apart: nobody should reach "cancel" on the way to
             "print". */}
         <div className="flex flex-wrap items-center gap-2 border-t border-[var(--border-subtle)] pt-4">
-          <AdminButton variant="outline" iconLeft={Printer} onClick={() => notWired()}>
+          <AdminButton variant="outline" iconLeft={Printer} disabled={invoiceWorking} onClick={() => invoices([order], "print")}>
             {t("admin.orders.actionPrintInvoice")}
           </AdminButton>
+          <AdminButton variant="ghost" iconLeft={Download} disabled={invoiceWorking} onClick={() => invoices([order], "download")}>
+            {t("admin.orders.actionDownloadInvoice")}
+          </AdminButton>
+          {creditNotesOf(order).map((note) => (
+            <AdminButton key={note.id} variant="ghost" iconLeft={Download} disabled={invoiceWorking} onClick={() => creditNote(order, note)}>
+              {t("admin.orders.actionDownloadCreditNote", { number: note.number })}
+            </AdminButton>
+          ))}
           <span className="ml-auto flex flex-wrap items-center gap-2">
             {!closed && order.status !== "delivered" && !holdsMoney(order) && (
               <button
