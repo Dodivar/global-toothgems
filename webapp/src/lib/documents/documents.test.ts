@@ -5,7 +5,7 @@ import type { StoreDetails } from "../../data/adminSettings";
 import type { Order } from "../../data/orders";
 import { legalFooter, orderAmountRows, orderDocument, orderDocumentFileName, type DocumentFormat, type Translate } from "./orderDocument";
 import { contentStream, writePdf, type PdfOp } from "./pdfWriter";
-import { layoutDocument, renderDocument, type BusinessDocument } from "./template";
+import { layoutDocument, renderDocument, renderDocuments, type BusinessDocument } from "./template";
 import { encodeWinAnsi, textWidth, wrapText } from "./text";
 
 /** i18next's lookup and {{interpolation}}, enough for the documents' keys. */
@@ -141,6 +141,14 @@ describe("document template", () => {
   it("renders to a PDF", () => {
     const bytes = renderDocument({ ...base, blocks: [{ kind: "paragraph", text: "Valable 30 jours.", tone: "notice" }] }, new Date("2026-10-09T00:00:00Z"));
     expect(new TextDecoder("latin1").decode(bytes.slice(0, 8))).toBe("%PDF-1.4");
+  });
+
+  it("puts several documents in one file, each with its own page numbering", () => {
+    const one = { ...base, blocks: [{ kind: "paragraph" as const, text: "Un." }] };
+    const body = new TextDecoder("latin1").decode(renderDocuments([one, { ...one, title: "Avoir" }], undefined, new Date("2026-10-09T00:00:00Z")));
+    expect(body).toContain("/Count 2");
+    expect(body.match(/\(Page 1 sur 1\)/g)?.length).toBe(2);
+    expect(() => renderDocuments([])).toThrow();
   });
 });
 

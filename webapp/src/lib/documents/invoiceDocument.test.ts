@@ -1,8 +1,8 @@
 import { describe, expect, it } from "vitest";
 import en from "../../i18n/locales/en.json";
 import fr from "../../i18n/locales/fr.json";
-import { mapInvoice, sortInvoices, type InvoiceRow } from "../invoiceMapping";
-import type { Translate } from "./orderDocument";
+import { mapInvoice, sortInvoices, type InvoiceRow } from "./invoiceModel";
+import type { Translate } from "./legal";
 import { invoiceDocument, invoiceFileName, type InvoiceFormat } from "./invoiceDocument";
 import { layoutDocument } from "./template";
 

@@ -6,6 +6,7 @@
  * firing, still sends one e-mail (see send.ts / email_log).
  */
 import type { SupabaseClient } from "npm:@supabase/supabase-js@2.57.4";
+import { type AttachedDocument, type InvoiceSource, orderInvoice } from "./invoicePdf.ts";
 import { type OrderSnapshot, orderConfirmationContent } from "./orderContent.ts";
 import { type EmailDeps, type SendResult, sendTemplatedEmail } from "./send.ts";
 
@@ -25,14 +26,29 @@ export interface OrderMailSource {
 
 export type OrderConfirmationResult = SendResult | { status: "skipped"; reason: "order_not_found" | "not_paid" };
 
+/**
+ * The invoice the payment issued travels as a PDF attachment, for every buyer
+ * (a guest has no other way to get it). Drawing it never blocks the e-mail: a
+ * failure is logged and the confirmation leaves without it.
+ */
 export async function sendOrderConfirmation(
   deps: EmailDeps,
   source: OrderMailSource,
   orderId: string,
+  options: { invoices?: InvoiceSource; log?: (message: string, detail?: unknown) => void } = {},
 ): Promise<OrderConfirmationResult> {
   const order = await source.loadOrder(orderId);
   if (!order) return { status: "skipped", reason: "order_not_found" };
   if (order.paymentStatus !== "paid") return { status: "skipped", reason: "not_paid" };
+
+  let invoice: AttachedDocument | null = null;
+  if (options.invoices) {
+    try {
+      invoice = await orderInvoice(options.invoices, order.id, order.locale);
+    } catch (error) {
+      options.log?.("invoice PDF not attached", { orderId, error: error instanceof Error ? error.message : error });
+    }
+  }
 
   return await sendTemplatedEmail(deps, {
     templateKey: "order_confirmation",
@@ -41,8 +57,9 @@ export async function sendOrderConfirmation(
     variables: { first_name: order.firstName, order_number: order.orderNumber },
     eventKey: `order_confirmation:${order.id}`,
     orderId: order.id,
+    attachments: invoice ? [invoice.attachment] : undefined,
     // Labels follow the language of the template actually found, like the body.
-    content: (locale) => orderConfirmationContent(order, locale, deps.layout.siteUrl),
+    content: (locale) => orderConfirmationContent(order, locale, deps.layout.siteUrl, invoice?.number),
   });
 }
 

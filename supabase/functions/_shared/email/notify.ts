@@ -14,6 +14,7 @@ import { serviceClient } from "../clients.ts";
 import { emailDepsFromEnv } from "./mod.ts";
 import { deliverGiftCards, supabaseGiftCardSource } from "./giftCards.ts";
 import { sendCourseEnrolmentEmails, sendRefundEmails, supabasePendingSource } from "./events.ts";
+import { supabaseInvoiceSource } from "./invoicePdf.ts";
 import { sendOrderConfirmation, supabaseOrderSource } from "./orders.ts";
 import type { EmailDeps } from "./send.ts";
 
@@ -39,7 +40,10 @@ export async function notifyOrderPaid(orderId: string, log: Logger): Promise<voi
 
   // Independent steps: a failing confirmation must not hold back the gift cards, nor the reverse.
   try {
-    const result = await sendOrderConfirmation(deps, supabaseOrderSource(db), orderId);
+    const result = await sendOrderConfirmation(deps, supabaseOrderSource(db), orderId, {
+      invoices: supabaseInvoiceSource(db),
+      log,
+    });
     if (result.status === "failed" || result.status === "invalid" || result.status === "template_missing") {
       log(`order confirmation not sent (${result.status})`, { orderId, ...result });
     }
@@ -73,7 +77,8 @@ export async function notifyRefundConfirmed(log: Logger): Promise<void> {
     return;
   }
   try {
-    await sendRefundEmails(emailDepsFromEnv(), supabasePendingSource(serviceClient()), { log });
+    const db = serviceClient();
+    await sendRefundEmails(emailDepsFromEnv(), supabasePendingSource(db), { log, invoices: supabaseInvoiceSource(db) });
   } catch (error) {
     log("refund e-mail crashed", error instanceof Error ? error.message : error);
   }

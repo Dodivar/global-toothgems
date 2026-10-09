@@ -87,6 +87,8 @@ const LABELS = {
     forgotProduct: "Vous avez oublié un produit ? On a ce qu’il vous faut.",
     refundTitle: (amount: string) => `Remboursement de ${amount} effectué`,
     refundBody: "Le délai d’apparition sur votre relevé dépend de votre banque.",
+    invoiceAttached: (n: string) => `Votre facture ${n} est jointe à cet e-mail (PDF).`,
+    creditNoteAttached: (n: string) => `L’avoir ${n} correspondant est joint à cet e-mail (PDF).`,
     orderLabel: "Commande",
     amountLabel: "Montant",
   },
@@ -119,6 +121,8 @@ const LABELS = {
     forgotProduct: "Forgot something? We have just what you need.",
     refundTitle: (amount: string) => `Refund of ${amount} issued`,
     refundBody: "How soon it shows on your statement depends on your bank.",
+    invoiceAttached: (n: string) => `Your invoice ${n} is attached to this e-mail (PDF).`,
+    creditNoteAttached: (n: string) => `The matching credit note ${n} is attached to this e-mail (PDF).`,
     orderLabel: "Order",
     amountLabel: "Amount",
   },
@@ -164,7 +168,8 @@ function shopUrl(siteUrl: string, lang: "fr" | "en"): string {
   return `${siteUrl}/${lang}/${lang === "fr" ? "boutique" : "shop"}`;
 }
 
-export function orderConfirmationContent(order: OrderSnapshot, locale: string, siteUrl: string): EmailContent {
+/** `invoiceNumber`: the invoice attached to the e-mail, said in its text. */
+export function orderConfirmationContent(order: OrderSnapshot, locale: string, siteUrl: string, invoiceNumber?: string): EmailContent {
   const lang = chromeLocale(locale);
   const l = LABELS[lang];
   const money = (amount: number) => formatAmount(amount, order.currency, lang);
@@ -210,6 +215,8 @@ export function orderConfirmationContent(order: OrderSnapshot, locale: string, s
     }),
   ];
 
+  if (invoiceNumber) blocks.push(paragraph(l.invoiceAttached(invoiceNumber)));
+
   const address = addressLines(order.shippingAddress, lang);
   if (address) {
     const rows: DetailRow[] = [{ label: l.address, value: address }];
@@ -250,6 +257,8 @@ export function shippingContent(
 export function refundContent(
   refund: { orderNumber: string; amount: number; currency: string },
   locale: string,
+  /** The credit note attached to the e-mail, said in its text. */
+  creditNoteNumber?: string,
 ): EmailContent {
   const lang = chromeLocale(locale);
   const l = LABELS[lang];
@@ -259,6 +268,7 @@ export function refundContent(
     blocks: [
       notice({ tone: "info", title: l.refundTitle(amount), body: l.refundBody }),
       details({ rows: [{ label: l.orderLabel, value: refund.orderNumber }, { label: l.amountLabel, value: amount }] }),
+      ...(creditNoteNumber ? [paragraph(l.creditNoteAttached(creditNoteNumber))] : []),
     ],
   };
 }

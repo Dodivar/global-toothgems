@@ -2,7 +2,7 @@ import type { Localized } from "./types";
 import { getProduct } from "./products";
 import { getCourse } from "./courses";
 import { toMinorUnits } from "../lib/catalog/money";
-import type { OrderInvoice } from "../lib/invoiceMapping";
+import type { OrderInvoice } from "../lib/documents/invoiceModel";
 
 /**
  * Order history of the member area.

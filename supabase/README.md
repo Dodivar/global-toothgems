@@ -476,8 +476,15 @@ refund status → 'succeeded'  (mark_refund_succeeded, record_external_refund, r
   refunds referenced by an invoice cannot be deleted (`RESTRICT`). A mistake is corrected by a credit note.
 - **Access.** No API writes; `invoice_sequences` has no grant and no policy (advisor "RLS enabled, no policy" accepted, as for `email_log`). The order's owner reads its invoices (member order
   page, PDF via `webapp/src/lib/documents/invoiceDocument.ts`); active staff read all.
-- **Not covered.** Orders paid before 2026-10-09 have no invoice (no backfill: development data). No back-office
-  screen yet. B2B details (buyer company VAT number, reverse charge) are not collected by checkout.
+- **E-mailed (owner, 2026-10-09).** The order confirmation carries the invoice as a PDF attachment, for members and
+  guests alike (a guest has no other access to it), and the refund e-mail carries the refund's credit note. Drawn in
+  the Edge Functions (`_shared/email/invoicePdf.ts`) by the same template as the member's download:
+  `_shared/documents/` is a generated copy of `webapp/src/lib/documents/` (portable modules + the `documents`
+  strings), refreshed by `npm run sync:documents` in `webapp/`; a Vitest test fails while the copy is stale. A PDF
+  that cannot be drawn is logged and the e-mail leaves without it (the member still has the download). Refunds
+  credited onto gift cards send no e-mail, so their credit note is not mailed (member page and back office only).
+- **Not covered.** Orders paid before 2026-10-09 have no invoice (no backfill: development data). B2B details
+  (buyer company VAT number, reverse charge) are not collected by checkout.
 
 ### Gift cards (iteration 4)
 
@@ -1558,7 +1565,8 @@ VAT rates, shipping zones/rates mirroring the Settings prototype. Media rows ref
       (Cron: scheduled by migration `email_cron_jobs`, no manual step beyond the Vault secret.) Former manual form: `select cron.schedule('send-pending-emails', '*/5 * * * *', $$ select net.http_post(url := 'https://<project-ref>.supabase.co/functions/v1/send-pending-emails', headers := jsonb_build_object('x-internal-secret', (select decrypted_secret from vault.decrypted_secrets where name = 'email_internal_secret')), body := '{}'::jsonb) $$);`
     - **Still to build:** the back-office resend of a card. To do by hand: the Resend domain and the secrets, then
       deploy the functions (`deliver-gift-cards`, `send-email`, `resend-webhook`, `send-pending-emails`, and redeploy
-      `stripe-webhook` and `create-checkout-session`), declare the `resend-webhook` endpoint in Resend (events delivered, opened, bounced, complained), and make sure the Vault secret
+      `stripe-webhook` and `create-checkout-session` — since 2026-10-09 they also bundle `_shared/documents/` for the
+      invoice and credit note attachments), declare the `resend-webhook` endpoint in Resend (events delivered, opened, bounced, complained), and make sure the Vault secret
       `email_internal_secret` holds the same value as `EMAIL_INTERNAL_SECRET` (the crons themselves are in migration `email_cron_jobs`; the manual form below is kept for reference):
       `select cron.schedule('deliver-gift-cards', '*/5 * * * *', $$ select net.http_post(url := 'https://<project-ref>.supabase.co/functions/v1/deliver-gift-cards', headers := jsonb_build_object('x-internal-secret', (select decrypted_secret from vault.decrypted_secrets where name = 'email_internal_secret')), body := '{}'::jsonb) $$);`
       (needs `pg_net` and a vault secret `email_internal_secret`; not part of a migration because of the secret).

@@ -1,6 +1,4 @@
-import type { Json } from "./supabase/database.types";
-import type { OrderAddress } from "../data/orders";
-import { toMinorUnits } from "./catalog/money";
+import { toMinorUnits } from "../catalog/money.ts";
 
 /**
  * `invoices` rows → the member area's `OrderInvoice`. An invoice (or credit
@@ -8,8 +6,28 @@ import { toMinorUnits } from "./catalog/money";
  * (or the refund confirmed): seller, buyer, lines and VAT as they were then,
  * numbered `FA-YYYY-NNNNNN` / `AV-YYYY-NNNNNN` (supabase/README.md,
  * "Invoices"). Nothing is recomputed here; amounts become integer minor units
- * of the invoice currency. Pure, unit-tested in `invoiceMapping.test.ts`.
+ * of the invoice currency. Pure, unit-tested in `invoiceDocument.test.ts`.
+ *
+ * Shared with the Edge Functions that e-mail the PDFs: `npm run sync:documents`
+ * copies this folder's portable modules to `supabase/functions/_shared/documents/`
+ * (`npm run sync:documents`, `scripts/sync-documents.mjs`), so they import nothing outside it but the money helper.
  */
+
+/** A JSON value as PostgREST returns it (same shape as the generated `Json`). */
+export type Json = string | number | boolean | null | { [key: string]: Json | undefined } | Json[];
+
+/** An address snapshot (`orders.billing_address`), as the documents print it. */
+export interface InvoiceAddress {
+  name: string;
+  company?: string;
+  lines: string[];
+  postalCode?: string;
+  city: string;
+  region?: string;
+  /** ISO 3166-1 alpha-2. */
+  countryCode: string;
+  phone?: string;
+}
 
 export type InvoiceLineKind = "product" | "course" | "gift_card" | "shipping" | "adjustment";
 
@@ -62,7 +80,7 @@ export interface OrderInvoice {
   totalTax: number;
   totalIncl: number;
   seller: InvoiceSeller;
-  buyer: { email: string; orderNumber: string; address?: OrderAddress };
+  buyer: { email: string; orderNumber: string; address?: InvoiceAddress };
   lines: InvoiceLine[];
   vat: InvoiceVatRow[];
   payment: {
@@ -123,7 +141,7 @@ function int(value: Json | undefined): number {
 }
 
 /** Same shape as the order's address snapshots (`orders.billing_address`). */
-function address(value: Json | undefined): OrderAddress | undefined {
+function address(value: Json | undefined): InvoiceAddress | undefined {
   const a = obj(value);
   const name = [str(a.first_name), str(a.last_name)].filter(Boolean).join(" ");
   const lines = [str(a.address_line1), str(a.address_line2)].filter(Boolean);
