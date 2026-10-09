@@ -13,7 +13,7 @@ import type {
 } from "../data/orders";
 import type { Product } from "../data/products";
 import { toMinorUnits } from "./catalog/money";
-import { INVOICE_SELECT, mapInvoice, sortInvoices, type InvoiceRow } from "./invoiceMapping";
+import { INVOICE_SELECT, mapInvoice, sortInvoices, type InvoiceRow } from "./documents/invoiceModel";
 
 /**
  * Database rows → the member area's `Order` model. Pure, so it is unit-tested

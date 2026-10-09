@@ -17,7 +17,7 @@ import { useOrders } from "../../lib/orders";
 import { courseHref } from "../../lib/academyUrl";
 import { orderAmountRows, orderDocument, orderDocumentFileName } from "../../lib/documents/orderDocument";
 import { invoiceDocument, invoiceFileName } from "../../lib/documents/invoiceDocument";
-import type { OrderInvoice } from "../../lib/invoiceMapping";
+import type { OrderInvoice } from "../../lib/documents/invoiceModel";
 import { useDocumentDownload } from "../../lib/documents/useDocumentDownload";
 import { countryName, useDocumentFormat } from "../../lib/documents/useDocumentFormat";
 import { fetchStoreDetails } from "../../lib/storeDetails";
@@ -149,7 +149,7 @@ function OrderDetailView({ order, back }: { order: Order; back: ReactNode }) {
 
 /**
  * The order's documents as PDFs: its legal invoice and credit notes once the
- * database has issued them (frozen snapshots, `lib/invoiceMapping.ts`), else
+ * database has issued them (frozen snapshots, `lib/documents/invoiceModel.ts`), else
  * the order form with the seller's identity as Settings holds it today.
  */
 function OrderDocumentButton({ order }: { order: Order }) {

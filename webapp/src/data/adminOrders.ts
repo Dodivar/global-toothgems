@@ -1,5 +1,5 @@
 import type { Localized } from "./types";
-import type { OrderInvoice } from "../lib/invoiceMapping";
+import type { OrderInvoice } from "../lib/documents/invoiceModel";
 import type {
   CustomerOrderLine,
   OrderAddress,

@@ -4966,6 +4966,8 @@
       "totalExcl": "Total HT",
       "totalVat": "TVA",
       "totalIncl": "Total TTC",
+      "paidGiftCard": "Réglé en carte cadeau",
+      "paidCard": "Réglé par carte",
       "vatTitle": "Récapitulatif de la TVA",
       "paid": "Facture acquittée le {{date}} : paiement comptant à la commande, aucun escompte pour paiement anticipé.",
       "giftCardNote": "Cartes cadeaux : bons à usages multiples, hors du champ de la TVA lors de leur achat ; la TVA est due lors de leur utilisation.",

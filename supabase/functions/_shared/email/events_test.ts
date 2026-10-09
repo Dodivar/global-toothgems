@@ -11,6 +11,7 @@ import {
   trackingLinkFor,
 } from "./events.ts";
 import type { Claim, EmailDeps, EmailStore } from "./send.ts";
+import { CREDIT_ROW, INVOICE_ROW } from "./invoicePdf_fixtures.ts";
 
 const SITE = "https://globaltoothgems.com";
 
@@ -218,4 +219,15 @@ Deno.test("the sweep runs the three kinds; one sweep failing does not stop the o
   assertEquals(report.courseEnrolment.sent, 1);
   assertEquals(report.refund.sent, 1);
   assertEquals(logs.length, 1);
+});
+
+Deno.test("a refund e-mail carries the credit note its refund issued; without one it leaves bare", async () => {
+  const { deps, seen } = setup();
+  await sendRefundEmails(deps, source({ refunds: () => Promise.resolve([refund(), refund({ refundId: "r-9" })]) }), {
+    invoices: { documentsOfOrder: () => Promise.resolve([INVOICE_ROW, CREDIT_ROW]) },
+  });
+  const [withNote, bare] = seen.requests as { attachments?: { filename: string }[]; text: string }[];
+  assertEquals(withNote.attachments?.map((a) => a.filename), ["credit-note-AV-2026-000001.pdf"]);
+  assertEquals(withNote.text.includes("The matching credit note AV-2026-000001 is attached to this e-mail (PDF)."), true);
+  assertEquals(bare.attachments, undefined);
 });

@@ -1,3 +1,4 @@
+// Generated from webapp/src/lib/documents/invoiceDocument.ts by webapp/scripts/sync-documents.mjs — edit the source, then run `npm run sync:documents`.
 import type { InvoiceLine, InvoiceSeller, OrderInvoice } from "./invoiceModel.ts";
 import { legalFooterLines, type DocumentFormat, type Translate } from "./legal.ts";
 import type { BusinessDocument, DocumentBlock, DocumentParty, DocumentTotalRow } from "./template.ts";

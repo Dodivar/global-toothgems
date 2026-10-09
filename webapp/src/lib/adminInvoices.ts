@@ -1,7 +1,7 @@
 import { useCallback } from "react";
 import { useTranslation } from "react-i18next";
 import type { AdminOrder } from "../data/adminOrders";
-import type { OrderInvoice } from "./invoiceMapping";
+import type { OrderInvoice } from "./documents/invoiceModel";
 import { invoiceDocument, invoiceFileName } from "./documents/invoiceDocument";
 import { useDocumentFormat } from "./documents/useDocumentFormat";
 import { useDocumentDownload } from "./documents/useDocumentDownload";

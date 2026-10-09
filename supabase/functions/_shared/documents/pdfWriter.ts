@@ -1,3 +1,4 @@
+// Generated from webapp/src/lib/documents/pdfWriter.ts by webapp/scripts/sync-documents.mjs — edit the source, then run `npm run sync:documents`.
 import { WORDMARK } from "./assets.generated.ts";
 import { encodeWinAnsi, type FontWeight } from "./text.ts";
 

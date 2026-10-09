@@ -1,4 +1,4 @@
-import { INVOICE_SELECT } from "./invoiceMapping";
+import { INVOICE_SELECT } from "./documents/invoiceModel";
 import type {
   AdminDiscount,
   AdminGiftCardUse,

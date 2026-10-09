@@ -1,3 +1,4 @@
+// Generated from webapp/src/lib/documents/text.ts by webapp/scripts/sync-documents.mjs — edit the source, then run `npm run sync:documents`.
 import { HELVETICA_BOLD_WIDTHS, HELVETICA_WIDTHS } from "./assets.generated.ts";
 
 /**

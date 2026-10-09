@@ -1,5 +1,6 @@
 import { assertEquals, assertStringIncludes } from "jsr:@std/assert@1";
 import { type OrderMailRow, sendOrderConfirmation } from "./orders.ts";
+import { INVOICE_ROW } from "./invoicePdf_fixtures.ts";
 import type { EmailDeps, EmailStore } from "./send.ts";
 
 const ORDER: OrderMailRow = {
@@ -95,4 +96,35 @@ Deno.test("the confirmation carries the order summary, the address and a button 
   assertStringIncludes(body.html, 'href="https://globaltoothgems.com/compte/commandes/GT-100042"');
   assertStringIncludes(body.text, "View my order: https://globaltoothgems.com/compte/commandes/GT-100042");
   assertStringIncludes(body.text, "Total incl. VAT: €59.60");
+});
+
+Deno.test("the invoice issued at payment is attached and named in the e-mail, for members and guests alike", async () => {
+  for (const userId of [ORDER.userId, null]) {
+    const { deps, seen } = setup();
+    await sendOrderConfirmation(deps, { loadOrder: () => Promise.resolve({ ...ORDER, userId }) }, ORDER.id, {
+      invoices: { documentsOfOrder: () => Promise.resolve([INVOICE_ROW]) },
+    });
+    const body = await seen.requests[0].json();
+    assertEquals(body.attachments.map((a: { filename: string }) => a.filename), ["invoice-FA-2026-000001.pdf"]);
+    assertEquals(atob(body.attachments[0].content).slice(0, 8), "%PDF-1.4");
+    assertStringIncludes(body.text, "Your invoice FA-2026-000001 is attached to this e-mail (PDF).");
+  }
+});
+
+Deno.test("without an invoice, or when it cannot be drawn, the confirmation still leaves, without attachment", async () => {
+  const none = setup();
+  await sendOrderConfirmation(none.deps, { loadOrder: () => Promise.resolve(ORDER) }, ORDER.id, {
+    invoices: { documentsOfOrder: () => Promise.resolve([]) },
+  });
+  assertEquals((await none.seen.requests[0].json()).attachments, undefined);
+
+  const broken = setup();
+  const logged: string[] = [];
+  const result = await sendOrderConfirmation(broken.deps, { loadOrder: () => Promise.resolve(ORDER) }, ORDER.id, {
+    invoices: { documentsOfOrder: () => Promise.reject(new Error("database down")) },
+    log: (message) => logged.push(message),
+  });
+  assertEquals(result, { status: "sent", id: "em_1" });
+  assertEquals((await broken.seen.requests[0].json()).attachments, undefined);
+  assertEquals(logged, ["invoice PDF not attached"]);
 });

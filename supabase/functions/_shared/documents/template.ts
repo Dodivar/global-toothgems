@@ -1,3 +1,4 @@
+// Generated from webapp/src/lib/documents/template.ts by webapp/scripts/sync-documents.mjs — edit the source, then run `npm run sync:documents`.
 import { A4, writePdf, type PdfOp } from "./pdfWriter.ts";
 import { textWidth, wrapText, type FontWeight } from "./text.ts";
 

@@ -15,6 +15,7 @@
  */
 import type { SupabaseClient } from "npm:@supabase/supabase-js@2.57.4";
 import { formatAmount } from "./format.ts";
+import { type AttachedDocument, type InvoiceSource, refundCreditNote } from "./invoicePdf.ts";
 import { refundContent, shippingContent } from "./orderContent.ts";
 import { type EmailDeps, type SendResult, sendTemplatedEmail } from "./send.ts";
 
@@ -168,15 +169,28 @@ export function sendCourseEnrolmentEmails(
   );
 }
 
+/** The credit note of the refund, or null; a failure to draw it is logged and never blocks the e-mail. */
+async function creditNoteFor(invoices: InvoiceSource | undefined, refund: PendingRefund, log: Log): Promise<AttachedDocument | null> {
+  if (!invoices) return null;
+  try {
+    return await refundCreditNote(invoices, refund.orderId, refund.refundId, refund.locale);
+  } catch (error) {
+    log("credit note PDF not attached", { refundId: refund.refundId, error: error instanceof Error ? error.message : error });
+    return null;
+  }
+}
+
+/** Each refund e-mail carries the credit note the confirmed refund issued (PDF), when the order was invoiced. */
 export function sendRefundEmails(
   deps: EmailDeps,
   source: PendingSource,
-  options: { limit?: number; log?: Log } = {},
+  options: { limit?: number; log?: Log; invoices?: InvoiceSource } = {},
 ): Promise<EventReport> {
   const log = options.log ?? (() => {});
   return source.refunds(options.limit ?? 25).then((rows) =>
-    sendEach(rows, "refund", (r) => r.refundId, (refund) =>
-      sendTemplatedEmail(deps, {
+    sendEach(rows, "refund", (r) => r.refundId, async (refund) => {
+      const creditNote = await creditNoteFor(options.invoices, refund, log);
+      return sendTemplatedEmail(deps, {
         templateKey: "order_refunded",
         to: refund.email,
         locale: refund.locale,
@@ -187,8 +201,10 @@ export function sendRefundEmails(
         },
         eventKey: `refund:${refund.refundId}`,
         orderId: refund.orderId,
-        content: (locale) => refundContent(refund, locale),
-      }), log)
+        attachments: creditNote ? [creditNote.attachment] : undefined,
+        content: (locale) => refundContent(refund, locale, creditNote?.number),
+      });
+    }, log)
   );
 }
 
@@ -196,7 +212,7 @@ export function sendRefundEmails(
 export async function sendPendingEmails(
   deps: EmailDeps,
   source: PendingSource,
-  options: { limit?: number; log?: Log } = {},
+  options: { limit?: number; log?: Log; invoices?: InvoiceSource } = {},
 ): Promise<SweepReport> {
   const log = options.log ?? (() => {});
   const guard = async (what: string, run: () => Promise<EventReport>): Promise<EventReport> => {

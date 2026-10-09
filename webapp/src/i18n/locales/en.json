@@ -4966,6 +4966,8 @@
       "totalExcl": "Total excl. VAT",
       "totalVat": "VAT",
       "totalIncl": "Total incl. VAT",
+      "paidGiftCard": "Paid by gift card",
+      "paidCard": "Paid by card",
       "vatTitle": "VAT summary",
       "paid": "Invoice paid on {{date}}: payment in full when ordering, no discount for early payment.",
       "giftCardNote": "Gift cards: multi-purpose vouchers, outside the scope of VAT when bought; VAT is due when they are used.",
