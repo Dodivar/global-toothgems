@@ -12,7 +12,7 @@ import {
 
 describe("gateFor", () => {
   it("gates the member space and the learner pages behind an account", () => {
-    for (const path of ["/compte", "/compte/commandes", "/compte/communaute/canal/1", "/academy/lecon", "/academy/mes-formations/fondation", "/academy/mes-formations/fondation/lecon/m1"]) {
+    for (const path of ["/compte", "/compte/commandes", "/compte/salons/en/discussion", "/academy/lecon", "/academy/mes-formations/fondation", "/academy/mes-formations/fondation/lecon/m1"]) {
       expect(gateFor(path), path).toBe("account");
     }
   });

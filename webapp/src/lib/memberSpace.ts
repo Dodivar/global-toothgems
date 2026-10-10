@@ -1,5 +1,5 @@
 /**
- * The member space — the account and the Artist Community under `/compte` —
+ * The member space — the account and the Members' Lounge under `/compte` —
  * wears its own chrome: a full-height sidebar that carries both its sections
  * and the way out to the shop, the Academy and the Studio. The storefront
  * header and footer are left out on these routes, as they are on the Studio.

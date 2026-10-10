@@ -5,7 +5,7 @@ import { ArrowLeft, ArrowRight, Check, LockKeyhole } from "lucide-react";
 import clsx from "clsx";
 import { Link } from "../../lib/navigation";
 import { CHAT_SERVERS, getChatMember, type ChatMember } from "../../data/communityChat";
-import { AccessDemoSwitch } from "../community/AccessDemoSwitch";
+import { AccessDemoSwitch } from "./AccessDemoSwitch";
 import { ChatAvatar, focusRing } from "./primitives";
 import { ChannelIcon } from "./channelIcons";
 

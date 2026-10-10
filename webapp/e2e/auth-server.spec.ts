@@ -28,7 +28,7 @@ test.describe("proxy", () => {
     ["/admin", "/admin/connexion?suite=%2Fadmin"],
     ["/admin/produits/42", "/admin/connexion?suite=%2Fadmin%2Fproduits%2F42"],
     // Phase 4: every zone's own segment (the proxy, then the zone's layout and page).
-    ["/compte/communaute/membres", "/connexion?suite=%2Fcompte%2Fcommunaute%2Fmembres"],
+    ["/compte/salons/en/discussion", "/connexion?suite=%2Fcompte%2Fsalons%2Fen%2Fdiscussion"],
     ["/academy/mes-formations/business/terminee", "/connexion?suite=%2Facademy%2Fmes-formations%2Fbusiness%2Fterminee"],
     ["/admin/avis?vue=signales", "/admin/connexion?suite=%2Fadmin%2Favis%3Fvue%3Dsignales"],
     // An order's detail page.
@@ -68,7 +68,7 @@ test.describe("/auth/confirm", () => {
     const account = await request.get("/compte", noRedirect);
     expect(account.status()).toBe(200);
     // The member's private zones let the member in.
-    for (const path of ["/compte/communaute", "/academy/lecon"]) {
+    for (const path of ["/compte/salons", "/academy/lecon"]) {
       expect((await request.get(path, noRedirect)).status(), path).toBe(200);
     }
     // The back office does not: a signed-in account that is not staff is sent

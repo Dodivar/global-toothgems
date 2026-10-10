@@ -4,12 +4,10 @@ import type { ReactNode } from "react";
 import { useTranslation } from "react-i18next";
 import { ArrowLeft, BellOff, Check, CheckCheck, ChevronDown, FlaskConical, Globe2, Inbox, Plus, Search, Users } from "lucide-react";
 import clsx from "clsx";
-import { Link } from "../../lib/navigation";
 import { CHAT_VIEWER_ID, UPCOMING_SERVERS, type Presence } from "../../data/communityChat";
 import { useChat, type ChannelView, type ConversationView } from "../../lib/communityChat/chatStore";
 import { plainText, timestampOf } from "../../lib/communityChat/chatLogic";
-import { AccessDemoSwitch } from "../community/AccessDemoSwitch";
-import { COMMUNITY_ROOT } from "../community/routes";
+import { AccessDemoSwitch } from "./AccessDemoSwitch";
 import { ChatAvatar, CountBadge, Popover, PopoverItem, PresenceDot, ToolButton, focusRing, useChatTime, useNow } from "./primitives";
 import { ChannelIcon } from "./channelIcons";
 import { LanguageFlag } from "./LanguageFlag";
@@ -446,9 +444,6 @@ export function ChatSidebar() {
             <Users size={12} aria-hidden="true" />
             {t("lounge.privateSpace")}
           </p>
-          <Link to={COMMUNITY_ROOT} className={clsx("text-[11.5px] text-[var(--text-muted)] underline underline-offset-2 hover:text-[var(--text-primary)]", focusRing)}>
-            {t("lounge.feedLink")}
-          </Link>
           <p className="m-0 text-[11px] leading-snug text-[var(--text-subtle)]">{t("lounge.previewNote")}</p>
         </div>
       </div>

@@ -46,7 +46,6 @@ Catalogue, variants and gem options, categories/families, gem colours, recommend
 
 ## Post-launch (do not build now unless the user asks)
 
-- Artist community / forum (UI exists on mock data): needs moderation, notifications, storage and access rules; Discord integration may be preferable to a custom forum.
 - German UI and other languages.
 - Referral programme, advanced gifting (scheduling UI beyond what exists), XP/levels/badges, streaks.
 - Advanced quizzes (tooth identification interactions, branching), graduate-only areas, social certificate verification.

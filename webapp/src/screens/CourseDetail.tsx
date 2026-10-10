@@ -17,7 +17,6 @@ import {
 } from "lucide-react";
 import { Button } from "../components/ui/Button";
 import { AssessmentPanel } from "../components/academy/AssessmentPanel";
-import { CommunityPanel } from "../components/academy/CommunityPanel";
 import { CurriculumAccordion } from "../components/academy/CurriculumAccordion";
 import { DiplomaPanel } from "../components/academy/DiplomaPanel";
 import { TrainingHero } from "../components/academy/TrainingHero";
@@ -331,20 +330,7 @@ export function CourseDetail({ course }: { course: PublicCourse }) {
         </Section>
       )}
 
-      {/* 8 — Artist community */}
-      <Section labelledBy="training-community">
-        <SectionIntro
-          id="training-community"
-          eyebrow={t("training.communityEyebrow")}
-          title={t("training.communityTitle")}
-        />
-        <CommunityPanel
-          onOpenForum={() => showToast(t("common.notIncludedTitle"), t("common.notIncludedForum"), "info")}
-        />
-      </Section>
-
-      {/* 8b — Student reviews: right after the community, because a review
-          here is one artist telling the next what the training changed. */}
+      {/* 8 — Student reviews: one artist telling the next what the training changed. */}
       <ReviewsSection subject={{ kind: "course", id: course.id }} />
 
       {/* 9 — Why this training */}

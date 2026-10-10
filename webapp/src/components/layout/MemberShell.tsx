@@ -19,7 +19,6 @@ import {
   Sparkles,
   UserCog,
   UserRound,
-  Users,
   X,
   type LucideIcon,
 } from "lucide-react";
@@ -78,7 +77,7 @@ interface SectionItem {
   /** Only the dashboard needs it: every other path is a distinct prefix. */
   end?: boolean;
   /**
-   * The Artist Community and the Members' Lounge, the entries whose
+   * The Members' Lounge, the entry whose
    * availability depends on what the account owns. They are never removed and
    * never disabled: without a training they still lead somewhere, to the
    * preview of what is behind them.
@@ -90,7 +89,6 @@ interface SectionItem {
 
 const SECTIONS: SectionItem[] = [
   { to: "/compte", labelKey: "account.navDashboard", shortKey: "dashboard", icon: LayoutDashboard, end: true },
-  { to: "/compte/communaute", labelKey: "community.navEntry", shortKey: "community", icon: Users, community: true },
   { to: "/compte/salons", labelKey: "lounge.navEntry", shortKey: "lounge", icon: MessagesSquare, community: true, lounge: true },
   { to: "/compte/attestations", labelKey: "account.navCertificates", shortKey: "certificates", icon: Award },
   { to: "/compte/commandes", labelKey: "account.navOrders", shortKey: "orders", icon: Package },
