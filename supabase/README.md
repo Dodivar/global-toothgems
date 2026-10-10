@@ -142,6 +142,8 @@ supabase/
 | 20261008182555 | `promotions_public_lifecycle_column` | **Applied 2026-10-08.** `grant select (lifecycle)` on `promotions` and `campaigns` to `anon`: the policies of their child tables (scope, translations, products) read it, and a visitor only ever sees live rows. Needed by the shop window's offers |
 | 20261009152941 | `invoices` | **Applied 2026-10-09.** Legal invoices and credit notes (decision 86): `invoice_sequences` (one counter per series `FA-YYYY` / `AV-YYYY`, backend only), `invoices` (insert-only frozen snapshot: number, issue date, sale date, seller identity from `store_settings`, buyer, lines with VAT rate and excl./incl. amounts, shipping, VAT breakdown, payment; UPDATE/DELETE refused by trigger for every role; owner of the order and active staff read). Triggers `orders_zz_issue_invoice` (order becomes paid → `private.issue_order_invoice`) and `refunds_zz_issue_credit_note` (refund becomes succeeded → `private.issue_refund_credit_note`). Suite `tests/invoices_validation.sql` (I1–I9); `shipping_refunds_validation.sql` checks one credit note per confirmed refund |
 | 20261009162740 | `quote_basket_used_up` | **Applied 2026-10-09.** Decision 87: `quote_basket(..., p_email)` knows a guest by the e-mail typed at the checkout (ignored when signed in; 5 new addresses per caller per 10 minutes, table `promotion_email_lookups`, hashed, no policies) and answers `used_up` (automatic promotions the customer has already had as often as allowed, on paid orders). Suite PL12 (and PL11d unlocks the codes PL6 locked) |
+| 20261010122507 | `members_lounge` | **Applied 2026-10-10.** Members' Lounge (iteration 25, decision 88): `lounge_channels` (the 4 × 5 rooms, ids `<lounge>-<key>`), `lounge_members` (generated handle, lounges, presence + heartbeat), `lounge_conversations` (one per pair), `lounge_messages` (parts jsonb, mentions, reply, reaction totals), `lounge_message_attachments` + private `lounge-media` bucket, `lounge_reactions`, `lounge_room_states` (read state, mutes), `lounge_notifications`; `private.lounge_can_enter()`; RPC `lounge_access/join/heartbeat/directory/overview/mark_read/set_muted/read_notifications/post_message/toggle_reaction`; Realtime publication of `lounge_messages` and `lounge_notifications`. Suite `tests/lounge_validation.sql` (A1–T1) |
+| 20261010145631 | `lounge_handle_initial` | **Applied 2026-10-10.** Decision 88 b: the generated handle is `first.l` (was `first.last`, which showed the full last name in every @mention) and the directory's name no longer falls back to `display_name`. No member existed yet, nothing rewritten |
 | 20261008175722 | `contact_attachments_and_support_email` | **Applied 2026-10-08.** Contact form: `contact_requests.attachment_path` → `attachment_paths text[]` (≤ 5, `private.valid_contact_attachment_paths()`), bucket `contact-attachments` 20 MB per object, `submit_contact_request(…, p_attachment_paths text[])` (old signature dropped; ownership per path, no duplicates, ≤ 20 MB in all), guard trigger rebuilt, `contact_ip_allowed(ip_hash)` (service role), template `contact_request_received` (fr + en) for the support inbox. Suite: `iteration7_validation.sql` C3/C4 |
 | 20261008175809 | `contact_attachment_paths_check_grant` | **Applied 2026-10-08.** `execute` on the CHECK helper for `authenticated`/`service_role` (staff triage re-evaluates the CHECK) |
 | 20261007181011 | `gift_card_design_everywhere` | **Applied 2026-10-07.** The design/names/message chosen at checkout are shown back (WYSIWYG): policy `gift_cards: purchaser reads own` (a buyer reads the cards of their purchases through the existing column grant — never the code) so the member's order pages draw the card in its design; the `gift_card_delivery` template bodies (fr + en) lose their `{{message}}` paragraph because the e-mail now draws the card itself (`giftCardVisual()`, message included). Test: a buyer sees only their own cards (to add to `gift_cards_validation.sql`) |
@@ -526,7 +528,7 @@ checkout (`create-checkout-session` accepts gift card lines); the cart sends up 
 `20261001200000_gift_card_staff_functions` (not applied yet) stops `extend_gift_card` / `cancel_gift_card` from
 returning the code. Suite: `tests/gift_cards_validation.sql` (GC1–GC7).
 
-**Built (2026-10-05) — delivering the code** (Resend, Edge Functions, decision 79; `_shared/email/giftCards.ts`, function `deliver-gift-cards`). Not yet deployed. Design:
+**Built (2026-10-05) — delivering the code** (Resend, Edge Functions, decision 79; `_shared/email/giftCards.ts`, function `deliver-gift-cards`). Deployed (2026-10-10). Design:
 
 ```
 Edge Function deliver-gift-cards (service role, verify_jwt = false, header x-internal-secret = EMAIL_INTERNAL_SECRET, called by pg_cron every 5 min;
@@ -1046,6 +1048,68 @@ full refund   payment_status or status → refunded → the order's purchase ent
   so an order of courses only stays `unfulfilled` like an order of gift cards.
 - Members read their course lines through the existing order RLS (`course:courses(slug)` for the link).
 
+### Members' Lounge (iteration 25)
+
+The community chat of `/compte/salons` (webapp `lib/communityChat/`: `liveChatStore.tsx` reads and writes through
+`loungeApi.ts` only, `loungeMapping.ts` narrows the rows; the fixtures of `data/communityChat.ts` serve the mock mode
+only).
+
+```
+lounge_channels       (id '<lounge>-<key>', lounge en|fr|de|es, key introductions|general|inspiration|techniques|business)
+lounge_members        (user → handle, languages, presence online|away|offline, last_seen_at, is_mentor, joined_at)
+lounge_conversations  (user_a < user_b, unique pair, last_message_at)
+lounge_messages       (channel_id XOR conversation_id, author, parts jsonb, body_text, mention_ids, reply_to_id, reactions jsonb)
+lounge_message_attachments (message, storage_path in lounge-media, alt_text, position 0–3)
+lounge_reactions      (surrogate id, message, user, reaction heart|clap|sparkles|laugh|fire|gem, unique triple)
+lounge_room_states    (user, channel XOR conversation, last_read_at, muted)
+lounge_notifications  (recipient, kind mention|reply|reaction, message, actor, read_at; unique per recipient/message/kind)
+```
+
+- **The door** — `private.lounge_can_enter(user)`: an active profile holding an active course entitlement (any course,
+  any source) or an active team member. Every policy and every `lounge_*` function checks it for the caller
+  (`42501 lounge: forbidden` otherwise); losing it closes the lounge at once (reads, writes, images), the member's
+  messages stay and they are flagged `active = false` in the directory. `lounge_access()` answers the question for the
+  webapp (locked screen or lounge).
+- **Members are never read from `profiles`** — `lounge_directory()` (SECURITY DEFINER) returns, for every member who ever
+  entered: id, name shown (first name + initial of the last name; none without a first name — the webapp says
+  "Membre"), handle (generated at first entry as `first.l`, accents removed, unique with a number suffix, `member`
+  without a first name — migration `lounge_handle_initial`), country, lounges, effective presence
+  (`offline` when the chosen presence is "invisible" or no heartbeat for 3 minutes), badge (`team` staff, `mentor`
+  `is_mentor`, `new` the first 30 days), number of channel messages, titles of completed courses, `active`. No e-mail,
+  phone, last name, address or avatar. `lounge_members` itself: own row only.
+- **Reading** — channel messages: any member; a private conversation: its two members only (staff included in "not
+  them"). Attachments are read with their message (policy on the messages, through RLS), images in `lounge-media`
+  by the uploader and by whoever can read the message they are attached to; served through signed URLs (1 h).
+  Reactions: own rows only — others are seen as totals on the message.
+- **Writing — functions only** (no insert/update/delete grant on any lounge table):
+  - `lounge_join(lounge?)` creates the member on first entry and adds a lounge to theirs; `lounge_heartbeat(presence?)`.
+  - `lounge_post_message(channel | recipient, parts, reply_to?, attachments?)`: author = caller; parts = array (≤ 200) of
+    `{type:'text', text}` / `{type:'mention', memberId}` with no other key, text ≤ 4 000 characters, not empty; a mention
+    names a lounge member; a reply stays in its room; ≤ 4 images, each already uploaded in the caller's folder and not
+    attached elsewhere; recipient = another member who can enter; the conversation is created by the first message;
+    **20 messages a minute** (`PT429`). Writing marks the room read. Notifications: `mention` for each mentioned member
+    who can enter, `reply` to the replied author (not when mentioned) — channels only.
+  - `lounge_toggle_reaction(message, reaction)` (message readable by the caller); the totals on the message are kept
+    by trigger; a new reaction notifies the author (one `reaction` row per message, renewed).
+  - `lounge_mark_read(channels[], conversations[])` (≤ 50 rooms; also reads the mentions/replies waiting there),
+    `lounge_set_muted(room, muted)`, `lounge_read_notifications(ids | null = all)`.
+- **Unread counts** — `lounge_overview()`: per channel, messages of others after the member's `last_read_at` (else
+  their `joined_at`: a new member does not inherit the history as unread) and how many mention them; per private
+  conversation, the other member, unread count, mute and last message.
+- **Realtime** — `lounge_messages` (INSERT, UPDATE for reaction totals) and `lounge_notifications` are published;
+  Postgres Changes apply the same RLS as a read, so a subscriber only receives rooms they can read. DELETE events are
+  never relied on (they are not filtered by RLS): nothing in the lounge is deleted through the API.
+- **Account deletion** cascades: the member row, their messages (and their replies' links set null), reactions,
+  conversations (both sides), read state and notifications.
+- Not built (decision 88): moderation (hide/delete a message, report, block a member), editing or deleting one's own
+  message, typing indicator, older messages beyond the latest 100 per room, server-side search, profile editing (bio,
+  city), back-office screen for mentors.
+- Suite: `tests/lounge_validation.sql` — the door (no course, suspended, staff), handles and directory without
+  personal data, posting rules (no direct writes, reply across rooms, unknown mention, empty, unknown part, extra
+  keys, too long, unknown channel), private conversations (third party and staff refused everywhere), reactions and
+  their totals and notifications, overview and read state, attachments and storage policies, a revoked course, the
+  rate limit.
+
 ### Integrity guarantees
 
 - `orders_total_matches`: `total = subtotal − discount + shipping (+ tax when prices exclude tax)`; discount ≤ subtotal; all amounts ≥ 0.
@@ -1091,6 +1155,11 @@ Iteration 17: **customers** read, add and remove their own favourites (`wishlist
 Iteration 6: "admin" in the lines above now reads "a team member holding the matching permission"
 (see *Back-office roles and permissions*); policy names say "staff".
 
+Iteration 25: **members' lounge** — members (course holders and active staff) read the channels, their own private
+conversations, the directory and their own read state, reactions and notifications; every write is a `lounge_*`
+function; staff have no extra right (they cannot read private conversations); visitors and accounts without a course
+have no access (see *Members' Lounge*).
+
 - Authorization is enforced in Postgres (`private.is_admin()` + RLS + triggers), never by frontend checks.
 - `TRUNCATE`, `REFERENCES`, `TRIGGER` revoked from `anon`/`authenticated` (TRUNCATE bypasses RLS).
 - Order/item/payment inserts are revoked from `authenticated`: prices and totals can only come from server code.
@@ -1105,6 +1174,7 @@ Iteration 6: "admin" in the lines above now reads "a team member holding the mat
 | `data-exports` (private, 100 MB, zip/json) | owners read their own `<user_id>/` folder through signed URLs; only the backend (service role) writes and deletes. |
 | `review-photos` (private, 8 MB, jpeg/png/webp) | authors upload into `<user_id>/`; authors and admins read and delete; **anyone** can read a photo once its review is published. |
 | `training-media` (private, no bucket limit: the project's global upload limit applies — 50 MB on the free plan; jpeg/png/webp/avif/mp4/webm/quicktime) | staff read; `manage_training` uploads, replaces and deletes under `media/`; the back office shows files through signed URLs. Learners get signed URLs after the entitlement check in phase C. Large videos are sent with resumable (TUS) uploads. |
+| `lounge-media` (private, 5 MB, jpeg/png/webp/gif) | members upload into `<user_id>/` while they can enter the lounge; the uploader reads and deletes their files; anyone who can read the lounge message an image is attached to reads it (so a private conversation's images stay between its two members). Served through signed URLs. |
 
 Path convention: `products/<product-slug>/<file>`, `categories/<category-slug>/<file>`, `<user_id>/<file>` for avatars and review photos.
 Never put private customer or paid training files in this bucket.
@@ -1505,7 +1575,7 @@ VAT rates, shipping zones/rates mirroring the Settings prototype. Media rows ref
     - To add when the first e-mail ships: a `email_log` table (template, recipient hash, resend id, status, order or
       card id) with a unique key per business event, so a retried webhook cannot send an order e-mail twice.
     - Missing templates to seed: `gift_card_delivery`, `order_refunded` (and `course_enrolment` already exists).
-    - **Built (2026-10-05), not deployed:** `_shared/email/` (`render.ts`, `resend.ts`, `send.ts` =
+    - **Built (2026-10-05), deployed:** `_shared/email/` (`render.ts`, `resend.ts`, `send.ts` =
       `sendTemplatedEmail()`, `store.ts`, `mod.ts` = `emailDepsFromEnv()`, `orders.ts`, `giftCards.ts`, `notify.ts`),
       `_shared/internalAuth.ts`, the function `deliver-gift-cards`, and migrations `email_log` and
       `email_attempt_cap_gift_card_wording` (applied). After a payment (`stripe-webhook`, or `create-checkout-session`
@@ -1513,7 +1583,7 @@ VAT rates, shipping zones/rates mirroring the Settings prototype. Media rows ref
       (`order_confirmation:<order id>`), then the gift cards of the order, then the enrolment e-mail of each course it bought. It never throws and does nothing without
       `RESEND_API_KEY`. Limit: a confirmation that fails once is not retried by Stripe (the event is already
       processed); `email_log` keeps it as `failed` — a sweep of paid orders without a sent confirmation is to add.
-    - **`send-email` built (2026-10-05), not deployed:** `supabase/functions/send-email/` (`verify_jwt = false`,
+    - **`send-email` built (2026-10-05), deployed:** `supabase/functions/send-email/` (`verify_jwt = false`,
       `x-internal-secret`). Body `{template_key, to, locale, variables, event_key}`; allow-list of two templates
       (`contact_acknowledgement`: name, subject, ticket_number; `newsletter_confirmation`: confirm_url), exactly the
       template's own variables as non-empty short strings, locale fr/en/de, event key prefixed by the template
@@ -1527,7 +1597,7 @@ VAT rates, shipping zones/rates mirroring the Settings prototype. Media rows ref
       (AGENTS.md §4). The guest path therefore needs a small Edge Function (captcha / IP limit, then the RPC, then
       the e-mail) — a decision to confirm (captcha provider), together with the page behind the newsletter link
       (`newsletter_confirm(token)`).
-    - **`resend-webhook` built (2026-10-05), not deployed:** `supabase/functions/resend-webhook/`
+    - **`resend-webhook` built (2026-10-05), deployed:** `supabase/functions/resend-webhook/`
       (`verify_jwt = false`), Svix signature checked with Web Crypto in `_shared/svix.ts` (`svix-id` / `svix-timestamp` /
       `svix-signature`, HMAC-SHA256 under the base64 part of `RESEND_WEBHOOK_SECRET`, several `v1,` entries accepted for
       rotation, 5 minutes of tolerance, no dependency). `email.delivered|opened|bounced|complained` →
@@ -1541,7 +1611,7 @@ VAT rates, shipping zones/rates mirroring the Settings prototype. Media rows ref
       consent records are left alone (decision to confirm: a complaint could also revoke `marketing_email`).
       A webhook arriving before `email_log_finish` stored the provider id would not match; it is a window of
       milliseconds against seconds of delivery time.
-    - **Shipping, course enrolment and refund e-mails built (2026-10-05), not deployed:** one sweep, the function
+    - **Shipping, course enrolment and refund e-mails built (2026-10-05), deployed:** one sweep, the function
       `send-pending-emails` (`verify_jwt = false`, `x-internal-secret`, pg_cron every 5 minutes, body `{limit}` optional),
       `_shared/email/events.ts`. Mechanism: no trigger and nothing the browser or the back office must call — the SQL
       functions of migration `email_pending_events` list the source rows (shipment `shipped`, `purchase` entitlement, refund
@@ -1563,8 +1633,7 @@ VAT rates, shipping zones/rates mirroring the Settings prototype. Media rows ref
         credited back onto gift cards (`refund_to_gift_cards`) is not in that table and sends nothing: the template speaks
         of the bank; a wording for it is to write if wanted.
       (Cron: scheduled by migration `email_cron_jobs`, no manual step beyond the Vault secret.) Former manual form: `select cron.schedule('send-pending-emails', '*/5 * * * *', $$ select net.http_post(url := 'https://<project-ref>.supabase.co/functions/v1/send-pending-emails', headers := jsonb_build_object('x-internal-secret', (select decrypted_secret from vault.decrypted_secrets where name = 'email_internal_secret')), body := '{}'::jsonb) $$);`
-    - **Still to build:** the back-office resend of a card. To do by hand: the Resend domain and the secrets, then
-      deploy the functions (`deliver-gift-cards`, `send-email`, `resend-webhook`, `send-pending-emails`, and redeploy
+    - **Operational status (2026-10-10):** the Resend domain and all secrets are configured by the user and the e-mail functions are deployed on the project (`deliver-gift-cards`, `send-email`, `resend-webhook`, `send-pending-emails`); no agent has yet verified a real send end to end. Remaining: redeploy `stripe-webhook` and `create-checkout-session` so they bundle `_shared/documents/` (invoice and credit note attachments). **Still to build:** the back-office resend of a card. Original checklist, kept for reference (deploy the functions (`deliver-gift-cards`, `send-email`, `resend-webhook`, `send-pending-emails`, and redeploy
       `stripe-webhook` and `create-checkout-session` — since 2026-10-09 they also bundle `_shared/documents/` for the
       invoice and credit note attachments), declare the `resend-webhook` endpoint in Resend (events delivered, opened, bounced, complained), and make sure the Vault secret
       `email_internal_secret` holds the same value as `EMAIL_INTERNAL_SECRET` (the crons themselves are in migration `email_cron_jobs`; the manual form below is kept for reference):
@@ -1679,3 +1748,18 @@ VAT rates, shipping zones/rates mirroring the Settings prototype. Media rows ref
     e-mail). Removing it is one argument less in the cart. (b) A use held by an order still waiting for its payment
     (≤ 60 min, released when the payment step is left or expires) blocks the promotion but is not announced as used.
     (c) A typed code already used by the customer is still refused with the generic "code not valid" message.
+88. **Members' Lounge on Supabase** (user's request, 2026-10-10: "a first version on the data"; agent's choices, to
+    confirm). (a) **Who enters**: any active course entitlement (bought, granted by hand, bundle, promotion) and any
+    active team member; losing the course closes the lounge immediately, old messages stay under the member's name.
+    (b) **What other members see**: first name + initial of the last name, a handle `first.l` (`emma.m`), the
+    country of the profile, the lounges visited, presence, the titles of completed courses, the number of channel
+    messages, the month joined — never e-mail, phone, full last name, city or photo. (c) **Private messages are
+    private, staff included**: no back-office access to them, so no moderation of private conversations yet.
+    (d) **No moderation tools yet**: nothing can be hidden, deleted, reported or blocked (members or staff) — needed
+    before opening the lounge to customers. (e) **Rate limit** 20 messages per minute per member; ≤ 4 images of 5 MB
+    per message. (f) **Account deletion** removes the member's messages and both sides of their private
+    conversations (cascade) — to check against the retention policy. (g) **Presence** is a heartbeat every minute
+    while the member space is open (offline after 3 minutes; "invisible" stored as `offline`). (h) Channel names and
+    topics are fixed product copy in the webapp (`lib/communityChat/model.ts`), not editable from the back office.
+    (i) Images uploaded for a message that is then refused are removed by the browser; one left behind by a closed tab
+    stays in the member's folder (no cleanup job).

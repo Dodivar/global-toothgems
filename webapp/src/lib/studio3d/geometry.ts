@@ -199,22 +199,6 @@ const templateCache = new Map<StudioShape, JewelTemplate>();
 
 const v2 = (pts: number[][]) => pts.map((p) => new THREE.Vector2(p[0], p[1]));
 
-function extrudeJewel(shape: THREE.Shape, depth = 0.3, rounded = false): THREE.BufferGeometry {
-  // crystals are cut facet by facet; metal charms are polished and rounded
-  if (!rounded) return crystalCut(shape);
-  const g = new THREE.ExtrudeGeometry(shape, {
-    depth,
-    bevelEnabled: true,
-    bevelThickness: 0.16,
-    bevelSize: 0.1,
-    bevelSegments: 4,
-    curveSegments: 32,
-  });
-  g.center();
-  // the rear bevel would round the back off: press it onto the back face
-  return flattenBack(g, -depth / 2);
-}
-
 /**
  * A flat-back crystal: a straight girdle, two stepped rings of crown facets
  * (the upper one zig-zagging so neighbouring facets catch different light),
@@ -388,6 +372,48 @@ const DACHSHUND_OUTLINE = [
   [0.484, -0.287], [0.492, -0.155], [0.481, -0.041], [0.499, 0.022], [0.536, 0.064], [0.595, 0.089], [0.812, 0.092], [0.904, 0.115],
   [0.937, 0.136], [0.981, 0.192], [1.000, 0.298], [0.991, 0.328], [0.967, 0.349], [0.849, 0.374], [0.746, 0.432], [0.675, 0.582],
   [0.613, 0.653], [0.525, 0.693], [0.436, 0.698],
+];
+
+/** 18ct lightning bolt, traced from its photo: two tapered blades meeting at the zig-zag, tips rounded. */
+const BOLT_OUTLINE = [
+  [0.480, 0.994], [0.524, 0.981], [0.546, 0.954], [0.550, 0.907], [0.539, 0.872], [0.456, 0.695], [0.173, 0.172], [0.202, 0.154],
+  [0.511, 0.143], [0.560, 0.098], [0.553, 0.046], [-0.266, -0.914], [-0.354, -0.988], [-0.415, -0.993], [-0.447, -0.950],
+  [-0.443, -0.876], [-0.133, -0.128], [-0.146, -0.115], [-0.498, -0.117], [-0.554, -0.080], [-0.563, -0.050], [-0.555, -0.011],
+  [-0.387, 0.193], [0.080, 0.663], [0.350, 0.920], [0.433, 0.980],
+];
+/** 18ct cherries, traced from their photo: the leaf up left, two stems crossing at the top, two heart-shaped cherries side by side. */
+const CHERRIES_OUTLINE = [
+  [-0.351, 0.996], [-0.242, 0.993], [-0.099, 0.966], [0.078, 0.886], [0.222, 0.764], [0.356, 0.574], [0.479, 0.648],
+  [0.607, 0.691], [0.696, 0.677], [0.757, 0.617], [0.765, 0.573], [0.739, 0.511], [0.686, 0.475], [0.578, 0.440], [0.533, 0.410],
+  [0.468, 0.326], [0.444, 0.237], [0.449, 0.089], [0.521, -0.193], [0.543, -0.210], [0.642, -0.227], [0.733, -0.286],
+  [0.790, -0.375], [0.825, -0.509], [0.816, -0.627], [0.777, -0.741], [0.695, -0.859], [0.578, -0.952], [0.479, -0.983],
+  [0.415, -0.983], [0.336, -0.963], [0.231, -0.889], [0.153, -0.777], [0.073, -0.894], [0.005, -0.948], [-0.119, -0.995],
+  [-0.217, -0.998], [-0.365, -0.953], [-0.469, -0.864], [-0.529, -0.775], [-0.578, -0.627], [-0.573, -0.514], [-0.534, -0.405],
+  [-0.500, -0.356], [-0.435, -0.302], [-0.311, -0.265], [-0.287, -0.247], [-0.212, -0.040], [-0.160, 0.067], [-0.058, 0.216],
+  [0.088, 0.370], [0.148, 0.459], [0.142, 0.478], [0.123, 0.484], [-0.109, 0.425], [-0.360, 0.408], [-0.479, 0.427],
+  [-0.612, 0.472], [-0.743, 0.568], [-0.810, 0.662], [-0.825, 0.706], [-0.822, 0.756], [-0.780, 0.825], [-0.731, 0.872],
+  [-0.588, 0.949], [-0.415, 0.993],
+];
+/** The gap the cherries' two stems leave above the fruit. */
+const CHERRIES_HOLE = [
+  [0.212, 0.171], [0.235, 0.170], [0.246, 0.153], [0.314, -0.104], [0.329, -0.212], [0.207, -0.277], [0.133, -0.373],
+  [0.035, -0.289], [-0.084, -0.257], [-0.018, -0.084], [0.033, -0.000], [0.138, 0.123],
+];
+/** 18ct open heart, traced from its photo: wider than tall, a V notch on the outside, a round inner opening. */
+const OPEN_HEART_OUTLINE = [
+  [-0.515, 0.920], [-0.397, 0.917], [-0.241, 0.876], [-0.147, 0.826], [-0.009, 0.723], [0.024, 0.730], [0.199, 0.857],
+  [0.284, 0.893], [0.454, 0.922], [0.619, 0.900], [0.726, 0.858], [0.828, 0.779], [0.933, 0.633], [0.983, 0.496], [0.998, 0.388],
+  [0.983, 0.189], [0.941, 0.061], [0.820, -0.140], [0.683, -0.304], [0.234, -0.754], [0.066, -0.899], [0.024, -0.919],
+  [-0.033, -0.917], [-0.113, -0.864], [-0.598, -0.389], [-0.824, -0.137], [-0.908, -0.009], [-0.954, 0.095], [-0.984, 0.200],
+  [-0.998, 0.397], [-0.971, 0.534], [-0.913, 0.671], [-0.834, 0.775], [-0.736, 0.853], [-0.642, 0.897],
+];
+/** The open heart's opening. */
+const OPEN_HEART_HOLE = [
+  [-0.487, 0.622], [-0.411, 0.624], [-0.298, 0.592], [-0.227, 0.551], [-0.113, 0.447], [-0.052, 0.410], [0.043, 0.412],
+  [0.103, 0.447], [0.260, 0.576], [0.411, 0.624], [0.515, 0.617], [0.610, 0.577], [0.667, 0.525], [0.702, 0.468], [0.723, 0.364],
+  [0.710, 0.251], [0.680, 0.165], [0.607, 0.043], [0.378, -0.207], [0.061, -0.508], [0.004, -0.548], [-0.142, -0.430],
+  [-0.488, -0.092], [-0.621, 0.066], [-0.684, 0.180], [-0.723, 0.340], [-0.702, 0.473], [-0.673, 0.519], [-0.614, 0.574],
+  [-0.563, 0.602],
 ];
 
 /** Step cut: two flat steps of crown facets around a large flat table, as on the navette's photo. */
@@ -569,17 +595,47 @@ function heartCut(): THREE.BufferGeometry {
   });
 }
 
+/** Distance from p to the closed loop `loop` (or the open polyline, when `closed` is false). */
+function distanceToLoop(p: THREE.Vector2, loop: THREE.Vector2[], closed = true): number {
+  let d = Infinity;
+  const ab = new THREE.Vector2(),
+    q = new THREE.Vector2();
+  for (let i = 0; i < (closed ? loop.length : loop.length - 1); i++) {
+    const a = loop[i],
+      b = loop[(i + 1) % loop.length];
+    ab.subVectors(b, a);
+    const t = Math.min(1, Math.max(0, q.subVectors(p, a).dot(ab) / (ab.lengthSq() || 1)));
+    d = Math.min(d, p.distanceTo(q.copy(a).addScaledVector(ab, t)));
+  }
+  return d;
+}
+
+interface CharmOptions {
+  /** Openings through the charm (the open heart's middle, the gap between the cherries' stems). */
+  holes?: number[][][];
+  /** Lines where two parts meet and the surface dips to `creaseFloor` of its height (the cleft between the two cherries). */
+  creases?: number[][][];
+  creaseFloor?: number;
+}
+
 /**
- * A polished gold charm with the given outline (CCW): a flat back, a short
- * straight edge, and a top that rises from the edge in a quarter round of
- * `round` to `height` — a slim part becomes a round rod, a wide one a
- * cushion with a flat top. Smooth-shaded, the way polished metal reads.
+ * A polished gold charm with the given outline: a flat back, a short straight
+ * edge, and a top that rises from every edge (outline and openings alike) in
+ * a quarter round of `round` to `height` — a slim part becomes a round rod, a
+ * wide one a cushion with a flat top. Smooth-shaded, the way polished metal reads.
  */
-function goldCharm(points: number[][], height: number, round: number, girdle: number): THREE.BufferGeometry[] {
-  const outline = points.map(([x, y]) => new THREE.Vector2(x, y));
-  const n = outline.length;
-  const verts = outline.map((p) => p.clone());
-  const flat = THREE.ShapeUtils.triangulateShape(outline, []).map(([a, b, c]) => {
+function goldCharm(points: number[][], height: number, round: number, girdle: number, options: CharmOptions = {}): THREE.BufferGeometry[] {
+  const loop = (pts: number[][], clockwise: boolean) => {
+    const l = pts.map(([x, y]) => new THREE.Vector2(x, y));
+    return THREE.ShapeUtils.isClockWise(l) === clockwise ? l : l.reverse();
+  };
+  // the outline turns CCW and every opening CW: the metal is then on the left of every edge
+  const outline = loop(points, false);
+  const holes = (options.holes ?? []).map((h) => loop(h, true));
+  const loops = [outline, ...holes];
+  const creases = (options.creases ?? []).map((c) => c.map(([x, y]) => new THREE.Vector2(x, y)));
+  const verts = loops.flat().map((p) => p.clone());
+  const flat = THREE.ShapeUtils.triangulateShape(outline, holes).map(([a, b, c]) => {
     const [pa, pb, pc] = [verts[a], verts[b], verts[c]];
     return (pb.x - pa.x) * (pc.y - pa.y) - (pc.x - pa.x) * (pb.y - pa.y) < 0 ? [a, c, b] : [a, b, c];
   });
@@ -609,32 +665,31 @@ function goldCharm(points: number[][], height: number, round: number, girdle: nu
       ];
     });
   }
-  const lift = (p: THREE.Vector2) => {
-    let d = Infinity;
-    for (let i = 0; i < n; i++) {
-      const a = outline[i],
-        b = outline[(i + 1) % n];
-      const ab = b.clone().sub(a);
-      const t = Math.min(1, Math.max(0, p.clone().sub(a).dot(ab) / (ab.lengthSq() || 1)));
-      d = Math.min(d, p.distanceTo(a.clone().addScaledVector(ab, t)));
-    }
+  const profile = (d: number) => {
     const k = 1 - Math.min(d / round, 1);
-    return height * Math.sqrt(1 - k * k);
+    return Math.sqrt(1 - k * k);
+  };
+  const floor = options.creaseFloor ?? 0.4;
+  const lift = (p: THREE.Vector2) => {
+    let h = profile(Math.min(...loops.map((l) => distanceToLoop(p, l))));
+    for (const c of creases) h = Math.min(h, floor + (1 - floor) * profile(distanceToLoop(p, c, false)));
+    return height * h;
   };
   const top = new THREE.BufferGeometry();
   top.setAttribute("position", new THREE.Float32BufferAttribute(verts.flatMap((p) => [p.x, p.y, lift(p)]), 3));
   top.setIndex(faces.flat());
   top.computeVertexNormals();
-  // the straight edge and the flat back (the outline is not star-shaped: the back reuses the triangulation)
+  // the straight edges and the flat back (the outline is not star-shaped: the back reuses the triangulation)
   const tri: number[] = [];
   const push = (...v: THREE.Vector3[]) => v.forEach((p) => tri.push(p.x, p.y, p.z));
-  for (let i = 0; i < n; i++) {
-    const a = outline[i],
-      b = outline[(i + 1) % n];
-    push(at(a, -girdle), at(b, -girdle), at(b, 0));
-    push(at(a, -girdle), at(b, 0), at(a, 0));
-  }
-  for (const [a, b, c] of flat) push(at(outline[a], -girdle), at(outline[c], -girdle), at(outline[b], -girdle));
+  for (const l of loops)
+    for (let i = 0; i < l.length; i++) {
+      const a = l[i],
+        b = l[(i + 1) % l.length];
+      push(at(a, -girdle), at(b, -girdle), at(b, 0));
+      push(at(a, -girdle), at(b, 0), at(a, 0));
+    }
+  for (const [a, b, c] of flat) push(at(verts[a], -girdle), at(verts[c], -girdle), at(verts[b], -girdle));
   const base = new THREE.BufferGeometry();
   base.setAttribute("position", new THREE.Float32BufferAttribute(tri, 3));
   base.computeVertexNormals();
@@ -665,13 +720,6 @@ function wire(points: THREE.Vector3[], radius: number, closed = false, radiusAt?
   return flattenBack(g, -radius * 0.45);
 }
 
-function blob(x: number, y: number, rx: number, ry: number, rz: number): THREE.BufferGeometry {
-  const g = new THREE.SphereGeometry(1, 28, 20);
-  g.scale(rx, ry, rz);
-  g.translate(x, y, 0);
-  return flattenBack(g, -rz * 0.45);
-}
-
 function starPath(outer: number, inner: number, z = 0): THREE.Vector3[] {
   const out: THREE.Vector3[] = [];
   for (let i = 0; i < 10; i++) {
@@ -681,22 +729,6 @@ function starPath(outer: number, inner: number, z = 0): THREE.Vector3[] {
   }
   return out;
 }
-function heartShape(scale = 1): THREE.Shape {
-  const s = new THREE.Shape();
-  const k = (x: number, y: number): [number, number] => [x * scale, y * scale];
-  s.moveTo(...k(0, -0.85));
-  s.bezierCurveTo(...k(-0.95, -0.35), ...k(-1.2, 0.35), ...k(-0.55, 0.72));
-  s.bezierCurveTo(...k(-0.25, 0.9), ...k(-0.1, 0.72), ...k(0, 0.45));
-  s.bezierCurveTo(...k(0.1, 0.72), ...k(0.25, 0.9), ...k(0.55, 0.72));
-  s.bezierCurveTo(...k(1.2, 0.35), ...k(0.95, -0.35), ...k(0, -0.85));
-  return s;
-}
-function heartPath(): THREE.Vector3[] {
-  const pts = heartShape(1).getSpacedPoints(48);
-  pts.pop(); // closed: the first point comes back on its own
-  return pts.map((p) => new THREE.Vector3(p.x, p.y, 0));
-}
-
 /** The outline of each shape, as the shop's photos show it. Sizes are normalised afterwards. */
 function buildParts(shape: StudioShape): THREE.BufferGeometry[] {
   switch (shape) {
@@ -705,22 +737,23 @@ function buildParts(shape: StudioShape): THREE.BufferGeometry[] {
       return [flattenBack(new THREE.IcosahedronGeometry(0.8, 1).scale(1, 1, 0.62), -0.06)];
     case "baguette":
       // a 1:2 step-cut rectangle with barely clipped corners
-      return [extrudeJewel(new THREE.Shape(v2([[0.42, 1], [-0.42, 1], [-0.5, 0.92], [-0.5, -0.92], [-0.42, -1], [0.42, -1], [0.5, -0.92], [0.5, 0.92]])), 0.24)];
+      return [crystalCut(new THREE.Shape(v2([[0.42, 1], [-0.42, 1], [-0.5, 0.92], [-0.5, -0.92], [-0.42, -1], [0.42, -1], [0.5, -0.92], [0.5, 0.92]])))];
     case "square":
-      return [extrudeJewel(new THREE.Shape(v2([[0.84, 0.92], [-0.84, 0.92], [-0.92, 0.84], [-0.92, -0.84], [-0.84, -0.92], [0.84, -0.92], [0.92, -0.84], [0.92, 0.84]])), 0.26)];
+      return [crystalCut(new THREE.Shape(v2([[0.84, 0.92], [-0.84, 0.92], [-0.92, 0.84], [-0.92, -0.84], [-0.84, -0.92], [0.84, -0.92], [0.92, -0.84], [0.92, 0.84]])))];
     case "heart":
       return [heartCut()];
     case "open-heart":
-      return [wire(heartPath(), 0.13, true)];
+      // a round rod: the quarter round reaches the middle of the band from both of its edges
+      return goldCharm(OPEN_HEART_OUTLINE, 0.13, 0.14, 0.04, { holes: [OPEN_HEART_HOLE] });
     case "kite":
       // Swarovski "Diamond Shape": a flat lozenge, taller than wide
-      return [extrudeJewel(new THREE.Shape(v2([[0, 1], [0.6, 0], [0, -1], [-0.6, 0]])), 0.3)];
+      return [crystalCut(new THREE.Shape(v2([[0, 1], [0.6, 0], [0, -1], [-0.6, 0]])))];
     case "navette":
       return [navetteCut()];
     case "raindrop":
       return [raindropCut()];
     case "triangle":
-      return [extrudeJewel(new THREE.Shape(v2([[0, 0.95], [-0.84, -0.62], [0.84, -0.62]])), 0.26)];
+      return [crystalCut(new THREE.Shape(v2([[0, 0.95], [-0.84, -0.62], [0.84, -0.62]])))];
     case "rivoli-star":
       return [rivoliStarCut()];
     case "starflower":
@@ -728,18 +761,10 @@ function buildParts(shape: StudioShape): THREE.BufferGeometry[] {
     case "halo-star":
       return [wire(starPath(1, 0.5), 0.12, true)];
     case "bolt":
-      return [extrudeJewel(new THREE.Shape(v2([[0.42, 1], [-0.5, -0.08], [-0.04, -0.08], [-0.42, -1], [0.5, 0.1], [0.06, 0.1]])), 0.24, true)];
-    case "cherries": {
-      const stemL = wire([new THREE.Vector3(-0.36, -0.3, 0), new THREE.Vector3(-0.2, 0.15, 0), new THREE.Vector3(0.12, 0.56, 0)], 0.06);
-      const stemR = wire([new THREE.Vector3(0.38, -0.3, 0), new THREE.Vector3(0.3, 0.2, 0), new THREE.Vector3(0.12, 0.56, 0)], 0.06);
-      const leaf = new THREE.Shape();
-      leaf.moveTo(0.1, 0.58);
-      leaf.bezierCurveTo(-0.15, 0.95, -0.55, 0.92, -0.7, 0.78);
-      leaf.bezierCurveTo(-0.45, 0.6, -0.1, 0.52, 0.1, 0.58);
-      const leafGeo = new THREE.ExtrudeGeometry(leaf, { depth: 0.08, bevelEnabled: true, bevelThickness: 0.05, bevelSize: 0.04, bevelSegments: 3, curveSegments: 24 });
-      leafGeo.translate(0, 0, -0.04);
-      return [blob(-0.4, -0.58, 0.34, 0.33, 0.3), blob(0.42, -0.58, 0.34, 0.33, 0.3), stemL, stemR, flattenBack(leafGeo, -0.06)];
-    }
+      return goldCharm(BOLT_OUTLINE, 0.17, 0.2, 0.05);
+    case "cherries":
+      // the cleft runs from where the stems leave the fruit down to the notch between the two cherries
+      return goldCharm(CHERRIES_OUTLINE, 0.22, 0.3, 0.05, { holes: [CHERRIES_HOLE], creases: [[[0.133, -0.373], [0.153, -0.777]]] });
     case "snake":
       return goldCharm(SNAKE_OUTLINE, 0.13, 0.11, 0.05);
     case "dachshund":

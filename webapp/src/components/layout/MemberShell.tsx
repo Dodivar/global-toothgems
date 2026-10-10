@@ -19,7 +19,6 @@ import {
   Sparkles,
   UserCog,
   UserRound,
-  Users,
   X,
   type LucideIcon,
 } from "lucide-react";
@@ -41,7 +40,7 @@ import monogram from "../../assets/monogram-blue.png";
 import logoBlack from "../../assets/logo-wordmark-black.png";
 
 /**
- * Shell of the member space: the account and the Artist Community.
+ * Shell of the member space: the account and the Members' Lounge.
  *
  * One navigation, on the left and the full height of the screen, the way the
  * 3D Studio has its rail: the storefront header and footer are left out on
@@ -50,6 +49,12 @@ import logoBlack from "../../assets/logo-wordmark-black.png";
  * Studio, the cart, the language and the cookie settings. The member's own
  * sections come first: this is their space, and the rest of the site is
  * where they go from it.
+ *
+ * The member's sections are grouped by what they come for — learning (the
+ * lounge, certificates), purchases (orders, loyalty, reviews, the cart) and
+ * the account itself (profile, security) — under the dashboard. The foot keeps
+ * one row per kind of move: the back office for staff, the small utilities
+ * (help, cookies, language) on one line, then signing out alone at the bottom.
  *
  * Below `lg` the same content opens as a drawer from a slim top bar, like the
  * Studio's. The breakpoint is CSS, so nothing shifts after hydration.
@@ -78,7 +83,7 @@ interface SectionItem {
   /** Only the dashboard needs it: every other path is a distinct prefix. */
   end?: boolean;
   /**
-   * The Artist Community and the Members' Lounge, the entries whose
+   * The Members' Lounge, the entry whose
    * availability depends on what the account owns. They are never removed and
    * never disabled: without a training they still lead somewhere, to the
    * preview of what is behind them.
@@ -88,17 +93,52 @@ interface SectionItem {
   lounge?: boolean;
 }
 
-const SECTIONS: SectionItem[] = [
-  { to: "/compte", labelKey: "account.navDashboard", shortKey: "dashboard", icon: LayoutDashboard, end: true },
-  { to: "/compte/communaute", labelKey: "community.navEntry", shortKey: "community", icon: Users, community: true },
-  { to: "/compte/salons", labelKey: "lounge.navEntry", shortKey: "lounge", icon: MessagesSquare, community: true, lounge: true },
-  { to: "/compte/attestations", labelKey: "account.navCertificates", shortKey: "certificates", icon: Award },
-  { to: "/compte/commandes", labelKey: "account.navOrders", shortKey: "orders", icon: Package },
-  { to: "/compte/avis", labelKey: "reviews.nav.account", shortKey: "reviews", icon: MessageSquareText },
-  { to: "/compte/fidelite", labelKey: "account.navLoyalty", shortKey: "loyalty", icon: Sparkles },
-  { to: "/compte/profil", labelKey: "account.navProfile", shortKey: "profile", icon: UserRound },
-  { to: "/compte/securite", labelKey: "account.navSecurity", shortKey: "security", icon: ShieldCheck },
+interface SectionGroup {
+  id: string;
+  /** None for the first group: the dashboard needs no heading. */
+  labelKey?: string;
+  items: SectionItem[];
+  /** The purchases group ends with the cart, which is not a section of the space. */
+  withCart?: boolean;
+}
+
+const GROUPS: SectionGroup[] = [
+  {
+    id: "home",
+    items: [{ to: "/compte", labelKey: "account.navDashboard", shortKey: "dashboard", icon: LayoutDashboard, end: true }],
+  },
+  {
+    id: "learning",
+    labelKey: "account.shell.groupLearning",
+    items: [
+      { to: "/compte/salons", labelKey: "lounge.navEntry", shortKey: "lounge", icon: MessagesSquare, community: true, lounge: true },
+      { to: "/compte/attestations", labelKey: "account.navCertificates", shortKey: "certificates", icon: Award },
+    ],
+  },
+  {
+    id: "purchases",
+    labelKey: "account.shell.groupPurchases",
+    withCart: true,
+    items: [
+      { to: "/compte/commandes", labelKey: "account.navOrders", shortKey: "orders", icon: Package },
+      { to: "/compte/fidelite", labelKey: "account.navLoyalty", shortKey: "loyalty", icon: Sparkles },
+      { to: "/compte/avis", labelKey: "reviews.nav.account", shortKey: "reviews", icon: MessageSquareText },
+    ],
+  },
+  {
+    id: "account",
+    labelKey: "account.shell.groupAccount",
+    items: [
+      { to: "/compte/profil", labelKey: "account.navProfile", shortKey: "profile", icon: UserRound },
+      { to: "/compte/securite", labelKey: "account.navSecurity", shortKey: "security", icon: ShieldCheck },
+    ],
+  },
 ];
+
+const SECTIONS: SectionItem[] = GROUPS.flatMap((group) => group.items);
+
+/** The first section of every group but the first: the lounge rail draws a divider above it. */
+const GROUP_STARTS = new Set(GROUPS.slice(1).map((group) => group.items[0].to));
 
 /** The section a pathname belongs to, for the title of the mobile bar. */
 function currentSection(pathname: string): SectionItem | undefined {
@@ -111,6 +151,9 @@ const focusRing =
 const rowBase =
   "flex items-center gap-3 rounded-[var(--radius-md)] px-3 py-2 text-[length:var(--text-body-sm)] font-semibold transition-colors";
 const rowIdle = "text-[var(--text-body)] hover:bg-[var(--gt-ink-100)] hover:text-[var(--text-primary)]";
+/** The small utilities at the foot: help and cookies share the line, the language takes what it needs. */
+const footTool =
+  "inline-flex min-w-0 items-center justify-center gap-1.5 rounded-[var(--radius-pill)] px-2 py-1.5 text-[length:var(--text-caption)] font-semibold text-[var(--text-muted)] transition-colors hover:bg-[var(--gt-ink-100)] hover:text-[var(--text-primary)]";
 
 export function MemberShell({ children }: { children: ReactNode }) {
   const { t } = useTranslation();
@@ -260,12 +303,29 @@ function SidebarBody({ onNavigate, closeButton }: { onNavigate?: () => void; clo
           </span>
         </div>
 
-        <nav aria-label={t("account.navLabel")}>
-          <ul className="m-0 grid list-none gap-0.5 p-0">
-            {SECTIONS.map((item) => (
-              <SectionLink key={item.to} item={item} onNavigate={onNavigate} />
-            ))}
-          </ul>
+        <nav aria-label={t("account.navLabel")} className="grid gap-4">
+          {GROUPS.map((group) => {
+            const headingId = `gt-member-nav-${group.id}`;
+            return (
+              <div key={group.id} className="grid gap-1">
+                {group.labelKey && (
+                  <span id={headingId} className="gt-eyebrow px-3">
+                    {t(group.labelKey)}
+                  </span>
+                )}
+                <ul aria-labelledby={group.labelKey ? headingId : undefined} className="m-0 grid list-none gap-0.5 p-0">
+                  {group.items.map((item) => (
+                    <SectionLink key={item.to} item={item} onNavigate={onNavigate} />
+                  ))}
+                  {group.withCart && (
+                    <li>
+                      <CartLink count={count} onNavigate={onNavigate} />
+                    </li>
+                  )}
+                </ul>
+              </div>
+            );
+          })}
         </nav>
 
         {/* The rest of the site: what the storefront header used to offer. */}
@@ -285,25 +345,24 @@ function SidebarBody({ onNavigate, closeButton }: { onNavigate?: () => void; clo
                 </Link>
               </li>
             ))}
-            <li>
-              <CartLink count={count} onNavigate={onNavigate} />
-            </li>
           </ul>
         </nav>
       </div>
 
+      {/* One row per kind of move: the back office (staff only — a full row,
+          since switching space is a primary move for them), the small
+          utilities on one line, then signing out alone at the bottom. */}
       <div className="grid flex-none gap-1 border-t border-[var(--border-subtle)] px-3 py-3">
-        <div className="flex flex-wrap items-center gap-1">
-          <Link
-            to={LEGAL_PATHS.help}
-            onClick={onNavigate}
-            className={clsx(
-              "inline-flex items-center gap-1.5 rounded-[var(--radius-pill)] px-2.5 py-1.5 text-[length:var(--text-caption)] font-semibold text-[var(--text-muted)] hover:bg-[var(--gt-ink-100)] hover:text-[var(--text-primary)]",
-              focusRing,
-            )}
-          >
-            <LifeBuoy size={14} aria-hidden="true" />
-            {t("account.shell.help")}
+        {isStaff && (
+          <Link to="/admin" onClick={onNavigate} className={clsx(rowBase, rowIdle, focusRing)}>
+            <UserCog size={16} strokeWidth={2} aria-hidden="true" />
+            {t("account.shell.adminSpace")}
+          </Link>
+        )}
+        <div className="grid grid-cols-[1fr_1fr_auto] gap-1">
+          <Link to={LEGAL_PATHS.help} onClick={onNavigate} className={clsx(footTool, focusRing)}>
+            <LifeBuoy size={14} aria-hidden="true" className="flex-none" />
+            <span className="truncate">{t("account.shell.help")}</span>
           </Link>
           <button
             type="button"
@@ -311,41 +370,24 @@ function SidebarBody({ onNavigate, closeButton }: { onNavigate?: () => void; clo
               onNavigate?.();
               openSettings();
             }}
-            className={clsx(
-              "inline-flex items-center gap-1.5 rounded-[var(--radius-pill)] px-2.5 py-1.5 text-[length:var(--text-caption)] font-semibold text-[var(--text-muted)] hover:bg-[var(--gt-ink-100)] hover:text-[var(--text-primary)]",
-              focusRing,
-            )}
+            className={clsx(footTool, focusRing)}
           >
-            <Cookie size={14} aria-hidden="true" />
-            {t("account.shell.cookies")}
+            <Cookie size={14} aria-hidden="true" className="flex-none" />
+            <span className="truncate">{t("account.shell.cookies")}</span>
           </button>
-          {isStaff && (
-            <Link
-              to="/admin"
-              onClick={onNavigate}
-              className={clsx(
-                "inline-flex items-center gap-1.5 rounded-[var(--radius-pill)] px-2.5 py-1.5 text-[length:var(--text-caption)] font-semibold text-[var(--text-muted)] hover:bg-[var(--gt-ink-100)] hover:text-[var(--text-primary)]",
-                focusRing,
-              )}
-            >
-              <UserCog size={14} aria-hidden="true" />
-              {t("account.shell.adminSpace")}
-            </Link>
-          )}
           <button
             type="button"
             onClick={switchLanguage}
             aria-label={t("common.langSwitchAria")}
-            className={clsx(
-              "inline-flex items-center gap-1.5 rounded-[var(--radius-pill)] px-2.5 py-1.5 text-[length:var(--text-caption)] font-semibold uppercase text-[var(--text-muted)] hover:bg-[var(--gt-ink-100)] hover:text-[var(--text-primary)]",
-              focusRing,
-            )}
+            title={t("common.langSwitchAria")}
+            className={clsx(footTool, "uppercase", focusRing)}
           >
-            <Languages size={14} aria-hidden="true" />
+            <Languages size={14} aria-hidden="true" className="flex-none" />
             {/* Shows the language you switch TO, like the storefront header. */}
             {t("common.langSwitchCode")}
           </button>
         </div>
+        <span aria-hidden="true" className="my-1 h-px bg-[var(--border-subtle)]" />
         <button type="button" onClick={leave} className={clsx(rowBase, "text-left text-[var(--text-muted)] hover:bg-[var(--gt-ink-100)] hover:text-[var(--text-primary)]", focusRing)}>
           <LogOut size={16} strokeWidth={2} aria-hidden="true" />
           {t("auth.signOut")}
@@ -455,7 +497,7 @@ function Rail({ onExpand, expanded }: { onExpand: () => void; expanded: boolean 
 
       <ul className="m-0 grid w-full list-none gap-0.5 px-1.5 py-0">
         {SECTIONS.map((item) => (
-          <li key={item.to}>
+          <li key={item.to} className={clsx(GROUP_STARTS.has(item.to) && "mt-1 border-t border-[var(--border-subtle)] pt-1")}>
             <NavLink
               to={item.to}
               end={item.end}

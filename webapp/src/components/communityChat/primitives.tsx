@@ -11,15 +11,26 @@ import {
 import { useTranslation } from "react-i18next";
 import { X, type LucideIcon } from "lucide-react";
 import clsx from "clsx";
-import type { ChatMember, Presence, ChatRole } from "../../data/communityChat";
-import { initialsOf } from "../community/MemberAvatar";
-import { TONE_SOLID } from "../community/channelStyle";
+import type { AvatarTone, ChatMember, ChatRole, Presence } from "../../lib/communityChat/model";
 
 /*
  * Small pieces shared by every part of the Members' Lounge. The lounge reuses
- * the forum's avatar language (initials on a tint, `TONE_SOLID`) so a member
- * is recognisable in both community spaces.
+ * initials on a tint (`TONE_SOLID`).
  */
+
+/** Filled avatar treatment. Every pairing here clears AA at avatar sizes. */
+const TONE_SOLID: Record<AvatarTone, string> = {
+  blue: "bg-[var(--gt-blue-300)] text-[var(--gt-ink-900)]",
+  emerald: "bg-[var(--gt-emerald-300)] text-[var(--gt-ink-900)]",
+  fuchsia: "bg-[var(--gt-fuchsia-300)] text-[var(--gt-ink-900)]",
+  ink: "bg-[var(--surface-inverse)] text-[var(--text-inverse)]",
+};
+
+function initialsOf(name: string): string {
+  const parts = name.split(" ").filter(Boolean);
+  if (parts.length === 0) return "?";
+  return (parts[0].charAt(0) + (parts.length > 1 ? parts[parts.length - 1].charAt(0) : "")).toUpperCase();
+}
 
 export const focusRing =
   "focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-[var(--focus-ring)]";

@@ -69,7 +69,7 @@ The document (decided by the owner, 2026-10-07): issued by "Global Toothgems Aca
 
 ## Community
 
-The Artist Community is unlocked by owning a course. When built for real, its access derives from the same entitlements, server-side. Post-launch.
+The Members' Lounge is unlocked by an active course entitlement (or being active staff), checked server-side by `private.lounge_can_enter()` on every read and write (see `supabase/README.md`, *Members' Lounge*).
 
 ## Course administration
 

@@ -3493,6 +3493,415 @@ export type Database = {
           },
         ]
       }
+      lounge_channels: {
+        Row: {
+          created_at: string
+          id: string
+          is_open: boolean
+          key: string
+          lounge: string
+          position: number
+        }
+        Insert: {
+          created_at?: string
+          id: string
+          is_open?: boolean
+          key: string
+          lounge: string
+          position?: number
+        }
+        Update: {
+          created_at?: string
+          id?: string
+          is_open?: boolean
+          key?: string
+          lounge?: string
+          position?: number
+        }
+        Relationships: []
+      }
+      lounge_conversations: {
+        Row: {
+          created_at: string
+          id: string
+          last_message_at: string
+          user_a: string
+          user_b: string
+        }
+        Insert: {
+          created_at?: string
+          id?: string
+          last_message_at?: string
+          user_a: string
+          user_b: string
+        }
+        Update: {
+          created_at?: string
+          id?: string
+          last_message_at?: string
+          user_a?: string
+          user_b?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "lounge_conversations_user_a_fkey"
+            columns: ["user_a"]
+            isOneToOne: false
+            referencedRelation: "loyalty_overview"
+            referencedColumns: ["user_id"]
+          },
+          {
+            foreignKeyName: "lounge_conversations_user_a_fkey"
+            columns: ["user_a"]
+            isOneToOne: false
+            referencedRelation: "profiles"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "lounge_conversations_user_b_fkey"
+            columns: ["user_b"]
+            isOneToOne: false
+            referencedRelation: "loyalty_overview"
+            referencedColumns: ["user_id"]
+          },
+          {
+            foreignKeyName: "lounge_conversations_user_b_fkey"
+            columns: ["user_b"]
+            isOneToOne: false
+            referencedRelation: "profiles"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      lounge_members: {
+        Row: {
+          handle: string
+          is_mentor: boolean
+          joined_at: string
+          languages: string[]
+          last_seen_at: string | null
+          presence: string
+          updated_at: string
+          user_id: string
+        }
+        Insert: {
+          handle: string
+          is_mentor?: boolean
+          joined_at?: string
+          languages?: string[]
+          last_seen_at?: string | null
+          presence?: string
+          updated_at?: string
+          user_id: string
+        }
+        Update: {
+          handle?: string
+          is_mentor?: boolean
+          joined_at?: string
+          languages?: string[]
+          last_seen_at?: string | null
+          presence?: string
+          updated_at?: string
+          user_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "lounge_members_user_id_fkey"
+            columns: ["user_id"]
+            isOneToOne: true
+            referencedRelation: "loyalty_overview"
+            referencedColumns: ["user_id"]
+          },
+          {
+            foreignKeyName: "lounge_members_user_id_fkey"
+            columns: ["user_id"]
+            isOneToOne: true
+            referencedRelation: "profiles"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      lounge_message_attachments: {
+        Row: {
+          alt_text: string
+          created_at: string
+          id: string
+          message_id: string
+          position: number
+          storage_path: string
+        }
+        Insert: {
+          alt_text?: string
+          created_at?: string
+          id?: string
+          message_id: string
+          position?: number
+          storage_path: string
+        }
+        Update: {
+          alt_text?: string
+          created_at?: string
+          id?: string
+          message_id?: string
+          position?: number
+          storage_path?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "lounge_message_attachments_message_id_fkey"
+            columns: ["message_id"]
+            isOneToOne: false
+            referencedRelation: "lounge_messages"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      lounge_messages: {
+        Row: {
+          author_id: string
+          body_text: string
+          channel_id: string | null
+          conversation_id: string | null
+          created_at: string
+          id: string
+          mention_ids: string[]
+          parts: Json
+          reactions: Json
+          reply_to_id: string | null
+        }
+        Insert: {
+          author_id: string
+          body_text?: string
+          channel_id?: string | null
+          conversation_id?: string | null
+          created_at?: string
+          id?: string
+          mention_ids?: string[]
+          parts?: Json
+          reactions?: Json
+          reply_to_id?: string | null
+        }
+        Update: {
+          author_id?: string
+          body_text?: string
+          channel_id?: string | null
+          conversation_id?: string | null
+          created_at?: string
+          id?: string
+          mention_ids?: string[]
+          parts?: Json
+          reactions?: Json
+          reply_to_id?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "lounge_messages_author_id_fkey"
+            columns: ["author_id"]
+            isOneToOne: false
+            referencedRelation: "loyalty_overview"
+            referencedColumns: ["user_id"]
+          },
+          {
+            foreignKeyName: "lounge_messages_author_id_fkey"
+            columns: ["author_id"]
+            isOneToOne: false
+            referencedRelation: "profiles"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "lounge_messages_channel_id_fkey"
+            columns: ["channel_id"]
+            isOneToOne: false
+            referencedRelation: "lounge_channels"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "lounge_messages_conversation_id_fkey"
+            columns: ["conversation_id"]
+            isOneToOne: false
+            referencedRelation: "lounge_conversations"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "lounge_messages_reply_to_id_fkey"
+            columns: ["reply_to_id"]
+            isOneToOne: false
+            referencedRelation: "lounge_messages"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      lounge_notifications: {
+        Row: {
+          actor_id: string | null
+          created_at: string
+          id: string
+          kind: string
+          message_id: string
+          read_at: string | null
+          user_id: string
+        }
+        Insert: {
+          actor_id?: string | null
+          created_at?: string
+          id?: string
+          kind: string
+          message_id: string
+          read_at?: string | null
+          user_id: string
+        }
+        Update: {
+          actor_id?: string | null
+          created_at?: string
+          id?: string
+          kind?: string
+          message_id?: string
+          read_at?: string | null
+          user_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "lounge_notifications_actor_id_fkey"
+            columns: ["actor_id"]
+            isOneToOne: false
+            referencedRelation: "loyalty_overview"
+            referencedColumns: ["user_id"]
+          },
+          {
+            foreignKeyName: "lounge_notifications_actor_id_fkey"
+            columns: ["actor_id"]
+            isOneToOne: false
+            referencedRelation: "profiles"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "lounge_notifications_message_id_fkey"
+            columns: ["message_id"]
+            isOneToOne: false
+            referencedRelation: "lounge_messages"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "lounge_notifications_user_id_fkey"
+            columns: ["user_id"]
+            isOneToOne: false
+            referencedRelation: "loyalty_overview"
+            referencedColumns: ["user_id"]
+          },
+          {
+            foreignKeyName: "lounge_notifications_user_id_fkey"
+            columns: ["user_id"]
+            isOneToOne: false
+            referencedRelation: "profiles"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      lounge_reactions: {
+        Row: {
+          created_at: string
+          id: string
+          message_id: string
+          reaction: string
+          user_id: string
+        }
+        Insert: {
+          created_at?: string
+          id?: string
+          message_id: string
+          reaction: string
+          user_id: string
+        }
+        Update: {
+          created_at?: string
+          id?: string
+          message_id?: string
+          reaction?: string
+          user_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "lounge_reactions_message_id_fkey"
+            columns: ["message_id"]
+            isOneToOne: false
+            referencedRelation: "lounge_messages"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "lounge_reactions_user_id_fkey"
+            columns: ["user_id"]
+            isOneToOne: false
+            referencedRelation: "loyalty_overview"
+            referencedColumns: ["user_id"]
+          },
+          {
+            foreignKeyName: "lounge_reactions_user_id_fkey"
+            columns: ["user_id"]
+            isOneToOne: false
+            referencedRelation: "profiles"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      lounge_room_states: {
+        Row: {
+          channel_id: string | null
+          conversation_id: string | null
+          id: string
+          last_read_at: string | null
+          muted: boolean
+          updated_at: string
+          user_id: string
+        }
+        Insert: {
+          channel_id?: string | null
+          conversation_id?: string | null
+          id?: string
+          last_read_at?: string | null
+          muted?: boolean
+          updated_at?: string
+          user_id: string
+        }
+        Update: {
+          channel_id?: string | null
+          conversation_id?: string | null
+          id?: string
+          last_read_at?: string | null
+          muted?: boolean
+          updated_at?: string
+          user_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "lounge_room_states_channel_id_fkey"
+            columns: ["channel_id"]
+            isOneToOne: false
+            referencedRelation: "lounge_channels"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "lounge_room_states_conversation_id_fkey"
+            columns: ["conversation_id"]
+            isOneToOne: false
+            referencedRelation: "lounge_conversations"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "lounge_room_states_user_id_fkey"
+            columns: ["user_id"]
+            isOneToOne: false
+            referencedRelation: "loyalty_overview"
+            referencedColumns: ["user_id"]
+          },
+          {
+            foreignKeyName: "lounge_room_states_user_id_fkey"
+            columns: ["user_id"]
+            isOneToOne: false
+            referencedRelation: "profiles"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       loyalty_cards: {
         Row: {
           completed_at: string | null
@@ -7983,6 +8392,56 @@ export type Database = {
         Returns: string
       }
       learner_courses: { Args: never; Returns: Json }
+      lounge_access: { Args: never; Returns: boolean }
+      lounge_directory: {
+        Args: never
+        Returns: {
+          active: boolean
+          country_code: string
+          display_name: string
+          handle: string
+          joined_at: string
+          languages: string[]
+          message_count: number
+          presence: string
+          role: string
+          trainings: string[]
+          user_id: string
+        }[]
+      }
+      lounge_heartbeat: { Args: { p_presence?: string }; Returns: undefined }
+      lounge_join: { Args: { p_lounge?: string }; Returns: undefined }
+      lounge_mark_read: {
+        Args: { p_channel_ids?: string[]; p_conversation_ids?: string[] }
+        Returns: undefined
+      }
+      lounge_overview: { Args: never; Returns: Json }
+      lounge_post_message: {
+        Args: {
+          p_attachments?: Json
+          p_channel_id: string
+          p_parts: Json
+          p_recipient_id: string
+          p_reply_to_id?: string
+        }
+        Returns: string
+      }
+      lounge_read_notifications: {
+        Args: { p_ids?: string[] }
+        Returns: undefined
+      }
+      lounge_set_muted: {
+        Args: {
+          p_channel_id: string
+          p_conversation_id: string
+          p_muted: boolean
+        }
+        Returns: undefined
+      }
+      lounge_toggle_reaction: {
+        Args: { p_message_id: string; p_reaction: string }
+        Returns: boolean
+      }
       mark_order_paid: {
         Args: {
           p_amount: number

@@ -4,7 +4,7 @@ import { useMemo, useState } from "react";
 import { useTranslation } from "react-i18next";
 import { Activity, AtSign, ChevronDown, Lock, X } from "lucide-react";
 import clsx from "clsx";
-import { CHAT_SERVERS, CHAT_VIEWER_ID, type ChatMember } from "../../data/communityChat";
+import type { ChatMember } from "../../lib/communityChat/model";
 import { useChat } from "../../lib/communityChat/chatStore";
 import { mentionedMembers, messagesToday, recentAuthors, timestampOf } from "../../lib/communityChat/chatLogic";
 import { ChatAvatar, RoleBadge, ToolButton, focusRing, useChatTime, useNow } from "./primitives";
@@ -35,7 +35,7 @@ function MemberRow({ member }: { member: ChatMember }) {
 }
 
 function AvatarRow({ ids, empty }: { ids: string[]; empty?: string }) {
-  const { memberOf } = useChat();
+  const { memberOf, viewer } = useChat();
   const { openProfile } = useLoungeUi();
   const { t } = useTranslation();
   const members = ids.map((id) => memberOf(id)).filter((m): m is ChatMember => Boolean(m));
@@ -51,7 +51,7 @@ function AvatarRow({ ids, empty }: { ids: string[]; empty?: string }) {
             title={member.name}
             className={clsx("rounded-full", focusRing)}
           >
-            <ChatAvatar member={member} size="sm" presence={member.id !== CHAT_VIEWER_ID} />
+            <ChatAvatar member={member} size="sm" presence={member.id !== viewer.id} />
           </button>
         </li>
       ))}
@@ -66,14 +66,14 @@ function AvatarRow({ ids, empty }: { ids: string[]; empty?: string }) {
  */
 export function MembersPanel({ onClose }: { onClose?: () => void }) {
   const { t } = useTranslation();
-  const { serverMembers, messages, currentChannel, currentConversation, viewer } = useChat();
+  const { serverMembers, messages, currentChannel, currentConversation, viewer, servers } = useChat();
   const { toggleMembers } = useLoungeUi();
   const { short } = useChatTime();
   const now = useNow();
   const [showOffline, setShowOffline] = useState(true);
 
   const { online, offline } = useMemo(() => {
-    const everyone = [viewer, ...serverMembers.filter((m) => m.id !== CHAT_VIEWER_ID)];
+    const everyone = [viewer, ...serverMembers.filter((m) => m.id !== viewer.id)];
     return {
       online: everyone.filter((m) => m.presence !== "offline"),
       offline: everyone.filter((m) => m.presence === "offline"),
@@ -114,7 +114,7 @@ export function MembersPanel({ onClose }: { onClose?: () => void }) {
               <h3 className="m-0 text-[10.5px] font-bold uppercase tracking-[var(--tracking-wide)] text-[var(--text-muted)]">{t("lounge.members.sharedLounges")}</h3>
               <p className="m-0 flex flex-wrap gap-1.5">
                 {currentConversation.member.languages.map((id) => {
-                  const lounge = CHAT_SERVERS.find((s) => s.id === id);
+                  const lounge = servers.find((s) => s.id === id);
                   return lounge ? (
                     <span key={id} className="inline-flex items-center gap-1 rounded-[var(--radius-pill)] bg-[var(--gt-ink-100)] px-2 py-0.5 text-[12px] text-[var(--text-body)]">
                       <LanguageFlag code={lounge.id} />

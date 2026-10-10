@@ -15,6 +15,7 @@ import {
   Store,
   Tags,
   TicketPercent,
+  UserCog,
   UserRound,
   Users,
   type LucideIcon,
@@ -27,18 +28,17 @@ import { useAdminAuth } from "../../lib/adminAuth";
  * Persistent navigation rail.
  *
  * Laid out like the member space's sidebar (`MemberShell`), in the rail's own
- * dark colours: the brand, who is signed in, the sections, then at the foot
- * the way out to the store, the member space and the language, and signing out.
+ * dark colours: the brand (with the desktop collapse toggle beside it), who is
+ * signed in, the sections, then at the foot the switch to the member space,
+ * the store and the language on one line, and signing out last.
  *
- * Analytics moved up into the first group when the Statistics screen landed:
- * the entry, its label and its icon are unchanged, it is simply a destination
- * now rather than a promise. Settings followed the same way when the store
- * configuration screens landed, and Training when its workspace did — it was
- * the last entry left in the second group.
+ * The sections are grouped by job — selling (orders, customers, promotions,
+ * reviews), the catalogue, the Academy, and running the back office itself
+ * (team, settings) — under the dashboard and statistics, which read across all
+ * of them. Collapsed, a group's heading becomes a thin divider.
  *
- * The "coming soon" group is therefore empty, and renders nothing rather than a
- * heading with nothing under it. The scaffolding stays for the next section
- * that is announced before it is built.
+ * The collapse toggle lives in the header, not under "Sign out": two
+ * look-alike rows stacked at the foot made one easy to hit for the other.
  */
 
 interface RailItem {
@@ -48,31 +48,74 @@ interface RailItem {
   end?: boolean;
 }
 
-const MAIN: RailItem[] = [
-  { to: "/admin", labelKey: "admin.nav.dashboard", icon: LayoutDashboard, end: true },
-  { to: "/admin/commandes", labelKey: "admin.nav.orders", icon: ShoppingBag },
-  { to: "/admin/clients", labelKey: "admin.nav.customers", icon: Users },
-  { to: "/admin/produits", labelKey: "admin.nav.products", icon: Package },
-  { to: "/admin/categories", labelKey: "admin.nav.categories", icon: Tags },
-  { to: "/admin/promotions", labelKey: "admin.nav.promotions", icon: TicketPercent },
-  { to: "/admin/avis", labelKey: "reviews.nav.admin", icon: MessageSquareText },
-  { to: "/admin/statistiques", labelKey: "admin.nav.analytics", icon: BarChart3 },
-  { to: "/admin/parametres", labelKey: "admin.nav.settings", icon: Settings },
-  { to: "/admin/formations", labelKey: "admin.nav.training", icon: GraduationCap },
-];
+interface RailGroup {
+  id: string;
+  /** None for the first group: the dashboard needs no heading. */
+  labelKey?: string;
+  items: RailItem[];
+}
 
-const SOON: { labelKey: string; icon: LucideIcon }[] = [];
+const GROUPS: RailGroup[] = [
+  {
+    id: "overview",
+    items: [
+      { to: "/admin", labelKey: "admin.nav.dashboard", icon: LayoutDashboard, end: true },
+      { to: "/admin/statistiques", labelKey: "admin.nav.analytics", icon: BarChart3 },
+    ],
+  },
+  {
+    id: "sales",
+    labelKey: "admin.nav.groupSales",
+    items: [
+      { to: "/admin/commandes", labelKey: "admin.nav.orders", icon: ShoppingBag },
+      { to: "/admin/clients", labelKey: "admin.nav.customers", icon: Users },
+      { to: "/admin/promotions", labelKey: "admin.nav.promotions", icon: TicketPercent },
+      { to: "/admin/avis", labelKey: "reviews.nav.admin", icon: MessageSquareText },
+    ],
+  },
+  {
+    id: "catalogue",
+    labelKey: "admin.nav.groupCatalogue",
+    items: [
+      { to: "/admin/produits", labelKey: "admin.nav.products", icon: Package },
+      { to: "/admin/categories", labelKey: "admin.nav.categories", icon: Tags },
+    ],
+  },
+  {
+    id: "academy",
+    labelKey: "admin.nav.groupAcademy",
+    items: [{ to: "/admin/formations", labelKey: "admin.nav.training", icon: GraduationCap }],
+  },
+  {
+    id: "administration",
+    labelKey: "admin.nav.groupAdministration",
+    items: [
+      { to: "/admin/utilisateurs", labelKey: "admin.nav.users", icon: UserCog },
+      { to: "/admin/parametres", labelKey: "admin.nav.settings", icon: Settings },
+    ],
+  },
+];
 
 const railFocus =
   "focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-[var(--gt-blue-300)]";
 
-/** Small secondary links at the foot of the rail; icon-only squares when collapsed. */
-const footPill = (collapsed: boolean) =>
+const railIdle = "text-[var(--admin-rail-muted)] hover:bg-[var(--admin-rail-hover)] hover:text-[var(--admin-rail-text)]";
+
+/** A full row of the rail: the sections, the member space, signing out. */
+const railRow = (collapsed: boolean) =>
   clsx(
-    "inline-flex items-center gap-1.5 text-[length:var(--text-caption)] font-semibold text-[var(--admin-rail-muted)] transition-colors hover:bg-[var(--admin-rail-hover)] hover:text-[var(--admin-rail-text)]",
-    collapsed
-      ? "h-9 w-9 justify-center rounded-[var(--admin-radius-sm)]"
-      : "rounded-[var(--radius-pill)] px-2.5 py-1.5",
+    "relative flex w-full items-center gap-3 rounded-[var(--admin-radius-sm)] py-2.5 text-[length:var(--text-body-sm)] font-medium transition-colors",
+    collapsed ? "justify-center px-0" : "px-3",
+    railFocus,
+  );
+
+/** The smaller utilities at the foot (store, language): one line, icon-only squares when collapsed. */
+const footTool = (collapsed: boolean) =>
+  clsx(
+    "inline-flex h-9 items-center gap-1.5 rounded-[var(--admin-radius-sm)] text-[length:var(--text-caption)] font-semibold transition-colors",
+    railIdle,
+    collapsed ? "w-9 justify-center" : "px-2.5",
+    railFocus,
   );
 
 export function AdminSidebar({
@@ -95,24 +138,51 @@ export function AdminSidebar({
     navigate("/admin/connexion", { replace: true });
   };
 
+  /* Desktop only: the small-screen drawer closes with its scrim instead. */
+  const toggle = (
+    <button
+      type="button"
+      onClick={onToggle}
+      aria-expanded={!collapsed}
+      aria-label={collapsed ? t("admin.shell.expand") : t("admin.shell.collapse")}
+      title={collapsed ? t("admin.shell.expand") : t("admin.shell.collapse")}
+      className={clsx(
+        "hidden h-8 w-8 flex-none place-items-center rounded-[var(--admin-radius-sm)] transition-colors lg:grid",
+        railIdle,
+        railFocus,
+      )}
+    >
+      {collapsed ? (
+        <ChevronsRight size={17} strokeWidth={1.9} aria-hidden="true" />
+      ) : (
+        <ChevronsLeft size={17} strokeWidth={1.9} aria-hidden="true" />
+      )}
+    </button>
+  );
+
   return (
     <div className="flex h-full flex-col bg-[var(--admin-rail)] text-[var(--admin-rail-text)]">
-      {/* Brand */}
+      {/* Brand and, on desktop, the collapse toggle. Collapsed, the rail is too
+          narrow for both: the toggle takes the header, the way to expand it. */}
       <div
         className={clsx(
-          "flex h-[var(--admin-header-h)] flex-none items-center gap-3 border-b border-[var(--admin-rail-border)]",
-          collapsed ? "justify-center px-3" : "px-5",
+          "flex h-[var(--admin-header-h)] flex-none items-center gap-2 border-b border-[var(--admin-rail-border)]",
+          collapsed ? "justify-center px-3" : "pl-5 pr-3",
         )}
       >
         <Link
           to="/admin"
           onClick={onNavigate}
-          className={clsx("flex items-center gap-3 rounded-[var(--admin-radius-sm)]", railFocus)}
+          className={clsx(
+            "min-w-0 flex-1 items-center gap-3 rounded-[var(--admin-radius-sm)]",
+            collapsed ? "flex lg:hidden" : "flex",
+            railFocus,
+          )}
         >
           <img src={monogram.src} alt="" aria-hidden="true" className="h-7 w-auto flex-none" />
           {!collapsed && (
-            <span className="grid leading-tight">
-              <span className="text-[length:var(--text-body-sm)] font-bold tracking-[var(--tracking-tight)]">
+            <span className="grid min-w-0 leading-tight">
+              <span className="truncate text-[length:var(--text-body-sm)] font-bold tracking-[var(--tracking-tight)]">
                 Global Toothgems
               </span>
               <span className="text-[10px] font-semibold uppercase tracking-[var(--tracking-eyebrow)] text-[var(--admin-rail-muted)]">
@@ -121,6 +191,7 @@ export function AdminSidebar({
             </span>
           )}
         </Link>
+        {toggle}
       </div>
 
       {/* Who is signed in, under the brand as in the member space. */}
@@ -151,102 +222,92 @@ export function AdminSidebar({
 
       <nav
         aria-label={t("admin.nav.primary")}
-        className="gt-admin-scroll flex-1 overflow-y-auto px-3 py-5"
+        className="gt-admin-scroll grid flex-1 content-start gap-5 overflow-y-auto px-3 py-5"
       >
-        {!collapsed && (
-          <p className="m-0 mb-2 px-2 text-[10px] font-semibold uppercase tracking-[var(--tracking-eyebrow)] text-[var(--admin-rail-muted)]">
-            {t("admin.nav.groupMain")}
-          </p>
-        )}
-        <ul className="m-0 grid list-none gap-1 p-0">
-          {MAIN.map((item) => (
-            <li key={item.to}>
-              <NavLink
-                to={item.to}
-                end={item.end}
-                onClick={onNavigate}
-                // Collapsed, the label is gone from the DOM, so the name has to
-                // be supplied explicitly — a `title` alone is a tooltip, not a
-                // guarantee.
-                aria-label={collapsed ? t(item.labelKey) : undefined}
-                title={collapsed ? t(item.labelKey) : undefined}
-                className={({ isActive }) =>
-                  clsx(
-                    "relative flex items-center gap-3 rounded-[var(--admin-radius-sm)] py-2.5 text-[length:var(--text-body-sm)] font-medium transition-colors",
-                    collapsed ? "justify-center px-0" : "px-3",
-                    railFocus,
-                    isActive
-                      ? "bg-[var(--admin-rail-active)] font-semibold text-[var(--gt-white)]"
-                      : "text-[var(--admin-rail-muted)] hover:bg-[var(--admin-rail-hover)] hover:text-[var(--admin-rail-text)]",
-                  )
-                }
-              >
-                {({ isActive }) => (
+        {GROUPS.map((group) => {
+          const headingId = `gt-admin-nav-${group.id}`;
+          return (
+            <div key={group.id} className="grid gap-1.5">
+              {group.labelKey &&
+                (collapsed ? (
                   <>
-                    {/* The active marker is a shape, not a tint: the rail is
-                        near-black, where a background alone is easy to miss. */}
-                    <span
-                      aria-hidden="true"
-                      className={clsx(
-                        "absolute left-0 top-1/2 h-5 w-[3px] -translate-y-1/2 rounded-r-[2px] bg-[var(--accent-cta)] transition-opacity",
-                        isActive ? "opacity-100" : "opacity-0",
-                      )}
-                    />
-                    <item.icon size={17} strokeWidth={1.9} aria-hidden="true" className="flex-none" />
-                    {!collapsed && <span>{t(item.labelKey)}</span>}
-                  </>
-                )}
-              </NavLink>
-            </li>
-          ))}
-        </ul>
-
-        {SOON.length > 0 && (
-          <>
-        <p
-          className={clsx(
-            "m-0 mb-2 mt-7 text-[10px] font-semibold uppercase tracking-[var(--tracking-eyebrow)] text-[var(--admin-rail-muted)]",
-            collapsed ? "text-center" : "px-2",
-          )}
-        >
-          {collapsed ? "···" : t("admin.nav.groupSoon")}
-        </p>
-        <ul className="m-0 grid list-none gap-1 p-0">
-          {SOON.map((item) => (
-            <li key={item.labelKey}>
-              {/* A disabled button rather than a styled div: it is announced as
-                  unavailable instead of looking clickable and doing nothing. */}
-              <button
-                type="button"
-                disabled
-                aria-disabled="true"
-                title={`${t(item.labelKey)} — ${t("admin.nav.soon")}`}
-                className={clsx(
-                  "flex w-full cursor-not-allowed items-center gap-3 rounded-[var(--admin-radius-sm)] py-2.5 text-left text-[length:var(--text-body-sm)] font-medium text-[rgba(250,250,248,.34)]",
-                  collapsed ? "justify-center px-0" : "px-3",
-                )}
-              >
-                <item.icon size={17} strokeWidth={1.9} aria-hidden="true" className="flex-none" />
-                {!collapsed && (
-                  <>
-                    <span className="flex-1">{t(item.labelKey)}</span>
-                    <span className="rounded-[var(--radius-pill)] border border-[var(--admin-rail-border)] px-1.5 py-0.5 text-[9px] font-semibold uppercase tracking-[var(--tracking-wide)] text-[var(--admin-rail-muted)]">
-                      {t("admin.nav.soon")}
+                    {/* The heading is gone visually; keep it for screen readers. */}
+                    <span aria-hidden="true" className="mx-auto mb-1 h-px w-8 bg-[var(--admin-rail-border)]" />
+                    <span id={headingId} className="sr-only">
+                      {t(group.labelKey)}
                     </span>
                   </>
-                )}
-              </button>
-            </li>
-          ))}
-        </ul>
-          </>
-        )}
+                ) : (
+                  <p
+                    id={headingId}
+                    className="m-0 px-3 text-[10px] font-semibold uppercase tracking-[var(--tracking-eyebrow)] text-[var(--admin-rail-muted)]"
+                  >
+                    {t(group.labelKey)}
+                  </p>
+                ))}
+              <ul
+                aria-labelledby={group.labelKey ? headingId : undefined}
+                className="m-0 grid list-none gap-0.5 p-0"
+              >
+                {group.items.map((item) => (
+                  <li key={item.to}>
+                    <NavLink
+                      to={item.to}
+                      end={item.end}
+                      onClick={onNavigate}
+                      // Collapsed, the label is gone from the DOM, so the name has to
+                      // be supplied explicitly — a `title` alone is a tooltip, not a
+                      // guarantee.
+                      aria-label={collapsed ? t(item.labelKey) : undefined}
+                      title={collapsed ? t(item.labelKey) : undefined}
+                      className={({ isActive }) =>
+                        clsx(
+                          railRow(collapsed),
+                          isActive ? "bg-[var(--admin-rail-active)] font-semibold text-[var(--gt-white)]" : railIdle,
+                        )
+                      }
+                    >
+                      {({ isActive }) => (
+                        <>
+                          {/* The active marker is a shape, not a tint: the rail is
+                              near-black, where a background alone is easy to miss. */}
+                          <span
+                            aria-hidden="true"
+                            className={clsx(
+                              "absolute left-0 top-1/2 h-5 w-[3px] -translate-y-1/2 rounded-r-[2px] bg-[var(--accent-cta)] transition-opacity",
+                              isActive ? "opacity-100" : "opacity-0",
+                            )}
+                          />
+                          <item.icon size={17} strokeWidth={1.9} aria-hidden="true" className="flex-none" />
+                          {!collapsed && <span>{t(item.labelKey)}</span>}
+                        </>
+                      )}
+                    </NavLink>
+                  </li>
+                ))}
+              </ul>
+            </div>
+          );
+        })}
       </nav>
 
-      {/* The way out, the member space and the language, then signing out:
-          the same order as the foot of the member space's sidebar. */}
-      <div className="flex-none border-t border-[var(--admin-rail-border)] p-3">
-        <div className={clsx("flex gap-1", collapsed ? "flex-col items-center" : "flex-wrap items-center")}>
+      {/* The foot, in the same order as the member space's: switching space
+          first (a full row — for staff it is a primary move), the small
+          utilities on one line, then signing out, alone at the very bottom. */}
+      <div className="grid flex-none gap-1 border-t border-[var(--admin-rail-border)] p-3">
+        {/* Staff are members too: their own account is one click away. */}
+        <Link
+          to="/compte"
+          onClick={onNavigate}
+          aria-label={collapsed ? t("admin.shell.memberSpace") : undefined}
+          title={collapsed ? t("admin.shell.memberSpace") : undefined}
+          className={clsx(railRow(collapsed), railIdle)}
+        >
+          <UserRound size={17} strokeWidth={1.9} aria-hidden="true" className="flex-none" />
+          {!collapsed && t("admin.shell.memberSpace")}
+        </Link>
+
+        <div className={clsx("flex gap-1", collapsed ? "flex-col items-center" : "items-center")}>
           {/* The storefront is the other half of the job; the admin should
               never be a dead end away from it. */}
           <Link
@@ -254,28 +315,17 @@ export function AdminSidebar({
             onClick={onNavigate}
             aria-label={collapsed ? t("admin.shell.viewStore") : undefined}
             title={collapsed ? t("admin.shell.viewStore") : undefined}
-            className={clsx(footPill(collapsed), railFocus)}
+            className={clsx(footTool(collapsed), !collapsed && "flex-1")}
           >
             <Store size={14} strokeWidth={1.9} aria-hidden="true" className="flex-none" />
             {!collapsed && t("admin.shell.viewStore")}
-          </Link>
-          {/* Staff are members too: their own account is one click away. */}
-          <Link
-            to="/compte"
-            onClick={onNavigate}
-            aria-label={collapsed ? t("admin.shell.memberSpace") : undefined}
-            title={collapsed ? t("admin.shell.memberSpace") : undefined}
-            className={clsx(footPill(collapsed), railFocus)}
-          >
-            <UserRound size={14} strokeWidth={1.9} aria-hidden="true" className="flex-none" />
-            {!collapsed && t("admin.shell.memberSpace")}
           </Link>
           <button
             type="button"
             onClick={switchLanguage}
             aria-label={t("common.langSwitchAria")}
-            title={collapsed ? t("common.langSwitchAria") : undefined}
-            className={clsx(footPill(collapsed), "uppercase", railFocus)}
+            title={t("common.langSwitchAria")}
+            className={clsx(footTool(collapsed), "uppercase")}
           >
             <Languages size={14} strokeWidth={1.9} aria-hidden="true" className="flex-none" />
             {/* Shows the language you switch TO, like the storefront header. */}
@@ -283,41 +333,17 @@ export function AdminSidebar({
           </button>
         </div>
 
+        <span aria-hidden="true" className="my-1 h-px bg-[var(--admin-rail-border)]" />
+
         <button
           type="button"
           onClick={leave}
           aria-label={collapsed ? t("admin.shell.signOut") : undefined}
           title={collapsed ? t("admin.shell.signOut") : undefined}
-          className={clsx(
-            "mt-1 flex w-full items-center gap-3 rounded-[var(--admin-radius-sm)] py-2.5 text-[length:var(--text-body-sm)] font-medium text-[var(--admin-rail-muted)] transition-colors hover:bg-[var(--admin-rail-hover)] hover:text-[var(--admin-rail-text)]",
-            collapsed ? "justify-center px-0" : "px-3",
-            railFocus,
-          )}
+          className={clsx(railRow(collapsed), railIdle)}
         >
           <LogOut size={17} strokeWidth={1.9} aria-hidden="true" className="flex-none" />
           {!collapsed && t("admin.shell.signOut")}
-        </button>
-
-        <button
-          type="button"
-          onClick={onToggle}
-          aria-expanded={!collapsed}
-          aria-label={collapsed ? t("admin.shell.expand") : undefined}
-          title={collapsed ? t("admin.shell.expand") : t("admin.shell.collapse")}
-          className={clsx(
-            "mt-1 hidden w-full items-center gap-3 rounded-[var(--admin-radius-sm)] py-2.5 text-[length:var(--text-caption)] font-medium text-[var(--admin-rail-muted)] transition-colors hover:bg-[var(--admin-rail-hover)] hover:text-[var(--admin-rail-text)] lg:flex",
-            collapsed ? "justify-center px-0" : "px-3",
-            railFocus,
-          )}
-        >
-          {collapsed ? (
-            <ChevronsRight size={17} strokeWidth={1.9} aria-hidden="true" />
-          ) : (
-            <>
-              <ChevronsLeft size={17} strokeWidth={1.9} aria-hidden="true" />
-              {t("admin.shell.collapse")}
-            </>
-          )}
         </button>
       </div>
     </div>

@@ -349,13 +349,11 @@ test card 4242 4242 4242 4242 (`ALLOWED_RETURN_ORIGINS` must include `http://loc
 src/
   screens/          One component per screen (Home, Shop, ProductDetail, Cart, Academy, CourseDetail, Lesson, Login)
   screens/account/  The member area: sidebar layout + one component per section
-  screens/community/ The Artist Community: its own layout + one component per screen
   screens/legal/    Help centre, FAQ, contact and about pages
   data/legal/       Legal and help content (bilingual data rendered by components/legal/)
   components/ui/     Design-system primitives (Button, Badge, ProductCard, CourseCard, QuizQuestion, ...)
   components/account/ Dashboard pieces (stat tile, course row, certificate card, order card)
   components/academy/ The training detail page: hero, curriculum accordion, assessment, diploma, community, shared primitives
-  components/community/ Forum pieces (navigation, discussion card, showcase card, reactions, member card, composer, locked preview)
   components/reviews/ Customer reviews: stars, badges, review card, section, form, request, overlays; admin/ holds the moderation workspace
   components/studio/ The 3D Studio mockups (and editor/, the working editor UI): smile canvas, rendered gems, interactive Studio window, feature cards, media placeholders, inspiration boards, steps, pricing card, FAQ, home teaser
   components/loyalty/ The Loyalty Club: stamp, card, progress, reward, steps, journey, FAQ, checkout banner
@@ -465,7 +463,7 @@ Ported from the standalone `studio3D.html` into the app's architecture:
 | `lib/studio3d/useStudioGems.ts`, `gemRegistry.ts` | The React hook that builds the gems once per catalogue load, and the module-level copy the engine and the repositories read |
 | `lib/studio3d/engine.ts` | The three.js engine: scene, camera, raycast placement, drag, collisions, mirror / distribute / align, group turn, the design check, glTF import, exports. On-demand rendering (idles when nothing moves) |
 | `lib/studio3d/dentition.ts`, `assets/studio3d/dentition.glb` | The default dentition scan and its calibration: where each crown of both arches sits, so a surface point is known as a tooth (FDI 11–47) or as gum / socle |
-| `lib/studio3d/geometry.ts` | Procedural teeth (the fallback arch), the gems' outlines as the shop photos show them (baguette, square, heart, lozenge "Diamond Shape", navette, raindrop, rivoli star, StarFlower, and the 18ct charms: open heart, halo star, bolt, cherries, snake, dachshund), each normalised so its longest side is the SS diameter; crystal / metal / iridescent materials, cached. The heart, navette, raindrop, rivoli star and StarFlower are traced from the product photos (silhouette measured on the photo, averaged over the stone's symmetries) and cut as the photos show: crown step round a pentagon table, step cut with a flat table, briolette diamonds, a five-ridged pyramid with its centre rosette, a bevelled outline round a pentagon table. The 18ct snake and dachshund are their photo's outline, traced pixel by pixel, raised into a smooth polished relief (`goldCharm`). `geometry.test.ts` holds the measured proportions |
+| `lib/studio3d/geometry.ts` | Procedural teeth (the fallback arch), the gems' outlines as the shop photos show them (baguette, square, heart, lozenge "Diamond Shape", navette, raindrop, rivoli star, StarFlower, and the 18ct charms: open heart, halo star, bolt, cherries, snake, dachshund), each normalised so its longest side is the SS diameter; crystal / metal / iridescent materials, cached. The heart, navette, raindrop, rivoli star and StarFlower are traced from the product photos (silhouette measured on the photo, averaged over the stone's symmetries) and cut as the photos show: crown step round a pentagon table, step cut with a flat table, briolette diamonds, a five-ridged pyramid with its centre rosette, a bevelled outline round a pentagon table. The 18ct snake, dachshund, bolt, cherries and open heart are their photo's outline (with its openings: the open heart's middle, the gap between the cherries' stems), traced pixel by pixel, raised into a smooth polished relief (`goldCharm`; a crease marks the cleft between the two cherries). `geometry.test.ts` holds the measured proportions |
 | `lib/studio3d/store.ts` | The design store (history, selection, local persistence in `gt-studio3d-design-v2`) |
 | `lib/studio3d/actions.ts`, `notices.ts` | Shared commands, and the channel through which the engine reports to the site's toasts by translation key |
 | `components/studio/editor/` | Top bar, library (shop photos, grouped by cut), 3D stage, inspector (colour = the shop gems of the same cut, size = its SS options, link to the product page), popovers |
@@ -530,7 +528,7 @@ The layer around the editor that makes it a personal design workspace. The edito
 
 ## The member area (`/compte`)
 
-The signed-in area is an administration dashboard: a left sidebar on desktop, a scrollable row of pills on small screens, and one route per section.
+The signed-in area is an administration dashboard: a full-height left sidebar on desktop (`components/layout/MemberShell.tsx`), the same sidebar as a drawer from a slim top bar on small screens, and one route per section.
 
 | Route | Section |
 | --- | --- |
@@ -541,7 +539,7 @@ The signed-in area is an administration dashboard: a left sidebar on desktop, a 
 | `/compte/fidelite` | Loyalty card — the member's real stamp card and reward (`lib/loyalty.tsx`, `loyalty_overview`), read again on arrival |
 | `/compte/profil` | Profile details, editable and saved: name/phone on `profiles`, newsletter as a `marketing_email` consent record, address as the default shipping row of `customer_addresses` (emptying it deletes the row; a partial address is refused client-side) |
 
-The sidebar also links out to the course catalogue (`/academy`) and signs the member out. `RequireAccount` wraps the layout, so every section is gated at once.
+The sidebar groups the sections under the dashboard: *Apprendre* (Members' Lounge, certificates), *Achats* (orders, loyalty, reviews, the cart) and *Mon compte* (profile, security), then *Explorer* (home, shop, Academy, Studio). Its foot has one row per kind of move: *Administration* as a full row for staff, help · cookies · language on one line, then signing out alone at the bottom. In the lounge the rail shows the same sections with a divider between groups. `RequireAccount` wraps the layout, so every section is gated at once.
 
 The member area is capped at `--max-width-account` rather than `--max-width-content`: it spends a 248 px sidebar, the column gap and its own gutters out of the width every other screen gives entirely to content, so the wider cap is what makes its content column measure the same 1240 px as the shop grid.
 
@@ -590,41 +588,9 @@ The builder's media fields (`components/admin/training/MediaPicker.tsx`) only **
 
 With Supabase, files go to the private `training-media` bucket under `media/<id>/` through resumable TUS uploads (`tus-js-client`, 6 MB chunks, direct storage hostname), each with a `training_media` row; the back office displays them through signed URLs renewed every 45 minutes (`lib/trainingMedia.tsx`). Course fields hold the media **id**, never a URL: every screen resolves it with `useTrainingMedia().urlOf()` (`components/admin/training/MediaImage.tsx`, the learner's `LessonBlocks`/`QuizPlayer`). In the prototype the library is the seeded photographs and uploads stay in the page.
 
-## The Artist Community (`/compte/communaute`)
-
-The private forum reserved for members who own a training. It is part of the member area — it is reached from the account sidebar and it lives under `/compte` — but it carries its own navigation rather than nesting inside the account sidebar, because two levels of vertical navigation on one screen is what makes forum software feel like software.
-
-| Route | Screen |
-| --- | --- |
-| `/compte/communaute` | Community home — welcome, community figures, the discussions of the day, the wall of recent creations, the channels, and a contextual column (who is around, artists to welcome, the guidelines) |
-| `/compte/communaute/canal/:channelId` | One channel: a reading list, or the image-led wall in *Vos créations*, with Latest / Most replies / Unanswered |
-| `/compte/communaute/discussion/:discussionId` | One thread: opening post, reactions, replies, reply composer, author card |
-| `/compte/communaute/activite/:view` | Your activity: `discussions`, `reponses`, `enregistrees` |
-| `/compte/communaute/membres` | The artist directory |
-| `/compte/communaute/charte` | Community guidelines |
-
-Eight channels (general chat, show your work, techniques, training help, inspiration, tools & materials, business, introductions) are declared in `data/community.ts`, together with the members, the discussions and their replies. A showcase post is a discussion like any other, with an image and a short body — the wall is a presentation of the same object, so a creation opens, reacts and replies through the same code path as a question about adhesive.
-
-Ages in that file are stored as `minutesAgo` rather than as dates, so a prototype opened again months later still reads "il y a 2 h" instead of showing a room whose last message is a season old.
-
-### Access
-
-Forum access is derived, never stored: the community is what a training purchase unlocks, so the rule is "at least one course on the account", read from `lib/progress.tsx`. `CommunityLayout` decides it once, so a deep link into a thread meets the same door as the home page.
-
-Both states are designed:
-
-- **With access** — the full community.
-- **Without access** — the account sidebar still shows *Communauté artistes*, marked with a lock, a pastel wash and the words "accès avec une formation" (never by the icon alone, and never disabled). It leads to a preview: the real figures and four real discussion titles shown in the clear, the discussion cards and the wall behind an elegant overlay, and one access card — *La communauté des artistes vous attend* — with **Découvrir les formations** and a way back to the account. The blurred preview is `inert` and `aria-hidden`, so it is never a keyboard trap.
-
-The seeded account owns two courses, so the locked state would be unreachable in a review. A visible, labelled **Aperçu prototype** switch in the community sidebar forces either state, exactly like the loyalty card's demo control.
-
-### Scope
-
-Interactions are simulated against in-memory state in `lib/community.tsx`: reacting, saving, replying, starting a discussion (with a sample photograph in place of an upload) and opening member profiles all work and move the same counters the navigation reads, and all of it resets on reload. Nothing is sent, stored or authorised — real membership, moderation and authorization belong to the server, driven by the same verified payment event as course access.
-
 ## The Members' Lounge (`/compte/salons`)
 
-The community's private chat — *Salon des membres* / *Members' Lounge* — beside, not instead of, the Artist Community's feed of posts. Same door: an account with a training on it (`useCommunity().hasAccess`, the same rule and the same **Aperçu prototype** switch, reachable from the flask in the lounge's user panel). Without access, the page is an invitation (`LockedLounge`): the real lounge blurred behind one card, *Découvrir les formations*, and the way back to the account. The member-space sidebar carries both entries, each marked "accès avec une formation" when locked.
+The community's private chat — *Salon des membres* / *Members' Lounge*. The door: an account with an active course entitlement, or an active team member — asked of the database (`lounge_access()`, through `useCommunity().hasAccess`) and enforced by it on every read and write. Without access, the page is an invitation (`LockedLounge`): the lounge's channels and the outline of a conversation (no member's words) blurred behind one card, *Découvrir les formations*, and the way back to the account. The member-space sidebar carries both entries, each marked "accès avec une formation" when locked.
 
 Language lounges (English by default, French, German, Spanish; Italian and Portuguese announced in the switcher) with the same five channels each (introductions, general, inspiration, techniques & tips, business & growth), and private conversations that belong to the community, not to a lounge.
 
@@ -636,14 +602,16 @@ Desktop is three columns beside the rail — lounge sidebar | conversation | mem
 
 | Piece | Where |
 | --- | --- |
-| Fixtures (members, lounges, channels, messages, private conversations) | `data/communityChat.ts` — `minutesAgo` ages, mentions stored as `{ type: "mention", memberId }` tokens, message text written in the lounge's language (content, not UI) |
+| Shapes, lounges and channel names/topics (in each lounge's language) | `lib/communityChat/model.ts` — mentions stored as `{ type: "mention", memberId }` tokens |
+| Contract the screens read (`useChat()`) | `lib/communityChat/chatContext.ts`; `chatStore.tsx` picks the live or the mock provider |
+| Live store (Supabase) | `lib/communityChat/liveChatStore.tsx`; every call in `loungeApi.ts`; rows ↔ shapes in `loungeMapping.ts` (tested) |
+| Mock store (no Supabase: local preview, Playwright) | `lib/communityChat/mockChatStore.tsx` + fixtures `data/communityChat.ts` |
 | Pure rules (reactions, mention parsing and autocomplete, grouping, search) | `lib/communityChat/chatLogic.ts`, tested in `chatLogic.test.ts` |
-| State (one reducer: open the room of the address, send, react, mark read, mute, notifications derived from the rooms) | `lib/communityChat/chatStore.tsx`, mounted by the account zone |
 | Addresses | `lib/communityChat/loungeRoutes.ts`, tested in `loungeRoutes.test.ts` |
 | Screen and components | `screens/communityChat/MembersLounge.tsx`, `components/communityChat/` |
 | Copy | `i18n/locales/communityChat.{fr,en}.json`, under `lounge` |
 
-Simulated, in memory, reset on reload: sending (text, `@mentions`, emoji, images kept as object URLs in the tab), replies shown as a compact quote with a connector, reactions, unread counts and the "New" marker, muting, mark-as-read, the inbox (mentions, replies, reactions, private messages), search (messages, members, channels of the current lounge and the private conversations), member profiles, presence, and — prototype only — a typing indicator and a canned answer when you write privately to someone online (`DEMO_AUTO_REPLY`). Nothing is sent, stored or authorised. A live version needs tables for lounges, channels, messages, reactions, read markers and conversations with RLS on the same course entitlement, Realtime for delivery, private Storage for images, and moderation — none of it exists yet.
+**Live on Supabase** (2026-10-10, `supabase/README.md` *Members' Lounge* and decision 88): on entry the member row, the directory (name shown as first name + initial), the unread counts and the inbox; per room, the latest 100 messages with the member's reactions and signed image URLs (private `lounge-media` bucket); sending (text, `@mentions`, emoji, up to 4 images of 5 MB, uploaded then attached by `lounge_post_message`; the message shows "Envoi…" until the server took it, a refusal — rate limit, lost access — is said under the composer and the text is kept), replies, reactions (totals kept by the database), unread counts and the "New" marker, muting, mark-as-read, the inbox (mentions, replies, reactions from `lounge_notifications`; private messages from the unread counts), presence (heartbeat every minute, "invisible" stored). Realtime brings new messages, reaction totals and notifications. Search covers the rooms already loaded on the page. Not built: moderation (hide, report, block), editing/deleting one's message, typing indicator, older history, profile editing. In mock mode the fixtures and local state stand in (with the prototype's canned answer in private conversations).
 
 ## The administration area (`/admin`)
 
@@ -671,7 +639,7 @@ Without Supabase, sign in with `camille@globaltoothgems.com` / `toothgems2026`; 
 - `data/adminOrders.ts` — the back office's order model (types only; the mock book is gone). A separate model from the member's `data/orders.ts`, sharing its amounts, lines, discounts, parcels, refunds and addresses. See *Orders in the back office* above.
 - `lib/adminOrders.tsx` — the one place any order changes (Supabase only; without it the book is empty).
 - `lib/adminOrderFilters.ts` — search, filtering, sorting and paging as pure functions over URL state, the same convention as `lib/productFilters.ts`; the KPI row and the filter options come from the book itself.
-- `components/admin/` — the workspace's own primitives (rail, header, table, row, status badge, filters, form, media uploader, preview drawer, confirmation dialog, empty and loading states, form field, search input, category badge), plus the orders workspace's own pieces.
+- `components/admin/` — the workspace's own primitives (rail — `AdminSidebar`: dashboard and statistics, then *Ventes* (orders, customers, promotions, reviews), *Catalogue* (products, categories), *Academy* (training), *Administration* (users, settings); the collapse toggle beside the brand; at the foot the member space as a full row, store · language on one line, signing out last — header, table, row, status badge, filters, form, media uploader, preview drawer, confirmation dialog, empty and loading states, form field, search input, category badge), plus the orders workspace's own pieces.
 - `components/ui/Dialog.tsx` and `components/ui/Menu.tsx` — a modal with a focus trap and a keyboard-navigable dropdown, added for the orders screens. See the scope note below: they overlap with `components/admin/ConfirmationDialog.tsx`, `OverflowMenu.tsx` and `lib/useFocusTrap.ts` and should be consolidated onto those.
 
 ### Decisions worth knowing
@@ -895,8 +863,6 @@ Without the Supabase variables every domain runs on its mock store. With them, t
 
 - **Checkout extras.** Payment runs through Stripe (see *Cart and checkout*); gift card codes, promotion codes and the loyalty reward can be used in the cart. No confirmation e-mail is sent from the browser, and saving the address on the account is not offered.
 - **Academy.** Authoring, public pages and the learner side are on Supabase (phases A–C). Courses are bought through the cart (phase D, migration `20261002100000_course_checkout` not applied yet) or granted by hand (`/admin/formations/:id/acces`). The back office's course list still shows placeholder learner figures (`enrolled`, `completionRate`); the statistics screen reads real ones.
-- **Artist Community.** Fixtures and in-memory posting; access derived client-side from the courses on the account. Post-launch.
-- **Members' Lounge** (`/compte/salons`). UI prototype of the community chat: fixtures and in-memory messages, same client-side access rule as the Artist Community. No backend. Post-launch.
 - **Loyalty Club.** Live (2026-10-03). `lib/loyalty.tsx` reads the public rules (`loyalty_settings`) and the member's card (`loyalty_overview`, RLS-limited); `lib/loyaltyMapping.ts` derives the card state (unit-tested); `data/loyalty.ts` holds the types and the example cards of the marketing pages. The database awards the stamp when the Stripe webhook marks an order paid; the browser only reads. The cart banner counts shop goods only (no gift card, no course) and invites guests to sign in. The cart offers a checkbox to spend a completed card (`use_loyalty_reward` in the checkout request, previewed with `rewardDiscount`; the database refuses with `loyalty_reward_unavailable` when the card is gone or reserved). Not built: e-mail on stamp/reward.
 - **Security page:** data export and account deletion are simulated (they need backend jobs).
 - **Back-office statistics:** live, within the current schema (see "Statistics on Supabase"). A translation workflow (coverage, editor) is not built.

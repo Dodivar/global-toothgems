@@ -4,7 +4,7 @@ import { useEffect, useId, useLayoutEffect, useMemo, useRef, useState, type Keyb
 import { useTranslation } from "react-i18next";
 import { ImagePlus, Lock, SendHorizontal, Smile, X, CornerUpLeft } from "lucide-react";
 import clsx from "clsx";
-import { CHAT_VIEWER_ID, type ChatAttachment, type ChatMember } from "../../data/communityChat";
+import type { ChatAttachment, ChatMember } from "../../lib/communityChat/model";
 import { useChat } from "../../lib/communityChat/chatStore";
 import {
   activeMentionQuery,
@@ -19,7 +19,9 @@ import { ChatAvatar, Popover, RoleBadge, ToolButton, focusRing } from "./primiti
 const EMOJIS = ["😊", "😂", "🥰", "😍", "🙏", "👏", "🙌", "👍", "💪", "🤔", "😅", "😮", "✨", "💎", "💖", "💜", "💚", "🔥", "🌟", "🦷", "📸", "💅", "☕", "🎉"];
 
 const MAX_ATTACHMENTS = 4;
-const MAX_BYTES = 10 * 1024 * 1024;
+/** The `lounge-media` bucket's limit and types (migration `members_lounge`). */
+const MAX_BYTES = 5 * 1024 * 1024;
+const IMAGE_TYPES = ["image/jpeg", "image/png", "image/webp", "image/gif"];
 
 /**
  * The message composer: text, @mentions, emoji, images, and the reply it is
@@ -44,7 +46,10 @@ export function Composer() {
     composerFocus,
     typingMember,
     roomKey,
+    viewer,
   } = useChat();
+  /* One message at a time: the field stays as it is until the server took it. */
+  const [sending, setSending] = useState(false);
   const field = useRef<HTMLTextAreaElement>(null);
   const fileInput = useRef<HTMLInputElement>(null);
   const listId = useId();
@@ -71,8 +76,8 @@ export function Composer() {
   const mentionable = useMemo(() => {
     const list: ChatMember[] = [...serverMembers];
     if (currentConversation && !list.some((m) => m.id === currentConversation.member.id)) list.unshift(currentConversation.member);
-    return list.filter((m) => m.id !== CHAT_VIEWER_ID);
-  }, [serverMembers, currentConversation]);
+    return list.filter((m) => m.id !== viewer.id);
+  }, [serverMembers, currentConversation, viewer.id]);
 
   const mention = activeMentionQuery(draft, caret);
   const candidates = mention && mention.start !== dismissedAt ? mentionCandidates(mention.query, mentionable) : [];
@@ -124,12 +129,20 @@ export function Composer() {
     });
   };
 
-  const canSend = draft.trim().length > 0 || attachments.length > 0;
+  const canSend = !sending && (draft.trim().length > 0 || attachments.length > 0);
 
-  const submit = () => {
+  const submit = async () => {
     if (!canSend) return;
     const parts = draft.trim() ? parseComposerText(draft.trim(), mentionable) : [];
-    send(parts, attachments);
+    const sent = attachments;
+    setSending(true);
+    setError(null);
+    const result = await send(parts, sent);
+    setSending(false);
+    if (!result.ok) {
+      setError(t(result.reason === "rateLimited" ? "lounge.composer.rateLimited" : result.reason === "forbidden" ? "lounge.composer.forbidden" : "lounge.composer.failed"));
+      return;
+    }
     setPicked({ room: roomKey, list: [], error: null });
     setCaret(0);
   };
@@ -161,7 +174,7 @@ export function Composer() {
     }
     if (event.key === "Enter" && !event.shiftKey && !event.nativeEvent.isComposing) {
       event.preventDefault();
-      submit();
+      void submit();
     }
   };
 
@@ -170,7 +183,7 @@ export function Composer() {
     setError(null);
     const next: ChatAttachment[] = [];
     for (const file of Array.from(files)) {
-      if (!file.type.startsWith("image/")) {
+      if (!IMAGE_TYPES.includes(file.type)) {
         setError(t("lounge.composer.notImage"));
         continue;
       }
@@ -182,8 +195,8 @@ export function Composer() {
         setError(t("lounge.composer.tooMany"));
         break;
       }
-      /* Prototype: the image stays in this browser tab, nothing is uploaded. */
-      next.push({ kind: "image", src: URL.createObjectURL(file), name: file.name, alt: file.name });
+      /* A local preview until it is sent; the file itself is uploaded with the message. */
+      next.push({ kind: "image", src: URL.createObjectURL(file), name: file.name, alt: file.name, file });
     }
     setAttachments((list) => [...list, ...next]);
     if (fileInput.current) fileInput.current.value = "";
@@ -287,7 +300,7 @@ export function Composer() {
           <input
             ref={fileInput}
             type="file"
-            accept="image/*"
+            accept={IMAGE_TYPES.join(",")}
             multiple
             className="sr-only"
             tabIndex={-1}
@@ -357,8 +370,9 @@ export function Composer() {
 
           <button
             type="button"
-            onClick={submit}
+            onClick={() => void submit()}
             disabled={!canSend}
+            aria-busy={sending || undefined}
             aria-label={t("lounge.composer.send")}
             title={t("lounge.composer.send")}
             className={clsx(
