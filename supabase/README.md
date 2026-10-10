@@ -526,7 +526,7 @@ checkout (`create-checkout-session` accepts gift card lines); the cart sends up 
 `20261001200000_gift_card_staff_functions` (not applied yet) stops `extend_gift_card` / `cancel_gift_card` from
 returning the code. Suite: `tests/gift_cards_validation.sql` (GC1–GC7).
 
-**Built (2026-10-05) — delivering the code** (Resend, Edge Functions, decision 79; `_shared/email/giftCards.ts`, function `deliver-gift-cards`). Not yet deployed. Design:
+**Built (2026-10-05) — delivering the code** (Resend, Edge Functions, decision 79; `_shared/email/giftCards.ts`, function `deliver-gift-cards`). Deployed (2026-10-10). Design:
 
 ```
 Edge Function deliver-gift-cards (service role, verify_jwt = false, header x-internal-secret = EMAIL_INTERNAL_SECRET, called by pg_cron every 5 min;
@@ -1505,7 +1505,7 @@ VAT rates, shipping zones/rates mirroring the Settings prototype. Media rows ref
     - To add when the first e-mail ships: a `email_log` table (template, recipient hash, resend id, status, order or
       card id) with a unique key per business event, so a retried webhook cannot send an order e-mail twice.
     - Missing templates to seed: `gift_card_delivery`, `order_refunded` (and `course_enrolment` already exists).
-    - **Built (2026-10-05), not deployed:** `_shared/email/` (`render.ts`, `resend.ts`, `send.ts` =
+    - **Built (2026-10-05), deployed:** `_shared/email/` (`render.ts`, `resend.ts`, `send.ts` =
       `sendTemplatedEmail()`, `store.ts`, `mod.ts` = `emailDepsFromEnv()`, `orders.ts`, `giftCards.ts`, `notify.ts`),
       `_shared/internalAuth.ts`, the function `deliver-gift-cards`, and migrations `email_log` and
       `email_attempt_cap_gift_card_wording` (applied). After a payment (`stripe-webhook`, or `create-checkout-session`
@@ -1513,7 +1513,7 @@ VAT rates, shipping zones/rates mirroring the Settings prototype. Media rows ref
       (`order_confirmation:<order id>`), then the gift cards of the order, then the enrolment e-mail of each course it bought. It never throws and does nothing without
       `RESEND_API_KEY`. Limit: a confirmation that fails once is not retried by Stripe (the event is already
       processed); `email_log` keeps it as `failed` — a sweep of paid orders without a sent confirmation is to add.
-    - **`send-email` built (2026-10-05), not deployed:** `supabase/functions/send-email/` (`verify_jwt = false`,
+    - **`send-email` built (2026-10-05), deployed:** `supabase/functions/send-email/` (`verify_jwt = false`,
       `x-internal-secret`). Body `{template_key, to, locale, variables, event_key}`; allow-list of two templates
       (`contact_acknowledgement`: name, subject, ticket_number; `newsletter_confirmation`: confirm_url), exactly the
       template's own variables as non-empty short strings, locale fr/en/de, event key prefixed by the template
@@ -1527,7 +1527,7 @@ VAT rates, shipping zones/rates mirroring the Settings prototype. Media rows ref
       (AGENTS.md §4). The guest path therefore needs a small Edge Function (captcha / IP limit, then the RPC, then
       the e-mail) — a decision to confirm (captcha provider), together with the page behind the newsletter link
       (`newsletter_confirm(token)`).
-    - **`resend-webhook` built (2026-10-05), not deployed:** `supabase/functions/resend-webhook/`
+    - **`resend-webhook` built (2026-10-05), deployed:** `supabase/functions/resend-webhook/`
       (`verify_jwt = false`), Svix signature checked with Web Crypto in `_shared/svix.ts` (`svix-id` / `svix-timestamp` /
       `svix-signature`, HMAC-SHA256 under the base64 part of `RESEND_WEBHOOK_SECRET`, several `v1,` entries accepted for
       rotation, 5 minutes of tolerance, no dependency). `email.delivered|opened|bounced|complained` →
@@ -1541,7 +1541,7 @@ VAT rates, shipping zones/rates mirroring the Settings prototype. Media rows ref
       consent records are left alone (decision to confirm: a complaint could also revoke `marketing_email`).
       A webhook arriving before `email_log_finish` stored the provider id would not match; it is a window of
       milliseconds against seconds of delivery time.
-    - **Shipping, course enrolment and refund e-mails built (2026-10-05), not deployed:** one sweep, the function
+    - **Shipping, course enrolment and refund e-mails built (2026-10-05), deployed:** one sweep, the function
       `send-pending-emails` (`verify_jwt = false`, `x-internal-secret`, pg_cron every 5 minutes, body `{limit}` optional),
       `_shared/email/events.ts`. Mechanism: no trigger and nothing the browser or the back office must call — the SQL
       functions of migration `email_pending_events` list the source rows (shipment `shipped`, `purchase` entitlement, refund
@@ -1563,8 +1563,7 @@ VAT rates, shipping zones/rates mirroring the Settings prototype. Media rows ref
         credited back onto gift cards (`refund_to_gift_cards`) is not in that table and sends nothing: the template speaks
         of the bank; a wording for it is to write if wanted.
       (Cron: scheduled by migration `email_cron_jobs`, no manual step beyond the Vault secret.) Former manual form: `select cron.schedule('send-pending-emails', '*/5 * * * *', $$ select net.http_post(url := 'https://<project-ref>.supabase.co/functions/v1/send-pending-emails', headers := jsonb_build_object('x-internal-secret', (select decrypted_secret from vault.decrypted_secrets where name = 'email_internal_secret')), body := '{}'::jsonb) $$);`
-    - **Still to build:** the back-office resend of a card. To do by hand: the Resend domain and the secrets, then
-      deploy the functions (`deliver-gift-cards`, `send-email`, `resend-webhook`, `send-pending-emails`, and redeploy
+    - **Operational status (2026-10-10):** the Resend domain and all secrets are configured by the user and the e-mail functions are deployed on the project (`deliver-gift-cards`, `send-email`, `resend-webhook`, `send-pending-emails`); no agent has yet verified a real send end to end. Remaining: redeploy `stripe-webhook` and `create-checkout-session` so they bundle `_shared/documents/` (invoice and credit note attachments). **Still to build:** the back-office resend of a card. Original checklist, kept for reference (deploy the functions (`deliver-gift-cards`, `send-email`, `resend-webhook`, `send-pending-emails`, and redeploy
       `stripe-webhook` and `create-checkout-session` — since 2026-10-09 they also bundle `_shared/documents/` for the
       invoice and credit note attachments), declare the `resend-webhook` endpoint in Resend (events delivered, opened, bounced, complained), and make sure the Vault secret
       `email_internal_secret` holds the same value as `EMAIL_INTERNAL_SECRET` (the crons themselves are in migration `email_cron_jobs`; the manual form below is kept for reference):
