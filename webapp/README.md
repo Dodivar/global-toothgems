@@ -349,13 +349,11 @@ test card 4242 4242 4242 4242 (`ALLOWED_RETURN_ORIGINS` must include `http://loc
 src/
   screens/          One component per screen (Home, Shop, ProductDetail, Cart, Academy, CourseDetail, Lesson, Login)
   screens/account/  The member area: sidebar layout + one component per section
-  screens/community/ The Artist Community: its own layout + one component per screen
   screens/legal/    Help centre, FAQ, contact and about pages
   data/legal/       Legal and help content (bilingual data rendered by components/legal/)
   components/ui/     Design-system primitives (Button, Badge, ProductCard, CourseCard, QuizQuestion, ...)
   components/account/ Dashboard pieces (stat tile, course row, certificate card, order card)
   components/academy/ The training detail page: hero, curriculum accordion, assessment, diploma, community, shared primitives
-  components/community/ Forum pieces (navigation, discussion card, showcase card, reactions, member card, composer, locked preview)
   components/reviews/ Customer reviews: stars, badges, review card, section, form, request, overlays; admin/ holds the moderation workspace
   components/studio/ The 3D Studio mockups (and editor/, the working editor UI): smile canvas, rendered gems, interactive Studio window, feature cards, media placeholders, inspiration boards, steps, pricing card, FAQ, home teaser
   components/loyalty/ The Loyalty Club: stamp, card, progress, reward, steps, journey, FAQ, checkout banner
@@ -590,41 +588,9 @@ The builder's media fields (`components/admin/training/MediaPicker.tsx`) only **
 
 With Supabase, files go to the private `training-media` bucket under `media/<id>/` through resumable TUS uploads (`tus-js-client`, 6 MB chunks, direct storage hostname), each with a `training_media` row; the back office displays them through signed URLs renewed every 45 minutes (`lib/trainingMedia.tsx`). Course fields hold the media **id**, never a URL: every screen resolves it with `useTrainingMedia().urlOf()` (`components/admin/training/MediaImage.tsx`, the learner's `LessonBlocks`/`QuizPlayer`). In the prototype the library is the seeded photographs and uploads stay in the page.
 
-## The Artist Community (`/compte/communaute`)
-
-The private forum reserved for members who own a training. It is part of the member area — it is reached from the account sidebar and it lives under `/compte` — but it carries its own navigation rather than nesting inside the account sidebar, because two levels of vertical navigation on one screen is what makes forum software feel like software.
-
-| Route | Screen |
-| --- | --- |
-| `/compte/communaute` | Community home — welcome, community figures, the discussions of the day, the wall of recent creations, the channels, and a contextual column (who is around, artists to welcome, the guidelines) |
-| `/compte/communaute/canal/:channelId` | One channel: a reading list, or the image-led wall in *Vos créations*, with Latest / Most replies / Unanswered |
-| `/compte/communaute/discussion/:discussionId` | One thread: opening post, reactions, replies, reply composer, author card |
-| `/compte/communaute/activite/:view` | Your activity: `discussions`, `reponses`, `enregistrees` |
-| `/compte/communaute/membres` | The artist directory |
-| `/compte/communaute/charte` | Community guidelines |
-
-Eight channels (general chat, show your work, techniques, training help, inspiration, tools & materials, business, introductions) are declared in `data/community.ts`, together with the members, the discussions and their replies. A showcase post is a discussion like any other, with an image and a short body — the wall is a presentation of the same object, so a creation opens, reacts and replies through the same code path as a question about adhesive.
-
-Ages in that file are stored as `minutesAgo` rather than as dates, so a prototype opened again months later still reads "il y a 2 h" instead of showing a room whose last message is a season old.
-
-### Access
-
-Forum access is derived, never stored: the community is what a training purchase unlocks, so the rule is "at least one course on the account", read from `lib/progress.tsx`. `CommunityLayout` decides it once, so a deep link into a thread meets the same door as the home page.
-
-Both states are designed:
-
-- **With access** — the full community.
-- **Without access** — the account sidebar still shows *Communauté artistes*, marked with a lock, a pastel wash and the words "accès avec une formation" (never by the icon alone, and never disabled). It leads to a preview: the real figures and four real discussion titles shown in the clear, the discussion cards and the wall behind an elegant overlay, and one access card — *La communauté des artistes vous attend* — with **Découvrir les formations** and a way back to the account. The blurred preview is `inert` and `aria-hidden`, so it is never a keyboard trap.
-
-The seeded account owns two courses, so the locked state would be unreachable in a review. A visible, labelled **Aperçu prototype** switch in the community sidebar forces either state, exactly like the loyalty card's demo control.
-
-### Scope
-
-Interactions are simulated against in-memory state in `lib/community.tsx`: reacting, saving, replying, starting a discussion (with a sample photograph in place of an upload) and opening member profiles all work and move the same counters the navigation reads, and all of it resets on reload. Nothing is sent, stored or authorised — real membership, moderation and authorization belong to the server, driven by the same verified payment event as course access.
-
 ## The Members' Lounge (`/compte/salons`)
 
-The community's private chat — *Salon des membres* / *Members' Lounge* — beside, not instead of, the Artist Community's feed of posts. Same door: an account with a training on it (`useCommunity().hasAccess`, the same rule and the same **Aperçu prototype** switch, reachable from the flask in the lounge's user panel). Without access, the page is an invitation (`LockedLounge`): the real lounge blurred behind one card, *Découvrir les formations*, and the way back to the account. The member-space sidebar carries both entries, each marked "accès avec une formation" when locked.
+The community's private chat — *Salon des membres* / *Members' Lounge*. Same door: an account with a training on it (`useCommunity().hasAccess`, the same rule and the same **Aperçu prototype** switch, reachable from the flask in the lounge's user panel). Without access, the page is an invitation (`LockedLounge`): the real lounge blurred behind one card, *Découvrir les formations*, and the way back to the account. The member-space sidebar carries both entries, each marked "accès avec une formation" when locked.
 
 Language lounges (English by default, French, German, Spanish; Italian and Portuguese announced in the switcher) with the same five channels each (introductions, general, inspiration, techniques & tips, business & growth), and private conversations that belong to the community, not to a lounge.
 
@@ -895,8 +861,7 @@ Without the Supabase variables every domain runs on its mock store. With them, t
 
 - **Checkout extras.** Payment runs through Stripe (see *Cart and checkout*); gift card codes, promotion codes and the loyalty reward can be used in the cart. No confirmation e-mail is sent from the browser, and saving the address on the account is not offered.
 - **Academy.** Authoring, public pages and the learner side are on Supabase (phases A–C). Courses are bought through the cart (phase D, migration `20261002100000_course_checkout` not applied yet) or granted by hand (`/admin/formations/:id/acces`). The back office's course list still shows placeholder learner figures (`enrolled`, `completionRate`); the statistics screen reads real ones.
-- **Artist Community.** Fixtures and in-memory posting; access derived client-side from the courses on the account. Post-launch.
-- **Members' Lounge** (`/compte/salons`). UI prototype of the community chat: fixtures and in-memory messages, same client-side access rule as the Artist Community. No backend. Post-launch.
+- **Members' Lounge** (`/compte/salons`). UI prototype of the community chat: fixtures and in-memory messages, access derived client-side from the courses on the account. No backend. Post-launch.
 - **Loyalty Club.** Live (2026-10-03). `lib/loyalty.tsx` reads the public rules (`loyalty_settings`) and the member's card (`loyalty_overview`, RLS-limited); `lib/loyaltyMapping.ts` derives the card state (unit-tested); `data/loyalty.ts` holds the types and the example cards of the marketing pages. The database awards the stamp when the Stripe webhook marks an order paid; the browser only reads. The cart banner counts shop goods only (no gift card, no course) and invites guests to sign in. The cart offers a checkbox to spend a completed card (`use_loyalty_reward` in the checkout request, previewed with `rewardDiscount`; the database refuses with `loyalty_reward_unavailable` when the card is gone or reserved). Not built: e-mail on stamp/reward.
 - **Security page:** data export and account deletion are simulated (they need backend jobs).
 - **Back-office statistics:** live, within the current schema (see "Statistics on Supabase"). A translation workflow (coverage, editor) is not built.

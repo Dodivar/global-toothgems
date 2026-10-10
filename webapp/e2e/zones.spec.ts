@@ -45,9 +45,6 @@ const MEMBER_SCREENS: { path: string; heading: RegExp }[] = [
   { path: "/compte/securite", heading: /^Sécurité et confidentialité$/ },
   { path: "/compte/fidelite", heading: /^Ma carte de fidélité$/ },
   { path: "/compte/avis", heading: /^Mes avis$/ },
-  { path: "/compte/communaute", heading: /^Bienvenue dans la communauté des artistes$/ },
-  { path: "/compte/communaute/membres", heading: /^Les artistes de la communauté$/ },
-  { path: "/compte/communaute/charte", heading: /^Notre façon de faire$/ },
   { path: "/compte/salons/en/discussion", heading: /^Salon des membres$/ },
   { path: "/compte/salons/messages/emma", heading: /^Salon des membres$/ },
 ];
@@ -60,7 +57,7 @@ for (const { path, heading } of MEMBER_SCREENS) {
   });
 }
 
-test("member space: the sidebar and the community's links are client-side navigations", async ({ page, problems }) => {
+test("member space: the sidebar's links are client-side navigations", async ({ page, problems }) => {
   await signInMember(page);
   await open(page, "/compte");
   await dismissCookieBanner(page);
@@ -77,11 +74,6 @@ test("member space: the sidebar and the community's links are client-side naviga
     expect(await marker()).toBe(1);
   };
   await follow('aside a[href="/compte/commandes"]');
-  await follow('aside a[href="/compte/communaute"]');
-  // The community's pages without a smoke test of their own until phase 5.
-  await follow('main a[href^="/compte/communaute/canal/"]');
-  await follow('main a[href^="/compte/communaute/discussion/"]');
-  await follow('main a[href^="/compte/communaute/activite/"]');
   await page.waitForLoadState("networkidle");
   expect(problems).toEqual([]);
 });
@@ -99,7 +91,7 @@ test("member space: the lounge's bare address opens a room, and channels have th
   expect(problems).toEqual([]);
 });
 
-for (const path of ["/compte/nimporte-quoi", "/compte/communaute/nimporte-quoi", "/compte/salons/nimporte-quoi", "/compte/salons/en/nimporte-quoi"]) {
+for (const path of ["/compte/nimporte-quoi", "/compte/communaute", "/compte/communaute/membres", "/compte/salons/nimporte-quoi", "/compte/salons/en/nimporte-quoi"]) {
   test(`member space: ${path} is the 404 screen inside the shell`, async ({ page, problems }) => {
     await signInMember(page);
     await expectScreen(page, path, /Oups, cette page a fait un petit détour/);
