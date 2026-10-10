@@ -35,7 +35,7 @@ import { useFormat } from "../../lib/format";
 import { useFocusTrap } from "../../lib/useFocusTrap";
 import { LEGAL_PATHS } from "../../data/legal/routes";
 import { NewTag } from "../studio/NewTag";
-import { MEMBER_SPACE_EXPLORE } from "./clientSpaces";
+import { MEMBER_SPACE_EXPLORE, STUDIO_SHORTCUTS } from "./clientSpaces";
 import monogram from "../../assets/monogram-blue.png";
 import logoBlack from "../../assets/logo-wordmark-black.png";
 
@@ -51,8 +51,10 @@ import logoBlack from "../../assets/logo-wordmark-black.png";
  * where they go from it.
  *
  * The member's sections are grouped by what they come for — learning (the
- * lounge, certificates), purchases (orders, loyalty, reviews, the cart) and
- * the account itself (profile, security) — under the dashboard. The foot keeps
+ * lounge, certificates), the 3D Studio (its workshop, creations and Gem
+ * Groups, which open the Studio's own full-screen workspace), purchases
+ * (orders, loyalty, reviews, the cart) and the account itself (profile,
+ * security) — under the dashboard. The foot keeps
  * one row per kind of move: the back office for staff, the small utilities
  * (help, cookies, language) on one line, then signing out alone at the bottom.
  *
@@ -91,6 +93,8 @@ interface SectionItem {
   community?: boolean;
   /** The Members' Lounge: carries its unread activity. */
   lounge?: boolean;
+  /** Left off the lounge's rail, which keeps one entry per destination. */
+  offRail?: boolean;
 }
 
 interface SectionGroup {
@@ -100,6 +104,8 @@ interface SectionGroup {
   items: SectionItem[];
   /** The purchases group ends with the cart, which is not a section of the space. */
   withCart?: boolean;
+  /** Marked "New" beside its heading, like the Studio everywhere else. */
+  isNew?: boolean;
 }
 
 const GROUPS: SectionGroup[] = [
@@ -114,6 +120,19 @@ const GROUPS: SectionGroup[] = [
       { to: "/compte/salons", labelKey: "lounge.navEntry", shortKey: "lounge", icon: MessagesSquare, community: true, lounge: true },
       { to: "/compte/attestations", labelKey: "account.navCertificates", shortKey: "certificates", icon: Award },
     ],
+  },
+  {
+    id: "studio",
+    labelKey: "nav.studio",
+    isNew: true,
+    items: STUDIO_SHORTCUTS.map((shortcut) => ({
+      to: shortcut.to,
+      labelKey: shortcut.labelKey,
+      shortKey: shortcut.shortKey,
+      icon: shortcut.icon,
+      end: shortcut.id === "workshop",
+      offRail: shortcut.id !== "workshop",
+    })),
   },
   {
     id: "purchases",
@@ -136,6 +155,7 @@ const GROUPS: SectionGroup[] = [
 ];
 
 const SECTIONS: SectionItem[] = GROUPS.flatMap((group) => group.items);
+const RAIL_SECTIONS = SECTIONS.filter((item) => !item.offRail);
 
 /** The first section of every group but the first: the lounge rail draws a divider above it. */
 const GROUP_STARTS = new Set(GROUPS.slice(1).map((group) => group.items[0].to));
@@ -309,8 +329,9 @@ function SidebarBody({ onNavigate, closeButton }: { onNavigate?: () => void; clo
             return (
               <div key={group.id} className="grid gap-1">
                 {group.labelKey && (
-                  <span id={headingId} className="gt-eyebrow px-3">
+                  <span id={headingId} className="gt-eyebrow flex items-center gap-2 px-3">
                     {t(group.labelKey)}
+                    {group.isNew && <NewTag />}
                   </span>
                 )}
                 <ul aria-labelledby={group.labelKey ? headingId : undefined} className="m-0 grid list-none gap-0.5 p-0">
@@ -496,7 +517,7 @@ function Rail({ onExpand, expanded }: { onExpand: () => void; expanded: boolean 
       </Link>
 
       <ul className="m-0 grid w-full list-none gap-0.5 px-1.5 py-0">
-        {SECTIONS.map((item) => (
+        {RAIL_SECTIONS.map((item) => (
           <li key={item.to} className={clsx(GROUP_STARTS.has(item.to) && "mt-1 border-t border-[var(--border-subtle)] pt-1")}>
             <NavLink
               to={item.to}

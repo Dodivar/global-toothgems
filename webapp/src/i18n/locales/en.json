@@ -37,6 +37,11 @@
     "studio": "Studio 3D",
     "new": "New",
     "studioSub": "Design your own compositions",
+    "studioWorkshop": "Open the workshop",
+    "studioWorkshopSub": "Compose a design in 3D",
+    "studioGroups": "My groups",
+    "openPanelStudio": "Show the 3D Studio shortcuts",
+    "viewAllStudio": "Discover the 3D Studio",
     "studioAria": "Studio 3D, new",
     "mySpace": "My space",
     "explore": "Explore"
@@ -1087,7 +1092,10 @@
         "profile": "Profile",
         "security": "Security",
         "menu": "Menu",
-        "cart": "Cart"
+        "cart": "Cart",
+        "studio": "Workshop",
+        "creations": "Creations",
+        "groups": "Groups"
       },
       "groupLearning": "Learning",
       "groupPurchases": "Purchases",

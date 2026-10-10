@@ -37,6 +37,11 @@
     "studio": "Studio 3D",
     "new": "Nouveau",
     "studioSub": "Imaginez vos compositions",
+    "studioWorkshop": "Ouvrir l’atelier",
+    "studioWorkshopSub": "Composer un design en 3D",
+    "studioGroups": "Mes groupes",
+    "openPanelStudio": "Afficher les accès au Studio 3D",
+    "viewAllStudio": "Découvrir le Studio 3D",
     "studioAria": "Studio 3D, nouveau",
     "mySpace": "Mon espace",
     "explore": "Explorer"
@@ -1087,7 +1092,10 @@
         "profile": "Profil",
         "security": "Sécurité",
         "menu": "Menu",
-        "cart": "Panier"
+        "cart": "Panier",
+        "studio": "Atelier",
+        "creations": "Créations",
+        "groups": "Groupes"
       },
       "groupLearning": "Apprendre",
       "groupPurchases": "Achats",
