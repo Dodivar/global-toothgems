@@ -1,10 +1,11 @@
 import type { Localized } from "./types";
-import type { AvatarTone } from "./community";
+/** Tint of a member's avatar. */
+export type AvatarTone = "blue" | "emerald" | "fuchsia" | "ink";
 import { photo } from "../lib/images";
 
 /**
  * Mock content for the Members' Lounge (`/compte/salons`), the community's
- * chat space — distinct from the Artist Community forum (`data/community.ts`).
+ * chat space.
  *
  * Prototype fixtures, static and read only: nothing here is user data. The
  * shape is the one a backend would serve, so the screens can switch to it
