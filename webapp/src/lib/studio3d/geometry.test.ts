@@ -12,6 +12,9 @@ const PHOTO_ASPECT: [StudioShape, number][] = [
   ["heart", 1.18],
   ["snake", 0.573],
   ["dachshund", 1.432],
+  ["bolt", 0.565],
+  ["cherries", 0.827],
+  ["open-heart", 1.082],
 ];
 
 function extent(shape: StudioShape) {
@@ -44,6 +47,18 @@ describe("gem outlines traced from the shop photos", () => {
         else expect(normal.z).toBeGreaterThanOrEqual(-1e-9);
       }
     }
+  });
+
+  it.each([
+    // the open heart's middle, and the gap between the cherries' stems above the fruit
+    ["open-heart", 0, 0],
+    ["cherries", 0.15, -0.1],
+  ] as [StudioShape, number, number][])("%s leaves its opening empty", (shape, x, y) => {
+    const { footprint } = getJewelTemplate(shape);
+    const centre = extent(shape).getCenter(new THREE.Vector3());
+    // template coordinates are centred on the bounding box, as the traced outlines are
+    expect(footprintCovers(footprint, x - centre.x, y - centre.y)).toBe(false);
+    expect(footprintCovers(footprint, -centre.x, -0.85 - centre.y)).toBe(true);
   });
 
   it.each([
