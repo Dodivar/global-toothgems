@@ -4,26 +4,23 @@ import { useTranslation } from "react-i18next";
 import { ArrowLeft, ArrowRight, Check, LockKeyhole } from "lucide-react";
 import clsx from "clsx";
 import { Link } from "../../lib/navigation";
-import { CHAT_SERVERS, getChatMember, type ChatMember } from "../../data/communityChat";
-import { AccessDemoSwitch } from "./AccessDemoSwitch";
-import { ChatAvatar, focusRing } from "./primitives";
+import { CHANNEL_KEYS, DEFAULT_SERVER, catalogChannel } from "../../lib/communityChat/model";
+import { focusRing } from "./primitives";
 import { ChannelIcon } from "./channelIcons";
 
 /**
  * The Lounge, seen from outside: an invitation, not an error.
  *
- * Behind the card, the real lounge — its channels and the first lines of a
- * real conversation — softened rather than replaced by a texture, so what is
- * on offer is visible. The preview is `inert` and hidden from assistive
+ * Behind the card, the lounge's shape — its real channels and the outline
+ * of a conversation (no member's words: a visitor without access reads
+ * nothing of the lounge) — softened rather than replaced by a texture, so
+ * what is on offer is visible. The preview is `inert` and hidden from assistive
  * technology; the card says the same thing in words. One way in (a
  * training), one way back (the member space), nothing disabled.
  */
 export function LockedLounge() {
   const { t } = useTranslation();
-  const lounge = CHAT_SERVERS[0];
-  const general = lounge.channels.find((c) => c.key === "general") ?? lounge.channels[0];
-  const preview = general.messages.slice(0, 4);
-  const online = lounge.memberIds.map((id) => getChatMember(id)).filter((m): m is ChatMember => Boolean(m) && m!.presence !== "offline");
+  const channels = CHANNEL_KEYS.map((key) => catalogChannel(DEFAULT_SERVER, key));
 
   return (
     <div className="relative min-h-[calc(100dvh-3.5rem)] overflow-hidden bg-[var(--surface-page)] lg:min-h-[100dvh]">
@@ -33,7 +30,7 @@ export function LockedLounge() {
       <div inert aria-hidden="true" className="pointer-events-none absolute inset-0 flex select-none opacity-70 blur-[3px]">
         <div className="hidden w-[248px] flex-none border-r border-[var(--border-subtle)] bg-[var(--surface-chrome)] p-4 md:block">
           <div className="mb-4 h-14 rounded-[var(--radius-md)] bg-white/80" />
-          {lounge.channels.map((channel) => (
+          {channels.map((channel) => (
             <div key={channel.id} className="flex items-center gap-2.5 px-2 py-2 text-[14px] text-[var(--text-muted)]">
               <ChannelIcon channelKey={channel.key} size={16} />
               {channel.name}
@@ -41,19 +38,16 @@ export function LockedLounge() {
           ))}
         </div>
         <div className="flex-1 bg-white px-6 pt-20">
-          {preview.map((message) => {
-            const author = getChatMember(message.authorId);
-            return author ? (
-              <div key={message.id} className="mb-6 flex gap-3">
-                <ChatAvatar member={author} size="md" />
-                <div className="grid gap-1.5">
-                  <span className="text-[14px] font-bold text-[var(--text-primary)]">{author.name}</span>
-                  <span className="h-2.5 w-[min(420px,60vw)] rounded-full bg-[var(--gt-ink-200)]" />
-                  <span className="h-2.5 w-[min(300px,45vw)] rounded-full bg-[var(--gt-ink-100)]" />
-                </div>
+          {(["bg-[var(--gt-blue-200)]", "bg-[var(--gt-emerald-300)]", "bg-[var(--gt-fuchsia-300)]", "bg-[var(--gt-ink-200)]"] as const).map((tint, index) => (
+            <div key={tint} className="mb-6 flex gap-3">
+              <span className={clsx("h-10 w-10 flex-none rounded-full", tint)} />
+              <div className="grid gap-1.5">
+                <span className="h-3 w-28 rounded-full bg-[var(--gt-ink-300)]" />
+                <span className={clsx("h-2.5 rounded-full bg-[var(--gt-ink-200)]", index % 2 ? "w-[min(300px,45vw)]" : "w-[min(420px,60vw)]")} />
+                <span className="h-2.5 w-[min(240px,40vw)] rounded-full bg-[var(--gt-ink-100)]" />
               </div>
-            ) : null;
-          })}
+            </div>
+          ))}
         </div>
       </div>
       <div aria-hidden="true" className="absolute inset-0 bg-[radial-gradient(ellipse_at_center,rgba(244,248,252,.7),rgba(244,248,252,.25)_75%)]" />
@@ -83,17 +77,6 @@ export function LockedLounge() {
             ))}
           </ul>
 
-          <div className="flex items-center gap-3">
-            <span aria-hidden="true" className="flex -space-x-2">
-              {online.slice(0, 5).map((member) => (
-                <span key={member.id} className="rounded-full ring-2 ring-white">
-                  <ChatAvatar member={member} size="sm" />
-                </span>
-              ))}
-            </span>
-            <span className="text-[13px] font-semibold text-[var(--text-muted)]">{t("lounge.locked.online", { count: online.length })}</span>
-          </div>
-
           <div className="flex flex-wrap items-center gap-3">
             <Link
               to="/academy"
@@ -114,8 +97,6 @@ export function LockedLounge() {
             </Link>
           </div>
           <p className="m-0 text-[12.5px] text-[var(--text-muted)]">{t("lounge.locked.note")}</p>
-
-          <AccessDemoSwitch />
         </section>
       </div>
     </div>

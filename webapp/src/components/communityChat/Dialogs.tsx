@@ -5,7 +5,7 @@ import { useTranslation } from "react-i18next";
 import { AtSign, CheckCheck, Inbox, UserRound, GraduationCap, Heart, Lock, MapPin, MessageCircle, Reply, Search, SearchX } from "lucide-react";
 import clsx from "clsx";
 import { Link } from "../../lib/navigation";
-import { CHAT_SERVERS, CHAT_VIEWER_ID, type ChatMember } from "../../data/communityChat";
+import { memberOfConversation, type ChatMember } from "../../lib/communityChat/model";
 import { pick } from "../../data/types";
 import { useChat, type ChatNotification, type NotificationKind } from "../../lib/communityChat/chatStore";
 import { mentionCandidates, normalize, plainText, searchCommunity, timestampOf, type ChatRoom } from "../../lib/communityChat/chatLogic";
@@ -25,7 +25,7 @@ const sectionTitle = "m-0 text-[10.5px] font-bold uppercase tracking-[var(--trac
  */
 export function ProfileDialog({ memberId, onClose }: { memberId: string; onClose: () => void }) {
   const { t, i18n } = useTranslation();
-  const { memberOf, openConversationWith, mention, room } = useChat();
+  const { memberOf, openConversationWith, mention, room, servers, viewer } = useChat();
   const { closeNav } = useLoungeUi();
   const { monthYear, locale } = useChatTime();
   const countryName = useCountryName();
@@ -33,8 +33,9 @@ export function ProfileDialog({ memberId, onClose }: { memberId: string; onClose
   const formatCount = (value: number) => new Intl.NumberFormat(locale).format(value);
   const member = memberOf(memberId);
   if (!member) return null;
-  const isSelf = member.id === CHAT_VIEWER_ID;
-  const lounges = member.languages.map((id) => CHAT_SERVERS.find((s) => s.id === id)).filter((s) => s !== undefined);
+  const isSelf = member.id === viewer.id;
+  const lounges = member.languages.map((id) => servers.find((s) => s.id === id)).filter((s) => s !== undefined);
+  const trainingLabel = (training: string) => t(`lounge.trainings.${training}`, { defaultValue: training });
 
   return (
     <ChatDialog titleId={titleId} onClose={onClose} width="400px">
@@ -67,16 +68,20 @@ export function ProfileDialog({ memberId, onClose }: { memberId: string; onClose
           )}
         </div>
 
-        <p className="m-0 text-[14px] leading-relaxed text-[var(--text-body)]">{isSelf ? t("lounge.profile.selfNote") : pick(member.bio, i18n.language)}</p>
+        {(isSelf || member.bio) && (
+          <p className="m-0 text-[14px] leading-relaxed text-[var(--text-body)]">
+            {isSelf ? t("lounge.profile.selfNote") : member.bio ? pick(member.bio, i18n.language) : null}
+          </p>
+        )}
 
-        {!isSelf && (
+        {!isSelf && member.trainings.length > 0 && (
           <section className="grid gap-2">
             <h3 className={sectionTitle}>{t("lounge.profile.trainings")}</h3>
             <ul className="m-0 flex list-none flex-wrap gap-1.5 p-0">
               {member.trainings.map((training) => (
                 <li key={training} className="inline-flex items-center gap-1.5 rounded-[var(--radius-pill)] border border-[var(--gt-emerald-300)] bg-[var(--gt-emerald-50)] px-2.5 py-1 text-[12px] font-semibold text-[var(--gt-emerald-600)]">
                   <GraduationCap size={13} aria-hidden="true" />
-                  {t(`lounge.trainings.${training}`)}
+                  {trainingLabel(training)}
                 </li>
               ))}
             </ul>
@@ -98,10 +103,10 @@ export function ProfileDialog({ memberId, onClose }: { memberId: string; onClose
         {!isSelf && (
           <section className="grid gap-2">
             <h3 className={sectionTitle}>{t("lounge.profile.activity")}</h3>
-            <dl className="m-0 grid grid-cols-3 gap-2 text-center">
+            <dl className={clsx("m-0 grid gap-2 text-center", member.helpfulCount === undefined ? "grid-cols-2" : "grid-cols-3")}>
               {[
                 [t("lounge.profile.statMessages"), formatCount(member.messageCount)],
-                [t("lounge.profile.statHelpful"), formatCount(member.helpfulCount)],
+                ...(member.helpfulCount === undefined ? [] : [[t("lounge.profile.statHelpful"), formatCount(member.helpfulCount)]]),
                 [t("lounge.profile.statSince"), monthYear(member.joined)],
               ].map(([label, value]) => (
                 <div key={label} className="grid gap-0.5 rounded-[var(--radius-md)] bg-[var(--surface-brand-wash)] px-2 py-2.5">
@@ -182,7 +187,7 @@ function MemberLine({ member, trailing }: { member: ChatMember; trailing?: React
           {member.role && <RoleBadge role={member.role} />}
         </span>
         <span className="truncate text-[12px] text-[var(--text-muted)]">
-          {member.city}, {countryName(member.country)} · {t(`lounge.presence.${member.presence}`)}
+          {[member.city, member.country ? countryName(member.country) : undefined, t(`lounge.presence.${member.presence}`)].filter(Boolean).join(" · ")}
         </span>
       </span>
       {trailing}
@@ -192,11 +197,11 @@ function MemberLine({ member, trailing }: { member: ChatMember; trailing?: React
 
 export function NewMessageDialog({ onClose }: { onClose: () => void }) {
   const { t } = useTranslation();
-  const { allMembers, conversations, openConversationWith } = useChat();
+  const { allMembers, conversations, openConversationWith, viewer } = useChat();
   const { closeNav } = useLoungeUi();
   const titleId = useId();
   const [query, setQuery] = useState("");
-  const results = mentionCandidates(query, allMembers.filter((m) => m.id !== CHAT_VIEWER_ID), 50).sort((a, b) => {
+  const results = mentionCandidates(query, allMembers.filter((m) => m.id !== viewer.id), 50).sort((a, b) => {
     const rank = { online: 0, away: 1, offline: 2 } as const;
     return rank[a.presence] - rank[b.presence] || a.name.localeCompare(b.name);
   });
@@ -484,7 +489,7 @@ const KIND_ICON = { mention: AtSign, reply: Reply, reaction: Heart, dm: MessageC
 
 export function InboxDialog({ onClose }: { onClose: () => void }) {
   const { t } = useTranslation();
-  const { notifications, readNotifications, openRoom, memberOf, nameOf, markRead } = useChat();
+  const { notifications, readNotifications, openRoom, memberOf, nameOf, markRead, servers } = useChat();
   const { closeNav } = useLoungeUi();
   const { short } = useChatTime();
   const now = useNow();
@@ -494,9 +499,9 @@ export function InboxDialog({ onClose }: { onClose: () => void }) {
   const unread = notifications.filter((n) => n.unread);
 
   const roomLabel = (notification: ChatNotification) => {
-    if (notification.room.kind === "dm") return nameOf(notification.actorId);
+    if (notification.room.kind === "dm") return nameOf(memberOfConversation(notification.room.conversationId));
     const channelId = notification.room.channelId;
-    const lounge = CHAT_SERVERS.find((s) => s.id === notification.serverId);
+    const lounge = servers.find((s) => s.id === notification.serverId);
     const channel = lounge?.channels.find((c) => c.id === channelId);
     return [lounge?.name, channel?.name].filter(Boolean).join(" · ");
   };

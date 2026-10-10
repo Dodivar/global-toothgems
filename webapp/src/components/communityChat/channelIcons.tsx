@@ -1,5 +1,5 @@
 import { Gem, HeartHandshake, Lightbulb, MessagesSquare, TrendingUp, type LucideIcon } from "lucide-react";
-import type { ChannelKey } from "../../data/communityChat";
+import type { ChannelKey } from "../../lib/communityChat/model";
 
 /**
  * One icon per channel, the same in every language lounge — a member who

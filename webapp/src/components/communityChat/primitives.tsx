@@ -11,8 +11,7 @@ import {
 import { useTranslation } from "react-i18next";
 import { X, type LucideIcon } from "lucide-react";
 import clsx from "clsx";
-import type { ChatMember, Presence, ChatRole } from "../../data/communityChat";
-import type { AvatarTone } from "../../data/communityChat";
+import type { AvatarTone, ChatMember, ChatRole, Presence } from "../../lib/communityChat/model";
 
 /*
  * Small pieces shared by every part of the Members' Lounge. The lounge reuses

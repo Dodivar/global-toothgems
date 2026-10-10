@@ -1,16 +1,9 @@
-import {
-  CHAT_REACTIONS,
-  CHAT_VIEWER_ID,
-  type ChatMember,
-  type ChatMessage,
-  type ChatReaction,
-  type MessagePart,
-} from "../../data/communityChat";
+import { CHAT_REACTIONS, type ChatMember, type ChatMessage, type ChatReaction, type MessagePart } from "./model";
 
 /*
  * Pure rules of the Members' Lounge: no React, no state, no fixtures read
- * directly — everything is passed in, so the same functions keep working when
- * the messages come from a database instead of `data/communityChat.ts`.
+ * directly — everything is passed in, so the same functions serve the live
+ * store (Supabase) and the mock one (`data/communityChat.ts`).
  */
 
 /* ------------------------------------------------------------------ rooms */
@@ -149,14 +142,14 @@ export function plainText(parts: readonly MessagePart[], nameOf: (memberId: stri
   return parts.map((part) => (part.type === "text" ? part.text : `@${nameOf(part.memberId)}`)).join("");
 }
 
-export function mentionsMember(message: ChatMessage, memberId: string = CHAT_VIEWER_ID): boolean {
+export function mentionsMember(message: ChatMessage, memberId: string): boolean {
   return message.parts.some((part) => part.type === "mention" && part.memberId === memberId);
 }
 
 /** Members mentioned in a list of messages, most recent mention first, without repeats. */
-export function mentionedMembers(messages: readonly ChatMessage[]): string[] {
+export function mentionedMembers(messages: readonly ChatMessage[], now: number = Date.now()): string[] {
   const seen: string[] = [];
-  for (const message of [...messages].sort((a, b) => a.minutesAgo - b.minutesAgo)) {
+  for (const message of newestFirst(messages, now)) {
     for (const part of message.parts) {
       if (part.type === "mention" && !seen.includes(part.memberId)) seen.push(part.memberId);
     }
@@ -165,9 +158,9 @@ export function mentionedMembers(messages: readonly ChatMessage[]): string[] {
 }
 
 /** Authors of a list of messages, most recent first, without repeats. */
-export function recentAuthors(messages: readonly ChatMessage[]): string[] {
+export function recentAuthors(messages: readonly ChatMessage[], now: number = Date.now()): string[] {
   const seen: string[] = [];
-  for (const message of [...messages].sort((a, b) => a.minutesAgo - b.minutesAgo)) {
+  for (const message of newestFirst(messages, now)) {
     if (!seen.includes(message.authorId)) seen.push(message.authorId);
   }
   return seen;
@@ -206,13 +199,18 @@ export function continuesPrevious(previous: ChatMessage | undefined, current: Ch
 }
 
 /** Oldest first: a conversation reads top to bottom. */
-export function chronological(messages: readonly ChatMessage[]): ChatMessage[] {
-  return [...messages].sort((a, b) => b.minutesAgo - a.minutesAgo);
+export function chronological(messages: readonly ChatMessage[], now: number = Date.now()): ChatMessage[] {
+  return [...messages].sort((a, b) => timestampOf(a, now) - timestampOf(b, now));
+}
+
+/** Newest first. */
+export function newestFirst(messages: readonly ChatMessage[], now: number = Date.now()): ChatMessage[] {
+  return chronological(messages, now).reverse();
 }
 
 /** Messages of the last 24 hours. */
-export function messagesToday(messages: readonly ChatMessage[]): number {
-  return messages.filter((message) => message.minutesAgo < 24 * 60).length;
+export function messagesToday(messages: readonly ChatMessage[], now: number = Date.now()): number {
+  return messages.filter((message) => now - timestampOf(message, now) < 24 * 60 * 60_000).length;
 }
 
 /* ----------------------------------------------------------------- search */
@@ -246,6 +244,7 @@ export function searchCommunity<C extends SearchableChannel>(
   scope: { rooms: readonly SearchableRoom[]; members: readonly ChatMember[]; channels: readonly C[] },
   nameOf: (memberId: string) => string,
   limits = { messages: 8, members: 5, channels: 5 },
+  now: number = Date.now(),
 ): SearchResults<C> {
   const words = normalize(query).split(/\s+/).filter(Boolean);
   if (words.length === 0) return { messages: [], members: [], channels: [] };
@@ -259,11 +258,11 @@ export function searchCommunity<C extends SearchableChannel>(
       list.map((message) => ({ room, label, message, text: plainText(message.parts, nameOf) })),
     )
     .filter(({ text, message }) => matches(`${text} ${nameOf(message.authorId)}`))
-    .sort((a, b) => a.message.minutesAgo - b.message.minutesAgo)
+    .sort((a, b) => timestampOf(b.message, now) - timestampOf(a.message, now))
     .slice(0, limits.messages);
 
   const members = scope.members
-    .filter((member) => matches(`${member.name} ${member.handle} ${member.city}`))
+    .filter((member) => matches(`${member.name} ${member.handle} ${member.city ?? ""}`))
     .slice(0, limits.members);
 
   const channels = scope.channels.filter((channel) => matches(`${channel.name} ${channel.topic}`)).slice(0, limits.channels);

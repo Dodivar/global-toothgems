@@ -590,7 +590,7 @@ With Supabase, files go to the private `training-media` bucket under `media/<id>
 
 ## The Members' Lounge (`/compte/salons`)
 
-The community's private chat — *Salon des membres* / *Members' Lounge*. Same door: an account with a training on it (`useCommunity().hasAccess`, the same rule and the same **Aperçu prototype** switch, reachable from the flask in the lounge's user panel). Without access, the page is an invitation (`LockedLounge`): the real lounge blurred behind one card, *Découvrir les formations*, and the way back to the account. The member-space sidebar carries both entries, each marked "accès avec une formation" when locked.
+The community's private chat — *Salon des membres* / *Members' Lounge*. The door: an account with an active course entitlement, or an active team member — asked of the database (`lounge_access()`, through `useCommunity().hasAccess`) and enforced by it on every read and write. Without access, the page is an invitation (`LockedLounge`): the lounge's channels and the outline of a conversation (no member's words) blurred behind one card, *Découvrir les formations*, and the way back to the account. The member-space sidebar carries both entries, each marked "accès avec une formation" when locked.
 
 Language lounges (English by default, French, German, Spanish; Italian and Portuguese announced in the switcher) with the same five channels each (introductions, general, inspiration, techniques & tips, business & growth), and private conversations that belong to the community, not to a lounge.
 
@@ -602,14 +602,16 @@ Desktop is three columns beside the rail — lounge sidebar | conversation | mem
 
 | Piece | Where |
 | --- | --- |
-| Fixtures (members, lounges, channels, messages, private conversations) | `data/communityChat.ts` — `minutesAgo` ages, mentions stored as `{ type: "mention", memberId }` tokens, message text written in the lounge's language (content, not UI) |
+| Shapes, lounges and channel names/topics (in each lounge's language) | `lib/communityChat/model.ts` — mentions stored as `{ type: "mention", memberId }` tokens |
+| Contract the screens read (`useChat()`) | `lib/communityChat/chatContext.ts`; `chatStore.tsx` picks the live or the mock provider |
+| Live store (Supabase) | `lib/communityChat/liveChatStore.tsx`; every call in `loungeApi.ts`; rows ↔ shapes in `loungeMapping.ts` (tested) |
+| Mock store (no Supabase: local preview, Playwright) | `lib/communityChat/mockChatStore.tsx` + fixtures `data/communityChat.ts` |
 | Pure rules (reactions, mention parsing and autocomplete, grouping, search) | `lib/communityChat/chatLogic.ts`, tested in `chatLogic.test.ts` |
-| State (one reducer: open the room of the address, send, react, mark read, mute, notifications derived from the rooms) | `lib/communityChat/chatStore.tsx`, mounted by the account zone |
 | Addresses | `lib/communityChat/loungeRoutes.ts`, tested in `loungeRoutes.test.ts` |
 | Screen and components | `screens/communityChat/MembersLounge.tsx`, `components/communityChat/` |
 | Copy | `i18n/locales/communityChat.{fr,en}.json`, under `lounge` |
 
-Simulated, in memory, reset on reload: sending (text, `@mentions`, emoji, images kept as object URLs in the tab), replies shown as a compact quote with a connector, reactions, unread counts and the "New" marker, muting, mark-as-read, the inbox (mentions, replies, reactions, private messages), search (messages, members, channels of the current lounge and the private conversations), member profiles, presence, and — prototype only — a typing indicator and a canned answer when you write privately to someone online (`DEMO_AUTO_REPLY`). Nothing is sent, stored or authorised. A live version needs tables for lounges, channels, messages, reactions, read markers and conversations with RLS on the same course entitlement, Realtime for delivery, private Storage for images, and moderation — none of it exists yet.
+**Live on Supabase** (2026-10-10, `supabase/README.md` *Members' Lounge* and decision 88): on entry the member row, the directory (name shown as first name + initial), the unread counts and the inbox; per room, the latest 100 messages with the member's reactions and signed image URLs (private `lounge-media` bucket); sending (text, `@mentions`, emoji, up to 4 images of 5 MB, uploaded then attached by `lounge_post_message`; the message shows "Envoi…" until the server took it, a refusal — rate limit, lost access — is said under the composer and the text is kept), replies, reactions (totals kept by the database), unread counts and the "New" marker, muting, mark-as-read, the inbox (mentions, replies, reactions from `lounge_notifications`; private messages from the unread counts), presence (heartbeat every minute, "invisible" stored). Realtime brings new messages, reaction totals and notifications. Search covers the rooms already loaded on the page. Not built: moderation (hide, report, block), editing/deleting one's message, typing indicator, older history, profile editing. In mock mode the fixtures and local state stand in (with the prototype's canned answer in private conversations).
 
 ## The administration area (`/admin`)
 
@@ -861,7 +863,6 @@ Without the Supabase variables every domain runs on its mock store. With them, t
 
 - **Checkout extras.** Payment runs through Stripe (see *Cart and checkout*); gift card codes, promotion codes and the loyalty reward can be used in the cart. No confirmation e-mail is sent from the browser, and saving the address on the account is not offered.
 - **Academy.** Authoring, public pages and the learner side are on Supabase (phases A–C). Courses are bought through the cart (phase D, migration `20261002100000_course_checkout` not applied yet) or granted by hand (`/admin/formations/:id/acces`). The back office's course list still shows placeholder learner figures (`enrolled`, `completionRate`); the statistics screen reads real ones.
-- **Members' Lounge** (`/compte/salons`). UI prototype of the community chat: fixtures and in-memory messages, access derived client-side from the courses on the account. No backend. Post-launch.
 - **Loyalty Club.** Live (2026-10-03). `lib/loyalty.tsx` reads the public rules (`loyalty_settings`) and the member's card (`loyalty_overview`, RLS-limited); `lib/loyaltyMapping.ts` derives the card state (unit-tested); `data/loyalty.ts` holds the types and the example cards of the marketing pages. The database awards the stamp when the Stripe webhook marks an order paid; the browser only reads. The cart banner counts shop goods only (no gift card, no course) and invites guests to sign in. The cart offers a checkbox to spend a completed card (`use_loyalty_reward` in the checkout request, previewed with `rewardDiscount`; the database refuses with `loyalty_reward_unavailable` when the card is gone or reserved). Not built: e-mail on stamp/reward.
 - **Security page:** data export and account deletion are simulated (they need backend jobs).
 - **Back-office statistics:** live, within the current schema (see "Statistics on Supabase"). A translation workflow (coverage, editor) is not built.

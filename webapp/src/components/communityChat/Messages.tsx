@@ -17,11 +17,10 @@ import clsx from "clsx";
 import {
   CHAT_REACTIONS,
   CHAT_REACTION_EMOJI,
-  CHAT_VIEWER_ID,
   type ChatMessage,
   type ChatReaction,
   type MessagePart,
-} from "../../data/communityChat";
+} from "../../lib/communityChat/model";
 import { useChat } from "../../lib/communityChat/chatStore";
 import {
   continuesPrevious,
@@ -40,7 +39,7 @@ import { ChannelIcon } from "./channelIcons";
 /** A message's text with its mentions as buttons that open the member's profile. */
 export function MessageText({ parts, className }: { parts: readonly MessagePart[]; className?: string }) {
   const { t } = useTranslation();
-  const { nameOf } = useChat();
+  const { nameOf, viewer } = useChat();
   const { openProfile } = useLoungeUi();
   return (
     <p className={clsx("m-0 whitespace-pre-wrap break-words", className)}>
@@ -55,7 +54,7 @@ export function MessageText({ parts, className }: { parts: readonly MessagePart[
             aria-label={t("lounge.message.openProfile", { name: nameOf(part.memberId) })}
             className={clsx(
               "rounded-[var(--radius-xs)] px-1 py-px font-semibold transition-colors",
-              part.memberId === CHAT_VIEWER_ID
+              part.memberId === viewer.id
                 ? "bg-[var(--gt-fuchsia-50)] text-[var(--accent-highlight-ink)] hover:bg-[var(--gt-fuchsia-300)]/40"
                 : "bg-[var(--gt-blue-100)] text-[var(--gt-blue-700)] hover:bg-[var(--gt-blue-200)]",
               focusRing,
@@ -210,7 +209,7 @@ const QUICK: ChatReaction[] = ["heart", "clap", "sparkles"];
 
 function MessageToolbar({ message, visible }: { message: ChatMessage; visible: boolean }) {
   const { t } = useTranslation();
-  const { react, replyToMessage, nameOf, mention, memberOf, openConversationWith, room } = useChat();
+  const { react, replyToMessage, nameOf, mention, memberOf, openConversationWith, room, viewer } = useChat();
   const [copied, setCopied] = useState(false);
   useEffect(() => {
     if (!copied) return;
@@ -218,7 +217,7 @@ function MessageToolbar({ message, visible }: { message: ChatMessage; visible: b
     return () => window.clearTimeout(timer);
   }, [copied]);
   const author = memberOf(message.authorId);
-  const isMine = message.authorId === CHAT_VIEWER_ID;
+  const isMine = message.authorId === viewer.id;
 
   return (
     <div
@@ -325,14 +324,14 @@ function MessageItem({
   onJump: (messageId: string) => void;
 }) {
   const { t } = useTranslation();
-  const { memberOf, messages } = useChat();
+  const { memberOf, messages, viewer } = useChat();
   const { openProfile } = useLoungeUi();
   const { clock, day } = useChatTime();
   const [touched, setTouched] = useState(false);
   const author = memberOf(message.authorId);
   const parent = message.replyToId ? messages.find((m) => m.id === message.replyToId) : undefined;
   const parentAuthor = parent ? memberOf(parent.authorId) : undefined;
-  const mentionsYou = message.authorId !== CHAT_VIEWER_ID && mentionsMember(message);
+  const mentionsYou = message.authorId !== viewer.id && mentionsMember(message, viewer.id);
   const timestamp = timestampOf(message, now);
   const when = new Date(timestamp);
   const fullTime = `${day(timestamp, now)} · ${clock(timestamp)}`;
@@ -349,6 +348,7 @@ function MessageItem({
       }}
       className={clsx(
         "group relative scroll-mt-24 px-3 transition-colors duration-[var(--duration-normal)] sm:px-4",
+        message.pending && "opacity-60",
         grouped ? "py-0.5" : "mt-3 pb-1 pt-1.5",
         mentionsYou
           ? "border-l-2 border-[var(--accent-highlight)] bg-[var(--gt-fuchsia-50)]/55 hover:bg-[var(--gt-fuchsia-50)]"
@@ -406,6 +406,7 @@ function MessageItem({
           {!grouped && parentAuthor && <span className="sr-only">{t("lounge.message.replyingTo", { name: parentAuthor.name })}</span>}
 
           <MessageText parts={message.parts} className="text-[14.5px] leading-[1.55] text-[var(--text-body)]" />
+          {message.pending && <span className="text-[11.5px] text-[var(--text-muted)]">{t("lounge.message.sending")}</span>}
 
           {message.attachments && message.attachments.length > 0 && (
             <div className={clsx("mt-2 grid max-w-[520px] gap-2", message.attachments.length > 1 && "grid-cols-2")}>
@@ -521,6 +522,44 @@ export function EmptyChannel({ onStart }: { onStart: () => void }) {
   );
 }
 
+/** A room whose messages are on their way, or could not be read. */
+function RoomPending({ failed, onRetry }: { failed: boolean; onRetry: () => void }) {
+  const { t } = useTranslation();
+  if (!failed) {
+    return (
+      <div className="grid flex-1 content-start gap-5 px-4 pt-10 sm:px-6" role="status" aria-busy="true">
+        <span className="sr-only">{t("lounge.message.loading")}</span>
+        {[0, 1, 2].map((row) => (
+          <div key={row} aria-hidden="true" className="flex gap-3 motion-safe:animate-pulse">
+            <span className="h-10 w-10 flex-none rounded-full bg-[var(--gt-ink-100)]" />
+            <span className="grid flex-1 gap-2 pt-1">
+              <span className="h-3 w-32 rounded-full bg-[var(--gt-ink-100)]" />
+              <span className="h-3 w-[min(420px,70%)] rounded-full bg-[var(--gt-ink-100)]" />
+            </span>
+          </div>
+        ))}
+      </div>
+    );
+  }
+  return (
+    <div className="grid flex-1 place-items-center px-6 py-10">
+      <div role="alert" className="grid max-w-[380px] justify-items-center gap-3 text-center">
+        <p className="m-0 text-[length:var(--text-body-sm)] text-[var(--text-body)]">{t("lounge.message.loadFailed")}</p>
+        <button
+          type="button"
+          onClick={onRetry}
+          className={clsx(
+            "inline-flex h-10 items-center gap-2 rounded-[var(--radius-pill)] border border-[var(--border-default)] bg-white px-5 text-[length:var(--text-body-sm)] font-bold text-[var(--text-primary)] hover:bg-[var(--gt-ink-100)]",
+            focusRing,
+          )}
+        >
+          {t("lounge.retry")}
+        </button>
+      </div>
+    </div>
+  );
+}
+
 /* -------------------------------------------------------------------- list */
 
 /**
@@ -530,7 +569,7 @@ export function EmptyChannel({ onStart }: { onStart: () => void }) {
  */
 export function MessageList() {
   const { t } = useTranslation();
-  const { messages, divider, roomKey, focus, currentChannel, currentConversation, focusComposer } = useChat();
+  const { messages, divider, roomKey, focus, currentChannel, currentConversation, focusComposer, viewer, roomStatus, retry } = useChat();
   const now = useNow();
   const { day } = useChatTime();
   const scroller = useRef<HTMLDivElement>(null);
@@ -576,11 +615,11 @@ export function MessageList() {
     if (messages.length <= previous.count) return;
     const last = messages[messages.length - 1];
     const nearEnd = node.scrollHeight - node.scrollTop - node.clientHeight < 260;
-    if (nearEnd || last.authorId === CHAT_VIEWER_ID) {
+    if (nearEnd || last.authorId === viewer.id) {
       const reduce = window.matchMedia("(prefers-reduced-motion: reduce)").matches;
       node.scrollTo({ top: node.scrollHeight, behavior: reduce ? "auto" : "smooth" });
     }
-  }, [roomKey, messages]);
+  }, [roomKey, messages, viewer.id]);
 
   /* From search or the inbox: bring the message into view and flash it. */
   useEffect(() => {
@@ -602,6 +641,10 @@ export function MessageList() {
     setFlash({ id: messageId, nonce: Date.now() });
     window.setTimeout(() => setFlash(null), 2200);
   };
+
+  if (messages.length === 0 && roomStatus !== "ready") {
+    return <RoomPending failed={roomStatus === "error"} onRetry={retry} />;
+  }
 
   if (messages.length === 0 && currentChannel) {
     return <EmptyChannel onStart={focusComposer} />;

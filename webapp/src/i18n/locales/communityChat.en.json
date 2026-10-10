@@ -3,7 +3,6 @@
   "title": "Members' Lounge",
   "eyebrow": "Global Toothgems community",
   "privateSpace": "Private space · Academy members",
-  "previewNote": "Preview: your messages stay on this device and disappear when you reload.",
   "server": {
     "label": "Language lounge",
     "current": "{{name}} lounge",
@@ -85,7 +84,10 @@
     "mentionsYou": "Mentions you",
     "imageAttachment": "Image: {{alt}}",
     "byYou": "you",
-    "openProfile": "Open {{name}}'s profile"
+    "openProfile": "Open {{name}}'s profile",
+    "sending": "Sending…",
+    "loading": "Loading messages…",
+    "loadFailed": "This room's messages could not be loaded."
   },
   "reactions": {
     "heart": "Love",
@@ -127,9 +129,12 @@
     "mentionList": "Members to mention",
     "noMention": "No member matches",
     "typing": "{{name}} is typing…",
-    "notImage": "Only images can be attached.",
-    "tooLarge": "This image is too large (10 MB maximum).",
-    "tooMany": "Up to 4 images per message."
+    "notImage": "Only JPEG, PNG, WebP or GIF images can be attached.",
+    "tooLarge": "This image is too large (5 MB maximum).",
+    "tooMany": "Up to 4 images per message.",
+    "rateLimited": "You are sending a lot of messages: wait a minute before the next one.",
+    "forbidden": "Your access to the Lounge has changed: reload the page.",
+    "failed": "The message could not be sent. Try again."
   },
   "members": {
     "heading": "Members",
@@ -229,10 +234,7 @@
     },
     "cta": "Discover the trainings",
     "back": "Back to my space",
-    "note": "One training is enough: access opens as soon as it is on your account.",
-    "previewLabel": "Preview of the Lounge",
-    "online_one": "{{count}} artist online now",
-    "online_other": "{{count}} artists online now"
+    "note": "One training is enough: access opens as soon as it is on your account."
   },
   "nav": {
     "attention_one": "{{count}} message for you",
@@ -251,5 +253,9 @@
     "dashboardOnline_other": "{{count}} artists online",
     "dashboardCta": "Open the Lounge",
     "myProfile": "Edit my profile"
-  }
+  },
+  "memberUnnamed": "Member",
+  "loading": "Opening the Lounge…",
+  "loadFailed": "The Lounge could not be loaded. Check your connection and try again.",
+  "retry": "Try again"
 }

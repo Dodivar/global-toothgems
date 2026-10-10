@@ -4010,15 +4010,7 @@
     }
   },
   "community": {
-    "navEntryLocked": "Accès avec une formation",
-    "demoTitle": "Aperçu prototype",
-    "demoBody_one": "Ce compte possède {{count}} formation. Basculez l’état pour voir la communauté telle qu’elle apparaît sans formation.",
-    "demoBody_other": "Ce compte possède {{count}} formations. Basculez l’état pour voir la communauté telle qu’elle apparaît sans formation.",
-    "demoMode": {
-      "auto": "Selon le compte",
-      "member": "Membre avec accès",
-      "locked": "Membre sans accès"
-    }
+    "navEntryLocked": "Accès avec une formation"
   },
   "errors": {
     "preview": {

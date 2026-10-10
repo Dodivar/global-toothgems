@@ -21,12 +21,16 @@ describe("lounge addresses", () => {
   it("addresses private conversations by member", () => {
     expect(loungePath({ kind: "dm", conversationId: "dm-emma" })).toBe("/compte/salons/messages/emma");
     expect(parseLoungePath("/compte/salons/messages/emma")).toEqual({ kind: "room", room: { kind: "dm", conversationId: "dm-emma" } });
+    const uuid = "3f1c2a4e-9b7d-4c2a-8e1f-0a9b8c7d6e5f";
+    const room = { kind: "dm" as const, conversationId: `dm-${uuid}` };
+    expect(parseLoungePath(loungePath(room))).toEqual({ kind: "room", room });
   });
 
+  /* An unknown member is the lounge's 404, once it knows its members (MembersLounge). */
   it("sends the bare address to the last room, and anything unknown to the 404", () => {
     expect(parseLoungePath("/compte/salons")).toEqual({ kind: "index" });
     expect(parseLoungePath("/compte/salons/")).toEqual({ kind: "index" });
-    for (const path of ["/compte/salons/it/discussion", "/compte/salons/en/nope", "/compte/salons/messages/you", "/compte/salons/messages/ghost", "/compte/salons/en", "/compte/salons/en/discussion/extra"]) {
+    for (const path of ["/compte/salons/it/discussion", "/compte/salons/en/nope", "/compte/salons/messages/a%20b", "/compte/salons/messages/%E0%A4%A", "/compte/salons/en", "/compte/salons/en/discussion/extra"]) {
       expect(parseLoungePath(path), path).toEqual({ kind: "notFound" });
     }
   });

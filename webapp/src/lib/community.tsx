@@ -1,28 +1,21 @@
-import { createContext, useContext, useMemo, useState, type ReactNode } from "react";
+import { createContext, useContext, useEffect, useMemo, useState, type ReactNode } from "react";
 import { useAuth } from "./auth";
 import { useProgress } from "./progress";
+import { isSupabaseConfigured } from "./supabase/client";
+import { canEnterLounge } from "./communityChat/loungeApi";
 
 /**
  * Access to the Members' Lounge for the signed-in visitor, and the visitor as
  * a lounge member.
  *
- * Mockup state, exactly like `cart.tsx`, `auth.tsx` and `progress.tsx`: it lives
- * in memory and nothing is verified. Access is derived, not stored: the lounge
- * is what a training purchase unlocks, so "has a course on the account" is the
- * rule, and `lib/progress.tsx` already owns that fact. The demo override exists
- * because the seeded account owns two courses, so the locked experience would
- * otherwise be unreachable in a review.
- *
- * None of this is access control. Real authorization belongs to the server, on
- * a verified payment event, exactly as for course content.
+ * The lounge is what a training unlocks. With Supabase the database answers
+ * (`lounge_access()`: an active account holding an active course, or an
+ * active team member) and enforces the same rule on every read and write —
+ * this flag only chooses between the lounge and its locked screen. In mock
+ * mode (no Supabase) the rule is read from the courses on the demo account.
  */
 
-/** How lounge access is decided. `auto` reads the account; the others force it. */
-export type AccessMode = "auto" | "member" | "locked";
-
-export const ACCESS_MODES: AccessMode[] = ["auto", "member", "locked"];
-
-/** The visitor as the lounge shows them, built from the account. */
+/** The visitor as the lounge shows them, built from the account (mock mode). */
 export interface LoungeViewer {
   name: string;
   location?: string;
@@ -35,24 +28,34 @@ export interface LoungeViewer {
 interface CommunityContextValue {
   /** Whether the visitor can enter the lounge. */
   hasAccess: boolean;
-  /** True when access comes from the account rather than from the demo switch. */
-  accessMode: AccessMode;
-  setAccessMode: (mode: AccessMode) => void;
-  /** Courses on the account — what the locked card offers to change. */
-  ownedCourses: number;
+  /** False while the answer is on its way (live mode). */
+  accessKnown: boolean;
   viewer: LoungeViewer;
 }
 
 const CommunityContext = createContext<CommunityContextValue | null>(null);
 
 export function CommunityProvider({ children }: { children: ReactNode }) {
-  const { displayName, profile } = useAuth();
+  const { displayName, profile, userId } = useAuth();
   const { enrolledCourses } = useProgress();
-
-  const [accessMode, setAccessMode] = useState<AccessMode>("auto");
-
   const ownedCourses = enrolledCourses().length;
-  const hasAccess = accessMode === "auto" ? ownedCourses > 0 : accessMode === "member";
+  const [liveAccess, setLiveAccess] = useState<{ owner: string; allowed: boolean } | null>(null);
+
+  useEffect(() => {
+    if (!isSupabaseConfigured || !userId) return;
+    let cancelled = false;
+    canEnterLounge()
+      .then((allowed) => !cancelled && setLiveAccess({ owner: userId, allowed }))
+      .catch(() => !cancelled && setLiveAccess({ owner: userId, allowed: false }));
+    return () => {
+      cancelled = true;
+    };
+    /* A course bought or granted in this session opens the lounge without a reload. */
+  }, [userId, ownedCourses]);
+
+  const access = liveAccess && liveAccess.owner === userId ? liveAccess.allowed : null;
+  const hasAccess = isSupabaseConfigured ? access === true : ownedCourses > 0;
+  const accessKnown = isSupabaseConfigured ? access !== null || !userId : true;
 
   /** The account's own city, shown the way the lounge shows a location. */
   const location = profile?.city ? `${profile.city}, ${profile.country.toUpperCase()}` : undefined;
@@ -71,10 +74,7 @@ export function CommunityProvider({ children }: { children: ReactNode }) {
     [displayName, location],
   );
 
-  const value = useMemo<CommunityContextValue>(
-    () => ({ hasAccess, accessMode, setAccessMode, ownedCourses, viewer }),
-    [hasAccess, accessMode, ownedCourses, viewer],
-  );
+  const value = useMemo<CommunityContextValue>(() => ({ hasAccess, accessKnown, viewer }), [hasAccess, accessKnown, viewer]);
 
   return <CommunityContext.Provider value={value}>{children}</CommunityContext.Provider>;
 }
