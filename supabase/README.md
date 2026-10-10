@@ -140,6 +140,8 @@ supabase/
 | 20261008174607 | `loyalty_with_promotions` | **Applied 2026-10-08.** Decision 85: `promotions.combinable_with_loyalty` (default false, set by `admin_save_promotion`), `private.loyalty_on_top()`, and `compute_order_discounts()` rewritten: with the reward requested it compares promotions alone, the reward alone and "combinable promotions + reward" and applies the best (tie: promotions, so the reward is kept); a typed code no longer conflicts with the reward. Suite PL11 |
 | 20261008182346 | `quote_basket_lines` | **Applied 2026-10-08.** `quote_basket()` also answers `lines` (product, variant, discount amount) so the checkout shows the discount on the lines it reaches |
 | 20261008182555 | `promotions_public_lifecycle_column` | **Applied 2026-10-08.** `grant select (lifecycle)` on `promotions` and `campaigns` to `anon`: the policies of their child tables (scope, translations, products) read it, and a visitor only ever sees live rows. Needed by the shop window's offers |
+| 20261009152941 | `invoices` | **Applied 2026-10-09.** Legal invoices and credit notes (decision 86): `invoice_sequences` (one counter per series `FA-YYYY` / `AV-YYYY`, backend only), `invoices` (insert-only frozen snapshot: number, issue date, sale date, seller identity from `store_settings`, buyer, lines with VAT rate and excl./incl. amounts, shipping, VAT breakdown, payment; UPDATE/DELETE refused by trigger for every role; owner of the order and active staff read). Triggers `orders_zz_issue_invoice` (order becomes paid → `private.issue_order_invoice`) and `refunds_zz_issue_credit_note` (refund becomes succeeded → `private.issue_refund_credit_note`). Suite `tests/invoices_validation.sql` (I1–I9); `shipping_refunds_validation.sql` checks one credit note per confirmed refund |
+| 20261009162740 | `quote_basket_used_up` | **Applied 2026-10-09.** Decision 87: `quote_basket(..., p_email)` knows a guest by the e-mail typed at the checkout (ignored when signed in; 5 new addresses per caller per 10 minutes, table `promotion_email_lookups`, hashed, no policies) and answers `used_up` (automatic promotions the customer has already had as often as allowed, on paid orders). Suite PL12 (and PL11d unlocks the codes PL6 locked) |
 | 20261008175722 | `contact_attachments_and_support_email` | **Applied 2026-10-08.** Contact form: `contact_requests.attachment_path` → `attachment_paths text[]` (≤ 5, `private.valid_contact_attachment_paths()`), bucket `contact-attachments` 20 MB per object, `submit_contact_request(…, p_attachment_paths text[])` (old signature dropped; ownership per path, no duplicates, ≤ 20 MB in all), guard trigger rebuilt, `contact_ip_allowed(ip_hash)` (service role), template `contact_request_received` (fr + en) for the support inbox. Suite: `iteration7_validation.sql` C3/C4 |
 | 20261008175809 | `contact_attachment_paths_check_grant` | **Applied 2026-10-08.** `execute` on the CHECK helper for `authenticated`/`service_role` (staff triage re-evaluates the CHECK) |
 | 20261007181011 | `gift_card_design_everywhere` | **Applied 2026-10-07.** The design/names/message chosen at checkout are shown back (WYSIWYG): policy `gift_cards: purchaser reads own` (a buyer reads the cards of their purchases through the existing column grant — never the code) so the member's order pages draw the card in its design; the `gift_card_delivery` template bodies (fr + en) lose their `{{message}}` paragraph because the e-mail now draws the card itself (`giftCardVisual()`, message included). Test: a buyer sees only their own cards (to add to `gift_cards_validation.sql`) |
@@ -208,6 +210,7 @@ statuses as `text` + `CHECK` (easy to extend, no enum migrations), money as
 | `customer_addresses` | many per user, `address_type` shipping/billing, one default per type (setting a new default clears the old one), ISO `country_code`, nullable `postal_code`/`region`. |
 | `orders` | `order_number` `GT-100001…`, `user_id` (SET NULL on account deletion — accounting records survive), `customer_email` + `billing_address`/`shipping_address` **JSONB snapshots**, subtotal/discount/shipping/tax/total, `prices_include_tax` (EU VAT-inclusive default), `status`, `payment_status`, `fulfillment_status`, `customer_note`, `admin_note` (deprecated, always NULL since `order_staff_notes`: notes live in `order_notes`, staff only). |
 | `order_items` | frozen `product_name`, `variant_name`, `sku`, `unit_price`, `quantity`, generated `subtotal_amount`. |
+| `invoices` / `invoice_sequences` | legal invoices (`FA-YYYY-NNNNNN`, one per paid order) and credit notes (`AV-YYYY-NNNNNN`, one per confirmed refund of an invoiced order), issued by triggers, never updated or deleted; counters per series, gapless (see "Invoices and credit notes"). |
 | `languages` | `fr` (default = language of base columns), `en`, `de` enabled; `it`, `es`, `pt`, `nl` disabled. The API can only switch `is_enabled` / `position` (through `admin_save_languages()`); `fr` and `en`, the storefront languages, cannot be switched off. |
 | `*_translations` | one row per (entity, non-default locale); product translations carry a localized `slug` (unique per locale) and `meta_title`/`meta_description`; `status` draft/published — only published rows are public. A translation for the default locale is rejected. |
 | `shipping_zones` / `shipping_zone_countries` / `shipping_rates` | zones of ISO countries + optional single "rest of world" zone; rates `standard`/`express`/`free`/`pickup` with delivery days, price, `free_over_amount`, basket-amount and weight bounds. |
@@ -443,6 +446,46 @@ sent to Stripe is the very integer received (`toDecimalString` for Postgres). Er
 `stripe_refused`, `stripe_unavailable`, `not_found`, `already_sent`, `server_error`. Refunds credited onto gift cards
 (`refund_to_gift_cards`) are immediate and not e-mailed. No Stripe secret other than the existing ones.
 
+### Invoices and credit notes (iteration 24)
+
+```
+order payment_status → 'paid'  (mark_order_paid, or create_order when gift cards cover it)
+   → trigger orders_zz_issue_invoice → private.issue_order_invoice(order)    [same transaction]
+        lock invoice_sequences row 'FA-<year Europe/Paris>' → next number → issued_at = clock_timestamp()
+        snapshot: seller (store_settings now), buyer (billing address + e-mail + order number),
+                  lines (order_items + shipping), VAT breakdown per rate, payment (paid_at, gift cards, card)
+refund status → 'succeeded'  (mark_refund_succeeded, record_external_refund, refund_to_gift_cards)
+   → trigger refunds_zz_issue_credit_note → private.issue_refund_credit_note(refund)
+        only when the order has an invoice; 'AV-<year>' series; credited_invoice_id → the invoice
+```
+
+- **Numbering.** One series per kind and calendar year, six digits: `FA-2026-000001`, `AV-2026-000001`. The counter
+  row is locked by the issuing transaction, so numbers follow the commit order; a rolled-back payment gives its
+  number back (a Postgres sequence would leave a gap). `issued_at` is read after the lock: a later number never has
+  an earlier date. Unique `(series, sequence_number)` and `invoice_number`, one invoice per order.
+- **Content = what was recorded.** Line `total_incl` = `subtotal_amount − discount_amount`, `vat_amount` = the line's
+  stored `tax_amount`, `total_excl` = the difference; `unit_price_excl` = unit price ÷ (1 + rate), rounded to the
+  cent (informative; totals come from the stored amounts). Shipping VAT = order VAT − lines' VAT, at today's
+  standard rate of the tax country. Gift card lines: rate 0 (multi-purpose vouchers). Totals: sums of the lines,
+  equal to the order's total.
+- **Credit notes.** Amount = the refund. VAT follows what was refunded: the refund's items at their invoiced value
+  and rate (scaled to the amount), any surplus as shipping; a refund without items is spread over the invoice's
+  rates pro rata. Cent residue on the largest line. Credit notes repeat the buyer, take the seller as Settings holds
+  it at issue time, and name the invoice they credit.
+- **Immutable.** `invoices_immutable` refuses UPDATE and DELETE for every role, the table owner included; orders and
+  refunds referenced by an invoice cannot be deleted (`RESTRICT`). A mistake is corrected by a credit note.
+- **Access.** No API writes; `invoice_sequences` has no grant and no policy (advisor "RLS enabled, no policy" accepted, as for `email_log`). The order's owner reads its invoices (member order
+  page, PDF via `webapp/src/lib/documents/invoiceDocument.ts`); active staff read all.
+- **E-mailed (owner, 2026-10-09).** The order confirmation carries the invoice as a PDF attachment, for members and
+  guests alike (a guest has no other access to it), and the refund e-mail carries the refund's credit note. Drawn in
+  the Edge Functions (`_shared/email/invoicePdf.ts`) by the same template as the member's download:
+  `_shared/documents/` is a generated copy of `webapp/src/lib/documents/` (portable modules + the `documents`
+  strings), refreshed by `npm run sync:documents` in `webapp/`; a Vitest test fails while the copy is stale. A PDF
+  that cannot be drawn is logged and the e-mail leaves without it (the member still has the download). Refunds
+  credited onto gift cards send no e-mail, so their credit note is not mailed (member page and back office only).
+- **Not covered.** Orders paid before 2026-10-09 have no invoice (no backfill: development data). B2B details
+  (buyer company VAT number, reverse charge) are not collected by checkout.
+
 ### Gift cards (iteration 4)
 
 Used by the webapp's gift card domain (`webapp/src/lib/giftCards/`): back office, `/carte-cadeau`, codes in the cart.
@@ -674,12 +717,16 @@ server  create_order(..., p_promotion_codes => ['WELCOME15'], p_use_loyalty_rewa
 - `admin_save_campaign(p jsonb) returns uuid` — the campaign, its ordered `product_ids` and the English text.
 - `promotion_daily_usage` — orders per promotion per day of payment (shop time), last 30 days, for the detail page's chart.
   Promotion figures come from `promotion_overview` (paid orders only).
-- `quote_basket(p_items, p_promotion_codes, p_shipping_rate_id, p_use_loyalty_reward, p_currency, p_locale) → jsonb` —
+- `quote_basket(p_items, p_promotion_codes, p_shipping_rate_id, p_use_loyalty_reward, p_currency, p_locale, p_email) → jsonb` —
   the cart's preview: `{ok, goods_discount, shipping_discount, discounts[{label, code, type, goods_amount,
-  shipping_amount}], gift_lines[]}` or `{ok:false, error: promotion_code_invalid | loyalty_reward_unavailable |
+  shipping_amount}], lines[], gift_lines[], used_up[{label, max_uses}]}` or `{ok:false, error: promotion_code_invalid | loyalty_reward_unavailable |
   too_many_attempts | unavailable}`. It builds the shop lines like `create_order()` (price, variant, VAT category; stock
   and gift cards ignored), then calls `private.compute_order_discounts()`. The caller's account (`auth.uid()`) counts
-  for "new customer" and per-customer limits; **a guest is quoted without e-mail**. Nothing is reserved or consumed.
+  for "new customer" and per-customer limits; a guest counts by `p_email` once typed in the checkout form (decision
+  87; at most 5 new addresses per caller per 10 minutes, logged hashed in `promotion_email_lookups`, else quoted
+  without e-mail). `used_up` lists the automatic promotions the basket would get but the customer has already had
+  `max_uses_per_customer` times on paid orders: the cart says so instead of a silently missing discount (a use held
+  by an unpaid order is not reported). Nothing is reserved or consumed.
   **Throttle:** every refused typed code is logged in `promotion_code_attempts` (actor = the account, else the first
   `x-forwarded-for` address); 10 refusals in 10 minutes → `too_many_attempts` for codes (the codeless quote still
   works); rows older than a day are purged on the next refusal. Codes stay unreadable to visitors and customers.
@@ -767,7 +814,7 @@ drift from them.
   12-point sparkline), `series`, `breakdown` (jewelry, aftercare, kits, training, other — fixed order), `products`
   (top 10 with stock, thumbnail and change), `customers` (base, repeat rate, lifetime value and orders, growth),
   `orders`, `geo` (delivery country, else billing), `cross` (share of jewellery orders that also carry aftercare),
-  `extras`. `training` is `null` and `insights` is `[]` (see decisions).
+  `extras`. `training` is `null` and `insights` is `[]` (see decisions; the screen fills both itself).
 - **Filters** (`p_filters`): `category`, `product`, `customerType` (`new`/`returning`), `country` narrow the sales;
   `country` and `orderStatus` narrow the orders section; the customer base is always the whole base.
 - **Reporting group**: `categories.report_group` maps catalogue categories onto the screen's buckets
@@ -1232,7 +1279,9 @@ VAT rates, shipping zones/rates mirroring the Settings prototype. Media rows ref
 32. **Sales are dated by payment (`paid_at`)** in the shop's time zone (default `Europe/Paris`); the orders section
     uses the placement date. A customer is an account, or a guest's e-mail (a guest who later signs up counts twice
     until guest orders are linked).
-33. **Training figures are `null`** until the training iteration; **product-page conversion** is not available (it
+33. **Training figures are `null`** in the snapshot: since 2026-10-09 the screen aggregates them in the browser from the
+    Academy rows staff read (`webapp/src/lib/adminAnalyticsTraining.ts`, definitions there), the schema being left
+    unchanged for statistics (owner's decision); moving them into the function is the next step if volume grows; **product-page conversion** is not available (it
     needs web analytics, not stored here); **insights** (written advice) are left to the frontend: the rules in
     `webapp/src/data/adminAnalytics.ts` derive them from the figures (its fixed "bundle 38 %" becomes `cross`).
 34. **No pre-aggregated tables**: each call recomputes from the orders (index on `paid_at`). Fine for the expected
@@ -1253,9 +1302,8 @@ VAT rates, shipping zones/rates mirroring the Settings prototype. Media rows ref
     `new.admin_note`; dropping it means rewriting those functions — a follow-up once the Stripe work settles.
     Other staff-written fields remain readable by the owner of the order (`cancellation_reason`,
     `refunds.failure_reason`): keep them customer-safe, or move them the same way if they need to be internal.
-39. **No invoices yet.** The member area offers a printable *order summary*, labelled as not being an invoice.
-    Legal invoices (sequential numbering, seller details, VAT breakdown per rate, credit notes) remain a
-    future iteration ("Next iterations", item on invoices / credit notes).
+39. **Invoices — superseded by decision 86 (2026-10-09).** The printable order summary stays, labelled as not
+    being an invoice; the legal invoice and credit notes are issued by the database (migration `invoices`).
 40. **Guest orders are not attached to an account.** An order placed without an account (`user_id` NULL) never
     appears in "My orders", even if the e-mail later signs up. Attaching them (by verified e-mail, at sign-up or
     on demand) is an open business decision — not implemented.
@@ -1517,7 +1565,8 @@ VAT rates, shipping zones/rates mirroring the Settings prototype. Media rows ref
       (Cron: scheduled by migration `email_cron_jobs`, no manual step beyond the Vault secret.) Former manual form: `select cron.schedule('send-pending-emails', '*/5 * * * *', $$ select net.http_post(url := 'https://<project-ref>.supabase.co/functions/v1/send-pending-emails', headers := jsonb_build_object('x-internal-secret', (select decrypted_secret from vault.decrypted_secrets where name = 'email_internal_secret')), body := '{}'::jsonb) $$);`
     - **Still to build:** the back-office resend of a card. To do by hand: the Resend domain and the secrets, then
       deploy the functions (`deliver-gift-cards`, `send-email`, `resend-webhook`, `send-pending-emails`, and redeploy
-      `stripe-webhook` and `create-checkout-session`), declare the `resend-webhook` endpoint in Resend (events delivered, opened, bounced, complained), and make sure the Vault secret
+      `stripe-webhook` and `create-checkout-session` — since 2026-10-09 they also bundle `_shared/documents/` for the
+      invoice and credit note attachments), declare the `resend-webhook` endpoint in Resend (events delivered, opened, bounced, complained), and make sure the Vault secret
       `email_internal_secret` holds the same value as `EMAIL_INTERNAL_SECRET` (the crons themselves are in migration `email_cron_jobs`; the manual form below is kept for reference):
       `select cron.schedule('deliver-gift-cards', '*/5 * * * *', $$ select net.http_post(url := 'https://<project-ref>.supabase.co/functions/v1/deliver-gift-cards', headers := jsonb_build_object('x-internal-secret', (select decrypted_secret from vault.decrypted_secrets where name = 'email_internal_secret')), body := '{}'::jsonb) $$);`
       (needs `pg_net` and a vault secret `email_internal_secret`; not part of a migration because of the secret).
@@ -1608,3 +1657,25 @@ VAT rates, shipping zones/rates mirroring the Settings prototype. Media rows ref
     flagged `combinable_with_loyalty` plus the reward on what they leave (a tie keeps the reward unused). The reward
     is reserved only when its `order_discounts` row exists. A typed code can be used with the reward. The cart says
     when the reward or a code was not retained. Default stays "never both"; staff opt a promotion in per promotion.
+86. **Legal invoices and credit notes are issued by the database** (user's request, 2026-10-09; agent's choices, to
+    confirm with the accountant): an invoice at payment, a credit note at each confirmed refund, numbered per
+    calendar year (`FA-YYYY-NNNNNN`, `AV-YYYY-NNNNNN`, gapless, chronological). To confirm: (a) the number format and
+    the yearly reset (a single never-reset series is also lawful); (b) invoices for every paid order, B2C included
+    (in France only required on request for consumers, but harmless); (c) the VAT split of a credit note (items at
+    their rate, surplus as shipping, otherwise pro rata); (d) gift card purchases invoiced at 0 % with the mention
+    "hors champ de la TVA" (multi-purpose vouchers); (e) the payment mentions printed on every invoice: "acquittée",
+    no early-payment discount, and the B2B late-payment penalties and €40 recovery fee (art. L441-10 Code de
+    commerce); (f) the seller's identity on an invoice is whatever Settings holds at issue time — the legal name,
+    registration (SIREN/RCS) and VAT numbers must be filled before launch; (g) no backfill for orders paid before the
+    migration; (h) the PDF is drawn in the member's interface language (French or English).
+87. **The checkout says when a shop-window promotion is used up, and knows a guest by the e-mail typed** (user's request,
+    2026-10-09; agent's choices, to confirm). A product keeps its promotion price in the shop window for everyone; at
+    the checkout `quote_basket()` lists in `used_up` the automatic promotions this customer has already had as often
+    as allowed (paid orders only), and the cart shows "vous avez déjà profité de l'offre…" with no struck price. To
+    confirm: (a) a guest's e-mail is sent to the quote as soon as it is complete, so the preview matches the order
+    `create_order()` will price — the trade-off: anyone can learn, quietly, whether an address has already used a
+    given promotion or has paid orders ("new customers" promotions). The checkout already revealed it, but only by
+    creating an order; the quote is throttled (5 new addresses per caller per 10 minutes, then quoted without
+    e-mail). Removing it is one argument less in the cart. (b) A use held by an order still waiting for its payment
+    (≤ 60 min, released when the payment step is left or expires) blocks the promotion but is not announced as used.
+    (c) A typed code already used by the customer is still refused with the generic "code not valid" message.

@@ -335,13 +335,6 @@
   "admin": {
     "title": "Reviews",
     "description": "Moderate customer and student reviews, answer them and handle reports.",
-    "protoToday": "Prototype date: {{date}}",
-    "protoSimulate": "Simulate",
-    "protoModes": {
-      "live": "Sample data",
-      "empty": "No reviews",
-      "error": "Loading error"
-    },
     "errorTitle": "Reviews couldn’t be loaded",
     "errorBody": "Nothing has been lost. Try again in a moment.",
     "cancel": "Cancel",

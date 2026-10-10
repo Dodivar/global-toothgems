@@ -20,6 +20,8 @@
 --   PL9 a promotion needs its French title (base column), even as a draft
 --   PL10 a free gift line is listed but does not change the quoted amounts
 --   PL11 reward vs promotions: the better wins; both when the promotion is combinable_with_loyalty; a code no longer conflicts
+--   PL12 a promotion used up by the customer (account, else the guest e-mail) is not quoted and is listed in `used_up`;
+--        another customer still gets it; a use held by an unpaid order is not reported as used up
 -- =============================================================================
 
 do $$
@@ -32,6 +34,7 @@ declare
   v_p1 uuid; v_p2 uuid; v_p3 uuid; v_p4 uuid; v_camp uuid; v_gift uuid;
   v_cnt int; v_state text; v_txt text; v_num numeric; v_ts timestamptz;
   v_json jsonb;
+  v_order uuid;
   v_items jsonb;
   passed text[] := '{}';
   base jsonb;
@@ -287,7 +290,10 @@ begin
      or abs((v_json ->> 'goods_discount')::numeric - round(v_price * 2 * (0.05 + 0.95 * 0.10), 2)) > 0.02 then
     raise exception 'FAIL PL11c: promotion + reward not combined (%)', v_json;
   end if;
-  -- d) a typed code with the reward is no longer refused
+  -- d) a typed code with the reward is no longer refused (PL6 locked this customer's codes: unlock them first)
+  perform set_config('role', 'postgres', true);
+  delete from public.promotion_code_attempts where actor = 'user:' || cst;
+  perform set_config('role', 'authenticated', true);
   perform set_config('request.jwt.claims', json_build_object('sub', mgr, 'role', 'authenticated')::text, true);
   perform public.admin_save_promotion(base || jsonb_build_object('name', 'Code 20', 'percent_off', 20, 'code', 'plmix20'));
   perform set_config('request.jwt.claims', json_build_object('sub', cst, 'role', 'authenticated')::text, true);
@@ -296,6 +302,48 @@ begin
     raise exception 'FAIL PL11d: code + reward (%)', v_json;
   end if;
   passed := array_append(passed, 'PL11 reward vs promotions: the better wins, both when the promotion allows it, a code no longer conflicts');
+
+  -- PL12: used-up promotions ------------------------------------------------------------
+  perform set_config('role', 'postgres', true);
+  update public.promotions set lifecycle = 'archived' where activation = 'automatic' and lifecycle = 'live' and id <> v_p1;
+  insert into public.orders (user_id, customer_email, billing_address, currency, subtotal_amount, total_amount, status, payment_status)
+  values (cst, 'promo.cst.test@example.invalid',
+          '{"first_name":"Cleo","last_name":"Test","address_line1":"1 rue Test","city":"Paris","country_code":"FR"}'::jsonb,
+          'EUR', v_price, v_price, 'delivered', 'paid')
+  returning id into v_order;
+  insert into public.order_discounts (order_id, source, promotion_id, user_id, customer_email, label)
+  values (v_order, 'promotion', v_p1, cst, 'promo.cst.test@example.invalid', 'Auto 5');
+  perform set_config('role', 'authenticated', true);
+  perform set_config('request.jwt.claims', json_build_object('sub', cst, 'role', 'authenticated')::text, true);
+  v_json := public.quote_basket(v_items);
+  if (v_json ->> 'goods_discount')::numeric <> 0 or jsonb_array_length(v_json -> 'used_up') <> 1
+     or (v_json #>> '{used_up,0,max_uses}')::int <> 1 then
+    raise exception 'FAIL PL12a: used-up promotion for the account (%)', v_json;
+  end if;
+  perform set_config('request.jwt.claims', json_build_object('sub', mgr, 'role', 'authenticated')::text, true);
+  v_json := public.quote_basket(v_items);
+  if (v_json ->> 'goods_discount')::numeric <= 0 or jsonb_array_length(v_json -> 'used_up') <> 0 then
+    raise exception 'FAIL PL12b: another customer lost the promotion (%)', v_json;
+  end if;
+  perform set_config('role', 'anon', true);
+  perform set_config('request.jwt.claims', json_build_object('role', 'anon')::text, true);
+  v_json := public.quote_basket(v_items, p_email => ' Promo.CST.test@example.invalid ');
+  if (v_json ->> 'goods_discount')::numeric <> 0 or jsonb_array_length(v_json -> 'used_up') <> 1 then
+    raise exception 'FAIL PL12c: guest e-mail not recognised (%)', v_json;
+  end if;
+  v_json := public.quote_basket(v_items, p_email => 'someone.else@example.invalid');
+  if (v_json ->> 'goods_discount')::numeric <= 0 or jsonb_array_length(v_json -> 'used_up') <> 0 then
+    raise exception 'FAIL PL12d: an unknown guest lost the promotion (%)', v_json;
+  end if;
+  perform set_config('role', 'postgres', true);
+  update public.orders set status = 'pending', payment_status = 'pending' where id = v_order;
+  perform set_config('role', 'authenticated', true);
+  perform set_config('request.jwt.claims', json_build_object('sub', cst, 'role', 'authenticated')::text, true);
+  v_json := public.quote_basket(v_items);
+  if (v_json ->> 'goods_discount')::numeric <> 0 or jsonb_array_length(v_json -> 'used_up') <> 0 then
+    raise exception 'FAIL PL12e: a use held by an unpaid order (%)', v_json;
+  end if;
+  passed := array_append(passed, 'PL12 used-up promotions: not quoted, listed for the account and the guest e-mail, others unaffected, unpaid holds not reported');
 
   raise exception 'ALL PROMOTIONS LIVE TESTS PASSED (% checks): %', array_length(passed, 1), array_to_string(passed, ' | ');
 end;

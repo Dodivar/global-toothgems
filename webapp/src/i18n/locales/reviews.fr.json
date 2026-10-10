@@ -335,13 +335,6 @@
   "admin": {
     "title": "Avis",
     "description": "Modérez les avis des clientes et des élèves, répondez-y et traitez les signalements.",
-    "protoToday": "Date du prototype : {{date}}",
-    "protoSimulate": "Simuler",
-    "protoModes": {
-      "live": "Données d’exemple",
-      "empty": "Aucun avis",
-      "error": "Erreur de chargement"
-    },
     "errorTitle": "Les avis n’ont pas pu être chargés",
     "errorBody": "Rien n’est perdu. Réessayez dans un instant.",
     "cancel": "Annuler",

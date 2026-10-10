@@ -3,8 +3,8 @@ import { ArrowDown, ArrowUp, CircleCheck, CircleSlash, Clock3, TrendingDown, Tre
 import clsx from "clsx";
 import type { LucideIcon } from "lucide-react";
 import type { StockState } from "../../../data/adminCatalog";
-import type { ProductDatum } from "../../../data/adminAnalytics";
-import { formatChange, formatPercent, sortProducts, type ProductSortKey } from "../../../lib/adminAnalytics";
+import { SHOP_CURRENCY, type ProductDatum } from "../../../data/adminAnalytics";
+import { formatChange, sortProducts, type ProductSortKey } from "../../../lib/adminAnalytics";
 import { useFormat } from "../../../lib/format";
 import { useLocalized } from "../../../lib/localized";
 import { AdminSelect } from "../AdminSelect";
@@ -29,8 +29,9 @@ const STOCK_META: Record<StockState, { icon: LucideIcon; className: string }> = 
   preorder: { icon: Clock3, className: "border-[var(--gt-blue-200)] bg-[var(--gt-blue-50)] text-[var(--gt-blue-700)]" },
 };
 
-function StockPill({ state }: { state: StockState }) {
+function StockPill({ state }: { state: StockState | null }) {
   const { t } = useTranslation();
+  if (!state) return <span className="text-[length:var(--text-caption)] text-[var(--text-subtle)]">—</span>;
   const meta = STOCK_META[state];
   return (
     <span
@@ -45,7 +46,16 @@ function StockPill({ state }: { state: StockState }) {
   );
 }
 
-function ChangeChip({ value }: { value: number }) {
+function ChangeChip({ value }: { value: number | null }) {
+  const { t } = useTranslation();
+  // Nothing sold in the previous period: there is no rate to show.
+  if (value === null) {
+    return (
+      <span className="whitespace-nowrap text-[length:var(--text-caption)] font-semibold text-[var(--text-muted)]">
+        {t("admin.stats.products.newInPeriod")}
+      </span>
+    );
+  }
   const Icon = value >= 0 ? TrendingUp : TrendingDown;
   return (
     <span
@@ -64,7 +74,6 @@ const COLUMNS: { key: ProductSortKey; labelKey: string }[] = [
   { key: "units", labelKey: "admin.stats.products.units" },
   { key: "revenue", labelKey: "admin.stats.products.revenue" },
   { key: "orders", labelKey: "admin.stats.products.orders" },
-  { key: "conversion", labelKey: "admin.stats.products.conversion" },
 ];
 
 export function TopProducts({
@@ -78,17 +87,15 @@ export function TopProducts({
   ascending: boolean;
   onSort: (key: ProductSortKey, ascending: boolean) => void;
 }) {
-  const { formatCount, formatPrice } = useFormat();
+  const { formatCount, formatMoney } = useFormat();
   const { t } = useTranslation();
   const L = useLocalized();
   const rows = sortProducts(products, sort, ascending);
 
   const cell = (product: ProductDatum, key: ProductSortKey) =>
     key === "revenue"
-      ? formatPrice(product.revenue)
-      : key === "conversion"
-        ? formatPercent(product.conversion)
-        : formatCount(product[key]);
+      ? formatMoney(product.revenue, SHOP_CURRENCY)
+      : formatCount(product[key]);
 
   return (
     <>
@@ -150,7 +157,7 @@ export function TopProducts({
       </ul>
 
       <div className="gt-admin-scroll hidden overflow-x-auto lg:block">
-        <table className="w-full min-w-[860px] border-collapse text-[length:var(--text-body-sm)]">
+        <table className="w-full min-w-[760px] border-collapse text-[length:var(--text-body-sm)]">
           <caption className="sr-only">{t("admin.stats.products.caption")}</caption>
           <thead className="gt-admin-thead">
             <tr>

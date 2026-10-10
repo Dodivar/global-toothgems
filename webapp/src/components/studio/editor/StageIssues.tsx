@@ -47,7 +47,7 @@ export function IssuePanel({ issues, jewels }: { issues: DesignIssue[]; jewels: 
   return (
     <section
       aria-label={title}
-      className="absolute left-3 top-3 z-[8] w-[min(276px,calc(100%-24px))] rounded-[var(--radius-md)] border border-[var(--gt-red-400)] bg-[var(--surface-card)] shadow-[var(--shadow-lg)] studio-side:top-14"
+      className="absolute left-[calc(var(--gt-lib-open,0px)+12px)] top-3 z-[8] transition-[left] duration-[var(--duration-fast)] w-[min(276px,calc(100%-24px))] rounded-[var(--radius-md)] border border-[var(--gt-red-400)] bg-[var(--surface-card)] shadow-[var(--shadow-lg)] studio-side:top-14"
     >
       <div className="flex items-center gap-2 py-1 pl-3 pr-1">
         <TriangleAlert size={16} aria-hidden="true" className="flex-none text-[var(--gt-red-500)]" />

@@ -2,6 +2,7 @@ import type { Localized } from "./types";
 import { getProduct } from "./products";
 import { getCourse } from "./courses";
 import { toMinorUnits } from "../lib/catalog/money";
+import type { OrderInvoice } from "../lib/documents/invoiceModel";
 
 /**
  * Order history of the member area.
@@ -194,6 +195,8 @@ export interface Order {
   shippingMethod?: string;
   /** The latest parcel with a carrier and a number. */
   tracking?: OrderTracking;
+  /** The legal invoice issued when the order was paid, then its credit notes. Absent in mock mode. */
+  invoices?: OrderInvoice[];
 }
 
 /** Whether the order stands: cancelled and fully refunded orders no longer do. */

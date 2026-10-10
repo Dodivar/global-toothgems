@@ -190,25 +190,29 @@ function StudioWorkspace() {
             so the engine keeps its canvas, its model and its camera. */}
         <div inert={!!section} className={clsx("flex min-h-0 flex-1 flex-col", section && "invisible")}>
           <EditorTopBar snap={snap} onOpenMenu={() => setDrawerOpen(true)} />
-          {/* Side by side, a closed panel's column is zero wide and the panel is hidden,
-              not unmounted: its search, tab and scroll are still there when it comes back.
-              The panel slides in and out (`usePanelPresence`) but its column snaps,
-              so the 3D canvas is resized once rather than on every frame. */}
+          {/* Side by side, the stage always fills the space and the two panels are
+              drawers sliding over it (`usePanelPresence`): the 3D canvas is never resized
+              when they open or close. A closed drawer is hidden, not unmounted, so its
+              search, tab and scroll are still there when it comes back. The width a drawer
+              covers (`--gt-lib-open`, `--gt-insp-open`) keeps the stage's own controls in
+              the part still in view. Stacked (a phone held upright), the panels follow the stage. */}
           <div
             className={clsx(
-              "grid min-h-0 flex-1 grid-cols-1 studio-side:grid-cols-[var(--gt-lib)_minmax(0,1fr)_var(--gt-insp)]",
-              library.shown ? "[--gt-lib:236px] lg:[--gt-lib:264px] xl:[--gt-lib:288px]" : "[--gt-lib:0px]",
-              inspector.shown ? "[--gt-insp:296px] lg:[--gt-insp:316px] xl:[--gt-insp:332px]" : "[--gt-insp:0px]",
+              "flex min-h-0 flex-1 flex-col studio-side:relative studio-side:block",
+              "[--gt-lib:236px] [--gt-insp:296px] lg:[--gt-lib:264px] lg:[--gt-insp:316px] xl:[--gt-lib:288px] xl:[--gt-insp:332px]",
+              panels.open.library && "studio-side:[--gt-lib-open:var(--gt-lib)]",
+              panels.open.inspector && "studio-side:[--gt-insp-open:var(--gt-insp)]",
             )}
           >
             {/* Stage first on small screens: it is what the visitor came for. */}
-            <div className="order-1 grid min-h-0 min-w-0 grid-cols-[minmax(0,1fr)] studio-side:col-start-2 studio-side:row-start-1">
+            <div className="order-1 grid min-h-0 min-w-0 grid-cols-[minmax(0,1fr)] studio-side:absolute studio-side:inset-0">
               <EditorViewport snap={snap} panels={panels} />
             </div>
             <div
               id="gt-editor-library-panel"
               className={clsx(
-                "order-2 grid min-h-0 min-w-0 grid-cols-[minmax(0,1fr)] studio-side:col-start-1 studio-side:row-start-1",
+                "order-2 grid min-h-0 min-w-0 grid-cols-[minmax(0,1fr)]",
+                "studio-side:absolute studio-side:inset-y-0 studio-side:left-0 studio-side:z-20 studio-side:w-[var(--gt-lib)] studio-side:shadow-[var(--shadow-lg)]",
                 !library.shown && "hidden",
                 library.phase && `gt-editor-side-${library.phase}-left`,
               )}
@@ -218,7 +222,8 @@ function StudioWorkspace() {
             <div
               id="gt-editor-inspector-panel"
               className={clsx(
-                "order-3 grid min-h-0 min-w-0 grid-cols-[minmax(0,1fr)] studio-side:col-start-3 studio-side:row-start-1",
+                "order-3 grid min-h-0 min-w-0 grid-cols-[minmax(0,1fr)]",
+                "studio-side:absolute studio-side:inset-y-0 studio-side:right-0 studio-side:z-20 studio-side:w-[var(--gt-insp)] studio-side:shadow-[var(--shadow-lg)]",
                 !inspector.shown && "hidden",
                 inspector.phase && `gt-editor-side-${inspector.phase}-right`,
               )}

@@ -168,6 +168,8 @@ export async function fetchBasketQuote(params: {
   useReward: boolean;
   currency: string;
   locale: "fr" | "en";
+  /** A guest's e-mail, for the per-customer promotion limits (ignored by the database when signed in). */
+  email?: string | null;
 }): Promise<QuoteResult> {
   const { data, error } = await requireSupabase().rpc("quote_basket", {
     p_items: params.items,
@@ -176,6 +178,7 @@ export async function fetchBasketQuote(params: {
     p_use_loyalty_reward: params.useReward,
     p_currency: params.currency,
     p_locale: params.locale,
+    ...(params.email ? { p_email: params.email } : {}),
   });
   if (error) return { ok: false, error: "unavailable" };
   return readQuote(data);

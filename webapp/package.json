@@ -11,7 +11,8 @@
     "typecheck": "next typegen && tsc --noEmit && tsc --noEmit -p tsconfig.e2e.json",
     "lint": "oxlint",
     "test": "vitest run",
-    "test:e2e": "playwright test"
+    "test:e2e": "playwright test",
+    "sync:documents": "node scripts/sync-documents.mjs"
   },
   "dependencies": {
     "@opentelemetry/exporter-logs-otlp-http": "^0.222.0",

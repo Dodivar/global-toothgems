@@ -1,5 +1,5 @@
 import { describe, expect, it } from "vitest";
-import { addPromotionCode, lineDiscount, MAX_PROMOTION_CODES, normalizePromotionCode, quoteItems, quoteKey, readQuote } from "./basketQuote";
+import { addPromotionCode, guestQuoteEmail, lineDiscount, MAX_PROMOTION_CODES, normalizePromotionCode, quoteItems, quoteKey, readQuote } from "./basketQuote";
 import type { BasketQuote } from "./basketQuote";
 import type { CartLine } from "./cartLines";
 
@@ -48,6 +48,16 @@ describe("quote items", () => {
     expect(quoteKey(items, ["A1"], null, false, "EUR")).not.toBe(base);
     expect(quoteKey(items, [], "rate", false, "EUR")).not.toBe(base);
     expect(quoteKey(items, [], null, true, "EUR")).not.toBe(base);
+    // who is buying: per-customer promotion limits depend on it
+    expect(quoteKey(items, [], null, false, "EUR", "user:u1")).not.toBe(base);
+    expect(quoteKey(items, [], null, false, "EUR", "a@b.fr")).not.toBe(quoteKey(items, [], null, false, "EUR", "c@d.fr"));
+  });
+
+  it("gives the quote a guest's e-mail only once it is complete, never a signed-in customer's", () => {
+    expect(guestQuoteEmail(false, "  Cleo@Example.FR ")).toBe("cleo@example.fr");
+    expect(guestQuoteEmail(false, "cleo@exam")).toBeNull();
+    expect(guestQuoteEmail(false, "")).toBeNull();
+    expect(guestQuoteEmail(true, "cleo@example.fr")).toBeNull();
   });
 });
 
@@ -60,6 +70,7 @@ describe("reading the quote", () => {
       discounts: [{ label: "Spring", code: "SPRING", type: "percentage", goods_amount: 7.6, shipping_amount: 0 }],
       lines: [{ product_id: "p1", variant_id: null, discount_amount: 7.6 }, { product_id: "p2", variant_id: "v2", discount_amount: 0 }],
       gift_lines: [{ product_name: "Pouch", variant_name: null }],
+      used_up: [{ label: "Noël 2026", max_uses: 1 }, { label: 42 }],
     });
     expect(result).toEqual({
       ok: true,
@@ -69,8 +80,14 @@ describe("reading the quote", () => {
         discounts: [{ label: "Spring", code: "SPRING", type: "percentage", goods: 760, shipping: 0 }],
         lines: [{ productId: "p1", variantId: null, amount: 760 }],
         gifts: [{ name: "Pouch", variant: null }],
+        usedUp: [{ label: "Noël 2026", maxUses: 1 }],
       },
     });
+  });
+
+  it("reads an answer without `used_up` (an older function) as nothing used up", () => {
+    const result = readQuote({ ok: true, goods_discount: 0, shipping_discount: 0, discounts: [], lines: [], gift_lines: [] });
+    expect(result.ok && result.quote.usedUp).toEqual([]);
   });
 
   it("maps the refusals the function knows, and anything else to unavailable", () => {
@@ -89,12 +106,23 @@ describe("lineDiscount (promotion shown on a basket line)", () => {
     discounts: [{ label: "Noël", code: null, type: "percentage", goods: 899, shipping: 0 }],
     lines: [{ productId: "p1", variantId: "v1", amount: 899 }],
     gifts: [],
+    usedUp: [],
   };
   const reward: BasketQuote = { ...promo, goodsDiscount: 450, lines: [{ productId: "p1", variantId: "v1", amount: 450 }] };
 
   it("shows the promotion with the reward off and the reward's cut with it on", () => {
     expect(lineDiscount({ status: "ready", quote: promo }, "p1", "v1")).toBe(899);
     expect(lineDiscount({ status: "ready", quote: reward }, "p1", "v1")).toBe(450);
+  });
+
+  it("never shows the loyalty reward alone as a promotion on the line (the promotion is used up, or the reward is better)", () => {
+    const rewardOnly: BasketQuote = {
+      ...reward,
+      discounts: [{ label: "Récompense fidélité -10 %", code: null, type: "loyalty", goods: 450, shipping: 0 }],
+      usedUp: [{ label: "Noël", maxUses: 1 }],
+    };
+    expect(lineDiscount({ status: "ready", quote: rewardOnly }, "p1", "v1")).toBe(0);
+    expect(lineDiscount({ status: "loading", previous: rewardOnly }, "p1", "v1")).toBe(0);
   });
 
   it("keeps the previous answer on the line while the new one loads, so the promotion does not vanish", () => {

@@ -20,6 +20,7 @@ import {
   type ExportScope,
 } from "../../components/admin/OrderDialogs";
 import { useAdminOrders } from "../../lib/adminOrders";
+import { useAdminInvoices } from "../../lib/adminInvoices";
 import { useToast } from "../../lib/toast";
 import { useFormat } from "../../lib/format";
 import {
@@ -202,7 +203,7 @@ export function Orders() {
   const [cancelTargets, setCancelTargets] = useState<AdminOrder[]>([]);
   const [exportOpen, setExportOpen] = useState(false);
 
-  const notInPrototype = () => showToast(t("common.notIncludedTitle"), t("admin.orders.toastNotWired"), "info");
+  const { invoices } = useAdminInvoices();
 
   const applyStatusToSelection = (status: AdminOrderStatus) => {
     const references = [...selected];
@@ -243,7 +244,7 @@ export function Orders() {
         "info",
       );
     },
-    onInvoice: notInPrototype,
+    onInvoice: (order: AdminOrder, kind: "print" | "download") => invoices([order], kind),
     hrefFor,
   };
 
@@ -349,7 +350,7 @@ export function Orders() {
         onMarkProcessing={() => applyStatusToSelection("processing")}
         onMarkShipped={() => applyStatusToSelection("shipped")}
         onExport={() => setExportOpen(true)}
-        onPrint={notInPrototype}
+        onPrint={() => invoices(selectedOrders, "print")}
         onCancel={() => setCancelTargets(selectedOrders)}
       />
 

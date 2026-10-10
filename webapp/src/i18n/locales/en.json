@@ -454,6 +454,8 @@
       "rewardHint": "Applied alone when it beats your promotions; added only on top of promotions that accept it.",
       "rewardNotUsed": "A better promotion is applied: your loyalty reward stays available.",
       "codeNotUsed": "Code {{code}} is not applied: a better offer is already in place.",
+      "usedUp_one": "You have already used the “{{label}}” offer: it is limited to one use per customer, so the discount does not apply to this order.",
+      "usedUp_other": "You have already used the “{{label}}” offer as many times as allowed ({{count}} per customer), so the discount does not apply to this order.",
       "discountLine": "{{label}} ({{code}})",
       "gift": "Free gift: {{name}}",
       "freeOrder": "This order is entirely free through a promotion: free checkout is not available yet. Remove the code or add an item."
@@ -1300,6 +1302,11 @@
       "billingAddress": "Billing address",
       "printRecap": "Print the summary",
       "recapNotice": "This order summary is not an invoice.",
+      "downloadPdf": "Download the order form (PDF)",
+      "downloadPdfWorking": "Preparing the PDF…",
+      "downloadPdfError": "The order form could not be prepared. Please try again in a moment.",
+      "downloadInvoice": "Download the invoice (PDF)",
+      "downloadCreditNote": "Credit note {{number}} (PDF)",
       "notFoundTitle": "Order not found",
       "notFoundBody": "This order does not exist or is not linked to your account."
     },
@@ -2224,6 +2231,16 @@
       "actionViewCustomer": "View customer",
       "actionPrintInvoice": "Print invoice",
       "actionDownloadInvoice": "Download invoice",
+      "actionDownloadCreditNote": "Credit note {{number}}",
+      "noInvoiceTitle": "No invoice",
+      "noInvoiceBody": "The invoice is issued at payment. This order is not paid, or was paid before invoicing was introduced (9 October 2026).",
+      "noInvoicesBody": "None of the selected orders has an invoice: they are not paid, or were paid before invoicing was introduced.",
+      "someWithoutInvoiceTitle": "Some orders have no invoice",
+      "someWithoutInvoiceBody_one": "{{count}} order without an invoice was left out.",
+      "someWithoutInvoiceBody_other": "{{count}} orders without an invoice were left out.",
+      "invoiceErrorTitle": "Invoice unavailable",
+      "invoiceErrorBody": "The PDF could not be prepared. Please try again in a moment.",
+      "invoicesFileName": "invoices",
       "actionCancel": "Cancel order",
       "bulkLabel": "Bulk actions",
       "bulkSelected_one": "{{count}} order selected",
@@ -2362,7 +2379,6 @@
       "nextOrder": "Next order, {{reference}}",
       "detailMissingTitle": "Order not found",
       "detailMissingBody": "No order {{reference}} in the book. It may have been removed, or the reference is wrong.",
-      "toastNotWired": "This action is not wired up in this mockup.",
       "toastStatusTitle": "Order {{reference}} updated",
       "toastStatusBody": "New status: {{status}}.",
       "toastBulkStatusTitle_one": "{{count}} order updated",
@@ -3083,7 +3099,7 @@
       "updatedAgo_one": "Updated {{count}} minute ago",
       "updatedAgo_other": "Updated {{count}} minutes ago",
       "relativeShare": "Relative weight: {{share}}%",
-      "disclaimer": "Sample figures: this screen is not connected to any real data source.",
+      "disclaimer": "Revenue: goods on orders paid in the period, VAT included, after discounts; excluding shipping, gift cards, courses and refunds. Dated by payment, Paris time.",
       "range": {
         "label": "Date range",
         "today": "Today",
@@ -3093,40 +3109,37 @@
         "year": "This year",
         "custom": "Custom range",
         "from": "From",
-        "to": "To"
+        "to": "To",
+        "max_one": "At most {{count}} day.",
+        "max_other": "At most {{count}} days."
       },
       "actions": {
         "refresh": "Refresh",
         "exportCsv": "Export CSV",
-        "exportPdf": "Export PDF",
-        "more": "More actions",
-        "showLoading": "Show the loading state",
-        "showError": "Show the error state"
+        "more": "More actions"
       },
       "toasts": {
-        "csvTitle": "CSV export prepared",
-        "pdfTitle": "PDF export prepared",
-        "exportBody": "Mockup: no file is actually generated.",
+        "csvTitle": "CSV export downloaded",
         "refreshTitle": "Statistics refreshed",
-        "refreshBody": "The figures on screen are current as of now."
+        "refreshBody": "The figures on screen are current as of now.",
+        "csvBody": "The file holds the figures on screen for this period and these filters."
       },
       "filters": {
         "label": "Date range and filters",
         "category": "Category",
         "product": "Product",
-        "course": "Course",
         "customerType": "Customer type",
         "country": "Country",
         "orderStatus": "Order status",
         "allCategories": "All categories",
         "allProducts": "All products",
-        "allCourses": "All courses",
         "allCustomers": "All customers",
         "allCountries": "All countries",
         "allStatuses": "All statuses",
         "active_one": "{{count}} filter active",
         "active_other": "{{count}} filters active",
-        "reset": "Reset filters"
+        "reset": "Reset filters",
+        "unknownProduct": "Selected product"
       },
       "kpi": {
         "explain": "What “{{name}}” means",
@@ -3134,36 +3147,37 @@
         "versusValue": "vs {{value}} last period",
         "revenue": {
           "label": "Total revenue",
-          "hint": "Everything taken in the period, after discounts and excluding shipping."
+          "hint": "Goods on orders paid in the period, VAT included and after discounts. Excludes shipping, gift cards, courses and refunds."
         },
         "orders": {
           "label": "Orders",
-          "hint": "Orders placed during the period, whatever their status."
+          "hint": "Orders paid in the period that hold at least one shop product."
         },
         "aov": {
           "label": "Average order value",
-          "hint": "Revenue divided by the number of orders in the period."
+          "hint": "Revenue divided by the number of orders paid in the period."
         },
         "units": {
           "label": "Products sold",
-          "hint": "Items sold across every reference in the catalogue."
+          "hint": "Items sold on paid orders, gift cards excluded."
         },
         "newCustomers": {
           "label": "New customers",
-          "hint": "Customers whose very first order falls inside the period."
+          "hint": "Customers (account or guest e-mail) whose very first purchase falls inside the period."
         },
         "returningCustomers": {
           "label": "Returning customers",
-          "hint": "Orders placed by customers the shop already knew."
+          "hint": "Customers who bought in the period after an earlier first purchase."
         },
         "enrollments": {
           "label": "Course enrolments",
-          "hint": "Access opened in the period, both purchased and included with a professional kit."
+          "hint": "Course access opened in the period and not revoked, bought or granted. Not narrowed by the shop filters."
         },
         "completionRate": {
           "label": "Completion rate",
-          "hint": "Share of enrolments carried through to the certificate."
-        }
+          "hint": "Share of the period's enrolments whose learner has since completed the course. Not narrowed by the shop filters."
+        },
+        "noReference": "No reference"
       },
       "metric": {
         "revenue": "Revenue",
@@ -3216,12 +3230,12 @@
         "units": "Units",
         "revenue": "Revenue",
         "orders": "Orders",
-        "conversion": "Conversion",
         "change": "Change",
         "stock": "Stock",
         "sortBy": "Sort by",
         "emptyTitle": "No products in this selection",
-        "emptyBody": "No sales match the active filters. Widen the period or remove a filter."
+        "emptyBody": "No sales match the active filters. Widen the period or remove a filter.",
+        "newInPeriod": "New"
       },
       "customers": {
         "title": "Customers",
@@ -3257,7 +3271,8 @@
         "course": "Course",
         "caption": "Courses ranked by enrolments",
         "emptyTitle": "No enrolments yet",
-        "emptyBody": "No enrolment matches this period or these filters."
+        "emptyBody": "No course enrolment, sale or completion in this period.",
+        "filtersIgnored": "Shop filters do not apply to courses: only the period counts here."
       },
       "insights": {
         "title": "Worth noting",
@@ -3291,37 +3306,22 @@
         "title": "Sales by location",
         "description": "The markets carrying the period.",
         "country": "Country",
-        "customers": "Customers",
-        "caption": "Revenue, orders and customers per country"
-      },
-      "country": {
-        "fr": "France",
-        "be": "Belgium",
-        "ch": "Switzerland",
-        "de": "Germany",
-        "uk": "United Kingdom",
-        "other": "Other countries"
+        "customers": "Customers (base)",
+        "caption": "Revenue, orders and customers per country",
+        "unknown": "Country not given",
+        "emptyTitle": "No sales in the period",
+        "emptyBody": "Countries appear as soon as an order is paid."
       },
       "cross": {
-        "title": "Shop and school",
-        "description": "What the two halves of the platform give each other.",
+        "title": "Cross-selling",
+        "description": "What customers buy together.",
         "benchmark": "Shop average: {{value}}",
-        "aftercareFollowUp": {
-          "label": "Aftercare bought after jewelry",
-          "hint": "Customers who come back for aftercare after a first gem."
+        "aftercareAttach": {
+          "label": "Jewelry sold with aftercare",
+          "hint": "Share of orders holding a gem that also hold an aftercare product."
         },
-        "trainedBuyers": {
-          "label": "Customers who became learners",
-          "hint": "Buyers who go on to enrol in a course."
-        },
-        "graduateAov": {
-          "label": "Average order value, graduates",
-          "hint": "Average order value of customers who completed a course."
-        },
-        "graduateRepeat": {
-          "label": "Repeat rate, trained artists",
-          "hint": "Repeat purchase rate of customers who completed a course."
-        }
+        "emptyTitle": "Nothing to cross",
+        "emptyBody": "No order in this selection."
       },
       "panel": {
         "collapse": "Collapse",
@@ -3335,6 +3335,19 @@
         "title": "Statistics unavailable",
         "body": "The figures could not be fetched. Nothing is lost — try again in a moment.",
         "retry": "Try again"
+      },
+      "unavailable": {
+        "title": "Statistics need the database",
+        "body": "This environment is not connected to Supabase: no figures are shown rather than invented ones."
+      },
+      "invalidRange": {
+        "title": "Period too long",
+        "body_one": "Choose a period of at most {{count}} day.",
+        "body_other": "Choose a period of at most {{count}} days."
+      },
+      "export": {
+        "value": "Value",
+        "previous": "Previous period"
       }
     },
     "training": {
@@ -4902,5 +4915,74 @@
     "nameMissing": "Your first and last name are needed to issue the certificate.",
     "nameError": "Your name couldn’t be saved. Please try again in a moment.",
     "nameLockedHint": "Add your first and last name to download or share this certificate."
+  },
+  "documents": {
+    "seller": "Seller",
+    "page": "Page {{page}} of {{count}}",
+    "meta": {
+      "reference": "Reference",
+      "orderDate": "Order date",
+      "issuedOn": "Issued on",
+      "order": "Order"
+    },
+    "columns": {
+      "item": "Item",
+      "qty": "Qty",
+      "unitPrice": "Unit price",
+      "discount": "Discount",
+      "total": "Total",
+      "date": "Date",
+      "reason": "Reason",
+      "status": "Status",
+      "amount": "Amount",
+      "unitPriceExcl": "Unit price excl. VAT",
+      "vatRate": "VAT",
+      "totalExcl": "Total excl. VAT",
+      "totalIncl": "Total incl. VAT",
+      "base": "Net amount",
+      "vat": "VAT amount"
+    },
+    "footer": {
+      "capital": "with a share capital of {{amount}}",
+      "registration": "Registration {{number}}",
+      "vat": "VAT number {{number}}"
+    },
+    "order": {
+      "title": "Order form",
+      "fileName": "order-form",
+      "notice": "This order form summarises your order as it was recorded. It is not an invoice."
+    },
+    "invoice": {
+      "title": "Invoice",
+      "number": "Invoice no.",
+      "issuedOn": "Issue date",
+      "saleDate": "Date of sale",
+      "buyer": "Customer",
+      "shipping": "Shipping",
+      "shippingNamed": "Shipping — {{method}}",
+      "adjustment": "Refund",
+      "giftCardVat": "outside the scope of VAT",
+      "lineDiscount": "discount of {{amount}} incl. VAT",
+      "totalExcl": "Total excl. VAT",
+      "totalVat": "VAT",
+      "totalIncl": "Total incl. VAT",
+      "paidGiftCard": "Paid by gift card",
+      "paidCard": "Paid by card",
+      "vatTitle": "VAT summary",
+      "paid": "Invoice paid on {{date}}: payment in full when ordering, no discount for early payment.",
+      "giftCardNote": "Gift cards: multi-purpose vouchers, outside the scope of VAT when bought; VAT is due when they are used.",
+      "latePayment": "Business customers: late payment incurs interest at three times the French legal rate and a fixed €40 recovery fee (French Commercial Code, art. L441-10).",
+      "fileName": "invoice"
+    },
+    "creditNote": {
+      "title": "Credit note",
+      "number": "Credit note no.",
+      "credits": "Original invoice",
+      "totalIncl": "Credit note total incl. VAT",
+      "notice": "Credit note issued against invoice {{invoice}} of {{date}}, for the refund confirmed on {{refundedOn}}.",
+      "toCard": "The amount was refunded to the payment method used.",
+      "toGiftCard": "The amount was credited back to the gift card used.",
+      "fileName": "credit-note"
+    }
   }
 }
