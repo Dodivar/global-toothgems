@@ -1088,7 +1088,10 @@
         "security": "Sécurité",
         "menu": "Menu",
         "cart": "Panier"
-      }
+      },
+      "groupLearning": "Apprendre",
+      "groupPurchases": "Achats",
+      "groupAccount": "Mon compte"
     },
     "statsLabel": "Votre compte en chiffres",
     "statCourses": "formations en cours",
@@ -1506,8 +1509,10 @@
     },
     "nav": {
       "primary": "Navigation de l’administration",
-      "groupMain": "Gestion",
-      "groupSoon": "Prochainement",
+      "groupSales": "Ventes",
+      "groupCatalogue": "Catalogue",
+      "groupAcademy": "Academy",
+      "groupAdministration": "Administration",
       "dashboard": "Tableau de bord",
       "products": "Produits",
       "categories": "Catégories",
@@ -1517,7 +1522,7 @@
       "training": "Formations",
       "analytics": "Statistiques",
       "settings": "Réglages",
-      "soon": "Bientôt"
+      "users": "Utilisateurs"
     },
     "role": {
       "owner": "Propriétaire",

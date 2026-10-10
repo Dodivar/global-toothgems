@@ -1088,7 +1088,10 @@
         "security": "Security",
         "menu": "Menu",
         "cart": "Cart"
-      }
+      },
+      "groupLearning": "Learning",
+      "groupPurchases": "Purchases",
+      "groupAccount": "My account"
     },
     "statsLabel": "Your account in numbers",
     "statCourses": "courses in progress",
@@ -1506,8 +1509,10 @@
     },
     "nav": {
       "primary": "Administration navigation",
-      "groupMain": "Manage",
-      "groupSoon": "Coming soon",
+      "groupSales": "Sales",
+      "groupCatalogue": "Catalogue",
+      "groupAcademy": "Academy",
+      "groupAdministration": "Administration",
       "dashboard": "Dashboard",
       "products": "Products",
       "categories": "Categories",
@@ -1517,7 +1522,7 @@
       "training": "Training",
       "analytics": "Analytics",
       "settings": "Settings",
-      "soon": "Soon"
+      "users": "Users"
     },
     "role": {
       "owner": "Owner",
