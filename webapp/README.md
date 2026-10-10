@@ -528,7 +528,7 @@ The layer around the editor that makes it a personal design workspace. The edito
 
 ## The member area (`/compte`)
 
-The signed-in area is an administration dashboard: a left sidebar on desktop, a scrollable row of pills on small screens, and one route per section.
+The signed-in area is an administration dashboard: a full-height left sidebar on desktop (`components/layout/MemberShell.tsx`), the same sidebar as a drawer from a slim top bar on small screens, and one route per section.
 
 | Route | Section |
 | --- | --- |
@@ -539,7 +539,7 @@ The signed-in area is an administration dashboard: a left sidebar on desktop, a 
 | `/compte/fidelite` | Loyalty card — the member's real stamp card and reward (`lib/loyalty.tsx`, `loyalty_overview`), read again on arrival |
 | `/compte/profil` | Profile details, editable and saved: name/phone on `profiles`, newsletter as a `marketing_email` consent record, address as the default shipping row of `customer_addresses` (emptying it deletes the row; a partial address is refused client-side) |
 
-The sidebar also links out to the course catalogue (`/academy`) and signs the member out. `RequireAccount` wraps the layout, so every section is gated at once.
+The sidebar groups the sections under the dashboard: *Apprendre* (Members' Lounge, certificates), *Achats* (orders, loyalty, reviews, the cart) and *Mon compte* (profile, security), then *Explorer* (home, shop, Academy, Studio). Its foot has one row per kind of move: *Administration* as a full row for staff, help · cookies · language on one line, then signing out alone at the bottom. In the lounge the rail shows the same sections with a divider between groups. `RequireAccount` wraps the layout, so every section is gated at once.
 
 The member area is capped at `--max-width-account` rather than `--max-width-content`: it spends a 248 px sidebar, the column gap and its own gutters out of the width every other screen gives entirely to content, so the wider cap is what makes its content column measure the same 1240 px as the shop grid.
 
@@ -637,7 +637,7 @@ Without Supabase, sign in with `camille@globaltoothgems.com` / `toothgems2026`; 
 - `data/adminOrders.ts` — the back office's order model (types only; the mock book is gone). A separate model from the member's `data/orders.ts`, sharing its amounts, lines, discounts, parcels, refunds and addresses. See *Orders in the back office* above.
 - `lib/adminOrders.tsx` — the one place any order changes (Supabase only; without it the book is empty).
 - `lib/adminOrderFilters.ts` — search, filtering, sorting and paging as pure functions over URL state, the same convention as `lib/productFilters.ts`; the KPI row and the filter options come from the book itself.
-- `components/admin/` — the workspace's own primitives (rail, header, table, row, status badge, filters, form, media uploader, preview drawer, confirmation dialog, empty and loading states, form field, search input, category badge), plus the orders workspace's own pieces.
+- `components/admin/` — the workspace's own primitives (rail — `AdminSidebar`: dashboard and statistics, then *Ventes* (orders, customers, promotions, reviews), *Catalogue* (products, categories), *Academy* (training), *Administration* (users, settings); the collapse toggle beside the brand; at the foot the member space as a full row, store · language on one line, signing out last — header, table, row, status badge, filters, form, media uploader, preview drawer, confirmation dialog, empty and loading states, form field, search input, category badge), plus the orders workspace's own pieces.
 - `components/ui/Dialog.tsx` and `components/ui/Menu.tsx` — a modal with a focus trap and a keyboard-navigable dropdown, added for the orders screens. See the scope note below: they overlap with `components/admin/ConfirmationDialog.tsx`, `OverflowMenu.tsx` and `lib/useFocusTrap.ts` and should be consolidated onto those.
 
 ### Decisions worth knowing
