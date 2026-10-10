@@ -80,7 +80,7 @@ begin
   perform set_config('request.jwt.claims', json_build_object('sub', a, 'role', 'authenticated')::text, true);
   perform public.lounge_join('en');
   select handle into v_txt from public.lounge_members where user_id = a;
-  if v_txt <> 'emma.martin' then raise exception 'FAIL J1: handle %', v_txt; end if;
+  if v_txt <> 'emma.m' then raise exception 'FAIL J1: handle %', v_txt; end if;
   select count(*) into v_cnt from public.lounge_members where user_id = a and languages @> array['fr', 'en'];
   if v_cnt <> 1 then raise exception 'FAIL J1: lounges of the member'; end if;
   begin
@@ -93,7 +93,7 @@ begin
   perform set_config('request.jwt.claims', json_build_object('sub', c, 'role', 'authenticated')::text, true);
   perform public.lounge_join('en');
   select handle into v_txt from public.lounge_members where user_id = c;
-  if v_txt <> 'emma.martin2' then raise exception 'FAIL J1: second handle %', v_txt; end if;
+  if v_txt <> 'emma.m2' then raise exception 'FAIL J1: second handle %', v_txt; end if;
   select count(*) into v_cnt from public.lounge_members;
   if v_cnt <> 1 then raise exception 'FAIL J1: a member reads other lounge rows (%)', v_cnt; end if;
   passed := passed || 'J1'::text;

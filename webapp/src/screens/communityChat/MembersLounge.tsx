@@ -101,7 +101,10 @@ function LoungeRoom({ route }: { route: Exclude<LoungeRoute, { kind: "notFound" 
       } catch {
         /* Storage unavailable: the default room. */
       }
-      const target = last && parseLoungePath(last).kind === "room" ? last : DEFAULT_LOUNGE_PATH;
+      /* Channels only: a remembered private conversation may be with someone who
+         is no longer a member (or a former prototype id), which would land on the 404. */
+      const remembered = last ? parseLoungePath(last) : null;
+      const target = last && remembered?.kind === "room" && remembered.room.kind === "channel" ? last : DEFAULT_LOUNGE_PATH;
       navigate(target, { replace: true });
       return;
     }
