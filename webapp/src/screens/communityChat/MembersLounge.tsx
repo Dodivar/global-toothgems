@@ -23,21 +23,53 @@ import { LockedLounge } from "../../components/communityChat/LockedLounge";
  *
  * Rendered by the section's layout, so it stays on screen while the address
  * moves from room to room; `children` is the page, which only checks the
- * session. Same door as the forum: an account with a training on it. Below
- * that, the locked screen, never an error. Prototype: conversations are
- * fixtures and local state (`lib/communityChat`), nothing leaves the browser.
+ * session. The door is an account with a training on it (or a team member),
+ * decided by the database (`lounge_access()`); below that, the locked screen,
+ * never an error. Messages, members and counts come from `useChat()`
+ * (Supabase, or the fixtures in mock mode).
  */
 export function MembersLounge({ children }: { children?: ReactNode }) {
-  const { hasAccess } = useCommunity();
+  const { hasAccess, accessKnown } = useCommunity();
   const { pathname } = useLocation();
   const route = parseLoungePath(pathname);
 
   if (route.kind === "notFound") return <NotFound />;
   return (
     <>
-      {hasAccess ? <LoungeRoom route={route} /> : <LockedLounge />}
+      {!accessKnown ? <LoungeWaiting /> : hasAccess ? <LoungeRoom route={route} /> : <LockedLounge />}
       {children}
     </>
+  );
+}
+
+/** The lounge while it is being read: the page's frame, nothing to act on yet. */
+function LoungeWaiting() {
+  const { t } = useTranslation();
+  return (
+    <div className="grid h-[100dvh] place-items-center bg-[var(--surface-card)]" role="status" aria-busy="true">
+      <h1 className="sr-only">{t("lounge.title")}</h1>
+      <span className="text-[length:var(--text-body-sm)] text-[var(--text-muted)]">{t("lounge.loading")}</span>
+    </div>
+  );
+}
+
+/** The lounge could not be read: say so, and offer to try again. */
+function LoungeFailed({ onRetry }: { onRetry: () => void }) {
+  const { t } = useTranslation();
+  return (
+    <div className="grid h-[100dvh] place-items-center bg-[var(--surface-card)] px-6">
+      <h1 className="sr-only">{t("lounge.title")}</h1>
+      <div role="alert" className="grid max-w-[420px] justify-items-center gap-3 text-center">
+        <p className="m-0 text-[length:var(--text-body)] text-[var(--text-body)]">{t("lounge.loadFailed")}</p>
+        <button
+          type="button"
+          onClick={onRetry}
+          className="inline-flex h-10 items-center rounded-[var(--radius-pill)] border border-[var(--border-default)] bg-white px-5 text-[length:var(--text-body-sm)] font-bold text-[var(--text-primary)] hover:bg-[var(--gt-ink-100)] focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-[var(--focus-ring)]"
+        >
+          {t("lounge.retry")}
+        </button>
+      </div>
+    </div>
   );
 }
 
@@ -49,7 +81,7 @@ const LAST_ROOM_KEY = "gt-lounge-last";
  * to the room visited last.
  */
 function LoungeRoom({ route }: { route: Exclude<LoungeRoute, { kind: "notFound" }> }) {
-  const { syncRoute, leave } = useChat();
+  const { syncRoute, leave, status, retry, currentConversation } = useChat();
   const navigate = useNavigate();
   const { pathname } = useLocation();
   const routeKey = route.kind === "room" ? pathname : "index";
@@ -85,6 +117,10 @@ function LoungeRoom({ route }: { route: Exclude<LoungeRoute, { kind: "notFound" 
 
   /* The bare address shows nothing while it forwards to a room. */
   if (route.kind === "index") return <div className="h-[100dvh]" aria-busy="true" />;
+  if (status === "error") return <LoungeFailed onRetry={retry} />;
+  if (status === "loading") return <LoungeWaiting />;
+  /* A private conversation with someone who is not (or no longer) a member. */
+  if (route.room.kind === "dm" && !currentConversation) return <NotFound />;
   return <LoungeLayout />;
 }
 

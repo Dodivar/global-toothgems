@@ -2,12 +2,11 @@
 
 import type { ReactNode } from "react";
 import { useTranslation } from "react-i18next";
-import { ArrowLeft, BellOff, Check, CheckCheck, ChevronDown, FlaskConical, Globe2, Inbox, Plus, Search, Users } from "lucide-react";
+import { ArrowLeft, BellOff, Check, CheckCheck, ChevronDown, Globe2, Inbox, Plus, Search, Users } from "lucide-react";
 import clsx from "clsx";
-import { CHAT_VIEWER_ID, UPCOMING_SERVERS, type Presence } from "../../data/communityChat";
+import { UPCOMING_SERVERS, type Presence } from "../../lib/communityChat/model";
 import { useChat, type ChannelView, type ConversationView } from "../../lib/communityChat/chatStore";
 import { plainText, timestampOf } from "../../lib/communityChat/chatLogic";
-import { AccessDemoSwitch } from "./AccessDemoSwitch";
 import { ChatAvatar, CountBadge, Popover, PopoverItem, PresenceDot, ToolButton, focusRing, useChatTime, useNow } from "./primitives";
 import { ChannelIcon } from "./channelIcons";
 import { LanguageFlag } from "./LanguageFlag";
@@ -206,12 +205,12 @@ export function ChannelList() {
 
 function ConversationRow({ view, active, now }: { view: ConversationView; active: boolean; now: number }) {
   const { t } = useTranslation();
-  const { openRoom, nameOf } = useChat();
+  const { openRoom, nameOf, viewer } = useChat();
   const { closeNav } = useLoungeUi();
   const { short } = useChatTime();
   const last = view.last;
   const preview = last
-    ? `${last.authorId === CHAT_VIEWER_ID ? t("lounge.dm.you") : ""}${plainText(last.parts, nameOf) || "📷"}`
+    ? `${last.authorId === viewer.id ? t("lounge.dm.you") : ""}${plainText(last.parts, nameOf) || "📷"}`
     : t("lounge.dm.noMessages");
   const unread = view.unread > 0;
 
@@ -343,27 +342,6 @@ export function UserPanel() {
           </div>
         )}
       </Popover>
-
-      {/* Prototype only: the same access preview as the Artist Community. */}
-      <Popover
-        label={t("community.demoTitle")}
-        side="top"
-        align="end"
-        width={260}
-        trigger={(props) => (
-          <button
-            {...props}
-            type="button"
-            aria-label={t("community.demoTitle")}
-            title={t("community.demoTitle")}
-            className={clsx("grid h-9 w-9 place-items-center rounded-[var(--radius-sm)] text-[var(--text-muted)] hover:bg-[var(--gt-ink-100)] hover:text-[var(--text-primary)]", focusRing)}
-          >
-            <FlaskConical size={16} aria-hidden="true" />
-          </button>
-        )}
-      >
-        {() => <AccessDemoSwitch />}
-      </Popover>
     </div>
   );
 }
@@ -444,7 +422,6 @@ export function ChatSidebar() {
             <Users size={12} aria-hidden="true" />
             {t("lounge.privateSpace")}
           </p>
-          <p className="m-0 text-[11px] leading-snug text-[var(--text-subtle)]">{t("lounge.previewNote")}</p>
         </div>
       </div>
 

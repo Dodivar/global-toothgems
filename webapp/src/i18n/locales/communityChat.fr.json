@@ -3,7 +3,6 @@
   "title": "Salon des membres",
   "eyebrow": "Communauté Global Toothgems",
   "privateSpace": "Espace privé · membres de l’Academy",
-  "previewNote": "Aperçu : vos messages restent sur cet appareil et disparaissent au rechargement.",
   "server": {
     "label": "Salon de langue",
     "current": "Salon {{name}}",
@@ -85,7 +84,10 @@
     "mentionsYou": "Vous mentionne",
     "imageAttachment": "Image : {{alt}}",
     "byYou": "vous",
-    "openProfile": "Ouvrir le profil de {{name}}"
+    "openProfile": "Ouvrir le profil de {{name}}",
+    "sending": "Envoi…",
+    "loading": "Chargement des messages…",
+    "loadFailed": "Les messages de ce salon n’ont pas pu être chargés."
   },
   "reactions": {
     "heart": "J’adore",
@@ -127,9 +129,12 @@
     "mentionList": "Membres à mentionner",
     "noMention": "Aucun membre ne correspond",
     "typing": "{{name}} écrit…",
-    "notImage": "Seules les images peuvent être jointes.",
-    "tooLarge": "Cette image est trop lourde (10 Mo maximum).",
-    "tooMany": "4 images au maximum par message."
+    "notImage": "Seules les images JPEG, PNG, WebP ou GIF peuvent être jointes.",
+    "tooLarge": "Cette image est trop lourde (5 Mo maximum).",
+    "tooMany": "4 images au maximum par message.",
+    "rateLimited": "Vous envoyez beaucoup de messages : patientez une minute avant le suivant.",
+    "forbidden": "Votre accès au Salon a changé : rechargez la page.",
+    "failed": "Le message n’a pas pu être envoyé. Réessayez."
   },
   "members": {
     "heading": "Membres",
@@ -229,10 +234,7 @@
     },
     "cta": "Découvrir les formations",
     "back": "Retour à mon espace",
-    "note": "Une formation suffit : l’accès s’ouvre dès qu’elle figure sur votre compte.",
-    "previewLabel": "Aperçu du Salon",
-    "online_one": "{{count}} artiste en ligne en ce moment",
-    "online_other": "{{count}} artistes en ligne en ce moment"
+    "note": "Une formation suffit : l’accès s’ouvre dès qu’elle figure sur votre compte."
   },
   "nav": {
     "attention_one": "{{count}} message pour vous",
@@ -251,5 +253,9 @@
     "dashboardOnline_other": "{{count}} artistes en ligne",
     "dashboardCta": "Ouvrir le Salon",
     "myProfile": "Modifier mon profil"
-  }
+  },
+  "memberUnnamed": "Membre",
+  "loading": "Ouverture du Salon…",
+  "loadFailed": "Le Salon n’a pas pu être chargé. Vérifiez votre connexion et réessayez.",
+  "retry": "Réessayer"
 }

@@ -4002,15 +4002,7 @@
     }
   },
   "community": {
-    "navEntryLocked": "Access with a training",
-    "demoTitle": "Prototype preview",
-    "demoBody_one": "This account owns {{count}} course. Switch the state to see the community as it appears without a training.",
-    "demoBody_other": "This account owns {{count}} courses. Switch the state to see the community as it appears without a training.",
-    "demoMode": {
-      "auto": "From the account",
-      "member": "Member with access",
-      "locked": "Member without access"
-    }
+    "navEntryLocked": "Access with a training"
   },
   "errors": {
     "preview": {
