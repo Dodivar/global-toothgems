@@ -39,6 +39,11 @@ export function GemGroupPanel({ snap }: { snap: StudioSnapshot }) {
   const ws = useWorkspace();
   const [drag, setDrag] = useState<DragState | null>(null);
   const suppressClick = useRef(false);
+  const lastPointerType = useRef("mouse");
+  // Touch: a tap arms a group, the next tap on the model places it (like an armed gem).
+  const [armedId, setArmedId] = useState<string | null>(null);
+  // Arming a single gem takes over from an armed group.
+  const armedGroup = snap.armedTypeId ? null : (ws.groups.find((g) => g.id === armedId) ?? null);
 
   const selectedPiece = snap.jewels.find((j) => j.id === snap.selectedJewelIds[0]);
   const selectedTooth =
@@ -48,11 +53,31 @@ export function GemGroupPanel({ snap }: { snap: StudioSnapshot }) {
         ? selectedPiece.toothId
         : null;
 
-  // Leaving the panel mid-drag must not leave a tooth lit.
-  useEffect(() => () => getEngine()?.previewDropTooth(null), []);
+  // Leaving the panel mid-drag must not leave a tooth lit, nor a group armed.
+  useEffect(
+    () => () => {
+      getEngine()?.previewDropTooth(null);
+      getEngine()?.setArmedGroup(null);
+    },
+    [],
+  );
+
+  useEffect(() => {
+    const engine = getEngine();
+    if (!engine) return;
+    if (!armedGroup) {
+      engine.setArmedGroup(null);
+      return;
+    }
+    engine.setArmedGroup((tooth) => {
+      ws.insertGroup(armedGroup, tooth && tooth !== FREE_TOOTH ? tooth : null);
+    });
+    return () => engine.setArmedGroup(null);
+  }, [armedGroup, ws]);
 
   const beginPress = (group: GemGroup, e: React.PointerEvent) => {
-    if (e.button !== 0 || e.pointerType === "touch") return; // touch: a tap inserts, a swipe scrolls the list
+    lastPointerType.current = e.pointerType;
+    if (e.button !== 0) return;
     const start = { x: e.clientX, y: e.clientY };
     let dragging = false;
     let tooth: string | null = null;
@@ -93,9 +118,15 @@ export function GemGroupPanel({ snap }: { snap: StudioSnapshot }) {
     window.addEventListener("keydown", cancelOnEscape, true);
   };
 
-  const insert = (group: GemGroup) => {
+  const insert = (group: GemGroup, detail: number) => {
     if (suppressClick.current) {
       suppressClick.current = false;
+      return;
+    }
+    // A tap on a touch screen arms the group instead of dropping it anywhere.
+    const handheld = lastPointerType.current !== "mouse" || window.matchMedia("(pointer: coarse)").matches;
+    if (detail > 0 && handheld) {
+      setArmedId((id) => (id === group.id ? null : group.id));
       return;
     }
     ws.insertGroup(group, selectedTooth);
@@ -109,7 +140,9 @@ export function GemGroupPanel({ snap }: { snap: StudioSnapshot }) {
     <div className="grid gap-3">
       <div className="flex items-start gap-1.5">
         <p className="m-0 flex-1 text-[12px] leading-snug text-[var(--text-muted)]">
-          {selectedTooth
+          {armedGroup
+            ? t("studio.workspace.panel.armed", { name: armedGroup.name })
+            : selectedTooth
             ? t("studio.workspace.panel.hintTooth", { tooth: toothName(selectedTooth), fdi: selectedTooth })
             : t("studio.workspace.panel.hint")}
         </p>
@@ -138,13 +171,15 @@ export function GemGroupPanel({ snap }: { snap: StudioSnapshot }) {
             <li key={g.id}>
               <button
                 type="button"
+                aria-pressed={armedGroup?.id === g.id}
                 onPointerDown={(e) => beginPress(g, e)}
-                onClick={() => insert(g)}
+                onClick={(e) => insert(g, e.detail)}
                 title={t("studio.workspace.panel.tileHint", { name: g.name })}
                 className={clsx(
                   "flex w-full cursor-grab items-center gap-3 rounded-[var(--radius-md)] border border-[var(--border-subtle)] bg-[var(--surface-page)] p-1.5 pr-3 text-left transition-[border-color,box-shadow,transform] duration-[var(--duration-fast)]",
-                  "hover:-translate-y-px hover:border-[var(--gt-blue-300)] hover:shadow-[var(--shadow-sm)] active:cursor-grabbing lg:touch-none",
+                  "hover:-translate-y-px hover:border-[var(--gt-blue-300)] hover:shadow-[var(--shadow-sm)] active:cursor-grabbing touch-pan-y",
                   drag?.group.id === g.id && "opacity-50",
+                  armedGroup?.id === g.id && "border-[var(--gt-blue-500)] bg-[var(--surface-brand-wash)]",
                   focusRing,
                 )}
               >
@@ -154,7 +189,7 @@ export function GemGroupPanel({ snap }: { snap: StudioSnapshot }) {
                 <span className="grid min-w-0 flex-1">
                   <span className="truncate text-[12.5px] font-bold text-[var(--text-primary)]">{g.name}</span>
                   <span className="truncate text-[11.5px] text-[var(--text-muted)]">
-                    {t("studio.workspace.gems", { count: g.elementCount })} · {price(g.estimatedPriceMinor)}
+                    {armedGroup?.id === g.id ? t("studio.workspace.panel.armedBadge") : `${t("studio.workspace.gems", { count: g.elementCount })} · ${price(g.estimatedPriceMinor)}`}
                   </span>
                 </span>
               </button>

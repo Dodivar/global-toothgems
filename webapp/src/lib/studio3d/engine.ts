@@ -2079,7 +2079,7 @@ export class StudioEngine {
       return;
     }
     const tHit = this.raycastTeeth();
-    if (tHit && this.store.getSnapshot().armedTypeId) {
+    if (tHit && (this.store.getSnapshot().armedTypeId || this.armedGroup)) {
       e.stopPropagation();
       this.controls.enabled = false;
       this.mode = "armed-press";
@@ -2194,8 +2194,11 @@ export class StudioEngine {
     } else if (this.mode === "armed-press" && quick) {
       this.setNDC(e);
       const hit = this.raycastTeeth();
-      const spec = specFor(this.store.getSnapshot().armedTypeId!);
-      if (hit && spec) this.placeJewel(spec, hit);
+      const armedId = this.store.getSnapshot().armedTypeId;
+      if (armedId) {
+        const spec = specFor(armedId);
+        if (hit && spec) this.placeJewel(spec, hit);
+      } else if (hit && this.armedGroup) this.armedGroup(hit.toothId);
     } else if (this.mode === "tooth-press" && quick && this.press?.toothId) {
       this.store.selectTooth(this.press.toothId);
     } else if (this.mode === "bg-press" && quick) {
@@ -2390,6 +2393,13 @@ export class StudioEngine {
   }
 
   /* ---------- library placement (drag from panel / armed click) ---------- */
+
+  /** A Gem Group armed from the panel: the next tap on the model hands it the tooth hit. */
+  private armedGroup: ((toothId: string) => void) | null = null;
+  setArmedGroup(place: ((toothId: string) => void) | null) {
+    this.armedGroup = place;
+    if (place) this.store.setArmed(null);
+  }
 
   beginPlacing(gemKey: string, e: { clientX: number; clientY: number; preventDefault: () => void }) {
     if (this.placing) return;
