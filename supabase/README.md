@@ -1672,9 +1672,14 @@ VAT rates, shipping zones/rates mirroring the Settings prototype. Media rows ref
     - A placed piece stores its product id, colour variant id, SS and a **snapshot of its look**: a design keeps
       rendering (share links, thumbnails) when its product leaves the shop or before the catalogue has loaded; the
       editor says "no longer in the shop" and leaves it out of the value.
-    - **Indicative value** (`estimateComposition`, to confirm): crystals are sold in packs, so each crystal product
-      and colour counts **once** (its price, or its colour variant's); metal charms count **per piece**. Never
-      charged, never sent to checkout; the value stored with a creation is the one computed at its last save.
+    - **Indicative value and shopping list** (`estimateComposition`, owner's request 2026-10-11, replacing "one pack
+      per crystal and colour"): pieces are grouped by product, colour and — when the shop sells the gem per size —
+      SS; each group is bought as ONE variant, the cheapest number of a single pack covering the pieces, in stock
+      first (2 pieces → at least the pack of 10; 30 → 3 × 10 or 2 × 25, whichever costs less). Colour variants
+      (gold charms) count per piece; a crystal without pack variants counts once. A piece whose gem, colour or size
+      is not sold is left out. The Studio's settings panel lists these items with their stock and adds every
+      in-stock one to the cart in one click (`ShoppingList.tsx`, `useCart().addLines`); the cart is priced again by
+      `create_order()` as always. The value stored with a creation is the one computed at its last save.
 
 82. **Shipping and card refunds are operated from the back office** (agent, 2026-10-07, asked by the user). What
     exists: `/admin/commandes/<ref>` creates parcels (one or several per order, lines and quantities, carrier,

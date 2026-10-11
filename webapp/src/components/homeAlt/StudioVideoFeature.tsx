@@ -4,7 +4,6 @@ import { useNavigate } from "../../lib/navigation";
 import { ArrowRight, Box, Gem as GemGlyph, Pause, Play, Share2 } from "lucide-react";
 import { Button } from "../ui/Button";
 import { GemIcon } from "../studio/Gem";
-import { NewTag } from "../studio/NewTag";
 import { STUDIO_PATH } from "../../lib/studioUrl";
 import { useReveal } from "../../lib/useReveal";
 import { usePrefersReducedMotion } from "./usePrefersReducedMotion";
@@ -70,7 +69,6 @@ export function StudioVideoFeature() {
             <span className="gt-eyebrow inline-flex items-center gap-2 !text-[var(--gt-blue-300)]">
               <Box size={14} aria-hidden="true" />
               {t("homeAlt.studio.eyebrow")}
-              <NewTag />
             </span>
             <h2 id="gt-alt-studio-title" className="gt-alt-display max-w-[13ch] !text-[var(--gt-off-white)]">
               {t("homeAlt.studio.title")}

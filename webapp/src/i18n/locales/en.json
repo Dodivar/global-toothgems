@@ -25,6 +25,7 @@
     "viewAllColors": "View all colours",
     "menuTabShop": "Shop",
     "menuTabAcademy": "Academy",
+    "menuTabStudio": "Studio 3D",
     "openPanelShop": "Show shop categories",
     "menuProductCount_one": "{{count}} product",
     "menuProductCount_other": "{{count}} products",
@@ -35,7 +36,6 @@
     "primary": "Primary navigation",
     "signIn": "Sign in",
     "studio": "Studio 3D",
-    "new": "New",
     "studioSub": "Design your own compositions",
     "studioWorkshop": "Open the workshop",
     "studioWorkshopSub": "Compose a design in 3D",
@@ -43,7 +43,6 @@
     "giftCard": "Gift card",
     "openPanelStudio": "Show the 3D Studio shortcuts",
     "viewAllStudio": "Discover the 3D Studio",
-    "studioAria": "Studio 3D, new",
     "mySpace": "My space"
   },
   "common": {

@@ -37,6 +37,7 @@ import {
 import { getEngine } from "../../../lib/studio3d/engine";
 import { notify } from "../../../lib/studio3d/notices";
 import { studioStore, type StudioSnapshot } from "../../../lib/studio3d/store";
+import { ShoppingList } from "./ShoppingList";
 import { SaveSelectionAsGroup } from "../workspace/SaveSelectionAsGroup";
 
 const focusRing = "focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-[var(--focus-ring)]";
@@ -530,7 +531,7 @@ function ToothPanel({ snap, toothId }: { snap: StudioSnapshot; toothId: string }
 }
 
 function OverviewPanel({ snap }: { snap: StudioSnapshot }) {
-  const { t, pieceName, formatEstimate } = useEditorLabels();
+  const { t, formatEstimate } = useEditorLabels();
   const { byKey } = useStudioGems();
   const zones = new Set(snap.jewels.map((j) => j.toothId)).size;
   const total = estimateComposition(snap.jewels, (key) => byKey.get(key)).totalMinor;
@@ -572,9 +573,8 @@ function OverviewPanel({ snap }: { snap: StudioSnapshot }) {
       {/* Stays in view: it qualifies the price shown just above. */}
       {total > 0 && <Hint className="mt-2.5">{t("studio.editor.estimateHint")}</Hint>}
 
-      <SectionLabel info={t("studio.editor.inspector.noOverlap")}>{t("studio.editor.inspector.design")}</SectionLabel>
-      {snap.jewels.length === 0 && <Hint>{t("studio.editor.inspector.designEmpty")}</Hint>}
-      <PieceList jewels={snap.jewels} label={pieceName} focusCamera />
+      <SectionLabel info={t("studio.editor.shopping.hint")}>{t("studio.editor.shopping.title")}</SectionLabel>
+      <ShoppingList jewels={snap.jewels} />
 
       {/* Keyboard and mouse shortcuts mean nothing on a touch screen. */}
       <div className="max-lg:hidden">
@@ -603,15 +603,7 @@ function OverviewPanel({ snap }: { snap: StudioSnapshot }) {
   );
 }
 
-function PieceList({
-  jewels,
-  label,
-  focusCamera,
-}: {
-  jewels: PlacedJewelry[];
-  label: (j: PlacedJewelry) => string;
-  focusCamera?: boolean;
-}) {
+function PieceList({ jewels, label }: { jewels: PlacedJewelry[]; label: (j: PlacedJewelry) => string }) {
   const { toothTag } = useEditorLabels();
   if (!jewels.length) return null;
   return (
@@ -621,10 +613,8 @@ function PieceList({
           <button
             type="button"
             onClick={() => {
-              // Gathering pieces (multi-selection mode): the row adds or removes, the camera stays put.
-              const gathering = studioStore.multiSelect;
-              studioStore.selectJewel(j.id, { toggle: gathering });
-              if (focusCamera && !gathering) getEngine()?.focusTooth(j.toothId);
+              // Gathering pieces (multi-selection mode): the row adds or removes.
+              studioStore.selectJewel(j.id, { toggle: studioStore.multiSelect });
             }}
             className={clsx(
               "flex w-full items-center gap-2.5 rounded-[var(--radius-sm)] border border-[var(--border-subtle)] bg-[var(--surface-page)] px-2.5 py-2 text-left text-[12px] font-semibold text-[var(--text-body)] transition-[border-color,transform] hover:translate-x-0.5 hover:border-[var(--gt-blue-300)]",

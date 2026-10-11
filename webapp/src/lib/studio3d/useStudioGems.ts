@@ -2,8 +2,7 @@ import { useEffect, useMemo, useState } from "react";
 import type { GemColorDef, Product } from "../../data/products";
 import { useCatalog } from "../catalog/CatalogProvider";
 import { isSupabaseConfigured, requireSupabase } from "../supabase/client";
-import type { PlacedJewelry } from "../../data/studioEditor";
-import { buildStudioGems, estimateComposition, type CompositionEstimate, type GemAppearanceRow, type StudioGem } from "./gemCatalog";
+import { buildStudioGems, estimateComposition, type CompositionEstimate, type EstimatedPiece, type GemAppearanceRow, type StudioGem } from "./gemCatalog";
 import { setStudioGems } from "./gemRegistry";
 
 /**
@@ -87,7 +86,7 @@ export function useStudioGems(): StudioGemsState {
 }
 
 /** The indicative shop value of these pieces (`estimateComposition`), at the prices loaded. */
-export function useCompositionEstimate(pieces: Pick<PlacedJewelry, "productId" | "variantId" | "look">[]): CompositionEstimate {
+export function useCompositionEstimate(pieces: EstimatedPiece[]): CompositionEstimate {
   const { byKey } = useStudioGems();
   return useMemo(() => estimateComposition(pieces, (key) => byKey.get(key)), [pieces, byKey]);
 }

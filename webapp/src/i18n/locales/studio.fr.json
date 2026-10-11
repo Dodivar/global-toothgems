@@ -309,7 +309,7 @@
     "pieceCount_one": "{{count}} pièce",
     "pieceCount_other": "{{count}} pièces",
     "estimateShort": "env. {{total}}",
-    "estimateHint": "Valeur indicative aux prix de la boutique : un pack par cristal et par couleur, un bijou en or par pièce. Ce n’est pas un prix facturé — la pose et les prix définitifs sont fixés par votre artiste.",
+    "estimateHint": "Valeur indicative aux prix de la boutique : chaque gemme dans sa couleur et sa taille, dans le plus petit pack qui couvre vos pièces, un bijou en or par pièce. Ce n’est pas un prix facturé — la pose et les prix définitifs sont fixés par votre artiste.",
     "undo": "Annuler",
     "undoHint": "Annuler (Ctrl+Z)",
     "redo": "Rétablir",
@@ -680,7 +680,9 @@
         "tooLarge": "Ce fichier est trop volumineux ({{max}} Mo max.)",
         "invalid": "Ce fichier n’est pas un modèle glTF / GLB valide",
         "empty": "Ce fichier ne contient aucun modèle 3D"
-      }
+      },
+      "addedToCart_one": "{{count}} article ajouté au panier",
+      "addedToCart_other": "{{count}} articles ajoutés au panier"
     },
     "pieceUnavailable": "Gemme retirée de la boutique",
     "shopPrice": "Prix boutique : {{price}}",
@@ -695,6 +697,25 @@
         "show": "Afficher les réglages",
         "hide": "Masquer les réglages"
       }
+    },
+    "shopping": {
+      "title": "Produits à commander",
+      "hint": "Les produits de la boutique qu’il faut pour réaliser cette création : la couleur et la taille de vos pièces, dans le plus petit pack qui les couvre (2 pièces → au moins le pack de 10), un bijou en or par pièce. Les prix sont recalculés au paiement.",
+      "pack_one": "Pack de {{count}}",
+      "pack_other": "Pack de {{count}}",
+      "cover_one": "{{count}} pièce · à commander : {{quantity}}",
+      "cover_other": "{{count}} pièces · à commander : {{quantity}}",
+      "low": "Stock faible",
+      "out": "Rupture de stock",
+      "outNote_one": "{{count}} produit est en rupture de stock : il ne sera pas ajouté au panier.",
+      "outNote_other": "{{count}} produits sont en rupture de stock : ils ne seront pas ajoutés au panier.",
+      "unavailable_one": "{{count}} pièce n’est plus vendue par la boutique (gemme, couleur ou taille retirée) : elle n’est pas comptée.",
+      "unavailable_other": "{{count}} pièces ne sont plus vendues par la boutique (gemme, couleur ou taille retirée) : elles ne sont pas comptées.",
+      "addAll_one": "Ajouter {{count}} produit au panier",
+      "addAll_other": "Ajouter les {{count}} produits au panier",
+      "added": "Ajouté à votre panier.",
+      "viewCart": "Voir le panier",
+      "noneAvailable": "Aucun produit disponible"
     }
   }
 }
