@@ -124,7 +124,8 @@ export function GemGroupPanel({ snap }: { snap: StudioSnapshot }) {
       return;
     }
     // A tap on a touch screen arms the group instead of dropping it anywhere.
-    if (detail > 0 && lastPointerType.current === "touch") {
+    const handheld = lastPointerType.current !== "mouse" || window.matchMedia("(pointer: coarse)").matches;
+    if (detail > 0 && handheld) {
       setArmedId((id) => (id === group.id ? null : group.id));
       return;
     }
