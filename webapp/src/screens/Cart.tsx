@@ -262,7 +262,9 @@ export function Cart() {
     amount: giftCardPayable(lines, total),
     currency,
   });
-  const giftApplied = giftQuoteState.status === "ready" ? Math.min(total, giftQuoteState.quote.applied) : null;
+  // While a new answer is on its way the last one stands in, so the summary does not jump on every change.
+  const giftQuote = giftQuoteState.status === "ready" ? giftQuoteState.quote : giftQuoteState.status === "loading" ? giftQuoteState.previous : null;
+  const giftApplied = giftQuote ? Math.min(total, giftQuote.applied) : null;
   const amountDue = giftApplied === null ? null : total - giftApplied;
   const threshold = ratesReady && shipped ? freeShippingThreshold(rates.rows, currency) : null;
   const remainingForFreeShipping = threshold === null ? null : Math.max(0, threshold - goods);
