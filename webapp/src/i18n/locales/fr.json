@@ -1094,7 +1094,11 @@
         "cart": "Panier",
         "studio": "Atelier",
         "creations": "Créations",
-        "groups": "Groupes"
+        "groups": "Groupes",
+        "home": "Accueil site",
+        "shop": "Boutique",
+        "giftCard": "Carte cadeau",
+        "academy": "Academy"
       },
       "groupLearning": "Apprendre",
       "groupPurchases": "Achats",

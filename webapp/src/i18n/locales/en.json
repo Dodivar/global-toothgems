@@ -1094,7 +1094,11 @@
         "cart": "Cart",
         "studio": "Workshop",
         "creations": "Creations",
-        "groups": "Groups"
+        "groups": "Groups",
+        "home": "Site home",
+        "shop": "Shop",
+        "giftCard": "Gift card",
+        "academy": "Academy"
       },
       "groupLearning": "Learning",
       "groupPurchases": "Purchases",
