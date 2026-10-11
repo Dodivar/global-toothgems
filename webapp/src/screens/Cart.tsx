@@ -38,7 +38,7 @@ import { GiftCardCodes } from "../components/shop/GiftCardCodes";
 import { PromotionCodes } from "../components/shop/PromotionCodes";
 import { OfferBadges } from "../components/shop/OfferBadges";
 import { useStorefrontOffers } from "../lib/useStorefrontOffers";
-import { guestQuoteEmail, lineDiscount, quoteItems } from "../lib/checkout/basketQuote";
+import { guestQuoteEmail, isLineDiscount, lineDiscount, quoteItems } from "../lib/checkout/basketQuote";
 import { useBasketQuote } from "../lib/checkout/useBasketQuote";
 import type { GiftCardDesign } from "../lib/giftCards/giftCardMapping";
 import {
@@ -236,7 +236,7 @@ export function Cart() {
   };
   // The shop-window badge belongs to a promotion only: a cut that comes from the loyalty reward alone (the promotion is
   // used up, or the reward beats it) carries no campaign badge.
-  const promotionApplied = quote?.discounts.some((d) => d.type !== "loyalty") ?? false;
+  const promotionApplied = quote?.discounts.some(isLineDiscount) ?? false;
   const freeOrder = live && quote !== null && total <= 0 && giftCodes.length === 0;
   const threshold = ratesReady && shipped ? freeShippingThreshold(rates.rows, currency) : null;
   const remainingForFreeShipping = threshold === null ? null : Math.max(0, threshold - goods);
