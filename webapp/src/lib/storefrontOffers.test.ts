@@ -15,7 +15,7 @@ const promo = (over: Partial<OfferPromotionRow> = {}): OfferPromotionRow => ({
   buy_quantity: null,
   get_quantity: null,
   bundle_price: null,
-  applies_to: "all",
+  applies_to: "products",
   customer_eligibility: "all",
   min_subtotal_amount: null,
   min_quantity: null,
@@ -23,7 +23,7 @@ const promo = (over: Partial<OfferPromotionRow> = {}): OfferPromotionRow => ({
   starts_at: "2026-10-01T00:00:00Z",
   ends_at: null,
   promotion_translations: [{ locale: "en", title: "Christmas -20%", description: null }],
-  promotion_products: [],
+  promotion_products: [{ product_id: "a", role: "eligible" }],
   promotion_categories: [],
   promotion_collections: [],
   ...over,
@@ -57,14 +57,14 @@ describe("which offer a product shows", () => {
     expect(book({ promotions: [promo()] }).offerFor({ cat: "gems" }, NOW)).toBeNull();
   });
 
-  it("follows the scope: products, categories, collections, exclusions, bundles", () => {
+  it("follows the scope: only specifically chosen products and bundles get a badge", () => {
     const scoped = (over: Partial<OfferPromotionRow>) => book({ promotions: [promo(over)] }).offerFor(product, NOW)?.promotion ?? null;
     expect(scoped({ applies_to: "products", promotion_products: [{ product_id: "a", role: "eligible" }] })).not.toBeNull();
     expect(scoped({ applies_to: "products", promotion_products: [{ product_id: "b", role: "eligible" }] })).toBeNull();
-    expect(scoped({ applies_to: "categories", promotion_categories: [{ category_id: "cat-gems" }] })).not.toBeNull();
-    expect(scoped({ applies_to: "categories", promotion_categories: [{ category_id: "cat-other" }] })).toBeNull();
-    expect(scoped({ applies_to: "collections", promotion_collections: [{ collection_id: "k1" }] })).not.toBeNull();
-    expect(scoped({ promotion_products: [{ product_id: "a", role: "excluded" }] })).toBeNull();
+    expect(scoped({ applies_to: "all" })).toBeNull();
+    expect(scoped({ applies_to: "categories", promotion_categories: [{ category_id: "cat-gems" }] })).toBeNull();
+    expect(scoped({ applies_to: "collections", promotion_collections: [{ collection_id: "k1" }] })).toBeNull();
+    expect(scoped({ applies_to: "products", promotion_products: [{ product_id: "a", role: "eligible" }, { product_id: "a", role: "excluded" }] })).toBeNull();
     expect(scoped({ type: "bundle", percent_off: null, bundle_price: 59, promotion_products: [{ product_id: "a", role: "bundle" }] })).toMatchObject({ type: "bundle", bundleCents: 5900, priceOffPercent: null });
   });
 

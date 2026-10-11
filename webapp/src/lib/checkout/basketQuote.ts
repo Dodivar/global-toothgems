@@ -56,9 +56,14 @@ export interface QuoteDiscount {
   code: string | null;
   /** The promotion's type, or `loyalty` for the reward. */
   type: string;
+  /** Who the promotion targets: `products` (chosen one by one), `bundle`, `all`, `categories`, `collections` or `loyalty`. */
+  scope: string;
   goods: number;
   shipping: number;
 }
+
+/** True for a discount that belongs to the product lines themselves (products chosen specifically, a bundle). */
+export const isLineDiscount = (d: QuoteDiscount): boolean => d.scope === "products" || d.scope === "bundle";
 
 export interface BasketQuote {
   goodsDiscount: number;
@@ -102,6 +107,7 @@ export function readQuote(data: unknown): QuoteResult {
         label: row.label,
         code: typeof row.code === "string" ? row.code : null,
         type: typeof row.type === "string" ? row.type : "",
+        scope: typeof row.scope === "string" ? row.scope : "all",
         goods: minor(row.goods_amount),
         shipping: minor(row.shipping_amount),
       });
@@ -158,8 +164,9 @@ export function guestQuoteEmail(signedIn: boolean, email: string): string | null
  * What a basket line carries of the discount (minor units). While a new answer is on its way (the customer just
  * ticked or unticked the loyalty reward, typed a code…) the line keeps what the previous answer gave it, so a
  * promotion never vanishes for the time of the round trip; a refused or unavailable quote shows nothing.
- * A line is shown on promotion only when a promotion applies: the loyalty reward alone is a basket discount, told
- * in the summary, so a product whose promotion the customer has used up never looks discounted again.
+ * A line is shown on promotion only when a promotion on specific products applies: the loyalty reward and the
+ * promotions on the whole basket, a category or a collection are told in the summary alone, so a product whose
+ * promotion the customer has used up never looks discounted again.
  */
 export function lineDiscount(
   state: { status: string; quote?: BasketQuote; previous?: BasketQuote | null },
@@ -167,6 +174,6 @@ export function lineDiscount(
   variantId: string | null | undefined,
 ): number {
   const quote = state.status === "ready" ? state.quote : state.status === "loading" ? state.previous : null;
-  if (!quote?.discounts.some((d) => d.type !== "loyalty")) return 0;
+  if (!quote?.discounts.some(isLineDiscount)) return 0;
   return quote.lines.find((d) => d.productId === productId && d.variantId === (variantId ?? null))?.amount ?? 0;
 }

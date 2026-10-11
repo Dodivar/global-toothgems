@@ -100,14 +100,15 @@ export function PromotionCodes({
       {codes.length > 0 && (
         <ul className="m-0 flex list-none flex-wrap gap-2 p-0" aria-label={t("checkout.promo.added")}>
           {codes.map((code) => (
-            <li key={code} className="inline-flex items-center gap-1 rounded-[var(--radius-pill)] border border-[var(--border-default)] bg-[var(--surface-sunken)] py-1 pl-3 pr-1 text-sm">
+            <li key={code} className="inline-flex items-center gap-1.5 rounded-[var(--radius-pill)] bg-[var(--status-success-bg)] py-1 pl-3 pr-1 text-sm font-semibold text-[var(--status-success-fg)]">
+              <Tag size={14} aria-hidden="true" className="flex-none" />
               <span className="font-[family-name:var(--gt-font-mono)]">{code}</span>
               <button
                 type="button"
                 onClick={() => onChange(codes.filter((c) => c !== code))}
                 disabled={disabled}
                 aria-label={t("checkout.promo.remove", { code })}
-                className="grid h-7 w-7 place-items-center rounded-full text-[var(--text-muted)] hover:bg-[var(--gt-ink-100)] hover:text-[var(--text-primary)] focus-visible:outline focus-visible:outline-2 focus-visible:outline-[var(--focus-ring)]"
+                className="grid h-7 w-7 place-items-center rounded-full hover:bg-[var(--surface-card)] focus-visible:outline focus-visible:outline-2 focus-visible:outline-[var(--focus-ring)]"
               >
                 <X size={14} aria-hidden="true" />
               </button>

@@ -67,7 +67,7 @@ describe("reading the quote", () => {
       ok: true,
       goods_discount: 7.6,
       shipping_discount: 4.9,
-      discounts: [{ label: "Spring", code: "SPRING", type: "percentage", goods_amount: 7.6, shipping_amount: 0 }],
+      discounts: [{ label: "Spring", code: "SPRING", type: "percentage", scope: "all", goods_amount: 7.6, shipping_amount: 0 }],
       lines: [{ product_id: "p1", variant_id: null, discount_amount: 7.6 }, { product_id: "p2", variant_id: "v2", discount_amount: 0 }],
       gift_lines: [{ product_name: "Pouch", variant_name: null }],
       used_up: [{ label: "Noël 2026", max_uses: 1 }, { label: 42 }],
@@ -77,7 +77,7 @@ describe("reading the quote", () => {
       quote: {
         goodsDiscount: 760,
         shippingDiscount: 490,
-        discounts: [{ label: "Spring", code: "SPRING", type: "percentage", goods: 760, shipping: 0 }],
+        discounts: [{ label: "Spring", code: "SPRING", type: "percentage", scope: "all", goods: 760, shipping: 0 }],
         lines: [{ productId: "p1", variantId: null, amount: 760 }],
         gifts: [{ name: "Pouch", variant: null }],
         usedUp: [{ label: "Noël 2026", maxUses: 1 }],
@@ -103,7 +103,7 @@ describe("lineDiscount (promotion shown on a basket line)", () => {
   const promo: BasketQuote = {
     goodsDiscount: 899,
     shippingDiscount: 0,
-    discounts: [{ label: "Noël", code: null, type: "percentage", goods: 899, shipping: 0 }],
+    discounts: [{ label: "Noël", code: null, type: "percentage", scope: "products", goods: 899, shipping: 0 }],
     lines: [{ productId: "p1", variantId: "v1", amount: 899 }],
     gifts: [],
     usedUp: [],
@@ -115,10 +115,15 @@ describe("lineDiscount (promotion shown on a basket line)", () => {
     expect(lineDiscount({ status: "ready", quote: reward }, "p1", "v1")).toBe(450);
   });
 
+  it("leaves a basket-wide promotion to the summary: no cut on the lines", () => {
+    const wide: BasketQuote = { ...promo, discounts: [{ ...promo.discounts[0], scope: "all" }] };
+    expect(lineDiscount({ status: "ready", quote: wide }, "p1", "v1")).toBe(0);
+  });
+
   it("never shows the loyalty reward alone as a promotion on the line (the promotion is used up, or the reward is better)", () => {
     const rewardOnly: BasketQuote = {
       ...reward,
-      discounts: [{ label: "Récompense fidélité -10 %", code: null, type: "loyalty", goods: 450, shipping: 0 }],
+      discounts: [{ label: "Récompense fidélité -10 %", code: null, type: "loyalty", scope: "loyalty", goods: 450, shipping: 0 }],
       usedUp: [{ label: "Noël", maxUses: 1 }],
     };
     expect(lineDiscount({ status: "ready", quote: rewardOnly }, "p1", "v1")).toBe(0);
