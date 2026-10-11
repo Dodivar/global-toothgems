@@ -1,6 +1,6 @@
 import { useState } from "react";
 import clsx from "clsx";
-import { Check, ExternalLink, ShoppingBag } from "lucide-react";
+import { ArrowRight, Check, ShoppingBag } from "lucide-react";
 import { GemPhoto } from "./PieceIcon";
 import { useEditorLabels } from "./editorLabels";
 import type { PlacedJewelry } from "../../../data/studioEditor";
@@ -140,14 +140,13 @@ export function ShoppingList({ jewels }: { jewels: PlacedJewelry[] }) {
         <p role="status" className="m-0 mt-2 flex flex-wrap items-center gap-x-2 text-[11.5px] font-semibold text-[var(--text-body)]">
           <Check size={13} aria-hidden="true" className="text-[var(--status-success-fg)]" />
           {t("studio.editor.shopping.added")}
+          {/* Same tab: the cart is kept per tab (`cartStorage.ts`), and the design is restored on return. */}
           <Link
             to="/panier"
-            target="_blank"
-            rel="noopener"
             className={clsx("inline-flex items-center gap-1 text-[var(--gt-blue-700)] underline-offset-2 hover:underline", focusRing)}
           >
             {t("studio.editor.shopping.viewCart")}
-            <ExternalLink size={12} aria-hidden="true" />
+            <ArrowRight size={12} aria-hidden="true" />
           </Link>
         </p>
       )}
