@@ -4,7 +4,7 @@ import { useEffect, useRef, useState } from "react";
 import posthog from "posthog-js";
 import { useTranslation } from "react-i18next";
 import { Link, useNavigate } from "../lib/navigation";
-import { ArrowRight, CheckCircle2, CircleAlert, CreditCard, Gift, GraduationCap, Lock, LogIn, Mail, Minus, Plus, ShieldCheck, ShoppingBag, Trash2, Truck, UserRound } from "lucide-react";
+import { ArrowRight, CheckCircle2, CircleAlert, CreditCard, Gift, GraduationCap, Lock, LogIn, Mail, Minus, Plus, ShieldCheck, ShoppingBag, Tag, Trash2, Truck, UserRound } from "lucide-react";
 import { Button } from "../components/ui/Button";
 import { Badge } from "../components/ui/Badge";
 import { DELIVERY_COUNTRIES, countryLabelKey } from "../data/countries";
@@ -75,7 +75,12 @@ const MOCK_FORM: CheckoutForm = {
   country: "fr",
 };
 
-type RatesState = { country: string; status: "loading" | "ready" | "error"; rows: ShippingRateRow[] };
+/** A summary discount line: `label` worded for the payment step, `name` and `code` shown apart in the cart. */
+type DiscountLine = { label: string; name: string | null; code: string | null; amount: number };
+
+const loyaltyLine = (label: string, amount: number): DiscountLine => ({ label, name: label, code: null, amount });
+
+type RatesState ={ country: string; status: "loading" | "ready" | "error"; rows: ShippingRateRow[] };
 
 /**
  * The client secret of the last payment step this tab opened. After a reload the
@@ -214,12 +219,21 @@ export function Cart() {
   const quote = quoteState.status === "ready" ? quoteState.quote : null;
   // Until the answer is in, the loyalty estimate stands in (same rule as the database); promotions show only once confirmed.
   const rewardEstimate = rewardOn && !quote ? rewardDiscount(shopGoods, programme.rewardPercent) : 0;
-  const discountLines = quote
+  const discountLines: DiscountLine[] = quote
     ? quote.discounts
         .filter((d) => d.goods > 0)
-        .map((d) => ({ label: d.code ? t("checkout.promo.discountLine", { label: d.label, code: d.code }) : d.label, amount: d.goods }))
+        .map((d) => {
+          // A promotion named after its own code says it once.
+          const named = d.code !== null && d.label.trim().toUpperCase() !== d.code.toUpperCase();
+          return {
+            label: d.code && named ? t("checkout.promo.discountLine", { label: d.label, code: d.code }) : (d.code ?? d.label),
+            code: d.code,
+            name: d.code && !named ? null : d.label,
+            amount: d.goods,
+          };
+        })
     : rewardEstimate > 0
-      ? [{ label: t("loyalty.checkout.summaryLine", { percent: programme.rewardPercent }), amount: rewardEstimate }]
+      ? [loyaltyLine(t("loyalty.checkout.summaryLine", { percent: programme.rewardPercent }), rewardEstimate)]
       : [];
   const goodsDiscount = quote ? quote.goodsDiscount : rewardEstimate;
   const shippingSaved = quote ? Math.min(shipping, quote.shippingDiscount) : 0;
@@ -831,9 +845,17 @@ export function Cart() {
               )}
             </div>
             {discountLines.map((discount) => (
-              <div key={discount.label} className="flex justify-between gap-3 text-[var(--status-success-fg)]">
-                <span>{discount.label}</span>
-                <span className="flex-none">−{money(discount.amount)}</span>
+              <div key={discount.label} className="flex items-center justify-between gap-3 text-[var(--status-success-fg)]">
+                <span className="flex min-w-0 flex-wrap items-center gap-x-2 gap-y-1">
+                  {discount.name && <span>{discount.name}</span>}
+                  {discount.code && (
+                    <span className="inline-flex items-center gap-1 rounded-[var(--radius-pill)] bg-[var(--status-success-bg)] px-2 py-0.5 text-xs font-semibold">
+                      <Tag size={12} aria-hidden="true" className="flex-none" />
+                      <span className="font-[family-name:var(--gt-font-mono)]">{discount.code}</span>
+                    </span>
+                  )}
+                </span>
+                <span className="flex-none font-semibold">−{money(discount.amount)}</span>
               </div>
             ))}
             {/* What the database chose, when it is not what was asked: the better offer wins. */}
@@ -862,9 +884,9 @@ export function Cart() {
                 <span>{t("checkout.promo.gift", { name: gift.variant ? `${gift.name} — ${gift.variant}` : gift.name })}</span>
               </div>
             ))}
-            <div className="flex justify-between border-t border-[var(--border-subtle)] pt-2 text-base font-bold text-[var(--text-primary)]">
-              <span>{t("cart.total")}</span>
-              <span>{money(total)}</span>
+            <div className="mt-1 flex items-baseline justify-between border-t border-[var(--border-subtle)] pt-3 font-bold text-[var(--text-primary)]">
+              <span className="text-base">{t("cart.total")}</span>
+              <span className="text-[length:var(--text-h4)]">{money(total)}</span>
             </div>
             {giftCodes.length > 0 && (
               // Balances are never read by the browser: the database applies the cards and computes what is left to pay.
@@ -873,6 +895,12 @@ export function Cart() {
                 {t("checkout.giftCard.summary", { count: giftCodes.length })}
               </p>
             )}
+          </div>
+          {/* The pay button follows the total; codes and gift cards come after, as optional steps. */}
+          <div className="hidden gap-3 lg:grid">
+            {alerts}
+            {payButton}
+            <p className="m-0 text-xs text-[var(--text-muted)]">{t("cart.summaryFootnote")}</p>
           </div>
           {live && items !== null && items.length > 0 && (
             <PromotionCodes
@@ -899,11 +927,7 @@ export function Cart() {
               refused={checkoutError === "gift_card_invalid"}
             />
           )}
-          <div className="hidden gap-3 lg:grid">
-            {alerts}
-            {payButton}
-          </div>
-          <p className="m-0 text-xs text-[var(--text-muted)]">{t("cart.summaryFootnote")}</p>
+          <p className="m-0 text-xs text-[var(--text-muted)] lg:hidden">{t("cart.summaryFootnote")}</p>
         </aside>
       </div>
 
