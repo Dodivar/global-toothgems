@@ -25,6 +25,7 @@
     "viewAllColors": "View all colours",
     "menuTabShop": "Shop",
     "menuTabAcademy": "Academy",
+    "menuTabStudio": "Studio 3D",
     "openPanelShop": "Show shop categories",
     "menuProductCount_one": "{{count}} product",
     "menuProductCount_other": "{{count}} products",
@@ -35,11 +36,14 @@
     "primary": "Primary navigation",
     "signIn": "Sign in",
     "studio": "Studio 3D",
-    "new": "New",
     "studioSub": "Design your own compositions",
-    "studioAria": "Studio 3D, new",
-    "mySpace": "My space",
-    "explore": "Explore"
+    "studioWorkshop": "Open the workshop",
+    "studioWorkshopSub": "Compose a design in 3D",
+    "studioGroups": "My groups",
+    "giftCard": "Gift card",
+    "openPanelStudio": "Show the 3D Studio shortcuts",
+    "viewAllStudio": "Discover the 3D Studio",
+    "mySpace": "My space"
   },
   "common": {
     "notIncludedTitle": "Screen out of scope",
@@ -1087,7 +1091,10 @@
         "profile": "Profile",
         "security": "Security",
         "menu": "Menu",
-        "cart": "Cart"
+        "cart": "Cart",
+        "studio": "Workshop",
+        "creations": "Creations",
+        "groups": "Groups"
       },
       "groupLearning": "Learning",
       "groupPurchases": "Purchases",

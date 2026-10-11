@@ -1,5 +1,4 @@
-import { estimateComposition, type CompositionEstimate, type StudioGem } from "./gemCatalog";
-import type { PlacedJewelry } from "../../data/studioEditor";
+import { estimateComposition, type CompositionEstimate, type EstimatedPiece, type StudioGem } from "./gemCatalog";
 
 /**
  * The Studio's gems as last loaded, for the code that runs outside React:
@@ -27,6 +26,6 @@ export function studioGems(): StudioGem[] {
 }
 
 /** The indicative shop value of these pieces, at the prices last loaded. */
-export function currentEstimate(pieces: Pick<PlacedJewelry, "productId" | "variantId" | "look">[]): CompositionEstimate {
+export function currentEstimate(pieces: EstimatedPiece[]): CompositionEstimate {
   return estimateComposition(pieces, studioGem);
 }

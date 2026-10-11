@@ -119,7 +119,7 @@ export function anchorToothOf(pieces: Pick<PlacedJewelry, "toothId">[]): string 
 }
 
 /** The indicative shop value of a group's pieces, at the prices last loaded (`gemCatalog.estimateComposition`). */
-export function groupEstimateCents(pieces: Pick<GroupPiece, "productId" | "variantId" | "look">[]): number {
+export function groupEstimateCents(pieces: Pick<GroupPiece, "productId" | "variantId" | "look" | "ss">[]): number {
   return currentEstimate(pieces).totalMinor;
 }
 

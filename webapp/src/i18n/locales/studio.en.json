@@ -309,7 +309,7 @@
     "pieceCount_one": "{{count}} piece",
     "pieceCount_other": "{{count}} pieces",
     "estimateShort": "approx. {{total}}",
-    "estimateHint": "Indicative value at shop prices: one pack per crystal and colour, one gold charm per piece. Not a price you are charged — fitting and final prices are set by your artist.",
+    "estimateHint": "Indicative value at shop prices: each gem in its colour and size, in the smallest pack that covers your pieces, one gold charm per piece. Not a price you are charged — fitting and final prices are set by your artist.",
     "undo": "Undo",
     "undoHint": "Undo (Ctrl+Z)",
     "redo": "Redo",
@@ -680,7 +680,9 @@
         "tooLarge": "This file is too large (max. {{max}} MB)",
         "invalid": "This file isn't a valid glTF / GLB model",
         "empty": "This file contains no 3D model"
-      }
+      },
+      "addedToCart_one": "{{count}} item added to your cart",
+      "addedToCart_other": "{{count}} items added to your cart"
     },
     "pieceUnavailable": "Gem no longer in the shop",
     "shopPrice": "Shop price: {{price}}",
@@ -695,6 +697,25 @@
         "show": "Show the settings",
         "hide": "Hide the settings"
       }
+    },
+    "shopping": {
+      "title": "Products to order",
+      "hint": "The shop products this design takes: your pieces' colour and size, in the smallest pack that covers them (2 pieces → at least the pack of 10), one gold charm per piece. Prices are worked out again at checkout.",
+      "pack_one": "Pack of {{count}}",
+      "pack_other": "Pack of {{count}}",
+      "cover_one": "{{count}} piece · to order: {{quantity}}",
+      "cover_other": "{{count}} pieces · to order: {{quantity}}",
+      "low": "Low stock",
+      "out": "Out of stock",
+      "outNote_one": "{{count}} product is out of stock: it will not be added to the cart.",
+      "outNote_other": "{{count}} products are out of stock: they will not be added to the cart.",
+      "unavailable_one": "{{count}} piece is no longer sold by the shop (gem, colour or size withdrawn): it is not counted.",
+      "unavailable_other": "{{count}} pieces are no longer sold by the shop (gem, colour or size withdrawn): they are not counted.",
+      "addAll_one": "Add {{count}} product to cart",
+      "addAll_other": "Add all {{count}} products to cart",
+      "added": "Added to your cart.",
+      "viewCart": "View cart",
+      "noneAvailable": "No product available"
     }
   }
 }
