@@ -54,11 +54,58 @@ export function getJewelMaterial(look: LookMaterial): THREE.MeshPhysicalMaterial
           clearcoatRoughness: 0.02,
           // a faint rainbow film even on plain stones, strong on AB / Shimmer / Vitrail
           iridescence: iridescent ? 1 : 0.22,
-          iridescenceIOR: 1.6,
-          iridescenceThicknessRange: [180, 620] as [number, number],
+          iridescenceIOR: iridescent ? 1.9 : 1.6,
+          iridescenceThicknessRange: (iridescent ? [220, 520] : [180, 620]) as [number, number],
         });
+  if (iridescent) coatFacets(m);
   materialCache.set(key, m);
   return m;
+}
+
+/**
+ * The AB / Shimmer / Vitrail coating. On a real stone every facet catches the
+ * metallic film at its own angle and glows its own colour — ice blue on one,
+ * peach or gold on its neighbour. A uniform film only tints the stone a pale
+ * pastel, so the shader gives each flat facet (constant object-space normal)
+ * its own film thickness and a pastel hue that tints the light passing
+ * through it, while the camera angle keeps sliding the colours as the stone
+ * turns. The coated stone lets less of the tooth show through, as on a photo.
+ */
+function coatFacets(m: THREE.MeshPhysicalMaterial) {
+  m.transmission = 0.32;
+  m.envMapIntensity = 3.6;
+  m.onBeforeCompile = (shader) => {
+    shader.vertexShader = shader.vertexShader
+      .replace("#include <common>", "#include <common>\nvarying vec3 vFacetNormal;")
+      .replace("#include <beginnormal_vertex>", "#include <beginnormal_vertex>\n\tvFacetNormal = normal;");
+    shader.fragmentShader = shader.fragmentShader
+      .replace(
+        "#include <common>",
+        `#include <common>
+varying vec3 vFacetNormal;
+// 0..1 per facet, smooth in the normal so neighbouring facets differ but nothing flickers
+float gtFacetPhase() {
+  vec3 fn = normalize( vFacetNormal );
+  return fract( dot( fn, vec3( 2.17, 3.41, 1.63 ) ) * 1.9 + fn.x * fn.y * 2.3 );
+}
+// the coating's palette: ice blue, lilac, peach, gold, mint
+vec3 gtCoatHue( float t ) {
+  return 0.5 + 0.5 * cos( 6.28318 * ( t + vec3( 0.0, 0.33, 0.67 ) ) );
+}`,
+      )
+      .replace(
+        "#include <color_fragment>",
+        `#include <color_fragment>
+	float gtPhase = gtFacetPhase();
+	float gtView = 1.0 - abs( dot( normalize( vNormal ), normalize( vViewPosition ) ) );
+	diffuseColor.rgb *= mix( vec3( 1.0 ), gtCoatHue( gtPhase + 0.35 * gtView ), 0.88 );`,
+      )
+      .replace(
+        "material.iridescenceThickness = iridescenceThicknessMaximum;",
+        "material.iridescenceThickness = mix( iridescenceThicknessMinimum, iridescenceThicknessMaximum, fract( gtPhase * 1.7 + 0.5 * gtView ) );",
+      );
+  };
+  m.customProgramCacheKey = () => "gt-coated-facets";
 }
 
 export function createToothGeometry(spec: ToothSpec): THREE.BufferGeometry {
