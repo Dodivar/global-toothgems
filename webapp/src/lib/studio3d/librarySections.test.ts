@@ -3,7 +3,7 @@ import type { StudioGem } from "./gemCatalog";
 import { filterSections, librarySections, type LibraryLabels } from "./librarySections";
 
 const gem = (key: string, name: string, shopShape: StudioGem["shopShape"], family: string | null = "swarovski"): StudioGem =>
-  ({ key, slug: key, name: { fr: name, en: name }, image: "", family, shopShape, shape: "round", finishes: [], sizes: [5], currency: "EUR" }) as StudioGem;
+  ({ key, slug: key, name: { fr: name, en: name }, image: "", family, shopShape, shape: "round", finishes: [], sizes: [5], currency: "EUR", offers: [] }) as StudioGem;
 
 const labels: LibraryLabels = {
   shape: (s) => ({ heart: "Cœur", baguette: "Baguette", square: "Carré" })[s] ?? s,

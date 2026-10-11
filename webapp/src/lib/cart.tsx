@@ -27,6 +27,8 @@ interface CartContextValue {
   /** Indicative, in minor units: the order is priced by the database. */
   subtotal: number;
   addLine: (line: Omit<CartLine, "id">) => void;
+  /** Several products at once (a Studio shopping list): merged like `addLine`, without the "added" notice. */
+  addLines: (lines: Omit<CartLine, "id">[]) => void;
   /** A gift card for one recipient: always its own line. */
   addGiftCard: (line: Omit<CartLine, "id" | "qty">) => void;
   /** An Academy course: one seat, added once. */
@@ -119,6 +121,10 @@ export function CartProvider({ children }: { children: ReactNode }) {
     },
     [setLines],
   );
+  const addLines = useCallback(
+    (added: Omit<CartLine, "id">[]) => setLines((prev) => added.reduce(addToLines, prev)),
+    [setLines],
+  );
   const undoLastAddition = useCallback(
     (addition: CartAddition) => setLines((prev) => undoAddition(prev, addition.line.id, addition.added)),
     [setLines],
@@ -145,7 +151,7 @@ export function CartProvider({ children }: { children: ReactNode }) {
 
   return (
     <CartContext.Provider
-      value={{ lines, count, subtotal, addLine, addGiftCard, addCourse, updateQty, removeLine, clearCart, lastAddition, undoAddition: undoLastAddition, dismissAddition }}
+      value={{ lines, count, subtotal, addLine, addLines, addGiftCard, addCourse, updateQty, removeLine, clearCart, lastAddition, undoAddition: undoLastAddition, dismissAddition }}
     >
       {children}
     </CartContext.Provider>

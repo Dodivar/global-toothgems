@@ -67,6 +67,24 @@ export interface StudioGem {
   /** Stone sizes, ascending; at least one. */
   sizes: number[];
   currency: string;
+  /** What the shop sells of this gem, for the shopping list: its variants, else the product itself. */
+  offers: StudioGemOffer[];
+}
+
+/** One thing the shop sells of a gem: a variant (a colour, a pack × size…), or the product itself. */
+export interface StudioGemOffer {
+  /** `product_variants.id`; null = the product itself (it has no variants). */
+  variantId: string | null;
+  /** The variant's name ("Pack de 10 · SS5"); null = the product itself. */
+  name: Localized | null;
+  /** Stones per item; null = not sold by the pack (or not said). */
+  pack: number | null;
+  ss: number | null;
+  /** A colour variant (it has a swatch): a finish of the gem rather than a pack. */
+  colour: boolean;
+  priceMinor: number;
+  stock?: "low" | "out";
+  image?: string;
 }
 
 /** The shop's cuts drawn with the nearest Studio outline when a gem has no drawing row. */
@@ -155,6 +173,19 @@ export function buildStudioGems(products: Product[], appearances: GemAppearanceR
       (a, b) => a - b,
     );
 
+    const offers: StudioGemOffer[] = product.variants?.length
+      ? product.variants.map((v) => ({
+          variantId: v.id,
+          name: v.name,
+          pack: v.pack ?? null,
+          ss: v.ss ?? null,
+          colour: Boolean(v.swatch),
+          priceMinor: priceMinor(v.price),
+          ...(v.stock ? { stock: v.stock } : {}),
+          ...(v.image ? { image: v.image } : {}),
+        }))
+      : [{ variantId: null, name: null, pack: null, ss: null, colour: false, priceMinor: priceMinor(product.price), ...(product.stock ? { stock: product.stock } : {}) }];
+
     gems.push({
       key,
       slug: product.id,
@@ -166,6 +197,7 @@ export function buildStudioGems(products: Product[], appearances: GemAppearanceR
       finishes,
       sizes: sizes.length ? sizes : DEFAULT_STUDIO_SIZES,
       currency: product.currency ?? "EUR",
+      offers,
     });
   }
   return gems;
@@ -210,42 +242,92 @@ export function swapPatch(piece: Pick<PlacedJewelry, "ss">, gem: StudioGem, fini
   return { productId: gem.key, variantId: finish.variantId ?? undefined, ss, scale: scaleForSs(ss), look: finish.look };
 }
 
-/* ------------------------------------------------------------ estimate */
+/* ------------------------------------------------------------ shopping list */
 
-/** A line of a composition's shopping list. */
+/**
+ * A line of a composition's shopping list: one shop item (a variant, or the
+ * product itself) and how many of it cover the pieces it stands for.
+ */
 export interface EstimateLine {
+  /** The gem (`StudioGem.key`). */
   productId: string;
+  /** The pieces' colour variant; null = the product's own colour. */
   variantId: string | null;
-  /** Pieces of this product and colour in the design. */
+  /** The pieces' stone size, when the gem is sold per size; null = one line whatever the size. */
+  ss: number | null;
+  /** The shop item bought: the variant added to the cart (null = the product itself). */
+  offer: StudioGemOffer;
+  /** Pieces of this gem, colour (and size) in the design. */
   pieces: number;
-  /** Shop items to buy: one pack for a crystal, one per piece for a metal charm. */
+  /** Items to buy: packs covering the pieces, or one per piece for a charm sold singly. */
   quantity: number;
   unitMinor: number;
   totalMinor: number;
+  /** The item's stock badge: "out" = it cannot be ordered now. */
+  stock?: "low" | "out";
 }
 
 export interface CompositionEstimate {
   lines: EstimateLine[];
   totalMinor: number;
   currency: string;
-  /** Pieces whose product the shop no longer sells: not counted. */
+  /** Pieces whose product (or size) the shop no longer sells: not counted. */
   unavailable: number;
 }
 
+export type EstimatedPiece = Pick<PlacedJewelry, "productId" | "variantId" | "look"> & { ss?: number };
+
 /**
- * INDICATIVE value of a composition at shop prices, in minor units — what
- * the pieces cost to buy, never a price charged (it is not sent to checkout).
+ * The cheapest way to cover `pieces` stones with ONE of these offers, in
+ * stock first: each offer is bought `ceil(pieces / pack)` times. An offer
+ * without a pack covers every piece at once for a crystal, one piece for a
+ * metal charm (sold singly). Ties go to fewer stones, then the smaller pack.
+ */
+export function coverPieces(
+  offers: StudioGemOffer[],
+  pieces: number,
+  metal: boolean,
+): { offer: StudioGemOffer; quantity: number } | null {
+  const inStock = offers.filter((o) => o.stock !== "out");
+  const pool = inStock.length ? inStock : offers;
+  let best: { offer: StudioGemOffer; quantity: number; cost: number; stones: number } | null = null;
+  for (const offer of pool) {
+    const per = offer.pack ?? (metal ? 1 : pieces);
+    const quantity = Math.ceil(pieces / per);
+    const cost = quantity * offer.priceMinor;
+    const stones = quantity * per;
+    if (
+      !best ||
+      cost < best.cost ||
+      (cost === best.cost && (stones < best.stones || (stones === best.stones && per < (best.offer.pack ?? Infinity))))
+    )
+      best = { offer, quantity, cost, stones };
+  }
+  return best && { offer: best.offer, quantity: best.quantity };
+}
+
+/**
+ * What a composition takes to buy at the shop, and its INDICATIVE value in
+ * minor units — never a price charged: the cart is priced again by the
+ * database at checkout.
  *
- * Rule (to confirm with the owner, 2026-10-07): crystals are sold by the
- * pack, so each crystal product and colour counts once whatever the number
- * of pieces; metal charms are sold one by one, so each piece counts.
+ * Rule (owner's request, 2026-10-11; replaces "one pack per crystal and
+ * colour" of 2026-10-07):
+ * - a gem in colours (gold charms…) is bought in the pieces' colour, one per
+ *   piece (or by its pack, if the variant has one);
+ * - a crystal sold in packs is bought in the pieces' size (when the shop sells
+ *   it per size), in the cheapest single pack that covers them, in stock
+ *   first: 2 pieces → at least the pack of 10; 30 pieces → 3 × 10 or 2 × 25,
+ *   whichever costs less;
+ * - a crystal without packs counts once whatever the number of pieces.
+ * A piece whose gem, colour or size the shop does not sell counts as `unavailable`.
  */
 export function estimateComposition(
-  pieces: Pick<PlacedJewelry, "productId" | "variantId" | "look">[],
+  pieces: EstimatedPiece[],
   gemByKey: (key: string) => StudioGem | undefined,
   currency = "EUR",
 ): CompositionEstimate {
-  const lines = new Map<string, EstimateLine>();
+  const groups = new Map<string, { gem: StudioGem; finish: StudioGemFinish; ss: number | null; candidates: StudioGemOffer[]; pieces: number }>();
   let unavailable = 0;
   let cur = currency;
   for (const p of pieces) {
@@ -255,14 +337,42 @@ export function estimateComposition(
       unavailable += 1;
       continue;
     }
+    let ss: number | null = null;
+    let candidates: StudioGemOffer[];
+    if (finish.variantId) {
+      candidates = gem.offers.filter((o) => o.variantId === finish.variantId);
+    } else {
+      const options = gem.offers.filter((o) => !o.colour);
+      const perSize = options.some((o) => o.ss != null);
+      if (perSize) ss = p.ss ?? null;
+      candidates = perSize ? options.filter((o) => o.ss === ss) : options;
+    }
+    if (!candidates.length) {
+      unavailable += 1;
+      continue;
+    }
     cur = gem.currency;
-    const id = `${p.productId}|${finish.variantId ?? ""}`;
-    const line = lines.get(id) ?? { productId: p.productId, variantId: finish.variantId, pieces: 0, quantity: 0, unitMinor: finish.priceMinor, totalMinor: 0 };
-    line.pieces += 1;
-    line.quantity = finish.look.material === "metal" ? line.pieces : 1;
-    line.totalMinor = line.quantity * line.unitMinor;
-    lines.set(id, line);
+    const id = `${gem.key}|${finish.variantId ?? ""}|${ss ?? ""}`;
+    const group = groups.get(id) ?? { gem, finish, ss, candidates, pieces: 0 };
+    group.pieces += 1;
+    groups.set(id, group);
   }
-  const list = [...lines.values()];
-  return { lines: list, totalMinor: list.reduce((sum, l) => sum + l.totalMinor, 0), currency: cur, unavailable };
+
+  const lines: EstimateLine[] = [];
+  for (const g of groups.values()) {
+    const plan = coverPieces(g.candidates, g.pieces, g.finish.look.material === "metal");
+    if (!plan) continue;
+    lines.push({
+      productId: g.gem.key,
+      variantId: g.finish.variantId,
+      ss: g.ss,
+      offer: plan.offer,
+      pieces: g.pieces,
+      quantity: plan.quantity,
+      unitMinor: plan.offer.priceMinor,
+      totalMinor: plan.quantity * plan.offer.priceMinor,
+      ...(plan.offer.stock ? { stock: plan.offer.stock } : {}),
+    });
+  }
+  return { lines, totalMinor: lines.reduce((sum, l) => sum + l.totalMinor, 0), currency: cur, unavailable };
 }
