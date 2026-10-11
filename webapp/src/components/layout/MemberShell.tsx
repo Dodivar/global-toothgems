@@ -93,11 +93,6 @@ interface SectionItem {
   community?: boolean;
   /** The Members' Lounge: carries its unread activity. */
   lounge?: boolean;
-  /**
-   * Left off the lounge's rail, which keeps the space's own sections: the
-   * rest of the site is one step away, in the full menu the rail opens.
-   */
-  offRail?: boolean;
 }
 
 interface SectionGroup {
@@ -116,7 +111,7 @@ const GROUPS: SectionGroup[] = [
     id: "home",
     items: [
       { to: "/compte", labelKey: "account.navDashboard", shortKey: "dashboard", icon: LayoutDashboard, end: true },
-      { to: CLIENT_SPACES.home.to, labelKey: CLIENT_SPACES.home.labelKey, icon: CLIENT_SPACES.home.icon, end: true, offRail: true },
+      { to: CLIENT_SPACES.home.to, labelKey: CLIENT_SPACES.home.labelKey, shortKey: "home", icon: CLIENT_SPACES.home.icon, end: true },
     ],
   },
   {
@@ -124,8 +119,8 @@ const GROUPS: SectionGroup[] = [
     labelKey: "account.shell.groupPurchases",
     withCart: true,
     items: [
-      { to: CLIENT_SPACES.shop.to, labelKey: CLIENT_SPACES.shop.labelKey, icon: CLIENT_SPACES.shop.icon, offRail: true },
-      { to: "/carte-cadeau", labelKey: "nav.giftCard", icon: Gift, offRail: true },
+      { to: CLIENT_SPACES.shop.to, labelKey: CLIENT_SPACES.shop.labelKey, shortKey: "shop", icon: CLIENT_SPACES.shop.icon },
+      { to: "/carte-cadeau", labelKey: "nav.giftCard", shortKey: "giftCard", icon: Gift },
       { to: "/compte/commandes", labelKey: "account.navOrders", shortKey: "orders", icon: Package },
       { to: "/compte/fidelite", labelKey: "account.navLoyalty", shortKey: "loyalty", icon: Sparkles },
       { to: "/compte/avis", labelKey: "reviews.nav.account", shortKey: "reviews", icon: MessageSquareText },
@@ -135,7 +130,7 @@ const GROUPS: SectionGroup[] = [
     id: "learning",
     labelKey: "account.shell.groupLearning",
     items: [
-      { to: CLIENT_SPACES.academy.to, labelKey: CLIENT_SPACES.academy.labelKey, icon: CLIENT_SPACES.academy.icon, offRail: true },
+      { to: CLIENT_SPACES.academy.to, labelKey: CLIENT_SPACES.academy.labelKey, shortKey: "academy", icon: CLIENT_SPACES.academy.icon },
       { to: "/compte/attestations", labelKey: "account.navCertificates", shortKey: "certificates", icon: Award },
       { to: "/compte/salons", labelKey: "lounge.navEntry", shortKey: "lounge", icon: MessagesSquare, community: true, lounge: true },
     ],
@@ -150,7 +145,6 @@ const GROUPS: SectionGroup[] = [
       shortKey: shortcut.shortKey,
       icon: shortcut.icon,
       end: shortcut.id === "workshop",
-      offRail: shortcut.id !== "workshop",
     })),
   },
   {
@@ -164,11 +158,10 @@ const GROUPS: SectionGroup[] = [
 ];
 
 const SECTIONS: SectionItem[] = GROUPS.flatMap((group) => group.items);
-const RAIL_SECTIONS = SECTIONS.filter((item) => !item.offRail);
 
 /** The first rail entry of every group but the first: the lounge rail draws a divider above it. */
 const GROUP_STARTS = new Set(
-  GROUPS.slice(1).flatMap((group) => group.items.find((item) => !item.offRail)?.to ?? []),
+  GROUPS.slice(1).flatMap((group) => group.items[0]?.to ?? []),
 );
 
 /** The section a pathname belongs to, for the title of the mobile bar. */
@@ -509,7 +502,7 @@ function Rail({ onExpand, expanded }: { onExpand: () => void; expanded: boolean 
       </Link>
 
       <ul className="m-0 grid w-full list-none gap-0.5 px-1.5 py-0">
-        {RAIL_SECTIONS.map((item) => (
+        {SECTIONS.map((item) => (
           <li key={item.to} className={clsx(GROUP_STARTS.has(item.to) && "mt-1 border-t border-[var(--border-subtle)] pt-1")}>
             <NavLink
               to={item.to}
