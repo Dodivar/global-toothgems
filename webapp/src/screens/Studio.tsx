@@ -29,7 +29,6 @@ import { InspirationBoards } from "../components/studio/InspirationBoards";
 import { StudioSteps } from "../components/studio/StudioSteps";
 import { StudioPricingCard } from "../components/studio/StudioPricingCard";
 import { StudioFaq } from "../components/studio/StudioFaq";
-import { NewTag } from "../components/studio/NewTag";
 import { useFormat } from "../lib/format";
 import { useReveal } from "../lib/useReveal";
 import { useToast } from "../lib/toast";
@@ -134,7 +133,6 @@ export function Studio() {
             <span className="inline-flex items-center gap-2 rounded-[var(--radius-pill)] border border-[var(--gt-blue-200)] bg-white/70 py-1 pl-2.5 pr-1.5 text-[11px] font-semibold uppercase tracking-[var(--tracking-eyebrow)] text-[var(--gt-blue-700)] backdrop-blur">
               <Box size={13} aria-hidden="true" />
               {t("studio.hero.eyebrow")}
-              <NewTag />
             </span>
             <span className="gt-accent text-[clamp(18px,2vw,24px)] text-[var(--gt-blue-700)]">{t("studio.hero.script")}</span>
             <h1 id="gt-studio-title" className="text-[length:var(--text-display-1)] font-[var(--weight-black)] leading-[var(--leading-tight)] tracking-[var(--tracking-display)] text-[var(--gt-ink-900)]">

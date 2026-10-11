@@ -7,7 +7,6 @@ import { Button } from "../ui/Button";
 import { IconButton } from "../ui/IconButton";
 import { SmileCanvas } from "../studio/SmileCanvas";
 import { GemIcon } from "../studio/Gem";
-import { NewTag } from "../studio/NewTag";
 import { COMPOSITIONS } from "../../data/studio";
 import { GEMS_CATEGORY, shopHref } from "../../data/taxonomy";
 import { useTaxonomy } from "../../lib/catalog/useTaxonomy";
@@ -255,7 +254,6 @@ function ShopSlide() {
                 <img src={photo("img-04.jpg")} alt="" className="h-10 w-10 object-contain" />
               </span>
               <span className="grid gap-0.5">
-                <NewTag className="justify-self-start" />
                 <span className="text-[13px] font-bold text-[var(--gt-ink-900)]">{t("homeAlt.hero.shop.floatName")}</span>
               </span>
             </div>
@@ -326,7 +324,6 @@ function StudioSlide() {
           <>
             <span className="gt-eyebrow inline-flex items-center gap-2 !text-[var(--gt-blue-700)]">
               {t("homeAlt.hero.studio.eyebrow")}
-              <NewTag />
             </span>
             <SlideTitle>{t("homeAlt.hero.studio.title")}</SlideTitle>
             <p className="m-0 max-w-[46ch] text-[16px] text-[var(--gt-ink-700)] lg:text-[length:var(--text-body-lg)]">{t("homeAlt.hero.studio.body")}</p>

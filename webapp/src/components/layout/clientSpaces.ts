@@ -20,15 +20,13 @@ export interface ClientSpace {
   icon: LucideIcon;
   /** Full label, under `nav.*`. */
   labelKey: string;
-  /** Marked "New" in the navigation. */
-  isNew?: boolean;
 }
 
 export const CLIENT_SPACES: Record<ClientSpaceId, ClientSpace> = {
   home: { id: "home", to: "/", icon: House, labelKey: "nav.home" },
   shop: { id: "shop", to: "/boutique", icon: Store, labelKey: "nav.shop" },
   academy: { id: "academy", to: "/academy", icon: GraduationCap, labelKey: "nav.academy" },
-  studio: { id: "studio", to: STUDIO_EDITOR_PATH, icon: Box, labelKey: "nav.studio", isNew: true },
+  studio: { id: "studio", to: STUDIO_EDITOR_PATH, icon: Box, labelKey: "nav.studio" },
   account: { id: "account", to: MEMBER_SPACE_PATH, icon: UserRound, labelKey: "nav.mySpace" },
 };
 
