@@ -26,6 +26,8 @@ export function getJewelMaterial(look: LookMaterial): THREE.MeshPhysicalMaterial
   if (m) return m;
   const iridescent = look.effect === "iridescent";
   const hsl = new THREE.Color(look.color).getHSL({ h: 0, s: 0, l: 0 });
+  // near-white coated stones (AB, Shimmer) are clear crystal: the coating, not a cream body, makes their colour
+  const body = iridescent && hsl.l > 0.9 ? "#ffffff" : look.color;
   m =
     look.material === "metal"
       ? new THREE.MeshPhysicalMaterial({
@@ -36,7 +38,7 @@ export function getJewelMaterial(look: LookMaterial): THREE.MeshPhysicalMaterial
           envMapIntensity: 1.7,
         })
       : new THREE.MeshPhysicalMaterial({
-          color: look.color,
+          color: body,
           metalness: 0,
           roughness: 0.02,
           // a little less see-through than glass: the facets, not the tooth behind, make the stone
@@ -45,7 +47,7 @@ export function getJewelMaterial(look: LookMaterial): THREE.MeshPhysicalMaterial
           ior: 2.3,
           // the "fire" of a lead crystal: white light split into colour along the facet edges
           dispersion: iridescent ? 0.45 : 0.28,
-          attenuationColor: new THREE.Color(look.color),
+          attenuationColor: new THREE.Color(body),
           attenuationDistance: 1.3,
           envMapIntensity: 3.2,
           specularIntensity: 1,
@@ -63,46 +65,68 @@ export function getJewelMaterial(look: LookMaterial): THREE.MeshPhysicalMaterial
 }
 
 /**
- * The AB / Shimmer / Vitrail coating. On a real stone every facet catches the
- * metallic film at its own angle and glows its own colour — ice blue on one,
- * peach or gold on its neighbour. A uniform film only tints the stone a pale
- * pastel, so the shader gives each flat facet (constant object-space normal)
- * its own film thickness and a pastel hue that tints the light passing
- * through it, while the camera angle keeps sliding the colours as the stone
- * turns. The coated stone lets less of the tooth show through, as on a photo.
+ * The AB / Shimmer / Vitrail coating. On a real stone the metallic film throws
+ * soft ice-blue, peach and champagne-gold reflections across a clear crystal:
+ * some facets almost white, others grey-blue or darker, the colours lying in
+ * broad gradients that slide over the cut as the stone turns. A uniform film
+ * only tints the stone a pale pastel, so the shader draws that pattern itself:
+ * a phase from the facet's orientation (neighbours differ a little), the point
+ * on the stone (colour sweeps across a facet instead of filling it flat) and
+ * the facet's angle to the camera (orbiting moves everything) picks a tint
+ * from the palette, and a second phase sets each zone's brightness, because a
+ * diamond reads from contrast first and colour second.
  */
 function coatFacets(m: THREE.MeshPhysicalMaterial) {
-  m.transmission = 0.32;
-  m.envMapIntensity = 3.6;
+  m.transmission = 0.48;
+  m.envMapIntensity = 2.6;
+  // the tint below colours the reflections; a full-strength film and a white clear coat would wash it out
+  m.iridescence = 0.5;
+  m.clearcoat = 0.25;
   m.onBeforeCompile = (shader) => {
     shader.vertexShader = shader.vertexShader
-      .replace("#include <common>", "#include <common>\nvarying vec3 vFacetNormal;")
-      .replace("#include <beginnormal_vertex>", "#include <beginnormal_vertex>\n\tvFacetNormal = normal;");
+      .replace("#include <common>", "#include <common>\nvarying vec3 vFacetNormal;\nvarying vec3 vStonePos;")
+      .replace("#include <beginnormal_vertex>", "#include <beginnormal_vertex>\n\tvFacetNormal = normal;\n\tvStonePos = position;");
     shader.fragmentShader = shader.fragmentShader
       .replace(
         "#include <common>",
         `#include <common>
 varying vec3 vFacetNormal;
-// 0..1 per facet, smooth in the normal so neighbouring facets differ but nothing flickers
-float gtFacetPhase() {
-  vec3 fn = normalize( vFacetNormal );
-  return fract( dot( fn, vec3( 2.17, 3.41, 1.63 ) ) * 1.9 + fn.x * fn.y * 2.3 );
-}
-// the coating's palette: ice blue, lilac, peach, gold, mint
-vec3 gtCoatHue( float t ) {
-  return 0.5 + 0.5 * cos( 6.28318 * ( t + vec3( 0.0, 0.33, 0.67 ) ) );
+varying vec3 vStonePos;
+// the coating's palette, cycling: ice blue, clear, peach, pale gold, sky blue
+vec3 gtCoatTint( float t ) {
+  const vec3 ICE = vec3( 0.32, 0.68, 0.96 );
+  const vec3 CLEAR = vec3( 1.0 );
+  const vec3 PEACH = vec3( 1.0, 0.66, 0.5 );
+  const vec3 GOLD = vec3( 1.0, 0.9, 0.62 );
+  const vec3 SKY = vec3( 0.66, 0.88, 1.0 );
+  t = fract( t ) * 5.0;
+  if ( t < 1.0 ) return mix( ICE, CLEAR, smoothstep( 0.0, 1.0, t ) );
+  if ( t < 2.0 ) return mix( CLEAR, PEACH, smoothstep( 1.0, 2.0, t ) );
+  if ( t < 3.0 ) return mix( PEACH, GOLD, smoothstep( 2.0, 3.0, t ) );
+  if ( t < 4.0 ) return mix( GOLD, SKY, smoothstep( 3.0, 4.0, t ) );
+  return mix( SKY, ICE, smoothstep( 4.0, 5.0, t ) );
 }`,
       )
       .replace(
         "#include <color_fragment>",
         `#include <color_fragment>
-	float gtPhase = gtFacetPhase();
-	float gtView = 1.0 - abs( dot( normalize( vNormal ), normalize( vViewPosition ) ) );
-	diffuseColor.rgb *= mix( vec3( 1.0 ), gtCoatHue( gtPhase + 0.35 * gtView ), 0.88 );`,
+	vec3 gtFacet = normalize( vFacetNormal );
+	vec3 gtView = normalize( vNormal );
+	float gtPhase = fract( dot( gtFacet, vec3( 1.3, 1.7, 0.5 ) ) * 0.7 + dot( vStonePos, vec3( 0.45, 0.6, 0.0 ) ) * 0.55 + dot( gtView, vec3( 0.8, 1.2, 0.0 ) ) * 0.7 );
+	float gtShade = 0.5 + 0.5 * sin( 6.28318 * ( dot( gtFacet, vec3( 2.1, -1.4, 0.6 ) ) * 0.8 + dot( vStonePos, vec3( -0.3, 0.4, 0.0 ) ) * 0.6 + dot( gtView, vec3( 1.0, -0.6, 0.0 ) ) * 0.6 ) );
+	vec3 gtTint = gtCoatTint( gtPhase ) * mix( 0.55, 1.0, gtShade );
+	diffuseColor.rgb *= gtTint;`,
+      )
+      .replace(
+        "#include <lights_fragment_end>",
+        // the film colours what the stone mirrors; the lamps' pin-point sparkles stay nearly white
+        `#include <lights_fragment_end>
+	reflectedLight.indirectSpecular *= gtTint;
+	reflectedLight.directSpecular *= mix( vec3( 1.0 ), gtTint, 0.4 );`,
       )
       .replace(
         "material.iridescenceThickness = iridescenceThicknessMaximum;",
-        "material.iridescenceThickness = mix( iridescenceThicknessMinimum, iridescenceThicknessMaximum, fract( gtPhase * 1.7 + 0.5 * gtView ) );",
+        "material.iridescenceThickness = mix( iridescenceThicknessMinimum, iridescenceThicknessMaximum, gtPhase );",
       );
   };
   m.customProgramCacheKey = () => "gt-coated-facets";

@@ -40,6 +40,11 @@ export function GemGroupPanel({ snap }: { snap: StudioSnapshot }) {
   const [drag, setDrag] = useState<DragState | null>(null);
   const suppressClick = useRef(false);
   const lastPointerType = useRef("mouse");
+  // `ws` changes identity on every update: the engine callback reads the latest through a ref.
+  const insertRef = useRef(ws.insertGroup);
+  useEffect(() => {
+    insertRef.current = ws.insertGroup;
+  });
   // Touch: a tap arms a group, the next tap on the model places it (like an armed gem).
   const [armedId, setArmedId] = useState<string | null>(null);
   // Arming a single gem takes over from an armed group.
@@ -70,10 +75,10 @@ export function GemGroupPanel({ snap }: { snap: StudioSnapshot }) {
       return;
     }
     engine.setArmedGroup((tooth) => {
-      ws.insertGroup(armedGroup, tooth && tooth !== FREE_TOOTH ? tooth : null);
+      insertRef.current(armedGroup, tooth && tooth !== FREE_TOOTH ? tooth : null);
     });
     return () => engine.setArmedGroup(null);
-  }, [armedGroup, ws]);
+  }, [armedGroup]);
 
   const beginPress = (group: GemGroup, e: React.PointerEvent) => {
     lastPointerType.current = e.pointerType;

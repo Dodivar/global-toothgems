@@ -21,7 +21,6 @@ import { Checkbox } from "../components/ui/Checkbox";
 import { Input } from "../components/ui/Input";
 import { StudioPricingCard } from "../components/studio/StudioPricingCard";
 import { GemIcon } from "../components/studio/Gem";
-import { NewTag } from "../components/studio/NewTag";
 import { useAuth } from "../lib/auth";
 import { useFormat } from "../lib/format";
 import { STUDIO_PRICE } from "../data/studio";
@@ -106,7 +105,6 @@ export function StudioSubscribe() {
             <span className="inline-flex items-center gap-2 rounded-[var(--radius-pill)] border border-[var(--gt-blue-200)] bg-white/70 py-1 pl-2.5 pr-1.5 text-[11px] font-semibold uppercase tracking-[var(--tracking-eyebrow)] text-[var(--gt-blue-700)]">
               <Box size={13} aria-hidden="true" />
               {t("studio.hero.eyebrow")}
-              <NewTag />
             </span>
             <h1 className="text-[length:var(--text-display-2)] font-[var(--weight-black)] leading-[var(--leading-tight)] tracking-[var(--tracking-display)] text-[var(--gt-ink-900)]">
               {t("studio.subscribe.title")}

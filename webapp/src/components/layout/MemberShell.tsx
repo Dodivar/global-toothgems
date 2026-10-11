@@ -35,7 +35,6 @@ import { useOrders } from "../../lib/orders";
 import { useFormat } from "../../lib/format";
 import { useFocusTrap } from "../../lib/useFocusTrap";
 import { LEGAL_PATHS } from "../../data/legal/routes";
-import { NewTag } from "../studio/NewTag";
 import { CLIENT_SPACES, STUDIO_SHORTCUTS } from "./clientSpaces";
 import monogram from "../../assets/monogram-blue.png";
 import logoBlack from "../../assets/logo-wordmark-black.png";
@@ -102,8 +101,6 @@ interface SectionGroup {
   items: SectionItem[];
   /** The purchases group ends with the cart, which is not a section of the space. */
   withCart?: boolean;
-  /** Marked "New" beside its heading, like the Studio everywhere else. */
-  isNew?: boolean;
 }
 
 const GROUPS: SectionGroup[] = [
@@ -138,7 +135,6 @@ const GROUPS: SectionGroup[] = [
   {
     id: "studio",
     labelKey: "nav.studio",
-    isNew: true,
     items: STUDIO_SHORTCUTS.map((shortcut) => ({
       to: shortcut.to,
       labelKey: shortcut.labelKey,
@@ -335,7 +331,6 @@ function SidebarBody({ onNavigate, closeButton }: { onNavigate?: () => void; clo
                 {group.labelKey && (
                   <span id={headingId} className="gt-eyebrow flex items-center gap-2 px-3">
                     {t(group.labelKey)}
-                    {group.isNew && <NewTag />}
                   </span>
                 )}
                 <ul aria-labelledby={group.labelKey ? headingId : undefined} className="m-0 grid list-none gap-0.5 p-0">

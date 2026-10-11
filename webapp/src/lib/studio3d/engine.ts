@@ -2398,7 +2398,7 @@ export class StudioEngine {
   private armedGroup: ((toothId: string) => void) | null = null;
   setArmedGroup(place: ((toothId: string) => void) | null) {
     this.armedGroup = place;
-    if (place) this.store.setArmed(null);
+    if (place && this.store.getSnapshot().armedTypeId) this.store.setArmed(null);
   }
 
   beginPlacing(gemKey: string, e: { clientX: number; clientY: number; preventDefault: () => void }) {
