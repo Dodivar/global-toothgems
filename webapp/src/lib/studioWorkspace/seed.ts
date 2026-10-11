@@ -1,7 +1,7 @@
 import { FALLBACK_GEM_COLORS, PRODUCTS } from "../../data/products";
 import { scaleForSs, type PlacedJewelry } from "../../data/studioEditor";
 import { approxLabialPoint } from "../studio3d/archLayout";
-import { buildStudioGems, estimateComposition, type StudioGem } from "../studio3d/gemCatalog";
+import { buildStudioGems, estimateComposition, type EstimatedPiece, type StudioGem } from "../studio3d/gemCatalog";
 import type { GemGroupData, GroupPiece } from "./gemGroup";
 import { createScene } from "./scene";
 import type { Creation, GemGroup } from "./types";
@@ -20,7 +20,7 @@ import type { Creation, GemGroup } from "./types";
 
 const MOCK_GEMS = buildStudioGems(PRODUCTS, [], FALLBACK_GEM_COLORS);
 const gemOf = (key: string): StudioGem | undefined => MOCK_GEMS.find((g) => g.key === key);
-const estimate = (pieces: Pick<PlacedJewelry, "productId" | "variantId" | "look">[]) => estimateComposition(pieces, gemOf);
+const estimate = (pieces: EstimatedPiece[]) => estimateComposition(pieces, gemOf);
 
 interface SeedItem {
   /** Mock product id (`data/products.ts`). */

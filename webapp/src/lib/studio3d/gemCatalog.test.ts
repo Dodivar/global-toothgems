@@ -2,7 +2,7 @@ import { describe, expect, it } from "vitest";
 import type { GemColorDef, Product } from "../../data/products";
 import { sanitizeJewels, scaleForSs } from "../../data/studioEditor";
 import { stoneSizeMmApprox } from "../gemOptions";
-import { buildStudioGems, defaultSize, estimateComposition, fallbackLook, nearestSize, pieceSpec, swapPatch, type GemAppearanceRow } from "./gemCatalog";
+import { buildStudioGems, coverPieces, defaultSize, estimateComposition, fallbackLook, nearestSize, pieceSpec, swapPatch, type GemAppearanceRow } from "./gemCatalog";
 
 const product = (over: Partial<Product>): Product => ({
   id: "slug",
@@ -99,16 +99,42 @@ describe("studio gems from the shop catalogue", () => {
     expect(swapPatch({ ss: 5 }, cherry, cherry.finishes[1])).toMatchObject({ productId: "p-cherry", variantId: "v-white", ss: 5 });
   });
 
-  it("values a composition at shop prices: a pack per crystal and colour, a charm per piece", () => {
+  it("values a composition at shop prices: one item per crystal and colour without packs, a charm per piece", () => {
     const crystal = { productId: "p-heart", look: byKey("p-heart")!.finishes[0].look };
     const gold = { productId: "p-cherry", variantId: "v-gold", look: byKey("p-cherry")!.finishes[0].look };
     const value = estimateComposition([crystal, crystal, crystal, gold, gold, { ...crystal, productId: "gone" }], byKey);
     expect(value.totalMinor).toBe(995 + 2 * 4495);
     expect(value.unavailable).toBe(1);
-    expect(value.lines.map((l) => [l.pieces, l.quantity])).toEqual([
-      [3, 1],
-      [2, 2],
+    expect(value.lines.map((l) => [l.pieces, l.quantity, l.offer.variantId])).toEqual([
+      [3, 1, null],
+      [2, 2, "v-gold"],
     ]);
+  });
+
+  it("buys a crystal in the pieces' size, in the cheapest pack that covers them, in stock first", () => {
+    const look = byKey("p-baguette")!.finishes[0].look;
+    const piece = (ss: number) => ({ productId: "p-baguette", ss, look });
+    // 2 pieces in SS3 → the pack of 10 (not 25); 1 piece in SS7 → its own pack of 10
+    const value = estimateComposition([piece(3), piece(3), piece(7)], byKey);
+    expect(value.lines.map((l) => [l.ss, l.offer.variantId, l.quantity])).toEqual([
+      [3, "v3", 1],
+      [7, "v1", 1],
+    ]);
+    expect(value.totalMinor).toBe(995 + 995);
+    // 30 pieces in SS3: 3 × pack of 10 (29.85) beats 2 × pack of 25 (37.90)
+    expect(estimateComposition(Array.from({ length: 30 }, () => piece(3)), byKey).lines[0]).toMatchObject({ offer: { variantId: "v3" }, quantity: 3 });
+    // a size the shop does not sell is not counted
+    expect(estimateComposition([piece(5)], byKey)).toMatchObject({ lines: [], unavailable: 1 });
+  });
+
+  it("covers pieces with one offer: in stock first, out of stock only when nothing else is", () => {
+    const offer = (variantId: string, pack: number, priceMinor: number, stock?: "out") => ({ variantId, name: null, pack, ss: null, colour: false, priceMinor, ...(stock ? { stock } : {}) });
+    const ten = offer("p10", 10, 500, "out");
+    const tf = offer("p25", 25, 1000);
+    expect(coverPieces([ten, tf], 2, false)).toMatchObject({ offer: { variantId: "p25" }, quantity: 1 });
+    expect(coverPieces([ten], 2, false)).toMatchObject({ offer: { variantId: "p10", stock: "out" }, quantity: 1 });
+    expect(coverPieces([offer("a", 10, 500), offer("b", 25, 1000)], 26, false)).toMatchObject({ offer: { variantId: "a" }, quantity: 3 });
+    expect(coverPieces([], 1, false)).toBeNull();
   });
 });
 
