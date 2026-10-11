@@ -369,7 +369,7 @@
     "backToCart": "Back to basket",
     "giftCard": {
       "title": "Gift card",
-      "hint": "Have a gift card? Add its code: the available amount is deducted at payment.",
+      "hint": "Have a gift card? Add its code: the available amount is deducted from your total.",
       "label": "Gift card code",
       "add": "Add",
       "added": "Gift cards added",
@@ -379,8 +379,8 @@
         "duplicate": "This card is already added.",
         "limit": "At most {{max}} gift cards per order."
       },
-      "summary_one": "1 gift card will be applied at payment: what is left to pay is computed by our server.",
-      "summary_other": "{{count}} gift cards will be applied at payment: what is left to pay is computed by our server.",
+      "checking": "Checking…",
+      "atPayment": "Deducted at payment",
       "payWithCards": "Pay with my gift cards",
       "emailDelivery": "By email",
       "byEmail": "Sent by email after payment",

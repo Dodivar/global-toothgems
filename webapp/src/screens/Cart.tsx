@@ -40,6 +40,8 @@ import { OfferBadges } from "../components/shop/OfferBadges";
 import { useStorefrontOffers } from "../lib/useStorefrontOffers";
 import { guestQuoteEmail, lineDiscount, quoteItems } from "../lib/checkout/basketQuote";
 import { useBasketQuote } from "../lib/checkout/useBasketQuote";
+import { giftCardPayable, refusedGiftCodes } from "../lib/checkout/giftCardQuote";
+import { useGiftCardQuote } from "../lib/checkout/useGiftCardQuote";
 import type { GiftCardDesign } from "../lib/giftCards/giftCardMapping";
 import {
   applicableRates,
@@ -135,6 +137,7 @@ export function Cart() {
   }, []);
   // Gift card codes are bearer credentials: kept in memory for this page only, never stored.
   const [giftCodes, setGiftCodes] = useState<string[]>([]);
+  const [giftRefused, setGiftRefused] = useState(false);
   // Promotion codes typed by the customer: the database decides what they give (basket quote below).
   const [promoCodes, setPromoCodes] = useState<string[]>([]);
   const [promoRefusal, setPromoRefusal] = useState<"invalid" | "too_many_attempts" | "dropped" | null>(null);
@@ -238,6 +241,15 @@ export function Cart() {
   // used up, or the reward beats it) carries no campaign badge.
   const promotionApplied = quote?.discounts.some((d) => d.type !== "loyalty") ?? false;
   const freeOrder = live && quote !== null && total <= 0 && giftCodes.length === 0;
+  // What the gift cards would pay, said by the database once the total is settled (the discounts are in).
+  const giftQuoteState = useGiftCardQuote({
+    enabled: live && giftCodes.length > 0 && ratesReady && quoteState.status !== "loading",
+    codes: giftCodes,
+    amount: giftCardPayable(lines, total),
+    currency,
+  });
+  const giftApplied = giftQuoteState.status === "ready" ? Math.min(total, giftQuoteState.quote.applied) : null;
+  const amountDue = giftApplied === null ? null : total - giftApplied;
   const threshold = ratesReady && shipped ? freeShippingThreshold(rates.rows, currency) : null;
   const remainingForFreeShipping = threshold === null ? null : Math.max(0, threshold - goods);
 
@@ -281,6 +293,14 @@ export function Cart() {
       setCheckoutError("loyalty_reward_unavailable");
     }
   }, [quoteState, promoCodes, wantsReward]);
+  // A code the database refuses is taken out at once, and said so (the same words for every refusal).
+  useEffect(() => {
+    if (giftQuoteState.status !== "ready" || giftQuoteState.quote.refused.length === 0) return;
+    const refused = refusedGiftCodes(giftCodes, giftQuoteState.quote.refused);
+    if (refused.length === 0) return;
+    setGiftCodes((codes) => codes.filter((code) => !refused.includes(code)));
+    setGiftRefused(true);
+  }, [giftQuoteState, giftCodes]);
   const pay = async (termsJustAccepted = false) => {
     setCheckoutError(null);
     if (accountMissing) {
@@ -512,7 +532,7 @@ export function Cart() {
     ? t("checkout.payNoShipping")
     : !live
       ? t("cart.pay", { amount: money(total) })
-      : giftCodes.length > 0
+      : giftCodes.length > 0 && amountDue === 0
         ? t("checkout.giftCard.payWithCards")
         : t("checkout.continueToPayment");
   const payButton = (
@@ -867,11 +887,30 @@ export function Cart() {
               <span>{money(total)}</span>
             </div>
             {giftCodes.length > 0 && (
-              // Balances are never read by the browser: the database applies the cards and computes what is left to pay.
-              <p className="m-0 flex items-start gap-2 rounded-[var(--radius-md)] bg-[var(--surface-brand-wash)] px-3 py-2 text-xs text-[var(--gt-blue-700)]">
-                <Gift size={14} aria-hidden="true" className="mt-0.5 flex-none" />
-                {t("checkout.giftCard.summary", { count: giftCodes.length })}
-              </p>
+              // The database's preview (never a balance): the payment step applies the cards for real.
+              <>
+                <div className="flex justify-between gap-3 text-[var(--status-success-fg)]">
+                  <span className="flex items-center gap-1.5">
+                    <Gift size={14} aria-hidden="true" className="flex-none" />
+                    {t("checkout.payment.giftCards", { count: giftCodes.length })}
+                  </span>
+                  <span className="flex-none">
+                    {giftApplied !== null ? (
+                      `−${money(giftApplied)}`
+                    ) : giftQuoteState.status === "error" ? (
+                      <span className="text-[var(--text-muted)]">{t("checkout.giftCard.atPayment")}</span>
+                    ) : (
+                      <span className="text-[var(--text-muted)]">{t("checkout.giftCard.checking")}</span>
+                    )}
+                  </span>
+                </div>
+                {amountDue !== null && (
+                  <div className="flex justify-between text-base font-bold text-[var(--text-primary)]">
+                    <span>{t("checkout.payment.due")}</span>
+                    <span>{money(amountDue)}</span>
+                  </div>
+                )}
+              </>
             )}
           </div>
           {live && items !== null && items.length > 0 && (
@@ -893,10 +932,15 @@ export function Cart() {
               codes={giftCodes}
               onChange={(codes) => {
                 setGiftCodes(codes);
+                setGiftRefused(false);
                 if (checkoutError === "gift_card_invalid") setCheckoutError(null);
               }}
               disabled={submitting}
-              refused={checkoutError === "gift_card_invalid"}
+              refused={
+                giftQuoteState.status === "error" && giftQuoteState.error === "too_many_attempts"
+                  ? "too_many_attempts"
+                  : giftRefused || checkoutError === "gift_card_invalid"
+              }
             />
           )}
           <div className="hidden gap-3 lg:grid">

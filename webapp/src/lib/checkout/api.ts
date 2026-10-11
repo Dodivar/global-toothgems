@@ -2,6 +2,8 @@ import { FunctionsHttpError } from "@supabase/supabase-js";
 import { requireSupabase } from "../supabase/client";
 import type { CheckoutItem } from "./cartLines";
 import { readQuote, type QuoteItem, type QuoteResult } from "./basketQuote";
+import { readGiftCardQuote, type GiftCardQuoteResult } from "./giftCardQuote";
+import { toMajorUnits } from "../catalog/money";
 import type { ShippingRateRow } from "./shippingRates";
 
 /**
@@ -182,6 +184,20 @@ export async function fetchBasketQuote(params: {
   });
   if (error) return { ok: false, error: "unavailable" };
   return readQuote(data);
+}
+
+/**
+ * What the gift card codes would pay on `amount` (minor units): a preview for the
+ * summary, nothing is reserved. The codes travel in the request body only.
+ */
+export async function fetchGiftCardQuote(params: { codes: string[]; amount: number; currency: string }): Promise<GiftCardQuoteResult> {
+  const { data, error } = await requireSupabase().rpc("quote_gift_cards", {
+    p_codes: params.codes,
+    p_amount: toMajorUnits(params.amount),
+    p_currency: params.currency,
+  });
+  if (error) return { ok: false, error: "unavailable" };
+  return readGiftCardQuote(data);
 }
 
 export async function fetchShippingRates(countryCode: string): Promise<ShippingRateRow[]> {

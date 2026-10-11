@@ -8,9 +8,9 @@ import { addGiftCardCode, MAX_GIFT_CARD_CODES } from "../../lib/giftCards/giftCa
  * Gift card codes typed in the cart, sent with the order to the checkout
  * function (at most 5). The browser only checks the shape of a code: whether
  * it exists, is active, unexpired or has money left is decided by the database
- * when the order is created, and every refusal reads the same ("cannot be
- * used"), so the page never tells which codes exist. Codes are shown masked
- * once added and are never stored.
+ * (the cart's preview, `quote_gift_cards()`, then the order itself), and every
+ * refusal reads the same ("cannot be used"). Codes are shown masked once added
+ * and are never stored.
  */
 export function GiftCardCodes({
   codes,
@@ -22,8 +22,8 @@ export function GiftCardCodes({
   codes: string[];
   onChange: (codes: string[]) => void;
   disabled?: boolean;
-  /** The last checkout refused one of the codes (which one is not said). */
-  refused?: boolean;
+  /** A code was refused (by the preview, which takes it out, or by the last checkout), or too many were. */
+  refused?: boolean | "too_many_attempts";
   /** Rendered inside another card (the order summary): no frame of its own, a smaller title. */
   embedded?: boolean;
 }) {
@@ -43,7 +43,11 @@ export function GiftCardCodes({
     onChange(result.codes);
   };
 
-  const message = error ? t(`checkout.giftCard.errors.${error}`, { max: MAX_GIFT_CARD_CODES }) : refused ? t("checkout.errors.gift_card_invalid") : null;
+  const message = error ? t(`checkout.giftCard.errors.${error}`, { max: MAX_GIFT_CARD_CODES }) : refused === "too_many_attempts"
+      ? t("checkout.promo.refusal.too_many_attempts")
+      : refused
+        ? t("checkout.errors.gift_card_invalid")
+        : null;
 
   return (
     <section

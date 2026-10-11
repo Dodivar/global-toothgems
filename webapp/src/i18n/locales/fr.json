@@ -369,7 +369,7 @@
     "backToCart": "Retour au panier",
     "giftCard": {
       "title": "Carte cadeau",
-      "hint": "Vous avez une carte cadeau ? Ajoutez son code : le montant disponible est déduit au paiement.",
+      "hint": "Vous avez une carte cadeau ? Ajoutez son code : le montant disponible est déduit de votre total.",
       "label": "Code de la carte cadeau",
       "add": "Ajouter",
       "added": "Cartes cadeaux ajoutées",
@@ -379,8 +379,8 @@
         "duplicate": "Cette carte est déjà ajoutée.",
         "limit": "{{max}} cartes cadeaux au plus par commande."
       },
-      "summary_one": "1 carte cadeau sera appliquée au paiement : le montant restant à payer est calculé par notre serveur.",
-      "summary_other": "{{count}} cartes cadeaux seront appliquées au paiement : le montant restant à payer est calculé par notre serveur.",
+      "checking": "Calcul…",
+      "atPayment": "Déduite au paiement",
       "payWithCards": "Payer avec mes cartes cadeaux",
       "emailDelivery": "Par e-mail",
       "byEmail": "Envoyée par e-mail après paiement",

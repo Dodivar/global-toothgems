@@ -144,6 +144,7 @@ supabase/
 | 20261009162740 | `quote_basket_used_up` | **Applied 2026-10-09.** Decision 87: `quote_basket(..., p_email)` knows a guest by the e-mail typed at the checkout (ignored when signed in; 5 new addresses per caller per 10 minutes, table `promotion_email_lookups`, hashed, no policies) and answers `used_up` (automatic promotions the customer has already had as often as allowed, on paid orders). Suite PL12 (and PL11d unlocks the codes PL6 locked) |
 | 20261010122507 | `members_lounge` | **Applied 2026-10-10.** Members' Lounge (iteration 25, decision 88): `lounge_channels` (the 4 × 5 rooms, ids `<lounge>-<key>`), `lounge_members` (generated handle, lounges, presence + heartbeat), `lounge_conversations` (one per pair), `lounge_messages` (parts jsonb, mentions, reply, reaction totals), `lounge_message_attachments` + private `lounge-media` bucket, `lounge_reactions`, `lounge_room_states` (read state, mutes), `lounge_notifications`; `private.lounge_can_enter()`; RPC `lounge_access/join/heartbeat/directory/overview/mark_read/set_muted/read_notifications/post_message/toggle_reaction`; Realtime publication of `lounge_messages` and `lounge_notifications`. Suite `tests/lounge_validation.sql` (A1–T1) |
 | 20261010145631 | `lounge_handle_initial` | **Applied 2026-10-10.** Decision 88 b: the generated handle is `first.l` (was `first.last`, which showed the full last name in every @mention) and the directory's name no longer falls back to `display_name`. No member existed yet, nothing rewritten |
+| 20261011171901 | `quote_gift_cards` | **Applied 2026-10-11.** Decision 89: `quote_gift_cards(p_codes, p_amount, p_currency)` (SECURITY DEFINER, callable by visitors) — the cart's preview of what the gift card codes pay, same rules as `create_order()`, total only (never a balance) and the refused codes; refused codes throttled per caller (10 per 10 minutes, table `gift_card_code_attempts`, no policies). Suite `tests/gift_card_quote_validation.sql` (GQ1–GQ8) |
 | 20261008175722 | `contact_attachments_and_support_email` | **Applied 2026-10-08.** Contact form: `contact_requests.attachment_path` → `attachment_paths text[]` (≤ 5, `private.valid_contact_attachment_paths()`), bucket `contact-attachments` 20 MB per object, `submit_contact_request(…, p_attachment_paths text[])` (old signature dropped; ownership per path, no duplicates, ≤ 20 MB in all), guard trigger rebuilt, `contact_ip_allowed(ip_hash)` (service role), template `contact_request_received` (fr + en) for the support inbox. Suite: `iteration7_validation.sql` C3/C4 |
 | 20261008175809 | `contact_attachment_paths_check_grant` | **Applied 2026-10-08.** `execute` on the CHECK helper for `authenticated`/`service_role` (staff triage re-evaluates the CHECK) |
 | 20261007181011 | `gift_card_design_everywhere` | **Applied 2026-10-07.** The design/names/message chosen at checkout are shown back (WYSIWYG): policy `gift_cards: purchaser reads own` (a buyer reads the cards of their purchases through the existing column grant — never the code) so the member's order pages draw the card in its design; the `gift_card_delivery` template bodies (fr + en) lose their `{{message}}` paragraph because the e-mail now draws the card itself (`giftCardVisual()`, message included). Test: a buyer sees only their own cards (to add to `gift_cards_validation.sql`) |
@@ -551,7 +552,8 @@ code prefix (e.g. 5 lookups / 10 min / IP, 20 / day / IP) with `private.hit_rate
 throttle table, keyed by a hashed IP — storing hashed IPs is the decision to take), answer the same shape for
 unknown and inactive codes, and return only `{balance, currency, expires_at, redeemable}` — never the order,
 names or e-mails. Not implemented: the throttle storage (hashed IP retention) and the captcha provider are
-decisions, and the codes' 60 bits already make blind guessing impractical; the cart reveals nothing either.
+decisions, and the codes' 60 bits already make blind guessing impractical. Since 2026-10-11 the cart shows what
+the typed codes pay (`quote_gift_cards()`, decision 89): a total capped at the amount asked, never a balance.
 
 ### Member account (iteration 5)
 
@@ -719,6 +721,13 @@ server  create_order(..., p_promotion_codes => ['WELCOME15'], p_use_loyalty_rewa
 - `admin_save_campaign(p jsonb) returns uuid` — the campaign, its ordered `product_ids` and the English text.
 - `promotion_daily_usage` — orders per promotion per day of payment (shop time), last 30 days, for the detail page's chart.
   Promotion figures come from `promotion_overview` (paid orders only).
+- `quote_gift_cards(p_codes, p_amount, p_currency) → jsonb` — the cart's gift card preview: `{ok, applied, refused[]}`
+  or `{ok:false, error: too_many_attempts | unavailable}`. `p_amount` is what the cards may pay for (the order total
+  without the gift cards bought in it, as the cart computes it: display only). Same rules as `create_order()`
+  (≤ 5 codes, de-duplicated, active, unexpired, delivered, same currency, money left); an amount held by an unpaid
+  order counts as available (the checkout releases those holds first). `applied` = min(Σ available, `p_amount`);
+  `refused` = the normalised codes that cannot be used, every refusal alike; 10 refusals per caller per 10 minutes
+  (`gift_card_code_attempts`), then `too_many_attempts`.
 - `quote_basket(p_items, p_promotion_codes, p_shipping_rate_id, p_use_loyalty_reward, p_currency, p_locale, p_email) → jsonb` —
   the cart's preview: `{ok, goods_discount, shipping_discount, discounts[{label, code, type, goods_amount,
   shipping_amount}], lines[], gift_lines[], used_up[{label, max_uses}]}` or `{ok:false, error: promotion_code_invalid | loyalty_reward_unavailable |
@@ -1768,3 +1777,10 @@ VAT rates, shipping zones/rates mirroring the Settings prototype. Media rows ref
     topics are fixed product copy in the webapp (`lib/communityChat/model.ts`), not editable from the back office.
     (i) Images uploaded for a message that is then refused are removed by the browser; one left behind by a closed tab
     stays in the member's folder (no cleanup job).
+89. **The cart shows what the gift cards pay** (user's request, 2026-10-11: the payment form is on our own page, so the
+    deduction should not first appear at the payment step; agent's choices, to confirm). `quote_gift_cards()` answers
+    the total the typed codes would pay on the cart's amount and which codes cannot be used; the cart shows a "Gift
+    card −X" line and "Amount due", and takes a refused code out at once. This is a partial balance check for whoever
+    holds a code (asking with a large amount gives the whole balance): accepted because the code is the bearer
+    credential that spends the money anyway, codes carry ~60 bits, refusals are throttled per caller (10 / 10 min)
+    and the answer never carries the expiry, the order or names. The public balance form above stays not built.
