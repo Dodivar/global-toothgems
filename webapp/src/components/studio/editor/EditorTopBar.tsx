@@ -195,10 +195,12 @@ function ExportMenu() {
     notify("quoteBuilding", undefined, "info");
     try {
       const jewels = studioStore.jewels;
-      // One row per shop item to buy: a product in one colour, with the teeth and sizes it covers.
+      // One row per shop item to buy: a product in one colour (and size), with the teeth and sizes it covers.
       const estimate = estimateComposition(jewels, (key) => byKey.get(key));
       const rows = estimate.lines.map((line) => {
-        const pieces = jewels.filter((j) => j.productId === line.productId && (j.variantId ?? null) === line.variantId);
+        const pieces = jewels.filter(
+          (j) => j.productId === line.productId && (j.variantId ?? null) === line.variantId && (line.ss == null || j.ss === line.ss),
+        );
         const teeth = [...new Set(pieces.map((j) => (j.toothId === FREE_TOOTH ? "—" : j.toothId)))];
         const sizes = [...new Set(pieces.map((j) => j.ss))].sort((a, b) => a - b);
         return {
