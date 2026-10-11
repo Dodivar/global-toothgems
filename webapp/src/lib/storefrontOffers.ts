@@ -13,6 +13,9 @@ import type { Localized } from "../data/types";
  *   minimum basket or quantity and no cap (the only kind that is the same for every
  *   purchase); the other kinds (x + y offered, bundle, gift, amount off, a
  *   percentage that needs a minimum) only show their badge and wording.
+ * - A promotion is shown on a product only when that product was chosen specifically
+ *   (scope "products", or a bundle's products); promotions on everything, a category
+ *   or a collection never put a badge or a price cut on the product cards.
  * - Promotions for a type of customer (new, existing, segments) are not shown
  *   in the shop window: a visitor cannot tell whether they qualify.
  * - A product already on sale (`compareAtPrice`) is skipped by promotions that
@@ -123,29 +126,15 @@ const running = (startsAt: string, endsAt: string | null, now: number) =>
 const KIND_ORDER: OfferPromotionType[] = ["percentage", "buy_x_get_y", "bundle", "gift", "fixed_amount"];
 
 export function buildOfferBook(sources: OfferSources) {
-  const collectionProducts = new Map(sources.collections.map((c) => [c.id, new Set(c.product_ids)]));
-  const categoryOf = (slug: string | null | undefined) => (slug ? sources.categoryIds[slug] : undefined);
-
   const applies = (row: OfferPromotionRow, product: OfferProduct): boolean => {
     const id = product.dbId;
     if (!id) return false;
     const roles = row.promotion_products;
     if (roles.some((r) => r.role === "excluded" && r.product_id === id)) return false;
     if (row.type === "bundle") return roles.some((r) => r.role === "bundle" && r.product_id === id);
-    switch (row.applies_to) {
-      case "all":
-        return true;
-      case "products":
-        return roles.some((r) => r.role === "eligible" && r.product_id === id);
-      case "categories": {
-        const category = categoryOf(product.cat);
-        return !!category && row.promotion_categories.some((c) => c.category_id === category);
-      }
-      case "collections":
-        return row.promotion_collections.some((c) => collectionProducts.get(c.collection_id)?.has(id));
-      default:
-        return false;
-    }
+    // Product cards carry a badge only for products chosen one by one; promotions on the
+    // whole shop, a category or a collection are announced elsewhere (not on every card).
+    return row.applies_to === "products" && roles.some((r) => r.role === "eligible" && r.product_id === id);
   };
 
   const toPromotion = (row: OfferPromotionRow): OfferPromotion => {
