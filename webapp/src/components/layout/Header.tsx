@@ -10,12 +10,13 @@ import { useCart } from "../../lib/cart";
 import { useAcademyMenu } from "./useAcademyMenu";
 import { NewTag } from "../studio/NewTag";
 import { ShopMenu } from "./ShopMenu";
+import { STUDIO_SHORTCUTS } from "./clientSpaces";
 import { HeaderSearch } from "./HeaderSearch";
 import { CartAddedNotice } from "./CartAddedNotice";
 import { STUDIO_PATH } from "../../lib/studioUrl";
 import logoBlack from "../../assets/logo-wordmark-black.png";
 
-type PanelKey = "shop" | "academy" | null;
+type PanelKey = "shop" | "academy" | "studio" | null;
 type MobileTab = "shop" | "academy";
 
 /** Long enough that a pointer crossing the nav on its way elsewhere does not
@@ -48,9 +49,11 @@ export function Header() {
     { id: "home", label: t("nav.home"), to: "/" },
     { id: "shop", label: t("nav.shop"), to: "/boutique", panel: "shop", panelLabel: t("nav.openPanelShop") },
     { id: "academy", label: t("nav.academy"), to: "/academy", panel: "academy", panelLabel: t("nav.openPanelAcademy") },
-    /* Last, after the two pillars, and without a panel: a single destination.
-       The "New" mark is what makes it noticed, not its size or colour. */
-    { id: "studio", label: t("nav.studio"), to: STUDIO_PATH, isNew: true },
+    /* Last, after the two pillars. The label leads to the Studio's
+       presentation; its panel goes straight into the workspace (workshop,
+       creations, Gem Groups). The "New" mark is what makes it noticed, not
+       its size or colour. */
+    { id: "studio", label: t("nav.studio"), to: STUDIO_PATH, panel: "studio", panelLabel: t("nav.openPanelStudio"), isNew: true },
   ];
 
   const closeAll = () => {
@@ -128,7 +131,9 @@ export function Header() {
   const panelRoot =
     panel === "shop"
       ? { label: t("nav.viewAllShop"), to: "/boutique" }
-      : { label: t("nav.viewAllAcademy"), to: "/academy" };
+      : panel === "studio"
+        ? { label: t("nav.viewAllStudio"), to: STUDIO_PATH }
+        : { label: t("nav.viewAllAcademy"), to: "/academy" };
 
   const mobileTabs: { key: MobileTab; label: string }[] = [
     { key: "shop", label: t("nav.menuTabShop") },
@@ -276,6 +281,27 @@ export function Header() {
             <div className="mx-auto grid max-w-[var(--max-width-content)] gap-7 px-[var(--gutter-page-lg)] pb-7 pt-7">
               {panel === "shop" ? (
                 <ShopMenu layout="columns" onNavigate={closeAll} />
+              ) : panel === "studio" ? (
+                <div className="grid grid-cols-[repeat(auto-fill,minmax(230px,1fr))] gap-4">
+                  {STUDIO_SHORTCUTS.map((shortcut) => (
+                    <Link
+                      key={shortcut.id}
+                      to={shortcut.to}
+                      onClick={closeAll}
+                      className="flex items-center gap-3 rounded-[var(--radius-card)] border border-[var(--border-subtle)] bg-[var(--surface-card)] p-2.5 text-left shadow-[var(--shadow-card)] outline-none transition-[transform,box-shadow,border-color] duration-[var(--duration-normal)] ease-[var(--ease-out-soft)] hover:-translate-y-0.5 hover:border-[var(--gt-blue-300)] hover:shadow-[var(--shadow-card-hover)] focus-visible:border-[var(--gt-blue-400)] focus-visible:shadow-[var(--shadow-focus),var(--shadow-card-hover)]"
+                    >
+                      <span aria-hidden="true" className="grid h-11 w-11 flex-none place-items-center rounded-[var(--radius-sm)] bg-[var(--gt-ink-900)] text-[var(--gt-blue-200)]">
+                        <shortcut.icon size={18} strokeWidth={1.75} />
+                      </span>
+                      <span className="grid min-w-0 gap-0.5">
+                        <span className="truncate text-[11px] font-semibold uppercase tracking-[.06em] text-[var(--text-primary)]">
+                          {t(shortcut.labelKey)}
+                        </span>
+                        <span className="text-xs text-[var(--text-muted)]">{t(shortcut.descKey)}</span>
+                      </span>
+                    </Link>
+                  ))}
+                </div>
               ) : (
                 <div className="grid grid-cols-[repeat(auto-fill,minmax(230px,1fr))] gap-4">
                   {academyMenu.map((item) => (
@@ -355,25 +381,42 @@ export function Header() {
             id="gt-mobile-menu"
             className="grid max-h-[calc(100vh-60px)] gap-3.5 overflow-y-auto border-t border-[var(--border-subtle)] bg-[var(--surface-sunken)] px-3 pb-5 pt-3.5"
           >
-            {/* The Studio has no tab of its own: it is one destination, so it
-                sits above the tabs as a single featured row. */}
-            <Link
-              to={STUDIO_PATH}
-              onClick={closeAll}
-              className="flex items-center gap-3.5 rounded-[var(--radius-card)] border border-[var(--gt-blue-200)] bg-[var(--surface-brand-wash)] p-3 text-left shadow-[var(--shadow-xs)]"
-            >
-              <span aria-hidden="true" className="grid h-[46px] w-[46px] flex-none place-items-center rounded-[var(--radius-sm)] bg-[var(--gt-ink-900)] text-[var(--gt-blue-200)]">
-                <Box size={20} strokeWidth={1.75} />
-              </span>
-              <span className="grid min-w-0 flex-1 gap-0.5">
-                <span className="flex items-center gap-2 text-[11.5px] font-semibold uppercase tracking-[.06em] text-[var(--text-primary)]">
-                  {t("nav.studio")}
-                  <NewTag />
+            {/* The Studio has no tab of its own: its presentation sits above
+                the tabs as a featured row, with the ways into its workspace
+                right under it. */}
+            <div className="grid gap-1.5">
+              <Link
+                to={STUDIO_PATH}
+                onClick={closeAll}
+                className="flex items-center gap-3.5 rounded-[var(--radius-card)] border border-[var(--gt-blue-200)] bg-[var(--surface-brand-wash)] p-3 text-left shadow-[var(--shadow-xs)]"
+              >
+                <span aria-hidden="true" className="grid h-[46px] w-[46px] flex-none place-items-center rounded-[var(--radius-sm)] bg-[var(--gt-ink-900)] text-[var(--gt-blue-200)]">
+                  <Box size={20} strokeWidth={1.75} />
                 </span>
-                <span className="text-xs text-[var(--text-muted)]">{t("nav.studioSub")}</span>
-              </span>
-              <ArrowRight size={16} aria-hidden="true" className="flex-none text-[var(--text-muted)]" />
-            </Link>
+                <span className="grid min-w-0 flex-1 gap-0.5">
+                  <span className="flex items-center gap-2 text-[11.5px] font-semibold uppercase tracking-[.06em] text-[var(--text-primary)]">
+                    {t("nav.studio")}
+                    <NewTag />
+                  </span>
+                  <span className="text-xs text-[var(--text-muted)]">{t("nav.studioSub")}</span>
+                </span>
+                <ArrowRight size={16} aria-hidden="true" className="flex-none text-[var(--text-muted)]" />
+              </Link>
+              <ul aria-label={t("nav.studio")} className="m-0 grid list-none grid-cols-3 gap-1.5 p-0">
+                {STUDIO_SHORTCUTS.map((shortcut) => (
+                  <li key={shortcut.id} className="min-w-0">
+                    <Link
+                      to={shortcut.to}
+                      onClick={closeAll}
+                      className="flex h-full flex-col items-center gap-1 rounded-[var(--radius-md)] border border-[var(--border-subtle)] bg-[var(--surface-card)] px-1.5 py-2 text-center text-[11px] font-semibold leading-tight text-[var(--text-primary)]"
+                    >
+                      <shortcut.icon size={16} strokeWidth={1.8} aria-hidden="true" />
+                      {t(`account.shell.short.${shortcut.shortKey}`)}
+                    </Link>
+                  </li>
+                ))}
+              </ul>
+            </div>
             <div role="tablist" aria-label={t("nav.primary")} className="flex gap-4 border-b border-[var(--border-subtle)] px-1">
               {mobileTabs.map((tab) => (
                 <button

@@ -210,7 +210,9 @@
     "emptyBody": "Select two or more gems on the stage, then “Create Gem Group” in the panel on the right.",
     "manage": "Manage my gem groups",
     "dragOver": "Drop it on a tooth",
-    "dropOn": "Drop on {{tooth}} · {{fdi}}"
+    "dropOn": "Drop on {{tooth}} · {{fdi}}",
+    "armed": "“{{name}}” is ready: tap a tooth on the model to place it, or tap it again to cancel.",
+    "armedBadge": "Ready to place"
   },
   "signIn": {
     "title": "Sign in to keep your designs",

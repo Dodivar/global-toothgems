@@ -210,7 +210,9 @@
     "emptyBody": "Sélectionnez au moins deux gemmes sur la scène, puis « Créer un groupe » dans le panneau de droite.",
     "manage": "Gérer mes groupes",
     "dragOver": "Déposez-le sur une dent",
-    "dropOn": "Déposer sur {{tooth}} · {{fdi}}"
+    "dropOn": "Déposer sur {{tooth}} · {{fdi}}",
+    "armed": "« {{name}} » est prêt : touchez une dent du modèle pour le poser, ou touchez-le à nouveau pour annuler.",
+    "armedBadge": "Prêt à poser"
   },
   "signIn": {
     "title": "Connectez-vous pour garder vos créations",
