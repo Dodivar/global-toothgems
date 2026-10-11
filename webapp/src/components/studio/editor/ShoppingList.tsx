@@ -77,10 +77,7 @@ export function ShoppingList({ jewels }: { jewels: PlacedJewelry[] }) {
           return (
             <li
               key={`${line.productId}|${line.variantId ?? ""}|${line.ss ?? ""}`}
-              className={clsx(
-                "flex items-start gap-2.5 rounded-[var(--radius-sm)] border bg-[var(--surface-page)] px-2.5 py-2",
-                out ? "border-[var(--gt-red-400)]" : "border-[var(--border-subtle)]",
-              )}
+              className="flex items-start gap-2.5 rounded-[var(--radius-sm)] border border-[var(--border-subtle)] bg-[var(--surface-page)] px-2.5 py-2"
             >
               <span aria-hidden="true" className="grid h-9 w-9 flex-none place-items-center rounded-[var(--radius-sm)] bg-[var(--surface-card)]">
                 <GemPhoto src={line.offer.image ?? finish.image ?? gem.image} look={finish.look} size={30} />
@@ -122,7 +119,7 @@ export function ShoppingList({ jewels }: { jewels: PlacedJewelry[] }) {
         </p>
       )}
       {outOfStock > 0 && (
-        <p role="note" className="m-0 mt-2 text-[11.5px] leading-relaxed text-[var(--status-error-fg)]">
+        <p role="note" className="m-0 mt-2 text-[11px] italic leading-relaxed text-[var(--text-body)]">
           {t("studio.editor.shopping.outNote", { count: outOfStock })}
         </p>
       )}
@@ -132,7 +129,7 @@ export function ShoppingList({ jewels }: { jewels: PlacedJewelry[] }) {
         onClick={addAll}
         disabled={!orderable.length}
         className={clsx(
-          "mt-3 inline-flex h-11 w-full items-center justify-center gap-2 rounded-[var(--radius-pill)] bg-[var(--accent-cta)] px-4 text-[12px] font-bold uppercase tracking-[var(--tracking-wide)] text-[var(--accent-cta-ink)] transition-opacity hover:opacity-90 disabled:cursor-not-allowed disabled:opacity-50",
+          "mt-3 inline-flex h-11 w-full items-center justify-center gap-2 rounded-[var(--radius-pill)] bg-[var(--accent-cta)] px-4 text-[12px] font-black uppercase tracking-[var(--tracking-wide)] text-[var(--gt-ink-900)] transition-colors hover:bg-[var(--accent-cta-hover)] disabled:cursor-not-allowed disabled:bg-[var(--gt-ink-100)] disabled:text-[var(--text-muted)]",
           focusRing,
         )}
       >
