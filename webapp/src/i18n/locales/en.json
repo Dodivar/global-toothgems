@@ -40,11 +40,11 @@
     "studioWorkshop": "Open the workshop",
     "studioWorkshopSub": "Compose a design in 3D",
     "studioGroups": "My groups",
+    "giftCard": "Gift card",
     "openPanelStudio": "Show the 3D Studio shortcuts",
     "viewAllStudio": "Discover the 3D Studio",
     "studioAria": "Studio 3D, new",
-    "mySpace": "My space",
-    "explore": "Explore"
+    "mySpace": "My space"
   },
   "common": {
     "notIncludedTitle": "Screen out of scope",

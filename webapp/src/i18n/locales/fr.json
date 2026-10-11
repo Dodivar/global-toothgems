@@ -40,11 +40,11 @@
     "studioWorkshop": "Ouvrir l’atelier",
     "studioWorkshopSub": "Composer un design en 3D",
     "studioGroups": "Mes groupes",
+    "giftCard": "Carte cadeau",
     "openPanelStudio": "Afficher les accès au Studio 3D",
     "viewAllStudio": "Découvrir le Studio 3D",
     "studioAria": "Studio 3D, nouveau",
-    "mySpace": "Mon espace",
-    "explore": "Explorer"
+    "mySpace": "Mon espace"
   },
   "common": {
     "notIncludedTitle": "Écran hors périmètre",

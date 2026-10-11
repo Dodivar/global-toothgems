@@ -3,6 +3,7 @@ import { useTranslation } from "react-i18next";
 import { Link, NavLink, useLocation, useNavigate, useLanguageSwitch } from "../../lib/navigation";
 import {
   Award,
+  Gift,
   Cookie,
   Languages,
   LayoutDashboard,
@@ -35,7 +36,7 @@ import { useFormat } from "../../lib/format";
 import { useFocusTrap } from "../../lib/useFocusTrap";
 import { LEGAL_PATHS } from "../../data/legal/routes";
 import { NewTag } from "../studio/NewTag";
-import { MEMBER_SPACE_EXPLORE, STUDIO_SHORTCUTS } from "./clientSpaces";
+import { CLIENT_SPACES, STUDIO_SHORTCUTS } from "./clientSpaces";
 import monogram from "../../assets/monogram-blue.png";
 import logoBlack from "../../assets/logo-wordmark-black.png";
 
@@ -45,18 +46,17 @@ import logoBlack from "../../assets/logo-wordmark-black.png";
  * One navigation, on the left and the full height of the screen, the way the
  * 3D Studio has its rail: the storefront header and footer are left out on
  * these routes (see `isMemberSpacePath`), so everything they carried lives
- * here instead — the way back to the home page, the shop, the Academy and the
- * Studio, the cart, the language and the cookie settings. The member's own
- * sections come first: this is their space, and the rest of the site is
- * where they go from it.
+ * here instead — the home page, the shop, the Academy and the Studio, the
+ * cart, the language and the cookie settings.
  *
- * The member's sections are grouped by what they come for — learning (the
- * lounge, certificates), the 3D Studio (its workshop, creations and Gem
- * Groups, which open the Studio's own full-screen workspace), purchases
- * (orders, loyalty, reviews, the cart) and the account itself (profile,
- * security) — under the dashboard. The foot keeps
- * one row per kind of move: the back office for staff, the small utilities
- * (help, cookies, language) on one line, then signing out alone at the bottom.
+ * Each group puts the part of the site it belongs to first, then the
+ * member's own pages for it: under the dashboard and the home page, purchases
+ * (the shop, gift cards, orders, loyalty, reviews, the cart), learning (the
+ * Academy, certificates, the lounge), the 3D Studio (its workshop, creations
+ * and Gem Groups, which open the Studio's own full-screen workspace) and the
+ * account itself (profile, security). The foot keeps one row per kind of
+ * move: the back office for staff, the small utilities (help, cookies,
+ * language) on one line, then signing out alone at the bottom.
  *
  * Below `lg` the same content opens as a drawer from a slim top bar, like the
  * Studio's. The breakpoint is CSS, so nothing shifts after hydration.
@@ -79,10 +79,10 @@ export function useMemberShellMenu() {
 interface SectionItem {
   to: string;
   labelKey: string;
-  /** Under `account.shell.short`, for the rail. */
-  shortKey: string;
+  /** Under `account.shell.short`, for the rail; none for an entry left off it. */
+  shortKey?: string;
   icon: LucideIcon;
-  /** Only the dashboard needs it: every other path is a distinct prefix. */
+  /** The dashboard and the home page need it: every other path is a distinct prefix. */
   end?: boolean;
   /**
    * The Members' Lounge, the entry whose
@@ -93,7 +93,10 @@ interface SectionItem {
   community?: boolean;
   /** The Members' Lounge: carries its unread activity. */
   lounge?: boolean;
-  /** Left off the lounge's rail, which keeps one entry per destination. */
+  /**
+   * Left off the lounge's rail, which keeps the space's own sections: the
+   * rest of the site is one step away, in the full menu the rail opens.
+   */
   offRail?: boolean;
 }
 
@@ -111,14 +114,30 @@ interface SectionGroup {
 const GROUPS: SectionGroup[] = [
   {
     id: "home",
-    items: [{ to: "/compte", labelKey: "account.navDashboard", shortKey: "dashboard", icon: LayoutDashboard, end: true }],
+    items: [
+      { to: "/compte", labelKey: "account.navDashboard", shortKey: "dashboard", icon: LayoutDashboard, end: true },
+      { to: CLIENT_SPACES.home.to, labelKey: CLIENT_SPACES.home.labelKey, icon: CLIENT_SPACES.home.icon, end: true, offRail: true },
+    ],
+  },
+  {
+    id: "purchases",
+    labelKey: "account.shell.groupPurchases",
+    withCart: true,
+    items: [
+      { to: CLIENT_SPACES.shop.to, labelKey: CLIENT_SPACES.shop.labelKey, icon: CLIENT_SPACES.shop.icon, offRail: true },
+      { to: "/carte-cadeau", labelKey: "nav.giftCard", icon: Gift, offRail: true },
+      { to: "/compte/commandes", labelKey: "account.navOrders", shortKey: "orders", icon: Package },
+      { to: "/compte/fidelite", labelKey: "account.navLoyalty", shortKey: "loyalty", icon: Sparkles },
+      { to: "/compte/avis", labelKey: "reviews.nav.account", shortKey: "reviews", icon: MessageSquareText },
+    ],
   },
   {
     id: "learning",
     labelKey: "account.shell.groupLearning",
     items: [
-      { to: "/compte/salons", labelKey: "lounge.navEntry", shortKey: "lounge", icon: MessagesSquare, community: true, lounge: true },
+      { to: CLIENT_SPACES.academy.to, labelKey: CLIENT_SPACES.academy.labelKey, icon: CLIENT_SPACES.academy.icon, offRail: true },
       { to: "/compte/attestations", labelKey: "account.navCertificates", shortKey: "certificates", icon: Award },
+      { to: "/compte/salons", labelKey: "lounge.navEntry", shortKey: "lounge", icon: MessagesSquare, community: true, lounge: true },
     ],
   },
   {
@@ -135,16 +154,6 @@ const GROUPS: SectionGroup[] = [
     })),
   },
   {
-    id: "purchases",
-    labelKey: "account.shell.groupPurchases",
-    withCart: true,
-    items: [
-      { to: "/compte/commandes", labelKey: "account.navOrders", shortKey: "orders", icon: Package },
-      { to: "/compte/fidelite", labelKey: "account.navLoyalty", shortKey: "loyalty", icon: Sparkles },
-      { to: "/compte/avis", labelKey: "reviews.nav.account", shortKey: "reviews", icon: MessageSquareText },
-    ],
-  },
-  {
     id: "account",
     labelKey: "account.shell.groupAccount",
     items: [
@@ -157,8 +166,10 @@ const GROUPS: SectionGroup[] = [
 const SECTIONS: SectionItem[] = GROUPS.flatMap((group) => group.items);
 const RAIL_SECTIONS = SECTIONS.filter((item) => !item.offRail);
 
-/** The first section of every group but the first: the lounge rail draws a divider above it. */
-const GROUP_STARTS = new Set(GROUPS.slice(1).map((group) => group.items[0].to));
+/** The first rail entry of every group but the first: the lounge rail draws a divider above it. */
+const GROUP_STARTS = new Set(
+  GROUPS.slice(1).flatMap((group) => group.items.find((item) => !item.offRail)?.to ?? []),
+);
 
 /** The section a pathname belongs to, for the title of the mobile bar. */
 function currentSection(pathname: string): SectionItem | undefined {
@@ -349,25 +360,6 @@ function SidebarBody({ onNavigate, closeButton }: { onNavigate?: () => void; clo
           })}
         </nav>
 
-        {/* The rest of the site: what the storefront header used to offer. */}
-        <nav aria-labelledby="gt-member-explore" className="grid gap-1">
-          <span id="gt-member-explore" className="gt-eyebrow px-3">
-            {t("nav.explore")}
-          </span>
-          <ul className="m-0 grid list-none gap-0.5 p-0">
-            {MEMBER_SPACE_EXPLORE.map((space) => (
-              <li key={space.id}>
-                <Link to={space.to} onClick={onNavigate} className={clsx(rowBase, rowIdle, focusRing)}>
-                  <space.icon size={16} strokeWidth={2} aria-hidden="true" />
-                  <span className="flex flex-1 items-center gap-2">
-                    {t(space.labelKey)}
-                    {space.isNew && <NewTag />}
-                  </span>
-                </Link>
-              </li>
-            ))}
-          </ul>
-        </nav>
       </div>
 
       {/* One row per kind of move: the back office (staff only — a full row,
