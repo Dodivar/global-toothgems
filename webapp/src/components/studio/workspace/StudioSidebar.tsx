@@ -71,11 +71,39 @@ function RailContent({ section }: { section: StudioSection | null }) {
         to={STUDIO_PATH}
         aria-label={t("studio.editor.backToStudio")}
         title={t("studio.editor.backToStudio")}
-        className={clsx("group/home relative mb-4 grid h-11 w-11 place-items-center rounded-[var(--radius-md)] hover:bg-[var(--gt-ink-100)]", focusRing)}
+        className={clsx("group/home relative mb-2 grid h-11 w-11 place-items-center rounded-[var(--radius-md)] hover:bg-[var(--gt-ink-100)]", focusRing)}
       >
         <img src={monogram.src} alt="" className="h-8 w-8 object-contain transition-opacity group-hover/home:opacity-0" />
         <ArrowLeft size={18} aria-hidden="true" className="absolute opacity-0 transition-opacity group-hover/home:opacity-100" />
       </Link>
+      {/* The member's own space first, before the Studio's sections: it is
+          where they come from and go back to. */}
+      <div className="grid w-full justify-items-center px-2">
+        <Link
+          to={signedIn ? "/compte" : "/connexion"}
+          state={signedIn ? undefined : { from: pathname }}
+          className={clsx(
+            "group/nav flex w-full flex-col items-center gap-1 rounded-[var(--radius-md)] px-1 py-2 text-[var(--gt-ink-600)] transition-colors hover:text-[var(--gt-ink-900)]",
+            focusRing,
+          )}
+        >
+          <span
+            aria-hidden="true"
+            className={clsx(
+              "grid h-8 w-8 place-items-center rounded-full text-[11px] font-bold transition-colors",
+              signedIn
+                ? "bg-[var(--gt-blue-100)] text-[var(--gt-blue-700)] group-hover/nav:bg-[var(--gt-blue-200)]"
+                : "border border-[var(--border-default)] group-hover/nav:bg-[var(--gt-ink-100)]",
+            )}
+          >
+            {signedIn ? initials : <UserRound size={16} />}
+          </span>
+          <span className="text-[10.5px] font-semibold leading-tight">
+            {signedIn ? t("studio.workspace.nav.short.account") : t("nav.signIn")}
+          </span>
+        </Link>
+        <span aria-hidden="true" className="my-2 h-px w-10 bg-[var(--border-subtle)]" />
+      </div>
       <ul className="m-0 grid w-full list-none gap-1 px-2 p-0">
         {NAV.map((item) => {
           const active = item.section === section;
@@ -121,6 +149,17 @@ function RailContent({ section }: { section: StudioSection | null }) {
         })}
       </ul>
       <div className="mt-auto grid w-full justify-items-center gap-1 px-2">
+        {/* The rest of the site, set apart from the Studio's own entries: the
+            same destinations and icons as the member-space sidebar. */}
+        <ul aria-label={t("studio.workspace.nav.explore")} className="m-0 grid w-full list-none gap-1 p-0">
+          {STUDIO_EXPLORE.map((space) => (
+            <li key={space.id}>
+              <RailSpaceLink space={space} />
+            </li>
+          ))}
+        </ul>
+        {/* Feedback last, on its own below a separator. */}
+        <span aria-hidden="true" className="my-1 h-px w-10 bg-[var(--border-subtle)]" />
         <button
           type="button"
           onClick={() => openWorkspaceDialog({ kind: "feedback" })}
@@ -134,41 +173,6 @@ function RailContent({ section }: { section: StudioSection | null }) {
           </span>
           <span className="text-[10.5px] font-semibold leading-tight">{t("studio.workspace.nav.short.feedback")}</span>
         </button>
-        {/* The rest of the site, set apart from the Studio's own entries: the
-            same destinations, icons and order as the member-space sidebar. */}
-        <span aria-hidden="true" className="my-1 h-px w-10 bg-[var(--border-subtle)]" />
-        <ul aria-label={t("studio.workspace.nav.explore")} className="m-0 grid w-full list-none gap-1 p-0">
-          {STUDIO_EXPLORE.map((space) => (
-            <li key={space.id}>
-              <RailSpaceLink space={space} />
-            </li>
-          ))}
-          <li>
-            <Link
-              to={signedIn ? "/compte" : "/connexion"}
-              state={signedIn ? undefined : { from: pathname }}
-              className={clsx(
-                "group/nav flex w-full flex-col items-center gap-1 rounded-[var(--radius-md)] px-1 py-2 text-[var(--gt-ink-600)] transition-colors hover:text-[var(--gt-ink-900)]",
-                focusRing,
-              )}
-            >
-              <span
-                aria-hidden="true"
-                className={clsx(
-                  "grid h-8 w-8 place-items-center rounded-full text-[11px] font-bold transition-colors",
-                  signedIn
-                    ? "bg-[var(--gt-blue-100)] text-[var(--gt-blue-700)] group-hover/nav:bg-[var(--gt-blue-200)]"
-                    : "border border-[var(--border-default)] group-hover/nav:bg-[var(--gt-ink-100)]",
-                )}
-              >
-                {signedIn ? initials : <UserRound size={16} />}
-              </span>
-              <span className="text-[10.5px] font-semibold leading-tight">
-                {signedIn ? t("studio.workspace.nav.short.account") : t("nav.signIn")}
-              </span>
-            </Link>
-          </li>
-        </ul>
       </div>
     </>
   );
@@ -229,6 +233,21 @@ function Drawer({ section, onClose }: { section: StudioSection | null; onClose: 
           </button>
         </div>
         <ul className="m-0 grid list-none gap-1 p-3">
+          <li>
+            <Link
+              to={signedIn ? "/compte" : "/connexion"}
+              state={signedIn ? undefined : { from: pathname }}
+              onClick={onClose}
+              className={clsx("flex items-center gap-3 rounded-[var(--radius-md)] px-3 py-2.5 text-[var(--gt-ink-700)] hover:bg-[var(--gt-ink-100)]", focusRing)}
+            >
+              <UserRound size={18} aria-hidden="true" />
+              <span className="grid min-w-0">
+                <span className="text-[13.5px] font-semibold">{signedIn ? t("nav.mySpace") : t("studio.workspace.signIn.cta")}</span>
+                {signedIn && <span className="truncate text-[11.5px] text-[var(--text-muted)]">{t("studio.workspace.nav.desc.account")}</span>}
+              </span>
+            </Link>
+          </li>
+          <li aria-hidden="true" className="mx-3 my-1 h-px bg-[var(--border-subtle)]" />
           {NAV.map((item) => {
             const active = item.section === section;
             const count = item.section === "creations" ? counts?.creations : item.section === "groups" ? counts?.groups : undefined;
@@ -256,22 +275,6 @@ function Drawer({ section, onClose }: { section: StudioSection | null; onClose: 
               </li>
             );
           })}
-          <li>
-            <button
-              type="button"
-              onClick={() => {
-                onClose();
-                openWorkspaceDialog({ kind: "feedback" });
-              }}
-              className={clsx("flex w-full items-center gap-3 rounded-[var(--radius-md)] px-3 py-2.5 text-left text-[var(--gt-ink-700)] hover:bg-[var(--gt-ink-100)]", focusRing)}
-            >
-              <MessageSquareHeart size={19} aria-hidden="true" />
-              <span className="grid">
-                <span className="text-[14px] font-semibold">{t("studio.workspace.nav.feedback")}</span>
-                <span className="text-[11.5px] text-[var(--text-muted)]">{t("studio.workspace.nav.desc.feedback")}</span>
-              </span>
-            </button>
-          </li>
         </ul>
         <div className="mt-auto grid gap-1 border-t border-[var(--border-subtle)] p-3">
           <span className="gt-eyebrow px-3 pb-1 pt-1">{t("studio.workspace.nav.explore")}</span>
@@ -290,18 +293,6 @@ function Drawer({ section, onClose }: { section: StudioSection | null; onClose: 
             </Link>
           ))}
           <Link
-            to={signedIn ? "/compte" : "/connexion"}
-            state={signedIn ? undefined : { from: pathname }}
-            onClick={onClose}
-            className={clsx("flex items-center gap-3 rounded-[var(--radius-md)] px-3 py-2.5 text-[var(--gt-ink-700)] hover:bg-[var(--gt-ink-100)]", focusRing)}
-          >
-            <UserRound size={18} aria-hidden="true" />
-            <span className="grid min-w-0">
-              <span className="text-[13.5px] font-semibold">{signedIn ? t("nav.mySpace") : t("studio.workspace.signIn.cta")}</span>
-              {signedIn && <span className="truncate text-[11.5px] text-[var(--text-muted)]">{t("studio.workspace.nav.desc.account")}</span>}
-            </span>
-          </Link>
-          <Link
             to={STUDIO_PATH}
             onClick={onClose}
             className={clsx("flex items-center gap-3 rounded-[var(--radius-md)] px-3 py-2.5 text-[13.5px] font-semibold text-[var(--gt-ink-700)] hover:bg-[var(--gt-ink-100)]", focusRing)}
@@ -309,6 +300,21 @@ function Drawer({ section, onClose }: { section: StudioSection | null; onClose: 
             <ArrowLeft size={18} aria-hidden="true" />
             {t("studio.editor.backToStudio")}
           </Link>
+          <span aria-hidden="true" className="mx-3 my-1 h-px bg-[var(--border-subtle)]" />
+          <button
+            type="button"
+            onClick={() => {
+              onClose();
+              openWorkspaceDialog({ kind: "feedback" });
+            }}
+            className={clsx("flex w-full items-center gap-3 rounded-[var(--radius-md)] px-3 py-2.5 text-left text-[var(--gt-ink-700)] hover:bg-[var(--gt-ink-100)]", focusRing)}
+          >
+            <MessageSquareHeart size={19} aria-hidden="true" />
+            <span className="grid">
+              <span className="text-[14px] font-semibold">{t("studio.workspace.nav.feedback")}</span>
+              <span className="text-[11.5px] text-[var(--text-muted)]">{t("studio.workspace.nav.desc.feedback")}</span>
+            </span>
+          </button>
         </div>
       </div>
     </div>
