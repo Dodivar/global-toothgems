@@ -30,7 +30,7 @@ import {
   reactionsOf,
   timestampOf,
 } from "../../lib/communityChat/chatLogic";
-import { ChatAvatar, Popover, PopoverItem, RoleBadge, focusRing, useChatTime, useNow } from "./primitives";
+import { ChatAvatar, Popover, PopoverItem, focusRing, useChatTime, useNow } from "./primitives";
 import { useLoungeUi } from "./loungeUi";
 import { ChannelIcon } from "./channelIcons";
 
@@ -388,7 +388,6 @@ function MessageItem({
               >
                 {author.name}
               </button>
-              {author.role && <RoleBadge role={author.role} className="self-center" />}
               <time dateTime={when.toISOString()} title={fullTime} className="text-[11.5px] tabular-nums text-[var(--text-muted)]">
                 {fullTime}
               </time>

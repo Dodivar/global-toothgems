@@ -102,11 +102,8 @@
     "add": "React with {{label}}"
   },
   "roles": {
-    "team": "Team",
     "teamLong": "Global Toothgems team",
-    "mentor": "Mentor",
     "mentorLong": "Community mentor",
-    "new": "New here",
     "newLong": "Joined recently"
   },
   "trainings": {
@@ -157,6 +154,7 @@
     "sharedLounges": "Lounges you share"
   },
   "profile": {
+    "cardEyebrow": "Member card · Global Toothgems",
     "title": "{{name}}'s profile",
     "languages": "Lounges",
     "trainings": "Global Toothgems trainings",

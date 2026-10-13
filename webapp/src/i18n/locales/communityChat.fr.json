@@ -102,11 +102,8 @@
     "add": "Réagir avec « {{label}} »"
   },
   "roles": {
-    "team": "Équipe",
     "teamLong": "Équipe Global Toothgems",
-    "mentor": "Mentor",
     "mentorLong": "Mentor de la communauté",
-    "new": "Premiers pas",
     "newLong": "Arrivée récente dans la communauté"
   },
   "trainings": {
@@ -157,6 +154,7 @@
     "sharedLounges": "Salons en commun"
   },
   "profile": {
+    "cardEyebrow": "Carte de membre · Global Toothgems",
     "title": "Profil de {{name}}",
     "languages": "Salons",
     "trainings": "Formations Global Toothgems",

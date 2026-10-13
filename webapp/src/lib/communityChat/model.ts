@@ -44,7 +44,7 @@ export interface ChatMember {
    */
   trainings: string[];
   bio?: Localized;
-  /** `YYYY-MM` the member joined. */
+  /** When the member first entered the lounge: an ISO timestamp (live) or date (fixtures). */
   joined: string;
   messageCount: number;
   /** Replies other members marked as helpful (fixtures only: not built). */

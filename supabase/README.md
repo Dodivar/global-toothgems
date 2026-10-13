@@ -1767,7 +1767,7 @@ VAT rates, shipping zones/rates mirroring the Settings prototype. Media rows ref
     active team member; losing the course closes the lounge immediately, old messages stay under the member's name.
     (b) **What other members see**: first name + initial of the last name, a handle `first.l` (`emma.m`), the
     country of the profile, the lounges visited, presence, the titles of completed courses, the number of channel
-    messages, the month joined — never e-mail, phone, full last name, city or photo. (c) **Private messages are
+    messages, the day they joined the lounge (shown on the profile card since 2026-10-14) — never e-mail, phone, full last name, city or photo. (c) **Private messages are
     private, staff included**: no back-office access to them, so no moderation of private conversations yet.
     (d) **No moderation tools yet**: nothing can be hidden, deleted, reported or blocked (members or staff) — needed
     before opening the lounge to customers. (e) **Rate limit** 20 messages per minute per member; ≤ 4 images of 5 MB

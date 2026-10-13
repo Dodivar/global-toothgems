@@ -2,16 +2,17 @@
 
 import { useId, useMemo, useState, type ReactNode } from "react";
 import { useTranslation } from "react-i18next";
-import { AtSign, CheckCheck, Inbox, UserRound, GraduationCap, Heart, Lock, MapPin, MessageCircle, Reply, Search, SearchX } from "lucide-react";
+import { AtSign, CheckCheck, Inbox, UserRound, GraduationCap, Heart, Lock, MessageCircle, Reply, Search, SearchX } from "lucide-react";
 import clsx from "clsx";
 import { Link } from "../../lib/navigation";
 import { memberOfConversation, type ChatMember } from "../../lib/communityChat/model";
 import { pick } from "../../data/types";
 import { useChat, type ChatNotification, type NotificationKind } from "../../lib/communityChat/chatStore";
 import { mentionCandidates, normalize, plainText, searchCommunity, timestampOf, type ChatRoom } from "../../lib/communityChat/chatLogic";
-import { ChatAvatar, ChatDialog, RoleBadge, focusRing, useChatTime, useCountryName, useNow } from "./primitives";
+import { ChatAvatar, ChatDialog, focusRing, useChatTime, useCountryName, useNow } from "./primitives";
 import { LanguageFlag } from "./LanguageFlag";
 import { ChannelIcon } from "./channelIcons";
+import { MemberCard } from "./MemberCard";
 import { useLoungeUi } from "./loungeUi";
 
 const sectionTitle = "m-0 text-[10.5px] font-bold uppercase tracking-[var(--tracking-wide)] text-[var(--text-muted)]";
@@ -19,16 +20,15 @@ const sectionTitle = "m-0 text-[10.5px] font-bold uppercase tracking-[var(--trac
 /* ----------------------------------------------------------------- profile */
 
 /**
- * A member's card: who they are, where they work, what they trained in, how
- * present they are in the community — and the two things you can do from
- * there. Light on purpose; there is no full profile page.
+ * A member's profile: their card (role, day they joined), what they trained
+ * in, how present they are in the community — and the two things you can do
+ * from there. Light on purpose; there is no full profile page.
  */
 export function ProfileDialog({ memberId, onClose }: { memberId: string; onClose: () => void }) {
   const { t, i18n } = useTranslation();
   const { memberOf, openConversationWith, mention, room, servers, viewer } = useChat();
   const { closeNav } = useLoungeUi();
-  const { monthYear, locale } = useChatTime();
-  const countryName = useCountryName();
+  const { locale } = useChatTime();
   const titleId = useId();
   const formatCount = (value: number) => new Intl.NumberFormat(locale).format(value);
   const member = memberOf(memberId);
@@ -38,35 +38,9 @@ export function ProfileDialog({ memberId, onClose }: { memberId: string; onClose
   const trainingLabel = (training: string) => t(`lounge.trainings.${training}`, { defaultValue: training });
 
   return (
-    <ChatDialog titleId={titleId} onClose={onClose} width="400px">
-      <div aria-hidden="true" className="h-[88px] flex-none bg-[linear-gradient(120deg,var(--gt-blue-200),var(--gt-blue-50)_55%,var(--gt-emerald-50))]" />
-      <div className="-mt-10 grid gap-4 overflow-y-auto px-5 pb-5">
-        <div className="flex items-end justify-between gap-3">
-          <span className="rounded-full border-4 border-white bg-white">
-            <ChatAvatar member={member} size="lg" presence />
-          </span>
-          <span className="mb-1 inline-flex items-center gap-1.5 rounded-[var(--radius-pill)] bg-[var(--gt-ink-100)] px-2.5 py-1 text-[12px] font-semibold text-[var(--text-body)]">
-            {t(`lounge.presence.${member.presence}`)}
-          </span>
-        </div>
-
-        <div className="grid gap-1">
-          <div className="flex flex-wrap items-center gap-2">
-            <h2 id={titleId} className="m-0 text-[20px] font-[var(--weight-black)] text-[var(--text-primary)]">
-              <span className="sr-only">{t("lounge.profile.title", { name: member.name })}: </span>
-              {member.name}
-            </h2>
-            {member.role && <RoleBadge role={member.role} />}
-          </div>
-          {!isSelf && <p className="m-0 text-[12.5px] text-[var(--text-muted)]">@{member.handle}</p>}
-          {member.city && (
-            <p className="m-0 flex items-center gap-1.5 text-[13px] text-[var(--text-body)]">
-              <MapPin size={13} aria-hidden="true" className="text-[var(--text-muted)]" />
-              {member.city}
-              {member.country && `, ${countryName(member.country)}`}
-            </p>
-          )}
-        </div>
+    <ChatDialog titleId={titleId} onClose={onClose} width="420px">
+      <div className="grid gap-4 overflow-y-auto p-3 pb-5 [&>*:not(:first-child)]:mx-2">
+        <MemberCard member={member} titleId={titleId} isSelf={isSelf} />
 
         {(isSelf || member.bio) && (
           <p className="m-0 text-[14px] leading-relaxed text-[var(--text-body)]">
@@ -103,11 +77,10 @@ export function ProfileDialog({ memberId, onClose }: { memberId: string; onClose
         {!isSelf && (
           <section className="grid gap-2">
             <h3 className={sectionTitle}>{t("lounge.profile.activity")}</h3>
-            <dl className={clsx("m-0 grid gap-2 text-center", member.helpfulCount === undefined ? "grid-cols-2" : "grid-cols-3")}>
+            <dl className={clsx("m-0 grid gap-2 text-center", member.helpfulCount !== undefined && "grid-cols-2")}>
               {[
                 [t("lounge.profile.statMessages"), formatCount(member.messageCount)],
                 ...(member.helpfulCount === undefined ? [] : [[t("lounge.profile.statHelpful"), formatCount(member.helpfulCount)]]),
-                [t("lounge.profile.statSince"), monthYear(member.joined)],
               ].map(([label, value]) => (
                 <div key={label} className="grid gap-0.5 rounded-[var(--radius-md)] bg-[var(--surface-brand-wash)] px-2 py-2.5">
                   <dd className="m-0 text-[15px] font-[var(--weight-black)] capitalize text-[var(--text-primary)]">{value}</dd>
@@ -184,7 +157,6 @@ function MemberLine({ member, trailing }: { member: ChatMember; trailing?: React
       <span className="grid min-w-0 flex-1">
         <span className="flex items-center gap-2">
           <span className="truncate text-[14px] font-bold text-[var(--text-primary)]">{member.name}</span>
-          {member.role && <RoleBadge role={member.role} />}
         </span>
         <span className="truncate text-[12px] text-[var(--text-muted)]">
           {[member.city, member.country ? countryName(member.country) : undefined, t(`lounge.presence.${member.presence}`)].filter(Boolean).join(" · ")}

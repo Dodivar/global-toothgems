@@ -120,7 +120,7 @@ describe("members", () => {
       languages: ["fr", "en"],
       presence: "online",
       role: "new",
-      joined: "2026-09",
+      joined: "2026-09-12T08:00:00Z",
       messageCount: 12,
       trainings: ["Fondamentaux"],
     });
