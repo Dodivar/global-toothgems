@@ -432,10 +432,13 @@ function ProductView({ product }: { product: Product }) {
                 <span className="w-8 text-center text-sm font-semibold" aria-live="polite">{qty}</span>
                 <IconButton icon={Plus} label={t("product.increaseQty")} variant="ghost" size="sm" onClick={() => setQty((q) => q + 1)} />
               </div>
-              <Button variant="primary" size="lg" iconLeft={ShoppingBag} onClick={addToCart} disabled={stock === "out"} className="flex-1">
+              {/* Quantity and favourite side by side; on phones the button takes the full width under them. */}
+              <span className="ml-auto flex sm:ml-0">
+                <FavoriteButton product={product} />
+              </span>
+              <Button variant="primary" size="lg" iconLeft={ShoppingBag} onClick={addToCart} disabled={stock === "out"} className="basis-full sm:basis-auto sm:flex-1">
                 {t("product.addToCart")}
               </Button>
-              <FavoriteButton product={product} />
             </div>
 
             <RichText source={description} className="text-[length:var(--text-body-md)] text-[var(--text-body)]" />

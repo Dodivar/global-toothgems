@@ -111,7 +111,7 @@ export function CategoryMosaic() {
           </div>
           <div className="grid justify-items-start gap-4 lg:justify-self-end">
             <p className="m-0 max-w-[40ch] text-[length:var(--text-body-md)] text-[var(--text-body)]">{t("homeAlt.categories.body")}</p>
-            <Button variant="ghost" iconRight={ArrowRight} className="-ml-[22px]" onClick={() => navigate("/boutique")}>
+            <Button variant="ghost" iconRight={ArrowRight} className="-ml-[18px] sm:-ml-[22px]" onClick={() => navigate("/boutique")}>
               {t("homeAlt.categories.shopAll")}
             </Button>
           </div>

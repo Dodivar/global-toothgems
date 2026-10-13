@@ -104,9 +104,9 @@ export function LegalLayout({
       </div>
 
       <div className="mx-auto max-w-[var(--max-width-content)] px-[clamp(16px,4vw,48px)] py-8 sm:py-12">
-        <div className={hasToc || aside ? "grid gap-10 lg:grid-cols-[260px_minmax(0,1fr)] lg:gap-14" : "grid"}>
+        <div className={hasToc || aside ? "grid grid-cols-1 gap-10 lg:grid-cols-[260px_minmax(0,1fr)] lg:gap-14" : "grid grid-cols-1"}>
           {hasToc ? <DesktopToc entries={toc} numbered={numbered} /> : aside ? <div className="hidden lg:block">{aside}</div> : null}
-          <div className="grid min-w-0 content-start gap-8">
+          <div className="grid min-w-0 grid-cols-1 content-start gap-8">
             {(showKey || hasToc) && (
               <div className="grid gap-3">
                 {hasToc && <MobileToc entries={toc} numbered={numbered} />}

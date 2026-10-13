@@ -87,7 +87,7 @@ export function TrainingHero({
           </span>
         </nav>
 
-        <div className="grid items-start gap-[clamp(28px,4vw,56px)] lg:grid-cols-[minmax(0,1.18fr)_minmax(0,.82fr)]">
+        <div className="grid grid-cols-1 items-start gap-[clamp(28px,4vw,56px)] lg:grid-cols-[minmax(0,1.18fr)_minmax(0,.82fr)]">
           <div className="grid gap-5">
             <div className="flex flex-wrap items-center gap-2">
               <Badge tone="brand">{t("training.eyebrow")}</Badge>
@@ -112,7 +112,7 @@ export function TrainingHero({
 
           {/* Artwork column: spans both rows of the left column on wide screens. */}
           <div className="relative lg:row-span-2">
-            <div className="gt-sparkle relative aspect-[4/5] overflow-hidden rounded-[var(--radius-xl)] bg-[var(--surface-sunken)] shadow-[var(--shadow-lg)] sm:aspect-[3/2] lg:aspect-[4/5]">
+            <div className="gt-sparkle relative aspect-[3/2] overflow-hidden rounded-[var(--radius-xl)] bg-[var(--surface-sunken)] shadow-[var(--shadow-lg)] lg:aspect-[4/5]">
               {course.cover ? (
                 <img
                   src={course.cover.src}

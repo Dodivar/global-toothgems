@@ -182,7 +182,7 @@ export function OrderCard({
           {t("account.orderView")}
           <ArrowRight size={14} aria-hidden="true" />
         </Link>
-        <span className="grid justify-items-end gap-0.5">
+        <span className="ml-auto grid justify-items-end gap-0.5 text-right">
           <span className="text-[length:var(--text-body-sm)] font-bold tabular-nums text-[var(--text-primary)]">
             {t("account.orderTotal")} {formatMoney(order.amounts.total, order.currency)}
           </span>

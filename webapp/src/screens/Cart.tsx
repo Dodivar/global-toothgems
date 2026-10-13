@@ -596,7 +596,7 @@ export function Cart() {
   );
 
   return (
-    <div className="mx-auto max-w-[var(--max-width-content)] px-[clamp(14px,4vw,48px)] py-[clamp(32px,4vw,56px)] pb-28 lg:pb-[clamp(32px,4vw,56px)]">
+    <div className="mx-auto max-w-[var(--max-width-content)] px-[clamp(14px,4vw,48px)] py-[clamp(32px,4vw,56px)] pb-36 lg:pb-[clamp(32px,4vw,56px)]">
       {progress}
 
       <div className="grid grid-cols-1 gap-8 lg:grid-cols-[minmax(0,1fr)_360px]">
@@ -662,7 +662,7 @@ export function Cart() {
                     // campaign / promotion it belongs to (as shown in the shop window).
                     const cut = lineCut(line);
                     return (
-                      <span className="grid w-24 justify-items-end gap-0.5 text-right">
+                      <span className="ml-auto grid w-24 justify-items-end gap-0.5 text-right">
                         <strong className={cut > 0 ? "text-sm text-[var(--accent-highlight-ink)]" : "text-sm text-[var(--text-primary)]"} aria-label={t("cart.lineTotalAria")}>
                           {money(line.unitPrice * line.qty - cut)}
                         </strong>
@@ -982,6 +982,13 @@ export function Cart() {
       <div className="fixed inset-x-0 bottom-0 z-50 border-t border-[var(--border-subtle)] bg-[var(--surface-card)] px-4 py-3 shadow-[var(--shadow-lg)] lg:hidden">
         <div className="grid gap-2">
           {alerts}
+          {/* Live, the button says "continue" without an amount: the total travels with it. */}
+          {live && (
+            <p className="m-0 flex items-baseline justify-between gap-3 text-sm text-[var(--text-body)]">
+              <span>{amountDue !== null ? t("checkout.payment.due") : t("cart.total")}</span>
+              <strong className="text-base tabular-nums text-[var(--text-primary)]">{money(amountDue ?? total)}</strong>
+            </p>
+          )}
           {payButton}
         </div>
       </div>

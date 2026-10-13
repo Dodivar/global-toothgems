@@ -1077,6 +1077,8 @@
     font-size: var(--text-body-md);
     line-height: var(--leading-relaxed);
     color: var(--text-body);
+    /* Addresses, e-mails and links break on a narrow phone instead of widening the page. */
+    overflow-wrap: anywhere;
   }
   .gt-legal-prose p { margin: 0; }
 
