@@ -12,12 +12,38 @@ import { GEMS_CATEGORY, shopHref } from "../../data/taxonomy";
 import { useTaxonomy } from "../../lib/catalog/useTaxonomy";
 import { photo } from "../../lib/images";
 import { STUDIO_PATH } from "../../lib/studioUrl";
+import { useMediaQuery } from "./useMediaQuery";
 import { usePrefersReducedMotion } from "./usePrefersReducedMotion";
 
 /** How long a slide stays up while the carousel rotates on its own. */
 const DWELL_MS = 7000;
 /** Horizontal travel, in px, that turns a touch drag into a slide change. */
 const SWIPE_PX = 48;
+
+/** Phones (Tailwind's `sm` breakpoint): no rotation, big arrows, compact slides. */
+const PHONE_QUERY = "(max-width: 639px)";
+
+/**
+ * The shop slide's phone visual: loose gems and products thrown together like
+ * a bouquet going off. A fixed layout (never random at render time, which
+ * would break hydration). `x`/`y` are the piece's centre in % of the box.
+ */
+const BOUQUET: { photo: string; x: number; y: number; size: number; rot: number }[] = [
+  { photo: "img-04.jpg", x: 50, y: 46, size: 70, rot: -12 },
+  { photo: "img-02.jpg", x: 29, y: 36, size: 54, rot: 20 },
+  { photo: "img-09.jpg", x: 69, y: 34, size: 58, rot: -25 },
+  { photo: "img-14.jpg", x: 13, y: 62, size: 46, rot: 40 },
+  { photo: "img-13.jpg", x: 85, y: 64, size: 50, rot: 10 },
+  { photo: "img-05.jpg", x: 38, y: 80, size: 42, rot: -30 },
+  { photo: "img-20.jpg", x: 62, y: 82, size: 48, rot: 15 },
+  { photo: "img-19.jpg", x: 92, y: 24, size: 38, rot: -10 },
+  { photo: "img-15.jpg", x: 8, y: 22, size: 40, rot: 25 },
+  { photo: "img-11.jpg", x: 22, y: 86, size: 36, rot: 60 },
+  { photo: "img-18.jpg", x: 77, y: 10, size: 36, rot: -40 },
+  { photo: "img-06.jpg", x: 45, y: 12, size: 38, rot: 30 },
+  { photo: "img-07.jpg", x: 93, y: 88, size: 32, rot: 5 },
+  { photo: "img-08.jpg", x: 21, y: 14, size: 40, rot: -18 },
+];
 
 type SlideId = "shop" | "academy" | "studio";
 const SLIDES: SlideId[] = ["shop", "academy", "studio"];
@@ -40,6 +66,7 @@ const SLIDES: SlideId[] = ["shop", "academy", "studio"];
 export function HeroCarousel() {
   const { t } = useTranslation();
   const reduced = usePrefersReducedMotion();
+  const phone = useMediaQuery(PHONE_QUERY);
   const [index, setIndex] = useState(0);
   const [userPaused, setUserPaused] = useState(false);
   const [hovered, setHovered] = useState(false);
@@ -47,7 +74,8 @@ export function HeroCarousel() {
   const tabRefs = useRef<(HTMLButtonElement | null)[]>([]);
   const touchX = useRef<number | null>(null);
 
-  const autoplay = !reduced && !userPaused;
+  // On a phone the carousel only moves when the visitor asks it to.
+  const autoplay = !reduced && !phone && !userPaused;
   const running = autoplay && !hovered && !focused;
   const total = SLIDES.length;
 
@@ -108,9 +136,9 @@ export function HeroCarousel() {
       </div>
 
       {/* Controls: the experience picker with its timer, then pause and step. */}
-      <div className="gt-alt-hero-controls relative z-[2] w-full px-[var(--gt-alt-gutter)] pb-5 pt-4 lg:absolute lg:inset-x-0 lg:bottom-0 lg:pb-7 lg:pt-0">
+      <div className="gt-alt-hero-controls relative z-[2] w-full px-[var(--gt-alt-gutter)] pb-5 pt-3 lg:absolute lg:inset-x-0 lg:bottom-0 lg:pb-7 lg:pt-0">
         <div className="gt-alt-wide flex items-center gap-3 sm:gap-5">
-          <div role="tablist" aria-label={t("homeAlt.hero.pickerLabel")} className="flex min-w-0 flex-1 gap-2 sm:gap-4">
+          <div role="tablist" aria-label={t("homeAlt.hero.pickerLabel")} className="order-2 flex min-w-0 flex-1 gap-2 sm:order-none sm:gap-4">
             {SLIDES.map((id, i) => {
               const active = i === index;
               return (
@@ -153,8 +181,9 @@ export function HeroCarousel() {
               );
             })}
           </div>
-          <div className="flex flex-none items-center gap-1.5 sm:gap-2">
-            {!reduced && (
+          {/* On a phone the arrows flank the picker (display: contents + order). */}
+          <div className="contents sm:flex sm:flex-none sm:items-center sm:gap-2">
+            {!reduced && !phone && (
               <IconButton
                 icon={userPaused ? Play : Pause}
                 label={userPaused ? t("homeAlt.hero.play") : t("homeAlt.hero.pause")}
@@ -163,8 +192,8 @@ export function HeroCarousel() {
                 onClick={() => setUserPaused((p) => !p)}
               />
             )}
-            <IconButton icon={ChevronLeft} label={t("homeAlt.hero.prev")} variant="glass" size="md" onClick={() => go(index - 1)} />
-            <IconButton icon={ChevronRight} label={t("homeAlt.hero.next")} variant="glass" size="md" onClick={() => go(index + 1)} />
+            <IconButton icon={ChevronLeft} label={t("homeAlt.hero.prev")} variant="glass" size={phone ? "lg" : "md"} className="order-1 flex-none sm:order-none" onClick={() => go(index - 1)} />
+            <IconButton icon={ChevronRight} label={t("homeAlt.hero.next")} variant="glass" size={phone ? "lg" : "md"} className="order-3 flex-none sm:order-none" onClick={() => go(index + 1)} />
           </div>
         </div>
       </div>
@@ -175,8 +204,8 @@ export function HeroCarousel() {
 /** Shared scaffold: copy then visual on a wide screen; the visual leads on a phone. */
 function SlideLayout({ copy, visual }: { copy: ReactNode; visual: ReactNode }) {
   return (
-    <div className="gt-alt-wide grid h-full grid-cols-[minmax(0,1fr)] items-center gap-8 px-[var(--gt-alt-gutter)] pb-4 pt-8 lg:grid-cols-[minmax(0,0.92fr)_minmax(0,1.08fr)] lg:gap-[clamp(32px,5vw,96px)] lg:pb-[104px] lg:pt-12">
-      <div className="gt-alt-slide-copy order-2 grid min-w-0 content-center justify-items-start gap-5 lg:order-1 lg:gap-6">
+    <div className="gt-alt-wide grid h-full grid-cols-[minmax(0,1fr)] items-center gap-4 px-[var(--gt-alt-gutter)] pb-2 pt-4 sm:gap-8 sm:pb-4 sm:pt-8 lg:grid-cols-[minmax(0,0.92fr)_minmax(0,1.08fr)] lg:gap-[clamp(32px,5vw,96px)] lg:pb-[104px] lg:pt-12">
+      <div className="gt-alt-slide-copy order-2 grid min-w-0 content-center justify-items-start gap-3 sm:gap-5 lg:order-1 lg:gap-6">
         {copy}
       </div>
       <div className="gt-alt-slide-visual relative order-1 min-w-0 lg:order-2">{visual}</div>
@@ -188,7 +217,7 @@ function SlideTitle({ children, inverse = false }: { children: ReactNode; invers
   return (
     <h2
       className={clsx(
-        "max-w-[18ch] text-balance text-[clamp(34px,4.3vw,72px)] font-[var(--weight-black)] leading-[1.02] tracking-[var(--tracking-display)]",
+        "max-w-[22ch] text-balance text-[clamp(28px,7.4vw,34px)] sm:max-w-[18ch] sm:text-[clamp(34px,4.3vw,72px)] font-[var(--weight-black)] leading-[1.02] tracking-[var(--tracking-display)]",
         inverse ? "text-[var(--gt-off-white)]" : "text-[var(--gt-ink-900)]",
       )}
     >
@@ -208,12 +237,12 @@ function ShopSlide() {
           <>
             <span className="gt-eyebrow !text-[var(--gt-blue-700)]">{t("homeAlt.hero.shop.eyebrow")}</span>
             <SlideTitle>{t("homeAlt.hero.shop.title")}</SlideTitle>
-            <p className="m-0 max-w-[48ch] text-[16px] text-[var(--gt-ink-700)] lg:text-[length:var(--text-body-lg)]">{t("homeAlt.hero.shop.body")}</p>
-            <div className="flex flex-wrap gap-3">
-              <Button variant="primary" size="lg" iconRight={ArrowRight} className="gt-alt-cta" onClick={() => navigate("/boutique")}>
+            <p className="m-0 hidden max-w-[48ch] text-[16px] sm:block text-[var(--gt-ink-700)] lg:text-[length:var(--text-body-lg)]">{t("homeAlt.hero.shop.body")}</p>
+            <div className="flex w-full flex-wrap gap-3 sm:w-auto">
+              <Button variant="primary" size="lg" iconRight={ArrowRight} className="gt-alt-cta w-full sm:w-auto" onClick={() => navigate("/boutique")}>
                 {t("homeAlt.hero.shop.cta")}
               </Button>
-              <Button variant="glass" size="lg" onClick={() => navigate(shopHref(GEMS_CATEGORY))}>
+              <Button variant="glass" size="lg" className="max-sm:hidden" onClick={() => navigate(shopHref(GEMS_CATEGORY))}>
                 {t("homeAlt.hero.shop.ctaSecondary")}
               </Button>
             </div>
@@ -234,7 +263,26 @@ function ShopSlide() {
           </>
         }
         visual={
-          <div className="relative mx-auto aspect-[16/10] w-full max-w-[880px] lg:aspect-square lg:h-[min(640px,calc(100svh-230px))] lg:w-auto lg:max-w-full">
+          <>
+            <div aria-hidden="true" className="relative mx-auto h-[168px] w-full max-w-[420px] sm:hidden">
+              {BOUQUET.map((g, i) => (
+                <span
+                  key={g.photo}
+                  className="absolute block"
+                  style={{ left: `${g.x}%`, top: `${g.y}%`, width: g.size, marginLeft: -g.size / 2, marginTop: -g.size / 2 }}
+                >
+                  {/* `rotate` (not `transform`) so no stacking context isolates the multiply blend. */}
+                  <img
+                    src={photo(g.photo)}
+                    alt=""
+                    decoding="async"
+                    className={clsx("gt-alt-cutout gt-alt-float block w-full", i % 2 === 1 && "gt-alt-float--late")}
+                    style={{ rotate: `${g.rot}deg` }}
+                  />
+                </span>
+              ))}
+            </div>
+          <div className="relative mx-auto hidden aspect-[16/10] w-full max-w-[880px] sm:block lg:aspect-square lg:h-[min(640px,calc(100svh-230px))] lg:w-auto lg:max-w-full">
             <div className="gt-alt-slide-media absolute inset-0 overflow-hidden rounded-[var(--radius-2xl)] shadow-[var(--shadow-glass-heavy)]">
               <img
                 src={photo("mouth-01.jpg")}
@@ -258,6 +306,7 @@ function ShopSlide() {
               </span>
             </div>
           </div>
+          </>
         }
       />
     </div>
@@ -275,8 +324,8 @@ function AcademySlide() {
           <>
             <span className="gt-eyebrow !text-[var(--gt-blue-300)]">{t("homeAlt.hero.academy.eyebrow")}</span>
             <SlideTitle inverse>{t("homeAlt.hero.academy.title")}</SlideTitle>
-            <p className="m-0 max-w-[46ch] text-[16px] text-[var(--gt-ink-300)] lg:text-[length:var(--text-body-lg)]">{t("homeAlt.hero.academy.body")}</p>
-            <ol className="m-0 grid list-none gap-2.5 p-0 sm:flex sm:flex-wrap sm:gap-x-6">
+            <p className="m-0 hidden max-w-[46ch] text-[16px] sm:block text-[var(--gt-ink-300)] lg:text-[length:var(--text-body-lg)]">{t("homeAlt.hero.academy.body")}</p>
+            <ol className="m-0 hidden list-none gap-2.5 p-0 sm:flex sm:flex-wrap sm:gap-x-6">
               {steps.map((s, i) => (
                 <li key={s} className="flex items-center gap-2.5 text-[14px] font-semibold text-[var(--gt-off-white)]">
                   <span aria-hidden="true" className="grid h-7 w-7 place-items-center rounded-full border border-white/25 text-[11px] tabular-nums text-[var(--gt-blue-300)]">
@@ -286,16 +335,16 @@ function AcademySlide() {
                 </li>
               ))}
             </ol>
-            <Button variant="primary" size="lg" iconRight={ArrowRight} className="gt-alt-cta" onClick={() => navigate("/academy")}>
+            <Button variant="primary" size="lg" iconRight={ArrowRight} className="gt-alt-cta w-full sm:w-auto" onClick={() => navigate("/academy")}>
               {t("homeAlt.hero.academy.cta")}
             </Button>
           </>
         }
         visual={
-          <div className="relative mx-auto flex h-full w-full max-w-[640px] items-center justify-center py-2">
+          <div className="relative mx-auto flex h-full w-full max-w-[640px] items-center justify-center sm:py-2">
             {/* The photographs are 640 px masters: framed tall and narrow
                 rather than stretched across the slide. */}
-            <div className="gt-alt-slide-media gt-alt-arch relative aspect-[4/5] h-[clamp(240px,64vw,320px)] overflow-hidden lg:h-[min(600px,calc(100svh-230px))]">
+            <div className="gt-alt-slide-media gt-alt-arch relative aspect-[4/5] h-[176px] overflow-hidden sm:h-[clamp(240px,64vw,320px)] lg:h-[min(600px,calc(100svh-230px))]">
               <img src={photo("mouth-04.jpg")} alt="" loading="lazy" decoding="async" className="h-full w-full object-cover" />
             </div>
             <figure className="gt-alt-float absolute bottom-[4%] left-0 m-0 grid w-[38%] max-w-[210px] gap-2 sm:left-[4%]">
@@ -326,14 +375,14 @@ function StudioSlide() {
               {t("homeAlt.hero.studio.eyebrow")}
             </span>
             <SlideTitle>{t("homeAlt.hero.studio.title")}</SlideTitle>
-            <p className="m-0 max-w-[46ch] text-[16px] text-[var(--gt-ink-700)] lg:text-[length:var(--text-body-lg)]">{t("homeAlt.hero.studio.body")}</p>
-            <Button variant="primary" size="lg" iconRight={ArrowRight} className="gt-alt-cta" onClick={() => navigate(STUDIO_PATH)}>
+            <p className="m-0 hidden max-w-[46ch] text-[16px] sm:block text-[var(--gt-ink-700)] lg:text-[length:var(--text-body-lg)]">{t("homeAlt.hero.studio.body")}</p>
+            <Button variant="primary" size="lg" iconRight={ArrowRight} className="gt-alt-cta w-full sm:w-auto" onClick={() => navigate(STUDIO_PATH)}>
               {t("homeAlt.hero.studio.cta")}
             </Button>
           </>
         }
         visual={
-          <div className="relative mx-auto w-full max-w-[860px]">
+          <div className="relative mx-auto w-full max-w-[250px] sm:max-w-[860px]">
             <div className="gt-alt-slide-media gt-studio-stage overflow-hidden rounded-[var(--radius-2xl)] shadow-[var(--shadow-glass-heavy)] ring-1 ring-white/40">
               <SmileCanvas pieces={COMPOSITIONS.signature} label={t("homeAlt.hero.studio.canvasLabel")} className="block aspect-[16/10] w-full" />
             </div>
