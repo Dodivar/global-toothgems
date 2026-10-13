@@ -29,20 +29,20 @@ const PHONE_QUERY = "(max-width: 639px)";
  * would break hydration). `x`/`y` are the piece's centre in % of the box.
  */
 const BOUQUET: { photo: string; x: number; y: number; size: number; rot: number }[] = [
-  { photo: "img-04.jpg", x: 50, y: 46, size: 70, rot: -12 },
-  { photo: "img-02.jpg", x: 29, y: 36, size: 54, rot: 20 },
-  { photo: "img-09.jpg", x: 69, y: 34, size: 58, rot: -25 },
-  { photo: "img-14.jpg", x: 13, y: 62, size: 46, rot: 40 },
-  { photo: "img-13.jpg", x: 85, y: 64, size: 50, rot: 10 },
-  { photo: "img-05.jpg", x: 38, y: 80, size: 42, rot: -30 },
-  { photo: "img-20.jpg", x: 62, y: 82, size: 48, rot: 15 },
-  { photo: "img-19.jpg", x: 92, y: 24, size: 38, rot: -10 },
-  { photo: "img-15.jpg", x: 8, y: 22, size: 40, rot: 25 },
-  { photo: "img-11.jpg", x: 22, y: 86, size: 36, rot: 60 },
-  { photo: "img-18.jpg", x: 77, y: 10, size: 36, rot: -40 },
-  { photo: "img-06.jpg", x: 45, y: 12, size: 38, rot: 30 },
-  { photo: "img-07.jpg", x: 93, y: 88, size: 32, rot: 5 },
-  { photo: "img-08.jpg", x: 21, y: 14, size: 40, rot: -18 },
+  { photo: "img-04.jpg", x: 50, y: 52, size: 83, rot: -12 },
+  { photo: "img-02.jpg", x: 29, y: 45, size: 64, rot: 20 },
+  { photo: "img-09.jpg", x: 69, y: 43, size: 68, rot: -25 },
+  { photo: "img-14.jpg", x: 13, y: 64, size: 54, rot: 40 },
+  { photo: "img-13.jpg", x: 85, y: 65, size: 59, rot: 10 },
+  { photo: "img-05.jpg", x: 38, y: 77, size: 50, rot: -30 },
+  { photo: "img-20.jpg", x: 62, y: 79, size: 57, rot: 15 },
+  { photo: "img-19.jpg", x: 92, y: 36, size: 45, rot: -10 },
+  { photo: "img-15.jpg", x: 8, y: 34, size: 47, rot: 25 },
+  { photo: "img-11.jpg", x: 22, y: 82, size: 42, rot: 60 },
+  { photo: "img-18.jpg", x: 77, y: 25, size: 42, rot: -40 },
+  { photo: "img-06.jpg", x: 45, y: 27, size: 45, rot: 30 },
+  { photo: "img-07.jpg", x: 93, y: 83, size: 38, rot: 5 },
+  { photo: "img-08.jpg", x: 21, y: 28, size: 47, rot: -18 },
 ];
 
 type SlideId = "shop" | "academy" | "studio";
@@ -192,8 +192,8 @@ export function HeroCarousel() {
                 onClick={() => setUserPaused((p) => !p)}
               />
             )}
-            <IconButton icon={ChevronLeft} label={t("homeAlt.hero.prev")} variant="glass" size={phone ? "lg" : "md"} className="order-1 flex-none sm:order-none" onClick={() => go(index - 1)} />
-            <IconButton icon={ChevronRight} label={t("homeAlt.hero.next")} variant="glass" size={phone ? "lg" : "md"} className="order-3 flex-none sm:order-none" onClick={() => go(index + 1)} />
+            <IconButton icon={ChevronLeft} label={t("homeAlt.hero.prev")} variant="glass" size="md" className="order-1 flex-none sm:order-none" onClick={() => go(index - 1)} />
+            <IconButton icon={ChevronRight} label={t("homeAlt.hero.next")} variant="glass" size="md" className="order-3 flex-none sm:order-none" onClick={() => go(index + 1)} />
           </div>
         </div>
       </div>
@@ -204,7 +204,7 @@ export function HeroCarousel() {
 /** Shared scaffold: copy then visual on a wide screen; the visual leads on a phone. */
 function SlideLayout({ copy, visual }: { copy: ReactNode; visual: ReactNode }) {
   return (
-    <div className="gt-alt-wide grid h-full grid-cols-[minmax(0,1fr)] items-center gap-4 px-[var(--gt-alt-gutter)] pb-2 pt-4 sm:gap-8 sm:pb-4 sm:pt-8 lg:grid-cols-[minmax(0,0.92fr)_minmax(0,1.08fr)] lg:gap-[clamp(32px,5vw,96px)] lg:pb-[104px] lg:pt-12">
+    <div className="gt-alt-wide grid h-full grid-cols-[minmax(0,1fr)] items-center gap-4 px-[var(--gt-alt-gutter)] pb-3 pt-6 sm:gap-8 sm:pb-4 sm:pt-8 lg:grid-cols-[minmax(0,0.92fr)_minmax(0,1.08fr)] lg:gap-[clamp(32px,5vw,96px)] lg:pb-[104px] lg:pt-12">
       <div className="gt-alt-slide-copy order-2 grid min-w-0 content-center justify-items-start gap-3 sm:gap-5 lg:order-1 lg:gap-6">
         {copy}
       </div>
@@ -229,6 +229,7 @@ function SlideTitle({ children, inverse = false }: { children: ReactNode; invers
 function ShopSlide() {
   const { t } = useTranslation();
   const navigate = useNavigate();
+  const phone = useMediaQuery(PHONE_QUERY);
   const { taxonomy, categoryName } = useTaxonomy();
   return (
     <div className="gt-alt-hero-shop h-full">
@@ -239,10 +240,10 @@ function ShopSlide() {
             <SlideTitle>{t("homeAlt.hero.shop.title")}</SlideTitle>
             <p className="m-0 hidden max-w-[48ch] text-[16px] sm:block text-[var(--gt-ink-700)] lg:text-[length:var(--text-body-lg)]">{t("homeAlt.hero.shop.body")}</p>
             <div className="flex w-full flex-wrap gap-3 sm:w-auto">
-              <Button variant="primary" size="lg" iconRight={ArrowRight} className="gt-alt-cta w-full sm:w-auto" onClick={() => navigate("/boutique")}>
+              <Button variant="primary" size={phone ? "md" : "lg"} iconRight={ArrowRight} className="gt-alt-cta w-full sm:w-auto" onClick={() => navigate("/boutique")}>
                 {t("homeAlt.hero.shop.cta")}
               </Button>
-              <Button variant="glass" size="lg" className="max-sm:hidden" onClick={() => navigate(shopHref(GEMS_CATEGORY))}>
+              <Button variant="glass" size={phone ? "md" : "lg"} className="max-sm:hidden" onClick={() => navigate(shopHref(GEMS_CATEGORY))}>
                 {t("homeAlt.hero.shop.ctaSecondary")}
               </Button>
             </div>
@@ -264,7 +265,7 @@ function ShopSlide() {
         }
         visual={
           <>
-            <div aria-hidden="true" className="relative mx-auto h-[168px] w-full max-w-[420px] sm:hidden">
+            <div aria-hidden="true" className="relative mx-auto h-[250px] w-full max-w-[440px] sm:hidden">
               {BOUQUET.map((g, i) => (
                 <span
                   key={g.photo}
@@ -316,6 +317,7 @@ function ShopSlide() {
 function AcademySlide() {
   const { t } = useTranslation();
   const navigate = useNavigate();
+  const phone = useMediaQuery(PHONE_QUERY);
   const steps = ["step1", "step2", "step3"] as const;
   return (
     <div className="gt-alt-hero-academy h-full">
@@ -335,7 +337,7 @@ function AcademySlide() {
                 </li>
               ))}
             </ol>
-            <Button variant="primary" size="lg" iconRight={ArrowRight} className="gt-alt-cta w-full sm:w-auto" onClick={() => navigate("/academy")}>
+            <Button variant="primary" size={phone ? "md" : "lg"} iconRight={ArrowRight} className="gt-alt-cta w-full sm:w-auto" onClick={() => navigate("/academy")}>
               {t("homeAlt.hero.academy.cta")}
             </Button>
           </>
@@ -365,6 +367,7 @@ function AcademySlide() {
 function StudioSlide() {
   const { t } = useTranslation();
   const navigate = useNavigate();
+  const phone = useMediaQuery(PHONE_QUERY);
   return (
     <div className="gt-alt-hero-studio relative h-full">
       <div aria-hidden="true" className="gt-studio-hero-grid pointer-events-none absolute inset-0" />
@@ -376,7 +379,7 @@ function StudioSlide() {
             </span>
             <SlideTitle>{t("homeAlt.hero.studio.title")}</SlideTitle>
             <p className="m-0 hidden max-w-[46ch] text-[16px] sm:block text-[var(--gt-ink-700)] lg:text-[length:var(--text-body-lg)]">{t("homeAlt.hero.studio.body")}</p>
-            <Button variant="primary" size="lg" iconRight={ArrowRight} className="gt-alt-cta w-full sm:w-auto" onClick={() => navigate(STUDIO_PATH)}>
+            <Button variant="primary" size={phone ? "md" : "lg"} iconRight={ArrowRight} className="gt-alt-cta w-full sm:w-auto" onClick={() => navigate(STUDIO_PATH)}>
               {t("homeAlt.hero.studio.cta")}
             </Button>
           </>
