@@ -22,6 +22,11 @@ export const test = base.extend<{ problems: string[] }>({
           contentType: route.request().resourceType() === "stylesheet" ? "text/css" : "text/plain",
         }),
     );
+    // Vercel serves /_vercel/* (Speed Insights, app/layout.tsx) on its own platform; `next start` cannot.
+    await page.route(
+      (url) => url.origin === origin && url.pathname.startsWith("/_vercel/"),
+      (route) => route.fulfill({ status: 200, body: "", contentType: "text/javascript" }),
+    );
     page.on("console", (message) => {
       if (message.type() === "error") problems.push(`console: ${message.text()}`);
     });
@@ -54,7 +59,8 @@ export async function signIn(page: Page, email: string, path = "/connexion", pas
   await page.goto(path);
   await page.waitForLoadState("networkidle");
   await dismissCookieBanner(page);
-  const submit = page.getByRole("button", { name: /^se connecter$/i });
+  // The header has its own "Se connecter" button (type=button): the form's is the submit one.
+  const submit = page.getByRole("button", { name: /^se connecter$/i }).and(page.locator('[type="submit"]'));
   const form = page.locator("form").filter({ has: submit });
   await form.getByLabel(/e-mail/i).fill(email);
   await form.getByLabel(/^mot de passe/i).fill(password);

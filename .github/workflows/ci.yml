@@ -115,8 +115,10 @@ jobs:
       # a migration that does not apply from scratch fails here.
       - name: Start a local Supabase stack
         run: supabase start -x studio,imgproxy,logflare,vector,edge-runtime,supavisor,postgres-meta
-      - name: Disable the scheduled jobs (they would call Edge Functions)
-        run: docker exec -i supabase_db_global-toothgems psql -U postgres -d postgres -v ON_ERROR_STOP=1 -c "select cron.unschedule(jobid) from cron.job;"
+      # The pg_cron e-mail jobs call Edge Functions only with the Vault secret
+      # `email_internal_secret` (migration email_cron_jobs); a fresh stack has none.
+      - name: No e-mail secret in the local stack
+        run: docker exec -i supabase_db_global-toothgems psql -U postgres -d postgres -v ON_ERROR_STOP=1 -c "do \$\$ begin if exists (select 1 from vault.secrets where name = 'email_internal_secret') then raise exception 'the local stack holds an e-mail secret'; end if; end \$\$;"
       - name: Run every SQL validation suite
         run: node supabase/tests/run.mjs
       - name: Database logs
@@ -195,11 +197,11 @@ jobs:
       - name: Start a local Supabase stack
         working-directory: .
         run: supabase start -x studio,imgproxy,logflare,vector,edge-runtime,supavisor,postgres-meta
-      - name: Seed the demo member and disable the scheduled jobs
+      - name: Seed the demo member; no e-mail secret in the local stack
         working-directory: .
         run: |
           docker exec -i supabase_db_global-toothgems psql -U postgres -d postgres -v ON_ERROR_STOP=1 < supabase/seed_demo_member.sql
-          docker exec -i supabase_db_global-toothgems psql -U postgres -d postgres -v ON_ERROR_STOP=1 -c "select cron.unschedule(jobid) from cron.job;"
+          docker exec -i supabase_db_global-toothgems psql -U postgres -d postgres -v ON_ERROR_STOP=1 -c "do \$\$ begin if exists (select 1 from vault.secrets where name = 'email_internal_secret') then raise exception 'the local stack holds an e-mail secret'; end if; end \$\$;"
       # The local stack's well-known development keys, read from the CLI (masked anyway).
       - name: Point the live suite at the local stack
         working-directory: .

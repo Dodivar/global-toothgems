@@ -69,6 +69,11 @@ begin
   -- EM3 shipping ---------------------------------------------------------------
   insert into public.orders (customer_email, billing_address, currency, subtotal_amount, total_amount, payment_status, status, locale)
     values ('t@example.com', billing, 'EUR', 10, 10, 'paid', 'processing', 'en') returning id into v_order;
+  -- One line, as every real order has: the invoice issued when the order is paid again below
+  -- (EM3) credits refunds against it (decision 86).
+  insert into public.order_items (order_id, product_id, product_name, unit_price, quantity, discount_amount, tax_rate_bp, tax_amount)
+    select v_order, p.id, p.name, 10, 1, 0, 2000, 1.67 from public.products p where p.slug = 'gel-de-suivi';
+  if not found then raise exception 'FAIL setup: run seed.sql'; end if;
   insert into public.payments (order_id, status, amount, currency) values (v_order, 'succeeded', 10, 'EUR') returning id into v_pay;
   insert into public.shipments (order_id, status, carrier, tracking_number, tracking_url, shipped_at)
     values (v_order, 'shipped', 'Colissimo', 'TRK123', 'https://track.example/TRK123', now()) returning id into v_ship;

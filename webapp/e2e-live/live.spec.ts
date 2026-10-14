@@ -36,7 +36,7 @@ test.describe("storefront, read from the database", () => {
   test("a product page shows the database's name and price", async ({ page, problems }) => {
     await open(page, "/fr/boutique/etoile-cristal");
     await expect(page.getByRole("heading", { level: 1 })).toHaveText("Étoile Cristal");
-    await expect(page.locator("main#main").getByText(/32,00\s?€/).first()).toBeVisible();
+    await expect(page.locator("main#main").getByText(/^32\s?€$/).first()).toBeVisible();
     expect(problems).toEqual([]);
   });
 
