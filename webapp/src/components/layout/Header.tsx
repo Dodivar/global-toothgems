@@ -1,4 +1,4 @@
-import { useCallback, useEffect, useRef, useState } from "react";
+import { useCallback, useEffect, useRef, useState, type ReactNode } from "react";
 import { Link, useNavigate, useLocation, useLanguageSwitch } from "../../lib/navigation";
 import { useTranslation } from "react-i18next";
 import { ArrowRight, Box, ChevronDown, Heart, Menu, Search, ShoppingBag, User, X } from "lucide-react";
@@ -23,6 +23,28 @@ type MobileTab = "shop" | "academy" | "studio";
 const HOVER_OPEN_MS = 120;
 /** Grace for the trip from the nav item down into the panel. */
 const HOVER_CLOSE_MS = 250;
+
+/** A phone-menu entry drawn like the shop's family cards (`ShopMenu`, stack layout). */
+function MobileMenuCard({ to, onNavigate, title, sub, media }: { to: string; onNavigate: () => void; title: string; sub: string; media: ReactNode }) {
+  return (
+    <Link
+      to={to}
+      onClick={onNavigate}
+      className="group/entry flex items-center gap-3.5 rounded-[var(--radius-card)] border border-[var(--border-subtle)] bg-[var(--surface-card)] p-2.5 pr-3.5 text-left shadow-[var(--shadow-card)] outline-none transition-[transform,box-shadow,border-color] duration-[var(--duration-normal)] ease-[var(--ease-out-soft)] focus-visible:border-[var(--gt-blue-400)] focus-visible:shadow-[var(--shadow-focus),var(--shadow-card-hover)]"
+    >
+      <span className="relative h-[52px] w-[52px] flex-none overflow-hidden rounded-[var(--radius-md)] bg-[var(--surface-brand-wash)] ring-1 ring-inset ring-[var(--gt-blue-200)]">
+        {media}
+      </span>
+      <span className="grid min-w-0 flex-1 gap-1">
+        <span className="line-clamp-2 text-[11.5px] font-bold uppercase leading-[1.3] tracking-[var(--tracking-wide)] text-[var(--text-primary)]">{title}</span>
+        <span className="line-clamp-2 text-xs text-[var(--text-body)]">{sub}</span>
+      </span>
+      <span aria-hidden="true" className="grid h-7 w-7 flex-none place-items-center rounded-full bg-[var(--surface-brand-wash)] text-[var(--text-muted)]">
+        <ArrowRight size={13} />
+      </span>
+    </Link>
+  );
+}
 
 export function Header() {
   const { t } = useTranslation();
@@ -381,7 +403,7 @@ export function Header() {
         {menuOpen && (
           <div
             id="gt-mobile-menu"
-            className="grid max-h-[calc(100vh-60px)] gap-3.5 overflow-y-auto border-t border-[var(--border-subtle)] bg-[var(--surface-sunken)] px-3 pb-5 pt-3.5"
+            className="grid max-h-[calc(100vh-60px)] gap-3.5 overflow-y-auto border-t border-[var(--border-subtle)] bg-[linear-gradient(180deg,var(--surface-chrome)_0%,var(--surface-brand-wash)_55%,var(--surface-brand-wash-strong)_100%)] px-3 pb-5 pt-3.5"
           >
             <div role="tablist" aria-label={t("nav.primary")} className="flex gap-4 border-b border-[var(--border-subtle)] px-1">
               {mobileTabs.map((tab) => (
@@ -404,51 +426,37 @@ export function Header() {
             {menuTab === "shop" ? (
               <ShopMenu layout="stack" onNavigate={closeAll} />
             ) : menuTab === "studio" ? (
-              <div className="grid gap-2.5">
+              <ul className="m-0 grid list-none gap-2 p-0">
                 {STUDIO_SHORTCUTS.map((shortcut) => (
-                  <Link
-                    key={shortcut.id}
-                    to={shortcut.to}
-                    onClick={closeAll}
-                    className="flex items-center gap-3.5 rounded-[var(--radius-card)] border border-[var(--border-subtle)] bg-[var(--surface-card)] p-3 text-left shadow-[var(--shadow-xs)]"
-                  >
-                    <span aria-hidden="true" className="grid h-[46px] w-[46px] flex-none place-items-center rounded-[var(--radius-sm)] bg-[var(--gt-ink-900)] text-[var(--gt-blue-200)]">
-                      <shortcut.icon size={20} strokeWidth={1.75} />
-                    </span>
-                    <span className="grid min-w-0 gap-0.5">
-                      <span className="truncate text-[11.5px] font-semibold uppercase tracking-[.06em] text-[var(--text-primary)]">
-                        {t(shortcut.labelKey)}
-                      </span>
-                      <span className="text-xs text-[var(--text-muted)]">{t(shortcut.descKey)}</span>
-                    </span>
-                  </Link>
-                ))}
-              </div>
-            ) : (
-              <div className="grid gap-2.5">
-                {academyMenu.map((item) => (
-                  <Link
-                    key={item.key}
-                    to={item.to}
-                    onClick={closeAll}
-                    className="flex items-center gap-3.5 rounded-[var(--radius-card)] border border-[var(--border-subtle)] bg-[var(--surface-card)] p-3 text-left shadow-[var(--shadow-xs)]"
-                  >
-                    <img
-                      src={item.thumb}
-                      alt=""
-                      loading="lazy"
-                      decoding="async"
-                      className="h-[46px] w-[46px] flex-none rounded-[var(--radius-sm)] border border-[var(--gt-blue-200)] object-cover"
+                  <li key={shortcut.id}>
+                    <MobileMenuCard
+                      to={shortcut.to}
+                      onNavigate={closeAll}
+                      title={t(shortcut.labelKey)}
+                      sub={t(shortcut.descKey)}
+                      media={
+                        <span aria-hidden="true" className="grid h-full w-full place-items-center bg-[var(--gt-ink-900)] text-[var(--gt-blue-200)]">
+                          <shortcut.icon size={20} strokeWidth={1.75} />
+                        </span>
+                      }
                     />
-                    <span className="grid min-w-0 gap-0.5">
-                      <span className="truncate text-[11.5px] font-semibold uppercase tracking-[.06em] text-[var(--text-primary)]">
-                        {item.title}
-                      </span>
-                      <span className="text-xs text-[var(--text-muted)]">{item.sub}</span>
-                    </span>
-                  </Link>
+                  </li>
                 ))}
-              </div>
+              </ul>
+            ) : (
+              <ul className="m-0 grid list-none gap-2 p-0">
+                {academyMenu.map((item) => (
+                  <li key={item.key}>
+                    <MobileMenuCard
+                      to={item.to}
+                      onNavigate={closeAll}
+                      title={item.title}
+                      sub={item.sub}
+                      media={<img src={item.thumb} alt="" loading="lazy" decoding="async" className="h-full w-full object-cover" />}
+                    />
+                  </li>
+                ))}
+              </ul>
             )}
             <div className="flex items-center justify-between gap-3 pt-1">
               <Link

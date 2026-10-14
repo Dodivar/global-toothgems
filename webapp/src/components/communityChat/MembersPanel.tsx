@@ -7,7 +7,7 @@ import clsx from "clsx";
 import type { ChatMember } from "../../lib/communityChat/model";
 import { useChat } from "../../lib/communityChat/chatStore";
 import { mentionedMembers, messagesToday, recentAuthors, timestampOf } from "../../lib/communityChat/chatLogic";
-import { ChatAvatar, RoleBadge, ToolButton, focusRing, useChatTime, useNow } from "./primitives";
+import { ChatAvatar, ToolButton, focusRing, useChatTime, useNow } from "./primitives";
 import { useLoungeUi } from "./loungeUi";
 import { LanguageFlag } from "./LanguageFlag";
 
@@ -28,7 +28,6 @@ function MemberRow({ member }: { member: ChatMember }) {
       >
         <ChatAvatar member={member} size="sm" presence />
         <span className="min-w-0 flex-1 truncate text-[13.5px] font-semibold text-[var(--text-primary)]">{member.name}</span>
-        {member.role && <RoleBadge role={member.role} />}
       </button>
     </li>
   );

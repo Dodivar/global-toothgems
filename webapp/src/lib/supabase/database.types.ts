@@ -2848,6 +2848,24 @@ export type Database = {
           },
         ]
       }
+      gift_card_code_attempts: {
+        Row: {
+          actor: string
+          created_at: string
+          id: number
+        }
+        Insert: {
+          actor: string
+          created_at?: string
+          id?: never
+        }
+        Update: {
+          actor?: string
+          created_at?: string
+          id?: never
+        }
+        Relationships: []
+      }
       gift_card_settings: {
         Row: {
           allow_custom_amount: boolean
@@ -8604,6 +8622,10 @@ export type Database = {
           p_shipping_rate_id?: string
           p_use_loyalty_reward?: boolean
         }
+        Returns: Json
+      }
+      quote_gift_cards: {
+        Args: { p_amount: number; p_codes: string[]; p_currency?: string }
         Returns: Json
       }
       recommended_products: {

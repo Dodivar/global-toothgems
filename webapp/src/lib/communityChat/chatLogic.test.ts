@@ -4,6 +4,7 @@ import {
   activeMentionQuery,
   continuesPrevious,
   insertMention,
+  joinedDate,
   mentionCandidates,
   mentionedMembers,
   parseComposerText,
@@ -11,6 +12,7 @@ import {
   reactionsOf,
   roomKey,
   searchCommunity,
+  tenureOf,
   toggleReaction,
 } from "./chatLogic";
 
@@ -155,5 +157,26 @@ describe("fixtures", () => {
   it("gives every room a distinct key", () => {
     const keys = CHAT_SERVERS.flatMap((s) => s.channels.map((c) => roomKey({ kind: "channel", channelId: c.id })));
     expect(new Set(keys).size).toBe(keys.length);
+  });
+});
+
+describe("tenure", () => {
+  const now = new Date("2026-10-14T15:00:00").getTime();
+
+  it("reads a timestamp or a plain date, and nothing else", () => {
+    expect(joinedDate("2026-09-12T08:00:00Z")?.toISOString()).toBe("2026-09-12T08:00:00.000Z");
+    expect(joinedDate("2025-03-08")?.getDate()).toBe(8);
+    expect(joinedDate("")).toBeNull();
+    expect(joinedDate("soon")).toBeNull();
+  });
+
+  it("counts days for the first month, then months, then whole years", () => {
+    expect(tenureOf("2026-10-14", now)).toEqual({ unit: "day", count: 0 });
+    expect(tenureOf("2026-10-20", now)).toEqual({ unit: "day", count: 0 });
+    expect(tenureOf("2026-10-02", now)).toEqual({ unit: "day", count: 12 });
+    expect(tenureOf("2026-07-20", now)).toEqual({ unit: "month", count: 2 });
+    expect(tenureOf("2025-10-15", now)).toEqual({ unit: "month", count: 11 });
+    expect(tenureOf("2024-01-08", now)).toEqual({ unit: "year", count: 2 });
+    expect(tenureOf("", now)).toBeNull();
   });
 });

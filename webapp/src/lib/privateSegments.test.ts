@@ -1,5 +1,5 @@
 import { readdirSync, readFileSync, statSync } from "node:fs";
-import { join } from "node:path";
+import { join, relative, sep } from "node:path";
 import { fileURLToPath } from "node:url";
 import { describe, expect, it } from "vitest";
 import { gateFor } from "./authRoutes";
@@ -23,9 +23,9 @@ function pages(dir: string): string[] {
 /** The address a page file serves, route groups left out, parameters filled. */
 const addressOf = (file: string) =>
   "/" +
-  file
-    .slice(APP.length + 1, -"/page.tsx".length)
-    .split("/")
+  relative(APP, file)
+    .split(sep)
+    .slice(0, -1)
     .filter((segment) => !/^\(.*\)$/.test(segment))
     .map((segment) => segment.replace(/^\[+\.*(\w+)\]+$/, "x"))
     .join("/");

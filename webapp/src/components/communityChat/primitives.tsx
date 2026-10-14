@@ -11,7 +11,7 @@ import {
 import { useTranslation } from "react-i18next";
 import { X, type LucideIcon } from "lucide-react";
 import clsx from "clsx";
-import type { AvatarTone, ChatMember, ChatRole, Presence } from "../../lib/communityChat/model";
+import type { AvatarTone, ChatMember, Presence } from "../../lib/communityChat/model";
 
 /*
  * Small pieces shared by every part of the Members' Lounge. The lounge reuses
@@ -98,26 +98,7 @@ export function ChatAvatar({
   );
 }
 
-/* ------------------------------------------------------------------ badges */
-
-/** A role beside a name: written out, the tint only reinforces it. */
-export function RoleBadge({ role, className }: { role: ChatRole; className?: string }) {
-  const { t } = useTranslation();
-  return (
-    <span
-      title={t(`lounge.roles.${role}Long`)}
-      className={clsx(
-        "inline-flex items-center rounded-[var(--radius-xs)] px-1.5 py-px text-[10px] font-bold uppercase leading-[16px] tracking-[0.04em]",
-        role === "team" && "bg-[var(--surface-inverse)] text-[var(--text-inverse)]",
-        role === "mentor" && "bg-[var(--gt-emerald-50)] text-[var(--gt-emerald-600)]",
-        role === "new" && "bg-[var(--gt-blue-100)] text-[var(--gt-blue-700)]",
-        className,
-      )}
-    >
-      {t(`lounge.roles.${role}`)}
-    </span>
-  );
-}
+/* ------------------------------------------------------------------ counts */
 
 /**
  * Unread count. `tone="mention"` is the stronger fuchsia pill used for
@@ -459,12 +440,7 @@ export function useChatTime() {
     [clock, locale, t],
   );
 
-  const monthYear = useCallback(
-    (yearMonth: string) => new Intl.DateTimeFormat(locale, { month: "long", year: "numeric" }).format(new Date(`${yearMonth}-01T12:00:00`)),
-    [locale],
-  );
-
-  return { clock, day, short, monthYear, locale };
+  return { clock, day, short, locale };
 }
 
 /** Country name in the interface language, from its ISO code. */

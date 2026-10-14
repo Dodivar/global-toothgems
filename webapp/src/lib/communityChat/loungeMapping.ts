@@ -112,7 +112,7 @@ export function mapMember(row: DirectoryRow, fallbackName: string): ChatMember {
     presence: PRESENCES.includes(row.presence as Presence) ? (row.presence as Presence) : "offline",
     role: ROLES.includes(row.role as ChatRole) ? (row.role as ChatRole) : undefined,
     trainings: [...(row.trainings ?? [])],
-    joined: (row.joined_at ?? "").slice(0, 7),
+    joined: row.joined_at ?? "",
     messageCount: Number(row.message_count) || 0,
     tone: toneFor(row.user_id),
   };

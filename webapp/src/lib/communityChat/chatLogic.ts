@@ -269,3 +269,30 @@ export function searchCommunity<C extends SearchableChannel>(
 
   return { messages, members, channels };
 }
+
+/* ----------------------------------------------------------------- tenure */
+
+/**
+ * When a member joined, from `ChatMember.joined`: a timestamp (live) or a
+ * plain date (fixtures, read at midday so no time zone moves it a day).
+ */
+export function joinedDate(joined: string): Date | null {
+  if (!joined) return null;
+  const date = new Date(/^\d{4}-\d{2}-\d{2}$/.test(joined) ? `${joined}T12:00:00` : joined);
+  return Number.isNaN(date.getTime()) ? null : date;
+}
+
+export type Tenure = { unit: "day" | "month" | "year"; count: number };
+
+/** How long ago a member joined, in the largest whole unit: 0 days means today. */
+export function tenureOf(joined: string, now: number): Tenure | null {
+  const start = joinedDate(joined);
+  if (!start) return null;
+  const days = Math.floor((now - start.getTime()) / 86_400_000);
+  if (days < 31) return { unit: "day", count: Math.max(0, days) };
+  const end = new Date(now);
+  const months =
+    (end.getFullYear() - start.getFullYear()) * 12 + end.getMonth() - start.getMonth() - (end.getDate() < start.getDate() ? 1 : 0);
+  if (months < 12) return { unit: "month", count: Math.max(1, months) };
+  return { unit: "year", count: Math.floor(months / 12) };
+}

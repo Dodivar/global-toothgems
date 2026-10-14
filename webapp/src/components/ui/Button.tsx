@@ -20,8 +20,8 @@ interface ButtonProps extends ButtonHTMLAttributes<HTMLButtonElement> {
 
 const sizeClasses: Record<ButtonSize, string> = {
   sm: "h-9 px-4 text-[length:var(--text-caption)]",
-  md: "h-[46px] px-[22px] text-[length:var(--text-body-sm)]",
-  lg: "h-14 px-[30px] text-[length:var(--text-body-md)]",
+  md: "h-[46px] px-[18px] sm:px-[22px] text-[length:var(--text-body-sm)]",
+  lg: "h-14 px-6 sm:px-[30px] text-[length:var(--text-body-md)]",
 };
 
 const iconSize: Record<ButtonSize, number> = { sm: 14, md: 16, lg: 18 };
@@ -67,8 +67,10 @@ export function Button({
     </>
   );
 
+  // On phones a long French label wraps onto a second line inside the same
+  // height rather than widening its column past the screen.
   const cls = clsx(
-    "inline-flex items-center justify-center gap-2 whitespace-nowrap rounded-[var(--radius-control)] font-semibold uppercase tracking-[var(--tracking-wide)] transition-[background-color,color,border-color,box-shadow] duration-[var(--duration-fast)] active:scale-[0.98] disabled:opacity-45 disabled:pointer-events-none",
+    "inline-flex items-center justify-center gap-2 whitespace-normal text-center leading-[1.15] sm:whitespace-nowrap [&>svg]:flex-none rounded-[var(--radius-control)] font-semibold uppercase tracking-[var(--tracking-wide)] transition-[background-color,color,border-color,box-shadow] duration-[var(--duration-fast)] active:scale-[0.98] disabled:opacity-45 disabled:pointer-events-none",
     sizeClasses[size],
     variantClasses[variant],
     fullWidth ? "flex w-full" : "inline-flex",

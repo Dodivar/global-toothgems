@@ -48,10 +48,13 @@ export function expectedFiles() {
   return files;
 }
 
+/** Line endings left out: a Windows checkout (`core.autocrlf`) writes CRLF. */
+const sameText = (a, b) => a.replaceAll("\r\n", "\n") === b.replaceAll("\r\n", "\n");
+
 /** Names of the generated files whose copy is missing or differs. */
 export function staleFiles() {
   return Object.entries(expectedFiles())
-    .filter(([name, content]) => !existsSync(join(TARGET, name)) || readFileSync(join(TARGET, name), "utf8") !== content)
+    .filter(([name, content]) => !existsSync(join(TARGET, name)) || !sameText(readFileSync(join(TARGET, name), "utf8"), content))
     .map(([name]) => name);
 }
 

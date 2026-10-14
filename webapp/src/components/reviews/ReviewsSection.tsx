@@ -25,6 +25,8 @@ import { useReviewAuthor, useReviewSubjects, useReviews } from "../../lib/review
 import { useReveal } from "../../lib/useReveal";
 
 const PAGE = 6;
+/** Phones read the list one card under the other: three first, so what comes after the reviews stays within reach. */
+const PHONE_FIRST = 3;
 const focusRing =
   "focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-[var(--focus-ring)]";
 
@@ -77,6 +79,7 @@ export function ReviewsSection({
   const [filter, setFilter] = useState<PublicFilter>("all");
   const [sort, setSort] = useState<PublicSort>("recent");
   const [shown, setShown] = useState(PAGE);
+  const [phoneOpen, setPhoneOpen] = useState(false);
   const [preview, setPreview] = useState<Preview>("live");
 
   const state: Preview = preview !== "live" ? preview : demoMode === "error" ? "error" : loading ? "loading" : published.length === 0 ? "empty" : "live";
@@ -90,6 +93,8 @@ export function ReviewsSection({
     list.filter((r) => matchesPublicFilter(r, filter) && !(browsing && featured && r.id === featured.id)),
     sort,
   );
+  const visible = Math.min(shown, filtered.length);
+  const phoneCollapsed = !phoneOpen && visible > PHONE_FIRST;
   const highlights = course ? topTags(list) : [];
   const photos = list.flatMap((r) => r.photos.map((p, index) => ({ ...p, index, review: r })));
   const name = subjectName(subject, lang);
@@ -101,6 +106,7 @@ export function ReviewsSection({
   const choose = (f: PublicFilter) => {
     setFilter(f);
     setShown(PAGE);
+    setPhoneOpen(false);
   };
 
   return (
@@ -283,7 +289,12 @@ export function ReviewsSection({
                 </div>
 
                 <p aria-live="polite" className="m-0 text-[length:var(--text-caption)] text-[var(--text-muted)]">
-                  {t("reviews.filters.showing", { shown: Math.min(shown, filtered.length), total: filtered.length })}
+                  <span className={phoneCollapsed ? "max-md:hidden" : undefined}>
+                    {t("reviews.filters.showing", { shown: visible, total: filtered.length })}
+                  </span>
+                  {phoneCollapsed && (
+                    <span className="md:hidden">{t("reviews.filters.showing", { shown: PHONE_FIRST, total: filtered.length })}</span>
+                  )}
                 </p>
 
                 {filtered.length === 0 ? (
@@ -293,14 +304,23 @@ export function ReviewsSection({
                   </div>
                 ) : (
                   <div key={`${filter}-${sort}`} className="gt-auth-swap grid items-start gap-4 md:grid-cols-2">
-                    {filtered.slice(0, shown).map((r) => (
-                      <ReviewCard key={r.id} review={r} />
+                    {filtered.slice(0, shown).map((r, i) => (
+                      <div key={r.id} className={phoneCollapsed && i >= PHONE_FIRST ? "max-md:hidden" : undefined}>
+                        <ReviewCard review={r} />
+                      </div>
                     ))}
                   </div>
                 )}
 
+                {phoneCollapsed && (
+                  <div className="flex justify-center md:hidden">
+                    <Button variant="outline" onClick={() => setPhoneOpen(true)}>
+                      {t("reviews.filters.more", { count: visible - PHONE_FIRST })}
+                    </Button>
+                  </div>
+                )}
                 {filtered.length > shown && (
-                  <div className="flex justify-center">
+                  <div className={phoneCollapsed ? "flex justify-center max-md:hidden" : "flex justify-center"}>
                     <Button variant="outline" onClick={() => setShown((n) => n + PAGE)}>
                       {t("reviews.filters.more", { count: Math.min(PAGE, filtered.length - shown) })}
                     </Button>

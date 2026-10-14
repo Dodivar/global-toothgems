@@ -4,7 +4,7 @@ import { useEffect, useRef, useState } from "react";
 import posthog from "posthog-js";
 import { useTranslation } from "react-i18next";
 import { Link, useNavigate } from "../lib/navigation";
-import { ArrowRight, CheckCircle2, CircleAlert, CreditCard, Gift, GraduationCap, Lock, LogIn, Mail, Minus, Plus, ShieldCheck, ShoppingBag, Trash2, Truck, UserRound } from "lucide-react";
+import { ArrowRight, CheckCircle2, CircleAlert, CreditCard, Gift, GraduationCap, Lock, LogIn, Mail, Minus, Plus, ShieldCheck, ShoppingBag, Tag, Trash2, Truck, UserRound } from "lucide-react";
 import { Button } from "../components/ui/Button";
 import { Badge } from "../components/ui/Badge";
 import { DELIVERY_COUNTRIES, countryLabelKey } from "../data/countries";
@@ -38,8 +38,10 @@ import { GiftCardCodes } from "../components/shop/GiftCardCodes";
 import { PromotionCodes } from "../components/shop/PromotionCodes";
 import { OfferBadges } from "../components/shop/OfferBadges";
 import { useStorefrontOffers } from "../lib/useStorefrontOffers";
-import { guestQuoteEmail, lineDiscount, quoteItems } from "../lib/checkout/basketQuote";
+import { guestQuoteEmail, isLineDiscount, lineDiscount, quoteItems } from "../lib/checkout/basketQuote";
 import { useBasketQuote } from "../lib/checkout/useBasketQuote";
+import { giftCardPayable, refusedGiftCodes } from "../lib/checkout/giftCardQuote";
+import { useGiftCardQuote } from "../lib/checkout/useGiftCardQuote";
 import type { GiftCardDesign } from "../lib/giftCards/giftCardMapping";
 import {
   applicableRates,
@@ -75,7 +77,12 @@ const MOCK_FORM: CheckoutForm = {
   country: "fr",
 };
 
-type RatesState = { country: string; status: "loading" | "ready" | "error"; rows: ShippingRateRow[] };
+/** A summary discount line: `label` worded for the payment step, `name` and `code` shown apart in the cart. */
+type DiscountLine = { label: string; name: string | null; code: string | null; amount: number };
+
+const loyaltyLine = (label: string, amount: number): DiscountLine => ({ label, name: label, code: null, amount });
+
+type RatesState ={ country: string; status: "loading" | "ready" | "error"; rows: ShippingRateRow[] };
 
 /**
  * The client secret of the last payment step this tab opened. After a reload the
@@ -135,6 +142,7 @@ export function Cart() {
   }, []);
   // Gift card codes are bearer credentials: kept in memory for this page only, never stored.
   const [giftCodes, setGiftCodes] = useState<string[]>([]);
+  const [giftRefused, setGiftRefused] = useState(false);
   // Promotion codes typed by the customer: the database decides what they give (basket quote below).
   const [promoCodes, setPromoCodes] = useState<string[]>([]);
   const [promoRefusal, setPromoRefusal] = useState<"invalid" | "too_many_attempts" | "dropped" | null>(null);
@@ -214,12 +222,21 @@ export function Cart() {
   const quote = quoteState.status === "ready" ? quoteState.quote : null;
   // Until the answer is in, the loyalty estimate stands in (same rule as the database); promotions show only once confirmed.
   const rewardEstimate = rewardOn && !quote ? rewardDiscount(shopGoods, programme.rewardPercent) : 0;
-  const discountLines = quote
+  const discountLines: DiscountLine[] = quote
     ? quote.discounts
         .filter((d) => d.goods > 0)
-        .map((d) => ({ label: d.code ? t("checkout.promo.discountLine", { label: d.label, code: d.code }) : d.label, amount: d.goods }))
+        .map((d) => {
+          // A promotion named after its own code says it once.
+          const named = d.code !== null && d.label.trim().toUpperCase() !== d.code.toUpperCase();
+          return {
+            label: d.code && named ? t("checkout.promo.discountLine", { label: d.label, code: d.code }) : (d.code ?? d.label),
+            code: d.code,
+            name: d.code && !named ? null : d.label,
+            amount: d.goods,
+          };
+        })
     : rewardEstimate > 0
-      ? [{ label: t("loyalty.checkout.summaryLine", { percent: programme.rewardPercent }), amount: rewardEstimate }]
+      ? [loyaltyLine(t("loyalty.checkout.summaryLine", { percent: programme.rewardPercent }), rewardEstimate)]
       : [];
   const goodsDiscount = quote ? quote.goodsDiscount : rewardEstimate;
   const shippingSaved = quote ? Math.min(shipping, quote.shippingDiscount) : 0;
@@ -236,8 +253,19 @@ export function Cart() {
   };
   // The shop-window badge belongs to a promotion only: a cut that comes from the loyalty reward alone (the promotion is
   // used up, or the reward beats it) carries no campaign badge.
-  const promotionApplied = quote?.discounts.some((d) => d.type !== "loyalty") ?? false;
+  const promotionApplied = quote?.discounts.some(isLineDiscount) ?? false;
   const freeOrder = live && quote !== null && total <= 0 && giftCodes.length === 0;
+  // What the gift cards would pay, said by the database once the total is settled (the discounts are in).
+  const giftQuoteState = useGiftCardQuote({
+    enabled: live && giftCodes.length > 0 && ratesReady && quoteState.status !== "loading",
+    codes: giftCodes,
+    amount: giftCardPayable(lines, total),
+    currency,
+  });
+  // While a new answer is on its way the last one stands in, so the summary does not jump on every change.
+  const giftQuote = giftQuoteState.status === "ready" ? giftQuoteState.quote : giftQuoteState.status === "loading" ? giftQuoteState.previous : null;
+  const giftApplied = giftQuote ? Math.min(total, giftQuote.applied) : null;
+  const amountDue = giftApplied === null ? null : total - giftApplied;
   const threshold = ratesReady && shipped ? freeShippingThreshold(rates.rows, currency) : null;
   const remainingForFreeShipping = threshold === null ? null : Math.max(0, threshold - goods);
 
@@ -281,6 +309,14 @@ export function Cart() {
       setCheckoutError("loyalty_reward_unavailable");
     }
   }, [quoteState, promoCodes, wantsReward]);
+  // A code the database refuses is taken out at once, and said so (the same words for every refusal).
+  useEffect(() => {
+    if (giftQuoteState.status !== "ready" || giftQuoteState.quote.refused.length === 0) return;
+    const refused = refusedGiftCodes(giftCodes, giftQuoteState.quote.refused);
+    if (refused.length === 0) return;
+    setGiftCodes((codes) => codes.filter((code) => !refused.includes(code)));
+    setGiftRefused(true);
+  }, [giftQuoteState, giftCodes]);
   const pay = async (termsJustAccepted = false) => {
     setCheckoutError(null);
     if (accountMissing) {
@@ -512,7 +548,7 @@ export function Cart() {
     ? t("checkout.payNoShipping")
     : !live
       ? t("cart.pay", { amount: money(total) })
-      : giftCodes.length > 0
+      : giftCodes.length > 0 && amountDue === 0
         ? t("checkout.giftCard.payWithCards")
         : t("checkout.continueToPayment");
   const payButton = (
@@ -560,7 +596,7 @@ export function Cart() {
   );
 
   return (
-    <div className="mx-auto max-w-[var(--max-width-content)] px-[clamp(14px,4vw,48px)] py-[clamp(32px,4vw,56px)] pb-28 lg:pb-[clamp(32px,4vw,56px)]">
+    <div className="mx-auto max-w-[var(--max-width-content)] px-[clamp(14px,4vw,48px)] py-[clamp(32px,4vw,56px)] pb-36 lg:pb-[clamp(32px,4vw,56px)]">
       {progress}
 
       <div className="grid grid-cols-1 gap-8 lg:grid-cols-[minmax(0,1fr)_360px]">
@@ -626,7 +662,7 @@ export function Cart() {
                     // campaign / promotion it belongs to (as shown in the shop window).
                     const cut = lineCut(line);
                     return (
-                      <span className="grid w-24 justify-items-end gap-0.5 text-right">
+                      <span className="ml-auto grid w-24 justify-items-end gap-0.5 text-right">
                         <strong className={cut > 0 ? "text-sm text-[var(--accent-highlight-ink)]" : "text-sm text-[var(--text-primary)]"} aria-label={t("cart.lineTotalAria")}>
                           {money(line.unitPrice * line.qty - cut)}
                         </strong>
@@ -831,9 +867,17 @@ export function Cart() {
               )}
             </div>
             {discountLines.map((discount) => (
-              <div key={discount.label} className="flex justify-between gap-3 text-[var(--status-success-fg)]">
-                <span>{discount.label}</span>
-                <span className="flex-none">−{money(discount.amount)}</span>
+              <div key={discount.label} className="flex items-center justify-between gap-3 text-[var(--status-success-fg)]">
+                <span className="flex min-w-0 flex-wrap items-center gap-x-2 gap-y-1">
+                  {discount.name && <span>{discount.name}</span>}
+                  {discount.code && (
+                    <span className="inline-flex items-center gap-1 rounded-[var(--radius-pill)] bg-[var(--status-success-bg)] px-2 py-0.5 text-xs font-semibold">
+                      <Tag size={12} aria-hidden="true" className="flex-none" />
+                      <span className="font-[family-name:var(--gt-font-mono)]">{discount.code}</span>
+                    </span>
+                  )}
+                </span>
+                <span className="flex-none font-semibold">−{money(discount.amount)}</span>
               </div>
             ))}
             {/* What the database chose, when it is not what was asked: the better offer wins. */}
@@ -862,17 +906,42 @@ export function Cart() {
                 <span>{t("checkout.promo.gift", { name: gift.variant ? `${gift.name} — ${gift.variant}` : gift.name })}</span>
               </div>
             ))}
-            <div className="flex justify-between border-t border-[var(--border-subtle)] pt-2 text-base font-bold text-[var(--text-primary)]">
-              <span>{t("cart.total")}</span>
-              <span>{money(total)}</span>
+            <div className="mt-1 flex items-baseline justify-between border-t border-[var(--border-subtle)] pt-3 font-bold text-[var(--text-primary)]">
+              <span className="text-base">{t("cart.total")}</span>
+              <span className="text-[length:var(--text-h4)]">{money(total)}</span>
             </div>
             {giftCodes.length > 0 && (
-              // Balances are never read by the browser: the database applies the cards and computes what is left to pay.
-              <p className="m-0 flex items-start gap-2 rounded-[var(--radius-md)] bg-[var(--surface-brand-wash)] px-3 py-2 text-xs text-[var(--gt-blue-700)]">
-                <Gift size={14} aria-hidden="true" className="mt-0.5 flex-none" />
-                {t("checkout.giftCard.summary", { count: giftCodes.length })}
-              </p>
+              // The database's preview (never a balance): the payment step applies the cards for real.
+              <>
+                <div className="flex justify-between gap-3 text-[var(--status-success-fg)]">
+                  <span className="flex items-center gap-1.5">
+                    <Gift size={14} aria-hidden="true" className="flex-none" />
+                    {t("checkout.payment.giftCards", { count: giftCodes.length })}
+                  </span>
+                  <span className="flex-none">
+                    {giftApplied !== null ? (
+                      `−${money(giftApplied)}`
+                    ) : giftQuoteState.status === "error" ? (
+                      <span className="text-[var(--text-muted)]">{t("checkout.giftCard.atPayment")}</span>
+                    ) : (
+                      <span className="text-[var(--text-muted)]">{t("checkout.giftCard.checking")}</span>
+                    )}
+                  </span>
+                </div>
+                {amountDue !== null && (
+                  <div className="flex justify-between text-base font-bold text-[var(--text-primary)]">
+                    <span>{t("checkout.payment.due")}</span>
+                    <span>{money(amountDue)}</span>
+                  </div>
+                )}
+              </>
             )}
+          </div>
+          {/* The pay button follows the total; codes and gift cards come after, as optional steps. */}
+          <div className="hidden gap-3 lg:grid">
+            {alerts}
+            {payButton}
+            <p className="m-0 text-xs text-[var(--text-muted)]">{t("cart.summaryFootnote")}</p>
           </div>
           {live && items !== null && items.length > 0 && (
             <PromotionCodes
@@ -893,17 +962,18 @@ export function Cart() {
               codes={giftCodes}
               onChange={(codes) => {
                 setGiftCodes(codes);
+                setGiftRefused(false);
                 if (checkoutError === "gift_card_invalid") setCheckoutError(null);
               }}
               disabled={submitting}
-              refused={checkoutError === "gift_card_invalid"}
+              refused={
+                giftQuoteState.status === "error" && giftQuoteState.error === "too_many_attempts"
+                  ? "too_many_attempts"
+                  : giftRefused || checkoutError === "gift_card_invalid"
+              }
             />
           )}
-          <div className="hidden gap-3 lg:grid">
-            {alerts}
-            {payButton}
-          </div>
-          <p className="m-0 text-xs text-[var(--text-muted)]">{t("cart.summaryFootnote")}</p>
+          <p className="m-0 text-xs text-[var(--text-muted)] lg:hidden">{t("cart.summaryFootnote")}</p>
         </aside>
       </div>
 
@@ -912,6 +982,13 @@ export function Cart() {
       <div className="fixed inset-x-0 bottom-0 z-50 border-t border-[var(--border-subtle)] bg-[var(--surface-card)] px-4 py-3 shadow-[var(--shadow-lg)] lg:hidden">
         <div className="grid gap-2">
           {alerts}
+          {/* Live, the button says "continue" without an amount: the total travels with it. */}
+          {live && (
+            <p className="m-0 flex items-baseline justify-between gap-3 text-sm text-[var(--text-body)]">
+              <span>{amountDue !== null ? t("checkout.payment.due") : t("cart.total")}</span>
+              <strong className="text-base tabular-nums text-[var(--text-primary)]">{money(amountDue ?? total)}</strong>
+            </p>
+          )}
           {payButton}
         </div>
       </div>

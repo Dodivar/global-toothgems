@@ -38,7 +38,7 @@ export function Loyalty() {
   return (
     <div>
       {/* Hero */}
-      <section className="relative grid items-end overflow-hidden bg-[var(--surface-brand)] px-[clamp(14px,4vw,48px)] pb-[clamp(40px,6vw,72px)] pt-[clamp(56px,8vw,96px)]">
+      <section className="relative grid grid-cols-1 items-end overflow-hidden bg-[var(--surface-brand)] px-[clamp(14px,4vw,48px)] pb-[clamp(40px,6vw,72px)] pt-[clamp(56px,8vw,96px)]">
         <div className="absolute inset-0 overflow-hidden border-b border-[var(--gt-blue-500)]">
           <img
             src={photo("mouth-05.jpg")}
@@ -55,7 +55,7 @@ export function Loyalty() {
             <span className="gt-accent text-[clamp(17px,1.9vw,22px)] text-[var(--gt-blue-700)]">
               {t("loyalty.heroScript")}
             </span>
-            <h1 className="text-[length:var(--text-display-2)] font-[var(--weight-black)] uppercase leading-[var(--leading-tight)] tracking-[var(--tracking-display)] text-[var(--gt-ink-900)]">
+            <h1 className="text-[length:var(--text-display-2)] max-sm:text-[clamp(28px,9vw,38px)] font-[var(--weight-black)] uppercase leading-[var(--leading-tight)] tracking-[var(--tracking-display)] text-[var(--gt-ink-900)]">
               {t("loyalty.heroTitle")}
             </h1>
             <p className="m-0 max-w-[48ch] text-[length:var(--text-body-lg)] text-[var(--gt-ink-900)]">

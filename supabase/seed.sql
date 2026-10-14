@@ -191,7 +191,8 @@ update public.product_variants set weight_grams = 280 where sku = 'ACC-CAP-009-1
 insert into public.tax_rates (country_code, tax_category, rate_bp, is_active) values
   ('FR', 'standard', 2000, true), ('DE', 'standard', 1900, true), ('IT', 'standard', 2200, true),
   ('ES', 'standard', 2100, true), ('BE', 'standard', 2100, true), ('NL', 'standard', 2100, true),
-  ('PT', 'standard', 2300, true), ('IE', 'standard', 2300, false),
+  -- IE active: migration 20261002064611 activates it, but on a fresh database it runs before this seed.
+  ('PT', 'standard', 2300, true), ('IE', 'standard', 2300, true),
   ('FR', 'books', 550, true), ('DE', 'books', 700, true)
 on conflict (country_code, tax_category) do nothing;
 

@@ -13,7 +13,7 @@ import {
   parseComposerText,
   plainText,
 } from "../../lib/communityChat/chatLogic";
-import { ChatAvatar, Popover, RoleBadge, ToolButton, focusRing } from "./primitives";
+import { ChatAvatar, Popover, ToolButton, focusRing } from "./primitives";
 
 /** A small, warm set: the composer is not an emoji keyboard. */
 const EMOJIS = ["😊", "😂", "🥰", "😍", "🙏", "👏", "🙌", "👍", "💪", "🤔", "😅", "😮", "✨", "💎", "💖", "💜", "💚", "🔥", "🌟", "🦷", "📸", "💅", "☕", "🎉"];
@@ -254,7 +254,6 @@ export function Composer() {
                     >
                       <ChatAvatar member={member} size="sm" presence />
                       <span className="font-semibold text-[var(--text-primary)]">{member.name}</span>
-                      {member.role && <RoleBadge role={member.role} />}
                       <span className="ml-auto truncate text-[12px] text-[var(--text-muted)]">@{member.handle}</span>
                     </li>
                   );

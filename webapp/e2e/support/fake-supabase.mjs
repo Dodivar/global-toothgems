@@ -17,6 +17,8 @@
 //                          course with a French and an English slug and a cover,
 //                          for the Academy's public pages (phase B)
 //   GET  /storage/v1/object/training-media/<its cover's path>: a 1×1 PNG
+//   GET  /rest/v1/member_consents: the terms accepted (`user_id=eq.`), so the
+//                          member gets past the terms gate (TermsGate, auth.tsx)
 //   POST /rest/v1/rpc/learner_courses → [] (no course held)
 //   other /rest/v1 → []
 //   GET  /__server-reads   how many REST reads each table got from the Next.js
@@ -183,6 +185,14 @@ createServer(async (req, res) => {
   if (url.pathname === "/rest/v1/profiles") {
     const single = (req.headers.accept ?? "").includes("vnd.pgrst.object");
     const rows = [PROFILE, STAFF_PROFILE].filter((row) => matches(url, row));
+    return send(200, single ? (rows[0] ?? null) : rows);
+  }
+  // Both accounts accepted the terms at sign-up (member_consents keeps the latest choice per purpose).
+  if (url.pathname === "/rest/v1/member_consents") {
+    const single = (req.headers.accept ?? "").includes("vnd.pgrst.object");
+    const rows = [PROFILE, STAFF_PROFILE]
+      .map((profile) => ({ user_id: profile.id, purpose: "terms", granted: true }))
+      .filter((row) => matches(url, row));
     return send(200, single ? (rows[0] ?? null) : rows);
   }
   if (url.pathname === "/rest/v1/products") return send(200, [PRODUCT].filter((row) => matches(url, row)));

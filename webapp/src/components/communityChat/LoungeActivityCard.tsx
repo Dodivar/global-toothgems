@@ -46,7 +46,8 @@ export function LoungeActivityCard() {
         )}
       </span>
 
-      <div className="grid min-w-0 flex-1 gap-1">
+      {/* A 14rem basis: on a phone the button wraps under the text instead of squeezing it to a word per line. */}
+      <div className="grid min-w-0 flex-[1_1_14rem] gap-1">
         <h2 id="gt-lounge-card" className="m-0 text-[length:var(--text-h4)] text-[var(--text-primary)]">
           {t("lounge.nav.dashboardTitle")}
         </h2>

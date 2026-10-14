@@ -71,20 +71,9 @@ export function Dashboard() {
       <section className="grid gap-5">
         <SectionHeader eyebrow={t("account.eyebrow")} title={t("account.greeting", { name: displayName })} />
 
-        <dl aria-label={t("account.statsLabel")} className="m-0 grid grid-cols-2 gap-3 xl:grid-cols-4">
-          <StatTile value={String(inProgress.length)} label={t("account.statCourses")} icon={BookOpen} />
-          <StatTile value={String(lessonsDone)} label={t("account.statLessons")} icon={PlayCircle} />
-          <StatTile value={String(certificates)} label={t("account.statCertificates")} icon={Award} />
-          {/* No count until the history has answered: "0" would be a wrong answer, not a pending one. */}
-          <StatTile
-            value={ordersStatus === "ready" ? String(orders.length) : "—"}
-            label={t("account.statOrders")}
-            icon={Package}
-          />
-        </dl>
-
         {/* The single most useful control on the dashboard, so it keeps the dark
-            treatment while the rest of the member area stays light. */}
+            treatment while the rest of the member area stays light, and comes
+            before the figures: on a phone it is the first thing under the greeting. */}
         {resume ? (
           <div className="grid grid-cols-1 gap-5 rounded-[var(--radius-card)] bg-[var(--surface-inverse)] p-[var(--space-5)] text-[var(--text-inverse)] sm:grid-cols-[minmax(0,220px)_minmax(0,1fr)]">
             <div className="relative aspect-video overflow-hidden rounded-[var(--radius-md)]">
@@ -141,6 +130,18 @@ export function Dashboard() {
             </Button>
           </div>
         )}
+
+        <dl aria-label={t("account.statsLabel")} className="m-0 grid grid-cols-2 gap-3 xl:grid-cols-4">
+          <StatTile value={String(inProgress.length)} label={t("account.statCourses")} icon={BookOpen} />
+          <StatTile value={String(lessonsDone)} label={t("account.statLessons")} icon={PlayCircle} />
+          <StatTile value={String(certificates)} label={t("account.statCertificates")} icon={Award} />
+          {/* No count until the history has answered: "0" would be a wrong answer, not a pending one. */}
+          <StatTile
+            value={ordersStatus === "ready" ? String(orders.length) : "—"}
+            label={t("account.statOrders")}
+            icon={Package}
+          />
+        </dl>
       </section>
 
       {reviewRequest && <ReviewRequestCard request={reviewRequest} />}

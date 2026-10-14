@@ -64,7 +64,8 @@ begin
 
   -- G2: invalid options are refused ------------------------------------------
   foreach v_txt in array array[
-    '[{"pack": 30, "ss": 6}]', '[{"pack": 20, "ss": 0}]', '[{"pack": null, "ss": null}]',
+    -- Packs are free since migration 20260928201905: 1 to 10 000 stones (30 is valid now).
+    '[{"pack": 0, "ss": 6}]', '[{"pack": 10001, "ss": 6}]', '[{"pack": 20, "ss": 0}]', '[{"pack": null, "ss": null}]',
     '[{"pack": 20, "ss": 6, "price": "1.999"}]', '[{"pack": 20, "ss": 6}, {"pack": 20, "ss": 6}]', '{"pack": 20}'
   ] loop
     v_state := null;

@@ -216,6 +216,27 @@ begin
   end;
   passed := passed || 'P1'::text;
 
+  -- Q0: the pass mark is inclusive — one of two answers right (50 %) fails against 51 %
+  -- and passes against 50 %. Inside a block that rolls itself back, so Q1 below starts
+  -- from the same unanswered check (and the same role and claims).
+  begin
+    execute 'reset role';
+    update public.course_quizzes set passing_score = 51 where module_id = m1;
+    perform set_config('role', 'authenticated', true);
+    perform set_config('request.jwt.claims', json_build_object('sub', cst, 'role', 'authenticated')::text, true);
+    v := public.submit_quiz_answers(m1, jsonb_build_object(q1, a1, q2, a4));
+    if (v ->> 'score')::int <> 50 or (v ->> 'passed')::boolean then raise exception 'FAIL Q0: 50%% against a 51%% mark %', v; end if;
+    execute 'reset role';
+    update public.course_quizzes set passing_score = 50 where module_id = m1;
+    perform set_config('role', 'authenticated', true);
+    perform set_config('request.jwt.claims', json_build_object('sub', cst, 'role', 'authenticated')::text, true);
+    v := public.submit_quiz_answers(m1, jsonb_build_object(q1, a1, q2, a4));
+    if (v ->> 'score')::int <> 50 or not (v ->> 'passed')::boolean then raise exception 'FAIL Q0: 50%% against a 50%% mark %', v; end if;
+    raise exception 'Q0 done' using errcode = 'ZX001';
+  exception when sqlstate 'ZX001' then null;
+  end;
+  passed := passed || 'Q0'::text;
+
   -- Q1: end-of-check scoring and corrections (show_answers on) --------------------------
   v := public.submit_quiz_answers(m1, jsonb_build_object(q1, a1, q2, a4));
   if (v ->> 'score')::int <> 50 or (v ->> 'passed')::boolean or (v ->> 'passing_score')::int <> 80 then
