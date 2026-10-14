@@ -38,7 +38,7 @@ Read only what the task needs (`guidelines/` below = `global-toothgems-llm-guide
 | Catalogue, cart, checkout, Stripe, orders, promotions, gift cards | `guidelines/04-ecommerce-rules.md`, `supabase/README.md` (Checkout flow, Promotions, Gift cards) |
 | Academy, courses, progress, quizzes | `guidelines/05-learning-platform-rules.md` |
 | Auth, roles, RLS, uploads, personal data | `guidelines/06-security-privacy.md`, `supabase/README.md` (Security, roles) |
-| Tests and checks | `guidelines/07-testing-and-quality.md` |
+| Tests and checks, CI | `guidelines/07-testing-and-quality.md`, `docs/testing.md` |
 | Translations, copy, SEO | `guidelines/08-content-and-localization.md` |
 | Schema, migrations, RPC, Storage, Edge Functions | `guidelines/09-supabase-workflow.md`, `supabase/README.md` (Migrations, Data model, Deliberate decisions) |
 | How to plan, report, commit | `guidelines/10-agent-workflow.md`, §14 below |
@@ -165,7 +165,9 @@ Before adding a dependency, check whether the stack already solves the need. Whe
 
 ## 13. Testing and validation
 
-From `webapp/`: `npm run typecheck`, `npm run lint`, `npm test` (Vitest), `npm run build` (`next build`, includes a type-check), `npm run test:e2e` (Playwright smoke tests, mock mode — required for routing, rendering and build changes). Database: the relevant `supabase/tests/*_validation.sql` suite(s), run on the Supabase project (they roll back). Choose checks by risk; critical flows are authentication, checkout, webhook handling, fulfilment, course access, progress and admin authorization.
+From `webapp/`: `npm run typecheck`, `npm run lint`, `npm test` (Vitest; `npm run test:coverage` enforces the coverage floor), `npm run build` (`next build`, includes a type-check), `npm run test:e2e` (Playwright smoke tests, mock mode — required for routing, rendering and build changes), `npm run test:functions` (Deno), `npm run test:e2e:live` (local Supabase stack). Database: the relevant `supabase/tests/*_validation.sql` suite(s), run on the Supabase project (they roll back) or locally with `npm run test:db` after `supabase start`. Choose checks by risk; critical flows are authentication, checkout, webhook handling, fulfilment, course access, progress and admin authorization.
+
+CI (`.github/workflows/ci.yml`, since 2026-10-14) runs all of these on every push to `dev`/`main` and every pull request, against local services only; the `CI result` job is the quality gate. A red CI on `dev` is a regression to fix before anything else. Details: `docs/testing.md`.
 
 Never claim a check passed unless it was run in this session. If a check cannot run (no `node_modules`, no database access), say so.
 

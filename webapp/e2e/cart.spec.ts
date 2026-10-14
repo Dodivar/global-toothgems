@@ -45,7 +45,10 @@ test("adding a product opens the notice under the cart icon: undo, outside click
   // A click anywhere else closes it, and keeps the product in the cart.
   await add.click();
   await expect(notice).toBeVisible();
-  await page.getByRole("heading", { level: 1 }).first().click();
+  // The page's left gutter at the bottom of the window: blank, and never under the sticky
+  // header the notice hangs from (the heading can be, once the page has scrolled).
+  const viewport = page.viewportSize()!;
+  await page.mouse.click(2, viewport.height - 2);
   await expect(notice).toHaveCount(0);
   await expect(cartButton).not.toHaveAttribute("aria-label", before!);
 

@@ -234,6 +234,7 @@ begin
                   and ((i.track_inventory and i.quantity_on_hand - i.quantity_reserved >= 1)
                        or (not i.track_inventory and i.availability <> 'out_of_stock')))
    order by p.created_at limit 1;
+  if v_gift is null then raise exception 'FAIL setup PL10: no simple in-stock product to give (run seed.sql)'; end if;
   if v_gift is not null then
     -- the earlier automatic / code promotions must not compete with the gift one
     update public.promotions set lifecycle = 'archived' where lifecycle = 'live';

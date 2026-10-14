@@ -98,6 +98,14 @@ begin
   select p.id into v_active from public.products p
     join public.studio_gem_appearances a on a.product_id = p.id and a.variant_id is null
    where p.status = 'active' limit 1;
+  -- On a fresh database the migration's backfill ran before seed.sql: draw one active product here.
+  if v_active is null then
+    select p.id into v_active from public.products p
+     where p.status = 'active'
+       and not exists (select 1 from public.studio_gem_appearances a where a.product_id = p.id)
+     limit 1;
+    insert into public.studio_gem_appearances (product_id, shape, material, color) values (v_active, 'round', 'crystal', '#ffffff');
+  end if;
   select p.id into v_archived from public.products p
    where p.status = 'archived'
      and not exists (select 1 from public.studio_gem_appearances a where a.product_id = p.id)

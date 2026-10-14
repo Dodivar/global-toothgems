@@ -16,7 +16,9 @@ const PUBLIC_ROUTES: { path: string; heading: RegExp }[] = [
   { path: "/connexion", heading: /Connexion/ },
   { path: "/inscription", heading: /Créez votre compte Global Toothgems/ },
   { path: "/mot-de-passe-oublie", heading: /Mot de passe oublié/ },
-  { path: "/reinitialiser-mot-de-passe", heading: /Choisissez un nouveau mot de passe/ },
+  // The page checks the link first (mock tokens: lib/accountSecurity.ts LINK_TOKENS), then settles.
+  { path: "/reinitialiser-mot-de-passe?jeton=demo-valide", heading: /Choisissez un nouveau mot de passe/ },
+  { path: "/reinitialiser-mot-de-passe", heading: /Ce lien ne fonctionne pas/ },
   { path: "/verifier-email", heading: /Vérification de votre e-mail/ },
   { path: "/confirmation-compte", heading: /Ce lien n’est plus valable/ },
   { path: "/fr/fidelite", heading: /Vos récompenses/ },
@@ -46,7 +48,7 @@ for (const { path, heading } of PUBLIC_ROUTES) {
   test(`${path} renders without errors`, async ({ page, problems }) => {
     await open(page, path);
     await expect(page.getByRole("heading", { level: 1 }).first()).toHaveText(heading);
-    expect(new URL(page.url()).pathname).toBe(path);
+    expect(new URL(page.url()).pathname).toBe(new URL(path, page.url()).pathname);
     expect(problems).toEqual([]);
   });
 }

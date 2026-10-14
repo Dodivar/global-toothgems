@@ -69,6 +69,11 @@ begin
   -- EM3 shipping ---------------------------------------------------------------
   insert into public.orders (customer_email, billing_address, currency, subtotal_amount, total_amount, payment_status, status, locale)
     values ('t@example.com', billing, 'EUR', 10, 10, 'paid', 'processing', 'en') returning id into v_order;
+  -- One line, as every real order has: the invoice issued when the order is paid again below
+  -- (EM3) credits refunds against it (decision 86).
+  insert into public.order_items (order_id, product_id, product_name, unit_price, quantity, discount_amount, tax_rate_bp, tax_amount)
+    select v_order, p.id, p.name, 10, 1, 0, 2000, 1.67 from public.products p where p.slug = 'gel-de-suivi';
+  if not found then raise exception 'FAIL setup: run seed.sql'; end if;
   insert into public.payments (order_id, status, amount, currency) values (v_order, 'succeeded', 10, 'EUR') returning id into v_pay;
   insert into public.shipments (order_id, status, carrier, tracking_number, tracking_url, shipped_at)
     values (v_order, 'shipped', 'Colissimo', 'TRK123', 'https://track.example/TRK123', now()) returning id into v_ship;
@@ -122,23 +127,23 @@ begin
   passed := array_append(passed, 'EM4 refund: succeeded refunds not yet logged');
 
   -- EM5 course enrolment ---------------------------------------------------------
-  select id into v_user from public.profiles limit 1;
-  select id into v_course from public.courses limit 1;
-  if v_user is not null and v_course is not null then
-    update public.orders set user_id = v_user where id = v_order;
-    insert into public.course_entitlements (user_id, course_id, source, order_id) values (v_user, v_course, 'purchase', v_order)
-      returning id into v_ent;
-    select * into r from public.pending_course_enrolment_emails(v_order, 10);
-    if r.entitlement_id <> v_ent or r.course_name is null or r.first_name <> 'Léa' then raise exception 'FAIL EM5: wrong row (%)', r; end if;
-    select count(*) into n from public.pending_course_enrolment_emails(gen_random_uuid(), 10);
-    if n <> 0 then raise exception 'FAIL EM5: another order''s entitlement is listed'; end if;
-    update public.course_entitlements set revoked_at = now() where id = v_ent;
-    select count(*) into n from public.pending_course_enrolment_emails(v_order, 10);
-    if n <> 0 then raise exception 'FAIL EM5: a revoked entitlement is listed'; end if;
-    passed := array_append(passed, 'EM5 enrolment: purchase entitlements of paid orders, not revoked');
-  else
-    passed := array_append(passed, 'EM5 skipped (no profile or course in the database)');
-  end if;
+  -- Its own member and course (draft), so the check runs on a fresh database too.
+  v_user := gen_random_uuid();
+  insert into auth.users (id, aud, role, email, created_at, updated_at)
+    values (v_user, 'authenticated', 'authenticated', 'em5.test@example.invalid', now(), now());
+  insert into public.courses (slug, title, status, published_at) values ('em5-test-course', 'Cours EM5', 'draft', null)
+    returning id into v_course;
+  update public.orders set user_id = v_user where id = v_order;
+  insert into public.course_entitlements (user_id, course_id, source, order_id) values (v_user, v_course, 'purchase', v_order)
+    returning id into v_ent;
+  select * into r from public.pending_course_enrolment_emails(v_order, 10);
+  if r.entitlement_id <> v_ent or r.course_name is null or r.first_name <> 'Léa' then raise exception 'FAIL EM5: wrong row (%)', r; end if;
+  select count(*) into n from public.pending_course_enrolment_emails(gen_random_uuid(), 10);
+  if n <> 0 then raise exception 'FAIL EM5: another order''s entitlement is listed'; end if;
+  update public.course_entitlements set revoked_at = now() where id = v_ent;
+  select count(*) into n from public.pending_course_enrolment_emails(v_order, 10);
+  if n <> 0 then raise exception 'FAIL EM5: a revoked entitlement is listed'; end if;
+  passed := array_append(passed, 'EM5 enrolment: purchase entitlements of paid orders, not revoked');
 
   -- EM6 privileges -------------------------------------------------------------------
   select count(*) into n from information_schema.routine_privileges

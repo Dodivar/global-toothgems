@@ -60,18 +60,19 @@ begin
   end if;
   perform set_config('request.jwt.claims', json_build_object('sub', mgr, 'role', 'authenticated')::text, true);
   select count(*) into v_cnt from public.my_permissions();
-  if v_cnt <> 10 or not private.has_permission('manage_promotions') or private.has_permission('manage_settings') then
+  -- 11 since migration 20260924210824 (manage_content granted to manager and admin).
+  if v_cnt <> 11 or not private.has_permission('manage_promotions') or private.has_permission('manage_settings') then
     raise exception 'FAIL R1: manager permissions (%)', v_cnt;
   end if;
   perform set_config('request.jwt.claims', json_build_object('sub', adm, 'role', 'authenticated')::text, true);
   select count(*) into v_cnt from public.my_permissions();
-  if v_cnt <> 11 then raise exception 'FAIL R1: admin permissions (%)', v_cnt; end if;
+  if v_cnt <> 12 then raise exception 'FAIL R1: admin permissions (%)', v_cnt; end if;
   perform set_config('request.jwt.claims', json_build_object('sub', alice, 'role', 'authenticated')::text, true);
   select count(*) into v_cnt from public.my_permissions();
   if v_cnt <> 0 or private.is_staff() then raise exception 'FAIL R1: customer has permissions'; end if;
   select count(*) into v_cnt from public.role_permissions;
   if v_cnt <> 0 then raise exception 'FAIL R1: customer reads the permission matrix'; end if;
-  passed := array_append(passed, 'R1 viewer 3 / manager 10 / admin 11 permissions, customers none');
+  passed := array_append(passed, 'R1 viewer 3 / manager 11 / admin 12 permissions, customers none');
 
   -- ===========================================================================
   -- R2 read-only staff read the back office and change nothing
@@ -430,14 +431,8 @@ begin
   insert into public.loyalty_cards (user_id, status, stamps_required, reward_percent, stamps_count, completed_at)
   values (alice, 'completed', 5, 10, 5, now());
   update public.promotions set lifecycle = 'live' where id = pr_code;
-  v_state := null;
-  begin
-    perform public.create_order(alice, 'alice6.test@example.invalid',
-              jsonb_build_array(jsonb_build_object('product_id', p_kit, 'quantity', 1)), fr, fr, r_std,
-              p_promotion_codes => array['WELCOME15'], p_use_loyalty_reward => true);
-  exception when others then v_state := sqlstate;
-  end;
-  if v_state is distinct from '22023' then raise exception 'FAIL P10: reward + code accepted (%)', v_state; end if;
+  -- Reward + typed code: refused until migration 20261008174607, which lets the better option win
+  -- (asserted by promotions_live_validation.sql, PL11).
   update public.promotions set lifecycle = 'live' where id = pr_pct;       -- an automatic promo is running too
   o := public.create_order(alice, 'alice6.test@example.invalid',
          jsonb_build_array(jsonb_build_object('product_id', p_kit, 'quantity', 1)), fr, fr, r_std,
@@ -460,7 +455,7 @@ begin
   select count(*) into v_cnt from public.loyalty_cards where user_id = alice and status = 'completed' and redeemed_order_id is null;
   if v_cnt <> 1 then raise exception 'FAIL P10: reward not given back after cancellation'; end if;
   update public.promotions set lifecycle = 'paused' where id in (pr_pct, pr_code);
-  passed := array_append(passed, 'P10 loyalty reward: only on request, alone, reserved on the order, back when cancelled');
+  passed := array_append(passed, 'P10 loyalty reward: only on request, reserved on the order, back when cancelled');
 
   -- ===========================================================================
   -- P11 publication rules and code rules

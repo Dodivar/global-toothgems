@@ -42,7 +42,8 @@ declare
   v_cnt   int;
   passed  text[] := '{}';
 begin
-  select id into p from public.products where status = 'active' order by created_at limit 1;
+  -- A physical product: on a fresh database the oldest active one is the gift card (created by a migration).
+  select id into p from public.products where status = 'active' and product_type = 'physical' order by created_at limit 1;
   if p is null then raise exception 'FAIL setup: no active product'; end if;
 
   insert into auth.users (id, aud, role, email, created_at, updated_at) values

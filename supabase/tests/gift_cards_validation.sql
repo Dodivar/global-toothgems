@@ -68,10 +68,16 @@ begin
   -- GC1 customer ----------------------------------------------------------------
   perform set_config('role', 'authenticated', true);
   perform set_config('request.jwt.claims', json_build_object('sub', alice, 'role', 'authenticated')::text, true);
+  -- Since migration 20261007181011 a buyer reads the cards of their own purchases (to draw them on the
+  -- order page), and nothing else: not the cards issued to others, never the code.
   select count(*) into v_cnt from public.gift_card_overview;
-  if v_cnt <> 0 then raise exception 'FAIL GC1: a customer reads % cards in the overview', v_cnt; end if;
+  if v_cnt <> 1 then raise exception 'FAIL GC1: a customer reads % cards in the overview', v_cnt; end if;
   select count(*) into v_cnt from public.gift_cards;
-  if v_cnt <> 0 then raise exception 'FAIL GC1: a customer reads % cards', v_cnt; end if;
+  if v_cnt <> 1 then raise exception 'FAIL GC1: a customer reads % cards', v_cnt; end if;
+  select count(*) into v_cnt from public.gift_cards where purchaser_user_id is distinct from alice or order_id is distinct from o.id;
+  if v_cnt <> 0 then raise exception 'FAIL GC1: a customer reads % cards that are not their purchase', v_cnt; end if;
+  select count(*) into v_cnt from public.gift_cards where id in (v_card, v_expired, v_cancelled, v_empty);
+  if v_cnt <> 0 then raise exception 'FAIL GC1: a customer reads % cards issued to others', v_cnt; end if;
   select count(*) into v_cnt from public.gift_card_transactions;
   if v_cnt <> 0 then raise exception 'FAIL GC1: a customer reads % ledger lines', v_cnt; end if;
   v_state := null;
@@ -100,7 +106,7 @@ begin
   exception when others then v_state := sqlstate;
   end;
   if v_state is distinct from '42501' then raise exception 'FAIL GC1: a visitor reads the overview (%)', v_state; end if;
-  passed := array_append(passed, 'GC1 customers and visitors read no card, no ledger, no code, no balance');
+  passed := array_append(passed, 'GC1 customers read only the cards they bought (no code, no ledger, no balance), visitors nothing');
 
   -- GC2 read-only staff -----------------------------------------------------------
   perform set_config('role', 'authenticated', true);
