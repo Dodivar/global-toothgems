@@ -12,7 +12,10 @@
 --     request is pending, once its e-mail is sent it is closed (notified_at) and
 --     never pending again, even if the stock moves again;
 --   * after a notification the same address can ask again (a new request);
---   * the throttle stops an 11th new request in an hour from the same address.
+--   * the throttle stops an 11th new request in an hour from the same address;
+--   * admin_back_in_stock_requests(): a visitor, a customer and a `viewer` are
+--     refused; a manager reads the requests with address, stock and e-mail state
+--     (migration 20261014150008_admin_back_in_stock_requests).
 --
 -- ONE transaction, ALWAYS rolled back by raising `ALL BACK IN STOCK TESTS PASSED`
 -- (or `FAIL: ...`).
@@ -21,6 +24,8 @@
 do $$
 declare
   m1     uuid := '00000000-0000-4000-a000-000000330001';
+  viewer uuid := '00000000-0000-4000-a000-000000330002';
+  mgr    uuid := '00000000-0000-4000-a000-000000330003';
   p_out  uuid;
   p_in   uuid;
   p_var  uuid;
@@ -45,7 +50,11 @@ begin
   insert into public.product_variants (product_id, name) values (p_var, 'Bleu') returning id into v_in;
   insert into public.inventory_items (variant_id, quantity_on_hand) values (v_out, 0), (v_in, 20);
   insert into auth.users (id, aud, role, email, created_at, updated_at)
-  values (m1, 'authenticated', 'authenticated', 'bis-member.test@example.invalid', now(), now());
+  values (m1, 'authenticated', 'authenticated', 'bis-member.test@example.invalid', now(), now()),
+         (viewer, 'authenticated', 'authenticated', 'bis-viewer.test@example.invalid', now(), now()),
+         (mgr, 'authenticated', 'authenticated', 'bis-manager.test@example.invalid', now(), now());
+  update public.profiles set role = 'viewer' where id = viewer;
+  update public.profiles set role = 'manager' where id = mgr;
 
   -- B1: a visitor asks for an out-of-stock product; refusals
   perform set_config('role', 'anon', true);
@@ -165,6 +174,44 @@ begin
   if r ->> 'error' <> 'too_many_requests' then raise exception 'FAIL B8: 11th request %', r; end if;
   execute 'reset role';
   passed := passed || 'B8'::text;
+
+  -- B9: staff reading — visitor, customer and viewer refused; a manager reads
+  perform set_config('role', 'anon', true);
+  perform set_config('request.jwt.claims', '{"role":"anon"}', true);
+  v_ok := false;
+  begin
+    perform public.admin_back_in_stock_requests(10);
+  exception when insufficient_privilege then v_ok := true;
+  end;
+  if not v_ok then raise exception 'FAIL B9: a visitor reads the requests'; end if;
+  perform set_config('role', 'authenticated', true);
+  foreach v_id in array array[m1, viewer] loop
+    perform set_config('request.jwt.claims', json_build_object('sub', v_id, 'role', 'authenticated')::text, true);
+    v_ok := false;
+    begin
+      perform public.admin_back_in_stock_requests(10);
+    exception when insufficient_privilege then v_ok := true;
+    end;
+    if not v_ok then raise exception 'FAIL B9: % reads the requests', v_id; end if;
+  end loop;
+  perform set_config('request.jwt.claims', json_build_object('sub', mgr, 'role', 'authenticated')::text, true);
+  select count(*) into v_cnt from public.admin_back_in_stock_requests(5000) a where a.product_id in (p_out, p_var);
+  if v_cnt <> 11 then raise exception 'FAIL B9: manager reads % requests (expected 11)', v_cnt; end if;
+  if not exists (select 1 from public.admin_back_in_stock_requests(5000) a
+                  where a.product_id = p_out and a.email = 'guest.test@example.invalid' and a.notified_at is not null
+                    and a.email_status = 'sent' and a.email_attempts = 1 and a.stock_status = 'out_of_stock') then
+    raise exception 'FAIL B9: notified request without its e-mail state';
+  end if;
+  if not exists (select 1 from public.admin_back_in_stock_requests(5000) a
+                  where a.product_id = p_out and a.user_id = m1 and a.email_status is null and a.notified_at is null) then
+    raise exception 'FAIL B9: waiting member request missing';
+  end if;
+  if not exists (select 1 from public.admin_back_in_stock_requests(5000) a
+                  where a.variant_id = v_out and a.variant_name = 'Rouge' and a.product_name = 'Test options') then
+    raise exception 'FAIL B9: option request without its names';
+  end if;
+  execute 'reset role';
+  passed := passed || 'B9'::text;
 
   raise exception 'ALL BACK IN STOCK TESTS PASSED: %', array_to_string(passed, ' ');
 end;

@@ -854,6 +854,17 @@ Live on Supabase; without the Supabase variables the workspace says the base is 
 - **Not offered (no server side yet):** export, e-mail sending (the e-mail action opens the operator's own mail
   client), creating a customer account.
 
+## Back-in-stock alerts (`/admin/alertes-stock`)
+
+Under Catalogue in the rail. Read-only view of the requests customers make on sold-out product pages (decision 90
+in `supabase/README.md`), through `lib/adminBackInStock.ts` → `admin_back_in_stock_requests()` (`manage_products`;
+a refusal shows "Restricted access"); states and figures in `lib/adminBackInStockMapping.ts` (tested): *waiting*
+(still sold out), *back* (leaves at the next sweep, ≤ 5 min), *off sale* (product no longer active: nothing
+leaves), *send failed* (5 failed attempts) and *notified*. The page shows the four counts, the most awaited
+products (what to restock), and the list with a view (to send / sent / all) and a search on product, option and
+address. Products link to their edit page, members to their customer file. Without Supabase: an "unavailable"
+state, never invented requests.
+
 ## Statistics on Supabase (`/admin/statistiques`)
 
 - **One boundary**: `lib/adminAnalytics.ts` (URL filters, reads, controller); pure mapping in `lib/adminAnalyticsMapping.ts` (periods in the shop's time zone, `analytics_snapshot()` JSON → `AnalyticsSnapshot`, insights, CSV) and `lib/adminAnalyticsTraining.ts` (Academy panel), both unit-tested. Shapes and vocabulary: `data/adminAnalytics.ts`.

@@ -8108,6 +8108,25 @@ export type Database = {
           isSetofReturn: false
         }
       }
+      admin_back_in_stock_requests: {
+        Args: { p_limit?: number }
+        Returns: {
+          created_at: string
+          email: string
+          email_attempts: number
+          email_status: string
+          id: string
+          locale: string
+          notified_at: string
+          product_id: string
+          product_name: string
+          product_status: string
+          stock_status: string
+          user_id: string
+          variant_id: string
+          variant_name: string
+        }[]
+      }
       admin_course_entitlements: {
         Args: { p_course_id: string }
         Returns: {

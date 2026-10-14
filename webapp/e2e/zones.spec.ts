@@ -129,6 +129,7 @@ const STAFF_SCREENS: { path: string; heading: RegExp }[] = [
   { path: "/admin/statistiques", heading: /^Statistiques$/ },
   { path: "/admin/produits", heading: /^Produits$/ },
   { path: "/admin/categories", heading: /^Catégories$/ },
+  { path: "/admin/alertes-stock", heading: /^Alertes retour en stock$/ },
   { path: "/admin/promotions", heading: /^Promotions$/ },
   { path: "/admin/avis", heading: /^Avis$/ },
   { path: "/admin/parametres", heading: /^Paramètres$/ },
