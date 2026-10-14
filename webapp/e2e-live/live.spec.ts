@@ -17,7 +17,11 @@ import { dismissCookieBanner, expect, open, signIn, test } from "./fixtures";
 
 /** The demo member's orders, as the database has them. */
 async function demoOrders() {
-  const { data, error } = await serviceClient().from("orders").select("id, order_number, status").eq("user_id", DEMO_MEMBER_ID).order("created_at");
+  const { data, error } = await serviceClient()
+    .from("orders")
+    .select("id, order_number, status, payment_status")
+    .eq("user_id", DEMO_MEMBER_ID)
+    .order("created_at");
   if (error) throw new Error(error.message);
   expect(data.length, "seed_demo_member.sql creates four orders").toBe(4);
   return data;
@@ -54,13 +58,15 @@ test.describe("storefront, read from the database", () => {
 
 test.describe("sign-in and sessions", () => {
   test("a wrong password is refused and opens no session", async ({ page, problems }) => {
+    const refused = page.waitForResponse((r) => r.url().includes("/auth/v1/token") && r.request().method() === "POST");
     await signIn(page, ACCOUNTS.customer, "/connexion", "Not-The-Password-1!");
+    expect((await refused).status()).toBe(400);
     await expect(page.getByText("E-mail ou mot de passe incorrect")).toBeVisible();
     await expect(page).toHaveURL((url) => url.pathname === "/connexion");
     const response = await page.request.get("/compte", { maxRedirects: 0 });
     expect(response.status()).toBe(307);
-    // The failed sign-in is reported by Supabase Auth as a 400 on its own origin, not as an app error.
-    expect(problems).toEqual([]);
+    // Supabase Auth's refusal is the only failed request, and the app raised no error of its own.
+    expect(problems).toEqual(["Supabase HTTP 400: /auth/v1/token"]);
   });
 
   test("a customer signs in, reaches the member area, then signs out", async ({ page, problems }) => {
@@ -118,13 +124,18 @@ test.describe("back office access", () => {
 });
 
 test.describe("orders belong to their customer", () => {
-  test("the demo member sees their own orders", async ({ page, problems }) => {
+  test("the demo member sees their paid orders, not the unpaid one", async ({ page, problems }) => {
     const orders = await demoOrders();
+    // The history lists paid (or refunded) orders only (CUSTOMER_VISIBLE_PAYMENT_STATUSES, lib/orderMapping.ts).
+    const visible = orders.filter((o) => ["paid", "refunded", "partially_refunded"].includes(o.payment_status));
+    const hidden = orders.filter((o) => !visible.includes(o));
+    expect(visible.length, "seed_demo_member.sql pays three of its four orders").toBe(3);
     await signIn(page, ACCOUNTS.demo, "/connexion?suite=%2Fcompte%2Fcommandes");
     await expect(page).toHaveURL((url) => url.pathname === "/compte/commandes");
-    for (const order of orders) await expect(page.getByText(order.order_number).first()).toBeVisible();
+    for (const order of visible) await expect(page.getByText(order.order_number).first()).toBeVisible();
+    for (const order of hidden) await expect(page.getByText(order.order_number)).toHaveCount(0);
 
-    await open(page, `/compte/commandes/${orders[0].order_number}`);
+    await open(page, `/compte/commandes/${visible[0].order_number}`);
     await expect(page.getByRole("heading", { level: 1 })).not.toHaveText("Commande introuvable");
     expect(problems).toEqual([]);
   });

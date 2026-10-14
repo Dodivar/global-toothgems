@@ -1,4 +1,5 @@
 import { test as base, expect, type Page } from "@playwright/test";
+import { installReactCommitCounter, waitForReactSettled } from "../e2e/support/react-settled";
 import { liveEnv, testPassword } from "./env";
 
 /**
@@ -8,6 +9,10 @@ import { liveEnv, testPassword } from "./env";
  * except the local Supabase stack, which is the point of this suite.
  */
 export const test = base.extend<{ problems: string[] }>({
+  page: async ({ page }, provide) => {
+    await installReactCommitCounter(page);
+    await provide(page);
+  },
   problems: async ({ page, baseURL }, provide) => {
     const origin = new URL(baseURL!).origin;
     const supabase = new URL(liveEnv().url).origin;
@@ -28,12 +33,19 @@ export const test = base.extend<{ problems: string[] }>({
       (route) => route.fulfill({ status: 200, body: "", contentType: "text/javascript" }),
     );
     page.on("console", (message) => {
-      if (message.type() === "error") problems.push(`console: ${message.text()}`);
+      if (message.type() !== "error") return;
+      // A refused Supabase call is reported below with its status and path; the browser's own
+      // "Failed to load resource" line for it would only repeat it.
+      if (message.text().startsWith("Failed to load resource") && message.location().url.startsWith(supabase)) return;
+      problems.push(`console: ${message.text()}`);
     });
     page.on("pageerror", (error) => problems.push(`exception: ${error.message}`));
     page.on("response", (response) => {
       if (response.url().startsWith(origin) && response.status() >= 400) {
         problems.push(`HTTP ${response.status()}: ${response.url()}`);
+      }
+      if (response.url().startsWith(supabase) && response.status() >= 400) {
+        problems.push(`Supabase HTTP ${response.status()}: ${new URL(response.url()).pathname}`);
       }
     });
 
@@ -47,6 +59,7 @@ export async function open(page: Page, path: string) {
   await page.goto(path);
   await expect(page.locator("main#main")).toBeVisible();
   await page.waitForLoadState("networkidle");
+  await waitForReactSettled(page);
 }
 
 export async function dismissCookieBanner(page: Page) {
@@ -58,6 +71,7 @@ export async function dismissCookieBanner(page: Page) {
 export async function signIn(page: Page, email: string, path = "/connexion", password = testPassword()) {
   await page.goto(path);
   await page.waitForLoadState("networkidle");
+  await waitForReactSettled(page);
   await dismissCookieBanner(page);
   // The header has its own "Se connecter" button (type=button): the form's is the submit one.
   const submit = page.getByRole("button", { name: /^se connecter$/i }).and(page.locator('[type="submit"]'));

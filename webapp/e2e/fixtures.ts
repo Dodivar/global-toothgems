@@ -1,4 +1,5 @@
 import { test as base, expect, type Page } from "@playwright/test";
+import { installReactCommitCounter, waitForReactSettled } from "./support/react-settled";
 
 /**
  * A page that records what a smoke test must never see: console errors,
@@ -7,6 +8,11 @@ import { test as base, expect, type Page } from "@playwright/test";
  * body so the tests neither depend on the network nor report its failures.
  */
 export const test = base.extend<{ problems: string[] }>({
+  // Every page counts React's commits, so `open()` can wait for hydration to settle.
+  page: async ({ page }, provide) => {
+    await installReactCommitCounter(page);
+    await provide(page);
+  },
   // The second argument is Playwright's `use`, renamed so lint does not take it for a React hook.
   problems: async ({ page, baseURL }, provide) => {
     const origin = new URL(baseURL!).origin;
@@ -37,11 +43,12 @@ export const test = base.extend<{ problems: string[] }>({
 
 export { expect };
 
-/** Opens a path and waits until the app has rendered its main landmark. */
+/** Opens a path and waits until the app has rendered its main landmark and React has finished hydrating it. */
 export async function open(page: Page, path: string) {
   await page.goto(path);
   await expect(page.locator("main#main")).toBeVisible();
   await page.waitForLoadState("networkidle");
+  await waitForReactSettled(page);
 }
 
 /** The cookie banner covers the bottom of the screen on every first visit. */

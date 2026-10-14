@@ -58,6 +58,7 @@ Then `supabase status -o env` gives the values to export as `E2E_SUPABASE_URL`, 
 - Playwright keeps a trace for every failed test: `npx playwright show-trace webapp/test-results/<test>/trace.zip` (live suite: `test-results-live/`, plus an HTML report in `playwright-report-live/`). In CI they are uploaded as the `e2e-traces` / `e2e-live-report` artifacts of the run.
 - `npx playwright test e2e/cart.spec.ts --headed --debug` steps through one file.
 - A smoke test fails on any console error, uncaught exception or failed same-origin request: the assertion message lists them.
+- `open()` returns only once React has hydrated the page and stopped committing for 100 ms (`e2e/support/react-settled.ts`, a minimal React DevTools hook counting commits). Interact through `open()`, never right after `page.goto()`: on a loaded CI runner a click can land on a page still hydrating, and the post-hydration render undoes it. Never add a fixed `waitForTimeout`.
 - A SQL suite failure prints the last lines psql wrote, starting with the `FAIL Tnn: …` it raised.
 - Coverage: `coverage/index.html` shows each file's uncovered lines. The floor is in `webapp/vitest.config.ts`.
 
