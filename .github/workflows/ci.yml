@@ -97,7 +97,7 @@ jobs:
       # --node-modules-dir=none: ignore the repository root's package.json, as the deployed functions do.
       - run: deno test --node-modules-dir=none
       - name: Type-check every deployed entry point
-        run: deno check --node-modules-dir=none */index.ts
+        run: deno check --node-modules-dir=none "*/index.ts"
 
   database:
     name: Database (migrations + SQL suites)
@@ -202,7 +202,8 @@ jobs:
         run: |
           docker exec -i supabase_db_global-toothgems psql -U postgres -d postgres -v ON_ERROR_STOP=1 < supabase/seed_demo_member.sql
           docker exec -i supabase_db_global-toothgems psql -U postgres -d postgres -v ON_ERROR_STOP=1 -c "do \$\$ begin if exists (select 1 from vault.secrets where name = 'email_internal_secret') then raise exception 'the local stack holds an e-mail secret'; end if; end \$\$;"
-      # The local stack's well-known development keys, read from the CLI (masked anyway).
+      # The local stack's development keys: public defaults of the Supabase CLI, which
+      # `supabase start` prints anyway; masked here only to keep them out of later steps' logs.
       - name: Point the live suite at the local stack
         working-directory: .
         run: |

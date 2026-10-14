@@ -83,12 +83,26 @@ Retries: one retry in CI for the Playwright suites only (a test that passes on r
 
 ### Branch protection (repository settings — to be set by the maintainer)
 
-Settings → Rules → Rulesets → New branch ruleset, target `main` (and `dev` if pull requests are used there):
+Settings → Rules → Rulesets → New branch ruleset, target **`main` only**:
 
 - **Require status checks to pass**: add `CI result` only (it already depends on every job). Tick "Require branches to be up to date before merging".
 - **Require a pull request before merging**; **Block force pushes**; **Restrict deletions**.
 
+Do **not** add required checks or a pull-request rule on `dev`: agents and the `Stop` hook push to it directly (AGENTS.md §14), and such a rule would refuse every push. CI still runs on each push to `dev`; a red run there is fixed before anything else, and the `dev` → `main` pull request cannot be merged while `CI result` is red.
+
 Until this is set, a red CI does not block a merge.
+
+## What covers what
+
+| Area | Unit (Vitest) | Database (SQL suites) | Edge Functions (Deno) | E2E |
+| --- | --- | --- | --- | --- |
+| Storefront: home, listing, product page, search, filters, 404 | `storefrontFilters`, `siteSearch`, `productFilters`, `catalog/mapping` | `mvp`, `iteration9` (recommendations), `iteration13` (gem colours), `iteration15`–`16` (variants, families), `iteration21` (Academy public pages) | — | every public route (`public-routes`, `locale`, `server-rendering`); live: listing and product page from Postgres, draft/unknown slugs 404 |
+| Accounts: sign-up, sign-in, sign-out, protected routes, recovery | `registration*`, `authRoutes`, `authRedirect`, `privateSegments` | `mvp` (no role from metadata), `iteration12` (sign-up), `iteration5` (member data), `iteration17` (wishlist), `google_signin` | `invite-staff-member` | mock sign-in/registration (`auth`); proxy, `/auth/confirm`, forged cookie (`auth-server`); live: real sign-in, wrong password, sign-out, registration persisted, duplicate sign-up |
+| Cart, pricing, promotions, gift cards, checkout, payment | `cartLines`, `basketQuote`, `giftCardQuote`, `shippingRates`, `promotionRules`, `money` | `mvp`, `iteration2` (checkout, stock, VAT), `iteration3` (shipments, refunds), `iteration4` + `gift_cards` + `gift_card_quote`, `iteration6` + `promotions_live` (promotions, loyalty), `iteration19` (Stripe, expiry), `iteration23` (course sales), `invoices`, `shipping_refunds`, `email` | `create-checkout-session`, `stripe-webhook` (signatures, replays, idempotency), `refund-order` | mock cart, notice, demo payment, Stripe return page grants nothing (`cart`); live: cart priced from the database |
+| Orders: history, detail, another customer's order | `orderMapping`, `adminOrderMapping` | `iteration18`, `admin_orders` | — | mock history (`orders`); live: paid orders listed, unpaid hidden, another customer gets "not found" in the UI **and** nothing from the API |
+| Academy: catalogue, access, progress, quizzes, certificates | `learning`, `quizScoring` (pass mark boundaries), `learnerCourse`, `coursePricing`, `certificate/*` | `iteration20` (authoring), `iteration22` (access, server-side scoring incl. the inclusive pass mark, gating, completion, certificates), `iteration23` (sales, access granted on payment) | — | learner zones render (`zones`, mock) |
+| Members' Lounge | `communityChat/*` | `lounge` | — | lounge zone renders (`zones`, mock) |
+| Back office: access, products, customers, orders, settings | `admin*Mapping`, `staffProfile` | `iteration6` (permission matrix), `iteration8` (statistics), `iteration10`–`11` (products), `admin_customers`, `admin_orders`, `admin_users`, `settings_workspace` | `invite-staff-member`, `refund-order` | every back-office screen renders (`zones`, mock); live: customer refused by the server, staff signs in and reads orders, customer refused from `staff_directory()` and from raising their own role |
 
 ## Coverage policy
 
@@ -104,5 +118,6 @@ The coverage of `src/lib/**/*.ts` (domain logic; screens and components are cove
 ## Known gaps
 
 - Payment is not exercised end to end: CI has no Stripe test keys and the Edge Functions are not served in the live stack. `create_order()` / `mark_order_paid()` / refunds are proven by the SQL suites, the webhook by `deno test`.
-- No live E2E yet for the Academy learner journey (needs a course and an entitlement seeded), the Members' Lounge, or back-office edits (product creation reflected on the storefront).
+- No live E2E yet for the Academy learner journey (needs a course and an entitlement seeded), the Members' Lounge, or back-office edits (product creation reflected on the storefront); those rules are proven by the SQL suites above.
+- Checkout submission is not exercised in the live suite: the Edge Functions are not served by the CI stack (and would need Stripe test keys).
 - Visitor uploads, e-mail delivery and Realtime are not exercised against a running service.

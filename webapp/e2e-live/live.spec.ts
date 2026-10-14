@@ -56,6 +56,30 @@ test.describe("storefront, read from the database", () => {
   });
 });
 
+test.describe("cart, priced from the database", () => {
+  test("a product added twice costs twice its database price, and can be removed", async ({ page, problems }) => {
+    const { data: product } = await serviceClient().from("products").select("price").eq("slug", "etoile-cristal").single();
+    expect(Number(product?.price)).toBe(32);
+
+    await open(page, "/fr/boutique/etoile-cristal");
+    await dismissCookieBanner(page);
+    await page.getByRole("button", { name: /ajouter au panier/i }).first().click();
+    await page.locator(".gt-cart-notice").getByRole("link", { name: /voir le panier/i }).click();
+    await expect(page).toHaveURL((url) => url.pathname === "/fr/panier");
+    await expect(page.getByRole("heading", { name: "Votre panier" })).toBeVisible();
+
+    const line = page.getByRole("listitem").filter({ hasText: "Étoile Cristal" });
+    await expect(line).toBeVisible();
+    await line.getByRole("button", { name: /augmenter/i }).click();
+    await expect(line.getByText("2", { exact: true })).toBeVisible();
+    await expect(line.getByText(/^64\s?€$/).first()).toBeVisible();
+
+    await line.getByRole("button", { name: /retirer/i }).click();
+    await expect(page.getByRole("listitem").filter({ hasText: "Étoile Cristal" })).toHaveCount(0);
+    expect(problems).toEqual([]);
+  });
+});
+
 test.describe("sign-in and sessions", () => {
   test("a wrong password is refused and opens no session", async ({ page, problems }) => {
     const refused = page.waitForResponse((r) => r.url().includes("/auth/v1/token") && r.request().method() === "POST");
