@@ -170,7 +170,13 @@ begin
     raise exception 'FAIL R3: cart order %, expected capsules (shared) then gel', v_ids;
   end if;
 
-  -- Similar: the out-of-stock opal link is skipped, same-category gems fill in.
+  -- Similar: the out-of-stock opal link is skipped, same-category gems fill in (newest first).
+  -- seed.sql creates every product in one transaction, so they share created_at on a fresh
+  -- database: make the two expected gems the newest, or the tie decides.
+  execute 'reset role';
+  update public.products set created_at = now() + interval '1 minute' where id in (p_star, p_gold);
+  perform set_config('role', 'anon', true);
+  perform set_config('request.jwt.claims', json_build_object('role', 'anon')::text, true);
   select array_agg(product_id order by rank), array_agg(source order by rank) into v_ids, v_src
     from public.recommended_products(array[p_heart], 'similar', 2);
   if v_ids && array[p_opal] or not (v_ids <@ array[p_star, p_gold])

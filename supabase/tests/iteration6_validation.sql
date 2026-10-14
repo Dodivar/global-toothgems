@@ -431,14 +431,8 @@ begin
   insert into public.loyalty_cards (user_id, status, stamps_required, reward_percent, stamps_count, completed_at)
   values (alice, 'completed', 5, 10, 5, now());
   update public.promotions set lifecycle = 'live' where id = pr_code;
-  v_state := null;
-  begin
-    perform public.create_order(alice, 'alice6.test@example.invalid',
-              jsonb_build_array(jsonb_build_object('product_id', p_kit, 'quantity', 1)), fr, fr, r_std,
-              p_promotion_codes => array['WELCOME15'], p_use_loyalty_reward => true);
-  exception when others then v_state := sqlstate;
-  end;
-  if v_state is distinct from '22023' then raise exception 'FAIL P10: reward + code accepted (%)', v_state; end if;
+  -- Reward + typed code: refused until migration 20261008174607, which lets the better option win
+  -- (asserted by promotions_live_validation.sql, PL11).
   update public.promotions set lifecycle = 'live' where id = pr_pct;       -- an automatic promo is running too
   o := public.create_order(alice, 'alice6.test@example.invalid',
          jsonb_build_array(jsonb_build_object('product_id', p_kit, 'quantity', 1)), fr, fr, r_std,
@@ -461,7 +455,7 @@ begin
   select count(*) into v_cnt from public.loyalty_cards where user_id = alice and status = 'completed' and redeemed_order_id is null;
   if v_cnt <> 1 then raise exception 'FAIL P10: reward not given back after cancellation'; end if;
   update public.promotions set lifecycle = 'paused' where id in (pr_pct, pr_code);
-  passed := array_append(passed, 'P10 loyalty reward: only on request, alone, reserved on the order, back when cancelled');
+  passed := array_append(passed, 'P10 loyalty reward: only on request, reserved on the order, back when cancelled');
 
   -- ===========================================================================
   -- P11 publication rules and code rules
