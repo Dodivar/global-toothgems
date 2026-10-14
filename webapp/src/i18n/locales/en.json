@@ -265,7 +265,25 @@
     "packValue_other": "{{count}} stones",
     "stoneSizeLabel": "Stone size",
     "optionUnavailable": "unavailable",
-    "ssApprox": "SS = stone size. Diameters are approximate."
+    "ssApprox": "SS = stone size. Diameters are approximate.",
+    "restock": {
+      "cta": "Tell me when it's back",
+      "stickyCta": "Notify me",
+      "intro": "Leave your e-mail: we will write to you as soon as this item is back in the shop.",
+      "emailLabel": "Your e-mail",
+      "submit": "Notify me",
+      "note": "One e-mail only, sent when the item is back. No newsletter.",
+      "done": "Done: we will write to you as soon as it is back in the shop.",
+      "doneTo": "Done: we will write to {{email}} as soon as it is back in the shop.",
+      "errors": {
+        "invalid_email": "This e-mail address does not look valid.",
+        "unavailable": "Alerts are not available for this item right now.",
+        "variant_required": "Pick the option you want first.",
+        "in_stock": "Good news: this item is available again. Reload the page to order it.",
+        "too_many_requests": "Too many requests in a short time. Please try again later.",
+        "network": "The request could not be sent. Check your connection and try again."
+      }
+    }
   },
   "cart": {
     "confirmedBadge": "Order confirmed",

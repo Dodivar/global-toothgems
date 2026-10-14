@@ -181,6 +181,11 @@ Mapping rules worth knowing:
 - **Images** are public URLs of `product-media` objects. A path whose file is
   not uploaded yet shows the image placeholder.
 - Gift cards (`product_type = 'gift_card'`) stay on their own page.
+- **Out of stock** (the product, or the picked option): "Me prévenir du retour" / "Tell me when it's back" takes
+  the place of "Add to cart" and the quantity, also in the phone's sticky bar (`components/shop/BackInStockForm.tsx`,
+  through `lib/backInStock.ts` → `request_back_in_stock_alert()`). A member is signed up in one click on the
+  account's address, a visitor types one. One e-mail when the stock is back, sent by the `send-pending-emails`
+  sweep (decision 90 in `supabase/README.md`). Mock products (no `dbId`) keep a disabled button.
 
 Not connected yet (still mock): the cart (kept for the browser tab only) and checkout, the Academy, the
 community and most of the back office. Orders and reviews are connected (next

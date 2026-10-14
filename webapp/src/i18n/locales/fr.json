@@ -265,7 +265,25 @@
     "packValue_other": "{{count}} pierres",
     "stoneSizeLabel": "Taille de pierre",
     "optionUnavailable": "indisponible",
-    "ssApprox": "SS = stone size (taille de pierre). Diamètres approximatifs."
+    "ssApprox": "SS = stone size (taille de pierre). Diamètres approximatifs.",
+    "restock": {
+      "cta": "Me prévenir du retour",
+      "stickyCta": "Me prévenir",
+      "intro": "Laissez votre e-mail : nous vous écrirons dès que cet article revient en boutique.",
+      "emailLabel": "Votre e-mail",
+      "submit": "M'avertir",
+      "note": "Un seul e-mail, envoyé au retour de l'article. Pas de newsletter.",
+      "done": "C'est noté : nous vous écrirons dès son retour en boutique.",
+      "doneTo": "C'est noté : nous écrirons à {{email}} dès son retour en boutique.",
+      "errors": {
+        "invalid_email": "Cette adresse e-mail ne semble pas valide.",
+        "unavailable": "Cet article ne peut pas faire l'objet d'une alerte pour le moment.",
+        "variant_required": "Choisissez d'abord l'option qui vous intéresse.",
+        "in_stock": "Bonne nouvelle : cet article est de nouveau disponible. Rechargez la page pour le commander.",
+        "too_many_requests": "Trop de demandes en peu de temps. Réessayez dans un moment.",
+        "network": "La demande n'a pas pu être envoyée. Vérifiez votre connexion et réessayez."
+      }
+    }
   },
   "cart": {
     "confirmedBadge": "Commande confirmée",

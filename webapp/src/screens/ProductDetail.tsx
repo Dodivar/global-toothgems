@@ -4,7 +4,7 @@ import { useEffect, useRef, useState } from "react";
 import posthog from "posthog-js";
 import { useTranslation } from "react-i18next";
 import { Link, useNavigate, useParams } from "../lib/navigation";
-import { CheckCircle2, Image as ImageIcon, Minus, Plus, ShoppingBag, Star } from "lucide-react";
+import { BellRing, CheckCircle2, Image as ImageIcon, Minus, Plus, ShoppingBag, Star } from "lucide-react";
 import { Badge } from "../components/ui/Badge";
 import { Button } from "../components/ui/Button";
 import { IconButton } from "../components/ui/IconButton";
@@ -28,6 +28,7 @@ import { useTaxonomy } from "../lib/catalog/useTaxonomy";
 import { shopHref } from "../data/taxonomy";
 import { CatalogError } from "../components/shop/CatalogError";
 import { GemOptionPicker } from "../components/shop/GemOptionPicker";
+import { BackInStockForm } from "../components/shop/BackInStockForm";
 import { formatSs, formatSsMm, isGemOptionSet } from "../lib/gemOptions";
 import { NotFound } from "./NotFound";
 
@@ -107,6 +108,10 @@ function ProductView({ product }: { product: Product }) {
   const offer = useProductOffer({ dbId: product.dbId, cat: product.cat, currency: product.currency, compareAtPrice });
   const shown = offerPrice(unitPrice, compareAtPrice, offer);
   const stock = variant ? variant.stock : product.stock;
+  // Out of stock: "Tell me when it's back" replaces the purchase, for a database product
+  // (the mock fixtures have no row to subscribe to and keep a disabled button).
+  const restockAlert = stock === "out" && product.dbId != null;
+  const [restockOpenRequest, setRestockOpenRequest] = useState(0);
 
   const [shade, setShade] = useState(SHADES[0]);
   const [size, setSize] = useState(SIZES[1]);
@@ -157,7 +162,8 @@ function ProductView({ product }: { product: Product }) {
     const observer = new IntersectionObserver(([entry]) => setShowStickyBar(!entry.isIntersecting), { threshold: 0 });
     observer.observe(el);
     return () => observer.disconnect();
-  }, []);
+    // The buy row is a different element once the picked option runs out (and back).
+  }, [restockAlert]);
 
   const sizeOptions = SIZES.map((s) => ({ value: s, label: s }));
   const shadeLabel = (s: string) => (lang.startsWith("en") ? SHADES_EN[s] : s);
@@ -426,20 +432,36 @@ function ProductView({ product }: { product: Product }) {
               </div>
             )}
 
-            <div ref={buyRef} className="flex flex-wrap items-center gap-3">
-              <div className="flex items-center gap-1 rounded-[var(--radius-control)] border border-[var(--border-default)]">
-                <IconButton icon={Minus} label={t("product.decreaseQty")} variant="ghost" size="sm" disabled={qty <= 1} onClick={() => setQty((q) => Math.max(1, q - 1))} />
-                <span className="w-8 text-center text-sm font-semibold" aria-live="polite">{qty}</span>
-                <IconButton icon={Plus} label={t("product.increaseQty")} variant="ghost" size="sm" onClick={() => setQty((q) => q + 1)} />
+            {restockAlert && product.dbId ? (
+              <div ref={buyRef} className="flex flex-wrap items-start gap-3">
+                {/* Keyed by the option: picking another one starts a fresh request. */}
+                <BackInStockForm
+                  key={variant?.id ?? "product"}
+                  productId={product.dbId}
+                  variantId={variant?.id}
+                  openRequest={restockOpenRequest}
+                  className="min-w-0 flex-1 basis-full sm:basis-0"
+                />
+                <span className="flex">
+                  <FavoriteButton product={product} />
+                </span>
               </div>
-              {/* Quantity and favourite side by side; on phones the button takes the full width under them. */}
-              <span className="ml-auto flex sm:ml-0">
-                <FavoriteButton product={product} />
-              </span>
-              <Button variant="primary" size="lg" iconLeft={ShoppingBag} onClick={addToCart} disabled={stock === "out"} className="basis-full sm:basis-auto sm:flex-1">
-                {t("product.addToCart")}
-              </Button>
-            </div>
+            ) : (
+              <div ref={buyRef} className="flex flex-wrap items-center gap-3">
+                <div className="flex items-center gap-1 rounded-[var(--radius-control)] border border-[var(--border-default)]">
+                  <IconButton icon={Minus} label={t("product.decreaseQty")} variant="ghost" size="sm" disabled={qty <= 1} onClick={() => setQty((q) => Math.max(1, q - 1))} />
+                  <span className="w-8 text-center text-sm font-semibold" aria-live="polite">{qty}</span>
+                  <IconButton icon={Plus} label={t("product.increaseQty")} variant="ghost" size="sm" onClick={() => setQty((q) => q + 1)} />
+                </div>
+                {/* Quantity and favourite side by side; on phones the button takes the full width under them. */}
+                <span className="ml-auto flex sm:ml-0">
+                  <FavoriteButton product={product} />
+                </span>
+                <Button variant="primary" size="lg" iconLeft={ShoppingBag} onClick={addToCart} disabled={stock === "out"} className="basis-full sm:basis-auto sm:flex-1">
+                  {t("product.addToCart")}
+                </Button>
+              </div>
+            )}
 
             <RichText source={description} className="text-[length:var(--text-body-md)] text-[var(--text-body)]" />
 
@@ -548,17 +570,30 @@ function ProductView({ product }: { product: Product }) {
           <div className="flex items-center gap-3">
             <div className="grid min-w-0 flex-1 gap-0.5">
               <span className="truncate text-xs text-[var(--text-muted)]">{name}</span>
-              <strong className="text-sm text-[var(--text-primary)]">{formatPrice(unitPrice * qty)}</strong>
+              <strong className="text-sm text-[var(--text-primary)]">
+                {restockAlert ? t("product.stockOut") : formatPrice(unitPrice * qty)}
+              </strong>
             </div>
-            <Button
-              variant="primary"
-              iconLeft={ShoppingBag}
-              onClick={addToCart}
-              disabled={stock === "out"}
-              tabIndex={showStickyBar ? 0 : -1}
-            >
-              {t("product.stickyBarLabel")}
-            </Button>
+            {restockAlert ? (
+              <Button
+                variant="primary"
+                iconLeft={BellRing}
+                onClick={() => setRestockOpenRequest((n) => n + 1)}
+                tabIndex={showStickyBar ? 0 : -1}
+              >
+                {t("product.restock.stickyCta")}
+              </Button>
+            ) : (
+              <Button
+                variant="primary"
+                iconLeft={ShoppingBag}
+                onClick={addToCart}
+                disabled={stock === "out"}
+                tabIndex={showStickyBar ? 0 : -1}
+              >
+                {t("product.stickyBarLabel")}
+              </Button>
+            )}
           </div>
         </div>
       </div>

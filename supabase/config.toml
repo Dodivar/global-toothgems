@@ -16,8 +16,8 @@ project_id = "global-toothgems"
 #   EMAIL_INTERNAL_SECRET in the x-internal-secret header is the authentication.
 # - send-email: called by the webapp's server routes (contact acknowledgement,
 #   newsletter confirmation), not a browser; same shared secret.
-# - send-pending-emails: called by pg_cron (shipping, course enrolment and
-#   refund e-mails), not a browser; same shared secret.
+# - send-pending-emails: called by pg_cron (shipping, course enrolment, refund and
+#   back-in-stock e-mails), not a browser; same shared secret.
 # - submit-contact-request: the contact form is open to visitors, who call it with the
 #   publishable key (not a JWT); a member's token is verified inside the function
 #   (auth.getUser). Honeypot, per-address and per-account/e-mail throttles stand in for a captcha.

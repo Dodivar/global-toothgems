@@ -10,7 +10,7 @@ export type Database = {
   // Allows to automatically instantiate createClient with right options
   // instead of createClient<Database, { PostgrestVersion: 'XX' }>(URL, KEY)
   __InternalSupabase: {
-    PostgrestVersion: "14.5"
+    PostgrestVersion: "14.17"
   }
   public: {
     Tables: {
@@ -58,6 +58,81 @@ export type Database = {
             columns: ["actor_id"]
             isOneToOne: false
             referencedRelation: "profiles"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      back_in_stock_requests: {
+        Row: {
+          actor_hash: string
+          created_at: string
+          email: string
+          id: string
+          locale: string
+          notified_at: string | null
+          product_id: string
+          updated_at: string
+          user_id: string | null
+          variant_id: string | null
+        }
+        Insert: {
+          actor_hash: string
+          created_at?: string
+          email: string
+          id?: string
+          locale?: string
+          notified_at?: string | null
+          product_id: string
+          updated_at?: string
+          user_id?: string | null
+          variant_id?: string | null
+        }
+        Update: {
+          actor_hash?: string
+          created_at?: string
+          email?: string
+          id?: string
+          locale?: string
+          notified_at?: string | null
+          product_id?: string
+          updated_at?: string
+          user_id?: string | null
+          variant_id?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "back_in_stock_requests_locale_fkey"
+            columns: ["locale"]
+            isOneToOne: false
+            referencedRelation: "languages"
+            referencedColumns: ["code"]
+          },
+          {
+            foreignKeyName: "back_in_stock_requests_product_id_fkey"
+            columns: ["product_id"]
+            isOneToOne: false
+            referencedRelation: "products"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "back_in_stock_requests_user_id_fkey"
+            columns: ["user_id"]
+            isOneToOne: false
+            referencedRelation: "loyalty_overview"
+            referencedColumns: ["user_id"]
+          },
+          {
+            foreignKeyName: "back_in_stock_requests_user_id_fkey"
+            columns: ["user_id"]
+            isOneToOne: false
+            referencedRelation: "profiles"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "back_in_stock_requests_variant_id_fkey"
+            columns: ["variant_id"]
+            isOneToOne: false
+            referencedRelation: "product_variants"
             referencedColumns: ["id"]
           },
         ]
@@ -8574,6 +8649,18 @@ export type Database = {
         Returns: Json
       }
       newsletter_unsubscribe: { Args: { p_token: string }; Returns: boolean }
+      pending_back_in_stock_emails: {
+        Args: { p_limit?: number }
+        Returns: {
+          email: string
+          image_path: string
+          locale: string
+          product_name: string
+          product_slug: string
+          request_id: string
+          variant_name: string
+        }[]
+      }
       pending_course_enrolment_emails: {
         Args: { p_limit?: number; p_order_id?: string }
         Returns: {
@@ -8715,6 +8802,15 @@ export type Database = {
       refund_to_gift_cards: {
         Args: { p_amount: number; p_order_id: string; p_reason: string }
         Returns: number
+      }
+      request_back_in_stock_alert: {
+        Args: {
+          p_email?: string
+          p_locale?: string
+          p_product_id: string
+          p_variant_id?: string
+        }
+        Returns: Json
       }
       request_refund: {
         Args: {

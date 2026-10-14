@@ -1,6 +1,6 @@
 /**
  * Business e-mails driven by rows in the database rather than by a request:
- * shipping, course enrolment and refund (decision 79).
+ * shipping, course enrolment and refund (decision 79), back in stock (decision 90).
  *
  * The `send-pending-emails` Edge Function runs `sendPendingEmails()` from
  * pg_cron every few minutes; the payment hook (`notifyOrderPaid`) runs
@@ -11,6 +11,7 @@
  * what `email_log` already holds); sending is exactly-once through the claim
  * in email_log, keyed:
  *   shipping:<shipment id>   course_enrolment:<entitlement id>   refund:<refund id>
+ *   back_in_stock:<request id>
  * One row never stops the others, and nothing here throws for a failed e-mail.
  */
 import type { SupabaseClient } from "npm:@supabase/supabase-js@2.57.4";
@@ -18,6 +19,7 @@ import { formatAmount } from "./format.ts";
 import { type AttachedDocument, type InvoiceSource, refundCreditNote } from "./invoicePdf.ts";
 import { refundContent, shippingContent } from "./orderContent.ts";
 import { type EmailDeps, type SendResult, sendTemplatedEmail } from "./send.ts";
+import { backInStockContent, type RestockedProduct, restockedItemName } from "./stockContent.ts";
 
 type Log = (message: string, detail?: unknown) => void;
 
@@ -45,10 +47,18 @@ export interface PendingRefund extends MailTarget {
   currency: string;
 }
 
+/** A customer's back-in-stock request whose product (or option) can be bought again. */
+export interface PendingBackInStock extends RestockedProduct {
+  requestId: string;
+  email: string;
+  locale: string;
+}
+
 export interface PendingSource {
   shipping(limit: number): Promise<PendingShipping[]>;
   courseEnrolments(options: { orderId?: string; limit: number }): Promise<PendingEnrolment[]>;
   refunds(limit: number): Promise<PendingRefund[]>;
+  backInStock(limit: number): Promise<PendingBackInStock[]>;
 }
 
 export interface EventReport {
@@ -68,6 +78,7 @@ export interface SweepReport {
   shipping: EventReport;
   courseEnrolment: EventReport;
   refund: EventReport;
+  backInStock: EventReport;
 }
 
 const SENT_OR_DONE = new Set(["sent", "delivered", "opened", "bounced", "complained"]);
@@ -208,11 +219,35 @@ export function sendRefundEmails(
   );
 }
 
-/** The three sweeps; one failing (a database error, say) does not prevent the others. */
+/**
+ * One e-mail per back-in-stock request, ever (the request is closed by the
+ * database once its e-mail is sent). `mediaBaseUrl`: public address of the
+ * `product-media` bucket, for the product's picture.
+ */
+export function sendBackInStockEmails(
+  deps: EmailDeps,
+  source: PendingSource,
+  options: { limit?: number; log?: Log; mediaBaseUrl?: string } = {},
+): Promise<EventReport> {
+  const log = options.log ?? (() => {});
+  return source.backInStock(options.limit ?? 25).then((rows) =>
+    sendEach(rows, "back in stock", (r) => r.requestId, (request) =>
+      sendTemplatedEmail(deps, {
+        templateKey: "back_in_stock",
+        to: request.email,
+        locale: request.locale,
+        variables: { product_name: restockedItemName(request) },
+        eventKey: `back_in_stock:${request.requestId}`,
+        content: (locale) => backInStockContent(request, locale, deps.layout.siteUrl, options.mediaBaseUrl),
+      }), log)
+  );
+}
+
+/** The four sweeps; one failing (a database error, say) does not prevent the others. */
 export async function sendPendingEmails(
   deps: EmailDeps,
   source: PendingSource,
-  options: { limit?: number; log?: Log; invoices?: InvoiceSource } = {},
+  options: { limit?: number; log?: Log; invoices?: InvoiceSource; mediaBaseUrl?: string } = {},
 ): Promise<SweepReport> {
   const log = options.log ?? (() => {});
   const guard = async (what: string, run: () => Promise<EventReport>): Promise<EventReport> => {
@@ -227,6 +262,7 @@ export async function sendPendingEmails(
     shipping: await guard("shipping", () => sendShippingEmails(deps, source, { ...options, log })),
     courseEnrolment: await guard("course enrolment", () => sendCourseEnrolmentEmails(deps, source, { ...options, log })),
     refund: await guard("refund", () => sendRefundEmails(deps, source, { ...options, log })),
+    backInStock: await guard("back in stock", () => sendBackInStockEmails(deps, source, { ...options, log })),
   };
 }
 
@@ -273,6 +309,26 @@ export function supabasePendingSource(db: SupabaseClient): PendingSource {
         { p_limit: limit },
       );
       return rows.map((row) => ({ ...target(row), refundId: row.refund_id, amount: Number(row.amount), currency: row.currency }));
+    },
+    async backInStock(limit) {
+      const rows = await rpc<{
+        request_id: string;
+        email: string;
+        locale: string;
+        product_name: string;
+        variant_name: string | null;
+        product_slug: string;
+        image_path: string | null;
+      }>("pending_back_in_stock_emails", { p_limit: limit });
+      return rows.map((row) => ({
+        requestId: row.request_id,
+        email: row.email,
+        locale: row.locale,
+        productName: row.product_name,
+        variantName: row.variant_name,
+        productSlug: row.product_slug,
+        imagePath: row.image_path,
+      }));
     },
   };
 }

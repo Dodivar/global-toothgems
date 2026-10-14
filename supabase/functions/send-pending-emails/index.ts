@@ -16,7 +16,12 @@ Deno.serve((req) =>
     secret: Deno.env.get("EMAIL_INTERNAL_SECRET"),
     run: (limit) => {
       const db = serviceClient();
-      return sendPendingEmails(emailDepsFromEnv(), supabasePendingSource(db), { limit, log, invoices: supabaseInvoiceSource(db) });
+      return sendPendingEmails(emailDepsFromEnv(), supabasePendingSource(db), {
+        limit,
+        log,
+        invoices: supabaseInvoiceSource(db),
+        mediaBaseUrl: `${Deno.env.get("SUPABASE_URL") ?? ""}/storage/v1/object/public/product-media`,
+      });
     },
     log,
   })
