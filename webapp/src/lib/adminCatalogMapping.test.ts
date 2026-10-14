@@ -158,6 +158,9 @@ describe("helpers", () => {
     expect(catalogErrorKind({ code: "42501" })).toBe("permission");
     expect(catalogErrorKind({ message: "TypeError: Failed to fetch" })).toBe("network");
     expect(catalogErrorKind(undefined)).toBe("generic");
+    expect(catalogErrorKind({ code: "40001" })).toBe("staleStock");
+    expect(catalogErrorKind({ code: "22023", hint: "reserved" })).toBe("belowReserved");
+    expect(catalogErrorKind({ code: "22023" })).toBe("invalid");
   });
 });
 
@@ -225,8 +228,8 @@ describe("gem options", () => {
       url,
     );
     expect(product.variantStock).toEqual([
-      expect.objectContaining({ key: "50:6", sku: "GEM-P50-SS6", price: 45, stock: 0 }),
-      expect.objectContaining({ key: "c", name: { fr: "Saphir", en: "Sapphire" }, stock: 5, reserved: 2 }),
+      expect.objectContaining({ key: "50:6", variantId: "a", sku: "GEM-P50-SS6", price: 45, stock: 0 }),
+      expect.objectContaining({ key: "c", variantId: "c", name: { fr: "Saphir", en: "Sapphire" }, stock: 5, reserved: 2 }),
     ]);
     expect(product.variantStock?.[0].name.fr).toBe("Pack de 50 · SS6");
   });

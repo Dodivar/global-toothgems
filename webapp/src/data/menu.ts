@@ -18,9 +18,9 @@ const img = photo;
 export const TAXONOMY_THUMBS: Record<string, string> = {
   swarovski: "/brands/swarovski.webp",
   preciosa: "/brands/preciosa.webp",
-  "bijoux-or-18ct": img("img-04.jpg"),
-  opales: img("img-14.jpg"),
-  "micro-gems": img("img-07.jpg"),
+  "bijoux-or-18ct": img("cerises-or-18ct.webp"),
+  opales: img("opaline.webp"),
+  "micro-gems": img("microgems.webp"),
   essentiels: img("img-01.jpg"),
   accessoires: img("img-08.jpg"),
   "kit-professionnel": img("img-11.jpg"),

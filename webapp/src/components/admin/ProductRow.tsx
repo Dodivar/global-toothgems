@@ -8,6 +8,7 @@ import {
   Eye,
   ImageOff,
   PackageCheck,
+  PackagePlus,
   PackageX,
   Pencil,
   Send,
@@ -23,6 +24,7 @@ import { ProductStatusBadge } from "./ProductStatusBadge";
 import { StockIndicator, VariantStockIndicator } from "./StockIndicator";
 import { useAdminCatalog } from "../../lib/adminCatalog";
 import { useLocalized } from "../../lib/localized";
+import { hasAdjustableStock } from "../../lib/stockAdjustment";
 import { useFormat } from "../../lib/format";
 import {
   displayState,
@@ -48,6 +50,8 @@ export interface ProductRowActions {
   onUnpublish: (product: AdminProduct) => void;
   onMarkOutOfStock: (product: AdminProduct) => void;
   onRestock: (product: AdminProduct) => void;
+  /** Opens the quick stock pop-up, on one option when `variantKey` is given. */
+  onAdjustStock: (product: AdminProduct, variantKey?: string) => void;
   onArchive: (product: AdminProduct) => void;
   onRestore: (product: AdminProduct) => void;
   onDelete: (product: AdminProduct) => void;
@@ -292,6 +296,14 @@ export function ProductRow({
 
       <td className="py-3 pr-4 align-middle" onClick={(e) => e.stopPropagation()}>
         <div className="flex items-center justify-end gap-0.5">
+          {hasAdjustableStock(product) && (
+            <AdminIconButton
+              size="sm"
+              icon={PackagePlus}
+              label={t("admin.restock.openNamed", { name: L(product.name) })}
+              onClick={() => actions.onAdjustStock(product)}
+            />
+          )}
           <AdminIconButton
             size="sm"
             icon={Pencil}
@@ -310,6 +322,7 @@ export function ProductRow({
           product={product}
           variant={variant}
           onEdit={() => actions.onEditOption(product, variant)}
+          onAdjustStock={() => actions.onAdjustStock(product, variant.key)}
         />
       ))}
     </>
@@ -402,11 +415,13 @@ function OptionRow({
   product,
   variant,
   onEdit,
+  onAdjustStock,
 }: {
   id: string;
   product: AdminProduct;
   variant: VariantStock;
   onEdit: () => void;
+  onAdjustStock: () => void;
 }) {
   const { formatPrice } = useFormat();
   const { t } = useTranslation();
@@ -458,7 +473,15 @@ function OptionRow({
       </td>
       <td className="py-2 pr-4 align-middle" />
       <td className="py-2 pr-4 align-middle" onClick={(e) => e.stopPropagation()}>
-        <div className="flex items-center justify-end">
+        <div className="flex items-center justify-end gap-0.5">
+          {variant.trackInventory && (
+            <AdminIconButton
+              size="sm"
+              icon={PackagePlus}
+              label={t("admin.restock.openOption", { option: L(variant.name), name: L(product.name) })}
+              onClick={onAdjustStock}
+            />
+          )}
           <AdminIconButton size="sm" icon={Pencil} label={label} onClick={onEdit} />
         </div>
       </td>

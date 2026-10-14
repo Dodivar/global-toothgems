@@ -71,7 +71,7 @@ export function ProductTable({
             squeeze the thumbnail column, and Tailwind's `img { max-width: 100% }`
             then shrinks the 44px thumbnails into slivers. Fixed layout makes the
             colgroup below binding and leaves the remainder to the name column. */}
-        <table className="w-full min-w-[1044px] table-fixed border-collapse text-left">
+        <table className="w-full min-w-[1080px] table-fixed border-collapse text-left">
           <caption className="sr-only">{t("admin.table.caption")}</caption>
           <colgroup>
             {/* Options toggle + thumbnail. */}
@@ -84,7 +84,7 @@ export function ProductTable({
             <col style={{ width: 150 }} />
             <col style={{ width: 132 }} />
             <col style={{ width: 104 }} />
-            <col style={{ width: 84 }} />
+            <col style={{ width: 120 }} />
           </colgroup>
           <thead className="gt-admin-thead">
             <tr className="text-[length:var(--text-caption)] font-semibold uppercase tracking-[var(--tracking-wide)] text-[var(--text-muted)]">

@@ -8108,6 +8108,15 @@ export type Database = {
           isSetofReturn: false
         }
       }
+      admin_adjust_stock: {
+        Args: {
+          p_delta: number
+          p_expected?: number
+          p_product_id: string
+          p_variant_id: string
+        }
+        Returns: Json
+      }
       admin_back_in_stock_requests: {
         Args: { p_limit?: number }
         Returns: {

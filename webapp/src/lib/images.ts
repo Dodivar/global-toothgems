@@ -1,9 +1,9 @@
 import type { StaticImageData } from "next/image";
 
-// Next.js resolves an image import to its metadata; the URL is `.src`. Two
-// patterns rather than `*.{jpg,png}`, resolved from `base` rather than written
+// Next.js resolves an image import to its metadata; the URL is `.src`. Three
+// patterns rather than `*.{jpg,png,webp}`, resolved from `base` rather than written
 // `../assets/...`: Turbopack matches neither braces nor parent-relative globs.
-const modules = import.meta.glob(["./*.jpg", "./*.png"], {
+const modules = import.meta.glob(["./*.jpg", "./*.png", "./*.webp"], {
   base: "../assets/photos",
   eager: true,
   import: "default",

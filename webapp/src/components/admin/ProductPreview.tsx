@@ -5,6 +5,7 @@ import {
   ArchiveRestore,
   Copy,
   ImageOff,
+  PackagePlus,
   Pencil,
   Send,
   Undo2,
@@ -27,6 +28,7 @@ import {
   type AdminProduct,
 } from "../../data/adminCatalog";
 import type { ProductRowActions } from "./ProductRow";
+import { hasAdjustableStock } from "../../lib/stockAdjustment";
 
 /**
  * Side drawer opened by clicking a product in the list.
@@ -207,6 +209,11 @@ export function ProductPreview({
             <AdminButton variant="primary" iconLeft={Pencil} onClick={() => actions.onEdit(product)}>
               {t("admin.actions.edit")}
             </AdminButton>
+            {hasAdjustableStock(product) && (
+              <AdminButton variant="outline" iconLeft={PackagePlus} onClick={() => actions.onAdjustStock(product)}>
+                {t("admin.actions.restock")}
+              </AdminButton>
+            )}
             <AdminButton variant="outline" iconLeft={Copy} onClick={() => actions.onDuplicate(product)}>
               {t("admin.actions.duplicate")}
             </AdminButton>

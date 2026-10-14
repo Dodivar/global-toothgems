@@ -147,6 +147,7 @@ supabase/
 | 20261011171901 | `quote_gift_cards` | **Applied 2026-10-11.** Decision 89: `quote_gift_cards(p_codes, p_amount, p_currency)` (SECURITY DEFINER, callable by visitors) — the cart's preview of what the gift card codes pay, same rules as `create_order()`, total only (never a balance) and the refused codes; refused codes throttled per caller (10 per 10 minutes, table `gift_card_code_attempts`, no policies). Suite `tests/gift_card_quote_validation.sql` (GQ1–GQ8) |
 | 20261014141425 | `back_in_stock_alerts` | **Applied 2026-10-14.** Decision 90: `back_in_stock_requests` (product, optional option, lower-cased address, member, language, throttle hash, `notified_at`; RLS on, no grant to anon/authenticated; one waiting request per address and target), `request_back_in_stock_alert(product, variant, email, locale)` (SECURITY DEFINER, visitors and members: target must be out of stock now, account address for a member, 10 new requests / hour per caller, 30 waiting per address), `pending_back_in_stock_emails()` (service role: waiting requests whose target is sellable again, no time window), trigger `email_log_close_back_in_stock` (stamps `notified_at` once the e-mail is sent), template `back_in_stock` (fr + en). Suite `tests/back_in_stock_validation.sql` (B1–B8) |
 | 20261014150008 | `admin_back_in_stock_requests` | **Applied 2026-10-14.** Decision 90: `admin_back_in_stock_requests(p_limit)` (SECURITY DEFINER, `manage_products`, 42501 otherwise) — the back office's read of the requests for `/admin/alertes-stock`: product and option names, product status, the target's stock state, address, member, language, dates and the e-mail's `email_log` status and attempts. Read-only. Suite `tests/back_in_stock_validation.sql` (B9) |
+| 20261014175219 | `admin_adjust_stock` | **Applied 2026-10-14.** Decision 91: `admin_adjust_stock(p_product_id, p_variant_id, p_delta, p_expected)` (SECURITY DEFINER, `manage_products`, 42501 otherwise) — the product list's quick restock: adds `p_delta` to `quantity_on_hand` of the product's or one variant's stock row in one UPDATE, so a sale paid meanwhile is kept; with `p_expected` (an exact count typed after a stocktake) refuses with 40001 when the shelf moved since. Refuses an untracked row, a product whose stock is per variant, a variant of another product (P0002), a zero change and a result below the reserved units (22023, hint `reserved`). Recorded as an `adjustment` with the actor by the `inventory_items_ledger` trigger. Suite `tests/stock_adjustment_validation.sql` |
 | 20261008175722 | `contact_attachments_and_support_email` | **Applied 2026-10-08.** Contact form: `contact_requests.attachment_path` → `attachment_paths text[]` (≤ 5, `private.valid_contact_attachment_paths()`), bucket `contact-attachments` 20 MB per object, `submit_contact_request(…, p_attachment_paths text[])` (old signature dropped; ownership per path, no duplicates, ≤ 20 MB in all), guard trigger rebuilt, `contact_ip_allowed(ip_hash)` (service role), template `contact_request_received` (fr + en) for the support inbox. Suite: `iteration7_validation.sql` C3/C4 |
 | 20261008175809 | `contact_attachment_paths_check_grant` | **Applied 2026-10-08.** `execute` on the CHECK helper for `authenticated`/`service_role` (staff triage re-evaluates the CHECK) |
 | 20261007181011 | `gift_card_design_everywhere` | **Applied 2026-10-07.** The design/names/message chosen at checkout are shown back (WYSIWYG): policy `gift_cards: purchaser reads own` (a buyer reads the cards of their purchases through the existing column grant — never the code) so the member's order pages draw the card in its design; the `gift_card_delivery` template bodies (fr + en) lose their `{{message}}` paragraph because the e-mail now draws the card itself (`giftCardVisual()`, message included). Test: a buyer sees only their own cards (to add to `gift_cards_validation.sql`) |
@@ -1150,6 +1151,27 @@ email_log row sent / delivered / opened / bounced / complained
   nothing pending while out of stock, pending after the restock, closed once sent and never pending again, a new
   request after a notification, the throttle, the staff read (visitor, customer and viewer refused, manager reads).
 
+### Quick stock change (iteration 27)
+
+```
+/admin/produits  "Restock" button (row, option row, preview drawer, menu)  → pop-up
+                 add the units received (+10/+25/+50/+100)  or  type the exact count on the shelf
+browser          admin_adjust_stock(product, variant | null, delta, expected?)   one call per stock row changed
+                   → manage_products, else 42501
+                   → quantity_on_hand + delta in one UPDATE (relative: a sale paid meanwhile is kept)
+                   → expected given and the shelf moved: 40001, nothing written (the pop-up reloads the product)
+                   → never below quantity_reserved, never on an untracked row
+                   → inventory_movements 'adjustment' with the actor (ledger trigger)
+                 then the product is read again; the back-in-stock sweep sees the new stock like any other
+```
+
+- The edit form still writes the absolute count through `admin_save_product()`; the pop-up is the safe path for
+  day-to-day restocking.
+- Suite: `tests/stock_adjustment_validation.sql` — visitor, customer and viewer refused; a manager adds to a product
+  and to a variant with a sale in between kept; the ledger row; a stale exact count refused and a fresh one applied;
+  never below the reserved units nor zero; product with variants, untracked row, variant of another product,
+  unknown product and zero change refused.
+
 ### Integrity guarantees
 
 - `orders_total_matches`: `total = subtotal − discount + shipping (+ tax when prices exclude tax)`; discount ≤ subtotal; all amounts ≥ 0.
@@ -1830,3 +1852,12 @@ VAT rates, shipping zones/rates mirroring the Settings prototype. Media rows ref
     then answers ok without adding one: such failures show on `/admin/alertes-stock` ("Send failed"); (g) staff
     with `manage_products` (admin, manager) see the customers' addresses on that screen — today they also hold
     `manage_customers`; staff cannot delete a request (e.g. a GDPR erasure: SQL editor meanwhile).
+
+91. **Quick restock from the product list** (user's request, 2026-10-14: "restock from a pop-up, not only from the
+    three-dot menu"). A change is sent as a relative delta (`admin_adjust_stock()`), never as the count the list
+    loaded, so it cannot erase a sale paid in between; an exact count typed after a stocktake carries the count it
+    started from and is refused if the shelf moved. Agent's choices, to confirm: (a) a correction may lower the
+    stock (down to the reserved units), with no reason or note asked; the ledger keeps who changed what and when;
+    (b) the pop-up saves each changed option of a product with variants one call at a time and stops at the first
+    refusal (the options already saved stay saved); (c) untracked products keep their one-click "back on sale"
+    in the menu, no pop-up; (d) staff with `manage_products` (admin, manager) may use it, like the edit form.
