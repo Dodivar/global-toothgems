@@ -42,6 +42,7 @@ import {
   AdminCatalogContext,
   CatalogError,
   STATUS_NOTE,
+  STOCK_NOTE,
   computeStats,
   unknownCategory,
   type AdminCatalogValue,
@@ -148,7 +149,7 @@ export function SupabaseAdminCatalogProvider({ children, actor }: { children: Re
 
   /** Reports a failed write once, here, and hands the page a typed error. */
   const fail = useCallback(
-    (error: { code?: string; message?: string; status?: number | string } | null | undefined): never => {
+    (error: { code?: string; message?: string; hint?: string; status?: number | string } | null | undefined): never => {
       console.error("Admin catalogue write failed", error);
       const kind = catalogErrorKind(error);
       showToast(t("admin.errors.title"), t(`admin.errors.${kind}`), "error");
@@ -183,6 +184,19 @@ export function SupabaseAdminCatalogProvider({ children, actor }: { children: Re
     [client],
   );
 
+  /** Reads one product back after a write and puts it at the top of the list. */
+  const refresh = useCallback(
+    async (id: string): Promise<AdminProduct> => {
+      const select = familiesSupported.current ? ADMIN_PRODUCT_SELECT : ADMIN_PRODUCT_SELECT_BASE;
+      const fresh = await client.from("products").select(select).eq("id", id).single();
+      if (fresh.error) return fail(fresh.error);
+      const saved = rowToProduct(fresh.data as unknown as ProductRow, publicUrl);
+      setProducts((prev) => [saved, ...prev.filter((p) => p.id !== saved.id)]);
+      return saved;
+    },
+    [client, fail, publicUrl],
+  );
+
   /** One write path for create, edit, status changes and duplicates. */
   const save = useCallback(
     async (product: AdminProduct): Promise<AdminProduct> => {
@@ -215,14 +229,9 @@ export function SupabaseAdminCatalogProvider({ children, actor }: { children: Re
         return fail({ code: "PGRST202", message: "admin_save_product() does not save families yet" });
       }
 
-      const select = familiesSupported.current ? ADMIN_PRODUCT_SELECT : ADMIN_PRODUCT_SELECT_BASE;
-      const fresh = await client.from("products").select(select).eq("id", result.id).single();
-      if (fresh.error) return fail(fresh.error);
-      const saved = rowToProduct(fresh.data as unknown as ProductRow, publicUrl);
-      setProducts((prev) => [saved, ...prev.filter((p) => p.id !== saved.id)]);
-      return saved;
+      return refresh(result.id);
     },
-    [client, fail, publicUrl, removeFiles],
+    [client, fail, refresh, removeFiles],
   );
 
   const getProduct = useCallback((id: string) => products.find((p) => p.id === id), [products]);
@@ -245,6 +254,37 @@ export function SupabaseAdminCatalogProvider({ children, actor }: { children: Re
       return saved;
     },
     [save, log],
+  );
+
+  /**
+   * Quick stock change (decision 91): relative and atomic in the database, so
+   * it never overwrites a sale the list did not show. When the shelf moved
+   * under an exact count, the product is read again before the refusal is
+   * reported, so the pop-up shows the count to start from.
+   */
+  const adjustStock = useCallback(
+    async (id: string, variantKey: string | null, delta: number, expected?: number) => {
+      const current = productsRef.current.find((p) => p.id === id);
+      if (!current) return undefined;
+      const variantId =
+        variantKey === null ? null : current.variantStock?.find((variant) => variant.key === variantKey)?.variantId;
+      if (variantId === undefined) return fail({ code: "P0002", message: `unknown variant ${variantKey}` });
+      const { error } = await client.rpc("admin_adjust_stock", {
+        p_product_id: id,
+        // The generated type does not know the argument is nullable.
+        p_variant_id: variantId as string,
+        p_delta: delta,
+        ...(expected === undefined ? {} : { p_expected: expected }),
+      });
+      if (error) {
+        if (error.code === "40001") await refresh(id).catch(() => undefined);
+        return fail(error);
+      }
+      const saved = await refresh(id);
+      log("updated", saved, STOCK_NOTE);
+      return saved;
+    },
+    [client, fail, refresh, log],
   );
 
   const setStatus = useCallback(
@@ -447,6 +487,7 @@ export function SupabaseAdminCatalogProvider({ children, actor }: { children: Re
       createProduct,
       updateProduct,
       setStatus,
+      adjustStock,
       duplicateProduct,
       deleteProduct,
       blankProduct,
@@ -475,6 +516,7 @@ export function SupabaseAdminCatalogProvider({ children, actor }: { children: Re
       createProduct,
       updateProduct,
       setStatus,
+      adjustStock,
       duplicateProduct,
       deleteProduct,
       blankProduct,

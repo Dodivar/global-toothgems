@@ -11,11 +11,13 @@ import { ProductFilters } from "../../components/admin/ProductFilters";
 import { ProductPreview } from "../../components/admin/ProductPreview";
 import { ProductTable } from "../../components/admin/ProductTable";
 import type { ProductRowActions } from "../../components/admin/ProductRow";
+import { RestockDialog, type RestockRequest } from "../../components/admin/RestockDialog";
 import { useAdminCatalog } from "../../lib/adminCatalog";
 import { productEditPath } from "../../lib/adminProductLinks";
 import { loadProductListFilters, saveProductListFilters } from "../../lib/adminProductListMemory";
 import { useLocalized } from "../../lib/localized";
 import { useToast } from "../../lib/toast";
+import { hasAdjustableStock } from "../../lib/stockAdjustment";
 import {
   DEFAULT_FILTERS,
   SORT_KEYS,
@@ -48,13 +50,14 @@ export function AdminProducts() {
   const navigate = useNavigate();
   const { openNav } = useAdminShell();
   const { showToast } = useToast();
-  const { products, loading, loadError, reload, updateProduct, setStatus, duplicateProduct, deleteProduct } =
+  const { products, loading, loadError, reload, updateProduct, adjustStock, setStatus, duplicateProduct, deleteProduct } =
     useAdminCatalog();
 
   const [params, setParams] = useSearchParams();
   const [preview, setPreview] = useState<AdminProduct | null>(null);
   const [archiving, setArchiving] = useState<AdminProduct | null>(null);
   const [deleting, setDeleting] = useState<AdminProduct | null>(null);
+  const [restocking, setRestocking] = useState<{ id: string; variantKey: string | null } | null>(null);
   const [pending, setPending] = useState(false);
 
   /**
@@ -113,6 +116,9 @@ export function AdminProducts() {
   // The drawer holds an id, not a snapshot: publishing from inside it must move
   // the badge the administrator is looking at.
   const previewProduct = preview ? (products.find((p) => p.id === preview.id) ?? null) : null;
+  // Same for the stock pop-up: after a refused exact count the store reloads
+  // the product, and the pop-up must show the count to start again from.
+  const restockProduct = restocking ? (products.find((p) => p.id === restocking.id) ?? null) : null;
 
   /**
    * Runs a catalogue write. A failure has already been reported by the store,
@@ -176,23 +182,25 @@ export function AdminProducts() {
     },
 
     onRestock: async (product) => {
+      // A count goes through the pop-up: a quantity cannot be invented on the
+      // administrator's behalf. An untracked product only has its manual
+      // availability, which can move in one click.
+      if (hasAdjustableStock(product)) {
+        setRestocking({ id: product.id, variantKey: null });
+        return;
+      }
       if (product.variantCount) {
         showToast(t("admin.toasts.variantStockTitle"), t("admin.toasts.variantStockBody"), "info");
         return;
       }
-      if (!product.trackInventory) {
-        const restocked = await attempt(() =>
-          updateProduct(product.id, { availability: "in_stock" }, { fr: "Remis en vente", en: "Back on sale" }),
-        );
-        if (!restocked) return;
-        showToast(t("admin.toasts.restockedTitle"), t("admin.toasts.restockedBody", { name: L(product.name) }));
-        return;
-      }
-      // A quantity cannot be invented on the administrator's behalf, so this
-      // hands over to the form rather than guessing one.
-      showToast(t("admin.toasts.restockNeedsFormTitle"), t("admin.toasts.restockNeedsFormBody"), "info");
-      navigate(`/admin/produits/${product.id}`);
+      const restocked = await attempt(() =>
+        updateProduct(product.id, { availability: "in_stock" }, { fr: "Remis en vente", en: "Back on sale" }),
+      );
+      if (!restocked) return;
+      showToast(t("admin.toasts.restockedTitle"), t("admin.toasts.restockedBody", { name: L(product.name) }));
     },
+
+    onAdjustStock: (product, variantKey) => setRestocking({ id: product.id, variantKey: variantKey ?? null }),
 
     onArchive: (product) => setArchiving(product),
 
@@ -204,6 +212,28 @@ export function AdminProducts() {
     },
 
     onDelete: (product) => setDeleting(product),
+  };
+
+  /**
+   * Saves the pop-up's changes one stock row at a time and stops at the first
+   * refusal; resolves to how many were saved, so the pop-up knows which lines
+   * are done.
+   */
+  const saveStock = async (product: AdminProduct, requests: RestockRequest[]) => {
+    let saved = 0;
+    for (const request of requests) {
+      if (!(await attempt(() => adjustStock(product.id, request.variantKey, request.delta, request.expected)))) break;
+      saved += 1;
+    }
+    if (saved < requests.length) return saved;
+    const added = requests.reduce((sum, request) => sum + Math.max(request.delta, 0), 0);
+    showToast(
+      t("admin.toasts.stockUpdatedTitle"),
+      requests.every((request) => request.expected === undefined && request.delta > 0)
+        ? t("admin.toasts.stockAddedBody", { count: added, name: L(product.name) })
+        : t("admin.toasts.stockUpdatedBody", { name: L(product.name) }),
+    );
+    return saved;
   };
 
   const confirmArchive = async () => {
@@ -292,6 +322,15 @@ export function AdminProducts() {
       </div>
 
       <ProductPreview product={previewProduct} onClose={() => setPreview(null)} actions={actions} />
+
+      {/* Keyed by product, so each opening starts from an empty form. */}
+      <RestockDialog
+        key={restocking?.id ?? "closed"}
+        product={restockProduct}
+        focusKey={restocking?.variantKey ?? null}
+        onClose={() => setRestocking(null)}
+        onSave={saveStock}
+      />
 
       <ConfirmationDialog
         open={archiving !== null}

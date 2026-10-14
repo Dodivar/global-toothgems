@@ -20,11 +20,13 @@ import type { Localized } from "../data/types";
 import { isSupabaseConfigured } from "./supabase/client";
 import { SupabaseAdminCatalogProvider } from "./adminCatalogSupabase";
 import { slugify } from "./adminCatalogMapping";
+import { applyStockDelta } from "./stockAdjustment";
 import {
   ACTIVITY_LIMIT,
   AdminCatalogContext,
   CatalogError,
   STATUS_NOTE,
+  STOCK_NOTE,
   computeStats,
   type AdminCatalogValue,
 } from "./adminCatalogContext";
@@ -125,6 +127,23 @@ function MockAdminCatalogProvider({ children, actor }: { children: ReactNode; ac
         }),
       );
       if (saved) log("updated", saved, note);
+      return saved;
+    },
+    [log],
+  );
+
+  const adjustStock = useCallback(
+    async (id: string, variantKey: string | null, delta: number) => {
+      await wait(SAVE_DELAY_MS);
+      let saved: AdminProduct | undefined;
+      setProducts((prev) =>
+        prev.map((p) => {
+          if (p.id !== id) return p;
+          saved = withVariantStock({ ...applyStockDelta(p, variantKey, delta), updatedAt: new Date().toISOString() });
+          return saved;
+        }),
+      );
+      if (saved) log("updated", saved, STOCK_NOTE);
       return saved;
     },
     [log],
@@ -290,6 +309,7 @@ function MockAdminCatalogProvider({ children, actor }: { children: ReactNode; ac
       createProduct,
       updateProduct,
       setStatus,
+      adjustStock,
       duplicateProduct,
       deleteProduct,
       blankProduct,
@@ -316,6 +336,7 @@ function MockAdminCatalogProvider({ children, actor }: { children: ReactNode; ac
       createProduct,
       updateProduct,
       setStatus,
+      adjustStock,
       duplicateProduct,
       deleteProduct,
       blankProduct,

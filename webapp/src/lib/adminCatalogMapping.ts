@@ -369,6 +369,7 @@ function variantToStock(variant: VariantRow): VariantStock {
   const nameFr = variant.name ?? "";
   return {
     key: gem ? comboKey(gem) : variant.id,
+    variantId: variant.id,
     name: gem ? comboName(gem) : { fr: nameFr, en: english(variant.product_variant_translations)?.name ?? nameFr },
     sku: variant.sku ?? undefined,
     price: variant.price == null ? undefined : amountFromDb(variant.price),
@@ -555,12 +556,21 @@ export function gemColorToPayload(draft: GemColorDraft): Json {
 
 /** Categories of failure the admin tells apart, keyed like `admin.errors.*`. */
 export type CatalogErrorKind =
-  | "permission" | "duplicate" | "inUse" | "invalid" | "notFound" | "network" | "outdated" | "generic";
+  | "permission" | "duplicate" | "inUse" | "invalid" | "notFound" | "network" | "outdated" | "generic"
+  /** The stock moved since it was read (a sale): nothing was written. */
+  | "staleStock"
+  /** The new count would be lower than the units held by unpaid orders. */
+  | "belowReserved";
 
 /** Maps a PostgREST / Postgres / Storage error to a message the screen can show. */
-export function catalogErrorKind(error: { code?: string; message?: string; status?: number | string } | null | undefined): CatalogErrorKind {
+export function catalogErrorKind(
+  error: { code?: string; message?: string; hint?: string; status?: number | string } | null | undefined,
+): CatalogErrorKind {
   if (!error) return "generic";
+  if (error.code === "22023" && error.hint === "reserved") return "belowReserved";
   switch (error.code) {
+    case "40001":
+      return "staleStock";
     case "42501":
     case "PGRST301":
       return "permission";

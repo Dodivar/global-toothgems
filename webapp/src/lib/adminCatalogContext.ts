@@ -50,6 +50,19 @@ export interface AdminCatalogValue {
   createProduct: (product: AdminProduct) => Promise<AdminProduct>;
   updateProduct: (id: string, patch: Partial<AdminProduct>, note?: Localized) => Promise<AdminProduct | undefined>;
   setStatus: (id: string, status: ProductStatus) => Promise<void>;
+  /**
+   * Adds `delta` units (negative to remove) to the product's own stock, or to
+   * one variant's (`variantKey` = its `VariantStock.key`), atomically, so a
+   * sale recorded meanwhile is kept. With `expected`, the change is refused
+   * (`staleStock`) unless the shelf still holds that count. Resolves to the
+   * product as saved.
+   */
+  adjustStock: (
+    id: string,
+    variantKey: string | null,
+    delta: number,
+    expected?: number,
+  ) => Promise<AdminProduct | undefined>;
   duplicateProduct: (id: string) => Promise<AdminProduct | undefined>;
   deleteProduct: (id: string) => Promise<void>;
   /** Fresh product shell for the creation form. */
@@ -121,3 +134,6 @@ export const STATUS_NOTE: Record<ProductStatus, Localized> = {
   draft: { fr: "Repassé en brouillon", en: "Moved back to draft" },
   archived: { fr: "Archivé", en: "Archived" },
 };
+
+/** Activity note of a quick stock change from the product list. */
+export const STOCK_NOTE: Localized = { fr: "Stock mis à jour", en: "Stock updated" };

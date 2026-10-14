@@ -1884,8 +1884,6 @@
       "outOfStockBody": "{{name}} n’est plus proposé à la vente.",
       "restockedTitle": "Produit de nouveau disponible",
       "restockedBody": "{{name}} est de nouveau proposé à la vente.",
-      "restockNeedsFormTitle": "Quantité à renseigner",
-      "restockNeedsFormBody": "Indiquez le nouveau stock dans la section Stock et disponibilité.",
       "restoredTitle": "Produit restauré",
       "restoredBody": "{{name}} est revenu en brouillon, prêt à être relu.",
       "archivedTitle": "Produit archivé",
@@ -1899,7 +1897,11 @@
       "updatedBody": "{{name}} a été enregistré.",
       "updatedDraftBody": "{{name}} a été enregistré en brouillon.",
       "variantStockTitle": "Stock par variante",
-      "variantStockBody": "Le stock de ce produit se règle variante par variante, dans sa fiche."
+      "variantStockBody": "Le stock de ce produit se règle variante par variante, dans sa fiche.",
+      "stockUpdatedTitle": "Stock mis à jour",
+      "stockAddedBody_one": "{{count}} unité ajoutée à {{name}}.",
+      "stockAddedBody_other": "{{count}} unités ajoutées à {{name}}.",
+      "stockUpdatedBody": "{{name}} : stock enregistré."
     },
     "dashboard": {
       "title": "Bonjour {{name}}",
@@ -4028,7 +4030,9 @@
       "generic": "Une erreur inattendue est survenue. Réessayez dans un instant.",
       "outdated": "Le produit est enregistré, mais pas ses packs et tailles : la base n’a pas encore été mise à jour pour eux.",
       "loadFailed": "Le catalogue n’a pas pu être chargé.",
-      "retry": "Réessayer"
+      "retry": "Réessayer",
+      "staleStock": "Le stock a changé entre-temps (une vente ?). Le nouveau chiffre est affiché : vérifiez-le puis recommencez.",
+      "belowReserved": "Le stock ne peut pas descendre sous les unités réservées par des commandes en attente de paiement."
     },
     "backInStock": {
       "title": "Alertes retour en stock",
@@ -4086,6 +4090,44 @@
       "errorTitle": "Les demandes n'ont pas pu être chargées",
       "errorBody": "Vérifiez la connexion puis réessayez.",
       "retry": "Réessayer"
+    },
+    "restock": {
+      "title": "Réapprovisionner",
+      "openNamed": "Réapprovisionner {{name}}",
+      "openOption": "Réapprovisionner {{option}} ({{name}})",
+      "modeLabel": "Que voulez-vous faire ?",
+      "mode": {
+        "add": "Ajouter du stock",
+        "set": "Corriger le stock"
+      },
+      "modeHint": {
+        "add": "Les unités reçues s’ajoutent au stock actuel, ventes en cours comprises.",
+        "set": "Indiquez le nombre exact d’unités en rayon, par exemple après un inventaire."
+      },
+      "current": "Stock actuel",
+      "next": "Après enregistrement",
+      "inputLabel": {
+        "add": "Unités reçues",
+        "set": "Nouveau stock en rayon"
+      },
+      "optionInput": {
+        "add": "Unités reçues pour {{option}}",
+        "set": "Nouveau stock en rayon pour {{option}}"
+      },
+      "quickAdd_one": "Ajouter {{count}} unité",
+      "quickAdd_other": "Ajouter {{count}} unités",
+      "untrackedOption": "Disponibilité à régler dans la fiche",
+      "saveAdd": "Ajouter au stock",
+      "saveSet": "Enregistrer le stock",
+      "errors": {
+        "empty": "Indiquez un nombre d’unités.",
+        "invalid": "Saisissez un nombre entier positif.",
+        "unchanged": "Ce nombre ne change pas le stock.",
+        "tooLarge": "Ce nombre est trop grand.",
+        "belowReserved_one": "Le stock ne peut pas descendre sous l’unité réservée par une commande en attente de paiement.",
+        "belowReserved_other": "Le stock ne peut pas descendre sous les {{count}} unités réservées par des commandes en attente de paiement.",
+        "nothing": "Indiquez une quantité pour au moins une option."
+      }
     }
   },
   "community": {

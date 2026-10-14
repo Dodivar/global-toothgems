@@ -91,6 +91,8 @@ export interface VariantStock {
    * `comboKey()` of a pack/SS option, the variant id of any other variant.
    */
   key: string;
+  /** Database id of the variant (Supabase store only): what a stock change targets. */
+  variantId?: string;
   name: Localized;
   sku?: string;
   /** EUR; undefined = the product price applies. */

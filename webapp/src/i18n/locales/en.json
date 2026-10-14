@@ -1884,8 +1884,6 @@
       "outOfStockBody": "{{name}} is no longer offered for sale.",
       "restockedTitle": "Product available again",
       "restockedBody": "{{name}} is offered for sale again.",
-      "restockNeedsFormTitle": "A quantity is needed",
-      "restockNeedsFormBody": "Enter the new stock in the Inventory and availability section.",
       "restoredTitle": "Product restored",
       "restoredBody": "{{name}} is back as a draft, ready for review.",
       "archivedTitle": "Product archived",
@@ -1899,7 +1897,11 @@
       "updatedBody": "{{name}} has been saved.",
       "updatedDraftBody": "{{name}} has been saved as a draft.",
       "variantStockTitle": "Stock per variant",
-      "variantStockBody": "This product's stock is set variant by variant, on its edit page."
+      "variantStockBody": "This product's stock is set variant by variant, on its edit page.",
+      "stockUpdatedTitle": "Stock updated",
+      "stockAddedBody_one": "{{count}} unit added to {{name}}.",
+      "stockAddedBody_other": "{{count}} units added to {{name}}.",
+      "stockUpdatedBody": "{{name}}: stock saved."
     },
     "dashboard": {
       "title": "Hello {{name}}",
@@ -4028,7 +4030,9 @@
       "generic": "Something unexpected went wrong. Try again in a moment.",
       "outdated": "The product was saved, but not its packs and sizes: the database has not been updated for them yet.",
       "loadFailed": "The catalogue could not be loaded.",
-      "retry": "Try again"
+      "retry": "Try again",
+      "staleStock": "The stock changed in the meantime (a sale?). The new figure is shown: check it and try again.",
+      "belowReserved": "The stock cannot go below the units held by orders awaiting payment."
     },
     "backInStock": {
       "title": "Back-in-stock alerts",
@@ -4086,6 +4090,44 @@
       "errorTitle": "The requests could not be loaded",
       "errorBody": "Check the connection and try again.",
       "retry": "Try again"
+    },
+    "restock": {
+      "title": "Restock",
+      "openNamed": "Restock {{name}}",
+      "openOption": "Restock {{option}} ({{name}})",
+      "modeLabel": "What do you want to do?",
+      "mode": {
+        "add": "Add stock",
+        "set": "Correct the stock"
+      },
+      "modeHint": {
+        "add": "The units received are added to the current stock, sales in progress included.",
+        "set": "Enter the exact number of units on the shelf, for instance after a stocktake."
+      },
+      "current": "Current stock",
+      "next": "Once saved",
+      "inputLabel": {
+        "add": "Units received",
+        "set": "New stock on the shelf"
+      },
+      "optionInput": {
+        "add": "Units received for {{option}}",
+        "set": "New stock on the shelf for {{option}}"
+      },
+      "quickAdd_one": "Add {{count}} unit",
+      "quickAdd_other": "Add {{count}} units",
+      "untrackedOption": "Availability is set in the product form",
+      "saveAdd": "Add to stock",
+      "saveSet": "Save the stock",
+      "errors": {
+        "empty": "Enter a number of units.",
+        "invalid": "Enter a positive whole number.",
+        "unchanged": "This number does not change the stock.",
+        "tooLarge": "This number is too large.",
+        "belowReserved_one": "The stock cannot go below the unit held by an order awaiting payment.",
+        "belowReserved_other": "The stock cannot go below the {{count}} units held by orders awaiting payment.",
+        "nothing": "Enter a quantity for at least one option."
+      }
     }
   },
   "community": {

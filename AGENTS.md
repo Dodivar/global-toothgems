@@ -73,7 +73,7 @@ Stripe  payment source of truth; fulfilment only from verified, idempotent webho
 
 | Domain | UI | Database | State |
 | --- | --- | --- | --- |
-| Catalogue, categories/families, gem colours, variants, recommendations | storefront + back office | yes | **Live** |
+| Catalogue, categories/families, gem colours, variants, recommendations | storefront + back office | yes | **Live** (quick restock pop-up in `/admin/produits` since 2026-10-14: `admin_adjust_stock()`, relative and atomic, decision 91) |
 | Customer & staff auth (sign-up, sign-in, recovery, email/password change) | yes | yes | **Live** (Google sign-in coded 2026-10-04 and live once the provider is enabled in the Supabase dashboard — see `supabase/README.md`; data export and account deletion not wired). Next.js side (cookie sessions, proxy, `/auth/confirm`) live since 2026-09-30 (Vercel switched, Supabase dashboard settings applied by the user) |
 | Favourites, reviews + moderation, member & admin order reading | yes | yes | **Live** |
 | Studio 3D workspace (creations, Gem Groups, share links) | yes | yes | **Live** (subscription/paywall not built: preview access). Since 2026-10-07 the library is the shop's gems, whatever their stock (`studio_gem_appearances`, `lib/studio3d/gemCatalog.ts`; sizes = `ss` variants, else SS2/SS5/SS7; scene format 2) — decision 81 in `supabase/README.md`. No back-office screen for the drawing rows yet |
