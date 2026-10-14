@@ -37,3 +37,11 @@ next-env.d.ts
 
 # Build folder of the Playwright auth-server tests (playwright.config.ts)
 /.next-e2e-auth/
+
+# Live E2E suite (playwright.live.config.ts): build folder and reports
+/.next-e2e-live/
+/test-results-live/
+/playwright-report-live/
+
+# Unit-test coverage reports (npm run test:coverage)
+/coverage/

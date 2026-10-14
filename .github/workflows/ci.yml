@@ -1,0 +1,266 @@
+# Quality gate of the repository (docs/testing.md). Every job must succeed for
+# the final `CI result` job to pass; branch protection requires that job only.
+#
+# Security: `pull_request` (never `pull_request_target`), read-only token, no
+# repository secret is used by any job. Every service the tests touch is local
+# to the runner: a Supabase stack started from supabase/ (migrations + seeds),
+# the fake Supabase Auth of webapp/e2e/support, and no Stripe or e-mail
+# provider at all. Actions are pinned to commit SHAs (tag in the comment).
+name: CI
+
+on:
+  push:
+    branches: [dev, main]
+  pull_request:
+    branches: [main, dev]
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+concurrency:
+  group: ci-${{ github.ref }}
+  cancel-in-progress: true
+
+env:
+  CI: "true"
+  NODE_VERSION: "24"
+  SUPABASE_CLI_VERSION: "2.120.0"
+  NEXT_TELEMETRY_DISABLED: "1"
+  # Never a real project: the app falls back to its mock mode without these.
+  NEXT_PUBLIC_SUPABASE_URL: ""
+  NEXT_PUBLIC_SUPABASE_PUBLISHABLE_KEY: ""
+  NEXT_PUBLIC_POSTHOG_PROJECT_TOKEN: ""
+
+defaults:
+  run:
+    working-directory: webapp
+
+jobs:
+  static:
+    name: Lint and type-check
+    runs-on: ubuntu-latest
+    timeout-minutes: 15
+    steps:
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+      - uses: actions/setup-node@949feb2413d6458794dcd2491c4babbbce0c15c1 # v7.1.0
+        with:
+          node-version: ${{ env.NODE_VERSION }}
+          cache: npm
+          cache-dependency-path: |
+            package-lock.json
+            webapp/package-lock.json
+      # The root package (@vercel/speed-insights, imported by app/layout.tsx) resolves from the root node_modules.
+      - run: npm ci --no-audit --no-fund
+        working-directory: .
+      - run: npm ci --no-audit --no-fund
+      - run: npm run lint
+      - run: npm run typecheck
+      - name: Generated document copies are up to date
+        run: npm run check:documents
+
+  unit:
+    name: Unit tests and coverage
+    runs-on: ubuntu-latest
+    timeout-minutes: 15
+    steps:
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+      - uses: actions/setup-node@949feb2413d6458794dcd2491c4babbbce0c15c1 # v7.1.0
+        with:
+          node-version: ${{ env.NODE_VERSION }}
+          cache: npm
+          cache-dependency-path: webapp/package-lock.json
+      - run: npm ci --no-audit --no-fund
+      # Fails on any failed test, on no test found, and on a coverage threshold missed (vitest.config.ts).
+      - run: npm run test:coverage
+      - uses: actions/upload-artifact@cf430e030ddbb5b0abf93d22962f4752f3646cd9 # v7.0.2
+        if: ${{ !cancelled() }}
+        with:
+          name: unit-coverage
+          path: webapp/coverage/
+          retention-days: 14
+          if-no-files-found: error
+
+  functions:
+    name: Edge Functions (Deno)
+    runs-on: ubuntu-latest
+    timeout-minutes: 15
+    defaults:
+      run:
+        working-directory: supabase/functions
+    steps:
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+      - uses: denoland/setup-deno@22d081ff2d3a40755e97629de92e3bcbfa7cf2ed # v2.0.5
+        with:
+          deno-version: v2.x
+      # No permission flag: the handlers are tested with injected fakes, never the network.
+      # --node-modules-dir=none: ignore the repository root's package.json, as the deployed functions do.
+      - run: deno test --node-modules-dir=none
+      - name: Type-check every deployed entry point
+        run: deno check --node-modules-dir=none */index.ts
+
+  database:
+    name: Database (migrations + SQL suites)
+    runs-on: ubuntu-latest
+    timeout-minutes: 30
+    defaults:
+      run:
+        working-directory: .
+    steps:
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+      - uses: supabase/setup-cli@45a513f8c64c0bc8e0e3dfe572b5c95be85f6359 # v3.0.1
+        with:
+          version: ${{ env.SUPABASE_CLI_VERSION }}
+      # Applies every migration of supabase/migrations to an empty database, then seed.sql:
+      # a migration that does not apply from scratch fails here.
+      - name: Start a local Supabase stack
+        run: supabase start -x studio,imgproxy,logflare,vector,edge-runtime,supavisor,postgres-meta
+      - name: Disable the scheduled jobs (they would call Edge Functions)
+        run: docker exec -i supabase_db_global-toothgems psql -U postgres -d postgres -v ON_ERROR_STOP=1 -c "select cron.unschedule(jobid) from cron.job;"
+      - name: Run every SQL validation suite
+        run: node supabase/tests/run.mjs
+      - name: Database logs
+        if: failure()
+        run: docker logs supabase_db_global-toothgems 2>&1 | tail -200
+      - if: always()
+        run: supabase stop --no-backup
+
+  build:
+    name: Production build
+    runs-on: ubuntu-latest
+    timeout-minutes: 20
+    steps:
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+      - uses: actions/setup-node@949feb2413d6458794dcd2491c4babbbce0c15c1 # v7.1.0
+        with:
+          node-version: ${{ env.NODE_VERSION }}
+          cache: npm
+          cache-dependency-path: |
+            package-lock.json
+            webapp/package-lock.json
+      - run: npm ci --no-audit --no-fund
+        working-directory: .
+      - run: npm ci --no-audit --no-fund
+      - run: npm run build
+
+  e2e:
+    name: E2E (smoke, then full)
+    needs: [static]
+    runs-on: ubuntu-latest
+    timeout-minutes: 30
+    steps:
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+      - uses: actions/setup-node@949feb2413d6458794dcd2491c4babbbce0c15c1 # v7.1.0
+        with:
+          node-version: ${{ env.NODE_VERSION }}
+          cache: npm
+          cache-dependency-path: |
+            package-lock.json
+            webapp/package-lock.json
+      - run: npm ci --no-audit --no-fund
+        working-directory: .
+      - run: npm ci --no-audit --no-fund
+      - run: npx playwright install --with-deps chromium
+      # Critical journeys first, so a broken storefront, sign-in or cart fails fast.
+      - name: Smoke tests
+        run: npm run test:e2e:smoke
+      # Every project: mock-mode routes and zones, then the server-side auth plumbing
+      # against the fake Supabase Auth (e2e/support/fake-supabase.mjs).
+      - name: Full suite
+        run: npm run test:e2e
+      - uses: actions/upload-artifact@cf430e030ddbb5b0abf93d22962f4752f3646cd9 # v7.0.2
+        if: failure()
+        with:
+          name: e2e-traces
+          path: webapp/test-results/
+          retention-days: 7
+
+  e2e-live:
+    name: E2E live (local Supabase stack)
+    needs: [static]
+    runs-on: ubuntu-latest
+    timeout-minutes: 40
+    steps:
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+      - uses: actions/setup-node@949feb2413d6458794dcd2491c4babbbce0c15c1 # v7.1.0
+        with:
+          node-version: ${{ env.NODE_VERSION }}
+          cache: npm
+          cache-dependency-path: |
+            package-lock.json
+            webapp/package-lock.json
+      - uses: supabase/setup-cli@45a513f8c64c0bc8e0e3dfe572b5c95be85f6359 # v3.0.1
+        with:
+          version: ${{ env.SUPABASE_CLI_VERSION }}
+      - name: Start a local Supabase stack
+        working-directory: .
+        run: supabase start -x studio,imgproxy,logflare,vector,edge-runtime,supavisor,postgres-meta
+      - name: Seed the demo member and disable the scheduled jobs
+        working-directory: .
+        run: |
+          docker exec -i supabase_db_global-toothgems psql -U postgres -d postgres -v ON_ERROR_STOP=1 < supabase/seed_demo_member.sql
+          docker exec -i supabase_db_global-toothgems psql -U postgres -d postgres -v ON_ERROR_STOP=1 -c "select cron.unschedule(jobid) from cron.job;"
+      # The local stack's well-known development keys, read from the CLI (masked anyway).
+      - name: Point the live suite at the local stack
+        working-directory: .
+        run: |
+          supabase status -o env > "$RUNNER_TEMP/supabase.env"
+          echo "Values provided by the CLI: $(cut -d= -f1 "$RUNNER_TEMP/supabase.env" | tr '\n' ' ')"
+          set -a; . "$RUNNER_TEMP/supabase.env"; set +a
+          publishable="${PUBLISHABLE_KEY:-$ANON_KEY}"
+          service="${SERVICE_ROLE_KEY:-$SECRET_KEY}"
+          echo "::add-mask::$publishable"
+          echo "::add-mask::$service"
+          {
+            echo "E2E_SUPABASE_URL=$API_URL"
+            echo "E2E_SUPABASE_PUBLISHABLE_KEY=$publishable"
+            echo "E2E_SUPABASE_SERVICE_KEY=$service"
+          } >> "$GITHUB_ENV"
+          rm "$RUNNER_TEMP/supabase.env"
+      - run: npm ci --no-audit --no-fund
+        working-directory: .
+      - run: npm ci --no-audit --no-fund
+      - run: npx playwright install --with-deps chromium
+      # Production bundle (next build + next start) built against the local stack.
+      - name: Live suite
+        run: npm run test:e2e:live
+        env:
+          E2E_LIVE_SERVER: start
+      - uses: actions/upload-artifact@cf430e030ddbb5b0abf93d22962f4752f3646cd9 # v7.0.2
+        if: failure()
+        with:
+          name: e2e-live-report
+          path: |
+            webapp/test-results-live/
+            webapp/playwright-report-live/
+          retention-days: 7
+      - name: Auth logs
+        if: failure()
+        working-directory: .
+        run: docker logs supabase_auth_global-toothgems 2>&1 | tail -100
+      - if: always()
+        working-directory: .
+        run: supabase stop --no-backup
+
+  # The one check branch protection requires. It runs even when a job failed or
+  # was skipped, and passes only if every job above succeeded.
+  result:
+    name: CI result
+    if: always()
+    needs: [static, unit, functions, database, build, e2e, e2e-live]
+    runs-on: ubuntu-latest
+    timeout-minutes: 5
+    defaults:
+      run:
+        working-directory: .
+    steps:
+      - name: Every job succeeded
+        env:
+          RESULTS: ${{ toJSON(needs) }}
+        run: |
+          echo "$RESULTS" | jq -r 'to_entries[] | "\(.key): \(.value.result)"'
+          failed=$(echo "$RESULTS" | jq -r '[to_entries[] | select(.value.result != "success") | .key] | join(", ")')
+          if [ -n "$failed" ]; then
+            echo "::error::Not successful: $failed"
+            exit 1
+          fi

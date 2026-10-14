@@ -11,7 +11,14 @@
     "typecheck": "next typegen && tsc --noEmit && tsc --noEmit -p tsconfig.e2e.json",
     "lint": "oxlint",
     "test": "vitest run",
+    "test:coverage": "vitest run --coverage",
     "test:e2e": "playwright test",
+    "test:e2e:smoke": "playwright test --project=chromium e2e/public-routes.spec.ts e2e/auth.spec.ts e2e/cart.spec.ts",
+    "test:e2e:live": "playwright test -c playwright.live.config.ts",
+    "test:db": "node ../supabase/tests/run.mjs",
+    "test:functions": "cd ../supabase/functions && deno test --node-modules-dir=none && deno check --node-modules-dir=none */index.ts",
+    "check:documents": "node scripts/sync-documents.mjs --check",
+    "ci": "npm run lint && npm run typecheck && npm run test:coverage && npm run build && npm run test:e2e",
     "sync:documents": "node scripts/sync-documents.mjs"
   },
   "dependencies": {
@@ -42,6 +49,7 @@
     "@types/node": "^24.13.3",
     "@types/react": "^19.2.18",
     "@types/react-dom": "^19.2.7",
+    "@vitest/coverage-v8": "^5.0.2",
     "oxlint": "^1.81.0",
     "tailwindcss": "^4.3.3",
     "typescript": "~6.0.2",
