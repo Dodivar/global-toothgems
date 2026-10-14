@@ -6,10 +6,9 @@ import type { GemShape } from "./products";
  *
  * These pages are a visual prototype: no subscription stands behind them. The
  * working editor is a separate page (`/studio-3d/atelier`, see
- * `data/studioEditor.ts`); nothing here is read by it. Everything the pages
- * show — the pieces in the library, the compositions on the canvas, the saved
- * creations — is fixture data, so the art direction can be reviewed before the
- * product exists.
+ * `data/studioEditor.ts`); nothing here is read by it. The compositions drawn
+ * on the inspiration boards and the offers listed on the presentation page are
+ * fixture data, until the subscription exists.
  */
 
 /**
@@ -37,41 +36,6 @@ export interface PlacedPiece {
   shape: GemShape;
   material: StudioMaterial;
 }
-
-export interface LibraryPiece {
-  id: string;
-  shape: GemShape;
-  material: StudioMaterial;
-  name: Localized;
-  /** Indicative real-world size shown in the properties panel. */
-  spec: string;
-}
-
-export const STUDIO_LIBRARY: LibraryPiece[] = [
-  { id: "crystal-round", shape: "round", material: "crystal", name: { fr: "Cristal rond", en: "Round crystal" }, spec: "SS5 · 1,8 mm" },
-  { id: "sapphire-round", shape: "round", material: "sapphire", name: { fr: "Saphir rond", en: "Round sapphire" }, spec: "SS3 · 1,4 mm" },
-  { id: "rose-round", shape: "round", material: "rose", name: { fr: "Rose fuchsia", en: "Fuchsia rose" }, spec: "SS5 · 1,8 mm" },
-  { id: "gold-heart", shape: "heart", material: "gold", name: { fr: "Cœur or 18k", en: "18k gold heart" }, spec: "3,0 mm" },
-  { id: "gold-star", shape: "star", material: "gold", name: { fr: "Étoile or 18k", en: "18k gold star" }, spec: "3,2 mm" },
-  { id: "emerald-drop", shape: "drop", material: "emerald", name: { fr: "Goutte émeraude", en: "Emerald drop" }, spec: "2,4 mm" },
-  { id: "opal-flower", shape: "flower", material: "opal", name: { fr: "Fleur opale", en: "Opal flower" }, spec: "3,0 mm" },
-  { id: "crystal-navette", shape: "navette", material: "crystal", name: { fr: "Navette cristal", en: "Crystal navette" }, spec: "2,8 mm" },
-  { id: "sapphire-baguette", shape: "baguette", material: "sapphire", name: { fr: "Baguette saphir", en: "Sapphire baguette" }, spec: "2,2 mm" },
-];
-
-export const MATERIALS: StudioMaterial[] = ["crystal", "sapphire", "rose", "emerald", "gold", "opal"];
-
-/** Where a new piece lands when nothing is selected: the free spots, in order. */
-export const FREE_SLOTS: Omit<PlacedPiece, "id" | "shape" | "material" | "size">[] = [
-  { row: "upper", tooth: 4, u: 0.5, v: 0.62 },
-  { row: "upper", tooth: 5, u: 0.5, v: 0.62 },
-  { row: "upper", tooth: 3, u: 0.5, v: 0.55 },
-  { row: "upper", tooth: 6, u: 0.5, v: 0.55 },
-  { row: "upper", tooth: 2, u: 0.5, v: 0.5 },
-  { row: "upper", tooth: 7, u: 0.5, v: 0.5 },
-  { row: "lower", tooth: 3, u: 0.5, v: 0.45 },
-  { row: "lower", tooth: 4, u: 0.5, v: 0.45 },
-];
 
 export type CompositionId = "signature" | "minimal" | "statement" | "symmetrical" | "mixed" | "sparkle" | "custom";
 
@@ -132,9 +96,6 @@ export const COMPOSITIONS: Record<CompositionId, PlacedPiece[]> = {
   ],
 };
 
-/** The three presets the Studio mockup offers in its composition panel. */
-export const MOCKUP_PRESETS: CompositionId[] = ["signature", "minimal", "statement", "symmetrical"];
-
 /** Editorial inspiration boards. Names are the styles, notes are fictional. */
 export interface InspirationBoard {
   id: CompositionId;
@@ -189,9 +150,36 @@ export const INSPIRATION: InspirationBoard[] = [
   },
 ];
 
-/** Fictional saved compositions for the "Save your creations" card. */
-export const SAVED_CREATIONS: { id: CompositionId; name: string; edited: Localized }[] = [
-  { id: "signature", name: "Aurora", edited: { fr: "Modifiée il y a 2 h", en: "Edited 2 h ago" } },
-  { id: "symmetrical", name: "Émeraude miroir", edited: { fr: "Hier", en: "Yesterday" } },
-  { id: "sparkle", name: "Stardust", edited: { fr: "Il y a 4 jours", en: "4 days ago" } },
+/**
+ * The Studio's offers, as the presentation page lists them: a free trial, then
+ * three monthly plans. Display values only, in integer minor units (§8) —
+ * supplied with the brief (2026-10-15) and still to confirm, like each plan's
+ * features (`studio.plans.<id>` in the translations).
+ *
+ * No subscription stands behind them yet (`studioAccess` is in preview). When
+ * it does, the amounts come from the Stripe Prices the subscriptions are
+ * created against and access from the verified webhook — never from here.
+ */
+export type StudioPlanId = "trial" | "essential" | "artist" | "atelier";
+
+export interface StudioPlan {
+  id: StudioPlanId;
+  /** Monthly price in minor units; 0 for the trial. */
+  amountMinor: number;
+  currency: "EUR";
+  /** Length of the free trial, for the trial only. */
+  trialDays?: number;
+  /** The plan the page singles out. */
+  featured?: boolean;
+}
+
+export const STUDIO_PLANS: StudioPlan[] = [
+  { id: "trial", amountMinor: 0, currency: "EUR", trialDays: 2 },
+  { id: "essential", amountMinor: 500, currency: "EUR" },
+  { id: "artist", amountMinor: 1990, currency: "EUR", featured: true },
+  { id: "atelier", amountMinor: 3990, currency: "EUR" },
 ];
+
+/** The lowest paid plan, quoted as "from …" on the page. */
+export const STUDIO_ENTRY_PLAN = STUDIO_PLANS.find((plan) => plan.id === "essential")!;
+export const STUDIO_TRIAL_DAYS = STUDIO_PLANS.find((plan) => plan.id === "trial")!.trialDays!;
