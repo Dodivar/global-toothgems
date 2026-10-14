@@ -27,6 +27,11 @@ export const test = base.extend<{ problems: string[] }>({
           contentType: route.request().resourceType() === "stylesheet" ? "text/css" : "text/plain",
         }),
     );
+    // Vercel serves /_vercel/* (Speed Insights, app/layout.tsx) on its own platform; `next start` cannot.
+    await page.route(
+      (url) => url.origin === origin && url.pathname.startsWith("/_vercel/"),
+      (route) => route.fulfill({ status: 200, body: "", contentType: "text/javascript" }),
+    );
     page.on("console", (message) => {
       if (message.type() === "error") problems.push(`console: ${message.text()}`);
     });

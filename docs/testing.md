@@ -73,7 +73,7 @@ Runs on every push to `dev` and `main`, every pull request to `main` or `dev`, a
 | Edge Functions (Deno) | a failed `deno test`, a deployed entry point that does not type-check |
 | Database (migrations + SQL suites) | a migration that does not apply to an empty database, or any SQL suite without its success marker |
 | Production build | `next build` fails |
-| E2E (smoke, then full) | any smoke test, then any test of the full suite (after one retry) |
+| E2E (smoke, then full) | any smoke test, then any test of the full suite (after one retry). The mock-mode project runs against the production bundle (`next build` + `next start`, `E2E_BASE_URL`); the auth-server project against its own dev server and the fake Auth |
 | E2E live (local Supabase stack) | any live test (after one retry); a missing configuration stops it before the first test |
 | **CI result** | any job above did not succeed (failed, cancelled **or skipped**) |
 

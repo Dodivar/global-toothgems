@@ -163,19 +163,41 @@ jobs:
         working-directory: .
       - run: npm ci --no-audit --no-fund
       - run: npx playwright install --with-deps chromium
+      # The mock-mode project runs against the production bundle (next build + next start):
+      # on a loaded runner `next dev` compiles routes on demand and reloads open pages,
+      # which wiped the in-memory mock cart mid-test. The auth-server project keeps its
+      # own dev server against the fake Supabase Auth (playwright.config.ts).
+      - name: Build (mock mode)
+        run: npm run build
+      - name: Serve the production build
+        run: |
+          nohup npx next start -p 5199 > "$RUNNER_TEMP/next-start.log" 2>&1 &
+          for i in $(seq 1 60); do
+            if curl -sf -o /dev/null http://localhost:5199/fr; then exit 0; fi
+            sleep 1
+          done
+          cat "$RUNNER_TEMP/next-start.log"
+          exit 1
       # Critical journeys first, so a broken storefront, sign-in or cart fails fast.
       - name: Smoke tests
         run: npm run test:e2e:smoke
+        env:
+          E2E_BASE_URL: http://localhost:5199
       # Every project: mock-mode routes and zones, then the server-side auth plumbing
       # against the fake Supabase Auth (e2e/support/fake-supabase.mjs).
       - name: Full suite
         run: npm run test:e2e
+        env:
+          E2E_BASE_URL: http://localhost:5199
       - uses: actions/upload-artifact@cf430e030ddbb5b0abf93d22962f4752f3646cd9 # v7.0.2
         if: failure()
         with:
           name: e2e-traces
           path: webapp/test-results/
           retention-days: 7
+      - name: Server log
+        if: failure()
+        run: cat "$RUNNER_TEMP/next-start.log"
 
   e2e-live:
     name: E2E live (local Supabase stack)
