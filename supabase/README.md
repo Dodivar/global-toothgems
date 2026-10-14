@@ -1823,4 +1823,6 @@ VAT rates, shipping zones/rates mirroring the Settings prototype. Media rows ref
     are kept after notification (address included) with no purge yet, and deleted with the member's account
     (`on delete cascade`); a retention period (e.g. 12 months) is to decide; (d) there is no unsubscribe link (a
     one-off service e-mail, not marketing) and no way to cancel a request; (e) the e-mail goes out within ~5
-    minutes of the restock (the sweep), first come first served, 25 per run.
+    minutes of the restock (the sweep), first come first served, 25 per run; (f) an e-mail that fails 5 times
+    (email_log attempt cap) leaves its request waiting for good, and a new request for the same address and target
+    then answers ok without adding one: such failures need a look from the team (`email_log` status `failed`).

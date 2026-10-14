@@ -29,7 +29,7 @@ type Phase = "idle" | "form" | "sending" | "done";
  */
 export function BackInStockForm({ productId, variantId, openRequest = 0, className }: BackInStockFormProps) {
   const { t, i18n } = useTranslation();
-  const { realAuth, userId, email: accountEmail } = useAuth();
+  const { realAuth, restoring, userId, email: accountEmail } = useAuth();
   const [phase, setPhase] = useState<Phase>("idle");
   const [email, setEmail] = useState("");
   const [error, setError] = useState<BackInStockError | null>(null);
@@ -44,7 +44,9 @@ export function BackInStockForm({ productId, variantId, openRequest = 0, classNa
     setError(null);
     const result = await requestBackInStockAlert({ productId, variantId, email: address, locale });
     if (result.ok) {
-      setSentTo(member ? accountEmail : address ?? null);
+      // While the session is still being restored a member may have typed an address: the
+      // database used the account's, so the message names none rather than the wrong one.
+      setSentTo(member ? accountEmail : restoring ? null : address ?? null);
       setPhase("done");
     } else {
       setError(result.error);
