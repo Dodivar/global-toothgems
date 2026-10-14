@@ -145,6 +145,8 @@ supabase/
 | 20261010122507 | `members_lounge` | **Applied 2026-10-10.** Members' Lounge (iteration 25, decision 88): `lounge_channels` (the 4 × 5 rooms, ids `<lounge>-<key>`), `lounge_members` (generated handle, lounges, presence + heartbeat), `lounge_conversations` (one per pair), `lounge_messages` (parts jsonb, mentions, reply, reaction totals), `lounge_message_attachments` + private `lounge-media` bucket, `lounge_reactions`, `lounge_room_states` (read state, mutes), `lounge_notifications`; `private.lounge_can_enter()`; RPC `lounge_access/join/heartbeat/directory/overview/mark_read/set_muted/read_notifications/post_message/toggle_reaction`; Realtime publication of `lounge_messages` and `lounge_notifications`. Suite `tests/lounge_validation.sql` (A1–T1) |
 | 20261010145631 | `lounge_handle_initial` | **Applied 2026-10-10.** Decision 88 b: the generated handle is `first.l` (was `first.last`, which showed the full last name in every @mention) and the directory's name no longer falls back to `display_name`. No member existed yet, nothing rewritten |
 | 20261011171901 | `quote_gift_cards` | **Applied 2026-10-11.** Decision 89: `quote_gift_cards(p_codes, p_amount, p_currency)` (SECURITY DEFINER, callable by visitors) — the cart's preview of what the gift card codes pay, same rules as `create_order()`, total only (never a balance) and the refused codes; refused codes throttled per caller (10 per 10 minutes, table `gift_card_code_attempts`, no policies). Suite `tests/gift_card_quote_validation.sql` (GQ1–GQ8) |
+| 20261014141425 | `back_in_stock_alerts` | **Applied 2026-10-14.** Decision 90: `back_in_stock_requests` (product, optional option, lower-cased address, member, language, throttle hash, `notified_at`; RLS on, no grant to anon/authenticated; one waiting request per address and target), `request_back_in_stock_alert(product, variant, email, locale)` (SECURITY DEFINER, visitors and members: target must be out of stock now, account address for a member, 10 new requests / hour per caller, 30 waiting per address), `pending_back_in_stock_emails()` (service role: waiting requests whose target is sellable again, no time window), trigger `email_log_close_back_in_stock` (stamps `notified_at` once the e-mail is sent), template `back_in_stock` (fr + en). Suite `tests/back_in_stock_validation.sql` (B1–B8) |
+| 20261014150008 | `admin_back_in_stock_requests` | **Applied 2026-10-14.** Decision 90: `admin_back_in_stock_requests(p_limit)` (SECURITY DEFINER, `manage_products`, 42501 otherwise) — the back office's read of the requests for `/admin/alertes-stock`: product and option names, product status, the target's stock state, address, member, language, dates and the e-mail's `email_log` status and attempts. Read-only. Suite `tests/back_in_stock_validation.sql` (B9) |
 | 20261008175722 | `contact_attachments_and_support_email` | **Applied 2026-10-08.** Contact form: `contact_requests.attachment_path` → `attachment_paths text[]` (≤ 5, `private.valid_contact_attachment_paths()`), bucket `contact-attachments` 20 MB per object, `submit_contact_request(…, p_attachment_paths text[])` (old signature dropped; ownership per path, no duplicates, ≤ 20 MB in all), guard trigger rebuilt, `contact_ip_allowed(ip_hash)` (service role), template `contact_request_received` (fr + en) for the support inbox. Suite: `iteration7_validation.sql` C3/C4 |
 | 20261008175809 | `contact_attachment_paths_check_grant` | **Applied 2026-10-08.** `execute` on the CHECK helper for `authenticated`/`service_role` (staff triage re-evaluates the CHECK) |
 | 20261007181011 | `gift_card_design_everywhere` | **Applied 2026-10-07.** The design/names/message chosen at checkout are shown back (WYSIWYG): policy `gift_cards: purchaser reads own` (a buyer reads the cards of their purchases through the existing column grant — never the code) so the member's order pages draw the card in its design; the `gift_card_delivery` template bodies (fr + en) lose their `{{message}}` paragraph because the e-mail now draws the card itself (`giftCardVisual()`, message included). Test: a buyer sees only their own cards (to add to `gift_cards_validation.sql`) |
@@ -1119,6 +1121,35 @@ lounge_notifications  (recipient, kind mention|reply|reaction, message, actor, r
   their totals and notifications, overview and read state, attachments and storage policies, a revoked course, the
   rate limit.
 
+### Back-in-stock alerts (iteration 26)
+
+```
+browser  request_back_in_stock_alert(product, variant?, email?, locale)        visitor or member, product page
+           → product active (not a gift card); its option when it sells options (variant_required otherwise)
+           → the target's stock row must be out_of_stock NOW (in_stock otherwise: the page may be stale)
+           → member: the account's address (the typed one is ignored); visitor: the typed one, checked
+           → already waiting for that address and target: {ok: true}, nothing added (no enumeration)
+           → throttle: 10 new requests / hour per account or network address, 30 waiting per address
+           → back_in_stock_requests row → {ok: true}
+pg_cron  send-pending-emails (every 5 minutes) → pending_back_in_stock_emails()
+           → waiting requests whose target is sellable again (stock row not out_of_stock, or none),
+             product / option still on sale, e-mail still open in email_log; oldest first
+           → template back_in_stock, event key back_in_stock:<request id> (exactly once), product card
+             (picture from product-media, name in the request's language) + button to the product page
+email_log row sent / delivered / opened / bounced / complained
+           → trigger email_log_close_back_in_stock → request notified_at: closed, never sent again
+```
+
+- One request = one e-mail, ever. A product that comes back and sells out again before the sweep simply waits for
+  the next restock. Once notified, the same address may ask again (a new request, e.g. the next time it runs out).
+- No time window (the other sweeps look 7 days back): the stock at sweep time decides, however old the request.
+- Nobody reads the table through the API. Staff with `manage_products` read it through
+  `admin_back_in_stock_requests()` (screen `/admin/alertes-stock`, read-only: no cancel or delete).
+- Suite: `tests/back_in_stock_validation.sql` — visitor request and refusals (bad address, in stock, option missing
+  or in stock, unknown product), idempotent second request, no read for anon or members, member address enforced,
+  nothing pending while out of stock, pending after the restock, closed once sent and never pending again, a new
+  request after a notification, the throttle, the staff read (visitor, customer and viewer refused, manager reads).
+
 ### Integrity guarantees
 
 - `orders_total_matches`: `total = subtotal − discount + shipping (+ tax when prices exclude tax)`; discount ≤ subtotal; all amounts ≥ 0.
@@ -1784,3 +1815,18 @@ VAT rates, shipping zones/rates mirroring the Settings prototype. Media rows ref
     holds a code (asking with a large amount gives the whole balance): accepted because the code is the bearer
     credential that spends the money anyway, codes carry ~60 bits, refusals are throttled per caller (10 / 10 min)
     and the answer never carries the expiry, the order or names. The public balance form above stays not built.
+90. **Back-in-stock alerts** (user's request, 2026-10-14: "notify customers once, by e-mail, when a product they
+    signed up for on its page is back"; agent's choices, to confirm). The button replaces "Add to cart" on an
+    out-of-stock product or option; a member is signed up in one click on the account's address, a visitor types
+    one. One e-mail per request, then the request is closed; the next restock needs a new request. Choices to
+    confirm: (a) visitors are accepted **without double opt-in or captcha**, protected by the throttle (10 new
+    requests / hour per caller, 30 waiting per address) — at worst someone receives one "back in stock" e-mail per
+    product they never asked for; (b) `preorder` counts as available again (the storefront sells it); (c) requests
+    are kept after notification (address included) with no purge yet, and deleted with the member's account
+    (`on delete cascade`); a retention period (e.g. 12 months) is to decide; (d) there is no unsubscribe link (a
+    one-off service e-mail, not marketing) and no way to cancel a request; (e) the e-mail goes out within ~5
+    minutes of the restock (the sweep), first come first served, 25 per run; (f) an e-mail that fails 5 times
+    (email_log attempt cap) leaves its request waiting for good, and a new request for the same address and target
+    then answers ok without adding one: such failures show on `/admin/alertes-stock` ("Send failed"); (g) staff
+    with `manage_products` (admin, manager) see the customers' addresses on that screen — today they also hold
+    `manage_customers`; staff cannot delete a request (e.g. a GDPR erasure: SQL editor meanwhile).

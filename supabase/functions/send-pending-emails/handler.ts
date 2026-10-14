@@ -5,7 +5,8 @@ import type { SweepReport } from "../_shared/email/events.ts";
 /**
  * POST /functions/v1/send-pending-emails — the sweep for the e-mails driven by
  * database rows: shipping (per parcel that left), course enrolment (per paid
- * course) and refund (per succeeded refund). Called by pg_cron every 5 minutes.
+ * course), refund (per succeeded refund) and back in stock (per customer request
+ * whose product can be bought again). Called by pg_cron every 5 minutes.
  *
  * Deployed with verify_jwt = false (supabase/config.toml): the caller is the
  * database or the team, not a browser. Authentication is the shared secret

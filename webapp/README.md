@@ -181,6 +181,11 @@ Mapping rules worth knowing:
 - **Images** are public URLs of `product-media` objects. A path whose file is
   not uploaded yet shows the image placeholder.
 - Gift cards (`product_type = 'gift_card'`) stay on their own page.
+- **Out of stock** (the product, or the picked option): "Me prévenir du retour" / "Tell me when it's back" takes
+  the place of "Add to cart" and the quantity, also in the phone's sticky bar (`components/shop/BackInStockForm.tsx`,
+  through `lib/backInStock.ts` → `request_back_in_stock_alert()`). A member is signed up in one click on the
+  account's address, a visitor types one. One e-mail when the stock is back, sent by the `send-pending-emails`
+  sweep (decision 90 in `supabase/README.md`). Mock products (no `dbId`) keep a disabled button.
 
 Not connected yet (still mock): the cart (kept for the browser tab only) and checkout, the Academy, the
 community and most of the back office. Orders and reviews are connected (next
@@ -848,6 +853,17 @@ Live on Supabase; without the Supabase variables the workspace says the base is 
   staff choose between active and suspended only.
 - **Not offered (no server side yet):** export, e-mail sending (the e-mail action opens the operator's own mail
   client), creating a customer account.
+
+## Back-in-stock alerts (`/admin/alertes-stock`)
+
+Under Catalogue in the rail. Read-only view of the requests customers make on sold-out product pages (decision 90
+in `supabase/README.md`), through `lib/adminBackInStock.ts` → `admin_back_in_stock_requests()` (`manage_products`;
+a refusal shows "Restricted access"); states and figures in `lib/adminBackInStockMapping.ts` (tested): *waiting*
+(still sold out), *back* (leaves at the next sweep, ≤ 5 min), *off sale* (product no longer active: nothing
+leaves), *send failed* (5 failed attempts) and *notified*. The page shows the four counts, the most awaited
+products (what to restock), and the list with a view (to send / sent / all) and a search on product, option and
+address. Products link to their edit page, members to their customer file. Without Supabase: an "unavailable"
+state, never invented requests.
 
 ## Statistics on Supabase (`/admin/statistiques`)
 

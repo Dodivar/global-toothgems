@@ -1,9 +1,11 @@
 import { assertEquals } from "jsr:@std/assert@1";
 import {
+  type PendingBackInStock,
   type PendingEnrolment,
   type PendingRefund,
   type PendingShipping,
   type PendingSource,
+  sendBackInStockEmails,
   sendCourseEnrolmentEmails,
   sendPendingEmails,
   sendRefundEmails,
@@ -82,6 +84,7 @@ function source(over: Partial<PendingSource> = {}): PendingSource {
     shipping: () => Promise.resolve([]),
     courseEnrolments: () => Promise.resolve([]),
     refunds: () => Promise.resolve([]),
+    backInStock: () => Promise.resolve([]),
     ...over,
   };
 }
@@ -230,4 +233,50 @@ Deno.test("a refund e-mail carries the credit note its refund issued; without on
   assertEquals(withNote.attachments?.map((a) => a.filename), ["credit-note-AV-2026-000001.pdf"]);
   assertEquals(withNote.text.includes("The matching credit note AV-2026-000001 is attached to this e-mail (PDF)."), true);
   assertEquals(bare.attachments, undefined);
+});
+
+const restock = (over: Partial<PendingBackInStock> = {}): PendingBackInStock => ({
+  requestId: "b-1",
+  email: "visitor@example.com",
+  locale: "fr",
+  productName: "Strass cristal",
+  variantName: "SS6",
+  productSlug: "strass-cristal",
+  imagePath: "products/strass-cristal/01.jpg",
+  ...over,
+});
+
+Deno.test("back in stock: one e-mail per request, keyed by the request, naming the option", async () => {
+  const { deps, seen } = setup();
+  const report = await sendBackInStockEmails(
+    deps,
+    source({ backInStock: () => Promise.resolve([restock(), restock({ requestId: "b-2", variantName: null, locale: "en" })]) }),
+    { mediaBaseUrl: "https://media.example/storage/v1/object/public/product-media" },
+  );
+  assertEquals(report, { examined: 2, sent: 2, inFlight: 0, gaveUp: 0, failed: 0, skipped: 0 });
+  assertEquals(seen.claims.map((c) => [c.eventKey, c.templateKey, c.orderId]), [
+    ["back_in_stock:b-1", "back_in_stock", undefined],
+    ["back_in_stock:b-2", "back_in_stock", undefined],
+  ]);
+  const [fr, en] = seen.requests as { to: string[]; html: string; text: string }[];
+  assertEquals(fr.text.includes(`Voir le produit: ${SITE}/fr/boutique/strass-cristal`), true);
+  assertEquals(fr.text.includes("Strass cristal — SS6"), true);
+  assertEquals(fr.html.includes("https://media.example/storage/v1/object/public/product-media/products/strass-cristal/01.jpg"), true);
+  assertEquals(en.text.includes(`View the product: ${SITE}/en/shop/strass-cristal`), true);
+});
+
+Deno.test("back in stock: without a picture the e-mail still carries the product link", async () => {
+  const { deps, seen } = setup();
+  await sendBackInStockEmails(deps, source({ backInStock: () => Promise.resolve([restock({ imagePath: null })]) }));
+  const [mail] = seen.requests as { html: string; text: string }[];
+  assertEquals(mail.html.includes("<img src=\"https://media"), false);
+  assertEquals(mail.text.includes(`${SITE}/fr/boutique/strass-cristal`), true);
+});
+
+Deno.test("back in stock: a request already sent is not sent again", async () => {
+  const { deps, seen } = setup({ claim: () => ({ claimed: false, status: "sent" }) });
+  const report = await sendBackInStockEmails(deps, source({ backInStock: () => Promise.resolve([restock()]) }));
+  assertEquals(report.sent, 0);
+  assertEquals(report.skipped, 1);
+  assertEquals(seen.requests.length, 0);
 });

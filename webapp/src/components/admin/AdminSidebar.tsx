@@ -2,6 +2,7 @@ import { useTranslation } from "react-i18next";
 import { Link, NavLink, useNavigate, useLanguageSwitch } from "../../lib/navigation";
 import {
   BarChart3,
+  BellRing,
   ChevronsLeft,
   ChevronsRight,
   GraduationCap,
@@ -79,6 +80,7 @@ const GROUPS: RailGroup[] = [
     items: [
       { to: "/admin/produits", labelKey: "admin.nav.products", icon: Package },
       { to: "/admin/categories", labelKey: "admin.nav.categories", icon: Tags },
+      { to: "/admin/alertes-stock", labelKey: "admin.nav.backInStock", icon: BellRing },
     ],
   },
   {
