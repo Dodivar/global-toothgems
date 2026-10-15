@@ -79,7 +79,14 @@ interface BlockJson {
   align: "left" | "center" | "full" | null;
   title: string | null;
   duration_seconds: number | null;
-  en: En<{ body_html: string | null; alt_text: string | null; caption: string | null; title: string | null }>;
+  en: En<{
+    body_html: string | null;
+    alt_text: string | null;
+    caption: string | null;
+    title: string | null;
+    media_id?: string | null;
+    poster_media_id?: string | null;
+  }>;
 }
 
 interface StepJson {
@@ -101,7 +108,7 @@ interface QuestionJson {
   id: string;
   text: string;
   image_media_id: string | null;
-  en: En<{ text: string }>;
+  en: En<{ text: string | null; image_media_id?: string | null }>;
   answers: AnswerJson[];
 }
 
@@ -218,6 +225,7 @@ function toBlock(json: BlockJson): ContentBlock {
       id: json.id,
       type: "image",
       src: json.media_id ?? "",
+      ...(en?.media_id ? { srcEn: en.media_id } : {}),
       alt: loc(json.alt_text, en?.alt_text),
       caption: loc(json.caption, en?.caption),
       align: json.align ?? "full",
@@ -229,6 +237,7 @@ function toBlock(json: BlockJson): ContentBlock {
       type: "video",
       source: json.media_id ?? "",
       poster: json.poster_media_id ?? "",
+      ...(en?.poster_media_id ? { posterEn: en.poster_media_id } : {}),
       title: loc(json.title, en?.title),
       duration: secondsToClock(json.duration_seconds),
       caption: loc(json.caption, en?.caption),
@@ -260,6 +269,7 @@ function toQuestion(json: QuestionJson): Question {
     incorrectFeedback: EMPTY,
   };
   if (json.image_media_id) question.image = json.image_media_id;
+  if (json.en?.image_media_id) question.imageEn = json.en.image_media_id;
   return question;
 }
 

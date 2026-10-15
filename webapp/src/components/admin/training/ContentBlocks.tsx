@@ -22,12 +22,12 @@ import { FormField } from "../FormField";
 import { AdminSelect } from "../AdminSelect";
 import { BlockTypeBadge } from "./TrainingPrimitives";
 import { MediaImage } from "./MediaImage";
-import { MediaPicker } from "./MediaPicker";
+import { EnglishImagePicker, MediaPicker } from "./MediaPicker";
 import { secondsToClock } from "../../../lib/adminTrainingMapping";
 import { useTrainingMedia } from "../../../lib/trainingMedia";
 import { RichTextEditor } from "./RichTextEditor";
 import { LessonBlock } from "../../learning/LessonBlocks";
-import { BLOCK_TYPES, type BlockType, type ContentBlock, type ImageBlock, type TextBlock, type VideoBlock } from "../../../data/adminTraining";
+import { BLOCK_TYPES, localizedMedia, type BlockType, type ContentBlock, type ImageBlock, type TextBlock, type VideoBlock } from "../../../data/adminTraining";
 import type { ContentLang } from "../../../lib/localized";
 import type { DragItemProps } from "../../../lib/useDragReorder";
 
@@ -323,7 +323,7 @@ function BlockSummary({ block, lang }: { block: ContentBlock; lang: ContentLang 
   if (block.type === "image") {
     return (
       <div className="mt-1.5 flex items-center gap-2.5">
-        <MediaImage mediaRef={block.src} className="h-10 w-14 flex-none rounded-[var(--radius-xs)] object-cover" />
+        <MediaImage mediaRef={localizedMedia(block.src, block.srcEn, lang)} className="h-10 w-14 flex-none rounded-[var(--radius-xs)] object-cover" />
         <p className="m-0 line-clamp-2 text-[length:var(--text-caption)] text-[var(--text-muted)]">
           {block.caption[lang] || block.alt[lang] || t("admin.training.blocks.imageHint")}
         </p>
@@ -334,7 +334,7 @@ function BlockSummary({ block, lang }: { block: ContentBlock; lang: ContentLang 
   return (
     <div className="mt-1.5 flex items-center gap-2.5">
       <span className="relative h-10 w-14 flex-none overflow-hidden rounded-[var(--radius-xs)]">
-        <MediaImage mediaRef={block.poster} className="h-full w-full object-cover" />
+        <MediaImage mediaRef={localizedMedia(block.poster, block.posterEn, lang)} className="h-full w-full object-cover" />
         <span className="absolute inset-0 grid place-items-center bg-[rgba(17,17,17,.34)] text-[var(--gt-white)]">
           <Play size={12} strokeWidth={2.5} fill="currentColor" aria-hidden="true" />
         </span>
@@ -400,7 +400,7 @@ export function ImageBlockEditor({
       <div className="grid gap-4 md:grid-cols-[minmax(0,260px)_minmax(0,1fr)]">
         <figure className="m-0 grid gap-2">
           <MediaImage
-            mediaRef={block.src}
+            mediaRef={localizedMedia(block.src, block.srcEn, lang)}
             alt={block.alt[lang] || ""}
             className="aspect-[4/3] w-full rounded-[var(--admin-radius-sm)] border border-[var(--border-subtle)] object-cover"
           />
@@ -469,8 +469,10 @@ export function ImageBlockEditor({
             alt: { fr: block.alt.fr || media.alt.fr, en: block.alt.en || media.alt.en },
           });
         }}
-        label={t("admin.training.blocks.imageReplace")}
+        label={lang === "en" ? t("trainingMedia.picker.french") : t("admin.training.blocks.imageReplace")}
       />
+
+      <EnglishImagePicker lang={lang} value={block.srcEn} onChange={(srcEn) => onChange({ srcEn })} />
     </div>
   );
 }
@@ -496,7 +498,7 @@ export function VideoBlockEditor({
             // The real file, as a learner will get it: controls, no autoplay, no sound until asked.
             <video
               src={videoUrl}
-              poster={urlOf(block.poster) || undefined}
+              poster={urlOf(localizedMedia(block.poster, block.posterEn, lang)) || undefined}
               controls
               preload="metadata"
               playsInline
@@ -505,7 +507,11 @@ export function VideoBlockEditor({
               <track kind="captions" />
             </video>
           ) : (
-            <VideoFrame poster={block.poster} title={block.title[lang]} duration={block.duration} />
+            <VideoFrame
+              poster={localizedMedia(block.poster, block.posterEn, lang)}
+              title={block.title[lang]}
+              duration={block.duration}
+            />
           )}
           <p className="m-0 text-[length:var(--text-caption)] text-[var(--text-subtle)]">
             {videoUrl ? t("admin.training.blocks.previewLabel") : t("admin.training.blocks.videoNone")}
@@ -577,6 +583,7 @@ export function VideoBlockEditor({
         hint={t("admin.training.blocks.videoPosterHint")}
         clearable
       />
+      {(block.poster || block.posterEn) && <EnglishImagePicker lang={lang} value={block.posterEn} onChange={(posterEn) => onChange({ posterEn })} />}
     </div>
   );
 }

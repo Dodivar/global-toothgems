@@ -145,7 +145,7 @@ function normalise(value: string): string {
 /**
  * How many places each media reference is used across the authored courses:
  * course and module covers, image blocks, videos and their posters, question
- * images. A file in use cannot be deleted from the library — the lesson would
+ * images — English files included. A file in use cannot be deleted from the library — the lesson would
  * lose it (the database refuses it too).
  */
 export function mediaUsage(courses: TrainingCourse[]): Map<string, number> {
@@ -159,14 +159,21 @@ export function mediaUsage(courses: TrainingCourse[]): Map<string, number> {
       add(module.cover);
       for (const step of module.steps) {
         for (const block of step.blocks) {
-          if (block.type === "image") add(block.src);
+          if (block.type === "image") {
+            add(block.src);
+            add(block.srcEn);
+          }
           if (block.type === "video") {
             add(block.source);
             add(block.poster);
+            add(block.posterEn);
           }
         }
       }
-      for (const question of module.quiz?.questions ?? []) add(question.image);
+      for (const question of module.quiz?.questions ?? []) {
+        add(question.image);
+        add(question.imageEn);
+      }
     }
   }
   return counts;

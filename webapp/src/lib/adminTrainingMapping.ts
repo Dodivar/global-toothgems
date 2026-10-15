@@ -21,7 +21,8 @@ import { minorToDecimalString, type CoursePromotion } from "./coursePricing";
  *
  * French lives in the base columns, English in one `*_translations` row per
  * node (absent = no English yet, the French is shown). Media slots hold the
- * `training_media` id. Money crosses the boundary here: numeric(12,2) in the
+ * `training_media` id; an image slot may have an English file in the same
+ * translation row (images that carry text), empty = the French one. Money crosses the boundary here: numeric(12,2) in the
  * database, integer minor units in TypeScript, a decimal string in payloads.
  */
 
@@ -117,6 +118,7 @@ function rowToBlock(row: BlockRow): ContentBlock {
       id: row.id,
       type: "image",
       src: row.media_id ?? "",
+      ...(t?.media_id ? { srcEn: t.media_id } : {}),
       alt: loc(row.alt_text, t?.alt_text),
       caption: loc(row.caption, t?.caption),
       align: (row.align as "left" | "center" | "full" | null) ?? "full",
@@ -128,6 +130,7 @@ function rowToBlock(row: BlockRow): ContentBlock {
       type: "video",
       source: row.media_id ?? "",
       poster: row.poster_media_id ?? "",
+      ...(t?.poster_media_id ? { posterEn: t.poster_media_id } : {}),
       title: loc(row.title, t?.title),
       duration: secondsToClock(row.duration_seconds),
       caption: loc(row.caption, t?.caption),
@@ -165,6 +168,7 @@ function rowToQuestion(row: QuestionRow): Question {
     incorrectFeedback: loc(row.incorrect_feedback, t?.incorrect_feedback),
   };
   if (row.image_media_id) question.image = row.image_media_id;
+  if (t?.image_media_id) question.imageEn = t.image_media_id;
   const learnMore = optLoc(row.learn_more, t?.learn_more);
   if (learnMore) question.learnMore = learnMore;
   return question;
@@ -289,7 +293,7 @@ function blockPayload(block: ContentBlock) {
       alt_text: trim(block.alt.fr),
       caption: trim(block.caption.fr),
       align: block.align,
-      en: { alt_text: trim(block.alt.en), caption: trim(block.caption.en) },
+      en: { alt_text: trim(block.alt.en), caption: trim(block.caption.en), media_id: media(block.srcEn) },
     };
   }
   return {
@@ -300,7 +304,7 @@ function blockPayload(block: ContentBlock) {
     title: trim(block.title.fr),
     caption: trim(block.caption.fr),
     duration_seconds: clockToSeconds(block.duration),
-    en: { title: trim(block.title.en), caption: trim(block.caption.en) },
+    en: { title: trim(block.title.en), caption: trim(block.caption.en), poster_media_id: media(block.posterEn) },
   };
 }
 
@@ -326,6 +330,7 @@ function quizPayload(quiz: Quiz) {
         correct_feedback: trim(question.correctFeedback.en),
         incorrect_feedback: trim(question.incorrectFeedback.en),
         learn_more: trim(question.learnMore?.en),
+        image_media_id: media(question.imageEn),
       },
       answers: question.answers.map((answer) => ({
         id: answer.id,

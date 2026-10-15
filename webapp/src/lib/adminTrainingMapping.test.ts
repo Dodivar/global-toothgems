@@ -15,6 +15,7 @@ import {
 
 const IMG = "11111111-1111-4111-8111-111111111111";
 const VID = "22222222-2222-4222-8222-222222222222";
+const IMG_EN = "33333333-3333-4333-8333-333333333333";
 
 /** A stored course as PostgREST returns it with ADMIN_COURSE_SELECT (columns the mapping reads). */
 const row = {
@@ -155,6 +156,61 @@ describe("courseToPayload", () => {
       ["a1", true, "Parce que"],
       ["a2", false, ""],
     ]);
+  });
+});
+
+describe("English images", () => {
+  const withEnglish = {
+    ...row,
+    course_modules: row.course_modules.map((module) =>
+      module.id !== "m1"
+        ? module
+        : {
+            ...module,
+            course_steps: module.course_steps.map((step) => ({
+              ...step,
+              course_blocks: [
+                ...step.course_blocks,
+                {
+                  id: "b3",
+                  position: 2,
+                  kind: "image",
+                  media_id: IMG,
+                  alt_text: "Schéma",
+                  caption: null,
+                  align: "full",
+                  course_block_translations: [{ locale: "en", alt_text: null, caption: null, media_id: IMG_EN }],
+                },
+              ],
+            })),
+          },
+    ),
+  } as unknown as CourseRow;
+  const course = rowToCourse(withEnglish);
+
+  it("reads the English file of an image slot, and none when it is absent", () => {
+    const blocks = course.modules[0].steps[0].blocks;
+    expect(blocks[2]).toMatchObject({ type: "image", src: IMG, srcEn: IMG_EN });
+    expect(blocks[1]).not.toHaveProperty("posterEn");
+    expect(course.modules[0].quiz?.questions[0]).not.toHaveProperty("imageEn");
+  });
+
+  it("sends the English files in the translation payloads", () => {
+    const module = { ...course.modules[0] };
+    module.quiz = { ...module.quiz!, questions: [{ ...module.quiz!.questions[0], image: IMG, imageEn: IMG_EN }] };
+    const video = module.steps[0].blocks[1];
+    if (video.type === "video") module.steps = [{ ...module.steps[0], blocks: [module.steps[0].blocks[0], { ...video, poster: IMG, posterEn: IMG_EN }, module.steps[0].blocks[2]] }];
+    const payload = courseToPayload({ ...course, modules: [module] });
+    const blocks = payload.modules[0].steps[0].blocks;
+    expect(blocks[2].en).toMatchObject({ media_id: IMG_EN });
+    expect(blocks[1].en).toMatchObject({ poster_media_id: IMG_EN });
+    expect(payload.modules[0].quiz?.questions[0].en).toMatchObject({ image_media_id: IMG_EN, text: "" });
+  });
+
+  it("sends no English file when the French one is meant for both", () => {
+    const payload = courseToPayload(rowToCourse(row));
+    expect(payload.modules[0].steps[0].blocks[1].en).toMatchObject({ poster_media_id: null });
+    expect(payload.modules[0].quiz?.questions[0].en.image_media_id).toBeNull();
   });
 });
 
