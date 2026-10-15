@@ -4,7 +4,7 @@ import { Link } from "../../lib/navigation";
 import { ArrowLeft, ArrowRight, BookOpen, Check, CircleCheck, Lightbulb, ListChecks, RotateCcw, Sparkles, X } from "lucide-react";
 import clsx from "clsx";
 import { Button } from "../ui/Button";
-import type { Answer, Question, Quiz } from "../../data/adminTraining";
+import { localizedMedia, type Answer, type Question, type Quiz } from "../../data/adminTraining";
 import type { ContentLang } from "../../lib/localized";
 import { useCourseMediaUrl } from "../../lib/progress";
 import type { QuizResult, QuizScore } from "../../lib/learning/path";
@@ -264,6 +264,7 @@ export function QuizPlayer({
   const correction: Correction | undefined = corrections[question.id];
   const reveal = immediateFeedback && Boolean(correction);
   const last = index === total - 1;
+  const questionImage = urlOf(localizedMedia(question.image, question.imageEn, lang));
 
   const advance = () => (last ? submit() : setIndex(index + 1));
 
@@ -286,8 +287,8 @@ export function QuizPlayer({
           </h2>
         </legend>
 
-        {question.image && urlOf(question.image) && (
-          <img src={urlOf(question.image)} alt="" className="max-h-[320px] w-full max-w-[480px] rounded-[var(--radius-media)] object-cover" />
+        {questionImage && (
+          <img src={questionImage} alt="" className="max-h-[320px] w-full max-w-[480px] rounded-[var(--radius-media)] object-cover" />
         )}
 
         <div className="grid gap-2.5">

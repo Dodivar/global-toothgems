@@ -91,6 +91,16 @@ describe("mediaUsage", () => {
     const image = course.modules.flatMap((m) => m.steps.flatMap((s) => s.blocks)).find((b) => b.type === "image");
     if (image?.type === "image") expect(usage.get(image.src)).toBeGreaterThan(0);
   });
+
+  it("counts English files as uses too", () => {
+    const course = TRAINING_COURSES[0];
+    const module = course.modules[0];
+    const withEnglish = {
+      ...course,
+      modules: [{ ...module, steps: [{ ...module.steps[0], blocks: [{ id: "x", type: "image" as const, src: "fr-ref", srcEn: "en-ref", alt: { fr: "", en: "" }, caption: { fr: "", en: "" }, align: "full" as const }] }] }],
+    };
+    expect(mediaUsage([withEnglish]).get("en-ref")).toBe(1);
+  });
 });
 
 describe("helpers", () => {

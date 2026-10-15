@@ -1,4 +1,5 @@
 import { describe, expect, it } from "vitest";
+import { localizedMedia } from "../../data/adminTraining";
 import { TRAINING_COURSES } from "../../data/adminTrainingSeed";
 import { accessErrorKind, isActiveHolder, isEmailLike, type CourseHolder } from "../adminCourseAccess";
 import { localGrader } from "./grading";
@@ -12,6 +13,7 @@ const Q1 = "33333333-3333-4333-8333-333333333331";
 const A1 = "44444444-4444-4444-8444-444444444441";
 const A2 = "44444444-4444-4444-8444-444444444442";
 const IMG = "55555555-5555-4555-8555-555555555555";
+const IMG_EN = "66666666-6666-4666-8666-666666666666";
 
 const EMPTY_PROGRESS: ProgressJson = { steps: [], attempts: [], completion: null };
 
@@ -107,6 +109,27 @@ describe("toHeldCourse", () => {
     expect(quiz.questions[0].correctFeedback).toEqual({ fr: "", en: "" });
     expect(held.training!.modules[0].steps[0].blocks[0]).toMatchObject({ type: "image", src: IMG, alt: { fr: "Poste", en: "Poste" } });
     expect(held.record.startedOn).toBe("2026-10-01");
+  });
+
+  it("carries an image's English file, the French one staying the default", () => {
+    const base = courseJson();
+    const module = base.modules![0];
+    const block = { ...module.steps[0].blocks[0], en: { body_html: null, alt_text: null, caption: null, title: null, media_id: IMG_EN } };
+    const question = { ...module.quiz!.questions[0], image_media_id: IMG, en: { text: null, image_media_id: IMG_EN } };
+    const held = toHeldCourse(
+      courseJson({
+        modules: [{ ...module, steps: [{ ...module.steps[0], blocks: [block] }, module.steps[1]], quiz: { ...module.quiz!, questions: [question] } }],
+      }),
+    );
+    const image = held.training!.modules[0].steps[0].blocks[0];
+    expect(image).toMatchObject({ type: "image", src: IMG, srcEn: IMG_EN });
+    const q = held.training!.modules[0].quiz!.questions[0];
+    expect(q).toMatchObject({ image: IMG, imageEn: IMG_EN, text: { fr: "Combien ?", en: "Combien ?" } });
+    if (image.type === "image") {
+      expect(localizedMedia(image.src, image.srcEn, "en")).toBe(IMG_EN);
+      expect(localizedMedia(image.src, image.srcEn, "fr")).toBe(IMG);
+    }
+    expect(localizedMedia(IMG, undefined, "en")).toBe(IMG);
   });
 
   it("serves no content for a withdrawn course", () => {

@@ -1,11 +1,12 @@
 import { useState } from "react";
 import { useTranslation } from "react-i18next";
-import { Film, Images, X } from "lucide-react";
+import { Film, Images, Languages, X } from "lucide-react";
 import { AdminButton } from "../AdminButton";
 import { MediaThumb } from "./MediaThumb";
 import { MediaPickerDialog } from "./MediaPickerDialog";
 import { useTrainingMedia } from "../../../lib/trainingMedia";
 import type { MediaKind, TrainingMedia } from "../../../lib/trainingMediaRules";
+import type { ContentLang } from "../../../lib/localized";
 
 /**
  * A media field of the course editor (cover, module cover, image block, video
@@ -88,5 +89,40 @@ export function MediaPicker({
         />
       )}
     </fieldset>
+  );
+}
+
+/**
+ * The English version of an image slot, for pictures that carry text (a
+ * diagram, a slide). Chosen while the builder edits English; empty means the
+ * French image is shown to English readers too. In French, one line says the
+ * option exists, or that an English version is already set.
+ */
+export function EnglishImagePicker({
+  lang,
+  value,
+  onChange,
+}: {
+  lang: ContentLang;
+  value: string | undefined;
+  onChange: (ref: string) => void;
+}) {
+  const { t } = useTranslation();
+  if (lang !== "en") {
+    return (
+      <p className="m-0 flex items-start gap-1.5 text-[length:var(--text-caption)] text-[var(--text-muted)]">
+        <Languages size={14} strokeWidth={2} aria-hidden="true" className="mt-0.5 flex-none" />
+        {value ? t("trainingMedia.picker.englishSet") : t("trainingMedia.picker.englishPointer")}
+      </p>
+    );
+  }
+  return (
+    <MediaPicker
+      value={value ?? ""}
+      onChange={onChange}
+      label={t("trainingMedia.picker.english")}
+      hint={t("trainingMedia.picker.englishHint")}
+      clearable
+    />
   );
 }

@@ -65,6 +65,8 @@ export interface ImageBlock {
   type: "image";
   /** Media reference (image). Empty while drafting; publication requires it. */
   src: string;
+  /** English image, for a picture that carries text. Empty = the French one (`localizedMedia`). */
+  srcEn?: string;
   /** Empty is a state the review screen reports on, not an error here. */
   alt: Localized;
   caption: Localized;
@@ -76,6 +78,8 @@ export interface VideoBlock {
   type: "video";
   /** Poster frame: media reference (image), optional. */
   poster: string;
+  /** English poster frame. Empty = the French one. */
+  posterEn?: string;
   title: Localized;
   /** mm:ss, as authored. */
   duration: string;
@@ -85,6 +89,15 @@ export interface VideoBlock {
 }
 
 export type ContentBlock = TextBlock | ImageBlock | VideoBlock;
+
+/**
+ * The image a reader in `lang` sees. French is the reference; an English file
+ * is chosen only for pictures that carry text, and its absence means the
+ * French picture is shown in English too.
+ */
+export function localizedMedia(fr: string | undefined, en: string | undefined, lang: keyof Localized): string {
+  return (lang === "en" && en) || fr || "";
+}
 
 export interface Step {
   id: string;
@@ -108,6 +121,8 @@ export interface Question {
   id: string;
   text: Localized;
   image?: string;
+  /** English image of the question. Empty = the French one. */
+  imageEn?: string;
   answers: Answer[];
   correctFeedback: Localized;
   incorrectFeedback: Localized;

@@ -7,163 +7,44 @@
     "gold": "Or 18k",
     "opal": "Opale"
   },
-  "compositions": {
-    "signature": "Aurora",
-    "minimal": "Minimal",
-    "statement": "Statement",
-    "symmetrical": "Symétrique",
-    "mixed": "Formes mixtes",
-    "sparkle": "Sparkle",
-    "custom": "Libre"
-  },
-  "mockup": {
-    "appName": "Studio 3D",
-    "projectName": "Composition · Aurora",
-    "undo": "Annuler",
-    "redo": "Rétablir",
-    "save": "Enregistrer",
-    "saving": "Enregistrement…",
-    "saved": "Enregistrée",
-    "share": "Partager",
-    "shareToastTitle": "Le partage, dans le vrai Studio",
-    "shareToastBody": "Cet aperçu ne crée pas de lien — dans le Studio, vous partagerez une composition avec vos proches ou votre artiste.",
-    "library": "Bibliothèque",
-    "search": "Rechercher une pièce",
-    "filterLabel": "Filtrer la bibliothèque",
-    "filters": {
-      "all": "Tout",
-      "crystals": "Cristaux",
-      "gold": "Or"
-    },
-    "addHint": "Choisissez une pièce pour l’ajouter au sourire.",
-    "swapHint": "Choisissez une pièce pour remplacer celle sélectionnée.",
-    "canvasLabel": "Canevas du Studio — aperçu interactif",
-    "pieceLabel": "{{name}}, pièce {{index}}",
-    "viewLabel": "Angle de vue",
-    "views": {
-      "front": "Face",
-      "three": "¾",
-      "profile": "Profil"
-    },
-    "zoomLabel": "Zoom",
-    "zoomIn": "Zoomer",
-    "zoomOut": "Dézoomer",
-    "pieceCount_one": "{{count}} pièce",
-    "pieceCount_other": "{{count}} pièces",
-    "panelTitle": "Composition",
-    "noSelection": "Sélectionnez une pièce sur les dents pour l’ajuster, ou ajoutez-en une depuis la bibliothèque.",
-    "material": "Matière",
-    "size": "Taille",
-    "sizeValue": "{{value}} mm",
-    "remove": "Retirer la pièce",
-    "symmetry": "Guide de symétrie",
-    "presets": "Points de départ",
-    "fullTitle": "Le sourire est complet",
-    "fullBody": "Sélectionnez une pièce pour la remplacer, ou retirez-en une pour faire de la place."
-  },
   "hero": {
     "eyebrow": "Studio 3D",
-    "script": "Votre atelier créatif",
     "title": "Créez vos propres bijoux dentaires.",
     "body": "Imaginez des compositions uniques, testez formes et placements, et donnez vie à vos idées avec le Studio 3D Global Toothgems.",
-    "ctaPrimary": "Commencer à créer",
     "ctaOpen": "Ouvrir le Studio",
-    "ctaSecondary": "Découvrir le Studio",
-    "floatPiece": "Cœur Aurora",
-    "floatPieceSub": "Or 18k · 3,0 mm",
-    "floatSaved": "Enregistrée dans vos créations"
+    "ctaSecondary": "Voir les formules",
+    "ctaPrimary_one": "Essayer {{count}} jour gratuitement",
+    "ctaPrimary_other": "Essayer {{count}} jours gratuitement",
+    "reassurance_one": "{{count}} jour gratuit, puis dès {{price}} / mois · sans engagement",
+    "reassurance_other": "{{count}} jours gratuits, puis dès {{price}} / mois · sans engagement"
   },
-  "concept": {
-    "eyebrow": "Qu’est-ce que le Studio 3D ?",
-    "title": "Imaginez. Testez. Créez.",
-    "body": "Choisissez vos bijoux, placez vos pièces et explorez des combinaisons infinies pour créer un look qui ne ressemble qu’à vous.",
-    "points": {
-      "combine": {
-        "title": "Combinez les pièces",
-        "body": "Cristaux, charms en or, formes et couleurs, réunis sur un même sourire."
+  "demo": {
+    "description": "Démonstration du Studio 3D : poser des gemmes sur les dents, changer leurs couleurs, les déplacer et les faire pivoter.",
+    "play": "Lire la démonstration",
+    "pause": "Mettre la démonstration en pause"
+  },
+  "advantages": {
+    "eyebrow": "Pourquoi le Studio 3D",
+    "title": "Voyez le résultat avant la pose.",
+    "body": "Composez, comparez, décidez — sur un sourire en 3D, avant qu’une seule gemme soit posée.",
+    "items": {
+      "try": {
+        "title": "Essayez sans risque",
+        "body": "Formes, couleurs, placements : testez autant que vous voulez, puis gardez ce qui vous plaît."
       },
-      "position": {
-        "title": "Placez-les librement",
-        "body": "Déplacez, redimensionnez et changez chaque pièce, dent par dent."
+      "shop": {
+        "title": "Les vraies gemmes de la boutique",
+        "body": "La bibliothèque reprend les gemmes de la boutique, dans leurs couleurs et leurs tailles : ce que vous composez existe."
       },
-      "explore": {
-        "title": "Recommencez à l’infini",
-        "body": "Annulez, comparez, repartez de zéro — rien n’est figé tant que vous ne le décidez pas."
+      "share": {
+        "title": "Partagez en un lien",
+        "body": "Envoyez votre création à vos proches ou à l’artiste qui la posera : ils la voient en 3D, sans compte."
+      },
+      "keep": {
+        "title": "Vos créations gardées",
+        "body": "Chaque composition est enregistrée dans votre compte, prête à être reprise ou dupliquée."
       }
-    },
-    "playground": "Utilisez-le pour tester une combinaison avant de commander, ou simplement comme terrain de jeu créatif — aucune expérience requise."
-  },
-  "features": {
-    "eyebrow": "Dans le Studio",
-    "title": "Tout pour composer.",
-    "body": "Des outils simples, pensés pour le bijou dentaire — pas pour les ingénieurs.",
-    "build": {
-      "title": "Construisez votre composition",
-      "body": "Associez plusieurs bijoux dentaires en un seul design unique.",
-      "videoLabel": "Démonstration du Studio 3D : poser des gemmes sur les dents, changer leurs couleurs, les déplacer et les faire pivoter.",
-      "videoPlay": "Lire la vidéo",
-      "videoPause": "Mettre la vidéo en pause"
-    },
-    "experiment": {
-      "title": "Expérimentez librement",
-      "body": "Essayez formes, styles, positions et combinaisons."
-    },
-    "visualize": {
-      "title": "Visualisez votre idée",
-      "body": "Voyez à quoi pourrait ressembler votre composition avant de lui donner vie."
-    },
-    "signature": {
-      "title": "Créez votre style signature",
-      "body": "Des designs qui reflètent votre personnalité et votre identité artistique.",
-      "script": "Signature"
-    },
-    "save": {
-      "title": "Enregistrez vos créations",
-      "body": "Gardez chaque composition dans votre galerie personnelle et retrouvez-la dès que l’inspiration revient.",
-      "listLabel": "Exemples de compositions enregistrées",
-      "latest": "Récente"
-    },
-    "share": {
-      "title": "Partagez vos idées",
-      "body": "Envoyez une composition à vos proches, ou à l’artiste qui la posera."
-    },
-    "before": "Avant",
-    "after": "Après",
-    "compareLabel": "Déplacer le séparateur avant/après",
-    "shareSheetTitle": "Partager « Aurora »",
-    "copy": "Copier",
-    "copied": "Copié",
-    "exportImage": "Image",
-    "exportArtist": "Envoyer à mon artiste",
-    "exportSocial": "Stories"
-  },
-  "showcase": {
-    "eyebrow": "Galerie",
-    "title": "Découvrez ce que vous pouvez créer.",
-    "body": "Rendus, vidéos et créations de membres prendront place ici. En attendant, un aperçu de ce que le Studio rend possible.",
-    "tags": {
-      "video": "STUDIO VIDEO PLACEHOLDER",
-      "composition": "3D COMPOSITION PLACEHOLDER",
-      "screenshot": "STUDIO SCREENSHOT PLACEHOLDER",
-      "beforeAfter": "BEFORE / AFTER PLACEHOLDER",
-      "user": "USER CREATION PLACEHOLDER"
-    },
-    "captions": {
-      "video": "Une visite de 30 secondes : d’un sourire vierge à une composition terminée.",
-      "composition": "Rendu 360° d’une composition terminée.",
-      "screenshot": "La fenêtre du Studio, bibliothèque ouverte.",
-      "beforeAfter": "Le même sourire, avant et après sa composition.",
-      "user": {
-        "one": "Une toute première composition.",
-        "two": "Gouttes en miroir, créées dans le Studio.",
-        "three": "Une étude à trois formes.",
-        "four": "Constellation de micro-cristaux."
-      }
-    },
-    "play": "Lire la visite du Studio (emplacement)",
-    "videoToastTitle": "Vidéo à venir",
-    "videoToastBody": "La visite du Studio sera lue ici une fois tournée.",
-    "compareLabel": "Style de l’avant/après :"
+    }
   },
   "inspiration": {
     "eyebrow": "Inspiration",
@@ -173,22 +54,67 @@
     "recreate": "Recréer dans le Studio",
     "recreateAria": "Recréer la composition {{style}} dans le Studio"
   },
-  "steps": {
-    "eyebrow": "Comment ça marche",
-    "title": "Trois étapes, une composition.",
-    "stepLabel": "Étape {{n}} :",
-    "choose": {
-      "title": "Choisir",
-      "body": "Explorez les bijoux dentaires disponibles."
-    },
-    "compose": {
-      "title": "Composer",
-      "body": "Disposez-les et associez-les dans le Studio."
-    },
-    "create": {
-      "title": "Créer",
-      "body": "Enregistrez votre idée et intégrez votre composition à votre parcours Global Toothgems."
+  "plans": {
+    "eyebrow": "Formules",
+    "title": "Commencez gratuitement, évoluez à votre rythme.",
+    "body": "Essayez tout le Studio, puis choisissez la formule qui correspond à votre pratique.",
+    "featured": "Le choix des artistes",
+    "trialBadge_one": "{{count}} jour offert",
+    "trialBadge_other": "{{count}} jours offerts",
+    "free": "Gratuit",
+    "trialPeriod_one": "pendant {{count}} jour",
+    "trialPeriod_other": "pendant {{count}} jours",
+    "perMonth": "/ mois",
+    "ctaTrial": "Commencer l’essai",
+    "ctaPaid": "Choisir {{plan}}",
+    "note": "Prix mensuels, sans engagement. Les formules arrivent bientôt : pendant l’aperçu, tout le Studio est gratuit.",
+    "items": {
+      "trial": {
+        "name": "Essai",
+        "pitch": "Tout le Studio, le temps de vous faire un avis.",
+        "features": [
+          "Toutes les fonctionnalités du Studio",
+          "Toute la bibliothèque de gemmes",
+          "Vos premières créations enregistrées et partagées"
+        ]
+      },
+      "essential": {
+        "name": "Essentiel",
+        "pitch": "Pour imaginer vos propres looks.",
+        "features": [
+          "Toute la bibliothèque de gemmes",
+          "Créations enregistrées dans votre compte",
+          "Partage de vos créations par lien",
+          "Ordinateur, tablette et mobile"
+        ]
+      },
+      "artist": {
+        "name": "Artiste",
+        "pitch": "Pour préparer chaque pose avec vos clientes.",
+        "features": [
+          "Tout ce que comprend Essentiel",
+          "Gem Groups : vos assemblages réutilisables",
+          "Import de votre propre modèle de dentition",
+          "Estimation des pièces aux prix de la boutique"
+        ]
+      },
+      "atelier": {
+        "name": "Atelier",
+        "pitch": "Pour les studios et les équipes.",
+        "features": [
+          "Tout ce que comprend Artiste",
+          "Plusieurs postes pour votre équipe",
+          "Accès en avant-première aux nouveaux outils",
+          "Support prioritaire"
+        ]
+      }
     }
+  },
+  "bar": {
+    "trial_one": "{{count}} jour gratuit",
+    "trial_other": "{{count}} jours gratuits",
+    "then": "puis dès {{price}} / mois",
+    "cta": "Essayer"
   },
   "pricing": {
     "eyebrow": "Accès au Studio 3D",
@@ -201,20 +127,7 @@
       "Vos créations enregistrées, toujours à portée de main",
       "Accès aux futures améliorations du Studio"
     ],
-    "reassurance": "Sans engagement — résiliable à tout moment.",
-    "reassuranceShort": "Sans engagement"
-  },
-  "offer": {
-    "eyebrow": "Studio 3D",
-    "title": "Votre prochaine composition commence ici.",
-    "body": "Tout ce que propose le Studio, pour le prix d’un café par mois.",
-    "points": [
-      "Toutes les pièces de la bibliothèque",
-      "Des essais à volonté",
-      "Ordinateur, tablette et mobile",
-      "Les nouveaux outils dès leur sortie"
-    ],
-    "cta": "Accéder au Studio 3D"
+    "reassurance": "Sans engagement — résiliable à tout moment."
   },
   "faq": {
     "eyebrow": "Questions",
@@ -229,8 +142,8 @@
         "answer": "D’un seul cristal discret à une composition statement complète — en mêlant formes, couleurs, cristaux et charms en or sur plusieurs dents."
       },
       {
-        "question": "Combien coûte l’accès ?",
-        "answer": "L’accès au Studio coûte 5 € par mois. Sans engagement : vous pouvez résilier à tout moment."
+        "question": "Combien coûte le Studio ?",
+        "answer": "Le Studio s’essaie gratuitement, puis se poursuit avec l’une des trois formules mensuelles présentées plus haut. Sans engagement : vous pouvez résilier à tout moment."
       },
       {
         "question": "Le Studio est-il disponible sur mobile ?",

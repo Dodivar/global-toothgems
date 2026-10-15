@@ -13,6 +13,8 @@ import { useStudioAccess } from "../../lib/studioAccess";
  * Editorial mood boards, one per style. Deliberately not product cards: no
  * price, no add-to-cart — a pinned "print" of the composition, its palette and
  * a line of intent, laid out as a masonry wall so the rhythm feels curated.
+ * On a phone the wall becomes a row to swipe through, so six boards do not
+ * stretch the page.
  */
 
 const TONE: Record<InspirationBoard["tone"], string> = {
@@ -32,7 +34,7 @@ export function InspirationBoards() {
   const recreateTo = useStudioAccess().granted ? STUDIO_EDITOR_PATH : STUDIO_SUBSCRIBE_PATH;
 
   return (
-    <div className="columns-1 gap-5 sm:columns-2 lg:columns-3">
+    <div className="-mx-4 flex snap-x snap-mandatory gap-4 overflow-x-auto scroll-px-4 px-4 pb-2 sm:mx-0 sm:block sm:snap-none sm:columns-2 sm:gap-5 sm:overflow-visible sm:p-0 lg:columns-3">
       {INSPIRATION.map((board, i) => {
         const ink = board.tone === "ink";
         const materials = [...new Set(COMPOSITIONS[board.id].map((p) => p.material))];
@@ -40,7 +42,7 @@ export function InspirationBoards() {
           <article
             key={board.id}
             className={clsx(
-              "group relative mb-5 grid break-inside-avoid gap-4 rounded-[var(--radius-xl)] p-[clamp(16px,2vw,22px)]",
+              "group relative grid w-[80%] flex-none snap-start gap-4 sm:mb-5 sm:w-auto sm:break-inside-avoid rounded-[var(--radius-xl)] p-[clamp(16px,2vw,22px)]",
               TONE[board.tone],
             )}
           >

@@ -360,7 +360,7 @@ src/
   components/account/ Dashboard pieces (stat tile, course row, certificate card, order card)
   components/academy/ The training detail page: hero, curriculum accordion, assessment, diploma, community, shared primitives
   components/reviews/ Customer reviews: stars, badges, review card, section, form, request, overlays; admin/ holds the moderation workspace
-  components/studio/ The 3D Studio mockups (and editor/, the working editor UI): smile canvas, rendered gems, interactive Studio window, feature cards, media placeholders, inspiration boards, steps, pricing card, FAQ, home teaser
+  components/studio/ The 3D Studio mockups (and editor/, the working editor UI): smile canvas, rendered gems, demo film, plans, inspiration boards, pricing card (subscription page), FAQ
   components/loyalty/ The Loyalty Club: stamp, card, progress, reward, steps, journey, FAQ, checkout banner
   components/layout/ Header (desktop nav + mega panel, mobile burger menu, site search: HeaderSearch over lib/siteSearch.ts) and Footer
   screens/admin/    The administration workspace: access screen, shell, dashboard, orders, products, categories
@@ -449,7 +449,7 @@ A paid creative tool (€5 / month) for designing tooth jewellery compositions. 
 
 | Route | Screen |
 | --- | --- |
-| `/studio-3d` | Presentation page: hero with the Studio window, concept, six capabilities, media wall, inspiration boards, three steps, offer, FAQ |
+| `/studio-3d` | Presentation page, phones first: hero (demo film, promise, "try" and "see the plans"), four advantages, inspiration boards (a swipeable row on phones), the plans (free trial + three monthly plans, `StudioPlans`), FAQ, phone call-to-action bar |
 | `/studio-3d/abonnement` | Subscription page: the single monthly plan, account, fictional payment, summary, loading and confirmation states (`/studio-3d/subscribe` redirects here) |
 | `/studio-3d/atelier` | The editor: 3D dentition (both arches), the shop's gems as its library, placement by drag / click / keyboard, collision-free layout tools, presets, undo/redo, PNG / estimate sheet / JSON export (`/studio-3d/editor` redirects here). Full-screen, without the storefront header and footer |
 | `/studio-3d/atelier/mes-creations` | My Creations: the account's saved designs (`…/editor/creations` redirects here) |
@@ -485,12 +485,12 @@ Ported from the standalone `studio3D.html` into the app's architecture:
 - **Multi-selection without Shift**: "Select" on the camera bar (or a finger held ~0.5 s on a gem) turns on a mode where each tap adds a gem to the selection or takes it out, a tap beside one keeps the selection, and a lasso adds to it — so two gems at opposite ends of the arch are two taps. "+ Identical" adds every piece of the same gem, colour and size; "Done" or Escape ends the mode. A mouse keeps Shift / Ctrl-click; its long press does nothing new. On Android the long press no longer opens the piece's context menu (the quick bar covers it).
 - **Model import** (`.glb` / `.gltf`, 60 MB max) runs entirely in the browser; Draco-compressed files fetch their decoder from the jsDelivr build of the bundled three.js version.
 
-- **The Studio window** (`components/studio/StudioMockup.tsx`) is lightly interactive: pieces can be selected, swapped from the library, resized, recoloured, added and removed; presets, undo/redo, zoom and a CSS-perspective "¾ / profile" view all work on local state. "Save" and "Share" only play their states.
+- **The demo** (`components/studio/StudioDemo.tsx`) plays the home page's silent introduction film (`/videos/studio-3d-intro.mp4`) until a dedicated product demo is filmed; it stays on the poster under reduced motion.
 - **The canvas** (`SmileCanvas.tsx`) is an SVG drawing of a smile; pieces reuse the shop's `GLYPH_PATHS` with material gradients (`Gem.tsx`, `gemStyle.ts`).
-- **Replaceable media**: every tile of the "See what you can create." wall is a `MediaPlaceholder` carrying `data-placeholder="…"` and a visible `[… PLACEHOLDER]` tag. Search for `data-placeholder` to find them.
-- **Fictional content**: compositions, library pieces, saved creations and inspiration boards live in `data/studio.ts`; copy lives in `i18n/locales/studio.{fr,en}.json` under `studio`. FAQ answers (mobile availability, saving, use when ordering) describe the intended product and must be confirmed before launch.
-- **Price**: `STUDIO_PRICE` is a display value only. In production the price comes from the Stripe Price, the button hands over to Stripe Checkout (subscription mode) and access is granted by the verified webhook — never by the confirmation screen.
-- **Editor entry points**: while preview access is on, "Open the Studio" on the presentation page (hero, FAQ, phone bar), the home teaser, "Recreate" on the inspiration boards and the subscription confirmation all lead to the editor; the offer section still leads to the subscription page.
+- **Fictional content**: compositions, inspiration boards and the plans live in `data/studio.ts`; copy lives in `i18n/locales/studio.{fr,en}.json` under `studio`. FAQ answers (mobile availability, saving, use when ordering) describe the intended product and must be confirmed before launch.
+- **Plans (2026-10-15, to confirm)**: `STUDIO_PLANS` — a 2-day free trial, then Essential €5, Artist €19.90 (featured) and Atelier €39.90 per month, in minor units — and each plan's features (`studio.plans.items`) are display values supplied with the brief; nothing is sold from them. The trial opens the Studio, a paid plan leads to the subscription page, which still offers a single €5 plan (`STUDIO_PRICE`).
+- **Price**: `STUDIO_PRICE` and `STUDIO_PLANS` are display values only. In production the price comes from the Stripe Price, the button hands over to Stripe Checkout (subscription mode) and access is granted by the verified webhook — never by the confirmation screen.
+- **Editor entry points**: while preview access is on, "Open the Studio" on the presentation page (hero, FAQ, phone bar, the trial plan), the home teaser, "Recreate" on the inspiration boards and the subscription confirmation all lead to the editor; the paid plans still lead to the subscription page.
 - **Navigation**: "Studio 3D · New" sits after the Academy in both desktop headers, as a featured row above the tabs in both mobile menus, and as a link in the member area sidebar and pill row. The home page carries a teaser (`StudioTeaser`) between the best sellers and the Academy band.
 
 ### The Studio workspace (creations, Gem Groups, help, feedback)

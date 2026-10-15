@@ -1184,6 +1184,8 @@ export type Database = {
           caption: string | null
           created_at: string
           locale: string
+          media_id: string | null
+          poster_media_id: string | null
           status: string
           title: string | null
           updated_at: string
@@ -1195,6 +1197,8 @@ export type Database = {
           caption?: string | null
           created_at?: string
           locale: string
+          media_id?: string | null
+          poster_media_id?: string | null
           status?: string
           title?: string | null
           updated_at?: string
@@ -1206,6 +1210,8 @@ export type Database = {
           caption?: string | null
           created_at?: string
           locale?: string
+          media_id?: string | null
+          poster_media_id?: string | null
           status?: string
           title?: string | null
           updated_at?: string
@@ -1224,6 +1230,20 @@ export type Database = {
             isOneToOne: false
             referencedRelation: "languages"
             referencedColumns: ["code"]
+          },
+          {
+            foreignKeyName: "course_block_translations_media_id_fkey"
+            columns: ["media_id"]
+            isOneToOne: false
+            referencedRelation: "training_media"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "course_block_translations_poster_media_id_fkey"
+            columns: ["poster_media_id"]
+            isOneToOne: false
+            referencedRelation: "training_media"
+            referencedColumns: ["id"]
           },
         ]
       }
@@ -6120,37 +6140,47 @@ export type Database = {
         Row: {
           correct_feedback: string | null
           created_at: string
+          image_media_id: string | null
           incorrect_feedback: string | null
           learn_more: string | null
           locale: string
           question_id: string
           status: string
-          text: string
+          text: string | null
           updated_at: string
         }
         Insert: {
           correct_feedback?: string | null
           created_at?: string
+          image_media_id?: string | null
           incorrect_feedback?: string | null
           learn_more?: string | null
           locale: string
           question_id: string
           status?: string
-          text: string
+          text?: string | null
           updated_at?: string
         }
         Update: {
           correct_feedback?: string | null
           created_at?: string
+          image_media_id?: string | null
           incorrect_feedback?: string | null
           learn_more?: string | null
           locale?: string
           question_id?: string
           status?: string
-          text?: string
+          text?: string | null
           updated_at?: string
         }
         Relationships: [
+          {
+            foreignKeyName: "quiz_question_translations_image_media_id_fkey"
+            columns: ["image_media_id"]
+            isOneToOne: false
+            referencedRelation: "training_media"
+            referencedColumns: ["id"]
+          },
           {
             foreignKeyName: "quiz_question_translations_locale_fkey"
             columns: ["locale"]

@@ -22,9 +22,9 @@ import { EmptyState } from "../EmptyState";
 import { FormField } from "../FormField";
 import { ToggleSwitch } from "../ToggleSwitch";
 import { MediaImage } from "./MediaImage";
-import { MediaPicker } from "./MediaPicker";
+import { EnglishImagePicker, MediaPicker } from "./MediaPicker";
 import { Section } from "./TrainingPrimitives";
-import type { Module, Question, Quiz } from "../../../data/adminTraining";
+import { localizedMedia, type Module, type Question, type Quiz } from "../../../data/adminTraining";
 import { useAdminTraining } from "../../../lib/adminTraining";
 import { useToast } from "../../../lib/toast";
 import { dragClasses, useDragReorder, type DragItemProps } from "../../../lib/useDragReorder";
@@ -340,7 +340,8 @@ function QuestionCard({
                   variant="ghost"
                   size="sm"
                   iconLeft={X}
-                  onClick={() => updateQuestion(courseId, moduleId, question.id, { image: undefined })}
+                  // The French image and its English version go together.
+                  onClick={() => updateQuestion(courseId, moduleId, question.id, { image: undefined, imageEn: undefined })}
                 >
                   {t("admin.training.quiz.questionImageRemove")}
                 </AdminButton>
@@ -358,7 +359,7 @@ function QuestionCard({
 
             {question.image && (
               <MediaImage
-                mediaRef={question.image}
+                mediaRef={localizedMedia(question.image, question.imageEn, lang)}
                 className="aspect-[4/3] max-w-[280px] rounded-[var(--admin-radius-sm)] border border-[var(--border-subtle)] object-cover"
               />
             )}
@@ -373,8 +374,16 @@ function QuestionCard({
                   updateQuestion(courseId, moduleId, question.id, { image });
                   setShowImagePicker(false);
                 }}
-                label={t("admin.training.quiz.questionImage")}
+                label={lang === "en" ? t("trainingMedia.picker.french") : t("admin.training.quiz.questionImage")}
                 hint={t("admin.training.quiz.questionImageHint")}
+              />
+            )}
+
+            {question.image && (
+              <EnglishImagePicker
+                lang={lang}
+                value={question.imageEn}
+                onChange={(imageEn) => updateQuestion(courseId, moduleId, question.id, { imageEn })}
               />
             )}
           </div>

@@ -59,6 +59,7 @@ Draft → published ⇄ unpublished (enforced by the `courses_guard` trigger; pu
 - Paid videos and downloads in a private bucket, served by short-lived signed URLs after the entitlement check (Edge Function or `SECURITY DEFINER` function that checks it).
 - Supabase Storage is acceptable at launch for simple MP4 delivery; Mux is the planned upgrade if adaptive streaming, playback analytics or scale require it (explicit decision).
 - Videos work on mobile, no autoplay with sound, meaningful titles, loading/error states.
+- Images per language (2026-10-15, decision 92 in `supabase/README.md`): an image block, a video poster or a question image may have an English file (in the node's English translation row) for pictures that carry text; the learner sees the file of their language, else the French one (`localizedMedia()` in `data/adminTraining.ts`). Covers and video files are single-language.
 - Kit QR codes point to platform-controlled pages that work on a phone without an account when the content is free.
 
 ## Certificates

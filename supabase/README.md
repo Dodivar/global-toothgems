@@ -148,6 +148,7 @@ supabase/
 | 20261014141425 | `back_in_stock_alerts` | **Applied 2026-10-14.** Decision 90: `back_in_stock_requests` (product, optional option, lower-cased address, member, language, throttle hash, `notified_at`; RLS on, no grant to anon/authenticated; one waiting request per address and target), `request_back_in_stock_alert(product, variant, email, locale)` (SECURITY DEFINER, visitors and members: target must be out of stock now, account address for a member, 10 new requests / hour per caller, 30 waiting per address), `pending_back_in_stock_emails()` (service role: waiting requests whose target is sellable again, no time window), trigger `email_log_close_back_in_stock` (stamps `notified_at` once the e-mail is sent), template `back_in_stock` (fr + en). Suite `tests/back_in_stock_validation.sql` (B1–B8) |
 | 20261014150008 | `admin_back_in_stock_requests` | **Applied 2026-10-14.** Decision 90: `admin_back_in_stock_requests(p_limit)` (SECURITY DEFINER, `manage_products`, 42501 otherwise) — the back office's read of the requests for `/admin/alertes-stock`: product and option names, product status, the target's stock state, address, member, language, dates and the e-mail's `email_log` status and attempts. Read-only. Suite `tests/back_in_stock_validation.sql` (B9) |
 | 20261014175219 | `admin_adjust_stock` | **Applied 2026-10-14.** Decision 91: `admin_adjust_stock(p_product_id, p_variant_id, p_delta, p_expected)` (SECURITY DEFINER, `manage_products`, 42501 otherwise) — the product list's quick restock: adds `p_delta` to `quantity_on_hand` of the product's or one variant's stock row in one UPDATE, so a sale paid meanwhile is kept; with `p_expected` (an exact count typed after a stocktake) refuses with 40001 when the shelf moved since. Refuses an untracked row, a product whose stock is per variant, a variant of another product (P0002), a zero change and a result below the reserved units (22023, hint `reserved`). Recorded as an `adjustment` with the actor by the `inventory_items_ledger` trigger. Suite `tests/stock_adjustment_validation.sql` |
+| 20261015152449 | `academy_localized_images` | **Applied 2026-10-15.** Decision 92: an English file per image slot — `course_block_translations.media_id` (image block) / `poster_media_id` (video poster), `quiz_question_translations.image_media_id` (FK `training_media`, ON DELETE RESTRICT, indexed); `quiz_question_translations.text` nullable (an English row may carry only the image). `admin_save_course()` patched (kind-checked; an English row exists when it has text or a file), `private.learner_course_json()` returns the English files and lists them in `media`, `private.can_read_learner_media_path()` lets a holder read them. Suite `tests/academy_localized_images_validation.sql` |
 | 20261008175722 | `contact_attachments_and_support_email` | **Applied 2026-10-08.** Contact form: `contact_requests.attachment_path` → `attachment_paths text[]` (≤ 5, `private.valid_contact_attachment_paths()`), bucket `contact-attachments` 20 MB per object, `submit_contact_request(…, p_attachment_paths text[])` (old signature dropped; ownership per path, no duplicates, ≤ 20 MB in all), guard trigger rebuilt, `contact_ip_allowed(ip_hash)` (service role), template `contact_request_received` (fr + en) for the support inbox. Suite: `iteration7_validation.sql` C3/C4 |
 | 20261008175809 | `contact_attachment_paths_check_grant` | **Applied 2026-10-08.** `execute` on the CHECK helper for `authenticated`/`service_role` (staff triage re-evaluates the CHECK) |
 | 20261007181011 | `gift_card_design_everywhere` | **Applied 2026-10-07.** The design/names/message chosen at checkout are shown back (WYSIWYG): policy `gift_cards: purchaser reads own` (a buyer reads the cards of their purchases through the existing column grant — never the code) so the member's order pages draw the card in its design; the `gift_card_delivery` template bodies (fr + en) lose their `{{message}}` paragraph because the e-mail now draws the card itself (`giftCardVisual()`, message included). Test: a buyer sees only their own cards (to add to `gift_cards_validation.sql`) |
@@ -917,7 +918,8 @@ courses ─* course_modules ─* course_steps ─* course_blocks (text | image |
                  └─ course_quizzes (0..1 per module) ─* quiz_questions ─* quiz_answers
 courses ─* course_promotions            every level ─* <level>_translations (English; French in the base columns)
 media references: courses.cover_media_id, course_modules.cover_media_id, course_blocks.media_id / poster_media_id,
-                  quiz_questions.image_media_id — ON DELETE RESTRICT
+                  quiz_questions.image_media_id — ON DELETE RESTRICT; English files of image slots in
+                  course_block_translations.media_id / poster_media_id, quiz_question_translations.image_media_id
 ```
 
 - **A course is not a product** (owner, 2026-10-01): it never shows in the shop. Price `numeric(12,2)` + `currency`
@@ -928,6 +930,11 @@ media references: courses.cover_media_id, course_modules.cover_media_id, course_
   progress rows will point at them). An id already stored under another course is refused. Money arrives as a
   decimal string. Each media slot is checked for kind (image slot ← image, video block ← video). An English field
   left empty removes that node's English row (the French text is shown).
+- **Images per language** (decision 92, 2026-10-15): an image block, a video poster and a question image may have
+  an English file in the node's English row (`en.media_id` / `en.poster_media_id` / `en.image_media_id` in the
+  payload), for pictures that carry text; empty = the French file is shown in English too. The English row of a
+  block or question is kept when it has text **or** a file, so a question row may have no English text
+  (`quiz_question_translations.text` nullable since then). Covers and video files stay single-language.
 - **Lifecycle** (trigger `courses_guard`): created as `draft`; `published` only when
   `course_publication_problems()` is empty (at least one module, no empty module, every image/video block has its
   file, every quiz has questions, every question ≥ 2 answers and one correct); `published_at` set once, by the
@@ -1004,7 +1011,8 @@ course_completions (user, course, completed_at, average_score, min_score, certif
   (`private.holds_course()`, `private.can_see_course()`, `private.is_held_course_cover()`), so the member area
   can show it greyed out ("back soon"). Nothing else of it.
 - **Media**: storage policy "learners read their courses' media" (`private.can_read_learner_media_path()`): the cover
-  of a held course, and the block media, posters, module covers and question images of a held *published* course.
+  of a held course, and the block media, posters, module covers and question images of a held *published* course,
+  English files included (decision 92).
   The browser signs them (`createSignedUrls`, 4 h, renewed every 3 h).
 - **Progress writes** — functions only, each re-checking the entitlement and that the course is published (row lock
   on the entitlement serialises one member's writes), then the path rules of `webapp/src/lib/learning/path.ts`
@@ -1861,3 +1869,10 @@ VAT rates, shipping zones/rates mirroring the Settings prototype. Media rows ref
     (b) the pop-up saves each changed option of a product with variants one call at a time and stops at the first
     refusal (the options already saved stay saved); (c) untracked products keep their one-click "back on sale"
     in the menu, no pop-up; (d) staff with `manage_products` (admin, manager) may use it, like the edit form.
+92. **Images per language in the course builder** (user's request, 2026-10-15: "images with text: the learner's
+    language must show the right image"). French is the reference file of every image slot; an English file is
+    optional and lives in the English translation row (no `*_en` column). The learner sees the file of their
+    interface language, else the French one. Agent's choices, to confirm: (a) covered slots are image blocks,
+    video posters and question images — course and module covers and the video files themselves stay
+    single-language; (b) removing a question's image removes its English version too; (c) German, when enabled,
+    gets its own rows the same way (no schema change).
