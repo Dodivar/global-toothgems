@@ -12,6 +12,7 @@ import {
   previousTourStep,
   tourBaseline,
   useTour,
+  visibleStage,
   type Box,
   type TourAnchor,
   type TourBaseline,
@@ -353,11 +354,23 @@ function Trail({
 function resolveAnchor(step: TourStep): { box: Box; which: TourAnchor } | null {
   for (const which of [step.anchor, step.fallback]) {
     if (!which) continue;
-    const el = document.querySelector<HTMLElement>(`[data-tour="${which}"]`);
-    if (!el) continue;
-    const r = el.getBoundingClientRect();
-    if (r.width === 0 || r.height === 0) continue;
-    return { box: { left: r.left, top: r.top, width: r.width, height: r.height }, which };
+    const box = boxOf(which);
+    if (!box) continue;
+    // The stage reaches under its drawers: point at the part actually in view.
+    if (which === "stage") {
+      const panels = [boxOf("library"), boxOf("inspector")].filter((b): b is Box => b !== null);
+      const seen = visibleStage(box, panels);
+      return { box: seen.width > 0 ? seen : box, which };
+    }
+    return { box, which };
   }
   return null;
+}
+
+function boxOf(which: TourAnchor): Box | null {
+  const el = document.querySelector<HTMLElement>(`[data-tour="${which}"]`);
+  if (!el) return null;
+  const r = el.getBoundingClientRect();
+  if (r.width === 0 || r.height === 0) return null;
+  return { left: r.left, top: r.top, width: r.width, height: r.height };
 }

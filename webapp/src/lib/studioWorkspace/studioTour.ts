@@ -174,6 +174,29 @@ export interface Box {
 
 export type CardDock = "beside" | "bottom" | "top";
 
+/**
+ * The part of the stage actually in view.
+ *
+ * Side by side, the library and the inspector are drawers *over* the stage —
+ * the 3D canvas keeps its full size behind them (`StudioEditor`) — so the
+ * stage's own box reaches under them. Spotlighting that box would dim almost
+ * nothing and put the card behind a panel, hence this: each edge the stage
+ * shares with an open drawer is pulled in. Stacked under the stage (a phone
+ * held upright), a panel shares no height with it and nothing is pulled in.
+ */
+export function visibleStage(stage: Box, panels: readonly Box[]): Box {
+  let left = stage.left;
+  let right = stage.left + stage.width;
+  for (const p of panels) {
+    const pRight = p.left + p.width;
+    const sharesHeight = p.top < stage.top + stage.height && p.top + p.height > stage.top;
+    if (!sharesHeight || p.width === 0) continue;
+    if (p.left <= left + 2 && pRight > left) left = Math.min(pRight, right);
+    else if (pRight >= right - 2 && p.left < right) right = Math.max(p.left, left);
+  }
+  return { left, top: stage.top, width: Math.max(right - left, 0), height: stage.height };
+}
+
 export interface CardPlacement {
   left: number;
   top: number;
@@ -212,9 +235,12 @@ export function placeTourCard(anchor: Box | null, card: { width: number; height:
   }
 
   if (inside) {
-    // Inside a large anchor: the bottom-right corner, clear of the camera bar in the middle.
+    // Inside a large anchor (the stage): against its right edge, half-way down.
+    // The stage's own furniture is at its edges — the camera bar along the
+    // bottom, the panel switches in the top corners — so the middle of a side
+    // is the one place a card can sit without covering a control.
     const left = clamp(anchor.left + anchor.width - card.width - GUTTER * 2, GUTTER, maxLeft);
-    const top = clamp(anchor.top + anchor.height - card.height - GUTTER * 2, GUTTER, maxTop);
+    const top = clamp(anchor.top + anchor.height / 2 - card.height / 2, GUTTER, maxTop);
     return { left, top, dock: "beside" };
   }
 

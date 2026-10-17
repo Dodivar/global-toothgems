@@ -14,6 +14,7 @@ import {
   startTour,
   tourBaseline,
   TOUR_STEPS,
+  visibleStage,
   type TourStepId,
 } from "./studioTour";
 
@@ -161,6 +162,42 @@ describe("a piece's signature", () => {
   });
 });
 
+/* --------------------------------------------------- the stage actually in view */
+
+describe("the part of the stage in view", () => {
+  // The stage reaches edge to edge behind its drawers (`StudioEditor`).
+  const stage = { left: 84, top: 56, width: 1196, height: 664 };
+  const library = { left: 84, top: 56, width: 264, height: 664 };
+  const inspector = { left: 964, top: 56, width: 316, height: 664 };
+
+  it("pulls in the edge each open drawer covers", () => {
+    expect(visibleStage(stage, [library, inspector])).toEqual({ left: 348, top: 56, width: 616, height: 664 });
+    expect(visibleStage(stage, [library])).toEqual({ left: 348, top: 56, width: 932, height: 664 });
+    expect(visibleStage(stage, [inspector])).toEqual({ left: 84, top: 56, width: 880, height: 664 });
+  });
+
+  it("leaves the stage alone with both drawers closed", () => {
+    expect(visibleStage(stage, [])).toEqual(stage);
+  });
+
+  it("leaves the stage alone where the panels are stacked under it", () => {
+    // A phone held upright: the stage is on top, the panels below, sharing no height.
+    const stacked = { left: 0, top: 56, width: 390, height: 450 };
+    const below = { left: 0, top: 506, width: 390, height: 600 };
+    expect(visibleStage(stacked, [below])).toEqual(stacked);
+  });
+
+  it("never turns the stage inside out when the drawers cover it all", () => {
+    const wide = { left: 0, top: 0, width: 400, height: 400 };
+    const seen = visibleStage(wide, [
+      { left: 0, top: 0, width: 300, height: 400 },
+      { left: 200, top: 0, width: 200, height: 400 },
+    ]);
+    expect(seen.width).toBeGreaterThanOrEqual(0);
+    expect(seen.left).toBeGreaterThanOrEqual(wide.left);
+  });
+});
+
 /* ----------------------------------------------------------- the card's place */
 
 const CARD = { width: 320, height: 240 };
@@ -186,12 +223,14 @@ describe("where the card goes", () => {
     expect(top).toBeGreaterThanOrEqual(56);
   });
 
-  it("sits inside a large control, clear of the camera bar in its middle", () => {
+  it("sits against a large control's side, clear of the furniture along its edges", () => {
     const stage = { left: 0, top: 56, width: 1440, height: 844 };
     const { left, top } = placeTourCard(stage, CARD, DESKTOP, true);
     expect(left + CARD.width).toBeLessThanOrEqual(DESKTOP.width);
     expect(left).toBeGreaterThan(DESKTOP.width / 2);
-    expect(top + CARD.height).toBeLessThanOrEqual(DESKTOP.height);
+    // Clear of the camera bar along the bottom and of the panel switches on top.
+    expect(top).toBeGreaterThan(stage.top + 60);
+    expect(top + CARD.height).toBeLessThan(stage.top + stage.height - 96);
   });
 
   it("docks on a phone, on the side the control is not", () => {
