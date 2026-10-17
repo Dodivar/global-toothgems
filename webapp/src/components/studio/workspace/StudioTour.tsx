@@ -41,8 +41,10 @@ import { focusRing } from "./workspaceStyles";
 /** The card's width when it stands beside a control; docked it spans the screen. */
 const CARD_WIDTH = 332;
 const DOCKED_MAX = 420;
-/** A guess until the card is measured, so its first frame is not in the wrong corner. */
+/** Guesses until the card and the window are measured, a tick later, so the
+    first frame is not drawn in the wrong corner. */
 const CARD_HEIGHT = 250;
+const VIEWPORT = { width: 1280, height: 800 };
 
 export function StudioTour({ snap, hidden }: { snap: StudioSnapshot; hidden: boolean }) {
   const { t } = useTranslation();
@@ -51,7 +53,7 @@ export function StudioTour({ snap, hidden }: { snap: StudioSnapshot; hidden: boo
   const cardRef = useRef<HTMLDivElement>(null);
   const [anchor, setAnchor] = useState<{ box: Box; which: TourAnchor } | null>(null);
   const [card, setCard] = useState({ width: CARD_WIDTH, height: CARD_HEIGHT });
-  const [viewport, setViewport] = useState({ width: CARD_WIDTH * 4, height: CARD_HEIGHT * 3 });
+  const [viewport, setViewport] = useState(VIEWPORT);
   const [cameraMoved, setCameraMoved] = useState(false);
   // A Back / Next press moves the focus to the card; a step the artist
   // completed on the stage does not take the caret away from them.
@@ -77,11 +79,13 @@ export function StudioTour({ snap, hidden }: { snap: StudioSnapshot; hidden: boo
   }, [live, step?.needsEngine]);
 
   /* -- follow the control on screen: drawers slide, windows turn, the stage resizes -- */
+  // Each measurement keeps the previous value when nothing moved: the poll
+  // below then costs one `getBoundingClientRect`, not a render, five times a second.
   const measure = useCallback(() => {
-    setViewport({ width: window.innerWidth, height: window.innerHeight });
+    setViewport((prev) => keepSize(prev, { width: window.innerWidth, height: window.innerHeight }));
     const el = cardRef.current;
-    if (el) setCard({ width: el.offsetWidth, height: el.offsetHeight });
-    setAnchor(step ? resolveAnchor(step) : null);
+    if (el) setCard((prev) => keepSize(prev, { width: el.offsetWidth, height: el.offsetHeight }));
+    setAnchor((prev) => keepAnchor(prev, step ? resolveAnchor(step) : null));
   }, [step]);
 
   useLayoutEffect(() => {
@@ -355,6 +359,18 @@ function Trail({
       ))}
     </div>
   );
+}
+
+type Measured = { width: number; height: number };
+const keepSize = (prev: Measured, next: Measured) => (prev.width === next.width && prev.height === next.height ? prev : next);
+
+type Anchored = { box: Box; which: TourAnchor } | null;
+function keepAnchor(prev: Anchored, next: Anchored): Anchored {
+  if (!prev || !next) return prev === next ? prev : next;
+  const a = prev.box;
+  const b = next.box;
+  const same = prev.which === next.which && a.left === b.left && a.top === b.top && a.width === b.width && a.height === b.height;
+  return same ? prev : next;
 }
 
 /**
