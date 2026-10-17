@@ -1566,6 +1566,23 @@
   .gt-editor-scroll-x { scrollbar-width: none; }
   .gt-editor-scroll-x::-webkit-scrollbar { display: none; }
 
+  /* The guided tour (`components/studio/workspace/StudioTour`). The spotlight is
+     one element: a ring and a halo on the control, and a very large outer shadow
+     that dims everything else — so the control itself stays fully visible and,
+     the layer taking no pointer events, fully usable. */
+  .gt-tour-spot {
+    box-shadow:
+      0 0 0 2px var(--gt-blue-500),
+      0 0 0 7px color-mix(in srgb, var(--gt-blue-400) 32%, transparent),
+      0 0 0 9999px color-mix(in srgb, var(--gt-ink-900) 40%, transparent);
+    transition:
+      left var(--duration-fast) var(--ease-out-soft),
+      top var(--duration-fast) var(--ease-out-soft),
+      width var(--duration-fast) var(--ease-out-soft),
+      height var(--duration-fast) var(--ease-out-soft);
+  }
+  .gt-tour-card { animation: gt-editor-in var(--duration-normal) var(--ease-out-soft) both; }
+
   .gt-editor-panel-in { animation: gt-editor-in var(--duration-normal) var(--ease-out-soft) both; }
   .gt-editor-chip { animation: gt-editor-chip-in var(--duration-fast) var(--ease-out-soft) both; }
   .gt-editor-floaty { animation: gt-editor-floaty 3.2s var(--ease-in-out) infinite; }

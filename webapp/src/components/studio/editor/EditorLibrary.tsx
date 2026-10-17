@@ -108,6 +108,7 @@ export function EditorLibrary({ snap }: { snap: StudioSnapshot }) {
   return (
     <aside
       aria-labelledby="gt-editor-library"
+      data-tour="library"
       className="flex min-h-0 flex-col border-b border-[var(--border-subtle)] bg-[var(--surface-card)] studio-side:border-b-0 studio-side:border-r"
     >
       {/* On a phone held sideways every line of height counts: the title is left to screen readers. */}

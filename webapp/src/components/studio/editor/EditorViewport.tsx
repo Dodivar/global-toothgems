@@ -145,6 +145,7 @@ export function EditorViewport({ snap, panels }: { snap: StudioSnapshot; panels?
   return (
     <section
       aria-label={t("studio.editor.viewport.label")}
+      data-tour="stage"
       className="gt-editor-stage @container relative isolate h-[58vh] min-h-[380px] min-w-0 overflow-hidden studio-side:h-auto studio-side:min-h-0"
     >
       <div ref={hostRef} className="gt-editor-canvas absolute inset-0" />
@@ -279,6 +280,7 @@ function PanelToggles({ panels, selectedCount }: { panels: PanelControls; select
         type="button"
         aria-expanded={panels.open.library}
         aria-controls="gt-editor-library-panel"
+        data-tour="library-toggle"
         aria-label={label("library")}
         title={label("library")}
         onClick={() => panels.toggle("library")}
@@ -291,6 +293,7 @@ function PanelToggles({ panels, selectedCount }: { panels: PanelControls; select
         type="button"
         aria-expanded={panels.open.inspector}
         aria-controls="gt-editor-inspector-panel"
+        data-tour="inspector-toggle"
         aria-label={label("inspector")}
         title={label("inspector")}
         onClick={() => panels.toggle("inspector")}
@@ -852,7 +855,7 @@ function BottomBar({ lightPreset, lasso, multiSelect }: { lightPreset: LightPres
   const [menu, setMenu] = useState<"views" | "lights" | null>(null);
   const view = (v: "front" | "top" | "side" | "reset") => {
     if (v === "reset") setOrbit(false);
-    getEngine()?.setView(v);
+    getEngine()?.setView(v, true);
   };
   const light = (p: LightPreset) => {
     getEngine()?.setLightPreset(p);

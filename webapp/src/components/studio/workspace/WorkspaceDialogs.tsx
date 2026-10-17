@@ -7,7 +7,7 @@ import { closeWorkspaceDialog, useWorkspaceDialog } from "../../../lib/studioWor
 import { CreationDetail } from "./CreationDetail";
 import { DeleteConfirmation } from "./DeleteConfirmation";
 import { FeedbackModal } from "./FeedbackModal";
-import { OnboardingOverlay } from "./OnboardingOverlay";
+import { OnboardingOverlay, TourCompleteDialog } from "./OnboardingOverlay";
 import { SaveCreationDialog } from "./SaveCreationDialog";
 import { SaveGemGroupDialog } from "./SaveGemGroupDialog";
 import { ShareDialog } from "./ShareDialog";
@@ -56,6 +56,8 @@ export function WorkspaceDialogs() {
       return <FeedbackModal onClose={close} />;
     case "onboarding":
       return <OnboardingOverlay onClose={close} />;
+    case "tourComplete":
+      return <TourCompleteDialog onClose={close} />;
     case "discardChanges":
       return (
         <Dialog

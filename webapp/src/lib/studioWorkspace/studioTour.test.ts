@@ -1,0 +1,281 @@
+import { beforeEach, describe, expect, it } from "vitest";
+import type { PlacedJewelry } from "../../data/studioEditor";
+import type { StudioSnapshot } from "../studio3d/store";
+import {
+  exitTour,
+  getTour,
+  markTourStepDone,
+  nextTourStep,
+  NARROW_WIDTH,
+  placeTourCard,
+  previousTourStep,
+  pieceSignature,
+  resetTourForTests,
+  startTour,
+  tourBaseline,
+  TOUR_STEPS,
+  type TourStepId,
+} from "./studioTour";
+
+/* ------------------------------------------------------------- fixtures */
+
+function piece(over: Partial<PlacedJewelry> = {}): PlacedJewelry {
+  return {
+    id: "p1",
+    productId: "crystal-round",
+    ss: 5,
+    look: { shape: "round", material: "crystal", color: "#ffffff", effect: "none" },
+    toothId: "11",
+    position: { x: 1, y: 2, z: 3 },
+    normal: { x: 0, y: 0, z: 1 },
+    rotation: 0,
+    scale: 1,
+    ...over,
+  };
+}
+
+function snapshot(over: Partial<StudioSnapshot> = {}): StudioSnapshot {
+  return {
+    jewels: [],
+    groups: [],
+    active: null,
+    selectedJewelIds: [],
+    selectedToothId: null,
+    armedTypeId: null,
+    placingTypeId: null,
+    lasso: false,
+    multiSelect: false,
+    modelMode: "dentition",
+    modelLoading: false,
+    issues: [],
+    lightPreset: "studio",
+    clientName: "",
+    contextMenu: null,
+    canUndo: false,
+    canRedo: false,
+    ...over,
+  };
+}
+
+const stepOf = (id: TourStepId) => {
+  const step = TOUR_STEPS.find((s) => s.id === id);
+  if (!step) throw new Error(`no step ${id}`);
+  return step;
+};
+
+/** The goal of a step, read against the stage it opened on. */
+function met(id: TourStepId, before: StudioSnapshot, now: StudioSnapshot, cameraMoved = false): boolean {
+  const step = stepOf(id);
+  if (!step.goal) throw new Error(`step ${id} has no goal`);
+  return step.goal({ snap: now, base: tourBaseline(before), cameraMoved });
+}
+
+/* ------------------------------------------------------------- the steps */
+
+describe("the guided tour's steps", () => {
+  it("walks the editor once, with no step repeated", () => {
+    expect(TOUR_STEPS.map((s) => s.id)).toEqual(["stage", "pick", "place", "adjust", "refine", "keep"]);
+    expect(new Set(TOUR_STEPS.map((s) => s.anchor)).size).toBeGreaterThan(1);
+  });
+
+  it("only moves on by itself where the next step is the obvious continuation", () => {
+    expect(TOUR_STEPS.filter((s) => s.autoAdvance).map((s) => s.id)).toEqual(["pick", "place"]);
+    // A step that goes on by itself must have something to detect in the first place.
+    for (const step of TOUR_STEPS) if (step.autoAdvance) expect(step.goal).not.toBeNull();
+  });
+
+  it("leaves the last step without a goal: a save the tour cannot observe is never claimed", () => {
+    expect(stepOf("keep").goal).toBeNull();
+  });
+
+  it("every panel step names the switch that brings its panel back", () => {
+    for (const step of TOUR_STEPS) {
+      if (step.anchor === "library" || step.anchor === "inspector") expect(step.fallback).toBeTruthy();
+    }
+  });
+});
+
+describe("what each step asks for", () => {
+  it("counts the camera step done only on a gesture the engine reported", () => {
+    const s = snapshot();
+    expect(met("stage", s, s, false)).toBe(false);
+    expect(met("stage", s, s, true)).toBe(true);
+  });
+
+  it("counts a gem as picked whether it was armed or is being dragged", () => {
+    const before = snapshot();
+    expect(met("pick", before, snapshot({ armedTypeId: "crystal-round" }))).toBe(true);
+    expect(met("pick", before, snapshot({ placingTypeId: "crystal-round" }))).toBe(true);
+    expect(met("pick", before, before)).toBe(false);
+  });
+
+  it("measures placing against the stage as it was, not against an empty arch", () => {
+    // A restored draft already has a piece: the step is about one more.
+    const before = snapshot({ jewels: [piece()] });
+    expect(met("place", before, before)).toBe(false);
+    expect(met("place", before, snapshot({ jewels: [piece(), piece({ id: "p2" })] }))).toBe(true);
+  });
+
+  it("counts adjusting only once a piece that was already there has changed", () => {
+    const before = snapshot({ jewels: [piece()] });
+    expect(met("adjust", before, before)).toBe(false);
+    // Selecting is not yet adjusting (the card says so through `midway`).
+    expect(met("adjust", before, snapshot({ jewels: [piece()], selectedJewelIds: ["p1"] }))).toBe(false);
+    expect(met("adjust", before, snapshot({ jewels: [piece({ ss: 9 })] }))).toBe(true);
+    expect(met("adjust", before, snapshot({ jewels: [piece({ rotation: 45 })] }))).toBe(true);
+    // Taking the piece off is an adjustment too.
+    expect(met("adjust", before, snapshot({ jewels: [] }))).toBe(true);
+    // Adding another piece is not: that was the previous step.
+    expect(met("adjust", before, snapshot({ jewels: [piece(), piece({ id: "p2" })] }))).toBe(false);
+  });
+
+  it("reads Undo from the redo stack appearing, not from the history's depth", () => {
+    const fresh = snapshot({ canUndo: true });
+    expect(met("refine", fresh, fresh)).toBe(false);
+    expect(met("refine", fresh, snapshot({ canRedo: true }))).toBe(true);
+    // Someone who arrived with something already redoable has to undo again.
+    const redoable = snapshot({ canRedo: true });
+    expect(met("refine", redoable, redoable)).toBe(false);
+  });
+
+  it("sees the selection as on the way, before anything has changed", () => {
+    const step = stepOf("adjust");
+    const base = tourBaseline(snapshot({ jewels: [piece()] }));
+    expect(step.midway?.({ snap: snapshot({ jewels: [piece()] }), base, cameraMoved: false })).toBe(false);
+    expect(step.midway?.({ snap: snapshot({ jewels: [piece()], selectedJewelIds: ["p1"] }), base, cameraMoved: false })).toBe(true);
+  });
+});
+
+describe("a piece's signature", () => {
+  it("ignores the engine re-seating a piece on the enamel by a hair", () => {
+    expect(pieceSignature(piece({ position: { x: 1, y: 2, z: 3 } }))).toBe(pieceSignature(piece({ position: { x: 1.0004, y: 2, z: 3 } })));
+  });
+
+  it("notices a colour, a size, a tooth, a spin or a standoff", () => {
+    const ref = pieceSignature(piece());
+    expect(pieceSignature(piece({ ss: 7 }))).not.toBe(ref);
+    expect(pieceSignature(piece({ toothId: "21" }))).not.toBe(ref);
+    expect(pieceSignature(piece({ rotation: 90 }))).not.toBe(ref);
+    expect(pieceSignature(piece({ offset: 0.4 }))).not.toBe(ref);
+    expect(pieceSignature(piece({ look: { shape: "round", material: "crystal", color: "#ff00aa", effect: "none" } }))).not.toBe(ref);
+  });
+});
+
+/* ----------------------------------------------------------- the card's place */
+
+const CARD = { width: 320, height: 240 };
+const DESKTOP = { width: 1440, height: 900 };
+
+describe("where the card goes", () => {
+  it("stands to the right of a control with room beside it", () => {
+    const { left, dock } = placeTourCard({ left: 100, top: 300, width: 280, height: 200 }, CARD, DESKTOP);
+    expect(dock).toBe("beside");
+    expect(left).toBeGreaterThan(380);
+  });
+
+  it("flips to the left of a control hugging the right edge", () => {
+    const { left, dock } = placeTourCard({ left: 1100, top: 300, width: 300, height: 200 }, CARD, DESKTOP);
+    expect(dock).toBe("beside");
+    expect(left).toBeLessThan(1100);
+    expect(left).toBeGreaterThanOrEqual(12);
+  });
+
+  it("goes under a wide, shallow control such as the top bar", () => {
+    const { top, dock } = placeTourCard({ left: 0, top: 0, width: 1440, height: 56 }, CARD, DESKTOP);
+    expect(dock).toBe("beside");
+    expect(top).toBeGreaterThanOrEqual(56);
+  });
+
+  it("sits inside a large control, clear of the camera bar in its middle", () => {
+    const stage = { left: 0, top: 56, width: 1440, height: 844 };
+    const { left, top } = placeTourCard(stage, CARD, DESKTOP, true);
+    expect(left + CARD.width).toBeLessThanOrEqual(DESKTOP.width);
+    expect(left).toBeGreaterThan(DESKTOP.width / 2);
+    expect(top + CARD.height).toBeLessThanOrEqual(DESKTOP.height);
+  });
+
+  it("docks on a phone, on the side the control is not", () => {
+    const phone = { width: 390, height: 844 };
+    expect(phone.width).toBeLessThan(NARROW_WIDTH);
+    const low = placeTourCard({ left: 0, top: 600, width: 390, height: 240 }, CARD, phone);
+    expect(low.dock).toBe("top");
+    const high = placeTourCard({ left: 0, top: 60, width: 390, height: 240 }, CARD, phone);
+    expect(high.dock).toBe("bottom");
+  });
+
+  it("docks to the top on a phone held sideways, where the bottom is the stage's own bar", () => {
+    const landscape = { width: 740, height: 390 };
+    const { dock } = placeTourCard({ left: 0, top: 40, width: 740, height: 300 }, { width: 320, height: 150 }, landscape);
+    expect(dock).toBe("top");
+  });
+
+  it("keeps the card inside the window, whatever the anchor", () => {
+    const vp = { width: 900, height: 600 };
+    for (const anchor of [
+      { left: -400, top: -200, width: 100, height: 100 },
+      { left: 880, top: 580, width: 400, height: 400 },
+      { left: 0, top: 0, width: 900, height: 600 },
+    ]) {
+      const { left, top } = placeTourCard(anchor, CARD, vp);
+      expect(left).toBeGreaterThanOrEqual(0);
+      expect(top).toBeGreaterThanOrEqual(0);
+      expect(left + CARD.width).toBeLessThanOrEqual(vp.width);
+      expect(top + CARD.height).toBeLessThanOrEqual(vp.height);
+    }
+  });
+
+  it("centres and docks when there is no control to point at", () => {
+    const { left, dock } = placeTourCard(null, CARD, DESKTOP);
+    expect(dock).toBe("bottom");
+    expect(left).toBe((DESKTOP.width - CARD.width) / 2);
+  });
+});
+
+/* ------------------------------------------------------------- the run */
+
+describe("running the tour", () => {
+  beforeEach(() => resetTourForTests());
+
+  it("starts idle and does nothing until it is started", () => {
+    expect(getTour().running).toBe(false);
+    nextTourStep();
+    expect(getTour().index).toBe(0);
+    expect(getTour().running).toBe(false);
+  });
+
+  it("walks forward and back, without falling off either end", () => {
+    startTour();
+    expect(getTour().index).toBe(0);
+    previousTourStep();
+    expect(getTour().index).toBe(0);
+    for (let i = 0; i < TOUR_STEPS.length + 3; i++) nextTourStep();
+    expect(getTour().index).toBe(TOUR_STEPS.length - 1);
+    previousTourStep();
+    expect(getTour().index).toBe(TOUR_STEPS.length - 2);
+  });
+
+  it("leaves out the stage's steps where WebGL could not start", () => {
+    startTour({ withStage: false });
+    const ids = getTour().steps.map((s) => s.id);
+    expect(ids).not.toContain("stage");
+    expect(ids).not.toContain("place");
+    expect(ids).toContain("pick");
+    expect(getTour().steps.every((s) => !s.needsEngine)).toBe(true);
+  });
+
+  it("remembers the objectives actually reached, once each", () => {
+    startTour();
+    markTourStepDone("stage");
+    markTourStepDone("stage");
+    markTourStepDone("pick");
+    expect(getTour().done).toEqual(["stage", "pick"]);
+  });
+
+  it("forgets the run on the way out", () => {
+    startTour();
+    nextTourStep();
+    markTourStepDone("stage");
+    exitTour();
+    expect(getTour()).toMatchObject({ running: false, index: 0, done: [] });
+  });
+});

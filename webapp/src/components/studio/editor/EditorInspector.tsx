@@ -66,6 +66,7 @@ export function EditorInspector({ snap }: { snap: StudioSnapshot }) {
   return (
     <aside
       aria-label={useEditorLabels().t("studio.editor.inspector.label")}
+      data-tour="inspector"
       className="gt-editor-scroll min-h-0 overflow-y-auto border-t border-[var(--border-subtle)] bg-[var(--surface-card)] px-4 pb-7 pt-4 studio-side:border-l studio-side:border-t-0"
     >
       <div className="gt-editor-panel-in">{body}</div>

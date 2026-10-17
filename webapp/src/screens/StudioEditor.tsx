@@ -22,7 +22,8 @@ import { setNoticeHandler } from "../lib/studio3d/notices";
 import { studioStore, useStudio } from "../lib/studio3d/store";
 import { studioSectionFromPath, type StudioSection } from "../lib/studioUrl";
 import { StudioWorkspaceProvider } from "../lib/studioWorkspace/workspace";
-import { getWorkspaceDialog, onboardingSeen, openWorkspaceDialog } from "../lib/studioWorkspace/workspaceUi";
+import { StudioTour } from "../components/studio/workspace/StudioTour";
+import { getWorkspaceDialog, onboardingSeen, openWorkspaceDialog, useWorkspaceDialog } from "../lib/studioWorkspace/workspaceUi";
 
 /**
  * The 3D Studio editor: compose tooth jewellery on a 3D dental arch.
@@ -57,6 +58,7 @@ function StudioWorkspace() {
   const snap = useStudio();
   const { pathname } = useLocation();
   const section = studioSectionFromPath(pathname);
+  const dialog = useWorkspaceDialog();
   const [drawerOpen, setDrawerOpen] = useState(false);
   const { save } = useWorkspaceActions();
   const panels = useEditorPanels();
@@ -243,6 +245,10 @@ function StudioWorkspace() {
           </main>
         )}
       </div>
+      {/* The guided tour follows the editor's own controls, so it is mounted
+          beside them and steps aside — without losing its place — whenever a
+          section or a dialog is in front of the stage. */}
+      <StudioTour snap={snap} hidden={!!section || !!dialog} />
       <WorkspaceDialogs />
     </div>
   );

@@ -3,6 +3,7 @@ import clsx from "clsx";
 import {
   Braces,
   ChevronDown,
+  Compass,
   Download,
   Image as ImageIcon,
   Menu,
@@ -28,6 +29,7 @@ import { estimateComposition } from "../../../lib/studio3d/gemCatalog";
 import { useCompositionEstimate, useStudioGems } from "../../../lib/studio3d/useStudioGems";
 import { importModelFile, resetModel } from "../../../lib/studio3d/actions";
 import { downloadURL, getEngine } from "../../../lib/studio3d/engine";
+import { startTour, useTour } from "../../../lib/studioWorkspace/studioTour";
 import { notify } from "../../../lib/studio3d/notices";
 import { buildQuoteSheetDataURL } from "../../../lib/studio3d/quoteSheet";
 import {
@@ -105,27 +107,31 @@ export function EditorTopBar({ snap, onOpenMenu }: { snap: StudioSnapshot; onOpe
       </p>
 
       <span aria-hidden="true" className="mx-0.5 hidden h-5 w-px bg-[var(--border-subtle)] sm:block" />
-      <button
-        type="button"
-        className={toolButton}
-        aria-label={t("studio.editor.undo")}
-        title={t("studio.editor.undoHint")}
-        disabled={!snap.canUndo}
-        onClick={() => studioStore.undo()}
-      >
-        <Undo2 size={16} aria-hidden="true" />
-      </button>
-      {/* On a phone, Undo stays and Redo steps aside for the design's name (Ctrl+Y still works on a keyboard). */}
-      <button
-        type="button"
-        className={clsx(toolButton, "max-sm:hidden")}
-        aria-label={t("studio.editor.redo")}
-        title={t("studio.editor.redoHint")}
-        disabled={!snap.canRedo}
-        onClick={() => studioStore.redo()}
-      >
-        <Redo2 size={16} aria-hidden="true" />
-      </button>
+      {/* Undo and Redo travel together: the guided tour points at the pair (`data-tour`). */}
+      <div data-tour="history" className="flex flex-none items-center gap-1 sm:gap-2">
+        <button
+          type="button"
+          className={toolButton}
+          aria-label={t("studio.editor.undo")}
+          title={t("studio.editor.undoHint")}
+          disabled={!snap.canUndo}
+          onClick={() => studioStore.undo()}
+        >
+          <Undo2 size={16} aria-hidden="true" />
+        </button>
+        {/* On a phone, Undo stays and Redo steps aside for the design's name (Ctrl+Y still works on a keyboard). */}
+        <button
+          type="button"
+          className={clsx(toolButton, "max-sm:hidden")}
+          aria-label={t("studio.editor.redo")}
+          title={t("studio.editor.redoHint")}
+          disabled={!snap.canRedo}
+          onClick={() => studioStore.redo()}
+        >
+          <Redo2 size={16} aria-hidden="true" />
+        </button>
+      </div>
+      <TourButton />
       <span aria-hidden="true" className="mx-0.5 hidden h-5 w-px bg-[var(--border-subtle)] sm:block" />
       <input ref={fileRef} type="file" accept=".glb,.gltf,model/gltf-binary" className="hidden" onChange={handleFile} tabIndex={-1} />
       <button
@@ -153,8 +159,33 @@ export function EditorTopBar({ snap, onOpenMenu }: { snap: StudioSnapshot; onOpe
       <QuickActionsMenu triggerClassName={clsx(toolButton, "max-sm:hidden")} />
       <ExportMenu />
       <ShareMenu triggerClassName={toolButton} />
-      <SaveControls />
+      <span data-tour="save" className="flex flex-none items-center">
+        <SaveControls />
+      </span>
     </header>
+  );
+}
+
+/**
+ * The way back into the guided tour, from the stage itself: one discreet button
+ * that starts the walkthrough wherever the artist is, without touching the
+ * design. The longer form — the lessons, the questions, the shortcuts — stays
+ * on the Help page, which can replay the tour too.
+ */
+function TourButton() {
+  const { t } = useEditorLabels();
+  const tour = useTour();
+  if (tour.running) return null;
+  return (
+    <button
+      type="button"
+      className={clsx(toolButton, "max-md:hidden")}
+      aria-label={t("studio.workspace.onboarding.replay")}
+      title={t("studio.workspace.onboarding.replay")}
+      onClick={() => startTour({ withStage: !!getEngine() })}
+    >
+      <Compass size={16} aria-hidden="true" />
+    </button>
   );
 }
 
