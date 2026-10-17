@@ -41,6 +41,7 @@ Read only what the task needs (`guidelines/` below = `global-toothgems-llm-guide
 | Tests and checks, CI | `guidelines/07-testing-and-quality.md`, `docs/testing.md` |
 | Translations, copy, SEO | `guidelines/08-content-and-localization.md` |
 | Schema, migrations, RPC, Storage, Edge Functions | `guidelines/09-supabase-workflow.md`, `supabase/README.md` (Migrations, Data model, Deliberate decisions) |
+| Pro artist module (showroom, booking with deposit, client file) — **study only, nothing decided** | `docs/pro-artist-erp-study.md` |
 | How to plan, report, commit | `guidelines/10-agent-workflow.md`, §14 below |
 | A given screen or store | the matching `webapp/README.md` section, then the code |
 
