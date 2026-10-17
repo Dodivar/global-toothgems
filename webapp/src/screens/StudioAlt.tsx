@@ -57,9 +57,9 @@ function scrollToSection(id: string) {
   document.getElementById(id)?.scrollIntoView({ behavior: reduced ? "auto" : "smooth", block: "start" });
 }
 
-function SectionHeading({ id, eyebrow, title, body, center }: { id: string; eyebrow: string; title: string; body?: string; center?: boolean }) {
+function SectionHeading({ id, eyebrow, title, body }: { id: string; eyebrow: string; title: string; body?: string }) {
   return (
-    <div className={clsx("grid max-w-[720px] gap-3", center && "justify-items-center justify-self-center text-center")}>
+    <div className="grid max-w-[720px] gap-3">
       <span className="grid gap-2 justify-items-start">
         <span className="gt-eyebrow">{eyebrow}</span>
         <span aria-hidden="true" className="gt-studio-b-tick h-px w-16" />

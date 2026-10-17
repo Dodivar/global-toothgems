@@ -57,7 +57,7 @@
       },
       "signature": {
         "title": "Cherchez votre prochaine signature",
-        "body": "Minimal ou statement, symétrique ou libre : changez de registre en quelques secondes et comparez les pistes côte à côte.",
+        "body": "Minimal ou statement, symétrique ou libre : changez de registre en quelques secondes et gardez les pistes qui vous parlent.",
         "media": {
           "title": "Galerie de compositions créées dans le Studio",
           "body": "Plusieurs esthétiques différentes, présentées ensemble.",
@@ -117,7 +117,7 @@
       "artist": "Pour les artistes qui veulent tirer le meilleur de leur travail créatif.",
       "atelier": "Pour les artistes dont les ambitions demandent la formule la plus complète."
     },
-    "note": "Montants mensuels affichés à titre indicatif, encore à confirmer : aucun abonnement n’est prélevé aujourd’hui. Pendant l’aperçu, tout le Studio est gratuit."
+    "note": "Montants mensuels affichés à titre indicatif, encore à confirmer : aucun abonnement n’est prélevé aujourd’hui."
   },
   "closing": {
     "title": "Votre prochaine grande création commence par une idée.",

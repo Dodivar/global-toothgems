@@ -49,7 +49,9 @@ export function StudioAltPlans({ onTrial, onChoose }: { onTrial: () => void; onC
       </div>
 
       {/* ------------------------------------------------------ Paid plans */}
-      <ul className="m-0 grid list-none grid-cols-1 gap-4 p-0 md:grid-cols-3">
+      {/* Two by two on a tablet, one row from 1024px: below that, three columns
+          leave a card too narrow for a "Choose <plan>" button. */}
+      <ul className="m-0 grid list-none grid-cols-1 gap-4 p-0 sm:grid-cols-2 lg:grid-cols-3">
         {paid.map((plan) => {
           const name = t(`studio.plans.items.${plan.id}.name`);
           return (
