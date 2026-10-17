@@ -343,7 +343,7 @@
       "title": "Vous savez créer dans le Studio",
       "sub": "La visite est terminée — la suite vous appartient",
       "body": "Vous savez poser une gemme, l’ajuster et revenir en arrière : c’est tout ce qu’il faut pour composer un sourire entier. Ajoutez des gemmes, dupliquez-les en miroir, et quand une composition vous plaît, enregistrez-la dans Mes créations.",
-      "again": "Besoin d’un rappel ? La boussole dans la barre du haut relance la visite, et « Aide & tutoriel » réunit les leçons, les questions fréquentes et les raccourcis clavier.",
+      "again": "Besoin d’un rappel ? « Aide & tutoriel », dans le menu du Studio, relance la visite et réunit les leçons, les questions fréquentes et les raccourcis clavier.",
       "cta": "Créer maintenant"
     },
     "stage": {
@@ -375,7 +375,7 @@
     },
     "refine": {
       "title": "Rien n’est définitif",
-      "body": "Annuler et Rétablir couvrent tout : déplacement, couleur, taille, suppression. La touche Suppr retire la sélection ; un double-clic sur une dent rapproche la caméra.",
+      "body": "Annuler et Rétablir couvrent tout : déplacement, couleur, taille, suppression. Pour retirer une gemme, la corbeille de la barre rapide au-dessus d’elle, ou la touche Suppr.",
       "task": "Appuyez sur Annuler : vous verrez que rien n’est perdu.",
       "blocked": "Rien à annuler pour l’instant : posez ou déplacez une gemme, et le bouton s’allumera.",
       "success": "Et Rétablir ramène tout. Vous pouvez essayer sans crainte."

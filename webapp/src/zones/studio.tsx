@@ -1,7 +1,8 @@
 "use client";
 
 import { lazy, Suspense } from "react";
-import { RequireStudioAccess } from "../lib/studioAccess";
+import { StudioAccessProvider } from "../lib/studioAccess";
+import { RequireStudioAccess } from "../components/studio/access/StudioAccessGate";
 import { StudioEditorLoading } from "../components/studio/editor/StudioEditorLoading";
 
 /* The 3D Studio editor carries three.js, the heaviest code in the site: it is
@@ -17,11 +18,13 @@ const StudioShare = lazy(() => import("../screens/StudioShare").then((m) => ({ d
  */
 export function StudioEditorScreen() {
   return (
-    <RequireStudioAccess>
-      <Suspense fallback={<StudioEditorLoading />}>
-        <StudioEditor />
-      </Suspense>
-    </RequireStudioAccess>
+    <StudioAccessProvider>
+      <RequireStudioAccess>
+        <Suspense fallback={<StudioEditorLoading />}>
+          <StudioEditor />
+        </Suspense>
+      </RequireStudioAccess>
+    </StudioAccessProvider>
   );
 }
 

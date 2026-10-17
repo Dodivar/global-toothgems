@@ -9,7 +9,6 @@ import {
   Menu,
   Redo2,
   RotateCcw,
-  Sparkles,
   SquareDashed,
   Undo2,
   Upload,
@@ -24,6 +23,7 @@ import { ShareMenu } from "./ShareMenu";
 import { HelpHint } from "../workspace/HelpHint";
 import { SaveControls } from "../workspace/SaveControls";
 import { SaveStatus } from "../workspace/SaveStatus";
+import { StudioAccessBadge } from "../access/StudioTrialCountdown";
 import { FREE_TOOTH } from "../../../data/studioEditor";
 import { estimateComposition } from "../../../lib/studio3d/gemCatalog";
 import { useCompositionEstimate, useStudioGems } from "../../../lib/studio3d/useStudioGems";
@@ -81,13 +81,7 @@ export function EditorTopBar({ snap, onOpenMenu }: { snap: StudioSnapshot; onOpe
             <HelpHint id="saving" className="-my-1 h-5 w-5 max-md:hidden" />
           </span>
         </div>
-        <span
-          title={t("studio.access.previewHint")}
-          className="hidden items-center gap-1 whitespace-nowrap rounded-[var(--radius-pill)] border border-[var(--gt-emerald-300)] bg-[var(--status-success-bg)] px-2 py-0.5 text-[10px] font-bold uppercase tracking-[.08em] text-[var(--status-success-fg)] lg:inline-flex"
-        >
-          <Sparkles size={11} aria-hidden="true" />
-          {t("studio.access.previewBadge")}
-        </span>
+        <StudioAccessBadge />
       </div>
 
       <div className="flex-1 max-sm:hidden" />

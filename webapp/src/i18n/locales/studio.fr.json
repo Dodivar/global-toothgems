@@ -132,7 +132,80 @@
   "access": {
     "previewBadge": "Aperçu gratuit",
     "previewHint": "Le Studio est gratuit pendant son aperçu — sans paiement ni carte.",
-    "previewNote": "Gratuit pendant l’aperçu — sans carte bancaire."
+    "previewNote": "Gratuit pendant l’aperçu — sans carte bancaire.",
+    "loading": "Vérification de votre accès au Studio…",
+    "back": "Retour",
+    "backToStudioPage": "Retour à la page du Studio",
+    "toAccount": "Aller à mon espace",
+    "offer": {
+      "eyebrow": "Essai gratuit",
+      "title": "Essayez le Studio 3D complet, gratuitement, pendant 48 heures",
+      "body": "Découvrez tous les outils, composez vos designs sur l’arcade 3D et enregistrez-les dans votre compte.",
+      "points": {
+        "full": "Accès complet au Studio 3D pendant 48 heures",
+        "noCard": "Sans carte bancaire, sans moyen de paiement",
+        "save": "Créez et enregistrez autant de designs que vous voulez",
+        "after": "Après 48 heures, l’édition se met en pause jusqu’au choix d’une formule",
+        "kept": "Vos designs enregistrés restent dans votre compte"
+      },
+      "cta": "Démarrer mon essai gratuit de 48 h",
+      "starting": "Démarrage de votre essai…",
+      "note": "Les 48 heures s’écoulent en continu dès le démarrage, même Studio fermé. Un essai par compte.",
+      "startError": "Votre essai n’a pas pu démarrer. Vérifiez votre connexion et réessayez."
+    },
+    "started": {
+      "title": "Votre essai gratuit a commencé",
+      "body": "Vous avez 48 heures d’accès complet. Belle création !"
+    },
+    "signedOut": {
+      "eyebrow": "Essai gratuit",
+      "title": "Connectez-vous pour démarrer votre essai gratuit de 48 h",
+      "body": "Votre essai et vos designs sont liés à votre compte : vous les retrouvez sur tous vos appareils. Aucune carte bancaire demandée.",
+      "signIn": "Se connecter",
+      "register": "Créer un compte"
+    },
+    "locked": {
+      "trialTitle": "Votre essai gratuit de 48 heures est terminé",
+      "endedTitle": "Votre abonnement au Studio est terminé",
+      "pendingTitle": "Votre abonnement est en cours d’activation",
+      "body": "Vos créations sont toujours là. Choisissez une formule pour débloquer à nouveau le Studio 3D et continuer à donner vie à vos idées.",
+      "pendingBody": "Votre paiement est en cours de confirmation. Le Studio se débloque automatiquement dès qu’il l’est.",
+      "refresh": "Vérifier à nouveau",
+      "kept_one": "Votre design enregistré est conservé dans votre compte. Il vous attendra dans le Studio dès qu’une formule sera active.",
+      "kept_other": "Vos {{count}} designs enregistrés sont conservés dans votre compte. Ils vous attendront dans le Studio dès qu’une formule sera active.",
+      "keptNone": "Tout ce que vous avez enregistré reste dans votre compte et vous attendra dès qu’une formule sera active.",
+      "plansTitle": "Choisissez votre formule",
+      "notOpenTitle": "L’abonnement en ligne n’est pas encore ouvert",
+      "notOpenBody": "Vous avez choisi {{plan}}. L’abonnement depuis le site ouvre bientôt : rien n’a été débité. Vos designs restent en sécurité dans votre compte et le Studio se débloque dès que votre abonnement est actif.",
+      "contact": "Nous contacter",
+      "pricesNote": "Prix par mois, TVA comprise. Les formules et leur contenu sont en cours de finalisation."
+    },
+    "error": {
+      "title": "Impossible de vérifier votre accès au Studio",
+      "body": "C’est généralement un problème de connexion. Vos designs sont en sécurité.",
+      "retry": "Réessayer"
+    },
+    "countdown": {
+      "label": "Essai gratuit",
+      "left": "Il reste {{time}}",
+      "days_one": "{{count}} jour",
+      "days_other": "{{count}} jours",
+      "hours_one": "{{count}} heure",
+      "hours_other": "{{count}} heures",
+      "minutes_one": "{{count}} minute",
+      "minutes_other": "{{count}} minutes",
+      "lessThanMinute": "moins d’une minute",
+      "ended": "Essai terminé"
+    },
+    "warning": {
+      "body": "Votre essai gratuit se termine bientôt — il reste {{time}}. Enregistrez vos designs et jetez un œil aux formules pour continuer à créer.",
+      "plans": "Voir les formules",
+      "dismiss": "Fermer"
+    },
+    "denied": {
+      "title": "Votre accès au Studio a pris fin",
+      "body": "Cette modification n’a pas pu être enregistrée. Vos designs enregistrés sont conservés."
+    }
   },
   "editor": {
     "documentTitle": "Studio 3D · Atelier",

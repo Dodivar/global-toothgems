@@ -52,6 +52,12 @@ export interface TourStep {
   inside?: boolean;
   /** The 3D stage must be running for this step to make sense. */
   needsEngine?: boolean;
+  /**
+   * Measure against the baseline of the step before, not this step's own.
+   * For a chain where one gesture can satisfy both steps at once — a gem
+   * dragged from the library straight onto a tooth is picked *and* placed.
+   */
+  measureFrom?: "previous";
   /** What the step asks for, when the editor can tell it was done. `null`: read and pass. */
   goal: ((ctx: TourContext) => boolean) | null;
   /** On the way: the artist has started, but the step is not done yet. */
@@ -76,19 +82,25 @@ export const TOUR_STEPS: readonly TourStep[] = [
     goal: (c) => c.cameraMoved,
   },
   {
-    // Pick a gem. A press on a library card arms it; a drag takes it to the arch.
+    // Pick a gem. A press on a library card arms it, a drag takes it to the
+    // arch, and Enter on a focused card puts it straight on the chosen tooth —
+    // so a gem that has landed counts as picked too, whichever way it got there.
     id: "pick",
     anchor: "library",
     fallback: "library-toggle",
-    goal: (c) => !!c.snap.armedTypeId || !!c.snap.placingTypeId,
+    goal: (c) => !!c.snap.armedTypeId || !!c.snap.placingTypeId || c.snap.jewels.length > c.base.pieceCount,
     autoAdvance: true,
   },
   {
-    // Put it on a tooth — the first real moment of the design.
+    // Put it on a tooth — the first real moment of the design. Measured from
+    // the arch as it was when the previous step opened: a gem dragged all the
+    // way from the library is already on a tooth by the time this step opens,
+    // and the tour says so instead of asking for a second one.
     id: "place",
     anchor: "stage",
     inside: true,
     needsEngine: true,
+    measureFrom: "previous",
     goal: (c) => c.snap.jewels.length > c.base.pieceCount,
     autoAdvance: true,
   },
@@ -166,6 +178,32 @@ function pieceEdited({ snap, base }: TourContext): boolean {
   const changed = snap.jewels.some((j) => base.pieces[j.id] !== undefined && base.pieces[j.id] !== pieceSignature(j));
   const removed = Object.keys(base.pieces).some((id) => !snap.jewels.some((j) => j.id === id));
   return changed || removed;
+}
+
+/**
+ * Whether reaching a step's objective earns the automatic move to the next one.
+ *
+ * Only a step that declares it, only when it is not the last, and only when the
+ * objective was reached *while the step was open* — `metBefore` is what the
+ * step's goal said a moment earlier, and `null` means the step has not been
+ * read yet (its baseline is not taken, so its goal cannot be trusted). A step
+ * already satisfied when it opens — the gem dragged from the library straight
+ * onto a tooth, or a step the artist stepped back to — stands still and waits
+ * to be read.
+ */
+export function earnsAutoAdvance({
+  step,
+  met,
+  metBefore,
+  last,
+}: {
+  step: TourStep;
+  met: boolean;
+  metBefore: boolean | null;
+  last: boolean;
+}): boolean {
+  if (!step.autoAdvance || last || !met) return false;
+  return metBefore === false;
 }
 
 /* ------------------------------------------------------------- placement */

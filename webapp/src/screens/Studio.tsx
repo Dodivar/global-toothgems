@@ -12,7 +12,7 @@ import { useFormat } from "../lib/format";
 import { useReveal } from "../lib/useReveal";
 import { STUDIO_ENTRY_PLAN, STUDIO_TRIAL_DAYS } from "../data/studio";
 import { STUDIO_EDITOR_PATH, STUDIO_SUBSCRIBE_PATH } from "../lib/studioUrl";
-import { useStudioAccess } from "../lib/studioAccess";
+import { STUDIO_PREVIEW } from "../lib/studioAccess";
 
 /**
  * The 3D Studio's public presentation page (`/studio-3d`, `/en/3d-studio`).
@@ -75,10 +75,11 @@ export function Studio() {
   const { t } = useTranslation();
   const { formatMoney } = useFormat();
   const navigate = useNavigate();
-  const access = useStudioAccess();
+  // The editor itself shows the trial invitation or the plans (StudioAccessGate).
+  const access = { granted: STUDIO_PREVIEW };
 
   const entryPrice = formatMoney(STUDIO_ENTRY_PLAN.amountMinor, STUDIO_ENTRY_PLAN.currency);
-  const start = () => navigate(access.granted ? STUDIO_EDITOR_PATH : STUDIO_SUBSCRIBE_PATH);
+  const start = () => navigate(STUDIO_EDITOR_PATH);
   const subscribe = () => navigate(STUDIO_SUBSCRIBE_PATH);
   const startLabel = access.granted ? t("studioPage.hero.ctaOpen") : t("studioPage.hero.ctaPrimary", { count: STUDIO_TRIAL_DAYS });
 

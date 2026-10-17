@@ -5,6 +5,7 @@ import { useTranslation } from "react-i18next";
 import { getEngine } from "../../../lib/studio3d/engine";
 import type { StudioSnapshot } from "../../../lib/studio3d/store";
 import {
+  earnsAutoAdvance,
   exitTour,
   markTourStepDone,
   nextTourStep,
@@ -66,9 +67,9 @@ export function StudioTour({ snap, hidden }: { snap: StudioSnapshot; hidden: boo
   // the baseline belongs to one step of one run and must not follow the stage
   // afterwards, so an effect would read it a render too late.
   const stepKey = `${tour.runId}:${tour.index}`;
-  const [base, setBase] = useState<{ key: string; value: TourBaseline } | null>(null);
-  if (tour.running && base?.key !== stepKey) {
-    setBase({ key: stepKey, value: tourBaseline(snap) });
+  const [bases, setBases] = useState<Record<string, TourBaseline>>({});
+  if (tour.running && !bases[stepKey]) {
+    setBases((prev) => ({ ...prev, [stepKey]: tourBaseline(snap) }));
     setCameraMoved(false);
   }
 
@@ -115,7 +116,12 @@ export function StudioTour({ snap, hidden }: { snap: StudioSnapshot; hidden: boo
   }, [live, step]);
 
   /* -- the goal, read from the editor's own state -- */
-  const ctx = base?.key === stepKey ? { snap, base: base.value, cameraMoved } : null;
+  // A step measuring from the one before reads that step's baseline, so a
+  // single gesture that satisfies both is not asked for twice.
+  const own = bases[stepKey];
+  const previous = bases[`${tour.runId}:${tour.index - 1}`];
+  const base = (step?.measureFrom === "previous" ? (previous ?? own) : own) ?? null;
+  const ctx = base ? { snap, base, cameraMoved } : null;
   const met = !!(step?.goal && ctx && step.goal(ctx));
   const midway = !met && !!(step?.midway && ctx && step.midway(ctx));
   const blocked = !met && !midway && !!(step?.blocked && ctx && step.blocked(ctx));
@@ -126,12 +132,37 @@ export function StudioTour({ snap, hidden }: { snap: StudioSnapshot; hidden: boo
   }, [met, step]);
 
   /* -- the steps whose next move is the obvious continuation go on by themselves -- */
+  // Only when the objective is reached *while the step is open*. A step already
+  // satisfied when it opens — the gem dragged in one go, or a step the artist
+  // stepped back to — stands still and waits to be read.
   const last = tour.index === tour.steps.length - 1;
+  const wasMet = useRef<{ key: string; met: boolean } | null>(null);
+  const beat = useRef<ReturnType<typeof setTimeout> | null>(null);
   useEffect(() => {
-    if (!live || !met || !step?.autoAdvance || last) return;
-    const timer = setTimeout(nextTourStep, 1100);
-    return () => clearTimeout(timer);
-  }, [live, met, step?.autoAdvance, last]);
+    // Not before the step's baseline exists: until it does, every goal reads
+    // false, and that false must not pass for "it was not met when this opened".
+    if (!base) return;
+    const before = wasMet.current?.key === stepKey ? wasMet.current.met : null;
+    wasMet.current = { key: stepKey, met };
+    if (!live || !step) return;
+    // The beat is not taken back if the state flips again afterwards: a gem
+    // armed and unarmed within the second still earned the move.
+    if (beat.current || !earnsAutoAdvance({ step, met, metBefore: before, last })) return;
+    beat.current = setTimeout(() => {
+      beat.current = null;
+      nextTourStep();
+    }, 1100);
+  }, [live, met, base, stepKey, step?.autoAdvance, last]);
+
+  // The beat belongs to the step that started it.
+  useEffect(
+    () => () => {
+      if (!beat.current) return;
+      clearTimeout(beat.current);
+      beat.current = null;
+    },
+    [stepKey],
+  );
 
   /* -- the card takes the focus when the tour opens and after a Back / Next
         press, so a keyboard keeps its place and a screen reader is told where

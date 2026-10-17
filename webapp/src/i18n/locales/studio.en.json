@@ -132,7 +132,80 @@
   "access": {
     "previewBadge": "Free preview",
     "previewHint": "The Studio is free during its preview — no payment, no card.",
-    "previewNote": "Free during the preview — no card needed."
+    "previewNote": "Free during the preview — no card needed.",
+    "loading": "Checking your Studio access…",
+    "back": "Back",
+    "backToStudioPage": "Back to the Studio page",
+    "toAccount": "Go to my account",
+    "offer": {
+      "eyebrow": "Free trial",
+      "title": "Try the full 3D Studio free for 48 hours",
+      "body": "Explore every tool, compose your designs on the 3D arch and save them to your account.",
+      "points": {
+        "full": "Full access to the 3D Studio for 48 hours",
+        "noCard": "No credit card, no payment details",
+        "save": "Create and save as many designs as you like",
+        "after": "After 48 hours, editing pauses until you choose a plan",
+        "kept": "Your saved designs stay in your account"
+      },
+      "cta": "Start my free 48-hour trial",
+      "starting": "Starting your trial…",
+      "note": "The 48 hours run continuously from the moment you start, even when the Studio is closed. One trial per account.",
+      "startError": "Your trial could not be started. Check your connection and try again."
+    },
+    "started": {
+      "title": "Your free trial has started",
+      "body": "You have 48 hours of full access. Enjoy the Studio!"
+    },
+    "signedOut": {
+      "eyebrow": "Free trial",
+      "title": "Sign in to start your free 48-hour trial",
+      "body": "Your trial and your designs are linked to your account, so you can pick up where you left off on any device. No credit card needed.",
+      "signIn": "Sign in",
+      "register": "Create an account"
+    },
+    "locked": {
+      "trialTitle": "Your 48-hour free trial has ended",
+      "endedTitle": "Your Studio subscription has ended",
+      "pendingTitle": "Your subscription is being set up",
+      "body": "Your creations are still here. Choose a plan to unlock the 3D Studio again and continue bringing your ideas to life.",
+      "pendingBody": "Your payment is still being confirmed. The Studio unlocks automatically as soon as it is.",
+      "refresh": "Check again",
+      "kept_one": "Your {{count}} saved design is kept in your account. It will be waiting for you in the Studio once a plan is active.",
+      "kept_other": "Your {{count}} saved designs are kept in your account. They will be waiting for you in the Studio once a plan is active.",
+      "keptNone": "Anything you saved stays in your account and will be waiting for you once a plan is active.",
+      "plansTitle": "Choose your plan",
+      "notOpenTitle": "Online subscription is not open yet",
+      "notOpenBody": "You chose {{plan}}. Subscribing from the site opens soon: nothing has been charged. Your designs stay safe in your account, and the Studio unlocks as soon as your subscription is active.",
+      "contact": "Contact us",
+      "pricesNote": "Prices per month, including VAT. Plans and their contents are still being finalised."
+    },
+    "error": {
+      "title": "We couldn’t check your Studio access",
+      "body": "This is usually a connection problem. Your designs are safe.",
+      "retry": "Try again"
+    },
+    "countdown": {
+      "label": "Free trial",
+      "left": "{{time}} left",
+      "days_one": "{{count}} day",
+      "days_other": "{{count}} days",
+      "hours_one": "{{count}} hour",
+      "hours_other": "{{count}} hours",
+      "minutes_one": "{{count}} minute",
+      "minutes_other": "{{count}} minutes",
+      "lessThanMinute": "less than a minute",
+      "ended": "Trial ended"
+    },
+    "warning": {
+      "body": "Your free trial ends soon — {{time}}. Save your designs, and have a look at the plans to keep creating.",
+      "plans": "See the plans",
+      "dismiss": "Dismiss"
+    },
+    "denied": {
+      "title": "Your Studio access has ended",
+      "body": "This change could not be saved. Your saved designs are kept."
+    }
   },
   "editor": {
     "documentTitle": "Studio 3D · Workshop",

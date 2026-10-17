@@ -343,7 +343,7 @@
       "title": "You know your way around the Studio",
       "sub": "The tour is done — the rest is yours",
       "body": "You can place a gem, adjust it and undo: that is everything you need to compose a whole smile. Add more gems, mirror them across the arch, and once a design pleases you, keep it in My Creations.",
-      "again": "Need a reminder? The compass in the top bar starts the tour again, and “Help & tutorial” gathers the lessons, the common questions and the keyboard shortcuts.",
+      "again": "Need a reminder? “Help & tutorial”, in the Studio menu, starts the tour again and gathers the lessons, the common questions and the keyboard shortcuts.",
       "cta": "Start creating"
     },
     "stage": {
@@ -375,7 +375,7 @@
     },
     "refine": {
       "title": "Nothing is final",
-      "body": "Undo and Redo cover everything: a move, a colour, a size, a deletion. The Delete key takes the selection off; a double-click on a tooth brings the camera closer.",
+      "body": "Undo and Redo cover everything: a move, a colour, a size, a deletion. To take a gem off: the bin in the quick bar above it, or the Delete key.",
       "task": "Press Undo: you will see that nothing is lost.",
       "blocked": "Nothing to undo just yet: place or move a gem and the button lights up.",
       "success": "And Redo brings it all back. You can experiment freely."

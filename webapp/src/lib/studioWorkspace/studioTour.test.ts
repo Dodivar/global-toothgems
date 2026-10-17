@@ -2,6 +2,7 @@ import { beforeEach, describe, expect, it } from "vitest";
 import type { PlacedJewelry } from "../../data/studioEditor";
 import type { StudioSnapshot } from "../studio3d/store";
 import {
+  earnsAutoAdvance,
   exitTour,
   getTour,
   markTourStepDone,
@@ -110,6 +111,20 @@ describe("what each step asks for", () => {
     expect(met("pick", before, before)).toBe(false);
   });
 
+  it("counts a gem dragged straight onto a tooth, or placed with Enter, as picked", () => {
+    // Neither gesture leaves an armed gem behind: the drag clears `placingTypeId`
+    // on the drop, and Enter on a library card places directly (`placeOnTooth`).
+    const before = snapshot();
+    expect(met("pick", before, snapshot({ jewels: [piece()] }))).toBe(true);
+  });
+
+  it("measures placing from the step before, so one gesture is not asked for twice", () => {
+    expect(stepOf("place").measureFrom).toBe("previous");
+    // The gem landed while "pick" was open; "place" reads that step's baseline.
+    const whenPickOpened = snapshot();
+    expect(met("place", whenPickOpened, snapshot({ jewels: [piece()] }))).toBe(true);
+  });
+
   it("measures placing against the stage as it was, not against an empty arch", () => {
     // A restored draft already has a piece: the step is about one more.
     const before = snapshot({ jewels: [piece()] });
@@ -167,6 +182,35 @@ describe("a piece's signature", () => {
     expect(pieceSignature(piece({ rotation: 90 }))).not.toBe(ref);
     expect(pieceSignature(piece({ offset: 0.4 }))).not.toBe(ref);
     expect(pieceSignature(piece({ look: { shape: "round", material: "crystal", color: "#ff00aa", effect: "none" } }))).not.toBe(ref);
+  });
+});
+
+/* ------------------------------------------------- moving on by itself */
+
+describe("earning the move to the next step", () => {
+  const pick = stepOf("pick");
+  const refine = stepOf("refine");
+
+  it("takes the beat when the objective is reached while the step is open", () => {
+    expect(earnsAutoAdvance({ step: pick, met: true, metBefore: false, last: false })).toBe(true);
+  });
+
+  it("stands still on a step already satisfied when it opens", () => {
+    // The gem dragged from the library straight onto a tooth satisfies both
+    // steps at once; the second one says so instead of jumping past itself.
+    expect(earnsAutoAdvance({ step: pick, met: true, metBefore: true, last: false })).toBe(false);
+  });
+
+  it("stands still until the step's baseline is taken", () => {
+    // `null`: the goal has not been read against anything yet, and a goal read
+    // against nothing always says false — which must not pass for "not yet met".
+    expect(earnsAutoAdvance({ step: pick, met: true, metBefore: null, last: false })).toBe(false);
+  });
+
+  it("never moves on by itself from a step that does not ask for it, or from the last", () => {
+    expect(earnsAutoAdvance({ step: refine, met: true, metBefore: false, last: false })).toBe(false);
+    expect(earnsAutoAdvance({ step: pick, met: true, metBefore: false, last: true })).toBe(false);
+    expect(earnsAutoAdvance({ step: pick, met: false, metBefore: false, last: false })).toBe(false);
   });
 });
 
