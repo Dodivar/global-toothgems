@@ -114,6 +114,7 @@ export function StudioTour({ snap, hidden }: { snap: StudioSnapshot; hidden: boo
   const ctx = base?.key === stepKey ? { snap, base: base.value, cameraMoved } : null;
   const met = !!(step?.goal && ctx && step.goal(ctx));
   const midway = !met && !!(step?.midway && ctx && step.midway(ctx));
+  const blocked = !met && !midway && !!(step?.blocked && ctx && step.blocked(ctx));
   const succeeded = met || (!!step && tour.done.includes(step.id));
 
   useEffect(() => {
@@ -128,12 +129,23 @@ export function StudioTour({ snap, hidden }: { snap: StudioSnapshot; hidden: boo
     return () => clearTimeout(timer);
   }, [live, met, step?.autoAdvance, last]);
 
-  /* -- after a Back / Next press, the keyboard keeps its place on the card -- */
+  /* -- the card takes the focus when the tour opens and after a Back / Next
+        press, so a keyboard keeps its place and a screen reader is told where
+        it is. A step the artist completed on the stage does not: the caret
+        stays where they are working. -- */
+  const lastRun = useRef(0);
   useEffect(() => {
-    if (!live || !focusCard.current) return;
+    if (!live) return;
+    if (lastRun.current !== tour.runId) {
+      lastRun.current = tour.runId;
+      focusCard.current = false;
+      cardRef.current?.focus();
+      return;
+    }
+    if (!focusCard.current) return;
     focusCard.current = false;
     cardRef.current?.focus();
-  }, [live, tour.index]);
+  }, [live, tour.index, tour.runId]);
 
   const leave = useCallback(() => {
     rememberOnboarding("skipped");
@@ -160,7 +172,7 @@ export function StudioTour({ snap, hidden }: { snap: StudioSnapshot; hidden: boo
   const bodyKey = usingFallback && step.fallback ? `${step.id}.bodyClosed` : `${step.id}.body`;
   const { left, top, dock } = placeTourCard(anchor?.box ?? null, card, viewport, step.inside && !usingFallback);
   const width = dock === "beside" ? CARD_WIDTH : Math.min(DOCKED_MAX, viewport.width - 24);
-  const taskKey = succeeded ? "success" : midway ? "midway" : step.goal ? "task" : "note";
+  const taskKey = succeeded ? "success" : midway ? "midway" : blocked ? "blocked" : step.goal ? "task" : "note";
 
   return (
     <>

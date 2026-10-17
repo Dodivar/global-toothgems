@@ -38,7 +38,6 @@ export type PublicRouteId =
   | "loyalty"
   | "giftCard"
   | "studio"
-  | "studioAlt"
   | "studioSubscribe"
   | "academy"
   | "course"
@@ -75,10 +74,6 @@ export const PUBLIC_ROUTES: readonly PublicRoute[] = [
   { id: "loyalty", fr: "/fidelite", en: "/loyalty", indexed: true },
   { id: "giftCard", fr: "/carte-cadeau", en: "/gift-card", indexed: true },
   { id: "studio", fr: "/studio-3d", en: "/3d-studio", indexed: true },
-  // Alternative design of the Studio presentation page, for the owner to compare
-  // with `/studio-3d` (the `-b` addresses the home and shop pages used before
-  // their own comparison). Not indexed: the same page in another dress.
-  { id: "studioAlt", fr: "/studio-3d-b", en: "/3d-studio-b", indexed: false },
   { id: "studioSubscribe", fr: "/studio-3d/abonnement", en: "/3d-studio/subscribe", indexed: true },
   { id: "academy", fr: "/academy", en: "/academy", indexed: true },
   { id: "course", fr: "/academy/formation/:id", en: "/academy/course/:id", indexed: true },

@@ -314,7 +314,7 @@
   "onboarding": {
     "progress": "Step {{step}} of {{total}}",
     "trail": "Guided tour progress",
-    "skip": "Leave the tour",
+    "skip": "Leave",
     "close": "Close the guided tour",
     "back": "Back",
     "next": "Next",
@@ -348,40 +348,41 @@
     },
     "stage": {
       "title": "Look around the smile",
-      "body": "The stage is your smile in 3D. Drag across it to turn around, use the wheel or a pinch to come closer, and the bar below the stage offers ready-made views (front, top, side) and a way back to the opening framing.",
+      "body": "Drag across the stage to turn around the smile; use the wheel or a pinch to come closer. The bar below keeps ready-made views and the opening framing.",
       "task": "Try it: drag across the stage to turn around the smile.",
       "success": "Lovely. “Views” brings you back to this framing whenever you want."
     },
     "pick": {
       "title": "Choose a gem",
-      "body": "The library holds the shop's gems, sorted by family, with a search by name. Click a gem to take it in hand, or drag it straight onto a tooth.",
-      "bodyClosed": "The gem library is closed to leave room for the stage. This button opens it again: the shop's gems by family, with a search by name.",
+      "body": "The shop's gems, sorted by family and searchable by name. A click takes one in hand; a drag carries it straight to a tooth.",
+      "bodyClosed": "The gem library is closed to leave room for the stage. This button opens it again.",
       "task": "Take the gem you like — one click is enough.",
       "success": "Gem in hand. The stage is waiting for a tooth."
     },
     "place": {
       "title": "Put it on a tooth",
-      "body": "With a gem in hand, click the tooth you like: it settles flat on the enamel, exactly where you clicked. You can also drag it from the library, then pick it up again to slide it along the tooth.",
+      "body": "With a gem in hand, click the tooth you like: it settles flat on the enamel, where you clicked. Pick it up again to slide it along.",
       "task": "Place your first gem on a tooth.",
       "success": "Your first gem is on. That is your design beginning."
     },
     "adjust": {
       "title": "Adjust it to taste",
-      "body": "Select a gem and this panel sets its colour, its size, its rotation, how far it stands off the enamel and its fine position. A quick action bar also appears above the selected gem, on the stage.",
-      "bodyClosed": "A gem's settings live in a panel that is closed. This button opens it: colour, size, rotation, standoff and fine position, for the selected gem.",
+      "body": "Select a gem: colour, size, rotation, standoff and fine position are set here, and a quick bar appears on the stage.",
+      "bodyClosed": "A gem's settings live in a panel that is closed. This button opens it: colour, size, rotation and position.",
       "task": "Select your gem, then change its colour or its size.",
       "midway": "Gem selected. Now change its colour, its size or its angle.",
       "success": "That is it. Every gem is adjusted on its own."
     },
     "refine": {
       "title": "Nothing is final",
-      "body": "Undo and Redo cover everything you do: a move, a colour, a size, a deletion. The Delete key takes the selection off, and a double-click on a tooth brings the camera closer to check the detail.",
+      "body": "Undo and Redo cover everything: a move, a colour, a size, a deletion. The Delete key takes the selection off; a double-click on a tooth brings the camera closer.",
       "task": "Press Undo: you will see that nothing is lost.",
+      "blocked": "Nothing to undo just yet: place or move a gem and the button lights up.",
       "success": "And Redo brings it all back. You can experiment freely."
     },
     "keep": {
       "title": "Your design follows you",
-      "body": "The Studio keeps a draft on this device by itself: close the tab and your design will be here when you come back. “Save” keeps it in My Creations, under your account, to reopen or share it from any device.",
+      "body": "The Studio keeps a draft on this device: your design will be here when you come back. “Save” keeps it in My Creations, under your account.",
       "note": "Keeping a design in My Creations asks you to sign in — your local draft is already kept either way."
     }
   },

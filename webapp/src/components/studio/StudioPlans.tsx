@@ -1,96 +1,109 @@
 import { useTranslation } from "react-i18next";
 import clsx from "clsx";
-import { ArrowRight, Check } from "lucide-react";
+import { ArrowRight, Gift, Info } from "lucide-react";
 import { Button } from "../ui/Button";
 import { useFormat } from "../../lib/format";
 import { STUDIO_PLANS, type StudioPlan } from "../../data/studio";
 
 /**
- * The Studio's offers side by side: the free trial and the three monthly
- * plans (`STUDIO_PLANS`). Stacked on phones, two by two on tablets, one row on
- * wide screens. The featured plan carries a written badge, not only a colour.
+ * The Studio's offers in the alternative page's dress: the free trial as an
+ * introductory banner, then the three monthly plans side by side.
  *
- * The trial opens the Studio (`onTrial`); a paid plan leads to the
- * subscription page (`onChoose`) — nothing is bought from here.
+ * Plan names, amounts and the trial's length are the project's own
+ * (`data/studio.ts`, `studio.plans.items.*.name`) — this page invents none of
+ * them. What each plan *includes* is not decided yet, so instead of a feature
+ * list each card carries a visible "to be defined" note. Nothing is bought
+ * here: the trial opens the Studio (`onTrial`) and a paid plan leads to the
+ * subscription page (`onChoose`), exactly as on `/studio-3d`.
  */
 export function StudioPlans({ onTrial, onChoose }: { onTrial: () => void; onChoose: (plan: StudioPlan) => void }) {
   const { t } = useTranslation();
   const { formatMoney } = useFormat();
 
+  const trial = STUDIO_PLANS.find((plan) => plan.id === "trial")!;
+  const paid = STUDIO_PLANS.filter((plan) => plan.id !== "trial");
+  const trialDays = trial.trialDays!;
+
   return (
-    <ul className="m-0 grid list-none grid-cols-1 gap-4 p-0 sm:grid-cols-2 xl:grid-cols-4">
-      {STUDIO_PLANS.map((plan) => {
-        const trial = plan.id === "trial";
-        const dark = plan.featured;
-        const features = t(`studio.plans.items.${plan.id}.features`, { returnObjects: true }) as string[];
-        return (
-          <li
-            key={plan.id}
-            className={clsx(
-              "relative grid content-start gap-5 rounded-[var(--radius-xl)] border p-5 sm:p-6",
-              dark
-                ? "gt-studio-offer border-transparent text-[var(--gt-ink-200)] shadow-[var(--shadow-lg)]"
-                : "border-[var(--border-subtle)] bg-[var(--surface-card)] text-[var(--text-body)]",
-            )}
-          >
-            <div className="grid gap-1.5">
-              <div className="flex flex-wrap items-center justify-between gap-2">
-                <h3 className={clsx("text-[length:var(--text-h4)]", dark && "text-[var(--gt-off-white)]")}>{t(`studio.plans.items.${plan.id}.name`)}</h3>
-                {plan.featured && (
-                  <span className="rounded-[var(--radius-pill)] bg-[var(--gt-blue-300)] px-2.5 py-1 text-[10.5px] font-bold uppercase tracking-[var(--tracking-wide)] text-[var(--gt-ink-900)]">
-                    {t("studio.plans.featured")}
-                  </span>
-                )}
-                {trial && (
-                  <span className="rounded-[var(--radius-pill)] border border-[var(--gt-emerald-300)] bg-[var(--status-success-bg)] px-2.5 py-1 text-[10.5px] font-bold uppercase tracking-[var(--tracking-wide)] text-[var(--status-success-fg)]">
-                    {t("studio.plans.trialBadge", { count: plan.trialDays })}
-                  </span>
-                )}
-              </div>
-              <p className={clsx("m-0 text-[length:var(--text-body-sm)]", dark ? "text-[var(--gt-ink-300)]" : "text-[var(--text-muted)]")}>
-                {t(`studio.plans.items.${plan.id}.pitch`)}
-              </p>
-            </div>
+    <div className="grid gap-5">
+      {/* ------------------------------------------------------- Free trial */}
+      <div className="gt-studio-b-trial grid gap-5 rounded-[var(--radius-xl)] border border-[var(--gt-blue-200)] p-5 sm:p-7 lg:grid-cols-[minmax(0,1fr)_auto] lg:items-center lg:gap-10">
+        <div className="grid gap-2.5">
+          <span className="inline-flex w-fit items-center gap-1.5 rounded-[var(--radius-pill)] border border-[var(--gt-emerald-300)] bg-[var(--status-success-bg)] px-2.5 py-1 text-[10.5px] font-bold uppercase tracking-[var(--tracking-wide)] text-[var(--status-success-fg)]">
+            <Gift size={12} aria-hidden="true" />
+            {t("studioPage.plans.trial.badge", { count: trialDays })}
+          </span>
+          <h3 className="text-[length:var(--text-h3)] font-[var(--weight-black)] tracking-[var(--tracking-display)]">
+            {t("studioPage.plans.trial.name")} · {t("studioPage.plans.trial.price", { count: trialDays })}
+          </h3>
+          <p className="m-0 max-w-[58ch] text-[length:var(--text-body-md)] text-[var(--text-body)]">{t("studioPage.plans.trial.body")}</p>
+        </div>
+        <div className="grid gap-2 lg:justify-items-end">
+          <Button variant="primary" size="lg" fullWidth iconRight={ArrowRight} onClick={onTrial} className="gt-studio-cta lg:w-auto">
+            {t("studioPage.plans.trial.cta")}
+          </Button>
+          <p className="m-0 max-w-[36ch] text-[length:var(--text-caption)] text-[var(--text-muted)] lg:text-right">
+            {t("studioPage.plans.trial.note", { count: trialDays })}
+          </p>
+        </div>
+      </div>
 
-            <p className={clsx("m-0 flex items-baseline gap-1.5", dark ? "text-[var(--gt-off-white)]" : "text-[var(--text-primary)]")}>
-              <span className="text-[clamp(36px,9vw,44px)] font-[var(--weight-black)] leading-none tracking-[var(--tracking-display)]">
-                {trial ? t("studio.plans.free") : formatMoney(plan.amountMinor, plan.currency)}
-              </span>
-              <span className={clsx("text-[length:var(--text-body-sm)] font-semibold", dark ? "text-[var(--gt-ink-300)]" : "text-[var(--text-muted)]")}>
-                {trial ? t("studio.plans.trialPeriod", { count: plan.trialDays }) : t("studio.plans.perMonth")}
-              </span>
-            </p>
-
-            <Button
-              variant={dark || trial ? "primary" : "outline"}
-              size="lg"
-              fullWidth
-              iconRight={ArrowRight}
-              onClick={() => (trial ? onTrial() : onChoose(plan))}
-              className={clsx(dark && "gt-studio-cta")}
+      {/* ------------------------------------------------------ Paid plans */}
+      {/* Two by two on a tablet, one row from 1024px: below that, three columns
+          leave a card too narrow for a "Choose <plan>" button. */}
+      <ul className="m-0 grid list-none grid-cols-1 gap-4 p-0 sm:grid-cols-2 lg:grid-cols-3">
+        {paid.map((plan) => {
+          const name = t(`studio.plans.items.${plan.id}.name`);
+          return (
+            <li
+              key={plan.id}
+              className={clsx(
+                "gt-studio-b-plan relative grid content-start gap-5 rounded-[var(--radius-xl)] border bg-[var(--surface-card)] p-5 sm:p-6",
+                plan.featured ? "gt-studio-b-plan--featured" : "border-[var(--border-subtle)]",
+              )}
             >
-              {trial ? t("studio.plans.ctaTrial") : t("studio.plans.ctaPaid", { plan: t(`studio.plans.items.${plan.id}.name`) })}
-            </Button>
+              <div className="grid gap-2">
+                <div className="flex flex-wrap items-center justify-between gap-2">
+                  <h3 className="text-[length:var(--text-h4)]">{name}</h3>
+                  {plan.featured && (
+                    <span className="rounded-[var(--radius-pill)] bg-[var(--gt-emerald-300)] px-2.5 py-1 text-[10.5px] font-bold uppercase tracking-[var(--tracking-wide)] text-[var(--gt-ink-900)]">
+                      {t("studioPage.plans.featured")}
+                    </span>
+                  )}
+                </div>
+                <p className="m-0 text-[length:var(--text-body-sm)] text-[var(--text-muted)]">{t(`studioPage.plans.items.${plan.id}`)}</p>
+              </div>
 
-            <ul className="m-0 grid list-none gap-2.5 p-0">
-              {features.map((feature) => (
-                <li key={feature} className="flex items-start gap-2.5 text-[length:var(--text-body-sm)]">
-                  <span
-                    aria-hidden="true"
-                    className={clsx(
-                      "mt-0.5 grid h-5 w-5 flex-none place-items-center rounded-full",
-                      dark ? "bg-white/10 text-[var(--gt-blue-300)]" : "bg-[var(--gt-blue-100)] text-[var(--gt-blue-700)]",
-                    )}
-                  >
-                    <Check size={12} strokeWidth={3} />
-                  </span>
-                  {feature}
-                </li>
-              ))}
-            </ul>
-          </li>
-        );
-      })}
-    </ul>
+              <p className="m-0 flex items-baseline gap-1.5 text-[var(--text-primary)]">
+                <span className="text-[clamp(34px,8vw,42px)] font-[var(--weight-black)] leading-none tracking-[var(--tracking-display)]">
+                  {formatMoney(plan.amountMinor, plan.currency)}
+                </span>
+                <span className="text-[length:var(--text-body-sm)] font-semibold text-[var(--text-muted)]">{t("studioPage.plans.perMonth")}</span>
+              </p>
+
+              <Button
+                variant={plan.featured ? "primary" : "outline"}
+                size="lg"
+                fullWidth
+                iconRight={ArrowRight}
+                onClick={() => onChoose(plan)}
+                className={clsx(plan.featured && "gt-studio-cta")}
+              >
+                {t("studioPage.plans.cta", { plan: name })}
+              </Button>
+
+              {/* What the plan includes is undecided: say so rather than invent it. */}
+              <div className="grid gap-1.5 rounded-[var(--radius-md)] border border-dashed border-[var(--gt-blue-300)] bg-[var(--gt-blue-50)] p-3.5">
+                <span className="inline-flex items-center gap-1.5 text-[10.5px] font-bold uppercase tracking-[var(--tracking-wide)] text-[var(--gt-blue-700)]">
+                  <Info size={12} aria-hidden="true" />
+                  {t("studioPage.plans.detailsTitle")}
+                </span>
+                <span className="text-[length:var(--text-caption)] text-[var(--text-body)]">{t("studioPage.plans.details")}</span>
+              </div>
+            </li>
+          );
+        })}
+      </ul>
+    </div>
   );
 }

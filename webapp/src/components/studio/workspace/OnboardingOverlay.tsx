@@ -33,6 +33,9 @@ export function OnboardingOverlay({ onClose }: { onClose: () => void }) {
   };
 
   const begin = () => {
+    // The welcome asks once: taking the tour answers it, whether or not the
+    // tour is seen through (the compass and Help replay it afterwards).
+    rememberOnboarding("started");
     onClose();
     // Without a 3D stage (WebGL refused) the tour leaves out the steps that need one.
     startTour({ withStage: !!getEngine() });

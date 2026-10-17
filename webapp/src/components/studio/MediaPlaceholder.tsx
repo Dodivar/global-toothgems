@@ -51,7 +51,7 @@ export function MediaPlaceholder({
         <div className="grid max-w-[46ch] justify-items-center gap-2.5">
           <span className="inline-flex items-center gap-1.5 rounded-[var(--radius-pill)] border border-[var(--gt-blue-300)] bg-white/80 px-2.5 py-1 text-[10.5px] font-bold uppercase tracking-[var(--tracking-wide)] text-[var(--gt-blue-700)]">
             <Icon size={12} aria-hidden="true" />
-            {t("studioAlt.placeholder.label")}
+            {t("studioPage.placeholder.label")}
           </span>
           {play && (
             <span
@@ -66,7 +66,7 @@ export function MediaPlaceholder({
         </div>
       </div>
       <figcaption className="text-[length:var(--text-caption)] text-[var(--text-muted)]">
-        {copy.caption} {t("studioAlt.placeholder.note")}
+        {copy.caption} {t("studioPage.placeholder.note")}
       </figcaption>
     </figure>
   );

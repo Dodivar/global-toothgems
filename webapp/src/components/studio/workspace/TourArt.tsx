@@ -65,10 +65,10 @@ export function StageGestures() {
       {items.map(({ id, art }) => (
         <li
           key={id}
-          className="grid justify-items-center gap-1.5 rounded-[var(--radius-md)] border border-[var(--border-subtle)] bg-[var(--surface-page)] px-1.5 py-2"
+          className="grid justify-items-center gap-1 rounded-[var(--radius-md)] border border-[var(--border-subtle)] bg-[var(--surface-page)] px-1 py-1.5"
         >
           {art}
-          <span className="text-center text-[10.5px] font-bold leading-tight text-[var(--text-muted)]">
+          <span className="text-center text-[9.5px] font-bold leading-[1.15] text-[var(--text-muted)]">
             {t(`studio.workspace.onboarding.gestures.${id}`)}
           </span>
         </li>
@@ -80,7 +80,7 @@ export function StageGestures() {
 const artProps = {
   "aria-hidden": true as const,
   viewBox: "0 0 48 32",
-  className: "block h-8 w-12",
+  className: "block h-6 w-10",
 };
 
 /** Drag: a cursor sweeping an arc around the arch. */
@@ -122,7 +122,6 @@ function FrameArt() {
 export function TourCelebration() {
   return (
     <svg aria-hidden="true" viewBox="0 0 320 104" className="block w-full rounded-[var(--radius-md)]">
-      <rect width="320" height="104" fill="url(#gt-tour-stage-done)" />
       <defs>
         <radialGradient id="gt-tour-stage-done" cx="50%" cy="30%" r="80%">
           <stop offset="0%" stopColor="var(--gt-emerald-50)" />
@@ -130,6 +129,7 @@ export function TourCelebration() {
           <stop offset="100%" stopColor="var(--gt-blue-200)" />
         </radialGradient>
       </defs>
+      <rect width="320" height="104" fill="url(#gt-tour-stage-done)" />
       {[-2, -1, 0, 1, 2].map((x) => (
         <rect
           key={x}

@@ -139,6 +139,14 @@ describe("what each step asks for", () => {
     expect(met("refine", redoable, redoable)).toBe(false);
   });
 
+  it("says so rather than asking for an Undo that is greyed out", () => {
+    const step = stepOf("refine");
+    const base = tourBaseline(snapshot());
+    // A draft restored from a previous visit: nothing in the history yet.
+    expect(step.blocked?.({ snap: snapshot({ canUndo: false }), base, cameraMoved: false })).toBe(true);
+    expect(step.blocked?.({ snap: snapshot({ canUndo: true }), base, cameraMoved: false })).toBe(false);
+  });
+
   it("sees the selection as on the way, before anything has changed", () => {
     const step = stepOf("adjust");
     const base = tourBaseline(snapshot({ jewels: [piece()] }));
@@ -217,6 +225,14 @@ describe("where the card goes", () => {
     expect(left).toBeGreaterThanOrEqual(12);
   });
 
+  it("hangs from a small control near the top, instead of climbing over the bar above it", () => {
+    // A switch in the stage's top corner: centring the card on it would put it
+    // over the application bar, which is not the tour's to cover.
+    const toggle = { left: 1180, top: 70, width: 90, height: 36 };
+    const { top } = placeTourCard(toggle, CARD, DESKTOP);
+    expect(top).toBe(70);
+  });
+
   it("goes under a wide, shallow control such as the top bar", () => {
     const { top, dock } = placeTourCard({ left: 0, top: 0, width: 1440, height: 56 }, CARD, DESKTOP);
     expect(dock).toBe("beside");
@@ -240,6 +256,28 @@ describe("where the card goes", () => {
     expect(low.dock).toBe("top");
     const high = placeTourCard({ left: 0, top: 60, width: 390, height: 240 }, CARD, phone);
     expect(high.dock).toBe("bottom");
+  });
+
+  it("keeps the stage's camera bar clear when it docks on a phone", () => {
+    // A phone held upright: the stage on top, its camera bar along its bottom edge.
+    const phone = { width: 375, height: 812 };
+    const stage = { left: 0, top: 56, width: 375, height: 471 };
+    const card = { width: 351, height: 340 };
+    const { top } = placeTourCard(stage, card, phone);
+    const barTop = stage.top + stage.height - 72;
+    expect(top + card.height).toBeLessThanOrEqual(barTop);
+    // And not over the application bar above the stage either.
+    expect(top).toBeGreaterThanOrEqual(stage.top);
+  });
+
+  it("still docks a card too tall to clear anything, rather than losing it", () => {
+    const phone = { width: 375, height: 812 };
+    const stage = { left: 0, top: 56, width: 375, height: 471 };
+    const huge = { width: 351, height: 600 };
+    const { top, dock } = placeTourCard(stage, huge, phone);
+    expect(dock).toBe("bottom");
+    expect(top).toBeGreaterThanOrEqual(0);
+    expect(top + huge.height).toBeLessThanOrEqual(phone.height);
   });
 
   it("docks to the top on a phone held sideways, where the bottom is the stage's own bar", () => {

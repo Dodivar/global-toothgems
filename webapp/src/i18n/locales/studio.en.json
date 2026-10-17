@@ -8,51 +8,7 @@
     "opal": "Opal"
   },
   "hero": {
-    "eyebrow": "Studio 3D",
-    "title": "Create your own tooth jewellery.",
-    "body": "Design unique compositions, experiment with shapes and placements, and bring your ideas to life with the Global Toothgems 3D Studio.",
-    "ctaOpen": "Open the Studio",
-    "ctaSecondary": "See the plans",
-    "ctaPrimary_one": "Try it free for {{count}} day",
-    "ctaPrimary_other": "Try it free for {{count}} days",
-    "reassurance_one": "{{count}} day free, then from {{price}} / month · cancel anytime",
-    "reassurance_other": "{{count}} days free, then from {{price}} / month · cancel anytime"
-  },
-  "demo": {
-    "description": "3D Studio demo: placing gems on teeth, changing their colours, moving and rotating them.",
-    "play": "Play the demo",
-    "pause": "Pause the demo"
-  },
-  "advantages": {
-    "eyebrow": "Why the 3D Studio",
-    "title": "See the result before it is set.",
-    "body": "Compose, compare, decide — on a 3D smile, before a single gem is set.",
-    "items": {
-      "try": {
-        "title": "Try without risk",
-        "body": "Shapes, colours, placements: test as much as you like, then keep what you love."
-      },
-      "shop": {
-        "title": "The shop’s real gems",
-        "body": "The library holds the shop’s gems, in their colours and sizes: what you compose exists."
-      },
-      "share": {
-        "title": "Share with a link",
-        "body": "Send your creation to friends or to the artist who will set it: they see it in 3D, no account needed."
-      },
-      "keep": {
-        "title": "Your creations, kept",
-        "body": "Every composition is saved to your account, ready to pick up again or duplicate."
-      }
-    }
-  },
-  "inspiration": {
-    "eyebrow": "Inspiration",
-    "title": "Six moods to start from.",
-    "body": "Boards to spark ideas — open one in the Studio and make it yours.",
-    "number": "No. {{n}}",
-    "recreate": "Recreate in the Studio",
-    "recreateAria": "Recreate the {{style}} composition in the Studio"
+    "eyebrow": "Studio 3D"
   },
   "plans": {
     "eyebrow": "Plans",
@@ -110,12 +66,6 @@
       }
     }
   },
-  "bar": {
-    "trial_one": "{{count}} day free",
-    "trial_other": "{{count}} days free",
-    "then": "then from {{price}} / month",
-    "cta": "Try it"
-  },
   "pricing": {
     "eyebrow": "3D Studio access",
     "planName": "Studio 3D · Monthly",
@@ -128,36 +78,6 @@
       "Access to future Studio improvements"
     ],
     "reassurance": "No commitment — cancel anytime."
-  },
-  "faq": {
-    "eyebrow": "Questions",
-    "title": "Good to know.",
-    "items": [
-      {
-        "question": "What is the 3D Studio?",
-        "answer": "An online creative tool to design your own tooth jewellery compositions: choose pieces, place them on a smile and see the result before anything is set."
-      },
-      {
-        "question": "What can I create with it?",
-        "answer": "Anything from a single discreet crystal to a full statement composition — mixing shapes, colours, crystals and gold charms across several teeth."
-      },
-      {
-        "question": "How much does the Studio cost?",
-        "answer": "You can try the Studio for free, then carry on with one of the three monthly plans above. No commitment: you can cancel at any time."
-      },
-      {
-        "question": "Is the Studio available on mobile?",
-        "answer": "Yes. The Studio works on desktop, tablet and mobile; a larger screen is more comfortable for fine placement."
-      },
-      {
-        "question": "Can I save my compositions?",
-        "answer": "Yes. Your compositions are saved in your personal gallery, so you can come back to them, duplicate them or keep refining them."
-      },
-      {
-        "question": "Can I use my creations when ordering jewellery?",
-        "answer": "Your saved composition is a reference: share it with your artist, or use it to find the matching pieces in the shop."
-      }
-    ]
   },
   "teaser": {
     "eyebrow": "Studio 3D",

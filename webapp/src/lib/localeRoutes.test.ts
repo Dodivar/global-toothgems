@@ -1,7 +1,7 @@
 import { existsSync } from "node:fs";
 import { describe, expect, it } from "vitest";
 import { LEGAL_ALIASES, LEGAL_PATHS } from "../data/legal/routes";
-import { STUDIO_ALT_PATH, STUDIO_PATH, STUDIO_SUBSCRIBE_PATH } from "./studioUrl";
+import { STUDIO_PATH, STUDIO_SUBSCRIBE_PATH } from "./studioUrl";
 import {
   PUBLIC_ROUTES,
   alternates,
@@ -97,7 +97,6 @@ describe("route table", () => {
     expect(publicRoute("cookies").fr).toBe(LEGAL_PATHS.cookies);
     expect(publicRoute("about").fr).toBe(LEGAL_PATHS.about);
     expect(publicRoute("studio").fr).toBe(STUDIO_PATH);
-    expect(publicRoute("studioAlt").fr).toBe(STUDIO_ALT_PATH);
     expect(publicRoute("studioSubscribe").fr).toBe(STUDIO_SUBSCRIBE_PATH);
   });
 

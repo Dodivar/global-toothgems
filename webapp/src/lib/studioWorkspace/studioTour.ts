@@ -56,6 +56,8 @@ export interface TourStep {
   goal: ((ctx: TourContext) => boolean) | null;
   /** On the way: the artist has started, but the step is not done yet. */
   midway?: (ctx: TourContext) => boolean;
+  /** The action is not available yet: the card says what to do first, rather than asking for the impossible. */
+  blocked?: (ctx: TourContext) => boolean;
   /** Once done, the tour moves on by itself after a beat — only where the next step is the obvious continuation. */
   autoAdvance?: boolean;
 }
@@ -103,6 +105,9 @@ export const TOUR_STEPS: readonly TourStep[] = [
     id: "refine",
     anchor: "history",
     goal: (c) => c.snap.canRedo && !c.base.canRedo,
+    // A draft restored from a previous visit arrives with an empty history:
+    // Undo is greyed out, and asking for it would be asking for nothing.
+    blocked: (c) => !c.snap.canUndo,
   },
   {
     // Where the design goes next. No goal: saving to the account needs a sign-in,
@@ -213,6 +218,19 @@ const GAP = 14;
 const clamp = (v: number, min: number, max: number) => Math.min(Math.max(v, min), max < min ? min : max);
 
 /**
+ * A control wide enough to hold its own furniture — the stage, whose camera
+ * bar runs along its bottom edge — keeps that strip clear of the docked card.
+ * Anything else is small enough that a docked card cannot swallow it.
+ */
+const CONTROL_STRIP = 72;
+
+function keepsControlsClear(top: number, height: number, anchor: Box | null): boolean {
+  if (!anchor || anchor.height < CONTROL_STRIP * 3) return true;
+  const stripTop = anchor.top + anchor.height - CONTROL_STRIP;
+  return top + height <= stripTop || top >= anchor.top + anchor.height;
+}
+
+/**
  * Where to put the card for a given anchor.
  *
  * On a narrow screen it docks to one edge, the one the anchor is not on, so the
@@ -229,9 +247,24 @@ export function placeTourCard(anchor: Box | null, card: { width: number; height:
   // No control to point at, or no room to stand beside one: dock to an edge.
   if (!anchor || vp.width < NARROW_WIDTH) {
     const anchorAbove = !anchor || anchor.top + anchor.height / 2 < vp.height / 2;
-    // A short window puts the card over the stage's own controls at the bottom.
-    const atBottom = vp.height >= SHORT_HEIGHT ? anchorAbove : !anchorAbove;
-    return { left: centreX, top: atBottom ? maxTop : GUTTER, dock: atBottom ? "bottom" : "top" };
+    // A short window (a phone held sideways) is all stage: docking at the
+    // bottom would land on its camera bar, so the card goes to the top.
+    const preferBottom = vp.height >= SHORT_HEIGHT ? anchorAbove : !anchorAbove;
+    const bottom = maxTop;
+    // Below the control's own top edge, so a card at the top of the window
+    // does not creep over the application bar above it.
+    const top = anchor ? clamp(anchor.top + GUTTER, GUTTER, maxTop) : GUTTER;
+    const order: [number, CardDock][] = preferBottom
+      ? [
+          [bottom, "bottom"],
+          [top, "top"],
+        ]
+      : [
+          [top, "top"],
+          [bottom, "bottom"],
+        ];
+    const [at, dock] = order.find(([y]) => keepsControlsClear(y, card.height, anchor)) ?? order[0];
+    return { left: centreX, top: at, dock };
   }
 
   if (inside) {
@@ -246,7 +279,10 @@ export function placeTourCard(anchor: Box | null, card: { width: number; height:
 
   // Beside, over or under, whichever fits — and clamped either way, because a
   // control can be scrolled half out of the window (a stacked phone layout).
-  const verticalTop = clamp(anchor.top + anchor.height / 2 - card.height / 2, GUTTER, maxTop);
+  // Level with a tall control; for a small one near an edge, hanging from its
+  // top rather than clamped, so the card does not creep over the top bar.
+  const centred = anchor.top + anchor.height / 2 - card.height / 2;
+  const verticalTop = centred >= GUTTER && centred <= maxTop ? centred : clamp(anchor.top, GUTTER, maxTop);
   const rightOf = anchor.left + anchor.width + GAP;
   if (rightOf + card.width + GUTTER <= vp.width) return { left: clamp(rightOf, GUTTER, maxLeft), top: verticalTop, dock: "beside" };
 

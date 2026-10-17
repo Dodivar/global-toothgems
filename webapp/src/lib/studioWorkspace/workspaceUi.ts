@@ -72,7 +72,7 @@ export function onboardingSeen(): boolean {
   }
 }
 
-export function rememberOnboarding(choice: "done" | "skipped") {
+export function rememberOnboarding(choice: "done" | "skipped" | "started") {
   try {
     localStorage.setItem(ONBOARDING_KEY, choice);
   } catch {

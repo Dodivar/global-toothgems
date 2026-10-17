@@ -8,51 +8,7 @@
     "opal": "Opale"
   },
   "hero": {
-    "eyebrow": "Studio 3D",
-    "title": "Créez vos propres bijoux dentaires.",
-    "body": "Imaginez des compositions uniques, testez formes et placements, et donnez vie à vos idées avec le Studio 3D Global Toothgems.",
-    "ctaOpen": "Ouvrir le Studio",
-    "ctaSecondary": "Voir les formules",
-    "ctaPrimary_one": "Essayer {{count}} jour gratuitement",
-    "ctaPrimary_other": "Essayer {{count}} jours gratuitement",
-    "reassurance_one": "{{count}} jour gratuit, puis dès {{price}} / mois · sans engagement",
-    "reassurance_other": "{{count}} jours gratuits, puis dès {{price}} / mois · sans engagement"
-  },
-  "demo": {
-    "description": "Démonstration du Studio 3D : poser des gemmes sur les dents, changer leurs couleurs, les déplacer et les faire pivoter.",
-    "play": "Lire la démonstration",
-    "pause": "Mettre la démonstration en pause"
-  },
-  "advantages": {
-    "eyebrow": "Pourquoi le Studio 3D",
-    "title": "Voyez le résultat avant la pose.",
-    "body": "Composez, comparez, décidez — sur un sourire en 3D, avant qu’une seule gemme soit posée.",
-    "items": {
-      "try": {
-        "title": "Essayez sans risque",
-        "body": "Formes, couleurs, placements : testez autant que vous voulez, puis gardez ce qui vous plaît."
-      },
-      "shop": {
-        "title": "Les vraies gemmes de la boutique",
-        "body": "La bibliothèque reprend les gemmes de la boutique, dans leurs couleurs et leurs tailles : ce que vous composez existe."
-      },
-      "share": {
-        "title": "Partagez en un lien",
-        "body": "Envoyez votre création à vos proches ou à l’artiste qui la posera : ils la voient en 3D, sans compte."
-      },
-      "keep": {
-        "title": "Vos créations gardées",
-        "body": "Chaque composition est enregistrée dans votre compte, prête à être reprise ou dupliquée."
-      }
-    }
-  },
-  "inspiration": {
-    "eyebrow": "Inspiration",
-    "title": "Six ambiances pour commencer.",
-    "body": "Des planches pour faire naître des idées — ouvrez-en une dans le Studio et faites-la vôtre.",
-    "number": "N° {{n}}",
-    "recreate": "Recréer dans le Studio",
-    "recreateAria": "Recréer la composition {{style}} dans le Studio"
+    "eyebrow": "Studio 3D"
   },
   "plans": {
     "eyebrow": "Formules",
@@ -110,12 +66,6 @@
       }
     }
   },
-  "bar": {
-    "trial_one": "{{count}} jour gratuit",
-    "trial_other": "{{count}} jours gratuits",
-    "then": "puis dès {{price}} / mois",
-    "cta": "Essayer"
-  },
   "pricing": {
     "eyebrow": "Accès au Studio 3D",
     "planName": "Studio 3D · Mensuel",
@@ -128,36 +78,6 @@
       "Accès aux futures améliorations du Studio"
     ],
     "reassurance": "Sans engagement — résiliable à tout moment."
-  },
-  "faq": {
-    "eyebrow": "Questions",
-    "title": "Bon à savoir.",
-    "items": [
-      {
-        "question": "Qu’est-ce que le Studio 3D ?",
-        "answer": "Un outil créatif en ligne pour imaginer vos propres compositions de bijoux dentaires : choisissez des pièces, placez-les sur un sourire et voyez le résultat avant toute pose."
-      },
-      {
-        "question": "Que puis-je créer avec ?",
-        "answer": "D’un seul cristal discret à une composition statement complète — en mêlant formes, couleurs, cristaux et charms en or sur plusieurs dents."
-      },
-      {
-        "question": "Combien coûte le Studio ?",
-        "answer": "Le Studio s’essaie gratuitement, puis se poursuit avec l’une des trois formules mensuelles présentées plus haut. Sans engagement : vous pouvez résilier à tout moment."
-      },
-      {
-        "question": "Le Studio est-il disponible sur mobile ?",
-        "answer": "Oui. Le Studio fonctionne sur ordinateur, tablette et mobile ; un plus grand écran reste plus confortable pour les placements précis."
-      },
-      {
-        "question": "Puis-je enregistrer mes compositions ?",
-        "answer": "Oui. Vos compositions sont enregistrées dans votre galerie personnelle : vous pouvez les retrouver, les dupliquer ou continuer à les affiner."
-      },
-      {
-        "question": "Puis-je utiliser mes créations pour commander des bijoux ?",
-        "answer": "Votre composition enregistrée sert de référence : partagez-la avec votre artiste, ou utilisez-la pour retrouver les pièces correspondantes en boutique."
-      }
-    ]
   },
   "teaser": {
     "eyebrow": "Studio 3D",

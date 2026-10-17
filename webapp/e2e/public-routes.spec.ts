@@ -23,10 +23,8 @@ const PUBLIC_ROUTES: { path: string; heading: RegExp }[] = [
   { path: "/confirmation-compte", heading: /Ce lien n’est plus valable/ },
   { path: "/fr/fidelite", heading: /Vos récompenses/ },
   { path: "/fr/carte-cadeau", heading: /Offrez l’éclat d’un sourire/ },
-  { path: "/fr/studio-3d", heading: /Créez vos propres bijoux dentaires/ },
+  { path: "/fr/studio-3d", heading: /Imaginez-le\. Dessinez-le\. Il est à vous\./ },
   { path: "/fr/studio-3d/abonnement", heading: /Débloquez le Studio 3D/ },
-  // The alternative design of the Studio page, kept beside it for comparison.
-  { path: "/fr/studio-3d-b", heading: /Imaginez-le\. Dessinez-le\. Il est à vous\./ },
   { path: "/studio-3d/partage", heading: /Ce lien ne contient pas de création lisible/ },
   { path: "/fr/academy", heading: /Apprenez\. Créez\. Maîtrisez votre art\./ },
   { path: "/fr/academy/formation/fondation", heading: /Fondation Tooth Gem/ },
