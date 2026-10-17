@@ -11,6 +11,7 @@ const ENGLISH_PAGES: { path: string; heading: RegExp; title: string }[] = [
   { path: "/en/shop", heading: /Gems, tools and professional kits/, title: "Gems, tools and professional kits · Global Toothgems" },
   { path: "/en/shop/aurora-heart", heading: /Aurora Heart/, title: "Aurora Heart · Global Toothgems" },
   { path: "/en/academy/course/fondation", heading: /Tooth Gem/, title: "Tooth Gem Foundation · Global Toothgems" },
+  { path: "/en/3d-studio-b", heading: /Imagine it\. Design it\. Make it yours\./, title: "Imagine it. Design it. Make it yours · Global Toothgems" },
   { path: "/en/help/faq", heading: /Frequently asked questions/, title: "Frequently asked questions · Global Toothgems" },
   { path: "/en/terms-of-sale", heading: /Terms/, title: "Terms of sale · Global Toothgems" },
 ];

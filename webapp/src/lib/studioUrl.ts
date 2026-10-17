@@ -3,6 +3,8 @@
  * the navigation, the home-page teaser and the Studio pages all link here.
  */
 export const STUDIO_PATH = "/studio-3d";
+/** The alternative design of the presentation page, kept side by side with it for comparison. */
+export const STUDIO_ALT_PATH = "/studio-3d-b";
 export const STUDIO_SUBSCRIBE_PATH = "/studio-3d/abonnement";
 /** English alias of the subscription page, like `/gift-card` for `/carte-cadeau`. */
 export const STUDIO_SUBSCRIBE_ALIAS = "/studio-3d/subscribe";

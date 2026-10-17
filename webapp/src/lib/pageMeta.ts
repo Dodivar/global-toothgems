@@ -34,6 +34,9 @@ const PAGES: Partial<Record<PublicRouteId, { title: Text; description?: Text }>>
   loyalty: { title: { key: "loyalty.heroTitle" }, description: { key: "loyalty.journeyBody" } },
   giftCard: { title: { keys: ["promo.store.headlineA", "promo.store.headlineB"] } },
   studio: { title: { key: "studio.hero.title" }, description: { key: "studio.hero.body" } },
+  // The alternative design of the Studio page (/studio-3d-b): its own heading,
+  // and `noindex` through its route, so it never competes with /studio-3d.
+  studioAlt: { title: { key: "studioAlt.hero.title" }, description: { key: "studioAlt.hero.body" } },
   studioSubscribe: { title: { key: "studio.subscribe.title" }, description: { key: "studio.subscribe.body" } },
   academy: { title: { key: "academyPage.meta.title" }, description: { key: "academyPage.meta.description" } },
   help: { title: { key: "legal.hub.title" }, description: { key: "legal.hub.intro" } },

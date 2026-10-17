@@ -1,0 +1,162 @@
+{
+  "placeholder": {
+    "label": "Media placeholder",
+    "note": "Visual to be supplied before this page goes live."
+  },
+  "hero": {
+    "eyebrow": "Your creativity, in 3D",
+    "title": "Imagine it. Design it. Make it yours.",
+    "body": "Bring your tooth jewellery ideas to life in an immersive 3D studio made for artists who want to explore new combinations, refine their creativity and visualise their next signature look.",
+    "ctaPrimary_one": "Try the Studio free for {{count}} day",
+    "ctaPrimary_other": "Try the Studio free for {{count}} days",
+    "ctaOpen": "Open the Studio",
+    "ctaSecondary": "Discover the experience",
+    "reassurance_one": "{{count}} day to explore, then the plan you choose, from {{price}} / month.",
+    "reassurance_other": "{{count}} days to explore, then the plan you choose, from {{price}} / month.",
+    "media": {
+      "title": "Screen recording of the 3D Studio",
+      "body": "A tooth jewellery composition being created and rotated in real time in the Studio.",
+      "caption": "Demonstration film · 16:9 · to be replaced by the final recording."
+    }
+  },
+  "benefits": {
+    "eyebrow": "Why artists love it",
+    "title": "Your ideas deserve more than a sketch.",
+    "body": "A creative space where inspiration becomes something you can see, explore and refine.",
+    "items": {
+      "visualize": {
+        "title": "Visualise before you create",
+        "body": "See how a composition could look before you commit to a creative direction."
+      },
+      "experiment": {
+        "title": "Experiment without limits",
+        "body": "Try other directions, other combinations, other styles, in a space built for exploring."
+      },
+      "signature": {
+        "title": "Develop your signature style",
+        "body": "Explore your ideas, find unexpected combinations and build a recognisable artistic identity."
+      },
+      "confidence": {
+        "title": "Create with more confidence",
+        "body": "Give your ideas a clearer visual form and make better informed creative decisions."
+      }
+    }
+  },
+  "showcase": {
+    "eyebrow": "The experience",
+    "title": "Let the Studio speak for itself.",
+    "items": {
+      "idea": {
+        "title": "Every detail starts with an idea",
+        "body": "One instinct placed as a single gem, then moved, resized, swapped — until it becomes the composition you had in mind.",
+        "media": {
+          "title": "Close-up of a composition in the Studio",
+          "body": "One tooth, two or three pieces, light catching the facets.",
+          "caption": "Image or short film · portrait or square."
+        }
+      },
+      "signature": {
+        "title": "Explore your next signature look",
+        "body": "Minimal or statement, symmetrical or free: change register in seconds and compare the directions side by side.",
+        "media": {
+          "title": "Gallery of compositions created in the Studio",
+          "body": "Several different aesthetics, shown together.",
+          "caption": "Six visuals · same framing, same light."
+        }
+      },
+      "space": {
+        "title": "A creative space made for you",
+        "body": "A place of your own for tooth jewellery ideas, open whenever inspiration comes, on a computer as on a phone.",
+        "media": {
+          "title": "Screenshot of the full Studio interface",
+          "body": "The whole workspace: the dentition, the library, the tools.",
+          "caption": "Wide screenshot · desktop screen."
+        }
+      }
+    }
+  },
+  "proof": {
+    "eyebrow": "The artists",
+    "title": "Made for artists who see possibilities everywhere.",
+    "body": "This space will hold the words and the work of the artists who use the Studio. Nothing appears here until they have agreed to it.",
+    "testimonialsTitle": "Testimonials",
+    "testimonial": {
+      "title": "Testimonial from a Studio user",
+      "body": "A real quote, collected and published with their agreement.",
+      "caption": "Artist portrait and name, published with permission."
+    },
+    "galleryTitle": "Creations",
+    "gallery": {
+      "title": "Finished composition created in the Studio",
+      "body": "A real example, shared with its author's agreement.",
+      "caption": "Square visual."
+    }
+  },
+  "plans": {
+    "eyebrow": "Plans",
+    "title": "Find the plan that fits your creativity.",
+    "body": "Start by exploring the Studio, then choose the subscription that suits the way you create.",
+    "perMonth": "/ month",
+    "featured": "Artists’ choice",
+    "cta": "Choose {{plan}}",
+    "detailsTitle": "What the plan includes",
+    "details": "What each plan includes is still to be defined with the site owner.",
+    "trial": {
+      "badge_one": "{{count}} day free",
+      "badge_other": "{{count}} days free",
+      "name": "Free trial",
+      "price_one": "Free for {{count}} day",
+      "price_other": "Free for {{count}} days",
+      "body": "Discover the 3D Studio, explore the experience and start bringing your ideas to life.",
+      "cta": "Start my free trial",
+      "note_one": "Explore the Studio for {{count}} day before choosing your subscription.",
+      "note_other": "Explore the Studio for {{count}} days before choosing your subscription."
+    },
+    "items": {
+      "essential": "For artists ready to make the Studio part of their creative routine.",
+      "artist": "For artists who want to make the most of their creative practice.",
+      "atelier": "For artists whose ambitions call for the most complete plan."
+    },
+    "note": "Monthly amounts are shown for illustration and are still to be confirmed: no subscription is charged today. During the preview the whole Studio is free."
+  },
+  "closing": {
+    "title": "Your next great creation starts with an idea.",
+    "body": "Give yourself the space to explore it in 3D.",
+    "ctaSecondary": "Explore the subscription plans"
+  },
+  "faq": {
+    "eyebrow": "Questions",
+    "title": "Before you start.",
+    "placeholderLabel": "To be confirmed",
+    "items": [
+      {
+        "question": "What is the Global Toothgems 3D Studio?",
+        "answer": "An online creative space for composing tooth jewellery: you place pieces on a 3D dentition, move them around, change shapes and colours, and see the composition from every angle. The library holds the shop's own gems, in their colours and sizes."
+      },
+      {
+        "question": "How does the two-day trial work?",
+        "answer": "While the Studio is in preview the editor is open to everyone free of charge, with no card: you can create and explore right now. Exactly how the trial will work once subscriptions exist is still to be defined.",
+        "placeholder": true
+      },
+      {
+        "question": "What happens after the trial ends?",
+        "answer": "What becomes of an account at the end of the trial — creations kept, moving to a plan, a reminder — has not been settled yet. This answer will be written before subscriptions open.",
+        "placeholder": true
+      },
+      {
+        "question": "Which subscription should I choose?",
+        "answer": "The three plans above differ by their monthly amount; what each one includes is still being defined. In the meantime, start with the trial: it is the best way to see what you need.",
+        "placeholder": true
+      },
+      {
+        "question": "Can I change my subscription later?",
+        "answer": "The rules for changing or ending a subscription will be set when subscriptions are built. No promise is made here until they are written down.",
+        "placeholder": true
+      },
+      {
+        "question": "Do I need experience with 3D design to get started?",
+        "answer": "No. You pick a piece, place it on a tooth and move it with the mouse, a finger or the keyboard; the view turns with a drag. A help page comes with the editor."
+      }
+    ]
+  }
+}

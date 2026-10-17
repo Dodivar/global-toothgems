@@ -1406,6 +1406,103 @@
 }
 
 /* ---------------------------------------------------------------------------
+   3D Studio — alternative presentation page (/studio-3d-b)
+   ---------------------------------------------------------------------------
+   A second dress for the same page, kept beside `/studio-3d` so the owner can
+   compare them (as `/accueil-b` and `/boutique-b` were compared before). Same
+   tokens, a more editorial composition: white paper, pastel-blue auroras,
+   oversized headlines, glass media frames, emerald on the calls to action and
+   fuchsia only as a hairline accent.
+
+   Media that does not exist yet is drawn as a deliberate placeholder
+   (`.gt-studio-b-ph`): a hatched, dashed surface naming the asset to come.
+   Nothing here is interactive, and nothing here touches `.gt-studio-*`.
+--------------------------------------------------------------------------- */
+@layer components {
+  .gt-studio-b-hero {
+    background:
+      radial-gradient(70% 60% at 78% 8%, rgba(185, 205, 229, .6), transparent 68%),
+      radial-gradient(55% 55% at 2% 92%, rgba(231, 238, 247, .95), transparent 70%),
+      var(--gt-white);
+  }
+  /* Soft colour clouds behind the editorial sections. */
+  .gt-studio-b-aurora {
+    background:
+      radial-gradient(closest-side, rgba(185, 205, 229, .55), transparent),
+      radial-gradient(closest-side, rgba(143, 240, 203, .3), transparent);
+    filter: blur(28px);
+  }
+  .gt-studio-b-aurora--blush {
+    background: radial-gradient(closest-side, rgba(245, 156, 199, .28), transparent);
+    filter: blur(32px);
+  }
+
+  /* Glass frame around a media area: readable, never frosted over content. */
+  .gt-studio-b-frame {
+    background: linear-gradient(135deg, rgba(255, 255, 255, .92), rgba(244, 248, 252, .78));
+    backdrop-filter: blur(var(--glass-blur)) saturate(1.1);
+    -webkit-backdrop-filter: blur(var(--glass-blur)) saturate(1.1);
+    box-shadow: var(--shadow-glass);
+  }
+
+  /* The placeholder surface itself: hatched paper, dashed edge. */
+  .gt-studio-b-ph {
+    background-color: var(--gt-blue-50);
+    background-image: repeating-linear-gradient(
+      135deg,
+      rgba(90, 119, 150, .08) 0 1px,
+      transparent 1px 11px
+    );
+  }
+
+  /* Benefit cards: a hairline that warms up when the card is hovered. */
+  .gt-studio-b-card {
+    background: linear-gradient(170deg, var(--gt-white), var(--gt-blue-50));
+    transition: transform var(--duration-normal) var(--ease-out-soft), box-shadow var(--duration-normal) var(--ease-out-soft), border-color var(--duration-fast) var(--ease-standard);
+  }
+  .gt-studio-b-card:hover {
+    transform: translateY(-3px);
+    border-color: var(--gt-blue-300);
+    box-shadow: var(--shadow-md);
+  }
+  .gt-studio-b-card:focus-within { border-color: var(--gt-blue-300); }
+
+  /* Pricing: the singled-out plan keeps the paper, gains an emerald edge. */
+  .gt-studio-b-plan { transition: transform var(--duration-normal) var(--ease-out-soft), box-shadow var(--duration-normal) var(--ease-out-soft); }
+  .gt-studio-b-plan:hover { transform: translateY(-3px); box-shadow: var(--shadow-md); }
+  .gt-studio-b-plan--featured {
+    background:
+      radial-gradient(70% 60% at 100% 0%, rgba(185, 205, 229, .45), transparent 65%),
+      var(--gt-white);
+    border-color: var(--gt-emerald-400);
+    box-shadow: var(--shadow-lg);
+  }
+  .gt-studio-b-trial {
+    background:
+      radial-gradient(60% 120% at 100% 0%, rgba(143, 240, 203, .35), transparent 60%),
+      linear-gradient(120deg, var(--gt-blue-100), var(--gt-blue-50));
+  }
+
+  /* Closing band. */
+  .gt-studio-b-close {
+    background:
+      radial-gradient(60% 90% at 10% 0%, rgba(143, 240, 203, .4), transparent 62%),
+      radial-gradient(70% 90% at 95% 100%, rgba(245, 156, 199, .22), transparent 60%),
+      linear-gradient(135deg, var(--gt-blue-100), var(--gt-blue-300));
+  }
+
+  /* A fuchsia hairline under section eyebrows, used sparingly. */
+  .gt-studio-b-tick { background: linear-gradient(90deg, var(--gt-fuchsia-400), rgba(224, 71, 155, 0)); }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .gt-studio-b-card,
+  .gt-studio-b-plan { transition: none; }
+  .gt-studio-b-card:hover,
+  .gt-studio-b-plan:hover { transform: none; }
+}
+
+/* ---------------------------------------------------------------------------
    3D Studio — the editor (/studio-3d/atelier)
    ---------------------------------------------------------------------------
    The editor wears the Studio's own art direction: white panels on the

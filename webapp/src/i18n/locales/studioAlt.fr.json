@@ -1,0 +1,162 @@
+{
+  "placeholder": {
+    "label": "Emplacement média",
+    "note": "Visuel à fournir avant la mise en ligne."
+  },
+  "hero": {
+    "eyebrow": "Votre créativité, en 3D",
+    "title": "Imaginez-le. Dessinez-le. Il est à vous.",
+    "body": "Donnez vie à vos idées de bijoux dentaires dans un studio 3D immersif, pensé pour les artistes qui veulent explorer de nouvelles combinaisons, affiner leur créativité et visualiser leur prochaine signature.",
+    "ctaPrimary_one": "Essayer le Studio {{count}} jour gratuitement",
+    "ctaPrimary_other": "Essayer le Studio {{count}} jours gratuitement",
+    "ctaOpen": "Ouvrir le Studio",
+    "ctaSecondary": "Découvrir l’expérience",
+    "reassurance_one": "{{count}} jour pour explorer, puis la formule de votre choix, dès {{price}} / mois.",
+    "reassurance_other": "{{count}} jours pour explorer, puis la formule de votre choix, dès {{price}} / mois.",
+    "media": {
+      "title": "Capture d’écran animée du Studio 3D",
+      "body": "Une composition de bijoux dentaires créée puis pivotée en temps réel dans le Studio.",
+      "caption": "Film de démonstration · 16:9 · à remplacer par l’enregistrement définitif."
+    }
+  },
+  "benefits": {
+    "eyebrow": "Pourquoi les artistes l’adoptent",
+    "title": "Vos idées méritent mieux qu’un croquis.",
+    "body": "Un espace créatif où l’inspiration devient quelque chose que l’on voit, explore et affine.",
+    "items": {
+      "visualize": {
+        "title": "Visualisez avant de créer",
+        "body": "Regardez à quoi une composition pourrait ressembler avant d’arrêter votre direction créative."
+      },
+      "experiment": {
+        "title": "Expérimentez sans limite",
+        "body": "Essayez d’autres directions, d’autres associations, d’autres styles, dans un espace fait pour chercher."
+      },
+      "signature": {
+        "title": "Construisez votre signature",
+        "body": "Explorez vos idées, découvrez des combinaisons inattendues et installez une identité reconnaissable."
+      },
+      "confidence": {
+        "title": "Créez avec plus de certitude",
+        "body": "Donnez à vos intuitions une forme visible et prenez des décisions créatives mieux informées."
+      }
+    }
+  },
+  "showcase": {
+    "eyebrow": "L’expérience",
+    "title": "Le Studio parle mieux que nous.",
+    "items": {
+      "idea": {
+        "title": "Chaque détail part d’une idée",
+        "body": "Une intuition posée en une gemme, puis déplacée, redimensionnée, échangée — jusqu’à la composition que vous aviez en tête.",
+        "media": {
+          "title": "Gros plan d’une composition dans le Studio",
+          "body": "Une dent, deux ou trois pièces, la lumière qui accroche les facettes.",
+          "caption": "Image ou court film · format portrait ou carré."
+        }
+      },
+      "signature": {
+        "title": "Cherchez votre prochaine signature",
+        "body": "Minimal ou statement, symétrique ou libre : changez de registre en quelques secondes et comparez les pistes côte à côte.",
+        "media": {
+          "title": "Galerie de compositions créées dans le Studio",
+          "body": "Plusieurs esthétiques différentes, présentées ensemble.",
+          "caption": "Six visuels · même cadrage, même lumière."
+        }
+      },
+      "space": {
+        "title": "Un espace créatif qui vous appartient",
+        "body": "Un lieu dédié à vos idées de bijoux dentaires, ouvert quand l’envie vient, sur ordinateur comme sur mobile.",
+        "media": {
+          "title": "Capture de l’interface complète du Studio",
+          "body": "L’espace de travail dans son ensemble : la dentition, la bibliothèque, les outils.",
+          "caption": "Capture large · écran d’ordinateur."
+        }
+      }
+    }
+  },
+  "proof": {
+    "eyebrow": "Les artistes",
+    "title": "Fait pour les artistes qui voient des possibilités partout.",
+    "body": "Cet espace accueillera les retours et les créations des artistes qui utilisent le Studio. Rien n’y sera affiché tant que nous n’aurons pas leur accord.",
+    "testimonialsTitle": "Témoignages",
+    "testimonial": {
+      "title": "Témoignage d’une utilisatrice du Studio",
+      "body": "Citation réelle, recueillie et publiée avec son accord.",
+      "caption": "Portrait et nom de l’artiste, publiés avec son autorisation."
+    },
+    "galleryTitle": "Créations",
+    "gallery": {
+      "title": "Composition terminée, créée dans le Studio",
+      "body": "Exemple réel, partagé avec l’accord de son autrice.",
+      "caption": "Visuel carré."
+    }
+  },
+  "plans": {
+    "eyebrow": "Formules",
+    "title": "Trouvez la formule qui suit votre créativité.",
+    "body": "Commencez par explorer le Studio, puis choisissez l’abonnement qui correspond à votre façon de créer.",
+    "perMonth": "/ mois",
+    "featured": "Le choix des artistes",
+    "cta": "Choisir {{plan}}",
+    "detailsTitle": "Contenu de la formule",
+    "details": "Ce que comprend chaque formule reste à définir avec le propriétaire du site.",
+    "trial": {
+      "badge_one": "{{count}} jour offert",
+      "badge_other": "{{count}} jours offerts",
+      "name": "Essai gratuit",
+      "price_one": "Gratuit pendant {{count}} jour",
+      "price_other": "Gratuit pendant {{count}} jours",
+      "body": "Découvrez le Studio 3D, parcourez l’expérience et commencez à donner forme à vos idées.",
+      "cta": "Commencer mon essai gratuit",
+      "note_one": "Explorez le Studio pendant {{count}} jour avant de choisir votre abonnement.",
+      "note_other": "Explorez le Studio pendant {{count}} jours avant de choisir votre abonnement."
+    },
+    "items": {
+      "essential": "Pour les artistes prêts à intégrer le Studio à leur pratique.",
+      "artist": "Pour les artistes qui veulent tirer le meilleur de leur travail créatif.",
+      "atelier": "Pour les artistes dont les ambitions demandent la formule la plus complète."
+    },
+    "note": "Montants mensuels affichés à titre indicatif, encore à confirmer : aucun abonnement n’est prélevé aujourd’hui. Pendant l’aperçu, tout le Studio est gratuit."
+  },
+  "closing": {
+    "title": "Votre prochaine grande création commence par une idée.",
+    "body": "Donnez-vous l’espace de l’explorer en 3D.",
+    "ctaSecondary": "Voir les formules"
+  },
+  "faq": {
+    "eyebrow": "Questions",
+    "title": "Avant de commencer.",
+    "placeholderLabel": "À confirmer",
+    "items": [
+      {
+        "question": "Qu’est-ce que le Studio 3D Global Toothgems ?",
+        "answer": "Un espace créatif en ligne pour composer des bijoux dentaires : vous posez des pièces sur une dentition en 3D, vous les déplacez, vous changez formes et couleurs, et vous voyez la composition sous tous les angles. La bibliothèque reprend les gemmes de la boutique, dans leurs couleurs et leurs tailles."
+      },
+      {
+        "question": "Comment se passe l’essai de deux jours ?",
+        "answer": "Pendant l’aperçu du Studio, l’éditeur est ouvert gratuitement à tout le monde, sans carte bancaire : vous pouvez créer et explorer dès maintenant. Le fonctionnement exact de l’essai, une fois les abonnements en place, reste à définir.",
+        "placeholder": true
+      },
+      {
+        "question": "Que se passe-t-il à la fin de l’essai ?",
+        "answer": "Ce que devient un compte à la fin de l’essai — créations conservées, passage à une formule, relance — n’est pas encore arrêté. Cette réponse sera précisée avant l’ouverture des abonnements.",
+        "placeholder": true
+      },
+      {
+        "question": "Quelle formule choisir ?",
+        "answer": "Les trois formules présentées plus haut se distinguent par leur montant mensuel ; leur contenu respectif est encore en cours de définition. En attendant, commencez par l’essai : c’est la meilleure façon de voir ce dont vous avez besoin.",
+        "placeholder": true
+      },
+      {
+        "question": "Puis-je changer de formule plus tard ?",
+        "answer": "Les règles de changement et de résiliation seront fixées avec la mise en place des abonnements. Aucune promesse n’est faite ici tant qu’elles ne sont pas écrites.",
+        "placeholder": true
+      },
+      {
+        "question": "Faut-il savoir manier la 3D pour commencer ?",
+        "answer": "Non. Vous choisissez une pièce, vous la posez sur une dent, vous la déplacez à la souris, au doigt ou au clavier ; la vue tourne d’un glissement. Une page d’aide accompagne l’éditeur."
+      }
+    ]
+  }
+}

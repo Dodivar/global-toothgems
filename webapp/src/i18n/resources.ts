@@ -25,6 +25,9 @@ import homeAltEn from "./locales/homeAlt.en.json";
 // The alternative shop page at /boutique, under `shopAlt`.
 import shopAltFr from "./locales/shopAlt.fr.json";
 import shopAltEn from "./locales/shopAlt.en.json";
+// The alternative 3D Studio presentation page at /studio-3d-b, under `studioAlt`.
+import studioAltFr from "./locales/studioAlt.fr.json";
+import studioAltEn from "./locales/studioAlt.en.json";
 // The learner experience (course overview, lesson player, knowledge checks),
 // under `learning`; and the back office's training image library, under
 // `trainingMedia`.
@@ -40,6 +43,6 @@ import loungeFr from "./locales/communityChat.fr.json";
 import loungeEn from "./locales/communityChat.en.json";
 
 export const resources = {
-  fr: { translation: { ...fr, promo: promoFr, reviews: reviewsFr, settings: settingsFr, studio: { ...studioFr, workspace: studioWorkspaceFr }, homeAlt: homeAltFr, shopAlt: shopAltFr, learning: learningFr, trainingMedia: trainingMediaFr, academyPage: academyPageFr, lounge: loungeFr } },
-  en: { translation: { ...en, promo: promoEn, reviews: reviewsEn, settings: settingsEn, studio: { ...studioEn, workspace: studioWorkspaceEn }, homeAlt: homeAltEn, shopAlt: shopAltEn, learning: learningEn, trainingMedia: trainingMediaEn, academyPage: academyPageEn, lounge: loungeEn } },
+  fr: { translation: { ...fr, promo: promoFr, reviews: reviewsFr, settings: settingsFr, studio: { ...studioFr, workspace: studioWorkspaceFr }, homeAlt: homeAltFr, shopAlt: shopAltFr, studioAlt: studioAltFr, learning: learningFr, trainingMedia: trainingMediaFr, academyPage: academyPageFr, lounge: loungeFr } },
+  en: { translation: { ...en, promo: promoEn, reviews: reviewsEn, settings: settingsEn, studio: { ...studioEn, workspace: studioWorkspaceEn }, homeAlt: homeAltEn, shopAlt: shopAltEn, studioAlt: studioAltEn, learning: learningEn, trainingMedia: trainingMediaEn, academyPage: academyPageEn, lounge: loungeEn } },
 };
