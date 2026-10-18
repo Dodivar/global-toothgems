@@ -1,16 +1,17 @@
 "use client";
 
-import { useEffect, useId, useRef, useState } from "react";
+import { lazy, Suspense, useEffect, useRef, useState } from "react";
 import { useTranslation } from "react-i18next";
 import clsx from "clsx";
 import { ArrowRight, Check, CircleAlert, Gift } from "lucide-react";
 import { Button } from "../ui/Button";
-import { Checkbox } from "../ui/Checkbox";
 import { TermsNotice } from "../auth/TermsNotice";
 import { useStudioCheckout, type StudioCheckoutSurface } from "./access/useStudioCheckout";
+
+// Stripe.js and the payment form are fetched only once a plan is chosen.
+const StudioPaymentStep = lazy(() => import("./access/StudioPaymentStep"));
 import { Link, useNavigate } from "../../lib/navigation";
 import { useAuth } from "../../lib/auth";
-import { useHydrated } from "../../lib/useHydrated";
 import { RETURN_PARAM, SIGN_IN_PATH } from "../../lib/authRoutes";
 import { STUDIO_SUBSCRIBE_PATH } from "../../lib/studioUrl";
 import { useFormat } from "../../lib/format";
@@ -69,16 +70,13 @@ export function StudioPlans({ onTrial, onChoose }: { onTrial: () => void; onChoo
 }
 
 /**
- * The paid plans wired to the checkout: a signed-in member goes to Stripe's
- * payment page; a visitor is asked to sign in first (the subscription belongs
- * to an account) and comes back to the subscription page. Refusals are said
- * here: terms to accept (accepted in place, then the checkout opens), a
- * subscription already running (managed from the account), Stripe unavailable.
- *
- * Above the plans, unticked by default, the member's request for immediate
- * access (decision 94 (a), L221-25): a plan button pressed without it focuses
- * the box and says why; the function refuses a checkout without it and records
- * it (`consent_records`, same sentence as `STUDIO_WITHDRAWAL_CONSENT`).
+ * The paid plans wired to the checkout: a signed-in member's plan button opens
+ * the payment step on this page, in place of the plans (`StudioPaymentStep`,
+ * the shop's payment form); a visitor is asked to sign in first (the
+ * subscription belongs to an account) and comes back to the subscription page.
+ * Refusals are said here: terms to accept (accepted in place, then the step
+ * opens), a subscription already running (managed from the account), Stripe
+ * unavailable. The request for immediate access is ticked in the payment step.
  */
 export function StudioCheckoutPlans({ surface }: { surface: StudioCheckoutSurface }) {
   const { t } = useTranslation();
@@ -88,12 +86,6 @@ export function StudioCheckoutPlans({ surface }: { surface: StudioCheckoutSurfac
   const last = useRef<Parameters<ChooseStudioPlan> | null>(null);
   const [accepting, setAccepting] = useState(false);
   const [termsFailed, setTermsFailed] = useState(false);
-  const [consent, setConsent] = useState(false);
-  const [consentMissing, setConsentMissing] = useState(false);
-  const consentRef = useRef<HTMLInputElement>(null);
-  const consentHintId = useId();
-  // Server-rendered pages: the account is only known once hydrated (no mismatch for a signed-in member).
-  const hydrated = useHydrated();
   const errorRef = useRef<HTMLDivElement>(null);
 
   useEffect(() => {
@@ -105,19 +97,8 @@ export function StudioCheckoutPlans({ surface }: { surface: StudioCheckoutSurfac
       navigate(`${SIGN_IN_PATH}?${new URLSearchParams({ [RETURN_PARAM]: STUDIO_SUBSCRIBE_PATH })}`);
       return;
     }
-    if (!consent) {
-      setConsentMissing(true);
-      consentRef.current?.focus();
-      return;
-    }
     last.current = [plan, interval, price];
-    void checkout.start(plan, interval, price, true);
-  };
-
-  const changeConsent = (checked: boolean) => {
-    setConsent(checked);
-    if (checked) setConsentMissing(false);
-    if (checked && checkout.error === "withdrawal_consent_required") checkout.clearError();
+    void checkout.start(plan, interval, price);
   };
 
   const acceptAndRetry = async () => {
@@ -129,35 +110,27 @@ export function StudioCheckoutPlans({ surface }: { surface: StudioCheckoutSurfac
       setTermsFailed(true);
       return;
     }
-    if (last.current) void checkout.start(...last.current, consent);
+    if (last.current) void checkout.start(...last.current);
   };
+
+  if (checkout.step) {
+    return (
+      <Suspense fallback={<div className="gt-skeleton mx-auto h-[420px] w-full max-w-[1040px] rounded-[var(--radius-card)]" role="status" aria-label={t("checkout.payment.loading")} />}>
+        <StudioPaymentStep
+          step={checkout.step}
+          locale={checkout.locale}
+          recordConsent={checkout.recordConsent}
+          onPaid={checkout.paid}
+          onBack={checkout.close}
+          onRestart={checkout.restart}
+        />
+      </Suspense>
+    );
+  }
 
   const error = checkout.error;
   return (
     <div className="grid gap-4">
-      {hydrated && signedIn && (
-        <div
-          className={clsx(
-            "mx-auto grid w-full max-w-[680px] gap-2 rounded-[var(--radius-lg)] border bg-[var(--surface-card)] p-4",
-            consentMissing ? "border-[var(--status-error-fg)]" : "border-[var(--border-subtle)]",
-          )}
-        >
-          <Checkbox
-            label={t("studio.access.checkout.consent.label")}
-            checked={consent}
-            onChange={changeConsent}
-            inputRef={consentRef}
-            invalid={consentMissing}
-            describedBy={consentMissing ? consentHintId : undefined}
-          />
-          {consentMissing && (
-            <p id={consentHintId} role="alert" className="m-0 inline-flex items-center gap-1.5 pl-8 text-[length:var(--text-caption)] font-semibold text-[var(--status-error-fg)]">
-              <CircleAlert size={13} aria-hidden="true" />
-              {t("studio.access.checkout.consent.required")}
-            </p>
-          )}
-        </div>
-      )}
       <StudioPaidPlans onChoose={choose} busy={checkout.pending} />
       {error && (
         <div

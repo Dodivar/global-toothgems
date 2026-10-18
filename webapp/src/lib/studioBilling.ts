@@ -6,8 +6,10 @@ import { isSupabaseConfigured, supabase } from "./supabase/client";
 import {
   mapPlanPriceRows,
   readStudioCheckoutAnswer,
+  readStudioConsentAnswer,
   readStudioPortalAnswer,
   type StudioCheckoutAnswer,
+  type StudioConsentAnswer,
   type StudioPlanPrice,
   type StudioPortalAnswer,
 } from "./studioBillingMapping";
@@ -15,8 +17,8 @@ import type { StudioBillingInterval, StudioPaidPlanId } from "../data/studio";
 
 /**
  * The persistence boundary of 3D Studio subscriptions (decision 94): the plan
- * prices (`studio_plan_prices`, public), the subscription Checkout
- * (`create-studio-subscription`) and the customer portal
+ * prices (`studio_plan_prices`, public), the subscription payment step on our
+ * own page (`create-studio-subscription`) and the customer portal
  * (`studio-billing-portal`). Nothing here grants access: the Studio opens when
  * the verified webhook has mirrored the subscription, which `studioAccess.tsx`
  * reads back from the database.
@@ -67,24 +69,40 @@ async function invoke<T>(name: string, body: Record<string, string | boolean>, r
   return offline;
 }
 
-/** A Stripe Checkout for this plan and interval; the browser is then sent to its address. */
-/**
- * `withdrawalConsent`: the member ticked the request for immediate access
- * (decision 94 (a)); the function refuses the checkout without it.
- */
-export function startStudioSubscription(
-  plan: StudioPaidPlanId,
-  interval: StudioBillingInterval,
-  locale: "fr" | "en",
-  withdrawalConsent: boolean,
-): Promise<StudioCheckoutAnswer> {
+/** Opens a payment step for this plan and interval: the Payment Element is mounted from its client secret. */
+export function startStudioSubscription(plan: StudioPaidPlanId, interval: StudioBillingInterval, locale: "fr" | "en"): Promise<StudioCheckoutAnswer> {
   return invoke(
     "create-studio-subscription",
-    { plan, interval, locale, withdrawal_consent: withdrawalConsent },
+    { plan, interval, locale },
     readStudioCheckoutAnswer,
     { kind: "error", error: "payment_unavailable" },
     { kind: "error", error: "network" },
   );
+}
+
+/**
+ * Records the request for immediate access the member ticked in the payment
+ * step (decision 94 (a)), just before the payment is confirmed: the payment is
+ * confirmed only on `consented`.
+ */
+export function recordStudioWithdrawalConsent(clientSecret: string): Promise<StudioConsentAnswer> {
+  return invoke(
+    "create-studio-subscription",
+    { consent_client_secret: clientSecret },
+    readStudioConsentAnswer,
+    { kind: "error", error: "payment_unavailable" },
+    { kind: "error", error: "network" },
+  );
+}
+
+/** Closes a payment step the member left (its Stripe session is expired). Best effort. */
+export async function releaseStudioPaymentStep(clientSecret: string): Promise<void> {
+  if (!supabase) return;
+  try {
+    await supabase.functions.invoke("create-studio-subscription", { body: { release_client_secret: clientSecret } });
+  } catch {
+    /* the session expires on its own within the hour */
+  }
 }
 
 /** The Stripe customer portal (change plan, card, invoices, cancel). */

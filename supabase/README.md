@@ -1206,18 +1206,25 @@ reads, deletes       always the owner's: the work done during the trial is kept
 
 ```
 plan button (locked screen, /studio-3d, /fr/studio-3d/abonnement)   signed out → sign-in, back to the subscription page
-  → POST functions/v1/create-studio-subscription {plan, interval, locale, withdrawal_consent}
+  → POST functions/v1/create-studio-subscription {plan, interval, locale}
                                                   (member token; no price id or amount accepted)
-      withdrawal_consent must be true (the box above the plans, unticked by default) → else withdrawal_consent_required
       terms accepted? no blocking subscription (active/trialing/past_due/unpaid/paused/incomplete) → else already_subscribed
       price = studio_plan_prices(plan, interval, active) → else plan_unavailable
-      the request is recorded: consent_records studio_immediate_access, version studio-withdrawal-2026-10
       customer = stripe_customers, else created once (idempotency key studio-customer:<user>)
       the customer's other open Studio Checkouts are expired
-      Stripe Checkout Session, mode subscription (Stripe's hosted page), metadata + subscription_data.metadata
-        {kind: studio_subscription, user_id, plan, interval, withdrawal_consent_id, withdrawal_consent_version};
-      custom_text above Stripe's pay button repeats the request and how to cancel
-      → {status: checkout, url}; success_url /studio-3d/atelier?subscription=success, cancel_url …=canceled
+      Stripe Checkout Session, ui_mode custom, mode subscription, expires in 60 min, metadata +
+        subscription_data.metadata {kind: studio_subscription, user_id, plan, interval}
+      → {status: payment, client_secret, publishable_key, amount, currency, expires_at}
+  the payment step opens in place of the plans (StudioPaymentStep: the shop's StripePaymentForm, Payment Element)
+      beside the form, unticked by default: the request for immediate access; Pay without it → the box is focused
+  Pay → POST functions/v1/create-studio-subscription {consent_client_secret}
+      the session must be open, kind studio_subscription and this member's (else invalid_request / checkout_closed)
+      the request is recorded: consent_records studio_immediate_access, version studio-withdrawal-2026-10,
+      its id + version merged into the session's metadata → {status: consented}
+      only then the browser confirms the payment with Stripe (checkout.confirm, redirect if_required)
+      paid on the page → /studio-3d/atelier?subscription=success; a 3-D Secure redirect comes back to the same
+      address (return_url)
+  "Change plan" → POST {release_client_secret}: the member's open session is expired
   Stripe → stripe-webhook   customer.subscription.created/updated/deleted, invoice.paid/payment_failed,
                             checkout.session.completed (mode subscription)
       verified + deduplicated like every event; subscription READ BACK from Stripe (order-independent, replay-safe)
@@ -1960,15 +1967,22 @@ VAT rates, shipping zones/rates mirroring the Settings prototype. Media rows ref
     subscription needs no basket, and the customer portal is Stripe's page anyway); the Stripe Prices are test-mode
     objects created by `studio-billing-setup` on the owner's go-ahead, live ones are created at launch. Access only
     from the verified webhook (`studio_subscriptions`), one blocking subscription per account, Stripe customer reused.
+    Paid on our own page since 2026-10-18 (owner's request: keep the member on the site): the subscription's
+    Checkout Session uses `ui_mode: "custom"` and is paid through the shop's Payment Element form
+    (`StripePaymentForm`, decision 80), opened in place of the plans; the customer portal stays Stripe's page.
     Agent's choices, to confirm: (a) the 14-day EU withdrawal right — since 2026-10-18 (owner's choice, migration
-    `20261018155521`) the member must tick, before any plan button works, an express request for immediate access
+    `20261018155521`) the member must tick, in the payment step beside the card form, an express request for immediate access
     acknowledging that a withdrawal within 14 days costs the share of the subscription already used (L221-25,
     option "service": the Studio is an online service, so the right is kept, not waived — a full waiver under
-    L221-28 was considered and set aside as unlikely to hold for a subscription). The function refuses a checkout
-    without it (`withdrawal_consent_required`), records it in `consent_records` (`studio_immediate_access`,
-    version `studio-withdrawal-2026-10`, wording in `_shared/studioBilling.ts`, the same as the box — checked by a
-    Deno test), puts its id and version in the Checkout and subscription metadata, repeats it above Stripe's pay
-    button and e-mails it with the plan and first payment once the first invoice is paid. To confirm with a lawyer:
+    L221-28 was considered and set aside as unlikely to hold for a subscription). Pay does nothing until it is
+    ticked; the function then records it in `consent_records` (`studio_immediate_access`, version
+    `studio-withdrawal-2026-10`, wording in `_shared/studioBilling.ts`, the same as the box — checked by a Deno
+    test) and merges its id and version into the Checkout Session's metadata, and only then does the browser
+    confirm the payment; it is e-mailed with the plan and first payment once the first invoice is paid. Limit: the
+    payment is confirmed from the browser (Stripe.js), so a hand-crafted client could pay without asking for the
+    record; such a subscription has no request on file (no confirmation e-mail is sent for it) and the safe reading
+    is that its withdrawal is refunded in full — not automated (`request_studio_withdrawal()` always deducts the
+    days used), to decide. To confirm with a lawyer:
     the wording; the refund on withdrawal (automated since decision 95); the Studio clause of the terms of sale (`data/legal/terms.ts` covers products and courses);
     (b) subscription invoices are Stripe's own documents (Stripe numbering), outside the `FA-` / `AV-` sequence of
     decision 86 — the accountant must confirm, or they must be issued by the database too; (c) VAT is inclusive at

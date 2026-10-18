@@ -18,11 +18,17 @@ const supabase = serviceClient();
 const stripe = stripeClient();
 const origins = readSiteOrigins(requireEnv("SITE_URL"), Deno.env.get("ALLOWED_RETURN_ORIGINS"));
 
-// Shown above Stripe's pay button: the request the member ticked on our page, then how to cancel.
-const SUBMIT_TEXT = {
-  fr: `${STUDIO_WITHDRAWAL_CONSENT.text.fr} Vous pouvez résilier à tout moment depuis votre compte : l’abonnement prend fin à la fin de la période payée.`,
-  en: `${STUDIO_WITHDRAWAL_CONSENT.text.en} You can cancel at any time from your account: the subscription ends at the close of the paid period.`,
-} as const;
+/**
+ * The publishable key mounts the payment form in the browser. It must belong to
+ * the same mode as the secret key (test with test, live with live), otherwise
+ * Stripe.js cannot open the session: a mismatch counts as not configured.
+ */
+function matchingPublishableKey(): string | null {
+  const publishable = Deno.env.get("STRIPE_PUBLISHABLE_KEY")?.trim() ?? "";
+  const secret = Deno.env.get("STRIPE_SECRET_KEY")?.trim() ?? "";
+  const mode = (key: string) => /^(?:pk|sk|rk)_(test|live)_/.exec(key)?.[1] ?? null;
+  return publishable.startsWith("pk_") && mode(publishable) !== null && mode(publishable) === mode(secret) ? publishable : null;
+}
 
 async function storedCustomer(userId: string): Promise<string | null> {
   const { data, error } = await supabase.from("stripe_customers").select("stripe_customer_id").eq("user_id", userId).maybeSingle();
@@ -32,6 +38,7 @@ async function storedCustomer(userId: string): Promise<string | null> {
 
 const deps: StudioCheckoutDeps = {
   origins,
+  publishableKey: matchingPublishableKey(),
 
   async userFromToken(token) {
     const { data, error } = await supabase.auth.getUser(token);
@@ -123,10 +130,10 @@ const deps: StudioCheckoutDeps = {
       user_id: params.userId,
       plan: params.plan,
       interval: params.interval,
-      withdrawal_consent_id: params.consentId,
-      withdrawal_consent_version: STUDIO_WITHDRAWAL_CONSENT.version,
     };
     const session = await stripe.checkout.sessions.create({
+      // The payment form (Payment Element) is mounted inside our own page, like the shop's checkout.
+      ui_mode: "custom",
       mode: "subscription",
       customer: params.customerId,
       client_reference_id: params.userId,
@@ -134,14 +141,40 @@ const deps: StudioCheckoutDeps = {
       locale: params.locale,
       metadata,
       subscription_data: { metadata },
-      success_url: params.successUrl,
-      cancel_url: params.cancelUrl,
-      custom_text: { submit: { message: SUBMIT_TEXT[params.locale] } },
+      expires_at: params.expiresAt,
+      return_url: params.returnUrl,
     });
-    if (!session.url) throw new Error("Stripe returned a session without url");
-    return { id: session.id, url: session.url };
+    if (!session.client_secret) throw new Error("Stripe returned a session without client secret");
+    return { id: session.id, clientSecret: session.client_secret };
   },
 
+  async retrieveSession(sessionId) {
+    try {
+      const session = await stripe.checkout.sessions.retrieve(sessionId);
+      return {
+        clientSecret: session.client_secret,
+        status: session.status,
+        kind: session.metadata?.kind ?? null,
+        userId: session.metadata?.user_id ?? null,
+      };
+    } catch (error) {
+      if (error instanceof Error && "statusCode" in error && (error as { statusCode?: number }).statusCode === 404) return null;
+      throw error;
+    }
+  },
+
+  async markSessionConsent(sessionId, consentId) {
+    // Merged into the existing metadata (kind, user, plan, interval stay).
+    await stripe.checkout.sessions.update(sessionId, {
+      metadata: { withdrawal_consent_id: consentId, withdrawal_consent_version: STUDIO_WITHDRAWAL_CONSENT.version },
+    });
+  },
+
+  async expireSession(sessionId) {
+    await stripe.checkout.sessions.expire(sessionId);
+  },
+
+  now: () => Date.now(),
   log: (message, detail) => console.error(`[create-studio-subscription] ${message}`, detail ?? ""),
 };
 

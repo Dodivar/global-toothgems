@@ -1,16 +1,21 @@
 import { assert, assertEquals } from "jsr:@std/assert@1";
 import { readSiteOrigins } from "../_shared/http.ts";
-import { parseStudioSubscriptionInput } from "../_shared/studioBilling.ts";
-import { handleStudioCheckout, type StudioCheckoutDeps, type StudioSessionParams } from "./handler.ts";
+import { parseStudioCheckoutRequest, parseStudioSubscriptionInput } from "../_shared/studioBilling.ts";
+import { handleStudioCheckout, type StudioCheckoutDeps, type StudioSessionParams, type StudioSessionState } from "./handler.ts";
 
 const USER = { id: "aaaaaaaa-0000-4000-8000-000000000001", email: "member@example.invalid" };
 const TOKEN = "member.jwt.sig";
 const SITE = "https://global-toothgems.example";
+const SESSION_ID = "cs_test_a1B2c3D4e5F6g7H8";
+const SECRET = `${SESSION_ID}_secret_Zz9Yy8Xx7Ww6`;
+const NOW = Date.parse("2026-10-18T12:00:00Z");
+const OPEN_SESSION: StudioSessionState = { clientSecret: SECRET, status: "open", kind: "studio_subscription", userId: USER.id };
 
 function fakeDeps(overrides: Partial<StudioCheckoutDeps> = {}) {
-  const calls = { sessions: [] as StudioSessionParams[], expired: [] as string[], customers: [] as string[], consents: [] as string[] };
+  const calls = { sessions: [] as StudioSessionParams[], expired: [] as string[], customers: [] as string[], consents: [] as string[], marked: [] as string[], expiredSessions: [] as string[] };
   const deps: StudioCheckoutDeps = {
     origins: readSiteOrigins(SITE, "http://localhost:3000"),
+    publishableKey: "pk_test_studio",
     userFromToken: (token) => Promise.resolve(token === TOKEN ? USER : null),
     termsAccepted: () => Promise.resolve(true),
     hasBlockingSubscription: () => Promise.resolve(false),
@@ -30,8 +35,18 @@ function fakeDeps(overrides: Partial<StudioCheckoutDeps> = {}) {
     },
     createSession: (params) => {
       calls.sessions.push(params);
-      return Promise.resolve({ id: "cs_test_1", url: "https://checkout.stripe.com/c/pay/cs_test_1" });
+      return Promise.resolve({ id: SESSION_ID, clientSecret: SECRET });
     },
+    retrieveSession: (id) => Promise.resolve(id === SESSION_ID ? OPEN_SESSION : null),
+    markSessionConsent: (id, consentId) => {
+      calls.marked.push(`${id}:${consentId}`);
+      return Promise.resolve();
+    },
+    expireSession: (id) => {
+      calls.expiredSessions.push(id);
+      return Promise.resolve();
+    },
+    now: () => NOW,
     log: () => {},
     ...overrides,
   };
@@ -45,83 +60,127 @@ const request = (body: unknown, token: string | null = TOKEN, origin = SITE) =>
     body: JSON.stringify(body),
   });
 
-const ARTIST_YEAR = { plan: "artist", interval: "year", locale: "en", withdrawal_consent: true };
+const ARTIST_YEAR = { plan: "artist", interval: "year", locale: "en" } as const;
 
 Deno.test("input: plan and interval are required, unknown keys refused, locale defaults to fr", () => {
-  assertEquals(parseStudioSubscriptionInput({ plan: "essential", interval: "month", withdrawal_consent: true }), {
-    ok: true,
-    value: { plan: "essential", interval: "month", locale: "fr", withdrawalConsent: true },
-  });
   assertEquals(parseStudioSubscriptionInput({ plan: "essential", interval: "month" }), {
     ok: true,
-    value: { plan: "essential", interval: "month", locale: "fr", withdrawalConsent: false },
+    value: { plan: "essential", interval: "month", locale: "fr" },
   });
-  assertEquals(parseStudioSubscriptionInput({ plan: "artist", interval: "year", withdrawal_consent: "true" }), { ok: false, field: "withdrawal_consent" });
-  assertEquals(parseStudioSubscriptionInput({ plan: "artist", interval: "year", withdrawal_consent: 1 }), { ok: false, field: "withdrawal_consent" });
   assertEquals(parseStudioSubscriptionInput({ plan: "gold", interval: "month" }), { ok: false, field: "plan" });
   assertEquals(parseStudioSubscriptionInput({ plan: "artist", interval: "week" }), { ok: false, field: "interval" });
   assertEquals(parseStudioSubscriptionInput({ plan: "artist", interval: "year", price: "price_x" }), { ok: false, field: "price" });
   assertEquals(parseStudioSubscriptionInput({ plan: "artist", interval: "year", amount: 1 }), { ok: false, field: "amount" });
+  // The request is no longer sent with the plan: it is ticked in the payment step.
+  assertEquals(parseStudioSubscriptionInput({ plan: "artist", interval: "year", withdrawal_consent: true }), { ok: false, field: "withdrawal_consent" });
   assertEquals(parseStudioSubscriptionInput([]), { ok: false, field: "body" });
 });
 
-Deno.test("a signed-in member gets a subscription Checkout for the stored price", async () => {
+Deno.test("input: a consent or release request names a Checkout client secret, alone", () => {
+  assertEquals(parseStudioCheckoutRequest({ consent_client_secret: SECRET }), {
+    ok: true,
+    value: { action: "consent", secret: SECRET, sessionId: SESSION_ID },
+  });
+  assertEquals(parseStudioCheckoutRequest({ release_client_secret: SECRET }), {
+    ok: true,
+    value: { action: "release", secret: SECRET, sessionId: SESSION_ID },
+  });
+  assertEquals(parseStudioCheckoutRequest({ consent_client_secret: "pi_123_secret_abcdefghij" }), { ok: false, field: "consent_client_secret" });
+  assertEquals(parseStudioCheckoutRequest({ consent_client_secret: SECRET, plan: "artist" }), { ok: false, field: "body" });
+  assertEquals(parseStudioCheckoutRequest(ARTIST_YEAR), { ok: true, value: { action: "open", input: { ...ARTIST_YEAR } } });
+});
+
+Deno.test("a signed-in member gets a payment step for the stored price, on our own page", async () => {
   const { deps, calls } = fakeDeps();
   const res = await handleStudioCheckout(request(ARTIST_YEAR), deps);
   assertEquals(res.status, 200);
-  const body = await res.json();
-  assertEquals(body, { status: "checkout", url: "https://checkout.stripe.com/c/pay/cs_test_1", amount: 19900, currency: "EUR" });
+  assertEquals(await res.json(), {
+    status: "payment",
+    client_secret: SECRET,
+    publishable_key: "pk_test_studio",
+    amount: 19900,
+    currency: "EUR",
+    expires_at: "2026-10-18T13:00:00.000Z",
+  });
   assertEquals(calls.expired, ["cus_test000001"]);
   assertEquals(calls.sessions.length, 1);
   const session = calls.sessions[0];
   assertEquals(session.priceId, "price_artistYear01");
   assertEquals(session.userId, USER.id);
   assertEquals(session.customerId, "cus_test000001");
-  assertEquals(calls.consents, [USER.id]);
-  assertEquals(session.consentId, "cccccccc-0000-4000-8000-000000000001");
-  assertEquals(session.successUrl, `${SITE}/studio-3d/atelier?subscription=success`);
-  assertEquals(session.cancelUrl, `${SITE}/studio-3d/atelier?subscription=canceled`);
-});
-
-Deno.test("without the immediate-access request the checkout is refused, nothing recorded, Stripe untouched", async () => {
-  for (const body of [
-    { plan: "artist", interval: "year", locale: "en" },
-    { plan: "artist", interval: "year", locale: "en", withdrawal_consent: false },
-  ]) {
-    const { deps, calls } = fakeDeps();
-    const res = await handleStudioCheckout(request(body), deps);
-    assertEquals(res.status, 403);
-    assertEquals((await res.json()).error, "withdrawal_consent_required");
-    assertEquals(calls.consents.length, 0);
-    assertEquals(calls.customers.length, 0);
-    assertEquals(calls.sessions.length, 0);
-  }
-  const { deps, calls } = fakeDeps();
-  const wrongType = await handleStudioCheckout(request({ plan: "artist", interval: "year", withdrawal_consent: "true" }), deps);
-  assertEquals(wrongType.status, 400);
-  assertEquals((await wrongType.json()).field, "withdrawal_consent");
+  assertEquals(session.returnUrl, `${SITE}/studio-3d/atelier?subscription=success`);
+  // Opening the step records nothing: the request is ticked beside the card form.
   assertEquals(calls.consents.length, 0);
 });
 
-Deno.test("the request is recorded only once the account checks pass, and its failure stops the checkout", async () => {
-  const blocked = fakeDeps({ hasBlockingSubscription: () => Promise.resolve(true) });
-  await handleStudioCheckout(request(ARTIST_YEAR), blocked.deps);
-  assertEquals(blocked.calls.consents.length, 0);
+Deno.test("no publishable key: nothing opens", async () => {
+  const { deps, calls } = fakeDeps({ publishableKey: null });
+  const res = await handleStudioCheckout(request(ARTIST_YEAR), deps);
+  assertEquals(res.status, 502);
+  assertEquals((await res.json()).error, "payment_unavailable");
+  assertEquals(calls.customers.length, 0);
+});
 
+Deno.test("the immediate-access request is recorded for the member's own open session, then written to it", async () => {
+  const { deps, calls } = fakeDeps();
+  const res = await handleStudioCheckout(request({ consent_client_secret: SECRET }), deps);
+  assertEquals(res.status, 200);
+  assertEquals(await res.json(), { status: "consented" });
+  assertEquals(calls.consents, [USER.id]);
+  assertEquals(calls.marked, [`${SESSION_ID}:cccccccc-0000-4000-8000-000000000001`]);
+});
+
+Deno.test("another member's, a foreign or a closed session: no request recorded", async () => {
+  const cases: [StudioSessionState | null, number, string][] = [
+    [{ ...OPEN_SESSION, userId: "bbbbbbbb-0000-4000-8000-000000000002" }, 400, "invalid_request"],
+    [{ ...OPEN_SESSION, kind: null }, 400, "invalid_request"],
+    [{ ...OPEN_SESSION, clientSecret: `${SESSION_ID}_secret_other00000` }, 400, "invalid_request"],
+    [null, 400, "invalid_request"],
+    [{ ...OPEN_SESSION, status: "expired" }, 409, "checkout_closed"],
+    [{ ...OPEN_SESSION, status: "complete" }, 409, "checkout_closed"],
+  ];
+  for (const [state, status, error] of cases) {
+    const { deps, calls } = fakeDeps({ retrieveSession: () => Promise.resolve(state) });
+    const res = await handleStudioCheckout(request({ consent_client_secret: SECRET }), deps);
+    assertEquals(res.status, status);
+    assertEquals((await res.json()).error, error);
+    assertEquals(calls.consents.length, 0);
+  }
+});
+
+Deno.test("a request that cannot be recorded stops the payment; the metadata write does not", async () => {
   const failing = fakeDeps({ recordWithdrawalConsent: () => Promise.reject(new Error("insert failed")) });
-  const res = await handleStudioCheckout(request(ARTIST_YEAR), failing.deps);
+  const res = await handleStudioCheckout(request({ consent_client_secret: SECRET }), failing.deps);
   assertEquals(res.status, 500);
   assertEquals((await res.json()).error, "server_error");
-  assertEquals(failing.calls.customers.length, 0);
-  assertEquals(failing.calls.sessions.length, 0);
+
+  const metadata = fakeDeps({ markSessionConsent: () => Promise.reject(new Error("stripe down")) });
+  const ok = await handleStudioCheckout(request({ consent_client_secret: SECRET }), metadata.deps);
+  assertEquals(ok.status, 200);
+  assertEquals(metadata.calls.consents, [USER.id]);
+});
+
+Deno.test("leaving the step expires only the member's own open session", async () => {
+  const own = fakeDeps();
+  const res = await handleStudioCheckout(request({ release_client_secret: SECRET }), own.deps);
+  assertEquals(await res.json(), { status: "released" });
+  assertEquals(own.calls.expiredSessions, [SESSION_ID]);
+
+  const other = fakeDeps({ retrieveSession: () => Promise.resolve({ ...OPEN_SESSION, userId: "bbbbbbbb-0000-4000-8000-000000000002" }) });
+  assertEquals((await handleStudioCheckout(request({ release_client_secret: SECRET }), other.deps)).status, 200);
+  assertEquals(other.calls.expiredSessions.length, 0);
+
+  const complete = fakeDeps({ retrieveSession: () => Promise.resolve({ ...OPEN_SESSION, status: "complete" }) });
+  await handleStudioCheckout(request({ release_client_secret: SECRET }), complete.deps);
+  assertEquals(complete.calls.expiredSessions.length, 0);
 });
 
 Deno.test("return addresses follow an allowed origin, else production", async () => {
   const { deps, calls } = fakeDeps();
   await handleStudioCheckout(request(ARTIST_YEAR, TOKEN, "http://localhost:3000"), deps);
   await handleStudioCheckout(request(ARTIST_YEAR, TOKEN, "https://evil.example"), deps);
-  assert(calls.sessions[0].successUrl.startsWith("http://localhost:3000/"));
-  assert(calls.sessions[1].successUrl.startsWith(`${SITE}/`));
+  assert(calls.sessions[0].returnUrl.startsWith("http://localhost:3000/"));
+  assert(calls.sessions[1].returnUrl.startsWith(`${SITE}/`));
 });
 
 Deno.test("visitors, invalid tokens and the publishable key are refused before anything else", async () => {
@@ -133,6 +192,8 @@ Deno.test("visitors, invalid tokens and the publishable key are refused before a
   assertEquals((await expired.json()).error, "session_expired");
   assertEquals(calls.customers.length, 0);
   assertEquals(calls.sessions.length, 0);
+  assertEquals((await handleStudioCheckout(request({ consent_client_secret: SECRET }, "other.jwt.sig"), deps)).status, 401);
+  assertEquals(calls.consents.length, 0);
 });
 
 Deno.test("one subscription per account: a blocking one is refused without touching Stripe", async () => {
@@ -148,10 +209,10 @@ Deno.test("terms not accepted, unknown price, invalid body", async () => {
   assertEquals((await (await handleStudioCheckout(request(ARTIST_YEAR), terms.deps)).json()).error, "terms_required");
 
   const { deps, calls } = fakeDeps();
-  const missing = await handleStudioCheckout(request({ plan: "essential", interval: "month", withdrawal_consent: true }), deps);
+  const missing = await handleStudioCheckout(request({ plan: "essential", interval: "month" }), deps);
   assertEquals(missing.status, 409);
   assertEquals((await missing.json()).error, "plan_unavailable");
-  const invalid = await handleStudioCheckout(request({ plan: "artist", interval: "year", amount: 1, withdrawal_consent: true }), deps);
+  const invalid = await handleStudioCheckout(request({ plan: "artist", interval: "year", amount: 1 }), deps);
   assertEquals(invalid.status, 400);
   assertEquals(calls.sessions.length, 0);
 });

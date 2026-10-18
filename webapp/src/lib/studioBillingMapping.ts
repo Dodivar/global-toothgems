@@ -16,14 +16,29 @@ export type StudioCheckoutError =
   | "sign_in_required"
   | "session_expired"
   | "terms_required"
-  | "withdrawal_consent_required"
   | "already_subscribed"
   | "plan_unavailable"
+  | "checkout_closed"
   | "payment_unavailable"
   | "network"
   | "server_error";
 
-export type StudioCheckoutAnswer = { kind: "redirect"; url: string } | { kind: "error"; error: StudioCheckoutError };
+/**
+ * A subscription payment step opened on our own page: the Stripe Checkout
+ * Session's client secret mounts the payment form (same form as the shop's).
+ * The amount is the stored plan price, VAT included, in minor units.
+ */
+export interface StudioPayment {
+  clientSecret: string;
+  publishableKey: string;
+  amountMinor: number;
+  currency: string;
+  /** When the session stops accepting a payment (ms since epoch). */
+  expiresAt: number;
+}
+
+export type StudioCheckoutAnswer = { kind: "payment"; payment: StudioPayment } | { kind: "error"; error: StudioCheckoutError };
+export type StudioConsentAnswer = { kind: "consented" } | { kind: "error"; error: StudioCheckoutError };
 export type StudioPortalAnswer = { kind: "redirect"; url: string } | { kind: "error"; error: "no_subscription" | "unavailable" };
 
 const PLANS: readonly StudioPaidPlanId[] = ["essential", "artist", "atelier"];
@@ -32,9 +47,9 @@ const ERRORS: readonly StudioCheckoutError[] = [
   "sign_in_required",
   "session_expired",
   "terms_required",
-  "withdrawal_consent_required",
   "already_subscribed",
   "plan_unavailable",
+  "checkout_closed",
   "payment_unavailable",
   "network",
   "server_error",
@@ -94,14 +109,44 @@ const isHttps = (value: unknown, host: RegExp): value is string => {
   }
 };
 
-/** The function's answer: only a Stripe Checkout address is followed. */
+const errorOf = (record: Record<string, unknown>): StudioCheckoutError =>
+  ERRORS.includes(record.error as StudioCheckoutError) ? (record.error as StudioCheckoutError) : "server_error";
+
+const CLIENT_SECRET_RE = /^cs_(?:test|live)_[A-Za-z0-9]+_secret_[A-Za-z0-9%_.~-]+$/;
+
+/** The function's answer: a payment step only when every part of it is well formed. */
 export function readStudioCheckoutAnswer(body: unknown): StudioCheckoutAnswer {
   const record = (body && typeof body === "object" ? body : {}) as Record<string, unknown>;
-  if (record.status === "checkout") {
-    return isHttps(record.url, /^checkout\.stripe\.com$/) ? { kind: "redirect", url: record.url } : { kind: "error", error: "payment_unavailable" };
-  }
-  const error = ERRORS.includes(record.error as StudioCheckoutError) ? (record.error as StudioCheckoutError) : "server_error";
-  return { kind: "error", error };
+  if (record.status !== "payment") return { kind: "error", error: errorOf(record) };
+  const { client_secret, publishable_key, amount, currency, expires_at } = record;
+  const expiresAt = typeof expires_at === "string" ? Date.parse(expires_at) : Number.NaN;
+  const valid =
+    typeof client_secret === "string" &&
+    CLIENT_SECRET_RE.test(client_secret) &&
+    typeof publishable_key === "string" &&
+    /^pk_(?:test|live)_/.test(publishable_key) &&
+    Number.isSafeInteger(amount) &&
+    (amount as number) > 0 &&
+    typeof currency === "string" &&
+    /^[A-Za-z]{3}$/.test(currency) &&
+    Number.isFinite(expiresAt);
+  if (!valid) return { kind: "error", error: "payment_unavailable" };
+  return {
+    kind: "payment",
+    payment: {
+      clientSecret: client_secret as string,
+      publishableKey: publishable_key as string,
+      amountMinor: amount as number,
+      currency: (currency as string).toUpperCase(),
+      expiresAt,
+    },
+  };
+}
+
+/** The answer to recording the immediate-access request: the payment is confirmed only on `consented`. */
+export function readStudioConsentAnswer(body: unknown): StudioConsentAnswer {
+  const record = (body && typeof body === "object" ? body : {}) as Record<string, unknown>;
+  return record.status === "consented" ? { kind: "consented" } : { kind: "error", error: errorOf(record) };
 }
 
 /** The portal function's answer: only a Stripe billing address is followed. */

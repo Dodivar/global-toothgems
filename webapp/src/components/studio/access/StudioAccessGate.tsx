@@ -52,7 +52,7 @@ export function RequireStudioAccess({ children }: { children: ReactNode }) {
   }
   if (access.granted) return <SessionTracker>{children}</SessionTracker>;
   if (status.info.state === "not_started") return <TrialOfferScreen />;
-  return <LockedScreen state={status.info.state} canceled={checkoutReturn.canceled} />;
+  return <LockedScreen state={status.info.state} />;
 }
 
 /* -------------------------------------------------------------------------- */
@@ -62,13 +62,14 @@ const ACTIVATION_POLL_MS = 3000;
 const ACTIVATION_PATIENCE_MS = 60_000;
 
 /**
- * Back from Stripe (`?subscription=success|canceled`, decision 94). The address
- * says nothing the page trusts: on `success` the access is re-read every few
+ * After paying (`?subscription=success`, decision 94): the payment step on our
+ * page sends the member here once Stripe confirmed, and so does Stripe's
+ * `return_url` after a payment that had to leave the page (3-D Secure). The
+ * address says nothing the page trusts: the access is re-read every few
  * seconds until the database — written only by the verified webhook — says
  * the account is subscribed; only then the Studio opens, the welcome shows and
  * `studio_subscription_completed` is reported (once per subscription period
- * and browser). On `canceled` the plans stay, with a word that nothing was
- * charged. The query is removed from the address either way.
+ * and browser). The query is removed from the address.
  */
 function useCheckoutReturn() {
   const access = useStudioAccess();
@@ -77,27 +78,16 @@ function useCheckoutReturn() {
   const { userId } = useAuth();
   const [params, setParams] = useSearchParams();
   const flag = params.get("subscription");
-  const [mode, setMode] = useState<"awaiting" | "canceled" | null>(null);
+  const [mode, setMode] = useState<"awaiting" | null>(null);
   const [slow, setSlow] = useState(false);
   const info = access?.status.kind === "ready" ? access.status.info : null;
   const subscribed = info?.state === "subscribed";
   const refresh = access?.refresh;
 
   useEffect(() => {
-    if (flag !== "success" && flag !== "canceled") return;
-    if (flag === "canceled") {
-      const pending = readPendingCheckout();
-      trackStudio("studio_checkout_canceled", {
-        plan_id: pending?.plan ?? null,
-        interval: pending?.interval ?? null,
-        surface: pending?.surface ?? null,
-      });
-      clearPendingCheckout();
-      setMode("canceled");
-    } else {
-      setSlow(false);
-      setMode("awaiting");
-    }
+    if (flag !== "success") return;
+    setSlow(false);
+    setMode("awaiting");
     setParams(
       (current) => {
         current.delete("subscription");
@@ -145,7 +135,6 @@ function useCheckoutReturn() {
   return {
     activating: mode === "awaiting" && !subscribed && info?.state !== "staff",
     slow,
-    canceled: mode === "canceled",
     dismiss: () => setMode(null),
   };
 }
@@ -356,7 +345,7 @@ function ErrorScreen({ onRetry }: { onRetry: () => void }) {
 
 /* -------------------------------------------------------------------------- */
 
-function LockedScreen({ state, canceled }: { state: StudioAccessKind; canceled: boolean }) {
+function LockedScreen({ state }: { state: StudioAccessKind }) {
   const { t } = useTranslation();
   const access = useStudioAccess()!;
   const navigate = useNavigate();
@@ -410,12 +399,6 @@ function LockedScreen({ state, canceled }: { state: StudioAccessKind; canceled: 
           <h2 id="studio-locked-plans" className="text-center text-[length:var(--text-h3)]">
             {t("studio.access.locked.plansTitle")}
           </h2>
-          {canceled && (
-            <p role="status" className="mx-auto m-0 inline-flex max-w-[680px] items-start gap-2 rounded-[var(--radius-lg)] border border-[var(--gt-blue-300)] bg-[var(--gt-blue-50)] px-4 py-3 text-[length:var(--text-body-sm)] text-[var(--text-primary)]">
-              <Info size={15} aria-hidden="true" className="mt-0.5 flex-none text-[var(--gt-blue-700)]" />
-              {t("studio.access.checkout.canceled")}
-            </p>
-          )}
           <StudioCheckoutPlans surface="studio_locked" />
           <p className="m-0 text-center text-[length:var(--text-caption)] text-[var(--text-muted)]">{t("studio.access.locked.pricesNote")}</p>
         </section>

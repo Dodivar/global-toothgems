@@ -159,9 +159,9 @@
         "sign_in_required": "Votre session a expiré. Reconnectez-vous puis réessayez.",
         "session_expired": "Votre session a expiré. Reconnectez-vous puis réessayez.",
         "terms_required": "Avant de vous abonner, acceptez les conditions générales.",
-        "withdrawal_consent_required": "Pour vous abonner, cochez la demande d’accès immédiat au-dessus des formules.",
         "already_subscribed": "Vous avez déjà un abonnement au Studio. Vous pouvez le gérer depuis votre compte.",
         "plan_unavailable": "Cette formule n’est pas disponible pour le moment. Choisissez-en une autre ou réessayez plus tard.",
+        "checkout_closed": "Ce paiement a expiré ou est déjà terminé. Rien n’a été débité : rouvrez le paiement pour continuer.",
         "payment_unavailable": "Le paiement en ligne est momentanément indisponible. Rien n’a été débité : réessayez dans quelques minutes.",
         "network": "Connexion impossible. Vérifiez votre réseau, puis réessayez.",
         "server_error": "Une erreur est survenue. Rien n’a été débité : réessayez."
@@ -169,10 +169,27 @@
       "manage": "Gérer mon abonnement",
       "consent": {
         "label": "Je demande l’accès immédiat au Studio 3D et je reconnais que, si j’exerce mon droit de rétractation dans les 14 jours, je paierai la part de l’abonnement correspondant à la période déjà utilisée.",
-        "required": "Cochez cette case pour choisir une formule."
+        "required": "Cochez cette case pour payer et ouvrir votre accès."
       },
-      "termsCta": "Accepter et continuer",
-      "canceled": "Paiement annulé : rien n’a été débité. Vous pouvez choisir une formule quand vous le souhaitez."
+      "termsCta": "Accepter et continuer"
+    },
+    "payment": {
+      "back": "Changer de formule",
+      "title": "Finaliser votre abonnement",
+      "intro": "Saisissez votre moyen de paiement ici même : vos données bancaires sont chiffrées et transmises directement à notre prestataire de paiement, elles ne sont jamais stockées par Global Toothgems.",
+      "summaryTitle": "Votre abonnement",
+      "planName": "Studio 3D · {{plan}}",
+      "billing": "Facturation",
+      "dueToday": "À payer aujourd’hui",
+      "renewsMonthly": "Renouvelé automatiquement chaque mois ({{amount}}), jusqu’à résiliation.",
+      "renewsYearly": "Renouvelé automatiquement chaque année ({{amount}}), jusqu’à résiliation.",
+      "points": {
+        "access": "Accès complet au Studio dès le paiement confirmé",
+        "cancel": "Résiliable à tout moment depuis votre compte : l’abonnement prend fin à la fin de la période payée",
+        "withdraw": "Rétractation possible dans les 14 jours depuis votre compte"
+      },
+      "consentTitle": "Droit de rétractation",
+      "pay": "Payer {{amount}} et m’abonner"
     },
     "activating": {
       "title": "Nous activons votre abonnement",

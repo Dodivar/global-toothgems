@@ -159,9 +159,9 @@
         "sign_in_required": "Your session has expired. Sign in again, then try once more.",
         "session_expired": "Your session has expired. Sign in again, then try once more.",
         "terms_required": "Before subscribing, please accept the terms and conditions.",
-        "withdrawal_consent_required": "To subscribe, tick the request for immediate access above the plans.",
         "already_subscribed": "You already have a Studio subscription. You can manage it from your account.",
         "plan_unavailable": "This plan is not available right now. Choose another one or try again later.",
+        "checkout_closed": "This payment has expired or is already complete. Nothing was charged: open the payment again to continue.",
         "payment_unavailable": "Online payment is temporarily unavailable. Nothing was charged: try again in a few minutes.",
         "network": "We could not connect. Check your network, then try again.",
         "server_error": "Something went wrong. Nothing was charged: please try again."
@@ -169,10 +169,27 @@
       "manage": "Manage my subscription",
       "consent": {
         "label": "I ask for immediate access to the 3D Studio and I acknowledge that, if I exercise my right of withdrawal within 14 days, I will pay the share of the subscription for the period already used.",
-        "required": "Tick this box to choose a plan."
+        "required": "Tick this box to pay and open your access."
       },
-      "termsCta": "Accept and continue",
-      "canceled": "Payment cancelled: nothing was charged. You can choose a plan whenever you like."
+      "termsCta": "Accept and continue"
+    },
+    "payment": {
+      "back": "Change plan",
+      "title": "Complete your subscription",
+      "intro": "Enter your payment method right here: your card details are encrypted and sent straight to our payment provider; Global Toothgems never stores them.",
+      "summaryTitle": "Your subscription",
+      "planName": "3D Studio · {{plan}}",
+      "billing": "Billing",
+      "dueToday": "Due today",
+      "renewsMonthly": "Renews automatically every month ({{amount}}) until cancelled.",
+      "renewsYearly": "Renews automatically every year ({{amount}}) until cancelled.",
+      "points": {
+        "access": "Full Studio access as soon as the payment is confirmed",
+        "cancel": "Cancel at any time from your account: the subscription ends at the close of the paid period",
+        "withdraw": "Withdraw within 14 days from your account"
+      },
+      "consentTitle": "Right of withdrawal",
+      "pay": "Pay {{amount}} and subscribe"
     },
     "activating": {
       "title": "We are activating your subscription",
