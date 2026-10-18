@@ -57,6 +57,63 @@ const LABELS = {
   },
 } as const;
 
+/** A withdrawal acknowledged (decision 95): what was paid, kept for the days used, refunded. */
+export interface StudioWithdrawalMail {
+  plan: StudioPlan;
+  requestedAt: string;
+  usedDays: number;
+  periodDays: number;
+  /** Decimal major units, as Postgres returns them. */
+  paidAmount: number;
+  usedAmount: number;
+  refundAmount: number;
+  currency: string;
+}
+
+const WITHDRAWAL_LABELS = {
+  fr: {
+    title: "Votre remboursement",
+    date: "Rétractation reçue le",
+    paid: "Payé à la souscription",
+    used: (days: number, total: number) => `Jours utilisés (${days} sur ${total})`,
+    refund: "Remboursé",
+    noRefund: "Aucun montant n’est à rembourser : la période payée a été entièrement utilisée.",
+    account: "Mon espace Studio",
+  },
+  en: {
+    title: "Your refund",
+    date: "Withdrawal received on",
+    paid: "Paid when subscribing",
+    used: (days: number, total: number) => `Days used (${days} of ${total})`,
+    refund: "Refunded",
+    noRefund: "Nothing is left to refund: the paid period was fully used.",
+    account: "My Studio page",
+  },
+} as const;
+
+export function studioWithdrawalContent(mail: StudioWithdrawalMail, locale: string, siteUrl: string): EmailContent {
+  const lang = chromeLocale(locale);
+  const l = WITHDRAWAL_LABELS[lang];
+  const money = (amount: number) => formatAmount(amount, mail.currency, lang);
+  const blocks: Block[] = [
+    details({
+      title: l.title,
+      rows: [
+        { label: l.date, value: dateOf(mail.requestedAt, lang) },
+        { label: l.paid, value: money(mail.paidAmount) },
+        { label: l.used(mail.usedDays, mail.periodDays), value: `− ${money(mail.usedAmount)}` },
+        { label: l.refund, value: money(mail.refundAmount) },
+      ],
+    }),
+  ];
+  if (mail.refundAmount === 0) blocks.push(notice({ tone: "info", title: l.noRefund }));
+  return {
+    eyebrow: LABELS[lang].eyebrow,
+    primaryAction: { label: l.account, url: `${siteUrl.replace(/\/+$/, "")}/compte/studio` },
+    blocks,
+  };
+}
+
 export const studioPlanName = (plan: StudioPlan, locale: string) => PLAN_NAMES[chromeLocale(locale)][plan];
 
 /**

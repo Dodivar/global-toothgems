@@ -11,7 +11,9 @@ import {
   sendRefundEmails,
   sendShippingEmails,
   sendStudioSubscriptionEmails,
+  sendStudioWithdrawalEmails,
   type PendingStudioSubscription,
+  type PendingStudioWithdrawal,
   trackingLinkFor,
 } from "./events.ts";
 import type { Claim, EmailDeps, EmailStore } from "./send.ts";
@@ -88,6 +90,7 @@ function source(over: Partial<PendingSource> = {}): PendingSource {
     refunds: () => Promise.resolve([]),
     backInStock: () => Promise.resolve([]),
     studioSubscriptions: () => Promise.resolve([]),
+    studioWithdrawals: () => Promise.resolve([]),
     ...over,
   };
 }
@@ -321,4 +324,37 @@ Deno.test("studio subscription: an unknown wording version is never quoted as ac
   await sendStudioSubscriptionEmails(deps, source({ studioSubscriptions: () => Promise.resolve([studioSub({ consentVersion: "other" })]) }));
   const [mail] = seen.requests as { text: string }[];
   assertEquals(mail.text.includes("période déjà utilisée"), false);
+});
+
+const withdrawal = (over: Partial<PendingStudioWithdrawal> = {}): PendingStudioWithdrawal => ({
+  withdrawalId: "w-1",
+  email: "member@example.com",
+  locale: "fr",
+  plan: "artist",
+  requestedAt: "2026-10-21T09:00:00Z",
+  usedDays: 3,
+  periodDays: 30,
+  paidAmount: 19.9,
+  usedAmount: 1.99,
+  refundAmount: 17.91,
+  currency: "EUR",
+  ...over,
+});
+
+Deno.test("studio withdrawal: one acknowledgement per withdrawal, with the refund worked out", async () => {
+  const { deps, seen } = setup();
+  const report = await sendStudioWithdrawalEmails(
+    deps,
+    source({ studioWithdrawals: () => Promise.resolve([withdrawal(), withdrawal({ withdrawalId: "w-2", locale: "en" })]) }),
+  );
+  assertEquals(report.sent, 2);
+  assertEquals(seen.claims.map((c) => [c.eventKey, c.templateKey]), [
+    ["studio_withdrawal:w-1", "studio_withdrawal_confirmation"],
+    ["studio_withdrawal:w-2", "studio_withdrawal_confirmation"],
+  ]);
+  const [fr, en] = seen.requests as { text: string }[];
+  assertEquals(fr.text.includes("Jours utilisés (3 sur 30)"), true);
+  assertEquals(fr.text.includes("17,91"), true);
+  assertEquals(en.text.includes("Days used (3 of 30)"), true);
+  assertEquals(en.text.includes(`${SITE}/compte/studio`), true);
 });

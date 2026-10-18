@@ -127,6 +127,16 @@ const deps: WebhookDeps = {
     if (error) throw dbError(error);
   },
 
+  async settleStudioWithdrawal({ withdrawalId, providerRefundId, status, reason }) {
+    const { error } = await supabase.rpc("settle_studio_withdrawal_refund", {
+      p_withdrawal_id: withdrawalId,
+      p_stripe_refund_id: providerRefundId,
+      p_status: status,
+      p_reason: reason,
+    });
+    if (error) throw dbError(error);
+  },
+
   async recordExternalRefund({ paymentIntentId, providerRefundId, amount, currency }) {
     const { error } = await supabase.rpc("record_external_refund", {
       p_provider_payment_id: paymentIntentId,

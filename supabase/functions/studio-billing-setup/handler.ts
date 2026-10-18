@@ -22,8 +22,13 @@ import { STUDIO_INTERVALS, STUDIO_PLANS, type StudioInterval, type StudioPlan } 
  *   { action: "smoke_subscribe", user_id, plan, interval }  → a real test-mode
  *     subscription created on Stripe; access comes only from the webhook it triggers
  *   { action: "smoke_cancel", subscription_id, at_period_end }  → cancels it
- *   { action: "webhook_events" }  → adds the subscription events to the
- *     test-mode endpoint of `stripe-webhook` (asked by the owner, 2026-10-18)
+ *   { action: "smoke_withdraw", user_id }  → withdraws that account's running
+ *     subscription exactly as `studio-withdraw` does (decision 95): cancel,
+ *     pro-rata refund; the refund is confirmed only by the webhook
+ *   { action: "webhook_status" }  → reads the events the test-mode endpoint of
+ *     `stripe-webhook` receives (changes nothing)
+ *   { action: "webhook_events" }  → adds the subscription and refund events to
+ *     that endpoint (asked by the owner, 2026-10-18)
  *
  * TEST MODE ONLY: refused when the Stripe key is not `sk_test_…` (live prices
  * are the owner's call, at launch). Running it twice changes nothing.
@@ -53,6 +58,8 @@ export interface SetupDeps {
   smokeCancel(args: { subscriptionId: string; atPeriodEnd: boolean }): Promise<{ status: string; cancelAtPeriodEnd: boolean }>;
   /** Adds the subscription events to the test-mode endpoint of `stripe-webhook`, keeping its other events. */
   subscribeWebhookEvents(): Promise<{ endpoint: string; events: string[] }>;
+  webhookStatus(): Promise<{ endpoint: string; events: string[] }>;
+  smokeWithdraw(userId: string): Promise<Record<string, unknown>>;
   log(message: string, detail?: unknown): void;
 }
 
@@ -90,7 +97,17 @@ export async function handleSetup(req: Request, deps: SetupDeps): Promise<Respon
     body = null;
   }
   const action = body && typeof body === "object" ? (body as Record<string, unknown>).action : undefined;
-  if (action === "smoke_subscribe" || action === "smoke_cancel") return smoke(body as Record<string, unknown>, deps);
+  if (action === "smoke_subscribe" || action === "smoke_cancel" || action === "smoke_withdraw") {
+    return smoke(body as Record<string, unknown>, deps);
+  }
+  if (action === "webhook_status") {
+    try {
+      return json({ result: "ok", ...(await deps.webhookStatus()) }, 200);
+    } catch (error) {
+      deps.log("webhook status not read", error instanceof Error ? error.message : error);
+      return json({ error: "webhook_failed", message: error instanceof Error ? error.message.slice(0, 300) : "unknown" }, 500);
+    }
+  }
   if (action === "webhook_events") {
     try {
       return json({ result: "ok", ...(await deps.subscribeWebhookEvents()) }, 200);
@@ -136,6 +153,11 @@ async function smoke(body: Record<string, unknown>, deps: SetupDeps): Promise<Re
       if (!(STUDIO_INTERVALS as readonly unknown[]).includes(interval)) return json({ error: "invalid_request", field: "interval" }, 400);
       const result = await deps.smokeSubscribe({ userId: user_id.toLowerCase(), plan: plan as StudioPlan, interval: interval as StudioInterval });
       return json({ result: "ok", ...result }, 200);
+    }
+    if (body.action === "smoke_withdraw") {
+      const { user_id } = body;
+      if (typeof user_id !== "string" || !UUID_RE.test(user_id)) return json({ error: "invalid_request", field: "user_id" }, 400);
+      return json({ result: "ok", ...(await deps.smokeWithdraw(user_id.toLowerCase())) }, 200);
     }
     const { subscription_id, at_period_end } = body;
     if (typeof subscription_id !== "string" || !/^sub_[A-Za-z0-9]{6,250}$/.test(subscription_id)) {

@@ -1,7 +1,8 @@
 /**
  * Business e-mails driven by rows in the database rather than by a request:
  * shipping, course enrolment and refund (decision 79), back in stock (decision 90),
- * 3D Studio subscription confirmation (decision 94 (a)).
+ * 3D Studio subscription confirmation (decision 94 (a)) and withdrawal
+ * acknowledgement (decision 95).
  *
  * The `send-pending-emails` Edge Function runs `sendPendingEmails()` from
  * pg_cron every few minutes; the payment hook (`notifyOrderPaid`) runs
@@ -13,6 +14,7 @@
  * in email_log, keyed:
  *   shipping:<shipment id>   course_enrolment:<entitlement id>   refund:<refund id>
  *   back_in_stock:<request id>   studio_subscription:<subscription id>
+ *   studio_withdrawal:<withdrawal id>
  * One row never stops the others, and nothing here throws for a failed e-mail.
  */
 import type { SupabaseClient } from "npm:@supabase/supabase-js@2.57.4";
@@ -21,7 +23,13 @@ import { type AttachedDocument, type InvoiceSource, refundCreditNote } from "./i
 import { refundContent, shippingContent } from "./orderContent.ts";
 import { type EmailDeps, type SendResult, sendTemplatedEmail } from "./send.ts";
 import { backInStockContent, type RestockedProduct, restockedItemName } from "./stockContent.ts";
-import { type StudioSubscriptionMail, studioPlanName, studioSubscriptionContent } from "./studioContent.ts";
+import {
+  type StudioSubscriptionMail,
+  type StudioWithdrawalMail,
+  studioPlanName,
+  studioSubscriptionContent,
+  studioWithdrawalContent,
+} from "./studioContent.ts";
 import { STUDIO_INTERVALS, STUDIO_PLANS, type StudioInterval, type StudioPlan } from "../studioBilling.ts";
 
 type Log = (message: string, detail?: unknown) => void;
@@ -64,12 +72,20 @@ export interface PendingStudioSubscription extends StudioSubscriptionMail {
   locale: string;
 }
 
+/** A Studio withdrawal Stripe has (refund sent, or none due), to acknowledge. */
+export interface PendingStudioWithdrawal extends StudioWithdrawalMail {
+  withdrawalId: string;
+  email: string;
+  locale: string;
+}
+
 export interface PendingSource {
   shipping(limit: number): Promise<PendingShipping[]>;
   courseEnrolments(options: { orderId?: string; limit: number }): Promise<PendingEnrolment[]>;
   refunds(limit: number): Promise<PendingRefund[]>;
   backInStock(limit: number): Promise<PendingBackInStock[]>;
   studioSubscriptions(limit: number): Promise<PendingStudioSubscription[]>;
+  studioWithdrawals(limit: number): Promise<PendingStudioWithdrawal[]>;
 }
 
 export interface EventReport {
@@ -91,6 +107,7 @@ export interface SweepReport {
   refund: EventReport;
   backInStock: EventReport;
   studioSubscription: EventReport;
+  studioWithdrawal: EventReport;
 }
 
 const SENT_OR_DONE = new Set(["sent", "delivered", "opened", "bounced", "complained"]);
@@ -279,7 +296,31 @@ export function sendStudioSubscriptionEmails(
   );
 }
 
-/** The five sweeps; one failing (a database error, say) does not prevent the others. */
+/**
+ * One acknowledgement per Studio withdrawal (L221-21: on a durable medium,
+ * without delay): sent by `studio-withdraw` right after the request, else by
+ * the sweep.
+ */
+export function sendStudioWithdrawalEmails(
+  deps: EmailDeps,
+  source: PendingSource,
+  options: { limit?: number; log?: Log } = {},
+): Promise<EventReport> {
+  const log = options.log ?? (() => {});
+  return source.studioWithdrawals(options.limit ?? 25).then((rows) =>
+    sendEach(rows, "studio withdrawal", (r) => r.withdrawalId, (withdrawal) =>
+      sendTemplatedEmail(deps, {
+        templateKey: "studio_withdrawal_confirmation",
+        to: withdrawal.email,
+        locale: withdrawal.locale,
+        variables: { plan_name: studioPlanName(withdrawal.plan, withdrawal.locale) },
+        eventKey: `studio_withdrawal:${withdrawal.withdrawalId}`,
+        content: (locale) => studioWithdrawalContent(withdrawal, locale, deps.layout.siteUrl),
+      }), log)
+  );
+}
+
+/** The sweeps; one failing (a database error, say) does not prevent the others. */
 export async function sendPendingEmails(
   deps: EmailDeps,
   source: PendingSource,
@@ -300,6 +341,7 @@ export async function sendPendingEmails(
     refund: await guard("refund", () => sendRefundEmails(deps, source, { ...options, log })),
     backInStock: await guard("back in stock", () => sendBackInStockEmails(deps, source, { ...options, log })),
     studioSubscription: await guard("studio subscription", () => sendStudioSubscriptionEmails(deps, source, { ...options, log })),
+    studioWithdrawal: await guard("studio withdrawal", () => sendStudioWithdrawalEmails(deps, source, { ...options, log })),
   };
 }
 
@@ -393,6 +435,36 @@ export function supabasePendingSource(db: SupabaseClient): PendingSource {
           currency: row.currency,
           consentVersion: row.consent_version,
           consentedAt: row.consented_at,
+        }));
+    },
+    async studioWithdrawals(limit) {
+      const rows = await rpc<{
+        withdrawal_id: string;
+        email: string;
+        locale: string;
+        plan: string;
+        requested_at: string;
+        used_days: number;
+        period_days: number;
+        paid_amount: number | string;
+        used_amount: number | string;
+        refund_amount: number | string;
+        currency: string;
+      }>("pending_studio_withdrawal_emails", { p_limit: limit });
+      return rows
+        .filter((row) => (STUDIO_PLANS as readonly string[]).includes(row.plan))
+        .map((row) => ({
+          withdrawalId: row.withdrawal_id,
+          email: row.email,
+          locale: row.locale,
+          plan: row.plan as StudioPlan,
+          requestedAt: row.requested_at,
+          usedDays: row.used_days,
+          periodDays: row.period_days,
+          paidAmount: Number(row.paid_amount),
+          usedAmount: Number(row.used_amount),
+          refundAmount: Number(row.refund_amount),
+          currency: row.currency,
         }));
     },
   };

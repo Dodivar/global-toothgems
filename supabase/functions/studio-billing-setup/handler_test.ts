@@ -23,6 +23,8 @@ function fakeDeps(overrides: Partial<SetupDeps> = {}) {
     smokeSubscribe: () => Promise.resolve({ subscriptionId: "sub_smoke00001", status: "active" }),
     smokeCancel: () => Promise.resolve({ status: "active", cancelAtPeriodEnd: true }),
     subscribeWebhookEvents: () => Promise.resolve({ endpoint: "we_1", events: ["invoice.paid"] }),
+    webhookStatus: () => Promise.resolve({ endpoint: "we_1", events: ["invoice.paid"] }),
+    smokeWithdraw: () => Promise.resolve({ outcome: { kind: "refused", refusal: "no_subscription" } }),
     recordPrice: (args) => {
       calls.recorded.push(args);
       return Promise.resolve();

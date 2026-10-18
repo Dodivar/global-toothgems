@@ -2,7 +2,7 @@ import { assertEquals } from "jsr:@std/assert@1";
 import { handleSendPendingEmails, type SweepDeps } from "./handler.ts";
 
 const ZERO = { examined: 0, sent: 0, inFlight: 0, gaveUp: 0, failed: 0, skipped: 0 };
-const REPORT = { shipping: { ...ZERO, examined: 1, sent: 1 }, courseEnrolment: ZERO, refund: ZERO, backInStock: ZERO, studioSubscription: ZERO };
+const REPORT = { shipping: { ...ZERO, examined: 1, sent: 1 }, courseEnrolment: ZERO, refund: ZERO, backInStock: ZERO, studioSubscription: ZERO, studioWithdrawal: ZERO };
 
 function makeDeps(overrides: Partial<SweepDeps> = {}) {
   const calls: number[] = [];

@@ -2,6 +2,9 @@ import { requireEnv, serviceClient, stripeClient, type Stripe } from "../_shared
 import { hasInternalSecret } from "../_shared/internalAuth.ts";
 import { accountStudioUrl, STUDIO_METADATA_KIND, STUDIO_SUBSCRIPTION_EVENTS } from "../_shared/studioBilling.ts";
 import { toDecimalString } from "../_shared/money.ts";
+import { HANDLED_REFUND_EVENTS } from "../stripe-webhook/handler.ts";
+import { withdrawFromStudio } from "../_shared/studioWithdrawal.ts";
+import { liveWithdrawalDeps } from "../_shared/studioWithdrawalLive.ts";
 import { handleSetup, type SetupDeps } from "./handler.ts";
 
 /*
@@ -15,6 +18,14 @@ const stripe = stripeClient();
 const site = requireEnv("SITE_URL");
 
 const PRODUCT_NAMES = { essential: "Essential", artist: "Artist", atelier: "Atelier" } as const;
+
+async function testEndpoint() {
+  const url = `${requireEnv("SUPABASE_URL").replace(/\/+$/, "")}/functions/v1/stripe-webhook`;
+  const list = await stripe.webhookEndpoints.list({ limit: 100 });
+  const endpoint = list.data.find((e) => e.url === url && !e.livemode);
+  if (!endpoint) throw new Error(`no test-mode endpoint for ${url}`);
+  return endpoint;
+}
 
 const deps: SetupDeps = {
   authorized: (req) => hasInternalSecret(req, Deno.env.get("EMAIL_INTERNAL_SECRET")),
@@ -164,12 +175,19 @@ const deps: SetupDeps = {
     return { status: sub.status, cancelAtPeriodEnd: sub.cancel_at_period_end };
   },
 
+  async webhookStatus() {
+    const endpoint = await testEndpoint();
+    return { endpoint: endpoint.id, events: endpoint.enabled_events };
+  },
+
+  async smokeWithdraw(userId) {
+    const log = (message: string, detail?: unknown) => console.error(`[studio-billing-setup] withdraw: ${message}`, detail ?? "");
+    return { outcome: await withdrawFromStudio(userId, liveWithdrawalDeps(supabase, stripe, log)) };
+  },
+
   async subscribeWebhookEvents() {
-    const url = `${requireEnv("SUPABASE_URL").replace(/\/+$/, "")}/functions/v1/stripe-webhook`;
-    const list = await stripe.webhookEndpoints.list({ limit: 100 });
-    const endpoint = list.data.find((e) => e.url === url && !e.livemode);
-    if (!endpoint) throw new Error(`no test-mode endpoint for ${url}`);
-    const events = [...new Set([...endpoint.enabled_events, ...STUDIO_SUBSCRIPTION_EVENTS])];
+    const endpoint = await testEndpoint();
+    const events = [...new Set([...endpoint.enabled_events, ...STUDIO_SUBSCRIPTION_EVENTS, ...HANDLED_REFUND_EVENTS])];
     if (events.includes("*")) return { endpoint: endpoint.id, events: ["*"] };
     const updated = await stripe.webhookEndpoints.update(endpoint.id, {
       enabled_events: events as Stripe.WebhookEndpointUpdateParams.EnabledEvent[],

@@ -1,4 +1,5 @@
 import { toDecimalString } from "../_shared/money.ts";
+import { STUDIO_WITHDRAWAL_KIND } from "../_shared/studioWithdrawal.ts";
 import {
   applySubscriptionEvent,
   subscriptionTarget,
@@ -23,7 +24,9 @@ import {
  *        (found by metadata.refund_id, else by the Stripe refund id), or, for a refund
  *        made in the Stripe dashboard (no row), record_external_refund() by payment intent
  *      failed / canceled -> mark_refund_failed(); pending / requires_action -> nothing yet
- *      then the refund e-mail sweep runs (`refundConfirmed`), never failing the event
+ *      then the refund e-mail sweep runs (`refundConfirmed`), never failing the event;
+ *      a refund with metadata kind = studio_withdrawal (decision 95) settles that
+ *      withdrawal instead (settle_studio_withdrawal_refund), never an order
  *   3c. 3D Studio subscriptions (`subscriptions.ts`): customer.subscription.*,
  *      invoice.paid / invoice.payment_failed and a subscription-mode
  *      checkout.session.completed → the subscription is read back from Stripe and
@@ -119,6 +122,8 @@ export interface WebhookDeps {
    * `orderPaid`: idempotent, never throws.
    */
   refundConfirmed?(): Promise<void>;
+  /** A Studio withdrawal's refund (decision 95): `settle_studio_withdrawal_refund()`. */
+  settleStudioWithdrawal?(args: { withdrawalId: string; providerRefundId: string; status: string; reason: string | null }): Promise<void>;
   /** The 3D Studio subscription writers (decision 94); without them subscription events are ignored. */
   studio?: Omit<SubscriptionDeps, "log">;
   log(message: string, detail?: unknown): void;
@@ -174,6 +179,17 @@ function paymentIntentId(session: CheckoutSessionObject): string | null {
 }
 
 async function applyRefundEvent(refund: RefundObject, deps: WebhookDeps) {
+  if (refund.metadata?.kind === STUDIO_WITHDRAWAL_KIND) {
+    const withdrawalId = uuidOf(refund.metadata.withdrawal_id);
+    if (!withdrawalId || !deps.settleStudioWithdrawal) return "ignored" as const;
+    await deps.settleStudioWithdrawal({
+      withdrawalId,
+      providerRefundId: refund.id,
+      status: refund.status ?? "pending",
+      reason: refund.failure_reason ?? null,
+    });
+    return "processed" as const;
+  }
   const requestedId = uuidOf(refund.metadata?.refund_id);
   switch (refund.status) {
     case "succeeded": {
