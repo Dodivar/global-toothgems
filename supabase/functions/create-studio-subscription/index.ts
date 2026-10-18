@@ -1,7 +1,12 @@
 import { requireEnv, serviceClient, stripeClient } from "../_shared/clients.ts";
 import { readSiteOrigins } from "../_shared/http.ts";
 import { toMinorUnits } from "../_shared/money.ts";
-import { BLOCKING_STATUSES, STUDIO_METADATA_KIND } from "../_shared/studioBilling.ts";
+import {
+  BLOCKING_STATUSES,
+  STUDIO_CONSENT_PURPOSE,
+  STUDIO_METADATA_KIND,
+  STUDIO_WITHDRAWAL_CONSENT,
+} from "../_shared/studioBilling.ts";
 import { handleStudioCheckout, type StudioCheckoutDeps } from "./handler.ts";
 
 /*
@@ -13,9 +18,10 @@ const supabase = serviceClient();
 const stripe = stripeClient();
 const origins = readSiteOrigins(requireEnv("SITE_URL"), Deno.env.get("ALLOWED_RETURN_ORIGINS"));
 
+// Shown above Stripe's pay button: the request the member ticked on our page, then how to cancel.
 const SUBMIT_TEXT = {
-  fr: "Votre abonnement au Studio 3D commence dès le paiement. Vous pouvez le résilier à tout moment depuis votre compte : il prend fin à la fin de la période payée.",
-  en: "Your 3D Studio subscription starts as soon as you pay. You can cancel it at any time from your account: it ends at the close of the paid period.",
+  fr: `${STUDIO_WITHDRAWAL_CONSENT.text.fr} Vous pouvez résilier à tout moment depuis votre compte : l’abonnement prend fin à la fin de la période payée.`,
+  en: `${STUDIO_WITHDRAWAL_CONSENT.text.en} You can cancel at any time from your account: the subscription ends at the close of the paid period.`,
 } as const;
 
 async function storedCustomer(userId: string): Promise<string | null> {
@@ -67,6 +73,22 @@ const deps: StudioCheckoutDeps = {
     return data ? { stripePriceId: data.stripe_price_id, amountMinor: toMinorUnits(data.amount), currency: data.currency } : null;
   },
 
+  async recordWithdrawalConsent(userId) {
+    const { data, error } = await supabase
+      .from("consent_records")
+      .insert({
+        user_id: userId,
+        purpose: STUDIO_CONSENT_PURPOSE,
+        granted: true,
+        policy_version: STUDIO_WITHDRAWAL_CONSENT.version,
+        source: "checkout",
+      })
+      .select("id")
+      .single();
+    if (error) throw new Error(error.message);
+    return data.id;
+  },
+
   async ensureCustomer(userId, email) {
     const known = await storedCustomer(userId);
     if (known) return known;
@@ -96,7 +118,14 @@ const deps: StudioCheckoutDeps = {
   },
 
   async createSession(params) {
-    const metadata = { kind: STUDIO_METADATA_KIND, user_id: params.userId, plan: params.plan, interval: params.interval };
+    const metadata = {
+      kind: STUDIO_METADATA_KIND,
+      user_id: params.userId,
+      plan: params.plan,
+      interval: params.interval,
+      withdrawal_consent_id: params.consentId,
+      withdrawal_consent_version: STUDIO_WITHDRAWAL_CONSENT.version,
+    };
     const session = await stripe.checkout.sessions.create({
       mode: "subscription",
       customer: params.customerId,

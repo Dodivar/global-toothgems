@@ -11,15 +11,21 @@ import {
 } from "../_shared/studioBilling.ts";
 
 /**
- * POST /functions/v1/create-studio-subscription   { plan, interval, locale }
+ * POST /functions/v1/create-studio-subscription   { plan, interval, locale, withdrawal_consent }
  *
  *   1. signed-in members only (their Supabase access token); the plan and the
- *      interval are validated strictly — no price id or amount is accepted
+ *      interval are validated strictly — no price id or amount is accepted;
+ *      `withdrawal_consent: true` (the member asks for immediate access and
+ *      acknowledges the cost of a withdrawal, L221-25) is required, else
+ *      `withdrawal_consent_required`
  *   2. one subscription per account: a live one (or one whose payment needs
  *      fixing) is answered `already_subscribed` (the customer portal manages it)
  *   3. the Stripe Price comes from `studio_plan_prices`; the account's Stripe
  *      customer is reused, or created once
- *   4. the customer's other open subscription Checkouts are expired, so two
+ *   4. the request for immediate access is recorded in `consent_records`
+ *      (proof, `STUDIO_WITHDRAWAL_CONSENT.version`); its id and the version go
+ *      into the Checkout and subscription metadata. The customer's other open
+ *      subscription Checkouts are expired, so two
  *      tabs cannot both end in a paid subscription
  *   5. a Stripe Checkout Session in subscription mode (Stripe's hosted page);
  *      the browser is sent to its `url`
@@ -39,6 +45,8 @@ export interface StudioSessionParams {
   customerId: string;
   priceId: string;
   userId: string;
+  /** The `consent_records` row of the member's immediate-access request. */
+  consentId: string;
   plan: StudioPlan;
   interval: StudioInterval;
   locale: StudioLocale;
@@ -54,6 +62,8 @@ export interface StudioCheckoutDeps {
   /** True when the account holds a subscription in a blocking status (`BLOCKING_STATUSES`). */
   hasBlockingSubscription(userId: string): Promise<boolean>;
   planPrice(plan: StudioPlan, interval: StudioInterval): Promise<PlanPrice | null>;
+  /** Records the immediate-access request (`STUDIO_WITHDRAWAL_CONSENT.version`); returns the row's id. */
+  recordWithdrawalConsent(userId: string): Promise<string>;
   /** The account's Stripe customer id, created (and stored) on first use. */
   ensureCustomer(userId: string, email: string | null): Promise<string>;
   /** Expires the customer's open subscription Checkouts; returns how many. */
@@ -67,6 +77,7 @@ export type StudioCheckoutError =
   | "sign_in_required"
   | "session_expired"
   | "terms_required"
+  | "withdrawal_consent_required"
   | "already_subscribed"
   | "plan_unavailable"
   | "payment_unavailable"
@@ -77,6 +88,7 @@ const STATUS: Record<StudioCheckoutError, number> = {
   sign_in_required: 401,
   session_expired: 401,
   terms_required: 403,
+  withdrawal_consent_required: 403,
   already_subscribed: 409,
   plan_unavailable: 409,
   payment_unavailable: 502,
@@ -100,6 +112,7 @@ export async function handleStudioCheckout(req: Request, deps: StudioCheckoutDep
   const parsed = parseStudioSubscriptionInput(await readJson(req, MAX_BODY_BYTES));
   if (!parsed.ok) return fail("invalid_request", { field: parsed.field });
   const input = parsed.value;
+  if (!input.withdrawalConsent) return fail("withdrawal_consent_required");
 
   let user: { id: string; email: string | null } | null;
   try {
@@ -122,6 +135,14 @@ export async function handleStudioCheckout(req: Request, deps: StudioCheckoutDep
   }
   if (!price) return fail("plan_unavailable");
 
+  let consentId: string;
+  try {
+    consentId = await deps.recordWithdrawalConsent(user.id);
+  } catch (error) {
+    deps.log("consent not recorded", error instanceof Error ? error.message : error);
+    return fail("server_error");
+  }
+
   const origin = returnOrigin(deps.origins, requestOrigin);
   try {
     const customerId = await deps.ensureCustomer(user.id, user.email);
@@ -135,6 +156,7 @@ export async function handleStudioCheckout(req: Request, deps: StudioCheckoutDep
       customerId,
       priceId: price.stripePriceId,
       userId: user.id,
+      consentId,
       plan: input.plan,
       interval: input.interval,
       locale: input.locale,

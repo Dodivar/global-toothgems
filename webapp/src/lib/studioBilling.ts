@@ -51,7 +51,7 @@ export function useStudioPlanPrices(): StudioPlanPrice[] | null {
   return prices;
 }
 
-async function invoke<T>(name: string, body: Record<string, string>, read: (body: unknown) => T, missing: T, offline: T): Promise<T> {
+async function invoke<T>(name: string, body: Record<string, string | boolean>, read: (body: unknown) => T, missing: T, offline: T): Promise<T> {
   if (!supabase) return missing;
   const { data, error } = await supabase.functions.invoke(name, { body });
   if (!error) return read(data);
@@ -68,10 +68,19 @@ async function invoke<T>(name: string, body: Record<string, string>, read: (body
 }
 
 /** A Stripe Checkout for this plan and interval; the browser is then sent to its address. */
-export function startStudioSubscription(plan: StudioPaidPlanId, interval: StudioBillingInterval, locale: "fr" | "en"): Promise<StudioCheckoutAnswer> {
+/**
+ * `withdrawalConsent`: the member ticked the request for immediate access
+ * (decision 94 (a)); the function refuses the checkout without it.
+ */
+export function startStudioSubscription(
+  plan: StudioPaidPlanId,
+  interval: StudioBillingInterval,
+  locale: "fr" | "en",
+  withdrawalConsent: boolean,
+): Promise<StudioCheckoutAnswer> {
   return invoke(
     "create-studio-subscription",
-    { plan, interval, locale },
+    { plan, interval, locale, withdrawal_consent: withdrawalConsent },
     readStudioCheckoutAnswer,
     { kind: "error", error: "payment_unavailable" },
     { kind: "error", error: "network" },

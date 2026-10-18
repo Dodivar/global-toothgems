@@ -72,7 +72,7 @@ export function useStudioCheckout(surface: StudioCheckoutSurface) {
   }, []);
 
   const start = useCallback(
-    async (plan: StudioPaidPlanId, interval: StudioBillingInterval, price: StudioPlanPrice | null) => {
+    async (plan: StudioPaidPlanId, interval: StudioBillingInterval, price: StudioPlanPrice | null, withdrawalConsent: boolean) => {
       if (lock.current) return;
       lock.current = true;
       setPending(`${plan}:${interval}`);
@@ -86,7 +86,7 @@ export function useStudioCheckout(surface: StudioCheckoutSurface) {
       };
       trackStudio("studio_subscription_cta_clicked", { ...props, checkout_available: true });
       const locale = i18n.language?.startsWith("en") ? "en" : "fr";
-      const answer = await startStudioSubscription(plan, interval, locale);
+      const answer = await startStudioSubscription(plan, interval, locale, withdrawalConsent);
       if (answer.kind === "redirect") {
         trackStudio("studio_checkout_started", props);
         savePendingCheckout({ plan, interval, surface, startedAt: Date.now() });

@@ -8,7 +8,7 @@ const TOKEN = "member.jwt.sig";
 const SITE = "https://global-toothgems.example";
 
 function fakeDeps(overrides: Partial<StudioCheckoutDeps> = {}) {
-  const calls = { sessions: [] as StudioSessionParams[], expired: [] as string[], customers: [] as string[] };
+  const calls = { sessions: [] as StudioSessionParams[], expired: [] as string[], customers: [] as string[], consents: [] as string[] };
   const deps: StudioCheckoutDeps = {
     origins: readSiteOrigins(SITE, "http://localhost:3000"),
     userFromToken: (token) => Promise.resolve(token === TOKEN ? USER : null),
@@ -16,6 +16,10 @@ function fakeDeps(overrides: Partial<StudioCheckoutDeps> = {}) {
     hasBlockingSubscription: () => Promise.resolve(false),
     planPrice: (plan, interval) =>
       Promise.resolve(plan === "artist" && interval === "year" ? { stripePriceId: "price_artistYear01", amountMinor: 19900, currency: "EUR" } : null),
+    recordWithdrawalConsent: (userId) => {
+      calls.consents.push(userId);
+      return Promise.resolve("cccccccc-0000-4000-8000-000000000001");
+    },
     ensureCustomer: (userId) => {
       calls.customers.push(userId);
       return Promise.resolve("cus_test000001");
@@ -41,13 +45,19 @@ const request = (body: unknown, token: string | null = TOKEN, origin = SITE) =>
     body: JSON.stringify(body),
   });
 
-const ARTIST_YEAR = { plan: "artist", interval: "year", locale: "en" };
+const ARTIST_YEAR = { plan: "artist", interval: "year", locale: "en", withdrawal_consent: true };
 
 Deno.test("input: plan and interval are required, unknown keys refused, locale defaults to fr", () => {
+  assertEquals(parseStudioSubscriptionInput({ plan: "essential", interval: "month", withdrawal_consent: true }), {
+    ok: true,
+    value: { plan: "essential", interval: "month", locale: "fr", withdrawalConsent: true },
+  });
   assertEquals(parseStudioSubscriptionInput({ plan: "essential", interval: "month" }), {
     ok: true,
-    value: { plan: "essential", interval: "month", locale: "fr" },
+    value: { plan: "essential", interval: "month", locale: "fr", withdrawalConsent: false },
   });
+  assertEquals(parseStudioSubscriptionInput({ plan: "artist", interval: "year", withdrawal_consent: "true" }), { ok: false, field: "withdrawal_consent" });
+  assertEquals(parseStudioSubscriptionInput({ plan: "artist", interval: "year", withdrawal_consent: 1 }), { ok: false, field: "withdrawal_consent" });
   assertEquals(parseStudioSubscriptionInput({ plan: "gold", interval: "month" }), { ok: false, field: "plan" });
   assertEquals(parseStudioSubscriptionInput({ plan: "artist", interval: "week" }), { ok: false, field: "interval" });
   assertEquals(parseStudioSubscriptionInput({ plan: "artist", interval: "year", price: "price_x" }), { ok: false, field: "price" });
@@ -67,8 +77,43 @@ Deno.test("a signed-in member gets a subscription Checkout for the stored price"
   assertEquals(session.priceId, "price_artistYear01");
   assertEquals(session.userId, USER.id);
   assertEquals(session.customerId, "cus_test000001");
+  assertEquals(calls.consents, [USER.id]);
+  assertEquals(session.consentId, "cccccccc-0000-4000-8000-000000000001");
   assertEquals(session.successUrl, `${SITE}/studio-3d/atelier?subscription=success`);
   assertEquals(session.cancelUrl, `${SITE}/studio-3d/atelier?subscription=canceled`);
+});
+
+Deno.test("without the immediate-access request the checkout is refused, nothing recorded, Stripe untouched", async () => {
+  for (const body of [
+    { plan: "artist", interval: "year", locale: "en" },
+    { plan: "artist", interval: "year", locale: "en", withdrawal_consent: false },
+  ]) {
+    const { deps, calls } = fakeDeps();
+    const res = await handleStudioCheckout(request(body), deps);
+    assertEquals(res.status, 403);
+    assertEquals((await res.json()).error, "withdrawal_consent_required");
+    assertEquals(calls.consents.length, 0);
+    assertEquals(calls.customers.length, 0);
+    assertEquals(calls.sessions.length, 0);
+  }
+  const { deps, calls } = fakeDeps();
+  const wrongType = await handleStudioCheckout(request({ plan: "artist", interval: "year", withdrawal_consent: "true" }), deps);
+  assertEquals(wrongType.status, 400);
+  assertEquals((await wrongType.json()).field, "withdrawal_consent");
+  assertEquals(calls.consents.length, 0);
+});
+
+Deno.test("the request is recorded only once the account checks pass, and its failure stops the checkout", async () => {
+  const blocked = fakeDeps({ hasBlockingSubscription: () => Promise.resolve(true) });
+  await handleStudioCheckout(request(ARTIST_YEAR), blocked.deps);
+  assertEquals(blocked.calls.consents.length, 0);
+
+  const failing = fakeDeps({ recordWithdrawalConsent: () => Promise.reject(new Error("insert failed")) });
+  const res = await handleStudioCheckout(request(ARTIST_YEAR), failing.deps);
+  assertEquals(res.status, 500);
+  assertEquals((await res.json()).error, "server_error");
+  assertEquals(failing.calls.customers.length, 0);
+  assertEquals(failing.calls.sessions.length, 0);
 });
 
 Deno.test("return addresses follow an allowed origin, else production", async () => {
@@ -103,10 +148,10 @@ Deno.test("terms not accepted, unknown price, invalid body", async () => {
   assertEquals((await (await handleStudioCheckout(request(ARTIST_YEAR), terms.deps)).json()).error, "terms_required");
 
   const { deps, calls } = fakeDeps();
-  const missing = await handleStudioCheckout(request({ plan: "essential", interval: "month" }), deps);
+  const missing = await handleStudioCheckout(request({ plan: "essential", interval: "month", withdrawal_consent: true }), deps);
   assertEquals(missing.status, 409);
   assertEquals((await missing.json()).error, "plan_unavailable");
-  const invalid = await handleStudioCheckout(request({ plan: "artist", interval: "year", amount: 1 }), deps);
+  const invalid = await handleStudioCheckout(request({ plan: "artist", interval: "year", amount: 1, withdrawal_consent: true }), deps);
   assertEquals(invalid.status, 400);
   assertEquals(calls.sessions.length, 0);
 });

@@ -16,6 +16,7 @@ export type StudioCheckoutError =
   | "sign_in_required"
   | "session_expired"
   | "terms_required"
+  | "withdrawal_consent_required"
   | "already_subscribed"
   | "plan_unavailable"
   | "payment_unavailable"
@@ -31,6 +32,7 @@ const ERRORS: readonly StudioCheckoutError[] = [
   "sign_in_required",
   "session_expired",
   "terms_required",
+  "withdrawal_consent_required",
   "already_subscribed",
   "plan_unavailable",
   "payment_unavailable",

@@ -159,6 +159,7 @@
         "sign_in_required": "Your session has expired. Sign in again, then try once more.",
         "session_expired": "Your session has expired. Sign in again, then try once more.",
         "terms_required": "Before subscribing, please accept the terms and conditions.",
+        "withdrawal_consent_required": "To subscribe, tick the request for immediate access above the plans.",
         "already_subscribed": "You already have a Studio subscription. You can manage it from your account.",
         "plan_unavailable": "This plan is not available right now. Choose another one or try again later.",
         "payment_unavailable": "Online payment is temporarily unavailable. Nothing was charged: try again in a few minutes.",
@@ -166,6 +167,10 @@
         "server_error": "Something went wrong. Nothing was charged: please try again."
       },
       "manage": "Manage my subscription",
+      "consent": {
+        "label": "I ask for immediate access to the 3D Studio and I acknowledge that, if I exercise my right of withdrawal within 14 days, I will pay the share of the subscription for the period already used.",
+        "required": "Tick this box to choose a plan."
+      },
       "termsCta": "Accept and continue",
       "canceled": "Payment cancelled: nothing was charged. You can choose a plan whenever you like."
     },
