@@ -151,22 +151,28 @@ export const INSPIRATION: InspirationBoard[] = [
 ];
 
 /**
- * The Studio's offers, as the presentation page lists them: a free trial, then
- * three monthly plans. Display values only, in integer minor units (§8) —
- * supplied with the brief (2026-10-15) and still to confirm, like each plan's
- * features (`studio.plans.<id>` in the translations).
+ * The Studio's offers: a free trial, then three plans billed monthly or yearly
+ * (yearly = 10 months, "two months free"). Amounts in integer minor units,
+ * VAT included (§8) — confirmed by the owner on 2026-10-18.
  *
- * The free trial is real (48 hours, decision 93, `lib/studioAccess.tsx`); no
- * paid subscription can be bought yet. When it can, the amounts come from the
- * Stripe Prices the subscriptions are created against and access from the
- * verified webhook (`studio_subscriptions`) — never from here.
+ * These are the values the pages show until the live prices are read from
+ * `studio_plan_prices` (`lib/studioBilling.ts`, `useStudioPlanPrices`), and the
+ * values the test-mode Stripe Prices were created with. What a member is
+ * charged is always the Stripe Price the subscription is created against, and
+ * access always comes from the verified webhook (`studio_subscriptions`,
+ * decision 94) — never from here. Every paid plan unlocks the whole Studio;
+ * the feature lists (`studio.plans.<id>`) are presentation only.
  */
 export type StudioPlanId = "trial" | "essential" | "artist" | "atelier";
+export type StudioPaidPlanId = Exclude<StudioPlanId, "trial">;
+export type StudioBillingInterval = "month" | "year";
 
 export interface StudioPlan {
   id: StudioPlanId;
   /** Monthly price in minor units; 0 for the trial. */
   amountMinor: number;
+  /** Yearly price in minor units (paid plans only). */
+  yearlyAmountMinor?: number;
   currency: "EUR";
   /** Length of the free trial, for the trial only. */
   trialDays?: number;
@@ -176,9 +182,9 @@ export interface StudioPlan {
 
 export const STUDIO_PLANS: StudioPlan[] = [
   { id: "trial", amountMinor: 0, currency: "EUR", trialDays: 2 },
-  { id: "essential", amountMinor: 500, currency: "EUR" },
-  { id: "artist", amountMinor: 1990, currency: "EUR", featured: true },
-  { id: "atelier", amountMinor: 3990, currency: "EUR" },
+  { id: "essential", amountMinor: 500, yearlyAmountMinor: 5000, currency: "EUR" },
+  { id: "artist", amountMinor: 1990, yearlyAmountMinor: 19900, currency: "EUR", featured: true },
+  { id: "atelier", amountMinor: 3990, yearlyAmountMinor: 39900, currency: "EUR" },
 ];
 
 /** The lowest paid plan, quoted as "from …" on the page. */

@@ -7347,6 +7347,42 @@ export type Database = {
           },
         ]
       }
+      stripe_customers: {
+        Row: {
+          created_at: string
+          livemode: boolean
+          stripe_customer_id: string
+          user_id: string
+        }
+        Insert: {
+          created_at?: string
+          livemode?: boolean
+          stripe_customer_id: string
+          user_id: string
+        }
+        Update: {
+          created_at?: string
+          livemode?: boolean
+          stripe_customer_id?: string
+          user_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "stripe_customers_user_id_fkey"
+            columns: ["user_id"]
+            isOneToOne: true
+            referencedRelation: "loyalty_overview"
+            referencedColumns: ["user_id"]
+          },
+          {
+            foreignKeyName: "stripe_customers_user_id_fkey"
+            columns: ["user_id"]
+            isOneToOne: true
+            referencedRelation: "profiles"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       stripe_webhook_events: {
         Row: {
           attempts: number
@@ -7531,39 +7567,148 @@ export type Database = {
           },
         ]
       }
+      studio_plan_prices: {
+        Row: {
+          active: boolean
+          amount: number
+          billing_interval: string
+          created_at: string
+          currency: string
+          id: string
+          livemode: boolean
+          plan: string
+          stripe_price_id: string
+          updated_at: string
+        }
+        Insert: {
+          active?: boolean
+          amount: number
+          billing_interval: string
+          created_at?: string
+          currency: string
+          id?: string
+          livemode?: boolean
+          plan: string
+          stripe_price_id: string
+          updated_at?: string
+        }
+        Update: {
+          active?: boolean
+          amount?: number
+          billing_interval?: string
+          created_at?: string
+          currency?: string
+          id?: string
+          livemode?: boolean
+          plan?: string
+          stripe_price_id?: string
+          updated_at?: string
+        }
+        Relationships: []
+      }
+      studio_subscription_invoices: {
+        Row: {
+          amount: number
+          billing_reason: string
+          created_at: string
+          currency: string
+          occurred_at: string
+          status: string
+          stripe_invoice_id: string
+          subscription_id: string
+          updated_at: string
+          user_id: string
+        }
+        Insert: {
+          amount: number
+          billing_reason: string
+          created_at?: string
+          currency: string
+          occurred_at: string
+          status: string
+          stripe_invoice_id: string
+          subscription_id: string
+          updated_at?: string
+          user_id: string
+        }
+        Update: {
+          amount?: number
+          billing_reason?: string
+          created_at?: string
+          currency?: string
+          occurred_at?: string
+          status?: string
+          stripe_invoice_id?: string
+          subscription_id?: string
+          updated_at?: string
+          user_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "studio_subscription_invoices_subscription_id_fkey"
+            columns: ["subscription_id"]
+            isOneToOne: false
+            referencedRelation: "studio_subscriptions"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "studio_subscription_invoices_user_id_fkey"
+            columns: ["user_id"]
+            isOneToOne: false
+            referencedRelation: "loyalty_overview"
+            referencedColumns: ["user_id"]
+          },
+          {
+            foreignKeyName: "studio_subscription_invoices_user_id_fkey"
+            columns: ["user_id"]
+            isOneToOne: false
+            referencedRelation: "profiles"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       studio_subscriptions: {
         Row: {
+          billing_interval: string | null
           cancel_at_period_end: boolean
+          canceled_at: string | null
           created_at: string
           current_period_end: string
           id: string
           plan: string
           status: string
           stripe_customer_id: string | null
+          stripe_price_id: string | null
           stripe_subscription_id: string
           updated_at: string
           user_id: string
         }
         Insert: {
+          billing_interval?: string | null
           cancel_at_period_end?: boolean
+          canceled_at?: string | null
           created_at?: string
           current_period_end: string
           id?: string
           plan: string
           status: string
           stripe_customer_id?: string | null
+          stripe_price_id?: string | null
           stripe_subscription_id: string
           updated_at?: string
           user_id: string
         }
         Update: {
+          billing_interval?: string | null
           cancel_at_period_end?: boolean
+          canceled_at?: string | null
           created_at?: string
           current_period_end?: string
           id?: string
           plan?: string
           status?: string
           stripe_customer_id?: string | null
+          stripe_price_id?: string | null
           stripe_subscription_id?: string
           updated_at?: string
           user_id?: string
@@ -8365,6 +8510,20 @@ export type Database = {
         }
         Returns: Json
       }
+      apply_studio_subscription: {
+        Args: {
+          p_cancel_at_period_end: boolean
+          p_canceled_at: string
+          p_current_period_end: string
+          p_livemode: boolean
+          p_metadata_user_id: string
+          p_status: string
+          p_stripe_customer_id: string
+          p_stripe_price_id: string
+          p_stripe_subscription_id: string
+        }
+        Returns: Json
+      }
       cancel_gift_card: {
         Args: { p_gift_card_id: string; p_note: string }
         Returns: string
@@ -8949,6 +9108,18 @@ export type Database = {
           p_type: string
         }
         Returns: string
+      }
+      record_studio_invoice: {
+        Args: {
+          p_amount: number
+          p_billing_reason: string
+          p_currency: string
+          p_occurred_at: string
+          p_status: string
+          p_stripe_invoice_id: string
+          p_stripe_subscription_id: string
+        }
+        Returns: undefined
       }
       refund_to_gift_cards: {
         Args: { p_amount: number; p_order_id: string; p_reason: string }
