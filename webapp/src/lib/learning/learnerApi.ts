@@ -1,5 +1,6 @@
 import type { Json } from "../supabase/database.types";
 import type { TypedSupabaseClient } from "../supabase/client";
+import { stableSignedUrls } from "../supabase/signedUrlCache";
 import type { CorrectionJson, LearnerCourseJson, ProgressJson, SubmissionJson } from "./learnerCourse";
 
 /**
@@ -13,6 +14,8 @@ import type { CorrectionJson, LearnerCourseJson, ProgressJson, SubmissionJson } 
 const BUCKET = "training-media";
 /** Long enough for a lesson video to be watched and sought through; re-signed before it ends. */
 export const LEARNER_SIGNED_URL_SECONDS = 4 * 60 * 60;
+/** A URL with less than this left is signed again (a video started then still has time to play). */
+const LEARNER_RESIGN_MARGIN_SECONDS = 60 * 60;
 
 /** The courses the member holds now, with content, media paths and progress. */
 export async function fetchLearnerCourses(db: TypedSupabaseClient): Promise<LearnerCourseJson[]> {
@@ -52,14 +55,20 @@ export async function submitQuiz(
   return data as unknown as SubmissionJson;
 }
 
-/** Signed URLs for the member's media (storage policy: files of the courses they hold). */
+/**
+ * Signed URLs for the member's media (storage policy: files of the courses
+ * they hold). A URL keeps its address while it has enough life left, so the
+ * browser and CDN caches serve it again (`lib/supabase/signedUrlCache.ts`).
+ */
 export async function signMedia(db: TypedSupabaseClient, paths: Map<string, string>): Promise<Map<string, string>> {
   const signed = new Map<string, string>();
   const list = [...new Set(paths.values())];
   if (list.length === 0) return signed;
-  const { data, error } = await db.storage.from(BUCKET).createSignedUrls(list, LEARNER_SIGNED_URL_SECONDS);
-  if (error) throw error;
-  const byPath = new Map((data ?? []).filter((entry) => entry.signedUrl).map((entry) => [entry.path, entry.signedUrl]));
+  const byPath = await stableSignedUrls(db, list, {
+    bucket: BUCKET,
+    ttlSeconds: LEARNER_SIGNED_URL_SECONDS,
+    minRemainingSeconds: LEARNER_RESIGN_MARGIN_SECONDS,
+  });
   for (const [id, path] of paths) {
     const url = byPath.get(path);
     if (url) signed.set(id, url);

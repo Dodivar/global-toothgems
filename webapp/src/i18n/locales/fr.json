@@ -1116,7 +1116,8 @@
         "home": "Accueil site",
         "shop": "Boutique",
         "giftCard": "Carte cadeau",
-        "academy": "Academy"
+        "academy": "Academy",
+        "subscription": "Abonnement"
       },
       "groupLearning": "Apprendre",
       "groupPurchases": "Achats",
@@ -1324,7 +1325,8 @@
     "certificateDocDateLabel": "Date d’obtention",
     "certificateDocRefLabel": "N° d’attestation",
     "certificateDocSeal": "Validée",
-    "certificateDocIssuer": "Organisme émetteur"
+    "certificateDocIssuer": "Organisme émetteur",
+    "navStudio": "Abonnement Studio"
   },
   "footer": {
     "blurb": "Gems, outils et formation professionnels. Expédié dans toute l’Europe depuis Lyon.",
@@ -3362,6 +3364,57 @@
       "export": {
         "value": "Valeur",
         "previous": "Période précédente"
+      },
+      "studioRevenue": {
+        "title": "Studio 3D : argent encaissé",
+        "description": "Les paiements d’abonnement de la période : ce qui est acquis, ce qui peut encore être en partie remboursé pendant les 14 jours de rétractation, et ce qui a été remboursé.",
+        "received": "Encaissé",
+        "settled": "Acquis",
+        "settledHint": "Renouvellements, premiers paiements après 14 jours, et la part gardée pour les jours utilisés lors d’une rétractation.",
+        "withdrawable": "En période de rétractation",
+        "withdrawableHint": "Premiers paiements de moins de 14 jours : une rétractation peut en rendre une partie (les jours utilisés restent acquis).",
+        "refunded": "Remboursé",
+        "refundedHint": "Rendu (ou en cours de remboursement) après une rétractation.",
+        "now": "Aujourd’hui, {{amount}} sont encore en période de rétractation ; la première échéance tombe le {{date}} au soir.",
+        "weeksTitle": "Par semaine",
+        "week": "Semaine du",
+        "chartLabel": "Barres empilées par semaine : acquis, en période de rétractation, remboursé. Les montants sont dans le tableau ci-dessous.",
+        "skipped_one": "{{count}} paiement dans une autre devise n’est pas compté.",
+        "skipped_other": "{{count}} paiements dans une autre devise ne sont pas comptés.",
+        "emptyTitle": "Aucun paiement d’abonnement sur la période",
+        "emptyBody": "Les abonnements au Studio apparaîtront ici dès leur premier paiement.",
+        "unavailableTitle": "Données indisponibles",
+        "unavailableBody": "Ce panneau lit la base de données, absente en mode démonstration.",
+        "errorTitle": "Lecture impossible",
+        "errorBody": "Les paiements du Studio n’ont pas pu être lus. Actualisez la page."
+      },
+      "studioTrial": {
+        "title": "Essai gratuit du Studio 3D",
+        "description": "Essais démarrés sur la période (un par compte) et ce qu’ils sont devenus. Un abonnement pris dans les {{days}} jours suivant la fin de l’essai compte comme une conversion. Les filtres boutique ne s’appliquent pas.",
+        "started": "Essais démarrés",
+        "activeNow": "En cours",
+        "activeNowHint": "Tous les essais, quelle que soit la période",
+        "ended": "Terminés",
+        "endedHint_one": "{{count}} sans abonnement",
+        "endedHint_other": "{{count}} sans abonnement",
+        "firstSaveRate": "Premier design enregistré",
+        "timeToFirstSave": "Délai médian avant le 1er enregistrement",
+        "hours_one": "{{count}} h",
+        "hours_other": "{{count}} h",
+        "conversionRate": "Essai → abonnement",
+        "convertedHint_one": "{{count}} abonné·e",
+        "convertedHint_other": "{{count}} abonné·es",
+        "weeksTitle": "Par semaine de démarrage",
+        "week": "Semaine du",
+        "savedShort": "Enregistré",
+        "convertedShort": "Abonné",
+        "posthogNote": "Vues de l’offre, sessions, retours, fonctions utilisées et clics sur les formules sont mesurés dans PostHog (événements studio_*), pour les visiteurs ayant accepté les cookies de mesure d’audience. L’abonnement en ligne n’est pas encore ouvert : les conversions restent à zéro d’ici là.",
+        "emptyTitle": "Aucun essai sur la période",
+        "emptyBody": "Les essais apparaissent ici dès que des membres en démarrent un dans le Studio.",
+        "unavailableTitle": "Pas de base de données",
+        "unavailableBody": "Les chiffres de l’essai nécessitent le projet Supabase.",
+        "errorTitle": "Chiffres de l’essai indisponibles",
+        "errorBody": "Ils n’ont pas pu être lus. Actualisez la page pour réessayer."
       }
     },
     "training": {

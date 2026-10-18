@@ -50,10 +50,14 @@ function storeError(error: PgError | null | undefined): StudioStoreError {
     case "22P02":
     case "22023":
       return new StudioStoreError("invalid");
+    case "42501": // a write refused by row-level security: no Studio access (trial over)
+      return new StudioStoreError("accessDenied");
     case "PGRST116": // no row (or not ours: RLS hides it)
     case "P0002": // raised by the share functions for a creation that is not ours
       return new StudioStoreError("notFound");
   }
+  // Storage reports its policy refusals by message only.
+  if (/row-level security/i.test(error?.message ?? "")) return new StudioStoreError("accessDenied");
   if (/failed to fetch|network/i.test(error?.message ?? "")) return new StudioStoreError("unavailable");
   return new StudioStoreError("storage");
 }

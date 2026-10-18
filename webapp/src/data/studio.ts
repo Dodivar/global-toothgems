@@ -2,24 +2,11 @@ import type { Localized } from "./types";
 import type { GemShape } from "./products";
 
 /**
- * Fictional content for the 3D Studio presentation and subscription pages.
- *
- * These pages are a visual prototype: no subscription stands behind them. The
- * working editor is a separate page (`/studio-3d/atelier`, see
- * `data/studioEditor.ts`); nothing here is read by it. The compositions drawn
- * on the inspiration boards and the offers listed on the presentation page are
- * fixture data, until the subscription exists.
+ * Content of the 3D Studio presentation and subscription pages: the
+ * compositions drawn on the inspiration boards (fixture art, not designs of
+ * real members) and the plans. The working editor is a separate page
+ * (`/studio-3d/atelier`, see `data/studioEditor.ts`); nothing here is read by it.
  */
-
-/**
- * Display price of the Studio subscription.
- *
- * A prototype value supplied with the brief (€5 per month). In production the
- * amount, currency and interval come from the Stripe Price the subscription is
- * created against, and access is granted by the verified webhook — never by
- * this constant or by the confirmation screen.
- */
-export const STUDIO_PRICE = { amount: 5, currency: "EUR", interval: "month" } as const;
 
 export type StudioMaterial = "crystal" | "sapphire" | "rose" | "emerald" | "gold" | "opal";
 
@@ -151,21 +138,28 @@ export const INSPIRATION: InspirationBoard[] = [
 ];
 
 /**
- * The Studio's offers, as the presentation page lists them: a free trial, then
- * three monthly plans. Display values only, in integer minor units (§8) —
- * supplied with the brief (2026-10-15) and still to confirm, like each plan's
- * features (`studio.plans.<id>` in the translations).
+ * The Studio's offers: a free trial, then three plans billed monthly or yearly
+ * (yearly = 10 months, "two months free"). Amounts in integer minor units,
+ * VAT included (§8) — confirmed by the owner on 2026-10-18.
  *
- * No subscription stands behind them yet (`studioAccess` is in preview). When
- * it does, the amounts come from the Stripe Prices the subscriptions are
- * created against and access from the verified webhook — never from here.
+ * These are the values the pages show until the live prices are read from
+ * `studio_plan_prices` (`lib/studioBilling.ts`, `useStudioPlanPrices`), and the
+ * values the test-mode Stripe Prices were created with. What a member is
+ * charged is always the Stripe Price the subscription is created against, and
+ * access always comes from the verified webhook (`studio_subscriptions`,
+ * decision 94) — never from here. Every paid plan unlocks the whole Studio;
+ * the feature lists (`studio.plans.<id>`) are presentation only.
  */
 export type StudioPlanId = "trial" | "essential" | "artist" | "atelier";
+export type StudioPaidPlanId = Exclude<StudioPlanId, "trial">;
+export type StudioBillingInterval = "month" | "year";
 
 export interface StudioPlan {
   id: StudioPlanId;
   /** Monthly price in minor units; 0 for the trial. */
   amountMinor: number;
+  /** Yearly price in minor units (paid plans only). */
+  yearlyAmountMinor?: number;
   currency: "EUR";
   /** Length of the free trial, for the trial only. */
   trialDays?: number;
@@ -175,9 +169,9 @@ export interface StudioPlan {
 
 export const STUDIO_PLANS: StudioPlan[] = [
   { id: "trial", amountMinor: 0, currency: "EUR", trialDays: 2 },
-  { id: "essential", amountMinor: 500, currency: "EUR" },
-  { id: "artist", amountMinor: 1990, currency: "EUR", featured: true },
-  { id: "atelier", amountMinor: 3990, currency: "EUR" },
+  { id: "essential", amountMinor: 500, yearlyAmountMinor: 5000, currency: "EUR" },
+  { id: "artist", amountMinor: 1990, yearlyAmountMinor: 19900, currency: "EUR", featured: true },
+  { id: "atelier", amountMinor: 3990, yearlyAmountMinor: 39900, currency: "EUR" },
 ];
 
 /** The lowest paid plan, quoted as "from …" on the page. */

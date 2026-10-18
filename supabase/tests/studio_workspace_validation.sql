@@ -32,6 +32,8 @@ begin
   insert into auth.users (id, aud, role, email, raw_user_meta_data, created_at, updated_at) values
     (ma, 'authenticated', 'authenticated', 'studio.a.test@example.invalid', '{"first_name":"Ana"}', now(), now()),
     (mb, 'authenticated', 'authenticated', 'studio.b.test@example.invalid', '{"first_name":"Ben"}', now(), now());
+  -- Writing designs needs Studio access (migration `…_studio_trial_access`): both members are in their trial.
+  insert into public.studio_trials (user_id) values (ma), (mb);
 
   -- T1: the owner writes the render path with the group, then changes it.
   perform set_config('role', 'authenticated', true);

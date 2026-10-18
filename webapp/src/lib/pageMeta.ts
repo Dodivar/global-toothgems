@@ -33,7 +33,7 @@ const PAGES: Partial<Record<PublicRouteId, { title: Text; description?: Text }>>
   checkoutReturn: { title: { key: "checkout.pageTitle" } },
   loyalty: { title: { key: "loyalty.heroTitle" }, description: { key: "loyalty.journeyBody" } },
   giftCard: { title: { keys: ["promo.store.headlineA", "promo.store.headlineB"] } },
-  studio: { title: { key: "studio.hero.title" }, description: { key: "studio.hero.body" } },
+  studio: { title: { key: "studioPage.hero.title" }, description: { key: "studioPage.hero.body" } },
   studioSubscribe: { title: { key: "studio.subscribe.title" }, description: { key: "studio.subscribe.body" } },
   academy: { title: { key: "academyPage.meta.title" }, description: { key: "academyPage.meta.description" } },
   help: { title: { key: "legal.hub.title" }, description: { key: "legal.hub.intro" } },

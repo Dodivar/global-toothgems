@@ -12,7 +12,7 @@ import {
 
 describe("gateFor", () => {
   it("gates the member space and the learner pages behind an account", () => {
-    for (const path of ["/compte", "/compte/commandes", "/compte/salons/en/discussion", "/academy/lecon", "/academy/mes-formations/fondation", "/academy/mes-formations/fondation/lecon/m1"]) {
+    for (const path of ["/compte", "/compte/commandes", "/compte/salons/en/discussion", "/academy/lecon", "/academy/mes-formations/fondation", "/academy/mes-formations/fondation/lecon/m1", "/studio-3d/paiement"]) {
       expect(gateFor(path), path).toBe("account");
     }
   });
@@ -24,7 +24,7 @@ describe("gateFor", () => {
   });
 
   it("leaves every other page open", () => {
-    for (const path of ["/", "/boutique", "/connexion", "/academy", "/academy/formation/fondation", "/studio-3d/atelier", "/comptes", "/administration", "/auth/confirm"]) {
+    for (const path of ["/", "/boutique", "/connexion", "/academy", "/academy/formation/fondation", "/studio-3d/atelier", "/studio-3d/abonnement", "/studio-3d/paiements", "/comptes", "/administration", "/auth/confirm"]) {
       expect(gateFor(path), path).toBeNull();
     }
   });

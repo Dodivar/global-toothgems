@@ -481,6 +481,9 @@ export class StudioEngine {
   private lasso: { pointerId: number; originX: number; originY: number; points: Point2[]; additive: boolean } | null = null;
   private lassoListener: LassoListener | null = null;
 
+  // camera moves the artist asked for (see `onCameraGesture`)
+  private cameraListeners = new Set<() => void>();
+
   // long press on a piece (see `onLongPress`)
   private longPressTimer: ReturnType<typeof setTimeout> | null = null;
   /** The last press came from a finger: the browser's long-press menu is not a right-click. */
@@ -533,6 +536,8 @@ export class StudioEngine {
     // Wheel zoom and damped orbiting move the camera without a pointer event on us.
     this.controls.addEventListener("change", this.wake);
     this.controls.addEventListener("start", this.wake);
+    // `start` fires on a press, a wheel or a pinch — the artist's own gestures, never a tween.
+    this.controls.addEventListener("start", this.emitCameraGesture);
 
     this.ro = new ResizeObserver(() => this.resize());
     this.ro.observe(container);
@@ -2542,10 +2547,12 @@ export class StudioEngine {
     this.wake();
     this.controls.enabled = false;
   }
-  setView(view: "front" | "top" | "side" | "reset") {
+  /** `fromUser`: asked for from the camera bar, rather than framed by the engine after a load. */
+  setView(view: "front" | "top" | "side" | "reset", fromUser = false) {
     const target = this.stage.target.clone();
     const pos = target.clone().add(this.stage.views[view]);
     if (view === "reset") this.setAutoRotate(false);
+    if (fromUser) this.emitCameraGesture();
     // Straight down over the reference arch shows it whole at any aspect; every other view is framed to the canvas.
     const straightDown = view === "top" && this.stage === ARCH_STAGE;
     this.tweenCamera(straightDown ? pos : this.framed(pos, target), target, this.modelReady ? 750 : 1200);
@@ -2570,6 +2577,7 @@ export class StudioEngine {
     this.tweenCamera(c.clone().addScaledVector(dir, 30), c, 650);
   }
   zoomBy(f: number) {
+    this.emitCameraGesture();
     const t = this.controls.target.clone();
     const dir = this.camera.position.clone().sub(t);
     const len = clamp(dir.length() * f, this.controls.minDistance, this.controls.maxDistance);
@@ -3041,6 +3049,24 @@ export class StudioEngine {
   private emitLasso() {
     this.lassoListener?.(this.lasso ? [...this.lasso.points] : null);
   }
+
+  /**
+   * Follow camera moves the artist asked for: an orbit, pan or wheel gesture
+   * (OrbitControls' own `start`, which no programmatic move dispatches), the
+   * zoom buttons, and a view chosen from the camera bar. The framing the engine
+   * does for itself — after a model loads, when a saved design is restored — is
+   * deliberately silent, so a listener never mistakes it for a gesture.
+   * Returns the unsubscribe.
+   */
+  onCameraGesture(fn: () => void): () => void {
+    this.cameraListeners.add(fn);
+    return () => {
+      this.cameraListeners.delete(fn);
+    };
+  }
+  private emitCameraGesture = () => {
+    this.cameraListeners.forEach((fn) => fn());
+  };
   /** Drop a loop in progress without selecting anything (the tool stays on). */
   cancelLasso() {
     if (!this.lasso) return;
@@ -3304,6 +3330,8 @@ export class StudioEngine {
     this.renderer.domElement.removeEventListener("dblclick", this.onDblClick);
     this.controls.removeEventListener("change", this.wake);
     this.controls.removeEventListener("start", this.wake);
+    this.controls.removeEventListener("start", this.emitCameraGesture);
+    this.cameraListeners.clear();
     this.unsubscribe();
     this.anchorListener = null;
     this.lassoListener = null;

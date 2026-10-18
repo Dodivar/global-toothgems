@@ -127,6 +127,16 @@ const deps: WebhookDeps = {
     if (error) throw dbError(error);
   },
 
+  async settleStudioWithdrawal({ withdrawalId, providerRefundId, status, reason }) {
+    const { error } = await supabase.rpc("settle_studio_withdrawal_refund", {
+      p_withdrawal_id: withdrawalId,
+      p_stripe_refund_id: providerRefundId,
+      p_status: status,
+      p_reason: reason,
+    });
+    if (error) throw dbError(error);
+  },
+
   async recordExternalRefund({ paymentIntentId, providerRefundId, amount, currency }) {
     const { error } = await supabase.rpc("record_external_refund", {
       p_provider_payment_id: paymentIntentId,
@@ -135,6 +145,56 @@ const deps: WebhookDeps = {
       p_currency: currency,
     });
     if (error) throw dbError(error);
+  },
+
+  studio: {
+    async retrieveSubscription(subscriptionId) {
+      const sub = await stripe.subscriptions.retrieve(subscriptionId);
+      const item = sub.items.data[0];
+      return {
+        id: sub.id,
+        customerId: typeof sub.customer === "string" ? sub.customer : sub.customer.id,
+        status: sub.status,
+        priceId: item?.price?.id ?? null,
+        // API 2025-08-27.basil: the billing period lives on the subscription item.
+        currentPeriodEnd: item?.current_period_end ?? null,
+        // A cancellation scheduled from the portal sets either flag depending on its settings.
+        cancelAtPeriodEnd: sub.cancel_at_period_end || sub.cancel_at !== null,
+        canceledAt: sub.canceled_at ?? null,
+        livemode: sub.livemode,
+        metadata: sub.metadata ?? {},
+      };
+    },
+
+    async applySubscription(args) {
+      const { data, error } = await supabase.rpc("apply_studio_subscription", {
+        p_stripe_subscription_id: args.subscriptionId,
+        p_stripe_customer_id: args.customerId,
+        p_metadata_user_id: args.metadataUserId,
+        p_stripe_price_id: args.priceId,
+        p_status: args.status,
+        p_current_period_end: args.currentPeriodEnd,
+        p_cancel_at_period_end: args.cancelAtPeriodEnd,
+        p_canceled_at: args.canceledAt,
+        p_livemode: args.livemode,
+      });
+      if (error) throw dbError(error);
+      const row = (data ?? {}) as { created?: boolean; other_live_subscriptions?: number };
+      return { created: row.created === true, otherLiveSubscriptions: Number(row.other_live_subscriptions ?? 0) };
+    },
+
+    async recordStudioInvoice(args) {
+      const { error } = await supabase.rpc("record_studio_invoice", {
+        p_stripe_invoice_id: args.invoiceId,
+        p_stripe_subscription_id: args.subscriptionId,
+        p_billing_reason: args.billingReason,
+        p_status: args.status,
+        p_amount: args.amount,
+        p_currency: args.currency,
+        p_occurred_at: args.occurredAt,
+      });
+      if (error) throw dbError(error);
+    },
   },
 
   refundConfirmed: () => notifyRefundConfirmed((message, detail) => console.error(`[stripe-webhook] ${message}`, detail ?? "")),

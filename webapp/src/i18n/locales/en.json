@@ -1116,7 +1116,8 @@
         "home": "Site home",
         "shop": "Shop",
         "giftCard": "Gift card",
-        "academy": "Academy"
+        "academy": "Academy",
+        "subscription": "Subscription"
       },
       "groupLearning": "Learning",
       "groupPurchases": "Purchases",
@@ -1324,7 +1325,8 @@
     "certificateDocDateLabel": "Date of completion",
     "certificateDocRefLabel": "Certificate no.",
     "certificateDocSeal": "Completed",
-    "certificateDocIssuer": "Issued by"
+    "certificateDocIssuer": "Issued by",
+    "navStudio": "Studio subscription"
   },
   "footer": {
     "blurb": "Professional gems, tools and training. Shipped across Europe from Lyon.",
@@ -3362,6 +3364,57 @@
       "export": {
         "value": "Value",
         "previous": "Previous period"
+      },
+      "studioRevenue": {
+        "title": "3D Studio: money received",
+        "description": "Subscription payments in the period: what is settled, what may still be partly refunded during the 14-day withdrawal period, and what was refunded.",
+        "received": "Received",
+        "settled": "Settled",
+        "settledHint": "Renewals, first payments past 14 days, and the share kept for the days used when a member withdrew.",
+        "withdrawable": "In withdrawal period",
+        "withdrawableHint": "First payments under 14 days old: a withdrawal may give part of them back (the days used stay settled).",
+        "refunded": "Refunded",
+        "refundedHint": "Given back (or being refunded) after a withdrawal.",
+        "now": "Today, {{amount}} is still in a withdrawal period; the first of it settles at the end of {{date}}.",
+        "weeksTitle": "By week",
+        "week": "Week of",
+        "chartLabel": "Stacked bars per week: settled, in withdrawal period, refunded. The amounts are in the table below.",
+        "skipped_one": "{{count}} payment in another currency is not counted.",
+        "skipped_other": "{{count}} payments in another currency are not counted.",
+        "emptyTitle": "No subscription payment in the period",
+        "emptyBody": "Studio subscriptions show here from their first payment.",
+        "unavailableTitle": "Data unavailable",
+        "unavailableBody": "This panel reads the database, which demo mode does not have.",
+        "errorTitle": "Could not read",
+        "errorBody": "The Studio payments could not be read. Refresh the page."
+      },
+      "studioTrial": {
+        "title": "3D Studio free trial",
+        "description": "Trials started in the period (one per account) and what became of them. A subscription started within {{days}} days of the trial's end counts as a conversion. Shop filters do not apply.",
+        "started": "Trials started",
+        "activeNow": "Running now",
+        "activeNowHint": "All trials, whatever the period",
+        "ended": "Ended",
+        "endedHint_one": "{{count}} without a subscription",
+        "endedHint_other": "{{count}} without a subscription",
+        "firstSaveRate": "Saved a first design",
+        "timeToFirstSave": "Median time to first save",
+        "hours_one": "{{count}} h",
+        "hours_other": "{{count}} h",
+        "conversionRate": "Trial → subscription",
+        "convertedHint_one": "{{count}} subscriber",
+        "convertedHint_other": "{{count}} subscribers",
+        "weeksTitle": "By week of trial start",
+        "week": "Week of",
+        "savedShort": "Saved",
+        "convertedShort": "Subscribed",
+        "posthogNote": "Offer views, sessions, return visits, features used and plan clicks are measured in PostHog (events studio_*), for visitors who accepted analytics cookies. Online subscription is not open yet: conversions stay at zero until it is.",
+        "emptyTitle": "No trial in this period",
+        "emptyBody": "Trials appear here as soon as members start one in the Studio.",
+        "unavailableTitle": "No database",
+        "unavailableBody": "Trial figures need the Supabase project.",
+        "errorTitle": "Trial figures unavailable",
+        "errorBody": "They could not be read. Refresh the page to try again."
       }
     },
     "training": {

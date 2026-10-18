@@ -3,38 +3,45 @@ import clsx from "clsx";
 import {
   Braces,
   ChevronDown,
+  Compass,
   Download,
   Image as ImageIcon,
   Menu,
   Redo2,
   RotateCcw,
-  Sparkles,
   SquareDashed,
   Undo2,
   Upload,
   ReceiptText,
+  ScanFace,
 } from "lucide-react";
 import monogram from "../../../assets/monogram-blue.png";
 import { Button } from "../../ui/Button";
 import { EditorPopover, PopoverItem, PopoverLabel, PopoverSeparator } from "./EditorPopover";
 import { useEditorLabels } from "./editorLabels";
 import { QuickActionsMenu } from "./QuickActionsMenu";
+import { PlacementSheetMenuItem } from "./PlacementSheetMenuItem";
 import { ShareMenu } from "./ShareMenu";
 import { HelpHint } from "../workspace/HelpHint";
 import { SaveControls } from "../workspace/SaveControls";
 import { SaveStatus } from "../workspace/SaveStatus";
+import { StudioAccessBadge } from "../access/StudioTrialCountdown";
 import { FREE_TOOTH } from "../../../data/studioEditor";
 import { estimateComposition } from "../../../lib/studio3d/gemCatalog";
 import { useCompositionEstimate, useStudioGems } from "../../../lib/studio3d/useStudioGems";
 import { importModelFile, resetModel } from "../../../lib/studio3d/actions";
 import { downloadURL, getEngine } from "../../../lib/studio3d/engine";
+import { startTour, useTour } from "../../../lib/studioWorkspace/studioTour";
 import { notify } from "../../../lib/studio3d/notices";
 import { buildQuoteSheetDataURL } from "../../../lib/studio3d/quoteSheet";
 import {
   CLIENT_NAME_MAX,
   studioStore,
+  useStudio,
   type StudioSnapshot,
 } from "../../../lib/studio3d/store";
+import { useWorkspace } from "../../../lib/studioWorkspace/workspace";
+import { openWorkspaceDialog } from "../../../lib/studioWorkspace/workspaceUi";
 import { useFormat } from "../../../lib/format";
 
 const toolButton = clsx(
@@ -79,13 +86,7 @@ export function EditorTopBar({ snap, onOpenMenu }: { snap: StudioSnapshot; onOpe
             <HelpHint id="saving" className="-my-1 h-5 w-5 max-md:hidden" />
           </span>
         </div>
-        <span
-          title={t("studio.access.previewHint")}
-          className="hidden items-center gap-1 whitespace-nowrap rounded-[var(--radius-pill)] border border-[var(--gt-emerald-300)] bg-[var(--status-success-bg)] px-2 py-0.5 text-[10px] font-bold uppercase tracking-[.08em] text-[var(--status-success-fg)] lg:inline-flex"
-        >
-          <Sparkles size={11} aria-hidden="true" />
-          {t("studio.access.previewBadge")}
-        </span>
+        <StudioAccessBadge />
       </div>
 
       <div className="flex-1 max-sm:hidden" />
@@ -105,27 +106,31 @@ export function EditorTopBar({ snap, onOpenMenu }: { snap: StudioSnapshot; onOpe
       </p>
 
       <span aria-hidden="true" className="mx-0.5 hidden h-5 w-px bg-[var(--border-subtle)] sm:block" />
-      <button
-        type="button"
-        className={toolButton}
-        aria-label={t("studio.editor.undo")}
-        title={t("studio.editor.undoHint")}
-        disabled={!snap.canUndo}
-        onClick={() => studioStore.undo()}
-      >
-        <Undo2 size={16} aria-hidden="true" />
-      </button>
-      {/* On a phone, Undo stays and Redo steps aside for the design's name (Ctrl+Y still works on a keyboard). */}
-      <button
-        type="button"
-        className={clsx(toolButton, "max-sm:hidden")}
-        aria-label={t("studio.editor.redo")}
-        title={t("studio.editor.redoHint")}
-        disabled={!snap.canRedo}
-        onClick={() => studioStore.redo()}
-      >
-        <Redo2 size={16} aria-hidden="true" />
-      </button>
+      {/* Undo and Redo travel together: the guided tour points at the pair (`data-tour`). */}
+      <div data-tour="history" className="flex flex-none items-center gap-1 sm:gap-2">
+        <button
+          type="button"
+          className={toolButton}
+          aria-label={t("studio.editor.undo")}
+          title={t("studio.editor.undoHint")}
+          disabled={!snap.canUndo}
+          onClick={() => studioStore.undo()}
+        >
+          <Undo2 size={16} aria-hidden="true" />
+        </button>
+        {/* On a phone, Undo stays and Redo steps aside for the design's name (Ctrl+Y still works on a keyboard). */}
+        <button
+          type="button"
+          className={clsx(toolButton, "max-sm:hidden")}
+          aria-label={t("studio.editor.redo")}
+          title={t("studio.editor.redoHint")}
+          disabled={!snap.canRedo}
+          onClick={() => studioStore.redo()}
+        >
+          <Redo2 size={16} aria-hidden="true" />
+        </button>
+      </div>
+      <TourButton />
       <span aria-hidden="true" className="mx-0.5 hidden h-5 w-px bg-[var(--border-subtle)] sm:block" />
       <input ref={fileRef} type="file" accept=".glb,.gltf,model/gltf-binary" className="hidden" onChange={handleFile} tabIndex={-1} />
       <button
@@ -153,8 +158,33 @@ export function EditorTopBar({ snap, onOpenMenu }: { snap: StudioSnapshot; onOpe
       <QuickActionsMenu triggerClassName={clsx(toolButton, "max-sm:hidden")} />
       <ExportMenu />
       <ShareMenu triggerClassName={toolButton} />
-      <SaveControls />
+      <span data-tour="save" className="flex flex-none items-center">
+        <SaveControls />
+      </span>
     </header>
+  );
+}
+
+/**
+ * The way back into the guided tour, from the stage itself: one discreet button
+ * that starts the walkthrough wherever the artist is, without touching the
+ * design. The longer form — the lessons, the questions, the shortcuts — stays
+ * on the Help page, which can replay the tour too.
+ */
+function TourButton() {
+  const { t } = useEditorLabels();
+  const tour = useTour();
+  if (tour.running) return null;
+  return (
+    <button
+      type="button"
+      className={clsx(toolButton, "max-md:hidden")}
+      aria-label={t("studio.workspace.onboarding.replay")}
+      title={t("studio.workspace.onboarding.replay")}
+      onClick={() => startTour({ withStage: !!getEngine() })}
+    >
+      <Compass size={16} aria-hidden="true" />
+    </button>
   );
 }
 
@@ -166,6 +196,10 @@ function ExportMenu() {
   const [open, setOpen] = useState(false);
   const [quoting, setQuoting] = useState(false);
   const [client, setClient] = useState(studioStore.clientName);
+  // Try-on works from the saved creation: offered once the design is saved with nothing pending.
+  const ws = useWorkspace();
+  const activeId = useStudio().active?.creationId;
+  const saved = !ws.dirty ? ws.creations.find((c) => c.id === activeId && c.elementCount > 0) : undefined;
 
   const close = () => {
     setOpen(false);
@@ -270,6 +304,17 @@ function ExportMenu() {
         sub={t("studio.editor.export.transparentSub")}
         onClick={() => exportPng(true)}
       />
+      {saved && (
+        <PopoverItem
+          icon={<ScanFace size={14} />}
+          label={t("studio.tryOn.action")}
+          sub={t("studio.tryOn.editorSub")}
+          onClick={() => {
+            close();
+            openWorkspaceDialog({ kind: "tryOn", creation: saved });
+          }}
+        />
+      )}
       <PopoverSeparator />
       <PopoverLabel>{t("studio.editor.export.quoteSection")}</PopoverLabel>
       {quoting ? (
@@ -301,6 +346,7 @@ function ExportMenu() {
           onClick={() => setQuoting(true)}
         />
       )}
+      <PlacementSheetMenuItem onDone={close} />
       <PopoverSeparator />
       <PopoverItem
         icon={<Braces size={14} />}

@@ -313,25 +313,77 @@
   },
   "onboarding": {
     "progress": "Step {{step}} of {{total}}",
-    "skip": "Skip tutorial",
+    "trail": "Guided tour progress",
+    "skip": "Leave",
+    "close": "Close the guided tour",
     "back": "Back",
     "next": "Next",
-    "start": "Start designing",
+    "continue": "Continue",
+    "finish": "Finish",
+    "replay": "Replay the guided tour",
+    "gestures": {
+      "rotate": "Drag to turn",
+      "zoom": "Wheel or pinch to zoom",
+      "frame": "Views and zoom below the stage"
+    },
     "welcome": {
-      "title": "Welcome to the Tooth Gem Studio",
-      "body": "Create, experiment and save your own designs on a 3D smile. Here is the whole idea in three quick steps."
+      "title": "Welcome to your 3D studio",
+      "sub": "Your first design, in six guided steps",
+      "body": "This is where you compose tooth jewellery on a 3D smile: you place real gems from the shop, adjust them, and turn around your design. Nothing is final and nothing is ordered — try everything.",
+      "promises": {
+        "explore": "Look around the smile: turn it, zoom in, reframe it.",
+        "place": "Place your first gem on whichever tooth you like.",
+        "refine": "Change colour, size and angle — and undo whenever you want."
+      },
+      "length": "{{count}} steps · about 2 minutes · the Studio stays yours to use throughout",
+      "start": "Start the tour",
+      "explore": "Explore on my own"
+    },
+    "complete": {
+      "title": "You know your way around the Studio",
+      "sub": "The tour is done — the rest is yours",
+      "body": "You can place a gem, adjust it and undo: that is everything you need to compose a whole smile. Add more gems, mirror them across the arch, and once a design pleases you, keep it in My Creations.",
+      "again": "Need a reminder? “Help & tutorial”, in the Studio menu, starts the tour again and gathers the lessons, the common questions and the keyboard shortcuts.",
+      "cta": "Start creating"
+    },
+    "stage": {
+      "title": "Look around the smile",
+      "body": "Drag across the stage to turn around the smile; use the wheel or a pinch to come closer. The bar below keeps ready-made views and the opening framing.",
+      "task": "Try it: drag across the stage to turn around the smile.",
+      "success": "Lovely. “Views” brings you back to this framing whenever you want."
+    },
+    "pick": {
+      "title": "Choose a gem",
+      "body": "The shop's gems, sorted by family and searchable by name. A click takes one in hand; a drag carries it straight to a tooth.",
+      "bodyClosed": "The gem library is closed to leave room for the stage. This button opens it again.",
+      "task": "Take the gem you like — one click is enough.",
+      "success": "Gem chosen. The rest happens on the stage."
     },
     "place": {
-      "title": "Drag a gem onto a tooth",
-      "body": "Pick a gem in the library on the left and drop it on any tooth. Drag it again to slide it across the enamel."
+      "title": "Put it on a tooth",
+      "body": "With a gem in hand, click the tooth you like: it settles flat on the enamel, where you clicked. Pick it up again to slide it along.",
+      "task": "Place your first gem on a tooth.",
+      "success": "Your first gem is on. That is your design beginning."
     },
-    "compose": {
-      "title": "Compose and adjust",
-      "body": "Select a gem to change its size, rotation and finish on the right. Shift + click selects several — mirror, align, or save them as a reusable Gem Group."
+    "adjust": {
+      "title": "Adjust it to taste",
+      "body": "Select a gem: colour, size, rotation, standoff and fine position are set here, and a quick bar appears on the stage.",
+      "bodyClosed": "A gem's settings live in a panel that is closed. This button opens it: colour, size, rotation and position.",
+      "task": "Select your gem, then change its colour or its size.",
+      "midway": "Gem selected. Now change its colour, its size or its angle.",
+      "success": "That is it. Every gem is adjusted on its own."
     },
-    "save": {
-      "title": "Save and reuse",
-      "body": "“Save creation” keeps your design in My Creations. Your gem groups wait in My Gem Groups, ready to drop onto the next smile."
+    "refine": {
+      "title": "Nothing is final",
+      "body": "Undo and Redo cover everything: a move, a colour, a size, a deletion. To take a gem off: the bin in the quick bar above it, or the Delete key.",
+      "task": "Press Undo: you will see that nothing is lost.",
+      "blocked": "Nothing to undo just yet: place or move a gem and the button lights up.",
+      "success": "And Redo brings it all back. You can experiment freely."
+    },
+    "keep": {
+      "title": "Your design follows you",
+      "body": "The Studio keeps a draft on this device: your design will be here when you come back. “Save” keeps it in My Creations, under your account.",
+      "note": "Keeping a design in My Creations asks you to sign in — your local draft is already kept either way."
     }
   },
   "feedback": {
