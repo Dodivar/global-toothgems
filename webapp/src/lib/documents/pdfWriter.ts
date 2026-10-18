@@ -20,7 +20,15 @@ export type PdfOp =
   | { kind: "text"; x: number; y: number; text: string; weight: FontWeight; size: number; color: string }
   | { kind: "rect"; x: number; y: number; w: number; h: number; fill: string }
   | { kind: "line"; x1: number; y1: number; x2: number; y2: number; color: string; width: number }
-  | { kind: "logo"; x: number; y: number; w: number; h: number };
+  | { kind: "logo"; x: number; y: number; w: number; h: number }
+  | { kind: "path"; commands: PdfPathCommand[]; fill?: string; stroke?: string; width?: number; dash?: number[] };
+
+/** A path segment, in points from the top-left corner: move, line, cubic Bézier, close. */
+export type PdfPathCommand =
+  | ["M", number, number]
+  | ["L", number, number]
+  | ["C", number, number, number, number, number, number]
+  | ["Z"];
 
 export interface PdfInfo {
   title: string;
@@ -83,6 +91,19 @@ export function contentStream(ops: PdfOp[], pageHeight: number = A4.height): str
       out.push(
         `${rgb(op.color)} RG ${num(op.width)} w ${num(op.x1)} ${num(pageHeight - op.y1)} m ${num(op.x2)} ${num(pageHeight - op.y2)} l S`,
       );
+    } else if (op.kind === "path") {
+      if (!op.fill && !op.stroke) continue;
+      const y = (v: number) => num(pageHeight - v);
+      const segments = op.commands.map((c) => {
+        if (c[0] === "Z") return "h";
+        if (c[0] === "C") return `${num(c[1])} ${y(c[2])} ${num(c[3])} ${y(c[4])} ${num(c[5])} ${y(c[6])} c`;
+        return `${num(c[1])} ${y(c[2])} ${c[0] === "M" ? "m" : "l"}`;
+      });
+      const paint = [
+        op.fill ? `${rgb(op.fill)} rg` : "",
+        op.stroke ? `${rgb(op.stroke)} RG ${num(op.width ?? 1)} w [${(op.dash ?? []).map(num).join(" ")}] 0 d` : "",
+      ].filter(Boolean);
+      out.push(`q ${paint.join(" ")} ${segments.join(" ")} ${op.fill && op.stroke ? "B" : op.fill ? "f" : "S"} Q`);
     } else if (op.kind === "logo") {
       out.push(`q ${num(op.w)} 0 0 ${num(op.h)} ${num(op.x)} ${num(pageHeight - op.y - op.h)} cm /Logo Do Q`);
     } else {

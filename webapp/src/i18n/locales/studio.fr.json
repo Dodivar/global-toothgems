@@ -696,5 +696,169 @@
       "incomplete": "Votre rétractation est enregistrée mais n’a pas pu être terminée. Réessayez dans un instant.",
       "error": "Une erreur est survenue. Rien n’a été modifié : réessayez."
     }
+  },
+  "tryOn": {
+    "action": "Essayer sur une photo",
+    "editorSub": "La création enregistrée, sur la photo du sourire de votre client·e",
+    "title": "Essayer sur une photo",
+    "subtitle": "« {{name}} » sur la photo du sourire de votre client·e.",
+    "empty": "Cette création ne contient aucune pierre : ajoutez-en dans l’éditeur, enregistrez, puis revenez l’essayer.",
+    "steps": {
+      "photo": "Photo",
+      "analysis": "Analyse",
+      "adjust": "Ajustement"
+    },
+    "photo": {
+      "tipsTitle": "Pour une bonne photo",
+      "tips": {
+        "front": "De face, le visage droit, à hauteur du sourire",
+        "lips": "Lèvres écartées, les dents bien visibles",
+        "light": "Une lumière franche, sans contre-jour ni ombre sur les dents",
+        "filter": "Sans filtre ni retouche"
+      },
+      "drop": "Déposez la photo ici, ou",
+      "takePhoto": "Prendre une photo",
+      "choose": "Choisir une photo",
+      "replace": "Changer de photo",
+      "previewAlt": "Photo du sourire choisie",
+      "formats": "JPEG, PNG, WebP ou HEIC · {{maxMb}} Mo max · au moins {{minWidth}} × {{minHeight}} pixels",
+      "reading": "Lecture de la photo…",
+      "privacy": "La photo reste sur cet appareil : elle n’est ni envoyée ni enregistrée par Global Toothgems, et elle est oubliée dès que vous fermez cette fenêtre. Ses métadonnées (position GPS, appareil, date) sont retirées.",
+      "consent": "La personne photographiée m’a donné son accord pour utiliser cette photo",
+      "consentHint": "Pour cet essai uniquement. Ne partagez l’image obtenue qu’avec son accord.",
+      "consentRequired": "Cochez cette case pour continuer : il faut l’accord de la personne photographiée.",
+      "continue": "Continuer",
+      "errors": {
+        "type": "Ce fichier n’est pas une photo prise en charge. Choisissez un JPEG, un PNG, un WebP ou un HEIC.",
+        "empty": "Ce fichier est vide. Choisissez une autre photo.",
+        "tooLarge": "Cette photo dépasse {{maxMb}} Mo. Choisissez-en une plus légère.",
+        "tooSmall": "Cette photo est trop petite pour voir les dents : il faut au moins {{minWidth}} × {{minHeight}} pixels.",
+        "unreadable": "Impossible de lire cette photo sur ce navigateur. Si c’est un HEIC, convertissez-le en JPEG (ou réglez l’appareil photo sur « le plus compatible »), puis réessayez."
+      }
+    },
+    "processing": {
+      "title": "Analyse du sourire…",
+      "body": "Nous cherchons les dents sur la photo pour y poser les pierres de la création.",
+      "cancel": "Annuler"
+    },
+    "errors": {
+      "not_available": {
+        "title": "Placement automatique bientôt disponible",
+        "body": "Le placement automatique des pierres n’est pas encore en service. Placez la création à la main : faites-la glisser sur les dents, puis ajustez sa taille et son inclinaison."
+      },
+      "no_smile_detected": {
+        "title": "Aucun sourire détecté",
+        "body": "Nous n’avons pas trouvé de sourire sur cette photo. Prenez-la de face, lèvres écartées."
+      },
+      "low_quality": {
+        "title": "Photo trop floue ou trop sombre",
+        "body": "Reprenez la photo avec plus de lumière, sans bouger, sans filtre."
+      },
+      "teeth_not_visible": {
+        "title": "Dents pas assez visibles",
+        "body": "Les dents de la création ne se voient pas assez. Demandez un sourire plus large, de face."
+      },
+      "failed": {
+        "title": "L’analyse n’a pas abouti",
+        "body": "Une erreur est survenue pendant l’analyse. Réessayez, ou placez la création à la main."
+      }
+    },
+    "errorActions": {
+      "newPhoto": "Prendre une autre photo",
+      "retry": "Réessayer",
+      "manual": "Placer à la main"
+    },
+    "adjust": {
+      "automatic": "Pierres placées automatiquement (fiabilité {{confidence}} %). Vérifiez et corrigez si besoin.",
+      "stageLabel": "« {{name}} » sur la photo du sourire",
+      "gestures": "Faites glisser pour déplacer, pincez à deux doigts pour agrandir et tourner, ou utilisez la molette.",
+      "keys": "Au clavier : flèches pour déplacer, + et − pour la taille, [ et ] pour tourner, Maj pour aller plus vite.",
+      "size": "Taille",
+      "rotation": "Inclinaison",
+      "opacity": "Opacité",
+      "before": "Avant / après",
+      "reset": "Réinitialiser",
+      "newPhoto": "Autre photo",
+      "download": "Télécharger l’image",
+      "share": "Partager",
+      "shareText": "« {{name}} », essayé avec le Studio 3D Global Toothgems",
+      "downloaded": "Image téléchargée.",
+      "exportFailed": "L’image n’a pas pu être créée. Réessayez.",
+      "exportHint": "L’image est créée sur cet appareil ; rien n’est envoyé à Global Toothgems."
+    }
+  },
+  "frontView": {
+    "title": "Vue de face",
+    "hint": "Les deux arcades vues de face, comme vous voyez votre client. Chaque gemme est numérotée : les numéros renvoient à la liste et à la fiche de pose.",
+    "svgTitle": "Vue de face schématique des dents et des gemmes",
+    "svgDescription_one": "Arcades supérieure et inférieure vues de face, avec {{count}} gemme numérotée à sa place sur sa dent. La droite du patient est à gauche du dessin.",
+    "svgDescription_other": "Arcades supérieure et inférieure vues de face, avec {{count}} gemmes numérotées à leur place sur leur dent. La droite du patient est à gauche du dessin.",
+    "patientRight": "Droite du patient",
+    "patientLeft": "Gauche du patient",
+    "listToggle_one": "Voir la gemme ({{count}})",
+    "listToggle_other": "Voir les {{count}} gemmes",
+    "listLabel": "Gemmes numérotées",
+    "gemNumber": "Gemme {{number}}",
+    "order": "Pose n° {{order}}",
+    "empty": "Placez une gemme sur une dent : elle apparaîtra ici, numérotée.",
+    "notDrawn": "non dessinée",
+    "backFace": "face arrière",
+    "unplaced_one": "{{count}} gemme n’est pas dessinée : elle est posée sur un modèle importé ou hors des dents repérées. Elle reste dans la liste.",
+    "unplaced_other": "{{count}} gemmes ne sont pas dessinées : elles sont posées sur un modèle importé ou hors des dents repérées. Elles restent dans la liste.",
+    "open": "Agrandir",
+    "openLabel": "Agrandir la vue de face",
+    "dialogTitle": "Vue de face · {{name}}",
+    "close": "Fermer",
+    "show": "Vue de face",
+    "materials": {
+      "crystal": "Cristal",
+      "metal": "Métal",
+      "iridescent": "Irisé"
+    },
+    "shapes": {
+      "round": "Rond",
+      "baguette": "Baguette",
+      "square": "Carré",
+      "heart": "Cœur",
+      "open-heart": "Cœur ajouré",
+      "kite": "Losange",
+      "navette": "Navette",
+      "raindrop": "Goutte",
+      "triangle": "Triangle",
+      "rivoli-star": "Étoile",
+      "starflower": "Fleur étoilée",
+      "halo-star": "Étoile ajourée",
+      "bolt": "Éclair",
+      "cherries": "Cerises",
+      "snake": "Serpent",
+      "dachshund": "Teckel"
+    }
+  },
+  "placementSheet": {
+    "title": "Fiche de pose",
+    "action": "Fiche de pose · PDF",
+    "actionSub": "Vue de face numérotée et tableau de pose, à imprimer",
+    "notReady": "Les gemmes de la boutique sont encore en chargement : réessayez dans un instant.",
+    "error": "La fiche de pose n’a pas pu être créée. Réessayez.",
+    "fileName": "fiche de pose",
+    "subtitle_one": "{{count}} gemme",
+    "subtitle_other": "{{count}} gemmes",
+    "subtitleModified_one": "{{count}} gemme · modifiée le {{date}}",
+    "subtitleModified_other": "{{count}} gemmes · modifiée le {{date}}",
+    "gemsTitle": "Gemmes",
+    "number": "N°",
+    "tooth": "Dent (FDI)",
+    "shape": "Forme",
+    "size": "Taille",
+    "colour": "Couleur / matière",
+    "order": "Ordre de pose",
+    "totalsTitle": "Par référence",
+    "reference": "Référence",
+    "count": "Qté",
+    "numbers": "Gemmes n°",
+    "toBuy": "À prévoir",
+    "sameAsAbove": "voir ci-dessus",
+    "footer": "Schéma indicatif du Studio 3D, à adapter à la dentition réelle. Ordre suggéré : arcade supérieure d’abord, du centre vers l’extérieur.",
+    "page": "Page {{page}} / {{count}}"
   }
 }

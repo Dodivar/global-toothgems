@@ -1,4 +1,4 @@
-import { useId, useRef, type ReactNode } from "react";
+import { useId, useRef, useState, type ReactNode } from "react";
 import clsx from "clsx";
 import {
   AlignCenterHorizontal,
@@ -10,6 +10,7 @@ import {
   Crosshair,
   FlipHorizontal2,
   FlipVertical2,
+  Maximize2,
   RotateCcw,
   RotateCw,
   SquareSplitHorizontal,
@@ -38,6 +39,8 @@ import { getEngine } from "../../../lib/studio3d/engine";
 import { notify } from "../../../lib/studio3d/notices";
 import { studioStore, type StudioSnapshot } from "../../../lib/studio3d/store";
 import { ShoppingList } from "./ShoppingList";
+import { useFrontView } from "../useFrontView";
+import { FrontViewDialog, FrontViewFigure } from "../FrontViewPanel";
 import { SaveSelectionAsGroup } from "../workspace/SaveSelectionAsGroup";
 
 const focusRing = "focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-[var(--focus-ring)]";
@@ -574,6 +577,8 @@ function OverviewPanel({ snap }: { snap: StudioSnapshot }) {
       {/* Stays in view: it qualifies the price shown just above. */}
       {total > 0 && <Hint className="mt-2.5">{t("studio.editor.estimateHint")}</Hint>}
 
+      <FrontViewSection snap={snap} />
+
       <SectionLabel info={t("studio.editor.shopping.hint")}>{t("studio.editor.shopping.title")}</SectionLabel>
       <ShoppingList jewels={snap.jewels} />
 
@@ -600,6 +605,38 @@ function OverviewPanel({ snap }: { snap: StudioSnapshot }) {
           ))}
         </dl>
       </div>
+    </>
+  );
+}
+
+/** The design seen from the front, live, with the way to the large view and the placement sheet. */
+function FrontViewSection({ snap }: { snap: StudioSnapshot }) {
+  const { t } = useEditorLabels();
+  const [open, setOpen] = useState(false);
+  const projection = useFrontView(snap.jewels, snap.modelMode);
+  return (
+    <>
+      <SectionLabel info={t("studio.frontView.hint")}>{t("studio.frontView.title")}</SectionLabel>
+      {snap.jewels.length ? (
+        <>
+          <FrontViewFigure projection={projection} list={false} />
+          <div className="mt-2 flex">
+            <button type="button" className={miniButton} aria-haspopup="dialog" aria-label={t("studio.frontView.openLabel")} onClick={() => setOpen(true)}>
+              <Maximize2 size={13} aria-hidden="true" />
+              {t("studio.frontView.open")}
+            </button>
+          </div>
+          <FrontViewDialog
+            open={open}
+            onClose={() => setOpen(false)}
+            pieces={snap.jewels}
+            model={snap.modelMode}
+            name={snap.active?.name || t("studio.workspace.untitled")}
+          />
+        </>
+      ) : (
+        <Hint>{t("studio.frontView.empty")}</Hint>
+      )}
     </>
   );
 }

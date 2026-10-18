@@ -12,6 +12,7 @@ import { SaveCreationDialog } from "./SaveCreationDialog";
 import { SaveGemGroupDialog } from "./SaveGemGroupDialog";
 import { ShareDialog } from "./ShareDialog";
 import { SignInPrompt } from "./SignInPrompt";
+import { TryOnDialog } from "../tryOn/TryOnDialog";
 
 /**
  * Hosts whichever workspace dialog is open (see `workspaceUi`). Saving asks
@@ -42,6 +43,8 @@ export function WorkspaceDialogs() {
       return <CreationDetail creationId={dialog.creationId} onClose={close} />;
     case "shareCreation":
       return <ShareDialog creation={dialog.creation} onClose={close} />;
+    case "tryOn":
+      return <TryOnDialog creation={dialog.creation} onClose={close} />;
     case "deleteCreation":
       return (
         <DeleteConfirmation kind="creation" name={dialog.creation.name} onConfirm={() => ws.deleteCreation(dialog.creation)} onClose={close} />

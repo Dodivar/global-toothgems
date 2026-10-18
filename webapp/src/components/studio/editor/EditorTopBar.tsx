@@ -13,12 +13,14 @@ import {
   Undo2,
   Upload,
   ReceiptText,
+  ScanFace,
 } from "lucide-react";
 import monogram from "../../../assets/monogram-blue.png";
 import { Button } from "../../ui/Button";
 import { EditorPopover, PopoverItem, PopoverLabel, PopoverSeparator } from "./EditorPopover";
 import { useEditorLabels } from "./editorLabels";
 import { QuickActionsMenu } from "./QuickActionsMenu";
+import { PlacementSheetMenuItem } from "./PlacementSheetMenuItem";
 import { ShareMenu } from "./ShareMenu";
 import { HelpHint } from "../workspace/HelpHint";
 import { SaveControls } from "../workspace/SaveControls";
@@ -35,8 +37,11 @@ import { buildQuoteSheetDataURL } from "../../../lib/studio3d/quoteSheet";
 import {
   CLIENT_NAME_MAX,
   studioStore,
+  useStudio,
   type StudioSnapshot,
 } from "../../../lib/studio3d/store";
+import { useWorkspace } from "../../../lib/studioWorkspace/workspace";
+import { openWorkspaceDialog } from "../../../lib/studioWorkspace/workspaceUi";
 import { useFormat } from "../../../lib/format";
 
 const toolButton = clsx(
@@ -191,6 +196,10 @@ function ExportMenu() {
   const [open, setOpen] = useState(false);
   const [quoting, setQuoting] = useState(false);
   const [client, setClient] = useState(studioStore.clientName);
+  // Try-on works from the saved creation: offered once the design is saved with nothing pending.
+  const ws = useWorkspace();
+  const activeId = useStudio().active?.creationId;
+  const saved = !ws.dirty ? ws.creations.find((c) => c.id === activeId && c.elementCount > 0) : undefined;
 
   const close = () => {
     setOpen(false);
@@ -295,6 +304,17 @@ function ExportMenu() {
         sub={t("studio.editor.export.transparentSub")}
         onClick={() => exportPng(true)}
       />
+      {saved && (
+        <PopoverItem
+          icon={<ScanFace size={14} />}
+          label={t("studio.tryOn.action")}
+          sub={t("studio.tryOn.editorSub")}
+          onClick={() => {
+            close();
+            openWorkspaceDialog({ kind: "tryOn", creation: saved });
+          }}
+        />
+      )}
       <PopoverSeparator />
       <PopoverLabel>{t("studio.editor.export.quoteSection")}</PopoverLabel>
       {quoting ? (
@@ -326,6 +346,7 @@ function ExportMenu() {
           onClick={() => setQuoting(true)}
         />
       )}
+      <PlacementSheetMenuItem onDone={close} />
       <PopoverSeparator />
       <PopoverItem
         icon={<Braces size={14} />}

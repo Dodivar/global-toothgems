@@ -14,6 +14,7 @@ export type WorkspaceDialog =
   | { kind: "deleteCreation"; creation: Creation }
   | { kind: "creationDetail"; creationId: string }
   | { kind: "shareCreation"; creation: Creation }
+  | { kind: "tryOn"; creation: Creation }
   | { kind: "saveGroup"; pieceIds: string[] }
   | { kind: "editGroup"; group: GemGroup }
   | { kind: "deleteGroup"; group: GemGroup }
