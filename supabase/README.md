@@ -1997,4 +1997,8 @@ VAT rates, shipping zones/rates mirroring the Settings prototype. Media rows ref
     is deleted); (d) no limit on withdrawals per account (each one costs the days used); (e) Stripe's invoice keeps
     no credit note for this refund (decision 94 (b) with the accountant); (f) a Studio refund made by hand in the
     Stripe dashboard is not recorded anywhere; (g) the webhook endpoint must receive `refund.created`,
-    `refund.updated`, `refund.failed` — until then a withdrawal stays `refund_pending` (the money still leaves).
+    `refund.updated`, `refund.failed`: added to the TEST-mode endpoint on 2026-10-18 at the owner's request
+    (`studio-billing-setup` `webhook_events`), to add to the live endpoint at launch. Verified end to end the same
+    day in test mode (`smoke_withdraw` on the owner's test subscription paid that morning: 1 day of 31 used, €0.64
+    kept, €19.26 refunded; subscription cancelled by `customer.subscription.deleted`, refund confirmed by
+    `refund.updated`, acknowledgement e-mail delivered).
