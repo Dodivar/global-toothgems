@@ -40,6 +40,7 @@ import { ChartSkeleton, KpiSkeleton, RowsSkeleton, StatsError } from "../../comp
 import { TopProducts } from "../../components/admin/stats/TopProducts";
 import { TrendChart } from "../../components/admin/stats/TrendChart";
 import { StudioTrialPanel } from "../../components/admin/stats/StudioTrialPanel";
+import { StudioRevenuePanel } from "../../components/admin/stats/StudioRevenuePanel";
 import {
   CHART_METRICS,
   PARAM,
@@ -556,6 +557,9 @@ export function Statistics() {
 
             {/* 5b — the 3D Studio free trial (its own read: studio_trials, studio_subscriptions) */}
             <StudioTrialPanel period={period} reloadKey={fetchedAt} />
+
+            {/* 5c — the Studio's subscription money: settled, still withdrawable, refunded */}
+            <StudioRevenuePanel period={period} reloadKey={fetchedAt} />
 
             {/* 6 — how the order book behaved, and where it came from */}
             <div className="grid items-start gap-5 xl:grid-cols-[minmax(0,1fr)_minmax(0,1.2fr)]">
