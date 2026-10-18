@@ -108,9 +108,17 @@ function PaymentForm({ expiresAt, payLabel, billing, beforeConfirm, onSubmit, on
     if (!checkout || paying) return;
     setPaying(true);
     setError(null);
-    if (beforeConfirm && !(await beforeConfirm())) {
-      setPaying(false);
-      return;
+    if (beforeConfirm) {
+      // It may change the session on the server (metadata): Stripe.js re-reads it before confirming.
+      let allowed = false;
+      const synced = await checkout.runServerUpdate(async () => {
+        allowed = await beforeConfirm();
+      });
+      if (!allowed || synced.type === "error") {
+        if (allowed && synced.type === "error") setError(synced.error.message || t("checkout.payment.failed"));
+        setPaying(false);
+        return;
+      }
     }
     onSubmit?.();
     const result = await checkout.confirm(billing ? { billingAddress: billing, redirect: "if_required" } : { redirect: "if_required" });
