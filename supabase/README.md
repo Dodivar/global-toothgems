@@ -1017,7 +1017,8 @@ course_completions (user, course, completed_at, average_score, min_score, certif
 - **Media**: storage policy "learners read their courses' media" (`private.can_read_learner_media_path()`): the cover
   of a held course, and the block media, posters, module covers and question images of a held *published* course,
   English files included (decision 92).
-  The browser signs them (`createSignedUrls`, 4 h, renewed every 3 h).
+  The browser signs them (`createSignedUrls`, 4 h) and keeps each address until it has less than 1 h left
+  (`webapp/src/lib/supabase/signedUrlCache.ts`), so cached files are not downloaded again.
 - **Progress writes** — functions only, each re-checking the entitlement and that the course is published (row lock
   on the entitlement serialises one member's writes), then the path rules of `webapp/src/lib/learning/path.ts`
   (`private.learner_path()`: each module's steps by position, then its check; required = `complete_all_steps` /
@@ -1590,7 +1591,7 @@ VAT rates, shipping zones/rates mirroring the Settings prototype. Media rows ref
     recipient details of a gift card being bought stay in the tab's cart storage like the rest of the cart.
 
 55. **Lesson media signed for 4 hours** (agent, 2026-10-01, to confirm): the member's browser signs the media of the
-    courses they hold for 4 h (renewed every 3 h), so a long lesson video can be watched and sought through without
+    courses they hold for 4 h (the same address is reused, also across reloads of the tab, until 1 h is left), so a long lesson video can be watched and sought through without
     expiring mid-way. Consequence: a signed URL keeps working up to 4 h after a revocation, an expiry or a
     withdrawal, and for anyone the member passes it to. Shorten `LEARNER_SIGNED_URL_SECONDS`
     (`webapp/src/lib/learning/learnerApi.ts`) or move to a streaming provider (Mux) if that is not acceptable.
