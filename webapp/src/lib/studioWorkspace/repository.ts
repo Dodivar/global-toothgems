@@ -23,7 +23,8 @@ import type { Creation, FeedbackInput, GemGroup, RecordDetails } from "./types";
  * save" instead of pretending the design was stored.
  */
 
-export type StudioStoreErrorCode = "storage" | "notFound" | "invalid" | "unavailable";
+/** `accessDenied`: the database refused a write because the member has no Studio access (trial over). */
+export type StudioStoreErrorCode = "storage" | "notFound" | "invalid" | "unavailable" | "accessDenied";
 
 export class StudioStoreError extends Error {
   readonly code: StudioStoreErrorCode;

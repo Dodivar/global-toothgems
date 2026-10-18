@@ -2,16 +2,23 @@ import { useTranslation } from "react-i18next";
 import { Plus } from "lucide-react";
 
 /**
- * The Studio's questions, as native `<details>` — keyboard-operable and
- * announced as expandable without any script, like the Loyalty FAQ.
+ * The questions asked before subscribing, on the alternative Studio page.
  *
- * The answers are fictional prototype copy: availability, saving and the link
- * with ordering describe the intended product and must be checked against the
- * real Studio before launch.
+ * Native `<details>`, like the rest of the site: keyboard-operable and
+ * announced as expandable without a line of script. Answers that depend on
+ * business rules nobody has written yet (trial expiry, changing plan) carry a
+ * visible "to be confirmed" chip instead of an invented policy.
  */
+interface Entry {
+  question: string;
+  answer: string;
+  /** The answer describes a rule that is not decided yet. */
+  placeholder?: boolean;
+}
+
 export function StudioFaq() {
   const { t } = useTranslation();
-  const entries = t("studio.faq.items", { returnObjects: true }) as { question: string; answer: string }[];
+  const entries = t("studioPage.faq.items", { returnObjects: true }) as Entry[];
 
   return (
     <div className="grid gap-2.5">
@@ -30,9 +37,14 @@ export function StudioFaq() {
               <Plus size={16} />
             </span>
           </summary>
-          <p className="m-0 max-w-[var(--max-width-prose)] px-5 pb-5 text-[length:var(--text-body-sm)] leading-[1.7] text-[var(--text-body)]">
-            {entry.answer}
-          </p>
+          <div className="grid max-w-[var(--max-width-prose)] gap-2 px-5 pb-5">
+            {entry.placeholder && (
+              <span className="w-fit rounded-[var(--radius-pill)] border border-dashed border-[var(--gt-blue-300)] bg-[var(--gt-blue-50)] px-2.5 py-1 text-[10.5px] font-bold uppercase tracking-[var(--tracking-wide)] text-[var(--gt-blue-700)]">
+                {t("studioPage.faq.placeholderLabel")}
+              </span>
+            )}
+            <p className="m-0 text-[length:var(--text-body-sm)] leading-[1.7] text-[var(--text-body)]">{entry.answer}</p>
+          </div>
         </details>
       ))}
     </div>

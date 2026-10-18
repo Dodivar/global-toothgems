@@ -15,7 +15,7 @@ const SERVER_RENDERED: { path: string; text: string }[] = [
   { path: "/fr/formes", text: "Toutes les formes de gems" },
   { path: "/en/colours", text: "Every gem colour" },
   { path: "/fr/fidelite", text: "Vos récompenses" },
-  { path: "/en/3d-studio", text: "Create your own tooth jewellery" },
+  { path: "/en/3d-studio", text: "Imagine it. Design it. Make it yours." },
   { path: "/fr/academy/formation/fondation", text: "Fondation Tooth Gem" },
   { path: "/en/help/faq", text: "Frequently asked questions" },
   { path: "/fr/mentions-legales", text: "Mentions légales" },

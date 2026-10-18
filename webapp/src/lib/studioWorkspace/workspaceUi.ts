@@ -14,13 +14,15 @@ export type WorkspaceDialog =
   | { kind: "deleteCreation"; creation: Creation }
   | { kind: "creationDetail"; creationId: string }
   | { kind: "shareCreation"; creation: Creation }
+  | { kind: "tryOn"; creation: Creation }
   | { kind: "saveGroup"; pieceIds: string[] }
   | { kind: "editGroup"; group: GemGroup }
   | { kind: "deleteGroup"; group: GemGroup }
   | { kind: "discardChanges"; onConfirm: () => void }
   | { kind: "signIn" }
   | { kind: "feedback" }
-  | { kind: "onboarding" };
+  | { kind: "onboarding" }
+  | { kind: "tourComplete" };
 
 let current: WorkspaceDialog | null = null;
 const listeners = new Set<() => void>();
@@ -54,9 +56,15 @@ export function useWorkspaceDialog(): WorkspaceDialog | null {
 
 /* ---------------------------------------------------------- onboarding */
 
-const ONBOARDING_KEY = "gt-studio3d-onboarding-v1";
+/**
+ * v2: the welcome became the guided tour over the editor itself
+ * (`components/studio/workspace/StudioTour`). The key was bumped so the new
+ * tour is offered once to everyone, including artists who dismissed the old
+ * four-slide dialog; nothing else is stored under it.
+ */
+const ONBOARDING_KEY = "gt-studio3d-onboarding-v2";
 
-/** Whether the welcome tour was already finished or skipped in this browser. */
+/** Whether the welcome was already answered — tour taken or declined — in this browser. */
 export function onboardingSeen(): boolean {
   try {
     return localStorage.getItem(ONBOARDING_KEY) !== null;
@@ -65,7 +73,7 @@ export function onboardingSeen(): boolean {
   }
 }
 
-export function rememberOnboarding(choice: "done" | "skipped") {
+export function rememberOnboarding(choice: "done" | "skipped" | "started") {
   try {
     localStorage.setItem(ONBOARDING_KEY, choice);
   } catch {

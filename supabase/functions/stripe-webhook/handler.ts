@@ -1,4 +1,11 @@
 import { toDecimalString } from "../_shared/money.ts";
+import { STUDIO_WITHDRAWAL_KIND } from "../_shared/studioWithdrawal.ts";
+import {
+  applySubscriptionEvent,
+  subscriptionTarget,
+  SubscriptionShapeError,
+  type SubscriptionDeps,
+} from "./subscriptions.ts";
 
 /**
  * POST /functions/v1/stripe-webhook — the only path by which a card payment
@@ -17,7 +24,13 @@ import { toDecimalString } from "../_shared/money.ts";
  *        (found by metadata.refund_id, else by the Stripe refund id), or, for a refund
  *        made in the Stripe dashboard (no row), record_external_refund() by payment intent
  *      failed / canceled -> mark_refund_failed(); pending / requires_action -> nothing yet
- *      then the refund e-mail sweep runs (`refundConfirmed`), never failing the event
+ *      then the refund e-mail sweep runs (`refundConfirmed`), never failing the event;
+ *      a refund with metadata kind = studio_withdrawal (decision 95) settles that
+ *      withdrawal instead (settle_studio_withdrawal_refund), never an order
+ *   3c. 3D Studio subscriptions (`subscriptions.ts`): customer.subscription.*,
+ *      invoice.paid / invoice.payment_failed and a subscription-mode
+ *      checkout.session.completed → the subscription is read back from Stripe and
+ *      mirrored by apply_studio_subscription(); invoices recorded with their billing reason
  *   4. the event is marked `processed` (or `failed` + error)
  *
  * Replays are harmless: mark_order_paid() returns a paid order unchanged and
@@ -109,6 +122,10 @@ export interface WebhookDeps {
    * `orderPaid`: idempotent, never throws.
    */
   refundConfirmed?(): Promise<void>;
+  /** A Studio withdrawal's refund (decision 95): `settle_studio_withdrawal_refund()`. */
+  settleStudioWithdrawal?(args: { withdrawalId: string; providerRefundId: string; status: string; reason: string | null }): Promise<void>;
+  /** The 3D Studio subscription writers (decision 94); without them subscription events are ignored. */
+  studio?: Omit<SubscriptionDeps, "log">;
   log(message: string, detail?: unknown): void;
 }
 
@@ -162,6 +179,17 @@ function paymentIntentId(session: CheckoutSessionObject): string | null {
 }
 
 async function applyRefundEvent(refund: RefundObject, deps: WebhookDeps) {
+  if (refund.metadata?.kind === STUDIO_WITHDRAWAL_KIND) {
+    const withdrawalId = uuidOf(refund.metadata.withdrawal_id);
+    if (!withdrawalId || !deps.settleStudioWithdrawal) return "ignored" as const;
+    await deps.settleStudioWithdrawal({
+      withdrawalId,
+      providerRefundId: refund.id,
+      status: refund.status ?? "pending",
+      reason: refund.failure_reason ?? null,
+    });
+    return "processed" as const;
+  }
   const requestedId = uuidOf(refund.metadata?.refund_id);
   switch (refund.status) {
     case "succeeded": {
@@ -269,13 +297,14 @@ export async function handleWebhook(req: Request, deps: WebhookDeps): Promise<Re
   }
 
   const refund = (HANDLED_REFUND_EVENTS as readonly string[]).includes(event.type) ? refundOf(event) : null;
-  const session = refund ? null : sessionOf(event);
+  const studio = refund ? null : subscriptionTarget(event.type, event.data?.object);
+  const session = refund || studio ? null : sessionOf(event);
   const orderId = refund ? uuidOf(refund.metadata?.order_id) : orderIdOf(session);
-  const handled = refund !== null || (HANDLED_EVENTS as readonly string[]).includes(event.type);
+  const handled = refund !== null || studio !== null || (HANDLED_EVENTS as readonly string[]).includes(event.type);
 
   let status: EventStatus;
   try {
-    status = await deps.recordEvent(event, refund?.id ?? session?.id ?? null, orderId);
+    status = await deps.recordEvent(event, refund?.id ?? studio?.objectId ?? session?.id ?? null, orderId);
   } catch (error) {
     deps.log("event not recorded", error instanceof Error ? error.message : error);
     return text({ error: "retry" }, 500);
@@ -283,7 +312,7 @@ export async function handleWebhook(req: Request, deps: WebhookDeps): Promise<Re
   if (status === "processed" || status === "ignored") return text({ received: true, duplicate: true }, 200);
 
   // Not an event of ours (other type, or a session this site did not create).
-  if (!handled || (!refund && (!session || !orderId))) {
+  if (!handled || (!refund && !studio && (!session || !orderId))) {
     try {
       await deps.finishEvent(event.id, "ignored");
     } catch (error) {
@@ -294,12 +323,17 @@ export async function handleWebhook(req: Request, deps: WebhookDeps): Promise<Re
   }
 
   try {
-    const outcome = refund ? await applyRefundEvent(refund, deps) : await applyEvent(event, session!, orderId!, deps);
+    const outcome = refund
+      ? await applyRefundEvent(refund, deps)
+      : studio
+        ? deps.studio ? await applySubscriptionEvent(studio, { ...deps.studio, log: deps.log }) : "ignored"
+        : await applyEvent(event, session!, orderId!, deps);
     await deps.finishEvent(event.id, outcome);
     return text({ received: true }, 200);
   } catch (error) {
     const message = error instanceof Error ? error.message : String(error);
-    const permanent = error instanceof DbCallError && error.code !== undefined && PERMANENT_SQLSTATES.has(error.code);
+    const permanent = error instanceof SubscriptionShapeError ||
+      (error instanceof DbCallError && error.code !== undefined && PERMANENT_SQLSTATES.has(error.code));
     deps.log(`processing ${event.type} failed (${permanent ? "permanent" : "will retry"})`, message);
     try {
       await deps.finishEvent(event.id, "failed", message.slice(0, 2000));

@@ -8,51 +8,7 @@
     "opal": "Opal"
   },
   "hero": {
-    "eyebrow": "Studio 3D",
-    "title": "Create your own tooth jewellery.",
-    "body": "Design unique compositions, experiment with shapes and placements, and bring your ideas to life with the Global Toothgems 3D Studio.",
-    "ctaOpen": "Open the Studio",
-    "ctaSecondary": "See the plans",
-    "ctaPrimary_one": "Try it free for {{count}} day",
-    "ctaPrimary_other": "Try it free for {{count}} days",
-    "reassurance_one": "{{count}} day free, then from {{price}} / month · cancel anytime",
-    "reassurance_other": "{{count}} days free, then from {{price}} / month · cancel anytime"
-  },
-  "demo": {
-    "description": "3D Studio demo: placing gems on teeth, changing their colours, moving and rotating them.",
-    "play": "Play the demo",
-    "pause": "Pause the demo"
-  },
-  "advantages": {
-    "eyebrow": "Why the 3D Studio",
-    "title": "See the result before it is set.",
-    "body": "Compose, compare, decide — on a 3D smile, before a single gem is set.",
-    "items": {
-      "try": {
-        "title": "Try without risk",
-        "body": "Shapes, colours, placements: test as much as you like, then keep what you love."
-      },
-      "shop": {
-        "title": "The shop’s real gems",
-        "body": "The library holds the shop’s gems, in their colours and sizes: what you compose exists."
-      },
-      "share": {
-        "title": "Share with a link",
-        "body": "Send your creation to friends or to the artist who will set it: they see it in 3D, no account needed."
-      },
-      "keep": {
-        "title": "Your creations, kept",
-        "body": "Every composition is saved to your account, ready to pick up again or duplicate."
-      }
-    }
-  },
-  "inspiration": {
-    "eyebrow": "Inspiration",
-    "title": "Six moods to start from.",
-    "body": "Boards to spark ideas — open one in the Studio and make it yours.",
-    "number": "No. {{n}}",
-    "recreate": "Recreate in the Studio",
-    "recreateAria": "Recreate the {{style}} composition in the Studio"
+    "eyebrow": "Studio 3D"
   },
   "plans": {
     "eyebrow": "Plans",
@@ -110,55 +66,6 @@
       }
     }
   },
-  "bar": {
-    "trial_one": "{{count}} day free",
-    "trial_other": "{{count}} days free",
-    "then": "then from {{price}} / month",
-    "cta": "Try it"
-  },
-  "pricing": {
-    "eyebrow": "3D Studio access",
-    "planName": "Studio 3D · Monthly",
-    "perMonth": "/ month",
-    "selected": "Selected",
-    "benefits": [
-      "Full access to the 3D Studio",
-      "Creative composition tools",
-      "Your saved creations, always at hand",
-      "Access to future Studio improvements"
-    ],
-    "reassurance": "No commitment — cancel anytime."
-  },
-  "faq": {
-    "eyebrow": "Questions",
-    "title": "Good to know.",
-    "items": [
-      {
-        "question": "What is the 3D Studio?",
-        "answer": "An online creative tool to design your own tooth jewellery compositions: choose pieces, place them on a smile and see the result before anything is set."
-      },
-      {
-        "question": "What can I create with it?",
-        "answer": "Anything from a single discreet crystal to a full statement composition — mixing shapes, colours, crystals and gold charms across several teeth."
-      },
-      {
-        "question": "How much does the Studio cost?",
-        "answer": "You can try the Studio for free, then carry on with one of the three monthly plans above. No commitment: you can cancel at any time."
-      },
-      {
-        "question": "Is the Studio available on mobile?",
-        "answer": "Yes. The Studio works on desktop, tablet and mobile; a larger screen is more comfortable for fine placement."
-      },
-      {
-        "question": "Can I save my compositions?",
-        "answer": "Yes. Your compositions are saved in your personal gallery, so you can come back to them, duplicate them or keep refining them."
-      },
-      {
-        "question": "Can I use my creations when ordering jewellery?",
-        "answer": "Your saved composition is a reference: share it with your artist, or use it to find the matching pieces in the shop."
-      }
-    ]
-  },
   "teaser": {
     "eyebrow": "Studio 3D",
     "title": "Turn your ideas into tooth jewellery.",
@@ -170,49 +77,132 @@
     "back": "Back to Studio",
     "title": "Unlock the Global Toothgems 3D Studio.",
     "body": "Your creative space for designing unique tooth jewellery compositions.",
-    "stepsLabel": "Subscription steps",
-    "stepDone": "done",
-    "steps": {
-      "plan": "Plan",
-      "account": "Account",
-      "confirm": "Confirmation"
-    },
-    "planLegend": "Your plan",
-    "planMonthly": "Monthly",
-    "planMonthlySub": "Billed every month · cancel anytime",
-    "accountLegend": "Account",
-    "signedIn": "Signed in",
-    "emailLabel": "Email address",
-    "emailPlaceholder": "you@example.com",
-    "emailHint": "Your Studio access will be linked to this address. Already have an account?",
-    "signInLink": "Sign in",
-    "emailInvalid": "Enter a valid email address.",
-    "paymentLegend": "Payment",
-    "cardDemo": "Card •••• 4242",
-    "cardDemoSub": "Demo card — prototype",
-    "prototypeNote": "Prototype: no card is collected and no payment is taken. In the real Studio, payment happens on our payment provider's secure page.",
-    "summaryLine": "Studio 3D — monthly",
-    "dueToday": "Due today",
-    "renews": "Then {{price}} each month. Cancel anytime from your account.",
-    "terms": "I accept the Studio 3D subscription terms",
-    "termsHint": "Prototype copy — the terms are not written yet.",
-    "cta": "Subscribe & start creating",
-    "ctaHint": "Accept the terms to continue.",
-    "processing": "Confirming…",
-    "confirmedTitle": "Welcome to the Studio.",
-    "confirmedBody": "Your access is ready. A confirmation will be sent to {{email}}.",
-    "prototypeConfirmed": "Prototype: nothing was charged and no access was created.",
-    "openStudio": "Start creating",
-    "reassurance": {
-      "secure": "Secure payment",
-      "cancel": "Cancel anytime",
-      "devices": "Desktop, tablet & mobile"
-    }
+    "signInNote": "Sign in or create your account to subscribe: the subscription belongs to your account, where your creations are saved."
   },
   "access": {
     "previewBadge": "Free preview",
     "previewHint": "The Studio is free during its preview — no payment, no card.",
-    "previewNote": "Free during the preview — no card needed."
+    "previewNote": "Free during the preview — no card needed.",
+    "loading": "Checking your Studio access…",
+    "back": "Back",
+    "backToStudioPage": "Back to the Studio page",
+    "toAccount": "Go to my account",
+    "offer": {
+      "eyebrow": "Free trial",
+      "title": "Try the full 3D Studio free for 48 hours",
+      "body": "Explore every tool, compose your designs on the 3D arch and save them to your account.",
+      "points": {
+        "full": "Full access to the 3D Studio for 48 hours",
+        "noCard": "No credit card, no payment details",
+        "save": "Create and save as many designs as you like",
+        "after": "After 48 hours, editing pauses until you choose a plan",
+        "kept": "Your saved designs stay in your account"
+      },
+      "cta": "Start my free 48-hour trial",
+      "starting": "Starting your trial…",
+      "note": "The 48 hours run continuously from the moment you start, even when the Studio is closed. One trial per account.",
+      "startError": "Your trial could not be started. Check your connection and try again."
+    },
+    "started": {
+      "title": "Your free trial has started",
+      "body": "You have 48 hours of full access. Enjoy the Studio!"
+    },
+    "signedOut": {
+      "eyebrow": "Free trial",
+      "title": "Sign in to start your free 48-hour trial",
+      "body": "Your trial and your designs are linked to your account, so you can pick up where you left off on any device. No credit card needed.",
+      "signIn": "Sign in",
+      "register": "Create an account"
+    },
+    "locked": {
+      "trialTitle": "Your 48-hour free trial has ended",
+      "endedTitle": "Your Studio subscription has ended",
+      "pendingTitle": "Your subscription is being set up",
+      "body": "Your creations are still here. Choose a plan to unlock the 3D Studio again and continue bringing your ideas to life.",
+      "pendingBody": "Your payment is still being confirmed. The Studio unlocks automatically as soon as it is.",
+      "refresh": "Check again",
+      "kept_one": "Your {{count}} saved design is kept in your account. It will be waiting for you in the Studio once a plan is active.",
+      "kept_other": "Your {{count}} saved designs are kept in your account. They will be waiting for you in the Studio once a plan is active.",
+      "keptNone": "Anything you saved stays in your account and will be waiting for you once a plan is active.",
+      "plansTitle": "Choose your plan",
+      "pricesNote": "Prices include VAT. Cancel at any time from your account: the subscription ends at the close of the paid period."
+    },
+    "error": {
+      "title": "We couldn’t check your Studio access",
+      "body": "This is usually a connection problem. Your designs are safe.",
+      "retry": "Try again"
+    },
+    "countdown": {
+      "label": "Free trial",
+      "left": "{{time}} left",
+      "days_one": "{{count}} day",
+      "days_other": "{{count}} days",
+      "hours_one": "{{count}} hour",
+      "hours_other": "{{count}} hours",
+      "minutes_one": "{{count}} minute",
+      "minutes_other": "{{count}} minutes",
+      "lessThanMinute": "less than a minute",
+      "ended": "Trial ended"
+    },
+    "warning": {
+      "body": "Your free trial ends soon — {{time}}. Save your designs, and have a look at the plans to keep creating.",
+      "plans": "See the plans",
+      "dismiss": "Dismiss"
+    },
+    "denied": {
+      "title": "Your Studio access has ended",
+      "body": "This change could not be saved. Your saved designs are kept."
+    },
+    "checkout": {
+      "title": "The payment could not open",
+      "errors": {
+        "sign_in_required": "Your session has expired. Sign in again, then try once more.",
+        "session_expired": "Your session has expired. Sign in again, then try once more.",
+        "terms_required": "Before subscribing, please accept the terms and conditions.",
+        "already_subscribed": "You already have a Studio subscription. You can manage it from your account.",
+        "plan_unavailable": "This plan is not available right now. Choose another one or try again later.",
+        "checkout_closed": "This payment has expired or is already complete. Nothing was charged: open the payment again to continue.",
+        "payment_unavailable": "Online payment is temporarily unavailable. Nothing was charged: try again in a few minutes.",
+        "network": "We could not connect. Check your network, then try again.",
+        "server_error": "Something went wrong. Nothing was charged: please try again."
+      },
+      "manage": "Manage my subscription",
+      "consent": {
+        "label": "I ask for immediate access to the 3D Studio and I acknowledge that, if I exercise my right of withdrawal within 14 days, I will pay the share of the subscription for the period already used.",
+        "required": "Tick this box to pay and open your access."
+      },
+      "termsCta": "Accept and continue"
+    },
+    "payment": {
+      "back": "Change plan",
+      "title": "Complete your subscription",
+      "subtitle": "{{plan}} plan: check the summary, then pay securely. The 3D Studio opens as soon as the payment is confirmed.",
+      "intro": "Enter your payment method right here: your card details are encrypted and sent straight to our payment provider; Global Toothgems never stores them.",
+      "summaryTitle": "Your subscription",
+      "planName": "3D Studio · {{plan}}",
+      "billing": "Billing",
+      "dueToday": "Due today",
+      "renewsMonthly": "Renews automatically every month ({{amount}}) until cancelled.",
+      "renewsYearly": "Renews automatically every year ({{amount}}) until cancelled.",
+      "points": {
+        "access": "Full Studio access as soon as the payment is confirmed",
+        "cancel": "Cancel at any time from your account: the subscription ends at the close of the paid period",
+        "withdraw": "Withdraw within 14 days from your account"
+      },
+      "consentTitle": "Right of withdrawal",
+      "pay": "Pay {{amount}} and subscribe",
+      "seePlans": "See the plans"
+    },
+    "activating": {
+      "title": "We are activating your subscription",
+      "body": "Stripe is confirming your payment: the Studio unlocks in a few seconds.",
+      "slow": "This is taking longer than expected. If your payment went through, the Studio unlocks as soon as Stripe confirms it: check again in a moment.",
+      "refresh": "Check again"
+    },
+    "subscribed": {
+      "title": "Welcome to the 3D Studio",
+      "body": "Your {{plan}} subscription is active."
+    }
   },
   "editor": {
     "documentTitle": "Studio 3D · Workshop",
@@ -392,6 +382,10 @@
       "lampHint": "Warm directional chair lamp",
       "daylightHint": "Bright daylight",
       "current": "Lighting: {{name}}"
+    },
+    "fullscreen": {
+      "enter": "Full screen",
+      "exit": "Exit full screen"
     },
     "orbit": "Orbit",
     "orbitHint": "Slowly orbit around the design",
@@ -630,5 +624,241 @@
       "viewCart": "View cart",
       "noneAvailable": "No product available"
     }
+  },
+  "account": {
+    "eyebrow": "3D Studio",
+    "title": "My subscription",
+    "description": "Your access to the 3D Studio, your plan and its billing.",
+    "loading": "Loading your subscription…",
+    "loadError": "We could not read your subscription right now.",
+    "retry": "Try again",
+    "planLabel": "Plan",
+    "billingLabel": "Billing",
+    "statusLabel": "Status",
+    "interval": {
+      "month": "Monthly",
+      "year": "Yearly"
+    },
+    "state": {
+      "subscribed": "Active",
+      "pastDue": "Payment to fix",
+      "trial_active": "Free trial running",
+      "trial_expired": "Free trial ended",
+      "subscription_ended": "Subscription ended",
+      "subscription_pending": "Being activated",
+      "not_started": "No subscription",
+      "staff": "Team access"
+    },
+    "renews": "Next renewal on {{date}}.",
+    "endsOn": "Cancelled: you keep access until {{date}}, then the subscription ends.",
+    "pastDue": "The last payment failed. Update your card to keep your access to the Studio.",
+    "trialUntil": "Your free trial gives you access to the Studio until {{date}}.",
+    "noPlan": "Choose a plan to use the 3D Studio. Your creations stay in your account.",
+    "staffNote": "Your team account opens the Studio without a subscription.",
+    "manage": "Manage my subscription",
+    "manageHint": "Change plan or billing, update your card, see your invoices or cancel: on Stripe’s secure page.",
+    "portalError": "Subscription management is temporarily unavailable. Try again in a moment.",
+    "choosePlan": "Choose a plan",
+    "openStudio": "Open the Studio",
+    "withdrawal": {
+      "title": "Right of withdrawal",
+      "until": "You can withdraw until {{date}} included. We then refund the share of the subscription you have not used.",
+      "paid": "Paid when subscribing",
+      "used": "Days used ({{days}} of {{total}})",
+      "refund": "Refunded if you withdraw today",
+      "estimateNote": "Each day started counts as a day used; the exact amount is worked out when you withdraw.",
+      "cta": "Withdraw",
+      "confirmTitle": "Withdraw from your subscription?",
+      "confirmBody": "This takes effect at once and cannot be undone.",
+      "effectAccess": "Your subscription stops right away: you lose access to the Studio editor and will not be charged again.",
+      "effectRefund": "The refund goes back to the payment method you used; depending on your bank, it appears within a few business days.",
+      "effectCreations": "Your creations stay in your account and you can still view them.",
+      "confirm": "Confirm my withdrawal",
+      "cancel": "Keep my subscription",
+      "contact": "You changed plans since subscribing: to withdraw until {{date}} included, write to us and we will work out your refund.",
+      "contactLink": "Contact us",
+      "retry": "Finish my withdrawal",
+      "status": {
+        "requested": "Withdrawal received on {{date}}: it could not be finished. Try again, or contact us if it keeps failing.",
+        "refund_pending": "Withdrawal received on {{date}}. Refund of {{amount}} in progress.",
+        "refunded": "Withdrawal received on {{date}}. {{amount}} has been refunded.",
+        "refund_failed": "Withdrawal received on {{date}}, but the refund of {{amount}} failed. Our team is on it: contact us if needed.",
+        "no_refund": "Withdrawal received on {{date}}. The paid period was fully used, so nothing is left to refund."
+      },
+      "refused": {
+        "no_subscription": "No running subscription to stop.",
+        "not_paid": "Your first payment is not confirmed yet: try again in a few minutes.",
+        "renewal": "The right of withdrawal only covers the subscription's first period.",
+        "manual_review": "Your withdrawal has to be handled by our team: contact us.",
+        "deadline_passed": "The 14 days to withdraw are over. You can still cancel for the end of the period.",
+        "withdrawn": "Your withdrawal is already recorded."
+      },
+      "incomplete": "Your withdrawal is recorded but could not be finished. Try again in a moment.",
+      "error": "Something went wrong. Nothing was changed: try again."
+    }
+  },
+  "tryOn": {
+    "action": "Try on a photo",
+    "editorSub": "The saved creation, on a photo of your client’s smile",
+    "title": "Try on a photo",
+    "subtitle": "“{{name}}” on a photo of your client’s smile.",
+    "empty": "This creation has no gems yet: add some in the editor, save, then come back to try it on.",
+    "steps": {
+      "photo": "Photo",
+      "analysis": "Analysis",
+      "adjust": "Adjust"
+    },
+    "photo": {
+      "tipsTitle": "For a good photo",
+      "tips": {
+        "front": "Face-on, head straight, at smile height",
+        "lips": "Lips apart, teeth clearly visible",
+        "light": "Good, even light, no backlight or shadow on the teeth",
+        "filter": "No filter or retouching"
+      },
+      "drop": "Drop the photo here, or",
+      "takePhoto": "Take a photo",
+      "choose": "Choose a photo",
+      "replace": "Change photo",
+      "previewAlt": "Chosen smile photo",
+      "formats": "JPEG, PNG, WebP or HEIC · {{maxMb}} MB max · at least {{minWidth}} × {{minHeight}} pixels",
+      "reading": "Reading the photo…",
+      "privacy": "The photo stays on this device: Global Toothgems neither receives nor stores it, and it is forgotten as soon as you close this window. Its metadata (GPS location, device, date) is removed.",
+      "consent": "The person in the photo has agreed to it being used",
+      "consentHint": "For this try-on only. Share the resulting image only with their agreement.",
+      "consentRequired": "Tick this box to continue: the person in the photo must agree.",
+      "continue": "Continue",
+      "errors": {
+        "type": "This file is not a supported photo. Choose a JPEG, PNG, WebP or HEIC.",
+        "empty": "This file is empty. Choose another photo.",
+        "tooLarge": "This photo is over {{maxMb}} MB. Choose a lighter one.",
+        "tooSmall": "This photo is too small to see the teeth: it needs at least {{minWidth}} × {{minHeight}} pixels.",
+        "unreadable": "This browser cannot read this photo. If it is a HEIC, convert it to JPEG (or set the camera to “Most compatible”) and try again."
+      }
+    },
+    "processing": {
+      "title": "Analysing the smile…",
+      "body": "We are finding the teeth in the photo to place the creation’s gems on them.",
+      "cancel": "Cancel"
+    },
+    "errors": {
+      "not_available": {
+        "title": "Automatic placement coming soon",
+        "body": "Automatic gem placement is not available yet. Place the creation by hand: drag it onto the teeth, then adjust its size and tilt."
+      },
+      "no_smile_detected": {
+        "title": "No smile detected",
+        "body": "We could not find a smile in this photo. Take it face-on, lips apart."
+      },
+      "low_quality": {
+        "title": "Photo too blurry or too dark",
+        "body": "Retake the photo with more light, holding still, without a filter."
+      },
+      "teeth_not_visible": {
+        "title": "Teeth not visible enough",
+        "body": "The creation’s teeth cannot be seen well enough. Ask for a wider smile, face-on."
+      },
+      "failed": {
+        "title": "The analysis did not complete",
+        "body": "Something went wrong during the analysis. Try again, or place the creation by hand."
+      }
+    },
+    "errorActions": {
+      "newPhoto": "Take another photo",
+      "retry": "Try again",
+      "manual": "Place by hand"
+    },
+    "adjust": {
+      "automatic": "Gems placed automatically ({{confidence}}% confidence). Check and correct if needed.",
+      "stageLabel": "“{{name}}” on the smile photo",
+      "gestures": "Drag to move, pinch with two fingers to resize and turn, or use the mouse wheel.",
+      "keys": "Keyboard: arrows to move, + and − to resize, [ and ] to turn, Shift for bigger steps.",
+      "size": "Size",
+      "rotation": "Tilt",
+      "opacity": "Opacity",
+      "before": "Before / after",
+      "reset": "Reset",
+      "newPhoto": "Another photo",
+      "download": "Download image",
+      "share": "Share",
+      "shareText": "“{{name}}”, tried on with the Global Toothgems 3D Studio",
+      "downloaded": "Image downloaded.",
+      "exportFailed": "The image could not be created. Try again.",
+      "exportHint": "The image is made on this device; nothing is sent to Global Toothgems."
+    }
+  },
+  "frontView": {
+    "title": "Front view",
+    "hint": "Both arches seen from the front, as you see your client. Every gem is numbered: the numbers match the list and the placement sheet.",
+    "svgTitle": "Schematic front view of the teeth and gems",
+    "svgDescription_one": "Upper and lower arches seen from the front, with {{count}} numbered gem in its place on its tooth. The patient's right is on the left of the drawing.",
+    "svgDescription_other": "Upper and lower arches seen from the front, with {{count}} numbered gems in their places on their teeth. The patient's right is on the left of the drawing.",
+    "patientRight": "Patient's right",
+    "patientLeft": "Patient's left",
+    "listToggle_one": "Show the gem ({{count}})",
+    "listToggle_other": "Show the {{count}} gems",
+    "listLabel": "Numbered gems",
+    "gemNumber": "Gem {{number}}",
+    "order": "Place #{{order}}",
+    "empty": "Place a gem on a tooth: it will appear here, numbered.",
+    "notDrawn": "not drawn",
+    "backFace": "back face",
+    "unplaced_one": "{{count}} gem is not drawn: it sits on an imported model or off the labelled teeth. It stays in the list.",
+    "unplaced_other": "{{count}} gems are not drawn: they sit on an imported model or off the labelled teeth. They stay in the list.",
+    "open": "Enlarge",
+    "openLabel": "Enlarge the front view",
+    "dialogTitle": "Front view · {{name}}",
+    "close": "Close",
+    "show": "Front view",
+    "materials": {
+      "crystal": "Crystal",
+      "metal": "Metal",
+      "iridescent": "Iridescent"
+    },
+    "shapes": {
+      "round": "Round",
+      "baguette": "Baguette",
+      "square": "Square",
+      "heart": "Heart",
+      "open-heart": "Open heart",
+      "kite": "Kite",
+      "navette": "Navette",
+      "raindrop": "Raindrop",
+      "triangle": "Triangle",
+      "rivoli-star": "Star",
+      "starflower": "Star flower",
+      "halo-star": "Open star",
+      "bolt": "Bolt",
+      "cherries": "Cherries",
+      "snake": "Snake",
+      "dachshund": "Dachshund"
+    }
+  },
+  "placementSheet": {
+    "title": "Placement sheet",
+    "action": "Placement sheet · PDF",
+    "actionSub": "Numbered front view and placement table, to print",
+    "notReady": "The shop’s gems are still loading: try again in a moment.",
+    "error": "The placement sheet could not be created. Please try again.",
+    "fileName": "placement sheet",
+    "subtitle_one": "{{count}} gem",
+    "subtitle_other": "{{count}} gems",
+    "subtitleModified_one": "{{count}} gem · modified on {{date}}",
+    "subtitleModified_other": "{{count}} gems · modified on {{date}}",
+    "gemsTitle": "Gems",
+    "number": "No.",
+    "tooth": "Tooth (FDI)",
+    "shape": "Shape",
+    "size": "Size",
+    "colour": "Colour / material",
+    "order": "Placement order",
+    "totalsTitle": "Per reference",
+    "reference": "Reference",
+    "count": "Qty",
+    "numbers": "Gem no.",
+    "toBuy": "To have ready",
+    "sameAsAbove": "see above",
+    "footer": "Indicative diagram from the 3D Studio, to adapt to the real teeth. Suggested order: upper arch first, from the centre outward.",
+    "page": "Page {{page}} / {{count}}"
   }
 }

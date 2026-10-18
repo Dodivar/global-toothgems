@@ -1,4 +1,4 @@
-import { Copy, FolderOpen, Gem, Link2, PencilLine, Trash2 } from "lucide-react";
+import { Copy, FolderOpen, Gem, Link2, PencilLine, ScanFace, Trash2 } from "lucide-react";
 import { Dialog } from "../../ui/Dialog";
 import { Button } from "../../ui/Button";
 import { useFormat } from "../../../lib/format";
@@ -6,6 +6,7 @@ import { useWorkspace } from "../../../lib/studioWorkspace/workspace";
 import { openWorkspaceDialog } from "../../../lib/studioWorkspace/workspaceUi";
 import { CreationThumb, FavoriteButton } from "./CreationCard";
 import { HelpHint } from "./HelpHint";
+import { FrontViewSection, PlacementSheetButton } from "../FrontViewPanel";
 import { useWorkspaceActions } from "./useWorkspaceActions";
 import { tagChip, useWorkspaceFormat } from "./workspaceStyles";
 
@@ -72,6 +73,8 @@ export function CreationDetail({ creationId, onClose }: { creationId: string; on
         </ul>
       )}
 
+      <FrontViewSection pieces={creation.scene.pieces} model={creation.scene.model} />
+
       <div className="flex flex-wrap items-center gap-2 border-t border-[var(--border-subtle)] pt-4">
         <Button
           variant="primary"
@@ -89,6 +92,18 @@ export function CreationDetail({ creationId, onClose }: { creationId: string; on
         </Button>
         <Button variant="outline" size="sm" iconLeft={Link2} onClick={() => openWorkspaceDialog({ kind: "shareCreation", creation })}>
           {t("studio.workspace.actions.share")}
+        </Button>
+        <PlacementSheetButton
+          request={{ name: creation.name, pieces: creation.scene.pieces, model: creation.scene.model, modifiedAt: creation.updatedAt }}
+        />
+        <Button
+          variant="outline"
+          size="sm"
+          iconLeft={ScanFace}
+          disabled={creation.elementCount === 0}
+          onClick={() => openWorkspaceDialog({ kind: "tryOn", creation })}
+        >
+          {t("studio.tryOn.action")}
         </Button>
         <Button variant="ghost" size="sm" iconLeft={PencilLine} onClick={() => openWorkspaceDialog({ kind: "editCreation", creation })}>
           {t("studio.workspace.actions.editDetails")}

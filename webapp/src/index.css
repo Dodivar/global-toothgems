@@ -570,6 +570,13 @@
 .gt-lounge-typing > span:nth-child(2) { animation-delay: .15s; }
 .gt-lounge-typing > span:nth-child(3) { animation-delay: .3s; }
 
+/* A loader that only shows itself when the wait is noticeable. */
+@keyframes gt-quiet-in {
+  from { opacity: 0; }
+  to { opacity: 1; }
+}
+.gt-quiet-in { animation: gt-quiet-in var(--duration-fast) var(--ease-standard) 350ms both; }
+
 @keyframes gt-skeleton {
   from { background-position: 100% 50%; }
   to { background-position: 0 50%; }
@@ -587,6 +594,7 @@
   .gt-stamp-next,
   .gt-stamp-press,
   .gt-lounge-typing > span,
+  .gt-quiet-in,
   .gt-skeleton { animation: none; }
   .gt-lounge-flash { animation: none; background-color: var(--gt-blue-100); }
   .gt-diploma { transform: none; transition: none; }
@@ -1374,16 +1382,6 @@
       linear-gradient(135deg, var(--gt-blue-100), var(--gt-blue-300));
   }
 
-  /* Phone CTA bar */
-  .gt-studio-bar {
-    background: rgba(255, 255, 255, .9);
-    backdrop-filter: blur(var(--glass-blur-strong)) saturate(1.2);
-    -webkit-backdrop-filter: blur(var(--glass-blur-strong)) saturate(1.2);
-    opacity: 0;
-    transform: translateY(24px);
-    transition: opacity var(--duration-normal) var(--ease-out-soft), transform var(--duration-normal) var(--ease-out-soft);
-  }
-  .gt-studio-bar.is-shown { opacity: 1; transform: none; }
 }
 
 @keyframes gt-studio-float {
@@ -1400,9 +1398,104 @@
   .gt-studio-float,
   .gt-studio-glint { animation: none; }
   .gt-studio-glint { opacity: .8; transform: none; }
-  .gt-studio-print,
-  .gt-studio-bar { transition: none; }
+  .gt-studio-print { transition: none; }
   .gt-studio-cta:hover:not(:disabled) { transform: none; }
+}
+
+/* ---------------------------------------------------------------------------
+   3D Studio — presentation page (/studio-3d)
+   ---------------------------------------------------------------------------
+   An editorial composition on the shared
+   tokens composition: white paper, pastel-blue auroras,
+   oversized headlines, glass media frames, emerald on the calls to action and
+   fuchsia only as a hairline accent.
+
+   Media that does not exist yet is drawn as a deliberate placeholder
+   (`.gt-studio-b-ph`): a hatched, dashed surface naming the asset to come.
+   Nothing here is interactive, and nothing here touches `.gt-studio-*`.
+--------------------------------------------------------------------------- */
+@layer components {
+  .gt-studio-b-hero {
+    background:
+      radial-gradient(70% 60% at 78% 8%, rgba(185, 205, 229, .6), transparent 68%),
+      radial-gradient(55% 55% at 2% 92%, rgba(231, 238, 247, .95), transparent 70%),
+      var(--gt-white);
+  }
+  /* Soft colour clouds behind the editorial sections. */
+  .gt-studio-b-aurora {
+    background:
+      radial-gradient(closest-side, rgba(185, 205, 229, .55), transparent),
+      radial-gradient(closest-side, rgba(143, 240, 203, .3), transparent);
+    filter: blur(28px);
+  }
+  .gt-studio-b-aurora--blush {
+    background: radial-gradient(closest-side, rgba(245, 156, 199, .28), transparent);
+    filter: blur(32px);
+  }
+
+  /* Glass frame around a media area: readable, never frosted over content. */
+  .gt-studio-b-frame {
+    background: linear-gradient(135deg, rgba(255, 255, 255, .92), rgba(244, 248, 252, .78));
+    backdrop-filter: blur(var(--glass-blur)) saturate(1.1);
+    -webkit-backdrop-filter: blur(var(--glass-blur)) saturate(1.1);
+    box-shadow: var(--shadow-glass);
+  }
+
+  /* The placeholder surface itself: hatched paper, dashed edge. */
+  .gt-studio-b-ph {
+    background-color: var(--gt-blue-50);
+    background-image: repeating-linear-gradient(
+      135deg,
+      rgba(90, 119, 150, .08) 0 1px,
+      transparent 1px 11px
+    );
+  }
+
+  /* Benefit cards: a hairline that warms up when the card is hovered. */
+  .gt-studio-b-card {
+    background: linear-gradient(170deg, var(--gt-white), var(--gt-blue-50));
+    transition: transform var(--duration-normal) var(--ease-out-soft), box-shadow var(--duration-normal) var(--ease-out-soft), border-color var(--duration-fast) var(--ease-standard);
+  }
+  .gt-studio-b-card:hover {
+    transform: translateY(-3px);
+    border-color: var(--gt-blue-300);
+    box-shadow: var(--shadow-md);
+  }
+  .gt-studio-b-card:focus-within { border-color: var(--gt-blue-300); }
+
+  /* Pricing: the singled-out plan keeps the paper, gains an emerald edge. */
+  .gt-studio-b-plan { transition: transform var(--duration-normal) var(--ease-out-soft), box-shadow var(--duration-normal) var(--ease-out-soft); }
+  .gt-studio-b-plan:hover { transform: translateY(-3px); box-shadow: var(--shadow-md); }
+  .gt-studio-b-plan--featured {
+    background:
+      radial-gradient(70% 60% at 100% 0%, rgba(185, 205, 229, .45), transparent 65%),
+      var(--gt-white);
+    border-color: var(--gt-emerald-400);
+    box-shadow: var(--shadow-lg);
+  }
+  .gt-studio-b-trial {
+    background:
+      radial-gradient(60% 120% at 100% 0%, rgba(143, 240, 203, .35), transparent 60%),
+      linear-gradient(120deg, var(--gt-blue-100), var(--gt-blue-50));
+  }
+
+  /* Closing band. */
+  .gt-studio-b-close {
+    background:
+      radial-gradient(60% 90% at 10% 0%, rgba(143, 240, 203, .4), transparent 62%),
+      radial-gradient(70% 90% at 95% 100%, rgba(245, 156, 199, .22), transparent 60%),
+      linear-gradient(135deg, var(--gt-blue-100), var(--gt-blue-300));
+  }
+
+  /* A fuchsia hairline under section eyebrows, used sparingly. */
+  .gt-studio-b-tick { background: linear-gradient(90deg, var(--gt-fuchsia-400), rgba(224, 71, 155, 0)); }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .gt-studio-b-card,
+  .gt-studio-b-plan { transition: none; }
+  .gt-studio-b-card:hover,
+  .gt-studio-b-plan:hover { transform: none; }
 }
 
 /* ---------------------------------------------------------------------------
@@ -1468,6 +1561,23 @@
   .gt-editor-scroll { scrollbar-width: thin; scrollbar-color: var(--gt-ink-300) transparent; }
   .gt-editor-scroll-x { scrollbar-width: none; }
   .gt-editor-scroll-x::-webkit-scrollbar { display: none; }
+
+  /* The guided tour (`components/studio/workspace/StudioTour`). The spotlight is
+     one element: a ring and a halo on the control, and a very large outer shadow
+     that dims everything else — so the control itself stays fully visible and,
+     the layer taking no pointer events, fully usable. */
+  .gt-tour-spot {
+    box-shadow:
+      0 0 0 2px var(--gt-blue-500),
+      0 0 0 7px color-mix(in srgb, var(--gt-blue-400) 32%, transparent),
+      0 0 0 9999px color-mix(in srgb, var(--gt-ink-900) 40%, transparent);
+    transition:
+      left var(--duration-fast) var(--ease-out-soft),
+      top var(--duration-fast) var(--ease-out-soft),
+      width var(--duration-fast) var(--ease-out-soft),
+      height var(--duration-fast) var(--ease-out-soft);
+  }
+  .gt-tour-card { animation: gt-editor-in var(--duration-normal) var(--ease-out-soft) both; }
 
   .gt-editor-panel-in { animation: gt-editor-in var(--duration-normal) var(--ease-out-soft) both; }
   .gt-editor-chip { animation: gt-editor-chip-in var(--duration-fast) var(--ease-out-soft) both; }

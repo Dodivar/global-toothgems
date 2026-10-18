@@ -1,96 +1,208 @@
+"use client";
+
+import { useState } from "react";
 import { useTranslation } from "react-i18next";
 import clsx from "clsx";
-import { ArrowRight, Check } from "lucide-react";
+import { ArrowRight, Check, Gift } from "lucide-react";
 import { Button } from "../ui/Button";
+import { trackStudio } from "../../lib/studioAnalytics";
+import { useNavigate } from "../../lib/navigation";
+import { useAuth } from "../../lib/auth";
+import { RETURN_PARAM, SIGN_IN_PATH } from "../../lib/authRoutes";
+import { studioCheckoutPath, type StudioCheckoutSurface } from "../../lib/studioUrl";
 import { useFormat } from "../../lib/format";
-import { STUDIO_PLANS, type StudioPlan } from "../../data/studio";
+import { useStudioPlanPrices } from "../../lib/studioBilling";
+import { displayPrice, monthsFreeOf, type StudioPlanPrice } from "../../lib/studioBillingMapping";
+import { STUDIO_PLANS, type StudioBillingInterval, type StudioPaidPlanId, type StudioPlan } from "../../data/studio";
+
+/** The member's subscription page (`app/compte/(space)/studio`). */
+export const ACCOUNT_STUDIO_PATH = "/compte/studio";
+
+export type ChooseStudioPlan =(plan: StudioPaidPlanId, interval: StudioBillingInterval, price: StudioPlanPrice | null) => void;
 
 /**
- * The Studio's offers side by side: the free trial and the three monthly
- * plans (`STUDIO_PLANS`). Stacked on phones, two by two on tablets, one row on
- * wide screens. The featured plan carries a written badge, not only a colour.
+ * The Studio's offers in the alternative page's dress: the free trial as an
+ * introductory banner, then the three paid plans side by side.
  *
- * The trial opens the Studio (`onTrial`); a paid plan leads to the
- * subscription page (`onChoose`) — nothing is bought from here.
+ * Plan names, amounts and the trial's length are the project's own
+ * (`data/studio.ts`, `studio_plan_prices`, `studio.plans.items.*.name`) — this
+ * page invents none of them. Every paid plan opens the whole Studio (decision
+ * 94). Nothing is bought here: the trial opens the Studio (`onTrial`) and a
+ * paid plan leads to its checkout (`onChoose`).
  */
-export function StudioPlans({ onTrial, onChoose }: { onTrial: () => void; onChoose: (plan: StudioPlan) => void }) {
+export function StudioPlans({ onTrial, onChoose }: { onTrial: () => void; onChoose?: ChooseStudioPlan }) {
   const { t } = useTranslation();
-  const { formatMoney } = useFormat();
+
+  const trial = STUDIO_PLANS.find((plan) => plan.id === "trial")!;
+  const trialDays = trial.trialDays!;
 
   return (
-    <ul className="m-0 grid list-none grid-cols-1 gap-4 p-0 sm:grid-cols-2 xl:grid-cols-4">
-      {STUDIO_PLANS.map((plan) => {
-        const trial = plan.id === "trial";
-        const dark = plan.featured;
-        const features = t(`studio.plans.items.${plan.id}.features`, { returnObjects: true }) as string[];
-        return (
-          <li
-            key={plan.id}
+    <div className="grid gap-5">
+      {/* ------------------------------------------------------- Free trial */}
+      <div className="gt-studio-b-trial grid gap-5 rounded-[var(--radius-xl)] border border-[var(--gt-blue-200)] p-5 sm:p-7 lg:grid-cols-[minmax(0,1fr)_auto] lg:items-center lg:gap-10">
+        <div className="grid gap-2.5">
+          <span className="inline-flex w-fit items-center gap-1.5 rounded-[var(--radius-pill)] border border-[var(--gt-emerald-300)] bg-[var(--status-success-bg)] px-2.5 py-1 text-[10.5px] font-bold uppercase tracking-[var(--tracking-wide)] text-[var(--status-success-fg)]">
+            <Gift size={12} aria-hidden="true" />
+            {t("studioPage.plans.trial.badge", { count: trialDays })}
+          </span>
+          <h3 className="text-[length:var(--text-h3)] font-[var(--weight-black)] tracking-[var(--tracking-display)]">
+            {t("studioPage.plans.trial.name")} · {t("studioPage.plans.trial.price", { count: trialDays })}
+          </h3>
+          <p className="m-0 max-w-[58ch] text-[length:var(--text-body-md)] text-[var(--text-body)]">{t("studioPage.plans.trial.body")}</p>
+        </div>
+        <div className="grid gap-2 lg:justify-items-end">
+          <Button variant="primary" size="lg" fullWidth iconRight={ArrowRight} onClick={onTrial} className="gt-studio-cta lg:w-auto">
+            {t("studioPage.plans.trial.cta")}
+          </Button>
+          <p className="m-0 max-w-[36ch] text-[length:var(--text-caption)] text-[var(--text-muted)] lg:text-right">
+            {t("studioPage.plans.trial.note", { count: trialDays })}
+          </p>
+        </div>
+      </div>
+
+      {onChoose ? <StudioPaidPlans onChoose={onChoose} /> : <StudioCheckoutPlans surface="studio_page" />}
+    </div>
+  );
+}
+
+/**
+ * The paid plans wired to the checkout: a plan button leads to the checkout
+ * page of that plan (`/studio-3d/paiement`, `screens/StudioCheckout.tsx`),
+ * where the member pays and the Studio then opens. A visitor signs in first
+ * (the subscription belongs to an account) and lands on that page.
+ */
+export function StudioCheckoutPlans({ surface }: { surface: StudioCheckoutSurface }) {
+  const navigate = useNavigate();
+  const { signedIn } = useAuth();
+
+  const choose: ChooseStudioPlan = (plan, interval, price) => {
+    const checkout = studioCheckoutPath({ plan, interval, surface });
+    if (!signedIn) {
+      navigate(`${SIGN_IN_PATH}?${new URLSearchParams({ [RETURN_PARAM]: checkout })}`);
+      return;
+    }
+    trackStudio("studio_subscription_cta_clicked", {
+      plan_id: plan,
+      interval,
+      price_minor: price?.amountMinor ?? null,
+      currency: price?.currency ?? null,
+      surface,
+      checkout_available: true,
+    });
+    navigate(checkout);
+  };
+
+  return <StudioPaidPlans onChoose={choose} />;
+}
+
+/**
+ * The three paid plans as cards, billed monthly or yearly (the switch above
+ * them), each with its own call to action. Shared by the presentation page,
+ * the subscription page and the Studio's locked screen (`StudioAccessGate`),
+ * so all show the same plans. Amounts are the live Stripe prices
+ * (`studio_plan_prices`) once read, the confirmed display values before.
+ */
+export function StudioPaidPlans({ onChoose }: { onChoose: ChooseStudioPlan }) {
+  const { t } = useTranslation();
+  const { formatMoney } = useFormat();
+  const live = useStudioPlanPrices();
+  const [interval, setInterval] = useState<StudioBillingInterval>("month");
+  const paid = STUDIO_PLANS.filter((plan): plan is StudioPlan & { id: StudioPaidPlanId } => plan.id !== "trial");
+  const monthsFree = Math.max(
+    0,
+    ...paid.map((plan) => monthsFreeOf(displayPrice(plan.id, "month", live), displayPrice(plan.id, "year", live))),
+  );
+
+  return (
+    <div className="grid gap-4">
+      <div
+        role="group"
+        aria-label={t("studioPage.plans.intervalLabel")}
+        className="mx-auto inline-flex flex-wrap items-center justify-center gap-1 rounded-[var(--radius-pill)] border border-[var(--border-subtle)] bg-[var(--surface-card)] p-1"
+      >
+        {(["month", "year"] as const).map((value) => (
+          <button
+            key={value}
+            type="button"
+            aria-pressed={interval === value}
+            onClick={() => setInterval(value)}
             className={clsx(
-              "relative grid content-start gap-5 rounded-[var(--radius-xl)] border p-5 sm:p-6",
-              dark
-                ? "gt-studio-offer border-transparent text-[var(--gt-ink-200)] shadow-[var(--shadow-lg)]"
-                : "border-[var(--border-subtle)] bg-[var(--surface-card)] text-[var(--text-body)]",
+              "inline-flex min-h-11 items-center gap-2 rounded-[var(--radius-pill)] px-4 text-[13px] font-semibold transition-colors focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-[var(--focus-ring)]",
+              interval === value ? "bg-[var(--surface-inverse)] text-[var(--text-inverse)]" : "text-[var(--text-primary)] hover:bg-[var(--gt-blue-50)]",
             )}
           >
-            <div className="grid gap-1.5">
-              <div className="flex flex-wrap items-center justify-between gap-2">
-                <h3 className={clsx("text-[length:var(--text-h4)]", dark && "text-[var(--gt-off-white)]")}>{t(`studio.plans.items.${plan.id}.name`)}</h3>
-                {plan.featured && (
-                  <span className="rounded-[var(--radius-pill)] bg-[var(--gt-blue-300)] px-2.5 py-1 text-[10.5px] font-bold uppercase tracking-[var(--tracking-wide)] text-[var(--gt-ink-900)]">
-                    {t("studio.plans.featured")}
-                  </span>
-                )}
-                {trial && (
-                  <span className="rounded-[var(--radius-pill)] border border-[var(--gt-emerald-300)] bg-[var(--status-success-bg)] px-2.5 py-1 text-[10.5px] font-bold uppercase tracking-[var(--tracking-wide)] text-[var(--status-success-fg)]">
-                    {t("studio.plans.trialBadge", { count: plan.trialDays })}
-                  </span>
-                )}
-              </div>
-              <p className={clsx("m-0 text-[length:var(--text-body-sm)]", dark ? "text-[var(--gt-ink-300)]" : "text-[var(--text-muted)]")}>
-                {t(`studio.plans.items.${plan.id}.pitch`)}
-              </p>
-            </div>
-
-            <p className={clsx("m-0 flex items-baseline gap-1.5", dark ? "text-[var(--gt-off-white)]" : "text-[var(--text-primary)]")}>
-              <span className="text-[clamp(36px,9vw,44px)] font-[var(--weight-black)] leading-none tracking-[var(--tracking-display)]">
-                {trial ? t("studio.plans.free") : formatMoney(plan.amountMinor, plan.currency)}
+            {t(value === "month" ? "studioPage.plans.monthly" : "studioPage.plans.yearly")}
+            {value === "year" && monthsFree > 0 && (
+              <span className="rounded-[var(--radius-pill)] bg-[var(--gt-emerald-300)] px-2 py-0.5 text-[10.5px] font-bold uppercase tracking-[var(--tracking-wide)] text-[var(--gt-ink-900)]">
+                {t("studioPage.plans.monthsFree", { count: monthsFree })}
               </span>
-              <span className={clsx("text-[length:var(--text-body-sm)] font-semibold", dark ? "text-[var(--gt-ink-300)]" : "text-[var(--text-muted)]")}>
-                {trial ? t("studio.plans.trialPeriod", { count: plan.trialDays }) : t("studio.plans.perMonth")}
-              </span>
-            </p>
+            )}
+          </button>
+        ))}
+      </div>
 
-            <Button
-              variant={dark || trial ? "primary" : "outline"}
-              size="lg"
-              fullWidth
-              iconRight={ArrowRight}
-              onClick={() => (trial ? onTrial() : onChoose(plan))}
-              className={clsx(dark && "gt-studio-cta")}
+      {/* Two by two on a tablet, one row from 1024px: below that, three columns
+          leave a card too narrow for a "Choose <plan>" button. */}
+      <ul className="m-0 grid list-none grid-cols-1 gap-4 p-0 sm:grid-cols-2 lg:grid-cols-3">
+        {paid.map((plan) => {
+          const name = t(`studio.plans.items.${plan.id}.name`);
+          const price = displayPrice(plan.id, interval, live);
+          return (
+            <li
+              key={plan.id}
+              className={clsx(
+                "gt-studio-b-plan relative grid content-start gap-5 rounded-[var(--radius-xl)] border bg-[var(--surface-card)] p-5 sm:p-6",
+                plan.featured ? "gt-studio-b-plan--featured" : "border-[var(--border-subtle)]",
+              )}
             >
-              {trial ? t("studio.plans.ctaTrial") : t("studio.plans.ctaPaid", { plan: t(`studio.plans.items.${plan.id}.name`) })}
-            </Button>
+              <div className="grid gap-2">
+                <div className="flex flex-wrap items-center justify-between gap-2">
+                  <h3 className="text-[length:var(--text-h4)]">{name}</h3>
+                  {plan.featured && (
+                    <span className="rounded-[var(--radius-pill)] bg-[var(--gt-emerald-300)] px-2.5 py-1 text-[10.5px] font-bold uppercase tracking-[var(--tracking-wide)] text-[var(--gt-ink-900)]">
+                      {t("studioPage.plans.featured")}
+                    </span>
+                  )}
+                </div>
+                <p className="m-0 text-[length:var(--text-body-sm)] text-[var(--text-muted)]">{t(`studioPage.plans.items.${plan.id}`)}</p>
+              </div>
 
-            <ul className="m-0 grid list-none gap-2.5 p-0">
-              {features.map((feature) => (
-                <li key={feature} className="flex items-start gap-2.5 text-[length:var(--text-body-sm)]">
-                  <span
-                    aria-hidden="true"
-                    className={clsx(
-                      "mt-0.5 grid h-5 w-5 flex-none place-items-center rounded-full",
-                      dark ? "bg-white/10 text-[var(--gt-blue-300)]" : "bg-[var(--gt-blue-100)] text-[var(--gt-blue-700)]",
-                    )}
-                  >
-                    <Check size={12} strokeWidth={3} />
+              {price ? (
+                <p className="m-0 flex items-baseline gap-1.5 text-[var(--text-primary)]">
+                  <span className="text-[clamp(34px,8vw,42px)] font-[var(--weight-black)] leading-none tracking-[var(--tracking-display)]">
+                    {formatMoney(price.amountMinor, price.currency)}
                   </span>
-                  {feature}
-                </li>
-              ))}
-            </ul>
-          </li>
-        );
-      })}
-    </ul>
+                  <span className="text-[length:var(--text-body-sm)] font-semibold text-[var(--text-muted)]">
+                    {t(interval === "month" ? "studioPage.plans.perMonth" : "studioPage.plans.perYear")}
+                  </span>
+                </p>
+              ) : (
+                <p className="m-0 text-[length:var(--text-body-sm)] font-semibold text-[var(--text-muted)]">{t("studioPage.plans.unavailable")}</p>
+              )}
+
+              <Button
+                variant={plan.featured ? "primary" : "outline"}
+                size="lg"
+                fullWidth
+                iconRight={ArrowRight}
+                disabled={!price}
+                onClick={() => onChoose(plan.id, interval, price)}
+                className={clsx(plan.featured && "gt-studio-cta")}
+              >
+                {t("studioPage.plans.cta", { plan: name })}
+              </Button>
+
+              <div className="grid gap-1.5 rounded-[var(--radius-md)] border border-[var(--gt-blue-200)] bg-[var(--gt-blue-50)] p-3.5">
+                <span className="inline-flex items-center gap-1.5 text-[10.5px] font-bold uppercase tracking-[var(--tracking-wide)] text-[var(--gt-blue-700)]">
+                  <Check size={12} aria-hidden="true" />
+                  {t("studioPage.plans.detailsTitle")}
+                </span>
+                <span className="text-[length:var(--text-caption)] text-[var(--text-body)]">{t("studioPage.plans.details")}</span>
+              </div>
+            </li>
+          );
+        })}
+      </ul>
+    </div>
   );
 }
