@@ -176,6 +176,7 @@
     "payment": {
       "back": "Change plan",
       "title": "Complete your subscription",
+      "subtitle": "{{plan}} plan: check the summary, then pay securely. The 3D Studio opens as soon as the payment is confirmed.",
       "intro": "Enter your payment method right here: your card details are encrypted and sent straight to our payment provider; Global Toothgems never stores them.",
       "summaryTitle": "Your subscription",
       "planName": "3D Studio · {{plan}}",
@@ -189,7 +190,8 @@
         "withdraw": "Withdraw within 14 days from your account"
       },
       "consentTitle": "Right of withdrawal",
-      "pay": "Pay {{amount}} and subscribe"
+      "pay": "Pay {{amount}} and subscribe",
+      "seePlans": "See the plans"
     },
     "activating": {
       "title": "We are activating your subscription",

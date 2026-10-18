@@ -6,6 +6,12 @@ export const STUDIO_PATH = "/studio-3d";
 export const STUDIO_SUBSCRIBE_PATH = "/studio-3d/abonnement";
 /** English alias of the subscription page, like `/gift-card` for `/carte-cadeau`. */
 export const STUDIO_SUBSCRIBE_ALIAS = "/studio-3d/subscribe";
+/**
+ * The subscription's checkout, a page of its own (signed-in members only,
+ * `gateFor`): `?plan=<id>&interval=month|year&from=<surface>`. Paid, it opens
+ * the editor.
+ */
+export const STUDIO_CHECKOUT_PATH = "/studio-3d/paiement";
 /** The editor itself — the Studio's workshop ("atelier"). */
 export const STUDIO_EDITOR_PATH = "/studio-3d/atelier";
 /**
@@ -40,4 +46,39 @@ export function studioSectionFromPath(pathname: string): StudioSection | null {
   if (!rest) return null;
   const direct = (Object.keys(SECTION_SLUGS) as StudioSection[]).find((s) => SECTION_SLUGS[s] === rest);
   return direct ?? SLUG_ALIASES[rest] ?? null;
+}
+
+const PAID_PLANS = ["essential", "artist", "atelier"] as const;
+const INTERVALS = ["month", "year"] as const;
+const SURFACES = ["studio_locked", "studio_page", "studio_subscribe_page"] as const;
+
+export type StudioCheckoutSurface = (typeof SURFACES)[number];
+export interface StudioCheckoutQuery {
+  plan: (typeof PAID_PLANS)[number];
+  interval: (typeof INTERVALS)[number];
+  /** Where the plan was chosen: analytics, and where "Change plan" leads back to. */
+  surface: StudioCheckoutSurface;
+}
+
+/** The checkout page for a plan, chosen on `surface`. */
+export function studioCheckoutPath({ plan, interval, surface }: StudioCheckoutQuery): string {
+  return `${STUDIO_CHECKOUT_PATH}?${new URLSearchParams({ plan, interval, from: surface })}`;
+}
+
+/** The checkout page's query, or null when the plan or the interval is not one on sale (an unknown origin counts as the subscription page). */
+export function parseStudioCheckoutQuery(params: URLSearchParams): StudioCheckoutQuery | null {
+  const plan = params.get("plan");
+  const interval = params.get("interval");
+  const from = params.get("from");
+  if (!PAID_PLANS.includes(plan as StudioCheckoutQuery["plan"]) || !INTERVALS.includes(interval as StudioCheckoutQuery["interval"])) return null;
+  return {
+    plan: plan as StudioCheckoutQuery["plan"],
+    interval: interval as StudioCheckoutQuery["interval"],
+    surface: SURFACES.includes(from as StudioCheckoutSurface) ? (from as StudioCheckoutSurface) : "studio_subscribe_page",
+  };
+}
+
+/** Where "Change plan" on the checkout page leads: back to the plans the member chose from. */
+export function studioPlansPathFor(surface: StudioCheckoutSurface): string {
+  return surface === "studio_locked" ? STUDIO_EDITOR_PATH : surface === "studio_page" ? STUDIO_PATH : STUDIO_SUBSCRIBE_PATH;
 }

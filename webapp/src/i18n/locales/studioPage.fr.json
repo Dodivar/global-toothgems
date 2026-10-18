@@ -124,8 +124,7 @@
     "yearly": "Annuelle",
     "monthsFree_one": "{{count}} mois offert",
     "monthsFree_other": "{{count}} mois offerts",
-    "unavailable": "Formule momentanément indisponible",
-    "redirecting": "Ouverture du paiement sécurisé…"
+    "unavailable": "Formule momentanément indisponible"
   },
   "closing": {
     "title": "Votre prochaine grande création commence par une idée.",

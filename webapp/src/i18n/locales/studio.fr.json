@@ -176,6 +176,7 @@
     "payment": {
       "back": "Changer de formule",
       "title": "Finaliser votre abonnement",
+      "subtitle": "Formule {{plan}} : vérifiez le récapitulatif, puis payez en toute sécurité. Le Studio 3D s’ouvre dès le paiement confirmé.",
       "intro": "Saisissez votre moyen de paiement ici même : vos données bancaires sont chiffrées et transmises directement à notre prestataire de paiement, elles ne sont jamais stockées par Global Toothgems.",
       "summaryTitle": "Votre abonnement",
       "planName": "Studio 3D · {{plan}}",
@@ -189,7 +190,8 @@
         "withdraw": "Rétractation possible dans les 14 jours depuis votre compte"
       },
       "consentTitle": "Droit de rétractation",
-      "pay": "Payer {{amount}} et m’abonner"
+      "pay": "Payer {{amount}} et m’abonner",
+      "seePlans": "Voir les formules"
     },
     "activating": {
       "title": "Nous activons votre abonnement",

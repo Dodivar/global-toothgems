@@ -1,19 +1,15 @@
 "use client";
 
-import { lazy, Suspense, useEffect, useRef, useState } from "react";
+import { useState } from "react";
 import { useTranslation } from "react-i18next";
 import clsx from "clsx";
-import { ArrowRight, Check, CircleAlert, Gift } from "lucide-react";
+import { ArrowRight, Check, Gift } from "lucide-react";
 import { Button } from "../ui/Button";
-import { TermsNotice } from "../auth/TermsNotice";
-import { useStudioCheckout, type StudioCheckoutSurface } from "./access/useStudioCheckout";
-
-// Stripe.js and the payment form are fetched only once a plan is chosen.
-const StudioPaymentStep = lazy(() => import("./access/StudioPaymentStep"));
-import { Link, useNavigate } from "../../lib/navigation";
+import { trackStudio } from "../../lib/studioAnalytics";
+import { useNavigate } from "../../lib/navigation";
 import { useAuth } from "../../lib/auth";
 import { RETURN_PARAM, SIGN_IN_PATH } from "../../lib/authRoutes";
-import { STUDIO_SUBSCRIBE_PATH } from "../../lib/studioUrl";
+import { studioCheckoutPath, type StudioCheckoutSurface } from "../../lib/studioUrl";
 import { useFormat } from "../../lib/format";
 import { useStudioPlanPrices } from "../../lib/studioBilling";
 import { displayPrice, monthsFreeOf, type StudioPlanPrice } from "../../lib/studioBillingMapping";
@@ -70,97 +66,33 @@ export function StudioPlans({ onTrial, onChoose }: { onTrial: () => void; onChoo
 }
 
 /**
- * The paid plans wired to the checkout: a signed-in member's plan button opens
- * the payment step on this page, in place of the plans (`StudioPaymentStep`,
- * the shop's payment form); a visitor is asked to sign in first (the
- * subscription belongs to an account) and comes back to the subscription page.
- * Refusals are said here: terms to accept (accepted in place, then the step
- * opens), a subscription already running (managed from the account), Stripe
- * unavailable. The request for immediate access is ticked in the payment step.
+ * The paid plans wired to the checkout: a plan button leads to the checkout
+ * page of that plan (`/studio-3d/paiement`, `screens/StudioCheckout.tsx`),
+ * where the member pays and the Studio then opens. A visitor signs in first
+ * (the subscription belongs to an account) and lands on that page.
  */
 export function StudioCheckoutPlans({ surface }: { surface: StudioCheckoutSurface }) {
-  const { t } = useTranslation();
   const navigate = useNavigate();
-  const { signedIn, acceptTerms } = useAuth();
-  const checkout = useStudioCheckout(surface);
-  const last = useRef<Parameters<ChooseStudioPlan> | null>(null);
-  const [accepting, setAccepting] = useState(false);
-  const [termsFailed, setTermsFailed] = useState(false);
-  const errorRef = useRef<HTMLDivElement>(null);
-
-  useEffect(() => {
-    if (checkout.error) errorRef.current?.focus();
-  }, [checkout.error]);
+  const { signedIn } = useAuth();
 
   const choose: ChooseStudioPlan = (plan, interval, price) => {
+    const checkout = studioCheckoutPath({ plan, interval, surface });
     if (!signedIn) {
-      navigate(`${SIGN_IN_PATH}?${new URLSearchParams({ [RETURN_PARAM]: STUDIO_SUBSCRIBE_PATH })}`);
+      navigate(`${SIGN_IN_PATH}?${new URLSearchParams({ [RETURN_PARAM]: checkout })}`);
       return;
     }
-    last.current = [plan, interval, price];
-    void checkout.start(plan, interval, price);
+    trackStudio("studio_subscription_cta_clicked", {
+      plan_id: plan,
+      interval,
+      price_minor: price?.amountMinor ?? null,
+      currency: price?.currency ?? null,
+      surface,
+      checkout_available: true,
+    });
+    navigate(checkout);
   };
 
-  const acceptAndRetry = async () => {
-    setAccepting(true);
-    setTermsFailed(false);
-    const done = await acceptTerms("checkout");
-    setAccepting(false);
-    if (!done) {
-      setTermsFailed(true);
-      return;
-    }
-    if (last.current) void checkout.start(...last.current);
-  };
-
-  if (checkout.step) {
-    return (
-      <Suspense fallback={<div className="gt-skeleton mx-auto h-[420px] w-full max-w-[1040px] rounded-[var(--radius-card)]" role="status" aria-label={t("checkout.payment.loading")} />}>
-        <StudioPaymentStep
-          step={checkout.step}
-          locale={checkout.locale}
-          recordConsent={checkout.recordConsent}
-          onPaid={checkout.paid}
-          onBack={checkout.close}
-          onRestart={checkout.restart}
-        />
-      </Suspense>
-    );
-  }
-
-  const error = checkout.error;
-  return (
-    <div className="grid gap-4">
-      <StudioPaidPlans onChoose={choose} busy={checkout.pending} />
-      {error && (
-        <div
-          ref={errorRef}
-          tabIndex={-1}
-          role="alert"
-          className="mx-auto grid w-full max-w-[680px] gap-3 rounded-[var(--radius-lg)] border border-[var(--border-subtle)] bg-[var(--surface-sunken)] p-4 text-[length:var(--text-body-sm)] text-[var(--text-primary)] outline-none"
-        >
-          <strong className="inline-flex items-center gap-2">
-            <CircleAlert size={15} aria-hidden="true" className="text-[var(--status-error-fg)]" />
-            {t("studio.access.checkout.title")}
-          </strong>
-          <p className="m-0">{t(`studio.access.checkout.errors.${error}`)}</p>
-          {error === "terms_required" && (
-            <TermsNotice cta={t("studio.access.checkout.termsCta")} busy={accepting} failed={termsFailed} onAccept={() => void acceptAndRetry()} />
-          )}
-          {error === "already_subscribed" && (
-            <Link to={ACCOUNT_STUDIO_PATH} className="w-fit font-semibold underline underline-offset-2">
-              {t("studio.access.checkout.manage")}
-            </Link>
-          )}
-          {(error === "session_expired" || error === "sign_in_required") && (
-            <Link to={`${SIGN_IN_PATH}?${new URLSearchParams({ [RETURN_PARAM]: STUDIO_SUBSCRIBE_PATH })}`} className="w-fit font-semibold underline underline-offset-2">
-              {t("studio.access.signedOut.signIn")}
-            </Link>
-          )}
-        </div>
-      )}
-    </div>
-  );
+  return <StudioPaidPlans onChoose={choose} />;
 }
 
 /**
@@ -169,9 +101,8 @@ export function StudioCheckoutPlans({ surface }: { surface: StudioCheckoutSurfac
  * the subscription page and the Studio's locked screen (`StudioAccessGate`),
  * so all show the same plans. Amounts are the live Stripe prices
  * (`studio_plan_prices`) once read, the confirmed display values before.
- * `busy` is the "plan:interval" whose checkout is opening.
  */
-export function StudioPaidPlans({ onChoose, busy = null }: { onChoose: ChooseStudioPlan; busy?: string | null }) {
+export function StudioPaidPlans({ onChoose }: { onChoose: ChooseStudioPlan }) {
   const { t } = useTranslation();
   const { formatMoney } = useFormat();
   const live = useStudioPlanPrices();
@@ -216,7 +147,6 @@ export function StudioPaidPlans({ onChoose, busy = null }: { onChoose: ChooseStu
         {paid.map((plan) => {
           const name = t(`studio.plans.items.${plan.id}.name`);
           const price = displayPrice(plan.id, interval, live);
-          const opening = busy === `${plan.id}:${interval}`;
           return (
             <li
               key={plan.id}
@@ -255,12 +185,11 @@ export function StudioPaidPlans({ onChoose, busy = null }: { onChoose: ChooseStu
                 size="lg"
                 fullWidth
                 iconRight={ArrowRight}
-                loading={opening}
-                disabled={!price || busy !== null}
+                disabled={!price}
                 onClick={() => onChoose(plan.id, interval, price)}
                 className={clsx(plan.featured && "gt-studio-cta")}
               >
-                {opening ? t("studioPage.plans.redirecting") : t("studioPage.plans.cta", { plan: name })}
+                {t("studioPage.plans.cta", { plan: name })}
               </Button>
 
               <div className="grid gap-1.5 rounded-[var(--radius-md)] border border-[var(--gt-blue-200)] bg-[var(--gt-blue-50)] p-3.5">

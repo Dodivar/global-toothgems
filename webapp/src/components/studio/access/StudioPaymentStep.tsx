@@ -1,21 +1,22 @@
 "use client";
 
-import { useEffect, useId, useRef, useState } from "react";
+import { useId, useRef, useState } from "react";
 import { useTranslation } from "react-i18next";
 import clsx from "clsx";
-import { ArrowLeft, Check, CircleAlert, CreditCard, Lock, RefreshCcw, ShieldCheck } from "lucide-react";
+import { Check, CircleAlert, CreditCard, Lock, RefreshCcw, ShieldCheck } from "lucide-react";
 import { Checkbox } from "../../ui/Checkbox";
 import { StripePaymentForm } from "../../checkout/StripePaymentForm";
 import { Link } from "../../../lib/navigation";
 import { useFormat } from "../../../lib/format";
 import { trackStudio } from "../../../lib/studioAnalytics";
-import type { StudioCheckoutError, StudioConsentAnswer } from "../../../lib/studioBillingMapping";
-import type { StudioCheckoutStep } from "./useStudioCheckout";
+import type { StudioCheckoutError, StudioConsentAnswer, StudioPayment } from "../../../lib/studioBillingMapping";
+import type { StudioCheckoutQuery } from "../../../lib/studioUrl";
 
 /**
- * The Studio subscription's payment step, on our own page in place of the
- * plans: what is being bought, the request for immediate access, and the
- * shop's payment form (`StripePaymentForm`, same look and states).
+ * The Studio subscription's payment step, the body of the checkout page
+ * (`screens/StudioCheckout.tsx`): what is being bought, the request for
+ * immediate access, and the shop's payment form (`StripePaymentForm`, same look
+ * and states).
  *
  * The request (decision 94 (a), L221-25) is a box beside the form, unticked by
  * default: Pay without it focuses the box and says why; with it, the request is
@@ -27,32 +28,25 @@ import type { StudioCheckoutStep } from "./useStudioCheckout";
  */
 
 interface StudioPaymentStepProps {
-  step: StudioCheckoutStep;
+  query: StudioCheckoutQuery;
+  payment: StudioPayment;
   locale: "fr" | "en";
   recordConsent: () => Promise<StudioConsentAnswer>;
   onPaid: () => void;
-  onBack: () => void;
   onRestart: () => void;
 }
 
-export default function StudioPaymentStep({ step, locale, recordConsent, onPaid, onBack, onRestart }: StudioPaymentStepProps) {
+export default function StudioPaymentStep({ query, payment, locale, recordConsent, onPaid, onRestart }: StudioPaymentStepProps) {
   const { t } = useTranslation();
   const { formatMoney } = useFormat();
-  const { plan, interval, payment } = step;
+  const { plan, interval, surface } = query;
   const [consent, setConsent] = useState(false);
   const [consentMissing, setConsentMissing] = useState(false);
   const [error, setError] = useState<StudioCheckoutError | null>(null);
   const consentRef = useRef<HTMLInputElement>(null);
   const consentHintId = useId();
-  const heading = useRef<HTMLHeadingElement>(null);
   const amount = formatMoney(payment.amountMinor, payment.currency);
   const name = t(`studio.plans.items.${plan}.name`);
-
-  // The step replaces the plans in place: focus and scroll follow it.
-  useEffect(() => {
-    heading.current?.focus({ preventScroll: true });
-    heading.current?.scrollIntoView({ block: "start", behavior: "smooth" });
-  }, []);
 
   const changeConsent = (checked: boolean) => {
     setConsent(checked);
@@ -69,22 +63,13 @@ export default function StudioPaymentStep({ step, locale, recordConsent, onPaid,
     }
     const answer = await recordConsent();
     if (answer.kind === "consented") return true;
-    trackStudio("studio_checkout_failed", { plan_id: plan, interval, price_minor: payment.amountMinor, currency: payment.currency, surface: null, reason: answer.error });
+    trackStudio("studio_checkout_failed", { plan_id: plan, interval, price_minor: payment.amountMinor, currency: payment.currency, surface, reason: answer.error });
     setError(answer.error);
     return false;
   };
 
   return (
     <div className="gt-step-in mx-auto grid w-full max-w-[1040px] gap-5">
-      <button
-        type="button"
-        onClick={onBack}
-        className="inline-flex w-fit items-center gap-1.5 bg-transparent p-0 text-[length:var(--text-body-sm)] font-semibold text-[var(--text-primary)] underline-offset-2 hover:underline"
-      >
-        <ArrowLeft size={15} aria-hidden="true" />
-        {t("studio.access.payment.back")}
-      </button>
-
       <div className="grid grid-cols-1 gap-6 lg:grid-cols-[minmax(0,1fr)_340px]">
         {/* What is bought: first on a phone, beside the form from 1024px. */}
         <aside className="grid content-start gap-4 rounded-[var(--radius-card)] border border-[var(--border-subtle)] bg-[var(--surface-card)] p-[var(--space-6)] shadow-[var(--shadow-xs)] lg:sticky lg:top-24 lg:order-2">
@@ -124,9 +109,9 @@ export default function StudioPaymentStep({ step, locale, recordConsent, onPaid,
         >
           <div className="grid gap-2">
             <div className="flex flex-wrap items-center justify-between gap-3">
-              <h2 id="studio-payment-title" ref={heading} tabIndex={-1} className="flex scroll-mt-24 items-center gap-2 text-[length:var(--text-h3)] outline-none">
+              <h2 id="studio-payment-title" className="flex items-center gap-2 text-[length:var(--text-h3)]">
                 <Lock size={20} aria-hidden="true" className="flex-none" />
-                {t("studio.access.payment.title")}
+                {t("checkout.payment.title")}
               </h2>
               <span className="inline-flex items-center gap-1.5 rounded-full bg-[var(--status-success-bg)] px-3 py-1 text-xs font-semibold text-[var(--status-success-fg)]">
                 <ShieldCheck size={14} aria-hidden="true" />

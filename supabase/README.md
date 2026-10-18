@@ -1205,7 +1205,8 @@ reads, deletes       always the owner's: the work done during the trial is kept
 - Subscriptions (decision 94, iteration 29):
 
 ```
-plan button (locked screen, /studio-3d, /fr/studio-3d/abonnement)   signed out → sign-in, back to the subscription page
+plan button (locked screen, /studio-3d, /fr/studio-3d/abonnement)   signed out → sign-in, then straight on
+  → the checkout page /studio-3d/paiement?plan=…&interval=…&from=<surface> (signed-in members only: gateFor)
   → POST functions/v1/create-studio-subscription {plan, interval, locale}
                                                   (member token; no price id or amount accepted)
       terms accepted? no blocking subscription (active/trialing/past_due/unpaid/paused/incomplete) → else already_subscribed
@@ -1215,16 +1216,16 @@ plan button (locked screen, /studio-3d, /fr/studio-3d/abonnement)   signed out �
       Stripe Checkout Session, ui_mode custom, mode subscription, expires in 60 min, metadata +
         subscription_data.metadata {kind: studio_subscription, user_id, plan, interval}
       → {status: payment, client_secret, publishable_key, amount, currency, expires_at}
-  the payment step opens in place of the plans (StudioPaymentStep: the shop's StripePaymentForm, Payment Element)
+  the page shows the payment step (StudioPaymentStep: the shop's StripePaymentForm, Payment Element)
       beside the form, unticked by default: the request for immediate access; Pay without it → the box is focused
   Pay → POST functions/v1/create-studio-subscription {consent_client_secret}
       the session must be open, kind studio_subscription and this member's (else invalid_request / checkout_closed)
       the request is recorded: consent_records studio_immediate_access, version studio-withdrawal-2026-10,
       its id + version merged into the session's metadata → {status: consented}
       only then the browser confirms the payment with Stripe (checkout.confirm, redirect if_required)
-      paid on the page → /studio-3d/atelier?subscription=success; a 3-D Secure redirect comes back to the same
-      address (return_url)
-  "Change plan" → POST {release_client_secret}: the member's open session is expired
+      paid on the page → the editor /studio-3d/atelier?subscription=success; a 3-D Secure redirect comes back to
+      the same address (return_url)
+  leaving the page unpaid ("Change plan" → back to the plans) → POST {release_client_secret}: the session is expired
   Stripe → stripe-webhook   customer.subscription.created/updated/deleted, invoice.paid/payment_failed,
                             checkout.session.completed (mode subscription)
       verified + deduplicated like every event; subscription READ BACK from Stripe (order-independent, replay-safe)
@@ -1969,7 +1970,8 @@ VAT rates, shipping zones/rates mirroring the Settings prototype. Media rows ref
     from the verified webhook (`studio_subscriptions`), one blocking subscription per account, Stripe customer reused.
     Paid on our own page since 2026-10-18 (owner's request: keep the member on the site): the subscription's
     Checkout Session uses `ui_mode: "custom"` and is paid through the shop's Payment Element form
-    (`StripePaymentForm`, decision 80), opened in place of the plans; the customer portal stays Stripe's page.
+    (`StripePaymentForm`, decision 80) on a checkout page of its own, `/studio-3d/paiement` (owner's request: not on
+    the plans page), which opens the editor once paid; the customer portal stays Stripe's page.
     Agent's choices, to confirm: (a) the 14-day EU withdrawal right — since 2026-10-18 (owner's choice, migration
     `20261018155521`) the member must tick, in the payment step beside the card form, an express request for immediate access
     acknowledging that a withdrawal within 14 days costs the share of the subscription already used (L221-25,

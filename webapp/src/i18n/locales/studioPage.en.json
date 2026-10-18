@@ -124,8 +124,7 @@
     "yearly": "Yearly",
     "monthsFree_one": "{{count}} month free",
     "monthsFree_other": "{{count}} months free",
-    "unavailable": "Plan temporarily unavailable",
-    "redirecting": "Opening secure payment…"
+    "unavailable": "Plan temporarily unavailable"
   },
   "closing": {
     "title": "Your next great creation starts with an idea.",

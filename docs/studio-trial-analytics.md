@@ -37,10 +37,10 @@ design content.
 | `studio_trial_expired` | The state is read as `trial_expired` | once per trial and browser | `observed_in_studio` (ran out while open) |
 | `studio_trial_access_blocked` | The locked screen is shown | once per tab and state | `state` |
 | `studio_subscription_plans_viewed` | The plans are shown on the locked screen | once per tab | `surface` |
-| `studio_subscription_cta_clicked` | A plan's button is pressed by a signed-in member | per click | `plan_id`, `interval`, `price_minor`, `currency`, `surface` (`studio_locked`, `studio_page`, `studio_subscribe_page`), `checkout_available` |
-| `studio_checkout_started` | `create-studio-subscription` opened a payment step and the payment form shows on the page | per checkout | `plan_id`, `interval`, `price_minor`, `currency`, `surface` |
+| `studio_subscription_cta_clicked` | A plan's button is pressed by a signed-in member (before the checkout page opens) | per click | `plan_id`, `interval`, `price_minor`, `currency`, `surface` (`studio_locked`, `studio_page`, `studio_subscribe_page`), `checkout_available` |
+| `studio_checkout_started` | the checkout page opened a payment step (`create-studio-subscription`) and the payment form shows | per checkout | `plan_id`, `interval`, `price_minor`, `currency`, `surface` |
 | `studio_checkout_failed` | The function refused or could not open the checkout, or could not record the request for immediate access before paying | per failure | same + `reason` (`terms_required`, `already_subscribed`, `plan_unavailable`, `payment_unavailable`, `network`, …) |
-| `studio_checkout_canceled` | The member leaves the payment step ("Change plan") | per step left | `plan_id`, `interval`, `surface` |
+| `studio_checkout_canceled` | The member leaves the checkout page unpaid ("Change plan", menu, back button) | per page left | `plan_id`, `interval`, `surface` |
 | `studio_subscription_completed` | Paid on the page (or back from a 3-D Secure redirect), on `?subscription=success`, **and** the database (fed by the verified webhook) reads the account as `subscribed` | once per subscription period and browser | `plan_id`, `interval`, `surface`, `source` = `verified_state` |
 | `studio_access_check_failed` | Reading the state or starting the trial failed | per failure | `operation` |
 | `studio_access_denied` | The database refused a write (42501) | per refusal | `operation` |
