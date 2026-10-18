@@ -383,6 +383,10 @@
       "daylightHint": "Lumière du jour, vive",
       "current": "Éclairage : {{name}}"
     },
+    "fullscreen": {
+      "enter": "Plein écran",
+      "exit": "Quitter le plein écran"
+    },
     "orbit": "Orbite",
     "orbitHint": "Tourner lentement autour de la création",
     "context": {

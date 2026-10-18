@@ -383,6 +383,10 @@
       "daylightHint": "Bright daylight",
       "current": "Lighting: {{name}}"
     },
+    "fullscreen": {
+      "enter": "Full screen",
+      "exit": "Exit full screen"
+    },
     "orbit": "Orbit",
     "orbitHint": "Slowly orbit around the design",
     "context": {

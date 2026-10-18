@@ -49,6 +49,8 @@ import {
   type RotationSession,
 } from "../../../lib/studio3d/actions";
 import { getEngine, setEngine, StudioEngine, type SelectionAnchor } from "../../../lib/studio3d/engine";
+import { useStageFullscreen } from "../../../lib/studio3d/stageFullscreen";
+import { StageFullscreenButton } from "../StageFullscreenButton";
 import type { Point2 } from "../../../lib/studio3d/math";
 import { useQuickActions, type QuickActionId } from "../../../lib/studio3d/quickActions";
 import { studioStore, type ContextMenuState, type LightPreset, type StudioSnapshot } from "../../../lib/studio3d/store";
@@ -141,12 +143,19 @@ export function EditorViewport({ snap, panels }: { snap: StudioSnapshot; panels?
 
   const armedName = snap.armedTypeId ? pieceName({ productId: snap.armedTypeId }) : null;
   const quick = useQuickActions();
+  const { ref: stageRef, active: fullscreen, overlay: fullscreenOverlay, toggle: toggleFullscreen } = useStageFullscreen<HTMLElement>();
 
   return (
     <section
+      ref={stageRef}
       aria-label={t("studio.editor.viewport.label")}
       data-tour="stage"
-      className="gt-editor-stage @container relative isolate h-[58vh] min-h-[380px] min-w-0 overflow-hidden studio-side:h-auto studio-side:min-h-0"
+      className={clsx(
+        "gt-editor-stage @container relative isolate h-[58vh] min-h-[380px] min-w-0 overflow-hidden studio-side:h-auto studio-side:min-h-0",
+        // Full screen, the side drawers are out of view: the controls centre on the whole stage.
+        fullscreen && "[--gt-lib-open:0px] [--gt-insp-open:0px]",
+        fullscreenOverlay && "!fixed inset-0 z-[90] !h-[100dvh] !min-h-0",
+      )}
     >
       <div ref={hostRef} className="gt-editor-canvas absolute inset-0" />
 
@@ -249,8 +258,16 @@ export function EditorViewport({ snap, panels }: { snap: StudioSnapshot; panels?
         <QuickBar ids={snap.selectedJewelIds} jewels={snap.jewels} actions={quick.actions} />
       )}
       {snap.contextMenu && <ContextMenu cm={snap.contextMenu} snap={snap} />}
-      {!failed && <BottomBar lightPreset={snap.lightPreset} lasso={snap.lasso} multiSelect={snap.multiSelect} />}
-      {panels?.side && <PanelToggles panels={panels} selectedCount={snap.selectedJewelIds.length} />}
+      {!failed && (
+        <BottomBar
+          lightPreset={snap.lightPreset}
+          lasso={snap.lasso}
+          multiSelect={snap.multiSelect}
+          fullscreen={fullscreen}
+          onToggleFullscreen={toggleFullscreen}
+        />
+      )}
+      {panels?.side && !fullscreen && <PanelToggles panels={panels} selectedCount={snap.selectedJewelIds.length} />}
       <p className="pointer-events-none absolute left-1/2 top-5 z-[3] m-0 hidden -translate-x-1/2 whitespace-nowrap text-[9px] font-bold uppercase tracking-[.24em] text-[var(--gt-blue-700)]/70 xl:block">
         {t(`studio.editor.viewport.stage.${snap.modelMode}`)}
       </p>
@@ -849,7 +866,19 @@ const VIEWS: { id: "front" | "top" | "side" | "reset"; Icon: typeof Copy }[] = [
  * shown by an icon (the chosen light's own), so the bar stays short enough
  * for a phone.
  */
-function BottomBar({ lightPreset, lasso, multiSelect }: { lightPreset: LightPreset; lasso: boolean; multiSelect: boolean }) {
+function BottomBar({
+  lightPreset,
+  lasso,
+  multiSelect,
+  fullscreen,
+  onToggleFullscreen,
+}: {
+  lightPreset: LightPreset;
+  lasso: boolean;
+  multiSelect: boolean;
+  fullscreen: boolean;
+  onToggleFullscreen: () => void;
+}) {
   const { t } = useEditorLabels();
   const [orbit, setOrbit] = useState(false);
   const [menu, setMenu] = useState<"views" | "lights" | null>(null);
@@ -980,6 +1009,8 @@ function BottomBar({ lightPreset, lasso, multiSelect }: { lightPreset: LightPres
           {t("studio.editor.viewport.multi")}
         </span>
       </button>
+      {sep}
+      <StageFullscreenButton active={fullscreen} onToggle={onToggleFullscreen} className={stageButton} />
     </div>
   );
 }

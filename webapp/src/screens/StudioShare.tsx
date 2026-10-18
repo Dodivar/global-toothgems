@@ -8,9 +8,11 @@ import { Button } from "../components/ui/Button";
 import { Dialog } from "../components/ui/Dialog";
 import { useDocumentTitle } from "../components/legal/hooks";
 import { SignInPrompt } from "../components/studio/workspace/SignInPrompt";
+import { StageFullscreenButton } from "../components/studio/StageFullscreenButton";
 import { useAuth } from "../lib/auth";
 import { useToast } from "../lib/toast";
 import { StudioEngine } from "../lib/studio3d/engine";
+import { useStageFullscreen } from "../lib/studio3d/stageFullscreen";
 import { DesignStore, studioStore } from "../lib/studio3d/store";
 import { STUDIO_EDITOR_PATH, STUDIO_PATH } from "../lib/studioUrl";
 import { piecesKey } from "../lib/studioWorkspace/scene";
@@ -257,6 +259,7 @@ function SharedStage({ design }: { design: SharedDesign }) {
   const snap = useSyncExternalStore(store.subscribe, store.getSnapshot);
   const [failed, setFailed] = useState(false);
   const [orbit, setOrbit] = useState(false);
+  const { ref: stageRef, active: fullscreen, overlay: fullscreenOverlay, toggle: toggleFullscreen } = useStageFullscreen<HTMLElement>();
 
   useEffect(() => {
     store.loadScene(design.scene, null);
@@ -281,8 +284,12 @@ function SharedStage({ design }: { design: SharedDesign }) {
 
   return (
     <section
+      ref={stageRef}
       aria-label={t("studio.workspace.share.view.stageLabel")}
-      className="gt-editor-stage relative isolate h-[60vh] min-h-[360px] min-w-0 overflow-hidden lg:h-auto lg:min-h-0"
+      className={clsx(
+        "gt-editor-stage relative isolate h-[60vh] min-h-[360px] min-w-0 overflow-hidden lg:h-auto lg:min-h-0",
+        fullscreenOverlay && "!fixed inset-0 z-[90] !h-[100dvh] !min-h-0",
+      )}
     >
       <div ref={hostRef} className="gt-editor-canvas absolute inset-0" />
       {failed && (
@@ -357,6 +364,8 @@ function SharedStage({ design }: { design: SharedDesign }) {
               {t("studio.editor.orbit")}
             </span>
           </button>
+          <span aria-hidden="true" className="mx-0.5 h-4 w-px flex-none bg-white/20" />
+          <StageFullscreenButton active={fullscreen} onToggle={toggleFullscreen} className={stageButton} />
         </div>
       )}
     </section>
