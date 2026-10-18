@@ -66,19 +66,6 @@
       }
     }
   },
-  "pricing": {
-    "eyebrow": "Accès au Studio 3D",
-    "planName": "Studio 3D · Mensuel",
-    "perMonth": "/ mois",
-    "selected": "Sélectionné",
-    "benefits": [
-      "Accès complet au Studio 3D",
-      "Outils de composition créative",
-      "Vos créations enregistrées, toujours à portée de main",
-      "Accès aux futures améliorations du Studio"
-    ],
-    "reassurance": "Sans engagement — résiliable à tout moment."
-  },
   "teaser": {
     "eyebrow": "Studio 3D",
     "title": "Transformez vos idées en bijoux dentaires.",
@@ -90,44 +77,7 @@
     "back": "Retour au Studio",
     "title": "Débloquez le Studio 3D Global Toothgems.",
     "body": "Votre espace créatif pour imaginer des compositions de bijoux dentaires uniques.",
-    "stepsLabel": "Étapes de l’abonnement",
-    "stepDone": "terminé",
-    "steps": {
-      "plan": "Formule",
-      "account": "Compte",
-      "confirm": "Confirmation"
-    },
-    "planLegend": "Votre formule",
-    "planMonthly": "Mensuelle",
-    "planMonthlySub": "Facturée chaque mois · sans engagement",
-    "accountLegend": "Compte",
-    "signedIn": "Session ouverte",
-    "emailLabel": "Adresse e-mail",
-    "emailPlaceholder": "vous@exemple.com",
-    "emailHint": "Votre accès au Studio sera lié à cette adresse. Déjà un compte ?",
-    "signInLink": "Se connecter",
-    "emailInvalid": "Saisissez une adresse e-mail valide.",
-    "paymentLegend": "Paiement",
-    "cardDemo": "Carte •••• 4242",
-    "cardDemoSub": "Carte de démonstration — prototype",
-    "prototypeNote": "Prototype : aucune carte n’est saisie et aucun paiement n’est effectué. Dans le vrai Studio, le paiement a lieu sur la page sécurisée de notre prestataire de paiement.",
-    "summaryLine": "Studio 3D — mensuel",
-    "dueToday": "À régler aujourd’hui",
-    "renews": "Puis {{price}} chaque mois. Résiliable à tout moment depuis votre compte.",
-    "terms": "J’accepte les conditions de l’abonnement Studio 3D",
-    "termsHint": "Texte de prototype — les conditions ne sont pas encore rédigées.",
-    "cta": "S’abonner et commencer à créer",
-    "ctaHint": "Acceptez les conditions pour continuer.",
-    "processing": "Confirmation…",
-    "confirmedTitle": "Bienvenue dans le Studio.",
-    "confirmedBody": "Votre accès est prêt. Une confirmation sera envoyée à {{email}}.",
-    "prototypeConfirmed": "Prototype : rien n’a été débité et aucun accès n’a été créé.",
-    "openStudio": "Commencer à créer",
-    "reassurance": {
-      "secure": "Paiement sécurisé",
-      "cancel": "Sans engagement",
-      "devices": "Ordinateur, tablette et mobile"
-    }
+    "signInNote": "Connectez-vous ou créez votre compte pour vous abonner : l’abonnement est lié à votre compte, et vos créations y sont enregistrées."
   },
   "access": {
     "previewBadge": "Aperçu gratuit",
@@ -175,10 +125,7 @@
       "kept_other": "Vos {{count}} designs enregistrés sont conservés dans votre compte. Ils vous attendront dans le Studio dès qu’une formule sera active.",
       "keptNone": "Tout ce que vous avez enregistré reste dans votre compte et vous attendra dès qu’une formule sera active.",
       "plansTitle": "Choisissez votre formule",
-      "notOpenTitle": "L’abonnement en ligne n’est pas encore ouvert",
-      "notOpenBody": "Vous avez choisi {{plan}}. L’abonnement depuis le site ouvre bientôt : rien n’a été débité. Vos designs restent en sécurité dans votre compte et le Studio se débloque dès que votre abonnement est actif.",
-      "contact": "Nous contacter",
-      "pricesNote": "Prix par mois, TVA comprise. Les formules et leur contenu sont en cours de finalisation."
+      "pricesNote": "Prix TVA comprise. Résiliable à tout moment depuis votre compte : l’abonnement prend fin à la fin de la période payée."
     },
     "error": {
       "title": "Impossible de vérifier votre accès au Studio",
@@ -205,6 +152,32 @@
     "denied": {
       "title": "Votre accès au Studio a pris fin",
       "body": "Cette modification n’a pas pu être enregistrée. Vos designs enregistrés sont conservés."
+    },
+    "checkout": {
+      "title": "Le paiement n’a pas pu s’ouvrir",
+      "errors": {
+        "sign_in_required": "Votre session a expiré. Reconnectez-vous puis réessayez.",
+        "session_expired": "Votre session a expiré. Reconnectez-vous puis réessayez.",
+        "terms_required": "Avant de vous abonner, acceptez les conditions générales.",
+        "already_subscribed": "Vous avez déjà un abonnement au Studio. Vous pouvez le gérer depuis votre compte.",
+        "plan_unavailable": "Cette formule n’est pas disponible pour le moment. Choisissez-en une autre ou réessayez plus tard.",
+        "payment_unavailable": "Le paiement en ligne est momentanément indisponible. Rien n’a été débité : réessayez dans quelques minutes.",
+        "network": "Connexion impossible. Vérifiez votre réseau, puis réessayez.",
+        "server_error": "Une erreur est survenue. Rien n’a été débité : réessayez."
+      },
+      "manage": "Gérer mon abonnement",
+      "termsCta": "Accepter et continuer",
+      "canceled": "Paiement annulé : rien n’a été débité. Vous pouvez choisir une formule quand vous le souhaitez."
+    },
+    "activating": {
+      "title": "Nous activons votre abonnement",
+      "body": "Stripe confirme votre paiement : le Studio se débloque dans quelques secondes.",
+      "slow": "C’est plus long que prévu. Si votre paiement est passé, le Studio se débloquera dès que Stripe l’aura confirmé : vérifiez à nouveau dans un instant.",
+      "refresh": "Vérifier à nouveau"
+    },
+    "subscribed": {
+      "title": "Bienvenue dans le Studio 3D",
+      "body": "Votre abonnement {{plan}} est actif."
     }
   },
   "editor": {
@@ -623,5 +596,41 @@
       "viewCart": "Voir le panier",
       "noneAvailable": "Aucun produit disponible"
     }
+  },
+  "account": {
+    "eyebrow": "Studio 3D",
+    "title": "Mon abonnement",
+    "description": "Votre accès au Studio 3D, votre formule et sa facturation.",
+    "loading": "Chargement de votre abonnement…",
+    "loadError": "Impossible de lire votre abonnement pour le moment.",
+    "retry": "Réessayer",
+    "planLabel": "Formule",
+    "billingLabel": "Facturation",
+    "statusLabel": "Statut",
+    "interval": {
+      "month": "Mensuelle",
+      "year": "Annuelle"
+    },
+    "state": {
+      "subscribed": "Actif",
+      "pastDue": "Paiement à régulariser",
+      "trial_active": "Essai gratuit en cours",
+      "trial_expired": "Essai gratuit terminé",
+      "subscription_ended": "Abonnement terminé",
+      "subscription_pending": "En cours d’activation",
+      "not_started": "Aucun abonnement",
+      "staff": "Accès équipe"
+    },
+    "renews": "Prochain renouvellement le {{date}}.",
+    "endsOn": "Résilié : vous gardez l’accès jusqu’au {{date}}, puis l’abonnement prend fin.",
+    "pastDue": "Le dernier paiement a échoué. Mettez à jour votre carte pour garder l’accès au Studio.",
+    "trialUntil": "Votre essai gratuit vous donne accès au Studio jusqu’au {{date}}.",
+    "noPlan": "Choisissez une formule pour utiliser le Studio 3D. Vos créations restent dans votre compte.",
+    "staffNote": "Votre compte d’équipe ouvre le Studio sans abonnement.",
+    "manage": "Gérer mon abonnement",
+    "manageHint": "Changer de formule ou de facturation, mettre à jour votre carte, voir vos factures ou résilier : sur la page sécurisée de Stripe.",
+    "portalError": "La gestion de l’abonnement est momentanément indisponible. Réessayez dans un instant.",
+    "choosePlan": "Choisir une formule",
+    "openStudio": "Ouvrir le Studio"
   }
 }

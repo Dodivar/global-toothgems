@@ -37,15 +37,21 @@ design content.
 | `studio_trial_expired` | The state is read as `trial_expired` | once per trial and browser | `observed_in_studio` (ran out while open) |
 | `studio_trial_access_blocked` | The locked screen is shown | once per tab and state | `state` |
 | `studio_subscription_plans_viewed` | The plans are shown on the locked screen | once per tab | `surface` |
-| `studio_subscription_cta_clicked` | A plan's button is pressed | per click | `plan_id`, `price_minor`, `currency`, `surface`, `checkout_available` |
+| `studio_subscription_cta_clicked` | A plan's button is pressed by a signed-in member | per click | `plan_id`, `interval`, `price_minor`, `currency`, `surface` (`studio_locked`, `studio_page`, `studio_subscribe_page`), `checkout_available` |
+| `studio_checkout_started` | `create-studio-subscription` returned a Stripe Checkout and the browser leaves for it | per checkout | `plan_id`, `interval`, `price_minor`, `currency`, `surface` |
+| `studio_checkout_failed` | The function refused or could not open the checkout | per failure | same + `reason` (`terms_required`, `already_subscribed`, `plan_unavailable`, `payment_unavailable`, `network`, …) |
+| `studio_checkout_canceled` | Back from Stripe with `?subscription=canceled` | per return | `plan_id`, `interval`, `surface` (from the tab's note of the checkout, else null) |
+| `studio_subscription_completed` | Back from Stripe with `?subscription=success` **and** the database (fed by the verified webhook) reads the account as `subscribed` | once per subscription period and browser | `plan_id`, `interval`, `surface`, `source` = `verified_state` |
 | `studio_access_check_failed` | Reading the state or starting the trial failed | per failure | `operation` |
 | `studio_access_denied` | The database refused a write (42501) | per refusal | `operation` |
 | `studio_access_restored` | Access came back after a locked state (subscription) | per transition | `from_state` |
 
-**Reserved, not sent yet** (no subscription checkout exists): `studio_checkout_started`,
-`studio_subscription_completed`, `studio_checkout_canceled`, `studio_checkout_failed`. When the Stripe subscription
-Checkout is built, `studio_subscription_completed` must come from the verified webhook (server side), not from the
-return page, and distinguish a new subscription from a renewal (`billing_reason`).
+`studio_subscription_completed` is sent by the browser (so it respects the analytics consent like every other
+event), but only once the verified state flips to `subscribed` — never because the return address says
+`success`. Renewals cause no return to the site, so the event counts new subscriptions only. The complete count of
+new subscriptions and renewals is in the database: `studio_subscription_invoices.billing_reason`
+(`subscription_create` = new, `subscription_cycle` = renewal, `subscription_update` = plan change), written by the
+webhook (decision 94).
 
 ## Metrics
 
@@ -66,8 +72,9 @@ people only.
 | Trial expiration rate | Cohort trials ended without a subscription / cohort trials ended | Database |
 | Trial-to-paid conversion | Cohort with a subscription (not `incomplete*`) created between trial start and trial end + 30 days / cohort | Database |
 | Subscription page conversion | Subscribers / people with `studio_subscription_plans_viewed` | PostHog + webhook event, once built |
-| Checkout completion rate | `studio_subscription_completed` / `studio_checkout_started` | Once checkout exists |
-| Revenue per trial user, day-30 retention | From `studio_subscriptions` and Stripe invoices, once subscriptions are sold | Database / Stripe |
+| Checkout completion rate | `studio_subscription_completed` / `studio_checkout_started` | PostHog |
+| New subscriptions, renewals | `studio_subscription_invoices` paid, by `billing_reason` | Database |
+| Revenue per trial user, day-30 retention | `studio_subscription_invoices` (paid amounts) and `studio_subscriptions` | Database |
 
 Recommended PostHog funnel (ordered, users may skip steps — use "any order" for the middle steps):
 offer viewed → trial started → first design created → first design saved → return visit → trial expired → plans

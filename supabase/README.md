@@ -67,7 +67,7 @@ supabase/
   tests/admin_customers_validation.sql back-office customers: customer refused, viewer read-only, manager writes and read-only columns, notes by their author, status history, course progress (always rolls back)
   tests/email_validation.sql        e-mail delivery events (forward-only, newsletter bounce/complaint) and the pending shipping / refund / enrolment queries, service role only (always rolls back)
   config.toml   CLI settings this repo relies on (verify_jwt of the Edge Functions)
-  functions/    Edge Functions (Deno): create-checkout-session, stripe-webhook, refund-order, deliver-gift-cards, send-email, resend-webhook, send-pending-emails, invite-staff-member, _shared/ (pure modules + clients),
+  functions/    Edge Functions (Deno): create-checkout-session, stripe-webhook, create-studio-subscription, studio-billing-portal, studio-billing-setup, refund-order, deliver-gift-cards, send-email, resend-webhook, send-pending-emails, invite-staff-member, _shared/ (pure modules + clients),
                 *_test.ts (deno test), .env.example (secret names)
   templates/confirm-signup.html     French "Confirm signup" email, to paste into the Auth settings
   templates/invite-staff.html       French "Invite user" email (team invitations), to paste into the Auth settings
@@ -149,7 +149,9 @@ supabase/
 | 20261014150008 | `admin_back_in_stock_requests` | **Applied 2026-10-14.** Decision 90: `admin_back_in_stock_requests(p_limit)` (SECURITY DEFINER, `manage_products`, 42501 otherwise) — the back office's read of the requests for `/admin/alertes-stock`: product and option names, product status, the target's stock state, address, member, language, dates and the e-mail's `email_log` status and attempts. Read-only. Suite `tests/back_in_stock_validation.sql` (B9) |
 | 20261014175219 | `admin_adjust_stock` | **Applied 2026-10-14.** Decision 91: `admin_adjust_stock(p_product_id, p_variant_id, p_delta, p_expected)` (SECURITY DEFINER, `manage_products`, 42501 otherwise) — the product list's quick restock: adds `p_delta` to `quantity_on_hand` of the product's or one variant's stock row in one UPDATE, so a sale paid meanwhile is kept; with `p_expected` (an exact count typed after a stocktake) refuses with 40001 when the shelf moved since. Refuses an untracked row, a product whose stock is per variant, a variant of another product (P0002), a zero change and a result below the reserved units (22023, hint `reserved`). Recorded as an `adjustment` with the actor by the `inventory_items_ledger` trigger. Suite `tests/stock_adjustment_validation.sql` |
 | 20261015152449 | `academy_localized_images` | **Applied 2026-10-15.** Decision 92: an English file per image slot — `course_block_translations.media_id` (image block) / `poster_media_id` (video poster), `quiz_question_translations.image_media_id` (FK `training_media`, ON DELETE RESTRICT, indexed); `quiz_question_translations.text` nullable (an English row may carry only the image). `admin_save_course()` patched (kind-checked; an English row exists when it has text or a file), `private.learner_course_json()` returns the English files and lists them in `media`, `private.can_read_learner_media_path()` lets a holder read them. Suite `tests/academy_localized_images_validation.sql` |
-| 20261017103101 | `studio_trial_access` | **Applied 2026-10-17.** Decision 93: the 3D Studio 48-hour free trial and the subscription entitlement. `studio_trials` (one row per account, `trial_expires_at = trial_started_at + 48 h` by CHECK, `first_creation_at` set by a trigger on `creations`), `studio_subscriptions` (Stripe mirror, service role only — no writer yet), `private.has_studio_access()` (active trial, active subscription or active staff) added to the INSERT/UPDATE policies of `creations`, `gem_groups` and the `studio-thumbnails` bucket (read and delete unchanged), `start_studio_trial()` (idempotent, `started` only for the call that created the trial; none for a current or former subscriber or staff), `studio_access_state()` (state + `server_now`). Both tables readable by their owner and `view_statistics` staff; audited. Suite `tests/studio_trial_validation.sql`; `tests/studio_workspace_validation.sql` gives its members a trial |
+| 20261017103101 | `studio_trial_access` | **Applied 2026-10-17.** Decision 93: the 3D Studio 48-hour free trial and the subscription entitlement. `studio_trials` (one row per account, `trial_expires_at = trial_started_at + 48 h` by CHECK, `first_creation_at` set by a trigger on `creations`), `studio_subscriptions` (Stripe mirror, service role only — written since `20261018102741`), `private.has_studio_access()` (active trial, active subscription or active staff) added to the INSERT/UPDATE policies of `creations`, `gem_groups` and the `studio-thumbnails` bucket (read and delete unchanged), `start_studio_trial()` (idempotent, `started` only for the call that created the trial; none for a current or former subscriber or staff), `studio_access_state()` (state + `server_now`). Both tables readable by their owner and `view_statistics` staff; audited. Suite `tests/studio_trial_validation.sql`; `tests/studio_workspace_validation.sql` gives its members a trial |
+| 20261018102741 | `studio_subscription_billing` | **Applied 2026-10-18.** Decision 94: selling the 3D Studio subscription. `stripe_customers` (account → Stripe customer, service role only), `studio_plan_prices` (plan × `month`/`year` → Stripe Price, amount VAT included; one active per plan and interval; public read of active rows; rows set per environment by `studio-billing-setup`, never by a migration; audited), `studio_subscriptions` + `billing_interval`, `stripe_price_id`, `canceled_at`, `studio_subscription_invoices` (paid / failed invoice with Stripe's `billing_reason`: new subscription vs renewal; owner and `view_statistics` read). Writers `apply_studio_subscription()` (account from the stored customer, else the Checkout's `user_id` metadata; plan from the price; never moves a subscription to another account) and `record_studio_invoice()` (a paid invoice stays paid), service role only. `studio_access_json()` / `start_studio_trial()`: a first payment that never completed (`incomplete`, `incomplete_expired`) does not forfeit the trial. Suite `tests/studio_billing_validation.sql` |
+| 20261018110209 | `studio_billing_updated_at` | **Applied 2026-10-18.** Fix: `studio_subscriptions` (since `20261017103101`), `studio_plan_prices` and `studio_subscription_invoices` used the designs' `studio_touch_updated_at()` trigger, which reads `name` and failed every UPDATE (`record "new" has no field "name"`, found by the first test subscription); they take `private.set_updated_at()` |
 | 20261008175722 | `contact_attachments_and_support_email` | **Applied 2026-10-08.** Contact form: `contact_requests.attachment_path` → `attachment_paths text[]` (≤ 5, `private.valid_contact_attachment_paths()`), bucket `contact-attachments` 20 MB per object, `submit_contact_request(…, p_attachment_paths text[])` (old signature dropped; ownership per path, no duplicates, ≤ 20 MB in all), guard trigger rebuilt, `contact_ip_allowed(ip_hash)` (service role), template `contact_request_received` (fr + en) for the support inbox. Suite: `iteration7_validation.sql` C3/C4 |
 | 20261008175809 | `contact_attachment_paths_check_grant` | **Applied 2026-10-08.** `execute` on the CHECK helper for `authenticated`/`service_role` (staff triage re-evaluates the CHECK) |
 | 20261007181011 | `gift_card_design_everywhere` | **Applied 2026-10-07.** The design/names/message chosen at checkout are shown back (WYSIWYG): policy `gift_cards: purchaser reads own` (a buyer reads the cards of their purchases through the existing column grant — never the code) so the member's order pages draw the card in its design; the `gift_card_delivery` template bodies (fr + en) lose their `{{message}}` paragraph because the e-mail now draws the card itself (`giftCardVisual()`, message included). Test: a buyer sees only their own cards (to add to `gift_cards_validation.sql`) |
@@ -1196,9 +1198,38 @@ reads, deletes       always the owner's: the work done during the trial is kept
 
 - The clock is `now()`: the browser counts down from `server_now` on a monotonic clock, so the device clock,
   storage or a direct URL cannot extend or restart a trial. Status is derived, never stored.
-- `studio_subscriptions` has no writer yet: the Stripe subscription Checkout and its webhook
-  (`customer.subscription.*`, idempotent like `stripe-webhook`) are the next step. Until then the locked screen
-  lists the plans of `webapp/src/data/studio.ts` and says that online subscription is not open; no payment path.
+- Subscriptions (decision 94, iteration 29):
+
+```
+plan button (locked screen, /studio-3d, /fr/studio-3d/abonnement)   signed out → sign-in, back to the subscription page
+  → POST functions/v1/create-studio-subscription {plan, interval, locale}     (member token; no price id or amount accepted)
+      terms accepted? no blocking subscription (active/trialing/past_due/unpaid/paused/incomplete) → else already_subscribed
+      price = studio_plan_prices(plan, interval, active) → else plan_unavailable
+      customer = stripe_customers, else created once (idempotency key studio-customer:<user>)
+      the customer's other open Studio Checkouts are expired
+      Stripe Checkout Session, mode subscription (Stripe's hosted page), metadata + subscription_data.metadata
+        {kind: studio_subscription, user_id, plan, interval}
+      → {status: checkout, url}; success_url /studio-3d/atelier?subscription=success, cancel_url …=canceled
+  Stripe → stripe-webhook   customer.subscription.created/updated/deleted, invoice.paid/payment_failed,
+                            checkout.session.completed (mode subscription)
+      verified + deduplicated like every event; subscription READ BACK from Stripe (order-independent, replay-safe)
+      metadata kind ≠ studio_subscription → ignored
+      apply_studio_subscription(…) → studio_subscriptions; invoices → record_studio_invoice(… billing_reason)
+      unknown account / price → stored as failed (acknowledged); Stripe unreachable → 500, retried
+  back on ?subscription=success → the page re-reads studio_access_state() every 3 s (60 s) until `subscribed`
+/compte/studio  plan, billing, renewal / end date, payment to fix → POST functions/v1/studio-billing-portal
+                → Stripe customer portal (configuration metadata kind = studio_portal: switch plan or interval,
+                  card, invoices, cancel at period end); changes come back through the webhook
+```
+
+  Cancelling in the portal keeps `active` with `cancel_at_period_end`: access lasts until `current_period_end`,
+  then `customer.subscription.deleted` (status `canceled`) — and even without that event the period end alone
+  closes access (`studio_subscription_active()`). `studio-billing-setup` (internal secret, **test mode only**)
+  creates the Products, the six Prices (lookup keys `studio_<plan>_<interval>`, VAT inclusive), the portal
+  configuration and the `studio_plan_prices` rows; its `smoke_subscribe` / `smoke_cancel` actions run a test-mode
+  subscription with Stripe's test card without a browser, and `webhook_events` adds the subscription events to
+  the test-mode endpoint. Verified end to end on the project on 2026-10-18 (subscribe → `subscribed`, invoice
+  `subscription_create`; cancel at period end → still `subscribed`; cancelled → `subscription_ended`).
 - Back office: `/admin/statistiques` aggregates both tables in the browser (`lib/adminStudioTrials.ts`); the
   rest of the funnel is in PostHog (`docs/studio-trial-analytics.md`).
 
@@ -1908,4 +1939,21 @@ VAT rates, shipping zones/rates mirroring the Settings prototype. Media rows ref
     `current_period_end` is in the future (Stripe's own retry period); (d) sharing a saved design stays possible
     after the trial (it is viewing, not editing); (e) a subscription started within 30 days after the trial's end
     counts as a trial conversion in the statistics; (f) plans and prices are still the display values of
-    `data/studio.ts` until the Stripe Prices exist.
+    `data/studio.ts` until the Stripe Prices exist (superseded by decision 94).
+94. **3D Studio subscriptions sold through Stripe** (user's request, 2026-10-18; prices confirmed by the owner the same
+    day). Three plans, Essential €5.00, Artist €19.90, Atelier €39.90 per month, or yearly at ten months' price
+    (€50, €199, €399: "two months free"), VAT included; every plan unlocks the whole Studio (the feature lists are
+    presentation only). Hosted Stripe Checkout in subscription mode (not the Payment Element of decision 80: a
+    subscription needs no basket, and the customer portal is Stripe's page anyway); the Stripe Prices are test-mode
+    objects created by `studio-billing-setup` on the owner's go-ahead, live ones are created at launch. Access only
+    from the verified webhook (`studio_subscriptions`), one blocking subscription per account, Stripe customer reused.
+    Agent's choices, to confirm: (a) the 14-day EU withdrawal right — the Checkout says the subscription starts at
+    once and can be cancelled for the end of the period, but no explicit waiver of the withdrawal right is collected;
+    (b) subscription invoices are Stripe's own documents (Stripe numbering), outside the `FA-` / `AV-` sequence of
+    decision 86 — the accountant must confirm, or they must be issued by the database too; (c) VAT is inclusive at
+    one rate (no Stripe Tax, no per-country rate, no B2B reverse charge), like decision 5; (d) `past_due` keeps
+    access while Stripe retries (Stripe's dunning settings decide how long), decision 93 (c); (e) a plan or interval
+    change in the portal is prorated immediately (`create_prorations`); (f) two subscriptions on one account (two
+    checkouts paid at once despite the expiry of the other open sessions) are logged, not refunded automatically;
+    (g) staff may subscribe (testing); (h) a subscription page reached signed out asks to sign in first (no guest
+    subscription).

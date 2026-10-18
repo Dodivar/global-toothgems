@@ -1116,7 +1116,8 @@
         "home": "Site home",
         "shop": "Shop",
         "giftCard": "Gift card",
-        "academy": "Academy"
+        "academy": "Academy",
+        "subscription": "Subscription"
       },
       "groupLearning": "Learning",
       "groupPurchases": "Purchases",
@@ -1324,7 +1325,8 @@
     "certificateDocDateLabel": "Date of completion",
     "certificateDocRefLabel": "Certificate no.",
     "certificateDocSeal": "Completed",
-    "certificateDocIssuer": "Issued by"
+    "certificateDocIssuer": "Issued by",
+    "navStudio": "Studio subscription"
   },
   "footer": {
     "blurb": "Professional gems, tools and training. Shipped across Europe from Lyon.",

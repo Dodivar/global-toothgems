@@ -66,19 +66,6 @@
       }
     }
   },
-  "pricing": {
-    "eyebrow": "3D Studio access",
-    "planName": "Studio 3D · Monthly",
-    "perMonth": "/ month",
-    "selected": "Selected",
-    "benefits": [
-      "Full access to the 3D Studio",
-      "Creative composition tools",
-      "Your saved creations, always at hand",
-      "Access to future Studio improvements"
-    ],
-    "reassurance": "No commitment — cancel anytime."
-  },
   "teaser": {
     "eyebrow": "Studio 3D",
     "title": "Turn your ideas into tooth jewellery.",
@@ -90,44 +77,7 @@
     "back": "Back to Studio",
     "title": "Unlock the Global Toothgems 3D Studio.",
     "body": "Your creative space for designing unique tooth jewellery compositions.",
-    "stepsLabel": "Subscription steps",
-    "stepDone": "done",
-    "steps": {
-      "plan": "Plan",
-      "account": "Account",
-      "confirm": "Confirmation"
-    },
-    "planLegend": "Your plan",
-    "planMonthly": "Monthly",
-    "planMonthlySub": "Billed every month · cancel anytime",
-    "accountLegend": "Account",
-    "signedIn": "Signed in",
-    "emailLabel": "Email address",
-    "emailPlaceholder": "you@example.com",
-    "emailHint": "Your Studio access will be linked to this address. Already have an account?",
-    "signInLink": "Sign in",
-    "emailInvalid": "Enter a valid email address.",
-    "paymentLegend": "Payment",
-    "cardDemo": "Card •••• 4242",
-    "cardDemoSub": "Demo card — prototype",
-    "prototypeNote": "Prototype: no card is collected and no payment is taken. In the real Studio, payment happens on our payment provider's secure page.",
-    "summaryLine": "Studio 3D — monthly",
-    "dueToday": "Due today",
-    "renews": "Then {{price}} each month. Cancel anytime from your account.",
-    "terms": "I accept the Studio 3D subscription terms",
-    "termsHint": "Prototype copy — the terms are not written yet.",
-    "cta": "Subscribe & start creating",
-    "ctaHint": "Accept the terms to continue.",
-    "processing": "Confirming…",
-    "confirmedTitle": "Welcome to the Studio.",
-    "confirmedBody": "Your access is ready. A confirmation will be sent to {{email}}.",
-    "prototypeConfirmed": "Prototype: nothing was charged and no access was created.",
-    "openStudio": "Start creating",
-    "reassurance": {
-      "secure": "Secure payment",
-      "cancel": "Cancel anytime",
-      "devices": "Desktop, tablet & mobile"
-    }
+    "signInNote": "Sign in or create your account to subscribe: the subscription belongs to your account, where your creations are saved."
   },
   "access": {
     "previewBadge": "Free preview",
@@ -175,10 +125,7 @@
       "kept_other": "Your {{count}} saved designs are kept in your account. They will be waiting for you in the Studio once a plan is active.",
       "keptNone": "Anything you saved stays in your account and will be waiting for you once a plan is active.",
       "plansTitle": "Choose your plan",
-      "notOpenTitle": "Online subscription is not open yet",
-      "notOpenBody": "You chose {{plan}}. Subscribing from the site opens soon: nothing has been charged. Your designs stay safe in your account, and the Studio unlocks as soon as your subscription is active.",
-      "contact": "Contact us",
-      "pricesNote": "Prices per month, including VAT. Plans and their contents are still being finalised."
+      "pricesNote": "Prices include VAT. Cancel at any time from your account: the subscription ends at the close of the paid period."
     },
     "error": {
       "title": "We couldn’t check your Studio access",
@@ -205,6 +152,32 @@
     "denied": {
       "title": "Your Studio access has ended",
       "body": "This change could not be saved. Your saved designs are kept."
+    },
+    "checkout": {
+      "title": "The payment could not open",
+      "errors": {
+        "sign_in_required": "Your session has expired. Sign in again, then try once more.",
+        "session_expired": "Your session has expired. Sign in again, then try once more.",
+        "terms_required": "Before subscribing, please accept the terms and conditions.",
+        "already_subscribed": "You already have a Studio subscription. You can manage it from your account.",
+        "plan_unavailable": "This plan is not available right now. Choose another one or try again later.",
+        "payment_unavailable": "Online payment is temporarily unavailable. Nothing was charged: try again in a few minutes.",
+        "network": "We could not connect. Check your network, then try again.",
+        "server_error": "Something went wrong. Nothing was charged: please try again."
+      },
+      "manage": "Manage my subscription",
+      "termsCta": "Accept and continue",
+      "canceled": "Payment cancelled: nothing was charged. You can choose a plan whenever you like."
+    },
+    "activating": {
+      "title": "We are activating your subscription",
+      "body": "Stripe is confirming your payment: the Studio unlocks in a few seconds.",
+      "slow": "This is taking longer than expected. If your payment went through, the Studio unlocks as soon as Stripe confirms it: check again in a moment.",
+      "refresh": "Check again"
+    },
+    "subscribed": {
+      "title": "Welcome to the 3D Studio",
+      "body": "Your {{plan}} subscription is active."
     }
   },
   "editor": {
@@ -623,5 +596,41 @@
       "viewCart": "View cart",
       "noneAvailable": "No product available"
     }
+  },
+  "account": {
+    "eyebrow": "3D Studio",
+    "title": "My subscription",
+    "description": "Your access to the 3D Studio, your plan and its billing.",
+    "loading": "Loading your subscription…",
+    "loadError": "We could not read your subscription right now.",
+    "retry": "Try again",
+    "planLabel": "Plan",
+    "billingLabel": "Billing",
+    "statusLabel": "Status",
+    "interval": {
+      "month": "Monthly",
+      "year": "Yearly"
+    },
+    "state": {
+      "subscribed": "Active",
+      "pastDue": "Payment to fix",
+      "trial_active": "Free trial running",
+      "trial_expired": "Free trial ended",
+      "subscription_ended": "Subscription ended",
+      "subscription_pending": "Being activated",
+      "not_started": "No subscription",
+      "staff": "Team access"
+    },
+    "renews": "Next renewal on {{date}}.",
+    "endsOn": "Cancelled: you keep access until {{date}}, then the subscription ends.",
+    "pastDue": "The last payment failed. Update your card to keep your access to the Studio.",
+    "trialUntil": "Your free trial gives you access to the Studio until {{date}}.",
+    "noPlan": "Choose a plan to use the 3D Studio. Your creations stay in your account.",
+    "staffNote": "Your team account opens the Studio without a subscription.",
+    "manage": "Manage my subscription",
+    "manageHint": "Change plan or billing, update your card, see your invoices or cancel: on Stripe’s secure page.",
+    "portalError": "Subscription management is temporarily unavailable. Try again in a moment.",
+    "choosePlan": "Choose a plan",
+    "openStudio": "Open the Studio"
   }
 }

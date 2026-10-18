@@ -2,13 +2,13 @@
 
 import { useEffect, useRef, useState, type ReactNode } from "react";
 import { useTranslation } from "react-i18next";
-import { ArrowLeft, ArrowRight, Box, Check, Gift, Info, Lock, LogIn, RefreshCcw, UserPlus, WifiOff } from "lucide-react";
+import { ArrowLeft, ArrowRight, Box, Check, Gift, Info, Loader2, Lock, LogIn, RefreshCcw, UserPlus, WifiOff } from "lucide-react";
 import { Button } from "../../ui/Button";
-import { StudioPaidPlans } from "../StudioPlans";
+import { ACCOUNT_STUDIO_PATH, StudioCheckoutPlans } from "../StudioPlans";
 import { StudioEditorLoading } from "../editor/StudioEditorLoading";
-import { Link, useLocation, useNavigate } from "../../../lib/navigation";
+import { clearPendingCheckout, readPendingCheckout } from "./useStudioCheckout";
+import { useLocation, useNavigate, useSearchParams } from "../../../lib/navigation";
 import { useToast } from "../../../lib/toast";
-import { useFormat } from "../../../lib/format";
 import { useStudioAccess } from "../../../lib/studioAccess";
 import { countSavedCreations } from "../../../lib/studioAccessApi";
 import { trackStudio, trackStudioOnce } from "../../../lib/studioAnalytics";
@@ -17,7 +17,6 @@ import { studioStore } from "../../../lib/studio3d/store";
 import { useAuth } from "../../../lib/auth";
 import { STUDIO_PATH } from "../../../lib/studioUrl";
 import { RETURN_PARAM, SIGN_IN_PATH } from "../../../lib/authRoutes";
-import type { StudioPlan } from "../../../data/studio";
 import type { StudioAccessKind } from "../../../lib/studioAccessState";
 
 /**
@@ -40,15 +39,150 @@ export function RequireStudioAccess({ children }: { children: ReactNode }) {
     dismiss?.();
   }, [justStarted, dismiss, showToast, t]);
 
+  const checkoutReturn = useCheckoutReturn();
+
   if (!access) return <>{children}</>;
   const { status } = access;
   if (status.kind === "preview") return <>{children}</>;
   if (status.kind === "loading") return <StudioEditorLoading />;
   if (status.kind === "signedOut") return <SignedOutScreen />;
   if (status.kind === "error") return <ErrorScreen onRetry={() => void access.refresh()} />;
+  if (checkoutReturn.activating) {
+    return <ActivatingScreen slow={checkoutReturn.slow} onContinue={access.granted ? checkoutReturn.dismiss : undefined} />;
+  }
   if (access.granted) return <SessionTracker>{children}</SessionTracker>;
   if (status.info.state === "not_started") return <TrialOfferScreen />;
-  return <LockedScreen state={status.info.state} />;
+  return <LockedScreen state={status.info.state} canceled={checkoutReturn.canceled} />;
+}
+
+/* -------------------------------------------------------------------------- */
+
+/** How long the return page waits, re-reading the access, for the webhook to record the subscription. */
+const ACTIVATION_POLL_MS = 3000;
+const ACTIVATION_PATIENCE_MS = 60_000;
+
+/**
+ * Back from Stripe (`?subscription=success|canceled`, decision 94). The address
+ * says nothing the page trusts: on `success` the access is re-read every few
+ * seconds until the database — written only by the verified webhook — says
+ * the account is subscribed; only then the Studio opens, the welcome shows and
+ * `studio_subscription_completed` is reported (once per subscription period
+ * and browser). On `canceled` the plans stay, with a word that nothing was
+ * charged. The query is removed from the address either way.
+ */
+function useCheckoutReturn() {
+  const access = useStudioAccess();
+  const { t } = useTranslation();
+  const { showToast } = useToast();
+  const { userId } = useAuth();
+  const [params, setParams] = useSearchParams();
+  const flag = params.get("subscription");
+  const [mode, setMode] = useState<"awaiting" | "canceled" | null>(null);
+  const [slow, setSlow] = useState(false);
+  const info = access?.status.kind === "ready" ? access.status.info : null;
+  const subscribed = info?.state === "subscribed";
+  const refresh = access?.refresh;
+
+  useEffect(() => {
+    if (flag !== "success" && flag !== "canceled") return;
+    if (flag === "canceled") {
+      const pending = readPendingCheckout();
+      trackStudio("studio_checkout_canceled", {
+        plan_id: pending?.plan ?? null,
+        interval: pending?.interval ?? null,
+        surface: pending?.surface ?? null,
+      });
+      clearPendingCheckout();
+      setMode("canceled");
+    } else {
+      setSlow(false);
+      setMode("awaiting");
+    }
+    setParams(
+      (current) => {
+        current.delete("subscription");
+        return current;
+      },
+      { replace: true },
+    );
+  }, [flag, setParams]);
+
+  useEffect(() => {
+    if (mode !== "awaiting" || subscribed || !refresh) return;
+    const started = Date.now();
+    void refresh();
+    const timer = window.setInterval(() => {
+      if (Date.now() - started > ACTIVATION_PATIENCE_MS) {
+        setSlow(true);
+        window.clearInterval(timer);
+        return;
+      }
+      void refresh();
+    }, ACTIVATION_POLL_MS);
+    return () => window.clearInterval(timer);
+  }, [mode, subscribed, refresh]);
+
+  useEffect(() => {
+    if (mode !== "awaiting" || !subscribed || !info) return;
+    const pending = readPendingCheckout();
+    trackStudioOnce(
+      `completed:${userId}:${info.subscriptionPeriodEnd}`,
+      "studio_subscription_completed",
+      {
+        plan_id: info.subscriptionPlan,
+        interval: info.subscriptionInterval,
+        surface: pending?.surface ?? null,
+        source: "verified_state",
+      },
+      "browser",
+    );
+    clearPendingCheckout();
+    const plan = info.subscriptionPlan ? t(`studio.plans.items.${info.subscriptionPlan}.name`) : "";
+    showToast(t("studio.access.subscribed.title"), t("studio.access.subscribed.body", { plan }), "success");
+    setMode(null);
+  }, [mode, subscribed, info, userId, showToast, t]);
+
+  return {
+    activating: mode === "awaiting" && !subscribed && info?.state !== "staff",
+    slow,
+    canceled: mode === "canceled",
+    dismiss: () => setMode(null),
+  };
+}
+
+function ActivatingScreen({ slow, onContinue }: { slow: boolean; onContinue?: () => void }) {
+  const { t } = useTranslation();
+  const access = useStudioAccess()!;
+  const heading = useHeadingFocus();
+  return (
+    <AccessShell>
+      <Card>
+        <span aria-hidden="true" className="grid h-11 w-11 place-items-center rounded-full bg-[var(--gt-blue-100)] text-[var(--gt-blue-700)]">
+          <Loader2 size={20} className={slow ? undefined : "motion-safe:animate-spin"} />
+        </span>
+        <div className="grid gap-2" role="status" aria-live="polite">
+          <h1 ref={heading} tabIndex={-1} className="text-[length:var(--text-h2)] outline-none">
+            {t("studio.access.activating.title")}
+          </h1>
+          <p className="m-0 text-[length:var(--text-body-md)] text-[var(--text-body)]">
+            {t(slow ? "studio.access.activating.slow" : "studio.access.activating.body")}
+          </p>
+        </div>
+        {slow && (
+          <div className="flex flex-wrap gap-3">
+            <Button variant="primary" iconLeft={RefreshCcw} onClick={() => void access.refresh()}>
+              {t("studio.access.activating.refresh")}
+            </Button>
+            {onContinue && (
+              <Button variant="outline" iconRight={ArrowRight} onClick={onContinue}>
+                {t("studio.account.openStudio")}
+              </Button>
+            )}
+          </div>
+        )}
+      </Card>
+    </AccessShell>
+  );
 }
 
 /* -------------------------------------------------------------------------- */
@@ -222,15 +356,12 @@ function ErrorScreen({ onRetry }: { onRetry: () => void }) {
 
 /* -------------------------------------------------------------------------- */
 
-function LockedScreen({ state }: { state: StudioAccessKind }) {
+function LockedScreen({ state, canceled }: { state: StudioAccessKind; canceled: boolean }) {
   const { t } = useTranslation();
-  const { formatMoney } = useFormat();
   const access = useStudioAccess()!;
   const navigate = useNavigate();
   const heading = useHeadingFocus();
   const [saved, setSaved] = useState<number | null | undefined>(undefined);
-  const [chosen, setChosen] = useState<StudioPlan | null>(null);
-  const noticeRef = useRef<HTMLDivElement>(null);
   const pending = state === "subscription_pending";
 
   useEffect(() => {
@@ -247,21 +378,6 @@ function LockedScreen({ state }: { state: StudioAccessKind }) {
       live = false;
     };
   }, []);
-
-  useEffect(() => {
-    if (chosen) noticeRef.current?.focus();
-  }, [chosen]);
-
-  const choose = (plan: StudioPlan) => {
-    trackStudio("studio_subscription_cta_clicked", {
-      plan_id: plan.id,
-      price_minor: plan.amountMinor,
-      currency: plan.currency,
-      surface: "studio_locked",
-      checkout_available: false,
-    });
-    setChosen(plan);
-  };
 
   const title = pending ? "pendingTitle" : state === "subscription_ended" ? "endedTitle" : "trialTitle";
   return (
@@ -294,34 +410,19 @@ function LockedScreen({ state }: { state: StudioAccessKind }) {
           <h2 id="studio-locked-plans" className="text-center text-[length:var(--text-h3)]">
             {t("studio.access.locked.plansTitle")}
           </h2>
-          <StudioPaidPlans onChoose={choose} />
-          <p className="m-0 text-center text-[length:var(--text-caption)] text-[var(--text-muted)]">{t("studio.access.locked.pricesNote")}</p>
-          {chosen && (
-            <div
-              ref={noticeRef}
-              tabIndex={-1}
-              role="status"
-              className="mx-auto grid max-w-[680px] gap-2 rounded-[var(--radius-lg)] border border-[var(--gt-blue-300)] bg-[var(--gt-blue-50)] p-4 text-[length:var(--text-body-sm)] text-[var(--text-primary)] outline-none"
-            >
-              <strong className="inline-flex items-center gap-2">
-                <Info size={15} aria-hidden="true" className="text-[var(--gt-blue-700)]" />
-                {t("studio.access.locked.notOpenTitle")}
-              </strong>
-              <p className="m-0">
-                {t("studio.access.locked.notOpenBody", {
-                  plan: `${t(`studio.plans.items.${chosen.id}.name`)} (${formatMoney(chosen.amountMinor, chosen.currency)})`,
-                })}
-              </p>
-              <Link to="/contact" className="w-fit font-semibold underline underline-offset-2">
-                {t("studio.access.locked.contact")}
-              </Link>
-            </div>
+          {canceled && (
+            <p role="status" className="mx-auto m-0 inline-flex max-w-[680px] items-start gap-2 rounded-[var(--radius-lg)] border border-[var(--gt-blue-300)] bg-[var(--gt-blue-50)] px-4 py-3 text-[length:var(--text-body-sm)] text-[var(--text-primary)]">
+              <Info size={15} aria-hidden="true" className="mt-0.5 flex-none text-[var(--gt-blue-700)]" />
+              {t("studio.access.checkout.canceled")}
+            </p>
           )}
+          <StudioCheckoutPlans surface="studio_locked" />
+          <p className="m-0 text-center text-[length:var(--text-caption)] text-[var(--text-muted)]">{t("studio.access.locked.pricesNote")}</p>
         </section>
       )}
 
       <div className="flex flex-wrap justify-center gap-3">
-        <Button variant="outline" onClick={() => navigate("/compte")}>
+        <Button variant="outline" onClick={() => navigate(ACCOUNT_STUDIO_PATH)}>
           {t("studio.access.toAccount")}
         </Button>
         <Button variant="ghost" iconLeft={ArrowLeft} onClick={() => navigate(STUDIO_PATH)}>

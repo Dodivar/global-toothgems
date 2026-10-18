@@ -2,24 +2,11 @@ import type { Localized } from "./types";
 import type { GemShape } from "./products";
 
 /**
- * Fictional content for the 3D Studio presentation and subscription pages.
- *
- * These pages are a visual prototype: no subscription stands behind them. The
- * working editor is a separate page (`/studio-3d/atelier`, see
- * `data/studioEditor.ts`); nothing here is read by it. The compositions drawn
- * on the inspiration boards and the offers listed on the presentation page are
- * fixture data, until the subscription exists.
+ * Content of the 3D Studio presentation and subscription pages: the
+ * compositions drawn on the inspiration boards (fixture art, not designs of
+ * real members) and the plans. The working editor is a separate page
+ * (`/studio-3d/atelier`, see `data/studioEditor.ts`); nothing here is read by it.
  */
-
-/**
- * Display price of the Studio subscription.
- *
- * A prototype value supplied with the brief (€5 per month). In production the
- * amount, currency and interval come from the Stripe Price the subscription is
- * created against, and access is granted by the verified webhook — never by
- * this constant or by the confirmation screen.
- */
-export const STUDIO_PRICE = { amount: 5, currency: "EUR", interval: "month" } as const;
 
 export type StudioMaterial = "crystal" | "sapphire" | "rose" | "emerald" | "gold" | "opal";
 

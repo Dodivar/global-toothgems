@@ -99,8 +99,8 @@
     "perMonth": "/ month",
     "featured": "Artists’ choice",
     "cta": "Choose {{plan}}",
-    "detailsTitle": "What the plan includes",
-    "details": "What each plan includes is still to be defined with the site owner.",
+    "detailsTitle": "Included",
+    "details": "Every plan opens the whole 3D Studio: every feature, the full gem library, your creations saved and shared.",
     "trial": {
       "badge_one": "{{count}} day free",
       "badge_other": "{{count}} days free",
@@ -117,7 +117,15 @@
       "artist": "For artists who want to make the most of their creative practice.",
       "atelier": "For artists whose ambitions call for the most complete plan."
     },
-    "note": "Monthly amounts are shown for illustration and are still to be confirmed: no subscription is charged today."
+    "note": "Prices include VAT. Cancel at any time from your account: the subscription ends at the close of the paid period.",
+    "perYear": "/ year",
+    "intervalLabel": "Billing",
+    "monthly": "Monthly",
+    "yearly": "Yearly",
+    "monthsFree_one": "{{count}} month free",
+    "monthsFree_other": "{{count}} months free",
+    "unavailable": "Plan temporarily unavailable",
+    "redirecting": "Opening secure payment…"
   },
   "closing": {
     "title": "Your next great creation starts with an idea.",

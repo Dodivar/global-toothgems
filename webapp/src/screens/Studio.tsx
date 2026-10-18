@@ -11,7 +11,7 @@ import { useNavigate } from "../lib/navigation";
 import { useFormat } from "../lib/format";
 import { useReveal } from "../lib/useReveal";
 import { STUDIO_ENTRY_PLAN, STUDIO_TRIAL_DAYS } from "../data/studio";
-import { STUDIO_EDITOR_PATH, STUDIO_SUBSCRIBE_PATH } from "../lib/studioUrl";
+import { STUDIO_EDITOR_PATH } from "../lib/studioUrl";
 import { STUDIO_PREVIEW } from "../lib/studioAccess";
 
 /**
@@ -80,7 +80,6 @@ export function Studio() {
 
   const entryPrice = formatMoney(STUDIO_ENTRY_PLAN.amountMinor, STUDIO_ENTRY_PLAN.currency);
   const start = () => navigate(STUDIO_EDITOR_PATH);
-  const subscribe = () => navigate(STUDIO_SUBSCRIBE_PATH);
   const startLabel = access.granted ? t("studioPage.hero.ctaOpen") : t("studioPage.hero.ctaPrimary", { count: STUDIO_TRIAL_DAYS });
 
   const benefitsRef = useReveal<HTMLElement>();
@@ -229,7 +228,7 @@ export function Studio() {
       >
         <div className="mx-auto grid max-w-[var(--max-width-content)] gap-8">
           <SectionHeading id="gt-studio-b-plans" eyebrow={t("studioPage.plans.eyebrow")} title={t("studioPage.plans.title")} body={t("studioPage.plans.body")} />
-          <StudioPlans onTrial={start} onChoose={subscribe} />
+          <StudioPlans onTrial={start} />
           <p className="m-0 text-[length:var(--text-caption)] text-[var(--text-muted)]">
             {t("studioPage.plans.note")}
             {access.granted ? ` ${t("studio.access.previewHint")}` : ""}

@@ -1116,7 +1116,8 @@
         "home": "Accueil site",
         "shop": "Boutique",
         "giftCard": "Carte cadeau",
-        "academy": "Academy"
+        "academy": "Academy",
+        "subscription": "Abonnement"
       },
       "groupLearning": "Apprendre",
       "groupPurchases": "Achats",
@@ -1324,7 +1325,8 @@
     "certificateDocDateLabel": "Date d’obtention",
     "certificateDocRefLabel": "N° d’attestation",
     "certificateDocSeal": "Validée",
-    "certificateDocIssuer": "Organisme émetteur"
+    "certificateDocIssuer": "Organisme émetteur",
+    "navStudio": "Abonnement Studio"
   },
   "footer": {
     "blurb": "Gems, outils et formation professionnels. Expédié dans toute l’Europe depuis Lyon.",

@@ -5,6 +5,7 @@ import {
   Award,
   Gift,
   Cookie,
+  CreditCard,
   Languages,
   LayoutDashboard,
   LifeBuoy,
@@ -135,13 +136,16 @@ const GROUPS: SectionGroup[] = [
   {
     id: "studio",
     labelKey: "nav.studio",
-    items: STUDIO_SHORTCUTS.map((shortcut) => ({
-      to: shortcut.to,
-      labelKey: shortcut.labelKey,
-      shortKey: shortcut.shortKey,
-      icon: shortcut.icon,
-      end: shortcut.id === "workshop",
-    })),
+    items: [
+      ...STUDIO_SHORTCUTS.map((shortcut) => ({
+        to: shortcut.to,
+        labelKey: shortcut.labelKey,
+        shortKey: shortcut.shortKey,
+        icon: shortcut.icon,
+        end: shortcut.id === "workshop",
+      })),
+      { to: "/compte/studio", labelKey: "account.navStudio", shortKey: "subscription", icon: CreditCard },
+    ],
   },
   {
     id: "account",

@@ -99,8 +99,8 @@
     "perMonth": "/ mois",
     "featured": "Le choix des artistes",
     "cta": "Choisir {{plan}}",
-    "detailsTitle": "Contenu de la formule",
-    "details": "Ce que comprend chaque formule reste à définir avec le propriétaire du site.",
+    "detailsTitle": "Inclus",
+    "details": "Chaque formule ouvre tout le Studio 3D : toutes les fonctions, toute la bibliothèque de gemmes, vos créations enregistrées et partagées.",
     "trial": {
       "badge_one": "{{count}} jour offert",
       "badge_other": "{{count}} jours offerts",
@@ -117,7 +117,15 @@
       "artist": "Pour les artistes qui veulent tirer le meilleur de leur travail créatif.",
       "atelier": "Pour les artistes dont les ambitions demandent la formule la plus complète."
     },
-    "note": "Montants mensuels affichés à titre indicatif, encore à confirmer : aucun abonnement n’est prélevé aujourd’hui."
+    "note": "Prix TVA comprise. Résiliable à tout moment depuis votre compte : l’abonnement prend fin à la fin de la période payée.",
+    "perYear": "/ an",
+    "intervalLabel": "Facturation",
+    "monthly": "Mensuelle",
+    "yearly": "Annuelle",
+    "monthsFree_one": "{{count}} mois offert",
+    "monthsFree_other": "{{count}} mois offerts",
+    "unavailable": "Formule momentanément indisponible",
+    "redirecting": "Ouverture du paiement sécurisé…"
   },
   "closing": {
     "title": "Votre prochaine grande création commence par une idée.",

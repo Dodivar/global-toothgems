@@ -33,6 +33,10 @@ export interface StudioAccessInfo {
   firstCreationAt: number | null;
   subscriptionPlan: string | null;
   subscriptionStatus: string | null;
+  /** End of the paid period (renewal, or the end of a cancelled subscription). */
+  subscriptionPeriodEnd: number | null;
+  subscriptionInterval: "month" | "year" | null;
+  subscriptionCancelAtPeriodEnd: boolean;
 }
 
 const KINDS: StudioAccessKind[] = [
@@ -67,6 +71,9 @@ export function parseAccessRow(raw: unknown): StudioAccessInfo | null {
     firstCreationAt: time(row.first_creation_at),
     subscriptionPlan: text(row.subscription_plan),
     subscriptionStatus: text(row.subscription_status),
+    subscriptionPeriodEnd: time(row.subscription_period_end),
+    subscriptionInterval: row.subscription_interval === "month" || row.subscription_interval === "year" ? row.subscription_interval : null,
+    subscriptionCancelAtPeriodEnd: row.subscription_cancel_at_period_end === true,
   };
 }
 
