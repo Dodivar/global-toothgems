@@ -7769,6 +7769,97 @@ export type Database = {
           },
         ]
       }
+      studio_withdrawals: {
+        Row: {
+          canceled_at: string | null
+          created_at: string
+          currency: string
+          failure_reason: string | null
+          id: string
+          paid_amount: number
+          period_days: number
+          period_end: string
+          period_start: string
+          refund_amount: number
+          refunded_at: string | null
+          requested_at: string
+          status: string
+          stripe_invoice_id: string
+          stripe_refund_id: string | null
+          subscription_id: string
+          updated_at: string
+          used_amount: number
+          used_days: number
+          user_id: string
+        }
+        Insert: {
+          canceled_at?: string | null
+          created_at?: string
+          currency: string
+          failure_reason?: string | null
+          id?: string
+          paid_amount: number
+          period_days: number
+          period_end: string
+          period_start: string
+          refund_amount: number
+          refunded_at?: string | null
+          requested_at?: string
+          status?: string
+          stripe_invoice_id: string
+          stripe_refund_id?: string | null
+          subscription_id: string
+          updated_at?: string
+          used_amount: number
+          used_days: number
+          user_id: string
+        }
+        Update: {
+          canceled_at?: string | null
+          created_at?: string
+          currency?: string
+          failure_reason?: string | null
+          id?: string
+          paid_amount?: number
+          period_days?: number
+          period_end?: string
+          period_start?: string
+          refund_amount?: number
+          refunded_at?: string | null
+          requested_at?: string
+          status?: string
+          stripe_invoice_id?: string
+          stripe_refund_id?: string | null
+          subscription_id?: string
+          updated_at?: string
+          used_amount?: number
+          used_days?: number
+          user_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "studio_withdrawals_subscription_id_fkey"
+            columns: ["subscription_id"]
+            isOneToOne: true
+            referencedRelation: "studio_subscriptions"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "studio_withdrawals_user_id_fkey"
+            columns: ["user_id"]
+            isOneToOne: false
+            referencedRelation: "loyalty_overview"
+            referencedColumns: ["user_id"]
+          },
+          {
+            foreignKeyName: "studio_withdrawals_user_id_fkey"
+            columns: ["user_id"]
+            isOneToOne: false
+            referencedRelation: "profiles"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       tax_rates: {
         Row: {
           country_code: string
@@ -9023,6 +9114,22 @@ export type Database = {
           subscription_id: string
         }[]
       }
+      pending_studio_withdrawal_emails: {
+        Args: { p_limit?: number }
+        Returns: {
+          currency: string
+          email: string
+          locale: string
+          paid_amount: number
+          period_days: number
+          plan: string
+          refund_amount: number
+          requested_at: string
+          used_amount: number
+          used_days: number
+          withdrawal_id: string
+        }[]
+      }
       quote_basket: {
         Args: {
           p_currency?: string
@@ -9135,6 +9242,41 @@ export type Database = {
         }
         Returns: undefined
       }
+      record_studio_withdrawal_step: {
+        Args: {
+          p_step: string
+          p_stripe_refund_id?: string
+          p_withdrawal_id: string
+        }
+        Returns: {
+          canceled_at: string | null
+          created_at: string
+          currency: string
+          failure_reason: string | null
+          id: string
+          paid_amount: number
+          period_days: number
+          period_end: string
+          period_start: string
+          refund_amount: number
+          refunded_at: string | null
+          requested_at: string
+          status: string
+          stripe_invoice_id: string
+          stripe_refund_id: string | null
+          subscription_id: string
+          updated_at: string
+          used_amount: number
+          used_days: number
+          user_id: string
+        }
+        SetofOptions: {
+          from: "*"
+          to: "studio_withdrawals"
+          isOneToOne: true
+          isSetofReturn: false
+        }
+      }
       refund_to_gift_cards: {
         Args: { p_amount: number; p_order_id: string; p_reason: string }
         Returns: number
@@ -9179,6 +9321,14 @@ export type Database = {
           isSetofReturn: false
         }
       }
+      request_studio_withdrawal: {
+        Args: {
+          p_period_end: string
+          p_period_start: string
+          p_user_id: string
+        }
+        Returns: Json
+      }
       set_shipment_status: {
         Args: {
           p_carrier?: string
@@ -9208,6 +9358,42 @@ export type Database = {
         SetofOptions: {
           from: "*"
           to: "shipments"
+          isOneToOne: true
+          isSetofReturn: false
+        }
+      }
+      settle_studio_withdrawal_refund: {
+        Args: {
+          p_reason?: string
+          p_status: string
+          p_stripe_refund_id: string
+          p_withdrawal_id: string
+        }
+        Returns: {
+          canceled_at: string | null
+          created_at: string
+          currency: string
+          failure_reason: string | null
+          id: string
+          paid_amount: number
+          period_days: number
+          period_end: string
+          period_start: string
+          refund_amount: number
+          refunded_at: string | null
+          requested_at: string
+          status: string
+          stripe_invoice_id: string
+          stripe_refund_id: string | null
+          subscription_id: string
+          updated_at: string
+          used_amount: number
+          used_days: number
+          user_id: string
+        }
+        SetofOptions: {
+          from: "*"
+          to: "studio_withdrawals"
           isOneToOne: true
           isSetofReturn: false
         }
@@ -9254,6 +9440,7 @@ export type Database = {
           updated_at: string
         }[]
       }
+      studio_withdrawal_quote: { Args: never; Returns: Json }
       submit_contact_request: {
         Args: {
           p_attachment_paths?: string[]

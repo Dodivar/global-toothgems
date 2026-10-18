@@ -9,6 +9,7 @@ import { useNavigate } from "../../lib/navigation";
 import { useFormat } from "../../lib/format";
 import { StudioAccessProvider, useStudioAccess } from "../../lib/studioAccess";
 import { openStudioBillingPortal } from "../../lib/studioBilling";
+import { StudioWithdrawalPanel } from "../../components/studio/account/StudioWithdrawalPanel";
 import { STUDIO_EDITOR_PATH, STUDIO_SUBSCRIBE_PATH } from "../../lib/studioUrl";
 import type { StudioAccessInfo } from "../../lib/studioAccessState";
 
@@ -18,7 +19,8 @@ import type { StudioAccessInfo } from "../../lib/studioAccessState";
  * payment to fix) and the way to Stripe's customer portal, where the plan, the
  * card and the cancellation are managed. What is changed there comes back
  * through the verified webhook; this page re-reads the access when the member
- * returns to it (the provider re-reads on focus).
+ * returns to it (the provider re-reads on focus). Within 14 days of the first
+ * payment, the right of withdrawal (decision 95) is offered below.
  */
 export function StudioSubscription() {
   return (
@@ -41,7 +43,10 @@ function StudioSubscriptionContent() {
           {t("studio.account.loading")}
         </p>
       ) : status.kind === "ready" ? (
-        <SubscriptionPanel info={status.info} />
+        <>
+          <SubscriptionPanel info={status.info} />
+          {status.info.subscriptionPlan !== null && <StudioWithdrawalPanel onWithdrawn={() => void access?.refresh()} />}
+        </>
       ) : status.kind === "preview" ? (
         <EmptyPanel>{t("studio.account.noPlan")}</EmptyPanel>
       ) : (

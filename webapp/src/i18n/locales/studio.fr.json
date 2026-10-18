@@ -636,6 +636,42 @@
     "manageHint": "Changer de formule ou de facturation, mettre à jour votre carte, voir vos factures ou résilier : sur la page sécurisée de Stripe.",
     "portalError": "La gestion de l’abonnement est momentanément indisponible. Réessayez dans un instant.",
     "choosePlan": "Choisir une formule",
-    "openStudio": "Ouvrir le Studio"
+    "openStudio": "Ouvrir le Studio",
+    "withdrawal": {
+      "title": "Droit de rétractation",
+      "until": "Vous pouvez vous rétracter jusqu’au {{date}} inclus. Nous vous remboursons alors la part de l’abonnement que vous n’avez pas utilisée.",
+      "paid": "Payé à la souscription",
+      "used": "Jours utilisés ({{days}} sur {{total}})",
+      "refund": "Remboursé si vous vous rétractez aujourd’hui",
+      "estimateNote": "Chaque jour commencé compte comme un jour utilisé ; le montant exact est calculé au moment de la rétractation.",
+      "cta": "Me rétracter",
+      "confirmTitle": "Vous rétracter de votre abonnement ?",
+      "confirmBody": "Cette action est immédiate et ne peut pas être annulée.",
+      "effectAccess": "Votre abonnement s’arrête tout de suite : vous perdez l’accès à l’éditeur du Studio et vous ne serez plus facturé.",
+      "effectRefund": "Le remboursement est fait sur le moyen de paiement utilisé ; selon votre banque, il apparaît sous quelques jours ouvrés.",
+      "effectCreations": "Vos créations restent dans votre compte et vous pouvez toujours les consulter.",
+      "confirm": "Confirmer ma rétractation",
+      "cancel": "Garder mon abonnement",
+      "contact": "Vous avez changé de formule depuis la souscription : pour vous rétracter jusqu’au {{date}} inclus, écrivez-nous et nous calculons votre remboursement.",
+      "contactLink": "Nous contacter",
+      "retry": "Terminer ma rétractation",
+      "status": {
+        "requested": "Rétractation reçue le {{date}} : elle n’a pas pu être terminée. Réessayez, ou contactez-nous si le problème continue.",
+        "refund_pending": "Rétractation reçue le {{date}}. Remboursement de {{amount}} en cours.",
+        "refunded": "Rétractation reçue le {{date}}. {{amount}} vous ont été remboursés.",
+        "refund_failed": "Rétractation reçue le {{date}}, mais le remboursement de {{amount}} a échoué. Notre équipe s’en occupe : contactez-nous si besoin.",
+        "no_refund": "Rétractation reçue le {{date}}. La période payée ayant été entièrement utilisée, il n’y a rien à rembourser."
+      },
+      "refused": {
+        "no_subscription": "Aucun abonnement en cours à arrêter.",
+        "not_paid": "Votre premier paiement n’est pas encore confirmé : réessayez dans quelques minutes.",
+        "renewal": "Le droit de rétractation ne s’applique qu’à la première période de l’abonnement.",
+        "manual_review": "Votre rétractation doit être traitée par notre équipe : contactez-nous.",
+        "deadline_passed": "Le délai de 14 jours pour vous rétracter est dépassé. Vous pouvez toujours résilier pour la fin de la période.",
+        "withdrawn": "Votre rétractation est déjà enregistrée."
+      },
+      "incomplete": "Votre rétractation est enregistrée mais n’a pas pu être terminée. Réessayez dans un instant.",
+      "error": "Une erreur est survenue. Rien n’a été modifié : réessayez."
+    }
   }
 }

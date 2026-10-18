@@ -636,6 +636,42 @@
     "manageHint": "Change plan or billing, update your card, see your invoices or cancel: on Stripe’s secure page.",
     "portalError": "Subscription management is temporarily unavailable. Try again in a moment.",
     "choosePlan": "Choose a plan",
-    "openStudio": "Open the Studio"
+    "openStudio": "Open the Studio",
+    "withdrawal": {
+      "title": "Right of withdrawal",
+      "until": "You can withdraw until {{date}} included. We then refund the share of the subscription you have not used.",
+      "paid": "Paid when subscribing",
+      "used": "Days used ({{days}} of {{total}})",
+      "refund": "Refunded if you withdraw today",
+      "estimateNote": "Each day started counts as a day used; the exact amount is worked out when you withdraw.",
+      "cta": "Withdraw",
+      "confirmTitle": "Withdraw from your subscription?",
+      "confirmBody": "This takes effect at once and cannot be undone.",
+      "effectAccess": "Your subscription stops right away: you lose access to the Studio editor and will not be charged again.",
+      "effectRefund": "The refund goes back to the payment method you used; depending on your bank, it appears within a few business days.",
+      "effectCreations": "Your creations stay in your account and you can still view them.",
+      "confirm": "Confirm my withdrawal",
+      "cancel": "Keep my subscription",
+      "contact": "You changed plans since subscribing: to withdraw until {{date}} included, write to us and we will work out your refund.",
+      "contactLink": "Contact us",
+      "retry": "Finish my withdrawal",
+      "status": {
+        "requested": "Withdrawal received on {{date}}: it could not be finished. Try again, or contact us if it keeps failing.",
+        "refund_pending": "Withdrawal received on {{date}}. Refund of {{amount}} in progress.",
+        "refunded": "Withdrawal received on {{date}}. {{amount}} has been refunded.",
+        "refund_failed": "Withdrawal received on {{date}}, but the refund of {{amount}} failed. Our team is on it: contact us if needed.",
+        "no_refund": "Withdrawal received on {{date}}. The paid period was fully used, so nothing is left to refund."
+      },
+      "refused": {
+        "no_subscription": "No running subscription to stop.",
+        "not_paid": "Your first payment is not confirmed yet: try again in a few minutes.",
+        "renewal": "The right of withdrawal only covers the subscription's first period.",
+        "manual_review": "Your withdrawal has to be handled by our team: contact us.",
+        "deadline_passed": "The 14 days to withdraw are over. You can still cancel for the end of the period.",
+        "withdrawn": "Your withdrawal is already recorded."
+      },
+      "incomplete": "Your withdrawal is recorded but could not be finished. Try again in a moment.",
+      "error": "Something went wrong. Nothing was changed: try again."
+    }
   }
 }
