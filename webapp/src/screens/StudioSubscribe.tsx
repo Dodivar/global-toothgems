@@ -4,6 +4,7 @@ import { useTranslation } from "react-i18next";
 import { ArrowLeft, Box, Info } from "lucide-react";
 import { Link } from "../lib/navigation";
 import { useAuth } from "../lib/auth";
+import { useHydrated } from "../lib/useHydrated";
 import { StudioCheckoutPlans } from "../components/studio/StudioPlans";
 import { STUDIO_PATH } from "../lib/studioUrl";
 
@@ -18,6 +19,8 @@ import { STUDIO_PATH } from "../lib/studioUrl";
 export function StudioSubscribe() {
   const { t } = useTranslation();
   const { signedIn } = useAuth();
+  // Server-rendered page: the account is only known once hydrated (no mismatch for a signed-in member).
+  const hydrated = useHydrated();
 
   return (
     <main className="gt-studio-alt overflow-x-clip">
@@ -43,7 +46,7 @@ export function StudioSubscribe() {
               {t("studio.subscribe.title")}
             </h1>
             <p className="m-0 max-w-[58ch] text-[length:var(--text-body-lg)] text-[var(--text-body)]">{t("studio.subscribe.body")}</p>
-            {!signedIn && (
+            {hydrated && !signedIn && (
               <p className="m-0 inline-flex max-w-[60ch] items-start gap-2 rounded-[var(--radius-lg)] border border-[var(--gt-blue-200)] bg-white/75 px-4 py-2.5 text-left text-[length:var(--text-body-sm)] text-[var(--text-primary)]">
                 <Info size={15} aria-hidden="true" className="mt-0.5 flex-none text-[var(--gt-blue-700)]" />
                 {t("studio.subscribe.signInNote")}
