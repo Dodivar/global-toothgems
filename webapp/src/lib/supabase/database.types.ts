@@ -9009,6 +9009,20 @@ export type Database = {
           user_id: string
         }[]
       }
+      pending_studio_subscription_emails: {
+        Args: { p_limit?: number }
+        Returns: {
+          amount: number
+          billing_interval: string
+          consent_version: string
+          consented_at: string
+          currency: string
+          email: string
+          locale: string
+          plan: string
+          subscription_id: string
+        }[]
+      }
       quote_basket: {
         Args: {
           p_currency?: string

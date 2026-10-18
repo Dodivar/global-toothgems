@@ -152,6 +152,7 @@ supabase/
 | 20261017103101 | `studio_trial_access` | **Applied 2026-10-17.** Decision 93: the 3D Studio 48-hour free trial and the subscription entitlement. `studio_trials` (one row per account, `trial_expires_at = trial_started_at + 48 h` by CHECK, `first_creation_at` set by a trigger on `creations`), `studio_subscriptions` (Stripe mirror, service role only — written since `20261018102741`), `private.has_studio_access()` (active trial, active subscription or active staff) added to the INSERT/UPDATE policies of `creations`, `gem_groups` and the `studio-thumbnails` bucket (read and delete unchanged), `start_studio_trial()` (idempotent, `started` only for the call that created the trial; none for a current or former subscriber or staff), `studio_access_state()` (state + `server_now`). Both tables readable by their owner and `view_statistics` staff; audited. Suite `tests/studio_trial_validation.sql`; `tests/studio_workspace_validation.sql` gives its members a trial |
 | 20261018102741 | `studio_subscription_billing` | **Applied 2026-10-18.** Decision 94: selling the 3D Studio subscription. `stripe_customers` (account → Stripe customer, service role only), `studio_plan_prices` (plan × `month`/`year` → Stripe Price, amount VAT included; one active per plan and interval; public read of active rows; rows set per environment by `studio-billing-setup`, never by a migration; audited), `studio_subscriptions` + `billing_interval`, `stripe_price_id`, `canceled_at`, `studio_subscription_invoices` (paid / failed invoice with Stripe's `billing_reason`: new subscription vs renewal; owner and `view_statistics` read). Writers `apply_studio_subscription()` (account from the stored customer, else the Checkout's `user_id` metadata; plan from the price; never moves a subscription to another account) and `record_studio_invoice()` (a paid invoice stays paid), service role only. `studio_access_json()` / `start_studio_trial()`: a first payment that never completed (`incomplete`, `incomplete_expired`) does not forfeit the trial. Suite `tests/studio_billing_validation.sql` |
 | 20261018110209 | `studio_billing_updated_at` | **Applied 2026-10-18.** Fix: `studio_subscriptions` (since `20261017103101`), `studio_plan_prices` and `studio_subscription_invoices` used the designs' `studio_touch_updated_at()` trigger, which reads `name` and failed every UPDATE (`record "new" has no field "name"`, found by the first test subscription); they take `private.set_updated_at()` |
+| 20261018155521 | `studio_withdrawal_consent` | **Applied 2026-10-18.** Decision 94 (a): the member's request for immediate access to the Studio (L221-25). `consent_records` purpose `studio_immediate_access` (source `checkout`, `policy_version` = wording version), recorded by `create-studio-subscription` before the Stripe session; `pending_studio_subscription_emails()` (service role: new subscriptions whose first invoice is paid, with the request accepted before them) and template `studio_subscription_confirmation` (FR + EN), sent once by `send-pending-emails` (`studio_subscription:<id>`). Suite `tests/studio_withdrawal_consent_validation.sql` |
 | 20261008175722 | `contact_attachments_and_support_email` | **Applied 2026-10-08.** Contact form: `contact_requests.attachment_path` → `attachment_paths text[]` (≤ 5, `private.valid_contact_attachment_paths()`), bucket `contact-attachments` 20 MB per object, `submit_contact_request(…, p_attachment_paths text[])` (old signature dropped; ownership per path, no duplicates, ≤ 20 MB in all), guard trigger rebuilt, `contact_ip_allowed(ip_hash)` (service role), template `contact_request_received` (fr + en) for the support inbox. Suite: `iteration7_validation.sql` C3/C4 |
 | 20261008175809 | `contact_attachment_paths_check_grant` | **Applied 2026-10-08.** `execute` on the CHECK helper for `authenticated`/`service_role` (staff triage re-evaluates the CHECK) |
 | 20261007181011 | `gift_card_design_everywhere` | **Applied 2026-10-07.** The design/names/message chosen at checkout are shown back (WYSIWYG): policy `gift_cards: purchaser reads own` (a buyer reads the cards of their purchases through the existing column grant — never the code) so the member's order pages draw the card in its design; the `gift_card_delivery` template bodies (fr + en) lose their `{{message}}` paragraph because the e-mail now draws the card itself (`giftCardVisual()`, message included). Test: a buyer sees only their own cards (to add to `gift_cards_validation.sql`) |
@@ -1202,13 +1203,17 @@ reads, deletes       always the owner's: the work done during the trial is kept
 
 ```
 plan button (locked screen, /studio-3d, /fr/studio-3d/abonnement)   signed out → sign-in, back to the subscription page
-  → POST functions/v1/create-studio-subscription {plan, interval, locale}     (member token; no price id or amount accepted)
+  → POST functions/v1/create-studio-subscription {plan, interval, locale, withdrawal_consent}
+                                                  (member token; no price id or amount accepted)
+      withdrawal_consent must be true (the box above the plans, unticked by default) → else withdrawal_consent_required
       terms accepted? no blocking subscription (active/trialing/past_due/unpaid/paused/incomplete) → else already_subscribed
       price = studio_plan_prices(plan, interval, active) → else plan_unavailable
+      the request is recorded: consent_records studio_immediate_access, version studio-withdrawal-2026-10
       customer = stripe_customers, else created once (idempotency key studio-customer:<user>)
       the customer's other open Studio Checkouts are expired
       Stripe Checkout Session, mode subscription (Stripe's hosted page), metadata + subscription_data.metadata
-        {kind: studio_subscription, user_id, plan, interval}
+        {kind: studio_subscription, user_id, plan, interval, withdrawal_consent_id, withdrawal_consent_version};
+      custom_text above Stripe's pay button repeats the request and how to cancel
       → {status: checkout, url}; success_url /studio-3d/atelier?subscription=success, cancel_url …=canceled
   Stripe → stripe-webhook   customer.subscription.created/updated/deleted, invoice.paid/payment_failed,
                             checkout.session.completed (mode subscription)
@@ -1216,6 +1221,8 @@ plan button (locked screen, /studio-3d, /fr/studio-3d/abonnement)   signed out �
       metadata kind ≠ studio_subscription → ignored
       apply_studio_subscription(…) → studio_subscriptions; invoices → record_studio_invoice(… billing_reason)
       unknown account / price → stored as failed (acknowledged); Stripe unreachable → 500, retried
+  first invoice paid → send-pending-emails (≤ 5 min) e-mails studio_subscription_confirmation: plan, first
+      payment and, word for word, the request accepted with its date (the durable confirmation)
   back on ?subscription=success → the page re-reads studio_access_state() every 3 s (60 s) until `subscribed`
 /compte/studio  plan, billing, renewal / end date, payment to fix → POST functions/v1/studio-billing-portal
                 → Stripe customer portal (configuration metadata kind = studio_portal: switch plan or interval,
@@ -1947,8 +1954,18 @@ VAT rates, shipping zones/rates mirroring the Settings prototype. Media rows ref
     subscription needs no basket, and the customer portal is Stripe's page anyway); the Stripe Prices are test-mode
     objects created by `studio-billing-setup` on the owner's go-ahead, live ones are created at launch. Access only
     from the verified webhook (`studio_subscriptions`), one blocking subscription per account, Stripe customer reused.
-    Agent's choices, to confirm: (a) the 14-day EU withdrawal right — the Checkout says the subscription starts at
-    once and can be cancelled for the end of the period, but no explicit waiver of the withdrawal right is collected;
+    Agent's choices, to confirm: (a) the 14-day EU withdrawal right — since 2026-10-18 (owner's choice, migration
+    `20261018155521`) the member must tick, before any plan button works, an express request for immediate access
+    acknowledging that a withdrawal within 14 days costs the share of the subscription already used (L221-25,
+    option "service": the Studio is an online service, so the right is kept, not waived — a full waiver under
+    L221-28 was considered and set aside as unlikely to hold for a subscription). The function refuses a checkout
+    without it (`withdrawal_consent_required`), records it in `consent_records` (`studio_immediate_access`,
+    version `studio-withdrawal-2026-10`, wording in `_shared/studioBilling.ts`, the same as the box — checked by a
+    Deno test), puts its id and version in the Checkout and subscription metadata, repeats it above Stripe's pay
+    button and e-mails it with the plan and first payment once the first invoice is paid. To confirm with a lawyer:
+    the wording; the refund on withdrawal — none is automated: the member writes in, staff refund the amount minus
+    the days used (pro rata of the period) from the Stripe dashboard and cancel the subscription, and that share
+    of a yearly plan; the Studio clause of the terms of sale (`data/legal/terms.ts` covers products and courses);
     (b) subscription invoices are Stripe's own documents (Stripe numbering), outside the `FA-` / `AV-` sequence of
     decision 86 — the accountant must confirm, or they must be issued by the database too; (c) VAT is inclusive at
     one rate (no Stripe Tax, no per-country rate, no B2B reverse charge), like decision 5; (d) `past_due` keeps
