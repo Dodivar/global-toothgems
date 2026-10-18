@@ -12,7 +12,6 @@ import {
   unavailableTryOnService,
 } from "./tryOn";
 import { checkPhotoFile, checkPhotoSize, fitWithin, PHOTO_MAX_BYTES, tryOnFileName } from "./tryOnPhoto";
-import { placeholderLayout } from "./tryOnPlaceholder";
 import {
   boxPointToStage,
   clampTransform,
@@ -215,28 +214,5 @@ describe("overlay transform", () => {
       expect(spot.size * frame.width).toBeCloseTo(original.scale * 1000);
     }
     expect(overlayFromResult({ placements: [] }, 0.75)).toBeNull();
-  });
-});
-
-describe("placeholder layout (temporary)", () => {
-  it("fits the front-facing pieces in the box", () => {
-    const spots = placeholderLayout([piece("a", -10, 0), piece("b", 10, 2), piece("back", 0, 0, { normal: { x: 0, y: 0, z: -1 } })]);
-    expect(spots.map((s) => s.pieceId)).toEqual(["a", "b"]);
-    for (const s of spots) {
-      expect(s.x).toBeGreaterThan(0);
-      expect(s.x).toBeLessThan(1);
-      expect(s.y).toBeGreaterThan(0);
-      expect(s.y).toBeLessThan(1);
-    }
-    expect(spots[0].x).toBeLessThan(spots[1].x);
-    expect(spots[1].y).toBeLessThan(spots[0].y); // higher in 3D, higher on the photo
-  });
-
-  it("centres a single piece and survives an empty creation", () => {
-    const [only] = placeholderLayout([piece("a", 5, 5)]);
-    expect(only.x).toBeCloseTo(0.5);
-    expect(only.y).toBeCloseTo(0.5);
-    expect(only.size).toBeGreaterThan(0);
-    expect(placeholderLayout([])).toEqual([]);
   });
 });
