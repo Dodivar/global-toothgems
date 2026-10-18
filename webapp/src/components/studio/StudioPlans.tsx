@@ -10,6 +10,7 @@ import { TermsNotice } from "../auth/TermsNotice";
 import { useStudioCheckout, type StudioCheckoutSurface } from "./access/useStudioCheckout";
 import { Link, useNavigate } from "../../lib/navigation";
 import { useAuth } from "../../lib/auth";
+import { useHydrated } from "../../lib/useHydrated";
 import { RETURN_PARAM, SIGN_IN_PATH } from "../../lib/authRoutes";
 import { STUDIO_SUBSCRIBE_PATH } from "../../lib/studioUrl";
 import { useFormat } from "../../lib/format";
@@ -91,6 +92,8 @@ export function StudioCheckoutPlans({ surface }: { surface: StudioCheckoutSurfac
   const [consentMissing, setConsentMissing] = useState(false);
   const consentRef = useRef<HTMLInputElement>(null);
   const consentHintId = useId();
+  // Server-rendered pages: the account is only known once hydrated (no mismatch for a signed-in member).
+  const hydrated = useHydrated();
   const errorRef = useRef<HTMLDivElement>(null);
 
   useEffect(() => {
@@ -132,7 +135,7 @@ export function StudioCheckoutPlans({ surface }: { surface: StudioCheckoutSurfac
   const error = checkout.error;
   return (
     <div className="grid gap-4">
-      {signedIn && (
+      {hydrated && signedIn && (
         <div
           className={clsx(
             "mx-auto grid w-full max-w-[680px] gap-2 rounded-[var(--radius-lg)] border bg-[var(--surface-card)] p-4",
@@ -148,7 +151,7 @@ export function StudioCheckoutPlans({ surface }: { surface: StudioCheckoutSurfac
             describedBy={consentMissing ? consentHintId : undefined}
           />
           {consentMissing && (
-            <p id={consentHintId} className="m-0 inline-flex items-center gap-1.5 pl-8 text-[length:var(--text-caption)] font-semibold text-[var(--status-error-fg)]">
+            <p id={consentHintId} role="alert" className="m-0 inline-flex items-center gap-1.5 pl-8 text-[length:var(--text-caption)] font-semibold text-[var(--status-error-fg)]">
               <CircleAlert size={13} aria-hidden="true" />
               {t("studio.access.checkout.consent.required")}
             </p>
