@@ -33,8 +33,8 @@ import { getWorkspaceDialog, onboardingSeen, openWorkspaceDialog, useWorkspaceDi
  * Loaded on demand — three.js and the editor are a separate chunk, so the rest
  * of the site does not download a 3D engine it never uses.
  *
- * Access is decided by `RequireStudioAccess` around the route; during the
- * preview it is open to every visitor (see `studioAccess`).
+ * Access is decided by `RequireStudioAccess` around the route: an active
+ * free trial, a subscription or staff (see `studioAccess`, decision 93).
  *
  * Around the editor sits the Studio workspace (`lib/studioWorkspace`): the
  * account's saved creations and Gem Groups, help, and feedback. Its sections

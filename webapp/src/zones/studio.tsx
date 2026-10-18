@@ -13,8 +13,8 @@ const StudioShare = lazy(() => import("../screens/StudioShare").then((m) => ({ d
 
 /**
  * The editor and its sections (`/studio-3d/atelier/*`, `app/studio-3d/atelier`).
- * Gated by `RequireStudioAccess`, which during the preview lets every visitor
- * in for free — the one place to change when the paid subscription goes live.
+ * Gated by `RequireStudioAccess`: the trial invitation, the editor or the
+ * plans, from the account's access (decision 93; the database enforces it).
  */
 export function StudioEditorScreen() {
   return (

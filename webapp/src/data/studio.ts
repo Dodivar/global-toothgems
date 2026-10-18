@@ -156,9 +156,10 @@ export const INSPIRATION: InspirationBoard[] = [
  * supplied with the brief (2026-10-15) and still to confirm, like each plan's
  * features (`studio.plans.<id>` in the translations).
  *
- * No subscription stands behind them yet (`studioAccess` is in preview). When
- * it does, the amounts come from the Stripe Prices the subscriptions are
- * created against and access from the verified webhook — never from here.
+ * The free trial is real (48 hours, decision 93, `lib/studioAccess.tsx`); no
+ * paid subscription can be bought yet. When it can, the amounts come from the
+ * Stripe Prices the subscriptions are created against and access from the
+ * verified webhook (`studio_subscriptions`) — never from here.
  */
 export type StudioPlanId = "trial" | "essential" | "artist" | "atelier";
 

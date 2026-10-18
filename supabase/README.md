@@ -149,6 +149,7 @@ supabase/
 | 20261014150008 | `admin_back_in_stock_requests` | **Applied 2026-10-14.** Decision 90: `admin_back_in_stock_requests(p_limit)` (SECURITY DEFINER, `manage_products`, 42501 otherwise) — the back office's read of the requests for `/admin/alertes-stock`: product and option names, product status, the target's stock state, address, member, language, dates and the e-mail's `email_log` status and attempts. Read-only. Suite `tests/back_in_stock_validation.sql` (B9) |
 | 20261014175219 | `admin_adjust_stock` | **Applied 2026-10-14.** Decision 91: `admin_adjust_stock(p_product_id, p_variant_id, p_delta, p_expected)` (SECURITY DEFINER, `manage_products`, 42501 otherwise) — the product list's quick restock: adds `p_delta` to `quantity_on_hand` of the product's or one variant's stock row in one UPDATE, so a sale paid meanwhile is kept; with `p_expected` (an exact count typed after a stocktake) refuses with 40001 when the shelf moved since. Refuses an untracked row, a product whose stock is per variant, a variant of another product (P0002), a zero change and a result below the reserved units (22023, hint `reserved`). Recorded as an `adjustment` with the actor by the `inventory_items_ledger` trigger. Suite `tests/stock_adjustment_validation.sql` |
 | 20261015152449 | `academy_localized_images` | **Applied 2026-10-15.** Decision 92: an English file per image slot — `course_block_translations.media_id` (image block) / `poster_media_id` (video poster), `quiz_question_translations.image_media_id` (FK `training_media`, ON DELETE RESTRICT, indexed); `quiz_question_translations.text` nullable (an English row may carry only the image). `admin_save_course()` patched (kind-checked; an English row exists when it has text or a file), `private.learner_course_json()` returns the English files and lists them in `media`, `private.can_read_learner_media_path()` lets a holder read them. Suite `tests/academy_localized_images_validation.sql` |
+| 20261017103101 | `studio_trial_access` | **Applied 2026-10-17.** Decision 93: the 3D Studio 48-hour free trial and the subscription entitlement. `studio_trials` (one row per account, `trial_expires_at = trial_started_at + 48 h` by CHECK, `first_creation_at` set by a trigger on `creations`), `studio_subscriptions` (Stripe mirror, service role only — no writer yet), `private.has_studio_access()` (active trial, active subscription or active staff) added to the INSERT/UPDATE policies of `creations`, `gem_groups` and the `studio-thumbnails` bucket (read and delete unchanged), `start_studio_trial()` (idempotent, `started` only for the call that created the trial; none for a current or former subscriber or staff), `studio_access_state()` (state + `server_now`). Both tables readable by their owner and `view_statistics` staff; audited. Suite `tests/studio_trial_validation.sql`; `tests/studio_workspace_validation.sql` gives its members a trial |
 | 20261008175722 | `contact_attachments_and_support_email` | **Applied 2026-10-08.** Contact form: `contact_requests.attachment_path` → `attachment_paths text[]` (≤ 5, `private.valid_contact_attachment_paths()`), bucket `contact-attachments` 20 MB per object, `submit_contact_request(…, p_attachment_paths text[])` (old signature dropped; ownership per path, no duplicates, ≤ 20 MB in all), guard trigger rebuilt, `contact_ip_allowed(ip_hash)` (service role), template `contact_request_received` (fr + en) for the support inbox. Suite: `iteration7_validation.sql` C3/C4 |
 | 20261008175809 | `contact_attachment_paths_check_grant` | **Applied 2026-10-08.** `execute` on the CHECK helper for `authenticated`/`service_role` (staff triage re-evaluates the CHECK) |
 | 20261007181011 | `gift_card_design_everywhere` | **Applied 2026-10-07.** The design/names/message chosen at checkout are shown back (WYSIWYG): policy `gift_cards: purchaser reads own` (a buyer reads the cards of their purchases through the existing column grant — never the code) so the member's order pages draw the card in its design; the `gift_card_delivery` template bodies (fr + en) lose their `{{message}}` paragraph because the e-mail now draws the card itself (`giftCardVisual()`, message included). Test: a buyer sees only their own cards (to add to `gift_cards_validation.sql`) |
@@ -1180,6 +1181,27 @@ browser          admin_adjust_stock(product, variant | null, delta, expected?)  
   never below the reserved units nor zero; product with variants, untracked row, variant of another product,
   unknown product and zero change refused.
 
+### 3D Studio trial and access (iteration 28)
+
+```
+/studio-3d/atelier   signed out            → "sign in to start your free trial"
+                     studio_access_state() → not_started  → trial invitation → start_studio_trial()  (explicit, once)
+                                           → trial_active / subscribed / staff → the editor (+ time left)
+                                           → trial_expired / subscription_ended → locked screen + plans
+                                           → subscription_pending → "being set up", check again
+writes               creations / gem_groups / studio-thumbnails INSERT·UPDATE → has_studio_access(), else 42501
+                     (the editor maps 42501 to the locked screen; the scene stays in the tab and its local draft)
+reads, deletes       always the owner's: the work done during the trial is kept
+```
+
+- The clock is `now()`: the browser counts down from `server_now` on a monotonic clock, so the device clock,
+  storage or a direct URL cannot extend or restart a trial. Status is derived, never stored.
+- `studio_subscriptions` has no writer yet: the Stripe subscription Checkout and its webhook
+  (`customer.subscription.*`, idempotent like `stripe-webhook`) are the next step. Until then the locked screen
+  lists the plans of `webapp/src/data/studio.ts` and says that online subscription is not open; no payment path.
+- Back office: `/admin/statistiques` aggregates both tables in the browser (`lib/adminStudioTrials.ts`); the
+  rest of the funnel is in PostHog (`docs/studio-trial-analytics.md`).
+
 ### Integrity guarantees
 
 - `orders_total_matches`: `total = subtotal − discount + shipping (+ tax when prices exclude tax)`; discount ≤ subtotal; all amounts ≥ 0.
@@ -1876,3 +1898,14 @@ VAT rates, shipping zones/rates mirroring the Settings prototype. Media rows ref
     video posters and question images — course and module covers and the video files themselves stay
     single-language; (b) removing a question's image removes its English version too; (c) German, when enabled,
     gets its own rows the same way (no schema change).
+93. **3D Studio: 48-hour free trial, then subscription** (user's request, 2026-10-17). Every account may start one
+    free trial of the full Studio, explicitly, with no payment details; it lasts 48 hours of continuous time from
+    its start on the database clock and never restarts. Using the Studio (saving or changing designs, Gem Groups,
+    thumbnails) needs an active trial, an active subscription or active staff, enforced by RLS; reading and deleting
+    one's own designs never does. The editor needs an account (no anonymous use any more). Agent's choices, to
+    confirm: (a) active staff use the Studio without a trial (support, testing); (b) an account that has ever had a
+    subscription gets no trial; (c) a subscription grants access while `active`, `trialing` or `past_due` and
+    `current_period_end` is in the future (Stripe's own retry period); (d) sharing a saved design stays possible
+    after the trial (it is viewing, not editing); (e) a subscription started within 30 days after the trial's end
+    counts as a trial conversion in the statistics; (f) plans and prices are still the display values of
+    `data/studio.ts` until the Stripe Prices exist.

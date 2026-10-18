@@ -12,6 +12,9 @@ import { useFormat } from "../../../lib/format";
 import { useStudioAccess } from "../../../lib/studioAccess";
 import { countSavedCreations } from "../../../lib/studioAccessApi";
 import { trackStudio, trackStudioOnce } from "../../../lib/studioAnalytics";
+import { watchStudioActivity } from "../../../lib/studioActivityAnalytics";
+import { studioStore } from "../../../lib/studio3d/store";
+import { useAuth } from "../../../lib/auth";
 import { STUDIO_PATH } from "../../../lib/studioUrl";
 import { RETURN_PARAM, SIGN_IN_PATH } from "../../../lib/authRoutes";
 import type { StudioPlan } from "../../../data/studio";
@@ -347,6 +350,7 @@ function SessionTracker({ children }: { children: ReactNode }) {
   // Read when the session starts; later re-reads of the state do not start a new one.
   const trial = useRef({ startedAt: info?.trialStartedAt ?? null, serverNow: info?.serverNow ?? null });
   const tracked = info !== null;
+  const { userId } = useAuth();
 
   useEffect(() => {
     if (!tracked) return;
@@ -382,14 +386,16 @@ function SessionTracker({ children }: { children: ReactNode }) {
       trackStudio("studio_session_ended", { session_id: current.id, session_seconds: Math.round((Date.now() - current.startedAt) / 1000) });
     };
     touch();
+    const stopActivity = watchStudioActivity(studioStore, { userId, sessionId: current.id });
     const beat = window.setInterval(touch, 60_000);
     window.addEventListener("pagehide", end);
     return () => {
       window.clearInterval(beat);
       window.removeEventListener("pagehide", end);
+      stopActivity();
       end();
     };
-  }, [tracked]);
+  }, [tracked, userId]);
 
   return <>{children}</>;
 }

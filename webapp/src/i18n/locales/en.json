@@ -3362,6 +3362,34 @@
       "export": {
         "value": "Value",
         "previous": "Previous period"
+      },
+      "studioTrial": {
+        "title": "3D Studio free trial",
+        "description": "Trials started in the period (one per account) and what became of them. A subscription started within {{days}} days of the trial's end counts as a conversion. Shop filters do not apply.",
+        "started": "Trials started",
+        "activeNow": "Running now",
+        "activeNowHint": "All trials, whatever the period",
+        "ended": "Ended",
+        "endedHint_one": "{{count}} without a subscription",
+        "endedHint_other": "{{count}} without a subscription",
+        "firstSaveRate": "Saved a first design",
+        "timeToFirstSave": "Median time to first save",
+        "hours_one": "{{count}} h",
+        "hours_other": "{{count}} h",
+        "conversionRate": "Trial → subscription",
+        "convertedHint_one": "{{count}} subscriber",
+        "convertedHint_other": "{{count}} subscribers",
+        "weeksTitle": "By week of trial start",
+        "week": "Week of",
+        "savedShort": "Saved",
+        "convertedShort": "Subscribed",
+        "posthogNote": "Offer views, sessions, return visits, features used and plan clicks are measured in PostHog (events studio_*), for visitors who accepted analytics cookies. Online subscription is not open yet: conversions stay at zero until it is.",
+        "emptyTitle": "No trial in this period",
+        "emptyBody": "Trials appear here as soon as members start one in the Studio.",
+        "unavailableTitle": "No database",
+        "unavailableBody": "Trial figures need the Supabase project.",
+        "errorTitle": "Trial figures unavailable",
+        "errorBody": "They could not be read. Refresh the page to try again."
       }
     },
     "training": {

@@ -3362,6 +3362,34 @@
       "export": {
         "value": "Valeur",
         "previous": "Période précédente"
+      },
+      "studioTrial": {
+        "title": "Essai gratuit du Studio 3D",
+        "description": "Essais démarrés sur la période (un par compte) et ce qu’ils sont devenus. Un abonnement pris dans les {{days}} jours suivant la fin de l’essai compte comme une conversion. Les filtres boutique ne s’appliquent pas.",
+        "started": "Essais démarrés",
+        "activeNow": "En cours",
+        "activeNowHint": "Tous les essais, quelle que soit la période",
+        "ended": "Terminés",
+        "endedHint_one": "{{count}} sans abonnement",
+        "endedHint_other": "{{count}} sans abonnement",
+        "firstSaveRate": "Premier design enregistré",
+        "timeToFirstSave": "Délai médian avant le 1er enregistrement",
+        "hours_one": "{{count}} h",
+        "hours_other": "{{count}} h",
+        "conversionRate": "Essai → abonnement",
+        "convertedHint_one": "{{count}} abonné·e",
+        "convertedHint_other": "{{count}} abonné·es",
+        "weeksTitle": "Par semaine de démarrage",
+        "week": "Semaine du",
+        "savedShort": "Enregistré",
+        "convertedShort": "Abonné",
+        "posthogNote": "Vues de l’offre, sessions, retours, fonctions utilisées et clics sur les formules sont mesurés dans PostHog (événements studio_*), pour les visiteurs ayant accepté les cookies de mesure d’audience. L’abonnement en ligne n’est pas encore ouvert : les conversions restent à zéro d’ici là.",
+        "emptyTitle": "Aucun essai sur la période",
+        "emptyBody": "Les essais apparaissent ici dès que des membres en démarrent un dans le Studio.",
+        "unavailableTitle": "Pas de base de données",
+        "unavailableBody": "Les chiffres de l’essai nécessitent le projet Supabase.",
+        "errorTitle": "Chiffres de l’essai indisponibles",
+        "errorBody": "Ils n’ont pas pu être lus. Actualisez la page pour réessayer."
       }
     },
     "training": {

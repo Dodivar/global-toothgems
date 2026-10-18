@@ -1,6 +1,8 @@
 import { createContext, useCallback, useContext, useEffect, useMemo, useState, type ReactNode } from "react";
 import { useTranslation } from "react-i18next";
 import { useAuth } from "../auth";
+import { useStudioAccess } from "../studioAccess";
+import { trackStudio, trackStudioOnce } from "../studioAnalytics";
 import { useToast } from "../toast";
 import { getEngine } from "../studio3d/engine";
 import { uid } from "../studio3d/math";
@@ -133,12 +135,21 @@ export function StudioWorkspaceProvider({ children }: { children: ReactNode }) {
       showToast(t(`studio.workspace.toasts.${key}`, values), undefined, tone),
     [showToast, t],
   );
+  const access = useStudioAccess();
+  const reportDenied = access?.reportDenied;
   const fail = useCallback(
     (err: unknown, key = "genericFailed") => {
+      // The database refused the write: the trial is over. The access gate
+      // re-reads the state and shows the plans; the scene stays in memory.
+      if (err instanceof StudioStoreError && err.code === "accessDenied") {
+        showToast(t("studio.access.denied.title"), t("studio.access.denied.body"), "warning");
+        reportDenied?.(key);
+        return;
+      }
       const invalid = err instanceof StudioStoreError && err.code === "invalid";
       showToast(t(`studio.workspace.toasts.${invalid ? "invalid" : key}`), t("studio.workspace.toasts.tryAgain"), "error");
     },
-    [showToast, t],
+    [showToast, t, reportDenied],
   );
 
   // Load the account's library.
@@ -201,6 +212,10 @@ export function StudioWorkspaceProvider({ children }: { children: ReactNode }) {
         studioStore.markSaved({ creationId: saved.id, ownerId: userId, name: saved.name, savedAt: saved.updatedAt }, scene.pieces);
         replaceCreation(saved);
         say(mode === "update" ? "changesSaved" : "creationSaved");
+        const counts = { piece_count: scene.pieces.length, is_new: mode === "new" };
+        trackStudio("studio_design_saved", counts);
+        if (mode === "update") trackStudio("studio_design_edited", counts);
+        trackStudioOnce(`first-saved:${userId}`, "studio_first_design_saved", counts, "browser");
         return saved;
       } catch (err) {
         setFailedKey(savedKey);
