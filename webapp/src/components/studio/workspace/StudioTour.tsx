@@ -125,7 +125,8 @@ export function StudioTour({ snap, hidden }: { snap: StudioSnapshot; hidden: boo
   const met = !!(step?.goal && ctx && step.goal(ctx));
   const midway = !met && !!(step?.midway && ctx && step.midway(ctx));
   const blocked = !met && !midway && !!(step?.blocked && ctx && step.blocked(ctx));
-  const succeeded = met || (!!step && tour.done.includes(step.id));
+  // The card speaks of the stage as it is — a gem unarmed is no longer "in
+  // hand" — while the trail keeps every objective reached (`tour.done`).
 
   useEffect(() => {
     if (met && step) markTourStepDone(step.id);
@@ -137,7 +138,6 @@ export function StudioTour({ snap, hidden }: { snap: StudioSnapshot; hidden: boo
   // stepped back to — stands still and waits to be read.
   const last = tour.index === tour.steps.length - 1;
   const wasMet = useRef<{ key: string; met: boolean } | null>(null);
-  const beat = useRef<ReturnType<typeof setTimeout> | null>(null);
   useEffect(() => {
     // Not before the step's baseline exists: until it does, every goal reads
     // false, and that false must not pass for "it was not met when this opened".
@@ -147,22 +147,12 @@ export function StudioTour({ snap, hidden }: { snap: StudioSnapshot; hidden: boo
     if (!live || !step) return;
     // The beat is not taken back if the state flips again afterwards: a gem
     // armed and unarmed within the second still earned the move.
-    if (beat.current || !earnsAutoAdvance({ step, met, metBefore: before, last })) return;
-    beat.current = setTimeout(() => {
-      beat.current = null;
-      nextTourStep();
-    }, 1100);
+    if (!earnsAutoAdvance({ step, met, metBefore: before, last })) return;
+    const timer = setTimeout(nextTourStep, 1100);
+    // Undone within the beat — the gem unarmed, a drag dropped beside a tooth —
+    // and the move is given back: the next step would open with nothing in hand.
+    return () => clearTimeout(timer);
   }, [live, met, base, stepKey, step?.autoAdvance, last]);
-
-  // The beat belongs to the step that started it.
-  useEffect(
-    () => () => {
-      if (!beat.current) return;
-      clearTimeout(beat.current);
-      beat.current = null;
-    },
-    [stepKey],
-  );
 
   /* -- the card takes the focus when the tour opens and after a Back / Next
         press, so a keyboard keeps its place and a screen reader is told where
@@ -205,9 +195,14 @@ export function StudioTour({ snap, hidden }: { snap: StudioSnapshot; hidden: boo
   // The panel a step names can be closed: then its switch is pointed at, and the card says so.
   const usingFallback = !!anchor && anchor.which !== step.anchor;
   const bodyKey = usingFallback && step.fallback ? `${step.id}.bodyClosed` : `${step.id}.body`;
-  const { left, top, dock } = placeTourCard(anchor?.box ?? null, card, viewport, step.inside && !usingFallback);
+  // Where the card stands. Normally beside the control the spotlight is on —
+  // but a step whose gesture crosses the stage puts its card on the stage, out
+  // of the path, while the spotlight stays on the control.
+  const onStage = step.cardOnStage && !usingFallback ? stageBox() : null;
+  const against = onStage ?? anchor?.box ?? null;
+  const { left, top, dock } = placeTourCard(against, card, viewport, (step.inside || !!onStage) && !usingFallback);
   const width = dock === "beside" ? CARD_WIDTH : Math.min(DOCKED_MAX, viewport.width - 24);
-  const taskKey = succeeded ? "success" : midway ? "midway" : blocked ? "blocked" : step.goal ? "task" : "note";
+  const taskKey = met ? "success" : midway ? "midway" : blocked ? "blocked" : step.goal ? "task" : "note";
 
   return (
     <>
@@ -275,17 +270,17 @@ export function StudioTour({ snap, hidden }: { snap: StudioSnapshot; hidden: boo
           {t(`studio.workspace.onboarding.${bodyKey}`)}
         </p>
 
-        {step.id === "stage" && !succeeded && <StageGestures />}
+        {step.id === "stage" && !met && <StageGestures />}
 
         {/* The one thing to do now — and what the editor has actually seen of it. */}
         <p
           aria-live="polite"
           className={clsx(
             "m-0 flex items-start gap-2 rounded-[var(--radius-md)] px-3 py-2 text-[12.5px] font-semibold leading-snug",
-            succeeded ? "bg-[var(--status-success-bg)] text-[var(--status-success-fg)]" : "bg-[var(--surface-brand-wash)] text-[var(--gt-blue-700)]",
+            met ? "bg-[var(--status-success-bg)] text-[var(--status-success-fg)]" : "bg-[var(--surface-brand-wash)] text-[var(--gt-blue-700)]",
           )}
         >
-          {succeeded ? (
+          {met ? (
             <Check size={14} aria-hidden="true" className="mt-px flex-none" />
           ) : (
             <Sparkles size={14} aria-hidden="true" className="mt-px flex-none" />
@@ -324,12 +319,12 @@ export function StudioTour({ snap, hidden }: { snap: StudioSnapshot; hidden: boo
               className={clsx(
                 "inline-flex h-9 items-center gap-1.5 rounded-[var(--radius-pill)] px-3.5 text-[12px] font-bold transition-colors",
                 focusRing,
-                succeeded || !step.goal
+                met || !step.goal
                   ? "bg-[var(--accent-cta)] text-[var(--gt-ink-900)] hover:bg-[var(--accent-cta-hover)]"
                   : "bg-[var(--gt-ink-900)] text-white hover:bg-[var(--gt-ink-700)]",
               )}
             >
-              {last ? t("studio.workspace.onboarding.finish") : succeeded ? t("studio.workspace.onboarding.continue") : t("studio.workspace.onboarding.next")}
+              {last ? t("studio.workspace.onboarding.finish") : met ? t("studio.workspace.onboarding.continue") : t("studio.workspace.onboarding.next")}
               <ArrowRight size={14} aria-hidden="true" />
             </button>
           </div>
@@ -416,14 +411,18 @@ function resolveAnchor(step: TourStep): { box: Box; which: TourAnchor } | null {
     const box = boxOf(which);
     if (!box) continue;
     // The stage reaches under its drawers: point at the part actually in view.
-    if (which === "stage") {
-      const panels = [boxOf("library"), boxOf("inspector")].filter((b): b is Box => b !== null);
-      const seen = visibleStage(box, panels);
-      return { box: seen.width > 0 ? seen : box, which };
-    }
-    return { box, which };
+    return { box: which === "stage" ? (stageBox() ?? box) : box, which };
   }
   return null;
+}
+
+/** The stage as the artist sees it, drawers taken off — or nothing, without one. */
+function stageBox(): Box | null {
+  const stage = boxOf("stage");
+  if (!stage) return null;
+  const panels = [boxOf("library"), boxOf("inspector")].filter((b): b is Box => b !== null);
+  const seen = visibleStage(stage, panels);
+  return seen.width > 0 ? seen : stage;
 }
 
 function boxOf(which: TourAnchor): Box | null {

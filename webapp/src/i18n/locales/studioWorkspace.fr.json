@@ -357,7 +357,7 @@
       "body": "Les gemmes de la boutique, rangées par famille et cherchables par nom. Un clic la prend en main ; un glissé l’emmène directement sur une dent.",
       "bodyClosed": "La bibliothèque des gemmes est refermée pour laisser la place à la scène. Ce bouton la rouvre.",
       "task": "Prenez la gemme qui vous plaît : un clic suffit.",
-      "success": "Gemme en main. La scène attend la dent."
+      "success": "Gemme choisie. La suite se passe sur la scène."
     },
     "place": {
       "title": "Posez-la sur une dent",

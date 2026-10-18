@@ -90,6 +90,14 @@ describe("the guided tour's steps", () => {
     expect(stepOf("keep").goal).toBeNull();
   });
 
+  it("keeps the card off the stage path for the step that asks for a drag across it", () => {
+    // "Pick a gem" invites dragging one from the library onto a tooth. A card
+    // standing beside the library sits in that path, and a gem dropped on the
+    // card is a gem dropped nowhere (the engine only places over the stage).
+    expect(stepOf("pick").cardOnStage).toBe(true);
+    expect(stepOf("pick").anchor).toBe("library");
+  });
+
   it("every panel step names the switch that brings its panel back", () => {
     for (const step of TOUR_STEPS) {
       if (step.anchor === "library" || step.anchor === "inspector") expect(step.fallback).toBeTruthy();

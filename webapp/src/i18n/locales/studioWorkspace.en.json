@@ -357,7 +357,7 @@
       "body": "The shop's gems, sorted by family and searchable by name. A click takes one in hand; a drag carries it straight to a tooth.",
       "bodyClosed": "The gem library is closed to leave room for the stage. This button opens it again.",
       "task": "Take the gem you like — one click is enough.",
-      "success": "Gem in hand. The stage is waiting for a tooth."
+      "success": "Gem chosen. The rest happens on the stage."
     },
     "place": {
       "title": "Put it on a tooth",

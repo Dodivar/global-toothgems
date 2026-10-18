@@ -48,8 +48,15 @@ export interface TourStep {
   anchor: TourAnchor;
   /** Where that control is not on screen (a closed drawer): the switch that brings it back. */
   fallback?: TourAnchor;
-  /** The card sits in a corner of the anchor rather than beside it (the anchor is the whole stage). */
+  /** The card sits inside the anchor rather than beside it (the anchor is the whole stage). */
   inside?: boolean;
+  /**
+   * Put the card on the stage instead of beside the anchor, while the
+   * spotlight stays on the anchor. For a step whose gesture crosses the stage:
+   * a card standing beside the library would sit in the very path the artist is
+   * asked to drag a gem along, and a gem dropped on it is a gem dropped nowhere.
+   */
+  cardOnStage?: boolean;
   /** The 3D stage must be running for this step to make sense. */
   needsEngine?: boolean;
   /**
@@ -88,6 +95,7 @@ export const TOUR_STEPS: readonly TourStep[] = [
     id: "pick",
     anchor: "library",
     fallback: "library-toggle",
+    cardOnStage: true,
     goal: (c) => !!c.snap.armedTypeId || !!c.snap.placingTypeId || c.snap.jewels.length > c.base.pieceCount,
     autoAdvance: true,
   },
