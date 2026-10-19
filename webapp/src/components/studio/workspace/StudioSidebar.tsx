@@ -1,5 +1,5 @@
 import clsx from "clsx";
-import { ArrowLeft, Box, LayoutGrid, LayoutTemplate, Layers, LifeBuoy, MessageSquareHeart, UserRound, X, type LucideIcon } from "lucide-react";
+import { ArrowLeft, Box, LayoutGrid, LayoutTemplate, Layers, LifeBuoy, MessageSquareHeart, Sparkles, UserRound, X, type LucideIcon } from "lucide-react";
 import { Link, useLocation } from "../../../lib/navigation";
 import { useTranslation } from "react-i18next";
 import monogram from "../../../assets/monogram-blue.png";
@@ -24,6 +24,7 @@ const NAV: NavItem[] = [
   { section: "creations", icon: LayoutGrid, key: "creations" },
   { section: "groups", icon: Layers, key: "groups" },
   { section: "templates", icon: LayoutTemplate, key: "templates" },
+  { section: "glowbook", icon: Sparkles, key: "glowbook" },
   { section: "help", icon: LifeBuoy, key: "help" },
 ];
 

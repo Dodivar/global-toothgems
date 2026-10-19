@@ -7723,6 +7723,151 @@ export type Database = {
           },
         ]
       }
+      studio_showcase_items: {
+        Row: {
+          created_at: string
+          creation_id: string
+          id: string
+          position: number
+          review_note: string | null
+          reviewed_at: string | null
+          reviewed_by: string | null
+          status: string
+          submitted_at: string
+          updated_at: string
+          user_id: string
+        }
+        Insert: {
+          created_at?: string
+          creation_id: string
+          id?: string
+          position?: number
+          review_note?: string | null
+          reviewed_at?: string | null
+          reviewed_by?: string | null
+          status?: string
+          submitted_at?: string
+          updated_at?: string
+          user_id: string
+        }
+        Update: {
+          created_at?: string
+          creation_id?: string
+          id?: string
+          position?: number
+          review_note?: string | null
+          reviewed_at?: string | null
+          reviewed_by?: string | null
+          status?: string
+          submitted_at?: string
+          updated_at?: string
+          user_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "studio_showcase_items_creation_id_fkey"
+            columns: ["creation_id"]
+            isOneToOne: true
+            referencedRelation: "creations"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "studio_showcase_items_reviewed_by_fkey"
+            columns: ["reviewed_by"]
+            isOneToOne: false
+            referencedRelation: "loyalty_overview"
+            referencedColumns: ["user_id"]
+          },
+          {
+            foreignKeyName: "studio_showcase_items_reviewed_by_fkey"
+            columns: ["reviewed_by"]
+            isOneToOne: false
+            referencedRelation: "profiles"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "studio_showcase_items_user_id_fkey"
+            columns: ["user_id"]
+            isOneToOne: false
+            referencedRelation: "studio_showcases"
+            referencedColumns: ["user_id"]
+          },
+        ]
+      }
+      studio_showcases: {
+        Row: {
+          bio: string
+          created_at: string
+          display_name: string
+          handle: string
+          instagram: string | null
+          review_note: string | null
+          reviewed_at: string | null
+          reviewed_by: string | null
+          status: string
+          submitted_at: string
+          updated_at: string
+          user_id: string
+        }
+        Insert: {
+          bio?: string
+          created_at?: string
+          display_name: string
+          handle: string
+          instagram?: string | null
+          review_note?: string | null
+          reviewed_at?: string | null
+          reviewed_by?: string | null
+          status?: string
+          submitted_at?: string
+          updated_at?: string
+          user_id?: string
+        }
+        Update: {
+          bio?: string
+          created_at?: string
+          display_name?: string
+          handle?: string
+          instagram?: string | null
+          review_note?: string | null
+          reviewed_at?: string | null
+          reviewed_by?: string | null
+          status?: string
+          submitted_at?: string
+          updated_at?: string
+          user_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "studio_showcases_reviewed_by_fkey"
+            columns: ["reviewed_by"]
+            isOneToOne: false
+            referencedRelation: "loyalty_overview"
+            referencedColumns: ["user_id"]
+          },
+          {
+            foreignKeyName: "studio_showcases_reviewed_by_fkey"
+            columns: ["reviewed_by"]
+            isOneToOne: false
+            referencedRelation: "profiles"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "studio_showcases_user_id_fkey"
+            columns: ["user_id"]
+            isOneToOne: true
+            referencedRelation: "loyalty_overview"
+            referencedColumns: ["user_id"]
+          },
+          {
+            foreignKeyName: "studio_showcases_user_id_fkey"
+            columns: ["user_id"]
+            isOneToOne: true
+            referencedRelation: "profiles"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       studio_subscription_invoices: {
         Row: {
           amount: number
@@ -9540,9 +9685,46 @@ export type Database = {
       }
       start_studio_trial: { Args: never; Returns: Json }
       studio_access_state: { Args: never; Returns: Json }
+      studio_moderate_showcase: {
+        Args: { p_note?: string; p_status: string; p_user_id: string }
+        Returns: undefined
+      }
+      studio_moderate_showcase_item: {
+        Args: { p_item_id: string; p_note?: string; p_status: string }
+        Returns: undefined
+      }
+      studio_public_showcase: { Args: { p_handle: string }; Returns: Json }
       studio_revoke_creation_share: {
         Args: { p_creation_id: string }
         Returns: undefined
+      }
+      studio_save_showcase: {
+        Args: {
+          p_bio: string
+          p_display_name: string
+          p_handle: string
+          p_instagram: string
+        }
+        Returns: {
+          bio: string
+          created_at: string
+          display_name: string
+          handle: string
+          instagram: string | null
+          review_note: string | null
+          reviewed_at: string | null
+          reviewed_by: string | null
+          status: string
+          submitted_at: string
+          updated_at: string
+          user_id: string
+        }
+        SetofOptions: {
+          from: "*"
+          to: "studio_showcases"
+          isOneToOne: true
+          isSetofReturn: false
+        }
       }
       studio_set_template: {
         Args: { p_creation_id: string; p_published: boolean }
@@ -9560,6 +9742,54 @@ export type Database = {
           scene_data: Json
           updated_at: string
         }[]
+      }
+      studio_showcase_add: {
+        Args: { p_creation_id: string }
+        Returns: {
+          created_at: string
+          creation_id: string
+          id: string
+          position: number
+          review_note: string | null
+          reviewed_at: string | null
+          reviewed_by: string | null
+          status: string
+          submitted_at: string
+          updated_at: string
+          user_id: string
+        }
+        SetofOptions: {
+          from: "*"
+          to: "studio_showcase_items"
+          isOneToOne: true
+          isSetofReturn: false
+        }
+      }
+      studio_showcase_queue: {
+        Args: never
+        Returns: {
+          bio: string
+          creation_description: string
+          creation_name: string
+          creation_updated_at: string
+          display_name: string
+          element_count: number
+          handle: string
+          id: string
+          instagram: string
+          kind: string
+          review_note: string
+          reviewed_at: string
+          showcase_status: string
+          status: string
+          submitted_at: string
+          thumbnail_path: string
+          user_id: string
+        }[]
+      }
+      studio_showcase_reorder: {
+        Args: { p_creation_ids: string[] }
+        Returns: undefined
       }
       studio_templates: {
         Args: never

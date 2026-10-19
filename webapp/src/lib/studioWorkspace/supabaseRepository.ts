@@ -186,6 +186,7 @@ export function toCreation(row: CreationRow, thumbnailUrl: string | null): Creat
     createdAt: row.created_at,
     updatedAt: row.updated_at,
     lastOpenedAt: row.last_opened_at,
+    templatePublishedAt: row.template_published_at,
   };
 }
 

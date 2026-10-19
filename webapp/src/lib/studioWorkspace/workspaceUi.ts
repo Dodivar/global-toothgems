@@ -1,5 +1,6 @@
 import { useSyncExternalStore } from "react";
-import type { Creation, GemGroup, StudioCollection } from "./types";
+import type { PublicExposure } from "./glowbook";
+import type { Creation, GemGroup, RecordDetails, StudioCollection } from "./types";
 
 /**
  * Which workspace dialog is open. One at a time, hosted once by
@@ -10,7 +11,8 @@ import type { Creation, GemGroup, StudioCollection } from "./types";
 
 export type WorkspaceDialog =
   | { kind: "saveCreation"; mode: "new" | "saveAsNew" }
-  | { kind: "editCreation"; creation: Creation }
+  /** `details`: what the artist had typed, when coming back from the public-save warning. */
+  | { kind: "editCreation"; creation: Creation; details?: RecordDetails }
   | { kind: "deleteCreation"; creation: Creation }
   | { kind: "creationDetail"; creationId: string }
   | { kind: "shareCreation"; creation: Creation }
@@ -24,6 +26,8 @@ export type WorkspaceDialog =
   | { kind: "editCollection"; collection?: StudioCollection }
   | { kind: "deleteCollection"; collection: StudioCollection }
   | { kind: "discardChanges"; onConfirm: () => void }
+  /** Before saving a creation others can see: in the artist's Glowbook, or a published template. */
+  | { kind: "confirmPublicSave"; exposure: PublicExposure; name: string; onConfirm: () => void; onCancel?: () => void }
   | { kind: "signIn" }
   | { kind: "feedback" }
   | { kind: "onboarding" }

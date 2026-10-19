@@ -8,6 +8,7 @@ import { CreationCollectionsSummary } from "./Collections";
 import { CreationThumb, FavoriteButton } from "./CreationCard";
 import { HelpHint } from "./HelpHint";
 import { FrontViewSection, PlacementSheetButton } from "../FrontViewPanel";
+import { GlowbookControl } from "./GlowbookControl";
 import { TemplatePublishControl } from "./TemplatePublishControl";
 import { useWorkspaceActions } from "./useWorkspaceActions";
 import { useWorkspaceFormat } from "./workspaceStyles";
@@ -101,6 +102,8 @@ export function CreationDetail({ creationId, onClose }: { creationId: string; on
       <CreationCollectionsSummary creationId={creation.id} back={{ kind: "creationDetail", creationId: creation.id }} />
 
       <FrontViewSection pieces={creation.scene.pieces} model={creation.scene.model} />
+
+      <GlowbookControl creation={creation} onLeave={onClose} />
 
       <TemplatePublishControl creation={creation} />
 

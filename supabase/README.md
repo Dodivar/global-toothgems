@@ -159,6 +159,8 @@ supabase/
 | 20261018224648 | `studio_collections_fk_index` | **Applied 2026-10-19.** Index covering the memberships' composite foreign key (performance advisor) |
 | 20261018224657 | `studio_templates` | **Applied 2026-10-19.** Decision 97: the Global Toothgems template library. `creations.template_published_at` (not in the column grants: written only by `studio_set_template(id, published)` — `manage_content` staff publish their own creation, keeping the first date, and unpublish any template; audited, the flag alone), `studio_templates()` (members with Studio access: published rows newest first, no owner, favourite or opening dates, Gem Group references dropped; 42501 otherwise), `studio_use_template(id)` (copies a published template into the caller's creations: owner = caller, unpublished, no render — the browser copies it), storage policy `studio-thumbnails: Studio members read template renders` (`private.is_studio_template_thumbnail()`). The `creations` SELECT policy is unchanged. Suite `tests/studio_templates_validation.sql` |
 | 20261019062619 | `studio_preferences` | **Applied 2026-10-19.** `studio_preferences`: one row per member (created on first change, none = defaults), `library_view` grid / explorer; owner-only RLS, not gated by Studio access. Decision 98 |
+| 20261019072230 | `studio_glowbook` | **Applied 2026-10-19.** Decision 99: the Glowbook, an artist's public showcase. `studio_showcases` (one per member: handle, display name, bio, Instagram, moderation status) and `studio_showcase_items` (one row per creation, order, moderation status); owners and `moderate_reviews` staff read (RLS), owners delete; every other write through `studio_save_showcase()`, `studio_showcase_add()`, `studio_showcase_reorder()` (Studio access) and `studio_moderate_showcase()` / `studio_moderate_showcase_item()` (`moderate_reviews`, audited); `studio_showcase_queue()` for moderators; `studio_public_showcase(handle)` for anyone (approved page of an author with Studio access, approved items only, no owner id); `private.studio_user_has_access(user)`; storage policies on `studio-thumbnails` (anyone reads public Glowbook renders, moderators read the renders sent). Suite `tests/studio_glowbook_validation.sql` (G1–G8) |
+| 20261019072443 | `studio_glowbook_updated_at` | **Applied 2026-10-19.** The Glowbook tables' `updated_at` triggers use `private.set_updated_at()` (the Studio design trigger reads columns they do not have) |
 | 20261008175722 | `contact_attachments_and_support_email` | **Applied 2026-10-08.** Contact form: `contact_requests.attachment_path` → `attachment_paths text[]` (≤ 5, `private.valid_contact_attachment_paths()`), bucket `contact-attachments` 20 MB per object, `submit_contact_request(…, p_attachment_paths text[])` (old signature dropped; ownership per path, no duplicates, ≤ 20 MB in all), guard trigger rebuilt, `contact_ip_allowed(ip_hash)` (service role), template `contact_request_received` (fr + en) for the support inbox. Suite: `iteration7_validation.sql` C3/C4 |
 | 20261008175809 | `contact_attachment_paths_check_grant` | **Applied 2026-10-08.** `execute` on the CHECK helper for `authenticated`/`service_role` (staff triage re-evaluates the CHECK) |
 | 20261007181011 | `gift_card_design_everywhere` | **Applied 2026-10-07.** The design/names/message chosen at checkout are shown back (WYSIWYG): policy `gift_cards: purchaser reads own` (a buyer reads the cards of their purchases through the existing column grant — never the code) so the member's order pages draw the card in its design; the `gift_card_delivery` template bodies (fr + en) lose their `{{message}}` paragraph because the e-mail now draws the card itself (`giftCardVisual()`, message included). Test: a buyer sees only their own cards (to add to `gift_cards_validation.sql`) |
@@ -1299,6 +1301,26 @@ member with Studio access   /studio-3d/atelier/modeles → studio_templates()   
   (one row per member, written by upsert, owner-only, not gated by Studio access). Validated by
   `supabase/tests/studio_preferences_validation.sql` (P1–P5).
 
+### 3D Studio Glowbook (decision 99)
+
+```
+member with Studio access   /studio-3d/atelier/glowbook → studio_save_showcase(handle, name, bio, instagram)   new page → pending
+                            My Creations → a creation's detail → "Add to my Glowbook" → studio_showcase_add(id)  pending
+                            order: studio_showcase_reorder(ids); remove an item / delete the page: DELETE (any time, at once)
+moderator (moderate_reviews) /admin/glowbook → studio_showcase_queue() → studio_moderate_showcase[_item](…, approved|rejected, note)
+anyone                      /fr/glowbook/<handle>, /en/glowbook/<handle> → studio_public_showcase(handle)  (server, every request)
+                            renders: signed with the publishable key through "anyone reads public Glowbook renders"
+```
+
+- Public = page approved **and** item approved **and** the author has Studio access now (trial, subscription or
+  staff, `private.studio_user_has_access()`); otherwise the page answers 404 and the renders cannot be signed.
+- Moderation happens before the first publication. An approved creation stays live: the author's later saves are
+  public at once (the editor and "Edit details" warn before saving, as they do for a published template). Name,
+  bio and Instagram edits of an approved page are live too; a new handle (a new address) and anything re-sent
+  after a rejection go back to `pending`. A moderator can reject what is already public (take-down), with a note
+  the artist reads.
+- Deleting a creation removes its item; deleting the page removes its items, never the creations.
+
 ### Integrity guarantees
 
 - `orders_total_matches`: `total = subtotal − discount + shipping (+ tax when prices exclude tax)`; discount ≤ subtotal; all amounts ≥ 0.
@@ -2099,3 +2121,18 @@ VAT rates, shipping zones/rates mirroring the Settings prototype. Media rows ref
     or filtering at the top level searches the whole library (matching folders by name + matching creations,
     wherever they are filed), like a file explorer's search; (e) one level only: collections are not nested;
     (f) no drag-and-drop into folders yet (filing goes through the card's "Collections…" menu).
+99. **3D Studio: the Glowbook, an artist's public showcase** (owner's request, 2026-10-19: "a public read-only
+    showcase of the artist's chosen creations, to link in their Instagram bio; moderation before any publication;
+    added only from the creations, not while editing a design; a confirmation pop-up when saving a creation that
+    is in the showcase, and when staff save a template shared with every artist"; migrations `20261019072230`,
+    `20261019072443`). Decided by the owner the same day: the address is `/fr/glowbook/<handle>` and
+    `/en/glowbook/<handle>`; the page is hidden while its author has no Studio access; saving an approved creation
+    is public at once, without a new review. Agent's choices, to confirm: (a) moderators are the staff holding
+    `moderate_reviews` (no new permission); (b) the page itself (handle, name, bio, Instagram) is moderated
+    before its first publication, then its name/bio/Instagram edits are live like the creations, while a new
+    handle goes back to moderation (the page is offline until approved); (c) a pending creation also triggers
+    the save warning ("will be published once approved"), a declined one does not; (d) at most 60 creations per
+    Glowbook; the handle is 3–30 characters `[a-z0-9._-]`, with a short reserved list; (e) no e-mail to the
+    artist on approval or rejection yet (the status and the reason show in the Studio); (f) the page shows each
+    creation's saved render and details, not a 3D viewer; (g) render links are signed for 7 days on every
+    request (the Open Graph image included), the page is never cached; (h) not listed in the sitemap.

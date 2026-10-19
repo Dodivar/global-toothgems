@@ -13,6 +13,7 @@ import { WorkspaceDialogs } from "../components/studio/workspace/WorkspaceDialog
 import { CreationLibrary } from "../components/studio/workspace/CreationLibrary";
 import { GemGroupLibrary } from "../components/studio/workspace/GemGroupLibrary";
 import { TemplateLibrary } from "../components/studio/workspace/TemplateLibrary";
+import { GlowbookManager } from "../components/studio/workspace/GlowbookManager";
 import { HelpPanel } from "../components/studio/workspace/HelpPanel";
 import { useWorkspaceActions } from "../components/studio/workspace/useWorkspaceActions";
 import { useDocumentTitle } from "../components/legal/hooks";
@@ -24,6 +25,7 @@ import { studioStore, useStudio } from "../lib/studio3d/store";
 import { studioSectionFromPath, type StudioSection } from "../lib/studioUrl";
 import { StudioWorkspaceProvider } from "../lib/studioWorkspace/workspace";
 import { StudioTemplatesProvider } from "../lib/studioWorkspace/templatesStore";
+import { GlowbookProvider } from "../lib/studioWorkspace/glowbookStore";
 import { StudioTour } from "../components/studio/workspace/StudioTour";
 import { getWorkspaceDialog, onboardingSeen, openWorkspaceDialog, useWorkspaceDialog } from "../lib/studioWorkspace/workspaceUi";
 
@@ -48,13 +50,21 @@ export function StudioEditor() {
   return (
     <StudioWorkspaceProvider>
       <StudioTemplatesProvider>
-        <StudioWorkspace />
+        <GlowbookProvider>
+          <StudioWorkspace />
+        </GlowbookProvider>
       </StudioTemplatesProvider>
     </StudioWorkspaceProvider>
   );
 }
 
-const SECTION_TITLE: Record<StudioSection, string> = { creations: "creations", groups: "groups", templates: "templates", help: "help" };
+const SECTION_TITLE: Record<StudioSection, string> = {
+  creations: "creations",
+  groups: "groups",
+  templates: "templates",
+  glowbook: "glowbook",
+  help: "help",
+};
 
 function StudioWorkspace() {
   const { t } = useTranslation();
@@ -245,6 +255,7 @@ function StudioWorkspace() {
               {section === "creations" && <CreationLibrary />}
               {section === "groups" && <GemGroupLibrary />}
               {section === "templates" && <TemplateLibrary />}
+              {section === "glowbook" && <GlowbookManager />}
               {section === "help" && <HelpPanel />}
             </div>
           </main>

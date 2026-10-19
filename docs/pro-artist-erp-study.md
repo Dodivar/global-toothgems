@@ -1,5 +1,7 @@
 # Pro artist module — showroom, booking with deposit, client file (study)
 
+> **Update 2026-10-19 — decided and built:** the public showcase part of P1 exists as the **Glowbook** (decision 99 in `supabase/README.md`): `/fr/glowbook/<handle>`, an artist's moderated, read-only page of chosen Studio creations, linked from Instagram. No booking, directory or tagging yet; the rest of this study is still undecided.
+
 **Study requested on 2026-10-15, written on 2026-10-17 against `dev` @ `e28eb02`.**
 
 **Nothing is decided and nothing is built.** This document records an analysis so the subject can be

@@ -5,9 +5,11 @@ import { Button } from "../../ui/Button";
 import { useCompositionEstimate } from "../../../lib/studio3d/useStudioGems";
 import { useStudio } from "../../../lib/studio3d/store";
 import { collectionIdsOf } from "../../../lib/studioWorkspace/collections";
+import { useGlowbook } from "../../../lib/studioWorkspace/glowbookStore";
 import type { Creation, RecordDetails } from "../../../lib/studioWorkspace/types";
 import { copyName, validateDetails, type DetailsError } from "../../../lib/studioWorkspace/validation";
 import { useWorkspace } from "../../../lib/studioWorkspace/workspace";
+import { openWorkspaceDialog } from "../../../lib/studioWorkspace/workspaceUi";
 import { CollectionChecklist } from "./Collections";
 import { DetailsFields } from "./DetailsFields";
 import { ScenePreview } from "./ScenePreview";
@@ -16,26 +18,31 @@ import { useWorkspaceFormat } from "./workspaceStyles";
 
 /**
  * Save the design on the stage as a creation (new, or "save as new"), or edit
- * a saved creation's name and description.
+ * a saved creation's name and description — after the public-save warning
+ * when the creation is in the Glowbook or a published template.
  */
 export function SaveCreationDialog({
   mode,
   creation,
+  initialDetails,
   onClose,
 }: {
   mode: "new" | "saveAsNew" | "edit";
   /** The creation being edited (`edit`). */
   creation?: Creation;
+  /** `edit`: the fields as the artist left them, when coming back from the public-save warning. */
+  initialDetails?: RecordDetails;
   onClose: () => void;
 }) {
   const { t, price } = useWorkspaceFormat();
   const snap = useStudio();
   const { saveDesign, updateCreationDetails, addToCollections, creations, memberships, collectionsStatus } = useWorkspace();
+  const { exposureFor } = useGlowbook();
   const source = mode === "saveAsNew" ? creations.find((c) => c.id === snap.active?.creationId) : undefined;
 
   const [details, setDetails] = useState<RecordDetails>(() =>
     mode === "edit" && creation
-      ? { name: creation.name, description: creation.description }
+      ? (initialDetails ?? { name: creation.name, description: creation.description })
       : source
         ? { name: copyName(source.name, t("studio.workspace.copySuffix")), description: source.description }
         : { name: "", description: "" },
@@ -62,8 +69,23 @@ export function SaveCreationDialog({
     if (problem || busy) return;
     setBusy(true);
     let ok: boolean;
-    if (mode === "edit" && creation) ok = await updateCreationDetails(creation, details);
-    else {
+    if (mode === "edit" && creation) {
+      const changed = details.name.trim() !== creation.name || details.description.trim() !== creation.description;
+      const exposure = changed ? await exposureFor(creation.id, creation) : null;
+      if (exposure) {
+        // The warning takes this dialog's place; cancelling it brings the fields back as typed.
+        setBusy(false);
+        openWorkspaceDialog({
+          kind: "confirmPublicSave",
+          exposure,
+          name: creation.name,
+          onConfirm: () => void updateCreationDetails(creation, details),
+          onCancel: () => openWorkspaceDialog({ kind: "editCreation", creation, details }),
+        });
+        return;
+      }
+      ok = await updateCreationDetails(creation, details);
+    } else {
       const saved = await saveDesign("new", details, capture);
       ok = !!saved;
       // The design is saved whatever happens to its filing (reported on its own).

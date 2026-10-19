@@ -30,6 +30,8 @@ export interface Creation {
   updatedAt: string;
   /** Last time it was opened in the editor. */
   lastOpenedAt: string | null;
+  /** Set while it is published as a Global Toothgems template (staff, decision 97): saving it changes it for every member. */
+  templatePublishedAt?: string | null;
 }
 
 export interface GemGroup {

@@ -6,6 +6,7 @@ import { studioStore } from "../../../lib/studio3d/store";
 import type { Creation, GemGroup } from "../../../lib/studioWorkspace/types";
 import { useWorkspace } from "../../../lib/studioWorkspace/workspace";
 import { openWorkspaceDialog } from "../../../lib/studioWorkspace/workspaceUi";
+import { usePublicSaveGuard } from "./PublicSaveWarning";
 
 /**
  * Workspace actions that cross from the library back to the stage: they ask
@@ -14,6 +15,7 @@ import { openWorkspaceDialog } from "../../../lib/studioWorkspace/workspaceUi";
 export function useWorkspaceActions() {
   const navigate = useNavigate();
   const ws = useWorkspace();
+  const guardPublicSave = usePublicSaveGuard();
   const toEditor = useCallback(() => navigate(studioSectionPath(null)), [navigate]);
 
   /** Run `then` now, or after the artist agrees to drop the stage's unsaved changes. */
@@ -55,7 +57,10 @@ export function useWorkspaceActions() {
     [ws, toEditor],
   );
 
-  /** Save the stage: into its creation, or through the dialog for a new one. */
+  /**
+   * Save the stage: into its creation — after a warning when others see it
+   * (in the Glowbook, or a published template) — or through the dialog for a new one.
+   */
   const save = useCallback(
     (mode: "auto" | "saveAsNew" = "auto") => {
       if (!ws.userId) {
@@ -67,9 +72,17 @@ export function useWorkspaceActions() {
         return;
       }
       if (mode === "saveAsNew" || !studioStore.active) openWorkspaceDialog({ kind: "saveCreation", mode: mode === "saveAsNew" ? "saveAsNew" : "new" });
-      else void ws.saveDesign("update");
+      else if (!ws.dirty) void ws.saveDesign("update"); // nothing changes: nothing to warn about
+      else {
+        const id = studioStore.active.creationId;
+        const known = ws.creations.find((c) => c.id === id);
+        void guardPublicSave(
+          { id, name: known?.name ?? studioStore.active.name, templatePublishedAt: known?.templatePublishedAt },
+          () => void ws.saveDesign("update"),
+        );
+      }
     },
-    [ws],
+    [ws, guardPublicSave],
   );
 
   return { openInStudio, newDesign, insertGroupInStudio, save, toEditor };

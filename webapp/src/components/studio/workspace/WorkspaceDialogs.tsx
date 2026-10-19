@@ -9,6 +9,7 @@ import { CreationDetail } from "./CreationDetail";
 import { DeleteConfirmation } from "./DeleteConfirmation";
 import { FeedbackModal } from "./FeedbackModal";
 import { OnboardingOverlay, TourCompleteDialog } from "./OnboardingOverlay";
+import { PublicSaveWarning } from "./PublicSaveWarning";
 import { SaveCreationDialog } from "./SaveCreationDialog";
 import { SaveGemGroupDialog } from "./SaveGemGroupDialog";
 import { ShareDialog } from "./ShareDialog";
@@ -39,7 +40,7 @@ export function WorkspaceDialogs() {
     case "saveCreation":
       return <SaveCreationDialog mode={dialog.mode} onClose={close} />;
     case "editCreation":
-      return <SaveCreationDialog mode="edit" creation={dialog.creation} onClose={close} />;
+      return <SaveCreationDialog mode="edit" creation={dialog.creation} initialDetails={dialog.details} onClose={close} />;
     case "creationDetail":
       return <CreationDetail creationId={dialog.creationId} onClose={close} />;
     case "shareCreation":
@@ -102,6 +103,21 @@ export function WorkspaceDialogs() {
               </Button>
             </>
           }
+        />
+      );
+    case "confirmPublicSave":
+      return (
+        <PublicSaveWarning
+          exposure={dialog.exposure}
+          name={dialog.name}
+          onClose={() => {
+            close();
+            dialog.onCancel?.();
+          }}
+          onConfirm={() => {
+            close();
+            dialog.onConfirm();
+          }}
         />
       );
     case "signIn":

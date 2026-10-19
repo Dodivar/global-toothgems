@@ -1,0 +1,178 @@
+{
+  "eyebrow": "Votre vitrine publique",
+  "title": "Mon Glowbook",
+  "sub": "Une page publique avec les créations que vous choisissez, à mettre en lien dans votre bio Instagram. Votre page et chaque création sont validées par l’équipe Global Toothgems avant d’être visibles.",
+  "unavailableTitle": "Glowbook indisponible",
+  "unavailableBody": "Le Glowbook nécessite un compte Global Toothgems connecté.",
+  "loadFailedTitle": "Impossible de charger votre Glowbook",
+  "status": {
+    "page": {
+      "pending": "Page en attente de validation",
+      "approved": "Page publiée",
+      "rejected": "Page refusée"
+    },
+    "item": {
+      "pending": "En attente de validation",
+      "approved": "Publiée",
+      "rejected": "Refusée"
+    }
+  },
+  "page": {
+    "pending": "Votre page est en cours de validation par l’équipe. Elle sera visible à son adresse dès qu’elle sera validée.",
+    "approved": "Votre page est en ligne. Elle reste visible tant que votre accès au Studio est actif.",
+    "rejected": "Votre page n’a pas été validée. Modifiez-la puis enregistrez pour la renvoyer en validation."
+  },
+  "reason": "Motif : {{note}}",
+  "pageSection": "Ma page Glowbook",
+  "link": "Adresse de votre Glowbook",
+  "copyLink": "Copier le lien",
+  "openPage": "Ouvrir ma page publique",
+  "linkHint": "Collez ce lien dans votre bio Instagram. Il ne s’affiche qu’une fois votre page validée.",
+  "edit": "Modifier ma page",
+  "delete": "Supprimer mon Glowbook",
+  "deleteConfirm": "Supprimer la page et la retirer de toutes vos créations ?",
+  "deleteYes": "Supprimer",
+  "resubmit": "Renvoyer en validation",
+  "remove": "Retirer « {{name}} » de mon Glowbook",
+  "form": {
+    "createTitle": "Créer mon Glowbook",
+    "editTitle": "Modifier ma page",
+    "moderationNote": "Votre page sera visible après validation par l’équipe Global Toothgems. Ensuite, vos modifications du nom, de la bio et d’Instagram sont publiées immédiatement.",
+    "displayName": "Nom affiché",
+    "displayNamePlaceholder": "Ex. Lily Gems Studio",
+    "handle": "Pseudo (adresse de la page)",
+    "handleHint": "3 à 30 caractères : lettres minuscules, chiffres, point, tiret ou tiret bas.",
+    "handleChangeWarning": "Changer de pseudo change l’adresse de votre page et la renvoie en validation : elle ne sera plus visible d’ici là.",
+    "bio": "Bio",
+    "bioPlaceholder": "Votre style, votre ville, comment prendre rendez-vous…",
+    "instagram": "Compte Instagram",
+    "create": "Envoyer en validation",
+    "save": "Enregistrer"
+  },
+  "errors": {
+    "handleLength": "Le pseudo doit faire entre 3 et {{max}} caractères.",
+    "handleCharacters": "Utilisez uniquement des lettres minuscules, des chiffres, un point, un tiret ou un tiret bas, sans en commencer ni en finir par ces signes.",
+    "handleReserved": "Ce pseudo est réservé. Choisissez-en un autre.",
+    "handleTaken": "Ce pseudo est déjà pris. Choisissez-en un autre.",
+    "invalid": "Ces informations n’ont pas pu être acceptées. Vérifiez-les.",
+    "displayNameRequired": "Indiquez le nom à afficher.",
+    "displayNameLength": "Le nom affiché fait au plus 60 caractères.",
+    "bioLength": "La bio fait au plus 300 caractères.",
+    "instagramInvalid": "Ce compte Instagram n’est pas valide (lettres, chiffres, point et tiret bas, 30 caractères au plus)."
+  },
+  "items": {
+    "title_one": "{{count}} création dans votre Glowbook",
+    "title_other": "{{count}} créations dans votre Glowbook",
+    "howTo": "Pour en ajouter une, ouvrez-la dans Mes créations puis choisissez « Ajouter à mon Glowbook ».",
+    "toCreations": "Mes créations",
+    "emptyTitle": "Aucune création pour l’instant",
+    "emptyBody": "Ouvrez une création dans Mes créations et ajoutez-la à votre Glowbook : elle sera publiée après validation.",
+    "open": "Voir la création « {{name}} »",
+    "moveUp": "Monter « {{name}} »",
+    "moveDown": "Descendre « {{name}} »"
+  },
+  "control": {
+    "title": "Mon Glowbook",
+    "noGlowbook": "Partagez vos créations sur une page publique à mettre dans votre bio Instagram.",
+    "empty": "Ajoutez au moins une gemme pour pouvoir la publier.",
+    "notIn": "Ajoutez-la à votre page publique. Elle sera visible après validation par l’équipe.",
+    "pending": "En attente de validation par l’équipe avant d’être visible sur votre page.",
+    "approved": "Visible sur votre page publique. Vos prochains enregistrements y seront publiés immédiatement.",
+    "rejected": "Cette création n’a pas été validée.",
+    "create": "Créer mon Glowbook",
+    "add": "Ajouter à mon Glowbook",
+    "remove": "Retirer du Glowbook"
+  },
+  "toasts": {
+    "saved": "Glowbook enregistré",
+    "savedPending": "Page envoyée en validation",
+    "saveFailed": "Impossible d’enregistrer votre Glowbook",
+    "added": "« {{name}} » envoyée en validation",
+    "addedBody": "Elle apparaîtra dans votre Glowbook dès qu’elle sera validée.",
+    "addFailed": "Impossible d’ajouter la création",
+    "full": "Votre Glowbook contient déjà 60 créations : retirez-en une pour en ajouter une autre.",
+    "removed": "« {{name}} » retirée de votre Glowbook",
+    "removeFailed": "Impossible de retirer la création",
+    "moveFailed": "Impossible de changer l’ordre",
+    "deleted": "Glowbook supprimé",
+    "deleteFailed": "Impossible de supprimer votre Glowbook",
+    "linkCopied": "Lien copié",
+    "linkCopiedBody": "Collez-le dans votre bio Instagram.",
+    "copyFailed": "Copie impossible : sélectionnez le lien"
+  },
+  "saveWarning": {
+    "cancel": "Annuler",
+    "glowbookLive": {
+      "title": "Cette création est publique",
+      "body": "« {{name}} » est visible par tous dans votre Glowbook. Si vous enregistrez, vos modifications y seront publiées immédiatement.",
+      "confirm": "Enregistrer et publier"
+    },
+    "glowbookPending": {
+      "title": "Cette création va être publiée",
+      "body": "« {{name}} » est en cours de validation pour votre Glowbook public. La version que vous enregistrez sera celle publiée une fois validée.",
+      "confirm": "Enregistrer"
+    },
+    "template": {
+      "title": "Ce modèle est partagé avec tous les artistes",
+      "body": "« {{name}} » est un modèle Global Toothgems publié. Si vous enregistrez, vos modifications seront visibles immédiatement par tous les membres du Studio.",
+      "confirm": "Enregistrer pour tous"
+    }
+  },
+  "public": {
+    "metaTitle": "{{name}} — Glowbook",
+    "metaDescription": "Les créations de tooth gems de {{name}}, imaginées dans le Studio 3D Global Toothgems.",
+    "eyebrow": "Glowbook",
+    "instagram": "@{{account}} sur Instagram",
+    "creationsTitle_one": "{{count}} création",
+    "creationsTitle_other": "{{count}} créations",
+    "empty": "Aucune création publiée pour l’instant. Revenez bientôt !",
+    "ctaTitle": "Imaginez votre propre smile",
+    "ctaBody": "Ces créations ont été composées dans le Studio 3D Global Toothgems. Essayez-le, ou découvrez nos gems.",
+    "ctaStudio": "Découvrir le Studio 3D",
+    "ctaShop": "Voir la boutique"
+  },
+  "admin": {
+    "title": "Glowbook",
+    "description": "Les pages publiques des artistes et les créations qu’ils y ajoutent attendent ici votre validation. Rien n’est visible avant.",
+    "unavailableTitle": "Modération indisponible",
+    "unavailableBody": "La modération des Glowbooks nécessite la base de données en ligne.",
+    "forbiddenTitle": "Accès réservé",
+    "forbiddenBody": "La modération des Glowbooks est réservée aux membres de l’équipe qui modèrent les avis.",
+    "errorTitle": "Impossible de charger la file de modération",
+    "errorBody": "Réessayez dans un instant.",
+    "retry": "Réessayer",
+    "viewLabel": "Afficher",
+    "viewPending": "À valider ({{count}})",
+    "viewApproved": "Publiés",
+    "viewRejected": "Refusés",
+    "viewAll": "Tout",
+    "searchLabel": "Rechercher",
+    "searchPlaceholder": "Pseudo, nom, création…",
+    "searchClear": "Effacer la recherche",
+    "loading": "Chargement de la file de modération…",
+    "emptyPendingTitle": "Rien à valider",
+    "emptyPendingBody": "Les nouvelles pages et créations envoyées par les artistes apparaîtront ici.",
+    "emptyTitle": "Aucun résultat",
+    "emptyBody": "Changez de vue ou de recherche.",
+    "kind": {
+      "page": "Page",
+      "creation": "Création"
+    },
+    "submitted": "Envoyé le {{date}}",
+    "byArtist": "par {{name}} (@{{handle}})",
+    "noteLabel": "Motif (montré à l’artiste)",
+    "notePlaceholder": "Ex. photo trop sombre, contenu hors sujet…",
+    "cancel": "Annuler",
+    "approve": "Valider et publier",
+    "reject": "Refuser",
+    "rejectConfirm": "Confirmer le refus",
+    "takeDown": "Retirer de la publication",
+    "takeDownConfirm": "Retirer",
+    "openPage": "Voir la page publique",
+    "toasts": {
+      "approved": "Validé : c’est en ligne",
+      "rejected": "Refusé : l’artiste verra le motif",
+      "failed": "La décision n’a pas pu être enregistrée"
+    }
+  }
+}
