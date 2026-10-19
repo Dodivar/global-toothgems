@@ -133,7 +133,8 @@ export function PlacementSheetButton({
 }
 
 /**
- * The front view large, with its list and the placement sheet, in a dialog.
+ * The front view large, with the placement sheet, in a dialog. The numbered
+ * list of gems is only in the sheet: with many gems it outgrows the screen.
  * Rendered at the document's root: the editor's side panels slide (a
  * transform), which would otherwise hold a fixed overlay inside them.
  */
@@ -168,7 +169,7 @@ export function FrontViewDialog({
       closeLabel={t("studio.frontView.close")}
       footer={<PlacementSheetButton request={{ name, pieces, model, modifiedAt }} variant="dark" />}
     >
-      <FrontViewFigure projection={projection} highlightIds={highlightIds} />
+      <FrontViewFigure projection={projection} highlightIds={highlightIds} list={false} />
     </Dialog>,
     document.body,
   );
