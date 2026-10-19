@@ -53,12 +53,10 @@ function canvasBlob(canvas: HTMLCanvasElement, type: string, quality?: number): 
 /** A hidden stage holding one saved design, kept while the export dialog is open. */
 export class ExportStage {
   private host: HTMLDivElement;
-  private store: DesignStore;
   private engine: StudioEngine;
 
-  private constructor(host: HTMLDivElement, store: DesignStore, engine: StudioEngine) {
+  private constructor(host: HTMLDivElement, engine: StudioEngine) {
     this.host = host;
-    this.store = store;
     this.engine = engine;
   }
 
@@ -77,7 +75,7 @@ export class ExportStage {
       host.remove();
       throw new ExportError("webgl");
     }
-    const stage = new ExportStage(host, store, engine);
+    const stage = new ExportStage(host, engine);
     store.loadScene(scene, null);
     try {
       await engine.whenReady();

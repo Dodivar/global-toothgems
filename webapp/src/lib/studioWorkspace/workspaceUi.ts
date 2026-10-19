@@ -17,6 +17,8 @@ export type WorkspaceDialog =
   | { kind: "creationDetail"; creationId: string }
   | { kind: "shareCreation"; creation: Creation }
   | { kind: "tryOn"; creation: Creation }
+  /** A post for social networks: HD still, 360° video or GIF (decision 101). */
+  | { kind: "socialExport"; creation: Creation }
   | { kind: "saveGroup"; pieceIds: string[] }
   | { kind: "editGroup"; group: GemGroup }
   | { kind: "deleteGroup"; group: GemGroup }

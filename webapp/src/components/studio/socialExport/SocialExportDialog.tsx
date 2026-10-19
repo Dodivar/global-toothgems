@@ -23,8 +23,8 @@ type StageState = { kind: "loading" } | { kind: "ready"; stage: ExportStage } | 
 type Job =
   | { kind: "idle" }
   | { kind: "running"; output: ShareOutput; progress: number }
-  | { kind: "done"; output: ShareOutput; file: File; url: string }
-  | { kind: "failed"; code: ExportErrorCode };
+  | { kind: "done"; output: ShareOutput; file: File; url: string; settings: object }
+  | { kind: "failed"; code: ExportErrorCode; settings: object };
 
 const PREVIEW_WIDTH = 540;
 const TITLE_MAX = 60;
@@ -120,7 +120,7 @@ export default function SocialExportDialog({ creation, onClose }: { creation: Cr
   const [templateId, setTemplateId] = useState<LayoutTemplateId>("plain");
   const [title, setTitle] = useState(creation.name.slice(0, TITLE_MAX));
   const [handle, setHandle] = useState("");
-  const [job, setJob] = useState<Job>({ kind: "idle" });
+  const [rawJob, setJob] = useState<Job>({ kind: "idle" });
   const [shareFailed, setShareFailed] = useState(false);
   const previewRef = useRef<HTMLCanvasElement>(null);
   const abortRef = useRef<AbortController | null>(null);
@@ -146,7 +146,7 @@ export default function SocialExportDialog({ creation, onClose }: { creation: Cr
   }, [creation.scene]);
 
   // Free the last file's object URL when it is replaced or the dialog closes.
-  const resultUrl = job.kind === "done" ? job.url : null;
+  const resultUrl = rawJob.kind === "done" ? rawJob.url : null;
   useEffect(() => () => {
     if (resultUrl) URL.revokeObjectURL(resultUrl);
   }, [resultUrl]);
@@ -176,11 +176,9 @@ export default function SocialExportDialog({ creation, onClose }: { creation: Cr
     return () => cancelAnimationFrame(frame);
   }, [stage, format, look]);
 
-  // A setting changed after an export: the shown file no longer matches.
-  useEffect(() => {
-    setJob((j) => (j.kind === "done" || j.kind === "failed" ? { kind: "idle" } : j));
-    setShareFailed(false);
-  }, [format, effectiveOutput, imageType, look]);
+  // A setting changed after an export: the shown file no longer matches it.
+  const settings = useMemo(() => ({ format, effectiveOutput, imageType, look }), [format, effectiveOutput, imageType, look]);
+  const job: Job = (rawJob.kind === "done" || rawJob.kind === "failed") && rawJob.settings !== settings ? { kind: "idle" } : rawJob;
 
   const running = job.kind === "running";
 
@@ -189,6 +187,7 @@ export default function SocialExportDialog({ creation, onClose }: { creation: Cr
     const controller = new AbortController();
     abortRef.current = controller;
     const out = effectiveOutput;
+    const startedWith = settings;
     setShareFailed(false);
     setJob({ kind: "running", output: out, progress: 0 });
     const onProgress = (progress: number) => setJob((j) => (j.kind === "running" ? { ...j, progress } : j));
@@ -206,10 +205,10 @@ export default function SocialExportDialog({ creation, onClose }: { creation: Cr
         ext = "gif";
       }
       const file = new File([blob], exportFileName(creation.name, format, out, ext), { type: blob.type });
-      setJob({ kind: "done", output: out, file, url: URL.createObjectURL(file) });
+      setJob({ kind: "done", output: out, file, url: URL.createObjectURL(file), settings: startedWith });
     } catch (err) {
       const code = err instanceof ExportError ? err.code : "encode";
-      setJob(code === "cancelled" ? { kind: "idle" } : { kind: "failed", code });
+      setJob(code === "cancelled" ? { kind: "idle" } : { kind: "failed", code, settings: startedWith });
     } finally {
       if (abortRef.current === controller) abortRef.current = null;
     }

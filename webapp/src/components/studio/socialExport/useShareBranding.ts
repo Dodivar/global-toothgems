@@ -62,12 +62,8 @@ export function useShareBranding(): ShareBrandingState {
   }, [setLogoUrl]);
 
   useEffect(() => {
-    if (!live) {
-      setLoading(false);
-      return;
-    }
+    if (!live) return;
     let active = true;
-    setLoading(true);
     loadShareBranding()
       .then(async (b) => {
         if (!active) return;
@@ -129,7 +125,7 @@ export function useShareBranding(): ShareBrandingState {
   }, [setLogoUrl]);
 
   return {
-    loading,
+    loading: live && loading,
     unavailable,
     rights,
     branding,

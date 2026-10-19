@@ -1,3 +1,4 @@
+import { lazy, Suspense } from "react";
 import { Save, TriangleAlert } from "lucide-react";
 import { useTranslation } from "react-i18next";
 import { Dialog } from "../../ui/Dialog";
@@ -15,6 +16,9 @@ import { SaveGemGroupDialog } from "./SaveGemGroupDialog";
 import { ShareDialog } from "./ShareDialog";
 import { SignInPrompt } from "./SignInPrompt";
 import { TryOnDialog } from "../tryOn/TryOnDialog";
+
+// The social export (its compositor, recorder and GIF encoder) loads with its first opening.
+const SocialExportDialog = lazy(() => import("../socialExport/SocialExportDialog"));
 
 /**
  * Hosts whichever workspace dialog is open (see `workspaceUi`). Saving asks
@@ -47,6 +51,12 @@ export function WorkspaceDialogs() {
       return <ShareDialog creation={dialog.creation} onClose={close} />;
     case "tryOn":
       return <TryOnDialog creation={dialog.creation} onClose={close} />;
+    case "socialExport":
+      return (
+        <Suspense fallback={null}>
+          <SocialExportDialog creation={dialog.creation} onClose={close} />
+        </Suspense>
+      );
     case "deleteCreation":
       return (
         <DeleteConfirmation kind="creation" name={dialog.creation.name} onConfirm={() => ws.deleteCreation(dialog.creation)} onClose={close} />
