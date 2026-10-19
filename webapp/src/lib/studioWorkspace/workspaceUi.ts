@@ -1,5 +1,5 @@
 import { useSyncExternalStore } from "react";
-import type { Creation, GemGroup } from "./types";
+import type { Creation, GemGroup, StudioCollection } from "./types";
 
 /**
  * Which workspace dialog is open. One at a time, hosted once by
@@ -18,6 +18,11 @@ export type WorkspaceDialog =
   | { kind: "saveGroup"; pieceIds: string[] }
   | { kind: "editGroup"; group: GemGroup }
   | { kind: "deleteGroup"; group: GemGroup }
+  /** Which collections a creation sits in; `back` reopens the dialog it was opened from. */
+  | { kind: "creationCollections"; creationId: string; back?: WorkspaceDialog }
+  /** Create (no `collection`) or rename / recolour a collection. */
+  | { kind: "editCollection"; collection?: StudioCollection }
+  | { kind: "deleteCollection"; collection: StudioCollection }
   | { kind: "discardChanges"; onConfirm: () => void }
   | { kind: "signIn" }
   | { kind: "feedback" }

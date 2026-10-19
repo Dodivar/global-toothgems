@@ -4,9 +4,11 @@ import { Dialog } from "../../ui/Dialog";
 import { Button } from "../../ui/Button";
 import { useCompositionEstimate } from "../../../lib/studio3d/useStudioGems";
 import { useStudio } from "../../../lib/studio3d/store";
+import { collectionIdsOf } from "../../../lib/studioWorkspace/collections";
 import type { Creation, RecordDetails } from "../../../lib/studioWorkspace/types";
 import { copyName, validateDetails, type DetailsError } from "../../../lib/studioWorkspace/validation";
 import { useWorkspace } from "../../../lib/studioWorkspace/workspace";
+import { CollectionChecklist } from "./Collections";
 import { DetailsFields } from "./DetailsFields";
 import { ScenePreview } from "./ScenePreview";
 import { useStageCapture } from "./useStageCapture";
@@ -29,7 +31,7 @@ export function SaveCreationDialog({
 }) {
   const { t, price } = useWorkspaceFormat();
   const snap = useStudio();
-  const { saveDesign, updateCreationDetails, creations } = useWorkspace();
+  const { saveDesign, updateCreationDetails, addToCollections, creations, memberships, collectionsStatus } = useWorkspace();
   const suggestions = useTagSuggestions();
   const source = mode === "saveAsNew" ? creations.find((c) => c.id === snap.active?.creationId) : undefined;
 
@@ -41,6 +43,9 @@ export function SaveCreationDialog({
         : { name: "", description: "", tags: [] },
   );
   const [error, setError] = useState<DetailsError | null>(null);
+  // A new save can be filed at once; "save as new" starts from the original's collections.
+  const [chosen, setChosen] = useState<Set<string>>(() => (source ? collectionIdsOf(source.id, memberships) : new Set()));
+  const filing = mode !== "edit" && collectionsStatus === "ready";
   const [busy, setBusy] = useState(false);
 
   const pieces = mode === "edit" && creation ? creation.scene.pieces : snap.jewels;
@@ -58,7 +63,14 @@ export function SaveCreationDialog({
     setError(problem);
     if (problem || busy) return;
     setBusy(true);
-    const ok = mode === "edit" && creation ? await updateCreationDetails(creation, details) : !!(await saveDesign("new", details, capture));
+    let ok: boolean;
+    if (mode === "edit" && creation) ok = await updateCreationDetails(creation, details);
+    else {
+      const saved = await saveDesign("new", details, capture);
+      ok = !!saved;
+      // The design is saved whatever happens to its filing (reported on its own).
+      if (saved && filing && chosen.size) await addToCollections(saved, [...chosen]);
+    }
     setBusy(false);
     if (ok) onClose();
   };
@@ -107,6 +119,22 @@ export function SaveCreationDialog({
           suggestions={suggestions}
           placeholders={{ name: t("studio.workspace.save.namePlaceholder"), description: t("studio.workspace.save.descriptionPlaceholder") }}
         />
+        {filing && (
+          <div className="sm:col-start-2">
+            <CollectionChecklist
+              legend={t("studio.workspace.collections.inSave")}
+              checked={chosen}
+              onToggle={(collection, on) =>
+                setChosen((prev) => {
+                  const next = new Set(prev);
+                  if (on) next.add(collection.id);
+                  else next.delete(collection.id);
+                  return next;
+                })
+              }
+            />
+          </div>
+        )}
       </form>
       <div className="flex flex-wrap justify-end gap-2.5 border-t border-[var(--border-subtle)] pt-4">
         <Button variant="ghost" size="sm" onClick={onClose}>

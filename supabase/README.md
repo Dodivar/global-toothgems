@@ -155,6 +155,8 @@ supabase/
 | 20261018155521 | `studio_withdrawal_consent` | **Applied 2026-10-18.** Decision 94 (a): the member's request for immediate access to the Studio (L221-25). `consent_records` purpose `studio_immediate_access` (source `checkout`, `policy_version` = wording version), recorded by `create-studio-subscription` when Pay is pressed in the payment step, before the payment is confirmed (since 2026-10-18; before the Stripe session until then); `pending_studio_subscription_emails()` (service role: new subscriptions whose first invoice is paid, with the request accepted before them) and template `studio_subscription_confirmation` (FR + EN), sent once by `send-pending-emails` (`studio_subscription:<id>`). Suite `tests/studio_withdrawal_consent_validation.sql` |
 | 20261018163051 | `studio_withdrawals` | **Applied 2026-10-18.** Decision 95: `studio_withdrawals` (one per subscription, amounts, Stripe steps, refund status; owner and `view_statistics` read, service role writes; audited), `studio_withdrawal_quote()` (member: eligibility, deadline, refund if withdrawn now), `request_studio_withdrawal()`, `record_studio_withdrawal_step()`, `settle_studio_withdrawal_refund()`, `pending_studio_withdrawal_emails()` (service role), template `studio_withdrawal_confirmation`, `studio_subscription_confirmation` now points to the account page. Suite `tests/studio_withdrawals_validation.sql` |
 | 20261018163229 | `studio_withdrawals_updated_at` | **Applied 2026-10-18.** Fix: `studio_withdrawals` took the designs' `updated_at` trigger (same mistake as `20261018110209`); generic `private.set_updated_at()` instead |
+| 20261018224456 | `studio_collections` | **Applied 2026-10-19.** `studio_collections` (name unique per member ignoring case, optional token colour) and `studio_collection_creations` (many-to-many memberships, insert/delete only); owner-only RLS, writes need `has_studio_access()`, reads and deletes do not; cross-owner links refused (composite FK + RLS on the creation's owner). Decision 96 |
+| 20261018224648 | `studio_collections_fk_index` | **Applied 2026-10-19.** Index covering the memberships' composite foreign key (performance advisor) |
 | 20261018224657 | `studio_templates` | **Applied 2026-10-19.** Decision 97: the Global Toothgems template library. `creations.template_published_at` (not in the column grants: written only by `studio_set_template(id, published)` — `manage_content` staff publish their own creation, keeping the first date, and unpublish any template; audited, the flag alone), `studio_templates()` (members with Studio access: published rows newest first, no owner, favourite or opening dates, Gem Group references dropped; 42501 otherwise), `studio_use_template(id)` (copies a published template into the caller's creations: owner = caller, unpublished, no render — the browser copies it), storage policy `studio-thumbnails: Studio members read template renders` (`private.is_studio_template_thumbnail()`). The `creations` SELECT policy is unchanged. Suite `tests/studio_templates_validation.sql` |
 | 20261008175722 | `contact_attachments_and_support_email` | **Applied 2026-10-08.** Contact form: `contact_requests.attachment_path` → `attachment_paths text[]` (≤ 5, `private.valid_contact_attachment_paths()`), bucket `contact-attachments` 20 MB per object, `submit_contact_request(…, p_attachment_paths text[])` (old signature dropped; ownership per path, no duplicates, ≤ 20 MB in all), guard trigger rebuilt, `contact_ip_allowed(ip_hash)` (service role), template `contact_request_received` (fr + en) for the support inbox. Suite: `iteration7_validation.sql` C3/C4 |
 | 20261008175809 | `contact_attachment_paths_check_grant` | **Applied 2026-10-08.** `execute` on the CHECK helper for `authenticated`/`service_role` (staff triage re-evaluates the CHECK) |
@@ -1255,6 +1257,26 @@ plan button (locked screen, /studio-3d, /fr/studio-3d/abonnement)   signed out �
 - Back office: `/admin/statistiques` aggregates both tables in the browser (`lib/adminStudioTrials.ts`); the
   rest of the funnel is in PostHog (`docs/studio-trial-analytics.md`).
 
+### 3D Studio collections (iteration 30)
+
+```
+studio_collections            id, user_id (= auth.uid(), not writable), name (1–40, trimmed, unique per owner
+                              ignoring case), color (null | blue | fuchsia | emerald | amber | ink), timestamps
+studio_collection_creations   (collection_id, creation_id) primary key, user_id; insert / delete only
+  collection side             FK (collection_id, user_id) → studio_collections (id, user_id) ON DELETE CASCADE
+  creation side               FK creation_id → creations ON DELETE CASCADE + RLS: the creation is the caller's
+writes                        INSERT / UPDATE collections, INSERT memberships → owner + has_studio_access(), else 42501
+reads, deletes                the owner's, whatever the access (like the designs)
+```
+
+- Many-to-many: a creation sits in any number of collections. Deleting a collection removes its memberships
+  only; deleting a creation removes its memberships. `creations` itself is unchanged (no column, no constraint).
+- Validated by `supabase/tests/studio_collections_validation.sql` (C1–C7: visitor refused, no access refused,
+  owner organises, another member reads and writes nothing and cannot link across owners or forge the owner,
+  cascades, after the trial read / take out / delete only, staff organise their own only).
+- The webapp reads both tables in one go with the library (`supabaseRepository.ts` `collections`) and keeps the
+  memberships beside the creations in the workspace store (`collections.ts`).
+
 ### 3D Studio templates (decision 97)
 
 ```
@@ -2036,6 +2058,17 @@ VAT rates, shipping zones/rates mirroring the Settings prototype. Media rows ref
     day in test mode (`smoke_withdraw` on the owner's test subscription paid that morning: 1 day of 31 used, €0.64
     kept, €19.26 refunded; subscription cancelled by `customer.subscription.deleted`, refund confirmed by
     `refund.updated`, acknowledgement e-mail delivered).
+96. **3D Studio collections** (owner's request, 2026-10-19: "more organisation features to justify the
+    subscription"; migrations `20261018224456`, `20261018224648`). A member files their saved creations into named
+    collections. Agent's choices, to confirm: (a) **many-to-many**, not folders: one design can be in "Bridal" and
+    in "Client Léa" at once, and nothing in the existing data asked for a single place; (b) creating, renaming and
+    adding a creation to a collection need Studio access, like saving a design; reading, deleting a collection
+    and taking a creation out of one do not, so a member whose trial or subscription ended can still see and tidy
+    their work (mirrors decision 93); (c) a collection name is 1–40 characters, unique per member ignoring case;
+    the colour is one of five design tokens or none, never free; (d) no limit on the number of collections; (e) a
+    duplicated creation is not put in the original's collections ("Save as new" pre-ticks them in the save dialog
+    instead); (f) staff organise their own creations only, they never read members' collections; (g) no audit
+    trigger (personal organisation, like `creations`).
 97. **3D Studio: Global Toothgems templates** (owner's request, 2026-10-19; migration `20261018224657`). Recurring
     value for the subscription: ordinary creations made by team members, published with one flag
     (`creations.template_published_at`), browsed by every member with Studio access (the same

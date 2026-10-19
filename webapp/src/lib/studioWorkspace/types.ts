@@ -69,3 +69,35 @@ export interface FeedbackInput {
   /** Where it was sent from, to reproduce what was reported. No personal data. */
   context: { path: string; pieces: number; language: string; viewport: string };
 }
+
+/**
+ * Colour of a collection's marker: a design-token name, never a free colour
+ * (the database refuses anything else). The name always reads next to it.
+ */
+export const COLLECTION_COLORS = ["blue", "fuchsia", "emerald", "amber", "ink"] as const;
+export type CollectionColor = (typeof COLLECTION_COLORS)[number];
+
+/**
+ * A named collection of saved creations (`public.studio_collections`).
+ * Which creations it holds is a separate list of memberships, so a creation
+ * can sit in several collections and deleting a collection never touches one.
+ */
+export interface StudioCollection {
+  id: string;
+  userId: string;
+  name: string;
+  color: CollectionColor | null;
+  createdAt: string;
+  updatedAt: string;
+}
+
+/** One creation in one collection (`public.studio_collection_creations`). */
+export interface CollectionMembership {
+  collectionId: string;
+  creationId: string;
+}
+
+export interface CollectionDetails {
+  name: string;
+  color: CollectionColor | null;
+}

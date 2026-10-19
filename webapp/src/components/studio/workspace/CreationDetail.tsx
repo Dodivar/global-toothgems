@@ -4,6 +4,7 @@ import { Button } from "../../ui/Button";
 import { useFormat } from "../../../lib/format";
 import { useWorkspace } from "../../../lib/studioWorkspace/workspace";
 import { openWorkspaceDialog } from "../../../lib/studioWorkspace/workspaceUi";
+import { CreationCollectionsSummary } from "./Collections";
 import { CreationThumb, FavoriteButton } from "./CreationCard";
 import { HelpHint } from "./HelpHint";
 import { FrontViewSection, PlacementSheetButton } from "../FrontViewPanel";
@@ -73,6 +74,8 @@ export function CreationDetail({ creationId, onClose }: { creationId: string; on
           ))}
         </ul>
       )}
+
+      <CreationCollectionsSummary creationId={creation.id} back={{ kind: "creationDetail", creationId: creation.id }} />
 
       <FrontViewSection pieces={creation.scene.pieces} model={creation.scene.model} />
 

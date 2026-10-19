@@ -99,7 +99,8 @@
     "edit": "Edit",
     "editDetails": "Edit details",
     "delete": "Delete",
-    "useInStudio": "Use in Studio"
+    "useInStudio": "Use in Studio",
+    "collections": "Collections…"
   },
   "creations": {
     "eyebrow": "My Creations",
@@ -168,7 +169,9 @@
     "creationBody": "“{{name}}” will be removed from My Creations.",
     "groupBody": "“{{name}}” will be removed from My Gem Groups. Designs that already use it keep their gems.",
     "cannotUndo": "This action cannot be undone.",
-    "confirm": "Delete"
+    "confirm": "Delete",
+    "collectionTitle": "Delete this collection?",
+    "collectionBody": "“{{name}}” will be removed. The creations in it stay in My Creations."
   },
   "discard": {
     "title": "Replace the design on the stage?",
@@ -443,7 +446,12 @@
     "groupInserted_other": "{{name}} added · {{count}} gems",
     "groupInsertedPartial_one": "{{name}} added — {{count}} gem did not fit",
     "groupInsertedPartial_other": "{{name}} added — {{count}} gems did not fit",
-    "feedbackFailed": "Your feedback could not be sent."
+    "feedbackFailed": "Your feedback could not be sent.",
+    "collectionCreated": "Collection “{{name}}” created",
+    "collectionSaved": "Collection saved",
+    "collectionDeleted": "Collection “{{name}}” deleted — its creations are kept",
+    "collectionNameTaken": "You already have a collection with this name.",
+    "collectionAddFailed": "The creation is saved, but it could not be added to every collection."
   },
   "share": {
     "menuSub": "A read-only link to the saved version",
@@ -495,6 +503,55 @@
       "unavailableBody": "Check your connection, then try again.",
       "retry": "Try again",
       "discover": "Discover the 3D Studio"
+    }
+  },
+  "collections": {
+    "label": "Collections",
+    "all": "All creations",
+    "new": "New collection",
+    "manage": "Options for the collection “{{name}}”",
+    "rename": "Rename or change colour",
+    "delete": "Delete the collection",
+    "loadFailed": "Your collections could not be loaded. Your creations are all here.",
+    "emptyHint": "Group your designs by client, occasion or style: a creation can be in several collections.",
+    "emptyCollectionTitle": "This collection is empty",
+    "emptyCollectionBody": "Open a creation’s menu and choose Collections to add it here.",
+    "showAll": "Show all creations",
+    "inSave": "Add to collections (optional)",
+    "detailNone": "Not in any collection yet.",
+    "addTo": "Collections",
+    "picker": {
+      "title": "Collections",
+      "sub": "Tick the collections “{{name}}” belongs to. Taking it out of one never deletes it.",
+      "legend": "Collections of “{{name}}”",
+      "empty": "No collection yet: create the first one below.",
+      "newLabel": "New collection",
+      "add": "Create",
+      "done": "Done"
+    },
+    "dialog": {
+      "createTitle": "New collection",
+      "editTitle": "Edit the collection",
+      "sub": "A name, and a colour if you like, to find it at a glance.",
+      "name": "Name",
+      "namePlaceholder": "e.g. Bridal, Client Léa, Summer",
+      "color": "Colour",
+      "create": "Create the collection",
+      "save": "Save"
+    },
+    "colors": {
+      "none": "None",
+      "blue": "Blue",
+      "fuchsia": "Fuchsia",
+      "emerald": "Emerald",
+      "amber": "Amber",
+      "ink": "Ink"
+    },
+    "errors": {
+      "nameMissing": "Give the collection a name.",
+      "nameTooLong": "{{max}} characters at most.",
+      "nameTaken": "You already have a collection with this name.",
+      "colorInvalid": "Choose one of the colours offered."
     }
   }
 }

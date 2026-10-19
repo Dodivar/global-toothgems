@@ -2,10 +2,12 @@ import type { TypedSupabaseClient } from "../supabase/client";
 import type { Json, Tables } from "../supabase/database.types";
 import { BUCKETS, SIGNED_URL_TTL_SECONDS } from "../supabase/storage";
 import { STUDIO_SHARE_PATH } from "../studioUrl";
+import { toCollection, toMembership } from "./collections";
 import { sanitizeGroupData } from "./gemGroup";
 import { currentEstimate } from "../studio3d/gemRegistry";
 import {
   StudioStoreError,
+  type CollectionsRepository,
   type CreationInput,
   type CreationPatch,
   type GemGroupInput,
@@ -14,8 +16,8 @@ import {
 } from "./repository";
 import { sanitizeScene, sceneStats } from "./scene";
 import { parseSharedCreation, SHARE_TOKEN_PATTERN, snapshotShareLink, storedShareLink, type SharedDesign } from "./share";
-import type { Creation, FeedbackInput, GemGroup } from "./types";
-import { normalizeDetails, normalizeTags, validateDetails, validateFeedback } from "./validation";
+import type { CollectionDetails, Creation, FeedbackInput, GemGroup } from "./types";
+import { normalizeCollection, normalizeDetails, normalizeTags, validateCollection, validateDetails, validateFeedback } from "./validation";
 
 /**
  * The Studio workspace on Supabase (`supabase/migrations/…_studio_workspace.sql`).
@@ -52,6 +54,9 @@ export function storeError(error: PgError | null | undefined): StudioStoreError 
       return new StudioStoreError("invalid");
     case "42501": // a write refused by row-level security: no Studio access (trial over)
       return new StudioStoreError("accessDenied");
+    case "23505": // unique violation: a collection of that name already exists
+      return new StudioStoreError("duplicate");
+    case "23503": // foreign key: the collection or the creation is gone (or not ours)
     case "PGRST116": // no row (or not ours: RLS hides it)
     case "P0002": // raised by the share functions for a creation that is not ours
       return new StudioStoreError("notFound");
@@ -60,6 +65,69 @@ export function storeError(error: PgError | null | undefined): StudioStoreError 
   if (/row-level security/i.test(error?.message ?? "")) return new StudioStoreError("accessDenied");
   if (/failed to fetch|network/i.test(error?.message ?? "")) return new StudioStoreError("unavailable");
   return new StudioStoreError("storage");
+}
+
+function checkCollection(details: CollectionDetails): CollectionDetails {
+  const problem = validateCollection(details);
+  if (problem) throw new StudioStoreError("invalid", problem);
+  return normalizeCollection(details);
+}
+
+/**
+ * Collections and their memberships. Owner and timestamps are the database's;
+ * RLS keeps every query to the member's rows and refuses linking anything
+ * that is not theirs.
+ */
+function collectionsRepository(client: TypedSupabaseClient): CollectionsRepository {
+  return {
+    async list() {
+      const [collections, memberships] = await Promise.all([
+        client.from("studio_collections").select("*").order("name"),
+        client.from("studio_collection_creations").select("collection_id, creation_id"),
+      ]);
+      if (collections.error) throw storeError(collections.error);
+      if (memberships.error) throw storeError(memberships.error);
+      return { collections: collections.data.map(toCollection), memberships: memberships.data.map(toMembership) };
+    },
+
+    async create(details) {
+      const { data, error } = await client.from("studio_collections").insert(checkCollection(details)).select().single();
+      if (error) throw storeError(error);
+      return toCollection(data);
+    },
+
+    async update(id, details) {
+      const { data, error } = await client.from("studio_collections").update(checkCollection(details)).eq("id", id).select().single();
+      if (error) throw storeError(error);
+      return toCollection(data);
+    },
+
+    async remove(id) {
+      // The memberships go with it (cascade); the creations stay.
+      const { data, error } = await client.from("studio_collections").delete().eq("id", id).select("id");
+      if (error) throw storeError(error);
+      if (!data.length) throw new StudioStoreError("notFound");
+    },
+
+    async addCreations(collectionId, creationIds) {
+      if (!creationIds.length) return;
+      const rows = creationIds.map((creation_id) => ({ collection_id: collectionId, creation_id }));
+      const { error } = await client
+        .from("studio_collection_creations")
+        .upsert(rows, { onConflict: "collection_id,creation_id", ignoreDuplicates: true });
+      if (error) throw storeError(error);
+    },
+
+    async removeCreations(collectionId, creationIds) {
+      if (!creationIds.length) return;
+      const { error } = await client
+        .from("studio_collection_creations")
+        .delete()
+        .eq("collection_id", collectionId)
+        .in("creation_id", creationIds);
+      if (error) throw storeError(error);
+    },
+  };
 }
 
 function checkDetails(details: { name: string; description: string; tags: string[] }) {
@@ -449,6 +517,8 @@ export function createSupabaseRepositories(client: TypedSupabaseClient, userId: 
         if (path) await thumbs().remove([path]).catch(() => undefined);
       },
     },
+
+    collections: collectionsRepository(client),
 
     feedback: {
       async submit(input: FeedbackInput) {

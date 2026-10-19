@@ -1,4 +1,4 @@
-import { FEEDBACK_CATEGORIES, type FeedbackInput, type RecordDetails } from "./types";
+import { COLLECTION_COLORS, FEEDBACK_CATEGORIES, type CollectionDetails, type FeedbackInput, type RecordDetails } from "./types";
 
 /**
  * Rules for what the Studio workspace accepts, shared by the dialogs (to say
@@ -10,6 +10,7 @@ export const NAME_MAX = 60;
 export const DESCRIPTION_MAX = 280;
 export const TAG_MAX = 24;
 export const TAGS_MAX = 8;
+export const COLLECTION_NAME_MAX = 40;
 export const FEEDBACK_MESSAGE_MIN = 3;
 export const FEEDBACK_MESSAGE_MAX = 2000;
 
@@ -62,6 +63,26 @@ export function validateFeedback(input: Pick<FeedbackInput, "rating" | "category
   const message = input.message.trim();
   if (message.length < FEEDBACK_MESSAGE_MIN) return "messageTooShort";
   if (message.length > FEEDBACK_MESSAGE_MAX) return "messageTooLong";
+  return null;
+}
+
+export type CollectionError = "nameMissing" | "nameTooLong" | "nameTaken" | "colorInvalid";
+
+export function normalizeCollection(details: CollectionDetails): CollectionDetails {
+  return { name: squash(details.name), color: details.color };
+}
+
+/**
+ * A collection's name and colour. `taken`: the names of the member's other
+ * collections, compared ignoring case, as the database's unique index does.
+ */
+export function validateCollection(details: CollectionDetails, taken: string[] = []): CollectionError | null {
+  const d = normalizeCollection(details);
+  if (!d.name) return "nameMissing";
+  if (d.name.length > COLLECTION_NAME_MAX) return "nameTooLong";
+  if (d.color !== null && !COLLECTION_COLORS.includes(d.color)) return "colorInvalid";
+  const key = d.name.toLocaleLowerCase();
+  if (taken.some((n) => n.toLocaleLowerCase() === key)) return "nameTaken";
   return null;
 }
 

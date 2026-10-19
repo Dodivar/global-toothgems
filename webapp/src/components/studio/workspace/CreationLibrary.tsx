@@ -1,6 +1,6 @@
 import { useMemo, useState } from "react";
 import { BookOpen, Plus, RotateCw } from "lucide-react";
-import { useNavigate } from "../../../lib/navigation";
+import { useNavigate, useSearchParams } from "../../../lib/navigation";
 import { Button } from "../../ui/Button";
 import { useStudio } from "../../../lib/studio3d/store";
 import { studioSectionPath } from "../../../lib/studioUrl";
@@ -12,7 +12,9 @@ import {
   type CreationFilter,
   type CreationSort,
 } from "../../../lib/studioWorkspace/library";
+import { COLLECTION_PARAM, collectionCounts, creationIdsIn } from "../../../lib/studioWorkspace/collections";
 import { useWorkspace } from "../../../lib/studioWorkspace/workspace";
+import { CollectionBar } from "./Collections";
 import { CreationCard } from "./CreationCard";
 import { EmptyState } from "./EmptyState";
 import { HelpHint } from "./HelpHint";
@@ -34,14 +36,41 @@ export function CreationLibrary() {
   const [query, setQuery] = useState("");
   const [filter, setFilter] = useState<CreationFilter>("all");
   const [sort, setSort] = useState<CreationSort>("updated");
+  // The chosen collection lives in the address (?collection=…), so it survives a reload and the back button.
+  const [params, setParams] = useSearchParams();
+  const requested = params.get(COLLECTION_PARAM);
+  // A collection that no longer exists (deleted, another account) shows the whole library.
+  const collectionId = requested && ws.collections.some((c) => c.id === requested) ? requested : null;
+  const selectCollection = (id: string | null) =>
+    setParams(
+      (prev) => {
+        if (id) prev.set(COLLECTION_PARAM, id);
+        else prev.delete(COLLECTION_PARAM);
+        return prev;
+      },
+      { replace: true },
+    );
+  const inCollection = useMemo(
+    () => (collectionId ? creationIdsIn(collectionId, ws.memberships) : null),
+    [collectionId, ws.memberships],
+  );
+  const inScope = useMemo(
+    () => (inCollection ? ws.creations.filter((c) => inCollection.has(c.id)) : ws.creations),
+    [ws.creations, inCollection],
+  );
 
   const shown = useMemo(
-    () => queryCreations(ws.creations, { query, filter, sort, now }),
-    [ws.creations, query, filter, sort, now],
+    () => queryCreations(ws.creations, { query, filter, sort, now, inCollection }),
+    [ws.creations, query, filter, sort, now, inCollection],
   );
+  // Filter counts follow the chosen collection; collection counts, the whole library.
   const counts = useMemo(
-    () => Object.fromEntries(CREATION_FILTERS.map((f) => [f, ws.creations.filter((c) => matchesFilter(c, f, now)).length])),
-    [ws.creations, now],
+    () => Object.fromEntries(CREATION_FILTERS.map((f) => [f, inScope.filter((c) => matchesFilter(c, f, now)).length])),
+    [inScope, now],
+  );
+  const perCollection = useMemo(
+    () => collectionCounts(ws.collections, ws.memberships, ws.creations.map((c) => c.id)),
+    [ws.collections, ws.memberships, ws.creations],
   );
   const summary = summarize(ws.creations, ws.groups);
 
@@ -130,6 +159,8 @@ export function CreationLibrary() {
             </dl>
           </section>
 
+          <CollectionBar selectedId={collectionId} onSelect={selectCollection} counts={perCollection} total={ws.creations.length} />
+
           <SearchAndFilters
             query={query}
             onQuery={setQuery}
@@ -145,7 +176,18 @@ export function CreationLibrary() {
             {t("studio.workspace.library.resultCount", { count: shown.length })}
           </p>
 
-          {shown.length === 0 ? (
+          {shown.length === 0 && inCollection && inScope.length === 0 ? (
+            <EmptyState
+              compact
+              title={t("studio.workspace.collections.emptyCollectionTitle")}
+              body={t("studio.workspace.collections.emptyCollectionBody")}
+              actions={
+                <Button variant="outline" size="sm" onClick={() => selectCollection(null)}>
+                  {t("studio.workspace.collections.showAll")}
+                </Button>
+              }
+            />
+          ) : shown.length === 0 ? (
             <EmptyState
               compact
               art="search"
@@ -158,6 +200,7 @@ export function CreationLibrary() {
                   onClick={() => {
                     setQuery("");
                     setFilter("all");
+                    selectCollection(null);
                   }}
                 >
                   {t("studio.workspace.library.resetFilters")}

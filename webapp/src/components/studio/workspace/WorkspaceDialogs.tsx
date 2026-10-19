@@ -4,6 +4,7 @@ import { Dialog } from "../../ui/Dialog";
 import { Button } from "../../ui/Button";
 import { useWorkspace } from "../../../lib/studioWorkspace/workspace";
 import { closeWorkspaceDialog, useWorkspaceDialog } from "../../../lib/studioWorkspace/workspaceUi";
+import { CollectionEditDialog, CreationCollectionsDialog } from "./Collections";
 import { CreationDetail } from "./CreationDetail";
 import { DeleteConfirmation } from "./DeleteConfirmation";
 import { FeedbackModal } from "./FeedbackModal";
@@ -48,6 +49,19 @@ export function WorkspaceDialogs() {
     case "deleteCreation":
       return (
         <DeleteConfirmation kind="creation" name={dialog.creation.name} onConfirm={() => ws.deleteCreation(dialog.creation)} onClose={close} />
+      );
+    case "creationCollections":
+      return <CreationCollectionsDialog creationId={dialog.creationId} back={dialog.back} onClose={close} />;
+    case "editCollection":
+      return <CollectionEditDialog collection={dialog.collection} onClose={close} />;
+    case "deleteCollection":
+      return (
+        <DeleteConfirmation
+          kind="collection"
+          name={dialog.collection.name}
+          onConfirm={() => ws.deleteCollection(dialog.collection)}
+          onClose={close}
+        />
       );
     case "saveGroup":
       return <SaveGemGroupDialog pieceIds={dialog.pieceIds} onClose={close} />;
