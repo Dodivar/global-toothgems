@@ -171,7 +171,7 @@ begin
 
   -- G4: moderator approves the page, then one item.
   perform set_config('request.jwt.claims', json_build_object('sub', modr, 'role', 'authenticated')::text, true);
-  select count(*) into v_cnt from public.studio_showcase_queue() q where q.status = 'pending';
+  select count(*) into v_cnt from public.studio_showcase_queue() q where q.status = 'pending' and q.user_id = artist;
   if v_cnt <> 3 then raise exception 'FAIL G4: queue has % pending rows', v_cnt; end if;
   select count(*) into v_cnt from storage.objects where bucket_id = 'studio-thumbnails' and name like artist || '/%';
   if v_cnt <> 2 then raise exception 'FAIL G4: moderator reads % submitted renders', v_cnt; end if;
