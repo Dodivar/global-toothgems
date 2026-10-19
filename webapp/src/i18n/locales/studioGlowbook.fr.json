@@ -15,6 +15,11 @@
       "pending": "En attente de validation",
       "approved": "Publiée",
       "rejected": "Refusée"
+    },
+    "changes": {
+      "pending": "Changements à valider",
+      "approved": "Changements publiés",
+      "rejected": "Changements refusés"
     }
   },
   "page": {
@@ -98,7 +103,11 @@
     "deleteFailed": "Impossible de supprimer votre Glowbook",
     "linkCopied": "Lien copié",
     "linkCopiedBody": "Collez-le dans votre bio Instagram.",
-    "copyFailed": "Copie impossible : sélectionnez le lien"
+    "copyFailed": "Copie impossible : sélectionnez le lien",
+    "lookSaved": "Apparence enregistrée",
+    "lookSavedPending": "Apparence enregistrée : les nouvelles images et liens attendent la validation",
+    "lookFailed": "Impossible d’enregistrer l’apparence",
+    "uploadFailed": "Impossible d’envoyer l’image"
   },
   "saveWarning": {
     "cancel": "Annuler",
@@ -131,7 +140,12 @@
     "ctaStudio": "Découvrir le Studio 3D",
     "ctaShop": "Voir la boutique",
     "view3d": "Voir en 3D",
-    "open3d": "Voir « {{name}} » en 3D"
+    "open3d": "Voir « {{name}} » en 3D",
+    "booking": "Prendre rendez-vous",
+    "website": "Site web",
+    "tiktok": "@{{account}} sur TikTok",
+    "avatarAlt": "Photo de profil de {{name}}",
+    "featured": "À la une"
   },
   "admin": {
     "title": "Glowbook",
@@ -158,7 +172,8 @@
     "emptyBody": "Changez de vue ou de recherche.",
     "kind": {
       "page": "Page",
-      "creation": "Création"
+      "creation": "Création",
+      "changes": "Images et liens"
     },
     "submitted": "Envoyé le {{date}}",
     "byArtist": "par {{name}} (@{{handle}})",
@@ -175,6 +190,74 @@
       "approved": "Validé : c’est en ligne",
       "rejected": "Refusé : l’artiste verra le motif",
       "failed": "La décision n’a pas pu être enregistrée"
+    },
+    "changesDone": "Ces changements ont été traités.",
+    "proposed": "Proposé par l’artiste",
+    "proposedWithPage": "Proposé avec la page (publié si vous validez la page)",
+    "newAvatar": "Nouvelle photo",
+    "newBanner": "Nouvelle bannière"
+  },
+  "look": {
+    "title": "Personnaliser ma page",
+    "sub": "Donnez à votre Glowbook votre identité : photo, bannière, couleur, mise en page et liens. Couleur, fond, mise en page, création à la une et ville sont publiés dès l’enregistrement ; une nouvelle photo, bannière ou un nouveau lien est d’abord validé par l’équipe.",
+    "pendingNote": "Des images ou des liens attendent la validation de l’équipe : votre page montre les précédents en attendant.",
+    "rejectedNote": "Vos dernières images ou liens n’ont pas été validés.",
+    "rejectedNoteReason": "Vos dernières images ou liens n’ont pas été validés. Motif : {{note}}",
+    "preview": "Aperçu",
+    "accent": "Couleur de votre identité",
+    "accents": {
+      "ink": "Encre",
+      "blue": "Bleu",
+      "fuchsia": "Fuchsia",
+      "rose": "Rose",
+      "coral": "Corail",
+      "gold": "Or",
+      "emerald": "Émeraude",
+      "teal": "Lagon",
+      "violet": "Violet",
+      "plum": "Prune"
+    },
+    "background": "Fond de page",
+    "backgrounds": {
+      "light": "Clair",
+      "tinted": "Teinté",
+      "dark": "Sombre"
+    },
+    "layout": "Présentation des créations",
+    "layouts": {
+      "grid": "Grille",
+      "large": "Grandes cartes"
+    },
+    "featured": "Création à la une",
+    "featuredNone": "Aucune",
+    "featuredHint": "Mise en avant en grand, en haut de votre page (créations publiées uniquement).",
+    "location": "Ville ou studio",
+    "locationPlaceholder": "Ex. Lyon, Studio Rivoli",
+    "links": "Liens",
+    "linksHint": "Adresses en https uniquement. Chaque nouveau lien est validé avant d’apparaître.",
+    "booking": "Prise de rendez-vous",
+    "website": "Site web",
+    "tiktok": "Compte TikTok",
+    "errors": {
+      "locationLength": "La ville fait au plus {{max}} caractères.",
+      "bookingUrl": "Le lien de rendez-vous doit être une adresse https valide.",
+      "websiteUrl": "Le site web doit être une adresse https valide.",
+      "tiktok": "Ce compte TikTok n’est pas valide (lettres, chiffres, point et tiret bas)."
+    },
+    "reset": "Annuler les modifications",
+    "save": "Enregistrer l’apparence",
+    "waiting": "En attente de validation",
+    "avatar": "Photo de profil",
+    "banner": "Bannière",
+    "avatarHint": "Recadrée en carré. JPEG, PNG ou WebP.",
+    "bannerHint": "Recadrée au format 3:1, affichée en haut de la page. JPEG, PNG ou WebP.",
+    "change": "Changer",
+    "add": "Ajouter",
+    "removePicture": "Retirer",
+    "pictureErrors": {
+      "type": "Ce fichier n’est pas une image.",
+      "tooLarge": "Image trop lourde (20 Mo au plus).",
+      "unreadable": "Cette image n’a pas pu être lue. Essayez en JPEG ou PNG."
     }
   }
 }

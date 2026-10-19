@@ -1,4 +1,5 @@
 import type { Database } from "../supabase/database.types";
+import { lookFromColumns, pendingFromColumns, type GlowbookLook, type ModeratedKey } from "./glowbookLook";
 
 /**
  * The Glowbook: an artist's public, read-only showcase of chosen creations,
@@ -25,6 +26,12 @@ export interface Glowbook {
   /** The moderator's reason, shown to the artist when rejected. */
   reviewNote: string | null;
   submittedAt: string;
+  /** The approved look, as the public sees it (decision 100). */
+  look: GlowbookLook;
+  /** Pictures and links proposed, waiting for a moderator. */
+  pending: Partial<Pick<GlowbookLook, ModeratedKey>>;
+  /** Why the last proposed pictures or links were declined (empty when no reason was given). */
+  changesReviewNote: string | null;
 }
 
 export interface GlowbookItem {
@@ -114,6 +121,9 @@ export function toGlowbook(row: ShowcaseRow): Glowbook {
     status: asStatus(row.status),
     reviewNote: row.review_note,
     submittedAt: row.submitted_at,
+    look: lookFromColumns(row as unknown as Record<string, unknown>),
+    pending: pendingFromColumns(row.pending_changes),
+    changesReviewNote: row.changes_review_note,
   };
 }
 
@@ -172,6 +182,9 @@ export interface PublicGlowbook {
   displayName: string;
   bio: string;
   instagram: string | null;
+  location: string | null;
+  /** The artist's approved look; null when customisation is not open to them (default look). */
+  look: GlowbookLook | null;
   items: PublicGlowbookItem[];
 }
 
@@ -188,6 +201,8 @@ export function toPublicGlowbook(json: unknown): PublicGlowbook | null {
     displayName: str(o.display_name),
     bio: str(o.bio),
     instagram: str(o.instagram) || null,
+    location: str(o.location) || null,
+    look: o.look && typeof o.look === "object" && !Array.isArray(o.look) ? lookFromColumns(o.look as Record<string, unknown>) : null,
     items: items.flatMap((raw) => {
       if (!raw || typeof raw !== "object") return [];
       const i = raw as Record<string, unknown>;

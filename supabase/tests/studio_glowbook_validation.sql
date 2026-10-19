@@ -1,6 +1,7 @@
 -- =============================================================================
 -- 3D Studio Glowbook validation suite
--- (migrations 20261019072230_studio_glowbook, 20261019112411_studio_glowbook_creation, decision 99)
+-- (migrations 20261019072230_studio_glowbook, 20261019112411_studio_glowbook_creation,
+-- 20261019134715_studio_glowbook_look, decisions 99 and 100)
 -- =============================================================================
 -- Proves, as the roles that really call them:
 --
@@ -21,7 +22,12 @@
 --       re-sent; a moderator takes an approved item down;
 --   G7  when the author loses Studio access the page, its renders and its 3D go dark;
 --   G8  the owner removes an item and deletes the Glowbook; another member
---       cannot delete or read them.
+--       cannot delete or read them;
+--   G9  the look: colour, layout, city and spotlight are live; a new picture
+--       or link waits (the page keeps the approved one) and is refused when it
+--       is not the caller's file, not https or not in the lists; a moderator
+--       approves (anon then signs the picture) or rejects with a note;
+--       removing is immediate; an approved picture cannot be deleted.
 --
 -- ONE transaction, ALWAYS rolled back by raising `ALL STUDIO GLOWBOOK TESTS PASSED`
 -- (or `FAIL: ...`).
@@ -293,6 +299,81 @@ begin
   select count(*) into v_cnt from public.creations where id in (c_one, c_two);
   if v_cnt <> 2 then raise exception 'FAIL G8: deleting the Glowbook deleted creations'; end if;
   passed := passed || 'G8'::text;
+
+  -- G9: the look (fresh Glowbook for the other member, who still has access).
+  perform set_config('request.jwt.claims', json_build_object('sub', other, 'role', 'authenticated')::text, true);
+  perform public.studio_save_showcase('nova.gems', 'Nova', '', null);
+  i_one := (public.studio_showcase_add(c_other)).id;
+  execute 'reset role';
+  insert into storage.objects (bucket_id, name) values
+    ('glowbook-media', other || '/avatar-1.jpg'), ('glowbook-media', artist || '/stolen.jpg');
+  perform set_config('role', 'authenticated', true);
+  perform set_config('request.jwt.claims', json_build_object('sub', modr, 'role', 'authenticated')::text, true);
+  perform public.studio_moderate_showcase(other, 'approved');
+  perform public.studio_moderate_showcase_item(i_one, 'approved');
+  perform set_config('request.jwt.claims', json_build_object('sub', other, 'role', 'authenticated')::text, true);
+  v_sc := public.studio_save_showcase_look(jsonb_build_object(
+    'accent', 'fuchsia', 'layout', 'large', 'location', ' Lyon ', 'featured_item_id', i_one,
+    'avatar_path', other || '/avatar-1.jpg', 'booking_url', 'https://book.example.com/nova'));
+  if v_sc.accent <> 'fuchsia' or v_sc.location <> 'Lyon' or v_sc.featured_item_id <> i_one or v_sc.avatar_path is not null
+     or v_sc.pending_changes ->> 'avatar_path' <> other || '/avatar-1.jpg' then
+    raise exception 'FAIL G9: look saved %', row_to_json(v_sc);
+  end if;
+  foreach v_page in array array[jsonb_build_object('avatar_path', artist || '/stolen.jpg'),
+                                jsonb_build_object('website_url', 'http://plain.example.com'),
+                                jsonb_build_object('accent', 'neon'),
+                                jsonb_build_object('featured_item_id', i_two)] loop
+    v_state := null;
+    begin
+      perform public.studio_save_showcase_look(v_page);
+    exception when others then v_state := sqlstate;
+    end;
+    if v_state is null or v_state not in ('22023', '23514') then raise exception 'FAIL G9: accepted % (%)', v_page, v_state; end if;
+  end loop;
+  perform set_config('role', 'anon', true);
+  perform set_config('request.jwt.claims', '{"role":"anon"}', true);
+  v_page := public.studio_public_showcase('nova.gems');
+  if v_page #>> '{look,accent}' <> 'fuchsia' or v_page #>> '{look,avatar_path}' is not null or v_page #>> '{look,booking_url}' is not null
+     or v_page #>> '{look,featured_item_id}' <> i_one::text or v_page ->> 'location' <> 'Lyon' then
+    raise exception 'FAIL G9: public look before review %', v_page;
+  end if;
+  select count(*) into v_cnt from storage.objects where bucket_id = 'glowbook-media';
+  if v_cnt <> 0 then raise exception 'FAIL G9: anon reads pending pictures (%)', v_cnt; end if;
+  perform set_config('role', 'authenticated', true);
+  perform set_config('request.jwt.claims', json_build_object('sub', artist, 'role', 'authenticated')::text, true);
+  v_state := null;
+  begin
+    perform public.studio_moderate_showcase_changes(other, 'approved');
+  exception when others then v_state := sqlstate;
+  end;
+  if v_state is distinct from '42501' then raise exception 'FAIL G9: member approved changes (%)', v_state; end if;
+  perform set_config('request.jwt.claims', json_build_object('sub', modr, 'role', 'authenticated')::text, true);
+  select count(*) into v_cnt from public.studio_showcase_queue() q where q.kind = 'changes' and q.user_id = other and q.status = 'pending';
+  if v_cnt <> 1 then raise exception 'FAIL G9: changes not queued (%)', v_cnt; end if;
+  perform public.studio_moderate_showcase_changes(other, 'approved');
+  perform set_config('role', 'anon', true);
+  perform set_config('request.jwt.claims', '{"role":"anon"}', true);
+  v_page := public.studio_public_showcase('nova.gems');
+  if v_page #>> '{look,avatar_path}' <> other || '/avatar-1.jpg' or v_page #>> '{look,booking_url}' <> 'https://book.example.com/nova' then
+    raise exception 'FAIL G9: approved look %', v_page -> 'look';
+  end if;
+  select array_agg(name) into v_names from storage.objects where bucket_id = 'glowbook-media';
+  if v_names is distinct from array[other || '/avatar-1.jpg'] then raise exception 'FAIL G9: anon reads pictures %', v_names; end if;
+  perform set_config('role', 'authenticated', true);
+  perform set_config('request.jwt.claims', json_build_object('sub', other, 'role', 'authenticated')::text, true);
+  -- The delete policy refuses files in use (direct SQL deletes are blocked by Storage itself).
+  if not private.glowbook_media_in_use(other || '/avatar-1.jpg') then raise exception 'FAIL G9: approved picture deletable'; end if;
+  v_sc := public.studio_save_showcase_look(jsonb_build_object('tiktok', '@nova.gems'));
+  perform set_config('request.jwt.claims', json_build_object('sub', modr, 'role', 'authenticated')::text, true);
+  perform public.studio_moderate_showcase_changes(other, 'rejected', 'Not your account');
+  perform set_config('request.jwt.claims', json_build_object('sub', other, 'role', 'authenticated')::text, true);
+  select * into v_sc from public.studio_showcases where user_id = other;
+  if v_sc.tiktok is not null or v_sc.pending_changes is not null or v_sc.changes_review_note <> 'Not your account' then
+    raise exception 'FAIL G9: rejected changes %', row_to_json(v_sc);
+  end if;
+  v_sc := public.studio_save_showcase_look(jsonb_build_object('avatar_path', null, 'booking_url', ''));
+  if v_sc.avatar_path is not null or v_sc.booking_url is not null then raise exception 'FAIL G9: removal not immediate'; end if;
+  passed := passed || 'G9'::text;
 
   raise exception 'ALL STUDIO GLOWBOOK TESTS PASSED (%)', array_to_string(passed, ', ');
 end;

@@ -24,6 +24,7 @@ import { openWorkspaceDialog } from "../../../lib/studioWorkspace/workspaceUi";
 import { useToast } from "../../../lib/toast";
 import { CreationThumb } from "./CreationCard";
 import { LibrarySkeleton } from "./CreationLibrary";
+import { GlowbookLookEditor } from "./GlowbookLookEditor";
 import { EmptyState } from "./EmptyState";
 import { SignInPrompt } from "./SignInPrompt";
 import { eyebrow, fieldClass, focusRing, iconButton, useWorkspaceFormat } from "./workspaceStyles";
@@ -74,6 +75,7 @@ export function GlowbookManager() {
           ) : (
             <GlowbookSummary glowbook={gb.glowbook} onEdit={() => setEditing(true)} />
           )}
+          <GlowbookLookEditor glowbook={gb.glowbook} />
           <GlowbookItems />
         </>
       )}

@@ -6,6 +6,8 @@ import { supabase } from "../supabase/client";
 import { useToast } from "../toast";
 import { exposureOf, sortItems, type Glowbook, type GlowbookDetails, type GlowbookItem, type PublicExposure } from "./glowbook";
 import { createGlowbookRepository, GlowbookError, type GlowbookRepository } from "./glowbookRepository";
+import { lookPatch, type GlowbookLook, type MediaKind } from "./glowbookLook";
+import { GlowbookMediaError, prepareGlowbookPicture, type MediaError } from "../../components/glowbook/prepareMedia";
 import { StudioStoreError } from "./repository";
 
 /**
@@ -36,9 +38,22 @@ interface GlowbookValue {
   remove: (creation: { id: string; name: string }) => Promise<boolean>;
   move: (orderedCreationIds: string[]) => Promise<boolean>;
   removeAll: () => Promise<boolean>;
+  /** The look as the artist last chose it: the approved one with what waits for a moderator over it. */
+  draftLook: GlowbookLook | null;
+  /** Signed URLs of the member's own pictures (approved and proposed), by storage path. */
+  mediaUrls: Map<string, string>;
+  /** Saves the look (decision 100). Resolves to whether it was stored. */
+  saveLook: (next: GlowbookLook) => Promise<boolean>;
+  /** Frames and uploads a picture; its path and a preview URL, or why it was refused. */
+  uploadPicture: (kind: MediaKind, file: File) => Promise<{ path: string; url: string } | { error: MediaError | "failed" }>;
 }
 
 const GlowbookContext = createContext<GlowbookValue | null>(null);
+
+/** Every picture a Glowbook uses or proposes. */
+function mediaPathsOf(g: Glowbook): string[] {
+  return [g.look.avatarPath, g.look.bannerPath, g.pending.avatarPath, g.pending.bannerPath].filter((p): p is string => !!p);
+}
 
 export function GlowbookProvider({ children }: { children: ReactNode }) {
   const { t } = useTranslation();
@@ -57,6 +72,7 @@ export function GlowbookProvider({ children }: { children: ReactNode }) {
     glowbook: Glowbook | null;
     items: GlowbookItem[];
   } | null>(null);
+  const [mediaUrls, setMediaUrls] = useState<Map<string, string>>(() => new Map());
   const [tick, setTick] = useState(0);
   const current = loaded && loaded.repo === repo ? loaded : null;
   const status: GlowbookStatus = !userId ? (restoring ? "loading" : "signedOut") : !repo ? "unavailable" : current ? current.status : "loading";
@@ -66,7 +82,12 @@ export function GlowbookProvider({ children }: { children: ReactNode }) {
     let live = true;
     repo
       .load()
-      .then(({ glowbook, items }) => live && setLoaded({ repo, status: "ready", glowbook, items: sortItems(items) }))
+      .then(({ glowbook, items }) => {
+        if (!live) return;
+        setLoaded({ repo, status: "ready", glowbook, items: sortItems(items) });
+        // Pictures are decoration here: a signing failure leaves the placeholders.
+        if (glowbook) void repo.signMedia(mediaPathsOf(glowbook)).then((urls) => live && setMediaUrls(urls)).catch(() => undefined);
+      })
       .catch(() => live && setLoaded({ repo, status: "error", glowbook: null, items: [] }));
     return () => {
       live = false;
@@ -202,6 +223,49 @@ export function GlowbookProvider({ children }: { children: ReactNode }) {
     }
   }, [repo, patch, showToast, t, fail]);
 
+  const glowbook = current?.glowbook ?? null;
+  const draftLook = useMemo(() => (glowbook ? { ...glowbook.look, ...glowbook.pending } : null), [glowbook]);
+
+  const saveLook = useCallback(
+    async (next: GlowbookLook) => {
+      if (!repo || !glowbook || !draftLook) return false;
+      const changes = lookPatch(draftLook, next);
+      if (!Object.keys(changes).length) return true;
+      try {
+        const saved = await repo.saveLook(changes);
+        patch((prev) => ({ glowbook: saved, items: prev.items }));
+        const waiting = Object.keys(saved.pending).length > 0;
+        showToast(t(waiting ? "studio.glowbook.toasts.lookSavedPending" : "studio.glowbook.toasts.lookSaved"), undefined, "success");
+        const keep = mediaPathsOf(saved);
+        void repo.cleanupMedia(keep).catch(() => undefined);
+        void repo.signMedia(keep).then(setMediaUrls).catch(() => undefined);
+        return true;
+      } catch (err) {
+        fail(err, "lookFailed");
+        return false;
+      }
+    },
+    [repo, glowbook, draftLook, patch, showToast, t, fail],
+  );
+
+  const uploadPicture = useCallback<GlowbookValue["uploadPicture"]>(
+    async (kind, file) => {
+      if (!repo) return { error: "failed" };
+      try {
+        const blob = await prepareGlowbookPicture(file, kind);
+        const path = await repo.uploadMedia(kind, blob);
+        const url = URL.createObjectURL(blob);
+        setMediaUrls((prev) => new Map(prev).set(path, url));
+        return { path, url };
+      } catch (err) {
+        if (err instanceof GlowbookMediaError) return { error: err.code };
+        fail(err, "uploadFailed");
+        return { error: "failed" };
+      }
+    },
+    [repo, fail],
+  );
+
   const value: GlowbookValue = {
     status,
     glowbook: current?.glowbook ?? null,
@@ -214,6 +278,10 @@ export function GlowbookProvider({ children }: { children: ReactNode }) {
     remove,
     move,
     removeAll,
+    draftLook,
+    mediaUrls,
+    saveLook,
+    uploadPicture,
   };
   return <GlowbookContext.Provider value={value}>{children}</GlowbookContext.Provider>;
 }

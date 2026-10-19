@@ -160,6 +160,8 @@ supabase/
 | 20261018224657 | `studio_templates` | **Applied 2026-10-19.** Decision 97: the Global Toothgems template library. `creations.template_published_at` (not in the column grants: written only by `studio_set_template(id, published)` — `manage_content` staff publish their own creation, keeping the first date, and unpublish any template; audited, the flag alone), `studio_templates()` (members with Studio access: published rows newest first, no owner, favourite or opening dates, Gem Group references dropped; 42501 otherwise), `studio_use_template(id)` (copies a published template into the caller's creations: owner = caller, unpublished, no render — the browser copies it), storage policy `studio-thumbnails: Studio members read template renders` (`private.is_studio_template_thumbnail()`). The `creations` SELECT policy is unchanged. Suite `tests/studio_templates_validation.sql` |
 | 20261019062619 | `studio_preferences` | **Applied 2026-10-19.** `studio_preferences`: one row per member (created on first change, none = defaults), `library_view` grid / explorer; owner-only RLS, not gated by Studio access. Decision 98 |
 | 20261019072230 | `studio_glowbook` | **Applied 2026-10-19.** Decision 99: the Glowbook, an artist's public showcase. `studio_showcases` (one per member: handle, display name, bio, Instagram, moderation status) and `studio_showcase_items` (one row per creation, order, moderation status); owners and `moderate_reviews` staff read (RLS), owners delete; every other write through `studio_save_showcase()`, `studio_showcase_add()`, `studio_showcase_reorder()` (Studio access) and `studio_moderate_showcase()` / `studio_moderate_showcase_item()` (`moderate_reviews`, audited); `studio_showcase_queue()` for moderators; `studio_public_showcase(handle)` for anyone (approved page of an author with Studio access, approved items only; no owner id field, though render paths start with it — decision 99 (i)); `private.studio_user_has_access(user)`; storage policies on `studio-thumbnails` (anyone reads public Glowbook renders, moderators read the renders sent). Suite `tests/studio_glowbook_validation.sql` (G1–G8) |
+| 20261019134715 | `studio_glowbook_look` | **Applied 2026-10-19.** Decision 100: the Glowbook's own look. `studio_showcases` gains accent / background / layout (fixed lists), location, featured_item_id (live), the approved avatar_path / banner_path / booking_url / website_url / tiktok, and `pending_changes` (+ `changes_submitted_at`, `changes_review_note`) for proposed pictures and links; `studio_save_showcase_look(jsonb)` (Studio access + `private.glowbook_customization_allowed()`, the plan switch: Studio access today), `studio_moderate_showcase_changes()` (`moderate_reviews`, audited); approving a page applies what waits with it; the queue gains `changes` rows and a `details` column (dropped and recreated); `studio_public_showcase()` returns `location` and `look` (null when customisation is not allowed). Private bucket `glowbook-media` (5 MB, JPEG/PNG/WebP): owners upload (Studio access) and read theirs, moderators read all, anyone reads approved pictures of a public Glowbook, owners delete only files no page uses or proposes (no update). Suite G9 |
+| 20261019135003 | `studio_glowbook_look_links` | **Applied 2026-10-19.** Postgres caps a regex repetition at 255: the link checks of `20261019134715` rewritten as pattern + length (`private.glowbook_link_valid()`), `studio_save_showcase_look()` replaced accordingly |
 | 20261019112411 | `studio_glowbook_creation` | **Applied 2026-10-19.** `studio_public_showcase_creation(handle, item)` (anon): one approved creation of a public Glowbook with its scene (Gem Group ids blanked), for the read-only 3D viewer; null otherwise. Suite G4/G7 |
 | 20261019072443 | `studio_glowbook_updated_at` | **Applied 2026-10-19.** The Glowbook tables' `updated_at` triggers use `private.set_updated_at()` (the Studio design trigger reads columns they do not have) |
 | 20261008175722 | `contact_attachments_and_support_email` | **Applied 2026-10-08.** Contact form: `contact_requests.attachment_path` → `attachment_paths text[]` (≤ 5, `private.valid_contact_attachment_paths()`), bucket `contact-attachments` 20 MB per object, `submit_contact_request(…, p_attachment_paths text[])` (old signature dropped; ownership per path, no duplicates, ≤ 20 MB in all), guard trigger rebuilt, `contact_ip_allowed(ip_hash)` (service role), template `contact_request_received` (fr + en) for the support inbox. Suite: `iteration7_validation.sql` C3/C4 |
@@ -1313,6 +1315,10 @@ anyone                      /fr/glowbook/<handle>, /en/glowbook/<handle> → stu
                             renders: signed with the publishable key through "anyone reads public Glowbook renders"
                             a card → /studio-3d/glowbook/<handle>/<item> → studio_public_showcase_creation(handle, item)
                                      read-only 3D viewer + the design's shop items, added to the cart in one click
+look (decision 100)         /studio-3d/atelier/glowbook "Customise my page" → studio_save_showcase_look(jsonb)
+                            colour, background, layout, spotlight, city → live
+                            picture (glowbook-media/<user>/<kind>-<uuid>.jpg, framed in the browser) / link → pending_changes
+                            moderator → studio_moderate_showcase_changes(user, approved|rejected, note) (or approves the page)
 ```
 
 - Public = page approved **and** item approved **and** the author has Studio access now (trial, subscription or
@@ -2145,3 +2151,18 @@ VAT rates, shipping zones/rates mirroring the Settings prototype. Media rows ref
     share links) lists the design's shop items with "add all to cart" (the editor's shopping list; the checkout
     prices again). Agent's choice, to confirm: (j) a Glowbook creation cannot be copied into the visitor's own
     Studio (share links still can): it is the artist's published work.
+100. **3D Studio: the Glowbook's own look** (owner's request, 2026-10-19: "let the artist customise the page —
+    profile picture, banner, identity colour, etc.; reserved to a subscription later, open to everyone for now";
+    migrations `20261019134715`, `20261019135003`). Built: profile picture, banner (framed and re-encoded to JPEG
+    in the browser), identity colour from a list of ten (each tested for contrast), light / tinted / dark
+    background, grid or large cards, a creation in the spotlight, city, booking link, website and TikTok, with a
+    live preview in the Studio. The plan switch is `private.glowbook_customization_allowed(user)` (Studio access
+    today): it gates saving and whether the public page shows the look. Agent's choices, to confirm: (a) new
+    pictures and links wait for a moderator (in `pending_changes`) while the page keeps the approved ones;
+    removing one is immediate; colour, background, layout, spotlight and city are live (fixed lists or the
+    artist's own approved creation; the city is short text, live like the bio, decision 99 (b)); (b) approving a
+    page applies what waits with it; (c) links are https only, shown with `rel="nofollow"`; (d) without the plan,
+    the page falls back to the default look but keeps its city; (e) no custom hex colour, font or free CSS (fixed
+    lists keep every page readable and on-brand); (f) pictures no page uses are deleted by the browser after a
+    save, best effort. Also on the owner's request the same day: the read-only 3D viewer no longer has a second
+    bar under the site's header; "read only" is a small badge in its side panel.

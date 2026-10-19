@@ -37,7 +37,7 @@ export async function glowbookMetadata(props: GlowbookPageProps, locale: Locale)
       fr: localizedPath("glowbook", "fr", { id: glowbook.handle }),
       en: localizedPath("glowbook", "en", { id: glowbook.handle }),
     },
-    image: glowbook.items.find((i) => i.imageUrl)?.imageUrl ?? undefined,
+    image: glowbook.bannerUrl ?? glowbook.items.find((i) => i.imageUrl)?.imageUrl ?? glowbook.avatarUrl ?? undefined,
   });
 }
 

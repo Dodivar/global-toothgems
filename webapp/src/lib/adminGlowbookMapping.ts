@@ -1,4 +1,5 @@
 import type { Database } from "./supabase/database.types";
+import { lookFromColumns, pendingFromColumns, type GlowbookLook, type ModeratedKey } from "./studioWorkspace/glowbookLook";
 
 /**
  * Back-office reading of the Glowbook moderation queue (`/admin/glowbook`,
@@ -23,10 +24,23 @@ interface QueueBase {
   pageStatus: QueueStatus;
 }
 
+/** The page's approved pictures and links, and what the artist proposes instead (decision 100). */
+export interface QueueLook {
+  approved: GlowbookLook;
+  pending: Partial<Pick<GlowbookLook, ModeratedKey>>;
+}
+
 export interface QueuePage extends QueueBase {
   kind: "page";
   bio: string;
   instagram: string | null;
+  look: QueueLook;
+}
+
+/** Pictures and links proposed for an approved page: approved, they replace the current ones. */
+export interface QueueChanges extends QueueBase {
+  kind: "changes";
+  look: QueueLook;
 }
 
 export interface QueueCreation extends QueueBase {
@@ -38,9 +52,25 @@ export interface QueueCreation extends QueueBase {
   updatedAt: string | null;
 }
 
-export type QueueEntry = QueuePage | QueueCreation;
+export type QueueEntry = QueuePage | QueueChanges | QueueCreation;
 
 const asStatus = (s: string | null | undefined): QueueStatus => (s === "approved" || s === "rejected" ? s : "pending");
+
+function lookOf(details: unknown): QueueLook {
+  const d = details && typeof details === "object" && !Array.isArray(details) ? (details as Record<string, unknown>) : {};
+  const approved = d.approved && typeof d.approved === "object" ? (d.approved as Record<string, unknown>) : null;
+  return { approved: lookFromColumns(approved), pending: pendingFromColumns(d.pending) };
+}
+
+/** Every picture an entry shows (approved and proposed), to sign. */
+export function queueMediaPaths(entries: QueueEntry[]): string[] {
+  const out = new Set<string>();
+  for (const e of entries) {
+    if (e.kind === "creation") continue;
+    for (const p of [e.look.approved.avatarPath, e.look.approved.bannerPath, e.look.pending.avatarPath, e.look.pending.bannerPath]) if (p) out.add(p);
+  }
+  return [...out];
+}
 
 export function toQueueEntry(row: GlowbookQueueRow): QueueEntry {
   const base: QueueBase = {
@@ -54,7 +84,8 @@ export function toQueueEntry(row: GlowbookQueueRow): QueueEntry {
     displayName: row.display_name,
     pageStatus: asStatus(row.showcase_status),
   };
-  if (row.kind === "showcase") return { ...base, kind: "page", bio: row.bio ?? "", instagram: row.instagram ?? null };
+  if (row.kind === "showcase") return { ...base, kind: "page", bio: row.bio ?? "", instagram: row.instagram ?? null, look: lookOf(row.details) };
+  if (row.kind === "changes") return { ...base, kind: "changes", look: lookOf(row.details) };
   return {
     ...base,
     kind: "creation",
@@ -79,7 +110,7 @@ export function filterQueue(entries: QueueEntry[], view: QueueView, query: strin
   return sortQueue(entries).filter((e) => {
     if (view !== "all" && e.status !== view) return false;
     if (!q) return true;
-    const text = [e.handle, e.displayName, e.kind === "creation" ? e.name : e.bio].join(" ").toLowerCase();
+    const text = [e.handle, e.displayName, e.kind === "creation" ? e.name : e.kind === "page" ? e.bio : ""].join(" ").toLowerCase();
     return text.includes(q);
   });
 }

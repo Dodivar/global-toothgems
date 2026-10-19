@@ -96,6 +96,8 @@ describe("toPublicGlowbook", () => {
       display_name: "Lily",
       bio: "Hi",
       instagram: null,
+      location: null,
+      look: null,
       items: [{ id: "1", name: "Aurora", description: "", element_count: 3, thumbnail_path: "u/1.jpg", updated_at: "t" }, { name: "no id" }],
     });
     expect(page).toEqual({
@@ -103,8 +105,15 @@ describe("toPublicGlowbook", () => {
       displayName: "Lily",
       bio: "Hi",
       instagram: null,
+      location: null,
+      look: null,
       items: [{ id: "1", name: "Aurora", description: "", elementCount: 3, thumbnailPath: "u/1.jpg", updatedAt: "t" }],
     });
+  });
+  it("reads the artist's look when the page carries one", () => {
+    const page = toPublicGlowbook({ handle: "lily.gems", display_name: "Lily", location: "Lyon", look: { accent: "rose", layout: "large" }, items: [] });
+    expect(page?.location).toBe("Lyon");
+    expect(page?.look).toMatchObject({ accent: "rose", layout: "large", background: "light" });
   });
   it("is null without a public page", () => {
     expect(toPublicGlowbook(null)).toBeNull();

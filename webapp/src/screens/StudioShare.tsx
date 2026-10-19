@@ -3,7 +3,6 @@ import { useTranslation } from "react-i18next";
 import { Link, useLocation, useNavigate, useParams } from "../lib/navigation";
 import clsx from "clsx";
 import { ArrowLeft, Box, Eye, Gem, Link2, LoaderCircle, Minus, Orbit, PencilRuler, Plus, RotateCcw, ShoppingBag, Sparkles, TriangleAlert } from "lucide-react";
-import monogram from "../assets/monogram-blue.png";
 import { Button } from "../components/ui/Button";
 import { Dialog } from "../components/ui/Dialog";
 import { useDocumentTitle } from "../components/legal/hooks";
@@ -95,28 +94,6 @@ export function StudioShare() {
 
   return (
     <div className="gt-editor flex min-h-[100dvh] flex-col bg-[var(--surface-page)] lg:h-[100dvh] lg:min-h-0">
-      <header className="flex h-14 flex-none items-center gap-3 border-b border-[var(--border-subtle)] bg-[var(--surface-card)] px-3 sm:px-4">
-        <Link
-          to={STUDIO_PATH}
-          className="flex min-w-0 items-center gap-2.5 rounded-[var(--radius-sm)] focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-[var(--focus-ring)]"
-        >
-          <img src={monogram.src} alt="" aria-hidden="true" className="h-7 w-7 flex-none object-contain" />
-          <span className="text-[15px] font-[var(--weight-black)] tracking-[var(--tracking-tight)] text-[var(--text-primary)]">
-            {t("studio.editor.appName")}
-          </span>
-        </Link>
-        {design && (
-          <p className="m-0 min-w-0 flex-1 truncate text-[13px] font-semibold text-[var(--text-muted)]">
-            <span aria-hidden="true">/ </span>
-            {name}
-          </p>
-        )}
-        <span className="ml-auto inline-flex flex-none items-center gap-1.5 rounded-[var(--radius-pill)] bg-[var(--gt-blue-100)] px-3 py-1 text-[11px] font-bold uppercase tracking-[var(--tracking-wide)] text-[var(--gt-blue-700)]">
-          <Eye size={13} aria-hidden="true" />
-          {t("studio.workspace.share.view.readOnly")}
-        </span>
-      </header>
-
       {!current ? (
         <div role="status" className="grid flex-1 place-items-center p-6 text-[var(--text-muted)]">
           <span className="inline-flex items-center gap-2 text-[length:var(--text-body-sm)] font-semibold">
@@ -198,9 +175,16 @@ function SharedDesignView({ design, name, author }: { design: SharedDesign; name
       <SharedStage design={design} />
       <aside className="gt-editor-scroll grid content-start gap-5 overflow-y-auto border-t border-[var(--border-subtle)] bg-[var(--surface-card)] p-5 lg:border-l lg:border-t-0 lg:p-6">
         <div className="grid gap-2">
-          <p className="m-0 text-[10.5px] font-bold uppercase tracking-[var(--tracking-eyebrow)] text-[var(--gt-blue-600)]">
-            {author ? t("studio.workspace.share.view.glowbookEyebrow", { name: author.displayName || `@${author.handle}` }) : t("studio.workspace.share.view.eyebrow")}
-          </p>
+          {/* The site's header is above: the viewer says "read only" here, quietly, instead of a second bar. */}
+          <div className="flex flex-wrap items-center justify-between gap-2">
+            <p className="m-0 text-[10.5px] font-bold uppercase tracking-[var(--tracking-eyebrow)] text-[var(--gt-blue-600)]">
+              {author ? t("studio.workspace.share.view.glowbookEyebrow", { name: author.displayName || `@${author.handle}` }) : t("studio.workspace.share.view.eyebrow")}
+            </p>
+            <span className="inline-flex flex-none items-center gap-1 rounded-[var(--radius-pill)] bg-[var(--gt-blue-100)] px-2 py-0.5 text-[10px] font-bold uppercase tracking-[var(--tracking-wide)] text-[var(--gt-blue-700)]">
+              <Eye size={11} aria-hidden="true" />
+              {t("studio.workspace.share.view.readOnly")}
+            </span>
+          </div>
           <h1 className="m-0 text-[length:var(--text-h3)] font-[var(--weight-black)] leading-tight tracking-[var(--tracking-tight)] text-[var(--text-primary)]">
             {name}
           </h1>

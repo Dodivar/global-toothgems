@@ -7796,48 +7796,94 @@ export type Database = {
       }
       studio_showcases: {
         Row: {
+          accent: string
+          avatar_path: string | null
+          background: string
+          banner_path: string | null
           bio: string
+          booking_url: string | null
+          changes_review_note: string | null
+          changes_submitted_at: string | null
           created_at: string
           display_name: string
+          featured_item_id: string | null
           handle: string
           instagram: string | null
+          layout: string
+          location: string | null
+          pending_changes: Json | null
           review_note: string | null
           reviewed_at: string | null
           reviewed_by: string | null
           status: string
           submitted_at: string
+          tiktok: string | null
           updated_at: string
           user_id: string
+          website_url: string | null
         }
         Insert: {
+          accent?: string
+          avatar_path?: string | null
+          background?: string
+          banner_path?: string | null
           bio?: string
+          booking_url?: string | null
+          changes_review_note?: string | null
+          changes_submitted_at?: string | null
           created_at?: string
           display_name: string
+          featured_item_id?: string | null
           handle: string
           instagram?: string | null
+          layout?: string
+          location?: string | null
+          pending_changes?: Json | null
           review_note?: string | null
           reviewed_at?: string | null
           reviewed_by?: string | null
           status?: string
           submitted_at?: string
+          tiktok?: string | null
           updated_at?: string
           user_id?: string
+          website_url?: string | null
         }
         Update: {
+          accent?: string
+          avatar_path?: string | null
+          background?: string
+          banner_path?: string | null
           bio?: string
+          booking_url?: string | null
+          changes_review_note?: string | null
+          changes_submitted_at?: string | null
           created_at?: string
           display_name?: string
+          featured_item_id?: string | null
           handle?: string
           instagram?: string | null
+          layout?: string
+          location?: string | null
+          pending_changes?: Json | null
           review_note?: string | null
           reviewed_at?: string | null
           reviewed_by?: string | null
           status?: string
           submitted_at?: string
+          tiktok?: string | null
           updated_at?: string
           user_id?: string
+          website_url?: string | null
         }
         Relationships: [
+          {
+            foreignKeyName: "studio_showcases_featured_item_id_fkey"
+            columns: ["featured_item_id"]
+            isOneToOne: false
+            referencedRelation: "studio_showcase_items"
+            referencedColumns: ["id"]
+          },
           {
             foreignKeyName: "studio_showcases_reviewed_by_fkey"
             columns: ["reviewed_by"]
@@ -9689,6 +9735,10 @@ export type Database = {
         Args: { p_note?: string; p_status: string; p_user_id: string }
         Returns: undefined
       }
+      studio_moderate_showcase_changes: {
+        Args: { p_note?: string; p_status: string; p_user_id: string }
+        Returns: undefined
+      }
       studio_moderate_showcase_item: {
         Args: { p_item_id: string; p_note?: string; p_status: string }
         Returns: undefined
@@ -9710,18 +9760,67 @@ export type Database = {
           p_instagram: string
         }
         Returns: {
+          accent: string
+          avatar_path: string | null
+          background: string
+          banner_path: string | null
           bio: string
+          booking_url: string | null
+          changes_review_note: string | null
+          changes_submitted_at: string | null
           created_at: string
           display_name: string
+          featured_item_id: string | null
           handle: string
           instagram: string | null
+          layout: string
+          location: string | null
+          pending_changes: Json | null
           review_note: string | null
           reviewed_at: string | null
           reviewed_by: string | null
           status: string
           submitted_at: string
+          tiktok: string | null
           updated_at: string
           user_id: string
+          website_url: string | null
+        }
+        SetofOptions: {
+          from: "*"
+          to: "studio_showcases"
+          isOneToOne: true
+          isSetofReturn: false
+        }
+      }
+      studio_save_showcase_look: {
+        Args: { p_look: Json }
+        Returns: {
+          accent: string
+          avatar_path: string | null
+          background: string
+          banner_path: string | null
+          bio: string
+          booking_url: string | null
+          changes_review_note: string | null
+          changes_submitted_at: string | null
+          created_at: string
+          display_name: string
+          featured_item_id: string | null
+          handle: string
+          instagram: string | null
+          layout: string
+          location: string | null
+          pending_changes: Json | null
+          review_note: string | null
+          reviewed_at: string | null
+          reviewed_by: string | null
+          status: string
+          submitted_at: string
+          tiktok: string | null
+          updated_at: string
+          user_id: string
+          website_url: string | null
         }
         SetofOptions: {
           from: "*"
@@ -9776,6 +9875,7 @@ export type Database = {
           creation_description: string
           creation_name: string
           creation_updated_at: string
+          details: Json
           display_name: string
           element_count: number
           handle: string

@@ -24,6 +24,9 @@ const RENDER_URL_TTL_SECONDS = 7 * 24 * 3600;
 
 export interface PublicGlowbookPage extends Omit<PublicGlowbook, "items"> {
   items: (PublicGlowbookItem & { imageUrl: string | null })[];
+  /** The approved profile picture and banner (decision 100), signed; null for none. */
+  avatarUrl: string | null;
+  bannerUrl: string | null;
 }
 
 export const findPublicGlowbook = cache(async (handle: string): Promise<PublicGlowbookPage | null> => {
@@ -44,8 +47,18 @@ export const findPublicGlowbook = cache(async (handle: string): Promise<PublicGl
     const { data: signed } = await client.storage.from(BUCKETS.studioThumbnails).createSignedUrls(paths, RENDER_URL_TTL_SECONDS);
     for (const entry of signed ?? []) if (entry.path && entry.signedUrl && !entry.error) urls.set(entry.path, entry.signedUrl);
   }
+  // The approved pictures, signed through "anyone reads public Glowbook pictures".
+  const media = [glowbook.look?.avatarPath, glowbook.look?.bannerPath].filter((p): p is string => !!p);
+  const mediaUrls = new Map<string, string>();
+  if (media.length) {
+    const { data: signed } = await client.storage.from(BUCKETS.glowbookMedia).createSignedUrls(media, RENDER_URL_TTL_SECONDS);
+    for (const entry of signed ?? []) if (entry.path && entry.signedUrl && !entry.error) mediaUrls.set(entry.path, entry.signedUrl);
+  }
+  const signedMedia = (path: string | null | undefined) => (path ? (mediaUrls.get(path) ?? null) : null);
   return {
     ...glowbook,
+    avatarUrl: signedMedia(glowbook.look?.avatarPath),
+    bannerUrl: signedMedia(glowbook.look?.bannerPath),
     items: glowbook.items.map((i) => ({ ...i, imageUrl: i.thumbnailPath ? (urls.get(i.thumbnailPath) ?? null) : null })),
   };
 });

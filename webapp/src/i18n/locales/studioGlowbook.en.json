@@ -15,6 +15,11 @@
       "pending": "Awaiting review",
       "approved": "Published",
       "rejected": "Declined"
+    },
+    "changes": {
+      "pending": "Changes to review",
+      "approved": "Changes published",
+      "rejected": "Changes declined"
     }
   },
   "page": {
@@ -98,7 +103,11 @@
     "deleteFailed": "Unable to delete your Glowbook",
     "linkCopied": "Link copied",
     "linkCopiedBody": "Paste it in your Instagram bio.",
-    "copyFailed": "Could not copy: select the link"
+    "copyFailed": "Could not copy: select the link",
+    "lookSaved": "Look saved",
+    "lookSavedPending": "Look saved: the new pictures and links wait for review",
+    "lookFailed": "Unable to save the look",
+    "uploadFailed": "Unable to upload the picture"
   },
   "saveWarning": {
     "cancel": "Cancel",
@@ -131,7 +140,12 @@
     "ctaStudio": "Discover the 3D Studio",
     "ctaShop": "Visit the shop",
     "view3d": "View in 3D",
-    "open3d": "View “{{name}}” in 3D"
+    "open3d": "View “{{name}}” in 3D",
+    "booking": "Book an appointment",
+    "website": "Website",
+    "tiktok": "@{{account}} on TikTok",
+    "avatarAlt": "{{name}}’s profile picture",
+    "featured": "In the spotlight"
   },
   "admin": {
     "title": "Glowbook",
@@ -158,7 +172,8 @@
     "emptyBody": "Change the view or the search.",
     "kind": {
       "page": "Page",
-      "creation": "Creation"
+      "creation": "Creation",
+      "changes": "Pictures and links"
     },
     "submitted": "Sent on {{date}}",
     "byArtist": "by {{name}} (@{{handle}})",
@@ -175,6 +190,74 @@
       "approved": "Approved: it is live",
       "rejected": "Declined: the artist will see the reason",
       "failed": "The decision could not be saved"
+    },
+    "changesDone": "These changes have been handled.",
+    "proposed": "Proposed by the artist",
+    "proposedWithPage": "Proposed with the page (published if you approve the page)",
+    "newAvatar": "New picture",
+    "newBanner": "New banner"
+  },
+  "look": {
+    "title": "Customise my page",
+    "sub": "Make your Glowbook yours: picture, banner, colour, layout and links. Colour, background, layout, spotlight and city are published when you save; a new picture, banner or link is reviewed by the team first.",
+    "pendingNote": "Some pictures or links wait for the team’s review: your page shows the previous ones meanwhile.",
+    "rejectedNote": "Your latest pictures or links were not approved.",
+    "rejectedNoteReason": "Your latest pictures or links were not approved. Reason: {{note}}",
+    "preview": "Preview",
+    "accent": "Your identity colour",
+    "accents": {
+      "ink": "Ink",
+      "blue": "Blue",
+      "fuchsia": "Fuchsia",
+      "rose": "Rose",
+      "coral": "Coral",
+      "gold": "Gold",
+      "emerald": "Emerald",
+      "teal": "Lagoon",
+      "violet": "Violet",
+      "plum": "Plum"
+    },
+    "background": "Page background",
+    "backgrounds": {
+      "light": "Light",
+      "tinted": "Tinted",
+      "dark": "Dark"
+    },
+    "layout": "Creations layout",
+    "layouts": {
+      "grid": "Grid",
+      "large": "Large cards"
+    },
+    "featured": "Creation in the spotlight",
+    "featuredNone": "None",
+    "featuredHint": "Shown large at the top of your page (published creations only).",
+    "location": "City or studio",
+    "locationPlaceholder": "e.g. Lyon, Studio Rivoli",
+    "links": "Links",
+    "linksHint": "https addresses only. Every new link is reviewed before it shows.",
+    "booking": "Booking",
+    "website": "Website",
+    "tiktok": "TikTok account",
+    "errors": {
+      "locationLength": "The city is {{max}} characters at most.",
+      "bookingUrl": "The booking link must be a valid https address.",
+      "websiteUrl": "The website must be a valid https address.",
+      "tiktok": "This TikTok account is not valid (letters, digits, dot and underscore)."
+    },
+    "reset": "Undo changes",
+    "save": "Save the look",
+    "waiting": "Awaiting review",
+    "avatar": "Profile picture",
+    "banner": "Banner",
+    "avatarHint": "Cropped square. JPEG, PNG or WebP.",
+    "bannerHint": "Cropped to 3:1, shown at the top of the page. JPEG, PNG or WebP.",
+    "change": "Change",
+    "add": "Add",
+    "removePicture": "Remove",
+    "pictureErrors": {
+      "type": "This file is not a picture.",
+      "tooLarge": "Picture too large (20 MB at most).",
+      "unreadable": "This picture could not be read. Try a JPEG or PNG."
     }
   }
 }

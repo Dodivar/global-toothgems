@@ -1,4 +1,6 @@
 import type { TypedSupabaseClient } from "../supabase/client";
+import { BUCKETS, SIGNED_URL_TTL_SECONDS } from "../supabase/storage";
+import type { MediaKind } from "./glowbookLook";
 import { StudioStoreError } from "./repository";
 import { storeError } from "./supabaseRepository";
 import {
@@ -21,6 +23,10 @@ import {
  *   remove(id)       → DELETE of their own item   any time, at once
  *   reorder(ids)     → `studio_showcase_reorder()`
  *   removeAll()      → DELETE of their own page (items go with it)
+ *   saveLook(patch)  → `studio_save_showcase_look()`  colour, layout… live; pictures and links proposed
+ *   uploadMedia()    → a new picture in `glowbook-media/<user id>/` (never overwritten)
+ *   signMedia()      → signed URLs of the member's own pictures
+ *   cleanupMedia()   → removes the member's pictures no page uses (storage refuses the others)
  *   publicState(id)  → a fresh read of what saving one creation would make public
  *                      (its Glowbook item, its template flag), for the warning before a save
  */
@@ -31,6 +37,10 @@ export interface GlowbookRepository {
   remove(creationId: string): Promise<void>;
   reorder(creationIds: string[]): Promise<void>;
   removeAll(): Promise<void>;
+  saveLook(patch: Record<string, string | null>): Promise<Glowbook>;
+  uploadMedia(kind: MediaKind, blob: Blob): Promise<string>;
+  signMedia(paths: string[]): Promise<Map<string, string>>;
+  cleanupMedia(keep: string[]): Promise<void>;
   publicState(creationId: string): Promise<{ item: GlowbookItem | null; templatePublishedAt: string | null }>;
 }
 
@@ -99,6 +109,37 @@ export function createGlowbookRepository(client: TypedSupabaseClient, userId: st
     async removeAll() {
       const { error } = await client.from("studio_showcases").delete().eq("user_id", userId);
       if (error) throw storeError(error);
+    },
+
+    async saveLook(patch) {
+      const { data, error } = await client.rpc("studio_save_showcase_look", { p_look: patch });
+      if (error) throw storeError(error);
+      if (!data) throw new StudioStoreError("storage");
+      return toGlowbook(data);
+    },
+
+    async uploadMedia(kind, blob) {
+      const path = `${userId}/${kind}-${crypto.randomUUID()}.jpg`;
+      const { error } = await client.storage.from(BUCKETS.glowbookMedia).upload(path, blob, { contentType: "image/jpeg", upsert: false });
+      if (error) throw storeError(error);
+      return path;
+    },
+
+    async signMedia(paths) {
+      const out = new Map<string, string>();
+      const unique = [...new Set(paths.filter(Boolean))];
+      if (!unique.length) return out;
+      const { data } = await client.storage.from(BUCKETS.glowbookMedia).createSignedUrls(unique, SIGNED_URL_TTL_SECONDS);
+      for (const entry of data ?? []) if (entry.path && entry.signedUrl && !entry.error) out.set(entry.path, entry.signedUrl);
+      return out;
+    },
+
+    async cleanupMedia(keep) {
+      const bucket = client.storage.from(BUCKETS.glowbookMedia);
+      const { data } = await bucket.list(userId, { limit: 100 });
+      const stale = (data ?? []).map((f) => `${userId}/${f.name}`).filter((path) => !keep.includes(path));
+      // Storage refuses to delete a picture a page uses or proposes: only the leftovers go.
+      if (stale.length) await bucket.remove(stale);
     },
 
     async publicState(creationId) {

@@ -1,6 +1,6 @@
 import { useCallback, useEffect, useState } from "react";
 import { readErrorOf } from "./adminBackInStockMapping";
-import { toQueueEntry, type QueueEntry } from "./adminGlowbookMapping";
+import { queueMediaPaths, toQueueEntry, type QueueEntry } from "./adminGlowbookMapping";
 import { isSupabaseConfigured, requireSupabase } from "./supabase/client";
 import { BUCKETS, SIGNED_URL_TTL_SECONDS } from "./supabase/storage";
 
@@ -41,6 +41,11 @@ export function useAdminGlowbook() {
         const { data: signed } = await client.storage.from(BUCKETS.studioThumbnails).createSignedUrls(paths, SIGNED_URL_TTL_SECONDS);
         for (const s of signed ?? []) if (s.path && s.signedUrl && !s.error) urls.set(s.path, s.signedUrl);
       }
+      const media = queueMediaPaths(list);
+      if (media.length) {
+        const { data: signed } = await client.storage.from(BUCKETS.glowbookMedia).createSignedUrls(media, SIGNED_URL_TTL_SECONDS);
+        for (const s of signed ?? []) if (s.path && s.signedUrl && !s.error) urls.set(s.path, s.signedUrl);
+      }
       if (cancelled) return;
       setEntries(list);
       setImages(urls);
@@ -59,7 +64,9 @@ export function useAdminGlowbook() {
     const { error } =
       entry.kind === "page"
         ? await client.rpc("studio_moderate_showcase", { p_user_id: entry.userId, p_status: status, p_note: note })
-        : await client.rpc("studio_moderate_showcase_item", { p_item_id: entry.id, p_status: status, p_note: note });
+        : entry.kind === "changes"
+          ? await client.rpc("studio_moderate_showcase_changes", { p_user_id: entry.userId, p_status: status, p_note: note })
+          : await client.rpc("studio_moderate_showcase_item", { p_item_id: entry.id, p_status: status, p_note: note });
     if (error) {
       console.error("[admin glowbook] decision failed", error.code);
       return false;
@@ -68,7 +75,13 @@ export function useAdminGlowbook() {
     setEntries((list) =>
       list.map((e) => {
         if (e.kind === entry.kind && e.id === entry.id) return { ...e, status, reviewNote: status === "rejected" ? note.trim() || null : null, reviewedAt: at };
-        // The page's status shows beside each of its creations.
+        // The page's status shows beside each of its creations; approving a page or its
+        // changes applies what was proposed (the database did the same).
+        if ((entry.kind === "page" || entry.kind === "changes") && e.userId === entry.userId && e.kind !== "creation" && status === "approved") {
+          const look = { approved: { ...e.look.approved, ...e.look.pending }, pending: {} };
+          if (e.kind === "changes") return { ...e, look, status: "approved" as const };
+          return { ...e, look, pageStatus: entry.kind === "page" ? status : e.pageStatus };
+        }
         if (entry.kind === "page" && e.userId === entry.userId) return { ...e, pageStatus: status };
         return e;
       }),
