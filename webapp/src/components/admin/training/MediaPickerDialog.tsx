@@ -67,7 +67,7 @@ export function MediaPickerDialog({
         aria-modal="true"
         aria-labelledby={titleId}
         tabIndex={-1}
-        className="gt-admin gt-admin-dialog relative grid h-full w-full max-w-[980px] grid-rows-[auto_auto_minmax(0,1fr)_auto] overflow-hidden bg-[var(--admin-panel)] shadow-[var(--shadow-lg)] sm:h-[min(760px,92vh)] sm:rounded-[var(--admin-radius)]"
+        className="gt-admin gt-admin-dialog relative grid h-full w-full max-w-[980px] grid-rows-[auto_auto_minmax(0,1fr)_auto] overflow-clip bg-[var(--admin-panel)] shadow-[var(--shadow-lg)] sm:h-[min(760px,92vh)] sm:rounded-[var(--admin-radius)]"
       >
         <header className="flex items-start gap-3 border-b border-[var(--border-subtle)] px-5 py-4">
           <div className="grid min-w-0 flex-1 gap-1">
@@ -161,7 +161,10 @@ export function MediaPickerDialog({
                 {visible.map((item) => {
                   const isSelected = item.id === selectedId;
                   return (
-                    <label key={item.id} className="group grid cursor-pointer gap-1.5">
+                    // `relative` keeps the visually hidden radio inside its tile: positioned
+                    // against the dialog instead, a tile on the last row put it below the
+                    // frame, and focusing it scrolled the whole dialog out of view.
+                    <label key={item.id} className="group relative grid cursor-pointer gap-1.5">
                       <input type="radio" name="training-media-pick" checked={isSelected} onChange={() => setSelectedId(item.id)} className="peer sr-only" />
                       <span
                         className={clsx(
