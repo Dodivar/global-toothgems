@@ -4,6 +4,7 @@ import clsx from "clsx";
 import { AtSign, CalendarCheck, Globe, MapPin, Music2, Sparkles } from "lucide-react";
 import { instagramUrl } from "../../lib/studioWorkspace/glowbook";
 import { DEFAULT_LOOK, initialsOf, tiktokUrl, type GlowbookLook } from "../../lib/studioWorkspace/glowbookLook";
+import { GlowbookBadge } from "./GlowbookBadge";
 
 /**
  * The top of a Glowbook (decision 100): banner, profile picture, name, handle,
@@ -20,12 +21,14 @@ export interface GlowbookHeroProps {
   bannerUrl: string | null;
   /** The Studio's preview: links are drawn, not followed. */
   preview?: boolean;
+  /** Course titles behind the "certified artist" badge (decision 102); none: no badge. */
+  certifiedTitles?: readonly string[];
 }
 
 const pill =
   "inline-flex h-9 items-center justify-center gap-2 rounded-[var(--radius-pill)] px-4 text-[12px] font-bold uppercase tracking-[var(--tracking-wide)] transition-opacity hover:opacity-85 focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-[var(--gb-accent)]";
 
-export function GlowbookHero({ displayName, handle, bio, instagram, look, avatarUrl, bannerUrl, preview = false }: GlowbookHeroProps) {
+export function GlowbookHero({ displayName, handle, bio, instagram, look, avatarUrl, bannerUrl, preview = false, certifiedTitles = [] }: GlowbookHeroProps) {
   const { t } = useTranslation();
   const l = look ?? DEFAULT_LOOK;
   const links: { key: string; href: string; label: string; icon: ReactNode; primary?: boolean }[] = [];
@@ -76,6 +79,7 @@ export function GlowbookHero({ displayName, handle, bio, instagram, look, avatar
             </span>
           )}
         </p>
+        <GlowbookBadge titles={certifiedTitles} />
         {bio && <p className="m-0 max-w-[56ch] whitespace-pre-line text-[length:var(--text-body)] leading-relaxed">{bio}</p>}
         {links.length > 0 && (
           <ul className="m-0 mt-1 flex list-none flex-wrap justify-center gap-2 p-0">

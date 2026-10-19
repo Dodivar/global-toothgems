@@ -164,6 +164,8 @@ supabase/
 | 20261019135003 | `studio_glowbook_look_links` | **Applied 2026-10-19.** Postgres caps a regex repetition at 255: the link checks of `20261019134715` rewritten as pattern + length (`private.glowbook_link_valid()`), `studio_save_showcase_look()` replaced accordingly |
 | 20261019142032 | `studio_share_branding` | **Applied 2026-10-19.** Decision 101: social exports branded by plan. `private.studio_user_tier(user)` (essential / artist / atelier, highest wins; trial = essential, active staff = atelier, null without access) and `private.studio_share_logo_allowed()`; `studio_share_logos` (one logo per member, owner reads, written only by `studio_set_share_logo(path)`: artist / atelier tier and a file of the caller's folder, `''` removes, always allowed, returns the previous path); `studio_share_branding()` → `{tier, logo_path, has_logo}` (logo_path only while the tier allows it). Private bucket `studio-share-logos` (2 MB, PNG / JPEG / WebP, no SVG): upload and read in one's own folder need the artist / atelier tier, delete never does. Suite `studio_share_branding_validation.sql` (B1–B6) |
 | 20261019142220 | `studio_share_logos_updated_at` | **Applied 2026-10-19.** The generic `private.set_updated_at()` on `studio_share_logos` (`private.studio_touch_updated_at()` reads design columns it does not have) |
+| 20261019142050 | `studio_glowbook_sections_certification` | **Applied 2026-10-19.** Decision 102 (the file says 101: renumbered by `20261019143019`). Glowbook sections: `studio_showcase_sections` (owner, name ≤ 40 unique per Glowbook case-insensitive, position; RLS: owners and `moderate_reviews` read, owners delete), `studio_showcase_items.section_id` (composite FK `(section_id, user_id)` → the author's own section, `on delete set null (section_id)`), `studio_save_showcase_section(id, name)` (create / rename, ≤ 12), `studio_reorder_showcase_sections(ids)`, `studio_set_showcase_item_section(item, section)` — Studio access + `private.glowbook_customization_allowed` + ownership (`private.glowbook_sections_writer()`). Certified badge: `studio_showcases.show_certification` (default true), `private.glowbook_certification(user)` (titles `[{fr, en}]` of the courses completed with a certificate), `studio_my_certification()`, `studio_set_showcase_certification(bool)` (owner, no Studio access needed). `studio_public_showcase()` gains `sections` (those holding an approved creation, plan switch), `section_id` per item and `certification` (titles only); the queue's page rows carry the section names. Suite `tests/studio_glowbook_validation.sql` G10–G12 |
+| 20261019143019 | `studio_glowbook_sections_decision_number` | **Applied 2026-10-19.** Comments only: the objects of `20261019142050` say decision 102 (101 went to the social exports the same afternoon) |
 | 20261019112411 | `studio_glowbook_creation` | **Applied 2026-10-19.** `studio_public_showcase_creation(handle, item)` (anon): one approved creation of a public Glowbook with its scene (Gem Group ids blanked), for the read-only 3D viewer; null otherwise. Suite G4/G7 |
 | 20261019072443 | `studio_glowbook_updated_at` | **Applied 2026-10-19.** The Glowbook tables' `updated_at` triggers use `private.set_updated_at()` (the Studio design trigger reads columns they do not have) |
 | 20261008175722 | `contact_attachments_and_support_email` | **Applied 2026-10-08.** Contact form: `contact_requests.attachment_path` → `attachment_paths text[]` (≤ 5, `private.valid_contact_attachment_paths()`), bucket `contact-attachments` 20 MB per object, `submit_contact_request(…, p_attachment_paths text[])` (old signature dropped; ownership per path, no duplicates, ≤ 20 MB in all), guard trigger rebuilt, `contact_ip_allowed(ip_hash)` (service role), template `contact_request_received` (fr + en) for the support inbox. Suite: `iteration7_validation.sql` C3/C4 |
@@ -1321,6 +1323,12 @@ look (decision 100)         /studio-3d/atelier/glowbook "Customise my page" → 
                             colour, background, layout, spotlight, city → live
                             picture (glowbook-media/<user>/<kind>-<uuid>.jpg, framed in the browser) / link → pending_changes
                             moderator → studio_moderate_showcase_changes(user, approved|rejected, note) (or approves the page)
+sections (decision 102)     /studio-3d/atelier/glowbook "Sections of my page" → studio_save_showcase_section(id|null, name),
+                            studio_reorder_showcase_sections(ids), DELETE (any time); each creation's row → studio_set_showcase_item_section
+                            public: chips "All" + sections holding an approved creation; creations without a section always shown
+badge (decision 102)        private.glowbook_certification(user) ← course_completions with a certificate_code (database only)
+                            public page: "certified artist" + course titles; studio_set_showcase_certification(bool) hides it
+QR / poster (decision 102)  approved page only: QR of /fr|en/glowbook/<handle> (UI language) → PNG, or A4 PDF poster drawn in the browser
 ```
 
 - Public = page approved **and** item approved **and** the author has Studio access now (trial, subscription or
@@ -1331,6 +1339,9 @@ look (decision 100)         /studio-3d/atelier/glowbook "Customise my page" → 
   after a rejection go back to `pending`. A moderator can reject what is already public (take-down), with a note
   the artist reads.
 - Deleting a creation removes its item; deleting the page removes its items, never the creations.
+- Sections, badge and QR poster (decision 102): validated by G10–G12 of `tests/studio_glowbook_validation.sql` (owner
+  writes, refusals for anon / a member without access / another member, the composite key, only sections with an
+  approved creation public, the badge as titles only and hidden by its owner, the plan switch closed).
 
 ### 3D Studio social exports (decision 101)
 
@@ -2208,3 +2219,24 @@ VAT rates, shipping zones/rates mirroring the Settings prototype. Media rows ref
     the member, not stored; (f) logo: PNG / JPEG / WebP up to 2 MB, no SVG, redrawn as a PNG within 1024 px in the
     browser; one per member; a member who leaves the plan keeps it stored but unusable until they come back;
     (g) exports are of the SAVED creation (not unsaved edits on the stage).
+102. **3D Studio: Glowbook sections, QR poster and "certified artist" badge** (owner's request, 2026-10-19;
+    migrations `20261019142050`, `20261019143019`). Built: sections the artist creates, renames, orders and
+    deletes, each Glowbook creation filed in one section or none, the public page filtered by section chips;
+    a QR code of the public address, downloadable as a PNG and as a printable A4 poster; a "certified artist"
+    badge derived by the database from the Academy. New dependency `qrcode-generator` 2.0.4 (MIT, no
+    dependencies, ~20 kB minified; QR encoding is the one piece the stack cannot do; only `lib/glowbookPoster/qr.ts`
+    imports it, in the Studio). Agent's choices, to confirm: (a) section names are short public text, live once
+    the page is approved like the bio (decision 99 (b)); moderators see them with the page in `/admin/glowbook`;
+    (b) sections follow the plan switch `private.glowbook_customization_allowed` (writes and public display; the
+    page falls back to one list without them), deleting a section is always allowed; at most 12 sections of
+    ≤ 40 characters; only sections holding an approved creation are shown; under a section filter the spotlight
+    creation is not repeated at the top; (c) the badge counts only completed courses that issued a certificate
+    (`certificate_code` not null), withdrawn courses included (the certificate stays valid), whatever later
+    refunds (completions are sticky); it shows the course titles (English title when published, else French) and
+    no code, date or score; it is NOT gated by the plan switch (it rewards training) and is shown by default —
+    including on pages already live (the existing Glowbook of a certified artist gained it without opting in);
+    the wording "Artiste certifiée" is feminine in French, as asked; (d) QR and poster only once the page is
+    approved (the address answers 404 before); the QR encodes the address in the artist's UI language and the
+    current site origin; the poster uses the APPROVED picture and colour (never one waiting for a moderator),
+    falls back to initials when the picture cannot be read, and is a 300 dpi image wrapped in a PDF (like the
+    certificate), its QR always ink on white (light identity colours would not scan); the PNG is the code alone.

@@ -18,6 +18,7 @@ import {
   type MediaKind,
 } from "../../../lib/studioWorkspace/glowbookLook";
 import type { Glowbook } from "../../../lib/studioWorkspace/glowbook";
+import { certifiedTitles } from "../../../lib/studioWorkspace/glowbookSections";
 import { useGlowbook } from "../../../lib/studioWorkspace/glowbookStore";
 import { useWorkspace } from "../../../lib/studioWorkspace/workspace";
 import { useToast } from "../../../lib/toast";
@@ -31,10 +32,11 @@ import { chipClass, fieldClass, focusRing } from "./workspaceStyles";
  * the approved one (the badge says so). Removing one is immediate.
  */
 export function GlowbookLookEditor({ glowbook }: { glowbook: Glowbook }) {
-  const { t } = useTranslation();
+  const { t, i18n } = useTranslation();
   const gb = useGlowbook();
   const ws = useWorkspace();
   const base = gb.draftLook!;
+  const badge = glowbook.showCertification && gb.certification ? certifiedTitles(gb.certification, i18n.language) : [];
   const [draft, setDraft] = useState<GlowbookLook>(base);
   const [problem, setProblem] = useState<LookProblem | null>(null);
   const [busy, setBusy] = useState(false);
@@ -124,6 +126,7 @@ export function GlowbookLookEditor({ glowbook }: { glowbook: Glowbook }) {
             look={draft}
             avatarUrl={draft.avatarPath ? (gb.mediaUrls.get(draft.avatarPath) ?? null) : null}
             bannerUrl={draft.bannerPath ? (gb.mediaUrls.get(draft.bannerPath) ?? null) : null}
+            certifiedTitles={badge}
           />
         </div>
       </figure>

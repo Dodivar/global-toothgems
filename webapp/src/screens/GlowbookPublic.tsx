@@ -1,11 +1,13 @@
 "use client";
 
+import { useState } from "react";
 import { useTranslation } from "react-i18next";
 import { ArrowRight, Box, Gem, Star } from "lucide-react";
 import clsx from "clsx";
 import { GlowbookHero } from "../components/glowbook/GlowbookHero";
 import { glowbookThemeStyle } from "../components/glowbook/theme";
 import { DEFAULT_LOOK } from "../lib/studioWorkspace/glowbookLook";
+import { certifiedTitles, visibleCreations, type SectionFilter } from "../lib/studioWorkspace/glowbookSections";
 import { Link } from "../lib/navigation";
 import type { PublicGlowbookPage } from "../lib/studioWorkspace/serverGlowbook";
 import { glowbookCreationPath, STUDIO_PATH } from "../lib/studioUrl";
@@ -16,7 +18,10 @@ import { glowbookCreationPath, STUDIO_PATH } from "../lib/studioUrl";
  * banner, profile picture, identity colour, background, layout, a creation in
  * the spotlight, their city and links. Everything shown was approved by a
  * moderator; the server reads it on every request. Each creation opens
- * read-only in the 3D viewer, where its gems can be put in the cart.
+ * read-only in the 3D viewer, where its gems can be put in the cart. The
+ * artist's sections filter the creations (decision 102; "all" first, so the
+ * server and the first browser render agree), and the "certified artist"
+ * badge sits under the name when the database grants it.
  * Rendered on the server and hydrated: nothing here reads the browser during render.
  */
 type Item = PublicGlowbookPage["items"][number];
@@ -24,11 +29,12 @@ type Item = PublicGlowbookPage["items"][number];
 const focus = "focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-[var(--gb-accent)]";
 
 export function GlowbookPublic({ glowbook }: { glowbook: PublicGlowbookPage }) {
-  const { t } = useTranslation();
+  const { t, i18n } = useTranslation();
   const look = glowbook.look;
-  const featured = look?.featuredItemId ? glowbook.items.find((i) => i.id === look.featuredItemId) : undefined;
-  const others = featured ? glowbook.items.filter((i) => i.id !== featured.id) : glowbook.items;
+  const [filter, setFilter] = useState<SectionFilter>("all");
+  const { featured, others, filter: active } = visibleCreations(glowbook.items, glowbook.sections, look?.featuredItemId ?? null, filter);
   const large = look?.layout === "large";
+  const titles = glowbook.certification ? certifiedTitles(glowbook.certification, i18n.language) : [];
 
   return (
     <div style={glowbookThemeStyle(look)} className="bg-[var(--gb-page)] text-[var(--gb-text)]">
@@ -40,12 +46,37 @@ export function GlowbookPublic({ glowbook }: { glowbook: PublicGlowbookPage }) {
         look={{ ...(look ?? DEFAULT_LOOK), location: glowbook.location }}
         avatarUrl={glowbook.avatarUrl}
         bannerUrl={glowbook.bannerUrl}
+        certifiedTitles={titles}
       />
 
       <section aria-labelledby="gt-glowbook-creations" className="mx-auto grid max-w-[1180px] gap-6 px-4 pb-12 sm:px-8">
         <h2 id="gt-glowbook-creations" className="m-0 text-[length:var(--text-h3)] font-[var(--weight-black)] tracking-[var(--tracking-tight)]">
           {t("studio.glowbook.public.creationsTitle", { count: glowbook.items.length })}
         </h2>
+        {glowbook.sections.length > 0 && glowbook.items.length > 0 && (
+          <div role="group" aria-label={t("studio.glowbook.public.sectionsLabel")} className="-mt-2 flex flex-wrap gap-2">
+            {[{ id: "all", name: t("studio.glowbook.public.allSections") }, ...glowbook.sections].map((section) => {
+              const on = active === section.id;
+              return (
+                <button
+                  key={section.id}
+                  type="button"
+                  aria-pressed={on}
+                  onClick={() => setFilter(section.id)}
+                  className={clsx(
+                    "inline-flex h-9 items-center rounded-[var(--radius-pill)] border px-4 text-[13px] font-bold transition-colors",
+                    on
+                      ? "border-[var(--gb-accent)] bg-[var(--gb-accent)] text-[var(--gb-on-accent)]"
+                      : "border-[var(--gb-border)] bg-[var(--gb-card)] text-[var(--gb-text)] hover:border-[var(--gb-accent)]",
+                    focus,
+                  )}
+                >
+                  {section.name}
+                </button>
+              );
+            })}
+          </div>
+        )}
         {glowbook.items.length === 0 ? (
           <p className="m-0 rounded-[var(--radius-md)] border border-dashed border-[var(--gb-border)] p-8 text-center text-[length:var(--text-body-sm)] text-[var(--gb-muted)]">
             {t("studio.glowbook.public.empty")}
