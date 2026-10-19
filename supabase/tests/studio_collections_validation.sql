@@ -100,6 +100,11 @@ begin
   insert into public.studio_collection_creations (collection_id, creation_id) values (k1, c1a), (k1, c1b), (k1b, c1a);
   select count(*) into v_cnt from public.studio_collection_creations where creation_id = c1a;
   if v_cnt <> 2 then raise exception 'FAIL C3: a creation in two collections (% rows)', v_cnt; end if;
+  -- Adding again, as the webapp does (upsert, ignore duplicates): no error, still one row.
+  insert into public.studio_collection_creations (collection_id, creation_id) values (k1, c1a)
+    on conflict (collection_id, creation_id) do nothing;
+  select count(*) into v_cnt from public.studio_collection_creations where collection_id = k1 and creation_id = c1a;
+  if v_cnt <> 1 then raise exception 'FAIL C3: adding twice made % rows', v_cnt; end if;
   update public.studio_collections set name = 'Mariages 2027', color = 'blue' where id = k1;
   select count(*) into v_cnt from public.studio_collections where id = k1 and name = 'Mariages 2027' and color = 'blue';
   if v_cnt <> 1 then raise exception 'FAIL C3: rename not applied'; end if;
