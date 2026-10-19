@@ -7,6 +7,7 @@ import { openWorkspaceDialog } from "../../../lib/studioWorkspace/workspaceUi";
 import { CreationThumb, FavoriteButton } from "./CreationCard";
 import { HelpHint } from "./HelpHint";
 import { FrontViewSection, PlacementSheetButton } from "../FrontViewPanel";
+import { TemplatePublishControl } from "./TemplatePublishControl";
 import { useWorkspaceActions } from "./useWorkspaceActions";
 import { tagChip, useWorkspaceFormat } from "./workspaceStyles";
 
@@ -74,6 +75,8 @@ export function CreationDetail({ creationId, onClose }: { creationId: string; on
       )}
 
       <FrontViewSection pieces={creation.scene.pieces} model={creation.scene.model} />
+
+      <TemplatePublishControl creation={creation} />
 
       <div className="flex flex-wrap items-center gap-2 border-t border-[var(--border-subtle)] pt-4">
         <Button

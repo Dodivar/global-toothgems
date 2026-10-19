@@ -27,14 +27,15 @@ export const STUDIO_SHARE_PATH = "/studio-3d/partage";
  * (`/studio-3d/atelier/mes-creations`…). French slugs like the rest of the
  * site; the English ones are accepted too, like the path aliases above.
  */
-export type StudioSection = "creations" | "groups" | "help";
+export type StudioSection = "creations" | "groups" | "templates" | "help";
 
 const SECTION_SLUGS: Record<StudioSection, string> = {
   creations: "mes-creations",
   groups: "mes-groupes",
+  templates: "modeles",
   help: "aide",
 };
-const SLUG_ALIASES: Record<string, StudioSection> = { creations: "creations", groups: "groups", help: "help" };
+const SLUG_ALIASES: Record<string, StudioSection> = { creations: "creations", groups: "groups", templates: "templates", help: "help" };
 
 export function studioSectionPath(section: StudioSection | null): string {
   return section ? `${STUDIO_EDITOR_PATH}/${SECTION_SLUGS[section]}` : STUDIO_EDITOR_PATH;

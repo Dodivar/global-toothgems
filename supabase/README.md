@@ -155,6 +155,7 @@ supabase/
 | 20261018155521 | `studio_withdrawal_consent` | **Applied 2026-10-18.** Decision 94 (a): the member's request for immediate access to the Studio (L221-25). `consent_records` purpose `studio_immediate_access` (source `checkout`, `policy_version` = wording version), recorded by `create-studio-subscription` when Pay is pressed in the payment step, before the payment is confirmed (since 2026-10-18; before the Stripe session until then); `pending_studio_subscription_emails()` (service role: new subscriptions whose first invoice is paid, with the request accepted before them) and template `studio_subscription_confirmation` (FR + EN), sent once by `send-pending-emails` (`studio_subscription:<id>`). Suite `tests/studio_withdrawal_consent_validation.sql` |
 | 20261018163051 | `studio_withdrawals` | **Applied 2026-10-18.** Decision 95: `studio_withdrawals` (one per subscription, amounts, Stripe steps, refund status; owner and `view_statistics` read, service role writes; audited), `studio_withdrawal_quote()` (member: eligibility, deadline, refund if withdrawn now), `request_studio_withdrawal()`, `record_studio_withdrawal_step()`, `settle_studio_withdrawal_refund()`, `pending_studio_withdrawal_emails()` (service role), template `studio_withdrawal_confirmation`, `studio_subscription_confirmation` now points to the account page. Suite `tests/studio_withdrawals_validation.sql` |
 | 20261018163229 | `studio_withdrawals_updated_at` | **Applied 2026-10-18.** Fix: `studio_withdrawals` took the designs' `updated_at` trigger (same mistake as `20261018110209`); generic `private.set_updated_at()` instead |
+| 20261018224657 | `studio_templates` | **Applied 2026-10-19.** Decision 97: the Global Toothgems template library. `creations.template_published_at` (not in the column grants: written only by `studio_set_template(id, published)` — `manage_content` staff publish their own creation, keeping the first date, and unpublish any template; audited, the flag alone), `studio_templates()` (members with Studio access: published rows newest first, no owner, favourite or opening dates, Gem Group references dropped; 42501 otherwise), `studio_use_template(id)` (copies a published template into the caller's creations: owner = caller, unpublished, no render — the browser copies it), storage policy `studio-thumbnails: Studio members read template renders` (`private.is_studio_template_thumbnail()`). The `creations` SELECT policy is unchanged. Suite `tests/studio_templates_validation.sql` |
 | 20261008175722 | `contact_attachments_and_support_email` | **Applied 2026-10-08.** Contact form: `contact_requests.attachment_path` → `attachment_paths text[]` (≤ 5, `private.valid_contact_attachment_paths()`), bucket `contact-attachments` 20 MB per object, `submit_contact_request(…, p_attachment_paths text[])` (old signature dropped; ownership per path, no duplicates, ≤ 20 MB in all), guard trigger rebuilt, `contact_ip_allowed(ip_hash)` (service role), template `contact_request_received` (fr + en) for the support inbox. Suite: `iteration7_validation.sql` C3/C4 |
 | 20261008175809 | `contact_attachment_paths_check_grant` | **Applied 2026-10-08.** `execute` on the CHECK helper for `authenticated`/`service_role` (staff triage re-evaluates the CHECK) |
 | 20261007181011 | `gift_card_design_everywhere` | **Applied 2026-10-07.** The design/names/message chosen at checkout are shown back (WYSIWYG): policy `gift_cards: purchaser reads own` (a buyer reads the cards of their purchases through the existing column grant — never the code) so the member's order pages draw the card in its design; the `gift_card_delivery` template bodies (fr + en) lose their `{{message}}` paragraph because the e-mail now draws the card itself (`giftCardVisual()`, message included). Test: a buyer sees only their own cards (to add to `gift_cards_validation.sql`) |
@@ -1254,6 +1255,22 @@ plan button (locked screen, /studio-3d, /fr/studio-3d/abonnement)   signed out �
 - Back office: `/admin/statistiques` aggregates both tables in the browser (`lib/adminStudioTrials.ts`); the
   rest of the funnel is in PostHog (`docs/studio-trial-analytics.md`).
 
+### 3D Studio templates (decision 97)
+
+```
+staff (manage_content)  CreationDetail "Publish as a template" → studio_set_template(id, true)   own creation only
+                        "Remove from templates" (detail, or the template's dialog) → studio_set_template(id, false)  any template
+member with Studio access   /studio-3d/atelier/modeles → studio_templates()   (newest first; 42501 without access)
+                            renders → storage policy: published templates' thumbnail_path only
+                            "Use this template" → studio_use_template(id) → a new creation owned by the caller
+                                                → render copied to <caller>/<new id>.jpg (best effort)
+```
+
+- Templates are live, like share links: the author's later saves show at once; deleting the creation (or the
+  account) removes the template. Members' copies are their own designs and stay.
+- Members never read a staff `creations` row: the only way in is `studio_templates()`, which leaves out the
+  owner, the favourite flag and the opening dates, and drops Gem Group references (they point at the author's groups).
+
 ### Integrity guarantees
 
 - `orders_total_matches`: `total = subtotal − discount + shipping (+ tax when prices exclude tax)`; discount ≤ subtotal; all amounts ≥ 0.
@@ -1318,6 +1335,7 @@ have no access (see *Members' Lounge*).
 | `data-exports` (private, 100 MB, zip/json) | owners read their own `<user_id>/` folder through signed URLs; only the backend (service role) writes and deletes. |
 | `review-photos` (private, 8 MB, jpeg/png/webp) | authors upload into `<user_id>/`; authors and admins read and delete; **anyone** can read a photo once its review is published. |
 | `training-media` (private, no bucket limit: the project's global upload limit applies — 50 MB on the free plan; jpeg/png/webp/avif/mp4/webm/quicktime) | staff read; `manage_training` uploads, replaces and deletes under `media/`; the back office shows files through signed URLs. Learners get signed URLs after the entitlement check in phase C. Large videos are sent with resumable (TUS) uploads. |
+| `studio-thumbnails` (private, 512 kB, jpeg/webp/png) | owners read/delete inside `<user_id>/`, and upload/replace there with Studio access; members with Studio access also read the renders of published templates (decision 97). Served through signed URLs. |
 | `lounge-media` (private, 5 MB, jpeg/png/webp/gif) | members upload into `<user_id>/` while they can enter the lounge; the uploader reads and deletes their files; anyone who can read the lounge message an image is attached to reads it (so a private conversation's images stay between its two members). Served through signed URLs. |
 
 Path convention: `products/<product-slug>/<file>`, `categories/<category-slug>/<file>`, `<user_id>/<file>` for avatars and review photos.
@@ -2018,3 +2036,17 @@ VAT rates, shipping zones/rates mirroring the Settings prototype. Media rows ref
     day in test mode (`smoke_withdraw` on the owner's test subscription paid that morning: 1 day of 31 used, €0.64
     kept, €19.26 refunded; subscription cancelled by `customer.subscription.deleted`, refund confirmed by
     `refund.updated`, acknowledgement e-mail delivered).
+97. **3D Studio: Global Toothgems templates** (owner's request, 2026-10-19; migration `20261018224657`). Recurring
+    value for the subscription: ordinary creations made by team members, published with one flag
+    (`creations.template_published_at`), browsed by every member with Studio access (the same
+    `has_studio_access()` as the writes: active trial, active subscription, active staff) and copied into their
+    own creations with "Use this template" — the original is never modified. Newest first, "New" for 30 days
+    (`TEMPLATE_NEW_DAYS`, webapp constant), publication date shown. Agent's choices, to confirm: (a) the
+    permission is `manage_content` (managers, administrators); (b) publishing is limited to one's own creations,
+    unpublishing to any template (an author who left included); (c) a template stays published if its author
+    stops being staff, until someone unpublishes it; (d) templates are live — the author's next saves change
+    what members see (copies already made do not change); (e) the copy keeps the name, description, tags and
+    estimate, starts unfavourited, and gets its own copy of the render; (f) the library is capped at 500 rows
+    (no paging yet); (g) members can see the author's user id inside the render's storage path (the only owner
+    data the reader exposes); (h) no record of which template a copy came from (no usage figures beyond the
+    PostHog event `studio_template_used`).

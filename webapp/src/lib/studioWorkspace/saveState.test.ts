@@ -103,6 +103,8 @@ describe("studio section URLs", () => {
     expect(studioSectionFromPath("/studio-3d/atelier/")).toBeNull();
     expect(studioSectionFromPath("/studio-3d/atelier/mes-creations")).toBe("creations");
     expect(studioSectionFromPath("/studio-3d/atelier/mes-groupes")).toBe("groups");
+    expect(studioSectionFromPath("/studio-3d/atelier/modeles")).toBe("templates");
+    expect(studioSectionFromPath("/studio-3d/editor/templates")).toBe("templates");
     expect(studioSectionFromPath("/studio-3d/editor/groups")).toBe("groups");
     expect(studioSectionFromPath("/studio-3d/editor/help")).toBe("help");
     expect(studioSectionFromPath("/studio-3d/atelier/nowhere")).toBeNull();

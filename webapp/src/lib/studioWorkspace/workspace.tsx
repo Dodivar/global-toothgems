@@ -49,6 +49,8 @@ interface WorkspaceValue {
   /** `thumbnail`: the render the save dialog already showed; captured now when omitted. */
   saveDesign: (mode: "new" | "update", details?: RecordDetails, thumbnail?: string | null) => Promise<Creation | null>;
   openCreation: (c: Creation) => void;
+  /** Add a creation made elsewhere (a template copied by `templatesStore`) to the library, first. */
+  adoptCreation: (c: Creation) => void;
   startNewDesign: () => void;
   updateCreationDetails: (c: Creation, details: RecordDetails) => Promise<boolean>;
   duplicateCreation: (c: Creation) => Promise<Creation | null>;
@@ -468,6 +470,7 @@ export function StudioWorkspaceProvider({ children }: { children: ReactNode }) {
     dirty,
     saveDesign,
     openCreation,
+    adoptCreation: replaceCreation,
     startNewDesign,
     updateCreationDetails,
     duplicateCreation,

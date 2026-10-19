@@ -1,0 +1,42 @@
+{
+  "eyebrow": "Global Toothgems library",
+  "title": "Global Toothgems templates",
+  "sub": "Designs created by the Global Toothgems team, renewed regularly. Use one and a copy joins your creations, yours to change freely.",
+  "new": "New",
+  "publishedOn": "Published {{date}}",
+  "use": "Use this template",
+  "using": "Copying…",
+  "preview": "View the template “{{name}}”",
+  "searchPlaceholder": "Search templates",
+  "resultCount_one": "{{count}} template shown",
+  "resultCount_other": "{{count}} templates shown",
+  "noMatchBody": "Try another word to browse every template.",
+  "emptyTitle": "The first templates are on their way",
+  "emptyBody": "The Global Toothgems team publishes ready-to-use designs here. Come back soon: the library grows week after week.",
+  "emptyBodyStaff": "No template published yet. Open one of your designs in My Creations and publish it as a Global Toothgems template.",
+  "unavailableTitle": "Templates are not available in preview",
+  "unavailableBody": "The template library is for Global Toothgems accounts with Studio access.",
+  "loadFailedTitle": "The templates could not be loaded",
+  "loadFailedBody": "We could not reach the library. Please try again in a moment.",
+  "detail": {
+    "published": "Published",
+    "useHint": "Using this template adds a copy to your creations and opens it on the stage. The original template does not change."
+  },
+  "staff": {
+    "title": "Global Toothgems template",
+    "notPublished": "Only you can see it. Once published, its last saved version is offered to every Studio member.",
+    "emptyDesign": "Add gems and save the design before publishing it.",
+    "publishedSince": "Offered to Studio members since {{date}}. Your next saves show there at once.",
+    "publish": "Publish as a template",
+    "unpublish": "Remove from templates",
+    "confirmUnpublish": "Remove this template from the members’ library?"
+  },
+  "toasts": {
+    "used": "“{{name}}” was added to your creations",
+    "useFailed": "This template could not be used.",
+    "gone": "This template is no longer available.",
+    "published": "“{{name}}” is published as a template",
+    "unpublished": "“{{name}}” was removed from the templates",
+    "publishFailed": "The template’s publication could not be changed."
+  }
+}

@@ -43,7 +43,7 @@ interface PgError {
   message?: string;
 }
 
-function storeError(error: PgError | null | undefined): StudioStoreError {
+export function storeError(error: PgError | null | undefined): StudioStoreError {
   switch (error?.code) {
     case "23514": // check violation
     case "23502":
@@ -79,7 +79,7 @@ const shareSchemaMissing = (error: PgError | null | undefined) =>
 const hasDetails = (p: { name?: string; description?: string; tags?: string[] }) =>
   p.name !== undefined || p.description !== undefined || p.tags !== undefined;
 
-function toCreation(row: CreationRow, thumbnailUrl: string | null): Creation {
+export function toCreation(row: CreationRow, thumbnailUrl: string | null): Creation {
   const scene = sanitizeScene(row.scene_data);
   return {
     id: row.id,

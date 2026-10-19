@@ -32,6 +32,7 @@ design content.
 | `studio_feature_used` | First use of a feature in a session: `place_gem`, `gem_group`, `model`, `lighting`, `lasso`, `multi_select`, `client_name`, `undo` | once per feature and session | `feature`, `session_id` |
 | `studio_design_saved` | A save succeeded | per save | `piece_count`, `is_new` |
 | `studio_design_edited` | A saved design was saved again | per save | `piece_count` |
+| `studio_template_used` | A Global Toothgems template was copied into the member's creations | per copy | `piece_count` |
 | `studio_first_design_saved` | The first successful save | once per account and browser | `piece_count`, `is_new` |
 | `studio_trial_expiration_warning_shown` | The last-hours reminder appears | once per trial and browser | — |
 | `studio_trial_expired` | The state is read as `trial_expired` | once per trial and browser | `observed_in_studio` (ran out while open) |

@@ -2093,6 +2093,7 @@ export type Database = {
           name: string
           scene_data: Json
           tags: string[]
+          template_published_at: string | null
           thumbnail_path: string | null
           updated_at: string
           user_id: string
@@ -2109,6 +2110,7 @@ export type Database = {
           name: string
           scene_data: Json
           tags?: string[]
+          template_published_at?: string | null
           thumbnail_path?: string | null
           updated_at?: string
           user_id?: string
@@ -2125,6 +2127,7 @@ export type Database = {
           name?: string
           scene_data?: Json
           tags?: string[]
+          template_published_at?: string | null
           thumbnail_path?: string | null
           updated_at?: string
           user_id?: string
@@ -7437,6 +7440,84 @@ export type Database = {
           },
         ]
       }
+      studio_collection_creations: {
+        Row: {
+          collection_id: string
+          created_at: string
+          creation_id: string
+          user_id: string
+        }
+        Insert: {
+          collection_id: string
+          created_at?: string
+          creation_id: string
+          user_id?: string
+        }
+        Update: {
+          collection_id?: string
+          created_at?: string
+          creation_id?: string
+          user_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "studio_collection_creations_collection_fkey"
+            columns: ["collection_id", "user_id"]
+            isOneToOne: false
+            referencedRelation: "studio_collections"
+            referencedColumns: ["id", "user_id"]
+          },
+          {
+            foreignKeyName: "studio_collection_creations_creation_id_fkey"
+            columns: ["creation_id"]
+            isOneToOne: false
+            referencedRelation: "creations"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      studio_collections: {
+        Row: {
+          color: string | null
+          created_at: string
+          id: string
+          name: string
+          updated_at: string
+          user_id: string
+        }
+        Insert: {
+          color?: string | null
+          created_at?: string
+          id?: string
+          name: string
+          updated_at?: string
+          user_id?: string
+        }
+        Update: {
+          color?: string | null
+          created_at?: string
+          id?: string
+          name?: string
+          updated_at?: string
+          user_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "studio_collections_user_id_fkey"
+            columns: ["user_id"]
+            isOneToOne: false
+            referencedRelation: "loyalty_overview"
+            referencedColumns: ["user_id"]
+          },
+          {
+            foreignKeyName: "studio_collections_user_id_fkey"
+            columns: ["user_id"]
+            isOneToOne: false
+            referencedRelation: "profiles"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       studio_feedback: {
         Row: {
           category: string
@@ -9427,6 +9508,10 @@ export type Database = {
         Args: { p_creation_id: string }
         Returns: undefined
       }
+      studio_set_template: {
+        Args: { p_creation_id: string; p_published: boolean }
+        Returns: string
+      }
       studio_share_creation: {
         Args: { p_creation_id: string }
         Returns: string
@@ -9439,6 +9524,48 @@ export type Database = {
           scene_data: Json
           updated_at: string
         }[]
+      }
+      studio_templates: {
+        Args: never
+        Returns: {
+          currency: string
+          description: string
+          element_count: number
+          estimated_price_minor: number
+          id: string
+          name: string
+          published_at: string
+          scene_data: Json
+          tags: string[]
+          thumbnail_path: string
+          updated_at: string
+        }[]
+      }
+      studio_use_template: {
+        Args: { p_template_id: string }
+        Returns: {
+          created_at: string
+          currency: string
+          description: string
+          element_count: number | null
+          estimated_price_minor: number
+          id: string
+          is_favorite: boolean
+          last_opened_at: string | null
+          name: string
+          scene_data: Json
+          tags: string[]
+          template_published_at: string | null
+          thumbnail_path: string | null
+          updated_at: string
+          user_id: string
+        }
+        SetofOptions: {
+          from: "*"
+          to: "creations"
+          isOneToOne: true
+          isSetofReturn: false
+        }
       }
       studio_withdrawal_quote: { Args: never; Returns: Json }
       submit_contact_request: {

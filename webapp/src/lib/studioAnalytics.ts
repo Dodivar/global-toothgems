@@ -29,6 +29,7 @@ export type StudioEvent =
   | "studio_design_created"
   | "studio_design_saved"
   | "studio_design_edited"
+  | "studio_template_used"
   | "studio_return_visit"
   | "studio_trial_expiration_warning_shown"
   | "studio_trial_expired"

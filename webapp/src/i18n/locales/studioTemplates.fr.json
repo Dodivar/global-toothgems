@@ -1,0 +1,42 @@
+{
+  "eyebrow": "Bibliothèque Global Toothgems",
+  "title": "Modèles Global Toothgems",
+  "sub": "Des créations imaginées par l’équipe Global Toothgems, renouvelées régulièrement. Utilisez-en une : une copie rejoint vos créations, à modifier librement.",
+  "new": "Nouveau",
+  "publishedOn": "Publié le {{date}}",
+  "use": "Utiliser ce modèle",
+  "using": "Copie en cours…",
+  "preview": "Voir le modèle « {{name}} »",
+  "searchPlaceholder": "Rechercher un modèle",
+  "resultCount_one": "{{count}} modèle affiché",
+  "resultCount_other": "{{count}} modèles affichés",
+  "noMatchBody": "Essayez un autre mot pour parcourir tous les modèles.",
+  "emptyTitle": "Les premiers modèles arrivent bientôt",
+  "emptyBody": "L’équipe Global Toothgems publie ici des créations prêtes à réutiliser. Revenez bientôt : la bibliothèque s’enrichit au fil des semaines.",
+  "emptyBodyStaff": "Aucun modèle publié. Ouvrez l’une de vos créations dans « Mes créations » et publiez-la comme modèle Global Toothgems.",
+  "unavailableTitle": "Modèles indisponibles en aperçu",
+  "unavailableBody": "La bibliothèque de modèles est réservée aux comptes Global Toothgems ayant accès au Studio.",
+  "loadFailedTitle": "Impossible de charger les modèles",
+  "loadFailedBody": "Nous n’avons pas pu joindre la bibliothèque. Réessayez dans un instant.",
+  "detail": {
+    "published": "Publié",
+    "useHint": "Utiliser ce modèle ajoute une copie à vos créations et l’ouvre sur la scène. Le modèle d’origine ne change pas."
+  },
+  "staff": {
+    "title": "Modèle Global Toothgems",
+    "notPublished": "Visible uniquement par vous. Publiée, la dernière version enregistrée est proposée à tous les membres du Studio.",
+    "emptyDesign": "Ajoutez des gemmes et enregistrez la création avant de la publier.",
+    "publishedSince": "Proposé aux membres du Studio depuis le {{date}}. Vos prochains enregistrements y apparaîtront aussitôt.",
+    "publish": "Publier comme modèle",
+    "unpublish": "Retirer des modèles",
+    "confirmUnpublish": "Retirer ce modèle de la bibliothèque des membres ?"
+  },
+  "toasts": {
+    "used": "« {{name}} » a été ajouté à vos créations",
+    "useFailed": "Impossible d’utiliser ce modèle.",
+    "gone": "Ce modèle n’est plus disponible.",
+    "published": "« {{name}} » est publié comme modèle",
+    "unpublished": "« {{name}} » a été retiré des modèles",
+    "publishFailed": "Impossible de modifier la publication du modèle."
+  }
+}

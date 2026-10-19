@@ -12,6 +12,7 @@ import { StudioSidebar } from "../components/studio/workspace/StudioSidebar";
 import { WorkspaceDialogs } from "../components/studio/workspace/WorkspaceDialogs";
 import { CreationLibrary } from "../components/studio/workspace/CreationLibrary";
 import { GemGroupLibrary } from "../components/studio/workspace/GemGroupLibrary";
+import { TemplateLibrary } from "../components/studio/workspace/TemplateLibrary";
 import { HelpPanel } from "../components/studio/workspace/HelpPanel";
 import { useWorkspaceActions } from "../components/studio/workspace/useWorkspaceActions";
 import { useDocumentTitle } from "../components/legal/hooks";
@@ -22,6 +23,7 @@ import { setNoticeHandler } from "../lib/studio3d/notices";
 import { studioStore, useStudio } from "../lib/studio3d/store";
 import { studioSectionFromPath, type StudioSection } from "../lib/studioUrl";
 import { StudioWorkspaceProvider } from "../lib/studioWorkspace/workspace";
+import { StudioTemplatesProvider } from "../lib/studioWorkspace/templatesStore";
 import { StudioTour } from "../components/studio/workspace/StudioTour";
 import { getWorkspaceDialog, onboardingSeen, openWorkspaceDialog, useWorkspaceDialog } from "../lib/studioWorkspace/workspaceUi";
 
@@ -45,12 +47,14 @@ import { getWorkspaceDialog, onboardingSeen, openWorkspaceDialog, useWorkspaceDi
 export function StudioEditor() {
   return (
     <StudioWorkspaceProvider>
-      <StudioWorkspace />
+      <StudioTemplatesProvider>
+        <StudioWorkspace />
+      </StudioTemplatesProvider>
     </StudioWorkspaceProvider>
   );
 }
 
-const SECTION_TITLE: Record<StudioSection, string> = { creations: "creations", groups: "groups", help: "help" };
+const SECTION_TITLE: Record<StudioSection, string> = { creations: "creations", groups: "groups", templates: "templates", help: "help" };
 
 function StudioWorkspace() {
   const { t } = useTranslation();
@@ -240,6 +244,7 @@ function StudioWorkspace() {
             <div className="gt-editor-scroll min-h-0 flex-1 overflow-y-auto overscroll-contain">
               {section === "creations" && <CreationLibrary />}
               {section === "groups" && <GemGroupLibrary />}
+              {section === "templates" && <TemplateLibrary />}
               {section === "help" && <HelpPanel />}
             </div>
           </main>
