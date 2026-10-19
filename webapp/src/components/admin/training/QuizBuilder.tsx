@@ -22,7 +22,7 @@ import { EmptyState } from "../EmptyState";
 import { FormField } from "../FormField";
 import { ToggleSwitch } from "../ToggleSwitch";
 import { MediaImage } from "./MediaImage";
-import { EnglishImagePicker, MediaPicker } from "./MediaPicker";
+import { LocalizedImageField } from "./MediaPicker";
 import { Section } from "./TrainingPrimitives";
 import { localizedMedia, type Module, type Question, type Quiz } from "../../../data/adminTraining";
 import { useAdminTraining } from "../../../lib/adminTraining";
@@ -330,63 +330,56 @@ function QuestionCard({
           </FormField>
 
           {/* Optional image */}
-          <div className="grid gap-2">
-            <div className="flex flex-wrap items-center justify-between gap-2">
-              <span className="text-[length:var(--text-caption)] font-semibold text-[var(--text-primary)]">
-                {t("admin.training.quiz.questionImage")}
-              </span>
-              {question.image ? (
-                <AdminButton
-                  variant="ghost"
-                  size="sm"
-                  iconLeft={X}
-                  // The French image and its English version go together.
-                  onClick={() => updateQuestion(courseId, moduleId, question.id, { image: undefined, imageEn: undefined })}
-                >
-                  {t("admin.training.quiz.questionImageRemove")}
-                </AdminButton>
-              ) : (
-                <AdminButton
-                  variant="ghost"
-                  size="sm"
-                  iconLeft={ImagePlus}
-                  onClick={() => setShowImagePicker((v) => !v)}
-                >
-                  {t("admin.training.quiz.questionImageAdd")}
-                </AdminButton>
+          {question.image || showImagePicker ? (
+            <div className="grid gap-3">
+              {question.image && (
+                <figure className="m-0 grid gap-1.5">
+                  <MediaImage
+                    mediaRef={localizedMedia(question.image, question.imageEn, lang)}
+                    className="aspect-[4/3] max-w-[280px] rounded-[var(--admin-radius-sm)] border border-[var(--border-subtle)] object-cover"
+                  />
+                  <figcaption className="text-[length:var(--text-caption)] text-[var(--text-subtle)]">
+                    {t("trainingMedia.localized.previewFor", {
+                      language: t(lang === "en" ? "trainingMedia.localized.languageEn" : "trainingMedia.localized.languageFr"),
+                      source: t(lang === "en" && question.imageEn ? "trainingMedia.localized.sourceEnglish" : "trainingMedia.localized.sourceDefault"),
+                    })}
+                  </figcaption>
+                </figure>
               )}
-            </div>
-
-            {question.image && (
-              <MediaImage
-                mediaRef={localizedMedia(question.image, question.imageEn, lang)}
-                className="aspect-[4/3] max-w-[280px] rounded-[var(--admin-radius-sm)] border border-[var(--border-subtle)] object-cover"
-              />
-            )}
-
-            {(showImagePicker || question.image) && (
-              <MediaPicker
-                value={question.image ?? ""}
+              <LocalizedImageField
+                editingLang={lang}
+                label={t("admin.training.quiz.questionImage")}
+                hint={t("admin.training.quiz.questionImageHint")}
+                defaultRef={question.image ?? ""}
+                englishRef={question.imageEn}
                 autoOpen={showImagePicker && !question.image}
                 onCancel={() => setShowImagePicker(false)}
-                showPreview={false}
-                onChange={(image) => {
-                  updateQuestion(courseId, moduleId, question.id, { image });
+                onPickDefault={(media) => {
+                  updateQuestion(courseId, moduleId, question.id, { image: media.ref });
                   setShowImagePicker(false);
                 }}
-                label={lang === "en" ? t("trainingMedia.picker.french") : t("admin.training.quiz.questionImage")}
-                hint={t("admin.training.quiz.questionImageHint")}
+                onPickEnglish={(media) => updateQuestion(courseId, moduleId, question.id, { imageEn: media.ref })}
+                onClearEnglish={() => updateQuestion(courseId, moduleId, question.id, { imageEn: undefined })}
+                // The default image and its English version go together.
+                onClearAll={() => {
+                  updateQuestion(courseId, moduleId, question.id, { image: undefined, imageEn: undefined });
+                  setShowImagePicker(false);
+                }}
               />
-            )}
-
-            {question.image && (
-              <EnglishImagePicker
-                lang={lang}
-                value={question.imageEn}
-                onChange={(imageEn) => updateQuestion(courseId, moduleId, question.id, { imageEn })}
-              />
-            )}
-          </div>
+            </div>
+          ) : (
+            <div className="flex flex-wrap items-center justify-between gap-2">
+              <span className="grid gap-0.5">
+                <span className="text-[length:var(--text-caption)] font-semibold text-[var(--text-primary)]">
+                  {t("admin.training.quiz.questionImage")}
+                </span>
+                <span className="text-[length:var(--text-caption)] text-[var(--text-muted)]">{t("admin.training.quiz.questionImageHint")}</span>
+              </span>
+              <AdminButton variant="ghost" size="sm" iconLeft={ImagePlus} onClick={() => setShowImagePicker(true)}>
+                {t("admin.training.quiz.questionImageAdd")}
+              </AdminButton>
+            </div>
+          )}
 
           {/* Answers */}
           <fieldset className="m-0 grid gap-2 border-0 p-0">

@@ -22,7 +22,7 @@ import { FormField } from "../FormField";
 import { AdminSelect } from "../AdminSelect";
 import { BlockTypeBadge } from "./TrainingPrimitives";
 import { MediaImage } from "./MediaImage";
-import { EnglishImagePicker, MediaPicker } from "./MediaPicker";
+import { LocalizedImageField, MediaPicker } from "./MediaPicker";
 import { secondsToClock } from "../../../lib/adminTrainingMapping";
 import { useTrainingMedia } from "../../../lib/trainingMedia";
 import { RichTextEditor } from "./RichTextEditor";
@@ -405,7 +405,7 @@ export function ImageBlockEditor({
             className="aspect-[4/3] w-full rounded-[var(--admin-radius-sm)] border border-[var(--border-subtle)] object-cover"
           />
           <figcaption className="text-[length:var(--text-caption)] text-[var(--text-subtle)]">
-            {t("admin.training.blocks.previewLabel")}
+            <LocalizedPreviewCaption lang={lang} hasEnglish={Boolean(block.srcEn)} />
           </figcaption>
         </figure>
 
@@ -456,23 +456,25 @@ export function ImageBlockEditor({
         </div>
       </div>
 
-      <MediaPicker
-        value={block.src}
+      <LocalizedImageField
+        editingLang={lang}
+        label={t("admin.training.blocks.image")}
+        defaultRef={block.src}
+        englishRef={block.srcEn}
         autoOpen={openLibrary}
         onCancel={onLibraryDone}
-        // The library's own description is offered where the block has none,
-        // in both languages; an author's wording is never overwritten.
-        onPick={(media) => {
+        // The library's own description is offered where the block has none;
+        // an author's wording is never overwritten.
+        onPickDefault={(media) => {
           onLibraryDone?.();
           onChange({
             src: media.ref,
             alt: { fr: block.alt.fr || media.alt.fr, en: block.alt.en || media.alt.en },
           });
         }}
-        label={lang === "en" ? t("trainingMedia.picker.french") : t("admin.training.blocks.imageReplace")}
+        onPickEnglish={(media) => onChange({ srcEn: media.ref, alt: { ...block.alt, en: block.alt.en || media.alt.en } })}
+        onClearEnglish={() => onChange({ srcEn: undefined })}
       />
-
-      <EnglishImagePicker lang={lang} value={block.srcEn} onChange={(srcEn) => onChange({ srcEn })} />
     </div>
   );
 }
@@ -514,7 +516,13 @@ export function VideoBlockEditor({
             />
           )}
           <p className="m-0 text-[length:var(--text-caption)] text-[var(--text-subtle)]">
-            {videoUrl ? t("admin.training.blocks.previewLabel") : t("admin.training.blocks.videoNone")}
+            {!videoUrl ? (
+              t("admin.training.blocks.videoNone")
+            ) : block.poster || block.posterEn ? (
+              <LocalizedPreviewCaption lang={lang} hasEnglish={Boolean(block.posterEn)} />
+            ) : (
+              t("admin.training.blocks.previewLabel")
+            )}
           </p>
         </div>
 
@@ -576,15 +584,35 @@ export function VideoBlockEditor({
         hint={t("admin.training.blocks.videoSourceHint")}
       />
 
-      <MediaPicker
-        value={block.poster}
-        onChange={(poster) => onChange({ poster })}
+      <LocalizedImageField
+        editingLang={lang}
         label={t("admin.training.blocks.videoPoster")}
         hint={t("admin.training.blocks.videoPosterHint")}
-        clearable
+        defaultRef={block.poster}
+        englishRef={block.posterEn}
+        onPickDefault={(media) => onChange({ poster: media.ref })}
+        onPickEnglish={(media) => onChange({ posterEn: media.ref })}
+        onClearEnglish={() => onChange({ posterEn: undefined })}
+        onClearAll={() => onChange({ poster: "", posterEn: undefined })}
       />
-      {(block.poster || block.posterEn) && <EnglishImagePicker lang={lang} value={block.posterEn} onChange={(posterEn) => onChange({ posterEn })} />}
     </div>
+  );
+}
+
+/**
+ * Says which language a block preview shows and where its picture comes from,
+ * so "why do I see the French image in English?" answers itself.
+ */
+function LocalizedPreviewCaption({ lang, hasEnglish }: { lang: ContentLang; hasEnglish: boolean }) {
+  const { t } = useTranslation();
+  const source = lang === "en" && hasEnglish ? "sourceEnglish" : "sourceDefault";
+  return (
+    <>
+      {t("trainingMedia.localized.previewFor", {
+        language: t(lang === "en" ? "trainingMedia.localized.languageEn" : "trainingMedia.localized.languageFr"),
+        source: t(`trainingMedia.localized.${source}`),
+      })}
+    </>
   );
 }
 

@@ -26,11 +26,14 @@ export const MEDIA_LIBRARY_PATH = "/admin/formations/medias";
  */
 export function MediaPickerDialog({
   kind,
+  title,
   initialRef,
   onInsert,
   onClose,
 }: {
   kind: MediaKind;
+  /** Says which slot is being filled (e.g. the English image); defaults to the kind. */
+  title?: string;
   initialRef?: string;
   onInsert: (media: TrainingMedia) => void;
   onClose: () => void;
@@ -69,7 +72,7 @@ export function MediaPickerDialog({
         <header className="flex items-start gap-3 border-b border-[var(--border-subtle)] px-5 py-4">
           <div className="grid min-w-0 flex-1 gap-1">
             <h2 id={titleId} className="text-[length:var(--text-h4)]">
-              {t(kind === "video" ? "trainingMedia.picker.titleVideo" : "trainingMedia.picker.titleImage")}
+              {title ?? t(kind === "video" ? "trainingMedia.picker.titleVideo" : "trainingMedia.picker.titleImage")}
             </h2>
             <p className="m-0 text-[length:var(--text-caption)] text-[var(--text-muted)]">{t("trainingMedia.picker.subtitle")}</p>
           </div>

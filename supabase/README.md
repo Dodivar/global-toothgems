@@ -2064,8 +2064,12 @@ VAT rates, shipping zones/rates mirroring the Settings prototype. Media rows ref
     optional and lives in the English translation row (no `*_en` column). The learner sees the file of their
     interface language, else the French one. Agent's choices, to confirm: (a) covered slots are image blocks,
     video posters and question images — course and module covers and the video files themselves stay
-    single-language; (b) removing a question's image removes its English version too; (c) German, when enabled,
-    gets its own rows the same way (no schema change).
+    single-language; (b) removing a question's image or a video's thumbnail removes its English version too;
+    (c) German, when enabled, gets its own rows the same way (no schema change). Builder (2026-10-19,
+    `LocalizedImageField` in `components/admin/training/MediaPicker.tsx`): both slots are shown whatever language is
+    being edited — "Default image" (the French file, shown in every language) and "English image" (optional,
+    replaces it for English readers, available once a default exists) — with a "what learners see" line per
+    language; covers say they are the same in every language.
 93. **3D Studio: 48-hour free trial, then subscription** (user's request, 2026-10-17). Every account may start one
     free trial of the full Studio, explicitly, with no payment details; it lasts 48 hours of continuous time from
     its start on the database clock and never restarts. Using the Studio (saving or changing designs, Gem Groups,

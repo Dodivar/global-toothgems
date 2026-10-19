@@ -161,6 +161,7 @@ export function CourseForm({
             onChange={(cover) => onChange({ cover })}
             label={t("admin.training.create.fieldCover")}
             hint={t("admin.training.create.fieldCoverHint")}
+            sharedAcrossLanguages
           />
         </Section>
 
