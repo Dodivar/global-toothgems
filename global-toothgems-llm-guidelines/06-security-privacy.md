@@ -43,6 +43,7 @@ Never commit or log API keys, Stripe secrets, webhook signing secrets, the servi
 | --- | --- |
 | `product-media` | public read by URL, staff write |
 | `avatars`, `review-photos`, `data-exports`, `contact-attachments`, `studio-thumbnails` | private, per-user folders `<user_id>/…`, signed URLs |
+| `studio-share-logos` | private, per-user folders, upload/read gated by the Studio plan tier (artist / atelier), downloaded by the owner only |
 | future course media | private, signed URLs after an entitlement check |
 
 Never put private customer files or paid training media in a public bucket.
