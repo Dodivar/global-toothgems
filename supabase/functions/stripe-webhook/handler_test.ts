@@ -52,6 +52,7 @@ function fakeDb(initial: Partial<{ status: EventStatus; order: { status: string;
     failedRefunds: [] as { id: string; reason: string | null }[],
     externalRefunds: [] as { paymentIntentId: string; providerRefundId: string; amount: string; currency: string }[],
     refundFollowUps: 0,
+    withdrawals: [] as { withdrawalId: string; providerRefundId: string; status: string; reason: string | null }[],
   };
   const deps: WebhookDeps = {
     verify: (raw, sig) => stripe.webhooks.constructEventAsync(raw, sig, SECRET, undefined, crypto) as unknown as Promise<WebhookEvent>,
@@ -96,6 +97,10 @@ function fakeDb(initial: Partial<{ status: EventStatus; order: { status: string;
     },
     recordExternalRefund: (args) => {
       state.externalRefunds.push(args);
+      return Promise.resolve();
+    },
+    settleStudioWithdrawal: (args) => {
+      state.withdrawals.push(args);
       return Promise.resolve();
     },
     refundConfirmed: () => {
@@ -316,4 +321,17 @@ Deno.test("a refund the database refuses permanently is stored as failed and ack
   const res = await handleWebhook(await signed(refundEvent("refund.created", { metadata: {} })), deps);
   assertEquals(res.status, 200);
   assertEquals(state.events.get("evt_refund_1")?.status, "failed");
+});
+
+Deno.test("a Studio withdrawal's refund settles the withdrawal, never an order", async () => {
+  const { deps, state } = fakeDb();
+  const withdrawalId = "77777777-6666-4555-8444-333333333333";
+  const metadata = { kind: "studio_withdrawal", withdrawal_id: withdrawalId, user_id: "u" };
+  assertEquals((await handleWebhook(await signed(refundEvent("refund.created", { status: "pending", metadata }, "evt_w1")), deps)).status, 200);
+  assertEquals((await handleWebhook(await signed(refundEvent("refund.updated", { status: "succeeded", metadata }, "evt_w2")), deps)).status, 200);
+  assertEquals(state.withdrawals.map((w) => [w.withdrawalId, w.status]), [[withdrawalId, "pending"], [withdrawalId, "succeeded"]]);
+  assertEquals(state.externalRefunds, []);
+  assertEquals(state.succeededRefunds, []);
+  assertEquals(state.refundFollowUps, 0);
+  assertEquals(state.events.get("evt_w2")?.status, "processed");
 });

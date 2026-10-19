@@ -2,21 +2,24 @@ import { useEffect, useMemo, useRef, useState, useSyncExternalStore } from "reac
 import { useTranslation } from "react-i18next";
 import { Link, useLocation, useNavigate, useParams } from "../lib/navigation";
 import clsx from "clsx";
-import { Box, Eye, Gem, Link2, LoaderCircle, Minus, Orbit, PencilRuler, Plus, RotateCcw, TriangleAlert } from "lucide-react";
-import monogram from "../assets/monogram-blue.png";
+import { ArrowLeft, Box, Eye, Gem, Link2, LoaderCircle, Minus, Orbit, PencilRuler, Plus, RotateCcw, ShoppingBag, Sparkles, TriangleAlert } from "lucide-react";
 import { Button } from "../components/ui/Button";
 import { Dialog } from "../components/ui/Dialog";
 import { useDocumentTitle } from "../components/legal/hooks";
+import { ShoppingList } from "../components/studio/editor/ShoppingList";
 import { SignInPrompt } from "../components/studio/workspace/SignInPrompt";
+import { StageFullscreenButton } from "../components/studio/StageFullscreenButton";
 import { useAuth } from "../lib/auth";
+import { isLocale, localizedPath } from "../lib/localeRoutes";
 import { useToast } from "../lib/toast";
 import { StudioEngine } from "../lib/studio3d/engine";
+import { useStageFullscreen } from "../lib/studio3d/stageFullscreen";
 import { DesignStore, studioStore } from "../lib/studio3d/store";
 import { STUDIO_EDITOR_PATH, STUDIO_PATH } from "../lib/studioUrl";
 import { piecesKey } from "../lib/studioWorkspace/scene";
 import { supabase } from "../lib/supabase/client";
 import { decodeSharedDesign, type SharedDesign } from "../lib/studioWorkspace/share";
-import { fetchSharedCreation } from "../lib/studioWorkspace/supabaseRepository";
+import { fetchGlowbookCreation, fetchSharedCreation } from "../lib/studioWorkspace/supabaseRepository";
 
 /**
  * A Studio design someone shared, shown read-only: a saved creation behind a
@@ -30,68 +33,67 @@ import { fetchSharedCreation } from "../lib/studioWorkspace/supabaseRepository";
  * touch the recipient's own draft. Signed out, the page invites them to sign
  * in to use the Studio; signed in, they can take a copy into their editor.
  *
+ * A creation of an artist's public Glowbook (`/studio-3d/glowbook/<handle>/<item>`,
+ * decision 99) opens in the same viewer, read through
+ * `studio_public_showcase_creation` (approved creations only), with the way
+ * back to the Glowbook and without the copy into one's own Studio: it is the
+ * artist's published work, not a design sent to the visitor.
+ *
+ * Every viewer lists the shop items the design takes and puts them in the
+ * cart in one click (the editor's `ShoppingList`; the checkout prices them
+ * again on the server).
+ *
  * Open to everyone and outside `RequireStudioAccess`: looking at a design
  * someone sent you is not using the paid tool. Lazy-loaded with three.js.
  */
+/** The artist whose Glowbook a creation comes from. */
+interface GlowbookAuthor {
+  handle: string;
+  displayName: string;
+}
+
 type Loaded =
-  | { key: string; status: "ready"; design: SharedDesign }
+  | { key: string; status: "ready"; design: SharedDesign; author: GlowbookAuthor | null }
   /** Unknown, disabled or unreadable link. */
   | { key: string; status: "invalid" }
   /** The database could not be reached: worth another try. */
   | { key: string; status: "unavailable" };
 
-async function loadShared(token: string | undefined, hash: string): Promise<SharedDesign | null> {
-  if (token) return supabase ? fetchSharedCreation(supabase, token) : null;
-  return decodeSharedDesign(hash);
+type Source = { token?: string; handle?: string; item?: string; hash: string };
+
+async function loadShared({ token, handle, item, hash }: Source): Promise<{ design: SharedDesign; author: GlowbookAuthor | null } | null> {
+  if (handle && item) return supabase ? fetchGlowbookCreation(supabase, decodeURIComponent(handle), item) : null;
+  const design = token ? (supabase ? await fetchSharedCreation(supabase, token) : null) : await decodeSharedDesign(hash);
+  return design ? { design, author: null } : null;
 }
 
 export function StudioShare() {
   const { t } = useTranslation();
   const { hash } = useLocation();
-  const { token } = useParams();
+  const { token, handle, item } = useParams();
+  const stored = !!token || !!(handle && item);
   const [retry, setRetry] = useState(0);
-  const key = `${token ?? ""}${hash}#${retry}`;
+  const key = `${token ?? ""}${handle ?? ""}/${item ?? ""}${hash}#${retry}`;
   const [loaded, setLoaded] = useState<Loaded | null>(null);
 
   useEffect(() => {
     let live = true;
-    loadShared(token, hash)
-      .then((design) => live && setLoaded(design ? { key, status: "ready", design } : { key, status: "invalid" }))
-      .catch(() => live && setLoaded({ key, status: token ? "unavailable" : "invalid" }));
+    loadShared({ token, handle, item, hash })
+      .then((found) => live && setLoaded(found ? { key, status: "ready", ...found } : { key, status: "invalid" }))
+      .catch(() => live && setLoaded({ key, status: stored ? "unavailable" : "invalid" }));
     return () => {
       live = false;
     };
-  }, [token, hash, key]);
+  }, [token, handle, item, hash, key, stored]);
 
   const current = loaded && loaded.key === key ? loaded : null;
   const design = current?.status === "ready" ? current.design : null;
+  const author = current?.status === "ready" ? current.author : null;
   const name = design?.name || t("studio.workspace.untitled");
   useDocumentTitle(design ? `${name} · ${t("studio.workspace.share.view.documentTitle")}` : t("studio.workspace.share.view.documentTitle"));
 
   return (
     <div className="gt-editor flex min-h-[100dvh] flex-col bg-[var(--surface-page)] lg:h-[100dvh] lg:min-h-0">
-      <header className="flex h-14 flex-none items-center gap-3 border-b border-[var(--border-subtle)] bg-[var(--surface-card)] px-3 sm:px-4">
-        <Link
-          to={STUDIO_PATH}
-          className="flex min-w-0 items-center gap-2.5 rounded-[var(--radius-sm)] focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-[var(--focus-ring)]"
-        >
-          <img src={monogram.src} alt="" aria-hidden="true" className="h-7 w-7 flex-none object-contain" />
-          <span className="text-[15px] font-[var(--weight-black)] tracking-[var(--tracking-tight)] text-[var(--text-primary)]">
-            {t("studio.editor.appName")}
-          </span>
-        </Link>
-        {design && (
-          <p className="m-0 min-w-0 flex-1 truncate text-[13px] font-semibold text-[var(--text-muted)]">
-            <span aria-hidden="true">/ </span>
-            {name}
-          </p>
-        )}
-        <span className="ml-auto inline-flex flex-none items-center gap-1.5 rounded-[var(--radius-pill)] bg-[var(--gt-blue-100)] px-3 py-1 text-[11px] font-bold uppercase tracking-[var(--tracking-wide)] text-[var(--gt-blue-700)]">
-          <Eye size={13} aria-hidden="true" />
-          {t("studio.workspace.share.view.readOnly")}
-        </span>
-      </header>
-
       {!current ? (
         <div role="status" className="grid flex-1 place-items-center p-6 text-[var(--text-muted)]">
           <span className="inline-flex items-center gap-2 text-[length:var(--text-body-sm)] font-semibold">
@@ -100,17 +102,32 @@ export function StudioShare() {
           </span>
         </div>
       ) : design ? (
-        <SharedDesignView design={design} name={name} />
+        <SharedDesignView design={design} name={name} author={author} />
       ) : (
-        <InvalidLink stored={!!token} unavailable={current.status === "unavailable"} onRetry={() => setRetry((n) => n + 1)} />
+        <InvalidLink
+          stored={stored}
+          glowbook={!!(handle && item)}
+          unavailable={current.status === "unavailable"}
+          onRetry={() => setRetry((n) => n + 1)}
+        />
       )}
     </div>
   );
 }
 
-function InvalidLink({ stored, unavailable, onRetry }: { stored: boolean; unavailable: boolean; onRetry: () => void }) {
+function InvalidLink({
+  stored,
+  glowbook,
+  unavailable,
+  onRetry,
+}: {
+  stored: boolean;
+  glowbook: boolean;
+  unavailable: boolean;
+  onRetry: () => void;
+}) {
   const { t } = useTranslation();
-  const copy = unavailable ? "unavailable" : stored ? "invalidStored" : "invalid";
+  const copy = unavailable ? "unavailable" : glowbook ? "glowbookGone" : stored ? "invalidStored" : "invalid";
   return (
     <div className="grid flex-1 place-items-center p-6">
       <div role="alert" className="grid max-w-[440px] justify-items-center gap-3 text-center">
@@ -133,8 +150,8 @@ function InvalidLink({ stored, unavailable, onRetry }: { stored: boolean; unavai
   );
 }
 
-function SharedDesignView({ design, name }: { design: SharedDesign; name: string }) {
-  const { t } = useTranslation();
+function SharedDesignView({ design, name, author }: { design: SharedDesign; name: string; author: GlowbookAuthor | null }) {
+  const { t, i18n } = useTranslation();
   const { signedIn, restoring } = useAuth();
   const { showToast } = useToast();
   const navigate = useNavigate();
@@ -158,9 +175,16 @@ function SharedDesignView({ design, name }: { design: SharedDesign; name: string
       <SharedStage design={design} />
       <aside className="gt-editor-scroll grid content-start gap-5 overflow-y-auto border-t border-[var(--border-subtle)] bg-[var(--surface-card)] p-5 lg:border-l lg:border-t-0 lg:p-6">
         <div className="grid gap-2">
-          <p className="m-0 text-[10.5px] font-bold uppercase tracking-[var(--tracking-eyebrow)] text-[var(--gt-blue-600)]">
-            {t("studio.workspace.share.view.eyebrow")}
-          </p>
+          {/* The site's header is above: the viewer says "read only" here, quietly, instead of a second bar. */}
+          <div className="flex flex-wrap items-center justify-between gap-2">
+            <p className="m-0 text-[10.5px] font-bold uppercase tracking-[var(--tracking-eyebrow)] text-[var(--gt-blue-600)]">
+              {author ? t("studio.workspace.share.view.glowbookEyebrow", { name: author.displayName || `@${author.handle}` }) : t("studio.workspace.share.view.eyebrow")}
+            </p>
+            <span className="inline-flex flex-none items-center gap-1 rounded-[var(--radius-pill)] bg-[var(--gt-blue-100)] px-2 py-0.5 text-[10px] font-bold uppercase tracking-[var(--tracking-wide)] text-[var(--gt-blue-700)]">
+              <Eye size={11} aria-hidden="true" />
+              {t("studio.workspace.share.view.readOnly")}
+            </span>
+          </div>
           <h1 className="m-0 text-[length:var(--text-h3)] font-[var(--weight-black)] leading-tight tracking-[var(--tracking-tight)] text-[var(--text-primary)]">
             {name}
           </h1>
@@ -171,34 +195,67 @@ function SharedDesignView({ design, name }: { design: SharedDesign; name: string
           {design.description && (
             <p className="m-0 whitespace-pre-line text-[length:var(--text-body-sm)] leading-relaxed text-[var(--text-primary)]">{design.description}</p>
           )}
-          <p className="m-0 text-[12px] leading-relaxed text-[var(--text-subtle)]">{t("studio.workspace.share.view.readOnlyNote")}</p>
+          <p className="m-0 text-[12px] leading-relaxed text-[var(--text-subtle)]">
+            {t(author ? "studio.workspace.share.view.glowbookNote" : "studio.workspace.share.view.readOnlyNote")}
+          </p>
         </div>
 
-        <div className="rounded-[var(--radius-lg)] border border-[var(--border-subtle)] bg-[var(--surface-page)] px-4">
-          {restoring ? (
-            <p role="status" className="m-0 flex items-center justify-center gap-2 py-8 text-[12.5px] text-[var(--text-muted)]">
-              <LoaderCircle size={15} aria-hidden="true" className="motion-safe:animate-spin" />
-              {t("studio.workspace.share.view.checkingAccount")}
-            </p>
-          ) : signedIn ? (
-            <div className="grid justify-items-start gap-3 py-5">
-              <h2 className="m-0 text-[17px] font-[var(--weight-black)] tracking-[var(--tracking-tight)] text-[var(--text-primary)]">
-                {t("studio.workspace.share.view.copyTitle")}
-              </h2>
-              <p className="m-0 text-[length:var(--text-body-sm)] leading-relaxed text-[var(--text-muted)]">{t("studio.workspace.share.view.copyBody")}</p>
-              <Button variant="primary" size="sm" iconLeft={PencilRuler} onClick={() => (stageHasWork() ? setConfirmReplace(true) : openCopy())}>
-                {t("studio.workspace.share.view.copyCta")}
-              </Button>
-            </div>
-          ) : (
-            <SignInPrompt
-              compact
-              returnTo={`${pathname}${hash}`}
-              title={t("studio.workspace.share.view.signInTitle")}
-              body={t("studio.workspace.share.view.signInBody")}
-            />
-          )}
-        </div>
+        {author && (
+          <Link
+            to={localizedPath("glowbook", isLocale(i18n.language) ? i18n.language : "fr", { id: author.handle })}
+            className="inline-flex items-center gap-2 justify-self-start rounded-[var(--radius-pill)] border border-[var(--border-subtle)] bg-[var(--surface-page)] py-1.5 pl-2 pr-3.5 text-[12.5px] font-semibold text-[var(--text-primary)] hover:border-[var(--gt-blue-400)] focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-[var(--focus-ring)]"
+          >
+            <ArrowLeft size={14} aria-hidden="true" />
+            <Sparkles size={13} aria-hidden="true" className="text-[var(--gt-blue-600)]" />
+            {t("studio.workspace.share.view.backToGlowbook", { name: author.displayName || `@${author.handle}` })}
+          </Link>
+        )}
+
+        <section
+          aria-labelledby="gt-shared-shopping"
+          className="grid gap-3 rounded-[var(--radius-lg)] border border-[var(--border-subtle)] bg-[var(--surface-page)] p-4"
+        >
+          <div className="grid gap-1">
+            <h2
+              id="gt-shared-shopping"
+              className="m-0 inline-flex items-center gap-2 text-[15px] font-[var(--weight-black)] tracking-[var(--tracking-tight)] text-[var(--text-primary)]"
+            >
+              <ShoppingBag size={16} aria-hidden="true" className="text-[var(--gt-blue-600)]" />
+              {t("studio.workspace.share.view.shoppingTitle")}
+            </h2>
+            <p className="m-0 text-[12px] leading-relaxed text-[var(--text-muted)]">{t("studio.workspace.share.view.shoppingBody")}</p>
+          </div>
+          <ShoppingList jewels={design.scene.pieces} />
+        </section>
+
+        {/* Copying into one's own Studio is for designs sent to the visitor, not an artist's published work. */}
+        {!author && (
+          <div className="rounded-[var(--radius-lg)] border border-[var(--border-subtle)] bg-[var(--surface-page)] px-4">
+            {restoring ? (
+              <p role="status" className="m-0 flex items-center justify-center gap-2 py-8 text-[12.5px] text-[var(--text-muted)]">
+                <LoaderCircle size={15} aria-hidden="true" className="motion-safe:animate-spin" />
+                {t("studio.workspace.share.view.checkingAccount")}
+              </p>
+            ) : signedIn ? (
+              <div className="grid justify-items-start gap-3 py-5">
+                <h2 className="m-0 text-[17px] font-[var(--weight-black)] tracking-[var(--tracking-tight)] text-[var(--text-primary)]">
+                  {t("studio.workspace.share.view.copyTitle")}
+                </h2>
+                <p className="m-0 text-[length:var(--text-body-sm)] leading-relaxed text-[var(--text-muted)]">{t("studio.workspace.share.view.copyBody")}</p>
+                <Button variant="primary" size="sm" iconLeft={PencilRuler} onClick={() => (stageHasWork() ? setConfirmReplace(true) : openCopy())}>
+                  {t("studio.workspace.share.view.copyCta")}
+                </Button>
+              </div>
+            ) : (
+              <SignInPrompt
+                compact
+                returnTo={`${pathname}${hash}`}
+                title={t("studio.workspace.share.view.signInTitle")}
+                body={t("studio.workspace.share.view.signInBody")}
+              />
+            )}
+          </div>
+        )}
 
         <Link
           to={STUDIO_PATH}
@@ -257,6 +314,7 @@ function SharedStage({ design }: { design: SharedDesign }) {
   const snap = useSyncExternalStore(store.subscribe, store.getSnapshot);
   const [failed, setFailed] = useState(false);
   const [orbit, setOrbit] = useState(false);
+  const { ref: stageRef, active: fullscreen, overlay: fullscreenOverlay, toggle: toggleFullscreen } = useStageFullscreen<HTMLElement>();
 
   useEffect(() => {
     store.loadScene(design.scene, null);
@@ -281,8 +339,12 @@ function SharedStage({ design }: { design: SharedDesign }) {
 
   return (
     <section
+      ref={stageRef}
       aria-label={t("studio.workspace.share.view.stageLabel")}
-      className="gt-editor-stage relative isolate h-[60vh] min-h-[360px] min-w-0 overflow-hidden lg:h-auto lg:min-h-0"
+      className={clsx(
+        "gt-editor-stage relative isolate h-[60vh] min-h-[360px] min-w-0 overflow-hidden lg:h-auto lg:min-h-0",
+        fullscreenOverlay && "!fixed inset-0 z-[90] !h-[100dvh] !min-h-0",
+      )}
     >
       <div ref={hostRef} className="gt-editor-canvas absolute inset-0" />
       {failed && (
@@ -357,6 +419,8 @@ function SharedStage({ design }: { design: SharedDesign }) {
               {t("studio.editor.orbit")}
             </span>
           </button>
+          <span aria-hidden="true" className="mx-0.5 h-4 w-px flex-none bg-white/20" />
+          <StageFullscreenButton active={fullscreen} onToggle={toggleFullscreen} className={stageButton} />
         </div>
       )}
     </section>

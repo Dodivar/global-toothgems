@@ -8,51 +8,7 @@
     "opal": "Opale"
   },
   "hero": {
-    "eyebrow": "Studio 3D",
-    "title": "Créez vos propres bijoux dentaires.",
-    "body": "Imaginez des compositions uniques, testez formes et placements, et donnez vie à vos idées avec le Studio 3D Global Toothgems.",
-    "ctaOpen": "Ouvrir le Studio",
-    "ctaSecondary": "Voir les formules",
-    "ctaPrimary_one": "Essayer {{count}} jour gratuitement",
-    "ctaPrimary_other": "Essayer {{count}} jours gratuitement",
-    "reassurance_one": "{{count}} jour gratuit, puis dès {{price}} / mois · sans engagement",
-    "reassurance_other": "{{count}} jours gratuits, puis dès {{price}} / mois · sans engagement"
-  },
-  "demo": {
-    "description": "Démonstration du Studio 3D : poser des gemmes sur les dents, changer leurs couleurs, les déplacer et les faire pivoter.",
-    "play": "Lire la démonstration",
-    "pause": "Mettre la démonstration en pause"
-  },
-  "advantages": {
-    "eyebrow": "Pourquoi le Studio 3D",
-    "title": "Voyez le résultat avant la pose.",
-    "body": "Composez, comparez, décidez — sur un sourire en 3D, avant qu’une seule gemme soit posée.",
-    "items": {
-      "try": {
-        "title": "Essayez sans risque",
-        "body": "Formes, couleurs, placements : testez autant que vous voulez, puis gardez ce qui vous plaît."
-      },
-      "shop": {
-        "title": "Les vraies gemmes de la boutique",
-        "body": "La bibliothèque reprend les gemmes de la boutique, dans leurs couleurs et leurs tailles : ce que vous composez existe."
-      },
-      "share": {
-        "title": "Partagez en un lien",
-        "body": "Envoyez votre création à vos proches ou à l’artiste qui la posera : ils la voient en 3D, sans compte."
-      },
-      "keep": {
-        "title": "Vos créations gardées",
-        "body": "Chaque composition est enregistrée dans votre compte, prête à être reprise ou dupliquée."
-      }
-    }
-  },
-  "inspiration": {
-    "eyebrow": "Inspiration",
-    "title": "Six ambiances pour commencer.",
-    "body": "Des planches pour faire naître des idées — ouvrez-en une dans le Studio et faites-la vôtre.",
-    "number": "N° {{n}}",
-    "recreate": "Recréer dans le Studio",
-    "recreateAria": "Recréer la composition {{style}} dans le Studio"
+    "eyebrow": "Studio 3D"
   },
   "plans": {
     "eyebrow": "Formules",
@@ -110,55 +66,6 @@
       }
     }
   },
-  "bar": {
-    "trial_one": "{{count}} jour gratuit",
-    "trial_other": "{{count}} jours gratuits",
-    "then": "puis dès {{price}} / mois",
-    "cta": "Essayer"
-  },
-  "pricing": {
-    "eyebrow": "Accès au Studio 3D",
-    "planName": "Studio 3D · Mensuel",
-    "perMonth": "/ mois",
-    "selected": "Sélectionné",
-    "benefits": [
-      "Accès complet au Studio 3D",
-      "Outils de composition créative",
-      "Vos créations enregistrées, toujours à portée de main",
-      "Accès aux futures améliorations du Studio"
-    ],
-    "reassurance": "Sans engagement — résiliable à tout moment."
-  },
-  "faq": {
-    "eyebrow": "Questions",
-    "title": "Bon à savoir.",
-    "items": [
-      {
-        "question": "Qu’est-ce que le Studio 3D ?",
-        "answer": "Un outil créatif en ligne pour imaginer vos propres compositions de bijoux dentaires : choisissez des pièces, placez-les sur un sourire et voyez le résultat avant toute pose."
-      },
-      {
-        "question": "Que puis-je créer avec ?",
-        "answer": "D’un seul cristal discret à une composition statement complète — en mêlant formes, couleurs, cristaux et charms en or sur plusieurs dents."
-      },
-      {
-        "question": "Combien coûte le Studio ?",
-        "answer": "Le Studio s’essaie gratuitement, puis se poursuit avec l’une des trois formules mensuelles présentées plus haut. Sans engagement : vous pouvez résilier à tout moment."
-      },
-      {
-        "question": "Le Studio est-il disponible sur mobile ?",
-        "answer": "Oui. Le Studio fonctionne sur ordinateur, tablette et mobile ; un plus grand écran reste plus confortable pour les placements précis."
-      },
-      {
-        "question": "Puis-je enregistrer mes compositions ?",
-        "answer": "Oui. Vos compositions sont enregistrées dans votre galerie personnelle : vous pouvez les retrouver, les dupliquer ou continuer à les affiner."
-      },
-      {
-        "question": "Puis-je utiliser mes créations pour commander des bijoux ?",
-        "answer": "Votre composition enregistrée sert de référence : partagez-la avec votre artiste, ou utilisez-la pour retrouver les pièces correspondantes en boutique."
-      }
-    ]
-  },
   "teaser": {
     "eyebrow": "Studio 3D",
     "title": "Transformez vos idées en bijoux dentaires.",
@@ -170,49 +77,132 @@
     "back": "Retour au Studio",
     "title": "Débloquez le Studio 3D Global Toothgems.",
     "body": "Votre espace créatif pour imaginer des compositions de bijoux dentaires uniques.",
-    "stepsLabel": "Étapes de l’abonnement",
-    "stepDone": "terminé",
-    "steps": {
-      "plan": "Formule",
-      "account": "Compte",
-      "confirm": "Confirmation"
-    },
-    "planLegend": "Votre formule",
-    "planMonthly": "Mensuelle",
-    "planMonthlySub": "Facturée chaque mois · sans engagement",
-    "accountLegend": "Compte",
-    "signedIn": "Session ouverte",
-    "emailLabel": "Adresse e-mail",
-    "emailPlaceholder": "vous@exemple.com",
-    "emailHint": "Votre accès au Studio sera lié à cette adresse. Déjà un compte ?",
-    "signInLink": "Se connecter",
-    "emailInvalid": "Saisissez une adresse e-mail valide.",
-    "paymentLegend": "Paiement",
-    "cardDemo": "Carte •••• 4242",
-    "cardDemoSub": "Carte de démonstration — prototype",
-    "prototypeNote": "Prototype : aucune carte n’est saisie et aucun paiement n’est effectué. Dans le vrai Studio, le paiement a lieu sur la page sécurisée de notre prestataire de paiement.",
-    "summaryLine": "Studio 3D — mensuel",
-    "dueToday": "À régler aujourd’hui",
-    "renews": "Puis {{price}} chaque mois. Résiliable à tout moment depuis votre compte.",
-    "terms": "J’accepte les conditions de l’abonnement Studio 3D",
-    "termsHint": "Texte de prototype — les conditions ne sont pas encore rédigées.",
-    "cta": "S’abonner et commencer à créer",
-    "ctaHint": "Acceptez les conditions pour continuer.",
-    "processing": "Confirmation…",
-    "confirmedTitle": "Bienvenue dans le Studio.",
-    "confirmedBody": "Votre accès est prêt. Une confirmation sera envoyée à {{email}}.",
-    "prototypeConfirmed": "Prototype : rien n’a été débité et aucun accès n’a été créé.",
-    "openStudio": "Commencer à créer",
-    "reassurance": {
-      "secure": "Paiement sécurisé",
-      "cancel": "Sans engagement",
-      "devices": "Ordinateur, tablette et mobile"
-    }
+    "signInNote": "Connectez-vous ou créez votre compte pour vous abonner : l’abonnement est lié à votre compte, et vos créations y sont enregistrées."
   },
   "access": {
     "previewBadge": "Aperçu gratuit",
     "previewHint": "Le Studio est gratuit pendant son aperçu — sans paiement ni carte.",
-    "previewNote": "Gratuit pendant l’aperçu — sans carte bancaire."
+    "previewNote": "Gratuit pendant l’aperçu — sans carte bancaire.",
+    "loading": "Vérification de votre accès au Studio…",
+    "back": "Retour",
+    "backToStudioPage": "Retour à la page du Studio",
+    "toAccount": "Aller à mon espace",
+    "offer": {
+      "eyebrow": "Essai gratuit",
+      "title": "Essayez le Studio 3D complet, gratuitement, pendant 48 heures",
+      "body": "Découvrez tous les outils, composez vos designs sur l’arcade 3D et enregistrez-les dans votre compte.",
+      "points": {
+        "full": "Accès complet au Studio 3D pendant 48 heures",
+        "noCard": "Sans carte bancaire, sans moyen de paiement",
+        "save": "Créez et enregistrez autant de designs que vous voulez",
+        "after": "Après 48 heures, l’édition se met en pause jusqu’au choix d’une formule",
+        "kept": "Vos designs enregistrés restent dans votre compte"
+      },
+      "cta": "Démarrer mon essai gratuit de 48 h",
+      "starting": "Démarrage de votre essai…",
+      "note": "Les 48 heures s’écoulent en continu dès le démarrage, même Studio fermé. Un essai par compte.",
+      "startError": "Votre essai n’a pas pu démarrer. Vérifiez votre connexion et réessayez."
+    },
+    "started": {
+      "title": "Votre essai gratuit a commencé",
+      "body": "Vous avez 48 heures d’accès complet. Belle création !"
+    },
+    "signedOut": {
+      "eyebrow": "Essai gratuit",
+      "title": "Connectez-vous pour démarrer votre essai gratuit de 48 h",
+      "body": "Votre essai et vos designs sont liés à votre compte : vous les retrouvez sur tous vos appareils. Aucune carte bancaire demandée.",
+      "signIn": "Se connecter",
+      "register": "Créer un compte"
+    },
+    "locked": {
+      "trialTitle": "Votre essai gratuit de 48 heures est terminé",
+      "endedTitle": "Votre abonnement au Studio est terminé",
+      "pendingTitle": "Votre abonnement est en cours d’activation",
+      "body": "Vos créations sont toujours là. Choisissez une formule pour débloquer à nouveau le Studio 3D et continuer à donner vie à vos idées.",
+      "pendingBody": "Votre paiement est en cours de confirmation. Le Studio se débloque automatiquement dès qu’il l’est.",
+      "refresh": "Vérifier à nouveau",
+      "kept_one": "Votre design enregistré est conservé dans votre compte. Il vous attendra dans le Studio dès qu’une formule sera active.",
+      "kept_other": "Vos {{count}} designs enregistrés sont conservés dans votre compte. Ils vous attendront dans le Studio dès qu’une formule sera active.",
+      "keptNone": "Tout ce que vous avez enregistré reste dans votre compte et vous attendra dès qu’une formule sera active.",
+      "plansTitle": "Choisissez votre formule",
+      "pricesNote": "Prix TVA comprise. Résiliable à tout moment depuis votre compte : l’abonnement prend fin à la fin de la période payée."
+    },
+    "error": {
+      "title": "Impossible de vérifier votre accès au Studio",
+      "body": "C’est généralement un problème de connexion. Vos designs sont en sécurité.",
+      "retry": "Réessayer"
+    },
+    "countdown": {
+      "label": "Essai gratuit",
+      "left": "Il reste {{time}}",
+      "days_one": "{{count}} jour",
+      "days_other": "{{count}} jours",
+      "hours_one": "{{count}} heure",
+      "hours_other": "{{count}} heures",
+      "minutes_one": "{{count}} minute",
+      "minutes_other": "{{count}} minutes",
+      "lessThanMinute": "moins d’une minute",
+      "ended": "Essai terminé"
+    },
+    "warning": {
+      "body": "Votre essai gratuit se termine bientôt — il reste {{time}}. Enregistrez vos designs et jetez un œil aux formules pour continuer à créer.",
+      "plans": "Voir les formules",
+      "dismiss": "Fermer"
+    },
+    "denied": {
+      "title": "Votre accès au Studio a pris fin",
+      "body": "Cette modification n’a pas pu être enregistrée. Vos designs enregistrés sont conservés."
+    },
+    "checkout": {
+      "title": "Le paiement n’a pas pu s’ouvrir",
+      "errors": {
+        "sign_in_required": "Votre session a expiré. Reconnectez-vous puis réessayez.",
+        "session_expired": "Votre session a expiré. Reconnectez-vous puis réessayez.",
+        "terms_required": "Avant de vous abonner, acceptez les conditions générales.",
+        "already_subscribed": "Vous avez déjà un abonnement au Studio. Vous pouvez le gérer depuis votre compte.",
+        "plan_unavailable": "Cette formule n’est pas disponible pour le moment. Choisissez-en une autre ou réessayez plus tard.",
+        "checkout_closed": "Ce paiement a expiré ou est déjà terminé. Rien n’a été débité : rouvrez le paiement pour continuer.",
+        "payment_unavailable": "Le paiement en ligne est momentanément indisponible. Rien n’a été débité : réessayez dans quelques minutes.",
+        "network": "Connexion impossible. Vérifiez votre réseau, puis réessayez.",
+        "server_error": "Une erreur est survenue. Rien n’a été débité : réessayez."
+      },
+      "manage": "Gérer mon abonnement",
+      "consent": {
+        "label": "Je demande l’accès immédiat au Studio 3D et je reconnais que, si j’exerce mon droit de rétractation dans les 14 jours, je paierai la part de l’abonnement correspondant à la période déjà utilisée.",
+        "required": "Cochez cette case pour payer et ouvrir votre accès."
+      },
+      "termsCta": "Accepter et continuer"
+    },
+    "payment": {
+      "back": "Changer de formule",
+      "title": "Finaliser votre abonnement",
+      "subtitle": "Formule {{plan}} : vérifiez le récapitulatif, puis payez en toute sécurité. Le Studio 3D s’ouvre dès le paiement confirmé.",
+      "intro": "Saisissez votre moyen de paiement ici même : vos données bancaires sont chiffrées et transmises directement à notre prestataire de paiement, elles ne sont jamais stockées par Global Toothgems.",
+      "summaryTitle": "Votre abonnement",
+      "planName": "Studio 3D · {{plan}}",
+      "billing": "Facturation",
+      "dueToday": "À payer aujourd’hui",
+      "renewsMonthly": "Renouvelé automatiquement chaque mois ({{amount}}), jusqu’à résiliation.",
+      "renewsYearly": "Renouvelé automatiquement chaque année ({{amount}}), jusqu’à résiliation.",
+      "points": {
+        "access": "Accès complet au Studio dès le paiement confirmé",
+        "cancel": "Résiliable à tout moment depuis votre compte : l’abonnement prend fin à la fin de la période payée",
+        "withdraw": "Rétractation possible dans les 14 jours depuis votre compte"
+      },
+      "consentTitle": "Droit de rétractation",
+      "pay": "Payer {{amount}} et m’abonner",
+      "seePlans": "Voir les formules"
+    },
+    "activating": {
+      "title": "Nous activons votre abonnement",
+      "body": "Stripe confirme votre paiement : le Studio se débloque dans quelques secondes.",
+      "slow": "C’est plus long que prévu. Si votre paiement est passé, le Studio se débloquera dès que Stripe l’aura confirmé : vérifiez à nouveau dans un instant.",
+      "refresh": "Vérifier à nouveau"
+    },
+    "subscribed": {
+      "title": "Bienvenue dans le Studio 3D",
+      "body": "Votre abonnement {{plan}} est actif."
+    }
   },
   "editor": {
     "documentTitle": "Studio 3D · Atelier",
@@ -392,6 +382,10 @@
       "lampHint": "Lampe de fauteuil chaude et dirigée",
       "daylightHint": "Lumière du jour, vive",
       "current": "Éclairage : {{name}}"
+    },
+    "fullscreen": {
+      "enter": "Plein écran",
+      "exit": "Quitter le plein écran"
     },
     "orbit": "Orbite",
     "orbitHint": "Tourner lentement autour de la création",
@@ -630,5 +624,241 @@
       "viewCart": "Voir le panier",
       "noneAvailable": "Aucun produit disponible"
     }
+  },
+  "account": {
+    "eyebrow": "Studio 3D",
+    "title": "Mon abonnement",
+    "description": "Votre accès au Studio 3D, votre formule et sa facturation.",
+    "loading": "Chargement de votre abonnement…",
+    "loadError": "Impossible de lire votre abonnement pour le moment.",
+    "retry": "Réessayer",
+    "planLabel": "Formule",
+    "billingLabel": "Facturation",
+    "statusLabel": "Statut",
+    "interval": {
+      "month": "Mensuelle",
+      "year": "Annuelle"
+    },
+    "state": {
+      "subscribed": "Actif",
+      "pastDue": "Paiement à régulariser",
+      "trial_active": "Essai gratuit en cours",
+      "trial_expired": "Essai gratuit terminé",
+      "subscription_ended": "Abonnement terminé",
+      "subscription_pending": "En cours d’activation",
+      "not_started": "Aucun abonnement",
+      "staff": "Accès équipe"
+    },
+    "renews": "Prochain renouvellement le {{date}}.",
+    "endsOn": "Résilié : vous gardez l’accès jusqu’au {{date}}, puis l’abonnement prend fin.",
+    "pastDue": "Le dernier paiement a échoué. Mettez à jour votre carte pour garder l’accès au Studio.",
+    "trialUntil": "Votre essai gratuit vous donne accès au Studio jusqu’au {{date}}.",
+    "noPlan": "Choisissez une formule pour utiliser le Studio 3D. Vos créations restent dans votre compte.",
+    "staffNote": "Votre compte d’équipe ouvre le Studio sans abonnement.",
+    "manage": "Gérer mon abonnement",
+    "manageHint": "Changer de formule ou de facturation, mettre à jour votre carte, voir vos factures ou résilier : sur la page sécurisée de Stripe.",
+    "portalError": "La gestion de l’abonnement est momentanément indisponible. Réessayez dans un instant.",
+    "choosePlan": "Choisir une formule",
+    "openStudio": "Ouvrir le Studio",
+    "withdrawal": {
+      "title": "Droit de rétractation",
+      "until": "Vous pouvez vous rétracter jusqu’au {{date}} inclus. Nous vous remboursons alors la part de l’abonnement que vous n’avez pas utilisée.",
+      "paid": "Payé à la souscription",
+      "used": "Jours utilisés ({{days}} sur {{total}})",
+      "refund": "Remboursé si vous vous rétractez aujourd’hui",
+      "estimateNote": "Chaque jour commencé compte comme un jour utilisé ; le montant exact est calculé au moment de la rétractation.",
+      "cta": "Me rétracter",
+      "confirmTitle": "Vous rétracter de votre abonnement ?",
+      "confirmBody": "Cette action est immédiate et ne peut pas être annulée.",
+      "effectAccess": "Votre abonnement s’arrête tout de suite : vous perdez l’accès à l’éditeur du Studio et vous ne serez plus facturé.",
+      "effectRefund": "Le remboursement est fait sur le moyen de paiement utilisé ; selon votre banque, il apparaît sous quelques jours ouvrés.",
+      "effectCreations": "Vos créations restent dans votre compte et vous pouvez toujours les consulter.",
+      "confirm": "Confirmer ma rétractation",
+      "cancel": "Garder mon abonnement",
+      "contact": "Vous avez changé de formule depuis la souscription : pour vous rétracter jusqu’au {{date}} inclus, écrivez-nous et nous calculons votre remboursement.",
+      "contactLink": "Nous contacter",
+      "retry": "Terminer ma rétractation",
+      "status": {
+        "requested": "Rétractation reçue le {{date}} : elle n’a pas pu être terminée. Réessayez, ou contactez-nous si le problème continue.",
+        "refund_pending": "Rétractation reçue le {{date}}. Remboursement de {{amount}} en cours.",
+        "refunded": "Rétractation reçue le {{date}}. {{amount}} vous ont été remboursés.",
+        "refund_failed": "Rétractation reçue le {{date}}, mais le remboursement de {{amount}} a échoué. Notre équipe s’en occupe : contactez-nous si besoin.",
+        "no_refund": "Rétractation reçue le {{date}}. La période payée ayant été entièrement utilisée, il n’y a rien à rembourser."
+      },
+      "refused": {
+        "no_subscription": "Aucun abonnement en cours à arrêter.",
+        "not_paid": "Votre premier paiement n’est pas encore confirmé : réessayez dans quelques minutes.",
+        "renewal": "Le droit de rétractation ne s’applique qu’à la première période de l’abonnement.",
+        "manual_review": "Votre rétractation doit être traitée par notre équipe : contactez-nous.",
+        "deadline_passed": "Le délai de 14 jours pour vous rétracter est dépassé. Vous pouvez toujours résilier pour la fin de la période.",
+        "withdrawn": "Votre rétractation est déjà enregistrée."
+      },
+      "incomplete": "Votre rétractation est enregistrée mais n’a pas pu être terminée. Réessayez dans un instant.",
+      "error": "Une erreur est survenue. Rien n’a été modifié : réessayez."
+    }
+  },
+  "tryOn": {
+    "action": "Essayer sur une photo",
+    "editorSub": "La création enregistrée, sur la photo du sourire de votre client·e",
+    "title": "Essayer sur une photo",
+    "subtitle": "« {{name}} » sur la photo du sourire de votre client·e.",
+    "empty": "Cette création ne contient aucune pierre : ajoutez-en dans l’éditeur, enregistrez, puis revenez l’essayer.",
+    "steps": {
+      "photo": "Photo",
+      "analysis": "Analyse",
+      "adjust": "Ajustement"
+    },
+    "photo": {
+      "tipsTitle": "Pour une bonne photo",
+      "tips": {
+        "front": "De face, le visage droit, à hauteur du sourire",
+        "lips": "Lèvres écartées, les dents bien visibles",
+        "light": "Une lumière franche, sans contre-jour ni ombre sur les dents",
+        "filter": "Sans filtre ni retouche"
+      },
+      "drop": "Déposez la photo ici, ou",
+      "takePhoto": "Prendre une photo",
+      "choose": "Choisir une photo",
+      "replace": "Changer de photo",
+      "previewAlt": "Photo du sourire choisie",
+      "formats": "JPEG, PNG, WebP ou HEIC · {{maxMb}} Mo max · au moins {{minWidth}} × {{minHeight}} pixels",
+      "reading": "Lecture de la photo…",
+      "privacy": "La photo reste sur cet appareil : elle n’est ni envoyée ni enregistrée par Global Toothgems, et elle est oubliée dès que vous fermez cette fenêtre. Ses métadonnées (position GPS, appareil, date) sont retirées.",
+      "consent": "La personne photographiée m’a donné son accord pour utiliser cette photo",
+      "consentHint": "Pour cet essai uniquement. Ne partagez l’image obtenue qu’avec son accord.",
+      "consentRequired": "Cochez cette case pour continuer : il faut l’accord de la personne photographiée.",
+      "continue": "Continuer",
+      "errors": {
+        "type": "Ce fichier n’est pas une photo prise en charge. Choisissez un JPEG, un PNG, un WebP ou un HEIC.",
+        "empty": "Ce fichier est vide. Choisissez une autre photo.",
+        "tooLarge": "Cette photo dépasse {{maxMb}} Mo. Choisissez-en une plus légère.",
+        "tooSmall": "Cette photo est trop petite pour voir les dents : il faut au moins {{minWidth}} × {{minHeight}} pixels.",
+        "unreadable": "Impossible de lire cette photo sur ce navigateur. Si c’est un HEIC, convertissez-le en JPEG (ou réglez l’appareil photo sur « le plus compatible »), puis réessayez."
+      }
+    },
+    "processing": {
+      "title": "Analyse du sourire…",
+      "body": "Nous cherchons les dents sur la photo pour y poser les pierres de la création.",
+      "cancel": "Annuler"
+    },
+    "errors": {
+      "not_available": {
+        "title": "Placement automatique bientôt disponible",
+        "body": "Le placement automatique des pierres n’est pas encore en service. Placez la création à la main : faites-la glisser sur les dents, puis ajustez sa taille et son inclinaison."
+      },
+      "no_smile_detected": {
+        "title": "Aucun sourire détecté",
+        "body": "Nous n’avons pas trouvé de sourire sur cette photo. Prenez-la de face, lèvres écartées."
+      },
+      "low_quality": {
+        "title": "Photo trop floue ou trop sombre",
+        "body": "Reprenez la photo avec plus de lumière, sans bouger, sans filtre."
+      },
+      "teeth_not_visible": {
+        "title": "Dents pas assez visibles",
+        "body": "Les dents de la création ne se voient pas assez. Demandez un sourire plus large, de face."
+      },
+      "failed": {
+        "title": "L’analyse n’a pas abouti",
+        "body": "Une erreur est survenue pendant l’analyse. Réessayez, ou placez la création à la main."
+      }
+    },
+    "errorActions": {
+      "newPhoto": "Prendre une autre photo",
+      "retry": "Réessayer",
+      "manual": "Placer à la main"
+    },
+    "adjust": {
+      "automatic": "Pierres placées automatiquement (fiabilité {{confidence}} %). Vérifiez et corrigez si besoin.",
+      "stageLabel": "« {{name}} » sur la photo du sourire",
+      "gestures": "Faites glisser pour déplacer, pincez à deux doigts pour agrandir et tourner, ou utilisez la molette.",
+      "keys": "Au clavier : flèches pour déplacer, + et − pour la taille, [ et ] pour tourner, Maj pour aller plus vite.",
+      "size": "Taille",
+      "rotation": "Inclinaison",
+      "opacity": "Opacité",
+      "before": "Avant / après",
+      "reset": "Réinitialiser",
+      "newPhoto": "Autre photo",
+      "download": "Télécharger l’image",
+      "share": "Partager",
+      "shareText": "« {{name}} », essayé avec le Studio 3D Global Toothgems",
+      "downloaded": "Image téléchargée.",
+      "exportFailed": "L’image n’a pas pu être créée. Réessayez.",
+      "exportHint": "L’image est créée sur cet appareil ; rien n’est envoyé à Global Toothgems."
+    }
+  },
+  "frontView": {
+    "title": "Vue de face",
+    "hint": "Les deux arcades vues de face, comme vous voyez votre client. Chaque gemme est numérotée : les numéros renvoient à la liste et à la fiche de pose.",
+    "svgTitle": "Vue de face schématique des dents et des gemmes",
+    "svgDescription_one": "Arcades supérieure et inférieure vues de face, avec {{count}} gemme numérotée à sa place sur sa dent. La droite du patient est à gauche du dessin.",
+    "svgDescription_other": "Arcades supérieure et inférieure vues de face, avec {{count}} gemmes numérotées à leur place sur leur dent. La droite du patient est à gauche du dessin.",
+    "patientRight": "Droite du patient",
+    "patientLeft": "Gauche du patient",
+    "listToggle_one": "Voir la gemme ({{count}})",
+    "listToggle_other": "Voir les {{count}} gemmes",
+    "listLabel": "Gemmes numérotées",
+    "gemNumber": "Gemme {{number}}",
+    "order": "Pose n° {{order}}",
+    "empty": "Placez une gemme sur une dent : elle apparaîtra ici, numérotée.",
+    "notDrawn": "non dessinée",
+    "backFace": "face arrière",
+    "unplaced_one": "{{count}} gemme n’est pas dessinée : elle est posée sur un modèle importé ou hors des dents repérées. Elle reste dans la liste.",
+    "unplaced_other": "{{count}} gemmes ne sont pas dessinées : elles sont posées sur un modèle importé ou hors des dents repérées. Elles restent dans la liste.",
+    "open": "Agrandir",
+    "openLabel": "Agrandir la vue de face",
+    "dialogTitle": "Vue de face · {{name}}",
+    "close": "Fermer",
+    "show": "Vue de face",
+    "materials": {
+      "crystal": "Cristal",
+      "metal": "Métal",
+      "iridescent": "Irisé"
+    },
+    "shapes": {
+      "round": "Rond",
+      "baguette": "Baguette",
+      "square": "Carré",
+      "heart": "Cœur",
+      "open-heart": "Cœur ajouré",
+      "kite": "Losange",
+      "navette": "Navette",
+      "raindrop": "Goutte",
+      "triangle": "Triangle",
+      "rivoli-star": "Étoile",
+      "starflower": "Fleur étoilée",
+      "halo-star": "Étoile ajourée",
+      "bolt": "Éclair",
+      "cherries": "Cerises",
+      "snake": "Serpent",
+      "dachshund": "Teckel"
+    }
+  },
+  "placementSheet": {
+    "title": "Fiche de pose",
+    "action": "Fiche de pose · PDF",
+    "actionSub": "Vue de face numérotée et tableau de pose, à imprimer",
+    "notReady": "Les gemmes de la boutique sont encore en chargement : réessayez dans un instant.",
+    "error": "La fiche de pose n’a pas pu être créée. Réessayez.",
+    "fileName": "fiche de pose",
+    "subtitle_one": "{{count}} gemme",
+    "subtitle_other": "{{count}} gemmes",
+    "subtitleModified_one": "{{count}} gemme · modifiée le {{date}}",
+    "subtitleModified_other": "{{count}} gemmes · modifiée le {{date}}",
+    "gemsTitle": "Gemmes",
+    "number": "N°",
+    "tooth": "Dent (FDI)",
+    "shape": "Forme",
+    "size": "Taille",
+    "colour": "Couleur / matière",
+    "order": "Ordre de pose",
+    "totalsTitle": "Par référence",
+    "reference": "Référence",
+    "count": "Qté",
+    "numbers": "Gemmes n°",
+    "toBuy": "À prévoir",
+    "sameAsAbove": "voir ci-dessus",
+    "footer": "Schéma indicatif du Studio 3D, à adapter à la dentition réelle. Ordre suggéré : arcade supérieure d’abord, du centre vers l’extérieur.",
+    "page": "Page {{page}} / {{count}}"
   }
 }

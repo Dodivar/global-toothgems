@@ -1,7 +1,16 @@
 import type { GemGroupData } from "./gemGroup";
 import type { StudioScene } from "./scene";
 import type { ShareLink } from "./share";
-import type { Creation, FeedbackInput, GemGroup, RecordDetails } from "./types";
+import type {
+  CollectionDetails,
+  CollectionMembership,
+  Creation,
+  FeedbackInput,
+  GemGroup,
+  RecordDetails,
+  StudioCollection,
+  StudioPreferences,
+} from "./types";
 
 /**
  * The Studio workspace's persistence boundary.
@@ -13,6 +22,8 @@ import type { Creation, FeedbackInput, GemGroup, RecordDetails } from "./types";
  *   creations        → `public.creations`        (select / insert / update / delete, own rows)
  *   gem groups       → `public.gem_groups`       (same)
  *   feedback         → `public.studio_feedback`  (insert only)
+ *   collections      → `public.studio_collections` + `public.studio_collection_creations` (own rows)
+ *   preferences      → `public.studio_preferences` (the member's one row, created on first change)
  *
  * Ownership is not a parameter: an implementation is created for the signed-in
  * account and every row it touches belongs to it. On Supabase, `user_id`
@@ -23,7 +34,11 @@ import type { Creation, FeedbackInput, GemGroup, RecordDetails } from "./types";
  * save" instead of pretending the design was stored.
  */
 
-export type StudioStoreErrorCode = "storage" | "notFound" | "invalid" | "unavailable";
+/**
+ * `accessDenied`: the database refused a write because the member has no Studio access (trial over).
+ * `duplicate`: a collection of that name already exists (names are unique per member, ignoring case).
+ */
+export type StudioStoreErrorCode = "storage" | "notFound" | "invalid" | "unavailable" | "accessDenied" | "duplicate";
 
 export class StudioStoreError extends Error {
   readonly code: StudioStoreErrorCode;
@@ -85,8 +100,36 @@ export interface FeedbackRepository {
   submit(input: FeedbackInput): Promise<void>;
 }
 
+export interface CollectionsList {
+  collections: StudioCollection[];
+  memberships: CollectionMembership[];
+}
+
+/**
+ * Collections of saved creations. Membership is many-to-many and lives apart
+ * from the creations: removing a collection removes its memberships only.
+ */
+export interface CollectionsRepository {
+  list(): Promise<CollectionsList>;
+  create(details: CollectionDetails): Promise<StudioCollection>;
+  update(id: string, details: CollectionDetails): Promise<StudioCollection>;
+  remove(id: string): Promise<void>;
+  /** Put creations in the collection; one already there is not an error. */
+  addCreations(collectionId: string, creationIds: string[]): Promise<void>;
+  /** Take creations out of the collection; the creations themselves are kept. */
+  removeCreations(collectionId: string, creationIds: string[]): Promise<void>;
+}
+
+/** The member's workspace preferences; no stored row reads as the defaults. */
+export interface PreferencesRepository {
+  get(): Promise<StudioPreferences>;
+  update(patch: Partial<StudioPreferences>): Promise<StudioPreferences>;
+}
+
 export interface StudioRepositories {
   creations: CreationsRepository;
   groups: GemGroupsRepository;
   feedback: FeedbackRepository;
+  collections: CollectionsRepository;
+  preferences: PreferencesRepository;
 }

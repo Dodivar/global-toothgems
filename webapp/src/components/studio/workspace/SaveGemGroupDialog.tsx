@@ -12,12 +12,11 @@ import { DetailsFields } from "./DetailsFields";
 import { HelpHint } from "./HelpHint";
 import { ScenePreview } from "./ScenePreview";
 import { useStageCapture } from "./useStageCapture";
-import { useTagSuggestions } from "./useTagSuggestions";
 import { useWorkspaceFormat } from "./workspaceStyles";
 
 /**
  * Save the selected pieces as a reusable Gem Group, or edit a saved group's
- * name, description and tags. The arrangement itself is captured from the
+ * name and description. The arrangement itself is captured from the
  * stage by the engine, relative to the tooth that holds most of it.
  */
 export function SaveGemGroupDialog({
@@ -34,7 +33,6 @@ export function SaveGemGroupDialog({
   const { t, price } = useWorkspaceFormat();
   const snap = useStudio();
   const { saveSelectionAsGroup, updateGroupDetails } = useWorkspace();
-  const suggestions = useTagSuggestions();
   const editing = !!group;
 
   const selected = snap.jewels.filter((j) => pieceIds?.includes(j.id));
@@ -47,7 +45,7 @@ export function SaveGemGroupDialog({
   const estimate = group ? group.estimatedPriceMinor : selectedEstimate;
 
   const [details, setDetails] = useState<RecordDetails>(() =>
-    group ? { name: group.name, description: group.description, tags: group.tags } : { name: "", description: "", tags: [] },
+    group ? { name: group.name, description: group.description } : { name: "", description: "" },
   );
   const [error, setError] = useState<DetailsError | null>(null);
   const [busy, setBusy] = useState(false);
@@ -100,7 +98,6 @@ export function SaveGemGroupDialog({
             if (error) setError(validateDetails(next));
           }}
           error={error}
-          suggestions={suggestions}
           placeholders={{
             name: t("studio.workspace.groups.namePlaceholder"),
             description: t("studio.workspace.groups.descriptionPlaceholder"),

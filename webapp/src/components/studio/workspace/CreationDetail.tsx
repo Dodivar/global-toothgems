@@ -1,13 +1,17 @@
-import { Copy, FolderOpen, Gem, Link2, PencilLine, Trash2 } from "lucide-react";
+import { Copy, FolderOpen, Gem, Link2, PencilLine, ScanFace, Trash2 } from "lucide-react";
 import { Dialog } from "../../ui/Dialog";
 import { Button } from "../../ui/Button";
 import { useFormat } from "../../../lib/format";
 import { useWorkspace } from "../../../lib/studioWorkspace/workspace";
 import { openWorkspaceDialog } from "../../../lib/studioWorkspace/workspaceUi";
+import { CreationCollectionsSummary } from "./Collections";
 import { CreationThumb, FavoriteButton } from "./CreationCard";
 import { HelpHint } from "./HelpHint";
+import { FrontViewSection, PlacementSheetButton } from "../FrontViewPanel";
+import { GlowbookControl } from "./GlowbookControl";
+import { TemplatePublishControl } from "./TemplatePublishControl";
 import { useWorkspaceActions } from "./useWorkspaceActions";
-import { tagChip, useWorkspaceFormat } from "./workspaceStyles";
+import { useWorkspaceFormat } from "./workspaceStyles";
 
 /**
  * A focused look at one saved creation: large preview, description, the
@@ -29,8 +33,41 @@ export function CreationDetail({ creationId, onClose }: { creationId: string; on
   ];
 
   return (
-    <Dialog open onClose={onClose} size="lg" title={creation.name} icon={<Gem size={17} />} closeLabel={t("studio.workspace.close")}>
-      <div className="relative -mx-1 -mt-1 aspect-[16/10] overflow-hidden rounded-[var(--radius-md)] border border-[var(--border-subtle)] bg-[var(--gt-blue-100)]">
+    <Dialog
+      open
+      onClose={onClose}
+      size="lg"
+      scrollBody
+      title={creation.name}
+      icon={<Gem size={17} />}
+      closeLabel={t("studio.workspace.close")}
+      footer={
+        <>
+          <Button
+            variant="primary"
+            size="sm"
+            iconLeft={FolderOpen}
+            className="flex-1 sm:flex-none"
+            onClick={() => {
+              onClose();
+              openInStudio(creation);
+            }}
+          >
+            {t("studio.workspace.actions.openInStudio")}
+          </Button>
+          <Button
+            variant="outline"
+            size="sm"
+            iconLeft={Link2}
+            className="flex-1 sm:flex-none"
+            onClick={() => openWorkspaceDialog({ kind: "shareCreation", creation })}
+          >
+            {t("studio.workspace.actions.share")}
+          </Button>
+        </>
+      }
+    >
+      <div className="relative -mx-1 -mt-1 aspect-[16/10] max-h-[32dvh] w-full overflow-hidden sm:max-h-none rounded-[var(--radius-md)] border border-[var(--border-subtle)] bg-[var(--gt-blue-100)]">
         <CreationThumb creation={creation} />
         <FavoriteButton
           on={creation.isFavorite}
@@ -62,33 +99,30 @@ export function CreationDetail({ creationId, onClose }: { creationId: string; on
         ))}
       </dl>
 
-      {creation.tags.length > 0 && (
-        <ul aria-label={t("studio.workspace.details.tags")} className="m-0 flex list-none flex-wrap gap-1.5 p-0">
-          {creation.tags.map((tag) => (
-            <li key={tag} className={tagChip}>
-              {tag}
-            </li>
-          ))}
-        </ul>
-      )}
+      <CreationCollectionsSummary creationId={creation.id} back={{ kind: "creationDetail", creationId: creation.id }} />
 
-      <div className="flex flex-wrap items-center gap-2 border-t border-[var(--border-subtle)] pt-4">
-        <Button
-          variant="primary"
-          size="sm"
-          iconLeft={FolderOpen}
-          onClick={() => {
-            onClose();
-            openInStudio(creation);
-          }}
-        >
-          {t("studio.workspace.actions.openInStudio")}
-        </Button>
+      <FrontViewSection pieces={creation.scene.pieces} model={creation.scene.model} />
+
+      <GlowbookControl creation={creation} onLeave={onClose} />
+
+      <TemplatePublishControl creation={creation} />
+
+      <div className="grid grid-cols-2 gap-2 border-t border-[var(--border-subtle)] pt-4 sm:flex sm:flex-wrap sm:items-center">
         <Button variant="outline" size="sm" iconLeft={Copy} onClick={() => void ws.duplicateCreation(creation)}>
           {t("studio.workspace.actions.duplicate")}
         </Button>
-        <Button variant="outline" size="sm" iconLeft={Link2} onClick={() => openWorkspaceDialog({ kind: "shareCreation", creation })}>
-          {t("studio.workspace.actions.share")}
+        <PlacementSheetButton
+          className="[&>button]:w-full sm:[&>button]:w-auto"
+          request={{ name: creation.name, pieces: creation.scene.pieces, model: creation.scene.model, modifiedAt: creation.updatedAt }}
+        />
+        <Button
+          variant="outline"
+          size="sm"
+          iconLeft={ScanFace}
+          disabled={creation.elementCount === 0}
+          onClick={() => openWorkspaceDialog({ kind: "tryOn", creation })}
+        >
+          {t("studio.tryOn.action")}
         </Button>
         <Button variant="ghost" size="sm" iconLeft={PencilLine} onClick={() => openWorkspaceDialog({ kind: "editCreation", creation })}>
           {t("studio.workspace.actions.editDetails")}
@@ -97,7 +131,7 @@ export function CreationDetail({ creationId, onClose }: { creationId: string; on
           variant="ghost"
           size="sm"
           iconLeft={Trash2}
-          className="text-[var(--status-error-fg)] sm:ml-auto"
+          className="col-span-2 text-[var(--status-error-fg)] sm:ml-auto"
           onClick={() => openWorkspaceDialog({ kind: "deleteCreation", creation })}
         >
           {t("studio.workspace.actions.delete")}

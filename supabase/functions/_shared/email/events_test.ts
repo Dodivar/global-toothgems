@@ -10,6 +10,10 @@ import {
   sendPendingEmails,
   sendRefundEmails,
   sendShippingEmails,
+  sendStudioSubscriptionEmails,
+  sendStudioWithdrawalEmails,
+  type PendingStudioSubscription,
+  type PendingStudioWithdrawal,
   trackingLinkFor,
 } from "./events.ts";
 import type { Claim, EmailDeps, EmailStore } from "./send.ts";
@@ -85,6 +89,8 @@ function source(over: Partial<PendingSource> = {}): PendingSource {
     courseEnrolments: () => Promise.resolve([]),
     refunds: () => Promise.resolve([]),
     backInStock: () => Promise.resolve([]),
+    studioSubscriptions: () => Promise.resolve([]),
+    studioWithdrawals: () => Promise.resolve([]),
     ...over,
   };
 }
@@ -279,4 +285,76 @@ Deno.test("back in stock: a request already sent is not sent again", async () =>
   assertEquals(report.sent, 0);
   assertEquals(report.skipped, 1);
   assertEquals(seen.requests.length, 0);
+});
+
+const studioSub = (over: Partial<PendingStudioSubscription> = {}): PendingStudioSubscription => ({
+  subscriptionId: "sub-1",
+  email: "member@example.com",
+  locale: "fr",
+  plan: "artist",
+  interval: "year",
+  amount: 199,
+  currency: "EUR",
+  consentVersion: "studio-withdrawal-2026-10",
+  consentedAt: "2026-10-18T14:00:00Z",
+  ...over,
+});
+
+Deno.test("studio subscription: one confirmation per subscription, restating the request accepted", async () => {
+  const { deps, seen } = setup();
+  const report = await sendStudioSubscriptionEmails(
+    deps,
+    source({ studioSubscriptions: () => Promise.resolve([studioSub(), studioSub({ subscriptionId: "sub-2", locale: "en", interval: "month", amount: 19.9 })]) }),
+  );
+  assertEquals(report, { examined: 2, sent: 2, inFlight: 0, gaveUp: 0, failed: 0, skipped: 0 });
+  assertEquals(seen.claims.map((c) => [c.eventKey, c.templateKey]), [
+    ["studio_subscription:sub-1", "studio_subscription_confirmation"],
+    ["studio_subscription:sub-2", "studio_subscription_confirmation"],
+  ]);
+  const [fr, en] = seen.requests as { text: string }[];
+  assertEquals(fr.text.includes("je paierai la part de l’abonnement correspondant à la période déjà utilisée"), true);
+  assertEquals(fr.text.includes("Acceptée le 18 octobre 2026"), true);
+  assertEquals(fr.text.includes("Artiste"), true);
+  assertEquals(en.text.includes("I will pay the share of the subscription for the period already used"), true);
+  assertEquals(en.text.includes(`${SITE}/compte/studio`), true);
+});
+
+Deno.test("studio subscription: an unknown wording version is never quoted as accepted", async () => {
+  const { deps, seen } = setup();
+  await sendStudioSubscriptionEmails(deps, source({ studioSubscriptions: () => Promise.resolve([studioSub({ consentVersion: "other" })]) }));
+  const [mail] = seen.requests as { text: string }[];
+  assertEquals(mail.text.includes("période déjà utilisée"), false);
+});
+
+const withdrawal = (over: Partial<PendingStudioWithdrawal> = {}): PendingStudioWithdrawal => ({
+  withdrawalId: "w-1",
+  email: "member@example.com",
+  locale: "fr",
+  plan: "artist",
+  requestedAt: "2026-10-21T09:00:00Z",
+  usedDays: 3,
+  periodDays: 30,
+  paidAmount: 19.9,
+  usedAmount: 1.99,
+  refundAmount: 17.91,
+  currency: "EUR",
+  ...over,
+});
+
+Deno.test("studio withdrawal: one acknowledgement per withdrawal, with the refund worked out", async () => {
+  const { deps, seen } = setup();
+  const report = await sendStudioWithdrawalEmails(
+    deps,
+    source({ studioWithdrawals: () => Promise.resolve([withdrawal(), withdrawal({ withdrawalId: "w-2", locale: "en" })]) }),
+  );
+  assertEquals(report.sent, 2);
+  assertEquals(seen.claims.map((c) => [c.eventKey, c.templateKey]), [
+    ["studio_withdrawal:w-1", "studio_withdrawal_confirmation"],
+    ["studio_withdrawal:w-2", "studio_withdrawal_confirmation"],
+  ]);
+  const [fr, en] = seen.requests as { text: string }[];
+  assertEquals(fr.text.includes("Jours utilisés (3 sur 30)"), true);
+  assertEquals(fr.text.includes("17,91"), true);
+  assertEquals(en.text.includes("Days used (3 of 30)"), true);
+  assertEquals(en.text.includes(`${SITE}/compte/studio`), true);
 });

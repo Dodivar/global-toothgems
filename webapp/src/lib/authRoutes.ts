@@ -42,6 +42,8 @@ export function gateFor(pathname: string): Gate | null {
   if (under(ADMIN_SIGN_IN_PATH)) return null;
   if (under("/admin")) return "staff";
   if (under("/compte") || under("/academy/lecon") || pathname.startsWith("/academy/mes-formations/")) return "account";
+  // The Studio subscription's checkout: a subscription belongs to an account.
+  if (under("/studio-3d/paiement")) return "account";
   return null;
 }
 

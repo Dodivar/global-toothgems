@@ -4,6 +4,8 @@ import { useAdminAuth } from "./adminAuth";
 import { isUuid } from "./adminTrainingMapping";
 import { isSupabaseConfigured, supabase, type TypedSupabaseClient } from "./supabase/client";
 import { supabasePublishableKey, supabaseUrl } from "./supabase/env";
+import { stableSignedUrls } from "./supabase/signedUrlCache";
+import { useVisibleInterval } from "./useVisibleInterval";
 import type { Database } from "./supabase/database.types";
 import {
   displayName,
@@ -22,8 +24,8 @@ import {
  * With Supabase, files go to the private `training-media` bucket under
  * `media/<id>/`, through resumable (TUS) uploads so a long video survives a
  * dropped connection, and each one gets a `training_media` row the courses
- * point at. The back office shows them through signed URLs, renewed before
- * they expire. Nothing is read until a staff session is open: the provider
+ * point at. The back office shows them through signed URLs that keep the
+ * same address while valid and are renewed only near their expiry. Nothing is read until a staff session is open: the provider
  * sits under the root layout.
  *
  * Without Supabase (prototype), the library is the seeded studio photographs
@@ -71,9 +73,16 @@ interface TrainingMediaValue {
 const TrainingMediaContext = createContext<TrainingMediaValue | null>(null);
 
 const BUCKET = "training-media";
-/** Signed URLs last an hour and are renewed every 45 minutes. */
-const SIGNED_URL_SECONDS = 3600;
-const RESIGN_MS = 45 * 60 * 1000;
+/**
+ * Signed URLs last twelve hours and keep the same address until the last
+ * hour (`lib/supabase/signedUrlCache.ts`): a new address re-downloads the
+ * file. Expiry is checked every few minutes while the tab is visible.
+ */
+const SIGNED_URL_SECONDS = 12 * 60 * 60;
+const RESIGN_MARGIN_SECONDS = 60 * 60;
+const RESIGN_CHECK_MS = 5 * 60 * 1000;
+/** Paths are `media/<id>/<file>` and never overwritten, so files may be cached for a year. */
+const UPLOAD_CACHE_CONTROL = "31536000";
 /** Prototype upload time, so the progress state is visible. */
 const MOCK_UPLOAD_MS = 1200;
 const MOCK_TICK_MS = 80;
@@ -208,7 +217,7 @@ async function uploadResumable(
       headers: { authorization: `Bearer ${token}`, apikey: supabasePublishableKey, "x-upsert": "false" },
       uploadDataDuringCreation: true,
       removeFingerprintOnSuccess: true,
-      metadata: { bucketName: BUCKET, objectName: path, contentType: file.type, cacheControl: "3600" },
+      metadata: { bucketName: BUCKET, objectName: path, contentType: file.type, cacheControl: UPLOAD_CACHE_CONTROL },
       // Supabase requires 6 MB chunks.
       chunkSize: 6 * 1024 * 1024,
       onError: reject,
@@ -250,8 +259,14 @@ export function TrainingMediaProvider({ children }: { children: ReactNode }) {
       const signed = new Map<string, string>();
       const list = ids.map((id) => paths.current.get(id)).filter((p): p is string => Boolean(p));
       if (!client || list.length === 0) return signed;
-      const { data } = await client.storage.from(BUCKET).createSignedUrls(list, SIGNED_URL_SECONDS);
-      const byPath = new Map((data ?? []).map((entry) => [entry.path, entry.signedUrl]));
+      const byPath = await stableSignedUrls(client, list, {
+        bucket: BUCKET,
+        ttlSeconds: SIGNED_URL_SECONDS,
+        minRemainingSeconds: RESIGN_MARGIN_SECONDS,
+      }).catch((error: unknown) => {
+        console.error("Training media signing:", error);
+        return new Map<string, string>();
+      });
       for (const id of ids) {
         const url = byPath.get(paths.current.get(id) ?? "");
         if (url) signed.set(id, url);
@@ -290,15 +305,16 @@ export function TrainingMediaProvider({ children }: { children: ReactNode }) {
     };
   }, [client, enabled, loadCount, sign]);
 
-  // Signed URLs expire: renew them while the back office stays open.
-  useEffect(() => {
-    if (!client || !enabled) return;
-    const timer = setInterval(async () => {
-      const signed = await sign(itemsRef.current.map((item) => item.id));
-      setItems((prev) => prev.map((item) => ({ ...item, src: signed.get(item.id) ?? item.src })));
-    }, RESIGN_MS);
-    return () => clearInterval(timer);
-  }, [client, enabled, sign]);
+  // Signed URLs expire: renew the ones close to it while the back office is
+  // looked at. Unchanged addresses keep their `src`, so nothing re-downloads.
+  const renew = useCallback(async () => {
+    const signed = await sign(itemsRef.current.map((item) => item.id));
+    setItems((prev) => {
+      const changed = prev.some((item) => (signed.get(item.id) ?? item.src) !== item.src);
+      return changed ? prev.map((item) => ({ ...item, src: signed.get(item.id) ?? item.src })) : prev;
+    });
+  }, [sign]);
+  useVisibleInterval(renew, RESIGN_CHECK_MS, Boolean(client) && enabled);
 
   const reload = useCallback(() => setLoadCount((n) => n + 1), []);
 

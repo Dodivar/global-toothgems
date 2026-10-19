@@ -1,12 +1,14 @@
 import clsx from "clsx";
-import { ArrowLeft, Box, LayoutGrid, Layers, LifeBuoy, MessageSquareHeart, UserRound, X, type LucideIcon } from "lucide-react";
+import { ArrowLeft, Box, LayoutGrid, LayoutTemplate, Layers, LifeBuoy, MessageSquareHeart, Sparkles, UserRound, X, type LucideIcon } from "lucide-react";
 import { Link, useLocation } from "../../../lib/navigation";
 import { useTranslation } from "react-i18next";
 import monogram from "../../../assets/monogram-blue.png";
 import { useAuth } from "../../../lib/auth";
 import { useFocusTrap } from "../../../lib/useFocusTrap";
 import { STUDIO_PATH, studioSectionPath, type StudioSection } from "../../../lib/studioUrl";
+import { collectionCounts, studioCollectionPath } from "../../../lib/studioWorkspace/collections";
 import { useWorkspace } from "../../../lib/studioWorkspace/workspace";
+import { CollectionDot, useSortedCollections } from "./Collections";
 import { openWorkspaceDialog } from "../../../lib/studioWorkspace/workspaceUi";
 import { STUDIO_EXPLORE, type ClientSpace } from "../../layout/clientSpaces";
 import { focusRing } from "./workspaceStyles";
@@ -21,6 +23,8 @@ const NAV: NavItem[] = [
   { section: null, icon: Box, key: "studio" },
   { section: "creations", icon: LayoutGrid, key: "creations" },
   { section: "groups", icon: Layers, key: "groups" },
+  { section: "templates", icon: LayoutTemplate, key: "templates" },
+  { section: "glowbook", icon: Sparkles, key: "glowbook" },
   { section: "help", icon: LifeBuoy, key: "help" },
 ];
 
@@ -197,6 +201,39 @@ function RailSpaceLink({ space }: { space: ClientSpace }) {
   );
 }
 
+/**
+ * The member's collections under "My Creations" in the drawer, each opening
+ * the library narrowed to it. Not on the desktop rail, which is too narrow
+ * for names: there, the library's collection bar does the same.
+ */
+function DrawerCollections({ onNavigate }: { onNavigate: () => void }) {
+  const { t } = useTranslation();
+  const ws = useWorkspace();
+  const sorted = useSortedCollections();
+  if (ws.collectionsStatus !== "ready" || !sorted.length) return null;
+  const counts = collectionCounts(sorted, ws.memberships, ws.creations.map((c) => c.id));
+  return (
+    <ul aria-label={t("studio.workspace.collections.label")} className="m-0 ml-[30px] grid list-none gap-0.5 border-l border-[var(--border-subtle)] py-1 pl-2">
+      {sorted.map((c) => (
+        <li key={c.id}>
+          <Link
+            to={studioCollectionPath(c.id)}
+            onClick={onNavigate}
+            className={clsx(
+              "flex items-center gap-2 rounded-[var(--radius-sm)] px-2 py-1.5 text-[13px] font-semibold text-[var(--gt-ink-700)] hover:bg-[var(--gt-ink-100)]",
+              focusRing,
+            )}
+          >
+            <CollectionDot color={c.color} />
+            <span className="min-w-0 flex-1 truncate">{c.name}</span>
+            <span className="text-[11px] tabular-nums text-[var(--text-subtle)]">{counts[c.id] ?? 0}</span>
+          </Link>
+        </li>
+      ))}
+    </ul>
+  );
+}
+
 function Drawer({ section, onClose }: { section: StudioSection | null; onClose: () => void }) {
   const { t } = useTranslation();
   const counts = useCounts();
@@ -272,6 +309,7 @@ function Drawer({ section, onClose }: { section: StudioSection | null; onClose: 
                     <span className="rounded-full bg-[var(--gt-ink-900)] px-2 py-0.5 text-[10.5px] font-bold text-white">{count}</span>
                   )}
                 </Link>
+                {item.section === "creations" && <DrawerCollections onNavigate={onClose} />}
               </li>
             );
           })}

@@ -17,6 +17,8 @@
     "studio": "3D Studio",
     "creations": "My Creations",
     "groups": "My Gem Groups",
+    "templates": "Global Toothgems templates",
+    "glowbook": "My Glowbook",
     "help": "Help & Tutorial",
     "feedback": "Give feedback",
     "account": "My account",
@@ -26,6 +28,8 @@
       "studio": "Studio",
       "creations": "Creations",
       "groups": "Groups",
+      "templates": "Templates",
+      "glowbook": "Glowbook",
       "help": "Help",
       "feedback": "Feedback",
       "shop": "Shop",
@@ -36,6 +40,8 @@
       "studio": "Back to the design on the stage",
       "creations": "Your saved designs",
       "groups": "Reusable gem arrangements",
+      "templates": "Team designs, ready to reuse",
+      "glowbook": "Your public showcase, for your Instagram bio",
       "help": "Learn the Studio step by step",
       "feedback": "Tell us how it feels",
       "shop": "Gems, tools and kits",
@@ -65,7 +71,7 @@
     "asNewTitle": "Save as new creation",
     "asNewSub": "Keep the original, save this version separately",
     "editTitle": "Edit details",
-    "editSub": "Change the name, description or tags. The design itself is not modified.",
+    "editSub": "Change the name, or description. The design itself is not modified.",
     "namePlaceholder": "e.g. Minimal Butterfly",
     "descriptionPlaceholder": "e.g. Symmetrical butterfly composition for front teeth.",
     "saveDetails": "Save details"
@@ -73,13 +79,7 @@
   "details": {
     "name": "Name",
     "description": "Description",
-    "tags": "Tags",
     "optional": "(optional)",
-    "tagsPlaceholder": "Add a tag and press Enter",
-    "tagsHint": "Press Enter or a comma to add a tag.",
-    "tagsFull": "Up to {{max}} tags.",
-    "suggested": "Suggested tags",
-    "removeTag": "Remove tag {{tag}}",
     "errors": {
       "nameMissing": "Give it a name so you can find it again.",
       "nameTooLong": "Keep the name under {{max}} characters.",
@@ -96,14 +96,15 @@
     "edit": "Edit",
     "editDetails": "Edit details",
     "delete": "Delete",
-    "useInStudio": "Use in Studio"
+    "useInStudio": "Use in Studio",
+    "collections": "Collections…"
   },
   "creations": {
     "eyebrow": "My Creations",
     "title": "Your designs, saved and ready to reuse.",
     "sub": "Every composition you save lands here — reopen it where you left off, duplicate it into a variation, or keep your favourites close.",
     "newDesign": "New design",
-    "searchPlaceholder": "Search by name, description or tag",
+    "searchPlaceholder": "Search by name or description",
     "viewDetails": "View details of {{name}}",
     "actionsFor": "Actions for {{name}}",
     "onStage": "On the stage",
@@ -165,7 +166,9 @@
     "creationBody": "“{{name}}” will be removed from My Creations.",
     "groupBody": "“{{name}}” will be removed from My Gem Groups. Designs that already use it keep their gems.",
     "cannotUndo": "This action cannot be undone.",
-    "confirm": "Delete"
+    "confirm": "Delete",
+    "collectionTitle": "Delete this collection?",
+    "collectionBody": "“{{name}}” will be removed. The creations in it stay in My Creations."
   },
   "discard": {
     "title": "Replace the design on the stage?",
@@ -287,7 +290,7 @@
         "summary": "Name your design and keep it in My Creations to reopen it any time.",
         "steps": [
           "Press “Save creation” (or Ctrl + S) at the top right.",
-          "Give it a name, and optionally a description and tags.",
+          "Give it a name, and optionally a description.",
           "Reopen it from My Creations: it comes back exactly as you left it."
         ]
       },
@@ -313,25 +316,77 @@
   },
   "onboarding": {
     "progress": "Step {{step}} of {{total}}",
-    "skip": "Skip tutorial",
+    "trail": "Guided tour progress",
+    "skip": "Leave",
+    "close": "Close the guided tour",
     "back": "Back",
     "next": "Next",
-    "start": "Start designing",
+    "continue": "Continue",
+    "finish": "Finish",
+    "replay": "Replay the guided tour",
+    "gestures": {
+      "rotate": "Drag to turn",
+      "zoom": "Wheel or pinch to zoom",
+      "frame": "Views and zoom below the stage"
+    },
     "welcome": {
-      "title": "Welcome to the Tooth Gem Studio",
-      "body": "Create, experiment and save your own designs on a 3D smile. Here is the whole idea in three quick steps."
+      "title": "Welcome to your 3D studio",
+      "sub": "Your first design, in six guided steps",
+      "body": "This is where you compose tooth jewellery on a 3D smile: you place real gems from the shop, adjust them, and turn around your design. Nothing is final and nothing is ordered — try everything.",
+      "promises": {
+        "explore": "Look around the smile: turn it, zoom in, reframe it.",
+        "place": "Place your first gem on whichever tooth you like.",
+        "refine": "Change colour, size and angle — and undo whenever you want."
+      },
+      "length": "{{count}} steps · about 2 minutes · the Studio stays yours to use throughout",
+      "start": "Start the tour",
+      "explore": "Explore on my own"
+    },
+    "complete": {
+      "title": "You know your way around the Studio",
+      "sub": "The tour is done — the rest is yours",
+      "body": "You can place a gem, adjust it and undo: that is everything you need to compose a whole smile. Add more gems, mirror them across the arch, and once a design pleases you, keep it in My Creations.",
+      "again": "Need a reminder? “Help & tutorial”, in the Studio menu, starts the tour again and gathers the lessons, the common questions and the keyboard shortcuts.",
+      "cta": "Start creating"
+    },
+    "stage": {
+      "title": "Look around the smile",
+      "body": "Drag across the stage to turn around the smile; use the wheel or a pinch to come closer. The bar below keeps ready-made views and the opening framing.",
+      "task": "Try it: drag across the stage to turn around the smile.",
+      "success": "Lovely. “Views” brings you back to this framing whenever you want."
+    },
+    "pick": {
+      "title": "Choose a gem",
+      "body": "The shop's gems, sorted by family and searchable by name. A click takes one in hand; a drag carries it straight to a tooth.",
+      "bodyClosed": "The gem library is closed to leave room for the stage. This button opens it again.",
+      "task": "Take the gem you like — one click is enough.",
+      "success": "Gem chosen. The rest happens on the stage."
     },
     "place": {
-      "title": "Drag a gem onto a tooth",
-      "body": "Pick a gem in the library on the left and drop it on any tooth. Drag it again to slide it across the enamel."
+      "title": "Put it on a tooth",
+      "body": "With a gem in hand, click the tooth you like: it settles flat on the enamel, where you clicked. Pick it up again to slide it along.",
+      "task": "Place your first gem on a tooth.",
+      "success": "Your first gem is on. That is your design beginning."
     },
-    "compose": {
-      "title": "Compose and adjust",
-      "body": "Select a gem to change its size, rotation and finish on the right. Shift + click selects several — mirror, align, or save them as a reusable Gem Group."
+    "adjust": {
+      "title": "Adjust it to taste",
+      "body": "Select a gem: colour, size, rotation, standoff and fine position are set here, and a quick bar appears on the stage.",
+      "bodyClosed": "A gem's settings live in a panel that is closed. This button opens it: colour, size, rotation and position.",
+      "task": "Select your gem, then change its colour or its size.",
+      "midway": "Gem selected. Now change its colour, its size or its angle.",
+      "success": "That is it. Every gem is adjusted on its own."
     },
-    "save": {
-      "title": "Save and reuse",
-      "body": "“Save creation” keeps your design in My Creations. Your gem groups wait in My Gem Groups, ready to drop onto the next smile."
+    "refine": {
+      "title": "Nothing is final",
+      "body": "Undo and Redo cover everything: a move, a colour, a size, a deletion. To take a gem off: the bin in the quick bar above it, or the Delete key.",
+      "task": "Press Undo: you will see that nothing is lost.",
+      "blocked": "Nothing to undo just yet: place or move a gem and the button lights up.",
+      "success": "And Redo brings it all back. You can experiment freely."
+    },
+    "keep": {
+      "title": "Your design follows you",
+      "body": "The Studio keeps a draft on this device: your design will be here when you come back. “Save” keeps it in My Creations, under your account.",
+      "note": "Keeping a design in My Creations asks you to sign in — your local draft is already kept either way."
     }
   },
   "feedback": {
@@ -388,7 +443,13 @@
     "groupInserted_other": "{{name}} added · {{count}} gems",
     "groupInsertedPartial_one": "{{name}} added — {{count}} gem did not fit",
     "groupInsertedPartial_other": "{{name}} added — {{count}} gems did not fit",
-    "feedbackFailed": "Your feedback could not be sent."
+    "feedbackFailed": "Your feedback could not be sent.",
+    "collectionCreated": "Collection “{{name}}” created",
+    "collectionSaved": "Collection saved",
+    "collectionDeleted": "Collection “{{name}}” deleted — its creations are kept",
+    "collectionNameTaken": "You already have a collection with this name.",
+    "collectionAddFailed": "The creation is saved, but it could not be added to every collection.",
+    "preferenceFailed": "Your layout choice could not be saved on your account."
   },
   "share": {
     "menuSub": "A read-only link to the saved version",
@@ -439,7 +500,80 @@
       "unavailableTitle": "The design couldn’t be loaded",
       "unavailableBody": "Check your connection, then try again.",
       "retry": "Try again",
-      "discover": "Discover the 3D Studio"
+      "discover": "Discover the 3D Studio",
+      "glowbookNote": "Published in the artist’s Glowbook. Turn and zoom it; it cannot be changed here.",
+      "backToGlowbook": "Back to {{name}}’s Glowbook",
+      "shoppingTitle": "The gems in this creation",
+      "shoppingBody": "Add everything it takes to your cart in one go. Prices are confirmed at checkout.",
+      "glowbookGoneTitle": "Creation unavailable",
+      "glowbookGoneBody": "This creation is no longer published in this Glowbook, or the address is incomplete.",
+      "glowbookEyebrow": "{{name}}’s Glowbook"
     }
+  },
+  "collections": {
+    "label": "Collections",
+    "all": "All creations",
+    "new": "New collection",
+    "manage": "Options for the collection “{{name}}”",
+    "rename": "Rename or change colour",
+    "delete": "Delete the collection",
+    "loadFailed": "Your collections could not be loaded. Your creations are all here.",
+    "emptyHint": "Group your designs by client, occasion or style: a creation can be in several collections.",
+    "emptyCollectionTitle": "This collection is empty",
+    "emptyCollectionBody": "Open a creation’s menu and choose Collections to add it here.",
+    "showAll": "Show all creations",
+    "inSave": "Add to collections (optional)",
+    "detailNone": "Not in any collection yet.",
+    "addTo": "Collections",
+    "picker": {
+      "title": "Collections",
+      "sub": "Tick the collections “{{name}}” belongs to. Taking it out of one never deletes it.",
+      "legend": "Collections of “{{name}}”",
+      "empty": "No collection yet: create the first one below.",
+      "newLabel": "New collection",
+      "add": "Create",
+      "done": "Done"
+    },
+    "dialog": {
+      "createTitle": "New collection",
+      "editTitle": "Edit the collection",
+      "sub": "A name, and a colour if you like, to find it at a glance.",
+      "name": "Name",
+      "namePlaceholder": "e.g. Bridal, Client Léa, Summer",
+      "color": "Colour",
+      "create": "Create the collection",
+      "save": "Save"
+    },
+    "colors": {
+      "none": "None",
+      "blue": "Blue",
+      "fuchsia": "Fuchsia",
+      "emerald": "Emerald",
+      "amber": "Amber",
+      "ink": "Ink"
+    },
+    "errors": {
+      "nameMissing": "Give the collection a name.",
+      "nameTooLong": "{{max}} characters at most.",
+      "nameTaken": "You already have a collection with this name.",
+      "colorInvalid": "Choose one of the colours offered."
+    }
+  },
+  "explorer": {
+    "viewLabel": "Layout of My Creations",
+    "views": {
+      "grid": "Grid",
+      "explorer": "Folders"
+    },
+    "openFolder_one": "Open the collection “{{name}}”, {{count}} creation",
+    "openFolder_other": "Open the collection “{{name}}”, {{count}} creations",
+    "folderCount_one": "{{count}} creation",
+    "folderCount_other": "{{count}} creations",
+    "back": "Back to all folders",
+    "trail": "Where you are",
+    "loose": "Not in a collection",
+    "results": "Results in all your creations",
+    "allFiled": "Every creation is filed in a collection.",
+    "removeFrom": "Take out of “{{name}}”"
   }
 }

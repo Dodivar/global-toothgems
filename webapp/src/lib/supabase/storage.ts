@@ -10,6 +10,7 @@ import { requireSupabase, type TypedSupabaseClient } from "./client";
  * | review-photos   | private    | author and admins; anyone once the review is public |
  * | studio-thumbnails | private  | owner only (3D Studio creation previews)            |
  * | lounge-media    | private    | uploader, and whoever can read the lounge message   |
+ * | glowbook-media  | private    | owner and moderators; anyone once approved on a public Glowbook |
  *
  * Paths stored in the database are object paths inside the bucket
  * (`products/<slug>/01.jpg`, `<user_id>/<file>`), never full URLs, so the
@@ -21,13 +22,15 @@ export const BUCKETS = {
   reviewPhotos: "review-photos",
   studioThumbnails: "studio-thumbnails",
   loungeMedia: "lounge-media",
+  glowbookMedia: "glowbook-media",
 } as const;
 
 export type PrivateBucket =
   | typeof BUCKETS.avatars
   | typeof BUCKETS.reviewPhotos
   | typeof BUCKETS.studioThumbnails
-  | typeof BUCKETS.loungeMedia;
+  | typeof BUCKETS.loungeMedia
+  | typeof BUCKETS.glowbookMedia;
 
 /** Signed URLs live long enough for a page view, not long enough to be shared around. */
 export const SIGNED_URL_TTL_SECONDS = 60 * 60;

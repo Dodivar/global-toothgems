@@ -26,10 +26,10 @@ const fold = (s: string) =>
     .replace(/[̀-ͯ]/g, "");
 
 /** Name, description or any tag contains every word of the query (accents and case ignored). */
-export function matchesQuery(record: Pick<Creation, "name" | "description" | "tags">, query: string): boolean {
+export function matchesQuery(record: Pick<Creation, "name" | "description">, query: string): boolean {
   const words = fold(query).split(/\s+/).filter(Boolean);
   if (!words.length) return true;
-  const haystack = fold([record.name, record.description, ...record.tags].join(" "));
+  const haystack = fold([record.name, record.description].join(" "));
   return words.every((w) => haystack.includes(w));
 }
 
@@ -71,12 +71,20 @@ export function sortCreations(list: Creation[], sort: CreationSort, locale?: str
   }
 }
 
+/**
+ * `inCollection`: the ids of the creations in the chosen collection (see
+ * `collections.ts`), or null for the whole library. It combines with the
+ * search and the filter chip: all three must match.
+ */
 export function queryCreations(
   list: Creation[],
-  opts: { query: string; filter: CreationFilter; sort: CreationSort; locale?: string; now?: number },
+  opts: { query: string; filter: CreationFilter; sort: CreationSort; locale?: string; now?: number; inCollection?: Set<string> | null },
 ): Creation[] {
   return sortCreations(
-    list.filter((c) => matchesQuery(c, opts.query) && matchesFilter(c, opts.filter, opts.now)),
+    list.filter(
+      (c) =>
+        (!opts.inCollection || opts.inCollection.has(c.id)) && matchesQuery(c, opts.query) && matchesFilter(c, opts.filter, opts.now),
+    ),
     opts.sort,
     opts.locale,
   );

@@ -13,6 +13,7 @@ import {
   Package,
   Settings,
   ShoppingBag,
+  Sparkles,
   Store,
   Tags,
   TicketPercent,
@@ -72,6 +73,7 @@ const GROUPS: RailGroup[] = [
       { to: "/admin/clients", labelKey: "admin.nav.customers", icon: Users },
       { to: "/admin/promotions", labelKey: "admin.nav.promotions", icon: TicketPercent },
       { to: "/admin/avis", labelKey: "reviews.nav.admin", icon: MessageSquareText },
+      { to: "/admin/glowbook", labelKey: "admin.nav.glowbook", icon: Sparkles },
     ],
   },
   {

@@ -12,6 +12,8 @@ import { StudioSidebar } from "../components/studio/workspace/StudioSidebar";
 import { WorkspaceDialogs } from "../components/studio/workspace/WorkspaceDialogs";
 import { CreationLibrary } from "../components/studio/workspace/CreationLibrary";
 import { GemGroupLibrary } from "../components/studio/workspace/GemGroupLibrary";
+import { TemplateLibrary } from "../components/studio/workspace/TemplateLibrary";
+import { GlowbookManager } from "../components/studio/workspace/GlowbookManager";
 import { HelpPanel } from "../components/studio/workspace/HelpPanel";
 import { useWorkspaceActions } from "../components/studio/workspace/useWorkspaceActions";
 import { useDocumentTitle } from "../components/legal/hooks";
@@ -22,7 +24,10 @@ import { setNoticeHandler } from "../lib/studio3d/notices";
 import { studioStore, useStudio } from "../lib/studio3d/store";
 import { studioSectionFromPath, type StudioSection } from "../lib/studioUrl";
 import { StudioWorkspaceProvider } from "../lib/studioWorkspace/workspace";
-import { getWorkspaceDialog, onboardingSeen, openWorkspaceDialog } from "../lib/studioWorkspace/workspaceUi";
+import { StudioTemplatesProvider } from "../lib/studioWorkspace/templatesStore";
+import { GlowbookProvider } from "../lib/studioWorkspace/glowbookStore";
+import { StudioTour } from "../components/studio/workspace/StudioTour";
+import { getWorkspaceDialog, onboardingSeen, openWorkspaceDialog, useWorkspaceDialog } from "../lib/studioWorkspace/workspaceUi";
 
 /**
  * The 3D Studio editor: compose tooth jewellery on a 3D dental arch.
@@ -32,8 +37,8 @@ import { getWorkspaceDialog, onboardingSeen, openWorkspaceDialog } from "../lib/
  * Loaded on demand — three.js and the editor are a separate chunk, so the rest
  * of the site does not download a 3D engine it never uses.
  *
- * Access is decided by `RequireStudioAccess` around the route; during the
- * preview it is open to every visitor (see `studioAccess`).
+ * Access is decided by `RequireStudioAccess` around the route: an active
+ * free trial, a subscription or staff (see `studioAccess`, decision 93).
  *
  * Around the editor sits the Studio workspace (`lib/studioWorkspace`): the
  * account's saved creations and Gem Groups, help, and feedback. Its sections
@@ -44,12 +49,22 @@ import { getWorkspaceDialog, onboardingSeen, openWorkspaceDialog } from "../lib/
 export function StudioEditor() {
   return (
     <StudioWorkspaceProvider>
-      <StudioWorkspace />
+      <StudioTemplatesProvider>
+        <GlowbookProvider>
+          <StudioWorkspace />
+        </GlowbookProvider>
+      </StudioTemplatesProvider>
     </StudioWorkspaceProvider>
   );
 }
 
-const SECTION_TITLE: Record<StudioSection, string> = { creations: "creations", groups: "groups", help: "help" };
+const SECTION_TITLE: Record<StudioSection, string> = {
+  creations: "creations",
+  groups: "groups",
+  templates: "templates",
+  glowbook: "glowbook",
+  help: "help",
+};
 
 function StudioWorkspace() {
   const { t } = useTranslation();
@@ -57,6 +72,7 @@ function StudioWorkspace() {
   const snap = useStudio();
   const { pathname } = useLocation();
   const section = studioSectionFromPath(pathname);
+  const dialog = useWorkspaceDialog();
   const [drawerOpen, setDrawerOpen] = useState(false);
   const { save } = useWorkspaceActions();
   const panels = useEditorPanels();
@@ -238,11 +254,17 @@ function StudioWorkspace() {
             <div className="gt-editor-scroll min-h-0 flex-1 overflow-y-auto overscroll-contain">
               {section === "creations" && <CreationLibrary />}
               {section === "groups" && <GemGroupLibrary />}
+              {section === "templates" && <TemplateLibrary />}
+              {section === "glowbook" && <GlowbookManager />}
               {section === "help" && <HelpPanel />}
             </div>
           </main>
         )}
       </div>
+      {/* The guided tour follows the editor's own controls, so it is mounted
+          beside them and steps aside — without losing its place — whenever a
+          section or a dialog is in front of the stage. */}
+      <StudioTour snap={snap} hidden={!!section || !!dialog} />
       <WorkspaceDialogs />
     </div>
   );

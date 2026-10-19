@@ -106,6 +106,17 @@ describe("PDF writer", () => {
     const stream = contentStream([{ kind: "text", x: 10, y: 41.89, text: "a(b)é", weight: "bold", size: 9, color: "#000000" }], 841.89);
     expect(stream).toContain("/F2 9 Tf 10 800 Td (a\\(b\\)\\351) Tj");
   });
+
+  it("draws filled and stroked paths, flipped, in their own graphics state", () => {
+    const stream = contentStream(
+      [
+        { kind: "path", commands: [["M", 10, 41.89], ["L", 20, 41.89], ["C", 1, 2, 3, 4, 5, 6], ["Z"]], fill: "#ff0000", stroke: "#000000", width: 0.5, dash: [1, 2] },
+        { kind: "path", commands: [["M", 0, 0], ["L", 1, 1]] },
+      ],
+      841.89,
+    );
+    expect(stream).toBe("q 1 0 0 rg 0 0 0 RG 0.5 w [1 2] 0 d 10 800 m 20 800 l 1 839.89 3 837.89 5 835.89 c h B Q");
+  });
 });
 
 describe("document template", () => {

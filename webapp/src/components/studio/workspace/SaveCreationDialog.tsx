@@ -4,43 +4,53 @@ import { Dialog } from "../../ui/Dialog";
 import { Button } from "../../ui/Button";
 import { useCompositionEstimate } from "../../../lib/studio3d/useStudioGems";
 import { useStudio } from "../../../lib/studio3d/store";
+import { collectionIdsOf } from "../../../lib/studioWorkspace/collections";
+import { useGlowbook } from "../../../lib/studioWorkspace/glowbookStore";
 import type { Creation, RecordDetails } from "../../../lib/studioWorkspace/types";
 import { copyName, validateDetails, type DetailsError } from "../../../lib/studioWorkspace/validation";
 import { useWorkspace } from "../../../lib/studioWorkspace/workspace";
+import { openWorkspaceDialog } from "../../../lib/studioWorkspace/workspaceUi";
+import { CollectionChecklist } from "./Collections";
 import { DetailsFields } from "./DetailsFields";
 import { ScenePreview } from "./ScenePreview";
 import { useStageCapture } from "./useStageCapture";
-import { useTagSuggestions } from "./useTagSuggestions";
 import { useWorkspaceFormat } from "./workspaceStyles";
 
 /**
  * Save the design on the stage as a creation (new, or "save as new"), or edit
- * a saved creation's name, description and tags.
+ * a saved creation's name and description — after the public-save warning
+ * when the creation is in the Glowbook or a published template.
  */
 export function SaveCreationDialog({
   mode,
   creation,
+  initialDetails,
   onClose,
 }: {
   mode: "new" | "saveAsNew" | "edit";
   /** The creation being edited (`edit`). */
   creation?: Creation;
+  /** `edit`: the fields as the artist left them, when coming back from the public-save warning. */
+  initialDetails?: RecordDetails;
   onClose: () => void;
 }) {
   const { t, price } = useWorkspaceFormat();
   const snap = useStudio();
-  const { saveDesign, updateCreationDetails, creations } = useWorkspace();
-  const suggestions = useTagSuggestions();
+  const { saveDesign, updateCreationDetails, addToCollections, creations, memberships, collectionsStatus } = useWorkspace();
+  const { exposureFor } = useGlowbook();
   const source = mode === "saveAsNew" ? creations.find((c) => c.id === snap.active?.creationId) : undefined;
 
   const [details, setDetails] = useState<RecordDetails>(() =>
     mode === "edit" && creation
-      ? { name: creation.name, description: creation.description, tags: creation.tags }
+      ? (initialDetails ?? { name: creation.name, description: creation.description })
       : source
-        ? { name: copyName(source.name, t("studio.workspace.copySuffix")), description: source.description, tags: source.tags }
-        : { name: "", description: "", tags: [] },
+        ? { name: copyName(source.name, t("studio.workspace.copySuffix")), description: source.description }
+        : { name: "", description: "" },
   );
   const [error, setError] = useState<DetailsError | null>(null);
+  // A new save can be filed at once; "save as new" starts from the original's collections.
+  const [chosen, setChosen] = useState<Set<string>>(() => (source ? collectionIdsOf(source.id, memberships) : new Set()));
+  const filing = mode !== "edit" && collectionsStatus === "ready";
   const [busy, setBusy] = useState(false);
 
   const pieces = mode === "edit" && creation ? creation.scene.pieces : snap.jewels;
@@ -58,7 +68,29 @@ export function SaveCreationDialog({
     setError(problem);
     if (problem || busy) return;
     setBusy(true);
-    const ok = mode === "edit" && creation ? await updateCreationDetails(creation, details) : !!(await saveDesign("new", details, capture));
+    let ok: boolean;
+    if (mode === "edit" && creation) {
+      const changed = details.name.trim() !== creation.name || details.description.trim() !== creation.description;
+      const exposure = changed ? await exposureFor(creation.id, creation) : null;
+      if (exposure) {
+        // The warning takes this dialog's place; cancelling it brings the fields back as typed.
+        setBusy(false);
+        openWorkspaceDialog({
+          kind: "confirmPublicSave",
+          exposure,
+          name: creation.name,
+          onConfirm: () => void updateCreationDetails(creation, details),
+          onCancel: () => openWorkspaceDialog({ kind: "editCreation", creation, details }),
+        });
+        return;
+      }
+      ok = await updateCreationDetails(creation, details);
+    } else {
+      const saved = await saveDesign("new", details, capture);
+      ok = !!saved;
+      // The design is saved whatever happens to its filing (reported on its own).
+      if (saved && filing && chosen.size) await addToCollections(saved, [...chosen]);
+    }
     setBusy(false);
     if (ok) onClose();
   };
@@ -104,9 +136,24 @@ export function SaveCreationDialog({
             if (error) setError(validateDetails(next));
           }}
           error={error}
-          suggestions={suggestions}
           placeholders={{ name: t("studio.workspace.save.namePlaceholder"), description: t("studio.workspace.save.descriptionPlaceholder") }}
         />
+        {filing && (
+          <div className="sm:col-start-2">
+            <CollectionChecklist
+              legend={t("studio.workspace.collections.inSave")}
+              checked={chosen}
+              onToggle={(collection, on) =>
+                setChosen((prev) => {
+                  const next = new Set(prev);
+                  if (on) next.add(collection.id);
+                  else next.delete(collection.id);
+                  return next;
+                })
+              }
+            />
+          </div>
+        )}
       </form>
       <div className="flex flex-wrap justify-end gap-2.5 border-t border-[var(--border-subtle)] pt-4">
         <Button variant="ghost" size="sm" onClick={onClose}>

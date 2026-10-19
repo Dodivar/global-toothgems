@@ -7,6 +7,7 @@ import { useAuth } from "./auth";
 import { FIXTURE_LEVELS } from "./academy/fixtures";
 import { isSupabaseConfigured, supabase } from "./supabase/client";
 import { useTrainingMedia } from "./trainingMedia";
+import { useVisibleInterval } from "./useVisibleInterval";
 import { localGrader, type QuizGrader } from "./learning/grading";
 import * as api from "./learning/learnerApi";
 import {
@@ -299,8 +300,17 @@ function useMockLearning(): ProgressContextValue {
 /* Supabase                                                                    */
 /* -------------------------------------------------------------------------- */
 
-/** Signed URLs last four hours; they are renewed well before. */
-const RESIGN_MS = 3 * 60 * 60 * 1000;
+/**
+ * How often the expiry of the signed URLs is checked while the tab is
+ * visible; only the URLs near their end are signed again (`api.signMedia`).
+ */
+const RESIGN_CHECK_MS = 5 * 60 * 1000;
+
+function sameUrls(a: ReadonlyMap<string, string>, b: ReadonlyMap<string, string>): boolean {
+  if (a.size !== b.size) return false;
+  for (const [key, url] of a) if (b.get(key) !== url) return false;
+  return true;
+}
 
 function useLiveLearning(): ProgressContextValue {
   const { userId, restoring } = useAuth();
@@ -350,15 +360,16 @@ function useLiveLearning(): ProgressContextValue {
     };
   }, [userId, restoring, loads]);
 
-  // Signed URLs expire: renew them while the member stays on the site.
-  useEffect(() => {
-    if (!supabase || status !== "ready" || paths.current.size === 0) return;
-    const db = supabase;
-    const timer = setInterval(() => {
-      api.signMedia(db, paths.current).then(setUrls, (error: unknown) => console.error("[learning] media re-signing failed", error));
-    }, RESIGN_MS);
-    return () => clearInterval(timer);
-  }, [status]);
+  // Signed URLs expire: renew the ones close to it while the member looks at
+  // the site. Unchanged addresses keep the same state, so nothing re-downloads.
+  const renewUrls = useCallback(() => {
+    if (!supabase || paths.current.size === 0) return;
+    api.signMedia(supabase, paths.current).then(
+      (signed) => setUrls((prev) => (sameUrls(prev, signed) ? prev : signed)),
+      (error: unknown) => console.error("[learning] media re-signing failed", error),
+    );
+  }, []);
+  useVisibleInterval(renewUrls, RESIGN_CHECK_MS, status === "ready");
 
   const byKey = useMemo(() => new Map(held.map((course) => [course.card.id, course])), [held]);
 

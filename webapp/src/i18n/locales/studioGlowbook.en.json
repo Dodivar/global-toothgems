@@ -1,0 +1,263 @@
+{
+  "eyebrow": "Your public showcase",
+  "title": "My Glowbook",
+  "sub": "A public page with the creations you choose, to link from your Instagram bio. Your page and each creation are reviewed by the Global Toothgems team before anyone can see them.",
+  "unavailableTitle": "Glowbook unavailable",
+  "unavailableBody": "The Glowbook needs a signed-in Global Toothgems account.",
+  "loadFailedTitle": "Unable to load your Glowbook",
+  "status": {
+    "page": {
+      "pending": "Page awaiting review",
+      "approved": "Page published",
+      "rejected": "Page declined"
+    },
+    "item": {
+      "pending": "Awaiting review",
+      "approved": "Published",
+      "rejected": "Declined"
+    },
+    "changes": {
+      "pending": "Changes to review",
+      "approved": "Changes published",
+      "rejected": "Changes declined"
+    }
+  },
+  "page": {
+    "pending": "The team is reviewing your page. It will be visible at its address as soon as it is approved.",
+    "approved": "Your page is live. It stays visible while your Studio access is active.",
+    "rejected": "Your page was not approved. Edit it and save to send it for review again."
+  },
+  "reason": "Reason: {{note}}",
+  "pageSection": "My Glowbook page",
+  "link": "Your Glowbook address",
+  "copyLink": "Copy link",
+  "openPage": "Open my public page",
+  "linkHint": "Paste this link in your Instagram bio. It only shows once your page is approved.",
+  "edit": "Edit my page",
+  "delete": "Delete my Glowbook",
+  "deleteConfirm": "Delete the page and take all your creations off it?",
+  "deleteYes": "Delete",
+  "resubmit": "Send for review again",
+  "remove": "Remove “{{name}}” from my Glowbook",
+  "form": {
+    "createTitle": "Create my Glowbook",
+    "editTitle": "Edit my page",
+    "moderationNote": "Your page will be visible once the Global Toothgems team approves it. After that, changes to the name, bio and Instagram are published at once.",
+    "displayName": "Display name",
+    "displayNamePlaceholder": "e.g. Lily Gems Studio",
+    "handle": "Handle (page address)",
+    "handleHint": "3 to 30 characters: lower-case letters, digits, dot, hyphen or underscore.",
+    "handleChangeWarning": "Changing your handle changes your page’s address and sends it for review again: it will not be visible until then.",
+    "bio": "Bio",
+    "bioPlaceholder": "Your style, your city, how to book…",
+    "instagram": "Instagram account",
+    "create": "Send for review",
+    "save": "Save"
+  },
+  "errors": {
+    "handleLength": "The handle must be 3 to {{max}} characters long.",
+    "handleCharacters": "Use only lower-case letters, digits, a dot, a hyphen or an underscore, and do not start or end with those signs.",
+    "handleReserved": "This handle is reserved. Choose another one.",
+    "handleTaken": "This handle is already taken. Choose another one.",
+    "invalid": "These details could not be accepted. Please check them.",
+    "displayNameRequired": "Enter the name to display.",
+    "displayNameLength": "The display name is 60 characters at most.",
+    "bioLength": "The bio is 300 characters at most.",
+    "instagramInvalid": "This Instagram account is not valid (letters, digits, dot and underscore, 30 characters at most)."
+  },
+  "items": {
+    "title_one": "{{count}} creation in your Glowbook",
+    "title_other": "{{count}} creations in your Glowbook",
+    "howTo": "To add one, open it in My Creations and choose “Add to my Glowbook”.",
+    "toCreations": "My Creations",
+    "emptyTitle": "No creations yet",
+    "emptyBody": "Open a creation in My Creations and add it to your Glowbook: it is published once approved.",
+    "open": "View the creation “{{name}}”",
+    "moveUp": "Move “{{name}}” up",
+    "moveDown": "Move “{{name}}” down"
+  },
+  "control": {
+    "title": "My Glowbook",
+    "noGlowbook": "Share your creations on a public page to link from your Instagram bio.",
+    "empty": "Add at least one gem to publish it.",
+    "notIn": "Add it to your public page. It will be visible once the team approves it.",
+    "pending": "Waiting for the team’s review before it shows on your page.",
+    "approved": "Visible on your public page. Your next saves are published there at once.",
+    "rejected": "This creation was not approved.",
+    "create": "Create my Glowbook",
+    "add": "Add to my Glowbook",
+    "remove": "Remove from Glowbook"
+  },
+  "toasts": {
+    "saved": "Glowbook saved",
+    "savedPending": "Page sent for review",
+    "saveFailed": "Unable to save your Glowbook",
+    "added": "“{{name}}” sent for review",
+    "addedBody": "It will appear in your Glowbook once approved.",
+    "addFailed": "Unable to add the creation",
+    "full": "Your Glowbook already holds 60 creations: remove one to add another.",
+    "removed": "“{{name}}” removed from your Glowbook",
+    "removeFailed": "Unable to remove the creation",
+    "moveFailed": "Unable to change the order",
+    "deleted": "Glowbook deleted",
+    "deleteFailed": "Unable to delete your Glowbook",
+    "linkCopied": "Link copied",
+    "linkCopiedBody": "Paste it in your Instagram bio.",
+    "copyFailed": "Could not copy: select the link",
+    "lookSaved": "Look saved",
+    "lookSavedPending": "Look saved: the new pictures and links wait for review",
+    "lookFailed": "Unable to save the look",
+    "uploadFailed": "Unable to upload the picture"
+  },
+  "saveWarning": {
+    "cancel": "Cancel",
+    "glowbookLive": {
+      "title": "This creation is public",
+      "body": "“{{name}}” is visible to everyone in your Glowbook. If you save, your changes are published there at once.",
+      "confirm": "Save and publish"
+    },
+    "glowbookPending": {
+      "title": "This creation is about to be published",
+      "body": "“{{name}}” is being reviewed for your public Glowbook. The version you save is the one published once approved.",
+      "confirm": "Save"
+    },
+    "template": {
+      "title": "This template is shared with every artist",
+      "body": "“{{name}}” is a published Global Toothgems template. If you save, every Studio member sees your changes at once.",
+      "confirm": "Save for everyone"
+    }
+  },
+  "public": {
+    "metaTitle": "{{name}} — Glowbook",
+    "metaDescription": "Tooth gem creations by {{name}}, designed in the Global Toothgems 3D Studio.",
+    "eyebrow": "Glowbook",
+    "instagram": "@{{account}} on Instagram",
+    "creationsTitle_one": "{{count}} creation",
+    "creationsTitle_other": "{{count}} creations",
+    "empty": "No creations published yet. Come back soon!",
+    "ctaTitle": "Design your own smile",
+    "ctaBody": "These creations were composed in the Global Toothgems 3D Studio. Try it, or discover our gems.",
+    "ctaStudio": "Discover the 3D Studio",
+    "ctaShop": "Visit the shop",
+    "view3d": "View in 3D",
+    "open3d": "View “{{name}}” in 3D",
+    "booking": "Book an appointment",
+    "website": "Website",
+    "tiktok": "@{{account}} on TikTok",
+    "avatarAlt": "{{name}}’s profile picture",
+    "featured": "In the spotlight"
+  },
+  "admin": {
+    "title": "Glowbook",
+    "description": "Artists’ public pages and the creations they add wait here for your approval. Nothing is visible before.",
+    "unavailableTitle": "Moderation unavailable",
+    "unavailableBody": "Glowbook moderation needs the live database.",
+    "forbiddenTitle": "Restricted",
+    "forbiddenBody": "Glowbook moderation is for team members who moderate reviews.",
+    "errorTitle": "Unable to load the moderation queue",
+    "errorBody": "Please try again in a moment.",
+    "retry": "Try again",
+    "viewLabel": "Show",
+    "viewPending": "To review ({{count}})",
+    "viewApproved": "Published",
+    "viewRejected": "Declined",
+    "viewAll": "All",
+    "searchLabel": "Search",
+    "searchPlaceholder": "Handle, name, creation…",
+    "searchClear": "Clear search",
+    "loading": "Loading the moderation queue…",
+    "emptyPendingTitle": "Nothing to review",
+    "emptyPendingBody": "New pages and creations sent by artists will show here.",
+    "emptyTitle": "No results",
+    "emptyBody": "Change the view or the search.",
+    "kind": {
+      "page": "Page",
+      "creation": "Creation",
+      "changes": "Pictures and links"
+    },
+    "submitted": "Sent on {{date}}",
+    "byArtist": "by {{name}} (@{{handle}})",
+    "noteLabel": "Reason (shown to the artist)",
+    "notePlaceholder": "e.g. render too dark, off-topic content…",
+    "cancel": "Cancel",
+    "approve": "Approve and publish",
+    "reject": "Decline",
+    "rejectConfirm": "Confirm decline",
+    "takeDown": "Take down",
+    "takeDownConfirm": "Take down",
+    "openPage": "View the public page",
+    "toasts": {
+      "approved": "Approved: it is live",
+      "rejected": "Declined: the artist will see the reason",
+      "failed": "The decision could not be saved"
+    },
+    "changesDone": "These changes have been handled.",
+    "proposed": "Proposed by the artist",
+    "proposedWithPage": "Proposed with the page (published if you approve the page)",
+    "newAvatar": "New picture",
+    "newBanner": "New banner"
+  },
+  "look": {
+    "title": "Customise my page",
+    "sub": "Make your Glowbook yours: picture, banner, colour, layout and links. Colour, background, layout, spotlight and city are published when you save; a new picture, banner or link is reviewed by the team first.",
+    "pendingNote": "Some pictures or links wait for the team’s review: your page shows the previous ones meanwhile.",
+    "rejectedNote": "Your latest pictures or links were not approved.",
+    "rejectedNoteReason": "Your latest pictures or links were not approved. Reason: {{note}}",
+    "preview": "Preview",
+    "accent": "Your identity colour",
+    "accents": {
+      "ink": "Ink",
+      "blue": "Blue",
+      "fuchsia": "Fuchsia",
+      "rose": "Rose",
+      "coral": "Coral",
+      "gold": "Gold",
+      "emerald": "Emerald",
+      "teal": "Lagoon",
+      "violet": "Violet",
+      "plum": "Plum"
+    },
+    "background": "Page background",
+    "backgrounds": {
+      "light": "Light",
+      "tinted": "Tinted",
+      "dark": "Dark"
+    },
+    "layout": "Creations layout",
+    "layouts": {
+      "grid": "Grid",
+      "large": "Large cards"
+    },
+    "featured": "Creation in the spotlight",
+    "featuredNone": "None",
+    "featuredHint": "Shown large at the top of your page (published creations only).",
+    "location": "City or studio",
+    "locationPlaceholder": "e.g. Lyon, Studio Rivoli",
+    "links": "Links",
+    "linksHint": "https addresses only. Every new link is reviewed before it shows.",
+    "booking": "Booking",
+    "website": "Website",
+    "tiktok": "TikTok account",
+    "errors": {
+      "locationLength": "The city is {{max}} characters at most.",
+      "bookingUrl": "The booking link must be a valid https address.",
+      "websiteUrl": "The website must be a valid https address.",
+      "tiktok": "This TikTok account is not valid (letters, digits, dot and underscore)."
+    },
+    "reset": "Undo changes",
+    "save": "Save the look",
+    "waiting": "Awaiting review",
+    "avatar": "Profile picture",
+    "banner": "Banner",
+    "avatarHint": "Cropped square. JPEG, PNG or WebP.",
+    "bannerHint": "Cropped to 3:1, shown at the top of the page. JPEG, PNG or WebP.",
+    "change": "Change",
+    "add": "Add",
+    "removePicture": "Remove",
+    "pictureErrors": {
+      "type": "This file is not a picture.",
+      "tooLarge": "Picture too large (20 MB at most).",
+      "unreadable": "This picture could not be read. Try a JPEG or PNG."
+    }
+  }
+}

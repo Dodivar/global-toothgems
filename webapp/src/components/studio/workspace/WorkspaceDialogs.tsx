@@ -4,14 +4,17 @@ import { Dialog } from "../../ui/Dialog";
 import { Button } from "../../ui/Button";
 import { useWorkspace } from "../../../lib/studioWorkspace/workspace";
 import { closeWorkspaceDialog, useWorkspaceDialog } from "../../../lib/studioWorkspace/workspaceUi";
+import { CollectionEditDialog, CreationCollectionsDialog } from "./Collections";
 import { CreationDetail } from "./CreationDetail";
 import { DeleteConfirmation } from "./DeleteConfirmation";
 import { FeedbackModal } from "./FeedbackModal";
-import { OnboardingOverlay } from "./OnboardingOverlay";
+import { OnboardingOverlay, TourCompleteDialog } from "./OnboardingOverlay";
+import { PublicSaveWarning } from "./PublicSaveWarning";
 import { SaveCreationDialog } from "./SaveCreationDialog";
 import { SaveGemGroupDialog } from "./SaveGemGroupDialog";
 import { ShareDialog } from "./ShareDialog";
 import { SignInPrompt } from "./SignInPrompt";
+import { TryOnDialog } from "../tryOn/TryOnDialog";
 
 /**
  * Hosts whichever workspace dialog is open (see `workspaceUi`). Saving asks
@@ -37,14 +40,29 @@ export function WorkspaceDialogs() {
     case "saveCreation":
       return <SaveCreationDialog mode={dialog.mode} onClose={close} />;
     case "editCreation":
-      return <SaveCreationDialog mode="edit" creation={dialog.creation} onClose={close} />;
+      return <SaveCreationDialog mode="edit" creation={dialog.creation} initialDetails={dialog.details} onClose={close} />;
     case "creationDetail":
       return <CreationDetail creationId={dialog.creationId} onClose={close} />;
     case "shareCreation":
       return <ShareDialog creation={dialog.creation} onClose={close} />;
+    case "tryOn":
+      return <TryOnDialog creation={dialog.creation} onClose={close} />;
     case "deleteCreation":
       return (
         <DeleteConfirmation kind="creation" name={dialog.creation.name} onConfirm={() => ws.deleteCreation(dialog.creation)} onClose={close} />
+      );
+    case "creationCollections":
+      return <CreationCollectionsDialog creationId={dialog.creationId} back={dialog.back} onClose={close} />;
+    case "editCollection":
+      return <CollectionEditDialog collection={dialog.collection} onClose={close} />;
+    case "deleteCollection":
+      return (
+        <DeleteConfirmation
+          kind="collection"
+          name={dialog.collection.name}
+          onConfirm={() => ws.deleteCollection(dialog.collection)}
+          onClose={close}
+        />
       );
     case "saveGroup":
       return <SaveGemGroupDialog pieceIds={dialog.pieceIds} onClose={close} />;
@@ -56,6 +74,8 @@ export function WorkspaceDialogs() {
       return <FeedbackModal onClose={close} />;
     case "onboarding":
       return <OnboardingOverlay onClose={close} />;
+    case "tourComplete":
+      return <TourCompleteDialog onClose={close} />;
     case "discardChanges":
       return (
         <Dialog
@@ -83,6 +103,21 @@ export function WorkspaceDialogs() {
               </Button>
             </>
           }
+        />
+      );
+    case "confirmPublicSave":
+      return (
+        <PublicSaveWarning
+          exposure={dialog.exposure}
+          name={dialog.name}
+          onClose={() => {
+            close();
+            dialog.onCancel?.();
+          }}
+          onConfirm={() => {
+            close();
+            dialog.onConfirm();
+          }}
         />
       );
     case "signIn":

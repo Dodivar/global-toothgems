@@ -19,12 +19,19 @@ import studioEn from "./locales/studio.en.json";
 // The Studio workspace around the editor (creations, Gem Groups, help), under `studio.workspace`.
 import studioWorkspaceFr from "./locales/studioWorkspace.fr.json";
 import studioWorkspaceEn from "./locales/studioWorkspace.en.json";
+import studioTemplatesFr from "./locales/studioTemplates.fr.json";
+import studioTemplatesEn from "./locales/studioTemplates.en.json";
+import studioGlowbookFr from "./locales/studioGlowbook.fr.json";
+import studioGlowbookEn from "./locales/studioGlowbook.en.json";
 // The alternative home page at /accueil-b, under `homeAlt`.
 import homeAltFr from "./locales/homeAlt.fr.json";
 import homeAltEn from "./locales/homeAlt.en.json";
 // The alternative shop page at /boutique, under `shopAlt`.
 import shopAltFr from "./locales/shopAlt.fr.json";
 import shopAltEn from "./locales/shopAlt.en.json";
+// The 3D Studio presentation page (/studio-3d), under `studioPage`.
+import studioPageFr from "./locales/studioPage.fr.json";
+import studioPageEn from "./locales/studioPage.en.json";
 // The learner experience (course overview, lesson player, knowledge checks),
 // under `learning`; and the back office's training image library, under
 // `trainingMedia`.
@@ -40,6 +47,6 @@ import loungeFr from "./locales/communityChat.fr.json";
 import loungeEn from "./locales/communityChat.en.json";
 
 export const resources = {
-  fr: { translation: { ...fr, promo: promoFr, reviews: reviewsFr, settings: settingsFr, studio: { ...studioFr, workspace: studioWorkspaceFr }, homeAlt: homeAltFr, shopAlt: shopAltFr, learning: learningFr, trainingMedia: trainingMediaFr, academyPage: academyPageFr, lounge: loungeFr } },
-  en: { translation: { ...en, promo: promoEn, reviews: reviewsEn, settings: settingsEn, studio: { ...studioEn, workspace: studioWorkspaceEn }, homeAlt: homeAltEn, shopAlt: shopAltEn, learning: learningEn, trainingMedia: trainingMediaEn, academyPage: academyPageEn, lounge: loungeEn } },
+  fr: { translation: { ...fr, promo: promoFr, reviews: reviewsFr, settings: settingsFr, studio: { ...studioFr, workspace: studioWorkspaceFr, templates: studioTemplatesFr, glowbook: studioGlowbookFr }, homeAlt: homeAltFr, shopAlt: shopAltFr, studioPage: studioPageFr, learning: learningFr, trainingMedia: trainingMediaFr, academyPage: academyPageFr, lounge: loungeFr } },
+  en: { translation: { ...en, promo: promoEn, reviews: reviewsEn, settings: settingsEn, studio: { ...studioEn, workspace: studioWorkspaceEn, templates: studioTemplatesEn, glowbook: studioGlowbookEn }, homeAlt: homeAltEn, shopAlt: shopAltEn, studioPage: studioPageEn, learning: learningEn, trainingMedia: trainingMediaEn, academyPage: academyPageEn, lounge: loungeEn } },
 };

@@ -25,12 +25,13 @@ export interface Creation {
   elementCount: number;
   estimatedPriceMinor: number;
   currency: string;
-  tags: string[];
   isFavorite: boolean;
   createdAt: string;
   updatedAt: string;
   /** Last time it was opened in the editor. */
   lastOpenedAt: string | null;
+  /** Set while it is published as a Global Toothgems template (staff, decision 97): saving it changes it for every member. */
+  templatePublishedAt?: string | null;
 }
 
 export interface GemGroup {
@@ -44,18 +45,16 @@ export interface GemGroup {
   elementCount: number;
   estimatedPriceMinor: number;
   currency: string;
-  tags: string[];
   isFavorite: boolean;
   createdAt: string;
   updatedAt: string;
   lastUsedAt: string | null;
 }
 
-/** Name, description and tags: what the save and "edit details" dialogs collect. */
+/** Name and description: what the save and "edit details" dialogs collect. */
 export interface RecordDetails {
   name: string;
   description: string;
-  tags: string[];
 }
 
 export const FEEDBACK_CATEGORIES = ["general", "bug", "feature", "usability", "performance"] as const;
@@ -69,3 +68,50 @@ export interface FeedbackInput {
   /** Where it was sent from, to reproduce what was reported. No personal data. */
   context: { path: string; pieces: number; language: string; viewport: string };
 }
+
+/**
+ * Colour of a collection's marker: a design-token name, never a free colour
+ * (the database refuses anything else). The name always reads next to it.
+ */
+export const COLLECTION_COLORS = ["blue", "fuchsia", "emerald", "amber", "ink"] as const;
+export type CollectionColor = (typeof COLLECTION_COLORS)[number];
+
+/**
+ * A named collection of saved creations (`public.studio_collections`).
+ * Which creations it holds is a separate list of memberships, so a creation
+ * can sit in several collections and deleting a collection never touches one.
+ */
+export interface StudioCollection {
+  id: string;
+  userId: string;
+  name: string;
+  color: CollectionColor | null;
+  createdAt: string;
+  updatedAt: string;
+}
+
+/** One creation in one collection (`public.studio_collection_creations`). */
+export interface CollectionMembership {
+  collectionId: string;
+  creationId: string;
+}
+
+export interface CollectionDetails {
+  name: string;
+  color: CollectionColor | null;
+}
+
+/**
+ * How "My Creations" is laid out, chosen by the member and kept on their
+ * account (`public.studio_preferences`): one grid with the collections as a
+ * filter bar, or an explorer of folders (the collections) to open.
+ */
+export const LIBRARY_VIEWS = ["grid", "explorer"] as const;
+export type LibraryView = (typeof LIBRARY_VIEWS)[number];
+
+export interface StudioPreferences {
+  libraryView: LibraryView;
+}
+
+/** What a member who never changed anything sees. */
+export const DEFAULT_PREFERENCES: StudioPreferences = { libraryView: "grid" };

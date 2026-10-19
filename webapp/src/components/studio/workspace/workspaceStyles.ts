@@ -3,6 +3,7 @@ import { useCallback, useEffect, useState } from "react";
 import { useTranslation } from "react-i18next";
 import { useFormat } from "../../../lib/format";
 import { formatRelative } from "../../../lib/studioWorkspace/relativeTime";
+import type { CollectionColor } from "../../../lib/studioWorkspace/types";
 
 /**
  * Shared look of the Studio workspace: the few class lists every card,
@@ -33,9 +34,6 @@ export const chipClass = (active: boolean) =>
       : "border-[var(--border-subtle)] bg-[var(--surface-card)] text-[var(--gt-ink-700)] hover:border-[var(--gt-blue-400)]",
   );
 
-export const tagChip =
-  "inline-flex items-center rounded-[var(--radius-pill)] bg-[var(--gt-blue-100)] px-2.5 py-0.5 text-[11px] font-semibold text-[var(--gt-blue-700)]";
-
 export const eyebrow = "m-0 text-[10.5px] font-bold uppercase tracking-[var(--tracking-eyebrow)] text-[var(--gt-blue-600)]";
 
 /** Prices, counts and relative dates in the UI language; relative dates refresh each minute. */
@@ -56,3 +54,13 @@ export function useWorkspaceFormat() {
   );
   return { t, price, count, ago, now };
 }
+
+/** A collection's colour marker; always shown beside its name, never alone. */
+export const collectionDot: Record<CollectionColor | "none", string> = {
+  blue: "bg-[var(--gt-blue-500)]",
+  fuchsia: "bg-[var(--gt-fuchsia-500)]",
+  emerald: "bg-[var(--gt-emerald-500)]",
+  amber: "bg-[var(--gt-amber-400)]",
+  ink: "bg-[var(--gt-ink-700)]",
+  none: "border border-[var(--gt-ink-400)] bg-transparent",
+};

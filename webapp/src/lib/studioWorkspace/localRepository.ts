@@ -1,5 +1,6 @@
 import { uid } from "../studio3d/math";
 import { STUDIO_SHARE_PATH } from "../studioUrl";
+import { toCollectionColor, toPreferences } from "./collections";
 import { sanitizeGroupData } from "./gemGroup";
 import { currentEstimate } from "../studio3d/gemRegistry";
 import {
@@ -13,8 +14,8 @@ import {
 import { sanitizeScene, sceneStats } from "./scene";
 import { seedCreations, seedGroups } from "./seed";
 import { snapshotShareLink } from "./share";
-import type { Creation, FeedbackInput, GemGroup } from "./types";
-import { normalizeDetails, normalizeTags, validateDetails, validateFeedback } from "./validation";
+import type { CollectionDetails, CollectionMembership, Creation, FeedbackInput, GemGroup, StudioCollection } from "./types";
+import { normalizeCollection, normalizeDetails, validateCollection, validateDetails, validateFeedback } from "./validation";
 
 /**
  * PROTOTYPE persistence: the Studio workspace kept in this browser's storage,
@@ -53,6 +54,9 @@ interface LibraryFile {
   creations: Omit<Creation, "thumbnailUrl">[];
   groups: Omit<GemGroup, "thumbnailUrl">[];
   feedback: (FeedbackInput & { id: string; createdAt: string })[];
+  collections: StudioCollection[];
+  memberships: CollectionMembership[];
+  preferences?: { library_view?: string };
 }
 
 /** v2: designs of the shop's gems (scene format 2); v1 libraries are left behind. */
@@ -86,6 +90,9 @@ export function createLocalRepositories(userId: string, opts: LocalRepositoryOpt
       creations: Array.isArray(data?.creations) ? data.creations : [],
       groups: Array.isArray(data?.groups) ? data.groups : [],
       feedback: Array.isArray(data?.feedback) ? data.feedback : [],
+      collections: Array.isArray(data?.collections) ? data.collections : [],
+      memberships: Array.isArray(data?.memberships) ? data.memberships : [],
+      preferences: data?.preferences && typeof data.preferences === "object" ? data.preferences : undefined,
     };
     if (seed && !file.seeded) {
       file.seeded = true;
@@ -103,7 +110,7 @@ export function createLocalRepositories(userId: string, opts: LocalRepositoryOpt
       .map((c) => {
         const scene = sanitizeScene(c.scene);
         // the estimate stays the one stored at the last save, like the database's
-        return { ...c, scene, elementCount: scene.pieces.length, tags: normalizeTags(Array.isArray(c.tags) ? c.tags : []) };
+        return { ...c, scene, elementCount: scene.pieces.length };
       });
     file.groups = file.groups
       .filter((g) => g && g.userId === userId && typeof g.id === "string")
@@ -112,6 +119,13 @@ export function createLocalRepositories(userId: string, opts: LocalRepositoryOpt
         if (!data) return [];
         return [{ ...g, data, elementCount: data.pieces.length }];
       });
+    file.collections = file.collections
+      .filter((c) => c && c.userId === userId && typeof c.id === "string" && typeof c.name === "string")
+      .map((c) => ({ ...c, color: toCollectionColor(c.color) }));
+    // A membership needs both sides, like the database's foreign keys.
+    const collectionIds = new Set(file.collections.map((c) => c.id));
+    const creationIds = new Set(file.creations.map((c) => c.id));
+    file.memberships = file.memberships.filter((m) => m && collectionIds.has(m.collectionId) && creationIds.has(m.creationId));
     return file;
   }
 
@@ -148,10 +162,26 @@ export function createLocalRepositories(userId: string, opts: LocalRepositoryOpt
   const withThumb = (c: Omit<Creation, "thumbnailUrl">): Creation => ({ ...c, thumbnailUrl: readThumb(c.id) });
   const withGroupThumb = (g: Omit<GemGroup, "thumbnailUrl">): GemGroup => ({ ...g, thumbnailUrl: readThumb(groupThumbId(g.id)) });
 
-  function checkDetails(details: { name: string; description: string; tags: string[] }) {
+  function checkDetails(details: { name: string; description: string }) {
     const problem = validateDetails(details);
     if (problem) throw new StudioStoreError("invalid", problem);
     return normalizeDetails(details);
+  }
+
+  /** Same rules as the database: valid name and colour, unique name per account ignoring case. */
+  function checkCollection(file: LibraryFile, details: CollectionDetails, exceptId?: string) {
+    const problem = validateCollection(details);
+    if (problem) throw new StudioStoreError("invalid", problem);
+    const next = normalizeCollection(details);
+    const key = next.name.toLocaleLowerCase();
+    if (file.collections.some((c) => c.id !== exceptId && c.name.toLocaleLowerCase() === key)) throw new StudioStoreError("duplicate");
+    return next;
+  }
+
+  function findCollection(file: LibraryFile, id: string) {
+    const index = file.collections.findIndex((c) => c.id === id);
+    if (index < 0) throw new StudioStoreError("notFound");
+    return index;
   }
 
   function findCreation(file: LibraryFile, id: string) {
@@ -199,11 +229,10 @@ export function createLocalRepositories(userId: string, opts: LocalRepositoryOpt
         const index = findCreation(file, id);
         const current = file.creations[index];
         const details =
-          patch.name !== undefined || patch.description !== undefined || patch.tags !== undefined
+          patch.name !== undefined || patch.description !== undefined
             ? checkDetails({
                 name: patch.name ?? current.name,
                 description: patch.description ?? current.description,
-                tags: patch.tags ?? current.tags,
               })
             : null;
         const scene = patch.scene ? sanitizeScene(patch.scene) : null;
@@ -246,6 +275,7 @@ export function createLocalRepositories(userId: string, opts: LocalRepositoryOpt
         await wait(latency);
         const file = read();
         file.creations.splice(findCreation(file, id), 1);
+        file.memberships = file.memberships.filter((m) => m.creationId !== id);
         write(file);
         writeThumb(id, null);
       },
@@ -297,11 +327,10 @@ export function createLocalRepositories(userId: string, opts: LocalRepositoryOpt
         const index = findGroup(file, id);
         const current = file.groups[index];
         const details =
-          patch.name !== undefined || patch.description !== undefined || patch.tags !== undefined
+          patch.name !== undefined || patch.description !== undefined
             ? checkDetails({
                 name: patch.name ?? current.name,
                 description: patch.description ?? current.description,
-                tags: patch.tags ?? current.tags,
               })
             : null;
         const next: Omit<GemGroup, "thumbnailUrl"> = {
@@ -341,6 +370,73 @@ export function createLocalRepositories(userId: string, opts: LocalRepositoryOpt
         file.groups.splice(findGroup(file, id), 1);
         write(file);
         writeThumb(groupThumbId(id), null);
+      },
+    },
+
+    collections: {
+      async list() {
+        await wait(latency);
+        const file = read();
+        return { collections: file.collections, memberships: file.memberships };
+      },
+      async create(details: CollectionDetails) {
+        await wait(latency);
+        const file = read();
+        const at = iso();
+        const row: StudioCollection = { id: uid() + uid(), userId, ...checkCollection(file, details), createdAt: at, updatedAt: at };
+        file.collections.push(row);
+        write(file);
+        return row;
+      },
+      async update(id: string, details: CollectionDetails) {
+        await wait(latency);
+        const file = read();
+        const index = findCollection(file, id);
+        const next: StudioCollection = { ...file.collections[index], ...checkCollection(file, details, id), updatedAt: iso() };
+        file.collections[index] = next;
+        write(file);
+        return next;
+      },
+      async remove(id: string) {
+        await wait(latency);
+        const file = read();
+        file.collections.splice(findCollection(file, id), 1);
+        file.memberships = file.memberships.filter((m) => m.collectionId !== id);
+        write(file);
+      },
+      async addCreations(collectionId: string, creationIds: string[]) {
+        await wait(latency);
+        const file = read();
+        findCollection(file, collectionId);
+        for (const creationId of creationIds) {
+          findCreation(file, creationId);
+          if (!file.memberships.some((m) => m.collectionId === collectionId && m.creationId === creationId)) {
+            file.memberships.push({ collectionId, creationId });
+          }
+        }
+        write(file);
+      },
+      async removeCreations(collectionId: string, creationIds: string[]) {
+        await wait(latency);
+        const file = read();
+        const out = new Set(creationIds);
+        file.memberships = file.memberships.filter((m) => !(m.collectionId === collectionId && out.has(m.creationId)));
+        write(file);
+      },
+    },
+
+    preferences: {
+      async get() {
+        await wait(latency);
+        return toPreferences(read().preferences);
+      },
+      async update(patch) {
+        await wait(latency);
+        const file = read();
+        const next = toPreferences({ library_view: patch.libraryView ?? toPreferences(file.preferences).libraryView });
+        file.preferences = { library_view: next.libraryView };
+        write(file);
+        return next;
       },
     },
 

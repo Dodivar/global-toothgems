@@ -2093,6 +2093,7 @@ export type Database = {
           name: string
           scene_data: Json
           tags: string[]
+          template_published_at: string | null
           thumbnail_path: string | null
           updated_at: string
           user_id: string
@@ -2109,6 +2110,7 @@ export type Database = {
           name: string
           scene_data: Json
           tags?: string[]
+          template_published_at?: string | null
           thumbnail_path?: string | null
           updated_at?: string
           user_id?: string
@@ -2125,6 +2127,7 @@ export type Database = {
           name?: string
           scene_data?: Json
           tags?: string[]
+          template_published_at?: string | null
           thumbnail_path?: string | null
           updated_at?: string
           user_id?: string
@@ -7347,6 +7350,42 @@ export type Database = {
           },
         ]
       }
+      stripe_customers: {
+        Row: {
+          created_at: string
+          livemode: boolean
+          stripe_customer_id: string
+          user_id: string
+        }
+        Insert: {
+          created_at?: string
+          livemode?: boolean
+          stripe_customer_id: string
+          user_id: string
+        }
+        Update: {
+          created_at?: string
+          livemode?: boolean
+          stripe_customer_id?: string
+          user_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "stripe_customers_user_id_fkey"
+            columns: ["user_id"]
+            isOneToOne: true
+            referencedRelation: "loyalty_overview"
+            referencedColumns: ["user_id"]
+          },
+          {
+            foreignKeyName: "stripe_customers_user_id_fkey"
+            columns: ["user_id"]
+            isOneToOne: true
+            referencedRelation: "profiles"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       stripe_webhook_events: {
         Row: {
           attempts: number
@@ -7398,6 +7437,84 @@ export type Database = {
             isOneToOne: false
             referencedRelation: "review_requests"
             referencedColumns: ["order_id"]
+          },
+        ]
+      }
+      studio_collection_creations: {
+        Row: {
+          collection_id: string
+          created_at: string
+          creation_id: string
+          user_id: string
+        }
+        Insert: {
+          collection_id: string
+          created_at?: string
+          creation_id: string
+          user_id?: string
+        }
+        Update: {
+          collection_id?: string
+          created_at?: string
+          creation_id?: string
+          user_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "studio_collection_creations_collection_fkey"
+            columns: ["collection_id", "user_id"]
+            isOneToOne: false
+            referencedRelation: "studio_collections"
+            referencedColumns: ["id", "user_id"]
+          },
+          {
+            foreignKeyName: "studio_collection_creations_creation_id_fkey"
+            columns: ["creation_id"]
+            isOneToOne: false
+            referencedRelation: "creations"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      studio_collections: {
+        Row: {
+          color: string | null
+          created_at: string
+          id: string
+          name: string
+          updated_at: string
+          user_id: string
+        }
+        Insert: {
+          color?: string | null
+          created_at?: string
+          id?: string
+          name: string
+          updated_at?: string
+          user_id?: string
+        }
+        Update: {
+          color?: string | null
+          created_at?: string
+          id?: string
+          name?: string
+          updated_at?: string
+          user_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "studio_collections_user_id_fkey"
+            columns: ["user_id"]
+            isOneToOne: false
+            referencedRelation: "loyalty_overview"
+            referencedColumns: ["user_id"]
+          },
+          {
+            foreignKeyName: "studio_collections_user_id_fkey"
+            columns: ["user_id"]
+            isOneToOne: false
+            referencedRelation: "profiles"
+            referencedColumns: ["id"]
           },
         ]
       }
@@ -7527,6 +7644,526 @@ export type Database = {
             columns: ["variant_id"]
             isOneToOne: false
             referencedRelation: "product_variants"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      studio_plan_prices: {
+        Row: {
+          active: boolean
+          amount: number
+          billing_interval: string
+          created_at: string
+          currency: string
+          id: string
+          livemode: boolean
+          plan: string
+          stripe_price_id: string
+          updated_at: string
+        }
+        Insert: {
+          active?: boolean
+          amount: number
+          billing_interval: string
+          created_at?: string
+          currency: string
+          id?: string
+          livemode?: boolean
+          plan: string
+          stripe_price_id: string
+          updated_at?: string
+        }
+        Update: {
+          active?: boolean
+          amount?: number
+          billing_interval?: string
+          created_at?: string
+          currency?: string
+          id?: string
+          livemode?: boolean
+          plan?: string
+          stripe_price_id?: string
+          updated_at?: string
+        }
+        Relationships: []
+      }
+      studio_preferences: {
+        Row: {
+          created_at: string
+          library_view: string
+          updated_at: string
+          user_id: string
+        }
+        Insert: {
+          created_at?: string
+          library_view?: string
+          updated_at?: string
+          user_id?: string
+        }
+        Update: {
+          created_at?: string
+          library_view?: string
+          updated_at?: string
+          user_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "studio_preferences_user_id_fkey"
+            columns: ["user_id"]
+            isOneToOne: true
+            referencedRelation: "loyalty_overview"
+            referencedColumns: ["user_id"]
+          },
+          {
+            foreignKeyName: "studio_preferences_user_id_fkey"
+            columns: ["user_id"]
+            isOneToOne: true
+            referencedRelation: "profiles"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      studio_showcase_items: {
+        Row: {
+          created_at: string
+          creation_id: string
+          id: string
+          position: number
+          review_note: string | null
+          reviewed_at: string | null
+          reviewed_by: string | null
+          status: string
+          submitted_at: string
+          updated_at: string
+          user_id: string
+        }
+        Insert: {
+          created_at?: string
+          creation_id: string
+          id?: string
+          position?: number
+          review_note?: string | null
+          reviewed_at?: string | null
+          reviewed_by?: string | null
+          status?: string
+          submitted_at?: string
+          updated_at?: string
+          user_id: string
+        }
+        Update: {
+          created_at?: string
+          creation_id?: string
+          id?: string
+          position?: number
+          review_note?: string | null
+          reviewed_at?: string | null
+          reviewed_by?: string | null
+          status?: string
+          submitted_at?: string
+          updated_at?: string
+          user_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "studio_showcase_items_creation_id_fkey"
+            columns: ["creation_id"]
+            isOneToOne: true
+            referencedRelation: "creations"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "studio_showcase_items_reviewed_by_fkey"
+            columns: ["reviewed_by"]
+            isOneToOne: false
+            referencedRelation: "loyalty_overview"
+            referencedColumns: ["user_id"]
+          },
+          {
+            foreignKeyName: "studio_showcase_items_reviewed_by_fkey"
+            columns: ["reviewed_by"]
+            isOneToOne: false
+            referencedRelation: "profiles"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "studio_showcase_items_user_id_fkey"
+            columns: ["user_id"]
+            isOneToOne: false
+            referencedRelation: "studio_showcases"
+            referencedColumns: ["user_id"]
+          },
+        ]
+      }
+      studio_showcases: {
+        Row: {
+          accent: string
+          avatar_path: string | null
+          background: string
+          banner_path: string | null
+          bio: string
+          booking_url: string | null
+          changes_review_note: string | null
+          changes_submitted_at: string | null
+          created_at: string
+          display_name: string
+          featured_item_id: string | null
+          handle: string
+          instagram: string | null
+          layout: string
+          location: string | null
+          pending_changes: Json | null
+          review_note: string | null
+          reviewed_at: string | null
+          reviewed_by: string | null
+          status: string
+          submitted_at: string
+          tiktok: string | null
+          updated_at: string
+          user_id: string
+          website_url: string | null
+        }
+        Insert: {
+          accent?: string
+          avatar_path?: string | null
+          background?: string
+          banner_path?: string | null
+          bio?: string
+          booking_url?: string | null
+          changes_review_note?: string | null
+          changes_submitted_at?: string | null
+          created_at?: string
+          display_name: string
+          featured_item_id?: string | null
+          handle: string
+          instagram?: string | null
+          layout?: string
+          location?: string | null
+          pending_changes?: Json | null
+          review_note?: string | null
+          reviewed_at?: string | null
+          reviewed_by?: string | null
+          status?: string
+          submitted_at?: string
+          tiktok?: string | null
+          updated_at?: string
+          user_id?: string
+          website_url?: string | null
+        }
+        Update: {
+          accent?: string
+          avatar_path?: string | null
+          background?: string
+          banner_path?: string | null
+          bio?: string
+          booking_url?: string | null
+          changes_review_note?: string | null
+          changes_submitted_at?: string | null
+          created_at?: string
+          display_name?: string
+          featured_item_id?: string | null
+          handle?: string
+          instagram?: string | null
+          layout?: string
+          location?: string | null
+          pending_changes?: Json | null
+          review_note?: string | null
+          reviewed_at?: string | null
+          reviewed_by?: string | null
+          status?: string
+          submitted_at?: string
+          tiktok?: string | null
+          updated_at?: string
+          user_id?: string
+          website_url?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "studio_showcases_featured_item_id_fkey"
+            columns: ["featured_item_id"]
+            isOneToOne: false
+            referencedRelation: "studio_showcase_items"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "studio_showcases_reviewed_by_fkey"
+            columns: ["reviewed_by"]
+            isOneToOne: false
+            referencedRelation: "loyalty_overview"
+            referencedColumns: ["user_id"]
+          },
+          {
+            foreignKeyName: "studio_showcases_reviewed_by_fkey"
+            columns: ["reviewed_by"]
+            isOneToOne: false
+            referencedRelation: "profiles"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "studio_showcases_user_id_fkey"
+            columns: ["user_id"]
+            isOneToOne: true
+            referencedRelation: "loyalty_overview"
+            referencedColumns: ["user_id"]
+          },
+          {
+            foreignKeyName: "studio_showcases_user_id_fkey"
+            columns: ["user_id"]
+            isOneToOne: true
+            referencedRelation: "profiles"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      studio_subscription_invoices: {
+        Row: {
+          amount: number
+          billing_reason: string
+          created_at: string
+          currency: string
+          occurred_at: string
+          status: string
+          stripe_invoice_id: string
+          subscription_id: string
+          updated_at: string
+          user_id: string
+        }
+        Insert: {
+          amount: number
+          billing_reason: string
+          created_at?: string
+          currency: string
+          occurred_at: string
+          status: string
+          stripe_invoice_id: string
+          subscription_id: string
+          updated_at?: string
+          user_id: string
+        }
+        Update: {
+          amount?: number
+          billing_reason?: string
+          created_at?: string
+          currency?: string
+          occurred_at?: string
+          status?: string
+          stripe_invoice_id?: string
+          subscription_id?: string
+          updated_at?: string
+          user_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "studio_subscription_invoices_subscription_id_fkey"
+            columns: ["subscription_id"]
+            isOneToOne: false
+            referencedRelation: "studio_subscriptions"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "studio_subscription_invoices_user_id_fkey"
+            columns: ["user_id"]
+            isOneToOne: false
+            referencedRelation: "loyalty_overview"
+            referencedColumns: ["user_id"]
+          },
+          {
+            foreignKeyName: "studio_subscription_invoices_user_id_fkey"
+            columns: ["user_id"]
+            isOneToOne: false
+            referencedRelation: "profiles"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      studio_subscriptions: {
+        Row: {
+          billing_interval: string | null
+          cancel_at_period_end: boolean
+          canceled_at: string | null
+          created_at: string
+          current_period_end: string
+          id: string
+          plan: string
+          status: string
+          stripe_customer_id: string | null
+          stripe_price_id: string | null
+          stripe_subscription_id: string
+          updated_at: string
+          user_id: string
+        }
+        Insert: {
+          billing_interval?: string | null
+          cancel_at_period_end?: boolean
+          canceled_at?: string | null
+          created_at?: string
+          current_period_end: string
+          id?: string
+          plan: string
+          status: string
+          stripe_customer_id?: string | null
+          stripe_price_id?: string | null
+          stripe_subscription_id: string
+          updated_at?: string
+          user_id: string
+        }
+        Update: {
+          billing_interval?: string | null
+          cancel_at_period_end?: boolean
+          canceled_at?: string | null
+          created_at?: string
+          current_period_end?: string
+          id?: string
+          plan?: string
+          status?: string
+          stripe_customer_id?: string | null
+          stripe_price_id?: string | null
+          stripe_subscription_id?: string
+          updated_at?: string
+          user_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "studio_subscriptions_user_id_fkey"
+            columns: ["user_id"]
+            isOneToOne: false
+            referencedRelation: "loyalty_overview"
+            referencedColumns: ["user_id"]
+          },
+          {
+            foreignKeyName: "studio_subscriptions_user_id_fkey"
+            columns: ["user_id"]
+            isOneToOne: false
+            referencedRelation: "profiles"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      studio_trials: {
+        Row: {
+          created_at: string
+          first_creation_at: string | null
+          trial_expires_at: string
+          trial_started_at: string
+          user_id: string
+        }
+        Insert: {
+          created_at?: string
+          first_creation_at?: string | null
+          trial_expires_at?: string
+          trial_started_at?: string
+          user_id: string
+        }
+        Update: {
+          created_at?: string
+          first_creation_at?: string | null
+          trial_expires_at?: string
+          trial_started_at?: string
+          user_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "studio_trials_user_id_fkey"
+            columns: ["user_id"]
+            isOneToOne: true
+            referencedRelation: "loyalty_overview"
+            referencedColumns: ["user_id"]
+          },
+          {
+            foreignKeyName: "studio_trials_user_id_fkey"
+            columns: ["user_id"]
+            isOneToOne: true
+            referencedRelation: "profiles"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      studio_withdrawals: {
+        Row: {
+          canceled_at: string | null
+          created_at: string
+          currency: string
+          failure_reason: string | null
+          id: string
+          paid_amount: number
+          period_days: number
+          period_end: string
+          period_start: string
+          refund_amount: number
+          refunded_at: string | null
+          requested_at: string
+          status: string
+          stripe_invoice_id: string
+          stripe_refund_id: string | null
+          subscription_id: string
+          updated_at: string
+          used_amount: number
+          used_days: number
+          user_id: string
+        }
+        Insert: {
+          canceled_at?: string | null
+          created_at?: string
+          currency: string
+          failure_reason?: string | null
+          id?: string
+          paid_amount: number
+          period_days: number
+          period_end: string
+          period_start: string
+          refund_amount: number
+          refunded_at?: string | null
+          requested_at?: string
+          status?: string
+          stripe_invoice_id: string
+          stripe_refund_id?: string | null
+          subscription_id: string
+          updated_at?: string
+          used_amount: number
+          used_days: number
+          user_id: string
+        }
+        Update: {
+          canceled_at?: string | null
+          created_at?: string
+          currency?: string
+          failure_reason?: string | null
+          id?: string
+          paid_amount?: number
+          period_days?: number
+          period_end?: string
+          period_start?: string
+          refund_amount?: number
+          refunded_at?: string | null
+          requested_at?: string
+          status?: string
+          stripe_invoice_id?: string
+          stripe_refund_id?: string | null
+          subscription_id?: string
+          updated_at?: string
+          used_amount?: number
+          used_days?: number
+          user_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "studio_withdrawals_subscription_id_fkey"
+            columns: ["subscription_id"]
+            isOneToOne: true
+            referencedRelation: "studio_subscriptions"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "studio_withdrawals_user_id_fkey"
+            columns: ["user_id"]
+            isOneToOne: false
+            referencedRelation: "loyalty_overview"
+            referencedColumns: ["user_id"]
+          },
+          {
+            foreignKeyName: "studio_withdrawals_user_id_fkey"
+            columns: ["user_id"]
+            isOneToOne: false
+            referencedRelation: "profiles"
             referencedColumns: ["id"]
           },
         ]
@@ -8272,6 +8909,20 @@ export type Database = {
         }
         Returns: Json
       }
+      apply_studio_subscription: {
+        Args: {
+          p_cancel_at_period_end: boolean
+          p_canceled_at: string
+          p_current_period_end: string
+          p_livemode: boolean
+          p_metadata_user_id: string
+          p_status: string
+          p_stripe_customer_id: string
+          p_stripe_price_id: string
+          p_stripe_subscription_id: string
+        }
+        Returns: Json
+      }
       cancel_gift_card: {
         Args: { p_gift_card_id: string; p_note: string }
         Returns: string
@@ -8757,6 +9408,36 @@ export type Database = {
           user_id: string
         }[]
       }
+      pending_studio_subscription_emails: {
+        Args: { p_limit?: number }
+        Returns: {
+          amount: number
+          billing_interval: string
+          consent_version: string
+          consented_at: string
+          currency: string
+          email: string
+          locale: string
+          plan: string
+          subscription_id: string
+        }[]
+      }
+      pending_studio_withdrawal_emails: {
+        Args: { p_limit?: number }
+        Returns: {
+          currency: string
+          email: string
+          locale: string
+          paid_amount: number
+          period_days: number
+          plan: string
+          refund_amount: number
+          requested_at: string
+          used_amount: number
+          used_days: number
+          withdrawal_id: string
+        }[]
+      }
       quote_basket: {
         Args: {
           p_currency?: string
@@ -8857,6 +9538,53 @@ export type Database = {
         }
         Returns: string
       }
+      record_studio_invoice: {
+        Args: {
+          p_amount: number
+          p_billing_reason: string
+          p_currency: string
+          p_occurred_at: string
+          p_status: string
+          p_stripe_invoice_id: string
+          p_stripe_subscription_id: string
+        }
+        Returns: undefined
+      }
+      record_studio_withdrawal_step: {
+        Args: {
+          p_step: string
+          p_stripe_refund_id?: string
+          p_withdrawal_id: string
+        }
+        Returns: {
+          canceled_at: string | null
+          created_at: string
+          currency: string
+          failure_reason: string | null
+          id: string
+          paid_amount: number
+          period_days: number
+          period_end: string
+          period_start: string
+          refund_amount: number
+          refunded_at: string | null
+          requested_at: string
+          status: string
+          stripe_invoice_id: string
+          stripe_refund_id: string | null
+          subscription_id: string
+          updated_at: string
+          used_amount: number
+          used_days: number
+          user_id: string
+        }
+        SetofOptions: {
+          from: "*"
+          to: "studio_withdrawals"
+          isOneToOne: true
+          isSetofReturn: false
+        }
+      }
       refund_to_gift_cards: {
         Args: { p_amount: number; p_order_id: string; p_reason: string }
         Returns: number
@@ -8901,6 +9629,14 @@ export type Database = {
           isSetofReturn: false
         }
       }
+      request_studio_withdrawal: {
+        Args: {
+          p_period_end: string
+          p_period_start: string
+          p_user_id: string
+        }
+        Returns: Json
+      }
       set_shipment_status: {
         Args: {
           p_carrier?: string
@@ -8934,6 +9670,42 @@ export type Database = {
           isSetofReturn: false
         }
       }
+      settle_studio_withdrawal_refund: {
+        Args: {
+          p_reason?: string
+          p_status: string
+          p_stripe_refund_id: string
+          p_withdrawal_id: string
+        }
+        Returns: {
+          canceled_at: string | null
+          created_at: string
+          currency: string
+          failure_reason: string | null
+          id: string
+          paid_amount: number
+          period_days: number
+          period_end: string
+          period_start: string
+          refund_amount: number
+          refunded_at: string | null
+          requested_at: string
+          status: string
+          stripe_invoice_id: string
+          stripe_refund_id: string | null
+          subscription_id: string
+          updated_at: string
+          used_amount: number
+          used_days: number
+          user_id: string
+        }
+        SetofOptions: {
+          from: "*"
+          to: "studio_withdrawals"
+          isOneToOne: true
+          isSetofReturn: false
+        }
+      }
       shipping_zone_for_country: {
         Args: { p_country_code: string }
         Returns: string
@@ -8957,9 +9729,109 @@ export type Database = {
           user_id: string
         }[]
       }
+      start_studio_trial: { Args: never; Returns: Json }
+      studio_access_state: { Args: never; Returns: Json }
+      studio_moderate_showcase: {
+        Args: { p_note?: string; p_status: string; p_user_id: string }
+        Returns: undefined
+      }
+      studio_moderate_showcase_changes: {
+        Args: { p_note?: string; p_status: string; p_user_id: string }
+        Returns: undefined
+      }
+      studio_moderate_showcase_item: {
+        Args: { p_item_id: string; p_note?: string; p_status: string }
+        Returns: undefined
+      }
+      studio_public_showcase: { Args: { p_handle: string }; Returns: Json }
+      studio_public_showcase_creation: {
+        Args: { p_handle: string; p_item_id: string }
+        Returns: Json
+      }
       studio_revoke_creation_share: {
         Args: { p_creation_id: string }
         Returns: undefined
+      }
+      studio_save_showcase: {
+        Args: {
+          p_bio: string
+          p_display_name: string
+          p_handle: string
+          p_instagram: string
+        }
+        Returns: {
+          accent: string
+          avatar_path: string | null
+          background: string
+          banner_path: string | null
+          bio: string
+          booking_url: string | null
+          changes_review_note: string | null
+          changes_submitted_at: string | null
+          created_at: string
+          display_name: string
+          featured_item_id: string | null
+          handle: string
+          instagram: string | null
+          layout: string
+          location: string | null
+          pending_changes: Json | null
+          review_note: string | null
+          reviewed_at: string | null
+          reviewed_by: string | null
+          status: string
+          submitted_at: string
+          tiktok: string | null
+          updated_at: string
+          user_id: string
+          website_url: string | null
+        }
+        SetofOptions: {
+          from: "*"
+          to: "studio_showcases"
+          isOneToOne: true
+          isSetofReturn: false
+        }
+      }
+      studio_save_showcase_look: {
+        Args: { p_look: Json }
+        Returns: {
+          accent: string
+          avatar_path: string | null
+          background: string
+          banner_path: string | null
+          bio: string
+          booking_url: string | null
+          changes_review_note: string | null
+          changes_submitted_at: string | null
+          created_at: string
+          display_name: string
+          featured_item_id: string | null
+          handle: string
+          instagram: string | null
+          layout: string
+          location: string | null
+          pending_changes: Json | null
+          review_note: string | null
+          reviewed_at: string | null
+          reviewed_by: string | null
+          status: string
+          submitted_at: string
+          tiktok: string | null
+          updated_at: string
+          user_id: string
+          website_url: string | null
+        }
+        SetofOptions: {
+          from: "*"
+          to: "studio_showcases"
+          isOneToOne: true
+          isSetofReturn: false
+        }
+      }
+      studio_set_template: {
+        Args: { p_creation_id: string; p_published: boolean }
+        Returns: string
       }
       studio_share_creation: {
         Args: { p_creation_id: string }
@@ -8974,6 +9846,98 @@ export type Database = {
           updated_at: string
         }[]
       }
+      studio_showcase_add: {
+        Args: { p_creation_id: string }
+        Returns: {
+          created_at: string
+          creation_id: string
+          id: string
+          position: number
+          review_note: string | null
+          reviewed_at: string | null
+          reviewed_by: string | null
+          status: string
+          submitted_at: string
+          updated_at: string
+          user_id: string
+        }
+        SetofOptions: {
+          from: "*"
+          to: "studio_showcase_items"
+          isOneToOne: true
+          isSetofReturn: false
+        }
+      }
+      studio_showcase_queue: {
+        Args: never
+        Returns: {
+          bio: string
+          creation_description: string
+          creation_name: string
+          creation_updated_at: string
+          details: Json
+          display_name: string
+          element_count: number
+          handle: string
+          id: string
+          instagram: string
+          kind: string
+          review_note: string
+          reviewed_at: string
+          showcase_status: string
+          status: string
+          submitted_at: string
+          thumbnail_path: string
+          user_id: string
+        }[]
+      }
+      studio_showcase_reorder: {
+        Args: { p_creation_ids: string[] }
+        Returns: undefined
+      }
+      studio_templates: {
+        Args: never
+        Returns: {
+          currency: string
+          description: string
+          element_count: number
+          estimated_price_minor: number
+          id: string
+          name: string
+          published_at: string
+          scene_data: Json
+          tags: string[]
+          thumbnail_path: string
+          updated_at: string
+        }[]
+      }
+      studio_use_template: {
+        Args: { p_template_id: string }
+        Returns: {
+          created_at: string
+          currency: string
+          description: string
+          element_count: number | null
+          estimated_price_minor: number
+          id: string
+          is_favorite: boolean
+          last_opened_at: string | null
+          name: string
+          scene_data: Json
+          tags: string[]
+          template_published_at: string | null
+          thumbnail_path: string | null
+          updated_at: string
+          user_id: string
+        }
+        SetofOptions: {
+          from: "*"
+          to: "creations"
+          isOneToOne: true
+          isSetofReturn: false
+        }
+      }
+      studio_withdrawal_quote: { Args: never; Returns: Json }
       submit_contact_request: {
         Args: {
           p_attachment_paths?: string[]

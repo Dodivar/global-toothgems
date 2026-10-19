@@ -11,7 +11,7 @@ import { StudioStoreError } from "./repository";
 import { createScene, isSymmetrical, piecesKey, sanitizeScene } from "./scene";
 import { seedCreations, seedGroups } from "./seed";
 import type { Creation } from "./types";
-import { copyName, normalizeTags, parseTagList, validateDetails, validateFeedback } from "./validation";
+import { copyName, validateDetails, validateFeedback } from "./validation";
 
 const piece = (over: Partial<PlacedJewelry> = {}): PlacedJewelry => ({
   id: "a",
@@ -138,16 +138,10 @@ describe("gem groups", () => {
 });
 
 describe("validation", () => {
-  it("normalises tags", () => {
-    expect(normalizeTags(["  Minimal ", "minimal", "#Butterfly", "", "a  b"])).toEqual(["Minimal", "Butterfly", "a b"]);
-    expect(parseTagList("Minimal, Butterfly ,Symmetrical,")).toEqual(["Minimal", "Butterfly", "Symmetrical"]);
-    expect(normalizeTags(Array.from({ length: 12 }, (_, i) => `t${i}`))).toHaveLength(8);
-  });
-
   it("requires a name and bounds the text", () => {
-    expect(validateDetails({ name: "   ", description: "", tags: [] })).toBe("nameMissing");
-    expect(validateDetails({ name: "x".repeat(61), description: "", tags: [] })).toBe("nameTooLong");
-    expect(validateDetails({ name: "Crystal Smile", description: "", tags: [] })).toBeNull();
+    expect(validateDetails({ name: "   ", description: "" })).toBe("nameMissing");
+    expect(validateDetails({ name: "x".repeat(61), description: "" })).toBe("nameTooLong");
+    expect(validateDetails({ name: "Crystal Smile", description: "" })).toBeNull();
     expect(copyName("x".repeat(60), "(copy)")).toHaveLength(60);
   });
 
@@ -169,10 +163,10 @@ describe("library", () => {
     for (const g of seedGroups("u1", now)) expect(sanitizeGroupData(g.data)?.pieces).toHaveLength(g.elementCount);
   });
 
-  it("searches name, description and tags, ignoring accents and case", () => {
+  it("searches name and description, ignoring accents and case", () => {
     const c = creations[0];
     expect(matchesQuery(c, "crystal")).toBe(true);
-    expect(matchesQuery(c, "SYMMÉTRICAL appointment")).toBe(true);
+    expect(matchesQuery(c, "crystal")).toBe(true);
     expect(matchesQuery(c, "ruby")).toBe(false);
   });
 
@@ -214,11 +208,10 @@ describe("local repository", () => {
     const created = await repo.creations.create({
       name: " Minimal  Butterfly ",
       description: "Symmetrical butterfly composition for front teeth.",
-      tags: ["Minimal", "minimal", "Butterfly"],
       scene,
       thumbnail: "data:image/jpeg;base64,AAAA",
     });
-    expect(created).toMatchObject({ name: "Minimal Butterfly", tags: ["Minimal", "Butterfly"], elementCount: 2, userId: "u1" });
+    expect(created).toMatchObject({ name: "Minimal Butterfly", elementCount: 2, userId: "u1" });
     expect(created.estimatedPriceMinor).toBeGreaterThan(0);
     expect(created.thumbnailUrl).toBe("data:image/jpeg;base64,AAAA");
 
@@ -247,7 +240,7 @@ describe("local repository", () => {
     const storage = memoryStorage();
     const mine = createLocalRepositories("u1", { storage, now });
     const theirs = createLocalRepositories("u2", { storage, now });
-    await mine.creations.create({ name: "Mine", description: "", tags: [], scene, thumbnail: null });
+    await mine.creations.create({ name: "Mine", description: "", scene, thumbnail: null });
     expect(await theirs.creations.list()).toEqual([]);
   });
 
@@ -255,18 +248,18 @@ describe("local repository", () => {
     const storage = memoryStorage();
     const repo = createLocalRepositories("u1", { storage, now });
     storage.failWrites = true;
-    const attempt = repo.creations.create({ name: "Too much", description: "", tags: [], scene, thumbnail: null });
+    const attempt = repo.creations.create({ name: "Too much", description: "", scene, thumbnail: null });
     await expect(attempt).rejects.toBeInstanceOf(StudioStoreError);
     await expect(attempt).rejects.toMatchObject({ code: "storage" });
   });
 
   it("refuses invalid details and one-gem groups", async () => {
     const repo = createLocalRepositories("u1", { storage: memoryStorage(), now });
-    await expect(repo.creations.create({ name: "", description: "", tags: [], scene, thumbnail: null })).rejects.toMatchObject({
+    await expect(repo.creations.create({ name: "", description: "", scene, thumbnail: null })).rejects.toMatchObject({
       code: "invalid",
     });
     const one = { version: 2 as const, anchorToothId: "11", pieces: [] };
-    await expect(repo.groups.create({ name: "Solo", description: "", tags: [], data: one, thumbnail: null })).rejects.toMatchObject({
+    await expect(repo.groups.create({ name: "Solo", description: "", data: one, thumbnail: null })).rejects.toMatchObject({
       code: "invalid",
     });
   });
@@ -278,7 +271,7 @@ describe("local repository", () => {
     expect(seeded.every((g) => g.thumbnailUrl === null)).toBe(true);
 
     const render = "data:image/jpeg;base64,BBBB";
-    const created = await repo.groups.create({ name: "Papillon", description: "", tags: [], data: seeded[0].data, thumbnail: render });
+    const created = await repo.groups.create({ name: "Papillon", description: "", data: seeded[0].data, thumbnail: render });
     expect(created.thumbnailUrl).toBe(render);
     expect((await repo.groups.update(created.id, { name: "Papillon bleu" })).thumbnailUrl).toBe(render);
 

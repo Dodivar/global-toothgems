@@ -67,7 +67,7 @@ supabase/
   tests/admin_customers_validation.sql back-office customers: customer refused, viewer read-only, manager writes and read-only columns, notes by their author, status history, course progress (always rolls back)
   tests/email_validation.sql        e-mail delivery events (forward-only, newsletter bounce/complaint) and the pending shipping / refund / enrolment queries, service role only (always rolls back)
   config.toml   CLI settings this repo relies on (verify_jwt of the Edge Functions)
-  functions/    Edge Functions (Deno): create-checkout-session, stripe-webhook, refund-order, deliver-gift-cards, send-email, resend-webhook, send-pending-emails, invite-staff-member, _shared/ (pure modules + clients),
+  functions/    Edge Functions (Deno): create-checkout-session, stripe-webhook, create-studio-subscription, studio-billing-portal, studio-billing-setup, refund-order, deliver-gift-cards, send-email, resend-webhook, send-pending-emails, invite-staff-member, _shared/ (pure modules + clients),
                 *_test.ts (deno test), .env.example (secret names)
   templates/confirm-signup.html     French "Confirm signup" email, to paste into the Auth settings
   templates/invite-staff.html       French "Invite user" email (team invitations), to paste into the Auth settings
@@ -149,6 +149,21 @@ supabase/
 | 20261014150008 | `admin_back_in_stock_requests` | **Applied 2026-10-14.** Decision 90: `admin_back_in_stock_requests(p_limit)` (SECURITY DEFINER, `manage_products`, 42501 otherwise) — the back office's read of the requests for `/admin/alertes-stock`: product and option names, product status, the target's stock state, address, member, language, dates and the e-mail's `email_log` status and attempts. Read-only. Suite `tests/back_in_stock_validation.sql` (B9) |
 | 20261014175219 | `admin_adjust_stock` | **Applied 2026-10-14.** Decision 91: `admin_adjust_stock(p_product_id, p_variant_id, p_delta, p_expected)` (SECURITY DEFINER, `manage_products`, 42501 otherwise) — the product list's quick restock: adds `p_delta` to `quantity_on_hand` of the product's or one variant's stock row in one UPDATE, so a sale paid meanwhile is kept; with `p_expected` (an exact count typed after a stocktake) refuses with 40001 when the shelf moved since. Refuses an untracked row, a product whose stock is per variant, a variant of another product (P0002), a zero change and a result below the reserved units (22023, hint `reserved`). Recorded as an `adjustment` with the actor by the `inventory_items_ledger` trigger. Suite `tests/stock_adjustment_validation.sql` |
 | 20261015152449 | `academy_localized_images` | **Applied 2026-10-15.** Decision 92: an English file per image slot — `course_block_translations.media_id` (image block) / `poster_media_id` (video poster), `quiz_question_translations.image_media_id` (FK `training_media`, ON DELETE RESTRICT, indexed); `quiz_question_translations.text` nullable (an English row may carry only the image). `admin_save_course()` patched (kind-checked; an English row exists when it has text or a file), `private.learner_course_json()` returns the English files and lists them in `media`, `private.can_read_learner_media_path()` lets a holder read them. Suite `tests/academy_localized_images_validation.sql` |
+| 20261017103101 | `studio_trial_access` | **Applied 2026-10-17.** Decision 93: the 3D Studio 48-hour free trial and the subscription entitlement. `studio_trials` (one row per account, `trial_expires_at = trial_started_at + 48 h` by CHECK, `first_creation_at` set by a trigger on `creations`), `studio_subscriptions` (Stripe mirror, service role only — written since `20261018102741`), `private.has_studio_access()` (active trial, active subscription or active staff) added to the INSERT/UPDATE policies of `creations`, `gem_groups` and the `studio-thumbnails` bucket (read and delete unchanged), `start_studio_trial()` (idempotent, `started` only for the call that created the trial; none for a current or former subscriber or staff), `studio_access_state()` (state + `server_now`). Both tables readable by their owner and `view_statistics` staff; audited. Suite `tests/studio_trial_validation.sql`; `tests/studio_workspace_validation.sql` gives its members a trial |
+| 20261018102741 | `studio_subscription_billing` | **Applied 2026-10-18.** Decision 94: selling the 3D Studio subscription. `stripe_customers` (account → Stripe customer, service role only), `studio_plan_prices` (plan × `month`/`year` → Stripe Price, amount VAT included; one active per plan and interval; public read of active rows; rows set per environment by `studio-billing-setup`, never by a migration; audited), `studio_subscriptions` + `billing_interval`, `stripe_price_id`, `canceled_at`, `studio_subscription_invoices` (paid / failed invoice with Stripe's `billing_reason`: new subscription vs renewal; owner and `view_statistics` read). Writers `apply_studio_subscription()` (account from the stored customer, else the Checkout's `user_id` metadata; plan from the price; never moves a subscription to another account) and `record_studio_invoice()` (a paid invoice stays paid), service role only. `studio_access_json()` / `start_studio_trial()`: a first payment that never completed (`incomplete`, `incomplete_expired`) does not forfeit the trial. Suite `tests/studio_billing_validation.sql` |
+| 20261018110209 | `studio_billing_updated_at` | **Applied 2026-10-18.** Fix: `studio_subscriptions` (since `20261017103101`), `studio_plan_prices` and `studio_subscription_invoices` used the designs' `studio_touch_updated_at()` trigger, which reads `name` and failed every UPDATE (`record "new" has no field "name"`, found by the first test subscription); they take `private.set_updated_at()` |
+| 20261018155521 | `studio_withdrawal_consent` | **Applied 2026-10-18.** Decision 94 (a): the member's request for immediate access to the Studio (L221-25). `consent_records` purpose `studio_immediate_access` (source `checkout`, `policy_version` = wording version), recorded by `create-studio-subscription` when Pay is pressed in the payment step, before the payment is confirmed (since 2026-10-18; before the Stripe session until then); `pending_studio_subscription_emails()` (service role: new subscriptions whose first invoice is paid, with the request accepted before them) and template `studio_subscription_confirmation` (FR + EN), sent once by `send-pending-emails` (`studio_subscription:<id>`). Suite `tests/studio_withdrawal_consent_validation.sql` |
+| 20261018163051 | `studio_withdrawals` | **Applied 2026-10-18.** Decision 95: `studio_withdrawals` (one per subscription, amounts, Stripe steps, refund status; owner and `view_statistics` read, service role writes; audited), `studio_withdrawal_quote()` (member: eligibility, deadline, refund if withdrawn now), `request_studio_withdrawal()`, `record_studio_withdrawal_step()`, `settle_studio_withdrawal_refund()`, `pending_studio_withdrawal_emails()` (service role), template `studio_withdrawal_confirmation`, `studio_subscription_confirmation` now points to the account page. Suite `tests/studio_withdrawals_validation.sql` |
+| 20261018163229 | `studio_withdrawals_updated_at` | **Applied 2026-10-18.** Fix: `studio_withdrawals` took the designs' `updated_at` trigger (same mistake as `20261018110209`); generic `private.set_updated_at()` instead |
+| 20261018224456 | `studio_collections` | **Applied 2026-10-19.** `studio_collections` (name unique per member ignoring case, optional token colour) and `studio_collection_creations` (many-to-many memberships, insert/delete only); owner-only RLS, writes need `has_studio_access()`, reads and deletes do not; cross-owner links refused (composite FK + RLS on the creation's owner). Decision 96 |
+| 20261018224648 | `studio_collections_fk_index` | **Applied 2026-10-19.** Index covering the memberships' composite foreign key (performance advisor) |
+| 20261018224657 | `studio_templates` | **Applied 2026-10-19.** Decision 97: the Global Toothgems template library. `creations.template_published_at` (not in the column grants: written only by `studio_set_template(id, published)` — `manage_content` staff publish their own creation, keeping the first date, and unpublish any template; audited, the flag alone), `studio_templates()` (members with Studio access: published rows newest first, no owner, favourite or opening dates, Gem Group references dropped; 42501 otherwise), `studio_use_template(id)` (copies a published template into the caller's creations: owner = caller, unpublished, no render — the browser copies it), storage policy `studio-thumbnails: Studio members read template renders` (`private.is_studio_template_thumbnail()`). The `creations` SELECT policy is unchanged. Suite `tests/studio_templates_validation.sql` |
+| 20261019062619 | `studio_preferences` | **Applied 2026-10-19.** `studio_preferences`: one row per member (created on first change, none = defaults), `library_view` grid / explorer; owner-only RLS, not gated by Studio access. Decision 98 |
+| 20261019072230 | `studio_glowbook` | **Applied 2026-10-19.** Decision 99: the Glowbook, an artist's public showcase. `studio_showcases` (one per member: handle, display name, bio, Instagram, moderation status) and `studio_showcase_items` (one row per creation, order, moderation status); owners and `moderate_reviews` staff read (RLS), owners delete; every other write through `studio_save_showcase()`, `studio_showcase_add()`, `studio_showcase_reorder()` (Studio access) and `studio_moderate_showcase()` / `studio_moderate_showcase_item()` (`moderate_reviews`, audited); `studio_showcase_queue()` for moderators; `studio_public_showcase(handle)` for anyone (approved page of an author with Studio access, approved items only; no owner id field, though render paths start with it — decision 99 (i)); `private.studio_user_has_access(user)`; storage policies on `studio-thumbnails` (anyone reads public Glowbook renders, moderators read the renders sent). Suite `tests/studio_glowbook_validation.sql` (G1–G8) |
+| 20261019134715 | `studio_glowbook_look` | **Applied 2026-10-19.** Decision 100: the Glowbook's own look. `studio_showcases` gains accent / background / layout (fixed lists), location, featured_item_id (live), the approved avatar_path / banner_path / booking_url / website_url / tiktok, and `pending_changes` (+ `changes_submitted_at`, `changes_review_note`) for proposed pictures and links; `studio_save_showcase_look(jsonb)` (Studio access + `private.glowbook_customization_allowed()`, the plan switch: Studio access today), `studio_moderate_showcase_changes()` (`moderate_reviews`, audited); approving a page applies what waits with it; the queue gains `changes` rows and a `details` column (dropped and recreated); `studio_public_showcase()` returns `location` and `look` (null when customisation is not allowed). Private bucket `glowbook-media` (5 MB, JPEG/PNG/WebP): owners upload (Studio access) and read theirs, moderators read all, anyone reads approved pictures of a public Glowbook, owners delete only files no page uses or proposes (no update). Suite G9 |
+| 20261019135003 | `studio_glowbook_look_links` | **Applied 2026-10-19.** Postgres caps a regex repetition at 255: the link checks of `20261019134715` rewritten as pattern + length (`private.glowbook_link_valid()`), `studio_save_showcase_look()` replaced accordingly |
+| 20261019112411 | `studio_glowbook_creation` | **Applied 2026-10-19.** `studio_public_showcase_creation(handle, item)` (anon): one approved creation of a public Glowbook with its scene (Gem Group ids blanked), for the read-only 3D viewer; null otherwise. Suite G4/G7 |
+| 20261019072443 | `studio_glowbook_updated_at` | **Applied 2026-10-19.** The Glowbook tables' `updated_at` triggers use `private.set_updated_at()` (the Studio design trigger reads columns they do not have) |
 | 20261008175722 | `contact_attachments_and_support_email` | **Applied 2026-10-08.** Contact form: `contact_requests.attachment_path` → `attachment_paths text[]` (≤ 5, `private.valid_contact_attachment_paths()`), bucket `contact-attachments` 20 MB per object, `submit_contact_request(…, p_attachment_paths text[])` (old signature dropped; ownership per path, no duplicates, ≤ 20 MB in all), guard trigger rebuilt, `contact_ip_allowed(ip_hash)` (service role), template `contact_request_received` (fr + en) for the support inbox. Suite: `iteration7_validation.sql` C3/C4 |
 | 20261008175809 | `contact_attachment_paths_check_grant` | **Applied 2026-10-08.** `execute` on the CHECK helper for `authenticated`/`service_role` (staff triage re-evaluates the CHECK) |
 | 20261007181011 | `gift_card_design_everywhere` | **Applied 2026-10-07.** The design/names/message chosen at checkout are shown back (WYSIWYG): policy `gift_cards: purchaser reads own` (a buyer reads the cards of their purchases through the existing column grant — never the code) so the member's order pages draw the card in its design; the `gift_card_delivery` template bodies (fr + en) lose their `{{message}}` paragraph because the e-mail now draws the card itself (`giftCardVisual()`, message included). Test: a buyer sees only their own cards (to add to `gift_cards_validation.sql`) |
@@ -1013,7 +1028,8 @@ course_completions (user, course, completed_at, average_score, min_score, certif
 - **Media**: storage policy "learners read their courses' media" (`private.can_read_learner_media_path()`): the cover
   of a held course, and the block media, posters, module covers and question images of a held *published* course,
   English files included (decision 92).
-  The browser signs them (`createSignedUrls`, 4 h, renewed every 3 h).
+  The browser signs them (`createSignedUrls`, 4 h) and keeps each address until it has less than 1 h left
+  (`webapp/src/lib/supabase/signedUrlCache.ts`), so cached files are not downloaded again.
 - **Progress writes** — functions only, each re-checking the entitlement and that the course is published (row lock
   on the entitlement serialises one member's writes), then the path rules of `webapp/src/lib/learning/path.ts`
   (`private.learner_path()`: each module's steps by position, then its check; required = `complete_all_steps` /
@@ -1180,6 +1196,140 @@ browser          admin_adjust_stock(product, variant | null, delta, expected?)  
   never below the reserved units nor zero; product with variants, untracked row, variant of another product,
   unknown product and zero change refused.
 
+### 3D Studio trial and access (iteration 28)
+
+```
+/studio-3d/atelier   signed out            → "sign in to start your free trial"
+                     studio_access_state() → not_started  → trial invitation → start_studio_trial()  (explicit, once)
+                                           → trial_active / subscribed / staff → the editor (+ time left)
+                                           → trial_expired / subscription_ended → locked screen + plans
+                                           → subscription_pending → "being set up", check again
+writes               creations / gem_groups / studio-thumbnails INSERT·UPDATE → has_studio_access(), else 42501
+                     (the editor maps 42501 to the locked screen; the scene stays in the tab and its local draft)
+reads, deletes       always the owner's: the work done during the trial is kept
+```
+
+- The clock is `now()`: the browser counts down from `server_now` on a monotonic clock, so the device clock,
+  storage or a direct URL cannot extend or restart a trial. Status is derived, never stored.
+- Subscriptions (decision 94, iteration 29):
+
+```
+plan button (locked screen, /studio-3d, /fr/studio-3d/abonnement)   signed out → sign-in, then straight on
+  → the checkout page /studio-3d/paiement?plan=…&interval=…&from=<surface> (signed-in members only: gateFor)
+  → POST functions/v1/create-studio-subscription {plan, interval, locale}
+                                                  (member token; no price id or amount accepted)
+      terms accepted? no blocking subscription (active/trialing/past_due/unpaid/paused/incomplete) → else already_subscribed
+      price = studio_plan_prices(plan, interval, active) → else plan_unavailable
+      customer = stripe_customers, else created once (idempotency key studio-customer:<user>)
+      the customer's other open Studio Checkouts are expired
+      Stripe Checkout Session, ui_mode custom, mode subscription, expires in 60 min, metadata +
+        subscription_data.metadata {kind: studio_subscription, user_id, plan, interval}
+      → {status: payment, client_secret, publishable_key, amount, currency, expires_at}
+  the page shows the payment step (StudioPaymentStep: the shop's StripePaymentForm, Payment Element)
+      beside the form, unticked by default: the request for immediate access; Pay without it → the box is focused
+  Pay → POST functions/v1/create-studio-subscription {consent_client_secret}
+      the session must be open, kind studio_subscription and this member's (else invalid_request / checkout_closed)
+      the request is recorded: consent_records studio_immediate_access, version studio-withdrawal-2026-10,
+      its id + version merged into the session's metadata → {status: consented}
+      only then the browser confirms the payment with Stripe (checkout.confirm, redirect if_required)
+      paid on the page → the editor /studio-3d/atelier?subscription=success; a 3-D Secure redirect comes back to
+      the same address (return_url)
+  leaving the page unpaid ("Change plan" → back to the plans) → POST {release_client_secret}: the session is expired
+  Stripe → stripe-webhook   customer.subscription.created/updated/deleted, invoice.paid/payment_failed,
+                            checkout.session.completed (mode subscription)
+      verified + deduplicated like every event; subscription READ BACK from Stripe (order-independent, replay-safe)
+      metadata kind ≠ studio_subscription → ignored
+      apply_studio_subscription(…) → studio_subscriptions; invoices → record_studio_invoice(… billing_reason)
+      unknown account / price → stored as failed (acknowledged); Stripe unreachable → 500, retried
+  first invoice paid → send-pending-emails (≤ 5 min) e-mails studio_subscription_confirmation: plan, first
+      payment and, word for word, the request accepted with its date (the durable confirmation)
+  /compte/studio within 14 days of the first payment → studio_withdrawal_quote() → "Withdraw" → POST functions/v1/studio-withdraw {}
+      request_studio_withdrawal(user, Stripe period) → cancel at Stripe (no proration) → refund the rest
+      (metadata kind studio_withdrawal) → refund.* webhook → settle_studio_withdrawal_refund(); e-mail at once
+  back on ?subscription=success → the page re-reads studio_access_state() every 3 s (60 s) until `subscribed`
+/compte/studio  plan, billing, renewal / end date, payment to fix → POST functions/v1/studio-billing-portal
+                → Stripe customer portal (configuration metadata kind = studio_portal: switch plan or interval,
+                  card, invoices, cancel at period end); changes come back through the webhook
+```
+
+  Cancelling in the portal keeps `active` with `cancel_at_period_end`: access lasts until `current_period_end`,
+  then `customer.subscription.deleted` (status `canceled`) — and even without that event the period end alone
+  closes access (`studio_subscription_active()`). `studio-billing-setup` (internal secret, **test mode only**)
+  creates the Products, the six Prices (lookup keys `studio_<plan>_<interval>`, VAT inclusive), the portal
+  configuration and the `studio_plan_prices` rows; its `smoke_subscribe` / `smoke_cancel` actions run a test-mode
+  subscription with Stripe's test card without a browser, and `webhook_events` adds the subscription events to
+  the test-mode endpoint. Verified end to end on the project on 2026-10-18 (subscribe → `subscribed`, invoice
+  `subscription_create`; cancel at period end → still `subscribed`; cancelled → `subscription_ended`).
+- Back office: `/admin/statistiques` aggregates both tables in the browser (`lib/adminStudioTrials.ts`); the
+  rest of the funnel is in PostHog (`docs/studio-trial-analytics.md`).
+
+### 3D Studio collections (iteration 30)
+
+```
+studio_collections            id, user_id (= auth.uid(), not writable), name (1–40, trimmed, unique per owner
+                              ignoring case), color (null | blue | fuchsia | emerald | amber | ink), timestamps
+studio_collection_creations   (collection_id, creation_id) primary key, user_id; insert / delete only
+  collection side             FK (collection_id, user_id) → studio_collections (id, user_id) ON DELETE CASCADE
+  creation side               FK creation_id → creations ON DELETE CASCADE + RLS: the creation is the caller's
+writes                        INSERT / UPDATE collections, INSERT memberships → owner + has_studio_access(), else 42501
+reads, deletes                the owner's, whatever the access (like the designs)
+```
+
+- Many-to-many: a creation sits in any number of collections. Deleting a collection removes its memberships
+  only; deleting a creation removes its memberships. `creations` itself is unchanged (no column, no constraint).
+- Validated by `supabase/tests/studio_collections_validation.sql` (C1–C7: visitor refused, no access refused,
+  owner organises, another member reads and writes nothing and cannot link across owners or forge the owner,
+  cascades, after the trial read / take out / delete only, staff organise their own only).
+- The webapp reads both tables in one go with the library (`supabaseRepository.ts` `collections`) and keeps the
+  memberships beside the creations in the workspace store (`collections.ts`).
+
+### 3D Studio templates (decision 97)
+
+```
+staff (manage_content)  CreationDetail "Publish as a template" → studio_set_template(id, true)   own creation only
+                        "Remove from templates" (detail, or the template's dialog) → studio_set_template(id, false)  any template
+member with Studio access   /studio-3d/atelier/modeles → studio_templates()   (newest first; 42501 without access)
+                            renders → storage policy: published templates' thumbnail_path only
+                            "Use this template" → studio_use_template(id) → a new creation owned by the caller
+                                                → render copied to <caller>/<new id>.jpg (best effort)
+```
+
+- Templates are live, like share links: the author's later saves show at once; deleting the creation (or the
+  account) removes the template. Members' copies are their own designs and stay.
+- Members never read a staff `creations` row: the only way in is `studio_templates()`, which leaves out the
+  owner, the favourite flag and the opening dates, and drops Gem Group references (they point at the author's groups).
+
+- Since 2026-10-19 (decision 98, migration `20261019062619`) the member chooses how My Creations is laid out —
+  grid with the collection bar, or folders (the explorer) — and the choice is stored in `studio_preferences`
+  (one row per member, written by upsert, owner-only, not gated by Studio access). Validated by
+  `supabase/tests/studio_preferences_validation.sql` (P1–P5).
+
+### 3D Studio Glowbook (decision 99)
+
+```
+member with Studio access   /studio-3d/atelier/glowbook → studio_save_showcase(handle, name, bio, instagram)   new page → pending
+                            My Creations → a creation's detail → "Add to my Glowbook" → studio_showcase_add(id)  pending
+                            order: studio_showcase_reorder(ids); remove an item / delete the page: DELETE (any time, at once)
+moderator (moderate_reviews) /admin/glowbook → studio_showcase_queue() → studio_moderate_showcase[_item](…, approved|rejected, note)
+anyone                      /fr/glowbook/<handle>, /en/glowbook/<handle> → studio_public_showcase(handle)  (server, every request)
+                            renders: signed with the publishable key through "anyone reads public Glowbook renders"
+                            a card → /studio-3d/glowbook/<handle>/<item> → studio_public_showcase_creation(handle, item)
+                                     read-only 3D viewer + the design's shop items, added to the cart in one click
+look (decision 100)         /studio-3d/atelier/glowbook "Customise my page" → studio_save_showcase_look(jsonb)
+                            colour, background, layout, spotlight, city → live
+                            picture (glowbook-media/<user>/<kind>-<uuid>.jpg, framed in the browser) / link → pending_changes
+                            moderator → studio_moderate_showcase_changes(user, approved|rejected, note) (or approves the page)
+```
+
+- Public = page approved **and** item approved **and** the author has Studio access now (trial, subscription or
+  staff, `private.studio_user_has_access()`); otherwise the page answers 404 and the renders cannot be signed.
+- Moderation happens before the first publication. An approved creation stays live: the author's later saves are
+  public at once (the editor and "Edit details" warn before saving, as they do for a published template). Name,
+  bio and Instagram edits of an approved page are live too; a new handle (a new address) and anything re-sent
+  after a rejection go back to `pending`. A moderator can reject what is already public (take-down), with a note
+  the artist reads.
+- Deleting a creation removes its item; deleting the page removes its items, never the creations.
+
 ### Integrity guarantees
 
 - `orders_total_matches`: `total = subtotal − discount + shipping (+ tax when prices exclude tax)`; discount ≤ subtotal; all amounts ≥ 0.
@@ -1244,6 +1394,7 @@ have no access (see *Members' Lounge*).
 | `data-exports` (private, 100 MB, zip/json) | owners read their own `<user_id>/` folder through signed URLs; only the backend (service role) writes and deletes. |
 | `review-photos` (private, 8 MB, jpeg/png/webp) | authors upload into `<user_id>/`; authors and admins read and delete; **anyone** can read a photo once its review is published. |
 | `training-media` (private, no bucket limit: the project's global upload limit applies — 50 MB on the free plan; jpeg/png/webp/avif/mp4/webm/quicktime) | staff read; `manage_training` uploads, replaces and deletes under `media/`; the back office shows files through signed URLs. Learners get signed URLs after the entitlement check in phase C. Large videos are sent with resumable (TUS) uploads. |
+| `studio-thumbnails` (private, 512 kB, jpeg/webp/png) | owners read/delete inside `<user_id>/`, and upload/replace there with Studio access; members with Studio access also read the renders of published templates (decision 97). Served through signed URLs. |
 | `lounge-media` (private, 5 MB, jpeg/png/webp/gif) | members upload into `<user_id>/` while they can enter the lounge; the uploader reads and deletes their files; anyone who can read the lounge message an image is attached to reads it (so a private conversation's images stay between its two members). Served through signed URLs. |
 
 Path convention: `products/<product-slug>/<file>`, `categories/<category-slug>/<file>`, `<user_id>/<file>` for avatars and review photos.
@@ -1530,7 +1681,7 @@ VAT rates, shipping zones/rates mirroring the Settings prototype. Media rows ref
     recipient details of a gift card being bought stay in the tab's cart storage like the rest of the cart.
 
 55. **Lesson media signed for 4 hours** (agent, 2026-10-01, to confirm): the member's browser signs the media of the
-    courses they hold for 4 h (renewed every 3 h), so a long lesson video can be watched and sought through without
+    courses they hold for 4 h (the same address is reused, also across reloads of the tab, until 1 h is left), so a long lesson video can be watched and sought through without
     expiring mid-way. Consequence: a signed URL keeps working up to 4 h after a revocation, an expiry or a
     withdrawal, and for anyone the member passes it to. Shorten `LEARNER_SIGNED_URL_SECONDS`
     (`webapp/src/lib/learning/learnerApi.ts`) or move to a streaming provider (Mux) if that is not acceptable.
@@ -1703,7 +1854,7 @@ VAT rates, shipping zones/rates mirroring the Settings prototype. Media rows ref
         credited back onto gift cards (`refund_to_gift_cards`) is not in that table and sends nothing: the template speaks
         of the bank; a wording for it is to write if wanted.
       (Cron: scheduled by migration `email_cron_jobs`, no manual step beyond the Vault secret.) Former manual form: `select cron.schedule('send-pending-emails', '*/5 * * * *', $$ select net.http_post(url := 'https://<project-ref>.supabase.co/functions/v1/send-pending-emails', headers := jsonb_build_object('x-internal-secret', (select decrypted_secret from vault.decrypted_secrets where name = 'email_internal_secret')), body := '{}'::jsonb) $$);`
-    - **Operational status (2026-10-10):** the Resend domain and all secrets are configured by the user and the e-mail functions are deployed on the project (`deliver-gift-cards`, `send-email`, `resend-webhook`, `send-pending-emails`); no agent has yet verified a real send end to end. Remaining: redeploy `stripe-webhook` and `create-checkout-session` so they bundle `_shared/documents/` (invoice and credit note attachments). **Still to build:** the back-office resend of a card. Original checklist, kept for reference (deploy the functions (`deliver-gift-cards`, `send-email`, `resend-webhook`, `send-pending-emails`, and redeploy
+    - **Operational status (2026-10-10):** the Resend domain and all secrets are configured by the user and the e-mail functions are deployed on the project (`deliver-gift-cards`, `send-email`, `resend-webhook`, `send-pending-emails`); no agent has yet verified a real send end to end. Remaining: redeploy `create-checkout-session` so it bundles `_shared/documents/` (`stripe-webhook` was redeployed with them on 2026-10-18). **Still to build:** the back-office resend of a card. Original checklist, kept for reference (deploy the functions (`deliver-gift-cards`, `send-email`, `resend-webhook`, `send-pending-emails`, and redeploy
       `stripe-webhook` and `create-checkout-session` — since 2026-10-09 they also bundle `_shared/documents/` for the
       invoice and credit note attachments), declare the `resend-webhook` endpoint in Resend (events delivered, opened, bounced, complained), and make sure the Vault secret
       `email_internal_secret` holds the same value as `EMAIL_INTERNAL_SECRET` (the crons themselves are in migration `email_cron_jobs`; the manual form below is kept for reference):
@@ -1876,3 +2027,142 @@ VAT rates, shipping zones/rates mirroring the Settings prototype. Media rows ref
     video posters and question images — course and module covers and the video files themselves stay
     single-language; (b) removing a question's image removes its English version too; (c) German, when enabled,
     gets its own rows the same way (no schema change).
+93. **3D Studio: 48-hour free trial, then subscription** (user's request, 2026-10-17). Every account may start one
+    free trial of the full Studio, explicitly, with no payment details; it lasts 48 hours of continuous time from
+    its start on the database clock and never restarts. Using the Studio (saving or changing designs, Gem Groups,
+    thumbnails) needs an active trial, an active subscription or active staff, enforced by RLS; reading and deleting
+    one's own designs never does. The editor needs an account (no anonymous use any more). Agent's choices, to
+    confirm: (a) active staff use the Studio without a trial (support, testing); (b) an account that has ever had a
+    subscription gets no trial; (c) a subscription grants access while `active`, `trialing` or `past_due` and
+    `current_period_end` is in the future (Stripe's own retry period); (d) sharing a saved design stays possible
+    after the trial (it is viewing, not editing); (e) a subscription started within 30 days after the trial's end
+    counts as a trial conversion in the statistics; (f) plans and prices are still the display values of
+    `data/studio.ts` until the Stripe Prices exist (superseded by decision 94).
+94. **3D Studio subscriptions sold through Stripe** (user's request, 2026-10-18; prices confirmed by the owner the same
+    day). Three plans, Essential €5.00, Artist €19.90, Atelier €39.90 per month, or yearly at ten months' price
+    (€50, €199, €399: "two months free"), VAT included; every plan unlocks the whole Studio (the feature lists are
+    presentation only). Stripe Checkout in subscription mode — first Stripe's hosted page, paid on our own page
+    since 2026-10-18 (below); the Stripe Prices are test-mode
+    objects created by `studio-billing-setup` on the owner's go-ahead, live ones are created at launch. Access only
+    from the verified webhook (`studio_subscriptions`), one blocking subscription per account, Stripe customer reused.
+    Paid on our own page since 2026-10-18 (owner's request: keep the member on the site): the subscription's
+    Checkout Session uses `ui_mode: "custom"` and is paid through the shop's Payment Element form
+    (`StripePaymentForm`, decision 80) on a checkout page of its own, `/studio-3d/paiement` (owner's request: not on
+    the plans page), which opens the editor once paid; the customer portal stays Stripe's page.
+    Agent's choices, to confirm: (a) the 14-day EU withdrawal right — since 2026-10-18 (owner's choice, migration
+    `20261018155521`) the member must tick, in the payment step beside the card form, an express request for immediate access
+    acknowledging that a withdrawal within 14 days costs the share of the subscription already used (L221-25,
+    option "service": the Studio is an online service, so the right is kept, not waived — a full waiver under
+    L221-28 was considered and set aside as unlikely to hold for a subscription). Pay does nothing until it is
+    ticked; the function then records it in `consent_records` (`studio_immediate_access`, version
+    `studio-withdrawal-2026-10`, wording in `_shared/studioBilling.ts`, the same as the box — checked by a Deno
+    test) and merges its id and version into the Checkout Session's metadata, and only then does the browser
+    confirm the payment; it is e-mailed with the plan and first payment once the first invoice is paid. Limit: the
+    payment is confirmed from the browser (Stripe.js), so a hand-crafted client could pay without asking for the
+    record; such a subscription has no request on file (no confirmation e-mail is sent for it) and the safe reading
+    is that its withdrawal is refunded in full — not automated (`request_studio_withdrawal()` always deducts the
+    days used), to decide. To confirm with a lawyer:
+    the wording; the refund on withdrawal (automated since decision 95); the Studio clause of the terms of sale (`data/legal/terms.ts` covers products and courses);
+    (b) subscription invoices are Stripe's own documents (Stripe numbering), outside the `FA-` / `AV-` sequence of
+    decision 86 — the accountant must confirm, or they must be issued by the database too; (c) VAT is inclusive at
+    one rate (no Stripe Tax, no per-country rate, no B2B reverse charge), like decision 5; (d) `past_due` keeps
+    access while Stripe retries (Stripe's dunning settings decide how long), decision 93 (c); (e) a plan or interval
+    change in the portal is prorated immediately (`create_prorations`); (f) two subscriptions on one account (two
+    checkouts paid at once despite the expiry of the other open sessions) are logged, not refunded automatically;
+    (g) staff may subscribe (testing); (h) a subscription page reached signed out asks to sign in first (no guest
+    subscription).
+95. **3D Studio withdrawal refunded automatically** (user's request, 2026-10-18; migrations `20261018163051`,
+    `20261018163229`). Within 14 days of the first payment the member withdraws from `/compte/studio` in one step;
+    the database alone decides (`request_studio_withdrawal()`, service role) and `studio-withdraw` does the Stripe
+    side: the subscription is cancelled at once without proration (access ends when the webhook mirrors
+    `customer.subscription.deleted`), then the rest of the first payment is refunded to the payment that paid the
+    first invoice (`invoicePayments`, idempotency key `studio-withdrawal:<id>`, metadata kind = studio_withdrawal);
+    each step is recorded so a second call resumes; the refund is confirmed only by the verified `refund.*` event
+    (`settle_studio_withdrawal_refund()`; such refunds never go down the order path). The acknowledgement e-mail
+    (`studio_withdrawal_confirmation`, L221-21) goes out at once, the sweep catches failures. `/admin/statistiques`
+    shows the money settled, still in its withdrawal period, and refunded (`StudioRevenuePanel`, browser-side from
+    `studio_subscription_invoices` + `studio_withdrawals`). `studio-billing-setup` `smoke_withdraw` runs the same
+    withdrawal for an account without a browser (test mode). Agent's choices, to confirm: (a) eligibility — the
+    first invoice is the only paid one (a renewal carries no right; a paid plan change goes to the team,
+    `manual_review`), until the end of the 14th day after that payment, Paris time; (b) the amount — days STARTED
+    since the period's start (from Stripe) over the period's days, the used share rounded DOWN to the cent in the
+    member's favour (an alternative is to the second); (c) the creations stay readable after a withdrawal (nothing
+    is deleted); (d) no limit on withdrawals per account (each one costs the days used); (e) Stripe's invoice keeps
+    no credit note for this refund (decision 94 (b) with the accountant); (f) a Studio refund made by hand in the
+    Stripe dashboard is not recorded anywhere; (g) the webhook endpoint must receive `refund.created`,
+    `refund.updated`, `refund.failed`: added to the TEST-mode endpoint on 2026-10-18 at the owner's request
+    (`studio-billing-setup` `webhook_events`), to add to the live endpoint at launch. Verified end to end the same
+    day in test mode (`smoke_withdraw` on the owner's test subscription paid that morning: 1 day of 31 used, €0.64
+    kept, €19.26 refunded; subscription cancelled by `customer.subscription.deleted`, refund confirmed by
+    `refund.updated`, acknowledgement e-mail delivered).
+96. **3D Studio collections** (owner's request, 2026-10-19: "more organisation features to justify the
+    subscription"; migrations `20261018224456`, `20261018224648`). A member files their saved creations into named
+    collections. Agent's choices, to confirm: (a) **many-to-many**, not folders: one design can be in "Bridal" and
+    in "Client Léa" at once, and nothing in the existing data asked for a single place; (b) creating, renaming and
+    adding a creation to a collection need Studio access, like saving a design; reading, deleting a collection
+    and taking a creation out of one do not, so a member whose trial or subscription ended can still see and tidy
+    their work (mirrors decision 93); (c) a collection name is 1–40 characters, unique per member ignoring case;
+    the colour is one of five design tokens or none, never free; (d) no limit on the number of collections; (e) a
+    duplicated creation is not put in the original's collections ("Save as new" pre-ticks them in the save dialog
+    instead); (f) staff organise their own creations only, they never read members' collections; (g) no audit
+    trigger (personal organisation, like `creations`).
+97. **3D Studio: Global Toothgems templates** (owner's request, 2026-10-19; migration `20261018224657`). Recurring
+    value for the subscription: ordinary creations made by team members, published with one flag
+    (`creations.template_published_at`), browsed by every member with Studio access (the same
+    `has_studio_access()` as the writes: active trial, active subscription, active staff) and copied into their
+    own creations with "Use this template" — the original is never modified. Newest first, "New" for 30 days
+    (`TEMPLATE_NEW_DAYS`, webapp constant), publication date shown. Agent's choices, to confirm: (a) the
+    permission is `manage_content` (managers, administrators); (b) publishing is limited to one's own creations,
+    unpublishing to any template (an author who left included); (c) a template stays published if its author
+    stops being staff, until someone unpublishes it; (d) templates are live — the author's next saves change
+    what members see (copies already made do not change); (e) the copy keeps the name, description, tags and
+    estimate, starts unfavourited, and gets its own copy of the render; (f) the library is capped at 500 rows
+    (no paging yet); (g) members can see the author's user id inside the render's storage path (the only owner
+    data the reader exposes); (h) no record of which template a copy came from (no usage figures beyond the
+    PostHog event `studio_template_used`).
+98. **3D Studio: folder view of My Creations, chosen per account** (owner's request, 2026-10-19: "a view like a
+    file explorer, folders you enter to see the creations; the current view by default; the choice stored per
+    user"; migration `20261019062619`). The collections of decision 96 are shown as folders; the choice of layout
+    is a row of `studio_preferences`. Agent's choices, to confirm: (a) stored in its own Studio table, not as a
+    column of `profiles` (keeps the Studio domain apart; room for later workspace settings); (b) changing it needs
+    no Studio access (it only changes how the member's own work is shown); (c) the top level lists the folders,
+    then the creations in no collection; a creation in several collections shows in each folder; (d) searching
+    or filtering at the top level searches the whole library (matching folders by name + matching creations,
+    wherever they are filed), like a file explorer's search; (e) one level only: collections are not nested;
+    (f) no drag-and-drop into folders yet (filing goes through the card's "Collections…" menu).
+99. **3D Studio: the Glowbook, an artist's public showcase** (owner's request, 2026-10-19: "a public read-only
+    showcase of the artist's chosen creations, to link in their Instagram bio; moderation before any publication;
+    added only from the creations, not while editing a design; a confirmation pop-up when saving a creation that
+    is in the showcase, and when staff save a template shared with every artist"; migrations `20261019072230`,
+    `20261019072443`). Decided by the owner the same day: the address is `/fr/glowbook/<handle>` and
+    `/en/glowbook/<handle>`; the page is hidden while its author has no Studio access; saving an approved creation
+    is public at once, without a new review. Agent's choices, to confirm: (a) moderators are the staff holding
+    `moderate_reviews` (no new permission); (b) the page itself (handle, name, bio, Instagram) is moderated
+    before its first publication, then its name/bio/Instagram edits are live like the creations, while a new
+    handle goes back to moderation (the page is offline until approved); (c) a pending creation also triggers
+    the save warning ("will be published once approved"), a declined one does not; (d) at most 60 creations per
+    Glowbook; the handle is 3–30 characters `[a-z0-9._-]`, with a short reserved list; (e) no e-mail to the
+    artist on approval or rejection yet (the status and the reason show in the Studio); (f) the page shows each
+    creation's saved render and details, not a 3D viewer; (g) render links are signed for 7 days on every
+    request (the Open Graph image included), the page is never cached; (h) not listed in the sitemap; (i) like
+    templates (97 (g)), visitors can see the author's user id inside the render's storage path, the only owner
+    data the page exposes. Added the same day at the owner's request: each creation opens read-only in 3D
+    (`/studio-3d/glowbook/<handle>/<item>`, migration `20261019112411`) and every read-only viewer (Glowbook and
+    share links) lists the design's shop items with "add all to cart" (the editor's shopping list; the checkout
+    prices again). Agent's choice, to confirm: (j) a Glowbook creation cannot be copied into the visitor's own
+    Studio (share links still can): it is the artist's published work.
+100. **3D Studio: the Glowbook's own look** (owner's request, 2026-10-19: "let the artist customise the page —
+    profile picture, banner, identity colour, etc.; reserved to a subscription later, open to everyone for now";
+    migrations `20261019134715`, `20261019135003`). Built: profile picture, banner (framed and re-encoded to JPEG
+    in the browser), identity colour from a list of ten (each tested for contrast), light / tinted / dark
+    background, grid or large cards, a creation in the spotlight, city, booking link, website and TikTok, with a
+    live preview in the Studio. The plan switch is `private.glowbook_customization_allowed(user)` (Studio access
+    today): it gates saving and whether the public page shows the look. Agent's choices, to confirm: (a) new
+    pictures and links wait for a moderator (in `pending_changes`) while the page keeps the approved ones;
+    removing one is immediate; colour, background, layout, spotlight and city are live (fixed lists or the
+    artist's own approved creation; the city is short text, live like the bio, decision 99 (b)); (b) approving a
+    page applies what waits with it; (c) links are https only, shown with `rel="nofollow"`; (d) without the plan,
+    the page falls back to the default look but keeps its city; (e) no custom hex colour, font or free CSS (fixed
+    lists keep every page readable and on-brand); (f) pictures no page uses are deleted by the browser after a
+    save, best effort. Also on the owner's request the same day: the read-only 3D viewer no longer has a second
+    bar under the site's header; "read only" is a small badge in its side panel.

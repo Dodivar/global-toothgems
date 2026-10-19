@@ -2,10 +2,13 @@ import type { TypedSupabaseClient } from "../supabase/client";
 import type { Json, Tables } from "../supabase/database.types";
 import { BUCKETS, SIGNED_URL_TTL_SECONDS } from "../supabase/storage";
 import { STUDIO_SHARE_PATH } from "../studioUrl";
+import { toCollection, toMembership, toPreferences } from "./collections";
 import { sanitizeGroupData } from "./gemGroup";
 import { currentEstimate } from "../studio3d/gemRegistry";
 import {
   StudioStoreError,
+  type CollectionsRepository,
+  type PreferencesRepository,
   type CreationInput,
   type CreationPatch,
   type GemGroupInput,
@@ -14,8 +17,8 @@ import {
 } from "./repository";
 import { sanitizeScene, sceneStats } from "./scene";
 import { parseSharedCreation, SHARE_TOKEN_PATTERN, snapshotShareLink, storedShareLink, type SharedDesign } from "./share";
-import type { Creation, FeedbackInput, GemGroup } from "./types";
-import { normalizeDetails, normalizeTags, validateDetails, validateFeedback } from "./validation";
+import type { CollectionDetails, Creation, FeedbackInput, GemGroup } from "./types";
+import { normalizeCollection, normalizeDetails, validateCollection, validateDetails, validateFeedback } from "./validation";
 
 /**
  * The Studio workspace on Supabase (`supabase/migrations/…_studio_workspace.sql`).
@@ -43,22 +46,112 @@ interface PgError {
   message?: string;
 }
 
-function storeError(error: PgError | null | undefined): StudioStoreError {
+export function storeError(error: PgError | null | undefined): StudioStoreError {
   switch (error?.code) {
     case "23514": // check violation
     case "23502":
     case "22P02":
     case "22023":
       return new StudioStoreError("invalid");
+    case "42501": // a write refused by row-level security: no Studio access (trial over)
+      return new StudioStoreError("accessDenied");
+    case "23505": // unique violation: a collection of that name already exists
+      return new StudioStoreError("duplicate");
+    case "23503": // foreign key: the collection or the creation is gone (or not ours)
     case "PGRST116": // no row (or not ours: RLS hides it)
     case "P0002": // raised by the share functions for a creation that is not ours
       return new StudioStoreError("notFound");
   }
+  // Storage reports its policy refusals by message only.
+  if (/row-level security/i.test(error?.message ?? "")) return new StudioStoreError("accessDenied");
   if (/failed to fetch|network/i.test(error?.message ?? "")) return new StudioStoreError("unavailable");
   return new StudioStoreError("storage");
 }
 
-function checkDetails(details: { name: string; description: string; tags: string[] }) {
+function checkCollection(details: CollectionDetails): CollectionDetails {
+  const problem = validateCollection(details);
+  if (problem) throw new StudioStoreError("invalid", problem);
+  return normalizeCollection(details);
+}
+
+/**
+ * Collections and their memberships. Owner and timestamps are the database's;
+ * RLS keeps every query to the member's rows and refuses linking anything
+ * that is not theirs.
+ */
+function collectionsRepository(client: TypedSupabaseClient): CollectionsRepository {
+  return {
+    async list() {
+      const [collections, memberships] = await Promise.all([
+        client.from("studio_collections").select("*").order("name"),
+        client.from("studio_collection_creations").select("collection_id, creation_id"),
+      ]);
+      if (collections.error) throw storeError(collections.error);
+      if (memberships.error) throw storeError(memberships.error);
+      return { collections: collections.data.map(toCollection), memberships: memberships.data.map(toMembership) };
+    },
+
+    async create(details) {
+      const { data, error } = await client.from("studio_collections").insert(checkCollection(details)).select().single();
+      if (error) throw storeError(error);
+      return toCollection(data);
+    },
+
+    async update(id, details) {
+      const { data, error } = await client.from("studio_collections").update(checkCollection(details)).eq("id", id).select().single();
+      if (error) throw storeError(error);
+      return toCollection(data);
+    },
+
+    async remove(id) {
+      // The memberships go with it (cascade); the creations stay.
+      const { data, error } = await client.from("studio_collections").delete().eq("id", id).select("id");
+      if (error) throw storeError(error);
+      if (!data.length) throw new StudioStoreError("notFound");
+    },
+
+    async addCreations(collectionId, creationIds) {
+      if (!creationIds.length) return;
+      const rows = creationIds.map((creation_id) => ({ collection_id: collectionId, creation_id }));
+      const { error } = await client
+        .from("studio_collection_creations")
+        .upsert(rows, { onConflict: "collection_id,creation_id", ignoreDuplicates: true });
+      if (error) throw storeError(error);
+    },
+
+    async removeCreations(collectionId, creationIds) {
+      if (!creationIds.length) return;
+      const { error } = await client
+        .from("studio_collection_creations")
+        .delete()
+        .eq("collection_id", collectionId)
+        .in("creation_id", creationIds);
+      if (error) throw storeError(error);
+    },
+  };
+}
+
+/** The member's single preferences row (`studio_preferences`), written by upsert. */
+function preferencesRepository(client: TypedSupabaseClient): PreferencesRepository {
+  return {
+    async get() {
+      const { data, error } = await client.from("studio_preferences").select("library_view").maybeSingle();
+      if (error) throw storeError(error);
+      return toPreferences(data);
+    },
+    async update(patch) {
+      const { data, error } = await client
+        .from("studio_preferences")
+        .upsert({ library_view: toPreferences({ library_view: patch.libraryView }).libraryView }, { onConflict: "user_id" })
+        .select("library_view")
+        .single();
+      if (error) throw storeError(error);
+      return toPreferences(data);
+    },
+  };
+}
+
+function checkDetails(details: { name: string; description: string }) {
   const problem = validateDetails(details);
   if (problem) throw new StudioStoreError("invalid", problem);
   return normalizeDetails(details);
@@ -72,17 +165,16 @@ function checkDetails(details: { name: string; description: string; tags: string
 const shareSchemaMissing = (error: PgError | null | undefined) =>
   !!error && ["PGRST202", "PGRST205", "42P01", "42883"].includes(error.code ?? "");
 
-const hasDetails = (p: { name?: string; description?: string; tags?: string[] }) =>
-  p.name !== undefined || p.description !== undefined || p.tags !== undefined;
+const hasDetails = (p: { name?: string; description?: string }) =>
+  p.name !== undefined || p.description !== undefined;
 
-function toCreation(row: CreationRow, thumbnailUrl: string | null): Creation {
+export function toCreation(row: CreationRow, thumbnailUrl: string | null): Creation {
   const scene = sanitizeScene(row.scene_data);
   return {
     id: row.id,
     userId: row.user_id,
     name: row.name,
     description: row.description,
-    tags: normalizeTags(row.tags ?? []),
     scene,
     // The count follows the scene as read back, so the card never disagrees with
     // it; the estimate is the one stored at the last save (shop prices then).
@@ -94,6 +186,7 @@ function toCreation(row: CreationRow, thumbnailUrl: string | null): Creation {
     createdAt: row.created_at,
     updatedAt: row.updated_at,
     lastOpenedAt: row.last_opened_at,
+    templatePublishedAt: row.template_published_at,
   };
 }
 
@@ -105,7 +198,6 @@ function toGroup(row: GroupRow, thumbnailUrl: string | null): GemGroup | null {
     userId: row.user_id,
     name: row.name,
     description: row.description,
-    tags: normalizeTags(row.tags ?? []),
     data,
     thumbnailUrl,
     elementCount: data.pieces.length,
@@ -241,7 +333,6 @@ export function createSupabaseRepositories(client: TypedSupabaseClient, userId: 
             checkDetails({
               name: patch.name ?? row.name,
               description: patch.description ?? row.description,
-              tags: patch.tags ?? row.tags,
             }),
           );
         }
@@ -372,14 +463,13 @@ export function createSupabaseRepositories(client: TypedSupabaseClient, userId: 
       async update(id: string, patch: GemGroupPatch) {
         const changes: Partial<GroupRow> = {};
         if (hasDetails(patch)) {
-          const { data: row, error } = await client.from("gem_groups").select("name, description, tags").eq("id", id).single();
+          const { data: row, error } = await client.from("gem_groups").select("name, description").eq("id", id).single();
           if (error) throw storeError(error);
           Object.assign(
             changes,
             checkDetails({
               name: patch.name ?? row.name,
               description: patch.description ?? row.description,
-              tags: patch.tags ?? row.tags,
             }),
           );
         }
@@ -446,6 +536,9 @@ export function createSupabaseRepositories(client: TypedSupabaseClient, userId: 
       },
     },
 
+    collections: collectionsRepository(client),
+    preferences: preferencesRepository(client),
+
     feedback: {
       async submit(input: FeedbackInput) {
         const problem = validateFeedback(input);
@@ -469,6 +562,30 @@ export function createSupabaseRepositories(client: TypedSupabaseClient, userId: 
  * and nothing about its owner. Null for an unknown or disabled link; throws
  * when the database cannot be reached, so the page can tell the two apart.
  */
+const UUID_PATTERN = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i;
+
+/**
+ * One creation of a public Glowbook, for the read-only 3D viewer (decision 99):
+ * `studio_public_showcase_creation(handle, item)` answers only for an approved
+ * creation of an approved Glowbook whose author has Studio access; null otherwise.
+ */
+export async function fetchGlowbookCreation(
+  client: TypedSupabaseClient,
+  handle: string,
+  itemId: string,
+): Promise<{ design: SharedDesign; author: { handle: string; displayName: string } } | null> {
+  if (!UUID_PATTERN.test(itemId) || !/^[a-z0-9._-]{3,30}$/i.test(handle)) return null;
+  const { data, error } = await client.rpc("studio_public_showcase_creation", { p_handle: handle.toLowerCase(), p_item_id: itemId });
+  if (error) throw storeError(error);
+  const design = parseSharedCreation(data);
+  if (!design || !data || typeof data !== "object" || Array.isArray(data)) return null;
+  const row = data as Record<string, unknown>;
+  return {
+    design,
+    author: { handle: String(row.handle ?? handle), displayName: typeof row.display_name === "string" ? row.display_name : "" },
+  };
+}
+
 export async function fetchSharedCreation(client: TypedSupabaseClient, token: string): Promise<SharedDesign | null> {
   if (!SHARE_TOKEN_PATTERN.test(token)) return null;
   const { data, error } = await client.rpc("studio_shared_creation", { p_token: token });

@@ -2,7 +2,10 @@ import clsx from "clsx";
 import { ChevronDown, Gem, Keyboard, Layers, MessageSquareHeart, MousePointer2, PlayCircle, Repeat, Save, Sparkles, type LucideIcon } from "lucide-react";
 import { useTranslation } from "react-i18next";
 import { Button } from "../../ui/Button";
+import { getEngine } from "../../../lib/studio3d/engine";
+import { startTour } from "../../../lib/studioWorkspace/studioTour";
 import { openWorkspaceDialog } from "../../../lib/studioWorkspace/workspaceUi";
+import { useWorkspaceActions } from "./useWorkspaceActions";
 import { eyebrow, focusRing } from "./workspaceStyles";
 
 /** The six short lessons, each under `studio.workspace.help.tutorials.<id>`. */
@@ -35,6 +38,14 @@ const SHORTCUTS: { keys: string[]; id: string }[] = [
  */
 export function HelpPanel() {
   const { t } = useTranslation();
+  const { toEditor } = useWorkspaceActions();
+
+  // The tour points at the editor's controls, and this page covers them: back
+  // to the stage first, then the walkthrough starts there.
+  const replay = () => {
+    toEditor();
+    startTour({ withStage: !!getEngine() });
+  };
 
   return (
     <div className="mx-auto grid w-full max-w-[1080px] gap-10 px-4 pb-16 pt-6 sm:px-8 sm:pt-10">
@@ -48,7 +59,7 @@ export function HelpPanel() {
             {t("studio.workspace.help.sub")}
           </p>
         </div>
-        <Button variant="outline" size="sm" iconLeft={PlayCircle} onClick={() => openWorkspaceDialog({ kind: "onboarding" })}>
+        <Button variant="outline" size="sm" iconLeft={PlayCircle} onClick={replay}>
           {t("studio.workspace.help.replayTour")}
         </Button>
       </header>

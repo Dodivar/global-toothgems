@@ -1,12 +1,12 @@
 import clsx from "clsx";
-import { Copy, FolderOpen, Heart, Link2, MoreHorizontal, PencilLine, Trash2 } from "lucide-react";
+import { Copy, FolderMinus, FolderOpen, FolderPlus, Heart, Link2, MoreHorizontal, PencilLine, Trash2 } from "lucide-react";
 import { Menu } from "../../ui/Menu";
-import type { Creation } from "../../../lib/studioWorkspace/types";
+import type { Creation, StudioCollection } from "../../../lib/studioWorkspace/types";
 import { useWorkspace } from "../../../lib/studioWorkspace/workspace";
 import { openWorkspaceDialog } from "../../../lib/studioWorkspace/workspaceUi";
 import { ScenePreview } from "./ScenePreview";
 import { useWorkspaceActions } from "./useWorkspaceActions";
-import { focusRing, iconButton, tagChip, useWorkspaceFormat } from "./workspaceStyles";
+import { focusRing, iconButton, useWorkspaceFormat } from "./workspaceStyles";
 
 /** The saved render when there is one, else the drawn front view of the same scene. */
 export function CreationThumb({ creation, className }: { creation: Creation; className?: string }) {
@@ -42,7 +42,16 @@ export function FavoriteButton({ on, name, onToggle, className }: { on: boolean;
  * One saved design in the library: its scene, name, piece count, estimate
  * and last edit, with Open as the obvious action and the rest in the menu.
  */
-export function CreationCard({ creation, onStage }: { creation: Creation; onStage: boolean }) {
+export function CreationCard({
+  creation,
+  onStage,
+  folder,
+}: {
+  creation: Creation;
+  onStage: boolean;
+  /** The collection open in the explorer view: the menu offers to take the creation out of it. */
+  folder?: StudioCollection;
+}) {
   const { t, price, ago } = useWorkspaceFormat();
   const ws = useWorkspace();
   const { openInStudio } = useWorkspaceActions();
@@ -103,6 +112,22 @@ export function CreationCard({ creation, onStage }: { creation: Creation; onStag
                 onSelect: () => openWorkspaceDialog({ kind: "shareCreation", creation }),
               },
               {
+                id: "collections",
+                label: t("studio.workspace.actions.collections"),
+                icon: FolderPlus,
+                onSelect: () => openWorkspaceDialog({ kind: "creationCollections", creationId: creation.id }),
+              },
+              ...(folder
+                ? [
+                    {
+                      id: "removeFromFolder",
+                      label: t("studio.workspace.explorer.removeFrom", { name: folder.name }),
+                      icon: FolderMinus,
+                      onSelect: () => void ws.setInCollection(creation, folder, false),
+                    },
+                  ]
+                : []),
+              {
                 id: "rename",
                 label: t("studio.workspace.actions.rename"),
                 icon: PencilLine,
@@ -127,11 +152,6 @@ export function CreationCard({ creation, onStage }: { creation: Creation; onStag
           <span className="min-w-0 flex-1 truncate text-[11.5px] text-[var(--text-subtle)]">
             {t("studio.workspace.edited", { when: ago(creation.updatedAt) })}
           </span>
-          {creation.tags.slice(0, 1).map((tag) => (
-            <span key={tag} className={tagChip}>
-              {tag}
-            </span>
-          ))}
         </div>
       </div>
       <div className="border-t border-[var(--border-subtle)] px-2 py-1.5">
