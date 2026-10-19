@@ -24,6 +24,7 @@ const item = (creationId: string, position: number, status: GlowbookItem["status
   status,
   reviewNote: null,
   submittedAt: "2026-10-19T08:00:00Z",
+  sectionId: null,
 });
 
 describe("validateGlowbook (mirrors studio_save_showcase)", () => {
@@ -107,8 +108,28 @@ describe("toPublicGlowbook", () => {
       instagram: null,
       location: null,
       look: null,
-      items: [{ id: "1", name: "Aurora", description: "", elementCount: 3, thumbnailPath: "u/1.jpg", updatedAt: "t" }],
+      sections: [],
+      certification: null,
+      items: [{ id: "1", name: "Aurora", description: "", elementCount: 3, thumbnailPath: "u/1.jpg", updatedAt: "t", sectionId: null }],
     });
+  });
+  it("reads the sections and the certified badge (decision 102)", () => {
+    const page = toPublicGlowbook({
+      handle: "lily.gems",
+      display_name: "Lily",
+      sections: [{ id: "s1", name: "Mariage" }, { id: "", name: "x" }, "junk"],
+      certification: { courses: [{ fr: "Pose experte", en: "Expert placement" }, { fr: 3 }] },
+      items: [
+        { id: "1", name: "A", section_id: "s1" },
+        { id: "2", name: "B", section_id: null },
+        { id: "3", name: "C", section_id: "unknown" },
+      ],
+    });
+    expect(page?.sections).toEqual([{ id: "s1", name: "Mariage" }]);
+    expect(page?.certification).toEqual([{ fr: "Pose experte", en: "Expert placement" }]);
+    expect(page?.items.map((i) => i.sectionId)).toEqual(["s1", null, null]);
+    expect(toPublicGlowbook({ handle: "x.y", display_name: "X", certification: null, items: [] })?.certification).toBeNull();
+    expect(toPublicGlowbook({ handle: "x.y", display_name: "X", certification: { courses: [] }, items: [] })?.certification).toBeNull();
   });
   it("reads the artist's look when the page carries one", () => {
     const page = toPublicGlowbook({ handle: "lily.gems", display_name: "Lily", location: "Lyon", look: { accent: "rose", layout: "large" }, items: [] });

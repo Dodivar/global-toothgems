@@ -21,6 +21,8 @@ import studioWorkspaceFr from "./locales/studioWorkspace.fr.json";
 import studioWorkspaceEn from "./locales/studioWorkspace.en.json";
 import studioTemplatesFr from "./locales/studioTemplates.fr.json";
 import studioTemplatesEn from "./locales/studioTemplates.en.json";
+import studioSocialExportFr from "./locales/studioSocialExport.fr.json";
+import studioSocialExportEn from "./locales/studioSocialExport.en.json";
 import studioGlowbookFr from "./locales/studioGlowbook.fr.json";
 import studioGlowbookEn from "./locales/studioGlowbook.en.json";
 // The alternative home page at /accueil-b, under `homeAlt`.
@@ -47,6 +49,6 @@ import loungeFr from "./locales/communityChat.fr.json";
 import loungeEn from "./locales/communityChat.en.json";
 
 export const resources = {
-  fr: { translation: { ...fr, promo: promoFr, reviews: reviewsFr, settings: settingsFr, studio: { ...studioFr, workspace: studioWorkspaceFr, templates: studioTemplatesFr, glowbook: studioGlowbookFr }, homeAlt: homeAltFr, shopAlt: shopAltFr, studioPage: studioPageFr, learning: learningFr, trainingMedia: trainingMediaFr, academyPage: academyPageFr, lounge: loungeFr } },
-  en: { translation: { ...en, promo: promoEn, reviews: reviewsEn, settings: settingsEn, studio: { ...studioEn, workspace: studioWorkspaceEn, templates: studioTemplatesEn, glowbook: studioGlowbookEn }, homeAlt: homeAltEn, shopAlt: shopAltEn, studioPage: studioPageEn, learning: learningEn, trainingMedia: trainingMediaEn, academyPage: academyPageEn, lounge: loungeEn } },
+  fr: { translation: { ...fr, promo: promoFr, reviews: reviewsFr, settings: settingsFr, studio: { ...studioFr, workspace: studioWorkspaceFr, templates: studioTemplatesFr, glowbook: studioGlowbookFr, socialExport: studioSocialExportFr }, homeAlt: homeAltFr, shopAlt: shopAltFr, studioPage: studioPageFr, learning: learningFr, trainingMedia: trainingMediaFr, academyPage: academyPageFr, lounge: loungeFr } },
+  en: { translation: { ...en, promo: promoEn, reviews: reviewsEn, settings: settingsEn, studio: { ...studioEn, workspace: studioWorkspaceEn, templates: studioTemplatesEn, glowbook: studioGlowbookEn, socialExport: studioSocialExportEn }, homeAlt: homeAltEn, shopAlt: shopAltEn, studioPage: studioPageEn, learning: learningEn, trainingMedia: trainingMediaEn, academyPage: academyPageEn, lounge: loungeEn } },
 };

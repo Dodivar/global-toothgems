@@ -35,6 +35,8 @@ export interface QueuePage extends QueueBase {
   bio: string;
   instagram: string | null;
   look: QueueLook;
+  /** The page's section names, in order (decision 102): public with the page once it is approved. */
+  sections: string[];
 }
 
 /** Pictures and links proposed for an approved page: approved, they replace the current ones. */
@@ -62,6 +64,11 @@ function lookOf(details: unknown): QueueLook {
   return { approved: lookFromColumns(approved), pending: pendingFromColumns(d.pending) };
 }
 
+function sectionsOf(details: unknown): string[] {
+  const d = details && typeof details === "object" && !Array.isArray(details) ? (details as Record<string, unknown>) : {};
+  return Array.isArray(d.sections) ? d.sections.filter((n): n is string => typeof n === "string" && n.length > 0) : [];
+}
+
 /** Every picture an entry shows (approved and proposed), to sign. */
 export function queueMediaPaths(entries: QueueEntry[]): string[] {
   const out = new Set<string>();
@@ -84,7 +91,7 @@ export function toQueueEntry(row: GlowbookQueueRow): QueueEntry {
     displayName: row.display_name,
     pageStatus: asStatus(row.showcase_status),
   };
-  if (row.kind === "showcase") return { ...base, kind: "page", bio: row.bio ?? "", instagram: row.instagram ?? null, look: lookOf(row.details) };
+  if (row.kind === "showcase") return { ...base, kind: "page", bio: row.bio ?? "", instagram: row.instagram ?? null, look: lookOf(row.details), sections: sectionsOf(row.details) };
   if (row.kind === "changes") return { ...base, kind: "changes", look: lookOf(row.details) };
   return {
     ...base,

@@ -1,5 +1,6 @@
 import type { Database } from "../supabase/database.types";
 import { lookFromColumns, pendingFromColumns, type GlowbookLook, type ModeratedKey } from "./glowbookLook";
+import { toCertifiedCourses, toPublicSections, type CertifiedCourse } from "./glowbookSections";
 
 /**
  * The Glowbook: an artist's public, read-only showcase of chosen creations,
@@ -32,6 +33,8 @@ export interface Glowbook {
   pending: Partial<Pick<GlowbookLook, ModeratedKey>>;
   /** Why the last proposed pictures or links were declined (empty when no reason was given). */
   changesReviewNote: string | null;
+  /** Whether the page shows the "certified artist" badge when the artist has earned it (decision 102). */
+  showCertification: boolean;
 }
 
 export interface GlowbookItem {
@@ -41,6 +44,8 @@ export interface GlowbookItem {
   status: ModerationStatus;
   reviewNote: string | null;
   submittedAt: string;
+  /** The section it is filed in (decision 102), or null. */
+  sectionId: string | null;
 }
 
 export interface GlowbookDetails {
@@ -124,6 +129,7 @@ export function toGlowbook(row: ShowcaseRow): Glowbook {
     look: lookFromColumns(row as unknown as Record<string, unknown>),
     pending: pendingFromColumns(row.pending_changes),
     changesReviewNote: row.changes_review_note,
+    showCertification: row.show_certification,
   };
 }
 
@@ -135,6 +141,7 @@ export function toGlowbookItem(row: ItemRow): GlowbookItem {
     status: asStatus(row.status),
     reviewNote: row.review_note,
     submittedAt: row.submitted_at,
+    sectionId: row.section_id,
   };
 }
 
@@ -175,6 +182,8 @@ export interface PublicGlowbookItem {
   elementCount: number;
   thumbnailPath: string | null;
   updatedAt: string;
+  /** Its section (decision 102); always null when sections are not open to the artist. */
+  sectionId: string | null;
 }
 
 export interface PublicGlowbook {
@@ -185,6 +194,10 @@ export interface PublicGlowbook {
   location: string | null;
   /** The artist's approved look; null when customisation is not open to them (default look). */
   look: GlowbookLook | null;
+  /** Sections holding at least one public creation, in the artist's order (decision 102). */
+  sections: { id: string; name: string }[];
+  /** The courses behind the "certified artist" badge; null when there is none or the artist hides it. */
+  certification: CertifiedCourse[] | null;
   items: PublicGlowbookItem[];
 }
 
@@ -196,6 +209,9 @@ export function toPublicGlowbook(json: unknown): PublicGlowbook | null {
   const o = json as Record<string, unknown>;
   if (!str(o.handle) || !str(o.display_name)) return null;
   const items = Array.isArray(o.items) ? o.items : [];
+  const cert = o.certification && typeof o.certification === "object" ? toCertifiedCourses((o.certification as Record<string, unknown>).courses) : [];
+  const sections = toPublicSections(o.sections);
+  const known = new Set(sections.map((x) => x.id));
   return {
     handle: str(o.handle),
     displayName: str(o.display_name),
@@ -203,6 +219,8 @@ export function toPublicGlowbook(json: unknown): PublicGlowbook | null {
     instagram: str(o.instagram) || null,
     location: str(o.location) || null,
     look: o.look && typeof o.look === "object" && !Array.isArray(o.look) ? lookFromColumns(o.look as Record<string, unknown>) : null,
+    sections,
+    certification: cert.length ? cert : null,
     items: items.flatMap((raw) => {
       if (!raw || typeof raw !== "object") return [];
       const i = raw as Record<string, unknown>;
@@ -215,6 +233,7 @@ export function toPublicGlowbook(json: unknown): PublicGlowbook | null {
           elementCount: typeof i.element_count === "number" ? i.element_count : 0,
           thumbnailPath: str(i.thumbnail_path) || null,
           updatedAt: str(i.updated_at),
+          sectionId: known.has(str(i.section_id)) ? str(i.section_id) : null,
         },
       ];
     }),

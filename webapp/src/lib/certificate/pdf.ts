@@ -5,11 +5,14 @@
  * a JPEG; wrapping that image in a PDF is a few dozen bytes of structure, which
  * is not worth a dependency (AGENTS.md §12). The page is A4 landscape and the
  * image fills it, so the file prints at the size the certificate was designed
- * for. Pure: no DOM, no canvas — unit-tested in `pdf.test.ts`.
+ * for; another page size can be given (the Glowbook poster is A4 portrait).
+ * Pure: no DOM, no canvas — unit-tested in `pdf.test.ts`.
  */
 
 /** A4 landscape in PDF points (1/72 in). */
 export const A4_LANDSCAPE_PT = { width: 841.89, height: 595.28 } as const;
+/** A4 portrait in PDF points, for the Glowbook poster (`lib/glowbookPoster`). */
+export const A4_PORTRAIT_PT = { width: 595.28, height: 841.89 } as const;
 
 const encoder = new TextEncoder();
 
@@ -20,10 +23,15 @@ function pdfText(value: string): string {
   return `<${hex}>`;
 }
 
-export function jpegToPdf(jpeg: Uint8Array, image: { width: number; height: number }, meta: { title: string; author: string }): Uint8Array {
+export function jpegToPdf(
+  jpeg: Uint8Array,
+  image: { width: number; height: number },
+  meta: { title: string; author: string },
+  page: { width: number; height: number } = A4_LANDSCAPE_PT,
+): Uint8Array {
   if (jpeg.length < 4 || jpeg[0] !== 0xff || jpeg[1] !== 0xd8) throw new Error("not a JPEG");
   if (!(image.width > 0 && image.height > 0)) throw new Error("invalid image size");
-  const { width, height } = A4_LANDSCAPE_PT;
+  const { width, height } = page;
 
   const chunks: Uint8Array[] = [];
   const offsets: number[] = [];

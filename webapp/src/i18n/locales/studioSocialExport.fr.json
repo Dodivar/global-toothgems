@@ -1,0 +1,95 @@
+{
+  "action": "Créer un post",
+  "title": "Créer un post pour les réseaux",
+  "intro": "« {{name}} » en image haute définition ou en rotation 360°, aux formats Story et publication. Tout est dessiné sur cet appareil : rien n'est publié.",
+  "close": "Fermer",
+  "previewLabel": "Aperçu du post",
+  "preparing": "Préparation du rendu 3D…",
+  "format": {
+    "label": "Format",
+    "story": "Story",
+    "square": "Carré",
+    "portrait": "Portrait"
+  },
+  "output": {
+    "label": "Type",
+    "image": "Image HD",
+    "video": "Vidéo 360°",
+    "gif": "GIF 360°",
+    "videoUnsupported": "Ce navigateur ne sait pas enregistrer de vidéo : choisissez le GIF ou l'image.",
+    "videoHint": "Un tour complet de {{seconds}} secondes, en boucle ({{type}}).",
+    "gifHint": "Boucle plus légère en demi-taille ({{width}} px de large), pour les messages."
+  },
+  "imageType": {
+    "label": "Fichier",
+    "png": "PNG (le plus net)",
+    "jpeg": "JPEG (plus léger)"
+  },
+  "mark": {
+    "label": "Signature",
+    "brand": "Filigrane Global Toothgems",
+    "logo": "Mon logo",
+    "none": "Sans filigrane",
+    "essentialNote": "Le filigrane Global Toothgems figure sur chaque export avec la formule Essentielle et l'essai gratuit. La formule Artiste vous permet de signer avec votre propre logo, ou sans rien.",
+    "brandingUnavailable": "Votre formule n'a pas pu être vérifiée pour le moment : les exports gardent le filigrane Global Toothgems."
+  },
+  "logo": {
+    "label": "Votre logo",
+    "none": "Pas encore de logo. Un PNG sur fond transparent rend le mieux.",
+    "upload": "Ajouter mon logo",
+    "replace": "Remplacer",
+    "remove": "Retirer",
+    "saving": "Enregistrement de votre logo…",
+    "alt": "Votre logo",
+    "hint": "PNG, JPEG ou WebP, 2 Mo au maximum.",
+    "kept": "Votre logo est conservé : il revient sur vos exports avec la formule Artiste ou Atelier.",
+    "errors": {
+      "type": "Choisissez une image PNG, JPEG ou WebP.",
+      "size": "Cette image dépasse 2 Mo.",
+      "decode": "Cette image n'a pas pu être lue.",
+      "forbidden": "Votre propre logo est inclus dans les formules Artiste et Atelier.",
+      "unavailable": "Votre logo n'a pas pu être enregistré. Réessayez dans un instant.",
+      "load": "Votre logo n'a pas pu être chargé : le filigrane Global Toothgems est utilisé à la place."
+    }
+  },
+  "template": {
+    "label": "Mise en page",
+    "plain": "Scène pleine",
+    "gallery": "Galerie",
+    "spotlight": "Projecteur",
+    "band": "Carte Studio",
+    "locked": "Les modèles de mise en page (fond, cadre, titre et compte) sont inclus dans la formule Atelier.",
+    "titleLabel": "Titre",
+    "handleLabel": "Votre compte",
+    "handlePlaceholder": "@votre.compte"
+  },
+  "create": {
+    "image": "Créer l'image",
+    "video": "Enregistrer la vidéo",
+    "gif": "Créer le GIF"
+  },
+  "progress": {
+    "image": "Dessin de l'image…",
+    "video": "Enregistrement du tour… gardez cet onglet ouvert",
+    "gif": "Dessin des images du GIF…",
+    "cancel": "Annuler"
+  },
+  "result": {
+    "ready": "Prêt : {{file}} ({{size}})",
+    "download": "Télécharger",
+    "share": "Partager",
+    "shareHint": "Sur téléphone, Partager ouvre directement Instagram, TikTok ou Messages quand ils acceptent ce fichier.",
+    "videoLabel": "La vidéo 360° enregistrée",
+    "gifLabel": "Le GIF 360°",
+    "imageLabel": "L'image exportée",
+    "reducedMotion": "Animation non lue (mouvements réduits) : le fichier est prêt à télécharger."
+  },
+  "errors": {
+    "webgl": "Le rendu 3D n'est pas disponible dans ce navigateur : le post ne peut pas être dessiné.",
+    "model": "Le rendu 3D n'a pas pu être préparé. Vérifiez votre connexion et réessayez.",
+    "video": "Ce navigateur n'a pas pu enregistrer la vidéo. Essayez le GIF ou l'image.",
+    "interrupted": "L'enregistrement s'est arrêté car l'onglet a été quitté. Réessayez en le gardant ouvert.",
+    "encode": "Le fichier n'a pas pu être créé. Réessayez, ou choisissez un autre format.",
+    "share": "Le partage n'a pas abouti : téléchargez le fichier et publiez-le depuis votre galerie."
+  }
+}

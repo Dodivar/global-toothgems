@@ -107,7 +107,16 @@
     "lookSaved": "Look saved",
     "lookSavedPending": "Look saved: the new pictures and links wait for review",
     "lookFailed": "Unable to save the look",
-    "uploadFailed": "Unable to upload the picture"
+    "uploadFailed": "Unable to upload the picture",
+    "sectionsFull": "Your Glowbook already has 12 sections: delete one to create another.",
+    "sectionAdded": "Section “{{name}}” created",
+    "sectionRenamed": "Section renamed “{{name}}”",
+    "sectionDeleted": "Section “{{name}}” deleted",
+    "sectionFailed": "Unable to save the section",
+    "badgeShown": "Badge shown on your page",
+    "badgeHidden": "Badge hidden on your page",
+    "badgeFailed": "Unable to change the badge",
+    "qrFailed": "Unable to prepare the file"
   },
   "saveWarning": {
     "cancel": "Cancel",
@@ -145,7 +154,9 @@
     "website": "Website",
     "tiktok": "@{{account}} on TikTok",
     "avatarAlt": "{{name}}’s profile picture",
-    "featured": "In the spotlight"
+    "featured": "In the spotlight",
+    "sectionsLabel": "Filter the creations by section",
+    "allSections": "All"
   },
   "admin": {
     "title": "Glowbook",
@@ -195,7 +206,8 @@
     "proposed": "Proposed by the artist",
     "proposedWithPage": "Proposed with the page (published if you approve the page)",
     "newAvatar": "New picture",
-    "newBanner": "New banner"
+    "newBanner": "New banner",
+    "sections": "Sections: {{names}}"
   },
   "look": {
     "title": "Customise my page",
@@ -259,5 +271,59 @@
       "tooLarge": "Picture too large (20 MB at most).",
       "unreadable": "This picture could not be read. Try a JPEG or PNG."
     }
+  },
+  "sections": {
+    "title": "Sections of my page",
+    "sub": "Sort your creations by theme (“Wedding”, “Minimal”…). Visitors filter your page by section; creations without a section stay visible. A section only shows once it holds a published creation. Names are published when you save, like your bio.",
+    "nameLabel": "Name of the new section",
+    "addPlaceholder": "e.g. Wedding",
+    "add": "Add",
+    "renameLabel": "New name for “{{name}}”",
+    "rename": "Rename “{{name}}”",
+    "save": "Save",
+    "cancel": "Cancel",
+    "delete": "Delete “{{name}}”",
+    "deleteConfirm": "Delete “{{name}}”? Its creations stay on your page, without a section.",
+    "deleteYes": "Delete",
+    "moveUp": "Move “{{name}}” up",
+    "moveDown": "Move “{{name}}” down",
+    "count_one": "{{count}} creation",
+    "count_other": "{{count}} creations",
+    "empty": "No sections yet.",
+    "itemLabel": "Section of “{{name}}”",
+    "none": "No section",
+    "errors": {
+      "required": "Give the section a name.",
+      "length": "The name is {{max}} characters at most.",
+      "taken": "You already have a section with this name.",
+      "full": "12 sections at most: delete one to create another.",
+      "failed": "The section could not be saved. Please try again."
+    }
+  },
+  "badge": {
+    "label": "Global Toothgems certified artist",
+    "courses": "Course: {{titles}}",
+    "title": "“Certified artist” badge",
+    "earned": "You completed a Global Toothgems course with a certificate: your page can show it, with the course title.",
+    "show": "Show the badge on my page",
+    "hiddenNote": "The badge is hidden: visitors do not see it.",
+    "notEarned": "Complete a Global Toothgems Academy course that issues a certificate: a “certified artist” badge will appear on your page.",
+    "toAcademy": "See the courses"
+  },
+  "qr": {
+    "title": "QR code of my page",
+    "sub": "Print it for your studio: clients scan it and discover your creations.",
+    "locked": "The QR code will be available once your page is approved: until then its address does not open.",
+    "previewAlt": "QR code of the address {{url}}",
+    "png": "QR code (PNG)",
+    "pdf": "A4 poster (PDF)",
+    "hint": "The poster shows your name, profile picture and colour. The QR code opens your page in {{language}}.",
+    "language": "English",
+    "eyebrow": "Glowbook",
+    "cta": "Scan to see my creations",
+    "footer": "Creations designed in the Global Toothgems 3D Studio",
+    "fileQr": "qr-code",
+    "filePoster": "poster",
+    "docTitle": "{{name}}’s Glowbook"
   }
 }
