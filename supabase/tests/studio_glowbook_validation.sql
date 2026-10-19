@@ -1,6 +1,6 @@
 -- =============================================================================
 -- 3D Studio Glowbook validation suite
--- (migration 20261019072230_studio_glowbook, decision 99)
+-- (migrations 20261019072230_studio_glowbook, 20261019112411_studio_glowbook_creation, decision 99)
 -- =============================================================================
 -- Proves, as the roles that really call them:
 --
@@ -13,12 +13,13 @@
 --       the queue; the tables take no direct INSERT / UPDATE;
 --   G4  a moderator (moderate_reviews) approves the page: still no item
 --       public; approves one item: the page shows it, the pending one stays
---       hidden; anon signs exactly that render; the decision is audited;
+--       hidden; anon signs exactly that render and reads exactly that scene
+--       in 3D (not through another handle); the decision is audited;
 --   G5  later edits of an approved creation are public at once; a new handle
 --       sends the page back to moderation; name/bio edits do not;
 --   G6  a rejected item stays hidden with its note, comes back pending when
 --       re-sent; a moderator takes an approved item down;
---   G7  when the author loses Studio access the page and its renders go dark;
+--   G7  when the author loses Studio access the page, its renders and its 3D go dark;
 --   G8  the owner removes an item and deletes the Glowbook; another member
 --       cannot delete or read them.
 --
@@ -195,6 +196,13 @@ begin
   end if;
   select array_agg(name) into v_names from storage.objects where bucket_id = 'studio-thumbnails' and name like artist || '/%';
   if v_names is distinct from array[artist || '/one.jpg'] then raise exception 'FAIL G4: anon reads renders %', v_names; end if;
+  -- The 3D viewer reads the approved creation's scene, nothing else (migration 20261019112411).
+  v_page := public.studio_public_showcase_creation('lily.gems', i_one);
+  if v_page ->> 'name' <> 'Aurora smile' or jsonb_array_length(v_page #> '{scene_data,pieces}') <> 2 or v_page ? 'user_id' then
+    raise exception 'FAIL G4: 3D creation %', v_page;
+  end if;
+  if public.studio_public_showcase_creation('lily.gems', i_two) is not null then raise exception 'FAIL G4: pending creation in 3D'; end if;
+  if public.studio_public_showcase_creation('someone.else', i_one) is not null then raise exception 'FAIL G4: creation read through another handle'; end if;
   execute 'reset role';
   select count(*) into v_cnt from public.audit_logs
    where table_name = 'studio_showcase_items' and record_id = i_one::text and action = 'update';
@@ -255,6 +263,7 @@ begin
   perform set_config('role', 'anon', true);
   perform set_config('request.jwt.claims', '{"role":"anon"}', true);
   if public.studio_public_showcase('lily.studio') is not null then raise exception 'FAIL G7: page shown without access'; end if;
+  if public.studio_public_showcase_creation('lily.studio', i_one) is not null then raise exception 'FAIL G7: 3D creation without access'; end if;
   select count(*) into v_cnt from storage.objects where bucket_id = 'studio-thumbnails' and name like artist || '/%';
   if v_cnt <> 0 then raise exception 'FAIL G7: renders readable without access (%)', v_cnt; end if;
   perform set_config('role', 'authenticated', true);

@@ -21,6 +21,17 @@ export const STUDIO_EDITOR_PATH = "/studio-3d/atelier";
  * workspace section, and viewing a shared design needs no Studio access.
  */
 export const STUDIO_SHARE_PATH = "/studio-3d/partage";
+/**
+ * A creation of an artist's public Glowbook in the read-only 3D viewer
+ * (decision 99): `/studio-3d/glowbook/<handle>/<item id>`. Beside the share
+ * viewer, open to everyone; the Glowbook page itself is a public page
+ * (`/fr/glowbook/<handle>`).
+ */
+export const STUDIO_GLOWBOOK_VIEW_PATH = "/studio-3d/glowbook";
+
+export function glowbookCreationPath(handle: string, itemId: string): string {
+  return `${STUDIO_GLOWBOOK_VIEW_PATH}/${encodeURIComponent(handle)}/${encodeURIComponent(itemId)}`;
+}
 
 /**
  * The workspace sections around the editor, under its path

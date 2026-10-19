@@ -562,6 +562,30 @@ export function createSupabaseRepositories(client: TypedSupabaseClient, userId: 
  * and nothing about its owner. Null for an unknown or disabled link; throws
  * when the database cannot be reached, so the page can tell the two apart.
  */
+const UUID_PATTERN = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i;
+
+/**
+ * One creation of a public Glowbook, for the read-only 3D viewer (decision 99):
+ * `studio_public_showcase_creation(handle, item)` answers only for an approved
+ * creation of an approved Glowbook whose author has Studio access; null otherwise.
+ */
+export async function fetchGlowbookCreation(
+  client: TypedSupabaseClient,
+  handle: string,
+  itemId: string,
+): Promise<{ design: SharedDesign; author: { handle: string; displayName: string } } | null> {
+  if (!UUID_PATTERN.test(itemId) || !/^[a-z0-9._-]{3,30}$/i.test(handle)) return null;
+  const { data, error } = await client.rpc("studio_public_showcase_creation", { p_handle: handle.toLowerCase(), p_item_id: itemId });
+  if (error) throw storeError(error);
+  const design = parseSharedCreation(data);
+  if (!design || !data || typeof data !== "object" || Array.isArray(data)) return null;
+  const row = data as Record<string, unknown>;
+  return {
+    design,
+    author: { handle: String(row.handle ?? handle), displayName: typeof row.display_name === "string" ? row.display_name : "" },
+  };
+}
+
 export async function fetchSharedCreation(client: TypedSupabaseClient, token: string): Promise<SharedDesign | null> {
   if (!SHARE_TOKEN_PATTERN.test(token)) return null;
   const { data, error } = await client.rpc("studio_shared_creation", { p_token: token });

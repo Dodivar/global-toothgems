@@ -500,7 +500,14 @@
       "unavailableTitle": "La création n’a pas pu être chargée",
       "unavailableBody": "Vérifiez votre connexion, puis réessayez.",
       "retry": "Réessayer",
-      "discover": "Découvrir le Studio 3D"
+      "discover": "Découvrir le Studio 3D",
+      "glowbookNote": "Création publiée dans le Glowbook de l’artiste. Faites-la tourner et zoomez ; elle ne peut pas être modifiée ici.",
+      "backToGlowbook": "Retour au Glowbook de {{name}}",
+      "shoppingTitle": "Les gems de cette création",
+      "shoppingBody": "Ajoutez au panier tout ce qu’il faut pour la reproduire. Les prix sont confirmés au paiement.",
+      "glowbookGoneTitle": "Création indisponible",
+      "glowbookGoneBody": "Cette création n’est plus publiée dans ce Glowbook, ou l’adresse est incomplète.",
+      "glowbookEyebrow": "Glowbook de {{name}}"
     }
   },
   "collections": {

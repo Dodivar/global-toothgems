@@ -29,7 +29,8 @@ export function StudioEditorScreen() {
 }
 
 /**
- * A design shared read-only (`/studio-3d/partage`, `/studio-3d/partage/<token>`).
+ * A design shared read-only (`/studio-3d/partage`, `/studio-3d/partage/<token>`),
+ * or a creation of an artist's Glowbook (`/studio-3d/glowbook/<handle>/<item>`).
  * Open to everyone, outside `RequireStudioAccess`: looking at a design someone
  * sent is not using the Studio. Full-screen like the editor.
  */

@@ -500,7 +500,14 @@
       "unavailableTitle": "The design couldn’t be loaded",
       "unavailableBody": "Check your connection, then try again.",
       "retry": "Try again",
-      "discover": "Discover the 3D Studio"
+      "discover": "Discover the 3D Studio",
+      "glowbookNote": "Published in the artist’s Glowbook. Turn and zoom it; it cannot be changed here.",
+      "backToGlowbook": "Back to {{name}}’s Glowbook",
+      "shoppingTitle": "The gems in this creation",
+      "shoppingBody": "Add everything it takes to your cart in one go. Prices are confirmed at checkout.",
+      "glowbookGoneTitle": "Creation unavailable",
+      "glowbookGoneBody": "This creation is no longer published in this Glowbook, or the address is incomplete.",
+      "glowbookEyebrow": "{{name}}’s Glowbook"
     }
   },
   "collections": {

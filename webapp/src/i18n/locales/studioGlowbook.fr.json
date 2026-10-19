@@ -129,7 +129,9 @@
     "ctaTitle": "Imaginez votre propre smile",
     "ctaBody": "Ces créations ont été composées dans le Studio 3D Global Toothgems. Essayez-le, ou découvrez nos gems.",
     "ctaStudio": "Découvrir le Studio 3D",
-    "ctaShop": "Voir la boutique"
+    "ctaShop": "Voir la boutique",
+    "view3d": "Voir en 3D",
+    "open3d": "Voir « {{name}} » en 3D"
   },
   "admin": {
     "title": "Glowbook",

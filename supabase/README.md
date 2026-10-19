@@ -160,6 +160,7 @@ supabase/
 | 20261018224657 | `studio_templates` | **Applied 2026-10-19.** Decision 97: the Global Toothgems template library. `creations.template_published_at` (not in the column grants: written only by `studio_set_template(id, published)` — `manage_content` staff publish their own creation, keeping the first date, and unpublish any template; audited, the flag alone), `studio_templates()` (members with Studio access: published rows newest first, no owner, favourite or opening dates, Gem Group references dropped; 42501 otherwise), `studio_use_template(id)` (copies a published template into the caller's creations: owner = caller, unpublished, no render — the browser copies it), storage policy `studio-thumbnails: Studio members read template renders` (`private.is_studio_template_thumbnail()`). The `creations` SELECT policy is unchanged. Suite `tests/studio_templates_validation.sql` |
 | 20261019062619 | `studio_preferences` | **Applied 2026-10-19.** `studio_preferences`: one row per member (created on first change, none = defaults), `library_view` grid / explorer; owner-only RLS, not gated by Studio access. Decision 98 |
 | 20261019072230 | `studio_glowbook` | **Applied 2026-10-19.** Decision 99: the Glowbook, an artist's public showcase. `studio_showcases` (one per member: handle, display name, bio, Instagram, moderation status) and `studio_showcase_items` (one row per creation, order, moderation status); owners and `moderate_reviews` staff read (RLS), owners delete; every other write through `studio_save_showcase()`, `studio_showcase_add()`, `studio_showcase_reorder()` (Studio access) and `studio_moderate_showcase()` / `studio_moderate_showcase_item()` (`moderate_reviews`, audited); `studio_showcase_queue()` for moderators; `studio_public_showcase(handle)` for anyone (approved page of an author with Studio access, approved items only; no owner id field, though render paths start with it — decision 99 (i)); `private.studio_user_has_access(user)`; storage policies on `studio-thumbnails` (anyone reads public Glowbook renders, moderators read the renders sent). Suite `tests/studio_glowbook_validation.sql` (G1–G8) |
+| 20261019112411 | `studio_glowbook_creation` | **Applied 2026-10-19.** `studio_public_showcase_creation(handle, item)` (anon): one approved creation of a public Glowbook with its scene (Gem Group ids blanked), for the read-only 3D viewer; null otherwise. Suite G4/G7 |
 | 20261019072443 | `studio_glowbook_updated_at` | **Applied 2026-10-19.** The Glowbook tables' `updated_at` triggers use `private.set_updated_at()` (the Studio design trigger reads columns they do not have) |
 | 20261008175722 | `contact_attachments_and_support_email` | **Applied 2026-10-08.** Contact form: `contact_requests.attachment_path` → `attachment_paths text[]` (≤ 5, `private.valid_contact_attachment_paths()`), bucket `contact-attachments` 20 MB per object, `submit_contact_request(…, p_attachment_paths text[])` (old signature dropped; ownership per path, no duplicates, ≤ 20 MB in all), guard trigger rebuilt, `contact_ip_allowed(ip_hash)` (service role), template `contact_request_received` (fr + en) for the support inbox. Suite: `iteration7_validation.sql` C3/C4 |
 | 20261008175809 | `contact_attachment_paths_check_grant` | **Applied 2026-10-08.** `execute` on the CHECK helper for `authenticated`/`service_role` (staff triage re-evaluates the CHECK) |
@@ -1310,6 +1311,8 @@ member with Studio access   /studio-3d/atelier/glowbook → studio_save_showcase
 moderator (moderate_reviews) /admin/glowbook → studio_showcase_queue() → studio_moderate_showcase[_item](…, approved|rejected, note)
 anyone                      /fr/glowbook/<handle>, /en/glowbook/<handle> → studio_public_showcase(handle)  (server, every request)
                             renders: signed with the publishable key through "anyone reads public Glowbook renders"
+                            a card → /studio-3d/glowbook/<handle>/<item> → studio_public_showcase_creation(handle, item)
+                                     read-only 3D viewer + the design's shop items, added to the cart in one click
 ```
 
 - Public = page approved **and** item approved **and** the author has Studio access now (trial, subscription or
@@ -2137,4 +2140,8 @@ VAT rates, shipping zones/rates mirroring the Settings prototype. Media rows ref
     creation's saved render and details, not a 3D viewer; (g) render links are signed for 7 days on every
     request (the Open Graph image included), the page is never cached; (h) not listed in the sitemap; (i) like
     templates (97 (g)), visitors can see the author's user id inside the render's storage path, the only owner
-    data the page exposes.
+    data the page exposes. Added the same day at the owner's request: each creation opens read-only in 3D
+    (`/studio-3d/glowbook/<handle>/<item>`, migration `20261019112411`) and every read-only viewer (Glowbook and
+    share links) lists the design's shop items with "add all to cart" (the editor's shopping list; the checkout
+    prices again). Agent's choice, to confirm: (j) a Glowbook creation cannot be copied into the visitor's own
+    Studio (share links still can): it is the artist's published work.

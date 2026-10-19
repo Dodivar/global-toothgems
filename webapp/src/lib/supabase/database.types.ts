@@ -9694,6 +9694,10 @@ export type Database = {
         Returns: undefined
       }
       studio_public_showcase: { Args: { p_handle: string }; Returns: Json }
+      studio_public_showcase_creation: {
+        Args: { p_handle: string; p_item_id: string }
+        Returns: Json
+      }
       studio_revoke_creation_share: {
         Args: { p_creation_id: string }
         Returns: undefined
