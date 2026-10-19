@@ -7723,6 +7723,42 @@ export type Database = {
           },
         ]
       }
+      studio_share_logos: {
+        Row: {
+          created_at: string
+          logo_path: string
+          updated_at: string
+          user_id: string
+        }
+        Insert: {
+          created_at?: string
+          logo_path: string
+          updated_at?: string
+          user_id: string
+        }
+        Update: {
+          created_at?: string
+          logo_path?: string
+          updated_at?: string
+          user_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "studio_share_logos_user_id_fkey"
+            columns: ["user_id"]
+            isOneToOne: true
+            referencedRelation: "loyalty_overview"
+            referencedColumns: ["user_id"]
+          },
+          {
+            foreignKeyName: "studio_share_logos_user_id_fkey"
+            columns: ["user_id"]
+            isOneToOne: true
+            referencedRelation: "profiles"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       studio_showcase_items: {
         Row: {
           created_at: string
@@ -9829,10 +9865,12 @@ export type Database = {
           isSetofReturn: false
         }
       }
+      studio_set_share_logo: { Args: { p_path: string }; Returns: string }
       studio_set_template: {
         Args: { p_creation_id: string; p_published: boolean }
         Returns: string
       }
+      studio_share_branding: { Args: never; Returns: Json }
       studio_share_creation: {
         Args: { p_creation_id: string }
         Returns: string
