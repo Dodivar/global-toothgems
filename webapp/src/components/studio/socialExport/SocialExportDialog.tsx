@@ -8,11 +8,11 @@ import { Dialog } from "../../ui/Dialog";
 import { ProgressBar } from "../../ui/ProgressBar";
 import { usePrefersReducedMotion } from "../../homeAlt/usePrefersReducedMotion";
 import { downloadFile } from "../tryOn/exportComposite";
-import { fieldClass, focusRing } from "../workspace/workspaceStyles";
+import { fieldClass } from "../workspace/workspaceStyles";
 import { defaultMark, markChoices, resolveMark, type ShareMark } from "../../../lib/studio3d/socialExport/branding";
 import type { MarkImage } from "../../../lib/studio3d/socialExport/compose";
 import { ExportError, ExportStage, loadBrandMark, type ExportErrorCode, type ExportLook } from "../../../lib/studio3d/socialExport/exporter";
-import { FORMAT_RATIOS, FORMAT_SIZES, SHARE_FORMATS, scaledSize, type ShareFormat } from "../../../lib/studio3d/socialExport/formats";
+import { FORMAT_RATIOS, SHARE_FORMATS, scaledSize, type ShareFormat } from "../../../lib/studio3d/socialExport/formats";
 import { LAYOUT_TEMPLATE_IDS, layoutFor, type LayoutTemplateId } from "../../../lib/studio3d/socialExport/layouts";
 import { exportFileName, pickVideoType, TURNTABLE_GIF, TURNTABLE_VIDEO, type ImageType, type ShareOutput } from "../../../lib/studio3d/socialExport/motion";
 import { canShareFiles } from "../../../lib/studio3d/socialShare";
@@ -493,7 +493,6 @@ export default function SocialExportDialog({ creation, onClose }: { creation: Cr
               )}
             </div>
           )}
-          <span className={clsx("sr-only", focusRing)} aria-hidden="true" data-format={FORMAT_SIZES[format].width} />
         </div>
       </div>
     </Dialog>
