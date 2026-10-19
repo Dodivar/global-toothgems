@@ -17,7 +17,7 @@ import {
 import { sanitizeScene, sceneStats } from "./scene";
 import { parseSharedCreation, SHARE_TOKEN_PATTERN, snapshotShareLink, storedShareLink, type SharedDesign } from "./share";
 import type { CollectionDetails, Creation, FeedbackInput, GemGroup } from "./types";
-import { normalizeCollection, normalizeDetails, normalizeTags, validateCollection, validateDetails, validateFeedback } from "./validation";
+import { normalizeCollection, normalizeDetails, validateCollection, validateDetails, validateFeedback } from "./validation";
 
 /**
  * The Studio workspace on Supabase (`supabase/migrations/…_studio_workspace.sql`).
@@ -130,7 +130,7 @@ function collectionsRepository(client: TypedSupabaseClient): CollectionsReposito
   };
 }
 
-function checkDetails(details: { name: string; description: string; tags: string[] }) {
+function checkDetails(details: { name: string; description: string }) {
   const problem = validateDetails(details);
   if (problem) throw new StudioStoreError("invalid", problem);
   return normalizeDetails(details);
@@ -144,8 +144,8 @@ function checkDetails(details: { name: string; description: string; tags: string
 const shareSchemaMissing = (error: PgError | null | undefined) =>
   !!error && ["PGRST202", "PGRST205", "42P01", "42883"].includes(error.code ?? "");
 
-const hasDetails = (p: { name?: string; description?: string; tags?: string[] }) =>
-  p.name !== undefined || p.description !== undefined || p.tags !== undefined;
+const hasDetails = (p: { name?: string; description?: string }) =>
+  p.name !== undefined || p.description !== undefined;
 
 export function toCreation(row: CreationRow, thumbnailUrl: string | null): Creation {
   const scene = sanitizeScene(row.scene_data);
@@ -154,7 +154,6 @@ export function toCreation(row: CreationRow, thumbnailUrl: string | null): Creat
     userId: row.user_id,
     name: row.name,
     description: row.description,
-    tags: normalizeTags(row.tags ?? []),
     scene,
     // The count follows the scene as read back, so the card never disagrees with
     // it; the estimate is the one stored at the last save (shop prices then).
@@ -177,7 +176,6 @@ function toGroup(row: GroupRow, thumbnailUrl: string | null): GemGroup | null {
     userId: row.user_id,
     name: row.name,
     description: row.description,
-    tags: normalizeTags(row.tags ?? []),
     data,
     thumbnailUrl,
     elementCount: data.pieces.length,
@@ -313,7 +311,6 @@ export function createSupabaseRepositories(client: TypedSupabaseClient, userId: 
             checkDetails({
               name: patch.name ?? row.name,
               description: patch.description ?? row.description,
-              tags: patch.tags ?? row.tags,
             }),
           );
         }
@@ -444,14 +441,13 @@ export function createSupabaseRepositories(client: TypedSupabaseClient, userId: 
       async update(id: string, patch: GemGroupPatch) {
         const changes: Partial<GroupRow> = {};
         if (hasDetails(patch)) {
-          const { data: row, error } = await client.from("gem_groups").select("name, description, tags").eq("id", id).single();
+          const { data: row, error } = await client.from("gem_groups").select("name, description").eq("id", id).single();
           if (error) throw storeError(error);
           Object.assign(
             changes,
             checkDetails({
               name: patch.name ?? row.name,
               description: patch.description ?? row.description,
-              tags: patch.tags ?? row.tags,
             }),
           );
         }

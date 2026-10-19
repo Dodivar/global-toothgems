@@ -3,7 +3,7 @@ import { CopyPlus, Eye } from "lucide-react";
 import { useFormat } from "../../../lib/format";
 import { isNewTemplate, type StudioTemplate } from "../../../lib/studioWorkspace/templates";
 import { ScenePreview } from "./ScenePreview";
-import { focusRing, iconButton, tagChip, useWorkspaceFormat } from "./workspaceStyles";
+import { focusRing, iconButton, useWorkspaceFormat } from "./workspaceStyles";
 
 /** The template's render when it has one, else the drawn front view of its scene. */
 export function TemplateThumb({ template, className }: { template: StudioTemplate; className?: string }) {
@@ -84,11 +84,6 @@ export function TemplateCard({
           <span className="min-w-0 flex-1 truncate text-[11.5px] text-[var(--text-subtle)]">
             {t("studio.templates.publishedOn", { date: formatDate(template.publishedAt) })}
           </span>
-          {template.tags.slice(0, 1).map((tag) => (
-            <span key={tag} className={tagChip}>
-              {tag}
-            </span>
-          ))}
         </div>
       </div>
       <div className="border-t border-[var(--border-subtle)] px-2 py-1.5">

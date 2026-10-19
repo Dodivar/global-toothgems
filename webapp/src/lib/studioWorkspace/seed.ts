@@ -36,7 +36,6 @@ interface SeedCreation {
   key: string;
   name: string;
   description: string;
-  tags: string[];
   favorite?: boolean;
   /** Days ago. */
   created: number;
@@ -55,7 +54,6 @@ const CREATIONS: SeedCreation[] = [
     key: "crystal-smile",
     name: "Crystal Smile",
     description: "A full, bright smile line of clear and aquamarine crystals — the signature look for a first appointment.",
-    tags: ["Crystal", "Classic", "Symmetrical"],
     favorite: true,
     created: 34,
     updated: 5,
@@ -71,7 +69,6 @@ const CREATIONS: SeedCreation[] = [
     key: "golden-stars",
     name: "Golden Stars",
     description: "Playful off-centre cluster of topaz stars around a gold star.",
-    tags: ["Stars", "Gold", "Playful"],
     created: 12,
     updated: 1,
     items: [
@@ -85,7 +82,6 @@ const CREATIONS: SeedCreation[] = [
     key: "micro-heart",
     name: "Micro Heart",
     description: "One gold heart on the lateral. Discreet, everyday.",
-    tags: ["Minimal", "Heart", "Gold"],
     created: 6,
     updated: 6,
     items: [{ gem: "aurora-heart", tooth: "12", u: 0, v: 0, ss: 5 }],
@@ -94,7 +90,6 @@ const CREATIONS: SeedCreation[] = [
     key: "evening-row",
     name: "Evening Row",
     description: "Sapphire navettes and heliotrope baguettes across the smile line, for an evening look.",
-    tags: ["Row", "Night", "Symmetrical"],
     created: 58,
     updated: 16,
     items: [
@@ -109,7 +104,6 @@ interface SeedGroup {
   key: string;
   name: string;
   description: string;
-  tags: string[];
   anchor: string;
   favorite?: boolean;
   created: number;
@@ -124,7 +118,6 @@ const GROUPS: SeedGroup[] = [
     key: "mini-flower",
     name: "Mini Flower",
     description: "Four topaz petals around a gold heart.",
-    tags: ["Flower", "Gold"],
     anchor: "21",
     favorite: true,
     created: 25,
@@ -142,7 +135,6 @@ const GROUPS: SeedGroup[] = [
     key: "crystal-arc",
     name: "Crystal Arc",
     description: "Six small crystals following the curve of the incisal edge.",
-    tags: ["Crystal", "Arc", "Classic"],
     anchor: "21",
     created: 30,
     updated: 20,
@@ -187,7 +179,6 @@ export function seedCreations(userId: string, now = Date.now()): Omit<Creation, 
       elementCount: scene.pieces.length,
       estimatedPriceMinor: value.totalMinor,
       currency: value.currency,
-      tags: c.tags,
       isFavorite: !!c.favorite,
       createdAt: daysAgo(now, c.created),
       updatedAt: daysAgo(now, c.updated),
@@ -214,7 +205,6 @@ export function seedGroups(userId: string, now = Date.now()): Omit<GemGroup, "th
       elementCount: pieces.length,
       estimatedPriceMinor: value.totalMinor,
       currency: value.currency,
-      tags: g.tags,
       isFavorite: !!g.favorite,
       createdAt: daysAgo(now, g.created),
       updatedAt: daysAgo(now, g.updated),

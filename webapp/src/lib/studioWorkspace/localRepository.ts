@@ -15,7 +15,7 @@ import { sanitizeScene, sceneStats } from "./scene";
 import { seedCreations, seedGroups } from "./seed";
 import { snapshotShareLink } from "./share";
 import type { CollectionDetails, CollectionMembership, Creation, FeedbackInput, GemGroup, StudioCollection } from "./types";
-import { normalizeCollection, normalizeDetails, normalizeTags, validateCollection, validateDetails, validateFeedback } from "./validation";
+import { normalizeCollection, normalizeDetails, validateCollection, validateDetails, validateFeedback } from "./validation";
 
 /**
  * PROTOTYPE persistence: the Studio workspace kept in this browser's storage,
@@ -108,7 +108,7 @@ export function createLocalRepositories(userId: string, opts: LocalRepositoryOpt
       .map((c) => {
         const scene = sanitizeScene(c.scene);
         // the estimate stays the one stored at the last save, like the database's
-        return { ...c, scene, elementCount: scene.pieces.length, tags: normalizeTags(Array.isArray(c.tags) ? c.tags : []) };
+        return { ...c, scene, elementCount: scene.pieces.length };
       });
     file.groups = file.groups
       .filter((g) => g && g.userId === userId && typeof g.id === "string")
@@ -160,7 +160,7 @@ export function createLocalRepositories(userId: string, opts: LocalRepositoryOpt
   const withThumb = (c: Omit<Creation, "thumbnailUrl">): Creation => ({ ...c, thumbnailUrl: readThumb(c.id) });
   const withGroupThumb = (g: Omit<GemGroup, "thumbnailUrl">): GemGroup => ({ ...g, thumbnailUrl: readThumb(groupThumbId(g.id)) });
 
-  function checkDetails(details: { name: string; description: string; tags: string[] }) {
+  function checkDetails(details: { name: string; description: string }) {
     const problem = validateDetails(details);
     if (problem) throw new StudioStoreError("invalid", problem);
     return normalizeDetails(details);
@@ -227,11 +227,10 @@ export function createLocalRepositories(userId: string, opts: LocalRepositoryOpt
         const index = findCreation(file, id);
         const current = file.creations[index];
         const details =
-          patch.name !== undefined || patch.description !== undefined || patch.tags !== undefined
+          patch.name !== undefined || patch.description !== undefined
             ? checkDetails({
                 name: patch.name ?? current.name,
                 description: patch.description ?? current.description,
-                tags: patch.tags ?? current.tags,
               })
             : null;
         const scene = patch.scene ? sanitizeScene(patch.scene) : null;
@@ -326,11 +325,10 @@ export function createLocalRepositories(userId: string, opts: LocalRepositoryOpt
         const index = findGroup(file, id);
         const current = file.groups[index];
         const details =
-          patch.name !== undefined || patch.description !== undefined || patch.tags !== undefined
+          patch.name !== undefined || patch.description !== undefined
             ? checkDetails({
                 name: patch.name ?? current.name,
                 description: patch.description ?? current.description,
-                tags: patch.tags ?? current.tags,
               })
             : null;
         const next: Omit<GemGroup, "thumbnailUrl"> = {

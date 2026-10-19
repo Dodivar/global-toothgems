@@ -32,7 +32,14 @@ export function Dialog({
   children,
   closeLabel,
   size = "md",
+  scrollBody = false,
 }: {
+  /**
+   * Long content: the panel fits the screen (full height on a phone), the
+   * header and footer stay put and only the body scrolls, instead of the
+   * whole overlay moving under the thumb.
+   */
+  scrollBody?: boolean;
   /** `lg` for dialogs holding a whole form, such as writing a review. */
   size?: "md" | "lg";
   open: boolean;
@@ -101,7 +108,12 @@ export function Dialog({
   if (!open) return null;
 
   return (
-    <div className="fixed inset-0 z-[500] flex items-end justify-center overflow-y-auto p-0 sm:items-center sm:p-6">
+    <div
+      className={clsx(
+        "fixed inset-0 z-[500] flex items-end justify-center p-0 sm:items-center sm:p-6",
+        scrollBody ? "overflow-hidden" : "overflow-y-auto",
+      )}
+    >
       {/* Decorative: the dialog is dismissed by Escape and by the labelled
           close button, so the scrim needs no role of its own. */}
       <div
@@ -120,9 +132,10 @@ export function Dialog({
           "gt-celebrate relative w-full rounded-t-[var(--radius-xl)] border bg-[var(--surface-card)] shadow-[var(--shadow-lg)] sm:rounded-[var(--radius-lg)]",
           tone === "danger" ? "border-[var(--gt-red-400)]" : "border-[var(--border-subtle)]",
           size === "lg" ? "max-w-[640px]" : "max-w-[520px]",
+          scrollBody && "flex max-h-[92dvh] flex-col sm:max-h-[calc(100dvh-3rem)]",
         )}
       >
-        <header className="flex items-start gap-3 border-b border-[var(--border-subtle)] p-[var(--space-5)] pr-[var(--space-4)]">
+        <header className="flex flex-none items-start gap-3 border-b border-[var(--border-subtle)] p-[var(--space-5)] pr-[var(--space-4)]">
           {icon && (
             <span
               aria-hidden="true"
@@ -156,10 +169,19 @@ export function Dialog({
           </button>
         </header>
 
-        {children && <div className="grid gap-4 p-[var(--space-5)]">{children}</div>}
+        {children && (
+          <div
+            className={clsx(
+              "grid gap-4 p-[var(--space-5)]",
+              scrollBody && "min-h-0 flex-1 content-start overflow-y-auto overscroll-contain",
+            )}
+          >
+            {children}
+          </div>
+        )}
 
         {footer && (
-          <footer className="flex flex-wrap items-center gap-3 border-t border-[var(--border-subtle)] bg-[var(--surface-sunken)] p-[var(--space-4)] px-[var(--space-5)]">
+          <footer className="flex flex-none flex-wrap items-center gap-3 border-t border-[var(--border-subtle)] bg-[var(--surface-sunken)] p-[var(--space-4)] px-[var(--space-5)]">
             {footer}
           </footer>
         )}

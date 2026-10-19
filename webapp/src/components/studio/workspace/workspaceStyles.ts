@@ -34,9 +34,6 @@ export const chipClass = (active: boolean) =>
       : "border-[var(--border-subtle)] bg-[var(--surface-card)] text-[var(--gt-ink-700)] hover:border-[var(--gt-blue-400)]",
   );
 
-export const tagChip =
-  "inline-flex items-center rounded-[var(--radius-pill)] bg-[var(--gt-blue-100)] px-2.5 py-0.5 text-[11px] font-semibold text-[var(--gt-blue-700)]";
-
 export const eyebrow = "m-0 text-[10.5px] font-bold uppercase tracking-[var(--tracking-eyebrow)] text-[var(--gt-blue-600)]";
 
 /** Prices, counts and relative dates in the UI language; relative dates refresh each minute. */

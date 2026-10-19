@@ -25,7 +25,6 @@ export interface Creation {
   elementCount: number;
   estimatedPriceMinor: number;
   currency: string;
-  tags: string[];
   isFavorite: boolean;
   createdAt: string;
   updatedAt: string;
@@ -44,18 +43,16 @@ export interface GemGroup {
   elementCount: number;
   estimatedPriceMinor: number;
   currency: string;
-  tags: string[];
   isFavorite: boolean;
   createdAt: string;
   updatedAt: string;
   lastUsedAt: string | null;
 }
 
-/** Name, description and tags: what the save and "edit details" dialogs collect. */
+/** Name and description: what the save and "edit details" dialogs collect. */
 export interface RecordDetails {
   name: string;
   description: string;
-  tags: string[];
 }
 
 export const FEEDBACK_CATEGORIES = ["general", "bug", "feature", "usability", "performance"] as const;

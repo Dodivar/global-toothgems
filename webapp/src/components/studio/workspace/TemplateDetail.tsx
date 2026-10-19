@@ -8,7 +8,7 @@ import { useStudioTemplates } from "../../../lib/studioWorkspace/templatesStore"
 import { FrontViewSection } from "../FrontViewPanel";
 import { HelpHint } from "./HelpHint";
 import { NewBadge, TemplateThumb } from "./TemplateCard";
-import { tagChip, useWorkspaceFormat } from "./workspaceStyles";
+import { useWorkspaceFormat } from "./workspaceStyles";
 
 /**
  * A closer look at one template before using it: large preview, description,
@@ -46,8 +46,8 @@ export function TemplateDetail({
   };
 
   return (
-    <Dialog open onClose={onClose} size="lg" title={template.name} icon={<LayoutTemplate size={17} />} closeLabel={t("studio.workspace.close")}>
-      <div className="relative -mx-1 -mt-1 aspect-[16/10] overflow-hidden rounded-[var(--radius-md)] border border-[var(--border-subtle)] bg-[var(--gt-blue-100)]">
+    <Dialog open onClose={onClose} size="lg" scrollBody title={template.name} icon={<LayoutTemplate size={17} />} closeLabel={t("studio.workspace.close")}>
+      <div className="relative -mx-1 -mt-1 aspect-[16/10] max-h-[32dvh] w-full overflow-hidden sm:max-h-none rounded-[var(--radius-md)] border border-[var(--border-subtle)] bg-[var(--gt-blue-100)]">
         <TemplateThumb template={template} />
         {isNewTemplate(template.publishedAt, now) && <NewBadge className="absolute left-3 top-3" />}
       </div>
@@ -73,16 +73,6 @@ export function TemplateDetail({
           </div>
         ))}
       </dl>
-
-      {template.tags.length > 0 && (
-        <ul aria-label={t("studio.workspace.details.tags")} className="m-0 flex list-none flex-wrap gap-1.5 p-0">
-          {template.tags.map((tag) => (
-            <li key={tag} className={tagChip}>
-              {tag}
-            </li>
-          ))}
-        </ul>
-      )}
 
       <FrontViewSection pieces={template.scene.pieces} model={template.scene.model} />
 

@@ -26,10 +26,10 @@ const fold = (s: string) =>
     .replace(/[̀-ͯ]/g, "");
 
 /** Name, description or any tag contains every word of the query (accents and case ignored). */
-export function matchesQuery(record: Pick<Creation, "name" | "description" | "tags">, query: string): boolean {
+export function matchesQuery(record: Pick<Creation, "name" | "description">, query: string): boolean {
   const words = fold(query).split(/\s+/).filter(Boolean);
   if (!words.length) return true;
-  const haystack = fold([record.name, record.description, ...record.tags].join(" "));
+  const haystack = fold([record.name, record.description].join(" "));
   return words.every((w) => haystack.includes(w));
 }
 

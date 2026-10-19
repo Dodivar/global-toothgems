@@ -8,7 +8,7 @@ import { openWorkspaceDialog } from "../../../lib/studioWorkspace/workspaceUi";
 import { FavoriteButton } from "./CreationCard";
 import { ScenePreview } from "./ScenePreview";
 import { useWorkspaceActions } from "./useWorkspaceActions";
-import { focusRing, iconButton, tagChip, useWorkspaceFormat } from "./workspaceStyles";
+import { focusRing, iconButton, useWorkspaceFormat } from "./workspaceStyles";
 
 /** The group's saved render (its pieces alone on the smile) when there is one, else its drawn front view. */
 export function GroupThumb({ group, minWidth, className }: { group: GemGroup; minWidth: number; className?: string }) {
@@ -79,11 +79,6 @@ export function GemGroupCard({ group }: { group: GemGroup }) {
           <span className="min-w-0 flex-1 truncate text-[11.5px] text-[var(--text-subtle)]">
             {group.lastUsedAt ? t("studio.workspace.groups.lastUsed", { when: ago(group.lastUsedAt) }) : t("studio.workspace.groups.neverUsed")}
           </span>
-          {group.tags.slice(0, 1).map((tag) => (
-            <span key={tag} className={tagChip}>
-              {tag}
-            </span>
-          ))}
         </div>
       </div>
       <div className="border-t border-[var(--border-subtle)] px-2 py-1.5">

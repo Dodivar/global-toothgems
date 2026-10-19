@@ -1,6 +1,7 @@
+import { useId, useState } from "react";
 import { createPortal } from "react-dom";
 import clsx from "clsx";
-import { FileDown, Smile } from "lucide-react";
+import { ChevronDown, FileDown, Smile } from "lucide-react";
 import type { PlacedJewelry } from "../../data/studioEditor";
 import type { FrontViewProjection } from "../../lib/studio3d/frontView";
 import type { SceneModel } from "../../lib/studioWorkspace/scene";
@@ -173,14 +174,50 @@ export function FrontViewDialog({
   );
 }
 
-/** A saved design's front view, its gems listed on demand (the creation's detail). */
-export function FrontViewSection({ pieces, model, className }: { pieces: readonly PlacedJewelry[]; model: SceneModel; className?: string }) {
+/**
+ * A saved design's front view (the creation's detail), folded away until
+ * asked for: the drawing is tall and most visits only need the facts. Its
+ * gems are listed on demand inside.
+ */
+export function FrontViewSection({
+  pieces,
+  model,
+  className,
+  defaultOpen = false,
+}: {
+  pieces: readonly PlacedJewelry[];
+  model: SceneModel;
+  className?: string;
+  defaultOpen?: boolean;
+}) {
   const { t } = useFrontViewLabels();
   const projection = useFrontView(pieces, model);
+  const [open, setOpen] = useState(defaultOpen);
+  const panelId = useId();
   return (
     <section aria-label={t("studio.frontView.title")} className={clsx("grid gap-2", className)}>
-      <h3 className="m-0 text-[10.5px] font-bold uppercase tracking-[var(--tracking-eyebrow)] text-[var(--text-subtle)]">{t("studio.frontView.title")}</h3>
-      {pieces.length ? <FrontViewFigure projection={projection} list="collapsed" /> : <FrontViewList projection={projection} />}
+      <h3 className="m-0">
+        <button
+          type="button"
+          aria-expanded={open}
+          aria-controls={panelId}
+          onClick={() => setOpen((v) => !v)}
+          className="flex min-h-11 w-full items-center justify-between gap-3 rounded-[var(--radius-md)] border border-[var(--border-subtle)] bg-[var(--surface-card)] px-3.5 text-left transition-colors hover:border-[var(--gt-blue-400)] focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-[var(--focus-ring)]"
+        >
+          <span className="flex min-w-0 items-center gap-2.5">
+            <Smile size={16} aria-hidden="true" className="flex-none text-[var(--gt-blue-700)]" />
+            <span className="text-[12.5px] font-bold text-[var(--text-primary)]">{t("studio.frontView.title")}</span>
+          </span>
+          <ChevronDown
+            size={16}
+            aria-hidden="true"
+            className={clsx("flex-none text-[var(--text-muted)] transition-transform motion-reduce:transition-none", open && "rotate-180")}
+          />
+        </button>
+      </h3>
+      <div id={panelId} hidden={!open}>
+        {open && (pieces.length ? <FrontViewFigure projection={projection} list="collapsed" /> : <FrontViewList projection={projection} />)}
+      </div>
     </section>
   );
 }

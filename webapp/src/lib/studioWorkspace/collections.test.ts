@@ -37,7 +37,6 @@ const creation = (id: string, name: string, over: Partial<Creation> = {}): Creat
   elementCount: 0,
   estimatedPriceMinor: 0,
   currency: "EUR",
-  tags: [],
   isFavorite: false,
   createdAt: "2026-10-01T10:00:00Z",
   updatedAt: "2026-10-01T10:00:00Z",
@@ -128,8 +127,8 @@ describe("local collections repository", () => {
 
   it("creates, renames and deletes collections without touching the creations", async () => {
     const repo = createLocalRepositories("u1", { storage: memoryStorage() });
-    const a = await repo.creations.create({ name: "A", description: "", tags: [], scene, thumbnail: null });
-    const b = await repo.creations.create({ name: "B", description: "", tags: [], scene, thumbnail: null });
+    const a = await repo.creations.create({ name: "A", description: "", scene, thumbnail: null });
+    const b = await repo.creations.create({ name: "B", description: "", scene, thumbnail: null });
     const k1 = await repo.collections.create({ name: "  Bridal  ", color: "fuchsia" });
     const k2 = await repo.collections.create({ name: "Clients", color: null });
     expect(k1).toMatchObject({ name: "Bridal", color: "fuchsia", userId: "u1" });

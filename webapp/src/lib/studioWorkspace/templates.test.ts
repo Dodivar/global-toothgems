@@ -41,7 +41,6 @@ describe("toTemplate", () => {
       thumbnailUrl: "https://signed",
       publishedAt: "2026-10-10T10:00:00Z",
     });
-    expect(t.tags).toEqual(["minimal"]);
     expect(t.scene.pieces).toHaveLength(2);
   });
 
@@ -69,15 +68,14 @@ describe("isNewTemplate", () => {
 describe("sortTemplates and searchTemplates", () => {
   const list = [
     toTemplate(row({ id: "a", name: "Aurore", published_at: "2026-09-01T00:00:00Z" })),
-    toTemplate(row({ id: "b", name: "Comète", published_at: "2026-10-15T00:00:00Z", tags: ["Gold"] })),
+    toTemplate(row({ id: "b", name: "Comète", published_at: "2026-10-15T00:00:00Z" })),
     toTemplate(row({ id: "c", name: "Bulle", published_at: "2026-10-15T00:00:00Z", description: "" })),
   ];
   it("puts the newest first, ties by name", () => {
     expect(sortTemplates(list).map((t) => t.id)).toEqual(["c", "b", "a"]);
   });
-  it("searches names, descriptions and tags, ignoring case and accents", () => {
+  it("searches names and descriptions, ignoring case and accents", () => {
     expect(searchTemplates(list, "comete").map((t) => t.id)).toEqual(["b"]);
-    expect(searchTemplates(list, "gold").map((t) => t.id)).toEqual(["b"]);
     expect(searchTemplates(list, "etoiles").map((t) => t.id)).toEqual(["a", "b"]);
     expect(searchTemplates(list, "  ")).toHaveLength(3);
   });

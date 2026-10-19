@@ -8,8 +8,6 @@ import { COLLECTION_COLORS, FEEDBACK_CATEGORIES, type CollectionDetails, type Fe
 
 export const NAME_MAX = 60;
 export const DESCRIPTION_MAX = 280;
-export const TAG_MAX = 24;
-export const TAGS_MAX = 8;
 export const COLLECTION_NAME_MAX = 40;
 export const FEEDBACK_MESSAGE_MIN = 3;
 export const FEEDBACK_MESSAGE_MAX = 2000;
@@ -17,33 +15,12 @@ export const FEEDBACK_MESSAGE_MAX = 2000;
 /** "  butterfly   wings " → "butterfly wings". */
 const squash = (s: string) => s.replace(/\s+/g, " ").trim();
 
-/** Trimmed, de-duplicated (ignoring case), each cut to the limit, at most `TAGS_MAX`. */
-export function normalizeTags(tags: string[]): string[] {
-  const seen = new Set<string>();
-  const out: string[] = [];
-  for (const raw of tags) {
-    const tag = squash(raw.replace(/^#/, "")).slice(0, TAG_MAX);
-    const key = tag.toLocaleLowerCase();
-    if (!tag || seen.has(key)) continue;
-    seen.add(key);
-    out.push(tag);
-    if (out.length === TAGS_MAX) break;
-  }
-  return out;
-}
-
-/** A comma-typed tag list, as the dialogs' tag field produces it. */
-export function parseTagList(text: string): string[] {
-  return normalizeTags(text.split(","));
-}
-
 export type DetailsError = "nameMissing" | "nameTooLong" | "descriptionTooLong";
 
 export function normalizeDetails(details: RecordDetails): RecordDetails {
   return {
     name: squash(details.name),
     description: details.description.trim(),
-    tags: normalizeTags(details.tags),
   };
 }
 

@@ -68,7 +68,7 @@
     "asNewTitle": "Save as new creation",
     "asNewSub": "Keep the original, save this version separately",
     "editTitle": "Edit details",
-    "editSub": "Change the name, description or tags. The design itself is not modified.",
+    "editSub": "Change the name, or description. The design itself is not modified.",
     "namePlaceholder": "e.g. Minimal Butterfly",
     "descriptionPlaceholder": "e.g. Symmetrical butterfly composition for front teeth.",
     "saveDetails": "Save details"
@@ -76,13 +76,7 @@
   "details": {
     "name": "Name",
     "description": "Description",
-    "tags": "Tags",
     "optional": "(optional)",
-    "tagsPlaceholder": "Add a tag and press Enter",
-    "tagsHint": "Press Enter or a comma to add a tag.",
-    "tagsFull": "Up to {{max}} tags.",
-    "suggested": "Suggested tags",
-    "removeTag": "Remove tag {{tag}}",
     "errors": {
       "nameMissing": "Give it a name so you can find it again.",
       "nameTooLong": "Keep the name under {{max}} characters.",
@@ -107,7 +101,7 @@
     "title": "Your designs, saved and ready to reuse.",
     "sub": "Every composition you save lands here — reopen it where you left off, duplicate it into a variation, or keep your favourites close.",
     "newDesign": "New design",
-    "searchPlaceholder": "Search by name, description or tag",
+    "searchPlaceholder": "Search by name or description",
     "viewDetails": "View details of {{name}}",
     "actionsFor": "Actions for {{name}}",
     "onStage": "On the stage",
@@ -293,7 +287,7 @@
         "summary": "Name your design and keep it in My Creations to reopen it any time.",
         "steps": [
           "Press “Save creation” (or Ctrl + S) at the top right.",
-          "Give it a name, and optionally a description and tags.",
+          "Give it a name, and optionally a description.",
           "Reopen it from My Creations: it comes back exactly as you left it."
         ]
       },

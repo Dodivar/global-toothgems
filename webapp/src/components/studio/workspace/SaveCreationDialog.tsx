@@ -12,12 +12,11 @@ import { CollectionChecklist } from "./Collections";
 import { DetailsFields } from "./DetailsFields";
 import { ScenePreview } from "./ScenePreview";
 import { useStageCapture } from "./useStageCapture";
-import { useTagSuggestions } from "./useTagSuggestions";
 import { useWorkspaceFormat } from "./workspaceStyles";
 
 /**
  * Save the design on the stage as a creation (new, or "save as new"), or edit
- * a saved creation's name, description and tags.
+ * a saved creation's name and description.
  */
 export function SaveCreationDialog({
   mode,
@@ -32,15 +31,14 @@ export function SaveCreationDialog({
   const { t, price } = useWorkspaceFormat();
   const snap = useStudio();
   const { saveDesign, updateCreationDetails, addToCollections, creations, memberships, collectionsStatus } = useWorkspace();
-  const suggestions = useTagSuggestions();
   const source = mode === "saveAsNew" ? creations.find((c) => c.id === snap.active?.creationId) : undefined;
 
   const [details, setDetails] = useState<RecordDetails>(() =>
     mode === "edit" && creation
-      ? { name: creation.name, description: creation.description, tags: creation.tags }
+      ? { name: creation.name, description: creation.description }
       : source
-        ? { name: copyName(source.name, t("studio.workspace.copySuffix")), description: source.description, tags: source.tags }
-        : { name: "", description: "", tags: [] },
+        ? { name: copyName(source.name, t("studio.workspace.copySuffix")), description: source.description }
+        : { name: "", description: "" },
   );
   const [error, setError] = useState<DetailsError | null>(null);
   // A new save can be filed at once; "save as new" starts from the original's collections.
@@ -116,7 +114,6 @@ export function SaveCreationDialog({
             if (error) setError(validateDetails(next));
           }}
           error={error}
-          suggestions={suggestions}
           placeholders={{ name: t("studio.workspace.save.namePlaceholder"), description: t("studio.workspace.save.descriptionPlaceholder") }}
         />
         {filing && (

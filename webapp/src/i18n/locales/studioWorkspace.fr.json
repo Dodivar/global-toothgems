@@ -68,7 +68,7 @@
     "asNewTitle": "Enregistrer comme nouvelle création",
     "asNewSub": "Garder l’originale et enregistrer cette version à part",
     "editTitle": "Modifier les informations",
-    "editSub": "Changez le nom, la description ou les étiquettes. La composition elle-même n’est pas modifiée.",
+    "editSub": "Changez le nom, ou la description. La composition elle-même n’est pas modifiée.",
     "namePlaceholder": "ex. Papillon minimaliste",
     "descriptionPlaceholder": "ex. Composition papillon symétrique pour les dents de devant.",
     "saveDetails": "Enregistrer"
@@ -76,13 +76,7 @@
   "details": {
     "name": "Nom",
     "description": "Description",
-    "tags": "Étiquettes",
     "optional": "(facultatif)",
-    "tagsPlaceholder": "Ajoutez une étiquette puis Entrée",
-    "tagsHint": "Appuyez sur Entrée ou une virgule pour ajouter une étiquette.",
-    "tagsFull": "{{max}} étiquettes au maximum.",
-    "suggested": "Étiquettes suggérées",
-    "removeTag": "Retirer l’étiquette {{tag}}",
     "errors": {
       "nameMissing": "Donnez-lui un nom pour la retrouver facilement.",
       "nameTooLong": "Le nom doit faire moins de {{max}} caractères.",
@@ -107,7 +101,7 @@
     "title": "Vos créations, enregistrées et prêtes à resservir.",
     "sub": "Chaque composition enregistrée arrive ici : rouvrez-la là où vous l’aviez laissée, dupliquez-la en variante, ou gardez vos favorites à portée de main.",
     "newDesign": "Nouvelle création",
-    "searchPlaceholder": "Rechercher par nom, description ou étiquette",
+    "searchPlaceholder": "Rechercher par nom ou description",
     "viewDetails": "Voir le détail de {{name}}",
     "actionsFor": "Actions pour {{name}}",
     "onStage": "Sur la scène",
@@ -293,7 +287,7 @@
         "summary": "Nommez votre composition et gardez-la dans Mes créations pour la rouvrir à tout moment.",
         "steps": [
           "Appuyez sur « Enregistrer » (ou Ctrl + S) en haut à droite.",
-          "Donnez-lui un nom, et si vous le souhaitez une description et des étiquettes.",
+          "Donnez-lui un nom, et si vous le souhaitez une description.",
           "Rouvrez-la depuis Mes créations : elle revient exactement comme vous l’avez laissée."
         ]
       },

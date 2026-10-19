@@ -6,7 +6,7 @@ import { useWorkspace } from "../../../lib/studioWorkspace/workspace";
 import { openWorkspaceDialog } from "../../../lib/studioWorkspace/workspaceUi";
 import { ScenePreview } from "./ScenePreview";
 import { useWorkspaceActions } from "./useWorkspaceActions";
-import { focusRing, iconButton, tagChip, useWorkspaceFormat } from "./workspaceStyles";
+import { focusRing, iconButton, useWorkspaceFormat } from "./workspaceStyles";
 
 /** The saved render when there is one, else the drawn front view of the same scene. */
 export function CreationThumb({ creation, className }: { creation: Creation; className?: string }) {
@@ -133,11 +133,6 @@ export function CreationCard({ creation, onStage }: { creation: Creation; onStag
           <span className="min-w-0 flex-1 truncate text-[11.5px] text-[var(--text-subtle)]">
             {t("studio.workspace.edited", { when: ago(creation.updatedAt) })}
           </span>
-          {creation.tags.slice(0, 1).map((tag) => (
-            <span key={tag} className={tagChip}>
-              {tag}
-            </span>
-          ))}
         </div>
       </div>
       <div className="border-t border-[var(--border-subtle)] px-2 py-1.5">

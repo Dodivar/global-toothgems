@@ -1,6 +1,5 @@
 import type { Database } from "../supabase/database.types";
 import { sanitizeScene, type StudioScene } from "./scene";
-import { normalizeTags } from "./validation";
 
 /**
  * The Global Toothgems template library (migration
@@ -21,7 +20,6 @@ export interface StudioTemplate {
   id: string;
   name: string;
   description: string;
-  tags: string[];
   scene: StudioScene;
   elementCount: number;
   /** Indicative estimate stored at the author's last save; never charged. */
@@ -42,7 +40,6 @@ export function toTemplate(row: TemplateRow, thumbnailUrl: string | null = null)
     id: row.id,
     name: row.name,
     description: row.description ?? "",
-    tags: normalizeTags(row.tags ?? []),
     scene,
     elementCount: scene.pieces.length,
     estimatedPriceMinor: row.estimated_price_minor,
@@ -65,10 +62,10 @@ export function sortTemplates(list: StudioTemplate[]): StudioTemplate[] {
   return [...list].sort((a, b) => Date.parse(b.publishedAt) - Date.parse(a.publishedAt) || a.name.localeCompare(b.name));
 }
 
-/** Search by name, description and tags, ignoring case and accents. */
+/** Search by name and description, ignoring case and accents. */
 export function searchTemplates(list: StudioTemplate[], query: string): StudioTemplate[] {
   const fold = (s: string) => s.normalize("NFD").replace(/\p{Diacritic}/gu, "").toLowerCase();
   const q = fold(query.trim());
   if (!q) return list;
-  return list.filter((t) => [t.name, t.description, ...t.tags].some((s) => fold(s).includes(q)));
+  return list.filter((t) => [t.name, t.description].some((s) => fold(s).includes(q)));
 }
