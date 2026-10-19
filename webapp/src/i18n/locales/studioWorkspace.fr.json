@@ -96,7 +96,8 @@
     "edit": "Modifier",
     "editDetails": "Modifier les informations",
     "delete": "Supprimer",
-    "useInStudio": "Utiliser dans le Studio"
+    "useInStudio": "Utiliser dans le Studio",
+    "collections": "Collections…"
   },
   "creations": {
     "eyebrow": "Mes créations",
@@ -165,7 +166,9 @@
     "creationBody": "« {{name}} » sera retirée de Mes créations.",
     "groupBody": "« {{name}} » sera retiré de Mes groupes de gemmes. Les créations qui l’utilisent déjà gardent leurs gemmes.",
     "cannotUndo": "Cette action est irréversible.",
-    "confirm": "Supprimer"
+    "confirm": "Supprimer",
+    "collectionTitle": "Supprimer cette collection ?",
+    "collectionBody": "« {{name}} » sera supprimée. Les créations qu’elle contient restent dans Mes créations."
   },
   "discard": {
     "title": "Remplacer la création sur la scène ?",
@@ -440,7 +443,12 @@
     "groupInserted_other": "{{name}} ajouté · {{count}} gemmes",
     "groupInsertedPartial_one": "{{name}} ajouté : {{count}} gemme n’a pas trouvé de place",
     "groupInsertedPartial_other": "{{name}} ajouté : {{count}} gemmes n’ont pas trouvé de place",
-    "feedbackFailed": "Votre avis n’a pas pu être envoyé."
+    "feedbackFailed": "Votre avis n’a pas pu être envoyé.",
+    "collectionCreated": "Collection « {{name}} » créée",
+    "collectionSaved": "Collection enregistrée",
+    "collectionDeleted": "Collection « {{name}} » supprimée — ses créations sont conservées",
+    "collectionNameTaken": "Vous avez déjà une collection de ce nom.",
+    "collectionAddFailed": "La création est enregistrée, mais n’a pas pu être ajoutée à toutes les collections."
   },
   "share": {
     "menuSub": "Un lien en lecture seule vers la version enregistrée",
@@ -492,6 +500,55 @@
       "unavailableBody": "Vérifiez votre connexion, puis réessayez.",
       "retry": "Réessayer",
       "discover": "Découvrir le Studio 3D"
+    }
+  },
+  "collections": {
+    "label": "Collections",
+    "all": "Toutes les créations",
+    "new": "Nouvelle collection",
+    "manage": "Options de la collection « {{name}} »",
+    "rename": "Renommer ou changer la couleur",
+    "delete": "Supprimer la collection",
+    "loadFailed": "Vos collections n’ont pas pu être chargées. Vos créations sont toutes là.",
+    "emptyHint": "Rangez vos créations par cliente, occasion ou style : une création peut appartenir à plusieurs collections.",
+    "emptyCollectionTitle": "Cette collection est vide",
+    "emptyCollectionBody": "Ouvrez le menu d’une création et choisissez Collections pour l’ajouter ici.",
+    "showAll": "Voir toutes les créations",
+    "inSave": "Ajouter à des collections (facultatif)",
+    "detailNone": "Dans aucune collection pour l’instant.",
+    "addTo": "Collections",
+    "picker": {
+      "title": "Collections",
+      "sub": "Cochez les collections de « {{name}} ». La retirer d’une collection ne la supprime jamais.",
+      "legend": "Collections de « {{name}} »",
+      "empty": "Aucune collection pour l’instant : créez la première ci-dessous.",
+      "newLabel": "Nouvelle collection",
+      "add": "Créer",
+      "done": "Terminé"
+    },
+    "dialog": {
+      "createTitle": "Nouvelle collection",
+      "editTitle": "Modifier la collection",
+      "sub": "Un nom, et une couleur si vous voulez, pour la repérer d’un coup d’œil.",
+      "name": "Nom",
+      "namePlaceholder": "ex. Mariage, Cliente Léa, Été",
+      "color": "Couleur",
+      "create": "Créer la collection",
+      "save": "Enregistrer"
+    },
+    "colors": {
+      "none": "Aucune",
+      "blue": "Bleu",
+      "fuchsia": "Fuchsia",
+      "emerald": "Émeraude",
+      "amber": "Ambre",
+      "ink": "Encre"
+    },
+    "errors": {
+      "nameMissing": "Donnez un nom à la collection.",
+      "nameTooLong": "{{max}} caractères au maximum.",
+      "nameTaken": "Vous avez déjà une collection de ce nom.",
+      "colorInvalid": "Choisissez l’une des couleurs proposées."
     }
   }
 }

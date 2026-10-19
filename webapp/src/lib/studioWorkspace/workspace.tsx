@@ -8,12 +8,13 @@ import { getEngine } from "../studio3d/engine";
 import { uid } from "../studio3d/math";
 import { studioStore, useStudio } from "../studio3d/store";
 import { supabase } from "../supabase/client";
+import { withMemberships, withoutMemberships } from "./collections";
 import { createLocalRepositories, type KeyValueStorage } from "./localRepository";
 import { StudioStoreError, type StudioRepositories } from "./repository";
 import { piecesKey } from "./scene";
 import type { ShareLink } from "./share";
 import { createSupabaseRepositories } from "./supabaseRepository";
-import type { Creation, FeedbackInput, GemGroup, RecordDetails } from "./types";
+import type { CollectionDetails, CollectionMembership, Creation, FeedbackInput, GemGroup, RecordDetails, StudioCollection } from "./types";
 import { copyName } from "./validation";
 
 /**
@@ -39,6 +40,11 @@ interface WorkspaceValue {
   status: LibraryStatus;
   creations: Creation[];
   groups: GemGroup[];
+  /** The member's collections and which creations sit in them. */
+  collections: StudioCollection[];
+  memberships: CollectionMembership[];
+  /** "error" when the collections could not be read; the creations still show. */
+  collectionsStatus: LibraryStatus;
   reload: () => void;
   saveState: SaveState;
   /** ISO time of the last save or load of the linked creation. */
@@ -68,6 +74,19 @@ interface WorkspaceValue {
   toggleGroupFavorite: (g: GemGroup) => Promise<void>;
   deleteGroup: (g: GemGroup) => Promise<boolean>;
   submitFeedback: (input: FeedbackInput) => Promise<boolean>;
+  createCollection: (details: CollectionDetails) => Promise<StudioCollection | null>;
+  updateCollection: (c: StudioCollection, details: CollectionDetails) => Promise<boolean>;
+  /** Deletes the collection only: its creations stay in the library. */
+  deleteCollection: (c: StudioCollection) => Promise<boolean>;
+  /** Put a creation in a collection or take it out (optimistic, put back on failure). */
+  setInCollection: (creation: Creation, collection: StudioCollection, inside: boolean) => Promise<boolean>;
+  /** Put a just-saved creation in the collections chosen in the save dialog; quiet on success. */
+  addToCollections: (creation: Creation, collectionIds: string[]) => Promise<boolean>;
+}
+
+interface CollectionsState {
+  list: StudioCollection[];
+  memberships: CollectionMembership[];
 }
 
 const WorkspaceContext = createContext<WorkspaceValue | null>(null);
@@ -113,11 +132,16 @@ export function StudioWorkspaceProvider({ children }: { children: ReactNode }) {
     status: "ready" | "error";
     creations: Creation[];
     groups: GemGroup[];
+    /** Null when the collections could not be read. */
+    collections: CollectionsState | null;
   } | null>(null);
   const current = loaded && loaded.repos === repos ? loaded : null;
   const status: LibraryStatus = !repos ? (restoring ? "loading" : "signedOut") : current ? current.status : "loading";
   const creations = useMemo(() => current?.creations ?? [], [current]);
   const groups = useMemo(() => current?.groups ?? [], [current]);
+  const collections = useMemo(() => current?.collections?.list ?? [], [current]);
+  const memberships = useMemo(() => current?.collections?.memberships ?? [], [current]);
+  const collectionsStatus: LibraryStatus = status !== "ready" ? status : current?.collections ? "ready" : "error";
   const [saving, setSaving] = useState(false);
   /** `piecesKey` of the design whose save failed; editing it again clears the failure. */
   const [failedKey, setFailedKey] = useState<string | null>(null);
@@ -128,6 +152,9 @@ export function StudioWorkspaceProvider({ children }: { children: ReactNode }) {
   }, []);
   const setGroups = useCallback((update: (list: GemGroup[]) => GemGroup[]) => {
     setLoaded((l) => (l ? { ...l, groups: update(l.groups) } : l));
+  }, []);
+  const setCollections = useCallback((update: (c: CollectionsState) => CollectionsState) => {
+    setLoaded((l) => (l?.collections ? { ...l, collections: update(l.collections) } : l));
   }, []);
 
   const say = useCallback(
@@ -156,9 +183,14 @@ export function StudioWorkspaceProvider({ children }: { children: ReactNode }) {
   useEffect(() => {
     if (!repos) return;
     let live = true;
-    Promise.all([repos.creations.list(), repos.groups.list()])
-      .then(([c, g]) => live && setLoaded({ repos, status: "ready", creations: c, groups: g }))
-      .catch(() => live && setLoaded({ repos, status: "error", creations: [], groups: [] }));
+    // Collections are organisation, not the work: if they cannot be read, the creations still show.
+    const collectionsLoad = repos.collections
+      .list()
+      .then((r): CollectionsState => ({ list: r.collections, memberships: r.memberships }))
+      .catch(() => null);
+    Promise.all([repos.creations.list(), repos.groups.list(), collectionsLoad])
+      .then(([c, g, k]) => live && setLoaded({ repos, status: "ready", creations: c, groups: g, collections: k }))
+      .catch(() => live && setLoaded({ repos, status: "error", creations: [], groups: [], collections: null }));
     return () => {
       live = false;
     };
@@ -301,6 +333,8 @@ export function StudioWorkspaceProvider({ children }: { children: ReactNode }) {
       try {
         await repos.creations.remove(c.id);
         setCreations((list) => list.filter((x) => x.id !== c.id));
+        // Its memberships went with it in the database (cascade).
+        setCollections((k) => ({ ...k, memberships: k.memberships.filter((m) => m.creationId !== c.id) }));
         if (studioStore.active?.creationId === c.id) studioStore.unlink();
         say("deleted", "success", { name: c.name });
         return true;
@@ -309,7 +343,7 @@ export function StudioWorkspaceProvider({ children }: { children: ReactNode }) {
         return false;
       }
     },
-    [repos, say, fail, setCreations],
+    [repos, say, fail, setCreations, setCollections],
   );
 
   const shareLink = useCallback(
@@ -457,11 +491,112 @@ export function StudioWorkspaceProvider({ children }: { children: ReactNode }) {
     [repos, fail],
   );
 
+  const failCollection = useCallback(
+    (err: unknown) => {
+      if (err instanceof StudioStoreError && err.code === "duplicate") say("collectionNameTaken", "error");
+      else fail(err);
+    },
+    [say, fail],
+  );
+
+  const createCollection = useCallback(
+    async (details: CollectionDetails) => {
+      if (!repos) return null;
+      try {
+        const created = await repos.collections.create(details);
+        setCollections((k) => ({ ...k, list: [...k.list, created] }));
+        say("collectionCreated", "success", { name: created.name });
+        return created;
+      } catch (err) {
+        failCollection(err);
+        return null;
+      }
+    },
+    [repos, say, failCollection, setCollections],
+  );
+
+  const updateCollection = useCallback(
+    async (c: StudioCollection, details: CollectionDetails) => {
+      if (!repos) return false;
+      try {
+        const saved = await repos.collections.update(c.id, details);
+        setCollections((k) => ({ ...k, list: k.list.map((x) => (x.id === c.id ? saved : x)) }));
+        say("collectionSaved");
+        return true;
+      } catch (err) {
+        failCollection(err);
+        return false;
+      }
+    },
+    [repos, say, failCollection, setCollections],
+  );
+
+  const deleteCollection = useCallback(
+    async (c: StudioCollection) => {
+      if (!repos) return false;
+      try {
+        await repos.collections.remove(c.id);
+        setCollections((k) => ({
+          list: k.list.filter((x) => x.id !== c.id),
+          memberships: k.memberships.filter((m) => m.collectionId !== c.id),
+        }));
+        say("collectionDeleted", "success", { name: c.name });
+        return true;
+      } catch (err) {
+        fail(err);
+        return false;
+      }
+    },
+    [repos, say, fail, setCollections],
+  );
+
+  const setInCollection = useCallback(
+    async (creation: Creation, collection: StudioCollection, inside: boolean) => {
+      if (!repos) return false;
+      const link = { collectionId: collection.id, creationId: creation.id };
+      const apply = (on: boolean) =>
+        setCollections((k) => ({
+          ...k,
+          memberships: on ? withMemberships(k.memberships, [link]) : withoutMemberships(k.memberships, collection.id, [creation.id]),
+        }));
+      // Optimistic, like the favourite heart: put back if the write fails.
+      apply(inside);
+      try {
+        if (inside) await repos.collections.addCreations(collection.id, [creation.id]);
+        else await repos.collections.removeCreations(collection.id, [creation.id]);
+        return true;
+      } catch (err) {
+        apply(!inside);
+        fail(err);
+        return false;
+      }
+    },
+    [repos, fail, setCollections],
+  );
+
+  const addToCollections = useCallback(
+    async (creation: Creation, collectionIds: string[]) => {
+      if (!repos || !collectionIds.length) return true;
+      const added = collectionIds.map((collectionId) => ({ collectionId, creationId: creation.id }));
+      const results = await Promise.allSettled(collectionIds.map((id) => repos.collections.addCreations(id, [creation.id])));
+      const kept = added.filter((_, i) => results[i].status === "fulfilled");
+      setCollections((k) => ({ ...k, memberships: withMemberships(k.memberships, kept) }));
+      const failed = results.find((r): r is PromiseRejectedResult => r.status === "rejected");
+      // The creation is saved either way; only its filing failed.
+      if (failed) fail(failed.reason, "collectionAddFailed");
+      return !failed;
+    },
+    [repos, fail, setCollections],
+  );
+
   const value: WorkspaceValue = {
     userId,
     status,
     creations,
     groups,
+    collections,
+    memberships,
+    collectionsStatus,
     reload: () => setReloadTick((n) => n + 1),
     saveState,
     savedAt: snap.active?.savedAt ?? null,
@@ -483,6 +618,11 @@ export function StudioWorkspaceProvider({ children }: { children: ReactNode }) {
     toggleGroupFavorite,
     deleteGroup,
     submitFeedback,
+    createCollection,
+    updateCollection,
+    deleteCollection,
+    setInCollection,
+    addToCollections,
   };
 
   return <WorkspaceContext.Provider value={value}>{children}</WorkspaceContext.Provider>;

@@ -7437,6 +7437,84 @@ export type Database = {
           },
         ]
       }
+      studio_collection_creations: {
+        Row: {
+          collection_id: string
+          created_at: string
+          creation_id: string
+          user_id: string
+        }
+        Insert: {
+          collection_id: string
+          created_at?: string
+          creation_id: string
+          user_id?: string
+        }
+        Update: {
+          collection_id?: string
+          created_at?: string
+          creation_id?: string
+          user_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "studio_collection_creations_collection_fkey"
+            columns: ["collection_id", "user_id"]
+            isOneToOne: false
+            referencedRelation: "studio_collections"
+            referencedColumns: ["id", "user_id"]
+          },
+          {
+            foreignKeyName: "studio_collection_creations_creation_id_fkey"
+            columns: ["creation_id"]
+            isOneToOne: false
+            referencedRelation: "creations"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      studio_collections: {
+        Row: {
+          color: string | null
+          created_at: string
+          id: string
+          name: string
+          updated_at: string
+          user_id: string
+        }
+        Insert: {
+          color?: string | null
+          created_at?: string
+          id?: string
+          name: string
+          updated_at?: string
+          user_id?: string
+        }
+        Update: {
+          color?: string | null
+          created_at?: string
+          id?: string
+          name?: string
+          updated_at?: string
+          user_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "studio_collections_user_id_fkey"
+            columns: ["user_id"]
+            isOneToOne: false
+            referencedRelation: "loyalty_overview"
+            referencedColumns: ["user_id"]
+          },
+          {
+            foreignKeyName: "studio_collections_user_id_fkey"
+            columns: ["user_id"]
+            isOneToOne: false
+            referencedRelation: "profiles"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       studio_feedback: {
         Row: {
           category: string

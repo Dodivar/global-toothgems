@@ -15,7 +15,7 @@ export function DeleteConfirmation({
   onConfirm,
   onClose,
 }: {
-  kind: "creation" | "group";
+  kind: "creation" | "group" | "collection";
   name: string;
   /** Resolves true when the deletion went through. */
   onConfirm: () => Promise<boolean>;

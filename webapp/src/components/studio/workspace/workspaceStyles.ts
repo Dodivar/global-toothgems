@@ -3,6 +3,7 @@ import { useCallback, useEffect, useState } from "react";
 import { useTranslation } from "react-i18next";
 import { useFormat } from "../../../lib/format";
 import { formatRelative } from "../../../lib/studioWorkspace/relativeTime";
+import type { CollectionColor } from "../../../lib/studioWorkspace/types";
 
 /**
  * Shared look of the Studio workspace: the few class lists every card,
@@ -56,3 +57,13 @@ export function useWorkspaceFormat() {
   );
   return { t, price, count, ago, now };
 }
+
+/** A collection's colour marker; always shown beside its name, never alone. */
+export const collectionDot: Record<CollectionColor | "none", string> = {
+  blue: "bg-[var(--gt-blue-500)]",
+  fuchsia: "bg-[var(--gt-fuchsia-500)]",
+  emerald: "bg-[var(--gt-emerald-500)]",
+  amber: "bg-[var(--gt-amber-400)]",
+  ink: "bg-[var(--gt-ink-700)]",
+  none: "border border-[var(--gt-ink-400)] bg-transparent",
+};
