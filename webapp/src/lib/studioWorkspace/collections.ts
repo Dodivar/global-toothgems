@@ -1,6 +1,15 @@
 import type { Tables } from "../supabase/database.types";
 import { studioSectionPath } from "../studioUrl";
-import { COLLECTION_COLORS, type CollectionColor, type CollectionMembership, type StudioCollection } from "./types";
+import {
+  COLLECTION_COLORS,
+  DEFAULT_PREFERENCES,
+  LIBRARY_VIEWS,
+  type CollectionColor,
+  type CollectionMembership,
+  type LibraryView,
+  type StudioCollection,
+  type StudioPreferences,
+} from "./types";
 
 /**
  * Collections of saved creations: the row ↔ interface mapping and the pure
@@ -90,3 +99,9 @@ export function studioCollectionPath(collectionId: string | null): string {
 }
 
 export const COLLECTION_PARAM = "collection";
+
+/** A stored preferences row (or none) as the interface reads it: anything unknown is the default. */
+export function toPreferences(row: { library_view?: string | null } | null | undefined): StudioPreferences {
+  const view = row?.library_view;
+  return { libraryView: LIBRARY_VIEWS.includes(view as LibraryView) ? (view as LibraryView) : DEFAULT_PREFERENCES.libraryView };
+}

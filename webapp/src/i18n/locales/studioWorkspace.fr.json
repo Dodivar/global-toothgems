@@ -445,7 +445,8 @@
     "collectionSaved": "Collection enregistrée",
     "collectionDeleted": "Collection « {{name}} » supprimée — ses créations sont conservées",
     "collectionNameTaken": "Vous avez déjà une collection de ce nom.",
-    "collectionAddFailed": "La création est enregistrée, mais n’a pas pu être ajoutée à toutes les collections."
+    "collectionAddFailed": "La création est enregistrée, mais n’a pas pu être ajoutée à toutes les collections.",
+    "preferenceFailed": "Votre choix d’affichage n’a pas pu être enregistré sur votre compte."
   },
   "share": {
     "menuSub": "Un lien en lecture seule vers la version enregistrée",
@@ -547,5 +548,22 @@
       "nameTaken": "Vous avez déjà une collection de ce nom.",
       "colorInvalid": "Choisissez l’une des couleurs proposées."
     }
+  },
+  "explorer": {
+    "viewLabel": "Affichage de Mes créations",
+    "views": {
+      "grid": "Grille",
+      "explorer": "Dossiers"
+    },
+    "openFolder_one": "Ouvrir la collection « {{name}} », {{count}} création",
+    "openFolder_other": "Ouvrir la collection « {{name}} », {{count}} créations",
+    "folderCount_one": "{{count}} création",
+    "folderCount_other": "{{count}} créations",
+    "back": "Retour à tous les dossiers",
+    "trail": "Où vous êtes",
+    "loose": "Dans aucune collection",
+    "results": "Résultats dans toutes vos créations",
+    "allFiled": "Toutes vos créations sont rangées dans une collection.",
+    "removeFrom": "Retirer de « {{name}} »"
   }
 }

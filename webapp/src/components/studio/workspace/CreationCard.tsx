@@ -1,7 +1,7 @@
 import clsx from "clsx";
-import { Copy, FolderOpen, FolderPlus, Heart, Link2, MoreHorizontal, PencilLine, Trash2 } from "lucide-react";
+import { Copy, FolderMinus, FolderOpen, FolderPlus, Heart, Link2, MoreHorizontal, PencilLine, Trash2 } from "lucide-react";
 import { Menu } from "../../ui/Menu";
-import type { Creation } from "../../../lib/studioWorkspace/types";
+import type { Creation, StudioCollection } from "../../../lib/studioWorkspace/types";
 import { useWorkspace } from "../../../lib/studioWorkspace/workspace";
 import { openWorkspaceDialog } from "../../../lib/studioWorkspace/workspaceUi";
 import { ScenePreview } from "./ScenePreview";
@@ -42,7 +42,16 @@ export function FavoriteButton({ on, name, onToggle, className }: { on: boolean;
  * One saved design in the library: its scene, name, piece count, estimate
  * and last edit, with Open as the obvious action and the rest in the menu.
  */
-export function CreationCard({ creation, onStage }: { creation: Creation; onStage: boolean }) {
+export function CreationCard({
+  creation,
+  onStage,
+  folder,
+}: {
+  creation: Creation;
+  onStage: boolean;
+  /** The collection open in the explorer view: the menu offers to take the creation out of it. */
+  folder?: StudioCollection;
+}) {
   const { t, price, ago } = useWorkspaceFormat();
   const ws = useWorkspace();
   const { openInStudio } = useWorkspaceActions();
@@ -108,6 +117,16 @@ export function CreationCard({ creation, onStage }: { creation: Creation; onStag
                 icon: FolderPlus,
                 onSelect: () => openWorkspaceDialog({ kind: "creationCollections", creationId: creation.id }),
               },
+              ...(folder
+                ? [
+                    {
+                      id: "removeFromFolder",
+                      label: t("studio.workspace.explorer.removeFrom", { name: folder.name }),
+                      icon: FolderMinus,
+                      onSelect: () => void ws.setInCollection(creation, folder, false),
+                    },
+                  ]
+                : []),
               {
                 id: "rename",
                 label: t("studio.workspace.actions.rename"),

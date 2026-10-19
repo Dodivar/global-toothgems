@@ -14,7 +14,18 @@ import { StudioStoreError, type StudioRepositories } from "./repository";
 import { piecesKey } from "./scene";
 import type { ShareLink } from "./share";
 import { createSupabaseRepositories } from "./supabaseRepository";
-import type { CollectionDetails, CollectionMembership, Creation, FeedbackInput, GemGroup, RecordDetails, StudioCollection } from "./types";
+import {
+  DEFAULT_PREFERENCES,
+  type CollectionDetails,
+  type CollectionMembership,
+  type Creation,
+  type FeedbackInput,
+  type GemGroup,
+  type LibraryView,
+  type RecordDetails,
+  type StudioCollection,
+  type StudioPreferences,
+} from "./types";
 import { copyName } from "./validation";
 
 /**
@@ -45,6 +56,10 @@ interface WorkspaceValue {
   memberships: CollectionMembership[];
   /** "error" when the collections could not be read; the creations still show. */
   collectionsStatus: LibraryStatus;
+  /** How "My Creations" is laid out, kept on the account (defaults until loaded). */
+  libraryView: LibraryView;
+  /** Switch the layout at once; saved in the background, put back if the save fails. */
+  setLibraryView: (view: LibraryView) => void;
   reload: () => void;
   saveState: SaveState;
   /** ISO time of the last save or load of the linked creation. */
@@ -136,6 +151,7 @@ export function StudioWorkspaceProvider({ children }: { children: ReactNode }) {
     groups: GemGroup[];
     /** Null when the collections could not be read. */
     collections: CollectionsState | null;
+    preferences: StudioPreferences;
   } | null>(null);
   const current = loaded && loaded.repos === repos ? loaded : null;
   const status: LibraryStatus = !repos ? (restoring ? "loading" : "signedOut") : current ? current.status : "loading";
@@ -144,6 +160,7 @@ export function StudioWorkspaceProvider({ children }: { children: ReactNode }) {
   const collections = useMemo(() => current?.collections?.list ?? [], [current]);
   const memberships = useMemo(() => current?.collections?.memberships ?? [], [current]);
   const collectionsStatus: LibraryStatus = status !== "ready" ? status : current?.collections ? "ready" : "error";
+  const libraryView = current?.preferences.libraryView ?? DEFAULT_PREFERENCES.libraryView;
   const [saving, setSaving] = useState(false);
   /** `piecesKey` of the design whose save failed; editing it again clears the failure. */
   const [failedKey, setFailedKey] = useState<string | null>(null);
@@ -190,9 +207,17 @@ export function StudioWorkspaceProvider({ children }: { children: ReactNode }) {
       .list()
       .then((r): CollectionsState => ({ list: r.collections, memberships: r.memberships }))
       .catch(() => null);
-    Promise.all([repos.creations.list(), repos.groups.list(), collectionsLoad])
-      .then(([c, g, k]) => live && setLoaded({ repos, status: "ready", creations: c, groups: g, collections: k }))
-      .catch(() => live && setLoaded({ repos, status: "error", creations: [], groups: [], collections: null }));
+    // A preference that cannot be read falls back to the default layout.
+    const preferencesLoad = repos.preferences.get().catch(() => DEFAULT_PREFERENCES);
+    Promise.all([repos.creations.list(), repos.groups.list(), collectionsLoad, preferencesLoad])
+      .then(
+        ([c, g, k, p]) => live && setLoaded({ repos, status: "ready", creations: c, groups: g, collections: k, preferences: p }),
+      )
+      .catch(
+        () =>
+          live &&
+          setLoaded({ repos, status: "error", creations: [], groups: [], collections: null, preferences: DEFAULT_PREFERENCES }),
+      );
     return () => {
       live = false;
     };
@@ -591,6 +616,21 @@ export function StudioWorkspaceProvider({ children }: { children: ReactNode }) {
     [repos, fail, setCollections],
   );
 
+  const setLibraryView = useCallback(
+    (view: LibraryView) => {
+      if (!repos) return;
+      const apply = (v: LibraryView) => setLoaded((l) => (l ? { ...l, preferences: { ...l.preferences, libraryView: v } } : l));
+      const before = current?.preferences.libraryView ?? DEFAULT_PREFERENCES.libraryView;
+      if (view === before) return;
+      apply(view);
+      repos.preferences.update({ libraryView: view }).catch(() => {
+        apply(before);
+        say("preferenceFailed", "error");
+      });
+    },
+    [repos, current, say],
+  );
+
   const value: WorkspaceValue = {
     userId,
     status,
@@ -599,6 +639,8 @@ export function StudioWorkspaceProvider({ children }: { children: ReactNode }) {
     collections,
     memberships,
     collectionsStatus,
+    libraryView,
+    setLibraryView,
     reload: () => setReloadTick((n) => n + 1),
     saveState,
     savedAt: snap.active?.savedAt ?? null,

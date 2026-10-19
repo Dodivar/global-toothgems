@@ -1,6 +1,6 @@
 import { uid } from "../studio3d/math";
 import { STUDIO_SHARE_PATH } from "../studioUrl";
-import { toCollectionColor } from "./collections";
+import { toCollectionColor, toPreferences } from "./collections";
 import { sanitizeGroupData } from "./gemGroup";
 import { currentEstimate } from "../studio3d/gemRegistry";
 import {
@@ -56,6 +56,7 @@ interface LibraryFile {
   feedback: (FeedbackInput & { id: string; createdAt: string })[];
   collections: StudioCollection[];
   memberships: CollectionMembership[];
+  preferences?: { library_view?: string };
 }
 
 /** v2: designs of the shop's gems (scene format 2); v1 libraries are left behind. */
@@ -91,6 +92,7 @@ export function createLocalRepositories(userId: string, opts: LocalRepositoryOpt
       feedback: Array.isArray(data?.feedback) ? data.feedback : [],
       collections: Array.isArray(data?.collections) ? data.collections : [],
       memberships: Array.isArray(data?.memberships) ? data.memberships : [],
+      preferences: data?.preferences && typeof data.preferences === "object" ? data.preferences : undefined,
     };
     if (seed && !file.seeded) {
       file.seeded = true;
@@ -420,6 +422,21 @@ export function createLocalRepositories(userId: string, opts: LocalRepositoryOpt
         const out = new Set(creationIds);
         file.memberships = file.memberships.filter((m) => !(m.collectionId === collectionId && out.has(m.creationId)));
         write(file);
+      },
+    },
+
+    preferences: {
+      async get() {
+        await wait(latency);
+        return toPreferences(read().preferences);
+      },
+      async update(patch) {
+        await wait(latency);
+        const file = read();
+        const next = toPreferences({ library_view: patch.libraryView ?? toPreferences(file.preferences).libraryView });
+        file.preferences = { library_view: next.libraryView };
+        write(file);
+        return next;
       },
     },
 

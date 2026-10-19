@@ -445,7 +445,8 @@
     "collectionSaved": "Collection saved",
     "collectionDeleted": "Collection “{{name}}” deleted — its creations are kept",
     "collectionNameTaken": "You already have a collection with this name.",
-    "collectionAddFailed": "The creation is saved, but it could not be added to every collection."
+    "collectionAddFailed": "The creation is saved, but it could not be added to every collection.",
+    "preferenceFailed": "Your layout choice could not be saved on your account."
   },
   "share": {
     "menuSub": "A read-only link to the saved version",
@@ -547,5 +548,22 @@
       "nameTaken": "You already have a collection with this name.",
       "colorInvalid": "Choose one of the colours offered."
     }
+  },
+  "explorer": {
+    "viewLabel": "Layout of My Creations",
+    "views": {
+      "grid": "Grid",
+      "explorer": "Folders"
+    },
+    "openFolder_one": "Open the collection “{{name}}”, {{count}} creation",
+    "openFolder_other": "Open the collection “{{name}}”, {{count}} creations",
+    "folderCount_one": "{{count}} creation",
+    "folderCount_other": "{{count}} creations",
+    "back": "Back to all folders",
+    "trail": "Where you are",
+    "loose": "Not in a collection",
+    "results": "Results in all your creations",
+    "allFiled": "Every creation is filed in a collection.",
+    "removeFrom": "Take out of “{{name}}”"
   }
 }

@@ -158,6 +158,7 @@ supabase/
 | 20261018224456 | `studio_collections` | **Applied 2026-10-19.** `studio_collections` (name unique per member ignoring case, optional token colour) and `studio_collection_creations` (many-to-many memberships, insert/delete only); owner-only RLS, writes need `has_studio_access()`, reads and deletes do not; cross-owner links refused (composite FK + RLS on the creation's owner). Decision 96 |
 | 20261018224648 | `studio_collections_fk_index` | **Applied 2026-10-19.** Index covering the memberships' composite foreign key (performance advisor) |
 | 20261018224657 | `studio_templates` | **Applied 2026-10-19.** Decision 97: the Global Toothgems template library. `creations.template_published_at` (not in the column grants: written only by `studio_set_template(id, published)` — `manage_content` staff publish their own creation, keeping the first date, and unpublish any template; audited, the flag alone), `studio_templates()` (members with Studio access: published rows newest first, no owner, favourite or opening dates, Gem Group references dropped; 42501 otherwise), `studio_use_template(id)` (copies a published template into the caller's creations: owner = caller, unpublished, no render — the browser copies it), storage policy `studio-thumbnails: Studio members read template renders` (`private.is_studio_template_thumbnail()`). The `creations` SELECT policy is unchanged. Suite `tests/studio_templates_validation.sql` |
+| 20261019062619 | `studio_preferences` | **Applied 2026-10-19.** `studio_preferences`: one row per member (created on first change, none = defaults), `library_view` grid / explorer; owner-only RLS, not gated by Studio access. Decision 98 |
 | 20261008175722 | `contact_attachments_and_support_email` | **Applied 2026-10-08.** Contact form: `contact_requests.attachment_path` → `attachment_paths text[]` (≤ 5, `private.valid_contact_attachment_paths()`), bucket `contact-attachments` 20 MB per object, `submit_contact_request(…, p_attachment_paths text[])` (old signature dropped; ownership per path, no duplicates, ≤ 20 MB in all), guard trigger rebuilt, `contact_ip_allowed(ip_hash)` (service role), template `contact_request_received` (fr + en) for the support inbox. Suite: `iteration7_validation.sql` C3/C4 |
 | 20261008175809 | `contact_attachment_paths_check_grant` | **Applied 2026-10-08.** `execute` on the CHECK helper for `authenticated`/`service_role` (staff triage re-evaluates the CHECK) |
 | 20261007181011 | `gift_card_design_everywhere` | **Applied 2026-10-07.** The design/names/message chosen at checkout are shown back (WYSIWYG): policy `gift_cards: purchaser reads own` (a buyer reads the cards of their purchases through the existing column grant — never the code) so the member's order pages draw the card in its design; the `gift_card_delivery` template bodies (fr + en) lose their `{{message}}` paragraph because the e-mail now draws the card itself (`giftCardVisual()`, message included). Test: a buyer sees only their own cards (to add to `gift_cards_validation.sql`) |
@@ -1293,6 +1294,11 @@ member with Studio access   /studio-3d/atelier/modeles → studio_templates()   
 - Members never read a staff `creations` row: the only way in is `studio_templates()`, which leaves out the
   owner, the favourite flag and the opening dates, and drops Gem Group references (they point at the author's groups).
 
+- Since 2026-10-19 (decision 98, migration `20261019062619`) the member chooses how My Creations is laid out —
+  grid with the collection bar, or folders (the explorer) — and the choice is stored in `studio_preferences`
+  (one row per member, written by upsert, owner-only, not gated by Studio access). Validated by
+  `supabase/tests/studio_preferences_validation.sql` (P1–P5).
+
 ### Integrity guarantees
 
 - `orders_total_matches`: `total = subtotal − discount + shipping (+ tax when prices exclude tax)`; discount ≤ subtotal; all amounts ≥ 0.
@@ -2083,3 +2089,13 @@ VAT rates, shipping zones/rates mirroring the Settings prototype. Media rows ref
     (no paging yet); (g) members can see the author's user id inside the render's storage path (the only owner
     data the reader exposes); (h) no record of which template a copy came from (no usage figures beyond the
     PostHog event `studio_template_used`).
+98. **3D Studio: folder view of My Creations, chosen per account** (owner's request, 2026-10-19: "a view like a
+    file explorer, folders you enter to see the creations; the current view by default; the choice stored per
+    user"; migration `20261019062619`). The collections of decision 96 are shown as folders; the choice of layout
+    is a row of `studio_preferences`. Agent's choices, to confirm: (a) stored in its own Studio table, not as a
+    column of `profiles` (keeps the Studio domain apart; room for later workspace settings); (b) changing it needs
+    no Studio access (it only changes how the member's own work is shown); (c) the top level lists the folders,
+    then the creations in no collection; a creation in several collections shows in each folder; (d) searching
+    or filtering at the top level searches the whole library (matching folders by name + matching creations,
+    wherever they are filed), like a file explorer's search; (e) one level only: collections are not nested;
+    (f) no drag-and-drop into folders yet (filing goes through the card's "Collections…" menu).

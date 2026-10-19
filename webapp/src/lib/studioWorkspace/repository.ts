@@ -1,7 +1,16 @@
 import type { GemGroupData } from "./gemGroup";
 import type { StudioScene } from "./scene";
 import type { ShareLink } from "./share";
-import type { CollectionDetails, CollectionMembership, Creation, FeedbackInput, GemGroup, RecordDetails, StudioCollection } from "./types";
+import type {
+  CollectionDetails,
+  CollectionMembership,
+  Creation,
+  FeedbackInput,
+  GemGroup,
+  RecordDetails,
+  StudioCollection,
+  StudioPreferences,
+} from "./types";
 
 /**
  * The Studio workspace's persistence boundary.
@@ -14,6 +23,7 @@ import type { CollectionDetails, CollectionMembership, Creation, FeedbackInput, 
  *   gem groups       → `public.gem_groups`       (same)
  *   feedback         → `public.studio_feedback`  (insert only)
  *   collections      → `public.studio_collections` + `public.studio_collection_creations` (own rows)
+ *   preferences      → `public.studio_preferences` (the member's one row, created on first change)
  *
  * Ownership is not a parameter: an implementation is created for the signed-in
  * account and every row it touches belongs to it. On Supabase, `user_id`
@@ -110,9 +120,16 @@ export interface CollectionsRepository {
   removeCreations(collectionId: string, creationIds: string[]): Promise<void>;
 }
 
+/** The member's workspace preferences; no stored row reads as the defaults. */
+export interface PreferencesRepository {
+  get(): Promise<StudioPreferences>;
+  update(patch: Partial<StudioPreferences>): Promise<StudioPreferences>;
+}
+
 export interface StudioRepositories {
   creations: CreationsRepository;
   groups: GemGroupsRepository;
   feedback: FeedbackRepository;
   collections: CollectionsRepository;
+  preferences: PreferencesRepository;
 }

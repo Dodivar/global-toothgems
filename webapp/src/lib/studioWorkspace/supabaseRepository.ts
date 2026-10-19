@@ -2,12 +2,13 @@ import type { TypedSupabaseClient } from "../supabase/client";
 import type { Json, Tables } from "../supabase/database.types";
 import { BUCKETS, SIGNED_URL_TTL_SECONDS } from "../supabase/storage";
 import { STUDIO_SHARE_PATH } from "../studioUrl";
-import { toCollection, toMembership } from "./collections";
+import { toCollection, toMembership, toPreferences } from "./collections";
 import { sanitizeGroupData } from "./gemGroup";
 import { currentEstimate } from "../studio3d/gemRegistry";
 import {
   StudioStoreError,
   type CollectionsRepository,
+  type PreferencesRepository,
   type CreationInput,
   type CreationPatch,
   type GemGroupInput,
@@ -126,6 +127,26 @@ function collectionsRepository(client: TypedSupabaseClient): CollectionsReposito
         .eq("collection_id", collectionId)
         .in("creation_id", creationIds);
       if (error) throw storeError(error);
+    },
+  };
+}
+
+/** The member's single preferences row (`studio_preferences`), written by upsert. */
+function preferencesRepository(client: TypedSupabaseClient): PreferencesRepository {
+  return {
+    async get() {
+      const { data, error } = await client.from("studio_preferences").select("library_view").maybeSingle();
+      if (error) throw storeError(error);
+      return toPreferences(data);
+    },
+    async update(patch) {
+      const { data, error } = await client
+        .from("studio_preferences")
+        .upsert({ library_view: toPreferences({ library_view: patch.libraryView }).libraryView }, { onConflict: "user_id" })
+        .select("library_view")
+        .single();
+      if (error) throw storeError(error);
+      return toPreferences(data);
     },
   };
 }
@@ -515,6 +536,7 @@ export function createSupabaseRepositories(client: TypedSupabaseClient, userId: 
     },
 
     collections: collectionsRepository(client),
+    preferences: preferencesRepository(client),
 
     feedback: {
       async submit(input: FeedbackInput) {

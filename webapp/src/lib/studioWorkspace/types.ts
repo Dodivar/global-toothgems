@@ -98,3 +98,18 @@ export interface CollectionDetails {
   name: string;
   color: CollectionColor | null;
 }
+
+/**
+ * How "My Creations" is laid out, chosen by the member and kept on their
+ * account (`public.studio_preferences`): one grid with the collections as a
+ * filter bar, or an explorer of folders (the collections) to open.
+ */
+export const LIBRARY_VIEWS = ["grid", "explorer"] as const;
+export type LibraryView = (typeof LIBRARY_VIEWS)[number];
+
+export interface StudioPreferences {
+  libraryView: LibraryView;
+}
+
+/** What a member who never changed anything sees. */
+export const DEFAULT_PREFERENCES: StudioPreferences = { libraryView: "grid" };

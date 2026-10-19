@@ -7687,6 +7687,42 @@ export type Database = {
         }
         Relationships: []
       }
+      studio_preferences: {
+        Row: {
+          created_at: string
+          library_view: string
+          updated_at: string
+          user_id: string
+        }
+        Insert: {
+          created_at?: string
+          library_view?: string
+          updated_at?: string
+          user_id?: string
+        }
+        Update: {
+          created_at?: string
+          library_view?: string
+          updated_at?: string
+          user_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "studio_preferences_user_id_fkey"
+            columns: ["user_id"]
+            isOneToOne: true
+            referencedRelation: "loyalty_overview"
+            referencedColumns: ["user_id"]
+          },
+          {
+            foreignKeyName: "studio_preferences_user_id_fkey"
+            columns: ["user_id"]
+            isOneToOne: true
+            referencedRelation: "profiles"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       studio_subscription_invoices: {
         Row: {
           amount: number
