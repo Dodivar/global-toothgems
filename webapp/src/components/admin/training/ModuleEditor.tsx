@@ -210,6 +210,7 @@ export function ModuleEditor({
             onChange={(cover) => updateModule(courseId, module.id, { cover })}
             label={t("admin.training.module.fieldCover")}
             hint={t("admin.training.module.fieldCoverHint")}
+            sharedAcrossLanguages
           />
         </div>
       </Section>

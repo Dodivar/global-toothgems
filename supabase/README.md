@@ -162,6 +162,10 @@ supabase/
 | 20261019072230 | `studio_glowbook` | **Applied 2026-10-19.** Decision 99: the Glowbook, an artist's public showcase. `studio_showcases` (one per member: handle, display name, bio, Instagram, moderation status) and `studio_showcase_items` (one row per creation, order, moderation status); owners and `moderate_reviews` staff read (RLS), owners delete; every other write through `studio_save_showcase()`, `studio_showcase_add()`, `studio_showcase_reorder()` (Studio access) and `studio_moderate_showcase()` / `studio_moderate_showcase_item()` (`moderate_reviews`, audited); `studio_showcase_queue()` for moderators; `studio_public_showcase(handle)` for anyone (approved page of an author with Studio access, approved items only; no owner id field, though render paths start with it — decision 99 (i)); `private.studio_user_has_access(user)`; storage policies on `studio-thumbnails` (anyone reads public Glowbook renders, moderators read the renders sent). Suite `tests/studio_glowbook_validation.sql` (G1–G8) |
 | 20261019134715 | `studio_glowbook_look` | **Applied 2026-10-19.** Decision 100: the Glowbook's own look. `studio_showcases` gains accent / background / layout (fixed lists), location, featured_item_id (live), the approved avatar_path / banner_path / booking_url / website_url / tiktok, and `pending_changes` (+ `changes_submitted_at`, `changes_review_note`) for proposed pictures and links; `studio_save_showcase_look(jsonb)` (Studio access + `private.glowbook_customization_allowed()`, the plan switch: Studio access today), `studio_moderate_showcase_changes()` (`moderate_reviews`, audited); approving a page applies what waits with it; the queue gains `changes` rows and a `details` column (dropped and recreated); `studio_public_showcase()` returns `location` and `look` (null when customisation is not allowed). Private bucket `glowbook-media` (5 MB, JPEG/PNG/WebP): owners upload (Studio access) and read theirs, moderators read all, anyone reads approved pictures of a public Glowbook, owners delete only files no page uses or proposes (no update). Suite G9 |
 | 20261019135003 | `studio_glowbook_look_links` | **Applied 2026-10-19.** Postgres caps a regex repetition at 255: the link checks of `20261019134715` rewritten as pattern + length (`private.glowbook_link_valid()`), `studio_save_showcase_look()` replaced accordingly |
+| 20261019142032 | `studio_share_branding` | **Applied 2026-10-19.** Decision 101: social exports branded by plan. `private.studio_user_tier(user)` (essential / artist / atelier, highest wins; trial = essential, active staff = atelier, null without access) and `private.studio_share_logo_allowed()`; `studio_share_logos` (one logo per member, owner reads, written only by `studio_set_share_logo(path)`: artist / atelier tier and a file of the caller's folder, `''` removes, always allowed, returns the previous path); `studio_share_branding()` → `{tier, logo_path, has_logo}` (logo_path only while the tier allows it). Private bucket `studio-share-logos` (2 MB, PNG / JPEG / WebP, no SVG): upload and read in one's own folder need the artist / atelier tier, delete never does. Suite `studio_share_branding_validation.sql` (B1–B6) |
+| 20261019142220 | `studio_share_logos_updated_at` | **Applied 2026-10-19.** The generic `private.set_updated_at()` on `studio_share_logos` (`private.studio_touch_updated_at()` reads design columns it does not have) |
+| 20261019142050 | `studio_glowbook_sections_certification` | **Applied 2026-10-19.** Decision 102 (the file says 101: renumbered by `20261019143019`). Glowbook sections: `studio_showcase_sections` (owner, name ≤ 40 unique per Glowbook case-insensitive, position; RLS: owners and `moderate_reviews` read, owners delete), `studio_showcase_items.section_id` (composite FK `(section_id, user_id)` → the author's own section, `on delete set null (section_id)`), `studio_save_showcase_section(id, name)` (create / rename, ≤ 12), `studio_reorder_showcase_sections(ids)`, `studio_set_showcase_item_section(item, section)` — Studio access + `private.glowbook_customization_allowed` + ownership (`private.glowbook_sections_writer()`). Certified badge: `studio_showcases.show_certification` (default true), `private.glowbook_certification(user)` (titles `[{fr, en}]` of the courses completed with a certificate), `studio_my_certification()`, `studio_set_showcase_certification(bool)` (owner, no Studio access needed). `studio_public_showcase()` gains `sections` (those holding an approved creation, plan switch), `section_id` per item and `certification` (titles only); the queue's page rows carry the section names. Suite `tests/studio_glowbook_validation.sql` G10–G12 |
+| 20261019143019 | `studio_glowbook_sections_decision_number` | **Applied 2026-10-19.** Comments only: the objects of `20261019142050` say decision 102 (101 went to the social exports the same afternoon) |
 | 20261019112411 | `studio_glowbook_creation` | **Applied 2026-10-19.** `studio_public_showcase_creation(handle, item)` (anon): one approved creation of a public Glowbook with its scene (Gem Group ids blanked), for the read-only 3D viewer; null otherwise. Suite G4/G7 |
 | 20261019072443 | `studio_glowbook_updated_at` | **Applied 2026-10-19.** The Glowbook tables' `updated_at` triggers use `private.set_updated_at()` (the Studio design trigger reads columns they do not have) |
 | 20261008175722 | `contact_attachments_and_support_email` | **Applied 2026-10-08.** Contact form: `contact_requests.attachment_path` → `attachment_paths text[]` (≤ 5, `private.valid_contact_attachment_paths()`), bucket `contact-attachments` 20 MB per object, `submit_contact_request(…, p_attachment_paths text[])` (old signature dropped; ownership per path, no duplicates, ≤ 20 MB in all), guard trigger rebuilt, `contact_ip_allowed(ip_hash)` (service role), template `contact_request_received` (fr + en) for the support inbox. Suite: `iteration7_validation.sql` C3/C4 |
@@ -1319,6 +1323,12 @@ look (decision 100)         /studio-3d/atelier/glowbook "Customise my page" → 
                             colour, background, layout, spotlight, city → live
                             picture (glowbook-media/<user>/<kind>-<uuid>.jpg, framed in the browser) / link → pending_changes
                             moderator → studio_moderate_showcase_changes(user, approved|rejected, note) (or approves the page)
+sections (decision 102)     /studio-3d/atelier/glowbook "Sections of my page" → studio_save_showcase_section(id|null, name),
+                            studio_reorder_showcase_sections(ids), DELETE (any time); each creation's row → studio_set_showcase_item_section
+                            public: chips "All" + sections holding an approved creation; creations without a section always shown
+badge (decision 102)        private.glowbook_certification(user) ← course_completions with a certificate_code (database only)
+                            public page: "certified artist" + course titles; studio_set_showcase_certification(bool) hides it
+QR / poster (decision 102)  approved page only: QR of /fr|en/glowbook/<handle> (UI language) → PNG, or A4 PDF poster drawn in the browser
 ```
 
 - Public = page approved **and** item approved **and** the author has Studio access now (trial, subscription or
@@ -1329,6 +1339,34 @@ look (decision 100)         /studio-3d/atelier/glowbook "Customise my page" → 
   after a rejection go back to `pending`. A moderator can reject what is already public (take-down), with a note
   the artist reads.
 - Deleting a creation removes its item; deleting the page removes its items, never the creations.
+- Sections, badge and QR poster (decision 102): validated by G10–G12 of `tests/studio_glowbook_validation.sql` (owner
+  writes, refusals for anon / a member without access / another member, the composite key, only sections with an
+  approved creation public, the badge as titles only and hidden by its owner, the plan switch closed).
+
+### 3D Studio social exports (decision 101)
+
+```
+member with Studio access   My Creations → a creation's detail → "Create a post" (dialog, lazy loaded)
+                            studio_share_branding() → {tier, logo_path, has_logo}        (42501 signed out)
+                            the design rendered on a hidden offscreen stage (its own store and engine) in the browser:
+                              HD still PNG / JPEG, 360° video (MediaRecorder: MP4 when the browser records it, else WebM),
+                              360° GIF (gifenc, half size); Story 1080×1920, square 1080×1080, portrait 1080×1350
+                            downloaded or handed to the system share sheet — nothing is uploaded or published
+logo (artist, atelier)      re-encoded to PNG ≤ 1024 px in the browser → studio-share-logos/<user>/logo-<uuid>.png
+                            → studio_set_share_logo(path) (previous file removed by the page);  removes (always)
+```
+
+- What each tier gets: essential (and the trial, and a member without access) — the Global Toothgems watermark,
+  always; artist — their logo, the watermark or nothing; atelier — the same plus the layout templates (code:
+  `webapp/src/lib/studio3d/socialExport/layouts.ts`, versioned pure functions; no table). Active staff = atelier.
+- **What the server guarantees, and what it does not**: the tier and the logo entitlement (upload, record and read
+  of a logo need artist / atelier; a member who left the plan keeps the row but can no longer read the file, and
+  can always remove it). The watermark and the templates are drawn by the browser: a determined member could take
+  the watermark off their own copy. A server-side render would be needed to truly enforce it (not built: decision
+  101 (b)).
+- Validated by `supabase/tests/studio_share_branding_validation.sql` (B1 visitor, B2 tier resolution incl. past_due,
+  highest plan, staff, ended access, B3 essential and trial refused, B4 artist own folder only, B5 another member
+  reads and records nothing, B6 after the subscription ends: no logo returned or readable, removal still allowed).
 
 ### Integrity guarantees
 
@@ -1396,6 +1434,7 @@ have no access (see *Members' Lounge*).
 | `training-media` (private, no bucket limit: the project's global upload limit applies — 50 MB on the free plan; jpeg/png/webp/avif/mp4/webm/quicktime) | staff read; `manage_training` uploads, replaces and deletes under `media/`; the back office shows files through signed URLs. Learners get signed URLs after the entitlement check in phase C. Large videos are sent with resumable (TUS) uploads. |
 | `studio-thumbnails` (private, 512 kB, jpeg/webp/png) | owners read/delete inside `<user_id>/`, and upload/replace there with Studio access; members with Studio access also read the renders of published templates (decision 97). Served through signed URLs. |
 | `lounge-media` (private, 5 MB, jpeg/png/webp/gif) | members upload into `<user_id>/` while they can enter the lounge; the uploader reads and deletes their files; anyone who can read the lounge message an image is attached to reads it (so a private conversation's images stay between its two members). Served through signed URLs. |
+| `studio-share-logos` (private, 2 MB, png/jpeg/webp, no SVG) | a member uploads into and reads `<user_id>/` only while their Studio tier is artist or atelier (`private.studio_share_logo_allowed()`); deleting their own files is always allowed; no update (a new logo is a new file, recorded by `studio_set_share_logo()`). Downloaded by the export dialog, never served publicly (decision 101). |
 
 Path convention: `products/<product-slug>/<file>`, `categories/<category-slug>/<file>`, `<user_id>/<file>` for avatars and review photos.
 Never put private customer or paid training files in this bucket.
@@ -2025,8 +2064,12 @@ VAT rates, shipping zones/rates mirroring the Settings prototype. Media rows ref
     optional and lives in the English translation row (no `*_en` column). The learner sees the file of their
     interface language, else the French one. Agent's choices, to confirm: (a) covered slots are image blocks,
     video posters and question images — course and module covers and the video files themselves stay
-    single-language; (b) removing a question's image removes its English version too; (c) German, when enabled,
-    gets its own rows the same way (no schema change).
+    single-language; (b) removing a question's image or a video's thumbnail removes its English version too;
+    (c) German, when enabled, gets its own rows the same way (no schema change). Builder (2026-10-19,
+    `LocalizedImageField` in `components/admin/training/MediaPicker.tsx`): both slots are shown whatever language is
+    being edited — "Default image" (the French file, shown in every language) and "English image" (optional,
+    replaces it for English readers, available once a default exists) — with a "what learners see" line per
+    language; covers say they are the same in every language.
 93. **3D Studio: 48-hour free trial, then subscription** (user's request, 2026-10-17). Every account may start one
     free trial of the full Studio, explicitly, with no payment details; it lasts 48 hours of continuous time from
     its start on the database clock and never restarts. Using the Studio (saving or changing designs, Gem Groups,
@@ -2166,3 +2209,38 @@ VAT rates, shipping zones/rates mirroring the Settings prototype. Media rows ref
     lists keep every page readable and on-brand); (f) pictures no page uses are deleted by the browser after a
     save, best effort. Also on the owner's request the same day: the read-only 3D viewer no longer has a second
     bar under the site's header; "read only" is a small badge in its side panel.
+101. **3D Studio: posts for social networks, branded by plan** (user's request, 2026-10-19: HD still and 360°
+    turntable in Story / square / portrait; Essential watermarked, Artist own logo or none, Atelier + layout
+    templates; migrations `20261019142032`, `20261019142220`). Agent's choices, to confirm: (a) the trial (and a
+    member without access) gets the Essential behaviour, active staff the Atelier one; (b) the watermark is drawn
+    client-side — the server enforces the tier and the logo only; a server-side render would be needed to make the
+    watermark unremovable; (c) video: one full turn in 6 s at 30 fps, ~10 Mbit/s, MP4 (H.264) when
+    `MediaRecorder` can record it, else WebM (Firefox; Instagram may refuse it); recorded in real time, so leaving
+    the tab stops it; (d) GIF at half size (540 px wide), 36 frames, 3.6 s, 256 colours per frame (a full-size
+    GIF weighs tens of MB) — new dependency `gifenc` 1.0.3 (MIT, no dependencies, ~9 kB, loaded with the first
+    GIF only: nothing in the stack encodes GIF); (e) three Atelier layouts (Gallery, Spotlight, Studio card) plus
+    the full stage for everyone, texts = title (the creation's name by default) and an account handle typed by
+    the member, not stored; (f) logo: PNG / JPEG / WebP up to 2 MB, no SVG, redrawn as a PNG within 1024 px in the
+    browser; one per member; a member who leaves the plan keeps it stored but unusable until they come back;
+    (g) exports are of the SAVED creation (not unsaved edits on the stage).
+102. **3D Studio: Glowbook sections, QR poster and "certified artist" badge** (owner's request, 2026-10-19;
+    migrations `20261019142050`, `20261019143019`). Built: sections the artist creates, renames, orders and
+    deletes, each Glowbook creation filed in one section or none, the public page filtered by section chips;
+    a QR code of the public address, downloadable as a PNG and as a printable A4 poster; a "certified artist"
+    badge derived by the database from the Academy. New dependency `qrcode-generator` 2.0.4 (MIT, no
+    dependencies, ~20 kB minified; QR encoding is the one piece the stack cannot do; only `lib/glowbookPoster/qr.ts`
+    imports it, in the Studio). Agent's choices, to confirm: (a) section names are short public text, live once
+    the page is approved like the bio (decision 99 (b)); moderators see them with the page in `/admin/glowbook`;
+    (b) sections follow the plan switch `private.glowbook_customization_allowed` (writes and public display; the
+    page falls back to one list without them), deleting a section is always allowed; at most 12 sections of
+    ≤ 40 characters; only sections holding an approved creation are shown; under a section filter the spotlight
+    creation is not repeated at the top; (c) the badge counts only completed courses that issued a certificate
+    (`certificate_code` not null), withdrawn courses included (the certificate stays valid), whatever later
+    refunds (completions are sticky); it shows the course titles (English title when published, else French) and
+    no code, date or score; it is NOT gated by the plan switch (it rewards training) and is shown by default —
+    including on pages already live (the existing Glowbook of a certified artist gained it without opting in);
+    the wording "Artiste certifiée" is feminine in French, as asked; (d) QR and poster only once the page is
+    approved (the address answers 404 before); the QR encodes the address in the artist's UI language and the
+    current site origin; the poster uses the APPROVED picture and colour (never one waiting for a moderator),
+    falls back to initials when the picture cannot be read, and is a 300 dpi image wrapped in a PDF (like the
+    certificate), its QR always ink on white (light identity colours would not scan); the PNG is the code alone.

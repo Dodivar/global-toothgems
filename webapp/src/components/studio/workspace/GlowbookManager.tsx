@@ -25,6 +25,8 @@ import { useToast } from "../../../lib/toast";
 import { CreationThumb } from "./CreationCard";
 import { LibrarySkeleton } from "./CreationLibrary";
 import { GlowbookLookEditor } from "./GlowbookLookEditor";
+import { GlowbookSections } from "./GlowbookSections";
+import { GlowbookBadgeCard, GlowbookQrCard } from "./GlowbookShare";
 import { EmptyState } from "./EmptyState";
 import { SignInPrompt } from "./SignInPrompt";
 import { eyebrow, fieldClass, focusRing, iconButton, useWorkspaceFormat } from "./workspaceStyles";
@@ -75,7 +77,10 @@ export function GlowbookManager() {
           ) : (
             <GlowbookSummary glowbook={gb.glowbook} onEdit={() => setEditing(true)} />
           )}
+          <GlowbookQr glowbook={gb.glowbook} />
+          <GlowbookBadgeCard glowbook={gb.glowbook} />
           <GlowbookLookEditor glowbook={gb.glowbook} />
+          <GlowbookSections />
           <GlowbookItems />
         </>
       )}
@@ -108,6 +113,11 @@ function useGlowbookUrl(handle: string) {
   const { i18n } = useTranslation();
   const lang = isLocale(i18n.language) ? i18n.language : "fr";
   return `${window.location.origin}${localizedPath("glowbook", lang, { id: handle })}`;
+}
+
+/** The QR code of the page's address, in the UI language (decision 102). */
+function GlowbookQr({ glowbook }: { glowbook: Glowbook }) {
+  return <GlowbookQrCard glowbook={glowbook} url={useGlowbookUrl(glowbook.handle)} />;
 }
 
 function GlowbookSummary({ glowbook, onEdit }: { glowbook: Glowbook; onEdit: () => void }) {
@@ -412,6 +422,23 @@ function GlowbookItems() {
                   <ModerationBadge status={item.status} kind="item" />
                   <span className="text-[12px] text-[var(--text-muted)]">{count(creation.elementCount)}</span>
                 </div>
+                {gb.sections.length > 0 && (
+                  <label className="flex flex-wrap items-center gap-2 text-[12px] font-semibold text-[var(--text-muted)]">
+                    <span className="sr-only">{t("studio.glowbook.sections.itemLabel", { name: creation.name })}</span>
+                    <select
+                      value={item.sectionId ?? ""}
+                      onChange={(e) => void gb.fileItem(item, e.target.value || null)}
+                      className="h-8 max-w-full rounded-[var(--radius-md)] border border-[var(--border-default)] bg-[var(--surface-card)] px-2 text-[12.5px] text-[var(--text-primary)]"
+                    >
+                      <option value="">{t("studio.glowbook.sections.none")}</option>
+                      {gb.sections.map((section) => (
+                        <option key={section.id} value={section.id}>
+                          {section.name}
+                        </option>
+                      ))}
+                    </select>
+                  </label>
+                )}
                 {item.status === "rejected" && item.reviewNote && (
                   <p className="m-0 text-[12.5px] text-[var(--status-error-fg)]">{t("studio.glowbook.reason", { note: item.reviewNote })}</p>
                 )}

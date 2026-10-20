@@ -7723,6 +7723,42 @@ export type Database = {
           },
         ]
       }
+      studio_share_logos: {
+        Row: {
+          created_at: string
+          logo_path: string
+          updated_at: string
+          user_id: string
+        }
+        Insert: {
+          created_at?: string
+          logo_path: string
+          updated_at?: string
+          user_id: string
+        }
+        Update: {
+          created_at?: string
+          logo_path?: string
+          updated_at?: string
+          user_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "studio_share_logos_user_id_fkey"
+            columns: ["user_id"]
+            isOneToOne: true
+            referencedRelation: "loyalty_overview"
+            referencedColumns: ["user_id"]
+          },
+          {
+            foreignKeyName: "studio_share_logos_user_id_fkey"
+            columns: ["user_id"]
+            isOneToOne: true
+            referencedRelation: "profiles"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       studio_showcase_items: {
         Row: {
           created_at: string
@@ -7732,6 +7768,7 @@ export type Database = {
           review_note: string | null
           reviewed_at: string | null
           reviewed_by: string | null
+          section_id: string | null
           status: string
           submitted_at: string
           updated_at: string
@@ -7745,6 +7782,7 @@ export type Database = {
           review_note?: string | null
           reviewed_at?: string | null
           reviewed_by?: string | null
+          section_id?: string | null
           status?: string
           submitted_at?: string
           updated_at?: string
@@ -7758,6 +7796,7 @@ export type Database = {
           review_note?: string | null
           reviewed_at?: string | null
           reviewed_by?: string | null
+          section_id?: string | null
           status?: string
           submitted_at?: string
           updated_at?: string
@@ -7786,7 +7825,49 @@ export type Database = {
             referencedColumns: ["id"]
           },
           {
+            foreignKeyName: "studio_showcase_items_section_fkey"
+            columns: ["section_id", "user_id"]
+            isOneToOne: false
+            referencedRelation: "studio_showcase_sections"
+            referencedColumns: ["id", "user_id"]
+          },
+          {
             foreignKeyName: "studio_showcase_items_user_id_fkey"
+            columns: ["user_id"]
+            isOneToOne: false
+            referencedRelation: "studio_showcases"
+            referencedColumns: ["user_id"]
+          },
+        ]
+      }
+      studio_showcase_sections: {
+        Row: {
+          created_at: string
+          id: string
+          name: string
+          position: number
+          updated_at: string
+          user_id: string
+        }
+        Insert: {
+          created_at?: string
+          id?: string
+          name: string
+          position?: number
+          updated_at?: string
+          user_id: string
+        }
+        Update: {
+          created_at?: string
+          id?: string
+          name?: string
+          position?: number
+          updated_at?: string
+          user_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "studio_showcase_sections_user_id_fkey"
             columns: ["user_id"]
             isOneToOne: false
             referencedRelation: "studio_showcases"
@@ -7815,6 +7896,7 @@ export type Database = {
           review_note: string | null
           reviewed_at: string | null
           reviewed_by: string | null
+          show_certification: boolean
           status: string
           submitted_at: string
           tiktok: string | null
@@ -7842,6 +7924,7 @@ export type Database = {
           review_note?: string | null
           reviewed_at?: string | null
           reviewed_by?: string | null
+          show_certification?: boolean
           status?: string
           submitted_at?: string
           tiktok?: string | null
@@ -7869,6 +7952,7 @@ export type Database = {
           review_note?: string | null
           reviewed_at?: string | null
           reviewed_by?: string | null
+          show_certification?: boolean
           status?: string
           submitted_at?: string
           tiktok?: string | null
@@ -9743,10 +9827,15 @@ export type Database = {
         Args: { p_item_id: string; p_note?: string; p_status: string }
         Returns: undefined
       }
+      studio_my_certification: { Args: never; Returns: Json }
       studio_public_showcase: { Args: { p_handle: string }; Returns: Json }
       studio_public_showcase_creation: {
         Args: { p_handle: string; p_item_id: string }
         Returns: Json
+      }
+      studio_reorder_showcase_sections: {
+        Args: { p_section_ids: string[] }
+        Returns: undefined
       }
       studio_revoke_creation_share: {
         Args: { p_creation_id: string }
@@ -9779,6 +9868,7 @@ export type Database = {
           review_note: string | null
           reviewed_at: string | null
           reviewed_by: string | null
+          show_certification: boolean
           status: string
           submitted_at: string
           tiktok: string | null
@@ -9815,6 +9905,7 @@ export type Database = {
           review_note: string | null
           reviewed_at: string | null
           reviewed_by: string | null
+          show_certification: boolean
           status: string
           submitted_at: string
           tiktok: string | null
@@ -9829,10 +9920,89 @@ export type Database = {
           isSetofReturn: false
         }
       }
+      studio_save_showcase_section: {
+        Args: { p_name: string; p_section_id: string }
+        Returns: {
+          created_at: string
+          id: string
+          name: string
+          position: number
+          updated_at: string
+          user_id: string
+        }
+        SetofOptions: {
+          from: "*"
+          to: "studio_showcase_sections"
+          isOneToOne: true
+          isSetofReturn: false
+        }
+      }
+      studio_set_share_logo: { Args: { p_path: string }; Returns: string }
+      studio_set_showcase_certification: {
+        Args: { p_visible: boolean }
+        Returns: {
+          accent: string
+          avatar_path: string | null
+          background: string
+          banner_path: string | null
+          bio: string
+          booking_url: string | null
+          changes_review_note: string | null
+          changes_submitted_at: string | null
+          created_at: string
+          display_name: string
+          featured_item_id: string | null
+          handle: string
+          instagram: string | null
+          layout: string
+          location: string | null
+          pending_changes: Json | null
+          review_note: string | null
+          reviewed_at: string | null
+          reviewed_by: string | null
+          show_certification: boolean
+          status: string
+          submitted_at: string
+          tiktok: string | null
+          updated_at: string
+          user_id: string
+          website_url: string | null
+        }
+        SetofOptions: {
+          from: "*"
+          to: "studio_showcases"
+          isOneToOne: true
+          isSetofReturn: false
+        }
+      }
+      studio_set_showcase_item_section: {
+        Args: { p_item_id: string; p_section_id: string }
+        Returns: {
+          created_at: string
+          creation_id: string
+          id: string
+          position: number
+          review_note: string | null
+          reviewed_at: string | null
+          reviewed_by: string | null
+          section_id: string | null
+          status: string
+          submitted_at: string
+          updated_at: string
+          user_id: string
+        }
+        SetofOptions: {
+          from: "*"
+          to: "studio_showcase_items"
+          isOneToOne: true
+          isSetofReturn: false
+        }
+      }
       studio_set_template: {
         Args: { p_creation_id: string; p_published: boolean }
         Returns: string
       }
+      studio_share_branding: { Args: never; Returns: Json }
       studio_share_creation: {
         Args: { p_creation_id: string }
         Returns: string
@@ -9856,6 +10026,7 @@ export type Database = {
           review_note: string | null
           reviewed_at: string | null
           reviewed_by: string | null
+          section_id: string | null
           status: string
           submitted_at: string
           updated_at: string

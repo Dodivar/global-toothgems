@@ -26,11 +26,14 @@ export const MEDIA_LIBRARY_PATH = "/admin/formations/medias";
  */
 export function MediaPickerDialog({
   kind,
+  title,
   initialRef,
   onInsert,
   onClose,
 }: {
   kind: MediaKind;
+  /** Says which slot is being filled (e.g. the English image); defaults to the kind. */
+  title?: string;
   initialRef?: string;
   onInsert: (media: TrainingMedia) => void;
   onClose: () => void;
@@ -64,12 +67,12 @@ export function MediaPickerDialog({
         aria-modal="true"
         aria-labelledby={titleId}
         tabIndex={-1}
-        className="gt-admin gt-admin-dialog relative grid h-full w-full max-w-[980px] grid-rows-[auto_auto_minmax(0,1fr)_auto] overflow-hidden bg-[var(--admin-panel)] shadow-[var(--shadow-lg)] sm:h-[min(760px,92vh)] sm:rounded-[var(--admin-radius)]"
+        className="gt-admin gt-admin-dialog relative grid h-full w-full max-w-[980px] grid-rows-[auto_auto_minmax(0,1fr)_auto] overflow-clip bg-[var(--admin-panel)] shadow-[var(--shadow-lg)] sm:h-[min(760px,92vh)] sm:rounded-[var(--admin-radius)]"
       >
         <header className="flex items-start gap-3 border-b border-[var(--border-subtle)] px-5 py-4">
           <div className="grid min-w-0 flex-1 gap-1">
             <h2 id={titleId} className="text-[length:var(--text-h4)]">
-              {t(kind === "video" ? "trainingMedia.picker.titleVideo" : "trainingMedia.picker.titleImage")}
+              {title ?? t(kind === "video" ? "trainingMedia.picker.titleVideo" : "trainingMedia.picker.titleImage")}
             </h2>
             <p className="m-0 text-[length:var(--text-caption)] text-[var(--text-muted)]">{t("trainingMedia.picker.subtitle")}</p>
           </div>
@@ -158,7 +161,10 @@ export function MediaPickerDialog({
                 {visible.map((item) => {
                   const isSelected = item.id === selectedId;
                   return (
-                    <label key={item.id} className="group grid cursor-pointer gap-1.5">
+                    // `relative` keeps the visually hidden radio inside its tile: positioned
+                    // against the dialog instead, a tile on the last row put it below the
+                    // frame, and focusing it scrolled the whole dialog out of view.
+                    <label key={item.id} className="group relative grid cursor-pointer gap-1.5">
                       <input type="radio" name="training-media-pick" checked={isSelected} onChange={() => setSelectedId(item.id)} className="peer sr-only" />
                       <span
                         className={clsx(

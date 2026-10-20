@@ -1,4 +1,4 @@
-import { Copy, FolderOpen, Gem, Link2, PencilLine, ScanFace, Trash2 } from "lucide-react";
+import { Clapperboard, Copy, FolderOpen, Gem, Link2, PencilLine, ScanFace, Trash2 } from "lucide-react";
 import { Dialog } from "../../ui/Dialog";
 import { Button } from "../../ui/Button";
 import { useFormat } from "../../../lib/format";
@@ -123,6 +123,15 @@ export function CreationDetail({ creationId, onClose }: { creationId: string; on
           onClick={() => openWorkspaceDialog({ kind: "tryOn", creation })}
         >
           {t("studio.tryOn.action")}
+        </Button>
+        <Button
+          variant="outline"
+          size="sm"
+          iconLeft={Clapperboard}
+          disabled={creation.elementCount === 0}
+          onClick={() => openWorkspaceDialog({ kind: "socialExport", creation })}
+        >
+          {t("studio.socialExport.action")}
         </Button>
         <Button variant="ghost" size="sm" iconLeft={PencilLine} onClick={() => openWorkspaceDialog({ kind: "editCreation", creation })}>
           {t("studio.workspace.actions.editDetails")}

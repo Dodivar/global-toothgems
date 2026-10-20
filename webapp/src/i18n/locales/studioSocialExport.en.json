@@ -1,0 +1,95 @@
+{
+  "action": "Create a post",
+  "title": "Create a post for social networks",
+  "intro": "\"{{name}}\" as a high-definition image or a 360° turntable, sized for Stories and feed posts. Everything is drawn on this device: nothing is published.",
+  "close": "Close",
+  "previewLabel": "Preview of the post",
+  "preparing": "Preparing the 3D render…",
+  "format": {
+    "label": "Format",
+    "story": "Story",
+    "square": "Square",
+    "portrait": "Portrait"
+  },
+  "output": {
+    "label": "Type",
+    "image": "HD image",
+    "video": "360° video",
+    "gif": "360° GIF",
+    "videoUnsupported": "This browser cannot record video: choose the GIF or the image.",
+    "videoHint": "{{seconds}}-second full turn, looping ({{type}}).",
+    "gifHint": "Lighter loop at half size ({{width}} px wide), for messages."
+  },
+  "imageType": {
+    "label": "File",
+    "png": "PNG (sharpest)",
+    "jpeg": "JPEG (lighter)"
+  },
+  "mark": {
+    "label": "Signature",
+    "brand": "Global Toothgems watermark",
+    "logo": "My logo",
+    "none": "No watermark",
+    "essentialNote": "The Global Toothgems watermark is included on every export with the Essential plan and the free trial. The Artist plan lets you sign with your own logo, or with nothing at all.",
+    "brandingUnavailable": "We could not check your plan right now: exports keep the Global Toothgems watermark."
+  },
+  "logo": {
+    "label": "Your logo",
+    "none": "No logo yet. PNG with a transparent background works best.",
+    "upload": "Add my logo",
+    "replace": "Replace",
+    "remove": "Remove",
+    "saving": "Saving your logo…",
+    "alt": "Your logo",
+    "hint": "PNG, JPEG or WebP, up to 2 MB.",
+    "kept": "Your logo is kept: it comes back on your exports with the Artist or Atelier plan.",
+    "errors": {
+      "type": "Choose a PNG, JPEG or WebP image.",
+      "size": "This image is over 2 MB.",
+      "decode": "This image could not be read.",
+      "forbidden": "Your own logo comes with the Artist and Atelier plans.",
+      "unavailable": "Your logo could not be saved. Try again in a moment.",
+      "load": "Your logo could not be loaded: the Global Toothgems watermark is used instead."
+    }
+  },
+  "template": {
+    "label": "Layout",
+    "plain": "Full stage",
+    "gallery": "Gallery",
+    "spotlight": "Spotlight",
+    "band": "Studio card",
+    "locked": "Layout templates (background, frame, title and handle) come with the Atelier plan.",
+    "titleLabel": "Title",
+    "handleLabel": "Your account",
+    "handlePlaceholder": "@your.account"
+  },
+  "create": {
+    "image": "Create the image",
+    "video": "Record the video",
+    "gif": "Create the GIF"
+  },
+  "progress": {
+    "image": "Drawing the image…",
+    "video": "Recording the turn… keep this tab open",
+    "gif": "Drawing the GIF frames…",
+    "cancel": "Cancel"
+  },
+  "result": {
+    "ready": "Ready: {{file}} ({{size}})",
+    "download": "Download",
+    "share": "Share",
+    "shareHint": "On a phone, Share opens Instagram, TikTok or Messages directly when they accept this file.",
+    "videoLabel": "The recorded 360° video",
+    "gifLabel": "The 360° GIF",
+    "imageLabel": "The exported image",
+    "reducedMotion": "Animation not played (reduced motion): the file is ready to download."
+  },
+  "errors": {
+    "webgl": "3D rendering is not available in this browser, so the post cannot be drawn.",
+    "model": "The 3D render could not be prepared. Check your connection and try again.",
+    "video": "This browser could not record the video. Try the GIF or the image.",
+    "interrupted": "The recording stopped because the tab was left. Try again and keep it open.",
+    "encode": "The file could not be created. Try again, or another format.",
+    "share": "Sharing did not work: download the file and post it from your gallery."
+  }
+}

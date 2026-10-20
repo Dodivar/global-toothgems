@@ -379,6 +379,12 @@ export interface EngineOptions {
    * double-click focus work, but no press selects, drags or places a piece.
    */
   readOnly?: boolean;
+  /**
+   * A stage nobody sees (social exports): no frame loop, no input, no resize
+   * watch — frames are drawn only by `renderExportFrame`. Disposing it never
+   * touches the gem templates and finishes shared with the editor's stage.
+   */
+  offscreen?: boolean;
 }
 
 export class StudioEngine {
@@ -398,12 +404,13 @@ export class StudioEngine {
   private jewelsGroup = new THREE.Group();
   private backdrop!: THREE.Mesh;
   private floor!: THREE.Mesh;
-  private ro: ResizeObserver;
+  private ro: ResizeObserver | null = null;
   private raf = 0;
   private disposed = false;
   private store: DesignStore;
   /** A shared design being viewed: the camera moves, the pieces never do (see `EngineOptions`). */
   private readOnly: boolean;
+  private offscreen: boolean;
   private unsubscribe: () => void;
   /** Frames left to draw before the loop idles (see `wake`). */
   private pendingFrames = SETTLE_FRAMES;
@@ -493,6 +500,7 @@ export class StudioEngine {
     this.container = container;
     this.store = store;
     this.readOnly = options.readOnly ?? false;
+    this.offscreen = options.offscreen ?? false;
     this.renderer = new THREE.WebGLRenderer({ antialias: true, alpha: true, powerPreference: "high-performance" });
     this.renderer.setPixelRatio(Math.min(window.devicePixelRatio, 2));
     this.renderer.setSize(container.clientWidth || 800, container.clientHeight || 600, false);
@@ -524,23 +532,26 @@ export class StudioEngine {
     this.jewelsGroup.visible = false;
     this.scene.add(this.jewelsGroup);
 
-    // input — capture phase on the container runs BEFORE OrbitControls' canvas listeners,
-    // so a press on a jewel (or an armed placement) can pre-empt camera rotation cleanly.
-    container.addEventListener("pointerdown", this.onPointerDown, true);
-    window.addEventListener("pointermove", this.onPointerMove);
-    window.addEventListener("pointerup", this.onPointerUp);
-    window.addEventListener("pointercancel", this.onPointerUp);
-    window.addEventListener("blur", this.onBlur);
-    this.renderer.domElement.addEventListener("dblclick", this.onDblClick);
-    container.addEventListener("contextmenu", this.onContextMenu);
-    // Wheel zoom and damped orbiting move the camera without a pointer event on us.
-    this.controls.addEventListener("change", this.wake);
-    this.controls.addEventListener("start", this.wake);
-    // `start` fires on a press, a wheel or a pinch — the artist's own gestures, never a tween.
-    this.controls.addEventListener("start", this.emitCameraGesture);
+    if (this.offscreen) this.controls.enabled = false;
+    else {
+      // input — capture phase on the container runs BEFORE OrbitControls' canvas listeners,
+      // so a press on a jewel (or an armed placement) can pre-empt camera rotation cleanly.
+      container.addEventListener("pointerdown", this.onPointerDown, true);
+      window.addEventListener("pointermove", this.onPointerMove);
+      window.addEventListener("pointerup", this.onPointerUp);
+      window.addEventListener("pointercancel", this.onPointerUp);
+      window.addEventListener("blur", this.onBlur);
+      this.renderer.domElement.addEventListener("dblclick", this.onDblClick);
+      container.addEventListener("contextmenu", this.onContextMenu);
+      // Wheel zoom and damped orbiting move the camera without a pointer event on us.
+      this.controls.addEventListener("change", this.wake);
+      this.controls.addEventListener("start", this.wake);
+      // `start` fires on a press, a wheel or a pinch — the artist's own gestures, never a tween.
+      this.controls.addEventListener("start", this.emitCameraGesture);
 
-    this.ro = new ResizeObserver(() => this.resize());
-    this.ro.observe(container);
+      this.ro = new ResizeObserver(() => this.resize());
+      this.ro.observe(container);
+    }
 
     this.unsubscribe = store.subscribe(this.onStoreChange);
     this.syncJewels();
@@ -548,7 +559,7 @@ export class StudioEngine {
     this.camera.position.set(40, 30, 120);
     this.resize();
     this.renderer.domElement.setAttribute("aria-hidden", "true");
-    this.raf = requestAnimationFrame(this.tick);
+    if (!this.offscreen) this.raf = requestAnimationFrame(this.tick);
     void this.loadDefaultModel();
   }
 
@@ -2612,6 +2623,20 @@ export class StudioEngine {
       shared by the PNG export and the quote sheet. With `only`, every other
       piece is hidden for the capture and shown again before it returns. */
   captureView(opts: { transparent?: boolean; camera?: THREE.PerspectiveCamera; only?: ReadonlySet<string> } = {}): string {
+    const url = this.withCleanStage(opts, () => {
+      this.renderer.render(this.scene, opts.camera ?? this.camera);
+      return this.renderer.domElement.toDataURL("image/png");
+    });
+    this.renderer.render(this.scene, this.camera);
+    return url;
+  }
+
+  /**
+   * Run `draw` with the stage cleaned for a capture — outlines, highlights and
+   * the drop ghost hidden, the backdrop and floor too when `transparent`,
+   * every piece but `only` hidden — and put everything back afterwards.
+   */
+  private withCleanStage<T>(opts: { transparent?: boolean; only?: ReadonlySet<string> }, draw: () => T): T {
     const hidden: THREE.Group[] = [];
     if (opts.only) {
       const only = opts.only;
@@ -2640,8 +2665,16 @@ export class StudioEngine {
       this.backdrop.visible = false;
       this.floor.visible = false;
     }
-    this.renderer.render(this.scene, opts.camera ?? this.camera);
-    const url = this.renderer.domElement.toDataURL("image/png");
+    let result: T;
+    try {
+      result = draw();
+    } finally {
+      this.restoreAfterCapture(outlineVis, emSave, ghostVis, bd, fl, hidden);
+    }
+    return result;
+  }
+
+  private restoreAfterCapture(outlineVis: boolean[], emSave: number[], ghostVis: boolean, bd: boolean, fl: boolean, hidden: THREE.Group[]) {
     let i = 0;
     this.jewelRigs.forEach((r) => {
       r.outline.visible = outlineVis[i++];
@@ -2658,9 +2691,108 @@ export class StudioEngine {
     hidden.forEach((g) => {
       g.visible = true;
     });
-    this.renderer.render(this.scene, this.camera);
-    return url;
   }
+
+  /* ---------- social exports (offscreen stage) ---------- */
+
+  /**
+   * Resolves once the design is on its model and settled (saved scene loaded,
+   * pieces re-seated): what `renderExportFrame` needs before its first frame.
+   * Rejects after `timeoutMs`.
+   */
+  whenReady(timeoutMs = 30_000): Promise<void> {
+    const started = performance.now();
+    return new Promise((resolve, reject) => {
+      const check = () => {
+        if (this.disposed) return reject(new Error("disposed"));
+        if (this.modelReady && !this.store.hasPendingLoad() && !this.store.getSnapshot().modelLoading) return resolve();
+        if (performance.now() - started > timeoutMs) return reject(new Error("timeout"));
+        setTimeout(check, 60);
+      };
+      check();
+    });
+  }
+
+  /**
+   * Draw one export frame at `width` × `height` device pixels and return the
+   * stage's canvas holding it. The caller copies it at once (same task: the
+   * drawing buffer is not preserved). `azimuth` null: the still, framed on the
+   * design from slightly above the front; a number: the turntable camera at
+   * that angle (radians) around the model. Only for an `offscreen` stage.
+   */
+  renderExportFrame({ width, height, azimuth, transparent }: { width: number; height: number; azimuth: number | null; transparent: boolean }): HTMLCanvasElement {
+    if (!this.offscreen) throw new Error("renderExportFrame needs an offscreen stage");
+    this.settleForExport();
+    if (this.renderer.getPixelRatio() !== 1) this.renderer.setPixelRatio(1);
+    const size = this.renderer.getSize(new THREE.Vector2());
+    if (size.x !== width || size.y !== height) this.renderer.setSize(width, height, false);
+    const camera = this.exportCamera(width / height, azimuth);
+    this.withCleanStage({ transparent }, () => this.renderer.render(this.scene, camera));
+    return this.renderer.domElement;
+  }
+
+  /** No frame loop runs offscreen: finish the arrival animations and light fades at once. */
+  private settleForExport() {
+    const lt = this.lightTarget;
+    this.keyLight.intensity = lt.key;
+    this.keyLight.color.copy(lt.keyColor);
+    this.keyLight.position.copy(lt.keyPos);
+    this.fillLight.intensity = lt.fill;
+    this.fillLight.color.copy(lt.fillColor);
+    this.rimLight.intensity = lt.rim;
+    this.scene.environmentIntensity = lt.env;
+    this.renderer.toneMappingExposure = lt.expo;
+    (this.backdrop.material as THREE.MeshBasicMaterial).color.copy(lt.tint);
+    this.toothRigs.forEach((rig) => {
+      rig.highlight = 0;
+    });
+    this.jewelRigs.forEach((rig) => {
+      rig.birth = 0;
+      rig.hoverT = 0;
+      rig.group.scale.setScalar(Math.max(0.001, rig.sizeScale));
+      rig.outlineMaterial.opacity = 0;
+      rig.outline.visible = false;
+    });
+    for (const rig of this.dyingJewels) this.jewelsGroup.remove(rig.group);
+    this.dyingJewels = [];
+  }
+
+  /**
+   * The export camera. Still: centred on the pieces and pulled back until
+   * they fit the frame with some smile around them. Turntable: around the
+   * model's own centre at the pieces' height, far enough to clear the arch
+   * at every angle, so a full turn never cuts into the teeth.
+   */
+  private exportCamera(aspect: number, azimuth: number | null): THREE.PerspectiveCamera {
+    const cam = new THREE.PerspectiveCamera(this.camera.fov, aspect, 2, 700);
+    const jewels = this.store.jewels;
+    const box = new THREE.Box3();
+    if (jewels.length) jewels.forEach((j) => box.expandByPoint(new THREE.Vector3(j.position.x, j.position.y, j.position.z)));
+    else box.setFromCenterAndSize(new THREE.Vector3(0, 0, 0), new THREE.Vector3(24, 10, 1));
+    const size = box.getSize(new THREE.Vector3());
+    const center = box.getCenter(new THREE.Vector3());
+    const tanV = Math.tan(THREE.MathUtils.degToRad(cam.fov / 2));
+    const fit = (w: number, h: number) => Math.max(h / 2 / tanV, w / 2 / (tanV * aspect));
+    if (azimuth === null) {
+      const w = Math.max(size.x + 10, 30);
+      const dist = fit(w, Math.max(size.y + 8, 18));
+      cam.position.copy(center).addScaledVector(new THREE.Vector3(0, 0.12, 1).normalize(), dist);
+      cam.lookAt(center);
+    } else {
+      const pivot = new THREE.Vector3(this.stage.target.x, center.y, this.stage.target.z);
+      const dist = Math.max(fit(Math.max(size.x + 16, 46), 30), this.stage.halfWidth + 16);
+      const elevation = 0.14;
+      cam.position.set(
+        pivot.x + Math.sin(azimuth) * Math.cos(elevation) * dist,
+        pivot.y + Math.sin(elevation) * dist,
+        pivot.z + Math.cos(azimuth) * Math.cos(elevation) * dist,
+      );
+      cam.lookAt(pivot);
+    }
+    cam.updateMatrixWorld();
+    return cam;
+  }
+
   /** Download a PNG of the current view, watermarked with the Global Toothgems wordmark. */
   async exportPNG(transparent: boolean) {
     const c = await this.renderWatermarked(transparent);
@@ -3320,7 +3452,7 @@ export class StudioEngine {
     this.disposed = true;
     this.clearLongPress();
     cancelAnimationFrame(this.raf);
-    this.ro.disconnect();
+    this.ro?.disconnect();
     this.container.removeEventListener("pointerdown", this.onPointerDown, true);
     this.container.removeEventListener("contextmenu", this.onContextMenu);
     window.removeEventListener("pointermove", this.onPointerMove);
@@ -3338,6 +3470,16 @@ export class StudioEngine {
     this.issueListener = null;
     this.destroyGhost();
     this.controls.dispose();
+    if (this.offscreen) {
+      // The gem templates and finishes are shared with the editor's stage: leave
+      // them. Losing the context frees everything this renderer uploaded.
+      this.scene.environment?.dispose();
+      ((this.backdrop.material as THREE.MeshBasicMaterial).map as THREE.Texture | null)?.dispose();
+      this.renderer.dispose();
+      this.renderer.forceContextLoss();
+      this.renderer.domElement.remove();
+      return;
+    }
     this.scene.traverse((o) => {
       const m = o as THREE.Mesh;
       if (m.isMesh) {

@@ -34,6 +34,12 @@ describe("toQueueEntry", () => {
     });
     expect(toQueueEntry(row({}))).toMatchObject({ kind: "creation", name: "Aurora", elementCount: 2, pageStatus: "approved" });
   });
+
+  it("reads the page's section names, ignoring anything else", () => {
+    const page = toQueueEntry(row({ kind: "showcase", id: "u1", details: { sections: ["Mariage", "", 3, "Minimaliste"] } }));
+    expect(page).toMatchObject({ kind: "page", sections: ["Mariage", "Minimaliste"] });
+    expect(toQueueEntry(row({ kind: "showcase", id: "u1" }))).toMatchObject({ sections: [] });
+  });
 });
 
 describe("proposed pictures and links", () => {

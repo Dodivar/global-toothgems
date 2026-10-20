@@ -9,6 +9,7 @@ import { createGlowbookRepository, GlowbookError, type GlowbookRepository } from
 import { lookPatch, type GlowbookLook, type MediaKind } from "./glowbookLook";
 import { GlowbookMediaError, prepareGlowbookPicture, type MediaError } from "../../components/glowbook/prepareMedia";
 import { StudioStoreError } from "./repository";
+import { sortSections, type CertifiedCourse, type GlowbookSection, type SectionProblem } from "./glowbookSections";
 
 /**
  * The member's Glowbook beside their workspace (decision 99): their public
@@ -46,6 +47,19 @@ interface GlowbookValue {
   saveLook: (next: GlowbookLook) => Promise<boolean>;
   /** Frames and uploads a picture; its path and a preview URL, or why it was refused. */
   uploadPicture: (kind: MediaKind, file: File) => Promise<{ path: string; url: string } | { error: MediaError | "failed" }>;
+  /** The page's sections, in order (decision 102). */
+  sections: GlowbookSection[];
+  /** Creates (null id) or renames a section. Resolves to the form's error, or null when saved. */
+  saveSection: (id: string | null, name: string) => Promise<SectionProblem | "failed" | null>;
+  deleteSection: (section: GlowbookSection) => Promise<boolean>;
+  moveSections: (orderedIds: string[]) => Promise<boolean>;
+  /** Files a Glowbook creation in a section, or in none (null). */
+  fileItem: (item: GlowbookItem, sectionId: string | null) => Promise<boolean>;
+  /** The courses behind the "certified artist" badge, as the database derives them; null while unknown. */
+  certification: CertifiedCourse[] | null;
+  setShowCertification: (visible: boolean) => Promise<boolean>;
+  /** One of the member's own pictures as a file (the poster draws it), or null when it cannot be read. */
+  downloadMedia: (path: string) => Promise<Blob | null>;
 }
 
 const GlowbookContext = createContext<GlowbookValue | null>(null);
@@ -71,7 +85,9 @@ export function GlowbookProvider({ children }: { children: ReactNode }) {
     status: "ready" | "error";
     glowbook: Glowbook | null;
     items: GlowbookItem[];
+    sections: GlowbookSection[];
   } | null>(null);
+  const [certified, setCertified] = useState<{ repo: GlowbookRepository; courses: CertifiedCourse[] } | null>(null);
   const [mediaUrls, setMediaUrls] = useState<Map<string, string>>(() => new Map());
   const [tick, setTick] = useState(0);
   const current = loaded && loaded.repo === repo ? loaded : null;
@@ -82,21 +98,31 @@ export function GlowbookProvider({ children }: { children: ReactNode }) {
     let live = true;
     repo
       .load()
-      .then(({ glowbook, items }) => {
+      .then(({ glowbook, items, sections }) => {
         if (!live) return;
-        setLoaded({ repo, status: "ready", glowbook, items: sortItems(items) });
+        setLoaded({ repo, status: "ready", glowbook, items: sortItems(items), sections: sortSections(sections) });
         // Pictures are decoration here: a signing failure leaves the placeholders.
         if (glowbook) void repo.signMedia(mediaPathsOf(glowbook)).then((urls) => live && setMediaUrls(urls)).catch(() => undefined);
       })
-      .catch(() => live && setLoaded({ repo, status: "error", glowbook: null, items: [] }));
+      .catch(() => live && setLoaded({ repo, status: "error", glowbook: null, items: [], sections: [] }));
+    // The badge is a bonus: when it cannot be read, the Studio says nothing about it.
+    repo
+      .certification()
+      .then((courses) => live && setCertified({ repo, courses }))
+      .catch(() => live && setCertified({ repo, courses: [] }));
     return () => {
       live = false;
     };
   }, [repo, tick]);
 
   const patch = useCallback(
-    (fn: (prev: { glowbook: Glowbook | null; items: GlowbookItem[] }) => { glowbook: Glowbook | null; items: GlowbookItem[] }) =>
-      setLoaded((prev) => (prev && prev.repo === repo ? { ...prev, ...fn(prev) } : prev)),
+    (
+      fn: (prev: { glowbook: Glowbook | null; items: GlowbookItem[]; sections: GlowbookSection[] }) => {
+        glowbook?: Glowbook | null;
+        items?: GlowbookItem[];
+        sections?: GlowbookSection[];
+      },
+    ) => setLoaded((prev) => (prev && prev.repo === repo ? { ...prev, ...fn(prev) } : prev)),
     [repo],
   );
 
@@ -107,8 +133,8 @@ export function GlowbookProvider({ children }: { children: ReactNode }) {
         reportDenied?.(key);
         return;
       }
-      if (err instanceof GlowbookError && err.code === "full") {
-        showToast(t("studio.glowbook.toasts.full"), undefined, "warning");
+      if (err instanceof GlowbookError && (err.code === "full" || err.code === "sectionsFull")) {
+        showToast(t(`studio.glowbook.toasts.${err.code}`), undefined, "warning");
         return;
       }
       showToast(t(`studio.glowbook.toasts.${key}`), t("studio.workspace.toasts.tryAgain"), "error");
@@ -266,6 +292,107 @@ export function GlowbookProvider({ children }: { children: ReactNode }) {
     [repo, fail],
   );
 
+  const sections = useMemo(() => current?.sections ?? [], [current]);
+
+  const saveSection = useCallback<GlowbookValue["saveSection"]>(
+    async (id, name) => {
+      if (!repo) return "failed";
+      try {
+        const saved = await repo.saveSection(id, name);
+        patch((prev) => ({ sections: sortSections([...prev.sections.filter((x) => x.id !== saved.id), saved]) }));
+        showToast(t(id ? "studio.glowbook.toasts.sectionRenamed" : "studio.glowbook.toasts.sectionAdded", { name: saved.name }), undefined, "success");
+        return null;
+      } catch (err) {
+        if (err instanceof GlowbookError && err.code === "sectionTaken") return "taken";
+        if (err instanceof GlowbookError && err.code === "sectionsFull") return "full";
+        if (err instanceof StudioStoreError && err.code === "invalid") return "length";
+        fail(err, "sectionFailed");
+        return "failed";
+      }
+    },
+    [repo, patch, showToast, t, fail],
+  );
+
+  const deleteSection = useCallback(
+    async (section: GlowbookSection) => {
+      if (!repo) return false;
+      try {
+        await repo.deleteSection(section.id);
+        patch((prev) => ({
+          sections: prev.sections.filter((x) => x.id !== section.id),
+          items: prev.items.map((i) => (i.sectionId === section.id ? { ...i, sectionId: null } : i)),
+        }));
+        showToast(t("studio.glowbook.toasts.sectionDeleted", { name: section.name }), undefined, "success");
+        return true;
+      } catch (err) {
+        fail(err, "sectionFailed");
+        return false;
+      }
+    },
+    [repo, patch, showToast, t, fail],
+  );
+
+  const moveSections = useCallback(
+    async (ids: string[]) => {
+      if (!repo) return false;
+      const before = sections;
+      const rank = new Map(ids.map((id, i) => [id, i]));
+      patch((prev) => ({ sections: sortSections(prev.sections.map((x) => ({ ...x, position: rank.get(x.id) ?? x.position }))) }));
+      try {
+        await repo.reorderSections(ids);
+        return true;
+      } catch (err) {
+        patch(() => ({ sections: before }));
+        fail(err, "moveFailed");
+        return false;
+      }
+    },
+    [repo, sections, patch, fail],
+  );
+
+  const fileItem = useCallback(
+    async (item: GlowbookItem, sectionId: string | null) => {
+      if (!repo) return false;
+      try {
+        const saved = await repo.fileItem(item.id, sectionId);
+        patch((prev) => ({ items: prev.items.map((i) => (i.id === saved.id ? saved : i)) }));
+        return true;
+      } catch (err) {
+        fail(err, "sectionFailed");
+        return false;
+      }
+    },
+    [repo, patch, fail],
+  );
+
+  const setShowCertification = useCallback(
+    async (visible: boolean) => {
+      if (!repo) return false;
+      try {
+        const saved = await repo.setShowCertification(visible);
+        patch(() => ({ glowbook: saved }));
+        showToast(t(visible ? "studio.glowbook.toasts.badgeShown" : "studio.glowbook.toasts.badgeHidden"), undefined, "success");
+        return true;
+      } catch (err) {
+        fail(err, "badgeFailed");
+        return false;
+      }
+    },
+    [repo, patch, showToast, t, fail],
+  );
+
+  const downloadMedia = useCallback(
+    async (path: string) => {
+      if (!repo) return null;
+      try {
+        return await repo.downloadMedia(path);
+      } catch {
+        return null;
+      }
+    },
+    [repo],
+  );
+
   const value: GlowbookValue = {
     status,
     glowbook: current?.glowbook ?? null,
@@ -282,6 +409,14 @@ export function GlowbookProvider({ children }: { children: ReactNode }) {
     mediaUrls,
     saveLook,
     uploadPicture,
+    sections,
+    saveSection,
+    deleteSection,
+    moveSections,
+    fileItem,
+    certification: certified && certified.repo === repo ? certified.courses : null,
+    setShowCertification,
+    downloadMedia,
   };
   return <GlowbookContext.Provider value={value}>{children}</GlowbookContext.Provider>;
 }

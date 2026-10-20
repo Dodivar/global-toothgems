@@ -1,7 +1,8 @@
 -- =============================================================================
 -- 3D Studio Glowbook validation suite
 -- (migrations 20261019072230_studio_glowbook, 20261019112411_studio_glowbook_creation,
--- 20261019134715_studio_glowbook_look, decisions 99 and 100)
+-- 20261019134715_studio_glowbook_look, 20261019142050_studio_glowbook_sections_certification,
+-- decisions 99, 100 and 102)
 -- =============================================================================
 -- Proves, as the roles that really call them:
 --
@@ -28,6 +29,15 @@
 --       is not the caller's file, not https or not in the lists; a moderator
 --       approves (anon then signs the picture) or rejects with a note;
 --       removing is immediate; an approved picture cannot be deleted.
+--   G10 sections: the owner creates, renames, orders, files and deletes
+--       them (bad / duplicate names refused); the public page shows only the
+--       sections holding an approved creation (id and name only) and the
+--       creations without a section; another member, a member without
+--       access and anon cannot write them, nor read them (moderators aside);
+--   G11 the certified badge: derived from completions with a certificate,
+--       public as course titles only (no code, no id), hidden by its owner only;
+--   G12 the plan switch closed: sections cannot be written and the page
+--       shows none (its creations still shown); the badge stays.
 --
 -- ONE transaction, ALWAYS rolled back by raising `ALL STUDIO GLOWBOOK TESTS PASSED`
 -- (or `FAIL: ...`).
@@ -53,6 +63,19 @@ declare
   v_cnt   int;
   v_state text;
   v_names text[];
+  v_sec   public.studio_showcase_sections;
+  v_case  text;
+  s_one   uuid;
+  s_two   uuid;
+  s_three uuid;
+  c_o2    uuid;
+  c_o3    uuid;
+  c_mod   uuid;
+  i_o2    uuid;
+  i_o3    uuid;
+  i_mod   uuid;
+  v_course  uuid;
+  v_course2 uuid;
   passed  text[] := '{}';
 begin
   v_scene := jsonb_build_object('version', 2, 'model', 'dentition', 'lightPreset', 'studio', 'camera', null,
@@ -374,6 +397,187 @@ begin
   v_sc := public.studio_save_showcase_look(jsonb_build_object('avatar_path', null, 'booking_url', ''));
   if v_sc.avatar_path is not null or v_sc.booking_url is not null then raise exception 'FAIL G9: removal not immediate'; end if;
   passed := passed || 'G9'::text;
+
+  -- G10: sections (the other member's approved page nova.gems, i_one approved).
+  perform set_config('role', 'authenticated', true);
+  perform set_config('request.jwt.claims', json_build_object('sub', other, 'role', 'authenticated')::text, true);
+  insert into public.creations (name, scene_data) values ('Loose one', v_scene) returning id into c_o2;
+  insert into public.creations (name, scene_data) values ('Still pending', v_scene) returning id into c_o3;
+  i_o2 := (public.studio_showcase_add(c_o2)).id;
+  i_o3 := (public.studio_showcase_add(c_o3)).id;
+  v_sec := public.studio_save_showcase_section(null, '  Mariage  ');
+  s_one := v_sec.id;
+  if v_sec.name <> 'Mariage' or v_sec.position <> 0 or v_sec.user_id <> other then raise exception 'FAIL G10: section %', row_to_json(v_sec); end if;
+  s_two := (public.studio_save_showcase_section(null, 'Minimal')).id;
+  foreach v_page in array array['" mariage "'::jsonb, '""', '"   "', to_jsonb(repeat('x', 41))] loop
+    v_state := null;
+    begin
+      perform public.studio_save_showcase_section(null, v_page #>> '{}');
+    exception when others then v_state := sqlstate;
+    end;
+    if v_state is null or v_state not in ('22023', '23505') then raise exception 'FAIL G10: section name % accepted (%)', v_page, v_state; end if;
+  end loop;
+  v_sec := public.studio_save_showcase_section(s_two, 'Minimaliste');
+  if v_sec.name <> 'Minimaliste' or v_sec.id <> s_two then raise exception 'FAIL G10: rename %', row_to_json(v_sec); end if;
+  perform public.studio_set_showcase_item_section(i_one, s_one);
+  perform public.studio_set_showcase_item_section(i_o3, s_two);
+  s_three := (public.studio_save_showcase_section(null, 'Fêtes')).id;
+  perform public.studio_reorder_showcase_sections(array[s_three, s_one, s_two]);
+  select array_agg(name order by position) into v_names from public.studio_showcase_sections where user_id = other;
+  if v_names is distinct from array['Fêtes', 'Mariage', 'Minimaliste'] then raise exception 'FAIL G10: order %', v_names; end if;
+  -- Moderation: i_o2 approved (no section), i_o3 stays pending (its section stays hidden).
+  perform set_config('request.jwt.claims', json_build_object('sub', modr, 'role', 'authenticated')::text, true);
+  perform public.studio_moderate_showcase_item(i_o2, 'approved');
+  select q.details -> 'sections' into v_page from public.studio_showcase_queue() q where q.kind = 'showcase' and q.user_id = other;
+  if v_page is distinct from '["Fêtes", "Mariage", "Minimaliste"]'::jsonb then raise exception 'FAIL G10: queue sections %', v_page; end if;
+  perform set_config('role', 'anon', true);
+  perform set_config('request.jwt.claims', '{"role":"anon"}', true);
+  v_page := public.studio_public_showcase('nova.gems');
+  if v_page -> 'sections' is distinct from jsonb_build_array(jsonb_build_object('id', s_one, 'name', 'Mariage')) then
+    raise exception 'FAIL G10: public sections %', v_page -> 'sections';
+  end if;
+  if jsonb_array_length(v_page -> 'items') <> 2
+     or (select i ->> 'section_id' from jsonb_array_elements(v_page -> 'items') i where i ->> 'id' = i_one::text) <> s_one::text
+     or (select i -> 'section_id' from jsonb_array_elements(v_page -> 'items') i where i ->> 'id' = i_o2::text) <> 'null'::jsonb then
+    raise exception 'FAIL G10: public items %', v_page -> 'items';
+  end if;
+  v_state := null;
+  begin
+    perform public.studio_save_showcase_section(null, 'Anon');
+  exception when others then v_state := sqlstate;
+  end;
+  if v_state is distinct from '42501' then raise exception 'FAIL G10: anon wrote a section (%)', v_state; end if;
+  -- A member without access: refused, reads nothing.
+  perform set_config('role', 'authenticated', true);
+  perform set_config('request.jwt.claims', json_build_object('sub', m_none, 'role', 'authenticated')::text, true);
+  select count(*) into v_cnt from public.studio_showcase_sections where user_id = other;
+  if v_cnt <> 0 then raise exception 'FAIL G10: other member reads sections (%)', v_cnt; end if;
+  v_state := null;
+  begin
+    perform public.studio_save_showcase_section(null, 'Mine');
+  exception when others then v_state := sqlstate;
+  end;
+  if v_state is distinct from '42501' then raise exception 'FAIL G10: written without access (%)', v_state; end if;
+  delete from public.studio_showcase_sections where id = s_one;
+  -- Another member WITH access (staff) and their own Glowbook: nothing on someone else's.
+  perform set_config('request.jwt.claims', json_build_object('sub', modr, 'role', 'authenticated')::text, true);
+  perform public.studio_save_showcase('mod.page', 'Mod', '', null);
+  insert into public.creations (name, scene_data) values ('Mod look', v_scene) returning id into c_mod;
+  i_mod := (public.studio_showcase_add(c_mod)).id;
+  foreach v_case in array array['rename', 'file-mine', 'file-theirs'] loop
+    v_state := null;
+    begin
+      case v_case
+        when 'rename' then perform public.studio_save_showcase_section(s_one, 'Hijacked');
+        when 'file-mine' then perform public.studio_set_showcase_item_section(i_mod, s_one);
+        else perform public.studio_set_showcase_item_section(i_one, null);
+      end case;
+    exception when others then v_state := sqlstate;
+    end;
+    if v_state is distinct from 'P0002' then raise exception 'FAIL G10: % on another''s section (%)', v_case, v_state; end if;
+  end loop;
+  v_state := null;
+  begin
+    update public.studio_showcase_items set section_id = s_one where id = i_mod;
+  exception when others then v_state := sqlstate;
+  end;
+  if v_state is distinct from '42501' then raise exception 'FAIL G10: direct filing (%)', v_state; end if;
+  v_state := null;
+  begin
+    insert into public.studio_showcase_sections (user_id, name) values (modr, 'Direct');
+  exception when others then v_state := sqlstate;
+  end;
+  if v_state is distinct from '42501' then raise exception 'FAIL G10: direct section insert (%)', v_state; end if;
+  delete from public.studio_showcase_sections where id = s_one;
+  execute 'reset role';
+  select count(*) into v_cnt from public.studio_showcase_sections where user_id = other;
+  if v_cnt <> 3 then raise exception 'FAIL G10: another member deleted a section (%)', v_cnt; end if;
+  -- The owner deletes a section: its creations stay, without a section.
+  perform set_config('role', 'authenticated', true);
+  perform set_config('request.jwt.claims', json_build_object('sub', other, 'role', 'authenticated')::text, true);
+  delete from public.studio_showcase_sections where id = s_one;
+  select * into v_item from public.studio_showcase_items where id = i_one;
+  if v_item.id is null or v_item.section_id is not null or v_item.user_id <> other then raise exception 'FAIL G10: delete section %', row_to_json(v_item); end if;
+  perform public.studio_set_showcase_item_section(i_one, s_three);
+  passed := passed || 'G10'::text;
+
+  -- G11: the certified badge.
+  execute 'reset role';
+  insert into public.courses (slug, title) values ('gb-test-cert-course-990001', 'Pose experte GB test') returning id into v_course;
+  insert into public.course_translations (course_id, locale, title, status) values (v_course, 'en', 'Expert placement GB test', 'published');
+  insert into public.courses (slug, title) values ('gb-test-nocert-course-990001', 'Sans certificat GB test') returning id into v_course2;
+  insert into public.course_completions (user_id, course_id, min_score, certificate_code) values
+    (other, v_course, 70, 'GTC-99AA-99BB-99CC'),
+    (other, v_course2, 70, null);
+  perform set_config('role', 'anon', true);
+  perform set_config('request.jwt.claims', '{"role":"anon"}', true);
+  v_page := public.studio_public_showcase('nova.gems');
+  if v_page -> 'certification' is distinct from
+     jsonb_build_object('courses', jsonb_build_array(jsonb_build_object('fr', 'Pose experte GB test', 'en', 'Expert placement GB test'))) then
+    raise exception 'FAIL G11: public badge %', v_page -> 'certification';
+  end if;
+  if v_page::text like '%GTC-%' or v_page::text like '%' || v_course::text || '%' then
+    raise exception 'FAIL G11: the page leaks a certificate code or a course id';
+  end if;
+  v_state := null;
+  begin
+    perform public.studio_set_showcase_certification(false);
+  exception when others then v_state := sqlstate;
+  end;
+  if v_state is distinct from '42501' then raise exception 'FAIL G11: anon hid a badge (%)', v_state; end if;
+  perform set_config('role', 'authenticated', true);
+  perform set_config('request.jwt.claims', json_build_object('sub', m_none, 'role', 'authenticated')::text, true);
+  if public.studio_my_certification() <> '[]'::jsonb then raise exception 'FAIL G11: badge without a certificate'; end if;
+  v_state := null;
+  begin
+    perform public.studio_set_showcase_certification(false);
+  exception when others then v_state := sqlstate;
+  end;
+  if v_state is distinct from 'P0002' then raise exception 'FAIL G11: hid without a Glowbook (%)', v_state; end if;
+  perform set_config('request.jwt.claims', json_build_object('sub', modr, 'role', 'authenticated')::text, true);
+  perform public.studio_set_showcase_certification(false);
+  perform set_config('request.jwt.claims', json_build_object('sub', other, 'role', 'authenticated')::text, true);
+  if public.studio_my_certification() <> jsonb_build_array(jsonb_build_object('fr', 'Pose experte GB test', 'en', 'Expert placement GB test')) then
+    raise exception 'FAIL G11: own badge %', public.studio_my_certification();
+  end if;
+  select * into v_sc from public.studio_showcases where user_id = other;
+  if not v_sc.show_certification then raise exception 'FAIL G11: another member hid the badge'; end if;
+  v_sc := public.studio_set_showcase_certification(false);
+  perform set_config('role', 'anon', true);
+  perform set_config('request.jwt.claims', '{"role":"anon"}', true);
+  if public.studio_public_showcase('nova.gems') -> 'certification' <> 'null'::jsonb then raise exception 'FAIL G11: hidden badge shown'; end if;
+  perform set_config('role', 'authenticated', true);
+  perform set_config('request.jwt.claims', json_build_object('sub', other, 'role', 'authenticated')::text, true);
+  v_sc := public.studio_set_showcase_certification(true);
+  passed := passed || 'G11'::text;
+
+  -- G12: the plan switch closed (rolled back with the rest).
+  execute 'reset role';
+  execute $f$create or replace function private.glowbook_customization_allowed(p_user uuid)
+    returns boolean language sql stable security definer set search_path = '' as $b$ select false $b$ $f$;
+  perform set_config('role', 'authenticated', true);
+  perform set_config('request.jwt.claims', json_build_object('sub', other, 'role', 'authenticated')::text, true);
+  v_state := null;
+  begin
+    perform public.studio_save_showcase_section(null, 'Closed');
+  exception when others then v_state := sqlstate;
+  end;
+  if v_state is distinct from '42501' then raise exception 'FAIL G12: section written without the plan (%)', v_state; end if;
+  v_state := null;
+  begin
+    perform public.studio_set_showcase_item_section(i_one, null);
+  exception when others then v_state := sqlstate;
+  end;
+  if v_state is distinct from '42501' then raise exception 'FAIL G12: filed without the plan (%)', v_state; end if;
+  perform set_config('role', 'anon', true);
+  perform set_config('request.jwt.claims', '{"role":"anon"}', true);
+  v_page := public.studio_public_showcase('nova.gems');
+  if v_page is null or v_page -> 'sections' <> '[]'::jsonb or jsonb_array_length(v_page -> 'items') <> 2
+     or exists (select 1 from jsonb_array_elements(v_page -> 'items') i where i -> 'section_id' <> 'null'::jsonb)
+     or v_page -> 'certification' = 'null'::jsonb then
+    raise exception 'FAIL G12: page without the plan %', v_page;
+  end if;
+  passed := passed || 'G12'::text;
 
   raise exception 'ALL STUDIO GLOWBOOK TESTS PASSED (%)', array_to_string(passed, ', ');
 end;

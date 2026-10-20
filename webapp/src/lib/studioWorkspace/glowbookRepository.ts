@@ -12,6 +12,7 @@ import {
   type GlowbookDetails,
   type GlowbookItem,
 } from "./glowbook";
+import { normalizeSectionName, toCertifiedCourses, toGlowbookSection, type CertifiedCourse, type GlowbookSection } from "./glowbookSections";
 
 /**
  * The Glowbook's persistence boundary for its owner (decision 99). Screens
@@ -29,9 +30,16 @@ import {
  *   cleanupMedia()   → removes the member's pictures no page uses (storage refuses the others)
  *   publicState(id)  → a fresh read of what saving one creation would make public
  *                      (its Glowbook item, its template flag), for the warning before a save
+ *   saveSection(id, name) → `studio_save_showcase_section()`   create (null id) or rename (decision 102)
+ *   deleteSection(id)     → DELETE of their own section        any time; its creations keep no section
+ *   reorderSections(ids)  → `studio_reorder_showcase_sections()`
+ *   fileItem(item, sec)   → `studio_set_showcase_item_section()`  one section or none
+ *   setShowCertification  → `studio_set_showcase_certification()` show or hide the badge
+ *   certification()       → `studio_my_certification()`      the courses behind the badge
+ *   downloadMedia(path)   → one of the member's own pictures, as a file (for the printable poster)
  */
 export interface GlowbookRepository {
-  load(): Promise<{ glowbook: Glowbook | null; items: GlowbookItem[] }>;
+  load(): Promise<{ glowbook: Glowbook | null; items: GlowbookItem[]; sections: GlowbookSection[] }>;
   save(details: GlowbookDetails): Promise<Glowbook>;
   add(creationId: string): Promise<GlowbookItem>;
   remove(creationId: string): Promise<void>;
@@ -42,10 +50,17 @@ export interface GlowbookRepository {
   signMedia(paths: string[]): Promise<Map<string, string>>;
   cleanupMedia(keep: string[]): Promise<void>;
   publicState(creationId: string): Promise<{ item: GlowbookItem | null; templatePublishedAt: string | null }>;
+  saveSection(id: string | null, name: string): Promise<GlowbookSection>;
+  deleteSection(id: string): Promise<void>;
+  reorderSections(ids: string[]): Promise<void>;
+  fileItem(itemId: string, sectionId: string | null): Promise<GlowbookItem>;
+  setShowCertification(visible: boolean): Promise<Glowbook>;
+  certification(): Promise<CertifiedCourse[]>;
+  downloadMedia(path: string): Promise<Blob>;
 }
 
-/** `handleTaken` / `handleReserved` / `full`: refusals the form explains. */
-export type GlowbookErrorCode = "handleTaken" | "handleReserved" | "full";
+/** `handleTaken` / `handleReserved` / `full` / `sectionTaken` / `sectionsFull`: refusals the forms explain. */
+export type GlowbookErrorCode = "handleTaken" | "handleReserved" | "full" | "sectionTaken" | "sectionsFull";
 
 export class GlowbookError extends Error {
   readonly code: GlowbookErrorCode;
@@ -65,16 +80,34 @@ function glowbookError(error: PgError): Error {
   return storeError(error);
 }
 
+function sectionError(error: PgError): Error {
+  if (error.code === "23505") return new GlowbookError("sectionTaken");
+  if (error.code === "54000") return new GlowbookError("sectionsFull");
+  return storeError(error);
+}
+
+/**
+ * The generated types say `string` for every argument; these functions take
+ * SQL null for "none" (a new section, no section), which PostgREST passes on.
+ */
+const sqlNull = null as unknown as string;
+
 export function createGlowbookRepository(client: TypedSupabaseClient, userId: string): GlowbookRepository {
   return {
     async load() {
-      const [page, items] = await Promise.all([
+      const [page, items, sections] = await Promise.all([
         client.from("studio_showcases").select("*").eq("user_id", userId).maybeSingle(),
         client.from("studio_showcase_items").select("*").eq("user_id", userId),
+        client.from("studio_showcase_sections").select("*").eq("user_id", userId),
       ]);
       if (page.error) throw storeError(page.error);
       if (items.error) throw storeError(items.error);
-      return { glowbook: page.data ? toGlowbook(page.data) : null, items: items.data.map(toGlowbookItem) };
+      if (sections.error) throw storeError(sections.error);
+      return {
+        glowbook: page.data ? toGlowbook(page.data) : null,
+        items: items.data.map(toGlowbookItem),
+        sections: sections.data.map(toGlowbookSection),
+      };
     },
 
     async save(details) {
@@ -150,6 +183,49 @@ export function createGlowbookRepository(client: TypedSupabaseClient, userId: st
       if (item.error) throw storeError(item.error);
       if (creation.error) throw storeError(creation.error);
       return { item: item.data ? toGlowbookItem(item.data) : null, templatePublishedAt: creation.data?.template_published_at ?? null };
+    },
+
+    async saveSection(id, name) {
+      const { data, error } = await client.rpc("studio_save_showcase_section", { p_section_id: id ?? sqlNull, p_name: normalizeSectionName(name) });
+      if (error) throw sectionError(error);
+      if (!data?.id) throw new StudioStoreError("storage");
+      return toGlowbookSection(data);
+    },
+
+    async deleteSection(id) {
+      const { error } = await client.from("studio_showcase_sections").delete().eq("id", id).eq("user_id", userId);
+      if (error) throw storeError(error);
+    },
+
+    async reorderSections(ids) {
+      const { error } = await client.rpc("studio_reorder_showcase_sections", { p_section_ids: ids });
+      if (error) throw storeError(error);
+    },
+
+    async fileItem(itemId, sectionId) {
+      const { data, error } = await client.rpc("studio_set_showcase_item_section", { p_item_id: itemId, p_section_id: sectionId ?? sqlNull });
+      if (error) throw storeError(error);
+      if (!data?.id) throw new StudioStoreError("storage");
+      return toGlowbookItem(data);
+    },
+
+    async setShowCertification(visible) {
+      const { data, error } = await client.rpc("studio_set_showcase_certification", { p_visible: visible });
+      if (error) throw storeError(error);
+      if (!data) throw new StudioStoreError("storage");
+      return toGlowbook(data);
+    },
+
+    async certification() {
+      const { data, error } = await client.rpc("studio_my_certification");
+      if (error) throw storeError(error);
+      return toCertifiedCourses(data);
+    },
+
+    async downloadMedia(path) {
+      const { data, error } = await client.storage.from(BUCKETS.glowbookMedia).download(path);
+      if (error || !data) throw storeError(error ?? { message: "no file" });
+      return data;
     },
   };
 }
