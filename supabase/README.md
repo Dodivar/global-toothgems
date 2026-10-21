@@ -164,6 +164,7 @@ supabase/
 | 20261019135003 | `studio_glowbook_look_links` | **Applied 2026-10-19.** Postgres caps a regex repetition at 255: the link checks of `20261019134715` rewritten as pattern + length (`private.glowbook_link_valid()`), `studio_save_showcase_look()` replaced accordingly |
 | 20261019142032 | `studio_share_branding` | **Applied 2026-10-19.** Decision 101: social exports branded by plan. `private.studio_user_tier(user)` (essential / artist / atelier, highest wins; trial = essential, active staff = atelier, null without access) and `private.studio_share_logo_allowed()`; `studio_share_logos` (one logo per member, owner reads, written only by `studio_set_share_logo(path)`: artist / atelier tier and a file of the caller's folder, `''` removes, always allowed, returns the previous path); `studio_share_branding()` → `{tier, logo_path, has_logo}` (logo_path only while the tier allows it). Private bucket `studio-share-logos` (2 MB, PNG / JPEG / WebP, no SVG): upload and read in one's own folder need the artist / atelier tier, delete never does. Suite `studio_share_branding_validation.sql` (B1–B6) |
 | 20261019142220 | `studio_share_logos_updated_at` | **Applied 2026-10-19.** The generic `private.set_updated_at()` on `studio_share_logos` (`private.studio_touch_updated_at()` reads design columns it does not have) |
+| 20261021172034 | `studio_share_link_previews` | **Applied 2026-10-21.** Decision 101 addendum: `studio_shared_creation_preview(token)` → `{name, description, thumbnail_path}` of an active share link (anon), and the storage policy "anyone reads renders of shared creations" (`private.is_shared_creation_thumbnail()`): the share viewer page signs the render for its Open Graph / Twitter image. Revoking the link closes both. Suite B7 |
 | 20261019142050 | `studio_glowbook_sections_certification` | **Applied 2026-10-19.** Decision 102 (the file says 101: renumbered by `20261019143019`). Glowbook sections: `studio_showcase_sections` (owner, name ≤ 40 unique per Glowbook case-insensitive, position; RLS: owners and `moderate_reviews` read, owners delete), `studio_showcase_items.section_id` (composite FK `(section_id, user_id)` → the author's own section, `on delete set null (section_id)`), `studio_save_showcase_section(id, name)` (create / rename, ≤ 12), `studio_reorder_showcase_sections(ids)`, `studio_set_showcase_item_section(item, section)` — Studio access + `private.glowbook_customization_allowed` + ownership (`private.glowbook_sections_writer()`). Certified badge: `studio_showcases.show_certification` (default true), `private.glowbook_certification(user)` (titles `[{fr, en}]` of the courses completed with a certificate), `studio_my_certification()`, `studio_set_showcase_certification(bool)` (owner, no Studio access needed). `studio_public_showcase()` gains `sections` (those holding an approved creation, plan switch), `section_id` per item and `certification` (titles only); the queue's page rows carry the section names. Suite `tests/studio_glowbook_validation.sql` G10–G12 |
 | 20261019143019 | `studio_glowbook_sections_decision_number` | **Applied 2026-10-19.** Comments only: the objects of `20261019142050` say decision 102 (101 went to the social exports the same afternoon) |
 | 20261019112411 | `studio_glowbook_creation` | **Applied 2026-10-19.** `studio_public_showcase_creation(handle, item)` (anon): one approved creation of a public Glowbook with its scene (Gem Group ids blanked), for the read-only 3D viewer; null otherwise. Suite G4/G7 |
@@ -1367,6 +1368,16 @@ logo (artist, atelier)      re-encoded to PNG ≤ 1024 px in the browser → stu
 - Validated by `supabase/tests/studio_share_branding_validation.sql` (B1 visitor, B2 tier resolution incl. past_due,
   highest plan, staff, ended access, B3 essential and trial refused, B4 artist own folder only, B5 another member
   reads and records nothing, B6 after the subscription ends: no logo returned or readable, removal still allowed).
+- **One button per network** (addendum 2026-10-21, user's choice: no publishing API, no developer app, no OAuth):
+  Instagram, TikTok, Pinterest, Facebook, Snapchat, WhatsApp, X, Threads (`webapp/src/lib/studio3d/socialExport/networks.ts`).
+  A phone opens the system share menu with the file; a computer opens the network's link-share page with the
+  creation's **public page** (Facebook sharer, Pinterest pin/create with the render as `media`, X intent/post,
+  Threads intent/post, wa.me) or, without one / for TikTok, Instagram and Snapchat, downloads the file and opens
+  the network's create page. The public page is the creation's Glowbook page when it is published there, else its
+  existing share link; none is created without the member's explicit "Create the read-only link" button.
+  Preview cards: `/studio-3d/partage/<token>` and `/studio-3d/glowbook/<handle>/<item>` render `og:image` /
+  `twitter:card` on the server (`serverSharePreview.ts`, publishable key; renders signed for 7 days), still
+  `noindex`. Suite B7: a visitor reads the preview and the render of a shared creation only, nothing once revoked.
 
 ### Integrity guarantees
 
@@ -2223,6 +2234,15 @@ VAT rates, shipping zones/rates mirroring the Settings prototype. Media rows ref
     the member, not stored; (f) logo: PNG / JPEG / WebP up to 2 MB, no SVG, redrawn as a PNG within 1024 px in the
     browser; one per member; a member who leaves the plan keeps it stored but unusable until they come back;
     (g) exports are of the SAVED creation (not unsaved edits on the stage).
+    Addendum 2026-10-21 (user's request: one button per network; migration `20261021172034`). Agent's choices, to
+    confirm: (h) the render of a creation with an active share link becomes readable by anyone who can sign it
+    (the link already shows the whole design), so link previews show the creation; revoking the link closes it;
+    (i) Pinterest's `media` is the creation's card render (480 × 360) through the member's own signed URL — the
+    exports themselves are never uploaded to a public bucket; (j) recommended formats: TikTok, Snapchat and
+    Instagram video → Story 9:16, Instagram / Facebook / X / Threads / Pinterest stills → portrait 4:5, WhatsApp
+    still → square (no 2:3 format for Pinterest); (k) desktop create pages: tiktok.com/upload,
+    instagram.com, snapchat.com/web, pinterest.com/pin-builder, facebook.com, x.com/compose/post, threads.net,
+    web.whatsapp.com; (l) brand marks are drawn as monograms (no brand logos shipped).
 102. **3D Studio: Glowbook sections, QR poster and "certified artist" badge** (owner's request, 2026-10-19;
     migrations `20261019142050`, `20261019143019`). Built: sections the artist creates, renames, orders and
     deletes, each Glowbook creation filed in one section or none, the public page filtered by section chips;

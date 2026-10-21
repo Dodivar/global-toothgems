@@ -30,6 +30,7 @@ design content.
 | `studio_design_created` | Gems land on an empty, unsaved scene | per occurrence | `session_id` |
 | `studio_first_design_created` | The first such design | once per account and browser | — |
 | `studio_feature_used` | First use of a feature in a session: `place_gem`, `gem_group`, `model`, `lighting`, `lasso`, `multi_select`, `client_name`, `undo` | once per feature and session | `feature`, `session_id` |
+| `studio_social_share_clicked` | A network button of the export dialog (decision 101) | each click | `network`, `output` (image / video / gif), `format` (story / square / portrait), `method` (share_sheet / link / upload_page) — no file, link or personal data |
 | `studio_design_saved` | A save succeeded | per save | `piece_count`, `is_new` |
 | `studio_design_edited` | A saved design was saved again | per save | `piece_count` |
 | `studio_template_used` | A Global Toothgems template was copied into the member's creations | per copy | `piece_count` |
