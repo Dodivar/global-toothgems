@@ -4,7 +4,7 @@ import type { StudioScene } from "../../studioWorkspace/scene";
 import { composeFrame, fontsReady, whiteMark, type MarkImage } from "./compose";
 import { FORMAT_SIZES, scaledSize, type FormatSize, type ShareFormat } from "./formats";
 import type { Layout } from "./layouts";
-import { loopAngles, progressShare, turntableAngle, TURNTABLE_GIF, TURNTABLE_VIDEO, type ImageType, type VideoType } from "./motion";
+import { loopAngles, progressShare, SPOTLIGHT_VIDEO, turntableAngle, TURNTABLE_GIF, TURNTABLE_VIDEO, type ImageType, type VideoType } from "./motion";
 
 /**
  * Social exports, drawn in this tab: a still, a 360° video or a GIF of a
@@ -129,20 +129,43 @@ export class ExportStage {
     return canvasBlob(canvas, type === "png" ? "image/png" : "image/jpeg", type === "jpeg" ? 0.93 : undefined);
   }
 
+  /** One full turn of a social post, at the network size, in the member's layout. */
+  video(format: ShareFormat, type: VideoType, look: ExportLook, options: ExportOptions = {}): Promise<Blob> {
+    const size = FORMAT_SIZES[format];
+    return this.record(size, type, TURNTABLE_VIDEO, (ctx, azimuth) => this.draw(ctx, format, size, look, azimuth), options);
+  }
+
+  /**
+   * One full turn for a Glowbook's spotlight (decision 103): the stage alone,
+   * square, no texts and no mark — it plays on Global Toothgems' own page.
+   */
+  spotlight(type: VideoType, seconds: number, options: ExportOptions = {}): Promise<Blob> {
+    const { size, fps, bitsPerSecond } = SPOTLIGHT_VIDEO;
+    const frame = { width: size, height: size };
+    return this.record(frame, type, { durationMs: seconds * 1000, fps, bitsPerSecond }, (ctx, azimuth) => {
+      const render = this.engine.renderExportFrame({ width: size, height: size, azimuth, transparent: false });
+      ctx.drawImage(render, 0, 0, size, size);
+    }, options);
+  }
+
   /**
    * One full turn recorded from a canvas stream. The angle follows the clock,
    * so the turn lasts `durationMs` whatever the device's speed. Leaving the
    * tab stops it (browsers stop drawing hidden pages).
    */
-  async video(format: ShareFormat, type: VideoType, look: ExportLook, { signal, onProgress }: ExportOptions = {}): Promise<Blob> {
+  private async record(
+    size: FormatSize,
+    type: VideoType,
+    { durationMs, fps, bitsPerSecond }: { durationMs: number; fps: number; bitsPerSecond: number },
+    drawFrame: (ctx: CanvasRenderingContext2D, azimuth: number) => void,
+    { signal, onProgress }: ExportOptions = {},
+  ): Promise<Blob> {
     if (typeof MediaRecorder === "undefined") throw new ExportError("video");
-    const size = FORMAT_SIZES[format];
     const { canvas, ctx } = this.target(size);
     this.host.appendChild(canvas);
-    const { durationMs, fps, bitsPerSecond } = TURNTABLE_VIDEO;
     let recorder: MediaRecorder;
     try {
-      this.draw(ctx, format, size, look, 0);
+      drawFrame(ctx, 0);
       const stream = canvas.captureStream(fps);
       recorder = new MediaRecorder(stream, { mimeType: type.mimeType, videoBitsPerSecond: bitsPerSecond });
     } catch (err) {
@@ -174,7 +197,7 @@ export class ExportStage {
         if (elapsed >= durationMs) break;
         if (elapsed - last < frameMs * 0.9) continue;
         last = elapsed;
-        this.draw(ctx, format, size, look, turntableAngle(elapsed, durationMs));
+        drawFrame(ctx, turntableAngle(elapsed, durationMs));
         onProgress?.(progressShare(elapsed, durationMs));
       }
       recorder.stop();

@@ -13,6 +13,13 @@ export type ImageType = "png" | "jpeg";
 export const TURNTABLE_VIDEO = { durationMs: 6000, fps: 30, bitsPerSecond: 10_000_000 };
 
 /**
+ * A Glowbook's spotlight video (decision 103): square, so one file suits
+ * phones and computers, and light — visitors arrive from an Instagram bio,
+ * often on mobile data (4 Mbit/s: about 2 MB for the default 4 seconds).
+ */
+export const SPOTLIGHT_VIDEO = { size: 1080, fps: 30, bitsPerSecond: 4_000_000 };
+
+/**
  * The GIF: half size (a full-size 1080 × 1920 GIF weighs tens of MB), one
  * turn in 3.6 s at 10 frames a second.
  */

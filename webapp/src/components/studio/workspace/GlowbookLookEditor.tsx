@@ -1,9 +1,9 @@
 import { useId, useMemo, useRef, useState, type ChangeEvent } from "react";
 import clsx from "clsx";
 import { useTranslation } from "react-i18next";
-import { Check, Clock3, ImagePlus, LoaderCircle, Palette, RotateCcw, Trash2 } from "lucide-react";
+import { Check, Clock3, Film, ImagePlus, LoaderCircle, Palette, RefreshCw, RotateCcw, Trash2 } from "lucide-react";
 import { Button } from "../../ui/Button";
-import { GlowbookHero } from "../../glowbook/GlowbookHero";
+import { GlowbookProfile, GlowbookTopBar } from "../../glowbook/GlowbookIdentity";
 import { glowbookThemeStyle } from "../../glowbook/theme";
 import {
   ACCENT_COLORS,
@@ -20,8 +20,10 @@ import {
 import type { Glowbook } from "../../../lib/studioWorkspace/glowbook";
 import { certifiedTitles } from "../../../lib/studioWorkspace/glowbookSections";
 import { useGlowbook } from "../../../lib/studioWorkspace/glowbookStore";
+import { SPOTLIGHT_SECONDS, spotlightSecondsFor } from "../../../lib/studioWorkspace/glowbookSpotlight";
 import { useWorkspace } from "../../../lib/studioWorkspace/workspace";
 import { useToast } from "../../../lib/toast";
+import { usePrefersReducedMotion } from "../../homeAlt/usePrefersReducedMotion";
 import { chipClass, fieldClass, focusRing } from "./workspaceStyles";
 
 /**
@@ -29,7 +31,9 @@ import { chipClass, fieldClass, focusRing } from "./workspaceStyles";
  * with a live preview drawn by the same component as the public page.
  * Colour, background, layout, spotlight and city are public as soon as they
  * are saved; a new picture or link waits for a moderator while the page keeps
- * the approved one (the badge says so). Removing one is immediate.
+ * the approved one (the badge says so). Removing one is immediate. The
+ * spotlight creation turns in a short video this tab records (decision 103);
+ * the page has no banner any more.
  */
 export function GlowbookLookEditor({ glowbook }: { glowbook: Glowbook }) {
   const { t, i18n } = useTranslation();
@@ -81,6 +85,16 @@ export function GlowbookLookEditor({ glowbook }: { glowbook: Glowbook }) {
     setBusy(false);
   };
 
+  const previewIdentity = {
+    displayName: glowbook.displayName,
+    handle: glowbook.handle,
+    bio: glowbook.bio,
+    instagram: glowbook.instagram,
+    look: draft,
+    avatarUrl: draft.avatarPath ? (gb.mediaUrls.get(draft.avatarPath) ?? null) : null,
+    certifiedTitles: badge,
+  };
+
   const pendingNote =
     Object.keys(glowbook.pending).length > 0
       ? t("studio.glowbook.look.pendingNote")
@@ -117,24 +131,14 @@ export function GlowbookLookEditor({ glowbook }: { glowbook: Glowbook }) {
       <figure className="m-0 grid gap-2">
         <figcaption className="text-[11px] font-bold uppercase tracking-[var(--tracking-eyebrow)] text-[var(--text-subtle)]">{t("studio.glowbook.look.preview")}</figcaption>
         <div style={glowbookThemeStyle(draft)} className="overflow-hidden rounded-[var(--radius-lg)] border border-[var(--border-subtle)] bg-[var(--gb-page)]">
-          <GlowbookHero
-            preview
-            displayName={glowbook.displayName}
-            handle={glowbook.handle}
-            bio={glowbook.bio}
-            instagram={glowbook.instagram}
-            look={draft}
-            avatarUrl={draft.avatarPath ? (gb.mediaUrls.get(draft.avatarPath) ?? null) : null}
-            bannerUrl={draft.bannerPath ? (gb.mediaUrls.get(draft.bannerPath) ?? null) : null}
-            certifiedTitles={badge}
-          />
+          <GlowbookTopBar preview {...previewIdentity} />
+          <div className="border-t border-[var(--gb-border)] bg-[var(--gb-soft)]">
+            <GlowbookProfile preview {...previewIdentity} />
+          </div>
         </div>
       </figure>
 
-      <div className="grid gap-5 md:grid-cols-2">
-        <PictureField kind="avatar" path={draft.avatarPath} waiting={waits("avatarPath")} onChange={(p) => set("avatarPath", p)} />
-        <PictureField kind="banner" path={draft.bannerPath} waiting={waits("bannerPath")} onChange={(p) => set("bannerPath", p)} />
-      </div>
+      <PictureField kind="avatar" path={draft.avatarPath} waiting={waits("avatarPath")} onChange={(p) => set("avatarPath", p)} />
 
       <fieldset className="m-0 grid gap-2 border-0 p-0">
         <legend className="mb-2 p-0 text-[12.5px] font-bold text-[var(--text-primary)]">{t("studio.glowbook.look.accent")}</legend>
@@ -199,6 +203,9 @@ export function GlowbookLookEditor({ glowbook }: { glowbook: Glowbook }) {
             ))}
           </select>
           <p className="m-0 text-[12px] text-[var(--text-subtle)]">{t("studio.glowbook.look.featuredHint")}</p>
+          {draft.featuredItemId !== base.featuredItemId
+            ? draft.featuredItemId && <p className="m-0 text-[12px] text-[var(--text-subtle)]">{t("studio.glowbook.look.spotlight.saveFirst")}</p>
+            : base.featuredItemId && <SpotlightVideoPanel />}
         </div>
         <div className="grid gap-1.5">
           <label htmlFor={ids.location} className="text-[12.5px] font-bold text-[var(--text-primary)]">
@@ -267,6 +274,67 @@ export function GlowbookLookEditor({ glowbook }: { glowbook: Glowbook }) {
         </Button>
       </div>
     </section>
+  );
+}
+
+/** The spotlight's turning video (decision 103): its state, a preview, its length and a way to record it again. */
+function SpotlightVideoPanel() {
+  const { t } = useTranslation();
+  const { spotlight } = useGlowbook();
+  const { state, job, videoUrl, record } = spotlight;
+  const reducedMotion = usePrefersReducedMotion();
+  const seconds = spotlightSecondsFor(state);
+  const recording = job.kind === "recording";
+  const status =
+    job.kind === "recording"
+      ? t("studio.glowbook.look.spotlight.recording", { percent: Math.round(job.progress * 100) })
+      : job.kind === "failed"
+        ? t(`studio.glowbook.look.spotlight.failed.${job.reason}`)
+        : state?.current
+          ? t("studio.glowbook.look.spotlight.ready", { count: seconds })
+          : t("studio.glowbook.look.spotlight.preparing");
+
+  return (
+    <div className="mt-1 grid gap-3 rounded-[var(--radius-md)] border border-[var(--border-subtle)] bg-[var(--surface-sunken)] p-3">
+      <div className="flex items-start gap-3">
+        <span className="grid h-20 w-20 flex-none place-items-center overflow-hidden rounded-[var(--radius-sm)] bg-[var(--surface-card)] text-[var(--text-subtle)]">
+          {videoUrl && state?.current && !recording ? (
+            <video src={videoUrl} muted loop playsInline autoPlay={!reducedMotion} aria-hidden="true" className="h-full w-full object-cover" />
+          ) : recording ? (
+            <LoaderCircle size={18} aria-hidden="true" className="motion-safe:animate-spin" />
+          ) : (
+            <Film size={18} aria-hidden="true" />
+          )}
+        </span>
+        <div className="grid min-w-0 gap-1">
+          <span className="text-[12.5px] font-bold text-[var(--text-primary)]">{t("studio.glowbook.look.spotlight.title")}</span>
+          <p role="status" className="m-0 text-[12px] leading-relaxed text-[var(--text-muted)]">
+            {status}
+          </p>
+          {recording && <p className="m-0 text-[11.5px] text-[var(--text-subtle)]">{t("studio.glowbook.look.spotlight.keepOpen")}</p>}
+        </div>
+      </div>
+      <div className="flex flex-wrap items-center gap-2">
+        <div role="radiogroup" aria-label={t("studio.glowbook.look.spotlight.length")} className="flex flex-wrap gap-1.5">
+          {SPOTLIGHT_SECONDS.map((s) => (
+            <button
+              key={s}
+              type="button"
+              role="radio"
+              aria-checked={s === seconds}
+              disabled={recording}
+              onClick={() => s !== seconds && record(s)}
+              className={chipClass(s === seconds)}
+            >
+              {t("studio.glowbook.look.spotlight.seconds", { count: s })}
+            </button>
+          ))}
+        </div>
+        <Button variant="outline" size="sm" iconLeft={RefreshCw} disabled={recording} onClick={() => record()}>
+          {t("studio.glowbook.look.spotlight.again")}
+        </Button>
+      </div>
+    </div>
   );
 }
 

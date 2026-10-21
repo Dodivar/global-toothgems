@@ -12,6 +12,7 @@ import {
   type GlowbookDetails,
   type GlowbookItem,
 } from "./glowbook";
+import { spotlightVideoPath, toSpotlightState, type SpotlightSeconds, type SpotlightVideoState, type SpotlightVideoType } from "./glowbookSpotlight";
 import { normalizeSectionName, toCertifiedCourses, toGlowbookSection, type CertifiedCourse, type GlowbookSection } from "./glowbookSections";
 
 /**
@@ -37,6 +38,10 @@ import { normalizeSectionName, toCertifiedCourses, toGlowbookSection, type Certi
  *   setShowCertification  → `studio_set_showcase_certification()` show or hide the badge
  *   certification()       → `studio_my_certification()`      the courses behind the badge
  *   downloadMedia(path)   → one of the member's own pictures, as a file (for the printable poster)
+ *   spotlightState()      → `studio_spotlight_video_state()`   the spotlight video and whether it is current (decision 103)
+ *   signSpotlightVideo()  → a signed URL of the member's own video (the Studio's preview)
+ *   saveSpotlightVideo()  → a new file in `glowbook-videos/<user id>/`, then `studio_set_spotlight_video()`;
+ *                           the member's other videos are removed (storage refuses the one in use)
  */
 export interface GlowbookRepository {
   load(): Promise<{ glowbook: Glowbook | null; items: GlowbookItem[]; sections: GlowbookSection[] }>;
@@ -57,6 +62,15 @@ export interface GlowbookRepository {
   setShowCertification(visible: boolean): Promise<Glowbook>;
   certification(): Promise<CertifiedCourse[]>;
   downloadMedia(path: string): Promise<Blob>;
+  spotlightState(): Promise<SpotlightVideoState | null>;
+  signSpotlightVideo(path: string): Promise<string | null>;
+  saveSpotlightVideo(video: {
+    itemId: string;
+    blob: Blob;
+    type: SpotlightVideoType;
+    seconds: SpotlightSeconds;
+    creationUpdatedAt: string;
+  }): Promise<SpotlightVideoState | null>;
 }
 
 /** `handleTaken` / `handleReserved` / `full` / `sectionTaken` / `sectionsFull`: refusals the forms explain. */
@@ -226,6 +240,40 @@ export function createGlowbookRepository(client: TypedSupabaseClient, userId: st
       const { data, error } = await client.storage.from(BUCKETS.glowbookMedia).download(path);
       if (error || !data) throw storeError(error ?? { message: "no file" });
       return data;
+    },
+
+    async spotlightState() {
+      const { data, error } = await client.rpc("studio_spotlight_video_state");
+      if (error) throw storeError(error);
+      return toSpotlightState(data);
+    },
+
+    async signSpotlightVideo(path) {
+      const { data } = await client.storage.from(BUCKETS.glowbookVideos).createSignedUrl(path, SIGNED_URL_TTL_SECONDS);
+      return data?.signedUrl ?? null;
+    },
+
+    async saveSpotlightVideo({ itemId, blob, type, seconds, creationUpdatedAt }) {
+      const bucket = client.storage.from(BUCKETS.glowbookVideos);
+      const path = spotlightVideoPath(userId, itemId, type, crypto.randomUUID());
+      const upload = await bucket.upload(path, blob, { contentType: type, upsert: false });
+      if (upload.error) throw storeError(upload.error);
+      const { data, error } = await client.rpc("studio_set_spotlight_video", {
+        p_item_id: itemId,
+        p_path: path,
+        p_type: type,
+        p_seconds: seconds,
+        p_creation_updated_at: creationUpdatedAt,
+      });
+      if (error) {
+        await bucket.remove([path]);
+        throw storeError(error);
+      }
+      // Older turns go; storage refuses to delete the one the page uses.
+      const { data: files } = await bucket.list(userId, { limit: 100 });
+      const stale = (files ?? []).map((f) => `${userId}/${f.name}`).filter((p) => p !== path);
+      if (stale.length) await bucket.remove(stale);
+      return toSpotlightState(data);
     },
   };
 }

@@ -108,6 +108,7 @@ describe("toPublicGlowbook", () => {
       instagram: null,
       location: null,
       look: null,
+      spotlightVideo: null,
       sections: [],
       certification: null,
       items: [{ id: "1", name: "Aurora", description: "", elementCount: 3, thumbnailPath: "u/1.jpg", updatedAt: "t", sectionId: null }],

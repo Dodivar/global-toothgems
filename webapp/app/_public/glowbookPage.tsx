@@ -37,7 +37,12 @@ export async function glowbookMetadata(props: GlowbookPageProps, locale: Locale)
       fr: localizedPath("glowbook", "fr", { id: glowbook.handle }),
       en: localizedPath("glowbook", "en", { id: glowbook.handle }),
     },
-    image: glowbook.bannerUrl ?? glowbook.items.find((i) => i.imageUrl)?.imageUrl ?? glowbook.avatarUrl ?? undefined,
+    // The spotlight creation first (the page opens on it; no banner since decision 103), else the first render.
+    image:
+      glowbook.items.find((i) => i.id === glowbook.look?.featuredItemId && i.imageUrl)?.imageUrl ??
+      glowbook.items.find((i) => i.imageUrl)?.imageUrl ??
+      glowbook.avatarUrl ??
+      undefined,
   });
 }
 

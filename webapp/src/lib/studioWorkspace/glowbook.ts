@@ -1,6 +1,7 @@
 import type { Database } from "../supabase/database.types";
 import { lookFromColumns, pendingFromColumns, type GlowbookLook, type ModeratedKey } from "./glowbookLook";
 import { toCertifiedCourses, toPublicSections, type CertifiedCourse } from "./glowbookSections";
+import { toPublicSpotlightVideo, type PublicSpotlightVideo } from "./glowbookSpotlight";
 
 /**
  * The Glowbook: an artist's public, read-only showcase of chosen creations,
@@ -194,6 +195,8 @@ export interface PublicGlowbook {
   location: string | null;
   /** The artist's approved look; null when customisation is not open to them (default look). */
   look: GlowbookLook | null;
+  /** The spotlight creation turning (decision 103), while it matches the creation; null otherwise. */
+  spotlightVideo: PublicSpotlightVideo | null;
   /** Sections holding at least one public creation, in the artist's order (decision 102). */
   sections: { id: string; name: string }[];
   /** The courses behind the "certified artist" badge; null when there is none or the artist hides it. */
@@ -212,13 +215,15 @@ export function toPublicGlowbook(json: unknown): PublicGlowbook | null {
   const cert = o.certification && typeof o.certification === "object" ? toCertifiedCourses((o.certification as Record<string, unknown>).courses) : [];
   const sections = toPublicSections(o.sections);
   const known = new Set(sections.map((x) => x.id));
+  const look = o.look && typeof o.look === "object" && !Array.isArray(o.look) ? (o.look as Record<string, unknown>) : null;
   return {
     handle: str(o.handle),
     displayName: str(o.display_name),
     bio: str(o.bio),
     instagram: str(o.instagram) || null,
     location: str(o.location) || null,
-    look: o.look && typeof o.look === "object" && !Array.isArray(o.look) ? lookFromColumns(o.look as Record<string, unknown>) : null,
+    look: look ? lookFromColumns(look) : null,
+    spotlightVideo: look ? toPublicSpotlightVideo(look.spotlight_video) : null,
     sections,
     certification: cert.length ? cert : null,
     items: items.flatMap((raw) => {
