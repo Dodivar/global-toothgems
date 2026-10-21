@@ -62,6 +62,13 @@ export function TrainingPreview() {
   const quiz = node?.kind === "quiz" && course ? course.modules[node.moduleIndex].quiz : undefined;
   const grader = useMemo(() => (quiz ? localGrader(quiz) : null), [quiz]);
 
+  // Only the query changes from one node to the next, which keeps the scroll
+  // position: start each lesson at its top, as the learner's pages do.
+  const shownKey = node?.key;
+  useEffect(() => {
+    if (shownKey) window.scrollTo({ top: 0 });
+  }, [shownKey]);
+
   useEffect(() => {
     if (!justCompleted) return;
     const timer = setTimeout(() => setJustCompleted(null), 1800);

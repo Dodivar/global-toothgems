@@ -200,5 +200,6 @@
     "moveTo": "Move to",
     "move": "Move",
     "clear": "Clear selection"
-  }
+  },
+  "categoryAll": "All categories"
 }

@@ -303,7 +303,7 @@ export function TrainingMedia() {
                 options={MEDIA_SORTS.map((value) => ({ value, label: t(`trainingMedia.sort.${value}`) }))}
               />
             </div>
-            <div className="min-w-[150px] flex-1">
+            <div className="min-w-[190px] flex-1">
               <AdminSelect
                 aria-label={t("trainingMedia.kindFilter")}
                 value={kind}
@@ -322,7 +322,7 @@ export function TrainingMedia() {
                 onChange={(e) => setCategory(e.target.value as MediaCategory | "all")}
                 options={(["all", ...MEDIA_CATEGORIES] as const).map((value) => ({
                   value,
-                  label: value === "all" ? `${t("trainingMedia.fields.category")} : ${t("trainingMedia.category.all")}` : t(`trainingMedia.category.${value}`),
+                  label: value === "all" ? t("trainingMedia.categoryAll") : t(`trainingMedia.category.${value}`),
                 }))}
               />
             </div>
@@ -715,13 +715,13 @@ function MoveBar({
   const [busy, setBusy] = useState(false);
   return (
     <div className="sticky top-[calc(var(--admin-header-h)+8px)] z-10 mb-3 flex flex-wrap items-center gap-2 rounded-[var(--admin-radius-sm)] border border-[var(--border-subtle)] bg-[var(--admin-panel)] p-2 shadow-[var(--shadow-sm)]">
-      <p className="m-0 min-w-0 flex-1 text-[length:var(--text-caption)] font-semibold text-[var(--text-primary)]" aria-live="polite">
+      <p className="m-0 mr-auto whitespace-nowrap text-[length:var(--text-caption)] font-semibold text-[var(--text-primary)]" aria-live="polite">
         {t("trainingMedia.select.count", { count })}
       </p>
-      <label htmlFor={id} className="text-[length:var(--text-caption)] text-[var(--text-muted)]">
+      <label htmlFor={id} className="whitespace-nowrap text-[length:var(--text-caption)] text-[var(--text-muted)]">
         {t("trainingMedia.select.moveTo")}
       </label>
-      <div className="w-[200px]">
+      <div className="w-[180px]">
         <AdminSelect
           id={id}
           value={target}
