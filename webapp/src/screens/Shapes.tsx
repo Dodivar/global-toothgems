@@ -5,7 +5,9 @@ import { SelectorPage, SelectorTile } from "../components/shop/SelectorPage";
 import { ShapeGlyph } from "../components/ui/ShapeGlyph";
 import { useCatalog } from "../lib/catalog/CatalogProvider";
 import { useShapesInCatalog } from "../lib/catalog/useShapesInCatalog";
-import { shapeHref } from "../lib/shopUrl";
+import { useSearchParams } from "../lib/navigation";
+import { useTaxonomy } from "../lib/catalog/useTaxonomy";
+import { isShapeFirstFamily, shapeHref } from "../lib/shopUrl";
 
 /** Every cut on one page — the carousel's overflow, for people who want to see
  *  the whole range at once before narrowing the collection. */

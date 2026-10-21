@@ -1125,7 +1125,16 @@
       },
       "groupLearning": "Formation",
       "groupPurchases": "Achats",
-      "groupAccount": "Mon compte"
+      "groupAccount": "Mon compte",
+      "activityInMenu": "Nouveautés dans le menu",
+      "activity": {
+        "orders_one": "{{count}} commande mise à jour",
+        "orders_other": "{{count}} commandes mises à jour",
+        "reviews_one": "{{count}} nouveauté dans vos avis",
+        "reviews_other": "{{count}} nouveautés dans vos avis",
+        "loyalty_one": "Carte complète : votre récompense vous attend",
+        "loyalty_other": "{{count}} récompenses vous attendent"
+      }
     },
     "statsLabel": "Votre compte en chiffres",
     "statCourses": "formations en cours",
@@ -1637,7 +1646,15 @@
       "price-desc": "Prix décroissant",
       "price-asc": "Prix croissant",
       "name-asc": "Nom (A → Z)",
-      "stock-asc": "Stock le plus bas"
+      "stock-asc": "Stock le plus bas",
+      "name-desc": "Nom (Z → A)",
+      "stock-desc": "Stock le plus haut",
+      "sku-asc": "SKU (A → Z)",
+      "sku-desc": "SKU (Z → A)",
+      "category-asc": "Catégorie (A → Z)",
+      "category-desc": "Catégorie (Z → A)",
+      "status-asc": "Statut (A → Z)",
+      "status-desc": "Statut (Z → A)"
     },
     "table": {
       "caption": "Catalogue produits : image, nom, SKU, catégorie, prix, stock, statut, dernière modification et actions.",

@@ -8,7 +8,7 @@ things such a writer cannot compute at run time:
   points 32-255 (Adobe's metrics, as shipped by reportlab), so text can be
   wrapped and right-aligned;
 - the Global Toothgems wordmark as a PDF soft mask (8-bit alpha, deflated),
-  drawn black through it.
+  drawn in the brand blue through it.
 
 Run from webapp/: python3 scripts/document-assets.py (needs reportlab, Pillow).
 """
@@ -21,10 +21,10 @@ from PIL import Image
 from reportlab.pdfbase import pdfmetrics
 
 ROOT = Path(__file__).resolve().parent.parent
-LOGO = ROOT / "src/assets/logo-wordmark-black.png"
+LOGO = ROOT / "src/assets/logo-wordmark-blue.png"
 OUT = ROOT / "src/lib/documents/assets.generated.ts"
 LOGO_WIDTH = 720  # px: 300 dpi at 61 mm, wider than the documents print it
-INK = 0x11  # the wordmark's grey level (#111111, the documents' ink)
+INK = (195, 203, 226)  # the wordmark's own blue (#c3cbe2)
 
 
 def widths(font_name: str) -> str:
@@ -41,7 +41,7 @@ def logo() -> tuple[int, int, str, str]:
     alpha = image.resize((LOGO_WIDTH, height), Image.LANCZOS).getchannel("A")
     data = base64.b64encode(zlib.compress(alpha.tobytes(), 9)).decode("ascii")
     # The ink as an image of the same size: some readers mishandle a mask larger than its image.
-    ink = base64.b64encode(zlib.compress(bytes([INK]) * (LOGO_WIDTH * height), 9)).decode("ascii")
+    ink = base64.b64encode(zlib.compress(bytes(INK) * (LOGO_WIDTH * height), 9)).decode("ascii")
     return LOGO_WIDTH, height, data, ink
 
 
@@ -54,7 +54,7 @@ def main() -> None:
         f"export const HELVETICA_WIDTHS: readonly number[] = {widths('Helvetica')};\n\n"
         "/** Advance widths (1/1000 em) of Helvetica-Bold for WinAnsi codes 32-255. */\n"
         f"export const HELVETICA_BOLD_WIDTHS: readonly number[] = {widths('Helvetica-Bold')};\n\n"
-        "/** The wordmark: its alpha channel and its ink, 8-bit grey each, deflated (base64). */\n"
+        "/** The wordmark: its alpha channel and its ink, 8-bit grey mask, 8-bit RGB ink, deflated (base64). */\n"
         f"export const WORDMARK = {{\n  width: {width},\n  height: {height},\n  ink: \"{ink}\",\n  mask:\n    "
         + " +\n    ".join(f'"{c}"' for c in chunks)
         + ",\n} as const;\n"

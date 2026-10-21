@@ -34,6 +34,8 @@ import { useCookieConsent } from "../../lib/cookieConsent";
 import { useOrders } from "../../lib/orders";
 import { useFormat } from "../../lib/format";
 import { useFocusTrap } from "../../lib/useFocusTrap";
+import type { ActivitySection } from "../../lib/memberActivity";
+import { useMemberActivity, type MemberActivity } from "../../lib/useMemberActivity";
 import { LEGAL_PATHS } from "../../data/legal/routes";
 import { CLIENT_SPACES, STUDIO_SHORTCUTS } from "./clientSpaces";
 import monogram from "../../assets/monogram-blue.png";
@@ -70,6 +72,9 @@ import logoBlack from "../../assets/logo-wordmark-black.png";
 
 const MemberShellMenuContext = createContext<{ openMenu: () => void } | null>(null);
 
+/** New things per section (orders, reviews, loyalty), read once by the shell for every menu it draws. */
+const ActivityContext = createContext<MemberActivity>({ orders: 0, reviews: 0, loyalty: 0 });
+
 /** Opens the member-space menu from inside a page (the lounge, whose screen hides the shell's own bar). */
 export function useMemberShellMenu() {
   return useContext(MemberShellMenuContext);
@@ -92,6 +97,8 @@ interface SectionItem {
   community?: boolean;
   /** The Members' Lounge: carries its unread activity. */
   lounge?: boolean;
+  /** Carries a badge for what is new there since the member last looked. */
+  activity?: ActivitySection;
 }
 
 interface SectionGroup {
@@ -115,9 +122,9 @@ const GROUPS: SectionGroup[] = [
     id: "purchases",
     labelKey: "account.shell.groupPurchases",
     items: [
-      { to: "/compte/commandes", labelKey: "account.navOrders", shortKey: "orders", icon: Package },
-      { to: "/compte/fidelite", labelKey: "account.navLoyalty", shortKey: "loyalty", icon: Sparkles },
-      { to: "/compte/avis", labelKey: "reviews.nav.account", shortKey: "reviews", icon: MessageSquareText },
+      { to: "/compte/commandes", labelKey: "account.navOrders", shortKey: "orders", icon: Package, activity: "orders" },
+      { to: "/compte/fidelite", labelKey: "account.navLoyalty", shortKey: "loyalty", icon: Sparkles, activity: "loyalty" },
+      { to: "/compte/avis", labelKey: "reviews.nav.account", shortKey: "reviews", icon: MessageSquareText, activity: "reviews" },
     ],
   },
   {
@@ -189,9 +196,12 @@ export function MemberShell({ children }: { children: ReactNode }) {
      404 (an unknown room) keep the full shell. */
   const compact = hasAccess && parseLoungePath(pathname).kind !== "notFound";
   const menu = useMemo(() => ({ openMenu: () => setDrawerPath(pathname) }), [pathname]);
+  const activity = useMemberActivity(pathname);
+  const anyActivity = activity.orders + activity.reviews + activity.loyalty > 0;
 
   return (
     <MemberShellMenuContext.Provider value={menu}>
+    <ActivityContext.Provider value={activity}>
     <div className="flex min-h-[100dvh] bg-[var(--surface-page)]">
       <aside
         className={clsx(
@@ -218,7 +228,14 @@ export function MemberShell({ children }: { children: ReactNode }) {
             aria-expanded={drawerOpen}
             className={clsx("grid h-10 w-10 place-items-center rounded-[var(--radius-sm)] text-[var(--gt-ink-700)] hover:bg-[var(--gt-ink-100)]", focusRing)}
           >
-            <Menu size={20} aria-hidden="true" />
+            <span className="relative">
+              <Menu size={20} aria-hidden="true" />
+              {anyActivity && (
+                <span className="absolute -right-1 -top-1 h-2.5 w-2.5 rounded-full border-2 border-[var(--surface-card)] bg-[var(--accent-highlight-ink)]">
+                  <span className="sr-only">{t("account.shell.activityInMenu")}</span>
+                </span>
+              )}
+            </span>
           </button>
           <Link to="/" aria-label={t("nav.home")} className={clsx("grid h-10 w-10 flex-none place-items-center rounded-[var(--radius-sm)]", focusRing)}>
             <img src={monogram.src} alt="" className="h-7 w-7 object-contain" />
@@ -235,6 +252,7 @@ export function MemberShell({ children }: { children: ReactNode }) {
       {/* In the lounge the drawer is also the desktop's full menu, opened from the rail. */}
       {drawerOpen && <Drawer onClose={() => setDrawerPath(null)} everywhere={compact} />}
     </div>
+    </ActivityContext.Provider>
     </MemberShellMenuContext.Provider>
   );
 }
@@ -429,6 +447,7 @@ function SectionLink({ item, onNavigate }: { item: SectionItem; onNavigate?: () 
         </span>
         {locked && <Lock size={13} strokeWidth={2} aria-hidden="true" className="ml-auto flex-none" />}
         {item.lounge && !locked && <LoungeActivity />}
+        {item.activity && <SectionActivity section={item.activity} />}
       </NavLink>
     </li>
   );
@@ -463,6 +482,28 @@ function LoungeActivity({ onRail = false }: { onRail?: boolean }) {
     );
   }
   return null;
+}
+
+/**
+ * What is new in a section since the member last opened it — an order that
+ * moved, a review the team handled, a purchase to review, a full loyalty
+ * card: the count on the lounge's fuchsia pill, written out for screen readers.
+ */
+function SectionActivity({ section, onRail = false }: { section: ActivitySection; onRail?: boolean }) {
+  const { t } = useTranslation();
+  const count = useContext(ActivityContext)[section];
+  if (count === 0) return null;
+  return (
+    <span
+      className={clsx(
+        "grid h-[18px] min-w-[18px] place-items-center rounded-full bg-[var(--accent-highlight-ink)] px-1 text-[10px] font-bold leading-none text-white",
+        onRail ? "absolute -right-1 -top-1 border-2 border-[var(--surface-card)]" : "ml-auto",
+      )}
+    >
+      <span aria-hidden="true">{count}</span>
+      <span className="sr-only">{t(`account.shell.activity.${section}`, { count })}</span>
+    </span>
+  );
 }
 
 const railRow =
@@ -518,6 +559,7 @@ function Rail({ onExpand, expanded }: { onExpand: () => void; expanded: boolean 
                   >
                     <item.icon size={18} aria-hidden="true" strokeWidth={isActive ? 2.2 : 1.8} />
                     {item.lounge && <LoungeActivity onRail />}
+                    {item.activity && <SectionActivity section={item.activity} onRail />}
                   </span>
                   <span aria-hidden="true" className={clsx("max-w-full text-[10px] leading-tight tracking-[-0.01em]", isActive ? "font-bold" : "font-semibold")}>
                     {t(`account.shell.short.${item.shortKey}`)}

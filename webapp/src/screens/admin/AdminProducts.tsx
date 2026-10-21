@@ -306,6 +306,7 @@ export function AdminProducts() {
           selectedId={previewProduct?.id}
           filtered={filtered}
           filters={filters}
+          onSort={(sort) => setFilters({ ...filters, sort })}
           expandAlerts={filters.availability === "out_of_stock" || filters.availability === "low_stock"}
           emptyAction={
             filtered ? (

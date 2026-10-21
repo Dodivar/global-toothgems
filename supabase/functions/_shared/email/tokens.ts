@@ -42,9 +42,9 @@ export const size = {
   gutter: 40,
   radiusCard: 18,
   radiusBlock: 12,
-  /** Logo shown at half its pixel size (the PNG is 360×99) to stay sharp on retina screens. */
+  /** Logo shown at half its pixel size (the PNG is 360×97) to stay sharp on retina screens. */
   logoWidth: 180,
-  logoHeight: 50,
+  logoHeight: 48,
 } as const;
 
 /** The status colours, each with a glyph so that a state never rests on colour alone. */

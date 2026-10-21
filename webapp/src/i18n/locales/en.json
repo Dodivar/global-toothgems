@@ -1125,7 +1125,16 @@
       },
       "groupLearning": "Training",
       "groupPurchases": "Purchases",
-      "groupAccount": "My account"
+      "groupAccount": "My account",
+      "activityInMenu": "New activity in the menu",
+      "activity": {
+        "orders_one": "{{count}} order updated",
+        "orders_other": "{{count}} orders updated",
+        "reviews_one": "{{count}} new item in your reviews",
+        "reviews_other": "{{count}} new items in your reviews",
+        "loyalty_one": "Card complete: your reward is waiting",
+        "loyalty_other": "{{count}} rewards are waiting"
+      }
     },
     "statsLabel": "Your account in numbers",
     "statCourses": "courses in progress",
@@ -1637,7 +1646,15 @@
       "price-desc": "Price, high to low",
       "price-asc": "Price, low to high",
       "name-asc": "Name (A → Z)",
-      "stock-asc": "Lowest stock"
+      "stock-asc": "Lowest stock",
+      "name-desc": "Name (Z → A)",
+      "stock-desc": "Highest stock",
+      "sku-asc": "SKU (A → Z)",
+      "sku-desc": "SKU (Z → A)",
+      "category-asc": "Category (A → Z)",
+      "category-desc": "Category (Z → A)",
+      "status-asc": "Status (A → Z)",
+      "status-desc": "Status (Z → A)"
     },
     "table": {
       "caption": "Product catalogue: image, name, SKU, category, price, stock, status, last update and actions.",
