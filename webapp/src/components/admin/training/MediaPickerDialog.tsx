@@ -7,10 +7,32 @@ import { MediaThumb } from "./MediaThumb";
 import { useAdminTraining } from "../../../lib/adminTraining";
 import { useFocusTrap } from "../../../lib/useFocusTrap";
 import { useTrainingMedia } from "../../../lib/trainingMedia";
-import { MEDIA_CATEGORIES, filterMedia, mediaUsage, type MediaCategory, type MediaKind, type TrainingMedia } from "../../../lib/trainingMediaRules";
+import { AdminSelect } from "../AdminSelect";
+import { useIncrementalList } from "../../../lib/useIncrementalList";
+import {
+  MEDIA_CATEGORIES,
+  MEDIA_SORTS,
+  filterMedia,
+  mediaUsage,
+  sortFolders,
+  type FolderFilter,
+  type MediaCategory,
+  type MediaKind,
+  type MediaSort,
+  type TrainingMedia,
+} from "../../../lib/trainingMediaRules";
 
 /** Where the library is managed (`app/admin/(staff)/formations/medias`). */
 export const MEDIA_LIBRARY_PATH = "/admin/formations/medias";
+
+/** Tiles drawn per page of the picker's grid. */
+const PAGE_SIZE = 40;
+
+/**
+ * The folder the picker was last opened on, for this tab: an editor filling
+ * the English images of a course goes back to "English images" every time.
+ */
+let lastFolder: FolderFilter = "all";
 
 /**
  * Choosing a file for a course field.
@@ -19,6 +41,9 @@ export const MEDIA_LIBRARY_PATH = "/admin/formations/medias";
  * screen (owner's decision, 2026-10-01). The link opens it in a new tab so the
  * course being edited — and its unsaved changes — stays where it is; "Refresh"
  * then brings in what was added there.
+ *
+ * Folders, sorting and the search narrow it down (decision 104); the grid
+ * shows thumbnails a page at a time.
  *
  * The grid is a radio group: one file is selected at a time, which arrow keys
  * then move. Selection shows as a ring, a tick and the footer text, never as a
@@ -41,20 +66,31 @@ export function MediaPickerDialog({
   const { t, i18n } = useTranslation();
   const lang = i18n.language.startsWith("en") ? "en" : "fr";
   const { courses } = useAdminTraining();
-  const { items, loading, reload, findByRef } = useTrainingMedia();
+  const { items, loading, reload, findByRef, folders: rawFolders } = useTrainingMedia();
   const ref = useFocusTrap<HTMLDivElement>(true, onClose);
   const titleId = useId();
   const searchId = useId();
 
   const [query, setQuery] = useState("");
   const [category, setCategory] = useState<MediaCategory | "all">("all");
+  const [folder, setFolderState] = useState<FolderFilter>(lastFolder);
+  const [sort, setSort] = useState<MediaSort>("newest");
+  const setFolder = (value: FolderFilter) => {
+    lastFolder = value;
+    setFolderState(value);
+  };
+  const folders = useMemo(() => sortFolders(rawFolders, lang), [rawFolders, lang]);
+  const folderFilter: FolderFilter = folder === "all" || folder === "none" || folders.some((f) => f.id === folder) ? folder : "all";
+  const folderId = useId();
+  const sortId = useId();
   const [selectedId, setSelectedId] = useState<string | null>(() => (initialRef ? findByRef(initialRef)?.id ?? null : null));
 
   const usage = useMemo(() => mediaUsage(courses), [courses]);
   const visible = useMemo(
-    () => filterMedia(items, { query, category, usage: "all", kind }, usage, lang),
-    [items, query, category, kind, usage, lang],
+    () => filterMedia(items, { query, category, usage: "all", kind, folder: folderFilter, sort }, usage, lang),
+    [items, query, category, kind, folderFilter, sort, usage, lang],
   );
+  const { visible: pageItems, hasMore, remaining, showMore, sentinelRef } = useIncrementalList(visible, PAGE_SIZE, [query, category, folderFilter, sort].join("|"));
   const selected = items.find((item) => item.id === selectedId) ?? null;
   const hasAny = items.some((item) => item.kind === kind);
 
@@ -116,6 +152,34 @@ export function MediaPickerDialog({
               <span className="sr-only"> {t("trainingMedia.picker.newTab")}</span>
             </a>
           </div>
+          <div className="flex flex-wrap items-center gap-2">
+            <label htmlFor={folderId} className="text-[length:var(--text-caption)] font-semibold text-[var(--text-primary)]">
+              {t("trainingMedia.picker.folder")}
+            </label>
+            <div className="min-w-[180px] flex-1 sm:max-w-[260px]">
+              <AdminSelect
+                id={folderId}
+                value={folderFilter}
+                onChange={(e) => setFolder(e.target.value)}
+                options={[
+                  { value: "all", label: t("trainingMedia.folders.all") },
+                  { value: "none", label: t("trainingMedia.folders.none") },
+                  ...folders.map((f) => ({ value: f.id, label: f.name })),
+                ]}
+              />
+            </div>
+            <label htmlFor={sortId} className="sr-only">
+              {t("trainingMedia.sort.label")}
+            </label>
+            <div className="min-w-[170px] flex-1 sm:max-w-[220px]">
+              <AdminSelect
+                id={sortId}
+                value={sort}
+                onChange={(e) => setSort(e.target.value as MediaSort)}
+                options={MEDIA_SORTS.map((value) => ({ value, label: t(`trainingMedia.sort.${value}`) }))}
+              />
+            </div>
+          </div>
           <div role="group" aria-label={t("trainingMedia.categoryFilter")} className="gt-scroller -mx-1 flex gap-1.5 px-1">
             {(["all", ...MEDIA_CATEGORIES] as const).map((value) => (
               <button
@@ -158,7 +222,7 @@ export function MediaPickerDialog({
             <fieldset className="m-0 border-0 p-0">
               <legend className="sr-only">{t("trainingMedia.gridLabel")}</legend>
               <div className="grid grid-cols-2 gap-3 sm:grid-cols-3 lg:grid-cols-5">
-                {visible.map((item) => {
+                {pageItems.map((item) => {
                   const isSelected = item.id === selectedId;
                   return (
                     // `relative` keeps the visually hidden radio inside its tile: positioned
@@ -188,6 +252,13 @@ export function MediaPickerDialog({
                   );
                 })}
               </div>
+              {hasMore && (
+                <div ref={sentinelRef} className="mt-4 grid justify-items-center">
+                  <AdminButton variant="outline" size="sm" onClick={showMore}>
+                    {t("trainingMedia.more", { count: remaining })}
+                  </AdminButton>
+                </div>
+              )}
             </fieldset>
           )}
         </div>

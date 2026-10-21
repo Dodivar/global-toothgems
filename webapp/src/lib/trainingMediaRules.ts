@@ -30,6 +30,13 @@ export interface TrainingMedia {
   kind: MediaKind;
   /** Displayable URL (a signed URL in Supabase); empty while it is being signed. */
   src: string;
+  /**
+   * The small preview for the library grids (decision 104); empty until one
+   * is drawn — a grid then shows the original image, or an icon for a video.
+   */
+  thumbSrc: string;
+  /** Library folder; null = not filed. */
+  folderId: string | null;
   mimeType: string;
   /** Readable name, from the file name. */
   name: string;
@@ -102,13 +109,48 @@ export function storageFileName(fileName: string): string {
   return `${base || "media"}${ext ? `.${ext}` : ""}`;
 }
 
+/** A folder of the library (decision 104): one per file, optional. */
+export interface MediaFolder {
+  id: string;
+  name: string;
+  position: number;
+}
+
+/** Folders in their order, then by name (accents and case ignored). */
+export function sortFolders(folders: MediaFolder[], lang: string): MediaFolder[] {
+  const collator = new Intl.Collator(lang.startsWith("en") ? "en" : "fr", { sensitivity: "base", numeric: true });
+  return [...folders].sort((a, b) => a.position - b.position || collator.compare(a.name, b.name));
+}
+
+/** A folder name as stored: trimmed, inner spaces collapsed, at most 80 characters. */
+export function cleanFolderName(value: string): string {
+  return value.replace(/\s+/g, " ").trim().slice(0, 80);
+}
+
+/** Whether a folder by that name already exists (case and accents ignored), other than `exceptId`. */
+export function folderNameTaken(folders: MediaFolder[], name: string, exceptId?: string): boolean {
+  const wanted = normalise(name);
+  return folders.some((folder) => folder.id !== exceptId && normalise(folder.name) === wanted);
+}
+
 export type UsageFilter = "all" | "unused" | "uploads";
+
+/** "all" = every folder, "none" = files not filed, otherwise a folder id. */
+export type FolderFilter = "all" | "none" | string;
+
+export type MediaSort = "newest" | "oldest" | "name";
+export const MEDIA_SORTS: MediaSort[] = ["newest", "oldest", "name"];
 
 export interface MediaFilters {
   query: string;
   category: MediaCategory | "all";
   usage: UsageFilter;
   kind?: MediaKind | "all";
+  folder?: FolderFilter;
+  /** An exact tag (case and accents ignored). */
+  tag?: string;
+  /** Newest first unless said otherwise. */
+  sort?: MediaSort;
 }
 
 export function filterMedia(
@@ -119,8 +161,14 @@ export function filterMedia(
 ): TrainingMedia[] {
   const query = normalise(filters.query);
   const kind = filters.kind ?? "all";
+  const folder = filters.folder ?? "all";
+  const tag = filters.tag ? normalise(filters.tag) : "";
+  const sort = filters.sort ?? "newest";
+  const collator = new Intl.Collator(lang, { sensitivity: "base", numeric: true });
   return items
     .filter((item) => kind === "all" || item.kind === kind)
+    .filter((item) => (folder === "all" ? true : folder === "none" ? item.folderId === null : item.folderId === folder))
+    .filter((item) => !tag || item.tags.some((value) => normalise(value) === tag))
     .filter((item) => filters.category === "all" || item.category === filters.category)
     .filter((item) =>
       filters.usage === "unused" ? !usage.get(item.ref) : filters.usage === "uploads" ? item.origin === "upload" : true,
@@ -130,7 +178,23 @@ export function filterMedia(
       const haystack = normalise([item.name, item.alt[lang], item.alt.fr, item.alt.en, ...item.tags].join(" "));
       return query.split(/\s+/).every((word) => haystack.includes(word));
     })
-    .sort((a, b) => b.createdAt.localeCompare(a.createdAt));
+    .sort((a, b) =>
+      sort === "name"
+        ? collator.compare(a.name, b.name) || b.createdAt.localeCompare(a.createdAt)
+        : sort === "oldest"
+          ? a.createdAt.localeCompare(b.createdAt)
+          : b.createdAt.localeCompare(a.createdAt),
+    );
+}
+
+/** How many files each folder holds ("none" = not filed). */
+export function folderCounts(items: TrainingMedia[]): Map<string, number> {
+  const counts = new Map<string, number>();
+  for (const item of items) {
+    const key = item.folderId ?? "none";
+    counts.set(key, (counts.get(key) ?? 0) + 1);
+  }
+  return counts;
 }
 
 /** Lower case, accents off: "hygiène" finds "Hygiene". */

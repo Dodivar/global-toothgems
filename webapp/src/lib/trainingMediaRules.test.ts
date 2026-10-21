@@ -6,6 +6,10 @@ import {
   displayName,
   storageFileName,
   filterMedia,
+  cleanFolderName,
+  folderCounts,
+  folderNameTaken,
+  sortFolders,
   formatBytes,
   mediaUsage,
   validateUpload,
@@ -19,6 +23,8 @@ const item = (patch: Partial<TrainingMedia>): TrainingMedia => ({
   mimeType: "image/jpeg",
   durationSeconds: null,
   src: "/a.jpg",
+  thumbSrc: "",
+  folderId: null,
   name: "Image",
   alt: { fr: "", en: "" },
   category: "technique",
@@ -80,6 +86,48 @@ describe("filterMedia", () => {
     expect(filterMedia(items, { ...all, category: "results" }, usage, "fr").map((i) => i.id)).toEqual(["c"]);
     expect(filterMedia(items, { ...all, usage: "unused" }, usage, "fr").map((i) => i.id)).toEqual(["b", "c"]);
     expect(filterMedia(items, { ...all, usage: "uploads" }, usage, "fr").map((i) => i.id)).toEqual(["b"]);
+  });
+
+  it("filters by folder: one folder, or the files not filed", () => {
+    const filed = items.map((i) => (i.id === "a" ? { ...i, folderId: "en" } : i));
+    expect(filterMedia(filed, { ...all, folder: "en" }, usage, "fr").map((i) => i.id)).toEqual(["a"]);
+    expect(filterMedia(filed, { ...all, folder: "none" }, usage, "fr").map((i) => i.id)).toEqual(["b", "c"]);
+    expect(filterMedia(filed, { ...all, folder: "all" }, usage, "fr")).toHaveLength(3);
+  });
+
+  it("filters by an exact tag, ignoring accents and case", () => {
+    expect(filterMedia(items, { ...all, tag: "POLYMERISATION" }, usage, "fr").map((i) => i.id)).toEqual(["a"]);
+    expect(filterMedia(items, { ...all, tag: "polym" }, usage, "fr")).toHaveLength(0);
+  });
+
+  it("sorts oldest first or by name on request", () => {
+    expect(filterMedia(items, { ...all, sort: "oldest" }, usage, "fr").map((i) => i.id)).toEqual(["a", "c", "b"]);
+    expect(filterMedia(items, { ...all, sort: "name" }, usage, "fr").map((i) => i.id)).toEqual(["a", "b", "c"]);
+  });
+});
+
+describe("folders", () => {
+  const folders = [
+    { id: "2", name: "Images anglaises", position: 0 },
+    { id: "1", name: "Couvertures", position: 0 },
+    { id: "3", name: "Archives", position: 1 },
+  ];
+
+  it("orders folders by position, then by name", () => {
+    expect(sortFolders(folders, "fr").map((f) => f.id)).toEqual(["1", "2", "3"]);
+  });
+
+  it("cleans names and spots duplicates whatever the case or accents", () => {
+    expect(cleanFolderName("  Images   FR  ")).toBe("Images FR");
+    expect(folderNameTaken(folders, "couvertures")).toBe(true);
+    expect(folderNameTaken(folders, "Couvertures", "1")).toBe(false);
+    expect(folderNameTaken(folders, "Vidéos")).toBe(false);
+  });
+
+  it("counts files per folder", () => {
+    const counts = folderCounts([item({ id: "a", folderId: "1" }), item({ id: "b", folderId: "1" }), item({ id: "c" })]);
+    expect(counts.get("1")).toBe(2);
+    expect(counts.get("none")).toBe(1);
   });
 });
 

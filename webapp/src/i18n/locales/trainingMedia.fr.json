@@ -62,7 +62,8 @@
     "altEn": "Description (anglais)",
     "altHint": "Proposée comme texte alternatif lorsque l’image est insérée dans une leçon.",
     "tags": "Mots-clés",
-    "tagsHint": "Séparés par des virgules, pour retrouver l’image."
+    "tagsHint": "Séparés par des virgules, pour retrouver l’image.",
+    "folder": "Dossier"
   },
   "delete": "Supprimer",
   "deleteConfirm": "Supprimer ce fichier de la médiathèque ? Cette action est définitive.",
@@ -89,7 +90,8 @@
     "newTab": "(nouvel onglet)",
     "emptyImage": "Aucune image dans la médiathèque",
     "emptyVideo": "Aucune vidéo dans la médiathèque",
-    "emptyBody": "Importez-la dans la médiathèque (nouvel onglet), puis cliquez sur « Actualiser »."
+    "emptyBody": "Importez-la dans la médiathèque (nouvel onglet), puis cliquez sur « Actualiser ».",
+    "folder": "Dossier"
   },
   "insertVideo": "Insérer la vidéo",
   "kindFilter": "Type de fichier",
@@ -114,7 +116,13 @@
     "saveFailed": "Le fichier n’a pas pu être mis à jour. Réessayez.",
     "inUse": "Ce fichier est utilisé dans une formation : remplacez-le avant de le supprimer.",
     "deleted": "Fichier supprimé",
-    "deleteFailed": "Le fichier n’a pas pu être supprimé. Réessayez."
+    "deleteFailed": "Le fichier n’a pas pu être supprimé. Réessayez.",
+    "folderCreated": "Dossier « {{name}} » créé",
+    "folderRenamed": "Dossier renommé",
+    "folderDeleted": "Dossier supprimé, ses fichiers sont non classés",
+    "moved_one": "{{count}} fichier rangé dans « {{folder}} »",
+    "moved_other": "{{count}} fichiers rangés dans « {{folder}} »",
+    "moveFailed": "Les fichiers n’ont pas pu être rangés. Réessayez."
   },
   "localized": {
     "intro": "L’image par défaut est montrée dans toutes les langues. Ajoutez une image anglaise seulement si elle doit être différente (texte dans l’image, par exemple) : elle remplacera alors l’image par défaut pour les apprenants en anglais.",
@@ -147,5 +155,50 @@
     "previewFor": "Aperçu en {{language}} · {{source}}",
     "languageFr": "français",
     "languageEn": "anglais"
+  },
+  "addedOn": "Ajouté le {{date}}",
+  "more": "Afficher plus ({{count}} restants)",
+  "sort": {
+    "label": "Trier",
+    "newest": "Plus récents d’abord",
+    "oldest": "Plus anciens d’abord",
+    "name": "Nom (A → Z)"
+  },
+  "tagFilter": "Mot-clé : {{tag}}",
+  "tagFilterClear": "Retirer le filtre « {{tag}} »",
+  "tagFilterHint": "Afficher les fichiers avec ce mot-clé",
+  "folders": {
+    "title": "Dossiers",
+    "all": "Tous les fichiers",
+    "none": "Non classés",
+    "new": "Nouveau dossier",
+    "nameLabel": "Nom du dossier",
+    "namePlaceholder": "Ex. : Images en anglais",
+    "create": "Créer",
+    "rename": "Renommer",
+    "save": "Enregistrer",
+    "cancel": "Annuler",
+    "delete": "Supprimer le dossier",
+    "menu": "Actions du dossier {{name}}",
+    "deleteTitle": "Supprimer le dossier « {{name}} » ?",
+    "deleteBody_one": "Le fichier qu’il contient n’est pas supprimé : il redevient non classé.",
+    "deleteBody_other": "Les {{count}} fichiers qu’il contient ne sont pas supprimés : ils redeviennent non classés.",
+    "deleteConfirm": "Supprimer le dossier",
+    "uploadInto": "Les fichiers importés seront rangés dans « {{folder}} ».",
+    "errors": {
+      "taken": "Un dossier porte déjà ce nom.",
+      "invalid": "Donnez un nom au dossier.",
+      "failed": "Le dossier n’a pas pu être enregistré. Réessayez."
+    }
+  },
+  "select": {
+    "start": "Sélectionner",
+    "done": "Terminer",
+    "label": "Sélectionner {{name}}",
+    "count_one": "{{count}} fichier sélectionné",
+    "count_other": "{{count}} fichiers sélectionnés",
+    "moveTo": "Ranger dans",
+    "move": "Ranger",
+    "clear": "Tout désélectionner"
   }
 }

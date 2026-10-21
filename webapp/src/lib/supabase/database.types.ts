@@ -7897,6 +7897,12 @@ export type Database = {
           reviewed_at: string | null
           reviewed_by: string | null
           show_certification: boolean
+          spotlight_video_at: string | null
+          spotlight_video_item_id: string | null
+          spotlight_video_path: string | null
+          spotlight_video_scene_md5: string | null
+          spotlight_video_seconds: number | null
+          spotlight_video_type: string | null
           status: string
           submitted_at: string
           tiktok: string | null
@@ -7925,6 +7931,12 @@ export type Database = {
           reviewed_at?: string | null
           reviewed_by?: string | null
           show_certification?: boolean
+          spotlight_video_at?: string | null
+          spotlight_video_item_id?: string | null
+          spotlight_video_path?: string | null
+          spotlight_video_scene_md5?: string | null
+          spotlight_video_seconds?: number | null
+          spotlight_video_type?: string | null
           status?: string
           submitted_at?: string
           tiktok?: string | null
@@ -7953,6 +7965,12 @@ export type Database = {
           reviewed_at?: string | null
           reviewed_by?: string | null
           show_certification?: boolean
+          spotlight_video_at?: string | null
+          spotlight_video_item_id?: string | null
+          spotlight_video_path?: string | null
+          spotlight_video_scene_md5?: string | null
+          spotlight_video_seconds?: number | null
+          spotlight_video_type?: string | null
           status?: string
           submitted_at?: string
           tiktok?: string | null
@@ -7980,6 +7998,13 @@ export type Database = {
             columns: ["reviewed_by"]
             isOneToOne: false
             referencedRelation: "profiles"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "studio_showcases_spotlight_video_item_id_fkey"
+            columns: ["spotlight_video_item_id"]
+            isOneToOne: false
+            referencedRelation: "studio_showcase_items"
             referencedColumns: ["id"]
           },
           {
@@ -8325,6 +8350,7 @@ export type Database = {
           created_at: string
           created_by: string | null
           duration_seconds: number | null
+          folder_id: string | null
           height: number | null
           id: string
           kind: string
@@ -8332,6 +8358,7 @@ export type Database = {
           name: string
           storage_path: string
           tags: string[]
+          thumb_path: string | null
           updated_at: string
           width: number | null
         }
@@ -8342,6 +8369,7 @@ export type Database = {
           created_at?: string
           created_by?: string | null
           duration_seconds?: number | null
+          folder_id?: string | null
           height?: number | null
           id?: string
           kind: string
@@ -8349,6 +8377,7 @@ export type Database = {
           name: string
           storage_path: string
           tags?: string[]
+          thumb_path?: string | null
           updated_at?: string
           width?: number | null
         }
@@ -8359,6 +8388,7 @@ export type Database = {
           created_at?: string
           created_by?: string | null
           duration_seconds?: number | null
+          folder_id?: string | null
           height?: number | null
           id?: string
           kind?: string
@@ -8366,6 +8396,7 @@ export type Database = {
           name?: string
           storage_path?: string
           tags?: string[]
+          thumb_path?: string | null
           updated_at?: string
           width?: number | null
         }
@@ -8379,6 +8410,55 @@ export type Database = {
           },
           {
             foreignKeyName: "training_media_created_by_fkey"
+            columns: ["created_by"]
+            isOneToOne: false
+            referencedRelation: "profiles"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "training_media_folder_id_fkey"
+            columns: ["folder_id"]
+            isOneToOne: false
+            referencedRelation: "training_media_folders"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      training_media_folders: {
+        Row: {
+          created_at: string
+          created_by: string | null
+          id: string
+          name: string
+          position: number
+          updated_at: string
+        }
+        Insert: {
+          created_at?: string
+          created_by?: string | null
+          id?: string
+          name: string
+          position?: number
+          updated_at?: string
+        }
+        Update: {
+          created_at?: string
+          created_by?: string | null
+          id?: string
+          name?: string
+          position?: number
+          updated_at?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "training_media_folders_created_by_fkey"
+            columns: ["created_by"]
+            isOneToOne: false
+            referencedRelation: "loyalty_overview"
+            referencedColumns: ["user_id"]
+          },
+          {
+            foreignKeyName: "training_media_folders_created_by_fkey"
             columns: ["created_by"]
             isOneToOne: false
             referencedRelation: "profiles"
@@ -9869,6 +9949,12 @@ export type Database = {
           reviewed_at: string | null
           reviewed_by: string | null
           show_certification: boolean
+          spotlight_video_at: string | null
+          spotlight_video_item_id: string | null
+          spotlight_video_path: string | null
+          spotlight_video_scene_md5: string | null
+          spotlight_video_seconds: number | null
+          spotlight_video_type: string | null
           status: string
           submitted_at: string
           tiktok: string | null
@@ -9906,6 +9992,12 @@ export type Database = {
           reviewed_at: string | null
           reviewed_by: string | null
           show_certification: boolean
+          spotlight_video_at: string | null
+          spotlight_video_item_id: string | null
+          spotlight_video_path: string | null
+          spotlight_video_scene_md5: string | null
+          spotlight_video_seconds: number | null
+          spotlight_video_type: string | null
           status: string
           submitted_at: string
           tiktok: string | null
@@ -9961,6 +10053,12 @@ export type Database = {
           reviewed_at: string | null
           reviewed_by: string | null
           show_certification: boolean
+          spotlight_video_at: string | null
+          spotlight_video_item_id: string | null
+          spotlight_video_path: string | null
+          spotlight_video_scene_md5: string | null
+          spotlight_video_seconds: number | null
+          spotlight_video_type: string | null
           status: string
           submitted_at: string
           tiktok: string | null
@@ -9998,6 +10096,16 @@ export type Database = {
           isSetofReturn: false
         }
       }
+      studio_set_spotlight_video: {
+        Args: {
+          p_creation_updated_at: string
+          p_item_id: string
+          p_path: string
+          p_seconds: number
+          p_type: string
+        }
+        Returns: Json
+      }
       studio_set_template: {
         Args: { p_creation_id: string; p_published: boolean }
         Returns: string
@@ -10007,7 +10115,6 @@ export type Database = {
         Args: { p_creation_id: string }
         Returns: string
       }
-      studio_shared_creation_preview: { Args: { p_token: string }; Returns: Json }
       studio_shared_creation: {
         Args: { p_token: string }
         Returns: {
@@ -10016,6 +10123,10 @@ export type Database = {
           scene_data: Json
           updated_at: string
         }[]
+      }
+      studio_shared_creation_preview: {
+        Args: { p_token: string }
+        Returns: Json
       }
       studio_showcase_add: {
         Args: { p_creation_id: string }
@@ -10067,6 +10178,7 @@ export type Database = {
         Args: { p_creation_ids: string[] }
         Returns: undefined
       }
+      studio_spotlight_video_state: { Args: never; Returns: Json }
       studio_templates: {
         Args: never
         Returns: {
