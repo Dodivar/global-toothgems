@@ -77,8 +77,6 @@
   "result": {
     "ready": "Prêt : {{file}} ({{size}})",
     "download": "Télécharger",
-    "share": "Partager",
-    "shareHint": "Sur téléphone, Partager ouvre directement Instagram, TikTok ou Messages quand ils acceptent ce fichier.",
     "videoLabel": "La vidéo 360° enregistrée",
     "gifLabel": "Le GIF 360°",
     "imageLabel": "L'image exportée",
@@ -89,7 +87,32 @@
     "model": "Le rendu 3D n'a pas pu être préparé. Vérifiez votre connexion et réessayez.",
     "video": "Ce navigateur n'a pas pu enregistrer la vidéo. Essayez le GIF ou l'image.",
     "interrupted": "L'enregistrement s'est arrêté car l'onglet a été quitté. Réessayez en le gardant ouvert.",
-    "encode": "Le fichier n'a pas pu être créé. Réessayez, ou choisissez un autre format.",
-    "share": "Le partage n'a pas abouti : téléchargez le fichier et publiez-le depuis votre galerie."
+    "encode": "Le fichier n'a pas pu être créé. Réessayez, ou choisissez un autre format."
+  },
+  "destination": {
+    "label": "Où allez-vous le publier ?",
+    "any": "Pas encore décidé",
+    "hint": "Choisit le format que ce réseau affiche le mieux. Vous pouvez toujours le changer."
+  },
+  "networks": {
+    "title": "Publier sur",
+    "sheetHint": "Chaque bouton ouvre le menu de partage de votre téléphone avec le fichier : choisissez l'application (Instagram, TikTok, Snapchat…).",
+    "desktopHint": "Sur ordinateur : Facebook, Pinterest, X, Threads et WhatsApp partagent la page publique de votre création ; pour les autres, le fichier est téléchargé et la page du réseau s'ouvre — déposez-y le fichier.",
+    "gifWarning": "{{network}} risque de ne pas animer ce GIF.",
+    "webmWarning": "{{network}} risque de refuser cette vidéo WebM.",
+    "gifNote": "Instagram, TikTok et Snapchat n'acceptent pas les GIF : choisissez la vidéo pour eux.",
+    "webmNote": "Ce navigateur enregistre en WebM : Instagram, TikTok, Snapchat et X peuvent la refuser. Un téléphone ou Safari enregistre en MP4.",
+    "linkLooking": "Recherche de la page publique de votre création…",
+    "linkGlowbook": "Les liens mènent à votre création dans votre Glowbook : l'aperçu l'affiche.",
+    "linkShare": "Les liens mènent à la page en lecture seule de votre création : l'aperçu l'affiche.",
+    "linkNone": "Votre création n'a pas encore de page publique : ces réseaux ouvrent donc leur propre page de publication et le fichier est téléchargé. Créez un lien en lecture seule pour que leur aperçu montre votre création : toute personne qui a le lien peut voir le design en 3D (vous pouvez le désactiver depuis Partager).",
+    "linkCreate": "Créer le lien en lecture seule",
+    "linkCreating": "Création du lien…",
+    "linkFailed": "Le lien n'a pas pu être créé. Réessayez dans un instant.",
+    "notice": {
+      "upload": "Fichier téléchargé — déposez-le dans la page {{network}} qui vient de s'ouvrir.",
+      "link": "{{network}} s'est ouvert avec le lien de votre création.",
+      "failed": "Le menu de partage ne s'est pas ouvert : téléchargez le fichier et publiez-le depuis votre galerie."
+    }
   }
 }

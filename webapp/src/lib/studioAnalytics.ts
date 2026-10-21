@@ -42,7 +42,9 @@ export type StudioEvent =
   | "studio_checkout_failed"
   | "studio_access_check_failed"
   | "studio_access_denied"
-  | "studio_access_restored";
+  | "studio_access_restored"
+  /** A social network button of the export dialog (decision 101): network, output, format, method. */
+  | "studio_social_share_clicked";
 
 type Props = Record<string, string | number | boolean | null | string[]>;
 

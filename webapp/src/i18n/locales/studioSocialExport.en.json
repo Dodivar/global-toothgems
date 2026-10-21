@@ -77,8 +77,6 @@
   "result": {
     "ready": "Ready: {{file}} ({{size}})",
     "download": "Download",
-    "share": "Share",
-    "shareHint": "On a phone, Share opens Instagram, TikTok or Messages directly when they accept this file.",
     "videoLabel": "The recorded 360° video",
     "gifLabel": "The 360° GIF",
     "imageLabel": "The exported image",
@@ -89,7 +87,32 @@
     "model": "The 3D render could not be prepared. Check your connection and try again.",
     "video": "This browser could not record the video. Try the GIF or the image.",
     "interrupted": "The recording stopped because the tab was left. Try again and keep it open.",
-    "encode": "The file could not be created. Try again, or another format.",
-    "share": "Sharing did not work: download the file and post it from your gallery."
+    "encode": "The file could not be created. Try again, or another format."
+  },
+  "destination": {
+    "label": "Where will you post it?",
+    "any": "Not decided yet",
+    "hint": "Picks the format that network shows best. You can still change it."
+  },
+  "networks": {
+    "title": "Post on",
+    "sheetHint": "Each button opens your phone's share menu with the file: pick the app there (Instagram, TikTok, Snapchat…).",
+    "desktopHint": "On a computer: Facebook, Pinterest, X, Threads and WhatsApp share your creation's public page; for the others the file is downloaded and the network's own page opens — drop the file into it.",
+    "gifWarning": "{{network}} may not play this GIF as an animation.",
+    "webmWarning": "{{network}} may refuse this WebM video.",
+    "gifNote": "Instagram, TikTok and Snapchat do not take GIFs: choose the video for them.",
+    "webmNote": "This browser records WebM: Instagram, TikTok, Snapchat and X may refuse it. A phone or Safari records MP4.",
+    "linkLooking": "Looking for your creation's public page…",
+    "linkGlowbook": "Links point to your creation in your Glowbook: the preview card shows it.",
+    "linkShare": "Links point to your creation's read-only page: the preview card shows it.",
+    "linkNone": "Your creation has no public page yet, so those networks open their own post page and the file is downloaded. Create a read-only link so their preview card shows your creation: anyone who has the link can view the design in 3D (you can disable it from Share).",
+    "linkCreate": "Create the read-only link",
+    "linkCreating": "Creating the link…",
+    "linkFailed": "The link could not be created. Try again in a moment.",
+    "notice": {
+      "upload": "File downloaded — drop it into the {{network}} page that just opened.",
+      "link": "{{network}} opened with your creation's link.",
+      "failed": "The share menu did not open: download the file and post it from your gallery."
+    }
   }
 }
