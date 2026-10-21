@@ -1,130 +1,33 @@
-import {
-  stepCount,
-  type CourseCategory,
-  type CourseLevel,
-  type CourseStatus,
-  type TrainingCourse,
-} from "../data/adminTraining";
-import { pick } from "../data/types";
+import { COURSE_STATUSES, type CourseStatus, type TrainingCourse } from "../data/adminTraining";
 
 /**
- * Search, filtering and sorting of the training catalogue.
+ * How the back office lists the training catalogue, and the duration format
+ * every Academy screen shares.
  *
- * Pure functions on plain state, kept out of the components for the same reason
- * `productFilters` is: the list renders what it is handed, and this is the part
- * a server-side query would eventually replace without any screen noticing.
+ * The catalogue holds a handful of courses, so the list is not searched or
+ * filtered (owner's decision, 2026-10-21): it is grouped by status — on sale
+ * first, then drafts, then withdrawn — most recently changed first in each.
  */
 
-export type TrainingSortKey =
-  | "recent"
-  | "oldest"
-  | "title-asc"
-  | "modules-desc"
-  | "completion-desc"
-  | "enrolled-desc";
+/** Section order of the back-office list. */
+export const COURSE_STATUS_ORDER: CourseStatus[] = ["published", "draft", "unpublished"];
 
-export const TRAINING_SORT_KEYS: TrainingSortKey[] = [
-  "recent",
-  "oldest",
-  "title-asc",
-  "modules-desc",
-  "completion-desc",
-  "enrolled-desc",
-];
-
-/**
- * `any`, not `all`: "all levels" is itself a `CourseLevel` -- a course
- * suitable for everyone -- so a filter sentinel spelled `all` would be
- * indistinguishable from it, and that level could never be filtered for.
- */
-export interface TrainingFilterState {
-  search: string;
-  status: CourseStatus | "any";
-  category: CourseCategory | "any";
-  level: CourseLevel | "any";
-  sort: TrainingSortKey;
+export interface CourseStatusGroup {
+  status: CourseStatus;
+  courses: TrainingCourse[];
 }
 
-export const DEFAULT_TRAINING_FILTERS: TrainingFilterState = {
-  search: "",
-  status: "any",
-  category: "any",
-  level: "any",
-  sort: "recent",
-};
-
-/** True as soon as anything narrows the list, which is what enables "Clear". */
-export function isTrainingFiltered(filters: TrainingFilterState): boolean {
-  return (
-    filters.search.trim() !== "" ||
-    filters.status !== "any" ||
-    filters.category !== "any" ||
-    filters.level !== "any"
-  );
-}
-
-/** Ignores case and accents, so "hygiene" finds "Hygiène". */
-function normalize(value: string): string {
-  return value
-    .toLowerCase()
-    .normalize("NFD")
-    .replace(/[̀-ͯ]/g, "");
-}
-
-/**
- * Matches against both languages of the title and descriptions, and against the
- * module titles. Searching for a module name is how an administrator looks for
- * "the course with the sterilisation module" without remembering its title.
- */
-function matchesSearch(course: TrainingCourse, query: string): boolean {
-  const needle = normalize(query.trim());
-  if (!needle) return true;
-  const haystack = [
-    course.title.fr,
-    course.title.en,
-    course.shortDescription.fr,
-    course.shortDescription.en,
-    ...course.modules.flatMap((m) => [m.title.fr, m.title.en]),
-  ]
-    .map(normalize)
-    .join(" ");
-  return haystack.includes(needle);
-}
-
-export function filterCourses(
-  courses: TrainingCourse[],
-  filters: TrainingFilterState,
-  lang: string,
-): TrainingCourse[] {
-  const result = courses.filter((course) => {
-    if (!matchesSearch(course, filters.search)) return false;
-    if (filters.status !== "any" && course.status !== filters.status) return false;
-    if (filters.category !== "any" && course.category !== filters.category) return false;
-    if (filters.level !== "any" && course.level !== filters.level) return false;
-    return true;
-  });
-
-  const collator = new Intl.Collator(lang.startsWith("en") ? "en" : "fr", { sensitivity: "base" });
-
-  // A copy: `filter` already returned one, but sorting the caller's array would
-  // reorder the store's state in place.
-  return [...result].sort((a, b) => {
-    switch (filters.sort) {
-      case "oldest":
-        return a.updatedAt.localeCompare(b.updatedAt);
-      case "title-asc":
-        return collator.compare(pick(a.title, lang), pick(b.title, lang));
-      case "modules-desc":
-        return b.modules.length - a.modules.length || stepCount(b) - stepCount(a);
-      case "completion-desc":
-        return b.completionRate - a.completionRate;
-      case "enrolled-desc":
-        return b.enrolled - a.enrolled;
-      case "recent":
-      default:
-        return b.updatedAt.localeCompare(a.updatedAt);
-    }
-  });
+/** The courses by status, in `COURSE_STATUS_ORDER`, empty sections left out. */
+export function groupCoursesByStatus(courses: TrainingCourse[]): CourseStatusGroup[] {
+  const known = new Set<CourseStatus>(COURSE_STATUSES);
+  return COURSE_STATUS_ORDER.filter((status) => known.has(status))
+    .map((status) => ({
+      status,
+      courses: courses
+        .filter((course) => course.status === status)
+        .sort((a, b) => b.updatedAt.localeCompare(a.updatedAt)),
+    }))
+    .filter((group) => group.courses.length > 0);
 }
 
 /** Minutes to a compact "1 h 32" / "1h32" reading. */

@@ -11,6 +11,7 @@ import { AdminSettingsProvider } from "../../lib/adminSettings";
 import { AdminGiftCardsProvider } from "../../lib/giftCards/AdminGiftCardsProvider";
 import { useAdminAuth } from "../../lib/adminAuth";
 import { useFocusTrap } from "../../lib/useFocusTrap";
+import { useLocation } from "../../lib/navigation";
 
 /**
  * The administration shell: a fixed rail on the left, the section on the right.
@@ -46,7 +47,11 @@ export function AdminLayout({ children }: { children: ReactNode }) {
 
   const shell = useMemo<AdminShellContext>(() => ({ openNav: () => setNavOpen(true) }), []);
 
-  const railWidth = collapsed ? "var(--admin-sidebar-collapsed)" : "var(--admin-sidebar)";
+  // A course preview is the learner's own full-width workspace: no rail, so the
+  // administrator sees the lesson at the width a learner gets.
+  const { pathname } = useLocation();
+  const immersive = /^\/admin\/formations\/[^/]+\/apercu\/?$/.test(pathname);
+  const railWidth = immersive ? "0px" : collapsed ? "var(--admin-sidebar-collapsed)" : "var(--admin-sidebar)";
 
   return (
     <AdminCatalogProvider actor={admin?.name ?? "Administrateur"}>
@@ -72,13 +77,15 @@ export function AdminLayout({ children }: { children: ReactNode }) {
         style={{ "--admin-rail-offset": railWidth } as React.CSSProperties}
       >
         {/* Desktop rail */}
-        <aside
-          aria-label={t("admin.nav.primary")}
-          className="fixed inset-y-0 left-0 z-[90] hidden lg:block"
-          style={{ width: railWidth }}
-        >
-          <AdminSidebar collapsed={collapsed} onToggle={() => setCollapsed((v) => !v)} />
-        </aside>
+        {!immersive && (
+          <aside
+            aria-label={t("admin.nav.primary")}
+            className="fixed inset-y-0 left-0 z-[90] hidden lg:block"
+            style={{ width: railWidth }}
+          >
+            <AdminSidebar collapsed={collapsed} onToggle={() => setCollapsed((v) => !v)} />
+          </aside>
+        )}
 
         {/* Small screens: the same rail as a drawer. Administration is a desktop
             job, so this is a courtesy path, not a second design. */}
