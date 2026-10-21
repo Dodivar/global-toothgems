@@ -13,11 +13,25 @@ export type ImageType = "png" | "jpeg";
 export const TURNTABLE_VIDEO = { durationMs: 6000, fps: 30, bitsPerSecond: 10_000_000 };
 
 /**
- * A Glowbook's spotlight video (decision 103): square, so one file suits
- * phones and computers, and light — visitors arrive from an Instagram bio,
- * often on mobile data (4 Mbit/s: about 2 MB for the default 4 seconds).
+ * A Glowbook's spotlight video (decisions 103 and 105): square, so one file
+ * suits phones and computers, and light — visitors arrive from an Instagram
+ * bio, often on mobile data (4 Mbit/s: about 2.5 MB). The camera stays in
+ * front of the smile and sweeps from 45° on the left to 45° on the right and
+ * back in 5 seconds, so the looping video goes right, left, right…
  */
-export const SPOTLIGHT_VIDEO = { size: 1080, fps: 30, bitsPerSecond: 4_000_000 };
+export const SPOTLIGHT_VIDEO = { size: 1080, fps: 30, bitsPerSecond: 4_000_000, durationMs: 5000, amplitude: Math.PI / 4 };
+
+/**
+ * The sweep's angle after `elapsedMs` of a `durationMs` loop, in radians:
+ * −amplitude (left) at the start, +amplitude (right) half way, back to
+ * −amplitude at the end. A cosine, so the camera slows down at each end and
+ * the last frame meets the first: the loop has no jump.
+ */
+export function sweepAngle(elapsedMs: number, durationMs: number, amplitude: number): number {
+  if (durationMs <= 0) return -amplitude;
+  const k = Math.min(Math.max(elapsedMs / durationMs, 0), 1);
+  return -amplitude * Math.cos(k * Math.PI * 2);
+}
 
 /**
  * The GIF: half size (a full-size 1080 × 1920 GIF weighs tens of MB), one

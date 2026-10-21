@@ -4,7 +4,7 @@ import type { StudioScene } from "../../studioWorkspace/scene";
 import { composeFrame, fontsReady, whiteMark, type MarkImage } from "./compose";
 import { FORMAT_SIZES, scaledSize, type FormatSize, type ShareFormat } from "./formats";
 import type { Layout } from "./layouts";
-import { loopAngles, progressShare, SPOTLIGHT_VIDEO, turntableAngle, TURNTABLE_GIF, TURNTABLE_VIDEO, type ImageType, type VideoType } from "./motion";
+import { loopAngles, progressShare, SPOTLIGHT_VIDEO, sweepAngle, turntableAngle, TURNTABLE_GIF, TURNTABLE_VIDEO, type ImageType, type VideoType } from "./motion";
 
 /**
  * Social exports, drawn in this tab: a still, a 360° video or a GIF of a
@@ -132,31 +132,41 @@ export class ExportStage {
   /** One full turn of a social post, at the network size, in the member's layout. */
   video(format: ShareFormat, type: VideoType, look: ExportLook, options: ExportOptions = {}): Promise<Blob> {
     const size = FORMAT_SIZES[format];
-    return this.record(size, type, TURNTABLE_VIDEO, (ctx, azimuth) => this.draw(ctx, format, size, look, azimuth), options);
+    return this.record(size, type, TURNTABLE_VIDEO, turntableAngle, (ctx, azimuth) => this.draw(ctx, format, size, look, azimuth), options);
   }
 
   /**
-   * One full turn for a Glowbook's spotlight (decision 103): the stage alone,
-   * square, no texts and no mark — it plays on Global Toothgems' own page.
+   * A Glowbook's spotlight (decisions 103 and 105): the stage alone, square,
+   * no texts and no mark — it plays on Global Toothgems' own page. The camera
+   * stays in front of the smile and sweeps left → right → left, so the
+   * looping video goes back and forth over the gems.
    */
-  spotlight(type: VideoType, seconds: number, options: ExportOptions = {}): Promise<Blob> {
-    const { size, fps, bitsPerSecond } = SPOTLIGHT_VIDEO;
+  spotlight(type: VideoType, options: ExportOptions = {}): Promise<Blob> {
+    const { size, fps, bitsPerSecond, durationMs, amplitude } = SPOTLIGHT_VIDEO;
     const frame = { width: size, height: size };
-    return this.record(frame, type, { durationMs: seconds * 1000, fps, bitsPerSecond }, (ctx, azimuth) => {
-      const render = this.engine.renderExportFrame({ width: size, height: size, azimuth, transparent: false });
-      ctx.drawImage(render, 0, 0, size, size);
-    }, options);
+    return this.record(
+      frame,
+      type,
+      { durationMs, fps, bitsPerSecond },
+      (elapsed, duration) => sweepAngle(elapsed, duration, amplitude),
+      (ctx, azimuth) => {
+        const render = this.engine.renderExportFrame({ width: size, height: size, azimuth, transparent: false, orbit: "front" });
+        ctx.drawImage(render, 0, 0, size, size);
+      },
+      options,
+    );
   }
 
   /**
-   * One full turn recorded from a canvas stream. The angle follows the clock,
-   * so the turn lasts `durationMs` whatever the device's speed. Leaving the
-   * tab stops it (browsers stop drawing hidden pages).
+   * A camera move recorded from a canvas stream. The angle (`angleAt`)
+   * follows the clock, so the move lasts `durationMs` whatever the device's
+   * speed. Leaving the tab stops it (browsers stop drawing hidden pages).
    */
   private async record(
     size: FormatSize,
     type: VideoType,
     { durationMs, fps, bitsPerSecond }: { durationMs: number; fps: number; bitsPerSecond: number },
+    angleAt: (elapsedMs: number, durationMs: number) => number,
     drawFrame: (ctx: CanvasRenderingContext2D, azimuth: number) => void,
     { signal, onProgress }: ExportOptions = {},
   ): Promise<Blob> {
@@ -165,7 +175,7 @@ export class ExportStage {
     this.host.appendChild(canvas);
     let recorder: MediaRecorder;
     try {
-      drawFrame(ctx, 0);
+      drawFrame(ctx, angleAt(0, durationMs));
       const stream = canvas.captureStream(fps);
       recorder = new MediaRecorder(stream, { mimeType: type.mimeType, videoBitsPerSecond: bitsPerSecond });
     } catch (err) {
@@ -197,7 +207,7 @@ export class ExportStage {
         if (elapsed >= durationMs) break;
         if (elapsed - last < frameMs * 0.9) continue;
         last = elapsed;
-        drawFrame(ctx, turntableAngle(elapsed, durationMs));
+        drawFrame(ctx, angleAt(elapsed, durationMs));
         onProgress?.(progressShare(elapsed, durationMs));
       }
       recorder.stop();
