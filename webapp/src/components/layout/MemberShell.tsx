@@ -137,12 +137,13 @@ const GROUPS: SectionGroup[] = [
     id: "studio",
     labelKey: "nav.studio",
     items: [
-      ...STUDIO_SHORTCUTS.map((shortcut) => ({
+      // Only the workshop: creations and groups are one click away inside it.
+      ...STUDIO_SHORTCUTS.filter((shortcut) => shortcut.id === "workshop").map((shortcut) => ({
         to: shortcut.to,
         labelKey: shortcut.labelKey,
         shortKey: shortcut.shortKey,
         icon: shortcut.icon,
-        end: shortcut.id === "workshop",
+        end: true,
       })),
       { to: "/compte/studio", labelKey: "account.navStudio", shortKey: "subscription", icon: CreditCard },
     ],
