@@ -5,7 +5,6 @@ import { ChevronDown, Clock } from "lucide-react";
 import clsx from "clsx";
 import type { TrainingCourse } from "../../data/adminTraining";
 import { pick } from "../../data/types";
-import { lessonHref } from "../../lib/academyUrl";
 import { isNodeDone, isUnlocked, type CourseSummary, type LearnerRecord } from "../../lib/learning/path";
 import { ModuleStatusBadge, NodeMarker, ThinProgress, type NodeStatus } from "./LearningStatus";
 
@@ -18,21 +17,25 @@ import { ModuleStatusBadge, NodeMarker, ThinProgress, type NodeStatus } from "./
  * Used in the player's side panel and, unchanged, in its mobile sheet.
  */
 export function CourseOutline({
-  courseId,
+  lessonHref,
   course,
   summary,
   record,
   currentKey,
   justCompleted,
+  allUnlocked = false,
   onNavigate,
 }: {
-  courseId: string;
+  /** The address of a node (the learner's lesson, or the preview's). */
+  lessonHref: (key: string) => string;
   course: TrainingCourse;
   summary: CourseSummary;
   record: LearnerRecord;
   currentKey: string | null;
   /** A lesson validated a moment ago, so its tick can pop once. */
   justCompleted?: string | null;
+  /** Every node can be opened (the administrator's preview). */
+  allUnlocked?: boolean;
   onNavigate?: () => void;
 }) {
   const { t, i18n } = useTranslation();
@@ -100,7 +103,7 @@ export function CourseOutline({
               <ul id={panelId} className="m-0 grid list-none gap-0.5 p-0 px-1.5 pb-2">
                 {nodes.map(({ node, index }) => {
                   const done = isNodeDone(node, record);
-                  const unlocked = isUnlocked(index, summary.path, record, course);
+                  const unlocked = allUnlocked || isUnlocked(index, summary.path, record, course);
                   const current = node.key === currentKey;
                   const status: NodeStatus = current ? "current" : done ? "done" : unlocked ? "open" : "locked";
                   const label = pick(node.title, lang);
@@ -126,7 +129,7 @@ export function CourseOutline({
                     <li key={node.key}>
                       {unlocked ? (
                         <Link
-                          to={lessonHref(courseId, node.key)}
+                          to={lessonHref(node.key)}
                           onClick={onNavigate}
                           aria-current={current ? "page" : undefined}
                           className={clsx(
