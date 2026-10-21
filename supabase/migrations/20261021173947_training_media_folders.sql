@@ -43,7 +43,7 @@ alter table public.training_media
 
 comment on column public.training_media.folder_id is 'Library folder (null = not filed).';
 comment on column public.training_media.thumb_path is
-  'Small WebP preview for the library grids (media/<id>/_thumb.webp); null until drawn.';
+  'Small WebP preview for the library grids (media/<id>/thumb.webp); null until drawn.';
 
 create index training_media_folder_id_idx on public.training_media (folder_id);
 create index training_media_created_at_idx on public.training_media (created_at desc);

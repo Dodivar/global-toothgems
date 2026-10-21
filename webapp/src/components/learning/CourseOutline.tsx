@@ -88,7 +88,8 @@ export function CourseOutline({
                 />
               </span>
               <span className="flex items-center gap-2">
-                <ModuleStatusBadge status={moduleSummary.status} />
+                {/* In the preview nothing is locked: a locked badge over rows that open would contradict itself. */}
+                <ModuleStatusBadge status={allUnlocked && moduleSummary.status === "locked" ? "notStarted" : moduleSummary.status} />
                 <span className="text-[length:var(--text-caption)] tabular-nums text-[var(--text-muted)]">
                   {t("learning.moduleDone", { done: moduleSummary.done, total: moduleSummary.total })}
                 </span>
