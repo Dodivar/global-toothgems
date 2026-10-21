@@ -160,7 +160,7 @@
     "profile": "Profile",
     "profileOpen": "See {{name}}’s profile",
     "profileEyebrow": "The artist",
-    "spotlightVideo": "“{{name}}” turning 360°",
+    "spotlightVideo": "“{{name}}” seen from left to right",
     "spotlightPlay": "Play the video",
     "spotlightPause": "Pause the video"
   },
@@ -248,7 +248,7 @@
     },
     "featured": "Creation in the spotlight",
     "featuredNone": "None",
-    "featuredHint": "It opens your page, large, in a short video turning around it (published creations only).",
+    "featuredHint": "It opens your page, large, in a short video moving in front of the smile from left to right (published creations only).",
     "location": "City or studio",
     "locationPlaceholder": "e.g. Lyon, Studio Rivoli",
     "links": "Links",
@@ -283,17 +283,13 @@
       "preparing": "Preparing the video… It is recorded right here, in your browser; your page shows the creation’s picture meanwhile.",
       "recording": "Recording the video… {{percent}}%",
       "keepOpen": "Keep this tab open and visible for a few seconds.",
-      "ready_one": "Video live: one full turn in {{count}} second.",
-      "ready_other": "Video live: one full turn in {{count}} seconds.",
-      "length": "Length of the turn",
-      "seconds_one": "{{count}} s",
-      "seconds_other": "{{count}} s",
       "again": "Record the video again",
       "failed": {
         "unsupported": "This browser cannot record video. Open the Studio in a recent Chrome, Edge or Safari to make it; your page shows the creation’s picture meanwhile.",
         "interrupted": "The recording stopped (the tab was hidden). It starts again as soon as the tab is visible.",
         "failed": "The video could not be recorded. Try again; your page shows the creation’s picture meanwhile."
-      }
+      },
+      "ready": "Video live: the camera moves in front of the smile, left to right and back, on a loop."
     }
   },
   "sections": {

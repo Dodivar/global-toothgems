@@ -20,7 +20,6 @@ import {
 import type { Glowbook } from "../../../lib/studioWorkspace/glowbook";
 import { certifiedTitles } from "../../../lib/studioWorkspace/glowbookSections";
 import { useGlowbook } from "../../../lib/studioWorkspace/glowbookStore";
-import { SPOTLIGHT_SECONDS, spotlightSecondsFor } from "../../../lib/studioWorkspace/glowbookSpotlight";
 import { useWorkspace } from "../../../lib/studioWorkspace/workspace";
 import { useToast } from "../../../lib/toast";
 import { usePrefersReducedMotion } from "../../homeAlt/usePrefersReducedMotion";
@@ -277,13 +276,12 @@ export function GlowbookLookEditor({ glowbook }: { glowbook: Glowbook }) {
   );
 }
 
-/** The spotlight's turning video (decision 103): its state, a preview, its length and a way to record it again. */
+/** The spotlight video (decisions 103 and 105): its state, a preview and a way to record it again. Its length is fixed. */
 function SpotlightVideoPanel() {
   const { t } = useTranslation();
   const { spotlight } = useGlowbook();
   const { state, job, videoUrl, record } = spotlight;
   const reducedMotion = usePrefersReducedMotion();
-  const seconds = spotlightSecondsFor(state);
   const recording = job.kind === "recording";
   const status =
     job.kind === "recording"
@@ -291,7 +289,7 @@ function SpotlightVideoPanel() {
       : job.kind === "failed"
         ? t(`studio.glowbook.look.spotlight.failed.${job.reason}`)
         : state?.current
-          ? t("studio.glowbook.look.spotlight.ready", { count: seconds })
+          ? t("studio.glowbook.look.spotlight.ready")
           : t("studio.glowbook.look.spotlight.preparing");
 
   return (
@@ -315,21 +313,6 @@ function SpotlightVideoPanel() {
         </div>
       </div>
       <div className="flex flex-wrap items-center gap-2">
-        <div role="radiogroup" aria-label={t("studio.glowbook.look.spotlight.length")} className="flex flex-wrap gap-1.5">
-          {SPOTLIGHT_SECONDS.map((s) => (
-            <button
-              key={s}
-              type="button"
-              role="radio"
-              aria-checked={s === seconds}
-              disabled={recording}
-              onClick={() => s !== seconds && record(s)}
-              className={chipClass(s === seconds)}
-            >
-              {t("studio.glowbook.look.spotlight.seconds", { count: s })}
-            </button>
-          ))}
-        </div>
         <Button variant="outline" size="sm" iconLeft={RefreshCw} disabled={recording} onClick={() => record()}>
           {t("studio.glowbook.look.spotlight.again")}
         </Button>

@@ -160,7 +160,7 @@
     "profile": "Profil",
     "profileOpen": "Voir le profil de {{name}}",
     "profileEyebrow": "L’artiste",
-    "spotlightVideo": "« {{name}} » en rotation à 360°",
+    "spotlightVideo": "« {{name}} » vu de gauche à droite",
     "spotlightPlay": "Lire la vidéo",
     "spotlightPause": "Mettre la vidéo en pause"
   },
@@ -248,7 +248,7 @@
     },
     "featured": "Création à la une",
     "featuredNone": "Aucune",
-    "featuredHint": "Elle ouvre votre page, en grand, dans une courte vidéo qui tourne autour d’elle (créations publiées uniquement).",
+    "featuredHint": "Elle ouvre votre page, en grand, dans une courte vidéo qui passe devant le sourire de gauche à droite (créations publiées uniquement).",
     "location": "Ville ou studio",
     "locationPlaceholder": "Ex. Lyon, Studio Rivoli",
     "links": "Liens",
@@ -283,17 +283,13 @@
       "preparing": "Préparation de la vidéo… Elle est enregistrée ici même, dans votre navigateur ; votre page montre l’image de la création en attendant.",
       "recording": "Enregistrement de la vidéo… {{percent}} %",
       "keepOpen": "Gardez cet onglet ouvert et visible quelques secondes.",
-      "ready_one": "Vidéo en ligne : un tour complet en {{count}} seconde.",
-      "ready_other": "Vidéo en ligne : un tour complet en {{count}} secondes.",
-      "length": "Durée du tour",
-      "seconds_one": "{{count}} s",
-      "seconds_other": "{{count}} s",
       "again": "Refaire la vidéo",
       "failed": {
         "unsupported": "Ce navigateur ne sait pas enregistrer de vidéo. Ouvrez le Studio dans Chrome, Edge ou Safari récent pour la créer ; votre page montre l’image de la création en attendant.",
         "interrupted": "L’enregistrement a été interrompu (onglet masqué). Il reprendra dès que l’onglet sera de nouveau visible.",
         "failed": "La vidéo n’a pas pu être enregistrée. Réessayez ; votre page montre l’image de la création en attendant."
-      }
+      },
+      "ready": "Vidéo en ligne : la caméra passe devant le sourire, de gauche à droite puis de droite à gauche, en boucle."
     }
   },
   "sections": {

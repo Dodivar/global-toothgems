@@ -1,12 +1,7 @@
 import { useCallback, useEffect, useRef, useState } from "react";
 import type { GlowbookItem } from "./glowbook";
 import type { GlowbookRepository } from "./glowbookRepository";
-import {
-  needsSpotlightVideo,
-  spotlightSecondsFor,
-  type SpotlightSeconds,
-  type SpotlightVideoState,
-} from "./glowbookSpotlight";
+import { needsSpotlightVideo, type SpotlightVideoState } from "./glowbookSpotlight";
 import type { Creation } from "./types";
 
 /**
@@ -14,8 +9,8 @@ import type { Creation } from "./types";
  * (decision 103), from the artist's own Studio tab — the only place WebGL can
  * draw it. Whenever a spotlight is chosen and the database says its video is
  * missing or stale (another creation, an edited design), the tab records a
- * new turn on a hidden stage, uploads it and records it. A failure is not
- * retried for the same design and duration (the artist can ask again); a
+ * new sweep on a hidden stage, uploads it and records it. A failure is not
+ * retried for the same design (the artist can ask again); a
  * recording cut short because the tab was hidden is retried once it shows.
  */
 
@@ -30,8 +25,8 @@ export interface SpotlightValue {
   job: SpotlightJob;
   /** A signed URL of the recorded video, for the Studio's preview. */
   videoUrl: string | null;
-  /** Records a new turn now, at `seconds` (else the current pace). */
-  record: (seconds?: SpotlightSeconds) => void;
+  /** Records a new video now. */
+  record: () => void;
 }
 
 /** Wait this long after a change before recording (several saves in a row record once). */
@@ -87,7 +82,7 @@ export function useSpotlightRecorder(
   }, []);
 
   const run = useCallback(
-    async (seconds: SpotlightSeconds, key: string) => {
+    async (key: string) => {
       if (!repo || !creation || !featuredItemId || running.current) return;
       running.current = true;
       tried.current.add(key);
@@ -105,12 +100,11 @@ export function useSpotlightRecorder(
         try {
           const opened = await ExportStage.open(creation.scene);
           stage = opened;
-          const blob = await opened.spotlight(type, seconds, { onProgress: (p) => setJob({ kind: "recording", progress: p }) });
+          const blob = await opened.spotlight(type, { onProgress: (p) => setJob({ kind: "recording", progress: p }) });
           const next = await repo.saveSpotlightVideo({
             itemId: featuredItemId,
             blob,
             type: type.fileType,
-            seconds,
             creationUpdatedAt: creation.updatedAt,
           });
           setState(next);
@@ -137,20 +131,16 @@ export function useSpotlightRecorder(
 
   // Record on its own when the video is missing or stale.
   const needed = needsSpotlightVideo(state) && state?.featuredItemId === featuredItemId && !!creation;
-  const autoSeconds = spotlightSecondsFor(state);
-  const autoKey = `${featuredItemId}|${creationStamp}|${autoSeconds}`;
+  const autoKey = `${featuredItemId}|${creationStamp}`;
   useEffect(() => {
     if (!needed || tried.current.has(autoKey) || document.visibilityState !== "visible") return;
-    const timer = setTimeout(() => void run(autoSeconds, autoKey), SETTLE_MS);
+    const timer = setTimeout(() => void run(autoKey), SETTLE_MS);
     return () => clearTimeout(timer);
-  }, [needed, autoKey, autoSeconds, run, visibleTick]);
+  }, [needed, autoKey, run, visibleTick]);
 
   const record = useCallback(
-    (seconds?: SpotlightSeconds) => {
-      const s = spotlightSecondsFor(state, seconds ?? null);
-      void run(s, `${featuredItemId}|${creationStamp}|${s}|asked-${Date.now()}`);
-    },
-    [state, featuredItemId, creationStamp, run],
+    () => void run(`${featuredItemId}|${creationStamp}|asked-${Date.now()}`),
+    [featuredItemId, creationStamp, run],
   );
 
   return { state, job, videoUrl, record };

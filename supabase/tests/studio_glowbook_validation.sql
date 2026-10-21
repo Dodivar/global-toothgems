@@ -2,7 +2,8 @@
 -- 3D Studio Glowbook validation suite
 -- (migrations 20261019072230_studio_glowbook, 20261019112411_studio_glowbook_creation,
 -- 20261019134715_studio_glowbook_look, 20261019142050_studio_glowbook_sections_certification,
--- 20261021174016_studio_glowbook_spotlight_video, decisions 99, 100, 102 and 103)
+-- 20261021174016_studio_glowbook_spotlight_video, 20261021190830_studio_glowbook_spotlight_sweep,
+-- decisions 99, 100, 102, 103 and 105)
 -- =============================================================================
 -- Proves, as the roles that really call them:
 --
@@ -39,7 +40,7 @@
 --   G12 the plan switch closed: sections cannot be written and the page
 --       shows none (its creations still shown); the badge stays; no
 --       spotlight video is recorded.
---   G13 the spotlight video: only its owner records it, for their current
+--   G13 the spotlight video (5-second front sweep only): only its owner records it, for their current
 --       spotlight, from a file of their folder, with the creation unchanged
 --       since it was drawn; anon then reads exactly that file; an edit of the
 --       design or a new spotlight hides it again; a file in use cannot be
@@ -574,7 +575,7 @@ begin
   end if;
   v_state := null;
   begin
-    perform public.studio_set_spotlight_video(i_one, other || '/spot-1.mp4', 'video/mp4', 4, v_at);
+    perform public.studio_set_spotlight_video(i_one, other || '/spot-1.mp4', 'video/mp4', 5, v_at);
   exception when others then v_state := sqlstate;
   end;
   if v_state is distinct from '42501' then raise exception 'FAIL G13: anon recorded (%)', v_state; end if;
@@ -582,7 +583,7 @@ begin
   perform set_config('request.jwt.claims', json_build_object('sub', m_none, 'role', 'authenticated')::text, true);
   v_state := null;
   begin
-    perform public.studio_set_spotlight_video(i_one, other || '/spot-1.mp4', 'video/mp4', 4, v_at);
+    perform public.studio_set_spotlight_video(i_one, other || '/spot-1.mp4', 'video/mp4', 5, v_at);
   exception when others then v_state := sqlstate;
   end;
   if v_state is distinct from '42501' then raise exception 'FAIL G13: recorded without access (%)', v_state; end if;
@@ -591,7 +592,7 @@ begin
   perform set_config('request.jwt.claims', json_build_object('sub', modr, 'role', 'authenticated')::text, true);
   v_state := null;
   begin
-    perform public.studio_set_spotlight_video(i_one, other || '/spot-1.mp4', 'video/mp4', 4, v_at);
+    perform public.studio_set_spotlight_video(i_one, other || '/spot-1.mp4', 'video/mp4', 5, v_at);
   exception when others then v_state := sqlstate;
   end;
   if v_state is distinct from '22023' then raise exception 'FAIL G13: recorded on another page (%)', v_state; end if;
@@ -600,12 +601,12 @@ begin
     v_state := null;
     begin
       case v_case
-        when 'not-spotlight' then perform public.studio_set_spotlight_video(i_o2, other || '/spot-1.mp4', 'video/mp4', 4, v_at);
-        when 'their-file' then perform public.studio_set_spotlight_video(i_one, artist || '/spot-x.mp4', 'video/mp4', 4, v_at);
-        when 'no-file' then perform public.studio_set_spotlight_video(i_one, other || '/nothing.mp4', 'video/mp4', 4, v_at);
-        when 'type' then perform public.studio_set_spotlight_video(i_one, other || '/spot-1.mp4', 'video/quicktime', 4, v_at);
-        when 'seconds' then perform public.studio_set_spotlight_video(i_one, other || '/spot-1.mp4', 'video/mp4', 5, v_at);
-        else perform public.studio_set_spotlight_video(i_one, other || '/spot-1.mp4', 'video/mp4', 4, v_at - interval '1 second');
+        when 'not-spotlight' then perform public.studio_set_spotlight_video(i_o2, other || '/spot-1.mp4', 'video/mp4', 5, v_at);
+        when 'their-file' then perform public.studio_set_spotlight_video(i_one, artist || '/spot-x.mp4', 'video/mp4', 5, v_at);
+        when 'no-file' then perform public.studio_set_spotlight_video(i_one, other || '/nothing.mp4', 'video/mp4', 5, v_at);
+        when 'type' then perform public.studio_set_spotlight_video(i_one, other || '/spot-1.mp4', 'video/quicktime', 5, v_at);
+        when 'seconds' then perform public.studio_set_spotlight_video(i_one, other || '/spot-1.mp4', 'video/mp4', 4, v_at);
+        else perform public.studio_set_spotlight_video(i_one, other || '/spot-1.mp4', 'video/mp4', 5, v_at - interval '1 second');
       end case;
     exception when others then v_state := sqlstate;
     end;
@@ -613,8 +614,8 @@ begin
       raise exception 'FAIL G13: % accepted (%)', v_case, v_state;
     end if;
   end loop;
-  v_page := public.studio_set_spotlight_video(i_one, other || '/spot-1.mp4', 'video/mp4', 4, v_at);
-  if (v_page ->> 'current')::boolean is not true or v_page ->> 'path' <> other || '/spot-1.mp4' or (v_page ->> 'seconds')::int <> 4 then
+  v_page := public.studio_set_spotlight_video(i_one, other || '/spot-1.mp4', 'video/mp4', 5, v_at);
+  if (v_page ->> 'current')::boolean is not true or v_page ->> 'path' <> other || '/spot-1.mp4' or (v_page ->> 'seconds')::int <> 5 then
     raise exception 'FAIL G13: state %', v_page;
   end if;
   -- The delete policy refuses a file in use (direct SQL deletes are blocked by Storage itself).
@@ -624,13 +625,22 @@ begin
   perform set_config('role', 'anon', true);
   perform set_config('request.jwt.claims', '{"role":"anon"}', true);
   v_page := public.studio_public_showcase('nova.gems');
-  if v_page #> '{look,spotlight_video}' is distinct from jsonb_build_object('path', other || '/spot-1.mp4', 'type', 'video/mp4', 'seconds', 4) then
+  if v_page #> '{look,spotlight_video}' is distinct from jsonb_build_object('path', other || '/spot-1.mp4', 'type', 'video/mp4', 'seconds', 5) then
     raise exception 'FAIL G13: public video %', v_page #> '{look,spotlight_video}';
   end if;
   select array_agg(name) into v_names from storage.objects where bucket_id = 'glowbook-videos' and (storage.foldername(name))[1] in (artist::text, other::text);
   if v_names is distinct from array[other || '/spot-1.mp4'] then raise exception 'FAIL G13: anon reads %', v_names; end if;
-  -- The design changes: the still render comes back until a new turn is recorded.
+  -- A full turn of decision 103 (4 s) is no longer current: only the 5-second front sweep is (decision 105).
   execute 'reset role';
+  update public.studio_showcases set spotlight_video_seconds = 4 where user_id = other;
+  perform set_config('role', 'anon', true);
+  perform set_config('request.jwt.claims', '{"role":"anon"}', true);
+  if public.studio_public_showcase('nova.gems') #> '{look,spotlight_video}' <> 'null'::jsonb then
+    raise exception 'FAIL G13: a former full-turn video shown';
+  end if;
+  execute 'reset role';
+  update public.studio_showcases set spotlight_video_seconds = 5 where user_id = other;
+  -- The design changes: the still render comes back until a new turn is recorded.
   update public.creations c set scene_data = c.scene_data || '{"lightPreset":"warm"}'::jsonb
    where c.id = (select creation_id from public.studio_showcase_items where id = i_one);
   perform set_config('role', 'anon', true);
@@ -679,7 +689,7 @@ begin
   if v_state is distinct from '42501' then raise exception 'FAIL G12: filed without the plan (%)', v_state; end if;
   v_state := null;
   begin
-    perform public.studio_set_spotlight_video(i_one, other || '/spot-1.mp4', 'video/mp4', 4, v_at);
+    perform public.studio_set_spotlight_video(i_one, other || '/spot-1.mp4', 'video/mp4', 5, v_at);
   exception when others then v_state := sqlstate;
   end;
   if v_state is distinct from '42501' then raise exception 'FAIL G12: video recorded without the plan (%)', v_state; end if;

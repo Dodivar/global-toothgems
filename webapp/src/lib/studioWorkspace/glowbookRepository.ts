@@ -12,7 +12,7 @@ import {
   type GlowbookDetails,
   type GlowbookItem,
 } from "./glowbook";
-import { spotlightVideoPath, toSpotlightState, type SpotlightSeconds, type SpotlightVideoState, type SpotlightVideoType } from "./glowbookSpotlight";
+import { SPOTLIGHT_SECONDS, spotlightVideoPath, toSpotlightState, type SpotlightVideoState, type SpotlightVideoType } from "./glowbookSpotlight";
 import { normalizeSectionName, toCertifiedCourses, toGlowbookSection, type CertifiedCourse, type GlowbookSection } from "./glowbookSections";
 
 /**
@@ -68,7 +68,6 @@ export interface GlowbookRepository {
     itemId: string;
     blob: Blob;
     type: SpotlightVideoType;
-    seconds: SpotlightSeconds;
     creationUpdatedAt: string;
   }): Promise<SpotlightVideoState | null>;
 }
@@ -253,7 +252,7 @@ export function createGlowbookRepository(client: TypedSupabaseClient, userId: st
       return data?.signedUrl ?? null;
     },
 
-    async saveSpotlightVideo({ itemId, blob, type, seconds, creationUpdatedAt }) {
+    async saveSpotlightVideo({ itemId, blob, type, creationUpdatedAt }) {
       const bucket = client.storage.from(BUCKETS.glowbookVideos);
       const path = spotlightVideoPath(userId, itemId, type, crypto.randomUUID());
       const upload = await bucket.upload(path, blob, { contentType: type, upsert: false });
@@ -262,7 +261,7 @@ export function createGlowbookRepository(client: TypedSupabaseClient, userId: st
         p_item_id: itemId,
         p_path: path,
         p_type: type,
-        p_seconds: seconds,
+        p_seconds: SPOTLIGHT_SECONDS,
         p_creation_updated_at: creationUpdatedAt,
       });
       if (error) {
