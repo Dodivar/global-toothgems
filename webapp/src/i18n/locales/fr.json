@@ -1396,7 +1396,11 @@
   "shapesPage": {
     "eyebrow": "Formes",
     "title": "Toutes les formes de gems",
-    "body": "Chaque forme regroupe les gems de cette coupe, toutes matières confondues. Choisissez-en une pour filtrer la boutique."
+    "body": "Chaque forme regroupe les gems de cette coupe, toutes matières confondues. Choisissez-en une pour filtrer la boutique.",
+    "familyTitle": "{{family}} : choisissez une forme",
+    "familyBody": "Sélectionnez la forme de gem {{family}} qui vous intéresse : vous ne verrez ensuite que les produits de cette forme.",
+    "all": "Toutes les formes",
+    "allAria": "Voir tous les gems {{family}}"
   },
   "colorsPage": {
     "eyebrow": "Couleurs",

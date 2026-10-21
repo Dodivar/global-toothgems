@@ -1396,7 +1396,11 @@
   "shapesPage": {
     "eyebrow": "Shapes",
     "title": "Every gem cut",
-    "body": "Each cut groups the gems of that silhouette, whatever the material. Pick one to filter the shop."
+    "body": "Each cut groups the gems of that silhouette, whatever the material. Pick one to filter the shop.",
+    "familyTitle": "{{family}}: pick a shape",
+    "familyBody": "Choose the {{family}} gem shape you want and you will only see products in that shape.",
+    "all": "All shapes",
+    "allAria": "See all {{family}} gems"
   },
   "colorsPage": {
     "eyebrow": "Colours",
