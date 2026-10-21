@@ -156,7 +156,13 @@
     "avatarAlt": "{{name}}’s profile picture",
     "featured": "In the spotlight",
     "sectionsLabel": "Filter the creations by section",
-    "allSections": "All"
+    "allSections": "All",
+    "profile": "Profile",
+    "profileOpen": "See {{name}}’s profile",
+    "profileEyebrow": "The artist",
+    "spotlightVideo": "“{{name}}” seen from left to right",
+    "spotlightPlay": "Play the video",
+    "spotlightPause": "Pause the video"
   },
   "admin": {
     "title": "Glowbook",
@@ -211,7 +217,7 @@
   },
   "look": {
     "title": "Customise my page",
-    "sub": "Make your Glowbook yours: picture, banner, colour, layout and links. Colour, background, layout, spotlight and city are published when you save; a new picture, banner or link is reviewed by the team first.",
+    "sub": "Make your Glowbook yours: picture, colour, layout and links. Colour, background, layout, spotlight and city are published when you save; a new picture or link is reviewed by the team first.",
     "pendingNote": "Some pictures or links wait for the team’s review: your page shows the previous ones meanwhile.",
     "rejectedNote": "Your latest pictures or links were not approved.",
     "rejectedNoteReason": "Your latest pictures or links were not approved. Reason: {{note}}",
@@ -242,7 +248,7 @@
     },
     "featured": "Creation in the spotlight",
     "featuredNone": "None",
-    "featuredHint": "Shown large at the top of your page (published creations only).",
+    "featuredHint": "It opens your page, large, in a short video moving in front of the smile from left to right (published creations only).",
     "location": "City or studio",
     "locationPlaceholder": "e.g. Lyon, Studio Rivoli",
     "links": "Links",
@@ -270,6 +276,20 @@
       "type": "This file is not a picture.",
       "tooLarge": "Picture too large (20 MB at most).",
       "unreadable": "This picture could not be read. Try a JPEG or PNG."
+    },
+    "spotlight": {
+      "title": "Spotlight video",
+      "saveFirst": "Save the look: the video of this creation will be prepared next.",
+      "preparing": "Preparing the video… It is recorded right here, in your browser; your page shows the creation’s picture meanwhile.",
+      "recording": "Recording the video… {{percent}}%",
+      "keepOpen": "Keep this tab open and visible for a few seconds.",
+      "again": "Record the video again",
+      "failed": {
+        "unsupported": "This browser cannot record video. Open the Studio in a recent Chrome, Edge or Safari to make it; your page shows the creation’s picture meanwhile.",
+        "interrupted": "The recording stopped (the tab was hidden). It starts again as soon as the tab is visible.",
+        "failed": "The video could not be recorded. Try again; your page shows the creation’s picture meanwhile."
+      },
+      "ready": "Video live: the camera moves in front of the smile, left to right and back, on a loop."
     }
   },
   "sections": {

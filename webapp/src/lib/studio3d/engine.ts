@@ -2717,16 +2717,29 @@ export class StudioEngine {
    * Draw one export frame at `width` × `height` device pixels and return the
    * stage's canvas holding it. The caller copies it at once (same task: the
    * drawing buffer is not preserved). `azimuth` null: the still, framed on the
-   * design from slightly above the front; a number: the turntable camera at
-   * that angle (radians) around the model. Only for an `offscreen` stage.
+   * design from slightly above the front; a number: the camera at that angle
+   * (radians, 0 = the front), on the `orbit` chosen. Only for an `offscreen` stage.
    */
-  renderExportFrame({ width, height, azimuth, transparent }: { width: number; height: number; azimuth: number | null; transparent: boolean }): HTMLCanvasElement {
+  renderExportFrame({
+    width,
+    height,
+    azimuth,
+    transparent,
+    orbit = "turntable",
+  }: {
+    width: number;
+    height: number;
+    azimuth: number | null;
+    transparent: boolean;
+    /** "turntable": around the whole model (a full turn); "front": around the gems at the still's distance (a sweep in front of the smile). */
+    orbit?: "turntable" | "front";
+  }): HTMLCanvasElement {
     if (!this.offscreen) throw new Error("renderExportFrame needs an offscreen stage");
     this.settleForExport();
     if (this.renderer.getPixelRatio() !== 1) this.renderer.setPixelRatio(1);
     const size = this.renderer.getSize(new THREE.Vector2());
     if (size.x !== width || size.y !== height) this.renderer.setSize(width, height, false);
-    const camera = this.exportCamera(width / height, azimuth);
+    const camera = this.exportCamera(width / height, azimuth, orbit);
     this.withCleanStage({ transparent }, () => this.renderer.render(this.scene, camera));
     return this.renderer.domElement;
   }
@@ -2763,7 +2776,7 @@ export class StudioEngine {
    * model's own centre at the pieces' height, far enough to clear the arch
    * at every angle, so a full turn never cuts into the teeth.
    */
-  private exportCamera(aspect: number, azimuth: number | null): THREE.PerspectiveCamera {
+  private exportCamera(aspect: number, azimuth: number | null, orbit: "turntable" | "front" = "turntable"): THREE.PerspectiveCamera {
     const cam = new THREE.PerspectiveCamera(this.camera.fov, aspect, 2, 700);
     const jewels = this.store.jewels;
     const box = new THREE.Box3();
@@ -2777,6 +2790,16 @@ export class StudioEngine {
       const w = Math.max(size.x + 10, 30);
       const dist = fit(w, Math.max(size.y + 8, 18));
       cam.position.copy(center).addScaledVector(new THREE.Vector3(0, 0.12, 1).normalize(), dist);
+      cam.lookAt(center);
+    } else if (orbit === "front") {
+      // The still's framing swung around the gems: the smile stays in view at every angle of the sweep.
+      const dist = fit(Math.max(size.x + 14, 34), Math.max(size.y + 10, 20));
+      const elevation = Math.atan(0.12);
+      cam.position.set(
+        center.x + Math.sin(azimuth) * Math.cos(elevation) * dist,
+        center.y + Math.sin(elevation) * dist,
+        center.z + Math.cos(azimuth) * Math.cos(elevation) * dist,
+      );
       cam.lookAt(center);
     } else {
       const pivot = new THREE.Vector3(this.stage.target.x, center.y, this.stage.target.z);

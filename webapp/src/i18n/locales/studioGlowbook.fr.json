@@ -156,7 +156,13 @@
     "avatarAlt": "Photo de profil de {{name}}",
     "featured": "À la une",
     "sectionsLabel": "Filtrer les créations par section",
-    "allSections": "Toutes"
+    "allSections": "Toutes",
+    "profile": "Profil",
+    "profileOpen": "Voir le profil de {{name}}",
+    "profileEyebrow": "L’artiste",
+    "spotlightVideo": "« {{name}} » vu de gauche à droite",
+    "spotlightPlay": "Lire la vidéo",
+    "spotlightPause": "Mettre la vidéo en pause"
   },
   "admin": {
     "title": "Glowbook",
@@ -211,7 +217,7 @@
   },
   "look": {
     "title": "Personnaliser ma page",
-    "sub": "Donnez à votre Glowbook votre identité : photo, bannière, couleur, mise en page et liens. Couleur, fond, mise en page, création à la une et ville sont publiés dès l’enregistrement ; une nouvelle photo, bannière ou un nouveau lien est d’abord validé par l’équipe.",
+    "sub": "Donnez à votre Glowbook votre identité : photo, couleur, mise en page et liens. Couleur, fond, mise en page, création à la une et ville sont publiés dès l’enregistrement ; une nouvelle photo ou un nouveau lien est d’abord validé par l’équipe.",
     "pendingNote": "Des images ou des liens attendent la validation de l’équipe : votre page montre les précédents en attendant.",
     "rejectedNote": "Vos dernières images ou liens n’ont pas été validés.",
     "rejectedNoteReason": "Vos dernières images ou liens n’ont pas été validés. Motif : {{note}}",
@@ -242,7 +248,7 @@
     },
     "featured": "Création à la une",
     "featuredNone": "Aucune",
-    "featuredHint": "Mise en avant en grand, en haut de votre page (créations publiées uniquement).",
+    "featuredHint": "Elle ouvre votre page, en grand, dans une courte vidéo qui passe devant le sourire de gauche à droite (créations publiées uniquement).",
     "location": "Ville ou studio",
     "locationPlaceholder": "Ex. Lyon, Studio Rivoli",
     "links": "Liens",
@@ -270,6 +276,20 @@
       "type": "Ce fichier n’est pas une image.",
       "tooLarge": "Image trop lourde (20 Mo au plus).",
       "unreadable": "Cette image n’a pas pu être lue. Essayez en JPEG ou PNG."
+    },
+    "spotlight": {
+      "title": "Vidéo à la une",
+      "saveFirst": "Enregistrez l’apparence : la vidéo de cette création sera préparée ensuite.",
+      "preparing": "Préparation de la vidéo… Elle est enregistrée ici même, dans votre navigateur ; votre page montre l’image de la création en attendant.",
+      "recording": "Enregistrement de la vidéo… {{percent}} %",
+      "keepOpen": "Gardez cet onglet ouvert et visible quelques secondes.",
+      "again": "Refaire la vidéo",
+      "failed": {
+        "unsupported": "Ce navigateur ne sait pas enregistrer de vidéo. Ouvrez le Studio dans Chrome, Edge ou Safari récent pour la créer ; votre page montre l’image de la création en attendant.",
+        "interrupted": "L’enregistrement a été interrompu (onglet masqué). Il reprendra dès que l’onglet sera de nouveau visible.",
+        "failed": "La vidéo n’a pas pu être enregistrée. Réessayez ; votre page montre l’image de la création en attendant."
+      },
+      "ready": "Vidéo en ligne : la caméra passe devant le sourire, de gauche à droite puis de droite à gauche, en boucle."
     }
   },
   "sections": {

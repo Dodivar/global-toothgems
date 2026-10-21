@@ -11,7 +11,10 @@
 --       the path must be a file of their folder (22023);
 --   B5  another member reads neither the row nor the file and cannot record it;
 --   B6  after the subscription ends: the logo is no longer returned nor
---       readable, the member still removes it (row and file).
+--       readable, the member still removes it (row and file);
+--   B7  share-link previews (migration 20261021172034): a visitor reads the
+--       name and render of a creation with an active share link, nothing for
+--       another creation, an unknown token or once the link is revoked.
 -- ONE transaction, ALWAYS rolled back by raising `ALL STUDIO SHARE BRANDING TESTS PASSED`.
 -- =============================================================================
 
@@ -28,6 +31,8 @@ declare
   v_text text;
   v_cnt  int;
   v_state text;
+  v_c1 uuid;
+  v_token text;
   passed text[] := '{}';
 begin
   insert into auth.users (id, aud, role, email, created_at, updated_at) values
@@ -192,6 +197,43 @@ begin
      and policyname = 'studio-share-logos: owners delete' and qual not like '%studio_share_logo_allowed%';
   if v_cnt <> 1 then raise exception 'FAIL B6: deleting own files must not need the plan'; end if;
   passed := passed || 'B6'::text;
+
+  -- B7: share-link previews
+  perform set_config('role', 'authenticated', true);
+  perform set_config('request.jwt.claims', json_build_object('sub', art, 'role', 'authenticated')::text, true);
+  insert into public.creations (name, description, scene_data, thumbnail_path)
+  values ('Shared smile', 'Two crystals',
+          jsonb_build_object('version', 2, 'model', 'dentition', 'lightPreset', 'studio', 'camera', null, 'pieces', '[]'::jsonb, 'groups', '[]'::jsonb),
+          art || '/shared.jpg')
+  returning id into v_c1;
+  insert into public.creations (name, scene_data, thumbnail_path)
+  values ('Private one', jsonb_build_object('version', 2, 'model', 'dentition', 'lightPreset', 'studio', 'camera', null, 'pieces', '[]'::jsonb, 'groups', '[]'::jsonb),
+          art || '/private.jpg');
+  execute 'reset role';
+  insert into storage.objects (bucket_id, name) values ('studio-thumbnails', art || '/shared.jpg'), ('studio-thumbnails', art || '/private.jpg');
+  perform set_config('role', 'authenticated', true);
+  v_token := public.studio_share_creation(v_c1);
+  perform set_config('role', 'anon', true);
+  perform set_config('request.jwt.claims', '{"role":"anon"}', true);
+  v_json := public.studio_shared_creation_preview(v_token);
+  if v_json ->> 'name' is distinct from 'Shared smile' or v_json ->> 'thumbnail_path' is distinct from art || '/shared.jpg' then
+    raise exception 'FAIL B7: preview %', v_json;
+  end if;
+  if public.studio_shared_creation_preview(repeat('a', 48)) is not null or public.studio_shared_creation_preview('nope') is not null then
+    raise exception 'FAIL B7: preview of an unknown token';
+  end if;
+  select array_agg(name) into v_text from storage.objects where bucket_id = 'studio-thumbnails' and name like art || '/%';
+  if v_text is distinct from '{' || art || '/shared.jpg}' then raise exception 'FAIL B7: visitor reads renders %', v_text; end if;
+  perform set_config('role', 'authenticated', true);
+  perform set_config('request.jwt.claims', json_build_object('sub', art, 'role', 'authenticated')::text, true);
+  perform public.studio_revoke_creation_share(v_c1);
+  perform set_config('role', 'anon', true);
+  perform set_config('request.jwt.claims', '{"role":"anon"}', true);
+  if public.studio_shared_creation_preview(v_token) is not null then raise exception 'FAIL B7: revoked link still previewed'; end if;
+  select count(*) into v_cnt from storage.objects where bucket_id = 'studio-thumbnails' and name like art || '/%';
+  if v_cnt <> 0 then raise exception 'FAIL B7: render readable after revocation (%)', v_cnt; end if;
+  execute 'reset role';
+  passed := passed || 'B7'::text;
 
   raise exception 'ALL STUDIO SHARE BRANDING TESTS PASSED (%)', array_to_string(passed, ', ');
 end;

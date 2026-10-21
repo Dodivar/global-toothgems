@@ -7,7 +7,6 @@ import {
   Copy,
   Eye,
   ListChecks,
-  Pencil,
   Trash2,
   Upload,
   Users,
@@ -175,24 +174,27 @@ export function CourseCard({ course, actions }: { course: TrainingCourse; action
         </div>
       </div>
 
-      <div className="flex items-center gap-2 border-t border-[var(--border-subtle)] bg-[var(--admin-panel-sunken)] p-3">
-        <AdminButton variant="primary" size="sm" iconLeft={Wrench} onClick={() => actions.onEdit(course)}>
+      {/* Wraps rather than overflows: in a two-column grid the card is
+          narrower than the three labelled actions side by side. */}
+      <div className="flex flex-wrap items-center gap-2 border-t border-[var(--border-subtle)] bg-[var(--admin-panel-sunken)] p-3">
+        <AdminButton variant="primary" size="sm" iconLeft={Wrench} onClick={() => actions.onEdit(course)} className="whitespace-nowrap">
           {t("admin.training.actions.openBuilder")}
         </AdminButton>
-        <AdminButton variant="outline" size="sm" iconLeft={Eye} onClick={() => actions.onPreview(course)}>
+        <AdminButton variant="outline" size="sm" iconLeft={Eye} onClick={() => actions.onPreview(course)} className="whitespace-nowrap">
           {t("admin.training.actions.preview")}
         </AdminButton>
-        <span className="flex-1" />
-        <AdminButton
-          variant="ghost"
-          size="sm"
-          iconLeft={Pencil}
-          onClick={() => actions.onReview(course)}
-          aria-label={`${t("admin.training.actions.review")} — ${title}`}
-        >
-          <span className="sr-only sm:not-sr-only">{t("admin.training.actions.review")}</span>
-        </AdminButton>
-        <OverflowMenu label={t("admin.training.actions.more", { name: title })} actions={menu} />
+        <span className="flex flex-1 items-center justify-end gap-1">
+          <AdminButton
+            variant="ghost"
+            size="sm"
+            iconLeft={CircleCheck}
+            onClick={() => actions.onReview(course)}
+            className="whitespace-nowrap"
+          >
+            {t("admin.training.actions.review")}
+          </AdminButton>
+          <OverflowMenu label={t("admin.training.actions.more", { name: title })} actions={menu.filter((action) => action.id !== "review")} />
+        </span>
       </div>
     </article>
   );

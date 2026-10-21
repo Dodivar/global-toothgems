@@ -1,6 +1,6 @@
 import { useEffect, useId, useMemo, useRef, useState, type ReactNode } from "react";
 import clsx from "clsx";
-import { CircleAlert, Clapperboard, Download, ImageUp, LoaderCircle, Lock, Share, Trash2 } from "lucide-react";
+import { CircleAlert, Clapperboard, Download, ImageUp, LoaderCircle, Lock, Trash2 } from "lucide-react";
 import { useTranslation } from "react-i18next";
 import watermark from "../../../assets/logo-wordmark-blue.png";
 import { Button } from "../../ui/Button";
@@ -15,8 +15,9 @@ import { ExportError, ExportStage, loadBrandMark, type ExportErrorCode, type Exp
 import { FORMAT_RATIOS, SHARE_FORMATS, scaledSize, type ShareFormat } from "../../../lib/studio3d/socialExport/formats";
 import { LAYOUT_TEMPLATE_IDS, layoutFor, type LayoutTemplateId } from "../../../lib/studio3d/socialExport/layouts";
 import { exportFileName, pickVideoType, TURNTABLE_GIF, TURNTABLE_VIDEO, type ImageType, type ShareOutput } from "../../../lib/studio3d/socialExport/motion";
-import { canShareFiles } from "../../../lib/studio3d/socialShare";
+import { NETWORK_NAMES, SOCIAL_NETWORKS, recommendedFormat, type SocialNetwork } from "../../../lib/studio3d/socialExport/networks";
 import type { Creation } from "../../../lib/studioWorkspace/types";
+import { NetworkButtons } from "./NetworkButtons";
 import { useShareBranding } from "./useShareBranding";
 
 type StageState = { kind: "loading" } | { kind: "ready"; stage: ExportStage } | { kind: "failed"; code: ExportErrorCode };
@@ -121,7 +122,7 @@ export default function SocialExportDialog({ creation, onClose }: { creation: Cr
   const [title, setTitle] = useState(creation.name.slice(0, TITLE_MAX));
   const [handle, setHandle] = useState("");
   const [rawJob, setJob] = useState<Job>({ kind: "idle" });
-  const [shareFailed, setShareFailed] = useState(false);
+  const [destination, setDestination] = useState<SocialNetwork | "any">("any");
   const previewRef = useRef<HTMLCanvasElement>(null);
   const abortRef = useRef<AbortController | null>(null);
   const fileInputRef = useRef<HTMLInputElement>(null);
@@ -188,7 +189,6 @@ export default function SocialExportDialog({ creation, onClose }: { creation: Cr
     abortRef.current = controller;
     const out = effectiveOutput;
     const startedWith = settings;
-    setShareFailed(false);
     setJob({ kind: "running", output: out, progress: 0 });
     const onProgress = (progress: number) => setJob((j) => (j.kind === "running" ? { ...j, progress } : j));
     try {
@@ -214,14 +214,10 @@ export default function SocialExportDialog({ creation, onClose }: { creation: Cr
     }
   };
 
-  const share = async (file: File) => {
-    setShareFailed(false);
-    try {
-      await navigator.share({ files: [file], title: creation.name });
-    } catch (err) {
-      if (err instanceof DOMException && err.name === "AbortError") return; // closed by the member
-      setShareFailed(true);
-    }
+  // Choosing where to post preselects the format that network shows best.
+  const chooseDestination = (value: SocialNetwork | "any") => {
+    setDestination(value);
+    if (value !== "any") setFormat(recommendedFormat(value, effectiveOutput));
   };
 
   const onLogoPicked = (file: File | undefined) => {
@@ -230,7 +226,6 @@ export default function SocialExportDialog({ creation, onClose }: { creation: Cr
   };
 
   const markOptions = choices.map((value) => ({ value, label: k(`mark.${value}`) }));
-  const shareable = job.kind === "done" && canShareFiles(job.file);
 
   return (
     <Dialog
@@ -300,6 +295,18 @@ export default function SocialExportDialog({ creation, onClose }: { creation: Cr
         </div>
 
         <div className="grid min-w-0 gap-4">
+          <label className="grid gap-1.5 text-[12.5px] font-bold text-[var(--text-primary)]">
+            {k("destination.label")}
+            <select className={fieldClass} value={destination} disabled={running} onChange={(e) => chooseDestination(e.target.value as SocialNetwork | "any")}>
+              <option value="any">{k("destination.any")}</option>
+              {SOCIAL_NETWORKS.map((n) => (
+                <option key={n} value={n}>
+                  {NETWORK_NAMES[n]}
+                </option>
+              ))}
+            </select>
+            <span className="text-[11.5px] font-normal text-[var(--text-muted)]">{k("destination.hint")}</span>
+          </label>
           <ChoiceGroup
             label={k("format.label")}
             name={`${uid}-format`}
@@ -315,7 +322,10 @@ export default function SocialExportDialog({ creation, onClose }: { creation: Cr
               name={`${uid}-output`}
               value={effectiveOutput}
               disabled={running}
-              onChange={setOutput}
+              onChange={(value) => {
+                setOutput(value);
+                if (destination !== "any") setFormat(recommendedFormat(destination, value));
+              }}
               options={[
                 { value: "image", label: k("output.image") },
                 { value: "video", label: k("output.video"), disabled: !videoType },
@@ -470,26 +480,16 @@ export default function SocialExportDialog({ creation, onClose }: { creation: Cr
           )}
 
           {job.kind === "done" && (
-            <div role="status" className="grid gap-2.5 rounded-[var(--radius-md)] border border-[var(--border-subtle)] bg-[var(--surface-brand-wash)] p-3">
-              <p className="m-0 break-all text-[12.5px] font-semibold text-[var(--text-primary)]">
+            <div className="grid gap-2.5 rounded-[var(--radius-md)] border border-[var(--border-subtle)] bg-[var(--surface-brand-wash)] p-3">
+              <p role="status" className="m-0 break-all text-[12.5px] font-semibold text-[var(--text-primary)]">
                 {k("result.ready", { file: job.file.name, size: fileSize(job.file.size, i18n.language) })}
               </p>
               <div className="flex flex-wrap gap-2">
                 <Button variant="primary" size="sm" iconLeft={Download} onClick={() => downloadFile(job.file)}>
                   {k("result.download")}
                 </Button>
-                {shareable && (
-                  <Button variant="outline" size="sm" iconLeft={Share} onClick={() => void share(job.file)}>
-                    {k("result.share")}
-                  </Button>
-                )}
               </div>
-              {shareable && <p className="m-0 text-[11.5px] text-[var(--text-muted)]">{k("result.shareHint")}</p>}
-              {shareFailed && (
-                <p role="alert" className="m-0 text-[12px] text-[var(--status-error-fg)]">
-                  {k("errors.share")}
-                </p>
-              )}
+              <NetworkButtons creation={creation} file={job.file} format={format} output={job.output} highlight={destination === "any" ? null : destination} />
             </div>
           )}
         </div>

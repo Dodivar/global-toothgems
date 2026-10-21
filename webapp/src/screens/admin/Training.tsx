@@ -2,7 +2,7 @@
 
 import { useMemo, useState } from "react";
 import { useTranslation } from "react-i18next";
-import { useNavigate, useSearchParams } from "../../lib/navigation";
+import { useNavigate } from "../../lib/navigation";
 import { GraduationCap, Images, Plus, Trash2, TriangleAlert, Upload } from "lucide-react";
 import { AdminButton } from "../../components/admin/AdminButton";
 import { AdminHeader } from "../../components/admin/AdminHeader";
@@ -10,69 +10,37 @@ import { ConfirmationDialog } from "../../components/admin/ConfirmationDialog";
 import { EmptyState } from "../../components/admin/EmptyState";
 import { StatCard } from "../../components/admin/StatCard";
 import { CourseCard, type CourseActions } from "../../components/admin/training/CourseCard";
-import { TrainingToolbar } from "../../components/admin/training/TrainingToolbar";
+import { StatusBadge } from "../../components/admin/training/TrainingPrimitives";
 import { trainingErrorMessage } from "../../components/admin/training/trainingErrors";
 import { MEDIA_LIBRARY_PATH } from "../../components/admin/training/MediaPickerDialog";
 import { useAdminTraining } from "../../lib/adminTraining";
 import { useLocalized } from "../../lib/localized";
 import { useToast } from "../../lib/toast";
-import {
-  DEFAULT_TRAINING_FILTERS,
-  TRAINING_SORT_KEYS,
-  filterCourses,
-  isTrainingFiltered,
-  type TrainingFilterState,
-  type TrainingSortKey,
-} from "../../lib/trainingFilters";
-import type { CourseCategory, CourseLevel, CourseStatus, TrainingCourse } from "../../data/adminTraining";
+import { groupCoursesByStatus } from "../../lib/trainingFilters";
+import type { CourseStatus, TrainingCourse } from "../../data/adminTraining";
 import { useAdminShell } from "./AdminLayout";
 
 /**
  * The training catalogue.
  *
- * Same shape as the product list, and deliberately so: filters travel in the
- * query string, the page owns every consequence, and the cards stay
- * presentational. What differs is the unit — a course is a hierarchy, not a
- * row — so the list is a grid of cards that each show their own structure.
+ * A handful of courses, so no search or filters (owner's decision,
+ * 2026-10-21): the cards are grouped by status — on sale, drafts, withdrawn —
+ * most recently changed first, and the figures at the top jump to a section.
+ * A course is a hierarchy, not a row, so each card shows its own structure.
  */
 export function Training() {
-  const { t, i18n } = useTranslation();
+  const { t } = useTranslation();
   const L = useLocalized();
   const navigate = useNavigate();
   const { openNav } = useAdminShell();
   const { showToast } = useToast();
   const { courses, loading, loadError, reload, duplicateCourse, deleteCourse, setCourseStatus } = useAdminTraining();
 
-  const [params, setParams] = useSearchParams();
   const [deleting, setDeleting] = useState<TrainingCourse | null>(null);
   const [unpublishing, setUnpublishing] = useState<TrainingCourse | null>(null);
   const [pending, setPending] = useState(false);
 
-  const filters = useMemo<TrainingFilterState>(
-    () => ({
-      search: params.get("q") ?? "",
-      status: (params.get("statut") as CourseStatus | null) ?? "any",
-      category: (params.get("categorie") as CourseCategory | null) ?? "any",
-      level: (params.get("niveau") as CourseLevel | null) ?? "any",
-      sort: TRAINING_SORT_KEYS.includes(params.get("tri") as TrainingSortKey)
-        ? (params.get("tri") as TrainingSortKey)
-        : "recent",
-    }),
-    [params],
-  );
-
-  const setFilters = (next: TrainingFilterState) => {
-    const search = new URLSearchParams();
-    if (next.search.trim()) search.set("q", next.search);
-    if (next.status !== "any") search.set("statut", next.status);
-    if (next.category !== "any") search.set("categorie", next.category);
-    if (next.level !== "any") search.set("niveau", next.level);
-    if (next.sort !== "recent") search.set("tri", next.sort);
-    // Replace, not push: typing in the search box must not fill the history.
-    setParams(search, { replace: true });
-  };
-
-  const visible = useMemo(() => filterCourses(courses, filters, i18n.language), [courses, filters, i18n.language]);
+  const groups = useMemo(() => groupCoursesByStatus(courses), [courses]);
 
   const stats = useMemo(
     () => ({
@@ -107,8 +75,6 @@ export function Training() {
     onDelete: (course) => setDeleting(course),
   };
 
-  const filtered = isTrainingFiltered(filters);
-
   return (
     <>
       <AdminHeader
@@ -141,7 +107,7 @@ export function Training() {
             hint={t("admin.training.list.description")}
             icon={GraduationCap}
             tone="brand"
-            to="/admin/formations"
+            to="#formations-sections"
             linkLabel={t("admin.training.list.metricTotal")}
           />
           <StatCard
@@ -150,7 +116,7 @@ export function Training() {
             hint={t("admin.training.statusHelp.published")}
             icon={Upload}
             tone="success"
-            to="/admin/formations?statut=published"
+            to="#formations-published"
             linkLabel={t("admin.training.list.metricPublished")}
           />
           <StatCard
@@ -159,7 +125,7 @@ export function Training() {
             hint={t("admin.training.statusHelp.draft")}
             icon={Plus}
             tone="warning"
-            to="/admin/formations?statut=draft"
+            to="#formations-draft"
             linkLabel={t("admin.training.list.metricDrafts")}
           />
           <StatCard
@@ -167,17 +133,10 @@ export function Training() {
             value={stats.learners}
             hint={t("admin.training.list.completion")}
             icon={GraduationCap}
-            to="/admin/formations?tri=enrolled-desc"
+            to="/admin/clients?formation=has"
             linkLabel={t("admin.training.list.metricLearners")}
           />
         </div>
-
-        <TrainingToolbar
-          filters={filters}
-          onChange={setFilters}
-          resultCount={visible.length}
-          totalCount={courses.length}
-        />
 
         {loadError ? (
           <div role="alert" className="gt-admin-panel grid justify-items-center gap-3 p-10 text-center">
@@ -203,37 +162,25 @@ export function Training() {
               {t("admin.training.list.title")}
             </p>
           </div>
-        ) : visible.length === 0 ? (
+        ) : groups.length === 0 ? (
           <div className="gt-admin-panel">
             <EmptyState
               icon={GraduationCap}
-              title={filtered ? t("admin.training.list.emptyFilteredTitle") : t("admin.training.list.emptyTitle")}
-              body={filtered ? t("admin.training.list.emptyFilteredBody") : t("admin.training.list.emptyBody")}
+              title={t("admin.training.list.emptyTitle")}
+              body={t("admin.training.list.emptyBody")}
               action={
-                filtered ? (
-                  <AdminButton variant="outline" onClick={() => setFilters(DEFAULT_TRAINING_FILTERS)}>
-                    {t("admin.training.list.clearFilters")}
-                  </AdminButton>
-                ) : (
-                  <AdminButton
-                    variant="primary"
-                    iconLeft={Plus}
-                    onClick={() => navigate("/admin/formations/nouvelle")}
-                  >
-                    {t("admin.training.list.create")}
-                  </AdminButton>
-                )
+                <AdminButton variant="primary" iconLeft={Plus} onClick={() => navigate("/admin/formations/nouvelle")}>
+                  {t("admin.training.list.create")}
+                </AdminButton>
               }
             />
           </div>
         ) : (
-          <ul className="m-0 grid list-none gap-4 p-0 md:grid-cols-2 2xl:grid-cols-3">
-            {visible.map((course) => (
-              <li key={course.id} className="grid">
-                <CourseCard course={course} actions={actions} />
-              </li>
+          <div id="formations-sections" className="grid scroll-mt-[calc(var(--admin-header-h)+16px)] gap-8" aria-label={t("admin.training.list.sections")} role="region">
+            {groups.map((group) => (
+              <StatusSection key={group.status} status={group.status} courses={group.courses} actions={actions} />
             ))}
-          </ul>
+          </div>
         )}
       </div>
 
@@ -306,5 +253,31 @@ export function Training() {
         onCancel={() => setDeleting(null)}
       />
     </>
+  );
+}
+
+/** One status of the catalogue: its name, what it means, and its cards. */
+function StatusSection({ status, courses, actions }: { status: CourseStatus; courses: TrainingCourse[]; actions: CourseActions }) {
+  const { t } = useTranslation();
+  const headingId = `formations-${status}-title`;
+  return (
+    <section id={`formations-${status}`} aria-labelledby={headingId} className="grid scroll-mt-[calc(var(--admin-header-h)+16px)] gap-3">
+      <header className="flex flex-wrap items-center gap-x-3 gap-y-1">
+        <h2 id={headingId} className="m-0 flex items-center gap-2 text-[length:var(--text-h4)]">
+          <StatusBadge status={status} size="sm" />
+          <span className="text-[length:var(--text-body-sm)] font-semibold tabular-nums text-[var(--text-muted)]">
+            {t("admin.training.list.sectionCount", { count: courses.length })}
+          </span>
+        </h2>
+        <p className="m-0 text-[length:var(--text-caption)] text-[var(--text-muted)]">{t(`admin.training.statusHelp.${status}`)}</p>
+      </header>
+      <ul className="m-0 grid list-none gap-4 p-0 md:grid-cols-2 2xl:grid-cols-3">
+        {courses.map((course) => (
+          <li key={course.id} className="grid min-w-0">
+            <CourseCard course={course} actions={actions} />
+          </li>
+        ))}
+      </ul>
+    </section>
   );
 }

@@ -7,12 +7,15 @@ import { supabasePublishableKey, supabaseUrl } from "./supabase/env";
 import { stableSignedUrls } from "./supabase/signedUrlCache";
 import { useVisibleInterval } from "./useVisibleInterval";
 import type { Database } from "./supabase/database.types";
+import { drawThumbnail, thumbPath } from "./trainingMediaThumbnail";
 import {
+  cleanFolderName,
   displayName,
   mediaKindOf,
   storageFileName,
   validateUpload,
   type MediaCategory,
+  type MediaFolder,
   type MediaKind,
   type TrainingMedia,
   type UploadRejection,
@@ -30,6 +33,15 @@ import {
  *
  * Without Supabase (prototype), the library is the seeded studio photographs
  * and uploads stay in the page (object URLs).
+ *
+ * Folders and thumbnails (decision 104): files are sorted into the editors'
+ * own folders (`training_media_folders`, one per file, optional), and the
+ * grids show a small WebP drawn by the browser at upload
+ * (`trainingMediaThumbnail.ts`) instead of the original. Files uploaded before
+ * get theirs once, when a training manager opens the library
+ * (`backfillThumbnails`). The whole list of rows is read (a few hundred bytes
+ * each): the courses resolve their media through `urlOf()`, which must know
+ * every file — what the grids page is what they draw, not what they read.
  *
  * Screens never use a course's media reference as a URL: they ask `urlOf()`.
  */
@@ -50,7 +62,14 @@ export interface RejectedUpload {
   reason: UploadFailure;
 }
 
-export type MediaPatch = Partial<Pick<TrainingMedia, "name" | "alt" | "category" | "tags">>;
+export type MediaPatch = Partial<Pick<TrainingMedia, "name" | "alt" | "category" | "tags" | "folderId">>;
+
+export interface UploadOptions {
+  category: MediaCategory;
+  folderId: string | null;
+}
+
+export type FolderFailure = "taken" | "invalid" | "failed";
 
 interface TrainingMediaValue {
   source: "mock" | "supabase";
@@ -59,9 +78,21 @@ interface TrainingMediaValue {
   loadFailed: boolean;
   reload: () => void;
   pending: PendingUpload[];
+  /** Whether the signed-in staff member may change the library (`manage_training`); navigation only. */
+  canManage: boolean;
   /** Validates and uploads; resolves with the new items and the files refused. */
-  upload: (files: File[], category: MediaCategory) => Promise<{ added: TrainingMedia[]; rejected: RejectedUpload[] }>;
+  upload: (files: File[], options: UploadOptions) => Promise<{ added: TrainingMedia[]; rejected: RejectedUpload[] }>;
   updateMedia: (id: string, patch: MediaPatch) => Promise<void>;
+  /** Files them in one folder (null = not filed). */
+  moveMedia: (ids: string[], folderId: string | null) => Promise<void>;
+  /** The library's folders, in their order. */
+  folders: MediaFolder[];
+  createFolder: (name: string) => Promise<MediaFolder>;
+  renameFolder: (id: string, name: string) => Promise<void>;
+  /** Removes the folder; its files stay, not filed. */
+  deleteFolder: (id: string) => Promise<void>;
+  /** Draws the missing thumbnails of older files, one at a time (managers only). */
+  backfillThumbnails: () => void;
   /** "inUse" when a course still points at the file (the database refuses it). */
   deleteMedia: (id: string) => Promise<"deleted" | "inUse">;
   /** The library entry behind a course's media reference, when there is one. */
@@ -90,6 +121,19 @@ const MOCK_TICK_MS = 80;
 type MediaRow = Database["public"]["Tables"]["training_media"]["Row"] & {
   training_media_translations: Database["public"]["Tables"]["training_media_translations"]["Row"][];
 };
+type FolderRow = Database["public"]["Tables"]["training_media_folders"]["Row"];
+
+/** PostgREST returns at most this many rows per request; the library is read in pages of it. */
+const PAGE_ROWS = 1000;
+
+/** A folder error the screens can word: a duplicate name is the database's unique index. */
+export class FolderError extends Error {
+  readonly reason: FolderFailure;
+  constructor(reason: FolderFailure) {
+    super(reason);
+    this.reason = reason;
+  }
+}
 
 /* -------------------------------------------------------------------------- */
 /* File metadata                                                               */
@@ -151,6 +195,8 @@ function seedLibrary(): TrainingMedia[] {
       ref: entry.src,
       kind: "image",
       src: entry.src,
+      thumbSrc: entry.src,
+      folderId: null,
       mimeType: "image/jpeg",
       name: meta?.name ?? entry.id,
       alt: { ...entry.label },
@@ -170,13 +216,15 @@ function seedLibrary(): TrainingMedia[] {
 /* Supabase                                                                    */
 /* -------------------------------------------------------------------------- */
 
-function rowToMedia(row: MediaRow, src: string): TrainingMedia {
+function rowToMedia(row: MediaRow, src: string, thumbSrc: string): TrainingMedia {
   const en = row.training_media_translations.find((t) => t.locale === "en");
   return {
     id: row.id,
     ref: row.id,
     kind: row.kind as MediaKind,
     src,
+    thumbSrc,
+    folderId: row.folder_id,
     mimeType: row.mime_type,
     name: row.name,
     alt: { fr: row.alt_text ?? "", en: en?.alt_text ?? "" },
@@ -189,6 +237,10 @@ function rowToMedia(row: MediaRow, src: string): TrainingMedia {
     createdAt: row.created_at,
     origin: "library",
   };
+}
+
+function rowToFolder(row: FolderRow): MediaFolder {
+  return { id: row.id, name: row.name, position: row.position };
 }
 
 /** The direct storage hostname, recommended for large uploads; the API URL otherwise. */
@@ -243,21 +295,33 @@ export function TrainingMediaProvider({ children }: { children: ReactNode }) {
   const enabled = source === "mock" || (!restoring && admin !== null);
 
   const [items, setItems] = useState<TrainingMedia[]>(() => (source === "supabase" ? [] : seedLibrary()));
+  const [folders, setFolders] = useState<MediaFolder[]>([]);
+  const [canManage, setCanManage] = useState(source === "mock");
   const [loading, setLoading] = useState(source === "supabase");
   const [loadFailed, setLoadFailed] = useState(false);
   const [loadCount, setLoadCount] = useState(0);
   const [pending, setPending] = useState<PendingUpload[]>([]);
-  // Storage paths by media id, to sign and delete files.
-  const paths = useRef(new Map<string, string>());
+  // Storage paths by media id (original and thumbnail), to sign and delete files.
+  const paths = useRef(new Map<string, { original: string; thumb: string | null }>());
   const itemsRef = useRef(items);
   useEffect(() => {
     itemsRef.current = items;
   }, [items]);
+  // Files whose thumbnail was already attempted in this tab (drawn or not).
+  const thumbTried = useRef(new Set<string>());
+  const backfilling = useRef(false);
 
+  /** Signed URLs by media id: the original and, when there is one, the thumbnail. */
   const sign = useCallback(
-    async (ids: string[]): Promise<Map<string, string>> => {
-      const signed = new Map<string, string>();
-      const list = ids.map((id) => paths.current.get(id)).filter((p): p is string => Boolean(p));
+    async (ids: string[]): Promise<Map<string, { src: string; thumb: string }>> => {
+      const signed = new Map<string, { src: string; thumb: string }>();
+      const list: string[] = [];
+      for (const id of ids) {
+        const entry = paths.current.get(id);
+        if (!entry) continue;
+        list.push(entry.original);
+        if (entry.thumb) list.push(entry.thumb);
+      }
       if (!client || list.length === 0) return signed;
       const byPath = await stableSignedUrls(client, list, {
         bucket: BUCKET,
@@ -268,8 +332,9 @@ export function TrainingMediaProvider({ children }: { children: ReactNode }) {
         return new Map<string, string>();
       });
       for (const id of ids) {
-        const url = byPath.get(paths.current.get(id) ?? "");
-        if (url) signed.set(id, url);
+        const entry = paths.current.get(id);
+        if (!entry) continue;
+        signed.set(id, { src: byPath.get(entry.original) ?? "", thumb: entry.thumb ? (byPath.get(entry.thumb) ?? "") : "" });
       }
       return signed;
     },
@@ -281,22 +346,36 @@ export function TrainingMediaProvider({ children }: { children: ReactNode }) {
     let cancelled = false;
     setLoading(true);
     (async () => {
-      const { data, error } = await client
-        .from("training_media")
-        .select("*, training_media_translations(*)")
-        .order("created_at", { ascending: false });
-      if (cancelled) return;
-      if (error) {
-        console.error("Training media:", error);
-        setLoadFailed(true);
-        setLoading(false);
-        return;
+      const rows: MediaRow[] = [];
+      for (let from = 0; ; from += PAGE_ROWS) {
+        const { data, error } = await client
+          .from("training_media")
+          .select("*, training_media_translations(*)")
+          .order("created_at", { ascending: false })
+          .order("id", { ascending: true })
+          .range(from, from + PAGE_ROWS - 1);
+        if (cancelled) return;
+        if (error) {
+          console.error("Training media:", error);
+          setLoadFailed(true);
+          setLoading(false);
+          return;
+        }
+        rows.push(...(data as MediaRow[]));
+        if (data.length < PAGE_ROWS) break;
       }
-      const rows = data as MediaRow[];
-      for (const row of rows) paths.current.set(row.id, row.storage_path);
+      const [folderResult, mine] = await Promise.all([
+        client.from("training_media_folders").select("*").order("position").order("name"),
+        client.rpc("my_permissions"),
+      ]);
+      if (cancelled) return;
+      if (folderResult.error) console.error("Training media folders:", folderResult.error);
+      for (const row of rows) paths.current.set(row.id, { original: row.storage_path, thumb: row.thumb_path });
       const signed = await sign(rows.map((row) => row.id));
       if (cancelled) return;
-      setItems(rows.map((row) => rowToMedia(row, signed.get(row.id) ?? "")));
+      setItems(rows.map((row) => rowToMedia(row, signed.get(row.id)?.src ?? "", signed.get(row.id)?.thumb ?? "")));
+      setFolders((folderResult.data ?? []).map(rowToFolder));
+      setCanManage(Boolean(mine.data?.includes("manage_training")));
       setLoadFailed(false);
       setLoading(false);
     })();
@@ -310,16 +389,40 @@ export function TrainingMediaProvider({ children }: { children: ReactNode }) {
   const renew = useCallback(async () => {
     const signed = await sign(itemsRef.current.map((item) => item.id));
     setItems((prev) => {
-      const changed = prev.some((item) => (signed.get(item.id) ?? item.src) !== item.src);
-      return changed ? prev.map((item) => ({ ...item, src: signed.get(item.id) ?? item.src })) : prev;
+      const changed = prev.some((item) => {
+        const fresh = signed.get(item.id);
+        return fresh !== undefined && ((fresh.src && fresh.src !== item.src) || (fresh.thumb && fresh.thumb !== item.thumbSrc));
+      });
+      if (!changed) return prev;
+      return prev.map((item) => {
+        const fresh = signed.get(item.id);
+        return fresh ? { ...item, src: fresh.src || item.src, thumbSrc: fresh.thumb || item.thumbSrc } : item;
+      });
     });
   }, [sign]);
   useVisibleInterval(renew, RESIGN_CHECK_MS, Boolean(client) && enabled);
 
   const reload = useCallback(() => setLoadCount((n) => n + 1), []);
 
+  /** Stores a drawn thumbnail next to its file; its path, or null when it could not be stored. */
+  const storeThumbnail = useCallback(
+    async (mediaId: string, blob: Blob): Promise<string | null> => {
+      if (!client) return null;
+      const path = thumbPath(mediaId, blob.type);
+      const { error } = await client.storage
+        .from(BUCKET)
+        .upload(path, blob, { contentType: blob.type, cacheControl: UPLOAD_CACHE_CONTROL, upsert: true });
+      if (error) {
+        console.error("Training media thumbnail:", error);
+        return null;
+      }
+      return path;
+    },
+    [client],
+  );
+
   const upload = useCallback(
-    async (files: File[], category: MediaCategory) => {
+    async (files: File[], { category, folderId }: UploadOptions) => {
       const rejected: RejectedUpload[] = [];
       const accepted: { file: File; entry: PendingUpload }[] = [];
       for (const file of files) {
@@ -346,6 +449,8 @@ export function TrainingMediaProvider({ children }: { children: ReactNode }) {
             ref: entry.preview,
             kind: entry.kind,
             src: entry.preview,
+            thumbSrc: entry.kind === "image" ? entry.preview : "",
+            folderId,
             mimeType: file.type,
             name: displayName(file.name),
             alt: { fr: "", en: "" },
@@ -376,10 +481,16 @@ export function TrainingMediaProvider({ children }: { children: ReactNode }) {
             }
             const path = `media/${entry.id}/${storageFileName(file.name)}`;
             await uploadResumable(client, path, file, (value) => progress(entry.id, value));
+            // A missing thumbnail is not a failed upload: the grids fall back.
+            const thumbBlob = await drawThumbnail(file, entry.kind);
+            const thumb = thumbBlob ? await storeThumbnail(entry.id, thumbBlob) : null;
+            thumbTried.current.add(entry.id);
             const { error } = await client.from("training_media").insert({
               id: entry.id,
               kind: entry.kind,
               storage_path: path,
+              thumb_path: thumb,
+              folder_id: folderId,
               mime_type: file.type,
               name: base.name.slice(0, 200),
               category,
@@ -390,13 +501,13 @@ export function TrainingMediaProvider({ children }: { children: ReactNode }) {
             });
             if (error) {
               // The file is useless without its row: remove it again.
-              await client.storage.from(BUCKET).remove([path]);
+              await client.storage.from(BUCKET).remove(thumb ? [path, thumb] : [path]);
               throw error;
             }
-            paths.current.set(entry.id, path);
-            const signed = await sign([entry.id]);
+            paths.current.set(entry.id, { original: path, thumb });
+            const signed = (await sign([entry.id])).get(entry.id);
             URL.revokeObjectURL(entry.preview);
-            return { ...base, ref: entry.id, src: signed.get(entry.id) ?? "" };
+            return { ...base, ref: entry.id, src: signed?.src ?? "", thumbSrc: signed?.thumb ?? "" };
           } catch (error) {
             console.error("Training media upload:", error);
             rejected.push({ name: file.name, reason: "failed" });
@@ -411,7 +522,7 @@ export function TrainingMediaProvider({ children }: { children: ReactNode }) {
       setItems((prev) => [...added, ...prev]);
       return { added, rejected };
     },
-    [client, sign],
+    [client, sign, storeThumbnail],
   );
 
   const updateMedia = useCallback(
@@ -427,6 +538,7 @@ export function TrainingMediaProvider({ children }: { children: ReactNode }) {
             alt_text: next.alt.fr.trim() || null,
             category: next.category,
             tags: next.tags.slice(0, 30),
+            folder_id: next.folderId,
           })
           .eq("id", id);
         if (error) throw error;
@@ -441,6 +553,19 @@ export function TrainingMediaProvider({ children }: { children: ReactNode }) {
     [client],
   );
 
+  const moveMedia = useCallback(
+    async (ids: string[], folderId: string | null) => {
+      if (ids.length === 0) return;
+      if (client) {
+        const { error } = await client.from("training_media").update({ folder_id: folderId }).in("id", ids);
+        if (error) throw error;
+      }
+      const moved = new Set(ids);
+      setItems((prev) => prev.map((item) => (moved.has(item.id) ? { ...item, folderId } : item)));
+    },
+    [client],
+  );
+
   const deleteMedia = useCallback(
     async (id: string): Promise<"deleted" | "inUse"> => {
       const current = itemsRef.current.find((item) => item.id === id);
@@ -451,8 +576,8 @@ export function TrainingMediaProvider({ children }: { children: ReactNode }) {
           if (error.code === "23503") return "inUse";
           throw error;
         }
-        const path = paths.current.get(id);
-        if (path) await client.storage.from(BUCKET).remove([path]);
+        const entry = paths.current.get(id);
+        if (entry) await client.storage.from(BUCKET).remove(entry.thumb ? [entry.original, entry.thumb] : [entry.original]);
         paths.current.delete(id);
       } else if (current.origin === "upload") {
         URL.revokeObjectURL(current.src);
@@ -463,18 +588,133 @@ export function TrainingMediaProvider({ children }: { children: ReactNode }) {
     [client],
   );
 
+  const createFolder = useCallback(
+    async (raw: string): Promise<MediaFolder> => {
+      const name = cleanFolderName(raw);
+      if (!name) throw new FolderError("invalid");
+      if (!client) {
+        const folder = { id: crypto.randomUUID(), name, position: 0 };
+        setFolders((prev) => [...prev, folder]);
+        return folder;
+      }
+      const { data, error } = await client.from("training_media_folders").insert({ name }).select("*").single();
+      if (error) throw new FolderError(error.code === "23505" ? "taken" : "failed");
+      const folder = rowToFolder(data);
+      setFolders((prev) => [...prev, folder]);
+      return folder;
+    },
+    [client],
+  );
+
+  const renameFolder = useCallback(
+    async (id: string, raw: string) => {
+      const name = cleanFolderName(raw);
+      if (!name) throw new FolderError("invalid");
+      if (client) {
+        const { error } = await client.from("training_media_folders").update({ name }).eq("id", id);
+        if (error) throw new FolderError(error.code === "23505" ? "taken" : "failed");
+      }
+      setFolders((prev) => prev.map((folder) => (folder.id === id ? { ...folder, name } : folder)));
+    },
+    [client],
+  );
+
+  const deleteFolder = useCallback(
+    async (id: string) => {
+      if (client) {
+        const { error } = await client.from("training_media_folders").delete().eq("id", id);
+        if (error) throw new FolderError("failed");
+      }
+      // The database unfiles its files (on delete set null); the page follows.
+      setFolders((prev) => prev.filter((folder) => folder.id !== id));
+      setItems((prev) => prev.map((item) => (item.folderId === id ? { ...item, folderId: null } : item)));
+    },
+    [client],
+  );
+
+  // Older files have no thumbnail: draw them one at a time, once per tab, from
+  // the signed original (one download each, then never again).
+  const backfillThumbnails = useCallback(() => {
+    if (!client || !canManage || backfilling.current) return;
+    backfilling.current = true;
+    void (async () => {
+      try {
+        for (;;) {
+          const item = itemsRef.current.find(
+            (candidate) =>
+              !candidate.thumbSrc && candidate.src && !thumbTried.current.has(candidate.id) && paths.current.has(candidate.id),
+          );
+          if (!item) return;
+          thumbTried.current.add(item.id);
+          const blob = await drawThumbnail(item.src, item.kind);
+          const path = blob ? await storeThumbnail(item.id, blob) : null;
+          if (!path) continue;
+          const { error } = await client.from("training_media").update({ thumb_path: path }).eq("id", item.id);
+          if (error) {
+            console.error("Training media thumbnail:", error);
+            continue;
+          }
+          const entry = paths.current.get(item.id);
+          if (entry) paths.current.set(item.id, { ...entry, thumb: path });
+          const thumb = (await sign([item.id])).get(item.id)?.thumb ?? "";
+          setItems((prev) => prev.map((candidate) => (candidate.id === item.id ? { ...candidate, thumbSrc: thumb } : candidate)));
+        }
+      } finally {
+        backfilling.current = false;
+      }
+    })();
+  }, [client, canManage, sign, storeThumbnail]);
+
   const byRef = useMemo(() => new Map(items.map((item) => [item.ref, item])), [items]);
   const findByRef = useCallback((ref: string) => byRef.get(ref), [byRef]);
   // A reference unknown to the library is shown as-is when it is a URL (prototype
   // courses read by the learner pages), never when it is a database id.
   const urlOf = useCallback(
-    (ref: string | undefined) => (ref ? byRef.get(ref)?.src ?? (isUuid(ref) ? "" : ref) : ""),
+    (ref: string | undefined) => (ref ? (byRef.get(ref)?.src ?? (isUuid(ref) ? "" : ref)) : ""),
     [byRef],
   );
 
   const value = useMemo<TrainingMediaValue>(
-    () => ({ source, items, loading, loadFailed, reload, pending, upload, updateMedia, deleteMedia, findByRef, urlOf }),
-    [source, items, loading, loadFailed, reload, pending, upload, updateMedia, deleteMedia, findByRef, urlOf],
+    () => ({
+      source,
+      items,
+      loading,
+      loadFailed,
+      reload,
+      pending,
+      canManage,
+      upload,
+      updateMedia,
+      moveMedia,
+      deleteMedia,
+      folders,
+      createFolder,
+      renameFolder,
+      deleteFolder,
+      backfillThumbnails,
+      findByRef,
+      urlOf,
+    }),
+    [
+      source,
+      items,
+      loading,
+      loadFailed,
+      reload,
+      pending,
+      canManage,
+      upload,
+      updateMedia,
+      moveMedia,
+      deleteMedia,
+      folders,
+      createFolder,
+      renameFolder,
+      deleteFolder,
+      backfillThumbnails,
+      findByRef,
+      urlOf,
+    ],
   );
 
   return <TrainingMediaContext.Provider value={value}>{children}</TrainingMediaContext.Provider>;

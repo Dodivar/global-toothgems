@@ -164,6 +164,12 @@ supabase/
 | 20261019135003 | `studio_glowbook_look_links` | **Applied 2026-10-19.** Postgres caps a regex repetition at 255: the link checks of `20261019134715` rewritten as pattern + length (`private.glowbook_link_valid()`), `studio_save_showcase_look()` replaced accordingly |
 | 20261019142032 | `studio_share_branding` | **Applied 2026-10-19.** Decision 101: social exports branded by plan. `private.studio_user_tier(user)` (essential / artist / atelier, highest wins; trial = essential, active staff = atelier, null without access) and `private.studio_share_logo_allowed()`; `studio_share_logos` (one logo per member, owner reads, written only by `studio_set_share_logo(path)`: artist / atelier tier and a file of the caller's folder, `''` removes, always allowed, returns the previous path); `studio_share_branding()` → `{tier, logo_path, has_logo}` (logo_path only while the tier allows it). Private bucket `studio-share-logos` (2 MB, PNG / JPEG / WebP, no SVG): upload and read in one's own folder need the artist / atelier tier, delete never does. Suite `studio_share_branding_validation.sql` (B1–B6) |
 | 20261019142220 | `studio_share_logos_updated_at` | **Applied 2026-10-19.** The generic `private.set_updated_at()` on `studio_share_logos` (`private.studio_touch_updated_at()` reads design columns it does not have) |
+| 20261021172034 | `studio_share_link_previews` | **Applied 2026-10-21.** Decision 101 addendum: `studio_shared_creation_preview(token)` → `{name, description, thumbnail_path}` of an active share link (anon), and the storage policy "anyone reads renders of shared creations" (`private.is_shared_creation_thumbnail()`): the share viewer page signs the render for its Open Graph / Twitter image. Revoking the link closes both. Suite B7 |
+| 20261021190830 | `studio_glowbook_spotlight_sweep` | **Applied 2026-10-21.** Decision 105: the spotlight video is a 5-second front sweep (45° left → 45° right → back); `studio_set_spotlight_video()` takes 5 s only, `private.glowbook_spotlight_video_current()` counts only 5-second videos (the full turns of decision 103 stop being shown and are re-recorded). Suite G13 |
+| 20261021180329 | `studio_glowbook_spotlight_video_anon` | **Applied 2026-10-21.** Revokes anon's default EXECUTE on `studio_set_spotlight_video()` and `studio_spotlight_video_state()` (decision 103; both already refused a visitor) |
+| 20261021174016 | `studio_glowbook_spotlight_video` | **Applied 2026-10-21.** Decision 103: the Glowbook's spotlight as a turning video. `studio_showcases.spotlight_video_*` (path in the owner's folder, item, scene md5, type mp4/webm, 4/6/8 s, recorded at; all-or-nothing CHECK), private bucket `glowbook-videos` (8 MB) with its four policies, `private.glowbook_spotlight_video_current(user)`, `private.is_public_glowbook_video(name)`, `private.glowbook_video_in_use(name)`, `studio_set_spotlight_video(item, path, type, seconds, creation updated_at)` (owner, Studio access + plan switch, current spotlight only, own existing file, creation unchanged — else 40001) and `studio_spotlight_video_state()`; `studio_public_showcase()` gains `look.spotlight_video` while current. Suite `tests/studio_glowbook_validation.sql` G13 (and G12) |
+| 20261021173947 | `training_media_folders` | **Applied 2026-10-21.** Decision 104: folders and thumbnails of the training media library. `training_media_folders` (name 1–80 trimmed, unique case-insensitively, `position`; staff read, `manage_training` writes; audited on delete) and `training_media.folder_id` (`on delete set null`: deleting a folder unfiles its files) + `thumb_path` (CHECK: under the file's own `media/<id>/`, never the original); indexes on `folder_id` and `created_at`. Thumbnails sit under the bucket's existing upload policy; learners never read them. Suite `tests/training_media_folders_validation.sql` |
+| 20261021180220 | `training_media_thumb_path_comment` | **Applied 2026-10-21.** Comment only: `training_media.thumb_path` names the stored path `media/<id>/_thumb.webp` (the first comment said `thumb.webp`) |
 | 20261019142050 | `studio_glowbook_sections_certification` | **Applied 2026-10-19.** Decision 102 (the file says 101: renumbered by `20261019143019`). Glowbook sections: `studio_showcase_sections` (owner, name ≤ 40 unique per Glowbook case-insensitive, position; RLS: owners and `moderate_reviews` read, owners delete), `studio_showcase_items.section_id` (composite FK `(section_id, user_id)` → the author's own section, `on delete set null (section_id)`), `studio_save_showcase_section(id, name)` (create / rename, ≤ 12), `studio_reorder_showcase_sections(ids)`, `studio_set_showcase_item_section(item, section)` — Studio access + `private.glowbook_customization_allowed` + ownership (`private.glowbook_sections_writer()`). Certified badge: `studio_showcases.show_certification` (default true), `private.glowbook_certification(user)` (titles `[{fr, en}]` of the courses completed with a certificate), `studio_my_certification()`, `studio_set_showcase_certification(bool)` (owner, no Studio access needed). `studio_public_showcase()` gains `sections` (those holding an approved creation, plan switch), `section_id` per item and `certification` (titles only); the queue's page rows carry the section names. Suite `tests/studio_glowbook_validation.sql` G10–G12 |
 | 20261019143019 | `studio_glowbook_sections_decision_number` | **Applied 2026-10-19.** Comments only: the objects of `20261019142050` say decision 102 (101 went to the social exports the same afternoon) |
 | 20261019112411 | `studio_glowbook_creation` | **Applied 2026-10-19.** `studio_public_showcase_creation(handle, item)` (anon): one approved creation of a public Glowbook with its scene (Gem Group ids blanked), for the read-only 3D viewer; null otherwise. Suite G4/G7 |
@@ -1329,6 +1335,9 @@ sections (decision 102)     /studio-3d/atelier/glowbook "Sections of my page" �
 badge (decision 102)        private.glowbook_certification(user) ← course_completions with a certificate_code (database only)
                             public page: "certified artist" + course titles; studio_set_showcase_certification(bool) hides it
 QR / poster (decision 102)  approved page only: QR of /fr|en/glowbook/<handle> (UI language) → PNG, or A4 PDF poster drawn in the browser
+spotlight video (dec. 103)  Studio tab (useSpotlightRecorder) → studio_spotlight_video_state() missing or stale → turntable on a hidden
+                            stage → glowbook-videos/<user>/spotlight-<item>-<uuid>.mp4|webm → studio_set_spotlight_video(item, path,
+                            type, 4|6|8 s, creation updated_at); public page: look.spotlight_video while current, else the still
 ```
 
 - Public = page approved **and** item approved **and** the author has Studio access now (trial, subscription or
@@ -1367,6 +1376,16 @@ logo (artist, atelier)      re-encoded to PNG ≤ 1024 px in the browser → stu
 - Validated by `supabase/tests/studio_share_branding_validation.sql` (B1 visitor, B2 tier resolution incl. past_due,
   highest plan, staff, ended access, B3 essential and trial refused, B4 artist own folder only, B5 another member
   reads and records nothing, B6 after the subscription ends: no logo returned or readable, removal still allowed).
+- **One button per network** (addendum 2026-10-21, user's choice: no publishing API, no developer app, no OAuth):
+  Instagram, TikTok, Pinterest, Facebook, Snapchat, WhatsApp, X, Threads (`webapp/src/lib/studio3d/socialExport/networks.ts`).
+  A phone opens the system share menu with the file; a computer opens the network's link-share page with the
+  creation's **public page** (Facebook sharer, Pinterest pin/create with the render as `media`, X intent/post,
+  Threads intent/post, wa.me) or, without one / for TikTok, Instagram and Snapchat, downloads the file and opens
+  the network's create page. The public page is the creation's Glowbook page when it is published there, else its
+  existing share link; none is created without the member's explicit "Create the read-only link" button.
+  Preview cards: `/studio-3d/partage/<token>` and `/studio-3d/glowbook/<handle>/<item>` render `og:image` /
+  `twitter:card` on the server (`serverSharePreview.ts`, publishable key; renders signed for 7 days), still
+  `noindex`. Suite B7: a visitor reads the preview and the render of a shared creation only, nothing once revoked.
 
 ### Integrity guarantees
 
@@ -1434,6 +1453,7 @@ have no access (see *Members' Lounge*).
 | `training-media` (private, no bucket limit: the project's global upload limit applies — 50 MB on the free plan; jpeg/png/webp/avif/mp4/webm/quicktime) | staff read; `manage_training` uploads, replaces and deletes under `media/`; the back office shows files through signed URLs. Learners get signed URLs after the entitlement check in phase C. Large videos are sent with resumable (TUS) uploads. |
 | `studio-thumbnails` (private, 512 kB, jpeg/webp/png) | owners read/delete inside `<user_id>/`, and upload/replace there with Studio access; members with Studio access also read the renders of published templates (decision 97). Served through signed URLs. |
 | `lounge-media` (private, 5 MB, jpeg/png/webp/gif) | members upload into `<user_id>/` while they can enter the lounge; the uploader reads and deletes their files; anyone who can read the lounge message an image is attached to reads it (so a private conversation's images stay between its two members). Served through signed URLs. |
+| `glowbook-videos` (private, 8 MB, mp4/webm) | a member uploads into `<user_id>/` while they have Studio access and the Glowbook look (`private.glowbook_customization_allowed()`); owners and `moderate_reviews` staff read; **anyone** signs exactly the current spotlight video of a public Glowbook (`private.is_public_glowbook_video()`: approved page and spotlight item, author with access, scene unchanged since the recording); owners delete the files no page uses; no update (a new turn is a new file). Decision 103. |
 | `studio-share-logos` (private, 2 MB, png/jpeg/webp, no SVG) | a member uploads into and reads `<user_id>/` only while their Studio tier is artist or atelier (`private.studio_share_logo_allowed()`); deleting their own files is always allowed; no update (a new logo is a new file, recorded by `studio_set_share_logo()`). Downloaded by the export dialog, never served publicly (decision 101). |
 
 Path convention: `products/<product-slug>/<file>`, `categories/<category-slug>/<file>`, `<user_id>/<file>` for avatars and review photos.
@@ -2223,6 +2243,15 @@ VAT rates, shipping zones/rates mirroring the Settings prototype. Media rows ref
     the member, not stored; (f) logo: PNG / JPEG / WebP up to 2 MB, no SVG, redrawn as a PNG within 1024 px in the
     browser; one per member; a member who leaves the plan keeps it stored but unusable until they come back;
     (g) exports are of the SAVED creation (not unsaved edits on the stage).
+    Addendum 2026-10-21 (user's request: one button per network; migration `20261021172034`). Agent's choices, to
+    confirm: (h) the render of a creation with an active share link becomes readable by anyone who can sign it
+    (the link already shows the whole design), so link previews show the creation; revoking the link closes it;
+    (i) Pinterest's `media` is the creation's card render (480 × 360) through the member's own signed URL — the
+    exports themselves are never uploaded to a public bucket; (j) recommended formats: TikTok, Snapchat and
+    Instagram video → Story 9:16, Instagram / Facebook / X / Threads / Pinterest stills → portrait 4:5, WhatsApp
+    still → square (no 2:3 format for Pinterest); (k) desktop create pages: tiktok.com/upload,
+    instagram.com, snapchat.com/web, pinterest.com/pin-builder, facebook.com, x.com/compose/post, threads.net,
+    web.whatsapp.com; (l) brand marks are drawn as monograms (no brand logos shipped).
 102. **3D Studio: Glowbook sections, QR poster and "certified artist" badge** (owner's request, 2026-10-19;
     migrations `20261019142050`, `20261019143019`). Built: sections the artist creates, renames, orders and
     deletes, each Glowbook creation filed in one section or none, the public page filtered by section chips;
@@ -2244,3 +2273,30 @@ VAT rates, shipping zones/rates mirroring the Settings prototype. Media rows ref
     current site origin; the poster uses the APPROVED picture and colour (never one waiting for a moderator),
     falls back to initials when the picture cannot be read, and is a 300 dpi image wrapped in a PDF (like the
     certificate), its QR always ink on white (light identity colours would not scan); the PNG is the code alone.
+103. **3D Studio: the Glowbook opens on the creations, the spotlight as a turning video** (owner's request,
+    2026-10-21: "make the public page sexier: no cover, land directly on the creations, show the profile another
+    way, the spotlight creation always a video turning around it in orbit mode, 4 seconds by default, generated
+    automatically if possible"; migration `20261021174016_studio_glowbook_spotlight_video`). The public page has
+    no banner any more: a slim identity bar (picture, name, city, booking, "Profile"), then the spotlight creation
+    large, then the others; the full profile (bio, badge, links) closes the page, where "Profile" leads. The
+    spotlight video can only be drawn where WebGL runs, so the **artist's own Studio tab records it**: the
+    "Create a post" turntable on a hidden stage, square 1080 px, 4 Mbit/s, no watermark, 4 s by default (4, 6 or 8
+    chosen in "Customise my page"), uploaded to the private bucket `glowbook-videos` and recorded by
+    `studio_set_spotlight_video()`; whenever the database says the video is missing or stale, any open Studio tab
+    records a new one after 2 s. A video is shown (and signable by anyone) only while it turns around the
+    approved spotlight item AND that creation's `scene_data` still hashes to the md5 stamped when it was recorded;
+    the RPC refuses a video drawn from a creation edited since (`p_creation_updated_at`, 40001). Until then the
+    page shows the still render, which is also the video's poster. Validated by G13 (and G12) of
+    `tests/studio_glowbook_validation.sql`. Agent's choices, to confirm: (a) the video is **not moderated** — it
+    is a mechanical render of a creation already approved, the same trust as its still render, whose later edits
+    are live too; (b) server-side rendering (headless Chrome on a GPU host) was not built: it would be a new
+    backend piece outside Supabase / Vercel functions, so a design edited outside the Studio's open tab shows its
+    still until the artist next opens the Studio; (c) the video plays muted and looped once hydrated, never on
+    its own for visitors who ask for reduced motion, always with a pause button; a browser that cannot play the
+    file (a WebM recorded by Firefox, on an older iPhone) keeps the still; (d) the banner column, its moderation
+    and its files stay (reversible), but the page and the editor no longer show it; (e) it rides the existing
+    plan switch `private.glowbook_customization_allowed()` — the owner said the Glowbook will be reserved to the
+    top plans, which is not wired yet; (f) a deleted Glowbook leaves its video files in the member's folder
+    (no page uses them; the member's next recording cleans them).
+105. **3D Studio: the spotlight video sweeps in front of the smile** (owner's request, 2026-10-21: "slower, stay in front of the 3D model, -45° to +45°, right then back left, only 5 seconds, no length choice"; migration `20261021190830`). The camera orbits the gems at the still's distance (engine `orbit: "front"`), angle = -45°·cos(2πt/5 s), so the looping video goes right, left, right with a slow-down at each end and no jump. One length, 5 s, not offered to the artist. Older 4/6/8 s full turns are no longer current and are re-recorded by the artist's Studio. Not verified on a real recording yet (no signed-in session for the agent).
+104. **Academy: folders and thumbnails in the training media library** (owner's request, 2026-10-21: "sort the images more easily, keep the tags, newest first, folders — e.g. to separate the images used for each language — changeable after upload; mind the Supabase cost"; migration `20261021173947`). Built: one folder per file, optional (`training_media_folders`); the library sorts newest first, oldest or by name; a keyword filters by click; several files are filed at once; the builder's picker filters by folder. Cost: the grids showed every original (41 images = 64 MB on 2026-10-21); they now show a WebP of at most 480 px drawn by the browser, page by page and lazy-loaded. Agent's choices, to confirm: (a) the fixed `category` column stays (filter and field) next to folders — three ways to classify a file (category, folder, keywords) may be one too many; dropping categories later is a migration; (b) folders are flat (no sub-folders) and ordered by name (`position` exists, not offered in the UI); (c) thumbnails are drawn in the browser, not by Supabase image transformations (plan-dependent, billed per image), and older files get theirs the first time a `manage_training` member opens the library — one download of each original, once; (d) the rows are still read in full (no server-side paging): `urlOf()` resolves every course's media from them, and they weigh a few hundred bytes each.

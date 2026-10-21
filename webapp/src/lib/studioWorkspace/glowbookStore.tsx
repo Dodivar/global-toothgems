@@ -9,6 +9,8 @@ import { createGlowbookRepository, GlowbookError, type GlowbookRepository } from
 import { lookPatch, type GlowbookLook, type MediaKind } from "./glowbookLook";
 import { GlowbookMediaError, prepareGlowbookPicture, type MediaError } from "../../components/glowbook/prepareMedia";
 import { StudioStoreError } from "./repository";
+import { useSpotlightRecorder, type SpotlightValue } from "./useSpotlightRecorder";
+import { useWorkspace } from "./workspace";
 import { sortSections, type CertifiedCourse, type GlowbookSection, type SectionProblem } from "./glowbookSections";
 
 /**
@@ -60,6 +62,8 @@ interface GlowbookValue {
   setShowCertification: (visible: boolean) => Promise<boolean>;
   /** One of the member's own pictures as a file (the poster draws it), or null when it cannot be read. */
   downloadMedia: (path: string) => Promise<Blob | null>;
+  /** The spotlight creation's turning video (decision 103), recorded by this tab when missing or stale. */
+  spotlight: SpotlightValue;
 }
 
 const GlowbookContext = createContext<GlowbookValue | null>(null);
@@ -393,6 +397,9 @@ export function GlowbookProvider({ children }: { children: ReactNode }) {
     [repo],
   );
 
+  const ws = useWorkspace();
+  const spotlight = useSpotlightRecorder(glowbook ? repo : null, glowbook?.look.featuredItemId ?? null, items, ws.creations);
+
   const value: GlowbookValue = {
     status,
     glowbook: current?.glowbook ?? null,
@@ -417,6 +424,7 @@ export function GlowbookProvider({ children }: { children: ReactNode }) {
     certification: certified && certified.repo === repo ? certified.courses : null,
     setShowCertification,
     downloadMedia,
+    spotlight,
   };
   return <GlowbookContext.Provider value={value}>{children}</GlowbookContext.Provider>;
 }

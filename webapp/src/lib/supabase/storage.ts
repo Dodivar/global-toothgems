@@ -23,6 +23,7 @@ export const BUCKETS = {
   studioThumbnails: "studio-thumbnails",
   loungeMedia: "lounge-media",
   glowbookMedia: "glowbook-media",
+  glowbookVideos: "glowbook-videos",
   studioShareLogos: "studio-share-logos",
 } as const;
 
@@ -32,6 +33,7 @@ export type PrivateBucket =
   | typeof BUCKETS.studioThumbnails
   | typeof BUCKETS.loungeMedia
   | typeof BUCKETS.glowbookMedia
+  | typeof BUCKETS.glowbookVideos
   | typeof BUCKETS.studioShareLogos;
 
 /** Signed URLs live long enough for a page view, not long enough to be shared around. */

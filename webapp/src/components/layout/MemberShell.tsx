@@ -3,7 +3,6 @@ import { useTranslation } from "react-i18next";
 import { Link, NavLink, useLocation, useNavigate, useLanguageSwitch } from "../../lib/navigation";
 import {
   Award,
-  Gift,
   Cookie,
   CreditCard,
   Languages,
@@ -100,8 +99,6 @@ interface SectionGroup {
   /** None for the first group: the dashboard needs no heading. */
   labelKey?: string;
   items: SectionItem[];
-  /** The purchases group ends with the cart, which is not a section of the space. */
-  withCart?: boolean;
 }
 
 const GROUPS: SectionGroup[] = [
@@ -110,15 +107,14 @@ const GROUPS: SectionGroup[] = [
     items: [
       { to: "/compte", labelKey: "account.navDashboard", shortKey: "dashboard", icon: LayoutDashboard, end: true },
       { to: CLIENT_SPACES.home.to, labelKey: CLIENT_SPACES.home.labelKey, shortKey: "home", icon: CLIENT_SPACES.home.icon, end: true },
+      { to: CLIENT_SPACES.shop.to, labelKey: CLIENT_SPACES.shop.labelKey, shortKey: "shop", icon: CLIENT_SPACES.shop.icon },
+      { to: CLIENT_SPACES.academy.to, labelKey: CLIENT_SPACES.academy.labelKey, shortKey: "academy", icon: CLIENT_SPACES.academy.icon },
     ],
   },
   {
     id: "purchases",
     labelKey: "account.shell.groupPurchases",
-    withCart: true,
     items: [
-      { to: CLIENT_SPACES.shop.to, labelKey: CLIENT_SPACES.shop.labelKey, shortKey: "shop", icon: CLIENT_SPACES.shop.icon },
-      { to: "/carte-cadeau", labelKey: "nav.giftCard", shortKey: "giftCard", icon: Gift },
       { to: "/compte/commandes", labelKey: "account.navOrders", shortKey: "orders", icon: Package },
       { to: "/compte/fidelite", labelKey: "account.navLoyalty", shortKey: "loyalty", icon: Sparkles },
       { to: "/compte/avis", labelKey: "reviews.nav.account", shortKey: "reviews", icon: MessageSquareText },
@@ -128,7 +124,6 @@ const GROUPS: SectionGroup[] = [
     id: "learning",
     labelKey: "account.shell.groupLearning",
     items: [
-      { to: CLIENT_SPACES.academy.to, labelKey: CLIENT_SPACES.academy.labelKey, shortKey: "academy", icon: CLIENT_SPACES.academy.icon },
       { to: "/compte/attestations", labelKey: "account.navCertificates", shortKey: "certificates", icon: Award },
       { to: "/compte/salons", labelKey: "lounge.navEntry", shortKey: "lounge", icon: MessagesSquare, community: true, lounge: true },
     ],
@@ -137,12 +132,13 @@ const GROUPS: SectionGroup[] = [
     id: "studio",
     labelKey: "nav.studio",
     items: [
-      ...STUDIO_SHORTCUTS.map((shortcut) => ({
+      // Only the workshop: creations and groups are one click away inside it.
+      ...STUDIO_SHORTCUTS.filter((shortcut) => shortcut.id === "workshop").map((shortcut) => ({
         to: shortcut.to,
         labelKey: shortcut.labelKey,
         shortKey: shortcut.shortKey,
         icon: shortcut.icon,
-        end: shortcut.id === "workshop",
+        end: true,
       })),
       { to: "/compte/studio", labelKey: "account.navStudio", shortKey: "subscription", icon: CreditCard },
     ],
@@ -288,7 +284,6 @@ function SidebarBody({ onNavigate, closeButton }: { onNavigate?: () => void; clo
   const navigate = useNavigate();
   const { displayName, initials, email, signOut } = useAuth();
   const { memberSince } = useOrders();
-  const { count } = useCart();
   const { openSettings } = useCookieConsent();
   /* Staff (any role the admin session accepts) get a way back to the back
      office. Navigation only: `RequireAdmin` and RLS still decide access. */
@@ -341,11 +336,6 @@ function SidebarBody({ onNavigate, closeButton }: { onNavigate?: () => void; clo
                   {group.items.map((item) => (
                     <SectionLink key={item.to} item={item} onNavigate={onNavigate} />
                   ))}
-                  {group.withCart && (
-                    <li>
-                      <CartLink count={count} onNavigate={onNavigate} />
-                    </li>
-                  )}
                 </ul>
               </div>
             );

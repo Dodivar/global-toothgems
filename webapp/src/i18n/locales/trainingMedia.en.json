@@ -62,7 +62,8 @@
     "altEn": "Description (English)",
     "altHint": "Offered as the image’s alternative text when it’s inserted into a lesson.",
     "tags": "Tags",
-    "tagsHint": "Comma-separated, to find the image again."
+    "tagsHint": "Comma-separated, to find the image again.",
+    "folder": "Folder"
   },
   "delete": "Delete",
   "deleteConfirm": "Delete this file from the library? This cannot be undone.",
@@ -89,7 +90,8 @@
     "newTab": "(new tab)",
     "emptyImage": "No image in the library",
     "emptyVideo": "No video in the library",
-    "emptyBody": "Upload it in the media library (new tab), then click “Refresh”."
+    "emptyBody": "Upload it in the media library (new tab), then click “Refresh”.",
+    "folder": "Folder"
   },
   "insertVideo": "Insert the video",
   "kindFilter": "File type",
@@ -114,7 +116,13 @@
     "saveFailed": "The file could not be updated. Try again.",
     "inUse": "This file is used in a course: replace it there before deleting it.",
     "deleted": "File deleted",
-    "deleteFailed": "The file could not be deleted. Try again."
+    "deleteFailed": "The file could not be deleted. Try again.",
+    "folderCreated": "Folder “{{name}}” created",
+    "folderRenamed": "Folder renamed",
+    "folderDeleted": "Folder deleted, its files are not filed",
+    "moved_one": "{{count}} file moved to “{{folder}}”",
+    "moved_other": "{{count}} files moved to “{{folder}}”",
+    "moveFailed": "The files could not be moved. Try again."
   },
   "localized": {
     "intro": "The default image is shown in every language. Add an English image only if it has to differ (text in the picture, for example): it then replaces the default image for English learners.",
@@ -147,5 +155,51 @@
     "previewFor": "Preview in {{language}} · {{source}}",
     "languageFr": "French",
     "languageEn": "English"
-  }
+  },
+  "addedOn": "Added on {{date}}",
+  "more": "Show more ({{count}} left)",
+  "sort": {
+    "label": "Sort",
+    "newest": "Newest first",
+    "oldest": "Oldest first",
+    "name": "Name (A → Z)"
+  },
+  "tagFilter": "Keyword: {{tag}}",
+  "tagFilterClear": "Remove the “{{tag}}” filter",
+  "tagFilterHint": "Show the files with this keyword",
+  "folders": {
+    "title": "Folders",
+    "all": "All files",
+    "none": "Not filed",
+    "new": "New folder",
+    "nameLabel": "Folder name",
+    "namePlaceholder": "E.g. English images",
+    "create": "Create",
+    "rename": "Rename",
+    "save": "Save",
+    "cancel": "Cancel",
+    "delete": "Delete folder",
+    "menu": "Actions for folder {{name}}",
+    "deleteTitle": "Delete the folder “{{name}}”?",
+    "deleteBody_one": "The file it holds is not deleted: it becomes not filed again.",
+    "deleteBody_other": "The {{count}} files it holds are not deleted: they become not filed again.",
+    "deleteConfirm": "Delete folder",
+    "uploadInto": "Uploaded files will go into “{{folder}}”.",
+    "errors": {
+      "taken": "A folder already has this name.",
+      "invalid": "Give the folder a name.",
+      "failed": "The folder could not be saved. Try again."
+    }
+  },
+  "select": {
+    "start": "Select",
+    "done": "Done",
+    "label": "Select {{name}}",
+    "count_one": "{{count}} file selected",
+    "count_other": "{{count}} files selected",
+    "moveTo": "Move to",
+    "move": "Move",
+    "clear": "Clear selection"
+  },
+  "categoryAll": "All categories"
 }
