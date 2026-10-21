@@ -248,14 +248,26 @@ export function ShopMenu({ layout, onNavigate }: { layout: "columns" | "stack"; 
   if (stacks.length > 0) stacks[stacks.length - 1].extras = true;
   else stacks.push({ groups: [], extras: true });
 
+  /* One grid, not one flex column per stack: the second section of a stack
+     (Kits, the extras) then starts on the same line whatever the first one's
+     height. A stack of one section spans both rows. */
   return (
-    <div className="grid grid-cols-[repeat(auto-fit,minmax(220px,1fr))] gap-x-6 gap-y-8">
-      {stacks.map((stack, i) => (
-        <div key={stack.groups[0]?.[0].slug ?? i} className="grid content-start gap-8">
-          {stack.groups.map(([group, index]) => renderGroup(group, index))}
-          {stack.extras && extrasSection}
-        </div>
-      ))}
+    <div
+      className="grid gap-x-6 gap-y-8"
+      style={{ gridTemplateColumns: `repeat(${stacks.length}, minmax(0, 1fr))` }}
+    >
+      {stacks.flatMap((stack, column) => {
+        const sections = [...stack.groups.map(([group, index]) => renderGroup(group, index)), ...(stack.extras ? [extrasSection] : [])];
+        return sections.map((section, row) => (
+          <div
+            key={section.key}
+            className="min-w-0"
+            style={{ gridColumn: column + 1, gridRow: sections.length === 1 ? "1 / span 2" : row + 1 }}
+          >
+            {section}
+          </div>
+        ));
+      })}
     </div>
   );
 }
