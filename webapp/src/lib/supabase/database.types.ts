@@ -10007,6 +10007,7 @@ export type Database = {
         Args: { p_creation_id: string }
         Returns: string
       }
+      studio_shared_creation_preview: { Args: { p_token: string }; Returns: Json }
       studio_shared_creation: {
         Args: { p_token: string }
         Returns: {
