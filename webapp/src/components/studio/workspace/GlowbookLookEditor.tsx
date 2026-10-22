@@ -172,7 +172,7 @@ export function GlowbookLookEditor({ glowbook }: { glowbook: Glowbook }) {
             </div>
           </fieldset>
 
-          <div className="grid gap-5 @lg:grid-cols-2">
+          <div className="grid items-start gap-5 @lg:grid-cols-2">
             <ChoiceRow
               label={t("studio.glowbook.look.background")}
               options={BACKGROUNDS.map((v) => ({ value: v, label: t(`studio.glowbook.look.backgrounds.${v}`) }))}
@@ -187,7 +187,7 @@ export function GlowbookLookEditor({ glowbook }: { glowbook: Glowbook }) {
             />
           </div>
 
-          <div className="grid gap-5 @lg:grid-cols-2">
+          <div className="grid items-start gap-5 @lg:grid-cols-2">
             <div className="grid gap-1.5">
               <label htmlFor={ids.featured} className="text-[12.5px] font-bold text-[var(--text-primary)]">
                 {t("studio.glowbook.look.featured")}
