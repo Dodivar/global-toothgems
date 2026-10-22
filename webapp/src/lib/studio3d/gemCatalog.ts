@@ -1,8 +1,9 @@
 import type { GemColorDef, GemShape, Product } from "../../data/products";
 import {
-  DEFAULT_STUDIO_SIZES,
+  DEFAULT_ROUND_SIZES,
+  DEFAULT_SHAPED_SIZES,
   isStudioShape,
-  scaleForSs,
+  scaleForSize,
   type GemEffect,
   type GemLook,
   type GemMaterial,
@@ -11,6 +12,7 @@ import {
 } from "../../data/studioEditor";
 import type { Localized } from "../../data/types";
 import { toMinorUnits } from "../catalog/money";
+import { sameSize, sizeKey, sizeLongestMm, sortSizes, type GemSize } from "../gemOptions";
 
 /**
  * The 3D Studio's gems: the shop's gems, as the editor draws and offers them.
@@ -26,7 +28,10 @@ import { toMinorUnits } from "../catalog/money";
  *   colour (so a gem added in the back office shows up straight away).
  * - Colours: one per colour variant (`swatch`: yellow / white gold…), else
  *   the product's own.
- * - Sizes: the product's active `ss` variants; SS2, SS5, SS7 until it has any.
+ * - Sizes: the sizes of the product's active variants — SS gauges or
+ *   millimetres, as the back office sets them (decision 107) — drawn at their
+ *   longest side; until it has any, SS2/SS5/SS7 for a round stone and
+ *   3/4/5 mm for any other cut.
  */
 
 /** One drawing row, as `studio_gem_appearances` stores it. */
@@ -64,8 +69,8 @@ export interface StudioGem {
   shape: StudioShape;
   /** At least one. */
   finishes: StudioGemFinish[];
-  /** Stone sizes, ascending; at least one. */
-  sizes: number[];
+  /** Sizes, smallest first; at least one. */
+  sizes: GemSize[];
   currency: string;
   /** What the shop sells of this gem, for the shopping list: its variants, else the product itself. */
   offers: StudioGemOffer[];
@@ -79,7 +84,7 @@ export interface StudioGemOffer {
   name: Localized | null;
   /** Stones per item; null = not sold by the pack (or not said). */
   pack: number | null;
-  ss: number | null;
+  size: GemSize | null;
   /** A colour variant (it has a swatch): a finish of the gem rather than a pack. */
   colour: boolean;
   priceMinor: number;
@@ -169,22 +174,20 @@ export function buildStudioGems(products: Product[], appearances: GemAppearanceR
         })
       : [{ variantId: null, name: null, look: base, priceMinor: priceMinor(product.price) }];
 
-    const sizes = [...new Set((product.variants ?? []).map((v) => v.ss).filter((ss): ss is number => typeof ss === "number"))].sort(
-      (a, b) => a - b,
-    );
+    const sizes = sortSizes((product.variants ?? []).map((v) => v.size).filter((size): size is GemSize => size != null));
 
     const offers: StudioGemOffer[] = product.variants?.length
       ? product.variants.map((v) => ({
           variantId: v.id,
           name: v.name,
           pack: v.pack ?? null,
-          ss: v.ss ?? null,
+          size: v.size ?? null,
           colour: Boolean(v.swatch),
           priceMinor: priceMinor(v.price),
           ...(v.stock ? { stock: v.stock } : {}),
           ...(v.image ? { image: v.image } : {}),
         }))
-      : [{ variantId: null, name: null, pack: null, ss: null, colour: false, priceMinor: priceMinor(product.price), ...(product.stock ? { stock: product.stock } : {}) }];
+      : [{ variantId: null, name: null, pack: null, size: null, colour: false, priceMinor: priceMinor(product.price), ...(product.stock ? { stock: product.stock } : {}) }];
 
     gems.push({
       key,
@@ -195,7 +198,7 @@ export function buildStudioGems(products: Product[], appearances: GemAppearanceR
       shopShape: product.shape ?? null,
       shape: base.shape,
       finishes,
-      sizes: sizes.length ? sizes : DEFAULT_STUDIO_SIZES,
+      sizes: sizes.length ? sizes : base.shape === "round" ? DEFAULT_ROUND_SIZES : DEFAULT_SHAPED_SIZES,
       currency: product.currency ?? "EUR",
       offers,
     });
@@ -204,13 +207,19 @@ export function buildStudioGems(products: Product[], appearances: GemAppearanceR
 }
 
 /** The size a new piece of this gem starts at: the middle of its sizes. */
-export function defaultSize(gem: Pick<StudioGem, "sizes">): number {
+export function defaultSize(gem: Pick<StudioGem, "sizes">): GemSize {
   return gem.sizes[Math.floor((gem.sizes.length - 1) / 2)];
 }
 
-/** The size of `gem` closest to `ss` (when a piece changes product, it keeps its size if it can). */
-export function nearestSize(gem: Pick<StudioGem, "sizes">, ss: number): number {
-  return gem.sizes.reduce((best, s) => (Math.abs(s - ss) < Math.abs(best - ss) ? s : best), gem.sizes[0]);
+/**
+ * The size of `gem` closest to `size` — the same one when it has it, else the
+ * nearest longest side (when a piece changes product, it keeps its size if it can).
+ */
+export function nearestSize(gem: Pick<StudioGem, "sizes">, size: GemSize): GemSize {
+  const same = gem.sizes.find((s) => sameSize(s, size));
+  if (same) return same;
+  const mm = sizeLongestMm(size);
+  return gem.sizes.reduce((best, s) => (Math.abs(sizeLongestMm(s) - mm) < Math.abs(sizeLongestMm(best) - mm) ? s : best), gem.sizes[0]);
 }
 
 export function findFinish(gem: StudioGem, variantId: string | undefined | null): StudioGemFinish {
@@ -221,25 +230,25 @@ export function findFinish(gem: StudioGem, variantId: string | undefined | null)
 export interface PieceSpec {
   productId: string;
   variantId?: string;
-  ss: number;
+  size: GemSize;
   scale: number;
   look: GemLook;
 }
 
-export function pieceSpec(gem: StudioGem, finish: StudioGemFinish = gem.finishes[0], ss: number = defaultSize(gem)): PieceSpec {
+export function pieceSpec(gem: StudioGem, finish: StudioGemFinish = gem.finishes[0], size: GemSize = defaultSize(gem)): PieceSpec {
   return {
     productId: gem.key,
     ...(finish.variantId ? { variantId: finish.variantId } : {}),
-    ss,
-    scale: scaleForSs(ss),
+    size,
+    scale: scaleForSize(size),
     look: finish.look,
   };
 }
 
 /** The patch that turns a placed piece into another gem / colour, keeping its size when it can. */
-export function swapPatch(piece: Pick<PlacedJewelry, "ss">, gem: StudioGem, finish: StudioGemFinish): Partial<PlacedJewelry> {
-  const ss = nearestSize(gem, piece.ss);
-  return { productId: gem.key, variantId: finish.variantId ?? undefined, ss, scale: scaleForSs(ss), look: finish.look };
+export function swapPatch(piece: Pick<PlacedJewelry, "size">, gem: StudioGem, finish: StudioGemFinish): Partial<PlacedJewelry> {
+  const size = nearestSize(gem, piece.size);
+  return { productId: gem.key, variantId: finish.variantId ?? undefined, size, scale: scaleForSize(size), look: finish.look };
 }
 
 /* ------------------------------------------------------------ shopping list */
@@ -253,8 +262,8 @@ export interface EstimateLine {
   productId: string;
   /** The pieces' colour variant; null = the product's own colour. */
   variantId: string | null;
-  /** The pieces' stone size, when the gem is sold per size; null = one line whatever the size. */
-  ss: number | null;
+  /** The pieces' size, when the gem is sold per size; null = one line whatever the size. */
+  size: GemSize | null;
   /** The shop item bought: the variant added to the cart (null = the product itself). */
   offer: StudioGemOffer;
   /** Pieces of this gem, colour (and size) in the design. */
@@ -275,7 +284,7 @@ export interface CompositionEstimate {
   unavailable: number;
 }
 
-export type EstimatedPiece = Pick<PlacedJewelry, "productId" | "variantId" | "look"> & { ss?: number };
+export type EstimatedPiece = Pick<PlacedJewelry, "productId" | "variantId" | "look"> & { size?: GemSize };
 
 /**
  * The cheapest way to cover `pieces` stones with ONE of these offers, in
@@ -327,7 +336,7 @@ export function estimateComposition(
   gemByKey: (key: string) => StudioGem | undefined,
   currency = "EUR",
 ): CompositionEstimate {
-  const groups = new Map<string, { gem: StudioGem; finish: StudioGemFinish; ss: number | null; candidates: StudioGemOffer[]; pieces: number }>();
+  const groups = new Map<string, { gem: StudioGem; finish: StudioGemFinish; size: GemSize | null; candidates: StudioGemOffer[]; pieces: number }>();
   let unavailable = 0;
   let cur = currency;
   for (const p of pieces) {
@@ -337,23 +346,23 @@ export function estimateComposition(
       unavailable += 1;
       continue;
     }
-    let ss: number | null = null;
+    let size: GemSize | null = null;
     let candidates: StudioGemOffer[];
     if (finish.variantId) {
       candidates = gem.offers.filter((o) => o.variantId === finish.variantId);
     } else {
       const options = gem.offers.filter((o) => !o.colour);
-      const perSize = options.some((o) => o.ss != null);
-      if (perSize) ss = p.ss ?? null;
-      candidates = perSize ? options.filter((o) => o.ss === ss) : options;
+      const perSize = options.some((o) => o.size != null);
+      if (perSize) size = p.size ?? null;
+      candidates = perSize ? options.filter((o) => sameSize(o.size, size)) : options;
     }
     if (!candidates.length) {
       unavailable += 1;
       continue;
     }
     cur = gem.currency;
-    const id = `${gem.key}|${finish.variantId ?? ""}|${ss ?? ""}`;
-    const group = groups.get(id) ?? { gem, finish, ss, candidates, pieces: 0 };
+    const id = `${gem.key}|${finish.variantId ?? ""}|${size ? sizeKey(size) : ""}`;
+    const group = groups.get(id) ?? { gem, finish, size, candidates, pieces: 0 };
     group.pieces += 1;
     groups.set(id, group);
   }
@@ -365,7 +374,7 @@ export function estimateComposition(
     lines.push({
       productId: g.gem.key,
       variantId: g.finish.variantId,
-      ss: g.ss,
+      size: g.size,
       offer: plan.offer,
       pieces: g.pieces,
       quantity: plan.quantity,

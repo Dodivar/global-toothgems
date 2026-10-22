@@ -1,5 +1,5 @@
 import { describe, expect, it } from "vitest";
-import { FREE_TOOTH, scaleForSs, type PlacedJewelry, type Vec3 } from "../../data/studioEditor";
+import { FREE_TOOTH, scaleForSize, type PlacedJewelry, type Vec3 } from "../../data/studioEditor";
 import { approxLabialPoint } from "./archLayout";
 import { DENTITION_CROWNS } from "./dentition";
 import { FRONT_VIEW_BOX, FRONT_VIEW_TEETH, crownOutline, gemOutline, pathToSvg, projectFrontView, seatOnTooth } from "./frontView";
@@ -17,13 +17,13 @@ function onDentition(id: string, fdi: string, across = 0, up = 0, extra: Partial
   return {
     id,
     productId: "gem",
-    ss: 5,
+    size: { ss: 5 },
     look: { shape: "round", material: "crystal", color: "#ffffff", effect: "none" },
     toothId: fdi,
     position,
     normal: { ...c.outward },
     rotation: 0,
-    scale: scaleForSs(5),
+    scale: scaleForSize({ ss: 5 }),
     ...extra,
   };
 }

@@ -172,9 +172,9 @@ begin
     delete from public.product_translations where product_id = v_id and locale = 'en';
   end if;
 
-  -- 3. Pack / stone-size options (only when the payload carries them) ---------
+  -- 3. Pack / size options (only when the payload carries them) ---------------
   if v_variants is not null then
-    -- Only pack/SS variants are managed here: a product whose variants are
+    -- Only pack/size variants are managed here: a product whose variants are
     -- something else (colours, boxes…) must not lose them to this editor.
     if exists (
       select 1 from public.product_variants pv

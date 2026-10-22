@@ -1,5 +1,6 @@
 import { useSyncExternalStore } from "react";
 import type { PlacedJewelry } from "../../data/studioEditor";
+import { sizeKey } from "../gemOptions";
 import type { StudioSnapshot } from "../studio3d/store";
 
 /**
@@ -159,7 +160,7 @@ export function pieceSignature(j: PlacedJewelry): string {
   return [
     j.productId,
     j.variantId ?? "",
-    j.ss,
+    sizeKey(j.size),
     // Field by field: the look is an object, and `[object Object]` would hide
     // exactly the change the tour asks for — a different colour.
     j.look.shape,

@@ -7,7 +7,7 @@ import { QuickAdd } from "../shop/QuickAdd";
 import { canQuickAdd } from "../../lib/quickAdd";
 import { useSubjectReviews } from "../reviews/ReviewsSection";
 import { useFormat } from "../../lib/format";
-import { gemAxes, isGemOptionSet } from "../../lib/gemOptions";
+import { gemAxes, isGemOptionSet, sizeRangeLabel } from "../../lib/gemOptions";
 import { pick } from "../../data/types";
 import { useTaxonomy } from "../../lib/catalog/useTaxonomy";
 import type { Product, ProductVariant } from "../../data/products";
@@ -248,11 +248,7 @@ function VariantAvailability({ variants }: { variants: ProductVariant[] }) {
     const { packs, sizes } = gemAxes(variants);
     const parts = [
       packs.length > 0 ? t("product.cardPacks", { list: packs.join(" · ") }) : null,
-      sizes.length > 1
-        ? t("product.cardSizes", { from: `SS${sizes[0]}`, to: `SS${sizes[sizes.length - 1]}` })
-        : sizes.length === 1
-          ? `SS${sizes[0]}`
-          : null,
+      sizeRangeLabel(sizes, lang, (range) => t("product.cardSizes", range)),
     ].filter(Boolean);
     return <span className="truncate text-[11px] text-[var(--text-muted)]">{parts.join(" — ")}</span>;
   }

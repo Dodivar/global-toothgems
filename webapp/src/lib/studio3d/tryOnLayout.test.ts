@@ -1,5 +1,5 @@
 import { describe, expect, it } from "vitest";
-import { scaleForSs, type PlacedJewelry, type Vec3 } from "../../data/studioEditor";
+import { scaleForSize, type PlacedJewelry, type Vec3 } from "../../data/studioEditor";
 import { DENTITION_CROWNS } from "./dentition";
 import { projectFrontView } from "./frontView";
 import { tryOnLayout } from "./tryOnLayout";
@@ -15,13 +15,13 @@ function onTooth(id: string, fdi: string, facing = 1): PlacedJewelry {
   return {
     id,
     productId: "gem",
-    ss: 5,
+    size: { ss: 5 },
     look: { shape: "heart", material: "crystal", color: "#ff0000", effect: "none" },
     toothId: fdi,
     position,
     normal: { x: facing * c.outward.x, y: 0, z: facing * c.outward.z },
     rotation: 0,
-    scale: scaleForSs(5),
+    scale: scaleForSize({ ss: 5 }),
   };
 }
 

@@ -4599,7 +4599,9 @@ export type Database = {
           prices_include_tax: boolean
           shipping_address: Json | null
           shipping_amount: number
+          shipping_max_days: number | null
           shipping_method_name: string | null
+          shipping_min_days: number | null
           shipping_rate_id: string | null
           status: string
           stock_state: string
@@ -4633,7 +4635,9 @@ export type Database = {
           prices_include_tax?: boolean
           shipping_address?: Json | null
           shipping_amount?: number
+          shipping_max_days?: number | null
           shipping_method_name?: string | null
+          shipping_min_days?: number | null
           shipping_rate_id?: string | null
           status?: string
           stock_state?: string
@@ -4667,7 +4671,9 @@ export type Database = {
           prices_include_tax?: boolean
           shipping_address?: Json | null
           shipping_amount?: number
+          shipping_max_days?: number | null
           shipping_method_name?: string | null
+          shipping_min_days?: number | null
           shipping_rate_id?: string | null
           status?: string
           stock_state?: string

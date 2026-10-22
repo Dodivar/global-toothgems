@@ -363,6 +363,8 @@ export function ProductForm({
                 error={showError("options")}
                 onChange={(gemOptions) => set("gemOptions", gemOptions)}
                 focusOption={focusOption}
+                // Round stones are sized in SS; every other cut in millimetres (decision 107).
+                defaultSizeMode={!draft.shape || draft.shape === "round" || draft.shape === "xilion-rose" ? "ss" : "mm"}
               />
             </Section>
           )}

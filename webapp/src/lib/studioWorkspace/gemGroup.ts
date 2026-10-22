@@ -1,13 +1,14 @@
 import {
   isGemRef,
   OFFSET_RANGE,
+  readPieceSize,
   sanitizeLook,
-  sanitizeSs,
-  scaleForSs,
+  scaleForSize,
   type GemLook,
   type PlacedJewelry,
   type Vec3,
 } from "../../data/studioEditor";
+import type { GemSize } from "../gemOptions";
 import { ARCH_FRAME_BY_ID, approxLabialPoint } from "../studio3d/archLayout";
 import { currentEstimate } from "../studio3d/gemRegistry";
 
@@ -27,7 +28,8 @@ import { currentEstimate } from "../studio3d/gemRegistry";
 export interface GroupPiece {
   productId: string;
   variantId?: string;
-  ss: number;
+  /** Groups saved before decision 107 stored a bare `ss` number instead, still read. */
+  size: GemSize;
   look: GemLook;
   rotation: number;
   offset?: number;
@@ -85,7 +87,7 @@ export function piecesToGroup(pieces: PlacedJewelry[], frame: Frame): GroupPiece
   return pieces.map((p) => ({
     productId: p.productId,
     ...(p.variantId ? { variantId: p.variantId } : {}),
-    ss: p.ss,
+    size: p.size,
     look: p.look,
     rotation: p.rotation,
     ...(p.offset ? { offset: p.offset } : {}),
@@ -119,7 +121,7 @@ export function anchorToothOf(pieces: Pick<PlacedJewelry, "toothId">[]): string 
 }
 
 /** The indicative shop value of a group's pieces, at the prices last loaded (`gemCatalog.estimateComposition`). */
-export function groupEstimateCents(pieces: Pick<GroupPiece, "productId" | "variantId" | "look" | "ss">[]): number {
+export function groupEstimateCents(pieces: Pick<GroupPiece, "productId" | "variantId" | "look" | "size">[]): number {
   return currentEstimate(pieces).totalMinor;
 }
 
@@ -142,12 +144,12 @@ export function sanitizeGroupData(input: unknown): GemGroupData | null {
     if (!isGemRef(p.productId) || !isVec(p.at) || !isVec(p.facing)) continue;
     if (Math.hypot(p.at.x, p.at.y, p.at.z) > MAX_REACH_MM) continue;
     const look = sanitizeLook(p.look);
-    const ss = sanitizeSs(p.ss);
-    if (!look || ss === null) continue;
+    const size = readPieceSize(p);
+    if (!look || size === null) continue;
     pieces.push({
       productId: p.productId,
       ...(isGemRef(p.variantId) ? { variantId: p.variantId } : {}),
-      ss,
+      size,
       look,
       rotation: isNum(p.rotation) ? ((p.rotation % 360) + 360) % 360 : 0,
       ...(isNum(p.offset) && p.offset !== 0 ? { offset: clampTo(p.offset, OFFSET_RANGE.min, OFFSET_RANGE.max) } : {}),
@@ -172,6 +174,6 @@ export function groupPreviewPieces(data: GemGroupData): PreviewPiece[] {
   const frame = ARCH_FRAME_BY_ID[data.anchorToothId] ?? ARCH_FRAME_BY_ID["11"];
   const origin = approxLabialPoint(frame.fdi, 0, 0)!.position;
   return groupToWorld(data.pieces, { origin, tangent: frame.tangent, up: { x: 0, y: 1, z: 0 }, outward: frame.outward }).map(
-    ({ piece, position }) => ({ look: piece.look, scale: scaleForSs(piece.ss), rotation: piece.rotation, position }),
+    ({ piece, position }) => ({ look: piece.look, scale: scaleForSize(piece.size), rotation: piece.rotation, position }),
   );
 }

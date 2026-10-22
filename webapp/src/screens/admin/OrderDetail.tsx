@@ -129,8 +129,10 @@ export function OrderDetail() {
   const onParcelAction = (parcel: OrderParcel, action: ParcelAction) => {
     if (action === "edit") return setParcelDialog({ parcel });
     if (action === "ship") {
-      // A parcel still without its carrier or tracking number is completed first.
-      if (!parcel.carrier || !parcel.trackingNumber) return setParcelDialog({ parcel, intent: "ship" });
+      // A parcel still without its carrier or tracking number is completed first, and one
+      // without an estimated delivery is shown with the promised one before it leaves.
+      const needsEta = !parcel.estimatedDelivery && order.shippingDays;
+      if (!parcel.carrier || !parcel.trackingNumber || needsEta) return setParcelDialog({ parcel, intent: "ship" });
       void changeParcel(parcel, { status: "shipped" }).then((r) =>
         report(r, t("admin.orders.fulfilment.toastShippedTitle"), t("admin.orders.fulfilment.toastShippedBody")),
       );

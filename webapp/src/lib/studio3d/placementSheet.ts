@@ -2,6 +2,7 @@ import { A4, writePdf, type PdfOp, type PdfPathCommand } from "../documents/pdfW
 import { DOC_INK } from "../documents/template";
 import { textWidth, type FontWeight } from "../documents/text";
 import { circleOutline, crownOutline, gemOutline, type FrontViewPathCommand, type FrontViewProjection } from "./frontView";
+import { sizeKey, type GemSize } from "../gemOptions";
 
 /**
  * The placement sheet ("fiche de pose"): an A4 PDF an artist prints and keeps
@@ -309,7 +310,7 @@ export function placementSheetFileName(prefix: string, name: string, date: Date 
 export interface ReferenceGroup {
   productId: string;
   variantId: string | null;
-  ss: number;
+  size: GemSize;
   numbers: number[];
 }
 
@@ -318,8 +319,8 @@ export function referenceGroups(projection: FrontViewProjection): ReferenceGroup
   const groups = new Map<string, ReferenceGroup>();
   for (const g of projection.gems) {
     const variantId = g.piece.variantId ?? null;
-    const key = `${g.piece.productId}|${variantId ?? ""}|${g.piece.ss}`;
-    const group = groups.get(key) ?? { productId: g.piece.productId, variantId, ss: g.piece.ss, numbers: [] };
+    const key = `${g.piece.productId}|${variantId ?? ""}|${sizeKey(g.piece.size)}`;
+    const group = groups.get(key) ?? { productId: g.piece.productId, variantId, size: g.piece.size, numbers: [] };
     group.numbers.push(g.number);
     groups.set(key, group);
   }

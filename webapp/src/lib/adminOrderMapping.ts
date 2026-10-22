@@ -71,6 +71,9 @@ export interface AdminOrderRow
   updated_at: string;
   paid_at: string | null;
   cancelled_at: string | null;
+  /** Working days promised at checkout, copied from the rate (null: no rate). */
+  shipping_min_days: number | null;
+  shipping_max_days: number | null;
   order_items: AdminOrderItemRow[];
   order_discounts: AdminOrderDiscountRow[];
   payments: PaymentRow[];
@@ -90,7 +93,7 @@ export const ADMIN_ORDER_SELECT = `
   id, order_number, user_id, customer_email, created_at, updated_at, paid_at, cancelled_at,
   status, payment_status, fulfillment_status, currency,
   subtotal_amount, discount_amount, shipping_amount, tax_amount, total_amount,
-  gift_card_amount, amount_due, prices_include_tax, shipping_method_name,
+  gift_card_amount, amount_due, prices_include_tax, shipping_method_name, shipping_min_days, shipping_max_days,
   billing_address, shipping_address,
   order_items ( id, product_name, variant_name, variant_id, unit_price, quantity, discount_amount, tax_rate_bp, tax_amount,
                 product:products ( slug ), course:courses ( slug ), gift_cards ( design ) ),
@@ -288,6 +291,10 @@ export function mapAdminOrder(
     currency: row.currency,
     shippingMethod: order.ships ? "standard" : "digital",
     shippingMethodName: order.shippingMethod,
+    shippingDays:
+      row.shipping_min_days != null && row.shipping_max_days != null
+        ? { min: row.shipping_min_days, max: row.shipping_max_days }
+        : undefined,
     amounts: order.amounts,
     discounts: order.discounts.map(
       (d, index): AdminDiscount => ({ ...d, source: row.order_discounts[index].source === "loyalty" ? "loyalty" : "promotion" }),

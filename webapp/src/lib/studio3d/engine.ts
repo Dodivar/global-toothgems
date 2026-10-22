@@ -6,7 +6,7 @@ import { RoomEnvironment } from "three/addons/environments/RoomEnvironment.js";
 import {
   FREE_TOOTH,
   QUADRANT_TEETH,
-  scaleForSs,
+  scaleForSize,
   TOOTH_SPECS,
   type PlacedJewelry,
   type StudioShape,
@@ -3010,7 +3010,7 @@ export class StudioEngine {
     for (const { piece, position, normal } of groupToWorld(data.pieces, frame)) {
       const hit = this.snapToSurface(new THREE.Vector3(position.x, position.y, position.z), new THREE.Vector3(normal.x, normal.y, normal.z));
       if (!hit) continue;
-      const scale = scaleForSs(piece.ss);
+      const scale = scaleForSize(piece.size);
       const pose: GemPose = { shape: piece.look.shape, scale, offset: piece.offset ?? 0, rotation: piece.rotation };
       const free = this.findFreeSpot(hit, pose, blockers);
       if (!free) continue;
@@ -3018,7 +3018,7 @@ export class StudioEngine {
         id: uid(),
         productId: piece.productId,
         ...(piece.variantId ? { variantId: piece.variantId } : {}),
-        ss: piece.ss,
+        size: piece.size,
         look: piece.look,
         toothId: free.toothId,
         position: v3(free.point.x, free.point.y, free.point.z),

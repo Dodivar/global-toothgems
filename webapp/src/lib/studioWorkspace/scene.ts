@@ -1,4 +1,5 @@
 import { sanitizeJewels, type PlacedJewelry } from "../../data/studioEditor";
+import { sameSize, sizeKey } from "../gemOptions";
 import { currentEstimate } from "../studio3d/gemRegistry";
 
 /**
@@ -139,7 +140,7 @@ export function piecesKey(pieces: PlacedJewelry[]): string {
       p.id,
       p.productId,
       p.variantId ?? null,
-      p.ss,
+      sizeKey(p.size),
       p.toothId,
       p.position.x,
       p.position.y,
@@ -168,7 +169,7 @@ export function isSymmetrical(pieces: PlacedJewelry[], tolerance = 1.2): boolean
         !used.has(k) &&
         q.productId === p.productId &&
         (q.variantId ?? null) === (p.variantId ?? null) &&
-        q.ss === p.ss &&
+        sameSize(q.size, p.size) &&
         Math.abs(q.position.x + p.position.x) <= tolerance &&
         Math.abs(q.position.y - p.position.y) <= tolerance,
     );

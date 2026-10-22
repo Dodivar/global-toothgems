@@ -28,6 +28,7 @@ import { SaveStatus } from "../workspace/SaveStatus";
 import { StudioAccessBadge } from "../access/StudioTrialCountdown";
 import { FREE_TOOTH } from "../../../data/studioEditor";
 import { estimateComposition } from "../../../lib/studio3d/gemCatalog";
+import { sameSize, sortSizes } from "../../../lib/gemOptions";
 import { useCompositionEstimate, useStudioGems } from "../../../lib/studio3d/useStudioGems";
 import { importModelFile, resetModel } from "../../../lib/studio3d/actions";
 import { downloadURL, getEngine } from "../../../lib/studio3d/engine";
@@ -233,14 +234,14 @@ function ExportMenu() {
       const estimate = estimateComposition(jewels, (key) => byKey.get(key));
       const rows = estimate.lines.map((line) => {
         const pieces = jewels.filter(
-          (j) => j.productId === line.productId && (j.variantId ?? null) === line.variantId && (line.ss == null || j.ss === line.ss),
+          (j) => j.productId === line.productId && (j.variantId ?? null) === line.variantId && (line.size == null || sameSize(j.size, line.size)),
         );
         const teeth = [...new Set(pieces.map((j) => (j.toothId === FREE_TOOTH ? "—" : j.toothId)))];
-        const sizes = [...new Set(pieces.map((j) => j.ss))].sort((a, b) => a - b);
+        const sizes = sortSizes(pieces.map((j) => j.size));
         return {
           name: `${labels.pieceName(pieces[0])} ×${line.pieces}`,
           tooth: teeth.join(", "),
-          size: sizes.map((ss) => `SS${ss}`).join(", "),
+          size: sizes.map(labels.sizeShort).join(", "),
           finish: labels.finishName(pieces[0]) ?? "—",
           price: `${line.quantity} × ${labels.formatEstimate(line.unitMinor)}`,
         };

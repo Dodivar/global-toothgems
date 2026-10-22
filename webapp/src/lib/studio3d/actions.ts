@@ -1,4 +1,6 @@
-import { scaleForSs } from "../../data/studioEditor";
+import { scaleForSize } from "../../data/studioEditor";
+import { sameSize, type GemSize } from "../gemOptions";
+import { nearestSize } from "./gemCatalog";
 import { studioGem } from "./gemRegistry";
 import { getEngine, MAX_MODEL_BYTES, ModelImportError } from "./engine";
 import { notify } from "./notices";
@@ -45,25 +47,25 @@ export function rotatePieces(ids: string[], clockwiseDeg = 90) {
 }
 
 /**
- * Move each piece `steps` stone sizes up (`> 0`) or down, among the sizes its
+ * Move each piece `steps` sizes up (`> 0`) or down, among the sizes its
  * gem is sold in. One undo step; a piece already at its largest / smallest
  * size, or whose gem the shop no longer sells, stays as it is.
  */
 export function resizePieces(ids: string[], steps: number) {
   const pieces = studioStore.jewels.filter((j) => ids.includes(j.id));
   if (!pieces.length || !steps) return;
-  const next = (productId: string, ss: number) => {
-    const sizes = studioGem(productId)?.sizes;
-    if (!sizes?.length) return ss;
-    const at = sizes.indexOf(ss);
+  const next = (productId: string, size: GemSize): GemSize => {
+    const gem = studioGem(productId);
+    if (!gem?.sizes.length) return size;
+    const at = gem.sizes.findIndex((s) => sameSize(s, size));
     // a size the gem no longer offers first snaps to the nearest one it does
-    if (at < 0) return sizes.reduce((best, s) => (Math.abs(s - ss) < Math.abs(best - ss) ? s : best), sizes[0]);
-    return sizes[Math.min(sizes.length - 1, Math.max(0, at + steps))];
+    if (at < 0) return nearestSize(gem, size);
+    return gem.sizes[Math.min(gem.sizes.length - 1, Math.max(0, at + steps))];
   };
   const updates = pieces
-    .map((j) => ({ j, ss: next(j.productId, j.ss) }))
-    .filter(({ j, ss }) => ss !== j.ss)
-    .map(({ j, ss }) => ({ id: j.id, patch: { ss, scale: scaleForSs(ss) } }));
+    .map((j) => ({ j, size: next(j.productId, j.size) }))
+    .filter(({ j, size }) => !sameSize(size, j.size))
+    .map(({ j, size }) => ({ id: j.id, patch: { size, scale: scaleForSize(size) } }));
 
   if (!updates.length) {
     return;

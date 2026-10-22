@@ -16,7 +16,7 @@ import {
 const piece = (over: Partial<PlacedJewelry> = {}): PlacedJewelry => ({
   id: "a",
   productId: "solitaire",
-  ss: 5,
+  size: { ss: 5 },
   look: { shape: "round", material: "crystal", color: "#ffffff", effect: "none" },
   toothId: "11",
   position: { x: -4.123456789, y: 0.5, z: 3 },
@@ -59,7 +59,7 @@ describe("share links", () => {
     expect(back?.scene.camera).toEqual(scene.camera);
     expect(back?.scene.groups).toEqual([{ id: "g1", gemGroupId: null, name: "Pair", pieceIds: ["a", "b"] }]);
     expect(back?.scene.pieces.map((p) => p.id)).toEqual(["a", "b"]);
-    expect(back?.scene.pieces[1]).toMatchObject({ productId: "etoile", variantId: "white-gold", ss: 5, look: { shape: "halo-star", material: "metal" } });
+    expect(back?.scene.pieces[1]).toMatchObject({ productId: "etoile", variantId: "white-gold", size: { ss: 5 }, look: { shape: "halo-star", material: "metal" } });
     // Rounded to a ten-thousandth of a millimetre to keep the link short.
     expect(back?.scene.pieces[0].position.x).toBe(-4.1235);
   });

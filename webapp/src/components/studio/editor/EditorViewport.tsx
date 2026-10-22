@@ -36,7 +36,7 @@ import { QuickColorPanel } from "./QuickColorPanel";
 import { IssueFrames, IssuePanel } from "./StageIssues";
 import type { PlacedJewelry } from "../../../data/studioEditor";
 import { lookSwatch } from "./lookSwatch";
-import { formatSs } from "../../../lib/gemOptions";
+import { sizeKey } from "../../../lib/gemOptions";
 import {
   beginRotation,
   duplicateMirroredPieces,
@@ -427,7 +427,7 @@ const quickButton = clsx(
  * is dragged or off screen.
  */
 function QuickBar({ ids, jewels, actions }: { ids: string[]; jewels: PlacedJewelry[]; actions: QuickActionId[] }) {
-  const { t, sizeName } = useEditorLabels();
+  const { t, sizeName, sizeShort } = useEditorLabels();
   const barRef = useRef<HTMLDivElement>(null);
   const panelRef = useRef<HTMLDivElement>(null);
   const colorButtonRef = useRef<HTMLButtonElement>(null);
@@ -454,14 +454,14 @@ function QuickBar({ ids, jewels, actions }: { ids: string[]; jewels: PlacedJewel
   }, []);
 
   const selected = jewels.filter((j) => ids.includes(j.id));
-  // One stone size for the whole selection, or none when the pieces differ.
-  const sizes = new Set(selected.map((j) => j.ss));
-  const ss = sizes.size === 1 ? [...sizes][0] : null;
+  // One size for the whole selection, or none when the pieces differ.
+  const sizes = new Set(selected.map((j) => sizeKey(j.size)));
+  const size = sizes.size === 1 && selected.length ? selected[0].size : null;
 
   // The bar's width changes with its buttons and the size readout, the panel comes and goes: stay placed.
   useLayoutEffect(() => {
     if (anchorRef.current) placeBarAndPanel(barRef.current, panelRef.current, anchorRef.current, !!gestureRef.current);
-  }, [actions, ss, colorOpen]);
+  }, [actions, size, colorOpen]);
 
   // The panel grows when the custom colour wheel opens: place it again.
   useEffect(() => {
@@ -602,9 +602,9 @@ function QuickBar({ ids, jewels, actions }: { ids: string[]; jewels: PlacedJewel
         return (
           <div role="group" aria-label={t("studio.editor.inspector.size")} className="flex flex-none items-center">
             {icon(t("studio.editor.viewport.quick.smaller", { count }), Minus, () => resizePieces(ids, -1))}
-            {ss !== null && (
-              <span aria-live="polite" title={sizeName(ss)} className="min-w-[46px] text-center text-[12px] font-bold tabular-nums">
-                {formatSs(ss)}
+            {size !== null && (
+              <span aria-live="polite" title={sizeName(size)} className="min-w-[46px] whitespace-nowrap px-1 text-center text-[12px] font-bold tabular-nums">
+                {sizeShort(size)}
               </span>
             )}
             {icon(t("studio.editor.viewport.quick.larger", { count }), Plus, () => resizePieces(ids, 1))}

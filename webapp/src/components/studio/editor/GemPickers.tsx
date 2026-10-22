@@ -4,7 +4,8 @@ import { lookSwatch } from "./lookSwatch";
 import { useLocalized } from "../../../lib/localized";
 import { swapPatch, type StudioGem, type StudioGemFinish } from "../../../lib/studio3d/gemCatalog";
 import { studioStore } from "../../../lib/studio3d/store";
-import { scaleForSs } from "../../../data/studioEditor";
+import { scaleForSize } from "../../../data/studioEditor";
+import { sameSize, sizeKey } from "../../../lib/gemOptions";
 import { useStudioGems } from "../../../lib/studio3d/useStudioGems";
 import { useEditorLabels } from "./editorLabels";
 
@@ -69,28 +70,28 @@ export function ColorOptions({ selected }: { selected: PlacedJewelry[] }) {
   );
 }
 
-/** The stone sizes every selected piece's gem comes in. */
+/** The sizes every selected piece's gem comes in. */
 export function SizeOptions({ selected }: { selected: PlacedJewelry[] }) {
   const { t, sizeName } = useEditorLabels();
   const { byKey } = useStudioGems();
-  const lists = selected.map((j) => byKey.get(j.productId)?.sizes ?? [j.ss]);
-  const sizes = lists.reduce((common, list) => common.filter((ss) => list.includes(ss)));
+  const lists = selected.map((j) => byKey.get(j.productId)?.sizes ?? [j.size]);
+  const sizes = lists.reduce((common, list) => common.filter((size) => list.some((s) => sameSize(s, size))));
   if (!sizes.length) return <p className="m-0 text-[11.5px] leading-relaxed text-[var(--text-muted)]">{t("studio.editor.inspector.sizeMixed")}</p>;
   return (
     <div role="radiogroup" aria-label={t("studio.editor.inspector.size")} className="flex flex-wrap gap-1.5">
-      {sizes.map((ss) => {
-        const on = selected.every((j) => j.ss === ss);
+      {sizes.map((size) => {
+        const on = selected.every((j) => sameSize(j.size, size));
         return (
           <button
-            key={ss}
+            key={sizeKey(size)}
             type="button"
             role="radio"
             aria-checked={on}
-            title={sizeName(ss)}
+            title={sizeName(size)}
             onClick={() => {
               if (on) return;
               studioStore.pushHistory();
-              studioStore.updateSelected({ ss, scale: scaleForSs(ss) });
+              studioStore.updateSelected({ size, scale: scaleForSize(size) });
             }}
             className={clsx(
               "inline-flex h-8 min-w-14 items-center justify-center rounded-[var(--radius-pill)] border px-3 text-[11.5px] font-semibold tabular-nums transition-colors",
@@ -100,7 +101,7 @@ export function SizeOptions({ selected }: { selected: PlacedJewelry[] }) {
                 : "border-[var(--border-default)] bg-[var(--surface-card)] text-[var(--text-body)] hover:border-[var(--border-strong)]",
             )}
           >
-            {sizeName(ss)}
+            {sizeName(size)}
           </button>
         );
       })}

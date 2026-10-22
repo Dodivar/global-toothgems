@@ -1,4 +1,5 @@
 import type { StudioShape } from "../../data/studioEditor";
+import { sizeLongestMm } from "../gemOptions";
 import type { Creation } from "../studioWorkspace/types";
 
 /**
@@ -28,8 +29,8 @@ export interface TryOnPieceInput {
   pieceId: string;
   /** FDI tooth number ("11", "21"…), or "X0" for a piece on an unlabelled region. */
   toothId: string;
-  /** Stone size (SS). */
-  ss: number;
+  /** Longest side, in millimetres (an SS gauge's approximate diameter for a round stone). */
+  sizeMm: number;
   shape: StudioShape;
   /** `#rrggbb`. */
   color: string;
@@ -105,7 +106,7 @@ export function tryOnInputFromCreation(creation: Pick<Creation, "id" | "scene">)
     pieces: creation.scene.pieces.map((p) => ({
       pieceId: p.id,
       toothId: p.toothId,
-      ss: p.ss,
+      sizeMm: sizeLongestMm(p.size),
       shape: p.look.shape,
       color: p.look.color,
       rotation: p.rotation,

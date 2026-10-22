@@ -1,4 +1,5 @@
 import type { Localized } from "./types";
+import type { GemSize } from "../lib/gemOptions";
 import type { BadgeTone } from "../components/ui/Badge";
 import { photo } from "../lib/images";
 
@@ -110,9 +111,9 @@ export interface ProductVariant {
   price: number;
   compareAtPrice?: number;
   stock?: "low" | "out";
-  /** Gem options (`lib/gemOptions.ts`): stones per pack, and stone size (SS). */
+  /** Gem options (`lib/gemOptions.ts`): stones per pack, and size (SS gauge or millimetres). */
   pack?: number;
-  ss?: number;
+  size?: GemSize;
   /** Colour dot of a colour variant, `#rrggbb`. */
   swatch?: string;
   /** First photo showing this variant: the gallery moves to it when the variant is picked. */

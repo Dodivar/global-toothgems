@@ -29,7 +29,7 @@ import {
 const piece = (id: string, x: number, y: number, extra: Partial<PlacedJewelry> = {}): PlacedJewelry => ({
   id,
   productId: "p1",
-  ss: 5,
+  size: { ss: 5 },
   look: { shape: "round", material: "crystal", color: "#ffffff", effect: "none" },
   toothId: "11",
   position: { x, y, z: 10 },
@@ -55,7 +55,7 @@ describe("try-on service contract", () => {
       id: "c1",
       scene: { version: 2, model: "studio", lightPreset: "studio", camera: null, pieces: [piece("a", 0, 0, { rotation: 30 })], groups: [] },
     });
-    expect(input).toEqual({ creationId: "c1", pieces: [{ pieceId: "a", toothId: "11", ss: 5, shape: "round", color: "#ffffff", rotation: 30 }] });
+    expect(input).toEqual({ creationId: "c1", pieces: [{ pieceId: "a", toothId: "11", sizeMm: 1.8, shape: "round", color: "#ffffff", rotation: 30 }] });
   });
 
   it("reads a valid answer and drops what does not belong", () => {
