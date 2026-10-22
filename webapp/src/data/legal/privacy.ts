@@ -273,6 +273,16 @@ export const PRIVACY: LegalDocument = {
             { role: l("Mesure d’audience", "Analytics"), provider: l("[[Outil d’analytics, si utilisé]]", "[[Analytics provider, if used]]"), location: l("[[Pays]]", "[[Country]]") },
             { role: l("Livraison", "Delivery"), provider: l("[[Transporteurs]]", "[[Carriers]]"), location: l("[[Pays]]", "[[Country]]") },
             { role: l("Vidéo des formations", "Training video"), provider: l("[[Hébergeur vidéo]]", "[[Video host]]"), location: l("[[Pays]]", "[[Country]]") },
+            {
+              role: l("Cartes des Glowbooks (affichées seulement à votre demande)", "Glowbook maps (shown only when you ask)"),
+              provider: l("OpenFreeMap — données © OpenStreetMap", "OpenFreeMap — data © OpenStreetMap"),
+              location: l("[[Pays]]", "[[Country]]"),
+            },
+            {
+              role: l("Recherche d’adresse dans le Studio (artistes)", "Address search in the Studio (artists)"),
+              provider: l("Nominatim — Fondation OpenStreetMap", "Nominatim — OpenStreetMap Foundation"),
+              location: l("[[Pays]]", "[[Country]]"),
+            },
             { role: l("Autres", "Other"), provider: l("[[Autres prestataires]]", "[[Other providers]]"), location: l("[[Pays]]", "[[Country]]") },
           ],
         },

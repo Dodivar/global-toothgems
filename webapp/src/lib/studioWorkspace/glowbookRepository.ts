@@ -1,4 +1,5 @@
 import type { TypedSupabaseClient } from "../supabase/client";
+import type { Json } from "../supabase/database.types";
 import { BUCKETS, SIGNED_URL_TTL_SECONDS } from "../supabase/storage";
 import type { MediaKind } from "./glowbookLook";
 import { StudioStoreError } from "./repository";
@@ -50,7 +51,7 @@ export interface GlowbookRepository {
   remove(creationId: string): Promise<void>;
   reorder(creationIds: string[]): Promise<void>;
   removeAll(): Promise<void>;
-  saveLook(patch: Record<string, string | null>): Promise<Glowbook>;
+  saveLook(patch: Record<string, unknown>): Promise<Glowbook>;
   uploadMedia(kind: MediaKind, blob: Blob): Promise<string>;
   signMedia(paths: string[]): Promise<Map<string, string>>;
   cleanupMedia(keep: string[]): Promise<void>;
@@ -158,7 +159,7 @@ export function createGlowbookRepository(client: TypedSupabaseClient, userId: st
     },
 
     async saveLook(patch) {
-      const { data, error } = await client.rpc("studio_save_showcase_look", { p_look: patch });
+      const { data, error } = await client.rpc("studio_save_showcase_look", { p_look: patch as Json });
       if (error) throw storeError(error);
       if (!data) throw new StudioStoreError("storage");
       return toGlowbook(data);

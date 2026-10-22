@@ -1,13 +1,16 @@
+import { placeFromJson, samePlace, validatePlace, type GlowbookPlace, type PlaceProblem } from "./glowbookPlace";
+
 /**
  * The Glowbook's own look (decision 100): what an artist chooses so the page
  * looks like them — profile picture, banner, identity colour, background,
- * layout, a creation in the spotlight, their city and links. Pure: the lists
+ * layout, a creation in the spotlight, their city, their place on a map
+ * (decision 108, `glowbookPlace.ts`) and links. Pure: the lists
  * the database accepts, the rules it checks (repeated so the form can say
  * what is wrong first), row ↔ UI mapping and the picture framing maths.
  *
  * Pictures and links are proposed: a new one waits for a moderator while the
  * page keeps the approved one (`pending`). Colour, background, layout,
- * spotlight and city are live. Who may customise is one database switch
+ * spotlight, city and place are live. Who may customise is one database switch
  * (`private.glowbook_customization_allowed`): every member with Studio access
  * today, a paid plan later.
  */
@@ -50,6 +53,8 @@ export interface GlowbookLook {
   background: Background;
   layout: Layout;
   location: string | null;
+  /** Where the artist works (decision 108); null: not shown. */
+  place: GlowbookPlace | null;
   featuredItemId: string | null;
   avatarPath: string | null;
   bannerPath: string | null;
@@ -63,6 +68,7 @@ export const DEFAULT_LOOK: GlowbookLook = {
   background: "light",
   layout: "grid",
   location: null,
+  place: null,
   featuredItemId: null,
   avatarPath: null,
   bannerPath: null,
@@ -71,8 +77,8 @@ export const DEFAULT_LOOK: GlowbookLook = {
   tiktok: null,
 };
 
-/** Database column ↔ UI field. */
-const COLUMN: Record<keyof GlowbookLook, string> = {
+/** Database column ↔ UI field (the place travels as one `place` object). */
+const COLUMN: Record<Exclude<keyof GlowbookLook, "place">, string> = {
   accent: "accent",
   background: "background",
   layout: "layout",
@@ -96,6 +102,7 @@ export function lookFromColumns(o: Record<string, unknown> | null | undefined): 
     background: oneOf(BACKGROUNDS, o.background, "light"),
     layout: oneOf(LAYOUTS, o.layout, "grid"),
     location: text(o.location),
+    place: placeFromJson(o),
     featuredItemId: text(o.featured_item_id),
     avatarPath: text(o.avatar_path),
     bannerPath: text(o.banner_path),
@@ -117,16 +124,17 @@ export function pendingFromColumns(json: unknown): Partial<Pick<GlowbookLook, Mo
   return out;
 }
 
-/** The changes between two looks, as `studio_save_showcase_look`'s argument (column names; null removes). */
-export function lookPatch(from: GlowbookLook, to: GlowbookLook): Record<string, string | null> {
-  const patch: Record<string, string | null> = {};
-  for (const key of Object.keys(COLUMN) as (keyof GlowbookLook)[]) {
+/** The changes between two looks, as `studio_save_showcase_look`'s argument (column names; null removes; the place whole). */
+export function lookPatch(from: GlowbookLook, to: GlowbookLook): Record<string, string | GlowbookPlace | null> {
+  const patch: Record<string, string | GlowbookPlace | null> = {};
+  for (const key of Object.keys(COLUMN) as (keyof typeof COLUMN)[]) {
     if (from[key] !== to[key]) patch[COLUMN[key]] = to[key];
   }
+  if (!samePlace(from.place, to.place)) patch.place = to.place;
   return patch;
 }
 
-export type LookProblem = "locationLength" | "bookingUrl" | "websiteUrl" | "tiktok";
+export type LookProblem = "locationLength" | "bookingUrl" | "websiteUrl" | "tiktok" | PlaceProblem;
 
 export const isHttpsLink = (url: string) => /^https:\/\/[^\s<>"]+$/.test(url) && url.length >= 11 && url.length <= LINK_MAX;
 
@@ -144,7 +152,7 @@ export function validateLook(look: GlowbookLook): LookProblem | null {
   if (look.bookingUrl && !isHttpsLink(look.bookingUrl)) return "bookingUrl";
   if (look.websiteUrl && !isHttpsLink(look.websiteUrl)) return "websiteUrl";
   if (look.tiktok && !/^[A-Za-z0-9._]{2,24}$/.test(look.tiktok.replace(/^@/, ""))) return "tiktok";
-  return null;
+  return validatePlace(look.place);
 }
 
 /* --------------------------------------------------------- picture framing */
