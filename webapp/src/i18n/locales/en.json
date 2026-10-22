@@ -4970,7 +4970,7 @@
       "credits": "Original invoice",
       "totalIncl": "Credit note total incl. VAT",
       "notice": "Credit note issued against invoice {{invoice}} of {{date}}, for the refund confirmed on {{refundedOn}}.",
-      "toCard": "The amount was refunded to the payment method used.",
+      "toCard": "The amount was refunded to the payment method used. This credit note is the accounting document for that refund: it is not a credit to spend on the site.",
       "toGiftCard": "The amount was credited back to the gift card used.",
       "fileName": "credit-note"
     }

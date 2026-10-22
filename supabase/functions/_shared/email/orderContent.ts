@@ -89,6 +89,8 @@ const LABELS = {
     refundBody: "Le délai d’apparition sur votre relevé dépend de votre banque.",
     invoiceAttached: (n: string) => `Votre facture ${n} est jointe à cet e-mail (PDF).`,
     creditNoteAttached: (n: string) => `L’avoir ${n} correspondant est joint à cet e-mail (PDF).`,
+    creditNoteExplained:
+      "Cet avoir est la pièce comptable de votre remboursement : le montant est recrédité sur votre moyen de paiement, aucun crédit n’est ajouté à votre compte.",
     orderLabel: "Commande",
     amountLabel: "Montant",
   },
@@ -123,6 +125,8 @@ const LABELS = {
     refundBody: "How soon it shows on your statement depends on your bank.",
     invoiceAttached: (n: string) => `Your invoice ${n} is attached to this e-mail (PDF).`,
     creditNoteAttached: (n: string) => `The matching credit note ${n} is attached to this e-mail (PDF).`,
+    creditNoteExplained:
+      "This credit note is the accounting document for your refund: the amount goes back to your payment method, and no credit is added to your account.",
     orderLabel: "Order",
     amountLabel: "Amount",
   },
@@ -268,7 +272,7 @@ export function refundContent(
     blocks: [
       notice({ tone: "info", title: l.refundTitle(amount), body: l.refundBody }),
       details({ rows: [{ label: l.orderLabel, value: refund.orderNumber }, { label: l.amountLabel, value: amount }] }),
-      ...(creditNoteNumber ? [paragraph(l.creditNoteAttached(creditNoteNumber))] : []),
+      ...(creditNoteNumber ? [paragraph(l.creditNoteAttached(creditNoteNumber)), paragraph(l.creditNoteExplained)] : []),
     ],
   };
 }

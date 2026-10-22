@@ -1,8 +1,9 @@
 /**
  * Business e-mails driven by rows in the database rather than by a request:
  * shipping, course enrolment and refund (decision 79), back in stock (decision 90),
- * 3D Studio subscription confirmation (decision 94 (a)) and withdrawal
- * acknowledgement (decision 95).
+ * 3D Studio subscription confirmation (decision 94 (a)), withdrawal
+ * acknowledgement (decision 95) and the daily low-stock digest for the support
+ * inbox (decision 106).
  *
  * The `send-pending-emails` Edge Function runs `sendPendingEmails()` from
  * pg_cron every few minutes; the payment hook (`notifyOrderPaid`) runs
@@ -14,7 +15,7 @@
  * in email_log, keyed:
  *   shipping:<shipment id>   course_enrolment:<entitlement id>   refund:<refund id>
  *   back_in_stock:<request id>   studio_subscription:<subscription id>
- *   studio_withdrawal:<withdrawal id>
+ *   studio_withdrawal:<withdrawal id>   stock_digest:<Paris date>
  * One row never stops the others, and nothing here throws for a failed e-mail.
  */
 import type { SupabaseClient } from "npm:@supabase/supabase-js@2.57.4";
@@ -22,7 +23,14 @@ import { formatAmount } from "./format.ts";
 import { type AttachedDocument, type InvoiceSource, refundCreditNote } from "./invoicePdf.ts";
 import { refundContent, shippingContent } from "./orderContent.ts";
 import { type EmailDeps, type SendResult, sendTemplatedEmail } from "./send.ts";
-import { backInStockContent, type RestockedProduct, restockedItemName } from "./stockContent.ts";
+import {
+  backInStockContent,
+  type RestockedProduct,
+  restockedItemName,
+  type StockDigestItem,
+  stockDigestContent,
+  stockDigestCounts,
+} from "./stockContent.ts";
 import {
   type StudioSubscriptionMail,
   type StudioWithdrawalMail,
@@ -79,6 +87,15 @@ export interface PendingStudioWithdrawal extends StudioWithdrawalMail {
   locale: string;
 }
 
+/** Today's low-stock digest: what to report and where to send it (null address: none configured). */
+export interface PendingStockDigest {
+  /** The Paris calendar day, YYYY-MM-DD: the e-mail is sent once per day. */
+  date: string;
+  items: StockDigestItem[];
+  /** The store's support e-mail; the sender falls back to the reply-to address. */
+  supportEmail: string | null;
+}
+
 export interface PendingSource {
   shipping(limit: number): Promise<PendingShipping[]>;
   courseEnrolments(options: { orderId?: string; limit: number }): Promise<PendingEnrolment[]>;
@@ -86,6 +103,8 @@ export interface PendingSource {
   backInStock(limit: number): Promise<PendingBackInStock[]>;
   studioSubscriptions(limit: number): Promise<PendingStudioSubscription[]>;
   studioWithdrawals(limit: number): Promise<PendingStudioWithdrawal[]>;
+  /** Null when the digest is not due today or there is nothing to report. */
+  stockDigest(): Promise<PendingStockDigest | null>;
 }
 
 export interface EventReport {
@@ -108,6 +127,7 @@ export interface SweepReport {
   backInStock: EventReport;
   studioSubscription: EventReport;
   studioWithdrawal: EventReport;
+  stockDigest: EventReport;
 }
 
 const SENT_OR_DONE = new Set(["sent", "delivered", "opened", "bounced", "complained"]);
@@ -320,6 +340,41 @@ export function sendStudioWithdrawalEmails(
   );
 }
 
+/** "22 octobre 2026" for a YYYY-MM-DD day. */
+function digestDateLabel(date: string): string {
+  return new Intl.DateTimeFormat("fr-FR", { dateStyle: "long", timeZone: "UTC" }).format(new Date(`${date}T00:00:00Z`));
+}
+
+/**
+ * At most one stock digest a day, to the support inbox, only when something is
+ * out of stock or low (the database decides: not before 08:00 Paris time, not
+ * once today's is sent). Written in French, the team's language.
+ */
+export async function sendStockDigestEmail(
+  deps: EmailDeps,
+  source: PendingSource,
+  options: { log?: Log } = {},
+): Promise<EventReport> {
+  const log = options.log ?? (() => {});
+  const digest = await source.stockDigest();
+  if (!digest || digest.items.length === 0) return emptyReport();
+  const to = digest.supportEmail ?? deps.replyTo;
+  if (!to) {
+    log("stock digest: no support e-mail (store settings) nor EMAIL_REPLY_TO");
+    return { ...emptyReport(), examined: 1, skipped: 1 };
+  }
+  const counts = stockDigestCounts(digest.items);
+  return sendEach([digest], "stock digest", (d) => d.date, (d) =>
+    sendTemplatedEmail(deps, {
+      templateKey: "stock_digest",
+      to,
+      locale: "fr",
+      variables: { date: digestDateLabel(d.date), out_count: String(counts.out), low_count: String(counts.low) },
+      eventKey: `stock_digest:${d.date}`,
+      content: (locale) => stockDigestContent(d.items, locale, deps.layout.siteUrl),
+    }), log);
+}
+
 /** The sweeps; one failing (a database error, say) does not prevent the others. */
 export async function sendPendingEmails(
   deps: EmailDeps,
@@ -342,6 +397,7 @@ export async function sendPendingEmails(
     backInStock: await guard("back in stock", () => sendBackInStockEmails(deps, source, { ...options, log })),
     studioSubscription: await guard("studio subscription", () => sendStudioSubscriptionEmails(deps, source, { ...options, log })),
     studioWithdrawal: await guard("studio withdrawal", () => sendStudioWithdrawalEmails(deps, source, { ...options, log })),
+    stockDigest: await guard("stock digest", () => sendStockDigestEmail(deps, source, { log })),
   };
 }
 
@@ -466,6 +522,32 @@ export function supabasePendingSource(db: SupabaseClient): PendingSource {
           refundAmount: Number(row.refund_amount),
           currency: row.currency,
         }));
+    },
+    async stockDigest() {
+      const rows = await rpc<{
+        digest_date: string;
+        product_name: string;
+        variant_name: string | null;
+        sku: string | null;
+        stock_status: string;
+        available: number;
+        threshold: number;
+      }>("pending_stock_digest", {});
+      if (rows.length === 0) return null;
+      const { data, error } = await db.from("store_settings").select("support_email").limit(1).maybeSingle();
+      if (error) throw new Error(`store_settings read failed: ${error.message}`);
+      return {
+        date: rows[0].digest_date,
+        supportEmail: data?.support_email?.trim() || null,
+        items: rows.map((row) => ({
+          productName: row.product_name,
+          variantName: row.variant_name,
+          sku: row.sku,
+          status: row.stock_status === "out_of_stock" ? "out_of_stock" as const : "low_stock" as const,
+          available: row.available,
+          threshold: row.threshold,
+        })),
+      };
     },
   };
 }

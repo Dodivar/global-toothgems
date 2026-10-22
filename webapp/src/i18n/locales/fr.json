@@ -4970,7 +4970,7 @@
       "credits": "Facture d’origine",
       "totalIncl": "Total de l’avoir TTC",
       "notice": "Avoir émis sur la facture {{invoice}} du {{date}}, au titre du remboursement confirmé le {{refundedOn}}.",
-      "toCard": "Le montant a été remboursé sur le moyen de paiement utilisé.",
+      "toCard": "Le montant a été remboursé sur le moyen de paiement utilisé. Cet avoir est la pièce comptable de ce remboursement : il ne constitue pas un crédit à dépenser sur le site.",
       "toGiftCard": "Le montant a été recrédité sur la carte cadeau utilisée.",
       "fileName": "avoir"
     }
