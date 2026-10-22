@@ -173,7 +173,10 @@ export function Dialog({
           <div
             className={clsx(
               "grid gap-4 p-[var(--space-5)]",
-              scrollBody && "min-h-0 flex-1 content-start overflow-y-auto overscroll-contain",
+              // max-content rows: in a scroll container of fixed height, auto rows fall back
+              // to their minimum, and a clipped child (an aspect-ratio preview) collapses
+              // under the content that follows it.
+              scrollBody && "min-h-0 flex-1 auto-rows-max content-start overflow-y-auto overscroll-contain",
             )}
           >
             {children}

@@ -382,5 +382,53 @@
       "apple": "Apple Maps",
       "osm": "OpenStreetMap"
     }
+  },
+  "card": {
+    "approved": "In my Glowbook",
+    "pending": "Glowbook · in review",
+    "rejected": "Glowbook · declined"
+  },
+  "deleteNotice": {
+    "approved": "This creation is shown on your Glowbook.",
+    "pending": "This creation is waiting for review for your Glowbook.",
+    "rejected": "This creation is in your Glowbook (declined).",
+    "body": "Deleting it also removes it from your public page.",
+    "featured": "It is also your spotlight creation: the spotlight stays empty until you choose another one."
+  },
+  "dashboard": {
+    "overview": "Your Glowbook at a glance",
+    "page": "Your page",
+    "stats": {
+      "approved": "Published",
+      "pending": "In review",
+      "rejected": "Declined"
+    },
+    "todoTitle": "To do",
+    "todo": {
+      "pageRejected": "Your page was not approved: edit it to send it again.",
+      "noItems": "Add a first creation to your page.",
+      "itemsRejected_one": "{{count}} declined creation to look at.",
+      "itemsRejected_other": "{{count}} declined creations to look at.",
+      "changesRejected": "Your latest pictures or links were not approved.",
+      "noSpotlight": "Choose the spotlight creation of your page.",
+      "unfiled_one": "{{count}} creation is not in any section.",
+      "unfiled_other": "{{count}} creations are not in any section."
+    },
+    "go": {
+      "pageRejected": "Edit",
+      "noItems": "See",
+      "itemsRejected": "See",
+      "changesRejected": "Review",
+      "noSpotlight": "Choose",
+      "unfiled": "File"
+    },
+    "nav": {
+      "label": "Parts of my Glowbook",
+      "profile": "Profile",
+      "creations": "Creations · {{count}}",
+      "sections": "Sections",
+      "look": "Look",
+      "share": "QR code"
+    }
   }
 }

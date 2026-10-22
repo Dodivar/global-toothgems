@@ -1,7 +1,7 @@
 import { useId, useState, type FormEvent } from "react";
 import clsx from "clsx";
 import { useTranslation } from "react-i18next";
-import { ArrowDown, ArrowUp, Check, CircleAlert, Clock3, Copy, ExternalLink, LayoutGrid, PencilLine, RotateCw, Send, Sparkles, Trash2 } from "lucide-react";
+import { ArrowDown, ArrowRight, ArrowUp, Check, CircleAlert, Clock3, Copy, ExternalLink, LayoutGrid, PencilLine, RotateCw, Rows3, Send, Sparkles, Star, Trash2 } from "lucide-react";
 import { Button } from "../../ui/Button";
 import { useNavigate } from "../../../lib/navigation";
 import { isLocale, localizedPath } from "../../../lib/localeRoutes";
@@ -15,9 +15,10 @@ import {
   validateGlowbook,
   type Glowbook,
   type GlowbookDetails,
+  type GlowbookItem,
   type GlowbookProblem,
-  type ModerationStatus,
 } from "../../../lib/studioWorkspace/glowbook";
+import { glowbookCounts, glowbookTodos, type GlowbookPanel, type GlowbookTodo } from "../../../lib/studioWorkspace/glowbookDashboard";
 import { useGlowbook } from "../../../lib/studioWorkspace/glowbookStore";
 import { useWorkspace } from "../../../lib/studioWorkspace/workspace";
 import { openWorkspaceDialog } from "../../../lib/studioWorkspace/workspaceUi";
@@ -27,9 +28,11 @@ import { LibrarySkeleton } from "./CreationLibrary";
 import { GlowbookLookEditor } from "./GlowbookLookEditor";
 import { GlowbookSections } from "./GlowbookSections";
 import { GlowbookBadgeCard, GlowbookQrCard } from "./GlowbookShare";
+import { ModerationBadge } from "./GlowbookStatus";
+import { usePrefersReducedMotion } from "../../homeAlt/usePrefersReducedMotion";
 import { EmptyState } from "./EmptyState";
 import { SignInPrompt } from "./SignInPrompt";
-import { eyebrow, fieldClass, focusRing, iconButton, useWorkspaceFormat } from "./workspaceStyles";
+import { chipClass, eyebrow, fieldClass, focusRing, iconButton, useWorkspaceFormat } from "./workspaceStyles";
 
 /**
  * "My Glowbook" (decision 99): the artist's public showcase — its address,
@@ -40,10 +43,9 @@ import { eyebrow, fieldClass, focusRing, iconButton, useWorkspaceFormat } from "
 export function GlowbookManager() {
   const { t } = useWorkspaceFormat();
   const gb = useGlowbook();
-  const [editing, setEditing] = useState(false);
 
   return (
-    <div className="mx-auto grid w-full max-w-[960px] gap-7 px-4 pb-16 pt-6 sm:px-8 sm:pt-10">
+    <div className="mx-auto grid w-full max-w-[1180px] gap-6 px-4 pb-16 pt-6 sm:px-8 sm:pt-10">
       <header className="grid min-w-0 gap-2">
         <p className={eyebrow}>{t("studio.glowbook.eyebrow")}</p>
         <h1 className="m-0 text-[clamp(1.6rem,2.6vw,2.25rem)] font-[var(--weight-black)] leading-[1.1] tracking-[var(--tracking-tight)] text-[var(--text-primary)]">
@@ -70,41 +72,186 @@ export function GlowbookManager() {
 
       {gb.status === "ready" && !gb.glowbook && <GlowbookForm onDone={() => undefined} />}
 
-      {gb.status === "ready" && gb.glowbook && (
-        <>
-          {editing ? (
-            <GlowbookForm glowbook={gb.glowbook} onDone={() => setEditing(false)} />
-          ) : (
-            <GlowbookSummary glowbook={gb.glowbook} onEdit={() => setEditing(true)} />
-          )}
-          <GlowbookQr glowbook={gb.glowbook} />
-          <GlowbookBadgeCard glowbook={gb.glowbook} />
-          <GlowbookLookEditor glowbook={gb.glowbook} />
-          <GlowbookSections />
-          <GlowbookItems />
-        </>
-      )}
+      {gb.status === "ready" && gb.glowbook && <GlowbookDashboard glowbook={gb.glowbook} />}
     </div>
   );
 }
 
-/* ----------------------------------------------------------------- status */
+/* -------------------------------------------------------------- dashboard */
 
-const STATUS_STYLE: Record<ModerationStatus, { icon: typeof Check; cls: string }> = {
-  pending: { icon: Clock3, cls: "bg-[var(--status-warning-bg)] text-[var(--status-warning-fg)]" },
-  approved: { icon: Check, cls: "bg-[var(--status-success-bg)] text-[var(--status-success-fg)]" },
-  rejected: { icon: CircleAlert, cls: "bg-[var(--status-error-bg)] text-[var(--status-error-fg)]" },
+type Panel = GlowbookPanel | "sections" | "share";
+
+const PANEL_ID: Record<Panel, string> = {
+  profile: "gt-glowbook-profile",
+  creations: "gt-glowbook-items",
+  sections: "gt-glowbook-sections",
+  look: "gt-glowbook-look",
+  share: "gt-glowbook-share",
 };
 
-/** Where something stands in moderation: an icon and words, never colour alone. */
-export function ModerationBadge({ status, kind }: { status: ModerationStatus; kind: "page" | "item" }) {
-  const { t } = useTranslation();
-  const { icon: Icon, cls } = STATUS_STYLE[status];
+/**
+ * The artist's control panel: figures and to-dos first, then every setting
+ * of the page. One column on phones, in the order an artist works through it
+ * (profile, creations, sections, look, sharing); on wide screens the
+ * creations take the main column beside the profile and sharing, and the
+ * look spreads below with its preview beside the fields.
+ */
+function GlowbookDashboard({ glowbook }: { glowbook: Glowbook }) {
+  const gb = useGlowbook();
+  const ws = useWorkspace();
+  const reducedMotion = usePrefersReducedMotion();
+  const [editing, setEditing] = useState(false);
+  // A creation deleted elsewhere has left the page too (cascade): never count it.
+  const items = gb.items.filter((item) => ws.creations.some((c) => c.id === item.creationId));
+
+  const scrollTo = (panel: Panel) =>
+    document.getElementById(PANEL_ID[panel])?.scrollIntoView({ behavior: reducedMotion ? "auto" : "smooth", block: "start" });
+  const fix = (panel: GlowbookPanel) => {
+    // A refused page is fixed in its form.
+    if (panel === "profile") setEditing(true);
+    scrollTo(panel);
+  };
+
   return (
-    <span className={clsx("inline-flex flex-none items-center gap-1 rounded-[var(--radius-pill)] px-2.5 py-1 text-[11px] font-bold", cls)}>
-      <Icon size={12} aria-hidden="true" />
-      {t(`studio.glowbook.status.${kind}.${status}`)}
-    </span>
+    <>
+      <GlowbookOverview glowbook={glowbook} items={items} onGo={fix} />
+      <GlowbookJumpNav itemCount={items.length} onGo={scrollTo} />
+      {/* Headings jumped to land below the sticky shortcuts on phones. */}
+      <div className="grid gap-6 lg:grid-cols-[minmax(0,1fr)_360px] lg:grid-rows-[auto_1fr_auto] lg:items-start [&_h2]:scroll-mt-20 lg:[&_h2]:scroll-mt-6">
+        <div id={PANEL_ID.profile} className={clsx(panelClass, "lg:col-start-2 lg:row-start-1")}>
+          {editing ? (
+            <GlowbookForm glowbook={glowbook} onDone={() => setEditing(false)} />
+          ) : (
+            <GlowbookSummary glowbook={glowbook} onEdit={() => setEditing(true)} />
+          )}
+        </div>
+        <div className="grid min-w-0 gap-6 lg:col-start-1 lg:row-span-2 lg:row-start-1">
+          <GlowbookItems />
+          <GlowbookSections />
+        </div>
+        <div className="min-w-0 lg:col-span-2 lg:row-start-3">
+          <GlowbookLookEditor glowbook={glowbook} />
+        </div>
+        <div id={PANEL_ID.share} className={clsx(panelClass, "self-start lg:col-start-2 lg:row-start-2")}>
+          <GlowbookQr glowbook={glowbook} />
+          <GlowbookBadgeCard glowbook={glowbook} />
+        </div>
+      </div>
+    </>
+  );
+}
+
+/** Below the sticky shortcuts on phones when jumped to. */
+const panelClass = "grid min-w-0 scroll-mt-16 gap-6 lg:scroll-mt-6";
+const statLabel = "text-[10.5px] font-bold uppercase tracking-[var(--tracking-eyebrow)] text-[var(--text-subtle)]";
+
+const TODO_ICON: Record<GlowbookTodo["code"], typeof Check> = {
+  pageRejected: CircleAlert,
+  noItems: LayoutGrid,
+  itemsRejected: CircleAlert,
+  changesRejected: CircleAlert,
+  noSpotlight: Star,
+  unfiled: Rows3,
+};
+const BLOCKING: ReadonlySet<GlowbookTodo["code"]> = new Set(["pageRejected", "itemsRejected", "changesRejected"]);
+
+/** The page at a glance: where it stands, its creations by moderation state, and what to do next. */
+function GlowbookOverview({ glowbook, items, onGo }: { glowbook: Glowbook; items: GlowbookItem[]; onGo: (panel: GlowbookPanel) => void }) {
+  const { t } = useTranslation();
+  const gb = useGlowbook();
+  const counts = glowbookCounts(items, gb.sections.length);
+  const todos = glowbookTodos(glowbook, items, gb.sections.length);
+  const stats: { key: "approved" | "pending" | "rejected"; icon: typeof Check; tone: string }[] = [
+    { key: "approved", icon: Check, tone: "text-[var(--status-success-fg)]" },
+    { key: "pending", icon: Clock3, tone: "text-[var(--status-warning-fg)]" },
+    { key: "rejected", icon: CircleAlert, tone: "text-[var(--status-error-fg)]" },
+  ];
+
+  return (
+    <section aria-labelledby="gt-glowbook-overview" className="grid gap-3">
+      <h2 id="gt-glowbook-overview" className="sr-only">
+        {t("studio.glowbook.dashboard.overview")}
+      </h2>
+      <dl className="m-0 grid grid-cols-3 gap-2 sm:gap-3 md:grid-cols-4">
+        <div className={clsx(statCard, "col-span-3 md:col-span-1")}>
+          <dt className={statLabel}>{t("studio.glowbook.dashboard.page")}</dt>
+          <dd className="m-0 flex flex-wrap items-center gap-1.5">
+            <ModerationBadge status={glowbook.status} kind="page" />
+            {Object.keys(glowbook.pending).length > 0 && <ModerationBadge status="pending" kind="changes" />}
+          </dd>
+        </div>
+        {stats.map(({ key, icon: Icon, tone }) => (
+          <div key={key} className={statCard}>
+            <dt className={clsx(statLabel, "flex items-center gap-1.5")}>
+              <Icon size={13} aria-hidden="true" className={clsx("flex-none", counts[key] > 0 ? tone : "text-[var(--text-subtle)]")} />
+              <span className="min-w-0 truncate">{t(`studio.glowbook.dashboard.stats.${key}`)}</span>
+            </dt>
+            <dd className="m-0 text-[26px] font-[var(--weight-black)] leading-none tabular-nums text-[var(--text-primary)]">{counts[key]}</dd>
+          </div>
+        ))}
+      </dl>
+
+      {todos.length > 0 && (
+        <div className="grid gap-2 rounded-[var(--radius-lg)] border border-[var(--border-subtle)] bg-[var(--surface-sunken)] p-3 sm:p-4">
+          <h3 className="m-0 text-[11px] font-bold uppercase tracking-[var(--tracking-eyebrow)] text-[var(--text-subtle)]">
+            {t("studio.glowbook.dashboard.todoTitle")}
+          </h3>
+          <ul className="m-0 grid list-none gap-2 p-0 md:grid-cols-2">
+            {todos.map((todo) => {
+              const Icon = TODO_ICON[todo.code];
+              return (
+                <li
+                  key={todo.code}
+                  className="flex flex-wrap items-center gap-x-3 gap-y-1 rounded-[var(--radius-md)] border border-[var(--border-subtle)] bg-[var(--surface-card)] py-2 pl-3 pr-1.5"
+                >
+                  <Icon
+                    size={16}
+                    aria-hidden="true"
+                    className={clsx("flex-none", BLOCKING.has(todo.code) ? "text-[var(--status-error-fg)]" : "text-[var(--gt-blue-600)]")}
+                  />
+                  <p className="m-0 min-w-0 flex-1 basis-[160px] text-[13px] font-semibold leading-snug text-[var(--text-primary)]">
+                    {t(`studio.glowbook.dashboard.todo.${todo.code}`, { count: "count" in todo ? todo.count : 0 })}
+                  </p>
+                  <Button variant="ghost" size="sm" iconRight={ArrowRight} className="ml-auto flex-none" onClick={() => onGo(todo.panel)}>
+                    {t(`studio.glowbook.dashboard.go.${todo.code}`)}
+                  </Button>
+                </li>
+              );
+            })}
+          </ul>
+        </div>
+      )}
+    </section>
+  );
+}
+
+const statCard = "grid min-w-0 content-between gap-2 rounded-[var(--radius-lg)] border border-[var(--border-subtle)] bg-[var(--surface-card)] p-3 shadow-[var(--shadow-sm)] sm:p-4";
+
+/** On phones the page is long: shortcuts to each part stay at the top of the scroll. */
+function GlowbookJumpNav({ itemCount, onGo }: { itemCount: number; onGo: (panel: Panel) => void }) {
+  const { t } = useTranslation();
+  const links: { panel: Panel; label: string }[] = [
+    { panel: "profile", label: t("studio.glowbook.dashboard.nav.profile") },
+    { panel: "creations", label: t("studio.glowbook.dashboard.nav.creations", { count: itemCount }) },
+    { panel: "sections", label: t("studio.glowbook.dashboard.nav.sections") },
+    { panel: "look", label: t("studio.glowbook.dashboard.nav.look") },
+    { panel: "share", label: t("studio.glowbook.dashboard.nav.share") },
+  ];
+  return (
+    <nav
+      aria-label={t("studio.glowbook.dashboard.nav.label")}
+      className="sticky top-0 z-10 -mx-4 -my-3 bg-[var(--surface-page)]/95 px-4 py-2.5 backdrop-blur-[8px] sm:-mx-8 sm:px-8 lg:hidden"
+    >
+      <ul className="m-0 flex list-none gap-2 overflow-x-auto p-0 [scrollbar-width:none]">
+        {links.map(({ panel, label }) => (
+          <li key={panel} className="flex-none">
+            <button type="button" onClick={() => onGo(panel)} className={clsx(chipClass(false), "whitespace-nowrap")}>
+              {label}
+            </button>
+          </li>
+        ))}
+      </ul>
+    </nav>
   );
 }
 

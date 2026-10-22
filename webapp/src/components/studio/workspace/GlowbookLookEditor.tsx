@@ -128,159 +128,168 @@ export function GlowbookLookEditor({ glowbook }: { glowbook: Glowbook }) {
         </p>
       )}
 
-      {/* Live preview, drawn like the public page. */}
-      <figure className="m-0 grid gap-2">
-        <figcaption className="text-[11px] font-bold uppercase tracking-[var(--tracking-eyebrow)] text-[var(--text-subtle)]">{t("studio.glowbook.look.preview")}</figcaption>
-        <div style={glowbookThemeStyle(draft)} className="overflow-hidden rounded-[var(--radius-lg)] border border-[var(--border-subtle)] bg-[var(--gb-page)]">
-          <GlowbookTopBar preview {...previewIdentity} />
-          <div className="border-t border-[var(--gb-border)] bg-[var(--gb-soft)]">
-            <GlowbookProfile preview {...previewIdentity} />
+      <div className="grid gap-5 lg:grid-cols-[minmax(0,1fr)_minmax(320px,420px)] lg:items-start xl:gap-8">
+        {/* Live preview, drawn like the public page: above the fields on phones, beside them on wide screens. */}
+        <figure className="m-0 grid gap-2 lg:sticky lg:top-6 lg:col-start-2 lg:row-start-1">
+          <figcaption className="text-[11px] font-bold uppercase tracking-[var(--tracking-eyebrow)] text-[var(--text-subtle)]">{t("studio.glowbook.look.preview")}</figcaption>
+          <div style={glowbookThemeStyle(draft)} className="overflow-hidden rounded-[var(--radius-lg)] border border-[var(--border-subtle)] bg-[var(--gb-page)]">
+            <GlowbookTopBar preview {...previewIdentity} />
+            <div className="border-t border-[var(--gb-border)] bg-[var(--gb-soft)]">
+              <GlowbookProfile preview {...previewIdentity} />
+            </div>
+          </div>
+        </figure>
+
+        <div className="@container grid min-w-0 gap-5 lg:col-start-1 lg:row-start-1">
+          <PictureField kind="avatar" path={draft.avatarPath} waiting={waits("avatarPath")} onChange={(p) => set("avatarPath", p)} />
+
+          <fieldset className="m-0 grid gap-2 border-0 p-0">
+            <legend className="mb-2 p-0 text-[12.5px] font-bold text-[var(--text-primary)]">{t("studio.glowbook.look.accent")}</legend>
+            <div role="radiogroup" aria-label={t("studio.glowbook.look.accent")} className="flex flex-wrap gap-2">
+              {ACCENTS.map((accent) => {
+                const on = draft.accent === accent;
+                return (
+                  <button
+                    key={accent}
+                    type="button"
+                    role="radio"
+                    aria-checked={on}
+                    aria-label={t(`studio.glowbook.look.accents.${accent}`)}
+                    title={t(`studio.glowbook.look.accents.${accent}`)}
+                    onClick={() => set("accent", accent)}
+                    className={clsx(
+                      "grid h-9 w-9 place-items-center rounded-full border-2 transition-transform motion-safe:hover:scale-105",
+                      on ? "border-[var(--gt-ink-900)]" : "border-transparent",
+                      focusRing,
+                    )}
+                  >
+                    <span className="grid h-7 w-7 place-items-center rounded-full text-white" style={{ background: ACCENT_COLORS[accent].solid }}>
+                      {on && <Check size={14} aria-hidden="true" />}
+                    </span>
+                  </button>
+                );
+              })}
+            </div>
+          </fieldset>
+
+          <div className="grid gap-5 @lg:grid-cols-2">
+            <ChoiceRow
+              label={t("studio.glowbook.look.background")}
+              options={BACKGROUNDS.map((v) => ({ value: v, label: t(`studio.glowbook.look.backgrounds.${v}`) }))}
+              value={draft.background}
+              onChange={(v) => set("background", v)}
+            />
+            <ChoiceRow
+              label={t("studio.glowbook.look.layout")}
+              options={LAYOUTS.map((v) => ({ value: v, label: t(`studio.glowbook.look.layouts.${v}`) }))}
+              value={draft.layout}
+              onChange={(v) => set("layout", v)}
+            />
+          </div>
+
+          <div className="grid gap-5 @lg:grid-cols-2">
+            <div className="grid gap-1.5">
+              <label htmlFor={ids.featured} className="text-[12.5px] font-bold text-[var(--text-primary)]">
+                {t("studio.glowbook.look.featured")}
+              </label>
+              <select
+                id={ids.featured}
+                value={draft.featuredItemId ?? ""}
+                onChange={(e) => set("featuredItemId", e.target.value || null)}
+                className={fieldClass}
+              >
+                <option value="">{t("studio.glowbook.look.featuredNone")}</option>
+                {approvedItems.map((i) => (
+                  <option key={i.id} value={i.id}>
+                    {i.name}
+                  </option>
+                ))}
+              </select>
+              <p className="m-0 text-[12px] text-[var(--text-subtle)]">{t("studio.glowbook.look.featuredHint")}</p>
+              {draft.featuredItemId !== base.featuredItemId
+                ? draft.featuredItemId && <p className="m-0 text-[12px] text-[var(--text-subtle)]">{t("studio.glowbook.look.spotlight.saveFirst")}</p>
+                : base.featuredItemId && <SpotlightVideoPanel />}
+            </div>
+            <div className="grid gap-1.5">
+              <label htmlFor={ids.location} className="text-[12.5px] font-bold text-[var(--text-primary)]">
+                {t("studio.glowbook.look.location")}
+              </label>
+              <input
+                id={ids.location}
+                value={draft.location ?? ""}
+                maxLength={LOCATION_MAX}
+                placeholder={t("studio.glowbook.look.locationPlaceholder")}
+                aria-invalid={problem === "locationLength"}
+                onChange={(e) => set("location", e.target.value || null)}
+                className={fieldClass}
+              />
+            </div>
+          </div>
+
+          <GlowbookPlaceField
+            place={draft.place}
+            color={ACCENT_COLORS[draft.accent].solid}
+            invalid={problem === "placeLabel" || problem === "placeCoordinates"}
+            errorId={ids.error}
+            onChange={(place) => set("place", place)}
+          />
+
+          <fieldset className="m-0 grid gap-3 border-0 p-0">
+            <legend className="mb-1 p-0 text-[12.5px] font-bold text-[var(--text-primary)]">{t("studio.glowbook.look.links")}</legend>
+            <p className="m-0 -mt-1 text-[12px] text-[var(--text-subtle)]">{t("studio.glowbook.look.linksHint")}</p>
+            <LinkField
+              id={ids.booking}
+              label={t("studio.glowbook.look.booking")}
+              placeholder="https://"
+              value={draft.bookingUrl}
+              waiting={waits("bookingUrl")}
+              invalid={problem === "bookingUrl"}
+              errorId={ids.error}
+              onChange={(v) => set("bookingUrl", v)}
+            />
+            <LinkField
+              id={ids.website}
+              label={t("studio.glowbook.look.website")}
+              placeholder="https://"
+              value={draft.websiteUrl}
+              waiting={waits("websiteUrl")}
+              invalid={problem === "websiteUrl"}
+              errorId={ids.error}
+              onChange={(v) => set("websiteUrl", v)}
+            />
+            <LinkField
+              id={ids.tiktok}
+              label={t("studio.glowbook.look.tiktok")}
+              placeholder="@"
+              value={draft.tiktok}
+              waiting={waits("tiktok")}
+              invalid={problem === "tiktok"}
+              errorId={ids.error}
+              onChange={(v) => set("tiktok", v)}
+            />
+            {problem && (
+              <p id={ids.error} role="alert" className="m-0 text-[12px] font-semibold text-[var(--status-error-fg)]">
+                {t(`studio.glowbook.look.errors.${problem}`, { max: LOCATION_MAX })}
+              </p>
+            )}
+          </fieldset>
+          {/* Kept in reach on phones while there is something to save. */}
+          <div
+            className={clsx(
+              "flex flex-wrap items-center justify-end gap-2 border-t border-[var(--border-subtle)] pt-4",
+              dirty && "max-lg:sticky max-lg:bottom-0 max-lg:z-10 max-lg:-mx-5 max-lg:-mb-5 max-lg:bg-[var(--surface-card)] max-lg:px-5 max-lg:pb-4 max-sm:rounded-b-[var(--radius-xl)] sm:max-lg:-mx-6 sm:max-lg:-mb-6 sm:max-lg:px-6",
+            )}
+          >
+            {dirty && (
+              <Button variant="ghost" size="sm" iconLeft={RotateCcw} onClick={() => setDraft(base)} disabled={busy}>
+                {t("studio.glowbook.look.reset")}
+              </Button>
+            )}
+            <Button variant="dark" size="sm" iconLeft={Check} loading={busy} disabled={!dirty} onClick={() => void save()}>
+              {t("studio.glowbook.look.save")}
+            </Button>
           </div>
         </div>
-      </figure>
-
-      <PictureField kind="avatar" path={draft.avatarPath} waiting={waits("avatarPath")} onChange={(p) => set("avatarPath", p)} />
-
-      <fieldset className="m-0 grid gap-2 border-0 p-0">
-        <legend className="mb-2 p-0 text-[12.5px] font-bold text-[var(--text-primary)]">{t("studio.glowbook.look.accent")}</legend>
-        <div role="radiogroup" aria-label={t("studio.glowbook.look.accent")} className="flex flex-wrap gap-2">
-          {ACCENTS.map((accent) => {
-            const on = draft.accent === accent;
-            return (
-              <button
-                key={accent}
-                type="button"
-                role="radio"
-                aria-checked={on}
-                aria-label={t(`studio.glowbook.look.accents.${accent}`)}
-                title={t(`studio.glowbook.look.accents.${accent}`)}
-                onClick={() => set("accent", accent)}
-                className={clsx(
-                  "grid h-9 w-9 place-items-center rounded-full border-2 transition-transform motion-safe:hover:scale-105",
-                  on ? "border-[var(--gt-ink-900)]" : "border-transparent",
-                  focusRing,
-                )}
-              >
-                <span className="grid h-7 w-7 place-items-center rounded-full text-white" style={{ background: ACCENT_COLORS[accent].solid }}>
-                  {on && <Check size={14} aria-hidden="true" />}
-                </span>
-              </button>
-            );
-          })}
-        </div>
-      </fieldset>
-
-      <div className="grid gap-5 md:grid-cols-2">
-        <ChoiceRow
-          label={t("studio.glowbook.look.background")}
-          options={BACKGROUNDS.map((v) => ({ value: v, label: t(`studio.glowbook.look.backgrounds.${v}`) }))}
-          value={draft.background}
-          onChange={(v) => set("background", v)}
-        />
-        <ChoiceRow
-          label={t("studio.glowbook.look.layout")}
-          options={LAYOUTS.map((v) => ({ value: v, label: t(`studio.glowbook.look.layouts.${v}`) }))}
-          value={draft.layout}
-          onChange={(v) => set("layout", v)}
-        />
-      </div>
-
-      <div className="grid gap-5 md:grid-cols-2">
-        <div className="grid gap-1.5">
-          <label htmlFor={ids.featured} className="text-[12.5px] font-bold text-[var(--text-primary)]">
-            {t("studio.glowbook.look.featured")}
-          </label>
-          <select
-            id={ids.featured}
-            value={draft.featuredItemId ?? ""}
-            onChange={(e) => set("featuredItemId", e.target.value || null)}
-            className={fieldClass}
-          >
-            <option value="">{t("studio.glowbook.look.featuredNone")}</option>
-            {approvedItems.map((i) => (
-              <option key={i.id} value={i.id}>
-                {i.name}
-              </option>
-            ))}
-          </select>
-          <p className="m-0 text-[12px] text-[var(--text-subtle)]">{t("studio.glowbook.look.featuredHint")}</p>
-          {draft.featuredItemId !== base.featuredItemId
-            ? draft.featuredItemId && <p className="m-0 text-[12px] text-[var(--text-subtle)]">{t("studio.glowbook.look.spotlight.saveFirst")}</p>
-            : base.featuredItemId && <SpotlightVideoPanel />}
-        </div>
-        <div className="grid gap-1.5">
-          <label htmlFor={ids.location} className="text-[12.5px] font-bold text-[var(--text-primary)]">
-            {t("studio.glowbook.look.location")}
-          </label>
-          <input
-            id={ids.location}
-            value={draft.location ?? ""}
-            maxLength={LOCATION_MAX}
-            placeholder={t("studio.glowbook.look.locationPlaceholder")}
-            aria-invalid={problem === "locationLength"}
-            onChange={(e) => set("location", e.target.value || null)}
-            className={fieldClass}
-          />
-        </div>
-      </div>
-
-      <GlowbookPlaceField
-        place={draft.place}
-        color={ACCENT_COLORS[draft.accent].solid}
-        invalid={problem === "placeLabel" || problem === "placeCoordinates"}
-        errorId={ids.error}
-        onChange={(place) => set("place", place)}
-      />
-
-      <fieldset className="m-0 grid gap-3 border-0 p-0">
-        <legend className="mb-1 p-0 text-[12.5px] font-bold text-[var(--text-primary)]">{t("studio.glowbook.look.links")}</legend>
-        <p className="m-0 -mt-1 text-[12px] text-[var(--text-subtle)]">{t("studio.glowbook.look.linksHint")}</p>
-        <LinkField
-          id={ids.booking}
-          label={t("studio.glowbook.look.booking")}
-          placeholder="https://"
-          value={draft.bookingUrl}
-          waiting={waits("bookingUrl")}
-          invalid={problem === "bookingUrl"}
-          errorId={ids.error}
-          onChange={(v) => set("bookingUrl", v)}
-        />
-        <LinkField
-          id={ids.website}
-          label={t("studio.glowbook.look.website")}
-          placeholder="https://"
-          value={draft.websiteUrl}
-          waiting={waits("websiteUrl")}
-          invalid={problem === "websiteUrl"}
-          errorId={ids.error}
-          onChange={(v) => set("websiteUrl", v)}
-        />
-        <LinkField
-          id={ids.tiktok}
-          label={t("studio.glowbook.look.tiktok")}
-          placeholder="@"
-          value={draft.tiktok}
-          waiting={waits("tiktok")}
-          invalid={problem === "tiktok"}
-          errorId={ids.error}
-          onChange={(v) => set("tiktok", v)}
-        />
-        {problem && (
-          <p id={ids.error} role="alert" className="m-0 text-[12px] font-semibold text-[var(--status-error-fg)]">
-            {t(`studio.glowbook.look.errors.${problem}`, { max: LOCATION_MAX })}
-          </p>
-        )}
-      </fieldset>
-
-      <div className="flex flex-wrap items-center justify-end gap-2 border-t border-[var(--border-subtle)] pt-4">
-        {dirty && (
-          <Button variant="ghost" size="sm" iconLeft={RotateCcw} onClick={() => setDraft(base)} disabled={busy}>
-            {t("studio.glowbook.look.reset")}
-          </Button>
-        )}
-        <Button variant="dark" size="sm" iconLeft={Check} loading={busy} disabled={!dirty} onClick={() => void save()}>
-          {t("studio.glowbook.look.save")}
-        </Button>
       </div>
     </section>
   );

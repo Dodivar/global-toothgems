@@ -41,6 +41,11 @@ interface GlowbookValue {
   remove: (creation: { id: string; name: string }) => Promise<boolean>;
   move: (orderedCreationIds: string[]) => Promise<boolean>;
   removeAll: () => Promise<boolean>;
+  /**
+   * Drops a deleted creation from the page here: the database already took its
+   * item away (cascade) and emptied the spotlight if it was that one.
+   */
+  forget: (creationId: string) => void;
   /** The look as the artist last chose it: the approved one with what waits for a moderator over it. */
   draftLook: GlowbookLook | null;
   /** Signed URLs of the member's own pictures (approved and proposed), by storage path. */
@@ -217,6 +222,20 @@ export function GlowbookProvider({ children }: { children: ReactNode }) {
       }
     },
     [repo, patch, showToast, t, fail],
+  );
+
+  const forget = useCallback(
+    (creationId: string) =>
+      patch((prev) => {
+        const gone = prev.items.find((i) => i.creationId === creationId);
+        if (!gone) return {};
+        const glowbook =
+          prev.glowbook && prev.glowbook.look.featuredItemId === gone.id
+            ? { ...prev.glowbook, look: { ...prev.glowbook.look, featuredItemId: null } }
+            : prev.glowbook;
+        return { glowbook, items: prev.items.filter((i) => i !== gone) };
+      }),
+    [patch],
   );
 
   const move = useCallback(
@@ -412,6 +431,7 @@ export function GlowbookProvider({ children }: { children: ReactNode }) {
     remove,
     move,
     removeAll,
+    forget,
     draftLook,
     mediaUrls,
     saveLook,
