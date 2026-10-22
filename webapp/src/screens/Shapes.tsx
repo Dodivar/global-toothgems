@@ -30,6 +30,15 @@ export function Shapes() {
       title={family ? t("shapesPage.familyTitle", { family: familyName(family) }) : t("shapesPage.title")}
       body={family ? t("shapesPage.familyBody", { family: familyName(family) }) : t("shapesPage.body")}
     >
+      {family && (
+        <SelectorTile
+          to={shopHref(GEMS_CATEGORY, family)}
+          ariaLabel={t("shapesPage.allAria", { family: familyName(family) })}
+          media={<span className="text-3xl" aria-hidden="true">∞</span>}
+          label={t("shapesPage.all")}
+          count={t("home.shapeCount", { count: scoped.length })}
+        />
+      )}
       {shapes.map((group) => (
         <SelectorTile
           key={group.shape}
@@ -40,15 +49,6 @@ export function Shapes() {
           count={t("home.shapeCount", { count: group.count })}
         />
       ))}
-      {family && (
-        <SelectorTile
-          to={shopHref(GEMS_CATEGORY, family)}
-          ariaLabel={t("shapesPage.allAria", { family: familyName(family) })}
-          media={<span className="text-3xl" aria-hidden="true">∞</span>}
-          label={t("shapesPage.all")}
-          count={t("home.shapeCount", { count: scoped.length })}
-        />
-      )}
     </SelectorPage>
   );
 }
