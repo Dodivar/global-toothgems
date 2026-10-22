@@ -278,7 +278,15 @@
       "downloadSub": "Pour la publier sur Instagram, TikTok ou Pinterest",
       "hint": "Le lien ouvre uniquement cette création, en lecture seule : personne ne peut la modifier ni voir vos autres créations.",
       "title": "Ma création tooth gems — Studio 3D Global Toothgems",
-      "message": "Découvrez la création de tooth gems que j’ai imaginée dans le Studio 3D de Global Toothgems !"
+      "message": "Découvrez la création de tooth gems que j’ai imaginée dans le Studio 3D de Global Toothgems !",
+      "instagram": "Instagram",
+      "tiktok": "TikTok",
+      "pinterest": "Pinterest",
+      "snapchat": "Snapchat",
+      "threads": "Threads",
+      "telegram": "Telegram",
+      "pasteHint": "Lien copié et {{network}} ouvert : collez-le dans un sticker « Lien » de votre story ou dans votre bio.",
+      "networksHint": "Chaque réseau reçoit le lien en lecture seule ; son aperçu montre le rendu de la création enregistrée."
     },
     "quote": {
       "title": "Estimation de la création",
@@ -589,7 +597,8 @@
         "empty": "Ce fichier ne contient aucun modèle 3D"
       },
       "addedToCart_one": "{{count}} article ajouté au panier",
-      "addedToCart_other": "{{count}} articles ajoutés au panier"
+      "addedToCart_other": "{{count}} articles ajoutés au panier",
+      "linkCopiedPaste": "Lien copié — collez-le dans un sticker « Lien » de votre story ou dans votre bio {{network}}"
     },
     "pieceUnavailable": "Gemme retirée de la boutique",
     "shopPrice": "Prix boutique : {{price}}",

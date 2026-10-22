@@ -1,4 +1,5 @@
 import { useEffect, useState } from "react";
+import clsx from "clsx";
 import { Download, Link2, LoaderCircle, Save, Settings2, Share, Share2 } from "lucide-react";
 import { EditorPopover, PopoverItem, PopoverLabel, PopoverSeparator } from "./EditorPopover";
 import { useEditorLabels } from "./editorLabels";
@@ -6,7 +7,7 @@ import { ShareNetworkIcon } from "../ShareNetworks";
 import { useWorkspaceActions } from "../workspace/useWorkspaceActions";
 import { getEngine } from "../../../lib/studio3d/engine";
 import { notify } from "../../../lib/studio3d/notices";
-import { canShareFiles, openShareLink, SHARE_NETWORKS, type ShareContent } from "../../../lib/studio3d/socialShare";
+import { canShareFiles, openShareLink, SHARE_NETWORKS, type ShareContent, type ShareNetwork } from "../../../lib/studio3d/socialShare";
 import { studioStore, useStudio } from "../../../lib/studio3d/store";
 import type { ShareLink } from "../../../lib/studioWorkspace/share";
 import { useWorkspace } from "../../../lib/studioWorkspace/workspace";
@@ -85,6 +86,13 @@ export function ShareMenu({ triggerClassName }: { triggerClassName: string }) {
     }
   };
 
+  const shareTo = async (network: ShareNetwork, url: string) => {
+    setOpen(false);
+    const copied = await openShareLink(network, content(url));
+    if (copied === true) notify("linkCopiedPaste", { network: t(`studio.editor.share.${network}`) });
+    else if (copied === false) notify("linkCopyFailed", undefined, "error");
+  };
+
   const openDialog = () => {
     setOpen(false);
     if (linked) openWorkspaceDialog({ kind: "shareCreation", creation: linked });
@@ -157,17 +165,27 @@ export function ShareMenu({ triggerClassName }: { triggerClassName: string }) {
         />
       ) : (
         <>
-          {SHARE_NETWORKS.map((network) => (
-            <PopoverItem
-              key={network}
-              icon={<ShareNetworkIcon network={network} />}
-              label={t(`studio.editor.share.${network}`)}
-              onClick={() => {
-                setOpen(false);
-                openShareLink(network, content(link.url));
-              }}
-            />
-          ))}
+          <ul className="m-0 grid list-none grid-cols-2 gap-0.5 p-0">
+            {SHARE_NETWORKS.map((network) => (
+              <li key={network} className="min-w-0">
+                <button
+                  type="button"
+                  onClick={() => void shareTo(network, link.url)}
+                  className={clsx(
+                    "flex w-full min-w-0 items-center gap-2 rounded-[var(--radius-sm)] px-2.5 py-2 text-left text-[length:var(--text-body-sm)] font-semibold text-[var(--text-primary)] transition-colors hover:bg-[var(--surface-brand-wash)]",
+                    "focus-visible:outline focus-visible:outline-2 focus-visible:-outline-offset-2 focus-visible:outline-[var(--focus-ring)]",
+                  )}
+                >
+                  <span aria-hidden="true" className="flex-none text-[var(--gt-blue-600)]">
+                    <ShareNetworkIcon network={network} />
+                  </span>
+                  <span className="truncate">{t(`studio.editor.share.${network}`)}</span>
+                </button>
+              </li>
+            ))}
+          </ul>
+          <p className="m-0 px-2.5 pb-1 pt-0.5 text-[11.5px] leading-snug text-[var(--text-muted)]">{t("studio.editor.share.networksHint")}</p>
+          <PopoverSeparator />
           <PopoverItem icon={<Link2 size={14} />} label={t("studio.editor.share.copyLink")} onClick={() => void copyLink(link.url)} />
           <PopoverItem icon={<Settings2 size={14} />} label={t("studio.editor.share.manageLink")} onClick={openDialog} />
         </>

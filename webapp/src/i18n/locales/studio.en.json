@@ -278,7 +278,15 @@
       "downloadSub": "To post it on Instagram, TikTok or Pinterest",
       "hint": "The link opens only this design, read-only: nobody can change it or see your other creations.",
       "title": "My tooth gem design — Global Toothgems 3D Studio",
-      "message": "Take a look at the tooth gem design I created in the Global Toothgems 3D Studio!"
+      "message": "Take a look at the tooth gem design I created in the Global Toothgems 3D Studio!",
+      "instagram": "Instagram",
+      "tiktok": "TikTok",
+      "pinterest": "Pinterest",
+      "snapchat": "Snapchat",
+      "threads": "Threads",
+      "telegram": "Telegram",
+      "pasteHint": "Link copied and {{network}} opened: paste it into a story “Link” sticker or your bio.",
+      "networksHint": "Each network gets the read-only link; its preview shows the render of the saved creation."
     },
     "quote": {
       "title": "Design estimate",
@@ -589,7 +597,8 @@
         "empty": "This file contains no 3D model"
       },
       "addedToCart_one": "{{count}} item added to your cart",
-      "addedToCart_other": "{{count}} items added to your cart"
+      "addedToCart_other": "{{count}} items added to your cart",
+      "linkCopiedPaste": "Link copied — paste it into a story “Link” sticker or your {{network}} bio"
     },
     "pieceUnavailable": "Gem no longer in the shop",
     "shopPrice": "Shop price: {{price}}",
