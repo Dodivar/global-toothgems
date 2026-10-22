@@ -207,10 +207,7 @@ export function layoutCertificate(content: CertificateContent): CertificateOp[] 
     ops.push({ kind: "path", d: `M${x} ${y - 1.6}L${x + 1.6} ${y}L${x} ${y + 1.6}L${x - 1.6} ${y}Z`, fill: INK.paper, stroke: INK.blue500, lineWidth: 0.25 });
   }
 
-  // The brand's stone as a watermark behind the holder and the course, and a few sparkles.
-  const watermark = gemPaths(CX - 62, 56, 124, 100);
-  ops.push({ kind: "path", d: watermark.outline, fill: "rgba(255,255,255,0.35)", stroke: INK.blue200, lineWidth: 0.35, opacity: 0.8 });
-  ops.push({ kind: "path", d: watermark.facets, stroke: INK.blue200, lineWidth: 0.25, opacity: 0.8 });
+  // A few sparkles (no watermark behind the text).
   ops.push({ kind: "path", d: sparklePath(46, 30, 2.2), fill: INK.emerald400, opacity: 0.85 });
   ops.push({ kind: "path", d: sparklePath(251, 28, 1.6), fill: INK.fuchsia300 });
   ops.push({ kind: "path", d: sparklePath(258, 37, 1), fill: INK.blue500, opacity: 0.7 });
