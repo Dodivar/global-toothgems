@@ -223,7 +223,7 @@ function mapVariant(row: VariantRow, productPrice: number | string, image: strin
   return {
     id: row.id,
     name: localize(row.name, row.product_variant_translations, (t) => t.name),
-    ...(gem ? { pack: gem.pack ?? undefined, ss: gem.ss ?? undefined } : {}),
+    ...(gem ? { pack: gem.pack ?? undefined, size: gem.size ?? undefined } : {}),
     ...(swatch ? { swatch } : {}),
     ...(image ? { image } : {}),
     price,

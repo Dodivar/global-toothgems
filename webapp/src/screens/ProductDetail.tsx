@@ -29,7 +29,7 @@ import { shopHref } from "../data/taxonomy";
 import { CatalogError } from "../components/shop/CatalogError";
 import { GemOptionPicker } from "../components/shop/GemOptionPicker";
 import { BackInStockForm } from "../components/shop/BackInStockForm";
-import { formatSs, formatSsMm, isGemOptionSet } from "../lib/gemOptions";
+import { formatSizeFull, isGemOptionSet } from "../lib/gemOptions";
 import { NotFound } from "./NotFound";
 
 const SHADES = ["Bleu aurore", "Cristal clair", "Or rose"];
@@ -478,8 +478,9 @@ function ProductView({ product }: { product: Product }) {
                   [t("product.specMaterial"), material],
                   [t("product.specCenter"), center],
                   [
-                    t("product.specDiameter"),
-                    legacyOptions ? size : variant?.ss != null ? `${formatSs(variant.ss)} ${formatSsMm(variant.ss, lang)}`.trim() : "",
+                    // Width × length is not a diameter.
+                    t(variant?.size?.mm?.length === 2 ? "product.specDimensions" : "product.specDiameter"),
+                    legacyOptions ? size : variant?.size ? formatSizeFull(variant.size, lang) : "",
                   ],
                   [t("product.specBack"), t("product.specBackValue")],
                   [t("product.specPackaging"), t("product.specPackagingValue")],

@@ -5,11 +5,13 @@ import {
   type PendingRefund,
   type PendingShipping,
   type PendingSource,
+  type PendingStockDigest,
   sendBackInStockEmails,
   sendCourseEnrolmentEmails,
   sendPendingEmails,
   sendRefundEmails,
   sendShippingEmails,
+  sendStockDigestEmail,
   sendStudioSubscriptionEmails,
   sendStudioWithdrawalEmails,
   type PendingStudioSubscription,
@@ -91,6 +93,7 @@ function source(over: Partial<PendingSource> = {}): PendingSource {
     backInStock: () => Promise.resolve([]),
     studioSubscriptions: () => Promise.resolve([]),
     studioWithdrawals: () => Promise.resolve([]),
+    stockDigest: () => Promise.resolve(null),
     ...over,
   };
 }
@@ -238,6 +241,7 @@ Deno.test("a refund e-mail carries the credit note its refund issued; without on
   const [withNote, bare] = seen.requests as { attachments?: { filename: string }[]; text: string }[];
   assertEquals(withNote.attachments?.map((a) => a.filename), ["credit-note-AV-2026-000001.pdf"]);
   assertEquals(withNote.text.includes("The matching credit note AV-2026-000001 is attached to this e-mail (PDF)."), true);
+  assertEquals(withNote.text.includes("no credit is added to your account"), true);
   assertEquals(bare.attachments, undefined);
 });
 
@@ -357,4 +361,71 @@ Deno.test("studio withdrawal: one acknowledgement per withdrawal, with the refun
   assertEquals(fr.text.includes("17,91"), true);
   assertEquals(en.text.includes("Days used (3 of 30)"), true);
   assertEquals(en.text.includes(`${SITE}/compte/studio`), true);
+});
+
+const digest = (over: Partial<PendingStockDigest> = {}): PendingStockDigest => ({
+  date: "2026-10-22",
+  supportEmail: "support@globaltoothgems.com",
+  items: [
+    { productName: "Strass cristal", variantName: "Pack de 10 · SS6", sku: "STR-P10-SS6", status: "out_of_stock", available: 0, threshold: 5 },
+    { productName: "Étoile 2,2 mm", variantName: null, sku: null, status: "low_stock", available: 3, threshold: 5 },
+  ],
+  ...over,
+});
+
+Deno.test("stock digest: one e-mail a day to the support address, out of stock before low stock", async () => {
+  const { deps, seen } = setup();
+  const report = await sendStockDigestEmail(deps, source({ stockDigest: () => Promise.resolve(digest()) }));
+  assertEquals(report, { examined: 1, sent: 1, inFlight: 0, gaveUp: 0, failed: 0, skipped: 0 });
+  assertEquals(seen.claims.map((c) => [c.eventKey, c.templateKey]), [["stock_digest:2026-10-22", "stock_digest"]]);
+  const [mail] = seen.requests as { to: string[]; text: string }[];
+  assertEquals(mail.to, ["support@globaltoothgems.com"]);
+  const out = mail.text.indexOf("Strass cristal — Pack de 10 · SS6 (STR-P10-SS6)");
+  const low = mail.text.indexOf("Étoile 2,2 mm");
+  assertEquals(out >= 0 && low > out, true);
+  assertEquals(mail.text.includes("0 disponible"), true);
+  assertEquals(mail.text.includes("3 disponibles (seuil 5)"), true);
+  assertEquals(mail.text.includes(`${SITE}/admin/produits`), true);
+});
+
+Deno.test("stock digest: nothing to report, nothing sent", async () => {
+  const { deps, seen } = setup();
+  assertEquals((await sendStockDigestEmail(deps, source())).examined, 0);
+  assertEquals((await sendStockDigestEmail(deps, source({ stockDigest: () => Promise.resolve(digest({ items: [] })) }))).examined, 0);
+  assertEquals(seen.requests.length, 0);
+});
+
+Deno.test("stock digest: without a support e-mail it falls back to the reply-to address, else it is skipped", async () => {
+  const { deps, seen } = setup();
+  const noSupport = source({ stockDigest: () => Promise.resolve(digest({ supportEmail: null })) });
+  const skipped = await sendStockDigestEmail(deps, noSupport);
+  assertEquals([skipped.sent, skipped.skipped], [0, 1]);
+  assertEquals(seen.requests.length, 0);
+  const sent = await sendStockDigestEmail({ ...deps, replyTo: "contact@globaltoothgems.com" }, noSupport);
+  assertEquals(sent.sent, 1);
+  assertEquals((seen.requests[0] as { to: string[] }).to, ["contact@globaltoothgems.com"]);
+});
+
+Deno.test("stock digest: a digest already sent today is not sent again", async () => {
+  const { deps, seen } = setup({ claim: () => ({ claimed: false, status: "sent" }) });
+  const report = await sendStockDigestEmail(deps, source({ stockDigest: () => Promise.resolve(digest()) }));
+  assertEquals([report.sent, report.skipped], [0, 1]);
+  assertEquals(seen.requests.length, 0);
+});
+
+Deno.test("stock digest: a long list is cut and the rest counted", async () => {
+  const { deps, seen } = setup();
+  const items = Array.from({ length: 103 }, (_, i) => ({
+    productName: `Produit ${i}`,
+    variantName: null,
+    sku: null,
+    status: "low_stock" as const,
+    available: 1,
+    threshold: 5,
+  }));
+  await sendStockDigestEmail(deps, source({ stockDigest: () => Promise.resolve(digest({ items })) }));
+  const [mail] = seen.requests as { text: string }[];
+  assertEquals(mail.text.includes("Produit 99"), true);
+  assertEquals(mail.text.includes("Produit 100"), false);
+  assertEquals(mail.text.includes("… et 3 autres"), true);
 });

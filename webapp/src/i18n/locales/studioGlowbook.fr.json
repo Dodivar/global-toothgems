@@ -260,7 +260,9 @@
       "locationLength": "La ville fait au plus {{max}} caractères.",
       "bookingUrl": "Le lien de rendez-vous doit être une adresse https valide.",
       "websiteUrl": "Le site web doit être une adresse https valide.",
-      "tiktok": "Ce compte TikTok n’est pas valide (lettres, chiffres, point et tiret bas)."
+      "tiktok": "Ce compte TikTok n’est pas valide (lettres, chiffres, point et tiret bas).",
+      "placeLabel": "Indiquez le nom du lieu (2 à 120 caractères).",
+      "placeCoordinates": "Choisissez le lieu dans la recherche ou placez l’épingle sur la carte."
     },
     "reset": "Annuler les modifications",
     "save": "Enregistrer l’apparence",
@@ -345,5 +347,42 @@
     "fileQr": "qr-code",
     "filePoster": "affiche",
     "docTitle": "Glowbook de {{name}}"
+  },
+  "place": {
+    "title": "Où je travaille",
+    "hint": "Aidez vos client·es à vous trouver : votre lieu s’affiche sur votre Glowbook avec une carte. Visible dès l’enregistrement.",
+    "modeLabel": "Type de lieu",
+    "modes": {
+      "area": "Une zone (domicile, à domicile)",
+      "exact": "Un salon qui reçoit"
+    },
+    "modeHint": {
+      "area": "Seul le quartier ou la ville est public, dans un cercle d’environ 1 km. Votre adresse n’est jamais enregistrée : la position est arrondie.",
+      "exact": "L’adresse et l’épingle sont publiques, avec un lien d’itinéraire. À choisir seulement pour un lieu qui accueille du public."
+    },
+    "searchExact": "Adresse du salon",
+    "searchArea": "Ville ou quartier",
+    "searchExactPlaceholder": "12 rue de la Paix, Lyon",
+    "searchAreaPlaceholder": "Lyon 7e",
+    "search": "Rechercher",
+    "searchFailed": "La recherche n’a pas abouti. Réessayez dans un instant.",
+    "noResult": "Aucun lieu trouvé. Essayez avec la ville ou le code postal.",
+    "resultsLabel": "Lieux trouvés",
+    "searchCredit": "Recherche : © les contributeurs d’OpenStreetMap",
+    "labelExact": "Adresse affichée",
+    "labelArea": "Nom de la zone affiché",
+    "moveHint": "Faites glisser l’épingle ou touchez la carte pour ajuster la position.",
+    "remove": "Retirer le lieu",
+    "pinLabel": "Position du lieu",
+    "eyebrow": "Où me trouver",
+    "publicExact": "Le salon où je vous reçois.",
+    "publicArea": "J’exerce dans ce secteur. L’adresse exacte est donnée à la prise de rendez-vous.",
+    "showMap": "Voir la carte",
+    "mapNotice": "La carte est fournie par OpenFreeMap (données OpenStreetMap) et ne se charge qu’à votre demande.",
+    "directions": {
+      "google": "Itinéraire Google Maps",
+      "apple": "Plans (Apple)",
+      "osm": "OpenStreetMap"
+    }
   }
 }

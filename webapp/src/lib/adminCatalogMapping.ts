@@ -18,7 +18,7 @@ import { GEM_SHAPES } from "../data/products";
 import type { Localized } from "../data/types";
 import type { Json } from "./supabase/database.types";
 import { toMinorUnits } from "./catalog/money";
-import { comboKey, comboName, parseGemAttributes } from "./gemOptions";
+import { comboKey, comboName, parseGemAttributes, sortSizes, type GemSize } from "./gemOptions";
 
 /**
  * Pure translation between the Supabase catalogue and the admin model.
@@ -393,10 +393,12 @@ export function readGemOptions(rows: VariantRow[]): GemOptions | undefined {
 
   const active = parsed.filter(({ row }) => row.is_active !== false);
   const packs = [...new Set(active.map(({ key }) => key!.pack).filter((v): v is number => v != null))].sort((a, b) => a - b);
-  const sizes = [...new Set(active.map(({ key }) => key!.ss).filter((v): v is number => v != null))].sort((a, b) => a - b);
+  const sizes = sortSizes(active.map(({ key }) => key!.size).filter((v): v is GemSize => v != null));
   return {
     enabled: active.length > 0,
     packs,
+    // A product is sized one way (the database refuses a mix).
+    ...(sizes.length ? { sizeMode: sizes[0].mm != null ? ("mm" as const) : ("ss" as const) } : {}),
     sizes,
     variants: parsed
       .sort((a, b) => (a.row.position ?? 0) - (b.row.position ?? 0))
@@ -404,7 +406,7 @@ export function readGemOptions(rows: VariantRow[]): GemOptions | undefined {
         const inventory = inventoryOf(row);
         return {
           pack: key!.pack,
-          ss: key!.ss,
+          size: key!.size,
           price: row.price == null ? undefined : amountFromDb(row.price),
           trackInventory: inventory?.track_inventory ?? true,
           stock: inventory?.quantity_on_hand ?? 0,
@@ -466,7 +468,7 @@ export function productToPayload(product: AdminProduct): Json {
       ? {
           variants: offeredGemVariants(product.gemOptions).map((variant) => ({
             pack: variant.pack,
-            ss: variant.ss,
+            ...(variant.size?.ss != null ? { ss: variant.size.ss } : variant.size?.mm ? { mm: variant.size.mm } : {}),
             price: variant.price == null ? null : amountToDb(variant.price),
             track_inventory: variant.trackInventory,
             quantity_on_hand: variant.stock,

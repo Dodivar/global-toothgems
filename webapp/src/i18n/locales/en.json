@@ -225,6 +225,7 @@
     "specMaterial": "Material",
     "specCenter": "Center",
     "specDiameter": "Diameter",
+    "specDimensions": "Dimensions",
     "specBack": "Back",
     "specBackValue": "Flat, polished",
     "specPackaging": "Packaging",
@@ -1125,7 +1126,16 @@
       },
       "groupLearning": "Training",
       "groupPurchases": "Purchases",
-      "groupAccount": "My account"
+      "groupAccount": "My account",
+      "activityInMenu": "New activity in the menu",
+      "activity": {
+        "orders_one": "{{count}} order updated",
+        "orders_other": "{{count}} orders updated",
+        "reviews_one": "{{count}} new item in your reviews",
+        "reviews_other": "{{count}} new items in your reviews",
+        "loyalty_one": "Card complete: your reward is waiting",
+        "loyalty_other": "{{count}} rewards are waiting"
+      }
     },
     "statsLabel": "Your account in numbers",
     "statCourses": "courses in progress",
@@ -1387,7 +1397,11 @@
   "shapesPage": {
     "eyebrow": "Shapes",
     "title": "Every gem cut",
-    "body": "Each cut groups the gems of that silhouette, whatever the material. Pick one to filter the shop."
+    "body": "Each cut groups the gems of that silhouette, whatever the material. Pick one to filter the shop.",
+    "familyTitle": "{{family}}: pick a shape",
+    "familyBody": "Choose the {{family}} gem shape you want and you will only see products in that shape.",
+    "all": "All shapes",
+    "allAria": "See all {{family}} gems"
   },
   "colorsPage": {
     "eyebrow": "Colours",
@@ -1637,7 +1651,15 @@
       "price-desc": "Price, high to low",
       "price-asc": "Price, low to high",
       "name-asc": "Name (A → Z)",
-      "stock-asc": "Lowest stock"
+      "stock-asc": "Lowest stock",
+      "name-desc": "Name (Z → A)",
+      "stock-desc": "Highest stock",
+      "sku-asc": "SKU (A → Z)",
+      "sku-desc": "SKU (Z → A)",
+      "category-asc": "Category (A → Z)",
+      "category-desc": "Category (Z → A)",
+      "status-asc": "Status (A → Z)",
+      "status-desc": "Status (Z → A)"
     },
     "table": {
       "caption": "Product catalogue: image, name, SKU, category, price, stock, status, last update and actions.",
@@ -1805,7 +1827,7 @@
         "categoryRequired": "Choose a category.",
         "familyMismatch": "This family does not belong to the chosen category.",
         "priceCents": "Two decimal places at most.",
-        "optionsEmpty": "Add at least one pack or tick a stone size, or switch the options off.",
+        "optionsEmpty": "Add at least one pack or size, or switch the options off.",
         "optionsPack": "Each pack must hold a whole number of stones, from {{min}} to {{max}}.",
         "optionsSkuTooLong": "With these options the SKU must be {{max}} characters or fewer (each option adds a suffix such as {{suffix}}).",
         "optionsPrice": "Check the option prices: greater than 0, two decimal places at most.",
@@ -1816,7 +1838,7 @@
       "promoInPromotions": "Promotional prices are managed in Promotions: the price here is the regular selling price.",
       "databaseNotice": "Saved to the Supabase database: an active product appears in the shop. Images upload as soon as they are added.",
       "optionsTitle": "Packs and stone sizes",
-      "optionsBody": "Sell this gem in packs of any number of stones and in one or more stone sizes (SS). Each pack × size is an option with its own price and stock.",
+      "optionsBody": "Sell this gem in packs of any number of stones and in one or more sizes: in SS for a round stone, in millimetres for any other cut. Each pack × size is an option with its own price and stock, and the 3D Studio draws the stone at the chosen size.",
       "optionsToggle": "Offer packs and sizes",
       "optionsToggleHint": "Off: the product is sold as a single item, with the stock of the section above.",
       "optionsPacks": "Packs",
@@ -1829,8 +1851,21 @@
       "optionsPackInvalid": "Enter a whole number of stones, from {{min}} to {{max}}.",
       "optionsPackDuplicate_one": "The pack of {{count}} stone already exists.",
       "optionsPackDuplicate_other": "The pack of {{count}} stones already exists.",
-      "optionsSizes": "Stone sizes (SS)",
+      "optionsSizes": "Sizes",
+      "optionsSizeMode": "How sizes are given",
+      "optionsSizeModeSs": "In SS (round stones)",
+      "optionsSizeModeMm": "In millimetres",
+      "optionsSizesSs": "Stone sizes (SS)",
       "optionsSizesHint": "Diameters are approximate: manufacturer charts differ slightly.",
+      "optionsSizesMm": "Sizes in millimetres",
+      "optionsSizesMmHint": "One value: the diameter or longest side (“3”). Two values: width × length (“2x4”, “2.5 x 5”). To a tenth of a millimetre.",
+      "optionsSizeInputLabel": "Size in millimetres",
+      "optionsSizePlaceholder": "e.g. 2x4",
+      "optionsSizeAdd": "Add size",
+      "optionsSizeRemove": "Remove size {{size}}",
+      "optionsSizeInvalid": "Enter one or two dimensions in millimetres, {{min}} to {{max}} mm, to a tenth (e.g. 2x4 or 2.5).",
+      "optionsSizeDuplicate": "Size {{size}} already exists.",
+      "optionsSizePreview": "Will add “{{size}}” — drawn in the 3D Studio with a longest side of {{length}} mm.",
       "optionsColOption": "Option",
       "optionsColPrice": "Price",
       "optionsColStock": "Stock",
@@ -2430,6 +2465,7 @@
         "trackingUrl": "Tracking page",
         "trackingUrlHint": "Suggested from the carrier; editable. The customer gets this link in the shipping email.",
         "estimatedDelivery": "Estimated delivery",
+        "estimatedDeliveryHint": "Suggested from the “{{method}}” option ({{min}} to {{max}} working days), counted from today. You can change it.",
         "shipNow": "The parcel has already left",
         "shipNowHint": "Untick to prepare the parcel now and ship it later: the customer is only told when it ships.",
         "guestNoLink": "Guest customer: without a tracking page, no shipping email will be sent to them. Add the tracking link.",
@@ -4949,7 +4985,7 @@
       "credits": "Original invoice",
       "totalIncl": "Credit note total incl. VAT",
       "notice": "Credit note issued against invoice {{invoice}} of {{date}}, for the refund confirmed on {{refundedOn}}.",
-      "toCard": "The amount was refunded to the payment method used.",
+      "toCard": "The amount was refunded to the payment method used. This credit note is the accounting document for that refund: it is not a credit to spend on the site.",
       "toGiftCard": "The amount was credited back to the gift card used.",
       "fileName": "credit-note"
     }

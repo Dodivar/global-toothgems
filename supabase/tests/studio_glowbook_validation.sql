@@ -3,7 +3,7 @@
 -- (migrations 20261019072230_studio_glowbook, 20261019112411_studio_glowbook_creation,
 -- 20261019134715_studio_glowbook_look, 20261019142050_studio_glowbook_sections_certification,
 -- 20261021174016_studio_glowbook_spotlight_video, 20261021190830_studio_glowbook_spotlight_sweep,
--- decisions 99, 100, 102, 103 and 105)
+-- 20261022111758_studio_glowbook_place, decisions 99, 100, 102, 103, 105 and 108)
 -- =============================================================================
 -- Proves, as the roles that really call them:
 --
@@ -45,6 +45,12 @@
 --       since it was drawn; anon then reads exactly that file; an edit of the
 --       design or a new spotlight hides it again; a file in use cannot be
 --       deleted.
+--   G14 the place (decision 108): live; an area is rounded to 2 decimals
+--       (~1 km) before it is stored, a salon to 5; a partial place, a bad
+--       mode, a non-number or out-of-range coordinate and a short label are
+--       refused, by the function and by the table's CHECKs; another member
+--       cannot write it; anon reads it inside the look; removing it is
+--       immediate; with the plan switch closed (G12) it is not public.
 --
 -- ONE transaction, ALWAYS rolled back by raising `ALL STUDIO GLOWBOOK TESTS PASSED`
 -- (or `FAIL: ...`).
@@ -669,6 +675,75 @@ begin
   v_sc := public.studio_save_showcase_look(jsonb_build_object('featured_item_id', i_one));
   passed := passed || 'G13'::text;
 
+  -- G14: the place (decision 108) on nova.gems — live, all or nothing, an area rounded to ~1 km.
+  v_sc := public.studio_save_showcase_look(jsonb_build_object('place', jsonb_build_object(
+    'mode', 'area', 'label', ' Lyon 7e ', 'lat', 45.748312, 'lng', 4.842687)));
+  if v_sc.place_mode <> 'area' or v_sc.place_label <> 'Lyon 7e' or v_sc.place_lat <> 45.75 or v_sc.place_lng <> 4.84 then
+    raise exception 'FAIL G14: area not rounded %', row_to_json(v_sc);
+  end if;
+  v_sc := public.studio_save_showcase_look(jsonb_build_object('place', jsonb_build_object(
+    'mode', 'exact', 'label', '12 rue de la Paix, Lyon', 'lat', 45.7483123, 'lng', 4.8426871)));
+  if v_sc.place_mode <> 'exact' or v_sc.place_lat <> 45.74831 or v_sc.place_lng <> 4.84269 then
+    raise exception 'FAIL G14: salon %', row_to_json(v_sc);
+  end if;
+  foreach v_page in array array[jsonb_build_object('place', jsonb_build_object('mode', 'exact', 'label', 'X', 'lat', 45, 'lng', 4)),
+                                jsonb_build_object('place', jsonb_build_object('mode', 'exact', 'label', 'Lyon', 'lat', 95, 'lng', 4)),
+                                jsonb_build_object('place', jsonb_build_object('mode', 'exact', 'label', 'Lyon', 'lat', 45, 'lng', -181)),
+                                jsonb_build_object('place', jsonb_build_object('mode', 'exact', 'label', 'Lyon', 'lat', '45', 'lng', 4)),
+                                jsonb_build_object('place', jsonb_build_object('mode', 'home', 'label', 'Lyon', 'lat', 45, 'lng', 4)),
+                                jsonb_build_object('place', jsonb_build_object('mode', 'area', 'lat', 45, 'lng', 4)),
+                                jsonb_build_object('place', '"Lyon"'::jsonb)] loop
+    v_state := null;
+    begin
+      perform public.studio_save_showcase_look(v_page);
+    exception when others then v_state := sqlstate;
+    end;
+    if v_state is distinct from '22023' then raise exception 'FAIL G14: accepted % (%)', v_page, v_state; end if;
+  end loop;
+  -- Neither a partial row nor a precise area, whoever writes it.
+  execute 'reset role';
+  v_state := null;
+  begin
+    update public.studio_showcases set place_label = null where user_id = other;
+  exception when others then v_state := sqlstate;
+  end;
+  if v_state is distinct from '23514' then raise exception 'FAIL G14: partial place stored (%)', v_state; end if;
+  v_state := null;
+  begin
+    update public.studio_showcases set place_mode = 'area' where user_id = other;
+  exception when others then v_state := sqlstate;
+  end;
+  if v_state is distinct from '23514' then raise exception 'FAIL G14: precise area stored (%)', v_state; end if;
+  -- Another member cannot write it (no direct UPDATE; the function only writes the caller's row).
+  perform set_config('role', 'authenticated', true);
+  perform set_config('request.jwt.claims', json_build_object('sub', artist, 'role', 'authenticated')::text, true);
+  v_state := null;
+  begin
+    update public.studio_showcases set place_label = 'Hijacked' where user_id = other;
+  exception when others then v_state := sqlstate;
+  end;
+  if v_state is distinct from '42501' then raise exception 'FAIL G14: another member wrote the place (%)', v_state; end if;
+  perform set_config('role', 'anon', true);
+  perform set_config('request.jwt.claims', '{"role":"anon"}', true);
+  v_page := public.studio_public_showcase('nova.gems');
+  if v_page #> '{look,place}' <> jsonb_build_object('mode', 'exact', 'label', '12 rue de la Paix, Lyon', 'lat', 45.74831, 'lng', 4.84269) then
+    raise exception 'FAIL G14: public place %', v_page #> '{look,place}';
+  end if;
+  perform set_config('role', 'authenticated', true);
+  perform set_config('request.jwt.claims', json_build_object('sub', other, 'role', 'authenticated')::text, true);
+  v_sc := public.studio_save_showcase_look(jsonb_build_object('place', null));
+  if v_sc.place_mode is not null or v_sc.place_label is not null or v_sc.place_lat is not null then
+    raise exception 'FAIL G14: place not removed';
+  end if;
+  perform set_config('role', 'anon', true);
+  perform set_config('request.jwt.claims', '{"role":"anon"}', true);
+  if public.studio_public_showcase('nova.gems') #> '{look,place}' <> 'null'::jsonb then raise exception 'FAIL G14: removed place shown'; end if;
+  perform set_config('role', 'authenticated', true);
+  perform set_config('request.jwt.claims', json_build_object('sub', other, 'role', 'authenticated')::text, true);
+  v_sc := public.studio_save_showcase_look(jsonb_build_object('place', jsonb_build_object(
+    'mode', 'area', 'label', 'Lyon', 'lat', 45.75, 'lng', 4.84)));
+  passed := passed || 'G14'::text;
+
   -- G12: the plan switch closed (rolled back with the rest).
   execute 'reset role';
   execute $f$create or replace function private.glowbook_customization_allowed(p_user uuid)
@@ -698,7 +773,7 @@ begin
   v_page := public.studio_public_showcase('nova.gems');
   if v_page is null or v_page -> 'sections' <> '[]'::jsonb or jsonb_array_length(v_page -> 'items') <> 2
      or exists (select 1 from jsonb_array_elements(v_page -> 'items') i where i -> 'section_id' <> 'null'::jsonb)
-     or v_page -> 'certification' = 'null'::jsonb then
+     or v_page -> 'certification' = 'null'::jsonb or v_page -> 'look' <> 'null'::jsonb then
     raise exception 'FAIL G12: page without the plan %', v_page;
   end if;
   passed := passed || 'G12'::text;

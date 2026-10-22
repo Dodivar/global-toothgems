@@ -25,7 +25,7 @@ function piece(over: Partial<PlacedJewelry> = {}): PlacedJewelry {
   return {
     id: "p1",
     productId: "crystal-round",
-    ss: 5,
+    size: { ss: 5 },
     look: { shape: "round", material: "crystal", color: "#ffffff", effect: "none" },
     toothId: "11",
     position: { x: 1, y: 2, z: 3 },
@@ -145,7 +145,7 @@ describe("what each step asks for", () => {
     expect(met("adjust", before, before)).toBe(false);
     // Selecting is not yet adjusting (the card says so through `midway`).
     expect(met("adjust", before, snapshot({ jewels: [piece()], selectedJewelIds: ["p1"] }))).toBe(false);
-    expect(met("adjust", before, snapshot({ jewels: [piece({ ss: 9 })] }))).toBe(true);
+    expect(met("adjust", before, snapshot({ jewels: [piece({ size: { ss: 9 } })] }))).toBe(true);
     expect(met("adjust", before, snapshot({ jewels: [piece({ rotation: 45 })] }))).toBe(true);
     // Taking the piece off is an adjustment too.
     expect(met("adjust", before, snapshot({ jewels: [] }))).toBe(true);
@@ -185,7 +185,7 @@ describe("a piece's signature", () => {
 
   it("notices a colour, a size, a tooth, a spin or a standoff", () => {
     const ref = pieceSignature(piece());
-    expect(pieceSignature(piece({ ss: 7 }))).not.toBe(ref);
+    expect(pieceSignature(piece({ size: { ss: 7 } }))).not.toBe(ref);
     expect(pieceSignature(piece({ toothId: "21" }))).not.toBe(ref);
     expect(pieceSignature(piece({ rotation: 90 }))).not.toBe(ref);
     expect(pieceSignature(piece({ offset: 0.4 }))).not.toBe(ref);

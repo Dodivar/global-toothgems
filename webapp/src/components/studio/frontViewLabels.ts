@@ -50,7 +50,7 @@ export function useFrontViewLabels() {
     (gem: FrontViewGem): GemDescription => ({
       tooth: toothLabel(gem.toothId),
       shape: shapeName(gem.shape),
-      size: sizeName(gem.piece.ss),
+      size: sizeName(gem.piece.size),
       colour: colourName(gem.piece),
       note: !gem.at ? t("studio.frontView.notDrawn") : gem.at.facing === "back" ? t("studio.frontView.backFace") : null,
     }),

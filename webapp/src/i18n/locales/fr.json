@@ -225,6 +225,7 @@
     "specMaterial": "Matière",
     "specCenter": "Centre",
     "specDiameter": "Diamètre",
+    "specDimensions": "Dimensions",
     "specBack": "Dos",
     "specBackValue": "Plat, poli",
     "specPackaging": "Conditionnement",
@@ -1125,7 +1126,16 @@
       },
       "groupLearning": "Formation",
       "groupPurchases": "Achats",
-      "groupAccount": "Mon compte"
+      "groupAccount": "Mon compte",
+      "activityInMenu": "Nouveautés dans le menu",
+      "activity": {
+        "orders_one": "{{count}} commande mise à jour",
+        "orders_other": "{{count}} commandes mises à jour",
+        "reviews_one": "{{count}} nouveauté dans vos avis",
+        "reviews_other": "{{count}} nouveautés dans vos avis",
+        "loyalty_one": "Carte complète : votre récompense vous attend",
+        "loyalty_other": "{{count}} récompenses vous attendent"
+      }
     },
     "statsLabel": "Votre compte en chiffres",
     "statCourses": "formations en cours",
@@ -1387,7 +1397,11 @@
   "shapesPage": {
     "eyebrow": "Formes",
     "title": "Toutes les formes de gems",
-    "body": "Chaque forme regroupe les gems de cette coupe, toutes matières confondues. Choisissez-en une pour filtrer la boutique."
+    "body": "Chaque forme regroupe les gems de cette coupe, toutes matières confondues. Choisissez-en une pour filtrer la boutique.",
+    "familyTitle": "{{family}} : choisissez une forme",
+    "familyBody": "Sélectionnez la forme de gem {{family}} qui vous intéresse : vous ne verrez ensuite que les produits de cette forme.",
+    "all": "Toutes les formes",
+    "allAria": "Voir tous les gems {{family}}"
   },
   "colorsPage": {
     "eyebrow": "Couleurs",
@@ -1637,7 +1651,15 @@
       "price-desc": "Prix décroissant",
       "price-asc": "Prix croissant",
       "name-asc": "Nom (A → Z)",
-      "stock-asc": "Stock le plus bas"
+      "stock-asc": "Stock le plus bas",
+      "name-desc": "Nom (Z → A)",
+      "stock-desc": "Stock le plus haut",
+      "sku-asc": "SKU (A → Z)",
+      "sku-desc": "SKU (Z → A)",
+      "category-asc": "Catégorie (A → Z)",
+      "category-desc": "Catégorie (Z → A)",
+      "status-asc": "Statut (A → Z)",
+      "status-desc": "Statut (Z → A)"
     },
     "table": {
       "caption": "Catalogue produits : image, nom, SKU, catégorie, prix, stock, statut, dernière modification et actions.",
@@ -1805,7 +1827,7 @@
         "categoryRequired": "Choisissez une catégorie.",
         "familyMismatch": "Cette famille n’appartient pas à la catégorie choisie.",
         "priceCents": "Deux décimales au maximum.",
-        "optionsEmpty": "Ajoutez au moins un pack ou cochez une taille de pierre, ou désactivez les options.",
+        "optionsEmpty": "Ajoutez au moins un pack ou une taille, ou désactivez les options.",
         "optionsPack": "Chaque pack doit contenir un nombre entier de pierres, de {{min}} à {{max}}.",
         "optionsSkuTooLong": "Avec ces options, le SKU doit faire {{max}} caractères au plus (chaque option ajoute un suffixe comme {{suffix}}).",
         "optionsPrice": "Vérifiez les prix des options : supérieurs à 0, deux décimales au plus.",
@@ -1816,7 +1838,7 @@
       "promoInPromotions": "Les prix promotionnels se gèrent dans l’espace Promotions : le prix affiché ici est le prix de vente normal.",
       "databaseNotice": "Enregistré dans la base Supabase : un produit « En ligne » apparaît en boutique. Les visuels sont envoyés dès leur ajout.",
       "optionsTitle": "Packs et tailles de pierre",
-      "optionsBody": "Vendez cette gem en packs du nombre de pierres de votre choix, dans une ou plusieurs tailles (SS). Chaque pack × taille est une option avec son propre prix et son propre stock.",
+      "optionsBody": "Vendez cette gem en packs du nombre de pierres de votre choix, dans une ou plusieurs tailles : en SS pour une pierre ronde, en millimètres pour toute autre taille. Chaque pack × taille est une option avec son propre prix et son propre stock, et le Studio 3D dessine la pierre à la taille choisie.",
       "optionsToggle": "Proposer des packs et des tailles",
       "optionsToggleHint": "Désactivé : le produit est vendu à l’unité, avec le stock de la section ci-dessus.",
       "optionsPacks": "Packs",
@@ -1829,8 +1851,21 @@
       "optionsPackInvalid": "Indiquez un nombre entier de pierres, de {{min}} à {{max}}.",
       "optionsPackDuplicate_one": "Le pack de {{count}} pierre existe déjà.",
       "optionsPackDuplicate_other": "Le pack de {{count}} pierres existe déjà.",
-      "optionsSizes": "Tailles de pierre (SS)",
+      "optionsSizes": "Tailles",
+      "optionsSizeMode": "Façon d’indiquer les tailles",
+      "optionsSizeModeSs": "En SS (pierres rondes)",
+      "optionsSizeModeMm": "En millimètres",
+      "optionsSizesSs": "Tailles de pierre (SS)",
       "optionsSizesHint": "Diamètres approximatifs : les tableaux des fabricants varient légèrement.",
+      "optionsSizesMm": "Tailles en millimètres",
+      "optionsSizesMmHint": "Une valeur : le diamètre ou le plus grand côté (« 3 »). Deux valeurs : largeur × longueur (« 2x4 », « 2,5 x 5 »). Au dixième de millimètre.",
+      "optionsSizeInputLabel": "Taille en millimètres",
+      "optionsSizePlaceholder": "ex. 2x4",
+      "optionsSizeAdd": "Ajouter la taille",
+      "optionsSizeRemove": "Retirer la taille {{size}}",
+      "optionsSizeInvalid": "Indiquez une ou deux dimensions en millimètres, de {{min}} à {{max}} mm, au dixième près (ex. 2x4 ou 2,5).",
+      "optionsSizeDuplicate": "La taille {{size}} existe déjà.",
+      "optionsSizePreview": "Ajoutera « {{size}} » — dessinée dans le Studio 3D avec un plus grand côté de {{length}} mm.",
       "optionsColOption": "Option",
       "optionsColPrice": "Prix",
       "optionsColStock": "Stock",
@@ -2430,6 +2465,7 @@
         "trackingUrl": "Page de suivi",
         "trackingUrlHint": "Proposée selon le transporteur ; modifiable. Le client reçoit ce lien dans l’e-mail d’expédition.",
         "estimatedDelivery": "Livraison estimée",
+        "estimatedDeliveryHint": "Proposée d'après l'option « {{method}} » ({{min}} à {{max}} jours ouvrés), comptée à partir d'aujourd'hui. Modifiable.",
         "shipNow": "Le colis est déjà parti",
         "shipNowHint": "Décochez pour préparer le colis maintenant et l’expédier plus tard : le client n’est prévenu qu’à l’expédition.",
         "guestNoLink": "Client sans compte : sans page de suivi, aucun e-mail d’expédition ne lui sera envoyé. Ajoutez le lien de suivi.",
@@ -4949,7 +4985,7 @@
       "credits": "Facture d’origine",
       "totalIncl": "Total de l’avoir TTC",
       "notice": "Avoir émis sur la facture {{invoice}} du {{date}}, au titre du remboursement confirmé le {{refundedOn}}.",
-      "toCard": "Le montant a été remboursé sur le moyen de paiement utilisé.",
+      "toCard": "Le montant a été remboursé sur le moyen de paiement utilisé. Cet avoir est la pièce comptable de ce remboursement : il ne constitue pas un crédit à dépenser sur le site.",
       "toGiftCard": "Le montant a été recrédité sur la carte cadeau utilisée.",
       "fileName": "avoir"
     }

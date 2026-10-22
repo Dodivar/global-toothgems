@@ -175,9 +175,9 @@ describe("gem options", () => {
       { id: "b", attributes: { pack: 50, ss: 6 }, price: "45.00", is_active: true, position: 1, inventory_items: [inv(4)] },
       { id: "c", attributes: { pack: 100, ss: 6 }, price: "80.00", is_active: false, position: 2, inventory_items: [inv(0)] },
     ]);
-    expect(options).toMatchObject({ enabled: true, packs: [20, 50], sizes: [6] });
+    expect(options).toMatchObject({ enabled: true, packs: [20, 50], sizeMode: "ss", sizes: [{ ss: 6 }] });
     expect(options?.variants).toHaveLength(3);
-    expect(options?.variants[1]).toMatchObject({ pack: 50, ss: 6, price: 45, stock: 4, lowStockThreshold: 3 });
+    expect(options?.variants[1]).toMatchObject({ pack: 50, size: { ss: 6 }, price: 45, stock: 4, lowStockThreshold: 3 });
     expect(options?.variants[0].price).toBeUndefined();
   });
 
@@ -228,7 +228,7 @@ describe("gem options", () => {
       url,
     );
     expect(product.variantStock).toEqual([
-      expect.objectContaining({ key: "50:6", variantId: "a", sku: "GEM-P50-SS6", price: 45, stock: 0 }),
+      expect.objectContaining({ key: "50:ss6", variantId: "a", sku: "GEM-P50-SS6", price: 45, stock: 0 }),
       expect.objectContaining({ key: "c", variantId: "c", name: { fr: "Saphir", en: "Sapphire" }, stock: 5, reserved: 2 }),
     ]);
     expect(product.variantStock?.[0].name.fr).toBe("Pack de 50 · SS6");
@@ -245,10 +245,11 @@ describe("gem options", () => {
       gemOptions: {
         enabled: true,
         packs: [20],
-        sizes: [6, 8],
+        sizeMode: "ss",
+        sizes: [{ ss: 6 }, { ss: 8 }],
         variants: [
-          { pack: 20, ss: 8, price: 19.9, trackInventory: true, stock: 5, lowStockThreshold: 2 },
-          { pack: 50, ss: 6, price: 40, trackInventory: true, stock: 7, lowStockThreshold: 2 },
+          { pack: 20, size: { ss: 8 }, price: 19.9, trackInventory: true, stock: 5, lowStockThreshold: 2 },
+          { pack: 50, size: { ss: 6 }, price: 40, trackInventory: true, stock: 7, lowStockThreshold: 2 },
         ],
       },
     }) as { variants: unknown[] };
@@ -266,8 +267,25 @@ describe("gem options", () => {
     expect(options).toMatchObject({ enabled: true, packs: [35, 250], sizes: [] });
     const payload = productToPayload({ ...rowToProduct(row, url), gemOptions: options }) as { variants: unknown[] };
     expect(payload.variants).toEqual([
-      { pack: 35, ss: null, price: "12.50", track_inventory: true, quantity_on_hand: 9, low_stock_threshold: 3 },
-      { pack: 250, ss: null, price: "70.00", track_inventory: true, quantity_on_hand: 2, low_stock_threshold: 3 },
+      { pack: 35, price: "12.50", track_inventory: true, quantity_on_hand: 9, low_stock_threshold: 3 },
+      { pack: 250, price: "70.00", track_inventory: true, quantity_on_hand: 2, low_stock_threshold: 3 },
+    ]);
+  });
+
+  it("round-trips millimetre sizes, and never sends the sizes of the way not chosen", () => {
+    const options = readGemOptions([
+      { id: "a", attributes: { pack: 10, mm: [2, 4] }, price: null, is_active: true, position: 0, inventory_items: [inv(9)] },
+      { id: "b", attributes: { pack: 10, mm: [3, 6] }, price: "12.00", is_active: true, position: 1, inventory_items: [inv(2)] },
+    ]);
+    expect(options).toMatchObject({ sizeMode: "mm", sizes: [{ mm: [2, 4] }, { mm: [3, 6] }] });
+    const payload = productToPayload({
+      ...rowToProduct(row, url),
+      // An SS size ticked before switching to millimetres stays in the draft, unsent.
+      gemOptions: { ...options!, sizes: [...options!.sizes, { ss: 6 }] },
+    }) as { variants: unknown[] };
+    expect(payload.variants).toEqual([
+      { pack: 10, mm: [2, 4], price: null, track_inventory: true, quantity_on_hand: 9, low_stock_threshold: 3 },
+      { pack: 10, mm: [3, 6], price: "12.00", track_inventory: true, quantity_on_hand: 2, low_stock_threshold: 3 },
     ]);
   });
 

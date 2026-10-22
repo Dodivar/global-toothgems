@@ -4,7 +4,7 @@ import { useTranslation } from "react-i18next";
 import { Heart, Image as ImageIcon } from "lucide-react";
 import { Badge, type BadgeTone } from "./Badge";
 import { useFormat } from "../../lib/format";
-import { gemAxes, isGemOptionSet } from "../../lib/gemOptions";
+import { gemAxes, isGemOptionSet, sizeRangeLabel } from "../../lib/gemOptions";
 import { pick } from "../../data/types";
 import type { ProductVariant } from "../../data/products";
 import { Stars } from "../reviews/Stars";
@@ -207,7 +207,7 @@ function VariantSummary({ variants, lang }: { variants: ProductVariant[]; lang: 
     const { packs, sizes } = gemAxes(variants);
     const parts = [
       packs.length > 0 ? t("product.cardPacks", { list: packs.join(" · ") }) : null,
-      sizes.length > 1 ? t("product.cardSizes", { from: `SS${sizes[0]}`, to: `SS${sizes[sizes.length - 1]}` }) : sizes.length === 1 ? `SS${sizes[0]}` : null,
+      sizeRangeLabel(sizes, lang, (range) => t("product.cardSizes", range)),
     ].filter(Boolean);
     return <span className="text-xs text-[var(--text-muted)]">{parts.join(" — ")}</span>;
   }

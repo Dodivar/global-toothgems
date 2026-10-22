@@ -53,6 +53,8 @@ function row(overrides: Partial<AdminOrderRow> = {}): AdminOrderRow {
     amount_due: "61.80",
     prices_include_tax: true,
     shipping_method_name: "Colissimo",
+    shipping_min_days: 2,
+    shipping_max_days: 4,
     billing_address: { first_name: "Nora", last_name: "Belkacem", address_line1: "1 rue A", postal_code: "75001", city: "Paris", country_code: "fr", phone: "+33 6 00 00 00 00" },
     shipping_address: { first_name: "Léa", last_name: "Martin", address_line1: "2 rue B", postal_code: "69001", city: "Lyon", country_code: "FR" },
     order_items: [
@@ -143,6 +145,8 @@ describe("mapAdminOrder: amounts as recorded", () => {
     expect(order.customer).toMatchObject({ id: "u1", firstName: "Nora", lastName: "Belkacem", phone: "+33 6 00 00 00 00" });
     expect(order.shippingMethod).toBe("standard");
     expect(order.shippingMethodName).toBe("Colissimo");
+    expect(order.shippingDays).toEqual({ min: 2, max: 4 });
+    expect(mapAdminOrder(row({ shipping_min_days: null, shipping_max_days: null }), findProduct).shippingDays).toBeUndefined();
   });
 
   it("names a guest by e-mail and marks an order without shipping address digital", () => {

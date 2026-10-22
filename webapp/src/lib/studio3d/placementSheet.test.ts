@@ -1,5 +1,5 @@
 import { describe, expect, it } from "vitest";
-import { scaleForSs, type PlacedJewelry } from "../../data/studioEditor";
+import { scaleForSize, type PlacedJewelry } from "../../data/studioEditor";
 import { DENTITION_CROWNS } from "./dentition";
 import { projectFrontView } from "./frontView";
 import { buildPlacementSheet, fitText, placementSheetFileName, referenceGroups, toothCell, type PlacementSheetInput } from "./placementSheet";
@@ -9,13 +9,13 @@ function piece(id: string, fdi: string, extra: Partial<PlacedJewelry> = {}): Pla
   return {
     id,
     productId: "gem-a",
-    ss: 5,
+    size: { ss: 5 },
     look: { shape: "heart", material: "crystal", color: "#e0479b", effect: "none" },
     toothId: fdi,
     position: { x: c.center.x + c.outward.x * c.halfDepth, y: c.center.y, z: c.center.z + c.outward.z * c.halfDepth },
     normal: { ...c.outward },
     rotation: 15,
-    scale: scaleForSs(5),
+    scale: scaleForSize({ ss: 5 }),
     ...extra,
   };
 }
@@ -31,7 +31,7 @@ function input(pieces: PlacedJewelry[]): PlacementSheetInput {
     totals: referenceGroups(projection).map((r) => ({
       reference: r.productId,
       colour: "Rose",
-      size: `SS${r.ss}`,
+      size: `SS${r.size.ss}`,
       count: r.numbers.length,
       numbers: r.numbers.join(", "),
       toBuy: "1 × 20",
@@ -84,11 +84,11 @@ describe("placement sheet", () => {
   });
 
   it("groups gems per product, colour and size, keeping their numbers", () => {
-    const view = projectFrontView([piece("a", "11"), piece("b", "21"), piece("c", "12", { ss: 7 })], "dentition");
+    const view = projectFrontView([piece("a", "11"), piece("b", "21"), piece("c", "12", { size: { ss: 7 } })], "dentition");
     const groups = referenceGroups(view);
     expect(groups).toHaveLength(2);
-    expect(groups.find((g) => g.ss === 5)!.numbers).toEqual([2, 3]);
-    expect(groups.find((g) => g.ss === 7)!.numbers).toEqual([1]);
+    expect(groups.find((g) => g.size.ss === 5)!.numbers).toEqual([2, 3]);
+    expect(groups.find((g) => g.size.ss === 7)!.numbers).toEqual([1]);
   });
 
   it("always prints a gem's note whole, shortening the tooth name instead", () => {

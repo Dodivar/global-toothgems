@@ -1,7 +1,7 @@
 import { describe, expect, it } from "vitest";
 import type { GemColorDef, Product } from "../../data/products";
-import { sanitizeJewels, scaleForSs } from "../../data/studioEditor";
-import { stoneSizeMmApprox } from "../gemOptions";
+import { DEFAULT_ROUND_SIZES, DEFAULT_SHAPED_SIZES, sanitizeJewels, scaleForSize } from "../../data/studioEditor";
+import { stoneSizeMmApprox, type GemSize } from "../gemOptions";
 import { buildStudioGems, coverPieces, defaultSize, estimateComposition, fallbackLook, nearestSize, pieceSpec, swapPatch, type GemAppearanceRow } from "./gemCatalog";
 
 const product = (over: Partial<Product>): Product => ({
@@ -41,9 +41,9 @@ const sized = product({
   dbId: "p-baguette",
   shape: "baguette",
   variants: [
-    { id: "v1", name: { fr: "", en: "" }, price: 9.95, pack: 10, ss: 7 },
-    { id: "v2", name: { fr: "", en: "" }, price: 18.95, pack: 25, ss: 3 },
-    { id: "v3", name: { fr: "", en: "" }, price: 9.95, pack: 10, ss: 3 },
+    { id: "v1", name: { fr: "", en: "" }, price: 9.95, pack: 10, size: { mm: [3, 6] } },
+    { id: "v2", name: { fr: "", en: "" }, price: 18.95, pack: 25, size: { mm: [2, 4] } },
+    { id: "v3", name: { fr: "", en: "" }, price: 9.95, pack: 10, size: { mm: [2, 4] } },
   ],
 });
 const tool = product({ id: "pince", dbId: "p-tool", cat: "materiel" });
@@ -83,20 +83,35 @@ describe("studio gems from the shop catalogue", () => {
     expect(finishes[0].priceMinor).toBe(4495);
   });
 
-  it("offers the gem's SS options, else SS2, SS5 and SS7", () => {
-    expect(byKey("p-baguette")?.sizes).toEqual([3, 7]);
-    expect(byKey("p-heart")?.sizes).toEqual([2, 5, 7]);
-    expect(defaultSize({ sizes: [2, 5, 7] })).toBe(5);
-    expect(nearestSize({ sizes: [3, 7] }, 5)).toBe(3);
-    expect(nearestSize({ sizes: [3, 7] }, 6)).toBe(7);
+  it("offers the sizes the shop sells, else SS sizes for a round stone and millimetres for any other cut", () => {
+    expect(byKey("p-baguette")?.sizes).toEqual([{ mm: [2, 4] }, { mm: [3, 6] }]);
+    expect(byKey("p-heart")?.sizes).toEqual(DEFAULT_SHAPED_SIZES);
+    const round = buildStudioGems([product({ id: "rond", dbId: "p-round", shape: "round" })], [], colors)[0];
+    expect(round.sizes).toEqual(DEFAULT_ROUND_SIZES);
+    expect(defaultSize({ sizes: DEFAULT_ROUND_SIZES })).toEqual({ ss: 5 });
+    const baguettes: GemSize[] = [{ mm: [2, 4] }, { mm: [3, 6] }];
+    // nearest by longest side: SS16 ≈ 3.9 mm → 2 × 4; 5.5 mm → 3 × 6; its own size kept
+    expect(nearestSize({ sizes: baguettes }, { ss: 16 })).toEqual({ mm: [2, 4] });
+    expect(nearestSize({ sizes: baguettes }, { mm: [5.5] })).toEqual({ mm: [3, 6] });
+    expect(nearestSize({ sizes: baguettes }, { mm: [3, 6] })).toEqual({ mm: [3, 6] });
+  });
+
+  it("draws a piece at its size's longest side", () => {
+    expect(scaleForSize({ mm: [2, 4] })).toBe(2);
+    expect(scaleForSize({ mm: [3] })).toBe(1.5);
+    expect(scaleForSize({ ss: 5 })).toBe(0.9);
   });
 
   it("builds a new piece and swaps a placed one to another gem, keeping the closest size", () => {
     const spec = pieceSpec(byKey("p-heart")!);
-    expect(spec).toEqual({ productId: "p-heart", ss: 5, scale: scaleForSs(5), look: byKey("p-heart")!.finishes[0].look });
+    expect(spec).toEqual({ productId: "p-heart", size: { mm: [4] }, scale: 2, look: byKey("p-heart")!.finishes[0].look });
     const cherry = byKey("p-cherry")!;
-    expect(swapPatch({ ss: 6 }, byKey("p-baguette")!, byKey("p-baguette")!.finishes[0])).toMatchObject({ productId: "p-baguette", ss: 7 });
-    expect(swapPatch({ ss: 5 }, cherry, cherry.finishes[1])).toMatchObject({ productId: "p-cherry", variantId: "v-white", ss: 5 });
+    expect(swapPatch({ size: { ss: 6 } }, byKey("p-baguette")!, byKey("p-baguette")!.finishes[0])).toMatchObject({
+      productId: "p-baguette",
+      size: { mm: [2, 4] },
+      scale: 2,
+    });
+    expect(swapPatch({ size: { mm: [5] } }, cherry, cherry.finishes[1])).toMatchObject({ productId: "p-cherry", variantId: "v-white", size: { mm: [5] } });
   });
 
   it("values a composition at shop prices: one item per crystal and colour without packs, a charm per piece", () => {
@@ -113,22 +128,23 @@ describe("studio gems from the shop catalogue", () => {
 
   it("buys a crystal in the pieces' size, in the cheapest pack that covers them, in stock first", () => {
     const look = byKey("p-baguette")!.finishes[0].look;
-    const piece = (ss: number) => ({ productId: "p-baguette", ss, look });
-    // 2 pieces in SS3 → the pack of 10 (not 25); 1 piece in SS7 → its own pack of 10
-    const value = estimateComposition([piece(3), piece(3), piece(7)], byKey);
-    expect(value.lines.map((l) => [l.ss, l.offer.variantId, l.quantity])).toEqual([
-      [3, "v3", 1],
-      [7, "v1", 1],
+    const piece = (size: GemSize) => ({ productId: "p-baguette", size, look });
+    const small: GemSize = { mm: [2, 4] };
+    // 2 pieces in 2 × 4 → the pack of 10 (not 25); 1 piece in 3 × 6 → its own pack of 10
+    const value = estimateComposition([piece(small), piece(small), piece({ mm: [3, 6] })], byKey);
+    expect(value.lines.map((l) => [l.size, l.offer.variantId, l.quantity])).toEqual([
+      [small, "v3", 1],
+      [{ mm: [3, 6] }, "v1", 1],
     ]);
     expect(value.totalMinor).toBe(995 + 995);
-    // 30 pieces in SS3: 3 × pack of 10 (29.85) beats 2 × pack of 25 (37.90)
-    expect(estimateComposition(Array.from({ length: 30 }, () => piece(3)), byKey).lines[0]).toMatchObject({ offer: { variantId: "v3" }, quantity: 3 });
+    // 30 pieces in 2 × 4: 3 × pack of 10 (29.85) beats 2 × pack of 25 (37.90)
+    expect(estimateComposition(Array.from({ length: 30 }, () => piece(small)), byKey).lines[0]).toMatchObject({ offer: { variantId: "v3" }, quantity: 3 });
     // a size the shop does not sell is not counted
-    expect(estimateComposition([piece(5)], byKey)).toMatchObject({ lines: [], unavailable: 1 });
+    expect(estimateComposition([piece({ mm: [5] })], byKey)).toMatchObject({ lines: [], unavailable: 1 });
   });
 
   it("covers pieces with one offer: in stock first, out of stock only when nothing else is", () => {
-    const offer = (variantId: string, pack: number, priceMinor: number, stock?: "out") => ({ variantId, name: null, pack, ss: null, colour: false, priceMinor, ...(stock ? { stock } : {}) });
+    const offer = (variantId: string, pack: number, priceMinor: number, stock?: "out") => ({ variantId, name: null, pack, size: null, colour: false, priceMinor, ...(stock ? { stock } : {}) });
     const ten = offer("p10", 10, 500, "out");
     const tf = offer("p25", 25, 1000);
     expect(coverPieces([ten, tf], 2, false)).toMatchObject({ offer: { variantId: "p25" }, quantity: 1 });
@@ -153,12 +169,27 @@ describe("placed pieces read back", () => {
 
   it("keeps a well-formed piece whether or not its gem is still sold, and derives its size", () => {
     const [piece] = sanitizeJewels([good]);
-    expect(piece).toMatchObject({ productId: "p-heart", ss: 5, rotation: 10, scale: scaleForSs(5), look: { color: "#aabbcc" } });
+    expect(piece).toMatchObject({ productId: "p-heart", size: { ss: 5 }, rotation: 10, scale: 0.9, look: { color: "#aabbcc" } });
+    expect(piece).not.toHaveProperty("ss");
+  });
+
+  it("reads a design saved before millimetre sizes (a bare `ss`) at the very scale it had", () => {
+    // Before decision 107 a piece was drawn at stoneSizeMmApprox(ss) / 2.
+    for (const ss of [2, 5, 7, 11]) {
+      expect(sanitizeJewels([{ ...good, ss }])[0].scale).toBe(stoneSizeMmApprox(ss) / 2);
+    }
+  });
+
+  it("reads a millimetre size, preferred over a stray `ss`", () => {
+    expect(sanitizeJewels([{ ...good, ss: undefined, size: { mm: [4, 2] } }])[0]).toMatchObject({ size: { mm: [2, 4] }, scale: 2 });
+    expect(sanitizeJewels([{ ...good, size: { mm: [3] } }])[0]).toMatchObject({ size: { mm: [3] }, scale: 1.5 });
   });
 
   it("drops pieces with an unknown shape, size or reference", () => {
     expect(sanitizeJewels([{ ...good, look: { ...good.look, shape: "hexagon" } }])).toEqual([]);
     expect(sanitizeJewels([{ ...good, ss: 2.5 }])).toEqual([]);
+    expect(sanitizeJewels([{ ...good, size: { mm: [40] } }])).toEqual([]);
+    expect(sanitizeJewels([{ ...good, size: "2x4" }])).toEqual([]);
     expect(sanitizeJewels([{ ...good, productId: "<script>" }])).toEqual([]);
   });
 
@@ -166,6 +197,6 @@ describe("placed pieces read back", () => {
     expect(stoneSizeMmApprox(2)).toBe(1.3);
     expect(stoneSizeMmApprox(11)).toBeCloseTo(2.95, 2);
     expect(stoneSizeMmApprox(1)).toBeGreaterThanOrEqual(0.8);
-    expect(scaleForSs(5)).toBe(0.9);
+    expect(scaleForSize({ ss: 5 })).toBe(0.9);
   });
 });

@@ -5,6 +5,7 @@ import { ArrowRight, Gift, Sparkles, type LucideIcon } from "lucide-react";
 import clsx from "clsx";
 import { DEFAULT_MENU_THUMB, TAXONOMY_THUMBS } from "../../data/menu";
 import { shopHref } from "../../data/taxonomy";
+import { familyEntryHref } from "../../lib/shopUrl";
 import { pick } from "../../data/types";
 import { useCatalog } from "../../lib/catalog/CatalogProvider";
 import { useAuth } from "../../lib/auth";
@@ -54,7 +55,7 @@ function useShopMenu(): MenuGroup[] {
           ? category.families.map((family) => ({
               key: family.slug,
               label: pick(family.name, lang),
-              to: shopHref(category.slug, family.slug),
+              to: familyEntryHref(category.slug, family.slug),
               thumb: family.imageUrl ?? TAXONOMY_THUMBS[family.slug] ?? DEFAULT_MENU_THUMB,
               count: countOf(category.slug, family.slug),
             }))

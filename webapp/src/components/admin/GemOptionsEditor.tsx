@@ -9,21 +9,33 @@ import { blankGemVariant, offeredGemVariants, type GemOptions, type GemOptionVar
 import {
   comboKey,
   comboName,
-  formatSs,
-  formatSsMm,
+  formatSize,
+  formatSizeDetail,
+  MM_MAX,
+  MM_MIN,
   PACK_MAX,
   PACK_MIN,
   parsePackCount,
+  parseSizeInput,
+  sameSize,
+  sizeKey,
+  sizeLongestMm,
+  sizeMode,
+  sortSizes,
   STONE_SIZES,
   type GemOptionKey,
+  type GemSize,
+  type SizeMode,
 } from "../../lib/gemOptions";
 import { pick } from "../../data/types";
 
 /**
- * Pack × stone size (SS) options of a gem.
+ * Pack × size options of a gem.
  *
  * The administrator types the packs this product is sold in (any number of
- * stones) and ticks sizes; every combination becomes a row
+ * stones) and its sizes — SS gauges ticked for a round stone, or millimetre
+ * dimensions typed freely for any other cut ("2x4", "2,5"; decision 107) —
+ * and every combination becomes a row
  * with its own price and stock. Rows are derived, not added one by one, so the
  * offer is always a complete grid and a customer never meets a pack that
  * exists in one size only by mistake.
@@ -41,13 +53,21 @@ interface GemOptionsEditorProps {
    * stock field focused. A key the grid does not show is ignored.
    */
   focusOption?: string | null;
+  /** How a product without sizes yet is sized: SS for a round stone, millimetres for any other cut. */
+  defaultSizeMode: SizeMode;
 }
 
 const EMPTY: GemOptions = { enabled: false, packs: [], sizes: [], variants: [] };
 
-export function GemOptionsEditor({ options = EMPTY, productPrice, error, onChange, focusOption }: GemOptionsEditorProps) {
+export function GemOptionsEditor({ options = EMPTY, productPrice, error, onChange, focusOption, defaultSizeMode }: GemOptionsEditorProps) {
   const { t, i18n } = useTranslation();
   const lang = i18n.language;
+  const mode = options.sizeMode ?? defaultSizeMode;
+  const modeSizes = options.sizes.filter((size) => sizeMode(size) === mode);
+  // Sizes of the other way stay in the draft (not offered): switching back gives them back.
+  const setSizes = (sizes: GemSize[]) => onChange({ ...options, sizeMode: mode, sizes });
+  const toggleSize = (size: GemSize) =>
+    setSizes(options.sizes.some((s) => sameSize(s, size)) ? options.sizes.filter((s) => !sameSize(s, size)) : sortSizes([...options.sizes, size]));
   const offered = offeredGemVariants(options);
   const target = focusOption && offered.some((v) => comboKey(v) === focusOption) ? focusOption : null;
   const arrived = useRef(false);
@@ -96,17 +116,42 @@ export function GemOptionsEditor({ options = EMPTY, productPrice, error, onChang
             onRemove={(pack) => onChange({ ...options, packs: options.packs.filter((p) => p !== pack) })}
           />
 
-          <ChipGroup legend={t("admin.form.optionsSizes")} hint={t("admin.form.optionsSizesHint")}>
-            {STONE_SIZES.map(({ ss }) => (
-              <Chip
-                key={ss}
-                checked={options.sizes.includes(ss)}
-                onChange={() => onChange({ ...options, sizes: toggleIn(options.sizes, ss) })}
-                label={formatSs(ss)}
-                detail={formatSsMm(ss, lang)}
+          <fieldset className="m-0 grid gap-3 border-0 p-0">
+            <legend className="mb-2 p-0 text-[length:var(--text-body-sm)] font-semibold text-[var(--text-primary)]">
+              {t("admin.form.optionsSizes")}
+            </legend>
+            <div role="radiogroup" aria-label={t("admin.form.optionsSizeMode")} className="flex flex-wrap gap-2">
+              {(["ss", "mm"] as const).map((value) => (
+                <Chip
+                  key={value}
+                  type="radio"
+                  name="gem-size-mode"
+                  checked={mode === value}
+                  onChange={() => onChange({ ...options, sizeMode: value })}
+                  label={t(value === "ss" ? "admin.form.optionsSizeModeSs" : "admin.form.optionsSizeModeMm")}
+                />
+              ))}
+            </div>
+            {mode === "ss" ? (
+              <ChipGroup legend={t("admin.form.optionsSizesSs")} hint={t("admin.form.optionsSizesHint")}>
+                {STONE_SIZES.map(({ ss }) => (
+                  <Chip
+                    key={ss}
+                    checked={modeSizes.some((s) => s.ss === ss)}
+                    onChange={() => toggleSize({ ss })}
+                    label={formatSize({ ss }, lang)}
+                    detail={formatSizeDetail({ ss }, lang)}
+                  />
+                ))}
+              </ChipGroup>
+            ) : (
+              <SizeList
+                sizes={modeSizes}
+                onAdd={(size) => setSizes(sortSizes([...options.sizes, size]))}
+                onRemove={(size) => setSizes(options.sizes.filter((s) => !sameSize(s, size)))}
               />
-            ))}
-          </ChipGroup>
+            )}
+          </fieldset>
 
           {offered.length === 0 ? (
             <p className="m-0 text-[length:var(--text-body-sm)] text-[var(--text-muted)]">{t("admin.form.optionsNone")}</p>
@@ -140,9 +185,9 @@ export function GemOptionsEditor({ options = EMPTY, productPrice, error, onChang
                         >
                           <th scope="row" className="px-3 py-2 text-left font-semibold">
                             {name}
-                            {variant.ss != null && formatSsMm(variant.ss, lang) && (
+                            {variant.size && formatSizeDetail(variant.size, lang) && (
                               <span className="block text-[length:var(--text-caption)] font-normal text-[var(--text-muted)]">
-                                {formatSsMm(variant.ss, lang)}
+                                {formatSizeDetail(variant.size, lang)}
                               </span>
                             )}
                           </th>
@@ -300,6 +345,108 @@ function PackList({ packs, onAdd, onRemove }: { packs: number[]; onAdd: (pack: n
   );
 }
 
+/**
+ * Millimetre sizes of this product, typed freely: one removable pill each,
+ * and a field that reads "2x4", "2 × 4 mm" or "2,5" and says, as it is typed,
+ * which size it will add — the shop shows that name and the 3D Studio draws
+ * the stone at its longest side.
+ */
+function SizeList({ sizes, onAdd, onRemove }: { sizes: GemSize[]; onAdd: (size: GemSize) => void; onRemove: (size: GemSize) => void }) {
+  const { t, i18n } = useTranslation();
+  const lang = i18n.language;
+  const [text, setText] = useState("");
+  const [error, setError] = useState<string | null>(null);
+  const inputId = useId();
+  const hintId = useId();
+  const errorId = useId();
+  const inputRef = useRef<HTMLInputElement>(null);
+  const parsed = text.trim() ? parseSizeInput(text, "mm") : null;
+  const mm = (n: number) => (lang.startsWith("en") ? String(n) : String(n).replace(".", ","));
+
+  const add = () => {
+    if (!parsed) {
+      setError(t("admin.form.optionsSizeInvalid", { min: mm(MM_MIN), max: mm(MM_MAX) }));
+      return;
+    }
+    if (sizes.some((s) => sameSize(s, parsed))) {
+      setError(t("admin.form.optionsSizeDuplicate", { size: formatSize(parsed, lang) }));
+      return;
+    }
+    onAdd(parsed);
+    setText("");
+    setError(null);
+  };
+
+  return (
+    <div className="grid gap-2">
+      {sizes.length > 0 && (
+        <ul className="m-0 flex list-none flex-wrap gap-2 p-0" aria-label={t("admin.form.optionsSizesMm")}>
+          {sizes.map((size) => (
+            <li
+              key={sizeKey(size)}
+              className="inline-flex items-center gap-1 rounded-[var(--radius-pill)] border border-[var(--gt-ink-900)] bg-[var(--gt-ink-900)] py-1 pl-3 pr-1 text-[length:var(--text-body-sm)] font-semibold text-[var(--text-inverse)]"
+            >
+              {formatSize(size, lang)}
+              <button
+                type="button"
+                // The pill and its button disappear: keep the keyboard user in the list's field.
+                onClick={() => {
+                  onRemove(size);
+                  inputRef.current?.focus();
+                }}
+                aria-label={t("admin.form.optionsSizeRemove", { size: formatSize(size, lang) })}
+                className="inline-flex h-6 w-6 items-center justify-center rounded-full hover:bg-[var(--gt-ink-700)] focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-[var(--focus-ring)]"
+              >
+                <X size={14} aria-hidden="true" />
+              </button>
+            </li>
+          ))}
+        </ul>
+      )}
+      <div className="flex flex-wrap items-center gap-2">
+        <label htmlFor={inputId} className="sr-only">
+          {t("admin.form.optionsSizeInputLabel")}
+        </label>
+        <input
+          ref={inputRef}
+          id={inputId}
+          type="text"
+          inputMode="decimal"
+          autoComplete="off"
+          maxLength={20}
+          className="gt-admin-field w-40"
+          placeholder={t("admin.form.optionsSizePlaceholder")}
+          value={text}
+          aria-invalid={error ? true : undefined}
+          aria-describedby={error ? `${hintId} ${errorId}` : hintId}
+          onChange={(e) => {
+            setText(e.target.value);
+            setError(null);
+          }}
+          // Enter adds the size; it must not submit the product form.
+          onKeyDown={(e) => {
+            if (e.key === "Enter") {
+              e.preventDefault();
+              add();
+            }
+          }}
+        />
+        <AdminButton variant="outline" iconLeft={Plus} onClick={add}>
+          {t("admin.form.optionsSizeAdd")}
+        </AdminButton>
+      </div>
+      <p id={hintId} aria-live="polite" className="m-0 text-[length:var(--text-caption)] text-[var(--text-muted)]">
+        {parsed
+          ? t("admin.form.optionsSizePreview", { size: formatSize(parsed, lang), length: mm(sizeLongestMm(parsed)) })
+          : t("admin.form.optionsSizesMmHint")}
+      </p>
+      <p id={errorId} aria-live="polite" className="m-0 text-[length:var(--text-caption)] font-semibold text-[var(--status-error-fg)] empty:hidden">
+        {error ?? ""}
+      </p>
+    </div>
+  );
+}
+
 function ChipGroup({ legend, hint, children }: { legend: string; hint?: string; children: ReactNode }) {
   return (
     <fieldset className="m-0 grid gap-2 border-0 p-0">
@@ -310,11 +457,25 @@ function ChipGroup({ legend, hint, children }: { legend: string; hint?: string; 
   );
 }
 
-/** A checkbox drawn as a pill: the input stays real, so keyboard and screen readers get a checkbox. */
-function Chip({ checked, onChange, label, detail }: { checked: boolean; onChange: () => void; label: string; detail?: string }) {
+/** A checkbox (or radio) drawn as a pill: the input stays real, so keyboard and screen readers get the real control. */
+function Chip({
+  checked,
+  onChange,
+  label,
+  detail,
+  type = "checkbox",
+  name,
+}: {
+  checked: boolean;
+  onChange: () => void;
+  label: string;
+  detail?: string;
+  type?: "checkbox" | "radio";
+  name?: string;
+}) {
   return (
     <label className="relative inline-flex cursor-pointer">
-      <input type="checkbox" className="peer sr-only" checked={checked} onChange={onChange} />
+      <input type={type} name={name} className="peer sr-only" checked={checked} onChange={onChange} />
       <span
         className={clsx(
           "inline-flex items-baseline gap-1.5 rounded-[var(--radius-pill)] border px-3 py-1.5 text-[length:var(--text-body-sm)] transition-colors",

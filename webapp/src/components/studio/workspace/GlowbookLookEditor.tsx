@@ -23,13 +23,14 @@ import { useGlowbook } from "../../../lib/studioWorkspace/glowbookStore";
 import { useWorkspace } from "../../../lib/studioWorkspace/workspace";
 import { useToast } from "../../../lib/toast";
 import { usePrefersReducedMotion } from "../../homeAlt/usePrefersReducedMotion";
+import { GlowbookPlaceField } from "./GlowbookPlaceField";
 import { chipClass, fieldClass, focusRing } from "./workspaceStyles";
 
 /**
  * "Customise my page" (decision 100): the artist's Glowbook in their own look,
  * with a live preview drawn by the same component as the public page.
- * Colour, background, layout, spotlight and city are public as soon as they
- * are saved; a new picture or link waits for a moderator while the page keeps
+ * Colour, background, layout, spotlight, city and place (decision 108) are
+ * public as soon as they are saved; a new picture or link waits for a moderator while the page keeps
  * the approved one (the badge says so). Removing one is immediate. The
  * spotlight creation turns in a short video this tab records (decision 103);
  * the page has no banner any more.
@@ -75,6 +76,7 @@ export function GlowbookLookEditor({ glowbook }: { glowbook: Glowbook }) {
       websiteUrl: draft.websiteUrl ? normalizeLink(draft.websiteUrl) : null,
       tiktok: draft.tiktok ? draft.tiktok.trim().replace(/^@/, "") || null : null,
       location: draft.location?.trim() || null,
+      place: draft.place ? { ...draft.place, label: draft.place.label.trim() } : null,
     };
     const found = validateLook(next);
     setProblem(found);
@@ -221,6 +223,14 @@ export function GlowbookLookEditor({ glowbook }: { glowbook: Glowbook }) {
           />
         </div>
       </div>
+
+      <GlowbookPlaceField
+        place={draft.place}
+        color={ACCENT_COLORS[draft.accent].solid}
+        invalid={problem === "placeLabel" || problem === "placeCoordinates"}
+        errorId={ids.error}
+        onChange={(place) => set("place", place)}
+      />
 
       <fieldset className="m-0 grid gap-3 border-0 p-0">
         <legend className="mb-1 p-0 text-[12.5px] font-bold text-[var(--text-primary)]">{t("studio.glowbook.look.links")}</legend>

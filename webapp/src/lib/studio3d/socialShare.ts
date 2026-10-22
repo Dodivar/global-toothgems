@@ -2,16 +2,43 @@
  * Sharing a Studio design on social networks.
  *
  * What goes out is the creation's read-only link (see
- * `studioWorkspace/share.ts`), through each network's own share page, and the
- * render itself through the system share sheet. No network script or SDK is
- * loaded: a share link is a plain URL opened in a new tab, only when the
- * customer asks for it.
+ * `studioWorkspace/share.ts`), through each network's own share page: the
+ * link's page carries the creation's name and render as its preview card
+ * (decision 101, addendum 2026-10-21). The render itself goes through the
+ * system share sheet. No network script or SDK is loaded: a share link is a
+ * plain URL opened in a new tab, only when the customer asks for it.
+ *
+ * Instagram and TikTok take no link from a website: their entry copies the
+ * link (for a story link sticker or the bio) and opens the network.
  */
 
-export type ShareNetwork = "whatsapp" | "facebook" | "x" | "linkedin" | "email";
+export type ShareNetwork =
+  | "whatsapp"
+  | "facebook"
+  | "instagram"
+  | "tiktok"
+  | "pinterest"
+  | "snapchat"
+  | "threads"
+  | "x"
+  | "linkedin"
+  | "telegram"
+  | "email";
 
 /** In the order the share menu lists them. */
-export const SHARE_NETWORKS: readonly ShareNetwork[] = ["whatsapp", "facebook", "x", "linkedin", "email"];
+export const SHARE_NETWORKS: readonly ShareNetwork[] = [
+  "whatsapp",
+  "facebook",
+  "instagram",
+  "tiktok",
+  "pinterest",
+  "snapchat",
+  "threads",
+  "x",
+  "linkedin",
+  "telegram",
+  "email",
+];
 
 export interface ShareContent {
   /** The link to share: absolute (the creation's read-only link). */
@@ -22,20 +49,42 @@ export interface ShareContent {
   title: string;
 }
 
-/** The share page of a network, pre-filled with the link and the message. */
-export function networkShareUrl(network: ShareNetwork, { url, text, title }: ShareContent): string {
+/**
+ * What an entry does:
+ *   open          the network's share page, pre-filled with the link;
+ *   copyThenOpen  the link is copied, then the network opens (no link intent);
+ *   mail          the mail app.
+ */
+export type ShareAction = { kind: "open" | "copyThenOpen" | "mail"; url: string };
+
+export function networkShareAction(network: ShareNetwork, { url, text, title }: ShareContent): ShareAction {
   const u = encodeURIComponent(url);
+  const m = encodeURIComponent(text);
+  const withLink = encodeURIComponent(`${text} ${url}`);
   switch (network) {
     case "whatsapp":
-      return `https://wa.me/?text=${encodeURIComponent(`${text} ${url}`)}`;
+      return { kind: "open", url: `https://wa.me/?text=${withLink}` };
     case "facebook":
-      return `https://www.facebook.com/sharer/sharer.php?u=${u}`;
+      return { kind: "open", url: `https://www.facebook.com/sharer/sharer.php?u=${u}` };
+    case "instagram":
+      return { kind: "copyThenOpen", url: "https://www.instagram.com/" };
+    case "tiktok":
+      return { kind: "copyThenOpen", url: "https://www.tiktok.com/" };
+    case "pinterest":
+      // The "link" builder reads the page's own images (its og:image is the render).
+      return { kind: "open", url: `https://www.pinterest.com/pin/create/link/?url=${u}&description=${m}` };
+    case "snapchat":
+      return { kind: "open", url: `https://www.snapchat.com/scan?attachmentUrl=${u}` };
+    case "threads":
+      return { kind: "open", url: `https://www.threads.net/intent/post?text=${withLink}` };
     case "x":
-      return `https://x.com/intent/tweet?text=${encodeURIComponent(text)}&url=${u}`;
+      return { kind: "open", url: `https://x.com/intent/tweet?text=${m}&url=${u}` };
     case "linkedin":
-      return `https://www.linkedin.com/sharing/share-offsite/?url=${u}`;
+      return { kind: "open", url: `https://www.linkedin.com/sharing/share-offsite/?url=${u}` };
+    case "telegram":
+      return { kind: "open", url: `https://t.me/share/url?url=${u}&text=${m}` };
     case "email":
-      return `mailto:?subject=${encodeURIComponent(title)}&body=${encodeURIComponent(`${text}\n\n${url}`)}`;
+      return { kind: "mail", url: `mailto:?subject=${encodeURIComponent(title)}&body=${encodeURIComponent(`${text}\n\n${url}`)}` };
   }
 }
 
@@ -44,9 +93,26 @@ export function canShareFiles(file: File): boolean {
   return typeof navigator !== "undefined" && typeof navigator.canShare === "function" && navigator.canShare({ files: [file] });
 }
 
-/** Open a network's share page: a new tab, cut off from this page; the mail app for e-mail. */
-export function openShareLink(network: ShareNetwork, content: ShareContent) {
-  const link = networkShareUrl(network, content);
-  if (network === "email") window.location.assign(link);
-  else window.open(link, "_blank", "noopener,noreferrer");
+/**
+ * Run a network's entry, right in the click. Resolves to whether the link was
+ * copied (`null` when nothing was to copy), for the caller's message.
+ *
+ * The copy starts before the new tab opens: the clipboard needs this page to
+ * still have the focus.
+ */
+export async function openShareLink(network: ShareNetwork, content: ShareContent): Promise<boolean | null> {
+  const action = networkShareAction(network, content);
+  if (action.kind === "mail") {
+    window.location.assign(action.url);
+    return null;
+  }
+  const copy = action.kind === "copyThenOpen" ? navigator.clipboard.writeText(content.url) : null;
+  window.open(action.url, "_blank", "noopener,noreferrer");
+  if (!copy) return null;
+  try {
+    await copy;
+    return true;
+  } catch {
+    return false;
+  }
 }

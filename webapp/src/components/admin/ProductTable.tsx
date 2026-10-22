@@ -5,7 +5,8 @@ import { EmptyState } from "./EmptyState";
 import { TableLoadingState } from "./LoadingState";
 import { ProductRow, type ProductRowActions } from "./ProductRow";
 import { variantAlerts, type AdminProduct } from "../../data/adminCatalog";
-import type { ProductFilterState } from "../../lib/productFilters";
+import { ArrowDown, ArrowUp, ChevronsUpDown } from "lucide-react";
+import { columnSortDirection, nextColumnSort, type ProductFilterState, type SortColumn } from "../../lib/productFilters";
 
 /**
  * The catalogue, as a real table.
@@ -25,6 +26,7 @@ export function ProductTable({
   filtered,
   filters,
   expandAlerts = false,
+  onSort,
 }: {
   products: AdminProduct[];
   actions: ProductRowActions;
@@ -40,8 +42,27 @@ export function ProductTable({
    * needing restocking: set while the list is filtered on low or out of stock.
    */
   expandAlerts?: boolean;
+  /** A click on a sortable column header; receives the new sort key. */
+  onSort: (sort: ProductFilterState["sort"]) => void;
 }) {
   const { t } = useTranslation();
+
+  const sortableHead = (column: SortColumn, label: string, className: string) => {
+    const direction = columnSortDirection(column, filters.sort);
+    const Icon = direction === "ascending" ? ArrowUp : direction === "descending" ? ArrowDown : ChevronsUpDown;
+    return (
+      <th scope="col" aria-sort={direction ?? "none"} className={`${className} font-semibold`}>
+        <button
+          type="button"
+          onClick={() => onSort(nextColumnSort(column, filters.sort))}
+          className="inline-flex cursor-pointer items-center gap-1 rounded-sm border-0 bg-transparent p-0 font-[inherit] text-[length:inherit] font-semibold uppercase tracking-[inherit] text-inherit hover:text-[var(--text-strong,inherit)]"
+        >
+          {label}
+          <Icon size={12} aria-hidden="true" className={direction ? "" : "opacity-40"} />
+        </button>
+      </th>
+    );
+  };
 
   if (loading) {
     return (
@@ -91,13 +112,13 @@ export function ProductTable({
               <th scope="col" className="py-3 pl-2 pr-2 font-semibold">
                 <span className="sr-only">{t("admin.table.image")}</span>
               </th>
-              <th scope="col" className="py-3 pr-4 font-semibold">{t("admin.table.product")}</th>
-              <th scope="col" className="py-3 pr-4 font-semibold">{t("admin.table.sku")}</th>
-              <th scope="col" className="py-3 pr-4 font-semibold">{t("admin.table.category")}</th>
-              <th scope="col" className="py-3 pr-4 font-semibold">{t("admin.table.price")}</th>
-              <th scope="col" className="py-3 pr-4 font-semibold">{t("admin.table.stock")}</th>
-              <th scope="col" className="py-3 pr-4 font-semibold">{t("admin.table.status")}</th>
-              <th scope="col" className="py-3 pr-4 font-semibold">{t("admin.table.updated")}</th>
+              {sortableHead("name", t("admin.table.product"), "py-3 pr-4")}
+              {sortableHead("sku", t("admin.table.sku"), "py-3 pr-4")}
+              {sortableHead("category", t("admin.table.category"), "py-3 pr-4")}
+              {sortableHead("price", t("admin.table.price"), "py-3 pr-4")}
+              {sortableHead("stock", t("admin.table.stock"), "py-3 pr-4")}
+              {sortableHead("status", t("admin.table.status"), "py-3 pr-4")}
+              {sortableHead("updated", t("admin.table.updated"), "py-3 pr-4")}
               <th scope="col" className="py-3 pr-4 text-right font-semibold">
                 <span className="sr-only">{t("admin.table.actions")}</span>
               </th>

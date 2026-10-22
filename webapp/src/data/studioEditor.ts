@@ -8,7 +8,7 @@
  * the catalogue; this file only holds identifiers, geometry and numbers.
  */
 
-import { SS_MAX, SS_MIN, stoneSizeMmApprox } from "../lib/gemOptions";
+import { sanitizeSize, sizeLongestMm, type GemSize } from "../lib/gemOptions";
 
 /* ------------------------------------------------------------------ types */
 
@@ -85,8 +85,12 @@ export interface PlacedJewelry {
   productId: string;
   /** The colour variant (yellow / white gold…), when the product has several looks. */
   variantId?: string;
-  /** Stone size (SS, `lib/gemOptions.ts`). */
-  ss: number;
+  /**
+   * Its size, as the shop sells it (`lib/gemOptions.ts`): an SS gauge or
+   * millimetre dimensions. Designs saved before decision 107 stored a bare
+   * `ss` number instead, still read by `sanitizeJewels()`.
+   */
+  size: GemSize;
   look: GemLook;
   /** FDI tooth number, or `FREE_TOOTH` on an unlabelled region of an imported model. */
   toothId: string;
@@ -95,8 +99,8 @@ export interface PlacedJewelry {
   /** Spin around the surface normal, in degrees. */
   rotation: number;
   /**
-   * Half the piece's longest side, in millimetres — derived from `ss`
-   * (`scaleForSs`) and kept on the piece because the engine poses with it.
+   * Half the piece's longest side, in millimetres — derived from `size`
+   * (`scaleForSize`) and kept on the piece because the engine poses with it.
    */
   scale: number;
   /** Manual standoff fine-tune from the enamel, in world units. */
@@ -173,16 +177,23 @@ export function isLowerTooth(fdi: string): boolean {
 
 /* ----------------------------------------------------------------- sizes */
 
-/** Sizes a shop gem is offered in until the team sets its real ones (its `ss` variants). */
-export const DEFAULT_STUDIO_SIZES = [2, 5, 7];
+/**
+ * Sizes a shop gem is offered in until the team sets its real ones (its
+ * sized variants): SS2, SS5, SS7 for a round stone, 3, 4 and 5 mm (longest
+ * side) for any other cut, since the SS gauges are far too small for a
+ * baguette or a charm.
+ */
+export const DEFAULT_ROUND_SIZES: GemSize[] = [{ ss: 2 }, { ss: 5 }, { ss: 7 }];
+export const DEFAULT_SHAPED_SIZES: GemSize[] = [{ mm: [3] }, { mm: [4] }, { mm: [5] }];
 
 /**
- * Half the longest side of a piece of this stone size, in millimetres. SS is
- * the gauge of round stones; a shaped piece is drawn with its longest side
- * equal to that diameter.
+ * Half the longest side of a piece of this size, in millimetres. SS is the
+ * gauge of round stones (its approximate diameter); millimetre dimensions
+ * give the longest side. A shaped piece is drawn with its longest side equal
+ * to it, in the proportions of its outline (the engine scales uniformly).
  */
-export function scaleForSs(ss: number): number {
-  return stoneSizeMmApprox(ss) / 2;
+export function scaleForSize(size: GemSize): number {
+  return sizeLongestMm(size) / 2;
 }
 
 /* ---------------------------------------------------------------- limits */
@@ -216,9 +227,13 @@ export function sanitizeLook(input: unknown): GemLook | null {
   };
 }
 
-/** A stone size read back from storage: a whole SS within the database's bounds. */
-export function sanitizeSs(value: unknown): number | null {
-  return typeof value === "number" && Number.isInteger(value) && value >= SS_MIN && value <= SS_MAX ? value : null;
+/**
+ * A piece's size read back from storage: its `size`, else the bare `ss`
+ * number every design saved before decision 107 carries.
+ */
+export function readPieceSize(piece: Record<string, unknown>): GemSize | null {
+  if (piece.size != null) return sanitizeSize(piece.size);
+  return typeof piece.ss === "number" ? sanitizeSize({ ss: piece.ss }) : null;
 }
 
 /** A product / variant reference read back from storage. */
@@ -247,19 +262,19 @@ export function sanitizeJewels(input: unknown): PlacedJewelry[] {
     if (!ALL_TEETH.includes(j.toothId) && j.toothId !== FREE_TOOTH) continue;
     if (!isVec(j.position) || !isVec(j.normal)) continue;
     const look = sanitizeLook(j.look);
-    const ss = sanitizeSs(j.ss);
-    if (!look || ss === null) continue;
+    const size = readPieceSize(j);
+    if (!look || size === null) continue;
     out.push({
       id: j.id.slice(0, 40),
       productId: j.productId,
       ...(isGemRef(j.variantId) ? { variantId: j.variantId } : {}),
-      ss,
+      size,
       look,
       toothId: j.toothId,
       position: { x: j.position.x, y: j.position.y, z: j.position.z },
       normal: { x: j.normal.x, y: j.normal.y, z: j.normal.z },
       rotation: isNum(j.rotation) ? ((j.rotation % 360) + 360) % 360 : 0,
-      scale: scaleForSs(ss),
+      scale: scaleForSize(size),
       ...(isNum(j.offset) ? { offset: clampTo(j.offset, OFFSET_RANGE.min, OFFSET_RANGE.max) } : {}),
     });
   }

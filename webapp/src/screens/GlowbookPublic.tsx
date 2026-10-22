@@ -5,6 +5,7 @@ import { useTranslation } from "react-i18next";
 import { ArrowRight, Box, Gem, Star } from "lucide-react";
 import clsx from "clsx";
 import { GlowbookProfile, GlowbookTopBar } from "../components/glowbook/GlowbookIdentity";
+import { GlowbookPlaceSection } from "../components/glowbook/GlowbookPlaceSection";
 import { SpotlightVideo } from "../components/glowbook/SpotlightVideo";
 import { glowbookThemeStyle } from "../components/glowbook/theme";
 import { DEFAULT_LOOK } from "../lib/studioWorkspace/glowbookLook";
@@ -23,7 +24,9 @@ import { glowbookCreationPath, STUDIO_PATH } from "../lib/studioUrl";
  * shown was approved by a moderator; the server reads it on every request.
  * Each creation opens read-only in the 3D viewer, where its gems can be put
  * in the cart. The artist's sections filter the creations (decision 102;
- * "all" first, so the server and the first browser render agree).
+ * "all" first, so the server and the first browser render agree). Where the
+ * artist works closes the profile (decision 108): address or area,
+ * directions, and a map drawn only when the visitor asks for it.
  * Rendered on the server and hydrated: nothing here reads the browser during render.
  */
 type Item = PublicGlowbookPage["items"][number];
@@ -117,6 +120,11 @@ export function GlowbookPublic({ glowbook }: { glowbook: PublicGlowbookPage }) {
 
       <div className="border-t border-[var(--gb-border)] bg-[var(--gb-soft)]">
         <GlowbookProfile {...identity} />
+        {look?.place && (
+          <div className="border-t border-[var(--gb-border)]">
+            <GlowbookPlaceSection place={look.place} accent={look.accent} />
+          </div>
+        )}
       </div>
 
       <section className="border-t border-[var(--gb-border)] bg-[var(--gb-card)]">

@@ -3,6 +3,7 @@ import { Link, useNavigate } from "../../lib/navigation";
 import { ArrowRight, ArrowUpRight } from "lucide-react";
 import clsx from "clsx";
 import { Button } from "../ui/Button";
+import { familyEntryHref } from "../../lib/shopUrl";
 import { FALLBACK_TAXONOMY, findCategory, shopHref, type ShopFamilyDef } from "../../data/taxonomy";
 import { pick } from "../../data/types";
 import { photo } from "../../lib/images";
@@ -196,7 +197,7 @@ function CategoryTile({ tile, index, families }: { tile: Tile; index: number; fa
             {families.map((family) => (
               <li key={family.slug}>
                 <Link
-                  to={shopHref(tile.cat, family.slug)}
+                  to={familyEntryHref(tile.cat, family.slug)}
                   className={clsx(
                     "inline-flex h-7 items-center rounded-[var(--radius-pill)] border px-3 text-[11.5px] font-semibold transition-colors duration-[var(--duration-fast)]",
                     photoTile

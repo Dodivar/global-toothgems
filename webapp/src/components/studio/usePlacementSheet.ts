@@ -1,7 +1,7 @@
 import { useCallback, useEffect, useRef, useState } from "react";
 import { useTranslation } from "react-i18next";
 import type { PlacedJewelry } from "../../data/studioEditor";
-import { formatSs } from "../../lib/gemOptions";
+import { sameSize, type GemSize } from "../../lib/gemOptions";
 import { useFormat } from "../../lib/format";
 import { useLocalized } from "../../lib/localized";
 import { projectFrontView } from "../../lib/studio3d/frontView";
@@ -65,16 +65,16 @@ export function usePlacementSheet() {
         // What to buy, from the shopping estimate: one line per product and colour (and size when sold per size).
         const estimate = estimateComposition([...request.pieces], (key) => byKey.get(key));
         const used = new Set<EstimateLine>();
-        const toBuy = (productId: string, variantId: string | null, ss: number) => {
-          const line = estimate.lines.find((x) => x.productId === productId && x.variantId === variantId && (x.ss == null || x.ss === ss));
+        const toBuy = (productId: string, variantId: string | null, size: GemSize) => {
+          const line = estimate.lines.find((x) => x.productId === productId && x.variantId === variantId && (x.size == null || sameSize(x.size, size)));
           if (!line) return "—";
           // A line covering several sizes is said once, on its first reference.
           if (used.has(line)) return t("studio.placementSheet.sameAsAbove");
           used.add(line);
           const offer = [
-            line.offer.name && line.offer.pack == null && line.offer.ss == null ? l(line.offer.name) : null,
+            line.offer.name && line.offer.pack == null && line.offer.size == null ? l(line.offer.name) : null,
             line.offer.pack != null ? t("studio.editor.shopping.pack", { count: line.offer.pack }) : null,
-            line.offer.ss != null ? formatSs(line.offer.ss) : null,
+            line.offer.size != null ? labels.sizeShort(line.offer.size) : null,
           ].filter(Boolean);
           return offer.length ? `${line.quantity} × ${offer.join(" · ")}` : `× ${line.quantity}`;
         };
@@ -84,10 +84,10 @@ export function usePlacementSheet() {
           return {
             reference: labels.pieceName(piece),
             colour: labels.colourName(piece),
-            size: forPdf(labels.sizeName(group.ss)),
+            size: forPdf(labels.sizeName(group.size)),
             count: group.numbers.length,
             numbers: group.numbers.join(", "),
-            toBuy: toBuy(group.productId, group.variantId, group.ss),
+            toBuy: toBuy(group.productId, group.variantId, group.size),
           };
         });
 

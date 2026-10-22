@@ -13,7 +13,7 @@ import { createScene, piecesKey } from "./scene";
 const piece = (over: Partial<PlacedJewelry> = {}): PlacedJewelry => ({
   id: "a",
   productId: "solitaire",
-  ss: 5,
+  size: { ss: 5 },
   look: { shape: "round", material: "crystal", color: "#ffffff", effect: "none" },
   toothId: "11",
   position: { x: -4, y: 0.5, z: 3 },
@@ -62,9 +62,9 @@ describe("design store and saved creations", () => {
 
   it("counts a change without a history step as an edit", () => {
     const store = loaded();
-    store.updateSelected({ ss: 7, scale: 1.1 }); // nothing selected: no change
+    store.updateSelected({ size: { ss: 7 }, scale: 1.1 }); // nothing selected: no change
     expect(clean(store)).toBe(true);
-    store.updateJewel("b", { ss: 7, scale: 1.1 });
+    store.updateJewel("b", { size: { ss: 7 }, scale: 1.1 });
     expect(clean(store)).toBe(false);
   });
 

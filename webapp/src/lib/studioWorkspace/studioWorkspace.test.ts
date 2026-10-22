@@ -16,7 +16,7 @@ import { copyName, validateDetails, validateFeedback } from "./validation";
 const piece = (over: Partial<PlacedJewelry> = {}): PlacedJewelry => ({
   id: "a",
   productId: "solitaire",
-  ss: 5,
+  size: { ss: 5 },
   look: { shape: "round", material: "crystal", color: "#ffffff", effect: "none" },
   toothId: "11",
   position: { x: -4, y: 0.5, z: 3 },
@@ -76,7 +76,7 @@ describe("scene", () => {
     expect(piecesKey([piece()])).toBe(piecesKey([structuredClone(piece())]));
     expect(piecesKey([piece()])).not.toBe(piecesKey([piece({ rotation: 90 })]));
     expect(piecesKey([piece()])).not.toBe(piecesKey([piece({ offset: 0.2 })]));
-    expect(piecesKey([piece()])).not.toBe(piecesKey([piece({ ss: 7 })]));
+    expect(piecesKey([piece()])).not.toBe(piecesKey([piece({ size: { ss: 7 } })]));
     expect(piecesKey([piece()])).not.toBe(piecesKey([piece({ variantId: "v2" })]));
   });
 
@@ -85,7 +85,7 @@ describe("scene", () => {
     const right = piece({ id: "r", toothId: "21", position: { x: 4.3, y: 0.4, z: 3 } });
     expect(isSymmetrical([left, right])).toBe(true);
     expect(isSymmetrical([left, { ...right, productId: "aquamarine" }])).toBe(false);
-    expect(isSymmetrical([left, { ...right, ss: 7 }])).toBe(false);
+    expect(isSymmetrical([left, { ...right, size: { ss: 7 } }])).toBe(false);
     expect(isSymmetrical([left])).toBe(false);
   });
 });
@@ -98,7 +98,7 @@ describe("gem groups", () => {
   const pieces = [
     piece({ id: "1", position: { x: -3.2, y: 1, z: 2.9 } }),
     piece({ id: "2", position: { x: -5.1, y: -0.8, z: 2.7 }, rotation: 45, variantId: "white-gold" }),
-    piece({ id: "3", position: { x: -1.4, y: 0.2, z: 3.1 }, productId: "etoile", ss: 2, look: { shape: "halo-star", material: "metal", color: "#f2c25c", effect: "none" } }),
+    piece({ id: "3", position: { x: -1.4, y: 0.2, z: 3.1 }, productId: "etoile", size: { ss: 2 }, look: { shape: "halo-star", material: "metal", color: "#f2c25c", effect: "none" } }),
   ];
 
   it("maps back onto its own frame exactly", () => {
@@ -118,7 +118,7 @@ describe("gem groups", () => {
     expect(dist(moved[1].position, moved[2].position)).toBeCloseTo(dist(pieces[1].position, pieces[2].position), 2);
     expect(moved[1].piece.rotation).toBe(45);
     expect(moved[1].piece.variantId).toBe("white-gold");
-    expect(moved[2].piece).toMatchObject({ productId: "etoile", ss: 2, look: { shape: "halo-star", material: "metal" } });
+    expect(moved[2].piece).toMatchObject({ productId: "etoile", size: { ss: 2 }, look: { shape: "halo-star", material: "metal" } });
   });
 
   it("anchors on the tooth holding most of the selection", () => {

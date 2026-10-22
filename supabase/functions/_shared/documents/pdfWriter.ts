@@ -147,15 +147,15 @@ export function writePdf(pages: PdfOp[][], info: PdfInfo): Uint8Array {
   object(3, () => push("<< /Type /Font /Subtype /Type1 /BaseFont /Helvetica /Encoding /WinAnsiEncoding >>"));
   object(4, () => push("<< /Type /Font /Subtype /Type1 /BaseFont /Helvetica-Bold /Encoding /WinAnsiEncoding >>"));
   // The wordmark: a plain ink image whose shape is given by its soft mask.
-  const image = (data: Uint8Array, extra: string) =>
-    `<< /Type /XObject /Subtype /Image /Width ${WORDMARK.width} /Height ${WORDMARK.height} /ColorSpace /DeviceGray /BitsPerComponent 8 /Filter /FlateDecode /Length ${data.length}${extra} >>\nstream\n`;
+  const image = (data: Uint8Array, space: string, extra: string) =>
+    `<< /Type /XObject /Subtype /Image /Width ${WORDMARK.width} /Height ${WORDMARK.height} /ColorSpace /${space} /BitsPerComponent 8 /Filter /FlateDecode /Length ${data.length}${extra} >>\nstream\n`;
   object(5, () => {
-    push(image(ink, " /SMask 6 0 R"));
+    push(image(ink, "DeviceRGB", " /SMask 6 0 R"));
     push(ink);
     push("\nendstream");
   });
   object(6, () => {
-    push(image(mask, ""));
+    push(image(mask, "DeviceGray", ""));
     push(mask);
     push("\nendstream");
   });

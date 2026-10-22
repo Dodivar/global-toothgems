@@ -225,7 +225,7 @@ describe("mapProduct gem options", () => {
       undefined,
       url,
     );
-    expect(p.variants?.[0]).toMatchObject({ pack: 20, ss: 6 });
+    expect(p.variants?.[0]).toMatchObject({ pack: 20, size: { ss: 6 } });
     expect(p.variants?.[1]).not.toHaveProperty("pack");
   });
 });

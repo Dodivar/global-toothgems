@@ -110,15 +110,16 @@ describe("prototype catalogue", () => {
       gemOptions: {
         enabled: true,
         packs: [20],
-        sizes: [6],
+        sizeMode: "ss",
+        sizes: [{ ss: 6 }],
         variants: [
-          { pack: 20, ss: 6, trackInventory: true, stock: 4, lowStockThreshold: 5 },
+          { pack: 20, size: { ss: 6 }, trackInventory: true, stock: 4, lowStockThreshold: 5 },
           // Remembered but no longer ticked: not sold, not listed.
-          { pack: 50, ss: 6, trackInventory: true, stock: 0, lowStockThreshold: 5 },
+          { pack: 50, size: { ss: 6 }, trackInventory: true, stock: 0, lowStockThreshold: 5 },
         ],
       },
     });
-    expect(product.variantStock).toEqual([expect.objectContaining({ key: "20:6", stock: 4 })]);
+    expect(product.variantStock).toEqual([expect.objectContaining({ key: "20:ss6", stock: 4 })]);
     expect(stockState(product)).toBe("low_stock");
     expect(gemVariantStock({ enabled: false, packs: [20], sizes: [], variants: [] })).toEqual([]);
   });

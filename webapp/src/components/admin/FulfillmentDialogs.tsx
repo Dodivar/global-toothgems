@@ -19,6 +19,7 @@ import {
   refundableMinor,
   suggestedRefundMinor,
 } from "../../lib/fulfillmentPlan";
+import { localToday, suggestedDelivery } from "../../lib/workingDays";
 import type { FulfillmentResult, ParcelChange, ParcelInput, RefundInput } from "../../lib/adminFulfillment";
 
 /**
@@ -90,6 +91,7 @@ export function ParcelDialog({
   const { t, i18n } = useTranslation();
   const lang = i18n.language;
   const balances = useMemo(() => lineBalances(order), [order]);
+  const maxDays = order.shippingDays?.max;
 
   const [quantities, setQuantities] = useState<Record<string, number>>({});
   const [carrierChoice, setCarrierChoice] = useState<string>(CARRIERS[0].name);
@@ -99,6 +101,8 @@ export function ParcelDialog({
   const [url, setUrl] = useState("");
   const [urlEdited, setUrlEdited] = useState(false);
   const [eta, setEta] = useState("");
+  /** The date offered from the promised delay, to say where it comes from while it is kept. */
+  const [etaSuggestion, setEtaSuggestion] = useState("");
   const [shipNow, setShipNow] = useState(true);
   const [busy, setBusy] = useState(false);
   const [reason, setReason] = useState<string | null>(null);
@@ -114,11 +118,15 @@ export function ParcelDialog({
     setNumber(parcel?.trackingNumber ?? "");
     setUrl(parcel?.trackingUrl ?? "");
     setUrlEdited(Boolean(parcel?.trackingUrl));
-    setEta(parcel?.estimatedDelivery ?? "");
+    // A parcel leaving now without a date gets the promised maximum, counted from today.
+    const leavesNow = !parcel || intent === "ship";
+    const offered = leavesNow && !parcel?.estimatedDelivery ? suggestedDelivery(localToday(), maxDays) : "";
+    setEta(parcel?.estimatedDelivery || offered);
+    setEtaSuggestion(offered);
     setShipNow(true);
     setBusy(false);
     setReason(null);
-  }, [open, parcel, balances]);
+  }, [open, parcel, intent, balances, maxDays]);
 
   const carrier = carrierChoice === OTHER ? carrierOther.trim() : carrierChoice;
   const suggestion = suggestedTrackingUrl(carrier, number);
@@ -268,7 +276,18 @@ export function ParcelDialog({
               />
             )}
           </FormField>
-          <FormField label={t("admin.orders.fulfilment.estimatedDelivery")}>
+          <FormField
+            label={t("admin.orders.fulfilment.estimatedDelivery")}
+            hint={
+              etaSuggestion && eta === etaSuggestion && order.shippingDays
+                ? t("admin.orders.fulfilment.estimatedDeliveryHint", {
+                    method: order.shippingMethodName ?? "—",
+                    min: order.shippingDays.min,
+                    max: order.shippingDays.max,
+                  })
+                : undefined
+            }
+          >
             {(props) => <input {...props} type="date" className={FIELD} value={eta} onChange={(e) => setEta(e.target.value)} />}
           </FormField>
         </div>

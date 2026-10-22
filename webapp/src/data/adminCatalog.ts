@@ -1,7 +1,7 @@
 import type { Localized } from "./types";
 import { FALLBACK_GEM_COLORS, type GemColor, type GemShape } from "./products";
 import { photo } from "../lib/images";
-import { combinations, comboKey, comboName, type GemOptionKey } from "../lib/gemOptions";
+import { combinations, comboKey, comboName, type GemOptionKey, type GemSize, type SizeMode } from "../lib/gemOptions";
 
 /**
  * Admin catalogue model, and the mock catalogue behind the prototype.
@@ -60,10 +60,10 @@ export interface Category {
   families?: CategoryFamily[];
 }
 
-/** One pack × stone-size combination of a gem, with its own price and stock. */
+/** One pack × size combination of a gem, with its own price and stock. */
 export interface GemOptionVariant {
   pack: number | null;
-  ss: number | null;
+  size: GemSize | null;
   /** EUR; undefined = the product price applies. */
   price?: number;
   trackInventory: boolean;
@@ -72,13 +72,14 @@ export interface GemOptionVariant {
 }
 
 /**
- * Pack (any number of stones, set per product) × stone size (SS) options of
- * a gem (`lib/gemOptions.ts`).
+ * Pack (any number of stones, set per product) × size options of a gem
+ * (`lib/gemOptions.ts`). Sizes are SS gauges or millimetre dimensions,
+ * `sizeMode` saying which (decision 107): one way per product.
  *
  * `enabled` off with the product still carrying options means "remove them
  * on save". `variants` keeps every combination ever loaded or typed, so
  * removing a pack then adding it again gives its price and stock back; only
- * the combinations of the listed packs × ticked sizes are saved.
+ * the combinations of the listed packs × listed sizes are saved.
  */
 /**
  * Stock of one sellable variant, as the product list shows it under its
@@ -109,7 +110,10 @@ export interface VariantStock {
 export interface GemOptions {
   enabled: boolean;
   packs: number[];
-  sizes: number[];
+  /** Undefined until the product has a size: the editor then proposes one from the gem's shape. */
+  sizeMode?: SizeMode;
+  /** Of `sizeMode` only, smallest first. */
+  sizes: GemSize[];
   variants: GemOptionVariant[];
 }
 
@@ -374,12 +378,13 @@ const PRODUCT_FIXTURES: AdminProduct[] = [
     gemOptions: {
       enabled: true,
       packs: [20, 50],
-      sizes: [6, 7],
+      sizeMode: "ss",
+      sizes: [{ ss: 6 }, { ss: 7 }],
       variants: [
-        { pack: 20, ss: 6, trackInventory: true, stock: 64, lowStockThreshold: 10 },
-        { pack: 20, ss: 7, trackInventory: true, stock: 52, lowStockThreshold: 10 },
-        { pack: 50, ss: 6, price: 72, trackInventory: true, stock: 0, lowStockThreshold: 5 },
-        { pack: 50, ss: 7, price: 72, trackInventory: true, stock: 3, lowStockThreshold: 5 },
+        { pack: 20, size: { ss: 6 }, trackInventory: true, stock: 64, lowStockThreshold: 10 },
+        { pack: 20, size: { ss: 7 }, trackInventory: true, stock: 52, lowStockThreshold: 10 },
+        { pack: 50, size: { ss: 6 }, price: 72, trackInventory: true, stock: 0, lowStockThreshold: 5 },
+        { pack: 50, size: { ss: 7 }, price: 72, trackInventory: true, stock: 3, lowStockThreshold: 5 },
       ],
     },
     material: { fr: "Cristal taillé", en: "Cut crystal" },
@@ -1059,7 +1064,8 @@ export function blankGemVariant(key: GemOptionKey): GemOptionVariant {
 export function offeredGemVariants(options: GemOptions | undefined): GemOptionVariant[] {
   if (!options?.enabled) return [];
   const known = new Map(options.variants.map((variant) => [comboKey(variant), variant]));
-  return combinations(options.packs, options.sizes).map((key) => known.get(comboKey(key)) ?? blankGemVariant(key));
+  const sizes = options.sizes.filter((size) => !options.sizeMode || (size.ss != null ? "ss" : "mm") === options.sizeMode);
+  return combinations(options.packs, sizes).map((key) => known.get(comboKey(key)) ?? blankGemVariant(key));
 }
 
 /** The stock rows a product's pack/SS options put under it in the list. */

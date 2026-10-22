@@ -5,7 +5,7 @@ import { GemPhoto } from "./PieceIcon";
 import { useEditorLabels } from "./editorLabels";
 import type { PlacedJewelry } from "../../../data/studioEditor";
 import { useCart, type CartLine } from "../../../lib/cart";
-import { formatSs } from "../../../lib/gemOptions";
+import { sizeKey } from "../../../lib/gemOptions";
 import { useLocalized } from "../../../lib/localized";
 import { Link } from "../../../lib/navigation";
 import type { EstimateLine, StudioGem } from "../../../lib/studio3d/gemCatalog";
@@ -23,7 +23,7 @@ const focusRing = "focus-visible:outline focus-visible:outline-2 focus-visible:o
  * again by the database at checkout (AGENTS.md §8).
  */
 export function ShoppingList({ jewels }: { jewels: PlacedJewelry[] }) {
-  const { t, formatEstimate } = useEditorLabels();
+  const { t, formatEstimate, sizeShort } = useEditorLabels();
   const l = useLocalized();
   const { byKey } = useStudioGems();
   const { addLines } = useCart();
@@ -67,16 +67,16 @@ export function ShoppingList({ jewels }: { jewels: PlacedJewelry[] }) {
           if (!gem) return null;
           const finish = gem.finishes.find((f) => f.variantId === line.variantId) ?? gem.finishes[0];
           // A colour or another kind of option is named as the shop names it; packs and sizes are spelled out.
-          const ss = line.ss ?? line.offer.ss;
+          const size = line.size ?? line.offer.size;
           const detail = [
-            line.offer.name && line.offer.pack == null && line.offer.ss == null ? l(line.offer.name) : null,
+            line.offer.name && line.offer.pack == null && line.offer.size == null ? l(line.offer.name) : null,
             line.offer.pack != null ? t("studio.editor.shopping.pack", { count: line.offer.pack }) : null,
-            ss != null ? formatSs(ss) : null,
+            size != null ? sizeShort(size) : null,
           ].filter(Boolean);
           const out = line.stock === "out";
           return (
             <li
-              key={`${line.productId}|${line.variantId ?? ""}|${line.ss ?? ""}`}
+              key={`${line.productId}|${line.variantId ?? ""}|${line.size ? sizeKey(line.size) : ""}`}
               className="flex items-start gap-2.5 rounded-[var(--radius-sm)] border border-[var(--border-subtle)] bg-[var(--surface-page)] px-2.5 py-2"
             >
               <span aria-hidden="true" className="grid h-9 w-9 flex-none place-items-center rounded-[var(--radius-sm)] bg-[var(--surface-card)]">

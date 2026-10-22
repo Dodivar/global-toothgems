@@ -208,6 +208,8 @@ export interface AdminOrder {
   shippingMethod: ShippingMethod;
   /** The shipping rate's name at purchase time. */
   shippingMethodName?: string;
+  /** Working days promised at checkout ("2 to 4"); absent without a rate or on older orders. */
+  shippingDays?: { min: number; max: number };
   amounts: OrderAmounts;
   discounts: AdminDiscount[];
   giftCards: AdminGiftCardUse[];

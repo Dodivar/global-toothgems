@@ -2,9 +2,12 @@ import type { ReactNode } from "react";
 import { useTranslation } from "react-i18next";
 import type { ProductVariant } from "../../data/products";
 import {
-  formatSs,
-  formatSsMm,
+  formatSize,
+  formatSizeDetail,
   gemAxes,
+  sameSize,
+  sizeKey,
+  type GemSize,
   packAvailable,
   pickGemVariant,
   sizeAvailable,
@@ -30,7 +33,7 @@ export function GemOptionPicker({ variants, selected, onSelect }: GemOptionPicke
   const lang = i18n.language;
   const { packs, sizes } = gemAxes(variants);
 
-  const choose = (want: { pack?: number; ss?: number }) => {
+  const choose = (want: { pack?: number; size?: GemSize }) => {
     const next = pickGemVariant(variants, want, selected);
     if (next) onSelect(next);
   };
@@ -54,18 +57,18 @@ export function GemOptionPicker({ variants, selected, onSelect }: GemOptionPicke
       )}
 
       {sizes.length > 0 && (
-        <PillGroup legend={t("product.stoneSizeLabel")} hint={t("product.ssApprox")}>
-          {sizes.map((ss) => {
-            const available = sizeAvailable(variants, ss, selected?.pack);
+        <PillGroup legend={t("product.stoneSizeLabel")} hint={sizes.some((s) => s.ss != null) ? t("product.ssApprox") : undefined}>
+          {sizes.map((size) => {
+            const available = sizeAvailable(variants, size, selected?.pack);
             return (
               <Pill
-                key={ss}
+                key={sizeKey(size)}
                 name="gem-size"
-                checked={selected?.ss === ss}
+                checked={sameSize(selected?.size, size)}
                 disabled={!available}
-                onChange={() => choose({ ss })}
-                label={formatSs(ss)}
-                detail={formatSsMm(ss, lang)}
+                onChange={() => choose({ size })}
+                label={formatSize(size, lang)}
+                detail={formatSizeDetail(size, lang)}
                 note={available ? undefined : t("product.optionUnavailable")}
               />
             );

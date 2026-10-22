@@ -1,5 +1,6 @@
 import { useSyncExternalStore } from "react";
 import { sanitizeJewels, type PlacedJewelry, type Vec3 } from "../../data/studioEditor";
+import { sizeKey } from "../gemOptions";
 import type { PieceSpec } from "./gemCatalog";
 import { uid, v3 } from "./math";
 import { piecesKey, pruneGroups, sanitizeScene, type SceneCamera, type SceneGroupRef, type StudioScene } from "../studioWorkspace/scene";
@@ -231,7 +232,7 @@ export class DesignStore {
       id: uid(),
       productId: spec.productId,
       ...(spec.variantId ? { variantId: spec.variantId } : {}),
-      ss: spec.ss,
+      size: spec.size,
       look: spec.look,
       toothId,
       position,
@@ -365,10 +366,10 @@ export class DesignStore {
   /** Select every piece of the same gem, colour and size as one of the selected pieces. */
   selectIdentical() {
     const keys = new Set(
-      this.jewels.filter((j) => this.selectedJewelIds.includes(j.id)).map((j) => `${j.productId}|${j.variantId ?? ""}|${j.ss}`),
+      this.jewels.filter((j) => this.selectedJewelIds.includes(j.id)).map((j) => `${j.productId}|${j.variantId ?? ""}|${sizeKey(j.size)}`),
     );
     if (!keys.size) return;
-    this.selectJewels(this.jewels.filter((j) => keys.has(`${j.productId}|${j.variantId ?? ""}|${j.ss}`)).map((j) => j.id));
+    this.selectJewels(this.jewels.filter((j) => keys.has(`${j.productId}|${j.variantId ?? ""}|${sizeKey(j.size)}`)).map((j) => j.id));
   }
   setModelMode(m: ModelMode) {
     if (this.modelMode !== m) {

@@ -67,7 +67,7 @@ export const DOCUMENT_MESSAGES = {
         "credits": "Facture d’origine",
         "totalIncl": "Total de l’avoir TTC",
         "notice": "Avoir émis sur la facture {{invoice}} du {{date}}, au titre du remboursement confirmé le {{refundedOn}}.",
-        "toCard": "Le montant a été remboursé sur le moyen de paiement utilisé.",
+        "toCard": "Le montant a été remboursé sur le moyen de paiement utilisé. Cet avoir est la pièce comptable de ce remboursement : il ne constitue pas un crédit à dépenser sur le site.",
         "toGiftCard": "Le montant a été recrédité sur la carte cadeau utilisée.",
         "fileName": "avoir"
       }
@@ -138,7 +138,7 @@ export const DOCUMENT_MESSAGES = {
         "credits": "Original invoice",
         "totalIncl": "Credit note total incl. VAT",
         "notice": "Credit note issued against invoice {{invoice}} of {{date}}, for the refund confirmed on {{refundedOn}}.",
-        "toCard": "The amount was refunded to the payment method used.",
+        "toCard": "The amount was refunded to the payment method used. This credit note is the accounting document for that refund: it is not a credit to spend on the site.",
         "toGiftCard": "The amount was credited back to the gift card used.",
         "fileName": "credit-note"
       }

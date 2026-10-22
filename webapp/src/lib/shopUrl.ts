@@ -1,5 +1,5 @@
 import type { GemColor, GemShape } from "../data/products";
-import { GEMS_CATEGORY } from "../data/taxonomy";
+import { GEMS_CATEGORY, shopHref } from "../data/taxonomy";
 
 /**
  * Shop URLs for a cut or a colour.
@@ -13,6 +13,17 @@ import { GEMS_CATEGORY } from "../data/taxonomy";
  * pinned: landing on "heart" with tools and kits still in the result count
  * would read as a broken filter.
  */
-export const shapeHref = (shape: GemShape) => `/boutique?categorie=${GEMS_CATEGORY}&forme=${shape}`;
+export const shapeHref = (shape: GemShape, family?: string) =>
+  `/boutique?categorie=${GEMS_CATEGORY}${family ? `&famille=${family}` : ""}&forme=${shape}`;
 
 export const colorHref = (color: GemColor) => `/boutique?categorie=${GEMS_CATEGORY}&couleur=${color}`;
+
+/** Families whose entry points ask for a cut first, on /formes, before the products. */
+const SHAPE_FIRST_FAMILIES = ["swarovski"];
+
+export const isShapeFirstFamily = (category: string, family: string | null | undefined) =>
+  category === GEMS_CATEGORY && family != null && SHAPE_FIRST_FAMILIES.includes(family);
+
+/** Where a menu or home entry for a family leads: the cut chooser for Swarovski, the family's products otherwise. */
+export const familyEntryHref = (category: string, family: string) =>
+  isShapeFirstFamily(category, family) ? `/formes?famille=${family}` : shopHref(category, family);

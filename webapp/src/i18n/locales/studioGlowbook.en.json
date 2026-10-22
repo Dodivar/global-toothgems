@@ -260,7 +260,9 @@
       "locationLength": "The city is {{max}} characters at most.",
       "bookingUrl": "The booking link must be a valid https address.",
       "websiteUrl": "The website must be a valid https address.",
-      "tiktok": "This TikTok account is not valid (letters, digits, dot and underscore)."
+      "tiktok": "This TikTok account is not valid (letters, digits, dot and underscore).",
+      "placeLabel": "Give the place a name (2 to 120 characters).",
+      "placeCoordinates": "Pick the place from the search or set the pin on the map."
     },
     "reset": "Undo changes",
     "save": "Save the look",
@@ -345,5 +347,42 @@
     "fileQr": "qr-code",
     "filePoster": "poster",
     "docTitle": "{{name}}’s Glowbook"
+  },
+  "place": {
+    "title": "Where I work",
+    "hint": "Help your clients find you: your place shows on your Glowbook with a map. Public as soon as it is saved.",
+    "modeLabel": "Kind of place",
+    "modes": {
+      "area": "An area (home studio, mobile)",
+      "exact": "A salon open to clients"
+    },
+    "modeHint": {
+      "area": "Only the district or town is public, in a circle of about 1 km. Your address is never stored: the position is rounded.",
+      "exact": "The address and the pin are public, with a directions link. Choose it only for a place open to the public."
+    },
+    "searchExact": "Salon address",
+    "searchArea": "Town or district",
+    "searchExactPlaceholder": "221B Baker Street, London",
+    "searchAreaPlaceholder": "Camden, London",
+    "search": "Search",
+    "searchFailed": "The search did not go through. Try again in a moment.",
+    "noResult": "No place found. Try the town or the postcode.",
+    "resultsLabel": "Places found",
+    "searchCredit": "Search: © OpenStreetMap contributors",
+    "labelExact": "Address shown",
+    "labelArea": "Area name shown",
+    "moveHint": "Drag the pin or tap the map to adjust the position.",
+    "remove": "Remove the place",
+    "pinLabel": "Location of the place",
+    "eyebrow": "Where to find me",
+    "publicExact": "The salon where I welcome you.",
+    "publicArea": "I work in this area. The exact address is given when you book.",
+    "showMap": "Show the map",
+    "mapNotice": "The map is provided by OpenFreeMap (OpenStreetMap data) and loads only when you ask for it.",
+    "directions": {
+      "google": "Directions in Google Maps",
+      "apple": "Apple Maps",
+      "osm": "OpenStreetMap"
+    }
   }
 }

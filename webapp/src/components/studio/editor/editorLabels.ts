@@ -1,7 +1,7 @@
 import { useCallback } from "react";
 import { useTranslation } from "react-i18next";
 import { FREE_TOOTH, toothKeys, type PlacedJewelry } from "../../../data/studioEditor";
-import { formatSs, formatSsMm } from "../../../lib/gemOptions";
+import { formatSize, formatSizeFull, type GemSize } from "../../../lib/gemOptions";
 import { useFormat } from "../../../lib/format";
 import { useLocalized } from "../../../lib/localized";
 import { useStudioGems } from "../../../lib/studio3d/useStudioGems";
@@ -38,8 +38,10 @@ export function useEditorLabels() {
     [byKey, l],
   );
 
-  /** "SS5 · ≈ 1,8 mm". */
-  const sizeName = useCallback((ss: number) => [formatSs(ss), formatSsMm(ss, i18n.language)].filter(Boolean).join(" · "), [i18n.language]);
+  /** "SS5 · ≈ 1,8 mm", "2 × 4 mm". */
+  const sizeName = useCallback((size: GemSize) => formatSizeFull(size, i18n.language), [i18n.language]);
+  /** "SS5", "2 × 4 mm" — where room is short. */
+  const sizeShort = useCallback((size: GemSize) => formatSize(size, i18n.language), [i18n.language]);
 
   /** "Canine" — the tooth type alone. */
   const toothShort = useCallback(
@@ -65,5 +67,5 @@ export function useEditorLabels() {
 
   const formatEstimate = useCallback((cents: number) => formatPrice(cents / 100), [formatPrice]);
 
-  return { t, pieceName, finishName, sizeName, toothShort, toothName, toothTag, formatEstimate };
+  return { t, pieceName, finishName, sizeName, sizeShort, toothShort, toothName, toothTag, formatEstimate };
 }

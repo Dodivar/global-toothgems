@@ -4599,7 +4599,9 @@ export type Database = {
           prices_include_tax: boolean
           shipping_address: Json | null
           shipping_amount: number
+          shipping_max_days: number | null
           shipping_method_name: string | null
+          shipping_min_days: number | null
           shipping_rate_id: string | null
           status: string
           stock_state: string
@@ -4633,7 +4635,9 @@ export type Database = {
           prices_include_tax?: boolean
           shipping_address?: Json | null
           shipping_amount?: number
+          shipping_max_days?: number | null
           shipping_method_name?: string | null
+          shipping_min_days?: number | null
           shipping_rate_id?: string | null
           status?: string
           stock_state?: string
@@ -4667,7 +4671,9 @@ export type Database = {
           prices_include_tax?: boolean
           shipping_address?: Json | null
           shipping_amount?: number
+          shipping_max_days?: number | null
           shipping_method_name?: string | null
+          shipping_min_days?: number | null
           shipping_rate_id?: string | null
           status?: string
           stock_state?: string
@@ -7893,6 +7899,10 @@ export type Database = {
           layout: string
           location: string | null
           pending_changes: Json | null
+          place_label: string | null
+          place_lat: number | null
+          place_lng: number | null
+          place_mode: string | null
           review_note: string | null
           reviewed_at: string | null
           reviewed_by: string | null
@@ -7927,6 +7937,10 @@ export type Database = {
           layout?: string
           location?: string | null
           pending_changes?: Json | null
+          place_label?: string | null
+          place_lat?: number | null
+          place_lng?: number | null
+          place_mode?: string | null
           review_note?: string | null
           reviewed_at?: string | null
           reviewed_by?: string | null
@@ -7961,6 +7975,10 @@ export type Database = {
           layout?: string
           location?: string | null
           pending_changes?: Json | null
+          place_label?: string | null
+          place_lat?: number | null
+          place_lng?: number | null
+          place_mode?: string | null
           review_note?: string | null
           reviewed_at?: string | null
           reviewed_by?: string | null
@@ -9572,6 +9590,19 @@ export type Database = {
           user_id: string
         }[]
       }
+      pending_stock_digest: {
+        Args: never
+        Returns: {
+          available: number
+          digest_date: string
+          product_id: string
+          product_name: string
+          sku: string
+          stock_status: string
+          threshold: number
+          variant_name: string
+        }[]
+      }
       pending_studio_subscription_emails: {
         Args: { p_limit?: number }
         Returns: {
@@ -9945,6 +9976,10 @@ export type Database = {
           layout: string
           location: string | null
           pending_changes: Json | null
+          place_label: string | null
+          place_lat: number | null
+          place_lng: number | null
+          place_mode: string | null
           review_note: string | null
           reviewed_at: string | null
           reviewed_by: string | null
@@ -9988,6 +10023,10 @@ export type Database = {
           layout: string
           location: string | null
           pending_changes: Json | null
+          place_label: string | null
+          place_lat: number | null
+          place_lng: number | null
+          place_mode: string | null
           review_note: string | null
           reviewed_at: string | null
           reviewed_by: string | null
@@ -10049,6 +10088,10 @@ export type Database = {
           layout: string
           location: string | null
           pending_changes: Json | null
+          place_label: string | null
+          place_lat: number | null
+          place_lng: number | null
+          place_mode: string | null
           review_note: string | null
           reviewed_at: string | null
           reviewed_by: string | null

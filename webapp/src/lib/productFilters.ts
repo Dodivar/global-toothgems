@@ -17,9 +17,65 @@ import { pick } from "../data/types";
  * eventually replace without any screen noticing.
  */
 
-export type SortKey = "newest" | "oldest" | "price-desc" | "price-asc" | "name-asc" | "stock-asc";
+export type SortKey =
+  | "newest"
+  | "oldest"
+  | "price-desc"
+  | "price-asc"
+  | "name-asc"
+  | "name-desc"
+  | "stock-asc"
+  | "stock-desc"
+  | "sku-asc"
+  | "sku-desc"
+  | "category-asc"
+  | "category-desc"
+  | "status-asc"
+  | "status-desc";
 
-export const SORT_KEYS: SortKey[] = ["newest", "oldest", "price-desc", "price-asc", "name-asc", "stock-asc"];
+export const SORT_KEYS: SortKey[] = [
+  "newest",
+  "oldest",
+  "price-desc",
+  "price-asc",
+  "name-asc",
+  "name-desc",
+  "stock-asc",
+  "stock-desc",
+  "sku-asc",
+  "sku-desc",
+  "category-asc",
+  "category-desc",
+  "status-asc",
+  "status-desc",
+];
+
+export type SortColumn = "name" | "sku" | "category" | "price" | "stock" | "status" | "updated";
+
+/** The two orders of each sortable column header; the first is what a first click gives. */
+const COLUMN_SORTS: Record<SortColumn, [SortKey, SortKey]> = {
+  name: ["name-asc", "name-desc"],
+  sku: ["sku-asc", "sku-desc"],
+  category: ["category-asc", "category-desc"],
+  price: ["price-asc", "price-desc"],
+  stock: ["stock-asc", "stock-desc"],
+  status: ["status-asc", "status-desc"],
+  updated: ["newest", "oldest"],
+};
+
+/** The order a column header shows, or null when the list is sorted on another column. */
+export function columnSortDirection(column: SortColumn, sort: SortKey): "ascending" | "descending" | null {
+  const [first, second] = COLUMN_SORTS[column];
+  if (sort === first) return column === "updated" ? "descending" : "ascending";
+  if (sort === second) return column === "updated" ? "ascending" : "descending";
+  return null;
+}
+
+/** What a click on a column header sorts by: its first order, then the other one. */
+export function nextColumnSort(column: SortColumn, sort: SortKey): SortKey {
+  const [first, second] = COLUMN_SORTS[column];
+  return sort === first ? second : first;
+}
 
 export interface ProductFilterState {
   search: string;
@@ -159,9 +215,31 @@ export function filterProducts(
         return effectivePrice(a) - effectivePrice(b);
       case "name-asc":
         return collator.compare(pick(a.name, lang), pick(b.name, lang));
+      case "name-desc":
+        return collator.compare(pick(b.name, lang), pick(a.name, lang));
       case "stock-asc":
         // Lowest first: this sort exists to surface what needs restocking.
         return stockValue(a) - stockValue(b);
+      case "stock-desc": {
+        // Untracked products have no count and stay last in both directions.
+        const [sa, sb] = [stockValue(a), stockValue(b)];
+        if (sa === sb) return 0;
+        if (sa === Number.MAX_SAFE_INTEGER) return 1;
+        if (sb === Number.MAX_SAFE_INTEGER) return -1;
+        return sb - sa;
+      }
+      case "sku-asc":
+        return collator.compare(a.sku, b.sku);
+      case "sku-desc":
+        return collator.compare(b.sku, a.sku);
+      case "category-asc":
+        return collator.compare(a.categoryId, b.categoryId);
+      case "category-desc":
+        return collator.compare(b.categoryId, a.categoryId);
+      case "status-asc":
+        return collator.compare(a.status, b.status);
+      case "status-desc":
+        return collator.compare(b.status, a.status);
       case "newest":
       default:
         return b.updatedAt.localeCompare(a.updatedAt);

@@ -1,5 +1,5 @@
 import { FALLBACK_GEM_COLORS, PRODUCTS } from "../../data/products";
-import { scaleForSs, type PlacedJewelry } from "../../data/studioEditor";
+import { scaleForSize, type PlacedJewelry } from "../../data/studioEditor";
 import { approxLabialPoint } from "../studio3d/archLayout";
 import { buildStudioGems, estimateComposition, type EstimatedPiece, type StudioGem } from "../studio3d/gemCatalog";
 import type { GemGroupData, GroupPiece } from "./gemGroup";
@@ -150,17 +150,17 @@ function buildPieces(key: string, items: SeedItem[]): PlacedJewelry[] {
     const gem = gemOf(it.gem);
     const at = gem && approxLabialPoint(it.tooth, it.u ?? 0, it.v ?? 0);
     if (!gem || !at) return;
-    const ss = it.ss ?? gem.sizes[0];
+    const size = it.ss != null ? { ss: it.ss } : gem.sizes[0];
     out.push({
       id: `${key.slice(0, 12)}-${i}`,
       productId: gem.key,
-      ss,
+      size,
       look: gem.finishes[0].look,
       toothId: it.tooth,
       position: at.position,
       normal: at.normal,
       rotation: it.rot ?? 0,
-      scale: scaleForSs(ss),
+      scale: scaleForSize(size),
     });
   });
   return out;
@@ -192,7 +192,7 @@ export function seedGroups(userId: string, now = Date.now()): Omit<GemGroup, "th
     const pieces: GroupPiece[] = g.pieces.flatMap(([key, ss, x, y]) => {
       const gem = gemOf(key);
       if (!gem) return [];
-      return [{ productId: gem.key, ss, look: gem.finishes[0].look, rotation: 0, at: { x, y, z: 0 }, facing: { x: 0, y: 0, z: 1 } }];
+      return [{ productId: gem.key, size: { ss }, look: gem.finishes[0].look, rotation: 0, at: { x, y, z: 0 }, facing: { x: 0, y: 0, z: 1 } }];
     });
     const data: GemGroupData = { version: 2, anchorToothId: g.anchor, pieces };
     const value = estimate(pieces);
