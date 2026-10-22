@@ -47,7 +47,7 @@ begin
   if v_min is distinct from 2 or v_max is distinct from 4 then
     raise exception 'FAIL 1: delays not copied (% / %)', v_min, v_max;
   end if;
-  passed := passed || 'copied at insert';
+  passed := array_append(passed, 'copied at insert');
 
   -- 2. A later edit, then the deletion, of the rate leave the order's promise as it was.
   update public.shipping_rates set min_days = 5, max_days = 9 where id = r;
@@ -56,7 +56,7 @@ begin
   delete from public.shipping_rates where id = r;
   select shipping_min_days, shipping_max_days into v_min, v_max from public.orders where id = o1;
   if v_min is distinct from 2 or v_max is distinct from 4 then raise exception 'FAIL 2b: rate deletion changed the order'; end if;
-  passed := passed || 'kept after rate edit and deletion';
+  passed := array_append(passed, 'kept after rate edit and deletion');
 
   -- 3. No rate (course or gift card only): no delay.
   insert into public.orders (user_id, customer_email, billing_address, currency,
@@ -66,7 +66,7 @@ begin
   if exists (select 1 from public.orders where id = o2 and (shipping_min_days is not null or shipping_max_days is not null)) then
     raise exception 'FAIL 3: an order without rate got delays';
   end if;
-  passed := passed || 'none without rate';
+  passed := array_append(passed, 'none without rate');
 
   -- 4. The check constraint.
   begin
@@ -84,7 +84,7 @@ begin
     raise exception 'FAIL 4c: negative delay accepted';
   exception when check_violation then null;
   end;
-  passed := passed || 'constraint';
+  passed := array_append(passed, 'constraint');
 
   -- 5. A customer: their own delays read, not changed; another customer's order not read.
   perform set_config('request.jwt.claims', json_build_object('sub', m1, 'role', 'authenticated')::text, true);
@@ -100,7 +100,7 @@ begin
   reset role;
   select shipping_max_days = 4 into v_ok from public.orders where id = o1;
   if not v_ok then raise exception 'FAIL 5b: the customer changed the promised delay'; end if;
-  passed := passed || 'customer cannot change or read others';
+  passed := array_append(passed, 'customer cannot change or read others');
 
   raise exception 'ALL ORDER SHIPPING DELAYS TESTS PASSED (%)', array_to_string(passed, ', ');
 end;
