@@ -94,15 +94,16 @@ const PANEL_ID: Record<Panel, string> = {
  * of the page. One column on phones, in the order an artist works through it
  * (profile, creations, sections, look, sharing); on wide screens the
  * creations take the main column beside the profile and sharing, and the
- * look spreads below with its preview beside the fields.
+ * look spreads below (its preview beside the fields on the widest).
  */
 function GlowbookDashboard({ glowbook }: { glowbook: Glowbook }) {
   const gb = useGlowbook();
   const ws = useWorkspace();
   const reducedMotion = usePrefersReducedMotion();
   const [editing, setEditing] = useState(false);
-  // A creation deleted elsewhere has left the page too (cascade): never count it.
-  const items = gb.items.filter((item) => ws.creations.some((c) => c.id === item.creationId));
+  // A creation deleted elsewhere has left the page too (cascade): never count it,
+  // once the library is known (before, an empty list would read as an empty page).
+  const items = ws.status === "ready" ? gb.items.filter((item) => ws.creations.some((c) => c.id === item.creationId)) : gb.items;
 
   const scrollTo = (panel: Panel) =>
     document.getElementById(PANEL_ID[panel])?.scrollIntoView({ behavior: reducedMotion ? "auto" : "smooth", block: "start" });

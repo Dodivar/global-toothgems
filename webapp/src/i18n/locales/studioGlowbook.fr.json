@@ -392,7 +392,7 @@
     "approved": "Cette création est affichée sur votre Glowbook.",
     "pending": "Cette création attend sa validation pour votre Glowbook.",
     "rejected": "Cette création figure dans votre Glowbook (refusée).",
-    "body": "La supprimer la retirera aussi de votre page publique.",
+    "body": "La supprimer la retirera aussi de votre Glowbook.",
     "featured": "C’est aussi votre création à la une : la une restera vide jusqu’à ce que vous en choisissiez une autre."
   },
   "dashboard": {

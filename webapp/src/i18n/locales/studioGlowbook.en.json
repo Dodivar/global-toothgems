@@ -392,7 +392,7 @@
     "approved": "This creation is shown on your Glowbook.",
     "pending": "This creation is waiting for review for your Glowbook.",
     "rejected": "This creation is in your Glowbook (declined).",
-    "body": "Deleting it also removes it from your public page.",
+    "body": "Deleting it also removes it from your Glowbook.",
     "featured": "It is also your spotlight creation: the spotlight stays empty until you choose another one."
   },
   "dashboard": {
