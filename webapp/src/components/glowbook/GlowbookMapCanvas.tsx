@@ -39,6 +39,7 @@ export default function GlowbookMapCanvas({ place, color, onMove, className }: G
   const container = useRef<HTMLDivElement>(null);
   const map = useRef<MapLibreMap | null>(null);
   const marker = useRef<Marker | null>(null);
+  const markerColor = useRef(color);
   const onMoveRef = useRef(onMove);
   useEffect(() => {
     onMoveRef.current = onMove;
@@ -53,8 +54,8 @@ export default function GlowbookMapCanvas({ place, color, onMove, className }: G
       style: MAP_STYLE_URL,
       center: [place.lng, place.lat],
       zoom: place.mode === "area" ? 12.5 : 15,
-      // A page scrolls over the map: two fingers / ctrl + wheel to move it.
-      cooperativeGestures: !editable,
+      // A page scrolls over the map: two fingers / ctrl + wheel to move it (dragging the pin still works).
+      cooperativeGestures: true,
       attributionControl: { compact: true },
       dragRotate: false,
       pitchWithRotate: false,
@@ -76,8 +77,14 @@ export default function GlowbookMapCanvas({ place, color, onMove, className }: G
     if (!m) return;
     const at: [number, number] = [place.lng, place.lat];
 
+    // A new identity colour: draw the pin again.
+    if (marker.current && markerColor.current !== color) {
+      marker.current.remove();
+      marker.current = null;
+    }
     if (place.mode === "exact" || editable) {
       if (!marker.current) {
+        markerColor.current = color;
         marker.current = new Marker({ color, draggable: editable }).setLngLat(at).addTo(m);
         marker.current.on("dragend", () => {
           const p = marker.current?.getLngLat();
@@ -102,6 +109,8 @@ export default function GlowbookMapCanvas({ place, color, onMove, className }: G
       }
       if (source) {
         source.setData(areaData(place));
+        m.setPaintProperty(`${AREA_SOURCE}-fill`, "fill-color", color);
+        m.setPaintProperty(`${AREA_SOURCE}-line`, "line-color", color);
         return;
       }
       m.addSource(AREA_SOURCE, { type: "geojson", data: areaData(place) });

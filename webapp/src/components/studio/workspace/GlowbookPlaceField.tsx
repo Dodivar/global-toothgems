@@ -10,6 +10,8 @@ import {
   PLACE_LABEL_MAX,
   placeFromCandidate,
   roundPlace,
+  samePlace,
+  switchPlaceMode,
   type GlowbookPlace,
   type PlaceCandidate,
   type PlaceMode,
@@ -46,7 +48,9 @@ export function GlowbookPlaceField({
 }) {
   const { t, i18n } = useTranslation();
   const ids = { query: useId(), label: useId(), results: useId() };
-  const [mode, setMode] = useState<PlaceMode>(place?.mode ?? "area");
+  // The place's own mode once there is one (a reset or a reload changes it); the chip's choice before.
+  const [emptyMode, setEmptyMode] = useState<PlaceMode>("area");
+  const mode = place?.mode ?? emptyMode;
   const [query, setQuery] = useState("");
   const [search, setSearch] = useState<SearchState>({ kind: "idle" });
   const [picked, setPicked] = useState<PlaceCandidate | null>(null);
@@ -76,11 +80,11 @@ export function GlowbookPlaceField({
   };
 
   const switchMode = (next: PlaceMode) => {
-    setMode(next);
+    setEmptyMode(next);
     if (!place) return;
-    // Never carry a street address into an area: the district's name, or the artist types one.
-    const label = next === "area" ? (picked?.area ?? (place.mode === "area" ? place.label : "")) : picked ? picked.label : place.label;
-    onChange(roundPlace({ ...place, mode: next, label }));
+    // The last result only while the place is still that result (not moved, not reset).
+    const current = picked && samePlace(placeFromCandidate(picked, place.mode), place) ? picked : null;
+    onChange(switchPlaceMode(place, next, current));
   };
 
   const move = (lat: number, lng: number) => {

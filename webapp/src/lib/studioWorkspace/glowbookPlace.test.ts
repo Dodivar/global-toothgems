@@ -9,6 +9,7 @@ import {
   placeFromJson,
   roundPlace,
   samePlace,
+  switchPlaceMode,
   validatePlace,
   type GlowbookPlace,
 } from "./glowbookPlace";
@@ -109,5 +110,23 @@ describe("circleRing", () => {
     expect(ring[0]).toEqual(ring[16]);
     const north = ring[4];
     expect((north[1] - 45.75) * 111_195).toBeCloseTo(AREA_RADIUS_METERS, -1);
+  });
+});
+
+describe("switchPlaceMode", () => {
+  const candidate = { label: "12, Rue de la Paix, Lyon 7e, Lyon, France", area: "Lyon 7e, Lyon", lat: 45.748312, lng: 4.842687 };
+  it("gives a salon the result's own coordinates, not the area's rounded ones", () => {
+    const area = placeFromCandidate(candidate, "area");
+    expect(switchPlaceMode(area, "exact", candidate)).toEqual({ mode: "exact", label: candidate.label, lat: 45.74831, lng: 4.84269 });
+  });
+  it("leaves a salon without a name when there is no result to take it from", () => {
+    expect(switchPlaceMode({ mode: "area", label: "Lyon 7e", lat: 45.75, lng: 4.84 }, "exact", null)).toEqual({ mode: "exact", label: "", lat: 45.75, lng: 4.84 });
+  });
+  it("never carries a street address into an area", () => {
+    expect(switchPlaceMode(salon, "area", null)).toEqual({ mode: "area", label: "", lat: 45.75, lng: 4.84 });
+    expect(switchPlaceMode(placeFromCandidate(candidate, "exact"), "area", candidate)).toEqual({ mode: "area", label: "Lyon 7e, Lyon", lat: 45.75, lng: 4.84 });
+  });
+  it("changes nothing in the same mode", () => {
+    expect(switchPlaceMode(salon, "exact", candidate)).toBe(salon);
   });
 });

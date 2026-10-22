@@ -145,6 +145,19 @@ export function placeFromCandidate(candidate: PlaceCandidate, mode: PlaceMode): 
   return roundPlace({ mode, label: mode === "area" ? (candidate.area ?? candidate.label) : candidate.label, lat: candidate.lat, lng: candidate.lng });
 }
 
+/**
+ * The place after the artist switches mode. An area never keeps a street
+ * address (the district's name, else nothing to fill in). A salon takes the
+ * picked result's own coordinates — an area's are rounded ~1 km away — and,
+ * without one, keeps no name, so the artist searches the address first.
+ */
+export function switchPlaceMode(place: GlowbookPlace, next: PlaceMode, picked: PlaceCandidate | null): GlowbookPlace {
+  if (place.mode === next) return place;
+  if (next === "area") return roundPlace({ ...place, mode: "area", label: picked?.area ?? "" });
+  if (picked) return placeFromCandidate(picked, "exact");
+  return roundPlace({ ...place, mode: "exact", label: "" });
+}
+
 /* ------------------------------------------------------------------ circle */
 
 /** A closed ring of [lng, lat] around a point, `radius` metres away (GeoJSON polygon for an area). */
