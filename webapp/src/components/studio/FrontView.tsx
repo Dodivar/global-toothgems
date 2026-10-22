@@ -65,7 +65,7 @@ export function FrontViewGems({ projection, numbered = true, highlightIds }: Fro
               <circle cx={at.x} cy={at.y} r={at.r + 0.7} fill="none" stroke="#2f6fb0" strokeWidth={0.35} />
             )}
             <g
-              transform={`translate(${at.x} ${at.y}) rotate(${at.rotation}) scale(${(at.r * 2) / GLYPH_SPAN}) translate(-8 -8)`}
+              transform={`translate(${at.x} ${at.y}) rotate(${at.rotation}) scale(${(at.r * 2 * at.stretch[0]) / GLYPH_SPAN} ${(at.r * 2 * at.stretch[1]) / GLYPH_SPAN}) translate(-8 -8)`}
               fill={color}
               color={color}
               stroke={GEM_EDGE}

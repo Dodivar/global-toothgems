@@ -1,6 +1,7 @@
 import { useId, useMemo } from "react";
 import clsx from "clsx";
 import { ARCH_FRAMES } from "../../../lib/studio3d/archLayout";
+import { glyphStretch } from "../../../lib/studio3d/frontView";
 import type { PreviewPiece } from "../../../lib/studioWorkspace/gemGroup";
 import { shapeGlyph } from "../editor/pieceGlyphs";
 
@@ -135,11 +136,12 @@ export function ScenePreview({
       {pieces.map((p, i) => {
         // A touch larger than life (×1.1) so a small stone still reads on a small card.
         const size = (p.scale * 2 * 1.1) / 13;
+        const [kx, ky] = glyphStretch(p.look.shape, p.size);
         const color = p.look.color;
         return (
           <g
             key={i}
-            transform={`translate(${p.position.x} ${-p.position.y}) rotate(${-p.rotation}) scale(${size}) translate(-8 -8)`}
+            transform={`translate(${p.position.x} ${-p.position.y}) rotate(${-p.rotation}) scale(${size * kx} ${size * ky}) translate(-8 -8)`}
             fill={color}
             color={color}
             stroke="rgba(38, 60, 82, .62)"

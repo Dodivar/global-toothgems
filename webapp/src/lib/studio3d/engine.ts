@@ -24,6 +24,7 @@ import {
   type Footprint,
 } from "./geometry";
 import { pieceSpec, type PieceSpec } from "./gemCatalog";
+import { maxFaceScale, scaleAxes, type ScaleAxes } from "./pieceScale";
 import { currentEstimate, studioGem } from "./gemRegistry";
 import { ARCH_K, backOut, clamp, easeInOutCubic, pointInPolygon, seeded, ss01, uid, v3, xForArc, type Point2 } from "./math";
 import { ARCH_FRAMES } from "./archLayout";
@@ -102,6 +103,8 @@ interface JewelRig {
   halfDepth: number;
   radius: number;
   sizeScale: number;
+  /** Its scale per axis (`scaleAxes`): `sizeScale` on every axis unless its size gives a width and a length. */
+  sizeAxes: ScaleAxes;
   birth: number;
   death: number;
   hoverT: number;
@@ -125,6 +128,8 @@ const GLB_FIT = {
 interface GemPose {
   shape: StudioShape;
   scale: number;
+  /** Its scale per axis (`scaleAxes`); depth is `scale`. */
+  axes: ScaleAxes;
   offset: number;
   rotation: number;
 }
@@ -154,11 +159,11 @@ const ALIGN_MAX_DRIFT = 3;
 /** Aligning on screen may seat a piece this far past the edge of the facet it rests on (world units, ~mm). */
 const ALIGN_FACET_SLACK = 0.5;
 function poseOf(j: PlacedJewelry): GemPose {
-  return { shape: j.look.shape, scale: j.scale, offset: j.offset ?? 0, rotation: j.rotation };
+  return { shape: j.look.shape, scale: j.scale, axes: scaleAxes(j.look.shape, j.size), offset: j.offset ?? 0, rotation: j.rotation };
 }
 /** A fresh library piece, before it has been turned or nudged. */
 function specPose(spec: PieceSpec): GemPose {
-  return { shape: spec.look.shape, scale: spec.scale, offset: 0, rotation: 0 };
+  return { shape: spec.look.shape, scale: spec.scale, axes: scaleAxes(spec.look.shape, spec.size), offset: 0, rotation: 0 };
 }
 /** What a library gem places, or null while the catalogue has not loaded it. */
 function specFor(gemKey: string): PieceSpec | null {
@@ -1361,8 +1366,9 @@ export class StudioEngine {
     const q = new THREE.Quaternion()
       .setFromUnitVectors(_Z, normal.clone().normalize())
       .multiply(new THREE.Quaternion().setFromAxisAngle(_Z, THREE.MathUtils.degToRad(pose.rotation)));
-    const toWorld = new THREE.Matrix4().compose(center, q, new THREE.Vector3(pose.scale, pose.scale, pose.scale));
-    return { center, reach: tpl.reach * pose.scale, toWorld, toLocal: toWorld.clone().invert(), footprint: tpl.footprint };
+    const toWorld = new THREE.Matrix4().compose(center, q, new THREE.Vector3(pose.axes.x, pose.axes.y, pose.axes.z));
+    // The outline may be stretched more across than along: bound it by the larger stretch.
+    return { center, reach: tpl.reach * maxFaceScale(pose.axes), toWorld, toLocal: toWorld.clone().invert(), footprint: tpl.footprint };
   }
   private jewelBlocker(j: PlacedJewelry): Blocker {
     return this.blockerAt(
@@ -1927,6 +1933,11 @@ export class StudioEngine {
     obj.quaternion.copy(_q1).multiply(_q2);
     obj.position.copy(point).addScaledVector(_nn, halfDepth * scale + mountGap(scale, manualOffset));
   }
+  /** A rig at its size per axis, times an animation factor (birth, hover, removal). */
+  private scaleRig(rig: JewelRig, k: number) {
+    const a = rig.sizeAxes;
+    rig.group.scale.set(Math.max(0.001, a.x * k), Math.max(0.001, a.y * k), Math.max(0.001, a.z * k));
+  }
   private applyPose(group: THREE.Group, j: PlacedJewelry, halfDepth: number) {
     _p.set(j.position.x, j.position.y, j.position.z);
     _n.set(j.normal.x, j.normal.y, j.normal.z);
@@ -1982,6 +1993,7 @@ export class StudioEngine {
       halfDepth: 0.5,
       radius: 0.8,
       sizeScale: 1,
+      sizeAxes: { x: 1, y: 1, z: 1 },
       birth: 0,
       death: 0,
       hoverT: 0,
@@ -2016,6 +2028,7 @@ export class StudioEngine {
         rig.matKey = mk;
       }
       rig.sizeScale = j.scale;
+      rig.sizeAxes = scaleAxes(j.look.shape, j.size);
       if (!this.isDragged(rig)) this.applyPose(rig.group, j, rig.halfDepth);
     }
     for (const [id, rig] of Array.from(this.jewelRigs)) {
@@ -2511,6 +2524,9 @@ export class StudioEngine {
       const m = new THREE.Mesh(g, material);
       root.add(m);
     });
+    // Drawn at the size the drop will place.
+    const axes = scaleAxes(spec.look.shape, spec.size);
+    root.scale.set(axes.x, axes.y, axes.z);
     const ringRoot = new THREE.Group();
     const ringMaterial = new THREE.MeshBasicMaterial({
       color: OUTLINE_COLOR,
@@ -2527,7 +2543,7 @@ export class StudioEngine {
       root,
       ringRoot,
       ring,
-      ringScale: tpl.radius * spec.scale * 1.4,
+      ringScale: tpl.radius * maxFaceScale(axes) * 1.4,
       spec,
       halfDepth: tpl.halfDepth,
       material,
@@ -2762,7 +2778,7 @@ export class StudioEngine {
     this.jewelRigs.forEach((rig) => {
       rig.birth = 0;
       rig.hoverT = 0;
-      rig.group.scale.setScalar(Math.max(0.001, rig.sizeScale));
+      this.scaleRig(rig, 1);
       rig.outlineMaterial.opacity = 0;
       rig.outline.visible = false;
     });
@@ -3010,8 +3026,13 @@ export class StudioEngine {
     for (const { piece, position, normal } of groupToWorld(data.pieces, frame)) {
       const hit = this.snapToSurface(new THREE.Vector3(position.x, position.y, position.z), new THREE.Vector3(normal.x, normal.y, normal.z));
       if (!hit) continue;
-      const scale = scaleForSize(piece.size);
-      const pose: GemPose = { shape: piece.look.shape, scale, offset: piece.offset ?? 0, rotation: piece.rotation };
+      const pose: GemPose = {
+        shape: piece.look.shape,
+        scale: scaleForSize(piece.size),
+        axes: scaleAxes(piece.look.shape, piece.size),
+        offset: piece.offset ?? 0,
+        rotation: piece.rotation,
+      };
       const free = this.findFreeSpot(hit, pose, blockers);
       if (!free) continue;
       const copy: PlacedJewelry = {
@@ -3024,7 +3045,7 @@ export class StudioEngine {
         position: v3(free.point.x, free.point.y, free.point.z),
         normal: v3(free.normal.x, free.normal.y, free.normal.z),
         rotation: piece.rotation,
-        scale,
+        scale: pose.scale,
         ...(piece.offset ? { offset: piece.offset } : {}),
       };
 
@@ -3427,7 +3448,7 @@ export class StudioEngine {
       }
       const hov = id === this.hoverJewelId ? 1 : 0;
       rig.hoverT += (hov - rig.hoverT) * 0.22;
-      rig.group.scale.setScalar(Math.max(0.001, rig.sizeScale * anim * (1 + rig.hoverT * 0.09)));
+      this.scaleRig(rig, anim * (1 + rig.hoverT * 0.09));
       // A piece with a problem is ringed in red, selected or not.
       const issue = this.issueIds.has(id);
       rig.outlineMaterial.color.setHex(issue ? BLOCK_COLOR : OUTLINE_COLOR);
@@ -3443,8 +3464,7 @@ export class StudioEngine {
         rig.outlineMaterial.dispose(); // jewel materials are cached+shared — not disposed here
         this.dyingJewels.splice(i, 1);
       } else {
-        const s = Math.max(0.001, rig.sizeScale * (1 - t) * (1 - t));
-        rig.group.scale.setScalar(s);
+        this.scaleRig(rig, (1 - t) * (1 - t));
       }
     }
     if (this.ghost && this.ghost.root.visible) {

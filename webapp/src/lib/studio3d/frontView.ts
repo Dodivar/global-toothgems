@@ -1,7 +1,19 @@
-import { ALL_TEETH, FREE_TOOTH, LOWER_TEETH, UPPER_TEETH, isLowerTooth, toothKeys, type PlacedJewelry, type StudioShape } from "../../data/studioEditor";
+import {
+  ALL_TEETH,
+  FREE_TOOTH,
+  LOWER_TEETH,
+  UPPER_TEETH,
+  isLowerTooth,
+  scaleForSize,
+  toothKeys,
+  type PlacedJewelry,
+  type StudioShape,
+} from "../../data/studioEditor";
+import type { GemSize } from "../gemOptions";
 import type { SceneModel } from "../studioWorkspace/scene";
 import { ARCH_FRAME_BY_ID } from "./archLayout";
 import { DENTITION_CROWNS, type CrownFrame } from "./dentition";
+import { longAxis } from "./pieceScale";
 
 /**
  * The front view of a design: both arches drawn flat, as seen from in front of
@@ -63,6 +75,11 @@ export interface FrontViewPoint {
   ny: number;
   /** `r` divided by the box width. */
   nr: number;
+  /**
+   * Stretch of the glyph across and along its own frame, on top of the
+   * uniform `r` (`glyphStretch`): [1, 1] unless the size gives a width and a length.
+   */
+  stretch: readonly [number, number];
   /** Turn on screen, degrees, clockwise. */
   rotation: number;
   /** Seat on the tooth: `u` across (-1 viewer's left … 1 right), `v` up the crown (world up), as the engine measures them. */
@@ -186,6 +203,7 @@ function pointOf(piece: PlacedJewelry, model: SceneModel): FrontViewPoint | null
     nx: (x - box.x) / box.width,
     ny: (y - box.y) / box.height,
     nr: r / box.width,
+    stretch: glyphStretch(piece.look.shape, piece.size),
     rotation: -piece.rotation,
     u: seat.u,
     v: seat.v,
@@ -388,18 +406,49 @@ export const SHAPE_OUTLINES: Record<StudioShape, FrontViewPathCommand[]> = {
 /** Longest side of the glyph grid's outlines, in grid units (`pieceGlyphs.tsx`). */
 export const GLYPH_SPAN = 13;
 
+/** Width and height of each outline on the glyph grid (control points included: a bound, close enough to draw with). */
+const GLYPH_EXTENTS = new Map(
+  (Object.entries(SHAPE_OUTLINES) as [StudioShape, FrontViewPathCommand[]][]).map(([shape, cmds]) => {
+    const xs: number[] = [];
+    const ys: number[] = [];
+    for (const cmd of cmds) for (let i = 1; i + 1 < cmd.length; i += 2) xs.push(cmd[i] as number), ys.push(cmd[i + 1] as number);
+    return [shape, [Math.max(...xs) - Math.min(...xs), Math.max(...ys) - Math.min(...ys)] as const];
+  }),
+);
+
+/**
+ * How much a glyph is stretched across and along its own frame so a piece
+ * sized width × length is drawn at both (decision 107). The outline's long
+ * axis keeps the uniform scale (`2r / GLYPH_SPAN`, as every piece is drawn);
+ * its short axis is set so that it spans the width exactly. [1, 1] for an SS
+ * size or a single millimetre value: such pieces draw exactly as before.
+ */
+export function glyphStretch(shape: StudioShape, size: GemSize): [number, number] {
+  if (!size.mm || size.mm.length !== 2) return [1, 1];
+  const extents = GLYPH_EXTENTS.get(shape) ?? GLYPH_EXTENTS.get("round")!;
+  const uniform = (scaleForSize(size) * 2) / GLYPH_SPAN;
+  const alongX = longAxis(shape) === "x";
+  const short = size.mm[0] / (alongX ? extents[1] : extents[0]) / uniform;
+  return alongX ? [1, short] : [short, 1];
+}
+
 /**
  * A gem's silhouette placed on the drawing: the 16-unit outline centred on
- * the gem, turned by its rotation and scaled to its real size.
+ * the gem, turned by its rotation and scaled to its real size (per axis, by
+ * `stretch` when given).
  */
-export function gemOutline(shape: StudioShape, at: Pick<FrontViewPoint, "x" | "y" | "r" | "rotation">): FrontViewPathCommand[] {
+export function gemOutline(
+  shape: StudioShape,
+  at: Pick<FrontViewPoint, "x" | "y" | "r" | "rotation"> & { stretch?: readonly [number, number] },
+): FrontViewPathCommand[] {
   const s = (at.r * 2) / GLYPH_SPAN;
+  const [kx, ky] = at.stretch ?? [1, 1];
   const a = (at.rotation * Math.PI) / 180;
   const cos = Math.cos(a);
   const sin = Math.sin(a);
   const map = (gx: number, gy: number): [number, number] => {
-    const lx = (gx - 8) * s;
-    const ly = (gy - 8) * s;
+    const lx = (gx - 8) * s * kx;
+    const ly = (gy - 8) * s * ky;
     return [at.x + lx * cos - ly * sin, at.y + lx * sin + ly * cos];
   };
   return (SHAPE_OUTLINES[shape] ?? SHAPE_OUTLINES.round).map((cmd): FrontViewPathCommand => {

@@ -1,6 +1,6 @@
 import type { PlacedJewelry, StudioShape } from "../../data/studioEditor";
 import type { SceneModel } from "../studioWorkspace/scene";
-import { FRONT_VIEW_TEETH, crownOutline, gemOutline, projectFrontView, type FrontViewPathCommand } from "./frontView";
+import { FRONT_VIEW_TEETH, crownOutline, gemOutline, glyphStretch, projectFrontView, type FrontViewPathCommand } from "./frontView";
 import type { BoxPlacement } from "./tryOnTransform";
 
 /**
@@ -49,13 +49,20 @@ export function tryOnLayout(
   height: number,
 ): TryOnLayout {
   if (!(width > 0) || !(height > 0)) return { spots: [], guide: [] };
-  const looks = new Map(pieces.map((p) => [p.id, p.look]));
+  const byId = new Map(pieces.map((p) => [p.id, p]));
 
   if (placements) {
     const spots = placements.flatMap((p): TryOnSpot[] => {
-      const look = looks.get(p.pieceId);
-      if (!look) return [];
-      const at = { x: p.x * width, y: p.y * height, r: (p.size * width) / 2, rotation: p.rotation };
+      const piece = byId.get(p.pieceId);
+      if (!piece) return [];
+      const look = piece.look;
+      const at = {
+        x: p.x * width,
+        y: p.y * height,
+        r: (p.size * width) / 2,
+        stretch: glyphStretch(look.shape, piece.size),
+        rotation: p.rotation,
+      };
       return [{ pieceId: p.pieceId, shape: look.shape, color: look.color, ...at, outline: gemOutline(look.shape, at) }];
     });
     return { spots, guide: [] };
@@ -76,7 +83,7 @@ export function tryOnLayout(
   const spots = projection.gems.flatMap((g): TryOnSpot[] => {
     if (!g.at || g.at.facing === "back") return [];
     const [x, y] = toBox(g.at.x, g.at.y);
-    const at = { x, y, r: g.at.r * scale, rotation: g.at.rotation };
+    const at = { x, y, r: g.at.r * scale, stretch: g.at.stretch, rotation: g.at.rotation };
     return [{ pieceId: g.id, shape: g.shape, color: g.piece.look.color, ...at, outline: gemOutline(g.shape, at) }];
   });
   const guide = FRONT_VIEW_TEETH.filter((t) => GUIDE_TEETH.has(t.fdi)).map((t) => mapPath(crownOutline(t)));
