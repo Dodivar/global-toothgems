@@ -377,8 +377,6 @@
     "eyebrow": "Où me trouver",
     "publicExact": "Le salon où je vous reçois.",
     "publicArea": "J’exerce dans ce secteur. L’adresse exacte est donnée à la prise de rendez-vous.",
-    "showMap": "Voir la carte",
-    "mapNotice": "La carte est fournie par OpenFreeMap (données OpenStreetMap) et ne se charge qu’à votre demande.",
     "directions": {
       "google": "Itinéraire Google Maps",
       "apple": "Plans (Apple)",

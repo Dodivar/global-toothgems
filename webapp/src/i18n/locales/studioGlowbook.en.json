@@ -377,8 +377,6 @@
     "eyebrow": "Where to find me",
     "publicExact": "The salon where I welcome you.",
     "publicArea": "I work in this area. The exact address is given when you book.",
-    "showMap": "Show the map",
-    "mapNotice": "The map is provided by OpenFreeMap (OpenStreetMap data) and loads only when you ask for it.",
     "directions": {
       "google": "Directions in Google Maps",
       "apple": "Apple Maps",
