@@ -1827,7 +1827,7 @@
         "categoryRequired": "Choisissez une catégorie.",
         "familyMismatch": "Cette famille n’appartient pas à la catégorie choisie.",
         "priceCents": "Deux décimales au maximum.",
-        "optionsEmpty": "Ajoutez au moins un pack ou cochez une taille de pierre, ou désactivez les options.",
+        "optionsEmpty": "Ajoutez au moins un pack ou une taille, ou désactivez les options.",
         "optionsPack": "Chaque pack doit contenir un nombre entier de pierres, de {{min}} à {{max}}.",
         "optionsSkuTooLong": "Avec ces options, le SKU doit faire {{max}} caractères au plus (chaque option ajoute un suffixe comme {{suffix}}).",
         "optionsPrice": "Vérifiez les prix des options : supérieurs à 0, deux décimales au plus.",

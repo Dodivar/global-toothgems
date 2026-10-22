@@ -1827,7 +1827,7 @@
         "categoryRequired": "Choose a category.",
         "familyMismatch": "This family does not belong to the chosen category.",
         "priceCents": "Two decimal places at most.",
-        "optionsEmpty": "Add at least one pack or tick a stone size, or switch the options off.",
+        "optionsEmpty": "Add at least one pack or size, or switch the options off.",
         "optionsPack": "Each pack must hold a whole number of stones, from {{min}} to {{max}}.",
         "optionsSkuTooLong": "With these options the SKU must be {{max}} characters or fewer (each option adds a suffix such as {{suffix}}).",
         "optionsPrice": "Check the option prices: greater than 0, two decimal places at most.",
