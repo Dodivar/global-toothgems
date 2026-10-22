@@ -37,7 +37,7 @@ const pill = clsx(
   focus,
 );
 
-function Avatar({ name, url, className }: { name: string; url: string | null; className: string }) {
+export function GlowbookAvatar({ name, url, className }: { name: string; url: string | null; className: string }) {
   const { t } = useTranslation();
   return (
     <span
@@ -66,7 +66,7 @@ export function GlowbookTopBar({ displayName, handle, look, avatarUrl, preview =
   return (
     <header className="border-b border-[var(--gb-border)] bg-[var(--gb-card)] text-[var(--gb-text)]">
       <div className="mx-auto flex max-w-[1180px] items-center gap-3 px-4 py-2.5 sm:px-8">
-        <Avatar name={displayName} url={avatarUrl} className="h-10 w-10 text-[14px] sm:h-11 sm:w-11" />
+        <GlowbookAvatar name={displayName} url={avatarUrl} className="h-10 w-10 text-[14px] sm:h-11 sm:w-11" />
         <div className="grid min-w-0 flex-1 leading-tight">
           <h1 className="m-0 inline-flex min-w-0 items-center gap-1.5 text-[16px] font-[var(--weight-black)] tracking-[var(--tracking-tight)] sm:text-[18px]">
             <span className="truncate">{displayName}</span>
@@ -136,7 +136,7 @@ export function GlowbookProfile({ displayName, handle, bio, instagram, look, ava
     >
       <div className={clsx("mx-auto grid max-w-[880px] justify-items-center gap-3 px-4 text-center", preview ? "py-5" : "py-12")}>
         <p className="m-0 text-[11px] font-bold uppercase tracking-[var(--tracking-eyebrow)] text-[var(--gb-muted)]">{t("studio.glowbook.public.profileEyebrow")}</p>
-        <Avatar
+        <GlowbookAvatar
           name={displayName}
           url={avatarUrl}
           className={clsx("border-4 border-[var(--gb-card)] shadow-[var(--shadow-md)]", preview ? "h-16 w-16 text-[20px]" : "h-24 w-24 text-[28px]")}

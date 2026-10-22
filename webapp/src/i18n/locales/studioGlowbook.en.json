@@ -422,13 +422,13 @@
       "noSpotlight": "Choose",
       "unfiled": "File"
     },
-    "nav": {
+    "tabs": {
       "label": "Parts of my Glowbook",
-      "profile": "Profile",
-      "creations": "Creations · {{count}}",
-      "sections": "Sections",
+      "creations": "Creations",
       "look": "Look",
-      "share": "QR code"
-    }
+      "profile": "Profile",
+      "share": "Share"
+    },
+    "deleteHint": "Your page goes away and every creation is taken off it. Your creations stay in My creations."
   }
 }

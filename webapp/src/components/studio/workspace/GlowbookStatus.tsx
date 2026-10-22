@@ -26,19 +26,20 @@ export function ModerationBadge({ status, kind }: { status: ModerationStatus; ki
   );
 }
 
-const CARD_ICON: Record<ModerationStatus, typeof Check> = { approved: Sparkles, pending: Clock3, rejected: CircleAlert };
-
 /** On a card in My Creations: this creation is in the Glowbook, and how it stands. Nothing when it is not. */
 export function CreationGlowbookBadge({ creationId, className }: { creationId: string; className?: string }) {
   const { t } = useTranslation();
   const gb = useGlowbook();
   const item = gb.status === "ready" ? gb.itemFor(creationId) : undefined;
   if (!item) return null;
-  const Icon = CARD_ICON[item.status];
+  const label = t(`studio.glowbook.card.${item.status}`);
+  // Short enough for two cards a row on a phone: the word and a status icon, the full label for readers and on hover.
+  const StatusIcon = item.status === "pending" ? Clock3 : item.status === "rejected" ? CircleAlert : null;
   return (
     <span
+      title={label}
       className={clsx(
-        "inline-flex max-w-full items-center gap-1.5 rounded-[var(--radius-pill)] px-2.5 py-1 text-[10.5px] font-bold uppercase tracking-[.06em] shadow-[var(--shadow-sm)] backdrop-blur-[6px]",
+        "inline-flex items-center gap-1.5 rounded-[var(--radius-pill)] px-2.5 py-1 text-[10.5px] font-bold uppercase tracking-[.06em] shadow-[var(--shadow-sm)] backdrop-blur-[6px]",
         item.status === "approved"
           ? "bg-[var(--gt-ink-900)]/85 text-white"
           : item.status === "pending"
@@ -47,8 +48,10 @@ export function CreationGlowbookBadge({ creationId, className }: { creationId: s
         className,
       )}
     >
-      <Icon size={12} aria-hidden="true" className="flex-none" />
-      <span className="truncate">{t(`studio.glowbook.card.${item.status}`)}</span>
+      <Sparkles size={12} aria-hidden="true" className="flex-none" />
+      <span aria-hidden="true">Glowbook</span>
+      {StatusIcon && <StatusIcon size={12} aria-hidden="true" className="flex-none" />}
+      <span className="sr-only">{label}</span>
     </span>
   );
 }

@@ -422,13 +422,13 @@
       "noSpotlight": "Choisir",
       "unfiled": "Ranger"
     },
-    "nav": {
+    "tabs": {
       "label": "Parties de mon Glowbook",
-      "profile": "Profil",
-      "creations": "Créations · {{count}}",
-      "sections": "Sections",
+      "creations": "Créations",
       "look": "Apparence",
-      "share": "QR code"
-    }
+      "profile": "Profil",
+      "share": "Partager"
+    },
+    "deleteHint": "Votre page disparaît et toutes vos créations en sont retirées. Vos créations restent dans Mes créations."
   }
 }
