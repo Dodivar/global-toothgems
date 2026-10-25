@@ -235,7 +235,7 @@ test("a link to another zone opens it, and the back button returns", async ({ pa
   await page.waitForLoadState("networkidle");
   await page.goBack();
   await expect(page).toHaveURL((url) => url.pathname === "/fr/boutique");
-  await expect(page.getByRole("heading", { level: 1 }).first()).toHaveText(/Gems, outils et kits professionnels/);
+  await expect(page.getByRole("heading", { level: 1 }).first()).toHaveText(/^Boutique$/);
   await page.waitForLoadState("networkidle");
   expect(problems).toEqual([]);
 });
@@ -274,7 +274,7 @@ test("links between zones are client-side navigations (phase 5)", async ({ page,
   expect(await marker()).toBe(1);
   await page.goBack();
   await expect(page).toHaveURL((url) => url.pathname === "/fr/boutique", { timeout: 30_000 });
-  await expect(page.getByRole("heading", { level: 1 }).first()).toHaveText(/Gems, outils et kits professionnels/);
+  await expect(page.getByRole("heading", { level: 1 }).first()).toHaveText(/^Boutique$/);
   expect(await marker()).toBe(1);
   await page.waitForLoadState("networkidle");
   expect(problems).toEqual([]);

@@ -9,7 +9,7 @@ import { expect, open, test } from "./fixtures";
  */
 const PUBLIC_ROUTES: { path: string; heading: RegExp }[] = [
   { path: "/fr", heading: /tooth gems, Academy et Studio 3D/ },
-  { path: "/fr/boutique", heading: /Gems, outils et kits professionnels/ },
+  { path: "/fr/boutique", heading: /^Boutique$/ },
   { path: "/fr/boutique/aurora-heart", heading: /Aurora Heart/ },
   { path: "/fr/formes", heading: /Toutes les formes de gems/ },
   { path: "/fr/couleurs", heading: /Toutes les couleurs de gems/ },

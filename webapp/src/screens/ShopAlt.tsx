@@ -226,22 +226,28 @@ export function ShopAlt() {
         ? t("shopAlt.resultsOf", { count: results.length, total: products.length })
         : t("shopAlt.results", { count: results.length });
 
+  // The title says what is on screen: the product type (family, else category)
+  // and the gem shape when chosen, else plain "Boutique".
+  const titleParts = [
+    familyActive
+      ? labelOf("family", filters.family)
+      : filters.category !== FILTER_PARAMS.category.fallback
+        ? labelOf("category", filters.category)
+        : null,
+    filters.shape !== FILTER_PARAMS.shape.fallback ? labelOf("shape", filters.shape) : null,
+  ].filter(Boolean);
+  const title = favoritesView ? t("favorites.title") : titleParts.length > 0 ? titleParts.join(" · ") : t("shop.eyebrow");
+
   return (
     <div className="gt-shopb">
-      <section className="gt-shopb-gutter pb-5 pt-[clamp(20px,3.4vw,44px)]">
-        <div className="mx-auto max-w-[var(--max-width-shop)]">
-          <div className="grid max-w-[760px] gap-2">
-            <span className="gt-eyebrow">
-              {t("shop.eyebrow")}
-              {catalogStatus === "ready" && <span className="text-[var(--text-subtle)]"> · {t("shopAlt.totalCount", { count: catalog.length })}</span>}
-            </span>
-            <h1 className="m-0 text-[length:clamp(28px,3.1vw,44px)] font-bold leading-[var(--leading-tight)] tracking-[var(--tracking-display)] text-[var(--text-primary)]">
-              {favoritesView ? t("favorites.title") : t("shop.title")}
-            </h1>
-            <p className="m-0 max-w-[62ch] text-[length:var(--text-body-sm)] text-[var(--text-body)] sm:text-[length:var(--text-body-md)]">
-              {favoritesView ? t("favorites.body") : t("shop.body")}
-            </p>
-          </div>
+      <section className="gt-shopb-gutter pb-3 pt-[clamp(14px,2vw,28px)]">
+        <div className="mx-auto flex max-w-[var(--max-width-shop)] flex-wrap items-baseline gap-x-4 gap-y-1">
+          <h1 className="m-0 text-[length:clamp(24px,2.4vw,34px)] font-bold leading-[var(--leading-tight)] tracking-[var(--tracking-display)] text-[var(--text-primary)]">
+            {title}
+          </h1>
+          <span role="status" aria-live="polite" className="text-[13px] font-semibold text-[var(--text-muted)]">
+            {status === "error" || favoritesBlocked ? null : countText}
+          </span>
         </div>
       </section>
 
@@ -306,10 +312,7 @@ export function ShopAlt() {
                   <span className="font-normal opacity-80">· {favorites.favoriteProducts.length}</span>
                 )}
               </button>
-              <span role="status" aria-live="polite" className="mr-auto text-[13px] font-semibold text-[var(--text-primary)]">
-                {status === "error" || favoritesBlocked ? null : countText}
-              </span>
-              <label htmlFor={sortId} className="flex items-center gap-1.5 text-[13px] text-[var(--text-muted)]">
+              <label htmlFor={sortId} className="ml-auto flex items-center gap-1.5 text-[13px] text-[var(--text-muted)]">
                 <span className="hidden sm:inline">{t("shopAlt.sortLabel")}</span>
                 <span className="relative">
                   <select
