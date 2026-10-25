@@ -1,7 +1,7 @@
 import { useMemo } from "react";
 import { Link } from "../../lib/navigation";
 import { useTranslation } from "react-i18next";
-import { ArrowRight, Gift, Sparkles, type LucideIcon } from "lucide-react";
+import { ArrowRight } from "lucide-react";
 import clsx from "clsx";
 import { DEFAULT_MENU_THUMB, TAXONOMY_THUMBS } from "../../data/menu";
 import { shopHref } from "../../data/taxonomy";
@@ -9,6 +9,7 @@ import { familyEntryHref } from "../../lib/shopUrl";
 import { pick } from "../../data/types";
 import { useCatalog } from "../../lib/catalog/CatalogProvider";
 import { useAuth } from "../../lib/auth";
+import { MenuCardArt } from "./MenuCardArt";
 
 interface MenuEntry {
   key: string;
@@ -30,7 +31,7 @@ interface ExtraLink {
   key: string;
   to: string;
   state?: { from: string };
-  icon: LucideIcon;
+  art: "giftCard" | "loyalty";
   label: string;
   sub: string;
 }
@@ -180,12 +181,12 @@ export function ShopMenu({ layout, onNavigate }: { layout: "columns" | "stack"; 
   /* Not a category: two ways into pages that are not catalogue nodes. The
      loyalty card is the member's own, so a visitor is sent to sign up. */
   const extras: ExtraLink[] = [
-    { key: "giftCard", to: "/carte-cadeau", icon: Gift, label: t("nav.giftCard"), sub: t("nav.menuGiftCardSub") },
+    { key: "giftCard", to: "/carte-cadeau", art: "giftCard", label: t("nav.giftCard"), sub: t("nav.menuGiftCardSub") },
     {
       key: "loyalty",
       to: signedIn ? "/compte/fidelite" : "/inscription",
       state: signedIn ? undefined : { from: "/compte/fidelite" },
-      icon: Sparkles,
+      art: "loyalty",
       label: t("nav.menuLoyalty"),
       sub: t("nav.menuLoyaltySub"),
     },
@@ -207,15 +208,7 @@ export function ShopMenu({ layout, onNavigate }: { layout: "columns" | "stack"; 
         {extras.map((extra) => (
           <li key={extra.key}>
             <Link to={extra.to} state={extra.state} onClick={onNavigate} className={entryClass(columns)}>
-              <span
-                aria-hidden="true"
-                className={clsx(
-                  "grid flex-none place-items-center rounded-[var(--radius-md)] bg-[var(--gt-ink-900)] text-[var(--gt-blue-200)]",
-                  columns ? "h-14 w-14" : "h-[52px] w-[52px]",
-                )}
-              >
-                <extra.icon size={20} strokeWidth={1.75} />
-              </span>
+              <MenuCardArt kind={extra.art} compact={columns} />
               <span className="grid min-w-0 flex-1 gap-1">
                 <span className="line-clamp-2 text-[11.5px] font-bold uppercase leading-[1.3] tracking-[var(--tracking-wide)] text-[var(--text-primary)]">
                   {extra.label}
