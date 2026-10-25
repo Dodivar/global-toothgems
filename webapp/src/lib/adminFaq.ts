@@ -22,8 +22,10 @@ export type FaqLoad = "unavailable" | "loading" | "ready" | "forbidden" | "error
 
 /** A failed write, already logged; the screen shows a localized message. */
 export class FaqWriteError extends Error {
-  constructor(readonly kind: "forbidden" | "invalid" | "error") {
+  readonly kind: "forbidden" | "invalid" | "error";
+  constructor(kind: "forbidden" | "invalid" | "error") {
     super(kind);
+    this.kind = kind;
   }
 }
 

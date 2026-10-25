@@ -886,6 +886,21 @@ products (what to restock), and the list with a view (to send / sent / all) and 
 address. Products link to their edit page, members to their customer file. Without Supabase: an "unavailable"
 state, never invented requests.
 
+## Product characteristics and FAQ (`/admin/faq`)
+
+Decision 110 in `supabase/README.md`. **Characteristics**: a gem's product page lists material, centre, size (from
+the selected option), back, packaging and indicative wear — only those the product holds, and nothing for other
+categories (`screens/ProductDetail.tsx`). They are columns (`products.spec_*`, English on `product_translations`),
+mapped into `Product.specs` (`lib/catalog/mapping.ts`) and edited in the product form's "Caractéristiques" section
+for a gem (`components/admin/ProductForm.tsx`, saved by `admin_save_product()`'s `specs`). **FAQ**: groups of
+questions under Catalogue in the rail — the list orders groups and says where each is shown (`screens/admin/AdminFaq.tsx`);
+`/admin/faq/nouveau` and `/admin/faq/<id>` edit a group's name, status, questions (FR/EN switch) and its
+categories and products (`AdminFaqEdit.tsx`), through `lib/adminFaq.ts` (one persistence boundary;
+`admin_save_faq_group()`) and `lib/adminFaqMapping.ts` (tested: mapping, validation, the "own groups replace the
+category's" rule). The product page receives its questions from the server (`app/_public/productPage.tsx` →
+`findProductFaq()` → `product_faq()`); mock mode has no FAQ. Without Supabase the admin page shows an
+"unavailable" state.
+
 ## Statistics on Supabase (`/admin/statistiques`)
 
 - **One boundary**: `lib/adminAnalytics.ts` (URL filters, reads, controller); pure mapping in `lib/adminAnalyticsMapping.ts` (periods in the shop's time zone, `analytics_snapshot()` JSON → `AnalyticsSnapshot`, insights, CSV) and `lib/adminAnalyticsTraining.ts` (Academy panel), both unit-tested. Shapes and vocabulary: `data/adminAnalytics.ts`.

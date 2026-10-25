@@ -9,6 +9,7 @@ import {
   Languages,
   LayoutDashboard,
   LogOut,
+  MessageCircleQuestion,
   MessageSquareText,
   Package,
   Settings,
@@ -83,6 +84,7 @@ const GROUPS: RailGroup[] = [
       { to: "/admin/produits", labelKey: "admin.nav.products", icon: Package },
       { to: "/admin/categories", labelKey: "admin.nav.categories", icon: Tags },
       { to: "/admin/alertes-stock", labelKey: "admin.nav.backInStock", icon: BellRing },
+      { to: "/admin/faq", labelKey: "admin.nav.faq", icon: MessageCircleQuestion },
     ],
   },
   {
