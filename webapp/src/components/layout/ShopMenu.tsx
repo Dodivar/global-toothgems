@@ -59,7 +59,7 @@ function useShopMenu(): MenuGroup[] {
               thumb: family.imageUrl ?? TAXONOMY_THUMBS[family.slug] ?? DEFAULT_MENU_THUMB,
               count: countOf(category.slug, family.slug),
             }))
-          : [{ key: category.slug, label, to, thumb: TAXONOMY_THUMBS[category.slug] ?? DEFAULT_MENU_THUMB, count: countOf(category.slug) }];
+          : [{ key: category.slug, label, to, thumb: category.imageUrl ?? TAXONOMY_THUMBS[category.slug] ?? DEFAULT_MENU_THUMB, count: countOf(category.slug) }];
       return { slug: category.slug, label, to, entries };
     });
   }, [taxonomy, products, lang]);

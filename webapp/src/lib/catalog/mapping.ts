@@ -74,6 +74,7 @@ export interface MediaRow {
 export interface CategoryRow {
   slug: string;
   name: string;
+  image_path?: string | null;
   category_translations: (TranslationRow & { name: string })[];
 }
 
@@ -129,6 +130,7 @@ export function mapTaxonomy(rows: TaxonomyRow[], mediaUrl: (path: string) => str
     .map((row) => ({
       slug: row.slug,
       name: localize(row.name, row.category_translations, (t) => t.name),
+      imageUrl: row.image_path ? mediaUrl(row.image_path) : undefined,
       families: (row.category_families ?? [])
         .filter((f) => f.is_active)
         .sort((a, b) => a.position - b.position)

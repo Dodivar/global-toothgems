@@ -102,7 +102,7 @@ export async function fetchGemColors(signal?: AbortSignal, db: TypedSupabaseClie
   return (data as GemColorRow[]).map(mapGemColor);
 }
 
-const TAXONOMY_SELECT_BASE = "slug, name, position, category_translations ( locale, name, status )";
+const TAXONOMY_SELECT_BASE = "slug, name, image_path, position, category_translations ( locale, name, status )";
 const TAXONOMY_SELECT = `${TAXONOMY_SELECT_BASE},
   category_families ( slug, name, image_path, position, is_active,
     category_family_translations ( locale, name, status ) )`;
