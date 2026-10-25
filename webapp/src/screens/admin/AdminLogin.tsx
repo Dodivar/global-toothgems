@@ -12,6 +12,7 @@ import { FormField } from "../../components/admin/FormField";
 import { useAdminAuth } from "../../lib/adminAuth";
 import { useFocusTrap } from "../../lib/useFocusTrap";
 import { returnPathFrom } from "../../lib/authRoutes";
+import { sendPasswordReset } from "../../lib/passwordRecovery";
 import { photo } from "../../lib/images";
 
 /**
@@ -245,19 +246,18 @@ export function AdminLogin() {
   );
 }
 
-/** Password recovery, rehearsed: the request, the wait, the confirmation. */
+/** Password recovery: the reset link is sent by Supabase Auth, the answer is the same whether or not the address has an account. */
 function ForgotPasswordDialog({ onClose, defaultEmail }: { onClose: () => void; defaultEmail: string }) {
   const { t } = useTranslation();
   const ref = useFocusTrap<HTMLDivElement>(true, onClose);
   const [email, setEmail] = useState(defaultEmail);
-  const [state, setState] = useState<"idle" | "sending" | "sent">("idle");
+  const [state, setState] = useState<"idle" | "sending" | "sent" | "failed">("idle");
 
   const send = async (event: FormEvent) => {
     event.preventDefault();
     if (!EMAIL_PATTERN.test(email.trim())) return;
     setState("sending");
-    await new Promise((resolve) => setTimeout(resolve, 800));
-    setState("sent");
+    setState((await sendPasswordReset(email)) === "sent" ? "sent" : "failed");
   };
 
   return (
@@ -302,6 +302,11 @@ function ForgotPasswordDialog({ onClose, defaultEmail }: { onClose: () => void; 
             <p className="m-0 text-[length:var(--text-body-sm)] text-[var(--text-body)]">
               {t("admin.login.forgotBody")}
             </p>
+            {state === "failed" && (
+              <p role="alert" className="m-0 text-[length:var(--text-caption)] text-[var(--status-error-fg)]">
+                {t("admin.login.forgotFailed")}
+              </p>
+            )}
             <FormField label={t("admin.login.email")} required>
               {(props) => (
                 <input

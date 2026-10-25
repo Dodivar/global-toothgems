@@ -789,6 +789,17 @@
     "demo": {
       "title": "Commandes du prototype",
       "takenLegend": "E-mails déjà inscrits (essayez-en un) :"
+    },
+    "verify": {
+      "title": "Consultez votre boîte mail",
+      "body": "Nous avons envoyé un lien de vérification à",
+      "instruction": "Ouvrez l’e-mail et sélectionnez le lien pour activer votre compte.",
+      "resend": "Renvoyer l’e-mail",
+      "resending": "Envoi…",
+      "resendIn": "Renvoyer dans {{time}}",
+      "wrongAddress": "Mauvaise adresse ? Recommencer",
+      "helpTitle": "Vous ne le trouvez pas ?",
+      "helpBody": "Cela peut prendre une minute. Regardez dans vos spams ou l’onglet Promotions. Toujours rien ? Renvoyez-le, ou corrigez votre adresse ci-dessus."
     }
   },
   "academy": {
@@ -2071,14 +2082,15 @@
         "emailRequired": "L’adresse e-mail est requise.",
         "emailInvalid": "Cette adresse e-mail semble incomplète.",
         "passwordRequired": "Le mot de passe est requis.",
-        "rejected": "Identifiants incorrects. Vérifiez le mot de passe indiqué plus bas et réessayez.",
+        "rejected": "Identifiants incorrects. Vérifiez votre e-mail et votre mot de passe, puis réessayez.",
         "notStaff": "Ce compte n’a pas accès à l’administration. Demandez un accès à un administrateur.",
         "unavailable": "Le service de connexion ne répond pas. Réessayez dans un instant."
       },
       "forgotTitle": "Mot de passe oublié",
-      "forgotBody": "Indiquez votre adresse e-mail : un lien de réinitialisation vous sera envoyé. Dans cette maquette, aucun e-mail n’est réellement expédié.",
+      "forgotBody": "Indiquez votre adresse e-mail : un lien de réinitialisation vous sera envoyé.",
       "forgotSubmit": "Envoyer le lien",
-      "forgotSent": "Si un compte administrateur existe pour {{email}}, un lien de réinitialisation vient de lui être envoyé."
+      "forgotSent": "Si un compte administrateur existe pour {{email}}, un lien de réinitialisation vient de lui être envoyé.",
+      "forgotFailed": "Le lien n’a pas pu être envoyé. Vérifiez l’adresse et réessayez dans un instant."
     },
     "orders": {
       "title": "Commandes",
@@ -3354,7 +3366,7 @@
         "emptyTitle": "Aucun paiement d’abonnement sur la période",
         "emptyBody": "Les abonnements au Studio apparaîtront ici dès leur premier paiement.",
         "unavailableTitle": "Données indisponibles",
-        "unavailableBody": "Ce panneau lit la base de données, absente en mode démonstration.",
+        "unavailableBody": "Ce panneau lit la base de données, qui n’est pas connectée dans cet environnement.",
         "errorTitle": "Lecture impossible",
         "errorBody": "Les paiements du Studio n’ont pas pu être lus. Actualisez la page."
       },

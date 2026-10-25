@@ -419,10 +419,11 @@ resend), wrong credentials, suspended accounts and rate limits separately.
 `/mot-de-passe-oublie` and `/reinitialiser-mot-de-passe` use Supabase password
 recovery (`lib/passwordRecovery.ts`). On the Security page, changing the email or
 the password goes through Supabase Auth (`lib/accountCredentials.ts`); data export
-and account deletion are still simulated. The
-prototype controls, the mock inbox and the Google dialog only exist without
-Supabase; Google sign-in is not connected. Without Supabase, everything below is
-simulated as before.
+and account deletion are still simulated (their demo panels only exist on
+that page). Google sign-in goes through Supabase Auth (`signInWithGoogle`, terms
+dialog first). The registration journey itself has no simulated service any
+more: without Supabase the mock `signUp` only answers "confirmation sent", which
+is enough for the smoke tests.
 
 The reason the visitor came is carried in the URL, and the page keeps it in view
 and ends on it:
@@ -431,17 +432,14 @@ and ends on it:
 | --- | --- | --- |
 | `/inscription` | Plain sign-up | Follows the chosen interest (products, training), else the dashboard |
 | `/inscription?contexte=achat` | Purchase in progress — shows the cart (or `&produit=<id>&qte=<n>`) | Return to cart |
-| `/inscription?contexte=formation&formation=<id>` | Training — shows the course | Continue to checkout (starts the course, like "Start this training") |
+| `/inscription?contexte=formation&formation=<id>` | Training — shows the course | View the training (its sales page, where "Buy" puts it in the cart) |
 
 History state from the login wall (`{ from, course }`) is honoured too.
 
-A **Prototype controls** panel at the top switches the context and forces
-outcomes: registration failure, network error, verification email failure,
-expired verification link. `camille@studio.fr`, `hello@globaltoothgems.com` and
-`lea.martin@gmail.com` are treated as already registered. "Continue with Google"
-opens a simulated account chooser; nothing is sent anywhere, no password is
-stored, and marketing consent is never pre-ticked. Logic and mock service live in
-`src/lib/registration.ts`, components in `src/components/register/`.
+Marketing consent is never pre-ticked. Validation, password strength and the
+context live in `src/lib/registration.ts`, components in
+`src/components/register/` (the former "Prototype controls" panel, mock inbox and
+simulated Google chooser were removed on 2026-10-25).
 
 ## The 3D Studio (`/studio-3d`)
 
@@ -647,7 +645,7 @@ A separate, desktop-first management workspace for the product catalogue. Produc
 
 | Route | Screen |
 | --- | --- |
-| `/admin/connexion` | Access screen — validation, loading, error and success states, plus a simulated password-recovery dialog |
+| `/admin/connexion` | Access screen — validation, loading, error and success states, plus a password-recovery dialog (Supabase Auth reset e-mail) |
 | `/admin` | Dashboard — catalogue counts, the products that cannot currently be sold, and recent product activity |
 | `/admin/commandes` | Order book — KPI row, search and filters, the table, bulk actions, export |
 | `/admin/commandes/:reference` | One order in full: items and money, shipping, payment, customer, timeline, internal notes |
@@ -809,7 +807,7 @@ Rules the prototype shows, and the assumptions behind them (to confirm before th
 - **Customer text is never translated or edited** (guideline 08); a review that can't be published is sent back with a message or rejected with a reason the customer sees.
 - Averages and counts on product and course pages are computed from the published reviews in the store, so they differ from the catalogue's `rating`/`reviewCount` fields that shop cards still show.
 
-Prototype controls: the admin bar switches between sample data, no reviews and a loading error (this also empties the storefront sections); each storefront section has its own small switch for loading, empty and error. Everything that matters — eligibility, the order behind "verified", photo type/size checks and storage, authorship, moderation permissions — must be enforced server-side in the real implementation; the checks here are presentation only.
+Prototype controls: the admin bar switches between sample data, no reviews and a loading error (this also empties the storefront sections); the storefront's own loading/empty/error switch was removed on 2026-10-25. Everything that matters — eligibility, the order behind "verified", photo type/size checks and storage, authorship, moderation permissions — must be enforced server-side in the real implementation; the checks here are presentation only.
 
 ## Store settings (`/admin/parametres`)
 
@@ -922,4 +920,4 @@ Without the Supabase variables every domain runs on its mock store. With them, t
 - **Back-office statistics:** live, within the current schema (see "Statistics on Supabase"). A translation workflow (coverage, editor) is not built.
 - **Gift card delivery:** cards are created and activated in the database, but nothing sends the code to the recipient yet (needs the e-mail Edge Function).
 
-The mock stores, fixtures in `data/`, demo accounts and "Prototype controls" panels are removed domain by domain as each goes live; a production build must never fall back to them.
+The mock stores, fixtures in `data/` and demo accounts that remain exist for the Playwright smoke suite (mock mode, see `AGENTS.md` §4) and are removed domain by domain once `test:e2e:live` covers the same screens; a production build must never fall back to them. The registration, recovery, cookie-preferences, system-page and orders-export screens have no simulated behaviour left.

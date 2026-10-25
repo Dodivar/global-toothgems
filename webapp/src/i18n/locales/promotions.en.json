@@ -948,7 +948,7 @@
     "checkout": "Checkout summary",
     "landing": "Campaign landing page",
     "noLanding": "Choose a campaign above to preview its landing page.",
-    "disclaimer": "Storefront mockup for review. Prices shown are illustrative; the shop recalculates every discount at checkout.",
+    "disclaimer": "Storefront preview. Prices shown are illustrative; the shop recalculates every discount at checkout.",
     "emptyTitle": "Nothing to preview yet",
     "emptyBody": "Create a promotion first — its customer view will appear here."
   },
