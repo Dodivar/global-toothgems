@@ -50,9 +50,6 @@
     "mySpace": "Mon espace"
   },
   "common": {
-    "notIncludedTitle": "Écran hors périmètre",
-    "notIncludedScreen": "Cet écran n’est pas inclus dans cette maquette.",
-    "notIncludedArtists": "L’annuaire des artistes n’est pas inclus dans cette maquette.",
     "readMore": "En savoir plus",
     "details": "Détails",
     "close": "Fermer",
@@ -492,7 +489,6 @@
     "newsletter": "Recevoir les nouveautés et dates de formation",
     "newsletterDescription": "Un e-mail par mois, désinscription en un clic.",
     "submitSignIn": "Se connecter",
-    "mockNote": "Maquette : l’authentification réelle sera branchée plus tard.",
     "guestNote": "Les gems, outils et kits s’achètent sans compte.",
     "guestCta": "Continuer vers la boutique",
     "benefitsTitle": "Avec un compte",
@@ -532,8 +528,6 @@
     "forgotToastTitle": "Récupération du mot de passe",
     "orContinue": "ou continuer avec",
     "google": "Continuer avec Google",
-    "googleToastTitle": "Maquette visuelle",
-    "googleToastBody": "La connexion Google est présentée pour le design uniquement — rien n’est branché.",
     "googleErrorTitle": "Connexion Google impossible",
     "googleErrorBody": "Nous n’avons pas pu joindre Google. Réessayez dans un instant ou utilisez votre e-mail.",
     "switchToSignUpPrompt": "Pas encore de compte ?",
@@ -1052,8 +1046,6 @@
     "toastLockedBody": "Terminez « {{title}} » pour débloquer celle-ci.",
     "toastCaptionsTitle": "Sous-titres",
     "toastCaptionsBody": "Disponibles en FR, EN et DE dans le lecteur de production.",
-    "toastFullscreenTitle": "Plein écran",
-    "toastFullscreenBody": "Le lecteur vidéo réel n’est pas inclus dans cette maquette.",
     "toastResourceTitle": "Ressource de leçon",
     "toastResourceBody": "Les notes et la carte de suivi sont servies depuis un stockage privé ; les liens expirent après usage.",
     "toastQuizCorrectTitle": "Bonne réponse",
@@ -1352,8 +1344,7 @@
     "company": {
       "about": "À propos",
       "training": "Formations professionnelles",
-      "pro": "Demandes professionnelles",
-      "findArtist": "Trouver un artiste"
+      "pro": "Demandes professionnelles"
     },
     "academyAll": "Toutes les formations"
   },
@@ -4742,9 +4733,7 @@
         "allowed": "Acceptés",
         "refused": "Refusés",
         "undecided": "Non choisi"
-      },
-      "demoNote": "Maquette d’interaction : aucun cookie optionnel ni traceur n’est déposé, seul votre choix est mémorisé dans ce navigateur.",
-      "demoReset": "Réafficher le bandeau"
+      }
     },
     "faq": {
       "eyebrow": "Centre d’aide",

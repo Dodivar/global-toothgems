@@ -2,7 +2,6 @@ import { useTranslation } from "react-i18next";
 import { Check, Lock, Minus, SlidersHorizontal, X } from "lucide-react";
 import { Button } from "../ui/Button";
 import { OPTIONAL_CATEGORIES, useCookieConsent } from "../../lib/cookieConsent";
-import { ReviewNote } from "./ReviewNote";
 
 /**
  * "Your current choices", on the cookie policy: the state of each category in
@@ -11,7 +10,7 @@ import { ReviewNote } from "./ReviewNote";
  */
 export function CookieChoicesPanel() {
   const { t, i18n } = useTranslation();
-  const { record, openSettings, reset } = useCookieConsent();
+  const { record, openSettings } = useCookieConsent();
 
   const status = (allowed: boolean | null) => {
     if (allowed === null)
@@ -63,14 +62,6 @@ export function CookieChoicesPanel() {
           );
         })}
       </ul>
-      <ReviewNote>
-        <span>{t("legal.cookies.demoNote")} </span>
-        {record && (
-          <button type="button" onClick={reset} className="gt-legal-link">
-            {t("legal.cookies.demoReset")}
-          </button>
-        )}
-      </ReviewNote>
     </div>
   );
 }

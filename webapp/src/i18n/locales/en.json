@@ -50,9 +50,6 @@
     "mySpace": "My space"
   },
   "common": {
-    "notIncludedTitle": "Screen out of scope",
-    "notIncludedScreen": "This screen isn’t included in this prototype.",
-    "notIncludedArtists": "The artist directory isn’t included in this prototype.",
     "readMore": "Learn more",
     "details": "Details",
     "close": "Close",
@@ -492,7 +489,6 @@
     "newsletter": "Send me new releases and course dates",
     "newsletterDescription": "One email a month, unsubscribe in one click.",
     "submitSignIn": "Sign in",
-    "mockNote": "Mockup: real authentication will be wired in later.",
     "guestNote": "Gems, tools and kits can be bought without an account.",
     "guestCta": "Continue to the shop",
     "benefitsTitle": "With an account",
@@ -532,8 +528,6 @@
     "forgotToastTitle": "Password recovery",
     "orContinue": "or continue with",
     "google": "Continue with Google",
-    "googleToastTitle": "Visual mockup",
-    "googleToastBody": "Google sign-in is shown for the design only — nothing is connected yet.",
     "googleErrorTitle": "Google sign-in unavailable",
     "googleErrorBody": "We could not reach Google. Try again in a moment or use your email.",
     "switchToSignUpPrompt": "No account yet?",
@@ -1052,8 +1046,6 @@
     "toastLockedBody": "Finish “{{title}}” to unlock this one.",
     "toastCaptionsTitle": "Captions",
     "toastCaptionsBody": "Available in FR, EN and DE in the production player.",
-    "toastFullscreenTitle": "Fullscreen",
-    "toastFullscreenBody": "The real video player isn’t included in this prototype.",
     "toastResourceTitle": "Lesson resource",
     "toastResourceBody": "Notes and the aftercare card are served from private storage; links expire after use.",
     "toastQuizCorrectTitle": "Correct answer",
@@ -1352,8 +1344,7 @@
     "company": {
       "about": "About Global Toothgems",
       "training": "Professional training",
-      "pro": "Professional inquiries",
-      "findArtist": "Find an artist"
+      "pro": "Professional inquiries"
     },
     "academyAll": "All courses"
   },
@@ -4742,9 +4733,7 @@
         "allowed": "Allowed",
         "refused": "Refused",
         "undecided": "Not chosen"
-      },
-      "demoNote": "Interaction prototype: no optional cookie or tracker is set; only your choice is remembered in this browser.",
-      "demoReset": "Show the banner again"
+      }
     },
     "faq": {
       "eyebrow": "Help centre",

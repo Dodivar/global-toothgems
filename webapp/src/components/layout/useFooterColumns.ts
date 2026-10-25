@@ -3,7 +3,6 @@ import { pick } from "../../data/types";
 import { useAcademy } from "../../lib/academy/AcademyProvider";
 import { courseSlug } from "../../lib/academy/publicCourse";
 import { courseHref } from "../../lib/academyUrl";
-import { useToast } from "../../lib/toast";
 import { useCookieConsent } from "../../lib/cookieConsent";
 import { contactHref, LEGAL_PATHS } from "../../data/legal/routes";
 import { shopHref } from "../../data/taxonomy";
@@ -12,9 +11,7 @@ import { shopHref } from "../../data/taxonomy";
  * The footer's link columns, used by `Footer`.
  *
  * An item either navigates (`to`) or acts (`action`): "Cookie settings" opens
- * the preferences dialog rather than a page, and the one entry this
- * prototype has no screen for (the artist directory) still says so instead
- * of pretending to be a link.
+ * the preferences dialog rather than a page.
  */
 export interface FooterItem {
   label: string;
@@ -29,9 +26,8 @@ export interface FooterColumn {
 }
 
 /* Destinations, positionally matched to the translated label lists so the
-   routes stay correct in both languages. `null` marks an item this prototype
-   does not have a screen for. */
-const SHOP_TARGETS: (string | null)[] = [
+   routes stay correct in both languages. */
+const SHOP_TARGETS: string[] = [
   shopHref("gems"),
   shopHref("materiel"),
   shopHref("kits"),
@@ -47,15 +43,10 @@ export function useFooterColumns(): FooterColumn[] {
   const { courses } = useAcademy();
   const lang = i18n.language;
   const locale = lang.startsWith("en") ? "en" : "fr";
-  const { showToast } = useToast();
   const { openSettings } = useCookieConsent();
 
-  const notIncluded = () => showToast(t("common.notIncludedTitle"), t("common.notIncludedScreen"), "info");
-  const fromList = (key: string, targets: (string | null)[]): FooterItem[] =>
-    (t(key, { returnObjects: true }) as string[]).map((label, i) => {
-      const to = targets[i];
-      return to ? { label, to } : { label, action: notIncluded };
-    });
+  const fromList = (key: string, targets: string[]): FooterItem[] =>
+    (t(key, { returnObjects: true }) as string[]).map((label, i) => ({ label, to: targets[i] }));
 
   return [
     { id: "shop", heading: t("footer.colShop"), items: fromList("footer.shopItems", SHOP_TARGETS) },
@@ -97,7 +88,6 @@ export function useFooterColumns(): FooterColumn[] {
         { label: t("footer.company.about"), to: LEGAL_PATHS.about },
         { label: t("footer.company.training"), to: "/academy" },
         { label: t("footer.company.pro"), to: contactHref("professional") },
-        { label: t("footer.company.findArtist"), action: notIncluded },
       ],
     },
   ];

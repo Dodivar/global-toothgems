@@ -105,12 +105,8 @@ export function Login() {
     navigate(target, { replace: true });
   };
 
-  /** Real auth leaves for Google and comes back signed in; the mock only says it is a mock-up. */
+  /** Google leaves for the provider and comes back signed in (offered with real authentication only). */
   const continueWithGoogle = async () => {
-    if (!realAuth) {
-      showToast(t("authAlt.googleToastTitle"), t("authAlt.googleToastBody"), "info");
-      return;
-    }
     setBusy(true);
     const result = await signInWithGoogle(target);
     if (result === "unavailable") {
@@ -272,17 +268,21 @@ export function Login() {
               {t("auth.submitSignIn")}
             </Button>
 
-            <div className="flex items-center gap-3" aria-hidden="true">
-              <span className="h-px flex-1 bg-[var(--border-subtle)]" />
-              <span className="gt-eyebrow">{t("authAlt.orContinue")}</span>
-              <span className="h-px flex-1 bg-[var(--border-subtle)]" />
-            </div>
+            {realAuth && (
+              <>
+                <div className="flex items-center gap-3" aria-hidden="true">
+                  <span className="h-px flex-1 bg-[var(--border-subtle)]" />
+                  <span className="gt-eyebrow">{t("authAlt.orContinue")}</span>
+                  <span className="h-px flex-1 bg-[var(--border-subtle)]" />
+                </div>
 
-            <GoogleButton
-              label={t("authAlt.google")}
-              disabled={busy}
-              onClick={() => void continueWithGoogle()}
-            />
+                <GoogleButton
+                  label={t("authAlt.google")}
+                  disabled={busy}
+                  onClick={() => void continueWithGoogle()}
+                />
+              </>
+            )}
           </form>
 
           <div className="grid gap-3 border-t border-[var(--border-subtle)] pt-5">
@@ -294,9 +294,6 @@ export function Login() {
                 {t("login.createAccount")}
               </Link>
             </p>
-            {!realAuth && (
-              <p className="m-0 text-center text-[length:var(--text-caption)] text-[var(--text-muted)]">{t("auth.mockNote")}</p>
-            )}
           </div>
         </div>
       </AuthCard>
