@@ -57,9 +57,8 @@ const SIDEBAR_OPEN_GROUPS: GroupKey[] = ["category", "shape", "color", "price"];
  * introduction, a wide grid, and the filters in a sticky sidebar on the right
  * (a drawer below the lg breakpoint).
  *
- * A layout prototype for comparison. Nothing here touches pricing or stock:
- * the page reads the catalogue like /boutique does and the cart recomputes
- * everything at checkout.
+ * Nothing here touches pricing or stock: the page reads the catalogue and the
+ * cart recomputes everything at checkout.
  */
 export function ShopAlt() {
   const { t, i18n } = useTranslation();

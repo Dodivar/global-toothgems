@@ -1,9 +1,6 @@
 import { useEffect, type CSSProperties, type ReactNode } from "react";
-import { Link } from "../../lib/navigation";
 import { useTranslation } from "react-i18next";
 import type { LucideIcon } from "lucide-react";
-import { FlaskConical } from "lucide-react";
-import clsx from "clsx";
 import { Badge, type BadgeTone } from "../ui/Badge";
 
 /**
@@ -19,13 +16,7 @@ import { Badge, type BadgeTone } from "../ui/Badge";
  * its own, and the headline is the page's only `h1`.
  */
 
-const SYSTEM_PREVIEW_PATHS = {
-  notFound: "/page-introuvable",
-  serverError: "/erreur",
-  maintenance: "/maintenance",
-} as const;
-
-type SystemPageKind = keyof typeof SYSTEM_PREVIEW_PATHS;
+type SystemPageKind = "notFound" | "serverError" | "maintenance";
 
 interface SystemPageProps {
   kind: SystemPageKind;
@@ -116,51 +107,7 @@ export function SystemPage({ kind, status, title, body, note, actions, after, vi
           {visual}
         </div>
       </div>
-
-      <PreviewSwitch current={kind} />
     </section>
   );
 }
 
-/**
- * Prototype-only navigation between the three system pages, so they can be
- * reviewed side by side. Labelled as such, and set apart from the page's own
- * actions so it never competes with them.
- */
-function PreviewSwitch({ current }: { current: SystemPageKind }) {
-  const { t } = useTranslation();
-  const kinds = Object.keys(SYSTEM_PREVIEW_PATHS) as SystemPageKind[];
-
-  return (
-    <nav
-      aria-label={t("errors.preview.label")}
-      className="mx-auto flex max-w-[var(--max-width-content)] flex-wrap items-center justify-center gap-x-3 gap-y-2 border-t border-[var(--border-subtle)] px-[var(--gutter-page)] py-4 text-[length:var(--text-caption)] text-[var(--text-muted)] lg:px-[var(--gutter-page-lg)]"
-    >
-      <span className="inline-flex items-center gap-1.5 font-semibold">
-        <FlaskConical size={13} aria-hidden="true" />
-        {t("errors.preview.label")}
-      </span>
-      <ul className="m-0 flex list-none flex-wrap items-center gap-1 p-0">
-        {kinds.map((kind) => {
-          const active = kind === current;
-          return (
-            <li key={kind}>
-              <Link
-                to={SYSTEM_PREVIEW_PATHS[kind]}
-                aria-current={active ? "page" : undefined}
-                className={clsx(
-                  "inline-flex min-h-[32px] items-center rounded-[var(--radius-pill)] px-3 font-semibold transition-colors duration-[var(--duration-fast)]",
-                  active
-                    ? "bg-[var(--surface-inverse)] text-[var(--text-inverse)]"
-                    : "text-[var(--text-body)] hover:bg-[var(--gt-ink-100)] hover:text-[var(--text-primary)]",
-                )}
-              >
-                {t(`errors.preview.${kind}`)}
-              </Link>
-            </li>
-          );
-        })}
-      </ul>
-    </nav>
-  );
-}

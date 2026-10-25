@@ -1,6 +1,6 @@
 "use client";
 
-import { useEffect, useRef, useState } from "react";
+import { useState } from "react";
 import { Link } from "../lib/navigation";
 import { useTranslation } from "react-i18next";
 import { House, RotateCw, Wrench } from "lucide-react";
@@ -9,9 +9,6 @@ import { SystemPage } from "../components/system/SystemPage";
 import { SettingInProgressVisual } from "../components/system/SystemVisuals";
 import { useRouterLink } from "../components/system/useRouterLink";
 import logoBlack from "../assets/logo-wordmark-black.png";
-
-/** How long the mock refresh "checks" before reporting back. */
-const REFRESH_MS = 1200;
 
 /**
  * Maintenance — planned, not broken.
@@ -24,29 +21,17 @@ const REFRESH_MS = 1200;
  * from, and an invented time is a promise nobody can keep. The progress bar is
  * indeterminate for the same reason.
  *
- * Prototype behaviour: "Refresh page" shows its loading state, then the time
- * of the check. In production it would simply reload.
+ * "Refresh page" shows its loading state and reloads the page.
  */
 export function Maintenance() {
-  const { t, i18n } = useTranslation();
+  const { t } = useTranslation();
   const link = useRouterLink();
   const [refreshing, setRefreshing] = useState(false);
-  const [checkedAt, setCheckedAt] = useState<Date | null>(null);
-  const timer = useRef<number | null>(null);
-
-  useEffect(() => () => {
-    if (timer.current !== null) window.clearTimeout(timer.current);
-  }, []);
 
   const refresh = () => {
     setRefreshing(true);
-    timer.current = window.setTimeout(() => {
-      setRefreshing(false);
-      setCheckedAt(new Date());
-    }, REFRESH_MS);
+    window.location.reload();
   };
-
-  const time = checkedAt?.toLocaleTimeString(i18n.language, { hour: "2-digit", minute: "2-digit" });
 
   return (
     <div className="flex min-h-[100svh] flex-col bg-[var(--surface-page)]">
@@ -87,11 +72,7 @@ export function Maintenance() {
               >
                 <span className="gt-sys-progress absolute inset-y-0 left-0 w-[38%] rounded-[var(--radius-pill)] bg-[var(--gt-blue-400)]" />
               </div>
-              {/* Opens on the reassurance, then becomes the result of each
-                  check; the change is what the live region announces. */}
-              <p role="status" className="m-0 text-[length:var(--text-caption)] text-[var(--text-muted)]">
-                {time ? t("errors.maintenance.checked", { time }) : t("errors.maintenance.note")}
-              </p>
+              <p className="m-0 text-[length:var(--text-caption)] text-[var(--text-muted)]">{t("errors.maintenance.note")}</p>
             </div>
           }
           visual={<SettingInProgressVisual statusLabel={t("errors.maintenance.chip")} />}

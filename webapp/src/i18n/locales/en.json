@@ -4206,12 +4206,6 @@
     "navEntryLocked": "Access with a training"
   },
   "errors": {
-    "preview": {
-      "label": "Prototype · system pages",
-      "notFound": "404",
-      "serverError": "500",
-      "maintenance": "Maintenance"
-    },
     "actions": {
       "home": "Back to homepage"
     },
@@ -4232,9 +4226,7 @@
       "note": "Nothing you did caused this, and there’s nothing you need to fix.",
       "retry": "Try again",
       "retrying": "Trying again…",
-      "pause": "Brief pause",
-      "stillOff": "Not quite yet — we’re still on it. Try again in a moment.",
-      "stillOffAgain": "Still being sorted out. Feel free to head back to the homepage in the meantime."
+      "pause": "Brief pause"
     },
     "maintenance": {
       "documentTitle": "Back shortly",
@@ -4247,7 +4239,6 @@
       "chip": "Work in progress",
       "statusTitle": "We’re making things better behind the scenes.",
       "progressLabel": "Maintenance in progress",
-      "checked": "Checked at {{time}} — still polishing. Thank you for your patience.",
       "logoAlt": "Global Toothgems — homepage",
       "copyright": "© 2026 Global Toothgems"
     }
