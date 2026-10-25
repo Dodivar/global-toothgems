@@ -88,6 +88,33 @@ export function imageModelConfig(env: (name: string) => string | undefined): Ima
   return { kind: "api_key", model, apiKey, baseUrl };
 }
 
+/**
+ * Why `imageModelConfig` found no door, in words safe for the logs: it names
+ * the secret and what is wrong with its shape, never its value.
+ */
+export function configProblem(env: (name: string) => string | undefined): string | null {
+  if (imageModelConfig(env)) return null;
+  const problems: string[] = [];
+  const model = env("GEMINI_IMAGE_MODEL")?.trim();
+  if (!model) problems.push("GEMINI_IMAGE_MODEL is missing");
+  else if (!ID.test(model)) problems.push(`GEMINI_IMAGE_MODEL must be a bare model id (letters, digits, . _ -; ${model.length} chars given${model.includes("/") ? ", contains '/'" : ""}${/\s/.test(model) ? ", contains spaces" : ""})`);
+  const raw = env("GOOGLE_ADC_JSON");
+  if (raw?.trim()) {
+    let type: unknown = "not JSON";
+    try {
+      const parsed = JSON.parse(raw);
+      type = parsed && typeof parsed === "object" ? (parsed as Record<string, unknown>).type ?? "no type field" : typeof parsed;
+    } catch {
+      const t = raw.trim();
+      type = `not JSON (starts with ${JSON.stringify(t.slice(0, 1))}, ${t.length} chars)`;
+    }
+    const adc = readAdcJson(raw);
+    if (!adc) problems.push(`GOOGLE_ADC_JSON is not an authorized_user ADC file (type: ${String(type).slice(0, 80)})`);
+    else if (!(env("GOOGLE_CLOUD_PROJECT")?.trim() || adc.quotaProject)) problems.push("no Google Cloud project: set GOOGLE_CLOUD_PROJECT");
+  } else if (!env("GEMINI_API_KEY")?.trim()) problems.push("neither GOOGLE_ADC_JSON nor GEMINI_API_KEY is set");
+  return problems.join("; ") || "unknown";
+}
+
 /** Where the request goes: the global Vertex endpoint has no region in its host. */
 export function generateUrl(config: ImageModelConfig): string {
   const model = encodeURIComponent(config.model);

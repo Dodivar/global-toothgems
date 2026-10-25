@@ -1,6 +1,6 @@
 import { requireEnv, serviceClient } from "../_shared/clients.ts";
 import { readSiteOrigins } from "../_shared/http.ts";
-import { generateImage, imageModelConfig, type InlineImage } from "./gemini.ts";
+import { configProblem, generateImage, imageModelConfig, type InlineImage } from "./gemini.ts";
 import { handleStudioTryOn, toBase64, type TryOnCreationRow } from "./handler.ts";
 import { promptVersion, TRY_ON_SYSTEM_PROMPT_V1, TRY_ON_SYSTEM_PROMPT_V2 } from "./systemPrompt.ts";
 
@@ -25,6 +25,9 @@ const limit = Number.parseInt(Deno.env.get("TRY_ON_DAILY_LIMIT") ?? "", 10);
 const version = promptVersion(Deno.env.get("TRY_ON_PROMPT_VERSION"));
 const systemPrompt = version === "v1" ? TRY_ON_SYSTEM_PROMPT_V1 : TRY_ON_SYSTEM_PROMPT_V2;
 const log = (message: string, detail?: unknown) => console.error(`[studio-try-on] ${message}`, detail ?? "");
+// Why the AI is not connected, if it is not: secret names and shapes only, never values.
+const problem = configProblem((name) => Deno.env.get(name));
+if (problem) log("AI not connected", problem);
 
 const REFERENCE_BUCKET = "studio-try-on-references";
 const REFERENCE_MAX = 6;
