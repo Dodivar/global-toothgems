@@ -4,6 +4,7 @@ import { Menu } from "../../ui/Menu";
 import type { Creation, StudioCollection } from "../../../lib/studioWorkspace/types";
 import { useWorkspace } from "../../../lib/studioWorkspace/workspace";
 import { openWorkspaceDialog } from "../../../lib/studioWorkspace/workspaceUi";
+import { CreationGlowbookBadge } from "./GlowbookStatus";
 import { ScenePreview } from "./ScenePreview";
 import { useWorkspaceActions } from "./useWorkspaceActions";
 import { focusRing, iconButton, useWorkspaceFormat } from "./workspaceStyles";
@@ -65,23 +66,27 @@ export function CreationCard({
         onStage ? "border-[var(--gt-blue-400)]" : "border-[var(--border-subtle)]",
       )}
     >
-      <button
-        type="button"
-        onClick={showDetails}
-        aria-label={t("studio.workspace.creations.viewDetails", { name: creation.name })}
-        className={clsx("relative block aspect-[4/3] w-full overflow-hidden bg-[var(--gt-blue-100)]", focusRing, "focus-visible:-outline-offset-2")}
-      >
-        <CreationThumb
-          creation={creation}
-          className="transition-transform duration-[var(--duration-slow)] ease-[var(--ease-out-soft)] group-hover/card:scale-[1.035]"
-        />
-        {onStage && (
-          <span className="absolute left-3 top-3 inline-flex items-center gap-1.5 rounded-[var(--radius-pill)] bg-[var(--gt-ink-900)]/85 px-2.5 py-1 text-[10.5px] font-bold uppercase tracking-[.08em] text-white backdrop-blur-[6px]">
-            <span aria-hidden="true" className="h-1.5 w-1.5 rounded-full bg-[var(--accent-cta)]" />
-            {ws.dirty ? t("studio.workspace.creations.onStageUnsaved") : t("studio.workspace.creations.onStage")}
-          </span>
-        )}
-      </button>
+      <div className="relative">
+        <button
+          type="button"
+          onClick={showDetails}
+          aria-label={t("studio.workspace.creations.viewDetails", { name: creation.name })}
+          className={clsx("relative block aspect-[4/3] w-full overflow-hidden bg-[var(--gt-blue-100)]", focusRing, "focus-visible:-outline-offset-2")}
+        >
+          <CreationThumb
+            creation={creation}
+            className="transition-transform duration-[var(--duration-slow)] ease-[var(--ease-out-soft)] group-hover/card:scale-[1.035]"
+          />
+          {onStage && (
+            <span className="absolute left-3 top-3 inline-flex items-center gap-1.5 rounded-[var(--radius-pill)] bg-[var(--gt-ink-900)]/85 px-2.5 py-1 text-[10.5px] font-bold uppercase tracking-[.08em] text-white backdrop-blur-[6px]">
+              <span aria-hidden="true" className="h-1.5 w-1.5 rounded-full bg-[var(--accent-cta)]" />
+              {ws.dirty ? t("studio.workspace.creations.onStageUnsaved") : t("studio.workspace.creations.onStage")}
+            </span>
+          )}
+        </button>
+        {/* Beside the thumbnail's button, not in it: its label would hide the status from screen readers. */}
+        <CreationGlowbookBadge creationId={creation.id} className="pointer-events-none absolute bottom-3 left-3 max-w-[calc(100%-1.5rem)]" />
+      </div>
       <FavoriteButton
         on={creation.isFavorite}
         name={creation.name}

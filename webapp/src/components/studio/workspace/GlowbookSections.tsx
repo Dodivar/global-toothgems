@@ -166,9 +166,9 @@ function SectionRow({ section, count, first, last }: { section: GlowbookSection;
         </div>
       ) : (
         <div className="flex flex-wrap items-center gap-2">
-          <span className="min-w-0 flex-1 truncate text-[14px] font-bold text-[var(--text-primary)]">{section.name}</span>
+          <span className="min-w-0 flex-1 basis-[120px] truncate text-[14px] font-bold text-[var(--text-primary)]">{section.name}</span>
           <span className="text-[12px] text-[var(--text-muted)]">{t("studio.glowbook.sections.count", { count })}</span>
-          <span className="flex items-center gap-1">
+          <span className="ml-auto flex items-center gap-1">
             <button
               type="button"
               className={iconButton}

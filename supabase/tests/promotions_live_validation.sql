@@ -49,7 +49,10 @@ begin
   select p.id, p.price into v_prod, v_price from public.products p
    where p.status = 'active' and p.currency = 'EUR' and p.product_type <> 'gift_card' and p.price >= 5
      and not exists (select 1 from public.product_variants v where v.product_id = p.id and v.is_active)
-   order by p.created_at limit 1;
+     -- Not already discounted: the promotions below exclude discounted products.
+     and p.compare_at_price is null
+   -- Seeded products share one created_at: the slug makes the pick stable.
+   order by p.created_at, p.slug limit 1;
   if v_prod is null then raise exception 'FAIL setup: no active EUR product without variants'; end if;
   v_items := jsonb_build_array(jsonb_build_object('product_id', v_prod, 'variant_id', null, 'quantity', 2));
 

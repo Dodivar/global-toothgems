@@ -1,6 +1,6 @@
 import { useMemo, useState } from "react";
 import { useTranslation } from "react-i18next";
-import { Camera, CircleAlert, FlaskConical, MessageSquareText, RotateCw, ShieldCheck, Sparkles, Users } from "lucide-react";
+import { Camera, CircleAlert, MessageSquareText, RotateCw, ShieldCheck, Sparkles, Users } from "lucide-react";
 import clsx from "clsx";
 import { Button } from "../ui/Button";
 import { Select } from "../ui/Select";
@@ -80,9 +80,8 @@ export function ReviewsSection({
   const [sort, setSort] = useState<PublicSort>("recent");
   const [shown, setShown] = useState(PAGE);
   const [phoneOpen, setPhoneOpen] = useState(false);
-  const [preview, setPreview] = useState<Preview>("live");
 
-  const state: Preview = preview !== "live" ? preview : demoMode === "error" ? "error" : loading ? "loading" : published.length === 0 ? "empty" : "live";
+  const state: Preview = demoMode === "error" ? "error" : loading ? "loading" : published.length === 0 ? "empty" : "live";
   const list = state === "live" ? published : [];
 
   const featured = course ? null : featuredReview(list);
@@ -170,7 +169,7 @@ export function ReviewsSection({
                   {t("reviews.section.errorTitle")}
                 </span>
                 <p className="m-0 text-[length:var(--text-body-sm)] text-[var(--text-body)]">{t("reviews.section.errorBody")}</p>
-                <Button variant="outline" size="sm" iconLeft={RotateCw} onClick={() => { setPreview("live"); retry(); }}>
+                <Button variant="outline" size="sm" iconLeft={RotateCw} onClick={retry}>
                   {t("reviews.section.retry")}
                 </Button>
               </div>
@@ -328,8 +327,6 @@ export function ReviewsSection({
                 )}
               </>
             )}
-
-            <PreviewSwitch value={preview} onChange={setPreview} name={`${id}-preview`} />
           </div>
         </div>
       </div>
@@ -417,37 +414,5 @@ function SummaryCard({
         </dl>
       )}
     </div>
-  );
-}
-
-/**
- * Prototype control: shows this section's loading, empty and error states on
- * demand. Labelled as a prototype tool, like the loyalty and promotions demo
- * switches, so nobody mistakes it for a feature.
- */
-function PreviewSwitch({ value, onChange, name }: { value: Preview; onChange: (v: Preview) => void; name: string }) {
-  const { t } = useTranslation();
-  const options: Preview[] = ["live", "loading", "empty", "error"];
-  return (
-    <fieldset className="m-0 flex flex-wrap items-center gap-2 rounded-[var(--radius-md)] border border-dashed border-[var(--border-default)] px-3 py-2">
-      <legend className="sr-only">{t("reviews.proto.label")}</legend>
-      <span aria-hidden="true" className="flex items-center gap-1.5 text-[11px] font-semibold uppercase tracking-[var(--tracking-wide)] text-[var(--text-muted)]">
-        <FlaskConical size={12} />
-        {t("reviews.proto.label")}
-      </span>
-      {options.map((o) => (
-        <label
-          key={o}
-          className={clsx(
-            "relative cursor-pointer rounded-[var(--radius-pill)] px-2.5 py-1 text-[11px] font-semibold transition-colors",
-            "has-[:focus-visible]:outline has-[:focus-visible]:outline-2 has-[:focus-visible]:outline-[var(--focus-ring)]",
-            value === o ? "bg-[var(--surface-inverse)] text-[var(--text-inverse)]" : "text-[var(--text-muted)] hover:bg-[var(--gt-ink-100)]",
-          )}
-        >
-          <input type="radio" name={name} value={o} checked={value === o} onChange={() => onChange(o)} className="sr-only" />
-          {t(`reviews.proto.${o}`)}
-        </label>
-      ))}
-    </fieldset>
   );
 }

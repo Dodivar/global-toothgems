@@ -27,6 +27,11 @@ export type ProductStatus = "active" | "draft" | "archived";
 /** What the customer receives. Drives nothing but presentation in the prototype. */
 export type ProductType = "single" | "set" | "kit" | "tool" | "care" | "course-material";
 
+/** A gem's characteristics besides the material (`products.spec_*`, French + English). */
+export const ADMIN_SPEC_KEYS = ["center", "back", "packaging", "wear"] as const;
+export type AdminSpecKey = (typeof ADMIN_SPEC_KEYS)[number];
+export type AdminSpecs = Partial<Record<AdminSpecKey, Localized>>;
+
 /**
  * A category key: one of the fixture slugs below in the mock catalogue, the
  * category's uuid when the catalogue comes from Supabase.
@@ -200,7 +205,10 @@ export interface AdminProduct {
    * or when it sells pack/SS options — saving then leaves variants alone.
    */
   customVariants?: CustomVariant[];
+  /** The card subtitle of any product, and the first characteristic of a gem. */
   material: Localized;
+  /** A gem's other characteristics (the product page lists them for gems only); empty = not shown. */
+  specs?: AdminSpecs;
   /** Gem cut and colour family, feeding the storefront's shape and colour filters. Gems only. */
   shape?: GemShape;
   color?: GemColor;

@@ -215,6 +215,7 @@ export function SupabaseAdminCatalogProvider({ children, actor }: { children: Re
         variants?: string[];
         custom_variants?: string[];
         family_id?: string | null;
+        specs?: boolean;
       };
       await removeFiles(result.removed_paths ?? []);
       // A database without the pack/SS, variants or families migration saves
@@ -227,6 +228,9 @@ export function SupabaseAdminCatalogProvider({ children, actor }: { children: Re
       }
       if (product.familyId && !("family_id" in result)) {
         return fail({ code: "PGRST202", message: "admin_save_product() does not save families yet" });
+      }
+      if (!result.specs) {
+        return fail({ code: "PGRST202", message: "admin_save_product() does not save characteristics yet" });
       }
 
       return refresh(result.id);

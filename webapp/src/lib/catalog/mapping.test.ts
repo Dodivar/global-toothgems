@@ -29,7 +29,10 @@ function row(overrides: Partial<ProductRow> = {}): ProductRow {
     compare_at_price: 38,
     currency: "EUR",
     is_featured: true,
-    metadata: { material: "Cristal taillé", shape: "star", color: "crystal" },
+    metadata: { material: "Ancienne valeur", shape: "star", color: "crystal" },
+    spec_material: "Cristal taillé",
+    spec_back: " Plat, poli ",
+    spec_wear: null,
     category: { slug: "gems", name: "Gems", category_translations: [] },
     product_translations: [
       {
@@ -39,6 +42,7 @@ function row(overrides: Partial<ProductRow> = {}): ProductRow {
         slug: "crystal-star-tooth-gem",
         short_description: "Five-point star.",
         description: null,
+        spec_material: "Cut crystal",
       },
     ],
     product_variants: [],
@@ -113,6 +117,19 @@ describe("mapProduct", () => {
     expect(p.isFeatured).toBe(true);
   });
 
+  it("reads the characteristics from their columns, English falling back to French, never metadata", () => {
+    const p = mapProduct(row(), undefined, url);
+    expect(p.specs).toEqual({
+      material: { fr: "Cristal taillé", en: "Cut crystal" },
+      back: { fr: "Plat, poli", en: "Plat, poli" },
+    });
+    expect(p.subtitle).toEqual({ fr: "Cristal taillé", en: "Cut crystal" });
+    const bare = mapProduct(row({ spec_material: null, spec_back: null }), undefined, url);
+    expect(bare.specs).toBeUndefined();
+    expect(bare.material).toBe("");
+    expect(bare.subtitle).toEqual({ fr: "Gems", en: "Gems" });
+  });
+
   it("puts the primary image first and resolves Storage URLs", () => {
     const p = mapProduct(row(), undefined, url);
     expect(p.image).toBe("https://cdn.test/products/etoile-cristal/01.jpg");
@@ -132,7 +149,7 @@ describe("mapProduct", () => {
 
   it("ignores unknown shapes and colours, and keeps any category slug", () => {
     const p = mapProduct(
-      row({ metadata: { shape: "hexagon", color: 3 }, category: { slug: "nouveautes", name: "Nouveautés", category_translations: [] } }),
+      row({ metadata: { shape: "hexagon", color: 3 }, spec_material: null, category: { slug: "nouveautes", name: "Nouveautés", category_translations: [] } }),
       undefined,
       url,
     );

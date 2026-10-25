@@ -1,5 +1,7 @@
 import {
   GEM_SHAPES,
+  SPEC_KEYS,
+  type ProductSpecs,
   type GemColorDef,
   type GemShape,
   type Product,
@@ -28,7 +30,10 @@ interface TranslationRow {
   status: string;
 }
 
-export interface ProductTranslationRow extends TranslationRow {
+/** The characteristic columns, on `products` (French) and `product_translations`. */
+export type SpecColumns = Partial<Record<`spec_${(typeof SPEC_KEYS)[number]}`, string | null>>;
+
+export interface ProductTranslationRow extends TranslationRow, SpecColumns {
   name: string;
   slug: string | null;
   short_description: string | null;
@@ -69,10 +74,11 @@ export interface MediaRow {
 export interface CategoryRow {
   slug: string;
   name: string;
+  image_path?: string | null;
   category_translations: (TranslationRow & { name: string })[];
 }
 
-export interface ProductRow {
+export interface ProductRow extends SpecColumns {
   id: string;
   slug: string;
   name: string;
@@ -124,6 +130,7 @@ export function mapTaxonomy(rows: TaxonomyRow[], mediaUrl: (path: string) => str
     .map((row) => ({
       slug: row.slug,
       name: localize(row.name, row.category_translations, (t) => t.name),
+      imageUrl: row.image_path ? mediaUrl(row.image_path) : undefined,
       families: (row.category_families ?? [])
         .filter((f) => f.is_active)
         .sort((a, b) => a.position - b.position)
@@ -177,6 +184,16 @@ function metadataString(metadata: Json, key: string): string | undefined {
   if (!metadata || typeof metadata !== "object" || Array.isArray(metadata)) return undefined;
   const value = metadata[key];
   return typeof value === "string" && value.trim() ? value.trim() : undefined;
+}
+
+/** The characteristics the product holds, each in French and its published translations. */
+function mapSpecs(row: ProductRow): ProductSpecs {
+  const specs: ProductSpecs = {};
+  for (const key of SPEC_KEYS) {
+    const base = row[`spec_${key}`]?.trim();
+    if (base) specs[key] = localize(base, row.product_translations, (t) => t[`spec_${key}`]);
+  }
+  return specs;
 }
 
 function asShape(value: string | undefined): GemShape | undefined {
@@ -251,7 +268,8 @@ export function mapProduct(
     ? localize(row.description, row.product_translations, (t) => t.description)
     : undefined;
 
-  const material = metadataString(row.metadata, "material") ?? "";
+  const specs = mapSpecs(row);
+  const material = specs.material?.fr ?? "";
   const categoryName = row.category
     ? localize(row.category.name, row.category.category_translations, (t) => t.name)
     : undefined;
@@ -300,7 +318,7 @@ export function mapProduct(
     name,
     // Cards read best with a short spec line; the material is that line when
     // the product has one, else the category.
-    subtitle: material ? { fr: material, en: material } : categoryName ?? { fr: "", en: "" },
+    subtitle: specs.material ?? categoryName ?? { fr: "", en: "" },
     price,
     currency: row.currency,
     compareAtPrice: compareAtPrice != null && compareAtPrice > price ? compareAtPrice : undefined,
@@ -316,6 +334,7 @@ export function mapProduct(
     // simply never shows up in the colour filter.
     color: metadataString(row.metadata, "color"),
     description: longDescription ?? shortDescription,
+    specs: Object.keys(specs).length > 0 ? specs : undefined,
     gallery: images.length > 0 ? images : undefined,
     variants: variants.length > 0 ? variants : undefined,
     isFeatured: row.is_featured,

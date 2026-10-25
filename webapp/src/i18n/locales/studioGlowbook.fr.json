@@ -377,12 +377,58 @@
     "eyebrow": "Où me trouver",
     "publicExact": "Le salon où je vous reçois.",
     "publicArea": "J’exerce dans ce secteur. L’adresse exacte est donnée à la prise de rendez-vous.",
-    "showMap": "Voir la carte",
-    "mapNotice": "La carte est fournie par OpenFreeMap (données OpenStreetMap) et ne se charge qu’à votre demande.",
     "directions": {
       "google": "Itinéraire Google Maps",
       "apple": "Plans (Apple)",
       "osm": "OpenStreetMap"
     }
+  },
+  "card": {
+    "approved": "Dans mon Glowbook",
+    "pending": "Glowbook · en validation",
+    "rejected": "Glowbook · refusée"
+  },
+  "deleteNotice": {
+    "approved": "Cette création est affichée sur votre Glowbook.",
+    "pending": "Cette création attend sa validation pour votre Glowbook.",
+    "rejected": "Cette création figure dans votre Glowbook (refusée).",
+    "body": "La supprimer la retirera aussi de votre Glowbook.",
+    "featured": "C’est aussi votre création à la une : la une restera vide jusqu’à ce que vous en choisissiez une autre."
+  },
+  "dashboard": {
+    "overview": "Vue d’ensemble de votre Glowbook",
+    "page": "Votre page",
+    "stats": {
+      "approved": "Publiées",
+      "pending": "En validation",
+      "rejected": "Refusées"
+    },
+    "todoTitle": "À faire",
+    "todo": {
+      "pageRejected": "Votre page n’a pas été validée : modifiez-la pour la renvoyer.",
+      "noItems": "Ajoutez une première création à votre page.",
+      "itemsRejected_one": "{{count}} création refusée à revoir.",
+      "itemsRejected_other": "{{count}} créations refusées à revoir.",
+      "changesRejected": "Vos dernières photos ou liens n’ont pas été validés.",
+      "noSpotlight": "Choisissez la création à la une de votre page.",
+      "unfiled_one": "{{count}} création n’est rangée dans aucune section.",
+      "unfiled_other": "{{count}} créations ne sont rangées dans aucune section."
+    },
+    "go": {
+      "pageRejected": "Modifier",
+      "noItems": "Voir",
+      "itemsRejected": "Voir",
+      "changesRejected": "Revoir",
+      "noSpotlight": "Choisir",
+      "unfiled": "Ranger"
+    },
+    "tabs": {
+      "label": "Parties de mon Glowbook",
+      "creations": "Créations",
+      "look": "Apparence",
+      "profile": "Profil",
+      "share": "Partager"
+    },
+    "deleteHint": "Votre page disparaît et toutes vos créations en sont retirées. Vos créations restent dans Mes créations."
   }
 }

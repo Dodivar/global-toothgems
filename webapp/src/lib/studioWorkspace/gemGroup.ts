@@ -164,6 +164,7 @@ export function sanitizeGroupData(input: unknown): GemGroupData | null {
 /** What a 2D preview needs of a piece. */
 export interface PreviewPiece {
   look: GemLook;
+  size: GemSize;
   scale: number;
   rotation: number;
   position: Vec3;
@@ -174,6 +175,6 @@ export function groupPreviewPieces(data: GemGroupData): PreviewPiece[] {
   const frame = ARCH_FRAME_BY_ID[data.anchorToothId] ?? ARCH_FRAME_BY_ID["11"];
   const origin = approxLabialPoint(frame.fdi, 0, 0)!.position;
   return groupToWorld(data.pieces, { origin, tangent: frame.tangent, up: { x: 0, y: 1, z: 0 }, outward: frame.outward }).map(
-    ({ piece, position }) => ({ look: piece.look, scale: scaleForSize(piece.size), rotation: piece.rotation, position }),
+    ({ piece, position }) => ({ look: piece.look, size: piece.size, scale: scaleForSize(piece.size), rotation: piece.rotation, position }),
   );
 }

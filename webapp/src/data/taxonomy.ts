@@ -18,6 +18,8 @@ export interface ShopFamilyDef {
 export interface ShopCategoryDef {
   slug: string;
   name: Localized;
+  /** Public image set in the back office, for a category with no family (the menu entry is the category). */
+  imageUrl?: string;
   /** In display order; empty for a category that is not split (Global Lip Gloss). */
   families: ShopFamilyDef[];
 }

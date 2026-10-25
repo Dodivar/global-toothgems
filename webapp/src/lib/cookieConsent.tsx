@@ -2,11 +2,11 @@ import { createContext, useCallback, useContext, useMemo, useState, type ReactNo
 import { useHydrated } from "./useHydrated";
 
 /**
- * Cookie consent — the interaction prototype.
+ * Cookie consent.
  *
- * This records the visitor's choice and nothing else: no script is loaded or
- * blocked because of it, and no tracker exists in this prototype. What it does
- * model faithfully is the behaviour a real consent layer must have:
+ * This records the visitor's choice; the Studio analytics read its
+ * `analytics` category (`lib/studioAnalytics.ts`), other scripts are not gated
+ * by it. It follows the behaviour a real consent layer must have:
  *
  * - optional categories start refused — nothing is pre-ticked;
  * - refusing is one click, exactly like accepting;
@@ -15,9 +15,8 @@ import { useHydrated } from "./useHydrated";
  *   as proof of consent alongside the policy version.
  *
  * The choice is kept in localStorage so the banner does not come back on every
- * page of the review. The production implementation (and whether that storage
- * itself is disclosed as a strictly necessary item) is to be decided with the
- * actual cookie stack.
+ * page. Whether that storage is disclosed as a strictly necessary item is to be
+ * decided with the cookie policy.
  */
 
 export type OptionalCategory = "preferences" | "analytics" | "marketing";
@@ -51,10 +50,9 @@ function readStored(): ConsentRecord | null {
   }
 }
 
-function writeStored(record: ConsentRecord | null) {
+function writeStored(record: ConsentRecord) {
   try {
-    if (record) window.localStorage.setItem(STORAGE_KEY, JSON.stringify(record));
-    else window.localStorage.removeItem(STORAGE_KEY);
+    window.localStorage.setItem(STORAGE_KEY, JSON.stringify(record));
   } catch {
     /* Private mode or blocked storage: the choice simply lasts this visit. */
   }
@@ -75,8 +73,6 @@ interface CookieConsentValue {
   acceptAll: () => void;
   rejectAll: () => void;
   save: (choices: ConsentChoices) => void;
-  /** Prototype only: forget the choice so the banner shows again. */
-  reset: () => void;
 }
 
 const CookieConsentContext = createContext<CookieConsentValue | null>(null);
@@ -106,10 +102,6 @@ export function CookieConsentProvider({ children }: { children: ReactNode }) {
       acceptAll: () => save(ALL_CONSENT),
       rejectAll: () => save(NO_OPTIONAL_CONSENT),
       save,
-      reset: () => {
-        writeStored(null);
-        setRecord(null);
-      },
     }),
     [record, known, settingsOpen, save],
   );

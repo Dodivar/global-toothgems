@@ -50,9 +50,6 @@
     "mySpace": "Mon espace"
   },
   "common": {
-    "notIncludedTitle": "Écran hors périmètre",
-    "notIncludedScreen": "Cet écran n’est pas inclus dans cette maquette.",
-    "notIncludedArtists": "L’annuaire des artistes n’est pas inclus dans cette maquette.",
     "readMore": "En savoir plus",
     "details": "Détails",
     "close": "Fermer",
@@ -227,18 +224,9 @@
     "specDiameter": "Diamètre",
     "specDimensions": "Dimensions",
     "specBack": "Dos",
-    "specBackValue": "Plat, poli",
     "specPackaging": "Conditionnement",
-    "specPackagingValue": "Capsule stérile",
     "specWear": "Tenue indicative",
-    "specWearValue": "6 à 12 mois",
     "faqTitle": "Questions fréquentes",
-    "faq1Q": "Combien de temps une gem tient-elle ?",
-    "faq1A": "Posée correctement, de six à douze mois. Le collage est réversible et laisse l’émail intact.",
-    "faq2Q": "Y a-t-il un perçage ?",
-    "faq2A": "Non. La gem est collée sur l’émail avec un adhésif dentaire : rien n’est percé ni limé.",
-    "faq3Q": "Puis-je la poser moi-même ?",
-    "faq3A": "Nous vendons aux artistes formés. La formation Fondation couvre la préparation, la pose et le suivi.",
     "reviewsEyebrow": "Avis",
     "reviewsTitle": "Ce que les artistes rapportent",
     "crossSellEyebrow": "Va avec",
@@ -501,7 +489,6 @@
     "newsletter": "Recevoir les nouveautés et dates de formation",
     "newsletterDescription": "Un e-mail par mois, désinscription en un clic.",
     "submitSignIn": "Se connecter",
-    "mockNote": "Maquette : l’authentification réelle sera branchée plus tard.",
     "guestNote": "Les gems, outils et kits s’achètent sans compte.",
     "guestCta": "Continuer vers la boutique",
     "benefitsTitle": "Avec un compte",
@@ -541,8 +528,6 @@
     "forgotToastTitle": "Récupération du mot de passe",
     "orContinue": "ou continuer avec",
     "google": "Continuer avec Google",
-    "googleToastTitle": "Maquette visuelle",
-    "googleToastBody": "La connexion Google est présentée pour le design uniquement — rien n’est branché.",
     "googleErrorTitle": "Connexion Google impossible",
     "googleErrorBody": "Nous n’avons pas pu joindre Google. Réessayez dans un instant ou utilisez votre e-mail.",
     "switchToSignUpPrompt": "Pas encore de compte ?",
@@ -1061,8 +1046,6 @@
     "toastLockedBody": "Terminez « {{title}} » pour débloquer celle-ci.",
     "toastCaptionsTitle": "Sous-titres",
     "toastCaptionsBody": "Disponibles en FR, EN et DE dans le lecteur de production.",
-    "toastFullscreenTitle": "Plein écran",
-    "toastFullscreenBody": "Le lecteur vidéo réel n’est pas inclus dans cette maquette.",
     "toastResourceTitle": "Ressource de leçon",
     "toastResourceBody": "Les notes et la carte de suivi sont servies depuis un stockage privé ; les liens expirent après usage.",
     "toastQuizCorrectTitle": "Bonne réponse",
@@ -1361,8 +1344,7 @@
     "company": {
       "about": "À propos",
       "training": "Formations professionnelles",
-      "pro": "Demandes professionnelles",
-      "findArtist": "Trouver un artiste"
+      "pro": "Demandes professionnelles"
     },
     "academyAll": "Toutes les formations"
   },
@@ -1566,6 +1548,7 @@
       "products": "Produits",
       "categories": "Catégories",
       "backInStock": "Alertes stock",
+      "faq": "Questions fréquentes",
       "glowbook": "Glowbook",
       "promotions": "Promotions",
       "orders": "Commandes",
@@ -1784,6 +1767,18 @@
       "extraBody": "Champs libres, réservés aux métadonnées qui viendront s’ajouter plus tard.",
       "material": "Matière",
       "materialHint": "Or 18 carats, cristal taillé, acier chirurgical…",
+      "specsTitle": "Caractéristiques",
+      "specsBody": "Affichées sur la fiche produit des gems. Un champ vide n’apparaît pas.",
+      "spec": {
+        "center": "Centre",
+        "centerHint": "Opale de laboratoire, zircon…",
+        "back": "Dos",
+        "backHint": "Plat, poli…",
+        "packaging": "Conditionnement",
+        "packagingHint": "Capsule stérile, sachet de 20…",
+        "wear": "Tenue indicative",
+        "wearHint": "6 à 12 mois…"
+      },
       "tags": "Étiquettes",
       "tagsHint": "Séparées par des virgules. Usage interne uniquement.",
       "statusTitle": "Statut",
@@ -3674,7 +3669,7 @@
         "emptyStepsBody": "Ajoutez une première étape pour commencer à écrire la leçon.",
         "deleteTitle": "Supprimer ce module ?",
         "deleteBody": "« {{name}} » et tout son contenu seront retirés de la formation.",
-        "deleteWarning": "Cette action est définitive dans le prototype.",
+        "deleteWarning": "Cette action est définitive.",
         "completion": "Avancement du module",
         "completionHint": "Part des étapes contenant au moins un bloc de contenu."
       },
@@ -4086,6 +4081,97 @@
       "staleStock": "Le stock a changé entre-temps (une vente ?). Le nouveau chiffre est affiché : vérifiez-le puis recommencez.",
       "belowReserved": "Le stock ne peut pas descendre sous les unités réservées par des commandes en attente de paiement."
     },
+    "faq": {
+      "title": "Questions fréquentes",
+      "description": "Des groupes de questions écrits une fois, affichés sur les fiches des produits et des catégories auxquels vous les attribuez.",
+      "rule": "Un produit qui a son propre groupe publié n’affiche que ses groupes ; sinon il affiche ceux de sa catégorie. Un produit sans groupe n’a pas de section « Questions fréquentes ». Les groupes s’affichent dans l’ordre de cette liste.",
+      "newGroup": "Nouveau groupe",
+      "newTitle": "Nouveau groupe de questions",
+      "listLabel": "Groupes de questions, dans l’ordre d’affichage",
+      "loading": "Chargement des groupes…",
+      "emptyTitle": "Aucun groupe de questions",
+      "emptyBody": "Créez un groupe, ajoutez ses questions, puis attribuez-le à une catégorie ou à des produits.",
+      "unavailableTitle": "Indisponible sans base de données",
+      "unavailableBody": "Les questions fréquentes sont enregistrées dans Supabase, qui n’est pas configuré ici.",
+      "forbiddenTitle": "Accès réservé",
+      "forbiddenBody": "Il faut la permission de gérer les produits pour voir et modifier les questions fréquentes.",
+      "errorTitle": "Les groupes n’ont pas pu être chargés",
+      "errorBody": "Vérifiez la connexion puis réessayez.",
+      "retry": "Réessayer",
+      "missingTitle": "Groupe introuvable",
+      "missingBody": "Ce groupe n’existe pas ou a été supprimé.",
+      "status": {
+        "draft": "Brouillon",
+        "published": "Publié"
+      },
+      "statusLabel": "Statut",
+      "statusHint": {
+        "draft": "Invisible sur la boutique, même s’il est attribué.",
+        "published": "Affiché sur les fiches des produits concernés."
+      },
+      "questionCount_one": "{{count}} question",
+      "questionCount_other": "{{count}} questions",
+      "translatedCount": "{{count}}/{{total}} traduites en anglais",
+      "assignedNowhere": "Attribué à aucun produit ni catégorie",
+      "assignedCategory": "Catégorie {{name}}",
+      "assignedProducts_one": "{{count}} produit",
+      "assignedProducts_other": "{{count}} produits",
+      "unknownCategory": "catégorie inconnue",
+      "unknownProduct": "Produit inconnu",
+      "moveUp": "Monter « {{name}} »",
+      "moveDown": "Descendre « {{name}} »",
+      "generalTitle": "Groupe",
+      "name": "Nom du groupe",
+      "nameHint": "Pour vous repérer dans l’administration ; jamais affiché aux clients.",
+      "questionsTitle": "Questions",
+      "questionsBody": "Dans l’ordre d’affichage. Le français est obligatoire ; sans traduction anglaise complète, la page anglaise montre le français.",
+      "noQuestions": "Aucune question pour l’instant.",
+      "questionNumber": "Question {{n}}",
+      "englishMissing": "anglais manquant",
+      "englishHint": "La traduction anglaise d’une question n’est publiée que lorsque la question et la réponse sont toutes deux traduites.",
+      "question": "Question ({{lang}})",
+      "answer": "Réponse ({{lang}})",
+      "addQuestion": "Ajouter une question",
+      "questionUp": "Monter la question {{n}}",
+      "questionDown": "Descendre la question {{n}}",
+      "questionRemove": "Retirer la question {{n}}",
+      "categoriesTitle": "Catégories",
+      "categoriesBody": "Tous les produits de la catégorie affichent ce groupe, sauf ceux qui ont leurs propres groupes.",
+      "productsTitle": "Produits",
+      "productsBody": "Pour ces produits, ce groupe remplace les groupes de leur catégorie.",
+      "selectedProducts": "Produits sélectionnés",
+      "removeProduct": "Retirer {{name}}",
+      "productSearchLabel": "Rechercher un produit",
+      "productSearchPlaceholder": "Nom ou SKU",
+      "productSearchClear": "Effacer la recherche",
+      "productListLabel": "Produits à ajouter",
+      "noProductMatch": "Aucun produit ne correspond.",
+      "save": "Enregistrer",
+      "cancel": "Annuler",
+      "delete": "Supprimer",
+      "deleteTitle": "Supprimer ce groupe ?",
+      "deleteBody": "« {{name}} » et ses questions disparaîtront de toutes les fiches produits. Cette action est définitive.",
+      "deleteConfirm": "Supprimer le groupe",
+      "errors": {
+        "name": "Donnez un nom au groupe (120 caractères au plus).",
+        "noQuestion": "Un groupe publié doit contenir au moins une question.",
+        "tooMany": "Un groupe contient au plus {{max}} questions.",
+        "question": "Chaque question doit être écrite en français.",
+        "answer": "Chaque question doit avoir une réponse en français.",
+        "questionField": "Obligatoire en français, {{max}} caractères au plus.",
+        "answerField": "Obligatoire en français, {{max}} caractères au plus."
+      },
+      "toasts": {
+        "savedTitle": "Groupe enregistré",
+        "savedBody": "« {{name}} » est à jour.",
+        "deletedTitle": "Groupe supprimé",
+        "deletedBody": "« {{name}} » a été supprimé.",
+        "errorTitle": "Échec de l’enregistrement",
+        "errorBody": "La modification n’a pas pu être enregistrée. Réessayez.",
+        "forbiddenBody": "Votre rôle ne permet pas de modifier les questions fréquentes.",
+        "invalidBody": "Un champ n’est pas valide, ou un produit ou une catégorie n’existe plus."
+      }
+    },
     "backInStock": {
       "title": "Alertes retour en stock",
       "description": "Les clients qui attendent un article épuisé. L'e-mail part une seule fois, au retour du stock.",
@@ -4268,12 +4354,6 @@
         "success": "Succès",
         "serverError": "Erreur serveur"
       },
-      "resetLinkLegend": "Lien de réinitialisation dans l’e-mail",
-      "resetLink": {
-        "valid": "Lien valide",
-        "expired": "Lien expiré",
-        "invalid": "Lien invalide"
-      },
       "verifyLegend": "Lien de vérification",
       "verify": {
         "verified": "Lien valide",
@@ -4302,12 +4382,7 @@
       "resendFailed": "Nous n’avons pas pu renvoyer l’e-mail. Réessayez dans un instant.",
       "useOther": "Utiliser une autre adresse",
       "noteTitle": "Pour votre sécurité",
-      "noteBody": "Le lien ne fonctionne qu’une fois et expire au bout de {{minutes}} minutes. Si vous n’êtes pas à l’origine de la demande, ignorez l’e-mail — votre mot de passe reste inchangé.",
-      "mailSubject": "Réinitialisez votre mot de passe Global Toothgems",
-      "mailBody": "Bonjour ! Nous avons reçu une demande de réinitialisation de votre mot de passe. Sélectionnez le bouton ci-dessous pour en choisir un nouveau.",
-      "mailCta": "Choisir un nouveau mot de passe",
-      "mailHint": "Ce lien expire dans {{minutes}} minutes et ne peut servir qu’une fois.",
-      "demoBody": "Choisissez la réponse du serveur à la prochaine demande et le type de lien contenu dans l’e-mail — puis ouvrez-le depuis la boîte mail simulée."
+      "noteBody": "Le lien ne fonctionne qu’une fois et expire au bout de {{minutes}} minutes. Si vous n’êtes pas à l’origine de la demande, ignorez l’e-mail — votre mot de passe reste inchangé."
     },
     "reset": {
       "eyebrow": "Nouveau mot de passe",
@@ -4326,8 +4401,7 @@
       "doneBody": "C’est fait. Votre compte est désormais protégé par votre nouveau mot de passe — utilisez-le lors de votre prochaine connexion.",
       "logIn": "Se connecter",
       "tipTitle": "Un petit conseil",
-      "tipBody": "Un gestionnaire de mots de passe retient un mot de passe unique pour chaque site. Et si vous n’êtes pas à l’origine de ce changement, contactez-nous sans attendre.",
-      "demoBody": "Changez l’état du lien pour voir les écrans « expiré » et « invalide », ou faites échouer le prochain enregistrement."
+      "tipBody": "Un gestionnaire de mots de passe retient un mot de passe unique pour chaque site. Et si vous n’êtes pas à l’origine de ce changement, contactez-nous sans attendre."
     },
     "verify": {
       "verifyingTitle": "Vérification de votre e-mail",
@@ -4647,9 +4721,7 @@
         "allowed": "Acceptés",
         "refused": "Refusés",
         "undecided": "Non choisi"
-      },
-      "demoNote": "Maquette d’interaction : aucun cookie optionnel ni traceur n’est déposé, seul votre choix est mémorisé dans ce navigateur.",
-      "demoReset": "Réafficher le bandeau"
+      }
     },
     "faq": {
       "eyebrow": "Centre d’aide",

@@ -274,7 +274,7 @@ export const PRIVACY: LegalDocument = {
             { role: l("Livraison", "Delivery"), provider: l("[[Transporteurs]]", "[[Carriers]]"), location: l("[[Pays]]", "[[Country]]") },
             { role: l("Vidéo des formations", "Training video"), provider: l("[[Hébergeur vidéo]]", "[[Video host]]"), location: l("[[Pays]]", "[[Country]]") },
             {
-              role: l("Cartes des Glowbooks (affichées seulement à votre demande)", "Glowbook maps (shown only when you ask)"),
+              role: l("Cartes des pages Glowbook (chargées quand vous les faites défiler)", "Glowbook page maps (loaded as you scroll to them)"),
               provider: l("OpenFreeMap — données © OpenStreetMap", "OpenFreeMap — data © OpenStreetMap"),
               location: l("[[Pays]]", "[[Country]]"),
             },

@@ -1,9 +1,9 @@
 "use client";
 
-import { useState } from "react";
+import { useEffect, useRef, useState } from "react";
 import { useTranslation } from "react-i18next";
 import clsx from "clsx";
-import { Map as MapIcon, MapPin, Navigation } from "lucide-react";
+import { MapPin, Navigation } from "lucide-react";
 import { ACCENT_COLORS, type Accent } from "../../lib/studioWorkspace/glowbookLook";
 import { directionsLinks, type GlowbookPlace } from "../../lib/studioWorkspace/glowbookPlace";
 import { GlowbookMap } from "./GlowbookMap";
@@ -11,10 +11,12 @@ import { GlowbookMap } from "./GlowbookMap";
 /**
  * "Where to find me" on the public Glowbook (decision 108). The address (or
  * the area) and the directions links are rendered on the server and work
- * without the map. The map is drawn only when the visitor asks for it: its
- * tiles come from a third party (OpenFreeMap), which then sees the visitor's IP
- * address — so nothing is requested until that tap. Same markup on the server
- * and on the first browser render (the map is off at first).
+ * without the map. The map loads by itself as the visitor scrolls near it
+ * (owner's choice, 2026-10-22): a visitor who never reaches the bottom of the
+ * page downloads neither MapLibre nor tiles. The tiles come from a third party
+ * (OpenFreeMap), which then sees the visitor's IP address (listed in the
+ * privacy policy). The map's frame is drawn from the start, on the server
+ * too, so nothing shifts when it arrives.
  */
 const focus = "focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-[var(--gb-accent)]";
 const pill = clsx(
@@ -25,7 +27,22 @@ const pill = clsx(
 export function GlowbookPlaceSection({ place, accent }: { place: GlowbookPlace; accent: Accent }) {
   const { t } = useTranslation();
   const [showMap, setShowMap] = useState(false);
+  const frame = useRef<HTMLDivElement>(null);
   const links = directionsLinks(place);
+
+  // Load the map once its frame comes within a screen of the viewport.
+  useEffect(() => {
+    const el = frame.current;
+    if (!el || showMap) return;
+    const observer = new IntersectionObserver(
+      (entries) => {
+        if (entries.some((e) => e.isIntersecting)) setShowMap(true);
+      },
+      { rootMargin: "100% 0px" },
+    );
+    observer.observe(el);
+    return () => observer.disconnect();
+  }, [showMap]);
 
   return (
     <section aria-labelledby="gt-glowbook-place" className="text-[var(--gb-text)]">
@@ -41,21 +58,20 @@ export function GlowbookPlaceSection({ place, accent }: { place: GlowbookPlace; 
           </p>
         </div>
 
-        {showMap ? (
-          <GlowbookMap
-            place={place}
-            color={ACCENT_COLORS[accent].solid}
-            className="h-[min(60vh,380px)] rounded-[var(--radius-lg)] border border-[var(--gb-border)]"
-          />
-        ) : null}
+        <div
+          ref={frame}
+          className="relative h-[min(60vh,380px)] overflow-hidden rounded-[var(--radius-lg)] border border-[var(--gb-border)] bg-[var(--gb-soft)]"
+        >
+          {showMap ? (
+            <GlowbookMap place={place} color={ACCENT_COLORS[accent].solid} className="h-full w-full" />
+          ) : (
+            <span aria-hidden="true" className="grid h-full w-full place-items-center text-[var(--gb-muted)]">
+              <MapPin size={22} />
+            </span>
+          )}
+        </div>
 
         <div className="flex flex-wrap justify-center gap-2">
-          {!showMap && (
-            <button type="button" onClick={() => setShowMap(true)} className={pill}>
-              <MapIcon size={14} aria-hidden="true" />
-              {t("studio.glowbook.place.showMap")}
-            </button>
-          )}
           {links.map((link) => (
             <a key={link.app} href={link.href} target="_blank" rel="noopener noreferrer nofollow" className={pill}>
               <Navigation size={14} aria-hidden="true" />
@@ -63,7 +79,6 @@ export function GlowbookPlaceSection({ place, accent }: { place: GlowbookPlace; 
             </a>
           ))}
         </div>
-        {!showMap && <p className="m-0 text-center text-[11.5px] text-[var(--gb-muted)]">{t("studio.glowbook.place.mapNotice")}</p>}
       </div>
     </section>
   );

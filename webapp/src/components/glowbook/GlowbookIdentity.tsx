@@ -37,7 +37,7 @@ const pill = clsx(
   focus,
 );
 
-function Avatar({ name, url, className }: { name: string; url: string | null; className: string }) {
+export function GlowbookAvatar({ name, url, className }: { name: string; url: string | null; className: string }) {
   const { t } = useTranslation();
   return (
     <span
@@ -56,19 +56,23 @@ function Avatar({ name, url, className }: { name: string; url: string | null; cl
   );
 }
 
-/** The slim bar on top of the page: who, where, book, profile. */
+/**
+ * The slim bar on top of the page: who, where, book, profile. It follows its
+ * own width, not the viewport's, so the Studio's preview column draws it as a
+ * phone would.
+ */
 export function GlowbookTopBar({ displayName, handle, look, avatarUrl, preview = false, certifiedTitles = [] }: GlowbookIdentityProps) {
   const { t } = useTranslation();
   const l = look ?? DEFAULT_LOOK;
   const certified = certifiedTitles.length > 0;
-  const bookingClass = clsx(pill, "bg-[var(--gb-accent)] px-3 text-[var(--gb-on-accent)] sm:px-4");
-  const profileClass = clsx(pill, "border border-[var(--gb-border)] bg-[var(--gb-card)] px-3 text-[var(--gb-text)] sm:px-4");
+  const bookingClass = clsx(pill, "bg-[var(--gb-accent)] px-3 text-[var(--gb-on-accent)] @[640px]:px-4");
+  const profileClass = clsx(pill, "border border-[var(--gb-border)] bg-[var(--gb-card)] px-3 text-[var(--gb-text)] @[640px]:px-4");
   return (
-    <header className="border-b border-[var(--gb-border)] bg-[var(--gb-card)] text-[var(--gb-text)]">
-      <div className="mx-auto flex max-w-[1180px] items-center gap-3 px-4 py-2.5 sm:px-8">
-        <Avatar name={displayName} url={avatarUrl} className="h-10 w-10 text-[14px] sm:h-11 sm:w-11" />
+    <header className="@container border-b border-[var(--gb-border)] bg-[var(--gb-card)] text-[var(--gb-text)]">
+      <div className="mx-auto flex max-w-[1180px] items-center gap-3 px-4 py-2.5 @[640px]:px-8">
+        <GlowbookAvatar name={displayName} url={avatarUrl} className="h-10 w-10 text-[14px] @[640px]:h-11 @[640px]:w-11" />
         <div className="grid min-w-0 flex-1 leading-tight">
-          <h1 className="m-0 inline-flex min-w-0 items-center gap-1.5 text-[16px] font-[var(--weight-black)] tracking-[var(--tracking-tight)] sm:text-[18px]">
+          <h1 className="m-0 inline-flex min-w-0 items-center gap-1.5 text-[16px] font-[var(--weight-black)] tracking-[var(--tracking-tight)] @[640px]:text-[18px]">
             <span className="truncate">{displayName}</span>
             {certified && (
               <BadgeCheck size={16} className="flex-none text-[var(--gb-accent)]" aria-label={t("studio.glowbook.badge.label")} role="img" />
@@ -77,7 +81,7 @@ export function GlowbookTopBar({ displayName, handle, look, avatarUrl, preview =
           <p className="m-0 inline-flex min-w-0 items-center gap-2 text-[12.5px] font-semibold text-[var(--gb-muted)]">
             <span className="truncate">@{handle}</span>
             {l.location && (
-              <span className="hidden min-w-0 items-center gap-1 sm:inline-flex">
+              <span className="hidden min-w-0 items-center gap-1 @[640px]:inline-flex">
                 <MapPin size={12} aria-hidden="true" />
                 <span className="truncate">{l.location}</span>
               </span>
@@ -88,7 +92,7 @@ export function GlowbookTopBar({ displayName, handle, look, avatarUrl, preview =
           (preview ? (
             <span className={bookingClass}>
               <CalendarCheck size={14} aria-hidden="true" />
-              <span className="hidden sm:inline">{t("studio.glowbook.public.booking")}</span>
+              <span className="hidden whitespace-nowrap @[640px]:inline">{t("studio.glowbook.public.booking")}</span>
             </span>
           ) : (
             <a
@@ -99,18 +103,18 @@ export function GlowbookTopBar({ displayName, handle, look, avatarUrl, preview =
               className={bookingClass}
             >
               <CalendarCheck size={14} aria-hidden="true" />
-              <span className="hidden sm:inline">{t("studio.glowbook.public.booking")}</span>
+              <span className="hidden whitespace-nowrap @[640px]:inline">{t("studio.glowbook.public.booking")}</span>
             </a>
           ))}
         {preview ? (
           <span className={profileClass}>
             <UserRound size={14} aria-hidden="true" />
-            <span className="hidden sm:inline">{t("studio.glowbook.public.profile")}</span>
+            <span className="hidden whitespace-nowrap @[640px]:inline">{t("studio.glowbook.public.profile")}</span>
           </span>
         ) : (
           <a href={`#${GLOWBOOK_PROFILE_ID}`} aria-label={t("studio.glowbook.public.profileOpen", { name: displayName })} className={profileClass}>
             <UserRound size={14} aria-hidden="true" />
-            <span className="hidden sm:inline">{t("studio.glowbook.public.profile")}</span>
+            <span className="hidden whitespace-nowrap @[640px]:inline">{t("studio.glowbook.public.profile")}</span>
           </a>
         )}
       </div>
@@ -136,7 +140,7 @@ export function GlowbookProfile({ displayName, handle, bio, instagram, look, ava
     >
       <div className={clsx("mx-auto grid max-w-[880px] justify-items-center gap-3 px-4 text-center", preview ? "py-5" : "py-12")}>
         <p className="m-0 text-[11px] font-bold uppercase tracking-[var(--tracking-eyebrow)] text-[var(--gb-muted)]">{t("studio.glowbook.public.profileEyebrow")}</p>
-        <Avatar
+        <GlowbookAvatar
           name={displayName}
           url={avatarUrl}
           className={clsx("border-4 border-[var(--gb-card)] shadow-[var(--shadow-md)]", preview ? "h-16 w-16 text-[20px]" : "h-24 w-24 text-[28px]")}

@@ -50,9 +50,6 @@
     "mySpace": "My space"
   },
   "common": {
-    "notIncludedTitle": "Screen out of scope",
-    "notIncludedScreen": "This screen isn’t included in this prototype.",
-    "notIncludedArtists": "The artist directory isn’t included in this prototype.",
     "readMore": "Learn more",
     "details": "Details",
     "close": "Close",
@@ -227,18 +224,9 @@
     "specDiameter": "Diameter",
     "specDimensions": "Dimensions",
     "specBack": "Back",
-    "specBackValue": "Flat, polished",
     "specPackaging": "Packaging",
-    "specPackagingValue": "Sterile capsule",
     "specWear": "Typical wear",
-    "specWearValue": "6 to 12 months",
     "faqTitle": "Frequently asked questions",
-    "faq1Q": "How long does a gem last?",
-    "faq1A": "Applied correctly, six to twelve months. The bond is reversible and leaves the enamel intact.",
-    "faq2Q": "Is there any drilling involved?",
-    "faq2A": "No. The gem is bonded to the enamel with a dental adhesive: nothing is drilled or filed.",
-    "faq3Q": "Can I apply it myself?",
-    "faq3A": "We sell to trained artists. The Foundation course covers prep, application and aftercare.",
     "reviewsEyebrow": "Reviews",
     "reviewsTitle": "What artists are saying",
     "crossSellEyebrow": "Pairs with",
@@ -501,7 +489,6 @@
     "newsletter": "Send me new releases and course dates",
     "newsletterDescription": "One email a month, unsubscribe in one click.",
     "submitSignIn": "Sign in",
-    "mockNote": "Mockup: real authentication will be wired in later.",
     "guestNote": "Gems, tools and kits can be bought without an account.",
     "guestCta": "Continue to the shop",
     "benefitsTitle": "With an account",
@@ -541,8 +528,6 @@
     "forgotToastTitle": "Password recovery",
     "orContinue": "or continue with",
     "google": "Continue with Google",
-    "googleToastTitle": "Visual mockup",
-    "googleToastBody": "Google sign-in is shown for the design only — nothing is connected yet.",
     "googleErrorTitle": "Google sign-in unavailable",
     "googleErrorBody": "We could not reach Google. Try again in a moment or use your email.",
     "switchToSignUpPrompt": "No account yet?",
@@ -1061,8 +1046,6 @@
     "toastLockedBody": "Finish “{{title}}” to unlock this one.",
     "toastCaptionsTitle": "Captions",
     "toastCaptionsBody": "Available in FR, EN and DE in the production player.",
-    "toastFullscreenTitle": "Fullscreen",
-    "toastFullscreenBody": "The real video player isn’t included in this prototype.",
     "toastResourceTitle": "Lesson resource",
     "toastResourceBody": "Notes and the aftercare card are served from private storage; links expire after use.",
     "toastQuizCorrectTitle": "Correct answer",
@@ -1361,8 +1344,7 @@
     "company": {
       "about": "About Global Toothgems",
       "training": "Professional training",
-      "pro": "Professional inquiries",
-      "findArtist": "Find an artist"
+      "pro": "Professional inquiries"
     },
     "academyAll": "All courses"
   },
@@ -1566,6 +1548,7 @@
       "products": "Products",
       "categories": "Categories",
       "backInStock": "Stock alerts",
+      "faq": "FAQ",
       "glowbook": "Glowbook",
       "promotions": "Promotions",
       "orders": "Orders",
@@ -1784,6 +1767,18 @@
       "extraBody": "Free fields, held for the product metadata that will come later.",
       "material": "Material",
       "materialHint": "18-carat gold, cut crystal, surgical steel…",
+      "specsTitle": "Characteristics",
+      "specsBody": "Shown on gem product pages. An empty field is not shown.",
+      "spec": {
+        "center": "Centre",
+        "centerHint": "Lab-grown opal, zircon…",
+        "back": "Back",
+        "backHint": "Flat, polished…",
+        "packaging": "Packaging",
+        "packagingHint": "Sterile capsule, bag of 20…",
+        "wear": "Typical wear",
+        "wearHint": "6 to 12 months…"
+      },
       "tags": "Tags",
       "tagsHint": "Comma separated. Internal use only.",
       "statusTitle": "Status",
@@ -3674,7 +3669,7 @@
         "emptyStepsBody": "Add a first step to start writing the lesson.",
         "deleteTitle": "Delete this module?",
         "deleteBody": "“{{name}}” and all of its content will be removed from the course.",
-        "deleteWarning": "This cannot be undone in the prototype.",
+        "deleteWarning": "This cannot be undone.",
         "completion": "Module progress",
         "completionHint": "Share of steps holding at least one content block."
       },
@@ -4086,6 +4081,97 @@
       "staleStock": "The stock changed in the meantime (a sale?). The new figure is shown: check it and try again.",
       "belowReserved": "The stock cannot go below the units held by orders awaiting payment."
     },
+    "faq": {
+      "title": "Frequently asked questions",
+      "description": "Groups of questions written once, shown on the pages of the products and categories you assign them to.",
+      "rule": "A product with a published group of its own shows only its own groups; otherwise it shows its category’s. A product with no group has no FAQ section. Groups appear in the order of this list.",
+      "newGroup": "New group",
+      "newTitle": "New question group",
+      "listLabel": "Question groups, in display order",
+      "loading": "Loading groups…",
+      "emptyTitle": "No question groups",
+      "emptyBody": "Create a group, add its questions, then assign it to a category or to products.",
+      "unavailableTitle": "Unavailable without a database",
+      "unavailableBody": "Frequently asked questions are stored in Supabase, which is not configured here.",
+      "forbiddenTitle": "Restricted",
+      "forbiddenBody": "You need the permission to manage products to view and edit the FAQ.",
+      "errorTitle": "The groups could not be loaded",
+      "errorBody": "Check the connection and try again.",
+      "retry": "Try again",
+      "missingTitle": "Group not found",
+      "missingBody": "This group does not exist or was deleted.",
+      "status": {
+        "draft": "Draft",
+        "published": "Published"
+      },
+      "statusLabel": "Status",
+      "statusHint": {
+        "draft": "Hidden from the shop, even when assigned.",
+        "published": "Shown on the pages of the products it applies to."
+      },
+      "questionCount_one": "{{count}} question",
+      "questionCount_other": "{{count}} questions",
+      "translatedCount": "{{count}}/{{total}} translated into English",
+      "assignedNowhere": "Not assigned to any product or category",
+      "assignedCategory": "Category {{name}}",
+      "assignedProducts_one": "{{count}} product",
+      "assignedProducts_other": "{{count}} products",
+      "unknownCategory": "unknown category",
+      "unknownProduct": "Unknown product",
+      "moveUp": "Move “{{name}}” up",
+      "moveDown": "Move “{{name}}” down",
+      "generalTitle": "Group",
+      "name": "Group name",
+      "nameHint": "To find it in the back office; never shown to customers.",
+      "questionsTitle": "Questions",
+      "questionsBody": "In display order. French is required; without a complete English translation, the English page shows the French.",
+      "noQuestions": "No questions yet.",
+      "questionNumber": "Question {{n}}",
+      "englishMissing": "English missing",
+      "englishHint": "A question’s English translation is published only once both the question and the answer are translated.",
+      "question": "Question ({{lang}})",
+      "answer": "Answer ({{lang}})",
+      "addQuestion": "Add a question",
+      "questionUp": "Move question {{n}} up",
+      "questionDown": "Move question {{n}} down",
+      "questionRemove": "Remove question {{n}}",
+      "categoriesTitle": "Categories",
+      "categoriesBody": "Every product of the category shows this group, except those with groups of their own.",
+      "productsTitle": "Products",
+      "productsBody": "For these products, this group replaces their category’s groups.",
+      "selectedProducts": "Selected products",
+      "removeProduct": "Remove {{name}}",
+      "productSearchLabel": "Search for a product",
+      "productSearchPlaceholder": "Name or SKU",
+      "productSearchClear": "Clear the search",
+      "productListLabel": "Products to add",
+      "noProductMatch": "No product matches.",
+      "save": "Save",
+      "cancel": "Cancel",
+      "delete": "Delete",
+      "deleteTitle": "Delete this group?",
+      "deleteBody": "“{{name}}” and its questions will disappear from every product page. This cannot be undone.",
+      "deleteConfirm": "Delete the group",
+      "errors": {
+        "name": "Give the group a name (120 characters at most).",
+        "noQuestion": "A published group needs at least one question.",
+        "tooMany": "A group holds at most {{max}} questions.",
+        "question": "Every question must be written in French.",
+        "answer": "Every question needs an answer in French.",
+        "questionField": "Required in French, {{max}} characters at most.",
+        "answerField": "Required in French, {{max}} characters at most."
+      },
+      "toasts": {
+        "savedTitle": "Group saved",
+        "savedBody": "“{{name}}” is up to date.",
+        "deletedTitle": "Group deleted",
+        "deletedBody": "“{{name}}” was deleted.",
+        "errorTitle": "Could not save",
+        "errorBody": "The change could not be saved. Try again.",
+        "forbiddenBody": "Your role cannot edit the FAQ.",
+        "invalidBody": "A field is not valid, or a product or category no longer exists."
+      }
+    },
     "backInStock": {
       "title": "Back-in-stock alerts",
       "description": "Customers waiting for a sold-out item. The e-mail goes out once, when the stock is back.",
@@ -4268,12 +4354,6 @@
         "success": "Success",
         "serverError": "Server error"
       },
-      "resetLinkLegend": "Reset link in the email",
-      "resetLink": {
-        "valid": "Valid link",
-        "expired": "Expired link",
-        "invalid": "Invalid link"
-      },
       "verifyLegend": "Verification link",
       "verify": {
         "verified": "Valid link",
@@ -4302,12 +4382,7 @@
       "resendFailed": "We couldn’t resend the email. Please try again in a moment.",
       "useOther": "Use another email",
       "noteTitle": "For your security",
-      "noteBody": "The link works once and expires after {{minutes}} minutes. If you didn’t ask for it, you can ignore the email — your password stays the same.",
-      "mailSubject": "Reset your Global Toothgems password",
-      "mailBody": "Hello! We received a request to reset your password. Click the button below to choose a new one.",
-      "mailCta": "Choose a new password",
-      "mailHint": "This link expires in {{minutes}} minutes and can be used once.",
-      "demoBody": "Choose how the server answers the next request, and which kind of link the email carries — then open it from the mock inbox."
+      "noteBody": "The link works once and expires after {{minutes}} minutes. If you didn’t ask for it, you can ignore the email — your password stays the same."
     },
     "reset": {
       "eyebrow": "New password",
@@ -4326,8 +4401,7 @@
       "doneBody": "All set. Your account is now protected by your new password — use it the next time you sign in.",
       "logIn": "Log in",
       "tipTitle": "A small tip",
-      "tipBody": "A password manager can remember a unique password for every site. And if you didn’t make this change, contact us straight away.",
-      "demoBody": "Switch the link state to see the expired and invalid screens, or make the next save fail."
+      "tipBody": "A password manager can remember a unique password for every site. And if you didn’t make this change, contact us straight away."
     },
     "verify": {
       "verifyingTitle": "Verifying your email",
@@ -4647,9 +4721,7 @@
         "allowed": "Allowed",
         "refused": "Refused",
         "undecided": "Not chosen"
-      },
-      "demoNote": "Interaction prototype: no optional cookie or tracker is set; only your choice is remembered in this browser.",
-      "demoReset": "Show the banner again"
+      }
     },
     "faq": {
       "eyebrow": "Help centre",

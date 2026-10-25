@@ -3,12 +3,14 @@ import { Save, TriangleAlert } from "lucide-react";
 import { useTranslation } from "react-i18next";
 import { Dialog } from "../../ui/Dialog";
 import { Button } from "../../ui/Button";
+import { useGlowbook } from "../../../lib/studioWorkspace/glowbookStore";
 import { useWorkspace } from "../../../lib/studioWorkspace/workspace";
 import { closeWorkspaceDialog, useWorkspaceDialog } from "../../../lib/studioWorkspace/workspaceUi";
 import { CollectionEditDialog, CreationCollectionsDialog } from "./Collections";
 import { CreationDetail } from "./CreationDetail";
 import { DeleteConfirmation } from "./DeleteConfirmation";
 import { FeedbackModal } from "./FeedbackModal";
+import { GlowbookDeleteNotice } from "./GlowbookStatus";
 import { OnboardingOverlay, TourCompleteDialog } from "./OnboardingOverlay";
 import { PublicSaveWarning } from "./PublicSaveWarning";
 import { SaveCreationDialog } from "./SaveCreationDialog";
@@ -27,6 +29,7 @@ const SocialExportDialog = lazy(() => import("../socialExport/SocialExportDialog
 export function WorkspaceDialogs() {
   const dialog = useWorkspaceDialog();
   const ws = useWorkspace();
+  const gb = useGlowbook();
   const { t } = useTranslation();
   const close = closeWorkspaceDialog;
   if (!dialog) return null;
@@ -59,7 +62,17 @@ export function WorkspaceDialogs() {
       );
     case "deleteCreation":
       return (
-        <DeleteConfirmation kind="creation" name={dialog.creation.name} onConfirm={() => ws.deleteCreation(dialog.creation)} onClose={close} />
+        <DeleteConfirmation
+          kind="creation"
+          name={dialog.creation.name}
+          notice={<GlowbookDeleteNotice creationId={dialog.creation.id} />}
+          onConfirm={async () => {
+            const ok = await ws.deleteCreation(dialog.creation);
+            if (ok) gb.forget(dialog.creation.id);
+            return ok;
+          }}
+          onClose={close}
+        />
       );
     case "creationCollections":
       return <CreationCollectionsDialog creationId={dialog.creationId} back={dialog.back} onClose={close} />;

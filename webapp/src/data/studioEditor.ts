@@ -189,8 +189,9 @@ export const DEFAULT_SHAPED_SIZES: GemSize[] = [{ mm: [3] }, { mm: [4] }, { mm: 
 /**
  * Half the longest side of a piece of this size, in millimetres. SS is the
  * gauge of round stones (its approximate diameter); millimetre dimensions
- * give the longest side. A shaped piece is drawn with its longest side equal
- * to it, in the proportions of its outline (the engine scales uniformly).
+ * give the longest side. A piece sized in SS or by one value is drawn with its
+ * longest side equal to it, in the proportions of its outline; a width ×
+ * length size is drawn at both (`scaleAxes`, `lib/studio3d/pieceScale.ts`).
  */
 export function scaleForSize(size: GemSize): number {
   return sizeLongestMm(size) / 2;

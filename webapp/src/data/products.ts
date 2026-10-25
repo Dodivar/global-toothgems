@@ -120,6 +120,11 @@ export interface ProductVariant {
   image?: string;
 }
 
+/** The five characteristics a product may list, in display order. */
+export const SPEC_KEYS = ["material", "center", "back", "packaging", "wear"] as const;
+export type SpecKey = (typeof SPEC_KEYS)[number];
+export type ProductSpecs = Partial<Record<SpecKey, Localized>>;
+
 export interface Product {
   /** URL key: the product slug in the default language. */
   id: string;
@@ -157,7 +162,11 @@ export interface Product {
   /** Gems only, like `shape`. */
   color?: GemColor;
   description?: Localized;
-  center?: Localized;
+  /**
+   * The characteristics the product page lists (gems only), each optional:
+   * a value the catalogue does not hold is not shown.
+   */
+  specs?: ProductSpecs;
   gallery?: { src: string; alt: Localized }[];
   /** Database products only. Mock products use the prototype's shade/size pickers. */
   variants?: ProductVariant[];
@@ -185,7 +194,10 @@ export const PRODUCTS: Product[] = [
       fr: "Cœur en or 18k à centre en opale de laboratoire. Dos plat pour le contact de l’adhésif, bords polis, livré en capsule stérile à usage unique.",
       en: "18k gold heart with a lab-grown opal center. Flat back for adhesive contact, polished edges, delivered in a single-use sterile capsule.",
     },
-    center: { fr: "Opale de laboratoire", en: "Lab-grown opal" },
+    specs: {
+      material: { fr: "Or 18k", en: "18k gold" },
+      center: { fr: "Opale de laboratoire", en: "Lab-grown opal" },
+    },
     gallery: [
       { src: img("img-04.jpg"), alt: { fr: "Aurora Heart de face", en: "Aurora Heart, front view" } },
       { src: img("img-07.jpg"), alt: { fr: "Gem de profil", en: "Gem, side view" } },
@@ -517,4 +529,11 @@ export function colorsInCatalog(list: Product[], colors: GemColorDef[]): ColorGr
     if (count > 0) groups.push({ color, count });
   }
   return groups;
+}
+
+/** One frequently asked question of a product page, in the page's language (`product_faq()`). */
+export interface ProductFaqEntry {
+  id: string;
+  question: string;
+  answer: string;
 }

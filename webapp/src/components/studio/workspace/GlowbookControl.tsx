@@ -5,7 +5,7 @@ import { useNavigate } from "../../../lib/navigation";
 import { studioSectionPath } from "../../../lib/studioUrl";
 import { useGlowbook } from "../../../lib/studioWorkspace/glowbookStore";
 import type { Creation } from "../../../lib/studioWorkspace/types";
-import { ModerationBadge } from "./GlowbookManager";
+import { ModerationBadge } from "./GlowbookStatus";
 import { useWorkspaceFormat } from "./workspaceStyles";
 
 /**

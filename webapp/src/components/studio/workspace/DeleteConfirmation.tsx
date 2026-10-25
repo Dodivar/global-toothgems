@@ -1,4 +1,5 @@
 import { useState } from "react";
+import type { ReactNode } from "react";
 import { Trash2 } from "lucide-react";
 import { useTranslation } from "react-i18next";
 import { Dialog } from "../../ui/Dialog";
@@ -12,11 +13,14 @@ import { Button } from "../../ui/Button";
 export function DeleteConfirmation({
   kind,
   name,
+  notice,
   onConfirm,
   onClose,
 }: {
   kind: "creation" | "group" | "collection";
   name: string;
+  /** What else goes with it (a creation shown on the public Glowbook…), under the body. */
+  notice?: ReactNode;
   /** Resolves true when the deletion went through. */
   onConfirm: () => Promise<boolean>;
   onClose: () => void;
@@ -59,6 +63,7 @@ export function DeleteConfirmation({
       <p className="m-0 text-[length:var(--text-body-sm)] text-[var(--text-muted)]">
         {t(`studio.workspace.delete.${kind}Body`, { name })}
       </p>
+      {notice}
     </Dialog>
   );
 }

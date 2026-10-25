@@ -29,10 +29,14 @@ const row: ProductRow = {
   compare_at_price: "38.00",
   currency: "EUR",
   status: "active",
-  metadata: { material: "Cristal taillé", tags: ["best-seller", 3], type: "set" },
+  metadata: { material: "Ancienne valeur", tags: ["best-seller", 3], type: "set" },
+  spec_material: "Cristal taillé",
+  spec_back: "Plat, poli",
   created_at: "2026-09-01T00:00:00Z",
   updated_at: "2026-09-02T00:00:00Z",
-  product_translations: [{ locale: "en", name: "Crystal Star", short_description: "Short", description: "Long" }],
+  product_translations: [
+    { locale: "en", name: "Crystal Star", short_description: "Short", description: "Long", spec_back: "Flat, polished" },
+  ],
   product_media: [
     { id: "m2", storage_path: "products/x/2.jpg", alt_text: "Deux", position: 1, product_media_translations: [] },
     { id: "m1", storage_path: "products/x/1.jpg", alt_text: null, position: 0, product_media_translations: [{ locale: "en", alt_text: "One" }] },
@@ -74,6 +78,12 @@ describe("rowToProduct", () => {
   it("reads stock, prices and presentation metadata", () => {
     expect(product).toMatchObject({ stock: 12, lowStockThreshold: 4, price: 32, compareAtPrice: 38, type: "set" });
     expect(product.material).toEqual({ fr: "Cristal taillé", en: "" });
+    expect(product.specs).toEqual({
+      center: { fr: "", en: "" },
+      back: { fr: "Plat, poli", en: "Flat, polished" },
+      packaging: { fr: "", en: "" },
+      wear: { fr: "", en: "" },
+    });
     expect(product.tags).toEqual(["best-seller"]);
   });
 
@@ -124,6 +134,19 @@ describe("productToPayload", () => {
     expect(payload.metadata).toMatchObject({ shape: null, color: null });
     const gem = productToPayload({ ...product, shape: "star", color: "crystal" }) as { metadata: Record<string, unknown> };
     expect(gem.metadata).toMatchObject({ shape: "star", color: "crystal" });
+  });
+
+  it("sends the five characteristics trimmed, never the material in metadata", () => {
+    expect(payload.specs).toEqual({
+      material: { fr: "Cristal taillé", en: "" },
+      center: { fr: "", en: "" },
+      back: { fr: "Plat, poli", en: "Flat, polished" },
+      packaging: { fr: "", en: "" },
+      wear: { fr: "", en: "" },
+    });
+    expect(payload.metadata).not.toHaveProperty("material");
+    const blank = productToPayload({ ...product, specs: undefined, material: { fr: " Or ", en: "" } }) as { specs: Record<string, unknown> };
+    expect(blank.specs).toMatchObject({ material: { fr: "Or", en: "" }, wear: { fr: "", en: "" } });
   });
 
   it("builds slugs from the names", () => {
