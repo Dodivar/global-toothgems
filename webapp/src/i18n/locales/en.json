@@ -578,10 +578,7 @@
     "signIn": "Sign in",
     "signInInstead": "Sign in instead",
     "forgotPassword": "Forgot your password?",
-    "forgotToastTitle": "Password recovery",
-    "forgotToastBody": "In this prototype, recovery is shown for the design only.",
     "reassurance": "Free to create · no card required · takes about a minute",
-    "checkingEmail": "Checking this email address…",
     "showPassword": "Show password",
     "hidePassword": "Hide password",
     "clearChoice": "Clear",
@@ -602,8 +599,7 @@
       "continue": "Continue",
       "back": "Back",
       "create": "Create my account",
-      "creating": "Creating your account…",
-      "checking": "Checking…"
+      "creating": "Creating your account…"
     },
     "context": {
       "purchaseAria": "Your purchase",
@@ -624,10 +620,7 @@
     "account": {
       "title": "Your sign-in details",
       "body": "You’ll use these to sign in on any device.",
-      "divider": "or with your email",
-      "googleConnected": "Connected with Google",
-      "googleNoPassword": "No password needed — you’ll sign in with Google.",
-      "useEmailInstead": "Use an email and password instead"
+      "divider": "or with your email"
     },
     "profile": {
       "title": "About you",
@@ -738,17 +731,7 @@
       "emailSendBody": "Your account was not created: our email service failed. Your details stay in this form — try again in a few minutes, and contact us if it keeps happening."
     },
     "google": {
-      "cta": "Continue with Google",
-      "title": "Continue with Google",
-      "description": "Choose the Google account to use with Global Toothgems.",
-      "choose": "Choose an account",
-      "mockNote": "Prototype: a simulated account chooser. Nothing is sent to Google.",
-      "connecting": "Connecting to Google…",
-      "takenTitle": "This Google account is already registered",
-      "takenBody": "{{email}} already has a Global Toothgems account. Sign in to continue.",
-      "otherAccount": "Use another account",
-      "toastTitle": "Connected with Google",
-      "toastBody": "Your email is confirmed. Just a few details left."
+      "cta": "Continue with Google"
     },
     "legal": {
       "summaryNote": "Key points, in plain language. The full legal text will be published with the live site.",
@@ -781,43 +764,6 @@
         ]
       }
     },
-    "verify": {
-      "title": "Check your inbox",
-      "body": "We’ve sent a verification link to",
-      "instruction": "Open the email and select the link to activate your account.",
-      "sending": "Sending your verification email…",
-      "sent": "Email sent",
-      "resent": "A new link is on its way",
-      "verified": "Email verified — welcome aboard!",
-      "failedTitle": "We couldn’t send the verification email",
-      "failedBody": "This is usually temporary. Try again, or check the address is correct.",
-      "tryAgain": "Try again",
-      "expiredTitle": "This link has expired",
-      "expiredBody": "For your security, verification links expire after a while. Send yourself a fresh one.",
-      "sendNewLink": "Send a new link",
-      "resend": "Resend email",
-      "resending": "Sending…",
-      "resendIn": "Resend in {{time}}",
-      "resendReady": "You can now resend the verification email.",
-      "changeEmail": "Change email address",
-      "changeTitle": "Change email address",
-      "changeBody": "We’ll send a new verification link to the corrected address.",
-      "changeSubmit": "Send link",
-      "mockInbox": "Prototype · simulated inbox",
-      "mailTo": "to {{email}}",
-      "mailNow": "now",
-      "mailSubject": "Confirm your email address",
-      "mailNewLink": "new link",
-      "mailBody": "Hi {{name}}, one last step: confirm this address to activate your Global Toothgems account.",
-      "mailFallbackName": "there",
-      "mailCta": "Verify my email",
-      "verifying": "Verifying…",
-      "mailHint": "Select the button to simulate opening the link.",
-      "mailHintExpired": "Scenario: this first link has expired.",
-      "helpTitle": "Can’t find it?",
-      "helpBody": "It can take a minute. Check your spam or promotions folder. Still nothing? Resend it, or correct your address above.",
-      "wrongAddress": "Wrong address? Start again"
-    },
     "welcome": {
       "script": "Bienvenue",
       "title": "Welcome to Global Toothgems",
@@ -825,7 +771,6 @@
       "readyNamed": "Your account is ready, {{name}}.",
       "checkAccount": "Account created",
       "checkEmail": "Email address verified",
-      "checkGoogle": "Connected with Google",
       "checkPersonalised": "Experience tailored to your answers",
       "checkProfile": "Profile saved",
       "personalNote": "We’ll tailor suggestions to your answers. Change them anytime in your profile.",
@@ -834,10 +779,7 @@
       "ctaDashboard": "Go to my dashboard",
       "ctaCart": "Return to cart",
       "ctaContinueShopping": "Continue shopping",
-      "ctaViewTraining": "View training",
-      "ctaCheckout": "Continue to checkout",
-      "toastCheckoutTitle": "Training added to your account",
-      "toastCheckoutBody": "Prototype: enrolment stands in for payment. Your first lesson is open."
+      "ctaViewTraining": "View training"
     },
     "signedIn": {
       "title": "You’re already signed in",
@@ -846,24 +788,7 @@
     },
     "demo": {
       "title": "Prototype controls",
-      "body": "Review helpers — not part of the real page. Switch where the visitor came from, or force an outcome to see each state.",
-      "contextLegend": "Visitor came from",
-      "scenarioLegend": "Simulated outcome",
-      "takenLegend": "Already-registered emails (try one):",
-      "otherTips": "Typos like “gmial.com” get a suggestion; “password123” is rejected as too common.",
-      "restart": "Restart the journey",
-      "context": {
-        "general": "Website",
-        "purchase": "Product purchase",
-        "training": "Training course"
-      },
-      "scenario": {
-        "success": "Everything works",
-        "registrationFails": "Registration fails",
-        "networkError": "Network error",
-        "emailFails": "Verification email fails",
-        "linkExpired": "Link expired"
-      }
+      "takenLegend": "Already-registered emails (try one):"
     }
   },
   "academy": {

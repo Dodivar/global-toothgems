@@ -1,9 +1,8 @@
 import { useTranslation } from "react-i18next";
 import { Link } from "../../../lib/navigation";
-import { BadgeCheck } from "lucide-react";
 import { PasswordField, TextField } from "../Field";
 import { PasswordStrength } from "../PasswordStrength";
-import { GoogleMark } from "../GoogleDialog";
+import { GoogleMark } from "../GoogleMark";
 import { StepHeading } from "./StepHeading";
 import { suggestEmail, validateField } from "../../../lib/registration";
 import type { StepProps } from "./types";
@@ -11,10 +10,8 @@ import type { StepProps } from "./types";
 /**
  * Step 1 — email and password, or Google.
  *
- * Google sits first because it is the shortest path; the email route follows a
- * labelled divider. Once Google has supplied the address, the password fields
- * are replaced by a confirmation card: asking for a password there would
- * contradict the choice the visitor just made.
+ * Google sits first because it is the shortest path (it leaves for Google and
+ * comes back signed in); the email route follows a labelled divider.
  */
 export function AccountStep({
   data,
@@ -24,20 +21,14 @@ export function AccountStep({
   fieldRef,
   headingRef,
   touched,
-  checkingEmail,
   emailTaken,
-  viaGoogle,
   onGoogle,
-  onUseEmail,
   signInState,
   onForgotPassword,
 }: StepProps & {
   touched: (name: "email" | "password" | "confirmPassword") => boolean;
-  checkingEmail: boolean;
   emailTaken: boolean;
-  viaGoogle: boolean;
   onGoogle: () => void;
-  onUseEmail: () => void;
   signInState: unknown;
   onForgotPassword: () => void;
 }) {
@@ -51,31 +42,7 @@ export function AccountStep({
     <div className="grid gap-5">
       <StepHeading headingRef={headingRef} title={t("register.account.title")} body={t("register.account.body")} />
 
-      {viaGoogle ? (
-        <div className="grid gap-3 rounded-[var(--radius-md)] border border-[var(--gt-emerald-300)] bg-[var(--status-success-bg)] p-4">
-          <p className="m-0 flex items-start gap-3 text-[length:var(--text-body-sm)] text-[var(--text-primary)]">
-            <span aria-hidden="true" className="grid h-9 w-9 flex-none place-items-center rounded-full bg-white shadow-[var(--shadow-xs)]">
-              <GoogleMark size={18} />
-            </span>
-            <span className="grid gap-0.5">
-              <strong className="flex items-center gap-1.5">
-                <BadgeCheck size={15} aria-hidden="true" className="text-[var(--status-success-fg)]" />
-                {t("register.account.googleConnected")}
-              </strong>
-              <span className="break-all text-[var(--text-body)]">{data.email}</span>
-              <span className="text-[length:var(--text-caption)] text-[var(--text-muted)]">{t("register.account.googleNoPassword")}</span>
-            </span>
-          </p>
-          <button
-            type="button"
-            onClick={onUseEmail}
-            className="justify-self-start text-[length:var(--text-caption)] font-semibold text-[var(--text-primary)] underline decoration-1 underline-offset-4 hover:text-[var(--text-link-hover)]"
-          >
-            {t("register.account.useEmailInstead")}
-          </button>
-        </div>
-      ) : (
-        <>
+      <>
           <button
             type="button"
             onClick={onGoogle}
@@ -105,9 +72,7 @@ export function AccountStep({
             onChange={(e) => set("email", e.target.value)}
             onBlur={() => blur("email")}
             error={errors.email}
-            loading={checkingEmail}
-            loadingLabel={t("register.checkingEmail")}
-            success={emailValid && touched("email") && !checkingEmail}
+            success={emailValid && touched("email")}
             hint={t("register.fields.emailHint")}
             after={
               <>
@@ -172,8 +137,7 @@ export function AccountStep({
             success={confirmValid && data.confirmPassword.length > 0}
             successMessage={t("register.fields.passwordsMatch")}
           />
-        </>
-      )}
+      </>
     </div>
   );
 }

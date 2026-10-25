@@ -578,10 +578,7 @@
     "signIn": "Se connecter",
     "signInInstead": "Me connecter plutôt",
     "forgotPassword": "Mot de passe oublié ?",
-    "forgotToastTitle": "Récupération du mot de passe",
-    "forgotToastBody": "Dans ce prototype, la récupération est présentée pour le design uniquement.",
     "reassurance": "Gratuit · aucune carte demandée · environ une minute",
-    "checkingEmail": "Vérification de cette adresse e-mail…",
     "showPassword": "Afficher le mot de passe",
     "hidePassword": "Masquer le mot de passe",
     "clearChoice": "Effacer",
@@ -602,8 +599,7 @@
       "continue": "Continuer",
       "back": "Retour",
       "create": "Créer mon compte",
-      "creating": "Création de votre compte…",
-      "checking": "Vérification…"
+      "creating": "Création de votre compte…"
     },
     "context": {
       "purchaseAria": "Votre achat",
@@ -624,10 +620,7 @@
     "account": {
       "title": "Vos identifiants",
       "body": "Ils vous serviront à vous connecter sur tous vos appareils.",
-      "divider": "ou avec votre e-mail",
-      "googleConnected": "Connecté avec Google",
-      "googleNoPassword": "Aucun mot de passe nécessaire : vous vous connecterez avec Google.",
-      "useEmailInstead": "Utiliser plutôt un e-mail et un mot de passe"
+      "divider": "ou avec votre e-mail"
     },
     "profile": {
       "title": "À propos de vous",
@@ -738,17 +731,7 @@
       "emailSendBody": "Votre compte n’a pas été créé : notre service d’envoi d’e-mails a échoué. Vos informations restent dans ce formulaire — réessayez dans quelques minutes, et contactez-nous si le problème persiste."
     },
     "google": {
-      "cta": "Continuer avec Google",
-      "title": "Continuer avec Google",
-      "description": "Choisissez le compte Google à utiliser avec Global Toothgems.",
-      "choose": "Choisissez un compte",
-      "mockNote": "Prototype : sélecteur de compte simulé. Rien n’est envoyé à Google.",
-      "connecting": "Connexion à Google…",
-      "takenTitle": "Ce compte Google est déjà inscrit",
-      "takenBody": "{{email}} possède déjà un compte Global Toothgems. Connectez-vous pour continuer.",
-      "otherAccount": "Utiliser un autre compte",
-      "toastTitle": "Connecté avec Google",
-      "toastBody": "Votre e-mail est confirmé. Plus que quelques informations."
+      "cta": "Continuer avec Google"
     },
     "legal": {
       "summaryNote": "L’essentiel, en langage clair. Le texte juridique complet sera publié avec le site.",
@@ -781,43 +764,6 @@
         ]
       }
     },
-    "verify": {
-      "title": "Consultez votre boîte mail",
-      "body": "Nous avons envoyé un lien de vérification à",
-      "instruction": "Ouvrez l’e-mail et sélectionnez le lien pour activer votre compte.",
-      "sending": "Envoi de l’e-mail de vérification…",
-      "sent": "E-mail envoyé",
-      "resent": "Un nouveau lien est en route",
-      "verified": "E-mail vérifié — bienvenue !",
-      "failedTitle": "Impossible d’envoyer l’e-mail de vérification",
-      "failedBody": "C’est généralement temporaire. Réessayez, ou vérifiez que l’adresse est correcte.",
-      "tryAgain": "Réessayer",
-      "expiredTitle": "Ce lien a expiré",
-      "expiredBody": "Pour votre sécurité, les liens de vérification expirent au bout d’un certain temps. Envoyez-vous un nouveau lien.",
-      "sendNewLink": "Envoyer un nouveau lien",
-      "resend": "Renvoyer l’e-mail",
-      "resending": "Envoi…",
-      "resendIn": "Renvoyer dans {{time}}",
-      "resendReady": "Vous pouvez maintenant renvoyer l’e-mail de vérification.",
-      "changeEmail": "Modifier l’adresse e-mail",
-      "changeTitle": "Modifier l’adresse e-mail",
-      "changeBody": "Nous enverrons un nouveau lien de vérification à l’adresse corrigée.",
-      "changeSubmit": "Envoyer le lien",
-      "mockInbox": "Prototype · boîte mail simulée",
-      "mailTo": "à {{email}}",
-      "mailNow": "à l’instant",
-      "mailSubject": "Confirmez votre adresse e-mail",
-      "mailNewLink": "nouveau lien",
-      "mailBody": "Bonjour {{name}}, une dernière étape : confirmez cette adresse pour activer votre compte Global Toothgems.",
-      "mailFallbackName": "à vous",
-      "mailCta": "Vérifier mon e-mail",
-      "verifying": "Vérification…",
-      "mailHint": "Sélectionnez le bouton pour simuler l’ouverture du lien.",
-      "mailHintExpired": "Scénario : ce premier lien a expiré.",
-      "helpTitle": "Vous ne le trouvez pas ?",
-      "helpBody": "Cela peut prendre une minute. Regardez dans vos spams ou l’onglet Promotions. Toujours rien ? Renvoyez-le, ou corrigez votre adresse ci-dessus.",
-      "wrongAddress": "Mauvaise adresse ? Recommencer"
-    },
     "welcome": {
       "script": "Bienvenue",
       "title": "Bienvenue chez Global Toothgems",
@@ -825,7 +771,6 @@
       "readyNamed": "Votre compte est prêt, {{name}}.",
       "checkAccount": "Compte créé",
       "checkEmail": "Adresse e-mail vérifiée",
-      "checkGoogle": "Connecté avec Google",
       "checkPersonalised": "Expérience adaptée à vos réponses",
       "checkProfile": "Profil enregistré",
       "personalNote": "Nos suggestions s’adapteront à vos réponses. Modifiez-les à tout moment dans votre profil.",
@@ -834,10 +779,7 @@
       "ctaDashboard": "Aller à mon tableau de bord",
       "ctaCart": "Revenir au panier",
       "ctaContinueShopping": "Continuer mes achats",
-      "ctaViewTraining": "Voir la formation",
-      "ctaCheckout": "Poursuivre vers le paiement",
-      "toastCheckoutTitle": "Formation ajoutée à votre compte",
-      "toastCheckoutBody": "Prototype : l’inscription tient lieu de paiement. Votre première leçon est ouverte."
+      "ctaViewTraining": "Voir la formation"
     },
     "signedIn": {
       "title": "Vous êtes déjà connecté·e",
@@ -846,24 +788,7 @@
     },
     "demo": {
       "title": "Commandes du prototype",
-      "body": "Outils de revue — ne font pas partie de la vraie page. Changez la provenance du visiteur, ou forcez un résultat pour voir chaque état.",
-      "contextLegend": "Le visiteur vient de",
-      "scenarioLegend": "Résultat simulé",
-      "takenLegend": "E-mails déjà inscrits (essayez-en un) :",
-      "otherTips": "Une faute comme « gmial.com » propose une correction ; « password123 » est refusé car trop courant.",
-      "restart": "Recommencer le parcours",
-      "context": {
-        "general": "Site",
-        "purchase": "Achat produit",
-        "training": "Formation"
-      },
-      "scenario": {
-        "success": "Tout fonctionne",
-        "registrationFails": "Échec de l’inscription",
-        "networkError": "Erreur réseau",
-        "emailFails": "Échec de l’e-mail",
-        "linkExpired": "Lien expiré"
-      }
+      "takenLegend": "E-mails déjà inscrits (essayez-en un) :"
     }
   },
   "academy": {

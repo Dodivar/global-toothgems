@@ -1,14 +1,14 @@
 import type { CSSProperties } from "react";
 import { useTranslation } from "react-i18next";
 import type { LucideIcon } from "lucide-react";
-import { ArrowRight, CircleCheck, GraduationCap, LayoutDashboard, ShoppingBag, Sparkles, Store } from "lucide-react";
+import { CircleCheck, GraduationCap, LayoutDashboard, ShoppingBag, Sparkles, Store } from "lucide-react";
 import { Button } from "../ui/Button";
 import { ShapeGlyph } from "../ui/ShapeGlyph";
 import { ContextSummary } from "./ContextSummary";
 import type { GemShape } from "../../data/products";
 import type { Interest, Persona, RegistrationContext } from "../../lib/registration";
 
-export type WelcomeAction = "cart" | "shop" | "dashboard" | "academy" | "course" | "checkout";
+export type WelcomeAction = "cart" | "shop" | "dashboard" | "academy" | "course";
 
 interface Cta {
   action: WelcomeAction;
@@ -34,7 +34,6 @@ function useCtas(context: RegistrationContext, interest: Interest | null): Cta[]
   }
   if (context.kind === "training") {
     return [
-      { action: "checkout", label: t("register.welcome.ctaCheckout"), icon: ArrowRight },
       { action: "course", label: t("register.welcome.ctaViewTraining"), icon: GraduationCap },
       dashboard,
     ];
@@ -66,7 +65,6 @@ export function WelcomeScreen({
   firstName,
   persona,
   interest,
-  viaGoogle,
   headingRef,
   onAction,
 }: {
@@ -74,7 +72,6 @@ export function WelcomeScreen({
   firstName: string;
   persona: Persona | null;
   interest: Interest | null;
-  viaGoogle: boolean;
   headingRef: React.RefObject<HTMLHeadingElement | null>;
   onAction: (action: WelcomeAction) => void;
 }) {
@@ -83,7 +80,7 @@ export function WelcomeScreen({
 
   const checks = [
     t("register.welcome.checkAccount"),
-    t(viaGoogle ? "register.welcome.checkGoogle" : "register.welcome.checkEmail"),
+    t("register.welcome.checkEmail"),
     persona || interest ? t("register.welcome.checkPersonalised") : t("register.welcome.checkProfile"),
   ];
 
