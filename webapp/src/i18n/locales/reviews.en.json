@@ -325,13 +325,6 @@
     "publishedBody": "It appears on the page with your verification badge.",
     "note": "Editing a published review sends it back for review. Reports are always read by a person; nothing is removed automatically."
   },
-  "proto": {
-    "label": "Prototype",
-    "live": "Sample reviews",
-    "loading": "Loading",
-    "empty": "No reviews",
-    "error": "Error"
-  },
   "admin": {
     "title": "Reviews",
     "description": "Moderate customer and student reviews, answer them and handle reports.",

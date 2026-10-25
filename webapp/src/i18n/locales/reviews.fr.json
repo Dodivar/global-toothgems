@@ -325,13 +325,6 @@
     "publishedBody": "Il apparaît sur la page avec votre badge de vérification.",
     "note": "Modifier un avis publié le renvoie en relecture. Les signalements sont toujours lus par une personne ; rien n’est retiré automatiquement."
   },
-  "proto": {
-    "label": "Prototype",
-    "live": "Avis d’exemple",
-    "loading": "Chargement",
-    "empty": "Aucun avis",
-    "error": "Erreur"
-  },
   "admin": {
     "title": "Avis",
     "description": "Modérez les avis des clientes et des élèves, répondez-y et traitez les signalements.",

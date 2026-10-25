@@ -65,14 +65,7 @@ export const LINK_TOKENS = {
   alreadyVerified: "demo-deja-verifie",
 } as const;
 
-export type ResetLinkState = "valid" | "expired" | "invalid";
 export type VerifyOutcome = "verified" | "expired" | "invalid" | "alreadyVerified";
-
-export function resetLinkStateOf(token: string | null): ResetLinkState {
-  if (token === LINK_TOKENS.expired) return "expired";
-  if (!token || token === LINK_TOKENS.invalid) return "invalid";
-  return "valid";
-}
 
 export function verifyOutcomeOf(token: string | null): VerifyOutcome {
   if (token === LINK_TOKENS.expired) return "expired";
@@ -132,20 +125,6 @@ const wait = (ms: number) => new Promise((resolve) => setTimeout(resolve, ms));
 async function call(ms: number, outcome: ServiceOutcome) {
   await wait(ms);
   if (outcome === "serverError") throw new SecurityServiceError("server");
-}
-
-/**
- * The response never says whether an account exists for the address: saying
- * so would let anyone probe which emails are customers. The page therefore
- * confirms the send in every case, with wording that stays true when no
- * account matches.
- */
-export async function requestPasswordReset(_email: string, outcome: ServiceOutcome) {
-  await call(1100, outcome);
-}
-
-export async function resetPassword(_password: string, outcome: ServiceOutcome) {
-  await call(1300, outcome);
 }
 
 export async function sendVerification(outcome: ServiceOutcome) {

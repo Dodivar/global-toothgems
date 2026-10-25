@@ -9,33 +9,12 @@ import { Button } from "../components/ui/Button";
 import { TextField } from "../components/register/Field";
 import { AuthShell, StateHeading } from "../components/security/AuthShell";
 import { Notice } from "../components/security/Notice";
-import { MockInbox } from "../components/security/MockInbox";
-import { DemoControls, DemoNote, RadioPills } from "../components/security/DemoControls";
-import {
-  LINK_TOKENS,
-  RESET_LINK_MINUTES,
-  RESET_PATH,
-  formatCountdown,
-  isEmail,
-  requestPasswordReset,
-  useCooldown,
-  type ResetLinkState,
-  type ServiceOutcome,
-} from "../lib/accountSecurity";
+import { RESET_LINK_MINUTES, formatCountdown, isEmail, useCooldown } from "../lib/accountSecurity";
 import { suggestEmail } from "../lib/registration";
-import { useAuth } from "../lib/auth";
 import { sendPasswordReset } from "../lib/passwordRecovery";
 
 type Phase = "form" | "sent";
 type SendFailure = null | "first" | "resend";
-
-const OUTCOMES: ServiceOutcome[] = ["success", "serverError"];
-const LINKS: ResetLinkState[] = ["valid", "expired", "invalid"];
-const TOKEN_FOR: Record<ResetLinkState, string> = {
-  valid: LINK_TOKENS.valid,
-  expired: LINK_TOKENS.expired,
-  invalid: LINK_TOKENS.invalid,
-};
 
 /**
  * "Forgot your password?", at `/mot-de-passe-oublie`.
@@ -44,11 +23,8 @@ const TOKEN_FOR: Record<ResetLinkState, string> = {
  * error) and the confirmation (check your inbox, resend behind a cooldown, use
  * another address). The confirmation is worded so it stays true whether or not
  * an account exists for the address — telling a stranger which emails are
- * customers would be a leak — and it carries a mock inbox whose button opens
- * the reset page, so the whole journey can be walked end to end.
- *
- * With Supabase configured the email is real (`lib/passwordRecovery.ts`) and
- * the demo panel and mock inbox are not shown.
+ * customers would be a leak. The e-mail is sent by Supabase Auth
+ * (`lib/passwordRecovery.ts`) and its link opens `/auth/confirm`.
  *
  * The address may arrive prefilled from the login or registration screen, in
  * history state, so the visitor never types it twice.
@@ -56,7 +32,6 @@ const TOKEN_FOR: Record<ResetLinkState, string> = {
 export function ForgotPassword() {
   const { t } = useTranslation();
   const location = useLocation();
-  const { realAuth } = useAuth();
   const initialEmail = (location.state as { email?: string } | null)?.email ?? "";
 
   const [phase, setPhase] = useState<Phase>("form");
@@ -65,8 +40,6 @@ export function ForgotPassword() {
   const [sending, setSending] = useState(false);
   const [failure, setFailure] = useState<SendFailure>(null);
   const [resent, setResent] = useState(false);
-  const [outcome, setOutcome] = useState<ServiceOutcome>("success");
-  const [linkState, setLinkState] = useState<ResetLinkState>("valid");
   const cooldown = useCooldown();
 
   const headingRef = useRef<HTMLHeadingElement>(null);
@@ -89,11 +62,7 @@ export function ForgotPassword() {
     setFailure(null);
     setResent(false);
     try {
-      if (realAuth) {
-        if ((await sendPasswordReset(email)) !== "sent") throw new Error("reset request failed");
-      } else {
-        await requestPasswordReset(email, outcome);
-      }
+      if ((await sendPasswordReset(email)) !== "sent") throw new Error("reset request failed");
       setSending(false);
       cooldown.start();
       if (resend) setResent(true);
@@ -115,28 +84,6 @@ export function ForgotPassword() {
     void send(false);
   };
 
-  const demo = (
-    <DemoControls summary={`${t(`security.demo.outcome.${outcome}`)} · ${t(`security.demo.resetLink.${linkState}`)}`}>
-      <DemoNote>{t("security.forgot.demoBody")}</DemoNote>
-      <RadioPills
-        name="gt-forgot-outcome"
-        legend={t("security.demo.outcomeLegend")}
-        options={OUTCOMES}
-        value={outcome}
-        onChange={setOutcome}
-        labelFor={(v) => t(`security.demo.outcome.${v}`)}
-      />
-      <RadioPills
-        name="gt-forgot-link"
-        legend={t("security.demo.resetLinkLegend")}
-        options={LINKS}
-        value={linkState}
-        onChange={setLinkState}
-        labelFor={(v) => t(`security.demo.resetLink.${v}`)}
-      />
-    </DemoControls>
-  );
-
   const backToLogin = (
     <Link
       to="/connexion"
@@ -150,7 +97,7 @@ export function ForgotPassword() {
   if (phase === "sent") {
     const locked = cooldown.left > 0;
     return (
-      <AuthShell demo={realAuth ? undefined : demo}>
+      <AuthShell>
         <StateHeading icon={MailCheck} tone="brand" title={t("security.forgot.sentTitle")} headingRef={headingRef}>
           <p>{t("security.forgot.sentBody")}</p>
           <p>
@@ -207,18 +154,6 @@ export function ForgotPassword() {
           </Button>
         </div>
 
-        {!realAuth && (
-        <MockInbox
-          to={email.trim()}
-          subject={t("security.forgot.mailSubject")}
-          ctaLabel={t("security.forgot.mailCta")}
-          href={`${RESET_PATH}?jeton=${TOKEN_FOR[linkState]}`}
-          hint={t("security.forgot.mailHint", { minutes: RESET_LINK_MINUTES })}
-        >
-          <p>{t("security.forgot.mailBody")}</p>
-        </MockInbox>
-        )}
-
         <aside className="flex items-start gap-3 rounded-[var(--radius-md)] bg-[var(--surface-brand-wash)] p-4 text-[length:var(--text-caption)] leading-[1.55] text-[var(--text-body)]">
           <ShieldCheck size={17} aria-hidden="true" className="mt-[1px] flex-none text-[var(--gt-blue-700)]" />
           <div className="grid gap-1">
@@ -233,7 +168,7 @@ export function ForgotPassword() {
   }
 
   return (
-    <AuthShell demo={realAuth ? undefined : demo}>
+    <AuthShell>
       <StateHeading icon={KeyRound} tone="brand" eyebrow={t("security.forgot.eyebrow")} title={t("security.forgot.title")} headingRef={headingRef}>
         <p>{t("security.forgot.body")}</p>
       </StateHeading>

@@ -3669,7 +3669,7 @@
         "emptyStepsBody": "Add a first step to start writing the lesson.",
         "deleteTitle": "Delete this module?",
         "deleteBody": "“{{name}}” and all of its content will be removed from the course.",
-        "deleteWarning": "This cannot be undone in the prototype.",
+        "deleteWarning": "This cannot be undone.",
         "completion": "Module progress",
         "completionHint": "Share of steps holding at least one content block."
       },
@@ -4354,12 +4354,6 @@
         "success": "Success",
         "serverError": "Server error"
       },
-      "resetLinkLegend": "Reset link in the email",
-      "resetLink": {
-        "valid": "Valid link",
-        "expired": "Expired link",
-        "invalid": "Invalid link"
-      },
       "verifyLegend": "Verification link",
       "verify": {
         "verified": "Valid link",
@@ -4388,12 +4382,7 @@
       "resendFailed": "We couldn’t resend the email. Please try again in a moment.",
       "useOther": "Use another email",
       "noteTitle": "For your security",
-      "noteBody": "The link works once and expires after {{minutes}} minutes. If you didn’t ask for it, you can ignore the email — your password stays the same.",
-      "mailSubject": "Reset your Global Toothgems password",
-      "mailBody": "Hello! We received a request to reset your password. Click the button below to choose a new one.",
-      "mailCta": "Choose a new password",
-      "mailHint": "This link expires in {{minutes}} minutes and can be used once.",
-      "demoBody": "Choose how the server answers the next request, and which kind of link the email carries — then open it from the mock inbox."
+      "noteBody": "The link works once and expires after {{minutes}} minutes. If you didn’t ask for it, you can ignore the email — your password stays the same."
     },
     "reset": {
       "eyebrow": "New password",
@@ -4412,8 +4401,7 @@
       "doneBody": "All set. Your account is now protected by your new password — use it the next time you sign in.",
       "logIn": "Log in",
       "tipTitle": "A small tip",
-      "tipBody": "A password manager can remember a unique password for every site. And if you didn’t make this change, contact us straight away.",
-      "demoBody": "Switch the link state to see the expired and invalid screens, or make the next save fail."
+      "tipBody": "A password manager can remember a unique password for every site. And if you didn’t make this change, contact us straight away."
     },
     "verify": {
       "verifyingTitle": "Verifying your email",
