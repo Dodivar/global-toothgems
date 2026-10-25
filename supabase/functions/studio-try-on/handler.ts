@@ -1,7 +1,7 @@
 import { corsHeaders, json, type SiteOrigins } from "../_shared/http.ts";
 import { bearer, looksLikeJwt } from "../_shared/studioBilling.ts";
 import type { GenerateOutcome, InlineImage } from "./gemini.ts";
-import { piecesFromScene } from "./prompt.ts";
+import { buildDesignData, piecesFromScene } from "./prompt.ts";
 
 /**
  * POST /functions/v1/studio-try-on   (decision 111)
@@ -50,8 +50,11 @@ export interface StudioTryOnDeps {
   startRequest(userId: string, row: TryOnCreationRow): Promise<string>;
   finishRequest(id: string, status: "generated" | "failed", errorCode: string | null): Promise<void>;
   references(): Promise<InlineImage[]>;
-  /** Sends the images, in this order, with the system instructions. */
-  generate(images: InlineImage[]): Promise<GenerateOutcome>;
+  /**
+   * Sends the images, in this order, with the system instructions; `designData`
+   * (the gems as text, from the database) follows them when the prompt version reads it.
+   */
+  generate(images: InlineImage[], designData: string): Promise<GenerateOutcome>;
   now?: () => Date;
   log(message: string, detail?: unknown): void;
 }
@@ -169,7 +172,7 @@ export async function handleStudioTryOn(req: Request, deps: StudioTryOnDeps): Pr
       deps.log("reference pictures unavailable", error instanceof Error ? error.message : error);
       return [] as InlineImage[];
     });
-    outcome = await deps.generate([design, photo, ...references]);
+    outcome = await deps.generate([design, photo, ...references], buildDesignData(pieces));
   } catch (error) {
     outcome = { ok: false, code: "failed", detail: error instanceof Error ? error.message : String(error) };
   }

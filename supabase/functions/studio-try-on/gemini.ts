@@ -9,8 +9,9 @@
  * Until both of the first two are set, the function answers `not_available`.
  *
  * Request: `models/<model>:generateContent` with the system instructions in
- * `systemInstruction` and one user turn holding only the images, inline
- * (base64), in the order the instructions name them. Response: the first
+ * `systemInstruction` and one user turn holding the images, inline (base64),
+ * in the order the instructions name them, then the design data when the
+ * prompt version reads it (v2). Response: the first
  * inline image part of the first candidate.
  */
 
@@ -46,12 +47,22 @@ export async function generateImage(
   config: ImageModelConfig,
   systemPrompt: string,
   images: InlineImage[],
+  /** Text sent after the images (the design data), or null for images only. */
+  text: string | null,
   fetchImpl: typeof fetch = fetch,
   timeoutMs = 90_000,
 ): Promise<GenerateOutcome> {
   const body = {
     systemInstruction: { parts: [{ text: systemPrompt }] },
-    contents: [{ role: "user", parts: images.map((img) => ({ inline_data: { mime_type: img.mimeType, data: img.data } })) }],
+    contents: [
+      {
+        role: "user",
+        parts: [
+          ...images.map((img) => ({ inline_data: { mime_type: img.mimeType, data: img.data } })),
+          ...(text ? [{ text }] : []),
+        ],
+      },
+    ],
     generationConfig: { responseModalities: ["IMAGE"] },
   };
   let res: Response;
