@@ -552,6 +552,39 @@ export type Database = {
           },
         ]
       }
+      category_faq_groups: {
+        Row: {
+          category_id: string
+          created_at: string
+          group_id: string
+        }
+        Insert: {
+          category_id: string
+          created_at?: string
+          group_id: string
+        }
+        Update: {
+          category_id?: string
+          created_at?: string
+          group_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "category_faq_groups_category_id_fkey"
+            columns: ["category_id"]
+            isOneToOne: false
+            referencedRelation: "categories"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "category_faq_groups_group_id_fkey"
+            columns: ["group_id"]
+            isOneToOne: false
+            referencedRelation: "faq_groups"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       category_translations: {
         Row: {
           category_id: string
@@ -2750,6 +2783,202 @@ export type Database = {
           },
         ]
       }
+      faq_groups: {
+        Row: {
+          created_at: string
+          created_by: string | null
+          id: string
+          name: string
+          position: number
+          status: string
+          updated_at: string
+          updated_by: string | null
+        }
+        Insert: {
+          created_at?: string
+          created_by?: string | null
+          id?: string
+          name: string
+          position?: number
+          status?: string
+          updated_at?: string
+          updated_by?: string | null
+        }
+        Update: {
+          created_at?: string
+          created_by?: string | null
+          id?: string
+          name?: string
+          position?: number
+          status?: string
+          updated_at?: string
+          updated_by?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "faq_groups_created_by_fkey"
+            columns: ["created_by"]
+            isOneToOne: false
+            referencedRelation: "loyalty_overview"
+            referencedColumns: ["user_id"]
+          },
+          {
+            foreignKeyName: "faq_groups_created_by_fkey"
+            columns: ["created_by"]
+            isOneToOne: false
+            referencedRelation: "profiles"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "faq_groups_updated_by_fkey"
+            columns: ["updated_by"]
+            isOneToOne: false
+            referencedRelation: "loyalty_overview"
+            referencedColumns: ["user_id"]
+          },
+          {
+            foreignKeyName: "faq_groups_updated_by_fkey"
+            columns: ["updated_by"]
+            isOneToOne: false
+            referencedRelation: "profiles"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      faq_item_translations: {
+        Row: {
+          answer: string
+          created_at: string
+          item_id: string
+          locale: string
+          question: string
+          status: string
+          updated_at: string
+          updated_by: string | null
+        }
+        Insert: {
+          answer: string
+          created_at?: string
+          item_id: string
+          locale: string
+          question: string
+          status?: string
+          updated_at?: string
+          updated_by?: string | null
+        }
+        Update: {
+          answer?: string
+          created_at?: string
+          item_id?: string
+          locale?: string
+          question?: string
+          status?: string
+          updated_at?: string
+          updated_by?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "faq_item_translations_item_id_fkey"
+            columns: ["item_id"]
+            isOneToOne: false
+            referencedRelation: "faq_items"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "faq_item_translations_locale_fkey"
+            columns: ["locale"]
+            isOneToOne: false
+            referencedRelation: "languages"
+            referencedColumns: ["code"]
+          },
+          {
+            foreignKeyName: "faq_item_translations_updated_by_fkey"
+            columns: ["updated_by"]
+            isOneToOne: false
+            referencedRelation: "loyalty_overview"
+            referencedColumns: ["user_id"]
+          },
+          {
+            foreignKeyName: "faq_item_translations_updated_by_fkey"
+            columns: ["updated_by"]
+            isOneToOne: false
+            referencedRelation: "profiles"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      faq_items: {
+        Row: {
+          answer: string
+          created_at: string
+          created_by: string | null
+          group_id: string
+          id: string
+          position: number
+          question: string
+          updated_at: string
+          updated_by: string | null
+        }
+        Insert: {
+          answer: string
+          created_at?: string
+          created_by?: string | null
+          group_id: string
+          id?: string
+          position?: number
+          question: string
+          updated_at?: string
+          updated_by?: string | null
+        }
+        Update: {
+          answer?: string
+          created_at?: string
+          created_by?: string | null
+          group_id?: string
+          id?: string
+          position?: number
+          question?: string
+          updated_at?: string
+          updated_by?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "faq_items_created_by_fkey"
+            columns: ["created_by"]
+            isOneToOne: false
+            referencedRelation: "loyalty_overview"
+            referencedColumns: ["user_id"]
+          },
+          {
+            foreignKeyName: "faq_items_created_by_fkey"
+            columns: ["created_by"]
+            isOneToOne: false
+            referencedRelation: "profiles"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "faq_items_group_id_fkey"
+            columns: ["group_id"]
+            isOneToOne: false
+            referencedRelation: "faq_groups"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "faq_items_updated_by_fkey"
+            columns: ["updated_by"]
+            isOneToOne: false
+            referencedRelation: "loyalty_overview"
+            referencedColumns: ["user_id"]
+          },
+          {
+            foreignKeyName: "faq_items_updated_by_fkey"
+            columns: ["updated_by"]
+            isOneToOne: false
+            referencedRelation: "profiles"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       gem_color_translations: {
         Row: {
           created_at: string
@@ -4837,6 +5066,39 @@ export type Database = {
         }
         Relationships: []
       }
+      product_faq_groups: {
+        Row: {
+          created_at: string
+          group_id: string
+          product_id: string
+        }
+        Insert: {
+          created_at?: string
+          group_id: string
+          product_id: string
+        }
+        Update: {
+          created_at?: string
+          group_id?: string
+          product_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "product_faq_groups_group_id_fkey"
+            columns: ["group_id"]
+            isOneToOne: false
+            referencedRelation: "faq_groups"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "product_faq_groups_product_id_fkey"
+            columns: ["product_id"]
+            isOneToOne: false
+            referencedRelation: "products"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       product_media: {
         Row: {
           alt_text: string | null
@@ -5040,6 +5302,11 @@ export type Database = {
           product_id: string
           short_description: string | null
           slug: string | null
+          spec_back: string | null
+          spec_center: string | null
+          spec_material: string | null
+          spec_packaging: string | null
+          spec_wear: string | null
           status: string
           updated_at: string
           updated_by: string | null
@@ -5054,6 +5321,11 @@ export type Database = {
           product_id: string
           short_description?: string | null
           slug?: string | null
+          spec_back?: string | null
+          spec_center?: string | null
+          spec_material?: string | null
+          spec_packaging?: string | null
+          spec_wear?: string | null
           status?: string
           updated_at?: string
           updated_by?: string | null
@@ -5068,6 +5340,11 @@ export type Database = {
           product_id?: string
           short_description?: string | null
           slug?: string | null
+          spec_back?: string | null
+          spec_center?: string | null
+          spec_material?: string | null
+          spec_packaging?: string | null
+          spec_wear?: string | null
           status?: string
           updated_at?: string
           updated_by?: string | null
@@ -5269,6 +5546,11 @@ export type Database = {
           short_description: string | null
           sku: string | null
           slug: string
+          spec_back: string | null
+          spec_center: string | null
+          spec_material: string | null
+          spec_packaging: string | null
+          spec_wear: string | null
           status: string
           tax_category: string
           updated_at: string
@@ -5294,6 +5576,11 @@ export type Database = {
           short_description?: string | null
           sku?: string | null
           slug: string
+          spec_back?: string | null
+          spec_center?: string | null
+          spec_material?: string | null
+          spec_packaging?: string | null
+          spec_wear?: string | null
           status?: string
           tax_category?: string
           updated_at?: string
@@ -5319,6 +5606,11 @@ export type Database = {
           short_description?: string | null
           sku?: string | null
           slug?: string
+          spec_back?: string | null
+          spec_center?: string | null
+          spec_material?: string | null
+          spec_packaging?: string | null
+          spec_wear?: string | null
           status?: string
           tax_category?: string
           updated_at?: string
@@ -9055,6 +9347,7 @@ export type Database = {
       }
       admin_save_campaign: { Args: { p: Json }; Returns: string }
       admin_save_course: { Args: { p_course: Json }; Returns: Json }
+      admin_save_faq_group: { Args: { p_group: Json }; Returns: Json }
       admin_save_gem_color: { Args: { p_color: Json }; Returns: Json }
       admin_save_languages: { Args: { p_languages: Json }; Returns: undefined }
       admin_save_product: { Args: { p_product: Json }; Returns: Json }
@@ -9133,7 +9426,9 @@ export type Database = {
           prices_include_tax: boolean
           shipping_address: Json | null
           shipping_amount: number
+          shipping_max_days: number | null
           shipping_method_name: string | null
+          shipping_min_days: number | null
           shipping_rate_id: string | null
           status: string
           stock_state: string
@@ -9226,7 +9521,9 @@ export type Database = {
           prices_include_tax: boolean
           shipping_address: Json | null
           shipping_amount: number
+          shipping_max_days: number | null
           shipping_method_name: string | null
+          shipping_min_days: number | null
           shipping_rate_id: string | null
           status: string
           stock_state: string
@@ -9459,7 +9756,9 @@ export type Database = {
           prices_include_tax: boolean
           shipping_address: Json | null
           shipping_amount: number
+          shipping_max_days: number | null
           shipping_method_name: string | null
+          shipping_min_days: number | null
           shipping_rate_id: string | null
           status: string
           stock_state: string
@@ -9631,6 +9930,15 @@ export type Database = {
           used_amount: number
           used_days: number
           withdrawal_id: string
+        }[]
+      }
+      product_faq: {
+        Args: { p_locale?: string; p_product_id: string }
+        Returns: {
+          answer: string
+          group_id: string
+          item_id: string
+          question: string
         }[]
       }
       quote_basket: {

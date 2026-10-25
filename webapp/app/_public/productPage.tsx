@@ -2,7 +2,7 @@ import type { Metadata } from "next";
 import { notFound, permanentRedirect } from "next/navigation";
 import { jsonLdScript, productAddresses, productDescription, productJsonLd, productTitle } from "../../src/lib/catalog/productMeta";
 import { productSlug } from "../../src/lib/catalog/productSlugs";
-import { findPublicProduct } from "../../src/lib/catalog/serverCatalog";
+import { findProductFaq, findPublicProduct } from "../../src/lib/catalog/serverCatalog";
 import { localizedPath, type Locale } from "../../src/lib/localeRoutes";
 import { siteUrl } from "../../src/lib/siteUrl";
 import { ProductDetail } from "../../src/screens/ProductDetail";
@@ -17,7 +17,8 @@ import { searchOf } from "./search";
  * - moves (308) an address naming it by another language's slug, an older
  *   slug or its row id to its address in this language, query kept;
  * - gives the page its title, description, hreflang to the other language's
- *   slug, Open Graph image and structured data (schema.org Product).
+ *   slug, Open Graph image and structured data (schema.org Product);
+ * - reads the product's FAQ in this language (`product_faq()`).
  * The page itself is `ProductDetail`, rendered on the server and hydrated in
  * the browser.
  */
@@ -51,10 +52,11 @@ export async function productMetadata(props: ProductPageProps, locale: Locale): 
 
 export async function ProductPage({ props, locale }: { props: ProductPageProps; locale: Locale }) {
   const { product } = await productFor(props, locale);
+  const faq = await findProductFaq(product.dbId, locale);
   return (
     <>
       <script type="application/ld+json" dangerouslySetInnerHTML={{ __html: jsonLdScript(productJsonLd(product, locale, siteUrl())) }} />
-      <ProductDetail />
+      <ProductDetail faq={faq} />
     </>
   );
 }

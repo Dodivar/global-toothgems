@@ -17,8 +17,10 @@ import { CONTENT_LANGS, type ContentLang } from "../../lib/localized";
 import { useFormat } from "../../lib/format";
 import { useAdminCatalog } from "../../lib/adminCatalog";
 import {
+  ADMIN_SPEC_KEYS,
   offeredGemVariants,
   type AdminProduct,
+  type AdminSpecKey,
   type Availability,
   type Category,
   type CategoryId,
@@ -64,6 +66,8 @@ type FieldKey =
 /** Same rule as the `products.sku` column: upper-case letters, digits and hyphens. */
 const SKU_PATTERN = /^[A-Z0-9][A-Z0-9-]{1,63}$/;
 const SKU_MAX_LENGTH = 64;
+/** Same limit as the `products.spec_*` columns. */
+const SPEC_MAX_LENGTH = 120;
 
 type Errors = Partial<Record<FieldKey, string>>;
 
@@ -96,6 +100,13 @@ export function ProductForm({
   /** Writes one language of a localized field, leaving the other alone. */
   const setLocalized = (key: "name" | "shortDescription" | "description" | "material", value: string) =>
     setDraft((prev) => ({ ...prev, [key]: { ...(prev[key] as Localized), [lang]: value } }));
+
+  /** Writes one language of a characteristic, leaving the other alone. */
+  const setSpec = (key: AdminSpecKey, value: string) =>
+    setDraft((prev) => ({
+      ...prev,
+      specs: { ...prev.specs, [key]: { fr: "", en: "", ...prev.specs?.[key], [lang]: value } },
+    }));
 
   const category = categories.find((c) => c.id === draft.categoryId);
   const isGem = (category?.slug ?? category?.id) === "gems";
@@ -297,6 +308,42 @@ export function ProductForm({
             </Section>
           )}
 
+          {/* Gem only: the product page lists these under "Characteristics".
+              An empty field is simply not shown there; nothing is filled in
+              for the shop. */}
+          {isGem && (
+            <Section title={t("admin.form.specsTitle")} description={t("admin.form.specsBody")} aside={langSwitch}>
+              <div className="grid gap-4 md:grid-cols-2">
+                <FormField label={t("admin.form.material")} hint={t("admin.form.materialHint")}>
+                  {(props) => (
+                    <input
+                      {...props}
+                      type="text"
+                      maxLength={SPEC_MAX_LENGTH}
+                      className="gt-admin-field"
+                      value={draft.material[lang]}
+                      onChange={(e) => setLocalized("material", e.target.value)}
+                    />
+                  )}
+                </FormField>
+                {ADMIN_SPEC_KEYS.map((key) => (
+                  <FormField key={key} label={t(`admin.form.spec.${key}`)} hint={t(`admin.form.spec.${key}Hint`)}>
+                    {(props) => (
+                      <input
+                        {...props}
+                        type="text"
+                        maxLength={SPEC_MAX_LENGTH}
+                        className="gt-admin-field"
+                        value={draft.specs?.[key]?.[lang] ?? ""}
+                        onChange={(e) => setSpec(key, e.target.value)}
+                      />
+                    )}
+                  </FormField>
+                ))}
+              </div>
+            </Section>
+          )}
+
           <Section title={t("admin.form.pricingTitle")} description={t("admin.form.pricingBody")}>
             <div className={clsx("grid gap-4", withPromoPrice ? "md:grid-cols-3" : "md:grid-cols-2")}>
               <FormField label={t("admin.form.price")} required error={showError("price")} hint={t("admin.form.priceHint")}>
@@ -448,17 +495,21 @@ export function ProductForm({
 
           <Section title={t("admin.form.extraTitle")} description={t("admin.form.extraBody")}>
             <div className="grid gap-4 md:grid-cols-2">
-              <FormField label={t("admin.form.material")} hint={t("admin.form.materialHint")} aside={langSwitch}>
-                {(props) => (
-                  <input
-                    {...props}
-                    type="text"
-                    className="gt-admin-field"
-                    value={draft.material[lang]}
-                    onChange={(e) => setLocalized("material", e.target.value)}
-                  />
-                )}
-              </FormField>
+              {/* A gem edits its material with its characteristics. */}
+              {!isGem && (
+                <FormField label={t("admin.form.material")} hint={t("admin.form.materialHint")} aside={langSwitch}>
+                  {(props) => (
+                    <input
+                      {...props}
+                      type="text"
+                      maxLength={SPEC_MAX_LENGTH}
+                      className="gt-admin-field"
+                      value={draft.material[lang]}
+                      onChange={(e) => setLocalized("material", e.target.value)}
+                    />
+                  )}
+                </FormField>
+              )}
 
               <FormField label={t("admin.form.tags")} hint={t("admin.form.tagsHint")}>
                 {(props) => (

@@ -155,7 +155,7 @@ export function searchProducts(
           ...both(family?.name),
           ...both(category?.name),
           product.material,
-          ...both(product.center),
+          ...Object.values(product.specs ?? {}).flatMap((value) => both(value)),
           // Not the long description: its care and returns wording made "retour"
           // or "hygiène" list gems instead of the pages about them.
           ...(product.variants ?? []).flatMap((variant) => both(variant.name)),

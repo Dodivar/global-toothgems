@@ -13,7 +13,7 @@ import { ProductCard } from "../components/ui/ProductCard";
 import { FavoriteButton } from "../components/favorites/FavoriteButton";
 import { RichText } from "../components/ui/RichText";
 import { ReviewsSection, useSubjectReviews } from "../components/reviews/ReviewsSection";
-import { relatedProducts, type Product } from "../data/products";
+import { relatedProducts, type Product, type ProductFaqEntry, type SpecKey } from "../data/products";
 import { pick } from "../data/types";
 import { useFormat } from "../lib/format";
 import { useCart } from "../lib/cart";
@@ -46,7 +46,7 @@ const SIZES = ["1,8 mm", "2,0 mm", "2,5 mm"];
  * rendering it, so the page never flashes another product while loading and
  * an unknown slug is a real 404 rather than a stand-in product.
  */
-export function ProductDetail() {
+export function ProductDetail({ faq = [] }: { faq?: ProductFaqEntry[] }) {
   const { id } = useParams();
   const { status, findProduct } = useCatalog();
 
@@ -62,7 +62,7 @@ export function ProductDetail() {
   }
   const product = findProduct(id ?? "");
   if (!product) return <NotFound />;
-  return <ProductView key={product.id} product={product} />;
+  return <ProductView key={product.id} product={product} faq={faq} />;
 }
 
 function ProductSkeleton() {
@@ -81,7 +81,7 @@ function ProductSkeleton() {
   );
 }
 
-function ProductView({ product }: { product: Product }) {
+function ProductView({ product, faq }: { product: Product; faq: ProductFaqEntry[] }) {
   const { formatPrice } = useFormat();
   const { t, i18n } = useTranslation();
   const navigate = useNavigate();
@@ -133,8 +133,6 @@ function ProductView({ product }: { product: Product }) {
   const name = pick(product.name, lang);
   const subtitle = pick(product.subtitle, lang);
   const description = product.description != null ? pick(product.description, lang) : `${name} — ${subtitle}.`;
-  const material = product.material || subtitle.split("·")[0].trim();
-  const center = product.center ? pick(product.center, lang) : material;
   const gallery = product.gallery ?? [{ src: product.image, alt: { fr: name, en: name } }];
   // Storage paths can exist in the catalogue before their file is uploaded.
   const [brokenImages, setBrokenImages] = useState<string[]>([]);
@@ -168,11 +166,25 @@ function ProductView({ product }: { product: Product }) {
   const sizeOptions = SIZES.map((s) => ({ value: s, label: s }));
   const shadeLabel = (s: string) => (lang.startsWith("en") ? SHADES_EN[s] : s);
 
-  const faqs = [
-    { q: t("product.faq1Q"), a: t("product.faq1A") },
-    { q: t("product.faq2Q"), a: t("product.faq2A") },
-    { q: t("product.faq3Q"), a: t("product.faq3A") },
-  ];
+  // Characteristics are a gem's: tools, kits and aftercare have none to list.
+  // Only what the catalogue holds is shown; nothing at all hides the section.
+  const specText = (key: SpecKey) => (product.specs?.[key] ? pick(product.specs[key], lang) : "");
+  const specs: [string, string][] = product.cat === "gems"
+    ? [
+        [t("product.specMaterial"), specText("material")],
+        [t("product.specCenter"), specText("center")],
+        [
+          // Width × length is not a diameter.
+          t(variant?.size?.mm?.length === 2 ? "product.specDimensions" : "product.specDiameter"),
+          legacyOptions ? size : variant?.size ? formatSizeFull(variant.size, lang) : "",
+        ],
+        [t("product.specBack"), specText("back")],
+        [t("product.specPackaging"), specText("packaging")],
+        [t("product.specWear"), specText("wear")],
+      ].filter((row): row is [string, string] => Boolean(row[1]))
+    : [];
+  // Next to the rating: the material, and a gem's centre stone.
+  const headline = [specText("material"), product.cat === "gems" ? specText("center") : ""].filter(Boolean).join(", ");
 
   const installment = formatPrice(unitPrice / 4);
 
@@ -322,7 +334,7 @@ function ProductView({ product }: { product: Product }) {
                   {t("reviews.section.noneYet")}
                 </a>
               )}
-              {material && <span aria-hidden="true">· {material}{center !== material ? `, ${center}` : ""}</span>}
+              {headline && <span aria-hidden="true">· {headline}</span>}
             </span>
             <div className="flex items-baseline gap-3">
               <strong className={`text-[28px] font-bold ${offer?.promotion?.priceOffPercent ? "text-[var(--accent-highlight-ink)]" : "text-[var(--text-primary)]"}`}>{formatPrice(shown.price)}</strong>
@@ -471,38 +483,27 @@ function ProductView({ product }: { product: Product }) {
               <span>{t("product.trust3")}</span>
             </div>
 
+            {specs.length > 0 && (
             <div className="grid gap-2 border-t border-[var(--border-subtle)] pt-5">
               <h2 className="text-[length:var(--text-h4)]">{t("product.specsTitle")}</h2>
               <dl className="m-0 grid gap-0">
-                {[
-                  [t("product.specMaterial"), material],
-                  [t("product.specCenter"), center],
-                  [
-                    // Width × length is not a diameter.
-                    t(variant?.size?.mm?.length === 2 ? "product.specDimensions" : "product.specDiameter"),
-                    legacyOptions ? size : variant?.size ? formatSizeFull(variant.size, lang) : "",
-                  ],
-                  [t("product.specBack"), t("product.specBackValue")],
-                  [t("product.specPackaging"), t("product.specPackagingValue")],
-                  [t("product.specWear"), t("product.specWearValue")],
-                ]
-                  // A spec the catalogue does not hold is left out, not shown empty.
-                  .filter(([, v]) => v)
-                  .map(([k, v]) => (
-                  <div key={k} className="flex justify-between border-b border-[var(--border-subtle)] py-2 text-sm">
+                {specs.map(([k, v]) => (
+                  <div key={k} className="flex justify-between gap-4 border-b border-[var(--border-subtle)] py-2 text-sm">
                     <dt className="text-[var(--text-muted)]">{k}</dt>
-                    <dd className="m-0 font-medium text-[var(--text-primary)]">{v}</dd>
+                    <dd className="m-0 text-right font-medium text-[var(--text-primary)]">{v}</dd>
                   </div>
                 ))}
               </dl>
             </div>
+            )}
 
+            {faq.length > 0 && (
             <div className="grid gap-2 border-t border-[var(--border-subtle)] pt-5">
               <h2 className="text-[length:var(--text-h4)]">{t("product.faqTitle")}</h2>
-              {faqs.map((f, i) => {
+              {faq.map((f, i) => {
                 const open = openFaq === i;
                 return (
-                  <div key={f.q} className="border-b border-[var(--border-subtle)]">
+                  <div key={f.id} className="border-b border-[var(--border-subtle)]">
                     <h3 className="m-0">
                       <button
                         type="button"
@@ -512,17 +513,18 @@ function ProductView({ product }: { product: Product }) {
                         id={`faq-trigger-${i}`}
                         className="flex w-full items-center justify-between gap-4 py-3 text-left text-sm font-semibold text-[var(--text-primary)]"
                       >
-                        {f.q}
+                        {f.question}
                         <span aria-hidden="true" className="text-lg text-[var(--text-muted)]">{open ? "–" : "+"}</span>
                       </button>
                     </h3>
                     <div id={`faq-panel-${i}`} role="region" aria-labelledby={`faq-trigger-${i}`} hidden={!open}>
-                      <p className="m-0 pb-3 text-sm text-[var(--text-body)]">{f.a}</p>
+                      <p className="m-0 whitespace-pre-line pb-3 text-sm text-[var(--text-body)]">{f.answer}</p>
                     </div>
                   </div>
                 );
               })}
             </div>
+            )}
           </div>
         </div>
 

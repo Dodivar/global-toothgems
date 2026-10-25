@@ -1,5 +1,8 @@
 import {
+  ADMIN_SPEC_KEYS,
   offeredGemVariants,
+  type AdminSpecKey,
+  type AdminSpecs,
   type AdminGemColor,
   type AdminProduct,
   type Availability,
@@ -15,7 +18,6 @@ import {
   type VariantStock,
 } from "../data/adminCatalog";
 import { GEM_SHAPES } from "../data/products";
-import type { Localized } from "../data/types";
 import type { Json } from "./supabase/database.types";
 import { toMinorUnits } from "./catalog/money";
 import { comboKey, comboName, parseGemAttributes, sortSizes, type GemSize } from "./gemOptions";
@@ -45,7 +47,9 @@ import { comboKey, comboName, parseGemAttributes, sortSizes, type GemSize } from
 export const ADMIN_PRODUCT_SELECT_BASE = `
   id, sku, slug, name, short_description, description, category_id,
   price, compare_at_price, currency, status, metadata, created_at, updated_at,
-  product_translations ( locale, name, short_description, description ),
+  spec_material, spec_center, spec_back, spec_packaging, spec_wear,
+  product_translations ( locale, name, short_description, description,
+    spec_material, spec_center, spec_back, spec_packaging, spec_wear ),
   product_media ( id, storage_path, alt_text, position, variant_id, product_media_translations ( locale, alt_text ) ),
   inventory_items ( track_inventory, quantity_on_hand, quantity_reserved, low_stock_threshold, availability ),
   product_variants ( id, name, sku, attributes, price, is_active, position,
@@ -62,7 +66,10 @@ export const ADMIN_CATEGORY_SELECT = `${ADMIN_CATEGORY_SELECT_BASE},
   category_families ( id, slug, name, position, is_active, category_family_translations ( locale, name ) )
 `;
 
-interface TranslationRow {
+/** The characteristic columns, on `products` (French) and `product_translations`. */
+type SpecColumns = Partial<Record<`spec_${"material" | AdminSpecKey}`, string | null>>;
+
+interface TranslationRow extends SpecColumns {
   locale: string;
   name: string;
   short_description?: string | null;
@@ -77,7 +84,7 @@ interface InventoryRow {
   availability: string;
 }
 
-export interface ProductRow {
+export interface ProductRow extends SpecColumns {
   id: string;
   sku: string | null;
   slug: string;
@@ -182,19 +189,6 @@ function english<T extends { locale: string }>(rows: T[] | null | undefined): T 
 
 function asObject(value: Json | undefined): Record<string, Json | undefined> {
   return value && typeof value === "object" && !Array.isArray(value) ? value : {};
-}
-
-/**
- * `metadata.material` was seeded as a plain French string; the admin writes
- * `{ fr, en }`. Both are read.
- */
-function readLocalized(value: Json | undefined): Localized {
-  if (typeof value === "string") return { fr: value, en: "" };
-  const obj = asObject(value);
-  return {
-    fr: typeof obj.fr === "string" ? obj.fr : "",
-    en: typeof obj.en === "string" ? obj.en : "",
-  };
 }
 
 /** Major units for the form, read through integer cents so no float drift is introduced. */
@@ -314,7 +308,10 @@ export function rowToProduct(row: ProductRow, publicUrl: (path: string) => strin
     variantStock: variantStockRows.length > 0 ? variantStockRows : undefined,
     gemOptions,
     customVariants,
-    material: readLocalized(metadata.material),
+    material: { fr: row.spec_material ?? "", en: en?.spec_material ?? "" },
+    specs: Object.fromEntries(
+      ADMIN_SPEC_KEYS.map((key) => [key, { fr: row[`spec_${key}`] ?? "", en: en?.[`spec_${key}`] ?? "" }]),
+    ) as AdminSpecs,
     shape: GEM_SHAPES.find((shape) => shape === metadata.shape),
     color: typeof metadata.color === "string" && metadata.color ? metadata.color : undefined,
     tags,
@@ -441,7 +438,6 @@ export function productToPayload(product: AdminProduct): Json {
     status: product.status,
     metadata: {
       type: product.type,
-      material: { fr: product.material.fr.trim(), en: product.material.en.trim() },
       tags: product.tags,
       // The database merges metadata into what is stored, so an unset value is
       // sent as null to clear it rather than omitted.
@@ -455,6 +451,14 @@ export function productToPayload(product: AdminProduct): Json {
         short_description: product.shortDescription.en.trim(),
         description: product.description.en.trim(),
       },
+    },
+    // The five characteristics, French and English (migration `…_product_specs_faq`);
+    // an empty value clears it.
+    specs: {
+      material: { fr: product.material.fr.trim(), en: product.material.en.trim() },
+      ...Object.fromEntries(
+        ADMIN_SPEC_KEYS.map((key) => [key, { fr: product.specs?.[key]?.fr.trim() ?? "", en: product.specs?.[key]?.en.trim() ?? "" }]),
+      ),
     },
     inventory: {
       track_inventory: product.trackInventory,

@@ -1,4 +1,4 @@
-import type { GemColorDef, Product } from "../../data/products";
+import type { GemColorDef, Product, ProductFaqEntry } from "../../data/products";
 import type { ShopCategoryDef } from "../../data/taxonomy";
 import { requireSupabase, type TypedSupabaseClient } from "../supabase/client";
 import { productMediaUrl } from "../supabase/storage";
@@ -21,8 +21,10 @@ import {
  */
 const PRODUCT_SELECT_BASE = `
   id, slug, name, short_description, description, price, compare_at_price, currency, is_featured, metadata,
+  spec_material, spec_center, spec_back, spec_packaging, spec_wear,
   category:categories ( slug, name, category_translations ( locale, name, status ) ),
-  product_translations ( locale, name, slug, short_description, description, status ),
+  product_translations ( locale, name, slug, short_description, description, status,
+    spec_material, spec_center, spec_back, spec_packaging, spec_wear ),
   product_variants ( id, name, attributes, price, compare_at_price, is_active, position,
     product_variant_translations ( locale, name, status ),
     inventory_items ( stock_status ) ),
@@ -177,4 +179,16 @@ export async function fetchProductSlugs(db: TypedSupabaseClient): Promise<{ id: 
     const en = row.product_translations.find((t) => t.locale === "en" && t.status === "published")?.slug;
     return { id: row.slug, slugs: en && en !== row.slug ? { en } : {} };
   });
+}
+
+/**
+ * The questions a product page shows, in one language: `product_faq()` applies
+ * the rule (the product's own published groups, else its category's) and the
+ * French fallback. `db` acts as an anonymous visitor, so only published groups
+ * of a product the shop sells come back.
+ */
+export async function fetchProductFaq(db: TypedSupabaseClient, productId: string, locale: string): Promise<ProductFaqEntry[]> {
+  const { data, error } = await db.rpc("product_faq", { p_product_id: productId, p_locale: locale });
+  if (error) throw error;
+  return (data ?? []).map((row) => ({ id: row.item_id, question: row.question, answer: row.answer }));
 }

@@ -1,11 +1,11 @@
 import "server-only";
 import { unstable_cache } from "next/cache";
 import { cache } from "react";
-import { PRODUCTS, type Product } from "../../data/products";
+import { PRODUCTS, type Product, type ProductFaqEntry } from "../../data/products";
 import { isSupabaseConfigured } from "../supabase/env";
 import { createPublicServerSupabase } from "../supabase/publicServer";
 import type { PublicRouteId } from "../localeRoutes";
-import { fetchCatalog, fetchGemColors, fetchProductByKey, fetchProductSlugs, fetchTaxonomy } from "./api";
+import { fetchCatalog, fetchGemColors, fetchProductByKey, fetchProductFaq, fetchProductSlugs, fetchTaxonomy } from "./api";
 import type { CatalogSeed } from "./CatalogProvider";
 import { findProductByKey, type SluggedProduct } from "./productSlugs";
 
@@ -33,6 +33,9 @@ function cached<A extends string[], T>(name: string, read: (...args: A) => Promi
 }
 
 const readProductByKey = cached("product-by-key", (key: string) => fetchProductByKey(createPublicServerSupabase(), key));
+const readProductFaq = cached("product-faq", (productId: string, locale: string) =>
+  fetchProductFaq(createPublicServerSupabase(), productId, locale),
+);
 const readProductSlugs = cached("product-slugs", () => fetchProductSlugs(createPublicServerSupabase()));
 const readProducts = cached("products", () => fetchCatalog(undefined, createPublicServerSupabase()));
 const readColors = cached("colours", () => fetchGemColors(undefined, createPublicServerSupabase()));
@@ -42,6 +45,20 @@ const readTaxonomy = cached("taxonomy", () => fetchTaxonomy(undefined, createPub
 export const findPublicProduct = cache(async (key: string): Promise<Product | null> => {
   if (!isSupabaseConfigured) return findProductByKey(PRODUCTS, key) ?? null;
   return readProductByKey(key);
+});
+
+/**
+ * The questions a product page shows, in its language. Mock products have no
+ * FAQ (nothing invented); a failed read hides the section rather than the page.
+ */
+export const findProductFaq = cache(async (productId: string | undefined, locale: string): Promise<ProductFaqEntry[]> => {
+  if (!isSupabaseConfigured || !productId) return [];
+  try {
+    return await readProductFaq(productId, locale);
+  } catch (error) {
+    console.warn("[catalog] product FAQ unavailable", error);
+    return [];
+  }
 });
 
 /** Every product's slugs, for the sitemap. */
