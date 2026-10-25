@@ -1,18 +1,29 @@
 /**
- * The call to Google's image model ("Nano Banana 2", decision 111).
+ * The call to Google's image model ("Nano Banana", decision 111), through one
+ * of two doors, chosen by the function secrets:
  *
- * NOT VERIFIED AGAINST THE PROVIDER YET: no key was configured when this was
- * written. Connecting it = setting the function secrets
- *   GEMINI_API_KEY        the Google AI Studio / Gemini API key
- *   GEMINI_IMAGE_MODEL    the model id, as Google's documentation names it
- *   GEMINI_API_BASE       optional, defaults to the public Gemini API
- * Until both of the first two are set, the function answers `not_available`.
+ *   Vertex AI with Application Default Credentials (the owner's Google policy
+ *   forbids API keys, 2026-10-25):
+ *     GOOGLE_ADC_JSON         the content of the ADC file written by
+ *                             `gcloud auth application-default login`
+ *                             (type "authorized_user": client id / secret +
+ *                             refresh token). The function trades it for a
+ *                             short-lived access token (cached until it
+ *                             expires) — the file itself never leaves Supabase.
+ *     GOOGLE_CLOUD_PROJECT    optional, else the file's `quota_project_id`
+ *     GOOGLE_CLOUD_LOCATION   optional, `global` by default
+ *   or the Gemini API with a key:
+ *     GEMINI_API_KEY          (+ GEMINI_API_BASE, optional)
+ *   and in both cases
+ *     GEMINI_IMAGE_MODEL      the model id, as Google's documentation names it.
+ * Vertex wins when both are set. Without a door, the function answers
+ * `not_available`.
  *
- * Request: `models/<model>:generateContent` with the system instructions in
- * `systemInstruction` and one user turn holding the images, inline (base64),
- * in the order the instructions name them, then the design data when the
- * prompt version reads it (v2). Response: the first
- * inline image part of the first candidate.
+ * NOT VERIFIED AGAINST THE PROVIDER YET. Request: `…/models/<model>:generateContent`
+ * with the system instructions in `systemInstruction` and one user turn
+ * holding the images, inline (base64), in the order the instructions name
+ * them, then the design data when the prompt version reads it (v2).
+ * Response: the first inline image part of the first candidate.
  */
 
 export interface InlineImage {
@@ -21,11 +32,16 @@ export interface InlineImage {
   data: string;
 }
 
-export interface ImageModelConfig {
-  apiKey: string;
-  model: string;
-  baseUrl: string;
+/** Fields of an "authorized_user" ADC file. */
+export interface AdcUserCredentials {
+  clientId: string;
+  clientSecret: string;
+  refreshToken: string;
 }
+
+export type ImageModelConfig =
+  | { kind: "api_key"; model: string; apiKey: string; baseUrl: string }
+  | { kind: "vertex"; model: string; credentials: AdcUserCredentials; project: string; location: string };
 
 export type GenerateOutcome =
   | { ok: true; image: InlineImage }
@@ -33,14 +49,88 @@ export type GenerateOutcome =
   | { ok: false; code: "blocked" | "failed"; detail?: string };
 
 const DEFAULT_BASE = "https://generativelanguage.googleapis.com/v1beta";
+const TOKEN_URL = "https://oauth2.googleapis.com/token";
+const ID = /^[\w.-]{3,80}$/;
+
+/** The "authorized_user" ADC file's credentials and quota project, or null when it is not one. */
+export function readAdcJson(raw: string | undefined): { credentials: AdcUserCredentials; quotaProject: string | null } | null {
+  if (!raw?.trim()) return null;
+  let data: unknown;
+  try {
+    data = JSON.parse(raw);
+  } catch {
+    return null;
+  }
+  const d = (data && typeof data === "object" ? data : {}) as Record<string, unknown>;
+  if (d.type !== "authorized_user") return null;
+  const { client_id: clientId, client_secret: clientSecret, refresh_token: refreshToken } = d;
+  if (typeof clientId !== "string" || typeof clientSecret !== "string" || typeof refreshToken !== "string") return null;
+  if (!clientId || !clientSecret || !refreshToken) return null;
+  const quota = typeof d.quota_project_id === "string" && ID.test(d.quota_project_id) ? d.quota_project_id : null;
+  return { credentials: { clientId, clientSecret, refreshToken }, quotaProject: quota };
+}
 
 /** The configuration, or null while the owner has not connected the provider. */
 export function imageModelConfig(env: (name: string) => string | undefined): ImageModelConfig | null {
-  const apiKey = env("GEMINI_API_KEY")?.trim();
   const model = env("GEMINI_IMAGE_MODEL")?.trim();
-  if (!apiKey || !model || !/^[\w.-]{3,80}$/.test(model)) return null;
-  const base = (env("GEMINI_API_BASE")?.trim() || DEFAULT_BASE).replace(/\/+$/, "");
-  return { apiKey, model, baseUrl: base };
+  if (!model || !ID.test(model)) return null;
+  const adc = readAdcJson(env("GOOGLE_ADC_JSON"));
+  if (adc) {
+    const project = env("GOOGLE_CLOUD_PROJECT")?.trim() || adc.quotaProject;
+    const location = env("GOOGLE_CLOUD_LOCATION")?.trim() || "global";
+    if (project && ID.test(project) && /^[a-z0-9-]{2,40}$/.test(location)) {
+      return { kind: "vertex", model, credentials: adc.credentials, project, location };
+    }
+  }
+  const apiKey = env("GEMINI_API_KEY")?.trim();
+  if (!apiKey) return null;
+  const baseUrl = (env("GEMINI_API_BASE")?.trim() || DEFAULT_BASE).replace(/\/+$/, "");
+  return { kind: "api_key", model, apiKey, baseUrl };
+}
+
+/** Where the request goes: the global Vertex endpoint has no region in its host. */
+export function generateUrl(config: ImageModelConfig): string {
+  const model = encodeURIComponent(config.model);
+  if (config.kind === "api_key") return `${config.baseUrl}/models/${model}:generateContent`;
+  const host = config.location === "global" ? "aiplatform.googleapis.com" : `${config.location}-aiplatform.googleapis.com`;
+  return `https://${host}/v1/projects/${config.project}/locations/${config.location}/publishers/google/models/${model}:generateContent`;
+}
+
+let cachedToken: { value: string; expiresAt: number; refreshToken: string } | null = null;
+
+/** A Google access token for the ADC user, refreshed a minute before it expires. */
+export async function accessToken(credentials: AdcUserCredentials, fetchImpl: typeof fetch = fetch, now = Date.now()): Promise<string> {
+  if (cachedToken && cachedToken.refreshToken === credentials.refreshToken && now < cachedToken.expiresAt - 60_000) return cachedToken.value;
+  const res = await fetchImpl(TOKEN_URL, {
+    method: "POST",
+    headers: { "content-type": "application/x-www-form-urlencoded" },
+    body: new URLSearchParams({
+      grant_type: "refresh_token",
+      client_id: credentials.clientId,
+      client_secret: credentials.clientSecret,
+      refresh_token: credentials.refreshToken,
+    }),
+    signal: AbortSignal.timeout(15_000),
+  });
+  const data = (await res.json().catch(() => null)) as Record<string, unknown> | null;
+  if (!res.ok || !data || typeof data.access_token !== "string") {
+    // `invalid_grant`: the refresh token was revoked or expired — run `gcloud auth application-default login` again.
+    throw new Error(`token refresh failed (${res.status} ${typeof data?.error === "string" ? data.error : ""})`);
+  }
+  const ttl = typeof data.expires_in === "number" ? data.expires_in : 3600;
+  cachedToken = { value: data.access_token, expiresAt: now + ttl * 1000, refreshToken: credentials.refreshToken };
+  return data.access_token;
+}
+
+/** Forget the cached token (tests). */
+export function resetTokenCache() {
+  cachedToken = null;
+}
+
+async function authHeaders(config: ImageModelConfig, fetchImpl: typeof fetch): Promise<Record<string, string>> {
+  if (config.kind === "api_key") return { "x-goog-api-key": config.apiKey };
+  // With user credentials, Google bills and counts quota on the project named here.
+  return { authorization: `Bearer ${await accessToken(config.credentials, fetchImpl)}`, "x-goog-user-project": config.project };
 }
 
 export async function generateImage(
@@ -57,19 +147,17 @@ export async function generateImage(
     contents: [
       {
         role: "user",
-        parts: [
-          ...images.map((img) => ({ inline_data: { mime_type: img.mimeType, data: img.data } })),
-          ...(text ? [{ text }] : []),
-        ],
+        parts: [...images.map((img) => ({ inlineData: { mimeType: img.mimeType, data: img.data } })), ...(text ? [{ text }] : [])],
       },
     ],
     generationConfig: { responseModalities: ["IMAGE"] },
   };
   let res: Response;
   try {
-    res = await fetchImpl(`${config.baseUrl}/models/${encodeURIComponent(config.model)}:generateContent`, {
+    const auth = await authHeaders(config, fetchImpl);
+    res = await fetchImpl(generateUrl(config), {
       method: "POST",
-      headers: { "content-type": "application/json", "x-goog-api-key": config.apiKey },
+      headers: { "content-type": "application/json", ...auth },
       body: JSON.stringify(body),
       signal: AbortSignal.timeout(timeoutMs),
     });
@@ -77,8 +165,8 @@ export async function generateImage(
     return { ok: false, code: "failed", detail: error instanceof Error ? error.message : "network" };
   }
   if (!res.ok) {
-    const text = await res.text().catch(() => "");
-    return { ok: false, code: "failed", detail: `http ${res.status} ${text.slice(0, 300)}` };
+    const detail = await res.text().catch(() => "");
+    return { ok: false, code: "failed", detail: `http ${res.status} ${detail.slice(0, 300)}` };
   }
   return readImage(await res.json().catch(() => null));
 }

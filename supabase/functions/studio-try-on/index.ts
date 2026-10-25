@@ -8,7 +8,8 @@ import { promptVersion, TRY_ON_SYSTEM_PROMPT_V1, TRY_ON_SYSTEM_PROMPT_V2 } from 
  * Deployed with verify_jwt = false (supabase/config.toml): the status call is
  * open, and the member's token is checked here for a generation.
  *
- * Secrets: GEMINI_API_KEY + GEMINI_IMAGE_MODEL connect the AI (see gemini.ts);
+ * Secrets: GEMINI_IMAGE_MODEL + GOOGLE_ADC_JSON (Vertex AI) or GEMINI_API_KEY
+ * connect the AI (see gemini.ts);
  * TRY_ON_DAILY_LIMIT (optional, default 10) caps generations per account per
  * 24 hours; TRY_ON_PROMPT_VERSION (optional, v2 by default, or v1) picks the
  * system instructions (`systemPrompt.ts`). Reference pictures: the private bucket `studio-try-on-references`

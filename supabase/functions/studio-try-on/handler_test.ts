@@ -1,6 +1,6 @@
 import { assertEquals, assertStringIncludes } from "jsr:@std/assert@1";
 import { readSiteOrigins } from "../_shared/http.ts";
-import { imageModelConfig, readImage } from "./gemini.ts";
+import { accessToken, generateImage, generateUrl, imageModelConfig, readAdcJson, readImage, resetTokenCache } from "./gemini.ts";
 import { handleStudioTryOn, readSourceRef, type StudioTryOnDeps, type TryOnCreationRow } from "./handler.ts";
 import { buildDesignData, piecesFromScene, toothLabel } from "./prompt.ts";
 import { promptVersion, TRY_ON_SYSTEM_PROMPT_V1, TRY_ON_SYSTEM_PROMPT_V2 } from "./systemPrompt.ts";
@@ -162,6 +162,61 @@ Deno.test("prompt versions: v2 by default, both name the two images", () => {
     assertStringIncludes(prompt, "IMAGE 2");
   }
   assertStringIncludes(TRY_ON_SYSTEM_PROMPT_V2, "THE DESIGN DATA");
+});
+
+const ADC = JSON.stringify({
+  type: "authorized_user",
+  client_id: "cid.apps.googleusercontent.com",
+  client_secret: "csecret",
+  refresh_token: "rtoken",
+  quota_project_id: "global-toothgems",
+});
+
+Deno.test("ADC: an authorized_user file opens Vertex AI, its quota project by default", () => {
+  assertEquals(readAdcJson(JSON.stringify({ type: "service_account" })), null);
+  assertEquals(readAdcJson("not json"), null);
+  const env = (vars: Record<string, string>) => (n: string) => vars[n];
+  const config = imageModelConfig(env({ GOOGLE_ADC_JSON: ADC, GEMINI_IMAGE_MODEL: "model-x", GEMINI_API_KEY: "k" }));
+  assertEquals(config?.kind, "vertex");
+  assertEquals(
+    generateUrl(config!),
+    "https://aiplatform.googleapis.com/v1/projects/global-toothgems/locations/global/publishers/google/models/model-x:generateContent",
+  );
+  const regional = imageModelConfig(env({ GOOGLE_ADC_JSON: ADC, GEMINI_IMAGE_MODEL: "model-x", GOOGLE_CLOUD_LOCATION: "europe-west1", GOOGLE_CLOUD_PROJECT: "other-proj" }));
+  assertEquals(
+    generateUrl(regional!),
+    "https://europe-west1-aiplatform.googleapis.com/v1/projects/other-proj/locations/europe-west1/publishers/google/models/model-x:generateContent",
+  );
+  assertEquals(imageModelConfig(env({ GOOGLE_ADC_JSON: ADC })), null); // no model
+});
+
+Deno.test("ADC: the refresh token buys an access token, cached, sent with the quota project", async () => {
+  resetTokenCache();
+  const seen: { url: string; headers: Record<string, string>; body: string }[] = [];
+  const fakeFetch = ((input: string | URL | Request, init?: RequestInit) => {
+    const url = String(input);
+    seen.push({ url, headers: (init?.headers ?? {}) as Record<string, string>, body: String(init?.body ?? "") });
+    if (url.startsWith("https://oauth2.googleapis.com/token")) {
+      return Promise.resolve(new Response(JSON.stringify({ access_token: "ya29.token", expires_in: 3599 }), { status: 200 }));
+    }
+    return Promise.resolve(
+      new Response(JSON.stringify({ candidates: [{ content: { parts: [{ inlineData: { mimeType: "image/png", data: "QQ==" } }] } }] }), { status: 200 }),
+    );
+  }) as typeof fetch;
+  const config = imageModelConfig((n) => ({ GOOGLE_ADC_JSON: ADC, GEMINI_IMAGE_MODEL: "model-x" } as Record<string, string>)[n])!;
+  const out = await generateImage(config, "system", [{ mimeType: "image/png", data: "AA==" }], "DESIGN DATA", fakeFetch);
+  assertEquals(out, { ok: true, image: { mimeType: "image/png", data: "QQ==" } });
+  assertStringIncludes(seen[0].body, "grant_type=refresh_token");
+  assertStringIncludes(seen[0].body, "refresh_token=rtoken");
+  assertEquals(seen[1].headers.authorization, "Bearer ya29.token");
+  assertEquals(seen[1].headers["x-goog-user-project"], "global-toothgems");
+  const body = JSON.parse(seen[1].body);
+  assertEquals(body.systemInstruction.parts[0].text, "system");
+  assertEquals(body.contents[0].parts, [{ inlineData: { mimeType: "image/png", data: "AA==" } }, { text: "DESIGN DATA" }]);
+  // Cached: a second render does not refresh again.
+  await accessToken({ clientId: "cid.apps.googleusercontent.com", clientSecret: "csecret", refreshToken: "rtoken" }, fakeFetch);
+  assertEquals(seen.filter((s) => s.url.includes("oauth2")).length, 1);
+  resetTokenCache();
 });
 
 Deno.test("gemini: config needs both secrets; the answer's first image is read", () => {
