@@ -617,10 +617,12 @@ export function ProductForm({
             </Section>
           )}
 
-          <p className="m-0 flex items-start gap-2 rounded-[var(--admin-radius-sm)] bg-[var(--status-info-bg)] p-3 text-[length:var(--text-caption)] text-[var(--gt-blue-700)]">
-            <Info size={14} aria-hidden="true" className="mt-0.5 flex-none" />
-            {source === "supabase" ? t("admin.form.databaseNotice") : t("admin.form.prototypeNotice")}
-          </p>
+          {source === "supabase" && (
+            <p className="m-0 flex items-start gap-2 rounded-[var(--admin-radius-sm)] bg-[var(--status-info-bg)] p-3 text-[length:var(--text-caption)] text-[var(--gt-blue-700)]">
+              <Info size={14} aria-hidden="true" className="mt-0.5 flex-none" />
+              {t("admin.form.databaseNotice")}
+            </p>
+          )}
         </div>
       </div>
 

@@ -1617,7 +1617,6 @@
     "media": {
       "dropTitle": "Drop your images here",
       "dropBody": "JPG or PNG, at least 2000px on the longest side. The first image is the storefront thumbnail.",
-      "prototypeNote": "Prototype: opens the photo library",
       "cover": "Cover",
       "moveEarlier": "Move image {{index}} left",
       "moveLater": "Move image {{index}} right",
@@ -1625,7 +1624,7 @@
       "orderHint": "Images appear on the product page in this order. The first one is the thumbnail.",
       "emptyHint": "A product with no image can be saved as a draft, but should not be published as is.",
       "pickerTitle": "Photo library",
-      "pickerBody": "File upload is not wired up in this prototype: pick one or more existing images instead.",
+      "pickerBody": "Choose one or more existing images.",
       "selectedCount_one": "{{count}} image selected",
       "selectedCount_other": "{{count}} images selected",
       "addSelected": "Add selection",
@@ -1726,7 +1725,6 @@
       "type": "Product type",
       "typeHint": "Groups the products that are managed the same way.",
       "historyTitle": "History",
-      "prototypeNotice": "Prototype: saving simulates a write. Nothing survives a page reload.",
       "unsaved": "Unsaved changes",
       "noChanges": "No changes",
       "saveDraft": "Save as draft",
@@ -2068,7 +2066,6 @@
       "forgot": "Forgot password?",
       "submit": "Sign in",
       "security": "This area is restricted to administrators. Sign-in attempts and catalogue changes will be logged.",
-      "demoNotice": "Prototype: no real authentication. Use {{email}} with the password {{password}}.",
       "successMessage": "Signed in, opening the workspace…",
       "errors": {
         "emailRequired": "The email address is required.",
@@ -2264,13 +2261,6 @@
       "exportScopeFiltered_other": "The filtered orders ({{count}})",
       "exportScopeAll_one": "The whole order book ({{count}} order)",
       "exportScopeAll_other": "The whole order book ({{count}} orders)",
-      "exportFormat": "Format",
-      "exportFormats": {
-        "csv": "CSV",
-        "xlsx": "Excel",
-        "pdf": "PDF"
-      },
-      "exportDialogNote": "Mockup: no file is generated. A real export is prepared server-side and arrives by email.",
       "customerTitle": "Customer",
       "customerReturning_one": "{{count}} order",
       "customerReturning_other": "{{count}} orders",
@@ -2455,8 +2445,8 @@
       "toastCancelTitle": "Order {{reference}} cancelled",
       "toastCancelTitleMany": "{{count}} orders cancelled",
       "toastCancelBody": "Reserved stock is released.",
-      "toastExportTitle": "Export started",
-      "toastExportBody": "{{count}} orders as {{format}}. The file will arrive by email.",
+      "toastExportTitle": "Export ready",
+      "toastExportBody": "{{count}} orders saved as a CSV file.",
       "toastNoteTitle": "Note added",
       "toastNoteBody": "Visible to the team only.",
       "toastCustomerTitle": "Customer history",
@@ -2535,7 +2525,26 @@
       },
       "refundRequestedOn": "Requested on",
       "refundProcessedOn": "Processed on",
-      "notesTeam": "Team notes"
+      "notesTeam": "Team notes",
+      "exportColumns": {
+        "reference": "Order",
+        "placedOn": "Date",
+        "status": "Status",
+        "payment": "Payment",
+        "fulfillment": "Fulfilment",
+        "customer": "Customer",
+        "email": "Email",
+        "items": "Items",
+        "currency": "Currency",
+        "subtotal": "Subtotal",
+        "discount": "Discount",
+        "shipping": "Shipping",
+        "tax": "VAT",
+        "total": "Total",
+        "giftCard": "Paid by gift card",
+        "charged": "Charged by card",
+        "refunded": "Refunded"
+      }
     },
     "customers": {
       "title": "Customers",
@@ -3627,7 +3636,7 @@
         "video": "Video",
         "textHint": "Headings, paragraphs and lists.",
         "imageHint": "Photo with caption and alternative text.",
-        "videoHint": "Demonstration video with a thumbnail.",
+        "videoHint": "Video lesson.",
         "addTitle": "Add content",
         "addHint": "Pick a block type.",
         "menuLabel": "Content types",
@@ -3747,7 +3756,7 @@
         "backToBuilder": "Back to the builder",
         "emptyTitle": "Nothing to preview",
         "emptyBody": "This course doesn't contain any modules yet.",
-        "videoMock": "Mock video",
+        "videoMock": "Video",
         "answersRevealed": "The correct answers are shown below."
       },
       "review": {

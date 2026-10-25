@@ -132,11 +132,6 @@ export function ProductMediaUploader({
         <span className="max-w-[46ch] text-[length:var(--text-caption)] text-[var(--text-muted)]">
           {onUpload ? t("admin.media.dropBodyUpload") : t("admin.media.dropBody")}
         </span>
-        {!onUpload && (
-          <span className="mt-1 rounded-[var(--radius-pill)] border border-[var(--border-default)] bg-[var(--admin-panel)] px-2.5 py-1 text-[10px] font-semibold uppercase tracking-[var(--tracking-wide)] text-[var(--text-muted)]">
-            {t("admin.media.prototypeNote")}
-          </span>
-        )}
       </button>
 
       <div role="status" aria-live="polite" className="grid gap-1 empty:hidden">
