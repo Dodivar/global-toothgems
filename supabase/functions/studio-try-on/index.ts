@@ -2,6 +2,7 @@ import { requireEnv, serviceClient } from "../_shared/clients.ts";
 import { readSiteOrigins } from "../_shared/http.ts";
 import { generateImage, imageModelConfig, type InlineImage } from "./gemini.ts";
 import { handleStudioTryOn, toBase64, type TryOnCreationRow } from "./handler.ts";
+import { TRY_ON_SYSTEM_PROMPT } from "./systemPrompt.ts";
 
 /*
  * Deployed with verify_jwt = false (supabase/config.toml): the status call is
@@ -95,7 +96,7 @@ Deno.serve((req) =>
       if (error) throw new Error(error.message);
     },
     references,
-    generate: (prompt, images) => (config ? generateImage(config, prompt, images) : Promise.resolve({ ok: false, code: "failed" })),
+    generate: (images) => (config ? generateImage(config, TRY_ON_SYSTEM_PROMPT, images) : Promise.resolve({ ok: false, code: "failed" })),
     log,
   })
 );

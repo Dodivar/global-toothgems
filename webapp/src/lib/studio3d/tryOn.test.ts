@@ -15,7 +15,7 @@ import { checkPhotoFile, checkPhotoSize, fitWithin, PHOTO_MAX_BYTES, tryOnFileNa
 describe("try-on service contract", () => {
   it("the not-available service says so at once, without a photo leaving", async () => {
     expect(await unavailableTryOnService.status()).toBe(false);
-    expect(await unavailableTryOnService.render({ photo: new Blob(), source: { kind: "own", creationId: "c1" } })).toEqual({
+    expect(await unavailableTryOnService.render({ photo: new Blob(), design: new Blob(), source: { kind: "own", creationId: "c1" } })).toEqual({
       ok: false,
       code: "not_available",
     });

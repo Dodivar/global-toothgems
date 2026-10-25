@@ -1,16 +1,11 @@
 /**
- * The instructions sent to the image model with the smile photo (decision 111).
- *
- * Built from the creation's scene as the DATABASE holds it (never from the
- * browser): one line per gem — tooth, cut, colour, size — so the model is told
- * exactly how many gems go where, instead of guessing it from a picture.
- *
- * FIRST VERSION, to be tuned by the owner once the provider is connected:
- * the wording lives only here (`buildTryOnPrompt`), the tests pin its
- * structure, not its prose.
+ * The gems of a creation as the database stores them (decision 111): the
+ * function renders nothing for a creation without a single valid gem. The
+ * render itself is driven by the system instructions (`systemPrompt.ts`) and
+ * the images; no text about the gems is sent.
  */
 
-/** What the prompt needs of a piece; anything else in the scene is ignored. */
+/** What is read of a piece; anything else in the scene is ignored. */
 export interface PromptPiece {
   toothId: string;
   shape: string;
@@ -21,30 +16,6 @@ export interface PromptPiece {
   size: string;
   /** Longest side in millimetres, rounded. */
   longestMm: number;
-}
-
-const QUADRANT: Record<string, string> = {
-  "1": "upper right",
-  "2": "upper left",
-  "3": "lower left",
-  "4": "lower right",
-};
-const TOOTH: Record<string, string> = {
-  "1": "central incisor",
-  "2": "lateral incisor",
-  "3": "canine",
-  "4": "first premolar",
-  "5": "second premolar",
-  "6": "first molar",
-  "7": "second molar",
-  "8": "third molar",
-};
-
-/** "upper left central incisor (FDI 21)" — the person's own left and right, as dentists count. */
-export function toothLabel(toothId: string): string {
-  const m = /^([1-4])([1-8])$/.exec(toothId);
-  if (!m) return "front tooth surface (unlabelled)";
-  return `${QUADRANT[m[1]]} ${TOOTH[m[2]]} (FDI ${toothId})`;
 }
 
 const MAX_PIECES = 200;
@@ -86,42 +57,4 @@ export function piecesFromScene(scene: unknown): PromptPiece[] {
     });
   }
   return out;
-}
-
-export interface PromptInput {
-  pieces: PromptPiece[];
-  /** How many reference pictures follow the photo (the owner's own, from the bucket). */
-  referenceCount: number;
-  /** Whether the browser's front view of the creation is attached. */
-  withDesign: boolean;
-}
-
-export function buildTryOnPrompt({ pieces, referenceCount, withDesign }: PromptInput): string {
-  const lines = pieces.map((p, i) => {
-    const look = [p.color, p.material, p.effect && p.effect !== "none" ? p.effect : ""].filter(Boolean).join(" ");
-    const mm = p.longestMm > 0 ? `, about ${p.longestMm} mm on its longest side` : "";
-    return `${i + 1}. ${toothLabel(p.toothId)}: one ${p.shape} tooth gem, ${look}, size ${p.size}${mm}.`;
-  });
-  const images = [
-    "Image 1 is a photo of a real person's smile.",
-    withDesign ? "Image 2 is a front view of the tooth gem design to apply (the gems' layout on the teeth)." : "",
-    referenceCount > 0
-      ? `The ${referenceCount} last image${referenceCount > 1 ? "s are" : " is"} reference photo${referenceCount > 1 ? "s" : ""} of real tooth gems worn on teeth, for realism only (light, reflections, scale) — do not copy their layout.`
-      : "",
-  ].filter(Boolean);
-  return [
-    "Edit image 1: add tooth gems bonded to the front surface of the teeth, exactly as listed below, and nothing else.",
-    ...images,
-    "",
-    `Exactly ${pieces.length} gem${pieces.length > 1 ? "s" : ""}:`,
-    ...lines,
-    "",
-    "Rules:",
-    "- Keep the person, the face, the lips, the skin, the teeth's shape and colour, the framing and the background exactly as in image 1.",
-    "- Add no gem that is not listed, never move a gem to another tooth, keep each gem's colour, cut and size.",
-    "- Left and right are the person's own (an upper left tooth appears on the right of a front-facing photo).",
-    "- Real scale: an incisor is about 8 to 9 mm wide; a gem is small and flat on the enamel.",
-    "- Photorealistic result: the gems catch the light of the photo, with soft reflections and contact shadows.",
-    "- Return one edited image, same framing and aspect ratio as image 1.",
-  ].join("\n");
 }

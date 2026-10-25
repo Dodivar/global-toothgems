@@ -5,9 +5,10 @@ import type { Creation } from "../studioWorkspace/types";
  * image model (Google's "Nano Banana 2", decision 111) behind the Edge
  * Function `studio-try-on` — the provider's key never reaches the browser.
  *
- * The browser sends the prepared photo, a REFERENCE to the creation (never its
- * scene: the function reads the creation and the owner's plan switch from the
- * database) and, as a visual hint, the creation's front view drawn here. The
+ * The browser sends the prepared photo, the creation's front view drawn here
+ * (IMAGE 1 and IMAGE 2 of the owner's system instructions, `systemPrompt.ts`
+ * in the function) and a REFERENCE to the creation: the function reads the
+ * creation and the owner's plan switch from the database. The
  * answer is a generated image, read through `parseTryOnResponse` like any
  * untrusted input. Nothing is stored: the photo and the image only pass
  * through the function's memory.
@@ -34,7 +35,7 @@ export interface TryOnRenderRequest {
   photo: Blob;
   source: TryOnSource;
   /** The creation's front view, drawn in the browser (`renderDesignImage`). */
-  design?: Blob | null;
+  design: Blob;
 }
 
 export const TRY_ON_ERROR_CODES = [

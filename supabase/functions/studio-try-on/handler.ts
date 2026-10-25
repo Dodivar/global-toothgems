@@ -1,7 +1,7 @@
 import { corsHeaders, json, type SiteOrigins } from "../_shared/http.ts";
 import { bearer, looksLikeJwt } from "../_shared/studioBilling.ts";
 import type { GenerateOutcome, InlineImage } from "./gemini.ts";
-import { buildTryOnPrompt, piecesFromScene } from "./prompt.ts";
+import { piecesFromScene } from "./prompt.ts";
 
 /**
  * POST /functions/v1/studio-try-on   (decision 111)
@@ -16,16 +16,16 @@ import { buildTryOnPrompt, piecesFromScene } from "./prompt.ts";
  *     source  JSON: { "creation_id" } (one's own creation) | { "token" } (share
  *             link) | { "handle", "item_id" } (approved Glowbook creation)
  *     photo   the smile photo (JPEG / PNG / WebP, ≤ 6 MB), prepared in the browser
- *     design  optional: the browser's front view of the creation (≤ 3 MB),
- *             a visual hint only — the gems listed to the model come from the
- *             database
+ *     design  the browser's front view of the creation (≤ 3 MB): IMAGE 1 of
+ *             the system instructions (`systemPrompt.ts`), the photo IMAGE 2
  *     200 { ok: true, image: { mime_type, data } }   base64, never stored
  *     4xx/5xx { ok: false, code }  invalid_request | sign_in_required |
  *             session_expired | not_found | not_allowed | daily_limit |
  *             not_available | blocked | failed | server_error
  *
  * The creation and the owner's plan switch are read from the database
- * (`studio_try_on_creation`); a generation is counted before the provider is
+ * (`studio_try_on_creation`), so only a creation the requester may see, and
+ * whose owner has the option, is ever rendered; a generation is counted before the provider is
  * called (`studio_try_on_requests`, daily limit per account). The photo and
  * the image only pass through memory.
  */
@@ -50,7 +50,8 @@ export interface StudioTryOnDeps {
   startRequest(userId: string, row: TryOnCreationRow): Promise<string>;
   finishRequest(id: string, status: "generated" | "failed", errorCode: string | null): Promise<void>;
   references(): Promise<InlineImage[]>;
-  generate(prompt: string, images: InlineImage[]): Promise<GenerateOutcome>;
+  /** Sends the images, in this order, with the system instructions. */
+  generate(images: InlineImage[]): Promise<GenerateOutcome>;
   now?: () => Date;
   log(message: string, detail?: unknown): void;
 }
@@ -130,7 +131,7 @@ export async function handleStudioTryOn(req: Request, deps: StudioTryOnDeps): Pr
   const ref = readSourceRef(form.get("source"));
   const photo = await inlineFile(form.get("photo"), PHOTO_MAX_BYTES);
   const design = await inlineFile(form.get("design"), DESIGN_MAX_BYTES);
-  if (!ref || !photo || photo === "invalid" || design === "invalid") return json({ ok: false, code: "invalid_request" }, 400, cors);
+  if (!ref || !photo || photo === "invalid" || !design || design === "invalid") return json({ ok: false, code: "invalid_request" }, 400, cors);
 
   let userId: string | null;
   try {
@@ -168,8 +169,7 @@ export async function handleStudioTryOn(req: Request, deps: StudioTryOnDeps): Pr
       deps.log("reference pictures unavailable", error instanceof Error ? error.message : error);
       return [] as InlineImage[];
     });
-    const prompt = buildTryOnPrompt({ pieces, referenceCount: references.length, withDesign: !!design });
-    outcome = await deps.generate(prompt, [photo, ...(design ? [design] : []), ...references]);
+    outcome = await deps.generate([design, photo, ...references]);
   } catch (error) {
     outcome = { ok: false, code: "failed", detail: error instanceof Error ? error.message : String(error) };
   }

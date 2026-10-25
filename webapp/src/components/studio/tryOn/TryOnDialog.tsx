@@ -112,6 +112,10 @@ export function TryOnDialog({
     setStep({ kind: "processing" });
     const design = await renderDesignImage(creation).catch(() => null);
     if (controller.signal.aborted) return;
+    if (!design) {
+      request.current = null;
+      return setStep({ kind: "error", code: "failed" });
+    }
     const outcome = await service.render({ photo: photo.blob, source, design }, { signal: controller.signal });
     if (controller.signal.aborted) return; // cancelled or closed: nothing to show
     request.current = null;

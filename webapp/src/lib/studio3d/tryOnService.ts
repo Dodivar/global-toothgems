@@ -40,7 +40,7 @@ export const smileTryOnService: SmileTryOnService = supabase
         const form = new FormData();
         form.set("source", JSON.stringify(sourcePayload(source)));
         form.set("photo", photo, "smile");
-        if (design) form.set("design", design, "design");
+        form.set("design", design, "design");
         try {
           const { data, error } = await supabase!.functions.invoke(FUNCTION, { body: form, signal: options?.signal, timeout: RENDER_TIMEOUT_MS });
           if (options?.signal?.aborted) return { ok: false, code: "failed" };

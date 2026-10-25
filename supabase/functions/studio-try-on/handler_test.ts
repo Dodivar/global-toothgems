@@ -1,8 +1,9 @@
-import { assert, assertEquals, assertStringIncludes } from "jsr:@std/assert@1";
+import { assertEquals, assertStringIncludes } from "jsr:@std/assert@1";
 import { readSiteOrigins } from "../_shared/http.ts";
 import { imageModelConfig, readImage } from "./gemini.ts";
 import { handleStudioTryOn, readSourceRef, type StudioTryOnDeps, type TryOnCreationRow } from "./handler.ts";
-import { buildTryOnPrompt, piecesFromScene, toothLabel } from "./prompt.ts";
+import { piecesFromScene } from "./prompt.ts";
+import { TRY_ON_SYSTEM_PROMPT } from "./systemPrompt.ts";
 
 const SITE = "https://global-toothgems.example";
 const TOKEN = "member.jwt.sig";
@@ -16,7 +17,7 @@ const SCENE = {
 };
 
 function fake(over: Partial<StudioTryOnDeps> = {}, row: TryOnCreationRow | null = { creationId: CREATION, source: "own", scene: SCENE, allowed: true }) {
-  const calls = { started: 0, finished: [] as string[], prompts: [] as string[], images: 0 };
+  const calls = { started: 0, finished: [] as string[], images: [] as string[] };
   const deps: StudioTryOnDeps = {
     origins: readSiteOrigins(SITE, undefined),
     available: true,
@@ -33,9 +34,8 @@ function fake(over: Partial<StudioTryOnDeps> = {}, row: TryOnCreationRow | null 
       return Promise.resolve();
     },
     references: () => Promise.resolve([{ mimeType: "image/jpeg", data: "cmVm" }]),
-    generate: (prompt, images) => {
-      calls.prompts.push(prompt);
-      calls.images = images.length;
+    generate: (images) => {
+      calls.images = images.map((img) => `${img.mimeType}:${img.data}`);
       return Promise.resolve({ ok: true, image: { mimeType: "image/png", data: "aW1n" } });
     },
     log: () => {},
@@ -44,10 +44,15 @@ function fake(over: Partial<StudioTryOnDeps> = {}, row: TryOnCreationRow | null 
   return { deps, calls };
 }
 
-function form(source: unknown = { creation_id: CREATION }, photo: Blob | null = new Blob([new Uint8Array([1, 2, 3])], { type: "image/jpeg" })) {
+function form(
+  source: unknown = { creation_id: CREATION },
+  photo: Blob | null = new Blob([new Uint8Array([1, 2, 3])], { type: "image/jpeg" }),
+  design: Blob | null = new Blob([new Uint8Array([4, 5])], { type: "image/png" }),
+) {
   const data = new FormData();
   data.set("source", JSON.stringify(source));
   if (photo) data.set("photo", photo, "smile.jpg");
+  if (design) data.set("design", design, "design.png");
   return data;
 }
 
@@ -77,16 +82,14 @@ Deno.test("not connected: nothing is read or counted", async () => {
   assertEquals(calls.started, 0);
 });
 
-Deno.test("a generation: counted, prompt from the stored scene, image returned", async () => {
+Deno.test("a generation: counted; design (IMAGE 1), photo (IMAGE 2), then references; image returned", async () => {
   const { deps, calls } = fake();
   const res = await handleStudioTryOn(post(form()), deps);
   assertEquals(res.status, 200);
   assertEquals(await res.json(), { ok: true, image: { mime_type: "image/png", data: "aW1n" } });
   assertEquals(calls.started, 1);
   assertEquals(calls.finished, ["generated"]);
-  assertEquals(calls.images, 2); // photo + one reference
-  assertStringIncludes(calls.prompts[0], "Exactly 2 gems");
-  assertStringIncludes(calls.prompts[0], "upper left central incisor (FDI 21)");
+  assertEquals(calls.images, ["image/png:BAU=", "image/jpeg:AQID", "image/jpeg:cmVm"]);
 });
 
 Deno.test("refusals: no token, expired, unknown creation, owner without the plan, daily limit", async () => {
@@ -102,8 +105,9 @@ Deno.test("refusals: no token, expired, unknown creation, owner without the plan
   assertEquals(limited.calls.started, 0);
 });
 
-Deno.test("invalid input: no photo, wrong type, malformed source", async () => {
+Deno.test("invalid input: no photo, no design, wrong type, malformed source", async () => {
   assertEquals((await handleStudioTryOn(post(form(undefined, null)), fake().deps)).status, 400);
+  assertEquals((await handleStudioTryOn(post(form(undefined, undefined, null)), fake().deps)).status, 400);
   assertEquals((await handleStudioTryOn(post(form(undefined, new Blob(["x"], { type: "image/gif" }))), fake().deps)).status, 400);
   assertEquals((await handleStudioTryOn(post(form({ creation_id: CREATION, token: "x" })), fake().deps)).status, 400);
 });
@@ -125,16 +129,13 @@ Deno.test("readSourceRef: exactly one well-formed reference", () => {
   assertEquals(readSourceRef("not json"), null);
 });
 
-Deno.test("prompt: one line per valid piece, sizes and teeth spelled out", () => {
+Deno.test("scene: valid pieces only; the owner's system prompt names the two images", () => {
   const pieces = piecesFromScene({ pieces: [...SCENE.pieces, { toothId: "11", look: { color: "red" } }, null] });
   assertEquals(pieces.length, 2);
-  assertEquals(pieces[0], { toothId: "21", shape: "round", material: "crystal", color: "#ffffff", effect: "none", size: "SS5", longestMm: 1.8 });
   assertEquals(pieces[1].size, "2 × 4 mm");
-  const prompt = buildTryOnPrompt({ pieces, referenceCount: 0, withDesign: true });
-  assertStringIncludes(prompt, "Image 2 is a front view");
-  assert(!prompt.includes("reference photo"));
-  assertEquals(toothLabel("X0"), "front tooth surface (unlabelled)");
-  assertEquals(toothLabel("36"), "lower left first molar (FDI 36)");
+  assertEquals(piecesFromScene({}), []);
+  assertStringIncludes(TRY_ON_SYSTEM_PROMPT, "**IMAGE 1 — 3D DENTAL JEWELRY DESIGN REFERENCE:**");
+  assertStringIncludes(TRY_ON_SYSTEM_PROMPT, "**IMAGE 2 — CUSTOMER PHOTO:**");
 });
 
 Deno.test("gemini: config needs both secrets; the answer's first image is read", () => {

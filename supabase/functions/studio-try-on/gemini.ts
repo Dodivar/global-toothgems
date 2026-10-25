@@ -8,8 +8,9 @@
  *   GEMINI_API_BASE       optional, defaults to the public Gemini API
  * Until both of the first two are set, the function answers `not_available`.
  *
- * Request: `models/<model>:generateContent` with one user turn — the text
- * instructions, then the images inline (base64). Response: the first
+ * Request: `models/<model>:generateContent` with the system instructions in
+ * `systemInstruction` and one user turn holding only the images, inline
+ * (base64), in the order the instructions name them. Response: the first
  * inline image part of the first candidate.
  */
 
@@ -43,18 +44,14 @@ export function imageModelConfig(env: (name: string) => string | undefined): Ima
 
 export async function generateImage(
   config: ImageModelConfig,
-  prompt: string,
+  systemPrompt: string,
   images: InlineImage[],
   fetchImpl: typeof fetch = fetch,
   timeoutMs = 90_000,
 ): Promise<GenerateOutcome> {
   const body = {
-    contents: [
-      {
-        role: "user",
-        parts: [{ text: prompt }, ...images.map((img) => ({ inline_data: { mime_type: img.mimeType, data: img.data } }))],
-      },
-    ],
+    systemInstruction: { parts: [{ text: systemPrompt }] },
+    contents: [{ role: "user", parts: images.map((img) => ({ inline_data: { mime_type: img.mimeType, data: img.data } })) }],
     generationConfig: { responseModalities: ["IMAGE"] },
   };
   let res: Response;
