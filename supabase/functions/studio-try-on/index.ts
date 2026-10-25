@@ -10,7 +10,8 @@ import { handleStudioTryOn, toBase64, type TryOnCreationRow } from "./handler.ts
  * Secrets: GEMINI_API_KEY + GEMINI_IMAGE_MODEL connect the AI (see gemini.ts);
  * TRY_ON_DAILY_LIMIT (optional, default 10) caps generations per account per
  * 24 hours. Reference pictures: the private bucket `studio-try-on-references`
- * (root folder, JPEG / PNG / WebP, the first REFERENCE_MAX by name).
+ * (root folder, JPEG / PNG / WebP, the first REFERENCE_MAX by name, at most
+ * REFERENCE_MAX_BYTES in all — a picture that would pass it is skipped).
  */
 
 const supabase = serviceClient();
@@ -21,6 +22,8 @@ const log = (message: string, detail?: unknown) => console.error(`[studio-try-on
 
 const REFERENCE_BUCKET = "studio-try-on-references";
 const REFERENCE_MAX = 6;
+/** Total raw bytes of reference pictures per request: the photo and the design come on top, all inlined. */
+const REFERENCE_MAX_BYTES = 8 * 1024 * 1024;
 const REFERENCE_TTL_MS = 10 * 60 * 1000;
 let referenceCache: { at: number; images: InlineImage[] } | null = null;
 
@@ -30,9 +33,11 @@ async function references(): Promise<InlineImage[]> {
   if (error) throw new Error(error.message);
   const files = (data ?? []).filter((f) => f.id && /\.(jpe?g|png|webp)$/i.test(f.name)).slice(0, REFERENCE_MAX);
   const images: InlineImage[] = [];
+  let total = 0;
   for (const file of files) {
     const { data: blob, error: err } = await supabase.storage.from(REFERENCE_BUCKET).download(file.name);
-    if (err || !blob) continue;
+    if (err || !blob || total + blob.size > REFERENCE_MAX_BYTES) continue;
+    total += blob.size;
     const mimeType = /\.png$/i.test(file.name) ? "image/png" : /\.webp$/i.test(file.name) ? "image/webp" : "image/jpeg";
     images.push({ mimeType, data: toBase64(new Uint8Array(await blob.arrayBuffer())) });
   }

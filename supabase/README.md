@@ -1424,8 +1424,8 @@ AI render                   multipart: source, photo (≤ 6 MB), design (front v
   `supabase secrets set GEMINI_API_KEY=… GEMINI_IMAGE_MODEL=<model id from Google's documentation>`; the request
   format (`supabase/functions/studio-try-on/gemini.ts`) is unverified against the provider until then.
 - **Reference pictures**: uploaded by the owner in the dashboard to the root of the private bucket
-  `studio-try-on-references` (JPEG / PNG / WebP, 10 MB; the first 6 by name are sent, cached 10 min per
-  instance). No storage policy: only the service role and the dashboard see them.
+  `studio-try-on-references` (JPEG / PNG / WebP, 10 MB; the first 6 by name are sent, 8 MB in all — a picture that would pass it is
+  skipped — cached 10 min per instance; Google's inline request limit is to check when connecting). No storage policy: only the service role and the dashboard see them.
 - **Prompt**: `supabase/functions/studio-try-on/prompt.ts` (`buildTryOnPrompt`), a first version to tune; the
   model is told the exact list of gems and to change nothing else in the photo.
 - **Privacy**: the photo and the image only pass through the function's memory (never stored, never logged);

@@ -77,8 +77,10 @@ export function TryOnDialog({
   const resultUrl = useRef<string | null>(null);
 
   // Ask once whether the AI is connected: no photo leaves before the answer.
+  // Keyed on whether there is a source, not on the object (callers pass it inline).
+  const hasSource = source !== null;
   useEffect(() => {
-    if (!source) return;
+    if (!hasSource) return;
     let live = true;
     service
       .status()
@@ -87,7 +89,7 @@ export function TryOnDialog({
     return () => {
       live = false;
     };
-  }, [service, source]);
+  }, [service, hasSource]);
 
   // Forget the photo when the dialog closes, and stop a render still running.
   useEffect(
