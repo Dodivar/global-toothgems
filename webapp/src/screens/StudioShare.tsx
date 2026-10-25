@@ -48,7 +48,7 @@ const TryOnDialog = lazy(() => import("../components/studio/tryOn/TryOnDialog").
  *
  * A stored creation (Glowbook or share token) whose owner's plan allows it
  * (`try_on`, decided by the database, decision 111) offers "Try it on my
- * smile": the visitor's own photo, rendered by AI or placed by hand. A design
+ * smile": the visitor's own photo, rendered by AI. A design
  * carried in the fragment has no server identity and offers none.
  *
  * Open to everyone and outside `RequireStudioAccess`: looking at a design

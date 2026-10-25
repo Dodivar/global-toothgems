@@ -1,5 +1,5 @@
 import { useEffect, useRef, useState } from "react";
-import { CircleAlert, Hand, ImageUp, LoaderCircle, LogIn, RefreshCw, ScanFace } from "lucide-react";
+import { CircleAlert, ImageUp, LoaderCircle, LogIn, RefreshCw, ScanFace } from "lucide-react";
 import { useTranslation } from "react-i18next";
 import { useAuth } from "../../../lib/auth";
 import { useLocation, useNavigate } from "../../../lib/navigation";
@@ -16,11 +16,7 @@ import {
   type TryOnSource,
 } from "../../../lib/studio3d/tryOn";
 import { smileTryOnService } from "../../../lib/studio3d/tryOnService";
-import { DEFAULT_TRANSFORM } from "../../../lib/studio3d/tryOnTransform";
-import { AdjustStep, type AdjustReason } from "./AdjustStep";
 import { renderDesignImage } from "./designImage";
-import type { TryOnGemRenderer } from "./gemOverlay";
-import { frontViewGemRenderer } from "./frontViewGemRenderer";
 import { PhotoStep, type AiState } from "./PhotoStep";
 import type { PreparedPhoto } from "./preparePhoto";
 import { ResultStep } from "./ResultStep";
@@ -29,23 +25,21 @@ type Step =
   | { kind: "photo" }
   | { kind: "processing" }
   | { kind: "error"; code: TryOnErrorCode }
-  | { kind: "result"; image: Blob; url: string }
-  | { kind: "adjust"; reason: AdjustReason };
+  | { kind: "result"; image: Blob; url: string };
 
-const STEP_INDEX: Record<Step["kind"], number> = { photo: 0, processing: 1, error: 1, result: 2, adjust: 2 };
+const STEP_INDEX: Record<Step["kind"], number> = { photo: 0, processing: 1, error: 1, result: 2 };
 
 /**
- * "Try it on a smile": a creation on a photo of a smile (decision 111).
- * Photo + consent → one click: the AI render (Nano Banana behind the Edge
- * Function `studio-try-on`) or placing the creation by hand → the result,
- * downloaded or shared. The photo and the image stay in this tab; closing
- * the dialog forgets them.
+ * "Try it on a smile": a creation on a photo of a smile, rendered by AI
+ * (decision 111). Photo + consent → the render (Nano Banana behind the Edge
+ * Function `studio-try-on`) → the result, downloaded or shared. The photo
+ * and the image stay in this tab; closing the dialog forgets them. While the
+ * AI is not connected, the dialog says so and sends nothing.
  *
  * Opened by the artist on their own creation (`audience="artist"`, a
  * client's photo) and by visitors on a Glowbook creation or a share link
  * (`audience="visitor"`, their own smile). `source` names the creation for
- * the function; without one (a design carried in a link's fragment) only
- * the manual try-on is offered. Whether the AI may be used for a creation
+ * the function (the viewers only open the dialog with one). Whether the AI may be used for a creation
  * (the owner's plan) is decided by the database: the viewers only show the
  * entry point when it says so, and the function checks again.
  */
@@ -55,14 +49,12 @@ export function TryOnDialog({
   audience = "artist",
   onClose,
   service = smileTryOnService,
-  renderer = frontViewGemRenderer,
 }: {
   creation: TryOnCreation;
   source: TryOnSource | null;
   audience?: TryOnAudience;
   onClose: () => void;
   service?: SmileTryOnService;
-  renderer?: TryOnGemRenderer;
 }) {
   const { t } = useTranslation();
   const { signedIn } = useAuth();
@@ -107,8 +99,6 @@ export function TryOnDialog({
     setPhoto(next);
   };
 
-  const placeByHand = (reason: AdjustReason) => setStep({ kind: "adjust", reason });
-
   const signIn = () => {
     onClose();
     navigate("/connexion", { state: { from: `${pathname}${hash}` } });
@@ -132,7 +122,7 @@ export function TryOnDialog({
     }
     if (outcome.code === "not_available") {
       setAi("unavailable");
-      return placeByHand("not_available");
+      return setStep({ kind: "photo" });
     }
     setStep({ kind: "error", code: outcome.code });
   };
@@ -176,7 +166,6 @@ export function TryOnDialog({
               ai={ai}
               signedIn={signedIn}
               onAi={() => void render()}
-              onManual={() => placeByHand("chosen")}
               onSignIn={signIn}
             />
           )}
@@ -216,9 +205,6 @@ export function TryOnDialog({
                 <Button variant="outline" size="sm" iconLeft={ImageUp} onClick={() => setStep({ kind: "photo" })}>
                   {t("studio.tryOn.errorActions.newPhoto")}
                 </Button>
-                <Button variant="outline" size="sm" iconLeft={Hand} onClick={() => placeByHand("chosen")}>
-                  {t("studio.tryOn.errorActions.manual")}
-                </Button>
               </div>
             </div>
           )}
@@ -230,21 +216,10 @@ export function TryOnDialog({
               imageUrl={step.url}
               creation={creation}
               onRegenerate={() => void render()}
-              onManual={() => placeByHand("chosen")}
               onNewPhoto={() => setStep({ kind: "photo" })}
             />
           )}
 
-          {step.kind === "adjust" && photo && (
-            <AdjustStep
-              photo={photo}
-              creation={creation}
-              renderer={renderer}
-              initial={DEFAULT_TRANSFORM}
-              reason={step.reason}
-              onNewPhoto={() => setStep({ kind: "photo" })}
-            />
-          )}
         </>
       )}
     </Dialog>

@@ -1,11 +1,11 @@
 import { useMemo, useState } from "react";
-import { Download, Eye, EyeOff, Hand, ImageUp, RefreshCw, Share, Sparkles } from "lucide-react";
+import { Download, Eye, EyeOff, ImageUp, RefreshCw, Share, Sparkles } from "lucide-react";
 import { useTranslation } from "react-i18next";
 import { Button } from "../../ui/Button";
 import { resultExtension, type TryOnCreation } from "../../../lib/studio3d/tryOn";
 import { tryOnFileName } from "../../../lib/studio3d/tryOnPhoto";
 import { useHydrated } from "../../../lib/useHydrated";
-import { downloadFile } from "./exportComposite";
+import { downloadFile } from "../../../lib/downloadFile";
 import type { PreparedPhoto } from "./preparePhoto";
 
 function canShareFile(file: File): boolean {
@@ -28,7 +28,6 @@ export function ResultStep({
   imageUrl,
   creation,
   onRegenerate,
-  onManual,
   onNewPhoto,
 }: {
   photo: PreparedPhoto;
@@ -37,7 +36,6 @@ export function ResultStep({
   imageUrl: string;
   creation: TryOnCreation;
   onRegenerate: () => void;
-  onManual: () => void;
   onNewPhoto: () => void;
 }) {
   const { t } = useTranslation();
@@ -49,7 +47,7 @@ export function ResultStep({
 
   const share = () => {
     setState(null);
-    navigator.share({ files: [file], title: creation.name, text: t("studio.tryOn.adjust.shareText", { name: creation.name }) }).catch((err: unknown) => {
+    navigator.share({ files: [file], title: creation.name, text: t("studio.tryOn.result.shareText", { name: creation.name }) }).catch((err: unknown) => {
       if (!(err instanceof DOMException && err.name === "AbortError")) setState("failed");
     });
   };
@@ -77,16 +75,13 @@ export function ResultStep({
 
       <div className="flex flex-wrap items-center gap-2">
         <Button variant="outline" size="sm" iconLeft={before ? EyeOff : Eye} aria-pressed={before} onClick={() => setBefore((v) => !v)}>
-          {t("studio.tryOn.adjust.before")}
+          {t("studio.tryOn.result.before")}
         </Button>
         <Button variant="ghost" size="sm" iconLeft={RefreshCw} onClick={onRegenerate}>
           {t("studio.tryOn.result.regenerate")}
         </Button>
-        <Button variant="ghost" size="sm" iconLeft={Hand} onClick={onManual}>
-          {t("studio.tryOn.errorActions.manual")}
-        </Button>
         <Button variant="ghost" size="sm" iconLeft={ImageUp} onClick={onNewPhoto}>
-          {t("studio.tryOn.adjust.newPhoto")}
+          {t("studio.tryOn.errorActions.newPhoto")}
         </Button>
       </div>
 
@@ -94,7 +89,7 @@ export function ResultStep({
         <div className="flex flex-wrap items-center justify-end gap-2">
           {canShare && (
             <Button variant="outline" size="sm" iconLeft={Share} onClick={share}>
-              {t("studio.tryOn.adjust.share")}
+              {t("studio.tryOn.result.share")}
             </Button>
           )}
           <Button
@@ -106,12 +101,12 @@ export function ResultStep({
               setState("downloaded");
             }}
           >
-            {t("studio.tryOn.adjust.download")}
+            {t("studio.tryOn.result.download")}
           </Button>
         </div>
         <p role="status" className="m-0 text-right text-[12px] font-semibold empty:hidden">
-          {state === "downloaded" && <span className="text-[var(--text-primary)]">{t("studio.tryOn.adjust.downloaded")}</span>}
-          {state === "failed" && <span className="text-[var(--status-error-fg)]">{t("studio.tryOn.adjust.exportFailed")}</span>}
+          {state === "downloaded" && <span className="text-[var(--text-primary)]">{t("studio.tryOn.result.downloaded")}</span>}
+          {state === "failed" && <span className="text-[var(--status-error-fg)]">{t("studio.tryOn.result.shareFailed")}</span>}
         </p>
         <p className="m-0 text-right text-[11.5px] leading-snug text-[var(--text-muted)]">{t("studio.tryOn.result.notStored")}</p>
       </div>

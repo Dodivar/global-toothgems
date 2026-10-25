@@ -7,7 +7,7 @@ import { Button } from "../../ui/Button";
 import { Dialog } from "../../ui/Dialog";
 import { ProgressBar } from "../../ui/ProgressBar";
 import { usePrefersReducedMotion } from "../../homeAlt/usePrefersReducedMotion";
-import { downloadFile } from "../tryOn/exportComposite";
+import { downloadFile } from "../../../lib/downloadFile";
 import { fieldClass } from "../workspace/workspaceStyles";
 import { defaultMark, markChoices, resolveMark, type ShareMark } from "../../../lib/studio3d/socialExport/branding";
 import type { MarkImage } from "../../../lib/studio3d/socialExport/compose";

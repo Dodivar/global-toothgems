@@ -13,8 +13,8 @@ import type { Creation } from "../studioWorkspace/types";
  * through the function's memory.
  *
  * While the owner has not connected the provider, the function says so
- * (`status()` → false, `render()` → `not_available`): the dialog then offers
- * to place the creation by hand on the photo — never a made-up result.
+ * (`status()` → false, `render()` → `not_available`): the dialog says the
+ * AI render is coming and sends nothing — never a made-up result.
  */
 
 /** What the try-on needs of a creation: its name (titles, file names) and its scene (the front view). */
@@ -129,7 +129,7 @@ export function resultExtension(type: string): "jpg" | "png" | "webp" {
   return type === "image/png" ? "png" : type === "image/webp" ? "webp" : "jpg";
 }
 
-/** Whether trying again can help (a passing failure), as opposed to "place it by hand". */
+/** Whether trying again can help (a passing failure), as opposed to another photo or nothing. */
 export function errorAllowsRetry(code: TryOnErrorCode): boolean {
   return code === "network" || code === "failed";
 }

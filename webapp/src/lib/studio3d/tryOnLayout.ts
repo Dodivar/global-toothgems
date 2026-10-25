@@ -3,17 +3,16 @@ import type { SceneModel } from "../studioWorkspace/scene";
 import { FRONT_VIEW_TEETH, crownOutline, gemOutline, projectFrontView, type FrontViewPathCommand } from "./frontView";
 
 /**
- * What the try-on overlay draws inside its box (pixels, origin top-left, y
- * down): the creation's gems from the Studio's front view (`frontView.ts`),
- * and the outline of the front teeth as an alignment guide for the artist.
+ * The creation's front view laid out in a box (pixels, origin top-left, y
+ * down): its gems from the Studio's front view (`frontView.ts`) and the
+ * outline of the front teeth. Drawn into the picture sent to the AI with the
+ * smile photo as a hint of the layout (`components/studio/tryOn/designImage.ts`).
  *
  * The box shows the whole front-view frame, fitted to its width and centred
- * vertically, so matching the guide's teeth to the photo's teeth puts every
- * gem on its tooth. Gems on the tongue side are left out — they cannot be
- * seen on a front photo — as are those the front view cannot place.
+ * vertically. Gems on the tongue side are left out — they cannot be seen on
+ * a front photo — as are those the front view cannot place.
  *
- * Pure: no React, no DOM. Both halves of the try-on renderer (live SVG and
- * exported canvas) draw from it, so the download matches the screen.
+ * Pure: no React, no DOM.
  */
 
 export interface TryOnSpot {
@@ -31,7 +30,7 @@ export interface TryOnSpot {
 
 export interface TryOnLayout {
   spots: TryOnSpot[];
-  /** Crown outlines of the guide, box pixels. */
+  /** Crown outlines of the front teeth, box pixels. */
   guide: FrontViewPathCommand[][];
 }
 

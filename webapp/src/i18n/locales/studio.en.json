@@ -708,7 +708,7 @@
   },
   "tryOn": {
     "action": "Try on a smile",
-    "editorSub": "The saved creation on a smile photo: AI render or placed by hand",
+    "editorSub": "The saved creation, rendered by AI on a smile photo",
     "title": "Try on a smile",
     "subtitle": {
       "artist": "“{{name}}” on a photo of your client’s smile.",
@@ -735,7 +735,7 @@
       "previewAlt": "Chosen smile photo",
       "formats": "JPEG, PNG, WebP or HEIC · {{maxMb}} MB max · at least {{minWidth}} × {{minHeight}} pixels",
       "reading": "Reading the photo…",
-      "privacy": "The photo stays on this device: Global Toothgems neither receives nor stores it, and it is forgotten as soon as you close this window. Its metadata (GPS location, device, date) is removed.",
+      "privacy": "For the render, the photo is sent encrypted to Global Toothgems and then to Google (Gemini) while the image is created: Global Toothgems does not keep it. Its metadata (GPS location, device, date) is removed before sending.",
       "consent": {
         "artist": "The person in the photo has agreed to its use",
         "visitor": "This is a photo of me and I agree to its use for this try-on"
@@ -755,7 +755,9 @@
         "tooSmall": "This photo is too small to see the teeth: it needs at least {{minWidth}} × {{minHeight}} pixels.",
         "unreadable": "This browser cannot read this photo. If it is a HEIC, convert it to JPEG (or set the camera to “Most compatible”) and try again."
       },
-      "privacyAi": "Placed by hand, the photo stays on this device. For the AI render, it is sent encrypted to Global Toothgems and then to Google (Gemini) while the image is created: Global Toothgems does not keep it. Its metadata (GPS location, device, date) is removed before sending."
+      "generate": "Generate the AI render",
+      "checking": "Checking availability…",
+      "signInHint": "Sign in to your account to get the AI render."
     },
     "processing": {
       "title": "Creating the render…",
@@ -765,23 +767,23 @@
     "errors": {
       "not_available": {
         "title": "AI render coming soon",
-        "body": "The AI render is not live yet. Place the creation by hand: drag it onto the teeth, then adjust its size and tilt."
+        "body": "The AI try-on is not live yet. Come back soon: no photo is sent in the meantime."
       },
       "sign_in_required": {
         "title": "Sign-in needed",
-        "body": "Sign in to your account to get the AI render. You can also place the creation by hand without an account."
+        "body": "Sign in to your account to get the AI render."
       },
       "not_found": {
         "title": "Creation not found",
-        "body": "This creation is no longer available (deleted, removed or link disabled). Place it by hand or close this window."
+        "body": "This creation is no longer available (deleted, removed or link disabled)."
       },
       "not_allowed": {
         "title": "AI render not available for this creation",
-        "body": "The AI render option is not included for this artist’s creations. You can place the creation by hand."
+        "body": "The AI render option is not included for this artist’s creations."
       },
       "daily_limit": {
         "title": "Today’s limit reached",
-        "body": "You have reached today’s number of AI renders. Try again tomorrow, or place the creation by hand."
+        "body": "You have reached today’s number of AI renders. Try again tomorrow."
       },
       "blocked": {
         "title": "Photo refused by the AI",
@@ -793,47 +795,13 @@
       },
       "failed": {
         "title": "The render did not work",
-        "body": "Something went wrong during the render. Try again, or place the creation by hand."
+        "body": "Something went wrong during the render. Try again in a moment."
       }
     },
     "errorActions": {
       "newPhoto": "Another photo",
       "retry": "Try again",
-      "manual": "Place by hand",
       "signIn": "Sign in"
-    },
-    "adjust": {
-      "stageLabel": "“{{name}}” on the smile photo",
-      "gestures": "Drag to move, pinch with two fingers to resize and turn, or use the mouse wheel.",
-      "keys": "Keyboard: arrows to move, + and − to resize, [ and ] to turn, Shift for bigger steps.",
-      "size": "Size",
-      "rotation": "Tilt",
-      "opacity": "Opacity",
-      "before": "Before / after",
-      "reset": "Reset",
-      "newPhoto": "Another photo",
-      "download": "Download image",
-      "share": "Share",
-      "shareText": "“{{name}}”, tried on with the Global Toothgems 3D Studio",
-      "downloaded": "Image downloaded.",
-      "exportFailed": "The image could not be created. Try again.",
-      "exportHint": "The image is made on this device; nothing is sent to Global Toothgems."
-    },
-    "choice": {
-      "title": "How would you like to try it?",
-      "photoFirst": "Add a smile photo first.",
-      "ai": {
-        "title": "Realistic AI render",
-        "available": "A realistic image generated by AI from the photo. About 30 seconds.",
-        "signIn": "Sign in to your account to get the AI render.",
-        "checking": "Checking availability…",
-        "unavailable": "The AI render is coming soon. Meanwhile, place the creation yourself.",
-        "soon": "Soon"
-      },
-      "manual": {
-        "title": "Place it myself",
-        "body": "Lay the creation over the teeth, then adjust its size and tilt. The photo stays on this device."
-      }
     },
     "result": {
       "alt": "“{{name}}” tried on the photo, AI render",
@@ -842,7 +810,13 @@
       "beforeTag": "Before",
       "disclaimer": "AI-generated image: a preview to picture it, not an exact promise of the finished result.",
       "regenerate": "Generate again",
-      "notStored": "Global Toothgems does not keep the image: download it to keep it."
+      "notStored": "Global Toothgems does not keep the image: download it to keep it.",
+      "before": "Before / after",
+      "download": "Download image",
+      "downloaded": "Image downloaded.",
+      "share": "Share",
+      "shareText": "“{{name}}”, tried on with the Global Toothgems 3D Studio",
+      "shareFailed": "Sharing did not work. Try again or download the image."
     },
     "visitor": {
       "title": "Try it on my smile",

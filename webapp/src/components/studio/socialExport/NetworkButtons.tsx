@@ -3,7 +3,7 @@ import clsx from "clsx";
 import { Link2, LoaderCircle, TriangleAlert } from "lucide-react";
 import { useTranslation } from "react-i18next";
 import { Button } from "../../ui/Button";
-import { downloadFile } from "../tryOn/exportComposite";
+import { downloadFile } from "../../../lib/downloadFile";
 import { desktopAction, fileFits, NETWORK_NAMES, SOCIAL_NETWORKS, type SocialNetwork } from "../../../lib/studio3d/socialExport/networks";
 import type { ShareFormat } from "../../../lib/studio3d/socialExport/formats";
 import type { ShareOutput } from "../../../lib/studio3d/socialExport/motion";

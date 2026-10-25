@@ -11,19 +11,6 @@ import {
   unavailableTryOnService,
 } from "./tryOn";
 import { checkPhotoFile, checkPhotoSize, fitWithin, PHOTO_MAX_BYTES, tryOnFileName } from "./tryOnPhoto";
-import {
-  boxPointToStage,
-  clampTransform,
-  DEFAULT_TRANSFORM,
-  dragTransform,
-  keyTransform,
-  MAX_WIDTH,
-  MIN_WIDTH,
-  normalizeDegrees,
-  overlayFrame,
-  pinchTransform,
-  wheelTransform,
-} from "./tryOnTransform";
 
 describe("try-on service contract", () => {
   it("the not-available service says so at once, without a photo leaving", async () => {
@@ -75,12 +62,6 @@ describe("try-on service contract", () => {
     expect(errorAllowsRetry("network")).toBe(true);
     expect(errorAllowsRetry("not_allowed")).toBe(false);
   });
-
-  it("normalises angles to -180..180", () => {
-    expect(normalizeDegrees(190)).toBe(-170);
-    expect(normalizeDegrees(-180)).toBe(180);
-    expect(normalizeDegrees(720)).toBe(0);
-  });
 });
 
 describe("photo checks", () => {
@@ -111,55 +92,5 @@ describe("photo checks", () => {
   it("names the export after the creation", () => {
     expect(tryOnFileName("Étoile & Cœur")).toBe("global-toothgems-try-on-etoile-c-ur.jpg");
     expect(tryOnFileName("***", "png")).toBe("global-toothgems-try-on.png");
-  });
-});
-
-describe("overlay transform", () => {
-  it("clamps the box to the photo and to sane sizes", () => {
-    expect(clampTransform({ cx: -1, cy: 2, width: 9, rotation: 200 })).toEqual({ cx: 0, cy: 1, width: MAX_WIDTH, rotation: -160 });
-    expect(clampTransform({ ...DEFAULT_TRANSFORM, width: 0 }).width).toBe(MIN_WIDTH);
-  });
-
-  it("gives the same frame to the screen and the export, in their own pixels", () => {
-    const t = { cx: 0.5, cy: 0.5, width: 0.4, rotation: 90 };
-    const screen = overlayFrame(t, 500, 400);
-    const full = overlayFrame(t, 2000, 1600);
-    expect(full.width / screen.width).toBeCloseTo(4);
-    expect(full.centerY / screen.centerY).toBeCloseTo(4);
-    expect(screen).toMatchObject({ centerX: 250, centerY: 200, width: 200, height: 100, left: 150, top: 150 });
-    // A quarter turn puts the box's right edge below its centre.
-    const p = boxPointToStage(screen, 1, 0.5);
-    expect(p.x).toBeCloseTo(250);
-    expect(p.y).toBeCloseTo(300);
-  });
-
-  it("drags, scales and rotates", () => {
-    expect(dragTransform(DEFAULT_TRANSFORM, 50, -20, 500, 400)).toMatchObject({ cx: 0.6, cy: 0.5 });
-    const pinched = pinchTransform(
-      DEFAULT_TRANSFORM,
-      [
-        { x: 100, y: 100 },
-        { x: 200, y: 100 },
-      ],
-      [
-        { x: 100, y: 100 },
-        { x: 100, y: 300 },
-      ],
-      500,
-      400,
-    );
-    expect(pinched.width).toBeCloseTo(1);
-    expect(pinched.rotation).toBeCloseTo(90);
-    expect(pinched.cx).toBeCloseTo(0.4);
-    expect(pinched.cy).toBeCloseTo(0.8);
-    expect(wheelTransform(DEFAULT_TRANSFORM, -100).width).toBeGreaterThan(DEFAULT_TRANSFORM.width);
-  });
-
-  it("answers the keyboard, with larger steps under Shift", () => {
-    expect(keyTransform(DEFAULT_TRANSFORM, "ArrowRight", false)?.cx).toBeCloseTo(0.505);
-    expect(keyTransform(DEFAULT_TRANSFORM, "ArrowUp", true)?.cy).toBeCloseTo(0.52);
-    expect(keyTransform(DEFAULT_TRANSFORM, "+", false)?.width).toBeCloseTo(0.515);
-    expect(keyTransform(DEFAULT_TRANSFORM, "]", true)?.rotation).toBe(10);
-    expect(keyTransform(DEFAULT_TRANSFORM, "Enter", false)).toBeNull();
   });
 });
