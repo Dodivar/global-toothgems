@@ -1,13 +1,12 @@
 import { useEffect, useLayoutEffect, useRef, useState, type KeyboardEvent, type PointerEvent } from "react";
 import clsx from "clsx";
-import type { Creation } from "../../../lib/studioWorkspace/types";
+import type { TryOnCreation } from "../../../lib/studio3d/tryOn";
 import {
   dragTransform,
   keyTransform,
   overlayFrame,
   pinchTransform,
   wheelTransform,
-  type BoxPlacement,
   type OverlayTransform,
 } from "../../../lib/studio3d/tryOnTransform";
 import type { TryOnGemRenderer } from "./gemOverlay";
@@ -25,7 +24,6 @@ type Point = { x: number; y: number };
 export function TryOnStage({
   photo,
   creation,
-  placements,
   renderer,
   transform,
   onTransform,
@@ -35,8 +33,7 @@ export function TryOnStage({
   describedBy,
 }: {
   photo: PreparedPhoto;
-  creation: Creation;
-  placements: BoxPlacement[] | null;
+  creation: TryOnCreation;
   renderer: TryOnGemRenderer;
   transform: OverlayTransform;
   onTransform: (t: OverlayTransform) => void;
@@ -148,7 +145,7 @@ export function TryOnStage({
             transformOrigin: "50% 50%",
           }}
         >
-          <Overlay creation={creation} placements={placements} width={frame.width} height={frame.height} />
+          <Overlay creation={creation} width={frame.width} height={frame.height} />
         </div>
       )}
     </div>

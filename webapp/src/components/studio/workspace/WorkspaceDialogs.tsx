@@ -53,7 +53,7 @@ export function WorkspaceDialogs() {
     case "shareCreation":
       return <ShareDialog creation={dialog.creation} onClose={close} />;
     case "tryOn":
-      return <TryOnDialog creation={dialog.creation} onClose={close} />;
+      return <TryOnDialog creation={dialog.creation} source={{ kind: "own", creationId: dialog.creation.id }} onClose={close} />;
     case "socialExport":
       return (
         <Suspense fallback={null}>

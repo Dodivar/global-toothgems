@@ -8496,6 +8496,61 @@ export type Database = {
           },
         ]
       }
+      studio_try_on_requests: {
+        Row: {
+          created_at: string
+          creation_id: string | null
+          error_code: string | null
+          id: string
+          source: string
+          status: string
+          updated_at: string
+          user_id: string
+        }
+        Insert: {
+          created_at?: string
+          creation_id?: string | null
+          error_code?: string | null
+          id?: string
+          source: string
+          status?: string
+          updated_at?: string
+          user_id: string
+        }
+        Update: {
+          created_at?: string
+          creation_id?: string | null
+          error_code?: string | null
+          id?: string
+          source?: string
+          status?: string
+          updated_at?: string
+          user_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "studio_try_on_requests_creation_id_fkey"
+            columns: ["creation_id"]
+            isOneToOne: false
+            referencedRelation: "creations"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "studio_try_on_requests_user_id_fkey"
+            columns: ["user_id"]
+            isOneToOne: false
+            referencedRelation: "loyalty_overview"
+            referencedColumns: ["user_id"]
+          },
+          {
+            foreignKeyName: "studio_try_on_requests_user_id_fkey"
+            columns: ["user_id"]
+            isOneToOne: false
+            referencedRelation: "profiles"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       studio_withdrawals: {
         Row: {
           canceled_at: string | null
@@ -10472,6 +10527,7 @@ export type Database = {
           description: string
           name: string
           scene_data: Json
+          try_on: boolean
           updated_at: string
         }[]
       }
@@ -10545,6 +10601,16 @@ export type Database = {
           thumbnail_path: string
           updated_at: string
         }[]
+      }
+      studio_try_on_creation: {
+        Args: {
+          p_creation_id?: string
+          p_handle?: string
+          p_item_id?: string
+          p_requester: string
+          p_token?: string
+        }
+        Returns: Json
       }
       studio_use_template: {
         Args: { p_template_id: string }

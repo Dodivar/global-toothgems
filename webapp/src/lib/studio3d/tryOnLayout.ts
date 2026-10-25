@@ -1,7 +1,6 @@
 import type { PlacedJewelry, StudioShape } from "../../data/studioEditor";
 import type { SceneModel } from "../studioWorkspace/scene";
-import { FRONT_VIEW_TEETH, crownOutline, gemOutline, glyphStretch, projectFrontView, type FrontViewPathCommand } from "./frontView";
-import type { BoxPlacement } from "./tryOnTransform";
+import { FRONT_VIEW_TEETH, crownOutline, gemOutline, projectFrontView, type FrontViewPathCommand } from "./frontView";
 
 /**
  * What the try-on overlay draws inside its box (pixels, origin top-left, y
@@ -10,10 +9,8 @@ import type { BoxPlacement } from "./tryOnTransform";
  *
  * The box shows the whole front-view frame, fitted to its width and centred
  * vertically, so matching the guide's teeth to the photo's teeth puts every
- * gem on its tooth. After an automatic placement (`placements` not null) the
- * gems are drawn where the service put them instead, and the guide is left
- * out: it would not match. Gems on the tongue side are left out too — they
- * cannot be seen on a front photo — as are those the front view cannot place.
+ * gem on its tooth. Gems on the tongue side are left out — they cannot be
+ * seen on a front photo — as are those the front view cannot place.
  *
  * Pure: no React, no DOM. Both halves of the try-on renderer (live SVG and
  * exported canvas) draw from it, so the download matches the screen.
@@ -34,7 +31,7 @@ export interface TryOnSpot {
 
 export interface TryOnLayout {
   spots: TryOnSpot[];
-  /** Crown outlines of the guide, box pixels; empty after an automatic placement. */
+  /** Crown outlines of the guide, box pixels. */
   guide: FrontViewPathCommand[][];
 }
 
@@ -44,30 +41,10 @@ const GUIDE_TEETH = new Set(["13", "12", "11", "21", "22", "23", "43", "42", "41
 export function tryOnLayout(
   pieces: readonly PlacedJewelry[],
   model: SceneModel,
-  placements: readonly BoxPlacement[] | null,
   width: number,
   height: number,
 ): TryOnLayout {
   if (!(width > 0) || !(height > 0)) return { spots: [], guide: [] };
-  const byId = new Map(pieces.map((p) => [p.id, p]));
-
-  if (placements) {
-    const spots = placements.flatMap((p): TryOnSpot[] => {
-      const piece = byId.get(p.pieceId);
-      if (!piece) return [];
-      const look = piece.look;
-      const at = {
-        x: p.x * width,
-        y: p.y * height,
-        r: (p.size * width) / 2,
-        stretch: glyphStretch(look.shape, piece.size),
-        rotation: p.rotation,
-      };
-      return [{ pieceId: p.pieceId, shape: look.shape, color: look.color, ...at, outline: gemOutline(look.shape, at) }];
-    });
-    return { spots, guide: [] };
-  }
-
   const projection = projectFrontView(pieces, model);
   const { box } = projection;
   const scale = width / box.width;

@@ -64,3 +64,7 @@ verify_jwt = false
 
 [functions.studio-billing-setup]
 verify_jwt = false
+
+# 3D Studio smile try-on (decision 111): the status call is open, the member's token is checked in the function.
+[functions.studio-try-on]
+verify_jwt = false

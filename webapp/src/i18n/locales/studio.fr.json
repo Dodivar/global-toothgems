@@ -707,15 +707,18 @@
     }
   },
   "tryOn": {
-    "action": "Essayer sur une photo",
-    "editorSub": "La création enregistrée, sur la photo du sourire de votre client·e",
-    "title": "Essayer sur une photo",
-    "subtitle": "« {{name}} » sur la photo du sourire de votre client·e.",
+    "action": "Essayer sur un sourire",
+    "editorSub": "La création enregistrée, sur une photo de sourire : rendu IA ou placement à la main",
+    "title": "Essayer sur un sourire",
+    "subtitle": {
+      "artist": "« {{name}} » sur la photo du sourire de votre client·e.",
+      "visitor": "« {{name}} » sur une photo de votre sourire."
+    },
     "empty": "Cette création ne contient aucune pierre : ajoutez-en dans l’éditeur, enregistrez, puis revenez l’essayer.",
     "steps": {
       "photo": "Photo",
-      "analysis": "Analyse",
-      "adjust": "Ajustement"
+      "render": "Essai",
+      "result": "Résultat"
     },
     "photo": {
       "tipsTitle": "Pour une bonne photo",
@@ -733,52 +736,73 @@
       "formats": "JPEG, PNG, WebP ou HEIC · {{maxMb}} Mo max · au moins {{minWidth}} × {{minHeight}} pixels",
       "reading": "Lecture de la photo…",
       "privacy": "La photo reste sur cet appareil : elle n’est ni envoyée ni enregistrée par Global Toothgems, et elle est oubliée dès que vous fermez cette fenêtre. Ses métadonnées (position GPS, appareil, date) sont retirées.",
-      "consent": "La personne photographiée m’a donné son accord pour utiliser cette photo",
-      "consentHint": "Pour cet essai uniquement. Ne partagez l’image obtenue qu’avec son accord.",
-      "consentRequired": "Cochez cette case pour continuer : il faut l’accord de la personne photographiée.",
-      "continue": "Continuer",
+      "consent": {
+        "artist": "La personne photographiée m’a donné son accord pour utiliser cette photo",
+        "visitor": "C’est une photo de moi et j’accepte qu’elle serve à cet essai"
+      },
+      "consentHint": {
+        "artist": "Pour cet essai uniquement. Ne partagez l’image obtenue qu’avec son accord.",
+        "visitor": "Pour cet essai uniquement : la photo n’est pas conservée."
+      },
+      "consentRequired": {
+        "artist": "Cochez cette case pour continuer : il faut l’accord de la personne photographiée.",
+        "visitor": "Cochez cette case pour continuer."
+      },
       "errors": {
         "type": "Ce fichier n’est pas une photo prise en charge. Choisissez un JPEG, un PNG, un WebP ou un HEIC.",
         "empty": "Ce fichier est vide. Choisissez une autre photo.",
         "tooLarge": "Cette photo dépasse {{maxMb}} Mo. Choisissez-en une plus légère.",
         "tooSmall": "Cette photo est trop petite pour voir les dents : il faut au moins {{minWidth}} × {{minHeight}} pixels.",
         "unreadable": "Impossible de lire cette photo sur ce navigateur. Si c’est un HEIC, convertissez-le en JPEG (ou réglez l’appareil photo sur « le plus compatible »), puis réessayez."
-      }
+      },
+      "privacyAi": "Placée à la main, la photo reste sur cet appareil. Pour le rendu IA, elle est envoyée de façon chiffrée à Global Toothgems puis à Google (Gemini) le temps de créer l’image : elle n’est pas conservée par Global Toothgems. Ses métadonnées (position GPS, appareil, date) sont retirées avant l’envoi."
     },
     "processing": {
-      "title": "Analyse du sourire…",
-      "body": "Nous cherchons les dents sur la photo pour y poser les pierres de la création.",
+      "title": "Création du rendu…",
+      "body": "L’IA pose les pierres de la création sur la photo. Cela prend en général moins d’une minute.",
       "cancel": "Annuler"
     },
     "errors": {
       "not_available": {
-        "title": "Placement automatique bientôt disponible",
-        "body": "Le placement automatique des pierres n’est pas encore en service. Placez la création à la main : faites-la glisser sur les dents, puis ajustez sa taille et son inclinaison."
+        "title": "Rendu IA bientôt disponible",
+        "body": "Le rendu par IA n’est pas encore en service. Placez la création à la main : faites-la glisser sur les dents, puis ajustez sa taille et son inclinaison."
       },
-      "no_smile_detected": {
-        "title": "Aucun sourire détecté",
-        "body": "Nous n’avons pas trouvé de sourire sur cette photo. Prenez-la de face, lèvres écartées."
+      "sign_in_required": {
+        "title": "Connexion nécessaire",
+        "body": "Connectez-vous à votre compte pour obtenir le rendu par IA. Vous pouvez aussi placer la création à la main sans compte."
       },
-      "low_quality": {
-        "title": "Photo trop floue ou trop sombre",
-        "body": "Reprenez la photo avec plus de lumière, sans bouger, sans filtre."
+      "not_found": {
+        "title": "Création introuvable",
+        "body": "Cette création n’est plus disponible (supprimée, retirée ou lien désactivé). Placez-la à la main ou fermez cette fenêtre."
       },
-      "teeth_not_visible": {
-        "title": "Dents pas assez visibles",
-        "body": "Les dents de la création ne se voient pas assez. Demandez un sourire plus large, de face."
+      "not_allowed": {
+        "title": "Rendu IA non disponible pour cette création",
+        "body": "L’option de rendu par IA n’est pas incluse pour les créations de cet·te artiste. Vous pouvez placer la création à la main."
+      },
+      "daily_limit": {
+        "title": "Limite du jour atteinte",
+        "body": "Vous avez atteint le nombre de rendus IA possibles pour aujourd’hui. Réessayez demain, ou placez la création à la main."
+      },
+      "blocked": {
+        "title": "Photo refusée par l’IA",
+        "body": "Le service d’IA a refusé cette photo. Essayez une autre photo, de face, centrée sur le sourire."
+      },
+      "network": {
+        "title": "Connexion interrompue",
+        "body": "Le rendu n’a pas pu être demandé. Vérifiez votre connexion et réessayez."
       },
       "failed": {
-        "title": "L’analyse n’a pas abouti",
-        "body": "Une erreur est survenue pendant l’analyse. Réessayez, ou placez la création à la main."
+        "title": "Le rendu n’a pas abouti",
+        "body": "Une erreur est survenue pendant le rendu. Réessayez, ou placez la création à la main."
       }
     },
     "errorActions": {
-      "newPhoto": "Prendre une autre photo",
+      "newPhoto": "Autre photo",
       "retry": "Réessayer",
-      "manual": "Placer à la main"
+      "manual": "Placer à la main",
+      "signIn": "Se connecter"
     },
     "adjust": {
-      "automatic": "Pierres placées automatiquement (fiabilité {{confidence}} %). Vérifiez et corrigez si besoin.",
       "stageLabel": "« {{name}} » sur la photo du sourire",
       "gestures": "Faites glisser pour déplacer, pincez à deux doigts pour agrandir et tourner, ou utilisez la molette.",
       "keys": "Au clavier : flèches pour déplacer, + et − pour la taille, [ et ] pour tourner, Maj pour aller plus vite.",
@@ -794,6 +818,36 @@
       "downloaded": "Image téléchargée.",
       "exportFailed": "L’image n’a pas pu être créée. Réessayez.",
       "exportHint": "L’image est créée sur cet appareil ; rien n’est envoyé à Global Toothgems."
+    },
+    "choice": {
+      "title": "Comment l’essayer ?",
+      "photoFirst": "Ajoutez d’abord une photo du sourire.",
+      "ai": {
+        "title": "Rendu réaliste par IA",
+        "available": "Une image réaliste générée par l’IA à partir de la photo. Environ 30 secondes.",
+        "signIn": "Connectez-vous à votre compte pour obtenir le rendu par IA.",
+        "checking": "Vérification de la disponibilité…",
+        "unavailable": "Le rendu par IA arrive bientôt. En attendant, placez la création vous-même.",
+        "soon": "Bientôt"
+      },
+      "manual": {
+        "title": "Placer moi-même",
+        "body": "Superposez la création sur les dents, puis ajustez sa taille et son inclinaison. La photo reste sur cet appareil."
+      }
+    },
+    "result": {
+      "alt": "« {{name}} » essayé sur la photo, rendu par IA",
+      "beforeAlt": "La photo d’origine",
+      "aiTag": "Rendu IA",
+      "beforeTag": "Avant",
+      "disclaimer": "Image générée par IA : un aperçu pour se projeter, pas une promesse exacte du résultat posé.",
+      "regenerate": "Générer à nouveau",
+      "notStored": "L’image n’est pas conservée par Global Toothgems : téléchargez-la pour la garder."
+    },
+    "visitor": {
+      "title": "Essayer sur mon sourire",
+      "body": "Prenez ou choisissez une photo de votre sourire et voyez cette création sur vous.",
+      "cta": "Essayer sur mon sourire"
     }
   },
   "frontView": {

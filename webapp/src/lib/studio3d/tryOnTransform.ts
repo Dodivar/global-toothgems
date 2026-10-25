@@ -1,6 +1,3 @@
-import type { TryOnResult } from "./tryOn";
-import { normalizeDegrees } from "./tryOn";
-
 /**
  * Where the creation sits on the smile photo, and how the artist moves it.
  *
@@ -28,13 +25,10 @@ export const MAX_WIDTH = 1.5;
 
 export const DEFAULT_TRANSFORM: OverlayTransform = { cx: 0.5, cy: 0.55, width: 0.5, rotation: 0 };
 
-/** A gem inside the box: centre normalised to the box (0..1 each way), diameter as a fraction of the box width. */
-export interface BoxPlacement {
-  pieceId: string;
-  x: number;
-  y: number;
-  size: number;
-  rotation: number;
+/** An angle brought back to -180..180 degrees. */
+export function normalizeDegrees(deg: number): number {
+  const d = ((((deg + 180) % 360) + 360) % 360) - 180;
+  return d === -180 ? 180 : d;
 }
 
 export function clampTransform(t: OverlayTransform): OverlayTransform {
@@ -151,41 +145,4 @@ export function keyTransform(start: OverlayTransform, key: string, shift: boolea
     default:
       return null;
   }
-}
-
-/* ----------------------------------------------- an automatic placement */
-
-/**
- * Turn the service's per-gem placements (normalised to the photo) into the
- * overlay: a box around them, unrotated, and each gem's spot inside it. The
- * artist then corrects the result with the same controls as a manual
- * placement. `photoAspect` is the photo's height / width.
- */
-export function overlayFromResult(
-  result: Pick<TryOnResult, "placements">,
-  photoAspect: number,
-  aspect = OVERLAY_ASPECT,
-): { transform: OverlayTransform; placements: BoxPlacement[] } | null {
-  const gems = result.placements;
-  if (gems.length === 0 || !(photoAspect > 0)) return null;
-  // Work in units of the photo's width, so x and y are on the same scale.
-  const pts = gems.map((g) => ({ ...g, py: g.y * photoAspect }));
-  const pad = Math.max(...pts.map((g) => g.scale));
-  const minX = Math.min(...pts.map((g) => g.x)) - pad;
-  const maxX = Math.max(...pts.map((g) => g.x)) + pad;
-  const minY = Math.min(...pts.map((g) => g.py)) - pad;
-  const maxY = Math.max(...pts.map((g) => g.py)) + pad;
-  const boxW = Math.max(maxX - minX, (maxY - minY) / aspect, MIN_WIDTH);
-  const boxH = boxW * aspect;
-  const cx = (minX + maxX) / 2;
-  const cyW = (minY + maxY) / 2;
-  const transform: OverlayTransform = { cx, cy: cyW / photoAspect, width: boxW, rotation: 0 };
-  const placements = pts.map((g) => ({
-    pieceId: g.pieceId,
-    x: (g.x - (cx - boxW / 2)) / boxW,
-    y: (g.py - (cyW - boxH / 2)) / boxH,
-    size: g.scale / boxW,
-    rotation: g.rotation,
-  }));
-  return { transform, placements };
 }

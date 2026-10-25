@@ -573,7 +573,7 @@ export async function fetchGlowbookCreation(
   client: TypedSupabaseClient,
   handle: string,
   itemId: string,
-): Promise<{ design: SharedDesign; author: { handle: string; displayName: string } } | null> {
+): Promise<{ design: SharedDesign; author: { handle: string; displayName: string }; tryOn: boolean } | null> {
   if (!UUID_PATTERN.test(itemId) || !/^[a-z0-9._-]{3,30}$/i.test(handle)) return null;
   const { data, error } = await client.rpc("studio_public_showcase_creation", { p_handle: handle.toLowerCase(), p_item_id: itemId });
   if (error) throw storeError(error);
@@ -583,13 +583,17 @@ export async function fetchGlowbookCreation(
   return {
     design,
     author: { handle: String(row.handle ?? handle), displayName: typeof row.display_name === "string" ? row.display_name : "" },
+    tryOn: row.try_on === true,
   };
 }
 
-export async function fetchSharedCreation(client: TypedSupabaseClient, token: string): Promise<SharedDesign | null> {
+/** A shared creation, and whether its owner's plan lets it be tried on a photo with AI (decision 111). */
+export async function fetchSharedCreation(client: TypedSupabaseClient, token: string): Promise<{ design: SharedDesign; tryOn: boolean } | null> {
   if (!SHARE_TOKEN_PATTERN.test(token)) return null;
   const { data, error } = await client.rpc("studio_shared_creation", { p_token: token });
   if (shareSchemaMissing(error)) return null;
   if (error) throw storeError(error);
-  return parseSharedCreation(Array.isArray(data) ? data[0] : null);
+  const row = Array.isArray(data) ? data[0] : null;
+  const design = parseSharedCreation(row);
+  return design ? { design, tryOn: row?.try_on === true } : null;
 }

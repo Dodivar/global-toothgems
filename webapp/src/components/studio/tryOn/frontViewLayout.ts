@@ -12,7 +12,7 @@ export const GEM_EDGE = "rgba(38, 60, 82, .7)";
 export const GUIDE = "rgba(255, 255, 255, .85)";
 export const GUIDE_SHADOW = "rgba(17, 17, 17, .45)";
 
-export const layoutOf = ({ creation, placements, width, height }: GemOverlayProps) =>
-  tryOnLayout(creation.scene.pieces, creation.scene.model, placements, width, height);
+export const layoutOf = ({ creation, width, height }: GemOverlayProps) =>
+  tryOnLayout(creation.scene.pieces, creation.scene.model, width, height);
 
 export const edgeWidth = (s: TryOnSpot) => Math.max(0.6, s.r * 0.12);

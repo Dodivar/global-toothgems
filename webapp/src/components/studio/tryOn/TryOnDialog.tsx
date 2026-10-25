@@ -1,65 +1,100 @@
 import { useEffect, useRef, useState } from "react";
-import { CircleAlert, ImageUp, LoaderCircle, ScanFace } from "lucide-react";
+import { CircleAlert, Hand, ImageUp, LoaderCircle, LogIn, RefreshCw, ScanFace } from "lucide-react";
 import { useTranslation } from "react-i18next";
+import { useAuth } from "../../../lib/auth";
+import { useLocation, useNavigate } from "../../../lib/navigation";
 import { Button } from "../../ui/Button";
 import { Dialog } from "../../ui/Dialog";
 import { ProgressBar } from "../../ui/ProgressBar";
 import {
   TRY_ON_ERROR_MESSAGES,
-  errorSuggestsNewPhoto,
-  tryOnInputFromCreation,
-  unavailableTryOnService,
+  errorAllowsRetry,
   type SmileTryOnService,
+  type TryOnAudience,
+  type TryOnCreation,
   type TryOnErrorCode,
+  type TryOnSource,
 } from "../../../lib/studio3d/tryOn";
-import { DEFAULT_TRANSFORM, overlayFromResult, type BoxPlacement, type OverlayTransform } from "../../../lib/studio3d/tryOnTransform";
-import type { Creation } from "../../../lib/studioWorkspace/types";
-import { AdjustStep, type AdjustOrigin } from "./AdjustStep";
+import { smileTryOnService } from "../../../lib/studio3d/tryOnService";
+import { DEFAULT_TRANSFORM } from "../../../lib/studio3d/tryOnTransform";
+import { AdjustStep, type AdjustReason } from "./AdjustStep";
+import { renderDesignImage } from "./designImage";
 import type { TryOnGemRenderer } from "./gemOverlay";
 import { frontViewGemRenderer } from "./frontViewGemRenderer";
-import { PhotoStep } from "./PhotoStep";
+import { PhotoStep, type AiState } from "./PhotoStep";
 import type { PreparedPhoto } from "./preparePhoto";
+import { ResultStep } from "./ResultStep";
 
 type Step =
   | { kind: "photo" }
   | { kind: "processing" }
-  | { kind: "error"; code: Exclude<TryOnErrorCode, "not_available"> }
-  | { kind: "adjust"; initial: OverlayTransform; placements: BoxPlacement[] | null; origin: AdjustOrigin };
+  | { kind: "error"; code: TryOnErrorCode }
+  | { kind: "result"; image: Blob; url: string }
+  | { kind: "adjust"; reason: AdjustReason };
 
-const STEP_INDEX: Record<Step["kind"], number> = { photo: 0, processing: 1, error: 1, adjust: 2 };
+const STEP_INDEX: Record<Step["kind"], number> = { photo: 0, processing: 1, error: 1, result: 2, adjust: 2 };
 
 /**
- * "Try on a photo": a saved creation on a photo of the client's smile.
- * Photo → automatic placement (not connected yet: `unavailableTryOnService`
- * says so and the artist places by hand) → adjust and export. The photo stays
- * in this tab; closing the dialog forgets it.
+ * "Try it on a smile": a creation on a photo of a smile (decision 111).
+ * Photo + consent → one click: the AI render (Nano Banana behind the Edge
+ * Function `studio-try-on`) or placing the creation by hand → the result,
+ * downloaded or shared. The photo and the image stay in this tab; closing
+ * the dialog forgets them.
  *
- * `service` and `renderer` are the two plug points: the AI placement (behind
- * an Edge Function) and the gems' drawing (the Studio's front view).
+ * Opened by the artist on their own creation (`audience="artist"`, a
+ * client's photo) and by visitors on a Glowbook creation or a share link
+ * (`audience="visitor"`, their own smile). `source` names the creation for
+ * the function; without one (a design carried in a link's fragment) only
+ * the manual try-on is offered. Whether the AI may be used for a creation
+ * (the owner's plan) is decided by the database: the viewers only show the
+ * entry point when it says so, and the function checks again.
  */
 export function TryOnDialog({
   creation,
+  source,
+  audience = "artist",
   onClose,
-  service = unavailableTryOnService,
+  service = smileTryOnService,
   renderer = frontViewGemRenderer,
 }: {
-  creation: Creation;
+  creation: TryOnCreation;
+  source: TryOnSource | null;
+  audience?: TryOnAudience;
   onClose: () => void;
   service?: SmileTryOnService;
   renderer?: TryOnGemRenderer;
 }) {
   const { t } = useTranslation();
+  const { signedIn } = useAuth();
+  const navigate = useNavigate();
+  const { pathname, hash } = useLocation();
   const [step, setStep] = useState<Step>({ kind: "photo" });
   const [photo, setPhoto] = useState<PreparedPhoto | null>(null);
   const [consent, setConsent] = useState(false);
+  const [ai, setAi] = useState<AiState>(source ? "checking" : "unavailable");
   const request = useRef<AbortController | null>(null);
   const photoUrl = useRef<string | null>(null);
+  const resultUrl = useRef<string | null>(null);
 
-  // Forget the photo when the dialog closes, and stop a placement still running.
+  // Ask once whether the AI is connected: no photo leaves before the answer.
+  useEffect(() => {
+    if (!source) return;
+    let live = true;
+    service
+      .status()
+      .then((available) => live && setAi(available ? "available" : "unavailable"))
+      .catch(() => live && setAi("unavailable"));
+    return () => {
+      live = false;
+    };
+  }, [service, source]);
+
+  // Forget the photo when the dialog closes, and stop a render still running.
   useEffect(
     () => () => {
       request.current?.abort();
       if (photoUrl.current) URL.revokeObjectURL(photoUrl.current);
+      if (resultUrl.current) URL.revokeObjectURL(resultUrl.current);
     },
     [],
   );
@@ -70,34 +105,34 @@ export function TryOnDialog({
     setPhoto(next);
   };
 
-  const placeByHand = (reason: "not_available" | "chosen") =>
-    setStep({ kind: "adjust", initial: DEFAULT_TRANSFORM, placements: null, origin: { kind: "manual", reason } });
+  const placeByHand = (reason: AdjustReason) => setStep({ kind: "adjust", reason });
 
-  const analyse = async () => {
-    if (!photo) return;
+  const signIn = () => {
+    onClose();
+    navigate("/connexion", { state: { from: `${pathname}${hash}` } });
+  };
+
+  const render = async () => {
+    if (!photo || !source) return;
     request.current?.abort();
     const controller = new AbortController();
     request.current = controller;
     setStep({ kind: "processing" });
-    const outcome = await service.placeCreation(
-      { photo: photo.blob, photoWidth: photo.width, photoHeight: photo.height, creation: tryOnInputFromCreation(creation) },
-      { signal: controller.signal },
-    );
+    const design = await renderDesignImage(creation).catch(() => null);
+    if (controller.signal.aborted) return;
+    const outcome = await service.render({ photo: photo.blob, source, design }, { signal: controller.signal });
     if (controller.signal.aborted) return; // cancelled or closed: nothing to show
     request.current = null;
-    if (!outcome.ok) {
-      if (outcome.code === "not_available") placeByHand("not_available");
-      else setStep({ kind: "error", code: outcome.code });
-      return;
+    if (outcome.ok) {
+      if (resultUrl.current) URL.revokeObjectURL(resultUrl.current);
+      resultUrl.current = URL.createObjectURL(outcome.image);
+      return setStep({ kind: "result", image: outcome.image, url: resultUrl.current });
     }
-    const mapped = overlayFromResult(outcome.result, photo.height / photo.width);
-    if (!mapped) return setStep({ kind: "error", code: "failed" });
-    setStep({
-      kind: "adjust",
-      initial: mapped.transform,
-      placements: mapped.placements,
-      origin: { kind: "automatic", confidence: outcome.result.confidence },
-    });
+    if (outcome.code === "not_available") {
+      setAi("unavailable");
+      return placeByHand("not_available");
+    }
+    setStep({ kind: "error", code: outcome.code });
   };
 
   const cancel = () => {
@@ -114,7 +149,7 @@ export function TryOnDialog({
       onClose={onClose}
       size="lg"
       title={t("studio.tryOn.title")}
-      description={t("studio.tryOn.subtitle", { name: creation.name })}
+      description={t(`studio.tryOn.subtitle.${audience}`, { name: creation.name })}
       icon={<ScanFace size={17} />}
       closeLabel={t("studio.workspace.close")}
     >
@@ -125,12 +160,23 @@ export function TryOnDialog({
           <ProgressBar
             variant="steps"
             tone="ink"
-            steps={[t("studio.tryOn.steps.photo"), t("studio.tryOn.steps.analysis"), t("studio.tryOn.steps.adjust")]}
+            steps={[t("studio.tryOn.steps.photo"), t("studio.tryOn.steps.render"), t("studio.tryOn.steps.result")]}
             current={STEP_INDEX[step.kind]}
           />
 
           {step.kind === "photo" && (
-            <PhotoStep photo={photo} onPhoto={takePhoto} consent={consent} onConsent={setConsent} onContinue={() => void analyse()} />
+            <PhotoStep
+              photo={photo}
+              onPhoto={takePhoto}
+              consent={consent}
+              onConsent={setConsent}
+              audience={audience}
+              ai={ai}
+              signedIn={signedIn}
+              onAi={() => void render()}
+              onManual={() => placeByHand("chosen")}
+              onSignIn={signIn}
+            />
           )}
 
           {step.kind === "processing" && (
@@ -156,20 +202,35 @@ export function TryOnDialog({
                 </span>
               </div>
               <div className="flex flex-wrap justify-end gap-2">
-                {errorSuggestsNewPhoto(step.code) ? (
-                  <Button variant="dark" size="sm" iconLeft={ImageUp} onClick={() => setStep({ kind: "photo" })}>
-                    {t("studio.tryOn.errorActions.newPhoto")}
+                {step.code === "sign_in_required" ? (
+                  <Button variant="dark" size="sm" iconLeft={LogIn} onClick={signIn}>
+                    {t("studio.tryOn.errorActions.signIn")}
                   </Button>
-                ) : (
-                  <Button variant="dark" size="sm" onClick={() => void analyse()}>
+                ) : errorAllowsRetry(step.code) ? (
+                  <Button variant="dark" size="sm" iconLeft={RefreshCw} onClick={() => void render()}>
                     {t("studio.tryOn.errorActions.retry")}
                   </Button>
-                )}
-                <Button variant="outline" size="sm" onClick={() => placeByHand("chosen")}>
+                ) : null}
+                <Button variant="outline" size="sm" iconLeft={ImageUp} onClick={() => setStep({ kind: "photo" })}>
+                  {t("studio.tryOn.errorActions.newPhoto")}
+                </Button>
+                <Button variant="outline" size="sm" iconLeft={Hand} onClick={() => placeByHand("chosen")}>
                   {t("studio.tryOn.errorActions.manual")}
                 </Button>
               </div>
             </div>
+          )}
+
+          {step.kind === "result" && photo && (
+            <ResultStep
+              photo={photo}
+              image={step.image}
+              imageUrl={step.url}
+              creation={creation}
+              onRegenerate={() => void render()}
+              onManual={() => placeByHand("chosen")}
+              onNewPhoto={() => setStep({ kind: "photo" })}
+            />
           )}
 
           {step.kind === "adjust" && photo && (
@@ -177,9 +238,8 @@ export function TryOnDialog({
               photo={photo}
               creation={creation}
               renderer={renderer}
-              initial={step.initial}
-              placements={step.placements}
-              origin={step.origin}
+              initial={DEFAULT_TRANSFORM}
+              reason={step.reason}
               onNewPhoto={() => setStep({ kind: "photo" })}
             />
           )}

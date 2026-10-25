@@ -31,7 +31,7 @@ describe("try-on layout", () => {
 
   it("fits the front view to the box width and centres it, keeping the gems' order and proportions", () => {
     const pieces = [onTooth("a", "11"), onTooth("b", "21")];
-    const { spots, guide } = tryOnLayout(pieces, "dentition", null, W, H);
+    const { spots, guide } = tryOnLayout(pieces, "dentition", W, H);
     expect(spots.map((s) => s.pieceId).sort()).toEqual(["a", "b"]);
     const [a, b] = ["a", "b"].map((id) => spots.find((s) => s.pieceId === id)!);
     expect(a.x).toBeLessThan(b.x); // 11 is the patient's right, on the viewer's left
@@ -49,22 +49,11 @@ describe("try-on layout", () => {
   });
 
   it("leaves out the gems on the tongue side", () => {
-    const { spots } = tryOnLayout([onTooth("front", "11"), onTooth("back", "21", -1)], "dentition", null, W, H);
+    const { spots } = tryOnLayout([onTooth("front", "11"), onTooth("back", "21", -1)], "dentition", W, H);
     expect(spots.map((s) => s.pieceId)).toEqual(["front"]);
   });
 
-  it("draws an automatic placement where the service put it, without the guide", () => {
-    const pieces = [onTooth("a", "11")];
-    const { spots, guide } = tryOnLayout(pieces, "dentition", [
-      { pieceId: "a", x: 0.25, y: 0.5, size: 0.1, rotation: 20 },
-      { pieceId: "unknown", x: 0.5, y: 0.5, size: 0.1, rotation: 0 },
-    ], W, H);
-    expect(guide).toEqual([]);
-    expect(spots).toHaveLength(1);
-    expect(spots[0]).toMatchObject({ pieceId: "a", x: 150, y: 150, r: 30, rotation: 20, shape: "heart", color: "#ff0000" });
-  });
-
   it("draws nothing in an empty box", () => {
-    expect(tryOnLayout([onTooth("a", "11")], "dentition", null, 0, 0)).toEqual({ spots: [], guide: [] });
+    expect(tryOnLayout([onTooth("a", "11")], "dentition", 0, 0)).toEqual({ spots: [], guide: [] });
   });
 });

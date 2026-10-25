@@ -1,14 +1,13 @@
 import { describe, expect, it } from "vitest";
-import type { PlacedJewelry } from "../../data/studioEditor";
 import studioEn from "../../i18n/locales/studio.en.json";
 import studioFr from "../../i18n/locales/studio.fr.json";
 import {
   TRY_ON_ERROR_CODES,
   TRY_ON_ERROR_MESSAGES,
-  errorSuggestsNewPhoto,
-  normalizeDegrees,
+  errorAllowsRetry,
   parseTryOnResponse,
-  tryOnInputFromCreation,
+  resultExtension,
+  sourcePayload,
   unavailableTryOnService,
 } from "./tryOn";
 import { checkPhotoFile, checkPhotoSize, fitWithin, PHOTO_MAX_BYTES, tryOnFileName } from "./tryOnPhoto";
@@ -20,82 +19,48 @@ import {
   keyTransform,
   MAX_WIDTH,
   MIN_WIDTH,
+  normalizeDegrees,
   overlayFrame,
-  overlayFromResult,
   pinchTransform,
   wheelTransform,
 } from "./tryOnTransform";
 
-const piece = (id: string, x: number, y: number, extra: Partial<PlacedJewelry> = {}): PlacedJewelry => ({
-  id,
-  productId: "p1",
-  size: { ss: 5 },
-  look: { shape: "round", material: "crystal", color: "#ffffff", effect: "none" },
-  toothId: "11",
-  position: { x, y, z: 10 },
-  normal: { x: 0, y: 0, z: 1 },
-  rotation: 0,
-  scale: 1,
-  ...extra,
-});
-
 describe("try-on service contract", () => {
-  it("ships only the not-available service, answering at once", async () => {
-    const out = await unavailableTryOnService.placeCreation({
-      photo: new Blob(),
-      photoWidth: 1000,
-      photoHeight: 800,
-      creation: { creationId: "c1", pieces: [] },
+  it("the not-available service says so at once, without a photo leaving", async () => {
+    expect(await unavailableTryOnService.status()).toBe(false);
+    expect(await unavailableTryOnService.render({ photo: new Blob(), source: { kind: "own", creationId: "c1" } })).toEqual({
+      ok: false,
+      code: "not_available",
     });
-    expect(out).toEqual({ ok: false, code: "not_available" });
   });
 
-  it("sends the pieces only, never the owner or the prices", () => {
-    const input = tryOnInputFromCreation({
-      id: "c1",
-      scene: { version: 2, model: "studio", lightPreset: "studio", camera: null, pieces: [piece("a", 0, 0, { rotation: 30 })], groups: [] },
-    });
-    expect(input).toEqual({ creationId: "c1", pieces: [{ pieceId: "a", toothId: "11", sizeMm: 1.8, shape: "round", color: "#ffffff", rotation: 30 }] });
+  it("names the creation by reference only, never by its scene", () => {
+    expect(sourcePayload({ kind: "own", creationId: "c1" })).toEqual({ creation_id: "c1" });
+    expect(sourcePayload({ kind: "share", token: "t" })).toEqual({ token: "t" });
+    expect(sourcePayload({ kind: "glowbook", handle: "aurora", itemId: "i1" })).toEqual({ handle: "aurora", item_id: "i1" });
   });
 
-  it("reads a valid answer and drops what does not belong", () => {
-    const out = parseTryOnResponse(
-      {
-        ok: true,
-        confidence: 1.4,
-        placements: [
-          { pieceId: "a", x: 0.4, y: 0.6, scale: 0.02, rotation: 370 },
-          { pieceId: "a", x: 0.5, y: 0.6, scale: 0.02 }, // duplicate
-          { pieceId: "zz", x: 0.5, y: 0.5, scale: 0.02 }, // unknown piece
-          { pieceId: "b", x: 1.2, y: 0.5, scale: 0.02 }, // off the photo
-          { pieceId: "b", x: 0.5, y: 0.5, scale: 0 }, // no size
-        ],
-        landmarks: [
-          { toothId: "11", x: 0.45, y: 0.6 },
-          { toothId: "99", x: 0.5, y: 0.5 },
-          { toothId: "21", x: 2, y: -1 },
-        ],
-      },
-      ["a", "b"],
-    );
-    expect(out).toEqual({
-      ok: true,
-      result: {
-        confidence: 1,
-        placements: [{ pieceId: "a", x: 0.4, y: 0.6, scale: 0.02, rotation: 10 }],
-        landmarks: [
-          { toothId: "11", x: 0.45, y: 0.6 },
-          { toothId: "21", x: 1, y: 0 },
-        ],
-      },
-    });
+  it("reads a generated image", async () => {
+    const out = parseTryOnResponse({ ok: true, image: { mime_type: "image/png", data: btoa("png!") } });
+    expect(out.ok).toBe(true);
+    if (!out.ok) return;
+    expect(out.image.type).toBe("image/png");
+    expect(await out.image.text()).toBe("png!");
+    expect(resultExtension("image/png")).toBe("png");
+    expect(resultExtension("image/jpeg")).toBe("jpg");
+  });
+
+  it("refuses images of another type, not base64 or missing", () => {
+    expect(parseTryOnResponse({ ok: true, image: { mime_type: "image/svg+xml", data: btoa("<svg/>") } })).toEqual({ ok: false, code: "failed" });
+    expect(parseTryOnResponse({ ok: true, image: { mime_type: "image/png", data: "not base64!" } })).toEqual({ ok: false, code: "failed" });
+    expect(parseTryOnResponse({ ok: true })).toEqual({ ok: false, code: "failed" });
   });
 
   it("maps errors and malformed answers to a known code", () => {
-    expect(parseTryOnResponse({ ok: false, code: "low_quality" }, [])).toEqual({ ok: false, code: "low_quality" });
-    expect(parseTryOnResponse({ ok: false, code: "exploded" }, [])).toEqual({ ok: false, code: "failed" });
-    expect(parseTryOnResponse(null, [])).toEqual({ ok: false, code: "failed" });
-    expect(parseTryOnResponse({ ok: true, placements: [] }, ["a"])).toEqual({ ok: false, code: "failed" });
+    expect(parseTryOnResponse({ ok: false, code: "daily_limit" })).toEqual({ ok: false, code: "daily_limit" });
+    expect(parseTryOnResponse({ ok: false, code: "session_expired" })).toEqual({ ok: false, code: "sign_in_required" });
+    expect(parseTryOnResponse({ ok: false, code: "exploded" })).toEqual({ ok: false, code: "failed" });
+    expect(parseTryOnResponse(null)).toEqual({ ok: false, code: "failed" });
   });
 
   it("has a message in both languages for every error code", () => {
@@ -107,8 +72,8 @@ describe("try-on service contract", () => {
         expect(typeof lookup(studioEn as Tree, key), `en ${key}`).toBe("string");
       }
     }
-    expect(errorSuggestsNewPhoto("low_quality")).toBe(true);
-    expect(errorSuggestsNewPhoto("not_available")).toBe(false);
+    expect(errorAllowsRetry("network")).toBe(true);
+    expect(errorAllowsRetry("not_allowed")).toBe(false);
   });
 
   it("normalises angles to -180..180", () => {
@@ -196,23 +161,5 @@ describe("overlay transform", () => {
     expect(keyTransform(DEFAULT_TRANSFORM, "+", false)?.width).toBeCloseTo(0.515);
     expect(keyTransform(DEFAULT_TRANSFORM, "]", true)?.rotation).toBe(10);
     expect(keyTransform(DEFAULT_TRANSFORM, "Enter", false)).toBeNull();
-  });
-
-  it("puts each gem of an automatic placement back where the service said", () => {
-    const placements = [
-      { pieceId: "a", x: 0.4, y: 0.6, scale: 0.02, rotation: 0 },
-      { pieceId: "b", x: 0.55, y: 0.62, scale: 0.03, rotation: 15 },
-    ];
-    const mapped = overlayFromResult({ placements }, 0.75);
-    expect(mapped).not.toBeNull();
-    const frame = overlayFrame(mapped!.transform, 1000, 750);
-    for (const spot of mapped!.placements) {
-      const original = placements.find((p) => p.pieceId === spot.pieceId)!;
-      const at = boxPointToStage(frame, spot.x, spot.y);
-      expect(at.x).toBeCloseTo(original.x * 1000);
-      expect(at.y).toBeCloseTo(original.y * 750);
-      expect(spot.size * frame.width).toBeCloseTo(original.scale * 1000);
-    }
-    expect(overlayFromResult({ placements: [] }, 0.75)).toBeNull();
   });
 });

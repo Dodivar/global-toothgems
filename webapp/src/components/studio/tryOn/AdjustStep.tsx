@@ -1,5 +1,5 @@
 import { useEffect, useId, useState } from "react";
-import { Download, Eye, EyeOff, ImageUp, Info, RotateCcw, Share, Sparkles } from "lucide-react";
+import { Download, Eye, EyeOff, ImageUp, Info, RotateCcw, Share } from "lucide-react";
 import { useTranslation } from "react-i18next";
 import { Button } from "../../ui/Button";
 import { tryOnFileName } from "../../../lib/studio3d/tryOnPhoto";
@@ -8,17 +8,16 @@ import {
   clampTransform,
   MAX_WIDTH,
   MIN_WIDTH,
-  type BoxPlacement,
   type OverlayTransform,
 } from "../../../lib/studio3d/tryOnTransform";
-import type { Creation } from "../../../lib/studioWorkspace/types";
+import type { TryOnCreation } from "../../../lib/studio3d/tryOn";
 import { composeTryOn, downloadFile } from "./exportComposite";
 import type { TryOnGemRenderer } from "./gemOverlay";
 import type { PreparedPhoto } from "./preparePhoto";
 import { TryOnStage } from "./TryOnStage";
 
-/** Why the artist is adjusting: the service placed the gems, or it is not available and they place them by hand. */
-export type AdjustOrigin = { kind: "automatic"; confidence: number } | { kind: "manual"; reason: "not_available" | "chosen" };
+/** Why the creation is placed by hand: chosen, or the AI render is not available. */
+export type AdjustReason = "chosen" | "not_available";
 
 function canShareImages(): boolean {
   try {
@@ -33,23 +32,21 @@ const sliderClass = "w-full accent-[var(--gt-ink-900)]";
 /**
  * Step 3: the creation on the photo, adjusted by hand — move, scale, turn,
  * before/after, opacity — then downloaded or shared as one image drawn in the
- * browser. The same controls correct an automatic placement.
+ * browser.
  */
 export function AdjustStep({
   photo,
   creation,
   renderer,
   initial,
-  placements,
-  origin,
+  reason,
   onNewPhoto,
 }: {
   photo: PreparedPhoto;
-  creation: Creation;
+  creation: TryOnCreation;
   renderer: TryOnGemRenderer;
   initial: OverlayTransform;
-  placements: BoxPlacement[] | null;
-  origin: AdjustOrigin;
+  reason: AdjustReason;
   onNewPhoto: () => void;
 }) {
   const { t } = useTranslation();
@@ -73,7 +70,7 @@ export function AdjustStep({
       transform,
       opacity: showOverlay ? opacity : 0,
       renderer,
-      overlay: { creation, placements },
+      overlay: { creation },
       fileName: tryOnFileName(creation.name),
     });
 
@@ -122,12 +119,7 @@ export function AdjustStep({
 
   return (
     <div className="grid gap-4">
-      {origin.kind === "automatic" ? (
-        <p role="status" className="m-0 flex items-start gap-2 rounded-[var(--radius-md)] bg-[var(--surface-brand-wash)] p-3 text-[length:var(--text-body-sm)] text-[var(--text-primary)]">
-          <Sparkles size={16} aria-hidden="true" className="mt-0.5 flex-none text-[var(--gt-blue-700)]" />
-          {t("studio.tryOn.adjust.automatic", { confidence: Math.round(origin.confidence * 100) })}
-        </p>
-      ) : origin.reason === "not_available" ? (
+      {reason === "not_available" ? (
         <div role="status" className="m-0 flex items-start gap-2 rounded-[var(--radius-md)] bg-[var(--surface-sunken)] p-3 text-[length:var(--text-body-sm)] text-[var(--text-primary)]">
           <Info size={16} aria-hidden="true" className="mt-0.5 flex-none text-[var(--gt-blue-700)]" />
           <span className="grid gap-0.5">
@@ -140,7 +132,6 @@ export function AdjustStep({
       <TryOnStage
         photo={photo}
         creation={creation}
-        placements={placements}
         renderer={renderer}
         transform={transform}
         onTransform={setTransform}

@@ -45,7 +45,7 @@ export function fitWithin(width: number, height: number, maxEdge = PHOTO_MAX_EDG
 }
 
 /** A file name for the exported image, from the creation's name: lowercase ASCII, dashes. */
-export function tryOnFileName(creationName: string, ext: "jpg" | "png" = "jpg"): string {
+export function tryOnFileName(creationName: string, ext: "jpg" | "png" | "webp" = "jpg"): string {
   const slug = creationName
     .normalize("NFD")
     .replace(/[̀-ͯ]/g, "")
