@@ -420,4 +420,15 @@ update public.products p
    and p.category_id = f.category_id
    and p.family_id is null;
 
+-- -----------------------------------------------------------------------------
+-- Characteristics (migration …_product_specs_faq): the material the products
+-- above carry in metadata becomes their `spec_material`, which the storefront
+-- and the back office read (the migration's own copy ran before this seed).
+-- -----------------------------------------------------------------------------
+update public.products
+   set spec_material = left(btrim(metadata ->> 'material'), 120)
+ where spec_material is null
+   and jsonb_typeof(metadata -> 'material') = 'string'
+   and nullif(btrim(metadata ->> 'material'), '') is not null;
+
 commit;
