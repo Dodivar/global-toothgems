@@ -134,7 +134,8 @@ export function CreationDetail({ creationId, onClose }: { creationId: string; on
         >
           {t("studio.socialExport.action")}
         </Button>
-        <div className="col-span-2 sm:ml-auto">
+        {/* On a phone the menu's anchor spans the row, so the panel opens inside the dialog. */}
+        <div className="col-span-2 sm:ml-auto [&>div]:flex [&>div]:w-full sm:[&>div]:inline-flex sm:[&>div]:w-auto">
           <Menu
             label={t("studio.workspace.creations.actionsFor", { name: creation.name })}
             width={240}
