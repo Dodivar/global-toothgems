@@ -948,7 +948,7 @@
     "checkout": "Récapitulatif de paiement",
     "landing": "Page de campagne",
     "noLanding": "Choisissez une campagne ci-dessus pour prévisualiser sa page.",
-    "disclaimer": "Maquette de la boutique pour relecture. Les prix sont indicatifs ; la boutique recalcule chaque remise au paiement.",
+    "disclaimer": "Aperçu de la boutique. Les prix sont indicatifs ; la boutique recalcule chaque remise au paiement.",
     "emptyTitle": "Rien à prévisualiser",
     "emptyBody": "Créez d’abord une promotion — sa vue client apparaîtra ici."
   },

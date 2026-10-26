@@ -4,7 +4,7 @@ import { useState } from "react";
 import { useTranslation } from "react-i18next";
 import { Dialog } from "../ui/Dialog";
 import { TermsNotice } from "../auth/TermsNotice";
-import { GoogleMark } from "./GoogleDialog";
+import { GoogleMark } from "./GoogleMark";
 
 /**
  * The one step between "Continue with Google" and Google itself on the

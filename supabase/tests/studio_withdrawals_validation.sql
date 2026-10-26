@@ -118,7 +118,8 @@ begin
   exception when others then get stacked diagnostics v_hint = pg_exception_hint;
   end;
   if v_hint is distinct from 'manual_review' then raise exception 'FAIL X4: plan change (%)', v_hint; end if;
-  delete from public.studio_subscription_invoices where stripe_invoice_id = 'in_testWithdraw4';
+  -- The plan change set aside (its legal invoice keeps the row: it can no longer be deleted).
+  update public.studio_subscription_invoices set status = 'payment_failed' where stripe_invoice_id = 'in_testWithdraw4';
   v_state := null;
   begin
     perform public.request_studio_withdrawal(m3, now() - interval '30 days', now() + interval '335 days');

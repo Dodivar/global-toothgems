@@ -1,13 +1,10 @@
 /**
- * Registration journey: validation rules, password strength, context and the
- * simulated account service.
+ * Registration journey: validation rules, password strength and context.
  *
- * Front-end prototype only. Nothing here creates an account, stores a password
- * or sends an email: the "service" is a set of timed promises whose outcome is
- * chosen by the demo scenario, so every state of the journey can be reviewed.
- * Real registration goes through Supabase Auth, which owns password hashing,
- * rate limiting and verification links — none of that may be modelled on this
- * file. The client-side rules below are for guidance only; the server re-checks.
+ * Nothing here creates an account, stores a password or sends an email: that
+ * goes through Supabase Auth (`lib/auth.tsx`), which owns password hashing,
+ * rate limiting and verification links. The client-side rules below are for
+ * guidance only; the server re-checks.
  */
 
 export type StepId = "account" | "profile" | "preferences" | "done";
@@ -36,10 +33,6 @@ const CONTEXT_PARAM: Record<ContextKind, string> = {
   purchase: "achat",
   training: "formation",
 };
-
-export function contextParam(kind: ContextKind): string {
-  return CONTEXT_PARAM[kind];
-}
 
 /**
  * Reads the context from the query string first (shareable, survives a reload)
@@ -305,14 +298,11 @@ export function validateField(name: FieldName, data: RegistrationData): string |
   }
 }
 
-/**
- * Fields validated on each step. An account created with Google has no
- * password on this side: Google already authenticated the address.
- */
-export function fieldsForStep(step: StepId, viaGoogle: boolean): FieldName[] {
+/** Fields validated on each step. */
+export function fieldsForStep(step: StepId): FieldName[] {
   switch (step) {
     case "account":
-      return viaGoogle ? ["email"] : ["email", "password", "confirmPassword"];
+      return ["email", "password", "confirmPassword"];
     case "profile":
       return ["firstName", "lastName", "country", "phone"];
     case "preferences":
@@ -322,9 +312,9 @@ export function fieldsForStep(step: StepId, viaGoogle: boolean): FieldName[] {
   }
 }
 
-export function validateStep(step: StepId, data: RegistrationData, viaGoogle: boolean): Errors {
+export function validateStep(step: StepId, data: RegistrationData): Errors {
   const errors: Errors = {};
-  for (const field of fieldsForStep(step, viaGoogle)) {
+  for (const field of fieldsForStep(step)) {
     const error = validateField(field, data);
     if (error) errors[field] = error;
   }
@@ -340,60 +330,14 @@ export function maskEmail(email: string): string {
 }
 
 /* ------------------------------------------------------------------ */
-/* Simulated service                                                  */
+/* Resend cooldown and demo addresses                                 */
 /* ------------------------------------------------------------------ */
 
-/**
- * Outcomes a reviewer can force from the prototype panel. "success" is the
- * default path; each other value breaks exactly one step so its state can be
- * seen without guessing which input triggers it.
- */
-export type Scenario = "success" | "registrationFails" | "networkError" | "emailFails" | "linkExpired";
-
-export const SCENARIOS: Scenario[] = ["success", "registrationFails", "networkError", "emailFails", "linkExpired"];
-
-/** Addresses the mock treats as already registered. */
+/** Addresses the security page's demo service treats as already registered. */
 export const TAKEN_EMAILS = ["camille@studio.fr", "hello@globaltoothgems.com", "lea.martin@gmail.com"];
 
 /** How long the resend button stays locked after a send, in seconds. */
 export const RESEND_COOLDOWN = 30;
-
-export type RegistrationErrorCode = "emailTaken" | "network" | "server" | "emailSend";
-
-export class RegistrationError extends Error {
-  code: RegistrationErrorCode;
-  constructor(code: RegistrationErrorCode) {
-    super(code);
-    this.code = code;
-  }
-}
-
-const wait = (ms: number) => new Promise((resolve) => setTimeout(resolve, ms));
-
-export async function checkEmailAvailable(email: string): Promise<boolean> {
-  await wait(650);
-  return !TAKEN_EMAILS.includes(email.trim().toLowerCase());
-}
-
-export async function createAccount(data: RegistrationData, scenario: Scenario): Promise<void> {
-  await wait(1400);
-  if (scenario === "networkError") throw new RegistrationError("network");
-  if (scenario === "registrationFails") throw new RegistrationError("server");
-  if (TAKEN_EMAILS.includes(data.email.trim().toLowerCase())) throw new RegistrationError("emailTaken");
-}
-
-/** `attempt` starts at 1; the "emailFails" scenario fails only the first send. */
-export async function sendVerificationEmail(scenario: Scenario, attempt: number): Promise<void> {
-  await wait(attempt === 1 ? 500 : 1100);
-  if (scenario === "emailFails" && attempt === 1) throw new RegistrationError("emailSend");
-}
-
-export async function verifyLink(scenario: Scenario, linkNumber: number): Promise<"verified" | "expired"> {
-  await wait(900);
-  // The expired scenario expires the first link only, so the recovery path —
-  // "send a new link" — can be completed.
-  return scenario === "linkExpired" && linkNumber === 1 ? "expired" : "verified";
-}
 
 /* ------------------------------------------------------------------ */
 /* Real sign-up (Supabase Auth)                                       */

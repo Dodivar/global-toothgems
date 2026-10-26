@@ -217,7 +217,6 @@ export function CancelDialog({
 /* -------------------------------------------------------------------------- */
 
 export type ExportScope = "selection" | "filtered" | "all";
-export type ExportFormat = "csv" | "xlsx" | "pdf";
 
 export function ExportDialog({
   open,
@@ -230,7 +229,7 @@ export function ExportDialog({
 }: {
   open: boolean;
   onClose: () => void;
-  onConfirm: (scope: ExportScope, format: ExportFormat) => void;
+  onConfirm: (scope: ExportScope) => void;
   selectionCount: number;
   filteredCount: number;
   totalCount: number;
@@ -239,7 +238,6 @@ export function ExportDialog({
 }) {
   const { t } = useTranslation();
   const [scope, setScope] = useState<ExportScope>(selectionCount > 0 ? "selection" : "filtered");
-  const [format, setFormat] = useState<ExportFormat>("csv");
 
   // Opening the dialog with rows selected should default to those rows; opening
   // it from the header should default to what the table is showing.
@@ -262,7 +260,7 @@ export function ExportDialog({
           <Button variant="ghost" size="sm" onClick={onClose}>
             {t("admin.orders.dialogKeep")}
           </Button>
-          <Button size="sm" className="ml-auto" disabled={count === 0} onClick={() => onConfirm(scope, format)}>
+          <Button size="sm" className="ml-auto" disabled={count === 0} onClick={() => onConfirm(scope)}>
             {t("admin.orders.exportDialogConfirm", { count })}
           </Button>
         </>
@@ -294,35 +292,6 @@ export function ExportDialog({
         />
       </fieldset>
 
-      <fieldset className="m-0 grid gap-1.5 border-0 p-0">
-        <legend className="mb-1 text-[11px] font-semibold uppercase tracking-[var(--tracking-eyebrow)] text-[var(--text-muted)]">
-          {t("admin.orders.exportFormat")}
-        </legend>
-        <div className="flex flex-wrap gap-1.5">
-          {(["csv", "xlsx", "pdf"] as ExportFormat[]).map((value) => (
-            <label
-              key={value}
-              className={clsx(
-                "flex cursor-pointer items-center gap-2 rounded-[var(--radius-pill)] border px-3.5 py-2 text-[length:var(--text-body-sm)] transition-colors",
-                format === value
-                  ? "border-[var(--gt-ink-900)] bg-[var(--gt-ink-100)] font-semibold text-[var(--text-primary)]"
-                  : "border-[var(--border-subtle)] text-[var(--text-body)] hover:bg-[var(--surface-sunken)]",
-              )}
-            >
-              <input
-                type="radio"
-                name="gt-export-format"
-                checked={format === value}
-                onChange={() => setFormat(value)}
-                className="h-4 w-4 accent-[var(--gt-ink-900)]"
-              />
-              {t(`admin.orders.exportFormats.${value}`)}
-            </label>
-          ))}
-        </div>
-      </fieldset>
-
-      <p className="m-0 text-[length:var(--text-caption)] text-[var(--text-muted)]">{t("admin.orders.exportDialogNote")}</p>
     </Dialog>
   );
 }

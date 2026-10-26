@@ -2,7 +2,9 @@
  * The invoice and credit note PDFs attached to the order e-mails: the
  * confirmation carries the invoice the database issued when the order was
  * paid, the refund e-mail the credit note issued when the refund was
- * confirmed (supabase/README.md, "Invoices and credit notes").
+ * confirmed (supabase/README.md, "Invoices and credit notes"). The 3D Studio
+ * e-mails carry the FA- invoice of a paid subscription invoice and the AV-
+ * credit note of a withdrawal the same way (decision 115).
  *
  * Drawn by the same template as the member's download (`_shared/documents/`,
  * a generated copy of webapp/src/lib/documents/), from the frozen `invoices`
@@ -94,12 +96,37 @@ export interface InvoiceSource {
   documentsOfOrder(orderId: string): Promise<InvoiceRowWithRefund[]>;
 }
 
-export function supabaseInvoiceSource(db: SupabaseClient): InvoiceSource {
+export interface StudioInvoiceRow extends InvoiceRow {
+  studio_invoice_id: string | null;
+  studio_withdrawal_id: string | null;
+}
+
+export interface StudioInvoiceSource {
+  /** The FA- invoice of a paid Stripe invoice and the credit notes against it. */
+  documentsOfStudioInvoice(stripeInvoiceId: string): Promise<StudioInvoiceRow[]>;
+  /** The credit note of a withdrawal and the invoice it credits (empty when not issued yet). */
+  documentsOfStudioWithdrawal(withdrawalId: string): Promise<StudioInvoiceRow[]>;
+}
+
+const STUDIO_SELECT = `${INVOICE_SELECT}, studio_invoice_id, studio_withdrawal_id`;
+
+export function supabaseInvoiceSource(db: SupabaseClient): InvoiceSource & StudioInvoiceSource {
+  const studioRows = async (column: "studio_invoice_id" | "studio_withdrawal_id", value: string) => {
+    const { data, error } = await db.from("invoices").select(STUDIO_SELECT).eq(column, value);
+    if (error) throw new Error(`invoice lookup failed: ${error.message}`);
+    return (data ?? []) as StudioInvoiceRow[];
+  };
   return {
     async documentsOfOrder(orderId) {
       const { data, error } = await db.from("invoices").select(`${INVOICE_SELECT}, refund_id`).eq("order_id", orderId);
       if (error) throw new Error(`invoice lookup failed: ${error.message}`);
       return (data ?? []) as InvoiceRowWithRefund[];
+    },
+    documentsOfStudioInvoice: (stripeInvoiceId) => studioRows("studio_invoice_id", stripeInvoiceId),
+    async documentsOfStudioWithdrawal(withdrawalId) {
+      const notes = await studioRows("studio_withdrawal_id", withdrawalId);
+      const credited = notes[0]?.studio_invoice_id;
+      return credited ? [...notes, ...(await studioRows("studio_invoice_id", credited)).filter((r) => r.kind === "invoice")] : notes;
     },
   };
 }
@@ -119,6 +146,21 @@ export async function refundCreditNote(
 ): Promise<AttachedDocument | null> {
   const rows = await source.documentsOfOrder(orderId);
   const note = rows.find((r) => r.kind === "credit_note" && r.refund_id === refundId);
+  if (!note) return null;
+  const invoice = rows.find((r) => r.kind === "invoice");
+  return attachDocument(mapInvoice(note), locale, invoice ? mapInvoice(invoice) : undefined);
+}
+
+/** The FA- invoice of a paid Studio invoice, or null (not issued: recorded before Studio invoicing, or a zero total). */
+export async function studioInvoice(source: StudioInvoiceSource, stripeInvoiceId: string, locale: string): Promise<AttachedDocument | null> {
+  const row = (await source.documentsOfStudioInvoice(stripeInvoiceId)).find((r) => r.kind === "invoice");
+  return row ? attachDocument(mapInvoice(row), locale) : null;
+}
+
+/** The credit note of a Studio withdrawal, drawn against its invoice, or null (refund not confirmed yet). */
+export async function studioCreditNote(source: StudioInvoiceSource, withdrawalId: string, locale: string): Promise<AttachedDocument | null> {
+  const rows = await source.documentsOfStudioWithdrawal(withdrawalId);
+  const note = rows.find((r) => r.kind === "credit_note" && r.studio_withdrawal_id === withdrawalId);
   if (!note) return null;
   const invoice = rows.find((r) => r.kind === "invoice");
   return attachDocument(mapInvoice(note), locale, invoice ? mapInvoice(invoice) : undefined);

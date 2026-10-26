@@ -18,6 +18,7 @@ import { useAuth } from "../../../lib/auth";
 import { STUDIO_PATH } from "../../../lib/studioUrl";
 import { RETURN_PARAM, SIGN_IN_PATH } from "../../../lib/authRoutes";
 import type { StudioAccessKind } from "../../../lib/studioAccessState";
+import { useVatFranchise, vatNoticeKey } from "../../../lib/vatRegime";
 
 /**
  * What stands in front of the Studio editor: the trial invitation, a sign-in
@@ -347,6 +348,7 @@ function ErrorScreen({ onRetry }: { onRetry: () => void }) {
 
 function LockedScreen({ state }: { state: StudioAccessKind }) {
   const { t } = useTranslation();
+  const vatNotice = vatNoticeKey(useVatFranchise());
   const access = useStudioAccess()!;
   const navigate = useNavigate();
   const heading = useHeadingFocus();
@@ -400,7 +402,10 @@ function LockedScreen({ state }: { state: StudioAccessKind }) {
             {t("studio.access.locked.plansTitle")}
           </h2>
           <StudioCheckoutPlans surface="studio_locked" />
-          <p className="m-0 text-center text-[length:var(--text-caption)] text-[var(--text-muted)]">{t("studio.access.locked.pricesNote")}</p>
+          <p className="m-0 text-center text-[length:var(--text-caption)] text-[var(--text-muted)]">
+            {vatNotice && `${t(vatNotice)}. `}
+            {t("studio.access.locked.pricesNote")}
+          </p>
         </section>
       )}
 

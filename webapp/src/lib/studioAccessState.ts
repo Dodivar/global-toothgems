@@ -1,3 +1,5 @@
+import { isStudioTier, type StudioTier } from "./studioEntitlements";
+
 /**
  * The 3D Studio access state, as the database reports it
  * (`studio_access_state()` / `start_studio_trial()`, migration
@@ -37,6 +39,24 @@ export interface StudioAccessInfo {
   subscriptionPeriodEnd: number | null;
   subscriptionInterval: "month" | "year" | null;
   subscriptionCancelAtPeriodEnd: boolean;
+  /**
+   * What the member's plan includes (decision 113, migration
+   * `20261026170231_studio_plan_entitlements`): the tier (a trial counts as
+   * essential, staff as atelier; null without access), whether the Glowbook
+   * is theirs, how many creations / Gem Groups they may hold (null =
+   * unlimited) and how many they hold. Display only: the database refuses a
+   * save over the limit.
+   */
+  tier: StudioTier | null;
+  glowbook: boolean;
+  limits: StudioCounts<number | null>;
+  usage: StudioCounts<number>;
+}
+
+export type { StudioTier };
+export interface StudioCounts<T> {
+  creations: T;
+  gemGroups: T;
 }
 
 const KINDS: StudioAccessKind[] = [
@@ -55,6 +75,10 @@ const time = (value: unknown): number | null => {
   return Number.isFinite(ms) ? ms : null;
 };
 const text = (value: unknown): string | null => (typeof value === "string" && value ? value : null);
+const count = (value: unknown): number | null =>
+  typeof value === "number" && Number.isInteger(value) && value >= 0 ? value : null;
+const record = (value: unknown): Record<string, unknown> =>
+  value && typeof value === "object" && !Array.isArray(value) ? (value as Record<string, unknown>) : {};
 
 /** The function's JSON answer, or null when it is not one (treated as an access error). */
 export function parseAccessRow(raw: unknown): StudioAccessInfo | null {
@@ -74,7 +98,17 @@ export function parseAccessRow(raw: unknown): StudioAccessInfo | null {
     subscriptionPeriodEnd: time(row.subscription_period_end),
     subscriptionInterval: row.subscription_interval === "month" || row.subscription_interval === "year" ? row.subscription_interval : null,
     subscriptionCancelAtPeriodEnd: row.subscription_cancel_at_period_end === true,
+    tier: isStudioTier(row.tier) ? row.tier : null,
+    glowbook: row.glowbook === true,
+    limits: { creations: count(record(row.limits).creations), gemGroups: count(record(row.limits).gem_groups) },
+    usage: { creations: count(record(row.usage).creations) ?? 0, gemGroups: count(record(row.usage).gem_groups) ?? 0 },
   };
+}
+
+/** True once the member holds as many as the plan allows (never for unlimited). */
+export function atLimit(info: Pick<StudioAccessInfo, "limits" | "usage">, kind: keyof StudioCounts<number>): boolean {
+  const limit = info.limits[kind];
+  return limit !== null && info.usage[kind] >= limit;
 }
 
 /** May the Studio be used in this state (as far as the page is concerned)? */

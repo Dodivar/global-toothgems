@@ -419,10 +419,11 @@ resend), wrong credentials, suspended accounts and rate limits separately.
 `/mot-de-passe-oublie` and `/reinitialiser-mot-de-passe` use Supabase password
 recovery (`lib/passwordRecovery.ts`). On the Security page, changing the email or
 the password goes through Supabase Auth (`lib/accountCredentials.ts`); data export
-and account deletion are still simulated. The
-prototype controls, the mock inbox and the Google dialog only exist without
-Supabase; Google sign-in is not connected. Without Supabase, everything below is
-simulated as before.
+and account deletion are still simulated (their demo panels only exist on
+that page). Google sign-in goes through Supabase Auth (`signInWithGoogle`, terms
+dialog first). The registration journey itself has no simulated service any
+more: without Supabase the mock `signUp` only answers "confirmation sent", which
+is enough for the smoke tests.
 
 The reason the visitor came is carried in the URL, and the page keeps it in view
 and ends on it:
@@ -431,17 +432,14 @@ and ends on it:
 | --- | --- | --- |
 | `/inscription` | Plain sign-up | Follows the chosen interest (products, training), else the dashboard |
 | `/inscription?contexte=achat` | Purchase in progress — shows the cart (or `&produit=<id>&qte=<n>`) | Return to cart |
-| `/inscription?contexte=formation&formation=<id>` | Training — shows the course | Continue to checkout (starts the course, like "Start this training") |
+| `/inscription?contexte=formation&formation=<id>` | Training — shows the course | View the training (its sales page, where "Buy" puts it in the cart) |
 
 History state from the login wall (`{ from, course }`) is honoured too.
 
-A **Prototype controls** panel at the top switches the context and forces
-outcomes: registration failure, network error, verification email failure,
-expired verification link. `camille@studio.fr`, `hello@globaltoothgems.com` and
-`lea.martin@gmail.com` are treated as already registered. "Continue with Google"
-opens a simulated account chooser; nothing is sent anywhere, no password is
-stored, and marketing consent is never pre-ticked. Logic and mock service live in
-`src/lib/registration.ts`, components in `src/components/register/`.
+Marketing consent is never pre-ticked. Validation, password strength and the
+context live in `src/lib/registration.ts`, components in
+`src/components/register/` (the former "Prototype controls" panel, mock inbox and
+simulated Google chooser were removed on 2026-10-25).
 
 ## The 3D Studio (`/studio-3d`)
 
@@ -451,7 +449,7 @@ A paid creative tool (€5 / month) for designing tooth jewellery compositions. 
 | --- | --- |
 | `/studio-3d` | Presentation page (replaced the first design on 2026-10-17): editorial hero, four benefits, three showcase blocks, room for artists' words, the offers (free trial + three monthly plans, `StudioPlans`), a closing call and the FAQ. Plan names, amounts and the trial come from `data/studio.ts`; media that does not exist yet is drawn as a labelled placeholder (`components/studio/MediaPlaceholder.tsx`), no testimonial or figure is invented. While the Studio is in free preview "start" opens the editor, otherwise it leads to the subscription page. Texts: `studioPage.*` (`locales/studioPage.*.json`). English address: `/en/3d-studio` |
 | `/studio-3d/abonnement` | Subscription page: the three plans, monthly or yearly, opening Stripe's hosted Checkout (`StudioCheckoutPlans`); a visitor is asked to sign in first (`/studio-3d/subscribe` redirects here) |
-| `/compte/studio` | The member's Studio subscription: plan, billing, renewal or end date, a payment to fix; "Manage my subscription" opens the Stripe customer portal (`studio-billing-portal`) |
+| `/compte/studio` | The member's Studio subscription: plan, billing, renewal or end date, a payment to fix; then the subscription managed on the page (decision 112, `components/studio/account/StudioBillingManager.tsx` through `studio-manage-subscription`): the plans with the current one marked and a comparison table, a switch previewed then confirmed (3-D Secure on the page), the card replaced in the shop's payment form, Stripe's invoice PDFs, cancel at period end / keep |
 | `/studio-3d/paiement` | The subscription's checkout (`?plan=…&interval=…`): summary, request for immediate access, the shop's payment form; paid, it opens the editor. Signed-in members only |
 | `/studio-3d/atelier` | The editor: 3D dentition (both arches), the shop's gems as its library, placement by drag / click / keyboard, collision-free layout tools, presets, undo/redo, PNG / estimate sheet / JSON export (`/studio-3d/editor` redirects here). Full-screen, without the storefront header and footer |
 | `/studio-3d/atelier/mes-creations` | My Creations: the account's saved designs (`…/editor/creations` redirects here) |
@@ -480,7 +478,8 @@ Ported from the standalone `studio3D.html` into the app's architecture:
 - **Saving**: the working draft is kept in the browser (`gt-studio3d-*` keys) as before; saving it to the account goes through the Studio workspace below.
 - **Estimate**: the indicative value at shop prices (`estimateComposition`: each crystal in the pieces' colour and size, in the cheapest single pack that covers them, in stock first; one charm per metal piece — `supabase/README.md` decision 81), shown as "approx." and labelled as not a quote. The estimate sheet lists one row per shop item to buy. With nothing selected, the settings panel shows that list ("Produits à commander", `components/studio/editor/ShoppingList.tsx`) with each item's stock, and one button adds every in-stock item to the cart (`useCart().addLines`); prices are recomputed at checkout.
 - **Front view and placement sheet** (2026-10-18): a schematic 2D front view of both arches with every gem numbered (`lib/studio3d/frontView.ts`: pure projection, numbering and suggested placement order, unit-tested; `components/studio/FrontView.tsx`: the SVG, with or without the teeth, `FrontViewGems` for an overlay; `FrontViewPanel.tsx`: drawing + numbered list + dialog). Shown live in the settings panel's overview (nothing selected, "Agrandir" opens it large) and in a creation's detail. Pieces are mapped tooth by tooth (the engine's seat: across / up the crown) onto the default dentition's calibrated crowns; pieces on an imported model or off the labelled teeth are numbered and listed but not drawn. The placement sheet (Export menu, the front view dialog, the creation's detail) is an A4 PDF written with the documents' own writer (`lib/studio3d/placementSheet.ts`, `path` op of `lib/documents/pdfWriter.ts`): name and date, the front view, one row per gem (FDI tooth and its name, shape, size, colour / material, suggested order) and the gems per reference with what to buy (`estimateComposition`).
-- **Try on a client's smile photo** (2026-10-18, screens only — the AI is not connected): "Essayer sur une photo" in a saved creation's detail and in the editor's Export menu (saved, unchanged creation) opens `components/studio/tryOn/TryOnDialog.tsx`: photo (camera or file, checks in `lib/studio3d/tryOnPhoto.ts`, consent box, downscaled and re-encoded in the browser so EXIF is dropped), automatic placement, then adjust (drag, pinch, wheel, keyboard, size / tilt / opacity, before / after) and export (download, Web Share). The photo never leaves the tab (object URL, `ph-no-capture`). The AI boundary is `SmileTryOnService` in `lib/studio3d/tryOn.ts` (request = photo + gems' tooth, size, shape, colour; answer = normalised placements, tooth landmarks, confidence, or an error code; `parseTryOnResponse` treats it as untrusted); the only implementation, `unavailableTryOnService`, answers `not_available`, and the UI says automatic placement is coming and offers manual placement. The gems are drawn from the front view (`lib/studio3d/tryOnLayout.ts`, `frontViewGemRenderer.ts`), with a faint guide of the front teeth on screen only. To connect an AI: an Edge Function holding the provider secret (sign-in + Studio access checked, size capped, photo not stored), a browser service posting to it, and the privacy / consent wording rewritten in the same change.
+- **Try on a smile** (decision 111, 2026-10-25 — AI render only; since 2026-10-26 only on the creations of Atelier owners, decision 111 (a)). On the share / Glowbook viewer (`screens/StudioShare.tsx`) the call to try it says the member's renders left over 24 hours, or that an account is needed and how many renders it gives (`TryOnAllowance.tsx`, `lib/studio3d/useTryOnStatus.ts`, read from the function's status call, asked again when the dialog closes; the button is off at 0).
+  The dialog itself: `components/studio/tryOn/TryOnDialog.tsx` takes a creation (`name` + `scene`), a `source` naming it for the server (own creation id, share token, Glowbook handle + item) and an `audience` (artist with a client's photo, visitor with their own). Photo (`PhotoStep.tsx`: camera or file, checks in `lib/studio3d/tryOnPhoto.ts`, downscaled and re-encoded in the browser so EXIF is dropped) + consent, then "Generate the AI render" (`lib/studio3d/tryOnService.ts` → Edge Function `studio-try-on`; `status()` is asked before any photo is sent — while it says no, the button is disabled and the step says the render is coming; sign-in required; the answer is read by `parseTryOnResponse`) → `ResultStep.tsx` (before / after, download, share, regenerate). The design picture sent with it (IMAGE 1) is the Studio's 3D still of the creation, rendered on a hidden stage by `designImage.ts` (`ExportStage.stageStill`); since 2026-10-26 a flat design map drawn for the model goes with it (IMAGE 3, `lib/studio3d/tryOnMap.ts` → SVG → PNG in `renderDesignMap`): every front tooth boxed with its FDI number outside it, the midline, bare teeth greyed out, each gem in its own cut (sharp, plump and hollow stars told apart) with a leader line to its tag (`11a`, tooth then a letter from the gum side, given by `tryOnSeats` and repeated in the design data). Since the same day the model edits a close-up of the mouth cut by the function around the photo check's teeth box; the answer says where it was cut and `pasteBack.ts` draws it back into the photo with a faded border (`lib/studio3d/tryOnComposite.ts`), so the result is the whole photo with only the mouth changed. Entry points: creation detail and editor Export menu (artist), "Try it on my smile" in `screens/StudioShare.tsx` for Glowbook creations and share links whose `try_on` flag is true (visitor). The manual placement of the gems on the photo (drag / pinch / adjust, `AdjustStep`, `TryOnStage`, `tryOnTransform.ts`) and the automatic-placement contract were removed on 2026-10-25 (owner's request: the AI render is the only try-on). `downloadFile()` moved to `lib/downloadFile.ts`.
 - **Gems**: the library loads with the storefront catalogue; until it has, a drag places nothing. A piece whose product left the shop keeps rendering from its stored look and is named "no longer in the shop".
 - **Default model**: the editor opens on `dentition.glb` (meshopt-compressed, ~1 MB, decoded from the bundle). If it cannot be fetched, the procedural upper arch stands in, with a notice. Pieces go on crowns only, never on gum or socle. A design saved on another model (older designs were made on the procedural arch) is re-seated tooth by tooth when it opens; the same happens when a model is imported or reset. Raycasts use a bounding-volume hierarchy (`three-mesh-bvh`): a scan of this size costs ~18 ms per ray without one, and placement casts hundreds.
 - **Design check**: pieces that overlap another or do not sit on a tooth are framed in red on the stage and listed in a panel (placement and dragging never create them; sizes, type changes, group turns or a design from another model can).
@@ -647,7 +646,7 @@ A separate, desktop-first management workspace for the product catalogue. Produc
 
 | Route | Screen |
 | --- | --- |
-| `/admin/connexion` | Access screen — validation, loading, error and success states, plus a simulated password-recovery dialog |
+| `/admin/connexion` | Access screen — validation, loading, error and success states, plus a password-recovery dialog (Supabase Auth reset e-mail) |
 | `/admin` | Dashboard — catalogue counts, the products that cannot currently be sold, and recent product activity |
 | `/admin/commandes` | Order book — KPI row, search and filters, the table, bulk actions, export |
 | `/admin/commandes/:reference` | One order in full: items and money, shipping, payment, customer, timeline, internal notes |
@@ -809,7 +808,7 @@ Rules the prototype shows, and the assumptions behind them (to confirm before th
 - **Customer text is never translated or edited** (guideline 08); a review that can't be published is sent back with a message or rejected with a reason the customer sees.
 - Averages and counts on product and course pages are computed from the published reviews in the store, so they differ from the catalogue's `rating`/`reviewCount` fields that shop cards still show.
 
-Prototype controls: the admin bar switches between sample data, no reviews and a loading error (this also empties the storefront sections); each storefront section has its own small switch for loading, empty and error. Everything that matters — eligibility, the order behind "verified", photo type/size checks and storage, authorship, moderation permissions — must be enforced server-side in the real implementation; the checks here are presentation only.
+Prototype controls: the admin bar switches between sample data, no reviews and a loading error (this also empties the storefront sections); the storefront's own loading/empty/error switch was removed on 2026-10-25. Everything that matters — eligibility, the order behind "verified", photo type/size checks and storage, authorship, moderation permissions — must be enforced server-side in the real implementation; the checks here are presentation only.
 
 ## Store settings (`/admin/parametres`)
 
@@ -922,4 +921,4 @@ Without the Supabase variables every domain runs on its mock store. With them, t
 - **Back-office statistics:** live, within the current schema (see "Statistics on Supabase"). A translation workflow (coverage, editor) is not built.
 - **Gift card delivery:** cards are created and activated in the database, but nothing sends the code to the recipient yet (needs the e-mail Edge Function).
 
-The mock stores, fixtures in `data/`, demo accounts and "Prototype controls" panels are removed domain by domain as each goes live; a production build must never fall back to them.
+The mock stores, fixtures in `data/` and demo accounts that remain exist for the Playwright smoke suite (mock mode, see `AGENTS.md` §4) and are removed domain by domain once `test:e2e:live` covers the same screens; a production build must never fall back to them. The registration, recovery, cookie-preferences, system-page and orders-export screens have no simulated behaviour left.

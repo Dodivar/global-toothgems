@@ -4,9 +4,9 @@ import { DRAFT_DATE, l, type LegalDocument } from "./types";
 /**
  * Cookie policy.
  *
- * Describes categories, not cookies: no cookie name, provider or lifetime is
- * listed because none has been verified against a real implementation. The
- * inventory table is there to be filled from an audit of the live site.
+ * Mirrors what the site really does: PostHog only after the analytics choice
+ * (`lib/cookieConsent.tsx`), OpenFreeMap tiles for the Glowbook maps, Stripe
+ * on the payment page. Update it when a cookie, a provider or a category changes.
  */
 export const COOKIE_POLICY: LegalDocument = {
   id: "cookies",
@@ -29,8 +29,8 @@ export const COOKIE_POLICY: LegalDocument = {
         {
           kind: "p",
           text: l(
-            "Un cookie est un petit fichier déposé sur votre appareil lorsque vous consultez un site. Il permet par exemple de garder votre panier ou de mémoriser votre langue. Cette politique couvre aussi les technologies similaires (stockage local du navigateur, pixels).",
-            "A cookie is a small file placed on your device when you visit a website. It lets a site, for example, keep your cart or remember your language. This policy also covers similar technologies (browser local storage, pixels).",
+            "Un cookie est un petit fichier déposé sur votre appareil lorsque vous consultez un site. Il permet par exemple de garder votre session ou de mémoriser votre langue. Cette politique couvre aussi les technologies similaires (stockage local du navigateur).",
+            "A cookie is a small file placed on your device when you visit a website. It lets a site, for example, keep your session or remember your language. This policy also covers similar technologies (browser local storage).",
           ),
         },
         {
@@ -45,51 +45,43 @@ export const COOKIE_POLICY: LegalDocument = {
     },
     {
       id: "categories",
-      title: l("Catégories de cookies", "Cookie categories"),
+      title: l("Ce que nous utilisons", "What we use"),
       blocks: [
         {
           kind: "table",
-          caption: l("Les quatre catégories et leur régime", "The four categories and how they are handled"),
+          caption: l("Les catégories et leur régime", "The categories and how they are handled"),
           columns: [
             { key: "category", label: l("Catégorie", "Category") },
             { key: "purpose", label: l("Finalité", "Purpose") },
-            { key: "required", label: l("Obligatoire ?", "Required?") },
+            { key: "used", label: l("Utilisée sur le site", "Used on the site") },
             { key: "consent", label: l("Consentement", "Consent") },
           ],
           rows: [
             {
-              category: l("Essentiels", "Essential"),
-              purpose: l("Fonctionnement du site : panier, connexion, sécurité, mémorisation de vos choix cookies", "Website functionality: cart, sign-in, security, remembering your cookie choices"),
-              required: l("Oui", "Yes"),
-              consent: l("Non requis, lorsque la loi le permet", "Not required where legally applicable"),
-            },
-            {
-              category: l("Préférences", "Preferences"),
-              purpose: l("Mémoriser vos choix (langue, affichage)", "Remember your choices (language, display)"),
-              required: l("Selon l’usage", "Depends"),
-              consent: l("Paramétrable", "Configurable"),
+              category: l("Nécessaires", "Necessary"),
+              purpose: l("Connexion, panier, paiement sécurisé, langue choisie, mémorisation de vos choix cookies", "Sign-in, cart, secure payment, chosen language, remembering your cookie choices"),
+              used: l("Oui", "Yes"),
+              consent: l("Non requis", "Not required"),
             },
             {
               category: l("Mesure d’audience", "Analytics"),
-              purpose: l("Comprendre l’utilisation du site pour l’améliorer", "Understand how the site is used to improve it"),
-              required: l("Selon l’usage", "Depends"),
-              consent: l("Paramétrable", "Configurable"),
+              purpose: l("Comprendre l’utilisation du site et corriger ses erreurs (PostHog)", "Understand how the site is used and fix its errors (PostHog)"),
+              used: l("Oui", "Yes"),
+              consent: l("Refusée par défaut, à accepter", "Off by default, you opt in"),
+            },
+            {
+              category: l("Préférences", "Preferences"),
+              purpose: l("Aucune donnée de confort soumise au consentement", "No comfort data that requires consent"),
+              used: l("Non", "No"),
+              consent: l("—", "—"),
             },
             {
               category: l("Marketing", "Marketing"),
               purpose: l("Publicité et suivi des campagnes", "Advertising and campaign tracking"),
-              required: l("Selon l’usage", "Depends"),
-              consent: l("Paramétrable", "Configurable"),
+              used: l("Non", "No"),
+              consent: l("—", "—"),
             },
           ],
-        },
-        {
-          kind: "callout",
-          tone: "verify",
-          text: l(
-            "Confirmer quelles catégories sont réellement utilisées. Si aucun cookie marketing ou d’audience n’est déposé, retirer la catégorie de cette page et du bandeau : [[Catégories effectivement utilisées]].",
-            "Confirm which categories are actually used. If no marketing or analytics cookie is set, remove the category from this page and the banner: [[Categories actually used]].",
-          ),
         },
       ],
     },
@@ -100,78 +92,66 @@ export const COOKIE_POLICY: LegalDocument = {
         {
           kind: "p",
           text: l(
-            "Ils permettent d’utiliser les fonctions de base : naviguer, garder un panier, se connecter à son compte, payer en sécurité, suivre une formation. Sans eux, le site ne peut pas fonctionner correctement ; ils ne peuvent donc pas être désactivés depuis nos paramètres.",
-            "They make the basic functions possible: browsing, keeping a cart, signing in, paying securely, following a course. Without them the site cannot work properly, so they cannot be switched off in our settings.",
-          ),
-        },
-      ],
-    },
-    {
-      id: "preferences",
-      title: l("Cookies de préférences", "Preference cookies"),
-      blocks: [
-        {
-          kind: "p",
-          text: l(
-            "Ils mémorisent des choix qui rendent votre visite plus confortable, comme la langue d’affichage. [[Préférences concernées et qualification (nécessaire ou soumis au consentement)]]",
-            "They remember choices that make your visit more comfortable, such as display language. [[Preferences concerned and classification (necessary or consent-based)]]",
+            "Ils permettent d’utiliser les fonctions de base : se connecter à son compte, garder un panier, payer en sécurité, retenir la langue que vous avez choisie et vos choix cookies. Sans eux, le site ne peut pas fonctionner correctement ; ils sont déposés sans consentement et ne peuvent pas être désactivés depuis nos paramètres.",
+            "They make the basic functions possible: signing in to your account, keeping a cart, paying securely, remembering the language you chose and your cookie choices. Without them the site cannot work properly; they are set without consent and cannot be switched off in our settings.",
           ),
         },
       ],
     },
     {
       id: "analytics",
-      title: l("Cookies de mesure d’audience", "Analytics cookies"),
+      title: l("Mesure d’audience (PostHog)", "Analytics (PostHog)"),
       blocks: [
         {
           kind: "p",
           text: l(
-            "S’ils sont utilisés, ils nous aident à comprendre quelles pages sont consultées et où la navigation se complique, à partir de statistiques agrégées. Outil utilisé : [[Outil de mesure d’audience, si utilisé]].",
-            "If used, they help us understand which pages are visited and where navigation gets difficult, from aggregated statistics. Tool used: [[Analytics tool, if used]].",
+            "Avec votre accord seulement, nous utilisons PostHog (serveurs situés dans l’Union européenne) pour savoir quelles pages sont consultées, où la navigation se complique, quelles fonctions sont utilisées (panier, paiement, Studio 3D) et quelles erreurs surviennent. Tant que vous n’avez pas accepté cette catégorie, aucune donnée n’est envoyée à PostHog.",
+            "Only with your agreement, we use PostHog (servers located in the European Union) to know which pages are visited, where navigation gets difficult, which features are used (cart, payment, 3D Studio) and which errors occur. Until you accept this category, no data is sent to PostHog.",
           ),
         },
-      ],
-    },
-    {
-      id: "marketing",
-      title: l("Cookies marketing et publicitaires", "Marketing and advertising cookies"),
-      blocks: [
         {
           kind: "p",
           text: l(
-            "S’ils sont utilisés, ils servent à mesurer l’efficacité de nos campagnes et à afficher des publicités adaptées sur d’autres sites. Plateformes concernées : [[Plateformes publicitaires, si utilisées]].",
-            "If used, they measure how well our campaigns perform and show relevant ads on other websites. Platforms concerned: [[Advertising platforms, if used]].",
+            "PostHog enregistre un identifiant dans votre navigateur. Si vous êtes connecté, il est rattaché à votre compte, avec votre adresse e-mail et votre nom. Ces données servent uniquement à notre propre analyse. Vous pouvez retirer votre accord à tout moment (voir plus bas).",
+            "PostHog stores an identifier in your browser. If you are signed in, it is linked to your account, with your e-mail address and name. This data is used only for our own analysis. You can withdraw your agreement at any time (see below).",
           ),
         },
       ],
     },
     {
       id: "third-party",
-      title: l("Cookies tiers", "Third-party cookies"),
+      title: l("Services tiers", "Third-party services"),
       blocks: [
         {
           kind: "p",
           text: l(
-            "Certains cookies peuvent être déposés par des services tiers intégrés au site, par exemple la page de paiement ou un lecteur vidéo. Ces tiers les utilisent selon leur propre politique. [[Services tiers intégrés et cookies associés]]",
-            "Some cookies may be set by third-party services built into the site, such as the payment page or a video player. These third parties use them under their own policies. [[Embedded third-party services and their cookies]]",
+            "Paiement : la page de paiement charge Stripe, qui dépose ses propres cookies de sécurité et de prévention de la fraude, nécessaires pour payer. Ils relèvent de la politique cookies de Stripe.",
+            "Payment: the payment page loads Stripe, which sets its own security and fraud-prevention cookies, needed to pay. They are covered by Stripe’s own cookie policy.",
+          ),
+        },
+        {
+          kind: "p",
+          text: l(
+            "Cartes Glowbook : la carte d’une page d’artiste se charge lorsque vous faites défiler jusqu’à elle. Ses fonds de carte viennent d’OpenFreeMap (données © OpenStreetMap), qui reçoit alors votre adresse IP et la zone affichée pour vous les envoyer. Aucun cookie n’est déposé par ce service ; avant ce défilement, rien n’est chargé.",
+            "Glowbook maps: the map on an artist’s page loads when you scroll to it. Its map tiles come from OpenFreeMap (data © OpenStreetMap), which then receives your IP address and the area shown in order to send them to you. This service sets no cookie; before that scroll, nothing is loaded.",
           ),
         },
       ],
     },
     {
       id: "duration",
-      title: l("Durée de conservation", "Cookie duration"),
+      title: l("Inventaire et durées", "Inventory and durations"),
       blocks: [
         {
           kind: "p",
           text: l(
-            "Certains cookies expirent à la fermeture du navigateur (cookies de session), d’autres restent un temps limité (cookies persistants). Votre choix est conservé [[Durée de conservation du choix de consentement]], après quoi nous vous le redemandons.",
-            "Some cookies expire when you close your browser (session cookies), others remain for a limited time (persistent cookies). Your choice is kept for [[Consent choice retention period]], after which we ask you again.",
+            "Votre choix de cookies est conservé dans votre navigateur jusqu’à ce que vous le modifiiez ou effaciez les données du site.",
+            "Your cookie choice is kept in your browser until you change it or clear the site’s data.",
           ),
         },
         {
           kind: "table",
-          caption: l("Inventaire des cookies", "Cookie inventory"),
+          caption: l("Cookies et stockages similaires", "Cookies and similar storage"),
           columns: [
             { key: "name", label: l("Nom", "Name") },
             { key: "provider", label: l("Fournisseur", "Provider") },
@@ -180,10 +160,40 @@ export const COOKIE_POLICY: LegalDocument = {
           ],
           rows: [
             {
-              name: l("[[À établir par audit du site en production]]", "[[To be established by auditing the live site]]"),
-              provider: l("—", "—"),
-              category: l("—", "—"),
-              duration: l("—", "—"),
+              name: l("sb-…-auth-token", "sb-…-auth-token"),
+              provider: l("Global Toothgems (Supabase Auth)", "Global Toothgems (Supabase Auth)"),
+              category: l("Nécessaire", "Necessary"),
+              duration: l("Session de connexion", "Sign-in session"),
+            },
+            {
+              name: l("gt-cookie-consent", "gt-cookie-consent"),
+              provider: l("Global Toothgems", "Global Toothgems"),
+              category: l("Nécessaire", "Necessary"),
+              duration: l("Jusqu’à modification", "Until changed"),
+            },
+            {
+              name: l("gt-lang", "gt-lang"),
+              provider: l("Global Toothgems", "Global Toothgems"),
+              category: l("Nécessaire", "Necessary"),
+              duration: l("Jusqu’à modification", "Until changed"),
+            },
+            {
+              name: l("Panier (stockage de session)", "Cart (session storage)"),
+              provider: l("Global Toothgems", "Global Toothgems"),
+              category: l("Nécessaire", "Necessary"),
+              duration: l("Fermeture de l’onglet", "Until the tab is closed"),
+            },
+            {
+              name: l("__stripe_mid, __stripe_sid", "__stripe_mid, __stripe_sid"),
+              provider: l("Stripe", "Stripe"),
+              category: l("Nécessaire (paiement)", "Necessary (payment)"),
+              duration: l("1 an, 30 minutes", "1 year, 30 minutes"),
+            },
+            {
+              name: l("ph_…_posthog", "ph_…_posthog"),
+              provider: l("PostHog", "PostHog"),
+              category: l("Mesure d’audience", "Analytics"),
+              duration: l("1 an, avec votre accord", "1 year, with your agreement"),
             },
           ],
         },
@@ -226,19 +236,6 @@ export const COOKIE_POLICY: LegalDocument = {
             "Tous les navigateurs permettent de consulter, bloquer ou supprimer les cookies, généralement dans les réglages « Confidentialité » ou « Vie privée ». Bloquer tous les cookies peut empêcher certaines fonctions du site (panier, connexion) de fonctionner.",
             "Every browser lets you view, block or delete cookies, usually under “Privacy” settings. Blocking all cookies may stop some site functions (cart, sign-in) from working.",
           ),
-        },
-        {
-          kind: "list",
-          items: [
-            l("Chrome : Paramètres › Confidentialité et sécurité › Cookies", "Chrome: Settings › Privacy and security › Cookies"),
-            l("Safari : Réglages › Confidentialité", "Safari: Settings › Privacy"),
-            l("Firefox : Paramètres › Vie privée et sécurité", "Firefox: Settings › Privacy & Security"),
-            l("Edge : Paramètres › Cookies et autorisations de site", "Edge: Settings › Cookies and site permissions"),
-          ],
-        },
-        {
-          kind: "p",
-          text: l("Le nom exact des menus peut varier selon la version du navigateur.", "Exact menu names may vary with the browser version."),
         },
       ],
     },

@@ -33,6 +33,12 @@ Deno.test("totals show the frozen amounts: discount, free shipping, gift card an
   assertStringIncludes(out, "65,00 €.");
 });
 
+Deno.test("an order charged no VAT (VAT franchise) shows a plain total and no VAT line", () => {
+  const out = text(orderConfirmationContent({ ...ORDER, tax: 0 }, "fr", SITE));
+  assertStringIncludes(out, "Total: 90,00 €");
+  assert(!out.includes("TTC") && !out.includes("TVA"));
+});
+
 Deno.test("a guest gets a shop button, a member a link to the order; a course-only order has no address block", () => {
   const guest = orderConfirmationContent(ORDER, "fr", SITE);
   assertEquals(guest.primaryAction, { label: "Continuer mes achats", url: `${SITE}/fr/boutique` });

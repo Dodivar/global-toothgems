@@ -14,7 +14,9 @@
  * Pure: no DOM, no Supabase.
  */
 
-export type StudioTier = "essential" | "artist" | "atelier";
+import { hasFeature, isStudioTier, type StudioTier } from "../../studioEntitlements";
+
+export { isStudioTier, type StudioTier };
 
 /** The mark in the corner of the export. */
 export type ShareMark = "brand" | "logo" | "none";
@@ -38,12 +40,6 @@ export interface ShareBranding {
   hasLogo: boolean;
 }
 
-const TIERS: readonly StudioTier[] = ["essential", "artist", "atelier"];
-
-export function isStudioTier(value: unknown): value is StudioTier {
-  return typeof value === "string" && (TIERS as readonly string[]).includes(value);
-}
-
 /** The function's JSON answer, or null when it is not one. */
 export function parseShareBranding(raw: unknown): ShareBranding | null {
   if (!raw || typeof raw !== "object" || Array.isArray(raw)) return null;
@@ -51,12 +47,13 @@ export function parseShareBranding(raw: unknown): ShareBranding | null {
   if (row.tier !== null && row.tier !== undefined && !isStudioTier(row.tier)) return null;
   const tier = isStudioTier(row.tier) ? row.tier : null;
   const logoPath = typeof row.logo_path === "string" && row.logo_path ? row.logo_path : null;
-  return { tier, logoPath: tier === "artist" || tier === "atelier" ? logoPath : null, hasLogo: row.has_logo === true || logoPath !== null };
+  return { tier, logoPath: hasFeature(tier, "ownLogo") ? logoPath : null, hasLogo: row.has_logo === true || logoPath !== null };
 }
 
 export function rightsFor(tier: StudioTier | null): BrandingRights {
-  const paid = tier === "artist" || tier === "atelier";
-  return { tier, mayRemoveWatermark: paid, mayUseLogo: paid, mayUseTemplates: tier === "atelier" };
+  // Decision 113: the same table as the plan pages (`STUDIO_PLAN_FEATURES`).
+  const ownLogo = hasFeature(tier, "ownLogo");
+  return { tier, mayRemoveWatermark: ownLogo, mayUseLogo: ownLogo, mayUseTemplates: hasFeature(tier, "postLayouts") };
 }
 
 /** The marks the dialog offers, in its order. Essential: the brand only. */

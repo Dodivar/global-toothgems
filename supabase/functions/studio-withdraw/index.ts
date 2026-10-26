@@ -2,13 +2,14 @@ import { requireEnv, serviceClient, stripeClient } from "../_shared/clients.ts";
 import { readSiteOrigins } from "../_shared/http.ts";
 import { emailDepsFromEnv } from "../_shared/email/mod.ts";
 import { sendStudioWithdrawalEmails, supabasePendingSource } from "../_shared/email/events.ts";
+import { supabaseInvoiceSource } from "../_shared/email/invoicePdf.ts";
 import { withdrawFromStudio } from "../_shared/studioWithdrawal.ts";
 import { liveWithdrawalDeps } from "../_shared/studioWithdrawalLive.ts";
 import { handleStudioWithdraw } from "./handler.ts";
 
 /*
  * Deployed with verify_jwt = false (supabase/config.toml): the member's token
- * is checked here, like studio-billing-portal.
+ * is checked here, like studio-manage-subscription.
  */
 
 const supabase = serviceClient();
@@ -18,7 +19,11 @@ const log = (message: string, detail?: unknown) => console.error(`[studio-withdr
 
 // The acknowledgement goes out at once; the send-pending-emails sweep catches a failure.
 const acknowledge = async () => {
-  await sendStudioWithdrawalEmails(emailDepsFromEnv(), supabasePendingSource(supabase), { limit: 5, log });
+  await sendStudioWithdrawalEmails(emailDepsFromEnv(), supabasePendingSource(supabase), {
+    limit: 5,
+    log,
+    studioDocuments: supabaseInvoiceSource(supabase),
+  });
 };
 
 Deno.serve((req) =>

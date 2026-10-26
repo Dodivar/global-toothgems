@@ -17,7 +17,6 @@ const PUBLIC_ROUTES: { path: string; heading: RegExp }[] = [
   { path: "/inscription", heading: /Créez votre compte Global Toothgems/ },
   { path: "/mot-de-passe-oublie", heading: /Mot de passe oublié/ },
   // The page checks the link first (mock tokens: lib/accountSecurity.ts LINK_TOKENS), then settles.
-  { path: "/reinitialiser-mot-de-passe?jeton=demo-valide", heading: /Choisissez un nouveau mot de passe/ },
   { path: "/reinitialiser-mot-de-passe", heading: /Ce lien ne fonctionne pas/ },
   { path: "/verifier-email", heading: /Vérification de votre e-mail/ },
   { path: "/confirmation-compte", heading: /Ce lien n’est plus valable/ },

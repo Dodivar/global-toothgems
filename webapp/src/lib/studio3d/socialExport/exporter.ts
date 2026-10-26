@@ -129,6 +129,18 @@ export class ExportStage {
     return canvasBlob(canvas, type === "png" ? "image/png" : "image/jpeg", type === "jpeg" ? 0.93 : undefined);
   }
 
+  /**
+   * The design alone on its model, the still's framing (in front of the
+   * smile, slightly above), no texts and no mark: the design picture sent to
+   * the smile try-on's AI (decision 111).
+   */
+  stageStill(size: FormatSize, type: ImageType = "jpeg"): Promise<Blob> {
+    const { canvas, ctx } = this.target(size);
+    const render = this.engine.renderExportFrame({ ...size, azimuth: null, transparent: false });
+    ctx.drawImage(render, 0, 0, size.width, size.height);
+    return canvasBlob(canvas, type === "png" ? "image/png" : "image/jpeg", type === "jpeg" ? 0.92 : undefined);
+  }
+
   /** One full turn of a social post, at the network size, in the member's layout. */
   video(format: ShareFormat, type: VideoType, look: ExportLook, options: ExportOptions = {}): Promise<Blob> {
     const size = FORMAT_SIZES[format];

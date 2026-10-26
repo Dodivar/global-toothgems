@@ -111,6 +111,10 @@
       "description": "Published on the legal notice. The store name is the one customers see."
     },
     "currency": "Store currency: {{currency}}. Every price, shipping rate and order is in this currency.",
+    "vatFranchise": {
+      "label": "VAT franchise (micro-enterprise)",
+      "description": "No VAT is charged: prices are net and invoices carry the mention “TVA non applicable, art. 293 B du CGI”. Turn it off the day the business becomes liable for VAT; the rates of the VAT tab will then apply to new orders."
+    },
     "contact": {
       "title": "Contact details",
       "description": "How customers and partners reach you."
@@ -447,6 +451,10 @@
       "rateDeleted": "Rate deleted: {{country}}",
       "reducedAdded": "Reduced rate added",
       "reducedRemoved": "Reduced rate removed"
+    },
+    "franchise": {
+      "title": "VAT franchise on",
+      "body": "None of these rates applies for now: orders are invoiced without VAT, with the mention “TVA non applicable, art. 293 B du CGI”. They will apply to new orders as soon as the franchise is turned off in Store › Business identity."
     }
   },
   "lang": {

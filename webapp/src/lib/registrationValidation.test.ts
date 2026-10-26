@@ -25,7 +25,7 @@ const valid: RegistrationData = {
 
 describe("validateField", () => {
   it("accepts a complete registration on every step", () => {
-    for (const step of ["account", "profile", "preferences"] as const) expect(validateStep(step, valid, false)).toEqual({});
+    for (const step of ["account", "profile", "preferences"] as const) expect(validateStep(step, valid)).toEqual({});
   });
 
   it.each([
@@ -56,9 +56,6 @@ describe("validateField", () => {
     expect(validateField("phone", { ...valid, phone: "+33 (0)6.12-34-56-78" })).toBeNull();
   });
 
-  it("asks no password when Google already authenticated the address", () => {
-    expect(validateStep("account", { ...valid, password: "", confirmPassword: "" }, true)).toEqual({});
-  });
 });
 
 describe("passwordStrength", () => {

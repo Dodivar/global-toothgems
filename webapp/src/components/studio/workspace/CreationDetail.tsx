@@ -1,13 +1,16 @@
-import { Clapperboard, Copy, FolderOpen, Gem, Link2, PencilLine, ScanFace, Trash2 } from "lucide-react";
+import { Clapperboard, Copy, FileDown, FolderOpen, Gem, Link2, MoreHorizontal, PencilLine, ScanFace, Trash2 } from "lucide-react";
 import { Dialog } from "../../ui/Dialog";
 import { Button } from "../../ui/Button";
+import { Menu } from "../../ui/Menu";
 import { useFormat } from "../../../lib/format";
+import { useToast } from "../../../lib/toast";
 import { useWorkspace } from "../../../lib/studioWorkspace/workspace";
 import { openWorkspaceDialog } from "../../../lib/studioWorkspace/workspaceUi";
 import { CreationCollectionsSummary } from "./Collections";
 import { CreationThumb, FavoriteButton } from "./CreationCard";
 import { HelpHint } from "./HelpHint";
-import { FrontViewSection, PlacementSheetButton } from "../FrontViewPanel";
+import { FrontViewSection } from "../FrontViewPanel";
+import { usePlacementSheet } from "../usePlacementSheet";
 import { GlowbookControl } from "./GlowbookControl";
 import { TemplatePublishControl } from "./TemplatePublishControl";
 import { useWorkspaceActions } from "./useWorkspaceActions";
@@ -23,6 +26,8 @@ export function CreationDetail({ creationId, onClose }: { creationId: string; on
   const { t, price, count } = useWorkspaceFormat();
   const ws = useWorkspace();
   const { openInStudio } = useWorkspaceActions();
+  const { showToast } = useToast();
+  const placementSheet = usePlacementSheet();
   const creation = ws.creations.find((c) => c.id === creationId);
   if (!creation) return null;
 
@@ -42,7 +47,17 @@ export function CreationDetail({ creationId, onClose }: { creationId: string; on
       icon={<Gem size={17} />}
       closeLabel={t("studio.workspace.close")}
       footer={
+        // The way into the editor sits on the right, under the thumb on a phone.
         <>
+          <Button
+            variant="outline"
+            size="sm"
+            iconLeft={Link2}
+            className="flex-1 sm:ml-auto sm:flex-none"
+            onClick={() => openWorkspaceDialog({ kind: "shareCreation", creation })}
+          >
+            {t("studio.workspace.actions.share")}
+          </Button>
           <Button
             variant="primary"
             size="sm"
@@ -54,15 +69,6 @@ export function CreationDetail({ creationId, onClose }: { creationId: string; on
             }}
           >
             {t("studio.workspace.actions.openInStudio")}
-          </Button>
-          <Button
-            variant="outline"
-            size="sm"
-            iconLeft={Link2}
-            className="flex-1 sm:flex-none"
-            onClick={() => openWorkspaceDialog({ kind: "shareCreation", creation })}
-          >
-            {t("studio.workspace.actions.share")}
           </Button>
         </>
       }
@@ -107,14 +113,9 @@ export function CreationDetail({ creationId, onClose }: { creationId: string; on
 
       <TemplatePublishControl creation={creation} />
 
+      {/* The two things people come for, then the rest in one menu: on a
+          phone a wall of buttons buried the Glowbook and template blocks. */}
       <div className="grid grid-cols-2 gap-2 border-t border-[var(--border-subtle)] pt-4 sm:flex sm:flex-wrap sm:items-center">
-        <Button variant="outline" size="sm" iconLeft={Copy} onClick={() => void ws.duplicateCreation(creation)}>
-          {t("studio.workspace.actions.duplicate")}
-        </Button>
-        <PlacementSheetButton
-          className="[&>button]:w-full sm:[&>button]:w-auto"
-          request={{ name: creation.name, pieces: creation.scene.pieces, model: creation.scene.model, modifiedAt: creation.updatedAt }}
-        />
         <Button
           variant="outline"
           size="sm"
@@ -133,18 +134,52 @@ export function CreationDetail({ creationId, onClose }: { creationId: string; on
         >
           {t("studio.socialExport.action")}
         </Button>
-        <Button variant="ghost" size="sm" iconLeft={PencilLine} onClick={() => openWorkspaceDialog({ kind: "editCreation", creation })}>
-          {t("studio.workspace.actions.editDetails")}
-        </Button>
-        <Button
-          variant="ghost"
-          size="sm"
-          iconLeft={Trash2}
-          className="col-span-2 text-[var(--status-error-fg)] sm:ml-auto"
-          onClick={() => openWorkspaceDialog({ kind: "deleteCreation", creation })}
-        >
-          {t("studio.workspace.actions.delete")}
-        </Button>
+        {/* On a phone the menu's anchor spans the row, so the panel opens inside the dialog. */}
+        <div className="col-span-2 sm:ml-auto [&>div]:flex [&>div]:w-full sm:[&>div]:inline-flex sm:[&>div]:w-auto">
+          <Menu
+            label={t("studio.workspace.creations.actionsFor", { name: creation.name })}
+            width={240}
+            trigger={(props) => (
+              <Button {...props} variant="ghost" size="sm" iconLeft={MoreHorizontal} loading={placementSheet.status === "working"} className="w-full sm:w-auto">
+                {t("studio.workspace.actions.more")}
+              </Button>
+            )}
+            items={[
+              { id: "duplicate", label: t("studio.workspace.actions.duplicate"), icon: Copy, onSelect: () => void ws.duplicateCreation(creation) },
+              {
+                id: "placementSheet",
+                label: t("studio.placementSheet.action"),
+                icon: FileDown,
+                disabled: creation.elementCount === 0,
+                onSelect: () => {
+                  // The menu is gone by the time the PDF is ready: the outcome is said in a toast.
+                  if (!placementSheet.ready) {
+                    showToast(t("studio.placementSheet.notReady"), undefined, "info");
+                    return;
+                  }
+                  void placementSheet
+                    .download({ name: creation.name, pieces: creation.scene.pieces, model: creation.scene.model, modifiedAt: creation.updatedAt })
+                    .then((ok) => {
+                      if (!ok) showToast(t("studio.placementSheet.error"), undefined, "error");
+                    });
+                },
+              },
+              {
+                id: "editDetails",
+                label: t("studio.workspace.actions.editDetails"),
+                icon: PencilLine,
+                onSelect: () => openWorkspaceDialog({ kind: "editCreation", creation }),
+              },
+              {
+                id: "delete",
+                label: t("studio.workspace.actions.delete"),
+                icon: Trash2,
+                destructive: true,
+                onSelect: () => openWorkspaceDialog({ kind: "deleteCreation", creation }),
+              },
+            ]}
+          />
+        </div>
       </div>
     </Dialog>
   );

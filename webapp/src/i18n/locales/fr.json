@@ -441,6 +441,7 @@
       "poweredBy": "Paiement opéré par Stripe, prestataire certifié PCI DSS niveau 1.",
       "due": "À payer",
       "vatIncluded": "TVA incluse",
+      "vatFranchise": "TVA non applicable, art. 293 B du CGI",
       "discounts": "Remises",
       "giftCards_one": "Carte cadeau",
       "giftCards_other": "{{count}} cartes cadeaux",
@@ -578,10 +579,7 @@
     "signIn": "Se connecter",
     "signInInstead": "Me connecter plutôt",
     "forgotPassword": "Mot de passe oublié ?",
-    "forgotToastTitle": "Récupération du mot de passe",
-    "forgotToastBody": "Dans ce prototype, la récupération est présentée pour le design uniquement.",
     "reassurance": "Gratuit · aucune carte demandée · environ une minute",
-    "checkingEmail": "Vérification de cette adresse e-mail…",
     "showPassword": "Afficher le mot de passe",
     "hidePassword": "Masquer le mot de passe",
     "clearChoice": "Effacer",
@@ -602,8 +600,7 @@
       "continue": "Continuer",
       "back": "Retour",
       "create": "Créer mon compte",
-      "creating": "Création de votre compte…",
-      "checking": "Vérification…"
+      "creating": "Création de votre compte…"
     },
     "context": {
       "purchaseAria": "Votre achat",
@@ -624,10 +621,7 @@
     "account": {
       "title": "Vos identifiants",
       "body": "Ils vous serviront à vous connecter sur tous vos appareils.",
-      "divider": "ou avec votre e-mail",
-      "googleConnected": "Connecté avec Google",
-      "googleNoPassword": "Aucun mot de passe nécessaire : vous vous connecterez avec Google.",
-      "useEmailInstead": "Utiliser plutôt un e-mail et un mot de passe"
+      "divider": "ou avec votre e-mail"
     },
     "profile": {
       "title": "À propos de vous",
@@ -738,17 +732,7 @@
       "emailSendBody": "Votre compte n’a pas été créé : notre service d’envoi d’e-mails a échoué. Vos informations restent dans ce formulaire — réessayez dans quelques minutes, et contactez-nous si le problème persiste."
     },
     "google": {
-      "cta": "Continuer avec Google",
-      "title": "Continuer avec Google",
-      "description": "Choisissez le compte Google à utiliser avec Global Toothgems.",
-      "choose": "Choisissez un compte",
-      "mockNote": "Prototype : sélecteur de compte simulé. Rien n’est envoyé à Google.",
-      "connecting": "Connexion à Google…",
-      "takenTitle": "Ce compte Google est déjà inscrit",
-      "takenBody": "{{email}} possède déjà un compte Global Toothgems. Connectez-vous pour continuer.",
-      "otherAccount": "Utiliser un autre compte",
-      "toastTitle": "Connecté avec Google",
-      "toastBody": "Votre e-mail est confirmé. Plus que quelques informations."
+      "cta": "Continuer avec Google"
     },
     "legal": {
       "summaryNote": "L’essentiel, en langage clair. Le texte juridique complet sera publié avec le site.",
@@ -781,43 +765,6 @@
         ]
       }
     },
-    "verify": {
-      "title": "Consultez votre boîte mail",
-      "body": "Nous avons envoyé un lien de vérification à",
-      "instruction": "Ouvrez l’e-mail et sélectionnez le lien pour activer votre compte.",
-      "sending": "Envoi de l’e-mail de vérification…",
-      "sent": "E-mail envoyé",
-      "resent": "Un nouveau lien est en route",
-      "verified": "E-mail vérifié — bienvenue !",
-      "failedTitle": "Impossible d’envoyer l’e-mail de vérification",
-      "failedBody": "C’est généralement temporaire. Réessayez, ou vérifiez que l’adresse est correcte.",
-      "tryAgain": "Réessayer",
-      "expiredTitle": "Ce lien a expiré",
-      "expiredBody": "Pour votre sécurité, les liens de vérification expirent au bout d’un certain temps. Envoyez-vous un nouveau lien.",
-      "sendNewLink": "Envoyer un nouveau lien",
-      "resend": "Renvoyer l’e-mail",
-      "resending": "Envoi…",
-      "resendIn": "Renvoyer dans {{time}}",
-      "resendReady": "Vous pouvez maintenant renvoyer l’e-mail de vérification.",
-      "changeEmail": "Modifier l’adresse e-mail",
-      "changeTitle": "Modifier l’adresse e-mail",
-      "changeBody": "Nous enverrons un nouveau lien de vérification à l’adresse corrigée.",
-      "changeSubmit": "Envoyer le lien",
-      "mockInbox": "Prototype · boîte mail simulée",
-      "mailTo": "à {{email}}",
-      "mailNow": "à l’instant",
-      "mailSubject": "Confirmez votre adresse e-mail",
-      "mailNewLink": "nouveau lien",
-      "mailBody": "Bonjour {{name}}, une dernière étape : confirmez cette adresse pour activer votre compte Global Toothgems.",
-      "mailFallbackName": "à vous",
-      "mailCta": "Vérifier mon e-mail",
-      "verifying": "Vérification…",
-      "mailHint": "Sélectionnez le bouton pour simuler l’ouverture du lien.",
-      "mailHintExpired": "Scénario : ce premier lien a expiré.",
-      "helpTitle": "Vous ne le trouvez pas ?",
-      "helpBody": "Cela peut prendre une minute. Regardez dans vos spams ou l’onglet Promotions. Toujours rien ? Renvoyez-le, ou corrigez votre adresse ci-dessus.",
-      "wrongAddress": "Mauvaise adresse ? Recommencer"
-    },
     "welcome": {
       "script": "Bienvenue",
       "title": "Bienvenue chez Global Toothgems",
@@ -825,7 +772,6 @@
       "readyNamed": "Votre compte est prêt, {{name}}.",
       "checkAccount": "Compte créé",
       "checkEmail": "Adresse e-mail vérifiée",
-      "checkGoogle": "Connecté avec Google",
       "checkPersonalised": "Expérience adaptée à vos réponses",
       "checkProfile": "Profil enregistré",
       "personalNote": "Nos suggestions s’adapteront à vos réponses. Modifiez-les à tout moment dans votre profil.",
@@ -834,10 +780,7 @@
       "ctaDashboard": "Aller à mon tableau de bord",
       "ctaCart": "Revenir au panier",
       "ctaContinueShopping": "Continuer mes achats",
-      "ctaViewTraining": "Voir la formation",
-      "ctaCheckout": "Poursuivre vers le paiement",
-      "toastCheckoutTitle": "Formation ajoutée à votre compte",
-      "toastCheckoutBody": "Prototype : l’inscription tient lieu de paiement. Votre première leçon est ouverte."
+      "ctaViewTraining": "Voir la formation"
     },
     "signedIn": {
       "title": "Vous êtes déjà connecté·e",
@@ -846,24 +789,18 @@
     },
     "demo": {
       "title": "Commandes du prototype",
-      "body": "Outils de revue — ne font pas partie de la vraie page. Changez la provenance du visiteur, ou forcez un résultat pour voir chaque état.",
-      "contextLegend": "Le visiteur vient de",
-      "scenarioLegend": "Résultat simulé",
-      "takenLegend": "E-mails déjà inscrits (essayez-en un) :",
-      "otherTips": "Une faute comme « gmial.com » propose une correction ; « password123 » est refusé car trop courant.",
-      "restart": "Recommencer le parcours",
-      "context": {
-        "general": "Site",
-        "purchase": "Achat produit",
-        "training": "Formation"
-      },
-      "scenario": {
-        "success": "Tout fonctionne",
-        "registrationFails": "Échec de l’inscription",
-        "networkError": "Erreur réseau",
-        "emailFails": "Échec de l’e-mail",
-        "linkExpired": "Lien expiré"
-      }
+      "takenLegend": "E-mails déjà inscrits (essayez-en un) :"
+    },
+    "verify": {
+      "title": "Consultez votre boîte mail",
+      "body": "Nous avons envoyé un lien de vérification à",
+      "instruction": "Ouvrez l’e-mail et sélectionnez le lien pour activer votre compte.",
+      "resend": "Renvoyer l’e-mail",
+      "resending": "Envoi…",
+      "resendIn": "Renvoyer dans {{time}}",
+      "wrongAddress": "Mauvaise adresse ? Recommencer",
+      "helpTitle": "Vous ne le trouvez pas ?",
+      "helpBody": "Cela peut prendre une minute. Regardez dans vos spams ou l’onglet Promotions. Toujours rien ? Renvoyez-le, ou corrigez votre adresse ci-dessus."
     }
   },
   "academy": {
@@ -1337,7 +1274,9 @@
       "Cartes cadeaux",
       "Programme fidélité"
     ],
-    "copyright": "© 2026 Global Toothgems · Prix TTC",
+    "copyright": "© 2026 Global Toothgems",
+    "pricesInclVat": "Prix TTC",
+    "vatFranchise": "TVA non applicable, art. 293 B du CGI",
     "colService": "Service client",
     "colLegal": "Informations légales",
     "colCompany": "L’entreprise",
@@ -1692,7 +1631,6 @@
     "media": {
       "dropTitle": "Glissez vos visuels ici",
       "dropBody": "JPG ou PNG, 2000 px minimum sur le plus grand côté. Le premier visuel sert de vignette en boutique.",
-      "prototypeNote": "Maquette : ouvre la photothèque",
       "cover": "Vignette",
       "moveEarlier": "Déplacer le visuel {{index}} vers la gauche",
       "moveLater": "Déplacer le visuel {{index}} vers la droite",
@@ -1700,7 +1638,7 @@
       "orderHint": "L’ordre des visuels est celui de la fiche produit. Le premier sert de vignette.",
       "emptyHint": "Un produit sans visuel peut être enregistré en brouillon, mais pas mis en ligne sereinement.",
       "pickerTitle": "Photothèque",
-      "pickerBody": "L’envoi de fichiers n’est pas branché dans cette maquette : choisissez un ou plusieurs visuels existants.",
+      "pickerBody": "Choisissez un ou plusieurs visuels existants.",
       "selectedCount_one": "{{count}} visuel sélectionné",
       "selectedCount_other": "{{count}} visuels sélectionnés",
       "addSelected": "Ajouter la sélection",
@@ -1801,7 +1739,6 @@
       "type": "Type de produit",
       "typeHint": "Sert à regrouper les produits qui se gèrent de la même façon.",
       "historyTitle": "Historique",
-      "prototypeNotice": "Maquette : l’enregistrement simule une sauvegarde. Rien n’est conservé après un rechargement de la page.",
       "unsaved": "Modifications non enregistrées",
       "noChanges": "Aucune modification",
       "saveDraft": "Enregistrer en brouillon",
@@ -2143,20 +2080,20 @@
       "forgot": "Mot de passe oublié ?",
       "submit": "Se connecter",
       "security": "Cet espace est réservé aux administrateurs. Les tentatives de connexion et les modifications du catalogue seront journalisées.",
-      "demoNotice": "Maquette : aucune authentification réelle. Utilisez {{email}} avec le mot de passe {{password}}.",
       "successMessage": "Connexion réussie, ouverture de l’espace de gestion…",
       "errors": {
         "emailRequired": "L’adresse e-mail est requise.",
         "emailInvalid": "Cette adresse e-mail semble incomplète.",
         "passwordRequired": "Le mot de passe est requis.",
-        "rejected": "Identifiants incorrects. Vérifiez le mot de passe indiqué plus bas et réessayez.",
+        "rejected": "Identifiants incorrects. Vérifiez votre e-mail et votre mot de passe, puis réessayez.",
         "notStaff": "Ce compte n’a pas accès à l’administration. Demandez un accès à un administrateur.",
         "unavailable": "Le service de connexion ne répond pas. Réessayez dans un instant."
       },
       "forgotTitle": "Mot de passe oublié",
-      "forgotBody": "Indiquez votre adresse e-mail : un lien de réinitialisation vous sera envoyé. Dans cette maquette, aucun e-mail n’est réellement expédié.",
+      "forgotBody": "Indiquez votre adresse e-mail : un lien de réinitialisation vous sera envoyé.",
       "forgotSubmit": "Envoyer le lien",
-      "forgotSent": "Si un compte administrateur existe pour {{email}}, un lien de réinitialisation vient de lui être envoyé."
+      "forgotSent": "Si un compte administrateur existe pour {{email}}, un lien de réinitialisation vient de lui être envoyé.",
+      "forgotFailed": "Le lien n’a pas pu être envoyé. Vérifiez l’adresse et réessayez dans un instant."
     },
     "orders": {
       "title": "Commandes",
@@ -2339,13 +2276,6 @@
       "exportScopeFiltered_other": "Les commandes filtrées ({{count}})",
       "exportScopeAll_one": "Tout le carnet ({{count}} commande)",
       "exportScopeAll_other": "Tout le carnet ({{count}} commandes)",
-      "exportFormat": "Format",
-      "exportFormats": {
-        "csv": "CSV",
-        "xlsx": "Excel",
-        "pdf": "PDF"
-      },
-      "exportDialogNote": "Maquette : aucun fichier n’est généré. L’export réel se prépare côté serveur et arrive par e-mail.",
       "customerTitle": "Client",
       "customerReturning_one": "{{count}} commande",
       "customerReturning_other": "{{count}} commandes",
@@ -2530,8 +2460,8 @@
       "toastCancelTitle": "Commande {{reference}} annulée",
       "toastCancelTitleMany": "{{count}} commandes annulées",
       "toastCancelBody": "Le stock réservé est libéré.",
-      "toastExportTitle": "Export lancé",
-      "toastExportBody": "{{count}} commandes au format {{format}}. Le fichier arrivera par e-mail.",
+      "toastExportTitle": "Export prêt",
+      "toastExportBody": "{{count}} commandes enregistrées dans un fichier CSV.",
       "toastNoteTitle": "Note ajoutée",
       "toastNoteBody": "Visible par l’équipe uniquement.",
       "toastCustomerTitle": "Historique client",
@@ -2610,7 +2540,26 @@
       },
       "refundRequestedOn": "Demandé le",
       "refundProcessedOn": "Traité le",
-      "notesTeam": "Notes de l’équipe"
+      "notesTeam": "Notes de l’équipe",
+      "exportColumns": {
+        "reference": "Commande",
+        "placedOn": "Date",
+        "status": "Statut",
+        "payment": "Paiement",
+        "fulfillment": "Préparation",
+        "customer": "Client",
+        "email": "E-mail",
+        "items": "Articles",
+        "currency": "Devise",
+        "subtotal": "Sous-total",
+        "discount": "Remise",
+        "shipping": "Livraison",
+        "tax": "TVA",
+        "total": "Total",
+        "giftCard": "Payé par carte cadeau",
+        "charged": "Débité par carte",
+        "refunded": "Remboursé"
+      }
     },
     "customers": {
       "title": "Clients",
@@ -3420,7 +3369,7 @@
         "emptyTitle": "Aucun paiement d’abonnement sur la période",
         "emptyBody": "Les abonnements au Studio apparaîtront ici dès leur premier paiement.",
         "unavailableTitle": "Données indisponibles",
-        "unavailableBody": "Ce panneau lit la base de données, absente en mode démonstration.",
+        "unavailableBody": "Ce panneau lit la base de données, qui n’est pas connectée dans cet environnement.",
         "errorTitle": "Lecture impossible",
         "errorBody": "Les paiements du Studio n’ont pas pu être lus. Actualisez la page."
       },
@@ -3451,6 +3400,22 @@
         "unavailableBody": "Les chiffres de l’essai nécessitent le projet Supabase.",
         "errorTitle": "Chiffres de l’essai indisponibles",
         "errorBody": "Ils n’ont pas pu être lus. Actualisez la page pour réessayer."
+      },
+      "studioInvoices": {
+        "title": "Factures Studio 3D",
+        "description": "Les factures et avoirs émis pour les abonnements sur la période, au format PDF.",
+        "invoice": "Facture",
+        "creditNote": "Avoir",
+        "printAll": "Imprimer les {{count}} documents",
+        "downloadLabel": "Télécharger {{kind}} {{number}} (PDF)",
+        "fileName": "factures-studio",
+        "pdfError": "Le PDF n’a pas pu être créé. Réessayez.",
+        "emptyTitle": "Aucun document sur la période",
+        "emptyBody": "Les factures apparaissent ici dès qu’un abonnement est payé.",
+        "errorTitle": "Factures indisponibles",
+        "errorBody": "Les documents n’ont pas pu être chargés. Actualisez la page.",
+        "unavailableTitle": "Factures indisponibles",
+        "unavailableBody": "Les documents sont lus dans la base de données, absente de cet environnement."
       }
     },
     "training": {
@@ -3702,7 +3667,7 @@
         "video": "Vidéo",
         "textHint": "Titres, paragraphes et listes.",
         "imageHint": "Photo avec légende et texte alternatif.",
-        "videoHint": "Vidéo de démonstration avec miniature.",
+        "videoHint": "Vidéo de la leçon.",
         "addTitle": "Ajouter un contenu",
         "addHint": "Choisissez un type de bloc.",
         "menuLabel": "Types de contenu",
@@ -3822,7 +3787,7 @@
         "backToBuilder": "Revenir au constructeur",
         "emptyTitle": "Rien à prévisualiser",
         "emptyBody": "Cette formation ne contient pas encore de module.",
-        "videoMock": "Vidéo de démonstration",
+        "videoMock": "Vidéo",
         "answersRevealed": "Les bonnes réponses sont indiquées ci-dessous."
       },
       "review": {
@@ -4272,12 +4237,6 @@
     "navEntryLocked": "Accès avec une formation"
   },
   "errors": {
-    "preview": {
-      "label": "Prototype · pages système",
-      "notFound": "404",
-      "serverError": "500",
-      "maintenance": "Maintenance"
-    },
     "actions": {
       "home": "Retour à l’accueil"
     },
@@ -4298,9 +4257,7 @@
       "note": "Vous n’y êtes pour rien, et vous n’avez rien à corriger.",
       "retry": "Réessayer",
       "retrying": "Nouvel essai…",
-      "pause": "Courte pause",
-      "stillOff": "Pas tout à fait encore — nous sommes dessus. Réessayez dans un instant.",
-      "stillOffAgain": "Toujours en cours de résolution. Vous pouvez revenir à l’accueil en attendant."
+      "pause": "Courte pause"
     },
     "maintenance": {
       "documentTitle": "De retour très vite",
@@ -4313,7 +4270,6 @@
       "chip": "Travaux en cours",
       "statusTitle": "Nous améliorons les choses en coulisses.",
       "progressLabel": "Maintenance en cours",
-      "checked": "Vérifié à {{time}} — encore quelques finitions. Merci de votre patience.",
       "logoAlt": "Global Toothgems — accueil",
       "copyright": "© 2026 Global Toothgems"
     }
@@ -5040,26 +4996,41 @@
       "adjustment": "Remboursement",
       "giftCardVat": "hors champ de la TVA",
       "lineDiscount": "remise de {{amount}} TTC",
+      "lineDiscountNoVat": "remise de {{amount}}",
       "totalExcl": "Total HT",
       "totalVat": "TVA",
       "totalIncl": "Total TTC",
+      "total": "Total",
       "paidGiftCard": "Réglé en carte cadeau",
       "paidCard": "Réglé par carte",
       "vatTitle": "Récapitulatif de la TVA",
+      "vatFranchise": "TVA non applicable, art. 293 B du CGI",
       "paid": "Facture acquittée le {{date}} : paiement comptant à la commande, aucun escompte pour paiement anticipé.",
       "giftCardNote": "Cartes cadeaux : bons à usages multiples, hors du champ de la TVA lors de leur achat ; la TVA est due lors de leur utilisation.",
       "latePayment": "Clients professionnels : en cas de retard de paiement, pénalités au taux de trois fois le taux d’intérêt légal et indemnité forfaitaire de 40 € pour frais de recouvrement (art. L441-10 du Code de commerce).",
-      "fileName": "facture"
+      "fileName": "facture",
+      "studioPlan": "Abonnement Studio 3D — formule {{plan}}",
+      "studioProration": "Ajustement au prorata — formule {{plan}}",
+      "studioInterval": {
+        "month": "facturation mensuelle",
+        "year": "facturation annuelle"
+      },
+      "studioPeriod": "du {{start}} au {{end}}",
+      "paidBalance": "Réglé avec le crédit de votre compte",
+      "paidSubscription": "Facture acquittée le {{date}} : paiement de l’abonnement par carte, aucun escompte pour paiement anticipé."
     },
     "creditNote": {
       "title": "Avoir",
       "number": "Avoir n°",
       "credits": "Facture d’origine",
       "totalIncl": "Total de l’avoir TTC",
+      "total": "Total de l’avoir",
       "notice": "Avoir émis sur la facture {{invoice}} du {{date}}, au titre du remboursement confirmé le {{refundedOn}}.",
       "toCard": "Le montant a été remboursé sur le moyen de paiement utilisé. Cet avoir est la pièce comptable de ce remboursement : il ne constitue pas un crédit à dépenser sur le site.",
       "toGiftCard": "Le montant a été recrédité sur la carte cadeau utilisée.",
-      "fileName": "avoir"
+      "fileName": "avoir",
+      "studioWithdrawal": "Rétractation — part non utilisée de l’abonnement Studio 3D, formule {{plan}}",
+      "studioUsedDays": "{{used}} jours utilisés sur {{total}}"
     }
   }
 }

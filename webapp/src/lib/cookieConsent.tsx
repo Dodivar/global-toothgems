@@ -1,12 +1,13 @@
-import { createContext, useCallback, useContext, useMemo, useState, type ReactNode } from "react";
+import { createContext, useCallback, useContext, useEffect, useMemo, useState, type ReactNode } from "react";
+import posthog from "posthog-js";
 import { useHydrated } from "./useHydrated";
 
 /**
  * Cookie consent.
  *
- * This records the visitor's choice; the Studio analytics read its
- * `analytics` category (`lib/studioAnalytics.ts`), other scripts are not gated
- * by it. It follows the behaviour a real consent layer must have:
+ * This records the visitor's choice; PostHog (all analytics, including the
+ * Studio events of `lib/studioAnalytics.ts`) is opted in only while the
+ * `analytics` category is accepted. It follows the behaviour a real consent layer must have:
  *
  * - optional categories start refused — nothing is pre-ticked;
  * - refusing is one click, exactly like accepting;
@@ -84,6 +85,19 @@ export function CookieConsentProvider({ children }: { children: ReactNode }) {
   const [chosen, setRecord] = useState<ConsentRecord | null | undefined>(undefined);
   const record = chosen === undefined ? stored : chosen;
   const [settingsOpen, setSettingsOpen] = useState(false);
+
+  // PostHog starts opted out (`instrumentation-client.ts`): it captures only
+  // while the analytics category is accepted.
+  const analyticsAccepted = record?.analytics === true;
+  useEffect(() => {
+    try {
+      if (!posthog.__loaded) return;
+      if (analyticsAccepted) posthog.opt_in_capturing();
+      else posthog.opt_out_capturing();
+    } catch {
+      /* analytics must never break the site */
+    }
+  }, [analyticsAccepted]);
 
   const save = useCallback((choices: ConsentChoices) => {
     const next = { ...choices, decidedAt: new Date().toISOString() };

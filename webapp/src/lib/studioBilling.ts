@@ -7,19 +7,30 @@ import {
   mapPlanPriceRows,
   readStudioCheckoutAnswer,
   readStudioConsentAnswer,
-  readStudioPortalAnswer,
   type StudioCheckoutAnswer,
   type StudioConsentAnswer,
   type StudioPlanPrice,
-  type StudioPortalAnswer,
 } from "./studioBillingMapping";
+import {
+  readCardStep,
+  readChangePreview,
+  readChargeAnswer,
+  readManageOverview,
+  type Answer,
+  type StudioCancelReason,
+  type StudioCardStep,
+  type StudioChangePreview,
+  type StudioChargeAnswer,
+  type StudioManageOverview,
+} from "./studioManageMapping";
 import type { StudioBillingInterval, StudioPaidPlanId } from "../data/studio";
 
 /**
  * The persistence boundary of 3D Studio subscriptions (decision 94): the plan
  * prices (`studio_plan_prices`, public), the subscription payment step on our
- * own page (`create-studio-subscription`) and the customer portal
- * (`studio-billing-portal`). Nothing here grants access: the Studio opens when
+ * own page (`create-studio-subscription`) and its management on the member's
+ * subscription page (`studio-manage-subscription`, decision 112). Nothing here
+ * grants access: the Studio opens when
  * the verified webhook has mirrored the subscription, which `studioAccess.tsx`
  * reads back from the database.
  */
@@ -53,7 +64,7 @@ export function useStudioPlanPrices(): StudioPlanPrice[] | null {
   return prices;
 }
 
-async function invoke<T>(name: string, body: Record<string, string | boolean>, read: (body: unknown) => T, missing: T, offline: T): Promise<T> {
+async function invoke<T>(name: string, body: Record<string, string | number | boolean>, read: (body: unknown) => T, missing: T, offline: T): Promise<T> {
   if (!supabase) return missing;
   const { data, error } = await supabase.functions.invoke(name, { body });
   if (!error) return read(data);
@@ -105,13 +116,56 @@ export async function releaseStudioPaymentStep(clientSecret: string): Promise<vo
   }
 }
 
-/** The Stripe customer portal (change plan, card, invoices, cancel). */
-export function openStudioBillingPortal(locale: "fr" | "en"): Promise<StudioPortalAnswer> {
-  return invoke(
-    "studio-billing-portal",
-    { locale },
-    readStudioPortalAnswer,
-    { kind: "error", error: "unavailable" },
-    { kind: "error", error: "unavailable" },
-  );
+const MANAGE = "studio-manage-subscription";
+const manageOffline = { kind: "error", error: "unavailable" } as const;
+
+function manage<T>(body: Record<string, string | number>, read: (body: unknown) => T, missing: T): Promise<T> {
+  return invoke(MANAGE, body, read, missing, missing);
+}
+
+/** Plan, price, status, period end, card and invoices, read from Stripe by the function. */
+export function fetchStudioManageOverview(): Promise<Answer<StudioManageOverview>> {
+  return manage({ action: "overview" }, readManageOverview, manageOffline);
+}
+
+/** What switching to this plan and interval costs: today, or on the next invoice. */
+export function previewStudioChange(plan: StudioPaidPlanId, interval: StudioBillingInterval): Promise<Answer<StudioChangePreview>> {
+  return manage({ action: "preview", plan, interval }, readChangePreview, manageOffline);
+}
+
+/** Switches the plan or interval (the preview's proration instant keeps the amount shown). */
+export function changeStudioPlan(plan: StudioPaidPlanId, interval: StudioBillingInterval, prorationDate: number): Promise<StudioChargeAnswer> {
+  return manage({ action: "change", plan, interval, proration_date: prorationDate }, readChargeAnswer, manageOffline);
+}
+
+/** Ends the subscription at the end of the paid period. */
+export function cancelStudioSubscription(reason: StudioCancelReason | null): Promise<StudioChargeAnswer> {
+  return manage(reason ? { action: "cancel", reason } : { action: "cancel" }, readChargeAnswer, manageOffline);
+}
+
+/** Keeps a subscription set to end. */
+export function resumeStudioSubscription(): Promise<StudioChargeAnswer> {
+  return manage({ action: "resume" }, readChargeAnswer, manageOffline);
+}
+
+/** Opens the card form (a setup-mode payment step: nothing is charged). */
+export function startStudioCardStep(locale: "fr" | "en"): Promise<Answer<StudioCardStep>> {
+  return manage({ action: "card_start", locale }, readCardStep, manageOffline);
+}
+
+/** The card saved in that step becomes the subscription's; an unpaid invoice is retried with it. */
+export function saveStudioCard(sessionId: string): Promise<StudioChargeAnswer> {
+  return manage({ action: "card_saved", session_id: sessionId }, readChargeAnswer, manageOffline);
+}
+
+/**
+ * Finishes the bank's check (3-D Secure) of a charge the function started.
+ * Stripe.js is loaded only now. `true` once the payment went through.
+ */
+export async function confirmStudioCharge(clientSecret: string, publishableKey: string, locale: "fr" | "en"): Promise<boolean> {
+  const { loadStripeFor } = await import("./checkout/stripe");
+  const stripe = await loadStripeFor(publishableKey, locale);
+  if (!stripe) return false;
+  const result = await stripe.handleNextAction({ clientSecret });
+  return !result.error && (result.paymentIntent?.status === "succeeded" || result.paymentIntent?.status === "processing");
 }

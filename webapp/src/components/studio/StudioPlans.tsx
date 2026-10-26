@@ -3,7 +3,7 @@
 import { useState } from "react";
 import { useTranslation } from "react-i18next";
 import clsx from "clsx";
-import { ArrowRight, Check, Gift } from "lucide-react";
+import { ArrowRight, Check, CircleCheck, Gift } from "lucide-react";
 import { Button } from "../ui/Button";
 import { trackStudio } from "../../lib/studioAnalytics";
 import { useNavigate } from "../../lib/navigation";
@@ -13,7 +13,14 @@ import { studioCheckoutPath, type StudioCheckoutSurface } from "../../lib/studio
 import { useFormat } from "../../lib/format";
 import { useStudioPlanPrices } from "../../lib/studioBilling";
 import { displayPrice, monthsFreeOf, type StudioPlanPrice } from "../../lib/studioBillingMapping";
-import { STUDIO_PLANS, type StudioBillingInterval, type StudioPaidPlanId, type StudioPlan } from "../../data/studio";
+import { hasFeature, type StudioFeature } from "../../lib/studioEntitlements";
+import {
+  STUDIO_PLAN_FEATURES,
+  STUDIO_PLANS,
+  type StudioBillingInterval,
+  type StudioPaidPlanId,
+  type StudioPlan,
+} from "../../data/studio";
 
 /** The member's subscription page (`app/compte/(space)/studio`). */
 export const ACCOUNT_STUDIO_PATH = "/compte/studio";
@@ -26,8 +33,8 @@ export type ChooseStudioPlan =(plan: StudioPaidPlanId, interval: StudioBillingIn
  *
  * Plan names, amounts and the trial's length are the project's own
  * (`data/studio.ts`, `studio_plan_prices`, `studio.plans.items.*.name`) — this
- * page invents none of them. Every paid plan opens the whole Studio (decision
- * 94). Nothing is bought here: the trial opens the Studio (`onTrial`) and a
+ * page invents none of them. What each plan includes is `STUDIO_PLAN_FEATURES`
+ * (decision 113), enforced by the database. Nothing is bought here: the trial opens the Studio (`onTrial`) and a
  * paid plan leads to its checkout (`onChoose`).
  */
 export function StudioPlans({ onTrial, onChoose }: { onTrial: () => void; onChoose?: ChooseStudioPlan }) {
@@ -101,12 +108,24 @@ export function StudioCheckoutPlans({ surface }: { surface: StudioCheckoutSurfac
  * the subscription page and the Studio's locked screen (`StudioAccessGate`),
  * so all show the same plans. Amounts are the live Stripe prices
  * (`studio_plan_prices`) once read, the confirmed display values before.
+ *
+ * On the member's subscription page (decision 112) `current` marks the plan and
+ * billing they have (opened on that billing), the other cards switch to theirs,
+ * and `locked` holds every switch while the subscription cannot change.
  */
-export function StudioPaidPlans({ onChoose }: { onChoose: ChooseStudioPlan }) {
+export function StudioPaidPlans({
+  onChoose,
+  current = null,
+  locked = false,
+}: {
+  onChoose: ChooseStudioPlan;
+  current?: { plan: StudioPaidPlanId; interval: StudioBillingInterval } | null;
+  locked?: boolean;
+}) {
   const { t } = useTranslation();
   const { formatMoney } = useFormat();
   const live = useStudioPlanPrices();
-  const [interval, setInterval] = useState<StudioBillingInterval>("month");
+  const [interval, setInterval] = useState<StudioBillingInterval>(current?.interval ?? "month");
   const paid = STUDIO_PLANS.filter((plan): plan is StudioPlan & { id: StudioPaidPlanId } => plan.id !== "trial");
   const monthsFree = Math.max(
     0,
@@ -147,18 +166,24 @@ export function StudioPaidPlans({ onChoose }: { onChoose: ChooseStudioPlan }) {
         {paid.map((plan) => {
           const name = t(`studio.plans.items.${plan.id}.name`);
           const price = displayPrice(plan.id, interval, live);
+          const isCurrent = current?.plan === plan.id && current.interval === interval;
           return (
             <li
               key={plan.id}
               className={clsx(
                 "gt-studio-b-plan relative grid content-start gap-5 rounded-[var(--radius-xl)] border bg-[var(--surface-card)] p-5 sm:p-6",
-                plan.featured ? "gt-studio-b-plan--featured" : "border-[var(--border-subtle)]",
+                (current ? isCurrent : plan.featured) ? "gt-studio-b-plan--featured" : "border-[var(--border-subtle)]",
               )}
             >
               <div className="grid gap-2">
                 <div className="flex flex-wrap items-center justify-between gap-2">
                   <h3 className="text-[length:var(--text-h4)]">{name}</h3>
-                  {plan.featured && (
+                  {isCurrent ? (
+                    <span className="inline-flex items-center gap-1 rounded-[var(--radius-pill)] bg-[var(--surface-inverse)] px-2.5 py-1 text-[10.5px] font-bold uppercase tracking-[var(--tracking-wide)] text-[var(--text-inverse)]">
+                      <CircleCheck size={12} aria-hidden="true" />
+                      {t("studioPage.plans.current")}
+                    </span>
+                  ) : plan.featured && !current && (
                     <span className="rounded-[var(--radius-pill)] bg-[var(--gt-emerald-300)] px-2.5 py-1 text-[10.5px] font-bold uppercase tracking-[var(--tracking-wide)] text-[var(--gt-ink-900)]">
                       {t("studioPage.plans.featured")}
                     </span>
@@ -180,28 +205,72 @@ export function StudioPaidPlans({ onChoose }: { onChoose: ChooseStudioPlan }) {
                 <p className="m-0 text-[length:var(--text-body-sm)] font-semibold text-[var(--text-muted)]">{t("studioPage.plans.unavailable")}</p>
               )}
 
-              <Button
-                variant={plan.featured ? "primary" : "outline"}
-                size="lg"
-                fullWidth
-                iconRight={ArrowRight}
-                disabled={!price}
-                onClick={() => onChoose(plan.id, interval, price)}
-                className={clsx(plan.featured && "gt-studio-cta")}
-              >
-                {t("studioPage.plans.cta", { plan: name })}
-              </Button>
+              {isCurrent ? (
+                <Button variant="outline" size="lg" fullWidth iconLeft={CircleCheck} disabled>
+                  {t("studioPage.plans.currentCta")}
+                </Button>
+              ) : (
+                <Button
+                  variant={plan.featured && !current ? "primary" : "outline"}
+                  size="lg"
+                  fullWidth
+                  iconRight={ArrowRight}
+                  disabled={!price || locked}
+                  onClick={() => onChoose(plan.id, interval, price)}
+                  className={clsx(plan.featured && !current && "gt-studio-cta")}
+                >
+                  {t(current ? "studioPage.plans.switchCta" : "studioPage.plans.cta", { plan: name })}
+                </Button>
+              )}
 
-              <div className="grid gap-1.5 rounded-[var(--radius-md)] border border-[var(--gt-blue-200)] bg-[var(--gt-blue-50)] p-3.5">
-                <span className="inline-flex items-center gap-1.5 text-[10.5px] font-bold uppercase tracking-[var(--tracking-wide)] text-[var(--gt-blue-700)]">
-                  <Check size={12} aria-hidden="true" />
-                  {t("studioPage.plans.detailsTitle")}
-                </span>
-                <span className="text-[length:var(--text-caption)] text-[var(--text-body)]">{t("studioPage.plans.details")}</span>
-              </div>
+              <PlanFeatureList plan={plan.id} />
             </li>
           );
         })}
+      </ul>
+    </div>
+  );
+}
+
+/** The plan below, whose features this one builds on ("Everything in Essential, plus:"). */
+const PREVIOUS_PLAN: Partial<Record<StudioPaidPlanId, StudioPaidPlanId>> = { artist: "essential", atelier: "artist" };
+
+/** The features a card names, in its order, when the plan has them and the one below does not. */
+const ADDED_FEATURES: readonly StudioFeature[] = ["ownLogo", "templates", "collections", "glowbook", "tryOn", "postLayouts"];
+
+/**
+ * What a plan includes, from `STUDIO_PLAN_FEATURES` (decision 113): Essential
+ * lists its whole offer, the plans above say what they add to the one below.
+ */
+function PlanFeatureList({ plan }: { plan: StudioPaidPlanId }) {
+  const { t } = useTranslation();
+  const k = "studioPage.plans.features";
+  const f = STUDIO_PLAN_FEATURES[plan];
+  const previous = PREVIOUS_PLAN[plan] ?? null;
+
+  const lines: string[] = [];
+  if (f.creations === null && f.gemGroups === null) lines.push(t(`${k}.unlimited`));
+  else {
+    if (f.creations !== null) lines.push(t(`${k}.creations`, { count: f.creations }));
+    if (f.gemGroups !== null) lines.push(t(`${k}.gemGroups`, { count: f.gemGroups }));
+  }
+  if (!previous) lines.push(t(`${k}.library`), t(`${k}.tools`), t(`${k}.watermark`));
+  for (const feature of ADDED_FEATURES) {
+    if (hasFeature(plan, feature) && !hasFeature(previous, feature)) lines.push(t(`${k}.${feature}`));
+  }
+
+  return (
+    <div className="grid gap-2.5 border-t border-[var(--border-subtle)] pt-4">
+      <span className="text-[10.5px] font-bold uppercase tracking-[var(--tracking-wide)] text-[var(--gt-blue-700)]">
+        {previous ? t(`${k}.plus`, { plan: t(`studio.plans.items.${previous}.name`) }) : t(`${k}.title`)}
+      </span>
+      <ul className="m-0 grid list-none gap-2 p-0">
+        {lines.map((line) => (
+          <li key={line} className="flex items-start gap-2 text-[length:var(--text-body-sm)] text-[var(--text-body)]">
+            <Check size={16} aria-hidden="true" className="mt-0.5 shrink-0 text-[var(--status-success-fg)]" />
+            <span>{line}</span>
+          </li>
+        ))}
       </ul>
     </div>
   );

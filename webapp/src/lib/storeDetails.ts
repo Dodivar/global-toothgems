@@ -14,7 +14,7 @@ import type { Database, Json } from "./supabase/database.types";
  */
 
 export const STORE_SETTINGS_SELECT =
-  "store_name, legal_name, legal_form, share_capital, registration_number, vat_number, business_email, support_email, phone, address_line1, address_line2, postal_code, city, region, country_code, publication_director, publication_director_role, host_name, host_address, host_contact, show_email, show_phone, show_address, opening_hours, support_message";
+  "store_name, legal_name, legal_form, share_capital, registration_number, vat_number, vat_franchise, business_email, support_email, phone, address_line1, address_line2, postal_code, city, region, country_code, publication_director, publication_director_role, host_name, host_address, host_contact, show_email, show_phone, show_address, opening_hours, support_message";
 
 type StoreSettingsTable = Database["public"]["Tables"]["store_settings"]["Row"];
 export type StoreSettingsRow = Pick<
@@ -25,6 +25,7 @@ export type StoreSettingsRow = Pick<
   | "share_capital"
   | "registration_number"
   | "vat_number"
+  | "vat_franchise"
   | "business_email"
   | "support_email"
   | "phone"
@@ -79,6 +80,7 @@ export function mapStoreDetails(row: StoreSettingsRow, translations: StoreTransl
     shareCapital: text(row.share_capital),
     registrationNumber: text(row.registration_number),
     vatNumber: text(row.vat_number),
+    vatFranchise: row.vat_franchise,
     businessEmail: text(row.business_email),
     supportEmail: text(row.support_email),
     phone: text(row.phone),
@@ -113,6 +115,7 @@ export function storeDetailsPayload(d: StoreDetails) {
     share_capital: d.shareCapital.trim(),
     registration_number: d.registrationNumber.trim(),
     vat_number: d.vatNumber.replace(/\s/g, "").toUpperCase(),
+    vat_franchise: d.vatFranchise,
     business_email: d.businessEmail.trim(),
     support_email: d.supportEmail.trim(),
     phone: d.phone.trim(),

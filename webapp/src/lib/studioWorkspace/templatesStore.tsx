@@ -1,11 +1,11 @@
 import { createContext, useCallback, useContext, useEffect, useMemo, useState, type ReactNode } from "react";
 import { useTranslation } from "react-i18next";
 import { useAuth } from "../auth";
-import { useStudioAccess } from "../studioAccess";
+import { useStudioAccess, useStudioFeature } from "../studioAccess";
 import { trackStudio } from "../studioAnalytics";
 import { supabase } from "../supabase/client";
 import { useToast } from "../toast";
-import { StudioStoreError } from "./repository";
+import { limitKind, StudioStoreError } from "./repository";
 import { sortTemplates, type StudioTemplate } from "./templates";
 import { createTemplatesRepository, type TemplatesRepository } from "./templatesRepository";
 import type { Creation } from "./types";
@@ -20,7 +20,8 @@ import { useWorkspace } from "./workspace";
  * (no real account) the library is `unavailable`: there is no fake catalogue.
  */
 
-export type TemplatesStatus = "signedOut" | "unavailable" | "loading" | "ready" | "error";
+/** `locked`: the member's plan does not open the templates (decision 113 (b): Artist and above). */
+export type TemplatesStatus = "signedOut" | "unavailable" | "locked" | "loading" | "ready" | "error";
 
 interface TemplatesValue {
   status: TemplatesStatus;
@@ -45,9 +46,12 @@ export function StudioTemplatesProvider({ children }: { children: ReactNode }) {
   const ws = useWorkspace();
   const access = useStudioAccess();
   const reportDenied = access?.reportDenied;
+  const refreshAccess = access?.refresh;
+  // Below the Artist plan the database refuses the library: nothing is asked.
+  const locked = useStudioFeature("templates") === false;
   const repo = useMemo<TemplatesRepository | null>(
-    () => (userId && realAuth && supabase ? createTemplatesRepository(supabase, userId) : null),
-    [userId, realAuth],
+    () => (userId && realAuth && supabase && !locked ? createTemplatesRepository(supabase, userId) : null),
+    [userId, realAuth, locked],
   );
 
   const [loaded, setLoaded] = useState<{
@@ -62,11 +66,13 @@ export function StudioTemplatesProvider({ children }: { children: ReactNode }) {
     ? restoring
       ? "loading"
       : "signedOut"
-    : !repo
-      ? "unavailable"
-      : current
-        ? current.status
-        : "loading";
+    : locked
+      ? "locked"
+      : !repo
+        ? "unavailable"
+        : current
+          ? current.status
+          : "loading";
   const templates = useMemo(() => current?.templates ?? [], [current]);
 
   useEffect(() => {
@@ -82,6 +88,14 @@ export function StudioTemplatesProvider({ children }: { children: ReactNode }) {
 
   const fail = useCallback(
     (err: unknown, key: string) => {
+      const limit = limitKind(err);
+      if (limit) {
+        // The plan's number is reached (decision 113): nothing was saved; the
+        // usage is read again so the plan pages show it.
+        showToast(t("studio.access.limit.title"), t(`studio.access.limit.${limit}`), "warning");
+        void refreshAccess?.();
+        return;
+      }
       if (err instanceof StudioStoreError && err.code === "accessDenied") {
         showToast(t("studio.access.denied.title"), t("studio.access.denied.body"), "warning");
         reportDenied?.(key);
@@ -91,7 +105,7 @@ export function StudioTemplatesProvider({ children }: { children: ReactNode }) {
       showToast(t(`studio.templates.toasts.${gone ? "gone" : key}`), t("studio.workspace.toasts.tryAgain"), "error");
       if (gone) setTick((n) => n + 1);
     },
-    [showToast, t, reportDenied],
+    [showToast, t, reportDenied, refreshAccess],
   );
 
   const adoptCreation = ws.adoptCreation;

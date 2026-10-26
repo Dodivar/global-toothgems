@@ -97,7 +97,8 @@
     "editDetails": "Modifier les informations",
     "delete": "Supprimer",
     "useInStudio": "Utiliser dans le Studio",
-    "collections": "Collections…"
+    "collections": "Collections…",
+    "more": "Plus d’actions"
   },
   "creations": {
     "eyebrow": "Mes créations",
@@ -113,16 +114,6 @@
     "emptyBody": "Commencez à créer dans le Studio 3D et enregistrez ici vos compositions préférées. Elles seront toujours prêtes à être reprises.",
     "emptyCta": "Créer ma première composition",
     "emptyHelp": "Découvrir le fonctionnement"
-  },
-  "summary": {
-    "title": "Votre Studio",
-    "creations_one": "création",
-    "creations_other": "créations",
-    "groups_one": "groupe de gemmes",
-    "groups_other": "groupes de gemmes",
-    "gems_one": "gemme utilisée",
-    "gems_other": "gemmes utilisées",
-    "value": "valeur estimée totale des créations"
   },
   "library": {
     "clearSearch": "Effacer la recherche",

@@ -9,18 +9,18 @@ import monogram from "../../assets/monogram-white.png";
 import { AdminButton } from "../../components/admin/AdminButton";
 import { AdminIconButton } from "../../components/admin/AdminIconButton";
 import { FormField } from "../../components/admin/FormField";
-import { DEMO_ADMIN_EMAIL, DEMO_ADMIN_PASSWORD, useAdminAuth } from "../../lib/adminAuth";
+import { useAdminAuth } from "../../lib/adminAuth";
 import { useFocusTrap } from "../../lib/useFocusTrap";
 import { returnPathFrom } from "../../lib/authRoutes";
+import { sendPasswordReset } from "../../lib/passwordRecovery";
 import { photo } from "../../lib/images";
 
 /**
  * Administration access screen.
  *
  * With Supabase configured it signs in through Supabase Auth and only lets a
- * staff account through (see `lib/adminAuth.tsx`). Without it, it rehearses
- * the same states against the prototype's demo account, whose credentials are
- * then printed on the page on purpose; they never appear with real sign-in.
+ * staff account through (see `lib/adminAuth.tsx`). Without it, it checks the
+ * single local account of mock mode (the smoke tests).
  */
 
 type Status = "idle" | "submitting" | "rejected" | "notStaff" | "unavailable" | "success";
@@ -37,8 +37,8 @@ export function AdminLogin() {
   // From `RequireAdmin` (history state) or from the server's redirect (`?suite=`, `proxy.ts`).
   const from = (location.state as { from?: string } | null)?.from ?? returnPathFrom(location.search) ?? "/admin";
 
-  const [email, setEmail] = useState(realAuth ? "" : DEMO_ADMIN_EMAIL);
-  const [password, setPassword] = useState(realAuth ? "" : DEMO_ADMIN_PASSWORD);
+  const [email, setEmail] = useState("");
+  const [password, setPassword] = useState("");
   const [remember, setRemember] = useState(true);
   const [reveal, setReveal] = useState(false);
   const [status, setStatus] = useState<Status>("idle");
@@ -238,12 +238,6 @@ export function AdminLogin() {
             <ShieldCheck size={14} aria-hidden="true" className="mt-0.5 flex-none text-[var(--status-success-fg)]" />
             {t("admin.login.security")}
           </p>
-
-          {!realAuth && (
-            <p className="m-0 mt-3 rounded-[var(--admin-radius-sm)] bg-[var(--status-info-bg)] p-3.5 text-[length:var(--text-caption)] text-[var(--gt-blue-700)]">
-              {t("admin.login.demoNotice", { email: DEMO_ADMIN_EMAIL, password: DEMO_ADMIN_PASSWORD })}
-            </p>
-          )}
         </div>
       </section>
 
@@ -252,19 +246,18 @@ export function AdminLogin() {
   );
 }
 
-/** Password recovery, rehearsed: the request, the wait, the confirmation. */
+/** Password recovery: the reset link is sent by Supabase Auth, the answer is the same whether or not the address has an account. */
 function ForgotPasswordDialog({ onClose, defaultEmail }: { onClose: () => void; defaultEmail: string }) {
   const { t } = useTranslation();
   const ref = useFocusTrap<HTMLDivElement>(true, onClose);
   const [email, setEmail] = useState(defaultEmail);
-  const [state, setState] = useState<"idle" | "sending" | "sent">("idle");
+  const [state, setState] = useState<"idle" | "sending" | "sent" | "failed">("idle");
 
   const send = async (event: FormEvent) => {
     event.preventDefault();
     if (!EMAIL_PATTERN.test(email.trim())) return;
     setState("sending");
-    await new Promise((resolve) => setTimeout(resolve, 800));
-    setState("sent");
+    setState((await sendPasswordReset(email)) === "sent" ? "sent" : "failed");
   };
 
   return (
@@ -309,6 +302,11 @@ function ForgotPasswordDialog({ onClose, defaultEmail }: { onClose: () => void; 
             <p className="m-0 text-[length:var(--text-body-sm)] text-[var(--text-body)]">
               {t("admin.login.forgotBody")}
             </p>
+            {state === "failed" && (
+              <p role="alert" className="m-0 text-[length:var(--text-caption)] text-[var(--status-error-fg)]">
+                {t("admin.login.forgotFailed")}
+              </p>
+            )}
             <FormField label={t("admin.login.email")} required>
               {(props) => (
                 <input

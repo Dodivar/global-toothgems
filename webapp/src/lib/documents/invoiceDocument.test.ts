@@ -145,6 +145,84 @@ describe("invoice PDF", () => {
     expect(all).not.toContain("late payment");
   });
 
+  it("under the VAT franchise: no VAT column, total or breakdown, and the art. 293 B mention", () => {
+    const franchised: InvoiceRow = {
+      ...invoiceRow,
+      total_excl_tax: "65.90",
+      total_tax: "0",
+      total_incl_tax: "65.90",
+      seller: { ...seller, vat_number: "", vat_franchise: true },
+      lines: [
+        { kind: "product", description: "Cœur chromé", detail: "Or", quantity: 2, unit_price_incl: 34.17, unit_price_excl: 34.17, discount_incl: 8.2, vat_rate_bp: 0, total_incl: 60.14, vat_amount: 0, total_excl: 60.14 },
+        { kind: "shipping", description: "Colissimo", detail: null, quantity: 1, unit_price_incl: 5.76, unit_price_excl: 5.76, discount_incl: 0, vat_rate_bp: 0, total_incl: 5.76, vat_amount: 0, total_excl: 5.76 },
+      ],
+      vat_breakdown: [{ vat_rate_bp: 0, total_excl: 65.9, vat_amount: 0, total_incl: 65.9 }],
+    };
+    const inv = mapInvoice(franchised);
+    expect(inv.seller.vatFranchise).toBe(true);
+    expect(mapInvoice(invoiceRow).seller.vatFranchise).toBe(false);
+
+    const all = texts(invoiceDocument(inv, t, fmt));
+    expect(all).toContain("TVA non applicable, art. 293 B du CGI");
+    expect(all).toContain("PRIX UNITAIRE");
+    expect(all).toContain("remise de 8,20 €");
+    for (const absent of ["TVA intracommunautaire", "Récapitulatif de la TVA", "HT", "TTC", "0 %"]) {
+      expect(all).not.toContain(absent);
+    }
+    // An English invoice keeps the French legal wording.
+    expect(texts(invoiceDocument(inv, translator(en), { ...fmt, lang: "en" }))).toContain("TVA non applicable, art. 293 B du CGI");
+  });
+
+  it("a 3D Studio invoice: plan lines with interval and period, a proration credit, the account credit used", () => {
+    const studio: InvoiceRow = {
+      ...invoiceRow,
+      invoice_number: "FA-2026-000042",
+      total_excl_tax: "20.00",
+      total_tax: "0",
+      total_incl_tax: "20.00",
+      seller: { ...seller, vat_number: "", vat_franchise: true },
+      buyer: { email: "camille@example.com", order_number: "", address: { first_name: "Camille", last_name: "Roussel" } },
+      lines: [
+        { kind: "subscription", description: "Essentiel", plan: "essential", interval: "month", proration: true, period_start: null, period_end: null, quantity: 1, unit_price_incl: -4.95, unit_price_excl: -4.95, discount_incl: 0, vat_rate_bp: 0, total_incl: -4.95, vat_amount: 0, total_excl: -4.95 },
+        { kind: "subscription", description: "Atelier", plan: "atelier", interval: "month", proration: false, period_start: "2026-10-26T10:00:00Z", period_end: "2026-11-26T10:00:00Z", quantity: 1, unit_price_incl: 24.95, unit_price_excl: 24.95, discount_incl: 0, vat_rate_bp: 0, total_incl: 24.95, vat_amount: 0, total_excl: 24.95 },
+      ],
+      vat_breakdown: [{ vat_rate_bp: 0, total_excl: 20, vat_amount: 0, total_incl: 20 }],
+      payment: { paid_at: "2026-10-26T10:00:00Z", gift_card_amount: 0, charged_amount: 15, balance_amount: 5, billing_reason: "subscription_update" },
+    };
+    const inv = mapInvoice(studio);
+    expect(inv.lines.map((l) => [l.kind, l.totalIncl, l.subscription?.plan, l.subscription?.proration])).toEqual([
+      ["subscription", -495, "essential", true],
+      ["subscription", 2495, "atelier", false],
+    ]);
+    expect(inv.payment.balance).toBe(500);
+    const all = texts(invoiceDocument(inv, t, fmt));
+    expect(all).toContain("Ajustement au prorata — formule Essentiel");
+    expect(all).toContain("Abonnement Studio 3D — formule Atelier");
+    expect(all).toContain("facturation mensuelle");
+    expect(all).toContain("du 26 octobre 2026 au 26 novembre 2026");
+    expect(all).toContain("-4,95 €");
+    expect(all).toContain("Réglé avec le crédit de votre compte");
+    expect(all).toContain("paiement de l’abonnement par carte");
+    expect(all).toContain("TVA non applicable, art. 293 B du CGI");
+    expect(all).not.toContain("Commande");
+  });
+
+  it("a 3D Studio withdrawal credit note names the unused share and the days used", () => {
+    const note: InvoiceRow = {
+      ...creditRow,
+      seller: { ...seller, vat_franchise: true },
+      total_excl_tax: "17.91",
+      total_tax: "0",
+      total_incl_tax: "17.91",
+      lines: [{ kind: "subscription", withdrawal: true, description: "Artist", plan: "artist", interval: "month", used_days: 3, period_days: 30, quantity: null, vat_rate_bp: 0, total_incl: 17.91, vat_amount: 0, total_excl: 17.91 }],
+      vat_breakdown: [{ vat_rate_bp: 0, total_excl: 17.91, vat_amount: 0, total_incl: 17.91 }],
+      payment: { refunded_at: "2026-10-28T10:00:00Z", refund_method: "card", reason: "withdrawal", credited_invoice_number: "FA-2026-000042" },
+    };
+    const all = texts(invoiceDocument(mapInvoice(note), translator(en), { ...fmt, lang: "en" }));
+    expect(all.replaceAll("\n", " ")).toContain("Withdrawal — unused share of the 3D Studio subscription, Artist plan");
+    expect(all).toContain("3 of 30 days used");
+  });
+
   it("names the file after the number", () => {
     expect(invoiceFileName(mapInvoice(invoiceRow), t)).toBe("facture-FA-2026-000001.pdf");
     expect(invoiceFileName(mapInvoice(creditRow), translator(en))).toBe("credit-note-AV-2026-000001.pdf");

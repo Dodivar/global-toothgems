@@ -6,6 +6,8 @@ import { useNavigate, useSearchParams } from "../../lib/navigation";
 import { Download, RefreshCw } from "lucide-react";
 import { AdminButton } from "../../components/admin/AdminButton";
 import { AdminHeader } from "../../components/admin/AdminHeader";
+import { ORDER_EXPORT_COLUMNS, ordersCsv, type OrderExportColumn } from "../../lib/adminOrderExport";
+import { saveFile } from "../../lib/saveFile";
 import { MetricsRow } from "../../components/admin/MetricsRow";
 import { OrdersToolbar } from "../../components/admin/OrdersToolbar";
 import { OrderCardList, OrdersTable } from "../../components/admin/OrdersTable";
@@ -16,7 +18,6 @@ import {
   CancelDialog,
   ExportDialog,
   StatusDialog,
-  type ExportFormat,
   type ExportScope,
 } from "../../components/admin/OrderDialogs";
 import { useAdminOrders } from "../../lib/adminOrders";
@@ -396,14 +397,12 @@ export function Orders() {
         filteredCount={filtered.length}
         totalCount={orders.length}
         rangeLabel={rangeLabel}
-        onConfirm={(scope: ExportScope, format: ExportFormat) => {
-          const count = scope === "selection" ? selected.size : scope === "filtered" ? filtered.length : orders.length;
+        onConfirm={(scope: ExportScope) => {
+          const rows = scope === "selection" ? selectedOrders : scope === "filtered" ? filtered : orders;
           setExportOpen(false);
-          showToast(
-            t("admin.orders.toastExportTitle"),
-            t("admin.orders.toastExportBody", { count, format: t(`admin.orders.exportFormats.${format}`) }),
-            "info",
-          );
+          const headers = Object.fromEntries(ORDER_EXPORT_COLUMNS.map((column) => [column, t(`admin.orders.exportColumns.${column}`)])) as Record<OrderExportColumn, string>;
+          saveFile(new Blob([ordersCsv(rows, headers)], { type: "text/csv;charset=utf-8" }), `commandes-${new Date().toISOString().slice(0, 10)}.csv`);
+          showToast(t("admin.orders.toastExportTitle"), t("admin.orders.toastExportBody", { count: rows.length }), "success");
         }}
       />
 

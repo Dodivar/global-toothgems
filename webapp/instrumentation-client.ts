@@ -12,6 +12,9 @@ if (!projectToken) {
     api_host: host,
     defaults: "2026-01-30",
     capture_exceptions: true,
+    // Nothing is captured until the visitor accepts the analytics category
+    // (`CookieConsentProvider` opts in and out).
+    opt_out_capturing_by_default: true,
     debug: process.env.NODE_ENV === "development",
   });
 }

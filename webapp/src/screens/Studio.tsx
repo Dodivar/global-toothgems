@@ -9,6 +9,7 @@ import { StudioPlans } from "../components/studio/StudioPlans";
 import { StudioFaq } from "../components/studio/StudioFaq";
 import { useNavigate } from "../lib/navigation";
 import { useFormat } from "../lib/format";
+import { useVatFranchise, vatNoticeKey } from "../lib/vatRegime";
 import { useReveal } from "../lib/useReveal";
 import { STUDIO_ENTRY_PLAN, STUDIO_TRIAL_DAYS } from "../data/studio";
 import { STUDIO_EDITOR_PATH } from "../lib/studioUrl";
@@ -73,6 +74,7 @@ function SectionHeading({ id, eyebrow, title, body }: { id: string; eyebrow: str
 
 export function Studio() {
   const { t } = useTranslation();
+  const vatNotice = vatNoticeKey(useVatFranchise());
   const { formatMoney } = useFormat();
   const navigate = useNavigate();
   // The editor itself shows the trial invitation or the plans (StudioAccessGate).
@@ -230,6 +232,7 @@ export function Studio() {
           <SectionHeading id="gt-studio-b-plans" eyebrow={t("studioPage.plans.eyebrow")} title={t("studioPage.plans.title")} body={t("studioPage.plans.body")} />
           <StudioPlans onTrial={start} />
           <p className="m-0 text-[length:var(--text-caption)] text-[var(--text-muted)]">
+            {vatNotice && `${t(vatNotice)}. `}
             {t("studioPage.plans.note")}
             {access.granted ? ` ${t("studio.access.previewHint")}` : ""}
           </p>

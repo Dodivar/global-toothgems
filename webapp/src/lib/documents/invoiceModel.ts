@@ -7,6 +7,9 @@ import { toMinorUnits } from "../catalog/money.ts";
  * numbered `FA-YYYY-NNNNNN` / `AV-YYYY-NNNNNN` (supabase/README.md,
  * "Invoices"). Nothing is recomputed here; amounts become integer minor units
  * of the invoice currency. Pure, unit-tested in `invoiceDocument.test.ts`.
+ * 3D Studio subscriptions are invoiced the same way (decision 115): their lines
+ * are `subscription` lines (plan, billing interval, period, proration or
+ * withdrawal), and their buyer has no order number.
  *
  * Shared with the Edge Functions that e-mail the PDFs: `npm run sync:documents`
  * copies this folder's portable modules to `supabase/functions/_shared/documents/`
@@ -29,7 +32,23 @@ export interface InvoiceAddress {
   phone?: string;
 }
 
-export type InvoiceLineKind = "product" | "course" | "gift_card" | "shipping" | "adjustment";
+export type InvoiceLineKind = "product" | "course" | "gift_card" | "shipping" | "adjustment" | "subscription";
+
+/** What a 3D Studio `subscription` line is about (frozen with the line). */
+export interface InvoiceSubscriptionDetail {
+  /** Plan key: essential, artist, atelier. */
+  plan: string;
+  interval?: "month" | "year";
+  /** ISO timestamps of the billed period, when Stripe gave it. */
+  periodStart?: string;
+  periodEnd?: string;
+  /** A prorated adjustment of a plan change (a credit is negative). */
+  proration: boolean;
+  /** A credit note line: the unused share given back on a withdrawal. */
+  withdrawal: boolean;
+  usedDays?: number;
+  periodDays?: number;
+}
 
 export interface InvoiceLine {
   kind: InvoiceLineKind;
@@ -45,6 +64,8 @@ export interface InvoiceLine {
   totalExcl: number;
   vatAmount: number;
   totalIncl: number;
+  /** Present on `subscription` lines only. */
+  subscription?: InvoiceSubscriptionDetail;
 }
 
 export interface InvoiceVatRow {
@@ -62,6 +83,8 @@ export interface InvoiceSeller {
   shareCapital: string;
   registrationNumber: string;
   vatNumber: string;
+  /** Issued under the VAT franchise (art. 293 B du CGI): no VAT, the legal mention instead. */
+  vatFranchise: boolean;
   email: string;
   addressLines: string[];
   countryCode: string;
@@ -87,6 +110,8 @@ export interface OrderInvoice {
     paidAt?: string;
     giftCard: number;
     charged: number;
+    /** Paid from the member's Stripe account credit (a Studio plan change credited earlier). */
+    balance: number;
     refundedAt?: string;
     refundMethod?: "card" | "gift_card";
     reason?: string;
@@ -116,7 +141,7 @@ export const INVOICE_SELECT =
   "id, kind, invoice_number, issued_at, sale_date, currency, total_excl_tax, total_tax, total_incl_tax, seller, buyer, lines, vat_breakdown, payment";
 
 type Obj = Record<string, Json | undefined>;
-const LINE_KINDS: readonly InvoiceLineKind[] = ["product", "course", "gift_card", "shipping", "adjustment"];
+const LINE_KINDS: readonly InvoiceLineKind[] = ["product", "course", "gift_card", "shipping", "adjustment", "subscription"];
 
 function obj(value: Json | undefined): Obj {
   return value && typeof value === "object" && !Array.isArray(value) ? (value as Obj) : {};
@@ -130,8 +155,13 @@ function str(value: Json | undefined): string {
 function opt(value: Json | undefined): string | undefined {
   return str(value) || undefined;
 }
+/** Signed: a Studio proration credit is a negative line. Both money helpers (webapp, Edge) read unsigned decimals. */
+function signedMinor(value: number | string): number {
+  const text = typeof value === "number" ? value.toFixed(2) : value.trim();
+  return text.startsWith("-") ? -toMinorUnits(text.slice(1)) : toMinorUnits(text);
+}
 function money(value: Json | undefined): number {
-  return typeof value === "number" || (typeof value === "string" && value.trim() !== "") ? toMinorUnits(value) : 0;
+  return typeof value === "number" || (typeof value === "string" && value.trim() !== "") ? signedMinor(value) : 0;
 }
 function optMoney(value: Json | undefined): number | undefined {
   return value === null || value === undefined ? undefined : money(value);
@@ -168,11 +198,30 @@ function seller(value: Json | undefined): InvoiceSeller {
     shareCapital: str(s.share_capital),
     registrationNumber: str(s.registration_number),
     vatNumber: str(s.vat_number),
+    vatFranchise: s.vat_franchise === true,
     email: str(s.email),
     addressLines: [[str(s.address_line1), str(s.address_line2)].filter(Boolean).join(", "), [town, str(s.region)].filter(Boolean).join(", ")].filter(
       Boolean,
     ),
     countryCode: str(s.country_code).toUpperCase(),
+  };
+}
+
+function optInt(value: Json | undefined): number | undefined {
+  return typeof value === "number" ? Math.round(value) : undefined;
+}
+
+function subscription(l: Obj): InvoiceSubscriptionDetail {
+  const interval = str(l.interval);
+  return {
+    plan: str(l.plan),
+    interval: interval === "month" || interval === "year" ? interval : undefined,
+    periodStart: opt(l.period_start),
+    periodEnd: opt(l.period_end),
+    proration: l.proration === true,
+    withdrawal: l.withdrawal === true,
+    usedDays: optInt(l.used_days),
+    periodDays: optInt(l.period_days),
   };
 }
 
@@ -190,6 +239,7 @@ function line(l: Obj): InvoiceLine {
     totalExcl: money(l.total_excl),
     vatAmount: money(l.vat_amount),
     totalIncl: money(l.total_incl),
+    ...(kind === "subscription" ? { subscription: subscription(l) } : {}),
   };
 }
 
@@ -204,9 +254,9 @@ export function mapInvoice(row: InvoiceRow): OrderInvoice {
     issuedAt: row.issued_at,
     saleDate: row.sale_date.slice(0, 10),
     currency: row.currency,
-    totalExcl: toMinorUnits(row.total_excl_tax),
-    totalTax: toMinorUnits(row.total_tax),
-    totalIncl: toMinorUnits(row.total_incl_tax),
+    totalExcl: signedMinor(row.total_excl_tax),
+    totalTax: signedMinor(row.total_tax),
+    totalIncl: signedMinor(row.total_incl_tax),
     seller: seller(row.seller),
     buyer: { email: str(buyer.email), orderNumber: str(buyer.order_number), address: address(buyer.address) },
     lines: list(row.lines).map(line),
@@ -220,6 +270,7 @@ export function mapInvoice(row: InvoiceRow): OrderInvoice {
       paidAt: opt(payment.paid_at),
       giftCard: money(payment.gift_card_amount),
       charged: money(payment.charged_amount),
+      balance: money(payment.balance_amount),
       refundedAt: opt(payment.refunded_at),
       refundMethod: method === "card" || method === "gift_card" ? method : undefined,
       reason: opt(payment.reason),

@@ -11,58 +11,18 @@
     "eyebrow": "Studio 3D"
   },
   "plans": {
-    "eyebrow": "Formules",
-    "title": "Commencez gratuitement, évoluez à votre rythme.",
-    "body": "Essayez tout le Studio, puis choisissez la formule qui correspond à votre pratique.",
-    "featured": "Le choix des artistes",
-    "trialBadge_one": "{{count}} jour offert",
-    "trialBadge_other": "{{count}} jours offerts",
-    "free": "Gratuit",
-    "trialPeriod_one": "pendant {{count}} jour",
-    "trialPeriod_other": "pendant {{count}} jours",
-    "perMonth": "/ mois",
-    "ctaTrial": "Commencer l’essai",
-    "ctaPaid": "Choisir {{plan}}",
-    "note": "Prix mensuels, sans engagement. Les formules arrivent bientôt : pendant l’aperçu, tout le Studio est gratuit.",
     "items": {
       "trial": {
-        "name": "Essai",
-        "pitch": "Tout le Studio, le temps de vous faire un avis.",
-        "features": [
-          "Toutes les fonctionnalités du Studio",
-          "Toute la bibliothèque de gemmes",
-          "Vos premières créations enregistrées et partagées"
-        ]
+        "name": "Essai"
       },
       "essential": {
-        "name": "Essentiel",
-        "pitch": "Pour imaginer vos propres looks.",
-        "features": [
-          "Toute la bibliothèque de gemmes",
-          "Créations enregistrées dans votre compte",
-          "Partage de vos créations par lien",
-          "Ordinateur, tablette et mobile"
-        ]
+        "name": "Essentiel"
       },
       "artist": {
-        "name": "Artiste",
-        "pitch": "Pour préparer chaque pose avec vos clientes.",
-        "features": [
-          "Tout ce que comprend Essentiel",
-          "Gem Groups : vos assemblages réutilisables",
-          "Import de votre propre modèle de dentition",
-          "Estimation des pièces aux prix de la boutique"
-        ]
+        "name": "Artiste"
       },
       "atelier": {
-        "name": "Atelier",
-        "pitch": "Pour les studios et les équipes.",
-        "features": [
-          "Tout ce que comprend Artiste",
-          "Plusieurs postes pour votre équipe",
-          "Accès en avant-première aux nouveaux outils",
-          "Support prioritaire"
-        ]
+        "name": "Atelier"
       }
     }
   },
@@ -125,7 +85,7 @@
       "kept_other": "Vos {{count}} designs enregistrés sont conservés dans votre compte. Ils vous attendront dans le Studio dès qu’une formule sera active.",
       "keptNone": "Tout ce que vous avez enregistré reste dans votre compte et vous attendra dès qu’une formule sera active.",
       "plansTitle": "Choisissez votre formule",
-      "pricesNote": "Prix TVA comprise. Résiliable à tout moment depuis votre compte : l’abonnement prend fin à la fin de la période payée."
+      "pricesNote": "Résiliable à tout moment depuis votre compte : l’abonnement prend fin à la fin de la période payée."
     },
     "error": {
       "title": "Impossible de vérifier votre accès au Studio",
@@ -202,6 +162,32 @@
     "subscribed": {
       "title": "Bienvenue dans le Studio 3D",
       "body": "Votre abonnement {{plan}} est actif."
+    },
+    "limit": {
+      "title": "Limite de votre formule atteinte",
+      "creations": "Rien n’a été enregistré : votre formule ne garde pas plus de créations. Supprimez-en une ou passez à la formule supérieure depuis Mon abonnement.",
+      "gemGroups": "Rien n’a été enregistré : votre formule ne garde pas plus de Gem Groups. Supprimez-en un ou passez à la formule supérieure depuis Mon abonnement."
+    },
+    "planLocked": {
+      "cta": "Passer à {{plan}}",
+      "glowbook": {
+        "title": "Le Glowbook est inclus dans la formule {{plan}}",
+        "short": "Montrez vos créations sur une page publique et laissez vos clientes les essayer sur leur sourire.",
+        "body": "Votre vitrine publique, à mettre dans votre bio Instagram : vos créations en 3D, votre identité, où vous trouver, un QR code et une affiche — et l’essayage par IA, qui permet à vos clientes de voir vos créations sur leur propre sourire.",
+        "kept": "Si vous aviez déjà un Glowbook, il est masqué du public pour l’instant et revient tel quel dès que vous repassez à cette formule."
+      },
+      "templates": {
+        "title": "Les modèles Global Toothgems sont inclus dans la formule {{plan}}",
+        "short": "Partez des créations de l’équipe Global Toothgems et adaptez-les à vos clientes.",
+        "body": "Des créations imaginées par l’équipe Global Toothgems, renouvelées au fil du temps : copiez-en une dans vos créations en un clic, puis adaptez-la librement. Le modèle d’origine ne change jamais.",
+        "kept": "Les modèles que vous avez déjà copiés restent dans vos créations, quelle que soit votre formule."
+      },
+      "collections": {
+        "title": "Les dossiers sont inclus dans la formule {{plan}}",
+        "short": "Rangez vos créations par cliente, par style ou par événement.",
+        "body": "Créez des dossiers pour ranger vos créations par cliente, par style ou par événement, et retrouvez-les d’un coup d’œil dans Mes créations.",
+        "kept": "Si vous aviez déjà des dossiers, ils restent visibles : vous pouvez en retirer des créations ou les supprimer, mais plus en créer ni en remplir."
+      }
     }
   },
   "editor": {
@@ -664,9 +650,6 @@
     "trialUntil": "Votre essai gratuit vous donne accès au Studio jusqu’au {{date}}.",
     "noPlan": "Choisissez une formule pour utiliser le Studio 3D. Vos créations restent dans votre compte.",
     "staffNote": "Votre compte d’équipe ouvre le Studio sans abonnement.",
-    "manage": "Gérer mon abonnement",
-    "manageHint": "Changer de formule ou de facturation, mettre à jour votre carte, voir vos factures ou résilier : sur la page sécurisée de Stripe.",
-    "portalError": "La gestion de l’abonnement est momentanément indisponible. Réessayez dans un instant.",
     "choosePlan": "Choisir une formule",
     "openStudio": "Ouvrir le Studio",
     "withdrawal": {
@@ -704,25 +687,154 @@
       },
       "incomplete": "Votre rétractation est enregistrée mais n’a pas pu être terminée. Réessayez dans un instant.",
       "error": "Une erreur est survenue. Rien n’a été modifié : réessayez."
+    },
+    "manageLoading": "Chargement de votre formule, de votre carte et de vos factures…",
+    "manageError": "Impossible de lire votre formule et vos factures pour le moment.",
+    "change": {
+      "title": "Votre formule",
+      "current": "Vous êtes abonné·e à {{plan}} : {{price}} {{per}}.",
+      "rules": "Changez de formule ou de facturation à tout moment. Un changement de formule est ajusté au prorata sur votre prochaine facture ; passer de mensuel à annuel (ou l’inverse) est facturé tout de suite, déduction faite de la période non utilisée.",
+      "locked": {
+        "pastDue": "Mettez d’abord votre carte à jour : le changement de formule sera possible une fois le paiement régularisé.",
+        "canceling": "Votre abonnement est résilié pour la fin de la période. Gardez-le (plus bas) pour changer de formule."
+      },
+      "confirmTitle": "Passer à {{plan}} ?",
+      "from": "{{from}} → {{to}}",
+      "previewLoading": "Calcul du montant…",
+      "dueNow": "À payer aujourd’hui",
+      "nextInvoice": "Prochaine facture, le {{date}}",
+      "nextRenewal": "Puis à chaque renouvellement, à partir du {{date}}",
+      "credit": "Crédit conservé sur votre compte",
+      "explainNow": "La nouvelle période commence aujourd’hui : la part non utilisée de votre période actuelle est déduite du montant.",
+      "explainLater": "Rien n’est prélevé aujourd’hui : l’ajustement pour le reste de la période figure sur votre prochaine facture. Votre nouvelle formule s’applique tout de suite.",
+      "confirm": "Confirmer le changement",
+      "confirmPay": "Payer {{amount}} et changer",
+      "keep": "Garder ma formule",
+      "done": "C’est fait : vous êtes passé·e à {{plan}} ({{billing}}).",
+      "errors": {
+        "payment_failed": "Le paiement n’a pas abouti : votre formule n’a pas changé. Vérifiez votre carte, puis réessayez.",
+        "not_active": "Votre abonnement ne peut pas changer pour le moment.",
+        "cancel_scheduled": "Votre abonnement est résilié pour la fin de la période : gardez-le d’abord pour changer de formule.",
+        "same_plan": "C’est déjà votre formule.",
+        "plan_unavailable": "Cette formule est momentanément indisponible.",
+        "no_subscription": "Aucun abonnement en cours.",
+        "unavailable": "Le changement n’a pas pu être fait. Rien n’a été modifié : réessayez dans un instant."
+      }
+    },
+    "compare": {
+      "caption": "Ce que comprend chaque formule",
+      "feature": "Inclus",
+      "included": "Inclus",
+      "notIncluded": "Non inclus",
+      "rows": {
+        "creations": "Créations enregistrées",
+        "gemGroups": "Gem Groups (assemblages réutilisables)",
+        "studio": "Éditeur 3D et toute la bibliothèque de gemmes",
+        "tools": "Vue de face, fiche de placement, partage par lien",
+        "templates": "Modèles Global Toothgems",
+        "posts": "Publications pour les réseaux : image HD, vidéo 360°, GIF",
+        "signature": "Signature des publications",
+        "layouts": "Modèles de mise en page des publications",
+        "glowbook": "Votre Glowbook, la vitrine publique de vos créations",
+        "tryOn": "Essayage par IA sur le sourire de vos clientes",
+        "collections": "Dossiers pour ranger vos créations"
+      },
+      "values": {
+        "watermark": "Filigrane Global Toothgems",
+        "ownLogo": "Votre logo, ou rien",
+        "unlimited": "Illimité"
+      }
+    },
+    "card": {
+      "title": "Moyen de paiement",
+      "none": "Aucune carte enregistrée.",
+      "other": "Moyen de paiement",
+      "expires": "expire le {{date}}",
+      "replace": "Remplacer la carte",
+      "add": "Ajouter une carte",
+      "dialogTitle": "Nouvelle carte",
+      "dialogBody": "Elle servira pour les prochains paiements de votre abonnement.",
+      "loading": "Ouverture du formulaire sécurisé…",
+      "save": "Enregistrer la carte",
+      "noCharge": "Rien n’est prélevé maintenant. Votre banque peut vous demander de confirmer.",
+      "close": "Fermer",
+      "saved": "Votre nouvelle carte est enregistrée.",
+      "savedAndPaid": "Votre nouvelle carte est enregistrée et le paiement en attente est réglé.",
+      "savedPaymentFailed": "Votre carte est enregistrée, mais le paiement en attente n’a pas abouti. Nous réessaierons automatiquement ; vous pouvez aussi essayer une autre carte.",
+      "error": "La carte n’a pas pu être enregistrée. Réessayez dans un instant."
+    },
+    "invoices": {
+      "title": "Factures et avoirs",
+      "invoice": "Facture",
+      "creditNote": "Avoir",
+      "download": "PDF",
+      "downloadLabel": "Télécharger {{kind}} {{number}} (PDF)",
+      "loadError": "Vos factures n’ont pas pu être chargées.",
+      "pdfError": "Le PDF n’a pas pu être créé. Réessayez."
+    },
+    "cancel": {
+      "title": "Résilier l’abonnement",
+      "body": "Vous gardez l’accès au Studio jusqu’au {{date}}, puis l’abonnement s’arrête sans autre prélèvement. Vos créations restent dans votre compte.",
+      "cta": "Résilier mon abonnement",
+      "confirmTitle": "Résilier votre abonnement ?",
+      "confirmBody": "Vous gardez l’accès jusqu’au {{date}}, puis l’abonnement s’arrête. Vous pouvez changer d’avis d’ici là.",
+      "reasonLabel": "Pourquoi partez-vous ? (facultatif)",
+      "reasons": {
+        "none": "Je préfère ne pas le dire",
+        "too_expensive": "C’est trop cher",
+        "missing_features": "Il manque des fonctions",
+        "unused": "Je ne l’utilise pas assez",
+        "switched_service": "J’utilise un autre outil",
+        "other": "Autre raison"
+      },
+      "confirm": "Confirmer la résiliation",
+      "keep": "Garder mon abonnement",
+      "done": "Votre abonnement est résilié : vous gardez l’accès jusqu’au {{date}}.",
+      "scheduledTitle": "Résiliation programmée",
+      "scheduled": "Votre abonnement s’arrête le {{date}}. Vous pouvez le garder : il continuera comme avant, sans nouvelle souscription.",
+      "resume": "Garder mon abonnement",
+      "resumed": "Votre abonnement continue : prochain renouvellement le {{date}}.",
+      "error": "L’action n’a pas pu être faite. Rien n’a été modifié : réessayez dans un instant."
+    },
+    "usage": {
+      "title": "Ce que comprend votre formule {{plan}}",
+      "creations": "Créations enregistrées",
+      "gemGroups": "Gem Groups",
+      "of": "{{used}} sur {{limit}}",
+      "unlimited": "{{used}} · illimité",
+      "full": {
+        "creations": "Limite atteinte : supprimez une création ou passez à la formule supérieure pour en enregistrer de nouvelles.",
+        "gemGroups": "Limite atteinte : supprimez un Gem Group ou passez à la formule supérieure pour en enregistrer de nouveaux."
+      },
+      "glowbook": "Glowbook",
+      "tryOn": "Essayage par IA pour vos clientes",
+      "included": "inclus",
+      "withPlan": "avec la formule {{plan}}",
+      "templates": "Modèles Global Toothgems",
+      "collections": "Dossiers pour ranger vos créations"
     }
   },
   "tryOn": {
-    "action": "Essayer sur une photo",
-    "editorSub": "La création enregistrée, sur la photo du sourire de votre client·e",
-    "title": "Essayer sur une photo",
-    "subtitle": "« {{name}} » sur la photo du sourire de votre client·e.",
+    "action": "Essayer sur un sourire",
+    "editorSub": "La création enregistrée, rendue par IA sur une photo de sourire",
+    "title": "Essayer sur un sourire",
+    "subtitle": {
+      "artist": "« {{name}} » sur la photo du sourire de votre client·e.",
+      "visitor": "« {{name}} » sur une photo de votre sourire."
+    },
     "empty": "Cette création ne contient aucune pierre : ajoutez-en dans l’éditeur, enregistrez, puis revenez l’essayer.",
     "steps": {
       "photo": "Photo",
-      "analysis": "Analyse",
-      "adjust": "Ajustement"
+      "check": "Vérification",
+      "render": "Essai",
+      "result": "Résultat"
     },
     "photo": {
       "tipsTitle": "Pour une bonne photo",
       "tips": {
-        "front": "De face, le visage droit, à hauteur du sourire",
-        "lips": "Lèvres écartées, les dents bien visibles",
+        "lips": "Lèvres écartées, les dents du haut bien visibles",
         "light": "Une lumière franche, sans contre-jour ni ombre sur les dents",
+        "front": "De face, sans tourner ni pencher la tête, le téléphone immobile",
         "filter": "Sans filtre ni retouche"
       },
       "drop": "Déposez la photo ici, ou",
@@ -732,68 +844,126 @@
       "previewAlt": "Photo du sourire choisie",
       "formats": "JPEG, PNG, WebP ou HEIC · {{maxMb}} Mo max · au moins {{minWidth}} × {{minHeight}} pixels",
       "reading": "Lecture de la photo…",
-      "privacy": "La photo reste sur cet appareil : elle n’est ni envoyée ni enregistrée par Global Toothgems, et elle est oubliée dès que vous fermez cette fenêtre. Ses métadonnées (position GPS, appareil, date) sont retirées.",
-      "consent": "La personne photographiée m’a donné son accord pour utiliser cette photo",
-      "consentHint": "Pour cet essai uniquement. Ne partagez l’image obtenue qu’avec son accord.",
-      "consentRequired": "Cochez cette case pour continuer : il faut l’accord de la personne photographiée.",
-      "continue": "Continuer",
+      "privacy": "Pour le rendu, la photo est envoyée de façon chiffrée à Global Toothgems puis à Google (Gemini) le temps de créer l’image : elle n’est pas conservée par Global Toothgems. Ses métadonnées (position GPS, appareil, date) sont retirées avant l’envoi.",
+      "consent": {
+        "artist": "La personne photographiée m’a donné son accord pour utiliser cette photo",
+        "visitor": "C’est une photo de moi et j’accepte qu’elle serve à cet essai"
+      },
+      "consentHint": {
+        "artist": "Pour cet essai uniquement. Ne partagez l’image obtenue qu’avec son accord.",
+        "visitor": "Pour cet essai uniquement : la photo n’est pas conservée."
+      },
+      "consentRequired": {
+        "artist": "Cochez cette case pour continuer : il faut l’accord de la personne photographiée.",
+        "visitor": "Cochez cette case pour continuer."
+      },
       "errors": {
         "type": "Ce fichier n’est pas une photo prise en charge. Choisissez un JPEG, un PNG, un WebP ou un HEIC.",
         "empty": "Ce fichier est vide. Choisissez une autre photo.",
         "tooLarge": "Cette photo dépasse {{maxMb}} Mo. Choisissez-en une plus légère.",
         "tooSmall": "Cette photo est trop petite pour voir les dents : il faut au moins {{minWidth}} × {{minHeight}} pixels.",
-        "unreadable": "Impossible de lire cette photo sur ce navigateur. Si c’est un HEIC, convertissez-le en JPEG (ou réglez l’appareil photo sur « le plus compatible »), puis réessayez."
+        "unreadable": "Impossible de lire cette photo sur ce navigateur. Si c’est un HEIC, convertissez-le en JPEG (ou réglez l’appareil photo sur « le plus compatible »), puis réessayez.",
+        "tooDark": "Cette photo est trop sombre pour voir les dents. Reprenez-la à la lumière du jour ou face à une lampe."
+      },
+      "generate": "Générer le rendu IA",
+      "checking": "Vérification de la disponibilité…",
+      "signInHint": "Connectez-vous à votre compte pour obtenir le rendu par IA.",
+      "closeUp": {
+        "title": "Un gros plan sur vos dents",
+        "body": "Approchez le téléphone et tenez-le bien de face, à hauteur du sourire : vos dents doivent occuper une bonne partie de la photo, pas tout le visage. Une photo trop éloignée, de biais, trop sombre ou floue est refusée avant le rendu, sans compter dans vos rendus du jour."
       }
     },
     "processing": {
-      "title": "Analyse du sourire…",
-      "body": "Nous cherchons les dents sur la photo pour y poser les pierres de la création.",
+      "checking": {
+        "title": "Vérification de la photo…",
+        "body": "Une IA vérifie que les dents sont bien visibles, de face, nettes et éclairées avant de créer le rendu. Quelques secondes."
+      },
+      "rendering": {
+        "title": "Création du rendu…",
+        "body": "L’IA pose les pierres de la création sur la photo. Cela prend en général moins d’une minute."
+      },
       "cancel": "Annuler"
     },
     "errors": {
       "not_available": {
-        "title": "Placement automatique bientôt disponible",
-        "body": "Le placement automatique des pierres n’est pas encore en service. Placez la création à la main : faites-la glisser sur les dents, puis ajustez sa taille et son inclinaison."
+        "title": "Rendu IA bientôt disponible",
+        "body": "L’essayage par IA n’est pas encore en service. Revenez bientôt : aucune photo n’est envoyée en attendant."
       },
-      "no_smile_detected": {
-        "title": "Aucun sourire détecté",
-        "body": "Nous n’avons pas trouvé de sourire sur cette photo. Prenez-la de face, lèvres écartées."
+      "sign_in_required": {
+        "title": "Connexion nécessaire",
+        "body": "Connectez-vous à votre compte pour obtenir le rendu par IA."
       },
-      "low_quality": {
-        "title": "Photo trop floue ou trop sombre",
-        "body": "Reprenez la photo avec plus de lumière, sans bouger, sans filtre."
+      "not_found": {
+        "title": "Création introuvable",
+        "body": "Cette création n’est plus disponible (supprimée, retirée ou lien désactivé)."
       },
-      "teeth_not_visible": {
-        "title": "Dents pas assez visibles",
-        "body": "Les dents de la création ne se voient pas assez. Demandez un sourire plus large, de face."
+      "not_allowed": {
+        "title": "Rendu IA non disponible pour cette création",
+        "body": "L’option de rendu par IA n’est pas incluse pour les créations de cet·te artiste."
+      },
+      "daily_limit": {
+        "title": "Limite du jour atteinte",
+        "body": "Vous avez atteint le nombre de rendus IA possibles pour aujourd’hui. Réessayez demain."
+      },
+      "blocked": {
+        "title": "Photo refusée par l’IA",
+        "body": "Le service d’IA a refusé cette photo. Essayez une autre photo, de face, centrée sur le sourire."
+      },
+      "network": {
+        "title": "Connexion interrompue",
+        "body": "Le rendu n’a pas pu être demandé. Vérifiez votre connexion et réessayez."
       },
       "failed": {
-        "title": "L’analyse n’a pas abouti",
-        "body": "Une erreur est survenue pendant l’analyse. Réessayez, ou placez la création à la main."
+        "title": "Le rendu n’a pas abouti",
+        "body": "Une erreur est survenue pendant le rendu. Réessayez dans un instant."
+      },
+      "photo_unsuitable": {
+        "title": "Cette photo ne permet pas un bon rendu",
+        "body": "Rien n’a été généré et ce rendu n’est pas compté. Reprenez une photo :"
       }
     },
     "errorActions": {
-      "newPhoto": "Prendre une autre photo",
-      "retry": "Réessayer",
-      "manual": "Placer à la main"
-    },
-    "adjust": {
-      "automatic": "Pierres placées automatiquement (fiabilité {{confidence}} %). Vérifiez et corrigez si besoin.",
-      "stageLabel": "« {{name}} » sur la photo du sourire",
-      "gestures": "Faites glisser pour déplacer, pincez à deux doigts pour agrandir et tourner, ou utilisez la molette.",
-      "keys": "Au clavier : flèches pour déplacer, + et − pour la taille, [ et ] pour tourner, Maj pour aller plus vite.",
-      "size": "Taille",
-      "rotation": "Inclinaison",
-      "opacity": "Opacité",
-      "before": "Avant / après",
-      "reset": "Réinitialiser",
       "newPhoto": "Autre photo",
+      "retry": "Réessayer",
+      "signIn": "Se connecter"
+    },
+    "result": {
+      "alt": "« {{name}} » essayé sur la photo, rendu par IA",
+      "beforeAlt": "La photo d’origine",
+      "aiTag": "Rendu IA",
+      "beforeTag": "Avant",
+      "disclaimer": "Image générée par IA : un aperçu pour se projeter, pas une promesse exacte du résultat posé.",
+      "regenerate": "Générer à nouveau",
+      "notStored": "L’image n’est pas conservée par Global Toothgems : téléchargez-la pour la garder.",
+      "before": "Avant / après",
       "download": "Télécharger l’image",
+      "downloaded": "Image téléchargée.",
       "share": "Partager",
       "shareText": "« {{name}} », essayé avec le Studio 3D Global Toothgems",
-      "downloaded": "Image téléchargée.",
-      "exportFailed": "L’image n’a pas pu être créée. Réessayez.",
-      "exportHint": "L’image est créée sur cet appareil ; rien n’est envoyé à Global Toothgems."
+      "shareFailed": "Le partage n’a pas abouti. Réessayez ou téléchargez l’image."
+    },
+    "visitor": {
+      "title": "Essayer sur mon sourire",
+      "body": "Prenez ou choisissez une photo de votre sourire et voyez cette création sur vous.",
+      "cta": "Essayer sur mon sourire"
+    },
+    "photoIssues": {
+      "too_far": "plus près : vos dents doivent remplir une bonne partie de la photo ;",
+      "not_frontal": "de face : le téléphone à hauteur du sourire, sans tourner ni pencher la tête, les deux dents de devant bien visibles ;",
+      "no_teeth": "en souriant, lèvres écartées, les dents du haut bien visibles ;",
+      "teeth_hidden": "sans rien devant les dents (main, objet, cheveux) ;",
+      "too_dark": "avec plus de lumière, sans contre-jour ;",
+      "too_bright": "avec une lumière moins forte, sans flash direct sur les dents ;",
+      "blurry": "nette : tenez le téléphone immobile et laissez-le faire la mise au point."
+    },
+    "allowance": {
+      "remaining_one": "Il vous reste {{count}} essai sur {{limit}} (sur 24 h glissantes).",
+      "remaining_other": "Il vous reste {{count}} essais sur {{limit}} (sur 24 h glissantes).",
+      "none": "Vous avez utilisé vos {{limit}} essais des dernières 24 h. De nouveaux essais se libèrent 24 h après chacun.",
+      "unlimited": "Essais illimités (compte administrateur).",
+      "signedOut_one": "Réservé aux membres connectés : {{count}} essai par 24 h.",
+      "signedOut_other": "Réservé aux membres connectés : {{count}} essais par 24 h.",
+      "signedOutPlain": "Réservé aux membres connectés."
     }
   },
   "frontView": {

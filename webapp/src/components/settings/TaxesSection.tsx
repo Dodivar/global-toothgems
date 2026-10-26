@@ -65,7 +65,16 @@ export function TaxesSection() {
 
   return (
     <>
-      {missing.length > 0 && (
+      {saved.store.vatFranchise && (
+        <div role="status" className="flex items-start gap-3 rounded-[var(--admin-radius)] border border-[var(--border-subtle)] bg-[var(--surface-brand-wash)] p-4 text-[var(--text-body)]">
+          <Receipt size={18} strokeWidth={2} aria-hidden="true" className="mt-0.5 flex-none text-[var(--gt-blue-700)]" />
+          <div className="grid gap-1">
+            <p className="m-0 text-[length:var(--text-body-sm)] font-semibold text-[var(--text-primary)]">{t("settings.taxes.franchise.title")}</p>
+            <p className="m-0 text-[length:var(--text-caption)]">{t("settings.taxes.franchise.body")}</p>
+          </div>
+        </div>
+      )}
+      {!saved.store.vatFranchise && missing.length > 0 && (
         <div role="status" className="flex items-start gap-3 rounded-[var(--admin-radius)] border border-[var(--gt-amber-400)] bg-[var(--status-warning-bg)] p-4 text-[var(--status-warning-fg)]">
           <TriangleAlert size={18} strokeWidth={2} aria-hidden="true" className="mt-0.5 flex-none" />
           <div className="grid gap-1">

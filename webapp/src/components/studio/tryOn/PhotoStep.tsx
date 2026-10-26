@@ -1,32 +1,49 @@
 import { useId, useRef, useState, type DragEvent } from "react";
 import clsx from "clsx";
-import { Camera, CircleAlert, ImageUp, LoaderCircle, ShieldCheck } from "lucide-react";
+import { Camera, CircleAlert, ImageUp, Info, LoaderCircle, LogIn, ShieldCheck, Sparkles, ZoomIn } from "lucide-react";
 import { useTranslation } from "react-i18next";
 import { Button } from "../../ui/Button";
 import { Checkbox } from "../../ui/Checkbox";
+import type { TryOnAudience } from "../../../lib/studio3d/tryOn";
 import { PHOTO_MAX_BYTES, PHOTO_MIN_LONG_EDGE, PHOTO_MIN_SHORT_EDGE, type PhotoError } from "../../../lib/studio3d/tryOnPhoto";
 import { preparePhoto, type PreparedPhoto } from "./preparePhoto";
 
-const TIPS = ["front", "lips", "light", "filter"] as const;
+const TIPS = ["lips", "light", "front", "filter"] as const;
+
+/** Whether the AI render can be asked: still checking, connected, or not (yet). */
+export type AiState = "checking" | "available" | "unavailable";
 
 /**
- * Step 1: the client's smile photo. Taken with the camera (phones) or chosen
- * from the device, or dropped (desktop); checked, turned upright and
- * downscaled in the browser. The artist confirms the client's consent before
- * going on. The photo never leaves this tab.
+ * Step 1: the smile photo, then the AI render (decision 111). It first asks
+ * for a close-up of the teeth — the function refuses a photo where they are
+ * too small, too dark or blurred, before any render. The photo is
+ * taken with the camera (phones), chosen from the device or dropped
+ * (desktop); checked, turned upright and downscaled in the browser. The
+ * person's consent is confirmed — the artist for a client, a visitor for
+ * themselves — then one button asks for the render (a signed-out visitor is
+ * sent to sign in). While the AI is not connected the button is disabled
+ * and the step says it is coming: nothing is sent.
  */
 export function PhotoStep({
   photo,
   onPhoto,
   consent,
   onConsent,
-  onContinue,
+  audience,
+  ai,
+  signedIn,
+  onAi,
+  onSignIn,
 }: {
   photo: PreparedPhoto | null;
   onPhoto: (photo: PreparedPhoto) => void;
   consent: boolean;
   onConsent: (consent: boolean) => void;
-  onContinue: () => void;
+  audience: TryOnAudience;
+  ai: AiState;
+  signedIn: boolean;
+  onAi: () => void;
+  onSignIn: () => void;
 }) {
   const { t } = useTranslation();
   const cameraRef = useRef<HTMLInputElement>(null);
@@ -55,17 +72,26 @@ export function PhotoStep({
     void take(e.dataTransfer.files?.[0]);
   };
 
-  const proceed = () => {
+  const proceed = (go: () => void) => {
     if (!consent) {
       setConsentMissing(true);
       consentRef.current?.focus();
       return;
     }
-    onContinue();
+    go();
   };
+  const ready = !!photo && !busy;
 
   return (
     <div className="grid gap-4">
+      <div className="flex items-start gap-3 rounded-[var(--radius-md)] bg-[var(--surface-brand-wash)] p-3">
+        <ZoomIn size={20} aria-hidden="true" className="mt-0.5 flex-none text-[var(--gt-blue-700)]" />
+        <span className="grid gap-0.5">
+          <strong className="text-[length:var(--text-body-sm)] font-semibold text-[var(--text-primary)]">{t("studio.tryOn.photo.closeUp.title")}</strong>
+          <span className="text-[12.5px] leading-snug text-[var(--text-muted)]">{t("studio.tryOn.photo.closeUp.body")}</span>
+        </span>
+      </div>
+
       <div>
         <h3 className="m-0 text-[13px] font-bold text-[var(--text-primary)]">{t("studio.tryOn.photo.tipsTitle")}</h3>
         <ul className="m-0 mt-2 grid list-disc gap-1 pl-5 text-[length:var(--text-body-sm)] text-[var(--text-muted)] sm:grid-cols-2">
@@ -161,8 +187,8 @@ export function PhotoStep({
       <div className="grid gap-1">
         <Checkbox
           inputRef={consentRef}
-          label={t("studio.tryOn.photo.consent")}
-          description={t("studio.tryOn.photo.consentHint")}
+          label={t(`studio.tryOn.photo.consent.${audience}`)}
+          description={t(`studio.tryOn.photo.consentHint.${audience}`)}
           checked={consent}
           invalid={consentMissing && !consent}
           describedBy={consentMissing && !consent ? consentId : undefined}
@@ -173,16 +199,41 @@ export function PhotoStep({
         />
         {consentMissing && !consent && (
           <p id={consentId} role="alert" className="m-0 pl-8 text-[12px] text-[var(--status-error-fg)]">
-            {t("studio.tryOn.photo.consentRequired")}
+            {t(`studio.tryOn.photo.consentRequired.${audience}`)}
           </p>
         )}
       </div>
 
-      <div className="flex justify-end border-t border-[var(--border-subtle)] pt-4">
-        <Button variant="primary" size="sm" onClick={proceed} disabled={!photo || busy}>
-          {t("studio.tryOn.photo.continue")}
-        </Button>
+      <div className="grid gap-2 border-t border-[var(--border-subtle)] pt-4">
+        {ai === "unavailable" && (
+          <p role="status" className="m-0 flex items-start gap-2 rounded-[var(--radius-md)] bg-[var(--surface-sunken)] p-3 text-[length:var(--text-body-sm)] text-[var(--text-primary)]">
+            <Info size={16} aria-hidden="true" className="mt-0.5 flex-none text-[var(--gt-blue-700)]" />
+            <span className="grid gap-0.5">
+              <strong className="font-semibold">{t("studio.tryOn.errors.not_available.title")}</strong>
+              <span className="text-[var(--text-muted)]">{t("studio.tryOn.errors.not_available.body")}</span>
+            </span>
+          </p>
+        )}
+        {ai === "available" && !signedIn && <p className="m-0 text-[12.5px] text-[var(--text-muted)]">{t("studio.tryOn.photo.signInHint")}</p>}
+        <div className="flex flex-wrap items-center justify-end gap-2">
+          {ai === "checking" && (
+            <span role="status" className="inline-flex items-center gap-2 text-[12.5px] text-[var(--text-muted)]">
+              <LoaderCircle size={14} aria-hidden="true" className="motion-safe:animate-spin" />
+              {t("studio.tryOn.photo.checking")}
+            </span>
+          )}
+          {ai === "available" && !signedIn ? (
+            <Button variant="primary" size="sm" iconLeft={LogIn} onClick={onSignIn}>
+              {t("studio.tryOn.errorActions.signIn")}
+            </Button>
+          ) : (
+            <Button variant="primary" size="sm" iconLeft={Sparkles} disabled={ai !== "available" || !ready} onClick={() => proceed(onAi)}>
+              {t("studio.tryOn.photo.generate")}
+            </Button>
+          )}
+        </div>
       </div>
     </div>
   );
 }
+

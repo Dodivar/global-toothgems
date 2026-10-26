@@ -3,13 +3,14 @@
 -- (migrations 20261019072230_studio_glowbook, 20261019112411_studio_glowbook_creation,
 -- 20261019134715_studio_glowbook_look, 20261019142050_studio_glowbook_sections_certification,
 -- 20261021174016_studio_glowbook_spotlight_video, 20261021190830_studio_glowbook_spotlight_sweep,
--- 20261022111758_studio_glowbook_place, decisions 99, 100, 102, 103, 105 and 108)
+-- 20261022111758_studio_glowbook_place, 20261026170231_studio_plan_entitlements,
+-- decisions 99, 100, 102, 103, 105, 108 and 113)
 -- =============================================================================
 -- Proves, as the roles that really call them:
 --
 --   G1  a member without Studio access cannot open a Glowbook; bad handles,
 --       reserved handles and a taken handle are refused;
---   G2  a member with access opens one (pending) and adds a creation
+--   G2  a member on the Atelier plan opens one (pending) and adds a creation
 --       (pending); not someone else's creation, not an empty one; nothing is
 --       public before moderation (page, items, renders);
 --   G3  a member cannot approve (neither function nor direct write) nor read
@@ -101,7 +102,10 @@ begin
     (m_none, 'authenticated', 'authenticated', 'gb-none.test@example.invalid',   now(), now()),
     (modr,   'authenticated', 'authenticated', 'gb-mod.test@example.invalid',    now(), now());
   update public.profiles set role = 'manager' where id = modr;
-  insert into public.studio_trials (user_id) values (artist), (other);
+  -- The Glowbook is the Atelier plan's (decision 113).
+  insert into public.studio_subscriptions (user_id, plan, status, stripe_subscription_id, current_period_end) values
+    (artist, 'atelier', 'active', 'sub_gb_artist', now() + interval '1 month'),
+    (other,  'atelier', 'active', 'sub_gb_other',  now() + interval '1 month');
 
   perform set_config('role', 'authenticated', true);
   perform set_config('request.jwt.claims', json_build_object('sub', artist, 'role', 'authenticated')::text, true);
@@ -300,8 +304,8 @@ begin
 
   -- G7: no Studio access, no page.
   execute 'reset role';
-  update public.studio_trials
-     set trial_started_at = now() - interval '48 hours', trial_expires_at = now()
+  update public.studio_subscriptions
+     set status = 'canceled', current_period_end = now() - interval '1 second'
    where user_id = artist;
   perform set_config('role', 'anon', true);
   perform set_config('request.jwt.claims', '{"role":"anon"}', true);

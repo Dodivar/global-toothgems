@@ -1,4 +1,4 @@
-import { checkPhotoFile, checkPhotoSize, fitWithin, type PhotoError } from "../../../lib/studio3d/tryOnPhoto";
+import { checkPhotoFile, checkPhotoLight, checkPhotoSize, fitWithin, type PhotoError } from "../../../lib/studio3d/tryOnPhoto";
 
 /**
  * Decode the picked smile photo in the browser, turn it upright (EXIF
@@ -68,10 +68,31 @@ export async function preparePhoto(file: File): Promise<PreparePhotoResult> {
     if (!ctx) return { ok: false, error: "unreadable" };
     ctx.imageSmoothingQuality = "high";
     ctx.drawImage(decoded.source, 0, 0, width, height);
+    const lightError = checkPhotoLight(lumaOf(canvas));
+    if (lightError) return { ok: false, error: lightError };
     const blob = await new Promise<Blob | null>((resolve) => canvas.toBlob(resolve, "image/jpeg", 0.92));
     if (!blob) return { ok: false, error: "unreadable" };
     return { ok: true, photo: { blob, url: URL.createObjectURL(blob), width, height } };
   } finally {
     decoded.release();
+  }
+}
+
+/** The light of each pixel of a 64 × 64 copy (Rec. 601 luma), or nothing when the browser cannot read it back. */
+function lumaOf(source: HTMLCanvasElement): number[] {
+  const size = 64;
+  const small = document.createElement("canvas");
+  small.width = size;
+  small.height = size;
+  const ctx = small.getContext("2d", { willReadFrequently: true });
+  if (!ctx) return [];
+  ctx.drawImage(source, 0, 0, size, size);
+  try {
+    const { data } = ctx.getImageData(0, 0, size, size);
+    const out: number[] = [];
+    for (let i = 0; i < data.length; i += 4) out.push(0.299 * data[i] + 0.587 * data[i + 1] + 0.114 * data[i + 2]);
+    return out;
+  } catch {
+    return [];
   }
 }

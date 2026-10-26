@@ -67,7 +67,7 @@ supabase/
   tests/admin_customers_validation.sql back-office customers: customer refused, viewer read-only, manager writes and read-only columns, notes by their author, status history, course progress (always rolls back)
   tests/email_validation.sql        e-mail delivery events (forward-only, newsletter bounce/complaint) and the pending shipping / refund / enrolment queries, service role only (always rolls back)
   config.toml   CLI settings this repo relies on (verify_jwt of the Edge Functions)
-  functions/    Edge Functions (Deno): create-checkout-session, stripe-webhook, create-studio-subscription, studio-billing-portal, studio-billing-setup, refund-order, deliver-gift-cards, send-email, resend-webhook, send-pending-emails, invite-staff-member, _shared/ (pure modules + clients),
+  functions/    Edge Functions (Deno): create-checkout-session, stripe-webhook, create-studio-subscription, studio-manage-subscription, studio-billing-setup, refund-order, deliver-gift-cards, send-email, resend-webhook, send-pending-emails, invite-staff-member, _shared/ (pure modules + clients),
                 *_test.ts (deno test), .env.example (secret names)
   templates/confirm-signup.html     French "Confirm signup" email, to paste into the Auth settings
   templates/invite-staff.html       French "Invite user" email (team invitations), to paste into the Auth settings
@@ -182,6 +182,12 @@ supabase/
 | 20261007181011 | `gift_card_design_everywhere` | **Applied 2026-10-07.** The design/names/message chosen at checkout are shown back (WYSIWYG): policy `gift_cards: purchaser reads own` (a buyer reads the cards of their purchases through the existing column grant — never the code) so the member's order pages draw the card in its design; the `gift_card_delivery` template bodies (fr + en) lose their `{{message}}` paragraph because the e-mail now draws the card itself (`giftCardVisual()`, message included). Test: a buyer sees only their own cards (to add to `gift_cards_validation.sql`) |
 | 20261007184209 | `shipping_refunds` | **Applied 2026-10-07** (decision 82). Back-office shipping and card refunds: `create_shipment()` (a parcel and its lines in one transaction, `manage_orders`, carrier + tracking to ship) and `set_shipment_status()` (forward-only; same status again only corrects the details); refunded units no longer count as "to ship" (`sync_order_fulfillment`, `guard_shipment_item`, via `private.refunded_units()`) and a confirmed refund recomputes the order's fulfilment (`apply_refund_success`); `pending_refund_emails()` lists card refunds only (gift-card credits are not e-mailed); trigger `refunds_guard_zz_gift_cards` refuses a refund while a gift card bought in the order is active; `record_external_refund()` (backend only) records a refund made in the Stripe dashboard. Suite: `supabase/tests/shipping_refunds_validation.sql` |
 | 20261025090755 | `product_specs_faq` | **Applied 2026-10-25** (decision 110). Product characteristics `products.spec_material/center/back/packaging/wear` + the same columns on `product_translations` (1–120 characters, null = not shown; `spec_material` backfilled from `metadata.material`, which stays unread), `admin_save_product()` optional `specs`; FAQ groups `faq_groups`, `faq_items`, `faq_item_translations`, `product_faq_groups`, `category_faq_groups` (RLS: published for visitors, `manage_products` writes, audited), `product_faq(product, locale)`, `admin_save_faq_group()`, seed group for `gems`. Suite: `supabase/tests/product_specs_faq_validation.sql` |
+| 20261026170231 | `studio_plan_entitlements` | **Applied 2026-10-26** (decision 113). What each Studio plan includes: `private.studio_plan_limit(tier, kind)` (essential 15 creations / 3 Gem Groups, artist 150 / 30, atelier unlimited) enforced by BEFORE INSERT triggers on `creations` and `gem_groups` (SQLSTATE `GTL01`, per-owner advisory lock; editing and deleting never limited); `private.glowbook_allowed()` = Atelier tier, now required by `studio_save_showcase` / `studio_showcase_add` / `studio_showcase_reorder`, by the look/sections/video switch (`glowbook_customization_allowed`) and by every public read (page, 3D creation, renders, pictures, video); `studio_access_state()` adds `tier`, `glowbook`, `limits`, `usage`. Suite `studio_plan_entitlements_validation.sql` (Glowbook suite moved to Atelier subscriptions) |
+| 20261026185024 | `vat_franchise` | **Applied 2026-10-26** (decision 114). VAT franchise ("franchise en base de TVA", art. 293 B du CGI): `store_settings.vat_franchise` (default true, public); `vat_rate_bp()` returns 0 while it is on, so `create_order()` (products, courses, shipping) and the invoices charge no VAT; `private.invoice_seller()` freezes `vat_franchise` in every invoice snapshot; a credit note keeps the regime of the invoice it credits (`issue_refund_credit_note`); `admin_save_store_details()` takes an optional boolean `vat_franchise` (absent = unchanged). Suite `vat_franchise_validation.sql` (F1–F4); the suites that check the standard VAT regime switch the franchise off in their transaction |
+| 20261026190347 | `order_vat_regime` | **Applied 2026-10-26** (decision 114). The regime is the order's, not the payment day's: `orders.vat_franchise` (BEFORE INSERT trigger `orders_snapshot_vat_regime` copies `store_settings`, an UPDATE keeps it; existing orders false), `private.configured_vat_rate_bp()` (the configured rate whatever the switch; `vat_rate_bp()` now wraps it), `issue_order_invoice()` takes the seller flag and the shipping rate from the order. Suite `vat_franchise_validation.sql` F5 |
+| 20261026211240 | `studio_invoices` | **Applied 2026-10-26** (decision 115). 3D Studio legal invoices and credit notes issued by the database: `studio_subscription_invoices.total` + `.lines` (what the webhook read of the Stripe invoice); `invoices.order_id` nullable, `studio_invoice_id` (→ `studio_subscription_invoices`) and `studio_withdrawal_id` (→ `studio_withdrawals`, unique), `invoices_kind_links` rewritten (exactly one of order / Studio invoice; a Studio credit note credits a withdrawal); RLS: owners of the order or of the Studio invoice, active staff; triggers `studio_subscription_invoices_zz_issue_invoice` (FA- when recorded paid, `private.issue_studio_invoice`) and `studio_withdrawals_zz_issue_credit_note` (AV- when the refund is confirmed, `private.issue_studio_withdrawal_credit_note`); `record_studio_invoice()` gains `p_total`, `p_lines` (old 7-argument signature dropped); `pending_studio_subscription_emails()` returns `stripe_invoice_id`; new `pending_studio_invoice_emails()`, `pending_studio_credit_note_emails()` and templates `studio_invoice`, `studio_credit_note`. Suite `studio_invoices_validation.sql` (S1–S8); `studio_withdrawals_validation.sql` X4 no longer deletes an invoiced row |
+| 20261026213754 | `studio_credit_note_email` | **Applied 2026-10-26** (decision 115). `pending_studio_credit_note_emails()` lists every issued withdrawal credit note once the acknowledgement went out: the acknowledgement never carries the credit note (it could race the refund confirmation), `studio_credit_note` always sends it |
+| 20261026190000 | `studio_templates_collections_artist` | **Not applied — awaits the owner's go-ahead** (decision 113 (b)). `private.studio_artist_plan()` (Artist tier or above); `studio_templates()`, `studio_use_template()` and the template-render policy require it; collection create / rename / file policies replaced by "owners on the Artist plan" ones (read, take out and delete stay open). Suites `studio_templates_validation.sql` T10, `studio_collections_validation.sql` C8 (both moved to Artist subscriptions) |
 | 20261007072552 | `quiz_unlimited_attempts_cleanup` | **Partly applied 2026-10-07.** `admin_save_course()` and `private.learner_course_json()` rewritten without `allow_retry` / `max_attempts` (applied live through SQL, not recorded in the migration history). `drop column` on `course_quizzes` **not applied yet**: the MCP call timed out three times with no lock or session visible; the columns are unused and keep their defaults, so nothing depends on the drop |
 
 RLS is **enabled in the same migration that creates each table** (deny by default);
@@ -246,7 +252,7 @@ statuses as `text` + `CHECK` (easy to extend, no enum migrations), money as
 | `customer_addresses` | many per user, `address_type` shipping/billing, one default per type (setting a new default clears the old one), ISO `country_code`, nullable `postal_code`/`region`. |
 | `orders` | `order_number` `GT-100001…`, `user_id` (SET NULL on account deletion — accounting records survive), `customer_email` + `billing_address`/`shipping_address` **JSONB snapshots**, subtotal/discount/shipping/tax/total, `prices_include_tax` (EU VAT-inclusive default), `status`, `payment_status`, `fulfillment_status`, `customer_note`, `admin_note` (deprecated, always NULL since `order_staff_notes`: notes live in `order_notes`, staff only). |
 | `order_items` | frozen `product_name`, `variant_name`, `sku`, `unit_price`, `quantity`, generated `subtotal_amount`. |
-| `invoices` / `invoice_sequences` | legal invoices (`FA-YYYY-NNNNNN`, one per paid order) and credit notes (`AV-YYYY-NNNNNN`, one per confirmed refund of an invoiced order), issued by triggers, never updated or deleted; counters per series, gapless (see "Invoices and credit notes"). |
+| `invoices` / `invoice_sequences` | legal invoices (`FA-YYYY-NNNNNN`, one per paid order or paid 3D Studio invoice) and credit notes (`AV-YYYY-NNNNNN`, one per confirmed refund of an invoiced order or Studio withdrawal refund, decision 115), issued by triggers, never updated or deleted; counters per series, gapless (see "Invoices and credit notes"). |
 | `languages` | `fr` (default = language of base columns), `en`, `de` enabled; `it`, `es`, `pt`, `nl` disabled. The API can only switch `is_enabled` / `position` (through `admin_save_languages()`); `fr` and `en`, the storefront languages, cannot be switched off. |
 | `*_translations` | one row per (entity, non-default locale); product translations carry a localized `slug` (unique per locale) and `meta_title`/`meta_description`; `status` draft/published — only published rows are public. A translation for the default locale is rejected. |
 | `shipping_zones` / `shipping_zone_countries` / `shipping_rates` | zones of ISO countries + optional single "rest of world" zone; rates `standard`/`express`/`free`/`pickup` with delivery days, price, `free_over_amount`, basket-amount and weight bounds. |
@@ -268,7 +274,7 @@ statuses as `text` + `CHECK` (easy to extend, no enum migrations), money as
 ```
 server  create_order(user, email, items[{product_id, variant_id, quantity}], billing, shipping, rate, currency, locale)
           → prices from products/variants, shipping from shipping_rates (zone, bounds, free-over),
-            VAT per line at the destination rate (prices include VAT, rounded per line; shipping at standard rate),
+            VAT per line at the destination rate (prices include VAT, rounded per line; shipping at standard rate; 0 under the VAT franchise, decision 114),
             snapshots, stock RESERVED, expires_at = now + 60 min            → order 'pending'
 server  create Stripe Checkout Session (ui_mode custom: payment form on our page) for order.amount_due / currency
 webhook checkout.session.completed → record stripe_webhook_events → mark_order_paid(order, amount, currency, cs_…, pi_…)
@@ -1268,9 +1274,12 @@ plan button (locked screen, /studio-3d, /fr/studio-3d/abonnement)   signed out �
       request_studio_withdrawal(user, Stripe period) → cancel at Stripe (no proration) → refund the rest
       (metadata kind studio_withdrawal) → refund.* webhook → settle_studio_withdrawal_refund(); e-mail at once
   back on ?subscription=success → the page re-reads studio_access_state() every 3 s (60 s) until `subscribed`
-/compte/studio  plan, billing, renewal / end date, payment to fix → POST functions/v1/studio-billing-portal
-                → Stripe customer portal (configuration metadata kind = studio_portal: switch plan or interval,
-                  card, invoices, cancel at period end); changes come back through the webhook
+/compte/studio  plan, billing, renewal / end date, payment to fix, then managed on the page (decision 112)
+                → POST functions/v1/studio-manage-subscription {action: overview | preview | change | cancel |
+                  resume | card_start | card_saved} (member token; plan + interval only, price from the database)
+                  switch prorated like the portal was (interval switch invoiced now, pending_if_incomplete,
+                  3-D Secure on the page), card through a setup-mode Checkout Session, Stripe's invoice PDFs,
+                  cancel at period end / keep; changes come back through the webhook
 ```
 
   Cancelling in the portal keeps `active` with `cancel_at_period_end`: access lasts until `current_period_end`,
@@ -1398,6 +1407,127 @@ logo (artist, atelier)      re-encoded to PNG ≤ 1024 px in the browser → stu
   `twitter:card` on the server (`serverSharePreview.ts`, publishable key; renders signed for 7 days), still
   `noindex`. Suite B7: a visitor reads the preview and the render of a shared creation only, nothing once revoked.
 
+### 3D Studio smile try-on with AI (decision 111)
+
+```
+artist (own creation)       creation detail / editor Export menu → "Try on a smile"   source {creation_id}
+visitor                     /studio-3d/glowbook/<handle>/<item> or /studio-3d/partage/<token> → "Try it on my smile"
+                            (shown only when studio_public_showcase_creation / studio_shared_creation say try_on = true;
+                             never for a design carried in a link's fragment)       source {handle,item_id} | {token}
+dialog                      photo + consent → POST functions/v1/studio-try-on {"action":"status"} → {available}
+                            → "Generate the AI render" (sign-in required; disabled while available = false)
+AI render                   multipart: source, photo (≤ 6 MB), design (3D still JPEG drawn in the browser, required),
+                            seats (optional JSON: each gem's place and size on its tooth, and its tag "11a"),
+                            map (optional PNG ≤ 2 MB, since 2026-10-26: the flat design map, lib/studio3d/tryOnMap.ts —
+                              every front tooth boxed and numbered, midline drawn, bare teeth grey "no gem", each
+                              gem tagged like its data line; read with prompt v3 only, a malformed one is dropped)
+                            progress=1 (the webapp, since 2026-10-26): the answer after the gates is an event stream
+                            (text/event-stream, 200): {stage:checking} → {stage:rendering} once the photo passed →
+                            {result: <the JSON body below>}; the dialog shows the check as its own step
+                            (Photo → Check → Render → Result, completed steps in the success colour)
+                            → token checked → studio_try_on_creation(requester, ref) → scene + allowed (owner's switch)
+                            → daily limits (studio_try_on_requests, 24 h: renders TRY_ON_DAILY_LIMIT, default 10,
+                              photos refused by the check not counted; every request TRY_ON_DAILY_CHECKS, default 30)
+                            → row 'pending'
+                            → the creation must hold at least one valid gem (else not_found)
+                            → photo check (photoCheck.ts, TRY_ON_CHECK_MODEL, default gemini-3.1-flash-lite, JSON
+                              answer) → refused: row 'failed' / 'photo_unsuitable', 422 with the reasons, no render;
+                              check unavailable: render anyway
+                            → mouth close-up (crop.ts, since 2026-10-26; TRY_ON_MOUTH_CROP=off disables it): the
+                              check's teeth_box widened to the lips and to the nearest output proportion, cut
+                              from the JPEG (npm:jpeg-js) and sent as IMAGE 2 instead of the whole photo; the
+                              answer adds crop {x, y, width, height, photo_width, photo_height} and the browser
+                              pastes the edited close-up back with a faded border (webapp tryOnComposite.ts,
+                              pasteBack.ts) — nothing outside the mouth can change; no box, not a JPEG or a
+                              crop over 60 % of the photo: the whole photo, as before
+                            → Gemini generateContent on Vertex AI (GOOGLE_ADC_JSON → access token) or the Gemini
+                              API (GEMINI_API_KEY), model GEMINI_IMAGE_MODEL: systemInstruction =
+                              systemPrompt.ts v3 (default) or v1 (TRY_ON_PROMPT_VERSION); user turn = design (IMAGE 1),
+                              photo (IMAGE 2), the flat map (IMAGE 3, v3, when sent), up to 6 pictures of the private bucket studio-try-on-references, then
+                              (v3 only) the design data built from the STORED scene (one line per gem) → image
+                            → row 'generated' / 'failed' → the browser shows it (before/after, download, share)
+```
+
+- **The gate is the creation owner's plan**, never the viewer's: `private.studio_try_on_allowed(owner)` — since
+  2026-10-26 (decision 111 (a), migration `20261026164042_studio_try_on_atelier_only`) the highest plan only:
+  `studio_user_tier(owner) = 'atelier'` (an active Atelier subscription, or active staff); trial, Essential and
+  Artist owners no longer offer it (their own editor button gets `not_allowed`). The requester must be signed in.
+  The flag reaches the viewers through the two public readers (no owner id); the function checks it again.
+- **Daily allowance shown** (2026-10-26, owner's request): the status call (`{"action":"status"}`) also answers
+  `daily_limit` and, with a member's token, `quota` — `{limit, remaining}` renders over the last 24 hours (0 once
+  either cap, renders or checks, is reached), `{unlimited:true}` for an active administrator, null for a visitor
+  or when it cannot be read. The share / Glowbook viewer shows it under "Try it on my smile" and turns the button
+  off at 0 (`lib/studio3d/useTryOnStatus.ts`, `components/studio/tryOn/TryOnAllowance.tsx`). Display only: every
+  render is counted again.
+- **Not connected yet**: without both secrets the function answers `{available:false}` and `not_available` (503)
+  before reading anything, and the dialog says the render is coming and sends nothing. Connecting it (owner's
+  Google policy, 2026-10-25: no API key, Application Default Credentials only) = `GEMINI_IMAGE_MODEL=<model id>` +
+  `GOOGLE_ADC_JSON=<content of the file written by gcloud auth application-default login>` (optional
+  `GOOGLE_CLOUD_PROJECT`, default the file's `quota_project_id`; `GOOGLE_CLOUD_LOCATION`, default `global`): the
+  function trades the refresh token for a short-lived access token (cached until it expires) and calls Vertex AI
+  with `x-goog-user-project`. These are a **person's** credentials (the owner's Google account, scope
+  cloud-platform): fine to start, but they stop working if the account's password changes or the token is revoked
+  (`invalid_grant` in the logs → log in again and reset the secret), and an organisation's session policy may
+  expire them. For production, prefer an identity that is not a person (a service account used from Google Cloud,
+  e.g. a small Cloud Run relay, or Workload Identity Federation) — decision 111 (j). A Gemini API key still works
+  (`GEMINI_API_KEY`) where allowed. The request format (`supabase/functions/studio-try-on/gemini.ts`) is
+  unverified against the provider until the first real call.
+- **Reference pictures**: uploaded by the owner in the dashboard to the root of the private bucket
+  `studio-try-on-references` (JPEG / PNG / WebP, 10 MB; the first 6 by name are sent, 8 MB in all — a picture that would pass it is
+  skipped — cached 10 min per instance; Google's inline request limit is to check when connecting). No storage policy: only the service role and the dashboard see them.
+- **Prompt** (`supabase/functions/studio-try-on/systemPrompt.ts`, sent as `systemInstruction`, chosen by the
+  `TRY_ON_PROMPT_VERSION` secret): **v3** (default; any value but `v1`, `v2` included) — the agent's revision of
+  the owner's prompt after the first renders (2026-10-26): IMAGE 1 is the Studio's **3D render** of the creation
+  (`webapp/src/components/studio/tryOn/designImage.ts`: a hidden stage, `ExportStage.stageStill`, the still's
+  framing — front, slightly above — as a 1280 × 800 JPEG; it replaced the flat 2D map of v2, whose generic tooth
+  outlines and identical star outlines misled the model); images 3+ are realism references whose layouts must never
+  be copied; a **design data** block follows the images (`prompt.ts` `buildDesignData`: "exactly N gems", then
+  tooth FDI + name, cut described by its 3D geometry (a `starflower` is a plump five-pointed star, never a flower),
+  material, `#rrggbb`, coating, size — reduced to known values, never the artist's free text). The data decides
+  count, tooth, cut, material, colour and size, the render the position and rotation; a listed gem not visible on
+  the render (tongue side) is never rendered. Against the first renders it also asks for the exact count (no extra
+  stone), teeth counted from the midline, crisp highlights and saturated colours (real jewellery, not stickers) and
+  a final self-check. Second round (same day, after gems landed on the gums, too large or one tooth off): the
+  browser also sends `seats` (`webapp/src/lib/studio3d/tryOnSeats.ts`, from the Studio's front view: each gem's
+  centre height from the gum line, shift toward the midline, longest side as a share of the crown's width, tongue
+  side or not), read by `prompt.ts` `readSeats` (clamped numbers, matched to the stored gems by id — untrusted, at
+  worst it moves a gem on the requester's own render). The design data then goes tooth by tooth in the photo's
+  order, front teeth without gems named "bare", each gem with its share of the tooth and place on the crown;
+  tongue-side gems are left out. The prompt makes the gum line a hard limit (slide toward the biting edge, else
+  leave out) and the share of the tooth's width the first size rule. Third round (after a render that opened the mouth and enlarged
+  the teeth — the model recomposing, nothing in our code resizes the photo): the prompt locks the framing, lips,
+  opening and every tooth's size and place (a gem that does not fit gets smaller, never the tooth bigger), and the
+  render asks for the proportions closest to the photo's (`imageConfig.aspectRatio`, `gemini.ts`
+  `nearestAspectRatio`, read from the JPEG header; same price — a format, not a resolution; a model refusing the
+  option is asked again without it). The owner keeps the AI edit and wants the starting photo to be good (photo check).
+  Fourth round (gems kept the same size whatever the size of the smile): the photo check also boxes the two upper
+  central incisors (`central_incisors_box`); `photoCheck.ts` `photoScale` turns it into one millimetre as a share of
+  the photo's width (17 mm for the two teeth; implausible boxes ignored), and the design data gives the scale and each
+  gem's length IN THIS PHOTO, which the prompt makes the first size rule (never drawn larger). **v1** — the owner's original prompt, verbatim, images only. Both: IMAGE 1 the design,
+  IMAGE 2 the photo. Output size is the model's default (no `imageConfig`): a higher resolution costs more, kept
+  as a last resort by the owner (2026-10-26).
+- **Photo check** (2026-10-26, owner's request: no user manipulation, as little friction as possible): before any
+  render, a small text model (`TRY_ON_CHECK_MODEL`, `gemini-3.1-flash-lite` by default, same door as the image
+  model) reports facts as JSON — teeth visible, covered, the box around the visible teeth, sharpness, light — and
+  `photoCheck.ts` `judgePhoto` decides with fixed thresholds, never the model: refused only for a clear reason
+  (`too_far`: the teeth span less than `MIN_TEETH_SPAN` = 0.25 of the photo's longer side, a first estimate to tune
+  with the logged spans; `not_frontal`: a three-quarter or steep view, or an upper central incisor not facing the
+  camera — a slanted smile loses its middle line and the image model puts the gems on the wrong teeth and adds some,
+  2026-10-26; only `frontal` passes — `slightly_turned` was let through at first and still gave wrong renders, so
+  the owner tightened it the same day; `no_teeth`, `teeth_hidden`, `too_dark`, `too_bright`, `blurry`); a fact the model did not
+  give clearly is not held against the photo, and a check that fails (provider, model id) never blocks the render.
+  A refused photo answers 422 `photo_unsuitable` with its reasons, is recorded with that error code and does not
+  count toward the renders (`TRY_ON_DAILY_LIMIT`), only toward every request (`TRY_ON_DAILY_CHECKS`, default 30). Active administrators (`profiles.role = 'admin'`, owner's decision 2026-10-26, to test freely) have no daily limit; their requests are still recorded.
+  The browser asks for a close-up first (photo step), refuses locally only a photo far too dark to see a tooth
+  (`tryOnPhoto.ts` `checkPhotoLight`), and lists the reasons with what to change.
+- **Privacy**: the photo and the image only pass through the function's memory (never stored, never logged);
+  `studio_try_on_requests` keeps who asked, for which creation, from where, and the outcome — no picture. The
+  photo step says the photo is sent to Google only while the AI is connected.
+- Validated by `supabase/tests/studio_try_on_validation.sql` (T1 owner's access decides, T2 flags on the public
+  readers without the owner id, T3 the function's door: one reference, own creation only, active token, approved
+  Glowbook item, T4 service role only, T5 requests readable by their author only, bucket private without policy)
+  and `deno test` in `supabase/functions/studio-try-on/`.
+
 ### Integrity guarantees
 
 - `orders_total_matches`: `total = subtotal − discount + shipping (+ tax when prices exclude tax)`; discount ≤ subtotal; all amounts ≥ 0.
@@ -1416,6 +1546,30 @@ logo (artist, atelier)      re-encoded to PNG ≤ 1024 px in the browser → stu
 `order_items(order_id)`, `(product_id)`, `(variant_id)`; `payments(order_id)`; `profiles(role)`, `profiles(lower(email))`.
 Unique constraints already index slugs, SKUs and order numbers.
 Audit FKs (`created_by`/`updated_by`) are intentionally not indexed (only scanned when a staff profile is deleted).
+
+### 3D Studio plans: what each one includes (decision 113)
+
+```
+                 Essential   Artist   Atelier     enforced by
+saved creations  15          150      unlimited   creations_plan_limit trigger (GTL01)
+Gem Groups       3           30       unlimited   gem_groups_plan_limit trigger (GTL01)
+post signature   watermark   logo     logo        private.studio_user_tier() (decision 101)
+post layouts     -           -        yes         browser, tier from the database
+templates        -           yes      yes         private.studio_artist_plan() (decision 113 (b))
+folders          -           yes      yes         private.studio_artist_plan() (collection policies)
+Glowbook         -           -        yes         private.glowbook_allowed() (RPCs + public reads)
+AI smile try-on  -           -        yes         private.studio_try_on_allowed() (decision 111 (a))
+```
+
+A trial counts as Essential, active staff as Atelier. Everything else (editor, whole gem library, front view,
+placement sheet, share links, posts) is open to every plan. Every rule is read in the browser through
+`webapp/src/lib/studioEntitlements.ts`; `studioEntitlements.sql.test.ts` checks it against the latest SQL
+definitions in `supabase/migrations/` so neither side drifts alone. The browser shows the same
+table from `webapp/src/data/studio.ts` (`STUDIO_PLAN_FEATURES`, keep both in step) on the presentation page,
+the plans of the locked editor and `/compte/studio`, which also shows the member's usage from
+`studio_access_state()` (`tier`, `glowbook`, `limits`, `usage`). A save over the limit is refused by the
+database and said by a toast ("nothing was saved"); below Atelier, "My Glowbook" and a creation's Glowbook
+control show the plan instead of the forms.
 
 ## Security
 
@@ -2123,7 +2277,7 @@ VAT rates, shipping zones/rates mirroring the Settings prototype. Media rows ref
     Paid on our own page since 2026-10-18 (owner's request: keep the member on the site): the subscription's
     Checkout Session uses `ui_mode: "custom"` and is paid through the shop's Payment Element form
     (`StripePaymentForm`, decision 80) on a checkout page of its own, `/studio-3d/paiement` (owner's request: not on
-    the plans page), which opens the editor once paid; the customer portal stays Stripe's page.
+    the plans page), which opens the editor once paid; the customer portal stayed Stripe's page until decision 112.
     Agent's choices, to confirm: (a) the 14-day EU withdrawal right — since 2026-10-18 (owner's choice, migration
     `20261018155521`) the member must tick, in the payment step beside the card form, an express request for immediate access
     acknowledging that a withdrawal within 14 days costs the share of the subscription already used (L221-25,
@@ -2138,8 +2292,9 @@ VAT rates, shipping zones/rates mirroring the Settings prototype. Media rows ref
     is that its withdrawal is refunded in full — not automated (`request_studio_withdrawal()` always deducts the
     days used), to decide. To confirm with a lawyer:
     the wording; the refund on withdrawal (automated since decision 95); the Studio clause of the terms of sale (`data/legal/terms.ts` covers products and courses);
-    (b) subscription invoices are Stripe's own documents (Stripe numbering), outside the `FA-` / `AV-` sequence of
-    decision 86 — the accountant must confirm, or they must be issued by the database too; (c) VAT is inclusive at
+    (b) ~~subscription invoices are Stripe's own documents~~ — **superseded by decision 115 (2026-10-26)**: the
+    database issues the legal `FA-` invoice of every paid subscription invoice and the `AV-` credit note of a
+    withdrawal, in the sequence of decision 86; Stripe only collects; (c) VAT is inclusive at
     one rate (no Stripe Tax, no per-country rate, no B2B reverse charge), like decision 5; (d) `past_due` keeps
     access while Stripe retries (Stripe's dunning settings decide how long), decision 93 (c); (e) a plan or interval
     change in the portal is prorated immediately (`create_prorations`); (f) two subscriptions on one account (two
@@ -2163,7 +2318,8 @@ VAT rates, shipping zones/rates mirroring the Settings prototype. Media rows ref
     since the period's start (from Stripe) over the period's days, the used share rounded DOWN to the cent in the
     member's favour (an alternative is to the second); (c) the creations stay readable after a withdrawal (nothing
     is deleted); (d) no limit on withdrawals per account (each one costs the days used); (e) Stripe's invoice keeps
-    no credit note for this refund (decision 94 (b) with the accountant); (f) a Studio refund made by hand in the
+    no credit note for this refund (decision 94 (b) with the accountant) — since decision 115 the database issues
+    the `AV-` credit note when the refund is confirmed; (f) a Studio refund made by hand in the
     Stripe dashboard is not recorded anywhere; (g) the webhook endpoint must receive `refund.created`,
     `refund.updated`, `refund.failed`: added to the TEST-mode endpoint on 2026-10-18 at the owner's request
     (`studio-billing-setup` `webhook_events`), to add to the live endpoint at launch. Verified end to end the same
@@ -2310,6 +2466,67 @@ VAT rates, shipping zones/rates mirroring the Settings prototype. Media rows ref
     plan switch `private.glowbook_customization_allowed()` — the owner said the Glowbook will be reserved to the
     top plans, which is not wired yet; (f) a deleted Glowbook leaves its video files in the member's folder
     (no page uses them; the member's next recording cleans them).
+114. **VAT franchise: the shop charges no VAT for now** (owner's request, 2026-10-26: "for now the e-commerce turnover is a micro-entreprise not subject to VAT — take it into account in the invoices and everywhere it appears, with the legal article on the invoices"; migration `20261026185024_vat_franchise`). One switch, `store_settings.vat_franchise` (Settings › Store › Business identity, on by default), not a deletion of VAT: the rates of the VAT tab stay configured and apply again to **new** orders the day the switch is turned off. While it is on, `vat_rate_bp()` returns 0 for every destination and category, so orders, invoices and credit notes carry no VAT; the prices customers pay do not change (the amounts that were "VAT included" are now the prices). Invoices and credit notes freeze the regime in `seller.vat_franchise`: under the franchise the PDF has no VAT column, VAT total or breakdown, says "Total" (not HT/TTC) and carries **"TVA non applicable, art. 293 B du CGI"** — kept in French on English documents, followed by an English gloss; a credit note follows its invoice's regime; documents issued before keep their layout. The storefront reads the switch (`lib/vatRegime.ts`): the checkout and Studio payment steps say the mention instead of "VAT included", the footer adds it after the copyright (nothing while unknown, mock mode included); the order confirmation e-mail says "Total" when the order's VAT is 0; the terms of sale state the franchise. Orders keep the regime they were created under (`orders.vat_franchise`, migration `20261026190347`): an order created under one regime and paid after the switch changed is invoiced under its own; orders created before the franchise keep their VAT. The 3D Studio price notes (plans, locked editor, subscribe page) also take the regime's wording. To confirm with the accountant: (a) that the business is under the franchise and its thresholds are watched (the switch is manual: nothing turns it off when the threshold is crossed); (b) EU distance sales (the €10,000 EU threshold) and sales outside the EU; (c) the English gloss; (d) ~~the 3D Studio subscriptions are billed by Stripe with its own invoices~~ — since decision 115 the Studio invoices are ours and carry the mention like the shop's; (e) a VAT number is still shown on invoices when one is filled in (a micro-entrepreneur may hold one for intra-EU purchases); (f) the admin hints "TVA incluse" in statistics and the course price "(TTC)" were left as they are.
+115. **3D Studio invoices and credit notes are ours, not Stripe's** (owner's question, 2026-10-26: could invoicing be handled entirely in-house; direction agreed: Stripe keeps collecting, the database becomes the single source of legal documents; migration `20261026211240_studio_invoices`). Stripe stays the payment engine (subscriptions, recurring charges, proration, retries, refunds). When `stripe-webhook` records a paid Studio invoice it also passes its total and its lines, read with `invoices.listLineItems` (amount, price, period, proration flag); a trigger on `studio_subscription_invoices` issues the `FA-` invoice in the same transaction — same sequences (`take_invoice_number`), same seller snapshot and VAT regime (decision 114: "TVA non applicable, art. 293 B du CGI"), same immutability, same PDF template (`lib/documents/`, line kind `subscription`: plan, billing interval, period, or "prorated adjustment"; a proration credit is a negative line; account credit used shows as "Paid from your account credit"). A withdrawal refund confirmed by the verified `refund.*` webhook (`settle_studio_withdrawal_refund`) issues the `AV-` credit note against the first invoice, for the refunded amount ("unused share", days used). Members read and download their documents on `/compte/studio` (`lib/studioInvoices.ts`, RLS: owner and active staff); staff print the period's documents from `/admin/statistiques` (panel "3D Studio invoices"). E-mails: the subscription confirmation carries the first invoice; each later paid invoice (renewal, plan change) gets `studio_invoice` with its PDF; the withdrawal acknowledgement goes out at once without it, and `studio_credit_note` sends the credit note once the refund is confirmed (migration `20261026213754`: attaching it to the acknowledgement could race the confirmation). Agent's choices, to confirm: (a) **a Stripe invoice whose total is zero or negative** (a downgrade credited to the customer balance) gets no document — the credit appears on the next invoice as "Paid from your account credit"; the accountant may want a credit note instead; (b) when the webhook's lines cannot be trusted (unknown price, not adding up to the total) the invoice carries one line for the subscription's plan and the total, rather than refusing the payment record; (c) the buyer is the member's e-mail and default billing (else shipping) address, else their name — Stripe's billing details are not read; (d) outside the franchise the rate is the store country's standard rate, VAT included (EU B2C digital services are normally taxed at the customer's country — OSS — to confirm before the franchise is turned off); (e) an invoice row can no longer be deleted (`on delete restrict` toward `studio_subscription_invoices` and `studio_withdrawals`), which also blocks deleting an account that holds Studio invoices (legal retention; account deletion is not wired yet); (f) Studio invoices paid before this migration (test mode) have no document — Stripe's numbered documents remain for them, and the `FA-` sequence simply continues; (g) a refund made by hand in the Stripe dashboard on a Studio invoice still issues no credit note (decision 95 (f)). **For the owner:** turn off Stripe's customer e-mails for invoices and receipts (Dashboard › Settings › Customer emails: "Successful payments" and "Finalized invoices"), so a member never receives two documents with two numbers.
+113. **3D Studio plans differ by what they save and by the Glowbook** (owner's request, 2026-10-26: "the first plan
+    is limited in features and in the content it can save, the second has more features and more groups and
+    creations, the third has almost everything unlimited plus the Glowbook, to share creations and let clients
+    try them on their smile with the AI"; migration `20261026170231_studio_plan_entitlements`). See "3D Studio
+    plans" above. Agent's choices, to confirm: (a) **the numbers** — Essential 15 creations / 3 Gem Groups,
+    Artist 150 / 30, Atelier unlimited (one function, `private.studio_plan_limit()`); (b) every creation counts,
+    Glowbook and template copies included; collections are not limited; (c) **after a downgrade nothing is
+    deleted**: the member reads, edits and deletes everything, and saves a new one once under the limit; (d) the
+    **Glowbook becomes Atelier-only** (it was open to every member with Studio access): below it the page, its
+    3D creations, renders, pictures and video are hidden and come back as they were on an upgrade; the owner
+    may still delete it (no delete button on the locked screen yet); (e) the **trial counts as Essential**
+    (decision 101's rule), so a trial member does not try the Glowbook or the AI; (f) the Artist plan's extra
+    over Essential is its numbers and the post signature — no new feature was invented for it; (g) one account
+    = one artist: no team seats are sold (the former, unused copy promising seats, early access and priority
+    support was removed). Before this decision no member but a staff account held any Studio row.
+    (b) (owner's request, 2026-10-26): **the Global Toothgems templates page and the folders (collections) are
+    for the Artist plan and above** — read as "Artist and up", a higher plan never losing a lower one's
+    feature (to confirm). Browsing, copying and the template renders need it; so do creating, renaming and
+    filing into a folder; reading, emptying and deleting a folder stay open, so a member who moves down keeps
+    their folders. Migration `20261026190000_studio_templates_collections_artist` is written and tested in
+    the repository but **not applied yet**: the owner gave the go-ahead on 2026-10-26, but the Supabase
+    connector's confirmation got no answer in time (to apply in the next session, then rename the file to
+    the applied version). The Studio already shows the lock screens (`components/studio/workspace/PlanLocked.tsx`:
+    templates page, every folder create / rename / file action, the save dialog's folder list).
+112. **3D Studio subscription managed on our own page, not in the Stripe customer portal** (owner's request,
+    2026-10-26: "keep the subscription management on our site: staying on the same interface builds trust and lets us
+    show the plans and what they offer side by side"; no migration). `/compte/studio` now switches the plan or the
+    billing, compares the plans, replaces the card, lists and downloads the invoices, cancels at the end of the period
+    and keeps a cancelled subscription, through the Edge Function `studio-manage-subscription` (member token, strict
+    body allow-list: an action, a plan and an interval, never a price or an amount; the subscription from
+    `studio_subscriptions` + `stripe_customers`, read back from Stripe and required to carry metadata kind
+    `studio_subscription` and the member's customer; the price from `studio_plan_prices`). Nothing is granted there:
+    Stripe's change comes back through the verified webhook (`customer.subscription.updated`,
+    `apply_studio_subscription()` updates plan and interval of an existing row). The function `studio-billing-portal`
+    is removed from the repository (its deployed copy is unused and can be deleted from the dashboard; the portal
+    configuration made by `studio-billing-setup` stays, unused). The rules are the portal's, unchanged: (a) a switch
+    is prorated (`create_prorations`) — within the same interval nothing is charged now and the adjustment is on the
+    next invoice; a month ↔ year switch restarts the period and is invoiced at once, the unused share credited. The
+    page shows Stripe's own preview (`invoices.createPreview`) and the change reuses the preview's proration instant
+    (up to 15 minutes) so the amount charged is the amount shown; (b) a charged switch uses
+    `payment_behavior: pending_if_incomplete`: it applies only once paid, a bank check (3-D Secure) is finished on the
+    page with Stripe.js (`handleNextAction`), a declined payment voids the invoice and nothing changes; (c) a switch is
+    refused while a payment is to fix (`past_due`, `unpaid`) or while a cancellation is scheduled (keep the
+    subscription first); a new switch replaces one still waiting for its payment; (d) cancellation at the end of the
+    period with an optional reason (the portal's five), one click from the page plus one confirmation, and undone
+    with "Keep my subscription" until then; (e) the card is replaced through the shop's payment form in a
+    setup-mode Checkout Session (`ui_mode: custom`, card only, metadata kind `studio_card`, nothing charged), then
+    becomes the default of the customer and of the subscription; with a payment to fix, the open invoice is retried
+    with it at once (3-D Secure on the page); older cards are not detached; (f) invoices: since decision 115 the page lists
+    our own `FA-` / `AV-` documents, read from `invoices` and drawn as PDFs in the browser (Stripe's PDFs and
+    numbers are no longer shown; an unpaid invoice shows as the plan's `past_due` state). The comparison table shows only what the database gates by
+    plan (decision 101: watermark, own logo, layout templates); every other row is the whole Studio. Agent's choices,
+    to confirm: (g) a plan switch within the 14-day withdrawal period: a same-interval switch issues no invoice, so a
+    later withdrawal is still computed on the first payment only (the days on the new plan are not charged); an
+    interval switch issues a paid `subscription_update` invoice, which sends a withdrawal to the team
+    (`manual_review`, decision 95 (a)); (h) no new immediate-access request is asked for a switch (the one given at
+    subscription covers the contract) — to confirm with the lawyer with decision 94 (a); (i) an upgrade within the
+    same interval is not charged at once (portal rule kept; charging it now would be `always_invoice`).
+111. **3D Studio: try a creation on a smile with AI** (owner's request, 2026-10-25: "let me try a creation on a smile with Google's Nano Banana 2 — I will connect it later; I will store the reference images myself; the request flow must be easy; clients must easily try the artist's creations; in time only artists on the highest plan will have the option for their 3D creations"; migration `20261025135203_studio_smile_try_on`, Edge Function `studio-try-on`). See "3D Studio smile try-on with AI" above. It replaces the former "automatic placement" interface (placements and landmarks returned by a service, never connected): the AI now returns an image. The manual placement of the gems on the photo was removed the same day (owner: "the only feature will be the AI"), so there is no try-on at all until the provider is connected. Agent's choices, to confirm: (a) **the switch is restricted to Atelier** since 2026-10-26 (owner's request; migration `20261026164042`, before that open to every member with Studio access) — active staff count as Atelier (`studio_user_tier`); when restricted, the artist's own entry point still opens and the AI answers `not_allowed` (no upsell screen yet); (b) **visitors must sign in** to ask for an AI render (each call costs money); (c) **10 renders per account per 24 hours** (`TRY_ON_DAILY_LIMIT`), counted before the provider is called, failures included; (d) the photo and the image are **never stored**; `studio_try_on_requests` has no retention rule yet; (e) the visitor's consent box is their own ("this is a photo of me"), the artist's stays the client's consent; the photo goes to Google (Gemini API) — the privacy policy must name it, and the API terms on data use (paid tier, region) are to check before launch; (f) the result is labelled "AI-generated image: a preview, not an exact promise"; (g) the model id is a secret (`GEMINI_IMAGE_MODEL`), not hard-coded, and the request format is unverified until a key is set; (h) with prompt v2 the gems are listed to the model from the database, and the browser's front view only gives their position and rotation (a visitor could alter that picture for their own render only); with v1 the picture is the only description of the design; (i) v2 is the default prompt until the owner compares both on real photos; (j) the render authenticates with the owner's personal ADC credentials (refresh token in a function secret) until a non-personal identity is set up for production.
 110. **Product characteristics are per product, shown for gems only; FAQs are groups assigned to products and categories** (owner's request, 2026-10-25: "characteristics only for gems, and configurable — the data is not well represented for each gem; create sets of frequently asked questions and assign the group to different products, from a new admin page"; owner's choices: assignment by product **and** category, keep the five fields; migration `20261025090755_product_specs_faq`). Before: back, packaging and wear were the same UI strings on every product page, the material fell back to the category name ("Matière : Matériel" on a tool), the FAQ was three gem questions in the front end. Now see "Product characteristics and FAQ groups" above. Agent's choices, to confirm: (a) **no default values** — a gem without characteristics shows only its size (the former "6 à 12 mois" / "Capsule stérile" / "Plat, poli" were not copied to any product: a durability or packaging claim is written per product by the shop); (b) the three former questions became one published group "Toothgems — questions fréquentes" assigned to the `gems` category, so gem pages kept their FAQ; (c) a product's own groups **replace** its category's (no merge); a draft group never counts; (d) English characteristics and answers fall back to French when not translated, like other product texts; (e) `metadata.material` is left in the rows, unread, rather than deleted (to clean up once confirmed); (f) the storefront shows no FAQPage structured data yet.
 
 109. **Orders keep the promised delivery delay; parcels get a default estimated delivery** (owner's request, 2026-10-22: "when the admin marks an order sent, set the estimated delivery to the maximum day of the chosen option — e.g. France 2 to 4 days → D+4 — and leave it editable"; migration `20261022113049_order_shipping_delays`). `orders.shipping_min_days` / `shipping_max_days` (working days, both null or both set) are copied from the shipping rate by a `BEFORE INSERT` trigger (`private.order_snapshot_shipping_days()`), so the promise survives a later edit or deletion of the rate and `create_order()` did not change; the 28 existing orders with a rate took its current delays (pre-production). The back office (`ParcelDialog`) pre-fills the estimated delivery of a parcel leaving now (created as shipped, or completed before shipping) with today + `shipping_max_days` **working days** (Monday–Friday, `webapp/src/lib/workingDays.ts`), says where the date comes from, and leaves it editable; a parcel that already has a date keeps it, and "Mark as shipped" on a parcel without one opens the form first. Agent's choices, to confirm: (a) public holidays are not skipped (the team corrects the date); (b) the count starts on the day the parcel is marked shipped, in the browser's calendar, a weekend start counting from Monday; (c) no default when the order has no delay (courses, gift cards, older orders without a rate).

@@ -9,37 +9,26 @@ import { Badge } from "../components/ui/Badge";
 import { StepProgress } from "../components/register/StepProgress";
 import { ContextSummary } from "../components/register/ContextSummary";
 import { AuthCard, AuthLayout } from "../components/auth/AuthScene";
-import { GoogleDialog, type GoogleIdentity } from "../components/register/GoogleDialog";
 import { GoogleTermsDialog } from "../components/register/GoogleTermsDialog";
 import { LegalDialog, type LegalDoc } from "../components/register/LegalDialog";
-import { VerifyEmail } from "../components/register/VerifyEmail";
 import { CheckInbox } from "../components/register/CheckInbox";
 import { WelcomeScreen, type WelcomeAction } from "../components/register/WelcomeScreen";
-import { DemoPanel } from "../components/register/DemoPanel";
 import { AccountStep } from "../components/register/steps/AccountStep";
 import { ProfileStep } from "../components/register/steps/ProfileStep";
 import { PreferencesStep, type CreateFailure } from "../components/register/steps/PreferencesStep";
 import { useAuth } from "../lib/auth";
 import { confirmationRedirect, isSafeNext } from "../lib/authRedirect";
-import { useProgress } from "../lib/progress";
 import { useToast } from "../lib/toast";
 import { FORGOT_PATH } from "../lib/accountSecurity";
-import { DELIVERY_COUNTRIES } from "../data/countries";
 import {
   EMPTY_REGISTRATION,
-  RegistrationError,
   STEPS,
-  checkEmailAvailable,
-  contextParam,
-  createAccount,
   fieldsForStep,
   resolveContext,
   validateField,
   validateStep,
-  type ContextKind,
   type FieldName,
   type RegistrationData,
-  type Scenario,
 } from "../lib/registration";
 
 type Phase = "form" | "verify" | "welcome";
@@ -47,12 +36,10 @@ type FormStep = "account" | "profile" | "preferences";
 
 const FORM_STEPS: FormStep[] = ["account", "profile", "preferences"];
 
-const normaliseEmail = (email: string) => email.trim().toLowerCase();
-
 /**
  * The registration journey, at `/inscription`.
  *
- * Three short form steps, a simulated verification, and a welcome whose next
+ * Three short form steps, an e-mail verification, and a welcome whose next
  * action follows the reason the visitor came: a plain sign-up, a purchase in
  * progress, or a training. The context arrives in the query string
  * (`?contexte=achat`, `?contexte=formation&formation=fondation`) or in history
@@ -63,16 +50,14 @@ const normaliseEmail = (email: string) => email.trim().toLowerCase();
  * Supabase Auth (`useAuth().signUp`): the answers travel as sign-up metadata,
  * which the database copies into the profile and the consent records, and
  * Supabase sends the confirmation email, whose link lands on
- * `/confirmation-compte`. Without Supabase, `lib/registration.ts` simulates
- * the service — mock inbox included — and nothing is stored.
+ * `/confirmation-compte`.
  */
 export function Register() {
   const { t, i18n } = useTranslation();
   const navigate = useNavigate();
   const location = useLocation();
-  const [params, setParams] = useSearchParams();
-  const { signedIn, restoring, realAuth, signIn, signUp, signInWithGoogle, signOut, email: sessionEmail } = useAuth();
-  const { openCourse } = useProgress();
+  const [params] = useSearchParams();
+  const { signedIn, restoring, signUp, signInWithGoogle, signOut, email: sessionEmail } = useAuth();
   const { showToast } = useToast();
 
   const routeState = location.state as { from?: string; course?: string } | null;
@@ -91,19 +76,13 @@ export function Register() {
   const [touched, setTouched] = useState<Set<FieldName>>(() => new Set());
   const [summary, setSummary] = useState<FieldName[]>([]);
 
-  const [checkingEmail, setCheckingEmail] = useState(false);
   const [emailTaken, setEmailTaken] = useState(false);
-  /** Last address the availability check cleared, so going back and forth does not re-check it. */
-  const [clearedEmail, setClearedEmail] = useState<string | null>(null);
 
-  const [viaGoogle, setViaGoogle] = useState(false);
-  const [googleOpen, setGoogleOpen] = useState(false);
-  /** Real auth: the terms are accepted in this dialog before the browser leaves for Google. */
+  /** The terms are accepted in this dialog before the browser leaves for Google. */
   const [googleTermsOpen, setGoogleTermsOpen] = useState(false);
   const [legalDoc, setLegalDoc] = useState<LegalDoc | null>(null);
   const [creating, setCreating] = useState(false);
   const [failure, setFailure] = useState<CreateFailure>(null);
-  const [scenario, setScenario] = useState<Scenario>("success");
 
   const headingRef = useRef<HTMLHeadingElement>(null);
   const topRef = useRef<HTMLDivElement>(null);
@@ -116,7 +95,6 @@ export function Register() {
     setData((d) => ({ ...d, [name]: value }));
     if (name === "email") {
       setEmailTaken(false);
-      setClearedEmail(null);
     }
     // Ticking the box is itself the fix, so its error clears at once.
     if (name === "terms") setTouched((prev) => new Set(prev).add("terms"));
@@ -187,30 +165,16 @@ export function Register() {
     el?.scrollIntoView({ block: "center", behavior: "auto" });
   };
 
-  /* ---------------- account service (simulated) ---------------- */
+  /* ---------------- account creation ---------------- */
 
+  // A session was opened by the confirmation link (or by sign-up itself).
   const completeAccount = () => {
-    // A real session was opened by the confirmation link (or by sign-up itself).
-    if (realAuth) {
-      setPhase("welcome");
-      scrollToTop();
-      return;
-    }
-    const country = data.country.toLowerCase();
-    signIn(data.email, {
-      firstName: data.firstName,
-      lastName: data.lastName,
-      phone: data.phone.trim() || undefined,
-      country: (DELIVERY_COUNTRIES as readonly string[]).includes(country) ? country : undefined,
-      newsletter: data.marketing,
-    });
     setPhase("welcome");
     scrollToTop();
   };
 
   const emailTakenOnCreate = () => {
     setEmailTaken(true);
-    setViaGoogle(false);
     pendingFocus.current = "email";
     goTo("account");
   };
@@ -218,48 +182,28 @@ export function Register() {
   const create = async () => {
     setFailure(null);
     setCreating(true);
-    if (realAuth) {
-      const result = await signUp(data, i18n.language, confirmationRedirect(afterConfirmation));
-      setCreating(false);
-      switch (result) {
-        case "confirmationSent":
-          setPhase("verify");
-          return scrollToTop();
-        case "signedIn":
-          return completeAccount();
-        case "emailTaken":
-          return emailTakenOnCreate();
-        default:
-          return setFailure(result);
-      }
-    }
-    try {
-      await createAccount(data, scenario);
-      setCreating(false);
-      // Google has already proven the address, so there is nothing to verify.
-      if (viaGoogle) completeAccount();
-      else {
+    const result = await signUp(data, i18n.language, confirmationRedirect(afterConfirmation));
+    setCreating(false);
+    switch (result) {
+      case "confirmationSent":
         setPhase("verify");
-        scrollToTop();
-      }
-    } catch (error) {
-      setCreating(false);
-      const code = error instanceof RegistrationError ? error.code : "server";
-      if (code === "emailTaken") {
-        emailTakenOnCreate();
-      } else {
-        setFailure(code === "network" ? "network" : "server");
-      }
+        return scrollToTop();
+      case "signedIn":
+        return completeAccount();
+      case "emailTaken":
+        return emailTakenOnCreate();
+      default:
+        return setFailure(result);
     }
   };
 
   const submitStep = async (e: FormEvent) => {
     e.preventDefault();
-    if (checkingEmail || creating) return;
+    if (creating) return;
 
-    const stepFields = fieldsForStep(step, viaGoogle);
+    const stepFields = fieldsForStep(step);
     setTouched((prev) => new Set([...prev, ...stepFields]));
-    const stepErrors = validateStep(step, data, viaGoogle);
+    const stepErrors = validateStep(step, data);
     const invalid = stepFields.filter((f) => stepErrors[f]);
     if (step === "account" && emailTaken && !invalid.includes("email")) invalid.unshift("email");
 
@@ -271,20 +215,9 @@ export function Register() {
     setSummary([]);
 
     if (step === "account") {
-      // The mock checks availability up front. Supabase Auth offers visitors no
-      // such query — it would reveal who holds an account — so a taken address
-      // is only reported when the account is created.
-      if (!realAuth && !viaGoogle && clearedEmail !== normaliseEmail(data.email)) {
-        setCheckingEmail(true);
-        const available = await checkEmailAvailable(data.email);
-        setCheckingEmail(false);
-        if (!available) {
-          setEmailTaken(true);
-          focusField("email");
-          return;
-        }
-        setClearedEmail(normaliseEmail(data.email));
-      }
+      // Supabase Auth offers visitors no availability query — it would reveal
+      // who holds an account — so a taken address is only reported when the
+      // account is created.
       goTo("profile");
     } else if (step === "profile") {
       goTo("preferences");
@@ -298,47 +231,7 @@ export function Register() {
     if (index > 0) goTo(FORM_STEPS[index - 1]);
   };
 
-  /* ---------------- Google (simulated) ---------------- */
-
-  const completeGoogle = useCallback(
-    (identity: GoogleIdentity) => {
-      setGoogleOpen(false);
-      setViaGoogle(true);
-      setEmailTaken(false);
-      setClearedEmail(normaliseEmail(identity.email));
-      setData((d) => ({
-        ...d,
-        email: identity.email,
-        password: "",
-        confirmPassword: "",
-        firstName: d.firstName || identity.firstName,
-        lastName: d.lastName || identity.lastName,
-      }));
-      showToast(t("register.google.toastTitle"), t("register.google.toastBody"));
-      setDirection("forward");
-      setSummary([]);
-      setStep("profile");
-    },
-    [showToast, t],
-  );
-
-  const useEmailInstead = () => {
-    setViaGoogle(false);
-    setClearedEmail(null);
-    setData((d) => ({ ...d, email: "" }));
-    setTouched(new Set());
-    pendingFocus.current = "email";
-  };
-
-  // After "use email instead" the email field reappears; focus it once it exists.
-  useEffect(() => {
-    if (!viaGoogle && pendingFocus.current === "email" && step === "account" && fields.current.email) {
-      pendingFocus.current = null;
-      fields.current.email.focus();
-    }
-  }, [viaGoogle, step]);
-
-  /* ---------------- context and demo ---------------- */
+  /* ---------------- context ---------------- */
 
   const courseId = context.kind === "training" ? context.courseId : "fondation";
 
@@ -355,21 +248,8 @@ export function Register() {
         ? "/panier"
         : returnPath ?? "/compte";
 
-  /**
-   * With Supabase, Google creates the account or signs the member in, then
-   * returns to the page the visitor was heading to. The mock keeps its
-   * simulated account chooser.
-   */
-  const openGoogle = () => {
-    if (realAuth) setGoogleTermsOpen(true);
-    else setGoogleOpen(true);
-  };
-
-  const changeContext = (kind: ContextKind) => {
-    const next = new URLSearchParams({ contexte: contextParam(kind) });
-    if (kind === "training") next.set("formation", courseId);
-    setParams(next, { replace: true });
-  };
+  /** Google creates the account or signs the member in, then returns to the page the visitor was heading to. */
+  const openGoogle = () => setGoogleTermsOpen(true);
 
   const restart = () => {
     setPhase("form");
@@ -379,11 +259,8 @@ export function Register() {
     setTouched(new Set());
     setSummary([]);
     setEmailTaken(false);
-    setClearedEmail(null);
-    setViaGoogle(false);
     setFailure(null);
     setCreating(false);
-    setCheckingEmail(false);
     if (signedIn && !signedInOnArrival) signOut();
     scrollToTop();
   };
@@ -404,12 +281,6 @@ export function Register() {
         return navigate(`/academy/formation/${courseId}`);
       case "dashboard":
         return navigate("/compte");
-      case "checkout":
-        // In this prototype, starting a training stands in for buying it — the
-        // same call the course page's "Start this training" makes.
-        openCourse(courseId);
-        showToast(t("register.welcome.toastCheckoutTitle"), t("register.welcome.toastCheckoutBody"));
-        return navigate("/academy/lecon");
     }
   };
 
@@ -420,11 +291,9 @@ export function Register() {
 
   const primaryLabel = creating
     ? t("register.actions.creating")
-    : checkingEmail
-      ? t("register.actions.checking")
-      : step === "preferences"
-        ? t("register.actions.create")
-        : t("register.actions.continue");
+    : step === "preferences"
+      ? t("register.actions.create")
+      : t("register.actions.continue");
 
   const crown = (
     <>
@@ -441,20 +310,7 @@ export function Register() {
 
   return (
     <>
-      <AuthLayout
-        wide
-        before={
-          realAuth ? undefined : (
-            <DemoPanel
-              context={context.kind}
-              onContextChange={changeContext}
-              scenario={scenario}
-              onScenarioChange={setScenario}
-              onRestart={restart}
-            />
-          )
-        }
-      >
+      <AuthLayout wide>
         <div ref={topRef} className="grid min-w-0 scroll-mt-24 gap-5">
           {arrival === null ? (
             <div aria-busy="true" className="min-h-[420px]" />
@@ -533,11 +389,8 @@ export function Register() {
                               fieldRef={fieldRef}
                               headingRef={headingRef}
                               touched={(name) => touched.has(name)}
-                              checkingEmail={checkingEmail}
                               emailTaken={emailTaken}
-                              viaGoogle={viaGoogle}
                               onGoogle={openGoogle}
-                              onUseEmail={useEmailInstead}
                               signInState={signInState}
                               onForgotPassword={() => navigate(FORGOT_PATH, { state: { email: data.email.trim() } })}
                             />
@@ -575,7 +428,7 @@ export function Register() {
                             variant="primary"
                             size="lg"
                             iconRight={ArrowRight}
-                            loading={checkingEmail || creating}
+                            loading={creating}
                             className="min-w-0 flex-1 px-5! max-sm:text-[length:var(--text-body-sm)] sm:ml-auto sm:flex-none sm:px-[30px]!"
                           >
                             {primaryLabel}
@@ -586,27 +439,13 @@ export function Register() {
 
                     {phase === "verify" && (
                       <div className="gt-step-forward">
-                        {realAuth ? (
-                          <CheckInbox
-                            email={data.email}
-                            redirectTo={confirmationRedirect(afterConfirmation)}
-                            headingRef={headingRef}
-                            onVerified={completeAccount}
-                            onRestart={restart}
-                          />
-                        ) : (
-                          <VerifyEmail
-                            email={data.email}
-                            firstName={data.firstName}
-                            scenario={scenario}
-                            headingRef={headingRef}
-                            onEmailChange={(email) => {
-                              setData((d) => ({ ...d, email }));
-                              setClearedEmail(normaliseEmail(email));
-                            }}
-                            onVerified={completeAccount}
-                          />
-                        )}
+                        <CheckInbox
+                          email={data.email}
+                          redirectTo={confirmationRedirect(afterConfirmation)}
+                          headingRef={headingRef}
+                          onVerified={completeAccount}
+                          onRestart={restart}
+                        />
                       </div>
                     )}
 
@@ -616,7 +455,6 @@ export function Register() {
                         firstName={data.firstName}
                         persona={data.persona}
                         interest={data.interest}
-                        viaGoogle={viaGoogle}
                         headingRef={headingRef}
                         onAction={onWelcomeAction}
                       />
@@ -645,13 +483,6 @@ export function Register() {
         </div>
       </AuthLayout>
 
-      {googleOpen && (
-        <GoogleDialog
-          onClose={() => setGoogleOpen(false)}
-          onComplete={completeGoogle}
-          onSignIn={() => navigate("/connexion", { state: signInState })}
-        />
-      )}
       {googleTermsOpen && (
         <GoogleTermsDialog
           onClose={() => setGoogleTermsOpen(false)}

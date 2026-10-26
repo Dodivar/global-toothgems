@@ -7,6 +7,10 @@
 -- raising `ALL ITERATION 7 TESTS PASSED` (or `FAIL: ...`).
 -- =============================================================================
 
+-- This suite checks the standard VAT regime: the franchise (decision 114) is
+-- switched off for its transaction.
+update public.store_settings set vat_franchise = false where id;
+
 do $$
 declare
   adm   uuid := '00000000-0000-4000-a000-00000007ad81';

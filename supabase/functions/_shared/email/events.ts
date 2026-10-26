@@ -16,11 +16,24 @@
  *   shipping:<shipment id>   course_enrolment:<entitlement id>   refund:<refund id>
  *   back_in_stock:<request id>   studio_subscription:<subscription id>
  *   studio_withdrawal:<withdrawal id>   stock_digest:<Paris date>
+ *   studio_invoice:<Stripe invoice id>   studio_credit_note:<withdrawal id>
+ * The Studio e-mails carry our legal documents as PDFs (decision 115): the
+ * confirmation its first FA- invoice, a renewal or plan change its own
+ * (`studio_invoice`); the withdrawal's AV- credit note follows the
+ * acknowledgement on its own (`studio_credit_note`) once the refund is
+ * confirmed — never attached to the acknowledgement, which may race it.
  * One row never stops the others, and nothing here throws for a failed e-mail.
  */
 import type { SupabaseClient } from "npm:@supabase/supabase-js@2.57.4";
 import { formatAmount } from "./format.ts";
-import { type AttachedDocument, type InvoiceSource, refundCreditNote } from "./invoicePdf.ts";
+import {
+  type AttachedDocument,
+  type InvoiceSource,
+  refundCreditNote,
+  studioCreditNote,
+  studioInvoice,
+  type StudioInvoiceSource,
+} from "./invoicePdf.ts";
 import { refundContent, shippingContent } from "./orderContent.ts";
 import { type EmailDeps, type SendResult, sendTemplatedEmail } from "./send.ts";
 import {
@@ -32,6 +45,7 @@ import {
   stockDigestCounts,
 } from "./stockContent.ts";
 import {
+  studioDocumentContent,
   type StudioSubscriptionMail,
   type StudioWithdrawalMail,
   studioPlanName,
@@ -76,8 +90,28 @@ export interface PendingBackInStock extends RestockedProduct {
 /** A new Studio subscription whose first invoice is paid, with the immediate-access request it was bought under. */
 export interface PendingStudioSubscription extends StudioSubscriptionMail {
   subscriptionId: string;
+  /** The first paid Stripe invoice: its FA- invoice is attached. */
+  stripeInvoiceId: string | null;
   email: string;
   locale: string;
+}
+
+/** A paid Studio renewal or plan change whose FA- invoice is issued. */
+export interface PendingStudioInvoice {
+  stripeInvoiceId: string;
+  email: string;
+  locale: string;
+  plan: StudioPlan;
+  invoiceNumber: string;
+}
+
+/** A withdrawal credit note issued after the acknowledgement went out. */
+export interface PendingStudioCreditNote {
+  withdrawalId: string;
+  email: string;
+  locale: string;
+  plan: StudioPlan;
+  invoiceNumber: string;
 }
 
 /** A Studio withdrawal Stripe has (refund sent, or none due), to acknowledge. */
@@ -103,6 +137,8 @@ export interface PendingSource {
   backInStock(limit: number): Promise<PendingBackInStock[]>;
   studioSubscriptions(limit: number): Promise<PendingStudioSubscription[]>;
   studioWithdrawals(limit: number): Promise<PendingStudioWithdrawal[]>;
+  studioInvoices(limit: number): Promise<PendingStudioInvoice[]>;
+  studioCreditNotes(limit: number): Promise<PendingStudioCreditNote[]>;
   /** Null when the digest is not due today or there is nothing to report. */
   stockDigest(): Promise<PendingStockDigest | null>;
 }
@@ -127,6 +163,8 @@ export interface SweepReport {
   backInStock: EventReport;
   studioSubscription: EventReport;
   studioWithdrawal: EventReport;
+  studioInvoice: EventReport;
+  studioCreditNote: EventReport;
   stockDigest: EventReport;
 }
 
@@ -297,22 +335,98 @@ export function sendBackInStockEmails(
  * for immediate access the member ticked (L221-25), with the plan and the first
  * payment. Sent by the sweep (every 5 minutes) once the first invoice is paid.
  */
+/** A Studio document as a PDF, or null; a failure to draw it is logged and never blocks the e-mail. */
+async function studioDocument(
+  what: string,
+  id: string,
+  load: () => Promise<AttachedDocument | null>,
+  log: Log,
+): Promise<AttachedDocument | null> {
+  try {
+    return await load();
+  } catch (error) {
+    log(`${what} PDF not attached`, { id, error: error instanceof Error ? error.message : error });
+    return null;
+  }
+}
+
+type StudioOptions = { limit?: number; log?: Log; studioDocuments?: StudioInvoiceSource };
+
 export function sendStudioSubscriptionEmails(
   deps: EmailDeps,
   source: PendingSource,
-  options: { limit?: number; log?: Log } = {},
+  options: StudioOptions = {},
 ): Promise<EventReport> {
   const log = options.log ?? (() => {});
+  const docs = options.studioDocuments;
   return source.studioSubscriptions(options.limit ?? 25).then((rows) =>
-    sendEach(rows, "studio subscription", (r) => r.subscriptionId, (sub) =>
-      sendTemplatedEmail(deps, {
+    sendEach(rows, "studio subscription", (r) => r.subscriptionId, async (sub) => {
+      const invoiceId = sub.stripeInvoiceId;
+      const invoice = docs && invoiceId
+        ? await studioDocument("studio invoice", invoiceId, () => studioInvoice(docs, invoiceId, sub.locale), log)
+        : null;
+      return sendTemplatedEmail(deps, {
         templateKey: "studio_subscription_confirmation",
         to: sub.email,
         locale: sub.locale,
         variables: { plan_name: studioPlanName(sub.plan, sub.locale) },
         eventKey: `studio_subscription:${sub.subscriptionId}`,
-        content: (locale) => studioSubscriptionContent(sub, locale, deps.layout.siteUrl),
-      }), log)
+        attachments: invoice ? [invoice.attachment] : undefined,
+        content: (locale) => studioSubscriptionContent(sub, locale, deps.layout.siteUrl, invoice?.number),
+      });
+    }, log)
+  );
+}
+
+/** Each paid renewal or plan change: its FA- invoice (Stripe's own e-mails are off). No PDF yet: skipped, the next run retries. */
+export function sendStudioInvoiceEmails(
+  deps: EmailDeps,
+  source: PendingSource,
+  options: StudioOptions = {},
+): Promise<EventReport> {
+  const log = options.log ?? (() => {});
+  const docs = options.studioDocuments;
+  return source.studioInvoices(options.limit ?? 25).then((rows) =>
+    sendEach(rows, "studio invoice", (r) => r.stripeInvoiceId, async (row) => {
+      if (!docs) return null;
+      const invoice = await studioInvoice(docs, row.stripeInvoiceId, row.locale);
+      if (!invoice) return null;
+      return sendTemplatedEmail(deps, {
+        templateKey: "studio_invoice",
+        to: row.email,
+        locale: row.locale,
+        variables: { plan_name: studioPlanName(row.plan, row.locale), invoice_number: invoice.number },
+        eventKey: `studio_invoice:${row.stripeInvoiceId}`,
+        attachments: [invoice.attachment],
+        content: (locale) => studioDocumentContent({ kind: "invoice", plan: row.plan, number: invoice.number }, locale, deps.layout.siteUrl),
+      });
+    }, log)
+  );
+}
+
+/** A withdrawal's credit note, once issued and the acknowledgement has gone out. */
+export function sendStudioCreditNoteEmails(
+  deps: EmailDeps,
+  source: PendingSource,
+  options: StudioOptions = {},
+): Promise<EventReport> {
+  const log = options.log ?? (() => {});
+  const docs = options.studioDocuments;
+  return source.studioCreditNotes(options.limit ?? 25).then((rows) =>
+    sendEach(rows, "studio credit note", (r) => r.withdrawalId, async (row) => {
+      if (!docs) return null;
+      const note = await studioCreditNote(docs, row.withdrawalId, row.locale);
+      if (!note) return null;
+      return sendTemplatedEmail(deps, {
+        templateKey: "studio_credit_note",
+        to: row.email,
+        locale: row.locale,
+        variables: { plan_name: studioPlanName(row.plan, row.locale), invoice_number: note.number },
+        eventKey: `studio_credit_note:${row.withdrawalId}`,
+        attachments: [note.attachment],
+        content: (locale) => studioDocumentContent({ kind: "creditNote", plan: row.plan, number: note.number }, locale, deps.layout.siteUrl),
+      });
+    }, log)
   );
 }
 
@@ -324,7 +438,7 @@ export function sendStudioSubscriptionEmails(
 export function sendStudioWithdrawalEmails(
   deps: EmailDeps,
   source: PendingSource,
-  options: { limit?: number; log?: Log } = {},
+  options: StudioOptions = {},
 ): Promise<EventReport> {
   const log = options.log ?? (() => {});
   return source.studioWithdrawals(options.limit ?? 25).then((rows) =>
@@ -379,7 +493,7 @@ export async function sendStockDigestEmail(
 export async function sendPendingEmails(
   deps: EmailDeps,
   source: PendingSource,
-  options: { limit?: number; log?: Log; invoices?: InvoiceSource; mediaBaseUrl?: string } = {},
+  options: { limit?: number; log?: Log; invoices?: InvoiceSource; studioDocuments?: StudioInvoiceSource; mediaBaseUrl?: string } = {},
 ): Promise<SweepReport> {
   const log = options.log ?? (() => {});
   const guard = async (what: string, run: () => Promise<EventReport>): Promise<EventReport> => {
@@ -397,6 +511,8 @@ export async function sendPendingEmails(
     backInStock: await guard("back in stock", () => sendBackInStockEmails(deps, source, { ...options, log })),
     studioSubscription: await guard("studio subscription", () => sendStudioSubscriptionEmails(deps, source, { ...options, log })),
     studioWithdrawal: await guard("studio withdrawal", () => sendStudioWithdrawalEmails(deps, source, { ...options, log })),
+    studioInvoice: await guard("studio invoice", () => sendStudioInvoiceEmails(deps, source, { ...options, log })),
+    studioCreditNote: await guard("studio credit note", () => sendStudioCreditNoteEmails(deps, source, { ...options, log })),
     stockDigest: await guard("stock digest", () => sendStockDigestEmail(deps, source, { log })),
   };
 }
@@ -476,6 +592,7 @@ export function supabasePendingSource(db: SupabaseClient): PendingSource {
         currency: string;
         consent_version: string;
         consented_at: string;
+        stripe_invoice_id: string | null;
       }>("pending_studio_subscription_emails", { p_limit: limit });
       return rows
         .filter((row) =>
@@ -491,6 +608,37 @@ export function supabasePendingSource(db: SupabaseClient): PendingSource {
           currency: row.currency,
           consentVersion: row.consent_version,
           consentedAt: row.consented_at,
+          stripeInvoiceId: row.stripe_invoice_id ?? null,
+        }));
+    },
+    async studioInvoices(limit) {
+      const rows = await rpc<{ stripe_invoice_id: string; email: string; locale: string; plan: string; invoice_number: string }>(
+        "pending_studio_invoice_emails",
+        { p_limit: limit },
+      );
+      return rows
+        .filter((row) => (STUDIO_PLANS as readonly string[]).includes(row.plan))
+        .map((row) => ({
+          stripeInvoiceId: row.stripe_invoice_id,
+          email: row.email,
+          locale: row.locale,
+          plan: row.plan as StudioPlan,
+          invoiceNumber: row.invoice_number,
+        }));
+    },
+    async studioCreditNotes(limit) {
+      const rows = await rpc<{ withdrawal_id: string; email: string; locale: string; plan: string; invoice_number: string }>(
+        "pending_studio_credit_note_emails",
+        { p_limit: limit },
+      );
+      return rows
+        .filter((row) => (STUDIO_PLANS as readonly string[]).includes(row.plan))
+        .map((row) => ({
+          withdrawalId: row.withdrawal_id,
+          email: row.email,
+          locale: row.locale,
+          plan: row.plan as StudioPlan,
+          invoiceNumber: row.invoice_number,
         }));
     },
     async studioWithdrawals(limit) {

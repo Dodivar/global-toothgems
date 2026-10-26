@@ -23,6 +23,18 @@ export function stripeClient(): Stripe {
   });
 }
 
+/**
+ * The publishable key mounts Stripe's payment form in the browser. It must belong
+ * to the same mode as the secret key (test with test, live with live), otherwise
+ * Stripe.js cannot use what the function opened: a mismatch counts as not configured.
+ */
+export function matchingPublishableKey(): string | null {
+  const publishable = Deno.env.get("STRIPE_PUBLISHABLE_KEY")?.trim() ?? "";
+  const secret = Deno.env.get("STRIPE_SECRET_KEY")?.trim() ?? "";
+  const mode = (key: string) => /^(?:pk|sk|rk)_(test|live)_/.exec(key)?.[1] ?? null;
+  return publishable.startsWith("pk_") && mode(publishable) !== null && mode(publishable) === mode(secret) ? publishable : null;
+}
+
 /** Signature verification with Web Crypto (Deno has no Node `crypto` HMAC in the Stripe SDK path). */
 export const stripeCryptoProvider = Stripe.createSubtleCryptoProvider();
 

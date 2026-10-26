@@ -40,11 +40,13 @@ import {
 } from "../../../lib/studioWorkspace/glowbook";
 import { glowbookCounts, glowbookTodos, type GlowbookPanel, type GlowbookTodo } from "../../../lib/studioWorkspace/glowbookDashboard";
 import { useGlowbook } from "../../../lib/studioWorkspace/glowbookStore";
+import { useGlowbookPlan } from "../../../lib/studioAccess";
 import { useWorkspace } from "../../../lib/studioWorkspace/workspace";
 import { openWorkspaceDialog } from "../../../lib/studioWorkspace/workspaceUi";
 import { useToast } from "../../../lib/toast";
 import { CreationThumb } from "./CreationCard";
 import { LibrarySkeleton } from "./CreationLibrary";
+import { PlanLocked } from "./PlanLocked";
 import { GlowbookLookEditor } from "./GlowbookLookEditor";
 import { GlowbookSections } from "./GlowbookSections";
 import { GlowbookBadgeCard, GlowbookQrCard } from "./GlowbookShare";
@@ -53,7 +55,7 @@ import { GlowbookAvatar } from "../../glowbook/GlowbookIdentity";
 import { glowbookThemeStyle } from "../../glowbook/theme";
 import { EmptyState } from "./EmptyState";
 import { SignInPrompt } from "./SignInPrompt";
-import { eyebrow, fieldClass, focusRing, iconButton, useWorkspaceFormat } from "./workspaceStyles";
+import { eyebrow, fieldClass, focusRing, iconButton, useWorkspaceFormat, workspacePage } from "./workspaceStyles";
 
 /**
  * "My Glowbook" (decision 99): the artist's public showcase — its address,
@@ -64,9 +66,11 @@ import { eyebrow, fieldClass, focusRing, iconButton, useWorkspaceFormat } from "
 export function GlowbookManager() {
   const { t } = useWorkspaceFormat();
   const gb = useGlowbook();
+  // Below the Atelier plan the Glowbook is closed (decision 113): the database refuses its writes.
+  const locked = useGlowbookPlan() === false;
 
   return (
-    <div className="mx-auto grid w-full max-w-[1180px] gap-6 px-4 pb-16 pt-6 sm:px-8 sm:pt-10">
+    <div className={`${workspacePage} gap-6`}>
       <header className="grid min-w-0 gap-2">
         <p className={eyebrow}>{t("studio.glowbook.eyebrow")}</p>
         <h1 className="m-0 text-[clamp(1.6rem,2.6vw,2.25rem)] font-[var(--weight-black)] leading-[1.1] tracking-[var(--tracking-tight)] text-[var(--text-primary)]">
@@ -76,6 +80,7 @@ export function GlowbookManager() {
       </header>
 
       {gb.status === "signedOut" && <SignInPrompt />}
+      {gb.status !== "signedOut" && locked && <PlanLocked feature="glowbook" />}
       {gb.status === "unavailable" && <EmptyState art="search" title={t("studio.glowbook.unavailableTitle")} body={t("studio.glowbook.unavailableBody")} />}
       {gb.status === "error" && (
         <EmptyState
@@ -91,9 +96,9 @@ export function GlowbookManager() {
       )}
       {gb.status === "loading" && <LibrarySkeleton />}
 
-      {gb.status === "ready" && !gb.glowbook && <GlowbookForm onDone={() => undefined} />}
+      {!locked && gb.status === "ready" && !gb.glowbook && <GlowbookForm onDone={() => undefined} />}
 
-      {gb.status === "ready" && gb.glowbook && <GlowbookDashboard glowbook={gb.glowbook} />}
+      {!locked && gb.status === "ready" && gb.glowbook && <GlowbookDashboard glowbook={gb.glowbook} />}
     </div>
   );
 }

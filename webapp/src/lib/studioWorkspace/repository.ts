@@ -37,8 +37,10 @@ import type {
 /**
  * `accessDenied`: the database refused a write because the member has no Studio access (trial over).
  * `duplicate`: a collection of that name already exists (names are unique per member, ignoring case).
+ * `limitReached`: the member already holds as many creations or Gem Groups as their plan allows
+ *   (decision 113); the message is the kind, `creations` or `gemGroups` (`limitKind()`).
  */
-export type StudioStoreErrorCode = "storage" | "notFound" | "invalid" | "unavailable" | "accessDenied" | "duplicate";
+export type StudioStoreErrorCode = "storage" | "notFound" | "invalid" | "unavailable" | "accessDenied" | "duplicate" | "limitReached";
 
 export class StudioStoreError extends Error {
   readonly code: StudioStoreErrorCode;
@@ -47,6 +49,12 @@ export class StudioStoreError extends Error {
     this.name = "StudioStoreError";
     this.code = code;
   }
+}
+
+/** The kind of a `limitReached` refusal, or null for any other error. */
+export function limitKind(err: unknown): "creations" | "gemGroups" | null {
+  if (!(err instanceof StudioStoreError) || err.code !== "limitReached") return null;
+  return err.message === "gemGroups" ? "gemGroups" : "creations";
 }
 
 export interface CreationInput extends RecordDetails {

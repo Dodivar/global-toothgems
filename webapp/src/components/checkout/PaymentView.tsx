@@ -9,6 +9,7 @@ import type { CheckoutForm } from "../../lib/checkout/checkoutForm";
 import type { PaymentStep as PaymentStepData } from "../../lib/checkout/api";
 import type { ShippingOption } from "../../lib/checkout/shippingRates";
 import { useFormat } from "../../lib/format";
+import { useVatFranchise, vatNoticeKey } from "../../lib/vatRegime";
 import { GiftCardVisual } from "../promotions/Visuals";
 import type { GiftCardDesign } from "../../lib/giftCards/giftCardMapping";
 
@@ -58,6 +59,7 @@ export function PaymentView({
   onRestart,
 }: PaymentViewProps) {
   const { t } = useTranslation();
+  const vatNotice = vatNoticeKey(useVatFranchise());
   const { formatMoney } = useFormat();
   const money = (minor: number) => formatMoney(minor, payment.currency);
   const [summaryOpen, setSummaryOpen] = useState(false);
@@ -140,7 +142,7 @@ export function PaymentView({
           <dt className="text-base font-bold text-[var(--text-primary)]">{t("checkout.payment.due")}</dt>
           <dd className="m-0 text-xl font-bold text-[var(--text-primary)]">{money(payment.amountDue)}</dd>
         </div>
-        <p className="m-0 text-xs text-[var(--text-muted)]">{t("checkout.payment.vatIncluded")}</p>
+        {vatNotice && <p className="m-0 text-xs text-[var(--text-muted)]">{t(vatNotice)}</p>}
       </dl>
       <p className="m-0 flex items-start gap-2 rounded-[var(--radius-md)] bg-[var(--surface-brand-wash)] px-3 py-2.5 text-xs text-[var(--gt-blue-700)]">
         <PackageCheck size={14} aria-hidden="true" className="mt-0.5 flex-none" />

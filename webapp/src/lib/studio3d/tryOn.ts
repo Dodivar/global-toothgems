@@ -1,178 +1,221 @@
-import type { StudioShape } from "../../data/studioEditor";
-import { sizeLongestMm } from "../gemOptions";
 import type { Creation } from "../studioWorkspace/types";
+import { parseTryOnCrop, type TryOnCrop } from "./tryOnComposite";
+import type { TryOnSeat } from "./tryOnSeats";
 
 /**
- * "Try on a client's smile photo": the contract between the Studio and the
- * service that will place a saved creation's gems on a photo of a smile.
+ * "Try it on a smile": a Studio creation on a photo of a smile, rendered by an
+ * image model (Google's "Nano Banana 2", decision 111) behind the Edge
+ * Function `studio-try-on` — the provider's key never reaches the browser.
  *
- * NOT CONNECTED YET. The only implementation shipped is
- * `unavailableTryOnService`, which answers `not_available`: the interface then
- * says automatic placement is coming and lets the artist place the creation
- * by hand. No placement is ever simulated.
+ * The browser sends the prepared photo, the creation's front view drawn here
+ * (IMAGE 1 and IMAGE 2 of the owner's system instructions, `systemPrompt.ts`
+ * in the function) and a REFERENCE to the creation: the function reads the
+ * creation and the owner's plan switch from the database. The
+ * answer is a generated image, read through `parseTryOnResponse` like any
+ * untrusted input. Nothing is stored: the photo and the image only pass
+ * through the function's memory.
  *
- * Where the real one will run: in a Supabase Edge Function (the AI provider's
- * secret must never reach the browser). The browser implementation will post
- * the prepared photo and `TryOnCreationInput` to it and pass the JSON it
- * answers through `parseTryOnResponse` — the function's answer is untrusted
- * input like any other. Everything crossing that boundary is therefore plain,
- * serialisable data: no `Creation` (it carries the owner's id), no DOM types
- * beyond the photo `Blob`.
- *
- * Coordinates are normalised to the photo: x = 0 left edge → 1 right edge,
- * y = 0 top edge → 1 bottom edge, of the photo exactly as sent (already
- * oriented, see `components/studio/tryOn/preparePhoto.ts`).
+ * While the owner has not connected the provider, the function says so
+ * (`status()` → not available, `render()` → `not_available`): the dialog says the
+ * AI render is coming and sends nothing — never a made-up result.
  */
 
-/** One gem of the creation, as the service needs it: what it is and on which tooth. */
-export interface TryOnPieceInput {
-  pieceId: string;
-  /** FDI tooth number ("11", "21"…), or "X0" for a piece on an unlabelled region. */
-  toothId: string;
-  /** Longest side, in millimetres (an SS gauge's approximate diameter for a round stone). */
-  sizeMm: number;
-  shape: StudioShape;
-  /** `#rrggbb`. */
-  color: string;
-  /** Spin on the tooth, degrees. */
-  rotation: number;
-}
+/** What the try-on needs of a creation: its name (titles, file names) and its scene (the front view). */
+export type TryOnCreation = Pick<Creation, "name" | "scene">;
 
-export interface TryOnCreationInput {
-  creationId: string;
-  pieces: TryOnPieceInput[];
-}
+/** Which creation, as the function finds it: one's own, behind a share link, or on a public Glowbook. */
+export type TryOnSource =
+  | { kind: "own"; creationId: string }
+  | { kind: "share"; token: string }
+  | { kind: "glowbook"; handle: string; itemId: string };
 
-export interface TryOnRequest {
+/** Who is trying it on: the artist with a client's photo, or a visitor on their own smile. */
+export type TryOnAudience = "artist" | "visitor";
+
+export interface TryOnRenderRequest {
   /** The prepared photo (oriented, downscaled, metadata stripped). */
   photo: Blob;
-  photoWidth: number;
-  photoHeight: number;
-  creation: TryOnCreationInput;
+  source: TryOnSource;
+  /** The creation rendered in 3D from the front, in the browser (`renderDesignImage`). */
+  design: Blob;
+  /** The flat design map (`tryOnMap`, PNG): every tooth labelled, every gem tagged like the design data. */
+  map?: Blob | null;
+  /** Each gem's place and size on its tooth (`tryOnSeats`), read by the AI as text. */
+  seats?: readonly TryOnSeat[];
 }
 
-/** Where one gem goes on the photo. */
-export interface TryOnGemPlacement {
-  pieceId: string;
-  /** Centre, normalised to the photo (0..1). */
-  x: number;
-  y: number;
-  /** The gem's diameter as a fraction of the photo's width. */
-  scale: number;
-  /** In-plane rotation, degrees, clockwise. */
-  rotation: number;
-}
-
-/** A tooth the service recognised: its FDI number and the centre of its visible face. */
-export interface TryOnToothLandmark {
-  toothId: string;
-  x: number;
-  y: number;
-}
-
-export interface TryOnResult {
-  placements: TryOnGemPlacement[];
-  landmarks: TryOnToothLandmark[];
-  /** 0..1: how sure the service is of the whole placement. */
-  confidence: number;
-}
-
-export const TRY_ON_ERROR_CODES = ["not_available", "no_smile_detected", "low_quality", "teeth_not_visible", "failed"] as const;
+export const TRY_ON_ERROR_CODES = [
+  "not_available",
+  "sign_in_required",
+  "not_found",
+  "not_allowed",
+  "daily_limit",
+  "photo_unsuitable",
+  "blocked",
+  "network",
+  "failed",
+] as const;
 export type TryOnErrorCode = (typeof TRY_ON_ERROR_CODES)[number];
 
-export type TryOnOutcome = { ok: true; result: TryOnResult } | { ok: false; code: TryOnErrorCode };
+/**
+ * Why the function's photo check refused a photo (`photo_unsuitable`,
+ * `photoCheck.ts` in the function): each one has a message saying what to change.
+ */
+export const PHOTO_ISSUES = ["too_far", "not_frontal", "no_teeth", "teeth_hidden", "too_dark", "too_bright", "blurry"] as const;
+export type PhotoIssue = (typeof PHOTO_ISSUES)[number];
+
+/** Where a render is, as the function reports it: the photo check, then the AI render. */
+export type TryOnStage = "checking" | "rendering";
+
+/** `crop`: the image is the edited mouth close-up, to paste back into the photo there (`tryOnComposite.ts`). */
+export type TryOnOutcome = { ok: true; image: Blob; crop?: TryOnCrop } | { ok: false; code: TryOnErrorCode; reasons?: PhotoIssue[] };
+
+/**
+ * The signed-in member's daily allowance of AI renders (over the last 24
+ * hours, counted by the function): `unlimited` for an active administrator.
+ * Display only — the function counts again on every render.
+ */
+export type TryOnQuota = { unlimited: true } | { unlimited: false; limit: number; remaining: number };
+
+export interface TryOnStatus {
+  /** Whether the AI is connected. */
+  available: boolean;
+  /** Renders per account per 24 hours, for visitors who are not signed in yet; null if unknown. */
+  dailyLimit: number | null;
+  /** The caller's own allowance; null when not signed in or unknown. */
+  quota: TryOnQuota | null;
+}
+
+export const UNAVAILABLE_STATUS: TryOnStatus = { available: false, dailyLimit: null, quota: null };
+
+const count = (v: unknown): number | null => (typeof v === "number" && Number.isInteger(v) && v >= 0 && v <= 10_000 ? v : null);
+
+/** Read the function's status answer (`{ available, daily_limit, quota }`) like any untrusted input. */
+export function parseTryOnStatus(json: unknown): TryOnStatus {
+  if (!json || typeof json !== "object") return UNAVAILABLE_STATUS;
+  const data = json as Record<string, unknown>;
+  const raw = data.quota && typeof data.quota === "object" ? (data.quota as Record<string, unknown>) : null;
+  let quota: TryOnQuota | null = null;
+  if (raw?.unlimited === true) quota = { unlimited: true };
+  else if (raw) {
+    const limit = count(raw.limit);
+    const remaining = count(raw.remaining);
+    if (limit !== null && limit > 0 && remaining !== null) quota = { unlimited: false, limit, remaining: Math.min(remaining, limit) };
+  }
+  const dailyLimit = count(data.daily_limit);
+  return { available: data.available === true, dailyLimit: dailyLimit && dailyLimit > 0 ? dailyLimit : null, quota };
+}
 
 export interface SmileTryOnService {
   /**
-   * Place the creation's gems on the photo. Never throws: every failure is an
-   * error code. An aborted call (the artist cancelled or closed the dialog)
-   * resolves with `failed`; the caller ignores it.
+   * Whether the AI is connected, and the caller's daily allowance. Asked
+   * before any photo leaves the device; never throws (unavailable).
    */
-  placeCreation(request: TryOnRequest, options?: { signal?: AbortSignal }): Promise<TryOnOutcome>;
+  status(): Promise<TryOnStatus>;
+  /**
+   * Render the creation on the photo. Never throws: every failure is an error
+   * code. An aborted call (cancelled, dialog closed) resolves with `failed`;
+   * the caller ignores it. `onStage` follows the function's progress: the
+   * photo check, then the render once the photo passed.
+   */
+  render(request: TryOnRenderRequest, options?: { signal?: AbortSignal; onStage?: (stage: TryOnStage) => void }): Promise<TryOnOutcome>;
 }
 
-/**
- * The service shipped today: automatic placement is not connected, so it says
- * so at once — no delay, no made-up result.
- */
+/** Used without a backend (mock mode): the AI is simply not there. */
 export const unavailableTryOnService: SmileTryOnService = {
-  placeCreation: async () => ({ ok: false, code: "not_available" }),
+  status: async () => UNAVAILABLE_STATUS,
+  render: async () => ({ ok: false, code: "not_available" }),
 };
 
-/** What the service is told about a creation — its pieces only, never the record (owner, prices, notes). */
-export function tryOnInputFromCreation(creation: Pick<Creation, "id" | "scene">): TryOnCreationInput {
-  return {
-    creationId: creation.id,
-    pieces: creation.scene.pieces.map((p) => ({
-      pieceId: p.id,
-      toothId: p.toothId,
-      sizeMm: sizeLongestMm(p.size),
-      shape: p.look.shape,
-      color: p.look.color,
-      rotation: p.rotation,
-    })),
-  };
+/** The `source` field the function reads (`readSourceRef` in the function). */
+export function sourcePayload(source: TryOnSource): Record<string, string> {
+  switch (source.kind) {
+    case "own":
+      return { creation_id: source.creationId };
+    case "share":
+      return { token: source.token };
+    case "glowbook":
+      return { handle: source.handle, item_id: source.itemId };
+  }
 }
 
 /* ------------------------------------------------- reading the answer */
 
-const isNum = (v: unknown): v is number => typeof v === "number" && Number.isFinite(v);
-const clamp01 = (v: number) => Math.min(1, Math.max(0, v));
+/** A generated image above this (decoded) is refused. */
+export const RESULT_MAX_BYTES = 15 * 1024 * 1024;
+const RESULT_TYPES = new Set(["image/png", "image/jpeg", "image/webp"]);
 const isCode = (v: unknown): v is TryOnErrorCode => typeof v === "string" && (TRY_ON_ERROR_CODES as readonly string[]).includes(v);
 
+/** The function's codes that the dialog does not tell apart. */
+const ALIASES: Record<string, TryOnErrorCode> = { session_expired: "sign_in_required", invalid_request: "failed", server_error: "failed" };
+
 /**
- * Read the service's JSON answer: `{ ok: false, code }` or
- * `{ ok: true, placements, landmarks, confidence }`. Placements for pieces
- * the creation does not have, out of the photo or malformed are dropped; an
- * answer that keeps none is `failed` — the artist then places by hand.
+ * Read the function's answer: `{ ok: true, image: { mime_type, data } }`
+ * (base64) or `{ ok: false, code }`. An image of another type, too large or
+ * not valid base64 is `failed`.
  */
-export function parseTryOnResponse(json: unknown, pieceIds: readonly string[]): TryOnOutcome {
+export function parseTryOnResponse(json: unknown): TryOnOutcome {
   if (!json || typeof json !== "object") return { ok: false, code: "failed" };
   const data = json as Record<string, unknown>;
-  if (data.ok !== true) return { ok: false, code: isCode(data.code) ? data.code : "failed" };
-
-  const known = new Set(pieceIds);
-  const seen = new Set<string>();
-  const placements: TryOnGemPlacement[] = [];
-  for (const raw of Array.isArray(data.placements) ? data.placements : []) {
-    if (!raw || typeof raw !== "object") continue;
-    const p = raw as Record<string, unknown>;
-    if (typeof p.pieceId !== "string" || !known.has(p.pieceId) || seen.has(p.pieceId)) continue;
-    if (!isNum(p.x) || !isNum(p.y) || !isNum(p.scale) || p.x < 0 || p.x > 1 || p.y < 0 || p.y > 1) continue;
-    if (p.scale <= 0 || p.scale > 0.5) continue;
-    seen.add(p.pieceId);
-    placements.push({ pieceId: p.pieceId, x: p.x, y: p.y, scale: p.scale, rotation: isNum(p.rotation) ? normalizeDegrees(p.rotation) : 0 });
+  if (data.ok !== true) {
+    const code = typeof data.code === "string" ? (ALIASES[data.code] ?? data.code) : null;
+    if (code === "photo_unsuitable") {
+      const reasons = Array.isArray(data.reasons)
+        ? PHOTO_ISSUES.filter((issue) => (data.reasons as unknown[]).includes(issue))
+        : [];
+      return { ok: false, code, reasons };
+    }
+    return { ok: false, code: isCode(code) ? code : "failed" };
   }
-  if (placements.length === 0) return { ok: false, code: "failed" };
-
-  const landmarks: TryOnToothLandmark[] = [];
-  for (const raw of Array.isArray(data.landmarks) ? data.landmarks : []) {
-    if (!raw || typeof raw !== "object") continue;
-    const l = raw as Record<string, unknown>;
-    if (typeof l.toothId !== "string" || !/^(X0|[1-4][1-8])$/.test(l.toothId) || !isNum(l.x) || !isNum(l.y)) continue;
-    landmarks.push({ toothId: l.toothId, x: clamp01(l.x), y: clamp01(l.y) });
+  const image = (data.image && typeof data.image === "object" ? data.image : {}) as Record<string, unknown>;
+  const type = image.mime_type;
+  const b64 = image.data;
+  if (typeof type !== "string" || !RESULT_TYPES.has(type) || typeof b64 !== "string" || b64.length === 0) return { ok: false, code: "failed" };
+  if ((b64.length * 3) / 4 > RESULT_MAX_BYTES || !/^[A-Za-z0-9+/]+={0,2}$/.test(b64)) return { ok: false, code: "failed" };
+  try {
+    const binary = atob(b64);
+    const bytes = new Uint8Array(binary.length);
+    for (let i = 0; i < binary.length; i++) bytes[i] = binary.charCodeAt(i);
+    const crop = parseTryOnCrop(data.crop);
+    return { ok: true, image: new Blob([bytes], { type }), ...(crop ? { crop } : {}) };
+  } catch {
+    return { ok: false, code: "failed" };
   }
-
-  return { ok: true, result: { placements, landmarks, confidence: isNum(data.confidence) ? clamp01(data.confidence) : 0 } };
 }
 
-export function normalizeDegrees(deg: number): number {
-  const d = ((((deg + 180) % 360) + 360) % 360) - 180;
-  return d === -180 ? 180 : d;
+/**
+ * One event of the function's progress stream (`data: <json>`, `progress=1`):
+ * a stage, or the final answer read by `parseTryOnResponse`. Anything else
+ * (comments, unknown stages, broken JSON) is null and skipped.
+ */
+export function parseTryOnEvent(chunk: string): { stage: TryOnStage } | { outcome: TryOnOutcome } | null {
+  const line = chunk.split("\n").find((l) => l.startsWith("data:"));
+  if (!line) return null;
+  let event: unknown;
+  try {
+    event = JSON.parse(line.slice(5));
+  } catch {
+    return null;
+  }
+  if (!event || typeof event !== "object") return null;
+  const data = event as Record<string, unknown>;
+  if ("result" in data) return { outcome: parseTryOnResponse(data.result) };
+  return data.stage === "checking" || data.stage === "rendering" ? { stage: data.stage } : null;
 }
 
 /* ------------------------------------------------------- the interface */
 
 /** Locale keys (under `studio.tryOn.errors`) for each error code: a title and what to do. */
-export const TRY_ON_ERROR_MESSAGES: Record<TryOnErrorCode, { title: string; body: string }> = {
-  not_available: { title: "studio.tryOn.errors.not_available.title", body: "studio.tryOn.errors.not_available.body" },
-  no_smile_detected: { title: "studio.tryOn.errors.no_smile_detected.title", body: "studio.tryOn.errors.no_smile_detected.body" },
-  low_quality: { title: "studio.tryOn.errors.low_quality.title", body: "studio.tryOn.errors.low_quality.body" },
-  teeth_not_visible: { title: "studio.tryOn.errors.teeth_not_visible.title", body: "studio.tryOn.errors.teeth_not_visible.body" },
-  failed: { title: "studio.tryOn.errors.failed.title", body: "studio.tryOn.errors.failed.body" },
-};
+export const TRY_ON_ERROR_MESSAGES: Record<TryOnErrorCode, { title: string; body: string }> = Object.fromEntries(
+  TRY_ON_ERROR_CODES.map((code) => [code, { title: `studio.tryOn.errors.${code}.title`, body: `studio.tryOn.errors.${code}.body` }]),
+) as Record<TryOnErrorCode, { title: string; body: string }>;
 
-/** Whether trying another photo can help (the photo was the problem), as opposed to "place it by hand". */
-export function errorSuggestsNewPhoto(code: TryOnErrorCode): boolean {
-  return code === "no_smile_detected" || code === "low_quality" || code === "teeth_not_visible";
+/** The file extension of a generated image's type. */
+export function resultExtension(type: string): "jpg" | "png" | "webp" {
+  return type === "image/png" ? "png" : type === "image/webp" ? "webp" : "jpg";
+}
+
+/** Whether trying again can help (a passing failure), as opposed to another photo or nothing. */
+export function errorAllowsRetry(code: TryOnErrorCode): boolean {
+  return code === "network" || code === "failed";
 }

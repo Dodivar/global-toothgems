@@ -1,5 +1,5 @@
 import { describe, expect, it } from "vitest";
-import { displayPrice, mapPlanPriceRows, monthsFreeOf, readStudioCheckoutAnswer, readStudioConsentAnswer, readStudioPortalAnswer } from "./studioBillingMapping";
+import { displayPrice, mapPlanPriceRows, monthsFreeOf, readStudioCheckoutAnswer, readStudioConsentAnswer } from "./studioBillingMapping";
 
 describe("mapPlanPriceRows", () => {
   it("maps numeric amounts to minor units without floats and drops malformed rows", () => {
@@ -84,9 +84,4 @@ describe("function answers", () => {
     expect(readStudioConsentAnswer({})).toEqual({ kind: "error", error: "server_error" });
   });
 
-  it("follows only Stripe billing addresses for the portal", () => {
-    expect(readStudioPortalAnswer({ url: "https://billing.stripe.com/p/session/x" }).kind).toBe("redirect");
-    expect(readStudioPortalAnswer({ url: "http://billing.stripe.com/p/session/x" })).toEqual({ kind: "error", error: "unavailable" });
-    expect(readStudioPortalAnswer({ error: "no_subscription" })).toEqual({ kind: "error", error: "no_subscription" });
-  });
 });

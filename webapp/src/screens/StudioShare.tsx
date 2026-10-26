@@ -1,13 +1,14 @@
-import { useEffect, useMemo, useRef, useState, useSyncExternalStore } from "react";
+import { lazy, Suspense, useEffect, useMemo, useRef, useState, useSyncExternalStore } from "react";
 import { useTranslation } from "react-i18next";
 import { Link, useLocation, useNavigate, useParams } from "../lib/navigation";
 import clsx from "clsx";
-import { ArrowLeft, Box, Eye, Gem, Link2, LoaderCircle, Minus, Orbit, PencilRuler, Plus, RotateCcw, ShoppingBag, Sparkles, TriangleAlert } from "lucide-react";
+import { ArrowLeft, Box, Eye, Gem, Link2, LoaderCircle, Minus, Orbit, PencilRuler, Plus, RotateCcw, ScanFace, ShoppingBag, Sparkles, TriangleAlert } from "lucide-react";
 import { Button } from "../components/ui/Button";
 import { Dialog } from "../components/ui/Dialog";
 import { useDocumentTitle } from "../components/legal/hooks";
 import { ShoppingList } from "../components/studio/editor/ShoppingList";
 import { SignInPrompt } from "../components/studio/workspace/SignInPrompt";
+import { TryOnAllowance } from "../components/studio/tryOn/TryOnAllowance";
 import { StageFullscreenButton } from "../components/studio/StageFullscreenButton";
 import { useAuth } from "../lib/auth";
 import { isLocale, localizedPath } from "../lib/localeRoutes";
@@ -15,11 +16,15 @@ import { useToast } from "../lib/toast";
 import { StudioEngine } from "../lib/studio3d/engine";
 import { useStageFullscreen } from "../lib/studio3d/stageFullscreen";
 import { DesignStore, studioStore } from "../lib/studio3d/store";
+import type { TryOnSource } from "../lib/studio3d/tryOn";
+import { tryOnExhausted, useTryOnStatus } from "../lib/studio3d/useTryOnStatus";
 import { STUDIO_EDITOR_PATH, STUDIO_PATH } from "../lib/studioUrl";
 import { piecesKey } from "../lib/studioWorkspace/scene";
 import { supabase } from "../lib/supabase/client";
 import { decodeSharedDesign, type SharedDesign } from "../lib/studioWorkspace/share";
 import { fetchGlowbookCreation, fetchSharedCreation } from "../lib/studioWorkspace/supabaseRepository";
+
+const TryOnDialog = lazy(() => import("../components/studio/tryOn/TryOnDialog").then((m) => ({ default: m.TryOnDialog })));
 
 /**
  * A Studio design someone shared, shown read-only: a saved creation behind a
@@ -43,6 +48,11 @@ import { fetchGlowbookCreation, fetchSharedCreation } from "../lib/studioWorkspa
  * cart in one click (the editor's `ShoppingList`; the checkout prices them
  * again on the server).
  *
+ * A stored creation (Glowbook or share token) whose owner's plan allows it
+ * (`try_on`, decided by the database, decision 111) offers "Try it on my
+ * smile": the visitor's own photo, rendered by AI. A design
+ * carried in the fragment has no server identity and offers none.
+ *
  * Open to everyone and outside `RequireStudioAccess`: looking at a design
  * someone sent you is not using the paid tool. Lazy-loaded with three.js.
  */
@@ -52,8 +62,11 @@ interface GlowbookAuthor {
   displayName: string;
 }
 
+/** The stored creation, as the try-on function finds it, when its owner's plan allows trying it on. */
+type TryOn = TryOnSource | null;
+
 type Loaded =
-  | { key: string; status: "ready"; design: SharedDesign; author: GlowbookAuthor | null }
+  | { key: string; status: "ready"; design: SharedDesign; author: GlowbookAuthor | null; tryOn: TryOn }
   /** Unknown, disabled or unreadable link. */
   | { key: string; status: "invalid" }
   /** The database could not be reached: worth another try. */
@@ -61,10 +74,18 @@ type Loaded =
 
 type Source = { token?: string; handle?: string; item?: string; hash: string };
 
-async function loadShared({ token, handle, item, hash }: Source): Promise<{ design: SharedDesign; author: GlowbookAuthor | null } | null> {
-  if (handle && item) return supabase ? fetchGlowbookCreation(supabase, decodeURIComponent(handle), item) : null;
-  const design = token ? (supabase ? await fetchSharedCreation(supabase, token) : null) : await decodeSharedDesign(hash);
-  return design ? { design, author: null } : null;
+async function loadShared({ token, handle, item, hash }: Source): Promise<{ design: SharedDesign; author: GlowbookAuthor | null; tryOn: TryOn } | null> {
+  if (handle && item) {
+    const found = supabase ? await fetchGlowbookCreation(supabase, decodeURIComponent(handle), item) : null;
+    if (!found) return null;
+    return { ...found, tryOn: found.tryOn ? { kind: "glowbook", handle: found.author.handle, itemId: item } : null };
+  }
+  if (token) {
+    const found = supabase ? await fetchSharedCreation(supabase, token) : null;
+    return found ? { design: found.design, author: null, tryOn: found.tryOn ? { kind: "share", token } : null } : null;
+  }
+  const design = await decodeSharedDesign(hash);
+  return design ? { design, author: null, tryOn: null } : null;
 }
 
 export function StudioShare() {
@@ -89,6 +110,7 @@ export function StudioShare() {
   const current = loaded && loaded.key === key ? loaded : null;
   const design = current?.status === "ready" ? current.design : null;
   const author = current?.status === "ready" ? current.author : null;
+  const tryOn = current?.status === "ready" ? current.tryOn : null;
   const name = design?.name || t("studio.workspace.untitled");
   useDocumentTitle(design ? `${name} · ${t("studio.workspace.share.view.documentTitle")}` : t("studio.workspace.share.view.documentTitle"));
 
@@ -102,7 +124,7 @@ export function StudioShare() {
           </span>
         </div>
       ) : design ? (
-        <SharedDesignView design={design} name={name} author={author} />
+        <SharedDesignView design={design} name={name} author={author} tryOn={tryOn} />
       ) : (
         <InvalidLink
           stored={stored}
@@ -150,13 +172,16 @@ function InvalidLink({
   );
 }
 
-function SharedDesignView({ design, name, author }: { design: SharedDesign; name: string; author: GlowbookAuthor | null }) {
+function SharedDesignView({ design, name, author, tryOn }: { design: SharedDesign; name: string; author: GlowbookAuthor | null; tryOn: TryOn }) {
   const { t, i18n } = useTranslation();
   const { signedIn, restoring } = useAuth();
   const { showToast } = useToast();
   const navigate = useNavigate();
   const { pathname, hash } = useLocation();
   const [confirmReplace, setConfirmReplace] = useState(false);
+  const [tryingOn, setTryingOn] = useState(false);
+  // Read again each time the try-on dialog closes, so the count follows the renders just made.
+  const tryOnStatus = useTryOnStatus(!!tryOn && !tryingOn);
 
   /** The recipient's own stage has work that opening a copy would replace. */
   const stageHasWork = () =>
@@ -209,6 +234,26 @@ function SharedDesignView({ design, name, author }: { design: SharedDesign; name
             <Sparkles size={13} aria-hidden="true" className="text-[var(--gt-blue-600)]" />
             {t("studio.workspace.share.view.backToGlowbook", { name: author.displayName || `@${author.handle}` })}
           </Link>
+        )}
+
+        {tryOn && design.scene.pieces.length > 0 && (
+          <section
+            aria-labelledby="gt-shared-try-on"
+            className="grid justify-items-start gap-2.5 rounded-[var(--radius-lg)] border border-[var(--gt-blue-300)] bg-[var(--surface-brand-wash)] p-4"
+          >
+            <h2
+              id="gt-shared-try-on"
+              className="m-0 inline-flex items-center gap-2 text-[15px] font-[var(--weight-black)] tracking-[var(--tracking-tight)] text-[var(--text-primary)]"
+            >
+              <ScanFace size={16} aria-hidden="true" className="text-[var(--gt-blue-700)]" />
+              {t("studio.tryOn.visitor.title")}
+            </h2>
+            <p className="m-0 text-[12.5px] leading-relaxed text-[var(--text-muted)]">{t("studio.tryOn.visitor.body")}</p>
+            <Button variant="primary" size="sm" iconLeft={ScanFace} disabled={tryOnExhausted(tryOnStatus, signedIn)} onClick={() => setTryingOn(true)}>
+              {t("studio.tryOn.visitor.cta")}
+            </Button>
+            <TryOnAllowance status={tryOnStatus} />
+          </section>
         )}
 
         <section
@@ -265,6 +310,12 @@ function SharedDesignView({ design, name, author }: { design: SharedDesign; name
           {t("studio.workspace.share.view.discover")}
         </Link>
       </aside>
+
+      {tryingOn && tryOn && (
+        <Suspense fallback={null}>
+          <TryOnDialog creation={{ name, scene: design.scene }} source={tryOn} audience="visitor" onClose={() => setTryingOn(false)} />
+        </Suspense>
+      )}
 
       {confirmReplace && (
         <Dialog

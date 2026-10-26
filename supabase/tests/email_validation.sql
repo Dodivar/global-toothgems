@@ -19,6 +19,10 @@
 --   EM6 none of these functions is executable by anon or authenticated
 -- =============================================================================
 
+-- This suite checks the standard VAT regime: the franchise (decision 114) is
+-- switched off for its transaction.
+update public.store_settings set vat_franchise = false where id;
+
 do $$
 declare
   h text := encode(extensions.digest('hb@example.com', 'sha256'), 'hex');

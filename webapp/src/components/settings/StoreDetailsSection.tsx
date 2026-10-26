@@ -76,6 +76,12 @@ export function StoreDetailsSection() {
             {text("registrationNumber", { placeholder: t("settings.store.placeholders.registrationNumber") })}
             {text("vatNumber", { placeholder: "FR12345678901", autoComplete: "off" })}
           </FieldGrid>
+          <ToggleSwitch
+            label={t("settings.store.vatFranchise.label")}
+            description={t("settings.store.vatFranchise.description")}
+            checked={d.vatFranchise}
+            onChange={(v) => set("vatFranchise", v)}
+          />
           <p className="m-0 text-[length:var(--text-caption)] text-[var(--text-muted)]">
             {t("settings.store.currency", { currency: STORE_CURRENCY })}
           </p>

@@ -11,58 +11,18 @@
     "eyebrow": "Studio 3D"
   },
   "plans": {
-    "eyebrow": "Plans",
-    "title": "Start free, grow at your own pace.",
-    "body": "Try the whole Studio, then pick the plan that fits your practice.",
-    "featured": "Artists’ choice",
-    "trialBadge_one": "{{count}} day free",
-    "trialBadge_other": "{{count}} days free",
-    "free": "Free",
-    "trialPeriod_one": "for {{count}} day",
-    "trialPeriod_other": "for {{count}} days",
-    "perMonth": "/ month",
-    "ctaTrial": "Start the trial",
-    "ctaPaid": "Choose {{plan}}",
-    "note": "Monthly prices, cancel anytime. The plans are coming soon: during the preview, the whole Studio is free.",
     "items": {
       "trial": {
-        "name": "Trial",
-        "pitch": "The whole Studio, long enough to make up your mind.",
-        "features": [
-          "Every Studio feature",
-          "The full gem library",
-          "Your first creations saved and shared"
-        ]
+        "name": "Trial"
       },
       "essential": {
-        "name": "Essential",
-        "pitch": "To imagine your own looks.",
-        "features": [
-          "The full gem library",
-          "Creations saved to your account",
-          "Share your creations with a link",
-          "Desktop, tablet and mobile"
-        ]
+        "name": "Essential"
       },
       "artist": {
-        "name": "Artist",
-        "pitch": "To prepare every setting with your clients.",
-        "features": [
-          "Everything in Essential",
-          "Gem Groups: your reusable arrangements",
-          "Import your own dentition model",
-          "Piece estimate at shop prices"
-        ]
+        "name": "Artist"
       },
       "atelier": {
-        "name": "Atelier",
-        "pitch": "For studios and teams.",
-        "features": [
-          "Everything in Artist",
-          "Several seats for your team",
-          "Early access to new tools",
-          "Priority support"
-        ]
+        "name": "Atelier"
       }
     }
   },
@@ -125,7 +85,7 @@
       "kept_other": "Your {{count}} saved designs are kept in your account. They will be waiting for you in the Studio once a plan is active.",
       "keptNone": "Anything you saved stays in your account and will be waiting for you once a plan is active.",
       "plansTitle": "Choose your plan",
-      "pricesNote": "Prices include VAT. Cancel at any time from your account: the subscription ends at the close of the paid period."
+      "pricesNote": "Cancel at any time from your account: the subscription ends at the close of the paid period."
     },
     "error": {
       "title": "We couldn’t check your Studio access",
@@ -202,6 +162,32 @@
     "subscribed": {
       "title": "Welcome to the 3D Studio",
       "body": "Your {{plan}} subscription is active."
+    },
+    "limit": {
+      "title": "Your plan’s limit is reached",
+      "creations": "Nothing was saved: your plan keeps no more creations. Delete one, or move to a higher plan from My subscription.",
+      "gemGroups": "Nothing was saved: your plan keeps no more Gem Groups. Delete one, or move to a higher plan from My subscription."
+    },
+    "planLocked": {
+      "cta": "Switch to {{plan}}",
+      "glowbook": {
+        "title": "The Glowbook comes with the {{plan}} plan",
+        "short": "Show your creations on a public page and let your clients try them on their smile.",
+        "body": "Your public showcase, for your Instagram bio: your creations in 3D, your identity, where to find you, a QR code and a poster — and the AI try-on, which lets your clients see your creations on their own smile.",
+        "kept": "If you already had a Glowbook, it is hidden from the public for now and comes back as it was once you are on this plan again."
+      },
+      "templates": {
+        "title": "Global Toothgems templates come with the {{plan}} plan",
+        "short": "Start from the Global Toothgems team’s creations and adapt them for your clients.",
+        "body": "Creations designed by the Global Toothgems team, renewed over time: copy one into your creations in one click, then adapt it freely. The original template never changes.",
+        "kept": "Templates you already copied stay in your creations, whatever your plan."
+      },
+      "collections": {
+        "title": "Folders come with the {{plan}} plan",
+        "short": "File your creations by client, by style or by event.",
+        "body": "Create folders to file your creations by client, by style or by event, and find them at a glance in My Creations.",
+        "kept": "Folders you already have stay visible: you can take creations out or delete them, but no longer create or fill them."
+      }
     }
   },
   "editor": {
@@ -664,9 +650,6 @@
     "trialUntil": "Your free trial gives you access to the Studio until {{date}}.",
     "noPlan": "Choose a plan to use the 3D Studio. Your creations stay in your account.",
     "staffNote": "Your team account opens the Studio without a subscription.",
-    "manage": "Manage my subscription",
-    "manageHint": "Change plan or billing, update your card, see your invoices or cancel: on Stripe’s secure page.",
-    "portalError": "Subscription management is temporarily unavailable. Try again in a moment.",
     "choosePlan": "Choose a plan",
     "openStudio": "Open the Studio",
     "withdrawal": {
@@ -704,25 +687,154 @@
       },
       "incomplete": "Your withdrawal is recorded but could not be finished. Try again in a moment.",
       "error": "Something went wrong. Nothing was changed: try again."
+    },
+    "manageLoading": "Loading your plan, card and invoices…",
+    "manageError": "Your plan and invoices cannot be read right now.",
+    "change": {
+      "title": "Your plan",
+      "current": "You are subscribed to {{plan}}: {{price}} {{per}}.",
+      "rules": "Change plan or billing at any time. A plan change is prorated on your next invoice; switching between monthly and yearly is charged straight away, minus the unused part of your current period.",
+      "locked": {
+        "pastDue": "Update your card first: you can change plan once the payment is settled.",
+        "canceling": "Your subscription is set to end with this period. Keep it (below) to change plan."
+      },
+      "confirmTitle": "Switch to {{plan}}?",
+      "from": "{{from}} → {{to}}",
+      "previewLoading": "Working out the amount…",
+      "dueNow": "Due today",
+      "nextInvoice": "Next invoice, on {{date}}",
+      "nextRenewal": "Then at each renewal, from {{date}}",
+      "credit": "Credit kept on your account",
+      "explainNow": "The new period starts today: the unused part of your current period is taken off the amount.",
+      "explainLater": "Nothing is charged today: the adjustment for the rest of the period appears on your next invoice. Your new plan applies straight away.",
+      "confirm": "Confirm the change",
+      "confirmPay": "Pay {{amount}} and switch",
+      "keep": "Keep my plan",
+      "done": "Done: you are now on {{plan}} ({{billing}}).",
+      "errors": {
+        "payment_failed": "The payment did not go through: your plan has not changed. Check your card, then try again.",
+        "not_active": "Your subscription cannot change right now.",
+        "cancel_scheduled": "Your subscription is set to end with this period: keep it first to change plan.",
+        "same_plan": "This is already your plan.",
+        "plan_unavailable": "This plan is unavailable for the moment.",
+        "no_subscription": "No current subscription.",
+        "unavailable": "The change could not be made. Nothing was changed: try again in a moment."
+      }
+    },
+    "compare": {
+      "caption": "What each plan includes",
+      "feature": "Included",
+      "included": "Included",
+      "notIncluded": "Not included",
+      "rows": {
+        "creations": "Saved creations",
+        "gemGroups": "Gem Groups (reusable arrangements)",
+        "studio": "3D editor and the whole gem library",
+        "tools": "Front view, placement sheet, sharing by link",
+        "templates": "Global Toothgems templates",
+        "posts": "Posts for social networks: HD image, 360° video, GIF",
+        "signature": "Signature on posts",
+        "layouts": "Post layout templates",
+        "glowbook": "Your Glowbook, the public showcase of your creations",
+        "tryOn": "AI try-on on your clients’ smile",
+        "collections": "Folders to file your creations"
+      },
+      "values": {
+        "watermark": "Global Toothgems watermark",
+        "ownLogo": "Your logo, or none",
+        "unlimited": "Unlimited"
+      }
+    },
+    "card": {
+      "title": "Payment method",
+      "none": "No card saved.",
+      "other": "Payment method",
+      "expires": "expires {{date}}",
+      "replace": "Replace card",
+      "add": "Add a card",
+      "dialogTitle": "New card",
+      "dialogBody": "It will be used for your subscription's next payments.",
+      "loading": "Opening the secure form…",
+      "save": "Save card",
+      "noCharge": "Nothing is charged now. Your bank may ask you to confirm.",
+      "close": "Close",
+      "saved": "Your new card is saved.",
+      "savedAndPaid": "Your new card is saved and the pending payment is settled.",
+      "savedPaymentFailed": "Your card is saved, but the pending payment did not go through. We will retry automatically; you can also try another card.",
+      "error": "The card could not be saved. Try again in a moment."
+    },
+    "invoices": {
+      "title": "Invoices and credit notes",
+      "invoice": "Invoice",
+      "creditNote": "Credit note",
+      "download": "PDF",
+      "downloadLabel": "Download {{kind}} {{number}} (PDF)",
+      "loadError": "Your invoices could not be loaded.",
+      "pdfError": "The PDF could not be produced. Please try again."
+    },
+    "cancel": {
+      "title": "Cancel the subscription",
+      "body": "You keep access to the Studio until {{date}}, then the subscription stops with no further charge. Your creations stay in your account.",
+      "cta": "Cancel my subscription",
+      "confirmTitle": "Cancel your subscription?",
+      "confirmBody": "You keep access until {{date}}, then the subscription stops. You can change your mind until then.",
+      "reasonLabel": "Why are you leaving? (optional)",
+      "reasons": {
+        "none": "I'd rather not say",
+        "too_expensive": "It's too expensive",
+        "missing_features": "Features are missing",
+        "unused": "I don't use it enough",
+        "switched_service": "I use another tool",
+        "other": "Another reason"
+      },
+      "confirm": "Confirm cancellation",
+      "keep": "Keep my subscription",
+      "done": "Your subscription is cancelled: you keep access until {{date}}.",
+      "scheduledTitle": "Cancellation scheduled",
+      "scheduled": "Your subscription ends on {{date}}. You can keep it: it carries on as before, with no new sign-up.",
+      "resume": "Keep my subscription",
+      "resumed": "Your subscription carries on: next renewal on {{date}}.",
+      "error": "This could not be done. Nothing was changed: try again in a moment."
+    },
+    "usage": {
+      "title": "What your {{plan}} plan includes",
+      "creations": "Saved creations",
+      "gemGroups": "Gem Groups",
+      "of": "{{used}} of {{limit}}",
+      "unlimited": "{{used}} · unlimited",
+      "full": {
+        "creations": "Limit reached: delete a creation or move to a higher plan to save new ones.",
+        "gemGroups": "Limit reached: delete a Gem Group or move to a higher plan to save new ones."
+      },
+      "glowbook": "Glowbook",
+      "tryOn": "AI try-on for your clients",
+      "included": "included",
+      "withPlan": "with the {{plan}} plan",
+      "templates": "Global Toothgems templates",
+      "collections": "Folders for your creations"
     }
   },
   "tryOn": {
-    "action": "Try on a photo",
-    "editorSub": "The saved creation, on a photo of your client’s smile",
-    "title": "Try on a photo",
-    "subtitle": "“{{name}}” on a photo of your client’s smile.",
+    "action": "Try on a smile",
+    "editorSub": "The saved creation, rendered by AI on a smile photo",
+    "title": "Try on a smile",
+    "subtitle": {
+      "artist": "“{{name}}” on a photo of your client’s smile.",
+      "visitor": "“{{name}}” on a photo of your smile."
+    },
     "empty": "This creation has no gems yet: add some in the editor, save, then come back to try it on.",
     "steps": {
       "photo": "Photo",
-      "analysis": "Analysis",
-      "adjust": "Adjust"
+      "check": "Check",
+      "render": "Try-on",
+      "result": "Result"
     },
     "photo": {
       "tipsTitle": "For a good photo",
       "tips": {
-        "front": "Face-on, head straight, at smile height",
-        "lips": "Lips apart, teeth clearly visible",
+        "lips": "Lips apart, upper teeth clearly visible",
         "light": "Good, even light, no backlight or shadow on the teeth",
+        "front": "Face-on, head neither turned nor tilted, the phone held still",
         "filter": "No filter or retouching"
       },
       "drop": "Drop the photo here, or",
@@ -732,68 +844,126 @@
       "previewAlt": "Chosen smile photo",
       "formats": "JPEG, PNG, WebP or HEIC · {{maxMb}} MB max · at least {{minWidth}} × {{minHeight}} pixels",
       "reading": "Reading the photo…",
-      "privacy": "The photo stays on this device: Global Toothgems neither receives nor stores it, and it is forgotten as soon as you close this window. Its metadata (GPS location, device, date) is removed.",
-      "consent": "The person in the photo has agreed to it being used",
-      "consentHint": "For this try-on only. Share the resulting image only with their agreement.",
-      "consentRequired": "Tick this box to continue: the person in the photo must agree.",
-      "continue": "Continue",
+      "privacy": "For the render, the photo is sent encrypted to Global Toothgems and then to Google (Gemini) while the image is created: Global Toothgems does not keep it. Its metadata (GPS location, device, date) is removed before sending.",
+      "consent": {
+        "artist": "The person in the photo has agreed to its use",
+        "visitor": "This is a photo of me and I agree to its use for this try-on"
+      },
+      "consentHint": {
+        "artist": "For this try-on only. Share the resulting image only with their agreement.",
+        "visitor": "For this try-on only: the photo is not kept."
+      },
+      "consentRequired": {
+        "artist": "Tick this box to continue: the person in the photo must agree.",
+        "visitor": "Tick this box to continue."
+      },
       "errors": {
         "type": "This file is not a supported photo. Choose a JPEG, PNG, WebP or HEIC.",
         "empty": "This file is empty. Choose another photo.",
         "tooLarge": "This photo is over {{maxMb}} MB. Choose a lighter one.",
         "tooSmall": "This photo is too small to see the teeth: it needs at least {{minWidth}} × {{minHeight}} pixels.",
-        "unreadable": "This browser cannot read this photo. If it is a HEIC, convert it to JPEG (or set the camera to “Most compatible”) and try again."
+        "unreadable": "This browser cannot read this photo. If it is a HEIC, convert it to JPEG (or set the camera to “Most compatible”) and try again.",
+        "tooDark": "This photo is too dark to see the teeth. Take it again in daylight or facing a lamp."
+      },
+      "generate": "Generate the AI render",
+      "checking": "Checking availability…",
+      "signInHint": "Sign in to your account to get the AI render.",
+      "closeUp": {
+        "title": "A close-up of your teeth",
+        "body": "Bring the phone closer and hold it straight in front of you, at smile height: your teeth should fill a good part of the photo, not your whole face. A photo taken too far away, at an angle, too dark or blurred is turned down before the render and does not count towards your renders of the day."
       }
     },
     "processing": {
-      "title": "Analysing the smile…",
-      "body": "We are finding the teeth in the photo to place the creation’s gems on them.",
+      "checking": {
+        "title": "Checking the photo…",
+        "body": "An AI checks that the teeth are clearly visible, face-on, sharp and well lit before creating the render. A few seconds."
+      },
+      "rendering": {
+        "title": "Creating the render…",
+        "body": "The AI is setting the creation’s gems on the photo. It usually takes less than a minute."
+      },
       "cancel": "Cancel"
     },
     "errors": {
       "not_available": {
-        "title": "Automatic placement coming soon",
-        "body": "Automatic gem placement is not available yet. Place the creation by hand: drag it onto the teeth, then adjust its size and tilt."
+        "title": "AI render coming soon",
+        "body": "The AI try-on is not live yet. Come back soon: no photo is sent in the meantime."
       },
-      "no_smile_detected": {
-        "title": "No smile detected",
-        "body": "We could not find a smile in this photo. Take it face-on, lips apart."
+      "sign_in_required": {
+        "title": "Sign-in needed",
+        "body": "Sign in to your account to get the AI render."
       },
-      "low_quality": {
-        "title": "Photo too blurry or too dark",
-        "body": "Retake the photo with more light, holding still, without a filter."
+      "not_found": {
+        "title": "Creation not found",
+        "body": "This creation is no longer available (deleted, removed or link disabled)."
       },
-      "teeth_not_visible": {
-        "title": "Teeth not visible enough",
-        "body": "The creation’s teeth cannot be seen well enough. Ask for a wider smile, face-on."
+      "not_allowed": {
+        "title": "AI render not available for this creation",
+        "body": "The AI render option is not included for this artist’s creations."
+      },
+      "daily_limit": {
+        "title": "Today’s limit reached",
+        "body": "You have reached today’s number of AI renders. Try again tomorrow."
+      },
+      "blocked": {
+        "title": "Photo refused by the AI",
+        "body": "The AI service refused this photo. Try another photo, front-facing and centred on the smile."
+      },
+      "network": {
+        "title": "Connection lost",
+        "body": "The render could not be requested. Check your connection and try again."
       },
       "failed": {
-        "title": "The analysis did not complete",
-        "body": "Something went wrong during the analysis. Try again, or place the creation by hand."
+        "title": "The render did not work",
+        "body": "Something went wrong during the render. Try again in a moment."
+      },
+      "photo_unsuitable": {
+        "title": "This photo cannot give a good render",
+        "body": "Nothing was generated and this render was not counted. Take another photo:"
       }
     },
     "errorActions": {
-      "newPhoto": "Take another photo",
-      "retry": "Try again",
-      "manual": "Place by hand"
-    },
-    "adjust": {
-      "automatic": "Gems placed automatically ({{confidence}}% confidence). Check and correct if needed.",
-      "stageLabel": "“{{name}}” on the smile photo",
-      "gestures": "Drag to move, pinch with two fingers to resize and turn, or use the mouse wheel.",
-      "keys": "Keyboard: arrows to move, + and − to resize, [ and ] to turn, Shift for bigger steps.",
-      "size": "Size",
-      "rotation": "Tilt",
-      "opacity": "Opacity",
-      "before": "Before / after",
-      "reset": "Reset",
       "newPhoto": "Another photo",
+      "retry": "Try again",
+      "signIn": "Sign in"
+    },
+    "result": {
+      "alt": "“{{name}}” tried on the photo, AI render",
+      "beforeAlt": "The original photo",
+      "aiTag": "AI render",
+      "beforeTag": "Before",
+      "disclaimer": "AI-generated image: a preview to picture it, not an exact promise of the finished result.",
+      "regenerate": "Generate again",
+      "notStored": "Global Toothgems does not keep the image: download it to keep it.",
+      "before": "Before / after",
       "download": "Download image",
+      "downloaded": "Image downloaded.",
       "share": "Share",
       "shareText": "“{{name}}”, tried on with the Global Toothgems 3D Studio",
-      "downloaded": "Image downloaded.",
-      "exportFailed": "The image could not be created. Try again.",
-      "exportHint": "The image is made on this device; nothing is sent to Global Toothgems."
+      "shareFailed": "Sharing did not work. Try again or download the image."
+    },
+    "visitor": {
+      "title": "Try it on my smile",
+      "body": "Take or choose a photo of your smile and see this creation on you.",
+      "cta": "Try it on my smile"
+    },
+    "photoIssues": {
+      "too_far": "closer: your teeth should fill a good part of the photo;",
+      "not_frontal": "face-on: the phone at smile height, head neither turned nor tilted, both front teeth clearly visible;",
+      "no_teeth": "smiling, lips apart, upper teeth clearly visible;",
+      "teeth_hidden": "with nothing in front of the teeth (hand, object, hair);",
+      "too_dark": "with more light, no backlight;",
+      "too_bright": "with softer light, no direct flash on the teeth;",
+      "blurry": "sharp: hold the phone still and let it focus."
+    },
+    "allowance": {
+      "remaining_one": "You have {{count}} try left out of {{limit}} (rolling 24 hours).",
+      "remaining_other": "You have {{count}} tries left out of {{limit}} (rolling 24 hours).",
+      "none": "You have used your {{limit}} tries of the last 24 hours. Each one frees up again 24 hours after it was made.",
+      "unlimited": "Unlimited tries (administrator account).",
+      "signedOut_one": "For signed-in members: {{count}} try per 24 hours.",
+      "signedOut_other": "For signed-in members: {{count}} tries per 24 hours.",
+      "signedOutPlain": "For signed-in members."
     }
   },
   "frontView": {

@@ -97,7 +97,8 @@
     "editDetails": "Edit details",
     "delete": "Delete",
     "useInStudio": "Use in Studio",
-    "collections": "Collections…"
+    "collections": "Collections…",
+    "more": "More actions"
   },
   "creations": {
     "eyebrow": "My Creations",
@@ -113,16 +114,6 @@
     "emptyBody": "Start designing in the 3D Studio and save your favourite tooth gem compositions here. Your designs will always be ready to revisit.",
     "emptyCta": "Create your first design",
     "emptyHelp": "Learn how it works"
-  },
-  "summary": {
-    "title": "Your Studio",
-    "creations_one": "creation",
-    "creations_other": "creations",
-    "groups_one": "gem group",
-    "groups_other": "gem groups",
-    "gems_one": "gem used",
-    "gems_other": "gems used",
-    "value": "total estimated design value"
   },
   "library": {
     "clearSearch": "Clear search",

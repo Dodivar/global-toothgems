@@ -441,6 +441,7 @@
       "poweredBy": "Payment processed by Stripe, a PCI DSS Level 1 certified provider.",
       "due": "Amount due",
       "vatIncluded": "VAT included",
+      "vatFranchise": "VAT not applicable, art. 293 B of the French Tax Code (CGI)",
       "discounts": "Discounts",
       "giftCards_one": "Gift card",
       "giftCards_other": "{{count}} gift cards",
@@ -578,10 +579,7 @@
     "signIn": "Sign in",
     "signInInstead": "Sign in instead",
     "forgotPassword": "Forgot your password?",
-    "forgotToastTitle": "Password recovery",
-    "forgotToastBody": "In this prototype, recovery is shown for the design only.",
     "reassurance": "Free to create · no card required · takes about a minute",
-    "checkingEmail": "Checking this email address…",
     "showPassword": "Show password",
     "hidePassword": "Hide password",
     "clearChoice": "Clear",
@@ -602,8 +600,7 @@
       "continue": "Continue",
       "back": "Back",
       "create": "Create my account",
-      "creating": "Creating your account…",
-      "checking": "Checking…"
+      "creating": "Creating your account…"
     },
     "context": {
       "purchaseAria": "Your purchase",
@@ -624,10 +621,7 @@
     "account": {
       "title": "Your sign-in details",
       "body": "You’ll use these to sign in on any device.",
-      "divider": "or with your email",
-      "googleConnected": "Connected with Google",
-      "googleNoPassword": "No password needed — you’ll sign in with Google.",
-      "useEmailInstead": "Use an email and password instead"
+      "divider": "or with your email"
     },
     "profile": {
       "title": "About you",
@@ -738,17 +732,7 @@
       "emailSendBody": "Your account was not created: our email service failed. Your details stay in this form — try again in a few minutes, and contact us if it keeps happening."
     },
     "google": {
-      "cta": "Continue with Google",
-      "title": "Continue with Google",
-      "description": "Choose the Google account to use with Global Toothgems.",
-      "choose": "Choose an account",
-      "mockNote": "Prototype: a simulated account chooser. Nothing is sent to Google.",
-      "connecting": "Connecting to Google…",
-      "takenTitle": "This Google account is already registered",
-      "takenBody": "{{email}} already has a Global Toothgems account. Sign in to continue.",
-      "otherAccount": "Use another account",
-      "toastTitle": "Connected with Google",
-      "toastBody": "Your email is confirmed. Just a few details left."
+      "cta": "Continue with Google"
     },
     "legal": {
       "summaryNote": "Key points, in plain language. The full legal text will be published with the live site.",
@@ -781,43 +765,6 @@
         ]
       }
     },
-    "verify": {
-      "title": "Check your inbox",
-      "body": "We’ve sent a verification link to",
-      "instruction": "Open the email and select the link to activate your account.",
-      "sending": "Sending your verification email…",
-      "sent": "Email sent",
-      "resent": "A new link is on its way",
-      "verified": "Email verified — welcome aboard!",
-      "failedTitle": "We couldn’t send the verification email",
-      "failedBody": "This is usually temporary. Try again, or check the address is correct.",
-      "tryAgain": "Try again",
-      "expiredTitle": "This link has expired",
-      "expiredBody": "For your security, verification links expire after a while. Send yourself a fresh one.",
-      "sendNewLink": "Send a new link",
-      "resend": "Resend email",
-      "resending": "Sending…",
-      "resendIn": "Resend in {{time}}",
-      "resendReady": "You can now resend the verification email.",
-      "changeEmail": "Change email address",
-      "changeTitle": "Change email address",
-      "changeBody": "We’ll send a new verification link to the corrected address.",
-      "changeSubmit": "Send link",
-      "mockInbox": "Prototype · simulated inbox",
-      "mailTo": "to {{email}}",
-      "mailNow": "now",
-      "mailSubject": "Confirm your email address",
-      "mailNewLink": "new link",
-      "mailBody": "Hi {{name}}, one last step: confirm this address to activate your Global Toothgems account.",
-      "mailFallbackName": "there",
-      "mailCta": "Verify my email",
-      "verifying": "Verifying…",
-      "mailHint": "Select the button to simulate opening the link.",
-      "mailHintExpired": "Scenario: this first link has expired.",
-      "helpTitle": "Can’t find it?",
-      "helpBody": "It can take a minute. Check your spam or promotions folder. Still nothing? Resend it, or correct your address above.",
-      "wrongAddress": "Wrong address? Start again"
-    },
     "welcome": {
       "script": "Bienvenue",
       "title": "Welcome to Global Toothgems",
@@ -825,7 +772,6 @@
       "readyNamed": "Your account is ready, {{name}}.",
       "checkAccount": "Account created",
       "checkEmail": "Email address verified",
-      "checkGoogle": "Connected with Google",
       "checkPersonalised": "Experience tailored to your answers",
       "checkProfile": "Profile saved",
       "personalNote": "We’ll tailor suggestions to your answers. Change them anytime in your profile.",
@@ -834,10 +780,7 @@
       "ctaDashboard": "Go to my dashboard",
       "ctaCart": "Return to cart",
       "ctaContinueShopping": "Continue shopping",
-      "ctaViewTraining": "View training",
-      "ctaCheckout": "Continue to checkout",
-      "toastCheckoutTitle": "Training added to your account",
-      "toastCheckoutBody": "Prototype: enrolment stands in for payment. Your first lesson is open."
+      "ctaViewTraining": "View training"
     },
     "signedIn": {
       "title": "You’re already signed in",
@@ -846,24 +789,18 @@
     },
     "demo": {
       "title": "Prototype controls",
-      "body": "Review helpers — not part of the real page. Switch where the visitor came from, or force an outcome to see each state.",
-      "contextLegend": "Visitor came from",
-      "scenarioLegend": "Simulated outcome",
-      "takenLegend": "Already-registered emails (try one):",
-      "otherTips": "Typos like “gmial.com” get a suggestion; “password123” is rejected as too common.",
-      "restart": "Restart the journey",
-      "context": {
-        "general": "Website",
-        "purchase": "Product purchase",
-        "training": "Training course"
-      },
-      "scenario": {
-        "success": "Everything works",
-        "registrationFails": "Registration fails",
-        "networkError": "Network error",
-        "emailFails": "Verification email fails",
-        "linkExpired": "Link expired"
-      }
+      "takenLegend": "Already-registered emails (try one):"
+    },
+    "verify": {
+      "title": "Check your inbox",
+      "body": "We’ve sent a verification link to",
+      "instruction": "Open the email and select the link to activate your account.",
+      "resend": "Resend email",
+      "resending": "Sending…",
+      "resendIn": "Resend in {{time}}",
+      "wrongAddress": "Wrong address? Start again",
+      "helpTitle": "Can’t find it?",
+      "helpBody": "It can take a minute. Check your spam or promotions folder. Still nothing? Resend it, or correct your address above."
     }
   },
   "academy": {
@@ -1337,7 +1274,9 @@
       "Gift cards",
       "Loyalty programme"
     ],
-    "copyright": "© 2026 Global Toothgems · Prices incl. VAT",
+    "copyright": "© 2026 Global Toothgems",
+    "pricesInclVat": "Prices incl. VAT",
+    "vatFranchise": "VAT not applicable, art. 293 B of the French Tax Code (CGI)",
     "colService": "Customer service",
     "colLegal": "Legal",
     "colCompany": "Company",
@@ -1692,7 +1631,6 @@
     "media": {
       "dropTitle": "Drop your images here",
       "dropBody": "JPG or PNG, at least 2000px on the longest side. The first image is the storefront thumbnail.",
-      "prototypeNote": "Prototype: opens the photo library",
       "cover": "Cover",
       "moveEarlier": "Move image {{index}} left",
       "moveLater": "Move image {{index}} right",
@@ -1700,7 +1638,7 @@
       "orderHint": "Images appear on the product page in this order. The first one is the thumbnail.",
       "emptyHint": "A product with no image can be saved as a draft, but should not be published as is.",
       "pickerTitle": "Photo library",
-      "pickerBody": "File upload is not wired up in this prototype: pick one or more existing images instead.",
+      "pickerBody": "Choose one or more existing images.",
       "selectedCount_one": "{{count}} image selected",
       "selectedCount_other": "{{count}} images selected",
       "addSelected": "Add selection",
@@ -1801,7 +1739,6 @@
       "type": "Product type",
       "typeHint": "Groups the products that are managed the same way.",
       "historyTitle": "History",
-      "prototypeNotice": "Prototype: saving simulates a write. Nothing survives a page reload.",
       "unsaved": "Unsaved changes",
       "noChanges": "No changes",
       "saveDraft": "Save as draft",
@@ -2143,20 +2080,20 @@
       "forgot": "Forgot password?",
       "submit": "Sign in",
       "security": "This area is restricted to administrators. Sign-in attempts and catalogue changes will be logged.",
-      "demoNotice": "Prototype: no real authentication. Use {{email}} with the password {{password}}.",
       "successMessage": "Signed in, opening the workspace…",
       "errors": {
         "emailRequired": "The email address is required.",
         "emailInvalid": "This email address looks incomplete.",
         "passwordRequired": "The password is required.",
-        "rejected": "Incorrect credentials. Check the password shown below and try again.",
+        "rejected": "Incorrect credentials. Check your email and password and try again.",
         "notStaff": "This account has no access to the back office. Ask an administrator for access.",
         "unavailable": "The sign-in service is not responding. Try again in a moment."
       },
       "forgotTitle": "Forgotten password",
-      "forgotBody": "Enter your email address and a reset link will be sent to it. No email is actually sent in this prototype.",
+      "forgotBody": "Enter your email address and a reset link will be sent to it.",
       "forgotSubmit": "Send the link",
-      "forgotSent": "If an administrator account exists for {{email}}, a reset link has just been sent to it."
+      "forgotSent": "If an administrator account exists for {{email}}, a reset link has just been sent to it.",
+      "forgotFailed": "We couldn’t send the link. Check the address and try again in a moment."
     },
     "orders": {
       "title": "Orders",
@@ -2339,13 +2276,6 @@
       "exportScopeFiltered_other": "The filtered orders ({{count}})",
       "exportScopeAll_one": "The whole order book ({{count}} order)",
       "exportScopeAll_other": "The whole order book ({{count}} orders)",
-      "exportFormat": "Format",
-      "exportFormats": {
-        "csv": "CSV",
-        "xlsx": "Excel",
-        "pdf": "PDF"
-      },
-      "exportDialogNote": "Mockup: no file is generated. A real export is prepared server-side and arrives by email.",
       "customerTitle": "Customer",
       "customerReturning_one": "{{count}} order",
       "customerReturning_other": "{{count}} orders",
@@ -2530,8 +2460,8 @@
       "toastCancelTitle": "Order {{reference}} cancelled",
       "toastCancelTitleMany": "{{count}} orders cancelled",
       "toastCancelBody": "Reserved stock is released.",
-      "toastExportTitle": "Export started",
-      "toastExportBody": "{{count}} orders as {{format}}. The file will arrive by email.",
+      "toastExportTitle": "Export ready",
+      "toastExportBody": "{{count}} orders saved as a CSV file.",
       "toastNoteTitle": "Note added",
       "toastNoteBody": "Visible to the team only.",
       "toastCustomerTitle": "Customer history",
@@ -2610,7 +2540,26 @@
       },
       "refundRequestedOn": "Requested on",
       "refundProcessedOn": "Processed on",
-      "notesTeam": "Team notes"
+      "notesTeam": "Team notes",
+      "exportColumns": {
+        "reference": "Order",
+        "placedOn": "Date",
+        "status": "Status",
+        "payment": "Payment",
+        "fulfillment": "Fulfilment",
+        "customer": "Customer",
+        "email": "Email",
+        "items": "Items",
+        "currency": "Currency",
+        "subtotal": "Subtotal",
+        "discount": "Discount",
+        "shipping": "Shipping",
+        "tax": "VAT",
+        "total": "Total",
+        "giftCard": "Paid by gift card",
+        "charged": "Charged by card",
+        "refunded": "Refunded"
+      }
     },
     "customers": {
       "title": "Customers",
@@ -3420,7 +3369,7 @@
         "emptyTitle": "No subscription payment in the period",
         "emptyBody": "Studio subscriptions show here from their first payment.",
         "unavailableTitle": "Data unavailable",
-        "unavailableBody": "This panel reads the database, which demo mode does not have.",
+        "unavailableBody": "This panel reads the database, which isn’t connected in this environment.",
         "errorTitle": "Could not read",
         "errorBody": "The Studio payments could not be read. Refresh the page."
       },
@@ -3451,6 +3400,22 @@
         "unavailableBody": "Trial figures need the Supabase project.",
         "errorTitle": "Trial figures unavailable",
         "errorBody": "They could not be read. Refresh the page to try again."
+      },
+      "studioInvoices": {
+        "title": "3D Studio invoices",
+        "description": "The invoices and credit notes issued for the subscriptions in the period, as PDFs.",
+        "invoice": "Invoice",
+        "creditNote": "Credit note",
+        "printAll": "Print the {{count}} documents",
+        "downloadLabel": "Download {{kind}} {{number}} (PDF)",
+        "fileName": "studio-invoices",
+        "pdfError": "The PDF could not be produced. Please try again.",
+        "emptyTitle": "No document in the period",
+        "emptyBody": "Invoices appear here as soon as a subscription is paid.",
+        "errorTitle": "Invoices unavailable",
+        "errorBody": "The documents could not be loaded. Refresh the page.",
+        "unavailableTitle": "Invoices unavailable",
+        "unavailableBody": "The documents are read from the database, which this environment does not have."
       }
     },
     "training": {
@@ -3702,7 +3667,7 @@
         "video": "Video",
         "textHint": "Headings, paragraphs and lists.",
         "imageHint": "Photo with caption and alternative text.",
-        "videoHint": "Demonstration video with a thumbnail.",
+        "videoHint": "Video lesson.",
         "addTitle": "Add content",
         "addHint": "Pick a block type.",
         "menuLabel": "Content types",
@@ -3822,7 +3787,7 @@
         "backToBuilder": "Back to the builder",
         "emptyTitle": "Nothing to preview",
         "emptyBody": "This course doesn't contain any modules yet.",
-        "videoMock": "Mock video",
+        "videoMock": "Video",
         "answersRevealed": "The correct answers are shown below."
       },
       "review": {
@@ -4272,12 +4237,6 @@
     "navEntryLocked": "Access with a training"
   },
   "errors": {
-    "preview": {
-      "label": "Prototype · system pages",
-      "notFound": "404",
-      "serverError": "500",
-      "maintenance": "Maintenance"
-    },
     "actions": {
       "home": "Back to homepage"
     },
@@ -4298,9 +4257,7 @@
       "note": "Nothing you did caused this, and there’s nothing you need to fix.",
       "retry": "Try again",
       "retrying": "Trying again…",
-      "pause": "Brief pause",
-      "stillOff": "Not quite yet — we’re still on it. Try again in a moment.",
-      "stillOffAgain": "Still being sorted out. Feel free to head back to the homepage in the meantime."
+      "pause": "Brief pause"
     },
     "maintenance": {
       "documentTitle": "Back shortly",
@@ -4313,7 +4270,6 @@
       "chip": "Work in progress",
       "statusTitle": "We’re making things better behind the scenes.",
       "progressLabel": "Maintenance in progress",
-      "checked": "Checked at {{time}} — still polishing. Thank you for your patience.",
       "logoAlt": "Global Toothgems — homepage",
       "copyright": "© 2026 Global Toothgems"
     }
@@ -5040,26 +4996,41 @@
       "adjustment": "Refund",
       "giftCardVat": "outside the scope of VAT",
       "lineDiscount": "discount of {{amount}} incl. VAT",
+      "lineDiscountNoVat": "discount of {{amount}}",
       "totalExcl": "Total excl. VAT",
       "totalVat": "VAT",
       "totalIncl": "Total incl. VAT",
+      "total": "Total",
       "paidGiftCard": "Paid by gift card",
       "paidCard": "Paid by card",
       "vatTitle": "VAT summary",
+      "vatFranchise": "TVA non applicable, art. 293 B du CGI (VAT not applicable, article 293 B of the French General Tax Code).",
       "paid": "Invoice paid on {{date}}: payment in full when ordering, no discount for early payment.",
       "giftCardNote": "Gift cards: multi-purpose vouchers, outside the scope of VAT when bought; VAT is due when they are used.",
       "latePayment": "Business customers: late payment incurs interest at three times the French legal rate and a fixed €40 recovery fee (French Commercial Code, art. L441-10).",
-      "fileName": "invoice"
+      "fileName": "invoice",
+      "studioPlan": "3D Studio subscription — {{plan}} plan",
+      "studioProration": "Prorated adjustment — {{plan}} plan",
+      "studioInterval": {
+        "month": "monthly billing",
+        "year": "yearly billing"
+      },
+      "studioPeriod": "from {{start}} to {{end}}",
+      "paidBalance": "Paid from your account credit",
+      "paidSubscription": "Invoice paid on {{date}}: subscription paid by card, no discount for early payment."
     },
     "creditNote": {
       "title": "Credit note",
       "number": "Credit note no.",
       "credits": "Original invoice",
       "totalIncl": "Credit note total incl. VAT",
+      "total": "Credit note total",
       "notice": "Credit note issued against invoice {{invoice}} of {{date}}, for the refund confirmed on {{refundedOn}}.",
       "toCard": "The amount was refunded to the payment method used. This credit note is the accounting document for that refund: it is not a credit to spend on the site.",
       "toGiftCard": "The amount was credited back to the gift card used.",
-      "fileName": "credit-note"
+      "fileName": "credit-note",
+      "studioWithdrawal": "Withdrawal — unused share of the 3D Studio subscription, {{plan}} plan",
+      "studioUsedDays": "{{used}} of {{total}} days used"
     }
   }
 }
