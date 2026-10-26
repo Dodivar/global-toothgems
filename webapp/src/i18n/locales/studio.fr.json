@@ -710,12 +710,13 @@
         "gemGroups": "Gem Groups (assemblages réutilisables)",
         "studio": "Éditeur 3D et toute la bibliothèque de gemmes",
         "tools": "Vue de face, fiche de placement, partage par lien",
-        "templates": "Modèles Global Toothgems et collections",
+        "templates": "Modèles Global Toothgems",
         "posts": "Publications pour les réseaux : image HD, vidéo 360°, GIF",
         "signature": "Signature des publications",
         "layouts": "Modèles de mise en page des publications",
         "glowbook": "Votre Glowbook, la vitrine publique de vos créations",
-        "tryOn": "Essayage par IA sur le sourire de vos clientes"
+        "tryOn": "Essayage par IA sur le sourire de vos clientes",
+        "collections": "Dossiers pour ranger vos créations"
       },
       "values": {
         "watermark": "Filigrane Global Toothgems",

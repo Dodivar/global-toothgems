@@ -183,6 +183,7 @@ supabase/
 | 20261007184209 | `shipping_refunds` | **Applied 2026-10-07** (decision 82). Back-office shipping and card refunds: `create_shipment()` (a parcel and its lines in one transaction, `manage_orders`, carrier + tracking to ship) and `set_shipment_status()` (forward-only; same status again only corrects the details); refunded units no longer count as "to ship" (`sync_order_fulfillment`, `guard_shipment_item`, via `private.refunded_units()`) and a confirmed refund recomputes the order's fulfilment (`apply_refund_success`); `pending_refund_emails()` lists card refunds only (gift-card credits are not e-mailed); trigger `refunds_guard_zz_gift_cards` refuses a refund while a gift card bought in the order is active; `record_external_refund()` (backend only) records a refund made in the Stripe dashboard. Suite: `supabase/tests/shipping_refunds_validation.sql` |
 | 20261025090755 | `product_specs_faq` | **Applied 2026-10-25** (decision 110). Product characteristics `products.spec_material/center/back/packaging/wear` + the same columns on `product_translations` (1–120 characters, null = not shown; `spec_material` backfilled from `metadata.material`, which stays unread), `admin_save_product()` optional `specs`; FAQ groups `faq_groups`, `faq_items`, `faq_item_translations`, `product_faq_groups`, `category_faq_groups` (RLS: published for visitors, `manage_products` writes, audited), `product_faq(product, locale)`, `admin_save_faq_group()`, seed group for `gems`. Suite: `supabase/tests/product_specs_faq_validation.sql` |
 | 20261026170231 | `studio_plan_entitlements` | **Applied 2026-10-26** (decision 113). What each Studio plan includes: `private.studio_plan_limit(tier, kind)` (essential 15 creations / 3 Gem Groups, artist 150 / 30, atelier unlimited) enforced by BEFORE INSERT triggers on `creations` and `gem_groups` (SQLSTATE `GTL01`, per-owner advisory lock; editing and deleting never limited); `private.glowbook_allowed()` = Atelier tier, now required by `studio_save_showcase` / `studio_showcase_add` / `studio_showcase_reorder`, by the look/sections/video switch (`glowbook_customization_allowed`) and by every public read (page, 3D creation, renders, pictures, video); `studio_access_state()` adds `tier`, `glowbook`, `limits`, `usage`. Suite `studio_plan_entitlements_validation.sql` (Glowbook suite moved to Atelier subscriptions) |
+| 20261026190000 | `studio_templates_collections_artist` | **Not applied — awaits the owner's go-ahead** (decision 113 (b)). `private.studio_artist_plan()` (Artist tier or above); `studio_templates()`, `studio_use_template()` and the template-render policy require it; collection create / rename / file policies replaced by "owners on the Artist plan" ones (read, take out and delete stay open). Suites `studio_templates_validation.sql` T10, `studio_collections_validation.sql` C8 (both moved to Artist subscriptions) |
 | 20261007072552 | `quiz_unlimited_attempts_cleanup` | **Partly applied 2026-10-07.** `admin_save_course()` and `private.learner_course_json()` rewritten without `allow_retry` / `max_attempts` (applied live through SQL, not recorded in the migration history). `drop column` on `course_quizzes` **not applied yet**: the MCP call timed out three times with no lock or session visible; the columns are unused and keep their defaults, so nothing depends on the drop |
 
 RLS is **enabled in the same migration that creates each table** (deny by default);
@@ -1550,12 +1551,16 @@ saved creations  15          150      unlimited   creations_plan_limit trigger (
 Gem Groups       3           30       unlimited   gem_groups_plan_limit trigger (GTL01)
 post signature   watermark   logo     logo        private.studio_user_tier() (decision 101)
 post layouts     -           -        yes         browser, tier from the database
+templates        -           yes      yes         private.studio_artist_plan() (decision 113 (b))
+folders          -           yes      yes         private.studio_artist_plan() (collection policies)
 Glowbook         -           -        yes         private.glowbook_allowed() (RPCs + public reads)
 AI smile try-on  -           -        yes         private.studio_try_on_allowed() (decision 111 (a))
 ```
 
 A trial counts as Essential, active staff as Atelier. Everything else (editor, whole gem library, front view,
-placement sheet, share links, templates, collections, posts) is open to every plan. The browser shows the same
+placement sheet, share links, posts) is open to every plan. Every rule is read in the browser through
+`webapp/src/lib/studioEntitlements.ts`; `studioEntitlements.sql.test.ts` checks it against the latest SQL
+definitions in `supabase/migrations/` so neither side drifts alone. The browser shows the same
 table from `webapp/src/data/studio.ts` (`STUDIO_PLAN_FEATURES`, keep both in step) on the presentation page,
 the plans of the locked editor and `/compte/studio`, which also shows the member's usage from
 `studio_access_state()` (`tier`, `glowbook`, `limits`, `usage`). A save over the limit is refused by the
@@ -2470,6 +2475,13 @@ VAT rates, shipping zones/rates mirroring the Settings prototype. Media rows ref
     over Essential is its numbers and the post signature — no new feature was invented for it; (g) one account
     = one artist: no team seats are sold (the former, unused copy promising seats, early access and priority
     support was removed). Before this decision no member but a staff account held any Studio row.
+    (b) (owner's request, 2026-10-26): **the Global Toothgems templates page and the folders (collections) are
+    for the Artist plan and above** — read as "Artist and up", a higher plan never losing a lower one's
+    feature (to confirm). Browsing, copying and the template renders need it; so do creating, renaming and
+    filing into a folder; reading, emptying and deleting a folder stay open, so a member who moves down keeps
+    their folders. Migration `20261026190000_studio_templates_collections_artist` is written and tested in
+    the repository but **not applied** (the owner stopped its application; awaiting the go-ahead). The UI
+    lock screens for these two are not built yet.
 112. **3D Studio subscription managed on our own page, not in the Stripe customer portal** (owner's request,
     2026-10-26: "keep the subscription management on our site: staying on the same interface builds trust and lets us
     show the plans and what they offer side by side"; no migration). `/compte/studio` now switches the plan or the

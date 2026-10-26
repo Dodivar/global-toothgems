@@ -1,12 +1,13 @@
 -- =============================================================================
 -- 3D Studio collections validation suite
--- (migrations 20261018224456_studio_collections, 20261018224648_studio_collections_fk_index)
+-- (migrations 20261018224456_studio_collections, 20261018224648_studio_collections_fk_index,
+--  20261026190000_studio_templates_collections_artist, decision 113 (b))
 -- =============================================================================
 -- Proves, as the roles that really call them:
 --
 --   C1  a visitor reads and writes no collection or membership;
 --   C2  a member without Studio access cannot create a collection (42501);
---   C3  with access (trial): create, rename, colour, add creations; a name
+--   C3  on the Artist plan: create, rename, colour, add creations; a name
 --       taken again ignoring case is refused (23505); a bad colour or an
 --       empty / padded / too long name is refused (23514); the owner, id and
 --       timestamps are not writable; a membership cannot be re-pointed;
@@ -15,10 +16,13 @@
 --       their own collection, and cannot forge the owner;
 --   C5  deleting a collection keeps its creations; deleting a creation
 --       removes its memberships;
---   C6  once the trial is over: collections and memberships are still read,
+--   C6  once the subscription has ended: collections and memberships are still read,
 --       a creation can be taken out and a collection deleted; creating,
 --       renaming and adding are refused (42501);
 --   C7  active staff have access (support), without reading members' collections.
+--   C8  below the Artist plan (a trial, an Essential subscription) no folder
+--       can be created, renamed or filled; folders kept from a higher plan
+--       are still read, emptied and deleted; Atelier creates them (decision 113 (b)).
 --
 -- ONE transaction, ALWAYS rolled back by raising `ALL STUDIO COLLECTIONS TESTS PASSED`
 -- (or `FAIL: ...`).
@@ -30,6 +34,12 @@ declare
   m2     uuid := '00000000-0000-4000-a000-000000360002';
   m3     uuid := '00000000-0000-4000-a000-000000360003';
   staff  uuid := '00000000-0000-4000-a000-000000360004';
+  m_trial uuid := '00000000-0000-4000-a000-000000360005';
+  m_ess  uuid := '00000000-0000-4000-a000-000000360006';
+  m_atl  uuid := '00000000-0000-4000-a000-000000360007';
+  c_ess  uuid;
+  k_ess  uuid;
+  r      jsonb;
   v_scene jsonb := '{"version": 2, "pieces": []}';
   c1a    uuid;   -- m1's creations
   c1b    uuid;
@@ -46,10 +56,18 @@ begin
     (m1, 'authenticated', 'authenticated', 'collections-1.test@example.invalid', now(), now()),
     (m2, 'authenticated', 'authenticated', 'collections-2.test@example.invalid', now(), now()),
     (m3, 'authenticated', 'authenticated', 'collections-3.test@example.invalid', now(), now()),
-    (staff, 'authenticated', 'authenticated', 'collections-staff.test@example.invalid', now(), now());
+    (staff, 'authenticated', 'authenticated', 'collections-staff.test@example.invalid', now(), now()),
+    (m_trial, 'authenticated', 'authenticated', 'collections-5.test@example.invalid', now(), now()),
+    (m_ess, 'authenticated', 'authenticated', 'collections-6.test@example.invalid', now(), now()),
+    (m_atl, 'authenticated', 'authenticated', 'collections-7.test@example.invalid', now(), now());
   update public.profiles set role = 'viewer' where id = staff;
-  -- m1 and m2 are on a trial; m3 has none.
-  insert into public.studio_trials (user_id) values (m1), (m2);
+  -- m1 and m2 are on the Artist plan (folders need it, decision 113 (b)); m3 has no access.
+  insert into public.studio_subscriptions (user_id, plan, status, stripe_subscription_id, current_period_end) values
+    (m1,    'artist',    'active', 'sub_col_m1',  now() + interval '1 month'),
+    (m2,    'artist',    'active', 'sub_col_m2',  now() + interval '1 month'),
+    (m_ess, 'essential', 'active', 'sub_col_ess', now() + interval '1 month'),
+    (m_atl, 'atelier',   'active', 'sub_col_atl', now() + interval '1 month');
+  insert into public.studio_trials (user_id) values (m_trial);
 
   -- C1: a visitor reads and writes nothing.
   perform set_config('role', 'anon', true);
@@ -223,8 +241,8 @@ begin
   insert into public.creations (name, scene_data) values ('Création C', v_scene) returning id into c1b;
   insert into public.studio_collections (name) values ('À supprimer') returning id into k1b;
   execute 'reset role';
-  update public.studio_trials
-     set trial_started_at = now() - interval '48 hours', trial_expires_at = now()
+  update public.studio_subscriptions
+     set status = 'canceled', current_period_end = now() - interval '1 second'
    where user_id = m1;
   perform set_config('role', 'authenticated', true);
   perform set_config('request.jwt.claims', json_build_object('sub', m1, 'role', 'authenticated')::text, true);
@@ -264,6 +282,47 @@ begin
   select count(*) into v_cnt from public.studio_collections where user_id in (m1, m2);
   if v_cnt <> 0 then raise exception 'FAIL C7: staff read % member collection(s)', v_cnt; end if;
   passed := passed || 'C7'::text;
+
+  -- C8: the Artist plan and above only (decision 113 (b)).
+  -- The Essential member kept a folder from a former Artist plan (written as the database).
+  execute 'reset role';
+  insert into public.creations (user_id, name, scene_data) values (m_ess, 'Essentiel', v_scene) returning id into c_ess;
+  insert into public.studio_collections (user_id, name) values (m_ess, 'Gardé') returning id into k_ess;
+  insert into public.studio_collection_creations (user_id, collection_id, creation_id) values (m_ess, k_ess, c_ess);
+  perform set_config('role', 'authenticated', true);
+  foreach r in array array[to_jsonb(m_trial), to_jsonb(m_ess)] loop
+    perform set_config('request.jwt.claims', json_build_object('sub', r #>> '{}', 'role', 'authenticated')::text, true);
+    v_state := null;
+    begin
+      insert into public.studio_collections (name) values ('Nouveau dossier');
+    exception when others then v_state := sqlstate;
+    end;
+    if v_state is distinct from '42501' then raise exception 'FAIL C8: % created a folder (%)', r, v_state; end if;
+  end loop;
+  perform set_config('request.jwt.claims', json_build_object('sub', m_ess, 'role', 'authenticated')::text, true);
+  select count(*) into v_cnt from public.studio_collections where id = k_ess;
+  if v_cnt <> 1 then raise exception 'FAIL C8: Essential cannot read the kept folder'; end if;
+  v_state := null;
+  begin
+    update public.studio_collections set name = 'Renommé' where id = k_ess;
+  exception when others then v_state := sqlstate;
+  end;
+  if v_state is distinct from '42501' then raise exception 'FAIL C8: Essential renamed a folder (%)', v_state; end if;
+  delete from public.studio_collection_creations where collection_id = k_ess;
+  v_state := null;
+  begin
+    insert into public.studio_collection_creations (collection_id, creation_id) values (k_ess, c_ess);
+  exception when others then v_state := sqlstate;
+  end;
+  if v_state is distinct from '42501' then raise exception 'FAIL C8: Essential filed a creation (%)', v_state; end if;
+  delete from public.studio_collections where id = k_ess;
+  get diagnostics v_cnt = row_count;
+  if v_cnt <> 1 then raise exception 'FAIL C8: Essential could not delete the kept folder'; end if;
+  perform set_config('request.jwt.claims', json_build_object('sub', m_atl, 'role', 'authenticated')::text, true);
+  insert into public.creations (name, scene_data) values ('Atelier', v_scene) returning id into c_ess;
+  insert into public.studio_collections (name) values ('Atelier') returning id into k_ess;
+  insert into public.studio_collection_creations (collection_id, creation_id) values (k_ess, c_ess);
+  passed := passed || 'C8'::text;
 
   raise exception 'ALL STUDIO COLLECTIONS TESTS PASSED (%)', array_to_string(passed, ', ');
 end;

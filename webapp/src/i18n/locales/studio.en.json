@@ -710,12 +710,13 @@
         "gemGroups": "Gem Groups (reusable arrangements)",
         "studio": "3D editor and the whole gem library",
         "tools": "Front view, placement sheet, sharing by link",
-        "templates": "Global Toothgems templates and collections",
+        "templates": "Global Toothgems templates",
         "posts": "Posts for social networks: HD image, 360° video, GIF",
         "signature": "Signature on posts",
         "layouts": "Post layout templates",
         "glowbook": "Your Glowbook, the public showcase of your creations",
-        "tryOn": "AI try-on on your clients’ smile"
+        "tryOn": "AI try-on on your clients’ smile",
+        "collections": "Folders to file your creations"
       },
       "values": {
         "watermark": "Global Toothgems watermark",

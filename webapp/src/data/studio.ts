@@ -188,6 +188,8 @@ export const STUDIO_TRIAL_DAYS = STUDIO_PLANS.find((plan) => plan.id === "trial"
  *   * the numbers: `private.studio_plan_limit()` (migration
  *     `20261026170231_studio_plan_entitlements`), a save over them is refused;
  *   * the Glowbook: `private.glowbook_allowed()` (same migration);
+ *   * templates and collections: `private.studio_artist_plan()` (decision 113 (b),
+ *     migration `20261026190000_studio_templates_collections_artist`);
  *   * the smile try-on: `private.studio_try_on_allowed()` (decision 111 (a));
  *   * the post signature and layouts: `private.studio_user_tier()` (decision 101).
  * A trial counts as Essential, active staff as Atelier. `null` = unlimited.
@@ -198,15 +200,43 @@ export interface StudioPlanFeatures {
   /** How social posts are signed: the Global Toothgems watermark, or the member's own logo (or nothing). */
   postSignature: "watermark" | "ownLogo";
   postLayouts: boolean;
+  /** The Global Toothgems templates page (browse and copy). */
+  templates: boolean;
+  /** Collections ("folders"): creating, renaming and filing creations. */
+  collections: boolean;
   glowbook: boolean;
   tryOn: boolean;
 }
 
 export const STUDIO_PLAN_FEATURES: Record<StudioPaidPlanId, StudioPlanFeatures> = {
-  essential: { creations: 15, gemGroups: 3, postSignature: "watermark", postLayouts: false, glowbook: false, tryOn: false },
-  artist: { creations: 150, gemGroups: 30, postSignature: "ownLogo", postLayouts: false, glowbook: false, tryOn: false },
-  atelier: { creations: null, gemGroups: null, postSignature: "ownLogo", postLayouts: true, glowbook: true, tryOn: true },
+  essential: {
+    creations: 15,
+    gemGroups: 3,
+    postSignature: "watermark",
+    postLayouts: false,
+    templates: false,
+    collections: false,
+    glowbook: false,
+    tryOn: false,
+  },
+  artist: {
+    creations: 150,
+    gemGroups: 30,
+    postSignature: "ownLogo",
+    postLayouts: false,
+    templates: true,
+    collections: true,
+    glowbook: false,
+    tryOn: false,
+  },
+  atelier: {
+    creations: null,
+    gemGroups: null,
+    postSignature: "ownLogo",
+    postLayouts: true,
+    templates: true,
+    collections: true,
+    glowbook: true,
+    tryOn: true,
+  },
 };
-
-/** The lowest paid plan that opens the Glowbook (and the smile try-on). */
-export const STUDIO_GLOWBOOK_PLAN: StudioPaidPlanId = "atelier";

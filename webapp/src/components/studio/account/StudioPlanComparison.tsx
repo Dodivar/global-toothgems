@@ -17,15 +17,16 @@ const perPlan = (cell: (f: StudioPlanFeatures) => Cell) =>
 /**
  * What separates the plans, side by side, from `STUDIO_PLAN_FEATURES`
  * (decision 113) — the rows that differ are the ones the database gates by
- * plan (saved creations and Gem Groups, Glowbook, smile try-on, post
- * signature and layouts); the others are open to every plan.
+ * plan (saved creations and Gem Groups, templates, collections, Glowbook,
+ * smile try-on, post signature and layouts); the others are open to every plan.
  */
 const ROWS: { key: string; cells: Record<StudioPaidPlanId, Cell> }[] = [
   { key: "creations", cells: perPlan((f) => limit(f.creations)) },
   { key: "gemGroups", cells: perPlan((f) => limit(f.gemGroups)) },
   { key: "studio", cells: perPlan(() => true) },
   { key: "tools", cells: perPlan(() => true) },
-  { key: "templates", cells: perPlan(() => true) },
+  { key: "templates", cells: perPlan((f) => f.templates) },
+  { key: "collections", cells: perPlan((f) => f.collections) },
   { key: "posts", cells: perPlan(() => true) },
   { key: "signature", cells: perPlan((f) => f.postSignature) },
   { key: "layouts", cells: perPlan((f) => f.postLayouts) },

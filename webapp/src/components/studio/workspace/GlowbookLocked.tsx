@@ -2,7 +2,7 @@ import { ArrowRight, Sparkles } from "lucide-react";
 import { Button } from "../../ui/Button";
 import { useNavigate } from "../../../lib/navigation";
 import { ACCOUNT_STUDIO_PATH } from "../StudioPlans";
-import { STUDIO_GLOWBOOK_PLAN } from "../../../data/studio";
+import { lowestPlanWith } from "../../../lib/studioEntitlements";
 import { useWorkspaceFormat } from "./workspaceStyles";
 
 /**
@@ -14,7 +14,7 @@ import { useWorkspaceFormat } from "./workspaceStyles";
 export function GlowbookLocked({ compact = false, onLeave }: { compact?: boolean; onLeave?: () => void }) {
   const { t } = useWorkspaceFormat();
   const navigate = useNavigate();
-  const plan = t(`studio.plans.items.${STUDIO_GLOWBOOK_PLAN}.name`);
+  const plan = t(`studio.plans.items.${lowestPlanWith("glowbook")}.name`);
   const go = () => {
     onLeave?.();
     navigate(ACCOUNT_STUDIO_PATH);

@@ -1,3 +1,5 @@
+import { isStudioTier, type StudioTier } from "./studioEntitlements";
+
 /**
  * The 3D Studio access state, as the database reports it
  * (`studio_access_state()` / `start_studio_trial()`, migration
@@ -51,7 +53,7 @@ export interface StudioAccessInfo {
   usage: StudioCounts<number>;
 }
 
-export type StudioTier = "essential" | "artist" | "atelier";
+export type { StudioTier };
 export interface StudioCounts<T> {
   creations: T;
   gemGroups: T;
@@ -77,7 +79,6 @@ const count = (value: unknown): number | null =>
   typeof value === "number" && Number.isInteger(value) && value >= 0 ? value : null;
 const record = (value: unknown): Record<string, unknown> =>
   value && typeof value === "object" && !Array.isArray(value) ? (value as Record<string, unknown>) : {};
-const TIERS: StudioTier[] = ["essential", "artist", "atelier"];
 
 /** The function's JSON answer, or null when it is not one (treated as an access error). */
 export function parseAccessRow(raw: unknown): StudioAccessInfo | null {
@@ -97,7 +98,7 @@ export function parseAccessRow(raw: unknown): StudioAccessInfo | null {
     subscriptionPeriodEnd: time(row.subscription_period_end),
     subscriptionInterval: row.subscription_interval === "month" || row.subscription_interval === "year" ? row.subscription_interval : null,
     subscriptionCancelAtPeriodEnd: row.subscription_cancel_at_period_end === true,
-    tier: TIERS.includes(row.tier as StudioTier) ? (row.tier as StudioTier) : null,
+    tier: isStudioTier(row.tier) ? row.tier : null,
     glowbook: row.glowbook === true,
     limits: { creations: count(record(row.limits).creations), gemGroups: count(record(row.limits).gem_groups) },
     usage: { creations: count(record(row.usage).creations) ?? 0, gemGroups: count(record(row.usage).gem_groups) ?? 0 },

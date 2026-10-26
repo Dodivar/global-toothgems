@@ -136,12 +136,13 @@
       "unlimited": "Unlimited creations and Gem Groups",
       "library": "The shop’s whole gem library, at their real sizes",
       "tools": "Front view, printable placement sheet and sharing by link",
-      "templates": "Global Toothgems templates and collections",
+      "templates": "The Global Toothgems templates, to copy into your creations",
       "watermark": "Social posts, with the Global Toothgems watermark",
       "ownLogo": "Posts signed with your logo, or without a watermark",
       "glowbook": "Your Glowbook: the public showcase of your creations, customised, with a QR code and a map",
       "tryOn": "AI try-on: your clients see your creations on their own smile",
-      "layouts": "Layout templates for your posts"
+      "layouts": "Layout templates for your posts",
+      "collections": "Folders to file your creations"
     }
   },
   "closing": {
@@ -168,7 +169,7 @@
       },
       {
         "question": "Which subscription should I choose?",
-        "answer": "Essential to imagine your first looks: 15 creations and 3 Gem Groups, the whole library and posts with the Global Toothgems watermark. Artist to work with your clients: 150 creations, 30 Gem Groups and posts signed with your logo. Atelier to go further: unlimited creations and Gem Groups, your public Glowbook and the AI try-on, which lets your clients see your creations on their own smile."
+        "answer": "Essential to imagine your first looks: 15 creations and 3 Gem Groups, the whole library and posts with the Global Toothgems watermark. Artist to work with your clients: 150 creations, 30 Gem Groups, the Global Toothgems templates, folders to file your creations and posts signed with your logo. Atelier to go further: unlimited creations and Gem Groups, your public Glowbook, the AI try-on, which lets your clients see your creations on their own smile, and layouts for your posts."
       },
       {
         "question": "Can I change my subscription later?",

@@ -13,6 +13,7 @@ import { studioCheckoutPath, type StudioCheckoutSurface } from "../../lib/studio
 import { useFormat } from "../../lib/format";
 import { useStudioPlanPrices } from "../../lib/studioBilling";
 import { displayPrice, monthsFreeOf, type StudioPlanPrice } from "../../lib/studioBillingMapping";
+import { hasFeature, type StudioFeature } from "../../lib/studioEntitlements";
 import {
   STUDIO_PLAN_FEATURES,
   STUDIO_PLANS,
@@ -234,6 +235,9 @@ export function StudioPaidPlans({
 /** The plan below, whose features this one builds on ("Everything in Essential, plus:"). */
 const PREVIOUS_PLAN: Partial<Record<StudioPaidPlanId, StudioPaidPlanId>> = { artist: "essential", atelier: "artist" };
 
+/** The features a card names, in its order, when the plan has them and the one below does not. */
+const ADDED_FEATURES: readonly StudioFeature[] = ["ownLogo", "templates", "collections", "glowbook", "tryOn", "postLayouts"];
+
 /**
  * What a plan includes, from `STUDIO_PLAN_FEATURES` (decision 113): Essential
  * lists its whole offer, the plans above say what they add to the one below.
@@ -242,7 +246,7 @@ function PlanFeatureList({ plan }: { plan: StudioPaidPlanId }) {
   const { t } = useTranslation();
   const k = "studioPage.plans.features";
   const f = STUDIO_PLAN_FEATURES[plan];
-  const previous = PREVIOUS_PLAN[plan];
+  const previous = PREVIOUS_PLAN[plan] ?? null;
 
   const lines: string[] = [];
   if (f.creations === null && f.gemGroups === null) lines.push(t(`${k}.unlimited`));
@@ -250,12 +254,9 @@ function PlanFeatureList({ plan }: { plan: StudioPaidPlanId }) {
     if (f.creations !== null) lines.push(t(`${k}.creations`, { count: f.creations }));
     if (f.gemGroups !== null) lines.push(t(`${k}.gemGroups`, { count: f.gemGroups }));
   }
-  if (!previous) lines.push(t(`${k}.library`), t(`${k}.tools`), t(`${k}.templates`), t(`${k}.watermark`));
-  else {
-    if (f.postSignature === "ownLogo" && STUDIO_PLAN_FEATURES[previous].postSignature !== "ownLogo") lines.push(t(`${k}.ownLogo`));
-    if (f.glowbook) lines.push(t(`${k}.glowbook`));
-    if (f.tryOn) lines.push(t(`${k}.tryOn`));
-    if (f.postLayouts) lines.push(t(`${k}.layouts`));
+  if (!previous) lines.push(t(`${k}.library`), t(`${k}.tools`), t(`${k}.watermark`));
+  for (const feature of ADDED_FEATURES) {
+    if (hasFeature(plan, feature) && !hasFeature(previous, feature)) lines.push(t(`${k}.${feature}`));
   }
 
   return (

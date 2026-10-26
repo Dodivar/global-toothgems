@@ -5,7 +5,7 @@ import { Check, Minus } from "lucide-react";
 import clsx from "clsx";
 import { useFormat } from "../../../lib/format";
 import { atLimit, type StudioAccessInfo, type StudioCounts } from "../../../lib/studioAccessState";
-import { STUDIO_GLOWBOOK_PLAN } from "../../../data/studio";
+import { hasFeature, lowestPlanWith } from "../../../lib/studioEntitlements";
 
 /**
  * What the member's plan includes and what they use of it (decision 113):
@@ -63,7 +63,7 @@ export function StudioPlanUsage({ info }: { info: StudioAccessInfo }) {
       )}
       <span>
         {t(`${k}.${key}`)} —{" "}
-        {on ? t(`${k}.included`) : t(`${k}.withPlan`, { plan: t(`studio.plans.items.${STUDIO_GLOWBOOK_PLAN}.name`) })}
+        {on ? t(`${k}.included`) : t(`${k}.withPlan`, { plan: t(`studio.plans.items.${lowestPlanWith(key)}.name`) })}
       </span>
     </li>
   );
@@ -77,7 +77,7 @@ export function StudioPlanUsage({ info }: { info: StudioAccessInfo }) {
       {meter("gemGroups")}
       <ul className="m-0 grid list-none gap-2 p-0">
         {flag("glowbook", info.glowbook)}
-        {flag("tryOn", info.tier === "atelier")}
+        {flag("tryOn", hasFeature(info.tier, "tryOn"))}
       </ul>
     </div>
   );
