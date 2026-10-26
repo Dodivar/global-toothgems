@@ -16,6 +16,11 @@
  *       Second round (same day): the data goes tooth by tooth with bare front
  *       teeth named, each gem's share of its tooth's width and place on the
  *       crown (measured by the browser), and the gum line is a hard limit.
+ *       Third round (same day, after a render that opened the mouth and
+ *       enlarged the teeth): the mouth does not move — same framing, lips,
+ *       opening and teeth; a gem that does not fit gets smaller, the tooth
+ *       never bigger; the output keeps the photo's proportions
+ *       (`imageConfig.aspectRatio`, `gemini.ts` `nearestAspectRatio`).
  *
  * Both expect the images in this order, and `handler.ts` sends them so:
  *   IMAGE 1  the creation rendered in 3D by the browser (`designImage.ts`)
@@ -336,9 +341,17 @@ Change only the pixels needed to add the gems on the enamel. Everything else in 
 
 No beauty filter, smoothing, sharpening, denoising or global enhancement. Never regenerate or redraw the mouth or the face to make the gems easier to place. When adding a gem would require changing anything else, leave that gem out.
 
+### The mouth does not move — not even by a pixel
+The output must line up exactly with IMAGE 2 when laid over it:
+- **same framing**: no zoom, no crop, no re-centring, no change of camera distance or angle; the face keeps its exact size and place in the image;
+- **same mouth**: the lips keep their exact outline and the mouth its exact opening — never open it wider, never lift or lower a lip;
+- **same teeth**: the same number of visible teeth, each at its exact place, with its exact size, shape and outline — never enlarge, lengthen, widen, straighten, add or reveal a tooth.
+
+IMAGE 1 shows the teeth much larger and closer than the photo does: it gives the design only, never a scale or a framing for the photo. Every gem is fitted to the teeth **as they already are** in IMAGE 2. When a gem seems too big for its tooth in the photo, **the gem becomes smaller — the tooth never becomes bigger**.
+
 ## 4. THE EXACT GEMS — NO MORE, NO LESS
 
-- Render **exactly the gems of the data** whose tooth is visible: the data's first line gives the total. Never add a gem, a small extra crystal, a filler stone, a cluster or a decoration; never split one gem into several, never merge two into one.
+- Render **exactly the gems of the data** whose tooth is visible: the data's first line gives the total. Each arch carries exactly the gems listed under it — never a gem on a tooth the data does not name. Never add a gem, a small extra crystal, a filler stone, a cluster or a decoration; never split one gem into several, never merge two into one.
 - Each gem keeps **its own cut**. A five-pointed star stays a five-pointed star with five arms (never a flower, a sunburst or a star with more points); a heart stays a heart; a raindrop keeps one round end and one point; a charm keeps its figure; an outline (open heart, open star) stays empty inside.
 - Each gem keeps **its own colour**, as given by its hex value, and its own size.
 
@@ -352,7 +365,7 @@ Identify the teeth actually visible in IMAGE 2 and match them to the teeth named
 
 ### The gum line is a hard limit
 - **Every gem lies entirely on the white enamel of its crown.** No part of a gem may touch or overlap the gums, the gum line, the lips or the gap between two teeth.
-- The visible crown in the photo is often shorter than on the 3D model (lips, gum shape). When a gem placed near the gum line would touch the gum, **slide it toward the biting edge just enough** that it sits fully on enamel with a thin margin of enamel all around it; keep its size.
+- The visible crown in the photo is often shorter than on the 3D model (lips, gum shape). When a gem placed near the gum line would touch the gum, **slide it toward the biting edge just enough** that it sits fully on enamel with a thin margin of enamel all around it; if it still does not fit, make it slightly smaller. Never move the gum line, the lip or the tooth to make room.
 - If a gem cannot sit fully on enamel even then, leave it out.
 - **A gem appears only if its tooth surface is visible in the photo.** If the tooth is hidden by the lips or another tooth, outside the frame or turned away, leave that gem out.
 - Never move a gem to another tooth; never open the mouth, move the lips or turn the head to reveal a tooth.
@@ -362,7 +375,7 @@ Identify the teeth actually visible in IMAGE 2 and match them to the teeth named
 ## 6. SCALE
 
 Gems are small. Size them from the data against the real teeth: an upper central incisor is about 8.5 mm wide with a visible crown about 10 mm high; a lateral incisor about 6.5 mm wide; a canine about 7.5 mm; a lower incisor about 5.5 mm.
-- **The share of the tooth's width given in the data comes first**: a gem at 50% spans half the width of that tooth as it appears in the photo, a gem at 35% about a third. Measure it on the photo's own tooth, not on the image as a whole.
+- **The share of the tooth's width given in the data comes first**: a gem at 50% spans half the width of that tooth as it appears in the photo, a gem at 35% about a third. Measure it on the photo's own tooth, unchanged, not on the image as a whole — the gem adapts to the tooth, never the tooth to the gem.
 - Without that share: an SS5 round crystal (about 1.8 mm) spans roughly a fifth of a central incisor's width; a 3 mm gem about a third; a 5 mm gem more than half.
 - Keep the sizes between gems as in IMAGE 1: a gem drawn smaller stays smaller. Never enlarge a gem to make it noticeable, never shrink it until its shape is lost.
 
@@ -382,7 +395,7 @@ The gems inherit the photo: light direction and softness, colour temperature, fo
 
 ## 9. PRIORITIES WHEN RULES COMPETE
 
-1. Keep the customer's photo unchanged.
+1. Keep the customer's photo unchanged — above all the framing, the mouth's opening and every tooth's size and place.
 2. Place gems only on visible teeth, on the right tooth, plausibly.
 3. Follow the design: exact count, teeth, cuts, materials, colours and sizes (data); positions and rotations (IMAGE 1).
 4. Realistic, sparkling materials and photographic integration.
@@ -397,6 +410,7 @@ When a gem's position cannot be decided from IMAGE 1 and the visible teeth, leav
 - Each gem's size against its tooth matches the share in the data.
 - Every gem has its cut, colour and rotation from the data and IMAGE 1.
 - Nothing from the reference photos or from IMAGE 1's dental model was copied.
+- Laid over IMAGE 2, the output lines up exactly: same framing, same lips, same opening, same teeth at the same size — only the gems differ.
 - The rest of the photo is untouched.
 
 ## 11. OUTPUT

@@ -1466,7 +1466,12 @@ AI render                   multipart: source, photo (≤ 6 MB), design (3D stil
   worst it moves a gem on the requester's own render). The design data then goes tooth by tooth in the photo's
   order, front teeth without gems named "bare", each gem with its share of the tooth and place on the crown;
   tongue-side gems are left out. The prompt makes the gum line a hard limit (slide toward the biting edge, else
-  leave out) and the share of the tooth's width the first size rule. **v1** — the owner's original prompt, verbatim, images only. Both: IMAGE 1 the design,
+  leave out) and the share of the tooth's width the first size rule. Third round (after a render that opened the mouth and enlarged
+  the teeth — the model recomposing, nothing in our code resizes the photo): the prompt locks the framing, lips,
+  opening and every tooth's size and place (a gem that does not fit gets smaller, never the tooth bigger), and the
+  render asks for the proportions closest to the photo's (`imageConfig.aspectRatio`, `gemini.ts`
+  `nearestAspectRatio`, read from the JPEG header; same price — a format, not a resolution; a model refusing the
+  option is asked again without it). The owner keeps the AI edit and wants the starting photo to be good (photo check). **v1** — the owner's original prompt, verbatim, images only. Both: IMAGE 1 the design,
   IMAGE 2 the photo. Output size is the model's default (no `imageConfig`): a higher resolution costs more, kept
   as a last resort by the owner (2026-10-26).
 - **Photo check** (2026-10-26, owner's request: no user manipulation, as little friction as possible): before any

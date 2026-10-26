@@ -122,8 +122,10 @@ Deno.serve((req) =>
     },
     references,
     checkPhoto: checkConfig ? (photo) => generateJson(checkConfig, PHOTO_CHECK_PROMPT, [photo], PHOTO_CHECK_SCHEMA) : undefined,
-    generate: (images, designData) =>
-      config ? generateImage(config, systemPrompt, images, version === "v3" ? designData : null) : Promise.resolve({ ok: false, code: "failed" }),
+    generate: (images, designData, aspectRatio) =>
+      config
+        ? generateImage(config, systemPrompt, images, version === "v3" ? designData : null, fetch, undefined, aspectRatio)
+        : Promise.resolve({ ok: false, code: "failed" }),
     log,
   })
 );

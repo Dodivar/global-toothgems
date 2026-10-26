@@ -175,6 +175,30 @@ async function callModel(config: ImageModelConfig, body: unknown, fetchImpl: typ
   }
 }
 
+/** The output proportions the image models accept (`imageConfig.aspectRatio`). */
+export const ASPECT_RATIOS = ["1:1", "2:3", "3:2", "3:4", "4:3", "4:5", "5:4", "9:16", "16:9", "21:9"] as const;
+
+/**
+ * The accepted proportions closest to a photo's: asked for so the model keeps
+ * the photo's framing instead of recomposing it (a format, not a resolution:
+ * the price does not change). Null when the size is unknown.
+ */
+export function nearestAspectRatio(size: { width: number; height: number } | null): string | null {
+  if (!size || !(size.width > 0) || !(size.height > 0)) return null;
+  const target = Math.log(size.width / size.height);
+  let best: string = ASPECT_RATIOS[0];
+  let gap = Infinity;
+  for (const ratio of ASPECT_RATIOS) {
+    const [w, h] = ratio.split(":").map(Number);
+    const d = Math.abs(Math.log(w / h) - target);
+    if (d < gap) {
+      gap = d;
+      best = ratio;
+    }
+  }
+  return best;
+}
+
 export async function generateImage(
   config: ImageModelConfig,
   systemPrompt: string,
@@ -183,8 +207,10 @@ export async function generateImage(
   text: string | null,
   fetchImpl: typeof fetch = fetch,
   timeoutMs = 90_000,
+  /** The output proportions (`nearestAspectRatio`); a model that refuses the option is asked again without it. */
+  aspectRatio: string | null = null,
 ): Promise<GenerateOutcome> {
-  const body = {
+  const body = (withRatio: boolean) => ({
     systemInstruction: { parts: [{ text: systemPrompt }] },
     contents: [
       {
@@ -192,9 +218,13 @@ export async function generateImage(
         parts: [...images.map((img) => ({ inlineData: { mimeType: img.mimeType, data: img.data } })), ...(text ? [{ text }] : [])],
       },
     ],
-    generationConfig: { responseModalities: ["IMAGE"] },
-  };
-  const res = await callModel(config, body, fetchImpl, timeoutMs);
+    generationConfig: { responseModalities: ["IMAGE"], ...(withRatio && aspectRatio ? { imageConfig: { aspectRatio } } : {}) },
+  });
+  let res = await callModel(config, body(true), fetchImpl, timeoutMs);
+  if (aspectRatio && res instanceof Response && res.status === 400) {
+    await res.body?.cancel();
+    res = await callModel(config, body(false), fetchImpl, timeoutMs);
+  }
   if (!(res instanceof Response)) return { ok: false, code: "failed", detail: res.error };
   if (!res.ok) {
     const detail = await res.text().catch(() => "");

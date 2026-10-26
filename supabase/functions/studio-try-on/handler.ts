@@ -1,6 +1,6 @@
 import { corsHeaders, json, type SiteOrigins } from "../_shared/http.ts";
 import { bearer, looksLikeJwt } from "../_shared/studioBilling.ts";
-import type { GenerateOutcome, InlineImage } from "./gemini.ts";
+import { nearestAspectRatio, type GenerateOutcome, type InlineImage } from "./gemini.ts";
 import { imageSize, judgePhoto } from "./photoCheck.ts";
 import { buildDesignData, piecesFromScene, readSeats } from "./prompt.ts";
 
@@ -73,7 +73,7 @@ export interface StudioTryOnDeps {
    * Sends the images, in this order, with the system instructions; `designData`
    * (the gems as text, from the database) follows them when the prompt version reads it.
    */
-  generate(images: InlineImage[], designData: string): Promise<GenerateOutcome>;
+  generate(images: InlineImage[], designData: string, aspectRatio: string | null): Promise<GenerateOutcome>;
   now?: () => Date;
   log(message: string, detail?: unknown): void;
 }
@@ -215,7 +215,7 @@ export async function handleStudioTryOn(req: Request, deps: StudioTryOnDeps): Pr
       deps.log("reference pictures unavailable", error instanceof Error ? error.message : error);
       return [] as InlineImage[];
     });
-    outcome = await deps.generate([{ mimeType: design.mimeType, data: design.data }, { mimeType: photo.mimeType, data: photo.data }, ...references], buildDesignData(pieces, seats));
+    outcome = await deps.generate([{ mimeType: design.mimeType, data: design.data }, { mimeType: photo.mimeType, data: photo.data }, ...references], buildDesignData(pieces, seats), nearestAspectRatio(photo.size));
   } catch (error) {
     outcome = { ok: false, code: "failed", detail: error instanceof Error ? error.message : String(error) };
   }
