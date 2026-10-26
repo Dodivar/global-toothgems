@@ -115,16 +115,6 @@
     "emptyCta": "Create your first design",
     "emptyHelp": "Learn how it works"
   },
-  "summary": {
-    "title": "Your Studio",
-    "creations_one": "creation",
-    "creations_other": "creations",
-    "groups_one": "gem group",
-    "groups_other": "gem groups",
-    "gems_one": "gem used",
-    "gems_other": "gems used",
-    "value": "total estimated design value"
-  },
   "library": {
     "clearSearch": "Clear search",
     "filterLabel": "Filter",

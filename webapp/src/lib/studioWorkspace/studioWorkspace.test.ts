@@ -5,7 +5,7 @@ import { buildStudioGems } from "../studio3d/gemCatalog";
 import { setStudioGems } from "../studio3d/gemRegistry";
 import { ARCH_FRAME_BY_ID } from "../studio3d/archLayout";
 import { anchorToothOf, groupToWorld, piecesToGroup, sanitizeGroupData, type Frame } from "./gemGroup";
-import { matchesFilter, matchesQuery, queryCreations, queryGroups, summarize } from "./library";
+import { matchesFilter, matchesQuery, queryCreations, queryGroups } from "./library";
 import { createLocalRepositories, type KeyValueStorage } from "./localRepository";
 import { StudioStoreError } from "./repository";
 import { createScene, isSymmetrical, piecesKey, sanitizeScene } from "./scene";
@@ -186,14 +186,9 @@ describe("library", () => {
     ]);
   });
 
-  it("puts favourite groups first and sums the studio", () => {
+  it("puts favourite groups first", () => {
     const groups = seedGroups("u1", now).map((g) => ({ ...g, thumbnailUrl: null }));
     expect(queryGroups(groups, "")[0].name).toBe("Mini Flower");
-    const s = summarize(creations, groups);
-    expect(s.creations).toBe(4);
-    expect(s.groups).toBe(2);
-    expect(s.gemsUsed).toBe(creations.reduce((n, c) => n + c.elementCount, 0));
-    expect(Number.isInteger(s.totalEstimateMinor)).toBe(true);
   });
 });
 

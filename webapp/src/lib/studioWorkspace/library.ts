@@ -97,20 +97,3 @@ export function queryGroups(list: GemGroup[], query: string): GemGroup[] {
     .filter((g) => matchesQuery(g, query))
     .sort((a, b) => Number(b.isFavorite) - Number(a.isFavorite) || last(b) - last(a));
 }
-
-export interface StudioSummary {
-  creations: number;
-  groups: number;
-  gemsUsed: number;
-  /** Sum of the creations' estimates, in minor units. Informational only. */
-  totalEstimateMinor: number;
-}
-
-export function summarize(creations: Creation[], groups: GemGroup[]): StudioSummary {
-  return {
-    creations: creations.length,
-    groups: groups.length,
-    gemsUsed: creations.reduce((n, c) => n + c.elementCount, 0),
-    totalEstimateMinor: creations.reduce((n, c) => n + c.estimatedPriceMinor, 0),
-  };
-}

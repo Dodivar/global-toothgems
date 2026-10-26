@@ -34,6 +34,13 @@ export const chipClass = (active: boolean) =>
       : "border-[var(--border-subtle)] bg-[var(--surface-card)] text-[var(--gt-ink-700)] hover:border-[var(--gt-blue-400)]",
   );
 
+/**
+ * The column of a workspace page (creations, Gem Groups, templates, Glowbook):
+ * the storefront's own width and gutter (`.gt-alt` tokens in index.css), so the
+ * Studio pages line up with the rest of the site.
+ */
+export const workspacePage = "gt-alt gt-alt-wide grid px-[var(--gt-alt-gutter)] pb-16 pt-6 sm:pt-10";
+
 export const eyebrow = "m-0 text-[10.5px] font-bold uppercase tracking-[var(--tracking-eyebrow)] text-[var(--gt-blue-600)]";
 
 /** Prices, counts and relative dates in the UI language; relative dates refresh each minute. */

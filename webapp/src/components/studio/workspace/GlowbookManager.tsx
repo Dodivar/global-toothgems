@@ -53,7 +53,7 @@ import { GlowbookAvatar } from "../../glowbook/GlowbookIdentity";
 import { glowbookThemeStyle } from "../../glowbook/theme";
 import { EmptyState } from "./EmptyState";
 import { SignInPrompt } from "./SignInPrompt";
-import { eyebrow, fieldClass, focusRing, iconButton, useWorkspaceFormat } from "./workspaceStyles";
+import { eyebrow, fieldClass, focusRing, iconButton, useWorkspaceFormat, workspacePage } from "./workspaceStyles";
 
 /**
  * "My Glowbook" (decision 99): the artist's public showcase — its address,
@@ -66,7 +66,7 @@ export function GlowbookManager() {
   const gb = useGlowbook();
 
   return (
-    <div className="mx-auto grid w-full max-w-[1180px] gap-6 px-4 pb-16 pt-6 sm:px-8 sm:pt-10">
+    <div className={`${workspacePage} gap-6`}>
       <header className="grid min-w-0 gap-2">
         <p className={eyebrow}>{t("studio.glowbook.eyebrow")}</p>
         <h1 className="m-0 text-[clamp(1.6rem,2.6vw,2.25rem)] font-[var(--weight-black)] leading-[1.1] tracking-[var(--tracking-tight)] text-[var(--text-primary)]">

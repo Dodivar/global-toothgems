@@ -10,7 +10,7 @@ import { SignInPrompt } from "./SignInPrompt";
 import { TemplateCard } from "./TemplateCard";
 import { TemplateDetail } from "./TemplateDetail";
 import { useWorkspaceActions } from "./useWorkspaceActions";
-import { eyebrow, focusRing, useWorkspaceFormat } from "./workspaceStyles";
+import { eyebrow, focusRing, useWorkspaceFormat, workspacePage } from "./workspaceStyles";
 
 /**
  * "Global Toothgems templates": designs published by the team, newest first,
@@ -27,7 +27,7 @@ export function TemplateLibrary() {
   const detail = detailId ? lib.templates.find((x) => x.id === detailId) : undefined;
 
   return (
-    <div className="mx-auto grid w-full max-w-[1180px] gap-7 px-4 pb-16 pt-6 sm:px-8 sm:pt-10">
+    <div className={`${workspacePage} gap-7`}>
       <header className="grid min-w-0 gap-2">
         <p className={eyebrow}>{t("studio.templates.eyebrow")}</p>
         <h1 className="m-0 text-[clamp(1.6rem,2.6vw,2.25rem)] font-[var(--weight-black)] leading-[1.1] tracking-[var(--tracking-tight)] text-[var(--text-primary)]">

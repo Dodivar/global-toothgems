@@ -115,16 +115,6 @@
     "emptyCta": "Créer ma première composition",
     "emptyHelp": "Découvrir le fonctionnement"
   },
-  "summary": {
-    "title": "Votre Studio",
-    "creations_one": "création",
-    "creations_other": "créations",
-    "groups_one": "groupe de gemmes",
-    "groups_other": "groupes de gemmes",
-    "gems_one": "gemme utilisée",
-    "gems_other": "gemmes utilisées",
-    "value": "valeur estimée totale des créations"
-  },
   "library": {
     "clearSearch": "Effacer la recherche",
     "filterLabel": "Filtrer",

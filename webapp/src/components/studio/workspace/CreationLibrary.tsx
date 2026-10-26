@@ -8,7 +8,6 @@ import {
   CREATION_FILTERS,
   matchesFilter,
   queryCreations,
-  summarize,
   type CreationFilter,
   type CreationSort,
 } from "../../../lib/studioWorkspace/library";
@@ -18,18 +17,17 @@ import { CollectionBar } from "./Collections";
 import { CreationCard } from "./CreationCard";
 import { CreationExplorer, LibraryViewToggle } from "./CreationExplorer";
 import { EmptyState } from "./EmptyState";
-import { HelpHint } from "./HelpHint";
 import { SearchAndFilters } from "./SearchAndFilters";
 import { SignInPrompt } from "./SignInPrompt";
 import { useWorkspaceActions } from "./useWorkspaceActions";
-import { eyebrow, useWorkspaceFormat } from "./workspaceStyles";
+import { eyebrow, useWorkspaceFormat, workspacePage } from "./workspaceStyles";
 
 /**
- * "My Creations": the account's personal library of saved designs — a quiet
- * summary, lightweight search and filters, and a grid of visual cards.
+ * "My Creations": the account's personal library of saved designs — the
+ * collections, one row of search, filter and sort, and a grid of visual cards.
  */
 export function CreationLibrary() {
-  const { t, price, count, now } = useWorkspaceFormat();
+  const { t, now } = useWorkspaceFormat();
   const ws = useWorkspace();
   const snap = useStudio();
   const navigate = useNavigate();
@@ -73,7 +71,6 @@ export function CreationLibrary() {
     () => collectionCounts(ws.collections, ws.memberships, ws.creations.map((c) => c.id)),
     [ws.collections, ws.memberships, ws.creations],
   );
-  const summary = summarize(ws.creations, ws.groups);
   // The folders need the collections: if they could not be read, the grid (with its retry) stands in.
   const explorer = ws.libraryView === "explorer" && ws.collectionsStatus === "ready";
   const resetAll = () => {
@@ -83,7 +80,7 @@ export function CreationLibrary() {
   };
 
   return (
-    <div className="mx-auto grid w-full max-w-[1180px] gap-7 px-4 pb-16 pt-6 sm:px-8 sm:pt-10">
+    <div className={`${workspacePage} gap-7`}>
       <header className="flex flex-wrap items-end gap-x-6 gap-y-4">
         <div className="grid min-w-0 flex-1 basis-[320px] gap-2">
           <p className={eyebrow}>{t("studio.workspace.creations.eyebrow")}</p>
@@ -140,50 +137,22 @@ export function CreationLibrary() {
 
       {ws.status === "ready" && ws.creations.length > 0 && (
         <>
-          <section
-            aria-labelledby="gt-ws-summary"
-            className="grid gap-3 rounded-[var(--radius-lg)] sm:flex sm:flex-wrap sm:items-center sm:gap-x-8 border border-[var(--border-subtle)] bg-[linear-gradient(120deg,var(--gt-blue-50),var(--surface-card)_55%)] px-5 py-4"
-          >
-            <h2 id="gt-ws-summary" className="m-0 text-[12px] font-bold uppercase tracking-[var(--tracking-eyebrow)] text-[var(--gt-blue-700)]">
-              {t("studio.workspace.summary.title")}
-            </h2>
-            <dl className="m-0 grid flex-1 grid-cols-2 gap-x-4 gap-y-3 sm:flex sm:flex-wrap sm:gap-x-8 sm:gap-y-2">
-              {(
-                [
-                  ["creations", count(summary.creations)],
-                  ["groups", count(summary.groups)],
-                  ["gems", count(summary.gemsUsed)],
-                  ["value", price(summary.totalEstimateMinor)],
-                ] as const
-              ).map(([key, value]) => (
-                // The figure reads first; the term stays first in the markup, as a list of terms wants.
-                <div key={key} className="flex flex-col sm:flex-row sm:items-baseline sm:gap-1.5">
-                  <dt className="flex items-center gap-0.5 text-[12px] leading-snug text-[var(--text-muted)]">
-                    {t(`studio.workspace.summary.${key}`, {
-                      count: key === "creations" ? summary.creations : key === "groups" ? summary.groups : summary.gemsUsed,
-                    })}
-                    {key === "value" && <HelpHint id="estimate" align="end" className="h-5 w-5" />}
-                  </dt>
-                  <dd className="order-first m-0 text-[18px] font-[var(--weight-black)] tabular-nums text-[var(--text-primary)]">{value}</dd>
-                </div>
-              ))}
-            </dl>
-          </section>
-
-          {!explorer && (
-            <CollectionBar selectedId={collectionId} onSelect={selectCollection} counts={perCollection} total={ws.creations.length} />
-          )}
-
-          <SearchAndFilters
-            query={query}
-            onQuery={setQuery}
-            placeholder={t("studio.workspace.creations.searchPlaceholder")}
-            filter={filter}
-            onFilter={setFilter}
-            sort={sort}
-            onSort={setSort}
-            counts={counts}
-          />
+          {/* One block of tools above the grid: where to look (collections), then what to show. */}
+          <div className="grid gap-3">
+            {!explorer && (
+              <CollectionBar selectedId={collectionId} onSelect={selectCollection} counts={perCollection} total={ws.creations.length} />
+            )}
+            <SearchAndFilters
+              query={query}
+              onQuery={setQuery}
+              placeholder={t("studio.workspace.creations.searchPlaceholder")}
+              filter={filter}
+              onFilter={setFilter}
+              sort={sort}
+              onSort={setSort}
+              counts={counts}
+            />
+          </div>
 
           {explorer ? (
             <CreationExplorer

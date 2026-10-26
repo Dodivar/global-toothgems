@@ -67,16 +67,41 @@ export function CollectionBar({
 
   return (
     <section aria-labelledby={labelId} className="grid gap-2">
-      <div className="flex items-center gap-2">
-        <h2 id={labelId} className="m-0 text-[12px] font-bold uppercase tracking-[var(--tracking-eyebrow)] text-[var(--text-subtle)]">
-          {t("studio.workspace.collections.label")}
-        </h2>
+      {/* The chips speak for themselves: the heading is for assistive technology only. */}
+      <h2 id={labelId} className="sr-only">
+        {t("studio.workspace.collections.label")}
+      </h2>
+      <div className="flex items-center gap-1.5">
+        <div role="group" aria-labelledby={labelId} className="gt-editor-scroll-x -mx-1 flex min-w-0 flex-1 gap-1.5 overflow-x-auto px-1 pb-1">
+          <button type="button" aria-pressed={selectedId === null} onClick={() => onSelect(null)} className={chipClass(selectedId === null)}>
+            {t("studio.workspace.collections.all")}
+            <span className={clsx("tabular-nums", selectedId === null ? "text-white/70" : "text-[var(--text-subtle)]")}>{total}</span>
+          </button>
+          {sorted.map((c) => {
+            const on = c.id === selectedId;
+            return (
+              <button key={c.id} type="button" aria-pressed={on} onClick={() => onSelect(on ? null : c.id)} className={chipClass(on)}>
+                <CollectionDot color={c.color} className={on && !c.color ? "border-white/70" : undefined} />
+                <span className="max-w-[18ch] truncate">{c.name}</span>
+                <span className={clsx("tabular-nums", on ? "text-white/70" : "text-[var(--text-subtle)]")}>{counts[c.id] ?? 0}</span>
+              </button>
+            );
+          })}
+          <button
+            type="button"
+            onClick={() => openWorkspaceDialog({ kind: "editCollection" })}
+            className={clsx(chipClass(false), "border-dashed text-[var(--gt-blue-700)]")}
+          >
+            <FolderPlus size={14} aria-hidden="true" />
+            {t("studio.workspace.collections.new")}
+          </button>
+        </div>
         {selected && (
           <Menu
             label={t("studio.workspace.collections.manage", { name: selected.name })}
             width={220}
             trigger={(props) => (
-              <button type="button" {...props} className={clsx(iconButton, "h-7 w-7")}>
+              <button type="button" {...props} className={clsx(iconButton, "mb-1 h-8 w-8")}>
                 <MoreHorizontal size={15} aria-hidden="true" />
               </button>
             )}
@@ -97,34 +122,6 @@ export function CollectionBar({
             ]}
           />
         )}
-      </div>
-      <div
-        role="group"
-        aria-labelledby={labelId}
-        className="gt-editor-scroll-x -mx-1 flex gap-1.5 overflow-x-auto px-1 pb-1"
-      >
-        <button type="button" aria-pressed={selectedId === null} onClick={() => onSelect(null)} className={chipClass(selectedId === null)}>
-          {t("studio.workspace.collections.all")}
-          <span className={clsx("tabular-nums", selectedId === null ? "text-white/70" : "text-[var(--text-subtle)]")}>{total}</span>
-        </button>
-        {sorted.map((c) => {
-          const on = c.id === selectedId;
-          return (
-            <button key={c.id} type="button" aria-pressed={on} onClick={() => onSelect(on ? null : c.id)} className={chipClass(on)}>
-              <CollectionDot color={c.color} className={on && !c.color ? "border-white/70" : undefined} />
-              <span className="max-w-[18ch] truncate">{c.name}</span>
-              <span className={clsx("tabular-nums", on ? "text-white/70" : "text-[var(--text-subtle)]")}>{counts[c.id] ?? 0}</span>
-            </button>
-          );
-        })}
-        <button
-          type="button"
-          onClick={() => openWorkspaceDialog({ kind: "editCollection" })}
-          className={clsx(chipClass(false), "border-dashed text-[var(--gt-blue-700)]")}
-        >
-          <FolderPlus size={14} aria-hidden="true" />
-          {t("studio.workspace.collections.new")}
-        </button>
       </div>
       {sorted.length === 0 && <p className="m-0 text-[12px] text-[var(--text-subtle)]">{t("studio.workspace.collections.emptyHint")}</p>}
     </section>
