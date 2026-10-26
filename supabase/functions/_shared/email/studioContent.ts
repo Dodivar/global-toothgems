@@ -81,7 +81,6 @@ const WITHDRAWAL_LABELS = {
     refund: "Remboursé",
     noRefund: "Aucun montant n’est à rembourser : la période payée a été entièrement utilisée.",
     account: "Mon espace Studio",
-    creditNote: "Avoir (en pièce jointe)",
   },
   en: {
     title: "Your refund",
@@ -91,11 +90,10 @@ const WITHDRAWAL_LABELS = {
     refund: "Refunded",
     noRefund: "Nothing is left to refund: the paid period was fully used.",
     account: "My Studio page",
-    creditNote: "Credit note (attached)",
   },
 } as const;
 
-export function studioWithdrawalContent(mail: StudioWithdrawalMail, locale: string, siteUrl: string, creditNoteNumber?: string): EmailContent {
+export function studioWithdrawalContent(mail: StudioWithdrawalMail, locale: string, siteUrl: string): EmailContent {
   const lang = chromeLocale(locale);
   const l = WITHDRAWAL_LABELS[lang];
   const money = (amount: number) => formatAmount(amount, mail.currency, lang);
@@ -107,7 +105,6 @@ export function studioWithdrawalContent(mail: StudioWithdrawalMail, locale: stri
         { label: l.paid, value: money(mail.paidAmount) },
         { label: l.used(mail.usedDays, mail.periodDays), value: `− ${money(mail.usedAmount)}` },
         { label: l.refund, value: money(mail.refundAmount) },
-        ...(creditNoteNumber ? [{ label: l.creditNote, value: creditNoteNumber }] : []),
       ],
     }),
   ];

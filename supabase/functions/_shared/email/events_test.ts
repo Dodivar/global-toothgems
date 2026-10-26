@@ -443,17 +443,13 @@ Deno.test("studio withdrawal: one acknowledgement per withdrawal, with the refun
   assertEquals(en.text.includes(`${SITE}/compte/studio`), true);
 });
 
-Deno.test("studio withdrawal: the acknowledgement carries the credit note when the refund is already confirmed", async () => {
+Deno.test("studio withdrawal: the acknowledgement never carries the credit note (it follows on its own)", async () => {
   const { deps, seen } = setup();
-  await sendStudioWithdrawalEmails(
-    deps,
-    source({ studioWithdrawals: () => Promise.resolve([withdrawal(), withdrawal({ withdrawalId: "w-2" })]) }),
-    { studioDocuments: studioDocs([STUDIO_INVOICE, STUDIO_NOTE]) },
-  );
-  const [withNote, bare] = seen.requests as { attachments?: { filename: string }[]; text: string }[];
-  assertEquals(withNote.attachments?.map((a) => a.filename), ["avoir-AV-2026-000007.pdf"]);
-  assertEquals(withNote.text.includes("AV-2026-000007"), true);
-  assertEquals(bare.attachments, undefined);
+  await sendStudioWithdrawalEmails(deps, source({ studioWithdrawals: () => Promise.resolve([withdrawal()]) }), {
+    studioDocuments: studioDocs([STUDIO_INVOICE, STUDIO_NOTE]),
+  });
+  const [mail] = seen.requests as { attachments?: unknown[] }[];
+  assertEquals(mail.attachments, undefined);
 });
 
 const digest = (over: Partial<PendingStockDigest> = {}): PendingStockDigest => ({

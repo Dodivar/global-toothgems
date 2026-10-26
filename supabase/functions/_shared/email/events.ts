@@ -19,8 +19,9 @@
  *   studio_invoice:<Stripe invoice id>   studio_credit_note:<withdrawal id>
  * The Studio e-mails carry our legal documents as PDFs (decision 115): the
  * confirmation its first FA- invoice, a renewal or plan change its own
- * (`studio_invoice`), the withdrawal acknowledgement its AV- credit note when
- * the refund is already confirmed, else `studio_credit_note` once it is.
+ * (`studio_invoice`); the withdrawal's AV- credit note follows the
+ * acknowledgement on its own (`studio_credit_note`) once the refund is
+ * confirmed — never attached to the acknowledgement, which may race it.
  * One row never stops the others, and nothing here throws for a failed e-mail.
  */
 import type { SupabaseClient } from "npm:@supabase/supabase-js@2.57.4";
@@ -403,7 +404,7 @@ export function sendStudioInvoiceEmails(
   );
 }
 
-/** A withdrawal's credit note issued after its acknowledgement went out (that e-mail could not carry it). */
+/** A withdrawal's credit note, once issued and the acknowledgement has gone out. */
 export function sendStudioCreditNoteEmails(
   deps: EmailDeps,
   source: PendingSource,
@@ -440,28 +441,16 @@ export function sendStudioWithdrawalEmails(
   options: StudioOptions = {},
 ): Promise<EventReport> {
   const log = options.log ?? (() => {});
-  const docs = options.studioDocuments;
   return source.studioWithdrawals(options.limit ?? 25).then((rows) =>
-    sendEach(rows, "studio withdrawal", (r) => r.withdrawalId, async (withdrawal) => {
-      // Usually not issued yet (the refund is confirmed later): `studio_credit_note` then follows.
-      const note = docs
-        ? await studioDocument(
-          "studio credit note",
-          withdrawal.withdrawalId,
-          () => studioCreditNote(docs, withdrawal.withdrawalId, withdrawal.locale),
-          log,
-        )
-        : null;
-      return sendTemplatedEmail(deps, {
+    sendEach(rows, "studio withdrawal", (r) => r.withdrawalId, (withdrawal) =>
+      sendTemplatedEmail(deps, {
         templateKey: "studio_withdrawal_confirmation",
         to: withdrawal.email,
         locale: withdrawal.locale,
         variables: { plan_name: studioPlanName(withdrawal.plan, withdrawal.locale) },
         eventKey: `studio_withdrawal:${withdrawal.withdrawalId}`,
-        attachments: note ? [note.attachment] : undefined,
-        content: (locale) => studioWithdrawalContent(withdrawal, locale, deps.layout.siteUrl, note?.number),
-      });
-    }, log)
+        content: (locale) => studioWithdrawalContent(withdrawal, locale, deps.layout.siteUrl),
+      }), log)
   );
 }
 
