@@ -36,6 +36,9 @@ import type { StudioBillingInterval, StudioPaidPlanId } from "../../../data/stud
  * `studio-manage-subscription`; the Studio's access follows through the
  * verified webhook, so `onChanged` asks the page to re-read it.
  */
+/** The verified webhook usually mirrors a change within seconds. */
+const WEBHOOK_REREADS_MS = [3_000, 10_000];
+
 export function StudioBillingManager({ onChanged }: { onChanged: () => void }) {
   const { t } = useTranslation();
   const k = "studio.account";
@@ -79,6 +82,8 @@ export function StudioBillingManager({ onChanged }: { onChanged: () => void }) {
     setNotice({ tone, text });
     void load();
     onChanged();
+    // The access above is the webhook's mirror: read it again once Stripe's event has landed.
+    for (const delay of WEBHOOK_REREADS_MS) window.setTimeout(onChanged, delay);
   };
 
   if (failed && !overview) {
