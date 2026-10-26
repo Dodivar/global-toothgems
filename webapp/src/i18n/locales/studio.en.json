@@ -85,7 +85,7 @@
       "kept_other": "Your {{count}} saved designs are kept in your account. They will be waiting for you in the Studio once a plan is active.",
       "keptNone": "Anything you saved stays in your account and will be waiting for you once a plan is active.",
       "plansTitle": "Choose your plan",
-      "pricesNote": "Prices include VAT. Cancel at any time from your account: the subscription ends at the close of the paid period."
+      "pricesNote": "Cancel at any time from your account: the subscription ends at the close of the paid period."
     },
     "error": {
       "title": "We couldn’t check your Studio access",
@@ -671,7 +671,7 @@
     "manageError": "Your plan and invoices cannot be read right now.",
     "change": {
       "title": "Your plan",
-      "current": "You are subscribed to {{plan}}: {{price}} {{per}}, VAT included.",
+      "current": "You are subscribed to {{plan}}: {{price}} {{per}}.",
       "rules": "Change plan or billing at any time. A plan change is prorated on your next invoice; switching between monthly and yearly is charged straight away, minus the unused part of your current period.",
       "locked": {
         "pastDue": "Update your card first: you can change plan once the payment is settled.",

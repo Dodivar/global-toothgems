@@ -4841,6 +4841,7 @@ export type Database = {
           updated_at: string
           updated_by: string | null
           user_id: string | null
+          vat_franchise: boolean
         }
         Insert: {
           admin_note?: string | null
@@ -4877,6 +4878,7 @@ export type Database = {
           updated_at?: string
           updated_by?: string | null
           user_id?: string | null
+          vat_franchise?: boolean
         }
         Update: {
           admin_note?: string | null
@@ -4913,6 +4915,7 @@ export type Database = {
           updated_at?: string
           updated_by?: string | null
           user_id?: string | null
+          vat_franchise?: boolean
         }
         Relationships: [
           {

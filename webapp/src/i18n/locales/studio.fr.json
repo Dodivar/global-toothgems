@@ -85,7 +85,7 @@
       "kept_other": "Vos {{count}} designs enregistrés sont conservés dans votre compte. Ils vous attendront dans le Studio dès qu’une formule sera active.",
       "keptNone": "Tout ce que vous avez enregistré reste dans votre compte et vous attendra dès qu’une formule sera active.",
       "plansTitle": "Choisissez votre formule",
-      "pricesNote": "Prix TVA comprise. Résiliable à tout moment depuis votre compte : l’abonnement prend fin à la fin de la période payée."
+      "pricesNote": "Résiliable à tout moment depuis votre compte : l’abonnement prend fin à la fin de la période payée."
     },
     "error": {
       "title": "Impossible de vérifier votre accès au Studio",
@@ -671,7 +671,7 @@
     "manageError": "Impossible de lire votre formule et vos factures pour le moment.",
     "change": {
       "title": "Votre formule",
-      "current": "Vous êtes abonné·e à {{plan}} : {{price}} {{per}}, TVA comprise.",
+      "current": "Vous êtes abonné·e à {{plan}} : {{price}} {{per}}.",
       "rules": "Changez de formule ou de facturation à tout moment. Un changement de formule est ajusté au prorata sur votre prochaine facture ; passer de mensuel à annuel (ou l’inverse) est facturé tout de suite, déduction faite de la période non utilisée.",
       "locked": {
         "pastDue": "Mettez d’abord votre carte à jour : le changement de formule sera possible une fois le paiement régularisé.",

@@ -1,5 +1,6 @@
 -- =============================================================================
--- VAT franchise validation suite (migration 20261026185024_vat_franchise)
+-- VAT franchise validation suite (migrations 20261026185024_vat_franchise,
+-- 20261026190347_order_vat_regime)
 -- =============================================================================
 -- Proves (decision 114, "franchise en base de TVA", art. 293 B du CGI):
 --   F1  the store row is under the franchise by default and vat_rate_bp()
@@ -12,7 +13,10 @@
 --       the switch has changed since;
 --   F4  admin_save_store_details(): a manage_settings admin switches the
 --       franchise, a missing key leaves it unchanged, a non-boolean is refused
---       (22023), a customer is refused (42501).
+--       (22023), a customer is refused (42501);
+--   F5  an order keeps the regime it was created under: paid after the switch
+--       changed, its invoice still follows the order (seller flag and shipping
+--       rate), both ways; the order's flag cannot be updated.
 --
 -- ONE transaction, ALWAYS rolled back by raising `ALL VAT FRANCHISE TESTS PASSED`
 -- (or `FAIL: ...`).
@@ -26,6 +30,7 @@ declare
   p_gel   uuid;
   r_std   uuid;
   o       public.orders;
+  o2      public.orders;
   pay     uuid;
   item    uuid;
   r1      uuid;
@@ -137,6 +142,42 @@ begin
   end;
   execute 'reset role';
   passed := passed || 'F4'::text;
+
+  -- F5 -------------------------------------------------------------------------
+  -- Created under the franchise, paid once it is off.
+  perform set_config('request.jwt.claims', json_build_object('role', 'service_role')::text, true);
+  perform set_config('role', 'service_role', true);
+  o := public.create_order(m1, 'franchise-a.test@example.invalid',
+         jsonb_build_array(jsonb_build_object('product_id', p_gel, 'quantity', 1)), addr, addr, r_std);
+  execute 'reset role';
+  update public.store_settings set vat_franchise = false where id;
+  -- Created with VAT, paid once the franchise is on.
+  perform set_config('role', 'service_role', true);
+  o2 := public.create_order(m1, 'franchise-a.test@example.invalid',
+          jsonb_build_array(jsonb_build_object('product_id', p_gel, 'quantity', 1)), addr, addr, r_std);
+  execute 'reset role';
+  update public.store_settings set vat_franchise = true where id;
+  if not o.vat_franchise or o2.vat_franchise or o.tax_amount <> 0 or o2.tax_amount = 0 then
+    raise exception 'FAIL F5: order snapshots % / %', to_jsonb(o), to_jsonb(o2);
+  end if;
+  update public.orders set vat_franchise = false where id = o.id;
+  if not (select vat_franchise from public.orders where id = o.id) then raise exception 'FAIL F5: order flag updated'; end if;
+
+  perform set_config('role', 'service_role', true);
+  perform public.mark_order_paid(o.id, o.total_amount, o.currency, 'cs_test_franchise_5a', 'pi_test_franchise_5a');
+  perform public.mark_order_paid(o2.id, o2.total_amount, o2.currency, 'cs_test_franchise_5b', 'pi_test_franchise_5b');
+  execute 'reset role';
+  select * into inv from public.invoices where order_id = o.id and kind = 'invoice';
+  if (inv.seller ->> 'vat_franchise')::boolean is not true or inv.total_tax <> 0
+     or exists (select 1 from jsonb_array_elements(inv.lines) l where (l ->> 'vat_rate_bp')::integer <> 0) then
+    raise exception 'FAIL F5: franchise order paid under VAT: %', to_jsonb(inv);
+  end if;
+  select * into inv from public.invoices where order_id = o2.id and kind = 'invoice';
+  if (inv.seller ->> 'vat_franchise')::boolean is not false or inv.total_tax <> o2.tax_amount
+     or exists (select 1 from jsonb_array_elements(inv.lines) l where (l ->> 'vat_rate_bp')::integer <> 2000) then
+    raise exception 'FAIL F5: VAT order paid under the franchise: %', to_jsonb(inv);
+  end if;
+  passed := passed || 'F5'::text;
 
   raise exception 'ALL VAT FRANCHISE TESTS PASSED: %', array_to_string(passed, ' ');
 end;
