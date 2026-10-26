@@ -946,6 +946,15 @@
       "too_dark": "avec plus de lumière, sans contre-jour ;",
       "too_bright": "avec une lumière moins forte, sans flash direct sur les dents ;",
       "blurry": "nette : tenez le téléphone immobile et laissez-le faire la mise au point."
+    },
+    "allowance": {
+      "remaining_one": "Il vous reste {{count}} essai sur {{limit}} (sur 24 h glissantes).",
+      "remaining_other": "Il vous reste {{count}} essais sur {{limit}} (sur 24 h glissantes).",
+      "none": "Vous avez utilisé vos {{limit}} essais des dernières 24 h. De nouveaux essais se libèrent 24 h après chacun.",
+      "unlimited": "Essais illimités (compte administrateur).",
+      "signedOut_one": "Réservé aux membres connectés : {{count}} essai par 24 h.",
+      "signedOut_other": "Réservé aux membres connectés : {{count}} essais par 24 h.",
+      "signedOutPlain": "Réservé aux membres connectés."
     }
   },
   "frontView": {

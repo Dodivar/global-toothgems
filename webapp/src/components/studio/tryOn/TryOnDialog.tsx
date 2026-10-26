@@ -84,7 +84,7 @@ export function TryOnDialog({
     let live = true;
     service
       .status()
-      .then((available) => live && setAi(available ? "available" : "unavailable"))
+      .then((status) => live && setAi(status.available ? "available" : "unavailable"))
       .catch(() => live && setAi("unavailable"));
     return () => {
       live = false;

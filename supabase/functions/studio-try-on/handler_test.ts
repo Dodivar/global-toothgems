@@ -79,7 +79,30 @@ Deno.test("status: says whether the AI is connected, without an account", async 
   const { deps } = fake({ available: false });
   const res = await handleStudioTryOn(post('{"action":"status"}', null), deps);
   assertEquals(res.status, 200);
-  assertEquals(await res.json(), { available: false });
+  assertEquals(await res.json(), { available: false, daily_limit: 3, quota: null });
+});
+
+Deno.test("status: a signed-in member reads the renders left over 24 hours", async () => {
+  const { deps } = fake({ countRecent: () => Promise.resolve({ requests: 2, renders: 1 }) });
+  const res = await handleStudioTryOn(post('{"action":"status"}'), deps);
+  assertEquals(await res.json(), { available: true, daily_limit: 3, quota: { limit: 3, remaining: 2 } });
+});
+
+Deno.test("status: none left once the checks cap is reached, whatever the renders", async () => {
+  const { deps } = fake({ countRecent: () => Promise.resolve({ requests: 5, renders: 0 }) });
+  const body = await (await handleStudioTryOn(post('{"action":"status"}'), deps)).json();
+  assertEquals(body.quota, { limit: 3, remaining: 0 });
+});
+
+Deno.test("status: an administrator is unlimited; an unknown token or a failed count gives no quota", async () => {
+  const admin = fake({ unlimited: () => Promise.resolve(true) }).deps;
+  assertEquals((await (await handleStudioTryOn(post('{"action":"status"}'), admin)).json()).quota, { unlimited: true });
+  const stranger = fake().deps;
+  assertEquals((await (await handleStudioTryOn(post('{"action":"status"}', "other.jwt.sig"), stranger)).json()).quota, null);
+  const broken = fake({ countRecent: () => Promise.reject(new Error("db down")) }).deps;
+  const res = await handleStudioTryOn(post('{"action":"status"}'), broken);
+  assertEquals(res.status, 200);
+  assertEquals((await res.json()).quota, null);
 });
 
 Deno.test("not connected: nothing is read or counted", async () => {

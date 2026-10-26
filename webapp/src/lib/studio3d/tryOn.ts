@@ -16,7 +16,7 @@ import type { TryOnSeat } from "./tryOnSeats";
  * through the function's memory.
  *
  * While the owner has not connected the provider, the function says so
- * (`status()` → false, `render()` → `not_available`): the dialog says the
+ * (`status()` → not available, `render()` → `not_available`): the dialog says the
  * AI render is coming and sends nothing — never a made-up result.
  */
 
@@ -70,9 +70,48 @@ export type TryOnStage = "checking" | "rendering";
 /** `crop`: the image is the edited mouth close-up, to paste back into the photo there (`tryOnComposite.ts`). */
 export type TryOnOutcome = { ok: true; image: Blob; crop?: TryOnCrop } | { ok: false; code: TryOnErrorCode; reasons?: PhotoIssue[] };
 
+/**
+ * The signed-in member's daily allowance of AI renders (over the last 24
+ * hours, counted by the function): `unlimited` for an active administrator.
+ * Display only — the function counts again on every render.
+ */
+export type TryOnQuota = { unlimited: true } | { unlimited: false; limit: number; remaining: number };
+
+export interface TryOnStatus {
+  /** Whether the AI is connected. */
+  available: boolean;
+  /** Renders per account per 24 hours, for visitors who are not signed in yet; null if unknown. */
+  dailyLimit: number | null;
+  /** The caller's own allowance; null when not signed in or unknown. */
+  quota: TryOnQuota | null;
+}
+
+export const UNAVAILABLE_STATUS: TryOnStatus = { available: false, dailyLimit: null, quota: null };
+
+const count = (v: unknown): number | null => (typeof v === "number" && Number.isInteger(v) && v >= 0 && v <= 10_000 ? v : null);
+
+/** Read the function's status answer (`{ available, daily_limit, quota }`) like any untrusted input. */
+export function parseTryOnStatus(json: unknown): TryOnStatus {
+  if (!json || typeof json !== "object") return UNAVAILABLE_STATUS;
+  const data = json as Record<string, unknown>;
+  const raw = data.quota && typeof data.quota === "object" ? (data.quota as Record<string, unknown>) : null;
+  let quota: TryOnQuota | null = null;
+  if (raw?.unlimited === true) quota = { unlimited: true };
+  else if (raw) {
+    const limit = count(raw.limit);
+    const remaining = count(raw.remaining);
+    if (limit !== null && limit > 0 && remaining !== null) quota = { unlimited: false, limit, remaining: Math.min(remaining, limit) };
+  }
+  const dailyLimit = count(data.daily_limit);
+  return { available: data.available === true, dailyLimit: dailyLimit && dailyLimit > 0 ? dailyLimit : null, quota };
+}
+
 export interface SmileTryOnService {
-  /** Whether the AI is connected. Asked before any photo leaves the device; never throws (false). */
-  status(): Promise<boolean>;
+  /**
+   * Whether the AI is connected, and the caller's daily allowance. Asked
+   * before any photo leaves the device; never throws (unavailable).
+   */
+  status(): Promise<TryOnStatus>;
   /**
    * Render the creation on the photo. Never throws: every failure is an error
    * code. An aborted call (cancelled, dialog closed) resolves with `failed`;
@@ -84,7 +123,7 @@ export interface SmileTryOnService {
 
 /** Used without a backend (mock mode): the AI is simply not there. */
 export const unavailableTryOnService: SmileTryOnService = {
-  status: async () => false,
+  status: async () => UNAVAILABLE_STATUS,
   render: async () => ({ ok: false, code: "not_available" }),
 };
 

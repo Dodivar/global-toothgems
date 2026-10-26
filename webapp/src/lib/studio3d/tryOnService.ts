@@ -3,7 +3,9 @@ import { supabase } from "../supabase/client";
 import {
   parseTryOnEvent,
   parseTryOnResponse,
+  parseTryOnStatus,
   sourcePayload,
+  UNAVAILABLE_STATUS,
   unavailableTryOnService,
   type SmileTryOnService,
   type TryOnOutcome,
@@ -64,9 +66,9 @@ export const smileTryOnService: SmileTryOnService = supabase
       async status() {
         try {
           const { data, error } = await supabase!.functions.invoke(FUNCTION, { body: { action: "status" } });
-          return !error && !!data && (data as { available?: unknown }).available === true;
+          return error ? UNAVAILABLE_STATUS : parseTryOnStatus(data);
         } catch {
-          return false;
+          return UNAVAILABLE_STATUS;
         }
       },
       async render({ photo, source, design, map, seats }, options) {

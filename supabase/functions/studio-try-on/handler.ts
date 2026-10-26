@@ -34,6 +34,10 @@ import { buildDesignData, piecesFromScene, readSeats } from "./prompt.ts";
  *     422 { ok: false, code: "photo_unsuitable", reasons }  the photo check
  *             (`photoCheck.ts`) refused the photo: too_far | not_frontal | no_teeth |
  *             teeth_hidden | too_dark | too_bright | blurry — no generation
+ *   status call (JSON `{ "action": "status" }`, no account needed):
+ *     200 { available, daily_limit, quota }  quota: the signed-in caller's
+ *             { limit, remaining } renders over the last 24 hours,
+ *             { unlimited: true } for an active administrator, null for a visitor
  *     4xx/5xx { ok: false, code }  invalid_request | sign_in_required |
  *             session_expired | not_found | not_allowed | daily_limit |
  *             not_available | blocked | failed | server_error
@@ -149,7 +153,7 @@ export async function handleStudioTryOn(req: Request, deps: StudioTryOnDeps): Pr
       body = null;
     }
     if (!body || (body as Record<string, unknown>).action !== "status") return json({ ok: false, code: "invalid_request" }, 400, cors);
-    return json({ available: deps.available }, 200, cors);
+    return json({ available: deps.available, daily_limit: deps.dailyLimit, quota: await quotaFor(req, deps) }, 200, cors);
   }
   if (!type.startsWith("multipart/form-data")) return json({ ok: false, code: "invalid_request" }, 400, cors);
 
@@ -190,11 +194,7 @@ export async function handleStudioTryOn(req: Request, deps: StudioTryOnDeps): Pr
     row = await deps.loadCreation(userId, ref);
     if (!row) return json({ ok: false, code: "not_found" }, 404, cors);
     if (!row.allowed) return json({ ok: false, code: "not_allowed" }, 403, cors);
-    if (!(await deps.unlimited(userId))) {
-      const now = deps.now?.() ?? new Date();
-      const used = await deps.countRecent(userId, new Date(now.getTime() - 24 * 3600 * 1000));
-      if (used.renders >= deps.dailyLimit || used.requests >= deps.dailyChecks) return json({ ok: false, code: "daily_limit" }, 429, cors);
-    }
+    if (!(await deps.unlimited(userId)) && (await remainingRenders(deps, userId)) === 0) return json({ ok: false, code: "daily_limit" }, 429, cors);
     requestId = await deps.startRequest(userId, row);
   } catch (error) {
     deps.log("preparing the request failed", error instanceof Error ? error.message : error);
@@ -213,6 +213,33 @@ export async function handleStudioTryOn(req: Request, deps: StudioTryOnDeps): Pr
     return json(ending.body, ending.status, cors);
   }
   return progressStream(run, cors);
+}
+
+/** Renders the account may still ask for in the last 24 hours: none once either daily cap is reached. */
+async function remainingRenders(deps: StudioTryOnDeps, userId: string): Promise<number> {
+  const now = deps.now?.() ?? new Date();
+  const used = await deps.countRecent(userId, new Date(now.getTime() - 24 * 3600 * 1000));
+  return used.requests >= deps.dailyChecks ? 0 : Math.max(0, deps.dailyLimit - used.renders);
+}
+
+/**
+ * The signed-in caller's daily allowance, for the status call: `{ limit,
+ * remaining }`, `{ unlimited: true }` for an active administrator, or null
+ * without a valid member token (a visitor) or when it cannot be read — the
+ * status itself never fails on it. Display only: a generation counts again.
+ */
+async function quotaFor(req: Request, deps: StudioTryOnDeps): Promise<Record<string, unknown> | null> {
+  const token = bearer(req);
+  if (!token || !looksLikeJwt(token)) return null;
+  try {
+    const userId = await deps.userFromToken(token);
+    if (!userId) return null;
+    if (await deps.unlimited(userId)) return { unlimited: true };
+    return { limit: deps.dailyLimit, remaining: await remainingRenders(deps, userId) };
+  } catch (error) {
+    deps.log("reading the daily allowance failed", error instanceof Error ? error.message : error);
+    return null;
+  }
 }
 
 type Ending = { status: number; body: Record<string, unknown> };

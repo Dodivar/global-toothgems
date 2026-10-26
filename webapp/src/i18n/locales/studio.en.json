@@ -946,6 +946,15 @@
       "too_dark": "with more light, no backlight;",
       "too_bright": "with softer light, no direct flash on the teeth;",
       "blurry": "sharp: hold the phone still and let it focus."
+    },
+    "allowance": {
+      "remaining_one": "You have {{count}} try left out of {{limit}} (rolling 24 hours).",
+      "remaining_other": "You have {{count}} tries left out of {{limit}} (rolling 24 hours).",
+      "none": "You have used your {{limit}} tries of the last 24 hours. Each one frees up again 24 hours after it was made.",
+      "unlimited": "Unlimited tries (administrator account).",
+      "signedOut_one": "For signed-in members: {{count}} try per 24 hours.",
+      "signedOut_other": "For signed-in members: {{count}} tries per 24 hours.",
+      "signedOutPlain": "For signed-in members."
     }
   },
   "frontView": {

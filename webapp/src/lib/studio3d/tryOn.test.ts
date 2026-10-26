@@ -8,6 +8,7 @@ import {
   errorAllowsRetry,
   parseTryOnEvent,
   parseTryOnResponse,
+  parseTryOnStatus,
   resultExtension,
   sourcePayload,
   unavailableTryOnService,
@@ -16,11 +17,25 @@ import { checkPhotoFile, checkPhotoLight, checkPhotoSize, fitWithin, PHOTO_MAX_B
 
 describe("try-on service contract", () => {
   it("the not-available service says so at once, without a photo leaving", async () => {
-    expect(await unavailableTryOnService.status()).toBe(false);
+    expect(await unavailableTryOnService.status()).toEqual({ available: false, dailyLimit: null, quota: null });
     expect(await unavailableTryOnService.render({ photo: new Blob(), design: new Blob(), source: { kind: "own", creationId: "c1" } })).toEqual({
       ok: false,
       code: "not_available",
     });
+  });
+
+  it("reads the status and the member's daily allowance as untrusted input", () => {
+    expect(parseTryOnStatus({ available: true, daily_limit: 10, quota: { limit: 10, remaining: 7 } })).toEqual({
+      available: true,
+      dailyLimit: 10,
+      quota: { unlimited: false, limit: 10, remaining: 7 },
+    });
+    expect(parseTryOnStatus({ available: true, daily_limit: 10, quota: { unlimited: true } }).quota).toEqual({ unlimited: true });
+    expect(parseTryOnStatus({ available: true, daily_limit: 10, quota: null })).toEqual({ available: true, dailyLimit: 10, quota: null });
+    expect(parseTryOnStatus({ available: true, quota: { limit: 10, remaining: 12 } }).quota).toEqual({ unlimited: false, limit: 10, remaining: 10 });
+    expect(parseTryOnStatus({ available: true, quota: { limit: "10", remaining: -1 } }).quota).toBeNull();
+    expect(parseTryOnStatus({ available: "yes" })).toEqual({ available: false, dailyLimit: null, quota: null });
+    expect(parseTryOnStatus(null).available).toBe(false);
   });
 
   it("names the creation by reference only, never by its scene", () => {

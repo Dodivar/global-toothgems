@@ -8,6 +8,7 @@ import { Dialog } from "../components/ui/Dialog";
 import { useDocumentTitle } from "../components/legal/hooks";
 import { ShoppingList } from "../components/studio/editor/ShoppingList";
 import { SignInPrompt } from "../components/studio/workspace/SignInPrompt";
+import { TryOnAllowance } from "../components/studio/tryOn/TryOnAllowance";
 import { StageFullscreenButton } from "../components/studio/StageFullscreenButton";
 import { useAuth } from "../lib/auth";
 import { isLocale, localizedPath } from "../lib/localeRoutes";
@@ -16,6 +17,7 @@ import { StudioEngine } from "../lib/studio3d/engine";
 import { useStageFullscreen } from "../lib/studio3d/stageFullscreen";
 import { DesignStore, studioStore } from "../lib/studio3d/store";
 import type { TryOnSource } from "../lib/studio3d/tryOn";
+import { tryOnExhausted, useTryOnStatus } from "../lib/studio3d/useTryOnStatus";
 import { STUDIO_EDITOR_PATH, STUDIO_PATH } from "../lib/studioUrl";
 import { piecesKey } from "../lib/studioWorkspace/scene";
 import { supabase } from "../lib/supabase/client";
@@ -178,6 +180,8 @@ function SharedDesignView({ design, name, author, tryOn }: { design: SharedDesig
   const { pathname, hash } = useLocation();
   const [confirmReplace, setConfirmReplace] = useState(false);
   const [tryingOn, setTryingOn] = useState(false);
+  // Read again each time the try-on dialog closes, so the count follows the renders just made.
+  const tryOnStatus = useTryOnStatus(!!tryOn && !tryingOn);
 
   /** The recipient's own stage has work that opening a copy would replace. */
   const stageHasWork = () =>
@@ -245,9 +249,10 @@ function SharedDesignView({ design, name, author, tryOn }: { design: SharedDesig
               {t("studio.tryOn.visitor.title")}
             </h2>
             <p className="m-0 text-[12.5px] leading-relaxed text-[var(--text-muted)]">{t("studio.tryOn.visitor.body")}</p>
-            <Button variant="primary" size="sm" iconLeft={ScanFace} onClick={() => setTryingOn(true)}>
+            <Button variant="primary" size="sm" iconLeft={ScanFace} disabled={tryOnExhausted(tryOnStatus, signedIn)} onClick={() => setTryingOn(true)}>
               {t("studio.tryOn.visitor.cta")}
             </Button>
+            <TryOnAllowance status={tryOnStatus} />
           </section>
         )}
 

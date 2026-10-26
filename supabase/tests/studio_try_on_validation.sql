@@ -1,9 +1,11 @@
 -- =============================================================================
 -- 3D Studio smile try-on validation suite
--- (migration 20261025135203_studio_smile_try_on, decision 111)
+-- (migrations 20261025135203_studio_smile_try_on, 20261026164042_studio_try_on_atelier_only,
+--  decision 111 and 111 (a))
 -- =============================================================================
---   T1  the plan switch follows the OWNER's Studio access (trial, subscription,
---       staff), not the requester's;
+--   T1  the plan switch follows the OWNER's Studio tier, not the requester's:
+--       Atelier subscription or active staff only (not a trial, not Essential
+--       or Artist, not an ended access);
 --   T2  the public readers carry the flag: an approved Glowbook creation and
 --       an active share link say try_on = true while the owner has access,
 --       false once it is gone (share link), never the owner's id;
@@ -23,6 +25,9 @@ declare
   artist uuid := '00000000-0000-4000-a000-000000410001';
   lapsed uuid := '00000000-0000-4000-a000-000000410002';
   client uuid := '00000000-0000-4000-a000-000000410003';
+  trialist uuid := '00000000-0000-4000-a000-000000410004';
+  artistplan uuid := '00000000-0000-4000-a000-000000410005';
+  staffer uuid := '00000000-0000-4000-a000-000000410006';
   v_scene jsonb := jsonb_build_object('version', 2, 'model', 'dentition', 'lightPreset', 'studio', 'camera', null,
                                       'pieces', '[]'::jsonb, 'groups', '[]'::jsonb);
   c_art uuid;
@@ -41,8 +46,15 @@ begin
   insert into auth.users (id, aud, role, email, created_at, updated_at) values
     (artist, 'authenticated', 'authenticated', 'tryon-1.test@example.invalid', now(), now()),
     (lapsed, 'authenticated', 'authenticated', 'tryon-2.test@example.invalid', now(), now()),
-    (client, 'authenticated', 'authenticated', 'tryon-3.test@example.invalid', now(), now());
-  insert into public.studio_trials (user_id) values (artist);
+    (client, 'authenticated', 'authenticated', 'tryon-3.test@example.invalid', now(), now()),
+    (trialist, 'authenticated', 'authenticated', 'tryon-4.test@example.invalid', now(), now()),
+    (artistplan, 'authenticated', 'authenticated', 'tryon-5.test@example.invalid', now(), now()),
+    (staffer, 'authenticated', 'authenticated', 'tryon-6.test@example.invalid', now(), now());
+  insert into public.studio_subscriptions (user_id, plan, status, stripe_subscription_id, current_period_end) values
+    (artist, 'atelier', 'active', 'sub_tryon_atl', now() + interval '1 month'),
+    (artistplan, 'artist', 'active', 'sub_tryon_art', now() + interval '1 month');
+  insert into public.studio_trials (user_id) values (trialist);
+  update public.profiles set role = 'admin', status = 'active' where id = staffer;
   insert into public.studio_trials (user_id, trial_started_at, trial_expires_at)
   values (lapsed, now() - interval '48 hours', now());
 
@@ -56,7 +68,10 @@ begin
   insert into public.studio_showcase_items (user_id, creation_id, status) values (artist, c_pending, 'pending') returning id into i_pending;
 
   -- T1: the owner's access decides
-  if not private.studio_try_on_allowed(artist) then raise exception 'FAIL T1: artist on trial refused'; end if;
+  if not private.studio_try_on_allowed(artist) then raise exception 'FAIL T1: Atelier artist refused'; end if;
+  if not private.studio_try_on_allowed(staffer) then raise exception 'FAIL T1: active staff refused'; end if;
+  if private.studio_try_on_allowed(trialist) then raise exception 'FAIL T1: owner on trial allowed'; end if;
+  if private.studio_try_on_allowed(artistplan) then raise exception 'FAIL T1: Artist plan allowed'; end if;
   if private.studio_try_on_allowed(lapsed) then raise exception 'FAIL T1: ended trial allowed'; end if;
   if private.studio_try_on_allowed(client) then raise exception 'FAIL T1: member without access allowed'; end if;
   if private.studio_try_on_allowed(null) then raise exception 'FAIL T1: null allowed'; end if;
