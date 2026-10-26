@@ -10,7 +10,7 @@ const SERVER_RENDERED: { path: string; text: string }[] = [
   { path: "/fr", text: "tooth gems, Academy et Studio 3D" },
   { path: "/en", text: "tooth gems, Academy and 3D Studio" },
   { path: "/fr/boutique", text: "Boutique" },
-  { path: "/en/shop?categorie=gems", text: "Gems, tools and professional kits" },
+  { path: "/en/shop?categorie=gems", text: "Toothgems" },
   { path: "/fr/boutique/aurora-heart", text: "Aurora Heart" },
   { path: "/fr/formes", text: "Toutes les formes de gems" },
   { path: "/en/colours", text: "Every gem colour" },
