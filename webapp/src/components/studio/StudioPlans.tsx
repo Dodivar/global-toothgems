@@ -3,7 +3,7 @@
 import { useState } from "react";
 import { useTranslation } from "react-i18next";
 import clsx from "clsx";
-import { ArrowRight, Check, Gift } from "lucide-react";
+import { ArrowRight, Check, CircleCheck, Gift } from "lucide-react";
 import { Button } from "../ui/Button";
 import { trackStudio } from "../../lib/studioAnalytics";
 import { useNavigate } from "../../lib/navigation";
@@ -101,12 +101,24 @@ export function StudioCheckoutPlans({ surface }: { surface: StudioCheckoutSurfac
  * the subscription page and the Studio's locked screen (`StudioAccessGate`),
  * so all show the same plans. Amounts are the live Stripe prices
  * (`studio_plan_prices`) once read, the confirmed display values before.
+ *
+ * On the member's subscription page (decision 112) `current` marks the plan and
+ * billing they have (opened on that billing), the other cards switch to theirs,
+ * and `locked` holds every switch while the subscription cannot change.
  */
-export function StudioPaidPlans({ onChoose }: { onChoose: ChooseStudioPlan }) {
+export function StudioPaidPlans({
+  onChoose,
+  current = null,
+  locked = false,
+}: {
+  onChoose: ChooseStudioPlan;
+  current?: { plan: StudioPaidPlanId; interval: StudioBillingInterval } | null;
+  locked?: boolean;
+}) {
   const { t } = useTranslation();
   const { formatMoney } = useFormat();
   const live = useStudioPlanPrices();
-  const [interval, setInterval] = useState<StudioBillingInterval>("month");
+  const [interval, setInterval] = useState<StudioBillingInterval>(current?.interval ?? "month");
   const paid = STUDIO_PLANS.filter((plan): plan is StudioPlan & { id: StudioPaidPlanId } => plan.id !== "trial");
   const monthsFree = Math.max(
     0,
@@ -147,18 +159,24 @@ export function StudioPaidPlans({ onChoose }: { onChoose: ChooseStudioPlan }) {
         {paid.map((plan) => {
           const name = t(`studio.plans.items.${plan.id}.name`);
           const price = displayPrice(plan.id, interval, live);
+          const isCurrent = current?.plan === plan.id && current.interval === interval;
           return (
             <li
               key={plan.id}
               className={clsx(
                 "gt-studio-b-plan relative grid content-start gap-5 rounded-[var(--radius-xl)] border bg-[var(--surface-card)] p-5 sm:p-6",
-                plan.featured ? "gt-studio-b-plan--featured" : "border-[var(--border-subtle)]",
+                (current ? isCurrent : plan.featured) ? "gt-studio-b-plan--featured" : "border-[var(--border-subtle)]",
               )}
             >
               <div className="grid gap-2">
                 <div className="flex flex-wrap items-center justify-between gap-2">
                   <h3 className="text-[length:var(--text-h4)]">{name}</h3>
-                  {plan.featured && (
+                  {isCurrent ? (
+                    <span className="inline-flex items-center gap-1 rounded-[var(--radius-pill)] bg-[var(--surface-inverse)] px-2.5 py-1 text-[10.5px] font-bold uppercase tracking-[var(--tracking-wide)] text-[var(--text-inverse)]">
+                      <CircleCheck size={12} aria-hidden="true" />
+                      {t("studioPage.plans.current")}
+                    </span>
+                  ) : plan.featured && !current && (
                     <span className="rounded-[var(--radius-pill)] bg-[var(--gt-emerald-300)] px-2.5 py-1 text-[10.5px] font-bold uppercase tracking-[var(--tracking-wide)] text-[var(--gt-ink-900)]">
                       {t("studioPage.plans.featured")}
                     </span>
@@ -180,17 +198,23 @@ export function StudioPaidPlans({ onChoose }: { onChoose: ChooseStudioPlan }) {
                 <p className="m-0 text-[length:var(--text-body-sm)] font-semibold text-[var(--text-muted)]">{t("studioPage.plans.unavailable")}</p>
               )}
 
-              <Button
-                variant={plan.featured ? "primary" : "outline"}
-                size="lg"
-                fullWidth
-                iconRight={ArrowRight}
-                disabled={!price}
-                onClick={() => onChoose(plan.id, interval, price)}
-                className={clsx(plan.featured && "gt-studio-cta")}
-              >
-                {t("studioPage.plans.cta", { plan: name })}
-              </Button>
+              {isCurrent ? (
+                <Button variant="outline" size="lg" fullWidth iconLeft={CircleCheck} disabled>
+                  {t("studioPage.plans.currentCta")}
+                </Button>
+              ) : (
+                <Button
+                  variant={plan.featured && !current ? "primary" : "outline"}
+                  size="lg"
+                  fullWidth
+                  iconRight={ArrowRight}
+                  disabled={!price || locked}
+                  onClick={() => onChoose(plan.id, interval, price)}
+                  className={clsx(plan.featured && !current && "gt-studio-cta")}
+                >
+                  {t(current ? "studioPage.plans.switchCta" : "studioPage.plans.cta", { plan: name })}
+                </Button>
+              )}
 
               <div className="grid gap-1.5 rounded-[var(--radius-md)] border border-[var(--gt-blue-200)] bg-[var(--gt-blue-50)] p-3.5">
                 <span className="inline-flex items-center gap-1.5 text-[10.5px] font-bold uppercase tracking-[var(--tracking-wide)] text-[var(--gt-blue-700)]">

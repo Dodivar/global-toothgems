@@ -67,7 +67,7 @@ supabase/
   tests/admin_customers_validation.sql back-office customers: customer refused, viewer read-only, manager writes and read-only columns, notes by their author, status history, course progress (always rolls back)
   tests/email_validation.sql        e-mail delivery events (forward-only, newsletter bounce/complaint) and the pending shipping / refund / enrolment queries, service role only (always rolls back)
   config.toml   CLI settings this repo relies on (verify_jwt of the Edge Functions)
-  functions/    Edge Functions (Deno): create-checkout-session, stripe-webhook, create-studio-subscription, studio-billing-portal, studio-billing-setup, refund-order, deliver-gift-cards, send-email, resend-webhook, send-pending-emails, invite-staff-member, _shared/ (pure modules + clients),
+  functions/    Edge Functions (Deno): create-checkout-session, stripe-webhook, create-studio-subscription, studio-manage-subscription, studio-billing-setup, refund-order, deliver-gift-cards, send-email, resend-webhook, send-pending-emails, invite-staff-member, _shared/ (pure modules + clients),
                 *_test.ts (deno test), .env.example (secret names)
   templates/confirm-signup.html     French "Confirm signup" email, to paste into the Auth settings
   templates/invite-staff.html       French "Invite user" email (team invitations), to paste into the Auth settings
@@ -1268,9 +1268,12 @@ plan button (locked screen, /studio-3d, /fr/studio-3d/abonnement)   signed out �
       request_studio_withdrawal(user, Stripe period) → cancel at Stripe (no proration) → refund the rest
       (metadata kind studio_withdrawal) → refund.* webhook → settle_studio_withdrawal_refund(); e-mail at once
   back on ?subscription=success → the page re-reads studio_access_state() every 3 s (60 s) until `subscribed`
-/compte/studio  plan, billing, renewal / end date, payment to fix → POST functions/v1/studio-billing-portal
-                → Stripe customer portal (configuration metadata kind = studio_portal: switch plan or interval,
-                  card, invoices, cancel at period end); changes come back through the webhook
+/compte/studio  plan, billing, renewal / end date, payment to fix, then managed on the page (decision 112)
+                → POST functions/v1/studio-manage-subscription {action: overview | preview | change | cancel |
+                  resume | card_start | card_saved} (member token; plan + interval only, price from the database)
+                  switch prorated like the portal was (interval switch invoiced now, pending_if_incomplete,
+                  3-D Secure on the page), card through a setup-mode Checkout Session, Stripe's invoice PDFs,
+                  cancel at period end / keep; changes come back through the webhook
 ```
 
   Cancelling in the portal keeps `active` with `cancel_at_period_end`: access lasts until `current_period_end`,
@@ -2180,7 +2183,7 @@ VAT rates, shipping zones/rates mirroring the Settings prototype. Media rows ref
     Paid on our own page since 2026-10-18 (owner's request: keep the member on the site): the subscription's
     Checkout Session uses `ui_mode: "custom"` and is paid through the shop's Payment Element form
     (`StripePaymentForm`, decision 80) on a checkout page of its own, `/studio-3d/paiement` (owner's request: not on
-    the plans page), which opens the editor once paid; the customer portal stays Stripe's page.
+    the plans page), which opens the editor once paid; the customer portal stayed Stripe's page until decision 112.
     Agent's choices, to confirm: (a) the 14-day EU withdrawal right — since 2026-10-18 (owner's choice, migration
     `20261018155521`) the member must tick, in the payment step beside the card form, an express request for immediate access
     acknowledging that a withdrawal within 14 days costs the share of the subscription already used (L221-25,
@@ -2367,6 +2370,40 @@ VAT rates, shipping zones/rates mirroring the Settings prototype. Media rows ref
     plan switch `private.glowbook_customization_allowed()` — the owner said the Glowbook will be reserved to the
     top plans, which is not wired yet; (f) a deleted Glowbook leaves its video files in the member's folder
     (no page uses them; the member's next recording cleans them).
+112. **3D Studio subscription managed on our own page, not in the Stripe customer portal** (owner's request,
+    2026-10-26: "keep the subscription management on our site: staying on the same interface builds trust and lets us
+    show the plans and what they offer side by side"; no migration). `/compte/studio` now switches the plan or the
+    billing, compares the plans, replaces the card, lists and downloads the invoices, cancels at the end of the period
+    and keeps a cancelled subscription, through the Edge Function `studio-manage-subscription` (member token, strict
+    body allow-list: an action, a plan and an interval, never a price or an amount; the subscription from
+    `studio_subscriptions` + `stripe_customers`, read back from Stripe and required to carry metadata kind
+    `studio_subscription` and the member's customer; the price from `studio_plan_prices`). Nothing is granted there:
+    Stripe's change comes back through the verified webhook (`customer.subscription.updated`,
+    `apply_studio_subscription()` updates plan and interval of an existing row). The function `studio-billing-portal`
+    is removed from the repository (its deployed copy is unused and can be deleted from the dashboard; the portal
+    configuration made by `studio-billing-setup` stays, unused). The rules are the portal's, unchanged: (a) a switch
+    is prorated (`create_prorations`) — within the same interval nothing is charged now and the adjustment is on the
+    next invoice; a month ↔ year switch restarts the period and is invoiced at once, the unused share credited. The
+    page shows Stripe's own preview (`invoices.createPreview`) and the change reuses the preview's proration instant
+    (up to 15 minutes) so the amount charged is the amount shown; (b) a charged switch uses
+    `payment_behavior: pending_if_incomplete`: it applies only once paid, a bank check (3-D Secure) is finished on the
+    page with Stripe.js (`handleNextAction`), a declined payment voids the invoice and nothing changes; (c) a switch is
+    refused while a payment is to fix (`past_due`, `unpaid`) or while a cancellation is scheduled (keep the
+    subscription first); a new switch replaces one still waiting for its payment; (d) cancellation at the end of the
+    period with an optional reason (the portal's five), one click from the page plus one confirmation, and undone
+    with "Keep my subscription" until then; (e) the card is replaced through the shop's payment form in a
+    setup-mode Checkout Session (`ui_mode: custom`, card only, metadata kind `studio_card`, nothing charged), then
+    becomes the default of the customer and of the subscription; with a payment to fix, the open invoice is retried
+    with it at once (3-D Secure on the page); older cards are not detached; (f) invoices are Stripe's documents
+    (decision 94 (b)): the twelve latest paid / due invoices of the member's Studio subscriptions, with Stripe's PDF
+    link (only `*.stripe.com` https links are offered). The comparison table shows only what the database gates by
+    plan (decision 101: watermark, own logo, layout templates); every other row is the whole Studio. Agent's choices,
+    to confirm: (g) a plan switch within the 14-day withdrawal period: a same-interval switch issues no invoice, so a
+    later withdrawal is still computed on the first payment only (the days on the new plan are not charged); an
+    interval switch issues a paid `subscription_update` invoice, which sends a withdrawal to the team
+    (`manual_review`, decision 95 (a)); (h) no new immediate-access request is asked for a switch (the one given at
+    subscription covers the contract) — to confirm with the lawyer with decision 94 (a); (i) an upgrade within the
+    same interval is not charged at once (portal rule kept; charging it now would be `always_invoice`).
 111. **3D Studio: try a creation on a smile with AI** (owner's request, 2026-10-25: "let me try a creation on a smile with Google's Nano Banana 2 — I will connect it later; I will store the reference images myself; the request flow must be easy; clients must easily try the artist's creations; in time only artists on the highest plan will have the option for their 3D creations"; migration `20261025135203_studio_smile_try_on`, Edge Function `studio-try-on`). See "3D Studio smile try-on with AI" above. It replaces the former "automatic placement" interface (placements and landmarks returned by a service, never connected): the AI now returns an image. The manual placement of the gems on the photo was removed the same day (owner: "the only feature will be the AI"), so there is no try-on at all until the provider is connected. Agent's choices, to confirm: (a) **the switch is open** to every member with Studio access (like decision 100's look) until the owner restricts it to Atelier; when restricted, the artist's own entry point still opens and the AI answers `not_allowed` (no upsell screen yet); (b) **visitors must sign in** to ask for an AI render (each call costs money); (c) **10 renders per account per 24 hours** (`TRY_ON_DAILY_LIMIT`), counted before the provider is called, failures included; (d) the photo and the image are **never stored**; `studio_try_on_requests` has no retention rule yet; (e) the visitor's consent box is their own ("this is a photo of me"), the artist's stays the client's consent; the photo goes to Google (Gemini API) — the privacy policy must name it, and the API terms on data use (paid tier, region) are to check before launch; (f) the result is labelled "AI-generated image: a preview, not an exact promise"; (g) the model id is a secret (`GEMINI_IMAGE_MODEL`), not hard-coded, and the request format is unverified until a key is set; (h) with prompt v2 the gems are listed to the model from the database, and the browser's front view only gives their position and rotation (a visitor could alter that picture for their own render only); with v1 the picture is the only description of the design; (i) v2 is the default prompt until the owner compares both on real photos; (j) the render authenticates with the owner's personal ADC credentials (refresh token in a function secret) until a non-personal identity is set up for production.
 110. **Product characteristics are per product, shown for gems only; FAQs are groups assigned to products and categories** (owner's request, 2026-10-25: "characteristics only for gems, and configurable — the data is not well represented for each gem; create sets of frequently asked questions and assign the group to different products, from a new admin page"; owner's choices: assignment by product **and** category, keep the five fields; migration `20261025090755_product_specs_faq`). Before: back, packaging and wear were the same UI strings on every product page, the material fell back to the category name ("Matière : Matériel" on a tool), the FAQ was three gem questions in the front end. Now see "Product characteristics and FAQ groups" above. Agent's choices, to confirm: (a) **no default values** — a gem without characteristics shows only its size (the former "6 à 12 mois" / "Capsule stérile" / "Plat, poli" were not copied to any product: a durability or packaging claim is written per product by the shop); (b) the three former questions became one published group "Toothgems — questions fréquentes" assigned to the `gems` category, so gem pages kept their FAQ; (c) a product's own groups **replace** its category's (no merge); a draft group never counts; (d) English characteristics and answers fall back to French when not translated, like other product texts; (e) `metadata.material` is left in the rows, unread, rather than deleted (to clean up once confirmed); (f) the storefront shows no FAQPage structured data yet.
 

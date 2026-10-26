@@ -8,7 +8,7 @@ import { handleStudioWithdraw } from "./handler.ts";
 
 /*
  * Deployed with verify_jwt = false (supabase/config.toml): the member's token
- * is checked here, like studio-billing-portal.
+ * is checked here, like studio-manage-subscription.
  */
 
 const supabase = serviceClient();

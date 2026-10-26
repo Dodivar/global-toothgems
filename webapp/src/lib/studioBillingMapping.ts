@@ -39,7 +39,6 @@ export interface StudioPayment {
 
 export type StudioCheckoutAnswer = { kind: "payment"; payment: StudioPayment } | { kind: "error"; error: StudioCheckoutError };
 export type StudioConsentAnswer = { kind: "consented" } | { kind: "error"; error: StudioCheckoutError };
-export type StudioPortalAnswer = { kind: "redirect"; url: string } | { kind: "error"; error: "no_subscription" | "unavailable" };
 
 const PLANS: readonly StudioPaidPlanId[] = ["essential", "artist", "atelier"];
 const INTERVALS: readonly StudioBillingInterval[] = ["month", "year"];
@@ -99,15 +98,6 @@ export function monthsFreeOf(monthly: StudioPlanPrice | null, yearly: StudioPlan
   return saved > 0 ? Math.floor(saved / monthly.amountMinor) : 0;
 }
 
-const isHttps = (value: unknown, host: RegExp): value is string => {
-  if (typeof value !== "string") return false;
-  try {
-    const url = new URL(value);
-    return url.protocol === "https:" && host.test(url.hostname);
-  } catch {
-    return false;
-  }
-};
 
 const errorOf = (record: Record<string, unknown>): StudioCheckoutError =>
   ERRORS.includes(record.error as StudioCheckoutError) ? (record.error as StudioCheckoutError) : "server_error";
@@ -147,11 +137,4 @@ export function readStudioCheckoutAnswer(body: unknown): StudioCheckoutAnswer {
 export function readStudioConsentAnswer(body: unknown): StudioConsentAnswer {
   const record = (body && typeof body === "object" ? body : {}) as Record<string, unknown>;
   return record.status === "consented" ? { kind: "consented" } : { kind: "error", error: errorOf(record) };
-}
-
-/** The portal function's answer: only a Stripe billing address is followed. */
-export function readStudioPortalAnswer(body: unknown): StudioPortalAnswer {
-  const record = (body && typeof body === "object" ? body : {}) as Record<string, unknown>;
-  if (isHttps(record.url, /^billing\.stripe\.com$/)) return { kind: "redirect", url: record.url as string };
-  return { kind: "error", error: record.error === "no_subscription" ? "no_subscription" : "unavailable" };
 }

@@ -124,7 +124,10 @@
     "yearly": "Yearly",
     "monthsFree_one": "{{count}} month free",
     "monthsFree_other": "{{count}} months free",
-    "unavailable": "Plan temporarily unavailable"
+    "unavailable": "Plan temporarily unavailable",
+    "current": "Current plan",
+    "currentCta": "Your current plan",
+    "switchCta": "Switch to {{plan}}"
   },
   "closing": {
     "title": "Your next great creation starts with an idea.",

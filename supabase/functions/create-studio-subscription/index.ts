@@ -1,4 +1,4 @@
-import { requireEnv, serviceClient, stripeClient } from "../_shared/clients.ts";
+import { matchingPublishableKey, requireEnv, serviceClient, stripeClient } from "../_shared/clients.ts";
 import { readSiteOrigins } from "../_shared/http.ts";
 import { toMinorUnits } from "../_shared/money.ts";
 import {
@@ -17,18 +17,6 @@ import { handleStudioCheckout, type StudioCheckoutDeps } from "./handler.ts";
 const supabase = serviceClient();
 const stripe = stripeClient();
 const origins = readSiteOrigins(requireEnv("SITE_URL"), Deno.env.get("ALLOWED_RETURN_ORIGINS"));
-
-/**
- * The publishable key mounts the payment form in the browser. It must belong to
- * the same mode as the secret key (test with test, live with live), otherwise
- * Stripe.js cannot open the session: a mismatch counts as not configured.
- */
-function matchingPublishableKey(): string | null {
-  const publishable = Deno.env.get("STRIPE_PUBLISHABLE_KEY")?.trim() ?? "";
-  const secret = Deno.env.get("STRIPE_SECRET_KEY")?.trim() ?? "";
-  const mode = (key: string) => /^(?:pk|sk|rk)_(test|live)_/.exec(key)?.[1] ?? null;
-  return publishable.startsWith("pk_") && mode(publishable) !== null && mode(publishable) === mode(secret) ? publishable : null;
-}
 
 async function storedCustomer(userId: string): Promise<string | null> {
   const { data, error } = await supabase.from("stripe_customers").select("stripe_customer_id").eq("user_id", userId).maybeSingle();

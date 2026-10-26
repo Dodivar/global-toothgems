@@ -56,7 +56,7 @@ verify_jwt = false
 [functions.create-studio-subscription]
 verify_jwt = false
 
-[functions.studio-billing-portal]
+[functions.studio-manage-subscription]
 verify_jwt = false
 
 [functions.studio-withdraw]

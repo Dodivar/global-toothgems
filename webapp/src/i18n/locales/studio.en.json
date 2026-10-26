@@ -664,9 +664,6 @@
     "trialUntil": "Your free trial gives you access to the Studio until {{date}}.",
     "noPlan": "Choose a plan to use the 3D Studio. Your creations stay in your account.",
     "staffNote": "Your team account opens the Studio without a subscription.",
-    "manage": "Manage my subscription",
-    "manageHint": "Change plan or billing, update your card, see your invoices or cancel: on Stripe’s secure page.",
-    "portalError": "Subscription management is temporarily unavailable. Try again in a moment.",
     "choosePlan": "Choose a plan",
     "openStudio": "Open the Studio",
     "withdrawal": {
@@ -704,6 +701,108 @@
       },
       "incomplete": "Your withdrawal is recorded but could not be finished. Try again in a moment.",
       "error": "Something went wrong. Nothing was changed: try again."
+    },
+    "manageLoading": "Loading your plan, card and invoices…",
+    "manageError": "Your plan and invoices cannot be read right now.",
+    "change": {
+      "title": "Your plan",
+      "current": "You are subscribed to {{plan}}: {{price}} {{per}}, VAT included.",
+      "rules": "Change plan or billing at any time. A plan change is prorated on your next invoice; switching between monthly and yearly is charged straight away, minus the unused part of your current period.",
+      "locked": {
+        "pastDue": "Update your card first: you can change plan once the payment is settled.",
+        "canceling": "Your subscription is set to end with this period. Keep it (below) to change plan."
+      },
+      "confirmTitle": "Switch to {{plan}}?",
+      "from": "{{from}} → {{to}}",
+      "previewLoading": "Working out the amount…",
+      "dueNow": "Due today",
+      "nextInvoice": "Next invoice, on {{date}}",
+      "nextRenewal": "Then at each renewal, from {{date}}",
+      "credit": "Credit kept on your account",
+      "explainNow": "The new period starts today: the unused part of your current period is taken off the amount.",
+      "explainLater": "Nothing is charged today: the adjustment for the rest of the period appears on your next invoice. Your new plan applies straight away.",
+      "confirm": "Confirm the change",
+      "confirmPay": "Pay {{amount}} and switch",
+      "keep": "Keep my plan",
+      "done": "Done: you are now on {{plan}} ({{billing}}).",
+      "errors": {
+        "payment_failed": "The payment did not go through: your plan has not changed. Check your card, then try again.",
+        "not_active": "Your subscription cannot change right now.",
+        "cancel_scheduled": "Your subscription is set to end with this period: keep it first to change plan.",
+        "same_plan": "This is already your plan.",
+        "plan_unavailable": "This plan is unavailable for the moment.",
+        "no_subscription": "No current subscription.",
+        "unavailable": "The change could not be made. Nothing was changed: try again in a moment."
+      }
+    },
+    "compare": {
+      "caption": "What each plan includes",
+      "feature": "Included",
+      "included": "Included",
+      "notIncluded": "Not included",
+      "rows": {
+        "studio": "The whole 3D Studio: editor, gem library, creations, collections and templates",
+        "glowbook": "Your Glowbook, the public showcase of your creations",
+        "posts": "Posts for social networks: HD image, 360° video, GIF",
+        "signature": "Signature on posts",
+        "layouts": "Post layout templates"
+      },
+      "values": {
+        "watermark": "Global Toothgems watermark",
+        "ownLogo": "Your logo, or none"
+      }
+    },
+    "card": {
+      "title": "Payment method",
+      "none": "No card saved.",
+      "other": "Payment method",
+      "expires": "expires {{date}}",
+      "replace": "Replace card",
+      "add": "Add a card",
+      "dialogTitle": "New card",
+      "dialogBody": "It will be used for your subscription's next payments.",
+      "loading": "Opening the secure form…",
+      "save": "Save card",
+      "noCharge": "Nothing is charged now. Your bank may ask you to confirm.",
+      "close": "Close",
+      "saved": "Your new card is saved.",
+      "savedAndPaid": "Your new card is saved and the pending payment is settled.",
+      "savedPaymentFailed": "Your card is saved, but the pending payment did not go through. We will retry automatically; you can also try another card.",
+      "error": "The card could not be saved. Try again in a moment."
+    },
+    "invoices": {
+      "title": "Invoices",
+      "download": "PDF",
+      "downloadLabel": "Download the invoice of {{date}} (PDF)",
+      "status": {
+        "paid": "Paid",
+        "open": "Due",
+        "uncollectible": "Unpaid"
+      }
+    },
+    "cancel": {
+      "title": "Cancel the subscription",
+      "body": "You keep access to the Studio until {{date}}, then the subscription stops with no further charge. Your creations stay in your account.",
+      "cta": "Cancel my subscription",
+      "confirmTitle": "Cancel your subscription?",
+      "confirmBody": "You keep access until {{date}}, then the subscription stops. You can change your mind until then.",
+      "reasonLabel": "Why are you leaving? (optional)",
+      "reasons": {
+        "none": "I'd rather not say",
+        "too_expensive": "It's too expensive",
+        "missing_features": "Features are missing",
+        "unused": "I don't use it enough",
+        "switched_service": "I use another tool",
+        "other": "Another reason"
+      },
+      "confirm": "Confirm cancellation",
+      "keep": "Keep my subscription",
+      "done": "Your subscription is cancelled: you keep access until {{date}}.",
+      "scheduledTitle": "Cancellation scheduled",
+      "scheduled": "Your subscription ends on {{date}}. You can keep it: it carries on as before, with no new sign-up.",
+      "resume": "Keep my subscription",
+      "resumed": "Your subscription carries on: next renewal on {{date}}.",
+      "error": "This could not be done. Nothing was changed: try again in a moment."
     }
   },
   "tryOn": {

@@ -1,26 +1,27 @@
 "use client";
 
-import { useState, type ReactNode } from "react";
+import { useCallback, type ReactNode } from "react";
 import { useTranslation } from "react-i18next";
-import { ArrowRight, Box, CircleAlert, ExternalLink, RotateCw } from "lucide-react";
+import { ArrowRight, Box, CircleAlert, RotateCw } from "lucide-react";
 import { Button } from "../../components/ui/Button";
 import { EmptyPanel, SectionHeader } from "../../components/account/SectionHeader";
 import { useNavigate } from "../../lib/navigation";
 import { useFormat } from "../../lib/format";
 import { StudioAccessProvider, useStudioAccess } from "../../lib/studioAccess";
-import { openStudioBillingPortal } from "../../lib/studioBilling";
 import { StudioWithdrawalPanel } from "../../components/studio/account/StudioWithdrawalPanel";
+import { StudioBillingManager } from "../../components/studio/account/StudioBillingManager";
 import { STUDIO_EDITOR_PATH, STUDIO_SUBSCRIBE_PATH } from "../../lib/studioUrl";
 import type { StudioAccessInfo } from "../../lib/studioAccessState";
 
 /**
  * The member's 3D Studio subscription (`/compte/studio`, decision 94): the
  * access the database reports (plan, billing, next renewal or end date, a
- * payment to fix) and the way to Stripe's customer portal, where the plan, the
- * card and the cancellation are managed. What is changed there comes back
- * through the verified webhook; this page re-reads the access when the member
- * returns to it (the provider re-reads on focus). Within 14 days of the first
- * payment, the right of withdrawal (decision 95) is offered below.
+ * payment to fix), then the subscription managed right here (decision 112:
+ * plans compared and switched, card, invoices, cancellation —
+ * `StudioBillingManager`). What changes at Stripe comes back through the
+ * verified webhook; the page re-reads the access after each change. Within 14
+ * days of the first payment, the right of withdrawal (decision 95) is offered
+ * below.
  */
 export function StudioSubscription() {
   return (
@@ -34,6 +35,7 @@ function StudioSubscriptionContent() {
   const { t } = useTranslation();
   const access = useStudioAccess();
   const status = access?.status;
+  const refresh = useCallback(() => void access?.refresh(), [access]);
 
   return (
     <section className="grid gap-5">
@@ -45,7 +47,8 @@ function StudioSubscriptionContent() {
       ) : status.kind === "ready" ? (
         <>
           <SubscriptionPanel info={status.info} />
-          {status.info.subscriptionPlan !== null && <StudioWithdrawalPanel onWithdrawn={() => void access?.refresh()} />}
+          {status.info.subscriptionPlan !== null && <StudioBillingManager onChanged={refresh} />}
+          {status.info.subscriptionPlan !== null && <StudioWithdrawalPanel onWithdrawn={refresh} />}
         </>
       ) : status.kind === "preview" ? (
         <EmptyPanel>{t("studio.account.noPlan")}</EmptyPanel>
@@ -74,30 +77,16 @@ function Row({ label, children }: { label: string; children: ReactNode }) {
 }
 
 function SubscriptionPanel({ info }: { info: StudioAccessInfo }) {
-  const { t, i18n } = useTranslation();
+  const { t } = useTranslation();
   const { formatDate } = useFormat();
   const navigate = useNavigate();
-  const [opening, setOpening] = useState(false);
-  const [portalError, setPortalError] = useState(false);
 
   const date = (ms: number | null) => (ms === null ? "" : formatDate(new Date(ms).toISOString()));
   const live = info.state === "subscribed";
   const pastDue = live && info.subscriptionStatus === "past_due";
-  // A member with a Stripe subscription, live or not, has invoices and a card to see.
+  // A member with a Stripe subscription, live or not, manages it below.
   const hasBilling = info.subscriptionPlan !== null;
   const stateLabel = pastDue ? t("studio.account.state.pastDue") : t(`studio.account.state.${info.state}`);
-
-  const manage = async () => {
-    setOpening(true);
-    setPortalError(false);
-    const answer = await openStudioBillingPortal(i18n.language?.startsWith("en") ? "en" : "fr");
-    if (answer.kind === "redirect") {
-      window.location.assign(answer.url);
-      return;
-    }
-    setOpening(false);
-    setPortalError(true);
-  };
 
   let note: string | null = null;
   if (pastDue) note = t("studio.account.pastDue");
@@ -137,11 +126,6 @@ function SubscriptionPanel({ info }: { info: StudioAccessInfo }) {
       )}
 
       <div className="flex flex-wrap items-center gap-3">
-        {hasBilling && (
-          <Button variant={pastDue ? "primary" : "outline"} iconRight={ExternalLink} loading={opening} disabled={opening} onClick={() => void manage()}>
-            {t("studio.account.manage")}
-          </Button>
-        )}
         {live || info.state === "trial_active" || info.state === "staff" ? (
           <Button variant={hasBilling ? "ghost" : "primary"} iconRight={ArrowRight} onClick={() => navigate(STUDIO_EDITOR_PATH)}>
             {t("studio.account.openStudio")}
@@ -154,12 +138,6 @@ function SubscriptionPanel({ info }: { info: StudioAccessInfo }) {
           )
         )}
       </div>
-      {hasBilling && <p className="m-0 text-[length:var(--text-caption)] text-[var(--text-muted)]">{t("studio.account.manageHint")}</p>}
-      {portalError && (
-        <p role="alert" className="m-0 text-[length:var(--text-body-sm)] font-medium text-[var(--status-error-fg)]">
-          {t("studio.account.portalError")}
-        </p>
-      )}
     </div>
   );
 }

@@ -1,7 +1,7 @@
 /**
  * 3D Studio subscriptions (decision 94): what the browser may ask for and the
  * addresses it comes back to. Pure, shared by `create-studio-subscription`,
- * `studio-billing-portal` and their tests.
+ * `studio-manage-subscription` and their tests.
  *
  * The browser names a plan and a billing interval — never a Stripe price id or
  * an amount: the price is looked up in `studio_plan_prices`.
@@ -115,7 +115,7 @@ export function parseStudioCheckoutRequest(body: unknown): Parsed<StudioCheckout
 /**
  * Subscription statuses that stand in the way of a new checkout: a live
  * subscription, one being set up, or one whose payment needs fixing (the
- * customer portal is the place for that). `canceled` and `incomplete_expired`
+ * member's subscription page is the place for that). `canceled` and `incomplete_expired`
  * leave the way open.
  */
 export const BLOCKING_STATUSES = ["active", "trialing", "past_due", "unpaid", "paused", "incomplete"] as const;

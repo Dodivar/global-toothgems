@@ -124,7 +124,10 @@
     "yearly": "Annuelle",
     "monthsFree_one": "{{count}} mois offert",
     "monthsFree_other": "{{count}} mois offerts",
-    "unavailable": "Formule momentanément indisponible"
+    "unavailable": "Formule momentanément indisponible",
+    "current": "Formule actuelle",
+    "currentCta": "Votre formule actuelle",
+    "switchCta": "Passer à {{plan}}"
   },
   "closing": {
     "title": "Votre prochaine grande création commence par une idée.",
