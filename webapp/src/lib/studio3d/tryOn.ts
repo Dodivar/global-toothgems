@@ -1,4 +1,5 @@
 import type { Creation } from "../studioWorkspace/types";
+import { parseTryOnCrop, type TryOnCrop } from "./tryOnComposite";
 import type { TryOnSeat } from "./tryOnSeats";
 
 /**
@@ -66,7 +67,8 @@ export type PhotoIssue = (typeof PHOTO_ISSUES)[number];
 /** Where a render is, as the function reports it: the photo check, then the AI render. */
 export type TryOnStage = "checking" | "rendering";
 
-export type TryOnOutcome = { ok: true; image: Blob } | { ok: false; code: TryOnErrorCode; reasons?: PhotoIssue[] };
+/** `crop`: the image is the edited mouth close-up, to paste back into the photo there (`tryOnComposite.ts`). */
+export type TryOnOutcome = { ok: true; image: Blob; crop?: TryOnCrop } | { ok: false; code: TryOnErrorCode; reasons?: PhotoIssue[] };
 
 export interface SmileTryOnService {
   /** Whether the AI is connected. Asked before any photo leaves the device; never throws (false). */
@@ -135,7 +137,8 @@ export function parseTryOnResponse(json: unknown): TryOnOutcome {
     const binary = atob(b64);
     const bytes = new Uint8Array(binary.length);
     for (let i = 0; i < binary.length; i++) bytes[i] = binary.charCodeAt(i);
-    return { ok: true, image: new Blob([bytes], { type }) };
+    const crop = parseTryOnCrop(data.crop);
+    return { ok: true, image: new Blob([bytes], { type }), ...(crop ? { crop } : {}) };
   } catch {
     return { ok: false, code: "failed" };
   }

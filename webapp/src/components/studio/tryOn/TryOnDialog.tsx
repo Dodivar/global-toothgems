@@ -20,6 +20,7 @@ import {
 import { smileTryOnService } from "../../../lib/studio3d/tryOnService";
 import { tryOnSeats } from "../../../lib/studio3d/tryOnSeats";
 import { renderDesignImage, renderDesignMap } from "./designImage";
+import { pasteBack } from "./pasteBack";
 import { PhotoStep, type AiState } from "./PhotoStep";
 import type { PreparedPhoto } from "./preparePhoto";
 import { ResultStep } from "./ResultStep";
@@ -136,9 +137,12 @@ export function TryOnDialog({
     if (controller.signal.aborted) return; // cancelled or closed: nothing to show
     request.current = null;
     if (outcome.ok) {
+      // A mouth close-up goes back into the photo; if the browser cannot draw it, the close-up is shown alone.
+      const image = outcome.crop ? ((await pasteBack(photo.blob, outcome.image, outcome.crop)) ?? outcome.image) : outcome.image;
+      if (controller.signal.aborted) return;
       if (resultUrl.current) URL.revokeObjectURL(resultUrl.current);
-      resultUrl.current = URL.createObjectURL(outcome.image);
-      return setStep({ kind: "result", image: outcome.image, url: resultUrl.current });
+      resultUrl.current = URL.createObjectURL(image);
+      return setStep({ kind: "result", image, url: resultUrl.current });
     }
     if (outcome.code === "not_available") {
       setAi("unavailable");

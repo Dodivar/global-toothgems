@@ -31,6 +31,10 @@
  *       numbered, the midline drawn, bare teeth greyed out, each gem tagged
  *       ("11a") like its line in the data. The map and the data decide the
  *       tooth and the place on the crown, the 3D render the rotation and look.
+ *       Sixth round (the side gems still slid outward on a whole face):
+ *       IMAGE 2 is a close-up of the mouth cut from the photo around the
+ *       check's teeth box (`crop.ts`), pasted back by the browser — the
+ *       teeth fill the picture, and nothing outside the mouth can change.
  *
  * Both expect the images in this order, and `handler.ts` sends them so:
  *   IMAGE 1  the creation rendered in 3D by the browser (`designImage.ts`)
@@ -330,7 +334,7 @@ This is a **localized edit of an existing photograph**, not the generation of a 
 - It shows each gem's **cut and colour**. Its look is a computer approximation: reproduce the cut and the colour, but render the material like the real gems of the reference photos.
 - The model's teeth, gums, background, camera angle and lighting are only a support. Never copy them into the photo.
 
-**IMAGE 2 — THE CUSTOMER PHOTO.** A real photograph of the customer's smile, mouth or face. It is the image you edit.
+**IMAGE 2 — THE CUSTOMER PHOTO.** A real photograph of the customer's smile, mouth or face — usually a **close-up of the mouth cut from their photo** (the design data says so), which will be pasted back into it at exactly the same place: its framing and its edges must not change at all. It is the image you edit.
 
 **IMAGE 3 — THE FLAT DESIGN MAP (only when the design data says it is included).** A labelled technical chart of the same design, drawn for you — not a picture to copy:
 - the front teeth of both arches seen **facing the person, like the photo** (person's right on the left), each tooth drawn as its own box with a gap to its neighbours;

@@ -1,5 +1,7 @@
 import { assertEquals, assertStringIncludes } from "jsr:@std/assert@1";
+import jpegCodec from "npm:jpeg-js@0.4.4";
 import { readSiteOrigins } from "../_shared/http.ts";
+import { mouthCrop, nearestRatio } from "./crop.ts";
 import { accessToken, generateImage, generateUrl, imageModelConfig, nearestAspectRatio, readAdcJson, readImage, resetTokenCache } from "./gemini.ts";
 import { handleStudioTryOn, readSourceRef, type StudioTryOnDeps, type TryOnCreationRow } from "./handler.ts";
 import { imageSize, judgePhoto, MIN_TEETH_SPAN, photoScale } from "./photoCheck.ts";
@@ -38,6 +40,7 @@ function fake(over: Partial<StudioTryOnDeps> = {}, row: TryOnCreationRow | null 
     },
     references: () => Promise.resolve([{ mimeType: "image/jpeg", data: "cmVm" }]),
     readsMap: true,
+    cropMouth: true,
     generate: (images, data) => {
       calls.images = images.map((img) => `${img.mimeType}:${img.data}`);
       calls.data = data;
@@ -498,4 +501,63 @@ Deno.test("flat map: none sent, or prompt v1 — the request goes as before", as
   const dropped = fake();
   assertEquals((await handleStudioTryOn(post(bad), dropped.deps)).status, 200);
   assertEquals(dropped.calls.images.length, 3);
+});
+
+/* ------------------------------------------------------------ mouth crop */
+
+
+Deno.test("mouthCrop: teeth and lips at a model proportion, inside the photo; none when useless", () => {
+  const size = { width: 1536, height: 2048 };
+  // The smile of the reported render: teeth across the middle of a tall face photo.
+  const crop = mouthCrop([430, 240, 560, 810], size)!;
+  const ratio = crop.width / crop.height;
+  assertEquals(Math.abs(ratio - nearestRatio(ratio)) < 0.01, true);
+  // The teeth are inside, with room around them.
+  assertEquals(crop.x < 240 * 1.536 && crop.x + crop.width > 810 * 1.536, true);
+  assertEquals(crop.y < 430 * 2.048 && crop.y + crop.height > 560 * 2.048, true);
+  assertEquals(crop.x >= 0 && crop.y >= 0 && crop.x + crop.width <= size.width && crop.y + crop.height <= size.height, true);
+  // A close-up of the mouth already, a missing box or tiny teeth: the whole photo.
+  assertEquals(mouthCrop([100, 50, 900, 950], size), null);
+  assertEquals(mouthCrop([], size), null);
+  assertEquals(mouthCrop([500, 500, 505, 520], size), null);
+  assertEquals(mouthCrop([430, 240, 560, 810], null), null);
+});
+
+/** A real JPEG of this size (flat grey). */
+function jpegOf(width: number, height: number): Blob {
+  const data = new Uint8Array(width * height * 4).fill(128);
+  return new Blob([new Uint8Array(jpegCodec.encode({ data, width, height }, 80).data)], { type: "image/jpeg" });
+}
+
+Deno.test("mouth crop: the model edits the close-up; the answer says where to paste it back", async () => {
+  let aspect: string | null = null;
+  const { deps, calls } = fake({
+    checkPhoto: () => Promise.resolve({ ok: true, value: { ...GOOD_PHOTO, teeth_box: [430, 240, 560, 810], central_incisors_box: [430, 420, 560, 600] } }),
+    generate: (images, data, ratio) => {
+      calls.images = images.map((img) => `${img.mimeType}:${img.data}`);
+      calls.data = data;
+      aspect = ratio;
+      return Promise.resolve({ ok: true, image: { mimeType: "image/png", data: "aW1n" } });
+    },
+  });
+  const res = await handleStudioTryOn(post(form({ creation_id: CREATION }, jpegOf(768, 1024))), deps);
+  assertEquals(res.status, 200);
+  const body = await res.json();
+  const crop = mouthCrop([430, 240, 560, 810], { width: 768, height: 1024 })!;
+  assertEquals(body.crop, { ...crop, photo_width: 768, photo_height: 1024 });
+  // IMAGE 2 is the crop, at its own size and proportions.
+  const sent = Uint8Array.from(atob(calls.images[1].split(":")[1]), (c) => c.charCodeAt(0));
+  assertEquals(imageSize(sent), { width: crop.width, height: crop.height });
+  assertEquals(aspect, nearestAspectRatio({ width: crop.width, height: crop.height }));
+  assertStringIncludes(calls.data, "IMAGE 2 is a CLOSE-UP of the customer's mouth");
+});
+
+Deno.test("mouth crop: off by secret, or not a JPEG — the whole photo, no crop in the answer", async () => {
+  const check = () => Promise.resolve({ ok: true as const, value: { ...GOOD_PHOTO, teeth_box: [430, 240, 560, 810] } });
+  const off = fake({ cropMouth: false, checkPhoto: check });
+  const res = await handleStudioTryOn(post(form({ creation_id: CREATION }, jpegOf(768, 1024))), off.deps);
+  assertEquals((await res.json()).crop, undefined);
+  const png = fake({ checkPhoto: check });
+  const res2 = await handleStudioTryOn(post(form({ creation_id: CREATION }, new Blob([new Uint8Array([1, 2, 3])], { type: "image/png" }))), png.deps);
+  assertEquals((await res2.json()).crop, undefined);
 });

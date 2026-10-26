@@ -122,6 +122,7 @@ Deno.serve((req) =>
     },
     references,
     readsMap: version === "v3",
+    cropMouth: Deno.env.get("TRY_ON_MOUTH_CROP")?.trim().toLowerCase() !== "off",
     checkPhoto: checkConfig ? (photo) => generateJson(checkConfig, PHOTO_CHECK_PROMPT, [photo], PHOTO_CHECK_SCHEMA) : undefined,
     generate: (images, designData, aspectRatio) =>
       config

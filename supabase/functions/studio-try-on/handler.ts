@@ -1,6 +1,7 @@
 import { corsHeaders, json, type SiteOrigins } from "../_shared/http.ts";
 import { bearer, looksLikeJwt } from "../_shared/studioBilling.ts";
 import { nearestAspectRatio, type GenerateOutcome, type InlineImage } from "./gemini.ts";
+import { cropJpeg, mouthCrop, type CropRect } from "./crop.ts";
 import { imageSize, judgePhoto, photoScale } from "./photoCheck.ts";
 import { buildDesignData, piecesFromScene, readSeats } from "./prompt.ts";
 
@@ -27,7 +28,9 @@ import { buildDesignData, piecesFromScene, readSeats } from "./prompt.ts";
  *             gems by id
  *     progress  optional "1": the answer is an event stream instead (see
  *             `progressStream`), so the browser shows the photo check as a step
- *     200 { ok: true, image: { mime_type, data } }   base64, never stored
+ *     200 { ok: true, image: { mime_type, data }, crop? }   base64, never stored;
+ *             crop { x, y, width, height, photo_width, photo_height }: the image
+ *             is the edited mouth close-up, to paste back at that place of the photo (`crop.ts`)
  *     422 { ok: false, code: "photo_unsuitable", reasons }  the photo check
  *             (`photoCheck.ts`) refused the photo: too_far | not_frontal | no_teeth |
  *             teeth_hidden | too_dark | too_bright | blurry — no generation
@@ -72,6 +75,8 @@ export interface StudioTryOnDeps {
   startRequest(userId: string, row: TryOnCreationRow): Promise<string>;
   finishRequest(id: string, status: "generated" | "failed", errorCode: string | null): Promise<void>;
   references(): Promise<InlineImage[]>;
+  /** Whether the model edits a close-up of the mouth (`crop.ts`) instead of the whole photo. */
+  cropMouth: boolean;
   /** Whether the prompt reads the flat design map (IMAGE 3): v3 only; v1 never gets it. */
   readsMap: boolean;
   /** The photo check model's answer (`photoCheck.ts`), or why there is none; absent: no check. */
@@ -115,11 +120,11 @@ export function readSourceRef(raw: unknown): TryOnSourceRef | null {
 async function inlineFile(
   value: FormDataEntryValue | null,
   maxBytes: number,
-): Promise<(InlineImage & { size: { width: number; height: number } | null }) | null | "invalid"> {
+): Promise<Photo | null | "invalid"> {
   if (value === null) return null;
   if (typeof value === "string" || !IMAGE_TYPES.has(value.type) || value.size === 0 || value.size > maxBytes) return "invalid";
   const bytes = new Uint8Array(await value.arrayBuffer());
-  return { mimeType: value.type, data: toBase64(bytes), size: imageSize(bytes) };
+  return { mimeType: value.type, data: toBase64(bytes), bytes, size: imageSize(bytes) };
 }
 
 export function toBase64(bytes: Uint8Array): string {
@@ -211,7 +216,7 @@ export async function handleStudioTryOn(req: Request, deps: StudioTryOnDeps): Pr
 }
 
 type Ending = { status: number; body: Record<string, unknown> };
-type Photo = InlineImage & { size: { width: number; height: number } | null };
+type Photo = InlineImage & { bytes: Uint8Array; size: { width: number; height: number } | null };
 
 /**
  * The browser asked to follow the request (`progress=1`): an event stream
@@ -261,6 +266,7 @@ async function checkAndRender(
   onRendering: () => void,
 ): Promise<Ending> {
   let mmShare: number | null = null;
+  let teethBox: unknown = null;
   if (deps.checkPhoto) {
     const answer = await deps.checkPhoto({ mimeType: photo.mimeType, data: photo.data }).catch((error) => ({
       ok: false as const,
@@ -269,6 +275,7 @@ async function checkAndRender(
     if (answer.ok) {
       const verdict = judgePhoto(answer.value, photo.size);
       mmShare = photoScale(answer.value, photo.size);
+      teethBox = answer.value.teeth_box;
       // Facts only, never the photo: they tune the thresholds.
       deps.log("photo check", {
         span: verdict.span,
@@ -290,6 +297,15 @@ async function checkAndRender(
 
   onRendering();
 
+  // The mouth close-up: the model edits the teeth and lips only, the browser pastes them back (`crop.ts`).
+  const edited = deps.cropMouth ? closeUp(photo, teethBox) : null;
+  if (deps.cropMouth) {
+    deps.log("mouth crop", edited ? { photo: photo.size, crop: edited.crop } : { photo: photo.size, crop: null });
+  }
+  const target = edited?.image ?? photo;
+  // One millimetre as a share of the edited image's width: the crop is narrower than the photo.
+  const scale = mmShare !== null && edited && photo.size ? (mmShare * photo.size.width) / edited.crop.width : mmShare;
+
   // Counts only: whether the browser sent the gems' places (a site older than the seats sends none).
   deps.log("design data", { gems: pieces.length, seats: seats.size });
 
@@ -299,9 +315,13 @@ async function checkAndRender(
       deps.log("reference pictures unavailable", error instanceof Error ? error.message : error);
       return [] as InlineImage[];
     });
-    const images = [{ mimeType: design.mimeType, data: design.data }, { mimeType: photo.mimeType, data: photo.data }];
+    const images = [{ mimeType: design.mimeType, data: design.data }, { mimeType: target.mimeType, data: target.data }];
     if (map) images.push({ mimeType: map.mimeType, data: map.data });
-    outcome = await deps.generate([...images, ...references], buildDesignData(pieces, seats, mmShare, map !== null), nearestAspectRatio(photo.size));
+    outcome = await deps.generate(
+      [...images, ...references],
+      buildDesignData(pieces, seats, scale, map !== null, edited !== null),
+      nearestAspectRatio(target.size),
+    );
   } catch (error) {
     outcome = { ok: false, code: "failed", detail: error instanceof Error ? error.message : String(error) };
   }
@@ -312,5 +332,21 @@ async function checkAndRender(
     return { status: 502, body: { ok: false, code: outcome.code } };
   }
   await deps.finishRequest(requestId, "generated", null).catch((error) => deps.log("could not close the request", error));
-  return { status: 200, body: { ok: true, image: { mime_type: outcome.image.mimeType, data: outcome.image.data } } };
+  const image = { mime_type: outcome.image.mimeType, data: outcome.image.data };
+  if (!edited || !photo.size) return { status: 200, body: { ok: true, image } };
+  const { crop } = edited;
+  return {
+    status: 200,
+    body: { ok: true, image, crop: { x: crop.x, y: crop.y, width: crop.width, height: crop.height, photo_width: photo.size.width, photo_height: photo.size.height } },
+  };
+}
+
+/** The photo's mouth close-up, or null to edit the whole photo (no box, not a JPEG, no useful crop, decoding failed). */
+function closeUp(photo: Photo, teethBox: unknown): { image: Photo; crop: CropRect } | null {
+  if (photo.mimeType !== "image/jpeg") return null;
+  const crop = mouthCrop(teethBox, photo.size);
+  if (!crop) return null;
+  const bytes = cropJpeg(photo.bytes, crop);
+  if (!bytes) return null;
+  return { image: { mimeType: "image/jpeg", data: toBase64(bytes), bytes, size: { width: crop.width, height: crop.height } }, crop };
 }
