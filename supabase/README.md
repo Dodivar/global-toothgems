@@ -1412,6 +1412,10 @@ dialog                      photo + consent → POST functions/v1/studio-try-on 
                             → "Generate the AI render" (sign-in required; disabled while available = false)
 AI render                   multipart: source, photo (≤ 6 MB), design (3D still JPEG drawn in the browser, required),
                             seats (optional JSON: each gem's place and size on its tooth)
+                            progress=1 (the webapp, since 2026-10-26): the answer after the gates is an event stream
+                            (text/event-stream, 200): {stage:checking} → {stage:rendering} once the photo passed →
+                            {result: <the JSON body below>}; the dialog shows the check as its own step
+                            (Photo → Check → Render → Result, completed steps in the success colour)
                             → token checked → studio_try_on_creation(requester, ref) → scene + allowed (owner's switch)
                             → daily limits (studio_try_on_requests, 24 h: renders TRY_ON_DAILY_LIMIT, default 10,
                               photos refused by the check not counted; every request TRY_ON_DAILY_CHECKS, default 30)

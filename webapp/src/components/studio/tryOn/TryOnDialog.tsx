@@ -15,6 +15,7 @@ import {
   type TryOnCreation,
   type TryOnErrorCode,
   type TryOnSource,
+  type TryOnStage,
 } from "../../../lib/studio3d/tryOn";
 import { smileTryOnService } from "../../../lib/studio3d/tryOnService";
 import { tryOnSeats } from "../../../lib/studio3d/tryOnSeats";
@@ -25,15 +26,19 @@ import { ResultStep } from "./ResultStep";
 
 type Step =
   | { kind: "photo" }
-  | { kind: "processing" }
-  | { kind: "error"; code: TryOnErrorCode; reasons?: PhotoIssue[] }
+  | { kind: "processing"; stage: TryOnStage }
+  | { kind: "error"; code: TryOnErrorCode; reasons?: PhotoIssue[]; stage: TryOnStage }
   | { kind: "result"; image: Blob; url: string };
 
-const STEP_INDEX: Record<Step["kind"], number> = { photo: 0, processing: 1, error: 1, result: 2 };
+/** The stepper: photo, the photo check, the render, the result. An error stays on the stage it happened at. */
+const STAGE_INDEX: Record<TryOnStage, number> = { checking: 1, rendering: 2 };
+const stepIndex = (step: Step) =>
+  step.kind === "photo" ? 0 : step.kind === "result" ? 3 : STAGE_INDEX[step.stage];
 
 /**
  * "Try it on a smile": a creation on a photo of a smile, rendered by AI
- * (decision 111). Photo + consent → the render (Nano Banana behind the Edge
+ * (decision 111). Photo + consent → the photo check (a small model, shown as
+ * its own step from the function's progress events) → the render (Nano Banana behind the Edge
  * Function `studio-try-on`) → the result, downloaded or shared. The photo
  * and the image stay in this tab; closing the dialog forgets them. While the
  * AI is not connected, the dialog says so and sends nothing.
@@ -111,15 +116,21 @@ export function TryOnDialog({
     request.current?.abort();
     const controller = new AbortController();
     request.current = controller;
-    setStep({ kind: "processing" });
+    let stage: TryOnStage = "checking";
+    setStep({ kind: "processing", stage });
     const design = await renderDesignImage(creation).catch(() => null);
     if (controller.signal.aborted) return;
     if (!design) {
       request.current = null;
-      return setStep({ kind: "error", code: "failed" });
+      return setStep({ kind: "error", code: "failed", stage });
     }
     const seats = tryOnSeats(creation.scene.pieces, creation.scene.model);
-    const outcome = await service.render({ photo: photo.blob, source, design, seats }, { signal: controller.signal });
+    const onStage = (next: TryOnStage) => {
+      if (controller.signal.aborted) return;
+      stage = next;
+      setStep({ kind: "processing", stage: next });
+    };
+    const outcome = await service.render({ photo: photo.blob, source, design, seats }, { signal: controller.signal, onStage });
     if (controller.signal.aborted) return; // cancelled or closed: nothing to show
     request.current = null;
     if (outcome.ok) {
@@ -131,7 +142,7 @@ export function TryOnDialog({
       setAi("unavailable");
       return setStep({ kind: "photo" });
     }
-    setStep({ kind: "error", code: outcome.code, reasons: outcome.reasons });
+    setStep({ kind: "error", code: outcome.code, reasons: outcome.reasons, stage });
   };
 
   const cancel = () => {
@@ -159,8 +170,9 @@ export function TryOnDialog({
           <ProgressBar
             variant="steps"
             tone="ink"
-            steps={[t("studio.tryOn.steps.photo"), t("studio.tryOn.steps.render"), t("studio.tryOn.steps.result")]}
-            current={STEP_INDEX[step.kind]}
+            doneTone="success"
+            steps={[t("studio.tryOn.steps.photo"), t("studio.tryOn.steps.check"), t("studio.tryOn.steps.render"), t("studio.tryOn.steps.result")]}
+            current={stepIndex(step)}
           />
 
           {step.kind === "photo" && (
@@ -181,9 +193,9 @@ export function TryOnDialog({
             <div className="grid justify-items-center gap-3 py-8 text-center">
               <LoaderCircle size={28} aria-hidden="true" className="text-[var(--gt-blue-700)] motion-safe:animate-spin" />
               <p role="status" className="m-0 text-[length:var(--text-body-sm)] font-semibold text-[var(--text-primary)]">
-                {t("studio.tryOn.processing.title")}
+                {t(`studio.tryOn.processing.${step.stage}.title`)}
               </p>
-              <p className="m-0 max-w-sm text-[12.5px] text-[var(--text-muted)]">{t("studio.tryOn.processing.body")}</p>
+              <p className="m-0 max-w-sm text-[12.5px] text-[var(--text-muted)]">{t(`studio.tryOn.processing.${step.stage}.body`)}</p>
               <Button variant="outline" size="sm" onClick={cancel}>
                 {t("studio.tryOn.processing.cancel")}
               </Button>

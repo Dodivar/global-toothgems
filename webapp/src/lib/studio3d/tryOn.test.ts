@@ -6,6 +6,7 @@ import {
   TRY_ON_ERROR_CODES,
   TRY_ON_ERROR_MESSAGES,
   errorAllowsRetry,
+  parseTryOnEvent,
   parseTryOnResponse,
   resultExtension,
   sourcePayload,
@@ -114,5 +115,23 @@ describe("photo checks", () => {
   it("names the export after the creation", () => {
     expect(tryOnFileName("Étoile & Cœur")).toBe("global-toothgems-try-on-etoile-c-ur.jpg");
     expect(tryOnFileName("***", "png")).toBe("global-toothgems-try-on.png");
+  });
+});
+
+describe("progress events", () => {
+  it("reads the stages, then the final answer like a plain response", () => {
+    expect(parseTryOnEvent('data: {"stage":"checking"}')).toEqual({ stage: "checking" });
+    expect(parseTryOnEvent('data: {"stage":"rendering"}')).toEqual({ stage: "rendering" });
+    expect(parseTryOnEvent('data: {"result":{"ok":false,"code":"photo_unsuitable","reasons":["blurry"]}}')).toEqual({
+      outcome: { ok: false, code: "photo_unsuitable", reasons: ["blurry"] },
+    });
+    expect(parseTryOnEvent('data: {"result":{"ok":false,"code":"server_error"}}')).toEqual({ outcome: { ok: false, code: "failed" } });
+  });
+
+  it("skips anything else", () => {
+    expect(parseTryOnEvent(": keep-alive")).toBeNull();
+    expect(parseTryOnEvent('data: {"stage":"done"}')).toBeNull();
+    expect(parseTryOnEvent("data: {broken")).toBeNull();
+    expect(parseTryOnEvent("data: null")).toBeNull();
   });
 });

@@ -16,6 +16,8 @@ interface StepsProps extends ProgressBarBase {
   variant: "steps";
   steps: string[];
   current: number;
+  /** Colour of the completed steps (their dot and the line after them): "success" marks them validated. Default: the tone. */
+  doneTone?: "tone" | "success";
 }
 
 type ProgressBarProps = BarProps | StepsProps;
@@ -34,6 +36,8 @@ export function ProgressBar(props: ProgressBarProps) {
 
   if (props.variant === "steps") {
     const { steps, current, label } = props;
+    const doneFill = props.doneTone === "success" ? "var(--status-success-fg)" : fill;
+    const doneInk = props.doneTone === "success" || tone !== "emerald" ? "var(--text-inverse)" : "var(--text-on-accent)";
     return (
       <div className="grid gap-2">
         {label && <span className="text-xs font-medium text-[var(--text-muted)]">{label}</span>}
@@ -47,8 +51,8 @@ export function ProgressBar(props: ProgressBarProps) {
                   <span
                     className="flex h-7 w-7 items-center justify-center rounded-full text-xs font-semibold"
                     style={{
-                      background: done || active ? fill : "var(--surface-sunken)",
-                      color: done || active ? (tone === "emerald" ? "var(--text-on-accent)" : "var(--text-inverse)") : "var(--text-muted)",
+                      background: done ? doneFill : active ? fill : "var(--surface-sunken)",
+                      color: done ? doneInk : active ? (tone === "emerald" ? "var(--text-on-accent)" : "var(--text-inverse)") : "var(--text-muted)",
                       border: done || active ? "none" : "1px solid var(--border-subtle)",
                     }}
                   >
@@ -62,7 +66,7 @@ export function ProgressBar(props: ProgressBarProps) {
                   </span>
                 </div>
                 {i < steps.length - 1 && (
-                  <span className="mx-2 h-px flex-1" style={{ background: i < current ? fill : "var(--border-subtle)" }} />
+                  <span className="mx-2 h-px flex-1" style={{ background: i < current ? doneFill : "var(--border-subtle)" }} />
                 )}
               </div>
             );

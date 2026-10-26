@@ -22,6 +22,8 @@ import { buildDesignData, piecesFromScene, readSeats } from "./prompt.ts";
  *     seats   optional JSON: each gem's place and size on its tooth, measured
  *             by the browser (`prompt.ts` `readSeats`), matched to the stored
  *             gems by id
+ *     progress  optional "1": the answer is an event stream instead (see
+ *             `progressStream`), so the browser shows the photo check as a step
  *     200 { ok: true, image: { mime_type, data } }   base64, never stored
  *     422 { ok: false, code: "photo_unsuitable", reasons }  the photo check
  *             (`photoCheck.ts`) refused the photo: too_far | not_frontal | no_teeth |
@@ -191,6 +193,63 @@ export async function handleStudioTryOn(req: Request, deps: StudioTryOnDeps): Pr
     return json({ ok: false, code: "not_found" }, 404, cors);
   }
 
+  const run = (onRendering: () => void) => checkAndRender(deps, requestId, photo, design, pieces, seats, onRendering);
+  if (form.get("progress") !== "1") {
+    const ending = await run(() => {});
+    return json(ending.body, ending.status, cors);
+  }
+  return progressStream(run, cors);
+}
+
+type Ending = { status: number; body: Record<string, unknown> };
+type Photo = InlineImage & { size: { width: number; height: number } | null };
+
+/**
+ * The browser asked to follow the request (`progress=1`): an event stream
+ * (`text/event-stream`, always 200) of `{ "stage": "checking" }`, then
+ * `{ "stage": "rendering" }` once the photo passed the check (or the check
+ * could not run), then `{ "result": <the usual body> }`. The dialog shows
+ * the check as its own step from these events. A browser that leaves mid-way
+ * does not stop the request: it is still closed in `studio_try_on_requests`.
+ */
+function progressStream(run: (onRendering: () => void) => Promise<Ending>, cors: Record<string, string>): Response {
+  const encoder = new TextEncoder();
+  const body = new ReadableStream<Uint8Array>({
+    start(controller) {
+      let open = true;
+      const send = (event: Record<string, unknown>) => {
+        if (!open) return;
+        try {
+          controller.enqueue(encoder.encode(`data: ${JSON.stringify(event)}\n\n`));
+        } catch {
+          open = false; // the browser left: the request still runs to its end
+        }
+      };
+      send({ stage: "checking" });
+      void run(() => send({ stage: "rendering" }))
+        .catch((): Ending => ({ status: 500, body: { ok: false, code: "server_error" } }))
+        .then((ending) => {
+          send({ result: ending.body });
+          if (open) controller.close();
+        });
+    },
+  });
+  return new Response(body, {
+    status: 200,
+    headers: { ...cors, "Content-Type": "text/event-stream; charset=utf-8", "Cache-Control": "no-store" },
+  });
+}
+
+/** The photo check, then the render; the request is closed whatever happens. */
+async function checkAndRender(
+  deps: StudioTryOnDeps,
+  requestId: string,
+  photo: Photo,
+  design: Photo,
+  pieces: ReturnType<typeof piecesFromScene>,
+  seats: ReturnType<typeof readSeats>,
+  onRendering: () => void,
+): Promise<Ending> {
   if (deps.checkPhoto) {
     const answer = await deps.checkPhoto({ mimeType: photo.mimeType, data: photo.data }).catch((error) => ({
       ok: false as const,
@@ -209,12 +268,14 @@ export async function handleStudioTryOn(req: Request, deps: StudioTryOnDeps): Pr
       });
       if (verdict.issues.length > 0) {
         await deps.finishRequest(requestId, "failed", "photo_unsuitable").catch(() => {});
-        return json({ ok: false, code: "photo_unsuitable", reasons: verdict.issues }, 422, cors);
+        return { status: 422, body: { ok: false, code: "photo_unsuitable", reasons: verdict.issues } };
       }
     } else {
       deps.log("photo check unavailable, rendering anyway", answer.detail);
     }
   }
+
+  onRendering();
 
   // Counts only: whether the browser sent the gems' places (a site older than the seats sends none).
   deps.log("design data", { gems: pieces.length, seats: seats.size });
@@ -233,8 +294,8 @@ export async function handleStudioTryOn(req: Request, deps: StudioTryOnDeps): Pr
   if (!outcome.ok) {
     deps.log(`generation ${outcome.code}`, outcome.detail);
     await deps.finishRequest(requestId, "failed", outcome.code).catch(() => {});
-    return json({ ok: false, code: outcome.code }, 502, cors);
+    return { status: 502, body: { ok: false, code: outcome.code } };
   }
   await deps.finishRequest(requestId, "generated", null).catch((error) => deps.log("could not close the request", error));
-  return json({ ok: true, image: { mime_type: outcome.image.mimeType, data: outcome.image.data } }, 200, cors);
+  return { status: 200, body: { ok: true, image: { mime_type: outcome.image.mimeType, data: outcome.image.data } } };
 }

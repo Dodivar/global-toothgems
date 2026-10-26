@@ -816,6 +816,7 @@
     "empty": "This creation has no gems yet: add some in the editor, save, then come back to try it on.",
     "steps": {
       "photo": "Photo",
+      "check": "Check",
       "render": "Try-on",
       "result": "Result"
     },
@@ -864,8 +865,14 @@
       }
     },
     "processing": {
-      "title": "Creating the render…",
-      "body": "The AI is setting the creation’s gems on the photo. It usually takes less than a minute.",
+      "checking": {
+        "title": "Checking the photo…",
+        "body": "An AI checks that the teeth are clearly visible, face-on, sharp and well lit before creating the render. A few seconds."
+      },
+      "rendering": {
+        "title": "Creating the render…",
+        "body": "The AI is setting the creation’s gems on the photo. It usually takes less than a minute."
+      },
       "cancel": "Cancel"
     },
     "errors": {

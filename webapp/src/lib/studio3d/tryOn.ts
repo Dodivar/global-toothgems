@@ -61,6 +61,9 @@ export type TryOnErrorCode = (typeof TRY_ON_ERROR_CODES)[number];
 export const PHOTO_ISSUES = ["too_far", "not_frontal", "no_teeth", "teeth_hidden", "too_dark", "too_bright", "blurry"] as const;
 export type PhotoIssue = (typeof PHOTO_ISSUES)[number];
 
+/** Where a render is, as the function reports it: the photo check, then the AI render. */
+export type TryOnStage = "checking" | "rendering";
+
 export type TryOnOutcome = { ok: true; image: Blob } | { ok: false; code: TryOnErrorCode; reasons?: PhotoIssue[] };
 
 export interface SmileTryOnService {
@@ -69,9 +72,10 @@ export interface SmileTryOnService {
   /**
    * Render the creation on the photo. Never throws: every failure is an error
    * code. An aborted call (cancelled, dialog closed) resolves with `failed`;
-   * the caller ignores it.
+   * the caller ignores it. `onStage` follows the function's progress: the
+   * photo check, then the render once the photo passed.
    */
-  render(request: TryOnRenderRequest, options?: { signal?: AbortSignal }): Promise<TryOnOutcome>;
+  render(request: TryOnRenderRequest, options?: { signal?: AbortSignal; onStage?: (stage: TryOnStage) => void }): Promise<TryOnOutcome>;
 }
 
 /** Used without a backend (mock mode): the AI is simply not there. */
@@ -133,6 +137,26 @@ export function parseTryOnResponse(json: unknown): TryOnOutcome {
   } catch {
     return { ok: false, code: "failed" };
   }
+}
+
+/**
+ * One event of the function's progress stream (`data: <json>`, `progress=1`):
+ * a stage, or the final answer read by `parseTryOnResponse`. Anything else
+ * (comments, unknown stages, broken JSON) is null and skipped.
+ */
+export function parseTryOnEvent(chunk: string): { stage: TryOnStage } | { outcome: TryOnOutcome } | null {
+  const line = chunk.split("\n").find((l) => l.startsWith("data:"));
+  if (!line) return null;
+  let event: unknown;
+  try {
+    event = JSON.parse(line.slice(5));
+  } catch {
+    return null;
+  }
+  if (!event || typeof event !== "object") return null;
+  const data = event as Record<string, unknown>;
+  if ("result" in data) return { outcome: parseTryOnResponse(data.result) };
+  return data.stage === "checking" || data.stage === "rendering" ? { stage: data.stage } : null;
 }
 
 /* ------------------------------------------------------- the interface */

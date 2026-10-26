@@ -379,3 +379,54 @@ Deno.test("the render asks for the photo's proportions, read from its header", a
   assertEquals((await handleStudioTryOn(post(form(undefined, new Blob([jpeg], { type: "image/jpeg" }))), deps)).status, 200);
   assertEquals(asked, "3:4");
 });
+
+/** The events of a `progress=1` answer, in order. */
+async function events(res: Response): Promise<Record<string, unknown>[]> {
+  const text = await res.text();
+  return text
+    .split("\n\n")
+    .filter((chunk) => chunk.startsWith("data: "))
+    .map((chunk) => JSON.parse(chunk.slice(6)));
+}
+
+const progressForm = () => {
+  const data = form();
+  data.set("progress", "1");
+  return data;
+};
+
+Deno.test("progress: checking, rendering, then the result, as an event stream", async () => {
+  const { deps, calls } = fake({ checkPhoto: () => Promise.resolve({ ok: true, value: GOOD_PHOTO }) });
+  const res = await handleStudioTryOn(post(progressForm()), deps);
+  assertEquals(res.status, 200);
+  assertStringIncludes(res.headers.get("content-type") ?? "", "text/event-stream");
+  assertEquals(await events(res), [
+    { stage: "checking" },
+    { stage: "rendering" },
+    { result: { ok: true, image: { mime_type: "image/png", data: "aW1n" } } },
+  ]);
+  assertEquals(calls.finished, ["generated"]);
+});
+
+Deno.test("progress: a refused photo ends after the check; a failed render after rendering", async () => {
+  const refused = fake({ checkPhoto: () => Promise.resolve({ ok: true, value: { ...GOOD_PHOTO, lighting: "too_dark" } }) });
+  assertEquals(await events(await handleStudioTryOn(post(progressForm()), refused.deps)), [
+    { stage: "checking" },
+    { result: { ok: false, code: "photo_unsuitable", reasons: ["too_dark"] } },
+  ]);
+  assertEquals(refused.calls.images, []);
+  const failed = fake({ generate: () => Promise.resolve({ ok: false, code: "blocked", detail: "SAFETY" }) });
+  assertEquals(await events(await handleStudioTryOn(post(progressForm()), failed.deps)), [
+    { stage: "checking" },
+    { stage: "rendering" },
+    { result: { ok: false, code: "blocked" } },
+  ]);
+  assertEquals(failed.calls.finished, ["failed:blocked"]);
+});
+
+Deno.test("progress: refusals before the check stay plain JSON with their status", async () => {
+  const { deps } = fake({ countRecent: () => Promise.resolve({ requests: 9, renders: 9 }) });
+  const res = await handleStudioTryOn(post(progressForm()), deps);
+  assertEquals(res.status, 429);
+  assertEquals(await res.json(), { ok: false, code: "daily_limit" });
+});

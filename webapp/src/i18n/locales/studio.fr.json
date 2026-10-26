@@ -816,6 +816,7 @@
     "empty": "Cette création ne contient aucune pierre : ajoutez-en dans l’éditeur, enregistrez, puis revenez l’essayer.",
     "steps": {
       "photo": "Photo",
+      "check": "Vérification",
       "render": "Essai",
       "result": "Résultat"
     },
@@ -864,8 +865,14 @@
       }
     },
     "processing": {
-      "title": "Création du rendu…",
-      "body": "L’IA pose les pierres de la création sur la photo. Cela prend en général moins d’une minute.",
+      "checking": {
+        "title": "Vérification de la photo…",
+        "body": "Une IA vérifie que les dents sont bien visibles, de face, nettes et éclairées avant de créer le rendu. Quelques secondes."
+      },
+      "rendering": {
+        "title": "Création du rendu…",
+        "body": "L’IA pose les pierres de la création sur la photo. Cela prend en général moins d’une minute."
+      },
       "cancel": "Annuler"
     },
     "errors": {
