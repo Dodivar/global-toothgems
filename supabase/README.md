@@ -1413,8 +1413,13 @@ dialog                      photo + consent → POST functions/v1/studio-try-on 
 AI render                   multipart: source, photo (≤ 6 MB), design (3D still JPEG drawn in the browser, required),
                             seats (optional JSON: each gem's place and size on its tooth)
                             → token checked → studio_try_on_creation(requester, ref) → scene + allowed (owner's switch)
-                            → daily limit (studio_try_on_requests, 24 h, TRY_ON_DAILY_LIMIT, default 10) → row 'pending'
+                            → daily limits (studio_try_on_requests, 24 h: renders TRY_ON_DAILY_LIMIT, default 10,
+                              photos refused by the check not counted; every request TRY_ON_DAILY_CHECKS, default 30)
+                            → row 'pending'
                             → the creation must hold at least one valid gem (else not_found)
+                            → photo check (photoCheck.ts, TRY_ON_CHECK_MODEL, default gemini-3.1-flash-lite, JSON
+                              answer) → refused: row 'failed' / 'photo_unsuitable', 422 with the reasons, no render;
+                              check unavailable: render anyway
                             → Gemini generateContent on Vertex AI (GOOGLE_ADC_JSON → access token) or the Gemini
                               API (GEMINI_API_KEY), model GEMINI_IMAGE_MODEL: systemInstruction =
                               systemPrompt.ts v3 (default) or v1 (TRY_ON_PROMPT_VERSION); user turn = design (IMAGE 1),
@@ -1464,6 +1469,17 @@ AI render                   multipart: source, photo (≤ 6 MB), design (3D stil
   leave out) and the share of the tooth's width the first size rule. **v1** — the owner's original prompt, verbatim, images only. Both: IMAGE 1 the design,
   IMAGE 2 the photo. Output size is the model's default (no `imageConfig`): a higher resolution costs more, kept
   as a last resort by the owner (2026-10-26).
+- **Photo check** (2026-10-26, owner's request: no user manipulation, as little friction as possible): before any
+  render, a small text model (`TRY_ON_CHECK_MODEL`, `gemini-3.1-flash-lite` by default, same door as the image
+  model) reports facts as JSON — teeth visible, covered, the box around the visible teeth, sharpness, light — and
+  `photoCheck.ts` `judgePhoto` decides with fixed thresholds, never the model: refused only for a clear reason
+  (`too_far`: the teeth span less than `MIN_TEETH_SPAN` = 0.25 of the photo's longer side, a first estimate to tune
+  with the logged spans; `no_teeth`, `teeth_hidden`, `too_dark`, `too_bright`, `blurry`); a fact the model did not
+  give clearly is not held against the photo, and a check that fails (provider, model id) never blocks the render.
+  A refused photo answers 422 `photo_unsuitable` with its reasons, is recorded with that error code and does not
+  count toward the renders (`TRY_ON_DAILY_LIMIT`), only toward every request (`TRY_ON_DAILY_CHECKS`, default 30).
+  The browser asks for a close-up first (photo step), refuses locally only a photo far too dark to see a tooth
+  (`tryOnPhoto.ts` `checkPhotoLight`), and lists the reasons with what to change.
 - **Privacy**: the photo and the image only pass through the function's memory (never stored, never logged);
   `studio_try_on_requests` keeps who asked, for which creation, from where, and the outcome — no picture. The
   photo step says the photo is sent to Google only while the AI is connected.

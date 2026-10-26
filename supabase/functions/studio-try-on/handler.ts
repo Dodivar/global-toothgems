@@ -1,6 +1,7 @@
 import { corsHeaders, json, type SiteOrigins } from "../_shared/http.ts";
 import { bearer, looksLikeJwt } from "../_shared/studioBilling.ts";
 import type { GenerateOutcome, InlineImage } from "./gemini.ts";
+import { imageSize, judgePhoto } from "./photoCheck.ts";
 import { buildDesignData, piecesFromScene, readSeats } from "./prompt.ts";
 
 /**
@@ -22,14 +23,20 @@ import { buildDesignData, piecesFromScene, readSeats } from "./prompt.ts";
  *             by the browser (`prompt.ts` `readSeats`), matched to the stored
  *             gems by id
  *     200 { ok: true, image: { mime_type, data } }   base64, never stored
+ *     422 { ok: false, code: "photo_unsuitable", reasons }  the photo check
+ *             (`photoCheck.ts`) refused the photo: too_far | no_teeth |
+ *             teeth_hidden | too_dark | too_bright | blurry — no generation
  *     4xx/5xx { ok: false, code }  invalid_request | sign_in_required |
  *             session_expired | not_found | not_allowed | daily_limit |
  *             not_available | blocked | failed | server_error
  *
  * The creation and the owner's plan switch are read from the database
  * (`studio_try_on_creation`), so only a creation the requester may see, and
- * whose owner has the option, is ever rendered; a generation is counted before the provider is
- * called (`studio_try_on_requests`, daily limit per account). The photo and
+ * whose owner has the option, is ever rendered; a request is counted before the provider is
+ * called (`studio_try_on_requests`, daily limits per account: the renders —
+ * photos refused by the check do not count — and every request, checks
+ * included). The photo is checked first by a small text model; a failed
+ * check (provider down, no answer) never blocks the render. The photo and
  * the image only pass through memory.
  */
 
@@ -46,13 +53,19 @@ export interface StudioTryOnDeps {
   origins: SiteOrigins;
   /** Whether the provider is connected (secrets set). */
   available: boolean;
+  /** Renders per account per 24 h (photos refused by the check not counted). */
   dailyLimit: number;
+  /** Requests per account per 24 h, refused photos included. */
+  dailyChecks: number;
   userFromToken(token: string): Promise<string | null>;
   loadCreation(requester: string, ref: TryOnSourceRef): Promise<TryOnCreationRow | null>;
-  countRecent(userId: string, since: Date): Promise<number>;
+  /** The account's requests since then: all of them, and those that were not refused by the photo check. */
+  countRecent(userId: string, since: Date): Promise<{ requests: number; renders: number }>;
   startRequest(userId: string, row: TryOnCreationRow): Promise<string>;
   finishRequest(id: string, status: "generated" | "failed", errorCode: string | null): Promise<void>;
   references(): Promise<InlineImage[]>;
+  /** The photo check model's answer (`photoCheck.ts`), or why there is none; absent: no check. */
+  checkPhoto?(photo: InlineImage): Promise<{ ok: true; value: Record<string, unknown> } | { ok: false; detail: string }>;
   /**
    * Sends the images, in this order, with the system instructions; `designData`
    * (the gems as text, from the database) follows them when the prompt version reads it.
@@ -88,11 +101,14 @@ export function readSourceRef(raw: unknown): TryOnSourceRef | null {
   return null;
 }
 
-async function inlineFile(value: FormDataEntryValue | null, maxBytes: number): Promise<InlineImage | null | "invalid"> {
+async function inlineFile(
+  value: FormDataEntryValue | null,
+  maxBytes: number,
+): Promise<(InlineImage & { size: { width: number; height: number } | null }) | null | "invalid"> {
   if (value === null) return null;
   if (typeof value === "string" || !IMAGE_TYPES.has(value.type) || value.size === 0 || value.size > maxBytes) return "invalid";
   const bytes = new Uint8Array(await value.arrayBuffer());
-  return { mimeType: value.type, data: toBase64(bytes) };
+  return { mimeType: value.type, data: toBase64(bytes), size: imageSize(bytes) };
 }
 
 export function toBase64(bytes: Uint8Array): string {
@@ -157,7 +173,7 @@ export async function handleStudioTryOn(req: Request, deps: StudioTryOnDeps): Pr
     if (!row.allowed) return json({ ok: false, code: "not_allowed" }, 403, cors);
     const now = deps.now?.() ?? new Date();
     const used = await deps.countRecent(userId, new Date(now.getTime() - 24 * 3600 * 1000));
-    if (used >= deps.dailyLimit) return json({ ok: false, code: "daily_limit" }, 429, cors);
+    if (used.renders >= deps.dailyLimit || used.requests >= deps.dailyChecks) return json({ ok: false, code: "daily_limit" }, 429, cors);
     requestId = await deps.startRequest(userId, row);
   } catch (error) {
     deps.log("preparing the request failed", error instanceof Error ? error.message : error);
@@ -170,13 +186,31 @@ export async function handleStudioTryOn(req: Request, deps: StudioTryOnDeps): Pr
     return json({ ok: false, code: "not_found" }, 404, cors);
   }
 
+  if (deps.checkPhoto) {
+    const answer = await deps.checkPhoto({ mimeType: photo.mimeType, data: photo.data }).catch((error) => ({
+      ok: false as const,
+      detail: error instanceof Error ? error.message : String(error),
+    }));
+    if (answer.ok) {
+      const verdict = judgePhoto(answer.value, photo.size);
+      // Facts only, never the photo: they tune the thresholds.
+      deps.log("photo check", { span: verdict.span, issues: verdict.issues, lighting: answer.value.lighting, sharpness: answer.value.sharpness });
+      if (verdict.issues.length > 0) {
+        await deps.finishRequest(requestId, "failed", "photo_unsuitable").catch(() => {});
+        return json({ ok: false, code: "photo_unsuitable", reasons: verdict.issues }, 422, cors);
+      }
+    } else {
+      deps.log("photo check unavailable, rendering anyway", answer.detail);
+    }
+  }
+
   let outcome: GenerateOutcome;
   try {
     const references = await deps.references().catch((error) => {
       deps.log("reference pictures unavailable", error instanceof Error ? error.message : error);
       return [] as InlineImage[];
     });
-    outcome = await deps.generate([design, photo, ...references], buildDesignData(pieces, seats));
+    outcome = await deps.generate([{ mimeType: design.mimeType, data: design.data }, { mimeType: photo.mimeType, data: photo.data }, ...references], buildDesignData(pieces, seats));
   } catch (error) {
     outcome = { ok: false, code: "failed", detail: error instanceof Error ? error.message : String(error) };
   }

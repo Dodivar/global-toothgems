@@ -160,6 +160,21 @@ async function authHeaders(config: ImageModelConfig, fetchImpl: typeof fetch): P
   return { authorization: `Bearer ${await accessToken(config.credentials, fetchImpl)}`, "x-goog-user-project": config.project };
 }
 
+/** POST a `generateContent` body to the model named in `config`: the response, or why it could not be sent. */
+async function callModel(config: ImageModelConfig, body: unknown, fetchImpl: typeof fetch, timeoutMs: number): Promise<Response | { error: string }> {
+  try {
+    const auth = await authHeaders(config, fetchImpl);
+    return await fetchImpl(generateUrl(config), {
+      method: "POST",
+      headers: { "content-type": "application/json", ...auth },
+      body: JSON.stringify(body),
+      signal: AbortSignal.timeout(timeoutMs),
+    });
+  } catch (error) {
+    return { error: error instanceof Error ? error.message : "network" };
+  }
+}
+
 export async function generateImage(
   config: ImageModelConfig,
   systemPrompt: string,
@@ -179,23 +194,49 @@ export async function generateImage(
     ],
     generationConfig: { responseModalities: ["IMAGE"] },
   };
-  let res: Response;
-  try {
-    const auth = await authHeaders(config, fetchImpl);
-    res = await fetchImpl(generateUrl(config), {
-      method: "POST",
-      headers: { "content-type": "application/json", ...auth },
-      body: JSON.stringify(body),
-      signal: AbortSignal.timeout(timeoutMs),
-    });
-  } catch (error) {
-    return { ok: false, code: "failed", detail: error instanceof Error ? error.message : "network" };
-  }
+  const res = await callModel(config, body, fetchImpl, timeoutMs);
+  if (!(res instanceof Response)) return { ok: false, code: "failed", detail: res.error };
   if (!res.ok) {
     const detail = await res.text().catch(() => "");
     return { ok: false, code: "failed", detail: `http ${res.status} ${detail.slice(0, 300)}` };
   }
   return readImage(await res.json().catch(() => null));
+}
+
+/**
+ * A text model's structured answer about images (the photo check,
+ * `photoCheck.ts`): the JSON object of the first candidate, or an error
+ * detail. The model is `config.model` — pass the check model's config.
+ */
+export async function generateJson(
+  config: ImageModelConfig,
+  systemPrompt: string,
+  images: InlineImage[],
+  responseSchema: unknown,
+  fetchImpl: typeof fetch = fetch,
+  timeoutMs = 20_000,
+): Promise<{ ok: true; value: Record<string, unknown> } | { ok: false; detail: string }> {
+  const body = {
+    systemInstruction: { parts: [{ text: systemPrompt }] },
+    contents: [{ role: "user", parts: images.map((img) => ({ inlineData: { mimeType: img.mimeType, data: img.data } })) }],
+    generationConfig: { responseMimeType: "application/json", responseSchema, temperature: 0 },
+  };
+  const res = await callModel(config, body, fetchImpl, timeoutMs);
+  if (!(res instanceof Response)) return { ok: false, detail: res.error };
+  if (!res.ok) return { ok: false, detail: `http ${res.status} ${(await res.text().catch(() => "")).slice(0, 300)}` };
+  const json = (await res.json().catch(() => null)) as Record<string, unknown> | null;
+  const candidate = (Array.isArray(json?.candidates) ? json.candidates[0] : null) as Record<string, unknown> | null;
+  const parts = ((candidate?.content as Record<string, unknown> | undefined)?.parts ?? []) as unknown[];
+  const text = (Array.isArray(parts) ? parts : [])
+    .map((p) => (p && typeof p === "object" && typeof (p as Record<string, unknown>).text === "string" ? (p as Record<string, string>).text : ""))
+    .join("");
+  try {
+    const value = JSON.parse(text);
+    if (value && typeof value === "object" && !Array.isArray(value)) return { ok: true, value };
+  } catch {
+    /* below */
+  }
+  return { ok: false, detail: `no JSON in the answer (${String(candidate?.finishReason ?? (json?.promptFeedback ? "blocked" : "empty"))})` };
 }
 
 /** The first inline image of the answer; a safety block or an answer without image is not one. */

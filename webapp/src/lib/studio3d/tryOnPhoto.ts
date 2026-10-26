@@ -14,7 +14,7 @@ export const PHOTO_MAX_EDGE = 2048;
 const TYPES = ["image/jpeg", "image/png", "image/webp", "image/heic", "image/heif"];
 const EXTENSIONS = ["jpg", "jpeg", "png", "webp", "heic", "heif"];
 
-export type PhotoError = "type" | "empty" | "tooLarge" | "tooSmall" | "unreadable";
+export type PhotoError = "type" | "empty" | "tooLarge" | "tooSmall" | "unreadable" | "tooDark";
 
 /**
  * The file before decoding. Windows often reports an empty type for HEIC, so
@@ -36,6 +36,22 @@ export function checkPhotoSize(width: number, height: number): PhotoError | null
   if (!(width > 0) || !(height > 0)) return "unreadable";
   if (Math.min(width, height) < PHOTO_MIN_SHORT_EDGE || Math.max(width, height) < PHOTO_MIN_LONG_EDGE) return "tooSmall";
   return null;
+}
+
+/**
+ * Only a photo far too dark to see any tooth is refused here, before anything
+ * is sent: the light of the 10 % brightest pixels (0–255). Teeth are among the
+ * brightest things in a smile photo, so a dim but usable photo still has a
+ * bright tenth; anything less clear-cut is left to the function's photo check.
+ */
+export const PHOTO_MIN_BRIGHT_LUMA = 60;
+
+/** `luma`: one value per pixel of a small copy of the photo, 0–255. */
+export function checkPhotoLight(luma: ArrayLike<number>): PhotoError | null {
+  if (luma.length === 0) return null;
+  const sorted = Array.from(luma).sort((a, b) => a - b);
+  const bright = sorted[Math.min(sorted.length - 1, Math.floor(sorted.length * 0.9))];
+  return bright < PHOTO_MIN_BRIGHT_LUMA ? "tooDark" : null;
 }
 
 /** The size to draw the photo at: within `maxEdge` on its longer side, never enlarged. */

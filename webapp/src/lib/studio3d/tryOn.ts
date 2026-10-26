@@ -47,13 +47,21 @@ export const TRY_ON_ERROR_CODES = [
   "not_found",
   "not_allowed",
   "daily_limit",
+  "photo_unsuitable",
   "blocked",
   "network",
   "failed",
 ] as const;
 export type TryOnErrorCode = (typeof TRY_ON_ERROR_CODES)[number];
 
-export type TryOnOutcome = { ok: true; image: Blob } | { ok: false; code: TryOnErrorCode };
+/**
+ * Why the function's photo check refused a photo (`photo_unsuitable`,
+ * `photoCheck.ts` in the function): each one has a message saying what to change.
+ */
+export const PHOTO_ISSUES = ["too_far", "no_teeth", "teeth_hidden", "too_dark", "too_bright", "blurry"] as const;
+export type PhotoIssue = (typeof PHOTO_ISSUES)[number];
+
+export type TryOnOutcome = { ok: true; image: Blob } | { ok: false; code: TryOnErrorCode; reasons?: PhotoIssue[] };
 
 export interface SmileTryOnService {
   /** Whether the AI is connected. Asked before any photo leaves the device; never throws (false). */
@@ -104,6 +112,12 @@ export function parseTryOnResponse(json: unknown): TryOnOutcome {
   const data = json as Record<string, unknown>;
   if (data.ok !== true) {
     const code = typeof data.code === "string" ? (ALIASES[data.code] ?? data.code) : null;
+    if (code === "photo_unsuitable") {
+      const reasons = Array.isArray(data.reasons)
+        ? PHOTO_ISSUES.filter((issue) => (data.reasons as unknown[]).includes(issue))
+        : [];
+      return { ok: false, code, reasons };
+    }
     return { ok: false, code: isCode(code) ? code : "failed" };
   }
   const image = (data.image && typeof data.image === "object" ? data.image : {}) as Record<string, unknown>;

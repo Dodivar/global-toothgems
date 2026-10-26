@@ -822,9 +822,9 @@
     "photo": {
       "tipsTitle": "For a good photo",
       "tips": {
-        "front": "Face-on, head straight, at smile height",
-        "lips": "Lips apart, teeth clearly visible",
+        "lips": "Lips apart, upper teeth clearly visible",
         "light": "Good, even light, no backlight or shadow on the teeth",
+        "front": "Face-on, the phone at smile height, held still",
         "filter": "No filter or retouching"
       },
       "drop": "Drop the photo here, or",
@@ -852,11 +852,16 @@
         "empty": "This file is empty. Choose another photo.",
         "tooLarge": "This photo is over {{maxMb}} MB. Choose a lighter one.",
         "tooSmall": "This photo is too small to see the teeth: it needs at least {{minWidth}} × {{minHeight}} pixels.",
-        "unreadable": "This browser cannot read this photo. If it is a HEIC, convert it to JPEG (or set the camera to “Most compatible”) and try again."
+        "unreadable": "This browser cannot read this photo. If it is a HEIC, convert it to JPEG (or set the camera to “Most compatible”) and try again.",
+        "tooDark": "This photo is too dark to see the teeth. Take it again in daylight or facing a lamp."
       },
       "generate": "Generate the AI render",
       "checking": "Checking availability…",
-      "signInHint": "Sign in to your account to get the AI render."
+      "signInHint": "Sign in to your account to get the AI render.",
+      "closeUp": {
+        "title": "A close-up of your teeth",
+        "body": "Bring the phone closer: your teeth should fill a good part of the photo, not your whole face. A photo taken too far away, too dark or blurred is turned down before the render and does not count towards your renders of the day."
+      }
     },
     "processing": {
       "title": "Creating the render…",
@@ -895,6 +900,10 @@
       "failed": {
         "title": "The render did not work",
         "body": "Something went wrong during the render. Try again in a moment."
+      },
+      "photo_unsuitable": {
+        "title": "This photo cannot give a good render",
+        "body": "Nothing was generated and this render was not counted. Take another photo:"
       }
     },
     "errorActions": {
@@ -921,6 +930,14 @@
       "title": "Try it on my smile",
       "body": "Take or choose a photo of your smile and see this creation on you.",
       "cta": "Try it on my smile"
+    },
+    "photoIssues": {
+      "too_far": "closer: your teeth should fill a good part of the photo;",
+      "no_teeth": "smiling, lips apart, upper teeth clearly visible;",
+      "teeth_hidden": "with nothing in front of the teeth (hand, object, hair);",
+      "too_dark": "with more light, no backlight;",
+      "too_bright": "with softer light, no direct flash on the teeth;",
+      "blurry": "sharp: hold the phone still and let it focus."
     }
   },
   "frontView": {

@@ -9,6 +9,7 @@ import { ProgressBar } from "../../ui/ProgressBar";
 import {
   TRY_ON_ERROR_MESSAGES,
   errorAllowsRetry,
+  type PhotoIssue,
   type SmileTryOnService,
   type TryOnAudience,
   type TryOnCreation,
@@ -25,7 +26,7 @@ import { ResultStep } from "./ResultStep";
 type Step =
   | { kind: "photo" }
   | { kind: "processing" }
-  | { kind: "error"; code: TryOnErrorCode }
+  | { kind: "error"; code: TryOnErrorCode; reasons?: PhotoIssue[] }
   | { kind: "result"; image: Blob; url: string };
 
 const STEP_INDEX: Record<Step["kind"], number> = { photo: 0, processing: 1, error: 1, result: 2 };
@@ -130,7 +131,7 @@ export function TryOnDialog({
       setAi("unavailable");
       return setStep({ kind: "photo" });
     }
-    setStep({ kind: "error", code: outcome.code });
+    setStep({ kind: "error", code: outcome.code, reasons: outcome.reasons });
   };
 
   const cancel = () => {
@@ -196,6 +197,13 @@ export function TryOnDialog({
                 <span className="grid gap-0.5">
                   <strong className="font-semibold text-[var(--status-error-fg)]">{t(TRY_ON_ERROR_MESSAGES[step.code].title)}</strong>
                   <span className="text-[var(--text-primary)]">{t(TRY_ON_ERROR_MESSAGES[step.code].body)}</span>
+                  {!!step.reasons?.length && (
+                    <ul className="m-0 mt-1 grid list-disc gap-0.5 pl-5 text-[var(--text-primary)]">
+                      {step.reasons.map((reason) => (
+                        <li key={reason}>{t(`studio.tryOn.photoIssues.${reason}`)}</li>
+                      ))}
+                    </ul>
+                  )}
                 </span>
               </div>
               <div className="flex flex-wrap justify-end gap-2">
@@ -208,7 +216,12 @@ export function TryOnDialog({
                     {t("studio.tryOn.errorActions.retry")}
                   </Button>
                 ) : null}
-                <Button variant="outline" size="sm" iconLeft={ImageUp} onClick={() => setStep({ kind: "photo" })}>
+                <Button
+                  variant={step.code === "photo_unsuitable" ? "dark" : "outline"}
+                  size="sm"
+                  iconLeft={ImageUp}
+                  onClick={() => setStep({ kind: "photo" })}
+                >
                   {t("studio.tryOn.errorActions.newPhoto")}
                 </Button>
               </div>

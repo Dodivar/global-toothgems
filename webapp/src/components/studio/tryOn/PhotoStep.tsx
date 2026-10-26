@@ -1,6 +1,6 @@
 import { useId, useRef, useState, type DragEvent } from "react";
 import clsx from "clsx";
-import { Camera, CircleAlert, ImageUp, Info, LoaderCircle, LogIn, ShieldCheck, Sparkles } from "lucide-react";
+import { Camera, CircleAlert, ImageUp, Info, LoaderCircle, LogIn, ShieldCheck, Sparkles, ZoomIn } from "lucide-react";
 import { useTranslation } from "react-i18next";
 import { Button } from "../../ui/Button";
 import { Checkbox } from "../../ui/Checkbox";
@@ -8,13 +8,15 @@ import type { TryOnAudience } from "../../../lib/studio3d/tryOn";
 import { PHOTO_MAX_BYTES, PHOTO_MIN_LONG_EDGE, PHOTO_MIN_SHORT_EDGE, type PhotoError } from "../../../lib/studio3d/tryOnPhoto";
 import { preparePhoto, type PreparedPhoto } from "./preparePhoto";
 
-const TIPS = ["front", "lips", "light", "filter"] as const;
+const TIPS = ["lips", "light", "front", "filter"] as const;
 
 /** Whether the AI render can be asked: still checking, connected, or not (yet). */
 export type AiState = "checking" | "available" | "unavailable";
 
 /**
- * Step 1: the smile photo, then the AI render (decision 111). The photo is
+ * Step 1: the smile photo, then the AI render (decision 111). It first asks
+ * for a close-up of the teeth — the function refuses a photo where they are
+ * too small, too dark or blurred, before any render. The photo is
  * taken with the camera (phones), chosen from the device or dropped
  * (desktop); checked, turned upright and downscaled in the browser. The
  * person's consent is confirmed — the artist for a client, a visitor for
@@ -82,6 +84,14 @@ export function PhotoStep({
 
   return (
     <div className="grid gap-4">
+      <div className="flex items-start gap-3 rounded-[var(--radius-md)] bg-[var(--surface-brand-wash)] p-3">
+        <ZoomIn size={20} aria-hidden="true" className="mt-0.5 flex-none text-[var(--gt-blue-700)]" />
+        <span className="grid gap-0.5">
+          <strong className="text-[length:var(--text-body-sm)] font-semibold text-[var(--text-primary)]">{t("studio.tryOn.photo.closeUp.title")}</strong>
+          <span className="text-[12.5px] leading-snug text-[var(--text-muted)]">{t("studio.tryOn.photo.closeUp.body")}</span>
+        </span>
+      </div>
+
       <div>
         <h3 className="m-0 text-[13px] font-bold text-[var(--text-primary)]">{t("studio.tryOn.photo.tipsTitle")}</h3>
         <ul className="m-0 mt-2 grid list-disc gap-1 pl-5 text-[length:var(--text-body-sm)] text-[var(--text-muted)] sm:grid-cols-2">

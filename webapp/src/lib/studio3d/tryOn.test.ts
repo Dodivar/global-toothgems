@@ -2,6 +2,7 @@ import { describe, expect, it } from "vitest";
 import studioEn from "../../i18n/locales/studio.en.json";
 import studioFr from "../../i18n/locales/studio.fr.json";
 import {
+  PHOTO_ISSUES,
   TRY_ON_ERROR_CODES,
   TRY_ON_ERROR_MESSAGES,
   errorAllowsRetry,
@@ -10,7 +11,7 @@ import {
   sourcePayload,
   unavailableTryOnService,
 } from "./tryOn";
-import { checkPhotoFile, checkPhotoSize, fitWithin, PHOTO_MAX_BYTES, tryOnFileName } from "./tryOnPhoto";
+import { checkPhotoFile, checkPhotoLight, checkPhotoSize, fitWithin, PHOTO_MAX_BYTES, tryOnFileName } from "./tryOnPhoto";
 
 describe("try-on service contract", () => {
   it("the not-available service says so at once, without a photo leaving", async () => {
@@ -50,6 +51,16 @@ describe("try-on service contract", () => {
     expect(parseTryOnResponse(null)).toEqual({ ok: false, code: "failed" });
   });
 
+  it("reads why the photo check refused a photo, known reasons only", () => {
+    expect(parseTryOnResponse({ ok: false, code: "photo_unsuitable", reasons: ["blurry", "too_far", "<b>"] })).toEqual({
+      ok: false,
+      code: "photo_unsuitable",
+      reasons: ["too_far", "blurry"],
+    });
+    expect(parseTryOnResponse({ ok: false, code: "photo_unsuitable" })).toEqual({ ok: false, code: "photo_unsuitable", reasons: [] });
+    expect(errorAllowsRetry("photo_unsuitable")).toBe(false);
+  });
+
   it("has a message in both languages for every error code", () => {
     type Tree = Record<string, unknown>;
     const lookup = (tree: Tree, key: string) => key.split(".").slice(1).reduce<unknown>((node, part) => (node as Tree | undefined)?.[part], tree);
@@ -58,6 +69,10 @@ describe("try-on service contract", () => {
         expect(typeof lookup(studioFr as Tree, key), `fr ${key}`).toBe("string");
         expect(typeof lookup(studioEn as Tree, key), `en ${key}`).toBe("string");
       }
+    }
+    for (const issue of PHOTO_ISSUES) {
+      expect(typeof lookup(studioFr as Tree, `studio.tryOn.photoIssues.${issue}`), `fr ${issue}`).toBe("string");
+      expect(typeof lookup(studioEn as Tree, `studio.tryOn.photoIssues.${issue}`), `en ${issue}`).toBe("string");
     }
     expect(errorAllowsRetry("network")).toBe(true);
     expect(errorAllowsRetry("not_allowed")).toBe(false);
@@ -82,6 +97,13 @@ describe("photo checks", () => {
     expect(checkPhotoSize(479, 1000)).toBe("tooSmall");
     expect(checkPhotoSize(600, 500)).toBe("tooSmall");
     expect(checkPhotoSize(0, 0)).toBe("unreadable");
+  });
+
+  it("refuses only a photo far too dark to see any tooth", () => {
+    const dim = Array.from({ length: 100 }, (_, i) => (i < 85 ? 30 : 110)); // dark room, teeth still bright
+    expect(checkPhotoLight(dim)).toBeNull();
+    expect(checkPhotoLight(Array.from({ length: 100 }, () => 25))).toBe("tooDark");
+    expect(checkPhotoLight([])).toBeNull();
   });
 
   it("downscales to the longer side, never enlarges", () => {

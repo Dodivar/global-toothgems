@@ -822,9 +822,9 @@
     "photo": {
       "tipsTitle": "Pour une bonne photo",
       "tips": {
-        "front": "De face, le visage droit, à hauteur du sourire",
-        "lips": "Lèvres écartées, les dents bien visibles",
+        "lips": "Lèvres écartées, les dents du haut bien visibles",
         "light": "Une lumière franche, sans contre-jour ni ombre sur les dents",
+        "front": "De face, le téléphone à hauteur du sourire, sans bouger",
         "filter": "Sans filtre ni retouche"
       },
       "drop": "Déposez la photo ici, ou",
@@ -852,11 +852,16 @@
         "empty": "Ce fichier est vide. Choisissez une autre photo.",
         "tooLarge": "Cette photo dépasse {{maxMb}} Mo. Choisissez-en une plus légère.",
         "tooSmall": "Cette photo est trop petite pour voir les dents : il faut au moins {{minWidth}} × {{minHeight}} pixels.",
-        "unreadable": "Impossible de lire cette photo sur ce navigateur. Si c’est un HEIC, convertissez-le en JPEG (ou réglez l’appareil photo sur « le plus compatible »), puis réessayez."
+        "unreadable": "Impossible de lire cette photo sur ce navigateur. Si c’est un HEIC, convertissez-le en JPEG (ou réglez l’appareil photo sur « le plus compatible »), puis réessayez.",
+        "tooDark": "Cette photo est trop sombre pour voir les dents. Reprenez-la à la lumière du jour ou face à une lampe."
       },
       "generate": "Générer le rendu IA",
       "checking": "Vérification de la disponibilité…",
-      "signInHint": "Connectez-vous à votre compte pour obtenir le rendu par IA."
+      "signInHint": "Connectez-vous à votre compte pour obtenir le rendu par IA.",
+      "closeUp": {
+        "title": "Un gros plan sur vos dents",
+        "body": "Approchez le téléphone : vos dents doivent occuper une bonne partie de la photo, pas tout le visage. Une photo trop éloignée, trop sombre ou floue est refusée avant le rendu, sans compter dans vos rendus du jour."
+      }
     },
     "processing": {
       "title": "Création du rendu…",
@@ -895,6 +900,10 @@
       "failed": {
         "title": "Le rendu n’a pas abouti",
         "body": "Une erreur est survenue pendant le rendu. Réessayez dans un instant."
+      },
+      "photo_unsuitable": {
+        "title": "Cette photo ne permet pas un bon rendu",
+        "body": "Rien n’a été généré et ce rendu n’est pas compté. Reprenez une photo :"
       }
     },
     "errorActions": {
@@ -921,6 +930,14 @@
       "title": "Essayer sur mon sourire",
       "body": "Prenez ou choisissez une photo de votre sourire et voyez cette création sur vous.",
       "cta": "Essayer sur mon sourire"
+    },
+    "photoIssues": {
+      "too_far": "plus près : vos dents doivent remplir une bonne partie de la photo ;",
+      "no_teeth": "en souriant, lèvres écartées, les dents du haut bien visibles ;",
+      "teeth_hidden": "sans rien devant les dents (main, objet, cheveux) ;",
+      "too_dark": "avec plus de lumière, sans contre-jour ;",
+      "too_bright": "avec une lumière moins forte, sans flash direct sur les dents ;",
+      "blurry": "nette : tenez le téléphone immobile et laissez-le faire la mise au point."
     }
   },
   "frontView": {

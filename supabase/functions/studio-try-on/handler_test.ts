@@ -2,6 +2,7 @@ import { assertEquals, assertStringIncludes } from "jsr:@std/assert@1";
 import { readSiteOrigins } from "../_shared/http.ts";
 import { accessToken, generateImage, generateUrl, imageModelConfig, readAdcJson, readImage, resetTokenCache } from "./gemini.ts";
 import { handleStudioTryOn, readSourceRef, type StudioTryOnDeps, type TryOnCreationRow } from "./handler.ts";
+import { imageSize, judgePhoto, MIN_TEETH_SPAN } from "./photoCheck.ts";
 import { buildDesignData, piecesFromScene, readSeats, toothLabel } from "./prompt.ts";
 import { promptVersion, TRY_ON_SYSTEM_PROMPT_V1, TRY_ON_SYSTEM_PROMPT_V3 } from "./systemPrompt.ts";
 
@@ -22,9 +23,10 @@ function fake(over: Partial<StudioTryOnDeps> = {}, row: TryOnCreationRow | null 
     origins: readSiteOrigins(SITE, undefined),
     available: true,
     dailyLimit: 3,
+    dailyChecks: 5,
     userFromToken: (token) => Promise.resolve(token === TOKEN ? "user-1" : null),
     loadCreation: () => Promise.resolve(row),
-    countRecent: () => Promise.resolve(0),
+    countRecent: () => Promise.resolve({ requests: 0, renders: 0 }),
     startRequest: () => {
       calls.started++;
       return Promise.resolve("req-1");
@@ -110,9 +112,62 @@ Deno.test("refusals: no token, expired, unknown creation, owner without the plan
   const res = await handleStudioTryOn(post(form({ handle: "aurora", item_id: CREATION })), notAllowed.deps);
   assertEquals(res.status, 403);
   assertEquals(notAllowed.calls.started, 0);
-  const limited = fake({ countRecent: () => Promise.resolve(3) });
+  const limited = fake({ countRecent: () => Promise.resolve({ requests: 3, renders: 3 }) });
   assertEquals((await handleStudioTryOn(post(form()), limited.deps)).status, 429);
   assertEquals(limited.calls.started, 0);
+  // Refused photos do not use up the renders, but every request counts toward the checks' cap.
+  assertEquals((await handleStudioTryOn(post(form()), fake({ countRecent: () => Promise.resolve({ requests: 4, renders: 0 }) }).deps)).status, 200);
+  assertEquals((await handleStudioTryOn(post(form()), fake({ countRecent: () => Promise.resolve({ requests: 5, renders: 0 }) }).deps)).status, 429);
+});
+
+const GOOD_PHOTO = { teeth_visible: true, teeth_covered: false, teeth_box: [400, 300, 520, 700], sharpness: "sharp", lighting: "good" };
+
+Deno.test("photo check: an unsuitable photo is refused with its reasons, recorded, never rendered", async () => {
+  const { deps, calls } = fake({
+    checkPhoto: () => Promise.resolve({ ok: true, value: { ...GOOD_PHOTO, teeth_box: [600, 450, 640, 550], lighting: "too_dark" } }),
+  });
+  const res = await handleStudioTryOn(post(form()), deps);
+  assertEquals(res.status, 422);
+  assertEquals(await res.json(), { ok: false, code: "photo_unsuitable", reasons: ["too_dark", "too_far"] });
+  assertEquals(calls.finished, ["failed:photo_unsuitable"]);
+  assertEquals(calls.images, []);
+});
+
+Deno.test("photo check: a good photo is rendered; a check that fails never blocks the render", async () => {
+  const good = fake({ checkPhoto: () => Promise.resolve({ ok: true, value: GOOD_PHOTO }) });
+  assertEquals((await handleStudioTryOn(post(form()), good.deps)).status, 200);
+  assertEquals(good.calls.finished, ["generated"]);
+  const down = fake({ checkPhoto: () => Promise.resolve({ ok: false, detail: "http 404" }) });
+  assertEquals((await handleStudioTryOn(post(form()), down.deps)).status, 200);
+  const throws = fake({ checkPhoto: () => Promise.reject(new Error("boom")) });
+  assertEquals((await handleStudioTryOn(post(form()), throws.deps)).status, 200);
+});
+
+Deno.test("judgePhoto: clear reasons only, the teeth's span against the longer side", () => {
+  assertEquals(judgePhoto(GOOD_PHOTO, null), { issues: [], span: 0.4 });
+  assertEquals(judgePhoto({ ...GOOD_PHOTO, teeth_visible: false }, null).issues, ["no_teeth"]);
+  assertEquals(judgePhoto({ ...GOOD_PHOTO, teeth_covered: true, sharpness: "blurred", lighting: "overexposed" }, null).issues, ["teeth_hidden", "too_bright", "blurry"]);
+  // Soft or dim but readable: not refused.
+  assertEquals(judgePhoto({ ...GOOD_PHOTO, sharpness: "slightly_blurred", lighting: "dim" }, null).issues, []);
+  // A selfie of the whole face, portrait: the teeth span 28 % of the width, 21 % of the longer side.
+  const face = judgePhoto({ ...GOOD_PHOTO, teeth_box: [540, 360, 600, 640] }, { width: 896, height: 1195 });
+  assertEquals(face, { issues: ["too_far"], span: 0.21 });
+  assertEquals(face.span! < MIN_TEETH_SPAN, true);
+  // Missing or malformed facts are not held against the photo.
+  assertEquals(judgePhoto({}, null), { issues: [], span: null });
+  assertEquals(judgePhoto({ ...GOOD_PHOTO, teeth_box: [10, 900, 20, 100] }, null).issues, []);
+});
+
+Deno.test("imageSize: JPEG and PNG headers", () => {
+  // SOI, APP0 (length 4), SOF0: precision 8, height 1195, width 896.
+  const jpeg = new Uint8Array([0xff, 0xd8, 0xff, 0xe0, 0x00, 0x04, 0x00, 0x00, 0xff, 0xc0, 0x00, 0x11, 0x08, 0x04, 0xab, 0x03, 0x80, 0x03, 0, 0, 0, 0]);
+  assertEquals(imageSize(jpeg), { width: 896, height: 1195 });
+  const png = new Uint8Array(32);
+  png.set([0x89, 0x50, 0x4e, 0x47, 0x0d, 0x0a, 0x1a, 0x0a]);
+  new DataView(png.buffer).setUint32(16, 640);
+  new DataView(png.buffer).setUint32(20, 480);
+  assertEquals(imageSize(png), { width: 640, height: 480 });
+  assertEquals(imageSize(new Uint8Array([1, 2, 3])), null);
 });
 
 Deno.test("invalid input: no photo, no design, wrong type, malformed source", async () => {
