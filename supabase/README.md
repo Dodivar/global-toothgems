@@ -182,6 +182,7 @@ supabase/
 | 20261007181011 | `gift_card_design_everywhere` | **Applied 2026-10-07.** The design/names/message chosen at checkout are shown back (WYSIWYG): policy `gift_cards: purchaser reads own` (a buyer reads the cards of their purchases through the existing column grant — never the code) so the member's order pages draw the card in its design; the `gift_card_delivery` template bodies (fr + en) lose their `{{message}}` paragraph because the e-mail now draws the card itself (`giftCardVisual()`, message included). Test: a buyer sees only their own cards (to add to `gift_cards_validation.sql`) |
 | 20261007184209 | `shipping_refunds` | **Applied 2026-10-07** (decision 82). Back-office shipping and card refunds: `create_shipment()` (a parcel and its lines in one transaction, `manage_orders`, carrier + tracking to ship) and `set_shipment_status()` (forward-only; same status again only corrects the details); refunded units no longer count as "to ship" (`sync_order_fulfillment`, `guard_shipment_item`, via `private.refunded_units()`) and a confirmed refund recomputes the order's fulfilment (`apply_refund_success`); `pending_refund_emails()` lists card refunds only (gift-card credits are not e-mailed); trigger `refunds_guard_zz_gift_cards` refuses a refund while a gift card bought in the order is active; `record_external_refund()` (backend only) records a refund made in the Stripe dashboard. Suite: `supabase/tests/shipping_refunds_validation.sql` |
 | 20261025090755 | `product_specs_faq` | **Applied 2026-10-25** (decision 110). Product characteristics `products.spec_material/center/back/packaging/wear` + the same columns on `product_translations` (1–120 characters, null = not shown; `spec_material` backfilled from `metadata.material`, which stays unread), `admin_save_product()` optional `specs`; FAQ groups `faq_groups`, `faq_items`, `faq_item_translations`, `product_faq_groups`, `category_faq_groups` (RLS: published for visitors, `manage_products` writes, audited), `product_faq(product, locale)`, `admin_save_faq_group()`, seed group for `gems`. Suite: `supabase/tests/product_specs_faq_validation.sql` |
+| 20261026170231 | `studio_plan_entitlements` | **Applied 2026-10-26** (decision 113). What each Studio plan includes: `private.studio_plan_limit(tier, kind)` (essential 15 creations / 3 Gem Groups, artist 150 / 30, atelier unlimited) enforced by BEFORE INSERT triggers on `creations` and `gem_groups` (SQLSTATE `GTL01`, per-owner advisory lock; editing and deleting never limited); `private.glowbook_allowed()` = Atelier tier, now required by `studio_save_showcase` / `studio_showcase_add` / `studio_showcase_reorder`, by the look/sections/video switch (`glowbook_customization_allowed`) and by every public read (page, 3D creation, renders, pictures, video); `studio_access_state()` adds `tier`, `glowbook`, `limits`, `usage`. Suite `studio_plan_entitlements_validation.sql` (Glowbook suite moved to Atelier subscriptions) |
 | 20261007072552 | `quiz_unlimited_attempts_cleanup` | **Partly applied 2026-10-07.** `admin_save_course()` and `private.learner_course_json()` rewritten without `allow_retry` / `max_attempts` (applied live through SQL, not recorded in the migration history). `drop column` on `course_quizzes` **not applied yet**: the MCP call timed out three times with no lock or session visible; the columns are unused and keep their defaults, so nothing depends on the drop |
 
 RLS is **enabled in the same migration that creates each table** (deny by default);
@@ -1541,6 +1542,26 @@ AI render                   multipart: source, photo (≤ 6 MB), design (3D stil
 Unique constraints already index slugs, SKUs and order numbers.
 Audit FKs (`created_by`/`updated_by`) are intentionally not indexed (only scanned when a staff profile is deleted).
 
+### 3D Studio plans: what each one includes (decision 113)
+
+```
+                 Essential   Artist   Atelier     enforced by
+saved creations  15          150      unlimited   creations_plan_limit trigger (GTL01)
+Gem Groups       3           30       unlimited   gem_groups_plan_limit trigger (GTL01)
+post signature   watermark   logo     logo        private.studio_user_tier() (decision 101)
+post layouts     -           -        yes         browser, tier from the database
+Glowbook         -           -        yes         private.glowbook_allowed() (RPCs + public reads)
+AI smile try-on  -           -        yes         private.studio_try_on_allowed() (decision 111 (a))
+```
+
+A trial counts as Essential, active staff as Atelier. Everything else (editor, whole gem library, front view,
+placement sheet, share links, templates, collections, posts) is open to every plan. The browser shows the same
+table from `webapp/src/data/studio.ts` (`STUDIO_PLAN_FEATURES`, keep both in step) on the presentation page,
+the plans of the locked editor and `/compte/studio`, which also shows the member's usage from
+`studio_access_state()` (`tier`, `glowbook`, `limits`, `usage`). A save over the limit is refused by the
+database and said by a toast ("nothing was saved"); below Atelier, "My Glowbook" and a creation's Glowbook
+control show the plan instead of the forms.
+
 ## Security
 
 | Who | Can |
@@ -2434,6 +2455,21 @@ VAT rates, shipping zones/rates mirroring the Settings prototype. Media rows ref
     plan switch `private.glowbook_customization_allowed()` — the owner said the Glowbook will be reserved to the
     top plans, which is not wired yet; (f) a deleted Glowbook leaves its video files in the member's folder
     (no page uses them; the member's next recording cleans them).
+113. **3D Studio plans differ by what they save and by the Glowbook** (owner's request, 2026-10-26: "the first plan
+    is limited in features and in the content it can save, the second has more features and more groups and
+    creations, the third has almost everything unlimited plus the Glowbook, to share creations and let clients
+    try them on their smile with the AI"; migration `20261026170231_studio_plan_entitlements`). See "3D Studio
+    plans" above. Agent's choices, to confirm: (a) **the numbers** — Essential 15 creations / 3 Gem Groups,
+    Artist 150 / 30, Atelier unlimited (one function, `private.studio_plan_limit()`); (b) every creation counts,
+    Glowbook and template copies included; collections are not limited; (c) **after a downgrade nothing is
+    deleted**: the member reads, edits and deletes everything, and saves a new one once under the limit; (d) the
+    **Glowbook becomes Atelier-only** (it was open to every member with Studio access): below it the page, its
+    3D creations, renders, pictures and video are hidden and come back as they were on an upgrade; the owner
+    may still delete it (no delete button on the locked screen yet); (e) the **trial counts as Essential**
+    (decision 101's rule), so a trial member does not try the Glowbook or the AI; (f) the Artist plan's extra
+    over Essential is its numbers and the post signature — no new feature was invented for it; (g) one account
+    = one artist: no team seats are sold (the former, unused copy promising seats, early access and priority
+    support was removed). Before this decision no member but a staff account held any Studio row.
 112. **3D Studio subscription managed on our own page, not in the Stripe customer portal** (owner's request,
     2026-10-26: "keep the subscription management on our site: staying on the same interface builds trust and lets us
     show the plans and what they offer side by side"; no migration). `/compte/studio` now switches the plan or the

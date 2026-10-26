@@ -1,5 +1,6 @@
 import { describe, expect, it } from "vitest";
 import {
+  atLimit,
   countdownTickMs,
   grantsAccess,
   hoursSince,
@@ -35,6 +36,33 @@ describe("parseAccessRow", () => {
     expect(parseAccessRow([row])).toBeNull();
     expect(parseAccessRow({ ...row, state: "free_forever" })).toBeNull();
     expect(parseAccessRow({ ...row, server_now: "not a date" })).toBeNull();
+  });
+
+  it("reads the plan's entitlements and usage (decision 113)", () => {
+    const info = parseAccessRow({
+      ...row,
+      tier: "essential",
+      glowbook: false,
+      limits: { creations: 15, gem_groups: 3 },
+      usage: { creations: 15, gem_groups: 1 },
+    })!;
+    expect(info.tier).toBe("essential");
+    expect(info.glowbook).toBe(false);
+    expect(info.limits).toEqual({ creations: 15, gemGroups: 3 });
+    expect(info.usage).toEqual({ creations: 15, gemGroups: 1 });
+    expect(atLimit(info, "creations")).toBe(true);
+    expect(atLimit(info, "gemGroups")).toBe(false);
+  });
+
+  it("treats null limits as unlimited and unknown values as absent", () => {
+    const info = parseAccessRow({ ...row, tier: "atelier", glowbook: true, limits: { creations: null, gem_groups: null }, usage: { creations: 400 } })!;
+    expect(info.glowbook).toBe(true);
+    expect(atLimit(info, "creations")).toBe(false);
+    expect(info.usage.gemGroups).toBe(0);
+    const odd = parseAccessRow({ ...row, tier: "platinum", glowbook: "yes", limits: "many" })!;
+    expect(odd.tier).toBeNull();
+    expect(odd.glowbook).toBe(false);
+    expect(odd.limits).toEqual({ creations: null, gemGroups: null });
   });
 });
 

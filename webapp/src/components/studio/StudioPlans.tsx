@@ -13,7 +13,13 @@ import { studioCheckoutPath, type StudioCheckoutSurface } from "../../lib/studio
 import { useFormat } from "../../lib/format";
 import { useStudioPlanPrices } from "../../lib/studioBilling";
 import { displayPrice, monthsFreeOf, type StudioPlanPrice } from "../../lib/studioBillingMapping";
-import { STUDIO_PLANS, type StudioBillingInterval, type StudioPaidPlanId, type StudioPlan } from "../../data/studio";
+import {
+  STUDIO_PLAN_FEATURES,
+  STUDIO_PLANS,
+  type StudioBillingInterval,
+  type StudioPaidPlanId,
+  type StudioPlan,
+} from "../../data/studio";
 
 /** The member's subscription page (`app/compte/(space)/studio`). */
 export const ACCOUNT_STUDIO_PATH = "/compte/studio";
@@ -26,8 +32,8 @@ export type ChooseStudioPlan =(plan: StudioPaidPlanId, interval: StudioBillingIn
  *
  * Plan names, amounts and the trial's length are the project's own
  * (`data/studio.ts`, `studio_plan_prices`, `studio.plans.items.*.name`) — this
- * page invents none of them. Every paid plan opens the whole Studio (decision
- * 94). Nothing is bought here: the trial opens the Studio (`onTrial`) and a
+ * page invents none of them. What each plan includes is `STUDIO_PLAN_FEATURES`
+ * (decision 113), enforced by the database. Nothing is bought here: the trial opens the Studio (`onTrial`) and a
  * paid plan leads to its checkout (`onChoose`).
  */
 export function StudioPlans({ onTrial, onChoose }: { onTrial: () => void; onChoose?: ChooseStudioPlan }) {
@@ -216,16 +222,54 @@ export function StudioPaidPlans({
                 </Button>
               )}
 
-              <div className="grid gap-1.5 rounded-[var(--radius-md)] border border-[var(--gt-blue-200)] bg-[var(--gt-blue-50)] p-3.5">
-                <span className="inline-flex items-center gap-1.5 text-[10.5px] font-bold uppercase tracking-[var(--tracking-wide)] text-[var(--gt-blue-700)]">
-                  <Check size={12} aria-hidden="true" />
-                  {t("studioPage.plans.detailsTitle")}
-                </span>
-                <span className="text-[length:var(--text-caption)] text-[var(--text-body)]">{t("studioPage.plans.details")}</span>
-              </div>
+              <PlanFeatureList plan={plan.id} />
             </li>
           );
         })}
+      </ul>
+    </div>
+  );
+}
+
+/** The plan below, whose features this one builds on ("Everything in Essential, plus:"). */
+const PREVIOUS_PLAN: Partial<Record<StudioPaidPlanId, StudioPaidPlanId>> = { artist: "essential", atelier: "artist" };
+
+/**
+ * What a plan includes, from `STUDIO_PLAN_FEATURES` (decision 113): Essential
+ * lists its whole offer, the plans above say what they add to the one below.
+ */
+function PlanFeatureList({ plan }: { plan: StudioPaidPlanId }) {
+  const { t } = useTranslation();
+  const k = "studioPage.plans.features";
+  const f = STUDIO_PLAN_FEATURES[plan];
+  const previous = PREVIOUS_PLAN[plan];
+
+  const lines: string[] = [];
+  if (f.creations === null && f.gemGroups === null) lines.push(t(`${k}.unlimited`));
+  else {
+    if (f.creations !== null) lines.push(t(`${k}.creations`, { count: f.creations }));
+    if (f.gemGroups !== null) lines.push(t(`${k}.gemGroups`, { count: f.gemGroups }));
+  }
+  if (!previous) lines.push(t(`${k}.library`), t(`${k}.tools`), t(`${k}.templates`), t(`${k}.watermark`));
+  else {
+    if (f.postSignature === "ownLogo" && STUDIO_PLAN_FEATURES[previous].postSignature !== "ownLogo") lines.push(t(`${k}.ownLogo`));
+    if (f.glowbook) lines.push(t(`${k}.glowbook`));
+    if (f.tryOn) lines.push(t(`${k}.tryOn`));
+    if (f.postLayouts) lines.push(t(`${k}.layouts`));
+  }
+
+  return (
+    <div className="grid gap-2.5 border-t border-[var(--border-subtle)] pt-4">
+      <span className="text-[10.5px] font-bold uppercase tracking-[var(--tracking-wide)] text-[var(--gt-blue-700)]">
+        {previous ? t(`${k}.plus`, { plan: t(`studio.plans.items.${previous}.name`) }) : t(`${k}.title`)}
+      </span>
+      <ul className="m-0 grid list-none gap-2 p-0">
+        {lines.map((line) => (
+          <li key={line} className="flex items-start gap-2 text-[length:var(--text-body-sm)] text-[var(--text-body)]">
+            <Check size={16} aria-hidden="true" className="mt-0.5 shrink-0 text-[var(--status-success-fg)]" />
+            <span>{line}</span>
+          </li>
+        ))}
       </ul>
     </div>
   );

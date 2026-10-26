@@ -10,7 +10,7 @@ import { studioStore, useStudio } from "../studio3d/store";
 import { supabase } from "../supabase/client";
 import { withMemberships, withoutMemberships } from "./collections";
 import { createLocalRepositories, type KeyValueStorage } from "./localRepository";
-import { StudioStoreError, type StudioRepositories } from "./repository";
+import { limitKind, StudioStoreError, type StudioRepositories } from "./repository";
 import { piecesKey } from "./scene";
 import type { ShareLink } from "./share";
 import { createSupabaseRepositories } from "./supabaseRepository";
@@ -183,10 +183,19 @@ export function StudioWorkspaceProvider({ children }: { children: ReactNode }) {
   );
   const access = useStudioAccess();
   const reportDenied = access?.reportDenied;
+  const refreshAccess = access?.refresh;
   const fail = useCallback(
     (err: unknown, key = "genericFailed") => {
       // The database refused the write: the trial is over. The access gate
       // re-reads the state and shows the plans; the scene stays in memory.
+      const limit = limitKind(err);
+      if (limit) {
+        // The plan's number is reached (decision 113): nothing was saved; the
+        // usage is read again so the plan pages show it.
+        showToast(t("studio.access.limit.title"), t(`studio.access.limit.${limit}`), "warning");
+        void refreshAccess?.();
+        return;
+      }
       if (err instanceof StudioStoreError && err.code === "accessDenied") {
         showToast(t("studio.access.denied.title"), t("studio.access.denied.body"), "warning");
         reportDenied?.(key);
@@ -195,7 +204,7 @@ export function StudioWorkspaceProvider({ children }: { children: ReactNode }) {
       const invalid = err instanceof StudioStoreError && err.code === "invalid";
       showToast(t(`studio.workspace.toasts.${invalid ? "invalid" : key}`), t("studio.workspace.toasts.tryAgain"), "error");
     },
-    [showToast, t, reportDenied],
+    [showToast, t, reportDenied, refreshAccess],
   );
 
   // Load the account's library.

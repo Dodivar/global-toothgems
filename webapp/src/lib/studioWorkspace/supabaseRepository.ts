@@ -55,6 +55,8 @@ export function storeError(error: PgError | null | undefined): StudioStoreError 
       return new StudioStoreError("invalid");
     case "42501": // a write refused by row-level security: no Studio access (trial over)
       return new StudioStoreError("accessDenied");
+    case "GTL01": // the plan's number of creations / Gem Groups is reached (decision 113)
+      return new StudioStoreError("limitReached", /gem_groups/.test(error.message ?? "") ? "gemGroups" : "creations");
     case "23505": // unique violation: a collection of that name already exists
       return new StudioStoreError("duplicate");
     case "23503": // foreign key: the collection or the creation is gone (or not ours)

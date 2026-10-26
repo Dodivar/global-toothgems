@@ -430,5 +430,12 @@
       "share": "Partager"
     },
     "deleteHint": "Votre page disparaît et toutes vos créations en sont retirées. Vos créations restent dans Mes créations."
+  },
+  "locked": {
+    "title": "Le Glowbook est inclus dans la formule {{plan}}",
+    "short": "Montrez vos créations sur une page publique et laissez vos clientes les essayer sur leur sourire.",
+    "body": "Votre vitrine publique, à mettre dans votre bio Instagram : vos créations en 3D, votre identité, où vous trouver, un QR code et une affiche — et l’essayage par IA, qui permet à vos clientes de voir vos créations sur leur propre sourire.",
+    "existing": "Si vous aviez déjà un Glowbook, il est masqué du public pour l’instant et revient tel quel dès que vous repassez à cette formule.",
+    "cta": "Passer à {{plan}}"
   }
 }

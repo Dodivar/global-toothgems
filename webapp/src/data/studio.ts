@@ -147,8 +147,8 @@ export const INSPIRATION: InspirationBoard[] = [
  * values the test-mode Stripe Prices were created with. What a member is
  * charged is always the Stripe Price the subscription is created against, and
  * access always comes from the verified webhook (`studio_subscriptions`,
- * decision 94) — never from here. Every paid plan unlocks the whole Studio;
- * the feature lists (`studio.plans.<id>`) are presentation only.
+ * decision 94) — never from here. What each plan includes is
+ * `STUDIO_PLAN_FEATURES` below (decision 113).
  */
 export type StudioPlanId = "trial" | "essential" | "artist" | "atelier";
 export type StudioPaidPlanId = Exclude<StudioPlanId, "trial">;
@@ -177,3 +177,36 @@ export const STUDIO_PLANS: StudioPlan[] = [
 /** The lowest paid plan, quoted as "from …" on the page. */
 export const STUDIO_ENTRY_PLAN = STUDIO_PLANS.find((plan) => plan.id === "essential")!;
 export const STUDIO_TRIAL_DAYS = STUDIO_PLANS.find((plan) => plan.id === "trial")!.trialDays!;
+
+/**
+ * What each paid plan includes (decision 113, owner's request 2026-10-26):
+ * Essential is limited in features and in what it saves, Artist saves more and
+ * signs its posts, Atelier has (almost) everything unlimited plus the Glowbook
+ * and the AI smile try-on for its clients.
+ *
+ * Display copy of what the database enforces — keep both in step:
+ *   * the numbers: `private.studio_plan_limit()` (migration
+ *     `20261026170231_studio_plan_entitlements`), a save over them is refused;
+ *   * the Glowbook: `private.glowbook_allowed()` (same migration);
+ *   * the smile try-on: `private.studio_try_on_allowed()` (decision 111 (a));
+ *   * the post signature and layouts: `private.studio_user_tier()` (decision 101).
+ * A trial counts as Essential, active staff as Atelier. `null` = unlimited.
+ */
+export interface StudioPlanFeatures {
+  creations: number | null;
+  gemGroups: number | null;
+  /** How social posts are signed: the Global Toothgems watermark, or the member's own logo (or nothing). */
+  postSignature: "watermark" | "ownLogo";
+  postLayouts: boolean;
+  glowbook: boolean;
+  tryOn: boolean;
+}
+
+export const STUDIO_PLAN_FEATURES: Record<StudioPaidPlanId, StudioPlanFeatures> = {
+  essential: { creations: 15, gemGroups: 3, postSignature: "watermark", postLayouts: false, glowbook: false, tryOn: false },
+  artist: { creations: 150, gemGroups: 30, postSignature: "ownLogo", postLayouts: false, glowbook: false, tryOn: false },
+  atelier: { creations: null, gemGroups: null, postSignature: "ownLogo", postLayouts: true, glowbook: true, tryOn: true },
+};
+
+/** The lowest paid plan that opens the Glowbook (and the smile try-on). */
+export const STUDIO_GLOWBOOK_PLAN: StudioPaidPlanId = "atelier";

@@ -40,11 +40,13 @@ import {
 } from "../../../lib/studioWorkspace/glowbook";
 import { glowbookCounts, glowbookTodos, type GlowbookPanel, type GlowbookTodo } from "../../../lib/studioWorkspace/glowbookDashboard";
 import { useGlowbook } from "../../../lib/studioWorkspace/glowbookStore";
+import { useGlowbookPlan } from "../../../lib/studioAccess";
 import { useWorkspace } from "../../../lib/studioWorkspace/workspace";
 import { openWorkspaceDialog } from "../../../lib/studioWorkspace/workspaceUi";
 import { useToast } from "../../../lib/toast";
 import { CreationThumb } from "./CreationCard";
 import { LibrarySkeleton } from "./CreationLibrary";
+import { GlowbookLocked } from "./GlowbookLocked";
 import { GlowbookLookEditor } from "./GlowbookLookEditor";
 import { GlowbookSections } from "./GlowbookSections";
 import { GlowbookBadgeCard, GlowbookQrCard } from "./GlowbookShare";
@@ -64,6 +66,8 @@ import { eyebrow, fieldClass, focusRing, iconButton, useWorkspaceFormat, workspa
 export function GlowbookManager() {
   const { t } = useWorkspaceFormat();
   const gb = useGlowbook();
+  // Below the Atelier plan the Glowbook is closed (decision 113): the database refuses its writes.
+  const locked = useGlowbookPlan() === false;
 
   return (
     <div className={`${workspacePage} gap-6`}>
@@ -76,6 +80,7 @@ export function GlowbookManager() {
       </header>
 
       {gb.status === "signedOut" && <SignInPrompt />}
+      {gb.status !== "signedOut" && locked && <GlowbookLocked />}
       {gb.status === "unavailable" && <EmptyState art="search" title={t("studio.glowbook.unavailableTitle")} body={t("studio.glowbook.unavailableBody")} />}
       {gb.status === "error" && (
         <EmptyState
@@ -91,9 +96,9 @@ export function GlowbookManager() {
       )}
       {gb.status === "loading" && <LibrarySkeleton />}
 
-      {gb.status === "ready" && !gb.glowbook && <GlowbookForm onDone={() => undefined} />}
+      {!locked && gb.status === "ready" && !gb.glowbook && <GlowbookForm onDone={() => undefined} />}
 
-      {gb.status === "ready" && gb.glowbook && <GlowbookDashboard glowbook={gb.glowbook} />}
+      {!locked && gb.status === "ready" && gb.glowbook && <GlowbookDashboard glowbook={gb.glowbook} />}
     </div>
   );
 }

@@ -11,58 +11,18 @@
     "eyebrow": "Studio 3D"
   },
   "plans": {
-    "eyebrow": "Plans",
-    "title": "Start free, grow at your own pace.",
-    "body": "Try the whole Studio, then pick the plan that fits your practice.",
-    "featured": "Artists’ choice",
-    "trialBadge_one": "{{count}} day free",
-    "trialBadge_other": "{{count}} days free",
-    "free": "Free",
-    "trialPeriod_one": "for {{count}} day",
-    "trialPeriod_other": "for {{count}} days",
-    "perMonth": "/ month",
-    "ctaTrial": "Start the trial",
-    "ctaPaid": "Choose {{plan}}",
-    "note": "Monthly prices, cancel anytime. The plans are coming soon: during the preview, the whole Studio is free.",
     "items": {
       "trial": {
-        "name": "Trial",
-        "pitch": "The whole Studio, long enough to make up your mind.",
-        "features": [
-          "Every Studio feature",
-          "The full gem library",
-          "Your first creations saved and shared"
-        ]
+        "name": "Trial"
       },
       "essential": {
-        "name": "Essential",
-        "pitch": "To imagine your own looks.",
-        "features": [
-          "The full gem library",
-          "Creations saved to your account",
-          "Share your creations with a link",
-          "Desktop, tablet and mobile"
-        ]
+        "name": "Essential"
       },
       "artist": {
-        "name": "Artist",
-        "pitch": "To prepare every setting with your clients.",
-        "features": [
-          "Everything in Essential",
-          "Gem Groups: your reusable arrangements",
-          "Import your own dentition model",
-          "Piece estimate at shop prices"
-        ]
+        "name": "Artist"
       },
       "atelier": {
-        "name": "Atelier",
-        "pitch": "For studios and teams.",
-        "features": [
-          "Everything in Artist",
-          "Several seats for your team",
-          "Early access to new tools",
-          "Priority support"
-        ]
+        "name": "Atelier"
       }
     }
   },
@@ -202,6 +162,11 @@
     "subscribed": {
       "title": "Welcome to the 3D Studio",
       "body": "Your {{plan}} subscription is active."
+    },
+    "limit": {
+      "title": "Your plan’s limit is reached",
+      "creations": "Nothing was saved: your plan keeps no more creations. Delete one, or move to a higher plan from My subscription.",
+      "gemGroups": "Nothing was saved: your plan keeps no more Gem Groups. Delete one, or move to a higher plan from My subscription."
     }
   },
   "editor": {
@@ -741,15 +706,21 @@
       "included": "Included",
       "notIncluded": "Not included",
       "rows": {
-        "studio": "The whole 3D Studio: editor, gem library, creations, collections and templates",
-        "glowbook": "Your Glowbook, the public showcase of your creations",
+        "creations": "Saved creations",
+        "gemGroups": "Gem Groups (reusable arrangements)",
+        "studio": "3D editor and the whole gem library",
+        "tools": "Front view, placement sheet, sharing by link",
+        "templates": "Global Toothgems templates and collections",
         "posts": "Posts for social networks: HD image, 360° video, GIF",
         "signature": "Signature on posts",
-        "layouts": "Post layout templates"
+        "layouts": "Post layout templates",
+        "glowbook": "Your Glowbook, the public showcase of your creations",
+        "tryOn": "AI try-on on your clients’ smile"
       },
       "values": {
         "watermark": "Global Toothgems watermark",
-        "ownLogo": "Your logo, or none"
+        "ownLogo": "Your logo, or none",
+        "unlimited": "Unlimited"
       }
     },
     "card": {
@@ -803,6 +774,21 @@
       "resume": "Keep my subscription",
       "resumed": "Your subscription carries on: next renewal on {{date}}.",
       "error": "This could not be done. Nothing was changed: try again in a moment."
+    },
+    "usage": {
+      "title": "What your {{plan}} plan includes",
+      "creations": "Saved creations",
+      "gemGroups": "Gem Groups",
+      "of": "{{used}} of {{limit}}",
+      "unlimited": "{{used}} · unlimited",
+      "full": {
+        "creations": "Limit reached: delete a creation or move to a higher plan to save new ones.",
+        "gemGroups": "Limit reached: delete a Gem Group or move to a higher plan to save new ones."
+      },
+      "glowbook": "Glowbook",
+      "tryOn": "AI try-on for your clients",
+      "included": "included",
+      "withPlan": "with the {{plan}} plan"
     }
   },
   "tryOn": {

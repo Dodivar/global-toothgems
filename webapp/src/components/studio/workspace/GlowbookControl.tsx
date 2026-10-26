@@ -6,6 +6,8 @@ import { studioSectionPath } from "../../../lib/studioUrl";
 import { useGlowbook } from "../../../lib/studioWorkspace/glowbookStore";
 import type { Creation } from "../../../lib/studioWorkspace/types";
 import { ModerationBadge } from "./GlowbookStatus";
+import { GlowbookLocked } from "./GlowbookLocked";
+import { useGlowbookPlan } from "../../../lib/studioAccess";
 import { useWorkspaceFormat } from "./workspaceStyles";
 
 /**
@@ -19,6 +21,8 @@ export function GlowbookControl({ creation, onLeave }: { creation: Creation; onL
   const gb = useGlowbook();
   const navigate = useNavigate();
   const [pending, setPending] = useState(false);
+  const plan = useGlowbookPlan();
+  if (plan === false) return <GlowbookLocked compact onLeave={onLeave} />;
   if (gb.status !== "ready") return null;
 
   const item = gb.itemFor(creation.id);

@@ -2,29 +2,40 @@
 
 import { useTranslation } from "react-i18next";
 import { Check, Minus } from "lucide-react";
-import type { StudioPaidPlanId } from "../../../data/studio";
+import { useFormat } from "../../../lib/format";
+import { STUDIO_PLAN_FEATURES, type StudioPaidPlanId, type StudioPlanFeatures } from "../../../data/studio";
 
 const PLANS: StudioPaidPlanId[] = ["essential", "artist", "atelier"];
 
-/** A row: included or not per plan, or a word per plan (`values.<key>`). */
-type Cell = boolean | string;
+/** A row: included or not per plan, a number, or a word per plan (`values.<key>`). */
+type Cell = boolean | number | string;
+
+const limit = (n: number | null): Cell => n ?? "unlimited";
+const perPlan = (cell: (f: StudioPlanFeatures) => Cell) =>
+  Object.fromEntries(PLANS.map((plan) => [plan, cell(STUDIO_PLAN_FEATURES[plan])])) as Record<StudioPaidPlanId, Cell>;
 
 /**
- * What separates the plans, side by side. Only what the database actually
- * gates by plan (`private.studio_user_tier()`, decision 101: the watermark, the
- * member's own logo, the post layouts) differs; every other row is the whole
- * Studio, open to every plan (decision 94).
+ * What separates the plans, side by side, from `STUDIO_PLAN_FEATURES`
+ * (decision 113) — the rows that differ are the ones the database gates by
+ * plan (saved creations and Gem Groups, Glowbook, smile try-on, post
+ * signature and layouts); the others are open to every plan.
  */
 const ROWS: { key: string; cells: Record<StudioPaidPlanId, Cell> }[] = [
-  { key: "studio", cells: { essential: true, artist: true, atelier: true } },
-  { key: "glowbook", cells: { essential: true, artist: true, atelier: true } },
-  { key: "posts", cells: { essential: true, artist: true, atelier: true } },
-  { key: "signature", cells: { essential: "watermark", artist: "ownLogo", atelier: "ownLogo" } },
-  { key: "layouts", cells: { essential: false, artist: false, atelier: true } },
+  { key: "creations", cells: perPlan((f) => limit(f.creations)) },
+  { key: "gemGroups", cells: perPlan((f) => limit(f.gemGroups)) },
+  { key: "studio", cells: perPlan(() => true) },
+  { key: "tools", cells: perPlan(() => true) },
+  { key: "templates", cells: perPlan(() => true) },
+  { key: "posts", cells: perPlan(() => true) },
+  { key: "signature", cells: perPlan((f) => f.postSignature) },
+  { key: "layouts", cells: perPlan((f) => f.postLayouts) },
+  { key: "glowbook", cells: perPlan((f) => f.glowbook) },
+  { key: "tryOn", cells: perPlan((f) => f.tryOn) },
 ];
 
 export function StudioPlanComparison({ current }: { current: StudioPaidPlanId | null }) {
   const { t } = useTranslation();
+  const { formatCount } = useFormat();
   const k = "studio.account.compare";
 
   return (
@@ -68,6 +79,8 @@ export function StudioPlanComparison({ current }: { current: StudioPaidPlanId | 
                         <Minus size={18} aria-hidden="true" className="mx-auto text-[var(--text-muted)]" />
                         <span className="sr-only">{t(`${k}.notIncluded`)}</span>
                       </>
+                    ) : typeof cell === "number" ? (
+                      <span className="font-semibold text-[var(--text-primary)]">{formatCount(cell)}</span>
                     ) : (
                       <span className="text-[var(--text-primary)]">{t(`${k}.values.${cell}`)}</span>
                     )}

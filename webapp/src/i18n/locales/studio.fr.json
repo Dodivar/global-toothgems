@@ -11,58 +11,18 @@
     "eyebrow": "Studio 3D"
   },
   "plans": {
-    "eyebrow": "Formules",
-    "title": "Commencez gratuitement, évoluez à votre rythme.",
-    "body": "Essayez tout le Studio, puis choisissez la formule qui correspond à votre pratique.",
-    "featured": "Le choix des artistes",
-    "trialBadge_one": "{{count}} jour offert",
-    "trialBadge_other": "{{count}} jours offerts",
-    "free": "Gratuit",
-    "trialPeriod_one": "pendant {{count}} jour",
-    "trialPeriod_other": "pendant {{count}} jours",
-    "perMonth": "/ mois",
-    "ctaTrial": "Commencer l’essai",
-    "ctaPaid": "Choisir {{plan}}",
-    "note": "Prix mensuels, sans engagement. Les formules arrivent bientôt : pendant l’aperçu, tout le Studio est gratuit.",
     "items": {
       "trial": {
-        "name": "Essai",
-        "pitch": "Tout le Studio, le temps de vous faire un avis.",
-        "features": [
-          "Toutes les fonctionnalités du Studio",
-          "Toute la bibliothèque de gemmes",
-          "Vos premières créations enregistrées et partagées"
-        ]
+        "name": "Essai"
       },
       "essential": {
-        "name": "Essentiel",
-        "pitch": "Pour imaginer vos propres looks.",
-        "features": [
-          "Toute la bibliothèque de gemmes",
-          "Créations enregistrées dans votre compte",
-          "Partage de vos créations par lien",
-          "Ordinateur, tablette et mobile"
-        ]
+        "name": "Essentiel"
       },
       "artist": {
-        "name": "Artiste",
-        "pitch": "Pour préparer chaque pose avec vos clientes.",
-        "features": [
-          "Tout ce que comprend Essentiel",
-          "Gem Groups : vos assemblages réutilisables",
-          "Import de votre propre modèle de dentition",
-          "Estimation des pièces aux prix de la boutique"
-        ]
+        "name": "Artiste"
       },
       "atelier": {
-        "name": "Atelier",
-        "pitch": "Pour les studios et les équipes.",
-        "features": [
-          "Tout ce que comprend Artiste",
-          "Plusieurs postes pour votre équipe",
-          "Accès en avant-première aux nouveaux outils",
-          "Support prioritaire"
-        ]
+        "name": "Atelier"
       }
     }
   },
@@ -202,6 +162,11 @@
     "subscribed": {
       "title": "Bienvenue dans le Studio 3D",
       "body": "Votre abonnement {{plan}} est actif."
+    },
+    "limit": {
+      "title": "Limite de votre formule atteinte",
+      "creations": "Rien n’a été enregistré : votre formule ne garde pas plus de créations. Supprimez-en une ou passez à la formule supérieure depuis Mon abonnement.",
+      "gemGroups": "Rien n’a été enregistré : votre formule ne garde pas plus de Gem Groups. Supprimez-en un ou passez à la formule supérieure depuis Mon abonnement."
     }
   },
   "editor": {
@@ -741,15 +706,21 @@
       "included": "Inclus",
       "notIncluded": "Non inclus",
       "rows": {
-        "studio": "Tout le Studio 3D : éditeur, bibliothèque de gemmes, créations, collections et modèles",
-        "glowbook": "Votre Glowbook, la vitrine publique de vos créations",
+        "creations": "Créations enregistrées",
+        "gemGroups": "Gem Groups (assemblages réutilisables)",
+        "studio": "Éditeur 3D et toute la bibliothèque de gemmes",
+        "tools": "Vue de face, fiche de placement, partage par lien",
+        "templates": "Modèles Global Toothgems et collections",
         "posts": "Publications pour les réseaux : image HD, vidéo 360°, GIF",
         "signature": "Signature des publications",
-        "layouts": "Modèles de mise en page des publications"
+        "layouts": "Modèles de mise en page des publications",
+        "glowbook": "Votre Glowbook, la vitrine publique de vos créations",
+        "tryOn": "Essayage par IA sur le sourire de vos clientes"
       },
       "values": {
         "watermark": "Filigrane Global Toothgems",
-        "ownLogo": "Votre logo, ou rien"
+        "ownLogo": "Votre logo, ou rien",
+        "unlimited": "Illimité"
       }
     },
     "card": {
@@ -803,6 +774,21 @@
       "resume": "Garder mon abonnement",
       "resumed": "Votre abonnement continue : prochain renouvellement le {{date}}.",
       "error": "L’action n’a pas pu être faite. Rien n’a été modifié : réessayez dans un instant."
+    },
+    "usage": {
+      "title": "Ce que comprend votre formule {{plan}}",
+      "creations": "Créations enregistrées",
+      "gemGroups": "Gem Groups",
+      "of": "{{used}} sur {{limit}}",
+      "unlimited": "{{used}} · illimité",
+      "full": {
+        "creations": "Limite atteinte : supprimez une création ou passez à la formule supérieure pour en enregistrer de nouvelles.",
+        "gemGroups": "Limite atteinte : supprimez un Gem Group ou passez à la formule supérieure pour en enregistrer de nouveaux."
+      },
+      "glowbook": "Glowbook",
+      "tryOn": "Essayage par IA pour vos clientes",
+      "included": "inclus",
+      "withPlan": "avec la formule {{plan}}"
     }
   },
   "tryOn": {

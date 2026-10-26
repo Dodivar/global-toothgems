@@ -10,13 +10,14 @@ import { useFormat } from "../../lib/format";
 import { StudioAccessProvider, useStudioAccess } from "../../lib/studioAccess";
 import { StudioWithdrawalPanel } from "../../components/studio/account/StudioWithdrawalPanel";
 import { StudioBillingManager } from "../../components/studio/account/StudioBillingManager";
+import { StudioPlanUsage } from "../../components/studio/account/StudioPlanUsage";
 import { STUDIO_EDITOR_PATH, STUDIO_SUBSCRIBE_PATH } from "../../lib/studioUrl";
-import type { StudioAccessInfo } from "../../lib/studioAccessState";
+import { grantsAccess, type StudioAccessInfo } from "../../lib/studioAccessState";
 
 /**
  * The member's 3D Studio subscription (`/compte/studio`, decision 94): the
  * access the database reports (plan, billing, next renewal or end date, a
- * payment to fix), then the subscription managed right here (decision 112:
+ * payment to fix) and what the plan includes and is used of it (decision 113), then the subscription managed right here (decision 112:
  * plans compared and switched, card, invoices, cancellation —
  * `StudioBillingManager`). What changes at Stripe comes back through the
  * verified webhook; the page re-reads the access after each change. Within 14
@@ -112,6 +113,8 @@ function SubscriptionPanel({ info }: { info: StudioAccessInfo }) {
           <Row label={t("studio.account.billingLabel")}>{t(`studio.account.interval.${info.subscriptionInterval}`)}</Row>
         )}
       </dl>
+
+      {grantsAccess(info.state) && <StudioPlanUsage info={info} />}
 
       {note && (
         <p
