@@ -824,7 +824,7 @@
       "tips": {
         "lips": "Lips apart, upper teeth clearly visible",
         "light": "Good, even light, no backlight or shadow on the teeth",
-        "front": "Face-on, the phone at smile height, held still",
+        "front": "Face-on, head neither turned nor tilted, the phone held still",
         "filter": "No filter or retouching"
       },
       "drop": "Drop the photo here, or",
@@ -860,7 +860,7 @@
       "signInHint": "Sign in to your account to get the AI render.",
       "closeUp": {
         "title": "A close-up of your teeth",
-        "body": "Bring the phone closer: your teeth should fill a good part of the photo, not your whole face. A photo taken too far away, too dark or blurred is turned down before the render and does not count towards your renders of the day."
+        "body": "Bring the phone closer and hold it straight in front of you, at smile height: your teeth should fill a good part of the photo, not your whole face. A photo taken too far away, at an angle, too dark or blurred is turned down before the render and does not count towards your renders of the day."
       }
     },
     "processing": {
@@ -933,6 +933,7 @@
     },
     "photoIssues": {
       "too_far": "closer: your teeth should fill a good part of the photo;",
+      "not_frontal": "face-on: the phone at smile height, head neither turned nor tilted, both front teeth clearly visible;",
       "no_teeth": "smiling, lips apart, upper teeth clearly visible;",
       "teeth_hidden": "with nothing in front of the teeth (hand, object, hair);",
       "too_dark": "with more light, no backlight;",

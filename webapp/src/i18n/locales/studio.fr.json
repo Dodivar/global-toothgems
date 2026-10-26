@@ -824,7 +824,7 @@
       "tips": {
         "lips": "Lèvres écartées, les dents du haut bien visibles",
         "light": "Une lumière franche, sans contre-jour ni ombre sur les dents",
-        "front": "De face, le téléphone à hauteur du sourire, sans bouger",
+        "front": "De face, sans tourner ni pencher la tête, le téléphone immobile",
         "filter": "Sans filtre ni retouche"
       },
       "drop": "Déposez la photo ici, ou",
@@ -860,7 +860,7 @@
       "signInHint": "Connectez-vous à votre compte pour obtenir le rendu par IA.",
       "closeUp": {
         "title": "Un gros plan sur vos dents",
-        "body": "Approchez le téléphone : vos dents doivent occuper une bonne partie de la photo, pas tout le visage. Une photo trop éloignée, trop sombre ou floue est refusée avant le rendu, sans compter dans vos rendus du jour."
+        "body": "Approchez le téléphone et tenez-le bien de face, à hauteur du sourire : vos dents doivent occuper une bonne partie de la photo, pas tout le visage. Une photo trop éloignée, de biais, trop sombre ou floue est refusée avant le rendu, sans compter dans vos rendus du jour."
       }
     },
     "processing": {
@@ -933,6 +933,7 @@
     },
     "photoIssues": {
       "too_far": "plus près : vos dents doivent remplir une bonne partie de la photo ;",
+      "not_frontal": "de face : le téléphone à hauteur du sourire, sans tourner ni pencher la tête, les deux dents de devant bien visibles ;",
       "no_teeth": "en souriant, lèvres écartées, les dents du haut bien visibles ;",
       "teeth_hidden": "sans rien devant les dents (main, objet, cheveux) ;",
       "too_dark": "avec plus de lumière, sans contre-jour ;",

@@ -24,7 +24,7 @@ import { buildDesignData, piecesFromScene, readSeats } from "./prompt.ts";
  *             gems by id
  *     200 { ok: true, image: { mime_type, data } }   base64, never stored
  *     422 { ok: false, code: "photo_unsuitable", reasons }  the photo check
- *             (`photoCheck.ts`) refused the photo: too_far | no_teeth |
+ *             (`photoCheck.ts`) refused the photo: too_far | not_frontal | no_teeth |
  *             teeth_hidden | too_dark | too_bright | blurry — no generation
  *     4xx/5xx { ok: false, code }  invalid_request | sign_in_required |
  *             session_expired | not_found | not_allowed | daily_limit |
@@ -199,7 +199,14 @@ export async function handleStudioTryOn(req: Request, deps: StudioTryOnDeps): Pr
     if (answer.ok) {
       const verdict = judgePhoto(answer.value, photo.size);
       // Facts only, never the photo: they tune the thresholds.
-      deps.log("photo check", { span: verdict.span, issues: verdict.issues, lighting: answer.value.lighting, sharpness: answer.value.sharpness });
+      deps.log("photo check", {
+        span: verdict.span,
+        issues: verdict.issues,
+        lighting: answer.value.lighting,
+        sharpness: answer.value.sharpness,
+        pose: answer.value.head_pose,
+        centrals: answer.value.central_incisors_visible,
+      });
       if (verdict.issues.length > 0) {
         await deps.finishRequest(requestId, "failed", "photo_unsuitable").catch(() => {});
         return json({ ok: false, code: "photo_unsuitable", reasons: verdict.issues }, 422, cors);

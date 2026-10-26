@@ -58,7 +58,7 @@ export type TryOnErrorCode = (typeof TRY_ON_ERROR_CODES)[number];
  * Why the function's photo check refused a photo (`photo_unsuitable`,
  * `photoCheck.ts` in the function): each one has a message saying what to change.
  */
-export const PHOTO_ISSUES = ["too_far", "no_teeth", "teeth_hidden", "too_dark", "too_bright", "blurry"] as const;
+export const PHOTO_ISSUES = ["too_far", "not_frontal", "no_teeth", "teeth_hidden", "too_dark", "too_bright", "blurry"] as const;
 export type PhotoIssue = (typeof PHOTO_ISSUES)[number];
 
 export type TryOnOutcome = { ok: true; image: Blob } | { ok: false; code: TryOnErrorCode; reasons?: PhotoIssue[] };

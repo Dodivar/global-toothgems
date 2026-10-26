@@ -125,7 +125,15 @@ Deno.test("refusals: no token, expired, unknown creation, owner without the plan
   assertEquals(admin.calls.started, 1);
 });
 
-const GOOD_PHOTO = { teeth_visible: true, teeth_covered: false, teeth_box: [400, 300, 520, 700], sharpness: "sharp", lighting: "good" };
+const GOOD_PHOTO = {
+  teeth_visible: true,
+  teeth_covered: false,
+  teeth_box: [400, 300, 520, 700],
+  sharpness: "sharp",
+  lighting: "good",
+  head_pose: "frontal",
+  central_incisors_visible: true,
+};
 
 Deno.test("photo check: an unsuitable photo is refused with its reasons, recorded, never rendered", async () => {
   const { deps, calls } = fake({
@@ -152,6 +160,10 @@ Deno.test("judgePhoto: clear reasons only, the teeth's span against the longer s
   assertEquals(judgePhoto(GOOD_PHOTO, null), { issues: [], span: 0.4 });
   assertEquals(judgePhoto({ ...GOOD_PHOTO, teeth_visible: false }, null).issues, ["no_teeth"]);
   assertEquals(judgePhoto({ ...GOOD_PHOTO, teeth_covered: true, sharpness: "blurred", lighting: "overexposed" }, null).issues, ["teeth_hidden", "too_bright", "blurry"]);
+  // A three-quarter view, or a front tooth not facing the camera: refused; slightly turned: not.
+  assertEquals(judgePhoto({ ...GOOD_PHOTO, head_pose: "strongly_turned" }, null).issues, ["not_frontal"]);
+  assertEquals(judgePhoto({ ...GOOD_PHOTO, central_incisors_visible: false }, null).issues, ["not_frontal"]);
+  assertEquals(judgePhoto({ ...GOOD_PHOTO, head_pose: "slightly_turned" }, null).issues, []);
   // Soft or dim but readable: not refused.
   assertEquals(judgePhoto({ ...GOOD_PHOTO, sharpness: "slightly_blurred", lighting: "dim" }, null).issues, []);
   // A selfie of the whole face, portrait: the teeth span 28 % of the width, 21 % of the longer side.

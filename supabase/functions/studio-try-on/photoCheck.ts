@@ -2,7 +2,8 @@
  * The photo check before a try-on render (decision 111, 2026-10-26): a small
  * text model (TRY_ON_CHECK_MODEL, `gemini-3.1-flash-lite` by default) looks at
  * the smile photo and answers a few facts as JSON — teeth visible or covered,
- * the box around the visible teeth, sharpness, light. The verdict is decided
+ * the box around the visible teeth, sharpness, light, how the smile faces
+ * the camera and whether both upper central incisors face it. The verdict is decided
  * HERE, by fixed thresholds (`judgePhoto`), never by the model: a photo is
  * refused only for a clear reason, and any fact the model did not give
  * clearly is not held against it (no false refusal for a doubt).
@@ -23,7 +24,7 @@ export const DEFAULT_CHECK_MODEL = "gemini-3.1-flash-lite";
  */
 export const MIN_TEETH_SPAN = 0.25;
 
-export const PHOTO_ISSUES = ["too_far", "no_teeth", "teeth_hidden", "too_dark", "too_bright", "blurry"] as const;
+export const PHOTO_ISSUES = ["too_far", "not_frontal", "no_teeth", "teeth_hidden", "too_dark", "too_bright", "blurry"] as const;
 export type PhotoIssue = (typeof PHOTO_ISSUES)[number];
 
 export const PHOTO_CHECK_PROMPT = `You check a photo before a tooth gem try-on: gems will be drawn on the person's front teeth.
@@ -33,6 +34,8 @@ Look at the photo and report facts only, as JSON matching the schema:
 - teeth_box: the box around ALL the visible teeth together (not the lips, not the face), as [ymin, xmin, ymax, xmax] on a 0–1000 scale of the image. Empty array when no teeth are visible.
 - sharpness: "sharp", "slightly_blurred" (soft but the teeth edges are readable) or "blurred" (the teeth edges cannot be told apart).
 - lighting: "good", "dim" (darker but the teeth are readable), "too_dark" (the teeth are hard to see) or "overexposed" (the teeth are burnt white, no detail).
+- head_pose: how the smile faces the camera — "frontal" (facing it), "slightly_turned" (a little to one side, up or down, the front teeth still face the camera) or "strongly_turned" (a three-quarter view or a steep angle from below or above: the front teeth are seen at a slant and one side of the smile is much more visible than the other).
+- central_incisors_visible: true when BOTH upper central incisors (the two front teeth on either side of the middle of the smile) are clearly visible and face the camera; false when one of them is hidden, cut off or seen edge-on.
 Report what you see; when unsure, choose the more favourable value.`;
 
 /** Gemini's `responseSchema` (OpenAPI subset). */
@@ -44,8 +47,10 @@ export const PHOTO_CHECK_SCHEMA = {
     teeth_box: { type: "ARRAY", items: { type: "INTEGER" } },
     sharpness: { type: "STRING", enum: ["sharp", "slightly_blurred", "blurred"] },
     lighting: { type: "STRING", enum: ["good", "dim", "too_dark", "overexposed"] },
+    head_pose: { type: "STRING", enum: ["frontal", "slightly_turned", "strongly_turned"] },
+    central_incisors_visible: { type: "BOOLEAN" },
   },
-  required: ["teeth_visible", "teeth_covered", "teeth_box", "sharpness", "lighting"],
+  required: ["teeth_visible", "teeth_covered", "teeth_box", "sharpness", "lighting", "head_pose", "central_incisors_visible"],
 };
 
 export interface PhotoVerdict {
@@ -61,6 +66,9 @@ export interface PhotoVerdict {
 export function judgePhoto(answer: Record<string, unknown>, size: { width: number; height: number } | null): PhotoVerdict {
   const issues: PhotoIssue[] = [];
   if (answer.teeth_visible === false) return { issues: ["no_teeth"], span: null };
+  // A smile seen at a slant loses its middle line: the image model then puts the gems on the wrong teeth
+  // (owner's test, 2026-10-26). Only a clear three-quarter view, or a front tooth not facing the camera, is refused.
+  if (answer.head_pose === "strongly_turned" || answer.central_incisors_visible === false) issues.push("not_frontal");
   if (answer.teeth_covered === true) issues.push("teeth_hidden");
   if (answer.lighting === "too_dark") issues.push("too_dark");
   if (answer.lighting === "overexposed") issues.push("too_bright");
