@@ -6,6 +6,7 @@ import { useCookieConsent } from "./cookieConsent";
 import { isSupabaseConfigured } from "./supabase/client";
 import { fetchStudioAccess, startStudioTrial } from "./studioAccessApi";
 import { grantsAccess, type StudioAccessInfo } from "./studioAccessState";
+import { hasFeature, type StudioFeature } from "./studioEntitlements";
 import { setStudioAnalyticsAccess, setStudioAnalyticsConsent, trackStudio, trackStudioOnce } from "./studioAnalytics";
 
 /**
@@ -230,4 +231,16 @@ export function useGlowbookPlan(): boolean | null {
   const status = access?.status;
   if (!status || status.kind === "preview") return true;
   return status.kind === "ready" ? status.info.glowbook : null;
+}
+
+/**
+ * Whether the member's plan opens a feature (decision 113, `lib/studioEntitlements.ts`),
+ * as far as the page knows: true in the preview, null while unknown. Display
+ * only — the database refuses the feature's writes and reads below its plan.
+ */
+export function useStudioFeature(feature: StudioFeature): boolean | null {
+  const access = useStudioAccess();
+  const status = access?.status;
+  if (!status || status.kind === "preview") return true;
+  return status.kind === "ready" ? hasFeature(status.info.tier, feature) : null;
 }

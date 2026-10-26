@@ -3,6 +3,10 @@ import { STUDIO_PLAN_FEATURES, STUDIO_PLANS, type StudioPaidPlanId } from "../da
 import { canSaveMore, countLimit, hasFeature, isStudioTier, lowestPlanWith, planFeatures, type StudioFeature } from "./studioEntitlements";
 import { atLimit, parseAccessRow } from "./studioAccessState";
 import { rightsFor } from "./studio3d/socialExport/branding";
+import studioPageFr from "../i18n/locales/studioPage.fr.json";
+import studioPageEn from "../i18n/locales/studioPage.en.json";
+import studioFr from "../i18n/locales/studio.fr.json";
+import studioEn from "../i18n/locales/studio.en.json";
 
 const TIERS: StudioPaidPlanId[] = ["essential", "artist", "atelier"];
 const FEATURES: StudioFeature[] = ["ownLogo", "postLayouts", "templates", "collections", "glowbook", "tryOn"];
@@ -142,5 +146,46 @@ describe("social export rights follow the same table", () => {
     expect(rights.mayUseLogo).toBe(hasFeature(tier, "ownLogo"));
     expect(rights.mayRemoveWatermark).toBe(hasFeature(tier, "ownLogo"));
     expect(rights.mayUseTemplates).toBe(hasFeature(tier, "postLayouts"));
+  });
+});
+
+describe("every plan string exists in French and English", () => {
+  // Read the JSON files themselves: i18next would show a missing key as its path, never fail.
+  const locales = {
+    fr: { page: studioPageFr, studio: studioFr },
+    en: { page: studioPageEn, studio: studioEn },
+  };
+  const at = (tree: unknown, path: string): unknown =>
+    path.split(".").reduce<unknown>((node, key) => (node && typeof node === "object" ? (node as Record<string, unknown>)[key] : undefined), tree);
+
+  it.each(Object.keys(locales) as (keyof typeof locales)[])("%s", (lang) => {
+    const { page, studio } = locales[lang];
+    const keys = [
+      // Plan cards (StudioPlans: PlanFeatureList)
+      ...FEATURES.map((f) => `plans.features.${f}`),
+      ...["title", "plus", "creations_one", "creations_other", "gemGroups_one", "gemGroups_other", "unlimited", "library", "tools", "watermark"].map(
+        (k) => `plans.features.${k}`,
+      ),
+      ...TIERS.map((tier) => `plans.items.${tier}`),
+    ];
+    for (const key of keys) expect(at(page, key), `studioPage.${key}`).toEqual(expect.any(String));
+
+    const studioKeys = [
+      ...TIERS.map((tier) => `plans.items.${tier}.name`),
+      // Comparison table (StudioPlanComparison)
+      ...["creations", "gemGroups", "studio", "tools", "templates", "collections", "posts", "signature", "layouts", "glowbook", "tryOn"].map(
+        (k) => `account.compare.rows.${k}`,
+      ),
+      ...["watermark", "ownLogo", "unlimited"].map((k) => `account.compare.values.${k}`),
+      // Usage block (StudioPlanUsage)
+      ...["title", "creations", "gemGroups", "of", "unlimited", "templates", "collections", "glowbook", "tryOn", "included", "withPlan"].map(
+        (k) => `account.usage.${k}`,
+      ),
+      // Locked panels (PlanLocked) and the limit toast
+      "access.planLocked.cta",
+      ...(["glowbook", "templates", "collections"] as const).flatMap((f) => ["title", "short", "body", "kept"].map((k) => `access.planLocked.${f}.${k}`)),
+      ...["title", "creations", "gemGroups"].map((k) => `access.limit.${k}`),
+    ];
+    for (const key of studioKeys) expect(at(studio, key), `studio.${key}`).toEqual(expect.any(String));
   });
 });

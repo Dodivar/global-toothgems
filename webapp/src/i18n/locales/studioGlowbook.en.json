@@ -430,12 +430,5 @@
       "share": "Share"
     },
     "deleteHint": "Your page goes away and every creation is taken off it. Your creations stay in My creations."
-  },
-  "locked": {
-    "title": "The Glowbook comes with the {{plan}} plan",
-    "short": "Show your creations on a public page and let your clients try them on their smile.",
-    "body": "Your public showcase, for your Instagram bio: your creations in 3D, your identity, where to find you, a QR code and a poster — and the AI try-on, which lets your clients see your creations on their own smile.",
-    "existing": "If you already had a Glowbook, it is hidden from the public for now and comes back as it was once you are on this plan again.",
-    "cta": "Switch to {{plan}}"
   }
 }

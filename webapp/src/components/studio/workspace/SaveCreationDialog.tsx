@@ -11,6 +11,7 @@ import { copyName, validateDetails, type DetailsError } from "../../../lib/studi
 import { useWorkspace } from "../../../lib/studioWorkspace/workspace";
 import { openWorkspaceDialog } from "../../../lib/studioWorkspace/workspaceUi";
 import { CollectionChecklist } from "./Collections";
+import { useStudioFeature } from "../../../lib/studioAccess";
 import { DetailsFields } from "./DetailsFields";
 import { ScenePreview } from "./ScenePreview";
 import { useStageCapture } from "./useStageCapture";
@@ -50,7 +51,9 @@ export function SaveCreationDialog({
   const [error, setError] = useState<DetailsError | null>(null);
   // A new save can be filed at once; "save as new" starts from the original's collections.
   const [chosen, setChosen] = useState<Set<string>>(() => (source ? collectionIdsOf(source.id, memberships) : new Set()));
-  const filing = mode !== "edit" && collectionsStatus === "ready";
+  // Filing into folders needs the Artist plan (decision 113 (b)).
+  const canFile = useStudioFeature("collections") !== false;
+  const filing = mode !== "edit" && collectionsStatus === "ready" && canFile;
   const [busy, setBusy] = useState(false);
 
   const pieces = mode === "edit" && creation ? creation.scene.pieces : snap.jewels;

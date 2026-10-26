@@ -167,6 +167,27 @@
       "title": "Your plan’s limit is reached",
       "creations": "Nothing was saved: your plan keeps no more creations. Delete one, or move to a higher plan from My subscription.",
       "gemGroups": "Nothing was saved: your plan keeps no more Gem Groups. Delete one, or move to a higher plan from My subscription."
+    },
+    "planLocked": {
+      "cta": "Switch to {{plan}}",
+      "glowbook": {
+        "title": "The Glowbook comes with the {{plan}} plan",
+        "short": "Show your creations on a public page and let your clients try them on their smile.",
+        "body": "Your public showcase, for your Instagram bio: your creations in 3D, your identity, where to find you, a QR code and a poster — and the AI try-on, which lets your clients see your creations on their own smile.",
+        "kept": "If you already had a Glowbook, it is hidden from the public for now and comes back as it was once you are on this plan again."
+      },
+      "templates": {
+        "title": "Global Toothgems templates come with the {{plan}} plan",
+        "short": "Start from the Global Toothgems team’s creations and adapt them for your clients.",
+        "body": "Creations designed by the Global Toothgems team, renewed over time: copy one into your creations in one click, then adapt it freely. The original template never changes.",
+        "kept": "Templates you already copied stay in your creations, whatever your plan."
+      },
+      "collections": {
+        "title": "Folders come with the {{plan}} plan",
+        "short": "File your creations by client, by style or by event.",
+        "body": "Create folders to file your creations by client, by style or by event, and find them at a glance in My Creations.",
+        "kept": "Folders you already have stay visible: you can take creations out or delete them, but no longer create or fill them."
+      }
     }
   },
   "editor": {
@@ -789,7 +810,9 @@
       "glowbook": "Glowbook",
       "tryOn": "AI try-on for your clients",
       "included": "included",
-      "withPlan": "with the {{plan}} plan"
+      "withPlan": "with the {{plan}} plan",
+      "templates": "Global Toothgems templates",
+      "collections": "Folders for your creations"
     }
   },
   "tryOn": {

@@ -5,6 +5,7 @@ import { Dialog } from "../../ui/Dialog";
 import { Button } from "../../ui/Button";
 import { useGlowbook } from "../../../lib/studioWorkspace/glowbookStore";
 import { useWorkspace } from "../../../lib/studioWorkspace/workspace";
+import { useStudioFeature } from "../../../lib/studioAccess";
 import { closeWorkspaceDialog, useWorkspaceDialog } from "../../../lib/studioWorkspace/workspaceUi";
 import { CollectionEditDialog, CreationCollectionsDialog } from "./Collections";
 import { CreationDetail } from "./CreationDetail";
@@ -12,6 +13,7 @@ import { DeleteConfirmation } from "./DeleteConfirmation";
 import { FeedbackModal } from "./FeedbackModal";
 import { GlowbookDeleteNotice } from "./GlowbookStatus";
 import { OnboardingOverlay, TourCompleteDialog } from "./OnboardingOverlay";
+import { PlanLockedDialog } from "./PlanLocked";
 import { PublicSaveWarning } from "./PublicSaveWarning";
 import { SaveCreationDialog } from "./SaveCreationDialog";
 import { SaveGemGroupDialog } from "./SaveGemGroupDialog";
@@ -31,6 +33,9 @@ export function WorkspaceDialogs() {
   const ws = useWorkspace();
   const gb = useGlowbook();
   const { t } = useTranslation();
+  // Below the Artist plan folders cannot be created, renamed or filled (decision 113 (b)):
+  // those actions open the plan panel instead; deleting a folder stays open.
+  const collectionsLocked = useStudioFeature("collections") === false;
   const close = closeWorkspaceDialog;
   if (!dialog) return null;
 
@@ -75,8 +80,10 @@ export function WorkspaceDialogs() {
         />
       );
     case "creationCollections":
+      if (collectionsLocked) return <PlanLockedDialog feature="collections" onClose={close} />;
       return <CreationCollectionsDialog creationId={dialog.creationId} back={dialog.back} onClose={close} />;
     case "editCollection":
+      if (collectionsLocked) return <PlanLockedDialog feature="collections" onClose={close} />;
       return <CollectionEditDialog collection={dialog.collection} onClose={close} />;
     case "deleteCollection":
       return (

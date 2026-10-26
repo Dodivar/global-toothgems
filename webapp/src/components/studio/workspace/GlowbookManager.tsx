@@ -46,7 +46,7 @@ import { openWorkspaceDialog } from "../../../lib/studioWorkspace/workspaceUi";
 import { useToast } from "../../../lib/toast";
 import { CreationThumb } from "./CreationCard";
 import { LibrarySkeleton } from "./CreationLibrary";
-import { GlowbookLocked } from "./GlowbookLocked";
+import { PlanLocked } from "./PlanLocked";
 import { GlowbookLookEditor } from "./GlowbookLookEditor";
 import { GlowbookSections } from "./GlowbookSections";
 import { GlowbookBadgeCard, GlowbookQrCard } from "./GlowbookShare";
@@ -80,7 +80,7 @@ export function GlowbookManager() {
       </header>
 
       {gb.status === "signedOut" && <SignInPrompt />}
-      {gb.status !== "signedOut" && locked && <GlowbookLocked />}
+      {gb.status !== "signedOut" && locked && <PlanLocked feature="glowbook" />}
       {gb.status === "unavailable" && <EmptyState art="search" title={t("studio.glowbook.unavailableTitle")} body={t("studio.glowbook.unavailableBody")} />}
       {gb.status === "error" && (
         <EmptyState

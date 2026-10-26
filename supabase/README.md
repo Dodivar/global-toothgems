@@ -2483,8 +2483,10 @@ VAT rates, shipping zones/rates mirroring the Settings prototype. Media rows ref
     feature (to confirm). Browsing, copying and the template renders need it; so do creating, renaming and
     filing into a folder; reading, emptying and deleting a folder stay open, so a member who moves down keeps
     their folders. Migration `20261026190000_studio_templates_collections_artist` is written and tested in
-    the repository but **not applied** (the owner stopped its application; awaiting the go-ahead). The UI
-    lock screens for these two are not built yet.
+    the repository but **not applied yet**: the owner gave the go-ahead on 2026-10-26, but the Supabase
+    connector's confirmation got no answer in time (to apply in the next session, then rename the file to
+    the applied version). The Studio already shows the lock screens (`components/studio/workspace/PlanLocked.tsx`:
+    templates page, every folder create / rename / file action, the save dialog's folder list).
 112. **3D Studio subscription managed on our own page, not in the Stripe customer portal** (owner's request,
     2026-10-26: "keep the subscription management on our site: staying on the same interface builds trust and lets us
     show the plans and what they offer side by side"; no migration). `/compte/studio` now switches the plan or the

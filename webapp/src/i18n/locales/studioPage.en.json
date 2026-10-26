@@ -141,8 +141,8 @@
       "ownLogo": "Posts signed with your logo, or without a watermark",
       "glowbook": "Your Glowbook: the public showcase of your creations, customised, with a QR code and a map",
       "tryOn": "AI try-on: your clients see your creations on their own smile",
-      "layouts": "Layout templates for your posts",
-      "collections": "Folders to file your creations"
+      "collections": "Folders to file your creations",
+      "postLayouts": "3 premium layouts for your posts: gallery, spotlight and band"
     }
   },
   "closing": {

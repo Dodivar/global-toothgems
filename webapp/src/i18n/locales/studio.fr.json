@@ -167,6 +167,27 @@
       "title": "Limite de votre formule atteinte",
       "creations": "Rien n’a été enregistré : votre formule ne garde pas plus de créations. Supprimez-en une ou passez à la formule supérieure depuis Mon abonnement.",
       "gemGroups": "Rien n’a été enregistré : votre formule ne garde pas plus de Gem Groups. Supprimez-en un ou passez à la formule supérieure depuis Mon abonnement."
+    },
+    "planLocked": {
+      "cta": "Passer à {{plan}}",
+      "glowbook": {
+        "title": "Le Glowbook est inclus dans la formule {{plan}}",
+        "short": "Montrez vos créations sur une page publique et laissez vos clientes les essayer sur leur sourire.",
+        "body": "Votre vitrine publique, à mettre dans votre bio Instagram : vos créations en 3D, votre identité, où vous trouver, un QR code et une affiche — et l’essayage par IA, qui permet à vos clientes de voir vos créations sur leur propre sourire.",
+        "kept": "Si vous aviez déjà un Glowbook, il est masqué du public pour l’instant et revient tel quel dès que vous repassez à cette formule."
+      },
+      "templates": {
+        "title": "Les modèles Global Toothgems sont inclus dans la formule {{plan}}",
+        "short": "Partez des créations de l’équipe Global Toothgems et adaptez-les à vos clientes.",
+        "body": "Des créations imaginées par l’équipe Global Toothgems, renouvelées au fil du temps : copiez-en une dans vos créations en un clic, puis adaptez-la librement. Le modèle d’origine ne change jamais.",
+        "kept": "Les modèles que vous avez déjà copiés restent dans vos créations, quelle que soit votre formule."
+      },
+      "collections": {
+        "title": "Les dossiers sont inclus dans la formule {{plan}}",
+        "short": "Rangez vos créations par cliente, par style ou par événement.",
+        "body": "Créez des dossiers pour ranger vos créations par cliente, par style ou par événement, et retrouvez-les d’un coup d’œil dans Mes créations.",
+        "kept": "Si vous aviez déjà des dossiers, ils restent visibles : vous pouvez en retirer des créations ou les supprimer, mais plus en créer ni en remplir."
+      }
     }
   },
   "editor": {
@@ -789,7 +810,9 @@
       "glowbook": "Glowbook",
       "tryOn": "Essayage par IA pour vos clientes",
       "included": "inclus",
-      "withPlan": "avec la formule {{plan}}"
+      "withPlan": "avec la formule {{plan}}",
+      "templates": "Modèles Global Toothgems",
+      "collections": "Dossiers pour ranger vos créations"
     }
   },
   "tryOn": {

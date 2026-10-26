@@ -10,7 +10,7 @@ import { hasFeature, lowestPlanWith } from "../../../lib/studioEntitlements";
 /**
  * What the member's plan includes and what they use of it (decision 113):
  * saved creations and Gem Groups against the plan's numbers, then the
- * Glowbook and the smile try-on. Read from `studio_access_state()` — the
+ * templates, folders, Glowbook and smile try-on. Read from `studio_access_state()` — the
  * database's own numbers, which it enforces on every save.
  */
 export function StudioPlanUsage({ info }: { info: StudioAccessInfo }) {
@@ -54,7 +54,7 @@ export function StudioPlanUsage({ info }: { info: StudioAccessInfo }) {
     );
   };
 
-  const flag = (key: "glowbook" | "tryOn", on: boolean) => (
+  const flag = (key: "templates" | "collections" | "glowbook" | "tryOn", on: boolean) => (
     <li key={key} className="flex items-start gap-2 text-[length:var(--text-body-sm)] text-[var(--text-body)]">
       {on ? (
         <Check size={16} aria-hidden="true" className="mt-0.5 shrink-0 text-[var(--status-success-fg)]" />
@@ -76,6 +76,8 @@ export function StudioPlanUsage({ info }: { info: StudioAccessInfo }) {
       {meter("creations")}
       {meter("gemGroups")}
       <ul className="m-0 grid list-none gap-2 p-0">
+        {flag("templates", hasFeature(info.tier, "templates"))}
+        {flag("collections", hasFeature(info.tier, "collections"))}
         {flag("glowbook", info.glowbook)}
         {flag("tryOn", hasFeature(info.tier, "tryOn"))}
       </ul>

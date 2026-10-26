@@ -6,6 +6,7 @@ import { searchTemplates, type StudioTemplate } from "../../../lib/studioWorkspa
 import { useStudioTemplates } from "../../../lib/studioWorkspace/templatesStore";
 import { LibrarySkeleton } from "./CreationLibrary";
 import { EmptyState } from "./EmptyState";
+import { PlanLocked } from "./PlanLocked";
 import { SignInPrompt } from "./SignInPrompt";
 import { TemplateCard } from "./TemplateCard";
 import { TemplateDetail } from "./TemplateDetail";
@@ -37,6 +38,8 @@ export function TemplateLibrary() {
       </header>
 
       {lib.status === "signedOut" && <SignInPrompt />}
+
+      {lib.status === "locked" && <PlanLocked feature="templates" />}
 
       {lib.status === "unavailable" && (
         <EmptyState art="search" title={t("studio.templates.unavailableTitle")} body={t("studio.templates.unavailableBody")} />

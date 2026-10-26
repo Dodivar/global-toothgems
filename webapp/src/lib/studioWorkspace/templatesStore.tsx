@@ -1,7 +1,7 @@
 import { createContext, useCallback, useContext, useEffect, useMemo, useState, type ReactNode } from "react";
 import { useTranslation } from "react-i18next";
 import { useAuth } from "../auth";
-import { useStudioAccess } from "../studioAccess";
+import { useStudioAccess, useStudioFeature } from "../studioAccess";
 import { trackStudio } from "../studioAnalytics";
 import { supabase } from "../supabase/client";
 import { useToast } from "../toast";
@@ -20,7 +20,8 @@ import { useWorkspace } from "./workspace";
  * (no real account) the library is `unavailable`: there is no fake catalogue.
  */
 
-export type TemplatesStatus = "signedOut" | "unavailable" | "loading" | "ready" | "error";
+/** `locked`: the member's plan does not open the templates (decision 113 (b): Artist and above). */
+export type TemplatesStatus = "signedOut" | "unavailable" | "locked" | "loading" | "ready" | "error";
 
 interface TemplatesValue {
   status: TemplatesStatus;
@@ -46,9 +47,11 @@ export function StudioTemplatesProvider({ children }: { children: ReactNode }) {
   const access = useStudioAccess();
   const reportDenied = access?.reportDenied;
   const refreshAccess = access?.refresh;
+  // Below the Artist plan the database refuses the library: nothing is asked.
+  const locked = useStudioFeature("templates") === false;
   const repo = useMemo<TemplatesRepository | null>(
-    () => (userId && realAuth && supabase ? createTemplatesRepository(supabase, userId) : null),
-    [userId, realAuth],
+    () => (userId && realAuth && supabase && !locked ? createTemplatesRepository(supabase, userId) : null),
+    [userId, realAuth, locked],
   );
 
   const [loaded, setLoaded] = useState<{
@@ -63,11 +66,13 @@ export function StudioTemplatesProvider({ children }: { children: ReactNode }) {
     ? restoring
       ? "loading"
       : "signedOut"
-    : !repo
-      ? "unavailable"
-      : current
-        ? current.status
-        : "loading";
+    : locked
+      ? "locked"
+      : !repo
+        ? "unavailable"
+        : current
+          ? current.status
+          : "loading";
   const templates = useMemo(() => current?.templates ?? [], [current]);
 
   useEffect(() => {
