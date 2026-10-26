@@ -125,6 +125,8 @@ export interface Seat {
   width: number;
   /** False: tongue side, not seen from the front. */
   front: boolean;
+  /** Its name on the flat design map ("11a"), when the browser drew one; used only when it names the gem's own tooth. */
+  tag?: string;
 }
 
 const SEATS_MAX_CHARS = 32 * 1024;
@@ -145,7 +147,8 @@ export function readSeats(raw: unknown): Map<string, Seat> {
     if (!entry || typeof entry !== "object") continue;
     const e = entry as Record<string, unknown>;
     if (typeof e.id !== "string" || !e.id || e.id.length > 40 || !isNum(e.gum) || !isNum(e.mid) || !isNum(e.width) || typeof e.front !== "boolean") continue;
-    out.set(e.id, { gum: clampTo(e.gum, 0, 1), mid: clampTo(e.mid, -0.5, 0.5), width: clampTo(e.width, 0.02, 2), front: e.front });
+    const tag = typeof e.tag === "string" && /^[1-4][1-8][a-z]$/.test(e.tag) ? e.tag : undefined;
+    out.set(e.id, { gum: clampTo(e.gum, 0, 1), mid: clampTo(e.mid, -0.5, 0.5), width: clampTo(e.width, 0.02, 2), front: e.front, ...(tag ? { tag } : {}) });
   }
   return out;
 }
@@ -170,13 +173,13 @@ function placeOf(seat: Seat): string {
 /** A share of the photo's width, with a decimal below 10 %. */
 const photoPct = (n: number) => `${n < 0.1 ? Math.round(n * 1000) / 10 : Math.round(n * 100)}%`;
 
-function gemLine(n: number, p: PromptPiece, seat: Seat | undefined, mmShare: number | null): string {
+function gemLine(label: string, p: PromptPiece, seat: Seat | undefined, mmShare: number | null): string {
   const mm = p.longestMm > 0 && p.size !== `${p.longestMm} mm` ? ` (about ${p.longestMm} mm on its longest side)` : "";
   const coating = p.iridescent ? " — iridescent coating" : "";
   const inPhoto = mmShare && p.longestMm > 0 ? ` — IN THIS PHOTO: about ${photoPct(p.longestMm * mmShare)} of the photo's width on its longest side` : "";
   const share = seat ? ` — longest side about ${pct(seat.width)} of this tooth's width` : "";
   const place = seat ? ` — ${placeOf(seat)}` : "";
-  return `  ${n}. ${SHAPES[p.shape]} — ${p.material} — colour ${p.color}${coating} — size ${p.size}${mm}${inPhoto}${share}${place}`;
+  return `  ${label}. ${SHAPES[p.shape]} — ${p.material} — colour ${p.color}${coating} — size ${p.size}${mm}${inPhoto}${share}${place}`;
 }
 
 /**
@@ -191,6 +194,8 @@ export function buildDesignData(
   seats: ReadonlyMap<string, Seat> = new Map(),
   /** One millimetre as a share of the photo's width (`photoCheck.ts` `photoScale`), when measured. */
   mmShare: number | null = null,
+  /** Whether the flat design map was sent (IMAGE 3): the gems are then named by their tags on it. */
+  withMap = false,
 ): string {
   const seatOf = (p: PromptPiece) => (p.id ? seats.get(p.id) : undefined);
   const shown = pieces.filter((p) => seatOf(p)?.front !== false);
@@ -198,6 +203,12 @@ export function buildDesignData(
     shown.filter((p) => p.toothId === fdi).sort((a, b) => (seatOf(a)?.gum ?? 0.5) - (seatOf(b)?.gum ?? 0.5));
   const lines: string[] = [];
   let n = 0;
+  // A gem's name: its tag on the map ("11a") when the map was sent and the tag names its own tooth, else its number.
+  const labelOf = (p: PromptPiece) => {
+    n++;
+    const tag = seatOf(p)?.tag;
+    return withMap && tag && tag.startsWith(p.toothId) ? tag : String(n);
+  };
   const arch = (title: string, teeth: string[]) => {
     const listed = teeth.filter((fdi) => ALWAYS.has(fdi) || onTooth(fdi).length > 0);
     if (!listed.some((fdi) => onTooth(fdi).length > 0)) return;
@@ -209,7 +220,7 @@ export function buildDesignData(
         continue;
       }
       lines.push(`Tooth ${toothLabel(fdi)}: ${gems.length} gem${gems.length > 1 ? "s" : ""}`);
-      for (const p of gems) lines.push(gemLine(++n, p, seatOf(p), mmShare));
+      for (const p of gems) lines.push(gemLine(labelOf(p), p, seatOf(p), mmShare));
     }
   };
   arch("UPPER ARCH — teeth in the photo's left-to-right order:", UPPER);
@@ -217,7 +228,7 @@ export function buildDesignData(
   const other = shown.filter((p) => p.toothId === "X0");
   if (other.length) {
     lines.push("", `Gems on an ${toothLabel("X0")}:`);
-    for (const p of other) lines.push(gemLine(++n, p, seatOf(p), mmShare));
+    for (const p of other) lines.push(gemLine(labelOf(p), p, seatOf(p), mmShare));
   }
   const count = `${n} gem${n > 1 ? "s" : ""}`;
   const scale = mmShare
@@ -226,5 +237,11 @@ export function buildDesignData(
         `SCALE MEASURED ON THIS PHOTO: the two upper central incisors together span about ${photoPct(mmShare * 17)} of the photo's width (about 17 mm in real life), so 1 mm is about ${photoPct(mmShare)} of the photo's width. Each gem gives its length IN THIS PHOTO: draw it at that length, never larger.`,
       ]
     : [];
-  return [`DESIGN DATA — exactly ${count}, no more.`, ...scale, ...lines].join("\n");
+  const map = withMap
+    ? [
+        "",
+        "IMAGE 3 (the flat design map) is included. Each gem below is named by its tag — its tooth number and a letter, e.g. 11a — exactly as written on IMAGE 3, where a line joins the tag to the gem on its labelled tooth.",
+      ]
+    : ["", "No flat design map (IMAGE 3) with this request."];
+  return [`DESIGN DATA — exactly ${count}, no more.`, ...map, ...scale, ...lines].join("\n");
 }

@@ -121,6 +121,7 @@ Deno.serve((req) =>
       if (error) throw new Error(error.message);
     },
     references,
+    readsMap: version === "v3",
     checkPhoto: checkConfig ? (photo) => generateJson(checkConfig, PHOTO_CHECK_PROMPT, [photo], PHOTO_CHECK_SCHEMA) : undefined,
     generate: (images, designData, aspectRatio) =>
       config

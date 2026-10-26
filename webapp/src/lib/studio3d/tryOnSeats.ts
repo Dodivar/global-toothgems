@@ -22,15 +22,45 @@ export interface TryOnSeat {
   width: number;
   /** False: on the tongue side, hidden from the front. */
   front: boolean;
+  /**
+   * The gem's name on the flat map and in the design data: its tooth and a
+   * letter, from the gum side ("11a" nearest the gum line, then "11b"…).
+   * Front gems only.
+   */
+  tag?: string;
 }
 
 const round = (n: number) => Math.round(n * 100) / 100;
+
+const LETTERS = "abcdefghijklmnopqrstuvwxyz";
+
+/**
+ * Tag the front gems tooth by tooth: nearest the gum line first, ties in the
+ * scene's order — the order the function lists them in (`prompt.ts`).
+ */
+function tagSeats(seats: TryOnSeat[], pieces: readonly PlacedJewelry[], toothOf: Map<string, string>): TryOnSeat[] {
+  const index = new Map(pieces.map((p, i) => [p.id, i]));
+  const byTooth = new Map<string, TryOnSeat[]>();
+  for (const s of seats) {
+    const fdi = toothOf.get(s.id);
+    if (!s.front || !fdi) continue;
+    byTooth.set(fdi, [...(byTooth.get(fdi) ?? []), s]);
+  }
+  const tags = new Map<string, string>();
+  for (const [fdi, list] of byTooth) {
+    list
+      .sort((a, b) => a.gum - b.gum || (index.get(a.id) ?? 0) - (index.get(b.id) ?? 0))
+      .forEach((s, i) => i < LETTERS.length && tags.set(s.id, `${fdi}${LETTERS[i]}`));
+  }
+  return seats.map((s) => (tags.has(s.id) ? { ...s, tag: tags.get(s.id) } : s));
+}
 
 /** The seats of the pieces the front view can place; others are left out. */
 export function tryOnSeats(pieces: readonly PlacedJewelry[], model: SceneModel): TryOnSeat[] {
   const { teeth, gems } = projectFrontView(pieces, model);
   const byFdi = new Map(teeth.map((t) => [t.fdi, t]));
-  return gems.flatMap((g): TryOnSeat[] => {
+  const toothOf = new Map(gems.map((g) => [g.id, g.toothId]));
+  const seats = gems.flatMap((g): TryOnSeat[] => {
     const tooth = byFdi.get(g.toothId);
     if (!g.at || !tooth) return [];
     const width = tooth.x1 - tooth.x0;
@@ -49,4 +79,5 @@ export function tryOnSeats(pieces: readonly PlacedJewelry[], model: SceneModel):
       },
     ];
   });
+  return tagSeats(seats, pieces, toothOf);
 }

@@ -69,11 +69,12 @@ export const smileTryOnService: SmileTryOnService = supabase
           return false;
         }
       },
-      async render({ photo, source, design, seats }, options) {
+      async render({ photo, source, design, map, seats }, options) {
         const form = new FormData();
         form.set("source", JSON.stringify(sourcePayload(source)));
         form.set("photo", photo, "smile");
         form.set("design", design, "design");
+        if (map) form.set("map", map, "map");
         if (seats?.length) form.set("seats", JSON.stringify(seats));
         form.set("progress", "1");
         // One signal for the caller's cancel and the timeout, kept for the whole

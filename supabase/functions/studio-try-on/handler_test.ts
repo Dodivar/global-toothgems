@@ -37,6 +37,7 @@ function fake(over: Partial<StudioTryOnDeps> = {}, row: TryOnCreationRow | null 
       return Promise.resolve();
     },
     references: () => Promise.resolve([{ mimeType: "image/jpeg", data: "cmVm" }]),
+    readsMap: true,
     generate: (images, data) => {
       calls.images = images.map((img) => `${img.mimeType}:${img.data}`);
       calls.data = data;
@@ -276,6 +277,7 @@ Deno.test("prompt versions: v3 by default, both name the two images", () => {
     assertStringIncludes(prompt, "IMAGE 2");
   }
   assertStringIncludes(TRY_ON_SYSTEM_PROMPT_V3, "THE DESIGN DATA");
+  assertStringIncludes(TRY_ON_SYSTEM_PROMPT_V3, "IMAGE 3 — THE FLAT DESIGN MAP");
 });
 
 const ADC = JSON.stringify({
@@ -458,4 +460,42 @@ Deno.test("photo scale: the two central incisors give each gem's length in this 
   });
   assertEquals((await handleStudioTryOn(post(form()), deps)).status, 200);
   assertStringIncludes(sent, "SCALE MEASURED ON THIS PHOTO");
+});
+
+const withMap = () => {
+  const data = form();
+  data.set("map", new Blob([new Uint8Array([7, 8])], { type: "image/png" }), "map.png");
+  data.set(
+    "seats",
+    JSON.stringify([
+      { id: "p1", gum: 0.3, mid: 0.1, width: 0.5, front: true, tag: "21a" },
+      { id: "p2", gum: 0.5, mid: 0, width: 0.6, front: true, tag: "11a" }, // names another tooth: not used
+    ]),
+  );
+  return data;
+};
+
+Deno.test("flat map: IMAGE 3 after the photo, the gems named by their tags on it", async () => {
+  const { deps, calls } = fake();
+  assertEquals((await handleStudioTryOn(post(withMap()), deps)).status, 200);
+  assertEquals(calls.images, ["image/png:BAU=", "image/jpeg:AQID", "image/png:Bwg=", "image/jpeg:cmVm"]);
+  assertStringIncludes(calls.data, "IMAGE 3 (the flat design map) is included");
+  assertStringIncludes(calls.data, "  21a. round — crystal");
+  // A tag naming another tooth than the stored gem's is ignored: the gem keeps its number.
+  assertStringIncludes(calls.data, "  1. heart — metal");
+});
+
+Deno.test("flat map: none sent, or prompt v1 — the request goes as before", async () => {
+  const none = fake();
+  assertEquals((await handleStudioTryOn(post(form()), none.deps)).status, 200);
+  assertEquals(none.calls.images.length, 3);
+  assertStringIncludes(none.calls.data, "No flat design map (IMAGE 3) with this request.");
+  const v1 = fake({ readsMap: false });
+  assertEquals((await handleStudioTryOn(post(withMap()), v1.deps)).status, 200);
+  assertEquals(v1.calls.images, ["image/png:BAU=", "image/jpeg:AQID", "image/jpeg:cmVm"]);
+  const bad = withMap();
+  bad.set("map", new Blob([new Uint8Array([1])], { type: "image/gif" }), "map.gif");
+  const dropped = fake();
+  assertEquals((await handleStudioTryOn(post(bad), dropped.deps)).status, 200);
+  assertEquals(dropped.calls.images.length, 3);
 });

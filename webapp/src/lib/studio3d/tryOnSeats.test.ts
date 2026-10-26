@@ -57,6 +57,13 @@ describe("tryOnSeats", () => {
     expect(seats.get("back")?.front).toBe(false);
   });
 
+  it("tags the front gems by tooth, from the gum side; none on the tongue side", () => {
+    expect(seats.get("drop")?.tag).toBe("11a");
+    expect(seats.get("heart")?.tag).toBe("11b");
+    expect(seats.get("star")?.tag).toBe("41a");
+    expect(seats.get("back")?.tag).toBeUndefined();
+  });
+
   it("leaves out what the front view cannot place", () => {
     expect(tryOnSeats(scene.pieces, "imported" as never)).toEqual([]);
   });

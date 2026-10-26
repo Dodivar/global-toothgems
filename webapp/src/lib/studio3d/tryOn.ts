@@ -37,6 +37,8 @@ export interface TryOnRenderRequest {
   source: TryOnSource;
   /** The creation rendered in 3D from the front, in the browser (`renderDesignImage`). */
   design: Blob;
+  /** The flat design map (`tryOnMap`, PNG): every tooth labelled, every gem tagged like the design data. */
+  map?: Blob | null;
   /** Each gem's place and size on its tooth (`tryOnSeats`), read by the AI as text. */
   seats?: readonly TryOnSeat[];
 }

@@ -19,6 +19,9 @@ import { buildDesignData, piecesFromScene, readSeats } from "./prompt.ts";
  *     photo   the smile photo (JPEG / PNG / WebP, ≤ 6 MB), prepared in the browser
  *     design  the browser's 3D render of the creation (≤ 3 MB): IMAGE 1 of
  *             the system instructions (`systemPrompt.ts`), the photo IMAGE 2
+ *     map     optional PNG (≤ 2 MB): the flat design map drawn by the browser
+ *             (`webapp/src/lib/studio3d/tryOnMap.ts`), IMAGE 3 with prompt v3,
+ *             each gem tagged like its design data line; ignored with v1
  *     seats   optional JSON: each gem's place and size on its tooth, measured
  *             by the browser (`prompt.ts` `readSeats`), matched to the stored
  *             gems by id
@@ -69,6 +72,8 @@ export interface StudioTryOnDeps {
   startRequest(userId: string, row: TryOnCreationRow): Promise<string>;
   finishRequest(id: string, status: "generated" | "failed", errorCode: string | null): Promise<void>;
   references(): Promise<InlineImage[]>;
+  /** Whether the prompt reads the flat design map (IMAGE 3): v3 only; v1 never gets it. */
+  readsMap: boolean;
   /** The photo check model's answer (`photoCheck.ts`), or why there is none; absent: no check. */
   checkPhoto?(photo: InlineImage): Promise<{ ok: true; value: Record<string, unknown> } | { ok: false; detail: string }>;
   /**
@@ -82,7 +87,8 @@ export interface StudioTryOnDeps {
 
 export const PHOTO_MAX_BYTES = 6 * 1024 * 1024;
 export const DESIGN_MAX_BYTES = 3 * 1024 * 1024;
-const BODY_MAX_BYTES = PHOTO_MAX_BYTES + DESIGN_MAX_BYTES + 64 * 1024;
+export const MAP_MAX_BYTES = 2 * 1024 * 1024;
+const BODY_MAX_BYTES = PHOTO_MAX_BYTES + DESIGN_MAX_BYTES + MAP_MAX_BYTES + 64 * 1024;
 const IMAGE_TYPES = new Set(["image/jpeg", "image/png", "image/webp"]);
 const UUID = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i;
 
@@ -158,6 +164,9 @@ export async function handleStudioTryOn(req: Request, deps: StudioTryOnDeps): Pr
   const ref = readSourceRef(form.get("source"));
   const photo = await inlineFile(form.get("photo"), PHOTO_MAX_BYTES);
   const design = await inlineFile(form.get("design"), DESIGN_MAX_BYTES);
+  // The flat map is optional (a site older than the map sends none); a malformed one is dropped, never fatal.
+  const mapFile = deps.readsMap ? await inlineFile(form.get("map"), MAP_MAX_BYTES) : null;
+  const map = mapFile && mapFile !== "invalid" ? mapFile : null;
   const seats = readSeats(form.get("seats"));
   if (!ref || !photo || photo === "invalid" || !design || design === "invalid") return json({ ok: false, code: "invalid_request" }, 400, cors);
 
@@ -193,7 +202,7 @@ export async function handleStudioTryOn(req: Request, deps: StudioTryOnDeps): Pr
     return json({ ok: false, code: "not_found" }, 404, cors);
   }
 
-  const run = (onRendering: () => void) => checkAndRender(deps, requestId, photo, design, pieces, seats, onRendering);
+  const run = (onRendering: () => void) => checkAndRender(deps, requestId, photo, design, map, pieces, seats, onRendering);
   if (form.get("progress") !== "1") {
     const ending = await run(() => {});
     return json(ending.body, ending.status, cors);
@@ -246,6 +255,7 @@ async function checkAndRender(
   requestId: string,
   photo: Photo,
   design: Photo,
+  map: Photo | null,
   pieces: ReturnType<typeof piecesFromScene>,
   seats: ReturnType<typeof readSeats>,
   onRendering: () => void,
@@ -289,7 +299,9 @@ async function checkAndRender(
       deps.log("reference pictures unavailable", error instanceof Error ? error.message : error);
       return [] as InlineImage[];
     });
-    outcome = await deps.generate([{ mimeType: design.mimeType, data: design.data }, { mimeType: photo.mimeType, data: photo.data }, ...references], buildDesignData(pieces, seats, mmShare), nearestAspectRatio(photo.size));
+    const images = [{ mimeType: design.mimeType, data: design.data }, { mimeType: photo.mimeType, data: photo.data }];
+    if (map) images.push({ mimeType: map.mimeType, data: map.data });
+    outcome = await deps.generate([...images, ...references], buildDesignData(pieces, seats, mmShare, map !== null), nearestAspectRatio(photo.size));
   } catch (error) {
     outcome = { ok: false, code: "failed", detail: error instanceof Error ? error.message : String(error) };
   }

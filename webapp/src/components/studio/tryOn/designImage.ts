@@ -1,5 +1,7 @@
 import type { TryOnCreation } from "../../../lib/studio3d/tryOn";
 import { ExportStage } from "../../../lib/studio3d/socialExport/exporter";
+import { tryOnMap } from "../../../lib/studio3d/tryOnMap";
+import type { TryOnSeat } from "../../../lib/studio3d/tryOnSeats";
 
 /** A smile is wide: the still's framing fits the gems with some teeth around them. */
 const SIZE = { width: 1280, height: 800 };
@@ -21,5 +23,32 @@ export async function renderDesignImage(creation: TryOnCreation): Promise<Blob |
     return null;
   } finally {
     stage?.close();
+  }
+}
+
+/**
+ * The flat design map (`tryOnMap`) as a PNG: IMAGE 3 for the image model,
+ * the tooth and the place of each gem, tagged like the design data. Null when
+ * the browser cannot draw it — the render then goes without the map.
+ */
+export async function renderDesignMap(creation: TryOnCreation, seats: readonly TryOnSeat[]): Promise<Blob | null> {
+  if (!seats.some((s) => s.tag)) return null;
+  const map = tryOnMap(creation.scene.pieces, creation.scene.model, seats);
+  const url = URL.createObjectURL(new Blob([map.svg], { type: "image/svg+xml" }));
+  try {
+    const img = new Image();
+    img.src = url;
+    await img.decode();
+    const canvas = document.createElement("canvas");
+    canvas.width = map.width;
+    canvas.height = map.height;
+    const ctx = canvas.getContext("2d");
+    if (!ctx) return null;
+    ctx.drawImage(img, 0, 0, map.width, map.height);
+    return await new Promise<Blob | null>((resolve) => canvas.toBlob(resolve, "image/png"));
+  } catch {
+    return null;
+  } finally {
+    URL.revokeObjectURL(url);
   }
 }
