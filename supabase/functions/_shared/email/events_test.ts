@@ -12,6 +12,8 @@ import {
   sendRefundEmails,
   sendShippingEmails,
   sendStockDigestEmail,
+  sendStudioCreditNoteEmails,
+  sendStudioInvoiceEmails,
   sendStudioSubscriptionEmails,
   sendStudioWithdrawalEmails,
   type PendingStudioSubscription,
@@ -20,6 +22,7 @@ import {
 } from "./events.ts";
 import type { Claim, EmailDeps, EmailStore } from "./send.ts";
 import { CREDIT_ROW, INVOICE_ROW } from "./invoicePdf_fixtures.ts";
+import type { StudioInvoiceRow, StudioInvoiceSource } from "./invoicePdf.ts";
 
 const SITE = "https://globaltoothgems.com";
 
@@ -93,6 +96,8 @@ function source(over: Partial<PendingSource> = {}): PendingSource {
     backInStock: () => Promise.resolve([]),
     studioSubscriptions: () => Promise.resolve([]),
     studioWithdrawals: () => Promise.resolve([]),
+    studioInvoices: () => Promise.resolve([]),
+    studioCreditNotes: () => Promise.resolve([]),
     stockDigest: () => Promise.resolve(null),
     ...over,
   };
@@ -301,7 +306,82 @@ const studioSub = (over: Partial<PendingStudioSubscription> = {}): PendingStudio
   currency: "EUR",
   consentVersion: "studio-withdrawal-2026-10",
   consentedAt: "2026-10-18T14:00:00Z",
+  stripeInvoiceId: null,
   ...over,
+});
+
+/** As `issue_studio_invoice()` / `issue_studio_withdrawal_credit_note()` write them (VAT franchise). */
+const STUDIO_INVOICE: StudioInvoiceRow = {
+  ...INVOICE_ROW,
+  id: "inv-s1",
+  invoice_number: "FA-2026-000050",
+  studio_invoice_id: "in_first",
+  studio_withdrawal_id: null,
+  total_excl_tax: "199.00",
+  total_tax: "0",
+  total_incl_tax: "199.00",
+  seller: { ...(INVOICE_ROW.seller as Record<string, string>), vat_franchise: true },
+  buyer: { email: "member@example.com", order_number: "", address: { first_name: "Camille", last_name: "Martin" } },
+  lines: [{ kind: "subscription", description: "Artiste", plan: "artist", interval: "year", proration: false, quantity: 1, unit_price_incl: 199, unit_price_excl: 199, discount_incl: 0, vat_rate_bp: 0, total_incl: 199, vat_amount: 0, total_excl: 199 }],
+  vat_breakdown: [{ vat_rate_bp: 0, total_excl: 199, vat_amount: 0, total_incl: 199 }],
+  payment: { paid_at: "2026-10-18T14:01:00Z", gift_card_amount: 0, charged_amount: 199, balance_amount: 0 },
+};
+const STUDIO_NOTE: StudioInvoiceRow = {
+  ...STUDIO_INVOICE,
+  id: "av-s1",
+  kind: "credit_note",
+  invoice_number: "AV-2026-000007",
+  studio_withdrawal_id: "w-1",
+  total_excl_tax: "17.91",
+  total_incl_tax: "17.91",
+  lines: [{ kind: "subscription", withdrawal: true, description: "Artiste", plan: "artist", used_days: 3, period_days: 30, quantity: null, vat_rate_bp: 0, total_incl: 17.91, vat_amount: 0, total_excl: 17.91 }],
+  vat_breakdown: [{ vat_rate_bp: 0, total_excl: 17.91, vat_amount: 0, total_incl: 17.91 }],
+  payment: { refunded_at: "2026-10-21T09:05:00Z", refund_method: "card", reason: "withdrawal", credited_invoice_number: "FA-2026-000050" },
+};
+const studioDocs = (rows: StudioInvoiceRow[]): StudioInvoiceSource => ({
+  documentsOfStudioInvoice: (id) => Promise.resolve(rows.filter((r) => r.studio_invoice_id === id)),
+  documentsOfStudioWithdrawal: (id) => Promise.resolve(rows.filter((r) => r.studio_withdrawal_id === id || r.kind === "invoice")),
+});
+
+Deno.test("studio subscription: the confirmation carries the first invoice (our FA- PDF); without one it leaves bare", async () => {
+  const { deps, seen } = setup();
+  await sendStudioSubscriptionEmails(
+    deps,
+    source({ studioSubscriptions: () => Promise.resolve([studioSub({ stripeInvoiceId: "in_first" }), studioSub({ subscriptionId: "sub-2", stripeInvoiceId: "in_old" })]) }),
+    { studioDocuments: studioDocs([STUDIO_INVOICE]) },
+  );
+  const [withInvoice, bare] = seen.requests as { attachments?: { filename: string }[]; text: string }[];
+  assertEquals(withInvoice.attachments?.map((a) => a.filename), ["facture-FA-2026-000050.pdf"]);
+  assertEquals(withInvoice.text.includes("FA-2026-000050"), true);
+  assertEquals(bare.attachments, undefined);
+});
+
+Deno.test("studio invoice: a renewal is mailed once with its invoice; no document yet means no e-mail", async () => {
+  const { deps, seen } = setup();
+  const row = { stripeInvoiceId: "in_first", email: "member@example.com", locale: "en", plan: "artist" as const, invoiceNumber: "FA-2026-000050" };
+  const report = await sendStudioInvoiceEmails(
+    deps,
+    source({ studioInvoices: () => Promise.resolve([row, { ...row, stripeInvoiceId: "in_missing" }]) }),
+    { studioDocuments: studioDocs([STUDIO_INVOICE]) },
+  );
+  assertEquals(report.sent, 1);
+  assertEquals(report.skipped, 1);
+  assertEquals(seen.claims.map((c) => [c.eventKey, c.templateKey]), [["studio_invoice:in_first", "studio_invoice"]]);
+  const [mail] = seen.requests as { attachments?: { filename: string }[]; text: string }[];
+  assertEquals(mail.attachments?.map((a) => a.filename), ["invoice-FA-2026-000050.pdf"]);
+  assertEquals(mail.text.includes(`${SITE}/compte/studio`), true);
+});
+
+Deno.test("studio credit note: the withdrawal's AV- PDF, keyed by the withdrawal", async () => {
+  const { deps, seen } = setup();
+  const row = { withdrawalId: "w-1", email: "member@example.com", locale: "fr", plan: "artist" as const, invoiceNumber: "AV-2026-000007" };
+  const report = await sendStudioCreditNoteEmails(deps, source({ studioCreditNotes: () => Promise.resolve([row]) }), {
+    studioDocuments: studioDocs([STUDIO_INVOICE, STUDIO_NOTE]),
+  });
+  assertEquals(report.sent, 1);
+  assertEquals(seen.claims.map((c) => [c.eventKey, c.templateKey]), [["studio_credit_note:w-1", "studio_credit_note"]]);
+  const [mail] = seen.requests as { attachments?: { filename: string }[] }[];
+  assertEquals(mail.attachments?.map((a) => a.filename), ["avoir-AV-2026-000007.pdf"]);
 });
 
 Deno.test("studio subscription: one confirmation per subscription, restating the request accepted", async () => {
@@ -361,6 +441,19 @@ Deno.test("studio withdrawal: one acknowledgement per withdrawal, with the refun
   assertEquals(fr.text.includes("17,91"), true);
   assertEquals(en.text.includes("Days used (3 of 30)"), true);
   assertEquals(en.text.includes(`${SITE}/compte/studio`), true);
+});
+
+Deno.test("studio withdrawal: the acknowledgement carries the credit note when the refund is already confirmed", async () => {
+  const { deps, seen } = setup();
+  await sendStudioWithdrawalEmails(
+    deps,
+    source({ studioWithdrawals: () => Promise.resolve([withdrawal(), withdrawal({ withdrawalId: "w-2" })]) }),
+    { studioDocuments: studioDocs([STUDIO_INVOICE, STUDIO_NOTE]) },
+  );
+  const [withNote, bare] = seen.requests as { attachments?: { filename: string }[]; text: string }[];
+  assertEquals(withNote.attachments?.map((a) => a.filename), ["avoir-AV-2026-000007.pdf"]);
+  assertEquals(withNote.text.includes("AV-2026-000007"), true);
+  assertEquals(bare.attachments, undefined);
 });
 
 const digest = (over: Partial<PendingStockDigest> = {}): PendingStockDigest => ({

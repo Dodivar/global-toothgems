@@ -3656,13 +3656,15 @@ export type Database = {
           kind: string
           lines: Json
           locale: string
-          order_id: string
+          order_id: string | null
           payment: Json
           refund_id: string | null
           sale_date: string
           seller: Json
           sequence_number: number
           series: string
+          studio_invoice_id: string | null
+          studio_withdrawal_id: string | null
           total_excl_tax: number
           total_incl_tax: number
           total_tax: number
@@ -3679,13 +3681,15 @@ export type Database = {
           kind: string
           lines: Json
           locale: string
-          order_id: string
+          order_id?: string | null
           payment?: Json
           refund_id?: string | null
           sale_date: string
           seller: Json
           sequence_number: number
           series: string
+          studio_invoice_id?: string | null
+          studio_withdrawal_id?: string | null
           total_excl_tax: number
           total_incl_tax: number
           total_tax: number
@@ -3702,13 +3706,15 @@ export type Database = {
           kind?: string
           lines?: Json
           locale?: string
-          order_id?: string
+          order_id?: string | null
           payment?: Json
           refund_id?: string | null
           sale_date?: string
           seller?: Json
           sequence_number?: number
           series?: string
+          studio_invoice_id?: string | null
+          studio_withdrawal_id?: string | null
           total_excl_tax?: number
           total_incl_tax?: number
           total_tax?: number
@@ -3749,6 +3755,20 @@ export type Database = {
             isOneToOne: false
             referencedRelation: "invoice_sequences"
             referencedColumns: ["series"]
+          },
+          {
+            foreignKeyName: "invoices_studio_invoice_id_fkey"
+            columns: ["studio_invoice_id"]
+            isOneToOne: false
+            referencedRelation: "studio_subscription_invoices"
+            referencedColumns: ["stripe_invoice_id"]
+          },
+          {
+            foreignKeyName: "invoices_studio_withdrawal_id_fkey"
+            columns: ["studio_withdrawal_id"]
+            isOneToOne: true
+            referencedRelation: "studio_withdrawals"
+            referencedColumns: ["id"]
           },
         ]
       }
@@ -8345,10 +8365,12 @@ export type Database = {
           billing_reason: string
           created_at: string
           currency: string
+          lines: Json | null
           occurred_at: string
           status: string
           stripe_invoice_id: string
           subscription_id: string
+          total: number | null
           updated_at: string
           user_id: string
         }
@@ -8357,10 +8379,12 @@ export type Database = {
           billing_reason: string
           created_at?: string
           currency: string
+          lines?: Json | null
           occurred_at: string
           status: string
           stripe_invoice_id: string
           subscription_id: string
+          total?: number | null
           updated_at?: string
           user_id: string
         }
@@ -8369,10 +8393,12 @@ export type Database = {
           billing_reason?: string
           created_at?: string
           currency?: string
+          lines?: Json | null
           occurred_at?: string
           status?: string
           stripe_invoice_id?: string
           subscription_id?: string
+          total?: number | null
           updated_at?: string
           user_id?: string
         }
@@ -9500,6 +9526,7 @@ export type Database = {
           updated_at: string
           updated_by: string | null
           user_id: string | null
+          vat_franchise: boolean
         }
         SetofOptions: {
           from: "*"
@@ -9595,6 +9622,7 @@ export type Database = {
           updated_at: string
           updated_by: string | null
           user_id: string | null
+          vat_franchise: boolean
         }
         SetofOptions: {
           from: "*"
@@ -9830,6 +9858,7 @@ export type Database = {
           updated_at: string
           updated_by: string | null
           user_id: string | null
+          vat_franchise: boolean
         }
         SetofOptions: {
           from: "*"
@@ -9963,6 +9992,29 @@ export type Database = {
           variant_name: string
         }[]
       }
+      pending_studio_credit_note_emails: {
+        Args: { p_limit?: number }
+        Returns: {
+          currency: string
+          email: string
+          invoice_number: string
+          locale: string
+          plan: string
+          refund_amount: number
+          withdrawal_id: string
+        }[]
+      }
+      pending_studio_invoice_emails: {
+        Args: { p_limit?: number }
+        Returns: {
+          billing_reason: string
+          email: string
+          invoice_number: string
+          locale: string
+          plan: string
+          stripe_invoice_id: string
+        }[]
+      }
       pending_studio_subscription_emails: {
         Args: { p_limit?: number }
         Returns: {
@@ -9974,6 +10026,7 @@ export type Database = {
           email: string
           locale: string
           plan: string
+          stripe_invoice_id: string
           subscription_id: string
         }[]
       }
@@ -10107,10 +10160,12 @@ export type Database = {
           p_amount: number
           p_billing_reason: string
           p_currency: string
+          p_lines?: Json
           p_occurred_at: string
           p_status: string
           p_stripe_invoice_id: string
           p_stripe_subscription_id: string
+          p_total?: number
         }
         Returns: undefined
       }

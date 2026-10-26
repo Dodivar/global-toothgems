@@ -3400,6 +3400,22 @@
         "unavailableBody": "Les chiffres de l’essai nécessitent le projet Supabase.",
         "errorTitle": "Chiffres de l’essai indisponibles",
         "errorBody": "Ils n’ont pas pu être lus. Actualisez la page pour réessayer."
+      },
+      "studioInvoices": {
+        "title": "Factures Studio 3D",
+        "description": "Les factures et avoirs émis pour les abonnements sur la période, au format PDF.",
+        "invoice": "Facture",
+        "creditNote": "Avoir",
+        "printAll": "Imprimer les {{count}} documents",
+        "downloadLabel": "Télécharger {{kind}} {{number}} (PDF)",
+        "fileName": "factures-studio",
+        "pdfError": "Le PDF n’a pas pu être créé. Réessayez.",
+        "emptyTitle": "Aucun document sur la période",
+        "emptyBody": "Les factures apparaissent ici dès qu’un abonnement est payé.",
+        "errorTitle": "Factures indisponibles",
+        "errorBody": "Les documents n’ont pas pu être chargés. Actualisez la page.",
+        "unavailableTitle": "Factures indisponibles",
+        "unavailableBody": "Les documents sont lus dans la base de données, absente de cet environnement."
       }
     },
     "training": {
@@ -4992,7 +5008,16 @@
       "paid": "Facture acquittée le {{date}} : paiement comptant à la commande, aucun escompte pour paiement anticipé.",
       "giftCardNote": "Cartes cadeaux : bons à usages multiples, hors du champ de la TVA lors de leur achat ; la TVA est due lors de leur utilisation.",
       "latePayment": "Clients professionnels : en cas de retard de paiement, pénalités au taux de trois fois le taux d’intérêt légal et indemnité forfaitaire de 40 € pour frais de recouvrement (art. L441-10 du Code de commerce).",
-      "fileName": "facture"
+      "fileName": "facture",
+      "studioPlan": "Abonnement Studio 3D — formule {{plan}}",
+      "studioProration": "Ajustement au prorata — formule {{plan}}",
+      "studioInterval": {
+        "month": "facturation mensuelle",
+        "year": "facturation annuelle"
+      },
+      "studioPeriod": "du {{start}} au {{end}}",
+      "paidBalance": "Réglé avec le crédit de votre compte",
+      "paidSubscription": "Facture acquittée le {{date}} : paiement de l’abonnement par carte, aucun escompte pour paiement anticipé."
     },
     "creditNote": {
       "title": "Avoir",
@@ -5003,7 +5028,9 @@
       "notice": "Avoir émis sur la facture {{invoice}} du {{date}}, au titre du remboursement confirmé le {{refundedOn}}.",
       "toCard": "Le montant a été remboursé sur le moyen de paiement utilisé. Cet avoir est la pièce comptable de ce remboursement : il ne constitue pas un crédit à dépenser sur le site.",
       "toGiftCard": "Le montant a été recrédité sur la carte cadeau utilisée.",
-      "fileName": "avoir"
+      "fileName": "avoir",
+      "studioWithdrawal": "Rétractation — part non utilisée de l’abonnement Studio 3D, formule {{plan}}",
+      "studioUsedDays": "{{used}} jours utilisés sur {{total}}"
     }
   }
 }

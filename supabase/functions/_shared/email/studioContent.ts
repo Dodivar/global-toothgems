@@ -41,6 +41,7 @@ const LABELS = {
     consentOn: (date: string) => `Acceptée le ${date} avant le paiement :`,
     open: "Ouvrir le Studio",
     manage: "Gérer mon abonnement",
+    invoice: "Facture (en pièce jointe)",
   },
   en: {
     eyebrow: "3D Studio",
@@ -54,6 +55,7 @@ const LABELS = {
     consentOn: (date: string) => `Accepted on ${date}, before paying:`,
     open: "Open the Studio",
     manage: "Manage my subscription",
+    invoice: "Invoice (attached)",
   },
 } as const;
 
@@ -79,6 +81,7 @@ const WITHDRAWAL_LABELS = {
     refund: "Remboursé",
     noRefund: "Aucun montant n’est à rembourser : la période payée a été entièrement utilisée.",
     account: "Mon espace Studio",
+    creditNote: "Avoir (en pièce jointe)",
   },
   en: {
     title: "Your refund",
@@ -88,10 +91,11 @@ const WITHDRAWAL_LABELS = {
     refund: "Refunded",
     noRefund: "Nothing is left to refund: the paid period was fully used.",
     account: "My Studio page",
+    creditNote: "Credit note (attached)",
   },
 } as const;
 
-export function studioWithdrawalContent(mail: StudioWithdrawalMail, locale: string, siteUrl: string): EmailContent {
+export function studioWithdrawalContent(mail: StudioWithdrawalMail, locale: string, siteUrl: string, creditNoteNumber?: string): EmailContent {
   const lang = chromeLocale(locale);
   const l = WITHDRAWAL_LABELS[lang];
   const money = (amount: number) => formatAmount(amount, mail.currency, lang);
@@ -103,6 +107,7 @@ export function studioWithdrawalContent(mail: StudioWithdrawalMail, locale: stri
         { label: l.paid, value: money(mail.paidAmount) },
         { label: l.used(mail.usedDays, mail.periodDays), value: `− ${money(mail.usedAmount)}` },
         { label: l.refund, value: money(mail.refundAmount) },
+        ...(creditNoteNumber ? [{ label: l.creditNote, value: creditNoteNumber }] : []),
       ],
     }),
   ];
@@ -130,7 +135,7 @@ function dateOf(iso: string, locale: "fr" | "en"): string {
   return new Intl.DateTimeFormat(locale === "fr" ? "fr-FR" : "en-GB", { dateStyle: "long", timeZone: "Europe/Paris" }).format(date);
 }
 
-export function studioSubscriptionContent(mail: StudioSubscriptionMail, locale: string, siteUrl: string): EmailContent {
+export function studioSubscriptionContent(mail: StudioSubscriptionMail, locale: string, siteUrl: string, invoiceNumber?: string): EmailContent {
   const lang = chromeLocale(locale);
   const l = LABELS[lang];
   const site = siteUrl.replace(/\/+$/, "");
@@ -141,6 +146,7 @@ export function studioSubscriptionContent(mail: StudioSubscriptionMail, locale: 
         { label: l.plan, value: studioPlanName(mail.plan, lang) },
         { label: l.billing, value: l[mail.interval] },
         { label: l.firstPayment, value: formatAmount(mail.amount, mail.currency, lang) },
+        ...(invoiceNumber ? [{ label: l.invoice, value: invoiceNumber }] : []),
       ],
     }),
   ];
@@ -154,5 +160,38 @@ export function studioSubscriptionContent(mail: StudioSubscriptionMail, locale: 
     primaryAction: { label: l.open, url: `${site}/studio-3d/atelier` },
     secondaryAction: { label: l.manage, url: `${site}/compte/studio` },
     blocks,
+  };
+}
+
+/**
+ * A Studio invoice (renewal, plan change) or a withdrawal's credit note sent on
+ * its own (decision 115): the document travels as a PDF; the e-mail names it.
+ */
+export interface StudioDocumentMail {
+  kind: "invoice" | "creditNote";
+  plan: StudioPlan;
+  number: string;
+}
+
+const DOCUMENT_LABELS = {
+  fr: { title: "Votre document", invoice: "Facture", creditNote: "Avoir", plan: "Formule" },
+  en: { title: "Your document", invoice: "Invoice", creditNote: "Credit note", plan: "Plan" },
+} as const;
+
+export function studioDocumentContent(mail: StudioDocumentMail, locale: string, siteUrl: string): EmailContent {
+  const lang = chromeLocale(locale);
+  const l = DOCUMENT_LABELS[lang];
+  return {
+    eyebrow: LABELS[lang].eyebrow,
+    primaryAction: { label: WITHDRAWAL_LABELS[lang].account, url: `${siteUrl.replace(/\/+$/, "")}/compte/studio` },
+    blocks: [
+      details({
+        title: l.title,
+        rows: [
+          { label: l[mail.kind], value: mail.number },
+          { label: l.plan, value: studioPlanName(mail.plan, lang) },
+        ],
+      }),
+    ],
   };
 }

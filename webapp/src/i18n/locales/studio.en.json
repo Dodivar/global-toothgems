@@ -764,14 +764,13 @@
       "error": "The card could not be saved. Try again in a moment."
     },
     "invoices": {
-      "title": "Invoices",
+      "title": "Invoices and credit notes",
+      "invoice": "Invoice",
+      "creditNote": "Credit note",
       "download": "PDF",
-      "downloadLabel": "Download the invoice of {{date}} (PDF)",
-      "status": {
-        "paid": "Paid",
-        "open": "Due",
-        "uncollectible": "Unpaid"
-      }
+      "downloadLabel": "Download {{kind}} {{number}} (PDF)",
+      "loadError": "Your invoices could not be loaded.",
+      "pdfError": "The PDF could not be produced. Please try again."
     },
     "cancel": {
       "title": "Cancel the subscription",

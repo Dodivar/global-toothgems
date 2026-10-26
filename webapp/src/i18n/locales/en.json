@@ -3400,6 +3400,22 @@
         "unavailableBody": "Trial figures need the Supabase project.",
         "errorTitle": "Trial figures unavailable",
         "errorBody": "They could not be read. Refresh the page to try again."
+      },
+      "studioInvoices": {
+        "title": "3D Studio invoices",
+        "description": "The invoices and credit notes issued for the subscriptions in the period, as PDFs.",
+        "invoice": "Invoice",
+        "creditNote": "Credit note",
+        "printAll": "Print the {{count}} documents",
+        "downloadLabel": "Download {{kind}} {{number}} (PDF)",
+        "fileName": "studio-invoices",
+        "pdfError": "The PDF could not be produced. Please try again.",
+        "emptyTitle": "No document in the period",
+        "emptyBody": "Invoices appear here as soon as a subscription is paid.",
+        "errorTitle": "Invoices unavailable",
+        "errorBody": "The documents could not be loaded. Refresh the page.",
+        "unavailableTitle": "Invoices unavailable",
+        "unavailableBody": "The documents are read from the database, which this environment does not have."
       }
     },
     "training": {
@@ -4992,7 +5008,16 @@
       "paid": "Invoice paid on {{date}}: payment in full when ordering, no discount for early payment.",
       "giftCardNote": "Gift cards: multi-purpose vouchers, outside the scope of VAT when bought; VAT is due when they are used.",
       "latePayment": "Business customers: late payment incurs interest at three times the French legal rate and a fixed €40 recovery fee (French Commercial Code, art. L441-10).",
-      "fileName": "invoice"
+      "fileName": "invoice",
+      "studioPlan": "3D Studio subscription — {{plan}} plan",
+      "studioProration": "Prorated adjustment — {{plan}} plan",
+      "studioInterval": {
+        "month": "monthly billing",
+        "year": "yearly billing"
+      },
+      "studioPeriod": "from {{start}} to {{end}}",
+      "paidBalance": "Paid from your account credit",
+      "paidSubscription": "Invoice paid on {{date}}: subscription paid by card, no discount for early payment."
     },
     "creditNote": {
       "title": "Credit note",
@@ -5003,7 +5028,9 @@
       "notice": "Credit note issued against invoice {{invoice}} of {{date}}, for the refund confirmed on {{refundedOn}}.",
       "toCard": "The amount was refunded to the payment method used. This credit note is the accounting document for that refund: it is not a credit to spend on the site.",
       "toGiftCard": "The amount was credited back to the gift card used.",
-      "fileName": "credit-note"
+      "fileName": "credit-note",
+      "studioWithdrawal": "Withdrawal — unused share of the 3D Studio subscription, {{plan}} plan",
+      "studioUsedDays": "{{used}} of {{total}} days used"
     }
   }
 }

@@ -764,14 +764,13 @@
       "error": "La carte n’a pas pu être enregistrée. Réessayez dans un instant."
     },
     "invoices": {
-      "title": "Factures",
+      "title": "Factures et avoirs",
+      "invoice": "Facture",
+      "creditNote": "Avoir",
       "download": "PDF",
-      "downloadLabel": "Télécharger la facture du {{date}} (PDF)",
-      "status": {
-        "paid": "Payée",
-        "open": "À régler",
-        "uncollectible": "Impayée"
-      }
+      "downloadLabel": "Télécharger {{kind}} {{number}} (PDF)",
+      "loadError": "Vos factures n’ont pas pu être chargées.",
+      "pdfError": "Le PDF n’a pas pu être créé. Réessayez."
     },
     "cancel": {
       "title": "Résilier l’abonnement",

@@ -1,7 +1,7 @@
 import { assertEquals } from "jsr:@std/assert@1";
 import Stripe from "npm:stripe@18.5.0";
 import { DbCallError, handleWebhook, type EventStatus, type WebhookDeps, type WebhookEvent } from "./handler.ts";
-import { subscriptionTarget, type StudioSubscriptionState, type SubscriptionDeps } from "./subscriptions.ts";
+import { invoiceLineFacts, subscriptionTarget, type StudioInvoiceLine, type StudioSubscriptionState, type SubscriptionDeps } from "./subscriptions.ts";
 
 const SECRET = "whsec_test_secret";
 const stripe = new Stripe("sk_test_unused", { httpClient: Stripe.createFetchHttpClient() });
@@ -34,6 +34,7 @@ const invoiceObject = (overrides: Record<string, unknown> = {}) => ({
   billing_reason: "subscription_create",
   amount_paid: 1990,
   amount_due: 1990,
+  total: 1990,
   currency: "eur",
   created: 1_790_000_000,
   status_transitions: { paid_at: 1_790_000_100 },
@@ -41,8 +42,18 @@ const invoiceObject = (overrides: Record<string, unknown> = {}) => ({
   ...overrides,
 });
 
-function fake(stripeState: Partial<StudioSubscriptionState> = {}, applyError?: DbCallError) {
+const LINE: StudioInvoiceLine = {
+  amountMinor: 1990,
+  priceId: "price_artistMonth1",
+  periodStart: 1_790_000_000,
+  periodEnd: 1_792_600_000,
+  proration: false,
+  quantity: 1,
+};
+
+function fake(stripeState: Partial<StudioSubscriptionState> = {}, applyError?: DbCallError, lines: StudioInvoiceLine[] = [LINE]) {
   const state = {
+    linesRead: [] as string[],
     events: new Map<string, EventStatus>(),
     errors: new Map<string, string | undefined>(),
     retrieved: [] as string[],
@@ -98,6 +109,10 @@ function fake(stripeState: Partial<StudioSubscriptionState> = {}, applyError?: D
       recordStudioInvoice: (args) => {
         state.invoices.push(args);
         return Promise.resolve();
+      },
+      invoiceLines: (id) => {
+        state.linesRead.push(id);
+        return Promise.resolve(lines);
       },
     },
     log: (message) => state.logs.push(message),
@@ -162,7 +177,77 @@ Deno.test("invoice.paid: renewal recorded with its billing reason, amount in dec
     amount: "19.90",
     currency: "EUR",
     occurredAt: new Date(1_790_000_100 * 1000).toISOString(),
+    total: "19.90",
+    lines: [{
+      amount: "19.90",
+      price_id: "price_artistMonth1",
+      period_start: new Date(1_790_000_000 * 1000).toISOString(),
+      period_end: new Date(1_792_600_000 * 1000).toISOString(),
+      proration: false,
+      quantity: 1,
+    }],
   }]);
+  assertEquals(state.linesRead, ["in_test0002"]);
+});
+
+Deno.test("invoiceLineFacts: basil line shapes — price, period, proration flag, negative credit", () => {
+  assertEquals(
+    invoiceLineFacts({
+      object: "line_item",
+      amount: 1990,
+      quantity: 1,
+      period: { start: 10, end: 20 },
+      pricing: { type: "price_details", price_details: { price: "price_artistMonth1", product: "prod_1" } },
+      parent: { type: "subscription_item_details", subscription_item_details: { proration: false, subscription_item: "si_1" } },
+    }),
+    { amountMinor: 1990, priceId: "price_artistMonth1", periodStart: 10, periodEnd: 20, proration: false, quantity: 1 },
+  );
+  assertEquals(
+    invoiceLineFacts({
+      amount: -495,
+      quantity: null,
+      period: { start: 10, end: 20 },
+      pricing: { price_details: { price: { id: "price_oldPlan01" } } },
+      parent: { type: "invoice_item_details", invoice_item_details: { proration: true } },
+    }),
+    { amountMinor: -495, priceId: "price_oldPlan01", periodStart: 10, periodEnd: 20, proration: true, quantity: 1 },
+  );
+  assertEquals(invoiceLineFacts({ description: "no amount" }), null);
+  assertEquals(invoiceLineFacts(null), null);
+});
+
+Deno.test("invoice.paid for a plan change: proration lines with a credit, signed decimals; the total may be negative", async () => {
+  const { deps, state } = fake({}, undefined, [
+    { ...LINE, amountMinor: -495, priceId: "price_oldPlan01", proration: true },
+    { ...LINE, amountMinor: 2495, priceId: "price_atelierMonth1", proration: true },
+  ]);
+  await handleWebhook(await signed(event("invoice.paid", invoiceObject({ billing_reason: "subscription_update", total: -300, amount_paid: 0 }))), deps);
+  assertEquals(state.invoices[0].total, "-3.00");
+  assertEquals(state.invoices[0].amount, "0.00");
+  assertEquals(state.invoices[0].lines?.map((l) => [l.amount, l.proration]), [["-4.95", true], ["24.95", true]]);
+});
+
+Deno.test("invoice.payment_failed: the lines are not read (no legal invoice for an unpaid one)", async () => {
+  const { deps, state } = fake({ status: "past_due" });
+  await handleWebhook(await signed(event("invoice.payment_failed", invoiceObject())), deps);
+  assertEquals(state.linesRead, []);
+  assertEquals(state.invoices[0].lines, null);
+});
+
+Deno.test("invoice.paid replayed: recorded once (the database issues one invoice per Stripe invoice)", async () => {
+  const { deps, state } = fake();
+  const payload = event("invoice.paid", invoiceObject(), "evt_inv_1");
+  await handleWebhook(await signed(payload), deps);
+  await handleWebhook(await signed(payload), deps);
+  assertEquals(state.invoices.length, 1);
+});
+
+Deno.test("Stripe unreachable when reading the lines: 500 so Stripe retries, nothing recorded", async () => {
+  const { deps, state } = fake();
+  deps.studio!.invoiceLines = () => Promise.reject(new Error("network"));
+  const res = await handleWebhook(await signed(event("invoice.paid", invoiceObject())), deps);
+  assertEquals(res.status, 500);
+  assertEquals(state.invoices.length, 0);
 });
 
 Deno.test("invoice.payment_failed: recorded as failed; the status mirrored is Stripe's (past_due)", async () => {

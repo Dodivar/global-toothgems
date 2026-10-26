@@ -8,8 +8,9 @@ import type { SweepReport } from "../_shared/email/events.ts";
  * course), refund (per succeeded refund) and back in stock (per customer request
  * whose product can be bought again) and the 3D Studio subscription
  * confirmation (per new subscription whose first invoice is paid) and
- * withdrawal acknowledgement (per withdrawal Stripe has). Called by
- * pg_cron every 5 minutes.
+ * withdrawal acknowledgement (per withdrawal Stripe has), the Studio invoice
+ * of each paid renewal or plan change, and the credit note of a withdrawal
+ * confirmed after its acknowledgement. Called by pg_cron every 5 minutes.
  *
  * Deployed with verify_jwt = false (supabase/config.toml): the caller is the
  * database or the team, not a browser. Authentication is the shared secret

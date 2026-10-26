@@ -61,20 +61,9 @@ export interface ManagedCard {
   expYear: number | null;
 }
 
-export interface ManagedInvoice {
-  id: string;
-  number: string | null;
-  date: number;
-  amountMinor: number;
-  currency: string;
-  status: "paid" | "open" | "uncollectible";
-  pdf: string | null;
-}
-
 export interface StudioManageOverview {
   subscription: ManagedPlan | null;
   card: ManagedCard | null;
-  invoices: ManagedInvoice[];
 }
 
 export interface StudioChangePreview {
@@ -141,33 +130,10 @@ function readCard(value: unknown): ManagedCard | null {
   return { type: o.type, brand: typeof o.brand === "string" ? o.brand : null, last4, expMonth: month, expYear: year };
 }
 
-/** Stripe's PDF links only (https, Stripe's own hosts): anything else is not offered. */
-function pdfLink(value: unknown): string | null {
-  if (typeof value !== "string") return null;
-  try {
-    const url = new URL(value);
-    return url.protocol === "https:" && (url.hostname === "stripe.com" || url.hostname.endsWith(".stripe.com")) ? url.toString() : null;
-  } catch {
-    return null;
-  }
-}
-
-function readInvoice(value: unknown): ManagedInvoice | null {
-  const o = record(value);
-  if (!o || typeof o.id !== "string") return null;
-  const date = seconds(o.date);
-  const amountMinor = minor(o.amount);
-  const currency = currencyOf(o.currency);
-  if (date === null || amountMinor === null || !currency) return null;
-  if (o.status !== "paid" && o.status !== "open" && o.status !== "uncollectible") return null;
-  return { id: o.id, number: typeof o.number === "string" ? o.number : null, date, amountMinor, currency, status: o.status, pdf: pdfLink(o.pdf) };
-}
-
 export function readManageOverview(body: unknown): Answer<StudioManageOverview> {
   const o = record(body);
   if (!o || o.error !== undefined) return { kind: "error", error: readManageError(body) };
-  const invoices = Array.isArray(o.invoices) ? o.invoices.map(readInvoice).filter((i): i is ManagedInvoice => i !== null) : [];
-  return { kind: "ok", value: { subscription: readPlan(o.subscription), card: readCard(o.card), invoices } };
+  return { kind: "ok", value: { subscription: readPlan(o.subscription), card: readCard(o.card) } };
 }
 
 export function readChangePreview(body: unknown): Answer<StudioChangePreview> {

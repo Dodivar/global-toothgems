@@ -19,7 +19,7 @@ import {
  * 112), in place of the Stripe customer portal, with the portal's rules
  * (`_shared/studioManage.ts`):
  *
- *   overview                     plan, price, status, period end, card, invoices
+ *   overview                     plan, price, status, period end, card (the invoices are ours: read from the database)
  *   preview  {plan, interval}    what the switch costs: now (interval change) or on the next invoice
  *   change   {plan, interval, proration_date?}
  *                                switched with create_prorations; a charge needing 3-D Secure
@@ -139,7 +139,7 @@ export async function handleStudioManage(req: Request, deps: StudioManageDeps): 
     const context = customerId ? await deps.subscriptionOf(userId, customerId) : null;
 
     if (request.action === "overview") {
-      if (!customerId) return json({ subscription: null, card: null, invoices: [] }, 200, cors);
+      if (!customerId) return json({ subscription: null, card: null }, 200, cors);
       return json(await deps.overview(userId, customerId, context), 200, cors);
     }
     if (!customerId || !context) return json({ error: "no_subscription" }, 409, cors);

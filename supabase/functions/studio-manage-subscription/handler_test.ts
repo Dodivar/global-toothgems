@@ -31,7 +31,7 @@ function fake(options: { ctx?: ManagedContext | null; customer?: string | null; 
     userFromToken: (token) => Promise.resolve(token === TOKEN ? "user-1" : null),
     customerOf: () => Promise.resolve(options.customer === undefined ? "cus_1" : options.customer),
     subscriptionOf: () => Promise.resolve(options.ctx === undefined ? context() : options.ctx),
-    overview: () => Promise.resolve({ subscription: { plan: "artist" }, card: null, invoices: [] }),
+    overview: () => Promise.resolve({ subscription: { plan: "artist" }, card: null }),
     priceOf: (plan, interval) => Promise.resolve(plan === "atelier" && interval === "year" ? null : `price_${plan}_${interval}`),
     preview: (_ctx, priceId, date) => {
       calls.push(`preview:${priceId}:${date}`);
@@ -119,7 +119,7 @@ Deno.test("no token or an expired one is refused before anything is read", async
 Deno.test("overview without a Stripe customer is empty; actions without a subscription are refused", async () => {
   const none = fake({ customer: null });
   const res = await handleStudioManage(post({ action: "overview" }), none.deps);
-  assertEquals(await res.json(), { subscription: null, card: null, invoices: [] });
+  assertEquals(await res.json(), { subscription: null, card: null });
   const gone = fake({ ctx: null });
   const res2 = await handleStudioManage(post({ action: "cancel" }), gone.deps);
   assertEquals(res2.status, 409);

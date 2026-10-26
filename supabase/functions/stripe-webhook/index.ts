@@ -1,6 +1,7 @@
 import { requireEnv, serviceClient, stripeClient, stripeCryptoProvider } from "../_shared/clients.ts";
 import { notifyOrderPaid, notifyRefundConfirmed } from "../_shared/email/notify.ts";
 import { DbCallError, handleWebhook, type WebhookDeps, type WebhookEvent } from "./handler.ts";
+import { invoiceLineFacts, type StudioInvoiceLine } from "./subscriptions.ts";
 
 /*
  * Deployed with verify_jwt = false (supabase/config.toml): Stripe does not
@@ -192,8 +193,19 @@ const deps: WebhookDeps = {
         p_amount: args.amount,
         p_currency: args.currency,
         p_occurred_at: args.occurredAt,
+        p_total: args.total,
+        p_lines: args.lines,
       });
       if (error) throw dbError(error);
+    },
+
+    async invoiceLines(invoiceId) {
+      const lines: StudioInvoiceLine[] = [];
+      for await (const line of stripe.invoices.listLineItems(invoiceId, { limit: 100 })) {
+        const facts = invoiceLineFacts(line);
+        if (facts) lines.push(facts);
+      }
+      return lines;
     },
   },
 

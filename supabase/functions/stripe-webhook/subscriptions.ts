@@ -16,6 +16,9 @@ import { STUDIO_METADATA_KIND, STUDIO_SUBSCRIPTION_EVENTS } from "../_shared/stu
  *
  * An invoice is then recorded with its billing reason (`record_studio_invoice()`):
  * `subscription_create` is a new subscription, `subscription_cycle` a renewal.
+ * A paid invoice also carries its total and its lines, read from Stripe
+ * (amount, price, period, proration): the database issues our legal FA-
+ * invoice from them (decision 115); Stripe's own invoice document is not used.
  */
 
 export const HANDLED_SUBSCRIPTION_EVENTS = STUDIO_SUBSCRIPTION_EVENTS;
@@ -39,8 +42,30 @@ export interface StudioInvoice {
   billingReason: string | null;
   status: "paid" | "payment_failed";
   amountMinor: number;
+  /** The invoice total before any customer balance (null when Stripe did not send it). */
+  totalMinor: number | null;
   currency: string;
   occurredAt: number;
+}
+
+/** One Stripe invoice line as the legal invoice needs it. */
+export interface StudioInvoiceLine {
+  amountMinor: number;
+  priceId: string | null;
+  periodStart: number | null;
+  periodEnd: number | null;
+  proration: boolean;
+  quantity: number;
+}
+
+/** What the database stores of a line (decimal amount, ISO dates). */
+export interface RecordedInvoiceLine {
+  amount: string;
+  price_id: string | null;
+  period_start: string | null;
+  period_end: string | null;
+  proration: boolean;
+  quantity: number;
 }
 
 export interface SubscriptionDeps {
@@ -64,7 +89,11 @@ export interface SubscriptionDeps {
     amount: string;
     currency: string;
     occurredAt: string;
+    total: string | null;
+    lines: RecordedInvoiceLine[] | null;
   }): Promise<void>;
+  /** Every line of a Stripe invoice (all pages). */
+  invoiceLines(invoiceId: string): Promise<StudioInvoiceLine[]>;
   log(message: string, detail?: unknown): void;
 }
 
@@ -107,6 +136,7 @@ export function subscriptionTarget(type: string, object: unknown): SubscriptionE
         billingReason: typeof o.billing_reason === "string" ? o.billing_reason : null,
         status: paid ? "paid" : "payment_failed",
         amountMinor: typeof amount === "number" ? amount : 0,
+        totalMinor: typeof o.total === "number" ? o.total : null,
         currency: typeof o.currency === "string" ? o.currency.toUpperCase() : "EUR",
         occurredAt: (paid && typeof transitions?.paid_at === "number" ? transitions.paid_at : null) ??
           (typeof o.created === "number" ? o.created : Math.floor(Date.now() / 1000)),
@@ -122,6 +152,50 @@ export function subscriptionTarget(type: string, object: unknown): SubscriptionE
 }
 
 const iso = (seconds: number) => new Date(seconds * 1000).toISOString();
+
+const num = (value: unknown): number | null => (typeof value === "number" && Number.isFinite(value) ? value : null);
+
+/**
+ * A Stripe invoice line (API 2025-08-27.basil) as the legal invoice needs it:
+ * the price is under `pricing.price_details.price`, the proration flag under
+ * `parent.subscription_item_details` (or `invoice_item_details` for a pending
+ * proration item). Null when the line has no amount.
+ */
+export function invoiceLineFacts(line: unknown): StudioInvoiceLine | null {
+  if (!line || typeof line !== "object") return null;
+  const l = line as Record<string, unknown>;
+  const amount = num(l.amount);
+  if (amount === null) return null;
+  const pricing = l.pricing as { price_details?: { price?: unknown } | null } | null | undefined;
+  const parent = l.parent as {
+    subscription_item_details?: { proration?: unknown } | null;
+    invoice_item_details?: { proration?: unknown } | null;
+  } | null | undefined;
+  const period = l.period as { start?: unknown; end?: unknown } | null | undefined;
+  const quantity = num(l.quantity);
+  return {
+    amountMinor: amount,
+    priceId: idOf(pricing?.price_details?.price),
+    periodStart: num(period?.start),
+    periodEnd: num(period?.end),
+    proration: parent?.subscription_item_details?.proration === true || parent?.invoice_item_details?.proration === true,
+    quantity: quantity !== null && quantity >= 1 ? Math.round(quantity) : 1,
+  };
+}
+
+/** Signed: a proration credit, or a total credited to the customer balance, is negative. */
+const signedDecimal = (minor: number) => (minor < 0 ? `-${toDecimalString(-minor)}` : toDecimalString(minor));
+
+function recordedLine(line: StudioInvoiceLine): RecordedInvoiceLine {
+  return {
+    amount: signedDecimal(line.amountMinor),
+    price_id: line.priceId,
+    period_start: line.periodStart === null ? null : iso(line.periodStart),
+    period_end: line.periodEnd === null ? null : iso(line.periodEnd),
+    proration: line.proration,
+    quantity: line.quantity,
+  };
+}
 
 /** Mirrors the subscription (and records the invoice). "ignored" when it is not a Studio subscription. */
 export async function applySubscriptionEvent(target: SubscriptionEventTarget, deps: SubscriptionDeps): Promise<"processed" | "ignored"> {
@@ -148,6 +222,8 @@ export async function applySubscriptionEvent(target: SubscriptionEventTarget, de
   }
 
   if (target.invoice) {
+    // The lines are read for a paid invoice only: it is the one that becomes a legal invoice.
+    const lines = target.invoice.status === "paid" ? (await deps.invoiceLines(target.invoice.id)).map(recordedLine) : null;
     await deps.recordStudioInvoice({
       invoiceId: target.invoice.id,
       subscriptionId: sub.id,
@@ -156,6 +232,8 @@ export async function applySubscriptionEvent(target: SubscriptionEventTarget, de
       amount: toDecimalString(target.invoice.amountMinor),
       currency: target.invoice.currency,
       occurredAt: iso(target.invoice.occurredAt),
+      total: target.invoice.totalMinor === null ? null : signedDecimal(target.invoice.totalMinor),
+      lines,
     });
   }
   return "processed";

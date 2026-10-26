@@ -2,7 +2,7 @@ import { describe, expect, it } from "vitest";
 import { readCardStep, readChangePreview, readChargeAnswer, readManageOverview } from "./studioManageMapping";
 
 describe("studio subscription management answers", () => {
-  it("reads the overview: plan, card and Stripe's invoice PDFs only", () => {
+  it("reads the overview: plan and card (the invoices are ours, read from the database)", () => {
     const answer = readManageOverview({
       subscription: {
         plan: "artist",
@@ -15,12 +15,6 @@ describe("studio subscription management answers", () => {
         pending_update: false,
       },
       card: { type: "card", brand: "visa", last4: "4242", exp_month: 12, exp_year: 2034 },
-      invoices: [
-        { id: "in_1", number: "ABC-0001", date: 1_789_000_000, amount: 1990, currency: "EUR", status: "paid", pdf: "https://pay.stripe.com/invoice/x/pdf" },
-        { id: "in_2", number: null, date: 1_788_000_000, amount: 1990, currency: "EUR", status: "paid", pdf: "https://evil.example/x.pdf" },
-        { id: "in_3", date: 1_788_000_000, amount: -5, currency: "EUR", status: "paid" },
-        { id: "in_4", date: 1_788_000_000, amount: 100, currency: "EUR", status: "draft" },
-      ],
     });
     expect(answer.kind).toBe("ok");
     if (answer.kind !== "ok") return;
@@ -35,16 +29,12 @@ describe("studio subscription management answers", () => {
       pendingUpdate: false,
     });
     expect(answer.value.card).toEqual({ type: "card", brand: "visa", last4: "4242", expMonth: 12, expYear: 2034 });
-    expect(answer.value.invoices.map((i) => [i.id, i.pdf])).toEqual([
-      ["in_1", "https://pay.stripe.com/invoice/x/pdf"],
-      ["in_2", null],
-    ]);
   });
 
   it("an empty overview and errors", () => {
-    expect(readManageOverview({ subscription: null, card: null, invoices: [] })).toEqual({
+    expect(readManageOverview({ subscription: null, card: null })).toEqual({
       kind: "ok",
-      value: { subscription: null, card: null, invoices: [] },
+      value: { subscription: null, card: null },
     });
     expect(readManageOverview({ error: "session_expired" })).toEqual({ kind: "error", error: "session_expired" });
     expect(readManageOverview({ error: "something_else" })).toEqual({ kind: "error", error: "unavailable" });

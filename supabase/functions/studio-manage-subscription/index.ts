@@ -16,8 +16,6 @@ const origins = readSiteOrigins(requireEnv("SITE_URL"), Deno.env.get("ALLOWED_RE
 const log = (message: string, detail?: unknown) => console.error(`[studio-manage-subscription] ${message}`, detail ?? "");
 
 const RUNNING = ["active", "trialing", "past_due", "unpaid"];
-/** The invoices listed on the page (Stripe's own documents, decision 94 (b)). */
-const INVOICE_LIMIT = 12;
 
 const idOf = (value: string | { id?: string } | null | undefined): string | null =>
   typeof value === "string" ? value : value?.id ?? null;
@@ -113,30 +111,12 @@ const deps: StudioManageDeps = {
     } satisfies ManagedContext;
   },
 
-  async overview(userId, customerId, context) {
+  // The invoices are ours (decision 115): the page reads them from the database, not from Stripe.
+  async overview(_userId, customerId, context) {
     const customer = await stripe.customers.retrieve(customerId);
     const customerMethod = customer.deleted ? null : idOf(customer.invoice_settings?.default_payment_method ?? null);
     const methodId = context?.paymentMethodId ?? customerMethod;
     const method = methodId ? await stripe.paymentMethods.retrieve(methodId) : null;
-
-    const ours = new Set(await subscriptionIdsOf(userId));
-    const listed = await stripe.invoices.list({ customer: customerId, limit: 50 });
-    const invoices = listed.data
-      .filter((invoice) => invoice.status === "paid" || invoice.status === "open" || invoice.status === "uncollectible")
-      .filter((invoice) => {
-        const subscription = idOf(invoice.parent?.subscription_details?.subscription ?? null);
-        return subscription !== null && ours.has(subscription);
-      })
-      .slice(0, INVOICE_LIMIT)
-      .map((invoice) => ({
-        id: invoice.id,
-        number: invoice.number,
-        date: invoice.status_transitions?.paid_at ?? invoice.created,
-        amount: invoice.total,
-        currency: invoice.currency.toUpperCase(),
-        status: invoice.status,
-        pdf: invoice.invoice_pdf ?? null,
-      }));
 
     return {
       subscription: context
@@ -152,7 +132,6 @@ const deps: StudioManageDeps = {
         }
         : null,
       card: cardOf(method),
-      invoices,
     };
   },
 

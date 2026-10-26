@@ -10,6 +10,12 @@ import { StudioPaidPlans } from "../StudioPlans";
 import { StudioPlanComparison } from "./StudioPlanComparison";
 import { StudioCardDialog } from "./StudioCardDialog";
 import { useFormat } from "../../../lib/format";
+import { useAuth } from "../../../lib/auth";
+import { invoiceDocument, invoiceFileName } from "../../../lib/documents/invoiceDocument";
+import type { OrderInvoice } from "../../../lib/documents/invoiceModel";
+import { useDocumentDownload } from "../../../lib/documents/useDocumentDownload";
+import { useDocumentFormat } from "../../../lib/documents/useDocumentFormat";
+import { creditedInvoice, fetchMyStudioDocuments } from "../../../lib/studioInvoices";
 import {
   cancelStudioSubscription,
   changeStudioPlan,
@@ -31,10 +37,12 @@ import type { StudioBillingInterval, StudioPaidPlanId } from "../../../data/stud
  * The 3D Studio subscription managed on our own page (decision 112), in place
  * of the Stripe customer portal and with its rules: switch plan or billing
  * (prorated; a billing switch is charged at once), compare the plans, replace
- * the card, read and download the invoices, cancel at the end of the period or
- * keep the subscription. Everything is read from and done at Stripe by
- * `studio-manage-subscription`; the Studio's access follows through the
- * verified webhook, so `onChanged` asks the page to re-read it.
+ * the card, download the invoices and credit notes, cancel at the end of the
+ * period or keep the subscription. The subscription is read from and changed at
+ * Stripe by `studio-manage-subscription`; the Studio's access follows through
+ * the verified webhook, so `onChanged` asks the page to re-read it. The
+ * invoices are our own legal documents (decision 115), read from the database
+ * and drawn as PDFs in the browser — never Stripe's.
  */
 /** The verified webhook usually mirrors a change within seconds. */
 const WEBHOOK_REREADS_MS = [3_000, 10_000];
@@ -144,7 +152,7 @@ export function StudioBillingManager({ onChanged }: { onChanged: () => void }) {
         </Panel>
       )}
 
-      {overview.invoices.length > 0 && <Invoices overview={overview} />}
+      <Invoices />
 
       {running && sub && <CancelSection overview={overview} onDone={changed} />}
     </div>
@@ -341,41 +349,79 @@ function CardLine({ overview }: { overview: StudioManageOverview }) {
 
 /* --------------------------------------------------------------- Invoices */
 
-function Invoices({ overview }: { overview: StudioManageOverview }) {
+function Invoices() {
   const { t } = useTranslation();
   const { formatMoney, formatDate } = useFormat();
+  const { userId } = useAuth();
+  const fmt = useDocumentFormat();
+  const { status, download } = useDocumentDownload();
+  const [documents, setDocuments] = useState<OrderInvoice[] | null>(null);
+  const [failed, setFailed] = useState(false);
   const k = "studio.account.invoices";
+
+  useEffect(() => {
+    if (!userId) return;
+    let cancelled = false;
+    fetchMyStudioDocuments(userId).then(
+      (rows) => {
+        if (!cancelled) setDocuments(rows);
+      },
+      () => {
+        if (!cancelled) setFailed(true);
+      },
+    );
+    return () => {
+      cancelled = true;
+    };
+  }, [userId]);
+
+  if (failed) {
+    return (
+      <Panel title={t(`${k}.title`)} icon={FileText}>
+        <p role="alert" className="m-0 text-[length:var(--text-body-sm)] text-[var(--text-body)]">{t(`${k}.loadError`)}</p>
+      </Panel>
+    );
+  }
+  if (!documents || documents.length === 0) return null;
+
+  const save = (doc: OrderInvoice) =>
+    void download(async () => ({ document: invoiceDocument(doc, t, fmt, creditedInvoice(documents, doc)), fileName: invoiceFileName(doc, t) }));
+
   return (
     <Panel title={t(`${k}.title`)} icon={FileText}>
+      {status === "error" && (
+        <p role="alert" className="m-0 text-[length:var(--text-body-sm)] font-medium text-[var(--status-error-fg)]">{t(`${k}.pdfError`)}</p>
+      )}
       <ul className="m-0 grid list-none gap-0 p-0">
-        {overview.invoices.map((invoice) => (
-          <li key={invoice.id} className="flex flex-wrap items-center justify-between gap-x-4 gap-y-1 border-b border-[var(--border-subtle)] py-2.5 last:border-b-0">
-            <span className="grid gap-0.5">
-              <span className="text-[length:var(--text-body-sm)] font-semibold text-[var(--text-primary)]">{formatDate(new Date(invoice.date).toISOString())}</span>
-              {invoice.number && <span className="text-[length:var(--text-caption)] text-[var(--text-muted)]">{invoice.number}</span>}
-            </span>
-            <span className="flex flex-wrap items-center gap-3">
-              <span className="tabular-nums text-[length:var(--text-body-sm)] text-[var(--text-primary)]">{formatMoney(invoice.amountMinor, invoice.currency)}</span>
-              <span
-                className={`rounded-[var(--radius-pill)] px-2 py-0.5 text-[11px] font-semibold ${
-                  invoice.status === "paid" ? "bg-[var(--status-success-bg)] text-[var(--status-success-fg)]" : "bg-[var(--status-error-bg)] text-[var(--status-error-fg)]"
-                }`}
-              >
-                {t(`${k}.status.${invoice.status}`)}
+        {documents.map((doc) => {
+          const kind = t(doc.kind === "creditNote" ? `${k}.creditNote` : `${k}.invoice`);
+          return (
+            <li key={doc.id} className="flex flex-wrap items-center justify-between gap-x-4 gap-y-1 border-b border-[var(--border-subtle)] py-2.5 last:border-b-0">
+              <span className="grid gap-0.5">
+                <span className="text-[length:var(--text-body-sm)] font-semibold text-[var(--text-primary)]">{formatDate(doc.issuedAt)}</span>
+                <span className="text-[length:var(--text-caption)] text-[var(--text-muted)]">
+                  {kind} {doc.number}
+                </span>
               </span>
-              {invoice.pdf && (
-                <a
-                  href={invoice.pdf}
-                  className="inline-flex min-h-11 items-center gap-1.5 text-[length:var(--text-body-sm)] font-semibold text-[var(--text-link,var(--gt-blue-700))] underline underline-offset-2"
-                  aria-label={t(`${k}.downloadLabel`, { date: formatDate(new Date(invoice.date).toISOString()) })}
+              <span className="flex flex-wrap items-center gap-3">
+                <span className="tabular-nums text-[length:var(--text-body-sm)] text-[var(--text-primary)]">
+                  {doc.kind === "creditNote" ? "− " : ""}
+                  {formatMoney(doc.totalIncl, doc.currency)}
+                </span>
+                <Button
+                  variant="ghost"
+                  size="sm"
+                  iconLeft={Download}
+                  onClick={() => save(doc)}
+                  disabled={status === "working"}
+                  aria-label={t(`${k}.downloadLabel`, { kind: kind.toLowerCase(), number: doc.number })}
                 >
-                  <Download size={14} aria-hidden="true" />
                   {t(`${k}.download`)}
-                </a>
-              )}
-            </span>
-          </li>
-        ))}
+                </Button>
+              </span>
+            </li>
+          );
+        })}
       </ul>
     </Panel>
   );
