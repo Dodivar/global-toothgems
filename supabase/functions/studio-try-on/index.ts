@@ -11,6 +11,7 @@ import { promptVersion, TRY_ON_SYSTEM_PROMPT_V1, TRY_ON_SYSTEM_PROMPT_V3 } from 
  *
  * Secrets: GEMINI_IMAGE_MODEL + GOOGLE_ADC_JSON (Vertex AI) or GEMINI_API_KEY
  * connect the AI (see gemini.ts);
+ * Active administrators (profiles.role = 'admin') have no daily limit.
  * TRY_ON_DAILY_LIMIT (optional, default 10) caps generations per account per
  * 24 hours (photos refused by the check not counted); TRY_ON_DAILY_CHECKS
  * (optional, default 30) caps every request, refused photos included;
@@ -88,6 +89,15 @@ Deno.serve((req) =>
         scene: row.scene_data,
         allowed: row.allowed === true,
       };
+    },
+    async unlimited(userId) {
+      // Active administrators (role `admin`) test without a daily limit; any doubt keeps the limit.
+      const { data, error } = await supabase.from("profiles").select("role, status").eq("id", userId).maybeSingle();
+      if (error) {
+        log("admin lookup failed, daily limit kept", error.message);
+        return false;
+      }
+      return data?.role === "admin" && data?.status === "active";
     },
     async countRecent(userId, since) {
       const recent = () =>

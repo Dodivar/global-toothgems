@@ -1477,7 +1477,7 @@ AI render                   multipart: source, photo (≤ 6 MB), design (3D stil
   with the logged spans; `no_teeth`, `teeth_hidden`, `too_dark`, `too_bright`, `blurry`); a fact the model did not
   give clearly is not held against the photo, and a check that fails (provider, model id) never blocks the render.
   A refused photo answers 422 `photo_unsuitable` with its reasons, is recorded with that error code and does not
-  count toward the renders (`TRY_ON_DAILY_LIMIT`), only toward every request (`TRY_ON_DAILY_CHECKS`, default 30).
+  count toward the renders (`TRY_ON_DAILY_LIMIT`), only toward every request (`TRY_ON_DAILY_CHECKS`, default 30). Active administrators (`profiles.role = 'admin'`, owner's decision 2026-10-26, to test freely) have no daily limit; their requests are still recorded.
   The browser asks for a close-up first (photo step), refuses locally only a photo far too dark to see a tooth
   (`tryOnPhoto.ts` `checkPhotoLight`), and lists the reasons with what to change.
 - **Privacy**: the photo and the image only pass through the function's memory (never stored, never logged);

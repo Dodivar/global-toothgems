@@ -26,6 +26,7 @@ function fake(over: Partial<StudioTryOnDeps> = {}, row: TryOnCreationRow | null 
     dailyChecks: 5,
     userFromToken: (token) => Promise.resolve(token === TOKEN ? "user-1" : null),
     loadCreation: () => Promise.resolve(row),
+    unlimited: () => Promise.resolve(false),
     countRecent: () => Promise.resolve({ requests: 0, renders: 0 }),
     startRequest: () => {
       calls.started++;
@@ -118,6 +119,10 @@ Deno.test("refusals: no token, expired, unknown creation, owner without the plan
   // Refused photos do not use up the renders, but every request counts toward the checks' cap.
   assertEquals((await handleStudioTryOn(post(form()), fake({ countRecent: () => Promise.resolve({ requests: 4, renders: 0 }) }).deps)).status, 200);
   assertEquals((await handleStudioTryOn(post(form()), fake({ countRecent: () => Promise.resolve({ requests: 5, renders: 0 }) }).deps)).status, 429);
+  // An active administrator has no limit; the request is still recorded.
+  const admin = fake({ unlimited: () => Promise.resolve(true), countRecent: () => Promise.resolve({ requests: 99, renders: 99 }) });
+  assertEquals((await handleStudioTryOn(post(form()), admin.deps)).status, 200);
+  assertEquals(admin.calls.started, 1);
 });
 
 const GOOD_PHOTO = { teeth_visible: true, teeth_covered: false, teeth_box: [400, 300, 520, 700], sharpness: "sharp", lighting: "good" };

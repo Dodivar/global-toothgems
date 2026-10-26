@@ -35,7 +35,8 @@ import { buildDesignData, piecesFromScene, readSeats } from "./prompt.ts";
  * whose owner has the option, is ever rendered; a request is counted before the provider is
  * called (`studio_try_on_requests`, daily limits per account: the renders —
  * photos refused by the check do not count — and every request, checks
- * included). The photo is checked first by a small text model; a failed
+ * included; active administrators have none, their requests are still
+ * recorded). The photo is checked first by a small text model; a failed
  * check (provider down, no answer) never blocks the render. The photo and
  * the image only pass through memory.
  */
@@ -59,6 +60,8 @@ export interface StudioTryOnDeps {
   dailyChecks: number;
   userFromToken(token: string): Promise<string | null>;
   loadCreation(requester: string, ref: TryOnSourceRef): Promise<TryOnCreationRow | null>;
+  /** Whether the account has no daily limit: an active administrator (owner's decision, 2026-10-26, to test freely). */
+  unlimited(userId: string): Promise<boolean>;
   /** The account's requests since then: all of them, and those that were not refused by the photo check. */
   countRecent(userId: string, since: Date): Promise<{ requests: number; renders: number }>;
   startRequest(userId: string, row: TryOnCreationRow): Promise<string>;
@@ -171,9 +174,11 @@ export async function handleStudioTryOn(req: Request, deps: StudioTryOnDeps): Pr
     row = await deps.loadCreation(userId, ref);
     if (!row) return json({ ok: false, code: "not_found" }, 404, cors);
     if (!row.allowed) return json({ ok: false, code: "not_allowed" }, 403, cors);
-    const now = deps.now?.() ?? new Date();
-    const used = await deps.countRecent(userId, new Date(now.getTime() - 24 * 3600 * 1000));
-    if (used.renders >= deps.dailyLimit || used.requests >= deps.dailyChecks) return json({ ok: false, code: "daily_limit" }, 429, cors);
+    if (!(await deps.unlimited(userId))) {
+      const now = deps.now?.() ?? new Date();
+      const used = await deps.countRecent(userId, new Date(now.getTime() - 24 * 3600 * 1000));
+      if (used.renders >= deps.dailyLimit || used.requests >= deps.dailyChecks) return json({ ok: false, code: "daily_limit" }, 429, cors);
+    }
     requestId = await deps.startRequest(userId, row);
   } catch (error) {
     deps.log("preparing the request failed", error instanceof Error ? error.message : error);
