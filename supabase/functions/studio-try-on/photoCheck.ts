@@ -67,8 +67,10 @@ export function judgePhoto(answer: Record<string, unknown>, size: { width: numbe
   const issues: PhotoIssue[] = [];
   if (answer.teeth_visible === false) return { issues: ["no_teeth"], span: null };
   // A smile seen at a slant loses its middle line: the image model then puts the gems on the wrong teeth
-  // (owner's test, 2026-10-26). Only a clear three-quarter view, or a front tooth not facing the camera, is refused.
-  if (answer.head_pose === "strongly_turned" || answer.central_incisors_visible === false) issues.push("not_frontal");
+  // and adds some (owner's tests, 2026-10-26). Only a face-on smile with both front teeth facing the camera passes:
+  // "slightly_turned" was let through at first and still gave wrong renders, so the owner tightened it the same day.
+  if (answer.head_pose !== undefined && answer.head_pose !== "frontal") issues.push("not_frontal");
+  else if (answer.central_incisors_visible === false) issues.push("not_frontal");
   if (answer.teeth_covered === true) issues.push("teeth_hidden");
   if (answer.lighting === "too_dark") issues.push("too_dark");
   if (answer.lighting === "overexposed") issues.push("too_bright");

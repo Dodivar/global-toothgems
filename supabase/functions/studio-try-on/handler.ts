@@ -216,6 +216,9 @@ export async function handleStudioTryOn(req: Request, deps: StudioTryOnDeps): Pr
     }
   }
 
+  // Counts only: whether the browser sent the gems' places (a site older than the seats sends none).
+  deps.log("design data", { gems: pieces.length, seats: seats.size });
+
   let outcome: GenerateOutcome;
   try {
     const references = await deps.references().catch((error) => {

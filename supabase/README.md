@@ -1480,8 +1480,9 @@ AI render                   multipart: source, photo (≤ 6 MB), design (3D stil
   `photoCheck.ts` `judgePhoto` decides with fixed thresholds, never the model: refused only for a clear reason
   (`too_far`: the teeth span less than `MIN_TEETH_SPAN` = 0.25 of the photo's longer side, a first estimate to tune
   with the logged spans; `not_frontal`: a three-quarter or steep view, or an upper central incisor not facing the
-  camera — a slanted smile loses its middle line and the image model puts the gems on the wrong teeth, 2026-10-26;
-  a slightly turned head passes; `no_teeth`, `teeth_hidden`, `too_dark`, `too_bright`, `blurry`); a fact the model did not
+  camera — a slanted smile loses its middle line and the image model puts the gems on the wrong teeth and adds some,
+  2026-10-26; only `frontal` passes — `slightly_turned` was let through at first and still gave wrong renders, so
+  the owner tightened it the same day; `no_teeth`, `teeth_hidden`, `too_dark`, `too_bright`, `blurry`); a fact the model did not
   give clearly is not held against the photo, and a check that fails (provider, model id) never blocks the render.
   A refused photo answers 422 `photo_unsuitable` with its reasons, is recorded with that error code and does not
   count toward the renders (`TRY_ON_DAILY_LIMIT`), only toward every request (`TRY_ON_DAILY_CHECKS`, default 30). Active administrators (`profiles.role = 'admin'`, owner's decision 2026-10-26, to test freely) have no daily limit; their requests are still recorded.

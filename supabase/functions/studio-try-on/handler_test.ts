@@ -160,10 +160,12 @@ Deno.test("judgePhoto: clear reasons only, the teeth's span against the longer s
   assertEquals(judgePhoto(GOOD_PHOTO, null), { issues: [], span: 0.4 });
   assertEquals(judgePhoto({ ...GOOD_PHOTO, teeth_visible: false }, null).issues, ["no_teeth"]);
   assertEquals(judgePhoto({ ...GOOD_PHOTO, teeth_covered: true, sharpness: "blurred", lighting: "overexposed" }, null).issues, ["teeth_hidden", "too_bright", "blurry"]);
-  // A three-quarter view, or a front tooth not facing the camera: refused; slightly turned: not.
+  // Only a face-on smile passes: turned (even slightly), or a front tooth not facing the camera, is refused.
   assertEquals(judgePhoto({ ...GOOD_PHOTO, head_pose: "strongly_turned" }, null).issues, ["not_frontal"]);
+  assertEquals(judgePhoto({ ...GOOD_PHOTO, head_pose: "slightly_turned" }, null).issues, ["not_frontal"]);
   assertEquals(judgePhoto({ ...GOOD_PHOTO, central_incisors_visible: false }, null).issues, ["not_frontal"]);
-  assertEquals(judgePhoto({ ...GOOD_PHOTO, head_pose: "slightly_turned" }, null).issues, []);
+  // No answer on the pose: not held against the photo.
+  assertEquals(judgePhoto({ ...GOOD_PHOTO, head_pose: undefined }, null).issues, []);
   // Soft or dim but readable: not refused.
   assertEquals(judgePhoto({ ...GOOD_PHOTO, sharpness: "slightly_blurred", lighting: "dim" }, null).issues, []);
   // A selfie of the whole face, portrait: the teeth span 28 % of the width, 21 % of the longer side.
