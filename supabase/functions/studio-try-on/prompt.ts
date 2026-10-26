@@ -167,12 +167,16 @@ function placeOf(seat: Seat): string {
   return `${height}, ${side}`;
 }
 
-function gemLine(n: number, p: PromptPiece, seat: Seat | undefined): string {
+/** A share of the photo's width, with a decimal below 10 %. */
+const photoPct = (n: number) => `${n < 0.1 ? Math.round(n * 1000) / 10 : Math.round(n * 100)}%`;
+
+function gemLine(n: number, p: PromptPiece, seat: Seat | undefined, mmShare: number | null): string {
   const mm = p.longestMm > 0 && p.size !== `${p.longestMm} mm` ? ` (about ${p.longestMm} mm on its longest side)` : "";
   const coating = p.iridescent ? " — iridescent coating" : "";
+  const inPhoto = mmShare && p.longestMm > 0 ? ` — IN THIS PHOTO: about ${photoPct(p.longestMm * mmShare)} of the photo's width on its longest side` : "";
   const share = seat ? ` — longest side about ${pct(seat.width)} of this tooth's width` : "";
   const place = seat ? ` — ${placeOf(seat)}` : "";
-  return `  ${n}. ${SHAPES[p.shape]} — ${p.material} — colour ${p.color}${coating} — size ${p.size}${mm}${share}${place}`;
+  return `  ${n}. ${SHAPES[p.shape]} — ${p.material} — colour ${p.color}${coating} — size ${p.size}${mm}${inPhoto}${share}${place}`;
 }
 
 /**
@@ -182,7 +186,12 @@ function gemLine(n: number, p: PromptPiece, seat: Seat | undefined): string {
  * size and, when the browser measured it, its share of the tooth's width and
  * its place on the crown. Gems on the tongue side are left out.
  */
-export function buildDesignData(pieces: readonly PromptPiece[], seats: ReadonlyMap<string, Seat> = new Map()): string {
+export function buildDesignData(
+  pieces: readonly PromptPiece[],
+  seats: ReadonlyMap<string, Seat> = new Map(),
+  /** One millimetre as a share of the photo's width (`photoCheck.ts` `photoScale`), when measured. */
+  mmShare: number | null = null,
+): string {
   const seatOf = (p: PromptPiece) => (p.id ? seats.get(p.id) : undefined);
   const shown = pieces.filter((p) => seatOf(p)?.front !== false);
   const onTooth = (fdi: string) =>
@@ -200,7 +209,7 @@ export function buildDesignData(pieces: readonly PromptPiece[], seats: ReadonlyM
         continue;
       }
       lines.push(`Tooth ${toothLabel(fdi)}: ${gems.length} gem${gems.length > 1 ? "s" : ""}`);
-      for (const p of gems) lines.push(gemLine(++n, p, seatOf(p)));
+      for (const p of gems) lines.push(gemLine(++n, p, seatOf(p), mmShare));
     }
   };
   arch("UPPER ARCH — teeth in the photo's left-to-right order:", UPPER);
@@ -208,8 +217,14 @@ export function buildDesignData(pieces: readonly PromptPiece[], seats: ReadonlyM
   const other = shown.filter((p) => p.toothId === "X0");
   if (other.length) {
     lines.push("", `Gems on an ${toothLabel("X0")}:`);
-    for (const p of other) lines.push(gemLine(++n, p, seatOf(p)));
+    for (const p of other) lines.push(gemLine(++n, p, seatOf(p), mmShare));
   }
   const count = `${n} gem${n > 1 ? "s" : ""}`;
-  return [`DESIGN DATA — exactly ${count}, no more.`, ...lines].join("\n");
+  const scale = mmShare
+    ? [
+        "",
+        `SCALE MEASURED ON THIS PHOTO: the two upper central incisors together span about ${photoPct(mmShare * 17)} of the photo's width (about 17 mm in real life), so 1 mm is about ${photoPct(mmShare)} of the photo's width. Each gem gives its length IN THIS PHOTO: draw it at that length, never larger.`,
+      ]
+    : [];
+  return [`DESIGN DATA — exactly ${count}, no more.`, ...scale, ...lines].join("\n");
 }

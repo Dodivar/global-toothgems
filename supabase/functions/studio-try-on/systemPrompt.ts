@@ -21,6 +21,10 @@
  *       opening and teeth; a gem that does not fit gets smaller, the tooth
  *       never bigger; the output keeps the photo's proportions
  *       (`imageConfig.aspectRatio`, `gemini.ts` `nearestAspectRatio`).
+ *       Fourth round: the photo check measures the two upper central
+ *       incisors, and the data gives each gem's length in THIS photo, as a
+ *       share of its width (`photoCheck.ts` `photoScale`) — gems kept the
+ *       same size whatever the size of the smile.
  *
  * Both expect the images in this order, and `handler.ts` sends them so:
  *   IMAGE 1  the creation rendered in 3D by the browser (`designImage.ts`)
@@ -375,7 +379,8 @@ Identify the teeth actually visible in IMAGE 2 and match them to the teeth named
 ## 6. SCALE
 
 Gems are small. Size them from the data against the real teeth: an upper central incisor is about 8.5 mm wide with a visible crown about 10 mm high; a lateral incisor about 6.5 mm wide; a canine about 7.5 mm; a lower incisor about 5.5 mm.
-- **The share of the tooth's width given in the data comes first**: a gem at 50% spans half the width of that tooth as it appears in the photo, a gem at 35% about a third. Measure it on the photo's own tooth, unchanged, not on the image as a whole — the gem adapts to the tooth, never the tooth to the gem.
+- **The length IN THIS PHOTO comes first.** When the data gives a scale measured on this photo and, for each gem, its length "IN THIS PHOTO" as a share of the photo's width, draw every gem at that length: it was measured on this very photo from the two upper central incisors. A gem is never drawn larger than that — a smile far from the camera carries small gems, a close-up larger ones.
+- **The share of the tooth's width** confirms it: a gem at 50% spans half the width of that tooth as it appears in the photo, a gem at 35% about a third. Measure it on the photo's own tooth, unchanged, not on the image as a whole — the gem adapts to the tooth, never the tooth to the gem.
 - Without that share: an SS5 round crystal (about 1.8 mm) spans roughly a fifth of a central incisor's width; a 3 mm gem about a third; a 5 mm gem more than half.
 - Keep the sizes between gems as in IMAGE 1: a gem drawn smaller stays smaller. Never enlarge a gem to make it noticeable, never shrink it until its shape is lost.
 

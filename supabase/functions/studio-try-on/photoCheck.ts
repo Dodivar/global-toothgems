@@ -32,6 +32,7 @@ Look at the photo and report facts only, as JSON matching the schema:
 - teeth_visible: true when front teeth (incisors) are clearly visible — lips apart, a smile or open mouth.
 - teeth_covered: true only when something hides most of the front teeth: a hand, an object, a phone, hair, a mask.
 - teeth_box: the box around ALL the visible teeth together (not the lips, not the face), as [ymin, xmin, ymax, xmax] on a 0–1000 scale of the image. Empty array when no teeth are visible.
+- central_incisors_box: the box around the two upper central incisors together — the two front teeth on either side of the middle of the smile, from the outer edge of one to the outer edge of the other, from the gum line to the biting edge — as [ymin, xmin, ymax, xmax] on the same 0–1000 scale. Empty array when they are not both visible.
 - sharpness: "sharp", "slightly_blurred" (soft but the teeth edges are readable) or "blurred" (the teeth edges cannot be told apart).
 - lighting: "good", "dim" (darker but the teeth are readable), "too_dark" (the teeth are hard to see) or "overexposed" (the teeth are burnt white, no detail).
 - head_pose: how the smile faces the camera — "frontal" (facing it), "slightly_turned" (a little to one side, up or down, the front teeth still face the camera) or "strongly_turned" (a three-quarter view or a steep angle from below or above: the front teeth are seen at a slant and one side of the smile is much more visible than the other).
@@ -45,12 +46,13 @@ export const PHOTO_CHECK_SCHEMA = {
     teeth_visible: { type: "BOOLEAN" },
     teeth_covered: { type: "BOOLEAN" },
     teeth_box: { type: "ARRAY", items: { type: "INTEGER" } },
+    central_incisors_box: { type: "ARRAY", items: { type: "INTEGER" } },
     sharpness: { type: "STRING", enum: ["sharp", "slightly_blurred", "blurred"] },
     lighting: { type: "STRING", enum: ["good", "dim", "too_dark", "overexposed"] },
     head_pose: { type: "STRING", enum: ["frontal", "slightly_turned", "strongly_turned"] },
     central_incisors_visible: { type: "BOOLEAN" },
   },
-  required: ["teeth_visible", "teeth_covered", "teeth_box", "sharpness", "lighting", "head_pose", "central_incisors_visible"],
+  required: ["teeth_visible", "teeth_covered", "teeth_box", "central_incisors_box", "sharpness", "lighting", "head_pose", "central_incisors_visible"],
 };
 
 export interface PhotoVerdict {
@@ -88,6 +90,30 @@ export function judgePhoto(answer: Record<string, unknown>, size: { width: numbe
     }
   }
   return { issues, span };
+}
+
+/** Width of the two upper central incisors together, in millimetres (about 8.5 mm each). */
+export const CENTRAL_INCISORS_MM = 17;
+
+/**
+ * The photo's scale, from the two upper central incisors: one millimetre as a
+ * share of the photo's width — so the image model can be told how long each
+ * gem should be in THIS photo (2026-10-26: without it, gems kept the same size
+ * whatever the size of the smile). Null when the box is missing or implausible
+ * (too small, too large, or not shaped like two front teeth).
+ */
+export function photoScale(answer: Record<string, unknown>, size: { width: number; height: number } | null): number | null {
+  const box = answer.central_incisors_box;
+  if (!Array.isArray(box) || box.length !== 4 || !box.every((v) => typeof v === "number" && Number.isFinite(v) && v >= 0 && v <= 1000)) return null;
+  const [ymin, xmin, ymax, xmax] = box as number[];
+  const share = (xmax - xmin) / 1000;
+  if (!(ymax > ymin) || share < 0.02 || share > 0.8) return null;
+  if (size && size.width > 0 && size.height > 0) {
+    // Two front teeth: about 17 mm wide, 6–12 mm of crown seen.
+    const ratio = ((ymax - ymin) * size.height) / ((xmax - xmin) * size.width);
+    if (ratio < 0.2 || ratio > 1.5) return null;
+  }
+  return share / CENTRAL_INCISORS_MM;
 }
 
 /** Width and height read from a JPEG (SOF marker) or PNG (IHDR) header; null for anything else. */

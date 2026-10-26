@@ -1475,7 +1475,11 @@ AI render                   multipart: source, photo (≤ 6 MB), design (3D stil
   opening and every tooth's size and place (a gem that does not fit gets smaller, never the tooth bigger), and the
   render asks for the proportions closest to the photo's (`imageConfig.aspectRatio`, `gemini.ts`
   `nearestAspectRatio`, read from the JPEG header; same price — a format, not a resolution; a model refusing the
-  option is asked again without it). The owner keeps the AI edit and wants the starting photo to be good (photo check). **v1** — the owner's original prompt, verbatim, images only. Both: IMAGE 1 the design,
+  option is asked again without it). The owner keeps the AI edit and wants the starting photo to be good (photo check).
+  Fourth round (gems kept the same size whatever the size of the smile): the photo check also boxes the two upper
+  central incisors (`central_incisors_box`); `photoCheck.ts` `photoScale` turns it into one millimetre as a share of
+  the photo's width (17 mm for the two teeth; implausible boxes ignored), and the design data gives the scale and each
+  gem's length IN THIS PHOTO, which the prompt makes the first size rule (never drawn larger). **v1** — the owner's original prompt, verbatim, images only. Both: IMAGE 1 the design,
   IMAGE 2 the photo. Output size is the model's default (no `imageConfig`): a higher resolution costs more, kept
   as a last resort by the owner (2026-10-26).
 - **Photo check** (2026-10-26, owner's request: no user manipulation, as little friction as possible): before any

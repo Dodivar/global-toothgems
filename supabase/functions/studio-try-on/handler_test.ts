@@ -2,7 +2,7 @@ import { assertEquals, assertStringIncludes } from "jsr:@std/assert@1";
 import { readSiteOrigins } from "../_shared/http.ts";
 import { accessToken, generateImage, generateUrl, imageModelConfig, nearestAspectRatio, readAdcJson, readImage, resetTokenCache } from "./gemini.ts";
 import { handleStudioTryOn, readSourceRef, type StudioTryOnDeps, type TryOnCreationRow } from "./handler.ts";
-import { imageSize, judgePhoto, MIN_TEETH_SPAN } from "./photoCheck.ts";
+import { imageSize, judgePhoto, MIN_TEETH_SPAN, photoScale } from "./photoCheck.ts";
 import { buildDesignData, piecesFromScene, readSeats, toothLabel } from "./prompt.ts";
 import { promptVersion, TRY_ON_SYSTEM_PROMPT_V1, TRY_ON_SYSTEM_PROMPT_V3 } from "./systemPrompt.ts";
 
@@ -429,4 +429,33 @@ Deno.test("progress: refusals before the check stay plain JSON with their status
   const res = await handleStudioTryOn(post(progressForm()), deps);
   assertEquals(res.status, 429);
   assertEquals(await res.json(), { ok: false, code: "daily_limit" });
+});
+
+Deno.test("photo scale: the two central incisors give each gem's length in this photo", async () => {
+  // Centrals 85/1000 of the width, 60/1000 high, on a 896 × 1195 portrait: plausible front teeth.
+  const scale = photoScale({ central_incisors_box: [500, 460, 560, 545] }, { width: 896, height: 1195 })!;
+  assertEquals(Math.round(scale * 100000) / 100000, 0.005);
+  // Missing, too thin, too tall or not a box: no scale.
+  assertEquals(photoScale({ central_incisors_box: [] }, null), null);
+  assertEquals(photoScale({ central_incisors_box: [500, 460, 560, 470] }, null), null);
+  assertEquals(photoScale({ central_incisors_box: [100, 460, 900, 545] }, { width: 896, height: 1195 }), null);
+  assertEquals(photoScale({}, null), null);
+
+  const data = buildDesignData(piecesFromScene(SCENE), new Map(), scale);
+  assertStringIncludes(data, "SCALE MEASURED ON THIS PHOTO: the two upper central incisors together span about 8.5% of the photo's width");
+  // The 4 mm heart: 4 × 0.5 % = 2 % of the width.
+  assertStringIncludes(data, "heart — metal — colour #e8c25a — size 2 × 4 mm (about 4 mm on its longest side) — IN THIS PHOTO: about 2% of the photo's width");
+  assertEquals(buildDesignData(piecesFromScene(SCENE)).includes("IN THIS PHOTO"), false);
+
+  // The render receives it when the check measured it.
+  let sent = "";
+  const { deps } = fake({
+    checkPhoto: () => Promise.resolve({ ok: true, value: { ...GOOD_PHOTO, central_incisors_box: [450, 450, 520, 550] } }),
+    generate: (_images, designData) => {
+      sent = designData;
+      return Promise.resolve({ ok: true, image: { mimeType: "image/png", data: "aW1n" } });
+    },
+  });
+  assertEquals((await handleStudioTryOn(post(form()), deps)).status, 200);
+  assertStringIncludes(sent, "SCALE MEASURED ON THIS PHOTO");
 });

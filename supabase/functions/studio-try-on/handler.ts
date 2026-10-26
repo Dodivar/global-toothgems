@@ -1,7 +1,7 @@
 import { corsHeaders, json, type SiteOrigins } from "../_shared/http.ts";
 import { bearer, looksLikeJwt } from "../_shared/studioBilling.ts";
 import { nearestAspectRatio, type GenerateOutcome, type InlineImage } from "./gemini.ts";
-import { imageSize, judgePhoto } from "./photoCheck.ts";
+import { imageSize, judgePhoto, photoScale } from "./photoCheck.ts";
 import { buildDesignData, piecesFromScene, readSeats } from "./prompt.ts";
 
 /**
@@ -250,6 +250,7 @@ async function checkAndRender(
   seats: ReturnType<typeof readSeats>,
   onRendering: () => void,
 ): Promise<Ending> {
+  let mmShare: number | null = null;
   if (deps.checkPhoto) {
     const answer = await deps.checkPhoto({ mimeType: photo.mimeType, data: photo.data }).catch((error) => ({
       ok: false as const,
@@ -257,6 +258,7 @@ async function checkAndRender(
     }));
     if (answer.ok) {
       const verdict = judgePhoto(answer.value, photo.size);
+      mmShare = photoScale(answer.value, photo.size);
       // Facts only, never the photo: they tune the thresholds.
       deps.log("photo check", {
         span: verdict.span,
@@ -265,6 +267,7 @@ async function checkAndRender(
         sharpness: answer.value.sharpness,
         pose: answer.value.head_pose,
         centrals: answer.value.central_incisors_visible,
+        mm: mmShare === null ? null : Math.round(mmShare * 10000) / 10000,
       });
       if (verdict.issues.length > 0) {
         await deps.finishRequest(requestId, "failed", "photo_unsuitable").catch(() => {});
@@ -286,7 +289,7 @@ async function checkAndRender(
       deps.log("reference pictures unavailable", error instanceof Error ? error.message : error);
       return [] as InlineImage[];
     });
-    outcome = await deps.generate([{ mimeType: design.mimeType, data: design.data }, { mimeType: photo.mimeType, data: photo.data }, ...references], buildDesignData(pieces, seats), nearestAspectRatio(photo.size));
+    outcome = await deps.generate([{ mimeType: design.mimeType, data: design.data }, { mimeType: photo.mimeType, data: photo.data }, ...references], buildDesignData(pieces, seats, mmShare), nearestAspectRatio(photo.size));
   } catch (error) {
     outcome = { ok: false, code: "failed", detail: error instanceof Error ? error.message : String(error) };
   }
