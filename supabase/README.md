@@ -1410,15 +1410,15 @@ visitor                     /studio-3d/glowbook/<handle>/<item> or /studio-3d/pa
                              never for a design carried in a link's fragment)       source {handle,item_id} | {token}
 dialog                      photo + consent → POST functions/v1/studio-try-on {"action":"status"} → {available}
                             → "Generate the AI render" (sign-in required; disabled while available = false)
-AI render                   multipart: source, photo (≤ 6 MB), design (front view PNG drawn in the browser, required)
+AI render                   multipart: source, photo (≤ 6 MB), design (3D still JPEG drawn in the browser, required)
                             → token checked → studio_try_on_creation(requester, ref) → scene + allowed (owner's switch)
                             → daily limit (studio_try_on_requests, 24 h, TRY_ON_DAILY_LIMIT, default 10) → row 'pending'
                             → the creation must hold at least one valid gem (else not_found)
                             → Gemini generateContent on Vertex AI (GOOGLE_ADC_JSON → access token) or the Gemini
                               API (GEMINI_API_KEY), model GEMINI_IMAGE_MODEL: systemInstruction =
-                              systemPrompt.ts v2 (default) or v1 (TRY_ON_PROMPT_VERSION); user turn = design (IMAGE 1),
+                              systemPrompt.ts v3 (default) or v1 (TRY_ON_PROMPT_VERSION); user turn = design (IMAGE 1),
                               photo (IMAGE 2), up to 6 pictures of the private bucket studio-try-on-references, then
-                              (v2 only) the design data built from the STORED scene (one line per gem) → image
+                              (v3 only) the design data built from the STORED scene (one line per gem) → image
                             → row 'generated' / 'failed' → the browser shows it (before/after, download, share)
 ```
 
@@ -1442,14 +1442,20 @@ AI render                   multipart: source, photo (≤ 6 MB), design (front v
   `studio-try-on-references` (JPEG / PNG / WebP, 10 MB; the first 6 by name are sent, 8 MB in all — a picture that would pass it is
   skipped — cached 10 min per instance; Google's inline request limit is to check when connecting). No storage policy: only the service role and the dashboard see them.
 - **Prompt** (`supabase/functions/studio-try-on/systemPrompt.ts`, sent as `systemInstruction`, chosen by the
-  `TRY_ON_PROMPT_VERSION` secret): **v2** (default) — the agent's revision of the owner's prompt, asked for by the
-  owner on 2026-10-25: IMAGE 1 described as it really is (a flat front-view map: grey tooth outlines, flat gem
-  silhouettes, same orientation as the photo), images 3+ named as realism references, and a **design data** block
-  after the images (`prompt.ts` `buildDesignData`: tooth FDI + name, cut, material, `#rrggbb`, coating, size —
-  reduced to known values, never the artist's free text); the data decides count, tooth, cut, material, colour and
-  size, the map the position and rotation; a listed gem not drawn on the map (tongue side) is never rendered.
-  **v1** — the owner's original prompt, verbatim, images only. Both: IMAGE 1 the front view, IMAGE 2 the photo. Whether the chosen image
-  model accepts `systemInstruction` is to check when connecting (else: send the prompt as the first text part).
+  `TRY_ON_PROMPT_VERSION` secret): **v3** (default; any value but `v1`, `v2` included) — the agent's revision of
+  the owner's prompt after the first renders (2026-10-26): IMAGE 1 is the Studio's **3D render** of the creation
+  (`webapp/src/components/studio/tryOn/designImage.ts`: a hidden stage, `ExportStage.stageStill`, the still's
+  framing — front, slightly above — as a 1280 × 800 JPEG; it replaced the flat 2D map of v2, whose generic tooth
+  outlines and identical star outlines misled the model); images 3+ are realism references whose layouts must never
+  be copied; a **design data** block follows the images (`prompt.ts` `buildDesignData`: "exactly N gems", then
+  tooth FDI + name, cut described by its 3D geometry (a `starflower` is a plump five-pointed star, never a flower),
+  material, `#rrggbb`, coating, size — reduced to known values, never the artist's free text). The data decides
+  count, tooth, cut, material, colour and size, the render the position and rotation; a listed gem not visible on
+  the render (tongue side) is never rendered. Against the first renders it also asks for the exact count (no extra
+  stone), teeth counted from the midline, crisp highlights and saturated colours (real jewellery, not stickers) and
+  a final self-check. **v1** — the owner's original prompt, verbatim, images only. Both: IMAGE 1 the design,
+  IMAGE 2 the photo. Output size is the model's default (no `imageConfig`): a higher resolution costs more, kept
+  as a last resort by the owner (2026-10-26).
 - **Privacy**: the photo and the image only pass through the function's memory (never stored, never logged);
   `studio_try_on_requests` keeps who asked, for which creation, from where, and the outcome — no picture. The
   photo step says the photo is sent to Google only while the AI is connected.

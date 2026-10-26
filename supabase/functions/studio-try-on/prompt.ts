@@ -25,24 +25,28 @@ export interface PromptPiece {
 const MAX_PIECES = 200;
 const isNum = (v: unknown): v is number => typeof v === "number" && Number.isFinite(v);
 
-/** The Studio's cuts (`StudioShape`), as the model should picture them. */
+/**
+ * The Studio's cuts (`StudioShape`), described by the geometry the 3D model
+ * gives them (`webapp/src/lib/studio3d/geometry.ts`), so the words never
+ * contradict IMAGE 1: a bare "star flower" was drawn as a flower or a sunburst.
+ */
 const SHAPES: Record<string, string> = {
   round: "round",
-  baguette: "baguette (long rectangle)",
+  baguette: "baguette (long narrow rectangle, step cut)",
   square: "square",
   heart: "heart",
-  "open-heart": "open heart (outline only)",
-  kite: "kite",
-  navette: "navette (marquise)",
-  raindrop: "raindrop (pear)",
+  "open-heart": "open heart: a gold wire outline of a heart, empty inside",
+  kite: "kite (flat lozenge, taller than wide)",
+  navette: "navette (marquise: long, pointed at both ends)",
+  raindrop: "raindrop (pear: round at one end, pointed at the other)",
   triangle: "triangle",
-  "rivoli-star": "star (rivoli)",
-  starflower: "star flower",
-  "halo-star": "open star (outline)",
-  bolt: "lightning bolt",
-  cherries: "cherries",
-  snake: "snake",
-  dachshund: "dachshund",
+  "rivoli-star": "five-pointed star with sharp tips, faceted like a low pyramid",
+  starflower: "five-pointed star with plump arms and a flat pentagon top (a star, never a flower or a sunburst)",
+  "halo-star": "open five-pointed star: a wire outline, empty inside",
+  bolt: "lightning bolt charm",
+  cherries: "cherries charm (two cherries on stems)",
+  snake: "snake charm",
+  dachshund: "dachshund charm (sausage dog in profile)",
 };
 
 function sizeOf(raw: Record<string, unknown>): { size: string; longestMm: number } | null {
@@ -97,7 +101,7 @@ const TOOTH: Record<string, string> = {
 /** "21 (upper left central incisor)" — the person's own left and right, as dentists count. */
 export function toothLabel(toothId: string): string {
   const m = /^([1-4])([1-8])$/.exec(toothId);
-  return m ? `${toothId} (${QUADRANT[m[1]]} ${TOOTH[m[2]]})` : "unlabelled front surface (see the map)";
+  return m ? `${toothId} (${QUADRANT[m[1]]} ${TOOTH[m[2]]})` : "unlabelled front surface (see IMAGE 1)";
 }
 
 /** The design data block sent after the images with the v2 system instructions. */
@@ -107,5 +111,6 @@ export function buildDesignData(pieces: readonly PromptPiece[]): string {
     const coating = p.iridescent ? " — iridescent coating" : "";
     return `${i + 1}. Tooth ${toothLabel(p.toothId)} — ${SHAPES[p.shape]} — ${p.material} — colour ${p.color}${coating} — size ${p.size}${mm}`;
   });
-  return [`DESIGN DATA — ${pieces.length} gem${pieces.length > 1 ? "s" : ""}:`, ...lines].join("\n");
+  const count = `${pieces.length} gem${pieces.length > 1 ? "s" : ""}`;
+  return [`DESIGN DATA — exactly ${count}, no more:`, ...lines].join("\n");
 }

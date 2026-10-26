@@ -1,43 +1,25 @@
-import { pathToSvg } from "../../../lib/studio3d/frontView";
 import type { TryOnCreation } from "../../../lib/studio3d/tryOn";
-import { tryOnLayout } from "../../../lib/studio3d/tryOnLayout";
+import { ExportStage } from "../../../lib/studio3d/socialExport/exporter";
 
-const WIDTH = 1024;
-/** Height / width: a smile is wide. */
-const ASPECT = 0.5;
-const GEM_EDGE = "rgba(38, 60, 82, .7)";
+/** A smile is wide: the still's framing fits the gems with some teeth around them. */
+const SIZE = { width: 1280, height: 800 };
 
 /**
- * The creation's front view as a PNG — the front teeth outlined in grey and
- * the gems on them, on white — sent to the image model as a visual hint of
- * the layout (decision 111). The list of gems the model must follow comes
- * from the database, not from this picture. Null when the browser cannot draw.
+ * The creation rendered in 3D on the Studio's dental model, from the front —
+ * the Studio's own still (`ExportStage.stageStill`, a hidden stage) as a JPEG,
+ * sent to the image model as IMAGE 1 (decision 111): where each gem sits on
+ * its tooth, its rotation, cut and look. The list of gems the model must
+ * follow comes from the database, not from this picture. Null when the
+ * browser cannot draw it (no WebGL, model not loaded).
  */
 export async function renderDesignImage(creation: TryOnCreation): Promise<Blob | null> {
-  const height = Math.round(WIDTH * ASPECT);
-  const canvas = document.createElement("canvas");
-  canvas.width = WIDTH;
-  canvas.height = height;
-  const ctx = canvas.getContext("2d");
-  if (!ctx) return null;
-  ctx.fillStyle = "#ffffff";
-  ctx.fillRect(0, 0, WIDTH, height);
-  const { spots, guide } = tryOnLayout(creation.scene.pieces, creation.scene.model, WIDTH, height);
-  ctx.lineJoin = "round";
-  ctx.lineWidth = 2;
-  ctx.strokeStyle = "#9aa3ad";
-  for (const crown of guide) ctx.stroke(new Path2D(pathToSvg(crown)));
-  for (const s of spots) {
-    const path = new Path2D(pathToSvg(s.outline));
-    ctx.fillStyle = s.color;
-    ctx.fill(path);
-    ctx.lineWidth = Math.max(0.6, s.r * 0.12);
-    ctx.strokeStyle = GEM_EDGE;
-    ctx.stroke(path);
-    ctx.beginPath();
-    ctx.arc(s.x - s.r * 0.3, s.y - s.r * 0.3, s.r * 0.3, 0, Math.PI * 2);
-    ctx.fillStyle = "rgba(255,255,255,.75)";
-    ctx.fill();
+  let stage: ExportStage | null = null;
+  try {
+    stage = await ExportStage.open(creation.scene);
+    return await stage.stageStill(SIZE);
+  } catch {
+    return null;
+  } finally {
+    stage?.close();
   }
-  return new Promise((resolve) => canvas.toBlob(resolve, "image/png"));
 }

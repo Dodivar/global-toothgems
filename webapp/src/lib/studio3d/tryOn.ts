@@ -34,7 +34,7 @@ export interface TryOnRenderRequest {
   /** The prepared photo (oriented, downscaled, metadata stripped). */
   photo: Blob;
   source: TryOnSource;
-  /** The creation's front view, drawn in the browser (`renderDesignImage`). */
+  /** The creation rendered in 3D from the front, in the browser (`renderDesignImage`). */
   design: Blob;
 }
 

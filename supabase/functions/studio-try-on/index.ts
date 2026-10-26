@@ -2,7 +2,7 @@ import { requireEnv, serviceClient } from "../_shared/clients.ts";
 import { readSiteOrigins } from "../_shared/http.ts";
 import { configProblem, generateImage, imageModelConfig, type InlineImage } from "./gemini.ts";
 import { handleStudioTryOn, toBase64, type TryOnCreationRow } from "./handler.ts";
-import { promptVersion, TRY_ON_SYSTEM_PROMPT_V1, TRY_ON_SYSTEM_PROMPT_V2 } from "./systemPrompt.ts";
+import { promptVersion, TRY_ON_SYSTEM_PROMPT_V1, TRY_ON_SYSTEM_PROMPT_V3 } from "./systemPrompt.ts";
 
 /*
  * Deployed with verify_jwt = false (supabase/config.toml): the status call is
@@ -11,7 +11,7 @@ import { promptVersion, TRY_ON_SYSTEM_PROMPT_V1, TRY_ON_SYSTEM_PROMPT_V2 } from 
  * Secrets: GEMINI_IMAGE_MODEL + GOOGLE_ADC_JSON (Vertex AI) or GEMINI_API_KEY
  * connect the AI (see gemini.ts);
  * TRY_ON_DAILY_LIMIT (optional, default 10) caps generations per account per
- * 24 hours; TRY_ON_PROMPT_VERSION (optional, v2 by default, or v1) picks the
+ * 24 hours; TRY_ON_PROMPT_VERSION (optional, v3 by default, or v1) picks the
  * system instructions (`systemPrompt.ts`). Reference pictures: the private bucket `studio-try-on-references`
  * (root folder, JPEG / PNG / WebP, the first REFERENCE_MAX by name, at most
  * REFERENCE_MAX_BYTES in all — a picture that would pass it is skipped).
@@ -21,9 +21,9 @@ const supabase = serviceClient();
 const origins = readSiteOrigins(requireEnv("SITE_URL"), Deno.env.get("ALLOWED_RETURN_ORIGINS"));
 const config = imageModelConfig((name) => Deno.env.get(name));
 const limit = Number.parseInt(Deno.env.get("TRY_ON_DAILY_LIMIT") ?? "", 10);
-// v2 (default): the revised instructions + the design data; v1: the owner's original, images only.
+// v3 (default): the revised instructions + the design data; v1: the owner's original, images only.
 const version = promptVersion(Deno.env.get("TRY_ON_PROMPT_VERSION"));
-const systemPrompt = version === "v1" ? TRY_ON_SYSTEM_PROMPT_V1 : TRY_ON_SYSTEM_PROMPT_V2;
+const systemPrompt = version === "v1" ? TRY_ON_SYSTEM_PROMPT_V1 : TRY_ON_SYSTEM_PROMPT_V3;
 const log = (message: string, detail?: unknown) => console.error(`[studio-try-on] ${message}`, detail ?? "");
 // Why the AI is not connected, if it is not: secret names and shapes only, never values.
 const problem = configProblem((name) => Deno.env.get(name));
@@ -105,7 +105,7 @@ Deno.serve((req) =>
     },
     references,
     generate: (images, designData) =>
-      config ? generateImage(config, systemPrompt, images, version === "v2" ? designData : null) : Promise.resolve({ ok: false, code: "failed" }),
+      config ? generateImage(config, systemPrompt, images, version === "v3" ? designData : null) : Promise.resolve({ ok: false, code: "failed" }),
     log,
   })
 );

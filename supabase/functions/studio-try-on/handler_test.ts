@@ -3,7 +3,7 @@ import { readSiteOrigins } from "../_shared/http.ts";
 import { accessToken, generateImage, generateUrl, imageModelConfig, readAdcJson, readImage, resetTokenCache } from "./gemini.ts";
 import { handleStudioTryOn, readSourceRef, type StudioTryOnDeps, type TryOnCreationRow } from "./handler.ts";
 import { buildDesignData, piecesFromScene, toothLabel } from "./prompt.ts";
-import { promptVersion, TRY_ON_SYSTEM_PROMPT_V1, TRY_ON_SYSTEM_PROMPT_V2 } from "./systemPrompt.ts";
+import { promptVersion, TRY_ON_SYSTEM_PROMPT_V1, TRY_ON_SYSTEM_PROMPT_V3 } from "./systemPrompt.ts";
 
 const SITE = "https://global-toothgems.example";
 const TOKEN = "member.jwt.sig";
@@ -91,7 +91,7 @@ Deno.test("a generation: counted; design (IMAGE 1), photo (IMAGE 2), then refere
   assertEquals(calls.started, 1);
   assertEquals(calls.finished, ["generated"]);
   assertEquals(calls.images, ["image/png:BAU=", "image/jpeg:AQID", "image/jpeg:cmVm"]);
-  assertStringIncludes(calls.data, "DESIGN DATA — 2 gems:");
+  assertStringIncludes(calls.data, "DESIGN DATA — exactly 2 gems, no more:");
 });
 
 Deno.test("refusals: no token, expired, unknown creation, owner without the plan, daily limit", async () => {
@@ -148,20 +148,20 @@ Deno.test("design data: known values only, one line per gem", () => {
     "1. Tooth 21 (upper left central incisor) — round — crystal — colour #ffffff — size SS5 (about 1.8 mm on its longest side)",
   );
   assertStringIncludes(data, "2. Tooth 12 (upper right lateral incisor) — heart — metal — colour #e8c25a — size 2 × 4 mm (about 4 mm on its longest side)");
-  assertStringIncludes(data, "3. Tooth unlabelled front surface (see the map) — round — crystal — colour #000000 — iridescent coating — size SS3");
+  assertStringIncludes(data, "3. Tooth unlabelled front surface (see IMAGE 1) — round — crystal — colour #000000 — iridescent coating — size SS3");
   assertEquals(toothLabel("36"), "36 (lower left first molar)");
   assertEquals(piecesFromScene({}), []);
 });
 
-Deno.test("prompt versions: v2 by default, both name the two images", () => {
-  assertEquals(promptVersion(undefined), "v2");
+Deno.test("prompt versions: v3 by default, both name the two images", () => {
+  assertEquals(promptVersion(undefined), "v3");
   assertEquals(promptVersion(" V1 "), "v1");
-  assertEquals(promptVersion("v3"), "v2");
-  for (const prompt of [TRY_ON_SYSTEM_PROMPT_V1, TRY_ON_SYSTEM_PROMPT_V2]) {
+  assertEquals(promptVersion("v2"), "v3");
+  for (const prompt of [TRY_ON_SYSTEM_PROMPT_V1, TRY_ON_SYSTEM_PROMPT_V3]) {
     assertStringIncludes(prompt, "IMAGE 1");
     assertStringIncludes(prompt, "IMAGE 2");
   }
-  assertStringIncludes(TRY_ON_SYSTEM_PROMPT_V2, "THE DESIGN DATA");
+  assertStringIncludes(TRY_ON_SYSTEM_PROMPT_V3, "THE DESIGN DATA");
 });
 
 const ADC = JSON.stringify({
