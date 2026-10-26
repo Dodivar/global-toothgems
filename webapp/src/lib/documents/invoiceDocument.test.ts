@@ -145,6 +145,34 @@ describe("invoice PDF", () => {
     expect(all).not.toContain("late payment");
   });
 
+  it("under the VAT franchise: no VAT column, total or breakdown, and the art. 293 B mention", () => {
+    const franchised: InvoiceRow = {
+      ...invoiceRow,
+      total_excl_tax: "65.90",
+      total_tax: "0",
+      total_incl_tax: "65.90",
+      seller: { ...seller, vat_number: "", vat_franchise: true },
+      lines: [
+        { kind: "product", description: "Cœur chromé", detail: "Or", quantity: 2, unit_price_incl: 34.17, unit_price_excl: 34.17, discount_incl: 8.2, vat_rate_bp: 0, total_incl: 60.14, vat_amount: 0, total_excl: 60.14 },
+        { kind: "shipping", description: "Colissimo", detail: null, quantity: 1, unit_price_incl: 5.76, unit_price_excl: 5.76, discount_incl: 0, vat_rate_bp: 0, total_incl: 5.76, vat_amount: 0, total_excl: 5.76 },
+      ],
+      vat_breakdown: [{ vat_rate_bp: 0, total_excl: 65.9, vat_amount: 0, total_incl: 65.9 }],
+    };
+    const inv = mapInvoice(franchised);
+    expect(inv.seller.vatFranchise).toBe(true);
+    expect(mapInvoice(invoiceRow).seller.vatFranchise).toBe(false);
+
+    const all = texts(invoiceDocument(inv, t, fmt));
+    expect(all).toContain("TVA non applicable, art. 293 B du CGI");
+    expect(all).toContain("PRIX UNITAIRE");
+    expect(all).toContain("remise de 8,20 €");
+    for (const absent of ["TVA intracommunautaire", "Récapitulatif de la TVA", "HT", "TTC", "0 %"]) {
+      expect(all).not.toContain(absent);
+    }
+    // An English invoice keeps the French legal wording.
+    expect(texts(invoiceDocument(inv, translator(en), { ...fmt, lang: "en" }))).toContain("TVA non applicable, art. 293 B du CGI");
+  });
+
   it("names the file after the number", () => {
     expect(invoiceFileName(mapInvoice(invoiceRow), t)).toBe("facture-FA-2026-000001.pdf");
     expect(invoiceFileName(mapInvoice(creditRow), translator(en))).toBe("credit-note-AV-2026-000001.pdf");

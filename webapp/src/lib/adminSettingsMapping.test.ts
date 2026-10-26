@@ -197,6 +197,7 @@ describe("store details", () => {
     share_capital: null,
     registration_number: "RCS Paris 123 456 789",
     vat_number: "FR12345678901",
+    vat_franchise: true,
     business_email: null,
     support_email: "support@example.com",
     phone: "+33 1 23 45 67 89",
@@ -241,6 +242,7 @@ describe("store details", () => {
     const d = mapStoreDetails(row, []);
     const p = storeDetailsPayload({ ...d, vatNumber: "fr 12 345678901" });
     expect(p.vat_number).toBe("FR12345678901");
+    expect(p.vat_franchise).toBe(true);
     expect(p.translations).toEqual({ en: { support_message: "" } });
     const stored = { ...row, ...Object.fromEntries(Object.entries(p).map(([k, v]) => [k, v === "" ? null : v])) } as unknown as StoreSettingsRow;
     expect(mapStoreDetails(stored, [])).toEqual(d);
@@ -286,6 +288,7 @@ describe("legal notice", () => {
           share_capital: "10 000 €",
           registration_number: null,
           vat_number: "FR12345678901",
+          vat_franchise: true,
           business_email: null,
           support_email: "support@example.com",
           phone: "+33 1 23 45 67 89",

@@ -7480,6 +7480,7 @@ export type Database = {
           support_message: string | null
           updated_at: string
           updated_by: string | null
+          vat_franchise: boolean
           vat_number: string | null
         }
         Insert: {
@@ -7516,6 +7517,7 @@ export type Database = {
           support_message?: string | null
           updated_at?: string
           updated_by?: string | null
+          vat_franchise?: boolean
           vat_number?: string | null
         }
         Update: {
@@ -7552,6 +7554,7 @@ export type Database = {
           support_message?: string | null
           updated_at?: string
           updated_by?: string | null
+          vat_franchise?: boolean
           vat_number?: string | null
         }
         Relationships: [

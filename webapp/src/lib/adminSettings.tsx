@@ -87,6 +87,7 @@ const EMPTY: SectionValues = {
     shareCapital: "",
     registrationNumber: "",
     vatNumber: "",
+    vatFranchise: true,
     businessEmail: "",
     supportEmail: "",
     phone: "",

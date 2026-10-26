@@ -15,6 +15,10 @@
 --   GQ8 visitors cannot read the throttle table
 -- =============================================================================
 
+-- This suite checks the standard VAT regime: the franchise (decision 114) is
+-- switched off for its transaction.
+update public.store_settings set vat_franchise = false where id;
+
 do $$
 declare
   fr jsonb := '{"first_name":"Ana","last_name":"Test","address_line1":"1 rue Fictive","postal_code":"75004","city":"Paris","country_code":"FR"}';

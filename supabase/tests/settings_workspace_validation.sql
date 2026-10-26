@@ -11,6 +11,10 @@
 -- locked); every served EU country has a VAT rate.
 -- =============================================================================
 
+-- This suite checks the standard VAT regime: the franchise (decision 114) is
+-- switched off for its transaction.
+update public.store_settings set vat_franchise = false where id;
+
 do $$
 declare
   adm  uuid := '00000000-0000-4000-a000-0000000d0001';  -- admin: manage_settings

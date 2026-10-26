@@ -111,6 +111,10 @@
       "description": "Publiée dans les mentions légales. Le nom de la boutique est celui que voient les clients."
     },
     "currency": "Devise de la boutique : {{currency}}. Tous les prix, frais de port et commandes sont dans cette devise.",
+    "vatFranchise": {
+      "label": "Franchise en base de TVA (micro-entreprise)",
+      "description": "Aucune TVA n’est facturée : les prix sont nets et les factures portent la mention « TVA non applicable, art. 293 B du CGI ». Désactivez-la le jour où l’entreprise devient redevable de la TVA ; les taux de l’onglet TVA s’appliqueront alors aux nouvelles commandes."
+    },
     "contact": {
       "title": "Coordonnées",
       "description": "Comment les clients et les partenaires vous joignent."
@@ -447,6 +451,10 @@
       "rateDeleted": "Taux supprimé : {{country}}",
       "reducedAdded": "Taux réduit ajouté",
       "reducedRemoved": "Taux réduit retiré"
+    },
+    "franchise": {
+      "title": "Franchise en base de TVA active",
+      "body": "Aucun de ces taux n’est appliqué pour l’instant : les commandes sont facturées sans TVA, avec la mention « TVA non applicable, art. 293 B du CGI ». Ils s’appliqueront aux nouvelles commandes dès que la franchise sera désactivée dans Boutique › Identité de l’entreprise."
     }
   },
   "lang": {

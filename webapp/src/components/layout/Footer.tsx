@@ -1,12 +1,15 @@
 import { Link, useLanguageSwitch } from "../../lib/navigation";
 import { useTranslation } from "react-i18next";
 import { useFooterColumns } from "./useFooterColumns";
+import { useVatFranchise } from "../../lib/vatRegime";
 import logoBlue from "../../assets/logo-wordmark-blue.png";
 
 export function Footer() {
   const { t } = useTranslation();
   const switchLanguage = useLanguageSwitch();
   const columns = useFooterColumns();
+  // Read after hydration: the server renders the copyright alone.
+  const franchise = useVatFranchise();
 
   const linkClass =
     "justify-self-start py-1 text-left text-sm text-[var(--text-body)] transition-colors hover:text-[var(--text-link-hover)]";
@@ -42,7 +45,10 @@ export function Footer() {
           ))}
         </div>
         <div className="flex flex-wrap items-center justify-between gap-3 border-t border-[var(--border-subtle)] pt-6 text-xs text-[var(--text-muted)]">
-          <span>{t("footer.copyright")}</span>
+          <span>
+            {t("footer.copyright")}
+            {franchise !== null && ` · ${t(franchise ? "footer.vatFranchise" : "footer.pricesInclVat")}`}
+          </span>
           <button
             type="button"
             onClick={switchLanguage}

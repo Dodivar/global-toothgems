@@ -71,6 +71,7 @@ const LABELS = {
     free: "Offerte",
     giftCard: "Carte cadeau",
     totalInclTax: "Total TTC",
+    total: "Total",
     totalExclTax: "Total HT",
     tax: (amount: string) => `dont TVA ${amount}`,
     vat: "TVA",
@@ -107,6 +108,7 @@ const LABELS = {
     free: "Free",
     giftCard: "Gift card",
     totalInclTax: "Total incl. VAT",
+    total: "Total",
     totalExclTax: "Total excl. VAT",
     tax: (amount: string) => `incl. VAT ${amount}`,
     vat: "VAT",
@@ -192,7 +194,8 @@ export function orderConfirmationContent(order: OrderSnapshot, locale: string, s
     totals.push({ label: l.shipping, amount: order.shipping > 0 ? money(order.shipping) : l.free });
   }
   if (!order.pricesIncludeTax && order.tax > 0) totals.push({ label: l.vat, amount: money(order.tax) });
-  const totalLabel = order.pricesIncludeTax ? l.totalInclTax : l.totalExclTax;
+  // No VAT charged (VAT franchise, decision 114, or a destination without VAT): a plain "Total".
+  const totalLabel = order.tax === 0 ? l.total : order.pricesIncludeTax ? l.totalInclTax : l.totalExclTax;
   if (order.giftCard > 0) {
     totals.push({ label: totalLabel, amount: money(order.total) });
     totals.push({ label: l.giftCard, amount: minus(order.giftCard) });

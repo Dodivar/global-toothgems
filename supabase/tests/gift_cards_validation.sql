@@ -17,6 +17,10 @@
 --   GC7 settings: written by manage_promotions, read by visitors only when published
 -- =============================================================================
 
+-- This suite checks the standard VAT regime: the franchise (decision 114) is
+-- switched off for its transaction.
+update public.store_settings set vat_franchise = false where id;
+
 do $$
 declare
   alice uuid := '00000000-0000-4000-a000-0000000a1ce1';

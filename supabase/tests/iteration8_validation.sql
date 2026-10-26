@@ -14,6 +14,10 @@
 --   D  bob   03-11 created, cancelled
 -- =============================================================================
 
+-- This suite checks the standard VAT regime: the franchise (decision 114) is
+-- switched off for its transaction.
+update public.store_settings set vat_franchise = false where id;
+
 do $$
 declare
   vwr   uuid := '00000000-0000-4000-a000-000000080003';

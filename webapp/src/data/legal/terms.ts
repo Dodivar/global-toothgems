@@ -134,16 +134,16 @@ export const TERMS: LegalDocument = {
         {
           kind: "p",
           text: l(
-            "Les prix sont indiqués en [[Devise(s) de vente]], [[TTC ou HT selon la clientèle]]. Les frais de livraison sont affichés séparément avant la validation de la commande. Le prix applicable est celui affiché au moment de la commande.",
-            "Prices are shown in [[Sales currency(ies)]], [[including or excluding VAT depending on customers]]. Delivery costs are shown separately before the order is confirmed. The price that applies is the one displayed when you order.",
+            "Les prix sont indiqués en [[Devise(s) de vente]]. TVA non applicable, art. 293 B du CGI : le vendeur relève de la franchise en base de TVA, aucune TVA n’est facturée et les prix affichés sont les prix à payer. Les frais de livraison sont affichés séparément avant la validation de la commande. Le prix applicable est celui affiché au moment de la commande.",
+            "Prices are shown in [[Sales currency(ies)]]. VAT not applicable, article 293 B of the French General Tax Code (“TVA non applicable, art. 293 B du CGI”): the seller is under the VAT franchise scheme, no VAT is charged and the prices shown are the prices to pay. Delivery costs are shown separately before the order is confirmed. The price that applies is the one displayed when you order.",
           ),
         },
         {
           kind: "callout",
           tone: "verify",
           text: l(
-            "Régime de TVA et règles pour les ventes hors UE à définir : [[Régime de TVA et traitement des taxes par pays]].",
-            "VAT regime and rules for sales outside the EU to be defined: [[VAT regime and per-country tax handling]].",
+            "Franchise en base de TVA à confirmer avec l’expert-comptable (seuils, ventes à distance dans l’UE). Règles pour les ventes hors UE à définir : [[Traitement des taxes par pays hors UE]].",
+            "VAT franchise to be confirmed with the accountant (thresholds, distance sales within the EU). Rules for sales outside the EU to be defined: [[Per-country tax handling outside the EU]].",
           ),
         },
       ],

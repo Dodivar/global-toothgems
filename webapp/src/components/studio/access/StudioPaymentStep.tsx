@@ -8,6 +8,7 @@ import { Checkbox } from "../../ui/Checkbox";
 import { StripePaymentForm } from "../../checkout/StripePaymentForm";
 import { Link } from "../../../lib/navigation";
 import { useFormat } from "../../../lib/format";
+import { useVatFranchise, vatNoticeKey } from "../../../lib/vatRegime";
 import { trackStudio } from "../../../lib/studioAnalytics";
 import type { StudioCheckoutError, StudioConsentAnswer, StudioPayment } from "../../../lib/studioBillingMapping";
 import type { StudioCheckoutQuery } from "../../../lib/studioUrl";
@@ -38,6 +39,7 @@ interface StudioPaymentStepProps {
 
 export default function StudioPaymentStep({ query, payment, locale, recordConsent, onPaid, onRestart }: StudioPaymentStepProps) {
   const { t } = useTranslation();
+  const vatNotice = vatNoticeKey(useVatFranchise());
   const { formatMoney } = useFormat();
   const { plan, interval, surface } = query;
   const [consent, setConsent] = useState(false);
@@ -87,7 +89,7 @@ export default function StudioPaymentStep({ query, payment, locale, recordConsen
               <dt className="text-base font-bold text-[var(--text-primary)]">{t("studio.access.payment.dueToday")}</dt>
               <dd className="m-0 text-xl font-bold text-[var(--text-primary)]">{amount}</dd>
             </div>
-            <p className="m-0 text-xs text-[var(--text-muted)]">{t("checkout.payment.vatIncluded")}</p>
+            {vatNotice && <p className="m-0 text-xs text-[var(--text-muted)]">{t(vatNotice)}</p>}
           </dl>
           <p className="m-0 flex items-start gap-2 rounded-[var(--radius-md)] bg-[var(--surface-brand-wash)] px-3 py-2.5 text-xs text-[var(--gt-blue-700)]">
             <RefreshCcw size={14} aria-hidden="true" className="mt-0.5 flex-none" />

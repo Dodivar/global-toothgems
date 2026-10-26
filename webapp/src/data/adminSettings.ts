@@ -40,6 +40,11 @@ export interface StoreDetails {
   /** Registration number and register (RCS, SIREN…). */
   registrationNumber: string;
   vatNumber: string;
+  /**
+   * VAT franchise ("franchise en base", art. 293 B du CGI): no VAT is charged
+   * and invoices carry the legal mention instead (decision 114).
+   */
+  vatFranchise: boolean;
 
   businessEmail: string;
   supportEmail: string;

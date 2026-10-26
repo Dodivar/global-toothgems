@@ -25,6 +25,10 @@
 -- (or `FAIL: ...`), so the counters are given back.
 -- =============================================================================
 
+-- This suite checks the standard VAT regime: the franchise (decision 114) is
+-- switched off for its transaction.
+update public.store_settings set vat_franchise = false where id;
+
 do $$
 declare
   m1     uuid := '00000000-0000-4000-a000-000000230001';

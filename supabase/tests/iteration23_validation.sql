@@ -20,6 +20,10 @@
 --   D11 nobody but the backend creates orders with course lines
 -- =============================================================================
 
+-- This suite checks the standard VAT regime: the franchise (decision 114) is
+-- switched off for its transaction.
+update public.store_settings set vat_franchise = false where id;
+
 do $$
 declare
   mgr   uuid := '00000000-0000-4000-a000-000000230001';  -- manager: manage_training, manage_orders

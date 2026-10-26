@@ -62,6 +62,8 @@ export interface InvoiceSeller {
   shareCapital: string;
   registrationNumber: string;
   vatNumber: string;
+  /** Issued under the VAT franchise (art. 293 B du CGI): no VAT, the legal mention instead. */
+  vatFranchise: boolean;
   email: string;
   addressLines: string[];
   countryCode: string;
@@ -168,6 +170,7 @@ function seller(value: Json | undefined): InvoiceSeller {
     shareCapital: str(s.share_capital),
     registrationNumber: str(s.registration_number),
     vatNumber: str(s.vat_number),
+    vatFranchise: s.vat_franchise === true,
     email: str(s.email),
     addressLines: [[str(s.address_line1), str(s.address_line2)].filter(Boolean).join(", "), [town, str(s.region)].filter(Boolean).join(", ")].filter(
       Boolean,
