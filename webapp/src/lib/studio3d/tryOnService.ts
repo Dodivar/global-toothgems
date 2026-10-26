@@ -36,11 +36,12 @@ export const smileTryOnService: SmileTryOnService = supabase
           return false;
         }
       },
-      async render({ photo, source, design }, options) {
+      async render({ photo, source, design, seats }, options) {
         const form = new FormData();
         form.set("source", JSON.stringify(sourcePayload(source)));
         form.set("photo", photo, "smile");
         form.set("design", design, "design");
+        if (seats?.length) form.set("seats", JSON.stringify(seats));
         try {
           const { data, error } = await supabase!.functions.invoke(FUNCTION, { body: form, signal: options?.signal, timeout: RENDER_TIMEOUT_MS });
           if (options?.signal?.aborted) return { ok: false, code: "failed" };

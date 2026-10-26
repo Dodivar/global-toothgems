@@ -1,4 +1,5 @@
 import type { Creation } from "../studioWorkspace/types";
+import type { TryOnSeat } from "./tryOnSeats";
 
 /**
  * "Try it on a smile": a Studio creation on a photo of a smile, rendered by an
@@ -36,6 +37,8 @@ export interface TryOnRenderRequest {
   source: TryOnSource;
   /** The creation rendered in 3D from the front, in the browser (`renderDesignImage`). */
   design: Blob;
+  /** Each gem's place and size on its tooth (`tryOnSeats`), read by the AI as text. */
+  seats?: readonly TryOnSeat[];
 }
 
 export const TRY_ON_ERROR_CODES = [

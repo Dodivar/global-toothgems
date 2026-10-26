@@ -1410,7 +1410,8 @@ visitor                     /studio-3d/glowbook/<handle>/<item> or /studio-3d/pa
                              never for a design carried in a link's fragment)       source {handle,item_id} | {token}
 dialog                      photo + consent → POST functions/v1/studio-try-on {"action":"status"} → {available}
                             → "Generate the AI render" (sign-in required; disabled while available = false)
-AI render                   multipart: source, photo (≤ 6 MB), design (3D still JPEG drawn in the browser, required)
+AI render                   multipart: source, photo (≤ 6 MB), design (3D still JPEG drawn in the browser, required),
+                            seats (optional JSON: each gem's place and size on its tooth)
                             → token checked → studio_try_on_creation(requester, ref) → scene + allowed (owner's switch)
                             → daily limit (studio_try_on_requests, 24 h, TRY_ON_DAILY_LIMIT, default 10) → row 'pending'
                             → the creation must hold at least one valid gem (else not_found)
@@ -1453,7 +1454,14 @@ AI render                   multipart: source, photo (≤ 6 MB), design (3D stil
   count, tooth, cut, material, colour and size, the render the position and rotation; a listed gem not visible on
   the render (tongue side) is never rendered. Against the first renders it also asks for the exact count (no extra
   stone), teeth counted from the midline, crisp highlights and saturated colours (real jewellery, not stickers) and
-  a final self-check. **v1** — the owner's original prompt, verbatim, images only. Both: IMAGE 1 the design,
+  a final self-check. Second round (same day, after gems landed on the gums, too large or one tooth off): the
+  browser also sends `seats` (`webapp/src/lib/studio3d/tryOnSeats.ts`, from the Studio's front view: each gem's
+  centre height from the gum line, shift toward the midline, longest side as a share of the crown's width, tongue
+  side or not), read by `prompt.ts` `readSeats` (clamped numbers, matched to the stored gems by id — untrusted, at
+  worst it moves a gem on the requester's own render). The design data then goes tooth by tooth in the photo's
+  order, front teeth without gems named "bare", each gem with its share of the tooth and place on the crown;
+  tongue-side gems are left out. The prompt makes the gum line a hard limit (slide toward the biting edge, else
+  leave out) and the share of the tooth's width the first size rule. **v1** — the owner's original prompt, verbatim, images only. Both: IMAGE 1 the design,
   IMAGE 2 the photo. Output size is the model's default (no `imageConfig`): a higher resolution costs more, kept
   as a last resort by the owner (2026-10-26).
 - **Privacy**: the photo and the image only pass through the function's memory (never stored, never logged);

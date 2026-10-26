@@ -2,7 +2,7 @@ import { assertEquals, assertStringIncludes } from "jsr:@std/assert@1";
 import { readSiteOrigins } from "../_shared/http.ts";
 import { accessToken, generateImage, generateUrl, imageModelConfig, readAdcJson, readImage, resetTokenCache } from "./gemini.ts";
 import { handleStudioTryOn, readSourceRef, type StudioTryOnDeps, type TryOnCreationRow } from "./handler.ts";
-import { buildDesignData, piecesFromScene, toothLabel } from "./prompt.ts";
+import { buildDesignData, piecesFromScene, readSeats, toothLabel } from "./prompt.ts";
 import { promptVersion, TRY_ON_SYSTEM_PROMPT_V1, TRY_ON_SYSTEM_PROMPT_V3 } from "./systemPrompt.ts";
 
 const SITE = "https://global-toothgems.example";
@@ -91,7 +91,15 @@ Deno.test("a generation: counted; design (IMAGE 1), photo (IMAGE 2), then refere
   assertEquals(calls.started, 1);
   assertEquals(calls.finished, ["generated"]);
   assertEquals(calls.images, ["image/png:BAU=", "image/jpeg:AQID", "image/jpeg:cmVm"]);
-  assertStringIncludes(calls.data, "DESIGN DATA — exactly 2 gems, no more:");
+  assertStringIncludes(calls.data, "DESIGN DATA — exactly 2 gems, no more.");
+});
+
+Deno.test("a generation reads the seats the browser measured, by piece id", async () => {
+  const { deps, calls } = fake();
+  const data = form();
+  data.set("seats", JSON.stringify([{ id: "p1", gum: 0.24, mid: 0.17, width: 0.51, front: true }]));
+  assertEquals((await handleStudioTryOn(post(data), deps)).status, 200);
+  assertStringIncludes(calls.data, "longest side about 51% of this tooth's width");
 });
 
 Deno.test("refusals: no token, expired, unknown creation, owner without the plan, daily limit", async () => {
@@ -131,7 +139,7 @@ Deno.test("readSourceRef: exactly one well-formed reference", () => {
   assertEquals(readSourceRef("not json"), null);
 });
 
-Deno.test("design data: known values only, one line per gem", () => {
+Deno.test("design data: known values only, tooth by tooth, bare front teeth named", () => {
   const pieces = piecesFromScene({
     pieces: [
       ...SCENE.pieces,
@@ -141,16 +149,48 @@ Deno.test("design data: known values only, one line per gem", () => {
     ],
   });
   assertEquals(pieces.length, 3);
-  assertEquals(pieces[2], { toothId: "X0", shape: "round", material: "crystal", color: "#000000", iridescent: true, size: "SS3", longestMm: 0 });
+  assertEquals(pieces[2], { id: "", toothId: "X0", shape: "round", material: "crystal", color: "#000000", iridescent: true, size: "SS3", longestMm: 0 });
   const data = buildDesignData(pieces);
-  assertEquals(
-    data.split("\n")[1],
-    "1. Tooth 21 (upper left central incisor) — round — crystal — colour #ffffff — size SS5 (about 1.8 mm on its longest side)",
-  );
-  assertStringIncludes(data, "2. Tooth 12 (upper right lateral incisor) — heart — metal — colour #e8c25a — size 2 × 4 mm (about 4 mm on its longest side)");
-  assertStringIncludes(data, "3. Tooth unlabelled front surface (see IMAGE 1) — round — crystal — colour #000000 — iridescent coating — size SS3");
+  const lines = data.split("\n");
+  assertEquals(lines[0], "DESIGN DATA — exactly 3 gems, no more.");
+  // Upper arch in the photo's order: 13, 12 (the heart), 11 bare, 21 (the round), 22, 23.
+  const upper = lines.indexOf("UPPER ARCH — teeth in the photo's left-to-right order:");
+  assertEquals(lines.slice(upper + 1, upper + 9), [
+    "Tooth 13 (upper right canine): no gem — it stays bare.",
+    "Tooth 12 (upper right lateral incisor): 1 gem",
+    "  1. heart — metal — colour #e8c25a — size 2 × 4 mm (about 4 mm on its longest side)",
+    "Tooth 11 (upper right central incisor): no gem — it stays bare.",
+    "Tooth 21 (upper left central incisor): 1 gem",
+    "  2. round — crystal — colour #ffffff — size SS5 (about 1.8 mm on its longest side)",
+    "Tooth 22 (upper left lateral incisor): no gem — it stays bare.",
+    "Tooth 23 (upper left canine): no gem — it stays bare.",
+  ]);
+  // No gem on the lower arch: it is not listed at all.
+  assertEquals(data.includes("LOWER ARCH"), false);
+  assertStringIncludes(data, "  3. round — crystal — colour #000000 — iridescent coating — size SS3");
   assertEquals(toothLabel("36"), "36 (lower left first molar)");
   assertEquals(piecesFromScene({}), []);
+});
+
+Deno.test("design data with seats: place and share of the tooth, tongue-side gems left out", () => {
+  const pieces = piecesFromScene(SCENE);
+  const seats = readSeats(JSON.stringify([
+    { id: "p1", gum: 0.24, mid: 0.17, width: 0.51, front: true },
+    { id: "p2", gum: 0.5, mid: 0, width: 0.4, front: false },
+    { id: "p3", gum: "x" },
+  ]));
+  assertEquals(seats.size, 2);
+  const data = buildDesignData(pieces, seats);
+  assertEquals(data.split("\n")[0], "DESIGN DATA — exactly 1 gem, no more.");
+  assertStringIncludes(
+    data,
+    "  1. round — crystal — colour #ffffff — size SS5 (about 1.8 mm on its longest side) — longest side about 51% of this tooth's width — centre at about 24% of the crown height from the gum line (gum-side third), 17% of the tooth's width off-centre toward the midline",
+  );
+  assertStringIncludes(data, "Tooth 12 (upper right lateral incisor): no gem — it stays bare.");
+  // Out-of-range numbers are clamped, malformed input ignored.
+  assertEquals(readSeats(JSON.stringify([{ id: "a", gum: 9, mid: -3, width: 0, front: true }])).get("a"), { gum: 1, mid: -0.5, width: 0.02, front: true });
+  assertEquals(readSeats("not json").size, 0);
+  assertEquals(readSeats(null).size, 0);
 });
 
 Deno.test("prompt versions: v3 by default, both name the two images", () => {

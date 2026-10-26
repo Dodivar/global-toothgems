@@ -1,7 +1,7 @@
 import { corsHeaders, json, type SiteOrigins } from "../_shared/http.ts";
 import { bearer, looksLikeJwt } from "../_shared/studioBilling.ts";
 import type { GenerateOutcome, InlineImage } from "./gemini.ts";
-import { buildDesignData, piecesFromScene } from "./prompt.ts";
+import { buildDesignData, piecesFromScene, readSeats } from "./prompt.ts";
 
 /**
  * POST /functions/v1/studio-try-on   (decision 111)
@@ -16,8 +16,11 @@ import { buildDesignData, piecesFromScene } from "./prompt.ts";
  *     source  JSON: { "creation_id" } (one's own creation) | { "token" } (share
  *             link) | { "handle", "item_id" } (approved Glowbook creation)
  *     photo   the smile photo (JPEG / PNG / WebP, ≤ 6 MB), prepared in the browser
- *     design  the browser's front view of the creation (≤ 3 MB): IMAGE 1 of
+ *     design  the browser's 3D render of the creation (≤ 3 MB): IMAGE 1 of
  *             the system instructions (`systemPrompt.ts`), the photo IMAGE 2
+ *     seats   optional JSON: each gem's place and size on its tooth, measured
+ *             by the browser (`prompt.ts` `readSeats`), matched to the stored
+ *             gems by id
  *     200 { ok: true, image: { mime_type, data } }   base64, never stored
  *     4xx/5xx { ok: false, code }  invalid_request | sign_in_required |
  *             session_expired | not_found | not_allowed | daily_limit |
@@ -134,6 +137,7 @@ export async function handleStudioTryOn(req: Request, deps: StudioTryOnDeps): Pr
   const ref = readSourceRef(form.get("source"));
   const photo = await inlineFile(form.get("photo"), PHOTO_MAX_BYTES);
   const design = await inlineFile(form.get("design"), DESIGN_MAX_BYTES);
+  const seats = readSeats(form.get("seats"));
   if (!ref || !photo || photo === "invalid" || !design || design === "invalid") return json({ ok: false, code: "invalid_request" }, 400, cors);
 
   let userId: string | null;
@@ -172,7 +176,7 @@ export async function handleStudioTryOn(req: Request, deps: StudioTryOnDeps): Pr
       deps.log("reference pictures unavailable", error instanceof Error ? error.message : error);
       return [] as InlineImage[];
     });
-    outcome = await deps.generate([design, photo, ...references], buildDesignData(pieces));
+    outcome = await deps.generate([design, photo, ...references], buildDesignData(pieces, seats));
   } catch (error) {
     outcome = { ok: false, code: "failed", detail: error instanceof Error ? error.message : String(error) };
   }

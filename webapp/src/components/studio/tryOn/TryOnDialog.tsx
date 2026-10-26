@@ -16,6 +16,7 @@ import {
   type TryOnSource,
 } from "../../../lib/studio3d/tryOn";
 import { smileTryOnService } from "../../../lib/studio3d/tryOnService";
+import { tryOnSeats } from "../../../lib/studio3d/tryOnSeats";
 import { renderDesignImage } from "./designImage";
 import { PhotoStep, type AiState } from "./PhotoStep";
 import type { PreparedPhoto } from "./preparePhoto";
@@ -116,7 +117,8 @@ export function TryOnDialog({
       request.current = null;
       return setStep({ kind: "error", code: "failed" });
     }
-    const outcome = await service.render({ photo: photo.blob, source, design }, { signal: controller.signal });
+    const seats = tryOnSeats(creation.scene.pieces, creation.scene.model);
+    const outcome = await service.render({ photo: photo.blob, source, design, seats }, { signal: controller.signal });
     if (controller.signal.aborted) return; // cancelled or closed: nothing to show
     request.current = null;
     if (outcome.ok) {

@@ -1,7 +1,9 @@
 /**
  * The gems of a creation as the database stores them (decision 111), and the
- * design data that the v2 system instructions (`systemPrompt.ts`) read after
- * the images: one line per gem — tooth, cut, material, colour, coating, size.
+ * design data that the v3 system instructions (`systemPrompt.ts`) read after
+ * the images: tooth by tooth, one line per gem — cut, material, colour,
+ * coating, size, and its place and size on the tooth when the browser sent
+ * them (`readSeats`).
  *
  * Everything in it comes from the stored scene, reduced to known values
  * (FDI tooth numbers, the Studio's cuts and materials, `#rrggbb`, numbers):
@@ -10,6 +12,8 @@
  */
 
 export interface PromptPiece {
+  /** The piece's id in the scene ("" when it has none): matches its seat. */
+  id: string;
   /** FDI number ("11"…"48"), or "X0" for an unlabelled region. */
   toothId: string;
   shape: string;
@@ -75,6 +79,7 @@ export function piecesFromScene(scene: unknown): PromptPiece[] {
     const color = typeof look.color === "string" && /^#[0-9a-f]{6}$/i.test(look.color) ? look.color.toLowerCase() : null;
     if (typeof p.toothId !== "string" || !size || !color) continue;
     out.push({
+      id: typeof p.id === "string" && p.id.length <= 40 ? p.id : "",
       toothId: /^(X0|[1-4][1-8])$/.test(p.toothId) ? p.toothId : "X0",
       shape: typeof look.shape === "string" && look.shape in SHAPES ? look.shape : "round",
       material: look.material === "metal" ? "metal" : "crystal",
@@ -104,13 +109,107 @@ export function toothLabel(toothId: string): string {
   return m ? `${toothId} (${QUADRANT[m[1]]} ${TOOTH[m[2]]})` : "unlabelled front surface (see IMAGE 1)";
 }
 
-/** The design data block sent after the images with the v2 system instructions. */
-export function buildDesignData(pieces: readonly PromptPiece[]): string {
-  const lines = pieces.map((p, i) => {
-    const mm = p.longestMm > 0 ? ` (about ${p.longestMm} mm on its longest side)` : "";
-    const coating = p.iridescent ? " — iridescent coating" : "";
-    return `${i + 1}. Tooth ${toothLabel(p.toothId)} — ${SHAPES[p.shape]} — ${p.material} — colour ${p.color}${coating} — size ${p.size}${mm}`;
-  });
-  const count = `${pieces.length} gem${pieces.length > 1 ? "s" : ""}`;
-  return [`DESIGN DATA — exactly ${count}, no more:`, ...lines].join("\n");
+/**
+ * Where a gem sits on its tooth and how big it is against it, measured by the
+ * browser on the Studio's front view (`webapp/src/lib/studio3d/tryOnSeats.ts`)
+ * and sent with the request. Untrusted, so reduced to clamped numbers and
+ * matched to the stored gems by id: at worst it moves a gem on the
+ * requester's own render.
+ */
+export interface Seat {
+  /** Centre height on the crown: 0 at the gum line, 1 at the biting edge. */
+  gum: number;
+  /** Across the crown, share of its width: > 0 toward the midline, < 0 toward the side. */
+  mid: number;
+  /** Longest side, share of the crown's width. */
+  width: number;
+  /** False: tongue side, not seen from the front. */
+  front: boolean;
+}
+
+const SEATS_MAX_CHARS = 32 * 1024;
+const clampTo = (n: number, lo: number, hi: number) => Math.min(hi, Math.max(lo, n));
+
+/** The seats the browser sent (form field `seats`), by piece id; malformed entries are dropped. */
+export function readSeats(raw: unknown): Map<string, Seat> {
+  const out = new Map<string, Seat>();
+  if (typeof raw !== "string" || raw.length > SEATS_MAX_CHARS) return out;
+  let data: unknown;
+  try {
+    data = JSON.parse(raw);
+  } catch {
+    return out;
+  }
+  if (!Array.isArray(data)) return out;
+  for (const entry of data.slice(0, MAX_PIECES)) {
+    if (!entry || typeof entry !== "object") continue;
+    const e = entry as Record<string, unknown>;
+    if (typeof e.id !== "string" || !e.id || e.id.length > 40 || !isNum(e.gum) || !isNum(e.mid) || !isNum(e.width) || typeof e.front !== "boolean") continue;
+    out.set(e.id, { gum: clampTo(e.gum, 0, 1), mid: clampTo(e.mid, -0.5, 0.5), width: clampTo(e.width, 0.02, 2), front: e.front });
+  }
+  return out;
+}
+
+/** Upper then lower arch, each in the photo's left-to-right order (the person's right first). */
+const UPPER = ["18", "17", "16", "15", "14", "13", "12", "11", "21", "22", "23", "24", "25", "26", "27", "28"];
+const LOWER = ["48", "47", "46", "45", "44", "43", "42", "41", "31", "32", "33", "34", "35", "36", "37", "38"];
+/** The front teeth, always listed — bare ones too, so a gem never slides onto them. */
+const ALWAYS = new Set(["13", "12", "11", "21", "22", "23", "43", "42", "41", "31", "32", "33"]);
+
+const pct = (n: number) => `${Math.round(n * 100)}%`;
+
+function placeOf(seat: Seat): string {
+  const third = seat.gum < 1 / 3 ? "gum-side third" : seat.gum < 2 / 3 ? "middle third" : "biting-edge third";
+  const height = `centre at about ${pct(seat.gum)} of the crown height from the gum line (${third})`;
+  const side = Math.abs(seat.mid) < 0.08
+    ? "centred across the tooth"
+    : `${pct(Math.abs(seat.mid))} of the tooth's width off-centre toward ${seat.mid > 0 ? "the midline" : "the outer side"}`;
+  return `${height}, ${side}`;
+}
+
+function gemLine(n: number, p: PromptPiece, seat: Seat | undefined): string {
+  const mm = p.longestMm > 0 && p.size !== `${p.longestMm} mm` ? ` (about ${p.longestMm} mm on its longest side)` : "";
+  const coating = p.iridescent ? " — iridescent coating" : "";
+  const share = seat ? ` — longest side about ${pct(seat.width)} of this tooth's width` : "";
+  const place = seat ? ` — ${placeOf(seat)}` : "";
+  return `  ${n}. ${SHAPES[p.shape]} — ${p.material} — colour ${p.color}${coating} — size ${p.size}${mm}${share}${place}`;
+}
+
+/**
+ * The design data block sent after the images with the v3 system
+ * instructions: the exact count, then tooth by tooth in the photo's order —
+ * bare front teeth named as such — each gem with its cut, material, colour,
+ * size and, when the browser measured it, its share of the tooth's width and
+ * its place on the crown. Gems on the tongue side are left out.
+ */
+export function buildDesignData(pieces: readonly PromptPiece[], seats: ReadonlyMap<string, Seat> = new Map()): string {
+  const seatOf = (p: PromptPiece) => (p.id ? seats.get(p.id) : undefined);
+  const shown = pieces.filter((p) => seatOf(p)?.front !== false);
+  const onTooth = (fdi: string) =>
+    shown.filter((p) => p.toothId === fdi).sort((a, b) => (seatOf(a)?.gum ?? 0.5) - (seatOf(b)?.gum ?? 0.5));
+  const lines: string[] = [];
+  let n = 0;
+  const arch = (title: string, teeth: string[]) => {
+    const listed = teeth.filter((fdi) => ALWAYS.has(fdi) || onTooth(fdi).length > 0);
+    if (!listed.some((fdi) => onTooth(fdi).length > 0)) return;
+    lines.push("", title);
+    for (const fdi of listed) {
+      const gems = onTooth(fdi);
+      if (!gems.length) {
+        lines.push(`Tooth ${toothLabel(fdi)}: no gem — it stays bare.`);
+        continue;
+      }
+      lines.push(`Tooth ${toothLabel(fdi)}: ${gems.length} gem${gems.length > 1 ? "s" : ""}`);
+      for (const p of gems) lines.push(gemLine(++n, p, seatOf(p)));
+    }
+  };
+  arch("UPPER ARCH — teeth in the photo's left-to-right order:", UPPER);
+  arch("LOWER ARCH — teeth in the photo's left-to-right order:", LOWER);
+  const other = shown.filter((p) => p.toothId === "X0");
+  if (other.length) {
+    lines.push("", `Gems on an ${toothLabel("X0")}:`);
+    for (const p of other) lines.push(gemLine(++n, p, seatOf(p)));
+  }
+  const count = `${n} gem${n > 1 ? "s" : ""}`;
+  return [`DESIGN DATA — exactly ${count}, no more.`, ...lines].join("\n");
 }
