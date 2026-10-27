@@ -249,9 +249,10 @@ function StudioWorkspace() {
           </div>
         </div>
         {section && (
-          <main key={section} className="gt-ws-section fixed inset-0 z-30 flex flex-col overflow-hidden bg-[var(--surface-page)] lg:absolute">
+          <main key={section} className="gt-ws-section fixed inset-0 z-30 flex min-w-0 flex-col overflow-hidden bg-[var(--surface-page)] lg:absolute">
             <SectionBar section={section} onOpenMenu={() => setDrawerOpen(true)} />
-            <div className="gt-editor-scroll min-h-0 flex-1 overflow-y-auto overscroll-contain">
+            {/* Never wider than the screen: a page that overflows sideways would scroll horizontally on phones (Safari). */}
+            <div className="gt-editor-scroll min-h-0 min-w-0 flex-1 overflow-x-hidden overflow-y-auto overscroll-contain">
               {section === "creations" && <CreationLibrary />}
               {section === "groups" && <GemGroupLibrary />}
               {section === "templates" && <TemplateLibrary />}

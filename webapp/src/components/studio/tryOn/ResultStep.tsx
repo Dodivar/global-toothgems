@@ -1,5 +1,5 @@
 import { useMemo, useState } from "react";
-import { Download, Eye, EyeOff, ImageUp, RefreshCw, Share, Sparkles } from "lucide-react";
+import { Download, Expand, Eye, EyeOff, ImageUp, RefreshCw, Share, Sparkles } from "lucide-react";
 import { useTranslation } from "react-i18next";
 import { Button } from "../../ui/Button";
 import { resultExtension, type TryOnCreation } from "../../../lib/studio3d/tryOn";
@@ -7,6 +7,7 @@ import { tryOnFileName } from "../../../lib/studio3d/tryOnPhoto";
 import { useHydrated } from "../../../lib/useHydrated";
 import { downloadFile } from "../../../lib/downloadFile";
 import type { PreparedPhoto } from "./preparePhoto";
+import { ResultViewer } from "./ResultViewer";
 
 function canShareFile(file: File): boolean {
   try {
@@ -18,7 +19,9 @@ function canShareFile(file: File): boolean {
 
 /**
  * Step 3 of the AI try-on: the generated image, the photo it came from one
- * click away (before / after), then download or share. The image only lives
+ * click away (before / after), then download or share. A tap on the image
+ * opens it full screen with its own zoom (`ResultViewer`); the page's own
+ * pinch-zoom is off on the image (it crashed Safari on iPhone). The image only lives
  * in this tab: closing the dialog forgets it. Marked `ph-no-capture` so
  * analytics session replay never records the face.
  */
@@ -40,10 +43,14 @@ export function ResultStep({
 }) {
   const { t } = useTranslation();
   const [before, setBefore] = useState(false);
+  const [enlarged, setEnlarged] = useState(false);
   const [state, setState] = useState<"downloaded" | "failed" | null>(null);
   const file = useMemo(() => new File([image], tryOnFileName(creation.name, resultExtension(image.type)), { type: image.type }), [image, creation.name]);
   const hydrated = useHydrated();
   const canShare = hydrated && canShareFile(file);
+
+  const shownUrl = before ? photo.url : imageUrl;
+  const shownAlt = before ? t("studio.tryOn.result.beforeAlt") : t("studio.tryOn.result.alt", { name: creation.name });
 
   const share = () => {
     setState(null);
@@ -55,12 +62,16 @@ export function ResultStep({
   return (
     <div className="grid gap-4">
       <figure className="ph-no-capture m-0 grid gap-2">
-        <div className="relative grid place-items-center overflow-hidden rounded-[var(--radius-md)] bg-[var(--surface-sunken)]">
-          <img
-            src={before ? photo.url : imageUrl}
-            alt={before ? t("studio.tryOn.result.beforeAlt") : t("studio.tryOn.result.alt", { name: creation.name })}
-            className="max-h-[60vh] w-auto max-w-full object-contain"
-          />
+        <button
+          type="button"
+          onClick={() => setEnlarged(true)}
+          aria-label={t("studio.tryOn.viewer.open")}
+          className="relative grid cursor-zoom-in touch-pan-y place-items-center overflow-hidden rounded-[var(--radius-md)] bg-[var(--surface-sunken)] focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-[var(--focus-ring)]"
+        >
+          <img src={shownUrl} alt={shownAlt} draggable={false} className="max-h-[60vh] w-auto max-w-full object-contain" />
+          <span aria-hidden="true" className="absolute bottom-2 right-2 inline-grid h-8 w-8 place-items-center rounded-full bg-[rgba(22,26,32,.7)] text-white">
+            <Expand size={15} />
+          </span>
           <span className="absolute left-2 top-2 inline-flex items-center gap-1 rounded-[var(--radius-pill)] bg-[rgba(22,26,32,.7)] px-2 py-0.5 text-[10.5px] font-bold uppercase tracking-[var(--tracking-wide)] text-white">
             {before ? t("studio.tryOn.result.beforeTag") : (
               <>
@@ -69,9 +80,10 @@ export function ResultStep({
               </>
             )}
           </span>
-        </div>
+        </button>
         <figcaption className="text-[12px] leading-snug text-[var(--text-muted)]">{t("studio.tryOn.result.disclaimer")}</figcaption>
       </figure>
+      {enlarged && <ResultViewer src={shownUrl} alt={shownAlt} onClose={() => setEnlarged(false)} />}
 
       <div className="flex flex-wrap items-center gap-2">
         <Button variant="outline" size="sm" iconLeft={before ? EyeOff : Eye} aria-pressed={before} onClick={() => setBefore((v) => !v)}>

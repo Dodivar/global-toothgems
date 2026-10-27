@@ -876,11 +876,25 @@
     "processing": {
       "checking": {
         "title": "Vérification de la photo…",
-        "body": "Une IA vérifie que les dents sont bien visibles, de face, nettes et éclairées avant de créer le rendu. Quelques secondes."
+        "body": "Une IA vérifie que les dents sont bien visibles, de face, nettes et éclairées avant de créer le rendu. Quelques secondes.",
+        "lines": [
+          "Lecture de la photo…",
+          "Repérage du sourire…",
+          "Contrôle de la netteté et de la lumière…",
+          "Vérification que les dents sont bien visibles…"
+        ]
       },
       "rendering": {
         "title": "Création du rendu…",
-        "body": "L’IA pose les pierres de la création sur la photo. Cela prend en général moins d’une minute."
+        "body": "L’IA pose les pierres de la création sur la photo. Cela prend en général moins d’une minute.",
+        "lines": [
+          "Préparation de la création 3D…",
+          "Repérage de chaque dent sur la photo…",
+          "Placement des pierres sur les dents…",
+          "Ajustement des reflets et de la lumière…",
+          "Fondu de la retouche dans la photo…",
+          "Derniers détails, presque prêt…"
+        ]
       },
       "cancel": "Annuler"
     },
@@ -964,6 +978,13 @@
       "signedOut_one": "Réservé aux membres connectés : {{count}} essai par 24 h.",
       "signedOut_other": "Réservé aux membres connectés : {{count}} essais par 24 h.",
       "signedOutPlain": "Réservé aux membres connectés."
+    },
+    "viewer": {
+      "open": "Afficher l’image en grand",
+      "close": "Fermer",
+      "zoomIn": "Zoomer",
+      "zoomOut": "Dézoomer",
+      "hint": "Pincez ou touchez deux fois pour zoomer."
     }
   },
   "frontView": {

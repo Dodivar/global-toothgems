@@ -1,5 +1,5 @@
 import { useEffect, useRef, useState } from "react";
-import { CircleAlert, ImageUp, LoaderCircle, LogIn, RefreshCw, ScanFace } from "lucide-react";
+import { CircleAlert, ImageUp, LogIn, RefreshCw, ScanFace } from "lucide-react";
 import { useTranslation } from "react-i18next";
 import { useAuth } from "../../../lib/auth";
 import { useLocation, useNavigate } from "../../../lib/navigation";
@@ -23,6 +23,7 @@ import { renderDesignImage, renderDesignMap } from "./designImage";
 import { pasteBack } from "./pasteBack";
 import { PhotoStep, type AiState } from "./PhotoStep";
 import type { PreparedPhoto } from "./preparePhoto";
+import { ProcessingStep } from "./ProcessingStep";
 import { ResultStep } from "./ResultStep";
 
 type Step =
@@ -195,18 +196,7 @@ export function TryOnDialog({
             />
           )}
 
-          {step.kind === "processing" && (
-            <div className="grid justify-items-center gap-3 py-8 text-center">
-              <LoaderCircle size={28} aria-hidden="true" className="text-[var(--gt-blue-700)] motion-safe:animate-spin" />
-              <p role="status" className="m-0 text-[length:var(--text-body-sm)] font-semibold text-[var(--text-primary)]">
-                {t(`studio.tryOn.processing.${step.stage}.title`)}
-              </p>
-              <p className="m-0 max-w-sm text-[12.5px] text-[var(--text-muted)]">{t(`studio.tryOn.processing.${step.stage}.body`)}</p>
-              <Button variant="outline" size="sm" onClick={cancel}>
-                {t("studio.tryOn.processing.cancel")}
-              </Button>
-            </div>
-          )}
+          {step.kind === "processing" && <ProcessingStep key={step.stage} stage={step.stage} onCancel={cancel} />}
 
           {step.kind === "error" && (
             <div role="alert" className="grid gap-3">

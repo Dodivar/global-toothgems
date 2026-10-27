@@ -876,11 +876,25 @@
     "processing": {
       "checking": {
         "title": "Checking the photo…",
-        "body": "An AI checks that the teeth are clearly visible, face-on, sharp and well lit before creating the render. A few seconds."
+        "body": "An AI checks that the teeth are clearly visible, face-on, sharp and well lit before creating the render. A few seconds.",
+        "lines": [
+          "Reading the photo…",
+          "Finding the smile…",
+          "Checking sharpness and light…",
+          "Making sure the teeth are clearly visible…"
+        ]
       },
       "rendering": {
         "title": "Creating the render…",
-        "body": "The AI is setting the creation’s gems on the photo. It usually takes less than a minute."
+        "body": "The AI is setting the creation’s gems on the photo. It usually takes less than a minute.",
+        "lines": [
+          "Preparing the 3D creation…",
+          "Finding each tooth on the photo…",
+          "Setting the gems on the teeth…",
+          "Adjusting reflections and light…",
+          "Blending the edit into the photo…",
+          "Final touches, almost ready…"
+        ]
       },
       "cancel": "Cancel"
     },
@@ -964,6 +978,13 @@
       "signedOut_one": "For signed-in members: {{count}} try per 24 hours.",
       "signedOut_other": "For signed-in members: {{count}} tries per 24 hours.",
       "signedOutPlain": "For signed-in members."
+    },
+    "viewer": {
+      "open": "Show the image full size",
+      "close": "Close",
+      "zoomIn": "Zoom in",
+      "zoomOut": "Zoom out",
+      "hint": "Pinch or double-tap to zoom."
     }
   },
   "frontView": {

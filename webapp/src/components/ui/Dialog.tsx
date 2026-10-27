@@ -111,11 +111,14 @@ export function Dialog({
       className="fixed inset-0 z-[500] flex items-end justify-center overflow-hidden p-0 sm:items-center sm:p-6"
     >
       {/* Decorative: the dialog is dismissed by Escape and by the labelled
-          close button, so the scrim needs no role of its own. */}
+          close button, so the scrim needs no role of its own. Blurred with a
+          mouse only: on touch screens a full-screen backdrop blur over the
+          Studio's 3D, redrawn at every step of a pinch-zoom, made Safari on
+          iPhone run out of memory and reload the page. */}
       <div
         aria-hidden="true"
         onClick={onClose}
-        className="fixed inset-0 bg-[rgba(17,17,17,.42)] backdrop-blur-[3px]"
+        className="fixed inset-0 bg-[rgba(17,17,17,.42)] pointer-fine:backdrop-blur-[3px]"
       />
       <div
         ref={panel}
