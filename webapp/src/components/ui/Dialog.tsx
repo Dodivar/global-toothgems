@@ -32,12 +32,11 @@ export function Dialog({
   children,
   closeLabel,
   size = "md",
-  scrollBody = false,
 }: {
   /**
-   * Long content: the panel fits the screen (full height on a phone), the
-   * header and footer stay put and only the body scrolls, instead of the
-   * whole overlay moving under the thumb.
+   * Kept for existing callers: every dialog now fits the screen, with the
+   * header and footer fixed and only the body scrolling (an overlay that
+   * scrolls as a whole cuts off its top when it is taller than the phone).
    */
   scrollBody?: boolean;
   /** `lg` for dialogs holding a whole form, such as writing a review. */
@@ -109,10 +108,7 @@ export function Dialog({
 
   return (
     <div
-      className={clsx(
-        "fixed inset-0 z-[500] flex items-end justify-center p-0 sm:items-center sm:p-6",
-        scrollBody ? "overflow-hidden" : "overflow-y-auto",
-      )}
+      className="fixed inset-0 z-[500] flex items-end justify-center overflow-hidden p-0 sm:items-center sm:p-6"
     >
       {/* Decorative: the dialog is dismissed by Escape and by the labelled
           close button, so the scrim needs no role of its own. */}
@@ -132,7 +128,7 @@ export function Dialog({
           "gt-celebrate relative w-full rounded-t-[var(--radius-xl)] border bg-[var(--surface-card)] shadow-[var(--shadow-lg)] sm:rounded-[var(--radius-lg)]",
           tone === "danger" ? "border-[var(--gt-red-400)]" : "border-[var(--border-subtle)]",
           size === "lg" ? "max-w-[640px]" : "max-w-[520px]",
-          scrollBody && "flex max-h-[92dvh] flex-col sm:max-h-[calc(100dvh-3rem)]",
+          "flex max-h-[92dvh] flex-col sm:max-h-[calc(100dvh-3rem)]",
         )}
       >
         <header className="flex flex-none items-start gap-3 border-b border-[var(--border-subtle)] p-[var(--space-5)] pr-[var(--space-4)]">
@@ -176,7 +172,7 @@ export function Dialog({
               // max-content rows: in a scroll container of fixed height, auto rows fall back
               // to their minimum, and a clipped child (an aspect-ratio preview) collapses
               // under the content that follows it.
-              scrollBody && "min-h-0 flex-1 auto-rows-max content-start overflow-y-auto overscroll-contain",
+              "min-h-0 flex-1 auto-rows-max content-start overflow-y-auto overscroll-contain",
             )}
           >
             {children}

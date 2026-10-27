@@ -103,7 +103,7 @@ export function MediaPickerDialog({
         aria-modal="true"
         aria-labelledby={titleId}
         tabIndex={-1}
-        className="gt-admin gt-admin-dialog relative grid h-full w-full max-w-[980px] grid-rows-[auto_auto_minmax(0,1fr)_auto] overflow-clip bg-[var(--admin-panel)] shadow-[var(--shadow-lg)] sm:h-[min(760px,92vh)] sm:rounded-[var(--admin-radius)]"
+        className="gt-admin gt-admin-dialog relative grid h-full w-full max-w-[980px] grid-rows-[auto_auto_minmax(0,1fr)_auto] overflow-clip bg-[var(--admin-panel)] shadow-[var(--shadow-lg)] sm:h-[min(760px,92dvh)] sm:rounded-[var(--admin-radius)]"
       >
         <header className="flex items-start gap-3 border-b border-[var(--border-subtle)] px-5 py-4">
           <div className="grid min-w-0 flex-1 gap-1">

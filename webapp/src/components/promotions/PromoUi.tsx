@@ -264,7 +264,7 @@ function DialogFrame({
           aria-describedby={description ? descId : undefined}
           tabIndex={-1}
           className={clsx(
-            "gt-sheet-up sm:gt-admin-dialog relative flex max-h-[92vh] w-full flex-col rounded-t-[var(--radius-xl)] border border-[var(--border-subtle)] bg-[var(--admin-panel)] shadow-[var(--shadow-lg)] outline-none sm:rounded-[var(--admin-radius)]",
+            "gt-sheet-up sm:gt-admin-dialog relative flex max-h-[92dvh] w-full flex-col rounded-t-[var(--radius-xl)] border border-[var(--border-subtle)] bg-[var(--admin-panel)] shadow-[var(--shadow-lg)] outline-none sm:rounded-[var(--admin-radius)]",
             wide ? "sm:max-w-[620px]" : "sm:max-w-[480px]",
           )}
         >
@@ -354,7 +354,7 @@ export function BottomSheet({
           aria-modal="true"
           aria-labelledby={titleId}
           tabIndex={-1}
-          className="gt-sheet-up absolute inset-x-0 bottom-0 flex max-h-[88vh] flex-col rounded-t-[var(--radius-xl)] bg-[var(--admin-panel)] shadow-[var(--shadow-lg)] outline-none"
+          className="gt-sheet-up absolute inset-x-0 bottom-0 flex max-h-[88dvh] flex-col rounded-t-[var(--radius-xl)] bg-[var(--admin-panel)] shadow-[var(--shadow-lg)] outline-none"
         >
           <span aria-hidden="true" className="mx-auto mt-2.5 h-1 w-10 rounded-full bg-[var(--gt-ink-300)]" />
           <div className="flex items-center justify-between gap-3 px-5 pb-2 pt-3">

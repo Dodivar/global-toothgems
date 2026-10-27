@@ -560,7 +560,7 @@ function ContentsSheet({ onClose, summary, children }: { onClose: () => void; su
         aria-modal="true"
         aria-label={t("learning.contents")}
         tabIndex={-1}
-        className="gt-learn-sheet absolute inset-x-0 bottom-0 grid max-h-[88vh] grid-rows-[auto_minmax(0,1fr)] rounded-t-[var(--radius-xl)] bg-[var(--surface-card)] shadow-[var(--shadow-lg)]"
+        className="gt-learn-sheet absolute inset-x-0 bottom-0 grid max-h-[88dvh] grid-rows-[auto_minmax(0,1fr)] rounded-t-[var(--radius-xl)] bg-[var(--surface-card)] shadow-[var(--shadow-lg)]"
       >
         <header className="grid gap-3 border-b border-[var(--border-subtle)] px-5 pb-4 pt-3">
           <span aria-hidden="true" className="mx-auto h-1 w-10 rounded-full bg-[var(--gt-ink-300)]" />

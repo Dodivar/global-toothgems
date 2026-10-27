@@ -275,7 +275,7 @@ function ForgotPasswordDialog({ onClose, defaultEmail }: { onClose: () => void; 
         aria-modal="true"
         aria-labelledby="gt-forgot-title"
         tabIndex={-1}
-        className="gt-admin-dialog relative w-full max-w-[440px] rounded-[var(--admin-radius)] border border-[var(--border-subtle)] bg-[var(--admin-panel)] p-6 shadow-[var(--shadow-lg)]"
+        className="gt-admin-dialog relative max-h-[calc(100dvh-2rem)] w-full max-w-[440px] overflow-y-auto overscroll-contain rounded-[var(--admin-radius)] border border-[var(--border-subtle)] bg-[var(--admin-panel)] p-6 shadow-[var(--shadow-lg)]"
       >
         <div className="flex items-start justify-between gap-4">
           <h2 id="gt-forgot-title" className="text-[length:var(--text-h4)]">
