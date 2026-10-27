@@ -116,12 +116,17 @@ export function CreationCard({
                 icon: Link2,
                 onSelect: () => openWorkspaceDialog({ kind: "shareCreation", creation }),
               },
-              {
-                id: "collections",
-                label: t("studio.workspace.actions.collections"),
-                icon: FolderPlus,
-                onSelect: () => openWorkspaceDialog({ kind: "creationCollections", creationId: creation.id }),
-              },
+              // No folders below the Artist plan (decision 113 (b)).
+              ...(ws.collectionsStatus === "locked"
+                ? []
+                : [
+                    {
+                      id: "collections",
+                      label: t("studio.workspace.actions.collections"),
+                      icon: FolderPlus,
+                      onSelect: () => openWorkspaceDialog({ kind: "creationCollections", creationId: creation.id }),
+                    },
+                  ]),
               ...(folder
                 ? [
                     {

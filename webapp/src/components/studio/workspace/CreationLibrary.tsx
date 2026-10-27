@@ -93,7 +93,7 @@ export function CreationLibrary() {
         </div>
         {ws.status === "ready" && (
           <div className="flex flex-wrap items-center gap-2.5">
-            {ws.creations.length > 0 && <LibraryViewToggle />}
+            {ws.creations.length > 0 && ws.collectionsStatus !== "locked" && <LibraryViewToggle />}
             <Button variant="primary" size="sm" iconLeft={Plus} onClick={newDesign}>
               {t("studio.workspace.creations.newDesign")}
             </Button>
@@ -139,7 +139,8 @@ export function CreationLibrary() {
         <>
           {/* One block of tools above the grid: where to look (collections), then what to show. */}
           <div className="grid gap-3">
-            {!explorer && (
+            {/* Below the Artist plan there are no folders to show (decision 113 (b)). */}
+            {!explorer && ws.collectionsStatus !== "locked" && (
               <CollectionBar selectedId={collectionId} onSelect={selectCollection} counts={perCollection} total={ws.creations.length} />
             )}
             <SearchAndFilters
